@@ -17,7 +17,7 @@ from Modules.zigateConsts import ADDRESS_MODE, MAX_LOAD_ZIGATE, ZIGATE_EP
 def create_domoticz_group_device(self, GroupName, GroupId):
     ' Create Device for just created group in Domoticz. '
 
-    def free_unit(self, Devices):
+    def free_unit( Devices):
         for x in range(1, 255):
             if x not in Devices:
                 return x
@@ -32,9 +32,9 @@ def create_domoticz_group_device(self, GroupName, GroupId):
             Domoticz.Error("createDomoticzGroupDevice - existing group %s" %(self.Devices[x].Name))
             return
 
-    Type_, Subtype_, SwitchType_ = self._bestGroupWidget( GroupId)
+    Type_, Subtype_, SwitchType_ = best_group_widget( self, GroupId)
 
-    unit = self.FreeUnit( self.Devices )
+    unit = free_unit( self.Devices )
     self.logging( 'Debug', "createDomoticzGroupDevice - Unit: %s" %unit)
     myDev = Domoticz.Device(DeviceID = str(GroupId), Name = str(GroupName), Unit = unit, Type = Type_, Subtype = Subtype_, Switchtype = SwitchType_)
     myDev.Create()
@@ -71,7 +71,7 @@ def update_domoticz_group_device_widget( self, GroupName, GroupId ):
 
     unit = unit_for_widget( self, GroupId )
 
-    Type_, Subtype_, SwitchType_ = self._bestGroupWidget( GroupId)
+    Type_, Subtype_, SwitchType_ = best_group_widget( self, GroupId)
 
     if Type_ != self.Devices[unit].Type or Subtype_ != self.Devices[unit].SubType or SwitchType_ != self.Devices[unit].SwitchType:
         self.logging( 'Debug', "updateDomoticzGroupDeviceWidget - Update Type:%s, Subtype:%s, Switchtype:%s" %(Type_, Subtype_, SwitchType_))

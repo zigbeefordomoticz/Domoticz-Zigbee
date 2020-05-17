@@ -14,7 +14,7 @@ from Modules.zigateConsts import ADDRESS_MODE, ZIGATE_EP
 from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl
 
 # Group Management Command
-def status_on_grp_command( self, MsgData):
+def statusGroupRequest( self, MsgData):
     """
     This is a 0x8000 message
     """
@@ -89,7 +89,7 @@ def add_group_member_ship_response(self, MsgData):
     if MsgEP not in self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip']:
         return
 
-    if MsgGroupID not in self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip']['MsgEP']:
+    if MsgGroupID not in self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP]:
         return
 
     if self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP][ MsgGroupID ]['Status'] != 'addGroupMembeShip':
@@ -97,7 +97,11 @@ def add_group_member_ship_response(self, MsgData):
 
     if MsgStatus == '00':
         # Success
-        self.ListOfDevices[ device_addr ]['GroupMemberShip'][MsgEP][ MsgGroupID ]['Status'] = 'OK'
+        self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP][ MsgGroupID ]['Status'] = 'OK'
+        
+    else:
+        # Might already part of the group
+        check_group_member_ship( self, MsgSrcAddr, MsgEP , MsgGroupID)
 
 def check_group_member_ship( self, device_addr, device_ep, goup_addr ):
     """
@@ -114,12 +118,32 @@ def check_group_member_ship_response( self, MsgData):
     MsgSequenceNumber = MsgData[0:2]
     MsgEP = MsgData[2:4]
     MsgClusterID = MsgData[4:8]
-    MsgDataStatus = MsgData[8:10]
+    MsgStatus = MsgData[8:10]
     MsgGroupID = MsgData[10:14]
     MsgSrcAddr = MsgData[14:18]
 
     self.logging( 'Debug', "checkGroupMemberShipResponse - SEQ: %s, Source: %s EP: %s, ClusterID: %s, GroupID: %s, Status: %s" 
-            %( MsgSequenceNumber, MsgSrcAddr, MsgEP, MsgClusterID, MsgGroupID, MsgDataStatus))
+            %( MsgSequenceNumber, MsgSrcAddr, MsgEP, MsgClusterID, MsgGroupID, MsgStatus))
+
+    if MsgSrcAddr not in self.ListOfDevices:
+        Domoticz.Error("Requesting to add group %s membership on non existing device %s" %(MsgGroupID, MsgSrcAddr))
+        return
+
+    if 'GroupMemberShip' not in self.ListOfDevices[ MsgSrcAddr ]:
+        return
+
+    if MsgEP not in self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip']:
+        return
+
+    if MsgGroupID not in self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP]:
+        return
+
+    if self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP][ MsgGroupID ]['Status'] != 'addGroupMembeShip':
+        return
+
+    if MsgStatus == '00':
+        # Success
+        self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP][ MsgGroupID ]['Status'] = 'OK'  
 
 def look_for_group_member_ship(self, device_addr, device_ep, group_list = None):
     """

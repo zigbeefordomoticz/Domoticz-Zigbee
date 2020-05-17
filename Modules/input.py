@@ -1480,22 +1480,22 @@ def Decode804E(self, Devices, MsgData, MsgRSSI):
         self.networkmap.LQIresp( MsgData )
 
 #Group response
-# Implemented in z_GrpMgt.py
+# Implemented in GroupMgtv2.GrupManagement.py
 def Decode8060(self, Devices, MsgData, MsgRSSI):
 
-    self.groupmgt.addGroupResponse( MsgData )
+    self.groupmgt.add_group_member_ship_response( MsgData )
 
 def Decode8061(self, Devices, MsgData, MsgRSSI):
 
-    self.groupmgt.viewGroupResponse( MsgData )
+    self.groupmgt.check_group_member_ship_response( MsgData )
 
 def Decode8062(self, Devices, MsgData, MsgRSSI):
 
-    self.groupmgt.getGroupMembershipResponse(MsgData)
+    self.groupmgt.look_for_group_member_ship_response(MsgData)
 
 def Decode8063(self, Devices, MsgData, MsgRSSI):
 
-    self.groupmgt.removeGroupResponse( MsgData )
+    self.groupmgt.remove_group_member_ship_response( MsgData )
 
 #Reponses SCENE
 def Decode80A0(self, Devices, MsgData, MsgRSSI) : # View Scene response

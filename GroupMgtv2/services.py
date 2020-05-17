@@ -16,6 +16,9 @@ def provision_Manufacturer_Group( self, GrpId, NwkId, Ep, Ieee):
 def scan_device_for_grp_membership( self, NwkId, Ep ):
     pass
 
+def scan_all_devices_for_grp_membership( self ):
+    pass
+
 def process_web_request( self, webInput):
     """
     Receive as GroupInput the json coming from the WebUI
@@ -115,6 +118,7 @@ def process_web_request( self, webInput):
                 self.logging( 'Debug', " --  --  --  -- - > Tuple to add: %s " % str([NwkId, Ep, IEEE] ))
             self.logging( 'Debug', " --  --  -- - > GroupCreation" )
             create_new_group_and_attach_devices( self, GrpId, GrpName, DevicesList)
+            return
 
         # we have to see if any groupmembership have to be added or removed
         self.logging( 'Debug', " -- - > Update GrpName: %s " %GrpName)

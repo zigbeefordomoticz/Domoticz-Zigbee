@@ -58,6 +58,8 @@ import pickle
 
 class GroupsManagement(object):
 
+  from GroupMgtv2.grpCommands import statusGroupRequest, remove_group_member_ship_response, look_for_group_member_ship_response, \
+                                      check_group_member_ship_response, add_group_member_ship_response
   from GroupMgtv2.domoticz import update_domoticz_group_device, process_command
   from GroupMgtv2.database import  write_groups_list, load_groups_list_from_json
   from GroupMgtv2.services import process_web_request
@@ -75,8 +77,6 @@ class GroupsManagement(object):
     self.loggingFileHandle = loggingFileHandle
     self.GroupListFileName = None       # Filename of Group cashing file
     self.ZigateIEEE = None
-
-
 
     # Check if we have to open the old format
     if os.path.isfile( self.pluginconf.pluginConf['pluginData'] + "/GroupsList-%02d.pck" %hardwareID  ):
