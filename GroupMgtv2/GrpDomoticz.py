@@ -286,10 +286,18 @@ def update_domoticz_group_device( self, GroupId):
     if 'Cluster' in self.ListOfGroups[ GroupId]:
         Cluster = self.ListOfGroups[ GroupId]['Cluster']
 
-    # If one device is on, then the group is on. If all devices are off, then the group is off
-    nValue = 0
-    sValue = None
-    level = None
+    ONOFF_ON_IF_ALL_ON =1
+
+    if ONOFF_ON_IF_ALL_ON:
+        # If ALL devices are on, then the group is On, otherwise it remains Off (Philips behaviour)
+        nValue = 1
+        sValue = None
+        level = None
+    else:
+        # If one device is on, then the group is on. If all devices are off, then the group is off
+        nValue = 0
+        sValue = None
+        level = None
 
     for NwkId, Ep, IEEE in self.ListOfGroups[GroupId]['Devices']:
         if NwkId not in self.ListOfDevices:
@@ -301,8 +309,12 @@ def update_domoticz_group_device( self, GroupId):
         if Cluster and Cluster in ( '0006', '0008') and '0006' in self.ListOfDevices[NwkId]['Ep'][Ep]:
             if '0000' in self.ListOfDevices[NwkId]['Ep'][Ep]['0006']:
                 if str(self.ListOfDevices[NwkId]['Ep'][Ep]['0006']['0000']).isdigit():
-                    if int(self.ListOfDevices[NwkId]['Ep'][Ep]['0006']['0000']) != 0:
-                        nValue = 1
+                    if ONOFF_ON_IF_ALL_ON: 
+                        if int(self.ListOfDevices[NwkId]['Ep'][Ep]['0006']['0000']) == 0:
+                            nValue = 0
+                    else:
+                        if int(self.ListOfDevices[NwkId]['Ep'][Ep]['0006']['0000']) != 0:
+                            nValue = 1
 
         # Cluster Level Control
         if Cluster and Cluster == '0008' and '0008' in self.ListOfDevices[NwkId]['Ep'][Ep]:
@@ -375,10 +387,6 @@ def update_domoticz_group_device( self, GroupId):
 
 def remove_domoticz_group_device(self, GroupId):
     ' User has removed the Domoticz Device corresponding to this group'
-
-    if GroupId not in self.ListOfGroups:
-        Domoticz.Error("remove_domoticz_group_device - unknown group: %s" %GroupId)
-        return
 
     unit = unit_for_widget(self, GroupId )
     if unit is None:

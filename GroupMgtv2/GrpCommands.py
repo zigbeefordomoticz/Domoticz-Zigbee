@@ -13,7 +13,7 @@ from time import time
 from Modules.zigateConsts import ADDRESS_MODE, ZIGATE_EP
 from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl
 
-from GroupMgtv2.GrpDatabase import remove_device_from_group
+from GroupMgtv2.GrpControl import checkToCreateGroup, checkToRemoveGroup
 
 
 # Group Management Command
@@ -25,6 +25,7 @@ def statusGroupRequest( self, MsgData):
     SEQ = MsgData[2:4]
     PacketType = MsgData[4:8]
 
+    self.logging( 'Debug', "statusOnGrpCommand - Status: %s for Command: %s" %(Status, PacketType))   
     if Status != '00':
         self.logging( 'Log', "statusOnGrpCommand - Status: %s for Command: %s" %(Status, PacketType))
 
@@ -92,8 +93,8 @@ def add_group_member_ship_response(self, MsgData):
 
     if MsgStatus == '00':
         # Success
-        self.RefreshRequired = True
-        self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP][ MsgGroupID ]['Status'] = 'OK'        
+        self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP][ MsgGroupID ]['Status'] = 'OK'  
+        checkToCreateGroup(self, MsgSrcAddr, MsgEP, MsgGroupID  )    
     else:
         # Might already part of the group
         self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP][ MsgGroupID ]['Phase'] = 'CheckgroupMemberShip'
@@ -138,8 +139,8 @@ def check_group_member_ship_response( self, MsgData):
 
     if MsgStatus == '00':
         # Success
-        self.RefreshRequired = True
         self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP][ MsgGroupID ]['Status'] = 'OK'  
+        checkToCreateGroup(self, MsgSrcAddr, MsgEP, MsgGroupID  )  
     else:
         self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP][ MsgGroupID ]['Status'] = MsgStatus
         # Failure 
@@ -190,6 +191,7 @@ def look_for_group_member_ship_response( self, MsgData):
 
         self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP][ GrpId ]['Status'] = 'OK'
         self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP][ GrpId ]['TimeStamp'] = 0
+        checkToCreateGroup(self, MsgSrcAddr, MsgEP, GrpId  )
 
 def remove_group_member_ship(self,  NwkId, DeviceEp, GrpId ):
 
@@ -200,10 +202,13 @@ def remove_group_member_ship(self,  NwkId, DeviceEp, GrpId ):
         return
 
     if 'GroupMemberShip' not in self.ListOfDevices[ NwkId ]:
+        Domoticz.Error("removeGroupMemberShip %s no GroupMemberShip structure device %s" %( GrpId, NwkId))
         return
     if DeviceEp not in self.ListOfDevices[ NwkId ]['GroupMemberShip']:
+        Domoticz.Error("removeGroupMemberShip %s no Ep %s for that device %s" %( GrpId,DeviceEp, NwkId))
         return
     if GrpId not in self.ListOfDevices[ NwkId ]['GroupMemberShip'][DeviceEp]:
+        Domoticz.Error("removeGroupMemberShip %s not existing group for device %s" %( GrpId, NwkId))
         return
 
     self.ListOfDevices[ NwkId ]['GroupMemberShip'][DeviceEp][ GrpId ]['Phase'] = 'removeGroupMemberShip'
@@ -251,7 +256,6 @@ def remove_group_member_ship_response( self, MsgData):
         return
 
     if MsgStatus == '00':
-        self.RefreshRequired = True
         if MsgGroupID in self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP]:
             del self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP][ MsgGroupID ]
 
@@ -261,17 +265,10 @@ def remove_group_member_ship_response( self, MsgData):
         if len(self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip']) == 0:
             del self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip']
 
-        if 'IEEE' in self.ListOfDevices[ MsgSrcAddr]:
-            ieee = self.ListOfDevices[ MsgSrcAddr]['IEEE']
-            device = [ MsgSrcAddr,MsgEP,  ]
-            remove_device_from_group( self, device, MsgGroupID )
+        checkToRemoveGroup( self,MsgSrcAddr, MsgEP, MsgGroupID )
 
     self.logging( 'Debug', "removeGroupMemberShipResponse - SEQ: %s, EP: %s, ClusterID: %s, GroupID: %s, Status: %s"
             %( MsgSequenceNumber, MsgEP, MsgClusterID, MsgGroupID, MsgStatus))
-
-
-
-
 
 # Operating commands on groups
 def send_group_member_ship_identify(self, NwkId, DeviceEp, goup_addr = "0000"):

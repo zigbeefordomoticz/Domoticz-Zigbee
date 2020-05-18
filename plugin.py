@@ -845,7 +845,7 @@ def zigateInit_Phase3( self ):
 
             if self.pluginconf.pluginConf['zigatePartOfGroup0000']:
                 # Add Zigate NwkId 0x0000 Ep 0x01 to GroupId 0x0000
-                self.groupmgt.add_group_member_ship( '0000', '01', '0000')
+                self.groupmgt.addGroupMemberShip( '0000', '01', '0000')
 
     # In case we have Transport = None , let's check if we have to active Group management or not. (For Test and Web UI Dev purposes
     if self.transport == 'None' and self.groupmgt is None and self.pluginconf.pluginConf['enablegroupmanagement']:

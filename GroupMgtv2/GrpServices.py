@@ -8,10 +8,20 @@ import Domoticz
 
 from time import time
 
-from GroupMgtv2.GrpDomoticz import create_domoticz_group_device, remove_domoticz_group_device
-from GroupMgtv2.GrpCommands import add_group_member_ship, remove_group_member_ship, look_for_group_member_ship, check_group_member_ship
-from GroupMgtv2.GrpDatabase import create_group, add_device_to_group, remove_device_from_group
+from GroupMgtv2.GrpDomoticz import create_domoticz_group_device, remove_domoticz_group_device, update_domoticz_group_device
+#from GroupMgtv2.GrpDatabase import create_group, add_device_to_group, remove_device_from_group
+from GroupMgtv2.GrpDatabase import create_group
+from GroupMgtv2.GrpCommands import remove_group_member_ship, add_group_member_ship, add_group_member_ship, check_group_member_ship, look_for_group_member_ship
 
+def checkAndTriggerIfMajGroupNeeded( self, NwkId, Ep, ClusterId):
+    """
+    This method is call from MajDomoDevice and onCommand because there is an update of a particular Device Cluster/Attribute
+    We will then check if that impact a group and in that case trigger the update of such group
+    """
+
+    if ( 'GroupMemberShip' in self.ListOfDevices[NwkId] and Ep in self.ListOfDevices[NwkId]['GroupMemberShip'] ):
+        for GrpId in self.ListOfDevices[ NwkId ]['GroupMemberShip'][Ep]:
+            self.update_domoticz_group_device( GrpId )
 
 def GroupManagementCheckActions( self ):
 
@@ -36,7 +46,6 @@ def GroupManagementCheckActions( self ):
                 if self.ListOfDevices[NwkId]['GroupMemberShip'][ ep ][ GrpId ]['Phase'] in 'removeGroupMemberShip':
                     remove_group_member_ship( self, NwkId, ep, GrpId)
 
-
 def process_remove_group( self, unit, GroupId):
     # Call by onRemove call from Domoticz
     # The widget has been removed by Domoticz, we have to cleanup
@@ -48,7 +57,6 @@ def process_remove_group( self, unit, GroupId):
 
     for NwkId, Ep, IEEE in self.ListOfGroups[ GroupId ]['Devices']:
         remove_group_member_ship( self,NwkId, Ep, GroupId )
-
 
 def provision_Manufacturer_Group( self, GrpId, NwkId, Ep, Ieee):
     pass
@@ -67,6 +75,29 @@ def scan_device_for_grp_membership( self, NwkId, Ep ):
 def scan_all_devices_for_grp_membership( self ):
     pass
 
+def addGroupMemberShip( self, NwkId, Ep, GroupId):
+    add_group_member_ship( self, NwkId, Ep, GroupId)
+
+def create_new_group_and_attach_devices( self, GrpId, GrpName, DevicesList ):
+    self.logging( 'Debug', " --  --  --  --  --  > CreateNewGroupAndAttachDevices ")
+    create_group( self, GrpId, GrpName )
+    create_domoticz_group_device(self, GrpName, GrpId)
+    for NwkId, ep, ieee in DevicesList:
+        add_group_member_ship( self, NwkId, ep, GrpId)
+        #add_device_to_group( self, [ NwkId, ep, ieee ], GrpId)
+
+def update_group_and_add_devices( self, GrpId, ToBeAddedDevices):
+    self.logging( 'Debug', " --  --  --  --  --  > UpdateGroupAndAddDevices ")
+    for NwkId, ep, ieee in ToBeAddedDevices:
+        add_group_member_ship( self, NwkId, ep, GrpId)
+        #add_device_to_group( self, [ NwkId, ep, ieee ], GrpId)
+
+def update_group_and_remove_devices( self, GrpId, ToBeRemoveDevices):
+    self.logging( 'Debug', " --  --  --  --  --  > UpdateGroupAndRemoveDevices ")
+    for NwkId, ep, ieee in ToBeRemoveDevices:
+        #remove_device_from_group(self, [ NwkId, ep, ieee ], GrpId)
+        remove_group_member_ship(self,  NwkId, ep, GrpId )
+
 def process_web_request( self, webInput):
     """
     Receive as GroupInput the json coming from the WebUI
@@ -81,29 +112,6 @@ def process_web_request( self, webInput):
             GrpId = '%04X' %x
             if GrpId not in self.ListOfGroups:
                 return GrpId
-
-    def create_new_group_and_attach_devices( self, GrpId, GrpName, DevicesList ):
-
-        self.logging( 'Debug', " --  --  --  --  --  > CreateNewGroupAndAttachDevices ")
-        create_group( self, GrpId, GrpName )
-        create_domoticz_group_device(self, GrpName, GrpId)
-        for NwkId, ep, ieee in DevicesList:
-            add_group_member_ship( self, NwkId, ep, GrpId)
-            add_device_to_group( self, (NwkId, ep, ieee), GrpId)
-
-    def update_group_and_add_devices( self, GrpId, ToBeAddedDevices):
-
-        self.logging( 'Debug', " --  --  --  --  --  > UpdateGroupAndAddDevices ")
-        for NwkId, ep, ieee in ToBeAddedDevices:
-            add_group_member_ship( self, NwkId, ep, GrpId)
-            add_device_to_group( self, (NwkId, ep, ieee), GrpId)
-
-    def update_group_and_remove_devices( self, GrpId, ToBeRemoveDevices):
-
-        self.logging( 'Debug', " --  --  --  --  --  > UpdateGroupAndRemoveDevices ")
-        for NwkId, ep, ieee in ToBeRemoveDevices:
-            remove_device_from_group(self, (NwkId, ep, ieee), GrpId)
-            remove_group_member_ship(self,  NwkId, ep, GrpId )
 
     def compare_exitsing_with_new_list( self, first, second):
         """
@@ -136,37 +144,58 @@ def process_web_request( self, webInput):
                 DeviceList.append( [Nwkid, Ep, IEEE ] )
         return DeviceList
 
+    def newGroup( self, GrpName, GrpId, item ):
+        
+        self.logging( 'Debug', " --  -- - > Creation of Group: %s " %GrpName)
+        # New Group to be added
+        GrpId = get_group_id()
+        self.logging( 'Debug', " --  --  -- - > GroupId: %s " %GrpId)
+        self.logging( 'Debug', " --  --  -- - > DevicesSelected: %s " %item['devicesSelected'])
+        DevicesList = []
+        for dev in item['devicesSelected']:
+            NwkId = dev['_NwkId']
+            Ep    = dev['Ep']
+            if 'IEEE' in dev:
+                IEEE  = dev['IEEE']
+            else:
+                if NwkId in self.ListOfDevices:
+                    IEEE = self.ListOfDevices[ NwkId ]['IEEE'] 
+
+            # Add Device ( NwkID, Ep, IEEE) to Group GrpId
+            if [ NwkId, Ep, IEEE]  not in DevicesList:
+                DevicesList.append( [ NwkId, Ep, IEEE] )
+            self.logging( 'Debug', " --  --  --  -- - > Tuple to add: %s " % str([NwkId, Ep, IEEE] ))
+        self.logging( 'Debug', " --  --  -- - > GroupCreation" )
+        create_new_group_and_attach_devices( self, GrpId, GrpName, DevicesList)
+
+    def fullGroupRemove( self ):
+        # Everything has to be removed.
+        for GrpId in list( self.ListOfGroups.keys() ):
+            TobeRemovedDevices = self.ListOfGroups[ GrpId]['Devices']
+            update_group_and_remove_devices( self, GrpId, TobeRemovedDevices)
+
+
     # Begining
 
-    self.logging( 'Debug', "processWebRequest ")
+    self.logging( 'Debug', "processWebRequest %s" %webInput)
+    if len(webInput) == 0:
+        fullGroupRemove( self )
+        return
+    
+    # Have at least 1 Item
+    # Now from that point we have 3 possibile Scenarios
+    # 1- We have a new Group
+    # 2- We have Remove a Group
+    # 3- We have updated a group
+
     for item in webInput:
         self.logging( 'Debug', " -- - > %s " %item)
 
         GrpName = item['GroupName']
         self.logging( 'Debug', " -- - > GrpName: %s " %GrpName)
         if '_GroupId' not in item:
-            self.logging( 'Debug', " --  -- - > Creation of Group: %s " %GrpName)
-            # New Group to be added
-            GrpId = get_group_id()
-            self.logging( 'Debug', " --  --  -- - > GroupId: %s " %GrpId)
-            self.logging( 'Debug', " --  --  -- - > DevicesSelected: %s " %item['devicesSelected'])
-            DevicesList = []
-            for dev in item['devicesSelected']:
-                NwkId = dev['_NwkId']
-                Ep    = dev['Ep']
-                if 'IEEE' in dev:
-                    IEEE  = dev['IEEE']
-                else:
-                    if NwkId in self.ListOfDevices:
-                       IEEE = self.ListOfDevices[ NwkId ]['IEEE'] 
-
-                # Add Device ( NwkID, Ep, IEEE) to Group GrpId
-                if [ NwkId, Ep, IEEE]  not in DevicesList:
-                    DevicesList.append( [ NwkId, Ep, IEEE] )
-                self.logging( 'Debug', " --  --  --  -- - > Tuple to add: %s " % str([NwkId, Ep, IEEE] ))
-            self.logging( 'Debug', " --  --  -- - > GroupCreation" )
-            create_new_group_and_attach_devices( self, GrpId, GrpName, DevicesList)
-            return
+            # Scneario 1 - We have a new Group
+            newGroup( self, GrpName, GrpId, item )
 
         # we have to see if any groupmembership have to be added or removed
         self.logging( 'Debug', " -- - > Update GrpName: %s " %GrpName)
