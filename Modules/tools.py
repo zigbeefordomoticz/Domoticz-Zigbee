@@ -77,22 +77,26 @@ def getListOfEpForCluster( self, NwkId, SearchCluster):
     indicate that there is no Widget associated and all informations in Ep are not used)
     In case ClusterType exists and not empty at Global Level, then just return the list of Ep for which Cluster is found
     """
+
     EpList = []
     oldFashion = 'ClusterType' in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]['ClusterType'] != {} and self.ListOfDevices[NwkId]['ClusterType'] != ''
     for Ep in self.ListOfDevices[NwkId]['Ep']:
         if SearchCluster not in self.ListOfDevices[NwkId]['Ep'][ Ep ]:
+            #Domoticz.Log("---- Cluster %s on %s" %( SearchCluster, str(self.ListOfDevices[NwkId]['Ep'][Ep] ) ))
             continue
 
-        if Ep not in EpList:
-            if oldFashion:
+        if oldFashion:
+            EpList.append( Ep )
+        else:
+            if 'ClusterType' in self.ListOfDevices[NwkId]['Ep'][Ep] and \
+                    self.ListOfDevices[NwkId]['Ep'][Ep]['ClusterType'] != {} and \
+                    self.ListOfDevices[NwkId]['Ep'][Ep]['ClusterType'] != '' :
                 EpList.append( Ep )
-            elif 'ClusterType' in self.ListOfDevices[NwkId]['Ep'][Ep] and \
-                        self.ListOfDevices[NwkId]['Ep'][Ep][SearchCluster] != {} and \
-                        self.ListOfDevices[NwkId]['Ep'][Ep][SearchCluster] != '' :
-                EpList.append( Ep )
+            #else:
+            #    Domoticz.Log("------------> Skiping Cluster: %s Clustertype not found in %s" %(  SearchCluster, str(self.ListOfDevices[ NwkId]['Ep'][Ep]) ) )
 
+    #Domoticz.Log("----------> NwkId: %s Ep: %s Cluster: %s oldFashion: %s EpList: %s" %( NwkId, Ep, SearchCluster, oldFashion, EpList))
     return EpList
-
 
 def getEPforClusterType( self, NWKID, ClusterType ) :
 
