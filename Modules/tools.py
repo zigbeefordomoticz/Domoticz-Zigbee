@@ -67,6 +67,34 @@ def getSaddrfromIEEE(self, IEEE) :
             if self.ListOfDevices[sAddr]['IEEE'] == IEEE :
                 return sAddr
     return ''
+    
+def getListOfEpForCluster( self, NwkId, SearchCluster):
+    """
+    NwkId: Device
+    Cluster: Cluster for which we are looking for Ep
+
+    return List of Ep where Cluster is found and at least ClusterType is not empty. (If ClusterType is empty, this 
+    indicate that there is no Widget associated and all informations in Ep are not used)
+    In case ClusterType exists and not empty at Global Level, then just return the list of Ep for which Cluster is found
+    """
+    EpList = []
+    oldFashion = 'ClusterType' in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]['ClusterType'] != {} and self.ListOfDevices[NwkId]['ClusterType'] != ''
+    for Ep in self.ListOfDevices[NwkId]['Ep']:
+        if SearchCluster not in self.ListOfDevices[NwkId]['Ep'][ Ep ]:
+            continue
+
+        if (
+            not oldFashion
+            and 'ClusterType'
+            in self.ListOfDevices[NwkId]['Ep'][Ep][SearchCluster]
+            and self.ListOfDevices[NwkId]['Ep'][Ep][SearchCluster] != {}
+            and self.ListOfDevices[NwkId]['Ep'][Ep][SearchCluster] != ''
+            and Ep not in EpList
+        ):
+            EpList.append( Ep )
+
+    return EpList
+
 
 def getEPforClusterType( self, NWKID, ClusterType ) :
 

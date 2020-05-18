@@ -18,7 +18,7 @@ from time import time
 from Modules.zigateConsts import  MAX_READATTRIBUTES_REQ,  ZIGATE_EP
 from Modules.basicOutputs import sendZigateCmd
 from Modules.logging import loggingReadAttributes 
-from Modules.tools import getEPforClusterType
+from Modules.tools import getListOfEpForCluster
 
 def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes , manufacturer_spec = '00', manufacturer = '0000'):
 
@@ -216,7 +216,7 @@ def ReadAttributeRequest_0000_basic(self, key):
     listAttributes = []
     listAttributes.append(0x0000)        # Attribut 0x0000
 
-    ListOfEp = getEPforClusterType( self, key, '0000' ) 
+    ListOfEp = getListOfEpForCluster( self, key, '0000' ) 
     for EPout in ListOfEp:
         ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0000", listAttributes )
 
@@ -286,7 +286,7 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
 
     else:
         loggingReadAttributes( self, 'Debug', "--> Full scope", nwkid=key)
-        ListOfEp = getEPforClusterType( self, key, '0000' ) 
+        ListOfEp = getListOfEpForCluster( self, key, '0000' ) 
         for EPout in ListOfEp:
             for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0000'):
                 listAttributes.append( iterAttr )
@@ -327,7 +327,7 @@ def ReadAttributeRequest_0001(self, key):
 
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0001 - Key: %s " %key, nwkid=key)
     # Power Config
-    ListOfEp = getEPforClusterType( self, key, '0001' )
+    ListOfEp = getListOfEpForCluster( self, key, '0001' )
     for EPout in ListOfEp:
         listAttributes = []
         for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0001'):
@@ -341,7 +341,7 @@ def ReadAttributeRequest_0001(self, key):
 def ReadAttributeRequest_0006_0000(self, key):
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0006 focus on 0x0000 Key: %s " %key, nwkid=key)
 
-    ListOfEp = getEPforClusterType( self, key, '0006' )
+    ListOfEp = getListOfEpForCluster( self, key, '0006' )
     for EPout in ListOfEp:
         listAttributes = [0]
         ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0006", listAttributes)
@@ -349,7 +349,7 @@ def ReadAttributeRequest_0006_0000(self, key):
 def ReadAttributeRequest_0006_400x(self, key):
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0006 focus on 0x4000x attributes- Key: %s " %key, nwkid=key)
 
-    ListOfEp = getEPforClusterType( self, key, '0006' )
+    ListOfEp = getListOfEpForCluster( self, key, '0006' )
     for EPout in ListOfEp:
         listAttributes = []
 
@@ -365,7 +365,7 @@ def ReadAttributeRequest_0006(self, key):
     # Cluster 0x0006
 
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0006 - Key: %s " %key, nwkid=key)
-    ListOfEp = getEPforClusterType( self, key, '0006' )
+    ListOfEp = getListOfEpForCluster( self, key, '0006' )
     for EPout in ListOfEp:
         listAttributes = []
         for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0006'):
@@ -379,7 +379,7 @@ def ReadAttributeRequest_0006(self, key):
 def ReadAttributeRequest_0008_0000(self, key):
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0008 focus on 0x0008/0000 Key: %s " %key, nwkid=key)
 
-    ListOfEp = getEPforClusterType( self, key, '0008' )
+    ListOfEp = getListOfEpForCluster( self, key, '0008' )
     for EPout in ListOfEp:
 
         listAttributes = [0]
@@ -389,7 +389,7 @@ def ReadAttributeRequest_0008(self, key):
     # Cluster 0x0008 
 
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0008 - Key: %s " %key, nwkid=key)
-    ListOfEp = getEPforClusterType( self, key, '0008' )
+    ListOfEp = getListOfEpForCluster( self, key, '0008' )
     for EPout in ListOfEp:
         listAttributes = []
         for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0008'):
@@ -404,7 +404,7 @@ def ReadAttributeRequest_0300(self, key):
     # Cluster 0x0300 - Color Control
 
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0300 - Key: %s " %key, nwkid=key)
-    ListOfEp = getEPforClusterType( self, key, '0300' )
+    ListOfEp = getListOfEpForCluster( self, key, '0300' )
     for EPout in ListOfEp:
         listAttributes = []
         for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0300'):
@@ -420,7 +420,7 @@ def ReadAttributeRequest_000C(self, key):
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_000C - Key: %s " %key, nwkid=key)
 
     listAttributes = [ 0x0051,0x0055, 0x006f, 0xff05 ]
-    ListOfEp = getEPforClusterType( self, key, '000C' )
+    ListOfEp = getListOfEpForCluster( self, key, '000C' )
     for EPout in ListOfEp:
         if listAttributes:
             loggingReadAttributes( self, 'Debug', "Request 0x000c info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
@@ -430,7 +430,7 @@ def ReadAttributeRequest_0100(self, key):
 
     loggingReadAttributes( self, 'Debug', "Request shade Configuration status Read Attribute request: " + key , nwkid=key)
 
-    ListOfEp = getEPforClusterType( self, key, '0100' )
+    ListOfEp = getListOfEpForCluster( self, key, '0100' )
     for EPout in ListOfEp:
         listAttributes = []
         for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0100'):
@@ -445,7 +445,7 @@ def ReadAttributeRequest_0102(self, key):
 
     loggingReadAttributes( self, 'Debug', "Request Windows Covering status Read Attribute request: " + key , nwkid=key)
 
-    ListOfEp = getEPforClusterType( self, key, '0102' )
+    ListOfEp = getListOfEpForCluster( self, key, '0102' )
     for EPout in ListOfEp:
         listAttributes = []
         for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0102'):
@@ -464,7 +464,7 @@ def ReadAttributeRequest_0201(self, key):
     if 'Model' in self.ListOfDevices[key]:
         _model = True
 
-    ListOfEp = getEPforClusterType( self, key, '0201' )
+    ListOfEp = getListOfEpForCluster( self, key, '0201' )
     for EPout in ListOfEp:
         listAttributes = []
         for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0201'):
@@ -504,7 +504,7 @@ def ReadAttributeRequest_0204(self, key):
 
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0204 - Key: %s " %key, nwkid=key)
 
-    ListOfEp = getEPforClusterType( self, key, '0204' )
+    ListOfEp = getListOfEpForCluster( self, key, '0204' )
     for EPout in ListOfEp:
         listAttributes = [0x0001]
         if listAttributes:
@@ -519,7 +519,7 @@ def ReadAttributeRequest_0400(self, key):
 
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0400 - Key: %s " %key, nwkid=key)
 
-    ListOfEp = getEPforClusterType( self, key, '0400' )
+    ListOfEp = getListOfEpForCluster( self, key, '0400' )
     for EPout in ListOfEp:
         listAttributes = []
         for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0400'):
@@ -535,7 +535,7 @@ def ReadAttributeRequest_0402(self, key):
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0402 - Key: %s " %key, nwkid=key)
 
     _model = 'Model' in self.ListOfDevices[key]
-    ListOfEp = getEPforClusterType( self, key, '0402' )
+    ListOfEp = getListOfEpForCluster( self, key, '0402' )
     for EPout in ListOfEp:
         listAttributes = []
         for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0402'):
@@ -552,7 +552,7 @@ def ReadAttributeRequest_0403(self, key):
 
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0403 - Key: %s " %key, nwkid=key)
     _model = 'Model' in self.ListOfDevices[key]
-    ListOfEp = getEPforClusterType( self, key, '0403' )
+    ListOfEp = getListOfEpForCluster( self, key, '0403' )
     for EPout in ListOfEp:
         listAttributes = []
         for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0403'):
@@ -569,7 +569,7 @@ def ReadAttributeRequest_0405(self, key):
 
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0405 - Key: %s " %key, nwkid=key)
     _model = 'Model' in self.ListOfDevices[key]
-    ListOfEp = getEPforClusterType( self, key, '0405' )
+    ListOfEp = getListOfEpForCluster( self, key, '0405' )
     for EPout in ListOfEp:
         listAttributes = []
         for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0405'):
@@ -586,7 +586,7 @@ def ReadAttributeRequest_0406(self, key):
 
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0406 - Key: %s " %key, nwkid=key)
     _model = 'Model' in self.ListOfDevices[key]
-    ListOfEp = getEPforClusterType( self, key, '0406' )
+    ListOfEp = getListOfEpForCluster( self, key, '0406' )
     for EPout in ListOfEp:
         listAttributes = []
 
@@ -603,7 +603,7 @@ def ReadAttributeRequest_0406(self, key):
 def ReadAttributeRequest_0500(self, key):
 
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0500 - Key: %s " %key, nwkid=key)
-    ListOfEp = getEPforClusterType( self, key, '0500' )
+    ListOfEp = getListOfEpForCluster( self, key, '0500' )
     for EPout in ListOfEp:
         listAttributes = []
         for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0500'):
@@ -617,7 +617,7 @@ def ReadAttributeRequest_0500(self, key):
 def ReadAttributeRequest_0502(self, key):
 
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0502 - Key: %s " %key, nwkid=key)
-    ListOfEp = getEPforClusterType( self, key, '0502' )
+    ListOfEp = getListOfEpForCluster( self, key, '0502' )
     for EPout in ListOfEp:
         listAttributes = []
         for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0502'):
@@ -633,7 +633,7 @@ def ReadAttributeRequest_0702(self, key):
 
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0702 - Key: %s " %key, nwkid=key)
     _manuf = 'Manufacturer' in self.ListOfDevices[key]
-    ListOfEp = getEPforClusterType( self, key, '0702' )
+    ListOfEp = getListOfEpForCluster( self, key, '0702' )
     for EPout in ListOfEp:
         listAttributes = []
         for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0702'):
@@ -664,7 +664,7 @@ def ReadAttributeRequest_0702(self, key):
 def ReadAttributeRequest_000f(self, key):
 
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_000f - Key: %s " %key, nwkid=key)
-    ListOfEp = getEPforClusterType( self, key, '000f' )
+    ListOfEp = getListOfEpForCluster( self, key, '000f' )
     for EPout in ListOfEp:
         listAttributes = []
         for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '000f'):
@@ -678,7 +678,7 @@ def ReadAttributeRequest_000f(self, key):
 def ReadAttributeRequest_fc01(self, key):
     # Cluster Legrand
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_fc01 - Key: %s " %key, nwkid=key)
-    ListOfEp = getEPforClusterType( self, key, 'fc01' )
+    ListOfEp = getListOfEpForCluster( self, key, 'fc01' )
     for EPout in ListOfEp:
         listAttributes = [ 0x0000]
         loggingReadAttributes( self, 'Debug', "Request Legrand info via Read Attribute request: " + key + " EPout = " + EPout + " Attributes: " + str(listAttributes), nwkid=key)
@@ -691,7 +691,7 @@ def ReadAttributeRequest_fc01(self, key):
 def ReadAttributeRequest_fc21(self, key):
     # Cluster PFX Profalux
 
-    ListOfEp = getEPforClusterType( self, key, 'fc1' )
+    ListOfEp = getListOfEpForCluster( self, key, 'fc21' )
     for EPout in ListOfEp:
         loggingReadAttributes( self, 'Log', "ReadAttributeRequest_fc21 - Key: %s " %key, nwkid=key)
         listAttributes = [ 0x0001 ]
