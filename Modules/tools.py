@@ -83,15 +83,13 @@ def getListOfEpForCluster( self, NwkId, SearchCluster):
         if SearchCluster not in self.ListOfDevices[NwkId]['Ep'][ Ep ]:
             continue
 
-        if (
-            not oldFashion
-            and 'ClusterType'
-            in self.ListOfDevices[NwkId]['Ep'][Ep][SearchCluster]
-            and self.ListOfDevices[NwkId]['Ep'][Ep][SearchCluster] != {}
-            and self.ListOfDevices[NwkId]['Ep'][Ep][SearchCluster] != ''
-            and Ep not in EpList
-        ):
-            EpList.append( Ep )
+        if Ep not in EpList:
+            if oldFashion:
+                EpList.append( Ep )
+            elif 'ClusterType' in self.ListOfDevices[NwkId]['Ep'][Ep] and \
+                        self.ListOfDevices[NwkId]['Ep'][Ep][SearchCluster] != {} and \
+                        self.ListOfDevices[NwkId]['Ep'][Ep][SearchCluster] != '' :
+                EpList.append( Ep )
 
     return EpList
 
