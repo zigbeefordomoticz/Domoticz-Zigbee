@@ -9,9 +9,8 @@ import Domoticz
 from time import time
 
 from GroupMgtv2.GrpDomoticz import create_domoticz_group_device, remove_domoticz_group_device, update_domoticz_group_device
-#from GroupMgtv2.GrpDatabase import create_group, add_device_to_group, remove_device_from_group
 from GroupMgtv2.GrpDatabase import create_group
-from GroupMgtv2.GrpCommands import remove_group_member_ship, add_group_member_ship, add_group_member_ship, check_group_member_ship, look_for_group_member_ship
+from GroupMgtv2.GrpCommands import remove_group_member_ship, add_group_member_ship, check_group_member_ship, look_for_group_member_ship
 
 def checkAndTriggerIfMajGroupNeeded( self, NwkId, Ep, ClusterId):
     """
@@ -243,18 +242,3 @@ def process_web_request( self, webInput):
     self.logging( 'Debug', " -- - > Groups to be removed: %s " %str(GroupToBeRemoved))  
     for GrpId in GroupToBeRemoved:
         delGroup( self, GrpId)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
