@@ -1,0 +1,5 @@
+[bandit]
+exclude: /zigate
+
+[bandit]
+zigate: B301,B602
