@@ -4,11 +4,11 @@
 # Author: pipiche38
 #
 
-from GroupMgtv2.GrpDomoticz import create_domoticz_group_device, remove_domoticz_group_device, update_domoticz_group_device
-from GroupMgtv2.GrpDatabase import create_group, add_device_to_group, remove_device_from_group
+from GroupMgtv2.GrpDomoticz import create_domoticz_group_device, remove_domoticz_group_device, update_domoticz_group_device, update_domoticz_group_device_widget
+from GroupMgtv2.GrpDatabase import write_groups_list, create_group, add_device_to_group, remove_device_from_group
 
 
-def checkToCreateGroup( self, NwkId, Ep, GroupId):
+def checkToCreateOrUpdateGroup( self, NwkId, Ep, GroupId):
     """ 
     Trigger from addGroupMemberShipResponse or checkGroupMemberShip
     (1) Update ListOfGroups datastructutre
@@ -29,6 +29,8 @@ def checkToCreateGroup( self, NwkId, Ep, GroupId):
 
     self.logging( 'Debug', "-------> Adding Device %s to Group GrouId: %s" %(NwkId, GroupId)) 
     add_device_to_group( self, [ NwkId, Ep, Ieee ] , GroupId)
+    update_domoticz_group_device_widget( self, GroupId )
+    self.write_groups_list()
 
 
 def checkToRemoveGroup( self, NwkId, Ep, GroupId ):
@@ -46,10 +48,10 @@ def checkToRemoveGroup( self, NwkId, Ep, GroupId ):
     remove_device_from_group(self, [ NwkId, Ep, Ieee ], GroupId)
 
     if GroupId in self.ListOfGroups:
+        update_domoticz_group_device_widget( self, GroupId )
+        self.write_groups_list()
         return
 
     self.logging( 'Debug', "-------> Needs to Remove Group GrouId: %s" %(GroupId))
     remove_domoticz_group_device( self, GroupId )
-
-
-
+    self.write_groups_list()

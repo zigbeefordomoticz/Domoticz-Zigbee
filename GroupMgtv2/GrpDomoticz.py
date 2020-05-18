@@ -259,6 +259,7 @@ def update_domoticz_group_device( self, GroupId):
     """
 
     def ValuesForVenetian( level ):
+
         if level > 0 and level < 100:
             nValue = 2
         elif level == 0:
@@ -288,16 +289,18 @@ def update_domoticz_group_device( self, GroupId):
 
     ONOFF_ON_IF_ALL_ON =1
 
-    if ONOFF_ON_IF_ALL_ON:
-        # If ALL devices are on, then the group is On, otherwise it remains Off (Philips behaviour)
-        nValue = 1
-        sValue = None
-        level = None
-    else:
+    if self.pluginconf.pluginConf['OnIfOneOn']:
         # If one device is on, then the group is on. If all devices are off, then the group is off
         nValue = 0
         sValue = None
         level = None
+         
+    else:
+        # If ALL devices are on, then the group is On, otherwise it remains Off (Philips behaviour)
+        nValue = 1
+        sValue = None
+        level = None
+
 
     for NwkId, Ep, IEEE in self.ListOfGroups[GroupId]['Devices']:
         if NwkId not in self.ListOfDevices:
@@ -330,9 +333,9 @@ def update_domoticz_group_device( self, GroupId):
             if '0008' in self.ListOfDevices[NwkId]['Ep'][Ep]['0102']:
                 if self.ListOfDevices[NwkId]['Ep'][Ep]['0102']['0008'] != '' and self.ListOfDevices[NwkId]['Ep'][Ep]['0102']['0008'] != {}:
                     if level is None:
-                        level = self.ListOfDevices[NwkId]['Ep'][Ep]['0102']['0008']
+                        level = int(self.ListOfDevices[NwkId]['Ep'][Ep]['0102']['0008'])
                     else:
-                        level = round(( level +  self.ListOfDevices[NwkId]['Ep'][Ep]['0102']['0008']) / 2)   
+                        level = round(( level +  int(self.ListOfDevices[NwkId]['Ep'][Ep]['0102']['0008']) ) / 2)   
 
                     nValue, sValue = ValuesForVenetian( level )
 
@@ -540,6 +543,10 @@ def processCommand( self, unit, GrpId, Command, Level, Color_ ) :
         datas = "%02d" %ADDRESS_MODE['group'] + GrpId + ZIGATE_EP + EPout + zigate_param
         self.logging( 'Debug', "Command: %s %s" %(Command,datas))
         self.ZigateComm.sendData( zigate_cmd, datas)
+        #Update Device
+        nValue = 0
+        sValue = 'Off'
+        self.Devices[unit].Update(nValue = int(nValue), sValue = str(sValue))
 
     if Command == 'On' :
         zigate_cmd = "0092"
@@ -554,7 +561,10 @@ def processCommand( self, unit, GrpId, Command, Level, Color_ ) :
         datas = "%02d" %ADDRESS_MODE['group'] + GrpId + ZIGATE_EP + EPout + zigate_param
         self.logging( 'Debug', "Command: %s %s" %(Command,datas))
         self.ZigateComm.sendData( zigate_cmd, datas)
-
+        #Update Device
+        nValue = 1
+        sValue = 'On'
+        self.Devices[unit].Update(nValue = int(nValue), sValue = str(sValue))
 
     if Command == 'Set Level':
         # Level: % value of move
@@ -573,6 +583,10 @@ def processCommand( self, unit, GrpId, Command, Level, Color_ ) :
         self.logging( 'Debug', "Command: %s %s" %(Command,datas))
         self.ZigateComm.sendData( zigate_cmd, datas)
         update_domoticz_group_device(self, GrpId)
+        #Update Device
+        nValue = 2
+        sValue = str( Level)
+        self.Devices[unit].Update(nValue = int(nValue), sValue = str(sValue))
 
     if Command == "Set Color" :
         Hue_List = json.loads(Color_)

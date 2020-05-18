@@ -113,28 +113,25 @@ def process_web_request( self, webInput):
             if GrpId not in self.ListOfGroups:
                 return GrpId
 
+    def diff(first, second):
+        """
+        Diff between first and second
+        returns what is in first and not in second
+        """
+
+        return [item for item in first if item not in second]
+            
     def compare_exitsing_with_new_list( self, first, second):
         """
         Compare 2 lists of devices and will return a dict with toBeAdded and toBeRemoved
         """
-        def diff(first, second):
-            """
-            Diff between first and second
-            returns what is in first and not in second
-            """
-            Domoticz.Log("------> First: %s" %first)
-            Domoticz.Log("------> Second: %s" %second)
-            #second = set(second)
-            return [item for item in first if item not in second]
-
-        self.logging( 'Debug', " --  --  --  --  --  > compareExitsingWithNewList ")
-        report = {}
-        report['ToBeAdded'] = diff( second, first )
+        #self.logging( 'Debug', " --  --  --  --  --  > compareExitsingWithNewList ")
+        report = {'ToBeAdded': diff(second, first)}
         report['ToBeRemoved'] = diff( first, second)
         return report
 
     def transform_web_to_group_devices_list( WebDeviceList ):
-        self.logging( 'Debug', "TransformWebToGroupDevicesList ")
+        #self.logging( 'Debug', "TransformWebToGroupDevicesList ")
         DeviceList = []
         for item in WebDeviceList:
             Nwkid = item['_NwkId']
@@ -168,40 +165,8 @@ def process_web_request( self, webInput):
         self.logging( 'Debug', " --  --  -- - > GroupCreation" )
         create_new_group_and_attach_devices( self, GrpId, GrpName, DevicesList)
 
-    def fullGroupRemove( self ):
-        # Everything has to be removed.
-        for GrpId in list( self.ListOfGroups.keys() ):
-            TobeRemovedDevices = self.ListOfGroups[ GrpId]['Devices']
-            update_group_and_remove_devices( self, GrpId, TobeRemovedDevices)
-
-
-    # Begining
-
-    self.logging( 'Debug', "processWebRequest %s" %webInput)
-    if len(webInput) == 0:
-        fullGroupRemove( self )
-        return
+    def updateGroup( self, GrpId, item):
     
-    # Have at least 1 Item
-    # Now from that point we have 3 possibile Scenarios
-    # 1- We have a new Group
-    # 2- We have Remove a Group
-    # 3- We have updated a group
-
-    for item in webInput:
-        self.logging( 'Debug', " -- - > %s " %item)
-
-        GrpName = item['GroupName']
-        self.logging( 'Debug', " -- - > GrpName: %s " %GrpName)
-        if '_GroupId' not in item:
-            # Scneario 1 - We have a new Group
-            newGroup( self, GrpName, GrpId, item )
-
-        # we have to see if any groupmembership have to be added or removed
-        self.logging( 'Debug', " -- - > Update GrpName: %s " %GrpName)
-        GrpId = item['_GroupId']
-        if GrpId not in self.ListOfGroups:
-            return
         self.logging( 'Debug', " --  -- - > Update GrpId: %s " %GrpId)
         self.logging( 'Debug', " --  -- - > DeviceList from Web: %s " %item[ 'devicesSelected' ])
 
@@ -222,3 +187,74 @@ def process_web_request( self, webInput):
 
         self.logging( 'Debug', " --  -- - > Devices to be removed: %s " %WhatToDo['ToBeRemoved'])
         update_group_and_remove_devices( self, GrpId, WhatToDo['ToBeRemoved'])
+
+    def delGroup( self, GrpId ):
+        TobeRemovedDevices = self.ListOfGroups[ GrpId]['Devices']
+        update_group_and_remove_devices( self, GrpId, TobeRemovedDevices)
+
+    def fullGroupRemove( self ):
+        # Everything has to be removed.
+        for GrpId in list( self.ListOfGroups.keys() ):
+            delGroup( self, GrpId )
+
+
+
+    # Begining
+
+    #self.logging( 'Debug', "processWebRequest %s" %webInput)
+    if len(webInput) == 0:
+        fullGroupRemove( self )
+        return
+    
+    # Have at least 1 Item
+    # Now from that point we have 3 possibile Scenarios
+    # 1- We have a new Group
+    # 2- We have updated a group
+    # 3- We have Remove a Group
+
+    InitialListOfGroups = list( self.ListOfGroups.keys() )
+    NewListOfGroups = []
+    for item in webInput:
+        self.logging( 'Debug', " -- - > %s " %item)
+        GrpName = item['GroupName']
+        self.logging( 'Debug', " -- - > GrpName: %s " %GrpName)
+
+        # Scenario 1 - We have a new Group
+        if '_GroupId' not in item:
+            newGroup( self, GrpName, GrpId, item )
+            return
+
+        # Scenario 2 we have to check if there is an update
+        self.logging( 'Debug', " -- - > Update GrpName: %s " %GrpName)
+        GrpId = item['_GroupId']
+        if GrpId not in self.ListOfGroups:
+            # Is that possible ?
+            # It should be considered as a New group, but in that case, we should not have _GroupId
+            continue
+
+        NewListOfGroups.append( GrpId )
+        updateGroup( self, GrpId, item)
+
+    # Finaly, let checks if we have Scenario 3
+    self.logging( 'Debug', " -- - > Initial Group List: %s " %str(InitialListOfGroups))
+    self.logging( 'Debug', " -- - > Updated Group List: %s " %str(NewListOfGroups))  
+
+    GroupToBeRemoved = diff (InitialListOfGroups, NewListOfGroups )
+    self.logging( 'Debug', " -- - > Groups to be removed: %s " %str(GroupToBeRemoved))  
+    for GrpId in GroupToBeRemoved:
+        delGroup( self, GrpId)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

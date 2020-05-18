@@ -13,7 +13,7 @@ from time import time
 from Modules.zigateConsts import ADDRESS_MODE, ZIGATE_EP
 from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl
 
-from GroupMgtv2.GrpControl import checkToCreateGroup, checkToRemoveGroup
+from GroupMgtv2.GrpControl import checkToCreateOrUpdateGroup, checkToRemoveGroup
 
 
 # Group Management Command
@@ -80,7 +80,9 @@ def add_group_member_ship_response(self, MsgData):
         MsgStatus = MsgData[8:10]
         MsgGroupID = MsgData[10:14]
         MsgSrcAddr = MsgData[14:18]
+ 
         self.logging( 'Debug', "addGroupMembeShipResponse - [%s] GroupID: %s adding: %s with Status: %s " %(MsgSequenceNumber, MsgGroupID, MsgSrcAddr, MsgStatus ))
+ 
     if MsgSrcAddr not in self.ListOfDevices:
         Domoticz.Error("Requesting to add group %s membership on non existing device %s" %(MsgGroupID, MsgSrcAddr))
         return
@@ -94,7 +96,7 @@ def add_group_member_ship_response(self, MsgData):
     if MsgStatus == '00':
         # Success
         self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP][ MsgGroupID ]['Status'] = 'OK'  
-        checkToCreateGroup(self, MsgSrcAddr, MsgEP, MsgGroupID  )    
+        checkToCreateOrUpdateGroup(self, MsgSrcAddr, MsgEP, MsgGroupID  )    
     else:
         # Might already part of the group
         self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP][ MsgGroupID ]['Phase'] = 'CheckgroupMemberShip'
@@ -128,22 +130,22 @@ def check_group_member_ship_response( self, MsgData):
         Domoticz.Error("Requesting to add group %s membership on non existing device %s" %(MsgGroupID, MsgSrcAddr))
         return
 
-    if 'GroupMemberShip' not in self.ListOfDevices[ MsgSrcAddr ]:
-        self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'] = {}
-
-    if MsgEP not in self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip']:
-        self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][ MsgEP ] = {}
-
-    if MsgGroupID not in self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][ MsgEP ]:
-        self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP][ MsgGroupID ] = {}
-
     if MsgStatus == '00':
+        if 'GroupMemberShip' not in self.ListOfDevices[ MsgSrcAddr ]:
+            self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'] = {}
+
+        if MsgEP not in self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip']:
+            self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][ MsgEP ] = {}
+
+        if MsgGroupID not in self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][ MsgEP ]:
+            self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP][ MsgGroupID ] = {}
+
         # Success
         self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP][ MsgGroupID ]['Status'] = 'OK'  
-        checkToCreateGroup(self, MsgSrcAddr, MsgEP, MsgGroupID  )  
-    else:
-        self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP][ MsgGroupID ]['Status'] = MsgStatus
-        # Failure 
+        checkToCreateOrUpdateGroup(self, MsgSrcAddr, MsgEP, MsgGroupID  )
+
+    # If we have receive a MsgStatus error, we cannot conclude, so we consider the membership to that group, not existing
+
     
 def look_for_group_member_ship(self, NwkId, DeviceEp, group_list = None):
     """
@@ -191,7 +193,7 @@ def look_for_group_member_ship_response( self, MsgData):
 
         self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP][ GrpId ]['Status'] = 'OK'
         self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP][ GrpId ]['TimeStamp'] = 0
-        checkToCreateGroup(self, MsgSrcAddr, MsgEP, GrpId  )
+        checkToCreateOrUpdateGroup(self, MsgSrcAddr, MsgEP, GrpId  )
 
 def remove_group_member_ship(self,  NwkId, DeviceEp, GrpId ):
 
@@ -201,19 +203,12 @@ def remove_group_member_ship(self,  NwkId, DeviceEp, GrpId ):
         Domoticz.Error("removeGroupMemberShip %s membership on non existing device %s" %( GrpId, NwkId))
         return
 
-    if 'GroupMemberShip' not in self.ListOfDevices[ NwkId ]:
-        Domoticz.Error("removeGroupMemberShip %s no GroupMemberShip structure device %s" %( GrpId, NwkId))
-        return
-    if DeviceEp not in self.ListOfDevices[ NwkId ]['GroupMemberShip']:
-        Domoticz.Error("removeGroupMemberShip %s no Ep %s for that device %s" %( GrpId,DeviceEp, NwkId))
-        return
-    if GrpId not in self.ListOfDevices[ NwkId ]['GroupMemberShip'][DeviceEp]:
-        Domoticz.Error("removeGroupMemberShip %s not existing group for device %s" %( GrpId, NwkId))
-        return
-
-    self.ListOfDevices[ NwkId ]['GroupMemberShip'][DeviceEp][ GrpId ]['Phase'] = 'removeGroupMemberShip'
-    self.ListOfDevices[ NwkId ]['GroupMemberShip'][DeviceEp][ GrpId ]['Status'] = 'ff'
-    self.ListOfDevices[ NwkId ]['GroupMemberShip'][DeviceEp][ GrpId ]['TimeStamp'] = int(time())
+    if ( 'GroupMemberShip' in self.ListOfDevices[NwkId] and \
+            DeviceEp in self.ListOfDevices[NwkId]['GroupMemberShip'] and \
+                GrpId in self.ListOfDevices[NwkId]['GroupMemberShip'][DeviceEp] ):
+        self.ListOfDevices[ NwkId ]['GroupMemberShip'][DeviceEp][ GrpId ]['Phase'] = 'removeGroupMemberShip'
+        self.ListOfDevices[ NwkId ]['GroupMemberShip'][DeviceEp][ GrpId ]['Status'] = 'ff'
+        self.ListOfDevices[ NwkId ]['GroupMemberShip'][DeviceEp][ GrpId ]['TimeStamp'] = int(time())
 
     self.logging( 'Debug', "removeGroupMemberShip - %s/%s on %s" %(NwkId, DeviceEp, GrpId))
 
@@ -245,30 +240,35 @@ def remove_group_member_ship_response( self, MsgData):
         MsgSrcAddr = MsgData[14:18]
         self.logging( 'Debug', "removeGroupMemberShipResponse - [%s] GroupID: %s adding: %s with Status: %s " %(MsgSequenceNumber, MsgGroupID, MsgSrcAddr, MsgStatus ))
 
+    self.logging( 'Debug', "removeGroupMemberShipResponse - SEQ: %s, EP: %s, ClusterID: %s, GroupID: %s, Status: %s"
+            %( MsgSequenceNumber, MsgEP, MsgClusterID, MsgGroupID, MsgStatus))
+
     if MsgSrcAddr not in self.ListOfDevices:
         Domoticz.Error("removeGroupMemberShipResponse %s membership on non existing device %s" %( MsgSrcAddr))
         return
-
     if 'GroupMemberShip' not in self.ListOfDevices[ MsgSrcAddr ]:
         return
-
     if MsgEP not in self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip']:
         return
 
-    if MsgStatus == '00':
-        if MsgGroupID in self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP]:
-            del self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP][ MsgGroupID ]
+    # This quiet an issue if we reach that part. Basically we have received a Status error for a Remove Group Membership.
+    # It is hard to know if this is because we ask to removed a non existing membership, or if we have something else.
+    # So the Approach is to consider the Membership removed so we will update the structutre accordinly, but
+    # we will request a check_group_member_ship and if it exist, then it will be created in the data structutr
+    if MsgGroupID in self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP]:
+        del self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP][ MsgGroupID ]
 
-        if len(self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP]) == 0:
-            del self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP]
+    if len(self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP]) == 0:
+        del self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP]
 
-        if len(self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip']) == 0:
-            del self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip']
+    if len(self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip']) == 0:
+        del self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip']
 
-        checkToRemoveGroup( self,MsgSrcAddr, MsgEP, MsgGroupID )
+    checkToRemoveGroup( self,MsgSrcAddr, MsgEP, MsgGroupID )
 
-    self.logging( 'Debug', "removeGroupMemberShipResponse - SEQ: %s, EP: %s, ClusterID: %s, GroupID: %s, Status: %s"
-            %( MsgSequenceNumber, MsgEP, MsgClusterID, MsgGroupID, MsgStatus))
+    if MsgStatus != '00':
+        check_group_member_ship( self, MsgSrcAddr, MsgEP , MsgGroupID)
+    
 
 # Operating commands on groups
 def send_group_member_ship_identify(self, NwkId, DeviceEp, goup_addr = "0000"):
