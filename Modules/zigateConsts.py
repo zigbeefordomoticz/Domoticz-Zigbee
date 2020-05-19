@@ -518,6 +518,8 @@ LEGRAND_REMOTE_SWITCHS = ( 'Remote switch', 'Double gangs remote switch')
 LEGRAND_REMOTE_SHUTTER = ( 'Shutters central remote switch', )
 
 
+
+
 CFG_RPT_ATTRIBUTESbyCLUSTERS = {
     # 0xFFFF sable reporting- # 6460   - 6 hours # 0x0E10 - 3600s A hour # 0x0708 - 30' # 0x0384 - 15' # 0x012C - 5' # 0x003C - 1'
     # Datatype   

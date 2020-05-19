@@ -21,9 +21,9 @@ from Modules.domoMaj import MajDomoDevice
 
 from Modules.basicOutputs import sendZigateCmd, raw_APS_request, write_attribute
 from Modules.domoMaj import MajDomoDevice
-from Modules.bindings import webBind
+from Modules.bindings import webBind, isWebBind
 
-from Modules.readAttributes import ReadAttributeRequest_0201, ReadAttributeRequest_0001
+from Modules.readAttributes import ReadAttributeRequest_0201, ReadAttributeRequest_0001, ReadAttributeRequest_0702, ReadAttributeRequest_0000
 from Modules.writeAttributes import write_attribute_when_awake
 from Modules.logging import loggingSchneider
 from Modules.zigateConsts import ZIGATE_EP,MAX_LOAD_ZIGATE
@@ -60,8 +60,13 @@ def callbackDeviceAwake_Schneider(self, NwkId, EndPoint, cluster):
                 #ReadAttributeRequest_0702(self, NwkId)
                 self.ListOfDevices[NwkId]['Heartbeat'] = 0
 
-
+    #if 'Model' in self.ListOfDevices[NwkId]:
+    #    if self.ListOfDevices[NwkId]['Model'] in ('EH-ZB-RTS','EH-ZB-VACT', 'EH-ZB-BMS'):
+    #        if (int(self.ListOfDevices[NwkId]['Heartbeat'],10) % 3600) == 0:
+    #            ReadAttributeRequest_0001(self, NwkId)
+   
     return
+
 
 def callbackDeviceAwake_Schneider_SetPoints( self, NwkId, EndPoint, cluster):
 
@@ -145,7 +150,7 @@ def schneider_wiser_registration( self, Devices, key ):
         loggingSchneider( self, 'Debug', "Schneider set default value Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
 
-        schneider_check_and_set_bind (self, key)
+        schneider_thermostat_check_and_bind (self, key)
         
 
 
@@ -193,22 +198,12 @@ def schneider_wiser_registration( self, Devices, key ):
         write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
 
     if self.ListOfDevices[key]['Model'] in ( 'EH-ZB-HACT' ): # Actuator
-        # ATTRIBUTE_THERMOSTAT_HACT_CONFIG
-        cluster_id = "%04x" %0x0201
-        manuf_id = "105e"
-        manuf_spec = "01"
-        # Set 0x01 to 0x0201/0xe011
-        Hattribute = "%04x" %0xe011
-        data_type = "18"
-        data = '03'   # By default register as CONVENTIONAL mode
-                      # E attente pour @hairv en FIP
-        loggingSchneider( self, 'Debug', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
-            %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
-        write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
+        schneider_hact_heater_type (self,key,'registration')
+        schneider_actuator_check_and_bind (self, key)
 
 
-    if self.ListOfDevices[key]['Model'] == 'EH-ZB-BMS': # Thermostat
-        cluster_id = "%04x" %0x0009
+    if self.ListOfDevices[key]['Model'] == 'EH-ZB-BMS': # current monitoring system
+        cluster_id = "%04x" %0x0009 # lets initialize the alarm widget to 00
         value = '00'
         loggingSchneider( self, 'Debug', "Schneider update Alarm Domoticz device Attribute %s Endpoint:%s / cluster: %s to %s"
                 %(key,EPout,cluster_id,value), nwkid=key)
@@ -237,21 +232,24 @@ def schneider_wiser_registration( self, Devices, key ):
     #    self.ListOfDevices[key]['Heartbeat'] = 0
 
     if self.ListOfDevices[key]['Model'] in ( 'EH-ZB-LMACT'): # Pilotage Chaffe eau
-        sendZigateCmd(self, "0092","02" + key + ZIGATE_EP + EPout + "01")
         sendZigateCmd(self, "0092","02" + key + ZIGATE_EP + EPout + "00")
-        self.ListOfDevices[key]['Heartbeat'] = 0
+        sendZigateCmd(self, "0092","02" + key + ZIGATE_EP + EPout + "01")
+    
+    self.ListOfDevices[key]['Heartbeat'] = 0
 
 
 def schneider_hact_heater_type( self, key, type_heater ):
     """[summary]
-
+         allows to set the heater in fip or conventional mode
+         by default it will set it to fip mode
     Arguments:
         key {[int]} -- id of the device
         type {[string]} -- type of heater "fip" of "conventional"
     """
     EPout = SCHNEIDER_BASE_EP
 
-    current_value_string = '0'
+    current_value_string = '-1'
+
     if EPout in self.ListOfDevices[ key ]['Ep']:
         if '0201' in  self.ListOfDevices[ key ]['Ep'][EPout]:
             if 'e011' in  self.ListOfDevices[ key ]['Ep'][EPout]['0201']:
@@ -262,16 +260,22 @@ def schneider_hact_heater_type( self, key, type_heater ):
     # bit 1 - mode of heater : 0 is conventional heater, 1 is fip enabled heater
     # for validation , 0x80 is added to he value retrived from HACT
     current_value = int(current_value_string,16)
-    if (current_value) == 0:
-        current_value = 0x80
+    force_update = False
+
+    if (current_value) == -1:
+        current_value = 0x82  # fip mode by default
+        force_update = True
+
     current_value = current_value - 0x80
     if (type_heater == "conventional"):
         new_value = current_value & 0xFD # we set the bit 1 to 0 and dont touch the other ones . logical_AND 1111 1101
     elif (type_heater == "fip"):
         new_value = current_value | 2  # we set the bit 1 to 1 and dont touch the other ones . logical_OR 0000 0010
+    elif (type_heater == "registration"):
+        new_value = current_value
 
-    new_value = new_value & 3
-    if (current_value == new_value): # no change , let's get out
+    new_value = new_value & 3 # cleanup, to remove everything else but the last two bits 
+    if (current_value == new_value) and not force_update: # no change, let's get out
         return
 
     manuf_id = "105e"
@@ -286,8 +290,7 @@ def schneider_hact_heater_type( self, key, type_heater ):
 
     if EPout in self.ListOfDevices[ key ]['Ep']:
         if '0201' in  self.ListOfDevices[ key ]['Ep'][EPout]:
-            if 'e011' in  self.ListOfDevices[ key ]['Ep'][EPout]['0201']:
-                self.ListOfDevices[ key ]['Ep'][EPout]['0201']['e011'] = "%02x" %(new_value + 0x80)
+            self.ListOfDevices[ key ]['Ep'][EPout]['0201']['e011'] = "%02x" %(new_value + 0x80)
 
 
 def schneider_hact_heating_mode( self, key, mode ):
@@ -317,16 +320,20 @@ def schneider_hact_heating_mode( self, key, mode ):
     # bit 1 - mode of heater : 0 is conventional heater, 1 is fip enabled heater
     # for validation , 0x80 is added to he value retrived from HACT
     current_value = int(current_value_string,16)
-    if (current_value) == 0:
-        current_value = 0x80
+    force_update = False
+
+    if (current_value) == -1:
+        current_value = 0x82
+        force_update = True
 
     current_value = current_value - 0x80
     if (mode == "setpoint"):
         new_value = current_value & 0xFE # we set the bit 0 to 0 and dont touch the other ones . logical_AND 1111 1110
     elif (mode == "FIP"):
         new_value = current_value | 1  # we set the bit 0 to 1 and dont touch the other ones . logical_OR 0000 0001
-    new_value = new_value & 3
-    if (current_value == new_value): # no change , let's get out
+
+    new_value = new_value & 3 # cleanup, to remove everything else but the last two bits 
+    if (current_value == new_value) and not force_update: # no change, let's get out
         return
 
     manuf_id = "105e"
@@ -341,6 +348,9 @@ def schneider_hact_heating_mode( self, key, mode ):
     # Reset Heartbeat in order to force a ReadAttribute when possible
     self.ListOfDevices[key]['Heartbeat'] = 0
     #ReadAttributeRequest_0201(self,key)
+    if EPout in self.ListOfDevices[ key ]['Ep']:
+        if '0201' in  self.ListOfDevices[ key ]['Ep'][EPout]:
+            self.ListOfDevices[ key ]['Ep'][EPout]['0201']['e011'] = "%02x" %(new_value + 0x80)
 
 def schneider_hact_fip_mode( self, key, mode):
     """[summary]
@@ -385,53 +395,64 @@ def schneider_hact_fip_mode( self, key, mode):
     self.ListOfDevices[key]['Heartbeat'] = 0
 
 
-def schneider_check_and_set_bind (self, key):
+def schneider_thermostat_check_and_bind (self, key):
     """[summary]
         bind the thermostat to the actuators based on the zoning json fie
     Arguments:
         key {[type]} -- [description]
     """
-    loggingSchneider(self, 'Debug', "schneider_check_and_set_bind : %s " %key )
+    loggingSchneider(self, 'Debug', "schneider_thermostat_check_and_bind : %s " %key )
 
     if self.SchneiderZone is None:
         return
 
     Cluster_bind1 = '0201'
-    Cluster_bind2 = '0402'       
+    Cluster_bind2 = '0402'
     for zone in self.SchneiderZone:
         if self.SchneiderZone[ zone ]['Thermostat']['NWKID'] == key :
             for hact in self.SchneiderZone[ zone ]['Thermostat']['HACT']:
                 srcIeee = self.SchneiderZone[ zone ]['Thermostat']['IEEE']
                 targetIeee = self.SchneiderZone[ zone ]['Thermostat']['HACT'][hact]['IEEE']
-                loggingSchneider(self, 'Debug', "schneider_check_and_set_bind : self.ListOfDevices[key]  %s " %self.ListOfDevices[key]  )
+                loggingSchneider(self, 'Debug', "schneider_thermostat_check_and_bind : self.ListOfDevices[key]  %s " %self.ListOfDevices[key]  )
 
-                if 'ZoneBinded' in self.ListOfDevices[key] and \
-                    hact in self.ListOfDevices[key]['ZoneBinded'] and \
-                    Cluster_bind1 in self.ListOfDevices[key]['ZoneBinded'][hact] and \
-                    Cluster_bind2 in self.ListOfDevices[key]['ZoneBinded'][hact] :
-                        continue # binding already done
+                if not isWebBind (self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind1):
+                    webBind(self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind1)
+                    webBind(self, targetIeee,SCHNEIDER_BASE_EP,srcIeee,SCHNEIDER_BASE_EP,Cluster_bind1)
 
-                if 'ZoneBinded' not in self.ListOfDevices[key]:
-                    self.ListOfDevices[key]['ZoneBinded'] = {}
-                if hact not in self.ListOfDevices[key]['ZoneBinded']:
-                    self.ListOfDevices[key]['ZoneBinded'][hact] = {}
-                self.ListOfDevices[key]['ZoneBinded'][hact][Cluster_bind1] = 'Done'
-                self.ListOfDevices[key]['ZoneBinded'][hact][Cluster_bind2] = 'Done'
+                if not isWebBind (self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind2):
+                    webBind(self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind2)
+                    webBind(self, targetIeee,SCHNEIDER_BASE_EP,srcIeee,SCHNEIDER_BASE_EP,Cluster_bind2)
 
-                webBind(self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind1)
-                webBind(self, targetIeee,SCHNEIDER_BASE_EP,srcIeee,SCHNEIDER_BASE_EP,Cluster_bind1)
-                webBind(self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind2)
-                webBind(self, targetIeee,SCHNEIDER_BASE_EP,srcIeee,SCHNEIDER_BASE_EP,Cluster_bind2)
-"""                datas =  str(srcIeee)+str(SCHNEIDER_BASE_EP)+str(Cluster_bind1)+str("03")+str(targetIeee)+str(SCHNEIDER_BASE_EP)
-                sendZigateCmd(self, "0030", datas )
-                datas =  str(targetIeee)+str(SCHNEIDER_BASE_EP)+str(Cluster_bind1)+str("03")+str(srcIeee)+str(SCHNEIDER_BASE_EP)
-                sendZigateCmd(self, "0030", datas )
 
-                datas =  str(srcIeee)+str(SCHNEIDER_BASE_EP)+str(Cluster_bind2)+str("03")+str(targetIeee)+str(SCHNEIDER_BASE_EP)
-                sendZigateCmd(self, "0030", datas )
-                datas =  str(targetIeee)+str(SCHNEIDER_BASE_EP)+str(Cluster_bind2)+str("03")+str(srcIeee)+str(SCHNEIDER_BASE_EP)
-                sendZigateCmd(self, "0030", datas )
-"""
+def schneider_actuator_check_and_bind (self, key):
+    """[summary]
+        bind the actuators to the thermostat based on the zoning json fie
+    Arguments:
+        key {[type]} -- [description]
+    """
+    loggingSchneider(self, 'Debug', "schneider_actuator_check_and_bind : %s " %key )
+
+    if self.SchneiderZone is None:
+        return
+
+    Cluster_bind1 = '0201'
+    Cluster_bind2 = '0402'
+    for zone in self.SchneiderZone:
+        for hact in self.SchneiderZone[ zone ]['Thermostat']['HACT']:
+            if hact == key :
+                srcIeee = self.SchneiderZone[ zone ]['Thermostat']['HACT'][hact]['IEEE']
+                targetIeee = self.SchneiderZone[ zone ]['Thermostat']['IEEE']
+                srcIeee = self.SchneiderZone[ zone ]['Thermostat']['HACT'][hact]['IEEE']
+                loggingSchneider(self, 'Debug', "schneider_actuator_check_and_bind : self.ListOfDevices[key]  %s " %self.ListOfDevices[key]  )
+
+                if not isWebBind (self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind1):
+                    webBind(self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind1)
+                    webBind(self, targetIeee,SCHNEIDER_BASE_EP,srcIeee,SCHNEIDER_BASE_EP,Cluster_bind1)
+
+                if not isWebBind (self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind2):
+                    webBind(self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind2)
+                    webBind(self, targetIeee,SCHNEIDER_BASE_EP,srcIeee,SCHNEIDER_BASE_EP,Cluster_bind2)
+
 
 def schneider_setpoint_thermostat( self, key, setpoint):
     """[summary]
@@ -454,7 +475,6 @@ def schneider_setpoint_thermostat( self, key, setpoint):
     importSchneiderZoning(self)
 
     if self.SchneiderZone is not None:
-        schneider_check_and_set_bind (self, key)
         for zone in self.SchneiderZone:
             loggingSchneider(self, 'Debug', "schneider_setpoint - Zone Information: %s " %zone )
             if self.SchneiderZone[ zone ]['Thermostat']['NWKID'] == NWKID :
