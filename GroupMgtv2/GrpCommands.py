@@ -3,7 +3,6 @@
 #
 # Author: pipiche38
 #
-
 # All operations to and from Zigate
 
 import Domoticz
@@ -12,9 +11,6 @@ from time import time
 
 from Modules.zigateConsts import ADDRESS_MODE, ZIGATE_EP
 from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl
-
-from GroupMgtv2.GrpControl import checkToCreateOrUpdateGroup, checkToRemoveGroup
-
 
 # Group Management Command
 def add_group_member_ship( self, NwkId, DeviceEp, GrpId):

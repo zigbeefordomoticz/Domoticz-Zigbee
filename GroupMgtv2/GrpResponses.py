@@ -5,7 +5,6 @@
 #
 
 # All operations to and from Zigate
-
 import Domoticz
 
 from time import time
@@ -13,7 +12,7 @@ from time import time
 from Modules.zigateConsts import ADDRESS_MODE, ZIGATE_EP
 from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl
 
-from GroupMgtv2.GrpControl import checkToCreateOrUpdateGroup, checkToRemoveGroup
+from GroupMgtv2.GrpCallBackResponses import checkToCreateOrUpdateGroup, checkToRemoveGroup
 from GroupMgtv2.GrpCommands import check_group_member_ship
 
 
@@ -29,7 +28,6 @@ def statusGroupRequest( self, MsgData):
     self.logging( 'Debug', "statusOnGrpCommand - Status: %s for Command: %s" %(Status, PacketType))   
     if Status != '00':
         self.logging( 'Log', "statusOnGrpCommand - Status: %s for Command: %s" %(Status, PacketType))
-
 
 def add_group_member_ship_response(self, MsgData):
     """
@@ -86,7 +84,6 @@ def add_group_member_ship_response(self, MsgData):
         # Let's check what is the membership ?
         check_group_member_ship( self, MsgSrcAddr, MsgEP , MsgGroupID)
  
-
 def check_group_member_ship_response( self, MsgData):
     ' Decode 0x8061'
 
@@ -119,7 +116,6 @@ def check_group_member_ship_response( self, MsgData):
         checkToCreateOrUpdateGroup(self, MsgSrcAddr, MsgEP, MsgGroupID  )
 
     # If we have receive a MsgStatus error, we cannot conclude, so we consider the membership to that group, not existing
-
 
 def look_for_group_member_ship_response( self, MsgData):
     """
@@ -161,7 +157,6 @@ def look_for_group_member_ship_response( self, MsgData):
         self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP][ GrpId ]['TimeStamp'] = 0
         checkToCreateOrUpdateGroup(self, MsgSrcAddr, MsgEP, GrpId  )
 
-
 def remove_group_member_ship_response( self, MsgData):
     ' Decode 0x8063'
 
@@ -191,8 +186,10 @@ def remove_group_member_ship_response( self, MsgData):
             %( MsgSequenceNumber, MsgEP, MsgClusterID, MsgGroupID, MsgStatus))
 
     if MsgSrcAddr not in self.ListOfDevices:
-        Domoticz.Error("removeGroupMemberShipResponse %s membership on non existing device %s" %( MsgSrcAddr))
+        Domoticz.Error("removeGroupMemberShipResponse %s membership on non existing device %s" %( MsgGroupID, MsgSrcAddr))
+        checkToRemoveGroup( self,MsgSrcAddr, MsgEP, MsgGroupID )
         return
+
     if 'GroupMemberShip' not in self.ListOfDevices[ MsgSrcAddr ]:
         return
     if MsgEP not in self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip']:

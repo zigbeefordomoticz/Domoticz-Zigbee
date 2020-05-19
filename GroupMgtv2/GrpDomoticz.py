@@ -4,7 +4,6 @@
 # Author: zaraki673 & pipiche38
 #
 
-
 import Domoticz
 import json
 

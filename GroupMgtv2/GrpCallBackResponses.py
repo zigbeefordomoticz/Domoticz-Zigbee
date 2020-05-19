@@ -3,7 +3,6 @@
 #
 # Author: pipiche38
 #
-
 from GroupMgtv2.GrpDomoticz import create_domoticz_group_device, remove_domoticz_group_device, update_domoticz_group_device, update_domoticz_group_device_widget
 from GroupMgtv2.GrpDatabase import write_groups_list, create_group, add_device_to_group, remove_device_from_group
 

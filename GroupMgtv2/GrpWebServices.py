@@ -3,7 +3,6 @@
 #
 # Author: pipiche38
 #
-
 import Domoticz
 
 from time import time
@@ -106,6 +105,8 @@ def process_web_request( self, webInput):
         update_group_and_remove_devices( self, GrpId, WhatToDo['ToBeRemoved'])
 
     def delGroup( self, GrpId ):
+        if GrpId not in self.ListOfGroups:
+            return
         TobeRemovedDevices = self.ListOfGroups[ GrpId]['Devices']
         update_group_and_remove_devices( self, GrpId, TobeRemovedDevices)
 
@@ -117,7 +118,6 @@ def process_web_request( self, webInput):
 
 
     # Begining
-
     #self.logging( 'Debug', "processWebRequest %s" %webInput)
     if len(webInput) == 0:
         fullGroupRemove( self )

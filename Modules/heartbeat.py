@@ -143,7 +143,6 @@ def pollingDeviceStatus( self, NWKID):
 
     return False
 
-
 def processKnownDevices( self, Devices, NWKID ):
 
     # Normalize Hearbeat value if needed

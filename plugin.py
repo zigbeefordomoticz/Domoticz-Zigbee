@@ -403,13 +403,20 @@ class BasePlugin:
         loggingPlugin( self, 'Debug', "onDeviceRemoved called" )
         # Let's check if this is End Node, or Group related.
         if Devices[Unit].DeviceID in self.IEEE2NWK:
+            IEEE = Devices[Unit].DeviceID
+            NwkId = self.IEEE2NWK[ IEEE ]
+
             # Command belongs to a end node
             loggingPlugin( self, 'Status', "onDeviceRemoved - removing End Device")
             fullyremoved = removeDeviceInList( self, Devices, Devices[Unit].DeviceID , Unit)
 
+            # We might have to remove also the Device from Groups
+            if fullyremoved and self.groupmgt:
+                self.groupmgt.RemoveNwkIdFromAllGroups( NwkId)
+
             # We should call this only if All Widgets have been remved !
             if fullyremoved and self.pluginconf.pluginConf['allowRemoveZigateDevice']:
-                IEEE = Devices[Unit].DeviceID
+                
                 # sending a Leave Request to device, so the device will send a leave
                 leaveRequest( self, IEEE= IEEE )
                 # for a remove in case device didn't send the leave
@@ -427,7 +434,7 @@ class BasePlugin:
         if self.groupmgt and Devices[Unit].DeviceID in self.groupmgt.ListOfGroups:
                 loggingPlugin( self, 'Status', "onDeviceRemoved - removing Group of Devices")
                 # Command belongs to a Zigate group
-                self.groupmgt.process_remove_group( Unit, Devices[Unit].DeviceID )
+                self.groupmgt.FullRemoveOfGroup( Unit, Devices[Unit].DeviceID )
 
     def onConnect(self, Connection, Status, Description):
 
