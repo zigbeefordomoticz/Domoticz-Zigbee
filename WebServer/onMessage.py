@@ -24,9 +24,11 @@ def onMessage( self, Connection, Data ):
         if (not 'Verb' in Data):
             Domoticz.Error("Invalid web request received, no Verb present")
             headerCode = "400 Bad Request"
+
         elif (Data['Verb'] not in ( 'GET', 'PUT', 'POST', 'DELETE')):
             Domoticz.Error("Invalid web request received, only GET requests allowed ("+Data['Verb']+")")
             headerCode = "405 Method Not Allowed"
+
         elif (not 'URL' in Data):
             Domoticz.Error("Invalid web request received, no URL present")
             headerCode = "400 Bad Request"
@@ -35,6 +37,7 @@ def onMessage( self, Connection, Data ):
         self.logging( 'Debug', "URL: %s , Path: %s" %( Data['URL'], parsed_url.path))
         if  Data['URL'][0] == '/': 
             parsed_query = Data['URL'][1:].split('/')
+
         else: 
             parsed_query = Data['URL'].split('/')
 
