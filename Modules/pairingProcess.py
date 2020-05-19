@@ -24,7 +24,7 @@ from Modules.bindings import unbindDevice, bindDevice, rebind_Clusters
 from Modules.basicOutputs import  sendZigateCmd, identifyEffect, getListofAttribute
 
         
-from Modules.readAttributes import ReadAttributeRequest_0000_basic, \
+from Modules.readAttributes import READ_ATTRIBUTES_REQUEST, ReadAttributeRequest_0000_basic, \
         ReadAttributeRequest_0000, ReadAttributeRequest_0001, ReadAttributeRequest_0006, ReadAttributeRequest_0008, \
         ReadAttributeRequest_0100, \
         ReadAttributeRequest_000C, ReadAttributeRequest_0102, ReadAttributeRequest_0201, ReadAttributeRequest_0204, ReadAttributeRequest_0300,  \
@@ -45,32 +45,6 @@ from Classes.IAS import IAS_Zone_Management
 from Classes.Transport import ZigateTransport
 from Classes.AdminWidgets import AdminWidgets
 from Classes.NetworkMap import NetworkMap
-
-READ_ATTRIBUTES_REQUEST = {
-    # Cluster : ( ReadAttribute function, Frequency )
-    '0000' : ( ReadAttributeRequest_0000, 'polling0000' ),
-    '0001' : ( ReadAttributeRequest_0001, 'polling0001' ),
-    '0006' : ( ReadAttributeRequest_0006, 'pollingONOFF' ),
-    '0008' : ( ReadAttributeRequest_0008, 'pollingLvlControl' ),
-    '000C' : ( ReadAttributeRequest_000C, 'polling000C' ),
-    '0100' : ( ReadAttributeRequest_0100, 'polling0100' ),
-    '0102' : ( ReadAttributeRequest_0102, 'polling0102' ),
-    '0201' : ( ReadAttributeRequest_0201, 'polling0201' ),
-    '0204' : ( ReadAttributeRequest_0204, 'polling0204' ),
-    '0300' : ( ReadAttributeRequest_0300, 'polling0300' ),
-    '0400' : ( ReadAttributeRequest_0400, 'polling0400' ),
-    '0402' : ( ReadAttributeRequest_0402, 'polling0402' ),
-    '0403' : ( ReadAttributeRequest_0403, 'polling0403' ),
-    '0405' : ( ReadAttributeRequest_0405, 'polling0405' ),
-    '0406' : ( ReadAttributeRequest_0406, 'polling0406' ),
-    '0500' : ( ReadAttributeRequest_0500, 'polling0500' ),
-    '0502' : ( ReadAttributeRequest_0502, 'polling0502' ),
-    '0702' : ( ReadAttributeRequest_0702, 'polling0702' ),
-    '000f' : ( ReadAttributeRequest_000f, 'polling000f' ),
-    'fc21' : ( ReadAttributeRequest_000f, 'pollingfc21' ),
-    #'fc01' : ( ReadAttributeRequest_fc01, 'pollingfc01' ),
-    }
-
 
 
 def writeDiscoveryInfos( self ):
