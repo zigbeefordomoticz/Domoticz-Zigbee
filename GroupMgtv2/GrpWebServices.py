@@ -8,88 +8,12 @@ import Domoticz
 
 from time import time
 
-from Modules.tools import mainPoweredDevice
+from GroupMgtv2.GrpServices import create_new_group_and_attach_devices, update_group_and_add_devices, update_group_and_remove_devices, \
+                                   scan_all_devices_for_grp_membership
 
-from GroupMgtv2.GrpDomoticz import create_domoticz_group_device
 
-# remove_domoticz_group_device, update_domoticz_group_device
-from GroupMgtv2.GrpDatabase import create_group, build_group_list_from_list_of_devices
-from GroupMgtv2.GrpCommands import remove_group_member_ship, add_group_member_ship, check_group_member_ship, look_for_group_member_ship
-
-def checkAndTriggerIfMajGroupNeeded( self, NwkId, Ep, ClusterId):
-    """
-    This method is call from MajDomoDevice and onCommand because there is an update of a particular Device Cluster/Attribute
-    We will then check if that impact a group and in that case trigger the update of such group
-    """
-
-    if ( 'GroupMemberShip' in self.ListOfDevices[NwkId] and Ep in self.ListOfDevices[NwkId]['GroupMemberShip'] ):
-        for GrpId in self.ListOfDevices[ NwkId ]['GroupMemberShip'][Ep]:
-            self.update_domoticz_group_device( GrpId )
-
-def check_existing_mmbership( self):
-    # For each group, check the group membership of the identified device
-    for GrpId in self.ListOfGroups:
-        for NwkId, Ep, Ieee in self.ListOfGroups[ GrpId ]['Devices']:
-            check_group_member_ship( self, NwkId, Ep, GrpId )
-
-def process_remove_group( self, unit, GroupId):
-    # Call by onRemove call from Domoticz
-    # The widget has been removed by Domoticz, we have to cleanup
-    
-    self.logging( 'Debug', "process_remove_group Unit: %s GroupId: %s" %(unit, GroupId))
-
-    if GroupId not in self.ListOfGroups:
-        return
-
-    for NwkId, Ep, IEEE in self.ListOfGroups[ GroupId ]['Devices']:
-        remove_group_member_ship( self,NwkId, Ep, GroupId )
-
-def provision_Manufacturer_Group( self, GrpId, NwkId, Ep, Ieee):
-    pass
-
-def scan_device_for_grp_membership( self, NwkId, Ep ):
-    # Ask this device for list of Group membership
-
-    if NwkId not in self.ListOfDevices:
-        return
-
-    if 'GroupMemberShip' in self.ListOfDevices[ NwkId ]:
-        del self.ListOfDevices[ NwkId ]['GroupMemberShip']
-
-    look_for_group_member_ship(self, NwkId, Ep)
-
-def scan_all_devices_for_grp_membership( self ):
-    
-    for NwkId in self.ListOfDevices:
-        if not mainPoweredDevice( self, NwkId):
-            continue
-        for Ep in self.ListOfDevices[ NwkId ]['Ep']:
-            if '0004' not in self.ListOfDevices[ NwkId ]['Ep'][Ep]:
-                continue
-            scan_device_for_grp_membership( self, NwkId, Ep)
-
-def addGroupMemberShip( self, NwkId, Ep, GroupId):
-    add_group_member_ship( self, NwkId, Ep, GroupId)
-
-def create_new_group_and_attach_devices( self, GrpId, GrpName, DevicesList ):
-    self.logging( 'Debug', " --  --  --  --  --  > CreateNewGroupAndAttachDevices ")
-    create_group( self, GrpId, GrpName )
-    create_domoticz_group_device(self, GrpName, GrpId)
-    for NwkId, ep, ieee in DevicesList:
-        add_group_member_ship( self, NwkId, ep, GrpId)
-        #add_device_to_group( self, [ NwkId, ep, ieee ], GrpId)
-
-def update_group_and_add_devices( self, GrpId, ToBeAddedDevices):
-    self.logging( 'Debug', " --  --  --  --  --  > UpdateGroupAndAddDevices ")
-    for NwkId, ep, ieee in ToBeAddedDevices:
-        add_group_member_ship( self, NwkId, ep, GrpId)
-        #add_device_to_group( self, [ NwkId, ep, ieee ], GrpId)
-
-def update_group_and_remove_devices( self, GrpId, ToBeRemoveDevices):
-    self.logging( 'Debug', " --  --  --  --  --  > UpdateGroupAndRemoveDevices ")
-    for NwkId, ep, ieee in ToBeRemoveDevices:
-        #remove_device_from_group(self, [ NwkId, ep, ieee ], GrpId)
-        remove_group_member_ship(self,  NwkId, ep, GrpId )
+def ScanAllDevicesForGroupMemberShip( self ):
+    scan_all_devices_for_grp_membership( self )
 
 def process_web_request( self, webInput):
     """

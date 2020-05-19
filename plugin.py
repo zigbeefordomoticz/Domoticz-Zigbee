@@ -94,7 +94,7 @@ from Classes.IAS import IAS_Zone_Management
 from Classes.PluginConf import PluginConf
 from Classes.Transport import ZigateTransport
 from Classes.TransportStats import TransportStatistics
-#from GroupMgt.GroupMgt import GroupsManagement
+
 from GroupMgtv2.GroupManagement import GroupsManagement
 from Classes.AdminWidgets import AdminWidgets
 from Classes.OTA import OTAManagement

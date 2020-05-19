@@ -8,6 +8,8 @@ from GroupMgtv2.GrpDomoticz import create_domoticz_group_device, remove_domoticz
 from GroupMgtv2.GrpDatabase import write_groups_list, create_group, add_device_to_group, remove_device_from_group
 
 
+
+
 def checkToCreateOrUpdateGroup( self, NwkId, Ep, GroupId):
     """ 
     Trigger from addGroupMemberShipResponse or checkGroupMemberShip
@@ -31,7 +33,6 @@ def checkToCreateOrUpdateGroup( self, NwkId, Ep, GroupId):
     add_device_to_group( self, [ NwkId, Ep, Ieee ] , GroupId)
     update_domoticz_group_device_widget( self, GroupId )
     self.write_groups_list()
-
 
 def checkToRemoveGroup( self, NwkId, Ep, GroupId ):
     """ 

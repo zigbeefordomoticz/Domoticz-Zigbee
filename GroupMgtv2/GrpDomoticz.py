@@ -287,8 +287,6 @@ def update_domoticz_group_device( self, GroupId):
     if 'Cluster' in self.ListOfGroups[ GroupId]:
         Cluster = self.ListOfGroups[ GroupId]['Cluster']
 
-    ONOFF_ON_IF_ALL_ON =1
-
     if self.pluginconf.pluginConf['OnIfOneOn']:
         # If one device is on, then the group is on. If all devices are off, then the group is off
         nValue = 0
@@ -312,12 +310,12 @@ def update_domoticz_group_device( self, GroupId):
         if Cluster and Cluster in ( '0006', '0008') and '0006' in self.ListOfDevices[NwkId]['Ep'][Ep]:
             if '0000' in self.ListOfDevices[NwkId]['Ep'][Ep]['0006']:
                 if str(self.ListOfDevices[NwkId]['Ep'][Ep]['0006']['0000']).isdigit():
-                    if ONOFF_ON_IF_ALL_ON: 
-                        if int(self.ListOfDevices[NwkId]['Ep'][Ep]['0006']['0000']) == 0:
-                            nValue = 0
-                    else:
+                    if self.pluginconf.pluginConf['OnIfOneOn']: 
                         if int(self.ListOfDevices[NwkId]['Ep'][Ep]['0006']['0000']) != 0:
                             nValue = 1
+                    else:
+                        if int(self.ListOfDevices[NwkId]['Ep'][Ep]['0006']['0000']) == 0:
+                            nValue = 0
 
         # Cluster Level Control
         if Cluster and Cluster == '0008' and '0008' in self.ListOfDevices[NwkId]['Ep'][Ep]:
@@ -445,9 +443,9 @@ def update_device_list_attribute( self, GroupId, cluster, value):
             self.ListOfDevices[iterDev]['Ep'][iterEp][cluster] = {}
 
         if cluster == '0102':
-            if '0000' not in self.ListOfDevices[iterDev]['Ep'][iterEp][cluster]:
+            if '0008' not in self.ListOfDevices[iterDev]['Ep'][iterEp][cluster]:
                 self.ListOfDevices[iterDev]['Ep'][iterEp][cluster]['0008'] = {}
-            self.ListOfDevices[iterDev]['Ep'][iterEp][cluster]['0008'] = value  
+            self.ListOfDevices[iterDev]['Ep'][iterEp][cluster]['0008'] = value 
         else:
             if '0000' not in self.ListOfDevices[iterDev]['Ep'][iterEp][cluster]:
                 self.ListOfDevices[iterDev]['Ep'][iterEp][cluster]['0000'] = {}
@@ -459,46 +457,37 @@ def update_device_list_attribute( self, GroupId, cluster, value):
 
 def processCommand( self, unit, GrpId, Command, Level, Color_ ) :
 
+    def resetDevicesHearttBeat( self, GrpId ):
+
+        for NwkId, Ep, Ieee in self.ListOfGroups[GrpId]['Devices']:
+            self.logging( 'Debug', 'processGroupCommand - reset heartbeat for device : %s' %NwkId)
+            if NwkId not in self.ListOfDevices:
+                if Ieee in self.IEEE2NWK:
+                    NwkId = self.IEEE2NWK[ Ieee ]
+                else:
+                    Domoticz.Error("resetDevicesHearttBeat - Hum Hum something wrong NwkId: %s Ieee %s" %(NwkId, Ieee))
+
+            if NwkId in self.ListOfDevices:
+                # Force Read Attribute consideration in the next hearbeat
+                if 'Heartbeat' in self.ListOfDevices[NwkId]:
+                    self.ListOfDevices[NwkId]['Heartbeat'] = '0'
+
+                # Reset Health status of corresponding device if any in Not Reachable
+                if ( 'Health' in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]['Health'] == 'Not Reachable' ):
+                    self.ListOfDevices[NwkId]['Health'] = ''
+
+
+    # Begin
+
     self.logging( 'Debug', "processGroupCommand - unit: %s, NwkId: %s, cmd: %s, level: %s, color: %s" %(unit, GrpId, Command, Level, Color_))
 
     if GrpId not in self.ListOfGroups:
         return
 
-    for iterDevice in self.ListOfGroups[GrpId]['Devices']:
-        if len(iterDevice) == 2:
-            iterDev, iterEp = iterDevice
-            if iterDev in self.ListOfDevices:
-                if 'IEEE' in self.ListOfDevices[iterDev]:
-                    iterIEEE = self.ListOfDevices[iterDev]['IEEE']
-        elif len(iterDevice) == 3:
-            iterDev, iterEp, iterIEEE = iterDevice
-        else:
-            Domoticz.Error("Group - processGroupCommand - Error unexpected item: %s" %str(iterDevice))
-            return
+    resetDevicesHearttBeat( self, GrpId)
 
-        self.logging( 'Debug', 'processGroupCommand - reset heartbeat for device : %s' %iterDev)
-        if iterDev not in self.ListOfDevices:
-            if iterIEEE in self.IEEE2NWK:
-                iterDev = self.IEEE2NWK[ iterIEEE ]
-
-        if iterDev in self.ListOfDevices:
-            # Force Read Attribute consideration in the next hearbeat
-            if 'Heartbeat' in self.ListOfDevices[iterDev]:
-                self.ListOfDevices[iterDev]['Heartbeat'] = '0'
-
-            # Reset ReadAttrinbutes, in order to force a Polling
-            if 'ReadAttributes' in  self.ListOfDevices[iterDev]:
-                if 'TimeStamps' in self.ListOfDevices[iterDev]['ReadAttributes']:
-                    del self.ListOfDevices[iterDev]['ReadAttributes']['TimeStamps']
-
-            # Reset Health status of corresponding device if any in Not Reachable
-            if 'Health' in self.ListOfDevices[iterDev]:
-                if self.ListOfDevices[iterDev]['Health'] == 'Not Reachable':
-                    self.ListOfDevices[iterDev]['Health'] = ''
-        else:
-            Domoticz.Error("processGroupCommand - Looks like device %s [%s] does not exist anymore and you expect to be part of group %s" %(iterDev, iterIEEE, GrpId))
-
-    EPin = EPout = '01'
+    # Not sure that Groups are always on EP 01 !!!!!
+    EPout = '01'
 
     if 'Cluster' in self.ListOfGroups[ GrpId ]:
         # new fashion
@@ -508,23 +497,21 @@ def processCommand( self, unit, GrpId, Command, Level, Color_ ) :
                 zigate_param = '00'
                 nValue = 0
                 sValue = 'Off'
-                update_device_list_attribute( self, GrpId, '0102', zigate_param)
+                update_device_list_attribute( self, GrpId, '0102', 0)
 
             if Command == 'On' :
                 zigate_param = '01'
                 nValue = 1
                 sValue = 'Off'
-                update_device_list_attribute( self, GrpId, '0102', zigate_param)
+                update_device_list_attribute( self, GrpId, '0102', 100)
 
             if Command == 'Stop':
                 zigate_param = '02'
                 nValue = 2
                 sValue = '50'
-                update_device_list_attribute( self, GrpId, '0102', zigate_param)
-
+                update_device_list_attribute( self, GrpId, '0102', 50)
 
             self.Devices[unit].Update(nValue = int(nValue), sValue = str(sValue))
-            update_device_list_attribute( self, GrpId, '0102', zigate_param)
             datas = "%02d" %ADDRESS_MODE['group'] + GrpId + ZIGATE_EP + EPout + zigate_param
             self.logging( 'Debug', "Group Command: %s %s-%s" %(Command, zigate_cmd, datas))
             self.ZigateComm.sendData( zigate_cmd, datas)
@@ -539,7 +526,7 @@ def processCommand( self, unit, GrpId, Command, Level, Color_ ) :
         self.Devices[unit].Update(nValue = int(nValue), sValue = str(sValue))
         update_device_list_attribute( self, GrpId, '0006', '00')
         update_domoticz_group_device(self, GrpId)
-        #datas = "01" + GrpId + EPin + EPout + zigate_param
+
         datas = "%02d" %ADDRESS_MODE['group'] + GrpId + ZIGATE_EP + EPout + zigate_param
         self.logging( 'Debug', "Command: %s %s" %(Command,datas))
         self.ZigateComm.sendData( zigate_cmd, datas)
@@ -557,7 +544,7 @@ def processCommand( self, unit, GrpId, Command, Level, Color_ ) :
         update_device_list_attribute( self, GrpId, '0006', '01')
 
         update_domoticz_group_device(self, GrpId)
-        #datas = "01" + GrpId + EPin + EPout + zigate_param
+
         datas = "%02d" %ADDRESS_MODE['group'] + GrpId + ZIGATE_EP + EPout + zigate_param
         self.logging( 'Debug', "Command: %s %s" %(Command,datas))
         self.ZigateComm.sendData( zigate_cmd, datas)
@@ -606,11 +593,11 @@ def processCommand( self, unit, GrpId, Command, Level, Color_ ) :
             self.logging( 'Debug', "Not implemented device color 1")
         #ColorModeTemp = 2   // White with color temperature. Valid fields: t
         if Hue_List['m'] == 2:
-            self.set_Kelvin_Color( ADDRESS_MODE['group'], GrpId, EPin, EPout, int(Hue_List['t']))
+            self.set_Kelvin_Color( ADDRESS_MODE['group'], GrpId, ZIGATE_EP, EPout, int(Hue_List['t']))
 
         #ColorModeRGB = 3    // Color. Valid fields: r, g, b.
         elif Hue_List['m'] == 3:
-            self.set_RGB_color( ADDRESS_MODE['group'], GrpId, EPin, EPout, \
+            self.set_RGB_color( ADDRESS_MODE['group'], GrpId, ZIGATE_EP, EPout, \
                     int(Hue_List['r']), int(Hue_List['g']), int(Hue_List['b']))
 
         #ColorModeCustom = 4, // Custom (color + white). Valid fields: r, g, b, cw, ww, depending on device capabilities

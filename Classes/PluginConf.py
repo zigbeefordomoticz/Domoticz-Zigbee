@@ -30,7 +30,7 @@ SETTINGS = {
     },
 
     'GroupManagement': { 'Order': 3, 'param': {
-        'OnIfOneOn': { 'type':'bool', 'default':1 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
+        'OnIfOneOn': { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
         }
     },
 
