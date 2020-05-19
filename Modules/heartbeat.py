@@ -24,7 +24,7 @@ from Modules.basicOutputs import  sendZigateCmd,identifyEffect, getListofAttribu
 from Modules.readAttributes import ReadAttributeRequest_0000_basic, \
         ReadAttributeRequest_0000, ReadAttributeRequest_0001, ReadAttributeRequest_0006, ReadAttributeRequest_0008, ReadAttributeRequest_0006_0000, ReadAttributeRequest_0008_0000,\
         ReadAttributeRequest_0100, \
-        ReadAttributeRequest_000C, ReadAttributeRequest_0102, ReadAttributeRequest_0201, ReadAttributeRequest_0204, ReadAttributeRequest_0300,  \
+        ReadAttributeRequest_000C, ReadAttributeRequest_0102, ReadAttributeRequest_0102_0008, ReadAttributeRequest_0201, ReadAttributeRequest_0204, ReadAttributeRequest_0300,  \
         ReadAttributeRequest_0400, ReadAttributeRequest_0402, ReadAttributeRequest_0403, ReadAttributeRequest_0405, \
         ReadAttributeRequest_0406, ReadAttributeRequest_0500, ReadAttributeRequest_0502, ReadAttributeRequest_0702, ReadAttributeRequest_000f, ReadAttributeRequest_fc01, ReadAttributeRequest_fc21
 
@@ -67,14 +67,11 @@ READ_ATTRIBUTES_REQUEST = {
     '0500' : ( ReadAttributeRequest_0500, 'polling0500' ),
     '0502' : ( ReadAttributeRequest_0502, 'polling0502' ),
     '0702' : ( ReadAttributeRequest_0702, 'polling0702' ),
-    '000f' : ( ReadAttributeRequest_000f, 'polling000f' ),
+    #'000f' : ( ReadAttributeRequest_000f, 'polling000f' ),
     'fc21' : ( ReadAttributeRequest_000f, 'pollingfc21' ),
     #'fc01' : ( ReadAttributeRequest_fc01, 'pollingfc01' ),
     }
 
-#READ_ATTR_COMMANDS = ( '0006', '0008', '0102' )
-# For now, we just look for On/Off state
-READ_ATTR_COMMANDS = ( '0006', '0201')
 
 # Read Attribute trigger: Every 10"
 # Configure Reporting trigger: Every 15
@@ -151,11 +148,9 @@ def pollingManufSpecificDevices( self, NWKID):
     return rescheduleAction
 
 def pollingDeviceStatus( self, NWKID):
-
     """
     Purpose is to trigger ReadAttrbute 0x0006 and 0x0008 on attribute 0x0000 if applicable
     """
-
     for iterEp in self.ListOfDevices[NWKID]['Ep']:
         if '0006' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
             ReadAttributeRequest_0006_0000( self, NWKID)
@@ -165,6 +160,11 @@ def pollingDeviceStatus( self, NWKID):
         if '0008' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
             ReadAttributeRequest_0008_0000( self, NWKID)
             loggingHeartbeat( self, 'Debug', "++ pollingDeviceStatus -  %s  for LVLControl" \
+            %(NWKID), NWKID)
+
+        if '0102' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+            ReadAttributeRequest_0102_0008( self, NWKID)
+            loggingHeartbeat( self, 'Debug', "++ pollingDeviceStatus -  %s  for WindowCOvering" \
             %(NWKID), NWKID)
 
     return False

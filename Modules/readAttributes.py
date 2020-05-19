@@ -339,8 +339,7 @@ def ReadAttributeRequest_0001(self, key):
             ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0001", listAttributes )
 
 def ReadAttributeRequest_0006_0000(self, key):
-    loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0006 focus on 0x0000 Key: %s " %key, nwkid=key)
-
+    loggingReadAttributes( self, 'Log', "ReadAttributeRequest_0006 focus on 0x0000 Key: %s " %key, nwkid=key)
     ListOfEp = getListOfEpForCluster( self, key, '0006' )
     for EPout in ListOfEp:
         listAttributes = [0]
@@ -377,8 +376,7 @@ def ReadAttributeRequest_0006(self, key):
             ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0006", listAttributes)
 
 def ReadAttributeRequest_0008_0000(self, key):
-    loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0008 focus on 0x0008/0000 Key: %s " %key, nwkid=key)
-
+    loggingReadAttributes( self, 'Log', "ReadAttributeRequest_0008 focus on 0x0008/0000 Key: %s " %key, nwkid=key)
     ListOfEp = getListOfEpForCluster( self, key, '0008' )
     for EPout in ListOfEp:
 
@@ -455,6 +453,13 @@ def ReadAttributeRequest_0102(self, key):
             if listAttributes:
                 loggingReadAttributes( self, 'Debug', "Request 0x0102 info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
                 ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0102", listAttributes)
+
+def ReadAttributeRequest_0102_0008( self, key):
+    loggingReadAttributes( self, 'Log', "Request Windows Covering status Read Attribute request: " + key , nwkid=key)
+    ListOfEp = getListOfEpForCluster( self, key, '0102' )
+    for EPout in ListOfEp:
+        listAttributes = [0x0008]
+        ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0102", listAttributes)
 
 def ReadAttributeRequest_0201(self, key):
     # Thermostat 
