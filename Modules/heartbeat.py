@@ -47,6 +47,7 @@ from Classes.Transport import ZigateTransport
 from Classes.AdminWidgets import AdminWidgets
 from Classes.NetworkMap import NetworkMap
 
+
 # Read Attribute trigger: Every 10"
 # Configure Reporting trigger: Every 15
 # Network Topology start: 15' after plugin start

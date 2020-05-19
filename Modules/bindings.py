@@ -280,34 +280,26 @@ def webUnBind( self, sourceIeee, sourceEp, destIeee, destEp, Cluster):
             del self.ListOfDevices[sourceNwkid]['WebBind']
 
 
-def iterable(obj):
-    try:
-        iter(obj)
-    except Exception:
-        return False
-    else:
-        return True
+def isWebBind( self, sourceIeee, sourceEp, destIeee, destEp, Cluster):
 
+    if sourceIeee not in self.IEEE2NWK:
+        Domoticz.Error("---> unknown sourceIeee: %s" %sourceIeee)
+        return
 
+    if destIeee not in self.IEEE2NWK:
+        Domoticz.Error("---> unknown destIeee: %s" %destIeee)
+        return
 
+    sourceNwkid = self.IEEE2NWK[sourceIeee]
+    destNwkid = self.IEEE2NWK[destIeee]
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    if 'WebBind' in self.ListOfDevices[sourceNwkid]:
+        if sourceEp in self.ListOfDevices[sourceNwkid]['WebBind']:
+            if Cluster in self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp]:
+                if destNwkid in self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster]:
+                    if self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster][destNwkid]['Phase'] == 'binded':
+                        return True
+    return False
 
 
 
