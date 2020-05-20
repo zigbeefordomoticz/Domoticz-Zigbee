@@ -90,7 +90,7 @@ class GroupsManagement(object):
     if os.path.isfile( self.pluginconf.pluginConf['pluginData'] + "/GroupsList-%02d.pck" %hardwareID  ):
         # Open the file and load it.
         with open( self.pluginconf.pluginConf['pluginData'] + "/GroupsList-%02d.pck" %hardwareID  , 'rb') as handle:
-          self.ListOfGroups = pickle.load( handle )
+          self.ListOfGroups = pickle.load( handle )  # nosec
 
         # Save it with new format
         self.GroupListFileName = self.pluginconf.pluginConf['pluginData'] + "/GroupsList-%02d.json" %hardwareID

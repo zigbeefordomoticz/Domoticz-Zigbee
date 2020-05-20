@@ -1,5 +1,3 @@
 [bandit]
-exclude: /zigate
-
-[bandit]
-zigate: B301,B602
+exclude: /GroupMgtv2
+skips: B301,B602
