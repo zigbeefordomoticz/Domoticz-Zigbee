@@ -34,14 +34,12 @@ def CreateDomoDevice(self, Devices, NWKID):
         _Model = _NickName = None
         devName = ''
         loggingWidget( self, "Debug", "deviceName - %s/%s - %s %s" %(NWKID, EP_, IEEE_, DeviceType), NWKID)
-        if 'Model' in self.ListOfDevices[NWKID]:
-            if self.ListOfDevices[NWKID]['Model'] != {}:
-                _Model = self.ListOfDevices[NWKID]['Model']
-                loggingWidget( self, "Debug", "deviceName - Model found: %s" %_Model, NWKID)
-                if _Model in self.DeviceConf:
-                    if 'NickName' in self.DeviceConf[_Model]:
-                        _NickName = self.DeviceConf[_Model]['NickName']
-                        loggingWidget( self, "Debug", "deviceName - NickName found %s" %_NickName, NWKID)
+        if ( 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['Model'] != {} ):
+            _Model = self.ListOfDevices[NWKID]['Model']
+            loggingWidget( self, "Debug", "deviceName - Model found: %s" %_Model, NWKID)
+            if _Model in self.DeviceConf and 'NickName' in self.DeviceConf[_Model]:
+                _NickName = self.DeviceConf[_Model]['NickName']
+                loggingWidget( self, "Debug", "deviceName - NickName found %s" %_NickName, NWKID)
 
         if _NickName is None and _Model is None:
             _Model = ''
@@ -92,7 +90,7 @@ def CreateDomoDevice(self, Devices, NWKID):
         #Domoticz.Log( "createSwitchSelector -  nbSelector: %s DeviceType: %s OffHidden: %s SelectorStyle %s " %(nbSelector,DeviceType,OffHidden,SelectorStyle))
         if nbSelector <= 1:
             return Options
-            
+
         Options[ 'LevelNames' ] = ''
         Options[ 'LevelActions'] = ''
         Options[ 'LevelOffHidden'] = 'false'
@@ -105,24 +103,24 @@ def CreateDomoDevice(self, Devices, NWKID):
                     Options[ 'LevelNames' ] = SWITCH_LVL_MATRIX[ DeviceType ]['LevelNames']
 
                 # In case we have a localized version, we will overwrite the standard vesion
-                if self.pluginconf.pluginConf['Lang'] != 'en-US':
+                if ( self.pluginconf.pluginConf['Lang'] != 'en-US' and 'Language' in SWITCH_LVL_MATRIX[DeviceType] ):
                     lang = self.pluginconf.pluginConf['Lang']
-                    if 'Language' in SWITCH_LVL_MATRIX[ DeviceType ]:
-                        if lang in SWITCH_LVL_MATRIX[ DeviceType ]['Language']:
-                            if 'LevelNames' in SWITCH_LVL_MATRIX[ DeviceType ]['Language'][ lang ]:
-                                Options[ 'LevelNames'] = SWITCH_LVL_MATRIX[ DeviceType ]['Language'][ lang ]['LevelNames']
+                    if (
+                        lang in SWITCH_LVL_MATRIX[DeviceType]['Language']
+                        and 'LevelNames'
+                        in SWITCH_LVL_MATRIX[DeviceType]['Language'][lang]
+                    ):
+                        Options[ 'LevelNames'] = SWITCH_LVL_MATRIX[ DeviceType ]['Language'][ lang ]['LevelNames']
 
                 if Options[ 'LevelNames' ] != '':
                     count = sum(map(lambda x : 1 if '|' in x else 0, Options[ 'LevelNames' ]))
                     #Domoticz.Log("----> How many Levels: %s" %count)
-                    for bt in range(0, count):
+                    for _ in range(count):
                         Options[ 'LevelActions'] += '|'
         else:
-            for bt in range(0, nbSelector):
+            for bt in range(nbSelector):
                 Options[ 'LevelNames' ] += 'BT %03s | ' %bt
                 Options[ 'LevelActions'] += '|'
-    
-            #Domoticz.Log(" --> Options: %s" %str(Options))  
 
             Options[ 'LevelNames' ] = Options[ 'LevelNames' ][:-2] # Remove the last '| '
             Options[ 'LevelActions' ] = Options[ 'LevelActions' ][:-1] # Remove the last '|'
@@ -246,16 +244,21 @@ def CreateDomoDevice(self, Devices, NWKID):
                 loggingWidget( self, "Debug", "adding Type : %s to Global Type: %s" %(iterType, str(GlobalType)), NWKID)
                 GlobalType.append(iterType)
 
-        # In case the Type has been autoamticaly detected based on Cluster, we might several times the same actuator
-        # Precendece is Swicth -> LvlControl -> ColorControl
-        if self.ListOfDevices[NWKID]['Model'] == {} or \
-                self.ListOfDevices[NWKID][ 'Model'] not in self.DeviceConf:    # If Model is known, then Type must be set correctly
-            if ("Switch" in Type) and ("LvlControl" in Type):
+        # In case Type is issued from GetType functions, this is based on Clusters, 
+        # In such case and the device is a Bulb or a Dimmer Switch we will get a combinaison of Switch/LvlControl and ColorControlxxx
+        # We want to avoid creating of 3 widgets while 1 is enought.
+        if self.ListOfDevices[NWKID][ 'Model'] not in self.DeviceConf:
+            loggingWidget(self, 'Debug', "---> Check if we need to reduce Type: %s" %Type)
+
+            if ("Switch" in Type) and ("LvlControl" in Type) and ("ColorControl" in Type):
+                # We need to detect what is the ColorControl ( can be RGB, Full, WW)
+                loggingWidget(self, 'Debug', "----> Colortype, let's remove Switch and LvlControl")
+                Type.remove( 'Switch')
+                Type.remove( 'LvlControl')
+
+            elif ("Switch" in Type) and ("LvlControl" in Type):
+                loggingWidget(self, 'Debug', "----> LvlControl, let's remove Switch and LvlControl")
                 Type = ['LvlControl']
-                if 'ColorControl' in Type or 'ColorControlRGB' in Type or \
-                    'ColorControlWW' in Type or 'ColorControlRGBWW' in Type or \
-                    'ColorControlFull' in Type or 'ColorControl' in Type :
-                        Type = ['ColorControl']
 
         loggingWidget( self, "Debug", "CreateDomoDevice - Creating devices based on Type: %s" % Type, NWKID)
 
