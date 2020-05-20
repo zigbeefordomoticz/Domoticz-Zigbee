@@ -150,14 +150,13 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
             EPout= tmpEp
             break
 
-    bitFrameType = '0'   # 
-    bitManufSpecif = '1' # Manuf specific
-    bitDirection = '0'   # Client to Server
-    bitDisableDefaultResponse = '000' # Disable Default Response
-    binFieldControlFrame = int( bitDisableDefaultResponse + bitDirection + bitManufSpecif + bitFrameType ,2)
-
-    cluster_frame = '%02x' %binFieldControlFrame
-
+    # Cluster Frame:
+    #  Frame Type: Cluster Command (1)
+    #  Manufacturer Specific True
+    #  Command Direction: Client to Server (0)
+    #  Disable default response: false
+    #  Reserved : 0x00
+    cluster_frame = '05' # Based on Profalux sniff
 
     sqn = '00'
     if 'SQN' in self.ListOfDevices[nwkid]:
@@ -200,6 +199,8 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
         Domoticz.Error( "profalux_MoveToLiftAndTilt - level: %s titl: %s" %(level, tilt) )
         return
     
+    Domoticz.Log("profalux_MoveToLiftAndTilt - Level: %s Tilt: %s" %( level, tilt))
+
     # payload: 11 45 10 03 55 2d ffff
     # Option Parameter uint8   Bit0 Ask for lift action, Bit1 Ask fr a tilt action
     # Lift Parameter   uint8   Lift value between 1 to 254
@@ -208,18 +209,9 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
     
     ManfufacturerCode = '1110'
     option = 0x03
-    level = 0x7F
-    tilt = 0x2D
 
     Domoticz.Log("----> Frame Control Field: %s" %cluster_frame)
     sqn = '%02x' %(int(sqn,16) + 1)
-    payload = cluster_frame + ManfufacturerCode + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'ffff'
+    payload = cluster_frame + ManfufacturerCode + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'FFFF'
     loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt %s ++++ %s %s/%s level: %s tilt: %s option: %s payload: %s" %( cluster_frame, sqn, nwkid, EPout, level, tilt, option, payload), nwkid)
-    raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
-
-    cluster_frame = '01'
-    Domoticz.Log("----> Frame Control Field: %s" %cluster_frame)
-    sqn = '%02x' %(int(sqn,16) + 1)
-    payload = cluster_frame + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'ffff'
-    loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt %s ++++ %s %s/%s level: %s tilt: %s option: %s payload: %s" %( cluster_frame, sqn, nwkid, EPout, level, tilt, option, payload), nwkid)
-    raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
+    raw_APS_request( self, nwkid, '01', '0008', '0104', payload, zigate_ep=ZIGATE_EP)
