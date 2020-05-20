@@ -3,7 +3,6 @@
 # Author: zaraki673 & pipiche38
 #
 
-
 """
     References: 
         - https://www.nxp.com/docs/en/user-guide/JN-UG-3115.pdf ( section 40 - OTA Upgrade Cluster
@@ -18,13 +17,13 @@
 
     0x8503 <------------------
 
-'Upgraded Device':
-    - Notified
-    - Block Requested
-    - Transfer Progress
-    - Transfer Completed
-    - Transfer Aborted
-    - Timeout
+    'Upgraded Device':
+        - Notified
+        - Block Requested
+        - Transfer Progress
+        - Transfer Completed
+        - Transfer Aborted
+        - Timeout
 
 """
 
@@ -63,30 +62,26 @@ OTA_MANUF_NAME = ( '117c', 'IKEA of Sweden', '1189', 'LEDVANCE', 'bbaa', '110c',
 
 
 BATTERY_TYPES = ( 4545, 4546, 4548, 4549 )
-"""
-  4353 - Control outlet
-  4545 - Remote Control
-  4546 - Wireless dimmer
-  4548 - Motion sensor
-  4549 - Switch On/Off 
-  8705 - Bulb White spectrum
-  8706 - Bulb White Spectrum 1000lm
-  8707 - Bulb White Spectrum GU10
-  8449 - Bulb white 1000lm
- 10241 - Bulb Color + White Spectrum 
- 16641 - Transformer
- 16897 - Driver LP
- 16898 - Driver HP
- 16900 - ???
-"""
+
+# 4353 - Control outlet
+# 4545 - Remote Control
+# 4546 - Wireless dimmer
+# 4548 - Motion sensor
+# 4549 - Switch On/Off 
+# 8705 - Bulb White spectrum
+# 8706 - Bulb White Spectrum 1000lm
+# 8707 - Bulb White Spectrum GU10
+# 8449 - Bulb white 1000lm
+# 10241 - Bulb Color + White Spectrum 
+# 16641 - Transformer
+# 16897 - Driver LP
+# 16898 - Driver HP
+# 16900 - ???
+
+# Legrand Type
+#    0x0010: Micromodule
 
 
-"""
-    Legrand Type
-
-    0x0010: Micromodule
-
-"""
 
 class OTAManagement(object):
 
@@ -325,7 +320,6 @@ class OTAManagement(object):
 
         self.logging( 'Debug', "ota_load_new_image: - len:%s datas: %s" %(len(datas),datas))
         self.ZigateComm.sendData( "0500", datas)
-        return
 
     def notify_device( self, MsgManufCode, MsgImageType, MsgImageVersion, MsgSrcAddr, MsgEpOut=None ):
 
@@ -352,7 +346,6 @@ class OTAManagement(object):
                                 self.OTA['Images'][MsgImageType]['Decoded Header']['image_version'], \
                                 self.OTA['Images'][MsgImageType]['Decoded Header']['image_type'], \
                                 self.OTA['Images'][MsgImageType]['Decoded Header']['manufacturer_code'])
-
 
     def async_request( self, MsgSrcAddr, MsgIEEE, MsgFileOffset, MsgImageVersion, MsgImageType, MsgManufCode, MsgBlockRequestDelay, MsgMaxDataSize, MsgFieldControl):
 
@@ -385,7 +378,6 @@ class OTAManagement(object):
         Domoticz.Log("--self.upgradeOTAImage = %s" %self.upgradeOTAImage)
         self.upgradeOTAImageType = MsgImageType
         self.notify_device( MsgManufCode, MsgImageType, MsgImageVersion, MsgSrcAddr)
-
 
     def ota_request_firmware( self , MsgData):
         'BLOCK_REQUEST 	0x8501 	ZiGate will receive this command when device asks OTA firmware'
@@ -490,7 +482,6 @@ class OTAManagement(object):
 
         self.OTA['Upgraded Device'][MsgSrcAddr]['Last Block sent'] = int(time())
         self.ota_block_send( MsgSrcAddr, MsgEP, MsgImageType, block_request )
-        return
 
     def ota_block_send( self , dest_addr, dest_ep, image, block_request):
         'BLOCK_SEND 	0x0502 	This is used to transfer firmware BLOCKS to device when it sends request 0x8501.'
@@ -558,7 +549,6 @@ class OTAManagement(object):
         # This is to Hack a Firmware issue on Legrand which is requesting Page update and not Block
         self.logging( 'Debug', "ota_block_send - Block sent to %s/%s Received yet: %s Sent now: %s" 
                 %( dest_addr, dest_ep, _offset, _lenght))
-        return 
 
     def ota_upgrade_end_response( self, dest_addr, dest_ep, MsgImageVersion, MsgImageType, MsgManufCode ):
         """
@@ -603,8 +593,6 @@ class OTAManagement(object):
         self.ListOfDevices[ dest_addr ]['OTA'][ now ]['Version'] =  '%08X' %_FileVersion
         self.ListOfDevices[ dest_addr ]['OTA'][ now ]['Type'] =  '%04X' %_ImageType
 
-        return
-
     def ota_image_advertize(self, dest_addr, dest_ep, image_version = 0xFFFFFFFF, image_type = 0xFFFF, manufacturer_code = 0xFFFF, Flag_=False ):
         'IMAGE_NOTIFY 	0x0505 	Notify desired device that ota is available. After loading headers use this.'
 
@@ -648,7 +636,6 @@ class OTAManagement(object):
             self.OTA['Upgraded Device'][dest_addr]['Notified Time'] = int(time())
 
         self.ZigateComm.sendData( "0505", datas)
-        return
 
     def ota_management( self, MsgSrcAddr, MsgEP ):
         'SEND_WAIT_FOR_DATA_PARAMS 	0x0506 	Can be used to delay/pause OTA update'
@@ -679,8 +666,6 @@ class OTAManagement(object):
 
         self.logging( 'Debug', "ota_management - Reduce Block request to a rate of %s ms" %_BlockRequestDelayMs)
         self.ZigateComm.sendData( "0506", datas)
-
-        return 
 
     def ota_request_firmware_completed( self , MsgData):
         'UPGRADE_END_REQUEST 	0x8503 	Device will send this when it has received last part of firmware'
@@ -781,7 +766,6 @@ class OTAManagement(object):
                     %(MsgStatus, _name, _transferTime_hh, _transferTime_mm, _transferTime_ss)
 
         self.adminWidgets.updateNotificationWidget( self.Devices, _textmsg)
-        return
 
     def ota_scan_folder( self):
         """
@@ -1061,7 +1045,6 @@ class OTAManagement(object):
                 self.stopOTA = True
                 self.logging( 'Status', "OTA heartbeat - Stop OTA upgrade")
 
-
 def convertTime( _timeInSec):
 
     _timeInSec_hh = _timeInSec // 3600
@@ -1070,4 +1053,3 @@ def convertTime( _timeInSec):
     _timeInSec = _timeInSec - ( _timeInSec_mm * 60 )
     _timeInSec_ss = _timeInSec
     return _timeInSec_hh, _timeInSec_mm, _timeInSec_ss 
-
