@@ -77,7 +77,7 @@ def _createDomoGroupDevice(self, groupname, group_nwkid):
 
     Type_, Subtype_, SwitchType_ = self._bestGroupWidget( group_nwkid)
 
-    unit = self.FreeUnit( self.Devices )
+    unit = FreeUnit( self,  self.Devices )
     self.logging( 'Debug', "_createDomoGroupDevice - Unit: %s" %unit)
     myDev = Domoticz.Device(DeviceID=str(group_nwkid), Name=str(groupname), Unit=unit, Type=Type_, Subtype=Subtype_, Switchtype=SwitchType_)
     myDev.Create()
