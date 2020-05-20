@@ -84,7 +84,6 @@ def profalux_stop( self, nwkid ):
     raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
     loggingProfalux( self, 'Log', "profalux_stop ++++ %s/%s payload: %s" %( nwkid, EPout, payload), nwkid)
 
-
 def profalux_MoveToLevelWithOnOff( self, nwkid, level):
 
     # determine which Endpoint
@@ -145,10 +144,6 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
 
     # determine which Endpoint
     EPout = '01'
-    for tmpEp in self.ListOfDevices[nwkid]['Ep']:
-        if "0008" in self.ListOfDevices[nwkid]['Ep'][tmpEp]:
-            EPout= tmpEp
-            break
 
     # Cluster Frame:
     #  Frame Type: Cluster Command (1)
@@ -207,7 +202,7 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
     # Tilt Parameter   uint8   Tilt value between 0 and 90
     # Transition Time  uint16  Transition Time between current and asked position
     
-    ManfufacturerCode = '1110'
+    ManfufacturerCode = '1011'
     option = 0x03
 
     Domoticz.Log("----> Frame Control Field: %s" %cluster_frame)
