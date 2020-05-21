@@ -55,6 +55,7 @@ import os
 import json
 import pickle
 
+from GroupMgtv2.GrpServices import scan_device_for_grp_membership
 from GroupMgtv2.GrpDatabase import build_group_list_from_list_of_devices
 from GroupMgtv2.GrpDomoticz import LookForGroupAndCreateIfNeeded
 
@@ -84,7 +85,7 @@ class GroupsManagement(object):
     self.loggingFileHandle = loggingFileHandle
     self.GroupListFileName = None       # Filename of Group cashing file
     self.ZigateIEEE = None
-
+    self.ScanDevicesToBeDone   = []     # List of Devices for which a GrpMemberShip request as to be performed
 
     # Check if we have to open the old format
     if os.path.isfile( self.pluginconf.pluginConf['pluginData'] + "/GroupsList-%02d.pck" %hardwareID  ):
@@ -112,12 +113,14 @@ class GroupsManagement(object):
 
       self.HB += 1
 
-      #if self.RefreshRequired:
-      #    build_group_list_from_list_of_devices( self )
-      #    for GroupId in self.ListOfGroups:
-      #        LookForGroupAndCreateIfNeeded( self, GroupId )
-      #    self.write_groups_list()
-      #    self.RefreshRequired  = False
+      self.logging( 'Debug', 'hearbeat_group_mgt -  ScanDevicesToBeDone: %s' %( self.ScanDevicesToBeDone))
+
+      # Check if we have some Scan to be done
+      for  NwkId, Ep in self.ScanDevicesToBeDone: 
+        if len(self.ZigateComm.zigateSendingFIFO) < 3:
+            self.ScanDevicesToBeDone.remove ( [ NwkId, Ep ] )
+            scan_device_for_grp_membership( self, NwkId, Ep )
+
 
       # Group Widget are updated based on Device update
       # Might be good to do the update also on a regular basic

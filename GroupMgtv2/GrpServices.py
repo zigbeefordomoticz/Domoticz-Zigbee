@@ -65,8 +65,15 @@ def scan_device_for_grp_membership( self, NwkId, Ep ):
     self.logging( 'Debug', " --  --  --  --  --  > scan_device_for_grp_membership ")
     if NwkId not in self.ListOfDevices:
         return
+    
+    # Remove Group MemverShip from Device
     if 'GroupMemberShip' in self.ListOfDevices[ NwkId ]:
         del self.ListOfDevices[ NwkId ]['GroupMemberShip']
+
+    # Remove Group MemberShip from Group, as we will check.
+    RemoveNwkIdFromAllGroups( self, NwkId )
+
+    # Finaly submit the request
     look_for_group_member_ship(self, NwkId, Ep)
 
 def scan_all_devices_for_grp_membership( self ):

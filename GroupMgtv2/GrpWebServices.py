@@ -34,7 +34,11 @@ def ScanDevicesForGroupMemberShip( self, DevicesToScan):
         self.logging( 'Debug', "ScanDevicesForGroupMemberShip : List of Ep %s for  %s" %( str(ListEp), NwkId))
         
         for Ep in ListEp:
-            scan_device_for_grp_membership( self, NwkId, Ep )
+            if [ NwkId, Ep] not in self.ScanDevicesToBeDone:
+                if len(self.ZigateComm.zigateSendingFIFO) >= 1:
+                    self.ScanDevicesToBeDone.append ( [ NwkId, Ep ] )
+                else:
+                    scan_device_for_grp_membership( self, NwkId, Ep )
 
 
 def process_web_request( self, webInput):
