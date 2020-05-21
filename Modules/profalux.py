@@ -139,8 +139,31 @@ def profalux_MoveWithOnOff( self, nwkid, OnOff):
 
 def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
 
+    def checkLevel( level):
+        if level == 0:
+            level = 1
+        elif level > 100:
+            level = 100
+        return ( 254 * level ) // 100
+
+    def checkTilt( tilt ):
+        if tilt is None:
+            tilt = self.pluginconf.pluginConf['profaluxOrientBSO'] 
+        if tilt > 90:
+            tilt = 90
+        return tilt
+
+    # Begin
     if level is None and tilt is None:
         return
+
+    if level is None:
+        # Let's check if we can get the Level from Attribute
+        if '01' in self.ListOfDevices[ nwkid ]['Ep']:
+            if '0008' in self.ListOfDevices[ nwkid ]['Ep']['01']:
+                if '0000' in self.ListOfDevices[ nwkid ]['Ep']['01']['0008']:
+                    level = int(self.ListOfDevices[ nwkid ]['Ep']['01']['0008']['0000'], 16)
+                    Domoticz.Log("Retreive Level: %s" %level)
 
     # determine which Endpoint
     EPout = '01'
@@ -151,34 +174,19 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
     #  Command Direction: Client to Server (0)
     #  Disable default response: false
     #  Reserved : 0x00
-    cluster_frame = '05' # Based on Profalux sniff
+    cluster_frame = '05'
 
     sqn = '00'
     if 'SQN' in self.ListOfDevices[nwkid]:
         if self.ListOfDevices[nwkid]['SQN'] != {} and self.ListOfDevices[nwkid]['SQN'] != '':
             sqn = '%02x' %(int(self.ListOfDevices[nwkid]['SQN'],16) + 1)
 
+
     cmd = '10' # Propriatary Command: Ask the Tilt Blind to go to a Certain Position and Orientate to a certain angle
+    level = checkLevel( level )
+    tilt = checkTilt( tilt)
 
-    # Normalized level and 
-    if level == 0:
-        level = 1
-    elif level > 100:
-        level = 100
-
-    # translate from % to level
-    if level:
-        level = ( 254 * level ) // 100
-    
-    # If tilt is not provided when calling the method,
-    # we will take the parameter from Settings
-    if tilt is None:
-        tilt = self.pluginconf.pluginConf['profaluxOrientBSO'] 
-        if tilt > 90:
-            tilt = 90
-
-    # compute option 0x01 level, 0x02 tilt, 0x03 level + tilt
-
+    # compute option 0x01 level, 0x02 tilt, 0x03 level + tilt    
     if level and tilt:
         option = 0x03
     elif tilt:
@@ -187,9 +195,6 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
     elif level:
        option = 0x01
        tilt = 0x00
-    else:
-        Domoticz.Error( "profalux_MoveToLiftAndTilt - level: %s titl: %s" %(level, tilt) )
-        return
     
     Domoticz.Log("profalux_MoveToLiftAndTilt - Level: %s Tilt: %s" %( level, tilt))
 
@@ -199,11 +204,9 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
     # Tilt Parameter   uint8   Tilt value between 0 and 90
     # Transition Time  uint16  Transition Time between current and asked position
     
-    ManfufacturerCode = '1011'
-    option = 0x03
+    ManfufacturerCode = '1110'
 
-    Domoticz.Log("----> Frame Control Field: %s" %cluster_frame)
     sqn = '%02x' %(int(sqn,16) + 1)
-    payload = cluster_frame + ManfufacturerCode + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'FFFF'
+    payload = cluster_frame + ManfufacturerCode[2:4] + ManfufacturerCode[0:2] + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'FFFF'
     loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt %s ++++ %s %s/%s level: %s tilt: %s option: %s payload: %s" %( cluster_frame, sqn, nwkid, EPout, level, tilt, option, payload), nwkid)
     raw_APS_request( self, nwkid, '01', '0008', '0104', payload, zigate_ep=ZIGATE_EP)
