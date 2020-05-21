@@ -95,18 +95,18 @@ def runmode_with_gpiocommand():
         GPIO_CMD = "/usr/bin/gpio"
         if os.path.isfile( GPIO_CMD ):
             Domoticz.Log("+ Checkint GPIO PINs")
-            run( GPIO_CMD + " read 0", shell=True, check=True)
-            run( GPIO_CMD + " read 2", shell=True, check=True)
+            run( GPIO_CMD + " read 0", shell=True, check=True) # nose
+            run( GPIO_CMD + " read 2", shell=True, check=True) # nose
     
-            run( GPIO_CMD + " mode 0 out", shell=True, check=True)
-            run( GPIO_CMD + " mode 2 out", shell=True, check=True)
-            run( GPIO_CMD + " write 2 1", shell=True, check=True)
-            run( GPIO_CMD + " write 0 0", shell=True, check=True)
-            run( GPIO_CMD + " write 0 1", shell=True, check=True)
+            run( GPIO_CMD + " mode 0 out", shell=True, check=True) # nose
+            run( GPIO_CMD + " mode 2 out", shell=True, check=True) # nose
+            run( GPIO_CMD + " write 2 1", shell=True, check=True) # nose
+            run( GPIO_CMD + " write 0 0", shell=True, check=True) # nose
+            run( GPIO_CMD + " write 0 1", shell=True, check=True) # nose
     
             Domoticz.Log("+ Checkint GPIO PINs")
-            run( GPIO_CMD + " read 0", shell=True, check=True)
-            run( GPIO_CMD + " read 2", shell=True, check=True)
+            run( GPIO_CMD + " read 0", shell=True, check=True) # nose
+            run( GPIO_CMD + " read 2", shell=True, check=True) # nose
         else:
             Domoticz.Error("%s command missing. Make sure to install wiringPi package" %GPIO_CMD)
 

@@ -14,23 +14,9 @@
 import Domoticz
 from datetime import datetime
 
-from Modules.output import *
-from Modules.zigateConsts import ADDRESS_MODE, ZIGATE_EP
+from Modules.zigateConsts import ADDRESS_MODE, ZIGATE_EP, ZONE_TYPE
 from Classes.PluginConf import PluginConf
 
-ZONE_TYPE = { 0x0000: 'standard',
-        0x000D: 'motion',
-        0x0015: 'contact', 
-        0x0028: 'fire',
-        0x002A: 'water',
-        0x002B: 'gas',
-        0x002C: 'personal',
-        0x002D: 'vibration',
-        0x010F: 'remote_control',
-        0x0115: 'key_fob',
-        0x021D: 'key_pad',
-        0x0225: 'standard_warning',
-        0xFFFF: 'invalid' }
 
 ENROLL_RESPONSE_CODE =  0x00
 

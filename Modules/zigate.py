@@ -4,7 +4,7 @@
 # Author: zaraki673 & pipiche38
 #
 import Domoticz
-from Modules.output import sendZigateCmd
+from Modules.basicOutputs import sendZigateCmd
 
 def initLODZigate( self, nwkid, ieee ):
 

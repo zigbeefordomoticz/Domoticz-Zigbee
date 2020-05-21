@@ -18,26 +18,27 @@ import struct
 import json
 
 from Modules.actuators import actuators
-from Modules.output import  sendZigateCmd,  \
-        identifyEffect, setXiaomiVibrationSensitivity, \
-        getListofAttribute, \
-        setPowerOn_OnOff, \
-        scene_membership_request, \
-        ReadAttributeRequest_0000_basic, \
+
+from Modules.basicOutputs import  sendZigateCmd,identifyEffect, getListofAttribute
+
+from Modules.readAttributes import READ_ATTRIBUTES_REQUEST, ReadAttributeRequest_0000_basic, \
         ReadAttributeRequest_0000, ReadAttributeRequest_0001, ReadAttributeRequest_0006, ReadAttributeRequest_0008, ReadAttributeRequest_0006_0000, ReadAttributeRequest_0008_0000,\
         ReadAttributeRequest_0100, \
         ReadAttributeRequest_000C, ReadAttributeRequest_0102, ReadAttributeRequest_0201, ReadAttributeRequest_0204, ReadAttributeRequest_0300,  \
         ReadAttributeRequest_0400, ReadAttributeRequest_0402, ReadAttributeRequest_0403, ReadAttributeRequest_0405, \
         ReadAttributeRequest_0406, ReadAttributeRequest_0500, ReadAttributeRequest_0502, ReadAttributeRequest_0702, ReadAttributeRequest_000f, ReadAttributeRequest_fc01, ReadAttributeRequest_fc21
+
 from Modules.configureReporting import processConfigureReporting
+
 from Modules.legrand_netatmo import  legrandReenforcement
-from Modules.schneider_wiser import schneider_thermostat_behaviour, schneider_fip_mode, schneiderRenforceent
+from Modules.schneider_wiser import schneiderRenforceent, pollingSchneider
 from Modules.philips import pollingPhilips
 from Modules.gledopto import pollingGledopto
+from Modules.lumi import setXiaomiVibrationSensitivity
 
 from Modules.tools import removeNwkInList, mainPoweredDevice, ReArrangeMacCapaBasedOnModel
 from Modules.logging import loggingPairing, loggingHeartbeat
-from Modules.domoticz import CreateDomoDevice, timedOutDevice
+from Modules.domoTools import timedOutDevice
 from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE, CLUSTERS_LIST, LEGRAND_REMOTES, LEGRAND_REMOTE_SHUTTER, LEGRAND_REMOTE_SWITCHS, ZIGATE_EP
 from Modules.pairingProcess import processNotinDBDevices
 
@@ -46,34 +47,6 @@ from Classes.Transport import ZigateTransport
 from Classes.AdminWidgets import AdminWidgets
 from Classes.NetworkMap import NetworkMap
 
-READ_ATTRIBUTES_REQUEST = {
-    # Cluster : ( ReadAttribute function, Frequency )
-    '0000' : ( ReadAttributeRequest_0000, 'polling0000' ),
-    '0001' : ( ReadAttributeRequest_0001, 'polling0001' ),
-    '0006' : ( ReadAttributeRequest_0006, 'pollingONOFF' ),
-    '0008' : ( ReadAttributeRequest_0008, 'pollingLvlControl' ),
-    '000C' : ( ReadAttributeRequest_000C, 'polling000C' ),
-    '0100' : ( ReadAttributeRequest_0100, 'polling0100' ),
-    '0102' : ( ReadAttributeRequest_0102, 'polling0102' ),
-    '0201' : ( ReadAttributeRequest_0201, 'polling0201' ),
-    '0204' : ( ReadAttributeRequest_0204, 'polling0204' ),
-    '0300' : ( ReadAttributeRequest_0300, 'polling0300' ),
-    '0400' : ( ReadAttributeRequest_0400, 'polling0400' ),
-    '0402' : ( ReadAttributeRequest_0402, 'polling0402' ),
-    '0403' : ( ReadAttributeRequest_0403, 'polling0403' ),
-    '0405' : ( ReadAttributeRequest_0405, 'polling0405' ),
-    '0406' : ( ReadAttributeRequest_0406, 'polling0406' ),
-    '0500' : ( ReadAttributeRequest_0500, 'polling0500' ),
-    '0502' : ( ReadAttributeRequest_0502, 'polling0502' ),
-    '0702' : ( ReadAttributeRequest_0702, 'polling0702' ),
-    '000f' : ( ReadAttributeRequest_000f, 'polling000f' ),
-    'fc21' : ( ReadAttributeRequest_000f, 'pollingfc21' ),
-    #'fc01' : ( ReadAttributeRequest_fc01, 'pollingfc01' ),
-    }
-
-#READ_ATTR_COMMANDS = ( '0006', '0008', '0102' )
-# For now, we just look for On/Off state
-READ_ATTR_COMMANDS = ( '0006', '0201')
 
 # Read Attribute trigger: Every 10"
 # Configure Reporting trigger: Every 15
@@ -100,9 +73,11 @@ def attributeDiscovery( self, NWKID ):
     if self.ListOfDevices[NWKID]['ConfigSource'] != 'DeviceConf':
         if 'Attributes List' not in self.ListOfDevices[NWKID]:
             for iterEp in self.ListOfDevices[NWKID]['Ep']:
-                if iterEp == 'ClusterType': continue
+                if iterEp == 'ClusterType': 
+                    continue
                 for iterCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                    if iterCluster in ( 'Type', 'ClusterType', 'ColorMode' ): continue
+                    if iterCluster in ( 'Type', 'ClusterType', 'ColorMode' ): 
+                        continue
                     if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
                         getListofAttribute( self, NWKID, iterEp, iterCluster)
                     else:
@@ -115,7 +90,9 @@ def pollingManufSpecificDevices( self, NWKID):
     POLLING_TABLE_SPECIFICS = {
         '100b':     ( 'Philips',  'pollingPhilips', pollingPhilips ),
         'Philips':  ( 'Philips',  'pollingPhilips', pollingPhilips),
-        'GLEDOPTO': ( 'Gledopto', 'pollingGledopto',pollingGledopto )
+        'GLEDOPTO': ( 'Gledopto', 'pollingGledopto',pollingGledopto ),
+        '105e':     ( 'Schneider', 'pollingSchneider', pollingSchneider),
+        'Schneider':( 'Schneider', 'pollingSchneider', pollingSchneider)
     }
 
     rescheduleAction = False
@@ -135,11 +112,11 @@ def pollingManufSpecificDevices( self, NWKID):
     if brand is None:
         return False
     
-    _HB = int(self.ListOfDevices[NWKID]['Heartbeat'],16)
+    _HB = int(self.ListOfDevices[NWKID]['Heartbeat'])
     _FEQ = self.pluginconf.pluginConf[ param ] // HEARTBEAT
 
     if _FEQ and (( _HB % _FEQ ) == 0):
-        loggingHeartbeat( self, 'Log', "++ pollingManufSpecificDevices -  %s Found: %s - %s %s %s" \
+        loggingHeartbeat( self, 'Debug', "++ pollingManufSpecificDevices -  %s Found: %s - %s %s %s" \
             %(NWKID, brand, devManufCode, devManufName, param), NWKID)       
         rescheduleAction = ( rescheduleAction or func( self, NWKID) )
 
@@ -413,11 +390,11 @@ def processListOfDevices( self , Devices ):
             processNotinDBDevices( self , Devices, NWKID, status , RIA )
     #end for key in ListOfDevices
     
-    for iter in entriesToBeRemoved:
-        if 'IEEE' in self.ListOfDevices[iter]:
-            _ieee = self.ListOfDevices[iter]['IEEE']
+    for iterDevToBeRemoved in entriesToBeRemoved:
+        if 'IEEE' in self.ListOfDevices[iterDevToBeRemoved]:
+            _ieee = self.ListOfDevices[iterDevToBeRemoved]['IEEE']
             del _ieee
-        del self.ListOfDevices[iter]
+        del self.ListOfDevices[iterDevToBeRemoved]
 
     if self.CommiSSionning or self.busy:
         loggingHeartbeat( self, 'Debug', "Skip LQI, ConfigureReporting and Networkscan du to Busy state: Busy: %s, Enroll: %s" %(self.busy, self.CommiSSionning))
@@ -451,5 +428,3 @@ def processListOfDevices( self , Devices ):
     loggingHeartbeat( self, 'Debug', "processListOfDevices END with HB: %s, Busy: %s, Enroll: %s, Load: %s" \
         %(self.HeartbeatCount, self.busy, self.CommiSSionning, self.ZigateComm.loadTransmit() ))
     return True
-
-

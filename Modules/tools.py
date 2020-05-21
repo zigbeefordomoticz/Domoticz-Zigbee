@@ -39,6 +39,19 @@ def Hex_Format(taille, value):
         value="0"+value
     return str(value)
 
+def voltage2batteryP( voltage, volt_max, volt_min):
+    
+    if voltage > volt_max: 
+        ValueBattery = 100
+
+    elif voltage < volt_min: 
+        ValueBattery = 0
+
+    else: 
+        ValueBattery = 100 - round( ((volt_max - (voltage))/(volt_max - volt_min)) * 100 )
+
+    return round(ValueBattery)
+
 def IEEEExist(self, IEEE):
     #check in ListOfDevices for an existing IEEE
     return IEEE in self.ListOfDevices and IEEE != ''
@@ -54,6 +67,36 @@ def getSaddrfromIEEE(self, IEEE) :
             if self.ListOfDevices[sAddr]['IEEE'] == IEEE :
                 return sAddr
     return ''
+    
+def getListOfEpForCluster( self, NwkId, SearchCluster):
+    """
+    NwkId: Device
+    Cluster: Cluster for which we are looking for Ep
+
+    return List of Ep where Cluster is found and at least ClusterType is not empty. (If ClusterType is empty, this 
+    indicate that there is no Widget associated and all informations in Ep are not used)
+    In case ClusterType exists and not empty at Global Level, then just return the list of Ep for which Cluster is found
+    """
+
+    EpList = []
+    oldFashion = 'ClusterType' in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]['ClusterType'] != {} and self.ListOfDevices[NwkId]['ClusterType'] != ''
+    for Ep in self.ListOfDevices[NwkId]['Ep']:
+        if SearchCluster not in self.ListOfDevices[NwkId]['Ep'][ Ep ]:
+            #Domoticz.Log("---- Cluster %s on %s" %( SearchCluster, str(self.ListOfDevices[NwkId]['Ep'][Ep] ) ))
+            continue
+
+        if oldFashion:
+            EpList.append( Ep )
+        else:
+            if 'ClusterType' in self.ListOfDevices[NwkId]['Ep'][Ep] and \
+                    self.ListOfDevices[NwkId]['Ep'][Ep]['ClusterType'] != {} and \
+                    self.ListOfDevices[NwkId]['Ep'][Ep]['ClusterType'] != '' :
+                EpList.append( Ep )
+            #else:
+            #    Domoticz.Log("------------> Skiping Cluster: %s Clustertype not found in %s" %(  SearchCluster, str(self.ListOfDevices[ NwkId]['Ep'][Ep]) ) )
+
+    #Domoticz.Log("----------> NwkId: %s Ep: %s Cluster: %s oldFashion: %s EpList: %s" %( NwkId, Ep, SearchCluster, oldFashion, EpList))
+    return EpList
 
 def getEPforClusterType( self, NWKID, ClusterType ) :
 
@@ -489,17 +532,17 @@ def xy_to_rgb(x, y, brightness=1):
     x = 0.313
     y = 0.329
 
-    x = float(x);
-    y = float(y);
-    z = 1.0 - x - y;
+    x = float(x)
+    y = float(y)
+    z = 1.0 - x - y
 
-    Y = brightness;
-    X = (Y / y) * x;
-    Z = (Y / y) * z;
+    Y = brightness
+    X = (Y / y) * x
+    Z = (Y / y) * z
 
-    r =  X * 1.656492 - Y * 0.354851 - Z * 0.255038;
-    g = -X * 0.707196 + Y * 1.655397 + Z * 0.036152;
-    b =  X * 0.051713 - Y * 0.121364 + Z * 1.011530;
+    r =  X * 1.656492 - Y * 0.354851 - Z * 0.255038
+    g = -X * 0.707196 + Y * 1.655397 + Z * 0.036152
+    b =  X * 0.051713 - Y * 0.121364 + Z * 1.011530
 
     r = 12.92 * r if r <= 0.0031308 else (1.0 + 0.055) * pow(r, (1.0 / 2.4)) - 0.055
     g = 12.92 * g if g <= 0.0031308 else (1.0 + 0.055) * pow(g, (1.0 / 2.4)) - 0.055
@@ -573,6 +616,10 @@ def ReArrangeMacCapaBasedOnModel( self, nwkid, inMacCapa):
 
     Return the old or the revised MacCapa and eventually fix some Attributes
     """
+
+    if nwkid not in self.ListOfDevices:
+        Domoticz.Error("%s not known !!!" %nwkid)
+        return inMacCapa
 
     if 'Model' not in self.ListOfDevices[nwkid]:
         return inMacCapa
@@ -751,3 +798,21 @@ def lookupForParentDevice( self, nwkid= None, ieee=None):
 
     #Nothing found
     return None
+
+
+def checkAttribute( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID ):
+    
+    if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = {}
+
+    if not isinstance( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] , dict):
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = {}
+
+    if MsgAttrID not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]:
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = {}
+
+def checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, Value ):
+    
+    checkAttribute( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID )    
+
+    self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = Value

@@ -8,8 +8,8 @@ import Domoticz
 from datetime import datetime
 from time import time
 
-from Modules.output import raw_APS_request, write_attribute,  \
-    ReadAttributeRequest_0006_0000, ReadAttributeRequest_0008_0000
+from Modules.basicOutputs import raw_APS_request, write_attribute
+from Modules.readAttributes import ReadAttributeRequest_0006_0000, ReadAttributeRequest_0008_0000
 
 
 def pollingGledopto( self, key ):

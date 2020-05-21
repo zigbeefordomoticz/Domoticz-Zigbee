@@ -1,4 +1,5 @@
 .DS_store
+.vscode/**
 */.DS_store
 */*/.DS_store
 Conf/PluginConf-*
@@ -9,6 +10,7 @@ Conf/ZigateGroupsConfig-*
 Data/DeviceList-*
 Data/GroupsList-*
 Data/zigatePDM-*
+Data/ZigateGroupsConfig**
 Data/Zigate.json
 www/zigate/reports/*
 Logs/*
@@ -17,3 +19,6 @@ Zdatas/DiscoveryDevice*
 Reports/*
 __pycache__/
 **/__pycache__
+.vscode/settings.json
+.pylintrc
+Tools/JennicModuleProgrammer/Build/JennicModuleProgrammer

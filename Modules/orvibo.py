@@ -7,8 +7,8 @@
 
 
 import Domoticz
-import Modules.output
-from Modules.domoticz import MajDomoDevice
+from  Modules.basicOutputs import sendZigateCmd, write_attribute
+from Modules.domoMaj import MajDomoDevice
 from Modules.zigateConsts import ZIGATE_EP
 
 
@@ -18,9 +18,7 @@ def pollingOrvibo( self, key ):
     This fonction is call if enabled to perform any Manufacturer specific polling action
     The frequency is defined in the pollingSchneider parameter (in number of seconds)
     """
-    rescheduleAction= False
-
-    return rescheduleAction
+    return False
 
 
 def callbackDeviceAwake_Orvibo(self, NwkId, EndPoint, cluster):
@@ -114,4 +112,4 @@ def OrviboRegistration( self, nwkid ):
     data = '01'
    
     Domoticz.Log("Orvibo registration for %s" %nwkid)
-    Modules.output.write_attribute( self, nwkid, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)    
+    write_attribute( self, nwkid, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)    

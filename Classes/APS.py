@@ -8,7 +8,7 @@ from time import time, ctime
 
 import Domoticz
 from Modules.errorCodes import DisplayStatusCode
-from Modules.domoticz import timedOutDevice
+from Modules.domoTools import timedOutDevice
 
 from datetime import datetime
 
