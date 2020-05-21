@@ -33,8 +33,22 @@ def look_for_group_member_ship(self, NwkId, DeviceEp, group_list = None):
     """
     Request to a device what are its group membership
     """
-    self.logging( 'Debug', "look_for_group_member_ship - %s/%s from %s" %(NwkId, DeviceEp, group_list))
     datas = "02" + NwkId + ZIGATE_EP + DeviceEp
+    if group_list is None:
+        lenGrpLst = 0
+        datas += "00"
+    else:
+        if isinstance(group_list, list):
+            lenGrpLst = len(group_list)
+            for x in group_list:
+                group_list_ += "%04x" %(x)
+        else:
+            # We received only 1 group
+            group_list_ = "%04x" %(group_list)
+            lenGrpLst = 1
+        datas += "%02.x" %(lenGrpLst) + group_list_
+ 
+    self.logging( 'Debug', "look_for_group_member_ship - %s/%s from %s" %(NwkId, DeviceEp, group_list))
     self.ZigateComm.sendData( "0062", datas)
 
 def remove_group_member_ship(self,  NwkId, DeviceEp, GrpId ):

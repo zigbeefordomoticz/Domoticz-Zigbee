@@ -7,12 +7,35 @@ import Domoticz
 
 from time import time
 
+from Modules.tools import getListOfEpForCluster, mainPoweredDevice
+
 from GroupMgtv2.GrpServices import create_new_group_and_attach_devices, update_group_and_add_devices, update_group_and_remove_devices, \
-                                   scan_all_devices_for_grp_membership
+                                   scan_all_devices_for_grp_membership, scan_device_for_grp_membership
 
 
 def ScanAllDevicesForGroupMemberShip( self ):
     scan_all_devices_for_grp_membership( self )
+
+def ScanDevicesForGroupMemberShip( self, DevicesToScan):
+
+    self.logging( 'Debug', "ScanDevicesForGroupMemberShip : %s " %DevicesToScan)
+    for NwkId in DevicesToScan:
+        if NwkId == '0000':
+            scan_device_for_grp_membership( self, NwkId, '01' )
+            continue
+        if NwkId not in self.ListOfDevices:
+            self.logging( 'Debug', "ScanDevicesForGroupMemberShip : Skiping %s not existing" %NwkId)
+            continue
+        if not mainPoweredDevice:
+            self.logging( 'Debug', "ScanDevicesForGroupMemberShip : Skiping %s not main powered" %NwkId)
+            continue
+
+        ListEp = getListOfEpForCluster( self, NwkId, '0004')
+        self.logging( 'Debug', "ScanDevicesForGroupMemberShip : List of Ep %s for  %s" %( str(ListEp), NwkId))
+        
+        for Ep in ListEp:
+            scan_device_for_grp_membership( self, NwkId, Ep )
+
 
 def process_web_request( self, webInput):
     """

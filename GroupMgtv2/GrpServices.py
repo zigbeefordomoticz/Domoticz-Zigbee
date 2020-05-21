@@ -62,6 +62,7 @@ def provision_Manufacturer_Group( self, GrpId, NwkId, Ep, Ieee):
 
 def scan_device_for_grp_membership( self, NwkId, Ep ):
     # Ask this device for list of Group membership
+    self.logging( 'Debug', " --  --  --  --  --  > scan_device_for_grp_membership ")
     if NwkId not in self.ListOfDevices:
         return
     if 'GroupMemberShip' in self.ListOfDevices[ NwkId ]:

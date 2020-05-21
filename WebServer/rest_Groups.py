@@ -10,8 +10,31 @@ import json
 
 
 from WebServer.headerResponse import setupHeadersResponse, prepResponseMessage
+import os
+from time import time
 
+def rest_rescan_group( self, verb, data, parameters):
 
+    _response = prepResponseMessage( self ,setupHeadersResponse())
+    _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+    action = {}
+    if verb == 'GET':
+        self.groupListFileName = self.pluginconf.pluginConf['pluginData'] + "/GroupsList-%02d.pck" %self.hardwareID
+        JsonGroupConfigFileName = self.pluginconf.pluginConf['pluginData'] + "/ZigateGroupsConfig-%02d.json" %self.hardwareID
+        TxtGroupConfigFileName = self.pluginconf.pluginConf['pluginConfig'] + "/ZigateGroupsConfig-%02d.txt" %self.hardwareID
+        for filename in ( TxtGroupConfigFileName, JsonGroupConfigFileName, self.groupListFileName ):
+            if os.path.isfile( filename ):
+                self.logging( 'Debug', "rest_rescan_group - Removing file: %s" %filename )
+                os.remove( filename )
+                self.restart_needed['RestartNeeded'] = True
+        action['Name'] = 'Groups file removed.'
+        action['TimeStamp'] = int(time())
+
+    _response["Data"] = json.dumps( action , sort_keys=True )
+
+    return _response
+
+    
 def rest_zGroup_lst_avlble_dev( self, verb, data, parameters):
 
     _response = prepResponseMessage( self ,setupHeadersResponse(  ))
@@ -148,6 +171,35 @@ def rest_zGroup_lst_avlble_dev( self, verb, data, parameters):
             device_lst.append( _device )
     self.logging( 'Debug', "Response: %s" %device_lst)
     _response["Data"] = json.dumps( device_lst, sort_keys=True )
+    return _response
+
+
+def rest_scan_devices_for_group( self, verb, data, parameter):
+    # wget --method=PUT --body-data='[ "0000", "0001", "0002", "0003" ]' http://127.0.0.1:9442/rest-zigate/1/ScanDeviceForGrp
+    
+    _response = prepResponseMessage( self ,setupHeadersResponse(  ))
+    _response["Data"] = None
+    if self.groupmgt is None:
+        # Group is not enabled!
+        return _response
+
+    if verb != 'PUT':
+        # Only Put command with a Valid JSON is allow
+        return _response
+
+    if data is None:
+        return _response
+
+    if len(parameter) != 0:
+        return _response 
+
+    # We receive a JSON with a list of NwkId to be scaned
+    data = data.decode('utf8')
+    data = json.loads(data)
+    self.logging( 'Debug', "rest_scan_devices_for_group - Trigger GroupMemberShip scan for devices: %s " %(data))
+    self.groupmgt.ScanDevicesForGroupMemberShip( data )
+    action = {'Name': 'Scan of device requested.', 'TimeStamp': int(time())}
+    _response["Data"] = json.dumps( action , sort_keys=True )
     return _response
 
 

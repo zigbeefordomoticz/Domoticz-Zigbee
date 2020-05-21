@@ -151,7 +151,7 @@ def look_for_group_member_ship_response( self, MsgData):
         GrpId = MsgData[12+(idx*4):12+(4+(idx*4))]
 
         if GrpId not in self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][ MsgEP ]:
-            self.ListOfDevices[ NwkId ]['GroupMemberShip'][MsgEP][ GrpId ] = {}
+            self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP][ GrpId ] = {}
 
         self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP][ GrpId ]['Status'] = 'OK'
         self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP][ GrpId ]['TimeStamp'] = 0

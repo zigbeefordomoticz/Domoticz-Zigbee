@@ -58,7 +58,7 @@ class WebServer(object):
     from WebServer.onMessage import onMessage
     from WebServer.rest_Bindings import rest_bindLSTcluster, rest_bindLSTdevice, rest_binding, rest_unbinding
     from WebServer.rest_Energy import rest_req_nwk_full, rest_req_nwk_inter
-    from WebServer.rest_Groups import rest_zGroup, rest_zGroup_lst_avlble_dev
+    from WebServer.rest_Groups import rest_zGroup, rest_zGroup_lst_avlble_dev, rest_rescan_group, rest_scan_devices_for_group
     from WebServer.rest_Provisioning import rest_new_hrdwr, rest_rcv_nw_hrdwr
     from WebServer.rest_Topology import rest_netTopologie, rest_req_topologie
     from WebServer.sendresponse import sendResponse
@@ -141,11 +141,6 @@ class WebServer(object):
     def rest_zigate_erase_PDM( self, verb, data, parameters):
 
         _response = prepResponseMessage( self ,setupHeadersResponse())
-
-
-
-
-
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
             self.logging( 'Status', "Erase Zigate PDM")
@@ -162,32 +157,6 @@ class WebServer(object):
             action = {'Description': 'Erase Zigate PDM - Non Implemente'}
                 #if self.pluginparameters['Mode1'] != 'None':
                 #    start_Zigate( self )
-        return _response
-
-    def rest_rescan_group( self, verb, data, parameters):
-
-        _response = prepResponseMessage( self ,setupHeadersResponse())
- 
- 
- 
- 
- 
-        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
-        action = {}
-        if verb == 'GET':
-            self.groupListFileName = self.pluginconf.pluginConf['pluginData'] + "/GroupsList-%02d.pck" %self.hardwareID
-            JsonGroupConfigFileName = self.pluginconf.pluginConf['pluginData'] + "/ZigateGroupsConfig-%02d.json" %self.hardwareID
-            TxtGroupConfigFileName = self.pluginconf.pluginConf['pluginConfig'] + "/ZigateGroupsConfig-%02d.txt" %self.hardwareID
-            for filename in ( TxtGroupConfigFileName, JsonGroupConfigFileName, self.groupListFileName ):
-                if os.path.isfile( filename ):
-                    self.logging( 'Debug', "rest_rescan_group - Removing file: %s" %filename )
-                    os.remove( filename )
-                    self.restart_needed['RestartNeeded'] = True
-            action['Name'] = 'Groups file removed.'
-            action['TimeStamp'] = int(time())
-
-        _response["Data"] = json.dumps( action , sort_keys=True )
-
         return _response
 
     def rest_reset_zigate( self, verb, data, parameters):
@@ -597,8 +566,6 @@ class WebServer(object):
     def rest_PermitToJoin( self, verb, data, parameters):
 
         _response = prepResponseMessage( self ,setupHeadersResponse())
-
-
         if verb == 'GET':
             duration = self.permitTojoin['Duration']
             timestamp = self.permitTojoin['Starttime']
@@ -1112,7 +1079,7 @@ class WebServer(object):
         if len(parameters) != 1:
             return
 
-        if not ( parameters[0] in self.ListOfDevices or parameters[0] in self.IEEE2NWK ):
+        if ( parameters[0] not in self.ListOfDevices and parameters[0] not in self.IEEE2NWK ):
             Domoticz.Error("rest_dev_capabilities - Device %s doesn't exist" %(parameters[0]))
             return _response
 

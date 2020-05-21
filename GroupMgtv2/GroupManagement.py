@@ -67,7 +67,7 @@ class GroupsManagement(object):
   from GroupMgtv2.GrpDomoticz import update_domoticz_group_device, processCommand
   from GroupMgtv2.GrpDatabase import  write_groups_list, load_groups_list_from_json, update_due_to_nwk_id_change
   from GroupMgtv2.GrpServices import FullRemoveOfGroup, checkAndTriggerIfMajGroupNeeded, addGroupMemberShip, RemoveNwkIdFromAllGroups
-  from GroupMgtv2.GrpWebServices import process_web_request, ScanAllDevicesForGroupMemberShip
+  from GroupMgtv2.GrpWebServices import process_web_request, ScanAllDevicesForGroupMemberShip, ScanDevicesForGroupMemberShip
   from GroupMgtv2.GrpLogging import logging
 
   def __init__( self, PluginConf, ZigateComm, adminWidgets, HomeDirectory, hardwareID, Devices, ListOfDevices, IEEE2NWK , loggingFileHandle):
