@@ -347,10 +347,10 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 NewSvalue = '%s;%s;%s;%s;%s' % (SplitData[0], SplitData[1], SplitData[2], baroValue, Bar_forecast)
                 UpdateDevice_v2(self, Devices, DeviceUnit, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
 
-        if 'BSO' in ClusterType: # Not fully tested / So far developped for Profalux
+        if 'BSO-Orientation' in ClusterType: # Not fully tested / So far developped for Profalux
             # value is str
-            if WidgetType == "BSO":
-                # Receveive Level (orientation) in degrees to convert into % for the dimmer
+            if WidgetType == "BSO-Orientation":
+                # Receveive Level (orientation) in degrees to convert into % for the slider
                 percent_value = (int(value) * 100 // 90)
                 nValue = 2
                 sValue = str(percent_value)

@@ -24,7 +24,7 @@ from Modules.thermostats import thermostat_Setpoint, thermostat_Mode
 from Modules.livolo import livolo_OnOff
 from Modules.legrand_netatmo import  legrand_fc40
 from Modules.schneider_wiser import schneider_EHZBRTS_thermoMode, schneider_hact_fip_mode, schneider_set_contract, schneider_temp_Setcurrent, schneider_hact_heater_type
-
+from Modules.profalux import profalux_stop, profalux_MoveToLiftAndTilt
 from Modules.domoTools import UpdateDevice_v2, RetreiveSignalLvlBattery, RetreiveWidgetTypeList
 from Classes.IAS import IAS_Zone_Management
 from Modules.zigateConsts import THERMOSTAT_LEVEL_2_MODE, ZIGATE_EP
@@ -139,8 +139,8 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
 
     if Command == 'Stop':  # Manage the Stop command. For known seen only on BSO and Windowcoering
         loggingCommand( self, 'Debug', "mgtCommand : Stop for Device: %s EPout: %s Unit: %s DeviceType: %s" %(NWKID, EPout, Unit, DeviceType), NWKID)
-        if profalux and DeviceType in ( 'BSO', 'LvlControl'):
-            from Modules.profalux import profalux_stop
+        if profalux and DeviceType == 'BSO-Volet':
+            # Profalux offer a Manufacturer command to make Stop on Cluster 0x0008
             profalux_stop( self, NWKID)
 
         elif DeviceType in ( "WindowCovering", "VenetianInverted", "Venetian"):
@@ -166,10 +166,8 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return
 
-        if DeviceType == 'BSO':
-            from Modules.profalux import profalux_MoveWithOnOff, profalux_MoveToLiftAndTilt
-            profalux_MoveToLiftAndTilt( self, NWKID, level=1, tilt=90)
-            #profalux_MoveWithOnOff( self, NWKID, 0x00 
+        if DeviceType == 'BSO-Volet':
+            profalux_MoveToLiftAndTilt( self, NWKID, level=1 )
 
         elif DeviceType == "WindowCovering":
             sendZigateCmd(self, "00FA","02" + NWKID + ZIGATE_EP + EPout + "01") # Blind inverted (On, for Close)
@@ -188,6 +186,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             thermostat_Mode( self, NWKID, 'Off' )
 
         else:
+            # Remaining Slider widget
             if profalux: # Profalux are define as LvlControl but should be managed as Blind Inverted
                 sendZigateCmd(self, "0081","02" + NWKID + ZIGATE_EP + EPout + '01' + '%02X' %0 + "0000")
             else:
@@ -217,9 +216,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             UpdateDevice_v2(self, Devices, Unit, 1, "On",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return
 
-        if DeviceType == 'BSO':
-            from Modules.profalux import profalux_MoveWithOnOff
-            profalux_MoveWithOnOff( self, NWKID, 0x01 )
+        if DeviceType == 'BSO-Volet':
+            if profalux:
+                # On translated into a Move to 254
+                profalux_MoveToLiftAndTilt( self, NWKID, level=100 )
 
         elif DeviceType == "WindowCovering":
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
@@ -235,6 +235,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             thermostat_Mode( self, NWKID, 'Heat' )
 
         else:
+            # Remaining Slider widget
             if profalux:
                 sendZigateCmd(self, "0081","02" + NWKID + ZIGATE_EP + EPout + '01' + '%02X' %255 + "0000")
             else:
@@ -366,7 +367,6 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
 
             return
 
-
         if DeviceType == 'ThermoMode':
             loggingCommand( self, 'Log', "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" 
                 %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
@@ -375,12 +375,17 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
                 loggingCommand( self, 'Debug', " - Set Thermostat Mode to : %s / %s" %( Level, THERMOSTAT_LEVEL_2_MODE[Level]), NWKID)
                 thermostat_Mode( self, NWKID, THERMOSTAT_LEVEL_2_MODE[Level] )
 
+        elif DeviceType == 'BSO-Volet':
+            if profalux:
+                loggingCommand( self, 'Log', "mgtCommand : profalux_MoveToLiftAndTilt: %s Lift: %s" %(NWKID, Level), NWKID)
+                profalux_MoveToLiftAndTilt( self, NWKID, level=Level)
 
-        elif DeviceType == 'BSO':
-            from Modules.profalux import profalux_MoveToLiftAndTilt
-
-            loggingCommand( self, 'Log', "mgtCommand : profalux_MoveToLiftAndTilt: %s Level: %s" %(NWKID, Level), NWKID)
-            profalux_MoveToLiftAndTilt( self, NWKID, level=Level)
+        elif DeviceType == 'BSO-Orientation':
+             if profalux:
+                loggingCommand( self, 'Log', "mgtCommand : profalux_MoveToLiftAndTilt: %s : Tilt%s" %(NWKID, Level), NWKID)
+                # Convert the tilt from a scale of 0 to 255 to 0 - 90
+                Tilt = (Level * 90 ) // 100
+                profalux_MoveToLiftAndTilt( self, NWKID, tilt==Level)           
 
         elif DeviceType == "WindowCovering": # Blind Inverted
             if Level == 0:
@@ -435,6 +440,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
                 actuators( self, NWKID, EPout, 'Toggle', 'Switch')
 
         else:
+            # Remaining Slider widget
             OnOff = '01' # 00 = off, 01 = on
             if Level == 100: 
                 value = 255

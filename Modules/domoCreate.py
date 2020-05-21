@@ -517,10 +517,15 @@ def CreateDomoDevice(self, Devices, NWKID):
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 244, Subtype_ = 73, Switchtype_ = 15 )
                 loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in VenetianInverted" %(t), NWKID)
 
-            if t == 'BSO':
+            if t == 'BSO-Volet':
                 # BSO for Profalux
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 244, Subtype_ = 73, Switchtype_ = 13 )
                 loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in BSO" %(t), NWKID)
+
+            if t == 'BSO-Orientation':
+                # BSO Orientation for Profalux
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 244, Subtype_ = 73, Switchtype_ = 13 )
+                loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in BSO-Orientation" %(t), NWKID)
             
             if t == 'BlindInverted':
                 # Blind Percentage Inverterd

@@ -140,6 +140,7 @@ def profalux_MoveWithOnOff( self, nwkid, OnOff):
 def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
 
     def checkLevel( level):
+        # Receive a value between 0 to 100
         if level == 0:
             level = 1
         elif level > 100:
@@ -147,8 +148,7 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
         return ( 254 * level ) // 100
 
     def checkTilt( tilt ):
-        if tilt is None:
-            tilt = self.pluginconf.pluginConf['profaluxOrientBSO'] 
+        # Receive a value between 0 to 90
         if tilt > 90:
             tilt = 90
         return tilt
@@ -164,6 +164,15 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
                 if '0000' in self.ListOfDevices[ nwkid ]['Ep']['01']['0008']:
                     level = int(self.ListOfDevices[ nwkid ]['Ep']['01']['0008']['0000'], 16)
                     Domoticz.Log("Retreive Level: %s" %level)
+
+    if tilt is None:
+        tilt = self.pluginconf.pluginConf['profaluxOrientBSO'] 
+        # Let's check if we can get the Tilt from Attribute
+        if '01' in self.ListOfDevices[ nwkid ]['Ep']:
+            if 'fc21' in self.ListOfDevices[ nwkid ]['Ep']['01']:
+                if '0001' in self.ListOfDevices[ nwkid ]['Ep']['01']['fc21']:
+                    level = int(self.ListOfDevices[ nwkid ]['Ep']['01']['fc21']['0001'], 16)
+                    Domoticz.Log("Retreive Tilt: %s" %level)
 
     # determine which Endpoint
     EPout = '01'
