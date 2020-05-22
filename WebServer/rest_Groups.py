@@ -12,29 +12,7 @@ import json
 from WebServer.headerResponse import setupHeadersResponse, prepResponseMessage
 import os
 from time import time
-
-def rest_rescan_group( self, verb, data, parameters):
-
-    _response = prepResponseMessage( self ,setupHeadersResponse())
-    _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
-    action = {}
-    if verb == 'GET':
-        self.groupListFileName = self.pluginconf.pluginConf['pluginData'] + "/GroupsList-%02d.pck" %self.hardwareID
-        JsonGroupConfigFileName = self.pluginconf.pluginConf['pluginData'] + "/ZigateGroupsConfig-%02d.json" %self.hardwareID
-        TxtGroupConfigFileName = self.pluginconf.pluginConf['pluginConfig'] + "/ZigateGroupsConfig-%02d.txt" %self.hardwareID
-        for filename in ( TxtGroupConfigFileName, JsonGroupConfigFileName, self.groupListFileName ):
-            if os.path.isfile( filename ):
-                self.logging( 'Debug', "rest_rescan_group - Removing file: %s" %filename )
-                os.remove( filename )
-                self.restart_needed['RestartNeeded'] = True
-        action['Name'] = 'Groups file removed.'
-        action['TimeStamp'] = int(time())
-
-    _response["Data"] = json.dumps( action , sort_keys=True )
-
-    return _response
-
-    
+  
 def rest_zGroup_lst_avlble_dev( self, verb, data, parameters):
 
     _response = prepResponseMessage( self ,setupHeadersResponse(  ))
@@ -173,6 +151,23 @@ def rest_zGroup_lst_avlble_dev( self, verb, data, parameters):
     _response["Data"] = json.dumps( device_lst, sort_keys=True )
     return _response
 
+def rest_rescan_group( self, verb, data, parameters):
+    
+    self.groupmgt.ScanAllDevicesForGroupMemberShip( )
+
+    _response = prepResponseMessage( self ,setupHeadersResponse())
+    _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+    action = {}
+    if verb != 'GET':
+        return _response
+
+    self.groupmgt.ScanAllDevicesForGroupMemberShip( )
+    action['Name'] = 'Full Scan'
+    action['TimeStamp'] = int(time())
+
+    _response["Data"] = json.dumps( action , sort_keys=True )
+
+    return _response
 
 def rest_scan_devices_for_group( self, verb, data, parameter):
     # wget --method=PUT --body-data='[ "0000", "0001", "0002", "0003" ]' http://127.0.0.1:9442/rest-zigate/1/ScanDeviceForGrp
@@ -201,7 +196,6 @@ def rest_scan_devices_for_group( self, verb, data, parameter):
     action = {'Name': 'Scan of device requested.', 'TimeStamp': int(time())}
     _response["Data"] = json.dumps( action , sort_keys=True )
     return _response
-
 
 def rest_zGroup( self, verb, data, parameters):
 

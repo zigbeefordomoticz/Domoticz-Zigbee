@@ -10,21 +10,24 @@ from time import time
 from Modules.tools import getListOfEpForCluster, mainPoweredDevice
 
 from GroupMgtv2.GrpServices import create_new_group_and_attach_devices, update_group_and_add_devices, update_group_and_remove_devices, \
-                                   scan_all_devices_for_grp_membership, scan_device_for_grp_membership
+                                   scan_all_devices_for_grp_membership, submitForGroupMemberShipScaner
+    
 
 from GroupMgtv2.GrpIkeaRemote import Ikea5BToBeAddedToListIfExist
 
 
 
 def ScanAllDevicesForGroupMemberShip( self ):
+    self.GroupStatus = 'scan'
     scan_all_devices_for_grp_membership( self )
 
 def ScanDevicesForGroupMemberShip( self, DevicesToScan):
 
     self.logging( 'Debug', "ScanDevicesForGroupMemberShip : %s " %DevicesToScan)
+
     for NwkId in DevicesToScan:
         if NwkId == '0000':
-            scan_device_for_grp_membership( self, NwkId, '01' )
+            submitForGroupMemberShipScaner( self, NwkId, '01' )
             continue
         if NwkId not in self.ListOfDevices:
             self.logging( 'Debug', "ScanDevicesForGroupMemberShip : Skiping %s not existing" %NwkId)
@@ -38,10 +41,8 @@ def ScanDevicesForGroupMemberShip( self, DevicesToScan):
         
         for Ep in ListEp:
             if [ NwkId, Ep] not in self.ScanDevicesToBeDone:
-                if len(self.ZigateComm.zigateSendingFIFO) >= 1:
-                    self.ScanDevicesToBeDone.append ( [ NwkId, Ep ] )
-                else:
-                    scan_device_for_grp_membership( self, NwkId, Ep )
+                self.GroupStatus = 'scan'
+                submitForGroupMemberShipScaner( self, NwkId, Ep )
 
 
 def process_web_request( self, webInput):

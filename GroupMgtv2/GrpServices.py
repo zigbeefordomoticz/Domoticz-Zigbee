@@ -17,6 +17,12 @@ from GroupMgtv2.GrpIkeaRemote import checkIfIkeaRound5BToBeAdded, checkIfIkeaRou
 from GroupMgtv2.GrpDatabase import create_group, checkNwkIdAndUpdateIfAny, remove_nwkid_from_all_groups, check_if_group_empty, remove_group
 from GroupMgtv2.GrpCommands import remove_group_member_ship, add_group_member_ship, check_group_member_ship, look_for_group_member_ship
 
+
+
+
+
+
+
 def checkAndTriggerIfMajGroupNeeded( self, NwkId, Ep, ClusterId):
     """
     This method is call from MajDomoDevice and onCommand because there is an update of a particular Device Cluster/Attribute
@@ -78,6 +84,14 @@ def scan_device_for_grp_membership( self, NwkId, Ep ):
     # Finaly submit the request
     look_for_group_member_ship(self, NwkId, Ep)
 
+def submitForGroupMemberShipScaner( self, NwkId, Ep):
+    
+    if len(self.ZigateComm.zigateSendingFIFO) >= 1:
+        self.ScanDevicesToBeDone.append ( [ NwkId, Ep ] )
+    else:
+        scan_device_for_grp_membership( self, NwkId, Ep )
+
+
 def scan_all_devices_for_grp_membership( self ):
     for NwkId in self.ListOfDevices:
         if not mainPoweredDevice( self, NwkId):
@@ -85,7 +99,7 @@ def scan_all_devices_for_grp_membership( self ):
         for Ep in self.ListOfDevices[ NwkId ]['Ep']:
             if '0004' not in self.ListOfDevices[ NwkId ]['Ep'][Ep]:
                 continue
-            scan_device_for_grp_membership( self, NwkId, Ep)
+            submitForGroupMemberShipScaner( self, NwkId, Ep)
 
 def addGroupMemberShip( self, NwkId, Ep, GroupId):
     add_group_member_ship( self, NwkId, Ep, GroupId)

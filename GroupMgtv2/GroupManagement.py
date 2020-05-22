@@ -89,10 +89,12 @@ class GroupsManagement( object):
         self.GroupListFileName = None             # Filename of Group cashing file
         self.ZigateIEEE = None
         self.ScanDevicesToBeDone     = []         # List of Devices for which a GrpMemberShip request as to be performed
+        self.GroupStatus = 'Starting'   # Used by WebServer to display Status of Group!
 
         # Check if we have to open the old format
         if os.path.isfile( self.pluginconf.pluginConf['pluginData'] + "/GroupsList-%02d.pck" %hardwareID    ):
             # We are in the Migration from Old Group Managemet to new.
+            self.GroupStatus = 'Migration'
             with open( self.pluginconf.pluginConf['pluginData'] + "/GroupsList-%02d.pck" %hardwareID    , 'rb') as handle:
                 self.ListOfGroups = pickle.load( handle )    # nosec
 
@@ -111,6 +113,7 @@ class GroupsManagement( object):
         # Open file and load config
         self.GroupListFileName = self.pluginconf.pluginConf['pluginData'] + "/GroupsList-%02d.json" %hardwareID
         self.load_groups_list_from_json()
+        self.GroupStatus = 'ready'
 
     def updateZigateIEEE( self, ZigateIEEE):
         self.ZigateIEEE =     ZigateIEEE
@@ -123,11 +126,12 @@ class GroupsManagement( object):
 
         # Check if we have some Scan to be done
         for    NwkId, Ep in self.ScanDevicesToBeDone: 
+            self.GroupStatus = 'scan'
             if len(self.ZigateComm.zigateSendingFIFO) < 3:
                     self.ScanDevicesToBeDone.remove ( [ NwkId, Ep ] )
                     scan_device_for_grp_membership( self, NwkId, Ep )
 
-
+        self.GroupStatus = 'ready'
         # Group Widget are updated based on Device update
         # Might be good to do the update also on a regular basic
         #if (self.HB % 2 ) == 0:
