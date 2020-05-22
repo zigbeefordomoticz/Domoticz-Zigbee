@@ -85,6 +85,7 @@ def update_domoticz_group_device_widget_name( self, GroupName, GroupId ):
 
 def update_domoticz_group_device_widget( self, GroupId ):
 
+    self.logging( 'Debug', "update_domoticz_group_device_widget GroupId: %s" %GroupId)
     if GroupId == '':
         Domoticz.Error("update_domoticz_group_device_widget - Invalid GroupdID: %s" %( GroupId))
 
@@ -94,26 +95,31 @@ def update_domoticz_group_device_widget( self, GroupId ):
 
     Type_, Subtype_, SwitchType_ = best_group_widget( self, GroupId)
 
+    self.logging( 'Debug', "      Looking to update Unit: %s from %s %s %s to %s %s %s"
+        %( unit,self.Devices[unit].Type, self.Devices[unit].SubType, self.Devices[unit].SwitchType, Type_, Subtype_, SwitchType_  ))
+
+    nValue = self.Devices[unit].nValue
+    sValue = self.Devices[unit].sValue
     if Type_ != self.Devices[unit].Type or Subtype_ != self.Devices[unit].SubType or SwitchType_ != self.Devices[unit].SwitchType:
         self.logging( 'Debug', "update_domoticz_group_device_widget - Update Type:%s, Subtype:%s, Switchtype:%s" %(Type_, Subtype_, SwitchType_))
-        self.Devices[unit].Update( 0, 'Off', Type = Type_, Subtype = Subtype_, Switchtype = SwitchType_)
+        self.Devices[unit].Update( nValue, sValue, Type = Type_, Subtype = Subtype_, Switchtype = SwitchType_)
 
 def best_group_widget( self, GroupId):
 
-    WIDGETS = {
-            'Plug':1,                 # ( 244, 73, 0)
-            'Switch':1,               # ( 244, 73, 0)
-            'LvlControl':2,           # ( 244, 73, 7)
-            'ColorControlWW':3,       # ( 241, 8, 7) - Cold white + warm white
-            'ColorControlRGB':3,      # ( 241, 2, 7) - RGB
-            'ColorControlRGBWW':4,    # ( 241, 4, 7) - RGB + cold white + warm white, either RGB or white can be lit
-            'ColorControl':5,         # ( 241, 7, 7) - Like RGBWW, but allows combining RGB and white
-            'ColorControlFull':5,     # ( 241, 7, 7) - Like RGBWW, but allows combining RGB and white
-            'Venetian': 10,           # ( 244, 73, 15) # Shade, Venetian
-            'VenetianInverted': 11,   # ( 244, 73, 15)
-            'WindowCovering': 12,     # ( 244, 73, 16)  # Venetian Blind EU 
-            'BlindPercentInverted': 12,     # ( 244, 73, 16)  # Venetian Blind EU 
-            }
+    #WIDGETS = {
+    #        'Plug':1,                 # ( 244, 73, 0)
+    #        'Switch':1,               # ( 244, 73, 0)
+    #        'LvlControl':2,           # ( 244, 73, 7)
+    #        'ColorControlWW':3,       # ( 241, 8, 7) - Cold white + warm white
+    #        'ColorControlRGB':3,      # ( 241, 2, 7) - RGB
+    #        'ColorControlRGBWW':4,    # ( 241, 4, 7) - RGB + cold white + warm white, either RGB or white can be lit
+    #        'ColorControl':5,         # ( 241, 7, 7) - Like RGBWW, but allows combining RGB and white
+    #        'ColorControlFull':5,     # ( 241, 7, 7) - Like RGBWW, but allows combining RGB and white
+    #        'Venetian': 10,           # ( 244, 73, 15) # Shade, Venetian
+    #        'VenetianInverted': 11,   # ( 244, 73, 15)
+    #        'WindowCovering': 12,     # ( 244, 73, 16)  # Venetian Blind EU 
+    #        'BlindPercentInverted': 12,     # ( 244, 73, 16)  # Venetian Blind EU 
+    #        }
 
     WIDGET_STYLE = {
             'Plug': ( 244, 73, 0 ),
@@ -152,7 +158,7 @@ def best_group_widget( self, GroupId):
             WidgetType = self.ListOfDevices[NwkId]['Ep'][devEp]['ClusterType'][DomoDeviceUnit]
             self.logging( 'Debug', "------------ GroupWidget: %s WidgetType: %s" %(GroupWidgetType, WidgetType))
 
-            if GroupWidgetType is None:
+            if GroupWidgetType is None and WidgetType in WIDGET_STYLE:
                 GroupWidgetType = WidgetType
                 continue
 

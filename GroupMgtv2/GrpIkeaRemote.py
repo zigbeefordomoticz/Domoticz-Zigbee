@@ -26,9 +26,11 @@ def checkIfIkeaRound5BToBeAdded( self, NwkId, ep, ieee, GrpId):
 
 def checkIfIkeaRound5BToBeRemoved( self, NwkId, ep, ieee, GrpId):
     self.logging( 'Debug', "checkIfIkeaRound5BToBeRemoved - Checking if Ikea Round 5B NwkId: %s, Ep: %s, Ieee: %s, GrpIp: %s" %(NwkId, ep, ieee, GrpId))
-    if ( 'Tradfri Remote' in self.ListOfGroups[GrpId] and NwkId == self.ListOfGroups[GrpId]['Tradfri Remote']['Device Addr'] ):
-        self.logging( 'Debug', "checkIfIkeaRound5BToBeRemoved - Found Ikea Remote %s" %NwkId)
+    if ( 'Tradfri Remote' in self.ListOfGroups[GrpId] and ieee == self.ListOfGroups[GrpId]['Tradfri Remote']['IEEE'] ):
+        self.logging( 'Debug', "checkIfIkeaRound5BToBeRemoved - Found Ikea Remote %s" %ieee)
         del self.ListOfGroups[ GrpId ]['Tradfri Remote']
+        if NwkId != self.IEEE2NWK[ ieee ]:
+            NwkId = self.IEEE2NWK[ ieee ]
         device = [ NwkId, ep, ieee ]
         if device in self.ListOfGroups[ GrpId]['Devices']:
             self.ListOfGroups[ GrpId]['Devices'].remove( device )
@@ -45,6 +47,11 @@ def Ikea5BToBeAddedToListIfExist( self, GrpId ):
     
     return ikea5b
 
+def Ikea_update_due_to_nwk_id_change( self, GrpId, OldNwkId, NewNwkId):
+
+    if ( 'Tradfri Remote' in self.ListOfGroups[GrpId] and self.ListOfGroups[GrpId]['Tradfri Remote']['Device Addr'] == OldNwkId ):
+        self.ListOfGroups[ GrpId]['Tradfri Remote']['Device Addr'] = NewNwkId
+ 
 
 def manageIkeaTradfriRemoteLeftRight( self, NwkId, type_dir):
 
@@ -53,7 +60,10 @@ def manageIkeaTradfriRemoteLeftRight( self, NwkId, type_dir):
     for x in self.ListOfGroups:
         if 'Tradfri Remote' not in self.ListOfGroups[x]:
             continue
-        if NwkId != self.ListOfGroups[x]['Tradfri Remote']['Device Addr']:
+        Ieee = self.ListOfGroups[ x ]['Tradfri Remote']['IEEE']
+        TrueNwkId = self.IEEE2NWK[ Ieee ]
+
+        if NwkId != self.ListOfGroups[x]['Tradfri Remote']['Device Addr'] and TrueNwkId != self.ListOfGroups[x]['Tradfri Remote']['Device Addr']:
             continue
         Ikea5ButtonGroupId = x
         break

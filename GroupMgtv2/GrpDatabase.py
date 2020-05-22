@@ -19,6 +19,9 @@ Methodes which manipulate the Groups Data Structure
 import os
 import json
 
+from GroupMgtv2.GrpIkeaRemote import Ikea_update_due_to_nwk_id_change
+
+
 def write_groups_list( self):
     """
     write GroupsList into Disk
@@ -70,6 +73,9 @@ def update_due_to_nwk_id_change( self, OldNwkId, NewNwkId):
             newdevice = [ NewNwkId, device[1], device[2] ]
             self.ListOfGroups[ GrpId ]['Devices'].remove ( device )
             self.ListOfGroups[ GrpId ]['Devices'].append( newdevice )
+            
+        # Check if there is not an Ikea Tradfri Remote to be migrated
+        Ikea_update_due_to_nwk_id_change( self, GrpId, OldNwkId, NewNwkId)
 
 def checkNwkIdAndUpdateIfAny( self, NwkId , ieee):
     """
