@@ -407,18 +407,21 @@ class BasePlugin:
             fullyremoved = removeDeviceInList( self, Devices, Devices[Unit].DeviceID , Unit)
 
             # We should call this only if All Widgets have been remved !
-            if fullyremoved and self.pluginconf.pluginConf['allowRemoveZigateDevice']:
-                IEEE = Devices[Unit].DeviceID
-                # sending a Leave Request to device, so the device will send a leave
-                leaveRequest( self, IEEE= IEEE )
-                # for a remove in case device didn't send the leave
-                if self.ZigateIEEE:
-                    sendZigateCmd(self, "0026", self.ZigateIEEE + IEEE )
-                    loggingPlugin( self, 'Status', "onDeviceRemoved - removing Device %s -> %s in Zigate" %(Devices[Unit].Name, IEEE))
+            if fullyremoved:
+                # Let see if enabled if we can fully remove this object from Zigate
+                if self.pluginconf.pluginConf['allowRemoveZigateDevice']:
+                    IEEE = Devices[Unit].DeviceID
+                    # sending a Leave Request to device, so the device will send a leave
+                    leaveRequest( self, IEEE= IEEE )
+
+                    # for a remove in case device didn't send the leave
+                    if self.ZigateIEEE:
+                        sendZigateCmd(self, "0026", self.ZigateIEEE + IEEE )
+                        loggingPlugin( self, 'Status', "onDeviceRemoved - removing Device %s -> %s in Zigate" %(Devices[Unit].Name, IEEE))
+                    else:
+                        Domoticz.Error("onDeviceRemoved - too early, Zigate and plugin initialisation not completed")
                 else:
-                    Domoticz.Error("onDeviceRemoved - too early, Zigate and plugin initialisation not completed")
-            else:
-                loggingPlugin( self, 'Status', "onDeviceRemoved - device entry %s from Zigate not removed. You need to enable 'allowRemoveZigateDevice' parameter. Do consider that it works only for main powered devices." %Devices[Unit].DeviceID)
+                    loggingPlugin( self, 'Status', "onDeviceRemoved - device entry %s from Zigate not removed. You need to enable 'allowRemoveZigateDevice' parameter. Do consider that it works only for main powered devices." %Devices[Unit].DeviceID)
 
             loggingPlugin( self, 'Debug', "ListOfDevices :After REMOVE " + str(self.ListOfDevices))
             return
