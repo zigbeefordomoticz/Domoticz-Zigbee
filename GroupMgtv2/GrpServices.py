@@ -112,8 +112,10 @@ def update_group_and_add_devices( self, GrpId, ToBeAddedDevices):
 def update_group_and_remove_devices( self, GrpId, ToBeRemoveDevices):
     self.logging( 'Debug', " --  --  --  --  --  > UpdateGroupAndRemoveDevices ")
     for NwkId, ep, ieee in ToBeRemoveDevices:
+        self.logging( 'Debug', "-- --  --  --  --  --  > Removing [%s %s %s]" %(NwkId, ep, ieee ))
         NwkId = checkNwkIdAndUpdateIfAny( self, NwkId, ieee )
         # Ikea Tradfri Round5B will be removed if required by checkIfIkeaRound5B
         if NwkId and not checkIfIkeaRound5BToBeRemoved( self, NwkId, ep, ieee, GrpId):
+            self.logging( 'Debug', "-- --  --  --  --  --  -- > Calling Remove_group_membership [%s %s %s]" %(NwkId, ep, ieee ))
             remove_group_member_ship(self,  NwkId, ep, GrpId )
     self.write_groups_list()

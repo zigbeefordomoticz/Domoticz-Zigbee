@@ -6,7 +6,6 @@ from GroupMgtv2.GrpDomoticz import update_domoticz_group_device_widget
 from GroupMgtv2.GrpCommands import set_kelvin_color, set_rgb_color
  
 def checkIfIkeaRound5BToBeAdded( self, NwkId, ep, ieee, GrpId):
-
     self.logging( 'Debug', "checkIfIkeaRound5BToBeAdded - Checking if Ikea Round 5B NwkId: %s, Ep: %s, Ieee: %s, GrpIp: %s" %(NwkId, ep, ieee, GrpId))
     if ( 'Ep' in self.ListOfDevices[NwkId] and '01' in self.ListOfDevices[NwkId]['Ep'] and 'ClusterType' in self.ListOfDevices[NwkId]['Ep']['01'] ):
         for DomoDeviceUnit in self.ListOfDevices[NwkId]['Ep']['01']['ClusterType']:
@@ -27,7 +26,6 @@ def checkIfIkeaRound5BToBeAdded( self, NwkId, ep, ieee, GrpId):
 
 def checkIfIkeaRound5BToBeRemoved( self, NwkId, ep, ieee, GrpId):
     self.logging( 'Debug', "checkIfIkeaRound5BToBeRemoved - Checking if Ikea Round 5B NwkId: %s, Ep: %s, Ieee: %s, GrpIp: %s" %(NwkId, ep, ieee, GrpId))
-
     if ( 'Tradfri Remote' in self.ListOfGroups[GrpId] and NwkId == self.ListOfGroups[GrpId]['Tradfri Remote']['Device Addr'] ):
         self.logging( 'Debug', "checkIfIkeaRound5BToBeRemoved - Found Ikea Remote %s" %NwkId)
         del self.ListOfGroups[ GrpId ]['Tradfri Remote']
@@ -35,10 +33,10 @@ def checkIfIkeaRound5BToBeRemoved( self, NwkId, ep, ieee, GrpId):
         if device in self.ListOfGroups[ GrpId]['Devices']:
             self.ListOfGroups[ GrpId]['Devices'].remove( device )
         return True
+
     return False
 
 def Ikea5BToBeAddedToListIfExist( self, GrpId ):
-
     ikea5b = None
     if 'Tradfri Remote' in self.ListOfGroups[ GrpId ]:
         ikea5b =  [ self.ListOfGroups[ GrpId ]['Tradfri Remote']['Device Addr'], self.ListOfGroups[ GrpId ]['Tradfri Remote']['Ep'], 

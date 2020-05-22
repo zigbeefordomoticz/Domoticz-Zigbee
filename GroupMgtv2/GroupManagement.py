@@ -55,10 +55,12 @@ import os
 import json
 import pickle
 
+import Domoticz
+
 from GroupMgtv2.GrpServices import scan_device_for_grp_membership
 from GroupMgtv2.GrpDatabase import build_group_list_from_list_of_devices
 from GroupMgtv2.GrpDomoticz import LookForGroupAndCreateIfNeeded
-
+from GroupMgtv2.GrpMigration import GrpMgtv2Migration
 
 class GroupsManagement(object):
 
@@ -90,9 +92,12 @@ class GroupsManagement(object):
 
     # Check if we have to open the old format
     if os.path.isfile( self.pluginconf.pluginConf['pluginData'] + "/GroupsList-%02d.pck" %hardwareID  ):
-        # Open the file and load it.
+        # We are in the Migration from Old Group Managemet to new.
         with open( self.pluginconf.pluginConf['pluginData'] + "/GroupsList-%02d.pck" %hardwareID  , 'rb') as handle:
           self.ListOfGroups = pickle.load( handle )  # nosec
+
+        # Migrate to new Format:
+        GrpMgtv2Migration( self )
 
         # Save it with new format
         self.GroupListFileName = self.pluginconf.pluginConf['pluginData'] + "/GroupsList-%02d.json" %hardwareID
