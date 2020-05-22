@@ -247,19 +247,16 @@ def CreateDomoDevice(self, Devices, NWKID):
         # In case Type is issued from GetType functions, this is based on Clusters, 
         # In such case and the device is a Bulb or a Dimmer Switch we will get a combinaison of Switch/LvlControl and ColorControlxxx
         # We want to avoid creating of 3 widgets while 1 is enought.
-        if self.ListOfDevices[NWKID][ 'Model'] not in self.DeviceConf:
-            loggingWidget(self, 'Debug', "---> Check if we need to reduce Type: %s" %Type)
-
-            if ("Switch" in Type) and ("LvlControl" in Type) and ("ColorControl" in Type):
-                # We need to detect what is the ColorControl ( can be RGB, Full, WW)
-                loggingWidget(self, 'Debug', "----> Colortype, let's remove Switch and LvlControl")
-                Type.remove( 'Switch')
-                Type.remove( 'LvlControl')
-
-            elif ("Switch" in Type) and ("LvlControl" in Type):
-                loggingWidget(self, 'Debug', "----> LvlControl, let's remove Switch and LvlControl")
-                Type = ['LvlControl']
-
+        # if self.ListOfDevices[NWKID][ 'Model'] not in self.DeviceConf:
+        loggingWidget(self, 'Debug', "---> Check if we need to reduce Type: %s" %Type)
+        if ("Switch" in Type) and ("LvlControl" in Type) and ("ColorControl" in Type):
+            # We need to detect what is the ColorControl ( can be RGB, Full, WW)
+            loggingWidget(self, 'Debug', "----> Colortype, let's remove Switch and LvlControl")
+            Type.remove( 'Switch')
+            Type.remove( 'LvlControl')
+        elif ("Switch" in Type) and ("LvlControl" in Type):
+            loggingWidget(self, 'Debug', "----> LvlControl, let's remove Switch and LvlControl")
+            Type = ['LvlControl']
         loggingWidget( self, "Debug", "CreateDomoDevice - Creating devices based on Type: %s" % Type, NWKID)
 
         if 'ClusterType' not in self.ListOfDevices[NWKID]['Ep'][Ep]:
