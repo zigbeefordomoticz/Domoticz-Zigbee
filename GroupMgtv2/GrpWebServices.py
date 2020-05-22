@@ -12,6 +12,9 @@ from Modules.tools import getListOfEpForCluster, mainPoweredDevice
 from GroupMgtv2.GrpServices import create_new_group_and_attach_devices, update_group_and_add_devices, update_group_and_remove_devices, \
                                    scan_all_devices_for_grp_membership, scan_device_for_grp_membership
 
+from GroupMgtv2.GrpIkeaRemote import Ikea5BToBeAddedToListIfExist
+
+
 
 def ScanAllDevicesForGroupMemberShip( self ):
     scan_all_devices_for_grp_membership( self )
@@ -122,6 +125,11 @@ def process_web_request( self, webInput):
         #    self.logging( 'Debug', " --  --  -- - > Target DeviceList Updated: %s " %TargetedDevices)
 
         ExistingDevices = self.ListOfGroups[ GrpId ]['Devices']
+        #Let's check if we have also Tradfri Remote 5 to be added
+
+        ikea5b = Ikea5BToBeAddedToListIfExist( self, GrpId )
+        if ikea5b:
+            self.ListOfGroups[ GrpId ]['Devices'].append ( ikea5b )
         self.logging( 'Debug', " --  -- - > Existing DeviceList: %s " %ExistingDevices)
 
         WhatToDo = compare_exitsing_with_new_list( self, ExistingDevices, TargetedDevices)

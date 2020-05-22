@@ -90,9 +90,8 @@ def checkNwkIdAndUpdateIfAny( self, NwkId , ieee):
     return None
 
 def check_if_group_empty( self, GrpId):
-
-    self.logging( 'Debug', "check_if_group_empty GrpId: %s Empty ? %s" %( GrpId, len(self.ListOfGroups[GrpId]['Devices']) == 0 ))
-    return len(self.ListOfGroups[GrpId]['Devices']) == 0
+    
+    return len(self.ListOfGroups[GrpId]['Devices']) == 0 and 'Tradfri Remote' not in self.ListOfGroups[GrpId]
 
 def create_group( self, GrpId, GrpName ):
 

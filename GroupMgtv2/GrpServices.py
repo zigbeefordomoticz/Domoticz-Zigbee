@@ -11,7 +11,7 @@ from Modules.tools import mainPoweredDevice
 
 from GroupMgtv2.GrpDomoticz import create_domoticz_group_device, remove_domoticz_group_device
 
-from GroupMgtv2.GrpIkeaRemote import checkIfIkeaRound5B
+from GroupMgtv2.GrpIkeaRemote import checkIfIkeaRound5BToBeAdded, checkIfIkeaRound5BToBeRemoved
 
 # remove_domoticz_group_device, update_domoticz_group_device
 from GroupMgtv2.GrpDatabase import create_group, checkNwkIdAndUpdateIfAny, remove_nwkid_from_all_groups, check_if_group_empty, remove_group
@@ -103,16 +103,17 @@ def update_group_and_add_devices( self, GrpId, ToBeAddedDevices):
     self.logging( 'Debug', " --  --  --  --  --  > UpdateGroupAndAddDevices ")
     for NwkId, ep, ieee in ToBeAddedDevices:
         NwkId = checkNwkIdAndUpdateIfAny( self, NwkId, ieee )
-        if NwkId and not checkIfIkeaRound5B( self, NwkId, ep, ieee, GrpId):
+        # Ikea Tradfri Round5B will be added if required by checkIfIkeaRound5B
+        if NwkId and not checkIfIkeaRound5BToBeAdded( self, NwkId, ep, ieee, GrpId):
             add_group_member_ship( self, NwkId, ep, GrpId)
 
     self.write_groups_list()
-
 
 def update_group_and_remove_devices( self, GrpId, ToBeRemoveDevices):
     self.logging( 'Debug', " --  --  --  --  --  > UpdateGroupAndRemoveDevices ")
     for NwkId, ep, ieee in ToBeRemoveDevices:
         NwkId = checkNwkIdAndUpdateIfAny( self, NwkId, ieee )
-        if NwkId:
+        # Ikea Tradfri Round5B will be removed if required by checkIfIkeaRound5B
+        if NwkId and not checkIfIkeaRound5BToBeRemoved( self, NwkId, ep, ieee, GrpId):
             remove_group_member_ship(self,  NwkId, ep, GrpId )
     self.write_groups_list()
