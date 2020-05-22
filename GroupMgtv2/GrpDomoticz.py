@@ -47,7 +47,7 @@ def create_domoticz_group_device(self, GroupName, GroupId):
         Domoticz.Error('createDomoticzGroupDevice - failed to create Group device.')
         return
     
-    self.ListOfGroups[GroupId]['WidgetId'] = unit
+    self.ListOfGroups[GroupId]['WidgetType'] = unit
 
 def LookForGroupAndCreateIfNeeded( self, GroupId):
     
@@ -129,107 +129,73 @@ def best_group_widget( self, GroupId):
             'ColorControlFull': ( 241, 7, 7 ),
             }
 
-    code = 0
-    _ikea_colormode = None
-    color_widget = None
-    widget_style = None
-    widget = WIDGET_STYLE['ColorControlFull']    # If not match, will create a RGBWWZ widget
+    GroupWidgetType = None
 
-    self.logging( 'Debug', "Device - %s" %str(self.ListOfGroups[GroupId]['Devices']))
-
+    self.logging( 'Debug', "best_group_widget Device - %s" %str(self.ListOfGroups[GroupId]['Devices']))
     for NwkId, devEp, iterIEEE in self.ListOfGroups[GroupId]['Devices']:
-        self.logging( 'Debug', "Device - %s  %s  %s" %(NwkId, devEp, iterIEEE))
+        # We will scan each Device in the Group and try to indentify which Widget is associated to it
+        # Based on the list of Widget will try to identified the Most Features
+        self.logging( 'Debug', "best_group_widget Device - %s  %s  %s" %(NwkId, devEp, iterIEEE))
         if NwkId == '0000':
             continue
 
-        self.logging( 'Log', "bestGroupWidget - Group: %s processing %s" %(GroupId, NwkId))
+        self.logging( 'debug', "bestGroupWidget - Group: %s processing %s" %(GroupId, NwkId))
         if NwkId not in self.ListOfDevices:
             # We have some inconsistency !
             continue
 
         if 'ClusterType' not in self.ListOfDevices[NwkId]['Ep'][devEp]:
+            # No widget associated
             continue
 
-        for iterClusterType in self.ListOfDevices[NwkId]['Ep'][devEp]['ClusterType']:
-            if self.ListOfDevices[NwkId]['Ep'][devEp]['ClusterType'][iterClusterType] in WIDGETS:
-                WidgetId = self.ListOfDevices[NwkId]['Ep'][devEp]['ClusterType'][iterClusterType]
-                if code <= WIDGETS[WidgetId]:
-                    code = WIDGETS[WidgetId]
-                    # Blind/ Venetian
-                    if code == 10:
-                        widget = WIDGET_STYLE['Venetian']
-                        widget_style =  'Venetian'
+        for DomoDeviceUnit in self.ListOfDevices[NwkId]['Ep'][devEp]['ClusterType']:
+            WidgetType = self.ListOfDevices[NwkId]['Ep'][devEp]['ClusterType'][DomoDeviceUnit]
+            self.logging( 'Debug', "------------ GroupWidget: %s WidgetType: %s" %(GroupWidgetType, WidgetType))
 
-                    elif code == 12:
-                        widget = WIDGET_STYLE['WindowCovering']
-                        widget_style =  'WindowCovering'
+            if GroupWidgetType is None:
+                GroupWidgetType = WidgetType
+                continue
 
-                    if code == 1:
-                        widget = WIDGET_STYLE['Switch']
-                        widget_style =  'Switch'
+            if WidgetType == GroupWidgetType:
+                continue
 
-                    elif code == 2:
-                        # Let's check if this is not a Blind Percentage Inverted
-                        for _dev in self.Devices:
-                            if self.Devices[_dev].ID == int(iterClusterType):
-                                if self.Devices[ _dev ].SwitchType == 16: # BlindPercentInverted
-                                    widget = WIDGET_STYLE['BlindPercentInverted']
-                                    widget_style =  'BlindPercentInverted'
-                                else:
-                                    widget = WIDGET_STYLE['LvlControl']
-                                    widget_style =  'LvlControl'
-                                break
-                        else:
-                            Domoticz.Error ('Device not found')
-                            widget = WIDGET_STYLE['LvlControl']
-                            widget_style =  'LvlControl'
+            if WidgetType == 'Switch' and GroupWidgetType == 'Plug':
+                GroupWidgetType = 'Switch'
+                continue
 
-                    elif code == 3:
-                        if color_widget is None:
-                            if WidgetId in [ 'ColorControlWW', 'ColorControlRGB', ]:
-                                widget = WIDGET_STYLE[ WidgetId ]
-                                _ikea_colormode = WidgetId
+            if WidgetType == 'LvlControl' and GroupWidgetType in ( 'Plug', 'Switch'):
+                GroupWidgetType = WidgetType
+                continue    
 
-                        elif color_widget == WidgetId:
-                            continue
+            if WidgetType == 'ColorControlWW' and GroupWidgetType in ( 'Plug', 'Switch', 'LvlControl'):
+                GroupWidgetType = WidgetType
+                continue    
 
-                        elif (WidgetId == 'ColorControlWW' and color_widget == 'ColorControlRGB') or \
-                                ( color_widget == 'ColorControlWW' and WidgetId == 'ColorControlRGB' ) :
-                            code = 4
-                            color_widget = 'ColorControlRGBWW'
-                            widget = WIDGET_STYLE[ color_widget ]
-                            _ikea_colormode = color_widget
+            if WidgetType == 'ColorControlRGB' and GroupWidgetType in ( 'Plug', 'Switch', 'LvlControl'):
+                GroupWidgetType = WidgetType
+                continue                       
 
-                        elif WidgetId == 'ColorControl':
-                            code = 5
-                            color_widget = 'ColorControlFull'
-                            widget = WIDGET_STYLE[ color_widget ]
-                            _ikea_colormode = color_widget
+            if (WidgetType == 'ColorControlRGB' and GroupWidgetType in ( 'ColorControlWW' ) ) or (WidgetType == 'ColorControlWW' and GroupWidgetType in ( 'ColorControlRGB' )):
+                GroupWidgetType = 'ColorControlRGBWW'
+                continue
 
-                    elif code == 4:
-                        color_widget = 'ColorControlRGBWW'
-                        widget = WIDGET_STYLE[ color_widget ]
-                        _ikea_colormode = color_widget
+            if WidgetType in ( 'ColorControl', 'ColorControlFull'):
+                GroupWidgetType = WidgetType
+                continue
 
-                    elif code == 5:
-                        color_widget = 'ColorControlFull'
-                        widget = WIDGET_STYLE[ color_widget ]
-                        _ikea_colormode = color_widget
+            if WidgetType in ( 'Venetian', 'VenetianInverted', 'WindowCovering', 'BlindPercentInverted'):
+                GroupWidgetType = WidgetType
 
-                pre_code = code
+    if GroupWidgetType is None:
+        GroupWidgetType = 'ColorControlFull'
 
-        self.logging( 'Debug', " --  --  --  --  --  --  -- - - processing %s code: %s widget: %s, color_widget: %s _ikea_colormode: %s " 
-                %(NwkId, code, widget, color_widget, _ikea_colormode))
+    self.ListOfGroups[GroupId]['WidgetStyle'] = GroupWidgetType
+    # This will be used when receiving left/right click , to know if it is RGB or WW
+    
+    if 'Tradfri Remote' in self.ListOfGroups[GroupId]:
+       self.ListOfGroups[GroupId]['Tradfri Remote']['Color Mode'] = GroupWidgetType
 
-    if color_widget:
-        self.ListOfGroups[GroupId]['WidgetStyle'] = color_widget
-
-    elif widget_style:
-        self.ListOfGroups[GroupId]['WidgetStyle'] = widget_style
-
-    else:
-        self.ListOfGroups[GroupId]['WidgetStyle'] = ''
-
+    # Update Cluster, based on WidgetStyle
     if self.ListOfGroups[GroupId]['WidgetStyle'] in  ( 'Switch', 'Plug' ):
         self.ListOfGroups[GroupId]['Cluster'] = '0006'
 
@@ -245,12 +211,9 @@ def best_group_widget( self, GroupId):
     else:
         self.ListOfGroups[GroupId]['Cluster'] = ''
 
-    # This will be used when receiving left/right click , to know if it is RGB or WW
-    if 'Tradfri Remote' in self.ListOfGroups[GroupId]:
-        self.ListOfGroups[GroupId]['Tradfri Remote']['Color Mode'] = _ikea_colormode
+    self.logging( 'Debug', "best_group_widget for GroupId: %s Found WidgetType: %s Widget: %s" %( GroupId, GroupWidgetType, WIDGET_STYLE.get(GroupWidgetType, WIDGET_STYLE[ 'ColorControlFull' ])))
 
-    self.logging( 'Log', "best_group_widget - %s Code: %s, Color_Widget: %s, widget: %s, WidgetStyle: %s" %( GroupId, code, color_widget, widget, self.ListOfGroups[GroupId]['WidgetStyle']))
-    return widget
+    return WIDGET_STYLE.get(GroupWidgetType, WIDGET_STYLE[ 'ColorControlFull' ])
 
 def update_domoticz_group_device( self, GroupId):
     """

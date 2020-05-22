@@ -70,6 +70,7 @@ class GroupsManagement(object):
   from GroupMgtv2.GrpServices import FullRemoveOfGroup, checkAndTriggerIfMajGroupNeeded, addGroupMemberShip, RemoveNwkIdFromAllGroups
   from GroupMgtv2.GrpWebServices import process_web_request, ScanAllDevicesForGroupMemberShip, ScanDevicesForGroupMemberShip
   from GroupMgtv2.GrpLogging import logging
+  from GroupMgtv2.GrpIkeaRemote import manageIkeaTradfriRemoteLeftRight
 
   def __init__( self, PluginConf, ZigateComm, adminWidgets, HomeDirectory, hardwareID, Devices, ListOfDevices, IEEE2NWK , loggingFileHandle):
 

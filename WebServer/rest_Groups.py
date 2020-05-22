@@ -251,7 +251,9 @@ def rest_zGroup( self, verb, data, parameters):
                     self.logging( 'Debug', "--> add Ikea Tradfri Remote")
                     _dev = {}
                     _dev['_NwkId'] = ListOfGroups[itergrp]["Tradfri Remote"]["Device Addr"]
-                    _dev['Ep'] = "01"
+                    _dev['Unit'] = ListOfGroups[itergrp]["Tradfri Remote"]['Device Id']
+                    _dev['Ep'] = ListOfGroups[itergrp]["Tradfri Remote"]["Ep"]
+                    _dev['Color Mode'] = ListOfGroups[itergrp]["Tradfri Remote"]["Color Mode"]
                     zgroup['Devices'].append( _dev )
                 zgroup_lst.append(zgroup)
             self.logging( 'Debug', "zGroup: %s" %zgroup_lst)
