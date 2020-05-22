@@ -95,10 +95,12 @@ def manageIkeaTradfriRemoteLeftRight( self, NwkId, type_dir):
 
         if type_dir == 'left':
             t -= self.pluginconf.pluginConf['TradfriKelvinStep']
-            if t < 0: t = 255
+            if t < 0: 
+                t = 255
         elif type_dir == 'right':
             t += self.pluginconf.pluginConf['TradfriKelvinStep']
-            if t > 255: t = 0
+            if t > 255: 
+                t = 0
 
         self.logging( 'Debug', "manageIkeaTradfriRemoteLeftRight - Kelvin T %s" %t)
         set_kelvin_color( self, ADDRESS_MODE['group'], Ikea5ButtonGroupId, '01', '01', t)
@@ -108,15 +110,15 @@ def manageIkeaTradfriRemoteLeftRight( self, NwkId, type_dir):
         # Here we will scroll R, G and B 
 
         PRESET_COLOR = (  
-                            (  10,  10,  10), # 
-                            ( 255,   0,   0), # Red
-                            (   0, 255,   0), # Green
-                            (   0,   0, 255), # Blue
-                            ( 255, 255,   0), # Yello
-                            (   0, 255, 255), # Aqua
-                            ( 255,   0, 255), # 
-                            ( 255, 255, 255)  # Whhite
-                        )
+            (  10,  10,  10), # 
+            ( 255,   0,   0), # Red
+            (   0, 255,   0), # Green
+            (   0,   0, 255), # Blue
+            ( 255, 255,   0), # Yello
+            (   0, 255, 255), # Aqua
+            ( 255,   0, 255), # 
+            ( 255, 255, 255)  # Whhite
+        )
 
         if 'RGB' not in self.ListOfGroups[Ikea5ButtonGroupId]['Tradfri Remote']:
             seq_idx = 0
@@ -125,11 +127,15 @@ def manageIkeaTradfriRemoteLeftRight( self, NwkId, type_dir):
 
         r, g, b = PRESET_COLOR[seq_idx]
 
-        if type_dir == 'left': seq_idx -= 1
-        elif type_dir == 'right': seq_idx += 1
+        if type_dir == 'left': 
+            seq_idx -= 1
+        elif type_dir == 'right': 
+            seq_idx += 1
 
-        if seq_idx >= len(PRESET_COLOR): seq_idx = 0
-        if seq_idx < 0: seq_idx = len(PRESET_COLOR) - 1
+        if seq_idx >= len(PRESET_COLOR): 
+            seq_idx = 0
+        if seq_idx < 0: 
+            seq_idx = len(PRESET_COLOR) - 1
 
         self.logging( 'Debug', "manageIkeaTradfriRemoteLeftRight - R %s G %s B %s" %(r,g,b))
         set_rgb_color( self, ADDRESS_MODE['group'], Ikea5ButtonGroupId, '01', '01', r, g, b)
