@@ -19,7 +19,7 @@
 	"ClusterToBind": [ "0008", "FC21" ],
 	"ConfigureReporting": {
 		    "0008": {"Attributes": { "0000": {"DataType": "20", "MinInterval":"0005", "MaxInterval":"5460", "TimeOut":"0000","Change":"01"}}},
-		    "FC21": {"Attributes": { "0001": {"DataType": "20", "MinInterval":"0000", "MaxInterval":"0000", "TimeOut":"0000","Change":"0005"}}}
+		    "FC21": {"Attributes": { "0001": {"DataType": "20", "MinInterval":"0000", "MaxInterval":"0000", "TimeOut":"0000","Change":"00"}}}
 	},
 	"ReadAttributes": {
 		"0000": [ "0000", "0005,", "0010" ],
