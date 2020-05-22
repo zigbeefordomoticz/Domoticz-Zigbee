@@ -108,14 +108,14 @@ def ZigateRead(self, Devices, Data):
 
     if len(Data) > 12 :
         # We have Payload : data + rssi
-        MsgData=Data[12:len(Data)-4]
-        MsgRSSI=Data[len(Data)-4:len(Data)-2]
+        MsgData = Data[12:len(Data)-4]
+        MsgRSSI = Data[len(Data)-4:len(Data)-2]
     else :
-        MsgData=""
-        MsgRSSI=""
+        MsgData = ""
+        MsgRSSI = "00"
 
     loggingInput( self, 'Debug2', "ZigateRead - MsgType: %s, MsgLength: %s, MsgCRC: %s, Data: %s; RSSI: %s" \
-            %( MsgType, MsgLength, MsgCRC, MsgData, MsgRSSI) )
+            %( MsgType, MsgLength, MsgCRC, MsgData, int(MsgRSSI,16)) )
 
     if MsgType in DECODERS:
         _decoding = DECODERS[ MsgType]
@@ -736,8 +736,8 @@ def Decode8015(self, Devices, MsgData, MsgRSSI): # Get device list ( following r
                         " Network addr = " + saddr + " IEEE = " + ieee + \
                         " LQI = {:03n}".format((int(rssi,16))) + " Power = " + power + \
                         " HB = {:02n}".format(int(self.ListOfDevices[saddr]['Heartbeat'])) + " found in ListOfDevices")
-                self.ListOfDevices[saddr]['RSSI'] = int(rssi, 16) if rssi != '00' else 12
-                loggingInput( self, 'Debug', "Decode8015 : RSSI set to " + str( self.ListOfDevices[saddr]['RSSI']) + "/" + str(rssi) + " for " + str(saddr) )
+                self.ListOfDevices[saddr]['RSSI'] = int(rssi, 16) if rssi != '00' else 0
+                loggingInput( self, 'Debug', "Decode8015 : RSSI set to " + str( self.ListOfDevices[saddr]['RSSI']) + "/" + str(int(rssi,16)) + " for " + str(saddr) )
             else:
                 loggingInput( self, 'Status', "[{:02n}".format((round(idx/26))) + "] DevID = " + DevID + \
                         " Network addr = " + saddr + " IEEE = " + ieee + \
@@ -1393,7 +1393,7 @@ def Decode8047(self, Devices, MsgData, MsgRSSI) : # Management Leave response
     MsgDataStatus=MsgData[2:4]
 
     loggingInput( self, 'Status', "Decode8047 - Leave response, RSSI: %s Status: %s - %s" \
-            %( MsgRSSI, MsgDataStatus, DisplayStatusCode( MsgDataStatus )))
+            %( int(MsgRSSI,16), MsgDataStatus, DisplayStatusCode( MsgDataStatus )))
 
 def Decode8048(self, Devices, MsgData, MsgRSSI) : # Leave indication
     MsgLen=len(MsgData)
@@ -1408,7 +1408,7 @@ def Decode8048(self, Devices, MsgData, MsgRSSI) : # Leave indication
             break
     self.adminWidgets.updateNotificationWidget( Devices, 'Leave indication from %s for %s ' %(MsgExtAddress, devName) )
 
-    loggingMessages( self, '8048', None, MsgExtAddress, MsgRSSI, None)
+    loggingMessages( self, '8048', None, MsgExtAddress, int(MsgRSSI,16), None)
 
     if MsgExtAddress not in self.IEEE2NWK: # Most likely this object has been removed and we are receiving the confirmation.
         return
@@ -1422,7 +1422,7 @@ def Decode8048(self, Devices, MsgData, MsgRSSI) : # Leave indication
         zdevname = ''
         if 'ZDeviceName' in self.ListOfDevices[sAddr]:
             zdevname = self.ListOfDevices[sAddr]['ZDeviceName']
-        loggingInput( self, 'Status', "%s (%s/%s) send a Leave indication and will be outside of the network. RSSI: %s" %(zdevname, sAddr, MsgExtAddress, MsgRSSI))
+        loggingInput( self, 'Status', "%s (%s/%s) send a Leave indication and will be outside of the network. RSSI: %s" %(zdevname, sAddr, MsgExtAddress, int(MsgRSSI,16)))
         if self.ListOfDevices[sAddr]['Status'] == 'inDB':
             self.ListOfDevices[sAddr]['Status'] = 'Left'
             self.ListOfDevices[sAddr]['Heartbeat'] = 0
@@ -1665,7 +1665,7 @@ def Decode8100(self, Devices, MsgData, MsgRSSI):  # Report Individual Attribute 
 
     updRSSI( self, MsgSrcAddr, MsgRSSI )
     timeStamped( self, MsgSrcAddr , 0x8100)
-    loggingMessages( self, '8100', MsgSrcAddr, None, MsgRSSI, MsgSQN)
+    loggingMessages( self, '8100', MsgSrcAddr, None, int(MsgRSSI,16), MsgSQN)
     if ( self.pluginconf.pluginConf['debugRSSI'] and self.ListOfDevices[MsgSrcAddr]['RSSI'] <= self.pluginconf.pluginConf['debugRSSI'] ):
         if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
             if self.ListOfDevices[MsgSrcAddr]['ZDeviceName'] not in ['', {}]:
@@ -2097,7 +2097,7 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         loggingPairing( self, 'Status', "Device Announcement Addr: %s, IEEE: %s Join Flag: %s RSSI: %s ChangeShortID: %s" \
                 %( MsgSrcAddr, MsgIEEE, REJOIN_NETWORK[ MsgRejoinFlag ], int(MsgRSSI,16), newShortId ) )
 
-    loggingMessages( self, '004D', MsgSrcAddr, MsgIEEE, MsgRSSI, None)
+    loggingMessages( self, '004D', MsgSrcAddr, MsgIEEE, int(MsgRSSI,16), None)
 
     # Test if Device Exist, if Left then we can reconnect, otherwise initialize the ListOfDevice for this entry
     if DeviceExist(self, Devices, MsgSrcAddr, MsgIEEE):
@@ -2121,7 +2121,7 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
             if 'Health' in self.ListOfDevices[MsgSrcAddr]:
                 if self.ListOfDevices[MsgSrcAddr]['Health'] == 'Live':
                     loggingInput( self, 'Log', "        -> ExpDeviceAnnoucement 1: droping packet for %s due to MsgRejoinFlag: 99. Health: %s, MacCapa: %s, RSSI: %s" \
-                        %( MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Health'], str(deviceMacCapa), MsgRSSI), MsgSrcAddr)
+                        %( MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Health'], str(deviceMacCapa), int(MsgRSSI,16)), MsgSrcAddr)
                     timeStamped( self, MsgSrcAddr , 0x004d)
                     lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
                     return
@@ -2130,14 +2130,14 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         #    if 'Health' in self.ListOfDevices[MsgSrcAddr]:
         #        if self.ListOfDevices[MsgSrcAddr]['Health'] == 'Live':
         #            loggingInput( self, 'Log', "        -> ExpDeviceAnnoucement 2: droping packet for %s due to Main Powered and Live RSSI: %s" \
-        #                    %(MsgSrcAddr, MsgRSSI), MsgSrcAddr)
+        #                    %(MsgSrcAddr, int(MsgRSSI,16)), MsgSrcAddr)
         #            timeStamped( self, MsgSrcAddr , 0x004d)
         #            lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
         #            return
 
         if self.pluginconf.pluginConf['ExpDeviceAnnoucement3'] and MsgRejoinFlag in ( '01', '02' ):
             loggingInput( self, 'Log', "        -> ExpDeviceAnnoucement 3: drop packet for %s due to  Rejoining network as %s, RSSI: %s" \
-                %(MsgSrcAddr, MsgRejoinFlag, MsgRSSI), MsgSrcAddr)
+                %(MsgSrcAddr, MsgRejoinFlag, int(MsgRSSI,16)), MsgSrcAddr)
             timeStamped( self, MsgSrcAddr , 0x004d)
             lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
             return
