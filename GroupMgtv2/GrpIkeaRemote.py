@@ -32,8 +32,13 @@ def checkIfIkeaRound5BToBeRemoved( self, NwkId, ep, ieee, GrpId):
         if NwkId != self.IEEE2NWK[ ieee ]:
             NwkId = self.IEEE2NWK[ ieee ]
         device = [ NwkId, ep, ieee ]
+        self.logging( 'Debug', "---------> Removing %s from %s" %(str(device), str( self.ListOfGroups[ GrpId]['Devices'] )))
+        
         if device in self.ListOfGroups[ GrpId]['Devices']:
+            self.logging( 'Debug', "checkIfIkeaRound5BToBeRemoved - Removing it from Group Device %s" %ieee)
             self.ListOfGroups[ GrpId]['Devices'].remove( device )
+
+        update_domoticz_group_device_widget( self, GrpId)
         return True
 
     return False

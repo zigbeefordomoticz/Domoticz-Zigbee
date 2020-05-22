@@ -120,16 +120,11 @@ def process_web_request( self, webInput):
         TargetedDevices = transform_web_to_group_devices_list( item[ 'devicesSelected' ] )
         self.logging( 'Debug', " --  -- - > Target DeviceList: %s " %TargetedDevices)
 
-        #if item[ 'coordinatorInside' ]:
-        #    self.logging( 'Debug', " --  -- - > ZigateMemberShip ")
-        #    TargetedDevices.append ( ['0000', '01', self.ZigateIEEE] )
-        #    self.logging( 'Debug', " --  --  -- - > Target DeviceList Updated: %s " %TargetedDevices)
-
         ExistingDevices = self.ListOfGroups[ GrpId ]['Devices']
         #Let's check if we have also Tradfri Remote 5 to be added
 
         ikea5b = Ikea5BToBeAddedToListIfExist( self, GrpId )
-        if ikea5b:
+        if ikea5b and ikea5b not in self.ListOfGroups[ GrpId ]['Devices'] :
             self.ListOfGroups[ GrpId ]['Devices'].append ( ikea5b )
         self.logging( 'Debug', " --  -- - > Existing DeviceList: %s " %ExistingDevices)
 
