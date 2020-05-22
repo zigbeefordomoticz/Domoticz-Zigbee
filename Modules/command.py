@@ -63,7 +63,7 @@ DEVICE_SWITCH_MATRIX = {
 }
 
 ACTIONATORS = [ 'Switch', 'Plug', 'SwitchAQ2', 'Smoke', 'DSwitch', 'LivoloSWL', 'LivoloSWR', 'Toggle',
-            'Venetian', 'VenetianInverted', 'WindowCovering', 'BSO',
+            'Venetian', 'VenetianInverted', 'WindowCovering', 'BSO', 'BSO-Orientation', 'BSO-Volet',
             'LvlControl', 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl',
             'ThermoSetpoint', 'ThermoMode', 'ThermoModeEHZBRTS', 'TempSetCurrent', 'AlarmWD',
             'LegrandFilPilote', 'FIP', 'HACTMODE','ContractPower','HeatingSwitch' ]
@@ -121,7 +121,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
 
     if DeviceType not in ACTIONATORS:
         if not ( self.pluginconf.pluginConf['forcePassiveWidget'] and DeviceType  in [ 'DButton_3', 'SwitchAQ3' ]):
-            loggingCommand( self, "Debug", "mgtCommand - You are trying to action a non commandable device Device %s has available Type %s and DeviceType: %s" 
+            loggingCommand( self, "Log", "mgtCommand - You are trying to action a non commandable device Device %s has available Type %s and DeviceType: %s" 
                    %( Devices[Unit].Name, ClusterTypeList, DeviceType ), NWKID )
             return
     
