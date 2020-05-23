@@ -51,7 +51,7 @@ def do_rest( self, Connection, verb, data, version, command, parameters):
         'zigate':        {'Name':'zigate',        'Verbs':{'GET'}, 'function':self.rest_zigate},
         'zigate-erase-PDM':{'Name':'zigate-erase-PDM', 'Verbs':{'GET'}, 'function':self.rest_zigate_erase_PDM},
         'rescan-groups': {'Name':'rescan-groups', 'Verbs':{'GET'}, 'function':self.rest_rescan_group},
-        'ScanDeviceForGrp': {'Name':'zdevice-raw',  'Verbs':{'PUT'}, 'function':self.rest_scan_devices_for_group},
+        'ScanDeviceForGrp': {'Name':'ScanDeviceForGrp',  'Verbs':{'PUT'}, 'function':self.rest_scan_devices_for_group},
         }
 
     self.logging( 'Debug', "do_rest - Verb: %s, Command: %s, Param: %s" %(verb, command, parameters))
