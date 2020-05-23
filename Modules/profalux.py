@@ -155,28 +155,47 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
             tilt = 90
         return tilt
 
-    # Begin
+    def getLevel( self, nwkid):
+        # Let's check if we can get the Level from Attribute
+        level = None
+        if ( '01' in self.ListOfDevices[nwkid]['Ep'] and '0008' in self.ListOfDevices[nwkid]['Ep']['01'] and '0000' in self.ListOfDevices[nwkid]['Ep']['01']['0008']):
+            level = int(self.ListOfDevices[ nwkid ]['Ep']['01']['0008']['0000'], 16)
+        return  level
 
+    def getTilt( self, nwkid):
+        tilt = self.pluginconf.pluginConf['profaluxOrientBSO']
+        # Let's check if we can get the Tilt from Attribute
+        if ( '01' in self.ListOfDevices[nwkid]['Ep'] and 'fc21' in self.ListOfDevices[nwkid]['Ep']['01'] and '0001' in self.ListOfDevices[nwkid]['Ep']['01']['fc21'] ):
+            tilt = int(self.ListOfDevices[ nwkid ]['Ep']['01']['fc21']['0001'], 16)
+        return tilt
+
+    def setLevel( self, nwkid, level):
+        if '01' not in self.ListOfDevices[nwkid]['Ep']:
+            self.ListOfDevices[nwkid]['Ep']['01'] = {}
+        if '0008' not in self.ListOfDevices[nwkid]['Ep']['01']:
+            self.ListOfDevices[nwkid]['Ep']['01']['0008'] = {}
+        self.ListOfDevices[nwkid]['Ep']['01']['0008']['0000'] = '%02x' %level
+
+    def setTilt(self, nwkid, tilt):
+        if '01' not in self.ListOfDevices[nwkid]['Ep']:
+            self.ListOfDevices[nwkid]['Ep']['01'] = {}
+        if 'fc21' not in self.ListOfDevices[nwkid]['Ep']['01']:
+            self.ListOfDevices[nwkid]['Ep']['01']['fc21'] = {}
+        self.ListOfDevices[nwkid]['Ep']['01']['fc21']['0001'] = '%02x' %tilt
+
+
+    # Begin
     loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt Nwkid: %s Level: %s Tilt: %s" %( nwkid, level, tilt))
     if level is None and tilt is None:
         return
 
     if level is None:
-        # Let's check if we can get the Level from Attribute
-        if '01' in self.ListOfDevices[ nwkid ]['Ep']:
-            if '0008' in self.ListOfDevices[ nwkid ]['Ep']['01']:
-                if '0000' in self.ListOfDevices[ nwkid ]['Ep']['01']['0008']:
-                    level = int(self.ListOfDevices[ nwkid ]['Ep']['01']['0008']['0000'], 16)
-                    Domoticz.Log("Retreive Level: %s" %level)
-
+        level = getLevel( self, nwkid)
+    Domoticz.Log("Retreive Level: %s" %level)
+ 
     if tilt is None:
-        tilt = self.pluginconf.pluginConf['profaluxOrientBSO'] 
-        # Let's check if we can get the Tilt from Attribute
-        if '01' in self.ListOfDevices[ nwkid ]['Ep']:
-            if 'fc21' in self.ListOfDevices[ nwkid ]['Ep']['01']:
-                if '0001' in self.ListOfDevices[ nwkid ]['Ep']['01']['fc21']:
-                    level = int(self.ListOfDevices[ nwkid ]['Ep']['01']['fc21']['0001'], 16)
-                    Domoticz.Log("Retreive Tilt: %s" %level)
+        tilt = getTilt( self, nwkid)
+    Domoticz.Log("Retreive Tilt: %s" %level)
 
     loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt after update Nwkid: %s Level: %s Tilt: %s" %( nwkid, level, tilt))
     
@@ -212,6 +231,8 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
        tilt = 0x00
     
     Domoticz.Log("profalux_MoveToLiftAndTilt - Level: %s Tilt: %s" %( level, tilt))
+    setTilt( self, nwkid, tilt)
+    setLevel( self, nwkid, level)
 
     # payload: 11 45 10 03 55 2d ffff
     # Option Parameter uint8   Bit0 Ask for lift action, Bit1 Ask fr a tilt action
