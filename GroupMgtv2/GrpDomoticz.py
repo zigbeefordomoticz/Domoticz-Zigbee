@@ -247,6 +247,7 @@ def update_domoticz_group_device( self, GroupId):
         self.logging( 'Debug2', "update_domoticz_group_device - no Devices for that group: %s" %self.ListOfGroups[GroupId])
         return
 
+
     unit = unit_for_widget(self, GroupId )
     if unit is None:
         return
@@ -255,40 +256,43 @@ def update_domoticz_group_device( self, GroupId):
     if 'Cluster' in self.ListOfGroups[ GroupId]:
         Cluster = self.ListOfGroups[ GroupId]['Cluster']
 
+    countOn = 0
+    countOff = 0
     if self.pluginconf.pluginConf['OnIfOneOn']:
         # If one device is on, then the group is on. If all devices are off, then the group is off
         nValue = 0
         sValue = None
-        level = None
-         
+        level = None     
     else:
         # If ALL devices are on, then the group is On, otherwise it remains Off (Philips behaviour)
         nValue = 1
         sValue = None
         level = None
 
-
     for NwkId, Ep, IEEE in self.ListOfGroups[GroupId]['Devices']:
         if NwkId not in self.ListOfDevices:
             return
         if Ep not in self.ListOfDevices[NwkId]['Ep']:
             return
+        if 'Model' in self.ListOfDevices[NwkId]:
+            if 'TRADFRI remote control' in self.ListOfDevices[NwkId]['Model']:
+                continue
 
         # Cluster ON/OFF
-        if Cluster and Cluster in ( '0006', '0008') and '0006' in self.ListOfDevices[NwkId]['Ep'][Ep]:
-            if '0000' in self.ListOfDevices[NwkId]['Ep'][Ep]['0006']:
+        if Cluster and Cluster in ( '0006', '0008', '0300') and '0006' in self.ListOfDevices[NwkId]['Ep'][Ep]:
+            if '0000' in self.ListOfDevices[NwkId]['Ep'][Ep]['0006']:       
                 if str(self.ListOfDevices[NwkId]['Ep'][Ep]['0006']['0000']).isdigit():
-                    if self.pluginconf.pluginConf['OnIfOneOn']: 
-                        if int(self.ListOfDevices[NwkId]['Ep'][Ep]['0006']['0000']) != 0:
-                            nValue = 1
+                    Domoticz.Log("     On/off Value: %s for %s/%s")
+                    if int(self.ListOfDevices[NwkId]['Ep'][Ep]['0006']['0000']) != 0:
+                        countOn += 1
                     else:
-                        if int(self.ListOfDevices[NwkId]['Ep'][Ep]['0006']['0000']) == 0:
-                            nValue = 0
+                        countOff += 1
 
         # Cluster Level Control
-        if Cluster and Cluster == '0008' and '0008' in self.ListOfDevices[NwkId]['Ep'][Ep]:
+        if Cluster and Cluster in ( '0008', '0300')  and '0008' in self.ListOfDevices[NwkId]['Ep'][Ep]:
             if '0000' in self.ListOfDevices[NwkId]['Ep'][Ep]['0008']:
                 if self.ListOfDevices[NwkId]['Ep'][Ep]['0008']['0000'] != '' and self.ListOfDevices[NwkId]['Ep'][Ep]['0008']['0000'] != {}:
+                    Domoticz.Log("     Level Value: %s for %s/%s")
                     if level is None:
                         level = int(self.ListOfDevices[NwkId]['Ep'][Ep]['0008']['0000'], 16)
                     else:
@@ -305,9 +309,22 @@ def update_domoticz_group_device( self, GroupId):
 
                     nValue, sValue = ValuesForVenetian( level )
 
-        self.logging( 'Debug2', "update_domoticz_group_device - Processing: Group: %s %s/%s nValue: %s, level: %s" %(GroupId, NwkId, Ep, nValue, level))
+        self.logging( 'Debug', "update_domoticz_group_device - Processing: Group: %s %s/%s On: %s, Off: %s level: %s" %(GroupId, NwkId, Ep, countOn, countOff, level))
 
-    self.logging( 'Debug2', "update_domoticz_group_device - Processing: Group: %s ==  > nValue: %s, level: %s" %(GroupId, nValue, level))
+    if self.pluginconf.pluginConf['OnIfOneOn']:
+        if countOn > 0:
+            nValue = 1
+    else:
+        if countOff > 0:
+            nValue = 0
+    self.logging( 'Debug', "update_domoticz_group_device - Processing: Group: %s ==  > nValue: %s, level: %s" %(GroupId, nValue, level))
+
+
+
+
+
+
+
     # At that stage
     # nValue == 0 if Off
     # nValue == 1 if Open/On
@@ -349,7 +366,7 @@ def update_domoticz_group_device( self, GroupId):
         else:
             sValue = 'On'
 
-    self.logging( 'Debug2', "update_domoticz_group_device - Processing: Group: %s ==  > nValue: %s, sValue: %s" %(GroupId, nValue, sValue))
+    self.logging( 'Debug', "update_domoticz_group_device - Processing: Group: %s ==  > nValue: %s, sValue: %s" %(GroupId, nValue, sValue))
     if nValue != self.Devices[unit].nValue or sValue != self.Devices[unit].sValue:
         self.logging( 'Log', "UpdateGroup  - (%15s) %s:%s" %( self.Devices[unit].Name, nValue, sValue ))
         self.Devices[unit].Update( nValue, sValue)
