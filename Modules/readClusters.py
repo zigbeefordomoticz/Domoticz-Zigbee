@@ -520,7 +520,7 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     checkAttribute( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID )
 
-    if MsgAttrID == "0000": # Voltage
+    if MsgAttrID == "0000":    # Voltage
         value = round(int(value)/10, 1)
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(value))
@@ -542,7 +542,6 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
 
-
     elif MsgAttrID == "0002": # MAINS ALARM MASK
         _undervoltage = (int(value)) & 1
         _overvoltage = (int(value) >> 1 ) & 1
@@ -553,10 +552,12 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     elif MsgAttrID == '0007': # Power Source
         if MsgClusterData == '01':
-            if 'Model' in self.ListOfDevices[MsgSrcAddr]:
-                if self.ListOfDevices[MsgSrcAddr]['Model'] != {}:
-                    if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TI0001': 
-                        return
+            if (
+                'Model' in self.ListOfDevices[MsgSrcAddr]
+                and self.ListOfDevices[MsgSrcAddr]['Model'] != {}
+                and self.ListOfDevices[MsgSrcAddr]['Model'] == 'TI0001'
+            ):
+                return
 
             self.ListOfDevices[MsgSrcAddr]['PowerSource'] = 'Main'
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
@@ -569,9 +570,8 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     elif MsgAttrID == "0020": # Battery Voltage
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
         loggingCluster( self, 'Debug', "readCluster 0001 - %s Battery: %s V" %(MsgSrcAddr, value) , MsgSrcAddr)
-        if 'Model' in self.ListOfDevices[MsgSrcAddr]:
-            if self.ListOfDevices[MsgSrcAddr]['Model'] == 'EH-ZB-BMS':
-                value = round( value/10, 1)
+        if ( 'Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Model'] == 'EH-ZB-BMS' ):
+            value = round( value/10, 1)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(value))
 
     elif MsgAttrID == "0021": # Battery %
@@ -614,7 +614,7 @@ def UpdateBatteryAttribute( self, MsgSrcAddr, MsgSrcEp ):
                                'lumi.remote.b286opcn01-bulb', 'lumi.remote.b486opcn01-bulb', 'lumi.remote.b686opcn01-bulb',
                                'lumi.sen_ill.mgl01')
 
-    BATTERY_200PERCENT = ( "SML001" , " RWL021", "SPZB0001", "WarningDevice" , "SmokeSensor-N", "SMOK_V16", "RH3001" ,"TS0201" )
+    BATTERY_200PERCENT = ( "SML001" , " RWL021", "SPZB0001", "WarningDevice" , "SmokeSensor-N", "SMOK_V16", "RH3001" ,"TS0201", "COSensor-N" )
     BATTERY_3VOLTS = ( "lumi.sen_ill.mgl01", "3AFE130104020015", "3AFE140103020000", "3AFE14010402000D", "3AFE170100510001" ) + LEGRAND_REMOTES
 
     BATTERY_15_VOLTS = ( )
@@ -637,12 +637,16 @@ def UpdateBatteryAttribute( self, MsgSrcAddr, MsgSrcEp ):
 
     if '0000' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']:
         mainVolt = float(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']['0000'])
+
     if '0010' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']:
         battVolt = float(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']['0010'])
+
     if '0020' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']:
         battRemainingVolt = float(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']['0020'])
+
     if '0021' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']:
         battRemainPer = float(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']['0021'])
+
 
     loggingCluster( self, 'Debug', "readCluster 0001 - Device: %s Model: %s mainVolt:%s , battVolt:%s, battRemainingVolt: %s, battRemainPer:%s " %(MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Model'], mainVolt, battVolt, battRemainingVolt, battRemainPer) , MsgSrcAddr)
 
