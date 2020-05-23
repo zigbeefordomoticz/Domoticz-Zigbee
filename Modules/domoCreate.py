@@ -348,8 +348,14 @@ def CreateDomoDevice(self, Devices, NWKID):
                 loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in ThermoModeEHZBRTS" %(t), NWKID)
 
             # 7 Selectors, Style 0, OffHidden
-            if t in ('FIP', 'LegrandFilPilote' ):             
+            if t in ('LegrandFilPilote', ):
                Options = createSwitchSelector( 7,  DeviceType = t,OffHidden = True, SelectorStyle = 0 )
+               createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
+               loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in LegrandFilPilote" %(t), NWKID)
+
+            # 7 Selectors, Style 0, OffHidden, SelectorStyle 1
+            if t in ('FIP',  ):
+               Options = createSwitchSelector( 7,  DeviceType = t,OffHidden = True, SelectorStyle = 1 )
                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in FIP" %(t), NWKID)
 

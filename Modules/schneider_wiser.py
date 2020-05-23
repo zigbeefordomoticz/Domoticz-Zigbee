@@ -145,7 +145,7 @@ def schneider_wiser_registration( self, Devices, key ):
         Hattribute = "%04x" %0x0012
         default_temperature = 2000
         setpoint = schneider_find_attribute_and_set(self,key,EPout,cluster_id,Hattribute,default_temperature)
-        schneiderUpdateThermostatDevice(self, Devices, key, EPout, cluster_id, setpoint)
+        schneider_update_ThermostatDevice(self, Devices, key, EPout, cluster_id, setpoint)
 
         loggingSchneider( self, 'Debug', "Schneider set default value Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
@@ -240,7 +240,7 @@ def schneider_wiser_registration( self, Devices, key ):
 
 def schneider_hact_heater_type( self, key, type_heater ):
     """[summary]
-         allows to set the heater in fip or conventional mode
+         allows to set the heater in "fip" or "conventional" mode
          by default it will set it to fip mode
     Arguments:
         key {[int]} -- id of the device
@@ -295,7 +295,7 @@ def schneider_hact_heater_type( self, key, type_heater ):
 
 def schneider_hact_heating_mode( self, key, mode ):
     """
-    Allow switching between Conventional and FIP mode
+    Allow switching between "setpoint" and "FIP" mode
     Set 0x0201/0xe011
     HAC into Fil Pilot FIP 0x03, in Covential Mode 0x00
     """
@@ -655,15 +655,25 @@ def schneiderRenforceent( self, NWKID):
 
     return rescheduleAction
 
-def schneiderSendReadAttributesResponse(self, NWKID, EPout, ClusterID, sqn, rawAttr):
-    loggingSchneider( self, 'Debug', "Schneider send attributes: nwkid %s ep: %s , clusterId: %s, sqn: %s,data: %s" \
+def schneider_thermostat_answer_attribute_request(self, NWKID, EPout, ClusterID, sqn, rawAttr):
+    """ Receive an attribute request from thermostat to know if the user has change the domoticz widget
+        we answer the current temperature stored in the device
+
+    Arguments:
+        NWKID {[type]} -- [description]
+        EPout {[type]} -- [description]
+        ClusterID {[type]} -- [description]
+        sqn {[type]} -- [description]
+        rawAttr {[type]} -- [description]
+    """
+    loggingSchneider( self, 'Debug', "Schneider receive attribute request: nwkid %s ep: %s , clusterId: %s, sqn: %s,rawAttr: %s" \
             %(NWKID, EPout, ClusterID, sqn, rawAttr ), NWKID)
 
     attr = rawAttr[2:4] + rawAttr[0:2]
     data = ''
     dataType = ''
     payload = ''
-    if attr == 'e010':
+    if attr == 'e010': # mode of operation
         dataType = '30'
         data = '01'
     elif attr == '0015': #min setpoint temp
@@ -695,22 +705,39 @@ def schneiderSendReadAttributesResponse(self, NWKID, EPout, ClusterID, sqn, rawA
     raw_APS_request( self, NWKID, EPout, ClusterID, '0104', payload, zigate_ep=ZIGATE_EP)
 
 
-def schneiderUpdateThermostatDevice (self, Devices, NWKID, srcEp, ClusterID, setpoint):
+def schneider_update_ThermostatDevice (self, Devices, NWKID, srcEp, ClusterID, setpoint):
+    """ we received a new setpoint from the thermostat device , we need to update the domoticz widget
 
+    Arguments:
+        Devices {[type]} -- [description]
+        NWKID {[type]} -- [description]
+        srcEp {[type]} -- [description]
+        ClusterID {[type]} -- [description]
+        setpoint {[type]} -- [description]
+    """
     # Check if nwkid is the ListOfDevices
-    loggingSchneider( self, 'Debug', "schneiderUpdateThermostatDevice nwkid : %s, setpoint: %s" \
-            %(NWKID, setpoint), NWKID)
     if NWKID not in self.ListOfDevices:
         return
 
     # Look for TargetSetPoint
     domoTemp = round(setpoint/100,1)
-    MajDomoDevice(self, Devices, NWKID, srcEp, ClusterID, domoTemp, '0012')
-
-    schneider_find_attribute_and_set(self, NWKID,srcEp,ClusterID,'0012',setpoint,setpoint)
 
     loggingSchneider( self, 'Debug', "Schneider updateThermostat setpoint:%s  , domoTemp : %s" \
             %(setpoint, domoTemp), NWKID)
+
+    MajDomoDevice(self, Devices, NWKID, srcEp, ClusterID, domoTemp, '0012')
+
+    # modify attribute of thermostat to store the new temperature requested
+    schneider_find_attribute_and_set(self, NWKID,srcEp,ClusterID,'0012',setpoint,setpoint)
+
+    if self.SchneiderZone is not None:
+        for zone in self.SchneiderZone:
+            if self.SchneiderZone[ zone ]['Thermostat']['NWKID'] == NWKID :
+                loggingSchneider( self, 'Debug', "schneider_update_ThermostatDevice - found %s " %zone )
+                for hact in self.SchneiderZone[ zone ]['Thermostat']['HACT']:
+                    loggingSchneider( self, 'Debug', "schneider_update_ThermostatDevice - upate hact setpoint mode hact nwwkid:%s " %hact )
+                    schneider_hact_heating_mode(self, hact, "setpoint")
+
 
 def schneiderAlarmReceived (self, Devices, NWKID, srcEp, ClusterID, start, payload):
     """
@@ -770,8 +797,16 @@ def schneider_set_contract( self, key, EPout, kva):
 
 
 def schneiderReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
-    """
-    Function called when raw APS indication are received for a schneider device - it then decide how to handle it
+    """    Function called when raw APS indication are received for a schneider device - it then decide how to handle it
+
+    Arguments:
+        Devices {[type]} -- list of devices
+        srcNWKID {[type]} -- id of the device that generated the request
+        srcEp {[type]} -- Endpoint of the device that generated the request
+        ClusterID {[type]} -- cluster Id of the device that generated the request
+        dstNWKID {[type]} -- Id of the device that should receive the request
+        dstEP {[type]} -- Endpoint of the device that should receive the request
+        MsgPayload {[type]} -- [description]
     """
 
     loggingSchneider( self, 'Debug', "Schneider read raw APS nwkid: %s ep: %s , clusterId: %s, dstnwkid: %s, dstep: %s, payload: %s" \
@@ -788,11 +823,11 @@ def schneiderReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dst
     if ClusterID == '0201' : # Thermostat cluster
         if cmd == '00': #read attributes
             loggingSchneider( self, 'Debug','Schneider cmd 0x00',srcNWKID)
-            schneiderSendReadAttributesResponse(self, srcNWKID, srcEp, ClusterID, sqn, data)
+            schneider_thermostat_answer_attribute_request(self, srcNWKID, srcEp, ClusterID, sqn, data)
         if cmd == 'e0': # command to change setpoint from thermostat
             sTemp = data [4:8]
             setpoint = struct.unpack('h',struct.pack('>H',int(sTemp,16)))[0]
-            schneiderUpdateThermostatDevice(self, Devices, srcNWKID, srcEp, ClusterID, setpoint)
+            schneider_update_ThermostatDevice(self, Devices, srcNWKID, srcEp, ClusterID, setpoint)
     elif ClusterID == '0009': # Alarm cluster
         if cmd == '00': #start of alarm
             loggingSchneider( self, 'Debug','Schneider cmd 0x00',srcNWKID)
@@ -879,7 +914,24 @@ def importSchneiderZoning( self ):
     loggingSchneider(self, 'Debug', "importSchneiderZoning - Zone Information: %s " %self.SchneiderZone )
 
 def schneider_find_attribute_and_set(self, NWKID, EP, ClusterID ,attr ,defaultValue , newValue = None):
+    """[summary]
 
+    Arguments:
+        NWKID {int} -- id of the device
+        EP {[type]} -- endpoint of the device you want to manipulate
+        ClusterID {[type]} -- cluster of the device you want to manipulate
+        attr {[type]} -- attribute of the device you want to manipulate
+        defaultValue {[type]} -- default value to use if there is no existing value
+
+    Keyword Arguments:
+        newValue {[type]} -- value to erase the existing value (if none then the existing value is untouched)
+
+    Returns:
+        [type] -- the value that the attribute will have once the function is finished
+                    if no existing value -> defaultValue
+                    if there is an existing value and newValue = None -> existing value
+                    ifthere is an  existing value and newValue != none -> newValue
+    """
     loggingSchneider( self, 'Debug', "schneider_find_attribute_or_set NWKID:%s, EP:%s, ClusterID:%s, attr:%s ,defaultValue:%s, newValue:%s" 
                 %(NWKID,EP,ClusterID,attr,defaultValue,newValue),NWKID)
     if EP not in self.ListOfDevices[NWKID]['Ep']:
