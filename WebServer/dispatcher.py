@@ -20,8 +20,8 @@ def do_rest( self, Connection, verb, data, version, command, parameters):
     REST_COMMANDS = { 
         'unbinding':     {'Name':'unbinding',     'Verbs':{'PUT'}, 'function':self.rest_unbinding},
         'binding':       {'Name':'binding',       'Verbs':{'PUT'}, 'function':self.rest_binding},
-        'bindLSTcluster':{'Name':'bindLSTcluster','Verbs':{'GET'}, 'function':self.rest_bindLSTcluster},
-        'bindLSTdevice': {'Name':'bindLSTdevice', 'Verbs':{'GET'}, 'function':self.rest_bindLSTdevice},
+        'bind-lst-cluster':{'Name':'bind-lst-cluster','Verbs':{'GET'}, 'function':self.rest_bindLSTcluster},
+        'bind-lst-device': {'Name':'bind-lst-device', 'Verbs':{'GET'}, 'function':self.rest_bindLSTdevice},
         'new-hrdwr':     {'Name':'new-hrdwr',     'Verbs':{'GET'}, 'function':self.rest_new_hrdwr},
         'rcv-nw-hrdwr':  {'Name':'rcv-nw-hrdwr',  'Verbs':{'GET'}, 'function':self.rest_rcv_nw_hrdwr},
         'device':        {'Name':'device',        'Verbs':{'GET'}, 'function':self.rest_Device},
@@ -51,7 +51,7 @@ def do_rest( self, Connection, verb, data, version, command, parameters):
         'zigate':        {'Name':'zigate',        'Verbs':{'GET'}, 'function':self.rest_zigate},
         'zigate-erase-PDM':{'Name':'zigate-erase-PDM', 'Verbs':{'GET'}, 'function':self.rest_zigate_erase_PDM},
         'rescan-groups': {'Name':'rescan-groups', 'Verbs':{'GET'}, 'function':self.rest_rescan_group},
-        'ScanDeviceForGrp': {'Name':'ScanDeviceForGrp',  'Verbs':{'PUT'}, 'function':self.rest_scan_devices_for_group},
+        'scan-device-for-grp': {'Name':'ScanDevscan-device-for-grpiceForGrp',  'Verbs':{'PUT'}, 'function':self.rest_scan_devices_for_group},
         }
 
     self.logging( 'Debug', "do_rest - Verb: %s, Command: %s, Param: %s" %(verb, command, parameters))

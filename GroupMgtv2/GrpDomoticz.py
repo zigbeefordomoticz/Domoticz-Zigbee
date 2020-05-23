@@ -33,7 +33,7 @@ def create_domoticz_group_device(self, GroupName, GroupId):
 
     for x in self.Devices:
         if self.Devices[x].DeviceID == GroupId:
-            Domoticz.Error("createDomoticzGroupDevice - existing group %s" %(self.Devices[x].Name))
+            #Domoticz.Error("createDomoticzGroupDevice - existing group %s" %(self.Devices[x].Name))
             return
 
     Type_, Subtype_, SwitchType_ = best_group_widget( self, GroupId)
