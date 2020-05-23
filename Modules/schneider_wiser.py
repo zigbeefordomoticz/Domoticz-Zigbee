@@ -473,6 +473,7 @@ def schneider_setpoint_thermostat( self, key, setpoint):
     schneider_find_attribute_and_set (self,NWKID,EPout,ClusterID,attr,setpoint,setpoint)
 
     importSchneiderZoning(self)
+    schneider_thermostat_check_and_bind (self, NWKID)
 
     if self.SchneiderZone is not None:
         for zone in self.SchneiderZone:
@@ -484,6 +485,7 @@ def schneider_setpoint_thermostat( self, key, setpoint):
                     schneider_setpoint_actuator(self, hact, setpoint)
                     # Reset Heartbeat in order to force a ReadAttribute when possible
                     self.ListOfDevices[key]['Heartbeat'] = 0
+                    schneider_actuator_check_and_bind (self, hact)
                     #ReadAttributeRequest_0201(self,key)
 
 
