@@ -67,6 +67,33 @@ def profalux_fake_deviceModel( self , nwkid):
         self.ListOfDevices[nwkid]['Manufacturer Name'] = 'Profalux'
         loggingProfalux( self, 'Log', "++++++ Model Name for %s forced to : %s" %(nwkid, self.ListOfDevices[nwkid]['Model']), nwkid)
 
+def checkAndTriggerConfigReporting( self, NwkId):
+
+    loggingProfalux(self, 'Debug', "-- -- checkAndTriggerConfigReporting for %s" %NwkId)
+    if 'ConfigureReporting' not in self.ListOfDevices[NwkId]:
+        configureReportingForprofalux( self, NwkId)
+        return
+    if '01' not in self.ListOfDevices[NwkId]['ConfigureReporting']['Ep']:
+        configureReportingForprofalux( self, NwkId)
+        return
+    if 'fc21' not in self.ListOfDevices[NwkId]['ConfigureReporting']['Ep']['01']:
+        configureReportingForprofalux( self, NwkId)
+        return
+    if self.ListOfDevices[NwkId]['ConfigureReporting']['Ep']['01']['fc21'] == {}:
+        configureReportingForprofalux( self, NwkId)
+        return
+
+
+def configureReportingForprofalux( self, NwkId):
+
+    loggingProfalux(self, 'Debug', "-- -- -- configureReportingForprofalux for %s" %NwkId)
+    if NwkId not in self.ListOfDevices:
+        return
+
+    attrList = '00' + '20' + '0001' + '0000' + '0000' + '0000' + '00'
+    datas =   '02' + NwkId + ZIGATE_EP + '01' + 'fc21' + '00' + '01' + '1110' + '01' + attrList
+    sendZigateCmd( self, "0120", datas )
+
 def profalux_stop( self, nwkid ):
 
     # determine which Endpoint
@@ -189,6 +216,7 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
     if level is None and tilt is None:
         return
 
+    checkAndTriggerConfigReporting( self, nwkid)
     if level is None:
         level = getLevel( self, nwkid)
     Domoticz.Log("Retreive Level: %s" %level)
