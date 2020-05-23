@@ -7,6 +7,7 @@
 import Domoticz
 import json
 
+from GroupMgtv2.GrpCommands import set_kelvin_color, set_rgb_color
 from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl
 from Modules.zigateConsts import ADDRESS_MODE, MAX_LOAD_ZIGATE, ZIGATE_EP
 
@@ -578,11 +579,11 @@ def processCommand( self, unit, GrpId, Command, Level, Color_ ) :
             self.logging( 'Debug', "Not implemented device color 1")
         #ColorModeTemp = 2   // White with color temperature. Valid fields: t
         if Hue_List['m'] == 2:
-            self.set_Kelvin_Color( ADDRESS_MODE['group'], GrpId, ZIGATE_EP, EPout, int(Hue_List['t']))
+            set_kelvin_color( self, ADDRESS_MODE['group'], GrpId, ZIGATE_EP, EPout, int(Hue_List['t']))
 
         #ColorModeRGB = 3    // Color. Valid fields: r, g, b.
         elif Hue_List['m'] == 3:
-            self.set_RGB_color( ADDRESS_MODE['group'], GrpId, ZIGATE_EP, EPout, \
+            set_rgb_color( self, ADDRESS_MODE['group'], GrpId, ZIGATE_EP, EPout, \
                     int(Hue_List['r']), int(Hue_List['g']), int(Hue_List['b']))
 
         #ColorModeCustom = 4, // Custom (color + white). Valid fields: r, g, b, cw, ww, depending on device capabilities
