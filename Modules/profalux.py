@@ -154,6 +154,8 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
         return tilt
 
     # Begin
+
+    loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt Nwkid: %s Level: %s Tilt: %s" %( nwkid, level, tilt))
     if level is None and tilt is None:
         return
 
@@ -174,6 +176,8 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
                     level = int(self.ListOfDevices[ nwkid ]['Ep']['01']['fc21']['0001'], 16)
                     Domoticz.Log("Retreive Tilt: %s" %level)
 
+    loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt after update Nwkid: %s Level: %s Tilt: %s" %( nwkid, level, tilt))
+    
     # determine which Endpoint
     EPout = '01'
 
