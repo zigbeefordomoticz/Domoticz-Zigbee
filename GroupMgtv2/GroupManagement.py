@@ -122,7 +122,7 @@ class GroupsManagement( object):
 
         self.HB += 1
 
-        self.logging( 'Debug', 'hearbeat_group_mgt -    ScanDevicesToBeDone: %s' %( self.ScanDevicesToBeDone))
+        #self.logging( 'Debug', 'hearbeat_group_mgt -    ScanDevicesToBeDone: %s' %( self.ScanDevicesToBeDone))
 
         # Check if we have some Scan to be done
         for    NwkId, Ep in self.ScanDevicesToBeDone: 
