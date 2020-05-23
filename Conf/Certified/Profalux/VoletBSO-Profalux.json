@@ -13,7 +13,7 @@
 			"0100":"",
 			"fc20":"",
 			"fc21":"",
-			"Type":"BSO-Volet/BSO-Orientation"}
+			"Type":"BlindInverted/BSO-Volet/BSO-Orientation"}
 	},
 	"Type":"",
 	"ClusterToBind": [ "0008", "fc21" ],
