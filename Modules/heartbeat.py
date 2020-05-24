@@ -61,90 +61,156 @@ SCHNEIDER_FEATURES =  300 // HEARTBEAT
 NETWORK_TOPO_START =  900 // HEARTBEAT
 NETWORK_ENRG_START = 1800 // HEARTBEAT
 
-def attributeDiscovery( self, NWKID ):
-
-    rescheduleAction = False
-    # If Attributes not yet discovered, let's do it
-
-    if 'ConfigSource' not in self.ListOfDevices[NWKID]:
-        return
-
-    if self.ListOfDevices[NWKID]['ConfigSource'] != 'DeviceConf':
-        if 'Attributes List' not in self.ListOfDevices[NWKID]:
-            for iterEp in self.ListOfDevices[NWKID]['Ep']:
-                if iterEp == 'ClusterType': 
-                    continue
-                for iterCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                    if iterCluster in ( 'Type', 'ClusterType', 'ColorMode' ): 
-                        continue
-                    if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
-                        getListofAttribute( self, NWKID, iterEp, iterCluster)
-                    else:
-                        rescheduleAction = True
-
-    return rescheduleAction
-
-def pollingManufSpecificDevices( self, NWKID):
-
-    POLLING_TABLE_SPECIFICS = {
-        '100b':     ( 'Philips',  'pollingPhilips', pollingPhilips ),
-        'Philips':  ( 'Philips',  'pollingPhilips', pollingPhilips),
-        'GLEDOPTO': ( 'Gledopto', 'pollingGledopto',pollingGledopto ),
-        '105e':     ( 'Schneider', 'pollingSchneider', pollingSchneider),
-        'Schneider':( 'Schneider', 'pollingSchneider', pollingSchneider)
-    }
-
-    rescheduleAction = False
-
-    devManufCode = devManufName = ''
-    if 'Manufacturer' in self.ListOfDevices[NWKID]:
-        devManufCode = self.ListOfDevices[NWKID]['Manufacturer']
-    if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
-        devManufName = self.ListOfDevices[NWKID]['Manufacturer Name']
-    
-    brand = func = param = None
-    if devManufCode in POLLING_TABLE_SPECIFICS:
-        brand, param , func =  POLLING_TABLE_SPECIFICS[ devManufCode ]
-    if brand is None and devManufName in POLLING_TABLE_SPECIFICS:
-        brand, param , func =  POLLING_TABLE_SPECIFICS[ devManufName ]        
-
-    if brand is None:
-        return False
-    
-    _HB = int(self.ListOfDevices[NWKID]['Heartbeat'])
-    _FEQ = self.pluginconf.pluginConf[ param ] // HEARTBEAT
-
-    if _FEQ and (( _HB % _FEQ ) == 0):
-        loggingHeartbeat( self, 'Debug', "++ pollingManufSpecificDevices -  %s Found: %s - %s %s %s" \
-            %(NWKID, brand, devManufCode, devManufName, param), NWKID)       
-        rescheduleAction = ( rescheduleAction or func( self, NWKID) )
-
-    return rescheduleAction
-
-def pollingDeviceStatus( self, NWKID):
-    """
-    Purpose is to trigger ReadAttrbute 0x0006 and 0x0008 on attribute 0x0000 if applicable
-    """
-    for iterEp in self.ListOfDevices[NWKID]['Ep']:
-        if '0006' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-            ReadAttributeRequest_0006_0000( self, NWKID)
-            loggingHeartbeat( self, 'Debug', "++ pollingDeviceStatus -  %s  for ON/OFF" \
-            %(NWKID), NWKID)
-
-        if '0008' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-            ReadAttributeRequest_0008_0000( self, NWKID)
-            loggingHeartbeat( self, 'Debug', "++ pollingDeviceStatus -  %s  for LVLControl" \
-            %(NWKID), NWKID)
-
-        if '0102' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-            ReadAttributeRequest_0102_0008( self, NWKID)
-            loggingHeartbeat( self, 'Debug', "++ pollingDeviceStatus -  %s  for WindowCOvering" \
-            %(NWKID), NWKID)
-
-    return False
 
 def processKnownDevices( self, Devices, NWKID ):
 
+    def attributeDiscovery( self, NWKID ):
+
+        rescheduleAction = False
+        # If Attributes not yet discovered, let's do it
+
+        if 'ConfigSource' not in self.ListOfDevices[NWKID]:
+            return
+
+        if self.ListOfDevices[NWKID]['ConfigSource'] != 'DeviceConf':
+            if 'Attributes List' not in self.ListOfDevices[NWKID]:
+                for iterEp in self.ListOfDevices[NWKID]['Ep']:
+                    if iterEp == 'ClusterType': 
+                        continue
+                    for iterCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                        if iterCluster in ( 'Type', 'ClusterType', 'ColorMode' ): 
+                            continue
+                        if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
+                            getListofAttribute( self, NWKID, iterEp, iterCluster)
+                        else:
+                            rescheduleAction = True
+
+        return rescheduleAction
+
+    def pollingManufSpecificDevices( self, NWKID):
+
+        POLLING_TABLE_SPECIFICS = {
+            '100b':     ( 'Philips',  'pollingPhilips', pollingPhilips ),
+            'Philips':  ( 'Philips',  'pollingPhilips', pollingPhilips),
+            'GLEDOPTO': ( 'Gledopto', 'pollingGledopto',pollingGledopto ),
+            '105e':     ( 'Schneider', 'pollingSchneider', pollingSchneider),
+            'Schneider':( 'Schneider', 'pollingSchneider', pollingSchneider)
+        }
+
+        rescheduleAction = False
+
+        devManufCode = devManufName = ''
+        if 'Manufacturer' in self.ListOfDevices[NWKID]:
+            devManufCode = self.ListOfDevices[NWKID]['Manufacturer']
+        if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
+            devManufName = self.ListOfDevices[NWKID]['Manufacturer Name']
+
+        brand = func = param = None
+        if devManufCode in POLLING_TABLE_SPECIFICS:
+            brand, param , func =  POLLING_TABLE_SPECIFICS[ devManufCode ]
+        if brand is None and devManufName in POLLING_TABLE_SPECIFICS:
+            brand, param , func =  POLLING_TABLE_SPECIFICS[ devManufName ]        
+
+        if brand is None:
+            return False
+
+        _HB = int(self.ListOfDevices[NWKID]['Heartbeat'])
+        _FEQ = self.pluginconf.pluginConf[ param ] // HEARTBEAT
+
+        if _FEQ and (( _HB % _FEQ ) == 0):
+            loggingHeartbeat( self, 'Debug', "++ pollingManufSpecificDevices -  %s Found: %s - %s %s %s" \
+                %(NWKID, brand, devManufCode, devManufName, param), NWKID)       
+            rescheduleAction = ( rescheduleAction or func( self, NWKID) )
+
+        return rescheduleAction
+
+    def pollingDeviceStatus( self, NWKID):
+
+        """
+        Purpose is to trigger ReadAttrbute 0x0006 and 0x0008 on attribute 0x0000 if applicable
+        """
+
+        for iterEp in self.ListOfDevices[NWKID]['Ep']:
+            if '0006' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                ReadAttributeRequest_0006_0000( self, NWKID)
+                loggingHeartbeat( self, 'Debug', "++ pollingDeviceStatus -  %s  for ON/OFF" \
+                %(NWKID), NWKID)
+
+            if '0008' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                ReadAttributeRequest_0008_0000( self, NWKID)
+                loggingHeartbeat( self, 'Debug', "++ pollingDeviceStatus -  %s  for LVLControl" \
+                %(NWKID), NWKID)
+
+            if '0102' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                ReadAttributeRequest_0102_0008( self, NWKID)
+            loggingHeartbeat( self, 'Debug', "++ pollingDeviceStatus -  %s  for WindowCOvering" \
+            %(NWKID), NWKID)
+
+        return False
+    
+    def checkHealth( self, NwkId):
+    
+        # Checking current state of the this Nwk
+        if 'Health' not in self.ListOfDevices[NWKID]:
+            self.ListOfDevices[NWKID]['Health'] = ''
+
+        if 'Stamp' not in self.ListOfDevices[NWKID]:
+            self.ListOfDevices[NWKID]['Stamp'] = {}
+            self.ListOfDevices[NWKID]['Stamp']['LastSeen'] = 0
+            self.ListOfDevices[NWKID]['Health'] = 'unknown'
+
+        if 'LastSeen' not in self.ListOfDevices[NWKID]['Stamp']:
+            self.ListOfDevices[NWKID]['Stamp']['LastSeen'] = 0
+            self.ListOfDevices[NWKID]['Health'] = 'unknown'
+
+        if int(time.time()) > (self.ListOfDevices[NWKID]['Stamp']['LastSeen'] + 21200) : # Age is above 6 hours
+            if self.ListOfDevices[NWKID]['Health'] == 'Live':
+                Domoticz.Error("Device Health - Nwkid: %s,Ieee: %s , Model: %s seems to be out of the network" \
+                    %(NWKID, self.ListOfDevices[NWKID]['IEEE'], self.ListOfDevices[NWKID]['Model']))
+                self.ListOfDevices[NWKID]['Health'] = 'Not seen last 24hours'
+
+        # If device flag as Not Reachable, don't do anything
+        if 'Health' in self.ListOfDevices[NWKID]:
+            if self.ListOfDevices[NWKID]['Health'] == 'Not Reachable':
+                return False
+        return True
+
+    def pingRetryDueToBadHealth( self, NwkId):
+        # device is on Non Reachable state
+        loggingHeartbeat( self, 'Debug', "--------> ping Retry Check %s" %NwkId, NwkId)
+        if 'pingDeviceRetry' not in self.ListOfDevices[NwkId]:
+            self.ListOfDevices[NwkId]['pingDeviceRetry'] = 0
+
+        if self.ListOfDevices[NwkId]['pingDeviceRetry'] < 3 and len(self.ZigateComm.zigateSendingFIFO) == 0:
+            self.ListOfDevices[NwkId]['pingDeviceRetry'] += 1
+            submitPing( self, NwkId)
+
+    def submitPing( self, NwkId):
+        # Pinging devices to check they are still Alive
+        loggingHeartbeat( self, 'Debug', "------------> call readAttributeRequest %s" %NwkId, NwkId)
+        ReadAttributeRequest_0000_basic( self, NwkId)
+
+    def pingDevices( self, NwkId, health, checkHealthFlag, mainPowerFlag):
+
+        loggingHeartbeat( self, 'Debug', "------> pinDevicest %s health: %s, checkHealth: %s, mainPower: %s" %(NwkId,health, checkHealthFlag, mainPowerFlag) , NwkId)
+        if not mainPowerFlag:
+            return
+
+        if not health:
+            pingRetryDueToBadHealth(self, NwkId)
+            return
+
+        if _checkHealth and len(self.ZigateComm.zigateSendingFIFO) == 0:
+            submitPing( self, NWKID)
+            return
+
+        if ( int(time.time()) > ( self.ListOfDevices[NwkId]['Stamp']['LastSeen'] + self.pluginconf.pluginConf['pingDevicesFeq'] )) and \
+                    len(self.ZigateComm.zigateSendingFIFO) == 0:
+            loggingHeartbeat( self, 'Debug', "------> pinDevice time: %s LastSeen: %s Freq: %s" \
+                %(int(time.time()), self.ListOfDevices[NwkId]['Stamp']['LastSeen'], self.pluginconf.pluginConf['pingDevicesFeq'] ), NwkId) 
+            submitPing( self, NwkId)         
+
+    # Begin   
     # Normalize Hearbeat value if needed
     intHB = int( self.ListOfDevices[NWKID]['Heartbeat'])
     if intHB > 0xffff:
@@ -156,35 +222,18 @@ def processKnownDevices( self, Devices, NWKID ):
  
     # Check if this is a Main powered device or Not. Source of information are: MacCapa and PowerSource
     _mainPowered = mainPoweredDevice( self, NWKID)
-
-    # Checking current state of the this Nwk
-    if 'Health' not in self.ListOfDevices[NWKID]:
-        self.ListOfDevices[NWKID]['Health'] = ''
-    if 'Stamp' not in self.ListOfDevices[NWKID]:
-        self.ListOfDevices[NWKID]['Stamp'] = {}
-        self.ListOfDevices[NWKID]['Stamp']['LastSeen'] = 0
-        self.ListOfDevices[NWKID]['Health'] = 'unknown'
-    if 'LastSeen' not in self.ListOfDevices[NWKID]['Stamp']:
-        self.ListOfDevices[NWKID]['Stamp']['LastSeen'] = 0
-        self.ListOfDevices[NWKID]['Health'] = 'unknown'
-    if int(time.time()) > (self.ListOfDevices[NWKID]['Stamp']['LastSeen'] + 21200) : # Age is above 6 hours
-        if self.ListOfDevices[NWKID]['Health'] == 'Live':
-            Domoticz.Error("Device Health - Nwkid: %s,Ieee: %s , Model: %s seems to be out of the network" \
-                %(NWKID, self.ListOfDevices[NWKID]['IEEE'], self.ListOfDevices[NWKID]['Model']))
-            self.ListOfDevices[NWKID]['Health'] = 'Not seen last 24hours'
+    _checkHealth = self.ListOfDevices[NWKID]['Health'] == ''
+    health = checkHealth( self, NWKID)
+ 
+    # Pinging devices to check they are still Alive
+    pingDevices( self, NWKID, health, _checkHealth, _mainPowered)
 
     # If device flag as Not Reachable, don't do anything
-    if 'Health' in self.ListOfDevices[NWKID]:
-        if self.ListOfDevices[NWKID]['Health'] == 'Not Reachable':
-            loggingHeartbeat( self, 'Debug', "processKnownDevices -  %s stop here due to Health %s" \
-                    %(NWKID, self.ListOfDevices[NWKID]['Health']), NWKID)
-            return
-
-        # In case Health is unknown let's force a Read attribute.
-        _checkHealth = False
-        if self.ListOfDevices[NWKID]['Health'] == '':
-            _checkHealth = True
-
+    if not health:
+        loggingHeartbeat( self, 'Debug', "processKnownDevices -  %s stop here due to Health %s" \
+                %(NWKID, self.ListOfDevices[NWKID]['Health']), NWKID)
+        return
+        
     # Action not taken, must be reschedule to next cycle
     rescheduleAction = False
 
@@ -270,13 +319,8 @@ def processKnownDevices( self, Devices, NWKID ):
 
                 func(self, NWKID )
 
-
-
-    # Pinging devices to check they are still Alive
-    if _mainPowered and (self.pluginconf.pluginConf['pingDevices'] or  _checkHealth):
-        if int(time.time()) > (self.ListOfDevices[NWKID]['Stamp']['LastSeen'] + self.pluginconf.pluginConf['pingDevicesFeq']):
-            if  len(self.ZigateComm.zigateSendingFIFO) == 0:
-                ReadAttributeRequest_0000_basic( self, NWKID)
+    
+    
 
     # Reenforcement of Legrand devices options if required
     if ( self.HeartbeatCount % LEGRAND_FEATURES ) == 0 :
