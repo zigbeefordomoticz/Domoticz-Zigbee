@@ -211,15 +211,21 @@ def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
     return targetAttribute
 
 def ReadAttributeRequest_0000_basic(self, key):
+    # In order to ping a device, we simply send a Read Attribute on Cluster 0x0000 and looking for Attribute 0x0000
+    # This Cluster/Attribute is mandatory for each devices.
 
-    loggingReadAttributes( self, 'Debug', "Ping Device - Key: %s" %(key), nwkid=key)
-
-    listAttributes = []
-    listAttributes.append(0x0000)        # Attribut 0x0000
+    loggingReadAttributes( self, 'Debug', "Ping Device Physical device - Key: %s" %(key), nwkid=key)
+    if 'ReadAttributes' not in self.ListOfDevices[key]:
+        self.ListOfDevices[key]['ReadAttributes'] = {}
+    if 'TimeStamps' not in self.ListOfDevices[key]['ReadAttributes']:
+        self.ListOfDevices[key]['ReadAttributes']['TimeStamps'] = {}
 
     ListOfEp = getListOfEpForCluster( self, key, '0000' ) 
     for EPout in ListOfEp:
-        ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0000", listAttributes )
+        self.ListOfDevices[key]['ReadAttributes']['TimeStamps'][ EPout + '-' + '0000'] = int(time())
+        datas = '02' + key + ZIGATE_EP + EPout + '0000' + '00' + '00' + '0000' + '01' + '0000'
+        sendZigateCmd(self, "0100", datas )
+      
 
 def ReadAttributeRequest_0000(self, key, fullScope=True):
     # Basic Cluster

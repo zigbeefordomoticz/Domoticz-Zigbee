@@ -238,23 +238,28 @@ def lastSeenUpdate( self, Devices, Unit=None, NwkId=None):
     if NwkId:
         if NwkId not in self.ListOfDevices:
             return
+
         if 'IEEE' not in self.ListOfDevices[NwkId]:
             return
+
         if 'Stamp' not in self.ListOfDevices[NwkId]:
             self.ListOfDevices[NwkId]['Stamp'] = {}
             self.ListOfDevices[NwkId]['Stamp']['Time'] = {}
             self.ListOfDevices[NwkId]['Stamp']['MsgType'] = {}
             self.ListOfDevices[NwkId]['Stamp']['LastSeen'] = 0
+
         if 'LastSeen' not in self.ListOfDevices[NwkId]['Stamp']:
             self.ListOfDevices[NwkId]['Stamp']['LastSeen'] = 0
+
         if 'ErrorManagement' in self.ListOfDevices[NwkId]:
             self.ListOfDevices[NwkId]['ErrorManagement'] = 0
 
         self.ListOfDevices[NwkId]['Health'] = 'Live'
 
-        if time.time() < self.ListOfDevices[NwkId]['Stamp']['LastSeen'] + 5*60:
-            loggingWidget( self, "Debug2", "Too early for a new update of lastSeenUpdate %s" %NwkId, NwkId)
-            return
+        #if time.time() < self.ListOfDevices[NwkId]['Stamp']['LastSeen'] + 5*60:
+        #    #loggingWidget( self, "Debug", "Too early for a new update of lastSeenUpdate %s" %NwkId, NwkId)
+        #    return
+        #loggingWidget( self, "Debug", "Update LastSeen for device %s" %NwkId, NwkId)
 
         self.ListOfDevices[NwkId]['Stamp']['LastSeen'] = int(time.time())
 

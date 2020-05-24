@@ -33,7 +33,7 @@ def decodeAttribute(self, AttType, Attribute, handleErrors=False):
 
     if len(Attribute) == 0:
         return
-    loggingCluster( self, 'Debug', "decodeAttribute( %s, %s) " %(AttType, Attribute) )
+    #loggingCluster( self, 'Debug', "decodeAttribute( %s, %s) " %(AttType, Attribute) )
 
     if int(AttType,16) == 0x10:    # Boolean
         return Attribute
@@ -109,7 +109,7 @@ def decodeAttribute(self, AttType, Attribute, handleErrors=False):
         decode = decode.strip()
         return decode
 
-    loggingCluster( self, 'Debug', "decodeAttribut(%s, %s) unknown, returning %s unchanged" %(AttType, Attribute, Attribute) )
+    #loggingCluster( self, 'Debug', "decodeAttribut(%s, %s) unknown, returning %s unchanged" %(AttType, Attribute, Attribute) )
     return Attribute
 
 def storeReadAttributeStatus( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus ):
