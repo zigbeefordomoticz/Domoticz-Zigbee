@@ -347,7 +347,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 NewSvalue = '%s;%s;%s;%s;%s' % (SplitData[0], SplitData[1], SplitData[2], baroValue, Bar_forecast)
                 UpdateDevice_v2(self, Devices, DeviceUnit, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
 
-        if 'BSO-Orientation' in ClusterType: # Not fully tested / So far developped for Profalux
+        if 'BSO-Orientation' in ClusterType: # 0xfc21 Not fully tested / So far developped for Profalux
             # value is str
             if WidgetType == "BSO-Orientation":
                 # Receveive Level (orientation) in degrees to convert into % for the slider
@@ -510,7 +510,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(value), BatteryLevel, SignalLevel)
 
         if 'LvlControl' in ClusterType: # LvlControl ( 0x0008)
-            if WidgetType == "LvlControl":
+            if WidgetType == 'LvlControl' or WidgetType == 'BSO-Volet':
                 # We need to handle the case, where we get an update from a Read Attribute or a Reporting message
                 # We might get a Level, but the device is still Off and we shouldn't make it On .
                 nValue = None
