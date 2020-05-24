@@ -230,10 +230,36 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 _mode = ((int(value,16) - 0x80) >> 1 ) & 1
 
                 if _mode in THERMOSTAT_MODE:
-                    nValue = _mode
                     sValue = THERMOSTAT_MODE[ _mode ]
-                    UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)            
-                    
+                    nValue = _mode + 1
+                    UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
+
+            elif WidgetType == 'FIP' and Attribute_ == "e020":#  Wiser specific Fil Pilote
+                 # value is str
+                loggingWidget( self, "Debug", "------>  ThermoMode FIP: %s" %(value), NWKID)
+                FIL_PILOT_MODE = {
+                    0 : '10',
+                    1 : '20', # confort -1
+                    2 : '30', # confort -2
+                    3 : '40', # eco
+                    4 : '50', # frost protection
+                    5 : '60'
+                }
+                _mode = int(value,16)
+
+                if _mode in FIL_PILOT_MODE:
+                    sValue = FIL_PILOT_MODE[ _mode ]
+                    nValue = _mode + 1
+                    if '0201' in self.ListOfDevices[NWKID]['Ep'][Ep]:
+                        if 'e011' in self.ListOfDevices[NWKID]['Ep'][Ep]['0201']:
+                            if self.ListOfDevices[NWKID]['Ep'][Ep]['0201']['e011'] != {} and self.ListOfDevices[NWKID]['Ep'][Ep]['0201']['e011'] != '' :
+                                _value_mode_hact  = self.ListOfDevices[NWKID]['Ep'][Ep]['0201']['e011']
+                                _mode_hact = ((int(_value_mode_hact,16) - 0x80)  ) & 1
+                                if _mode_hact  == 0 :
+                                    loggingWidget( self, "Debug", "------>  Disable FIP widget: %s" %(value), NWKID)
+                                    nValue =  0
+                    UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
+
             elif WidgetType == 'ThermoMode' and Attribute_ == '001c':
                 # value seems to come as int or str. To be fixed
                 loggingWidget( self, "Debug", "------>  Thermostat Mode %s" %value, NWKID)
