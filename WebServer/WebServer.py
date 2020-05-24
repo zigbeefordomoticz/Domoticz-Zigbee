@@ -132,7 +132,7 @@ class WebServer(object):
                 health['OTAupdateDevice'] = self.PluginHealth['Firmware Update']['Device']
 
             if self.groupmgt:
-                health['GroupStatus'] = 'Ready'
+                health['GroupStatus'] = self.groupmgt.GroupStatus
 
             _response["Data"] = json.dumps( health, sort_keys=True )
 
