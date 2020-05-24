@@ -248,7 +248,6 @@ def update_domoticz_group_device( self, GroupId):
         self.logging( 'Debug2', "update_domoticz_group_device - no Devices for that group: %s" %self.ListOfGroups[GroupId])
         return
 
-
     unit = unit_for_widget(self, GroupId )
     if unit is None:
         return
@@ -283,7 +282,6 @@ def update_domoticz_group_device( self, GroupId):
         if Cluster and Cluster in ( '0006', '0008', '0300') and '0006' in self.ListOfDevices[NwkId]['Ep'][Ep]:
             if '0000' in self.ListOfDevices[NwkId]['Ep'][Ep]['0006']:       
                 if str(self.ListOfDevices[NwkId]['Ep'][Ep]['0006']['0000']).isdigit():
-                    Domoticz.Log("     On/off Value: %s for %s/%s")
                     if int(self.ListOfDevices[NwkId]['Ep'][Ep]['0006']['0000']) != 0:
                         countOn += 1
                     else:
@@ -293,7 +291,6 @@ def update_domoticz_group_device( self, GroupId):
         if Cluster and Cluster in ( '0008', '0300')  and '0008' in self.ListOfDevices[NwkId]['Ep'][Ep]:
             if '0000' in self.ListOfDevices[NwkId]['Ep'][Ep]['0008']:
                 if self.ListOfDevices[NwkId]['Ep'][Ep]['0008']['0000'] != '' and self.ListOfDevices[NwkId]['Ep'][Ep]['0008']['0000'] != {}:
-                    Domoticz.Log("     Level Value: %s for %s/%s")
                     if level is None:
                         level = int(self.ListOfDevices[NwkId]['Ep'][Ep]['0008']['0000'], 16)
                     else:
@@ -319,12 +316,6 @@ def update_domoticz_group_device( self, GroupId):
         if countOff > 0:
             nValue = 0
     self.logging( 'Debug', "update_domoticz_group_device - Processing: Group: %s ==  > nValue: %s, level: %s" %(GroupId, nValue, level))
-
-
-
-
-
-
 
     # At that stage
     # nValue == 0 if Off
