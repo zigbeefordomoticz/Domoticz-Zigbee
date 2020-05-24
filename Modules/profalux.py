@@ -56,11 +56,11 @@ def profalux_fake_deviceModel( self , nwkid):
         # Main Powered device => Volet or BSO
         self.ListOfDevices[nwkid]['Model'] = 'VoletBSO-Profalux'
 
-        if location.find('bso') != -1:
+        if location in ( 'BSO', 'bso', 'Bso'):
             # We found a BSO in attrbute 0010
             self.ListOfDevices[nwkid]['Model'] = 'BSO-Profalux'
 
-        elif location.find('volet') != -1:
+        elif location in ( 'VOLET', 'volet', 'Volet' ):
             # We found a VR
             self.ListOfDevices[nwkid]['Model'] = 'Volet-Profalux'
 
