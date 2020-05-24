@@ -382,10 +382,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
 
         elif DeviceType == 'BSO-Orientation':
              if profalux:
-                loggingCommand( self, 'Log', "mgtCommand : profalux_MoveToLiftAndTilt: %s : Tilt%s" %(NWKID, Level), NWKID)
+                loggingCommand( self, 'Log', "mgtCommand : profalux_MoveToLiftAndTilt: %s : Tilt: %s" %(NWKID, Level), NWKID)
                 # Convert the tilt from a scale of 0 to 255 to 0 - 90
                 Tilt = (Level * 90 ) // 100
-                profalux_MoveToLiftAndTilt( self, NWKID, Tilt==Level)           
+                profalux_MoveToLiftAndTilt( self, NWKID, Tilt=Tilt)           
 
         elif DeviceType == "WindowCovering": # Blind Inverted
             if Level == 0:

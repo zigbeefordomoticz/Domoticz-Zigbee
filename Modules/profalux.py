@@ -40,6 +40,8 @@ def profalux_fake_deviceModel( self , nwkid):
     if self.ListOfDevices[nwkid]['Manufacturer'] != '1110':
         return
 
+    self.ListOfDevices[nwkid]['Manufacturer Name'] = 'Profalux'
+
     location =''
     if (
         'Ep' in self.ListOfDevices[nwkid]
@@ -50,21 +52,25 @@ def profalux_fake_deviceModel( self , nwkid):
         location = self.ListOfDevices[nwkid]['Ep']['01']['0000']['0010']
 
     if self.ListOfDevices[nwkid]['MacCapa'] == '8e' and self.ListOfDevices[nwkid]['ZDeviceID'] == '0200':
-        self.ListOfDevices[nwkid]['Manufacturer Name'] = 'Profalux'
+    
         # Main Powered device => Volet or BSO
         self.ListOfDevices[nwkid]['Model'] = 'VoletBSO-Profalux'
+
         if location.find('bso') != -1:
             # We found a BSO in attrbute 0010
             self.ListOfDevices[nwkid]['Model'] = 'BSO-Profalux'
-        if location.find('volet') != -1:
+
+        elif location.find('volet') != -1:
             # We found a VR
             self.ListOfDevices[nwkid]['Model'] = 'Volet-Profalux'
-        loggingProfalux( self, 'Log', "++++++ Model Name for %s forced to : %s" %(nwkid, self.ListOfDevices[nwkid]['Model']), nwkid)
 
-    elif self.ListOfDevices[nwkid]['MacCapa'] == '80' and self.ListOfDevices[nwkid]['ZDeviceID'] == '0201':
+        loggingProfalux( self, 'Log', "++++++ Model Name for %s forced to : %s due to location: %s" %(nwkid, self.ListOfDevices[nwkid]['Model'], location), nwkid)
+
+    elif self.ListOfDevices[nwkid]['MacCapa'] == '80':
+
         # Batterie Device => Remote command
         self.ListOfDevices[nwkid]['Model'] = 'Telecommande-Profalux'
-        self.ListOfDevices[nwkid]['Manufacturer Name'] = 'Profalux'
+
         loggingProfalux( self, 'Log', "++++++ Model Name for %s forced to : %s" %(nwkid, self.ListOfDevices[nwkid]['Model']), nwkid)
 
 def checkAndTriggerConfigReporting( self, NwkId):
@@ -185,8 +191,15 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
     def getLevel( self, nwkid):
         # Let's check if we can get the Level from Attribute
         level = None
-        if ( '01' in self.ListOfDevices[nwkid]['Ep'] and '0008' in self.ListOfDevices[nwkid]['Ep']['01'] and '0000' in self.ListOfDevices[nwkid]['Ep']['01']['0008']):
-            level = int(self.ListOfDevices[ nwkid ]['Ep']['01']['0008']['0000'], 16)
+        if '01' in self.ListOfDevices[nwkid]['Ep']:
+            Domoticz.Log("------------- %s" %self.ListOfDevices[nwkid]['Ep']['01'])
+            if  '0008' in self.ListOfDevices[nwkid]['Ep']['01']:
+                Domoticz.Log("------------- %s" %self.ListOfDevices[nwkid]['Ep']['01']['0008'])
+                if '0000' in self.ListOfDevices[nwkid]['Ep']['01']['0008']:
+                    Domoticz.Log("------------- %s" %self.ListOfDevices[nwkid]['Ep']['01']['0008']['0000'])
+                    level = int(self.ListOfDevices[ nwkid ]['Ep']['01']['0008']['0000'], 16)
+
+
         return  level
 
     def getTilt( self, nwkid):
@@ -223,7 +236,7 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
  
     if tilt is None:
         tilt = getTilt( self, nwkid)
-    Domoticz.Log("Retreive Tilt: %s" %level)
+    Domoticz.Log("Retreive Tilt: %s" %tilt)
 
     loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt after update Nwkid: %s Level: %s Tilt: %s" %( nwkid, level, tilt))
     
