@@ -198,7 +198,7 @@ def schneider_wiser_registration( self, Devices, key ):
         write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
 
     if self.ListOfDevices[key]['Model'] in ( 'EH-ZB-HACT' ): # Actuator
-        schneider_hact_heater_type (self,key,'registration')
+        schneider_hact_heater_type (self,key,'registration')# set fip mode if nothing and dont touch if already exists
         schneider_actuator_check_and_bind (self, key)
 
 
