@@ -110,17 +110,6 @@ class WebServer(object):
     def rest_plugin_health( self, verb, data, parameters):
 
         _response = prepResponseMessage( self ,setupHeadersResponse())
-        if self.pluginconf.pluginConf['enableKeepalive']:
-            _response["Headers"]["Connection"] = "Keep-alive"
-        else:
-            _response["Headers"]["Connection"] = "Close"
-        if not self.pluginconf.pluginConf['enableCache']:
-            _response["Headers"]["Cache-Control"] = "no-cache, no-store, must-revalidate"
-            _response["Headers"]["Pragma"] = "no-cache"
-            _response["Headers"]["Expires"] = "0"
-            _response["Headers"]["Accept"] = "*/*"
-
-        _response["Status"] = "200 OK"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
             health = {
@@ -162,6 +151,7 @@ class WebServer(object):
     def rest_reset_zigate( self, verb, data, parameters):
 
         _response = prepResponseMessage( self ,setupHeadersResponse())
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
             if self.pluginparameters['Mode1'] != 'None':
                 self.zigatedata['startZigateNeeded'] = True
@@ -173,7 +163,7 @@ class WebServer(object):
 
     def rest_zigate( self, verb, data, parameters):
 
-        _response = setupHeadersResponse()
+        _response = prepResponseMessage( self ,setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
             if self.zigatedata:
@@ -219,7 +209,7 @@ class WebServer(object):
     def rest_nwk_stat( self, verb, data, parameters):
 
         _response = prepResponseMessage( self ,setupHeadersResponse())
-
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         _filename = self.pluginconf.pluginConf['pluginReports'] + 'NetworkEnergy-v3-' + '%02d' %self.hardwareID + '.json'
 
         _timestamps_lst = [] # Just the list of Timestamps
@@ -329,7 +319,7 @@ class WebServer(object):
     def rest_restart_needed( self, verb, data, parameters):
 
         _response = prepResponseMessage( self ,setupHeadersResponse())
-
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
             _response["Data"] = json.dumps( self.restart_needed, sort_keys=True )
         return _response
@@ -396,6 +386,7 @@ class WebServer(object):
         Statistics['Rxph'] = round(Statistics['Received'] / Statistics['Uptime'] * 3600, 2)
 
         _response = prepResponseMessage( self ,setupHeadersResponse())
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
                 _response["Data"] = json.dumps( Statistics, sort_keys=True )
         return _response
@@ -403,7 +394,7 @@ class WebServer(object):
     def rest_Settings( self, verb, data, parameters):
 
         _response = prepResponseMessage( self ,setupHeadersResponse())
-
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
             if len(parameters) == 0:
                 setting_lst = []
@@ -566,6 +557,7 @@ class WebServer(object):
     def rest_PermitToJoin( self, verb, data, parameters):
 
         _response = prepResponseMessage( self ,setupHeadersResponse())
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
             duration = self.permitTojoin['Duration']
             timestamp = self.permitTojoin['Starttime']
@@ -610,6 +602,7 @@ class WebServer(object):
 
         _dictDevices = {}
         _response = prepResponseMessage( self ,setupHeadersResponse())
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
         if verb == 'GET':
             if self.Devices is None or len(self.Devices) == 0:
@@ -689,6 +682,7 @@ class WebServer(object):
     def rest_zDevice_name( self, verb, data, parameters):
 
         _response = prepResponseMessage( self ,setupHeadersResponse())
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
         if verb == 'DELETE':
             if len(parameters) == 1:
@@ -806,6 +800,7 @@ class WebServer(object):
     def rest_zDevice( self, verb, data, parameters):
 
         _response = prepResponseMessage( self ,setupHeadersResponse())
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
         if verb == 'DELETE':
             if len(parameters) == 1:
@@ -938,6 +933,7 @@ class WebServer(object):
     def rest_zDevice_raw( self, verb, data, parameters):
 
         _response = prepResponseMessage( self ,setupHeadersResponse())
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
  
         if verb == 'GET':
             if self.Devices is None or len(self.Devices) == 0:
@@ -963,6 +959,7 @@ class WebServer(object):
 
         Domoticz.Log("raw_command - %s %s" %(verb, data))
         _response = prepResponseMessage( self ,setupHeadersResponse())
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
         if verb == 'PUT':
             _response["Data"] = None
@@ -993,6 +990,7 @@ class WebServer(object):
     def rest_dev_command( self, verb, data, parameters):
 
         _response = prepResponseMessage( self ,setupHeadersResponse())
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
         if verb == 'PUT':
             _response["Data"] = None
@@ -1062,6 +1060,7 @@ class WebServer(object):
     def rest_dev_capabilities( self, verb, data, parameters):
 
         _response = prepResponseMessage( self ,setupHeadersResponse())
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
         if verb != 'GET':
             return _response
