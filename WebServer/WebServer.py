@@ -465,8 +465,12 @@ class WebServer(object):
                         if str(setting_lst[setting]['current']) == str(self.pluginconf.pluginConf[param]):
                             #Nothing to do
                             continue
+                        if SETTINGS[_theme]['param'][param]['type'] == 'hex':
+                            if int(setting_lst[setting]['current'],16) == self.pluginconf.pluginConf[param]:
+                                continue
 
-                        self.logging( 'Debug', "Updating %s from %s to %s" %( param, self.pluginconf.pluginConf[param], setting_lst[setting]['current']))
+                        self.logging( 'Debug', "Updating %s from %s to %s on theme: %s" %( param, self.pluginconf.pluginConf[param], setting_lst[setting]['current'], _theme))
+
                         if SETTINGS[_theme]['param'][param]['restart']:
                             self.restart_needed['RestartNeeded'] = True
 
