@@ -167,7 +167,8 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             return
 
         if DeviceType == 'BSO-Volet':
-            profalux_MoveToLiftAndTilt( self, NWKID, level=1 )
+            if profalux:
+                profalux_MoveToLiftAndTilt( self, NWKID, level=0 )
 
         elif DeviceType == "WindowCovering":
             sendZigateCmd(self, "00FA","02" + NWKID + ZIGATE_EP + EPout + "01") # Blind inverted (On, for Close)
@@ -219,7 +220,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         if DeviceType == 'BSO-Volet':
             if profalux:
                 # On translated into a Move to 254
-                profalux_MoveToLiftAndTilt( self, NWKID, level=100 )
+                profalux_MoveToLiftAndTilt( self, NWKID, level=255 )
 
         elif DeviceType == "WindowCovering":
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
