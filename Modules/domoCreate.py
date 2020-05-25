@@ -522,7 +522,7 @@ def CreateDomoDevice(self, Devices, NWKID):
             if t == 'BSO-Orientation':
                 # BSO Orientation for Profalux, Create a Switch selector instead of Slider
                 #createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 244, Subtype_ = 73, Switchtype_ = 13 )
-                Options = createSwitchSelector( 20,  DeviceType = t,OffHidden = True, SelectorStyle = 1 )
+                Options = createSwitchSelector( 11,  DeviceType = t,OffHidden = True, SelectorStyle = 1 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)       
                 loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in BSO-Orientation" %(t), NWKID)
             

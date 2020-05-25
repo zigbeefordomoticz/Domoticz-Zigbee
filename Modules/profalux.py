@@ -101,19 +101,19 @@ def configureReportingForprofalux( self, NwkId):
     loggingProfalux(self, 'Debug', "-- -- -- configureReportingForprofalux for %s data: %s" %(NwkId, datas))
 
     # Configure Reporting iin Raw Mode
-    ZCLFrameControl = '04'
-    ManfufacturerCode = '1110'
-    Attribute = '0001'
+    #ZCLFrameControl = '04'
+    #ManfufacturerCode = '1110'
+    #Attribute = '0001'
 
-    sqn = '01'
-    if 'SQN' in self.ListOfDevices[NwkId]:
-        if self.ListOfDevices[NwkId]['SQN'] != {} and self.ListOfDevices[NwkId]['SQN'] != '':
-            sqn = '%02x' %(int(self.ListOfDevices[NwkId]['SQN'],16) + 1)
-    cmd = '06' 
-    payload = ZCLFrameControl + ManfufacturerCode[2:4] + ManfufacturerCode[0:2] + sqn + cmd + '00' + Attribute[2:4] + Attribute[0:2] + '20' + '0000' + '0000' + '00'
+    #sqn = '01'
+    #if 'SQN' in self.ListOfDevices[NwkId]:
+    #    if self.ListOfDevices[NwkId]['SQN'] != {} and self.ListOfDevices[NwkId]['SQN'] != '':
+    #        sqn = '%02x' %(int(self.ListOfDevices[NwkId]['SQN'],16) + 1)
+    #cmd = '06' 
+    #payload = ZCLFrameControl + ManfufacturerCode[2:4] + ManfufacturerCode[0:2] + sqn + cmd + '00' + Attribute[2:4] + Attribute[0:2] + '20' + '0000' + '0000' + '00'
 
-    loggingProfalux( self, 'Log', "configureReportingForprofalux RAW APS %s %s" %(NwkId, payload))
-    raw_APS_request( self, NwkId, '01', 'fc21', '0104', payload, zigate_ep=ZIGATE_EP)
+    #loggingProfalux( self, 'Log', "configureReportingForprofalux RAW APS %s %s" %(NwkId, payload))
+    #raw_APS_request( self, NwkId, '01', 'fc21', '0104', payload, zigate_ep=ZIGATE_EP)
 
 def profalux_stop( self, nwkid ):
 
@@ -229,7 +229,8 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
     if level is None and tilt is None:
         return
 
-    checkAndTriggerConfigReporting( self, nwkid)
+    # Disabled until 3.1c
+    #checkAndTriggerConfigReporting( self, nwkid)
     if level is None:
         level = getLevel( self, nwkid)
     Domoticz.Log("Retreive Level: %s" %level)
