@@ -64,14 +64,14 @@ def profalux_fake_deviceModel( self , nwkid):
             # We found a VR
             self.ListOfDevices[nwkid]['Model'] = 'Volet-Profalux'
 
-        loggingProfalux( self, 'Log', "++++++ Model Name for %s forced to : %s due to location: %s" %(nwkid, self.ListOfDevices[nwkid]['Model'], location), nwkid)
+        loggingProfalux( self, 'Debug', "++++++ Model Name for %s forced to : %s due to location: %s" %(nwkid, self.ListOfDevices[nwkid]['Model'], location), nwkid)
 
     elif self.ListOfDevices[nwkid]['MacCapa'] == '80':
 
         # Batterie Device => Remote command
         self.ListOfDevices[nwkid]['Model'] = 'Telecommande-Profalux'
 
-        loggingProfalux( self, 'Log', "++++++ Model Name for %s forced to : %s" %(nwkid, self.ListOfDevices[nwkid]['Model']), nwkid)
+        loggingProfalux( self, 'Debug', "++++++ Model Name for %s forced to : %s" %(nwkid, self.ListOfDevices[nwkid]['Model']), nwkid)
 
 def checkAndTriggerConfigReporting( self, NwkId):
 
@@ -132,7 +132,7 @@ def profalux_stop( self, nwkid ):
 
     payload = cluster_frame + sqn + cmd
     raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
-    loggingProfalux( self, 'Log', "profalux_stop ++++ %s/%s payload: %s" %( nwkid, EPout, payload), nwkid)
+    loggingProfalux( self, 'Debug', "profalux_stop ++++ %s/%s payload: %s" %( nwkid, EPout, payload), nwkid)
 
 def profalux_MoveToLevelWithOnOff( self, nwkid, level):
 
@@ -155,7 +155,7 @@ def profalux_MoveToLevelWithOnOff( self, nwkid, level):
 
     payload = cluster_frame + sqn + cmd + '%02x' %level
     raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
-    loggingProfalux( self, 'Log', "profalux_MoveToLevelWithOnOff ++++ %s/%s Level: %s payload: %s" %( nwkid, EPout, level, payload), nwkid)
+    loggingProfalux( self, 'Debug', "profalux_MoveToLevelWithOnOff ++++ %s/%s Level: %s payload: %s" %( nwkid, EPout, level, payload), nwkid)
     return
 
 def profalux_MoveWithOnOff( self, nwkid, OnOff):
@@ -183,7 +183,7 @@ def profalux_MoveWithOnOff( self, nwkid, OnOff):
 
     payload = cluster_frame + sqn + cmd + '%02x' %OnOff
     raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
-    loggingProfalux( self, 'Log', "profalux_MoveWithOnOff ++++ %s/%s OnOff: %s payload: %s" %( nwkid, EPout, OnOff, payload), nwkid)
+    loggingProfalux( self, 'Debug', "profalux_MoveWithOnOff ++++ %s/%s OnOff: %s payload: %s" %( nwkid, EPout, OnOff, payload), nwkid)
 
     return
 
@@ -192,13 +192,12 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
     def getLevel( self, nwkid):
         # Let's check if we can get the Level from Attribute
         level = None
-        if '01' in self.ListOfDevices[nwkid]['Ep']:
-            Domoticz.Log("------------- %s" %self.ListOfDevices[nwkid]['Ep']['01'])
-            if  '0008' in self.ListOfDevices[nwkid]['Ep']['01']:
-                Domoticz.Log("------------- %s" %self.ListOfDevices[nwkid]['Ep']['01']['0008'])
-                if '0000' in self.ListOfDevices[nwkid]['Ep']['01']['0008']:
-                    Domoticz.Log("------------- %s" %self.ListOfDevices[nwkid]['Ep']['01']['0008']['0000'])
-                    level = int(self.ListOfDevices[ nwkid ]['Ep']['01']['0008']['0000'], 16)
+        if (
+            '01' in self.ListOfDevices[nwkid]['Ep']
+            and '0008' in self.ListOfDevices[nwkid]['Ep']['01']
+            and '0000' in self.ListOfDevices[nwkid]['Ep']['01']['0008']
+        ):
+            level = int(self.ListOfDevices[ nwkid ]['Ep']['01']['0008']['0000'], 16)
 
         return  level
 
@@ -225,7 +224,7 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
 
 
     # Begin
-    loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt Nwkid: %s Level: %s Tilt: %s" %( nwkid, level, tilt))
+    loggingProfalux( self, 'Debug', "profalux_MoveToLiftAndTilt Nwkid: %s Level: %s Tilt: %s" %( nwkid, level, tilt))
     if level is None and tilt is None:
         return
 
@@ -233,13 +232,11 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
     #checkAndTriggerConfigReporting( self, nwkid)
     if level is None:
         level = getLevel( self, nwkid)
-    Domoticz.Log("Retreive Level: %s" %level)
  
     if tilt is None:
         tilt = getTilt( self, nwkid)
-    Domoticz.Log("Retreive Tilt: %s" %tilt)
 
-    loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt after update Nwkid: %s Level: %s Tilt: %s" %( nwkid, level, tilt))
+    loggingProfalux( self, 'Debug', "profalux_MoveToLiftAndTilt after update Nwkid: %s Level: %s Tilt: %s" %( nwkid, level, tilt))
     
     # determine which Endpoint
     EPout = '01'
@@ -270,7 +267,8 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
        option = 0x01
        tilt = 0x00
     
-    Domoticz.Log("profalux_MoveToLiftAndTilt - Level: %s Tilt: %s" %( level, tilt))
+    if tilt == 0:
+        tilt = 1
     setTilt( self, nwkid, tilt)
     setLevel( self, nwkid, level)
 
@@ -281,8 +279,9 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
     # Transition Time  uint16  Transition Time between current and asked position
     
     ManfufacturerCode = '1110'
-    if tilt == 0:
-        tilt = 1
+
+
+
     payload = cluster_frame + ManfufacturerCode[2:4] + ManfufacturerCode[0:2] + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'FFFF'
-    loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt %s ++++ %s %s/%s level: %s tilt: %s option: %s payload: %s" %( cluster_frame, sqn, nwkid, EPout, level, tilt, option, payload), nwkid)
+    loggingProfalux( self, 'Debug', "profalux_MoveToLiftAndTilt %s ++++ %s %s/%s level: %s tilt: %s option: %s payload: %s" %( cluster_frame, sqn, nwkid, EPout, level, tilt, option, payload), nwkid)
     raw_APS_request( self, nwkid, '01', '0008', '0104', payload, zigate_ep=ZIGATE_EP)

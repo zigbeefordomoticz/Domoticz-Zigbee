@@ -33,7 +33,7 @@ def decodeAttribute(self, AttType, Attribute, handleErrors=False):
 
     if len(Attribute) == 0:
         return
-    loggingCluster( self, 'Debug', "decodeAttribute( %s, %s) " %(AttType, Attribute) )
+    #loggingCluster( self, 'Debug', "decodeAttribute( %s, %s) " %(AttType, Attribute) )
 
     if int(AttType,16) == 0x10:    # Boolean
         return Attribute
@@ -109,7 +109,7 @@ def decodeAttribute(self, AttType, Attribute, handleErrors=False):
         decode = decode.strip()
         return decode
 
-    loggingCluster( self, 'Debug', "decodeAttribut(%s, %s) unknown, returning %s unchanged" %(AttType, Attribute, Attribute) )
+    #loggingCluster( self, 'Debug', "decodeAttribut(%s, %s) unknown, returning %s unchanged" %(AttType, Attribute, Attribute) )
     return Attribute
 
 def storeReadAttributeStatus( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus ):
@@ -520,7 +520,7 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     checkAttribute( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID )
 
-    if MsgAttrID == "0000": # Voltage
+    if MsgAttrID == "0000":    # Voltage
         value = round(int(value)/10, 1)
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(value))
@@ -542,7 +542,6 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
 
-
     elif MsgAttrID == "0002": # MAINS ALARM MASK
         _undervoltage = (int(value)) & 1
         _overvoltage = (int(value) >> 1 ) & 1
@@ -553,10 +552,12 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     elif MsgAttrID == '0007': # Power Source
         if MsgClusterData == '01':
-            if 'Model' in self.ListOfDevices[MsgSrcAddr]:
-                if self.ListOfDevices[MsgSrcAddr]['Model'] != {}:
-                    if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TI0001': 
-                        return
+            if (
+                'Model' in self.ListOfDevices[MsgSrcAddr]
+                and self.ListOfDevices[MsgSrcAddr]['Model'] != {}
+                and self.ListOfDevices[MsgSrcAddr]['Model'] == 'TI0001'
+            ):
+                return
 
             self.ListOfDevices[MsgSrcAddr]['PowerSource'] = 'Main'
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
@@ -569,9 +570,8 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     elif MsgAttrID == "0020": # Battery Voltage
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
         loggingCluster( self, 'Debug', "readCluster 0001 - %s Battery: %s V" %(MsgSrcAddr, value) , MsgSrcAddr)
-        if 'Model' in self.ListOfDevices[MsgSrcAddr]:
-            if self.ListOfDevices[MsgSrcAddr]['Model'] == 'EH-ZB-BMS':
-                value = round( value/10, 1)
+        if ( 'Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Model'] == 'EH-ZB-BMS' ):
+            value = round( value/10, 1)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(value))
 
     elif MsgAttrID == "0021": # Battery %
@@ -614,7 +614,7 @@ def UpdateBatteryAttribute( self, MsgSrcAddr, MsgSrcEp ):
                                'lumi.remote.b286opcn01-bulb', 'lumi.remote.b486opcn01-bulb', 'lumi.remote.b686opcn01-bulb',
                                'lumi.sen_ill.mgl01')
 
-    BATTERY_200PERCENT = ( "SML001" , " RWL021", "SPZB0001", "WarningDevice" , "SmokeSensor-N", "SMOK_V16", "RH3001" ,"TS0201" )
+    BATTERY_200PERCENT = ( "SML001" , "RWL021", "SPZB0001", "WarningDevice" , "SmokeSensor-N", "SMOK_V16", "RH3001" ,"TS0201", "COSensor-N" )
     BATTERY_3VOLTS = ( "lumi.sen_ill.mgl01", "3AFE130104020015", "3AFE140103020000", "3AFE14010402000D", "3AFE170100510001" ) + LEGRAND_REMOTES
 
     BATTERY_15_VOLTS = ( )
@@ -637,12 +637,16 @@ def UpdateBatteryAttribute( self, MsgSrcAddr, MsgSrcEp ):
 
     if '0000' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']:
         mainVolt = float(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']['0000'])
+
     if '0010' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']:
         battVolt = float(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']['0010'])
+
     if '0020' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']:
         battRemainingVolt = float(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']['0020'])
+
     if '0021' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']:
         battRemainPer = float(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']['0021'])
+
 
     loggingCluster( self, 'Debug', "readCluster 0001 - Device: %s Model: %s mainVolt:%s , battVolt:%s, battRemainingVolt: %s, battRemainPer:%s " %(MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Model'], mainVolt, battVolt, battRemainingVolt, battRemainPer) , MsgSrcAddr)
 
@@ -1989,7 +1993,7 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 loggingCluster( self, 'Debug', "ReadCluster - 0201 - %s/%s Host Flags: %s" %(MsgSrcAddr, MsgSrcEp,value), MsgSrcAddr)
                 checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  value )
         
-    elif MsgAttrID in ( 'e010', 'e011', 'e012', 'e013', 'e014', 'e030', 'e031'):
+    elif MsgAttrID in ( 'e010', 'e011', 'e012', 'e013', 'e014', 'e030', 'e031', 'e020'):
         if MsgAttrID == 'e010': # Schneider Thermostat Mode
             THERMOSTAT_MODE = { '00': 'Mode Off', '01': 'Manual',
                 '02': 'Schedule', '03': 'Energy Saver',
@@ -2004,7 +2008,7 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0201',MsgClusterData, Attribute_=MsgAttrID)
             checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  MsgClusterData )
 
-        elif MsgAttrID == 'e011': 
+        elif MsgAttrID == 'e011':  # hact mode : fip or conventional and heating mode : fip or setpoint 
             loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Schneider ATTRIBUTE_THERMOSTAT_HACT_CONFIG  %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0201',MsgClusterData, Attribute_=MsgAttrID)
             checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  MsgClusterData )
@@ -2018,6 +2022,11 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         elif MsgAttrID == 'e014': # 57364, ATTRIBUTE_THERMOSTAT_OPEN_WINDOW_DETECTION_INTERVAL
             loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Schneider ATTRIBUTE_THERMOSTAT_OPEN_WINDOW_DETECTION_INTERVAL  %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
             checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  MsgClusterData )
+
+        elif MsgAttrID == 'e020': # fip mode
+            loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Schneider FIP mode  %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
+            checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  MsgClusterData )
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0201',MsgClusterData, Attribute_=MsgAttrID)
 
         elif MsgAttrID == 'e030': 
             loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Schneider Valve Position  %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
