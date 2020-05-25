@@ -135,7 +135,7 @@ def getEpForCluster( self, nwkid, ClusterId):
         if ClusterId in self.ListOfDevices[nwkid]['Ep'][tmpEp]:
             EPout.append( tmpEp )
 
-    if len(EPout):
+    if not EPout:
         return EPout
 
     if len(self.ListOfDevices[nwkid]['Ep']) == 1:
