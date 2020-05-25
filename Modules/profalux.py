@@ -155,6 +155,9 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
     elif level and tilt:
         option = 0x03
 
+    if tilt == 0:
+        tilt = 1
+
     payload = cluster_frame + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'ffff'
     raw_APS_request( self, nwkid, EPout, 'fc21', '0104', payload, zigate_ep=ZIGATE_EP)
     loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload), nwkid)
