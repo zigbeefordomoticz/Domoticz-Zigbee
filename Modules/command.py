@@ -377,13 +377,20 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
 
         elif DeviceType == 'BSO-Volet':
             if profalux:
-                loggingCommand( self, 'Log', "mgtCommand : profalux_MoveToLiftAndTilt: %s BSO-Volet Lift: %s" %(NWKID, Level), NWKID)
+                # Transform slider % into analog value
+                if Level == 0:
+                    lift = 0
+                elif Level > 100:
+                    lift = 25
+                lift = ( 255 * Level ) // 100
+                loggingCommand( self, 'Log', "mgtCommand : profalux_MoveToLiftAndTilt: %s BSO-Volet Lift: %s" %(NWKID, lift), NWKID)
                 profalux_MoveToLiftAndTilt( self, NWKID, level=Level)
 
         elif DeviceType == 'BSO-Orientation':
              if profalux:
-                loggingCommand( self, 'Log', "mgtCommand : profalux_MoveToLiftAndTilt:  %s BSO-Orientation : Tilt: %s" %(NWKID, Level), NWKID)
-                profalux_MoveToLiftAndTilt( self, NWKID, tilt=Level)           
+                Tilt = ( (Level - 10) // 2)
+                loggingCommand( self, 'Log', "mgtCommand : profalux_MoveToLiftAndTilt:  %s BSO-Orientation : Tilt: %s" %(NWKID, Tilt), NWKID)
+                profalux_MoveToLiftAndTilt( self, NWKID, tilt=Tilt)           
 
         elif DeviceType == "WindowCovering": # Blind Inverted
             if Level == 0:

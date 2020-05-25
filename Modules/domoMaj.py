@@ -351,9 +351,10 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
             # value is str
             if WidgetType == "BSO-Orientation":
                 # Receveive Level (orientation) in degrees to convert into % for the slider
-                percent_value = (int(value) * 100 // 90)
-                nValue = 2
-                sValue = str(percent_value)
+                # Translate the Angle into Selector item
+                selector = (int(value) * 2 ) + 10
+                nValue = selector // 10
+                sValue = str(selector)
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
 
         if ClusterType in ( 'Alarm', 'Door', 'Switch', 'SwitchButton', 'AqaraOppleMiddle', 'Motion', 

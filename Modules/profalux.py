@@ -174,20 +174,6 @@ def profalux_MoveWithOnOff( self, nwkid, OnOff):
 
 def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
 
-    def checkLevel( level):
-        # Check the Level and convert % into analog value
-        if level == 0:
-            level = 0
-        elif level > 100:
-            level = 25
-        return ( 255 * level ) // 100
-
-    def checkTilt( level ):
-        # Receive a value between 0 to 90
-        if level > 100:
-            level = 100
-        return (( level * 90 )// 100)
-
     def getLevel( self, nwkid):
         # Let's check if we can get the Level from Attribute
         level = None
@@ -198,7 +184,6 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
                 if '0000' in self.ListOfDevices[nwkid]['Ep']['01']['0008']:
                     Domoticz.Log("------------- %s" %self.ListOfDevices[nwkid]['Ep']['01']['0008']['0000'])
                     level = int(self.ListOfDevices[ nwkid ]['Ep']['01']['0008']['0000'], 16)
-
 
         return  level
 
@@ -258,8 +243,6 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
 
 
     cmd = '10' # Propriatary Command: Ask the Tilt Blind to go to a Certain Position and Orientate to a certain angle
-    level = checkLevel( level )
-    tilt = checkTilt( tilt)
 
     # compute option 0x01 level, 0x02 tilt, 0x03 level + tilt    
     if level and tilt:
