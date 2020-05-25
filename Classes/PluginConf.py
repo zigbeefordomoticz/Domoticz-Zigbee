@@ -20,7 +20,7 @@ from Modules.tools import is_hex
 
 SETTINGS = { 
     'Services': { 'Order': 1, 'param': {
-        'enablegroupmanagement':  { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
+        'enablegroupmanagement':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
         'enableReadAttributes': { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
         'enableWebServer': { 'type':'bool', 'default':1, 'current':None, 'restart':True , 'hidden':False, 'Advanced':False},
         'internetAccess': { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
@@ -29,19 +29,19 @@ SETTINGS = {
         }
     },
 
-    'GroupManagement': { 'Order': 3, 'param': {
+    'GroupManagement': { 'Order': 2, 'param': {
         'OnIfOneOn': { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
         }
     },
 
-    'DomoticzEnvironment': { 'Order': 4, 'param':{
+    'DomoticzEnvironment': { 'Order': 3, 'param':{
         #'proto': { 'type':'str', 'default':'http', 'current':None, 'restart':False, 'hidden':False, 'Advanced':False},
         #'host': { 'type':'str', 'default':'127.0.0.1', 'current':None, 'restart':False, 'hidden':False, 'Advanced':False},
         'port': { 'type':'str', 'default':'8080', 'current':None, 'restart':False, 'hidden':False, 'Advanced':False}
         }
     },
 
-    'WebInterface': { 'Order': 5, 'param': {
+    'WebInterface': { 'Order': 4, 'param': {
         'Lang':            { 'type':'str', 'default':'en-US', 'current':None, 'restart':False, 'hidden':False, 'Advanced':False},
         'enableGzip':      { 'type':'bool', 'default':1, 'current':None, 'restart':False, 'hidden':False, 'Advanced':True},
         'enableDeflate':   { 'type':'bool', 'default':1, 'current':None, 'restart':False, 'hidden':False, 'Advanced':True},
@@ -52,7 +52,7 @@ SETTINGS = {
     },
 
     # Polling
-    'DevicePolling': { 'Order': 6, 'param': {
+    'DevicePolling': { 'Order': 5, 'param': {
         'pingDevicesFeq':       { 'type':'int', 'default':3600 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
         'pollingPhilips':       { 'type':'int', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
         'pollingGledopto':      { 'type':'int', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
@@ -82,7 +82,7 @@ SETTINGS = {
     },
 
     # Device Management
-    'DeviceManagement': { 'Order': 7, 'param': {
+    'DeviceManagement': { 'Order': 6, 'param': {
         'forcePollingAfterAction':       { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
         'forcePassiveWidget':            { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
         'allowForceCreationDomoDevice':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
@@ -97,7 +97,7 @@ SETTINGS = {
     },
 
     # Zigate Configuration
-    'ZigateConfiguration': { 'Order': 8, 'param': {
+    'ZigateConfiguration': { 'Order': 7, 'param': {
         'zigatePartOfGroup0000':         { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
         'allowRemoveZigateDevice':       { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
         'blueLedOnOff':                  { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
@@ -117,7 +117,7 @@ SETTINGS = {
     },
 
     # Command Transitionin tenth of seconds
-    'CommandTransition': { 'Order': 9, 'param': {
+    'CommandTransition': { 'Order': 8, 'param': {
         'moveToHueSatu':     { 'type':'int', 'default':0 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':False},
         'moveToColourTemp':  { 'type':'int', 'default':0 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':False},
         'moveToColourRGB':   { 'type':'int', 'default':0 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':False},
@@ -126,7 +126,7 @@ SETTINGS = {
     },
 
     #Over The Air Upgrade
-    'OverTheAirUpgrade': { 'Order': 10, 'param': {
+    'OverTheAirUpgrade': { 'Order': 9, 'param': {
         'forceOTAUpgrade': { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
         'forceOTAMask': { 'type':'hex', 'default':0x00050000 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
         'batteryOTA':  { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
@@ -136,7 +136,7 @@ SETTINGS = {
     },
 
     # Plugin Transport
-    'PluginTransport': { 'Order': 11, 'param': {
+    'PluginTransport': { 'Order': 10, 'param': {
         #'APSrteError':  {'type':'bool', 'default':0, 'current': None, 'restart':False , 'hidden':True, 'Advanced':False},
         #'APSreTx': {'type':'bool', 'default':0, 'current': None, 'restart':False , 'hidden':True, 'Advanced':False},
         #'zmode':  { 'type':'str', 'default':'ZigBee' , 'current': None, 'restart':True , 'hidden':True, 'Advanced':False},
@@ -148,7 +148,7 @@ SETTINGS = {
     },
 
     # Plugin Directories
-    'PluginConfiguration': { 'Order': 12, 'param': {
+    'PluginConfiguration': { 'Order': 11, 'param': {
         'numDeviceListVersion': { 'type':'int', 'default':12 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
         'filename':             { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':True, 'Advanced':True},
         'pluginHome':           { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':True, 'Advanced':True},
@@ -163,7 +163,7 @@ SETTINGS = {
     },
 
     # Verbose
-    'VerboseLogging': { 'Order': 13, 'param': {
+    'VerboseLogging': { 'Order': 12, 'param': {
         'debugMatchId':         { 'type':'str', 'default':'ffff' , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
         'useDomoticzLog':       { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
         'logDeviceUpdate':      { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
@@ -206,7 +206,7 @@ SETTINGS = {
     },
 
     # Legrand Specific
-    'Legrand': { 'Order': 14, 'param': {
+    'Legrand': { 'Order': 13, 'param': {
         'EnableLedIfOn':    {'type':'bool', 'default':1, 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
         'EnableLedInDark':  {'type':'bool', 'default':0, 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
         'EnableLedShutter': {'type':'bool', 'default':0, 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
@@ -217,14 +217,14 @@ SETTINGS = {
     },
 
     # Schneider Wiser configuration
-    'Schneider Wiser':  { 'Order': 15, 'param': {
+    'Schneider Wiser':  { 'Order': 14, 'param': {
         'enableSchneiderWiser': { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
         'reenforcementWiser': { 'type':'int', 'default':300 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
         }
     },
 
     #Others
-    'Others': { 'Order': 16, 'param': {
+    'Others': { 'Order': 15, 'param': {
         'alarmDuration': {'type':'int', 'default':1, 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
         'numTopologyReports': { 'type':'int', 'default':4 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
         'numEnergyReports': { 'type':'int', 'default':4 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
@@ -235,13 +235,13 @@ SETTINGS = {
         }
     },
 
-    'Patching': { 'Order': 17, 'param': {
+    'Patching': { 'Order': 16, 'param': {
         'Bug566': {'type':'bool', 'default':0, 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
         }
     },
 
     # Experimental
-    'Experimental': { 'Order': 18, 'param': {
+    'Experimental': { 'Order': 17, 'param': {
         'expJsonDatabase': { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
         'ExpDeviceAnnoucement1': { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
         'ExpDeviceAnnoucement2': { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},

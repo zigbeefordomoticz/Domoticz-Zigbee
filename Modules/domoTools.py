@@ -423,8 +423,9 @@ def TypeFromCluster( self, cluster, create_=False, ProfileID_='', ZDeviceID_='')
     elif cluster == "fc00" : 
         TypeFromCluster = 'LvlControl'   # RWL01 - Hue remote
 
+    # Propriatory cluster 0xfc21 Profalux PFX
     elif cluster == "fc21" : 
-        TypeFromCluster = 'BSO'   # PXF Cluster from Profalux
+        TypeFromCluster = 'BSO-Orientation'
 
     # Propriatory Cluster. Plugin Cluster
     elif cluster == "rmt1": 
