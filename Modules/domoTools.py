@@ -76,9 +76,6 @@ def RetreiveSignalLvlBattery( self, NwkID):
     if 'Battery' in self.ListOfDevices[NwkID] and self.ListOfDevices[NwkID]['Battery'] != {}:
         BatteryLevel = int(round((self.ListOfDevices[NwkID]['Battery'])))
 
-
-    Domoticz.Log("Battery: %s Type: %s " %(BatteryLevel, type(BatteryLevel)))
-
     # Battery Level 255 means Main Powered device
     #if isinstance(BatteryLevel, float):
         # Looks like sometime we got a float instead of int.
