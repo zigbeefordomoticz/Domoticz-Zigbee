@@ -124,6 +124,24 @@ def getClusterListforEP( self, NWKID, Ep ) :
                 ClusterList.append(cluster)
     return ClusterList
 
+def getEpForCluster( self, nwkid, ClusterId):
+    """ 
+    Return the Ep or a list of Ep associated to the ClusterId 
+    If not found return Ep: 01
+    """
+
+    EPout = []
+    for tmpEp in self.ListOfDevices[nwkid]['Ep']:
+        if ClusterId in self.ListOfDevices[nwkid]['Ep'][tmpEp]:
+            EPout.append( tmpEp )
+
+    if len(EPout):
+        return EPout
+
+    if len(self.ListOfDevices[nwkid]['Ep']) == 1:
+        return [ self.ListOfDevices[nwkid]['Ep'].keys() ]
+
+    return EPout
 
 def DeviceExist(self, Devices, lookupNwkId , lookupIEEE = ''):
     """

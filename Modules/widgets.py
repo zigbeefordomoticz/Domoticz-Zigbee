@@ -364,23 +364,23 @@ SWITCH_LVL_MATRIX = {
     },
 
     "OrviboRemoteSquare": {
-    0: (0, "Off"), 
-    11: (1, "10"), 
-    12: (2, "20"), 
-    13: (3, "30"), 
-    21: (4, "40"),
-    22: (5, "50"),
-    23: (6, "60"),
-    31: (7, "70"),
-    32: (8, "80"),
-    33: (9, "90"),
-    41: (10, "100"),
-    42: (11, "110"),
-    43: (12, "120"),
-    "ForceUpdate": True,
-    "LevelNames": "Off|BT 1 Click|BT 1 Long|BT 1 Release|BT 2 Click|BT 2 Long|BT 2 Release|BT 3 Click|BT 3 Long|BT 3 Release|BT 4 Click|BT 4 Long|BT 4 Release",
-    "Language": {
-        "fr-FR": {"Off|BT 1 Click|BT 1 Long|BT 1 Release|BT 2 Click|BT 2 Long|BT 2 Release|BT 3 Click|BT 3 Long|BT 3 Release|BT 4 Click|BT 4 Long|BT 4 Release"}
+        0: (0, "Off"), 
+        11: (1, "10"), 
+        12: (2, "20"), 
+        13: (3, "30"), 
+        21: (4, "40"),
+        22: (5, "50"),
+        23: (6, "60"),
+        31: (7, "70"),
+        32: (8, "80"),
+        33: (9, "90"),
+        41: (10, "100"),
+        42: (11, "110"),
+        43: (12, "120"),
+        "ForceUpdate": True,
+        "LevelNames": "Off|BT 1 Click|BT 1 Long|BT 1 Release|BT 2 Click|BT 2 Long|BT 2 Release|BT 3 Click|BT 3 Long|BT 3 Release|BT 4 Click|BT 4 Long|BT 4 Release",
+        "Language": {
+            "fr-FR": {"Off|BT 1 Click|BT 1 Long|BT 1 Release|BT 2 Click|BT 2 Long|BT 2 Release|BT 3 Click|BT 3 Long|BT 3 Release|BT 4 Click|BT 4 Long|BT 4 Release"}
         }
     },
 
@@ -391,5 +391,21 @@ SWITCH_LVL_MATRIX = {
         '03': ( 3, "Level 3"),
         '04': ( 4, "Critical"), 
         "ForceUpdate": True,
-    }
+    },
+
+    "BSO-Orientation": {
+         0:  ( 0, "Off"), 
+         10: ( 1,  "10"),
+         20: ( 2,  "20"), 
+         30: ( 3,  "30"), 
+         40: ( 4,  "40"), 
+         50: ( 5,  "50"),
+         60: ( 6,  "60"),
+         70: ( 7,  "70"),
+         80: ( 8,  "80"),
+         90: ( 9,  "90"),
+        100: (10, "100"),
+        "ForceUpdate": True,
+        "LevelNames": "Off|0°|10°|20°|30°|40°|50°|60°|70°|80°|90°",
+    },
 }
