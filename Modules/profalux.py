@@ -175,18 +175,18 @@ def profalux_MoveWithOnOff( self, nwkid, OnOff):
 def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
 
     def checkLevel( level):
-        # Receive a value between 0 to 100
+        # Check the Level and convert % into analog value
         if level == 0:
-            level = 1
+            level = 0
         elif level > 100:
-            level = 100
-        return ( 254 * level ) // 100
+            level = 25
+        return ( 255 * level ) // 100
 
-    def checkTilt( tilt ):
+    def checkTilt( level ):
         # Receive a value between 0 to 90
-        if tilt > 90:
-            tilt = 90
-        return tilt
+        if level > 100:
+            level = 100
+        return (( level * 90 )// 100)
 
     def getLevel( self, nwkid):
         # Let's check if we can get the Level from Attribute

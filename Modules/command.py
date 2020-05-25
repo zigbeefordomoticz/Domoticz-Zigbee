@@ -139,7 +139,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
 
     if Command == 'Stop':  # Manage the Stop command. For known seen only on BSO and Windowcoering
         loggingCommand( self, 'Debug', "mgtCommand : Stop for Device: %s EPout: %s Unit: %s DeviceType: %s" %(NWKID, EPout, Unit, DeviceType), NWKID)
-        if profalux and DeviceType == 'BSO-Volet':
+        if profalux:
             # Profalux offer a Manufacturer command to make Stop on Cluster 0x0008
             profalux_stop( self, NWKID)
 
@@ -377,15 +377,13 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
 
         elif DeviceType == 'BSO-Volet':
             if profalux:
-                loggingCommand( self, 'Log', "mgtCommand : profalux_MoveToLiftAndTilt: %s Lift: %s" %(NWKID, Level), NWKID)
+                loggingCommand( self, 'Log', "mgtCommand : profalux_MoveToLiftAndTilt: %s BSO-Volet Lift: %s" %(NWKID, Level), NWKID)
                 profalux_MoveToLiftAndTilt( self, NWKID, level=Level)
 
         elif DeviceType == 'BSO-Orientation':
              if profalux:
-                loggingCommand( self, 'Log', "mgtCommand : profalux_MoveToLiftAndTilt: %s : Tilt: %s" %(NWKID, Level), NWKID)
-                # Convert the tilt from a scale of 0 to 255 to 0 - 90
-                Tilt = (Level * 90 ) // 100
-                profalux_MoveToLiftAndTilt( self, NWKID, tilt=Tilt)           
+                loggingCommand( self, 'Log', "mgtCommand : profalux_MoveToLiftAndTilt:  %s BSO-Orientation : Tilt: %s" %(NWKID, Level), NWKID)
+                profalux_MoveToLiftAndTilt( self, NWKID, tilt=Level)           
 
         elif DeviceType == "WindowCovering": # Blind Inverted
             if Level == 0:
