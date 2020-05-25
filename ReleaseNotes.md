@@ -12,6 +12,7 @@
 - [Technical] - Log mecanishm for the plugin (all Logs save under Logs folder)
 - [Technical] - Refactor a number of Modules
 - [Hardware] - Provides a number of additionnal Devices
+- [Hardware] - Implementation of BSO profalux
 
 ## 22 February 2020 - 4.7.5
 - [Hardware] - More Device Configuration
