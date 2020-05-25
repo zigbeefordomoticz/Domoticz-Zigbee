@@ -698,7 +698,7 @@ def ReadAttributeRequest_fc21(self, key):
 
     if profalux:
         loggingReadAttributes( self, 'Log', "Request Profalux BSO via Read Attribute request: %s" %key, nwkid=key)
-        datas = "02" + key + '01' + '01' + 'FC21' + '00' + '01' + '1110' + '01' + '0001'
+        datas = "02" + key + ZIGATE_EP + '01' + 'fc21' + '00' + '01' + '1110' + '01' + '0001'
         sendZigateCmd(self, "0100", datas )
 
 

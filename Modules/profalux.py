@@ -89,7 +89,6 @@ def checkAndTriggerConfigReporting( self, NwkId):
         configureReportingForprofalux( self, NwkId)
         return
 
-
 def configureReportingForprofalux( self, NwkId):
 
     loggingProfalux(self, 'Debug', "-- -- -- configureReportingForprofalux for %s" %NwkId)
@@ -99,6 +98,22 @@ def configureReportingForprofalux( self, NwkId):
     attrList = '00' + '20' + '0001' + '0000' + '0000' + '0000' + '00'
     datas =   '02' + NwkId + ZIGATE_EP + '01' + 'fc21' + '00' + '01' + '1110' + '01' + attrList
     sendZigateCmd( self, "0120", datas )
+    loggingProfalux(self, 'Debug', "-- -- -- configureReportingForprofalux for %s data: %s" %(NwkId, datas))
+
+    # Configure Reporting iin Raw Mode
+    ZCLFrameControl = '04'
+    ManfufacturerCode = '1110'
+    Attribute = '0001'
+
+    sqn = '01'
+    if 'SQN' in self.ListOfDevices[NwkId]:
+        if self.ListOfDevices[NwkId]['SQN'] != {} and self.ListOfDevices[NwkId]['SQN'] != '':
+            sqn = '%02x' %(int(self.ListOfDevices[NwkId]['SQN'],16) + 1)
+    cmd = '06' 
+    payload = ZCLFrameControl + ManfufacturerCode[2:4] + ManfufacturerCode[0:2] + sqn + cmd + '00' + Attribute[2:4] + Attribute[0:2] + '20' + '0000' + '0000' + '00'
+
+    loggingProfalux( self, 'Log', "configureReportingForprofalux RAW APS %s %s" %(NwkId, payload))
+    raw_APS_request( self, NwkId, '01', 'fc21', '0104', payload, zigate_ep=ZIGATE_EP)
 
 def profalux_stop( self, nwkid ):
 
@@ -266,7 +281,6 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
     
     ManfufacturerCode = '1110'
 
-    sqn = '%02x' %(int(sqn,16) + 1)
     payload = cluster_frame + ManfufacturerCode[2:4] + ManfufacturerCode[0:2] + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'FFFF'
     loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt %s ++++ %s %s/%s level: %s tilt: %s option: %s payload: %s" %( cluster_frame, sqn, nwkid, EPout, level, tilt, option, payload), nwkid)
     raw_APS_request( self, nwkid, '01', '0008', '0104', payload, zigate_ep=ZIGATE_EP)
