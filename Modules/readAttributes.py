@@ -346,7 +346,7 @@ def ReadAttributeRequest_0001(self, key):
             ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0001", listAttributes )
 
 def ReadAttributeRequest_0006_0000(self, key):
-    loggingReadAttributes( self, 'Log', "ReadAttributeRequest_0006 focus on 0x0000 Key: %s " %key, nwkid=key)
+    loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0006 focus on 0x0000 Key: %s " %key, nwkid=key)
     ListOfEp = getListOfEpForCluster( self, key, '0006' )
     for EPout in ListOfEp:
         listAttributes = [0]
@@ -383,7 +383,7 @@ def ReadAttributeRequest_0006(self, key):
             ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0006", listAttributes)
 
 def ReadAttributeRequest_0008_0000(self, key):
-    loggingReadAttributes( self, 'Log', "ReadAttributeRequest_0008 focus on 0x0008/0000 Key: %s " %key, nwkid=key)
+    loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0008 focus on 0x0008/0000 Key: %s " %key, nwkid=key)
     ListOfEp = getListOfEpForCluster( self, key, '0008' )
     for EPout in ListOfEp:
 
