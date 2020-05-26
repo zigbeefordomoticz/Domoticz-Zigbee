@@ -225,6 +225,7 @@ SETTINGS = {
 
     #Others
     'Others': { 'Order': 15, 'param': {
+        'profaluxOrientBSO': {'type':'int', 'default':45, 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
         'alarmDuration': {'type':'int', 'default':1, 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
         'numTopologyReports': { 'type':'int', 'default':4 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
         'numEnergyReports': { 'type':'int', 'default':4 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
