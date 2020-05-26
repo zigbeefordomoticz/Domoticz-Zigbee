@@ -49,7 +49,7 @@ from Modules.pdmHost import pdmHostAvailableRequest, PDMSaveRequest, PDMLoadRequ
 
 from Classes.IAS import IAS_Zone_Management
 from Classes.AdminWidgets import  AdminWidgets
-from GroupMgt.GroupMgt import GroupsManagement
+#from GroupMgtv2.GroupManagement import GroupsManagement
 from Classes.OTA import OTAManagement
 from Classes.NetworkMap import NetworkMap
 
@@ -550,7 +550,8 @@ def Decode8009(self, Devices, MsgData, MsgRSSI): # Network State response (Firm 
 
     if self.iaszonemgt:
         self.iaszonemgt.setZigateIEEE( extaddr )
-
+    if self.groupmgt:
+        self.groupmgt.updateZigateIEEE( extaddr) 
 
     loggingInput( self, 'Status', "Zigate addresses ieee: %s , short addr: %s" %( self.ZigateIEEE,  self.ZigateNWKID) )
 
@@ -795,6 +796,10 @@ def Decode8024(self, Devices, MsgData, MsgRSSI): # Network joined / formed
         self.ZigateNWKID = MsgShortAddress
         if self.iaszonemgt:
             self.iaszonemgt.setZigateIEEE( MsgExtendedAddress )
+            
+        if self.groupmgt:
+            self.groupmgt.updateZigateIEEE( MsgExtendedAddress ) 
+
         self.zigatedata['IEEE'] = MsgExtendedAddress
         self.zigatedata['Short Address'] = MsgShortAddress
         self.zigatedata['Channel'] = int(MsgChannel,16)
@@ -1475,22 +1480,22 @@ def Decode804E(self, Devices, MsgData, MsgRSSI):
         self.networkmap.LQIresp( MsgData )
 
 #Group response
-# Implemented in z_GrpMgt.py
+# Implemented in GroupMgtv2.GrupManagement.py
 def Decode8060(self, Devices, MsgData, MsgRSSI):
 
-    self.groupmgt.addGroupResponse( MsgData )
+    self.groupmgt.add_group_member_ship_response( MsgData )
 
 def Decode8061(self, Devices, MsgData, MsgRSSI):
 
-    self.groupmgt.viewGroupResponse( MsgData )
+    self.groupmgt.check_group_member_ship_response( MsgData )
 
 def Decode8062(self, Devices, MsgData, MsgRSSI):
 
-    self.groupmgt.getGroupMembershipResponse(MsgData)
+    self.groupmgt.look_for_group_member_ship_response(MsgData)
 
 def Decode8063(self, Devices, MsgData, MsgRSSI):
 
-    self.groupmgt.removeGroupResponse( MsgData )
+    self.groupmgt.remove_group_member_ship_response( MsgData )
 
 #Reponses SCENE
 def Decode80A0(self, Devices, MsgData, MsgRSSI) : # View Scene response

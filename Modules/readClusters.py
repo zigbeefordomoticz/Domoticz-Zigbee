@@ -12,11 +12,13 @@
 
 import Domoticz
 import binascii
-import time
+#import time
 import struct
 import json
 import queue
 import string
+
+from time import time
 
 from math import atan, sqrt, pi
 
@@ -114,19 +116,23 @@ def decodeAttribute(self, AttType, Attribute, handleErrors=False):
 
 def storeReadAttributeStatus( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus ):
 
-    if 'ReadAttributes' not in  self.ListOfDevices[MsgSrcAddr]:
-         self.ListOfDevices[MsgSrcAddr]['ReadAttributes'] = {}
+    if 'ReadAttributes' not in self.ListOfDevices[MsgSrcAddr]:
+            self.ListOfDevices[MsgSrcAddr]['ReadAttributes'] = {}
 
+    # Store the Time Stamp when this is received
+    if 'TimeStamps' not in self.ListOfDevices[MsgSrcAddr]['ReadAttributes']:
+        self.ListOfDevices[MsgSrcAddr]['ReadAttributes']['TimeStamps'] = {}
+    self.ListOfDevices[MsgSrcAddr]['ReadAttributes']['TimeStamps'][MsgSrcEp+'-'+str(MsgClusterId)] = int(time())
+
+    # Store the Read Attribute Status
     if 'Ep' not in  self.ListOfDevices[MsgSrcAddr]['ReadAttributes']:
         self.ListOfDevices[MsgSrcAddr]['ReadAttributes']['Ep'] = {}
-
     if MsgSrcEp not in self.ListOfDevices[MsgSrcAddr]['ReadAttributes']['Ep']:
         self.ListOfDevices[MsgSrcAddr]['ReadAttributes']['Ep'][MsgSrcEp] = {}
-
     if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]['ReadAttributes']['Ep'][MsgSrcEp]:
         self.ListOfDevices[MsgSrcAddr]['ReadAttributes']['Ep'][MsgSrcEp][MsgClusterId] = {}
-
     self.ListOfDevices[MsgSrcAddr]['ReadAttributes']['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgAttrStatus
+
 
 def ReadCluster(self, Devices, MsgData):
 
@@ -439,7 +445,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             self.DiscoveryDevices[MsgSrcAddr]['Battery'] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
         self.ListOfDevices[MsgSrcAddr]['Battery0016'] = decodeAttribute( self, MsgAttType, MsgClusterData)
-        self.ListOfDevices[MsgSrcAddr]['BatteryUpdateTime'] = int(time.time())
+        self.ListOfDevices[MsgSrcAddr]['BatteryUpdateTime'] = int(time())
 
     elif MsgAttrID == "4000": # SW Build
         loggingCluster( self, 'Debug', "ReadCluster - 0x0000 - Attribut 4000: %s" %str(decodeAttribute( self, MsgAttType, MsgClusterData) ), MsgSrcAddr)
@@ -689,7 +695,7 @@ def UpdateBatteryAttribute( self, MsgSrcAddr, MsgSrcEp ):
             %(MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Model'], self.ListOfDevices[MsgSrcAddr]['Battery'], value) , MsgSrcAddr)
        if value != self.ListOfDevices[MsgSrcAddr]['Battery']:
            self.ListOfDevices[MsgSrcAddr]['Battery'] = value
-           self.ListOfDevices[MsgSrcAddr]['BatteryUpdateTime'] = int(time.time())
+           self.ListOfDevices[MsgSrcAddr]['BatteryUpdateTime'] = int(time())
            loggingCluster( self, 'Debug', "readCluster 0001 - Device: %s Model: %s Updating battery to %s" %(MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Model'], value) , MsgSrcAddr)
 
 def Cluster0003( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
@@ -1637,7 +1643,7 @@ def Cluster0500( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
             self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['GlobalInfos'] = "%s;%s;%s;%s;%s;%s;%s;%s;%s;%s" \
                     %( alarm1, alarm2, tamper, batter, srepor, rrepor, troubl, acmain, test, batdef)
-            self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['TimeStamp'] = int(time.time())
+            self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['TimeStamp'] = int(time())
         else:
             loggingCluster( self, 'Debug', "ReadCluster0500 - Device: %s empty data: %s" %(MsgSrcAddr, MsgClusterData), MsgSrcAddr)
 

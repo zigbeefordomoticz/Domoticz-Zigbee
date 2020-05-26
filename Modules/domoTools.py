@@ -61,6 +61,7 @@ def RetreiveWidgetTypeList( self, Devices, NwkId, DeviceUnit = None):
 
 def RetreiveSignalLvlBattery( self, NwkID):
     
+    
     # Takes the opportunity to update RSSI and Battery
     SignalLevel = '' 
     if 'RSSI' in self.ListOfDevices[NwkID]:
@@ -70,17 +71,17 @@ def RetreiveSignalLvlBattery( self, NwkID):
     rssi = 12
     if isinstance(SignalLevel, int):
         rssi = round((SignalLevel * 12) / 255)
-        
+    
     BatteryLevel = ''
-    if 'Battery' in self.ListOfDevices[NwkID]:
-        BatteryLevel = self.ListOfDevices[NwkID]['Battery']
+    if 'Battery' in self.ListOfDevices[NwkID] and self.ListOfDevices[NwkID]['Battery'] != {}:
+        BatteryLevel = int(round((self.ListOfDevices[NwkID]['Battery'])))
 
     # Battery Level 255 means Main Powered device
-    if isinstance(BatteryLevel, float):
+    #if isinstance(BatteryLevel, float):
         # Looks like sometime we got a float instead of int.
         # in that case convert to int
-        BatteryLvl = round( BatteryLevel)
-
+    #    BatteryLvl = round( BatteryLevel)
+    
     if BatteryLevel == '' or (not isinstance(BatteryLevel, int)):
         BatteryLevel = 255
 

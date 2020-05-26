@@ -20,10 +20,18 @@ from Modules.widgets import SWITCH_LVL_MATRIX
 from Modules.domoTools import TypeFromCluster, RetreiveSignalLvlBattery, UpdateDevice_v2, RetreiveWidgetTypeList
 
 def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Color_=''):
-    '''
+    """
     MajDomoDevice
     Update domoticz device accordingly to Type found in EP and value/Color provided
-    '''
+    """
+    def CheckUpdateGroup( self, NwkId, Ep, ClusterId):
+
+        if ClusterId not in ( '0006', '0008', '0102' ):
+            return
+
+        if self.groupmgt:
+            self.groupmgt.checkAndTriggerIfMajGroupNeeded( NwkId, Ep, ClusterId)
+
 
     def getDimmerLevelOfColor( self, value):
 
@@ -617,27 +625,25 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 if value == '00': 
                     nValue = 0 
                     sValue = '00' #Off
-
+                    UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
                 elif value == '01': 
                     nValue = 1 
                     sValue = "10" # On
-
+                    UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
                 elif value == 'moveup': 
                     nValue = 2 
                     sValue = "20" # Move Up
-
+                    UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
                 elif value == 'movedown': 
                     nValue = 3 
                     sValue = "30" # Move Down
-
+                    UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
                 elif value == 'stop': 
                     nValue = 4 
                     sValue = "40" # Stop
-
+                    UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
                 else:
-                    Domoticz.Error("------>  %s LegrandSelector Unknown value %s" %(NWKID, value))
-                    return
-                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+                    Domoticz.Error("------>  %s LegrandSelector Unknown value %s" %(NWKID, value))         
 
             elif WidgetType == 'Generic_5_buttons':
                 loggingWidget( self, "Debug", "------> Generic 5 buttons : Value -> %s" %value, NWKID)
@@ -852,3 +858,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 nValue = int(value)
                 sValue = value
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_= True)
+
+        # Check if this Device belongs to a Group. In that case update group
+        CheckUpdateGroup( self, NWKID, Ep,  clusterID )

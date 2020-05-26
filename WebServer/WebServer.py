@@ -19,7 +19,7 @@ from Modules.legrand_netatmo import legrand_ledInDark, legrand_ledIfOnOnOff, leg
 from Modules.actuators import actuators
 from Modules.tools import is_hex
 from Classes.PluginConf import PluginConf,SETTINGS
-from GroupMgt.GroupMgt import GroupsManagement
+
 from Classes.DomoticzDB import DomoticzDB_Preferences
 
 from WebServer.headerResponse import setupHeadersResponse, prepResponseMessage
@@ -58,7 +58,7 @@ class WebServer(object):
     from WebServer.onMessage import onMessage
     from WebServer.rest_Bindings import rest_bindLSTcluster, rest_bindLSTdevice, rest_binding, rest_unbinding
     from WebServer.rest_Energy import rest_req_nwk_full, rest_req_nwk_inter
-    from WebServer.rest_Groups import rest_zGroup, rest_zGroup_lst_avlble_dev
+    from WebServer.rest_Groups import rest_zGroup, rest_zGroup_lst_avlble_dev, rest_rescan_group, rest_scan_devices_for_group
     from WebServer.rest_Provisioning import rest_new_hrdwr, rest_rcv_nw_hrdwr
     from WebServer.rest_Topology import rest_netTopologie, rest_req_topologie
     from WebServer.sendresponse import sendResponse
@@ -110,17 +110,6 @@ class WebServer(object):
     def rest_plugin_health( self, verb, data, parameters):
 
         _response = prepResponseMessage( self ,setupHeadersResponse())
-        if self.pluginconf.pluginConf['enableKeepalive']:
-            _response["Headers"]["Connection"] = "Keep-alive"
-        else:
-            _response["Headers"]["Connection"] = "Close"
-        if not self.pluginconf.pluginConf['enableCache']:
-            _response["Headers"]["Cache-Control"] = "no-cache, no-store, must-revalidate"
-            _response["Headers"]["Pragma"] = "no-cache"
-            _response["Headers"]["Expires"] = "0"
-            _response["Headers"]["Accept"] = "*/*"
-
-        _response["Status"] = "200 OK"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
             health = {
@@ -132,7 +121,7 @@ class WebServer(object):
                 health['OTAupdateDevice'] = self.PluginHealth['Firmware Update']['Device']
 
             if self.groupmgt:
-                health['GroupStatus'] = self.groupmgt.StartupPhase
+                health['GroupStatus'] = self.groupmgt.GroupStatus
 
             _response["Data"] = json.dumps( health, sort_keys=True )
 
@@ -141,11 +130,6 @@ class WebServer(object):
     def rest_zigate_erase_PDM( self, verb, data, parameters):
 
         _response = prepResponseMessage( self ,setupHeadersResponse())
-
-
-
-
-
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
             self.logging( 'Status', "Erase Zigate PDM")
@@ -164,35 +148,10 @@ class WebServer(object):
                 #    start_Zigate( self )
         return _response
 
-    def rest_rescan_group( self, verb, data, parameters):
-
-        _response = prepResponseMessage( self ,setupHeadersResponse())
- 
- 
- 
- 
- 
-        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
-        action = {}
-        if verb == 'GET':
-            self.groupListFileName = self.pluginconf.pluginConf['pluginData'] + "/GroupsList-%02d.pck" %self.hardwareID
-            JsonGroupConfigFileName = self.pluginconf.pluginConf['pluginData'] + "/ZigateGroupsConfig-%02d.json" %self.hardwareID
-            TxtGroupConfigFileName = self.pluginconf.pluginConf['pluginConfig'] + "/ZigateGroupsConfig-%02d.txt" %self.hardwareID
-            for filename in ( TxtGroupConfigFileName, JsonGroupConfigFileName, self.groupListFileName ):
-                if os.path.isfile( filename ):
-                    self.logging( 'Debug', "rest_rescan_group - Removing file: %s" %filename )
-                    os.remove( filename )
-                    self.restart_needed['RestartNeeded'] = True
-            action['Name'] = 'Groups file removed.'
-            action['TimeStamp'] = int(time())
-
-        _response["Data"] = json.dumps( action , sort_keys=True )
-
-        return _response
-
     def rest_reset_zigate( self, verb, data, parameters):
 
         _response = prepResponseMessage( self ,setupHeadersResponse())
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
             if self.pluginparameters['Mode1'] != 'None':
                 self.zigatedata['startZigateNeeded'] = True
@@ -204,7 +163,7 @@ class WebServer(object):
 
     def rest_zigate( self, verb, data, parameters):
 
-        _response = setupHeadersResponse()
+        _response = prepResponseMessage( self ,setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
             if self.zigatedata:
@@ -250,7 +209,7 @@ class WebServer(object):
     def rest_nwk_stat( self, verb, data, parameters):
 
         _response = prepResponseMessage( self ,setupHeadersResponse())
-
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         _filename = self.pluginconf.pluginConf['pluginReports'] + 'NetworkEnergy-v3-' + '%02d' %self.hardwareID + '.json'
 
         _timestamps_lst = [] # Just the list of Timestamps
@@ -360,7 +319,7 @@ class WebServer(object):
     def rest_restart_needed( self, verb, data, parameters):
 
         _response = prepResponseMessage( self ,setupHeadersResponse())
-
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
             _response["Data"] = json.dumps( self.restart_needed, sort_keys=True )
         return _response
@@ -427,6 +386,7 @@ class WebServer(object):
         Statistics['Rxph'] = round(Statistics['Received'] / Statistics['Uptime'] * 3600, 2)
 
         _response = prepResponseMessage( self ,setupHeadersResponse())
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
                 _response["Data"] = json.dumps( Statistics, sort_keys=True )
         return _response
@@ -434,7 +394,7 @@ class WebServer(object):
     def rest_Settings( self, verb, data, parameters):
 
         _response = prepResponseMessage( self ,setupHeadersResponse())
-
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
             if len(parameters) == 0:
                 setting_lst = []
@@ -505,8 +465,12 @@ class WebServer(object):
                         if str(setting_lst[setting]['current']) == str(self.pluginconf.pluginConf[param]):
                             #Nothing to do
                             continue
+                        if SETTINGS[_theme]['param'][param]['type'] == 'hex':
+                            if int(setting_lst[setting]['current'],16) == self.pluginconf.pluginConf[param]:
+                                continue
 
-                        self.logging( 'Debug', "Updating %s from %s to %s" %( param, self.pluginconf.pluginConf[param], setting_lst[setting]['current']))
+                        self.logging( 'Debug', "Updating %s from %s to %s on theme: %s" %( param, self.pluginconf.pluginConf[param], setting_lst[setting]['current'], _theme))
+
                         if SETTINGS[_theme]['param'][param]['restart']:
                             self.restart_needed['RestartNeeded'] = True
 
@@ -597,8 +561,7 @@ class WebServer(object):
     def rest_PermitToJoin( self, verb, data, parameters):
 
         _response = prepResponseMessage( self ,setupHeadersResponse())
-
-
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
             duration = self.permitTojoin['Duration']
             timestamp = self.permitTojoin['Starttime']
@@ -643,6 +606,7 @@ class WebServer(object):
 
         _dictDevices = {}
         _response = prepResponseMessage( self ,setupHeadersResponse())
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
         if verb == 'GET':
             if self.Devices is None or len(self.Devices) == 0:
@@ -722,6 +686,7 @@ class WebServer(object):
     def rest_zDevice_name( self, verb, data, parameters):
 
         _response = prepResponseMessage( self ,setupHeadersResponse())
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
         if verb == 'DELETE':
             if len(parameters) == 1:
@@ -839,6 +804,7 @@ class WebServer(object):
     def rest_zDevice( self, verb, data, parameters):
 
         _response = prepResponseMessage( self ,setupHeadersResponse())
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
         if verb == 'DELETE':
             if len(parameters) == 1:
@@ -971,6 +937,7 @@ class WebServer(object):
     def rest_zDevice_raw( self, verb, data, parameters):
 
         _response = prepResponseMessage( self ,setupHeadersResponse())
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
  
         if verb == 'GET':
             if self.Devices is None or len(self.Devices) == 0:
@@ -996,6 +963,7 @@ class WebServer(object):
 
         Domoticz.Log("raw_command - %s %s" %(verb, data))
         _response = prepResponseMessage( self ,setupHeadersResponse())
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
         if verb == 'PUT':
             _response["Data"] = None
@@ -1026,6 +994,7 @@ class WebServer(object):
     def rest_dev_command( self, verb, data, parameters):
 
         _response = prepResponseMessage( self ,setupHeadersResponse())
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
         if verb == 'PUT':
             _response["Data"] = None
@@ -1095,6 +1064,7 @@ class WebServer(object):
     def rest_dev_capabilities( self, verb, data, parameters):
 
         _response = prepResponseMessage( self ,setupHeadersResponse())
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
         if verb != 'GET':
             return _response
@@ -1112,7 +1082,7 @@ class WebServer(object):
         if len(parameters) != 1:
             return
 
-        if not ( parameters[0] in self.ListOfDevices or parameters[0] in self.IEEE2NWK ):
+        if ( parameters[0] not in self.ListOfDevices and parameters[0] not in self.IEEE2NWK ):
             Domoticz.Error("rest_dev_capabilities - Device %s doesn't exist" %(parameters[0]))
             return _response
 

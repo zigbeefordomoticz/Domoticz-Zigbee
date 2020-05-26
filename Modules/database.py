@@ -61,9 +61,9 @@ def LoadDeviceList( self ):
     def loadTxtDatabase( self , dbName ):
 
         res = "Success"
-        nb = 0
         with open( dbName , 'r') as myfile2:
             loggingDatabase( self, 'Debug',  "Open : " + dbName )
+            nb = 0
             for line in myfile2:
                 if not line.strip() :
                     #Empty line
@@ -90,12 +90,12 @@ def LoadDeviceList( self ):
                     res = "Failed"
                     continue
 
-                if dlVal['Version'] != '3' :
+                if dlVal['Version'] != '3':
                     Domoticz.Error("LoadDeviceList - entry " +key +" not loaded - not Version 3 - " +str(dlVal) )
                     res = "Failed"
                     continue
                 else:
-                    nb = nb +1
+                    nb += 1
                     CheckDeviceList( self, key, val )
 
         return res
@@ -303,13 +303,13 @@ def checkDevices2LOD( self, Devices):
                 self.ListOfDevices[nwkid]['ConsistencyCheck'] = 'not in DZ'
 
 
-def checkListOfDevice2Devices( self, Devices ) :
+def checkListOfDevice2Devices( self, Devices ):
 
     # As of V3 we will be loading only the IEEE information as that is the only one existing in Domoticz area.
     # It is also expected that the ListOfDevices is already loaded.
 
     # At that stage the ListOfDevices has beene initialized.
-    for x in Devices : # initialise listeofdevices avec les devices en bases domoticz
+    for x in Devices: # initialise listeofdevices avec les devices en bases domoticz
         ID = Devices[x].DeviceID
         if (len(str(ID)) == 4 ):
             # This is a Group Id (short address)
@@ -318,22 +318,20 @@ def checkListOfDevice2Devices( self, Devices ) :
                 ID.find('Zigate-02-') != -1 or \
                 ID.find('Zigate-03-') != -1:
             continue # This is a Widget ID
-        else:
-            # Let's check if this is End Node
-            if str(ID) not in self.IEEE2NWK :
-                if self.pluginconf.pluginConf['allowForceCreationDomoDevice'] == 1 :
-                    loggingDatabase( self, "Log", "checkListOfDevice2Devices - " +str(Devices[x].Name) + " - " +str(ID) + " not found in Plugin Database" )
-                    continue
-                else:
-                    Domoticz.Error("checkListOfDevice2Devices - " +str(Devices[x].Name) + " - " +str(ID) + " not found in Plugin Database" )
-                    loggingDatabase( self, 'Debug', "checkListOfDevice2Devices - " +str(ID) + " not found in " +str(self.IEEE2NWK) )
-                    continue
-    
-            NWKID = self.IEEE2NWK[ID]
-            if str(NWKID) in self.ListOfDevices :
-                loggingDatabase( self, 'Debug', "checkListOfDevice2Devices - we found a matching entry for ID " +str(x) + " as DeviceID = " +str(ID) +" NWK_ID = " + str(NWKID) , NWKID)
-            else :
-                Domoticz.Error("loadListOfDevices -  : " +Devices[x].Name +" with IEEE = " +str(ID) +" not found in Zigate plugin Database!" )
+
+        # Let's check if this is End Node
+        if str(ID) not in self.IEEE2NWK:
+            if self.pluginconf.pluginConf['allowForceCreationDomoDevice'] == 1:
+                loggingDatabase( self, "Log", "checkListOfDevice2Devices - " +str(Devices[x].Name) + " - " +str(ID) + " not found in Plugin Database" )
+            else:
+                Domoticz.Error("checkListOfDevice2Devices - " +str(Devices[x].Name) + " - " +str(ID) + " not found in Plugin Database" )
+                loggingDatabase( self, 'Debug', "checkListOfDevice2Devices - " +str(ID) + " not found in " +str(self.IEEE2NWK) )
+            continue
+        NWKID = self.IEEE2NWK[ID]
+        if str(NWKID) in self.ListOfDevices :
+            loggingDatabase( self, 'Debug', "checkListOfDevice2Devices - we found a matching entry for ID " +str(x) + " as DeviceID = " +str(ID) +" NWK_ID = " + str(NWKID) , NWKID)
+        else :
+            Domoticz.Error("loadListOfDevices -  : " +Devices[x].Name +" with IEEE = " +str(ID) +" not found in Zigate plugin Database!" )
 
 def saveZigateNetworkData( self, nkwdata ):
 
@@ -346,7 +344,7 @@ def saveZigateNetworkData( self, nkwdata ):
             Domoticz.Error("Error while writing Zigate Network Details%s" %json_filename)
 
 
-def CheckDeviceList(self, key, val) :
+def CheckDeviceList(self, key, val):
     '''
         This function is call during DeviceList load
     '''
@@ -356,14 +354,17 @@ def CheckDeviceList(self, key, val) :
 
     DeviceListVal=eval(val)
     # Do not load Devices in State == 'unknown' or 'left' 
-    if 'Status' in DeviceListVal:
-        if DeviceListVal['Status'] in ( 'UNKNOW', 'failDB', 'DUP' ):
-            loggingDatabase( self, 'Status', "Not Loading %s as Status: %s" %( key, DeviceListVal['Status']))
-            return
+    if 'Status' in DeviceListVal and DeviceListVal['Status'] in (
+        'UNKNOW',
+        'failDB',
+        'DUP',
+    ):
+        loggingDatabase( self, 'Status', "Not Loading %s as Status: %s" %( key, DeviceListVal['Status']))
+        return
 
     if Modules.tools.DeviceExist(self, key, DeviceListVal.get('IEEE','')):
         return
-        
+
     if key == '0000':
         self.ListOfDevices[ key ] = {}
         self.ListOfDevices[ key ]['Status'] = ''
@@ -381,6 +382,7 @@ def CheckDeviceList(self, key, val) :
             'LogicalType',
             'PowerSource',
             'Neighbours',
+            'GroupMemberShip',
             }
 
     MANDATORY_ATTRIBUTES = ( 'App Version', 
@@ -419,19 +421,22 @@ def CheckDeviceList(self, key, val) :
             'Version', 
             'ZCL Version', 
             'ZDeviceID', 
-            'ZDeviceName')
+            'ZDeviceName',
+            )
 
     # List of Attributes whcih are going to be loaded, ut in case of Reset (resetPluginDS) they will be re-initialized.
     BUILD_ATTRIBUTES = (
             'Battery', 
             'ConfigureReporting',
+            'GroupMemberShip',
             'Last Cmds',
             'Neighbours',
             'ReadAttributes', 
             'RSSI',
             'SQN', 
             'Stamp', 
-            'Health')
+            'Health',
+            )
 
     MANUFACTURER_ATTRIBUTES = (
             'Legrand', 'Schneider', 'Lumi' )
@@ -452,6 +457,7 @@ def CheckDeviceList(self, key, val) :
     loggingDatabase( self, 'Debug', "--> Attributes loaded: %s" %IMPORT_ATTRIBUTES)
     for attribute in IMPORT_ATTRIBUTES:
         if attribute not in DeviceListVal:
+            loggingDatabase( self, 'Debug', "--> Attributes not existing: %s" %attribute)
             continue
 
         self.ListOfDevices[key][ attribute ] = DeviceListVal[ attribute]
@@ -496,13 +502,16 @@ def fixing_Issue566( self, key ):
             del self.ListOfDevices[key]['Ep'][ep]['Cluster Revision']
             res = True
 
-    if '02' in self.ListOfDevices[key]['Ep'] and '01' in self.ListOfDevices[key]['Ep']:
-        if 'ClusterType' in self.ListOfDevices[key]['Ep']['02']:
-            if len(self.ListOfDevices[key]['Ep']['02']['ClusterType']) != 0:
-                if 'ClusterType' in self.ListOfDevices[key]['Ep']['01']:
-                    if len(self.ListOfDevices[key]['Ep']['01']['ClusterType']) == 0:
-                        Domoticz.Log("++++Issue #566 ClusterType mixing NwkId: %s Ep 01 and 02" %key)
-                        self.ListOfDevices[key]['Ep']['01']['ClusterType'] = dict(self.ListOfDevices[key]['Ep']['02']['ClusterType'])
-                        self.ListOfDevices[key]['Ep']['02']['ClusterType'] = {}
-                        res = True
+    if (
+        '02' in self.ListOfDevices[key]['Ep']
+        and '01' in self.ListOfDevices[key]['Ep']
+        and 'ClusterType' in self.ListOfDevices[key]['Ep']['02']
+        and len(self.ListOfDevices[key]['Ep']['02']['ClusterType']) != 0
+        and 'ClusterType' in self.ListOfDevices[key]['Ep']['01']
+        and len(self.ListOfDevices[key]['Ep']['01']['ClusterType']) == 0
+    ):
+        Domoticz.Log("++++Issue #566 ClusterType mixing NwkId: %s Ep 01 and 02" %key)
+        self.ListOfDevices[key]['Ep']['01']['ClusterType'] = dict(self.ListOfDevices[key]['Ep']['02']['ClusterType'])
+        self.ListOfDevices[key]['Ep']['02']['ClusterType'] = {}
+        res = True
     return True
