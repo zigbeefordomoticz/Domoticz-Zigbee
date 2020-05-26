@@ -88,7 +88,7 @@ def process_web_request( self, webInput):
                 DeviceList.append( [Nwkid, Ep, IEEE ] )
         return DeviceList
 
-    def newGroup( self, GrpName, GrpId, item ):
+    def newGroup( self, GrpName, item ):
         
         self.logging( 'Debug', " --  -- - > Creation of Group: %s " %GrpName)
         # New Group to be added
@@ -169,7 +169,7 @@ def process_web_request( self, webInput):
 
         # Scenario 1 - We have a new Group
         if '_GroupId' not in item:
-            newGroup( self, GrpName, GrpId, item )
+            newGroup( self, GrpName, item )
             return
 
         # Scenario 2 we have to check if there is an update
