@@ -63,7 +63,7 @@ def send_group_member_ship_identify(self, NwkId, DeviceEp, goup_addr = "0000"):
     datas = "02" + NwkId + ZIGATE_EP + DeviceEp + goup_addr
     self.ZigateComm.sendData( "0065", datas)
 
-def send_group_member_ship_identify_effect( self, nwkid, ep, effect = 'Okay' ):
+def send_group_member_ship_identify_effect( self, GrpId, Ep='01', effect = 'Okay' ):
     '''
         Blink   / Light is switched on and then off (once)
         Breathe / Light is switched on and off by smoothly increasing and
@@ -80,12 +80,12 @@ def send_group_member_ship_identify_effect( self, nwkid, ep, effect = 'Okay' ):
             'FinishEffect': 0xfe,
             'StopEffect': 0xff }
 
-    self.logging( 'Debug', "Identify effect for Group: %s" %nwkid)
+    self.logging( 'Debug', "Identify effect for Group: %s" %GrpId)
     identify = False
     if effect not in effect_command:
         effect = 'Okay'
 
-    datas = "%02d" %ADDRESS_MODE['group'] + "%s"%(nwkid) + ZIGATE_EP + ep + "%02x"%(effect_command[effect])  + "%02x" %0
+    datas = "%02d" %ADDRESS_MODE['group'] + "%s"%(GrpId) + ZIGATE_EP + Ep + "%02x"%(effect_command[effect])  + "%02x" %0
     self.ZigateComm.sendData( "00E0", datas)
 
 def set_kelvin_color( self, mode, addr, EPin, EPout, t, transit = None):
