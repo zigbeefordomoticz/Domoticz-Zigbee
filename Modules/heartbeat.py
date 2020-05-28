@@ -181,6 +181,12 @@ def processKnownDevices( self, Devices, NWKID ):
         if 'pingDeviceRetry' not in self.ListOfDevices[NwkId]:
             self.ListOfDevices[NwkId]['pingDeviceRetry'] = {}
             self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] = 0
+            self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = 0
+
+        if 'Retry' in self.ListOfDevices[NwkId]['pingDeviceRetry'] and 'TimeStamp' not in self.ListOfDevices[NwkId]['pingDeviceRetry']:
+            # This could be due to a previous version without TimeStamp
+            self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] = 0
+            self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = 0
 
         if self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] == 0:
             # First retry in the next cycle if possible
