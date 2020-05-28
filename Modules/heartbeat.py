@@ -193,25 +193,25 @@ def processKnownDevices( self, Devices, NWKID ):
             if len(self.ZigateComm.zigateSendingFIFO) == 0:
                 loggingHeartbeat( self, 'Log', "--------> ping Retry 1 Check %s" %NwkId, NwkId)
                 self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] += 1
-                self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = int(time())
+                self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = int(time.time())
                 submitPing( self, NwkId)
 
         elif self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] == 1:
             # Second retry in the next 30"
-            if len(self.ZigateComm.zigateSendingFIFO) == 0 and time() > (self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] + (30 // HEARTBEAT)):
+            if len(self.ZigateComm.zigateSendingFIFO) == 0 and time.time() > (self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] + (30 // HEARTBEAT)):
                 # Let's retry
                 loggingHeartbeat( self, 'Log', "--------> ping Retry 2 Check %s" %NwkId, NwkId)
                 self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] += 1
-                self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = int(time())
+                self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = int(time.time())
                 submitPing( self, NwkId)
 
         elif self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] == 2:
             # Last retry after 5 minutes
-            if len(self.ZigateComm.zigateSendingFIFO) == 0 and time() > (self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] + (300 // HEARTBEAT)):
+            if len(self.ZigateComm.zigateSendingFIFO) == 0 and time.time() > (self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] + (300 // HEARTBEAT)):
                 # Let's retry
                 loggingHeartbeat( self, 'Log', "--------> ping Retry 3 (last) Check %s" %NwkId, NwkId)
                 self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] += 1
-                self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = int(time())
+                self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = int(time.time())
                 submitPing( self, NwkId)
 
 
