@@ -176,42 +176,53 @@ def processKnownDevices( self, Devices, NWKID ):
         return True
 
     def pingRetryDueToBadHealth( self, NwkId):
+
+
         # device is on Non Reachable state
-        loggingHeartbeat( self, 'Log', "--------> ping Retry Check %s" %NwkId, NwkId)
+        loggingHeartbeat( self, 'Debug', "--------> ping Retry Check %s" %NwkId, NwkId)
         if 'pingDeviceRetry' not in self.ListOfDevices[NwkId]:
             self.ListOfDevices[NwkId]['pingDeviceRetry'] = {}
             self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] = 0
             self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = 0
+
+        if self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] == 3:
+            return
+        
+        now = int(time.time())
 
         if 'Retry' in self.ListOfDevices[NwkId]['pingDeviceRetry'] and 'TimeStamp' not in self.ListOfDevices[NwkId]['pingDeviceRetry']:
             # This could be due to a previous version without TimeStamp
             self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] = 0
             self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = 0
 
+        lastTimeStamp = self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp']
+        retry = self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry']
+
+        loggingHeartbeat( self, 'Log', "--------> ping Retry Check %s Retry: %s Gap: %s" %(NwkId, retry, now - lastTimeStamp), NwkId)
         if self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] == 0:
             # First retry in the next cycle if possible
             if len(self.ZigateComm.zigateSendingFIFO) == 0:
                 loggingHeartbeat( self, 'Log', "--------> ping Retry 1 Check %s" %NwkId, NwkId)
                 self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] += 1
-                self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = int(time.time())
+                self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = now
                 submitPing( self, NwkId)
 
         elif self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] == 1:
             # Second retry in the next 30"
-            if len(self.ZigateComm.zigateSendingFIFO) == 0 and time.time() > (self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] + (30 // HEARTBEAT)):
+            if len(self.ZigateComm.zigateSendingFIFO) == 0 and now > ( lastTimeStamp + (30 // HEARTBEAT)):
                 # Let's retry
                 loggingHeartbeat( self, 'Log', "--------> ping Retry 2 Check %s" %NwkId, NwkId)
                 self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] += 1
-                self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = int(time.time())
+                self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = now
                 submitPing( self, NwkId)
 
         elif self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] == 2:
             # Last retry after 5 minutes
-            if len(self.ZigateComm.zigateSendingFIFO) == 0 and time.time() > (self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] + (300 // HEARTBEAT)):
+            if len(self.ZigateComm.zigateSendingFIFO) == 0 and now > ( lastTimeStamp + (300 // HEARTBEAT)):
                 # Let's retry
                 loggingHeartbeat( self, 'Log', "--------> ping Retry 3 (last) Check %s" %NwkId, NwkId)
                 self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] += 1
-                self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = int(time.time())
+                self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = now
                 submitPing( self, NwkId)
 
 
