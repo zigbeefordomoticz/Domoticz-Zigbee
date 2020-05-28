@@ -260,7 +260,8 @@ def processKnownDevices( self, Devices, NWKID ):
         
     # If we reach this step, the device health is Live
     if 'pingDeviceRetry' in self.ListOfDevices[NWKID]: 
-       del self.ListOfDevices[NWKID]['pingDeviceRetry']
+        loggingHeartbeat( self, 'Log', "processKnownDevices -  %s recover from Non Reachable" %NWKID, NWKID) 
+        del self.ListOfDevices[NWKID]['pingDeviceRetry']
 
     # Action not taken, must be reschedule to next cycle
     rescheduleAction = False
