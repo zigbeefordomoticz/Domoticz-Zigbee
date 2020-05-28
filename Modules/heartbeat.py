@@ -177,13 +177,37 @@ def processKnownDevices( self, Devices, NWKID ):
 
     def pingRetryDueToBadHealth( self, NwkId):
         # device is on Non Reachable state
-        loggingHeartbeat( self, 'Debug', "--------> ping Retry Check %s" %NwkId, NwkId)
+        loggingHeartbeat( self, 'Log', "--------> ping Retry Check %s" %NwkId, NwkId)
         if 'pingDeviceRetry' not in self.ListOfDevices[NwkId]:
-            self.ListOfDevices[NwkId]['pingDeviceRetry'] = 0
+            self.ListOfDevices[NwkId]['pingDeviceRetry'] = {}
+            self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] = 0
 
-        if self.ListOfDevices[NwkId]['pingDeviceRetry'] < 3 and len(self.ZigateComm.zigateSendingFIFO) == 0:
-            self.ListOfDevices[NwkId]['pingDeviceRetry'] += 1
-            submitPing( self, NwkId)
+        if self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] == 0:
+            # First retry in the next cycle if possible
+            if len(self.ZigateComm.zigateSendingFIFO) == 0:
+                loggingHeartbeat( self, 'Log', "--------> ping Retry 1 Check %s" %NwkId, NwkId)
+                self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] += 1
+                self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = int(time())
+                submitPing( self, NwkId)
+
+        elif self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] == 1:
+            # Second retry in the next 30"
+            if len(self.ZigateComm.zigateSendingFIFO) == 0 and time > (self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] + (30 // HEARTBEAT)):
+                # Let's retry
+                loggingHeartbeat( self, 'Log', "--------> ping Retry 2 Check %s" %NwkId, NwkId)
+                self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] += 1
+                self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = int(time())
+                submitPing( self, NwkId)
+
+        elif self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] == 2:
+            # Last retry after 5 minutes
+            if len(self.ZigateComm.zigateSendingFIFO) == 0 and time > (self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] + (300 // HEARTBEAT)):
+                # Let's retry
+                loggingHeartbeat( self, 'Log', "--------> ping Retry 3 (last) Check %s" %NwkId, NwkId)
+                self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] += 1
+                self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = int(time())
+                submitPing( self, NwkId)
+
 
     def submitPing( self, NwkId):
         # Pinging devices to check they are still Alive
@@ -234,6 +258,10 @@ def processKnownDevices( self, Devices, NWKID ):
                 %(NWKID, self.ListOfDevices[NWKID]['Health']), NWKID)
         return
         
+    # If we reach this step, the device health is Live
+    if 'pingDeviceRetry' in self.ListOfDevices[NWKID]: 
+       del self.ListOfDevices[NWKID]['pingDeviceRetry']
+
     # Action not taken, must be reschedule to next cycle
     rescheduleAction = False
 
