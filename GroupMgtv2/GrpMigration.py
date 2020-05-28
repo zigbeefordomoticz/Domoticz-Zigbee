@@ -47,6 +47,13 @@ def migrateTupleToList( self, GrpId, tupleItem ):
         self.ListOfGroups[ GrpId]['Devices'].append( [ NwkId, Ep, Ieee ])
 
     Domoticz.Status( "--- --- NwkId: %s Ep: %s Ieee: %s" %( NwkId, Ep, Ieee ))
+    if NwkId not in self.ListOfDevices:
+        Domoticz.Error("migrateTupleToList - NwkId: %s not found in current database" %NwkId)
+        if Ieee not in self.IEEE2NWK:
+            return
+        NwkId = self.IEEE2NWK[ Ieee ]
+        Domoticz.Status("---> Retreive new NwkId: %s from Ieee: %s" %(NwkId, Ieee))
+
     if 'GroupMemberShip' not in self.ListOfDevices[ NwkId ]:
         self.ListOfDevices[ NwkId ]['GroupMemberShip'] = {}
 
