@@ -198,11 +198,11 @@ def processKnownDevices( self, Devices, NWKID ):
         lastTimeStamp = self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp']
         retry = self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry']
 
-        loggingHeartbeat( self, 'Log', "--------> ping Retry Check %s Retry: %s Gap: %s" %(NwkId, retry, now - lastTimeStamp), NwkId)
+        loggingHeartbeat( self, 'Debug', "--------> ping Retry Check %s Retry: %s Gap: %s" %(NwkId, retry, now - lastTimeStamp), NwkId)
         if self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] == 0:
             # First retry in the next cycle if possible
             if len(self.ZigateComm.zigateSendingFIFO) == 0:
-                loggingHeartbeat( self, 'Log', "--------> ping Retry 1 Check %s" %NwkId, NwkId)
+                loggingHeartbeat( self, 'Debug', "--------> ping Retry 1 Check %s" %NwkId, NwkId)
                 self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] += 1
                 self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = now
                 submitPing( self, NwkId)
@@ -211,7 +211,7 @@ def processKnownDevices( self, Devices, NWKID ):
             # Second retry in the next 30"
             if len(self.ZigateComm.zigateSendingFIFO) == 0 and now > ( lastTimeStamp + 30 ):
                 # Let's retry
-                loggingHeartbeat( self, 'Log', "--------> ping Retry 2 Check %s" %NwkId, NwkId)
+                loggingHeartbeat( self, 'Debug', "--------> ping Retry 2 Check %s" %NwkId, NwkId)
                 self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] += 1
                 self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = now
                 submitPing( self, NwkId)
@@ -220,7 +220,7 @@ def processKnownDevices( self, Devices, NWKID ):
             # Last retry after 5 minutes
             if len(self.ZigateComm.zigateSendingFIFO) == 0 and now > ( lastTimeStamp + 300):
                 # Let's retry
-                loggingHeartbeat( self, 'Log', "--------> ping Retry 3 (last) Check %s" %NwkId, NwkId)
+                loggingHeartbeat( self, 'Debug', "--------> ping Retry 3 (last) Check %s" %NwkId, NwkId)
                 self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] += 1
                 self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = now
                 submitPing( self, NwkId)
