@@ -398,7 +398,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                     if 'GroupMembership' in self.DeviceConf[ self.ListOfDevices[NWKID]['Model'] ]:
                         for groupToAdd in self.DeviceConf[ self.ListOfDevices[NWKID]['Model'] ]['GroupMembership']:
                             if len( groupToAdd ) == 2:
-                                self.groupmgt.addGroupMembership( NWKID, groupToAdd[0], groupToAdd[1] )
+                                self.groupmgt.addGroupMemberShip( NWKID, groupToAdd[0], groupToAdd[1] )
                             else:
                                 Domoticz.Error("Uncorrect GroupMembership definition %s" %str(self.DeviceConf[ self.ListOfDevices[NWKID]['Model'] ]['GroupMembership']))
 

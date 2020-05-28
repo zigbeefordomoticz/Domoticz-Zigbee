@@ -94,7 +94,8 @@ from Classes.IAS import IAS_Zone_Management
 from Classes.PluginConf import PluginConf
 from Classes.Transport import ZigateTransport
 from Classes.TransportStats import TransportStatistics
-from GroupMgt.GroupMgt import GroupsManagement
+
+from GroupMgtv2.GroupManagement import GroupsManagement
 from Classes.AdminWidgets import AdminWidgets
 from Classes.OTA import OTAManagement
 
@@ -145,7 +146,6 @@ class BasePlugin:
         self.permitTojoin = {}
         self.permitTojoin['Duration'] = 0
         self.permitTojoin['Starttime'] = 0
-        self.groupmgt_NotStarted = True
         self.CommiSSionning = False    # This flag is raised when a Device Annocement is receive, in order to give priority to commissioning
 
         self.busy = False    # This flag is raised when a Device Annocement is receive, in order to give priority to commissioning
@@ -389,6 +389,7 @@ class BasePlugin:
 
         #self.ZigateComm.closeConn()
         WriteDeviceList(self, 0)
+        
         self.statistics.printSummary()
         self.statistics.writeReport()
         self.PluginHealth['Flag'] = 3
@@ -402,9 +403,16 @@ class BasePlugin:
         loggingPlugin( self, 'Debug', "onDeviceRemoved called" )
         # Let's check if this is End Node, or Group related.
         if Devices[Unit].DeviceID in self.IEEE2NWK:
+            IEEE = Devices[Unit].DeviceID
+            NwkId = self.IEEE2NWK[ IEEE ]
+
             # Command belongs to a end node
             loggingPlugin( self, 'Status', "onDeviceRemoved - removing End Device")
             fullyremoved = removeDeviceInList( self, Devices, Devices[Unit].DeviceID , Unit)
+
+            # We might have to remove also the Device from Groups
+            if fullyremoved and self.groupmgt:
+                self.groupmgt.RemoveNwkIdFromAllGroups( NwkId)
 
             # We should call this only if All Widgets have been remved !
             if fullyremoved:
@@ -426,10 +434,10 @@ class BasePlugin:
             loggingPlugin( self, 'Debug', "ListOfDevices :After REMOVE " + str(self.ListOfDevices))
             return
 
-        if self.pluginconf.pluginConf['enablegroupmanagement'] and self.groupmgt and Devices[Unit].DeviceID in self.groupmgt.ListOfGroups:
+        if self.groupmgt and Devices[Unit].DeviceID in self.groupmgt.ListOfGroups:
                 loggingPlugin( self, 'Status', "onDeviceRemoved - removing Group of Devices")
                 # Command belongs to a Zigate group
-                self.groupmgt.processRemoveGroup( Unit, Devices[Unit].DeviceID )
+                self.groupmgt.FullRemoveOfGroup( Unit, Devices[Unit].DeviceID )
 
     def onConnect(self, Connection, Status, Description):
 
@@ -523,7 +531,7 @@ class BasePlugin:
             # Command belongs to a end node
             mgtCommand( self, Devices, Unit, Command, Level, Color )
 
-        elif self.pluginconf.pluginConf['enablegroupmanagement'] and self.groupmgt:
+        elif self.groupmgt:
             #if Devices[Unit].DeviceID in self.groupmgt.ListOfGroups:
             #    # Command belongs to a Zigate group
             loggingPlugin( self, 'Debug', "Command: %s/%s/%s to Group: %s" %(Command,Level,Color, Devices[Unit].DeviceID))
@@ -565,7 +573,7 @@ class BasePlugin:
         loggingPlugin( self, 'Status', "onDisconnect called")
 
     def onHeartbeat(self):
-        
+
         if self.pluginconf is None:
             return
 
@@ -574,7 +582,7 @@ class BasePlugin:
 
         busy_ = False
 
-        # Quiet a bad hack. In order to get the needs for ZigateRestart 
+        # Quiet a bad hack. In order to get the needs for ZigateRestart
         # from WebServer
         if (
             'startZigateNeeded' in self.zigatedata
@@ -676,10 +684,8 @@ class BasePlugin:
             return
 
         # Group Management
-        if self.groupmgt: 
-            self.groupmgt.hearbeatGroupMgt()
-            if self.groupmgt.stillWIP:
-                busy_ = True
+        if self.groupmgt:
+            self.groupmgt.hearbeat_group_mgt()
 
         # OTA upgrade
         if self.OTA:
@@ -711,12 +717,12 @@ class BasePlugin:
 
         elif not self.connectionState:
             self.PluginHealth['Flag'] = 3
-            self.PluginHealth['Txt'] = 'No Communication' 
+            self.PluginHealth['Txt'] = 'No Communication'
             self.adminWidgets.updateStatusWidget( Devices, 'No Communication')
-            
+
         else:
             self.PluginHealth['Flag'] = 1
-            self.PluginHealth['Txt'] = 'Ready' 
+            self.PluginHealth['Txt'] = 'Ready'
             self.adminWidgets.updateStatusWidget( Devices, 'Ready')
 
         self.busy = busy_
@@ -840,24 +846,24 @@ def zigateInit_Phase3( self ):
             sendZigateCmd(self, '0019', '%02x' %self.pluginconf.pluginConf['CertificationCode'])
 
         # Enable Group Management
-        if self.groupmgt is None and self.groupmgt_NotStarted and self.pluginconf.pluginConf['enablegroupmanagement']:
+        if self.groupmgt is None and self.pluginconf.pluginConf['enablegroupmanagement']:
             loggingPlugin( self, 'Status', "Start Group Management")
-            self.groupmgt = GroupsManagement( self.pluginconf, self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], 
+            self.groupmgt = GroupsManagement( self.pluginconf, self.ZigateComm, self.adminWidgets, Parameters["HomeFolder"],
                     self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK, self.loggingFileHandle )
-            self.groupmgt_NotStarted = False
+            if self.groupmgt and self.ZigateIEEE:
+                self.groupmgt.updateZigateIEEE( self.ZigateIEEE) 
 
             if self.pluginconf.pluginConf['zigatePartOfGroup0000']:
                 # Add Zigate NwkId 0x0000 Ep 0x01 to GroupId 0x0000
-                self.groupmgt.addGroupMembership( '0000', '01', '0000')
+                self.groupmgt.addGroupMemberShip( '0000', '01', '0000')
 
     # In case we have Transport = None , let's check if we have to active Group management or not. (For Test and Web UI Dev purposes
-    if self.transport == 'None' and self.groupmgt is None and self.groupmgt_NotStarted and self.pluginconf.pluginConf['enablegroupmanagement']:
-            loggingPlugin( self, 'Status', "Start Group Management")
-            self.groupmgt = GroupsManagement( self.pluginconf, self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], 
-                    self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK, self.loggingFileHandle )
-            self.groupmgt._load_GroupList()
-            self.groupmgt_NotStarted = False
-
+    if self.transport == 'None' and self.groupmgt is None and self.pluginconf.pluginConf['enablegroupmanagement']:
+           self.groupmgt = GroupsManagement( self.pluginconf, self.ZigateComm, self.adminWidgets, Parameters["HomeFolder"],
+                   self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK, self.loggingFileHandle )
+           if self.groupmgt and self.ZigateIEEE:
+               self.groupmgt.updateZigateIEEE( self.ZigateIEEE) 
+               
     # Starting WebServer
     if self.webserver is None and self.pluginconf.pluginConf['enableWebServer']:
         if (not self.VersionNewFashion and (self.DomoticzMajor < 4 or ( self.DomoticzMajor == 4 and self.DomoticzMinor < 10901))):

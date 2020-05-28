@@ -24,7 +24,7 @@ from Modules.basicOutputs import  sendZigateCmd,identifyEffect, getListofAttribu
 from Modules.readAttributes import READ_ATTRIBUTES_REQUEST, ReadAttributeRequest_0000_basic, \
         ReadAttributeRequest_0000, ReadAttributeRequest_0001, ReadAttributeRequest_0006, ReadAttributeRequest_0008, ReadAttributeRequest_0006_0000, ReadAttributeRequest_0008_0000,\
         ReadAttributeRequest_0100, \
-        ReadAttributeRequest_000C, ReadAttributeRequest_0102, ReadAttributeRequest_0201, ReadAttributeRequest_0204, ReadAttributeRequest_0300,  \
+        ReadAttributeRequest_000C, ReadAttributeRequest_0102, ReadAttributeRequest_0102_0008, ReadAttributeRequest_0201, ReadAttributeRequest_0204, ReadAttributeRequest_0300,  \
         ReadAttributeRequest_0400, ReadAttributeRequest_0402, ReadAttributeRequest_0403, ReadAttributeRequest_0405, \
         ReadAttributeRequest_0406, ReadAttributeRequest_0500, ReadAttributeRequest_0502, ReadAttributeRequest_0702, ReadAttributeRequest_000f, ReadAttributeRequest_fc01, ReadAttributeRequest_fc21
 
@@ -46,7 +46,6 @@ from Classes.IAS import IAS_Zone_Management
 from Classes.Transport import ZigateTransport
 from Classes.AdminWidgets import AdminWidgets
 from Classes.NetworkMap import NetworkMap
-
 
 # Read Attribute trigger: Every 10"
 # Configure Reporting trigger: Every 15
@@ -142,8 +141,13 @@ def processKnownDevices( self, Devices, NWKID ):
                 loggingHeartbeat( self, 'Debug', "++ pollingDeviceStatus -  %s  for LVLControl" \
                 %(NWKID), NWKID)
 
-        return False
+            if '0102' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                ReadAttributeRequest_0102_0008( self, NWKID)
+            loggingHeartbeat( self, 'Debug', "++ pollingDeviceStatus -  %s  for WindowCOvering" \
+            %(NWKID), NWKID)
 
+        return False
+    
     def checkHealth( self, NwkId):
     
         # Checking current state of the this Nwk

@@ -24,7 +24,7 @@ from Modules.thermostats import thermostat_Setpoint, thermostat_Mode
 from Modules.livolo import livolo_OnOff
 from Modules.legrand_netatmo import  legrand_fc40
 from Modules.schneider_wiser import schneider_EHZBRTS_thermoMode, schneider_hact_fip_mode, schneider_set_contract, schneider_temp_Setcurrent, schneider_hact_heater_type
-
+from Modules.profalux import profalux_stop, profalux_MoveToLiftAndTilt
 from Modules.domoTools import UpdateDevice_v2, RetreiveSignalLvlBattery, RetreiveWidgetTypeList
 from Classes.IAS import IAS_Zone_Management
 from Modules.zigateConsts import THERMOSTAT_LEVEL_2_MODE, ZIGATE_EP
@@ -63,7 +63,7 @@ DEVICE_SWITCH_MATRIX = {
 }
 
 ACTIONATORS = [ 'Switch', 'Plug', 'SwitchAQ2', 'Smoke', 'DSwitch', 'LivoloSWL', 'LivoloSWR', 'Toggle',
-            'Venetian', 'VenetianInverted', 'WindowCovering', 'BSO',
+            'Venetian', 'VenetianInverted', 'WindowCovering', 'BSO', 'BSO-Orientation', 'BSO-Volet',
             'LvlControl', 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl',
             'ThermoSetpoint', 'ThermoMode', 'ThermoModeEHZBRTS', 'TempSetCurrent', 'AlarmWD',
             'LegrandFilPilote', 'FIP', 'HACTMODE','ContractPower','HeatingSwitch' ]
@@ -121,7 +121,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
 
     if DeviceType not in ACTIONATORS:
         if not ( self.pluginconf.pluginConf['forcePassiveWidget'] and DeviceType  in [ 'DButton_3', 'SwitchAQ3' ]):
-            loggingCommand( self, "Debug", "mgtCommand - You are trying to action a non commandable device Device %s has available Type %s and DeviceType: %s" 
+            loggingCommand( self, "Log", "mgtCommand - You are trying to action a non commandable device Device %s has available Type %s and DeviceType: %s" 
                    %( Devices[Unit].Name, ClusterTypeList, DeviceType ), NWKID )
             return
     
@@ -134,18 +134,19 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         if self.ListOfDevices[NWKID]['Health'] == 'Not Reachable':
             self.ListOfDevices[NWKID]['Health'] = ''
 
-    self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
+    # Let's force a refresh of Attribute in the next Heartbeat  
+    self.ListOfDevices[NWKID]['Heartbeat'] = 0  
+
     if Command == 'Stop':  # Manage the Stop command. For known seen only on BSO and Windowcoering
         loggingCommand( self, 'Debug', "mgtCommand : Stop for Device: %s EPout: %s Unit: %s DeviceType: %s" %(NWKID, EPout, Unit, DeviceType), NWKID)
-        if DeviceType == 'BSO':
-            from Modules.profalux import profalux_stop
+        if profalux:
+            # Profalux offer a Manufacturer command to make Stop on Cluster 0x0008
             profalux_stop( self, NWKID)
 
         elif DeviceType in ( "WindowCovering", "VenetianInverted", "Venetian"):
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
             sendZigateCmd(self, "00FA","02" + NWKID + ZIGATE_EP + EPout + "02")
             UpdateDevice_v2(self, Devices, Unit, 2, "50", BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
-            self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
 
     if Command == "Off" :  # Manage the Off command. 
         loggingCommand( self, 'Debug', "mgtCommand : Off for Device: %s EPout: %s Unit: %s DeviceType: %s" %(NWKID, EPout, Unit, DeviceType), NWKID)
@@ -154,20 +155,20 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return
 
-        elif DeviceType == 'LivoloSWR':
+        if DeviceType == 'LivoloSWR':
             livolo_OnOff( self, NWKID , EPout, 'Right', 'Off')
             UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return
 
-        elif DeviceType == 'ThermoModeEHZBRTS':
+        if DeviceType == 'ThermoModeEHZBRTS':
             loggingCommand( self, 'Debug', "MajDomoDevice EHZBRTS Schneider Thermostat Mode Off", NWKID )
             schneider_EHZBRTS_thermoMode( self, NWKID, 0 )
             UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return
 
-        elif DeviceType == 'BSO':
-            from Modules.profalux import profalux_MoveWithOnOff
-            profalux_MoveWithOnOff( self, NWKID, 0x00 )
+        if DeviceType == 'BSO-Volet':
+            if profalux:
+                profalux_MoveToLiftAndTilt( self, NWKID, level=1 )
 
         elif DeviceType == "WindowCovering":
             sendZigateCmd(self, "00FA","02" + NWKID + ZIGATE_EP + EPout + "01") # Blind inverted (On, for Close)
@@ -186,6 +187,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             thermostat_Mode( self, NWKID, 'Off' )
 
         else:
+            # Remaining Slider widget
             if profalux: # Profalux are define as LvlControl but should be managed as Blind Inverted
                 sendZigateCmd(self, "0081","02" + NWKID + ZIGATE_EP + EPout + '01' + '%02X' %0 + "0000")
             else:
@@ -210,14 +212,15 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             UpdateDevice_v2(self, Devices, Unit, 1, "On",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return
 
-        elif DeviceType == 'LivoloSWR':
+        if DeviceType == 'LivoloSWR':
             livolo_OnOff( self, NWKID , EPout, 'Right', 'On')
             UpdateDevice_v2(self, Devices, Unit, 1, "On",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return
 
-        elif DeviceType == 'BSO':
-            from Modules.profalux import profalux_MoveWithOnOff
-            profalux_MoveWithOnOff( self, NWKID, 0x01 )
+        if DeviceType == 'BSO-Volet':
+            if profalux:
+                # On translated into a Move to 254
+                profalux_MoveToLiftAndTilt( self, NWKID, level=255 )
 
         elif DeviceType == "WindowCovering":
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
@@ -233,6 +236,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             thermostat_Mode( self, NWKID, 'Heat' )
 
         else:
+            # Remaining Slider widget
             if profalux:
                 sendZigateCmd(self, "0081","02" + NWKID + ZIGATE_EP + EPout + '01' + '%02X' %255 + "0000")
             else:
@@ -334,6 +338,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
                 %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
             if 'Schneider Wiser' not in self.ListOfDevices[NWKID]:
                 self.ListOfDevices[NWKID]['Schneider Wiser'] ={}
+
             if Level in FIL_PILOT_MODE:
                 loggingCommand( self, 'Log', "mgtCommand : -----> Fil Pilote mode: %s - %s" %(Level, FIL_PILOT_MODE[ Level ]), NWKID)
                 if 'Model' in self.ListOfDevices[NWKID]:
@@ -341,6 +346,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
                         self.ListOfDevices[NWKID]['Schneider Wiser']['HACT FIP Mode'] = FIL_PILOT_MODE[ Level ]
                         schneider_hact_fip_mode( self, NWKID,  FIL_PILOT_MODE[ Level ] )
                         UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+
             return
 
         if DeviceType == 'LegrandFilPilote':
@@ -359,8 +365,8 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
                 loggingCommand( self, 'Log', "mgtCommand : -----> Fil Pilote mode: %s - %s" %(Level, FIL_PILOTE_MODE[ Level ]), NWKID)
                 legrand_fc40( self, FIL_PILOTE_MODE[ Level ])
                 UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
-            return
 
+            return
 
         if DeviceType == 'ThermoMode':
             loggingCommand( self, 'Log', "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" 
@@ -370,13 +376,23 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
                 loggingCommand( self, 'Debug', " - Set Thermostat Mode to : %s / %s" %( Level, THERMOSTAT_LEVEL_2_MODE[Level]), NWKID)
                 thermostat_Mode( self, NWKID, THERMOSTAT_LEVEL_2_MODE[Level] )
 
+        elif DeviceType == 'BSO-Volet':
+            if profalux:
+                # Transform slider % into analog value
+                lift = ( 255 * Level ) // 100
+                if Level == 0:
+                    lift = 1
+                elif Level > 255:
+                    lift = 255
+                
+                loggingCommand( self, 'Log', "mgtCommand : profalux_MoveToLiftAndTilt: %s BSO-Volet Lift: Level:%s Lift: %s" %(NWKID, Level, lift), NWKID)
+                profalux_MoveToLiftAndTilt( self, NWKID, level=lift)
 
-        elif DeviceType == 'BSO':
-            from Modules.profalux import profalux_MoveToLiftAndTilt
-            orientation = (Level * 90 ) // 100
-            if orientation > 90: 
-                orientation = 90
-            profalux_MoveToLiftAndTilt( self, NWKID, tilt=orientation)
+        elif DeviceType == 'BSO-Orientation':
+             if profalux:
+                Tilt = Level - 10
+                loggingCommand( self, 'Log', "mgtCommand : profalux_MoveToLiftAndTilt:  %s BSO-Orientation : Level: %s Tilt: %s" %(NWKID, Level, Tilt), NWKID)
+                profalux_MoveToLiftAndTilt( self, NWKID, tilt=Tilt)           
 
         elif DeviceType == "WindowCovering": # Blind Inverted
             if Level == 0:
@@ -431,6 +447,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
                 actuators( self, NWKID, EPout, 'Toggle', 'Switch')
 
         else:
+            # Remaining Slider widget
             OnOff = '01' # 00 = off, 01 = on
             if Level == 100: 
                 value = 255

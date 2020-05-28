@@ -347,7 +347,6 @@ def ReadAttributeRequest_0001(self, key):
 
 def ReadAttributeRequest_0006_0000(self, key):
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0006 focus on 0x0000 Key: %s " %key, nwkid=key)
-
     ListOfEp = getListOfEpForCluster( self, key, '0006' )
     for EPout in ListOfEp:
         listAttributes = [0]
@@ -385,7 +384,6 @@ def ReadAttributeRequest_0006(self, key):
 
 def ReadAttributeRequest_0008_0000(self, key):
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0008 focus on 0x0008/0000 Key: %s " %key, nwkid=key)
-
     ListOfEp = getListOfEpForCluster( self, key, '0008' )
     for EPout in ListOfEp:
 
@@ -462,6 +460,13 @@ def ReadAttributeRequest_0102(self, key):
             if listAttributes:
                 loggingReadAttributes( self, 'Debug', "Request 0x0102 info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
                 ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0102", listAttributes)
+
+def ReadAttributeRequest_0102_0008( self, key):
+    loggingReadAttributes( self, 'Log', "Request Windows Covering status Read Attribute request: " + key , nwkid=key)
+    ListOfEp = getListOfEpForCluster( self, key, '0102' )
+    for EPout in ListOfEp:
+        listAttributes = [0x0008]
+        ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0102", listAttributes)
 
 def ReadAttributeRequest_0201(self, key):
     # Thermostat 
@@ -696,14 +701,17 @@ def ReadAttributeRequest_fc01(self, key):
         ReadAttributeReq( self, key, ZIGATE_EP, EPout, "fc01", listAttributes)
 
 def ReadAttributeRequest_fc21(self, key):
-    # Cluster PFX Profalux
+    # Cluster PFX Profalux/ Manufacturer specific
 
-    ListOfEp = getListOfEpForCluster( self, key, 'fc21' )
-    for EPout in ListOfEp:
-        loggingReadAttributes( self, 'Log', "ReadAttributeRequest_fc21 - Key: %s " %key, nwkid=key)
-        listAttributes = [ 0x0001 ]
-        loggingReadAttributes( self, 'Log', "Request Profalux BSO via Read Attribute request: " + key + " EPout = " + EPout + " Attributes: " + str(listAttributes), nwkid=key)
-        ReadAttributeReq( self, key, ZIGATE_EP, EPout, "fc21", listAttributes)
+    profalux = False
+    if 'Manufacturer' in self.ListOfDevices[key]:
+        profalux = ( self.ListOfDevices[key]['Manufacturer'] == '1110' and self.ListOfDevices[key]['ZDeviceID'] in ('0200', '0202') )
+
+    if profalux:
+        loggingReadAttributes( self, 'Log', "Request Profalux BSO via Read Attribute request: %s" %key, nwkid=key)
+        datas = "02" + key + ZIGATE_EP + '01' + 'fc21' + '00' + '01' + '1110' + '01' + '0001'
+        sendZigateCmd(self, "0100", datas )
+
 
 READ_ATTRIBUTES_REQUEST = {
     # Cluster : ( ReadAttribute function, Frequency )

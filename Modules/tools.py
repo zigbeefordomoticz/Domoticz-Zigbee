@@ -124,6 +124,24 @@ def getClusterListforEP( self, NWKID, Ep ) :
                 ClusterList.append(cluster)
     return ClusterList
 
+def getEpForCluster( self, nwkid, ClusterId):
+    """ 
+    Return the Ep or a list of Ep associated to the ClusterId 
+    If not found return Ep: 01
+    """
+
+    EPout = []
+    for tmpEp in self.ListOfDevices[nwkid]['Ep']:
+        if ClusterId in self.ListOfDevices[nwkid]['Ep'][tmpEp]:
+            EPout.append( tmpEp )
+
+    if not EPout:
+        return EPout
+
+    if len(self.ListOfDevices[nwkid]['Ep']) == 1:
+        return [ self.ListOfDevices[nwkid]['Ep'].keys() ]
+
+    return EPout
 
 def DeviceExist(self, Devices, lookupNwkId , lookupIEEE = ''):
     """
@@ -233,7 +251,7 @@ def reconnectNWkDevice( self, newNWKID, IEEE, oldNWKID):
 
     if self.groupmgt:
         # We should check if this belongs to a group
-        self.groupmgt.deviceChangeNetworkID( oldNWKID, newNWKID)
+        self.groupmgt.update_due_to_nwk_id_change( oldNWKID, newNWKID)
 
     # We will also reset ReadAttributes
     if 'ReadAttributes' in self.ListOfDevices[newNWKID]:

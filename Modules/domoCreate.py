@@ -247,19 +247,16 @@ def CreateDomoDevice(self, Devices, NWKID):
         # In case Type is issued from GetType functions, this is based on Clusters, 
         # In such case and the device is a Bulb or a Dimmer Switch we will get a combinaison of Switch/LvlControl and ColorControlxxx
         # We want to avoid creating of 3 widgets while 1 is enought.
-        if self.ListOfDevices[NWKID][ 'Model'] not in self.DeviceConf:
-            loggingWidget(self, 'Debug', "---> Check if we need to reduce Type: %s" %Type)
-
-            if ("Switch" in Type) and ("LvlControl" in Type) and ("ColorControl" in Type):
-                # We need to detect what is the ColorControl ( can be RGB, Full, WW)
-                loggingWidget(self, 'Debug', "----> Colortype, let's remove Switch and LvlControl")
-                Type.remove( 'Switch')
-                Type.remove( 'LvlControl')
-
-            elif ("Switch" in Type) and ("LvlControl" in Type):
-                loggingWidget(self, 'Debug', "----> LvlControl, let's remove Switch and LvlControl")
-                Type = ['LvlControl']
-
+        # if self.ListOfDevices[NWKID][ 'Model'] not in self.DeviceConf:
+        loggingWidget(self, 'Debug', "---> Check if we need to reduce Type: %s" %Type)
+        if ("Switch" in Type) and ("LvlControl" in Type) and ("ColorControl" in Type):
+            # We need to detect what is the ColorControl ( can be RGB, Full, WW)
+            loggingWidget(self, 'Debug', "----> Colortype, let's remove Switch and LvlControl")
+            Type.remove( 'Switch')
+            Type.remove( 'LvlControl')
+        elif ("Switch" in Type) and ("LvlControl" in Type):
+            loggingWidget(self, 'Debug', "----> LvlControl, let's remove Switch and LvlControl")
+            Type = ['LvlControl']
         loggingWidget( self, "Debug", "CreateDomoDevice - Creating devices based on Type: %s" % Type, NWKID)
 
         if 'ClusterType' not in self.ListOfDevices[NWKID]['Ep'][Ep]:
@@ -523,10 +520,17 @@ def CreateDomoDevice(self, Devices, NWKID):
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 244, Subtype_ = 73, Switchtype_ = 15 )
                 loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in VenetianInverted" %(t), NWKID)
 
-            if t == 'BSO':
-                # BSO for Profalux
-                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 244, Subtype_ = 73, Switchtype_ = 13 )
+            if t == 'BSO-Volet':
+                # BSO for Profalux , created as a Blinded Inverted Percentage
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 244, Subtype_ = 73, Switchtype_ = 16 )
                 loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in BSO" %(t), NWKID)
+
+            if t == 'BSO-Orientation':
+                # BSO Orientation for Profalux, Create a Switch selector instead of Slider
+                #createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 244, Subtype_ = 73, Switchtype_ = 13 )
+                Options = createSwitchSelector( 11,  DeviceType = t,OffHidden = True, SelectorStyle = 1 )
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)       
+                loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in BSO-Orientation" %(t), NWKID)
             
             if t == 'BlindInverted':
                 # Blind Percentage Inverterd

@@ -10,8 +10,9 @@ import json
 
 
 from WebServer.headerResponse import setupHeadersResponse, prepResponseMessage
-
-
+import os
+from time import time
+  
 def rest_zGroup_lst_avlble_dev( self, verb, data, parameters):
 
     _response = prepResponseMessage( self ,setupHeadersResponse(  ))
@@ -150,6 +151,51 @@ def rest_zGroup_lst_avlble_dev( self, verb, data, parameters):
     _response["Data"] = json.dumps( device_lst, sort_keys=True )
     return _response
 
+def rest_rescan_group( self, verb, data, parameters):
+    
+    self.groupmgt.ScanAllDevicesForGroupMemberShip( )
+
+    _response = prepResponseMessage( self ,setupHeadersResponse())
+    _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+    action = {}
+    if verb != 'GET':
+        return _response
+
+    self.groupmgt.ScanAllDevicesForGroupMemberShip( )
+    action['Name'] = 'Full Scan'
+    action['TimeStamp'] = int(time())
+
+    _response["Data"] = json.dumps( action , sort_keys=True )
+
+    return _response
+
+def rest_scan_devices_for_group( self, verb, data, parameter):
+    # wget --method=PUT --body-data='[ "0000", "0001", "0002", "0003" ]' http://127.0.0.1:9442/rest-zigate/1/ScanDeviceForGrp
+    
+    _response = prepResponseMessage( self ,setupHeadersResponse(  ))
+    _response["Data"] = None
+    if self.groupmgt is None:
+        # Group is not enabled!
+        return _response
+
+    if verb != 'PUT':
+        # Only Put command with a Valid JSON is allow
+        return _response
+
+    if data is None:
+        return _response
+
+    if len(parameter) != 0:
+        return _response 
+
+    # We receive a JSON with a list of NwkId to be scaned
+    data = data.decode('utf8')
+    data = json.loads(data)
+    self.logging( 'Debug', "rest_scan_devices_for_group - Trigger GroupMemberShip scan for devices: %s " %(data))
+    self.groupmgt.ScanDevicesForGroupMemberShip( data )
+    action = {'Name': 'Scan of device requested.', 'TimeStamp': int(time())}
+    _response["Data"] = json.dumps( action , sort_keys=True )
+    return _response
 
 def rest_zGroup( self, verb, data, parameters):
 
@@ -199,7 +245,9 @@ def rest_zGroup( self, verb, data, parameters):
                     self.logging( 'Debug', "--> add Ikea Tradfri Remote")
                     _dev = {}
                     _dev['_NwkId'] = ListOfGroups[itergrp]["Tradfri Remote"]["Device Addr"]
-                    _dev['Ep'] = "01"
+                    _dev['Unit'] = ListOfGroups[itergrp]["Tradfri Remote"]['Device Id']
+                    _dev['Ep'] = ListOfGroups[itergrp]["Tradfri Remote"]["Ep"]
+                    _dev['Color Mode'] = ListOfGroups[itergrp]["Tradfri Remote"]["Color Mode"]
                     zgroup['Devices'].append( _dev )
                 zgroup_lst.append(zgroup)
             self.logging( 'Debug', "zGroup: %s" %zgroup_lst)
@@ -244,131 +292,10 @@ def rest_zGroup( self, verb, data, parameters):
         ListOfGroups = self.groupmgt.ListOfGroups
         grp_lst = []
         if len(parameters) == 0:
-            self.restart_needed['RestartNeeded'] = True
             data = data.decode('utf8')
-            data = json.loads(data)
-            self.logging( 'Debug', "data: %s" %data)
-            for item in data:
-                self.logging( 'Debug', "item: %s" %item)
-                if '_GroupId' not in item:
-                    self.logging( 'Debug', "--->Adding Group: ")
-                    # Define a GroupId 
-                    for x in range( 0x0001, 0x0999):
-                        grpid = '%04d' %x
-                        if grpid not in ListOfGroups:
-                            break
-                    else:
-                        Domoticz.Error("Out of GroupId")
-                        continue
-                    ListOfGroups[grpid] = {}
-                    ListOfGroups[grpid]['Name'] = item['GroupName']
-                    ListOfGroups[grpid]['Devices'] = []
-                else:
-                    if item['_GroupId'] not in ListOfGroups:
-                        Domoticz.Error("zGroup REST API - unknown GroupId: %s" %grpid)
-                        continue
-                    grpid = item['_GroupId']
+            _response["Data"] = {}
+            self.groupmgt.process_web_request(  json.loads(data) )
 
-                grp_lst.append( grpid ) # To memmorize the list of Group
-                #Update Group
-                self.logging( 'Debug', "--->Checking Group: %s" %grpid)
-                if item['GroupName'] != ListOfGroups[grpid]['Name']:
-                    # Update the GroupName
-                    self.logging( 'Debug', "------>Updating Group from :%s to : %s" %( ListOfGroups[grpid]['Name'], item['GroupName']))
-                    self.groupmgt._updateDomoGroupDeviceWidgetName( item['GroupName'], grpid )
-
-                newdev = []
-                if 'devicesSelected' not in item:
-                    continue
-                if 'GroupName' in item:
-                    if item['GroupName'] == '':
-                        continue
-                for devselected in item['devicesSelected']:
-                    if 'IEEE' in devselected:
-                        ieee = devselected['IEEE']
-                    elif '_NwkId' in devselected:
-                        nwkid = devselected['_NwkId']
-                        if nwkid != '0000' and nwkid not in self.ListOfDevices:
-                            Domoticz.Error("Not able to find nwkid: %s" %(nwkid))
-                            continue
-                        if 'IEEE' not in self.ListOfDevices[nwkid]:
-                            Domoticz.Error("Not able to find IEEE for %s - no IEEE entry in %s" %(nwkid, self.ListOfDevices[nwkid]))
-                            continue
-                        ieee = self.ListOfDevices[nwkid]['IEEE']
-                    else: 
-                        Domoticz.Error("Not able to find IEEE for %s" %(_dev))
-                        continue
-                    self.logging( 'Debug', "------>Checking device : %s/%s" %(devselected['_NwkId'], devselected['Ep']))
-                    # Check if this is not an Ikea Tradfri Remote
-                    nwkid = devselected['_NwkId']
-                    _tradfri_remote = False
-                    if 'Ep' in self.ListOfDevices[nwkid]:
-                        if '01' in self.ListOfDevices[nwkid]['Ep']:
-                            if 'ClusterType' in self.ListOfDevices[nwkid]['Ep']['01']:
-                                for iterDev in self.ListOfDevices[nwkid]['Ep']['01']['ClusterType']:
-                                    if self.ListOfDevices[nwkid]['Ep']['01']['ClusterType'][iterDev] == 'Ikea_Round_5b':
-                                        # We should not process it through the group.
-                                        self.logging( 'Debug', "------>Not processing Ikea Tradfri as part of Group. Will enable the Left/Right actions")
-                                        ListOfGroups[grpid]['Tradfri Remote'] = {}
-                                        ListOfGroups[grpid]['Tradfri Remote']['Device Addr'] = nwkid
-                                        ListOfGroups[grpid]['Tradfri Remote']['Device Id'] = iterDev
-                                        _tradfri_remote = True
-                    if _tradfri_remote:
-                        continue
-                    # Process the rest
-                    for itemDevice in ListOfGroups[grpid]['Devices']:
-                        if len(itemDevice) == 2:
-                            _dev, _ep = itemDevice
-                            _ieee = self.ListOfDevices[dev]['IEEE']
-                        elif len(itemDevice) == 3:
-                            _dev, _ep, _ieee = itemDevice
-
-                        if _dev == devselected['_NwkId'] and _ep == devselected['Ep']:
-                            if (ieee, _ep) not in newdev:
-                                self.logging( 'Debug', "------>--> %s to be added to group %s" %( (ieee, _ep), grpid))
-                                newdev.append( (ieee, _ep) )
-                            else:
-                                self.logging( 'Debug', "------>--> %s already in %s" %( (ieee, _ep), newdev))
-                            break
-                    else:
-                        if (ieee, devselected['Ep']) not in newdev:
-                            self.logging( 'Debug', "------>--> %s to be added to group %s" %( (ieee, devselected['Ep']), grpid))
-                            newdev.append( (ieee, devselected['Ep']) )
-                        else:
-                            self.logging( 'Debug', "------>--> %s already in %s" %( (_dev, _ep), newdev))
-                # end for devselecte
-
-                if 'coordinatorInside' in item:
-                    if item['coordinatorInside']:
-                        if 'IEEE' in self.zigatedata:
-                            ieee_zigate = self.zigatedata['IEEE']
-                            if ( ieee_zigate, '01') not in newdev:
-                                self.logging( 'Debug', "------>--> %s to be added to group %s" %( (ieee_zigate, '01'), grpid))
-                                newdev.append( (ieee_zigate, _ep) )
-
-                self.logging( 'Debug', "--->Devices Added: %s" %newdev)
-                ListOfGroups[grpid]['Imported'] = list( newdev )
-                self.logging( 'Debug', "--->Grp: %s - tobe Imported: %s" %(grpid, ListOfGroups[grpid]['Imported']))
-
-            # end for item / next group
-            # Finaly , we need to check if AnyGroup have been removed !
-            self.logging( 'Debug', "Group to be removed")
-            Domoticz.Log("ListOfGroups: %s" %ListOfGroups)
-            for grpid in ListOfGroups:
-                if grpid not in grp_lst:
-                    self.logging( 'Debug', "--->Group %s has to be removed" %grpid)
-                    if 'Imported' in ListOfGroups[grpid]:
-                        del ListOfGroups[grpid]['Imported']
-                    ListOfGroups[grpid]['Imported'] = []
-
-            self.logging( 'Debug', "Group to be worked out")
-            for grpid in ListOfGroups:
-                self.logging( 'Debug', "Group: %s" %grpid)
-                if 'Imported' in ListOfGroups[grpid]:
-                    for dev in ListOfGroups[grpid]['Imported']:
-                        self.logging( 'Debug', "---> %s to be imported" %str(dev))
-
-            self.groupmgt.write_jsonZigateGroupConfig()
         # end if len()
     # end if Verb=
 
