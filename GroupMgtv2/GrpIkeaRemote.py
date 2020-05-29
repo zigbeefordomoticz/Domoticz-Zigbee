@@ -69,7 +69,11 @@ def manageIkeaTradfriRemoteLeftRight( self, NwkId, type_dir):
         TrueNwkId = self.IEEE2NWK[ Ieee ]
 
         if NwkId != self.ListOfGroups[x]['Tradfri Remote']['Device Addr'] and TrueNwkId != self.ListOfGroups[x]['Tradfri Remote']['Device Addr']:
+            self.logging( 'Debug', "manageIkeaTradfriRemoteLeftRight - GroupId identified : %s, NwkId: %s TrueNwkId: %s not matching" 
+                %(Ikea5ButtonGroupId, NwkId, TrueNwkId))
             continue
+        
+        self.logging( 'Debug', "manageIkeaTradfriRemoteLeftRight - Found GrpId : %s" %x)
         Ikea5ButtonGroupId = x
         break
 
@@ -78,11 +82,13 @@ def manageIkeaTradfriRemoteLeftRight( self, NwkId, type_dir):
         return
 
     if 'Tradfri Remote' not in self.ListOfGroups[Ikea5ButtonGroupId]:
-        Domoticz.Error("manageIkeaTradfriRemoteLeftRight - Remote %s badly associated in GroupId: %s with %s" %( NwkId, Ikea5ButtonGroupId, self.ListOfGroups[Ikea5ButtonGroupId]))
+        Domoticz.Error("manageIkeaTradfriRemoteLeftRight - Remote %s badly associated in GroupId: %s with %s" 
+            %( NwkId, Ikea5ButtonGroupId, self.ListOfGroups[Ikea5ButtonGroupId]))
         return
 
     if 'Color Mode' not in self.ListOfGroups[Ikea5ButtonGroupId]['Tradfri Remote']:
-        Domoticz.Error("manageIkeaTradfriRemoteLeftRight - Remote %s badly associated in GroupId: %s with %s" %( NwkId, Ikea5ButtonGroupId, self.ListOfGroups[Ikea5ButtonGroupId]))
+        Domoticz.Error("manageIkeaTradfriRemoteLeftRight - Remote %s badly associated in GroupId: %s with %s" 
+            %( NwkId, Ikea5ButtonGroupId, self.ListOfGroups[Ikea5ButtonGroupId]))
         return       
     DomoWidgetColorType = self.ListOfGroups[Ikea5ButtonGroupId]['Tradfri Remote']['Color Mode']
 
