@@ -258,17 +258,15 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
     cmd = '10' # Propriatary Command: Ask the Tilt Blind to go to a Certain Position and Orientate to a certain angle
 
     # compute option 0x01 level, 0x02 tilt, 0x03 level + tilt    
-    if level and tilt:
+    if level is not None and tilt is not None:
         option = 0x03
-    elif tilt:
+    elif tilt is not None:
         option = 0x02
         level = 0x00
-    elif level:
+    elif level is not None:
        option = 0x01
        tilt = 0x00
     
-    if tilt == 0:
-        tilt = 1
     setTilt( self, nwkid, tilt)
     setLevel( self, nwkid, level)
 
