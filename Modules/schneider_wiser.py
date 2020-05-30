@@ -18,15 +18,14 @@ import struct
 import Domoticz
 
 from Modules.domoMaj import MajDomoDevice
-
 from Modules.basicOutputs import sendZigateCmd, raw_APS_request, write_attribute
-from Modules.domoMaj import MajDomoDevice
 from Modules.bindings import webBind, isWebBind
 
 from Modules.readAttributes import ReadAttributeRequest_0201, ReadAttributeRequest_0001, ReadAttributeRequest_0702, ReadAttributeRequest_0000
 from Modules.writeAttributes import write_attribute_when_awake
 from Modules.logging import loggingSchneider
 from Modules.zigateConsts import ZIGATE_EP,MAX_LOAD_ZIGATE
+from Modules.tools import getAttributeValue
 
 SCHNEIDER_BASE_EP = '0b'
 
@@ -55,17 +54,14 @@ def callbackDeviceAwake_Schneider(self, NwkId, EndPoint, cluster):
     if cluster == '0201':
         callbackDeviceAwake_Schneider_SetPoints( self, NwkId, EndPoint, cluster)
     if 'Model' in self.ListOfDevices[NwkId]:
-        if self.ListOfDevices[NwkId]['Model'] == 'EH-ZB-BMS':
-            if int(self.ListOfDevices[NwkId]['Heartbeat']) > 24 * 60 * 60:
-                #ReadAttributeRequest_0702(self, NwkId)
-                self.ListOfDevices[NwkId]['Heartbeat'] = 0
+        if self.ListOfDevices[NwkId]['Model'] in ('EH-ZB-HACT','EH-ZB-BMS', 'EH-ZB-SPD', 'EH-ZB-LMACT', 'EH-ZB-SPD-V2'):
+            if getAttributeValue(self, NwkId, EndPoint, '0702', '0301') == None or getAttributeValue(self, NwkId, EndPoint, '0702', '0302') == None:
+                ReadAttributeRequest_0702(self, NwkId)
 
     #if 'Model' in self.ListOfDevices[NwkId]:
     #    if self.ListOfDevices[NwkId]['Model'] in ('EH-ZB-RTS','EH-ZB-VACT', 'EH-ZB-BMS'):
     #        if (int(self.ListOfDevices[NwkId]['Heartbeat'],10) % 3600) == 0:
     #            ReadAttributeRequest_0001(self, NwkId)
-   
-    return
 
 
 def callbackDeviceAwake_Schneider_SetPoints( self, NwkId, EndPoint, cluster):
@@ -80,7 +76,8 @@ def callbackDeviceAwake_Schneider_SetPoints( self, NwkId, EndPoint, cluster):
                     if 'Schneider' not in self.ListOfDevices[NwkId]:
                         self.ListOfDevices[NwkId]['Schneider'] = {}
                     if 'Target SetPoint' in self.ListOfDevices[NwkId]['Schneider']:
-                        if self.ListOfDevices[NwkId]['Schneider']['Target SetPoint'] and self.ListOfDevices[NwkId]['Schneider']['Target SetPoint'] != int( self.ListOfDevices[NwkId]['Ep'][EndPoint]['0201']['0012'] ):
+                        if  self.ListOfDevices[NwkId]['Schneider']['Target SetPoint'] and \
+                            self.ListOfDevices[NwkId]['Schneider']['Target SetPoint'] != int( self.ListOfDevices[NwkId]['Ep'][EndPoint]['0201']['0012'] ):
                             # Protect against overloading Zigate
                             if now > self.ListOfDevices[NwkId]['Schneider']['TimeStamp SetPoint'] + 15:
                                 schneider_setpoint( self, NwkId, self.ListOfDevices[NwkId]['Schneider']['Target SetPoint'] )
@@ -97,8 +94,6 @@ def callbackDeviceAwake_Schneider_SetPoints( self, NwkId, EndPoint, cluster):
                                 if now > self.ListOfDevices[NwkId]['Schneider']['TimeStamp Mode'] + 15:
                                     schneider_EHZBRTS_thermoMode( self, NwkId, self.ListOfDevices[NwkId]['Schneider']['Target Mode'] )
 
-
-    return
 
 def schneider_wiser_registration( self, Devices, key ):
     """
@@ -248,23 +243,18 @@ def schneider_hact_heater_type( self, key, type_heater ):
     """
     EPout = SCHNEIDER_BASE_EP
 
-    current_value_string = '-1'
-
-    if EPout in self.ListOfDevices[ key ]['Ep']:
-        if '0201' in  self.ListOfDevices[ key ]['Ep'][EPout]:
-            if 'e011' in  self.ListOfDevices[ key ]['Ep'][EPout]['0201']:
-                current_value_string = self.ListOfDevices[ key ]['Ep'][EPout]['0201']['e011']
+    attrValue = getAttributeValue (self, key, EPout, '0201', 'e011')
+    if attrValue != None:
+        current_value = int(attrValue,16)
+        force_update = False
+    else:
+        current_value = 0x82
+        force_update = True
 
     # value received is :
     # bit 0 - mode of heating  : 0 is setpoint, 1 is fip mode
     # bit 1 - mode of heater : 0 is conventional heater, 1 is fip enabled heater
     # for validation , 0x80 is added to he value retrived from HACT
-    current_value = int(current_value_string,16)
-    force_update = False
-
-    if (current_value) == -1:
-        current_value = 0x82  # fip mode by default
-        force_update = True
 
     current_value = current_value - 0x80
     if (type_heater == "conventional"):
@@ -309,22 +299,18 @@ def schneider_hact_heating_mode( self, key, mode ):
 
     EPout = SCHNEIDER_BASE_EP
 
-    current_value_string = '0'
-    if EPout in self.ListOfDevices[ key ]['Ep']:
-        if '0201' in  self.ListOfDevices[ key ]['Ep'][EPout]:
-            if 'e011' in  self.ListOfDevices[ key ]['Ep'][EPout]['0201']:
-                current_value_string = self.ListOfDevices[ key ]['Ep'][EPout]['0201']['e011']
+    attrValue = getAttributeValue (self, key, EPout, '0201', 'e011')
+    if attrValue != None:
+        current_value = int(attrValue,16)
+        force_update = False
+    else:
+        current_value = 0x82
+        force_update = True
 
     # value received is:
     # bit 0 - mode of heating  : 0 is setpoint, 1 is fip mode
     # bit 1 - mode of heater : 0 is conventional heater, 1 is fip enabled heater
     # for validation , 0x80 is added to he value retrived from HACT
-    current_value = int(current_value_string,16)
-    force_update = False
-
-    if (current_value) == -1:
-        current_value = 0x82
-        force_update = True
 
     current_value = current_value - 0x80
     if (mode == "setpoint"):
@@ -413,7 +399,6 @@ def schneider_thermostat_check_and_bind (self, key):
             for hact in self.SchneiderZone[ zone ]['Thermostat']['HACT']:
                 srcIeee = self.SchneiderZone[ zone ]['Thermostat']['IEEE']
                 targetIeee = self.SchneiderZone[ zone ]['Thermostat']['HACT'][hact]['IEEE']
-                loggingSchneider(self, 'Debug', "schneider_thermostat_check_and_bind : self.ListOfDevices[key]  %s " %self.ListOfDevices[key]  )
 
                 if not isWebBind (self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind1):
                     webBind(self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind1)
@@ -443,7 +428,6 @@ def schneider_actuator_check_and_bind (self, key):
                 srcIeee = self.SchneiderZone[ zone ]['Thermostat']['HACT'][hact]['IEEE']
                 targetIeee = self.SchneiderZone[ zone ]['Thermostat']['IEEE']
                 srcIeee = self.SchneiderZone[ zone ]['Thermostat']['HACT'][hact]['IEEE']
-                loggingSchneider(self, 'Debug', "schneider_actuator_check_and_bind : self.ListOfDevices[key]  %s " %self.ListOfDevices[key]  )
 
                 if not isWebBind (self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind1):
                     webBind(self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind1)
@@ -836,7 +820,6 @@ def schneiderReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dst
             loggingSchneider( self, 'Debug','Schneider cmd 0x50',srcNWKID)
             schneiderAlarmReceived (self, Devices, srcNWKID, srcEp, ClusterID, False, data)
 
-    return
 
 def importSchneiderZoning( self ):
     """

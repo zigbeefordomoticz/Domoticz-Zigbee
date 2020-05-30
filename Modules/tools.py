@@ -799,7 +799,6 @@ def lookupForParentDevice( self, nwkid= None, ieee=None):
     #Nothing found
     return None
 
-
 def checkAttribute( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID ):
     
     if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
@@ -816,3 +815,17 @@ def checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAtt
     checkAttribute( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID )    
 
     self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = Value
+
+def getAttributeValue (self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID):
+
+    if MsgSrcAddr not in self.ListOfDevices:
+        return None
+    if MsgSrcEp not in self.ListOfDevices[MsgSrcAddr]['Ep']:
+        return None
+    if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
+        return None
+    if not isinstance( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] , dict):
+        return None
+    if MsgAttrID not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]:
+        return None
+    return self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID]
