@@ -18,9 +18,7 @@ import struct
 import Domoticz
 
 from Modules.domoMaj import MajDomoDevice
-
 from Modules.basicOutputs import sendZigateCmd, raw_APS_request, write_attribute
-from Modules.domoMaj import MajDomoDevice
 from Modules.bindings import webBind, isWebBind
 
 from Modules.readAttributes import ReadAttributeRequest_0201, ReadAttributeRequest_0001, ReadAttributeRequest_0702, ReadAttributeRequest_0000
@@ -66,8 +64,6 @@ def callbackDeviceAwake_Schneider(self, NwkId, EndPoint, cluster):
     #    if self.ListOfDevices[NwkId]['Model'] in ('EH-ZB-RTS','EH-ZB-VACT', 'EH-ZB-BMS'):
     #        if (int(self.ListOfDevices[NwkId]['Heartbeat'],10) % 3600) == 0:
     #            ReadAttributeRequest_0001(self, NwkId)
-   
-    return
 
 
 def callbackDeviceAwake_Schneider_SetPoints( self, NwkId, EndPoint, cluster):
@@ -99,8 +95,6 @@ def callbackDeviceAwake_Schneider_SetPoints( self, NwkId, EndPoint, cluster):
                                 if now > self.ListOfDevices[NwkId]['Schneider']['TimeStamp Mode'] + 15:
                                     schneider_EHZBRTS_thermoMode( self, NwkId, self.ListOfDevices[NwkId]['Schneider']['Target Mode'] )
 
-
-    return
 
 def schneider_wiser_registration( self, Devices, key ):
     """
@@ -836,7 +830,6 @@ def schneiderReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dst
             loggingSchneider( self, 'Debug','Schneider cmd 0x50',srcNWKID)
             schneiderAlarmReceived (self, Devices, srcNWKID, srcEp, ClusterID, False, data)
 
-    return
 
 def importSchneiderZoning( self ):
     """

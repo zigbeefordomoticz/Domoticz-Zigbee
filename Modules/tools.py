@@ -799,7 +799,6 @@ def lookupForParentDevice( self, nwkid= None, ieee=None):
     #Nothing found
     return None
 
-
 def checkAttribute( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID ):
     
     if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
