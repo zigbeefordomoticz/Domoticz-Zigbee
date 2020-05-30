@@ -55,10 +55,12 @@ def callbackDeviceAwake_Schneider(self, NwkId, EndPoint, cluster):
     if cluster == '0201':
         callbackDeviceAwake_Schneider_SetPoints( self, NwkId, EndPoint, cluster)
     if 'Model' in self.ListOfDevices[NwkId]:
-        if self.ListOfDevices[NwkId]['Model'] == 'EH-ZB-BMS':
-            if int(self.ListOfDevices[NwkId]['Heartbeat']) > 24 * 60 * 60:
-                #ReadAttributeRequest_0702(self, NwkId)
-                self.ListOfDevices[NwkId]['Heartbeat'] = 0
+        if self.ListOfDevices[NwkId]['Model'] in ('EH-ZB-HACT','EH-ZB-BMS', 'EH-ZB-SPD', 'EH-ZB-LMACT', 'EH-ZB-SPD-V2'):
+            if EndPoint in self.ListOfDevices[ NwkId ]['Ep']:
+                if '0702' in  self.ListOfDevices[ NwkId ]['Ep'][EndPoint]:
+                    if  '0301' not in self.ListOfDevices[ NwkId ]['Ep'][EndPoint]['0702'] or \
+                        '0302' not in self.ListOfDevices[ NwkId ]['Ep'][EndPoint]['0702']:
+                        ReadAttributeRequest_0702(self, NwkId)
 
     #if 'Model' in self.ListOfDevices[NwkId]:
     #    if self.ListOfDevices[NwkId]['Model'] in ('EH-ZB-RTS','EH-ZB-VACT', 'EH-ZB-BMS'):
