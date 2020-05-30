@@ -68,6 +68,12 @@ def manageIkeaTradfriRemoteLeftRight( self, RemoteNwkId, type_dir):
         
         # Get NwkId from the IEEE remote in the Group (as if we use the Device Addr this could be an Old NetworkId)
         Ieee = self.ListOfGroups[ x ]['Tradfri Remote']['IEEE']
+        if Ieee not in self.IEEE2NWK:
+            # Inconsistency. Most-like the remote has been removed but remains in Group
+            Domoticz.Error("manageIkeaTradfriRemoteLeftRight - Group %s refer to a Remote %s/%s which do not exist anymore"
+                %(x, self.ListOfGroups[ x ]['Tradfri Remote']['Device Addr'], Ieee))
+            break
+
         RemoteFromGroupNwkId = self.IEEE2NWK[ Ieee ]
 
         if RemoteNwkId == RemoteFromGroupNwkId:
