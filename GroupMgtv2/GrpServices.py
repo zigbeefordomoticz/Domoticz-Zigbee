@@ -18,6 +18,10 @@ from GroupMgtv2.GrpDatabase import create_group, checkNwkIdAndUpdateIfAny, remov
 from GroupMgtv2.GrpCommands import remove_group_member_ship, add_group_member_ship, check_group_member_ship, look_for_group_member_ship, send_group_member_ship_identify_effect
 
 
+def SendGroupIdentifyEffect( self, GrpId):
+    
+    send_group_member_ship_identify_effect( self, GrpId )
+
 def checkAndTriggerIfMajGroupNeeded( self, NwkId, Ep, ClusterId):
     """
     This method is call from MajDomoDevice and onCommand because there is an update of a particular Device Cluster/Attribute
@@ -108,7 +112,7 @@ def create_new_group_and_attach_devices( self, GrpId, GrpName, DevicesList ):
     create_domoticz_group_device(self, GrpName, GrpId)
     for NwkId, ep, ieee in DevicesList:
         add_group_member_ship( self, NwkId, ep, GrpId)
-    send_group_member_ship_identify_effect( self, GrpId )
+    #send_group_member_ship_identify_effect( self, GrpId )
     self.write_groups_list()
 
 def update_group_and_add_devices( self, GrpId, ToBeAddedDevices):
@@ -118,7 +122,7 @@ def update_group_and_add_devices( self, GrpId, ToBeAddedDevices):
         # Ikea Tradfri Round5B will be added if required by checkIfIkeaRound5B
         if NwkId and not checkIfIkeaRound5BToBeAdded( self, NwkId, ep, ieee, GrpId):
             add_group_member_ship( self, NwkId, ep, GrpId)
-    send_group_member_ship_identify_effect( self, GrpId )
+    #send_group_member_ship_identify_effect( self, GrpId )
     self.write_groups_list()
 
 def update_group_and_remove_devices( self, GrpId, ToBeRemoveDevices):
@@ -130,5 +134,5 @@ def update_group_and_remove_devices( self, GrpId, ToBeRemoveDevices):
         if NwkId and not checkIfIkeaRound5BToBeRemoved( self, NwkId, ep, ieee, GrpId):
             self.logging( 'Debug', "-- --  --  --  --  --  -- > Calling Remove_group_membership [%s %s %s]" %(NwkId, ep, ieee ))
             remove_group_member_ship(self,  NwkId, ep, GrpId )
-    send_group_member_ship_identify_effect( self, GrpId )
+    #send_group_member_ship_identify_effect( self, GrpId )
     self.write_groups_list()
