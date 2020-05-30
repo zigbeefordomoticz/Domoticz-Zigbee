@@ -151,19 +151,20 @@ def rebind_Clusters( self, NWKID):
 
 def reWebBind_Clusters( self, NWKID):
 
-    if 'WebBind' in self.ListOfDevices[NWKID]:
-        for Ep in list(self.ListOfDevices[NWKID]['WebBind']):
-            for cluster in list(self.ListOfDevices[NWKID]['WebBind'][ Ep ]):
-                for destNwkid in list(self.ListOfDevices[NWKID]['WebBind'][ Ep ][cluster]):
-                    if destNwkid in ('Stamp','Target','TargetIEEE','SourceIEEE','TargetEp','Phase','Status'): # delete old mechanism
-                        Domoticz.Error("---> delete  destNwkid: %s" %( destNwkid))
-                        del self.ListOfDevices[NWKID]['WebBind'][Ep][cluster][destNwkid]
-                    if self.ListOfDevices[NWKID]['WebBind'][Ep][cluster][destNwkid]['Phase'] == 'binded':
-                        loggingBinding( self, 'Debug', "Request a rewebbind for : nwkid %s ep: %s cluster: %s destNwkid: %s" 
-                            %(NWKID,Ep,cluster,destNwkid), nwkid=NWKID)
-                        self.ListOfDevices[NWKID]['WebBind'][Ep][cluster][destNwkid]['Stamp'] = int(time())
-                        self.ListOfDevices[NWKID]['WebBind'][Ep][cluster][destNwkid]['Phase'] = 'requested'
-                        return
+    if 'WebBind' not in self.ListOfDevices[NWKID]:
+        return
+    for Ep in list(self.ListOfDevices[NWKID]['WebBind']):
+        for cluster in list(self.ListOfDevices[NWKID]['WebBind'][ Ep ]):
+            for destNwkid in list(self.ListOfDevices[NWKID]['WebBind'][ Ep ][cluster]):
+                if destNwkid in ('Stamp','Target','TargetIEEE','SourceIEEE','TargetEp','Phase','Status'): # delete old mechanism
+                    Domoticz.Error("---> delete  destNwkid: %s" %( destNwkid))
+                    del self.ListOfDevices[NWKID]['WebBind'][Ep][cluster][destNwkid]
+                if self.ListOfDevices[NWKID]['WebBind'][Ep][cluster][destNwkid]['Phase'] == 'binded':
+                    loggingBinding( self, 'Debug', "Request a rewebbind for : nwkid %s ep: %s cluster: %s destNwkid: %s" 
+                        %(NWKID,Ep,cluster,destNwkid), nwkid=NWKID)
+                    self.ListOfDevices[NWKID]['WebBind'][Ep][cluster][destNwkid]['Stamp'] = int(time())
+                    self.ListOfDevices[NWKID]['WebBind'][Ep][cluster][destNwkid]['Phase'] = 'requested'
+                    return
 
 def unbindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
     '''
