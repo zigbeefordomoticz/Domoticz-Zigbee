@@ -26,7 +26,7 @@ from Modules.tools import timeStamped, updSQN, updRSSI, DeviceExist, getSaddrfro
 from Modules.logging import loggingPairing, loggingInput
 from Modules.basicOutputs import sendZigateCmd, leaveMgtReJoin, setTimeServer, ZigatePermitToJoin
 from Modules.readAttributes import ReadAttributeRequest_0000, ReadAttributeRequest_0001
-from Modules.bindings import rebind_Clusters
+from Modules.bindings import rebind_Clusters, reWebBind_Clusters
 from Modules.livolo import livolo_bind
 from Modules.lumi import AqaraOppleDecoding, enableOppleSwitch
 from Modules.configureReporting import processConfigureReporting
@@ -897,10 +897,13 @@ def Decode8030(self, Devices, MsgData, MsgRSSI) : # Bind response
 
                 for cluster in list(self.ListOfDevices[nwkid]['Bind'][ Ep ]):
                     if self.ListOfDevices[nwkid]['Bind'][Ep][cluster]['Phase'] == 'requested':
+                        loggingInput( self, 'Debug', "Decode8030 - Set bind request to binded : nwkid %s ep: %s cluster: %s" 
+                                %(nwkid,Ep,cluster), MsgSrcAddr)
                         self.ListOfDevices[nwkid]['Bind'][Ep][cluster]['Stamp'] = int(time())
                         self.ListOfDevices[nwkid]['Bind'][Ep][cluster]['Phase'] = 'binded'
                         self.ListOfDevices[nwkid]['Bind'][Ep][cluster]['Status'] = MsgDataStatus
                         return
+
         if 'WebBind' in self.ListOfDevices[nwkid]:
             for Ep in list(self.ListOfDevices[nwkid]['WebBind']):
                 if Ep not in self.ListOfDevices[nwkid]['Ep']:
@@ -915,6 +918,8 @@ def Decode8030(self, Devices, MsgData, MsgRSSI) : # Bind response
                             Domoticz.Error("---> delete  destNwkid: %s" %( destNwkid))
                             del self.ListOfDevices[nwkid]['WebBind'][Ep][cluster][destNwkid]
                         if self.ListOfDevices[nwkid]['WebBind'][Ep][cluster][destNwkid]['Phase'] == 'requested':
+                            loggingInput( self, 'Debug', "Decode8030 - Set WebBind request to binded : nwkid %s ep: %s cluster: %s destNwkid: %s" 
+                                %(nwkid,Ep,cluster,destNwkid), MsgSrcAddr)
                             self.ListOfDevices[nwkid]['WebBind'][Ep][cluster][destNwkid]['Stamp'] = int(time())
                             self.ListOfDevices[nwkid]['WebBind'][Ep][cluster][destNwkid]['Phase'] = 'binded'
                             self.ListOfDevices[nwkid]['WebBind'][Ep][cluster][destNwkid]['Status'] = MsgDataStatus
@@ -2191,6 +2196,7 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         if self.pluginconf.pluginConf['allowReBindingClusters']:
             loggingInput( self, 'Debug', "Decode004D - Request rebind clusters for %s" %( MsgSrcAddr), MsgSrcAddr)
             rebind_Clusters( self, MsgSrcAddr)
+            reWebBind_Clusters( self, MsgSrcAddr)
 
         if  self.ListOfDevices[MsgSrcAddr]['Model'] in ('lumi.remote.b686opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b286opcn01',
                                         'lumi.remote.b686opcn01-bulb', 'lumi.remote.b486opcn01-bulb', 'lumi.remote.b286opcn01-bulb'):

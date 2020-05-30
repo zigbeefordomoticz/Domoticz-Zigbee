@@ -11,7 +11,7 @@ import Domoticz
 from Modules.schneider_wiser import callbackDeviceAwake_Schneider
 from Modules.legrand_netatmo import callbackDeviceAwake_Legrand
 from Modules.basicOutputs import write_attribute
-from Modules.bindings import webBind
+from Modules.bindings import webBind, callBackForWebBindIfNeeded
 from Modules.logging import loggingWriteAttributes, loggingBinding
 
 
@@ -68,32 +68,3 @@ def callBackForWriteAttributeIfNeeded(self, key):
                 data = self.ListOfDevices[key]['WriteAttribute'][EPout][clusterID][attribute]['data']
                 write_attribute (self,key,EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data)
 
-def callBackForWebBindIfNeeded( self , srcNWKID ):
-    
-    """
-    Check that WebBind are well set
-    """
-
-    if srcNWKID not in self.ListOfDevices:
-        return
-    if 'WebBind' not in self.ListOfDevices[srcNWKID]:
-        return
-
-    for Ep in list(self.ListOfDevices[srcNWKID]['WebBind']):
-        for ClusterId in list(self.ListOfDevices[srcNWKID]['WebBind'][ Ep ]):
-            for destNwkid in list(self.ListOfDevices[srcNWKID]['WebBind'][ Ep ][ClusterId]):
-                if destNwkid in ('Stamp','Target','TargetIEEE','SourceIEEE','TargetEp','Phase','Status'):
-                    Domoticz.Error("---> delete  destNwkid: %s" %( destNwkid))
-                    del self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId][destNwkid]
-                elif ('Phase' in self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId][destNwkid] and \
-                                 self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId][destNwkid]['Phase'] == 'requested'):
-                    if ('Stamp' in self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId][destNwkid] and time() < self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId][destNwkid]['Stamp']+ 5):    # Let's wait 5s before trying again
-                        continue
-                    loggingBinding( self, 'Log', "Redo a WebBind for device %s" %(srcNWKID))
-                    sourceIeee = self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId][destNwkid]['SourceIEEE']
-                    destIeee = self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId][destNwkid]['TargetIEEE']
-                    destEp = self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId][destNwkid]['TargetEp']
-                    # Perforning the bind
-                    webBind(self, sourceIeee, Ep, destIeee, destEp, ClusterId)
-
-                    self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId][destNwkid]['Stamp'] = int(time())
