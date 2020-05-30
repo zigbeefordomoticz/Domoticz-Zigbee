@@ -112,7 +112,6 @@ def create_new_group_and_attach_devices( self, GrpId, GrpName, DevicesList ):
     create_domoticz_group_device(self, GrpName, GrpId)
     for NwkId, ep, ieee in DevicesList:
         add_group_member_ship( self, NwkId, ep, GrpId)
-    #send_group_member_ship_identify_effect( self, GrpId )
     self.write_groups_list()
 
 def update_group_and_add_devices( self, GrpId, ToBeAddedDevices):
@@ -122,7 +121,6 @@ def update_group_and_add_devices( self, GrpId, ToBeAddedDevices):
         # Ikea Tradfri Round5B will be added if required by checkIfIkeaRound5B
         if NwkId and not checkIfIkeaRound5BToBeAdded( self, NwkId, ep, ieee, GrpId):
             add_group_member_ship( self, NwkId, ep, GrpId)
-    #send_group_member_ship_identify_effect( self, GrpId )
     self.write_groups_list()
 
 def update_group_and_remove_devices( self, GrpId, ToBeRemoveDevices):
@@ -134,5 +132,4 @@ def update_group_and_remove_devices( self, GrpId, ToBeRemoveDevices):
         if NwkId and not checkIfIkeaRound5BToBeRemoved( self, NwkId, ep, ieee, GrpId):
             self.logging( 'Debug', "-- --  --  --  --  --  -- > Calling Remove_group_membership [%s %s %s]" %(NwkId, ep, ieee ))
             remove_group_member_ship(self,  NwkId, ep, GrpId )
-    #send_group_member_ship_identify_effect( self, GrpId )
     self.write_groups_list()

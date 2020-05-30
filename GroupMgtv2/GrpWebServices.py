@@ -130,12 +130,15 @@ def process_web_request( self, webInput):
         self.logging( 'Debug', " --  -- - > Existing DeviceList: %s " %ExistingDevices)
 
         WhatToDo = compare_exitsing_with_new_list( self, ExistingDevices, TargetedDevices)
+        sendIdentify = len(WhatToDo['ToBeAdded']) + len(WhatToDo['ToBeRemoved'])
         self.logging( 'Debug', " --  -- - > Devices to be added: %s " %WhatToDo['ToBeAdded'])
         update_group_and_add_devices( self, GrpId, WhatToDo['ToBeAdded'])
 
         self.logging( 'Debug', " --  -- - > Devices to be removed: %s " %WhatToDo['ToBeRemoved'])
         update_group_and_remove_devices( self, GrpId, WhatToDo['ToBeRemoved'])
-        SendGroupIdentifyEffect( self, GrpId )
+        if sendIdentify > 0:
+            SendGroupIdentifyEffect( self, GrpId )
+
 
     def delGroup( self, GrpId ):
         if GrpId not in self.ListOfGroups:
