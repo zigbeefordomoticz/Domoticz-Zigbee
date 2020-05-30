@@ -413,7 +413,6 @@ def schneider_thermostat_check_and_bind (self, key):
             for hact in self.SchneiderZone[ zone ]['Thermostat']['HACT']:
                 srcIeee = self.SchneiderZone[ zone ]['Thermostat']['IEEE']
                 targetIeee = self.SchneiderZone[ zone ]['Thermostat']['HACT'][hact]['IEEE']
-                loggingSchneider(self, 'Debug', "schneider_thermostat_check_and_bind : self.ListOfDevices[key]  %s " %self.ListOfDevices[key]  )
 
                 if not isWebBind (self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind1):
                     webBind(self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind1)
@@ -443,7 +442,6 @@ def schneider_actuator_check_and_bind (self, key):
                 srcIeee = self.SchneiderZone[ zone ]['Thermostat']['HACT'][hact]['IEEE']
                 targetIeee = self.SchneiderZone[ zone ]['Thermostat']['IEEE']
                 srcIeee = self.SchneiderZone[ zone ]['Thermostat']['HACT'][hact]['IEEE']
-                loggingSchneider(self, 'Debug', "schneider_actuator_check_and_bind : self.ListOfDevices[key]  %s " %self.ListOfDevices[key]  )
 
                 if not isWebBind (self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind1):
                     webBind(self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind1)
