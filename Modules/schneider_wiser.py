@@ -25,6 +25,7 @@ from Modules.readAttributes import ReadAttributeRequest_0201, ReadAttributeReque
 from Modules.writeAttributes import write_attribute_when_awake
 from Modules.logging import loggingSchneider
 from Modules.zigateConsts import ZIGATE_EP,MAX_LOAD_ZIGATE
+from Modules.tools import getAttributeValue
 
 SCHNEIDER_BASE_EP = '0b'
 
@@ -54,11 +55,8 @@ def callbackDeviceAwake_Schneider(self, NwkId, EndPoint, cluster):
         callbackDeviceAwake_Schneider_SetPoints( self, NwkId, EndPoint, cluster)
     if 'Model' in self.ListOfDevices[NwkId]:
         if self.ListOfDevices[NwkId]['Model'] in ('EH-ZB-HACT','EH-ZB-BMS', 'EH-ZB-SPD', 'EH-ZB-LMACT', 'EH-ZB-SPD-V2'):
-            if EndPoint in self.ListOfDevices[ NwkId ]['Ep']:
-                if '0702' in  self.ListOfDevices[ NwkId ]['Ep'][EndPoint]:
-                    if  '0301' not in self.ListOfDevices[ NwkId ]['Ep'][EndPoint]['0702'] or \
-                        '0302' not in self.ListOfDevices[ NwkId ]['Ep'][EndPoint]['0702']:
-                        ReadAttributeRequest_0702(self, NwkId)
+            if getAttributeValue(self, NwkId, EndPoint, '0702', '0301') == None or getAttributeValue(self, NwkId, EndPoint, '0702', '0302') == None:
+                ReadAttributeRequest_0702(self, NwkId)
 
     #if 'Model' in self.ListOfDevices[NwkId]:
     #    if self.ListOfDevices[NwkId]['Model'] in ('EH-ZB-RTS','EH-ZB-VACT', 'EH-ZB-BMS'):
@@ -78,7 +76,8 @@ def callbackDeviceAwake_Schneider_SetPoints( self, NwkId, EndPoint, cluster):
                     if 'Schneider' not in self.ListOfDevices[NwkId]:
                         self.ListOfDevices[NwkId]['Schneider'] = {}
                     if 'Target SetPoint' in self.ListOfDevices[NwkId]['Schneider']:
-                        if self.ListOfDevices[NwkId]['Schneider']['Target SetPoint'] and self.ListOfDevices[NwkId]['Schneider']['Target SetPoint'] != int( self.ListOfDevices[NwkId]['Ep'][EndPoint]['0201']['0012'] ):
+                        if  self.ListOfDevices[NwkId]['Schneider']['Target SetPoint'] and \
+                            self.ListOfDevices[NwkId]['Schneider']['Target SetPoint'] != int( self.ListOfDevices[NwkId]['Ep'][EndPoint]['0201']['0012'] ):
                             # Protect against overloading Zigate
                             if now > self.ListOfDevices[NwkId]['Schneider']['TimeStamp SetPoint'] + 15:
                                 schneider_setpoint( self, NwkId, self.ListOfDevices[NwkId]['Schneider']['Target SetPoint'] )
@@ -244,23 +243,18 @@ def schneider_hact_heater_type( self, key, type_heater ):
     """
     EPout = SCHNEIDER_BASE_EP
 
-    current_value_string = '-1'
-
-    if EPout in self.ListOfDevices[ key ]['Ep']:
-        if '0201' in  self.ListOfDevices[ key ]['Ep'][EPout]:
-            if 'e011' in  self.ListOfDevices[ key ]['Ep'][EPout]['0201']:
-                current_value_string = self.ListOfDevices[ key ]['Ep'][EPout]['0201']['e011']
+    attrValue = getAttributeValue (self, key, EPout, '0201', 'e011')
+    if attrValue != None:
+        current_value = int(attrValue,16)
+        force_update = False
+    else:
+        current_value = 0x82
+        force_update = True
 
     # value received is :
     # bit 0 - mode of heating  : 0 is setpoint, 1 is fip mode
     # bit 1 - mode of heater : 0 is conventional heater, 1 is fip enabled heater
     # for validation , 0x80 is added to he value retrived from HACT
-    current_value = int(current_value_string,16)
-    force_update = False
-
-    if (current_value) == -1:
-        current_value = 0x82  # fip mode by default
-        force_update = True
 
     current_value = current_value - 0x80
     if (type_heater == "conventional"):
@@ -305,22 +299,18 @@ def schneider_hact_heating_mode( self, key, mode ):
 
     EPout = SCHNEIDER_BASE_EP
 
-    current_value_string = '0'
-    if EPout in self.ListOfDevices[ key ]['Ep']:
-        if '0201' in  self.ListOfDevices[ key ]['Ep'][EPout]:
-            if 'e011' in  self.ListOfDevices[ key ]['Ep'][EPout]['0201']:
-                current_value_string = self.ListOfDevices[ key ]['Ep'][EPout]['0201']['e011']
+    attrValue = getAttributeValue (self, key, EPout, '0201', 'e011')
+    if attrValue != None:
+        current_value = int(attrValue,16)
+        force_update = False
+    else:
+        current_value = 0x82
+        force_update = True
 
     # value received is:
     # bit 0 - mode of heating  : 0 is setpoint, 1 is fip mode
     # bit 1 - mode of heater : 0 is conventional heater, 1 is fip enabled heater
     # for validation , 0x80 is added to he value retrived from HACT
-    current_value = int(current_value_string,16)
-    force_update = False
-
-    if (current_value) == -1:
-        current_value = 0x82
-        force_update = True
 
     current_value = current_value - 0x80
     if (mode == "setpoint"):
