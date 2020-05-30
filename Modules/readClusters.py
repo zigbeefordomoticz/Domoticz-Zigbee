@@ -20,15 +20,13 @@ import string
 
 from time import time
 
-from math import atan, sqrt, pi
-
 from Modules.zigateConsts import LEGRAND_REMOTE_SHUTTER, LEGRAND_REMOTE_SWITCHS, LEGRAND_REMOTES, ZONE_TYPE
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import lastSeenUpdate, timedOutDevice
 from Modules.tools import DeviceExist, getEPforClusterType, is_hex, voltage2batteryP, checkAttribute, checkAndStoreAttributeValue
 from Modules.logging import loggingCluster
 
-from Modules.lumi import AqaraOppleDecoding0012, readXiaomiCluster, xiaomi_leave
+from Modules.lumi import AqaraOppleDecoding0012, readXiaomiCluster, xiaomi_leave, cube_decode, decode_vibr, decode_vibrAngle
 
 
 def decodeAttribute(self, AttType, Attribute, handleErrors=False):
@@ -56,12 +54,12 @@ def decodeAttribute(self, AttType, Attribute, handleErrors=False):
         return str(struct.unpack('I',struct.pack('I',int("0"+Attribute,16)))[0])
 
     if int(AttType,16) == 0x23:   # 32BitUint
-            loggingCluster( self, 'Debug', "decodeAttribut(%s, %s) returning %s " %(AttType, Attribute, \
-                                    str(struct.unpack('I',struct.pack('I',int(Attribute,16)))[0])))
-            return str(struct.unpack('I',struct.pack('I',int(Attribute,16)))[0])
+        loggingCluster( self, 'Debug', "decodeAttribut(%s, %s) returning %s " %(AttType, Attribute, \
+                                str(struct.unpack('I',struct.pack('I',int(Attribute,16)))[0])))
+        return str(struct.unpack('I',struct.pack('I',int(Attribute,16)))[0])
 
     if int(AttType,16) == 0x25:   # ZigBee_48BitUint
-            return str(struct.unpack('Q',struct.pack('Q',int(Attribute,16)))[0])
+        return str(struct.unpack('Q',struct.pack('Q',int(Attribute,16)))[0])
 
     if int(AttType,16)  == 0x28: # int8
         return int(Attribute, 16 )
@@ -75,14 +73,15 @@ def decodeAttribute(self, AttType, Attribute, handleErrors=False):
         return str(struct.unpack('i',struct.pack('I',int("0"+Attribute,16)))[0])
 
     if int(AttType,16) == 0x2b:   # 32Bitint
-            loggingCluster( self, 'Debug', "decodeAttribut(%s, %s) untested, returning %s " %(AttType, Attribute, \
-                                    str(struct.unpack('i',struct.pack('I',int(Attribute,16)))[0])))
-            return str(struct.unpack('i',struct.pack('I',int(Attribute,16)))[0])
+        loggingCluster( self, 'Debug', "decodeAttribut(%s, %s) untested, returning %s " %(AttType, Attribute, \
+                                str(struct.unpack('i',struct.pack('I',int(Attribute,16)))[0])))
+        return str(struct.unpack('i',struct.pack('I',int(Attribute,16)))[0])
 
     if int(AttType,16) == 0x2d:   # ZigBee_48Bitint
-            loggingCluster( self, 'Debug', "decodeAttribut(%s, %s) untested, returning %s " %(AttType, Attribute, \
-                                    str(struct.unpack('Q',struct.pack('Q',int(Attribute,16)))[0])))
-            return str(struct.unpack('q',struct.pack('Q',int(Attribute,16)))[0])
+        loggingCluster( self, 'Debug', "decodeAttribut(%s, %s) untested, returning %s " %(AttType, Attribute, \
+                                str(struct.unpack('Q',struct.pack('Q',int(Attribute,16)))[0])))
+        return str(struct.unpack('q',struct.pack('Q',int(Attribute,16)))[0])
+
     if int(AttType,16) == 0x30:  # 8BitEnum
         return int(Attribute,16 )
 
@@ -133,7 +132,6 @@ def storeReadAttributeStatus( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrI
         self.ListOfDevices[MsgSrcAddr]['ReadAttributes']['Ep'][MsgSrcEp][MsgClusterId] = {}
     self.ListOfDevices[MsgSrcAddr]['ReadAttributes']['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgAttrStatus
 
-
 def ReadCluster(self, Devices, MsgData):
 
     MsgLen=len(MsgData)
@@ -155,12 +153,11 @@ def ReadCluster(self, Devices, MsgData):
 
     self.statistics._clusterOK += 1
 
-    lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
-
     if MsgSrcAddr not in self.ListOfDevices:
         Domoticz.Error("ReadCluster - unknown device: %s" %(MsgSrcAddr))
         return
 
+    lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
     if not DeviceExist(self, Devices, MsgSrcAddr):
         #Pas sur de moi, mais je vois pas pkoi continuer, pas sur que de mettre a jour un device bancale soit utile
         Domoticz.Error("ReadCluster - KeyError: MsgData = " + MsgData)
@@ -188,17 +185,31 @@ def ReadCluster(self, Devices, MsgData):
         return
 
     DECODE_CLUSTER = {
-            "0000": Cluster0000, "0001": Cluster0001, "0003": Cluster0003, "0005": Cluster0005, "0006": Cluster0006,"0008": Cluster0008,
+            "0000": Cluster0000, 
+            "0001": Cluster0001, 
+            "0003": Cluster0003, 
+            "0005": Cluster0005, 
+            "0006": Cluster0006,
+            "0008": Cluster0008,
             "0009": Cluster0009,
-            "0012": Cluster0012, "000c": Cluster000c,
+            "0012": Cluster0012, 
+            "000c": Cluster000c,
             "0100": Cluster0100,
-            "0101": Cluster0101, "0102": Cluster0102,
-            "0201": Cluster0201, "0204": Cluster0204,
+            "0101": Cluster0101, 
+            "0102": Cluster0102,
+            "0201": Cluster0201, 
+            "0204": Cluster0204,
             "0300": Cluster0300,
-            "0400": Cluster0400, "0402": Cluster0402, "0403": Cluster0403, "0405": Cluster0405, "0406": Cluster0406,
-            "0500": Cluster0500, "0502": Cluster0502,
+            "0400": Cluster0400, 
+            "0402": Cluster0402, 
+            "0403": Cluster0403, 
+            "0405": Cluster0405, 
+            "0406": Cluster0406,
+            "0500": Cluster0500, 
+            "0502": Cluster0502,
             "0702": Cluster0702,
-            "0b04": Cluster0b04, "fc00": Clusterfc00,
+            "0b04": Cluster0b04, 
+            "fc00": Clusterfc00,
             "000f": Cluster000f,
             "fc01": Clusterfc01,
             "fc21": Clusterfc21,
@@ -523,7 +534,6 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
 
     value = decodeAttribute( self, MsgAttType, MsgClusterData)
-
     checkAttribute( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID )
 
     if MsgAttrID == "0000":    # Voltage
@@ -609,9 +619,7 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
         loggingCluster( self, 'Log', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
-
     UpdateBatteryAttribute( self, MsgSrcAddr, MsgSrcEp )
-
     ### End of Cluster0001
     
 def UpdateBatteryAttribute( self, MsgSrcAddr, MsgSrcEp ):
@@ -705,14 +713,12 @@ def Cluster0003( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, str(decodeAttribute( self, MsgAttType, MsgClusterData) ) )
 
-
     if MsgAttrID == '0000': # IdentifyTime Attribute
         loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s Remaining time to identify itself %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, int(MsgClusterData, 16)))
 
 def Cluster0005( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
 
     checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, str(decodeAttribute( self, MsgAttType, MsgClusterData) ) )
-
 
     if MsgAttrID == '0000': # SceneCount
         loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Scene Count: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
@@ -739,49 +745,53 @@ def Cluster0006( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     # Cluster On/Off
      
     if MsgAttrID in ( "0000" , "8000"):
-        if 'Model' in self.ListOfDevices[MsgSrcAddr]:
-            if self.ListOfDevices[MsgSrcAddr]['Model'] == 'lumi.ctrl_neutral1' and MsgSrcEp != '02':
-                checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, MsgClusterData )
+        if 'Model' not in self.ListOfDevices[MsgSrcAddr]:
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgClusterData)
+            checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, MsgClusterData )
+            return
 
-                # endpoint 02 is for controlling the L1 outpu
-                # Blacklist all EPs other than '02'
-                loggingCluster( self, 'Debug', "ReadCluster - ClusterId=%s - Unexpected EP, %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, Value: %s" \
-                     %(MsgClusterId, MsgSrcAddr, MsgSrcEp,MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
+        if self.ListOfDevices[MsgSrcAddr]['Model'] == 'lumi.ctrl_neutral1' and MsgSrcEp != '02':
+            checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, MsgClusterData )
+
+            # endpoint 02 is for controlling the L1 output
+            # Blacklist all EPs other than '02'
+            loggingCluster( self, 'Debug', "ReadCluster - ClusterId=%s - Unexpected EP, %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, Value: %s" \
+                    %(MsgClusterId, MsgSrcAddr, MsgSrcEp,MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
+            return
+
+        if self.ListOfDevices[MsgSrcAddr]['Model'] == 'lumi.ctrl_neutral2' and MsgSrcEp != '02' and MsgSrcEp != '03':
+            # EP 02 ON/OFF LEFT    -- OK
+            # EP 03 ON/ON RIGHT    -- OK
+            # EP 04 EVENT LEFT
+            # EP 05 EVENT RIGHT
+            checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, MsgClusterData )
+            loggingCluster( self, 'Debug', "ReadCluster - ClusterId=%s - not processed EP, %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, Value: %s" \
+                %(MsgClusterId, MsgSrcAddr, MsgSrcEp,MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
+            return
+
+        if self.ListOfDevices[MsgSrcAddr]['Model'] == '3AFE170100510001': 
+            # Konke Multi Purpose Switch
+            value = None
+            if MsgClusterData in ( '01', '80'): # Simple Click
+                value = '01'
+            elif MsgClusterData in ( '02', '81'): # Multiple Click
+                value = '02'
+            elif MsgClusterData == '82': # Long Click
+                value = '03'
+            elif MsgClusterData == 'cd': # short reset , a short click on the reset button
                 return
-
-            if self.ListOfDevices[MsgSrcAddr]['Model'] == 'lumi.ctrl_neutral2' and MsgSrcEp != '02' and MsgSrcEp != '03':
-                # EP 02 ON/OFF LEFT    -- OK
-                # EP 03 ON/ON RIGHT    -- OK
-                # EP 04 EVENT LEFT
-                # EP 05 EVENT RIGHT
-                checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, MsgClusterData )
-                loggingCluster( self, 'Debug', "ReadCluster - ClusterId=%s - not processed EP, %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, Value: %s" \
-                   %(MsgClusterId, MsgSrcAddr, MsgSrcEp,MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
+            else:
+                #Domoticz.Log("Konke Multi Purpose Switch - Unknown Value: %s" %MsgClusterData)
                 return
+            loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0006 - Konke Multi Purpose Switch reception General: On/Off: %s" %value , MsgSrcAddr)
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value)
+            checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, MsgClusterData )
+            return
 
-            if self.ListOfDevices[MsgSrcAddr]['Model'] == '3AFE170100510001': 
-                # Konke Multi Purpose Switch
-                value = None
-                if MsgClusterData in ( '01', '80'): # Simple Click
-                    value = '01'
-                elif MsgClusterData in ( '02', '81'): # Multiple Click
-                    value = '02'
-                elif MsgClusterData == '82': # Long Click
-                    value = '03'
-                elif MsgClusterData == 'cd': # short reset , a short click on the reset button
-                    return
-                else:
-                    #Domoticz.Log("Konke Multi Purpose Switch - Unknown Value: %s" %MsgClusterData)
-                    return
-                loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0006 - Konke Multi Purpose Switch reception General: On/Off: %s" %value , MsgSrcAddr)
-                MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value)
-                checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, MsgClusterData )
-                return
-
-            if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TI0001':
-                # Livolo / Might get something else than On/Off
-                 loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0006 - %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, : %s" \
-                         %(MsgSrcAddr, MsgSrcEp,MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
+        if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TI0001':
+            # Livolo / Might get something else than On/Off
+                loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0006 - %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, : %s" \
+                        %(MsgSrcAddr, MsgSrcEp,MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgClusterData)
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, MsgClusterData )
@@ -857,10 +867,8 @@ def Cluster0008( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,MsgClusterData)
 
-
     loggingCluster( self, 'Debug', "ReadCluster - ClusterID: %s Addr: %s MsgAttrID: %s MsgAttType: %s MsgAttSize: %s MsgClusterData: %s"
             %(MsgClusterId, MsgSrcAddr, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
-
 
     if MsgAttrID == '0000': # Current Level
         if 'Model' in self.ListOfDevices[MsgSrcAddr]:
@@ -923,6 +931,7 @@ def Cluster000c( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         loggingCluster( self, 'Debug', "EPforPower: %s, EPforMeter: %s, EPforPowerMeter: %s" %(EPforPower, EPforMeter, EPforPowerMeter), MsgSrcAddr)
        
         if len(EPforPower) == len(EPforMeter) == len(EPforPowerMeter) == 0:
+
             rotation_angle = struct.unpack('f',struct.pack('I',int(MsgClusterData,16)))[0]
             loggingCluster( self, 'Debug', "ReadCluster - ClusterId=000c - Magic Cube angle: %s" %rotation_angle, MsgSrcAddr)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(int(rotation_angle)), Attribute_ = '0055' )
@@ -989,41 +998,40 @@ def Cluster000f( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         elif MsgClusterData == '01': 
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]['Active State'] = True
 
-        if 'Model' in self.ListOfDevices[MsgSrcAddr]:
-            loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s Model: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, self.ListOfDevices[MsgSrcAddr]['Model']), MsgSrcAddr)
-            if self.ListOfDevices[MsgSrcAddr]['Model'] != {}:
-                if self.ListOfDevices[MsgSrcAddr]['Model'] in LEGRAND_REMOTE_SWITCHS:
-                    loggingCluster( self, 'Debug', "Legrand remote Switch Present Value: %s" %MsgClusterData, MsgSrcAddr)
-                    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', MsgClusterData)
+        if 'Model' not in self.ListOfDevices[MsgSrcAddr]:
+            loggingCluster( self, 'Log', "Legrand unknown Model %s Value: %s" %(self.ListOfDevices[MsgSrcAddr]['Model'], MsgClusterData), MsgSrcAddr)
+            return
+            
+        loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s Model: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, self.ListOfDevices[MsgSrcAddr]['Model']), MsgSrcAddr)
+        if self.ListOfDevices[MsgSrcAddr]['Model'] != {}:
+            if self.ListOfDevices[MsgSrcAddr]['Model'] in LEGRAND_REMOTE_SWITCHS:
+                loggingCluster( self, 'Debug', "Legrand remote Switch Present Value: %s" %MsgClusterData, MsgSrcAddr)
+                MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', MsgClusterData)
 
-                elif self.ListOfDevices[MsgSrcAddr]['Model'] in LEGRAND_REMOTE_SHUTTER:
-                    if MsgClusterData == '01':
-                        value = '%02x' %100
-                    else:
-                        value = '%02x' %0
-                    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0102', value)
-
-                elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'Shutter switch with neutral' ):
-                    # The Shutter should have the Led on its right
-                    # Present Value: 0x01 -> Open
-                    # Present Value: 0x00 -> Closed
-                    loggingCluster( self, 'Debug', "---->Legrand Shutter switch with neutral Present Value: %s" %MsgClusterData, MsgSrcAddr)
-                    if MsgClusterData == '01':
-                        value = '%02x' %100
-                    else:
-                        value = '%02x' %0
-                    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0102', value)
-
-                elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'Dimmer switch wo neutral' ):
-                    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', MsgClusterData)
-
-                elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'Micromodule switch'):
-                    # Useless information. It is given the state of the micromodule button. 01 when click, 00 when release
-                    pass
-
-
+            elif self.ListOfDevices[MsgSrcAddr]['Model'] in LEGRAND_REMOTE_SHUTTER:
+                if MsgClusterData == '01':
+                    value = '%02x' %100
                 else:
-                    loggingCluster( self, 'Log', "Legrand unknown Model %s Value: %s" %(self.ListOfDevices[MsgSrcAddr]['Model'], MsgClusterData), MsgSrcAddr)
+                    value = '%02x' %0
+                MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0102', value)
+
+            elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'Shutter switch with neutral' ):
+                # The Shutter should have the Led on its right
+                # Present Value: 0x01 -> Open
+                # Present Value: 0x00 -> Closed
+                loggingCluster( self, 'Debug', "---->Legrand Shutter switch with neutral Present Value: %s" %MsgClusterData, MsgSrcAddr)
+                if MsgClusterData == '01':
+                    value = '%02x' %100
+                else:
+                    value = '%02x' %0
+                MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0102', value)
+
+            elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'Dimmer switch wo neutral' ):
+                MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', MsgClusterData)
+
+            elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'Micromodule switch'):
+                # Useless information. It is given the state of the micromodule button. 01 when click, 00 when release
+                pass
 
             else:
                 loggingCluster( self, 'Error', "Legrand unknown device %s Value: %s" %(self.ListOfDevices[MsgSrcAddr]['Model'], MsgClusterData), MsgSrcAddr)
@@ -1056,46 +1064,8 @@ def Cluster000f( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
 def Cluster0012( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
     
-    def cube_decode(value):
-        'https://github.com/sasu-drooz/Domoticz-Zigate/wiki/Aqara-Cube-decoding'
-        value=int(value,16)
-        if value == '' or value is None:
-            return value
-
-        if value == 0x0000:         
-            loggingCluster( self, 'Debug', "cube action: " + 'Shake' , MsgSrcAddr)
-            value='10'
-        elif value == 0x0002:            
-            loggingCluster( self, 'Debug', "cube action: " + 'Wakeup' , MsgSrcAddr)
-            value = '20'
-        elif value == 0x0003:
-            loggingCluster( self, 'Debug', "cube action: " + 'Drop' , MsgSrcAddr)
-            value = '30'
-        elif value & 0x0040 != 0:    
-            face = value ^ 0x0040
-            face1 = face >> 3
-            face2 = face ^ (face1 << 3)
-            loggingCluster( self, 'Debug', "cube action: " + 'Flip90_{}{}'.format(face1, face2), MsgSrcAddr)
-            value = '40'
-        elif value & 0x0080 != 0:  
-            face = value ^ 0x0080
-            loggingCluster( self, 'Debug', "cube action: " + 'Flip180_{}'.format(face) , MsgSrcAddr)
-            value = '50'
-        elif value & 0x0100 != 0:  
-            face = value ^ 0x0100
-            loggingCluster( self, 'Debug', "cube action: " + 'Push/Move_{}'.format(face) , MsgSrcAddr)
-            value = '60'
-        elif value & 0x0200 != 0:  # double_tap
-            face = value ^ 0x0200
-            loggingCluster( self, 'Debug', "cube action: " + 'Double_tap_{}'.format(face) , MsgSrcAddr)
-            value = '70'
-        else:  
-            loggingCluster( self, 'Debug', "cube action: Not expected value %s" %value , MsgSrcAddr)
-        return value
-
     if 'Model' not in self.ListOfDevices[MsgSrcAddr]:
         return
-
     _modelName = self.ListOfDevices[MsgSrcAddr]['Model']
 
     loggingCluster( self, 'Debug', "readCluster - %s - %s/%s - MsgAttrID: %s MsgAttType: %s MsgAttSize: %s MsgClusterData: %s Model: %s"
@@ -1148,28 +1118,6 @@ def Cluster0012( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
     # Door Lock Cluster
 
-    def decode_vibr(value):         #Decoding XIAOMI Vibration sensor 
-        if value == '' or value is None:
-            return value
-
-        if  value == "0001": 
-            return '20' # Take/Vibrate/Shake
-
-        if value == "0002": 
-            return '10' # Tilt / we will most-likely receive 0x0503/0x0054 after
-
-        if value == "0003": 
-            return '30' #Drop
-
-        return '00'
-
-    if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
-        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = {}
-    if not isinstance( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] , dict):
-        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = {}
-    if MsgAttrID not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]:
-        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = {}
-
     loggingCluster( self, 'Debug', "ReadCluster 0101 - Dev: %s, EP:%s AttrID: %s, AttrType: %s, AttrSize: %s Attribute: %s Len: %s" \
             %( MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, len(MsgClusterData)), MsgSrcAddr)
 
@@ -1215,24 +1163,7 @@ def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             # https://github.com/fairecasoimeme/ZiGate/issues/229
             Domoticz.Log("Needs Firmware 3.1b to decode this data")
 
-        value = int(MsgClusterData,16)
-        x =  value & 0xffff
-        y = (value >> 16) & 0xffff
-        z = (value >> 32) & 0xfff
-
-        x2 = x*x
-        y2 = y*y
-        z2 = z*z
-        
-        angleX= angleY = angleZ = 0
-        if z2 + y2 != 0: 
-            angleX = round( atan( x / sqrt(z2+y2)) * 180 / pi)
-
-        if x2 + z2 != 0: 
-            angleY = round( atan( y / sqrt(x2+z2)) * 180 / pi)
-
-        if x2 + y2 != 0: 
-            angleZ = round( atan( z / sqrt(x2+y2)) * 180 / pi)
+        angleX, angleY, angleZ = decode_vibrAngle( MsgClusterData)
 
         loggingCluster( self, 'Debug', " ReadCluster %s/%s - AttrType: %s AttrLenght: %s AttrData: %s Vibration ==> angleX: %s angleY: %s angleZ: %s" \
                 %(MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, angleX, angleY, angleZ), MsgSrcAddr)
@@ -1247,7 +1178,6 @@ def Cluster0100( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,MsgClusterData)
     
-
     if MsgAttrID == "0000":
         loggingCluster( self, 'Debug', "ReadCluster 0100 - Shade Config: PhysicalClosedLimit: %s" %MsgClusterData, MsgSrcAddr)
     elif MsgAttrID == "0001":
@@ -2031,13 +1961,11 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         conso = compute_conso( self,  MsgSrcAddr, value)
         loggingCluster( self, 'Debug', "Cluster0702 - 0x0000 CURRENT_SUMMATION_DELIVERED Value: %s Conso: %s " %(value, conso), MsgSrcAddr)
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, conso )
-
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(conso), Attribute_='0000' )
 
     elif MsgAttrID == "0001": #CURRENT_SUMMATION_RECEIVED
         loggingCluster( self, 'Debug', "Cluster0702 - CURRENT_SUMMATION_RECEIVED %s " %(value), MsgSrcAddr)
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
-
 
     elif MsgAttrID == "0002": #Current Max Demand Delivered
         loggingCluster( self, 'Debug', "Cluster0702 - %s/%s Max Demand Delivered %s " %(MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr)
