@@ -67,23 +67,35 @@ def RetreiveSignalLvlBattery( self, NwkID):
     if 'RSSI' in self.ListOfDevices[NwkID]:
         SignalLevel = self.ListOfDevices[NwkID]['RSSI']
 
-    # SignalLvl max is 12
-    rssi = 12  # Unknown
+    DomoticzRSSI = 12  # Unknown
+
     if isinstance(SignalLevel, int):
-        rssi = round((SignalLevel * 11) / 255)
-    #Domoticz.Log("RetreiveSignalLvlBattery - convert ZiGate RSSI: %s to Domoticz RSSI: %s" %(SignalLevel, rssi ))
-    SignalLevel = rssi
+        #rssi = round((SignalLevel * 11) / 255)
+        SEUIL1 = 20
+        SEUIL2 = 75
+        SEUIL3 = 180
+        DomoticzRSSI = 0
+        if SignalLevel >= SEUIL3:
+            #  SEUIL3 < ZiGate RSSI < 255 -> 11
+            DomoticzRSSI = 11
+        elif SignalLevel >= SEUIL2:
+            # SEUIL2 <= ZiGate RSSI <= SEUIL3 --> 4 - 10 ( 6 )
+            gamme = SEUIL3 - SEUIL2
+            SignalLevel = SignalLevel - SEUIL2
+            DomoticzRSSI = 4 + round((SignalLevel * 6) / gamme)
+        elif SignalLevel >= SEUIL1:
+            # SEUIL1 < ZiGate RSSI < SEUIL2 --> 1 - 3 ( 3 )
+            gamme = SEUIL2 - SEUIL1
+            SignalLevel = SignalLevel - SEUIL1
+            DomoticzRSSI =  1 + round((SignalLevel * 3) / gamme)
+          
+    #Domoticz.Log("RetreiveSignalLvlBattery - convert ZiGate RSSI: %s to Domoticz RSSI: %s" %(SignalLevel, DomoticzRSSI ))
+    SignalLevel = DomoticzRSSI
 
     BatteryLevel = ''
     if 'Battery' in self.ListOfDevices[NwkID] and self.ListOfDevices[NwkID]['Battery'] != {}:
         BatteryLevel = int(round((self.ListOfDevices[NwkID]['Battery'])))
 
-    # Battery Level 255 means Main Powered device
-    #if isinstance(BatteryLevel, float):
-        # Looks like sometime we got a float instead of int.
-        # in that case convert to int
-    #    BatteryLvl = round( BatteryLevel)
-    
     if BatteryLevel == '' or (not isinstance(BatteryLevel, int)):
         BatteryLevel = 255
 
