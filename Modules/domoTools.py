@@ -68,10 +68,12 @@ def RetreiveSignalLvlBattery( self, NwkID):
         SignalLevel = self.ListOfDevices[NwkID]['RSSI']
 
     # SignalLvl max is 12
-    rssi = 12
+    rssi = 12  # Unknown
     if isinstance(SignalLevel, int):
-        rssi = round((SignalLevel * 12) / 255)
-    
+        rssi = round((SignalLevel * 11) / 255)
+    #Domoticz.Log("RetreiveSignalLvlBattery - convert ZiGate RSSI: %s to Domoticz RSSI: %s" %(SignalLevel, rssi ))
+    SignalLevel = rssi
+
     BatteryLevel = ''
     if 'Battery' in self.ListOfDevices[NwkID] and self.ListOfDevices[NwkID]['Battery'] != {}:
         BatteryLevel = int(round((self.ListOfDevices[NwkID]['Battery'])))
