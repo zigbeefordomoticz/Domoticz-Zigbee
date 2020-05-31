@@ -5,7 +5,7 @@
 #
 """
     Module: lumi.py
-
+ 
     Description: Lumi specifics handling
 
 """
@@ -13,6 +13,9 @@ import time
 import struct
 
 import Domoticz
+
+
+from math import atan, sqrt, pi
 
 from Modules.domoMaj import MajDomoDevice
 from Modules.basicOutputs import ZigatePermitToJoin, leaveRequest, write_attribute
@@ -352,3 +355,71 @@ def readXiaomiCluster( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId
         loggingCluster( self, 'Debug', "ReadCluster - 0000/ff01 Saddr: %s sLevel: %s" %(MsgSrcAddr, sLevel), MsgSrcAddr)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0008',sLevel)
         checkAndStoreAttributeValue( self, MsgSrcAddr , MsgSrcEp, '0008', '0000' , sLevel)
+
+def cube_decode(value):
+    'https://github.com/sasu-drooz/Domoticz-Zigate/wiki/Aqara-Cube-decoding'
+    value=int(value,16)
+    if value == '' or value is None:
+        return value
+
+    if value == 0x0000:         
+        loggingCluster( self, 'Debug', "cube action: " + 'Shake' , MsgSrcAddr)
+        value='10'
+    elif value == 0x0002:            
+        loggingCluster( self, 'Debug', "cube action: " + 'Wakeup' , MsgSrcAddr)
+        value = '20'
+    elif value == 0x0003:
+        loggingCluster( self, 'Debug', "cube action: " + 'Drop' , MsgSrcAddr)
+        value = '30'
+    elif value & 0x0040 != 0:    
+        face = value ^ 0x0040
+        face1 = face >> 3
+        face2 = face ^ (face1 << 3)
+        loggingCluster( self, 'Debug', "cube action: " + 'Flip90_{}{}'.format(face1, face2), MsgSrcAddr)
+        value = '40'
+    elif value & 0x0080 != 0:  
+        face = value ^ 0x0080
+        loggingCluster( self, 'Debug', "cube action: " + 'Flip180_{}'.format(face) , MsgSrcAddr)
+        value = '50'
+    elif value & 0x0100 != 0:  
+        face = value ^ 0x0100
+        loggingCluster( self, 'Debug', "cube action: " + 'Push/Move_{}'.format(face) , MsgSrcAddr)
+        value = '60'
+    elif value & 0x0200 != 0:  # double_tap
+        face = value ^ 0x0200
+        loggingCluster( self, 'Debug', "cube action: " + 'Double_tap_{}'.format(face) , MsgSrcAddr)
+        value = '70'
+    else:  
+        loggingCluster( self, 'Debug', "cube action: Not expected value %s" %value , MsgSrcAddr)
+    return value
+
+def decode_vibr(value):         #Decoding XIAOMI Vibration sensor 
+    if value == '' or value is None:
+        return value
+    if  value == "0001": 
+        return '20' # Take/Vibrate/Shake
+    if value == "0002": 
+        return '10' # Tilt / we will most-likely receive 0x0503/0x0054 after
+    if value == "0003": 
+        return '30' #Drop
+    return '00'
+
+def decode_vibrAngle( rawData):
+
+    value = int(rawData,16)
+    x =  value & 0xffff
+    y = (value >> 16) & 0xffff
+    z = (value >> 32) & 0xfff
+
+    x2 = x*x
+    y2 = y*y
+    z2 = z*z
+
+    angleX= angleY = angleZ = 0
+    if z2 + y2 != 0: 
+        angleX = round( atan( x / sqrt(z2+y2)) * 180 / pi)
+    if x2 + z2 != 0: 
+        angleY = round( atan( y / sqrt(x2+z2)) * 180 / pi)
+    if x2 + y2 != 0: 
+        angleZ = round( atan( z / sqrt(x2+y2)) * 180 / pi)
+    return (angleX, angleY, angleZ)
