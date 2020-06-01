@@ -366,17 +366,13 @@ class WebServer(object):
                 _response["Data"] = json.dumps( Statistics, sort_keys=True )
         return _response
 
-
     def rest_Settings_wo_debug( self, verb, data, parameters):
         return self.rest_Settings( verb, data, parameters, sendDebug=False)
 
     def rest_Settings_with_debug( self, verb, data, parameters):
         return self.rest_Settings( verb, data, parameters, sendDebug=True)
 
-
     def rest_Settings( self, verb, data, parameters, sendDebug=False):
-
-        Domoticz.Log("Verb: %s Data: %s, Parameters: %s, Debug: %s" %(verb, data, parameters, sendDebug))
 
         _response = prepResponseMessage( self ,setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
