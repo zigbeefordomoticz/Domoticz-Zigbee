@@ -120,10 +120,10 @@ SETTINGS = {
 
     # Command Transitionin tenth of seconds
     'CommandTransition': { 'Order': 8, 'param': {
-        'moveToHueSatu':     { 'type':'int', 'default':0 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':False},
-        'moveToColourTemp':  { 'type':'int', 'default':0 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':False},
-        'moveToColourRGB':   { 'type':'int', 'default':0 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':False},
-        'moveToLevel':       { 'type':'int', 'default':0 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':False},
+        'moveToHueSatu':     { 'type':'int', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
+        'moveToColourTemp':  { 'type':'int', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
+        'moveToColourRGB':   { 'type':'int', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
+        'moveToLevel':       { 'type':'int', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
         }
     },
 

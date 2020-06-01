@@ -484,6 +484,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         #    uint8_t cw;    // Range:0..255, Cold white level
         #    uint8_t ww;    // Range:0..255, Warm white level (also used as level for monochrome white)
         #
+        transitionRGB = '%04x' %self.pluginconf.pluginConf['moveToColourRGB']
+        transitionMoveLevel = '%04x' %self.pluginconf.pluginConf['moveToLevel']
+        transitionHue = '%04x' %self.pluginconf.pluginConf['moveToHueSatu']
+        transitionTemp = '%04x' %self.pluginconf.pluginConf['moveToColourTemp']
 
         #First manage level
         if Hue_List['m'] != 9998:
@@ -491,11 +495,15 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             OnOff = '01' # 00 = off, 01 = on
             value=Hex_Format(2,round(1+Level*254/100)) #To prevent off state
             loggingCommand( self, 'Debug', "---------- Set Level: %s" %(value), NWKID)
-            sendZigateCmd(self, "0081","02" + NWKID + ZIGATE_EP + EPout + OnOff + value + "0000")
+            # u16TransitionTime is the time taken, in units of tenths of a second, to reach the target level 
+            # (0xFFFF means use the u16OnOffTransitionTime attribute instead
+            transitionONOFF = 'ffff' 
+            sendZigateCmd(self, "0081","02" + NWKID + ZIGATE_EP + EPout + OnOff + value + transitionMoveLevel)
 
-        #Now color
+        #Now colorgrep 
         #ColorModeNone = 0   // Illegal
         #ColorModeNone = 1   // White. Valid fields: none
+
         if Hue_List['m'] == 1:
             ww = int(Hue_List['ww']) # Can be used as level for monochrome white
             #TODO : Jamais vu un device avec ca encore
@@ -509,7 +517,9 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             TempKelvin = int(((255 - int(Hue_List['t']))*(6500-1700)/255)+1700)
             TempMired = 1000000 // TempKelvin
             loggingCommand( self, 'Debug', "---------- Set Temp Kelvin: %s-%s" %(TempMired, Hex_Format(4,TempMired)), NWKID)
-            sendZigateCmd(self, "00C0","02" + NWKID + ZIGATE_EP + EPout + Hex_Format(4,TempMired) + "0000")
+            #u16TransitionTime is the time period, in tenths of a second, over which the change in hue should be implemented
+
+            sendZigateCmd(self, "00C0","02" + NWKID + ZIGATE_EP + EPout + Hex_Format(4,TempMired) + transitionTemp)
 
         #ColorModeRGB = 3    // Color. Valid fields: r, g, b.
         elif Hue_List['m'] == 3:
@@ -519,7 +529,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             y = int(y*65536)
             strxy = Hex_Format(4,x) + Hex_Format(4,y)
             loggingCommand( self, 'Debug', "---------- Set Temp X: %s Y: %s" %(x, y), NWKID)
-            sendZigateCmd(self, "00B7","02" + NWKID + ZIGATE_EP + EPout + strxy + "0000")
+            sendZigateCmd(self, "00B7","02" + NWKID + ZIGATE_EP + EPout + strxy + transitionRGB)
 
         #ColorModeCustom = 4, // Custom (color + white). Valid fields: r, g, b, cw, ww, depending on device capabilities
         elif Hue_List['m'] == 4:
@@ -534,7 +544,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
                 TempKelvin = int(((255 - int(ww))*(6500-1700)/255)+1700)
                 TempMired = 1000000 // TempKelvin
                 loggingCommand( self, 'Log', "---------- Set Temp Kelvin: %s-%s" %(TempMired, Hex_Format(4,TempMired)), NWKID)
-                sendZigateCmd(self, "00C0","02" + NWKID + ZIGATE_EP + EPout + Hex_Format(4,TempMired) + "0000")
+                sendZigateCmd(self, "00C0","02" + NWKID + ZIGATE_EP + EPout + Hex_Format(4,TempMired) + transitionTemp)
             else:
                 # How to powerOff the WW/CW channel ?
                 pass
@@ -546,11 +556,11 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             hue = int(hue*254//360)
             saturation = int(saturation*254//100)
             loggingCommand( self, 'Log', "---------- Set Hue X: %s Saturation: %s" %(hue, saturation), NWKID)
-            sendZigateCmd(self, "00B6","02" + NWKID + ZIGATE_EP + EPout + Hex_Format(2,hue) + Hex_Format(2,saturation) + "0000")
+            sendZigateCmd(self, "00B6","02" + NWKID + ZIGATE_EP + EPout + Hex_Format(2,hue) + Hex_Format(2,saturation) + transitionRGB)
 
-            value = int(l * 254//100)
-            OnOff = '01'
-            loggingCommand( self, 'Debug', "---------- Set Level: %s instead of Level: %s" %(value, Level), NWKID)
+            #value = int(l * 254//100)
+            #OnOff = '01'
+            #loggingCommand( self, 'Debug', "---------- Set Level: %s instead of Level: %s" %(value, Level), NWKID)
             #sendZigateCmd(self, "0081","02" + NWKID + ZIGATE_EP + EPout + OnOff + Hex_Format(2,value) + "0000")
 
         #With saturation and hue, not seen in domoticz but present on zigate, and some device need it
@@ -561,12 +571,12 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             hue = int(hue*254//360)
             saturation = int(saturation*254//100)
             loggingCommand( self, 'Debug', "---------- Set Hue X: %s Saturation: %s" %(hue, saturation), NWKID)
-            sendZigateCmd(self, "00B6","02" + NWKID + ZIGATE_EP + EPout + Hex_Format(2,hue) + Hex_Format(2,saturation) + "0000")
+            sendZigateCmd(self, "00B6","02" + NWKID + ZIGATE_EP + EPout + Hex_Format(2,hue) + Hex_Format(2,saturation) + transitionHue)
 
             value = int(l * 254//100)
             OnOff = '01'
             loggingCommand( self, 'Debug', "---------- Set Level: %s instead of Level: %s" %(value, Level), NWKID)
-            sendZigateCmd(self, "0081","02" + NWKID + ZIGATE_EP + EPout + OnOff + Hex_Format(2,value) + "0000")
+            sendZigateCmd(self, "0081","02" + NWKID + ZIGATE_EP + EPout + OnOff + Hex_Format(2,value) + transitionMoveLevel)
 
         #Update Device
         self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
