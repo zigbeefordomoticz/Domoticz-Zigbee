@@ -128,7 +128,8 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
                 return
         if (now - lastupdate) >= TimedOut:
             loggingWidget( self, "Debug", "Last update of the devices %s %s was %s ago" %( unit, WidgetType, (now - lastupdate)), NwkId)
-            UpdateDevice_v2(self, Devices, unit, 0, "Off", BatteryLvl, SignalLevel)
+            #UpdateDevice_v2(self, Devices, unit, 0, "Off", BatteryLvl, SignalLevel)
+            Devices[unit].Update(nValue=0, sValue='Off')
 
     def resetSwitchSelectorPushButton( self, Devices, NwkId, WidgetType, unit, SignalLevel, BatteryLvl, now, lastupdate, TimedOut ):
         if Devices[unit].nValue == 0:
@@ -137,15 +138,17 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
         if (now - lastupdate) < TimedOut: 
             return
 
-        Domoticz.Log("Options: %s" %Devices[unit].Options)
+        #Domoticz.Log("Options: %s" %Devices[unit].Options)
         LevelOffHidden = Devices[unit].Options['LevelOffHidden']
 
+        nValue = 0
         sValue = '0'
         if LevelOffHidden == 'false':
             sValue = '00'
 
         loggingWidget( self, "Debug", "Last update of the devices %s WidgetType: %s was %s ago" %( unit, WidgetType, (now - lastupdate)), NwkId) 
-        UpdateDevice_v2(self, Devices, unit, 0, sValue , BatteryLvl, SignalLevel)
+        #Domoticz.Log(" Update nValue: %s sValue: %s" %(nValue, sValue))
+        Devices[unit].Update(nValue=nValue, sValue=sValue)
 
 
     #Begining

@@ -121,8 +121,8 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
 
     if DeviceType not in ACTIONATORS:
         if not ( self.pluginconf.pluginConf['forcePassiveWidget'] and DeviceType  in [ 'DButton_3', 'SwitchAQ3' ]):
-            loggingCommand( self, "Log", "mgtCommand - You are trying to action a non commandable device Device %s has available Type %s and DeviceType: %s" 
-                   %( Devices[Unit].Name, ClusterTypeList, DeviceType ), NWKID )
+            loggingCommand( self, "Log", "mgtCommand - You are trying to action not allowed for Device: %s Type: %s and DeviceType: %s Command: %s Level:%s" 
+                   %( Devices[Unit].Name, ClusterTypeList, DeviceType , Command, Level), NWKID )
             return
     
     profalux = False
