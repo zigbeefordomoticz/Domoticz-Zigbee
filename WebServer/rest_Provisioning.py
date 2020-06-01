@@ -43,7 +43,7 @@ def rest_new_hrdwr( self, verb, data, parameters):
             # Seems we are in None mode - Testing for ben
             self.fakeDevicesInPairingMode = 0
 
-        if self.permitTojoin['Duration'] != 255 and self.pluginparameters['Mode1'] != 'None':
+        if self.permitTojoin['Duration'] != 255 and self.pluginParameters['Mode1'] != 'None':
             ZigatePermitToJoin(self, ( 4 * 60 ))
 
         _response["Data"] = { "start pairing mode at %s " %int(time()) }
@@ -61,7 +61,7 @@ def rest_new_hrdwr( self, verb, data, parameters):
 
         if not (
             self.permitTojoin['Duration'] == 255
-            or self.pluginparameters['Mode1'] == 'None'
+            or self.pluginParameters['Mode1'] == 'None'
         ):
             ZigatePermitToJoin(self, 0)
 
