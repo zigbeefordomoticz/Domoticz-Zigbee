@@ -624,7 +624,8 @@ def ReArrangeMacCapaBasedOnModel( self, nwkid, inMacCapa):
     if 'Model' not in self.ListOfDevices[nwkid]:
         return inMacCapa
 
-    if self.ListOfDevices[nwkid]['Model'] == 'TI0001':
+    # Convert battery annouced devices to main powered
+    if self.ListOfDevices[nwkid]['Model'] in ( 'TI0001', 'TS0011'):
         # Livol Switch, must be converted to Main Powered
         # Patch some status as Device Annouced doesn't provide much info
         self.ListOfDevices[nwkid]['LogicalType'] = 'Router'
@@ -633,6 +634,7 @@ def ReArrangeMacCapaBasedOnModel( self, nwkid, inMacCapa):
         self.ListOfDevices[nwkid]['PowerSource'] = 'Main'
         return '8e'
 
+    # Convert Main Powered device to Battery 
     if self.ListOfDevices[nwkid]['Model'] in ( 'lumi.remote.b686opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b286opcn01', 
                                              'lumi.remote.b686opcn01-bulb','lumi.remote.b486opcn01-bulb','lumi.remote.b286opcn01-bulb',
                                              'lumi.remote.b686opcn01' ):
@@ -658,7 +660,6 @@ def mainPoweredDevice( self, nwkid):
         Domoticz.Log("mainPoweredDevice - Unknown Device: %s" %nwkid)
         return False
 
-
     mainPower = False
     if (
         'MacCapa' in self.ListOfDevices[nwkid]
@@ -679,7 +680,8 @@ def mainPoweredDevice( self, nwkid):
         if self.ListOfDevices[nwkid]['Model'] in ('lumi.remote.b686opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b286opcn01',
                                                   'lumi.remote.b686opcn01-bulb', 'lumi.remote.b486opcn01-bulb', 'lumi.remote.b286opcn01-bulb'):
             mainPower = False
-        if self.ListOfDevices[nwkid]['Model'] == 'TI0001':
+
+        if self.ListOfDevices[nwkid]['Model'] in ( 'TI0001', 'TS0011'):
             mainPower = True
 
     return mainPower
