@@ -88,7 +88,7 @@ class WebServer(object):
         self.adminWidget = adminWidgets
         self.ZigateComm = ZigateComm
         self.statistics = Statistics
-        self.pluginparameters = PluginParameters
+        self.pluginParameters = PluginParameters
         self.networkmap = networkmap
         self.networkenergy = networkenergy
 
@@ -136,16 +136,16 @@ class WebServer(object):
             self.logging( 'Status', "Erase ZiGate PDM")
             Domoticz.Error("Erase ZiGate PDM non implémenté pour l'instant")
             if self.pluginconf.pluginConf['eraseZigatePDM']:
-                if self.pluginparameters['Mode1'] != 'None':
+                if self.pluginParameters['Mode1'] != 'None':
                     sendZigateCmd(self, "0012", "")
                 self.pluginconf.pluginConf['eraseZigatePDM'] = 0
 
             if self.pluginconf.pluginConf['extendedPANID'] is not None:
                 self.logging( 'Status', "ZigateConf - Setting extPANID : 0x%016x" %( self.pluginconf.pluginConf['extendedPANID'] ))
-                if self.pluginparameters['Mode1'] != 'None':
+                if self.pluginParameters['Mode1'] != 'None':
                     setExtendedPANID(self, self.pluginconf.pluginConf['extendedPANID'])
             action = {'Description': 'Erase ZiGate PDM - Non Implemente'}
-                #if self.pluginparameters['Mode1'] != 'None':
+                #if self.pluginParameters['Mode1'] != 'None':
                 #    start_Zigate( self )
         return _response
 
@@ -154,7 +154,7 @@ class WebServer(object):
         _response = prepResponseMessage( self ,setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
-            if self.pluginparameters['Mode1'] != 'None':
+            if self.pluginParameters['Mode1'] != 'None':
                 self.zigatedata['startZigateNeeded'] = True
                 #start_Zigate( self )
                 sendZigateCmd(self, "0011", "" ) # Software Reset
@@ -204,7 +204,7 @@ class WebServer(object):
         _response = prepResponseMessage( self ,setupHeadersResponse())     
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
-                _response["Data"] = json.dumps( self.pluginparameters, sort_keys=True )
+                _response["Data"] = json.dumps( self.pluginParameters, sort_keys=True )
         return _response
 
     def rest_nwk_stat( self, verb, data, parameters):
@@ -306,7 +306,7 @@ class WebServer(object):
         self.logging( 'Debug', " --> Type: %s" %type(self.statistics))
 
         Statistics['Trend'] = [ ]
-        if self.pluginparameters['Mode1'] == 'None':
+        if self.pluginParameters['Mode1'] == 'None':
             Statistics['CRC'] = 1
             Statistics['FrameErrors'] = 1
             Statistics['Sent'] = 5
@@ -576,7 +576,7 @@ class WebServer(object):
                         sendZigateCmd( self, "0049", router + '%02x' %duration + '00') 
 
                 else:                   
-                    if self.pluginparameters['Mode1'] != 'None':
+                    if self.pluginParameters['Mode1'] != 'None':
                         ZigatePermitToJoin(self, int( data['PermitToJoin']))
         return _response
 
