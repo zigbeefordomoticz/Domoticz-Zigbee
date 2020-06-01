@@ -366,55 +366,70 @@ class WebServer(object):
                 _response["Data"] = json.dumps( Statistics, sort_keys=True )
         return _response
 
-    def rest_Settings( self, verb, data, parameters):
+
+    def rest_Settings_wo_debug( self, verb, data, parameters):
+        return self.rest_Settings( verb, data, parameters, sendDebug=False)
+
+    def rest_Settings_with_debug( self, verb, data, parameters):
+        return self.rest_Settings( verb, data, parameters, sendDebug=True)
+
+
+    def rest_Settings( self, verb, data, parameters, sendDebug=False):
+
+        Domoticz.Log("Verb: %s Data: %s, Parameters: %s, Debug: %s" %(verb, data, parameters, sendDebug))
 
         _response = prepResponseMessage( self ,setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
-            if len(parameters) == 0:
-                setting_lst = []
-                for _theme in SETTINGS:
-                    if _theme in ( 'PluginTransport'): 
+            if len(parameters) != 0:
+                return
+
+            setting_lst = []
+            for _theme in SETTINGS:
+                if _theme in ( 'PluginTransport'): 
+                    continue
+                if sendDebug and _theme != 'VerboseLogging':
+                    continue
+                if _theme == 'VerboseLogging' and not sendDebug:
+                    continue
+                theme = {
+                    '_Order': SETTINGS[_theme]['Order'],
+                    '_Theme': _theme,
+                    'ListOfSettings': [],
+                }
+
+                for param in self.pluginconf.pluginConf:
+                    if param not in SETTINGS[_theme]['param']: 
                         continue
 
-                    theme = {
-                        '_Order': SETTINGS[_theme]['Order'],
-                        '_Theme': _theme,
-                        'ListOfSettings': [],
-                    }
+                    if not SETTINGS[_theme]['param'][param]['hidden']:
+                        setting = {
+                            'Name': param,
+                            'default_value': SETTINGS[_theme]['param'][param][
+                                'default'
+                            ],
+                            'DataType': SETTINGS[_theme]['param'][param][
+                                'type'
+                            ],
+                            'restart_need': SETTINGS[_theme]['param'][param][
+                                'restart'
+                            ],
+                            'Advanced': SETTINGS[_theme]['param'][param][
+                                'Advanced'
+                            ],
+                        }
 
-                    for param in self.pluginconf.pluginConf:
-                        if param not in SETTINGS[_theme]['param']: 
-                            continue
-
-                        if not SETTINGS[_theme]['param'][param]['hidden']:
-                            setting = {
-                                'Name': param,
-                                'default_value': SETTINGS[_theme]['param'][param][
-                                    'default'
-                                ],
-                                'DataType': SETTINGS[_theme]['param'][param][
-                                    'type'
-                                ],
-                                'restart_need': SETTINGS[_theme]['param'][param][
-                                    'restart'
-                                ],
-                                'Advanced': SETTINGS[_theme]['param'][param][
-                                    'Advanced'
-                                ],
-                            }
-
-                            if SETTINGS[_theme]['param'][param]['type'] == 'hex':
-                                Domoticz.Debug("--> %s: %s - %s" %(param, self.pluginconf.pluginConf[param], type(self.pluginconf.pluginConf[param])))
-                                if isinstance( self.pluginconf.pluginConf[param], int):
-                                    setting['current_value'] = '%x' %self.pluginconf.pluginConf[param] 
-                                else:
-                                    setting['current_value'] = '%x' %int(self.pluginconf.pluginConf[param] ,16)
+                        if SETTINGS[_theme]['param'][param]['type'] == 'hex':
+                            Domoticz.Debug("--> %s: %s - %s" %(param, self.pluginconf.pluginConf[param], type(self.pluginconf.pluginConf[param])))
+                            if isinstance( self.pluginconf.pluginConf[param], int):
+                                setting['current_value'] = '%x' %self.pluginconf.pluginConf[param] 
                             else:
-                                setting['current_value'] = self.pluginconf.pluginConf[param]
-                            theme['ListOfSettings'].append ( setting )
-                    setting_lst.append( theme )
-                _response["Data"] = json.dumps( setting_lst, sort_keys=True )
+                                setting['current_value'] = '%x' %int(self.pluginconf.pluginConf[param] ,16)
+                        else:
+                            setting['current_value'] = self.pluginconf.pluginConf[param]
+                        theme['ListOfSettings'].append ( setting )
+                setting_lst.append( theme )
+            _response["Data"] = json.dumps( setting_lst, sort_keys=True )
 
         elif verb == 'PUT':
             _response["Data"] = None
