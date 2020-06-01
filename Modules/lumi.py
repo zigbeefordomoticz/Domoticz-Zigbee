@@ -356,7 +356,7 @@ def readXiaomiCluster( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0008',sLevel)
         checkAndStoreAttributeValue( self, MsgSrcAddr , MsgSrcEp, '0008', '0000' , sLevel)
 
-def cube_decode(self, value):
+def cube_decode(self, value, MsgSrcAddr):
     'https://github.com/sasu-drooz/Domoticz-Zigate/wiki/Aqara-Cube-decoding'
     value=int(value,16)
     if value == '' or value is None:
