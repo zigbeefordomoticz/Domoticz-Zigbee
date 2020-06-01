@@ -128,7 +128,6 @@ class NetworkMap():
 
         return
 
-
     def _initNeighboursTableEntry( self, nwkid):
 
         self.logging( 'Debug', "_initNeighboursTableEntry - %s" %nwkid)
@@ -146,7 +145,6 @@ class NetworkMap():
             for entry in self.Neighbours[ nwkid ]['Neighbours']:
                 self.logging( 'Debug', "---> Neighbour %s ( %s )" %( entry, self.Neighbours[ nwkid ]['Neighbours'][entry]['_relationshp']))
         self.logging( 'Debug', "")
-
 
     def LQIreq(self, nwkid='0000'):
         """
@@ -208,7 +206,6 @@ class NetworkMap():
         self.ZigateComm.sendData( "004E",datas)  
 
         return
-
 
     def start_scan(self):
 
@@ -277,6 +274,14 @@ class NetworkMap():
 
     def finish_scan( self ):
 
+        def storeLQIforEndDevice( self, child, router, lqi):
+            if child not in self.ListOfDevices:
+                return
+            if 'LQI' not in self.ListOfDevices[ child ]:
+                self.ListOfDevices[ child ]['LQI'] = {}
+            self.ListOfDevices[ child ]['LQI'][ nwkid ] = lqi
+
+
         # Write the report onto file
         Domoticz.Status("Network Topology report")
         Domoticz.Status("------------------------------------------------------------------------------------------")
@@ -333,6 +338,8 @@ class NetworkMap():
 
                     LOD_Neighbours['Devices'].append( element )
 
+                    storeLQIforEndDevice( self, child, nwkid, int(self.Neighbours[nwkid]['Neighbours'][child]['_lnkqty'],16) )
+
             self.ListOfDevices[nwkid]['Neighbours'].append ( LOD_Neighbours )
 
         Domoticz.Status("--")
@@ -367,7 +374,6 @@ class NetworkMap():
             #self.adminWidgets.updateNotificationWidget( Devices, 'A new LQI report is available')
         else:
             Domoticz.Error("LQI:Unable to get access to directory %s, please check PluginConf.txt" %(self.pluginconf.pluginConf['pluginReports']))
-
 
     def LQIresp(self, MsgData):
 
