@@ -554,59 +554,78 @@ def processCommand( self, unit, GrpId, Command, Level, Color_ ) :
 
     if Command == "Set Color" :
         Hue_List = json.loads(Color_)
+        transitionRGB = '%04x' %self.pluginconf.pluginConf['moveToColourRGB']
+        transitionMoveLevel = '%04x' %self.pluginconf.pluginConf['moveToLevel']
+        transitionHue = '%04x' %self.pluginconf.pluginConf['moveToHueSatu']
+        transitionTemp = '%04x' %self.pluginconf.pluginConf['moveToColourTemp']
+
+
         #First manage level
-        OnOff = '01' # 00 = off, 01 = on
-        value = '%02X' %round(1+Level*254/100)
-        #value = Hex_Format(2, round(1+Level*254/100)) #To prevent off state
-        zigate_cmd = "0081"
-        zigate_param = OnOff + value + "0000"
-        datas = "%02d" %ADDRESS_MODE['group'] + GrpId + ZIGATE_EP + EPout + zigate_param
-        self.logging( 'Debug', "Command: %s - data: %s" %(zigate_cmd, datas))
-        update_device_list_attribute( self, GrpId, '0008', value)
-        self.ZigateComm.sendData( zigate_cmd, datas)
+        if Hue_List['m'] != 9998:
+            # In case of m ==3, we will do the Setlevel
+            OnOff = '01' # 00 = off, 01 = on
+            value=Hex_Format(2,round(1+Level*254/100)) #To prevent off state
+            zigate_cmd = "0081"
+            zigate_param = OnOff + value + transitionMoveLevel
+            datas = "%02d" %ADDRESS_MODE['group'] + GrpId + ZIGATE_EP + EPout + zigate_param
+            self.logging( 'Debug', "Command: %s - data: %s" %(zigate_cmd, datas))
+            update_device_list_attribute( self, GrpId, '0008', value)
+            self.ZigateComm.sendData( zigate_cmd, datas)
 
         if Hue_List['m'] == 1:
             ww = int(Hue_List['ww']) # Can be used as level for monochrome white
             self.logging( 'Debug', "Not implemented device color 1")
+
         #ColorModeTemp = 2   // White with color temperature. Valid fields: t
         if Hue_List['m'] == 2:
-            set_kelvin_color( self, ADDRESS_MODE['group'], GrpId, ZIGATE_EP, EPout, int(Hue_List['t']))
+            set_kelvin_color( self, ADDRESS_MODE['group'], GrpId, ZIGATE_EP, EPout, int(Hue_List['t']), transit = transitionTemp )
 
         #ColorModeRGB = 3    // Color. Valid fields: r, g, b.
         elif Hue_List['m'] == 3:
             set_rgb_color( self, ADDRESS_MODE['group'], GrpId, ZIGATE_EP, EPout, \
-                    int(Hue_List['r']), int(Hue_List['g']), int(Hue_List['b']))
+                    int(Hue_List['r']), int(Hue_List['g']), int(Hue_List['b']), transit = transitionRGB )
 
         #ColorModeCustom = 4, // Custom (color + white). Valid fields: r, g, b, cw, ww, depending on device capabilities
         elif Hue_List['m'] == 4:
-            ww = int(Hue_List['ww'])
-            cw = int(Hue_List['cw'])
-            x, y = rgb_to_xy((int(Hue_List['r']), int(Hue_List['g']), int(Hue_List['b'])))
-            self.logging( 'Debug', "Not implemented device color 2")
+            #Gledopto GL_008
+            # Color: {"b":43,"cw":27,"g":255,"m":4,"r":44,"t":227,"ww":215}
+            self.logging( 'Log', "Not fully implemented device color 4")
 
-        #With saturation and hue, not seen in domoticz but present on zigate, and some device need it
-        elif Hue_List['m'] == 9998:
-            h, l, s = rgb_to_hsl((int(Hue_List['r']), int(Hue_List['g']), int(Hue_List['b'])))
+            # Process White color
+            cw = int(Hue_List['cw'])   # 0 < cw < 255 Cold White
+            ww = int(Hue_List['ww'])   # 0 < ww < 255 Warm White
+            if cw != 0 and ww != 0:
+                TempKelvin = int(((255 - int(ww))*(6500-1700)/255)+1700)
+                TempMired = 1000000 // TempKelvin
+                self.logging( 'Log', "---------- Set Temp Kelvin: %s-%s" %(TempMired, Hex_Format(4,TempMired)))
+                self.ZigateComm.sendData( "00C0", "%02d" %ADDRESS_MODE['group'] + GrpId + ZIGATE_EP + EPout + Hex_Format(4,TempMired) + transitionTemp)
+            else:
+                # How to powerOff the WW/CW channel ?
+                pass
+
+            # Process Colour
+            h,l,s = rgb_to_hsl((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))
             saturation = s * 100   #0 > 100
             hue = h *360           #0 > 360
             hue = int(hue*254//360)
             saturation = int(saturation*254//100)
-            Level = l
-            value = '%02X' %round(1+Level*254/100)
-            #value = Hex_Format(2, round(1+Level*254/100)) #To prevent off state
+            self.logging( 'Log', "---------- Set Hue X: %s Saturation: %s" %(hue, saturation))
+            self.ZigateComm.sendData( "00B6","%02d" %ADDRESS_MODE['group'] + GrpId + ZIGATE_EP + EPout + Hex_Format(2,hue) + Hex_Format(2,saturation) + transitionRGB)
 
+        #With saturation and hue, not seen in domoticz but present on zigate, and some device need it
+        elif Hue_List['m'] == 9998:
+            h,l,s = rgb_to_hsl((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))
+            saturation = s * 100   #0 > 100
+            hue = h *360           #0 > 360
+            hue = int(hue*254//360)
+            saturation = int(saturation*254//100)
+            self.logging( 'Debug', "---------- Set Hue X: %s Saturation: %s" %(hue, saturation))
+            self.ZigateComm.sendData( "00B6","%02d" %ADDRESS_MODE['group'] + GrpId + ZIGATE_EP + EPout + Hex_Format(2,hue) + Hex_Format(2,saturation) + transitionHue)
+
+            value = int(l * 254//100)
             OnOff = '01'
-            zigate_cmd = "00B6"
-            zigate_param = Hex_Format(2, hue) + Hex_Format(2, saturation) + "0000"
-            datas = "%02d" %ADDRESS_MODE['group'] + GrpId + ZIGATE_EP + EPout + zigate_param
-            self.logging( 'Debug', "Command: %s - data: %s" %(zigate_cmd, datas))
-            self.ZigateComm.sendData( zigate_cmd, datas)
-            zigate_cmd = "0081"
-            zigate_param = OnOff + value + "0010"
-            datas = "%02d" %ADDRESS_MODE['group'] + GrpId + ZIGATE_EP + EPout + zigate_param
-            self.logging( 'Debug', "Command: %s - data: %s" %(zigate_cmd, datas))
-            self.ZigateComm.sendData( zigate_cmd, datas)
-            update_device_list_attribute( self, GrpId, '0008', value)
+            self.logging( 'Debug', "---------- Set Level: %s instead of Level: %s" %(value, Level))
+            self.ZigateComm.sendData( "0081","%02d" %ADDRESS_MODE['group'] + GrpId + ZIGATE_EP + EPout + OnOff + Hex_Format(2,value) + transitionMoveLevel)
 
         #Update Device
         nValue = 1
