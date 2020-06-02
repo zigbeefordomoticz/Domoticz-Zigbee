@@ -7,7 +7,7 @@
 import Domoticz
 import json
 
-from GroupMgtv2.GrpCommands import set_kelvin_color, set_rgb_color
+from GroupMgtv2.GrpCommands import set_kelvin_color, set_rgb_color, set_hue_saturation
 from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl
 from Modules.zigateConsts import ADDRESS_MODE, MAX_LOAD_ZIGATE, ZIGATE_EP
 
@@ -559,7 +559,6 @@ def processCommand( self, unit, GrpId, Command, Level, Color_ ) :
         transitionHue = '%04x' %self.pluginconf.pluginConf['moveToHueSatu']
         transitionTemp = '%04x' %self.pluginconf.pluginConf['moveToColourTemp']
 
-
         #First manage level
         if Hue_List['m'] != 9998:
             # In case of m ==3, we will do the Setlevel
@@ -595,32 +594,21 @@ def processCommand( self, unit, GrpId, Command, Level, Color_ ) :
             cw = int(Hue_List['cw'])   # 0 < cw < 255 Cold White
             ww = int(Hue_List['ww'])   # 0 < ww < 255 Warm White
             if cw != 0 and ww != 0:
-                TempKelvin = int(((255 - int(ww))*(6500-1700)/255)+1700)
-                TempMired = 1000000 // TempKelvin
                 self.logging( 'Log', "---------- Set Temp Kelvin: %s-%s" %(TempMired, Hex_Format(4,TempMired)))
-                self.ZigateComm.sendData( "00C0", "%02d" %ADDRESS_MODE['group'] + GrpId + ZIGATE_EP + EPout + Hex_Format(4,TempMired) + transitionTemp)
+                set_kelvin_color( self, ADDRESS_MODE['group'], GrpId, ZIGATE_EP, EPout, int(ww), transit = transitionTemp)
             else:
                 # How to powerOff the WW/CW channel ?
                 pass
 
             # Process Colour
-            h,l,s = rgb_to_hsl((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))
-            saturation = s * 100   #0 > 100
-            hue = h *360           #0 > 360
-            hue = int(hue*254//360)
-            saturation = int(saturation*254//100)
-            self.logging( 'Log', "---------- Set Hue X: %s Saturation: %s" %(hue, saturation))
-            self.ZigateComm.sendData( "00B6","%02d" %ADDRESS_MODE['group'] + GrpId + ZIGATE_EP + EPout + Hex_Format(2,hue) + Hex_Format(2,saturation) + transitionRGB)
+            set_hue_saturation( self, ADDRESS_MODE['group'], GrpId, ZIGATE_EP, EPout, \
+                int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b']), transit = transitionHue)
 
         #With saturation and hue, not seen in domoticz but present on zigate, and some device need it
         elif Hue_List['m'] == 9998:
-            h,l,s = rgb_to_hsl((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))
-            saturation = s * 100   #0 > 100
-            hue = h *360           #0 > 360
-            hue = int(hue*254//360)
-            saturation = int(saturation*254//100)
             self.logging( 'Debug', "---------- Set Hue X: %s Saturation: %s" %(hue, saturation))
-            self.ZigateComm.sendData( "00B6","%02d" %ADDRESS_MODE['group'] + GrpId + ZIGATE_EP + EPout + Hex_Format(2,hue) + Hex_Format(2,saturation) + transitionHue)
+            set_hue_saturation( self, ADDRESS_MODE['group'], GrpId, ZIGATE_EP, EPout, \
+                int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b']), transit = transitionHue)
 
             value = int(l * 254//100)
             OnOff = '01'
