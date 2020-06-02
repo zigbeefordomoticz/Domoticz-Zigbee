@@ -1362,7 +1362,12 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  int(value) )
 
         if 'Model' in self.ListOfDevices[MsgSrcAddr]:
-            if self.ListOfDevices[MsgSrcAddr]['Model'] == 'EH-ZB-VACT':
+            if self.ListOfDevices[MsgSrcAddr]['Model'] == 'EH-ZB-HACT':
+                if 'Schneider' in self.ListOfDevices[MsgSrcAddr]:
+                    if 'Rebinding Timestamp' in self.ListOfDevices[MsgSrcAddr]['Schneider']:
+                        del self.ListOfDevices[MsgSrcAddr]['Schneider']['Rebinding Timestamp']
+
+            elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'EH-ZB-VACT':
                 # In case of Schneider Wiser Valve, we have to 
                 loggingCluster( self, 'Debug', "ReadCluster - 0201 - ValueTemp: %s" %int( ((ValueTemp * 100) * 2) / 2 ), MsgSrcAddr)
                 if 'Schneider' in self.ListOfDevices[MsgSrcAddr]:
