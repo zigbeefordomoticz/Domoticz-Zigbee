@@ -550,7 +550,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
                 pass
 
             # Process Colour
-            h,l,s = rgb_to_hsl((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))
+            h, s, l = rgb_to_hsl((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))
             saturation = s * 100   #0 > 100
             hue = h *360           #0 > 360
             hue = int(hue*254//360)
@@ -565,7 +565,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
 
         #With saturation and hue, not seen in domoticz but present on zigate, and some device need it
         elif Hue_List['m'] == 9998:
-            h,l,s = rgb_to_hsl((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))
+            h, s, l = rgb_to_hsl((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))
             saturation = s * 100   #0 > 100
             hue = h *360           #0 > 360
             hue = int(hue*254//360)
