@@ -297,7 +297,7 @@ def webUnBind( self, sourceIeee, sourceEp, destIeee, destEp, Cluster):
             del self.ListOfDevices[sourceNwkid]['WebBind']
 
 
-def isWebBind( self, sourceIeee, sourceEp, destIeee, destEp, Cluster):
+def WebBindStatus( self, sourceIeee, sourceEp, destIeee, destEp, Cluster):
 
     if sourceIeee not in self.IEEE2NWK:
         Domoticz.Error("---> unknown sourceIeee: %s" %sourceIeee)
@@ -314,9 +314,9 @@ def isWebBind( self, sourceIeee, sourceEp, destIeee, destEp, Cluster):
         if sourceEp in self.ListOfDevices[sourceNwkid]['WebBind']:
             if Cluster in self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp]:
                 if destNwkid in self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster]:
-                    if self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster][destNwkid]['Phase'] == 'binded':
-                        return True
-    return False
+                    if 'Phase' in self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster][destNwkid]:
+                        return self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster][destNwkid]['Phase'] 
+    return None
 
 def callBackForWebBindIfNeeded( self , srcNWKID ):
 
