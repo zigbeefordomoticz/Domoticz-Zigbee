@@ -132,7 +132,7 @@ def schneider_wiser_registration( self, Devices, key ):
         Hattribute = "%04x" %0x5011
         data_type = "42" # String
         data = '656e'  # 'en'
-        loggingSchneider( self, 'Debug', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
+        loggingSchneider( self, 'Debug', "Schneider Write Attribute (locale: english) %s with value %s / cluster: %s, attribute: %s type: %s"
                 %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
         write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
 

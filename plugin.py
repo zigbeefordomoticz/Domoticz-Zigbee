@@ -105,6 +105,7 @@ from Classes.NetworkMap import NetworkMap
 from Classes.NetworkEnergy import NetworkEnergy
 
 from Classes.ListOfDevices import ListOfDevices
+from Modules.sqnMgmt import sqn_cleanup
 
 VERSION_FILENAME = '.hidden/VERSION'
 
@@ -734,6 +735,7 @@ class BasePlugin:
 
         self.statistics.addPointforTrendStats( self.HeartbeatCount )
 
+        sqn_cleanup(self.ZigateComm)
         return True
 
 def zigateInit_Phase1(self ):
