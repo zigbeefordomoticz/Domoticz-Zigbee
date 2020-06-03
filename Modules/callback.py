@@ -66,5 +66,6 @@ def callBackForWriteAttributeIfNeeded(self, key):
                 manuf_id = self.ListOfDevices[key]['WriteAttribute'][EPout][clusterID][attribute]['manuf_id']
                 manuf_spec = self.ListOfDevices[key]['WriteAttribute'][EPout][clusterID][attribute]['manuf_spec']
                 data = self.ListOfDevices[key]['WriteAttribute'][EPout][clusterID][attribute]['data']
-                write_attribute (self,key,EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data)
+                i_sqn = write_attribute (self,key,EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data)
+                self.ListOfDevices[key]['WriteAttribute'][EPout][clusterID][attribute]['i_sqn'] = i_sqn
 

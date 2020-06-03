@@ -12,6 +12,7 @@ from datetime import datetime
 
 from Modules.tools import is_hex
 from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_RESPONSES, ZIGATE_COMMANDS, RETRANSMIT_COMMAND
+from Modules.sqnMgmt import init_sqn_stack, generate_new_internal_sqn, add_external_sqn
 
 
 STANDALONE_MESSAGE =[]
@@ -75,6 +76,7 @@ class ZigateTransport(object):
         self.zmode = pluginconf.pluginConf['zmode']
         self.sendDelay = pluginconf.pluginConf['sendDelay']
         self.zTimeOut = pluginconf.pluginConf['zTimeOut']
+        init_sqn_stack (self)
 
         self.loggingFileHandle = loggingFileHandle
 
@@ -395,6 +397,10 @@ class ZigateTransport(object):
         return ( None, None, None, None, None)
 
     def sendData(self, cmd, datas , delay=None):
+        self.sendData_internal (cmd, datas, delay )
+        return generate_new_internal_sqn(self)
+
+    def sendData_internal(self, cmd, datas , delay=None):
         '''
         in charge of sending Data. Call by sendZigateCmd
         If nothing in the waiting queue, will call _sendData and it will be sent straight to Zigate
@@ -469,6 +475,7 @@ class ZigateTransport(object):
         if MsgType == "8000":  # We are receiving a Status
             # We have receive a Status code in response to a command.
             if Status:
+                add_external_sqn (self, SEQ)
                 self._process8000(Status, PacketType, frame)
             self.F_out(frame)  # Forward the message to plugin for further processing
             return
@@ -513,7 +520,7 @@ class ZigateTransport(object):
                         for cmd, payload, frame8702 in tupleCommands:
                             if Status == NwkStatus == '00':
                                 self.loggingReceive('Debug',"             - New Route Discovery OK, resend %s %s" %(cmd, payload))
-                                self.sendData(cmd, payload)
+                                self.sendData_internal(cmd, payload)
                             else:
                                 self.loggingReceive('Debug',"             - New Route Discovery KO, drop %s %s" %(cmd, payload))
                                 self.F_out( frame8702 )  # Forward the old frame in the pipe. str() is used to make a physical copy
@@ -564,7 +571,7 @@ class ZigateTransport(object):
         if len(self.zigateSendingFIFO) != 0 \
                 and len(self._waitForStatus) == 0 and len(self._waitForData) == 0:
             cmd, datas, timestamps, reTx = self._nextCmdFromSendingFIFO()
-            self.sendData(cmd, datas)
+            self.sendData_internal(cmd, datas)
 
 
     def _process8000(self, Status, PacketType, frame):
@@ -599,7 +606,7 @@ class ZigateTransport(object):
         # Let's check if we cannot send a command from teh Queue
         if len(self.zigateSendingFIFO) != 0 and len(self._waitForStatus) == 0 and len(self._waitForData) == 0:
             cmd, datas, timestamps, reTx = self._nextCmdFromSendingFIFO()
-            self.sendData(cmd, datas)
+            self.sendData_internal(cmd, datas)
 
 
     def checkTOwaitFor(self):
@@ -651,7 +658,7 @@ class ZigateTransport(object):
                 and len(self._waitForStatus) == 0 and len(self._waitForData) == 0:
             cmd, datas, timestamps, reTx = self._nextCmdFromSendingFIFO()
             self.loggingReceive('Debug', "checkTOwaitForStatus - Unqueue %s %s" %(cmd, datas))
-            self.sendData(cmd, datas)
+            self.sendData_internal(cmd, datas)
 
         # self._printSendQueue()
         self._checkTO_flag = False
@@ -795,7 +802,7 @@ class ZigateTransport(object):
         
                 if _timeAPS <= ( iterTime + APS_TIME_WINDOW):
                     # That command has been issued in the APS time window
-                    self.sendData( iterCmd, iterpayLoad, 2)
+                    self.sendData_internal( iterCmd, iterpayLoad, 2)
                     self.statistics._reTx += 1
                     return False
 

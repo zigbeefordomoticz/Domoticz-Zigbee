@@ -42,7 +42,8 @@ def sendZigateCmd(self, cmd, datas ):
     if len(self.ZigateComm.zigateSendingFIFO) > 15:
         loggingBasicOutput( self, 'Log', "WARNING - ZigateCmd: %s %18s ZigateQueue: %s" %(cmd, datas, len(self.ZigateComm.zigateSendingFIFO)))
 
-    self.ZigateComm.sendData( cmd, datas )
+    i_sqn = self.ZigateComm.sendData( cmd, datas )
+    return i_sqn
 
 def ZigatePermitToJoin( self, permit ):
     """
@@ -435,7 +436,7 @@ def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, at
     datas += direction + manuf_spec + manuf_id
     datas += lenght +attribute + data_type + data
     loggingBasicOutput( self, 'Debug', "write_attribute for %s/%s - >%s<" %(key, EPout, datas) )
-    sendZigateCmd(self, "0110", str(datas) )
+    return sendZigateCmd(self, "0110", str(datas) )
 
 ## Scene
 def scene_membership_request( self, nwkid, ep, groupid='0000'):
