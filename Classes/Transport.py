@@ -101,47 +101,30 @@ class ZigateTransport(object):
         else:
             Domoticz.Error("Unknown Transport Mode: %s" %transport)
 
-    def _loggingStatus( self, message):
 
-        if self.pluginconf.pluginConf['useDomoticzLog']:
-            Domoticz.Status( message )
-        else:
-            if self.loggingFileHandle:
-                Domoticz.Status( message )
-                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
-                self.loggingFileHandle.write( message )
-                self.loggingFileHandle.flush()
-            else:
-                Domoticz.Status( message )
+
+    def _writeMessage( self, message):
+        message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+        self.loggingFileHandle.write( message )
+        self.loggingFileHandle.flush()
+
+    def _loggingStatus( self, message):
+        Domoticz.Status( message )
+        if ( not self.pluginconf.pluginConf['useDomoticzLog'] and self.loggingFileHandle ):
+            _writeMessage( self, message)
 
     def _loggingLog( self, message):
-
-        if self.pluginconf.pluginConf['useDomoticzLog']:
-            Domoticz.Log( message )
-        else:
-            if self.loggingFileHandle:
-                Domoticz.Log( message )
-                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
-                self.loggingFileHandle.write( message )
-                self.loggingFileHandle.flush()
-            else:
-                Domoticz.Log( message )
+        Domoticz.Log( message )
+        if ( not self.pluginconf.pluginConf['useDomoticzLog'] and self.loggingFileHandle ):
+            _writeMessage( self, message)
 
     def _loggingDebug( self, message):
-
-        if self.pluginconf.pluginConf['useDomoticzLog']:
-            Domoticz.Log( message )
+        if ( not self.pluginconf.pluginConf['useDomoticzLog'] and self.loggingFileHandle ):
+            _writeMessage( self, message)
         else:
-            if self.loggingFileHandle:
-                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
-                self.loggingFileHandle.write( message )
-                self.loggingFileHandle.flush()
-            else:
-                Domoticz.Log( message )
-
+            Domoticz.Log( message )
 
     def loggingSend( self, logType, message):
-
         if self.pluginconf.pluginConf['debugTransportTx'] and logType == 'Debug':
             self._loggingDebug( message )
         elif  logType == 'Log':
@@ -150,7 +133,6 @@ class ZigateTransport(object):
             self._loggingStatus( message )
 
     def loggingReceive( self, logType, message):
-
         if self.pluginconf.pluginConf['debugTransportRx'] and logType == 'Debug':
             self._loggingDebug( message )
         elif  logType == 'Log':
@@ -161,27 +143,17 @@ class ZigateTransport(object):
     # Transport / Opening / Closing Communication
     def setConnection( self ):
 
-        BAUDS = 115200
-
         if self._connection is not None:
             del self._connection
             self._connection = None
 
-        if self._transp == "USB":
+        if self._transp in ["USB", "DIN", "PI"]:
             if self._serialPort.find('/dev/') != -1 or self._serialPort.find('COM') != -1:
                 Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" %( self._serialPort ))
+                BAUDS = 115200
                 self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
                          Address=self._serialPort, Baud= BAUDS)
-        elif self._transp == "DIN":
-            if self._serialPort.find('/dev/') != -1 or self._serialPort.find('COM') != -1:
-                Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" %( self._serialPort ))
-                self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
-                         Address=self._serialPort, Baud=BAUDS)
-        elif self._transp == "PI":
-            if self._serialPort.find('/dev/') != -1 or self._serialPort.find('COM') != -1:
-                Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" %( self._serialPort ))
-                self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
-                         Address=self._serialPort, Baud=BAUDS)
+
         elif self._transp == "Wifi":
             Domoticz.Status("Connection Name: Zigate, Transport: TCP/IP, Address: %s:%s" %( self._serialPort, self._wifiPort ))
             self._connection = Domoticz.Connection(Name="Zigate", Transport="TCP/IP", Protocol="None ",
@@ -189,13 +161,10 @@ class ZigateTransport(object):
         else:
             Domoticz.Error("Unknown Transport Mode: %s" %self._transp)
 
-
     def PDMLock( self , lock):
-
         self.PDMCommandOnly = lock
 
     def PDMLockStatus( self ):
-
         return self.PDMCommandOnly
 
     def openConn(self):
@@ -233,18 +202,12 @@ class ZigateTransport(object):
 
         if datas == "":
             checksumCmd = getChecksum(cmd, length, "0")
-            if len(checksumCmd) == 1:
-                strchecksum = "0" + str(checksumCmd)
-            else:
-                strchecksum = checksumCmd
+            strchecksum = '0' + str(checksumCmd) if len(checksumCmd) == 1 else checksumCmd
             lineinput = "01" + str(ZigateEncode(cmd)) + str(ZigateEncode(length)) + \
                         str(ZigateEncode(strchecksum)) + "03"
         else:
             checksumCmd = getChecksum(cmd, length, datas)
-            if len(checksumCmd) == 1:
-                strchecksum = "0" + str(checksumCmd)
-            else:
-                strchecksum = checksumCmd
+            strchecksum = '0' + str(checksumCmd) if len(checksumCmd) == 1 else checksumCmd
             lineinput = "01" + str(ZigateEncode(cmd)) + str(ZigateEncode(length)) + \
                         str(ZigateEncode(strchecksum)) + str(ZigateEncode(datas)) + "03"
 
@@ -640,19 +603,18 @@ class ZigateTransport(object):
                 expResponse, pCmd, pData, pTime, reTx =  self._nextCmdFromWaitDataQueue()
                 self.loggingReceive('Debug',"waitForData - Timeout %s sec on %04.x Command waiting for %04.x " % (now - pTime, expResponse, int(pCmd,16)))
                 # If we allow reTransmit, let's resend the command
-                if self.reTransmit:
-                    if int(pCmd, 16) in RETRANSMIT_COMMAND and reTx <= self.reTransmit:
-                        self.statistics._reTx += 1
-                        self.loggingReceive('Debug',"checkTOwaitForStatus - Request a reTransmit of Command : %s/%s (%s) " % (
-                            pCmd, pData, reTx))
-                        # waitForData should be 0 as well as waitForCmd
-                        if  len(self._waitForData) == len(self._waitForStatus) == 0 :
-                            reTx += 1
-                            self._addCmdToWaitQueue(pCmd, pData, reTransmit=reTx)
-                            self._addCmdToWaitDataQueue(CMD_DATA[int(pCmd, 16)],pCmd, pData, reTransmit=reTx)
-                            self._sendData( pCmd, pData , self.sendDelay)
-                        else:
-                            Domoticz.Error("Unable to retransmit message %s/%s Queue was not free anymore !" %(pCmd, pData))
+                if ( self.reTransmit and int(pCmd, 16) in RETRANSMIT_COMMAND and reTx <= self.reTransmit ):
+                    self.statistics._reTx += 1
+                    self.loggingReceive('Debug',"checkTOwaitForStatus - Request a reTransmit of Command : %s/%s (%s) " % (
+                        pCmd, pData, reTx))
+                    # waitForData should be 0 as well as waitForCmd
+                    if  len(self._waitForData) == len(self._waitForStatus) == 0 :
+                        reTx += 1
+                        self._addCmdToWaitQueue(pCmd, pData, reTransmit=reTx)
+                        self._addCmdToWaitDataQueue(CMD_DATA[int(pCmd, 16)],pCmd, pData, reTransmit=reTx)
+                        self._sendData( pCmd, pData , self.sendDelay)
+                    else:
+                        Domoticz.Error("Unable to retransmit message %s/%s Queue was not free anymore !" %(pCmd, pData))
 
         if len(self.zigateSendingFIFO) != 0 \
                 and len(self._waitForStatus) == 0 and len(self._waitForData) == 0:
@@ -818,9 +780,7 @@ def ZigateEncode(Data):  # ajoute le transcodage
             if Outtmp[0] == "1" and Outtmp != "10":
                 if Outtmp[1] == "0":
                     Outtmp = "0200"
-                    Out += Outtmp
-                else:
-                    Out += Outtmp
+                Out += Outtmp
             elif Outtmp[0] == "0":
                 Out += "021" + Outtmp[1]
             else:
