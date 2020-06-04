@@ -633,7 +633,7 @@ class ZigateTransport(object):
 
         if len(self.zigateSendQueue) != 0 \
                 and len(self._waitFor8000Queue) == 0 and len(self._waitForDataQueue) == 0:
-            cmd, datas, timestamps, reTx = self._nextCmdFromSendQueue()
+            cmd, datas, timestamps = self._nextCmdFromSendQueue()
             self.loggingReceive('Debug', "checkTOwaitForStatus - Unqueue %s %s" %(cmd, datas))
             self.sendData_internal(cmd, datas)
 
