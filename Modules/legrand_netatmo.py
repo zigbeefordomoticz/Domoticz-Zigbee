@@ -384,7 +384,7 @@ def legrandReenforcement( self, NWKID):
         and self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand'
     ):
         for cmd in ( 'LegrandFilPilote', 'EnableLedInDark', 'EnableDimmer', 'EnableLedIfOn', 'EnableLedShutter'):
-            if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
+            if not self.busy and self.ZigateComm.loadTransmit() <= MAX_LOAD_ZIGATE:
                 if self.pluginconf.pluginConf[ cmd ]:
                     legrand_fc01( self, NWKID, cmd , 'On')
                 else:

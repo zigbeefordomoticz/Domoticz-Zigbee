@@ -35,12 +35,12 @@ def sendZigateCmd(self, cmd, datas ):
         return
 
     if self.pluginconf.pluginConf['debugzigateCmd']:
-        loggingBasicOutput( self, 'Log', "sendZigateCmd - %s %s Queue Length: %s" %(cmd, datas, len(self.ZigateComm.zigateSendingFIFO)))
+        loggingBasicOutput( self, 'Log', "sendZigateCmd - %s %s Queue Length: %s" %(cmd, datas, self.ZigateComm.loadTransmit()))
     else:
-        loggingBasicOutput( self, 'Debug', "=====> sendZigateCmd - %s %s Queue Length: %s" %(cmd, datas, len(self.ZigateComm.zigateSendingFIFO)))
+        loggingBasicOutput( self, 'Debug', "=====> sendZigateCmd - %s %s Queue Length: %s" %(cmd, datas, self.ZigateComm.loadTransmit()))
 
-    if len(self.ZigateComm.zigateSendingFIFO) > 15:
-        loggingBasicOutput( self, 'Log', "WARNING - ZigateCmd: %s %18s ZigateQueue: %s" %(cmd, datas, len(self.ZigateComm.zigateSendingFIFO)))
+    if self.ZigateComm.loadTransmit() > 15:
+        loggingBasicOutput( self, 'Log', "WARNING - ZigateCmd: %s %18s ZigateQueue: %s" %(cmd, datas, self.ZigateComm.loadTransmit))
 
     i_sqn = self.ZigateComm.sendData( cmd, datas )
     return i_sqn
