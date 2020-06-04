@@ -61,7 +61,6 @@ def actuator_stop( self, nwkid, EPout, DeviceType):
 
     if DeviceType == "WindowCovering":
         # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
-        Domoticz.Log("Sending STOP to Zigate .. Queue: %s" %(self.ZigateComm.zigateSendingFIFO))
         sendZigateCmd(self, "00FA","02" + nwkid + ZIGATE_EP + EPout + "02")
     else:
         sendZigateCmd(self, "0083","02" + nwkid + ZIGATE_EP + EPout )

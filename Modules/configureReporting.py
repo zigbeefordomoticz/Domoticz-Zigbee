@@ -41,9 +41,9 @@ def processConfigureReporting( self, NWKID=None ):
 
     now = int(time())
     if NWKID is None :
-        if self.busy or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE:
+        if self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE:
             loggingConfigureReporting( self, 'Debug2', "configureReporting - skip configureReporting for now ... system too busy (%s/%s) for %s"
-                  %(self.busy, len(self.ZigateComm.zigateSendingFIFO), NWKID), nwkid=NWKID)
+                  %(self.busy, self.ZigateComm.loadTransmit(), NWKID), nwkid=NWKID)
             return # Will do at the next round
         target = list(self.ListOfDevices.keys())
         clusterlist = None
@@ -148,10 +148,10 @@ def processConfigureReporting( self, NWKID=None ):
                         loggingConfigureReporting( self, 'Debug', "------> configurereporting - %s skiping due to done past" %key, nwkid=key)
                         continue
 
-                if NWKID is None and (self.busy or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE):
+                if NWKID is None and (self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE):
                     loggingConfigureReporting( self, 'Debug2', "---> configureReporting - %s skip configureReporting for now ... system too busy (%s/%s) for %s"
-                        %(key, self.busy, len(self.ZigateComm.zigateSendingFIFO), key), nwkid=key)
-                    loggingConfigureReporting( self, 'Debug2', "QUEUE: %s" %str(self.ZigateComm.zigateSendingFIFO), nwkid=key)
+                        %(key, self.busy, self.ZigateComm.loadTransmit(), key), nwkid=key)
+
                     return # Will do at the next round
 
                 loggingConfigureReporting( self, 'Debug', "---> configureReporting - requested for device: %s on Cluster: %s" %(key, cluster), nwkid=key)

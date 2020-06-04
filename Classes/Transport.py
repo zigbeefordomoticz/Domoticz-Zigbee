@@ -285,6 +285,7 @@ class ZigateTransport(object):
         return ret
 
     def sendData(self, cmd, datas , delay=None):
+        self.loggingSend('Debug', "sendData - %s %s FIFO: %s" %(cmd, datas, len(self.zigateSendQueue)))
         self.sendData_internal (cmd, datas )
         return generate_new_internal_sqn(self)
 
@@ -293,29 +294,26 @@ class ZigateTransport(object):
         in charge of sending Data. Call by sendZigateCmd
         If nothing in the waiting queue, will call _sendData and it will be sent straight to Zigate
         '''
-        self.loggingSend('Debug', "sendData - %s %s FIFO: %s" %(cmd, datas, len(self.zigateSendQueue)))
+        self.loggingSend('Debug', "sendData_internal - %s %s FIFO: %s" %(cmd, datas, len(self.zigateSendQueue)))
 
         # Before to anything, let's check that the cmd and datas are HEXA information.
         if datas is None:
             datas = ''
         if datas != '' and not is_hex( datas):
-            Domoticz.Error("sendData - receiving a non hexa Data: >%s<" %datas)
+            Domoticz.Error("sendData_internal - receiving a non hexa Data: >%s<" %datas)
             return
 
-        if self.zmode == 'Agressive':
-            sendNow = (len(self._waitFor8000Queue) == 0) or int(cmd,16) in CMD_PDM_ON_HOST
-        else:
-            sendNow = (len(self._waitFor8000Queue) == 0 and len(self._waitForDataQueue) == 0) or int(cmd,16) in CMD_PDM_ON_HOST
+
 
         # PDM Management.
         # When PDM traffic is ongoing we cannot interupt, so we need to FIFO all other commands until the PDMLock is released
-        PDM_COMMANDS = ( '8300', '8200', '8201', '8204', '8205', '8206', '8207', '8208' )
-        if self.PDMLockStatus() and cmd not in PDM_COMMANDS:
-            # Only PDM related command can go , all others will be dropped.
-            Domoticz.Log("PDM not yet ready, FIFO command %s %s" %(cmd, datas))
-            sendNow = False
-
-        self.loggingSend('Debug', "sendData - Command: %s zMode: %s Q(Status): %s Q(Data): %s sendNow: %s" %(cmd, self.zmode, len(self._waitFor8000Queue), len(self._waitForDataQueue), sendNow))
+        #PDM_COMMANDS = ( '8300', '8200', '8201', '8204', '8205', '8206', '8207', '8208' )
+        #if self.PDMLockStatus() and cmd not in PDM_COMMANDS:
+        #    # Only PDM related command can go , all others will be dropped.
+        #    Domoticz.Log("PDM not yet ready, FIFO command %s %s" %(cmd, datas))
+        #    sendNow = False
+        sendNow = (len(self._waitFor8000Queue) == 0 and len(self._waitForDataQueue) == 0) or int(cmd,16) in CMD_PDM_ON_HOST
+        self.loggingSend('Debug', "sendData_internal - Command: %s zMode: %s Q(Status): %s Q(Data): %s sendNow: %s" %(cmd, self.zmode, len(self._waitFor8000Queue), len(self._waitForDataQueue), sendNow))
 
         # In case the cmd is part of the PDM on Host commands, that is High Priority and must go through.
         if sendNow:
@@ -324,11 +322,11 @@ class ZigateTransport(object):
                 self._addCmdToWaitFor8000Queue(cmd, datas)
                 if self.zmode == 'ZigBee' and int(cmd, 16) in CMD_DATA:  # We do wait only if required and if not in AGGRESSIVE mode
                     self._addCmdToWaitForDataQueue(CMD_DATA[int(cmd, 16)], cmd, datas)
-                self._sendData(cmd, datas )
+            self._sendData(cmd, datas )
 
         else:
             # Put in FIFO
-            self.loggingSend('Debug', "sendData - put in waiting queue")
+            self.loggingSend('Debug', "sendData_internal - put in waiting queue")
             self._addCmdToSendQueue(cmd, datas)
 
     # Transport Sending Data
@@ -356,7 +354,7 @@ class ZigateTransport(object):
         self.processCMD4APS( cmd, datas)
         self.loggingSend('Debug', "--> _sendData - sending encoded Cmd: %s length: %s CRC: %s Data: %s" \
                     %(str(ZigateEncode(cmd)), str(ZigateEncode(length)), str(ZigateEncode(strchecksum)), str(ZigateEncode(datas))))
-        self._connection.Send(bytes.fromhex(str(lineinput)))
+        self._connection.Send(bytes.fromhex(str(lineinput)), 0)
         self.statistics._sent += 1
 
     # Transport / called by plugin 
@@ -547,15 +545,15 @@ class ZigateTransport(object):
                 self.loggingReceive( 'Debug', "         - not waiting Data")
                 return
 
-        expResponse, cmd, datas, pTime, reTx = self._nextCmdFromWaitDataQueue()
+        expResponse, cmd, datas, pTime = self._nextCmdFromWaitDataQueue()
 
-        self.loggingReceive( 'Debug', "         - Expecting: Response: %s, Cmd: %s, Datas: %s, Time: %s reTx: %s" \
-                %(expResponse, cmd, datas, pTime, reTx))
+        self.loggingReceive( 'Debug', "         - Expecting: Response: %s, Cmd: %s, Datas: %s, Time: %s" \
+                %(expResponse, cmd, datas, pTime))
 
         # If we have Still commands in the queue and the WaitforStatus+Data are free
         if len(self.zigateSendQueue) != 0 \
                 and len(self._waitFor8000Queue) == 0 and len(self._waitForDataQueue) == 0:
-            cmd, datas, timestamps, reTx = self._nextCmdFromSendQueue()
+            cmd, datas, timestamps = self._nextCmdFromSendQueue()
             self.sendData_internal(cmd, datas)
 
     def _process8000(self, Status, PacketType, frame):
@@ -566,7 +564,7 @@ class ZigateTransport(object):
             self.statistics._ackKO += 1
             # In that case we need to unblock data, as we will never get it !
             if len(self._waitForDataQueue) > 0:
-                expResponse, pCmd, pData, pTime, reTx =  self._nextCmdFromWaitDataQueue()
+                expResponse, pCmd, pData, pTime =  self._nextCmdFromWaitDataQueue()
                 self.loggingReceive( 'Debug', "waitForData - unlock waitForData due to command %s failed, remove %s/%s" %(PacketType, expResponse, pCmd))
 
         # What to do with the Command
@@ -575,6 +573,7 @@ class ZigateTransport(object):
             if expectedCommand is None:
                 self.loggingReceive( 'Debug',"_process8000 - Empty Queue")
             else:
+                Domoticz.Log("expectedCommand %s PacketType: %s " %(expectedCommand[0], PacketType ))
                 if int(expectedCommand[0], 16) != int(PacketType, 16):
                     self.loggingReceive( 'Debug',"receiveData - sync error : Expecting %s and Received: %s" \
                             % (expectedCommand[0], PacketType))
@@ -589,7 +588,7 @@ class ZigateTransport(object):
                     Domoticz.Error("_process8000 - APS Ack push receive Cmd %s status doesn't match Cmd %s in FIFO!" %(PacketType, cmd))
         # Let's check if we cannot send a command from teh Queue
         if len(self.zigateSendQueue) != 0 and len(self._waitFor8000Queue) == 0 and len(self._waitForDataQueue) == 0:
-            cmd, datas, timestamps, reTx = self._nextCmdFromSendQueue()
+            cmd, datas, timestamps = self._nextCmdFromSendQueue()
             self.sendData_internal(cmd, datas)
 
     def checkTimedOutForTxQueues(self):
@@ -606,7 +605,7 @@ class ZigateTransport(object):
         # Check waitForStatus
         if len(self._waitFor8000Queue) > 0:
             now = int(time())
-            pCmd, pDatas, pTime, reTx = self._waitFor8000Queue[0]
+            pCmd, pDatas, pTime = self._waitFor8000Queue[0]
             ## DEBUG Domoticz.Debug("checkTOwaitForStatus - %04.x enter at: %s delta: %s" % (int(pCmd, 16), pTime, now - pTime))
             if (now - pTime) > self.zTimeOut:
                 self.statistics._TOstatus += 1
@@ -617,24 +616,24 @@ class ZigateTransport(object):
         # Check waitForData
         if len(self._waitForDataQueue) > 0:
             now = int(time())
-            expResponse, pCmd, pData, pTime, reTx = self._waitForDataQueue[0]
+            expResponse, pCmd, pData, pTime = self._waitForDataQueue[0]
             if (now - pTime) > self.zTimeOut:
                 self.statistics._TOdata += 1
-                expResponse, pCmd, pData, pTime, reTx =  self._nextCmdFromWaitDataQueue()
+                expResponse, pCmd, pData, pTime =  self._nextCmdFromWaitDataQueue()
                 self.loggingReceive('Debug',"waitForData - Timeout %s sec on %04.x Command waiting for %04.x " % (now - pTime, expResponse, int(pCmd,16)))
                 # If we allow reTransmit, let's resend the command
-                if ( self.reTransmit and int(pCmd, 16) in RETRANSMIT_COMMAND and reTx <= self.reTransmit ):
-                    self.statistics._reTx += 1
-                    self.loggingReceive('Debug',"checkTOwaitForStatus - Request a reTransmit of Command : %s/%s (%s) " % (
-                        pCmd, pData, reTx))
-                    # waitForData should be 0 as well as waitForCmd
-                    if  len(self._waitForDataQueue) == len(self._waitFor8000Queue) == 0 :
-                        reTx += 1
-                        self._addCmdToWaitFor8000Queue(pCmd, pData, reTransmit=reTx)
-                        self._addCmdToWaitForDataQueue(CMD_DATA[int(pCmd, 16)],pCmd, pData, reTransmit=reTx)
-                        self._sendData( pCmd, pData , self.sendDelay)
-                    else:
-                        Domoticz.Error("Unable to retransmit message %s/%s Queue was not free anymore !" %(pCmd, pData))
+                #if ( self.reTransmit and int(pCmd, 16) in RETRANSMIT_COMMAND and reTx <= self.reTransmit ):
+                #    self.statistics._reTx += 1
+                #    self.loggingReceive('Debug',"checkTOwaitForStatus - Request a reTransmit of Command : %s/%s (%s) " % (
+                #        pCmd, pData, reTx))
+                #    # waitForData should be 0 as well as waitForCmd
+                #    if  len(self._waitForDataQueue) == len(self._waitFor8000Queue) == 0 :
+                #        reTx += 1
+                #        self._addCmdToWaitFor8000Queue(pCmd, pData, reTransmit=reTx)
+                #        self._addCmdToWaitForDataQueue(CMD_DATA[int(pCmd, 16)],pCmd, pData, reTransmit=reTx)
+                #        self._sendData( pCmd, pData , self.sendDelay)
+                #    else:
+                #        Domoticz.Error("Unable to retransmit message %s/%s Queue was not free anymore !" %(pCmd, pData))
 
         if len(self.zigateSendQueue) != 0 \
                 and len(self._waitFor8000Queue) == 0 and len(self._waitForDataQueue) == 0:

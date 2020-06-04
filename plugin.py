@@ -680,7 +680,7 @@ class BasePlugin:
             self.PluginHealth['Txt'] = 'Enrollment in Progress'
             self.adminWidgets.updateStatusWidget( Devices, 'Enrollment')
             # Maintain trend statistics
-            self.statistics._Load = len(self.ZigateComm.zigateSendingFIFO)
+            self.statistics._Load = self.ZigateComm.loadTransmit()
             self.statistics.addPointforTrendStats( self.HeartbeatCount )
             return
 
@@ -707,7 +707,7 @@ class BasePlugin:
         if self.HeartbeatCount % ( 3600 // HEARTBEAT) == 0:
             sendZigateCmd(self,"0017", "")
 
-        if len(self.ZigateComm.zigateSendingFIFO) >= MAX_FOR_ZIGATE_BUZY:
+        if self.ZigateComm.loadTransmit() >= MAX_FOR_ZIGATE_BUZY:
             # This mean that 4 commands are on the Queue to be executed by Zigate.
             busy_ = True
 
@@ -730,8 +730,8 @@ class BasePlugin:
 
         # Maintain trend statistics
         self.statistics._Load = 0
-        if len(self.ZigateComm.zigateSendingFIFO) >= MAX_FOR_ZIGATE_BUZY:
-            self.statistics._Load = len(self.ZigateComm.zigateSendingFIFO)
+        if self.ZigateComm.loadTransmit() >= MAX_FOR_ZIGATE_BUZY:
+            self.statistics._Load = self.ZigateComm.loadTransmit()
 
         self.statistics.addPointforTrendStats( self.HeartbeatCount )
 
