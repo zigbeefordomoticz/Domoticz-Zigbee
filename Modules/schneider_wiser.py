@@ -151,7 +151,7 @@ def schneider_wiser_registration( self, Devices, key ):
         Hattribute = "%04x" %0x5011
         data_type = "42" # String
         data = '656e'  # 'en'
-        loggingSchneider( self, 'Debug', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
+        loggingSchneider( self, 'Debug', "Schneider Write Attribute (locale: english) %s with value %s / cluster: %s, attribute: %s type: %s"
                 %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
         write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
 
@@ -703,12 +703,12 @@ def schneiderRenforceent( self, NWKID):
             pass
     if 'Schneider Wiser' in self.ListOfDevices[NWKID]:
         if 'HACT Mode' in self.ListOfDevices[NWKID]['Schneider Wiser']:
-            if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
+            if not self.busy and self.ZigateComm.loadTransmit() <= MAX_LOAD_ZIGATE:
                 schneider_hact_heating_mode( self, NWKID, self.ListOfDevices[NWKID]['Schneider Wiser']['HACT Mode'])
             else:
                 rescheduleAction = True
         if 'HACT FIP Mode' in self.ListOfDevices[NWKID]['Schneider Wiser']:
-            if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
+            if not self.busy and self.ZigateComm.loadTransmit() <= MAX_LOAD_ZIGATE:
                 schneider_hact_fip_mode( self, NWKID,  self.ListOfDevices[NWKID]['Schneider Wiser']['HACT FIP Mode'])
             else:
                 rescheduleAction = True

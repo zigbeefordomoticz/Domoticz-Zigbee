@@ -19,9 +19,6 @@ def pollingPhilips( self, key ):
     The frequency is defined in the pollingSchneider parameter (in number of seconds)
     """
 
-    #if  ( self.busy or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE):
-    #    return True
-
     ReadAttributeRequest_0006_0000( self, key)
     ReadAttributeRequest_0008_0000( self, key)
 
