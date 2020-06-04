@@ -301,8 +301,6 @@ class ZigateTransport(object):
             Domoticz.Error("sendData_internal - receiving a non hexa Data: >%s<" %datas)
             return
 
-
-
         # PDM Management.
         # When PDM traffic is ongoing we cannot interupt, so we need to FIFO all other commands until the PDMLock is released
         #PDM_COMMANDS = ( '8300', '8200', '8201', '8204', '8205', '8206', '8207', '8208' )
@@ -319,7 +317,7 @@ class ZigateTransport(object):
                 # That is a Standard command (not PDM on  Host), let's process as usall
                 self._addCmdToWaitFor8000Queue(cmd, datas)
                 if self.zmode == 'ZigBee' and int(cmd, 16) in CMD_DATA:  # We do wait only if required and if not in AGGRESSIVE mode
-                    self._addCmdToWaitForDataQueue(CMD_DATA[int(cmd, 16)], cmd, datas)
+                    self._addCmdToWaitForDataQueue( CMD_DATA[int(cmd, 16)], cmd, datas)
             self._sendData(cmd, datas )
 
         else:
@@ -572,7 +570,7 @@ class ZigateTransport(object):
                 self.loggingReceive( 'Debug',"_process8000 - Empty Queue")
             else:
                 Domoticz.Log("expectedCommand %s PacketType: %s " %(expectedCommand[0], PacketType ))
-                if int(expectedCommand[0], 16) != int(PacketType, 16):
+                if expectedCommand[0] and int(expectedCommand[0], 16) != int(PacketType, 16):
                     self.loggingReceive( 'Debug',"receiveData - sync error : Expecting %s and Received: %s" \
                             % (expectedCommand[0], PacketType))
             
