@@ -73,9 +73,8 @@ class ZigateTransport(object):
         self.statistics = statistics
 
         self.pluginconf = pluginconf
-        self.reTransmit = pluginconf.pluginConf['reTransmit']
+
         self.zmode = pluginconf.pluginConf['zmode']
-        self.sendDelay = pluginconf.pluginConf['sendDelay']
         self.zTimeOut = pluginconf.pluginConf['zTimeOut']
         init_sqn_stack (self)
 
@@ -191,7 +190,6 @@ class ZigateTransport(object):
 
     def PDMLockStatus( self ):
         return self.PDMCommandOnly
-
 
     # Queue Management
     def _printSendQueue(self):
