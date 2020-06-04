@@ -12,7 +12,7 @@ from datetime import datetime
 
 from Modules.tools import is_hex
 from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_RESPONSES, ZIGATE_COMMANDS, RETRANSMIT_COMMAND
-from Modules.sqnMgmt import init_sqn_stack, generate_new_internal_sqn, add_external_sqn
+from Modules.sqnMgmt import sqn_init_stack, sqn_generate_new_internal_sqn, sqn_add_external_sqn
 
 
 STANDALONE_MESSAGE =[]
@@ -76,7 +76,7 @@ class ZigateTransport(object):
 
         self.zmode = pluginconf.pluginConf['zmode']
         self.zTimeOut = pluginconf.pluginConf['zTimeOut']
-        init_sqn_stack (self)
+        sqn_init_stack (self)
 
         self.loggingFileHandle = loggingFileHandle
 
@@ -285,7 +285,7 @@ class ZigateTransport(object):
     def sendData(self, cmd, datas , delay=None):
         self.loggingSend('Debug', "sendData - %s %s FIFO: %s" %(cmd, datas, len(self.zigateSendQueue)))
         self.sendData_internal (cmd, datas )
-        return generate_new_internal_sqn(self)
+        return sqn_generate_new_internal_sqn(self)
 
     def sendData_internal(self, cmd, datas):
         '''
@@ -455,7 +455,7 @@ class ZigateTransport(object):
         if MsgType == "8000":  # We are receiving a Status
             # We have receive a Status code in response to a command.
             if Status:
-                add_external_sqn (self, SEQ)
+                sqn_add_external_sqn (self, SEQ)
                 self._process8000(Status, PacketType, frame)
             self.F_out(frame)  # Forward the message to plugin for further processing
             return
