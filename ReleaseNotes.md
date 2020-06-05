@@ -12,8 +12,8 @@ If you want to contribue , please let us know , we are looking for help in vario
 - improving the plugin
 - increasing the level of documentation for end user
 
-## June 2020 - 4.9.001 (Last release supporting Firmware below 3.1c)
 
+##  5 June 2020 - 4.9.1 (Last release supporting Firmware below 3.1c)
 - [Technical] - Ready for PDM on host.
 - [Technical] - Scrip for PiZiGate on Fedora distribution
 - [Technical] - Provide Firmware
@@ -26,6 +26,8 @@ If you want to contribue , please let us know , we are looking for help in vario
 - [Technical] - Refactor a number of Modules
 - [Hardware] - Provides a number of additionnal Devices
 - [Hardware] - Implementation of BSO profalux
+- [WebAdmin] - Update Translation for French and Dutch
+- [Technical] - Implement a Reset after delay of the Switch Selector (push button)
 - [Hardware] - Support of Schneider sWiser, HACT and Thermostat.
 - [WebAdmin] - Debug menu move to Tools
 - [WebAdmin] - Allow to enable pairing on one specific router
