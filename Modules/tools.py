@@ -21,11 +21,9 @@ from Classes.AdminWidgets import AdminWidgets
 from Modules.database import WriteDeviceList
 
 def is_hex(s):
+
     hex_digits = set("0123456789abcdefABCDEF")
-    for char in s:
-        if not (char in hex_digits):
-            return False
-    return True
+    return all(char in hex_digits for char in s)
 
 def returnlen(taille , value) :
     while len(value)<taille:
@@ -41,13 +39,25 @@ def Hex_Format(taille, value):
         value="0"+value
     return str(value)
 
-def IEEEExist(self, IEEE) :
+def voltage2batteryP( voltage, volt_max, volt_min):
+    
+    if voltage > volt_max: 
+        ValueBattery = 100
+
+    elif voltage < volt_min: 
+        ValueBattery = 0
+
+    else: 
+        ValueBattery = 100 - round( ((volt_max - (voltage))/(volt_max - volt_min)) * 100 )
+
+    return round(ValueBattery)
+
+def IEEEExist(self, IEEE):
     #check in ListOfDevices for an existing IEEE
-    if IEEE :
-        if IEEE in self.ListOfDevices and IEEE != '' :
-            return True
-        else:
-            return False
+    return IEEE in self.ListOfDevices and IEEE != ''
+
+def NwkIdExist( self, Nwkid):
+    return Nwkid in self.ListOfDevices
 
 def getSaddrfromIEEE(self, IEEE) :
     # Return Short Address if IEEE found.
@@ -56,10 +66,37 @@ def getSaddrfromIEEE(self, IEEE) :
         for sAddr in self.ListOfDevices :
             if self.ListOfDevices[sAddr]['IEEE'] == IEEE :
                 return sAddr
-
-    Domoticz.Log("getSaddrfromIEEE no IEEE found " )
-
     return ''
+    
+def getListOfEpForCluster( self, NwkId, SearchCluster):
+    """
+    NwkId: Device
+    Cluster: Cluster for which we are looking for Ep
+
+    return List of Ep where Cluster is found and at least ClusterType is not empty. (If ClusterType is empty, this 
+    indicate that there is no Widget associated and all informations in Ep are not used)
+    In case ClusterType exists and not empty at Global Level, then just return the list of Ep for which Cluster is found
+    """
+
+    EpList = []
+    oldFashion = 'ClusterType' in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]['ClusterType'] != {} and self.ListOfDevices[NwkId]['ClusterType'] != ''
+    for Ep in self.ListOfDevices[NwkId]['Ep']:
+        if SearchCluster not in self.ListOfDevices[NwkId]['Ep'][ Ep ]:
+            #Domoticz.Log("---- Cluster %s on %s" %( SearchCluster, str(self.ListOfDevices[NwkId]['Ep'][Ep] ) ))
+            continue
+
+        if oldFashion:
+            EpList.append( Ep )
+        else:
+            if 'ClusterType' in self.ListOfDevices[NwkId]['Ep'][Ep] and \
+                    self.ListOfDevices[NwkId]['Ep'][Ep]['ClusterType'] != {} and \
+                    self.ListOfDevices[NwkId]['Ep'][Ep]['ClusterType'] != '' :
+                EpList.append( Ep )
+            #else:
+            #    Domoticz.Log("------------> Skiping Cluster: %s Clustertype not found in %s" %(  SearchCluster, str(self.ListOfDevices[ NwkId]['Ep'][Ep]) ) )
+
+    #Domoticz.Log("----------> NwkId: %s Ep: %s Cluster: %s oldFashion: %s EpList: %s" %( NwkId, Ep, SearchCluster, oldFashion, EpList))
+    return EpList
 
 def getEPforClusterType( self, NWKID, ClusterType ) :
 
@@ -87,89 +124,154 @@ def getClusterListforEP( self, NWKID, Ep ) :
                 ClusterList.append(cluster)
     return ClusterList
 
+def getEpForCluster( self, nwkid, ClusterId):
+    """ 
+    Return the Ep or a list of Ep associated to the ClusterId 
+    If not found return Ep: 01
+    """
 
-def DeviceExist(self, Devices, newNWKID , IEEE = ''):
+    EPout = []
+    for tmpEp in self.ListOfDevices[nwkid]['Ep']:
+        if ClusterId in self.ListOfDevices[nwkid]['Ep'][tmpEp]:
+            EPout.append( tmpEp )
 
-    #Validity check
-    if newNWKID == '':
-        return False
+    if not EPout:
+        return EPout
+
+    if len(self.ListOfDevices[nwkid]['Ep']) == 1:
+        return [ self.ListOfDevices[nwkid]['Ep'].keys() ]
+
+    return EPout
+
+def DeviceExist(self, Devices, lookupNwkId , lookupIEEE = ''):
+    """
+    DeviceExist 
+        check if the Device is existing in the ListOfDevice.
+        lookupNwkId Mandatory field
+        lookupIEEE Optional
+    Return
+        True if object found
+        False if not found
+    """
 
     found = False
+    #Validity check
+    if lookupNwkId == '':
+        return False
 
-    #check in ListOfDevices, we can return only Found
-    if newNWKID in self.ListOfDevices:
-        if 'Status' in self.ListOfDevices[newNWKID] :
-            if self.ListOfDevices[newNWKID]['Status'] != 'UNKNOWN':
+    #1- Check if found in ListOfDevices
+    #   Verify that Status is not 'UNKNOWN' otherwise condider not found
+    if lookupNwkId in self.ListOfDevices:
+        if 'Status' in self.ListOfDevices[lookupNwkId] :
+            # Found, let's check the Status
+            if self.ListOfDevices[lookupNwkId]['Status'] != 'UNKNOWN':
                 found = True
 
-                if not IEEE :
-                    return True
+    # 2- We might have found it with the lookupNwkId 
+    # If we didnt find it, we should check if this is not a new ShortId  
+    if lookupIEEE:
+        if lookupIEEE not in self.IEEE2NWK:
+            # Not found
+            return found
+        
+        # We found IEEE, let's get the Short Address 
+        exitsingNwkId = self.IEEE2NWK[ lookupIEEE ]
+        if exitsingNwkId == lookupNwkId:
+            # Everything fine, we have found it
+            # and this is the same ShortId as the one existing
+            return True
 
-    # Not found with NWKID, let's check in the IEEE
-    #If given, let's check if the IEEE is already existing. In such we have a device communicating with a new Saddr
-    if IEEE:
-        for existingIEEEkey in list(self.IEEE2NWK):
-            if existingIEEEkey == IEEE :
-                # This device is already in Domoticz 
-                existingNWKkey = self.IEEE2NWK[IEEE]
-                if existingNWKkey == newNWKID :        #Check that I'm not myself
-                    continue
+        if exitsingNwkId not in self.ListOfDevices:
+            # Should not happen
+            # We have an entry in IEEE2NWK, but no corresponding
+            # in ListOfDevices !!
+            # Let's clenup
+            del self.IEEE2NWK[ lookupIEEE ]
+            return False
 
-                if existingNWKkey not in self.ListOfDevices:
-                    # In fact this device doesn't really exist ... The cleanup was not correctly done in IEEE2NWK
-                    del self.IEEE2NWK[IEEE]
-                    found = False
-                    continue
+        if 'Status' not in self.ListOfDevices[ exitsingNwkId ]:
+            # Should not happen
+            # That seems not correct
+            # We might have to do some cleanup here !
+            # Cleanup
+            # Delete the entry in IEEE2NWK as it will be recreated in Decode004d
+            del self.IEEE2NWK[ lookupIEEE ]
 
-                # Make sure this device is valid 
-                if 'Status' not in  self.ListOfDevices[existingNWKkey]:
-                    found = False
-                    continue
-                    
-                if self.ListOfDevices[existingNWKkey]['Status'] not in ( 'inDB' , 'Left', 'Leave'):
-                    found = False
-                    continue
+            # Delete the all Data Structure
+            del self.ListOfDevices[ exitsingNwkId ]
+            return False
 
-                # We got a new Network ID for an existing IEEE. So just re-connect.
-                # - mapping the information to the new newNWKID
+        if self.ListOfDevices[ exitsingNwkId ]['Status'] in ( '004d', '0045', '0043', '8045', '8043', 'UNKNOW'):
+            # We are in the discovery/provisioning process,
+            # and the device got a new Short Id
+            # we need to restart from the begiging and remove all existing datastructutre.
+            # In case we receive asynchronously messages (which should be possible), they must be
+            # droped in the corresponding Decodexxx function
+            Domoticz.Status("DeviceExist - Device %s changed its ShortId: from %s to %s during provisioing. Restarting !" 
+                %( lookupIEEE, exitsingNwkId , lookupNwkId ))
 
-                self.ListOfDevices[newNWKID] = dict(self.ListOfDevices[existingNWKkey])
+            # Delete the entry in IEEE2NWK as it will be recreated in Decode004d
+            del self.IEEE2NWK[ lookupIEEE ]
 
-                self.IEEE2NWK[IEEE] = newNWKID
+            # Delete the all Data Structure
+            del self.ListOfDevices[ exitsingNwkId ]
 
-                Domoticz.Status("NetworkID : " +str(newNWKID) + " is replacing " +str(existingNWKkey) + " and is attached to IEEE : " +str(IEEE) )
-                devName = ''
-                for x in Devices:
-                    if Devices[x].DeviceID == existingIEEEkey:
-                        devName = Devices[x].Name
+            return False
 
-                if self.groupmgt:
-                    # We should check if this belongs to a group
-                    self.groupmgt.deviceChangeNetworkID( existingNWKkey, newNWKID)
+        # At that stage, we have found an entry for the IEEE, but doesn't match
+        # the coming Short Address lookupNwkId.
+        # Most likely , device has changed its NwkId   
+        found = True        
+        reconnectNWkDevice( self, lookupNwkId, lookupIEEE, exitsingNwkId)
 
-                self.adminWidgets.updateNotificationWidget( Devices, 'Reconnect %s with %s/%s' %( devName, newNWKID, existingIEEEkey ))
-
-                # We will also reset ReadAttributes
-                if 'ReadAttributes' in self.ListOfDevices[newNWKID]:
-                    del self.ListOfDevices[newNWKID]['ReadAttributes']
-
-                if 'ConfigureReporting' in self.ListOfDevices[newNWKID]:
-                    del self.ListOfDevices[newNWKID]['ConfigureReporting']
-                self.ListOfDevices[newNWKID]['Heartbeat'] = 0
-
-                # MostLikely exitsingKey(the old NetworkID)  is not needed any more
-                removeNwkInList( self, existingNWKkey )    
-
-                if self.ListOfDevices[newNWKID]['Status'] in ( 'Left', 'Leave') :
-                    Domoticz.Log("DeviceExist - Update Status from %s to 'inDB' for NetworkID : %s" %(self.ListOfDevices[newNWKID]['Status'], newNWKID) )
-                    self.ListOfDevices[newNWKID]['Status'] = 'inDB'
-                    self.ListOfDevices[newNWKID]['Heartbeat'] = 0
-                    WriteDeviceList(self, 0)
-
-                found = True
+        # Let's send a Notfification
+        devName = ''
+        for x in Devices:
+            if Devices[x].DeviceID == lookupIEEE:
+                devName = Devices[x].Name
                 break
-
+        self.adminWidgets.updateNotificationWidget( Devices, 'Reconnect %s with %s/%s' %( devName, lookupNwkId, lookupIEEE ))
+ 
     return found
+
+def reconnectNWkDevice( self, newNWKID, IEEE, oldNWKID):
+
+    # We got a new Network ID for an existing IEEE. So just re-connect.
+    # - mapping the information to the new newNWKID
+    if oldNWKID not in self.ListOfDevices:
+        return
+
+    self.ListOfDevices[newNWKID] = dict(self.ListOfDevices[oldNWKID])
+    self.IEEE2NWK[IEEE] = newNWKID
+
+    Domoticz.Status("NetworkID : " +str(newNWKID) + " is replacing " +str(oldNWKID) + " and is attached to IEEE : " +str(IEEE) )
+
+    if 'ZDeviceName' in self.ListOfDevices[ newNWKID ]:
+        devName = self.ListOfDevices[ newNWKID ]['ZDeviceName']
+
+    if self.groupmgt:
+        # We should check if this belongs to a group
+        self.groupmgt.update_due_to_nwk_id_change( oldNWKID, newNWKID)
+
+    # We will also reset ReadAttributes
+    if 'ReadAttributes' in self.ListOfDevices[newNWKID]:
+        del self.ListOfDevices[newNWKID]['ReadAttributes']
+
+    if 'ConfigureReporting' in self.ListOfDevices[newNWKID]:
+        del self.ListOfDevices[newNWKID]['ConfigureReporting']
+
+    self.ListOfDevices[newNWKID]['Heartbeat'] = 0
+
+    # MostLikely exitsingKey(the old NetworkID)  is not needed any more
+    removeNwkInList( self, oldNWKID )    
+
+    if self.ListOfDevices[newNWKID]['Status'] in ( 'Left', 'Leave') :
+        Domoticz.Log("DeviceExist - Update Status from %s to 'inDB' for NetworkID : %s" %(self.ListOfDevices[newNWKID]['Status'], newNWKID) )
+        self.ListOfDevices[newNWKID]['Status'] = 'inDB'
+        self.ListOfDevices[newNWKID]['Heartbeat'] = 0
+        WriteDeviceList(self, 0)
+
+    return
 
 def removeNwkInList( self, NWKID) :
 
@@ -221,8 +323,7 @@ def removeDeviceInList( self, Devices, IEEE, Unit ) :
             Domoticz.Status('Device %s with IEEE: %s fully removed from the system.' %(Devices[Unit].Name, IEEE))
 
             return True
-        else:
-            return False
+        return False
 
 
 
@@ -271,57 +372,43 @@ def timeStamped( self, key, Type ):
         self.ListOfDevices[key]['Stamp']['Time'] = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
         self.ListOfDevices[key]['Stamp']['MsgType'] = "%4x" %(Type)
 
-def updSQN_mainpower(self, key, newSQN):
-
-    return
-
-def updSQN_battery(self, key, newSQN):
-
-    if 'SQN' in self.ListOfDevices[key]:
-        oldSQN = self.ListOfDevices[key]['SQN']
-        if oldSQN == '' or oldSQN is None or oldSQN == {} :
-            oldSQN='00'
-    else :
-        oldSQN='00'
-
-    try:
-        if int(oldSQN,16) != int(newSQN,16) :
-            self.ListOfDevices[key]['SQN'] = newSQN
-            if ( int(oldSQN,16)+1 != int(newSQN,16) ) and newSQN != "00" :
-                # Out of seq
-                return
-    except:
-        self.ListOfDevices[key]['SQN'] = {}
-    return
-
-        
 
 def updSQN( self, key, newSQN) :
 
-    if key not in self.ListOfDevices or \
-             newSQN == {} or newSQN == '' or newSQN is None:
+    if key not in self.ListOfDevices:
+        return
+    if newSQN == {}:
+        return
+    if newSQN is None:
         return
 
-    if 'PowerSource' in self.ListOfDevices[key] :
-        if self.ListOfDevices[key]['PowerSource'] == 'Main':
-            # Device on Main Power. SQN is increasing independetly of the object
-           # updSQN_mainpower( self, key, newSQN)
-            pass
-        elif  self.ListOfDevices[key]['PowerSource'] == 'Battery':
-            # On Battery, each object managed its SQN
-            updSQN_battery( self, key, newSQN)
+    #Domoticz.Log("-->SQN updated %s from %s to %s" %(key, self.ListOfDevices[key]['SQN'], newSQN))
+    self.ListOfDevices[key]['SQN'] = newSQN
+    return
 
-    elif 'MacCapa' in self.ListOfDevices[key]:
-        if self.ListOfDevices[key]['MacCapa'] in ( '84', '8e'):     # So far we have a good understanding on 
-            # Device on Main Power. SQN is increasing independetly of the object
-            #updSQN_mainpower( self, key, newSQN)
-            pass
-        elif self.ListOfDevices[key]['MacCapa'] == '80':
-            # On Battery, each object managed its SQN
-            updSQN_battery( self, key, newSQN)
-        else:
-            self.ListOfDevices[key]['SQN'] = {}
+def updRSSI( self, key, RSSI):
 
+    if key not in self.ListOfDevices:
+        return
+
+    if 'RSSI' not in self.ListOfDevices[ key ]:
+        self.ListOfDevices[ key ]['RSSI'] = {}
+        
+    if RSSI == '00':
+        return
+    
+    if is_hex( RSSI ): # Check if the RSSI is Correct
+
+        self.ListOfDevices[ key ]['RSSI'] = int( RSSI, 16)
+
+        if 'RollingRSSI' not in self.ListOfDevices[ key ]:
+           self.ListOfDevices[ key ]['RollingRSSI'] = []   
+
+        if len(self.ListOfDevices[key]['RollingRSSI']) > 10:
+            del self.ListOfDevices[key]['RollingRSSI'][0]
+        self.ListOfDevices[ key ]['RollingRSSI'].append( int(RSSI, 16))
+
+    return
 
 #### Those functions will be use with the new DeviceConf structutre
 
@@ -341,10 +428,11 @@ def getTypebyCluster( self, Cluster ) :
 
     if Cluster == '' or Cluster is None :
         return ''
+
     if Cluster in clustersType :
         return clustersType[Cluster]
-    else :
-        return ''
+
+    return ''
 
 def getListofClusterbyModel( self, Model , InOut ) :
     """
@@ -376,12 +464,12 @@ def getListofOutClusterbyModel( self, Model ) :
     return getListofClusterbyModel( self, Model, 'Epout' )
 
     
-def getListofTypebyModel( self, Model ) :
+def getListofTypebyModel( self, Model ):
     """
     Provide a list of Tuple ( Ep, Type ) for a given Model name if found. Else return an empty list
         Type is provided as a list of Type already.
     """
-    EpType = list()
+    EpType = []
     if Model in self.DeviceConf :
         for ep in self.DeviceConf[Model]['Epin'] :
             if 'Type' in self.DeviceConf[Model]['Epin'][ep]:
@@ -399,14 +487,14 @@ def getModelbyZDeviceIDProfileID( self, ZDeviceID, ProfileID):
     return ''
 
 
-def getListofType( self, Type ) :
+def getListofType( self, Type ):
     """
     For a given DeviceConf Type "Plug/Power/Meters" return a list of Type [ 'Plug', 'Power', 'Meters' ]
     """
 
     if Type == '' or Type is None :
         return ''
-    retList = list()
+    retList = []
     retList= Type.split("/")
     return retList
 
@@ -444,17 +532,17 @@ def xy_to_rgb(x, y, brightness=1):
     x = 0.313
     y = 0.329
 
-    x = float(x);
-    y = float(y);
-    z = 1.0 - x - y;
+    x = float(x)
+    y = float(y)
+    z = 1.0 - x - y
 
-    Y = brightness;
-    X = (Y / y) * x;
-    Z = (Y / y) * z;
+    Y = brightness
+    X = (Y / y) * x
+    Z = (Y / y) * z
 
-    r =  X * 1.656492 - Y * 0.354851 - Z * 0.255038;
-    g = -X * 0.707196 + Y * 1.655397 + Z * 0.036152;
-    b =  X * 0.051713 - Y * 0.121364 + Z * 1.011530;
+    r =  X * 1.656492 - Y * 0.354851 - Z * 0.255038
+    g = -X * 0.707196 + Y * 1.655397 + Z * 0.036152
+    b =  X * 0.051713 - Y * 0.121364 + Z * 1.011530
 
     r = 12.92 * r if r <= 0.0031308 else (1.0 + 0.055) * pow(r, (1.0 / 2.4)) - 0.055
     g = 12.92 * g if g <= 0.0031308 else (1.0 + 0.055) * pow(g, (1.0 / 2.4)) - 0.055
@@ -489,112 +577,115 @@ def rgb_to_hsl(rgb):
 
     return h, s, l
 
+def decodeMacCapa( inMacCapa ):
 
-def loggingPairing( self, logType, message):
+    maccap = int(inMacCapa,16)
+    alternatePANCOORDInator = (maccap & 0b00000001)
+    deviceType              = (maccap & 0b00000010) >> 1
+    powerSource             = (maccap & 0b00000100) >> 2
+    receiveOnIddle          = (maccap & 0b00001000) >> 3
+    securityCap             = (maccap & 0b01000000) >> 6
+    allocateAddress         = (maccap & 0b10000000) >> 7
 
-    if self.pluginconf.pluginConf['debugPairing'] and logType == 'Debug':
-        Domoticz.Log( message )
-    elif  logType == 'Log':
-        Domoticz.Log( message )
-    elif logType == 'Status':
-        Domoticz.Status( message )
+    MacCapa = []
+    if alternatePANCOORDInator:
+        MacCapa.append('Able to act Coordinator')
+    if deviceType:
+        MacCapa.append('Full-Function Device')
+    else:
+        MacCapa.append('Reduced-Function Device')
+    if powerSource:
+        MacCapa.append('Main Powered')
+    if receiveOnIddle:
+        MacCapa.append('Receiver during Idle')
+    if securityCap:
+        MacCapa.append('High security')
+    else:
+        MacCapa.append('Standard security')
+    if allocateAddress:
+        MacCapa.append('NwkAddr should be allocated')
+    else:
+        MacCapa.append('NwkAddr need to be allocated')
+    return MacCapa
 
-    return
+        
+def ReArrangeMacCapaBasedOnModel( self, nwkid, inMacCapa):
+    """
+    Function to check if the MacCapa should not be updated based on Model.
+    As they are some bogous Devices which tell they are Main Powered and they are not !
 
-def _logginfilter( self, message, nwkid):
+    Return the old or the revised MacCapa and eventually fix some Attributes
+    """
 
-    if nwkid:
-        nwkid = nwkid.lower()
-        _debugMatchId =  self.pluginconf.pluginConf['debugMatchId'].lower().split(',')
-        if 'ffff' in _debugMatchId:
-            Domoticz.Log( message )
-        elif nwkid in _debugMatchId:
-            Domoticz.Log( message )
-        elif nwkid == 'ffff':
-            Domoticz.Log( message )
-        return
-    #else:
-    #    Domoticz.Log( message )
+    if nwkid not in self.ListOfDevices:
+        Domoticz.Error("%s not known !!!" %nwkid)
+        return inMacCapa
 
+    if 'Model' not in self.ListOfDevices[nwkid]:
+        return inMacCapa
 
-def loggingCommand( self, logType, message, nwkid=None):
-    if self.pluginconf.pluginConf['debugCommand'] and logType == 'Debug':
-        _logginfilter( self, message, nwkid)
-    elif  logType == 'Log':
-        Domoticz.Log( message )
-    elif logType == 'Status':
-        Domoticz.Status( message )
-    return
+    # Convert battery annouced devices to main powered
+    if self.ListOfDevices[nwkid]['Model'] in ( 'TI0001', 'TS0011'):
+        # Livol Switch, must be converted to Main Powered
+        # Patch some status as Device Annouced doesn't provide much info
+        self.ListOfDevices[nwkid]['LogicalType'] = 'Router'
+        self.ListOfDevices[nwkid]['DevideType'] = 'FFD'
+        self.ListOfDevices[nwkid]['MacCapa'] = '8e'
+        self.ListOfDevices[nwkid]['PowerSource'] = 'Main'
+        return '8e'
 
-def loggingDatabase( self, logType, message, nwkid=None):
-    if self.pluginconf.pluginConf['debugDatabase'] and logType == 'Debug':
-        _logginfilter( self, message, nwkid)
-    elif  logType == 'Log':
-        Domoticz.Log( message )
-    elif logType == 'Status':
-        Domoticz.Status( message )
-    return
+    # Convert Main Powered device to Battery 
+    if self.ListOfDevices[nwkid]['Model'] in ( 'lumi.remote.b686opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b286opcn01', 
+                                             'lumi.remote.b686opcn01-bulb','lumi.remote.b486opcn01-bulb','lumi.remote.b286opcn01-bulb',
+                                             'lumi.remote.b686opcn01' ):
+        # Aqara Opple Switch, must be converted to Battery Devices
+        self.ListOfDevices[nwkid]['MacCapa'] = '80'
+        self.ListOfDevices[nwkid]['PowerSource'] = 'Battery'
+        if (
+            'Capability' in self.ListOfDevices[nwkid]
+            and 'Main Powered' in self.ListOfDevices[nwkid]['Capability']
+        ):
+            self.ListOfDevices[nwkid]['Capability'].remove( 'Main Powered')
+        return '80'
 
-def loggingPlugin( self, logType, message, nwkid=None):
+    return inMacCapa
 
-    if self.pluginconf.pluginConf['debugPlugin'] and logType == 'Debug':
-        _logginfilter( self, message, nwkid)
-    elif  logType == 'Log':
-        Domoticz.Log( message )
-    elif logType == 'Status':
-        Domoticz.Status( message )
-    return
+def mainPoweredDevice( self, nwkid):
+    """
+    return True is it is Main Powered device
+    return False if it is not Main Powered
+    """
 
-def loggingCluster( self, logType, message, nwkid=None):
+    if nwkid not in self.ListOfDevices:
+        Domoticz.Log("mainPoweredDevice - Unknown Device: %s" %nwkid)
+        return False
 
-    if self.pluginconf.pluginConf['debugCluster'] and logType == 'Debug':
-        _logginfilter( self, message, nwkid)
-    elif  logType == 'Log':
-        Domoticz.Log( message )
-    elif logType == 'Status':
-        Domoticz.Status( message )
-    return
+    mainPower = False
+    if (
+        'MacCapa' in self.ListOfDevices[nwkid]
+        and self.ListOfDevices[nwkid]['MacCapa'] != {}
+    ):
+        mainPower = ( '8e' == self.ListOfDevices[nwkid]['MacCapa']) or ( '84' ==  self.ListOfDevices[nwkid]['MacCapa'] )
 
-def loggingOutput( self, logType, message, nwkid=None):
+    if (
+        not mainPower
+        and 'PowerSource' in self.ListOfDevices[nwkid]
+        and self.ListOfDevices[nwkid]['PowerSource'] != {}
+    ):
+        mainPower = ('Main' == self.ListOfDevices[nwkid]['PowerSource'])
 
-    if self.pluginconf.pluginConf['debugOutput'] and logType == 'Debug':
-        _logginfilter( self, message, nwkid)
-    elif  logType == 'Log':
-        Domoticz.Log( message )
-    elif logType == 'Status':
-        Domoticz.Status( message )
-    return
+    # We need to take in consideration that Livolo is reporting a MacCapa of 0x80
+    # That Aqara Opple are reporting MacCap 0x84 while they are Battery devices
+    if 'Model' in self.ListOfDevices[nwkid]:
+        if self.ListOfDevices[nwkid]['Model'] in ('lumi.remote.b686opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b286opcn01',
+                                                  'lumi.remote.b686opcn01-bulb', 'lumi.remote.b486opcn01-bulb', 'lumi.remote.b286opcn01-bulb'):
+            mainPower = False
 
-def loggingInput( self, logType, message, nwkid=None):
+        if self.ListOfDevices[nwkid]['Model'] in ( 'TI0001', 'TS0011'):
+            mainPower = True
 
-    if self.pluginconf.pluginConf['debugInput'] and logType == 'Debug':
-        _logginfilter( self, message, nwkid)
-    elif  logType == 'Log':
-        Domoticz.Log( message )
-    elif logType == 'Status':
-        Domoticz.Status( message )
-    return
+    return mainPower
 
-def loggingWidget( self, logType, message, nwkid=None):
-
-    if self.pluginconf.pluginConf['debugWidget'] and logType == 'Debug':
-        _logginfilter( self, message, nwkid)
-    elif  logType == 'Log':
-        Domoticz.Log( message )
-    elif logType == 'Status':
-        Domoticz.Status( message )
-    return
-
-
-def loggingHeartbeat( self, logType, message, nwkid=None):
-
-    if self.pluginconf.pluginConf['debugHeartbeat'] and logType == 'Debug':
-        _logginfilter( self, message, nwkid)
-    elif  logType == 'Log':
-        Domoticz.Log( message )
-    elif logType == 'Status':
-        Domoticz.Status( message )
-    return
 
 def loggingMessages( self, msgtype, sAddr=None, ieee=None, RSSI=None, SQN=None):
 
@@ -625,24 +716,118 @@ def loggingMessages( self, msgtype, sAddr=None, ieee=None, RSSI=None, SQN=None):
     Domoticz.Log("Device activity for | %4s | %14s | %4s | %16s | %3s | 0x%02s |" \
         %( msgtype, zdevname, sAddr, ieee, int(RSSI,16), SQN))
 
-def mainPoweredDevice( self, nwkid):
+
+def lookupForIEEE( self, nwkid , reconnect=False):
+
     """
-    return True is it is Main Powered device
-    return False if it is not Main Powered
+    Purpose of this function is to search a Nwkid in the Neighbours table and find an IEEE
     """
 
-    if nwkid not in self.ListOfDevices:
-        Domoticz.Log("mainPoweredDevice - Unknown Device: %s" %nwkid)
-        return False
+    Domoticz.Log("lookupForIEEE - looking for %s in Neighbourgs table" %nwkid)
+    for key in self.ListOfDevices:
+        if 'Neighbours' not in self.ListOfDevices[key]:
+            continue
 
-    mainPower = False
-    if 'MacCapa' in self.ListOfDevices[nwkid]:
-        if self.ListOfDevices[nwkid]['MacCapa'] != {}:
-            mainPower = ( '8e' == self.ListOfDevices[nwkid]['MacCapa']) or ( '84' ==  self.ListOfDevices[nwkid]['MacCapa'] )
+        if len(self.ListOfDevices[key]['Neighbours']) == 0:
+            continue
 
-    if not mainPower and 'PowerSource' in self.ListOfDevices[nwkid]:
-        if self.ListOfDevices[nwkid]['PowerSource'] != {}:
-            mainPower = ('Main' == self.ListOfDevices[nwkid]['PowerSource'])
+        # We are interested only on the last one
+        lastScan = self.ListOfDevices[key]['Neighbours'][-1]
+        for item in lastScan[ 'Devices' ]:            
+            if nwkid not in item:
+                continue
+            # Found !
+            if '_IEEE' in item[ nwkid ]:
+                ieee = item[ nwkid ]['_IEEE']
+                oldNWKID = 'none'
+                if ieee in self.IEEE2NWK:
+                    oldNWKID = self.IEEE2NWK[ ieee ]
+                    if oldNWKID not in self.ListOfDevices:
+                        Domoticz.Log("lookupForIEEE found an inconsitency %s nt existing but pointed by %s"
+                            %( oldNWKID, ieee ))
+                        del self.IEEE2NWK[ ieee ]
+                        return None
+                    if reconnect:
+                        reconnectNWkDevice( self, nwkid, ieee, oldNWKID)
+                Domoticz.Log("lookupForIEEE found IEEE %s for %s in %s known as %s  Neighbourg table" %(ieee, nwkid, oldNWKID, key))
+                return ieee
 
-    return mainPower
+    return None
 
+def lookupForParentDevice( self, nwkid= None, ieee=None):
+
+    """
+    Purpose is to find a router to which this device is connected to.
+    the IEEE will be returned if found otherwise None
+    """
+
+    if nwkid is None and ieee is None:
+        return None
+    
+    # Got Short Address in Input
+    if nwkid and ieee is None:
+        if nwkid not in self.ListOfDevices:
+            return
+        if 'IEEE' in self.ListOfDevices[ nwkid ]:
+            ieee = self.ListOfDevices[ nwkid ]['IEEE']
+
+    # Got IEEE in Input
+    if ieee and nwkid is None:
+        if ieee not in self.IEEE2NWK:
+            return
+        nwkid = self.IEEE2NWK[ nwkid ]
+
+    if mainPoweredDevice( self, nwkid):
+        return ieee
+
+    for PotentialRouter in self.ListOfDevices:
+        if 'Neighbours' not in self.ListOfDevices[PotentialRouter]:
+            continue
+        if len(self.ListOfDevices[PotentialRouter]['Neighbours']) == 0:
+            continue
+        # We are interested only on the last one
+        lastScan = self.ListOfDevices[PotentialRouter]['Neighbours'][-1]
+
+        for item in lastScan[ 'Devices' ]:          
+            if nwkid not in item:
+                continue
+            # found and PotentialRouter is one router
+            if 'IEEE' not in self.ListOfDevices[ PotentialRouter ]:
+                # This is problematic, let's try an other candidate
+                continue
+
+            return self.ListOfDevices[ PotentialRouter ]['IEEE']
+
+    #Nothing found
+    return None
+
+def checkAttribute( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID ):
+    
+    if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = {}
+
+    if not isinstance( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] , dict):
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = {}
+
+    if MsgAttrID not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]:
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = {}
+
+def checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, Value ):
+    
+    checkAttribute( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID )    
+
+    self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = Value
+
+def getAttributeValue (self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID):
+
+    if MsgSrcAddr not in self.ListOfDevices:
+        return None
+    if MsgSrcEp not in self.ListOfDevices[MsgSrcAddr]['Ep']:
+        return None
+    if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
+        return None
+    if not isinstance( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] , dict):
+        return None
+    if MsgAttrID not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]:
+        return None
+    return self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID]

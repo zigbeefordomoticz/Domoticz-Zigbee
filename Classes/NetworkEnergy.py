@@ -20,42 +20,81 @@
 """
 
 
-import datetime
+from datetime import datetime
 from time import time
 import os.path
 import json
 
 import Domoticz
-from Modules.output import sendZigateCmd, maskChannel
+from Modules.basicOutputs import sendZigateCmd, maskChannel
 from Classes.AdminWidgets import AdminWidgets
 
-CHANNELS = [ '11','15','19','20','25','26']
+CHANNELS = [ '11', '12', '13','14','15','16','17','18','19','20','21','22','23','24','25','26']
 DURATION = 0x03
 
 class NetworkEnergy():
 
-    def __init__( self, PluginConf, ZigateComm, ListOfDevices, Devices, HardwareID):
+    def __init__( self, PluginConf, ZigateComm, ListOfDevices, Devices, HardwareID, loggingFileHandle):
 
         self.pluginconf = PluginConf
         self.ZigateComm = ZigateComm
         self.ListOfDevices = ListOfDevices
         self.Devices = Devices
         self.HardwareID = HardwareID
+        self.loggingFileHandle = loggingFileHandle
 
         self.EnergyLevel = None
         self.ScanInProgress = False
         self.nwkidInQueue = []
         self.ticks = 0
 
+    def _loggingStatus( self, message):
+
+        if self.pluginconf.pluginConf['useDomoticzLog']:
+            Domoticz.Status( message )
+        else:
+            if self.loggingFileHandle:
+                Domoticz.Status( message )
+                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+                self.loggingFileHandle.write( message )
+                self.loggingFileHandle.flush()
+            else:
+                Domoticz.Status( message )
+
+    def _loggingLog( self, message):
+
+        if self.pluginconf.pluginConf['useDomoticzLog']:
+            Domoticz.Log( message )
+        else:
+            if self.loggingFileHandle:
+                Domoticz.Log( message )
+                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+                self.loggingFileHandle.write( message )
+                self.loggingFileHandle.flush()
+            else:
+                Domoticz.Log( message )
+
+    def _loggingDebug( self, message):
+
+        if self.pluginconf.pluginConf['useDomoticzLog']:
+            Domoticz.Log( message )
+        else:
+            if self.loggingFileHandle:
+                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+                self.loggingFileHandle.write( message )
+                self.loggingFileHandle.flush()
+            else:
+                Domoticz.Log( message )
+
     def logging( self, logType, message):
 
         self.debugNetworkEnergy = self.pluginconf.pluginConf['debugNetworkEnergy']
         if logType == 'Debug' and self.debugNetworkEnergy:
-            Domoticz.Log( message)
+            self._loggingDebug( message)
         elif logType == 'Log':
-            Domoticz.Log( message )
+            self._loggingLog( message )
         elif logType == 'Status':
-            Domoticz.Status( message)
+            self._loggingStatus( message)
         return
 
 
@@ -351,17 +390,21 @@ class NetworkEnergy():
         if len(self.nwkidInQueue) == 0 and MsgSrc:
             self.logging( 'Log', "NwkScanResponse - Empty Queue, Receive infos from %s" %MsgSrc)
             return
-        elif len(self.nwkidInQueue) == 0:
+
+        if len(self.nwkidInQueue) == 0:
             self.logging( 'Log', "NwkScanResponse - Empty Queue ")
             return
-        elif len(self.nwkidInQueue) > 0 and MsgSrc:
+
+        if len(self.nwkidInQueue) > 0 and MsgSrc:
             root, entry = self.nwkidInQueue.pop()
             self.logging( 'Debug', "NwkScanResponse - Root: %s, Entry: %s, MsgSrc: %s" %(root, entry, MsgSrc))
             if entry != MsgSrc:
                 Domoticz.Log("NwkScanResponse - Unexpected message >%s< from %s, expecting %s" %( MsgData, MsgSrc, entry))
+
         elif  len(self.nwkidInQueue) > 0 :
             root, entry = self.nwkidInQueue.pop()
             self.logging( 'Debug', "NwkScanResponse - Root: %s, Entry: %s" %(root, entry))
+            
         else:
             self.logging( 'Log', "NwkScanResponse - Unexpected: len: %s, MsgSrc: %s" %(len(self.nwkidInQueue), MsgSrc))
             return

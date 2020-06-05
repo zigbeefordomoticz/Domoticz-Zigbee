@@ -24,24 +24,25 @@
 """
 
 
-import datetime
+from datetime import datetime
 import time
 import os.path
 import json
 
 import Domoticz
-from Modules.output import sendZigateCmd
+
 from Classes.AdminWidgets import AdminWidgets
 
 class NetworkMap():
 
-    def __init__( self, PluginConf, ZigateComm, ListOfDevices, Devices, HardwareID):
+    def __init__( self, PluginConf, ZigateComm, ListOfDevices, Devices, HardwareID, loggingFileHandle):
 
         self.pluginconf = PluginConf
         self.ZigateComm = ZigateComm
         self.ListOfDevices = ListOfDevices
         self.Devices = Devices
         self.HardwareID = HardwareID
+        self.loggingFileHandle = loggingFileHandle
 
         self._NetworkMapPhase = 0
         self.LQIreqInProgress = []
@@ -49,15 +50,53 @@ class NetworkMap():
         self.Neighbours = {}                   # Table of Neighbours
 
 
+    def _loggingStatus( self, message):
+
+        if self.pluginconf.pluginConf['useDomoticzLog']:
+            Domoticz.Status( message )
+        else:
+            if self.loggingFileHandle:
+                Domoticz.Status( message )
+                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+                self.loggingFileHandle.write( message )
+                self.loggingFileHandle.flush()
+            else:
+                Domoticz.Status( message )
+
+    def _loggingLog( self, message):
+
+        if self.pluginconf.pluginConf['useDomoticzLog']:
+            Domoticz.Log( message )
+        else:
+            if self.loggingFileHandle:
+                Domoticz.Log( message )
+                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+                self.loggingFileHandle.write( message )
+                self.loggingFileHandle.flush()
+            else:
+                Domoticz.Log( message )
+
+    def _loggingDebug( self, message):
+
+        if self.pluginconf.pluginConf['useDomoticzLog']:
+            Domoticz.Log( message )
+        else:
+            if self.loggingFileHandle:
+                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+                self.loggingFileHandle.write( message )
+                self.loggingFileHandle.flush()
+            else:
+                Domoticz.Log( message )
+
     def logging( self, logType, message):
 
         self.debugNetworkMap = self.pluginconf.pluginConf['debugNetworkMap']
         if logType == 'Debug' and self.debugNetworkMap:
-            Domoticz.Log( message)
+            self._loggingDebug( message)
         elif logType == 'Log':
-            Domoticz.Log( message )
+            self._loggingLog( message )
         elif logType == 'Status':
-            Domoticz.Status( message)
+            self._loggingStatus( message)
         return
 
     def NetworkMapPhase( self ):
@@ -70,25 +109,24 @@ class NetworkMap():
         self.logging( 'Debug', "_initNeighbours")
 
         for nwkid in self.ListOfDevices:
-            router = False
+            tobescanned = False
             if nwkid == '0000':
-                router = True
+                tobescanned = True
             elif 'LogicalType' in self.ListOfDevices[nwkid]:
                 if self.ListOfDevices[nwkid]['LogicalType'] == 'Router':
-                    router = True
+                    tobescanned = True
                 if 'DeviceType' in self.ListOfDevices[nwkid]:
                     if self.ListOfDevices[nwkid]['DeviceType'] == 'FFD':
-                        router = True
+                        tobescanned = True
                 if 'MacCapa' in self.ListOfDevices[nwkid]:
                     if self.ListOfDevices[nwkid]['MacCapa'] == '8e':
-                        router = True
+                        tobescanned = True
 
-            if not router:
+            if not tobescanned:
                 continue
             self._initNeighboursTableEntry( nwkid )
 
         return
-
 
     def _initNeighboursTableEntry( self, nwkid):
 
@@ -108,7 +146,6 @@ class NetworkMap():
                 self.logging( 'Debug', "---> Neighbour %s ( %s )" %( entry, self.Neighbours[ nwkid ]['Neighbours'][entry]['_relationshp']))
         self.logging( 'Debug', "")
 
-
     def LQIreq(self, nwkid='0000'):
         """
         Send a Management LQI request 
@@ -121,36 +158,35 @@ class NetworkMap():
 
         self.logging( 'Debug', "LQIreq - nwkid: %s" %nwkid)
 
-
         if nwkid not in self.Neighbours:
             self._initNeighboursTableEntry( nwkid)
-
-        
-        router = False
+   
+        tobescanned = False
         if nwkid != '0000' and nwkid not in self.ListOfDevices:
             return
         if nwkid == '0000':
-            router = True
+            tobescanned = True
         elif 'LogicalType' in self.ListOfDevices[nwkid]:
             if self.ListOfDevices[nwkid]['LogicalType'] in ( 'Router' ):
-                router = True
+                tobescanned = True
             if 'DeviceType' in self.ListOfDevices[nwkid]:
                 if self.ListOfDevices[nwkid]['DeviceType'] in ( 'FFD' ):
-                    router = True
+                    tobescanned = True
             if 'MacCapa' in self.ListOfDevices[nwkid]:
                 if self.ListOfDevices[nwkid]['MacCapa'] in ( '8e' ):
-                    router = True
+                    tobescanned = True
             if 'PowerSource' in self.ListOfDevices[nwkid]:
                 if self.ListOfDevices[nwkid]['PowerSource'] in ( 'Main'):
-                    router = True
+                    tobescanned = True
 
-        if not router:
+        if not tobescanned:
             self.logging( 'Debug', "Skiping %s as it's not a Router nor Coordinator" %nwkid)
             return
 
+        # u8StartIndex is the Neighbour table index of the first entry to be included in the response to this request
         index = self.Neighbours[ nwkid ]['TableCurSize']
 
-        self.LQIreq
+        ############self.LQIreq
         self.LQIreqInProgress.append ( nwkid )
         datas = "%s%02X" %(nwkid, index)
 
@@ -167,10 +203,9 @@ class NetworkMap():
                     self.Neighbours[ nwkid ]['Status'] = 'NotReachable'
                     return
 
-        sendZigateCmd(self, "004E",datas)    
+        self.ZigateComm.sendData( "004E",datas)  
 
         return
-
 
     def start_scan(self):
 
@@ -188,12 +223,14 @@ class NetworkMap():
     def continue_scan(self):
 
         self.logging( 'Debug', "continue_scan - %s" %( len(self.LQIreqInProgress) ))
+
         self.prettyPrintNeighbours()
         if len(self.LQIreqInProgress) > 0 and self.LQIticks < 2:
-            self.logging( 'Debug', "Command pending")
+            self.logging( 'Debug', "continue_scan - Command pending")
             self.LQIticks += 1
             return
-        elif len(self.LQIreqInProgress) > 0 and self.LQIticks >= 2:
+
+        if len(self.LQIreqInProgress) > 0 and self.LQIticks >= 2:
             entry = self.LQIreqInProgress.pop()
             self.logging( 'Debug', "Commdand pending Timeout: %s" % entry)
             if self.Neighbours[entry]['Status'] == 'WaitResponse':
@@ -207,17 +244,26 @@ class NetworkMap():
             self.logging( 'Debug', "continue_scan - %s" %( len(self.LQIreqInProgress) ))
 
         waitResponse = False
-        for entry in self.Neighbours:
+        for entry in list(self.Neighbours):
+            if entry not in self.ListOfDevices:
+                self.logging( 'Log', "LQIreq - device %s not found removing from the device to be scaned" %entry)
+                # Most likely this device as been removed, or change it Short Id
+                del self.Neighbours[ entry ]
+                continue
+
             if self.Neighbours[entry]['Status'] == 'Completed':
                 continue
+
             elif self.Neighbours[entry]['Status'] in ( 'TimedOut', 'NotReachable'):
                 continue
+
             elif self.Neighbours[entry]['Status'] in ( 'WaitResponse', 'WaitResponse2'):
                 waitResponse = True
                 continue
+
             elif self.Neighbours[entry]['Status'] in ( 'ScanRequired', 'ScanRequired2') :
-                    self.LQIreq( entry )
-                    return
+                self.LQIreq( entry )
+                return
         else:
             # We have been through all list of devices and not action triggered
             if not waitResponse:
@@ -227,6 +273,14 @@ class NetworkMap():
         return
 
     def finish_scan( self ):
+
+        def storeLQIforEndDevice( self, child, router, lqi):
+            if child not in self.ListOfDevices:
+                return
+            if 'LQI' not in self.ListOfDevices[ child ]:
+                self.ListOfDevices[ child ]['LQI'] = {}
+            self.ListOfDevices[ child ]['LQI'][ nwkid ] = lqi
+
 
         # Write the report onto file
         Domoticz.Status("Network Topology report")
@@ -254,7 +308,7 @@ class NetworkMap():
             LOD_Neighbours['Devices'] =  []
 
             # Set Time when the Neighbours have been calaculated
-            LOD_Neighbours['Time'] = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S') 
+            LOD_Neighbours['Time'] = datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S') 
 
             if self.Neighbours[nwkid]['Status'] == 'NotReachable':
                 Domoticz.Status("%6s %6s %9s %11s %6s %4s %7s NotReachable" \
@@ -279,7 +333,12 @@ class NetworkMap():
                     element[child]['_depth'] =   int(self.Neighbours[nwkid]['Neighbours'][child]['_depth'],16)
                     element[child]['_lnkqty'] =  int(self.Neighbours[nwkid]['Neighbours'][child]['_lnkqty'],16)
                     element[child]['_rxonwhenidl'] = self.Neighbours[nwkid]['Neighbours'][child]['_rxonwhenidl'] 
+                    element[child]['_IEEE']        = self.Neighbours[nwkid]['Neighbours'][child]['_ieee']
+                    element[child]['_permitjnt']   = self.Neighbours[nwkid]['Neighbours'][child]['_permitjnt']
+
                     LOD_Neighbours['Devices'].append( element )
+
+                    storeLQIforEndDevice( self, child, nwkid, int(self.Neighbours[nwkid]['Neighbours'][child]['_lnkqty'],16) )
 
             self.ListOfDevices[nwkid]['Neighbours'].append ( LOD_Neighbours )
 
@@ -316,7 +375,6 @@ class NetworkMap():
         else:
             Domoticz.Error("LQI:Unable to get access to directory %s, please check PluginConf.txt" %(self.pluginconf.pluginConf['pluginReports']))
 
-
     def LQIresp(self, MsgData):
 
         self.logging( 'Debug', "LQIresp - MsgData = " +str(MsgData))
@@ -332,7 +390,7 @@ class NetworkMap():
         if len(MsgData) == ( 10 + 42*NeighbourTableListCount + 4 ):
             # Firmware 3.1a and aboce
             MsgSrc = MsgData[ 10 + 42*NeighbourTableListCount: len(MsgData)]
-            self.logging( 'Debug', "LQIresp - Firmware 3.1a - MsgSrc: %s" %MsgSrc)
+            self.logging( 'Debug', "LQIresp - MsgSrc: %s" %MsgSrc)
 
         if Status != '00':
             self.logging( 'Debug', "LQI:LQIresp - Status: %s for %s (raw data: %s)" %(Status, MsgData[len(MsgData) - 4: len(MsgData)],MsgData))
@@ -399,27 +457,42 @@ class NetworkMap():
             self.logging( 'Debug', "--> _rxonwhenidl:-%s" %_rxonwhenidl)
 
             # s a 2-bit value representing the ZigBee device type of the neighbouring node
-            if  _devicetype   == 0x00: _devicetype = 'Coordinator'
-            elif  _devicetype == 0x01: _devicetype = 'Router'
-            elif  _devicetype == 0x02: _devicetype = 'End Device'
-            elif  _devicetype == 0x03: _devicetype = '??'
-
+            if  _devicetype   == 0x00: 
+                _devicetype = 'Coordinator'
+            elif  _devicetype == 0x01: 
+                _devicetype = 'Router'
+            elif  _devicetype == 0x02: 
+                _devicetype = 'End Device'
+            elif  _devicetype == 0x03: 
+                _devicetype = '??'
 
             #is a 3-bit value representing the neighbouring node’s relationship to the local node
-            if _relationshp   == 0x00: _relationshp = 'Parent'
-            elif _relationshp == 0x01: _relationshp = 'Child'
-            elif _relationshp == 0x02: _relationshp = 'Sibling'
+            if _relationshp   == 0x00: 
+                _relationshp = 'Parent'
+            elif _relationshp == 0x01: 
+                _relationshp = 'Child'
+            elif _relationshp == 0x02: 
+                _relationshp = 'Sibling'
             #else: _relationshp = 'Child'
-            elif _relationshp == 0x03: _relationshp = 'None'
-            elif _relationshp == 0x04: _relationshp = 'Former Child'
+            elif _relationshp == 0x03: 
+                _relationshp = 'None'
+            elif _relationshp == 0x04: 
+                _relationshp = 'Former Child'
 
-            if _permitjnt   == 0x00: _permitjnt = 'Off'
-            elif _permitjnt == 0x01 : _permitjnt = 'On'
-            elif _permitjnt == 0x02 : _permitjnt = '--'
+            if _permitjnt   == 0x00: 
+                _permitjnt = 'Off'
+            elif _permitjnt == 0x01 : 
+                _permitjnt = 'On'
+            elif _permitjnt == 0x02 : 
+                _permitjnt = '--'
 
-            if _rxonwhenidl   == 0x00: _rxonwhenidl = 'Rx-Off'
-            elif _rxonwhenidl == 0x01: _rxonwhenidl = 'Rx-On'
-            elif _rxonwhenidl == 0x02: _rxonwhenidl = '--'
+            if _rxonwhenidl   == 0x00: 
+                _rxonwhenidl = 'Rx-Off'
+            elif _rxonwhenidl == 0x01: 
+                _rxonwhenidl = 'Rx-On'
+            elif _rxonwhenidl == 0x02: 
+                _rxonwhenidl = '--'
+                
             n = n + 42
             self.logging( 'Debug', "mgtLQIresp - capture a new neighbour %s from %s" %(_nwkid, NwkIdSource))
             self.logging( 'Debug', "---> _nwkid: %s" %(_nwkid))

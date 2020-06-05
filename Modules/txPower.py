@@ -19,7 +19,7 @@ import json
 from datetime import datetime
 from time import time
 
-from Modules.output import sendZigateCmd
+from Modules.basicOutputs import sendZigateCmd
 
 """
 (Zigate) JN5168 standard-power module has a transmission power range of -32 to 0 dBm

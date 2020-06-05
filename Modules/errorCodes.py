@@ -111,12 +111,16 @@ def DisplayStatusCode( StatusCode ) :
     StatusMsg=""
     if StatusCode in ZIGATE_CODES:
         StatusMsg = "ZIGATE - [%s] %s" %(StatusCode,ZIGATE_CODES[StatusCode])
+
     elif StatusCode in APS_CODES:
         StatusMsg = "APS - [%s] %s" %(StatusCode,APS_CODES[StatusCode])
+
     elif StatusCode in NWK_CODES:
         StatusMsg = "NWK - [%s] %s" %(StatusCode,NWK_CODES[StatusCode])
+
     elif StatusCode in MAC_CODES:
         StatusMsg = "MAC - [%s] %s" %(StatusCode,MAC_CODES[StatusCode])
+        
     else:
         StatusMsg="Unknown code : %s" %StatusCode
 

@@ -8,12 +8,12 @@
 	"Type":"",
 	"ClusterToBind": [ "0019", "000f", "0102", "0003" ],
 	"ConfigureReporting": {
-		"0102": {"Attributes": { "0008": {"DataType": "20", "MinInterval":"0001", "MaxInterval":"0384", "TimeOut":"0258","Change":"01"}}}
+		"0102": {"Attributes": { "0008": {"DataType": "20", "MinInterval":"0001", "MaxInterval":"012C", "TimeOut":"0258","Change":"01"}}}
 	},
 	"ReadAttributes": {
 		"0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0007", "000a", "4000", "f000" ],
 		"0001": [],
-		"0102": [ "0000" ],
+		"0102": [ "0008" ],
 		"000f": [ "0051", "0055", "006f" ],
 		"fc01": []
 	}

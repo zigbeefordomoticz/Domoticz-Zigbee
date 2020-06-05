@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# coding: utf-8 -*-
 #
 # Author: zaraki673 & pipiche38
 #
@@ -18,52 +20,31 @@ import json
 from Modules.actuators import actuators
 from Modules.schneider_wiser import schneider_wiser_registration
 from Modules.legrand_netatmo import legrand_fc01
-from Modules.output import  sendZigateCmd,  \
-        processConfigureReporting, identifyEffect, setXiaomiVibrationSensitivity, \
-        unbindDevice, bindDevice, rebind_Clusters, getListofAttribute, \
-        livolo_bind, \
-        setPowerOn_OnOff, \
-        scene_membership_request, \
-        ReadAttributeRequest_0000_basic, \
+from Modules.bindings import unbindDevice, bindDevice, rebind_Clusters
+from Modules.basicOutputs import  sendZigateCmd, identifyEffect, getListofAttribute
+
+        
+from Modules.readAttributes import READ_ATTRIBUTES_REQUEST, ReadAttributeRequest_0000_basic, \
         ReadAttributeRequest_0000, ReadAttributeRequest_0001, ReadAttributeRequest_0006, ReadAttributeRequest_0008, \
         ReadAttributeRequest_0100, \
         ReadAttributeRequest_000C, ReadAttributeRequest_0102, ReadAttributeRequest_0201, ReadAttributeRequest_0204, ReadAttributeRequest_0300,  \
         ReadAttributeRequest_0400, ReadAttributeRequest_0402, ReadAttributeRequest_0403, ReadAttributeRequest_0405, \
-        ReadAttributeRequest_0406, ReadAttributeRequest_0500, ReadAttributeRequest_0502, ReadAttributeRequest_0702, ReadAttributeRequest_000f, ReadAttributeRequest_fc01
+        ReadAttributeRequest_0406, ReadAttributeRequest_0500, ReadAttributeRequest_0502, ReadAttributeRequest_0702, ReadAttributeRequest_000f, \
+        ReadAttributeRequest_fc01, ReadAttributeRequest_fc21
 
-from Modules.tools import loggingPairing, loggingHeartbeat
-from Modules.domoticz import CreateDomoDevice
-from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE, CLUSTERS_LIST, LEGRAND_REMOTES, LEGRAND_REMOTE_SHUTTER, LEGRAND_REMOTE_SWITCHS
+from Modules.lumi import enableOppleSwitch, setXiaomiVibrationSensitivity
+from Modules.livolo import livolo_bind
+from Modules.orvibo import OrviboRegistration
+from Modules.configureReporting import processConfigureReporting
+from Modules.profalux import profalux_fake_deviceModel
+from Modules.logging import loggingHeartbeat, loggingPairing
+from Modules.domoCreate import CreateDomoDevice
+from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE, CLUSTERS_LIST, LEGRAND_REMOTES, LEGRAND_REMOTE_SHUTTER, LEGRAND_REMOTE_SWITCHS, ZIGATE_EP
 
 from Classes.IAS import IAS_Zone_Management
 from Classes.Transport import ZigateTransport
 from Classes.AdminWidgets import AdminWidgets
 from Classes.NetworkMap import NetworkMap
-
-READ_ATTRIBUTES_REQUEST = {
-    # Cluster : ( ReadAttribute function, Frequency )
-    '0000' : ( ReadAttributeRequest_0000, 'polling0000' ),
-    '0001' : ( ReadAttributeRequest_0001, 'polling0001' ),
-    '0006' : ( ReadAttributeRequest_0006, 'pollingONOFF' ),
-    '0008' : ( ReadAttributeRequest_0008, 'pollingLvlControl' ),
-    '000C' : ( ReadAttributeRequest_000C, 'polling000C' ),
-    '0100' : ( ReadAttributeRequest_0100, 'polling0100' ),
-    '0102' : ( ReadAttributeRequest_0102, 'polling0102' ),
-    '0201' : ( ReadAttributeRequest_0201, 'polling0201' ),
-    '0204' : ( ReadAttributeRequest_0204, 'polling0204' ),
-    '0300' : ( ReadAttributeRequest_0300, 'polling0300' ),
-    '0400' : ( ReadAttributeRequest_0400, 'polling0400' ),
-    '0402' : ( ReadAttributeRequest_0402, 'polling0402' ),
-    '0403' : ( ReadAttributeRequest_0403, 'polling0403' ),
-    '0405' : ( ReadAttributeRequest_0405, 'polling0405' ),
-    '0406' : ( ReadAttributeRequest_0406, 'polling0406' ),
-    '0500' : ( ReadAttributeRequest_0500, 'polling0500' ),
-    '0502' : ( ReadAttributeRequest_0502, 'polling0502' ),
-    '0702' : ( ReadAttributeRequest_0702, 'polling0702' ),
-    '000f' : ( ReadAttributeRequest_000f, 'polling000f' ),
-    #'fc01' : ( ReadAttributeRequest_fc01, 'pollingfc01' ),
-    }
-
 
 
 def writeDiscoveryInfos( self ):
@@ -101,6 +82,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
 
     if status not in ( '004d', '0043', '0045', '8045', '8043') and 'Model' in self.ListOfDevices[NWKID]:
         return
+
 
     knownModel = False
     if self.ListOfDevices[NWKID]['Model'] != {} and self.ListOfDevices[NWKID]['Model'] != '':
@@ -284,8 +266,15 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                         Domoticz.Error("processNotinDBDevices - Please cross check the consistency of the Domoticz and Plugin database.")
                         break
 
-        if IsCreated == False:
+        if not IsCreated:
             loggingPairing( self, 'Debug', "processNotinDBDevices - ready for creation: %s , Model: %s " %(self.ListOfDevices[NWKID], self.ListOfDevices[NWKID]['Model']))
+
+            # Purpose of this call is to patch Model and Manufacturer Name in case of Profalux
+            # We do it just before calling CreateDomoDevice
+            if 'Manufacturer' in self.ListOfDevices[NWKID]:
+                if self.ListOfDevices[NWKID]['Manufacturer'] == '1110':
+                    profalux_fake_deviceModel( self, NWKID)
+
             if self.pluginconf.pluginConf['capturePairingInfos']:
                 self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'CR-DOMO' )
             CreateDomoDevice(self, Devices, NWKID)
@@ -298,21 +287,32 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                 Domoticz.Error("processNotinDBDevices - %s doesn't have Ep in Post creation widget" %NWKID)
                 return
 
+            ######
             ###### Post processing : work done after Domoticz Widget creation
-                
+            ######    
             if 'ConfigSource' in self.ListOfDevices[NWKID]:
                 loggingPairing( self, 'Debug', "Device: %s - Config Source: %s Ep Details: %s" \
                         %(NWKID,self.ListOfDevices[NWKID]['ConfigSource'],str(self.ListOfDevices[NWKID]['Ep'])))
 
-            # Binding devices
+            # Bindings ....
             cluster_to_bind = CLUSTERS_LIST
+
+            # Checking if anything must be done before Bindings, and if we have to take some specific bindings
             if 'Model' in self.ListOfDevices[NWKID]:
                 if self.ListOfDevices[NWKID]['Model'] != {}:
-                    if self.ListOfDevices[NWKID]['Model'] in self.DeviceConf:
-                        if 'ClusterToBind' in self.DeviceConf[ self.ListOfDevices[NWKID]['Model'] ]:
-                            cluster_to_bind = self.DeviceConf[ self.ListOfDevices[NWKID]['Model'] ]['ClusterToBind']             
+                    _model = self.ListOfDevices[NWKID]['Model']
+                    if _model in self.DeviceConf:
+                        # Check if we have to unbind clusters
+                        if 'ClusterToUnbind' in self.DeviceConf[ _model ]:
+                            for iterEp, iterUnBindCluster in self.DeviceConf[ _model ]['ClusterToUnbind']:
+                                unbindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterUnBindCluster)
+    
+                        # Check if we have specific clusters to Bind                     
+                        if 'ClusterToBind' in self.DeviceConf[ _model ]:
+                            cluster_to_bind = self.DeviceConf[ _model ]['ClusterToBind']             
                             loggingPairing( self, 'Debug', '%s Binding cluster based on Conf: %s' %(NWKID,  str(cluster_to_bind)) )
 
+            # Binding devices
             for iterEp in self.ListOfDevices[NWKID]['Ep']:
                 for iterBindCluster in cluster_to_bind:      # Binding order is important
                     if iterBindCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
@@ -320,12 +320,18 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                             self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'BIND_' + iterEp + '_' + iterBindCluster )
 
                         loggingPairing( self, 'Debug', 'Request a Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster) )
-
+                        # If option enabled, unbind
                         if self.pluginconf.pluginConf['doUnbindBind']:
                             unbindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
-
+                        # Finaly binding
                         bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
 
+            # Just after Binding Enable Opple with Magic Word
+            if  self.ListOfDevices[NWKID]['Model'] in ('lumi.remote.b686opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b286opcn01',
+                                                'lumi.remote.b686opcn01-bulb', 'lumi.remote.b486opcn01-bulb', 'lumi.remote.b286opcn01-bulb'):
+                Domoticz.Log("---> Calling enableOppleSwitch %s" %NWKID)
+                enableOppleSwitch( self, NWKID)
+    
             # 2 Enable Configure Reporting for any applicable cluster/attributes
             if self.pluginconf.pluginConf['capturePairingInfos']:
                 self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'PR-CONFIG' )
@@ -334,19 +340,26 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
 
             # 3 Read attributes
             for iterEp in self.ListOfDevices[NWKID]['Ep']:
+                # Let's scan each Endpoint cluster and check if there is anything to read
                 for iterReadAttrCluster in CLUSTERS_LIST:
                     if iterReadAttrCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
                         if iterReadAttrCluster in READ_ATTRIBUTES_REQUEST:
                             if self.pluginconf.pluginConf['capturePairingInfos']:
                                 self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'RA_' + iterEp + '_' + iterReadAttrCluster )
+
                             func = READ_ATTRIBUTES_REQUEST[iterReadAttrCluster][0]
                             func( self, NWKID)
 
             # In case of Schneider Wiser, let's do the Registration Process
             if 'Manufacturer' in self.ListOfDevices[NWKID]:
                 if self.ListOfDevices[NWKID]['Manufacturer'] == '105e':
-                    schneider_wiser_registration( self, NWKID )
+                    schneider_wiser_registration( self, Devices, NWKID )
 
+            # In case of Orvibo Scene controller let's Registration
+            if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
+                if self.ListOfDevices[NWKID][ 'Manufacturer Name'] == '欧瑞博':
+                    OrviboRegistration( self, NWKID )
+                    
             # Identify for ZLL compatible devices
             # Search for EP to be used 
             ep = '01'
@@ -385,7 +398,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                     if 'GroupMembership' in self.DeviceConf[ self.ListOfDevices[NWKID]['Model'] ]:
                         for groupToAdd in self.DeviceConf[ self.ListOfDevices[NWKID]['Model'] ]['GroupMembership']:
                             if len( groupToAdd ) == 2:
-                                self.groupmgt.addGroupMembership( NWKID, groupToAdd[0], groupToAdd[1] )
+                                self.groupmgt.addGroupMemberShip( NWKID, groupToAdd[0], groupToAdd[1] )
                             else:
                                 Domoticz.Error("Uncorrect GroupMembership definition %s" %str(self.DeviceConf[ self.ListOfDevices[NWKID]['Model'] ]['GroupMembership']))
 
