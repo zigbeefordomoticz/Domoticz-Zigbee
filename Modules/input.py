@@ -44,7 +44,7 @@ from Modules.pdmHost import pdmHostAvailableRequest, PDMSaveRequest, PDMLoadRequ
             PDMGetBitmapRequest, PDMIncBitmapRequest, PDMExistanceRequest, pdmLoadConfirmed, \
             PDMDeleteRecord, PDMDeleteAllRecord, PDMCreateBitmap, PDMDeleteBitmapRequest
 
-from Modules.sqnMgmt import get_internal_sqn
+from Modules.sqnMgmt import sqn_get_internal_sqn
 
 #from Modules.adminWidget import updateNotificationWidget, updateStatusWidget
 
@@ -279,7 +279,7 @@ def Decode8000_v2(self, Devices, MsgData, MsgRSSI) : # Status
     PacketType=MsgData[4:8]
 
     if self.pluginconf.pluginConf['debugzigateCmd']:
-        loggingInput( self, 'Log', "Decode8000    - %s      Status: %s" %( PacketType, Status))
+        loggingInput( self, 'Log', "Decode8000    - %s      Status: %s e_sqn: %s, i_sqn: %s" %( PacketType, Status,SEQ,sqn_get_internal_sqn (self.ZigateComm,SEQ)))
 
     # Handling Status
     if  Status == "00" : 
@@ -329,8 +329,8 @@ def Decode8000_v2(self, Devices, MsgData, MsgRSSI) : # Status
             self.groupmgt.statusGroupRequest( MsgData )
 
     if str(MsgData[0:2]) != "00" :
-        loggingInput( self, 'Debug', "Decode8000 - PacketType: %s Status: [%s] - %s" \
-                %(PacketType, MsgData[0:2], Status))
+        loggingInput( self, 'Debug', "Decode8000 - PacketType: %s e_sqn: %s i_sqn: %s Status: [%s] - %s" \
+                %(PacketType, SEQ, sqn_get_internal_sqn (self.ZigateComm,SEQ), MsgData[0:2], Status))
 
 def Decode8001(self, Decode, MsgData, MsgRSSI) : # Reception log Level
     MsgLen=len(MsgData)
@@ -885,7 +885,7 @@ def Decode8030(self, Devices, MsgData, MsgRSSI) : # Bind response
         Domoticz.Error("Decode8030 - Unknown addr mode %s in %s" %(MsgSrcAddrMode, MsgData))
         return
 
-    i_sqn = get_internal_sqn(self.ZigateComm,MsgSequenceNumber)
+    i_sqn = sqn_get_internal_sqn(self.ZigateComm,MsgSequenceNumber)
     loggingInput( self, 'Debug', "Decode8030 - Bind response, Device: %s Status: %s MsgSequenceNumber: %s i_sqn: %s" %(MsgSrcAddr, MsgDataStatus,MsgSequenceNumber,i_sqn), MsgSrcAddr)
 
     if nwkid in self.ListOfDevices:
@@ -1815,15 +1815,15 @@ def Decode8110(self, Devices, MsgData, MsgRSSI):  # Write Attribute response
     if MsgAttSize != '0000':
         MsgClusterData=MsgData[24:len(MsgData)]
 
+    i_sqn = sqn_get_internal_sqn(self.ZigateComm, MsgSQN)
 
-    loggingInput( self, 'Debug', "Decode8110 - WriteAttributeResponse - MsgSQN: %s, MsgSrcAddr: %s, MsgSrcEp: %s, MsgClusterId: %s, MsgAttrID: %s, MsgAttrStatus:%s, MsgAttType: %s, MsgAttSize: %s, MsgClusterData: %s. rawData: %s" \
-            %( MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus, MsgAttType, MsgAttSize, MsgClusterData, MsgData), MsgSrcAddr)
+    loggingInput( self, 'Debug', "Decode8110 - WriteAttributeResponse - MsgSQN: %s, i_sqn: %s, MsgSrcAddr: %s, MsgSrcEp: %s, MsgClusterId: %s, MsgAttrID: %s, MsgAttrStatus:%s, MsgAttType: %s, MsgAttSize: %s, MsgClusterData: %s. rawData: %s" \
+            %( MsgSQN, i_sqn, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus, MsgAttType, MsgAttSize, MsgClusterData, MsgData), MsgSrcAddr)
 
     timeStamped( self, MsgSrcAddr , 0x8110)
     updSQN( self, MsgSrcAddr, MsgSQN)
     updRSSI( self, MsgSrcAddr, MsgRSSI)
 
-    i_sqn = get_internal_sqn(self.ZigateComm, MsgSQN)
     nwkid = MsgSrcAddr
     if (
         'WriteAttribute' in self.ListOfDevices[nwkid] and MsgSrcEp in self.ListOfDevices[nwkid]['WriteAttribute']
