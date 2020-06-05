@@ -1,6 +1,6 @@
 # Release Notes 
 
-##                 - 4.8
+##  5 June 2020 - 4.8.1
 - [Technical] - Ready for PDM on host.
 - [Technical] - Scrip for PiZiGate on Fedora distribution
 - [Technical] - Provide Firmware
@@ -13,6 +13,8 @@
 - [Technical] - Refactor a number of Modules
 - [Hardware] - Provides a number of additionnal Devices
 - [Hardware] - Implementation of BSO profalux
+- [WebAdmin] - Update Translation for French and Dutch
+- [Technical] - Implement a Reset after delay of the Switch Selector (push button)
 
 ## 22 February 2020 - 4.7.5
 - [Hardware] - More Device Configuration
