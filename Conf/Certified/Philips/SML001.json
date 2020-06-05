@@ -16,6 +16,7 @@
 	"Type":"",
 	"NickName":"Hue_Motion",
 	"ClusterToBind": [ "0406", "0400", "0402", "0001" ],
+	"bindEp": [ "02" ],
         "ConfigureReporting": {
                 "0406": {"Attributes": { 
 			"0000": {"DataType": "18", "MinInterval":"0001", "MaxInterval":"012C", "TimeOut":"0FFF","Change":"00"},

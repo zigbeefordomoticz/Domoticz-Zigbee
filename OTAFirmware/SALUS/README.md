@@ -1,0 +1,1 @@
+https://eu.salusconnect.io/demo/default/status/firmware?timestamp=0

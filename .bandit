@@ -1,0 +1,3 @@
+[bandit]
+exclude: /GroupMgtv2
+skips: B301,B602

@@ -1,0 +1,22 @@
+{
+	"_comment": "router ",
+	"Ep":{
+        "01": {
+			"0000": "",
+			"0001": "",
+			"0003": "",
+			"0004": "",
+            "0006": "",
+            "Type": "Switch"
+        }
+	},
+	"Type":"",
+	"ClusterToBind": [ "0001", "0006" ],
+        "ConfigureReporting":{
+			"0006": {"Attributes": { "0000": {"DataType": "10", "MinInterval": "0001", "MaxInterval": "012C", "TimeOut": "0258","Change": "01"}}}
+	},
+	"ReadAttributes": {
+		"0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0006" ] ,
+		"0006": [ "0000" ]
+	}
+}

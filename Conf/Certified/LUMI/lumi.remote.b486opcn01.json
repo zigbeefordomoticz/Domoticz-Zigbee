@@ -1,24 +1,20 @@
 {
-	"_comment": "Innovative Wireless Control WXCJKGAxLM",
-	"_actions": "hold, release, single, double, triple",
+	"_comment": "Innovative Wireless Control WXCJKG12LM. 4 Buttons Off/on only",
+	"_version": "Initial Version",
 	"Ep":{
-		"01": { "0000": "", "0001": "", "0003": "", "0006": "", "0008": "", "0300": "", "Type": "LvlControl" },
-		"02": { "0003": "", "0006": "", "0008": "", "Type": "LvlControl" },
-		"03": { "0006": "", "0008": "", "Type": "LvlControl" },
-		"04": { "0006": "", "0008": "", "Type": "LvlControl" },
-		"05": { "0006": "", "0008": "", "Type": "LvlControl" },
-		"06": { "0006": "", "0008": "", "Type": "LvlControl" }
+		"01": { "0000": "", "0001": "", "0003": "", "0006": "", "0008": "", "0300": "", "0012": "", "Type": "AqaraOppleMiddle" },
+		"02": { "0003": "", "Type": "AqaraOppleMiddle" },
+		"03": {  "Type": "AqaraOppleMiddle" },
+		"04": {  "Type": "AqaraOppleMiddle" }
 	},
 	"Type":"",
-	"ClusterToBind": [ "0001", "0006", "0008"],
+	"ClusterToUnbind": [ [ "01", "0006"], [ "01", "0008"] , [ "01","0300"] ],
+	"ClusterToBind": [ "0012" ],
         "ConfigureReporting":{
-		"0001": {"Attributes": { "0021": {"DataType": "20", "MinInterval":"1C20", "MaxInterval":"1C20", "TimeOut":"0FFF","Change":"00"}}},
-		"0006": {"Attributes": { "0000": {"DataType": "10", "MinInterval":"0001", "MaxInterval":"012C", "TimeOut":"0258","Change":"01"}}},
-		"0008": {"Attributes": { "0000": {"DataType": "20", "MinInterval":"0005", "MaxInterval":"012C", "TimeOut":"0258","Change":"01"}}}
 	},
 	"ReadAttributes": {
 		"0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0006", "0032", "0033" ] ,
-        	"0001": [ "0020" ],
+		"0001": [ "0020" ],
 		"0006": [],
 		"0008": [],
 		"0300": []

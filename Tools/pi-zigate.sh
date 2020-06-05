@@ -6,8 +6,8 @@ then
 	exit 0
 fi
 echo "Verif GPIO ..."
-io0=`gpio read 0`
-io2=`gpio read 2`
+io0=$(gpio read 0)
+io2=$(gpio read 2)
 
 if [ "$io0" -eq "1" ]
 then

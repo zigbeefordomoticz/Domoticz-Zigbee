@@ -1,4 +1,8 @@
-
+#!/usr/bin/env python3
+# coding: utf-8 -*-
+#
+# Author: zaraki673 & pipiche38
+#
 
 # Enable Version Check ( will required Internet connectivity )
 
@@ -60,7 +64,7 @@ def checkPluginUpdate( currentVersion, availVersion):
 
 def checkFirmwareUpdate( currentMajorVersion, currentFirmwareVersion, availfirmMajor, availfirmMinor):
 
-    if not availfirmMinor or not currentFirmwareVersion:
+    if not (availfirmMinor and currentFirmwareVersion):
         return False
     if int(availfirmMinor,16) > int(currentFirmwareVersion,16):
         Domoticz.Debug("checkFirmwareUpdate - Firmware update available")

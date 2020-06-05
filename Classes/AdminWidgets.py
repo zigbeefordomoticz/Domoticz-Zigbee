@@ -11,6 +11,7 @@
 """
 
 import Domoticz
+from datetime import datetime
 
 DEVICEID_ADMIN_WIDGET = 'Zigate-01-'
 DEVICEID_STATUS_WIDGET = 'Zigate-02-'

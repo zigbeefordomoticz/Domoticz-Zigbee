@@ -8,6 +8,7 @@ import Domoticz
 import binascii
 import struct
 from time import time
+from datetime import datetime
 
 from Modules.tools import is_hex
 from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_RESPONSES, ZIGATE_COMMANDS, RETRANSMIT_COMMAND
@@ -17,6 +18,7 @@ STANDALONE_MESSAGE =[]
 for x in ZIGATE_RESPONSES:
     STANDALONE_MESSAGE.append( x )
 
+CMD_PDM_ON_HOST = []
 CMD_ONLY_STATUS = []
 CMD_NWK_2NDBytes = {}
 CMD_DATA = {}
@@ -25,6 +27,9 @@ for x in ZIGATE_COMMANDS:
         CMD_NWK_2NDBytes[ x ] = x
     if len ( ZIGATE_COMMANDS[ x ]['Sequence']) == 1:
             CMD_ONLY_STATUS.append( x )
+    elif len ( ZIGATE_COMMANDS[ x ]['Sequence']) == 0:
+            CMD_PDM_ON_HOST.append ( x )
+
     else:
         CMD_DATA[ x ] = ZIGATE_COMMANDS[ x ]['Sequence'][1]
 
@@ -41,9 +46,11 @@ class ZigateTransport(object):
     Managed also the Command -> Status -> Data sequence
     """
 
-    def __init__(self, LOD, transport, statistics, pluginconf, F_out, serialPort=None, wifiAddress=None, wifiPort=None):
+    def __init__(self, LOD, transport, statistics, pluginconf, F_out, loggingFileHandle, serialPort=None, wifiAddress=None, wifiPort=None):
         ##DEBUG Domoticz.Debug("Setting Transport object")
         self.lock = False
+
+        self.PDMCommandOnly = False    # This flag indicate if any command can be sent to Zigate or only PDM related one
 
         self.LOD = LOD # Object managing the Plugin Devices
         self._checkTO_flag = None
@@ -69,6 +76,8 @@ class ZigateTransport(object):
         self.sendDelay = pluginconf.pluginConf['sendDelay']
         self.zTimeOut = pluginconf.pluginConf['zTimeOut']
 
+        self.loggingFileHandle = loggingFileHandle
+
         self.loggingSend('Debug',"STANDALONE_MESSAGE: %s" %STANDALONE_MESSAGE)
         self.loggingSend('Debug',"CMD_ONLY_STATUS: %s" %CMD_ONLY_STATUS)
         self.loggingSend('Debug',"ZIGATE_COMMANDS: %s" %ZIGATE_COMMANDS)
@@ -90,26 +99,67 @@ class ZigateTransport(object):
         else:
             Domoticz.Error("Unknown Transport Mode: %s" %transport)
 
+    def _loggingStatus( self, message):
+
+        if self.pluginconf.pluginConf['useDomoticzLog']:
+            Domoticz.Status( message )
+        else:
+            if self.loggingFileHandle:
+                Domoticz.Status( message )
+                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+                self.loggingFileHandle.write( message )
+                self.loggingFileHandle.flush()
+            else:
+                Domoticz.Status( message )
+
+    def _loggingLog( self, message):
+
+        if self.pluginconf.pluginConf['useDomoticzLog']:
+            Domoticz.Log( message )
+        else:
+            if self.loggingFileHandle:
+                Domoticz.Log( message )
+                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+                self.loggingFileHandle.write( message )
+                self.loggingFileHandle.flush()
+            else:
+                Domoticz.Log( message )
+
+    def _loggingDebug( self, message):
+
+        if self.pluginconf.pluginConf['useDomoticzLog']:
+            Domoticz.Log( message )
+        else:
+            if self.loggingFileHandle:
+                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+                self.loggingFileHandle.write( message )
+                self.loggingFileHandle.flush()
+            else:
+                Domoticz.Log( message )
+
+
     def loggingSend( self, logType, message):
 
         if self.pluginconf.pluginConf['debugTransportTx'] and logType == 'Debug':
-            Domoticz.Log( message )
+            self._loggingDebug( message )
         elif  logType == 'Log':
-            Domoticz.Log( message )
+            self._loggingLog( message )
         elif logType == 'Status':
-            Domoticz.Status( message )
+            self._loggingStatus( message )
 
     def loggingReceive( self, logType, message):
 
         if self.pluginconf.pluginConf['debugTransportRx'] and logType == 'Debug':
-            Domoticz.Log( message )
+            self._loggingDebug( message )
         elif  logType == 'Log':
-            Domoticz.Log( message )
+            self._loggingLog( message )
         elif logType == 'Status':
-            Domoticz.Status( message )
+            self._loggingStatus.Status( message )
 
     # Transport / Opening / Closing Communication
     def setConnection( self ):
+
+        BAUDS = 115200
 
         if self._connection is not None:
             del self._connection
@@ -119,24 +169,32 @@ class ZigateTransport(object):
             if self._serialPort.find('/dev/') != -1 or self._serialPort.find('COM') != -1:
                 Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" %( self._serialPort ))
                 self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
-                         Address=self._serialPort, Baud=115200)
+                         Address=self._serialPort, Baud= BAUDS)
         elif self._transp == "DIN":
             if self._serialPort.find('/dev/') != -1 or self._serialPort.find('COM') != -1:
                 Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" %( self._serialPort ))
                 self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
-                         Address=self._serialPort, Baud=115200)
+                         Address=self._serialPort, Baud=BAUDS)
         elif self._transp == "PI":
             if self._serialPort.find('/dev/') != -1 or self._serialPort.find('COM') != -1:
                 Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" %( self._serialPort ))
                 self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
-                         Address=self._serialPort, Baud=115200)
+                         Address=self._serialPort, Baud=BAUDS)
         elif self._transp == "Wifi":
             Domoticz.Status("Connection Name: Zigate, Transport: TCP/IP, Address: %s:%s" %( self._serialPort, self._wifiPort ))
             self._connection = Domoticz.Connection(Name="Zigate", Transport="TCP/IP", Protocol="None ",
                          Address=self._wifiAddress, Port=self._wifiPort)
         else:
-            Domoticz.Error("Unknown Transport Mode: %s" %transport)
+            Domoticz.Error("Unknown Transport Mode: %s" %self._transp)
 
+
+    def PDMLock( self , lock):
+
+        self.PDMCommandOnly = lock
+
+    def PDMLockStatus( self ):
+
+        return self.PDMCommandOnly
 
     def openConn(self):
         self.setConnection()
@@ -164,8 +222,6 @@ class ZigateTransport(object):
         """
         send data to Zigate via the communication transport
         """
-
-
         self.loggingSend('Debug', "--> _sendData - %s %s %s" %(cmd, datas, delay))
 
         if datas == "":
@@ -272,9 +328,9 @@ class ZigateTransport(object):
     def _printSendQueue(self):
         cnt = 0
         lenQ = len(self.zigateSendingFIFO)
-        for iter in self.zigateSendingFIFO:
+        for iterFIFO in self.zigateSendingFIFO:
             if cnt < 5:
-                self.loggingSend('Debug',"SendingFIFO[%d:%d] = %s " % (cnt, lenQ, iter[0]))
+                self.loggingSend('Debug',"SendingFIFO[%d:%d] = %s " % (cnt, lenQ, iterFIFO[0]))
                 cnt += 1
         self.loggingSend('Debug',"--")
 
@@ -353,16 +409,27 @@ class ZigateTransport(object):
             return
 
         if self.zmode == 'Agressive':
-            sendNow = len(self._waitForStatus) == 0
+            sendNow = (len(self._waitForStatus) == 0) or int(cmd,16) in CMD_PDM_ON_HOST
         else:
-            sendNow = len(self._waitForStatus) == 0 and len(self._waitForData) == 0
+            sendNow = (len(self._waitForStatus) == 0 and len(self._waitForData) == 0) or int(cmd,16) in CMD_PDM_ON_HOST
 
-        self.loggingSend('Debug', "sendData - zMode: %s Q(Status): %s Q(Data): %s sendNow: %s" %(self.zmode, len(self._waitForStatus), len(self._waitForData), sendNow))
+        # PDM Management.
+        # When PDM traffic is ongoing we cannot interupt, so we need to FIFO all other commands until the PDMLock is released
+        PDM_COMMANDS = ( '8300', '8200', '8201', '8204', '8205', '8206', '8207', '8208' )
+        if self.PDMLockStatus() and cmd not in PDM_COMMANDS:
+            # Only PDM related command can go , all others will be dropped.
+            Domoticz.Log("PDM not yet ready, FIFO command %s %s" %(cmd, datas))
+            sendNow = False
 
+        self.loggingSend('Debug', "sendData - Command: %s zMode: %s Q(Status): %s Q(Data): %s sendNow: %s" %(cmd, self.zmode, len(self._waitForStatus), len(self._waitForData), sendNow))
+
+        # In case the cmd is part of the PDM on Host commands, that is High Priority and must go through.
         if sendNow:
-            self._addCmdToWaitQueue(cmd, datas)
-            if self.zmode == 'ZigBee' and int(cmd, 16) in CMD_DATA:  # We do wait only if required and if not in AGGRESSIVE mode
-                self._addCmdToWaitDataQueue(CMD_DATA[int(cmd, 16)], cmd, datas)
+            if int(cmd,16) not in CMD_PDM_ON_HOST:
+                # That is a Standard command (not PDM on  Host), let's process as usall
+                self._addCmdToWaitQueue(cmd, datas)
+                if self.zmode == 'ZigBee' and int(cmd, 16) in CMD_DATA:  # We do wait only if required and if not in AGGRESSIVE mode
+                    self._addCmdToWaitDataQueue(CMD_DATA[int(cmd, 16)], cmd, datas)
             if delay is None:
                 self._sendData(cmd, datas, self.sendDelay )
             else:
@@ -384,6 +451,7 @@ class ZigateTransport(object):
         if frame == '' or frame is None or len(frame) < 12:
             return
 
+        Status = None
         MsgType = frame[2:6]
         MsgLength = frame[6:10]
         MsgCRC = frame[10:12]
@@ -406,7 +474,7 @@ class ZigateTransport(object):
             self.F_out(frame)  # Forward the message to plugin for further processing
             return
 
-        elif MsgType == '8011': # APS Ack/Nck with Firmware 3.1b
+        if MsgType == '8011': # APS Ack/Nck with Firmware 3.1b
 
             MsgStatus = MsgData[0:2]
             MsgSrcAddr = MsgData[2:6]
@@ -417,6 +485,7 @@ class ZigateTransport(object):
 
             if MsgStatus == '00':
                 self.statistics._APSAck += 1
+                
             elif MsgStatus == 'a7':
                 self.statistics._APSNck += 1
 
@@ -473,7 +542,6 @@ class ZigateTransport(object):
             self.F_out(frame)  # Forward the message to plugin for further processing
 
         self.checkTOwaitFor()  # Let's take the opportunity to check TimeOut
-        return
 
 
     def receiveDataCmd(self, MsgType):
@@ -498,7 +566,7 @@ class ZigateTransport(object):
                 and len(self._waitForStatus) == 0 and len(self._waitForData) == 0:
             cmd, datas, timestamps, reTx = self._nextCmdFromSendingFIFO()
             self.sendData(cmd, datas)
-        return
+
 
     def _process8000(self, Status, PacketType, frame):
         self.statistics._ack += 1
@@ -534,7 +602,6 @@ class ZigateTransport(object):
             cmd, datas, timestamps, reTx = self._nextCmdFromSendingFIFO()
             self.sendData(cmd, datas)
 
-        return
 
     def checkTOwaitFor(self):
         'look at the waitForStatus, and in case of TimeOut delete the entry'
@@ -589,7 +656,7 @@ class ZigateTransport(object):
 
         # self._printSendQueue()
         self._checkTO_flag = False
-        return
+
 
     def _addNewCmdtoDevice(self, nwk, cmd, payload):
         """ Add Cmd to the nwk list of Command FIFO mode """
