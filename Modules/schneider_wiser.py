@@ -58,7 +58,7 @@ def callbackDeviceAwake_Schneider(self, NwkId, EndPoint, cluster):
     if 'Model' in self.ListOfDevices[NwkId]:
 
         if cluster == '0701':
-            if self.ListOfDevices[NwkId]['Model'] in ('EH-ZB-HACT','EH-ZB-BMS', 'EH-ZB-SPD', 'EH-ZB-LMACT', 'EH-ZB-SPD-V2'):
+            if self.ListOfDevices[NwkId]['Model'] in ('EH-ZB-HACT', 'EH-ZB-SPD', 'EH-ZB-LMACT', 'EH-ZB-SPD-V2'):
                 if getAttributeValue(self, NwkId, EndPoint, '0702', '0301') is None or getAttributeValue(self, NwkId, EndPoint, '0702', '0302') is None:
                     # if those atttributes are missing, it means that we had a bad pairing and consumption reporting will be wrong 
                     ReadAttributeRequest_0702(self, NwkId)
