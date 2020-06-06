@@ -578,7 +578,7 @@ class BasePlugin:
             return
 
         if self.ZigateComm:
-            self.ZigateComm.checkTOwaitFor()
+            self.ZigateComm.checkTimedOutForTxQueues()
 
         busy_ = False
 

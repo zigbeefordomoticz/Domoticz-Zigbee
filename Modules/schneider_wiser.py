@@ -703,12 +703,12 @@ def schneiderRenforceent( self, NWKID):
             pass
     if 'Schneider Wiser' in self.ListOfDevices[NWKID]:
         if 'HACT Mode' in self.ListOfDevices[NWKID]['Schneider Wiser']:
-            if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
+            if not self.busy and self.ZigateComm.loadTransmit() <= MAX_LOAD_ZIGATE:
                 schneider_hact_heating_mode( self, NWKID, self.ListOfDevices[NWKID]['Schneider Wiser']['HACT Mode'])
             else:
                 rescheduleAction = True
         if 'HACT FIP Mode' in self.ListOfDevices[NWKID]['Schneider Wiser']:
-            if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
+            if not self.busy and self.ZigateComm.loadTransmit() <= MAX_LOAD_ZIGATE:
                 schneider_hact_fip_mode( self, NWKID,  self.ListOfDevices[NWKID]['Schneider Wiser']['HACT FIP Mode'])
             else:
                 rescheduleAction = True
