@@ -31,7 +31,7 @@ def sqn_init_stack(self):
 
 def sqn_generate_new_internal_sqn (self): # to be called in zigatecmd
 
-    Domoticz.Error ("sqnMgmt generate_new_internal_sqn")
+    self.loggingSend(  'Debug',"sqnMgmt generate_new_internal_sqn")
    
     i_sqn = self.current_sqn
     self.current_sqn = i_sqn + 1
@@ -42,7 +42,7 @@ def sqn_generate_new_internal_sqn (self): # to be called in zigatecmd
     now = int(time.time())
 
     self.sqn_stack.append ([i_sqn, -1, now])
-    Domoticz.Error ("sqnMgmt generate_new_internal_sqn %s" %i_sqn)
+    self.loggingSend(  'Debug',"sqnMgmt generate_new_internal_sqn %s" %i_sqn)
     
     return i_sqn
 
@@ -54,7 +54,7 @@ def sqn_add_external_sqn (self, e_sqn, e_sqnZcl): # to be called in decode8000
         if sqn_tuple[E_SQN]  == -1 :
             sqn_tuple[E_SQN] = e_sqn
             return
-    Domoticz.Error ("sqnMgmt add_external_sqn could not find i_sqn corresponding %s %s" %(e_sqn, self.sqn_stack))
+    self.loggingSend(  'Debug',"sqnMgmt add_external_sqn could not find i_sqn corresponding %s %s" %(e_sqn, self.sqn_stack))
 
 def sqn_get_tuple (self, e_sqn):
 
