@@ -158,21 +158,6 @@ class ZigateTransport(object):
     def PDMLockStatus( self ):
         return self.PDMCommandOnly
 
-    # Queue Management
-    def _printSendQueue(self):
-        cnt = 0
-        lenQ = len(self.zigateSendQueue)
-        for iterFIFO in self.zigateSendQueue:
-            if cnt < 5:
-                loggingSend( self, 'Debug',"SendingFIFO[%d:%d] = %s " % (cnt, lenQ, iterFIFO[0]))
-                cnt += 1
-        loggingSend( self, 'Debug',"--")
-
-
-
-
-
-
     def sendData(self, cmd, datas , delay=None):
         loggingSend( self, 'Debug', "sendData - %s %s FIFO: %s" %(cmd, datas, len(self.zigateSendQueue)))
         if datas is None:
@@ -337,6 +322,7 @@ class ZigateTransport(object):
 
         Status = None
         
+        MsgData = None
         MsgType = frame[2:6]
         MsgLength = frame[6:10]
         MsgCRC = frame[10:12]
@@ -345,25 +331,29 @@ class ZigateTransport(object):
         if len(frame) >= 18:
             #Payload
             MsgData = frame[12:len(frame) - 4]
-            Status = MsgData[0:2]
-            SEQ = MsgData[2:4]
-            PacketType = MsgData[4:8]
             RSSI = frame[len(frame) - 4: len(frame) - 2]
-            loggingReceive( self,  'Debug', "         - Status: %s SEQ: %s PacketType: %s RSSI: %s" %(Status, SEQ, PacketType, RSSI))
 
-        if MsgType == "8000":  
+        if MsgData and MsgType == "8000":  
+            Status = MsgData[0:2]
+            SQN = MsgData[2:4]
+            PacketType = MsgData[4:8] 
+            SqnZCL = None  
+            if len(MsgData) == 10:
+                # New Firmware 3.1d (get a 2nd SQN)
+                SqnZCL = MsgData[8:10]
+
             # We are receiving a Status
             # We have receive a Status code in response to a command.
             # We have the SQN
             if Status:
-                sqn_add_external_sqn (self, SEQ)
+                sqn_add_external_sqn (self, SQN, SqnZCL)
                 self._process8000(Status, PacketType, frame)
             # PP> Shouldn't we remove the Internal SQN, As the 8000 status is failed ?
 
             self.F_out(frame)  # Forward the message to plugin for further processing
             return
 
-        if MsgType == '8011': 
+        if MsgData and MsgType == '8011': 
             # APS Ack/Nck with Firmware 3.1b
             MsgStatus = MsgData[0:2]
             MsgSrcAddr = MsgData[2:6]
@@ -493,9 +483,14 @@ class ZigateTransport(object):
         Domoticz.Log("checkTimedOutForTxQueues ListOfCommands size: %s" %len(self.ListOfCommands))
         for x in list(self.ListOfCommands.keys()):
             if  (now - self.ListOfCommands[ x ]['TimeStamp']) > 10:
-                Domoticz.Log("Time Out : %s %s %s 0x%04x %s"
-                    %(self.ListOfCommands[ x ]['Cmd'],self.ListOfCommands[ x ]['Datas'], 
-                      self.ListOfCommands[ x ]['ResponseExpected'], self.ListOfCommands[ x ]['ResponseExpectedCmd'] , type(self.ListOfCommands[ x ]['ResponseExpectedCmd'])))
+                if self.ListOfCommands[ x ]['ResponseExpectedCmd']:
+                    Domoticz.Log("Time Out : %s %s %s 0x%04x"
+                     %(self.ListOfCommands[ x ]['Cmd'],self.ListOfCommands[ x ]['Datas'], 
+                        self.ListOfCommands[ x ]['ResponseExpected'], self.ListOfCommands[ x ]['ResponseExpectedCmd'] ))
+                else:
+                      Domoticz.Log("Time Out : %s %s %s 0x%s"
+                     %(self.ListOfCommands[ x ]['Cmd'],self.ListOfCommands[ x ]['Datas'], 
+                        self.ListOfCommands[ x ]['ResponseExpected'], self.ListOfCommands[ x ]['ResponseExpectedCmd'] ))                  
                 del self.ListOfCommands[ x ]
         self.checkTimedOutFlag = False
 
@@ -716,7 +711,7 @@ def _sendData(self, InternalSqn):
     self._connection.Send(bytes.fromhex(str(lineinput)), 0)
     self.statistics._sent += 1
 
-@staticmethod
+
 def ZigateEncode(Data):  # ajoute le transcodage
 
     Out = ""
@@ -734,7 +729,7 @@ def ZigateEncode(Data):  # ajoute le transcodage
                 Out += Outtmp
             Outtmp = ""
     return Out
-@staticmethod
+
 def getChecksum(msgtype, length, datas):
     temp = 0 ^ int(msgtype[0:2], 16)
     temp ^= int(msgtype[2:4], 16)
@@ -745,7 +740,7 @@ def getChecksum(msgtype, length, datas):
         chk = hex(temp)
     return chk[2:4]
 
-@staticmethod
+
 def returnlen(taille, value):
     while len(value) < taille:
         value = "0" + value
