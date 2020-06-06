@@ -270,13 +270,14 @@ def Decode8000_v2(self, Devices, MsgData, MsgRSSI) : # Status
         loggingInput( self, 'Log',"Decode8000 - uncomplete message : %s" %MsgData)
         return
 
-    if MsgLen > 8 :
-        loggingInput( self, 'Log',"Decode8000 - More information . New Firmware ???")
-        loggingInput( self, 'Log',"Decode8000 - %s" %MsgData)
-
     Status=MsgData[0:2]
     SEQ=MsgData[2:4]
     PacketType=MsgData[4:8]
+
+    if MsgLen > 8 :
+        loggingInput( self, 'Log',"Decode8000 - More information . New Firmware ???")
+        loggingInput( self, 'Log',"Decode8000 - %s" %MsgData)
+        APSAck = PacketType=MsgData[8:10]
 
     if self.pluginconf.pluginConf['debugzigateCmd']:
         loggingInput( self, 'Log', "Decode8000    - %s      Status: %s e_sqn: %s, i_sqn: %s" %( PacketType, Status,SEQ,sqn_get_internal_sqn (self.ZigateComm,SEQ)))
@@ -594,10 +595,15 @@ def Decode8011(self, Devices, MsgData, MsgRSSI ):
 
     # APP APS ACK
     loggingInput( self, 'Debug', "Decode8011 - APS ACK: %s" %MsgData)
+    MsgLen=len(MsgData)
     MsgStatus = MsgData[0:2]
     MsgSrcAddr = MsgData[2:6]
     MsgSrcEp = MsgData[6:8]
     MsgClusterId = MsgData[8:12]
+    if MsgLen > 12 :
+        MsgSEQ = MsgData[12:14]
+    else:
+        MsgSEQ = 0
 
     if MsgSrcAddr not in self.ListOfDevices:
         return
@@ -605,8 +611,12 @@ def Decode8011(self, Devices, MsgData, MsgRSSI ):
     updRSSI( self, MsgSrcAddr, MsgRSSI )
 
     _powered = mainPoweredDevice( self, MsgSrcAddr)
-    loggingInput( self, 'Debug', "Decode8011 - Src: %s, SrcEp: %s, Cluster: %s, Status: %s MainPowered: %s RSSI: %s" \
-            %(MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgStatus, _powered, int(MsgRSSI,16)), MsgSrcAddr)
+    if MsgLen > 12 :
+        loggingInput( self, 'Debug', "Decode8011 - Src: %s, MsgSEQ: %s, i_sqn : %s, SrcEp: %s, Cluster: %s, Status: %s MainPowered: %s RSSI: %s" \
+                %(MsgSrcAddr, MsgSEQ, sqn_get_internal_sqn (self.ZigateComm,MsgSEQ), MsgSrcEp, MsgClusterId, MsgStatus, _powered, int(MsgRSSI,16)), MsgSrcAddr)
+    else:
+        loggingInput( self, 'Debug', "Decode8011 - Src: %s, SrcEp: %s, Cluster: %s, Status: %s MainPowered: %s RSSI: %s" \
+                %(MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgStatus, _powered, int(MsgRSSI,16)), MsgSrcAddr)
 
     timeStamped( self, MsgSrcAddr , 0x8011)
     if MsgStatus == '00':
@@ -1968,7 +1978,7 @@ def Decode8701(self, Devices, MsgData, MsgRSSI) : # Reception Router Disovery Co
         if MsgSrcAddr in self.ListOfDevices:
             MsgSrcIEEE = self.ListOfDevices[ MsgSrcAddr ][ 'IEEE' ]
 
-    if Status != "00" :
+    if NwkStatus != "00" :
         loggingInput( self, 'Log', "Decode8701 - Route discovery has been performed for %s, status: %s - %s Nwk Status: %s - %s " \
                 %( MsgSrcAddr, Status, DisplayStatusCode( Status ), NwkStatus, DisplayStatusCode(NwkStatus)))
 
