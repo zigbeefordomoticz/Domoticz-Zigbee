@@ -280,16 +280,16 @@ def processKnownDevices( self, Devices, NWKID ):
         loggingHeartbeat( self, 'Log', "processKnownDevices -  %s recover from Non Reachable" %NWKID, NWKID) 
         del self.ListOfDevices[NWKID]['pingDeviceRetry']
 
+    ## Starting this point, it is ony relevant for Main Powered Devices.
+    if not _mainPowered:
+       return
+
     # Action not taken, must be reschedule to next cycle
     rescheduleAction = False
 
     if self.pluginconf.pluginConf['forcePollingAfterAction'] and (intHB == 1): # HB has been reset to 0 as for a Group command
         loggingHeartbeat( self, 'Debug', "processKnownDevices -  %s due to intHB %s" %(NWKID, intHB), NWKID)
         rescheduleAction = (rescheduleAction or pollingDeviceStatus( self, NWKID))
-
-    ## Starting this point, it is ony relevant for Main Powered Devices.
-    if not _mainPowered:
-        return
 
     # Polling Manufacturer Specific devices ( Philips, Gledopto  ) if applicable
     rescheduleAction = (rescheduleAction or pollingManufSpecificDevices( self, NWKID))
