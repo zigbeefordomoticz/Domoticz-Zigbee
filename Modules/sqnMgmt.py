@@ -46,7 +46,7 @@ def sqn_generate_new_internal_sqn (self): # to be called in zigatecmd
     
     return i_sqn
 
-def sqn_add_external_sqn (self, e_sqn): # to be called in decode8000
+def sqn_add_external_sqn (self, e_sqn, e_sqnZcl): # to be called in decode8000
 
   #  Domoticz.Error ("sqnMgmt add_external_sqn %s %s" %(e_sqn, self.sqn_stack))
 

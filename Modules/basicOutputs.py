@@ -40,10 +40,9 @@ def sendZigateCmd(self, cmd, datas ):
         loggingBasicOutput( self, 'Debug', "=====> sendZigateCmd - %s %s Queue Length: %s" %(cmd, datas, self.ZigateComm.loadTransmit()))
 
     if self.ZigateComm.loadTransmit() > 15:
-        loggingBasicOutput( self, 'Log', "WARNING - ZigateCmd: %s %18s ZigateQueue: %s" %(cmd, datas, self.ZigateComm.loadTransmit))
+        loggingBasicOutput( self, 'Log', "WARNING - ZigateCmd: %s %18s ZigateQueue: %s" %(cmd, datas, self.ZigateComm.loadTransmit()))
 
-    i_sqn = self.ZigateComm.sendData( cmd, datas )
-    return i_sqn
+    return self.ZigateComm.sendData( cmd, datas )
 
 def ZigatePermitToJoin( self, permit ):
     """
