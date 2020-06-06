@@ -404,8 +404,8 @@ ZIGATE_COMMANDS = {
         0x00FA: {'Sequence': (0x8000, 0x8002), 'Command': 'Windows covering (v3.0f)' , 'NwkId 2nd Bytes': True },
 
         # Action Attribute
-        ##0x0100: {'Sequence': (0x8000, 0x8100), 'Command': 'Read Attribute Request' , 'NwkId 2nd Bytes': True },
-        0x0100: {'Sequence': (0x8000,), 'Command': 'Read Attribute Request' , 'NwkId 2nd Bytes': True },
+        0x0100: {'Sequence': (0x8000, 0x8100), 'Command': 'Read Attribute Request' , 'NwkId 2nd Bytes': True },
+        #0x0100: {'Sequence': (0x8000,), 'Command': 'Read Attribute Request' , 'NwkId 2nd Bytes': True },
         0x0110: {'Sequence': (0x8000, 0x8110), 'Command': 'Write Attribute Request' , 'NwkId 2nd Bytes': True },
         0x0111: {'Sequence': (0x8000, 0x8002), 'Command': 'IAS WD mode' , 'NwkId 2nd Bytes': True },
         0x0112: {'Sequence': (0x8000, 0x8002), 'Command': 'IAS WD Squawk' , 'NwkId 2nd Bytes': True },
