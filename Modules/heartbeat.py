@@ -80,7 +80,7 @@ def processKnownDevices( self, Devices, NWKID ):
                     for iterCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
                         if iterCluster in ( 'Type', 'ClusterType', 'ColorMode' ): 
                             continue
-                        if not self.busy and self.ZigateComm.loadTransmit() <= MAX_LOAD_ZIGATE:
+                        if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
                             getListofAttribute( self, NWKID, iterEp, iterCluster)
                         else:
                             rescheduleAction = True
@@ -201,7 +201,7 @@ def processKnownDevices( self, Devices, NWKID ):
         loggingHeartbeat( self, 'Debug', "--------> ping Retry Check %s Retry: %s Gap: %s" %(NwkId, retry, now - lastTimeStamp), NwkId)
         if self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] == 0:
             # First retry in the next cycle if possible
-            if self.ZigateComm.loadTransmit() == 0:
+            if len(self.ZigateComm.zigateSendingFIFO) == 0:
                 loggingHeartbeat( self, 'Debug', "--------> ping Retry 1 Check %s" %NwkId, NwkId)
                 self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] += 1
                 self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = now
@@ -209,7 +209,7 @@ def processKnownDevices( self, Devices, NWKID ):
 
         elif self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] == 1:
             # Second retry in the next 30"
-            if self.ZigateComm.loadTransmit() == 0 and now > ( lastTimeStamp + 30 ):
+            if len(self.ZigateComm.zigateSendingFIFO) == 0 and now > ( lastTimeStamp + 30 ):
                 # Let's retry
                 loggingHeartbeat( self, 'Debug', "--------> ping Retry 2 Check %s" %NwkId, NwkId)
                 self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] += 1
@@ -218,7 +218,7 @@ def processKnownDevices( self, Devices, NWKID ):
 
         elif self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] == 2:
             # Last retry after 5 minutes
-            if self.ZigateComm.loadTransmit() == 0 and now > ( lastTimeStamp + 300):
+            if len(self.ZigateComm.zigateSendingFIFO) == 0 and now > ( lastTimeStamp + 300):
                 # Let's retry
                 loggingHeartbeat( self, 'Debug', "--------> ping Retry 3 (last) Check %s" %NwkId, NwkId)
                 self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] += 1
@@ -241,12 +241,12 @@ def processKnownDevices( self, Devices, NWKID ):
             pingRetryDueToBadHealth(self, NwkId)
             return
 
-        if _checkHealth and self.ZigateComm.loadTransmit() == 0:
+        if _checkHealth and len(self.ZigateComm.zigateSendingFIFO) == 0:
             submitPing( self, NWKID)
             return
 
         if ( int(time.time()) > ( self.ListOfDevices[NwkId]['Stamp']['LastSeen'] + self.pluginconf.pluginConf['pingDevicesFeq'] )) and \
-                    self.ZigateComm.loadTransmit() == 0:
+                    len(self.ZigateComm.zigateSendingFIFO) == 0:
             loggingHeartbeat( self, 'Debug', "------> pinDevice time: %s LastSeen: %s Freq: %s" \
                 %(int(time.time()), self.ListOfDevices[NwkId]['Stamp']['LastSeen'], self.pluginconf.pluginConf['pingDevicesFeq'] ), NwkId) 
             submitPing( self, NwkId)         
@@ -280,16 +280,16 @@ def processKnownDevices( self, Devices, NWKID ):
         loggingHeartbeat( self, 'Log', "processKnownDevices -  %s recover from Non Reachable" %NWKID, NWKID) 
         del self.ListOfDevices[NWKID]['pingDeviceRetry']
 
+    ## Starting this point, it is ony relevant for Main Powered Devices.
+    if not _mainPowered:
+       return
+
     # Action not taken, must be reschedule to next cycle
     rescheduleAction = False
 
     if self.pluginconf.pluginConf['forcePollingAfterAction'] and (intHB == 1): # HB has been reset to 0 as for a Group command
         loggingHeartbeat( self, 'Debug', "processKnownDevices -  %s due to intHB %s" %(NWKID, intHB), NWKID)
         rescheduleAction = (rescheduleAction or pollingDeviceStatus( self, NWKID))
-
-    ## Starting this point, it is ony relevant for Main Powered Devices.
-    if not _mainPowered:
-        return
 
     # Polling Manufacturer Specific devices ( Philips, Gledopto  ) if applicable
     rescheduleAction = (rescheduleAction or pollingManufSpecificDevices( self, NWKID))
@@ -334,9 +334,9 @@ def processKnownDevices( self, Devices, NWKID ):
                     if  self.ListOfDevices[NWKID]['Model'] == 'lumi.ctrl_neutral2' and tmpEp not in ( '02' , '03' ):
                         continue
 
-                if  (self.busy  or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE):
+                if  (self.busy  or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE):
                     loggingHeartbeat( self, 'Debug', '--  -  %s skip ReadAttribute for now ... system too busy (%s/%s)' 
-                            %(NWKID, self.busy, self.ZigateComm.loadTransmit()), NWKID)
+                            %(NWKID, self.busy, len(self.ZigateComm.zigateSendingFIFO)), NWKID)
                     rescheduleAction = True
                     continue # Do not break, so we can keep all clusters on the same states
    
@@ -394,9 +394,9 @@ def processKnownDevices( self, Devices, NWKID ):
             if self.ListOfDevices[NWKID]['Manufacturer'] == '':
                 req_node_descriptor = True
     
-        if req_node_descriptor and not self.busy and  self.ZigateComm.loadTransmit() <= MAX_LOAD_ZIGATE:
+        if req_node_descriptor and not self.busy and  len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
             loggingHeartbeat( self, 'Debug', '-- - skip ReadAttribute for now ... system too busy (%s/%s) for %s' 
-                    %(self.busy, self.ZigateComm.loadTransmit(), NWKID), NWKID)
+                    %(self.busy, len(self.ZigateComm.zigateSendingFIFO), NWKID), NWKID)
             Domoticz.Status("Requesting Node Descriptor for %s" %NWKID)
             sendZigateCmd(self,"0042", str(NWKID) )         # Request a Node Descriptor
 

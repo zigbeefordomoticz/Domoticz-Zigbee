@@ -582,8 +582,11 @@ class WebServer(object):
                     duration = int( data['PermitToJoin'])
                     router = data['Router']
                     if router in self.ListOfDevices:
-                        # Allow Permit to join from this specific router    
-                        self.logging( 'Log', "Requesting router: %s to switch into Permit to join" %router)             
+                        # Allow Permit to join from this specific router   
+                        if  duration == 0:
+                            self.logging( 'Log', "Requesting router: %s to disable Permit to join" %router)  
+                        else:
+                            self.logging( 'Log', "Requesting router: %s to enable Permit to join" %router)             
                         sendZigateCmd( self, "0049", router + '%02x' %duration + '00') 
 
                 else:                   

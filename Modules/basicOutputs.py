@@ -35,9 +35,9 @@ def sendZigateCmd(self, cmd, datas ):
         return
 
     if self.pluginconf.pluginConf['debugzigateCmd']:
-        loggingBasicOutput( self, 'Log', "sendZigateCmd - %s %s Queue Length: %s" %(cmd, datas, self.ZigateComm.loadTransmit()))
+        loggingBasicOutput( self, 'Log', "sendZigateCmd - %s %s Queue Length: %s" %(cmd, datas, len(self.ZigateComm.zigateSendingFIFO)))
     else:
-        loggingBasicOutput( self, 'Debug', "=====> sendZigateCmd - %s %s Queue Length: %s" %(cmd, datas, self.ZigateComm.loadTransmit()))
+        loggingBasicOutput( self, 'Debug', "=====> sendZigateCmd - %s %s Queue Length: %s" %(cmd, datas, len(self.ZigateComm.zigateSendingFIFO)))
 
     if self.ZigateComm.loadTransmit() > 15:
         loggingBasicOutput( self, 'Log', "WARNING - ZigateCmd: %s %18s ZigateQueue: %s" %(cmd, datas, self.ZigateComm.loadTransmit()))
@@ -435,7 +435,7 @@ def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, at
     datas += direction + manuf_spec + manuf_id
     datas += lenght +attribute + data_type + data
     loggingBasicOutput( self, 'Debug', "write_attribute for %s/%s - >%s<" %(key, EPout, datas) )
-    return sendZigateCmd(self, "0110", str(datas) )
+    sendZigateCmd(self, "0110", str(datas) )
 
 ## Scene
 def scene_membership_request( self, nwkid, ep, groupid='0000'):

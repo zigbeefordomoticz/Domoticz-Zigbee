@@ -20,8 +20,8 @@ from Modules.tools import is_hex
 
 SETTINGS = { 
     'Services': { 'Order': 1, 'param': {
-        'enablegroupmanagement':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
-        'enableReadAttributes': { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
+        'enablegroupmanagement':  { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
+        'enableReadAttributes': { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
         'enableWebServer': { 'type':'bool', 'default':1, 'current':None, 'restart':True , 'hidden':False, 'Advanced':False},
         'internetAccess': { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
         'allowOTA':  { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
