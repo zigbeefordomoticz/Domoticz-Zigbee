@@ -13,6 +13,11 @@ If you want to contribue , please let us know , we are looking for help in vario
 - increasing the level of documentation for end user
 
 
+## 6 June 2020 - 4.9.2 
+- [Technical] - Smooth pairing for Schneider devices
+- [Issue] - Do not poll battery based devices
+- [Issue] - Require plugin restart after enabling Reset Read Attribute or Group Management
+
 ##  5 June 2020 - 4.9.1 (Last release supporting Firmware below 3.1c)
 - [Technical] - Ready for PDM on host.
 - [Technical] - Scrip for PiZiGate on Fedora distribution
