@@ -67,7 +67,7 @@ def sqn_get_internal_sqn (self, e_sqn):
 
     sqn_tuple = sqn_get_tuple (self, e_sqn)
     if sqn_tuple is not None:
-        Domoticz.Error ("sqnMgmt sqn_get_internal found i_sqn %s" %(sqn_tuple[0]))
+        self.loggingSend(  'Debug',"sqnMgmt sqn_get_internal found i_sqn %s" %(sqn_tuple[0]))
         return sqn_tuple[I_SQN]
     else:
         Domoticz.Error ("sqnMgmt sqn_get_internal not found e_sqn %s" %(e_sqn))

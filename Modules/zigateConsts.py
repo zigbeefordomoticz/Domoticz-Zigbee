@@ -301,7 +301,7 @@ ZCL_CLUSTERS_LIST = {
 # Zigate Commands, with there sequence of response ( Status + Data)
 ZIGATE_COMMANDS = {
         0x0009: {'Sequence': (0x8000, 0x8009), 'Command': 'Get Network State (Firm v3.0d)', 'NwkId 2nd Bytes': False },
-        0x0010: {'Sequence': ( ), 'Command': 'Get Version' , 'NwkId 2nd Bytes': False },
+        0x0010: {'Sequence': (0x8010, ), 'Command': 'Get Version' , 'NwkId 2nd Bytes': False },
         0x0011: {'Sequence': (0x8000,), 'Command': 'Reset' , 'NwkId 2nd Bytes': False },
         0x0012: {'Sequence': (0x8000,), 'Command': 'Erase Persistent Data' , 'NwkId 2nd Bytes': False },
         0x0013: {'Sequence': (0x8000,), 'Command': 'ZLO/ZLL “Factory New” Reset' , 'NwkId 2nd Bytes': False },
@@ -452,7 +452,7 @@ ZIGATE_RESPONSES = {
         0x8085: 'Level Update',
         0x8095: 'ON/OFF Update',
         0x8101: 'Default response',
-        0x8102: 'Report Individual Attribute response',
+        #0x8102: 'Report Individual Attribute response',
         0x8701: 'Router Disocver',
         0x8702: 'APS Data Confirm Fail',
         0x004D: 'Device Annouce' 
