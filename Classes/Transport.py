@@ -234,7 +234,7 @@ class ZigateTransport(object):
         # add a command to the waiting list
         # _waitForDataQueue [ Expected Response Type, Cmd, Data, TimeStamps ]
         timestamp = int(time())
-        self.loggingSend('Debug', "--> _addCmdToWaitForDataQueue - adding to Queue %s %s %s" %(InternalSqn, timestamp))
+        self.loggingSend('Debug', "--> _addCmdToWaitForDataQueue - adding to Queue %s %s" %(InternalSqn, timestamp))
         self._waitForDataQueue.append( (InternalSqn, timestamp) )
 
     def loadTransmit(self):
@@ -291,10 +291,10 @@ class ZigateTransport(object):
             return
 
         # Check if the Cmd/Data is not yet in the pipe
-        for x in self.ListOfCommands:
-            if self.ListOfCommands[ x ]['Cmd'] ==  cmd and self.ListOfCommands[ x ]['Datas'] == datas:
-                self.loggingSend('Log',"Do not queue again an existing command in the Pipe, we drop the command %s %s" %(cmd, datas))
-                return
+        #for x in self.ListOfCommands:
+        #    if self.ListOfCommands[ x ]['Cmd'] ==  cmd and self.ListOfCommands[ x ]['Datas'] == datas:
+        #        self.loggingSend('Log',"Do not queue again an existing command in the Pipe, we drop the command %s %s" %(cmd, datas))
+        #        return
 
         InternalSqn = sqn_generate_new_internal_sqn(self)
 
@@ -303,10 +303,12 @@ class ZigateTransport(object):
             Domoticz.Error("sendData - Existing Internal SQN: %s for %s versus new %s/%s" %( InternalSqn, str(self.ListOfCommands[ InternalSqn]), cmd, datas ))
             return
 
+        self.ListOfCommands[ InternalSqn ] = {}
         self.ListOfCommands[ InternalSqn ]['Cmd'] = cmd
         self.ListOfCommands[ InternalSqn ]['Datas'] = datas
         self.ListOfCommands[ InternalSqn ]['ReTransmit'] = 0
         self.ListOfCommands[ InternalSqn ]['Status'] = ''
+        self.ListOfCommands[ InternalSqn ]['TimeStamp'] = int(time())
 
         self.ListOfCommands[ InternalSqn ]['PDMCommand'] = False
         self.ListOfCommands[ InternalSqn ]['ResponseExpected'] = False
@@ -486,67 +488,33 @@ class ZigateTransport(object):
             RSSI = frame[len(frame) - 4: len(frame) - 2]
             self.loggingReceive( 'Debug', "         - Status: %s SEQ: %s PacketType: %s RSSI: %s" %(Status, SEQ, PacketType, RSSI))
 
-        if MsgType == "8000":  # We are receiving a Status
+        if MsgType == "8000":  
+            # We are receiving a Status
             # We have receive a Status code in response to a command.
+            # We have the SQN
             if Status:
                 sqn_add_external_sqn (self, SEQ)
                 self._process8000(Status, PacketType, frame)
+            # PP> Shouldn't we remove the Internal SQN, As the 8000 status is failed ?
+
             self.F_out(frame)  # Forward the message to plugin for further processing
             return
 
-        if MsgType == '8011': # APS Ack/Nck with Firmware 3.1b
-
+        if MsgType == '8011': 
+            # APS Ack/Nck with Firmware 3.1b
             MsgStatus = MsgData[0:2]
             MsgSrcAddr = MsgData[2:6]
             MsgSrcEp = MsgData[6:8]
             MsgClusterId = MsgData[8:12]
-
             #Domoticz.Log("processFrame - 0x8011 - APS Ack/Nck - Status: %s for %s/%s on cluster: %s" %(MsgStatus, MsgSrcAddr, MsgSrcEp, MsgClusterId))
 
             if MsgStatus == '00':
                 self.statistics._APSAck += 1
-                
-            elif MsgStatus == 'a7':
+            else:
                 self.statistics._APSNck += 1
 
             # Next step is to look after the last command for SrcAddr/SrcEp and if it matches the ClusterId
-
             self.F_out(frame)  # Forward the message to plugin for further processing
-
-        elif MsgType == "8701": # Router Discovery Confirm
-            if self.pluginconf.pluginConf['APSrteError']:
-                if self.lock:
-                    Domoticz.Debug("processFrame - passing the 0x8701 frame (lock)")
-                    self.F_out(frame)  # Forward the message to plugin for further processing
-                else:
-                    self.lock = True
-                    NwkStatus = MsgData[0:2]
-                    Status = MsgData[2:4]
-                    MsgSrc = ''
-                    # https://github.com/fairecasoimeme/ZiGate/pull/231/commits/9a206779050fbce3bd464cad9bd65affb91d1720
-                    if len(MsgData) == 8:
-                        MsgSrc = MsgData[4:8]
-                        self.loggingReceive('Log',"             - New Route Discovery for %s" %(MsgSrc))
-    
-                    if len(self._waitForRouteDiscoveryConfirm) > 0:
-                        # We have some pending Command for re-submition
-                        tupleCommands = list(self._waitForRouteDiscoveryConfirm)
-                        for cmd, payload, frame8702 in tupleCommands:
-                            if Status == NwkStatus == '00':
-                                self.loggingReceive('Debug',"             - New Route Discovery OK, resend %s %s" %(cmd, payload))
-                                self.sendData_internal(cmd, payload)
-                            else:
-                                self.loggingReceive('Debug',"             - New Route Discovery KO, drop %s %s" %(cmd, payload))
-                                self.F_out( frame8702 )  # Forward the old frame in the pipe. str() is used to make a physical copy
-    
-                            self._waitForRouteDiscoveryConfirm.remove( ( cmd, payload, frame8702)  )
-    
-                        del self._waitForRouteDiscoveryConfirm 
-                        self._waitForRouteDiscoveryConfirm = []
-                self.lock = False
-            else:
-                self.F_out(frame)  # Forward the message to plugin for further processing
-
 
         elif MsgType == "8702": # APS Failure
             #if self._process8702( frame ):
@@ -580,6 +548,8 @@ class ZigateTransport(object):
                 return
 
         InternalSqn = self._nextCmdFromWaitDataQueue()
+        if InternalSqn in self.ListOfCommands:
+            del self.ListOfCommands[ InternalSqn ]
 
         # If we have Still commands in the queue and the WaitforStatus+Data are free
         _readyToSend( self )
@@ -594,6 +564,8 @@ class ZigateTransport(object):
             if len(self._waitForDataQueue) > 0:
                 InternalSqn = self._nextCmdFromWaitDataQueue()
                 self.loggingReceive( 'Debug', "waitForData - unlock waitForData due to command %s failed, remove %s" %(PacketType, InternalSqn))
+                if InternalSqn in self.ListOfCommands:
+                    del self.ListOfCommands[ InternalSqn ]
 
         # What to do with the Command
         if PacketType != '':
@@ -607,25 +579,17 @@ class ZigateTransport(object):
             InternalSqn = NextCmdFromWaitFor8000[0]
             if InternalSqn in self.ListOfCommands:
                 expectedCommand = self.ListOfCommands[ InternalSqn ]['ResponseExpectedCmd']
-                Domoticz.Log("expectedCommand %s PacketType: %s " %(expectedCommand, PacketType ))
-                if  expectedCommand != int(PacketType, 16):
+
+                if  expectedCommand and expectedCommand != int(PacketType, 16):
                     self.loggingReceive( 'Debug',"receiveData - sync error : Expecting %04x and Received: %s" \
                             % (expectedCommand, PacketType))
         
-        # If we have a APS Ack firmware, then we will push the Cmd/Data tfor APS Ack/Failure
-        #if APS_ACK:
-        #    cmd, data, timestamp, reTransmit = expectedCommand
-        #    if cmd == PacketType:
-        #        self.loggingReceive('Debug',"_process8000 - APS Ack push Cmd: %s Data: %s for APS Ack/Failure" %(cmd, data))
-        #        self.addCmdTowaitForAPS( cmd, data )
-        #    else:
-        #        Domoticz.Error("_process8000 - APS Ack push receive Cmd %s status doesn't match Cmd %s in FIFO!" %(PacketType, cmd))
-        # Let's check if we cannot send a command from teh Queue
         _readyToSend( self )
 
     def checkTimedOutForTxQueues(self):
         # look at the waitForStatus, and in case of TimeOut delete the entry'
 
+        now = int(time())
         if self.checkTimedOutFlag:  # checkTimedOutForTxQueues can be called either by onHeartbeat or from inside the Class. 
                                 # In case it comes from onHeartbeat we might have a re-entrance issue
             ##Domoticz.Debug("checkTimedOutForTxQueues already ongoing")
@@ -636,23 +600,26 @@ class ZigateTransport(object):
 
         # Check waitForStatus
         if len(self._waitFor8000Queue) > 0:
-            now = int(time())
-            pCmd, pDatas, pTime = self._waitFor8000Queue[0]
+            InternalSqn, TimeStamp = self._waitFor8000Queue[0]
             ## DEBUG Domoticz.Debug("checkTOwaitForStatus - %04.x enter at: %s delta: %s" % (int(pCmd, 16), pTime, now - pTime))
-            if (now - pTime) > self.zTimeOut:
+            if (now - TimeStamp) > self.zTimeOut:
                 self.statistics._TOstatus += 1
                 entry = self._nextCmdFromWaitFor8000Queue()
                 if entry:
-                   self.loggingReceive('Debug',"waitForStatus - Timeout %s on %04.x " % (now - pTime, entry[0]))
+                   self.loggingReceive('Debug',"waitForStatus - Timeout %s  " % ( entry[0]))
 
         # Check waitForData
         if len(self._waitForDataQueue) > 0:
             now = int(time())
-            expResponse, pCmd, pData, pTime = self._waitForDataQueue[0]
-            if (now - pTime) > self.zTimeOut:
+            InternalSqn, TimeStamp = self._waitForDataQueue[0]
+
+            if (now - TimeStamp) > self.zTimeOut:
                 self.statistics._TOdata += 1
                 InternalSqn =  self._nextCmdFromWaitDataQueue()
-                self.loggingReceive('Debug',"waitForData - Timeout %s sec on %04.x SQN waiting for %04.x " % (now - pTime, expResponse, InternalSqn))
+                self.loggingReceive('Debug',"waitForData - Timeout %s sec on SQN waiting for %s " % (now - TimeStamp, InternalSqn))
+                if InternalSqn in self.ListOfCommands:
+                    del self.ListOfCommands[ InternalSqn ]
+
                 # If we allow reTransmit, let's resend the command
                 #if ( self.reTransmit and int(pCmd, 16) in RETRANSMIT_COMMAND and reTx <= self.reTransmit ):
                 #    self.statistics._reTx += 1
@@ -666,6 +633,13 @@ class ZigateTransport(object):
                 #        self._sendData( pCmd, pData , self.sendDelay)
                 #    else:
                 #        Domoticz.Error("Unable to retransmit message %s/%s Queue was not free anymore !" %(pCmd, pData))
+
+        for x in list(self.ListOfCommands.keys()):
+            if  (now - self.ListOfCommands[ x ]['TimeStamp']) > 10:
+                Domoticz.Error("Time Out : %s %s %s %s"
+                    %(self.ListOfCommands[ x ]['Cmd'],self.ListOfCommands[ x ]['Datas'], 
+                      self.ListOfCommands[ x ]['ResponseExpected'], self.ListOfCommands[ x ]['ResponseExpectedCmd'] ))
+                del self.ListOfCommands[ x ]
 
         _readyToSend( self )
 
@@ -775,38 +749,6 @@ class ZigateTransport(object):
                     return True
                 if len(_lastCmds[0]) == 3:
                     iterTime, iterCmd, iterpayLoad = _lastCmds[0]
-
-            if self.pluginconf.pluginConf['APSrteError'] and len(_lastCmds[0]) == 3:
-                self.loggingReceive('Debug',"_process8702 - WARNING - Queue Size: %s received APSFailure %s %s %s, will wait for a Route Discoverys" %( len(self._waitForRouteDiscoveryConfirm), NWKID, iterCmd, iterpayLoad))
-                tupleCommand = ( iterCmd, iterpayLoad, frame)
-                if (  tupleCommand ) not in self._waitForRouteDiscoveryConfirm:
-                    self.loggingReceive('Debug',"      -> Add %s %s to Queue" %( iterCmd, iterpayLoad))
-                    self._waitForRouteDiscoveryConfirm.append( tupleCommand )
-                else:
-                    self.loggingReceive('Debug',"      -> Do not add to Queue %s %s , already in" %(iterCmd, iterpayLoad))
-                return False
-
-            if self.pluginconf.pluginConf['APSreTx'] and len(_lastCmds[1]) == 3:
-                iterTime2 = 0
-                iterCmd2 = iterpayLoad2 = None
-                if len(_lastCmds) >= 2: # At least we have 2 Commands
-                    # Retreive command -1
-                    iterTime2, iterCmd2, iterpayLoad2 = _lastCmds[1]
-    
-                if APS_MAX_RETRY == 2:
-                    if iterCmd2 == iterCmd and iterpayLoad2 == iterpayLoad and \
-                            iterTime  <= (iterTime2 + APS_TIME_WINDOW):
-                        return True
-     
-                elif APS_MAX_RETRY == 3:
-                    iterTime2 = 0
-                    iterCmd2 = iterpayLoad2 = None
-                    if len(_lastCmds) >= 3: # At least we have 3 commands
-                        # Retreive command -1
-                        iterTime3, iterCmd3, iterpayLoad3 = _lastCmds[2]
-                    if iterCmd3 == iterCmd2 == iterCmd and iterpayLoad3 == iterpayLoad2 == iterpayLoad and \
-                            iterTime  <= (iterTime3 + APS_TIME_WINDOW):
-                        return True
         
                 if _timeAPS <= ( iterTime + APS_TIME_WINDOW):
                     # That command has been issued in the APS time window
