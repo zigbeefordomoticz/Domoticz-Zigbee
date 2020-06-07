@@ -447,17 +447,20 @@ ZIGATE_RESPONSES = {
         0x8005: '',
         0x8006: 'Non Factory new Restart',
         0x8007: 'Factory New Restart',
-        0x8011: '',
+
         0x8048: 'Leave Indication',
         0x8085: 'Level Update',
         0x8095: 'ON/OFF Update',
         0x8101: 'Default response',
         #0x8102: 'Report Individual Attribute response',
-        0x8701: 'Router Disocver',
-        0x8702: 'APS Data Confirm Fail',
         0x004D: 'Device Annouce' 
         }
-
+ZIGATE_MSG_PROC_TANSPORT = {
+        0x8000: 'Command Response',
+        0x8011: 'Ack/Nack Response',
+        0x8701: 'Router Disocver',
+        0x8702: 'APS Data Confirm Fail',
+}
 # Used in output/thermostat_Mode
 SYSTEM_MODE = { 'Off' : 0x00 ,
         'Auto' : 0x01 ,

@@ -251,7 +251,7 @@ class BasePlugin:
             openLogFile( self )
 
         loggingPlugin( self, 'Status',  "Switching Heartbeat to %s s interval" %HEARTBEAT)
-        Domoticz.Heartbeat( HEARTBEAT )
+        Domoticz.Heartbeat( 1 )
         loggingPlugin( self, 'Status',  "Python Version - %s" %sys.version)
         assert sys.version_info >= (3, 4)
         loggingPlugin( self, 'Status',  "DomoticzVersion: %s" %Parameters["DomoticzVersion"])
@@ -578,12 +578,13 @@ class BasePlugin:
 
         busy_ = False
 
+        self.HeartbeatCount += 1
+        if (self.HeartbeatCount % HEARTBEAT) != 0:
+            return
+            
         # Quiet a bad hack. In order to get the needs for ZigateRestart
         # from WebServer
-        if (
-            'startZigateNeeded' in self.zigatedata
-            and self.zigatedata['startZigateNeeded']
-        ):
+        if ( 'startZigateNeeded' in self.zigatedata and self.zigatedata['startZigateNeeded'] ):
             self.startZigateNeeded = self.HeartbeatCount
             del self.zigatedata['startZigateNeeded']
 
@@ -594,7 +595,6 @@ class BasePlugin:
             sendZigateCmd(self, "0010", "")
             return
 
-        self.HeartbeatCount += 1
 
         if self.transport != 'None':
             loggingPlugin( self, 'Debug', "onHeartbeat - busy = %s, Health: %s, startZigateNeeded: %s/%s, InitPhase1: %s InitPhase2: %s, InitPhase3: %s PDM_LOCK: %s" \

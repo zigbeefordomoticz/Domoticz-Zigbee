@@ -46,7 +46,7 @@ def sqn_generate_new_internal_sqn (self): # to be called in zigatecmd
     
     return i_sqn
 
-def sqn_add_external_sqn (self, e_sqn, e_sqnZcl): # to be called in decode8000
+def sqn_add_external_sqn (self, e_sqn, e_sqnZcl): # to be called in Transport when receiving 0x8000
 
   #  Domoticz.Error ("sqnMgmt add_external_sqn %s %s" %(e_sqn, self.sqn_stack))
 
@@ -54,7 +54,7 @@ def sqn_add_external_sqn (self, e_sqn, e_sqnZcl): # to be called in decode8000
         if sqn_tuple[E_SQN]  == -1 :
             sqn_tuple[E_SQN] = e_sqn
             return
-    self.loggingSend(  'Debug',"sqnMgmt add_external_sqn could not find i_sqn corresponding %s %s" %(e_sqn, self.sqn_stack))
+    self.loggingSend(  'Error',"sqnMgmt add_external_sqn could not find i_sqn corresponding %s %s" %(e_sqn, self.sqn_stack))
 
 def sqn_get_tuple (self, e_sqn):
 

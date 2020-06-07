@@ -600,10 +600,10 @@ def Decode8011(self, Devices, MsgData, MsgRSSI ):
     MsgSrcAddr = MsgData[2:6]
     MsgSrcEp = MsgData[6:8]
     MsgClusterId = MsgData[8:12]
+    MsgSEQ = 0
     if MsgLen > 12 :
         MsgSEQ = MsgData[12:14]
-    else:
-        MsgSEQ = 0
+
 
     if MsgSrcAddr not in self.ListOfDevices:
         return
