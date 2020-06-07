@@ -362,7 +362,7 @@ class BasePlugin:
             return
 
         loggingPlugin( self, 'Debug', "Establish Zigate connection" )
-        self.ZigateComm.openConn()
+        self.ZigateComm.open_conn()
         self.busy = False
 
     def onStop(self):
@@ -377,17 +377,13 @@ class BasePlugin:
         if self.webserver:
             self.webserver.onStop()
 
- 
-        if self.webserver:
-            self.webserver.onStop()
-
         if (not self.VersionNewFashion and (self.DomoticzMajor > 4 or ( self.DomoticzMajor == 4 and self.DomoticzMinor >= 10355))) or self.VersionNewFashion:
             import threading
             for thread in threading.enumerate():
                 if (thread.name != threading.current_thread().name):
                     Domoticz.Error("'"+thread.name+"' is running, it must be shutdown otherwise Domoticz will abort on plugin exit.")
 
-        #self.ZigateComm.closeConn()
+        #self.ZigateComm.close_conn()
         WriteDeviceList(self, 0)
         
         self.statistics.printSummary()
@@ -466,7 +462,7 @@ class BasePlugin:
             Domoticz.Error("Failed to connect ("+str(Status)+")")
             loggingPlugin( self, 'Debug', "Failed to connect ("+str(Status)+") with error: "+Description)
             self.connectionState = 0
-            self.ZigateComm.reConn()
+            self.ZigateComm.re_conn()
             self.PluginHealth['Flag'] = 3
             self.PluginHealth['Txt'] = 'No Communication'
             self.adminWidgets.updateStatusWidget( Devices, 'No Communication')
@@ -516,7 +512,7 @@ class BasePlugin:
             Domoticz.Error("onMessage - empty message received on %s" %Connection)
 
         self.Ping['Nb Ticks'] = 0
-        self.ZigateComm.onMessage(Data)
+        self.ZigateComm.on_message(Data)
 
     def processFrame( self, Data ):
 
@@ -578,7 +574,7 @@ class BasePlugin:
             return
 
         if self.ZigateComm:
-            self.ZigateComm.checkTimedOutForTxQueues()
+            self.ZigateComm.check_timed_out_for_tx_queues()
 
         busy_ = False
 
@@ -602,7 +598,7 @@ class BasePlugin:
 
         if self.transport != 'None':
             loggingPlugin( self, 'Debug', "onHeartbeat - busy = %s, Health: %s, startZigateNeeded: %s/%s, InitPhase1: %s InitPhase2: %s, InitPhase3: %s PDM_LOCK: %s" \
-                %(self.busy, self.PluginHealth, self.startZigateNeeded, self.HeartbeatCount, self.InitPhase1, self.InitPhase2, self.InitPhase3, self.ZigateComm.PDMLockStatus() ))
+                %(self.busy, self.PluginHealth, self.startZigateNeeded, self.HeartbeatCount, self.InitPhase1, self.InitPhase2, self.InitPhase3, self.ZigateComm.pdm_lock_status() ))
 
         if self.transport != 'None' and ( self.startZigateNeeded or not self.InitPhase1 or not self.InitPhase2):
             # Require Transport
@@ -927,7 +923,7 @@ def pingZigate( self ):
             self.adminWidgets.updateNotificationWidget( Devices, 'Ping: Connection with Zigate Lost')
             #self.connectionState = 0
             #self.Ping['TimeStamp'] = int(time.time())
-            #self.ZigateComm.reConn()
+            #self.ZigateComm.re_conn()
             restartPluginViaDomoticzJsonApi( self )
 
         else:
