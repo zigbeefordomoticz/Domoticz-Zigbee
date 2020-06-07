@@ -699,18 +699,24 @@ def ProcessOtherTypeOfMessage(self, MsgType):
 
     FirstTupleWaitForData = self._waitForCmdResponseQueue[0]
     InternalSqn = FirstTupleWaitForData[0]
-    expResponse = self.ListOfCommands[ InternalSqn ]['ResponseExpectedCmd']
+    if InternalSqn not in self.ListOfCommands:
+        Domoticz.Error("ProcessOtherTypeOfMessage - MsgType: %s, InternalSqn: %s not found in ListOfCommands" %( MsgType, InternalSqn))
+        ReadyToSendIfNeeded( self )
+        return
 
+    expResponse = self.ListOfCommands[ InternalSqn ]['ResponseExpectedCmd']
     if expResponse == 0x8100:
         # In case the expResponse is 0x8100 then we can accept 0x8102
         self.loggingSend(  'Debug',"-----> Internal SQN: %s Received: %s and expecting %s" %(InternalSqn, MsgType, '(0x8100, 0x8102)'  ))
         if int(MsgType, 16) not in ( 0x8100, 0x8102):
             self.loggingReceive(  'Debug', "         - Async incoming PacketType")
+            ReadyToSendIfNeeded( self )
             return   
     else:
         self.loggingSend(  'Debug',"-----> Internal SQN: %s Received: %s and expecting %04x" %(InternalSqn, MsgType,expResponse  ))
         if int(MsgType, 16) != expResponse:
             self.loggingReceive(  'Debug', "         - Async incoming PacketType")
+            ReadyToSendIfNeeded( self )
             return
 
     # We receive Response for Command, let's cleanup
