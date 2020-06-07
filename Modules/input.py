@@ -271,16 +271,16 @@ def Decode8000_v2(self, Devices, MsgData, MsgRSSI) : # Status
         return
 
     Status=MsgData[0:2]
-    SEQ=MsgData[2:4]
+    SQN=MsgData[2:4]
     PacketType=MsgData[4:8]
 
     if MsgLen > 8 :
         loggingInput( self, 'Log',"Decode8000 - More information . New Firmware ???")
         loggingInput( self, 'Log',"Decode8000 - %s" %MsgData)
-        APSAck = PacketType=MsgData[8:10]
+        APSsqn = PacketType=MsgData[8:10]
 
     if self.pluginconf.pluginConf['debugzigateCmd']:
-        loggingInput( self, 'Log', "Decode8000    - %s      Status: %s e_sqn: %s, i_sqn: %s" %( PacketType, Status,SEQ,sqn_get_internal_sqn (self.ZigateComm,SEQ)))
+        loggingInput( self, 'Log', "Decode8000    - %s      Status: %s e_sqn: %s, i_sqn: %s" %( PacketType, Status,SQN,sqn_get_internal_sqn (self.ZigateComm,SQN)))
 
     # Handling Status
     if  Status == "00" : 
@@ -331,7 +331,7 @@ def Decode8000_v2(self, Devices, MsgData, MsgRSSI) : # Status
 
     if str(MsgData[0:2]) != "00" :
         loggingInput( self, 'Debug', "Decode8000 - PacketType: %s e_sqn: %s i_sqn: %s Status: [%s] - %s" \
-                %(PacketType, SEQ, sqn_get_internal_sqn (self.ZigateComm,SEQ), MsgData[0:2], Status))
+                %(PacketType, SQN, sqn_get_internal_sqn (self.ZigateComm,SQN), MsgData[0:2], Status))
 
 def Decode8001(self, Decode, MsgData, MsgRSSI) : # Reception log Level
     MsgLen=len(MsgData)
