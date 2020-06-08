@@ -12,6 +12,11 @@ If you want to contribue , please let us know , we are looking for help in vario
 - improving the plugin
 - increasing the level of documentation for end user
 
+##  8 June 2020 - 4.9.2
+- [Technical] - Smooth pairing for Schneider devices
+- [Issue] - Do not poll battery based devices
+- [Issue] - Require plugin restart after enabling Reset Read Attribute or Group Management
+- [WebAdmin] - Security fixes
 
 ##  5 June 2020 - 4.9.1 (Last release supporting Firmware below 3.1c)
 - [Technical] - Ready for PDM on host.
