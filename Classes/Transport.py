@@ -536,7 +536,7 @@ def process_frame(self, frame):
         # We have the SQN
         self.logging_receive(  'Debug', " - SQN: %s, SqnZCL: %s" %(SQN, SqnZCL))
         if Status == '00':
-            sqn_add_external_sqn (self, SQN, SqnZCL)
+ 
             process_msg_type8000(self, Status, PacketType, SQN, SqnZCL)
 
         self.F_out(frame)  # Forward the message to plugin for further processing
@@ -588,7 +588,6 @@ def process_frame(self, frame):
 def process_msg_type8000(self, Status, PacketType, ExternalSqn, ExternalSqnZCL):
 
     self.loggingSend( 'Debug', "--> process_msg_type8000 - Status: %s PacketType: %s" %(Status, PacketType))
-
     self.statistics._ack += 1
 
     # Command Failed, Status != 00
@@ -604,7 +603,6 @@ def process_msg_type8000(self, Status, PacketType, ExternalSqn, ExternalSqnZCL):
     # What to do with the Command
     if PacketType != '':
         NextCmdFromWaitFor8000 = _next_cmd_from_wait_for8000_queue( self )
-
         if NextCmdFromWaitFor8000 is None:
             self.loggingSend( 'Debug', " --  --  -- - > - Empty Queue")
             ready_to_send_if_needed( self )
@@ -612,19 +610,24 @@ def process_msg_type8000(self, Status, PacketType, ExternalSqn, ExternalSqnZCL):
 
         InternalSqn, TimeStamp = NextCmdFromWaitFor8000
         self.loggingSend( 'Debug', " --  --  -- - > InternSqn: %s ExternalSqn: %s ExternalSqnZCL: %s" %(InternalSqn, ExternalSqn, ExternalSqnZCL))
-        if InternalSqn in self.ListOfCommands:
-            if self.ListOfCommands[ InternalSqn ]['Cmd']:
-                IsCommandOk = int(self.ListOfCommands[ InternalSqn ]['Cmd'], 16) == int(PacketType, 16)
-                if not IsCommandOk:
-                    self.loggingSend( 'Error', "process_msg_type8000 - sync error : Expecting %s and Received: %s" \
-                            % (self.ListOfCommands[ InternalSqn ]['Cmd'], PacketType))
-                    ready_to_send_if_needed( self )
-                    return
-            
-            # Let's check if we are not expecting any CmdResponse. In that case we remove the Entry
-            if not self.ListOfCommands[ InternalSqn ]['ResponseExpected']:
-                self.loggingSend('Debug', " --  --  -- - > remove Entry Command[%s]: %s" %( InternalSqn, self.ListOfCommands[ InternalSqn ]['Cmd'] ))
-                del self.ListOfCommands[ InternalSqn ]
+        if InternalSqn not in self.ListOfCommands:
+            ready_to_send_if_needed( self )
+            return
+
+        if self.ListOfCommands[ InternalSqn ]['Cmd']:
+            IsCommandOk = int(self.ListOfCommands[ InternalSqn ]['Cmd'], 16) == int(PacketType, 16)
+            if not IsCommandOk:
+                self.loggingSend( 'Error', "process_msg_type8000 - sync error : Expecting %s and Received: %s" \
+                        % (self.ListOfCommands[ InternalSqn ]['Cmd'], PacketType))
+                ready_to_send_if_needed( self )
+                return
+        
+        # Let's check if we are not expecting any CmdResponse. In that case we remove the Entry
+        if not self.ListOfCommands[ InternalSqn ]['ResponseExpected']:
+            self.loggingSend('Debug', " --  --  -- - > remove Entry Command[%s]: %s" %( InternalSqn, self.ListOfCommands[ InternalSqn ]['Cmd'] ))
+            del self.ListOfCommands[ InternalSqn ]
+
+        sqn_add_external_sqn (self, InternalSqn, ExternalSqn, ExternalSqnZCL)
 
     ready_to_send_if_needed( self )
 
