@@ -167,7 +167,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             if self.pluginconf.pluginConf['capturePairingInfos']:
                 self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'RA_0300' )
             ReadAttributeRequest_0300(self, NWKID )
-            if  self.ListOfDevices[NWKID]['RIA'] < '2':
+            if  int(self.ListOfDevices[NWKID]['RIA'],10) < 2:
                 return
     # end if status== "8043"
 
@@ -211,7 +211,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         loggingPairing( self, 'Debug', "processNotinDB - Try several times to get all informations, let's use the Model now" +str(NWKID) )
         status = 'createDB'
 
-    elif self.ListOfDevices[NWKID]['RIA'] > '4' and status != 'UNKNOW' and status != 'inDB':  # We have done several retry
+    elif int(self.ListOfDevices[NWKID]['RIA'],10) > 4 and status != 'UNKNOW' and status != 'inDB':  # We have done several retry
         Domoticz.Error("[%s] NEW OBJECT: %s Not able to get all needed attributes on time" %(RIA, NWKID))
         self.ListOfDevices[NWKID]['Status']="UNKNOW"
         self.ListOfDevices[NWKID]['ConsistencyCheck']="Bad Pairing"
@@ -228,9 +228,10 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
 
     if status in ( 'createDB', '8043' ):
         #We will try to create the device(s) based on the Model , if we find it in DeviceConf or against the Cluster
-        if status == '8043' and self.ListOfDevices[NWKID]['RIA'] < '3':     # Let's take one more chance to get Model
-            loggingPairing( self, 'Debug', "Too early, let's try to get the Model")
-            return
+        if self.ListOfDevices[NWKID]['Model'] == {} or self.ListOfDevices[NWKID]['Model'] == '':
+            if status == '8043' and int(self.ListOfDevices[NWKID]['RIA'],10) < 3:     # Let's take one more chance to get Model
+                loggingPairing( self, 'Debug', "Too early, let's try to get the Model")
+                return
 
         # Let's check if we have a profalux device, and if that is a remote. In such case, just drop this
         if 'Manufacturer' in self.ListOfDevices[NWKID]:
