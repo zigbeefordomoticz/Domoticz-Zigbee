@@ -514,9 +514,9 @@ class BasePlugin:
         self.Ping['Nb Ticks'] = 0
         self.ZigateComm.on_message(Data)
 
-    def processFrame( self, Data ):
+    def processFrame( self, Data , i_sqn):
 
-        ZigateRead( self, Devices, Data )
+        ZigateRead( self, Devices, Data, i_sqn )
 
     def onCommand(self, Unit, Command, Level, Color):
 

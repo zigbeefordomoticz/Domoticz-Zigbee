@@ -12,7 +12,7 @@ from datetime import datetime
 
 from Modules.tools import is_hex
 from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_RESPONSES, ZIGATE_COMMANDS, RETRANSMIT_COMMAND
-from Modules.sqnMgmt import sqn_init_stack, sqn_generate_new_internal_sqn, sqn_add_external_sqn, sqn_get_internal_sqn
+from Modules.sqnMgmt import sqn_init_stack, sqn_generate_new_internal_sqn, sqn_add_external_sqn, sqn_get_internal_sqn, sqn_delete
 
 
 STANDALONE_MESSAGE = []
@@ -493,12 +493,12 @@ def check_timed_out(self):
 
     ready_to_send_if_needed( self )
 
-def cleanup_list_of_commands( self, InternalSqn):
+def cleanup_list_of_commands( self, i_sqn):
     
-    self.loggingSend(  'Debug', " --  -- - > Internal SQN: %s" %InternalSqn)
-    if InternalSqn in self.ListOfCommands:
+    self.loggingSend(  'Debug', " --  -- - > Internal SQN: %s" %i_sqn)
+    if i_sqn in self.ListOfCommands:
         self.loggingSend(  'Debug', " --  -- - > Removing ListOfCommand entry")
-        del self.ListOfCommands[ InternalSqn ]
+        del self.ListOfCommands[ i_sqn ]
 
 # Receiving functions
 def process_frame(self, frame):
@@ -537,9 +537,9 @@ def process_frame(self, frame):
         self.logging_receive(  'Debug', " - SQN: %s, SqnZCL: %s" %(SQN, SqnZCL))
         if Status == '00':
  
-            process_msg_type8000(self, Status, PacketType, SQN, SqnZCL)
+            i_sqn = process_msg_type8000(self, Status, PacketType, SQN, SqnZCL)
 
-        self.F_out(frame)  # Forward the message to plugin for further processing
+        self.F_out(frame, i_sqn )  # Forward the message to plugin for further processing
         return
 
     if self.zmode == 'ZigBeeAck' and MsgData and MsgType == '8011': 
@@ -560,28 +560,28 @@ def process_frame(self, frame):
             self.logging_receive( 'Log', " - detect an NACK")
             self.statistics._APSNck += 1
 
-        process_msg_type8011( self, MsgStatus, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgSEQ )
+        i_sqn = process_msg_type8011( self, MsgStatus, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgSEQ )
 
-        #self.F_out(frame)  # Forward the message to plugin for further processing
+        #self.F_out(frame, i_sqn )  # Forward the message to plugin for further processing
         return
 
     if MsgType == '8701':
         # Route Discovery
-        # self.F_out(frame)  # for processing
+        # self.F_out(frame, None)  # for processing
         return        
 
     if MsgType == "8702": # APS Failure
-        process_msg_type8702( self, MsgData )
+        i_sqn = process_msg_type8702( self, MsgData )
         self.statistics._APSFailure += 1
-        #    self.F_out(frame)  # Forward the message to plugin for further processing
+        #    self.F_out(frame, i_sqn )  # Forward the message to plugin for further processing
         return
 
     if int(MsgType, 16) in STANDALONE_MESSAGE:  # We receive an async message, just forward it to plugin
-        self.F_out(frame)  # for processing
+        self.F_out(frame, None)  # for processing
         return
 
-    process_other_type_of_message( self, MsgType)  #
-    self.F_out(frame)  # Forward the message to plugin for further processing
+    i_sqn = process_other_type_of_message( self, MsgType)  #
+    self.F_out(frame, i_sqn)  # Forward the message to plugin for further processing
 
     self.check_timed_out_for_tx_queues()  # Let's take the opportunity to check TimeOut
 
@@ -606,13 +606,13 @@ def process_msg_type8000(self, Status, PacketType, ExternalSqn, ExternalSqnZCL):
         if NextCmdFromWaitFor8000 is None:
             self.loggingSend( 'Debug', " --  --  -- - > - Empty Queue")
             ready_to_send_if_needed( self )
-            return
+            return None
 
         InternalSqn, TimeStamp = NextCmdFromWaitFor8000
         self.loggingSend( 'Debug', " --  --  -- - > InternSqn: %s ExternalSqn: %s ExternalSqnZCL: %s" %(InternalSqn, ExternalSqn, ExternalSqnZCL))
         if InternalSqn not in self.ListOfCommands:
             ready_to_send_if_needed( self )
-            return
+            return None
 
         if self.ListOfCommands[ InternalSqn ]['Cmd']:
             IsCommandOk = int(self.ListOfCommands[ InternalSqn ]['Cmd'], 16) == int(PacketType, 16)
@@ -620,7 +620,7 @@ def process_msg_type8000(self, Status, PacketType, ExternalSqn, ExternalSqnZCL):
                 self.loggingSend( 'Error', "process_msg_type8000 - sync error : Expecting %s and Received: %s" \
                         % (self.ListOfCommands[ InternalSqn ]['Cmd'], PacketType))
                 ready_to_send_if_needed( self )
-                return
+                return None
         
         # Let's check if we are not expecting any CmdResponse. In that case we remove the Entry
         if not self.ListOfCommands[ InternalSqn ]['ResponseExpected']:
@@ -630,6 +630,7 @@ def process_msg_type8000(self, Status, PacketType, ExternalSqn, ExternalSqnZCL):
         sqn_add_external_sqn (self, InternalSqn, ExternalSqn, ExternalSqnZCL)
 
     ready_to_send_if_needed( self )
+    return InternalSqn
 
 def process_msg_type8011( self, Status, NwkId, Ep, MsgClusterId, ExternSqn ):
 
@@ -638,12 +639,13 @@ def process_msg_type8011( self, Status, NwkId, Ep, MsgClusterId, ExternSqn ):
     if InternSqn is None:
         # Unknown SQN !
         #Domoticz.Log("process_msg_type8011 - Sqn: %s not found" %ExternSqn)
-        return
+        return None
 
     if ExternSqn == 0:
         self.loggingSend( 'Debug',"----> Firmware below 3.1d")
         #return
     self.loggingSend( 'Debug',"----------->  ExternalSqn: %s InternalSqn: %s" %(ExternSqn,InternSqn))
+    return InternSqn
 
 def process_msg_type8702( self, MsgData):
     #
@@ -665,7 +667,6 @@ def process_msg_type8702( self, MsgData):
         Domoticz.Error("process_msg_type8702 - Empty frame: %s" %MsgData)
         return  True
 
-
     MsgDataStatus = MsgData[0:2]
     #MsgDataSrcEp = MsgData[2:4]
     MsgDataDestEp = MsgData[4:6]
@@ -686,7 +687,7 @@ def process_msg_type8702( self, MsgData):
     InternSqn = sqn_get_internal_sqn (self, ExternSqn)
     self.loggingSend( 'Debug', "----------->  ExternalSqn: %s InternalSqn: %s" %(ExternSqn,InternSqn))
 
-    return True
+    return InternSqn
 
 def process_other_type_of_message(self, MsgType):
     
@@ -708,7 +709,7 @@ def process_other_type_of_message(self, MsgType):
     if InternalSqn not in self.ListOfCommands:
         Domoticz.Error("process_other_type_of_message - MsgType: %s, InternalSqn: %s not found in ListOfCommands" %( MsgType, InternalSqn))
         ready_to_send_if_needed( self )
-        return
+        return None
 
     expResponse = self.ListOfCommands[ InternalSqn ]['ResponseExpectedCmd']
     if expResponse == 0x8100:
@@ -717,19 +718,20 @@ def process_other_type_of_message(self, MsgType):
         if int(MsgType, 16) not in ( 0x8100, 0x8102):
             self.logging_receive(  'Debug', "         - Async incoming PacketType")
             ready_to_send_if_needed( self )
-            return   
+            return None
     else:
         self.loggingSend(  'Debug', " --  -- - > Internal SQN: %s Received: %s and expecting %04x" %(InternalSqn, MsgType, expResponse  ))
         if int(MsgType, 16) != expResponse:
             self.logging_receive(  'Debug', "         - Async incoming PacketType")
             ready_to_send_if_needed( self )
-            return
+            return None
 
     # We receive Response for Command, let's cleanup
     cleanup_list_of_commands( self, _next_cmd_from_wait_cmdresponse_queue( self )[0] )
 
     # If we have Still commands in the queue and the WaitforStatus+Data are free
     ready_to_send_if_needed( self )
+    return InternalSqn
 
 # Logging functions
 def _write_message( self, message):
