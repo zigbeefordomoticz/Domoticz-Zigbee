@@ -34,13 +34,15 @@ def sendZigateCmd(self, cmd, datas ):
         Domoticz.Error("Zigate Communication error.")
         return
 
+    i_sqn = self.ZigateComm.sendData( cmd, datas )
+
     if self.pluginconf.pluginConf['debugzigateCmd']:
-        loggingBasicOutput( self, 'Log', "sendZigateCmd - %s %s Queue Length: %s" %(cmd, datas, self.ZigateComm.loadTransmit()))
+        loggingBasicOutput( self, 'Log', "sendZigateCmd - [%s] %s %s Queue Length: %s" %(i_sqn, cmd, datas, self.ZigateComm.loadTransmit()))
     else:
-        loggingBasicOutput( self, 'Debug', "=====> sendZigateCmd - %s %s Queue Length: %s" %(cmd, datas, self.ZigateComm.loadTransmit()))
+        loggingBasicOutput( self, 'Debug', "=====> sendZigateCmd - [%s] %s %s Queue Length: %s" %(i_sqn,cmd, datas, self.ZigateComm.loadTransmit()))
 
     if self.ZigateComm.loadTransmit() > 15:
-        loggingBasicOutput( self, 'Log', "WARNING - ZigateCmd: %s %18s ZigateQueue: %s" %(cmd, datas, self.ZigateComm.loadTransmit()))
+        loggingBasicOutput( self, 'Log', "WARNING - ZigateCmd: [%s] %s %18s ZigateQueue: %s" %(i_sqn,cmd, datas, self.ZigateComm.loadTransmit()))
 
     return self.ZigateComm.sendData( cmd, datas )
 

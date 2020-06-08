@@ -448,6 +448,8 @@ ZIGATE_RESPONSES = {
         0x8006: 'Non Factory new Restart',
         0x8007: 'Factory New Restart',
 
+        0x8035: ' PDM event',
+
         0x8048: 'Leave Indication',
         0x8085: 'Level Update',
         0x8095: 'ON/OFF Update',

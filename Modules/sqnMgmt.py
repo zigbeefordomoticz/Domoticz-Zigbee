@@ -53,7 +53,7 @@ def sqn_add_external_sqn (self, i_sqn, e_sqn, e_sqnZcl): # to be called in Trans
     for sqn_tuple in self.sqn_stack:
         if sqn_tuple[ I_SQN ] == i_sqn:
         #if sqn_tuple[E_SQN]  == -1 :
-            self.loggingSend(  'Log',"sqn_add_external_sqn -> %s %s" %(i_sqn, sqn_tuple[ I_SQN ] ))
+            self.loggingSend(  'Debug',"sqn_add_external_sqn -> %s %s" %(i_sqn, sqn_tuple[ I_SQN ] ))
             sqn_tuple[E_SQN] = e_sqn
             return
     self.loggingSend(  'Error',"sqnMgmt add_external_sqn could not find i_sqn corresponding %s %s" %(e_sqn, self.sqn_stack))
