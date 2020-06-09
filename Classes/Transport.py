@@ -550,14 +550,24 @@ def process_frame(self, frame):
             # New Firmware 3.1d (get a 2nd SQN)
             SqnZCL = MsgData[8:10]
 
-        # We are receiving a Status
-        # We have receive a Status code in response to a command.
-        # We have the SQN
-        self.logging_receive( 'Debug', " - SQN: %s, SqnZCL: %s" %(SQN, SqnZCL))
-        if Status == '00':
-            i_sqn = process_msg_type8000(self, Status, PacketType, SQN, SqnZCL)
+        i_sqn = process_msg_type8000(self, Status, PacketType, SQN, SqnZCL)
+        if Status != '00':
+            # Unqueue the Wait for Command response 
+            if len(self._waitForCmdResponseQueue) > 0:
+                self.logging_receive( 'Log', " - Unqueue CmdResponse is needed: [%s] %s %s " %(i_sqn, SQN, SqnZCL))
+                # We are waiting for a Response from a Command
+                if i_sqn in self.ListOfCommands:
+                    if self.ListOfCommands[ i_sqn ]['ResponseExpectedCmd']:
+                        self.logging_receive( 'Log', " - -- Unqueue CmdResponse : [%s] %s %s " 
+                            %(i_sqn, self.ListOfCommands[ i_sqn ]['Cmd'], self.ListOfCommands[ i_sqn ]['Datas']))
+                _next_cmd_from_wait_cmdresponse_queue( self )
 
-        self.F_out(frame, i_sqn )  # Forward the message to plugin for further processing
+        self.logging_receive( 'Debug', " - SQN: %s, SqnZCL: %s" %(SQN, SqnZCL))
+        if i_sqn in self.ListOfCommands:
+            ReportingCommand = dict(self.ListOfCommands[ i_sqn ])
+            self.F_out(frame, i_sqn, ReportingCommand )  # Forward the message to plugin for further processing
+        else: 
+           self.F_out(frame, i_sqn, None)
         return
 
     if  MsgType == '8011':
