@@ -277,7 +277,7 @@ def Decode8000_v2(self, Devices, MsgData, MsgRSSI, i_sqn) : # Status
     if MsgLen > 8 :
         loggingInput( self, 'Log',"Decode8000 - More information . New Firmware ???")
         loggingInput( self, 'Log',"Decode8000 - %s" %MsgData)
-        APSsqn = PacketType=MsgData[8:10]
+        APSsqn = MsgData[8:10]
 
     if self.pluginconf.pluginConf['debugzigateCmd']:
         loggingInput( self, 'Log', "Decode8000    - %s      Status: %s e_sqn: %s, i_sqn: %s" %( PacketType, Status,SQN, i_sqn))
