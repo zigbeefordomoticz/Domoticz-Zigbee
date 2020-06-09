@@ -433,6 +433,9 @@ def _send_data(self, InternalSqn):
     self.statistics._sent += 1
 
 def check_timed_out(self):
+
+    TIME_OUT_8000 = 1.5
+    TIME_OUT_RESPONSE = 3
     
     if self.checkTimedOutFlag:
         # check_timed_out can be called either by onHeartbeat or from inside the Class. 
@@ -451,21 +454,25 @@ def check_timed_out(self):
         # We are waiting for 0x8000
 
         InternalSqn, TimeStamp = self._waitFor8000Queue[0]
-        if (now - TimeStamp) > self.zTimeOut:
+        if (now - TimeStamp) >= TIME_OUT_8000:
             # Timed Out 0x8000
             # We might have to Timed Out also on the Data ?
 
             self.statistics._TOstatus += 1
             entry = _next_cmd_from_wait_for8000_queue( self )
             if entry:
+                InternalSqn, TimeStamp = entry
                 self.loggingSend( 'Log', " --  --  --  >  0x8000- TIMED OUT %s  " % ( entry[0]))
+                self.loggingSend( 'Log', " --  --  --  > - TIMED OUT %s sec on SQN waiting for %s %s %s %04x" \
+                    % ((now - TimeStamp), InternalSqn, self.ListOfCommands[ InternalSqn ]['Cmd'], self.ListOfCommands[ InternalSqn ]['Datas'], 
+                    self.ListOfCommands[ InternalSqn ]['ResponseExpectedCmd'] ))
 
     # Check waitForData
     if len(self._waitForCmdResponseQueue) > 0:
         # We are waiting for a Response from a Command
         InternalSqn, TimeStamp = self._waitForCmdResponseQueue[0]
         #if (now - TimeStamp) > self.zTimeOut:
-        if (now - TimeStamp) >= 3:
+        if (now - TimeStamp) >= TIME_OUT_RESPONSE:
 
             # No response ! We Timed Out
             self.statistics._TOdata += 1
@@ -518,6 +525,7 @@ def process_frame(self, frame):
     MsgLength = frame[6:10]
     MsgCRC = frame[10:12]
     self.logging_receive( 'Debug', "process_frame - MsgType: %s MsgLength: %s MsgCRC: %s" %(MsgType, MsgLength, MsgCRC))
+    
     if len(frame) >= 18:
         #Payload
         MsgData = frame[12:len(frame) - 4]
@@ -582,7 +590,6 @@ def process_frame(self, frame):
 
     i_sqn = process_other_type_of_message( self, MsgType)  #
     self.F_out(frame, i_sqn)  # Forward the message to plugin for further processing
-
     self.check_timed_out_for_tx_queues()  # Let's take the opportunity to check TimeOut
 
 def process_msg_type8000(self, Status, PacketType, ExternalSqn, ExternalSqnZCL):
@@ -635,7 +642,7 @@ def process_msg_type8000(self, Status, PacketType, ExternalSqn, ExternalSqnZCL):
 def process_msg_type8011( self, Status, NwkId, Ep, MsgClusterId, ExternSqn ):
 
     self.loggingSend( 'Log',"--> process_msg_type8011 - ExternalSqn: %s NwkId: %s Ep: %s" %(ExternSqn, NwkId, Ep  ))
-    #InternSqn = sqn_get_internal_sqn (self,ExternSqn)
+    InternSqn = sqn_get_internal_sqn (self,ExternSqn)
     if InternSqn is None:
         # Unknown SQN !
         #Domoticz.Log("process_msg_type8011 - Sqn: %s not found" %ExternSqn)
@@ -684,7 +691,7 @@ def process_msg_type8702( self, MsgData):
         ExternSqn = MsgData[12:14]
 
     self.loggingSend( 'Log',"process_msg_type8702 - ExternalSqn: %s NwkId: %s Ep: %s" %(ExternSqn, NwkId, MsgDataDestEp  ))
-    #InternSqn = sqn_get_internal_sqn (self, ExternSqn)
+    InternSqn = sqn_get_internal_sqn (self, ExternSqn)
     self.loggingSend( 'Log', "----------->  ExternalSqn: %s InternalSqn: %s" %(ExternSqn,InternSqn))
 
     return InternSqn
