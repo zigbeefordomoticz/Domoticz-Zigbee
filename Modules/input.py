@@ -54,7 +54,7 @@ from Classes.AdminWidgets import  AdminWidgets
 from Classes.OTA import OTAManagement
 from Classes.NetworkMap import NetworkMap
 
-def ZigateRead(self, Devices, Data, i_sqn, TransportErrors=None):
+def ZigateRead(self, Devices, Data, i_sqn, TransportInfos=None):
 
     DECODERS = {
         '0100': Decode0100,

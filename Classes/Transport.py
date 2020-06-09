@@ -434,9 +434,20 @@ def _send_data(self, InternalSqn):
 
 def check_timed_out(self):
 
+    def logExpectedCommand( self, now, TimeStamp, i_sqn):
+        if self.ListOfCommands[ i_sqn ]['ResponseExpectedCmd']:
+            self.loggingSend( 'Log', " --  --  --  > - TIMED OUT %s sec on SQN waiting for %s %s %s %04x" \
+                % ((now - TimeStamp), i_sqn, self.ListOfCommands[ i_sqn ]['Cmd'], self.ListOfCommands[ i_sqn ]['Datas'], 
+                self.ListOfCommands[ i_sqn ]['ResponseExpectedCmd'] ))
+        else:
+            self.loggingSend( 'Log', " --  --  --  > - TIMED OUT %s sec on SQN waiting for %s %s %s %s" \
+                % ((now - TimeStamp), i_sqn, self.ListOfCommands[ i_sqn ]['Cmd'], self.ListOfCommands[ i_sqn ]['Datas'], 
+                self.ListOfCommands[ i_sqn ]['ResponseExpectedCmd'] ))
+
+
     TIME_OUT_8000 = 1.5
     TIME_OUT_RESPONSE = 3
-    
+
     if self.checkTimedOutFlag:
         # check_timed_out can be called either by onHeartbeat or from inside the Class. 
         # In case it comes from onHeartbeat we might have a re-entrance issue
@@ -454,6 +465,7 @@ def check_timed_out(self):
         # We are waiting for 0x8000
 
         InternalSqn, TimeStamp = self._waitFor8000Queue[0]
+
         if (now - TimeStamp) >= TIME_OUT_8000:
             # Timed Out 0x8000
             # We might have to Timed Out also on the Data ?
@@ -463,14 +475,13 @@ def check_timed_out(self):
             if entry:
                 InternalSqn, TimeStamp = entry
                 self.loggingSend( 'Log', " --  --  --  >  0x8000- TIMED OUT %s  " % ( entry[0]))
-                self.loggingSend( 'Log', " --  --  --  > - TIMED OUT %s sec on SQN waiting for %s %s %s %04x" \
-                    % ((now - TimeStamp), InternalSqn, self.ListOfCommands[ InternalSqn ]['Cmd'], self.ListOfCommands[ InternalSqn ]['Datas'], 
-                    self.ListOfCommands[ InternalSqn ]['ResponseExpectedCmd'] ))
+                logExpectedCommand( self, now, TimeStamp, InternalSqn)
 
     # Check waitForData
     if len(self._waitForCmdResponseQueue) > 0:
         # We are waiting for a Response from a Command
         InternalSqn, TimeStamp = self._waitForCmdResponseQueue[0]
+
         #if (now - TimeStamp) > self.zTimeOut:
         if (now - TimeStamp) >= TIME_OUT_RESPONSE:
 
@@ -478,11 +489,10 @@ def check_timed_out(self):
             self.statistics._TOdata += 1
             InternalSqn, TimeStamp =  _next_cmd_from_wait_cmdresponse_queue( self )
             if InternalSqn in self.ListOfCommands:
-                self.loggingSend( 'Log', " --  --  --  > - TIMED OUT %s sec on SQN waiting for %s %s %s %04x" \
-                    % ((now - TimeStamp), InternalSqn, self.ListOfCommands[ InternalSqn ]['Cmd'], self.ListOfCommands[ InternalSqn ]['Datas'], 
-                    self.ListOfCommands[ InternalSqn ]['ResponseExpectedCmd'] ))
+                logExpectedCommand( self, now, TimeStamp, InternalSqn)
+
                 del self.ListOfCommands[ InternalSqn ]
-    
+
     # Check if there is no TimedOut on ListOfCommands
     #Domoticz.Log("checkTimedOutForTxQueues ListOfCommands size: %s" %len(self.ListOfCommands))
     #for x in list(self.ListOfCommands.keys()):
@@ -570,7 +580,11 @@ def process_frame(self, frame):
                 self.statistics._APSNck += 1
 
             i_sqn = process_msg_type8011( self, MsgStatus, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgSEQ )
-            #self.F_out(frame, i_sqn )  # Forward the message to plugin for further processing
+            if i_sqn in self.ListOfCommands:
+                ReportingCommand = dict(self.ListOfCommands[ i_sqn ])
+                self.F_out(frame, i_sqn, ReportingCommand )  # Forward the message to plugin for further processing
+            else: 
+                self.F_out(frame, i_sqn, None)
         return
 
     if MsgType == '8701':
@@ -578,10 +592,15 @@ def process_frame(self, frame):
         # self.F_out(frame, i_sqn)  # for processing
         return        
 
-    if MsgType == "8702": # APS Failure
-        #i_sqn = process_msg_type8702( self, MsgData )
+    if MsgType == "8702":
+        # APS Failure
+        i_sqn = process_msg_type8702( self, MsgData )
         self.statistics._APSFailure += 1
-        #    self.F_out(frame, i_sqn )  # Forward the message to plugin for further processing
+        if i_sqn in self.ListOfCommands:
+            FailedCommand = dict(self.ListOfCommands[ i_sqn ])
+            self.F_out(frame, i_sqn , FailedCommand)  # Forward the message to plugin for further processing
+        else:
+            self.F_out(frame, i_sqn , None)
         return
 
     if int(MsgType, 16) in STANDALONE_MESSAGE:  # We receive an async message, just forward it to plugin
@@ -655,7 +674,6 @@ def process_msg_type8011( self, Status, NwkId, Ep, MsgClusterId, ExternSqn ):
     return InternSqn
 
 def process_msg_type8702( self, MsgData):
-    #
     # Status: d4 - Unicast frame does not have a route available but it is buffered for automatic resend
     # Status: e9 - No acknowledgement received when expected
     # Status: f0 - Pending transaction has expired and data discarded
@@ -667,9 +685,7 @@ def process_msg_type8702( self, MsgData):
     # stack event ZPS_EVENT_NWK_ROUTE_DISCOVERY_CONFIRM (success or failure) before attempting to re-send
     # the message by calling the same unicast function again.
 
-
     self.loggingSend( 'Log',"--> process_msg_type8702")
-
     if len(MsgData) == 0 or len(MsgData) < 8:
         Domoticz.Error("process_msg_type8702 - Empty frame: %s" %MsgData)
         return  True
