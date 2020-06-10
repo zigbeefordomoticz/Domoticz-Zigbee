@@ -12,7 +12,7 @@ from datetime import datetime
 
 from Modules.tools import is_hex
 from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_RESPONSES, ZIGATE_COMMANDS, RETRANSMIT_COMMAND
-from Modules.sqnMgmt import sqn_init_stack, sqn_generate_new_internal_sqn, sqn_add_external_sqn, sqn_get_internal_sqn, sqn_delete
+from Modules.sqnMgmt import sqn_init_stack, sqn_generate_new_internal_sqn, sqn_add_external_sqn, sqn_get_internal_sqn, sqn_delete, E_SQN_ZCL, E_SQN_APS
 
 
 STANDALONE_MESSAGE = []
@@ -64,6 +64,7 @@ class ZigateTransport(object):
         self.statistics = statistics
 
         self.pluginconf = pluginconf
+        self.firmware_with_zcl_sqn = False
 
         self.zmode = pluginconf.pluginConf['zmode']
         self.zTimeOut = pluginconf.pluginConf['zTimeOut']
@@ -549,6 +550,7 @@ def process_frame(self, frame):
         if len(MsgData) == 10:
             # New Firmware 3.1d (get a 2nd SQN)
             SqnZCL = MsgData[8:10]
+            self.firmware_with_zcl_sqn = True
 
         i_sqn = process_msg_type8000(self, Status, PacketType, SQN, SqnZCL)
         if Status != '00':
@@ -717,6 +719,7 @@ def process_msg_type8702( self, MsgData):
         ExternSqn = MsgData[12:14]
 
     self.loggingSend( 'Log',"process_msg_type8702 - ExternalSqn: %s NwkId: %s Ep: %s" %(ExternSqn, NwkId, MsgDataDestEp  ))
+
     InternSqn = sqn_get_internal_sqn (self, ExternSqn)
     self.loggingSend( 'Log', "----------->  ExternalSqn: %s InternalSqn: %s" %(ExternSqn,InternSqn))
 
