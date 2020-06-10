@@ -12,7 +12,7 @@ from datetime import datetime
 
 from Modules.tools import is_hex
 from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_RESPONSES, ZIGATE_COMMANDS, RETRANSMIT_COMMAND, ADDRESS_MODE
-from Modules.sqnMgmt import sqn_init_stack, sqn_generate_new_internal_sqn, sqn_add_external_sqn, sqn_get_internal_sqn
+from Modules.sqnMgmt import sqn_init_stack, sqn_generate_new_internal_sqn, sqn_add_external_sqn, sqn_get_internal_sqn, E_SQN_APS
 
 
 STANDALONE_MESSAGE = []
@@ -63,6 +63,9 @@ class ZigateTransport(object):
         self._waitFor8000Queue = []  # list of command sent and waiting for status 0x8000
         self._waitForCmdResponseQueue = []  # list of command sent for which status received and waiting for data
         self._waitForAckNack = []    # Contains list of Command waiting for Ack/Nack
+
+        self.firmware_with_aps_sqn = False
+
         self.zmode = pluginconf.pluginConf['zmode']
         self.zTimeOut = pluginconf.pluginConf['zTimeOut']
         self.firmware_with_zcl_sqn = False
@@ -640,17 +643,20 @@ def process_frame(self, frame):
 
     if MsgData and MsgType == "8000":  
         Status = MsgData[0:2]
-        SQN_1 = MsgData[2:4]
+        sqn_app = MsgData[2:4]
         PacketType = MsgData[4:8] 
-        SQN_2 = None  
-        if len(MsgData) == 10:
-            # New Firmware 3.1d (get a 2nd SQN)
-            SqnAPS = MsgData[8:10]
-            self.firmware_with_zcl_sqn = True
 
-        i_sqn = process_msg_type8000(self, Status, PacketType, SQN_1, SQN_2)
-        self.logging_receive( 'Debug', " - SQN: %s, SqnZCL: %s" %(SQN_1, SQN_2))
-        self.F_out(frame, None)
+        sqn_aps = None  
+        Ack_expected = None
+        if len(MsgData) == 12:
+            # New Firmware 3.1d (get aps sqn)
+            Ack_expected = MsgData[8:10]
+            sqn_aps = MsgData[10:12]
+            self.firmware_with_aps_sqn = True
+
+        i_sqn = process_msg_type8000(self, Status, PacketType, sqn_app, sqn_aps, Ack_expected)
+        self.logging_receive( 'Debug', " - sqn_app: %s, SQN_APS: %s Ack_expected: %s" %(sqn_app, sqn_aps, Ack_expected))
+        self.F_out(frame, i_sqn, None)
         if i_sqn  in self.ListOfCommands:
             self.ListOfCommands[ i_sqn ]['Status'] = '8000'  
         else:
@@ -716,12 +722,12 @@ def process_frame(self, frame):
     self.F_out(frame, None)  # Forward the message to plugin for further processing
     self.check_timed_out_for_tx_queues()  # Let's take the opportunity to check TimeOut
 
-def process_msg_type8000(self, Status, PacketType, sqn_1, sqn_2):
+def process_msg_type8000(self, Status, PacketType, sqn_app, sqn_aps, Ack_expected):
 
     if PacketType == '':
         return None
 
-    self.loggingSend( 'Debug', "--> process_msg_type8000 - Status: %s PacketType: %s eSqn1:%s eSqn2: %s" %(Status, PacketType,sqn_1, sqn_2))
+    self.loggingSend( 'Debug', "--> process_msg_type8000 - Status: %s PacketType: %s sqn_app:%s sqn_aps: %s Ack_expected: %s" %(Status, PacketType,sqn_app, sqn_aps, Ack_expected))
     # Command Failed, Status != 00
     if Status != '00':
         self.statistics._ackKO += 1
@@ -759,7 +765,7 @@ def process_msg_type8000(self, Status, PacketType, sqn_1, sqn_2):
         return None
 
     InternalSqn, TimeStamp = NextCmdFromWaitFor8000
-    self.loggingSend( 'Debug', " --  --  -- - > InternSqn: %s ExternalSqn: %s ExternalSqnZCL: %s" %(InternalSqn, sqn_1, sqn_2))
+    self.loggingSend( 'Debug', " --  --  -- - > InternSqn: %s ExternalSqn: %s ExternalSqnZCL: %s" %(InternalSqn, sqn_app, sqn_aps))
     if InternalSqn not in self.ListOfCommands:
         return None
 
@@ -771,7 +777,7 @@ def process_msg_type8000(self, Status, PacketType, sqn_1, sqn_2):
             return None
     
 
-    sqn_add_external_sqn (self, InternalSqn, sqn_1, sqn_2)
+    sqn_add_external_sqn (self, InternalSqn, sqn_app, sqn_aps)
     return InternalSqn
 
 def process_msg_type8011( self, Status, NwkId, Ep, MsgClusterId, ExternSqn ):
@@ -779,6 +785,11 @@ def process_msg_type8011( self, Status, NwkId, Ep, MsgClusterId, ExternSqn ):
     self.loggingSend( 'Debug',"--> process_msg_type8011 - Status: %s ExternalSqn: %s NwkId: %s Ep: %s" %(Status, ExternSqn, NwkId, Ep  ))
     # Unqueue the Command in order to free for the next
     InternSqn, TimeStamps = _next_cmd_to_wait_for_ack_nack_queue( self ) 
+
+    if (self.firmware_with_aps_sqn):
+        InternSqn_from_ExternSqn = sqn_get_internal_sqn (self, ExternSqn, E_SQN_APS)
+        if InternSqn != InternSqn_from_ExternSqn:
+            Domoticz.Error ("process_msg_type8011 different sqn : InternSqn:%s InternSQN_from_ExternalSQN:%s" %(InternSqn, InternSqn_from_ExternSqn))
 
     if Status == '00':
         if InternSqn in self.ListOfCommands:

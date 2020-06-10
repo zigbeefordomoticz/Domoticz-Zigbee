@@ -11,7 +11,7 @@ import Domoticz
 from Modules.schneider_wiser import callbackDeviceAwake_Schneider
 from Modules.legrand_netatmo import callbackDeviceAwake_Legrand
 from Modules.basicOutputs import write_attribute
-from Modules.bindings import webBind, callBackForWebBindIfNeeded
+from Modules.bindings import webBind, callBackForBindIfNeeded, callBackForWebBindIfNeeded
 from Modules.logging import loggingWriteAttributes, loggingBinding
 
 
@@ -33,6 +33,8 @@ def callbackDeviceAwake(self, nwkid, endpoint, cluster):
         return
 
     # Let's check if any WebBind have to be established
+
+#    callBackForBindIfNeeded(self, nwkid)
     callBackForWebBindIfNeeded( self, nwkid )
 
     callBackForWriteAttributeIfNeeded( self, nwkid )
