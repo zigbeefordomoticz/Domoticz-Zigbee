@@ -567,9 +567,9 @@ def process_frame(self, frame):
         self.logging_receive( 'Debug', " - SQN: %s, SqnZCL: %s" %(SQN, SqnZCL))
         if i_sqn in self.ListOfCommands:
             ReportingCommand = dict(self.ListOfCommands[ i_sqn ])
-            self.F_out(frame, i_sqn, ReportingCommand )  # Forward the message to plugin for further processing
-        else: 
-           self.F_out(frame, i_sqn, None)
+            #self.F_out(frame, i_sqn, ReportingCommand )  # Forward the message to plugin for further processing
+        #else: 
+        #   self.F_out(frame, i_sqn, None)
         return
 
     if  MsgType == '8011':
@@ -594,7 +594,7 @@ def process_frame(self, frame):
             i_sqn = process_msg_type8011( self, MsgStatus, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgSEQ )
             if i_sqn in self.ListOfCommands:
                 ReportingCommand = dict(self.ListOfCommands[ i_sqn ])
-                self.F_out(frame, i_sqn, ReportingCommand )  # Forward the message to plugin for further processing
+                #self.F_out(frame, i_sqn, ReportingCommand )  # Forward the message to plugin for further processing
             else: 
                 self.F_out(frame, i_sqn, None)
         return
