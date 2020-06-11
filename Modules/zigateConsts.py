@@ -321,16 +321,19 @@ ZIGATE_COMMANDS = {
         0x0027: {'Sequence': (0x8000,),        'Ack': False, 'Command': 'Enable Permissions Controlled Joins' , 'NwkId 2nd Bytes': False },
         0x0028: {'Sequence': (0x8000, 0x8028), 'Ack': False, 'Command': 'Authenticate Device' , 'NwkId 2nd Bytes': False },
         0x0029: {'Sequence': (0x8000,),        'Ack': False, 'Command': 'Out of Band Commissioning Data Request' , 'NwkId 2nd Bytes': False },
+        0x002A: {'Sequence': (0x8000,),        'Ack': False, 'Command': 'E_SL_MSG_UPDATE_AUTHENTICATE_DEVICE' , 'NwkId 2nd Bytes': False },
         0x002B: {'Sequence': (0x8000, 0x802B), 'Ack': False, 'Command': 'User Descriptor Set' , 'NwkId 2nd Bytes': False },
         0x002C: {'Sequence': (0x8000, 0x802C), 'Ack': False, 'Command': 'User Descritpor Request' , 'NwkId 2nd Bytes': False },
+        0x002F: {'Sequence': (0x8000,),        'Ack': False, 'Command': 'E_SL_MSG_SET_FLOW_CONTROL' , 'NwkId 2nd Bytes': False },
+
+
         0x0030: {'Sequence': (0x8000, 0x8030), 'Ack': True , 'Command': 'Bind' , 'NwkId 2nd Bytes': False },
         0x0031: {'Sequence': (0x8000, 0x8031), 'Ack': True , 'Command': 'Unbind' , 'NwkId 2nd Bytes': False },
-        0x0032: {'Sequence': (0x8000, 0x8030), 'Ack': False , 'Command': 'Bind Group' , 'NwkId 2nd Bytes': False },
-        0x0033: {'Sequence': (0x8000, 0x8031), 'Ack': False , 'Command': 'Unbind Group' , 'NwkId 2nd Bytes': False },
 
+        0x0032: {'Sequence': (0x8000, 0x8030), 'Ack': False ,'Command': 'Bind Group' , 'NwkId 2nd Bytes': False },
+        0x0033: {'Sequence': (0x8000, 0x8031), 'Ack': False ,'Command': 'Unbind Group' , 'NwkId 2nd Bytes': False },
 
         0x0040: {'Sequence': (0x8000, 0x8040), 'Ack': True , 'Command': 'Network Address request' , 'NwkId 2nd Bytes': False },
-
         0x0041: {'Sequence': (0x8000, 0x8041), 'Ack': True , 'Command': 'IEEE Address request' , 'NwkId 2nd Bytes': False },
         0x0042: {'Sequence': (0x8000, 0x8042), 'Ack': True , 'Command': 'Node Descriptor request' , 'NwkId 2nd Bytes': False },
         0x0043: {'Sequence': (0x8000, 0x8043), 'Ack': True , 'Command': 'Simple Descriptor request' , 'NwkId 2nd Bytes': False },
@@ -340,9 +343,12 @@ ZIGATE_COMMANDS = {
         0x0047: {'Sequence': (0x8000, 0x8047), 'Ack': True , 'Command': 'Management Leave request' , 'NwkId 2nd Bytes': False },
         
         0x0049: {'Sequence': (0x8000,),        'Ack': False, 'Command': 'Permit Joining request' , 'NwkId 2nd Bytes': False },
-        0x004A: {'Sequence': (0x8000, 0x804A), 'Ack': False , 'Command': 'Management Network Update request' , 'NwkId 2nd Bytes': False },
-        0x004B: {'Sequence': (0x8000, 0x804B), 'Ack': False , 'Command': 'System Server Discovery request' , 'NwkId 2nd Bytes': False },
-        0x004E: {'Sequence': (0x8000, 0x804E), 'Ack': False , 'Command': 'Management LQI request' , 'NwkId 2nd Bytes': False },
+        0x004A: {'Sequence': (0x8000, 0x804A), 'Ack': False ,'Command': 'Management Network Update request' , 'NwkId 2nd Bytes': False },
+        0x004B: {'Sequence': (0x8000, 0x804B), 'Ack': True ,'Command': 'System Server Discovery request' , 'NwkId 2nd Bytes': False },
+        0x004C: {'Sequence': (0x8000, 0x804C), 'Ack': False ,'Command': 'E_SL_MSG_LEAVE_REQUEST' , 'NwkId 2nd Bytes': False },
+        0x004D: {'Sequence': (0x8000, 0x804D), 'Ack': False ,'Command': 'E_SL_MSG_DEVICE_ANNOUNCE' , 'NwkId 2nd Bytes': False },
+        0x004E: {'Sequence': (0x8000, 0x804E), 'Ack': False ,'Command': 'Management LQI request' , 'NwkId 2nd Bytes': False },
+        0x004F: {'Sequence': (0x8000, 0x804F), 'Ack': False ,'Command': 'E_SL_MSG_DEVICE_ANNOUNCE' , 'NwkId 2nd Bytes': False },
 
         # Group
         0x0060:{'Sequence': (0x8000, 0x8060),  'Ack': True, 'Command': 'Group Add' , 'NwkId 2nd Bytes': True },
@@ -412,9 +418,19 @@ ZIGATE_COMMANDS = {
         0x0110: {'Sequence': (0x8000, 0x8110), 'Ack': True ,'Command': 'Write Attribute Request' , 'NwkId 2nd Bytes': True },
         0x0111: {'Sequence': (0x8000, 0x8002), 'Ack': True ,'Command': 'IAS WD mode' , 'NwkId 2nd Bytes': True },
         0x0112: {'Sequence': (0x8000, 0x8002), 'Ack': True ,'Command': 'IAS WD Squawk' , 'NwkId 2nd Bytes': True },
+        0x0113: {'Sequence': (0x8000, ),       'Ack': True ,'Command': 'E_SL_MSG_WRITE_ATTRIBUTE_REQUEST_NO_RESPONSE' , 'NwkId 2nd Bytes': True },
         0x0120: {'Sequence': (0x8000, 0x8120), 'Ack': True ,'Command': 'Configure Reporting Request' , 'NwkId 2nd Bytes': True },
+        0x0122: {'Sequence': (0x8000, 0x8122), 'Ack': True ,'Command': 'E_SL_MSG_READ_REPORT_CONFIG_REQUEST' , 'NwkId 2nd Bytes': True },
         0x0140: {'Sequence': (0x8000, 0x8140), 'Ack': True ,'Command': 'Attribute Discovery request' , 'NwkId 2nd Bytes': False },
+        0x0141: {'Sequence': (0x8000, 0x8141), 'Ack': True ,'Command': 'E_SL_MSG_ATTRIBUTE_EXT_DISCOVERY_REQUEST' , 'NwkId 2nd Bytes': False },
 
+        0x0400: {'Sequence': (0x8000, ),       'Ack': True ,'Command': 'E_SL_MSG_SEND_IAS_ZONE_ENROLL_RSP' , 'NwkId 2nd Bytes': False },
+
+        # OTA
+        0x0500: {'Sequence': (0x8000,),        'Ack': False,'Command': 'E_SL_MSG_LOAD_NEW_IMAGE' , 'NwkId 2nd Bytes': False },
+        0x0502: {'Sequence': (0x8000,),        'Ack': False,'Command': 'E_SL_MSG_BLOCK_SEND' , 'NwkId 2nd Bytes': False },
+        0x0504: {'Sequence': (0x8000,),        'Ack': False,'Command': 'E_SL_MSG_UPGRADE_END_RESPONSE' , 'NwkId 2nd Bytes': False },
+        0x0506: {'Sequence': (0x8000,),        'Ack': False,'Command': 'E_SL_MSG_IMAGE_NOTIFY' , 'NwkId 2nd Bytes': False },
         # Miscaleneous
         
         0x0530: {'Sequence': (0x8000,),        'Ack': True,'Command': 'Raw APS Data Request' , 'NwkId 2nd Bytes': False },
@@ -422,7 +438,7 @@ ZIGATE_COMMANDS = {
         0x0806: {'Sequence': (0x8000,),        'Ack': False,'Command': 'AHI Control' , 'NwkId 2nd Bytes': False },
 
         # PDM response
-        0x0033 : {'Sequence': ( ),             'Ack': False, 'Command': 'PE_SL_MSG_DEBUG_PDM', 'NwkId 2nd Bytes': False },
+        0x0034 : {'Sequence': ( ),             'Ack': False, 'Command': 'PE_SL_MSG_DEBUG_PDM', 'NwkId 2nd Bytes': False },
 
         0x8200 : {'Sequence': ( ),             'Ack': False, 'Command': 'PDM Save Request', 'NwkId 2nd Bytes': False },
         0x8201 : {'Sequence': ( ),             'Ack': False, 'Command': 'PDM Load Request', 'NwkId 2nd Bytes': False },

@@ -59,37 +59,75 @@ def ZigateRead(self, Devices, Data, TransportInfos=None):
     DECODERS = {
         '0100': Decode0100,
         '004d': Decode004D,
-        '8000': Decode8000_v2, '8001': Decode8001, '8002': Decode8002, '8003': Decode8003, '8004': Decode8004,
-        '8005': Decode8005, '8006': Decode8006, '8007': Decode8007,
-        '8009': Decode8009, '8010': Decode8010, '8011': Decode8011, '8012': Decode8012,
-        '8014': Decode8014, '8015': Decode8015,
+        '8000': Decode8000_v2, 
+        '8001': Decode8001, 
+        '8002': Decode8002, 
+        '8003': Decode8003, 
+        '8004': Decode8004,
+        '8005': Decode8005, 
+        '8006': Decode8006, 
+        '8007': Decode8007,
+        '8009': Decode8009, 
+        '8010': Decode8010, 
+        #'8011': Decode8011, 
+        '8012': Decode8012,
+        '8014': Decode8014, 
+        '8015': Decode8015,
         '8017': Decode8017,
         '8024': Decode8024,
         '8028': Decode8028,
-        '802b': Decode802B, '802c': Decode802C,
-        '8030': Decode8030, '8031': Decode8031, '8035': Decode8035,
+        '802b': Decode802B, 
+        '802c': Decode802C,
+        '8030': Decode8030, 
+        '8031': Decode8031, 
+        '8035': Decode8035,
         '8034': Decode8034,
-        '8040': Decode8040, '8041': Decode8041, '8042': Decode8042, '8043': Decode8043, '8044': Decode8044,
-        '8045': Decode8045, '8046': Decode8046, '8047': Decode8047, '8048': Decode8048, '8049': Decode8049,
-        '804a': Decode804A, '804b': Decode804B,
+        '8040': Decode8040, 
+        '8041': Decode8041, 
+        '8042': Decode8042, 
+        '8043': Decode8043, 
+        '8044': Decode8044,
+        '8045': Decode8045, 
+        '8046': Decode8046, 
+        '8047': Decode8047, 
+        '8048': Decode8048, 
+        '8049': Decode8049,
+        '804a': Decode804A, 
+        '804b': Decode804B,
         '804e': Decode804E,
-        '8060': Decode8060, '8061': Decode8061, '8062': Decode8062, '8063': Decode8063,
+        '8060': Decode8060, 
+        '8061': Decode8061, 
+        '8062': Decode8062, 
+        '8063': Decode8063,
         '8085': Decode8085,
         '8095': Decode8095,
         '80a6': Decode80A6,
         '80a7': Decode80A7,
-        '8100': Decode8100, '8101': Decode8101, '8102': Decode8102,
+        '8100': Decode8100, 
+        '8101': Decode8101, 
+        '8102': Decode8102,
         '8110': Decode8110,
         '8120': Decode8120,
         '8140': Decode8140,
         '8401': Decode8401,
         '8501': Decode8501,
         '8503': Decode8503,
-        '8701': Decode8701, '8702': Decode8702,
-        '8806': Decode8806, '8807': Decode8807,
-        '0300': Decode0300, '0301': Decode0301, '0302': Decode0302,
-        '0200': Decode0200, '0201': Decode0201, '0202': Decode0202, '0203': Decode0203, '0204':Decode0204, 
-        '0205': Decode0205, '0206': Decode0206, '0207': Decode0207, '0208': Decode0208
+        '8701': Decode8701, 
+        '8702': Decode8702,
+        '8806': Decode8806, 
+        '8807': Decode8807,
+        '0300': Decode0300, 
+        '0301': Decode0301, 
+        '0302': Decode0302,
+        '0200': Decode0200, 
+        '0201': Decode0201, 
+        '0202': Decode0202, 
+        '0203': Decode0203, 
+        '0204':Decode0204, 
+        '0205': Decode0205, 
+        '0206': Decode0206, 
+        '0207': Decode0207, 
+        '0208': Decode0208
     }
     
     NOT_IMPLEMENTED = ( '00d1', '8029', '80a0', '80a1', '80a2', '80a3', '80a4' )
@@ -121,6 +159,10 @@ def ZigateRead(self, Devices, Data, TransportInfos=None):
     if MsgType in DECODERS:
         _decoding = DECODERS[ MsgType]
         _decoding( self, Devices, MsgData, MsgRSSI)
+        return
+
+    if MsgType == '8011':
+        Decode8011( self, Devices, MsgData, MsgRSSI, TransportInfos)
         return
 
     Domoticz.Error("ZigateRead - Decoder not found for %s" %(MsgType))
@@ -591,7 +633,7 @@ def Decode8010(self, Devices, MsgData, MsgRSSI): # Reception Version list
 
     self.PDMready = True
 
-def Decode8011(self, Devices, MsgData, MsgRSSI ):
+def Decode8011(self, Devices, MsgData, MsgRSSI , TransportInfos= None):
 
     # APP APS ACK
     loggingInput( self, 'Debug', "Decode8011 - APS ACK: %s" %MsgData)
@@ -599,7 +641,6 @@ def Decode8011(self, Devices, MsgData, MsgRSSI ):
     MsgStatus = MsgData[0:2]
     MsgSrcAddr = MsgData[2:6]
     MsgSrcEp = MsgData[6:8]
-    MsgClusterId = MsgData[8:12]
     MsgSEQ = 0
     if MsgLen > 12 :
         MsgSEQ = MsgData[12:14]
@@ -609,21 +650,15 @@ def Decode8011(self, Devices, MsgData, MsgRSSI ):
         return
 
     updRSSI( self, MsgSrcAddr, MsgRSSI )
-
     _powered = mainPoweredDevice( self, MsgSrcAddr)
-    if MsgLen > 12 :
-        loggingInput( self, 'Debug', "Decode8011 - Src: %s, MsgSEQ: %s : %s, SrcEp: %s, Cluster: %s, Status: %s MainPowered: %s RSSI: %s" \
-                %(MsgSrcAddr, MsgSEQ, MsgSrcEp, MsgClusterId, MsgStatus, _powered, int(MsgRSSI,16)), MsgSrcAddr)
-    else:
-        loggingInput( self, 'Debug', "Decode8011 - Src: %s, SrcEp: %s, Cluster: %s, Status: %s MainPowered: %s RSSI: %s" \
-                %(MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgStatus, _powered, int(MsgRSSI,16)), MsgSrcAddr)
-
     timeStamped( self, MsgSrcAddr , 0x8011)
+
     if MsgStatus == '00':
         lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
         if ( 'Health' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Health'] != 'Live' ):
             loggingInput( self, 'Log', "Receive an APS Ack from %s, let's put the device back to Live" %MsgSrcAddr, MsgSrcAddr)
             self.ListOfDevices[MsgSrcAddr]['Health'] = 'Live'
+
     else:
         if _powered and self.pluginconf.pluginConf['enableACKNACK']: 
             # Handle only NACK for main powered devices
@@ -632,14 +667,19 @@ def Decode8011(self, Devices, MsgData, MsgRSSI ):
                 if self.ListOfDevices[MsgSrcAddr]['Health'] != 'Not Reachable':
                     self.ListOfDevices[MsgSrcAddr]['Health'] = 'Not Reachable'
 
-                if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
-                    if self.ListOfDevices[MsgSrcAddr]['ZDeviceName'] not in [ {}, '', ]:
-                        loggingInput( self, 'Log', "Receive NACK from %s (%s) clusterId: %s Status: %s" 
-                            %(self.ListOfDevices[MsgSrcAddr]['ZDeviceName'], MsgSrcAddr, MsgClusterId, MsgStatus), MsgSrcAddr)
+                cmd = ''
+                if TransportInfos:
+                    cmd = TransportInfos['Cmd']
 
+                if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
+                    MsgClusterId = MsgData[8:12]
+                    if self.ListOfDevices[MsgSrcAddr]['ZDeviceName'] not in [ {}, '', ]:
+                        loggingInput( self, 'Log', "Receive NACK from %s (%s) clusterId: %s for Command: %s Status: %s" 
+                            %(self.ListOfDevices[MsgSrcAddr]['ZDeviceName'], MsgSrcAddr, MsgClusterId, cmd, MsgStatus), MsgSrcAddr)
                     else:
-                        loggingInput( self, 'Log', "Receive NACK from %s clusterId: %s Status: %s" 
-                            %(MsgSrcAddr, MsgClusterId, MsgStatus), MsgSrcAddr)
+                        loggingInput( self, 'Log', "Receive NACK from %s clusterId: %s for Command: %s Status: %s" 
+                            %(MsgSrcAddr, MsgClusterId, cmd, MsgStatus), MsgSrcAddr)
+
         #else:
         #    if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
         #        if self.ListOfDevices[MsgSrcAddr]['ZDeviceName'] not in [ {}, '', ]:
