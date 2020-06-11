@@ -652,21 +652,16 @@ def process_frame(self, frame):
 
     if MsgType == '8701':
         # Route Discovery
-        # self.F_out(frame, i_sqn)  # for processing
+        # self.F_out(frame, None)  # for processing
         ready_to_send_if_needed( self )
-        #self.F_out(frame, i_sqn, None)
         return        
 
     if MsgType == "8702":
         # APS Failure
         # i_sqn = process_msg_type8702( self, MsgData )
-        # self.statistics._APSFailure += 1
-        # if i_sqn in self.ListOfCommands:
-        #     FailedCommand = dict(self.ListOfCommands[ i_sqn ])
-        #     self.F_out(frame, i_sqn , FailedCommand)  # Forward the message to plugin for further processing
-        # else:
-        #     self.F_out(frame, i_sqn , None)
-        # ready_to_send_if_needed( self )
+        self.statistics._APSFailure += 1
+        self.F_out(frame, None)
+        ready_to_send_if_needed( self )
         return
 
     if int(MsgType, 16) in STANDALONE_MESSAGE:  # We receive an async message, just forward it to plugin

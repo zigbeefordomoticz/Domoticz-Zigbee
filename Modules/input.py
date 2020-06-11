@@ -2024,13 +2024,12 @@ def Decode8701(self, Devices, MsgData, MsgRSSI) : # Reception Router Disovery Co
 
 #Réponses APS
 def Decode8702(self, Devices, MsgData, MsgRSSI) : # Reception APS Data confirm fail
-
-    """
-    Status: d4 - Unicast frame does not have a route available but it is buffered for automatic resend
-    Status: e9 - No acknowledgement received when expected
-    Status: f0 - Pending transaction has expired and data discarded
-    Status: cf - Attempt at route discovery has failed due to lack of table spac
-    """
+    # 
+    # Status: d4 - Unicast frame does not have a route available but it is buffered for automatic resend
+    # Status: e9 - No acknowledgement received when expected
+    # Status: f0 - Pending transaction has expired and data discarded
+    # Status: cf - Attempt at route discovery has failed due to lack of table spac
+    # 
 
     MsgLen=len(MsgData)
     if MsgLen==0: 
@@ -2084,12 +2083,26 @@ def Decode8702(self, Devices, MsgData, MsgRSSI) : # Reception APS Data confirm f
         return
     
     loggingInput( self, 'Debug', "Decode8702 - IEEE: %s Nwkid: %s Status: %s" %(IEEE, NWKID, MsgDataStatus), NWKID)
-    if self.APS:
-        self.APS.processAPSFailure(NWKID, IEEE, MsgDataStatus)
 
     timeStamped( self, NWKID , 0x8702)
     updSQN( self, NWKID, MsgDataSQN)
     updRSSI( self, NWKID, MsgRSSI)
+    _powered = mainPoweredDevice( self, NWKID)
+
+    if _powered and not self.pluginconf.pluginConf['enableACKNACK']: 
+        # Handle only NACK for main powered devices
+        timedOutDevice( self, Devices, NwkId = NWKID)
+        if 'Health' in self.ListOfDevices[NWKID]:
+            if self.ListOfDevices[NWKID]['Health'] != 'Not Reachable':
+                self.ListOfDevices[NWKID]['Health'] = 'Not Reachable'
+            if 'ZDeviceName' in self.ListOfDevices[NWKID]:
+                if self.ListOfDevices[NWKID]['ZDeviceName'] not in [ {}, '', ]:
+                    loggingInput( self, 'Log', "Receive APS Failure from %s (%s) with Status: %s" 
+                        %(self.ListOfDevices[NWKID]['ZDeviceName'], NWKID, MsgDataStatus), NWKID)
+                else:
+                    loggingInput( self, 'Log', "Receive APS Failure from %s Status: %s" 
+                        %(NWKID,  MsgDataStatus), NWKID)
+
 
 #Device Announce
 def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
