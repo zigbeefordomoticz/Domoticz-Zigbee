@@ -271,7 +271,7 @@ def Decode8000_v2(self, Devices, MsgData, MsgRSSI) : # Status
         return
 
     Status=MsgData[0:2]
-    SQN = MsgData[2:4]
+    APSsqn = SQN = MsgData[2:4]
     PacketType=MsgData[4:8]
 
     if MsgLen > 8 :
