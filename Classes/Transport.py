@@ -213,7 +213,6 @@ class ZigateTransport(object):
             self.ListOfCommands[ InternalSqn ]['ResponseExpected'] = True
 
         if int(cmd, 16) in CMD_WITH_ACK:
-            Domoticz.Log("---------> Wait for Ack")
             self.ListOfCommands[ InternalSqn ]['ExpectedAck'] = True 
 
         if self.ListOfCommands[ InternalSqn ]['ResponseExpected']:
@@ -749,11 +748,11 @@ def process_msg_type8011( self, Status, NwkId, Ep, MsgClusterId, ExternSqn ):
 
     if Status == '00':
         if InternSqn in self.ListOfCommands:
-            self.logging_receive( 'Log', " - [%s] receive Ack for Cmd: %s - size of SendQueue: %s" %( InternSqn,  self.ListOfCommands[InternSqn]['Cmd'], self.loadTransmit()))
+            self.logging_receive( 'Debug', " - [%s] receive Ack for Cmd: %s - size of SendQueue: %s" %( InternSqn,  self.ListOfCommands[InternSqn]['Cmd'], self.loadTransmit()))
         self.statistics._APSAck += 1
     else:
         if InternSqn in self.ListOfCommands:
-            self.logging_receive( 'Log', " - [%s] receive Nack for Cmd: %s - size of SendQueue: %s" %( InternSqn,  self.ListOfCommands[InternSqn]['Cmd'], self.loadTransmit()))
+            self.logging_receive( 'Debug', " - [%s] receive Nack for Cmd: %s - size of SendQueue: %s" %( InternSqn,  self.ListOfCommands[InternSqn]['Cmd'], self.loadTransmit()))
         self.statistics._APSNck += 1 
     return InternSqn
 
