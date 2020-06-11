@@ -620,7 +620,7 @@ def process_frame(self, frame):
         self.F_out(frame, i_sqn, None)
 
         # Let's check if we are not expecting any CmdResponse. In that case we remove the Entry
-        if not (( self.zmode == 'ZigBeeAck' and self.ListOfCommands[ i_sqn ]['ExpectedAck']) or \
+        if not (( self.zmode == 'ZigBeeAck' and i_sqn in self.ListOfCommands and self.ListOfCommands[ i_sqn ]['ExpectedAck']) or \
             (self.zmode == 'ZigBee' and self.ListOfCommands[ i_sqn ]['ResponseExpected'])):
             cleanup_list_of_commands( self, i_sqn)
 

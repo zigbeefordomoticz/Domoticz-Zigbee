@@ -948,7 +948,10 @@ def Decode8030(self, Devices, MsgData, MsgRSSI) : # Bind response
                     continue
 
                 for cluster in list(self.ListOfDevices[nwkid]['Bind'][ Ep ]):
-                    if self.ListOfDevices[nwkid]['Bind'][Ep][cluster]['Phase'] == 'requested':
+                    if self.ListOfDevices[nwkid]['Bind'][Ep][cluster]['Phase'] == 'requested' and \
+                                'i_sqn' in self.ListOfDevices[nwkid]['Bind'][Ep][cluster] and \
+                                self.ListOfDevices[nwkid]['Bind'][Ep][cluster]['i_sqn'] == i_sqn:
+
                         loggingInput( self, 'Debug', "Decode8030 - Set bind request to binded : nwkid %s ep: %s cluster: %s" 
                                 %(nwkid,Ep,cluster), MsgSrcAddr)
                         self.ListOfDevices[nwkid]['Bind'][Ep][cluster]['Stamp'] = int(time())
@@ -969,7 +972,10 @@ def Decode8030(self, Devices, MsgData, MsgRSSI) : # Bind response
                         if destNwkid in ('Stamp','Target','TargetIEEE','SourceIEEE','TargetEp','Phase','Status'): # delete old mechanism
                             Domoticz.Error("---> delete  destNwkid: %s" %( destNwkid))
                             del self.ListOfDevices[nwkid]['WebBind'][Ep][cluster][destNwkid]
-                        if self.ListOfDevices[nwkid]['WebBind'][Ep][cluster][destNwkid]['Phase'] == 'requested':
+                        if self.ListOfDevices[nwkid]['WebBind'][Ep][cluster][destNwkid]['Phase'] == 'requested' and \
+                                'i_sqn' in self.ListOfDevices[nwkid]['Bind'][Ep][cluster] and \
+                                self.ListOfDevices[nwkid]['Bind'][Ep][cluster]['i_sqn'] == i_sqn:
+
                             loggingInput( self, 'Debug', "Decode8030 - Set WebBind request to binded : nwkid %s ep: %s cluster: %s destNwkid: %s" 
                                 %(nwkid,Ep,cluster,destNwkid), MsgSrcAddr)
                             self.ListOfDevices[nwkid]['WebBind'][Ep][cluster][destNwkid]['Stamp'] = int(time())
@@ -1866,8 +1872,7 @@ def Decode8110(self, Devices, MsgData, MsgRSSI):  # Write Attribute response
     updRSSI( self, MsgSrcAddr, MsgRSSI)
 
     nwkid = MsgSrcAddr
-    if (
-        'WriteAttribute' in self.ListOfDevices[nwkid] and MsgSrcEp in self.ListOfDevices[nwkid]['WriteAttribute']
+    if ( 'WriteAttribute' in self.ListOfDevices[nwkid] and MsgSrcEp in self.ListOfDevices[nwkid]['WriteAttribute']
                 and MsgClusterId in self.ListOfDevices[nwkid]['WriteAttribute'][MsgSrcEp]
                 and MsgAttrID in self.ListOfDevices[nwkid]['WriteAttribute'][MsgSrcEp][MsgClusterId]
                 and self.ListOfDevices[nwkid]['WriteAttribute'][MsgSrcEp][MsgClusterId][ MsgAttrID ] == 'requested' ):

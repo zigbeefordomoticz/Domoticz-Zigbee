@@ -110,7 +110,7 @@ VERSION_FILENAME = '.hidden/VERSION'
 
 TEMPO_NETWORK = 2    # Start HB totrigget Network Status
 TIMEDOUT_START = 10  # Timeoud for the all startup
-TIMEDOUT_FIRMWARE = 5# HB before request Firmware again
+TIMEDOUT_FIRMWARE = 25 # HB before request Firmware again
 TEMPO_START_ZIGATE = 1 # Nb HB before requesting a Start_Zigate
 
 class BasePlugin:
