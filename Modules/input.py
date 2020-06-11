@@ -271,7 +271,7 @@ def Decode8000_v2(self, Devices, MsgData, MsgRSSI) : # Status
         return
 
     Status=MsgData[0:2]
-    SQN=MsgData[2:4]
+    SQN = MsgData[2:4]
     PacketType=MsgData[4:8]
 
     if MsgLen > 8 :
@@ -280,7 +280,7 @@ def Decode8000_v2(self, Devices, MsgData, MsgRSSI) : # Status
         APSsqn = MsgData[8:10]
 
     if self.pluginconf.pluginConf['debugzigateCmd']:
-        loggingInput( self, 'Log', "Decode8000    - %s      Status: %s e_sqn: %s: %s" %( PacketType, Status,SQN))
+        loggingInput( self, 'Log', "Decode8000    - %s      Status: %s " %( PacketType, Status))
 
     # Handling Status
     if  Status == "00" : 
@@ -330,8 +330,8 @@ def Decode8000_v2(self, Devices, MsgData, MsgRSSI) : # Status
             self.groupmgt.statusGroupRequest( MsgData )
 
     if str(MsgData[0:2]) != "00" :
-        loggingInput( self, 'Debug', "Decode8000 - PacketType: %s e_sqn: %s i_sqn: %s Status: [%s] - %s" \
-                %(PacketType, SQN, MsgData[0:2], Status))
+        loggingInput( self, 'Debug', "Decode8000 - PacketType: %s APS_SQN %s  ZCL_SQN: %s Status: [%s] - %s" \
+                %(PacketType, APSsqn, SQN,  MsgData[0:2], Status))
 
 def Decode8001(self, Decode, MsgData, MsgRSSI) : # Reception log Level
     MsgLen=len(MsgData)
