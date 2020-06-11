@@ -421,7 +421,11 @@ def send_data_internal(self, InternalSqn):
                 _add_cmd_to_wait_for_cmdresponse_queue( self, InternalSqn )
 
             elif self.zmode == 'ZigBeeAck' and self.ListOfCommands[ InternalSqn ]['ExpectedAck']:
-                _add_cmd_to_wait_for_ack_nack_queue( self, InternalSqn)
+                if int(self.ListOfCommands[ InternalSqn ]['Cmd'],16) in CMD_NWK_2NDBytes:
+                    if self.ListOfCommands[ InternalSqn ]['Datas'][2:6] != '0000':
+                        _add_cmd_to_wait_for_ack_nack_queue( self, InternalSqn)
+                else:
+                    _add_cmd_to_wait_for_ack_nack_queue( self, InternalSqn)
 
         _send_data( self, InternalSqn )
     else:
