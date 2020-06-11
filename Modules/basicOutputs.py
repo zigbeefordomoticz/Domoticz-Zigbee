@@ -44,7 +44,7 @@ def sendZigateCmd(self, cmd, datas ):
     if self.ZigateComm.loadTransmit() > 15:
         loggingBasicOutput( self, 'Log', "WARNING - ZigateCmd: [%s] %s %18s ZigateQueue: %s" %(i_sqn,cmd, datas, self.ZigateComm.loadTransmit()))
 
-    return self.ZigateComm.sendData( cmd, datas )
+    return i_sqn
 
 def ZigatePermitToJoin( self, permit ):
     """
