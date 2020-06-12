@@ -669,7 +669,10 @@ def Decode8011(self, Devices, MsgData, MsgRSSI , TransportInfos= None):
 
                 cmd = ''
                 if TransportInfos:
-                    cmd = TransportInfos['Cmd']
+                    if isinstance(TransportInfos, dict ):
+                        cmd = TransportInfos['Cmd']
+                    else:
+                        Domoticz.Error("Transport Info not a dict ! %s" %TransportInfos  )
 
                 if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
                     MsgClusterId = MsgData[8:12]
