@@ -594,7 +594,6 @@ def processCommand( self, unit, GrpId, Command, Level, Color_ ) :
             cw = int(Hue_List['cw'])   # 0 < cw < 255 Cold White
             ww = int(Hue_List['ww'])   # 0 < ww < 255 Warm White
             if cw != 0 and ww != 0:
-                self.logging( 'Log', "---------- Set Temp Kelvin: %s-%s" %(TempMired, Hex_Format(4,TempMired)))
                 set_kelvin_color( self, ADDRESS_MODE['group'], GrpId, ZIGATE_EP, EPout, int(ww), transit = transitionTemp)
             else:
                 # How to powerOff the WW/CW channel ?
@@ -606,11 +605,10 @@ def processCommand( self, unit, GrpId, Command, Level, Color_ ) :
 
         #With saturation and hue, not seen in domoticz but present on zigate, and some device need it
         elif Hue_List['m'] == 9998:
-            self.logging( 'Debug', "---------- Set Hue X: %s Saturation: %s" %(hue, saturation))
-            set_hue_saturation( self, ADDRESS_MODE['group'], GrpId, ZIGATE_EP, EPout, \
+            level = set_hue_saturation( self, ADDRESS_MODE['group'], GrpId, ZIGATE_EP, EPout, \
                 int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b']), transit = transitionHue)
 
-            value = int(l * 254//100)
+            value = int(level * 254//100)
             OnOff = '01'
             self.logging( 'Debug', "---------- Set Level: %s instead of Level: %s" %(value, Level))
             self.ZigateComm.sendData( "0081","%02d" %ADDRESS_MODE['group'] + GrpId + ZIGATE_EP + EPout + OnOff + Hex_Format(2,value) + transitionMoveLevel)
