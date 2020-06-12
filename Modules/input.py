@@ -658,39 +658,33 @@ def Decode8011(self, Devices, MsgData, MsgRSSI , TransportInfos= None):
         if ( 'Health' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Health'] != 'Live' ):
             loggingInput( self, 'Log', "Receive an APS Ack from %s, let's put the device back to Live" %MsgSrcAddr, MsgSrcAddr)
             self.ListOfDevices[MsgSrcAddr]['Health'] = 'Live'
+        return
 
-    else:
-        if _powered and self.pluginconf.pluginConf['enableACKNACK']: 
-            # Handle only NACK for main powered devices
-            timedOutDevice( self, Devices, NwkId = MsgSrcAddr)
-            if 'Health' in self.ListOfDevices[MsgSrcAddr]:
-                if self.ListOfDevices[MsgSrcAddr]['Health'] != 'Not Reachable':
-                    self.ListOfDevices[MsgSrcAddr]['Health'] = 'Not Reachable'
+    if not _powered:
+        return
 
-                cmd = ''
-                if TransportInfos:
-                    if isinstance(TransportInfos, dict ):
-                        cmd = TransportInfos['Cmd']
-                    else:
-                        Domoticz.Error("Transport Info not a dict ! %s" %TransportInfos  )
+    if self.pluginconf.pluginConf['enableACKNACK']: 
+        # Handle only NACK for main powered devices
+        timedOutDevice( self, Devices, NwkId = MsgSrcAddr)
+        if 'Health' in self.ListOfDevices[MsgSrcAddr]:
+            if self.ListOfDevices[MsgSrcAddr]['Health'] != 'Not Reachable':
+                self.ListOfDevices[MsgSrcAddr]['Health'] = 'Not Reachable'
 
-                if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
-                    MsgClusterId = MsgData[8:12]
-                    if self.ListOfDevices[MsgSrcAddr]['ZDeviceName'] not in [ {}, '', ]:
-                        loggingInput( self, 'Log', "Receive NACK from %s (%s) clusterId: %s for Command: %s Status: %s" 
-                            %(self.ListOfDevices[MsgSrcAddr]['ZDeviceName'], MsgSrcAddr, MsgClusterId, cmd, MsgStatus), MsgSrcAddr)
-                    else:
-                        loggingInput( self, 'Log', "Receive NACK from %s clusterId: %s for Command: %s Status: %s" 
-                            %(MsgSrcAddr, MsgClusterId, cmd, MsgStatus), MsgSrcAddr)
+            cmd = ''
+            if TransportInfos:
+                if isinstance(TransportInfos, dict ):
+                    cmd = TransportInfos['Cmd']
+                else:
+                    Domoticz.Error("Transport Info not a dict ! %s" %TransportInfos  )
 
-        #else:
-        #    if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
-        #        if self.ListOfDevices[MsgSrcAddr]['ZDeviceName'] not in [ {}, '', ]:
-        #            loggingInput( self, 'Debug', "Receive NACK from %s (%s) clusterId: %s Status: %s" 
-        #            %(self.ListOfDevices[MsgSrcAddr]['ZDeviceName'], MsgSrcAddr, MsgClusterId, MsgStatus), MsgSrcAddr)
-        #        else:
-        #            loggingInput( self, 'Debug', "Receive NACK from %s clusterId: %s Status: %s" 
-        #            %(MsgSrcAddr, MsgClusterId, MsgStatus), MsgSrcAddr)
+            if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
+                MsgClusterId = MsgData[8:12]
+                if self.ListOfDevices[MsgSrcAddr]['ZDeviceName'] not in [ {}, '', ]:
+                    loggingInput( self, 'Log', "Receive NACK from %s (%s) clusterId: %s for Command: %s Status: %s" 
+                        %(self.ListOfDevices[MsgSrcAddr]['ZDeviceName'], MsgSrcAddr, MsgClusterId, cmd, MsgStatus), MsgSrcAddr)
+                else:
+                    loggingInput( self, 'Log', "Receive NACK from %s clusterId: %s for Command: %s Status: %s" 
+                        %(MsgSrcAddr, MsgClusterId, cmd, MsgStatus), MsgSrcAddr)
 
 def Decode8012(self, Devices, MsgData, MsgRSSI ):
     """

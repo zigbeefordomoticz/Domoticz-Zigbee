@@ -335,7 +335,7 @@ ZIGATE_COMMANDS = {
 
         0x0040: {'Sequence': (0x8000, 0x8040), 'Ack': True , 'Command': 'Network Address request' , 'NwkId 2nd Bytes': False },
         0x0041: {'Sequence': (0x8000, 0x8041), 'Ack': True , 'Command': 'IEEE Address request' , 'NwkId 2nd Bytes': False },
-        0x0042: {'Sequence': (0x8000, 0x8042), 'Ack': True , 'Command': 'Node Descriptor request' , 'NwkId 2nd Bytes': False },
+        0x0042: {'Sequence': (0x8000, 0x8042), 'Ack': False , 'Command': 'Node Descriptor request' , 'NwkId 2nd Bytes': False },
         0x0043: {'Sequence': (0x8000, 0x8043), 'Ack': True , 'Command': 'Simple Descriptor request' , 'NwkId 2nd Bytes': False },
         0x0044: {'Sequence': (0x8000, 0x7044), 'Ack': True , 'Command': 'Power Descriptor request' , 'NwkId 2nd Bytes': False },
         0x0045: {'Sequence': (0x8000, 0x8045), 'Ack': True , 'Command': 'Active Endpoint request' , 'NwkId 2nd Bytes': False },
