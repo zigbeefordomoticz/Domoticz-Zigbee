@@ -342,15 +342,6 @@ def _next_cmd_from_wait_for8000_queue(self):
     self.loggingSend(  'Debug', " --  > _nextCmdFromWaitFor8000Queue - Unqueue %s " %( str(ret) ))
     return ret
 
-def _next_cmd_from_wait_for_ack_nack_queue( self ):
-    # return the entry waiting for a Ack/Nack 
-    ret = ( None, None )
-    if len(self._waitForAckNackQueue) > 0:
-        ret = self._waitForAckNackQueue[0]
-        del self._waitForAckNackQueue[0]
-    self.loggingSend(  'Debug', " --  > _nextCmdFromWaitForAckNackQueue - Unqueue %s " %( str(ret) ))
-    return ret
-
 def _add_cmd_to_wait_for_ack_nack_queue( self, InternalSqn):
     # add a command to the AckNack waiting list
     timestamp = int(time())
@@ -454,7 +445,6 @@ def send_data_internal(self, InternalSqn):
 
     # Go!
     _send_data( self, InternalSqn )
-
 
 def ready_to_send_if_needed( self ):
 
@@ -606,9 +596,9 @@ def check_timed_out(self):
 
 def cleanup_list_of_commands( self, i_sqn):
     
-    self.loggingSend(  'Log', " --  -- - > Cleanup Internal SQN: %s" %i_sqn)
+    self.loggingSend(  'Debug', " --  -- - > Cleanup Internal SQN: %s" %i_sqn)
     if i_sqn in self.ListOfCommands:
-        self.loggingSend(  'Log', " --  -- - > Removing ListOfCommand entry")
+        self.loggingSend(  'Debug', " --  -- - > Removing ListOfCommand entry")
         del self.ListOfCommands[ i_sqn ]
 
 # Receiving functions
@@ -777,11 +767,11 @@ def process_msg_type8011( self, Status, NwkId, Ep, MsgClusterId, ExternSqn ):
 
     if Status == '00':
         if InternSqn in self.ListOfCommands:
-            self.logging_receive( 'Log', " - [%s] receive Ack for Cmd: %s - size of SendQueue: %s" %( InternSqn,  self.ListOfCommands[InternSqn]['Cmd'], self.loadTransmit()))
+            self.logging_receive( 'Debug', " - [%s] receive Ack for Cmd: %s - size of SendQueue: %s" %( InternSqn,  self.ListOfCommands[InternSqn]['Cmd'], self.loadTransmit()))
         self.statistics._APSAck += 1
     else:
         if InternSqn in self.ListOfCommands:
-            self.logging_receive( 'Log', " - [%s] receive Nack for Cmd: %s - size of SendQueue: %s" %( InternSqn,  self.ListOfCommands[InternSqn]['Cmd'], self.loadTransmit()))
+            self.logging_receive( 'Debug', " - [%s] receive Nack for Cmd: %s - size of SendQueue: %s" %( InternSqn,  self.ListOfCommands[InternSqn]['Cmd'], self.loadTransmit()))
         self.statistics._APSNck += 1 
     return InternSqn
 
@@ -833,7 +823,7 @@ def process_other_type_of_message(self, MsgType):
     
     # For now we assume that we do only one command at a time, so either it is an Async message, 
     # or it is related to the command
-    self.logging_receive(  'Log', "--> process_other_type_of_message - MsgType: %s" %(MsgType))
+    self.logging_receive(  'Debug', "--> process_other_type_of_message - MsgType: %s" %(MsgType))
 
     if len(self._waitForCmdResponseQueue) == 0:
         self.logging_receive(  'Debug', " --  -- - > - WaitForDataQueue empty")
@@ -849,13 +839,13 @@ def process_other_type_of_message(self, MsgType):
     expResponse = self.ListOfCommands[ InternalSqn ]['ResponseExpectedCmd']
     if expResponse == 0x8100:
         # In case the expResponse is 0x8100 then we can accept 0x8102
-        self.loggingSend( 'Log', " --  -- - > Internal SQN: %s Received: %s and expecting %s" %(InternalSqn, MsgType, '(0x8100, 0x8102)'  ))
+        self.loggingSend( 'Debug', " --  -- - > Internal SQN: %s Received: %s and expecting %s" %(InternalSqn, MsgType, '(0x8100, 0x8102)'  ))
         if int(MsgType, 16) not in ( 0x8100, 0x8102):
             self.logging_receive(  'Debug', "         - Async incoming PacketType")
             ready_to_send_if_needed( self )
             return InternalSqn
     else:
-        self.loggingSend( 'Log', " --  -- - > Internal SQN: %s Received: %s and expecting %04x" %(InternalSqn, MsgType, expResponse  ))
+        self.loggingSend( 'Debug', " --  -- - > Internal SQN: %s Received: %s and expecting %04x" %(InternalSqn, MsgType, expResponse  ))
         if int(MsgType, 16) != expResponse:
             self.logging_receive(  'Debug', "         - Async incoming PacketType")
             ready_to_send_if_needed( self )
