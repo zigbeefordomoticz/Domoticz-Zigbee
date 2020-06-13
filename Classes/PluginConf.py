@@ -31,6 +31,8 @@ SETTINGS = {
 
     'GroupManagement': { 'Order': 2, 'param': {
         'OnIfOneOn': { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
+        'forceGroupDeviceRefresh': { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
+        'reComputeGroupState': { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
         }
     },
 

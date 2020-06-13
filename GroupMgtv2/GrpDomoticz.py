@@ -436,6 +436,9 @@ def processCommand( self, unit, GrpId, Command, Level, Color_ ) :
 
     def resetDevicesHearttBeat( self, GrpId ):
 
+        if not self.pluginconf.pluginConf['forceGroupDeviceRefresh']:
+            return
+
         for NwkId, Ep, Ieee in self.ListOfGroups[GrpId]['Devices']:
             self.logging( 'Debug', 'processGroupCommand - reset heartbeat for device : %s' %NwkId)
             if NwkId not in self.ListOfDevices:
@@ -455,13 +458,10 @@ def processCommand( self, unit, GrpId, Command, Level, Color_ ) :
 
 
     # Begin
-
     self.logging( 'Debug', "processGroupCommand - unit: %s, NwkId: %s, cmd: %s, level: %s, color: %s" %(unit, GrpId, Command, Level, Color_))
 
     if GrpId not in self.ListOfGroups:
         return
-
-    resetDevicesHearttBeat( self, GrpId)
 
     # Not sure that Groups are always on EP 01 !!!!!
     EPout = '01'
@@ -492,6 +492,7 @@ def processCommand( self, unit, GrpId, Command, Level, Color_ ) :
             datas = "%02d" %ADDRESS_MODE['group'] + GrpId + ZIGATE_EP + EPout + zigate_param
             self.logging( 'Debug', "Group Command: %s %s-%s" %(Command, zigate_cmd, datas))
             self.ZigateComm.sendData( zigate_cmd, datas)
+            resetDevicesHearttBeat( self, GrpId)
             return
 
     # Old Fashon
@@ -519,7 +520,6 @@ def processCommand( self, unit, GrpId, Command, Level, Color_ ) :
         sValue = 'On'
         self.Devices[unit].Update(nValue = int(nValue), sValue = str(sValue))
         update_device_list_attribute( self, GrpId, '0006', '01')
-
         update_domoticz_group_device(self, GrpId)
 
         datas = "%02d" %ADDRESS_MODE['group'] + GrpId + ZIGATE_EP + EPout + zigate_param
@@ -543,6 +543,7 @@ def processCommand( self, unit, GrpId, Command, Level, Color_ ) :
         sValue = str(Level)
         self.Devices[unit].Update(nValue = int(nValue), sValue = str(sValue))
         update_device_list_attribute( self, GrpId, '0008', value)
+
         datas = "%02d" %ADDRESS_MODE['group'] + GrpId + ZIGATE_EP + EPout + zigate_param
         self.logging( 'Debug', "Command: %s %s" %(Command,datas))
         self.ZigateComm.sendData( zigate_cmd, datas)
@@ -566,6 +567,7 @@ def processCommand( self, unit, GrpId, Command, Level, Color_ ) :
             value=Hex_Format(2,round(1+Level*254/100)) #To prevent off state
             zigate_cmd = "0081"
             zigate_param = OnOff + value + transitionMoveLevel
+            
             datas = "%02d" %ADDRESS_MODE['group'] + GrpId + ZIGATE_EP + EPout + zigate_param
             self.logging( 'Debug', "Command: %s - data: %s" %(zigate_cmd, datas))
             update_device_list_attribute( self, GrpId, '0008', value)
@@ -617,3 +619,4 @@ def processCommand( self, unit, GrpId, Command, Level, Color_ ) :
         nValue = 1
         sValue = str(Level)
         self.Devices[unit].Update(nValue = int(nValue), sValue = str(sValue), Color = Color_)
+    resetDevicesHearttBeat( self, GrpId)
