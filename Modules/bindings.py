@@ -233,7 +233,7 @@ def webBind( self, sourceIeee, sourceEp, destIeee, destEp, Cluster):
     mode = "03"     # IEEE
     datas =  str(sourceIeee)+str(sourceEp)+str(Cluster)+str(mode)+str(destIeee)+str(destEp)
     i_sqn = sendZigateCmd(self, "0030", datas )
-    loggingBinding( self, 'Debug', "---> %s %s" %("0030", datas), sourceNwkid)
+    loggingBinding( self, 'Debug', "---> %s %s i_sqn: %s" %("0030", datas, i_sqn), sourceNwkid)
 
     if 'WebBind' not in self.ListOfDevices[sourceNwkid]:
         self.ListOfDevices[sourceNwkid]['WebBind'] = {}
