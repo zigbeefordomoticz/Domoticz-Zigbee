@@ -933,7 +933,7 @@ def Decode8030(self, Devices, MsgData, MsgRSSI) : # Bind response
         return
 
     i_sqn = sqn_get_internal_sqn(self.ZigateComm,MsgSequenceNumber)
-    loggingInput( self, 'Debug', "Decode8030 - Bind response, Device: %s Status: %s MsgSequenceNumber: %s i_sqn: %s" %(MsgSrcAddr, MsgDataStatus,MsgSequenceNumber,i_sqn), MsgSrcAddr)
+    loggingInput( self, 'Log', "Decode8030 - Bind response, Device: %s Status: %s MsgSequenceNumber: %s i_sqn: %s" %(MsgSrcAddr, MsgDataStatus,MsgSequenceNumber,i_sqn), MsgSrcAddr)
 
     if nwkid in self.ListOfDevices:
         if 'Bind' in self.ListOfDevices[nwkid]:
@@ -969,9 +969,10 @@ def Decode8030(self, Devices, MsgData, MsgRSSI) : # Bind response
                         if destNwkid in ('Stamp','Target','TargetIEEE','SourceIEEE','TargetEp','Phase','Status'): # delete old mechanism
                             Domoticz.Error("---> delete  destNwkid: %s" %( destNwkid))
                             del self.ListOfDevices[nwkid]['WebBind'][Ep][cluster][destNwkid]
+
                         if self.ListOfDevices[nwkid]['WebBind'][Ep][cluster][destNwkid]['Phase'] == 'requested' and \
-                                'i_sqn' in self.ListOfDevices[nwkid]['Bind'][Ep][cluster] and \
-                                self.ListOfDevices[nwkid]['Bind'][Ep][cluster]['i_sqn'] == i_sqn:
+                                'i_sqn' in self.ListOfDevices[nwkid]['WebBind'][Ep][cluster][destNwkid] and \
+                                self.ListOfDevices[nwkid]['WebBind'][Ep][cluster][destNwkid]['i_sqn'] == i_sqn:
 
                             loggingInput( self, 'Debug', "Decode8030 - Set WebBind request to binded : nwkid %s ep: %s cluster: %s destNwkid: %s" 
                                 %(nwkid,Ep,cluster,destNwkid), MsgSrcAddr)
