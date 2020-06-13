@@ -2290,7 +2290,7 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         deviceMacCapa = list(decodeMacCapa( MsgMacCapa ))
 
         # There is a dilem here as Livolo and Schneider Wiser share the same IEEE prefix.
-        if not self.pluginconf.pluginConf['enableSchneiderWiser']:
+        if self.pluginconf.pluginConf['Livolo']:
             PREFIX_MACADDR_LIVOLO = '00124b00'
             if MsgIEEE[0:len(PREFIX_MACADDR_LIVOLO)] == PREFIX_MACADDR_LIVOLO:
                 livolo_bind( self, MsgSrcAddr, '06')

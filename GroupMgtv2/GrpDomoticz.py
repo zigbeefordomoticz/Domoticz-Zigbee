@@ -436,6 +436,9 @@ def processCommand( self, unit, GrpId, Command, Level, Color_ ) :
 
     def resetDevicesHearttBeat( self, GrpId ):
 
+        if not self.pluginconf.pluginConf['forceGroupDeviceRefresh']:
+            return
+
         for NwkId, Ep, Ieee in self.ListOfGroups[GrpId]['Devices']:
             self.logging( 'Debug', 'processGroupCommand - reset heartbeat for device : %s' %NwkId)
             if NwkId not in self.ListOfDevices:
@@ -455,13 +458,10 @@ def processCommand( self, unit, GrpId, Command, Level, Color_ ) :
 
 
     # Begin
-
     self.logging( 'Debug', "processGroupCommand - unit: %s, NwkId: %s, cmd: %s, level: %s, color: %s" %(unit, GrpId, Command, Level, Color_))
 
     if GrpId not in self.ListOfGroups:
         return
-
-    resetDevicesHearttBeat( self, GrpId)
 
     # Not sure that Groups are always on EP 01 !!!!!
     EPout = '01'
@@ -492,6 +492,7 @@ def processCommand( self, unit, GrpId, Command, Level, Color_ ) :
             datas = "%02d" %ADDRESS_MODE['group'] + GrpId + ZIGATE_EP + EPout + zigate_param
             self.logging( 'Debug', "Group Command: %s %s-%s" %(Command, zigate_cmd, datas))
             self.ZigateComm.sendData( zigate_cmd, datas)
+            resetDevicesHearttBeat( self, GrpId)
             return
 
     # Old Fashon
@@ -519,7 +520,6 @@ def processCommand( self, unit, GrpId, Command, Level, Color_ ) :
         sValue = 'On'
         self.Devices[unit].Update(nValue = int(nValue), sValue = str(sValue))
         update_device_list_attribute( self, GrpId, '0006', '01')
-
         update_domoticz_group_device(self, GrpId)
 
         datas = "%02d" %ADDRESS_MODE['group'] + GrpId + ZIGATE_EP + EPout + zigate_param
@@ -543,6 +543,7 @@ def processCommand( self, unit, GrpId, Command, Level, Color_ ) :
         sValue = str(Level)
         self.Devices[unit].Update(nValue = int(nValue), sValue = str(sValue))
         update_device_list_attribute( self, GrpId, '0008', value)
+
         datas = "%02d" %ADDRESS_MODE['group'] + GrpId + ZIGATE_EP + EPout + zigate_param
         self.logging( 'Debug', "Command: %s %s" %(Command,datas))
         self.ZigateComm.sendData( zigate_cmd, datas)
@@ -566,6 +567,7 @@ def processCommand( self, unit, GrpId, Command, Level, Color_ ) :
             value=Hex_Format(2,round(1+Level*254/100)) #To prevent off state
             zigate_cmd = "0081"
             zigate_param = OnOff + value + transitionMoveLevel
+            
             datas = "%02d" %ADDRESS_MODE['group'] + GrpId + ZIGATE_EP + EPout + zigate_param
             self.logging( 'Debug', "Command: %s - data: %s" %(zigate_cmd, datas))
             update_device_list_attribute( self, GrpId, '0008', value)
@@ -594,7 +596,6 @@ def processCommand( self, unit, GrpId, Command, Level, Color_ ) :
             cw = int(Hue_List['cw'])   # 0 < cw < 255 Cold White
             ww = int(Hue_List['ww'])   # 0 < ww < 255 Warm White
             if cw != 0 and ww != 0:
-                self.logging( 'Log', "---------- Set Temp Kelvin: %s-%s" %(TempMired, Hex_Format(4,TempMired)))
                 set_kelvin_color( self, ADDRESS_MODE['group'], GrpId, ZIGATE_EP, EPout, int(ww), transit = transitionTemp)
             else:
                 # How to powerOff the WW/CW channel ?
@@ -606,11 +607,10 @@ def processCommand( self, unit, GrpId, Command, Level, Color_ ) :
 
         #With saturation and hue, not seen in domoticz but present on zigate, and some device need it
         elif Hue_List['m'] == 9998:
-            self.logging( 'Debug', "---------- Set Hue X: %s Saturation: %s" %(hue, saturation))
-            set_hue_saturation( self, ADDRESS_MODE['group'], GrpId, ZIGATE_EP, EPout, \
+            level = set_hue_saturation( self, ADDRESS_MODE['group'], GrpId, ZIGATE_EP, EPout, \
                 int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b']), transit = transitionHue)
 
-            value = int(l * 254//100)
+            value = int(level * 254//100)
             OnOff = '01'
             self.logging( 'Debug', "---------- Set Level: %s instead of Level: %s" %(value, Level))
             self.ZigateComm.sendData( "0081","%02d" %ADDRESS_MODE['group'] + GrpId + ZIGATE_EP + EPout + OnOff + Hex_Format(2,value) + transitionMoveLevel)
@@ -619,3 +619,4 @@ def processCommand( self, unit, GrpId, Command, Level, Color_ ) :
         nValue = 1
         sValue = str(Level)
         self.Devices[unit].Update(nValue = int(nValue), sValue = str(sValue), Color = Color_)
+    resetDevicesHearttBeat( self, GrpId)

@@ -633,8 +633,8 @@ def schneider_temp_Setcurrent( self, key, setpoint):
         if "0402" in self.ListOfDevices[key]['Ep'][tmpEp]:
             EPout= tmpEp
 
-    loggingSchneider( self, 'Debug', "schneider_temp_Setcurrent for device %s sending command: %s , setoiubt: %s" 
-            %(key, cmd, cmd, setpoint))
+    loggingSchneider( self, 'Debug', "schneider_temp_Setcurrent for device %s sending command: %s , setpoint: %s" 
+            %(key, cmd, setpoint))
 
     raw_APS_request( self, key, EPout, '0402', '0104', payload, zigate_ep=ZIGATE_EP)
     self.ListOfDevices[key]['Heartbeat'] = 0
