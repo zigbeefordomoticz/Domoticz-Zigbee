@@ -347,7 +347,7 @@ ZIGATE_COMMANDS = {
         0x004B: {'Sequence': (0x8000, 0x804B), 'Ack': True ,'Command': 'System Server Discovery request' , 'NwkId 2nd Bytes': False },
         0x004C: {'Sequence': (0x8000, 0x804C), 'Ack': False ,'Command': 'E_SL_MSG_LEAVE_REQUEST' , 'NwkId 2nd Bytes': False },
         0x004D: {'Sequence': (0x8000, 0x804D), 'Ack': False ,'Command': 'E_SL_MSG_DEVICE_ANNOUNCE' , 'NwkId 2nd Bytes': False },
-        0x004E: {'Sequence': (0x8000, 0x804E), 'Ack': False ,'Command': 'Management LQI request' , 'NwkId 2nd Bytes': False },
+        0x004E: {'Sequence': (0x8000, 0x804E), 'Ack': True ,'Command': 'Management LQI request' , 'NwkId 2nd Bytes': False },
         0x004F: {'Sequence': (0x8000, 0x804F), 'Ack': False ,'Command': 'E_SL_MSG_DEVICE_ANNOUNCE' , 'NwkId 2nd Bytes': False },
 
         # Group
@@ -405,7 +405,7 @@ ZIGATE_COMMANDS = {
         0x00D2: {'Sequence': (0x8000,),        'Ack': False,'Command': 'Touch link factory reset target' , 'NwkId 2nd Bytes': True },
 
         # Identify Trigger Effect
-        0x00E0: {'Sequence': (0x8000, 0x8002), 'Ack': True ,'Command': 'Identify Trigger Effect' , 'NwkId 2nd Bytes': True },
+        0x00E0: {'Sequence': (0x8000, 0x8002), 'Ack': False ,'Command': 'Identify Trigger Effect' , 'NwkId 2nd Bytes': True },
 
         # Action Lock/Unlock Door
         0x00F0: {'Sequence': (0x8000, 0x8002), 'Ack': True ,'Command': 'Lock Unlock door' , 'NwkId 2nd Bytes': True },
