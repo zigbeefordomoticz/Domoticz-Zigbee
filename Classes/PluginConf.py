@@ -140,10 +140,11 @@ SETTINGS = {
     },
 
     # Plugin Transport
-    'PluginTransport': { 'Order': 10, 'param': {
-        'zmode':    { 'type':'str', 'default':'ZigBee' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
-
-
+    'PluginTransport':     { 'Order': 10, 'param': {
+        'zmode':           { 'type':'str', 'default':'ZigBee' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
+        'TimeOut8000':     { 'type':'int', 'default': 1.5 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
+        'TimeOut8011':     { 'type':'int', 'default': 7, 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
+        'TimeOutResponse': { 'type':'int', 'default': 7, 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
         }
     },
 

@@ -107,6 +107,11 @@ class ZigateTransport(object):
         else:
             Domoticz.Error("Unknown Transport Mode: %s" %transport)
 
+
+
+
+
+
     def loggingSend( self, logType, message):
         # Log all activties towards ZiGate
         if self.pluginconf.pluginConf['debugTransportTx'] and logType == 'Debug':
@@ -540,10 +545,12 @@ def check_timed_out(self):
                 % ((now - TimeStamp), i_sqn, self.ListOfCommands[ i_sqn ]['Cmd'], self.ListOfCommands[ i_sqn ]['Datas'], 
                 self.ListOfCommands[ i_sqn ]['ResponseExpectedCmd'] ))
 
-    TIME_OUT_8000 = 1.5
-    TIME_OUT_RESPONSE = 3
+
+    TIME_OUT_8000 = self.pluginconf.pluginConf['TimeOut8000']
+    TIME_OUT_RESPONSE = self.pluginconf.pluginConf['TimeOutResponse']
+    TIME_OUT_ACK = self.pluginconf.pluginConf['TimeOut8011']
     TIME_OUT_LISTCMD = 10
-    TIME_OUT_ACK = 8
+
 
     if self.checkTimedOutFlag:
         # check_timed_out can be called either by onHeartbeat or from inside the Class. 
@@ -604,7 +611,7 @@ def check_timed_out(self):
 
     # Check if there is no TimedOut on ListOfCommands
     if len(self.ListOfCommands) > 0:
-        self.loggingSend( 'Debug', "checkTimedOutForTxQueues ListOfCommands size: %s" %len(self.ListOfCommands))
+        self.loggingSend( 'Log', "checkTimedOutForTxQueues ListOfCommands size: %s" %len(self.ListOfCommands))
     for x in list(self.ListOfCommands.keys()):
         if  self.ListOfCommands[ x ]['SentTimeStamp'] and  (now - self.ListOfCommands[ x ]['SentTimeStamp']) > TIME_OUT_LISTCMD:
             if self.ListOfCommands[ x ]['ResponseExpectedCmd']:
