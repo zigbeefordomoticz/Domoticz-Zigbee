@@ -138,6 +138,6 @@ class GroupsManagement( object):
             
         # Group Widget are updated based on Device update
         # Might be good to do the update also on a regular basic
-        if (self.HB % 2 ) == 0:
+        if self.pluginconf.pluginConf['reComputeGroupState'] and (self.HB % 2 ) == 0:
             for GroupId in self.ListOfGroups:
                 self.update_domoticz_group_device( GroupId )

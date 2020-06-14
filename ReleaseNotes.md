@@ -12,6 +12,11 @@ If you want to contribue , please let us know , we are looking for help in vario
 - improving the plugin
 - increasing the level of documentation for end user
 
+## 14 June 2020 - 4.9.3
+- [Technical] - Livolo parameter
+- [Technical] - Improvement Schneider
+
+
 ##  8 June 2020 - 4.9.2
 - [Technical] - Smooth pairing for Schneider devices
 - [Issue] - Do not poll battery based devices
