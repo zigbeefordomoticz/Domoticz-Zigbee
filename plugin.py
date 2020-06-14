@@ -89,7 +89,7 @@ from Modules.checkingUpdate import checkPluginVersion, checkPluginUpdate, checkF
 from Modules.logging import openLogFile, closeLogFile
 from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
 
-from Classes.APS import APSManagement
+#from Classes.APS import APSManagement
 from Classes.IAS import IAS_Zone_Management
 from Classes.PluginConf import PluginConf
 from Classes.Transport import ZigateTransport
@@ -128,7 +128,6 @@ class BasePlugin:
         # Objects from Classe
         self.ZigateComm = None
         self.groupmgt = None
-        self.APS = None
         self.networkmap = None
         self.networkenergy = None
         self.domoticzdb_DeviceStatus = None      # Object allowing direct access to Domoticz DB DeviceSatus
@@ -332,8 +331,8 @@ class BasePlugin:
         self.statistics = TransportStatistics(self.pluginconf)
 
         # Create APS object to manage Transmission Errors
-        if self.pluginconf.pluginConf['enableAPSFailureLoging'] or self.pluginconf.pluginConf['enableAPSFailureReporting']:
-            self.APS = APSManagement( self.ListOfDevices , Devices, self.pluginconf, self.loggingFileHandle)
+        #if self.pluginconf.pluginConf['enableAPSFailureLoging'] or self.pluginconf.pluginConf['enableAPSFailureReporting']:
+        #    self.APS = APSManagement( self.ListOfDevices , Devices, self.pluginconf, self.loggingFileHandle)
 
         # Connect to Zigate only when all initialisation are properly done.
         loggingPlugin( self, 'Status', "Transport mode: %s" %self.transport)
@@ -817,12 +816,12 @@ def zigateInit_Phase3( self ):
         self.PluzzyFirmware = True
     elif self.FirmwareVersion.lower() == '031b':
         loggingPlugin( self, 'Status', "You are not on the latest firmware version, This version is known to have problem, please consider to upgrae")
-    elif int(self.FirmwareVersion,16) >= 0x031b:
-        # We have ACK/NCK so we disable APSReporting
-        if self.APS:
-            self.pluginconf.pluginConf['enableAPSFailureReporting'] = 0
-            del self.APS
-            self.APS = None
+    #elif int(self.FirmwareVersion,16) >= 0x031b:
+    #    # We have ACK/NCK so we disable APSReporting
+    #    #if self.APS:
+    #    #    self.pluginconf.pluginConf['enableAPSFailureReporting'] = 0
+    #    #    del self.APS
+    #    #    self.APS = None
 
     elif int(self.FirmwareVersion,16) > 0x031c:
         Domoticz.Error("Firmware %s is not yet supported" %self.FirmwareVersion.lower())

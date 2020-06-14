@@ -382,8 +382,8 @@ class WebServer(object):
 
             setting_lst = []
             for _theme in SETTINGS:
-                if _theme in ( 'PluginTransport'): 
-                    continue
+                #if _theme in ( 'PluginTransport'): 
+                #    continue
                 if sendDebug and _theme != 'VerboseLogging':
                     continue
                 if _theme == 'VerboseLogging' and not sendDebug:

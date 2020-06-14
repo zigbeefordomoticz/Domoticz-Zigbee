@@ -801,7 +801,8 @@ def Decode8030(self, Devices, MsgData, MsgRSSI) : # Bind response
         return
 
     i_sqn = sqn_get_internal_sqn(self.ZigateComm,MsgSequenceNumber)
-    loggingInput( self, 'Log', "Decode8030 - Bind response, Device: %s Status: %s MsgSequenceNumber: %s i_sqn: %s" %(MsgSrcAddr, MsgDataStatus,MsgSequenceNumber,i_sqn), MsgSrcAddr)
+    loggingInput( self, 'Log', "Decode8030 - Bind response, Device: %s Status: %s MsgSequenceNumber: 0x%s/%3s i_sqn: %s" 
+        %(MsgSrcAddr, MsgDataStatus,MsgSequenceNumber, int(MsgSequenceNumber,16),i_sqn), MsgSrcAddr)
 
     if nwkid in self.ListOfDevices:
         if 'Bind' in self.ListOfDevices[nwkid]:
