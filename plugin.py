@@ -110,7 +110,7 @@ VERSION_FILENAME = '.hidden/VERSION'
 
 TEMPO_NETWORK = 2    # Start HB totrigget Network Status
 TIMEDOUT_START = 10  # Timeoud for the all startup
-TIMEDOUT_FIRMWARE = 25 # HB before request Firmware again
+TIMEDOUT_FIRMWARE = 5 # HB before request Firmware again
 TEMPO_START_ZIGATE = 1 # Nb HB before requesting a Start_Zigate
 
 class BasePlugin:
@@ -159,8 +159,11 @@ class BasePlugin:
         self.PluginHealth = {}
         self.Ping = {}
         self.connectionState = None
+
         self.HBcount = 0
         self.HeartbeatCount = 0
+        self.internalHB = 0
+
         self.currentChannel = None  # Curent Channel. Set in Decode8009/Decode8024
         self.ZigateIEEE = None       # Zigate IEEE. Set in CDecode8009/Decode8024
         self.ZigateNWKID = None       # Zigate NWKID. Set in CDecode8009/Decode8024
@@ -514,7 +517,6 @@ class BasePlugin:
         self.ZigateComm.on_message(Data)
 
     def processFrame( self, Data , i_sqn, TransportInfos=None):
-
         ZigateRead( self, Devices, Data, i_sqn )
 
     def onCommand(self, Unit, Command, Level, Color):
@@ -575,12 +577,12 @@ class BasePlugin:
         if self.ZigateComm:
             self.ZigateComm.check_timed_out_for_tx_queues()
 
-        busy_ = False
-
-        self.HeartbeatCount += 1
-        if (self.HeartbeatCount % HEARTBEAT) != 0:
+        self.internalHB += 1
+        if (self.internalHB % HEARTBEAT) != 0:
             return
-            
+        busy_ = False
+        self.HeartbeatCount += 1 
+
         # Quiet a bad hack. In order to get the needs for ZigateRestart
         # from WebServer
         if ( 'startZigateNeeded' in self.zigatedata and self.zigatedata['startZigateNeeded'] ):

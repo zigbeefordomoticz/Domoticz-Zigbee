@@ -67,6 +67,7 @@ class ZigateTransport(object):
         self.firmware_with_aps_sqn = False
 
         self.zmode = pluginconf.pluginConf['zmode']
+        self.loggingSend( 'Status', "==> Transport Mode: %s" %self.zmode)
 
         self.firmware_with_zcl_sqn = False
         sqn_init_stack (self)
@@ -531,26 +532,26 @@ def _send_data(self, InternalSqn):
 
 def check_timed_out(self):
 
-    def logExpectedCommand( self, now, TimeStamp, i_sqn):
+    def logExpectedCommand( self, desc, now, TimeStamp, i_sqn):
         if i_sqn not in self.ListOfCommands:
             Domoticz.Error( 'Unknown sqn %s in ListOfCommands' %i_sqn)
             return
 
         if self.ListOfCommands[ i_sqn ]['ResponseExpectedCmd']:
-            self.loggingSend( 'Error', " --  --  --  > - TIMED OUT %s sec on SQN waiting for %s %s %s %04x" \
-                % ((now - TimeStamp), i_sqn, self.ListOfCommands[ i_sqn ]['Cmd'], self.ListOfCommands[ i_sqn ]['Datas'], 
+            self.loggingSend( 'Error', " --  --  --  > - TIMED OUT %s sec on %s waiting for %s %s %s %04x" \
+                % (desc, (now - TimeStamp), i_sqn, self.ListOfCommands[ i_sqn ]['Cmd'], self.ListOfCommands[ i_sqn ]['Datas'], 
                 self.ListOfCommands[ i_sqn ]['ResponseExpectedCmd'] ))
         else:
-            self.loggingSend( 'Error', " --  --  --  > - TIMED OUT %s sec on SQN waiting for %s %s %s %s" \
-                % ((now - TimeStamp), i_sqn, self.ListOfCommands[ i_sqn ]['Cmd'], self.ListOfCommands[ i_sqn ]['Datas'], 
+            self.loggingSend( 'Error', " --  --  --  > - TIMED OUT %s sec on %s waiting for %s %s %s %s" \
+                % (desc, (now - TimeStamp), i_sqn, self.ListOfCommands[ i_sqn ]['Cmd'], self.ListOfCommands[ i_sqn ]['Datas'], 
                 self.ListOfCommands[ i_sqn ]['ResponseExpectedCmd'] ))
+
 
 
     TIME_OUT_8000 = self.pluginconf.pluginConf['TimeOut8000']
     TIME_OUT_RESPONSE = self.pluginconf.pluginConf['TimeOutResponse']
     TIME_OUT_ACK = self.pluginconf.pluginConf['TimeOut8011']
     TIME_OUT_LISTCMD = 10
-
 
     if self.checkTimedOutFlag:
         # check_timed_out can be called either by onHeartbeat or from inside the Class. 
@@ -575,12 +576,11 @@ def check_timed_out(self):
             if entry:
                 InternalSqn, TimeStamp = entry
                 self.loggingSend( 'Error', " --  --  --  >  0x8000- TIMED OUT %s  " % ( entry[0]))
-                logExpectedCommand( self, now, TimeStamp, InternalSqn)
+                logExpectedCommand( self, '8000', now, TimeStamp, InternalSqn)
                 if self.zmode == 'ZigBeeAck' and self.ListOfCommands[ InternalSqn ]['ExpectedAck']:
                     cleanup_list_of_commands( self, InternalSqn)
                 elif self.zmode == 'ZigBee' and self.ListOfCommands[ InternalSqn ]['ResponseExpected']:
                     cleanup_list_of_commands( self, InternalSqn)
-
 
     # Check Ack/Nack
     if self.zmode == 'ZigBeeAck' and len(self._waitForAckNack) > 0:
@@ -592,10 +592,9 @@ def check_timed_out(self):
             if entry:
                 InternalSqn, TimeStamp = entry
                 self.loggingSend( 'Error', " --  --  --  >  ACK/NACK- TIMED OUT %s  " % ( entry[0]))
-                logExpectedCommand( self, now, TimeStamp, InternalSqn)
+                logExpectedCommand( self, 'Ack', now, TimeStamp, InternalSqn)
                 cleanup_list_of_commands( self, InternalSqn)
 
-   
     # Check waitForData
     if self.zmode == 'ZigBee' and len(self._waitForCmdResponseQueue) > 0:
         # We are waiting for a Response from a Command
@@ -606,7 +605,7 @@ def check_timed_out(self):
             self.statistics._TOdata += 1
             InternalSqn, TimeStamp =  _next_cmd_from_wait_cmdresponse_queue( self )
             if InternalSqn in self.ListOfCommands:
-                logExpectedCommand( self, now, TimeStamp, InternalSqn)
+                logExpectedCommand( self, 'CmdResponse', now, TimeStamp, InternalSqn)
                 cleanup_list_of_commands( self, InternalSqn)
 
     # Check if there is no TimedOut on ListOfCommands
