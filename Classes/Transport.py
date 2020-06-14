@@ -691,6 +691,15 @@ def process_frame(self, frame):
         return
 
     if  MsgType == '8011':
+        if MsgData and self.zmode == 'ZigBee':
+            if Status == '00':
+                self.statistics._APSAck += 1
+            else:
+                self.statistics._APSNck += 1
+            self.F_out(frame, None)
+            ready_to_send_if_needed( self )
+            return
+
         if MsgData and self.zmode == 'ZigBeeAck': 
             MsgStatus = MsgData[0:2]
             MsgSrcAddr = MsgData[2:6]
