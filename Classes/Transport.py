@@ -109,10 +109,6 @@ class ZigateTransport(object):
             Domoticz.Error("Unknown Transport Mode: %s" %transport)
 
 
-
-
-
-
     def loggingSend( self, logType, message):
         # Log all activties towards ZiGate
         if self.pluginconf.pluginConf['debugTransportTx'] and logType == 'Debug':
@@ -538,11 +534,11 @@ def check_timed_out(self):
             return
 
         if self.ListOfCommands[ i_sqn ]['ResponseExpectedCmd']:
-            self.loggingSend( 'Error', " --  --  --  > - TIMED OUT %s sec on %s waiting for %s %s %s %04x" \
+            self.loggingSend( 'Log', " --  --  --  > - TIMED OUT %s sec on %s waiting for %s %s %s %04x" \
                 % (desc, (now - TimeStamp), i_sqn, self.ListOfCommands[ i_sqn ]['Cmd'], self.ListOfCommands[ i_sqn ]['Datas'], 
                 self.ListOfCommands[ i_sqn ]['ResponseExpectedCmd'] ))
         else:
-            self.loggingSend( 'Error', " --  --  --  > - TIMED OUT %s sec on %s waiting for %s %s %s %s" \
+            self.loggingSend( 'Log', " --  --  --  > - TIMED OUT %s sec on %s waiting for %s %s %s %s" \
                 % (desc, (now - TimeStamp), i_sqn, self.ListOfCommands[ i_sqn ]['Cmd'], self.ListOfCommands[ i_sqn ]['Datas'], 
                 self.ListOfCommands[ i_sqn ]['ResponseExpectedCmd'] ))
 
@@ -591,7 +587,7 @@ def check_timed_out(self):
             entry = _next_cmd_to_wait_for_ack_nack_queue( self )
             if entry:
                 InternalSqn, TimeStamp = entry
-                self.loggingSend( 'Error', " --  --  --  >  ACK/NACK- TIMED OUT %s  " % ( entry[0]))
+                self.loggingSend( 'Log', " --  --  --  >  ACK/NACK- TIMED OUT %s  " % ( entry[0]))
                 logExpectedCommand( self, 'Ack', now, TimeStamp, InternalSqn)
                 cleanup_list_of_commands( self, InternalSqn)
 
@@ -614,12 +610,12 @@ def check_timed_out(self):
     for x in list(self.ListOfCommands.keys()):
         if  self.ListOfCommands[ x ]['SentTimeStamp'] and  (now - self.ListOfCommands[ x ]['SentTimeStamp']) > TIME_OUT_LISTCMD:
             if self.ListOfCommands[ x ]['ResponseExpectedCmd']:
-                self.loggingSend( 'Error', " --  --  --  > Time Out : %s %s Flags: %s/%s %04x Status: %s"
+                self.loggingSend( 'Log', " --  --  --  > Time Out : %s %s Flags: %s/%s %04x Status: %s"
                     %(self.ListOfCommands[ x ]['Cmd'], self.ListOfCommands[ x ]['Datas'], self.ListOfCommands[ x ]['ResponseExpected'], 
                         self.ListOfCommands[ x ]['ExpectedAck'], self.ListOfCommands[ x ]['ResponseExpectedCmd'],
                         self.ListOfCommands[ x ]['Status'] ))
             else:
-                self.loggingSend( 'Error', " --  --  --  > Time Out : %s %s Flags: %s/%s Status: %s"
+                self.loggingSend( 'Log', " --  --  --  > Time Out : %s %s Flags: %s/%s Status: %s"
                     %(self.ListOfCommands[ x ]['Cmd'], self.ListOfCommands[ x ]['Datas'], 
                         self.ListOfCommands[ x ]['ResponseExpected'], self.ListOfCommands[ x ]['ExpectedAck'],
                         self.ListOfCommands[ x ]['Status'] ))                  
