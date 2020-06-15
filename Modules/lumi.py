@@ -301,9 +301,9 @@ def readXiaomiCluster( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId
     if sPower != '':
         #Domoticz.Log("ReadCluster - %s/%s Saddr: %s/%s Power %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, MsgSrcEp, sPower ))
         Domoticz.Log("ReadCluster - %s/%s Saddr: %s Power %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, float(decodeFloat( sPower ))))
-        checkAndStoreAttributeValue( self, MsgSrcAddr , MsgSrcEp, '0702', '0400' , float(decodeFloat( sPower )) )
+        #checkAndStoreAttributeValue( self, MsgSrcAddr , MsgSrcEp, '0702', '0400' , float(decodeFloat( sPower )) )
         # Update Power Widget
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0702", float(decodeFloat( sPower ))) 
+        #MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0702", float(decodeFloat( sPower ))) 
 
     if sLighLevel != '':
         loggingCluster( self, 'Debug', "ReadCluster - %s/%s Saddr: %s Light Level: %s" 
