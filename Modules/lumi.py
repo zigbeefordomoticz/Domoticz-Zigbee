@@ -280,7 +280,7 @@ def readXiaomiCluster( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId
     sPower =       retreive8Tag( '9839', MsgClusterData )         # Power Watt
 
     if sConsumption != '':
-        Domoticz.Log("ReadCluster - %s/%s Saddr: %s Consumption %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, sConsumption ))
+        Domoticz.Log("ReadCluster - %s/%s Saddr: %s/%s Consumption %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, MsgSrcEp, sConsumption ))
         Domoticz.Log("ReadCluster - %s/%s Saddr: %s Consumption %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, float(decodeFloat( self, '39', sConsumption )) ))
         if 'Consumption' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['Consumption'] = 0
@@ -288,18 +288,18 @@ def readXiaomiCluster( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId
         checkAndStoreAttributeValue( self, MsgSrcAddr , MsgSrcEp, '0702', '0000' , float(decodeFloat( self, '39', sConsumption )))
 
     if sVoltage != '':
-        Domoticz.Log("ReadCluster - %s/%s Saddr: %s Voltage %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, sVoltage ))
+        Domoticz.Log("ReadCluster - %s/%s Saddr: %s/%s Voltage %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, MsgSrcEp, sVoltage ))
         Domoticz.Log("ReadCluster - %s/%s Saddr: %s Voltage %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, float(decodeFloat( self, '39', sVoltage )) ))
         checkAndStoreAttributeValue( self, MsgSrcAddr , MsgSrcEp, '0001', '0000' , float(decodeFloat( self, '39', sVoltage )) )
         # Update Voltage ( cluster 0001 )
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0001", float(decodeFloat( self, '39', sVoltage )))
 
     if sCurrent != '':
-        Domoticz.Log("ReadCluster - %s/%s Saddr: %s Courant %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, sCurrent ))
+        Domoticz.Log("ReadCluster - %s/%s Saddr: %s/%s Courant %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, MsgSrcEp, sCurrent ))
         Domoticz.Log("ReadCluster - %s/%s Saddr: %s Courant %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, float(decodeFloat( self, '39', sCurrent ))))
 
     if sPower != '':
-        Domoticz.Log("ReadCluster - %s/%s Saddr: %s Power %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, sPower ))
+        Domoticz.Log("ReadCluster - %s/%s Saddr: %s/%s Power %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, MsgSrcEp, sPower ))
         Domoticz.Log("ReadCluster - %s/%s Saddr: %s Power %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, float(decodeFloat( self, '39', sPower ))))
         checkAndStoreAttributeValue( self, MsgSrcAddr , MsgSrcEp, '0702', '0400' , float(decodeFloat( self, '39', sPower )) )
         # Update Power Widget
