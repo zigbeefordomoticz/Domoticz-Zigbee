@@ -544,7 +544,7 @@ def check_timed_out(self):
     TIME_OUT_8000 = self.pluginconf.pluginConf['TimeOut8000']
     TIME_OUT_RESPONSE = self.pluginconf.pluginConf['TimeOutResponse']
     TIME_OUT_ACK = self.pluginconf.pluginConf['TimeOut8011']
-    TIME_OUT_LISTCMD = 15
+    TIME_OUT_LISTCMD = 10
 
     if self.checkTimedOutFlag:
         # check_timed_out can be called either by onHeartbeat or from inside the Class. 
