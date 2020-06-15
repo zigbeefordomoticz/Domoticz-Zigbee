@@ -446,7 +446,7 @@ def send_data_internal(self, InternalSqn):
 def set_acknack_for_sending(self, i_sqn):
 
     # These are ZiGate commands which doesn't have Ack/Nack with firmware up to 3.1c
-    CMD_NOACK_ZDP = (  0x0030, 0x0031, 0x0040, 0x0041, 0x0042, 0x0043, 0x0044, 0x0045, 0x0046, 0x0047, 0x0049, 0x004A, 0x004B, 0x004E, 0x0530, 0x0531, 0x0532, 0x0533 )
+    CMD_NOACK_ZDP = (  0x0030, 0x0031, 0x0040, 0x0041, 0x0042, 0x0043, 0x0044, 0x0045, 0x0046, 0x0047, 0x0049, 0x004A, 0x004B, 0x004E, 0x0531, 0x0532, 0x0533 )
 
     # If ZigBeeAck mode and Ack Expected
     if not self.firmware_with_zcl_sqn and int(self.ListOfCommands[ i_sqn ]['Cmd'],16) in CMD_NOACK_ZDP:
@@ -547,7 +547,7 @@ def check_timed_out(self):
     TIME_OUT_8000 = self.pluginconf.pluginConf['TimeOut8000']
     TIME_OUT_RESPONSE = self.pluginconf.pluginConf['TimeOutResponse']
     TIME_OUT_ACK = self.pluginconf.pluginConf['TimeOut8011']
-    TIME_OUT_LISTCMD = 10
+    TIME_OUT_LISTCMD = 15
 
     if self.checkTimedOutFlag:
         # check_timed_out can be called either by onHeartbeat or from inside the Class. 
@@ -618,8 +618,9 @@ def check_timed_out(self):
                 self.loggingSend( 'Log', " --  --  --  > Time Out : %s %s Flags: %s/%s Status: %s"
                     %(self.ListOfCommands[ x ]['Cmd'], self.ListOfCommands[ x ]['Datas'], 
                         self.ListOfCommands[ x ]['ResponseExpected'], self.ListOfCommands[ x ]['ExpectedAck'],
-                        self.ListOfCommands[ x ]['Status'] ))                  
-            #del self.ListOfCommands[ x ]
+                        self.ListOfCommands[ x ]['Status'] ))  
+
+            del self.ListOfCommands[ x ]
     self.checkTimedOutFlag = False
 
     ready_to_send_if_needed( self )
