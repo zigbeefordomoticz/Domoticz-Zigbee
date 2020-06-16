@@ -176,14 +176,55 @@ def processKnownDevices( self, Devices, NWKID ):
         return True
 
     def pingRetryDueToBadHealth( self, NwkId):
+
+
         # device is on Non Reachable state
         loggingHeartbeat( self, 'Debug', "--------> ping Retry Check %s" %NwkId, NwkId)
         if 'pingDeviceRetry' not in self.ListOfDevices[NwkId]:
-            self.ListOfDevices[NwkId]['pingDeviceRetry'] = 0
+            self.ListOfDevices[NwkId]['pingDeviceRetry'] = {}
+            self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] = 0
+            self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = 0
 
-        if self.ListOfDevices[NwkId]['pingDeviceRetry'] < 3 and len(self.ZigateComm.zigateSendingFIFO) == 0:
-            self.ListOfDevices[NwkId]['pingDeviceRetry'] += 1
-            submitPing( self, NwkId)
+        if self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] == 3:
+            return
+        
+        now = int(time.time())
+
+        if 'Retry' in self.ListOfDevices[NwkId]['pingDeviceRetry'] and 'TimeStamp' not in self.ListOfDevices[NwkId]['pingDeviceRetry']:
+            # This could be due to a previous version without TimeStamp
+            self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] = 0
+            self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = 0
+
+        lastTimeStamp = self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp']
+        retry = self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry']
+
+        loggingHeartbeat( self, 'Debug', "--------> ping Retry Check %s Retry: %s Gap: %s" %(NwkId, retry, now - lastTimeStamp), NwkId)
+        if self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] == 0:
+            # First retry in the next cycle if possible
+            if len(self.ZigateComm.zigateSendingFIFO) == 0:
+                loggingHeartbeat( self, 'Debug', "--------> ping Retry 1 Check %s" %NwkId, NwkId)
+                self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] += 1
+                self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = now
+                submitPing( self, NwkId)
+
+        elif self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] == 1:
+            # Second retry in the next 30"
+            if len(self.ZigateComm.zigateSendingFIFO) == 0 and now > ( lastTimeStamp + 30 ):
+                # Let's retry
+                loggingHeartbeat( self, 'Debug', "--------> ping Retry 2 Check %s" %NwkId, NwkId)
+                self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] += 1
+                self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = now
+                submitPing( self, NwkId)
+
+        elif self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] == 2:
+            # Last retry after 5 minutes
+            if len(self.ZigateComm.zigateSendingFIFO) == 0 and now > ( lastTimeStamp + 300):
+                # Let's retry
+                loggingHeartbeat( self, 'Debug', "--------> ping Retry 3 (last) Check %s" %NwkId, NwkId)
+                self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] += 1
+                self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = now
+                submitPing( self, NwkId)
+
 
     def submitPing( self, NwkId):
         # Pinging devices to check they are still Alive
@@ -234,16 +275,21 @@ def processKnownDevices( self, Devices, NWKID ):
                 %(NWKID, self.ListOfDevices[NWKID]['Health']), NWKID)
         return
         
+    # If we reach this step, the device health is Live
+    if 'pingDeviceRetry' in self.ListOfDevices[NWKID]: 
+        loggingHeartbeat( self, 'Log', "processKnownDevices -  %s recover from Non Reachable" %NWKID, NWKID) 
+        del self.ListOfDevices[NWKID]['pingDeviceRetry']
+
+    ## Starting this point, it is ony relevant for Main Powered Devices.
+    if not _mainPowered:
+       return
+
     # Action not taken, must be reschedule to next cycle
     rescheduleAction = False
 
     if self.pluginconf.pluginConf['forcePollingAfterAction'] and (intHB == 1): # HB has been reset to 0 as for a Group command
         loggingHeartbeat( self, 'Debug', "processKnownDevices -  %s due to intHB %s" %(NWKID, intHB), NWKID)
         rescheduleAction = (rescheduleAction or pollingDeviceStatus( self, NWKID))
-
-    ## Starting this point, it is ony relevant for Main Powered Devices.
-    if not _mainPowered:
-        return
 
     # Polling Manufacturer Specific devices ( Philips, Gledopto  ) if applicable
     rescheduleAction = (rescheduleAction or pollingManufSpecificDevices( self, NWKID))

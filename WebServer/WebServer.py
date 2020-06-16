@@ -50,6 +50,7 @@ MIMETYPES = {
         "woff": "application/x-font-woff" 
    }
 
+
 class WebServer(object):
 
     from WebServer.com import startWebServer, onStop, onConnect, onDisconnect
@@ -87,7 +88,7 @@ class WebServer(object):
         self.adminWidget = adminWidgets
         self.ZigateComm = ZigateComm
         self.statistics = Statistics
-        self.pluginparameters = PluginParameters
+        self.pluginParameters = PluginParameters
         self.networkmap = networkmap
         self.networkenergy = networkenergy
 
@@ -132,19 +133,19 @@ class WebServer(object):
         _response = prepResponseMessage( self ,setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
-            self.logging( 'Status', "Erase Zigate PDM")
-            Domoticz.Error("Erase Zigate PDM non implémenté pour l'instant")
+            self.logging( 'Status', "Erase ZiGate PDM")
+            Domoticz.Error("Erase ZiGate PDM non implémenté pour l'instant")
             if self.pluginconf.pluginConf['eraseZigatePDM']:
-                if self.pluginparameters['Mode1'] != 'None':
+                if self.pluginParameters['Mode1'] != 'None':
                     sendZigateCmd(self, "0012", "")
                 self.pluginconf.pluginConf['eraseZigatePDM'] = 0
 
             if self.pluginconf.pluginConf['extendedPANID'] is not None:
                 self.logging( 'Status', "ZigateConf - Setting extPANID : 0x%016x" %( self.pluginconf.pluginConf['extendedPANID'] ))
-                if self.pluginparameters['Mode1'] != 'None':
+                if self.pluginParameters['Mode1'] != 'None':
                     setExtendedPANID(self, self.pluginconf.pluginConf['extendedPANID'])
-            action = {'Description': 'Erase Zigate PDM - Non Implemente'}
-                #if self.pluginparameters['Mode1'] != 'None':
+            action = {'Description': 'Erase ZiGate PDM - Non Implemente'}
+                #if self.pluginParameters['Mode1'] != 'None':
                 #    start_Zigate( self )
         return _response
 
@@ -153,11 +154,11 @@ class WebServer(object):
         _response = prepResponseMessage( self ,setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
-            if self.pluginparameters['Mode1'] != 'None':
+            if self.pluginParameters['Mode1'] != 'None':
                 self.zigatedata['startZigateNeeded'] = True
                 #start_Zigate( self )
                 sendZigateCmd(self, "0011", "" ) # Software Reset
-            action = {'Name': 'Software reboot of Zigate', 'TimeStamp': int(time())}
+            action = {'Name': 'Software reboot of ZiGate', 'TimeStamp': int(time())}
         _response["Data"] = json.dumps( action , sort_keys=True )
         return _response
 
@@ -203,7 +204,7 @@ class WebServer(object):
         _response = prepResponseMessage( self ,setupHeadersResponse())     
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
-                _response["Data"] = json.dumps( self.pluginparameters, sort_keys=True )
+                _response["Data"] = json.dumps( self.pluginParameters, sort_keys=True )
         return _response
 
     def rest_nwk_stat( self, verb, data, parameters):
@@ -218,7 +219,7 @@ class WebServer(object):
             self.logging( 'Debug', "Opening file: %s" %_filename)
             with open( _filename , 'rt') as handle:
                 for line in handle:
-                    if not (line[0] == '{' or line[-1] == '}'):
+                    if line[0] != '{' and line[-1] != '}':
                         continue
 
                     entry = json.loads( line, encoding=dict )
@@ -240,7 +241,7 @@ class WebServer(object):
                         d = handle.readlines()
                         handle.seek(0)
                         for line in d:
-                            if line[0] != '{' and line[-1] != '}':
+                            if not (line[0] == '{' or line[-1] == '}'):
                                 handle.write( line )
                                 continue
 
@@ -283,37 +284,11 @@ class WebServer(object):
         _response = prepResponseMessage( self ,setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
-            if self.WebUsername and self.WebPassword:
-                url = 'http://%s:%s@127.0.0.1:%s' %(self.WebUsername, self.WebPassword, self.pluginconf.pluginConf['port'])
-            else:
-                url = 'http://127.0.0.1:%s' %self.pluginconf.pluginConf['port']
-            url += '/json.htm?type=command&param=updatehardware&htype=94'
-            url += '&idx=%s' %self.pluginparameters['HardwareID']
-
-            url += '&name=%s' %self.pluginparameters['Name']
-            url += '&address=%s' %self.pluginparameters['Address']
-            url += '&port=%s' %self.pluginparameters['Port']
-            url += '&serialport=%s' %self.pluginparameters['SerialPort']
-            url += '&Mode1=%s' %self.pluginparameters['Mode1']
-            url += '&Mode2=%s' %self.pluginparameters['Mode2']
-            url += '&Mode3=%s' %self.pluginparameters['Mode3']
-            url += '&Mode4=%s' %self.pluginparameters['Mode4']
-            url += '&Mode5=%s' %self.pluginparameters['Mode5']
-            url += '&Mode6=%s' %self.pluginparameters['Mode6']
-            url += '&extra=%s' %self.pluginparameters['Key']
-            url += '&enabled=true'
-            url += '&datatimeout=0'
+            from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
+            restartPluginViaDomoticzJsonApi( self )
 
             info = {'Text': 'Plugin restarted', 'TimeStamp': int(time())}
             _response["Data"] = json.dumps( info, sort_keys=True )
-
-            Domoticz.Log("Plugin Restart command : %s" %url)
-            _cmd = "/usr/bin/curl '%s' &" %url
-            try:
-                os.system( _cmd )  # nosec
-            except:
-                Domoticz.Error("Error while trying to restart plugin %s" %_cmd)
-
         return _response
         
     def rest_restart_needed( self, verb, data, parameters):
@@ -331,7 +306,7 @@ class WebServer(object):
         self.logging( 'Debug', " --> Type: %s" %type(self.statistics))
 
         Statistics['Trend'] = [ ]
-        if self.pluginparameters['Mode1'] == 'None':
+        if self.pluginParameters['Mode1'] == 'None':
             Statistics['CRC'] = 1
             Statistics['FrameErrors'] = 1
             Statistics['Sent'] = 5
@@ -391,55 +366,66 @@ class WebServer(object):
                 _response["Data"] = json.dumps( Statistics, sort_keys=True )
         return _response
 
-    def rest_Settings( self, verb, data, parameters):
+    def rest_Settings_wo_debug( self, verb, data, parameters):
+        return self.rest_Settings( verb, data, parameters, sendDebug=False)
+
+    def rest_Settings_with_debug( self, verb, data, parameters):
+        return self.rest_Settings( verb, data, parameters, sendDebug=True)
+
+    def rest_Settings( self, verb, data, parameters, sendDebug=False):
 
         _response = prepResponseMessage( self ,setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
-            if len(parameters) == 0:
-                setting_lst = []
-                for _theme in SETTINGS:
-                    if _theme in ( 'PluginTransport'): 
+            if len(parameters) != 0:
+                return
+
+            setting_lst = []
+            for _theme in SETTINGS:
+                if _theme in ( 'PluginTransport'): 
+                    continue
+                if sendDebug and _theme != 'VerboseLogging':
+                    continue
+                if _theme == 'VerboseLogging' and not sendDebug:
+                    continue
+                theme = {
+                    '_Order': SETTINGS[_theme]['Order'],
+                    '_Theme': _theme,
+                    'ListOfSettings': [],
+                }
+
+                for param in self.pluginconf.pluginConf:
+                    if param not in SETTINGS[_theme]['param']: 
                         continue
 
-                    theme = {
-                        '_Order': SETTINGS[_theme]['Order'],
-                        '_Theme': _theme,
-                        'ListOfSettings': [],
-                    }
+                    if not SETTINGS[_theme]['param'][param]['hidden']:
+                        setting = {
+                            'Name': param,
+                            'default_value': SETTINGS[_theme]['param'][param][
+                                'default'
+                            ],
+                            'DataType': SETTINGS[_theme]['param'][param][
+                                'type'
+                            ],
+                            'restart_need': SETTINGS[_theme]['param'][param][
+                                'restart'
+                            ],
+                            'Advanced': SETTINGS[_theme]['param'][param][
+                                'Advanced'
+                            ],
+                        }
 
-                    for param in self.pluginconf.pluginConf:
-                        if param not in SETTINGS[_theme]['param']: 
-                            continue
-
-                        if not SETTINGS[_theme]['param'][param]['hidden']:
-                            setting = {
-                                'Name': param,
-                                'default_value': SETTINGS[_theme]['param'][param][
-                                    'default'
-                                ],
-                                'DataType': SETTINGS[_theme]['param'][param][
-                                    'type'
-                                ],
-                                'restart_need': SETTINGS[_theme]['param'][param][
-                                    'restart'
-                                ],
-                                'Advanced': SETTINGS[_theme]['param'][param][
-                                    'Advanced'
-                                ],
-                            }
-
-                            if SETTINGS[_theme]['param'][param]['type'] == 'hex':
-                                Domoticz.Debug("--> %s: %s - %s" %(param, self.pluginconf.pluginConf[param], type(self.pluginconf.pluginConf[param])))
-                                if isinstance( self.pluginconf.pluginConf[param], int):
-                                    setting['current_value'] = '%x' %self.pluginconf.pluginConf[param] 
-                                else:
-                                    setting['current_value'] = '%x' %int(self.pluginconf.pluginConf[param] ,16)
+                        if SETTINGS[_theme]['param'][param]['type'] == 'hex':
+                            Domoticz.Debug("--> %s: %s - %s" %(param, self.pluginconf.pluginConf[param], type(self.pluginconf.pluginConf[param])))
+                            if isinstance( self.pluginconf.pluginConf[param], int):
+                                setting['current_value'] = '%x' %self.pluginconf.pluginConf[param] 
                             else:
-                                setting['current_value'] = self.pluginconf.pluginConf[param]
-                            theme['ListOfSettings'].append ( setting )
-                    setting_lst.append( theme )
-                _response["Data"] = json.dumps( setting_lst, sort_keys=True )
+                                setting['current_value'] = '%x' %int(self.pluginconf.pluginConf[param] ,16)
+                        else:
+                            setting['current_value'] = self.pluginconf.pluginConf[param]
+                        theme['ListOfSettings'].append ( setting )
+                setting_lst.append( theme )
+            _response["Data"] = json.dumps( setting_lst, sort_keys=True )
 
         elif verb == 'PUT':
             _response["Data"] = None
@@ -465,9 +451,12 @@ class WebServer(object):
                         if str(setting_lst[setting]['current']) == str(self.pluginconf.pluginConf[param]):
                             #Nothing to do
                             continue
-                        if SETTINGS[_theme]['param'][param]['type'] == 'hex':
-                            if int(setting_lst[setting]['current'],16) == self.pluginconf.pluginConf[param]:
-                                continue
+                        if (
+                            SETTINGS[_theme]['param'][param]['type'] == 'hex'
+                            and int(setting_lst[setting]['current'], 16)
+                            == self.pluginconf.pluginConf[param]
+                        ):
+                            continue
 
                         self.logging( 'Debug', "Updating %s from %s to %s on theme: %s" %( param, self.pluginconf.pluginConf[param], setting_lst[setting]['current'], _theme))
 
@@ -593,16 +582,34 @@ class WebServer(object):
                     duration = int( data['PermitToJoin'])
                     router = data['Router']
                     if router in self.ListOfDevices:
-                        # Allow Permit to join from this specific router    
-                        self.logging( 'Log', "Requesting router: %s to switch into Permit to join" %router)             
+                        # Allow Permit to join from this specific router   
+                        if  duration == 0:
+                            self.logging( 'Log', "Requesting router: %s to disable Permit to join" %router)  
+                        else:
+                            self.logging( 'Log', "Requesting router: %s to enable Permit to join" %router)             
                         sendZigateCmd( self, "0049", router + '%02x' %duration + '00') 
 
                 else:                   
-                    if self.pluginparameters['Mode1'] != 'None':
+                    if self.pluginParameters['Mode1'] != 'None':
                         ZigatePermitToJoin(self, int( data['PermitToJoin']))
         return _response
 
     def rest_Device( self, verb, data, parameters):
+
+        def getDeviceInfos( self, UnitId):
+            return {
+                '_DeviceID': self.Devices[UnitId].DeviceID,
+                'Name': self.Devices[UnitId].Name,
+                'ID': self.Devices[UnitId].ID,
+                'sValue': self.Devices[UnitId].sValue,
+                'nValue': self.Devices[UnitId].nValue,
+                'SignaleLevel': self.Devices[UnitId].SignalLevel,
+                'BatteryLevel': self.Devices[UnitId].BatteryLevel,
+                'TimedOut': self.Devices[UnitId].TimedOut,
+                #_dictDevices['Type'] = self.Devices[UnitId].Type
+                #_dictDevices['SwitchType'] = self.Devices[UnitId].SwitchType
+                }
+
 
         _dictDevices = {}
         _response = prepResponseMessage( self ,setupHeadersResponse())
@@ -613,25 +620,13 @@ class WebServer(object):
                 return _response
 
             if len(parameters) == 0:
-                # Return the Full List of ZIgate Domoticz Widget
+                # Return the Full List of ZiGate Domoticz Widget
                 device_lst = []
                 for x in self.Devices:
                     if len(self.Devices[x].DeviceID)  != 16:
                         continue
 
-                    device_info = {
-                        '_DeviceID': self.Devices[x].DeviceID,
-                        'Name': self.Devices[x].Name,
-                        'ID': self.Devices[x].ID,
-                        'sValue': self.Devices[x].sValue,
-                        'nValue': self.Devices[x].nValue,
-                        'SignaleLevel': self.Devices[x].SignalLevel,
-                        'BatteryLevel': self.Devices[x].BatteryLevel,
-                        'TimedOut': self.Devices[x].TimedOut,
-                    }
-
-                    #device_info['Type'] = self.Devices[x].Type
-                    #device_info['SwitchType'] = self.Devices[x].SwitchType
+                    device_info = device_info = getDeviceInfos( self, x)
                     device_lst.append( device_info )
                 _response["Data"] = json.dumps( device_lst, sort_keys=True )
 
@@ -641,19 +636,7 @@ class WebServer(object):
                         continue
 
                     if parameters[0] == self.Devices[x].DeviceID:
-                        _dictDevices = {
-                            '_DeviceID': self.Devices[x].DeviceID,
-                            'Name': self.Devices[x].Name,
-                            'ID': self.Devices[x].ID,
-                            'sValue': self.Devices[x].sValue,
-                            'nValue': self.Devices[x].nValue,
-                            'SignaleLevel': self.Devices[x].SignalLevel,
-                            'BatteryLevel': self.Devices[x].BatteryLevel,
-                            'TimedOut': self.Devices[x].TimedOut,
-                        }
-
-                        #_dictDevices['Type'] = self.Devices[x].Type
-                        #_dictDevices['SwitchType'] = self.Devices[x].SwitchType
+                        _dictDevices = device_info = getDeviceInfos( self, x) 
                         _response["Data"] = json.dumps( _dictDevices, sort_keys=True )
                         break
 
@@ -666,19 +649,7 @@ class WebServer(object):
                             continue
 
                         if parm == self.Devices[x].DeviceID:
-                            device_info = {
-                                '_DeviceID': self.Devices[x].DeviceID,
-                                'Name': self.Devices[x].Name,
-                                'ID': self.Devices[x].ID,
-                                'sValue': self.Devices[x].sValue,
-                                'nValue': self.Devices[x].nValue,
-                                'SignaleLevel': self.Devices[x].SignalLevel,
-                                'BatteryLevel': self.Devices[x].BatteryLevel,
-                                'TimedOut': self.Devices[x].TimedOut,
-                            }
-
-                            #device_info['Type'] = self.Devices[x].Type
-                            #device_info['SwitchType'] = self.Devices[x].SwitchType
+                            device_info = getDeviceInfos( self, x)
                             device_lst.append( device_info )
                 _response["Data"] = json.dumps( device_lst, sort_keys=True )
         return _response
@@ -832,7 +803,7 @@ class WebServer(object):
                 _response['Data'] = json.dumps( action , sort_keys=True)
             return _response
 
-        elif verb == 'GET':
+        if verb == 'GET':
             if self.Devices is None or len(self.Devices) == 0:
                 return _response
             if self.ListOfDevices is None or len(self.ListOfDevices) == 0:

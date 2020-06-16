@@ -5,7 +5,7 @@
 #
 """
     Module: lumi.py
-
+ 
     Description: Lumi specifics handling
 
 """
@@ -13,6 +13,9 @@ import time
 import struct
 
 import Domoticz
+
+
+from math import atan, sqrt, pi
 
 from Modules.domoMaj import MajDomoDevice
 from Modules.basicOutputs import ZigatePermitToJoin, leaveRequest, write_attribute
@@ -246,41 +249,62 @@ def retreive8Tag(tag,chain):
 
 def readXiaomiCluster( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
 
+    def decodeFloat( data ):
+        return (int(data[2:4]+data[0:2],16))
+
     if 'Model' not in self.ListOfDevices[MsgSrcAddr]:
         return
     
     # Taging: https://github.com/dresden-elektronik/deconz-rest-plugin/issues/42#issuecomment-370152404
     # 0x0624 might be the LQI indicator and 0x0521 the RSSI dB
 
-    sBatteryLvl = retreive4Tag( "0121", MsgClusterData )
-    sTemp2 =  retreive4Tag( "0328", MsgClusterData )   # Device Temperature
-    stag04 = retreive4Tag( '0424', MsgClusterData )
-    sRSSI = retreive4Tag( '0521', MsgClusterData )[0:2] # RSSI
-    sLQI = retreive8Tag( '0620', MsgClusterData ) # LQI
-    sLighLevel = retreive4Tag( '0b21', MsgClusterData)
+    sBatteryLvl =  retreive4Tag( "0121", MsgClusterData )
+    sTemp2 =       retreive4Tag( "0328", MsgClusterData )         # Device Temperature
+    stag04 =       retreive4Tag( '0424', MsgClusterData )
+    sRSSI =        retreive4Tag( '0521', MsgClusterData )[0:2]    # RSSI
+    sLQI =         retreive8Tag( '0620', MsgClusterData ) # LQI
+    sLighLevel =   retreive4Tag( '0b21', MsgClusterData)
 
-    sOnOff =  retreive4Tag( "6410", MsgClusterData )[0:2]
-    sOnOff2 = retreive4Tag( "6420", MsgClusterData )[0:2]    # OnOff for Aqara Bulb / Current position lift for lumi.curtain
-    sTemp =   retreive4Tag( "6429", MsgClusterData )
-    sOnOff3 =  retreive4Tag( "6510", MsgClusterData ) # On/off lumi.ctrl_ln2 EP 02
-    sHumid =  retreive4Tag( "6521", MsgClusterData )
-    sHumid2 = retreive4Tag( "6529", MsgClusterData )
-    sLevel =  retreive4Tag( "6520", MsgClusterData )[0:2]     # Dim level for Aqara Bulb
-    sPress =  retreive8Tag( "662b", MsgClusterData )
-    #sConso = retreive8Tag( '9539', MsgClusterData )
-    #sPower = retreive8Tag( '9839', MsgClusterData )
+    sOnOff =       retreive4Tag( "6410", MsgClusterData )[0:2]
+    sOnOff2 =      retreive4Tag( "6420", MsgClusterData )[0:2]    # OnOff for Aqara Bulb / Current position lift for lumi.curtain
+    sTemp =        retreive4Tag( "6429", MsgClusterData )
+    sOnOff3 =      retreive4Tag( "6510", MsgClusterData )         # On/off lumi.ctrl_ln2 EP 02
+    sHumid =       retreive4Tag( "6521", MsgClusterData )
+    sHumid2 =      retreive4Tag( "6529", MsgClusterData )
+    sLevel =       retreive4Tag( "6520", MsgClusterData )[0:2]    # Dim level for Aqara Bulb
+    sPress =       retreive8Tag( "662b", MsgClusterData )
 
-    #if sConso != '':
-    #    #Domoticz.Log("ReadCluster - %s/%s Saddr: %s Consumption %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, sConso ))
-    #    #Domoticz.Log("ReadCluster - %s/%s Saddr: %s Consumption %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, int(decodeAttribute( self, '2b', sConso ))))
-    #    Domoticz.Log("ReadCluster - %s/%s Saddr: %s Consumption %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, float(decodeAttribute( self, '39', sConso ))))
-    #    if 'Consumtpion' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
-    #        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['Consumption'] = 0
-    #    self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['Consumption'] = self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['Consumption'] + float(decodeAttribute( self, '39', sConso ))
-    #if sPower != '':
-    #    #Domoticz.Log("ReadCluster - %s/%s Saddr: %s Power %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, sPower ))
-    #    #Domoticz.Log("ReadCluster - %s/%s Saddr: %s Power %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, int(decodeAttribute( self, '2b', sPower ))))
-    #    Domoticz.Log("ReadCluster - %s/%s Saddr: %s Power %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, float(decodeAttribute( self, '39', sPower ))))
+    sConsumption = retreive8Tag( '9539', MsgClusterData )         # Cummulative Consumption
+    sVoltage =     retreive8Tag( '9639', MsgClusterData )         # Voltage
+    sCurrent =     retreive8Tag( '9739', MsgClusterData )         # Ampere
+    sPower =       retreive8Tag( '9839', MsgClusterData )         # Power Watt
+
+    if sConsumption != '':
+        #Domoticz.Log("ReadCluster - %s/%s Saddr: %s/%s Consumption %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, MsgSrcEp, sConsumption ))
+        Domoticz.Log("ReadCluster - %s/%s Saddr: %s Consumption %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, float(decodeFloat( sConsumption )) ))
+        if 'Consumption' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['Consumption'] = 0
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['Consumption'] = self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['Consumption'] + float(decodeFloat( sConsumption ))
+        #checkAndStoreAttributeValue( self, MsgSrcAddr , MsgSrcEp, '0702', '0000' , float(decodeFloat( sConsumption )))
+
+    if sVoltage != '':
+        #Domoticz.Log("ReadCluster - %s/%s Saddr: %s/%s Voltage %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, MsgSrcEp, sVoltage ))
+        Domoticz.Log("ReadCluster - %s/%s Saddr: %s Voltage %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, float(decodeFloat( sVoltage )) ))
+        checkAndStoreAttributeValue( self, MsgSrcAddr , MsgSrcEp, '0001', '0000' , float(decodeFloat( sVoltage )) )
+        # Update Voltage ( cluster 0001 )
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0001", float(decodeFloat( sVoltage )))
+
+    if sCurrent != '':
+        #Domoticz.Log("ReadCluster - %s/%s Saddr: %s/%s Courant %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, MsgSrcEp, sCurrent ))
+        Domoticz.Log("ReadCluster - %s/%s Saddr: %s Courant %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, float(decodeFloat( sCurrent ))))
+
+    if sPower != '':
+        #Domoticz.Log("ReadCluster - %s/%s Saddr: %s/%s Power %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, MsgSrcEp, sPower ))
+        Domoticz.Log("ReadCluster - %s/%s Saddr: %s Power %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, float(decodeFloat( sPower ))))
+        #checkAndStoreAttributeValue( self, MsgSrcAddr , MsgSrcEp, '0702', '0400' , float(decodeFloat( sPower )) )
+        # Update Power Widget
+        #MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0702", float(decodeFloat( sPower ))) 
+
     if sLighLevel != '':
         loggingCluster( self, 'Debug', "ReadCluster - %s/%s Saddr: %s Light Level: %s" 
             %(MsgClusterId, MsgAttrID, MsgSrcAddr,  int(sLighLevel,16)), MsgSrcAddr)
@@ -352,3 +376,71 @@ def readXiaomiCluster( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId
         loggingCluster( self, 'Debug', "ReadCluster - 0000/ff01 Saddr: %s sLevel: %s" %(MsgSrcAddr, sLevel), MsgSrcAddr)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0008',sLevel)
         checkAndStoreAttributeValue( self, MsgSrcAddr , MsgSrcEp, '0008', '0000' , sLevel)
+
+def cube_decode(self, value, MsgSrcAddr):
+    'https://github.com/sasu-drooz/Domoticz-Zigate/wiki/Aqara-Cube-decoding'
+    value=int(value,16)
+    if value == '' or value is None:
+        return value
+
+    if value == 0x0000:         
+        loggingCluster( self, 'Debug', "cube action: " + 'Shake' , MsgSrcAddr)
+        value='10'
+    elif value == 0x0002:            
+        loggingCluster( self, 'Debug', "cube action: " + 'Wakeup' , MsgSrcAddr)
+        value = '20'
+    elif value == 0x0003:
+        loggingCluster( self, 'Debug', "cube action: " + 'Drop' , MsgSrcAddr)
+        value = '30'
+    elif value & 0x0040 != 0:    
+        face = value ^ 0x0040
+        face1 = face >> 3
+        face2 = face ^ (face1 << 3)
+        loggingCluster( self, 'Debug', "cube action: " + 'Flip90_{}{}'.format(face1, face2), MsgSrcAddr)
+        value = '40'
+    elif value & 0x0080 != 0:  
+        face = value ^ 0x0080
+        loggingCluster( self, 'Debug', "cube action: " + 'Flip180_{}'.format(face) , MsgSrcAddr)
+        value = '50'
+    elif value & 0x0100 != 0:  
+        face = value ^ 0x0100
+        loggingCluster( self, 'Debug', "cube action: " + 'Push/Move_{}'.format(face) , MsgSrcAddr)
+        value = '60'
+    elif value & 0x0200 != 0:  # double_tap
+        face = value ^ 0x0200
+        loggingCluster( self, 'Debug', "cube action: " + 'Double_tap_{}'.format(face) , MsgSrcAddr)
+        value = '70'
+    else:  
+        loggingCluster( self, 'Debug', "cube action: Not expected value %s" %value , MsgSrcAddr)
+    return value
+
+def decode_vibr(value):         #Decoding XIAOMI Vibration sensor 
+    if value == '' or value is None:
+        return value
+    if  value == "0001": 
+        return '20' # Take/Vibrate/Shake
+    if value == "0002": 
+        return '10' # Tilt / we will most-likely receive 0x0503/0x0054 after
+    if value == "0003": 
+        return '30' #Drop
+    return '00'
+
+def decode_vibrAngle( rawData):
+
+    value = int(rawData,16)
+    x =  value & 0xffff
+    y = (value >> 16) & 0xffff
+    z = (value >> 32) & 0xfff
+
+    x2 = x*x
+    y2 = y*y
+    z2 = z*z
+
+    angleX= angleY = angleZ = 0
+    if z2 + y2 != 0: 
+        angleX = round( atan( x / sqrt(z2+y2)) * 180 / pi)
+    if x2 + z2 != 0: 
+        angleY = round( atan( y / sqrt(x2+z2)) * 180 / pi)
+    if x2 + y2 != 0: 
+        angleZ = round( atan( z / sqrt(x2+y2)) * 180 / pi)
+    return (angleX, angleY, angleZ)

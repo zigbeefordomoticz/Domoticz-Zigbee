@@ -93,7 +93,7 @@ def set_kelvin_color( self, mode, addr, EPin, EPout, t, transit = None):
     #Correct values are from 153 (6500K) up to 588 (1700K)
     # t is 0 > 255
 
-    transit = '0001' if transit is None else '%04x' % transit
+    transit = '0000' if transit is None else transit
     TempKelvin = int(((255 - int(t))*(6500-1700)/255)+1700)
     TempMired = 1000000 // TempKelvin
     zigate_cmd = "00C0"
@@ -105,7 +105,7 @@ def set_kelvin_color( self, mode, addr, EPin, EPout, t, transit = None):
 
 def set_rgb_color( self, mode, addr, EPin, EPout, r, g, b, transit = None):
 
-    transit = '0001' if transit is None else '%04x' % transit
+    transit = '0000' if transit is None else transit
     x, y = rgb_to_xy((int(r), int(g), int(b)))
     #Convert 0 > 1 to 0 > FFFF
     x = int(x*65536)
@@ -117,3 +117,14 @@ def set_rgb_color( self, mode, addr, EPin, EPout, r, g, b, transit = None):
 
     self.logging( 'Debug', "Command: %s - data: %s" %(zigate_cmd, datas))
     self.ZigateComm.sendData( zigate_cmd, datas)
+
+def set_hue_saturation( self, mode, addr, EPin, EPout, r, g, b, transit = None):
+    h,s,l = rgb_to_hsl((int(r),int(g),int(b)))
+
+    saturation = s * 100   #r
+    hue = h *360           #0 > 360
+    hue = int(hue*254//360)
+    saturation = int(saturation*254//100)
+    self.logging( 'Log', "---------- Set Hue X: %s Saturation: %s" %(hue, saturation))
+    self.ZigateComm.sendData( "00B6","%02d" %ADDRESS_MODE['group'] + GrpId + ZIGATE_EP + EPout + Hex_Format(2,hue) + Hex_Format(2,saturation) + transit)
+    return l

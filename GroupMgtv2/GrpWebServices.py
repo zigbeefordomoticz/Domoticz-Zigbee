@@ -10,7 +10,7 @@ from time import time
 from Modules.tools import getListOfEpForCluster, mainPoweredDevice
 
 from GroupMgtv2.GrpServices import create_new_group_and_attach_devices, update_group_and_add_devices, update_group_and_remove_devices, \
-                                   scan_all_devices_for_grp_membership, submitForGroupMemberShipScaner
+                                   scan_all_devices_for_grp_membership, submitForGroupMemberShipScaner, SendGroupIdentifyEffect
     
 
 from GroupMgtv2.GrpIkeaRemote import Ikea5BToBeAddedToListIfExist
@@ -111,6 +111,7 @@ def process_web_request( self, webInput):
             self.logging( 'Debug', " --  --  --  -- - > Tuple to add: %s " % str([NwkId, Ep, IEEE] ))
         self.logging( 'Debug', " --  --  -- - > GroupCreation" )
         create_new_group_and_attach_devices( self, GrpId, GrpName, DevicesList)
+        SendGroupIdentifyEffect( self, GrpId )
 
     def updateGroup( self, GrpId, item):
     
@@ -129,17 +130,22 @@ def process_web_request( self, webInput):
         self.logging( 'Debug', " --  -- - > Existing DeviceList: %s " %ExistingDevices)
 
         WhatToDo = compare_exitsing_with_new_list( self, ExistingDevices, TargetedDevices)
+        sendIdentify = len(WhatToDo['ToBeAdded']) + len(WhatToDo['ToBeRemoved'])
         self.logging( 'Debug', " --  -- - > Devices to be added: %s " %WhatToDo['ToBeAdded'])
         update_group_and_add_devices( self, GrpId, WhatToDo['ToBeAdded'])
 
         self.logging( 'Debug', " --  -- - > Devices to be removed: %s " %WhatToDo['ToBeRemoved'])
         update_group_and_remove_devices( self, GrpId, WhatToDo['ToBeRemoved'])
+        if sendIdentify > 0:
+            SendGroupIdentifyEffect( self, GrpId )
+
 
     def delGroup( self, GrpId ):
         if GrpId not in self.ListOfGroups:
             return
         TobeRemovedDevices = self.ListOfGroups[ GrpId]['Devices']
         update_group_and_remove_devices( self, GrpId, TobeRemovedDevices)
+        SendGroupIdentifyEffect( self, GrpId )
 
     def fullGroupRemove( self ):
         # Everything has to be removed.

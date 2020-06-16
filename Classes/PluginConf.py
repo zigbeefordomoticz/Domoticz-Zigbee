@@ -20,8 +20,8 @@ from Modules.tools import is_hex
 
 SETTINGS = { 
     'Services': { 'Order': 1, 'param': {
-        'enablegroupmanagement':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
-        'enableReadAttributes': { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
+        'enablegroupmanagement':  { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
+        'enableReadAttributes': { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
         'enableWebServer': { 'type':'bool', 'default':1, 'current':None, 'restart':True , 'hidden':False, 'Advanced':False},
         'internetAccess': { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
         'allowOTA':  { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
@@ -31,6 +31,8 @@ SETTINGS = {
 
     'GroupManagement': { 'Order': 2, 'param': {
         'OnIfOneOn': { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
+        'forceGroupDeviceRefresh': { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
+        'reComputeGroupState': { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
         }
     },
 
@@ -90,6 +92,8 @@ SETTINGS = {
         'resetConfigureReporting':       { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
         'resetReadAttributes':           { 'type':'bool', 'default':0 , 'current': None, 'restart':True  , 'hidden':False, 'Advanced':True},
         'resetMotiondelay':              { 'type':'int', 'default':30 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
+        'resetSwitchSelectorPushButton': { 'type':'int', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
+        'forceSwitchSelectorPushButton': { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
         'allowGroupMembership':          { 'type':'bool', 'default':1 , 'current': None, 'restart':True  , 'hidden':False, 'Advanced':True},
         'doUnbindBind':                  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
         'allowReBindingClusters':        { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True}
@@ -118,10 +122,10 @@ SETTINGS = {
 
     # Command Transitionin tenth of seconds
     'CommandTransition': { 'Order': 8, 'param': {
-        'moveToHueSatu':     { 'type':'int', 'default':0 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':False},
-        'moveToColourTemp':  { 'type':'int', 'default':0 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':False},
-        'moveToColourRGB':   { 'type':'int', 'default':0 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':False},
-        'moveToLevel':       { 'type':'int', 'default':0 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':False},
+        'moveToHueSatu':     { 'type':'int', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
+        'moveToColourTemp':  { 'type':'int', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
+        'moveToColourRGB':   { 'type':'int', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
+        'moveToLevel':       { 'type':'int', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
         }
     },
 
@@ -225,6 +229,7 @@ SETTINGS = {
 
     #Others
     'Others': { 'Order': 15, 'param': {
+        'Livolo': {'type':'bool', 'default':0, 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
         'profaluxOrientBSO': {'type':'int', 'default':45, 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
         'alarmDuration': {'type':'int', 'default':1, 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
         'numTopologyReports': { 'type':'int', 'default':4 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},

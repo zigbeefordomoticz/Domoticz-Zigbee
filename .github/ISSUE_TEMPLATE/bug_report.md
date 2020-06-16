@@ -11,6 +11,8 @@ Your first place to get support is via the Forums.
 
     English channel : https://www.domoticz.com/forum/viewforum.php?f=68
     French Channel : https://easydomoticz.com/forum/viewforum.php?f=28&sid=a8633a9d8cb2acccb32872543b50fd47
+    
+Didn't you find answers in the Wiki at https://github.com/pipiche38/Domoticz-Zigate-Wiki/blob/master/en-eng/Home.md
 
 **Describe the bug**
 A clear and concise description of what the bug is.

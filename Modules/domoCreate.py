@@ -460,7 +460,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 # Xiaomi Magic Cube
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 # Create the XCube Widget
-                Options = createSwitchSelector( 10, OffHidden = True, SelectorStyle = 1 )
+                Options = createSwitchSelector( 10,  DeviceType = t, OffHidden = True, SelectorStyle = 1 )
                 unit = FreeUnit(self, Devices, nbunit_=2) # Look for 2 consecutive slots
                 myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                                 Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)

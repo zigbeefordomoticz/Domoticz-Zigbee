@@ -1,6 +1,19 @@
-# Release Notes 
+# Release Notes
 
-##                 - 4.8
+Please use the Wiki <https://github.com/pipiche38/Domoticz-Zigate-Wiki> and feel free to contribute.
+And if you have any questions, problem please use first the Domoticz forum.
+
+- French channel : <https://easydomoticz.com/forum/viewtopic.php?f=8&t=7099>
+- English channel : <https://www.domoticz.com/forum/viewtopic.php?f=28&t=24789>
+
+If you want to contribue , please let us know , we are looking for help in various areas:
+
+- certifying new ZigBee devices
+- improving the plugin
+- increasing the level of documentation for end user
+
+
+##  5 June 2020 - 4.9.1 (Last release supporting Firmware below 3.1c)
 - [Technical] - Ready for PDM on host.
 - [Technical] - Scrip for PiZiGate on Fedora distribution
 - [Technical] - Provide Firmware
@@ -13,29 +26,40 @@
 - [Technical] - Refactor a number of Modules
 - [Hardware] - Provides a number of additionnal Devices
 - [Hardware] - Implementation of BSO profalux
+- [WebAdmin] - Update Translation for French and Dutch
+- [Technical] - Implement a Reset after delay of the Switch Selector (push button)
+- [Hardware] - Support of Schneider sWiser, HACT and Thermostat.
+- [WebAdmin] - Debug menu move to Tools
+- [WebAdmin] - Allow to enable pairing on one specific router
+- [Technical] - Full rework/refactor of Group Management. Allow real time Group creation/edition/removal
 
 ## 22 February 2020 - 4.7.5
+
 - [Hardware] - More Device Configuration
 
 ## 18 February 2020 - 4.7.4
+
 - [Hardware] - Update a number of device configuration
 
 ## 14 February 2020 - 4.7.3
+
 - [Issue] - Fix issue when Window Covering device exist
 - [Issue] - Re-enable configureReporting split Atrribute by attribute
 - [Issue] - Check the validity of Temp and Humidity
 
 ## 12 February 2020 - 4.7.1
+
 - [Issue] - Using wrong ClusterId for 0201 read attribute
 - [Issue] - Fixing binding information
 
-## 8 February 2020 - 4.7.0 
+## 8 February 2020 - 4.7.0
+
 - [Hardware] - Update of IKEA Tradfri firmware
 - [Technical] - better management of APS Failure, network transmission
 - [Technical] - speedup the process to get Powered Devices with a correct Health state
 - [Technical] - Consider Health 'Non rechable' as a dead device, and do not process them anymore.
 - [Technical] - Implement the possibility to setup the PowerOn after device PowerOff/Off (supported by Philips)
-- [Technical] - Handle ZHA1.2/Pluzzy Firmware 
+- [Technical] - Handle ZHA1.2/Pluzzy Firmware
 - [Technical] - Handle Pluzzy devices - Temp/Humi is working for now.
 - [Technical] - Transfert of GitHub repository
 - [Hardware] - Certify Tuya Door contact
@@ -76,8 +100,8 @@
 - [Technical] - Introduce ClusterToBind, ConfigureReportig and ReadAttributes pragma to configuration model
 - [Technical] - Fully compliant with firmware 3.1c
 
+## 31 July 2019  - 4.5.0 ( Web User Interface ) <https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/4.5.0>
 
-## 31 July 2019  - 4.5.0 ( Web User Interface ) https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/4.5.0
 - [Technical] - Web Server Class
 - [Technical] - New way of managing PluginConf/Parameters, in order to be managed from UI.
 - [Technical] - Full re-factory of Network Toplogy scanner
@@ -86,7 +110,7 @@
 - [Technical] - enable live debug switch (with nwkid filtering) from the Web Admin Interface
 - [Technical] - Refactor the Read Attribute mechanism. Enable Polling parameters for ON/OFF and LvlControl from the User Interface or Configuration file
 - [Technical] - Implement ReJoin capabilities. When a device is sending a un-expected Leave (not following a remove).
-- [Technical] - Refactor logFORMAT 
+- [Technical] - Refactor logFORMAT
 - [Hardware] - Certify WXKG11LM (up to 4 clicks), Warning Device HEIMAN
 - [Technical] - Refactor the PiZigate setup
 - [Technical] - Tools to get PiZigate running on Fedora distribution
@@ -104,8 +128,8 @@
 - [Technical] - Enhance piZigate support
 - [Technical] - Full compliance with firmware 3.1a
 
+## 27 May 2019 - 4.3.0 <https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/4.3.0>
 
-## 27 May 2019 - 4.3.0 https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/4.3.0
 - [Enhancement] #419 Better versioning of DeviceList (restricted to 12 versions by default)
 - [Hardware] #421 - Integrate the new Aqara switch with gyroscope
 - [Hardware] - Add group management (cluster 0x0004) to Aqara Switch with Neutral
@@ -127,18 +151,21 @@
 - [Technical] - Create a Report folder to store reporting ( LQI, Nwk Interference) reports.
 - [Technical] - APS Failure management + reporting
 
+## 19 May 2019 - 4.2.3 <https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/4.2.3>
 
-## 19 May 2019 - 4.2.3 https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/4.2.3
 - [Issue] Wrong battery calculation for Xiaomi devices.
 
 ## 05 May 2019 - 4.2.2
+
 - [Issue] Fix a problem when creating a device and there is no Model associated.
 
 ## 30 April 2019 - 4.2.1
+
 - [Technical] Disable APS failure reporting. If still want to use it, you can enable it enableAPSFailurereporting in PluginConf.txt
+
 >>>>>>> stable
 
-## 24 April 2019 - 4.2.0 https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/4.2
+## 24 April 2019 - 4.2.0 <https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/4.2>
 
 - [Enhancement] Over-The-Air firmware upgrade of main powered Ikea/Tradfri devices (so far only firmware publicaly available)
 - [Enhancement] In case of communication failure between Zigate -> Device, triggering TimeOut flag on Domoticz Device widget.
@@ -168,20 +195,24 @@
 - [Hardware] - Handle lumi.ctrl_neutral1 / QBKG04LM device
 - [Issue] #414 - Plugin will switch GPIO to RUN mode at plugin start
 
-## 05 April 2019 - 4.1.4 https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/4.1.4
+## 05 April 2019 - 4.1.4 <https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/4.1.4>
+
 - [Issue] #395 - PI doesn't stay as Model .
 
 ## 04 April 2019 - 4.1.3
+
 - [Issue] Strange error in heartbeat self.self ...
 
 ## 30 Mars 2019 - 4.1.2
+
 - [Issue] #390 and #389 - Integrate those 2 Pull Requests
 
-##    Mars 2019 - 4.1.1
+## Mars 2019 - 4.1.1
+
 - [Issue] #383 - fixing and allowing index on one digit.
 - [Issue] #384 - Handling 0xff02 Xiaomi attribute for cluster 0x0000 and decoding what is inside.
 
-## 12 Mars 2019 - 4.1.0 https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/4.1.0
+## 12 Mars 2019 - 4.1.0 <https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/4.1.0>
 
 - [Technical] Full refactor of Discovery and Enrolement process
 - [Issue] Make the possibility to use a PluginConf per HardwareID #271
@@ -197,7 +228,7 @@
 - [Enhacement] Zigate Notification Widget (measures section) to display plugin notification
 - [Technical] Configurable plugin folders ( Data, Zdata, reports, www/templates )
 - [Technical] Configure by default the ZigBee Channels (recommended for Europe
-- [Hardware] Improve 2018 Xiaomi wireless sitches with 3 states per button ( lumi.remote.b286acn01, lumi.remote.b186acn01) 
+- [Hardware] Improve 2018 Xiaomi wireless sitches with 3 states per button ( lumi.remote.b286acn01, lumi.remote.b186acn01)
 - [Technical] Remove the use of random
 - [Technical] Ping <-> Zigate. In case of connectivity failure, reConnect
 - [Technical] re-factor the ReadAttributes request in Hearbeat in order to avoid peak of load.
@@ -235,30 +266,38 @@
 - [Technical] - Reduce the LastSeen update to every 5' in order to avoid too much load on the IO
 
 ## 14 January 2019 - Version 4.0.7
+
 - [Issue] Fix #322 / Power/Meter reporting not working for Xiaomi Smart Plug
 
 ## 03 January 2019 - Version 4.0.6
+
 - [Isssue] Remove usage of random
 
 ## 27 December 2018 - Version 4.0.5
+
 - [Issue] Negative temperature not correctly reported for Xiaomi Sensor
 
 ## 15 December 2018 - Version 4.0.4
+
 - [Issue] #291 , wrong decoding of Cluster Out frame in 0x8043
 
 ## 13 December 2018 - Version 4.0.3
+
 - [Hardware] Handle new Aqara switches WXKG03LM and WXKG02LM
 
 ## 09 December 2018 - Version 4.0.2
+
 - [Issue] #278 , make the plugin windows compatible
 - [Issue] #279 , test if ZDeviceID before trying o convert it to an int
 
 ## 08 December 2018 - Version 4.0.1
+
 - [Issue] #272
 - [Issue] Correct the Selector tab label for the Double Button swicth
 - [Issue] When receiving a leave message , if the object is not 'removed' then request a rejoin
 
-## 02 Decembre 2018 - Version 4.0.0 https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/4.0.0
+## 02 Decembre 2018 - Version 4.0.0 <https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/4.0.0>
+
 - [Technical] New Zigate Transport layer  ( ZigBee compliant with retransmission in case of missing data, bit also a agressive algorithm.)
 - [Technical] Creation of PluginConf class to manage the PluginConf.txt file
 - [Technical] Refactor the inclusion/discovery and domoticz widget creation
@@ -268,7 +307,7 @@
 - [Hardware] WXKG03LM Aqara wireles switch single button (using Cluster 0x0012)
 - [Enhancement] Improve stats report at plugin exit
 - [Hardware] Adding more IKEA Tradfri bulbes
-- [Enhancement] Adding one more parameter in DeviceConf 'ColorMode' to define the type of Bulbe colormode. 
+- [Enhancement] Adding one more parameter in DeviceConf 'ColorMode' to define the type of Bulbe colormode.
 - [Enhancement] When commissioning is over and the Domoticz device is created, ZLL device will blink
 - [Issue] In case the Domoticz widget creation failed, plugin test the return of the Create() and in case of error report in the log
 - [Issue] Fix some potential problem when receiveing and empty EP
@@ -282,7 +321,7 @@
 - [Enhancement] When stoping the Plugin , Transmission statistics will be print out
 - [Technical] Introduce a Constants file.
 - [Enhancement] #266 send identify message when completing the commissioning and get devices created.
-- [Enhancement] Get async status of switches and plug 
+- [Enhancement] Get async status of switches and plug
 - [Enhancement] Get async Level of Level Control devices
 - [Technical] Use IEEE instead of Network addresses in Domoticz
 - [Technical] Don't store any plugin informations in Domoticz. All plugin infos are now in DeviceList
@@ -291,7 +330,7 @@
 - [Technical] Manage Leave message from device
 - [Hardware] Aqara Wall Switch LN (Double) Aqara 230 double switch, double fire switch (QBKG12LM))
 - [Hardware] Aqara Motion sensor / Vibration sensor
-- [Technical] Network Topology report based on LQI request. 
+- [Technical] Network Topology report based on LQI request.
 - [Technical] Better management of Temp/Hum/Baro sensor with very basic forcast and Air quality
 - [Technical] Randomize the time when Read Attribute Req will be sent. This will distribute the load of those recurring tasks.
 - [Technical] Implementation of Configure Reporting
@@ -314,34 +353,13 @@
 - [Issue] - Handle Leave message
 - [Issue] - When you remove a device in Domoticz, we remove the entry in the Plugin, but we don't remove the device in Zigate, yet.
 
+## 12 September 2018 - 3.0.0 <https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/3.0.0>
 
-## 12 September 2018 - 3.0.0 https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/3.0.0
 Mainly a technical version in order to split the code in pieces.
 
 - Code split
 - Bug fixing
 
+## 8 September 2018 - 2.4.0 <https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/2.4.0>
 
-## 8 September 2018 - 2.4.0 https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/2.4.0
-We are keen to release this version off the Zigate Plugin, which include a set of update, enhacement and bugfixing.
-
-- Configuration file to enable further configuration parameters
-- New data capture from the zigate hardware. It involved also on the fly lenght and checksum validation, in order to ensure proper data transmitted to the plugin feature.
-- Reporting device signal quality to Domoticz through RSSI.
-- Reporting in the log at plugin start, the Zigate firmware version. We recommend using 03.0d
-- Reporting in the log at plugin start and if the firmware version is greater than 03.0b
-- We have onboarded a number of new devices ( Xcube Aqara,  TRADFRI LED LED1624G9, ...) all of them are now documented in a file name : Compatible-Hardware.md . Feel free to let us know if you are using a device not listed there and working properly.
-- Implementation of polling of Profalux shutter state, in order to update Domoticz devices in case of direct radio-command
-- a number of bug fixes.
-
-Please feel free to report issue through github: https://github.com/sasu-drooz/Domoticz-Zigate/issues
-And if you have any questions, problem please use first the Domoticz forum.
-- French channel : https://easydomoticz.com/forum/viewtopic.php?f=8&t=7099
-- English channel : https://www.domoticz.com/forum/viewtopic.php?f=28&t=24789
-
-If you want to contribue , please let us know , we are looking for help in various areas:
-- certifying new ZigBee devices
-- improving the plugin
-- increasing the level of documentation for end user
-
-Thanks to : zaraki673, pipiche38, smanar, thiklop, dennoo, lboue, cldfr, sbhc68 
+Thanks to : zaraki673, pipiche38, smanar, thiklop, dennoo, lboue, cldfr, sbhc68

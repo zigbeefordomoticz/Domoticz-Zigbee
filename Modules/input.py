@@ -26,7 +26,7 @@ from Modules.tools import timeStamped, updSQN, updRSSI, DeviceExist, getSaddrfro
 from Modules.logging import loggingPairing, loggingInput
 from Modules.basicOutputs import sendZigateCmd, leaveMgtReJoin, setTimeServer, ZigatePermitToJoin
 from Modules.readAttributes import ReadAttributeRequest_0000, ReadAttributeRequest_0001
-from Modules.bindings import rebind_Clusters
+from Modules.bindings import rebind_Clusters, reWebBind_Clusters
 from Modules.livolo import livolo_bind
 from Modules.lumi import AqaraOppleDecoding, enableOppleSwitch
 from Modules.configureReporting import processConfigureReporting
@@ -598,15 +598,14 @@ def Decode8011(self, Devices, MsgData, MsgRSSI ):
     MsgSrcEp = MsgData[6:8]
     MsgClusterId = MsgData[8:12]
 
-
     if MsgSrcAddr not in self.ListOfDevices:
         return
 
     updRSSI( self, MsgSrcAddr, MsgRSSI )
 
     _powered = mainPoweredDevice( self, MsgSrcAddr)
-    loggingInput( self, 'Debug', "Decode8011 - Src: %s, SrcEp: %s, Cluster: %s, Status: %s MainPowered: %s" \
-            %(MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgStatus, _powered), MsgSrcAddr)
+    loggingInput( self, 'Debug', "Decode8011 - Src: %s, SrcEp: %s, Cluster: %s, Status: %s MainPowered: %s RSSI: %s" \
+            %(MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgStatus, _powered, int(MsgRSSI,16)), MsgSrcAddr)
 
     timeStamped( self, MsgSrcAddr , 0x8011)
     if MsgStatus == '00':
@@ -615,22 +614,29 @@ def Decode8011(self, Devices, MsgData, MsgRSSI ):
             loggingInput( self, 'Log', "Receive an APS Ack from %s, let's put the device back to Live" %MsgSrcAddr, MsgSrcAddr)
             self.ListOfDevices[MsgSrcAddr]['Health'] = 'Live'
     else:
-        if _powered and self.pluginconf.pluginConf['enableACKNACK']: # NACK for a Non powered device doesn't make sense
+        if _powered and self.pluginconf.pluginConf['enableACKNACK']: 
+            # Handle only NACK for main powered devices
             timedOutDevice( self, Devices, NwkId = MsgSrcAddr)
             if 'Health' in self.ListOfDevices[MsgSrcAddr]:
                 if self.ListOfDevices[MsgSrcAddr]['Health'] != 'Not Reachable':
                     self.ListOfDevices[MsgSrcAddr]['Health'] = 'Not Reachable'
+
                 if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
                     if self.ListOfDevices[MsgSrcAddr]['ZDeviceName'] not in [ {}, '', ]:
-                        loggingInput( self, 'Log', "Receive NACK from %s (%s) clusterId: %s" %(self.ListOfDevices[MsgSrcAddr]['ZDeviceName'], MsgSrcAddr, MsgClusterId), MsgSrcAddr)
+                        loggingInput( self, 'Log', "Receive NACK from %s (%s) clusterId: %s Status: %s" 
+                            %(self.ListOfDevices[MsgSrcAddr]['ZDeviceName'], MsgSrcAddr, MsgClusterId, MsgStatus), MsgSrcAddr)
+
                     else:
-                        loggingInput( self, 'Log', "Receive NACK from %s clusterId: %s" %(MsgSrcAddr, MsgClusterId), MsgSrcAddr)
-        else:
-            if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
-                if self.ListOfDevices[MsgSrcAddr]['ZDeviceName'] not in [ {}, '', ]:
-                    loggingInput( self, 'Debug', "Receive NACK from %s (%s) clusterId: %s" %(self.ListOfDevices[MsgSrcAddr]['ZDeviceName'], MsgSrcAddr, MsgClusterId), MsgSrcAddr)
-                else:
-                    loggingInput( self, 'Debug', "Receive NACK from %s clusterId: %s" %(MsgSrcAddr, MsgClusterId), MsgSrcAddr)
+                        loggingInput( self, 'Log', "Receive NACK from %s clusterId: %s Status: %s" 
+                            %(MsgSrcAddr, MsgClusterId, MsgStatus), MsgSrcAddr)
+        #else:
+        #    if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
+        #        if self.ListOfDevices[MsgSrcAddr]['ZDeviceName'] not in [ {}, '', ]:
+        #            loggingInput( self, 'Debug', "Receive NACK from %s (%s) clusterId: %s Status: %s" 
+        #            %(self.ListOfDevices[MsgSrcAddr]['ZDeviceName'], MsgSrcAddr, MsgClusterId, MsgStatus), MsgSrcAddr)
+        #        else:
+        #            loggingInput( self, 'Debug', "Receive NACK from %s clusterId: %s Status: %s" 
+        #            %(MsgSrcAddr, MsgClusterId, MsgStatus), MsgSrcAddr)
 
 def Decode8012(self, Devices, MsgData, MsgRSSI ):
     """
@@ -891,10 +897,13 @@ def Decode8030(self, Devices, MsgData, MsgRSSI) : # Bind response
 
                 for cluster in list(self.ListOfDevices[nwkid]['Bind'][ Ep ]):
                     if self.ListOfDevices[nwkid]['Bind'][Ep][cluster]['Phase'] == 'requested':
+                        loggingInput( self, 'Debug', "Decode8030 - Set bind request to binded : nwkid %s ep: %s cluster: %s" 
+                                %(nwkid,Ep,cluster), MsgSrcAddr)
                         self.ListOfDevices[nwkid]['Bind'][Ep][cluster]['Stamp'] = int(time())
                         self.ListOfDevices[nwkid]['Bind'][Ep][cluster]['Phase'] = 'binded'
                         self.ListOfDevices[nwkid]['Bind'][Ep][cluster]['Status'] = MsgDataStatus
                         return
+
         if 'WebBind' in self.ListOfDevices[nwkid]:
             for Ep in list(self.ListOfDevices[nwkid]['WebBind']):
                 if Ep not in self.ListOfDevices[nwkid]['Ep']:
@@ -909,6 +918,8 @@ def Decode8030(self, Devices, MsgData, MsgRSSI) : # Bind response
                             Domoticz.Error("---> delete  destNwkid: %s" %( destNwkid))
                             del self.ListOfDevices[nwkid]['WebBind'][Ep][cluster][destNwkid]
                         if self.ListOfDevices[nwkid]['WebBind'][Ep][cluster][destNwkid]['Phase'] == 'requested':
+                            loggingInput( self, 'Debug', "Decode8030 - Set WebBind request to binded : nwkid %s ep: %s cluster: %s destNwkid: %s" 
+                                %(nwkid,Ep,cluster,destNwkid), MsgSrcAddr)
                             self.ListOfDevices[nwkid]['WebBind'][Ep][cluster][destNwkid]['Stamp'] = int(time())
                             self.ListOfDevices[nwkid]['WebBind'][Ep][cluster][destNwkid]['Phase'] = 'binded'
                             self.ListOfDevices[nwkid]['WebBind'][Ep][cluster][destNwkid]['Status'] = MsgDataStatus
@@ -2185,6 +2196,7 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         if self.pluginconf.pluginConf['allowReBindingClusters']:
             loggingInput( self, 'Debug', "Decode004D - Request rebind clusters for %s" %( MsgSrcAddr), MsgSrcAddr)
             rebind_Clusters( self, MsgSrcAddr)
+            reWebBind_Clusters( self, MsgSrcAddr)
 
         if  self.ListOfDevices[MsgSrcAddr]['Model'] in ('lumi.remote.b686opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b286opcn01',
                                         'lumi.remote.b686opcn01-bulb', 'lumi.remote.b486opcn01-bulb', 'lumi.remote.b286opcn01-bulb'):
@@ -2212,7 +2224,7 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         deviceMacCapa = list(decodeMacCapa( MsgMacCapa ))
 
         # There is a dilem here as Livolo and Schneider Wiser share the same IEEE prefix.
-        if not self.pluginconf.pluginConf['enableSchneiderWiser']:
+        if self.pluginconf.pluginConf['Livolo']:
             PREFIX_MACADDR_LIVOLO = '00124b00'
             if MsgIEEE[0:len(PREFIX_MACADDR_LIVOLO)] == PREFIX_MACADDR_LIVOLO:
                 livolo_bind( self, MsgSrcAddr, '06')
@@ -2282,8 +2294,6 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         loggingPairing( self, 'Debug', "Decode004d - Request End Point List ( 0x0045 )")
         self.ListOfDevices[MsgSrcAddr]['Heartbeat'] = "0"
         self.ListOfDevices[MsgSrcAddr]['Status'] = "0045"
-        if MsgIEEE == 'f0d1b80000125e49':
-            ReadAttributeRequest_0000(self, MsgSrcAddr , fullScope=False)    # Request Model Name
 
         sendZigateCmd(self,"0045", str(MsgSrcAddr))             # Request list of EPs
         loggingInput( self, 'Debug', "Decode004D - %s Infos: %s" %( MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]), MsgSrcAddr)
