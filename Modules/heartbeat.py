@@ -80,7 +80,7 @@ def processKnownDevices( self, Devices, NWKID ):
                     for iterCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
                         if iterCluster in ( 'Type', 'ClusterType', 'ColorMode' ): 
                             continue
-                        if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
+                        if not self.busy and self.ZigateComm.loadTransmit() <= MAX_LOAD_ZIGATE:
                             getListofAttribute( self, NWKID, iterEp, iterCluster)
                         else:
                             rescheduleAction = True
@@ -177,48 +177,51 @@ def processKnownDevices( self, Devices, NWKID ):
 
     def pingRetryDueToBadHealth( self, NwkId):
 
-
+        now = int(time.time())
         # device is on Non Reachable state
         loggingHeartbeat( self, 'Debug', "--------> ping Retry Check %s" %NwkId, NwkId)
         if 'pingDeviceRetry' not in self.ListOfDevices[NwkId]:
             self.ListOfDevices[NwkId]['pingDeviceRetry'] = {}
             self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] = 0
-            self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = 0
+            self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = now
 
         if self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] == 3:
             return
         
-        now = int(time.time())
-
         if 'Retry' in self.ListOfDevices[NwkId]['pingDeviceRetry'] and 'TimeStamp' not in self.ListOfDevices[NwkId]['pingDeviceRetry']:
             # This could be due to a previous version without TimeStamp
             self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] = 0
-            self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = 0
+            self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = now
 
         lastTimeStamp = self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp']
         retry = self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry']
 
         loggingHeartbeat( self, 'Debug', "--------> ping Retry Check %s Retry: %s Gap: %s" %(NwkId, retry, now - lastTimeStamp), NwkId)
-        if self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] == 0:
+        # Retry #1
+        if retry == 0:
             # First retry in the next cycle if possible
-            if len(self.ZigateComm.zigateSendingFIFO) == 0:
+            if self.ZigateComm.loadTransmit() == 0 and now > ( lastTimeStamp + 30 ):
                 loggingHeartbeat( self, 'Debug', "--------> ping Retry 1 Check %s" %NwkId, NwkId)
                 self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] += 1
                 self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = now
                 submitPing( self, NwkId)
+                return
 
-        elif self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] == 1:
+        # Retry #2
+        if retry == 1:
             # Second retry in the next 30"
-            if len(self.ZigateComm.zigateSendingFIFO) == 0 and now > ( lastTimeStamp + 30 ):
+            if self.ZigateComm.loadTransmit() == 0 and now > ( lastTimeStamp + 120 ):
                 # Let's retry
                 loggingHeartbeat( self, 'Debug', "--------> ping Retry 2 Check %s" %NwkId, NwkId)
                 self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] += 1
                 self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = now
                 submitPing( self, NwkId)
+                return
 
-        elif self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] == 2:
+        # Retry #3
+        if retry == 2:
             # Last retry after 5 minutes
-            if len(self.ZigateComm.zigateSendingFIFO) == 0 and now > ( lastTimeStamp + 300):
+            if self.ZigateComm.loadTransmit() == 0 and now > ( lastTimeStamp + 300):
                 # Let's retry
                 loggingHeartbeat( self, 'Debug', "--------> ping Retry 3 (last) Check %s" %NwkId, NwkId)
                 self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] += 1
@@ -241,12 +244,12 @@ def processKnownDevices( self, Devices, NWKID ):
             pingRetryDueToBadHealth(self, NwkId)
             return
 
-        if _checkHealth and len(self.ZigateComm.zigateSendingFIFO) == 0:
+        if _checkHealth and self.ZigateComm.loadTransmit() == 0:
             submitPing( self, NWKID)
             return
 
         if ( int(time.time()) > ( self.ListOfDevices[NwkId]['Stamp']['LastSeen'] + self.pluginconf.pluginConf['pingDevicesFeq'] )) and \
-                    len(self.ZigateComm.zigateSendingFIFO) == 0:
+                    self.ZigateComm.loadTransmit() == 0:
             loggingHeartbeat( self, 'Debug', "------> pinDevice time: %s LastSeen: %s Freq: %s" \
                 %(int(time.time()), self.ListOfDevices[NwkId]['Stamp']['LastSeen'], self.pluginconf.pluginConf['pingDevicesFeq'] ), NwkId) 
             submitPing( self, NwkId)         
@@ -334,9 +337,9 @@ def processKnownDevices( self, Devices, NWKID ):
                     if  self.ListOfDevices[NWKID]['Model'] == 'lumi.ctrl_neutral2' and tmpEp not in ( '02' , '03' ):
                         continue
 
-                if  (self.busy  or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE):
+                if  (self.busy  or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE):
                     loggingHeartbeat( self, 'Debug', '--  -  %s skip ReadAttribute for now ... system too busy (%s/%s)' 
-                            %(NWKID, self.busy, len(self.ZigateComm.zigateSendingFIFO)), NWKID)
+                            %(NWKID, self.busy, self.ZigateComm.loadTransmit()), NWKID)
                     rescheduleAction = True
                     continue # Do not break, so we can keep all clusters on the same states
    
@@ -394,9 +397,9 @@ def processKnownDevices( self, Devices, NWKID ):
             if self.ListOfDevices[NWKID]['Manufacturer'] == '':
                 req_node_descriptor = True
     
-        if req_node_descriptor and not self.busy and  len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
+        if req_node_descriptor and not self.busy and  self.ZigateComm.loadTransmit() <= MAX_LOAD_ZIGATE:
             loggingHeartbeat( self, 'Debug', '-- - skip ReadAttribute for now ... system too busy (%s/%s) for %s' 
-                    %(self.busy, len(self.ZigateComm.zigateSendingFIFO), NWKID), NWKID)
+                    %(self.busy, self.ZigateComm.loadTransmit(), NWKID), NWKID)
             Domoticz.Status("Requesting Node Descriptor for %s" %NWKID)
             sendZigateCmd(self,"0042", str(NWKID) )         # Request a Node Descriptor
 

@@ -1,8 +1,8 @@
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 # coding: utf-8 -*-
-#
+# 
 # Author: zaraki673 & pipiche38
-#
+# 
 
 import Domoticz
 import binascii
@@ -11,20 +11,27 @@ from time import time
 from datetime import datetime
 
 from Modules.tools import is_hex
-from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_RESPONSES, ZIGATE_COMMANDS, RETRANSMIT_COMMAND
+from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_RESPONSES, ZIGATE_COMMANDS, RETRANSMIT_COMMAND, ADDRESS_MODE
+from Modules.sqnMgmt import sqn_init_stack, sqn_generate_new_internal_sqn, sqn_add_external_sqn, sqn_get_internal_sqn, E_SQN_APS
 
 
-STANDALONE_MESSAGE =[]
+STANDALONE_MESSAGE = []
 for x in ZIGATE_RESPONSES:
     STANDALONE_MESSAGE.append( x )
 
+PDM_COMMANDS = ( '8300', '8200', '8201', '8204', '8205', '8206', '8207', '8208' )
 CMD_PDM_ON_HOST = []
 CMD_ONLY_STATUS = []
+CMD_WITH_ACK = []
 CMD_NWK_2NDBytes = {}
 CMD_DATA = {}
 for x in ZIGATE_COMMANDS:
     if ZIGATE_COMMANDS[ x ]['NwkId 2nd Bytes']:
         CMD_NWK_2NDBytes[ x ] = x
+
+    if ZIGATE_COMMANDS[ x ]['Ack']:
+        CMD_WITH_ACK.append( x )
+
     if len ( ZIGATE_COMMANDS[ x ]['Sequence']) == 1:
             CMD_ONLY_STATUS.append( x )
     elif len ( ZIGATE_COMMANDS[ x ]['Sequence']) == 0:
@@ -33,55 +40,57 @@ for x in ZIGATE_COMMANDS:
     else:
         CMD_DATA[ x ] = ZIGATE_COMMANDS[ x ]['Sequence'][1]
 
-
-
-APS_DELAY = 1
-APS_MAX_RETRY = 2
-APS_TIME_WINDOW = APS_MAX_RETRY * APS_DELAY
-APS_ACK = 0
-
 class ZigateTransport(object):
-    """
-    Class in charge of Transport mecanishm to and from Zigate
-    Managed also the Command -> Status -> Data sequence
-    """
+    # """
+    # Class in charge of Transport mecanishm to and from Zigate
+    # Managed also the Command - > Status - > Data sequence
+    # """
 
-    def __init__(self, LOD, transport, statistics, pluginconf, F_out, loggingFileHandle, serialPort=None, wifiAddress=None, wifiPort=None):
-        ##DEBUG Domoticz.Debug("Setting Transport object")
-        self.lock = False
+    def __init__(self, LOD, transport, statistics, pluginconf, F_out, loggingFileHandle, serialPort = None, wifiAddress = None, wifiPort = None):
 
+        # Statistics
+        self.statistics = statistics
+        self.pluginconf = pluginconf
+
+        # PDM attributes
+        self.lock = False   # PDM Lock
         self.PDMCommandOnly = False    # This flag indicate if any command can be sent to Zigate or only PDM related one
 
-        self.LOD = LOD # Object managing the Plugin Devices
-        self._checkTO_flag = None
+        # Queue Management attributes
+        self.checkTimedOutFlag = None
+        self.ListOfCommands = {}     # List of ( Command, Data ) to be or in process
+        self.zigateSendQueue = []    # list of normal priority commands
+        self._waitFor8000Queue = []  # list of command sent and waiting for status 0x8000
+        self._waitForCmdResponseQueue = []  # list of command sent for which status received and waiting for data
+        self._waitForAckNack = []    # Contains list of Command waiting for Ack/Nack
+
+        self.firmware_with_aps_sqn = False
+
+        self.zmode = pluginconf.pluginConf['zmode']
+        self.loggingSend( 'Status', "==> Transport Mode: %s" %self.zmode)
+
+        self.firmware_with_zcl_sqn = False
+        sqn_init_stack (self)
+
+        # Communication/Transport link attributes
         self._connection = None  # connection handle
         self._ReqRcv = bytearray()  # on going receive buffer
         self._transp = None  # Transport mode USB or Wifi
         self._serialPort = None  # serial port in case of USB
         self._wifiAddress = None  # ip address in case of Wifi
         self._wifiPort = None  # wifi port
+
+        # Call back function to send back to plugin
         self.F_out = F_out  # Function to call to bring the decoded Frame at plugin
 
-        self.zigateSendingFIFO = []  # list of normal priority commands
-        self._waitForStatus = []  # list of command sent and waiting for status 0x8000
-        self._waitForData = []  # list of command sent for which status received and waiting for data
-        self._waitForAPS = [] # Contain list of Command waiting for APS ACK or Failure. That one is populated when receiving x8000
-        self._waitForRouteDiscoveryConfirm = []
-
-        self.statistics = statistics
-
-        self.pluginconf = pluginconf
-        self.reTransmit = pluginconf.pluginConf['reTransmit']
-        self.zmode = pluginconf.pluginConf['zmode']
-        self.sendDelay = pluginconf.pluginConf['sendDelay']
-        self.zTimeOut = pluginconf.pluginConf['zTimeOut']
-
+        # Logging
         self.loggingFileHandle = loggingFileHandle
 
-        self.loggingSend('Debug',"STANDALONE_MESSAGE: %s" %STANDALONE_MESSAGE)
-        self.loggingSend('Debug',"CMD_ONLY_STATUS: %s" %CMD_ONLY_STATUS)
-        self.loggingSend('Debug',"ZIGATE_COMMANDS: %s" %ZIGATE_COMMANDS)
-        self.loggingSend('Debug',"CMD_NWK_2NDBytes: %s" %CMD_NWK_2NDBytes)
+        #self.loggingSend(  'Debug', "STANDALONE_MESSAGE: %s" %STANDALONE_MESSAGE)
+        #self.loggingSend(  'Debug', "CMD_ONLY_STATUS: %s" %CMD_ONLY_STATUS)
+        #self.loggingSend(  'Debug', "ZIGATE_COMMANDS: %s" %ZIGATE_COMMANDS)
+        #self.loggingSend(  'Debug', "CMD_NWK_2NDBytes: %s" %CMD_NWK_2NDBytes)
+        #self.loggingSend(  'Debug', "CMD_WITH_ACK: %s" %CMD_WITH_ACK)
 
         if str(transport) == "USB":
             self._transp = "USB"
@@ -99,163 +108,140 @@ class ZigateTransport(object):
         else:
             Domoticz.Error("Unknown Transport Mode: %s" %transport)
 
-    def _loggingStatus( self, message):
-
-        if self.pluginconf.pluginConf['useDomoticzLog']:
-            Domoticz.Status( message )
-        else:
-            if self.loggingFileHandle:
-                Domoticz.Status( message )
-                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
-                self.loggingFileHandle.write( message )
-                self.loggingFileHandle.flush()
-            else:
-                Domoticz.Status( message )
-
-    def _loggingLog( self, message):
-
-        if self.pluginconf.pluginConf['useDomoticzLog']:
-            Domoticz.Log( message )
-        else:
-            if self.loggingFileHandle:
-                Domoticz.Log( message )
-                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
-                self.loggingFileHandle.write( message )
-                self.loggingFileHandle.flush()
-            else:
-                Domoticz.Log( message )
-
-    def _loggingDebug( self, message):
-
-        if self.pluginconf.pluginConf['useDomoticzLog']:
-            Domoticz.Log( message )
-        else:
-            if self.loggingFileHandle:
-                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
-                self.loggingFileHandle.write( message )
-                self.loggingFileHandle.flush()
-            else:
-                Domoticz.Log( message )
-
 
     def loggingSend( self, logType, message):
-
+        # Log all activties towards ZiGate
         if self.pluginconf.pluginConf['debugTransportTx'] and logType == 'Debug':
-            self._loggingDebug( message )
+            _logging_debug( self, message )
         elif  logType == 'Log':
-            self._loggingLog( message )
+            _logging_log( self, message )
         elif logType == 'Status':
-            self._loggingStatus( message )
+            _logging_status( self, message )
+        elif logType == 'Error':
+            _logging_error( self, message)
 
-    def loggingReceive( self, logType, message):
-
+    def logging_receive( self, logType, message):
+        # Log all activities received from ZiGate
         if self.pluginconf.pluginConf['debugTransportRx'] and logType == 'Debug':
-            self._loggingDebug( message )
+            _logging_debug( self, message )
         elif  logType == 'Log':
-            self._loggingLog( message )
+            _logging_log( self, message )
         elif logType == 'Status':
-            self._loggingStatus.Status( message )
+            _logging_status( self, message )
+        elif logType == 'Error':
+            _logging_error( self, message)
+
+    def loadTransmit(self):
+        # Provide the Load of the Sending Queue
+        return len(self.zigateSendQueue)
 
     # Transport / Opening / Closing Communication
-    def setConnection( self ):
-
-        BAUDS = 115200
+    def set_connection( self ):
 
         if self._connection is not None:
             del self._connection
             self._connection = None
 
-        if self._transp == "USB":
+        if self._transp in ["USB", "DIN", "PI"]:
             if self._serialPort.find('/dev/') != -1 or self._serialPort.find('COM') != -1:
                 Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" %( self._serialPort ))
-                self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
-                         Address=self._serialPort, Baud= BAUDS)
-        elif self._transp == "DIN":
-            if self._serialPort.find('/dev/') != -1 or self._serialPort.find('COM') != -1:
-                Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" %( self._serialPort ))
-                self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
-                         Address=self._serialPort, Baud=BAUDS)
-        elif self._transp == "PI":
-            if self._serialPort.find('/dev/') != -1 or self._serialPort.find('COM') != -1:
-                Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" %( self._serialPort ))
-                self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
-                         Address=self._serialPort, Baud=BAUDS)
+                BAUDS = 115200
+                self._connection = Domoticz.Connection(Name = "ZiGate", Transport = "Serial", Protocol = "None", 
+                         Address = self._serialPort, Baud = BAUDS)
+
         elif self._transp == "Wifi":
             Domoticz.Status("Connection Name: Zigate, Transport: TCP/IP, Address: %s:%s" %( self._serialPort, self._wifiPort ))
-            self._connection = Domoticz.Connection(Name="Zigate", Transport="TCP/IP", Protocol="None ",
-                         Address=self._wifiAddress, Port=self._wifiPort)
+            self._connection = Domoticz.Connection(Name = "Zigate", Transport = "TCP/IP", Protocol = "None ", 
+                         Address = self._wifiAddress, Port = self._wifiPort)
         else:
             Domoticz.Error("Unknown Transport Mode: %s" %self._transp)
 
-
-    def PDMLock( self , lock):
-
-        self.PDMCommandOnly = lock
-
-    def PDMLockStatus( self ):
-
-        return self.PDMCommandOnly
-
-    def openConn(self):
-        self.setConnection()
+    def open_conn(self):
+        self.set_connection()
         if self._connection:
             self._connection.Connect()
         else:
             Domoticz.Error("openConn _connection note set!")
         Domoticz.Status("Connection open: %s" %self._connection)
 
-    def closeConn(self):
+    def close_conn(self):
         Domoticz.Status("Connection close: %s" %self._connection)
         self._connection.Disconnect()
         del self._connection
         self._connection = None
 
-    def reConn(self):
+    def re_conn(self):
         Domoticz.Status("Reconnection: %s" %self._connection)
         if self._connection.Connected() :
-            Domoticz.Log("--> still connected!")
-            self.closeConn()
-        self.openConn()
+            Domoticz.Log(" --  > still connected!")
+            self.close_conn()
+        self.open_conn()
 
-    # Transport Sending Data
-    def _sendData(self, cmd, datas, delay ):
-        """
-        send data to Zigate via the communication transport
-        """
-        self.loggingSend('Debug', "--> _sendData - %s %s %s" %(cmd, datas, delay))
+    # PDMonhost related
+    def pdm_lock( self , lock):
+        # Take a Lock to protect all communications from/to ZiGate (PDM on Host)
+        self.PDMCommandOnly = lock
 
-        if datas == "":
-            length = "0000"
+    def pdm_lock_status( self ):
+        return self.PDMCommandOnly
+
+    def sendData(self, cmd, datas , delay = None):
+        self.loggingSend(  'Debug', "sendData - %s %s FIFO: %s" %(cmd, datas, len(self.zigateSendQueue)))
+        if datas is None:
+            datas = ''
+        if datas != '' and not is_hex( datas):
+            Domoticz.Error("sendData_internal - receiving a non hexa Data: > %s < " %datas)
+            return None
+
+        # Check if the Cmd/Data is not yet in the pipe
+        for x in self.ListOfCommands:
+            if self.ListOfCommands[ x ]['Cmd'] ==  cmd and self.ListOfCommands[ x ]['Datas'] == datas:
+                self.loggingSend(  'Log', "Do not queue again an existing command in the Pipe, we drop the command %s %s" %(cmd, datas))
+                return None
+
+        InternalSqn = sqn_generate_new_internal_sqn(self)
+        if InternalSqn in self.ListOfCommands:
+            # Unexpected !
+            Domoticz.Error("sendData - Existing Internal SQN: %s for %s versus new %s/%s" %( InternalSqn, str(self.ListOfCommands[ InternalSqn]), cmd, datas ))
+            return None
+
+        self.ListOfCommands[ InternalSqn ] = {}
+        self.ListOfCommands[ InternalSqn ]['Cmd'] = cmd
+        self.ListOfCommands[ InternalSqn ]['Datas'] = datas
+        self.ListOfCommands[ InternalSqn ]['ReTransmit'] = 0
+        self.ListOfCommands[ InternalSqn ]['Status'] = ''
+        self.ListOfCommands[ InternalSqn ]['ReceiveTimeStamp'] = int(time())
+        self.ListOfCommands[ InternalSqn ]['SentTimeStamp'] = None
+
+        self.ListOfCommands[ InternalSqn ]['PDMCommand'] = False
+        self.ListOfCommands[ InternalSqn ]['ResponseExpected'] = False
+        self.ListOfCommands[ InternalSqn ]['ResponseExpectedCmd'] = None
+        self.ListOfCommands[ InternalSqn ]['ExpectedAck'] = False 
+
+        if int(cmd, 16) in CMD_PDM_ON_HOST:
+            self.ListOfCommands[ InternalSqn ]['PDMCommand'] = True
+
+        if int(cmd, 16) in CMD_DATA:
+            self.ListOfCommands[ InternalSqn ]['ResponseExpectedCmd'] = CMD_DATA[int(cmd, 16)]
+            self.ListOfCommands[ InternalSqn ]['ResponseExpected'] = True
+
+        if int(cmd, 16) in CMD_WITH_ACK:
+            self.ListOfCommands[ InternalSqn ]['ExpectedAck'] = True 
+
+        if self.ListOfCommands[ InternalSqn ]['ResponseExpected']:
+            self.loggingSend(  'Debug', "sendData - InternalSQN: %s Cmd: %s Data: %s ExpectedCmd: %04x"
+                %(InternalSqn, cmd, datas, self.ListOfCommands[ InternalSqn ]['ResponseExpectedCmd'] ))
         else:
-            length = returnlen(4, (str(hex(int(round(len(datas) / 2)))).split('x')[-1]))  # by Cortexlegeni
+            self.loggingSend(  'Debug', "sendData - InternalSQN: %s Cmd: %s Data: %s"
+                %(InternalSqn, cmd, datas ))
 
-        if datas == "":
-            checksumCmd = getChecksum(cmd, length, "0")
-            if len(checksumCmd) == 1:
-                strchecksum = "0" + str(checksumCmd)
-            else:
-                strchecksum = checksumCmd
-            lineinput = "01" + str(ZigateEncode(cmd)) + str(ZigateEncode(length)) + \
-                        str(ZigateEncode(strchecksum)) + "03"
-        else:
-            checksumCmd = getChecksum(cmd, length, datas)
-            if len(checksumCmd) == 1:
-                strchecksum = "0" + str(checksumCmd)
-            else:
-                strchecksum = checksumCmd
-            lineinput = "01" + str(ZigateEncode(cmd)) + str(ZigateEncode(length)) + \
-                        str(ZigateEncode(strchecksum)) + str(ZigateEncode(datas)) + "03"
+        send_data_internal ( self, InternalSqn )
+        return InternalSqn
 
-        self.processCMD4APS( cmd, datas)
-        self.loggingSend('Debug', "--> _sendData - sending encoded Cmd: %s length: %s CRC: %s Data: %s" \
-                    %(str(ZigateEncode(cmd)), str(ZigateEncode(length)), str(ZigateEncode(strchecksum)), str(ZigateEncode(datas))))
-        self._connection.Send(bytes.fromhex(str(lineinput)), delay)
-        self.statistics._sent += 1
+    def on_message(self, Data):
+        # Process/Decode Data
 
-    # Transport / called by plugin 
-    def onMessage(self, Data):
-
-        self.loggingReceive('Debug', "onMessage - %s" %(Data))
+        self.logging_receive( 'Debug', "onMessage - %s" %(Data))
         FrameIsKo = 0
 
         if Data is not None:
@@ -322,507 +308,652 @@ class ZigateTransport(object):
             if FrameIsKo == 0:
                 AsciiMsg = binascii.hexlify(BinMsg).decode('utf-8')
                 self.statistics._received += 1
-                self.processFrame(AsciiMsg)
+                process_frame(self, AsciiMsg)
 
-    # For debuging purposes print the SendQueue
-    def _printSendQueue(self):
-        cnt = 0
-        lenQ = len(self.zigateSendingFIFO)
-        for iterFIFO in self.zigateSendingFIFO:
-            if cnt < 5:
-                self.loggingSend('Debug',"SendingFIFO[%d:%d] = %s " % (cnt, lenQ, iterFIFO[0]))
-                cnt += 1
-        self.loggingSend('Debug',"--")
+    def check_timed_out_for_tx_queues(self):
+        check_timed_out(self)
+      
+# Local Functions
 
+# Queues Managements
+def _add_cmd_to_send_queue(self, InternalSqn ):
+    # add a command to the waiting list
+    timestamp = int(time())
+    # Check if the Cmd+Data is not yet in the Queue. If yes forget that message
+    self.loggingSend(  'Debug', " --  > _add_cmd_to_send_queue - adding to Queue %s %s" %(InternalSqn, timestamp ))
+    self.zigateSendQueue.append( (InternalSqn, timestamp))
+    # Manage Statistics
+    if len(self.zigateSendQueue) > self.statistics._MaxLoad:
+        self.statistics._MaxLoad = len(self.zigateSendQueue)
+    self.statistics._Load = len(self.zigateSendQueue)
 
-    def _addCmdToSendQueue(self, cmd, data, reTransmit=0):
-        """add a command to the waiting list"""
-        timestamp = int(time())
-        ##DEBUG Domoticz.Debug("_addCmdToSendQueue: cmd: %s data: %s reTransmit: %s" %(cmd, data, reTransmit))
-        
-        # Check if the Cmd+Data is not yet in the Queue. If yes forget that message
-        for iterCmd, iterData, iterTS, iterreTx in self.zigateSendingFIFO:
-            if cmd == iterCmd and data == iterCmd:
-                self.loggingSend('Debug',"Do not queue again an existing command in the Pipe, we drop the command %s %s" %(cmd, data))
-                return
-        self.loggingSend('Debug', "--> _addCmdToSendQueue - adding to Queue %s %s %s %s" %(cmd, data, timestamp, reTransmit))
-        self.zigateSendingFIFO.append((cmd, data, timestamp, reTransmit))
-        if len(self.zigateSendingFIFO) > self.statistics._MaxLoad:
-            self.statistics._MaxLoad = len(self.zigateSendingFIFO)
-        self.statistics._Load = len(self.zigateSendingFIFO)
+def _next_cmd_from_send_queue(self):
+    
+    # return the next Command to send (pop)
+    ret = ( None, None)
+    if len(self.zigateSendQueue) > 0:
+        ret = self.zigateSendQueue[0]
+        del self.zigateSendQueue[0]
+    self.loggingSend(  'Debug', " --  > _nextCmdFromSendQueue - Unqueue %s " %( str(ret) ))
+    return ret
 
-        #self._printSendQueue()
+def _add_cmd_to_wait_for8000_queue(self, InternalSqn ):
+    # add a command to the waiting list for 0x8000
+    timestamp = int(time())
+    self.loggingSend(  'Debug', " --  > _add_cmd_to_wait_for8000_queue - adding to Queue %s %s" %(InternalSqn, timestamp))
+    self._waitFor8000Queue.append( (InternalSqn, timestamp) )
 
-    def _addCmdToWaitQueue(self, cmd, data, reTransmit=0):
-        'add a command to the waiting list'
-        timestamp = int(time())
-        self.loggingSend('Debug', "--> _addCmdToWaitQueue - adding to Queue %s %s %s %s" %(cmd, data, timestamp, reTransmit))
-        self._waitForStatus.append((cmd, data, timestamp, reTransmit))
+def _next_cmd_from_wait_for8000_queue(self):
+    # return the entry waiting for a Status 
+    ret = ( None, None )
+    if len(self._waitFor8000Queue) > 0:
+        ret = self._waitFor8000Queue[0]
+        del self._waitFor8000Queue[0]
+    self.loggingSend(  'Debug', " --  > _nextCmdFromWaitFor8000Queue - Unqueue %s " %( str(ret) ))
+    return ret
 
-    def _addCmdToWaitDataQueue(self, expResponse, cmd, data, reTransmit=0):
-        'add a command to the waiting list'
-        timestamp = int(time())
-        self.loggingSend('Debug', "--> _addCmdToWaitDataQueue - adding to Queue %s %s %s %s" %(cmd, data, timestamp, reTransmit))
-        self._waitForData.append((expResponse, cmd, data, timestamp, reTransmit))
+def _add_cmd_to_wait_for_ack_nack_queue( self, InternalSqn):
+    # add a command to the AckNack waiting list
+    timestamp = int(time())
+    self.loggingSend(  'Debug', " --  > _addCmdToWaitForAckNackQueue - adding to Queue  %s %s" %(InternalSqn, timestamp))
+    self._waitForAckNack.append( (InternalSqn, timestamp) )
 
-    def loadTransmit(self):
-        return len(self.zigateSendingFIFO)
+def _next_cmd_to_wait_for_ack_nack_queue( self):
+    # return the entry waiting for Data
+    ret = ( None, None )
+    if len(self._waitForAckNack) > 0:
+        ret = self._waitForAckNack[0]
+        del self._waitForAckNack[0]
+    self.loggingSend(  'Debug', " --  > _next_cmd_to_wait_for_ack_nack_queue - Unqueue %s " %( str(ret) ))
+    return ret    
 
-    def _nextCmdFromSendingFIFO(self):
-        ' return the next Command to send pop'
-        if len(self.zigateSendingFIFO) > 0:
-            ret = self.zigateSendingFIFO[0]
-            del self.zigateSendingFIFO[0]
-            self.loggingSend('Debug', "--> _nextCmdFromSendingFIFO - Unqueue %s %s %s %s" %(ret[0], ret[1], ret[2], ret[3]))
-            # self._printSendQueue()
-            return ret
-        return (None, None, None, None)
+def _add_cmd_to_wait_for_cmdresponse_queue(self, InternalSqn):
+    # add a command to the waiting list
+    # _waitForDataQueue [ Expected Response Type, Cmd, Data, TimeStamps ]
+    timestamp = int(time())
+    self.loggingSend(  'Debug', " --  > _add_cmd_to_wait_for_cmdresponse_queue - adding to Queue %s %s" %(InternalSqn, timestamp))
+    self._waitForCmdResponseQueue.append( (InternalSqn, timestamp) )
 
-    def _nextCmdFromWaitQueue(self):
-        ' return the entry waiting for a Status '
-        if len(self._waitForStatus) > 0:
-            ret = self._waitForStatus[0]
-            del self._waitForStatus[0]
-            return ret
-        return None
+def _next_cmd_from_wait_cmdresponse_queue(self):
+    # return the entry waiting for Data
+    ret = ( None, None )
+    if len(self._waitForCmdResponseQueue) > 0:
+        ret = self._waitForCmdResponseQueue[0]
+        del self._waitForCmdResponseQueue[0]
+    self.loggingSend(  'Debug', " --  > _next_cmd_from_wait_cmdresponse_queue - Unqueue %s " %( str(ret) ))
+    return ret
 
-    def _nextCmdFromWaitDataQueue(self):
-        ' return the entry waiting for Data '
-        if len(self._waitForData) > 0:
-            ret = self._waitForData[0]
-            del self._waitForData[0]
-            return ret
-        return ( None, None, None, None, None)
+# Sending functions
+def send_data_internal(self, InternalSqn):
+    '''
+    in charge of sending Data. Call by sendZigateCmd
+    If nothing in the waiting queue, will call _send_data and it will be sent straight to Zigate
+    '''
+    if InternalSqn not in self.ListOfCommands:
+        # Unexpected
+        Domoticz.Error("send_data_internal - unexpected 1 %s not in ListOfCommands: %s" %(InternalSqn, str(self.ListOfCommands.keys())))
+        return
 
-    def sendData(self, cmd, datas , delay=None):
-        '''
-        in charge of sending Data. Call by sendZigateCmd
-        If nothing in the waiting queue, will call _sendData and it will be sent straight to Zigate
-        '''
-        self.loggingSend('Debug', "sendData - %s %s %s FIFO: %s" %(cmd, datas, delay, len(self.zigateSendingFIFO)))
+    self.loggingSend(  'Debug', "--- send_data_internal - %s FIFO: %s" %(InternalSqn, len(self.zigateSendQueue)))
 
-        # Before to anything, let's check that the cmd and datas are HEXA information.
-        if datas is None:
-            datas = ''
-        if datas != '' and not is_hex( datas):
-            Domoticz.Error("sendData - receiving a non hexa Data: >%s<" %datas)
+    sendNow = True
+    # PDM Management.
+    # When PDM traffic is ongoing we cannot interupt, so we need to FIFO all other commands until the PDMLock is released
+    if self.pdm_lock_status() and self.ListOfCommands[ InternalSqn ]['Cmd'] not in PDM_COMMANDS:
+        # Only PDM related command can go , all others will be dropped.
+        Domoticz.Log("PDM not yet ready, FIFO command %s %s" %(self.ListOfCommands[ InternalSqn ]['Cmd'], self.ListOfCommands[ InternalSqn ]['Datas']))
+        sendNow = False
+
+    if sendNow and self.zmode == 'ZigBee':
+        sendNow = (len(self._waitFor8000Queue) == 0 and len(self._waitForCmdResponseQueue) == 0) or self.ListOfCommands[ InternalSqn ]['PDMCommand']
+        self.loggingSend(  'Debug', "--- send_data_internal - Command: %s  Q(0x8000): %s Q(Response): %s sendNow: %s" 
+            %(self.ListOfCommands[ InternalSqn ]['Cmd'], len(self._waitFor8000Queue), len(self._waitForCmdResponseQueue), sendNow))
+
+    elif sendNow and self.zmode == 'ZigBeeAck':
+        sendNow = (len(self._waitFor8000Queue) == 0 and len(self._waitForAckNack) == 0) or self.ListOfCommands[ InternalSqn ]['PDMCommand']
+        self.loggingSend(  'Debug', "--- send_data_internal - Command: %s  Q(0x8000): %s Q(Ack/Nack): %s sendNow: %s" 
+            %(self.ListOfCommands[ InternalSqn ]['Cmd'], len(self._waitFor8000Queue), len(self._waitForAckNack), sendNow))
+
+    # In case the cmd is part of the PDM on Host commands, that is High Priority and must go through.
+    if not sendNow:
+        # Put in FIFO
+        self.loggingSend(  'Debug', "--- send_data_internal - put in waiting queue")
+        self.ListOfCommands[ InternalSqn ]['Status'] = 'QUEUED'
+        _add_cmd_to_send_queue( self, InternalSqn )
+        return
+
+    # Sending Command
+    self.loggingSend( 'Debug', "--- send_data_internal - sending now")
+    
+    if not self.ListOfCommands[ InternalSqn ]['PDMCommand']:
+        # That is a Standard command (not PDM on  Host), let's process as usall
+        self.ListOfCommands[ InternalSqn ]['Status'] = 'TO-SEND'
+
+        # Add to 0x8000 queue
+        _add_cmd_to_wait_for8000_queue( self, InternalSqn )
+
+        if self.zmode == 'ZigBee' and self.ListOfCommands[ InternalSqn ]['ResponseExpected']:  
+            # If ZigBee and Response Expected, add to CmdResponse Queue
+            self.loggingSend( 'Debug', "--- Add to Queue CommandResponse Queue")
+            _add_cmd_to_wait_for_cmdresponse_queue( self, InternalSqn )
+
+        elif self.zmode == 'ZigBeeAck' and self.ListOfCommands[ InternalSqn ]['ExpectedAck']:
+            set_acknack_for_sending( self, InternalSqn)
+
+    # Go!
+    _send_data( self, InternalSqn )
+
+def set_acknack_for_sending(self, i_sqn):
+
+    # These are ZiGate commands which doesn't have Ack/Nack with firmware up to 3.1c
+    CMD_NOACK_ZDP = (  0x0030, 0x0031, 0x0040, 0x0041, 0x0042, 0x0043, 0x0044, 0x0045, 0x0046, 0x0047, 0x0049, 0x004A, 0x004B, 0x004E, 0x0530, 0x0531, 0x0532, 0x0533 )
+
+    # If ZigBeeAck mode and Ack Expected
+    if not self.firmware_with_zcl_sqn and int(self.ListOfCommands[ i_sqn ]['Cmd'],16) in CMD_NOACK_ZDP:
+            self.loggingSend( 'Debug', "--- ZDP command no Ack/Nack with that firmware")
+            self.ListOfCommands[ i_sqn ]['ExpectedAck'] = False
+
+    elif int(self.ListOfCommands[ i_sqn ]['Cmd'],16) not in CMD_NWK_2NDBytes:
+        if self.ListOfCommands[ i_sqn ]['Cmd'] == '004E' and self.ListOfCommands[ i_sqn ]['Datas'][0:4] == '0000':
+            # Do not wait for LQI request to ZiGate
+            self.loggingSend( 'Debug', "--- LQI request to ZiGate Do not wait for Ack/Nack")
+            self.ListOfCommands[ i_sqn ]['ExpectedAck'] = False
+        else:
+            # Wait for Ack/Nack 
+            self.loggingSend( 'Debug', "--- Add to Queue Ack/Nack")
+            _add_cmd_to_wait_for_ack_nack_queue( self, i_sqn)
+    else:
+        if self.ListOfCommands[ i_sqn ]['Datas'][0:2] == '%02x' %ADDRESS_MODE['group']:
+            # Do not wait for Ack/Nack as the command to Groups
+            self.loggingSend( 'Debug', "--- Group command to ZiGate Do not wait for Ack/Nack")
+            self.ListOfCommands[ i_sqn ]['ExpectedAck'] = False
+
+        elif self.ListOfCommands[ i_sqn ]['Datas'][2:6] == '0000':
+            # Do not wait for Ack/Nack as the command is sent for ZiGate
+            self.loggingSend( 'Debug', "--- Cmmand to ZiGate Do not wait for Ack/Nack")
+            self.ListOfCommands[ i_sqn ]['ExpectedAck'] = False
+
+        else:
+            # Wait for Ack/Nack if NwkId != '0000' and Address Mode (ZiGate)
+            self.loggingSend( 'Debug', "--- Add to Queue Ack/Nack %s %s" %(self.ListOfCommands[ i_sqn ]['Cmd'], self.ListOfCommands[ i_sqn ]['Datas']))
+            _add_cmd_to_wait_for_ack_nack_queue( self, i_sqn)
+
+def ready_to_send_if_needed( self ):
+
+    readyToSend = True
+    if self.zmode.lower() == 'zigbee':
+        readyToSend = len(self.zigateSendQueue) != 0 and len(self._waitFor8000Queue) == 0 and len(self._waitForCmdResponseQueue) == 0
+        self.loggingSend(  'Debug', "--- send_data_internal - Q(0x8000): %s Q(Ack/Nack): %s sendNow: %s" 
+            %(len(self.zigateSendQueue),len(self._waitFor8000Queue), len(self._waitFor8000Queue) ))
+
+    elif self.zmode.lower() == 'zigbeeack':
+        readyToSend = len(self.zigateSendQueue) != 0 and len(self._waitFor8000Queue) == 0 and len(self._waitFor8000Queue) == 0
+        self.loggingSend(  'Debug', "--- send_data_internal - Q(0x8000): %s Q(Ack/Nack): %s sendNow: %s" 
+            %(len(self.zigateSendQueue),len(self._waitFor8000Queue), len(self._waitFor8000Queue) ))
+
+    if readyToSend:
+        send_data_internal( self, _next_cmd_from_send_queue( self )[0] )
+
+def _send_data(self, InternalSqn):
+    # send data to Zigate via the communication transport
+
+    cmd = self.ListOfCommands[ InternalSqn ]['Cmd']
+    datas = self.ListOfCommands[ InternalSqn ]['Datas']
+    self.ListOfCommands[ InternalSqn ]['Status'] = 'SENT'
+    self.ListOfCommands[ InternalSqn ]['SentTimeStamp'] = int(time())
+
+    self.loggingSend(  'Debug', "---  --  > _send_data - [%s] %s %s" %(InternalSqn, cmd, datas))
+
+    if datas == "":
+        length = "0000"
+        checksumCmd = get_checksum(cmd, length, "0")
+        strchecksum = '0' + str(checksumCmd) if len(checksumCmd) == 1 else checksumCmd
+        lineinput = "01" + str(zigate_encode(cmd)) + str(zigate_encode(length)) + \
+                    str(zigate_encode(strchecksum)) + "03"
+    else:
+        #Domoticz.Log("---> datas: %s" %datas)
+        length = '%04x' %(len(datas)//2)
+
+        checksumCmd = get_checksum(cmd, length, datas)
+        strchecksum = '0' + str(checksumCmd) if len(checksumCmd) == 1 else checksumCmd
+        lineinput = "01" + str(zigate_encode(cmd)) + str(zigate_encode(length)) + \
+                    str(zigate_encode(strchecksum)) + str(zigate_encode(datas)) + "03"
+
+    self.loggingSend(  'Debug', "---  --  > _send_data - sending encoded Cmd: %s length: %s CRC: %s Data: %s" \
+                %(str(zigate_encode(cmd)), str(zigate_encode(length)), str(zigate_encode(strchecksum)), str(zigate_encode(datas))))
+    self._connection.Send(bytes.fromhex(str(lineinput)), 0)
+    self.statistics._sent += 1
+
+def check_timed_out(self):
+
+    def logExpectedCommand( self, desc, now, TimeStamp, i_sqn):
+        if i_sqn not in self.ListOfCommands:
+            self.loggingSend( 'Log', " --  --  --  > - %s - Time Out %s  " % ( desc, i_sqn ))
             return
 
-        if self.zmode == 'Agressive':
-            sendNow = (len(self._waitForStatus) == 0) or int(cmd,16) in CMD_PDM_ON_HOST
+        if self.ListOfCommands[ i_sqn ]['ResponseExpectedCmd']:
+            self.loggingSend( 'Log', " --  --  --  > - Time Out %s [%s] %s sec for  %s %s %04x" \
+                % (desc, i_sqn, (now - TimeStamp), self.ListOfCommands[ i_sqn ]['Cmd'], self.ListOfCommands[ i_sqn ]['Datas'], 
+                self.ListOfCommands[ i_sqn ]['ResponseExpectedCmd'] ))
         else:
-            sendNow = (len(self._waitForStatus) == 0 and len(self._waitForData) == 0) or int(cmd,16) in CMD_PDM_ON_HOST
+            self.loggingSend( 'Log', " --  --  --  > - Time Out %s [%s] %s sec for  %s %s %s" \
+                % (desc, i_sqn, (now - TimeStamp), self.ListOfCommands[ i_sqn ]['Cmd'], self.ListOfCommands[ i_sqn ]['Datas'], 
+                self.ListOfCommands[ i_sqn ]['ResponseExpectedCmd'] ))
 
-        # PDM Management.
-        # When PDM traffic is ongoing we cannot interupt, so we need to FIFO all other commands until the PDMLock is released
-        PDM_COMMANDS = ( '8300', '8200', '8201', '8204', '8205', '8206', '8207', '8208' )
-        if self.PDMLockStatus() and cmd not in PDM_COMMANDS:
-            # Only PDM related command can go , all others will be dropped.
-            Domoticz.Log("PDM not yet ready, FIFO command %s %s" %(cmd, datas))
-            sendNow = False
 
-        self.loggingSend('Debug', "sendData - Command: %s zMode: %s Q(Status): %s Q(Data): %s sendNow: %s" %(cmd, self.zmode, len(self._waitForStatus), len(self._waitForData), sendNow))
+    TIME_OUT_8000 = self.pluginconf.pluginConf['TimeOut8000']
+    TIME_OUT_RESPONSE = self.pluginconf.pluginConf['TimeOutResponse']
+    TIME_OUT_ACK = self.pluginconf.pluginConf['TimeOut8011']
+    TIME_OUT_LISTCMD = 10
 
-        # In case the cmd is part of the PDM on Host commands, that is High Priority and must go through.
-        if sendNow:
-            if int(cmd,16) not in CMD_PDM_ON_HOST:
-                # That is a Standard command (not PDM on  Host), let's process as usall
-                self._addCmdToWaitQueue(cmd, datas)
-                if self.zmode == 'ZigBee' and int(cmd, 16) in CMD_DATA:  # We do wait only if required and if not in AGGRESSIVE mode
-                    self._addCmdToWaitDataQueue(CMD_DATA[int(cmd, 16)], cmd, datas)
-            if delay is None:
-                self._sendData(cmd, datas, self.sendDelay )
+    if self.checkTimedOutFlag:
+        # check_timed_out can be called either by onHeartbeat or from inside the Class. 
+        # In case it comes from onHeartbeat we might have a re-entrance issue
+        Domoticz.Error("checkTimedOut already ongoing - Re-entrance")
+        return
+
+    self.checkTimedOutFlag = True
+    now = int(time())
+
+    self.loggingSend( 'Debug', "checkTimedOut  Start - Cmd: %04.X waitQ: %s ackQ: %s dataQ: %s SendingFIFO: %s"\
+                %(0x0000, len(self._waitFor8000Queue), len(self._waitForAckNack), len(self._waitForCmdResponseQueue), len(self.zigateSendQueue)))
+
+    # Check if we have a Wait for 0x8000 message
+    if len(self._waitFor8000Queue) > 0:
+        # We are waiting for 0x8000
+        InternalSqn, TimeStamp = self._waitFor8000Queue[0]
+        if (now - TimeStamp) >= TIME_OUT_8000:
+            # Timed Out 0x8000
+            self.statistics._TOstatus += 1
+            entry = _next_cmd_from_wait_for8000_queue( self )
+            if entry:
+                InternalSqn, TimeStamp = entry
+                logExpectedCommand( self, '0x8000', now, TimeStamp, InternalSqn)
+                if self.zmode == 'ZigBeeAck' and self.ListOfCommands[ InternalSqn ]['ExpectedAck']:
+                    cleanup_list_of_commands( self, InternalSqn)
+                elif self.zmode == 'ZigBee' and self.ListOfCommands[ InternalSqn ]['ResponseExpected']:
+                    cleanup_list_of_commands( self, InternalSqn)
+
+    # Check Ack/Nack
+    if self.zmode == 'ZigBeeAck' and len(self._waitForAckNack) > 0:
+        # We are waiting for APS Ack/Nack
+        InternalSqn, TimeStamp = self._waitForAckNack[0]
+        if (now - TimeStamp) >= TIME_OUT_ACK:
+            self.statistics._TOstatus += 1
+            entry = _next_cmd_to_wait_for_ack_nack_queue( self )
+            if entry:
+                InternalSqn, TimeStamp = entry
+                logExpectedCommand( self, 'Ack', now, TimeStamp, InternalSqn)
+                cleanup_list_of_commands( self, InternalSqn)
+
+    # Check waitForData
+    if self.zmode == 'ZigBee' and len(self._waitForCmdResponseQueue) > 0:
+        # We are waiting for a Response from a Command
+        InternalSqn, TimeStamp = self._waitForCmdResponseQueue[0]
+        if (now - TimeStamp) >= TIME_OUT_RESPONSE:
+            # No response ! We Timed Out
+            self.statistics._TOdata += 1
+            InternalSqn, TimeStamp =  _next_cmd_from_wait_cmdresponse_queue( self )
+            if InternalSqn in self.ListOfCommands:
+                logExpectedCommand( self, 'CmdResponse', now, TimeStamp, InternalSqn)
+                cleanup_list_of_commands( self, InternalSqn)
+
+    # Check if there is no TimedOut on ListOfCommands
+    if len(self.ListOfCommands) > 0:
+        self.loggingSend( 'Log', "checkTimedOutForTxQueues ListOfCommands size: %s" %len(self.ListOfCommands))
+    for x in list(self.ListOfCommands.keys()):
+        if  self.ListOfCommands[ x ]['SentTimeStamp'] and  (now - self.ListOfCommands[ x ]['SentTimeStamp']) > TIME_OUT_LISTCMD:
+            if self.ListOfCommands[ x ]['ResponseExpectedCmd']:
+                self.loggingSend( 'Log', " --  --  --  > - Time Out : [%s] %s %s Flags: %s/%s %04x Status: %s"
+                    %(x, self.ListOfCommands[ x ]['Cmd'], self.ListOfCommands[ x ]['Datas'], self.ListOfCommands[ x ]['ResponseExpected'], 
+                        self.ListOfCommands[ x ]['ExpectedAck'], self.ListOfCommands[ x ]['ResponseExpectedCmd'],
+                        self.ListOfCommands[ x ]['Status'] ))
             else:
-                self._sendData(cmd, datas, delay )
+                self.loggingSend( 'Log', " --  --  --  > - Time Out : [%s] %s %s Flags: %s/%s Status: %s"
+                    %(x, self.ListOfCommands[ x ]['Cmd'], self.ListOfCommands[ x ]['Datas'], 
+                        self.ListOfCommands[ x ]['ResponseExpected'], self.ListOfCommands[ x ]['ExpectedAck'],
+                        self.ListOfCommands[ x ]['Status'] ))  
 
+            #del self.ListOfCommands[ x ]
+    self.checkTimedOutFlag = False
+
+    ready_to_send_if_needed( self )
+    self.logging_receive( 'Debug', "checkTimedOut  End   - Cmd: %04.X waitQ: %s dataQ: %s SendingFIFO: %s"\
+            %(0x0000, len(self._waitFor8000Queue), len(self._waitForCmdResponseQueue), len(self.zigateSendQueue)))
+
+def cleanup_list_of_commands( self, i_sqn):
+    
+    self.loggingSend(  'Debug', " --  -- - > Cleanup Internal SQN: %s" %i_sqn)
+    if i_sqn in self.ListOfCommands:
+        self.loggingSend(  'Debug', " --  -- - > Removing ListOfCommand entry")
+        del self.ListOfCommands[ i_sqn ]
+
+# Receiving functions
+def process_frame(self, frame):
+    # will return the Frame in the Data if any
+    # process the Data and check if this is a 0x8000 message
+    # in case the message contains several frame, receiveData will be recall
+    self.logging_receive(  'Debug', "process_frame - Frame: %s" %frame)
+    if frame == '' or frame is None or len(frame) < 12:
+        return
+
+    Status = None
+    MsgData = None
+    i_sqn = None
+    MsgType = frame[2:6]
+    MsgLength = frame[6:10]
+    MsgCRC = frame[10:12]
+    self.logging_receive( 'Debug', "process_frame - MsgType: %s MsgLength: %s MsgCRC: %s" %(MsgType, MsgLength, MsgCRC))
+    
+    if len(frame) >= 18:
+        #Payload
+        MsgData = frame[12:len(frame) - 4]
+        RSSI = frame[len(frame) - 4: len(frame) - 2]
+
+    if MsgData and MsgType == "8000":  
+        Status = MsgData[0:2]
+        sqn_app = MsgData[2:4]
+        PacketType = MsgData[4:8] 
+
+        sqn_aps = None  
+        Ack_expected = None
+        if len(MsgData) == 12:
+            # New Firmware 3.1d (get aps sqn)
+            Ack_expected = MsgData[8:10]
+            sqn_aps = MsgData[10:12]
+            self.firmware_with_aps_sqn = True
+
+        i_sqn = process_msg_type8000(self, Status, PacketType, sqn_app, sqn_aps, Ack_expected)
+        self.logging_receive( 'Debug', " 0x8000 - sqn_app: 0x%s/%3s, SQN_APS: 0x%s Ack_expected: %s" %(sqn_app, int(sqn_app,16), sqn_aps, Ack_expected))
+        self.F_out(frame, i_sqn, None)
+        if i_sqn in self.ListOfCommands:
+            self.ListOfCommands[ i_sqn ]['Status'] = '8000'  
         else:
-            # Put in FIFO
-            self.loggingSend('Debug', "sendData - put in waiting queue")
-            self._addCmdToSendQueue(cmd, datas)
+            if i_sqn is not None:
+                Domoticz.Error("i_sqn: %s not found in %s" %(i_sqn, str(self.ListOfCommands.keys())))    
 
-    def processFrame(self, frame):
-        ''' 
-        will return the Frame in the Data if any
-        process the Data and check if this is a 0x8000 message
-        in case the message contains several frame, receiveData will be recall
-        '''
+        # Let's check if we are not expecting any CmdResponse. In that case we remove the Entry
+        if not (( self.zmode == 'ZigBeeAck' and i_sqn in self.ListOfCommands and self.ListOfCommands[ i_sqn ]['ExpectedAck']) or \
+            (self.zmode == 'ZigBee' and i_sqn in self.ListOfCommands and self.ListOfCommands[ i_sqn ]['ResponseExpected'])):
+            cleanup_list_of_commands( self, i_sqn)
 
-        self.loggingReceive( 'Debug', "processFrame - Frame: %s" %frame)
-        if frame == '' or frame is None or len(frame) < 12:
+        ready_to_send_if_needed( self )
+        return
+
+    if  MsgType == '8011':
+        if MsgData and self.zmode == 'ZigBee':
+            if Status == '00':
+                # Ack
+                self.statistics._APSAck += 1
+            else:
+                # Nack
+                self.statistics._APSNck += 1
+            self.F_out(frame, None)
+            ready_to_send_if_needed( self )
             return
 
-        Status = None
-        MsgType = frame[2:6]
-        MsgLength = frame[6:10]
-        MsgCRC = frame[10:12]
-        self.loggingReceive( 'Debug', "         - MsgType: %s MsgLength: %s MsgCRC: %s" %(MsgType, MsgLength, MsgCRC))
-        Status = None
-
-        if len(frame) >= 18:
-            #Payload
-            MsgData = frame[12:len(frame) - 4]
-            Status = MsgData[0:2]
-            SEQ = MsgData[2:4]
-            PacketType = MsgData[4:8]
-            RSSI = frame[len(frame) - 4: len(frame) - 2]
-            self.loggingReceive( 'Debug', "         - Status: %s SEQ: %s PacketType: %s RSSI: %s" %(Status, SEQ, PacketType, RSSI))
-
-        if MsgType == "8000":  # We are receiving a Status
-            # We have receive a Status code in response to a command.
-            if Status:
-                self._process8000(Status, PacketType, frame)
-            self.F_out(frame)  # Forward the message to plugin for further processing
-            return
-
-        if MsgType == '8011': # APS Ack/Nck with Firmware 3.1b
-
+        if MsgData and self.zmode == 'ZigBeeAck': 
             MsgStatus = MsgData[0:2]
             MsgSrcAddr = MsgData[2:6]
             MsgSrcEp = MsgData[6:8]
             MsgClusterId = MsgData[8:12]
+            MsgSEQ = 0
+            if len(MsgData) > 12 :
+                MsgSEQ = MsgData[12:14]
 
-            #Domoticz.Log("processFrame - 0x8011 - APS Ack/Nck - Status: %s for %s/%s on cluster: %s" %(MsgStatus, MsgSrcAddr, MsgSrcEp, MsgClusterId))
+            i_sqn = process_msg_type8011( self, MsgStatus, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgSEQ )
+            ReportingCommand = None
+            if i_sqn in self.ListOfCommands:
+                self.ListOfCommands[ i_sqn ]['Status'] = '8011'
+                ReportingCommand = dict(self.ListOfCommands[ i_sqn ])
+            self.F_out(frame, ReportingCommand )  # Forward the message to plugin for further processing
 
-            if MsgStatus == '00':
-                self.statistics._APSAck += 1
-                
-            elif MsgStatus == 'a7':
-                self.statistics._APSNck += 1
+            # We receive Response for Command, let's cleanup
+            cleanup_list_of_commands( self, i_sqn )
+            ready_to_send_if_needed( self )
+        return
 
-            # Next step is to look after the last command for SrcAddr/SrcEp and if it matches the ClusterId
+    if MsgType == '8701':
+        # Route Discovery
+        # self.F_out(frame, None)  # for processing
+        ready_to_send_if_needed( self )
+        return        
 
-            self.F_out(frame)  # Forward the message to plugin for further processing
+    if MsgType == "8702":
+        # APS Failure
+        # i_sqn = process_msg_type8702( self, MsgData )
+        self.statistics._APSFailure += 1
+        self.F_out(frame, None)
+        ready_to_send_if_needed( self )
+        return
 
-        elif MsgType == "8701": # Router Discovery Confirm
-            if self.pluginconf.pluginConf['APSrteError']:
-                if self.lock:
-                    Domoticz.Debug("processFrame - passing the 0x8701 frame (lock)")
-                    self.F_out(frame)  # Forward the message to plugin for further processing
-                else:
-                    self.lock = True
-                    NwkStatus = MsgData[0:2]
-                    Status = MsgData[2:4]
-                    MsgSrc = ''
-                    # https://github.com/fairecasoimeme/ZiGate/pull/231/commits/9a206779050fbce3bd464cad9bd65affb91d1720
-                    if len(MsgData) == 8:
-                        MsgSrc = MsgData[4:8]
-                        self.loggingReceive('Log',"             - New Route Discovery for %s" %(MsgSrc))
-    
-                    if len(self._waitForRouteDiscoveryConfirm) > 0:
-                        # We have some pending Command for re-submition
-                        tupleCommands = list(self._waitForRouteDiscoveryConfirm)
-                        for cmd, payload, frame8702 in tupleCommands:
-                            if Status == NwkStatus == '00':
-                                self.loggingReceive('Debug',"             - New Route Discovery OK, resend %s %s" %(cmd, payload))
-                                self.sendData(cmd, payload)
-                            else:
-                                self.loggingReceive('Debug',"             - New Route Discovery KO, drop %s %s" %(cmd, payload))
-                                self.F_out( frame8702 )  # Forward the old frame in the pipe. str() is used to make a physical copy
-    
-                            self._waitForRouteDiscoveryConfirm.remove( ( cmd, payload, frame8702)  )
-    
-                        del self._waitForRouteDiscoveryConfirm 
-                        self._waitForRouteDiscoveryConfirm = []
-                self.lock = False
-            else:
-                self.F_out(frame)  # Forward the message to plugin for further processing
+    if int(MsgType, 16) in STANDALONE_MESSAGE:  # We receive an async message, just forward it to plugin
+        self.F_out(frame, None )  # for processing
+        ready_to_send_if_needed( self )
+        return
 
+    if self.zmode == 'ZigBee':
+        # If ZigBee Command blocked until response received
+        i_sqn = process_other_type_of_message( self, MsgType)
+        if i_sqn in self.ListOfCommands:
+            self.ListOfCommands[ i_sqn ]['Status'] = '8XXX'
+            cleanup_list_of_commands( self, _next_cmd_from_wait_cmdresponse_queue( self )[0] )
 
-        elif MsgType == "8702": # APS Failure
-            #if self._process8702( frame ):
-                self.loggingReceive('Debug',"             - detect an APS Failure forward to plugin")
-                self.statistics._APSFailure += 1
-                self.F_out(frame)  # Forward the message to plugin for further processing
+    ready_to_send_if_needed( self )
+    self.F_out(frame, None)  # Forward the message to plugin for further processing
+    self.check_timed_out_for_tx_queues()  # Let's take the opportunity to check TimeOut
 
-        elif int(MsgType, 16) in STANDALONE_MESSAGE:  # We receive an async message, just forward it to plugin
-            self.F_out(frame)  # for processing
+def process_msg_type8000(self, Status, PacketType, sqn_app, sqn_aps, Ack_expected):
 
-        else:
-            self.receiveDataCmd(MsgType)  #
-            self.F_out(frame)  # Forward the message to plugin for further processing
+    if PacketType == '':
+        return None
 
-        self.checkTOwaitFor()  # Let's take the opportunity to check TimeOut
-
-
-    def receiveDataCmd(self, MsgType):
-        self.statistics._data += 1
-        # There is a probability that we get an ASYNC message, which is not related to a Command request.
-        # In that case we should just process this message.
-
-        self.loggingReceive( 'Debug', "receiveDataCmd - MsgType: %s" %(MsgType))
-
-        if len(self._waitForData) != 0:
-            if int(MsgType, 16) != self._waitForData[0][0]:
-                self.loggingReceive( 'Debug', "         - not waiting Data")
-                return
-
-        expResponse, cmd, datas, pTime, reTx = self._nextCmdFromWaitDataQueue()
-
-        self.loggingReceive( 'Debug', "         - Expecting: Response: %s, Cmd: %s, Datas: %s, Time: %s reTx: %s" \
-                %(expResponse, cmd, datas, pTime, reTx))
-
-        # If we have Still commands in the queue and the WaitforStatus+Data are free
-        if len(self.zigateSendingFIFO) != 0 \
-                and len(self._waitForStatus) == 0 and len(self._waitForData) == 0:
-            cmd, datas, timestamps, reTx = self._nextCmdFromSendingFIFO()
-            self.sendData(cmd, datas)
-
-
-    def _process8000(self, Status, PacketType, frame):
-        self.statistics._ack += 1
-
-        # Command Failed, Status != 00
-        if Status != '00':
-            self.statistics._ackKO += 1
+    self.loggingSend( 'Debug', "--> process_msg_type8000 - Status: %s PacketType: %s sqn_app:%s sqn_aps: %s Ack_expected: %s" %(Status, PacketType,sqn_app, sqn_aps, Ack_expected))
+    # Command Failed, Status != 00
+    if Status != '00':
+        self.statistics._ackKO += 1
+        if self.zmode == 'ZigBee':
             # In that case we need to unblock data, as we will never get it !
-            if len(self._waitForData) > 0:
-                expResponse, pCmd, pData, pTime, reTx =  self._nextCmdFromWaitDataQueue()
-                self.loggingReceive( 'Debug', "waitForData - unlock waitForData due to command %s failed, remove %s/%s" %(PacketType, expResponse, pCmd))
+            if len(self._waitForCmdResponseQueue) > 0:
+                InternalSqn, TimeStamp = _next_cmd_from_wait_cmdresponse_queue( self )
+                self.loggingSend( 'Debug', " --  --  -- - > - unlock waitForData due to command %s failed, remove %s" %(PacketType, InternalSqn))
+                if InternalSqn in self.ListOfCommands:
+                    if self.ListOfCommands[ InternalSqn ]['ResponseExpectedCmd']:
+                        self.logging_receive( 'Debug', " - -- Unqueue CmdResponse : [%s] %s %s " 
+                        %(InternalSqn, self.ListOfCommands[ InternalSqn ]['Cmd'], self.ListOfCommands[ InternalSqn ]['Datas']))
+                    del self.ListOfCommands[ InternalSqn ]
 
-        # What to do with the Command
-        if PacketType != '':
-            expectedCommand = self._nextCmdFromWaitQueue()
-            if expectedCommand is None:
-                self.loggingReceive( 'Debug',"_process8000 - Empty Queue")
-            else:
-                if int(expectedCommand[0], 16) != int(PacketType, 16):
-                    self.loggingReceive( 'Debug',"receiveData - sync error : Expecting %s and Received: %s" \
-                            % (expectedCommand[0], PacketType))
-            
-            # If we have a APS Ack firmware, then we will push the Cmd/Data tfor APS Ack/Failure
-            if APS_ACK:
-                cmd, data, timestamp, reTransmit = expectedCommand
-                if cmd == PacketType:
-                    self.loggingReceive('Debug',"_process8000 - APS Ack push Cmd: %s Data: %s for APS Ack/Failure" %(cmd, data))
-                    self.addCmdTowaitForAPS( cmd, data )
-                else:
-                    Domoticz.Error("_process8000 - APS Ack push receive Cmd %s status doesn't match Cmd %s in FIFO!" %(PacketType, cmd))
-        # Let's check if we cannot send a command from teh Queue
-        if len(self.zigateSendingFIFO) != 0 and len(self._waitForStatus) == 0 and len(self._waitForData) == 0:
-            cmd, datas, timestamps, reTx = self._nextCmdFromSendingFIFO()
-            self.sendData(cmd, datas)
+        elif self.zmode == 'ZigBeeAck':
+            # In that case we need to unblock ack_nack, as we will never get it !
+            if len(self._waitForAckNack) > 0:
+                InternalSqn, TimeStamp = _next_cmd_to_wait_for_ack_nack_queue( self )
+                self.loggingSend( 'Debug', " --  --  -- - > - unlock waitForAckNack due to command %s failed, remove %s" %(PacketType, InternalSqn))
+                if InternalSqn in self.ListOfCommands:
+                    if self.ListOfCommands[ InternalSqn ]['ResponseExpectedCmd']:
+                        self.logging_receive( 'Debug', " - -- Unqueue CmdResponse : [%s] %s %s " 
+                        %(InternalSqn, self.ListOfCommands[ InternalSqn ]['Cmd'], self.ListOfCommands[ InternalSqn ]['Datas']))
+                    del self.ListOfCommands[ InternalSqn ]
 
+        # Finaly freeup the 0x8000 queue
+        NextCmdFromWaitFor8000 = _next_cmd_from_wait_for8000_queue( self )
+        return None
 
-    def checkTOwaitFor(self):
-        'look at the waitForStatus, and in case of TimeOut delete the entry'
+    # Status is '00' -> Valid command sent !
+    self.statistics._ack += 1
+    NextCmdFromWaitFor8000 = _next_cmd_from_wait_for8000_queue( self )
+    if NextCmdFromWaitFor8000 is None:
+        self.loggingSend( 'Debug', " --  --  -- - > - Empty Queue")
+        return None
 
-        if self._checkTO_flag:  # checkTOwaitFor can be called either by onHeartbeat or from inside the Class. 
-                                # In case it comes from onHeartbeat we might have a re-entrance issue
-            ##Domoticz.Debug("checkTOwaitFor already ongoing")
-            return
-        self._checkTO_flag = True
-        self.loggingReceive('Debug',"checkTOwaitFor   - Cmd: %04.X waitQ: %s dataQ: %s SendingFIFO: %s"\
-                 %(0x0000, len(self._waitForStatus), len(self._waitForData), len(self.zigateSendingFIFO)))
+    InternalSqn, TimeStamp = NextCmdFromWaitFor8000
+    self.loggingSend( 'Debug', " --  --  -- - > InternSqn: %s ExternalSqn: %s ExternalSqnZCL: %s" %(InternalSqn, sqn_app, sqn_aps))
+    if InternalSqn not in self.ListOfCommands:
+        return None
 
-        # Check waitForStatus
-        if len(self._waitForStatus) > 0:
-            now = int(time())
-            pCmd, pDatas, pTime, reTx = self._waitForStatus[0]
-            ## DEBUG Domoticz.Debug("checkTOwaitForStatus - %04.x enter at: %s delta: %s" % (int(pCmd, 16), pTime, now - pTime))
-            if (now - pTime) > self.zTimeOut:
-                self.statistics._TOstatus += 1
-                entry = self._nextCmdFromWaitQueue()
-                if entry:
-                   self.loggingReceive('Debug',"waitForStatus - Timeout %s on %04.x " % (now - pTime, int(entry[0], 16)))
-
-        # Check waitForData
-        if len(self._waitForData) > 0:
-            now = int(time())
-            expResponse, pCmd, pData, pTime, reTx = self._waitForData[0]
-            if (now - pTime) > self.zTimeOut:
-                self.statistics._TOdata += 1
-                expResponse, pCmd, pData, pTime, reTx =  self._nextCmdFromWaitDataQueue()
-                self.loggingReceive('Debug',"waitForData - Timeout %s sec on %04.x Command waiting for %04.x " % (now - pTime, expResponse, int(pCmd,16)))
-                # If we allow reTransmit, let's resend the command
-                if self.reTransmit:
-                    if int(pCmd, 16) in RETRANSMIT_COMMAND and reTx <= self.reTransmit:
-                        self.statistics._reTx += 1
-                        self.loggingReceive('Debug',"checkTOwaitForStatus - Request a reTransmit of Command : %s/%s (%s) " % (
-                            pCmd, pData, reTx))
-                        # waitForData should be 0 as well as waitForCmd
-                        if  len(self._waitForData) == len(self._waitForStatus) == 0 :
-                            reTx += 1
-                            self._addCmdToWaitQueue(pCmd, pData, reTransmit=reTx)
-                            self._addCmdToWaitDataQueue(CMD_DATA[int(pCmd, 16)],pCmd, pData, reTransmit=reTx)
-                            self._sendData( pCmd, pData , self.sendDelay)
-                        else:
-                            Domoticz.Error("Unable to retransmit message %s/%s Queue was not free anymore !" %(pCmd, pData))
-
-        if len(self.zigateSendingFIFO) != 0 \
-                and len(self._waitForStatus) == 0 and len(self._waitForData) == 0:
-            cmd, datas, timestamps, reTx = self._nextCmdFromSendingFIFO()
-            self.loggingReceive('Debug', "checkTOwaitForStatus - Unqueue %s %s" %(cmd, datas))
-            self.sendData(cmd, datas)
-
-        # self._printSendQueue()
-        self._checkTO_flag = False
-
-
-    def _addNewCmdtoDevice(self, nwk, cmd, payload):
-        """ Add Cmd to the nwk list of Command FIFO mode """
-
-        if not self.LOD.find( nwk ):
-            return
-        deviceinfos = self.LOD.retreive( nwk )
-
-        if self.pluginconf.pluginConf['APSreTx'] or self.pluginconf.pluginConf['APSrteError'] :
-            _tuple = ( time(), cmd , payload) # Keep Payload as well in order to redo the command
-        else:
-            _tuple = ( time(), cmd , None)
-
-        # Add element at the end of the List
-        self.LOD.add_Last_Cmds( nwk, _tuple )
-
-    def processCMD4APS( self, cmd, payload):
-
-        if len(payload) < 7 or int(cmd,16) not in CMD_NWK_2NDBytes:
-            return
-
-        nwkid = payload[2:6]
-        if self.LOD.find( nwkid ):
-            self._addNewCmdtoDevice( nwkid, cmd , payload)
-
-    def addCmdTowaitForAPS(self, cmd, data):
-
-        timestamp = int(time())
-        self._waitForAPS.append((cmd, data, timestamp))
-        
-    def _process8011( self, MsgData):
-
-        MsgStatus = MsgData[0:2]
-        MsgSQN = MsgData[2:4]
-        MsgSrcEp = MsgData[4:6]
-        MsgDstEp = MsgData[6:8]
-        MsgProfileID = MsgData[8:12]
-        MsgClusterId = MsgData[12:16]
+    if self.ListOfCommands[ InternalSqn ]['Cmd']:
+        IsCommandOk = int(self.ListOfCommands[ InternalSqn ]['Cmd'], 16) == int(PacketType, 16)
+        if not IsCommandOk:
+            self.loggingSend( 'Debug', "process_msg_type8000 - sync error : Expecting %s and Received: %s" \
+                    % (self.ListOfCommands[ InternalSqn ]['Cmd'], PacketType))
+            return None
     
-    def _process8702( self, frame):
 
-        """
-        Status: d4 - Unicast frame does not have a route available but it is buffered for automatic resend
-        Status: e9 - No acknowledgement received when expected
-        Status: f0 - Pending transaction has expired and data discarded
-        Status: cf - Attempt at route discovery has failed due to lack of table spac
+    sqn_add_external_sqn (self, InternalSqn, sqn_app, sqn_aps)
+    return InternalSqn
 
+def process_msg_type8011( self, Status, NwkId, Ep, MsgClusterId, ExternSqn ):
 
-        Note: If a message is unicast to a destination for which a route has not already been established,
-        the message will not be sent and a route discovery will be performed instead. If this is the case,
-        the unicast function will return ZPS_NWK_ENUM_ROUTE_ERROR. The application must then wait for the
-        stack event ZPS_EVENT_NWK_ROUTE_DISCOVERY_CONFIRM (success or failure) before attempting to re-send
-        the message by calling the same unicast function again.
+    self.loggingSend( 'Debug',"--> process_msg_type8011 - Status: %s ExternalSqn: %s NwkId: %s Ep: %s ClusterId: %s" %(Status, ExternSqn, NwkId, Ep , MsgClusterId ))
+    # Unqueue the Command in order to free for the next
+    InternSqn, TimeStamps = _next_cmd_to_wait_for_ack_nack_queue( self ) 
 
+    if (self.firmware_with_aps_sqn):
+        InternSqn_from_ExternSqn = sqn_get_internal_sqn (self, ExternSqn, E_SQN_APS)
+        if InternSqn != InternSqn_from_ExternSqn:
+            Domoticz.Error ("process_msg_type8011 different sqn : InternSqn:%s InternSQN_from_ExternalSQN:%s" %(InternSqn, InternSqn_from_ExternSqn))
 
-        """
-        # We have Payload : data + rssi
-        MsgData=frame[12:len(frame)-4]
-        MsgRSSI=frame[len(frame)-4:len(frame)-2]
+    if Status == '00':
+        if InternSqn in self.ListOfCommands:
+            self.loggingSend( 'Debug', " - [%s] receive Ack for Cmd: %s - size of SendQueue: %s" %( InternSqn,  self.ListOfCommands[InternSqn]['Cmd'], self.loadTransmit()))
+        self.statistics._APSAck += 1
+    else:
+        if InternSqn in self.ListOfCommands:
+            self.loggingSend( 'Debug', " - [%s] receive Nack for Cmd: %s - size of SendQueue: %s" %( InternSqn,  self.ListOfCommands[InternSqn]['Cmd'], self.loadTransmit()))
+        self.statistics._APSNck += 1 
+    return InternSqn
+
+def process_msg_type8702( self, MsgData):
+    # Status: d4 - Unicast frame does not have a route available but it is buffered for automatic resend
+    # Status: e9 - No acknowledgement received when expected
+    # Status: f0 - Pending transaction has expired and data discarded
+    # Status: cf - Attempt at route discovery has failed due to lack of table space
+
+    # Note: If a message is unicast to a destination for which a route has not already been established, 
+    # the message will not be sent and a route discovery will be performed instead. If this is the case, 
+    # the unicast function will return ZPS_NWK_ENUM_ROUTE_ERROR. The application must then wait for the
+    # stack event ZPS_EVENT_NWK_ROUTE_DISCOVERY_CONFIRM (success or failure) before attempting to re-send
+    # the message by calling the same unicast function again.
+
+    self.loggingSend( 'Debug',"--> process_msg_type8702")
+    if len(MsgData) == 0 or len(MsgData) < 8:
+        Domoticz.Error("process_msg_type8702 - Empty frame: %s" %MsgData)
+        return  True
+
+    MsgDataStatus = MsgData[0:2]
+    #MsgDataSrcEp = MsgData[2:4]
+    MsgDataDestEp = MsgData[4:6]
+    MsgDataDestMode = MsgData[6:8]
+
+    NWKID = IEEE = None
+    if MsgDataDestMode == '01': # IEEE
+        IEEE = MsgData[8:24]
+        ExternSqn = MsgData[24:26]
+    elif MsgDataDestMode == '02': # Short Address
+        NwkId = MsgData[8:12]
+        ExternSqn = MsgData[12:14]
+    elif MsgDataDestMode == '03': # Group
+        MsgDataDestAddr = MsgData[8:12]
+        ExternSqn = MsgData[12:14]
+
+    self.loggingSend( 'Debug',"process_msg_type8702 - ExternalSqn: %s NwkId: %s Ep: %s" %(ExternSqn, NwkId, MsgDataDestEp  ))
+
+    InternSqn = sqn_get_internal_sqn (self, ExternSqn)
+    self.loggingSend( 'Debug', "----------->  ExternalSqn: %s InternalSqn: %s" %(ExternSqn,InternSqn))
+
+    return InternSqn
+
+def process_other_type_of_message(self, MsgType):
     
-        if len(MsgData) ==0:
-            return  True
+    self.statistics._data += 1
+    # There is a probability that we get an ASYNC message, which is not related to a Command request.
+    # In that case we should just process this message.
     
-        MsgDataStatus = MsgData[0:2]
-        MsgDataSrcEp = MsgData[2:4]
-        MsgDataDestEp = MsgData[4:6]
-        MsgDataDestMode = MsgData[6:8]
-    
-        # Assuming that Firmware is above 3.0f
-        NWKID = IEEE = None
-        if MsgDataDestMode == '01': # IEEE
-            IEEE=MsgData[8:24]
-            MsgDataSQN=MsgData[24:26]
-        elif MsgDataDestMode == '02': # Short Address
-            NWKID=MsgData[8:12]
-            MsgDataSQN=MsgData[12:14]
-        elif MsgDataDestMode == '03': # Group
-            MsgDataDestAddr=MsgData[8:12]
-            MsgDataSQN=MsgData[12:14]
+    # For now we assume that we do only one command at a time, so either it is an Async message, 
+    # or it is related to the command
+    self.logging_receive(  'Debug', "--> process_other_type_of_message - MsgType: %s" %(MsgType))
 
-        NWKID = self.LOD.find( NWKID, IEEE)
+    if len(self._waitForCmdResponseQueue) == 0:
+        self.logging_receive(  'Debug', " --  -- - > - WaitForDataQueue empty")
+        return
 
-        self.loggingReceive('Debug',"_process8702 - NwkId: %s Ieee: %s Status: %s" %(NWKID, IEEE, MsgDataStatus))
-        #if NWKID and ( MsgDataStatus == 'd4' or MsgDataStatus == 'd1'):
-        # https://github.com/fairecasoimeme/ZiGate/issues/106#issuecomment-515343571
-        if NWKID and ( MsgDataStatus == 'd1'):
-            # Let's resend the command
-            deviceinfos = self.LOD.retreive( NWKID )
-            if 'Last Cmds' not in deviceinfos:
-                Domoticz.Error("_process8702 - no 'Last Cmds' in %s" %deviceinfos)
-                return  True
+    FirstTupleWaitForData = self._waitForCmdResponseQueue[0]
+    InternalSqn = FirstTupleWaitForData[0]
+    if InternalSqn not in self.ListOfCommands:
+        Domoticz.Error("process_other_type_of_message - MsgType: %s, InternalSqn: %s not found in ListOfCommands" %( MsgType, InternalSqn))
+        ready_to_send_if_needed( self )
+        return None
 
-            _timeAPS = (time())
-            # Retreive Last command
-            # Let's check that we have a done  Max 2 retrys
-            _lastCmds = deviceinfos['Last Cmds'][::-1]  #Reverse list
-            iterTime = 0
-            iterCmd = iterpayLoad = None
-            if len(_lastCmds) >= 1: # At least we have one command
-                if len(_lastCmds[0]) == 2:
-                    Domoticz.Error("_process8702 - no payload")
-                    return True
-                if len(_lastCmds[0]) == 3:
-                    iterTime, iterCmd, iterpayLoad = _lastCmds[0]
+    expResponse = self.ListOfCommands[ InternalSqn ]['ResponseExpectedCmd']
+    if expResponse == 0x8100:
+        # In case the expResponse is 0x8100 then we can accept 0x8102
+        self.loggingSend( 'Debug', " --  -- - > Internal SQN: %s Received: %s and expecting %s" %(InternalSqn, MsgType, '(0x8100, 0x8102)'  ))
+        if int(MsgType, 16) not in ( 0x8100, 0x8102):
+            self.logging_receive(  'Debug', "         - Async incoming PacketType")
+            ready_to_send_if_needed( self )
+            return InternalSqn
+    else:
+        self.loggingSend( 'Debug', " --  -- - > Internal SQN: %s Received: %s and expecting %04x" %(InternalSqn, MsgType, expResponse  ))
+        if int(MsgType, 16) != expResponse:
+            self.logging_receive(  'Debug', "         - Async incoming PacketType")
+            ready_to_send_if_needed( self )
+            return None
 
-            if self.pluginconf.pluginConf['APSrteError'] and len(_lastCmds[0]) == 3:
-                self.loggingReceive('Debug',"_process8702 - WARNING - Queue Size: %s received APSFailure %s %s %s, will wait for a Route Discoverys" %( len(self._waitForRouteDiscoveryConfirm), NWKID, iterCmd, iterpayLoad))
-                tupleCommand = ( iterCmd, iterpayLoad, frame)
-                if (  tupleCommand ) not in self._waitForRouteDiscoveryConfirm:
-                    self.loggingReceive('Debug',"      -> Add %s %s to Queue" %( iterCmd, iterpayLoad))
-                    self._waitForRouteDiscoveryConfirm.append( tupleCommand )
-                else:
-                    self.loggingReceive('Debug',"      -> Do not add to Queue %s %s , already in" %(iterCmd, iterpayLoad))
-                return False
+    # If we have Still commands in the queue and the WaitforStatus+Data are free
+    ready_to_send_if_needed( self )
+    return InternalSqn
 
-            if self.pluginconf.pluginConf['APSreTx'] and len(_lastCmds[1]) == 3:
-                iterTime2 = 0
-                iterCmd2 = iterpayLoad2 = None
-                if len(_lastCmds) >= 2: # At least we have 2 Commands
-                    # Retreive command -1
-                    iterTime2, iterCmd2, iterpayLoad2 = _lastCmds[1]
-    
-                if APS_MAX_RETRY == 2:
-                    if iterCmd2 == iterCmd and iterpayLoad2 == iterpayLoad and \
-                            iterTime  <= (iterTime2 + APS_TIME_WINDOW):
-                        return True
-     
-                elif APS_MAX_RETRY == 3:
-                    iterTime2 = 0
-                    iterCmd2 = iterpayLoad2 = None
-                    if len(_lastCmds) >= 3: # At least we have 3 commands
-                        # Retreive command -1
-                        iterTime3, iterCmd3, iterpayLoad3 = _lastCmds[2]
-                    if iterCmd3 == iterCmd2 == iterCmd and iterpayLoad3 == iterpayLoad2 == iterpayLoad and \
-                            iterTime  <= (iterTime3 + APS_TIME_WINDOW):
-                        return True
-        
-                if _timeAPS <= ( iterTime + APS_TIME_WINDOW):
-                    # That command has been issued in the APS time window
-                    self.sendData( iterCmd, iterpayLoad, 2)
-                    self.statistics._reTx += 1
-                    return False
+# Logging functions
+def _write_message( self, message):
+    message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+    self.loggingFileHandle.write( message )
+    self.loggingFileHandle.flush()
 
-        return True
+def _logging_status( self, message):
+    Domoticz.Status( message )
+    if ( not self.pluginconf.pluginConf['useDomoticzLog'] and self.loggingFileHandle ):
+        _write_message( self, message)
 
-def ZigateEncode(Data):  # ajoute le transcodage
+def _logging_log( self, message):
+    Domoticz.Log( message )
+    if ( not self.pluginconf.pluginConf['useDomoticzLog'] and self.loggingFileHandle ):
+        _write_message( self, message)
 
-    Out = ""
-    Outtmp = ""
+def _logging_debug( self, message):
+    if ( not self.pluginconf.pluginConf['useDomoticzLog'] and self.loggingFileHandle ):
+        _write_message( self, message)
+    else:
+        Domoticz.Log( message )
+
+def _logging_error( self, message):
+    if ( not self.pluginconf.pluginConf['useDomoticzLog'] and self.loggingFileHandle ):
+        _write_message( self, message)
+    else:
+        Domoticz.Error( message )
+
+def zigate_encode(Data):
+    #The encoding is the following:
+    # Let B any byte value of the message. If B is between 0x00 and 0x0f (included) then :
+    #    Instead of B, a 2-byte content will be written in the encoded frame
+    #    The first byte is a fixed value: 0x02
+    #    The second byte is the result of B ^ 0x10
+
+    Out = ''
+    Outtmp = ''
     for c in Data:
         Outtmp += c
         if len(Outtmp) == 2:
-            if Outtmp[0] == "1" and Outtmp != "10":
-                if Outtmp[1] == "0":
-                    Outtmp = "0200"
-                    Out += Outtmp
-                else:
-                    Out += Outtmp
-            elif Outtmp[0] == "0":
-                Out += "021" + Outtmp[1]
+            if Outtmp[0] == '1' and Outtmp != '10':
+                if Outtmp[1] == '0':
+                    Outtmp = '0200'
+                Out += Outtmp
+            elif Outtmp[0] == '0':
+                Out += '021' + Outtmp[1]
             else:
                 Out += Outtmp
             Outtmp = ""
     return Out
 
-def getChecksum(msgtype, length, datas):
+def get_checksum(msgtype, length, datas):
     temp = 0 ^ int(msgtype[0:2], 16)
     temp ^= int(msgtype[2:4], 16)
     temp ^= int(length[0:2], 16)
@@ -831,8 +962,3 @@ def getChecksum(msgtype, length, datas):
         temp ^= int(datas[i:i + 2], 16)
         chk = hex(temp)
     return chk[2:4]
-
-def returnlen(taille, value):
-    while len(value) < taille:
-        value = "0" + value
-    return str(value)

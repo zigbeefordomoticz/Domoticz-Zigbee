@@ -53,18 +53,11 @@ def callbackDeviceAwake_Schneider(self, NwkId, EndPoint, cluster):
             %(NwkId, EndPoint, cluster),NwkId )
     if cluster == '0201':
         callbackDeviceAwake_Schneider_SetPoints( self, NwkId, EndPoint, cluster)
-
-
-    if 'Model' in self.ListOfDevices[NwkId]:
-
-        if cluster == '0701':
-            if self.ListOfDevices[NwkId]['Model'] in ('EH-ZB-HACT', 'EH-ZB-SPD', 'EH-ZB-LMACT', 'EH-ZB-SPD-V2'):
-                if getAttributeValue(self, NwkId, EndPoint, '0702', '0301') is None or getAttributeValue(self, NwkId, EndPoint, '0702', '0302') is None:
-                    # if those atttributes are missing, it means that we had a bad pairing and consumption reporting will be wrong 
-                    ReadAttributeRequest_0702(self, NwkId)
-
-        if self.ListOfDevices[NwkId]['Model'] == 'EH-ZB-HACT':
-            schneider_check_binding_actuator (self, NwkId)
+#    if 'Model' in self.ListOfDevices[NwkId]:
+ #       if self.ListOfDevices[NwkId]['Model'] in ('EH-ZB-HACT','EH-ZB-BMS', 'EH-ZB-SPD', 'EH-ZB-LMACT', 'EH-ZB-SPD-V2'):
+  #          if getAttributeValue(self, NwkId, EndPoint, '0702', '0301') == None or getAttributeValue(self, NwkId, EndPoint, '0702', '0302') == None:
+               # ReadAttributeRequest_0702(self, NwkId)
+   #            pass
 
     #if 'Model' in self.ListOfDevices[NwkId]:
     #    if self.ListOfDevices[NwkId]['Model'] in ('EH-ZB-RTS','EH-ZB-VACT', 'EH-ZB-BMS'):
@@ -703,12 +696,12 @@ def schneiderRenforceent( self, NWKID):
             pass
     if 'Schneider Wiser' in self.ListOfDevices[NWKID]:
         if 'HACT Mode' in self.ListOfDevices[NWKID]['Schneider Wiser']:
-            if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
+            if not self.busy and self.ZigateComm.loadTransmit() <= MAX_LOAD_ZIGATE:
                 schneider_hact_heating_mode( self, NWKID, self.ListOfDevices[NWKID]['Schneider Wiser']['HACT Mode'])
             else:
                 rescheduleAction = True
         if 'HACT FIP Mode' in self.ListOfDevices[NWKID]['Schneider Wiser']:
-            if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
+            if not self.busy and self.ZigateComm.loadTransmit() <= MAX_LOAD_ZIGATE:
                 schneider_hact_fip_mode( self, NWKID,  self.ListOfDevices[NWKID]['Schneider Wiser']['HACT FIP Mode'])
             else:
                 rescheduleAction = True

@@ -142,14 +142,11 @@ SETTINGS = {
     },
 
     # Plugin Transport
-    'PluginTransport': { 'Order': 10, 'param': {
-        #'APSrteError':  {'type':'bool', 'default':0, 'current': None, 'restart':False , 'hidden':True, 'Advanced':False},
-        #'APSreTx': {'type':'bool', 'default':0, 'current': None, 'restart':False , 'hidden':True, 'Advanced':False},
-        #'zmode':  { 'type':'str', 'default':'ZigBee' , 'current': None, 'restart':True , 'hidden':True, 'Advanced':False},
-        'CrcCheck':    { 'type':'bool', 'default':1 , 'current': None, 'restart':True , 'hidden':True, 'Advanced':False},
-        'reTransmit':  { 'type':'bool', 'default':1 , 'current': None, 'restart':True , 'hidden':True, 'Advanced':False},
-        'sendDelay':   { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':True, 'Advanced':False},
-        'zTimeOut':    { 'type':'int', 'default':1 , 'current': None, 'restart':True , 'hidden':True, 'Advanced':False},
+    'PluginTransport':     { 'Order': 10, 'param': {
+        'zmode':           { 'type':'str', 'default':'ZigBee' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
+        'TimeOut8000':     { 'type':'int', 'default': 1.5 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+        'TimeOut8011':     { 'type':'int', 'default': 7, 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+        'TimeOutResponse': { 'type':'int', 'default': 7, 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
         }
     },
 
@@ -197,7 +194,6 @@ SETTINGS = {
         'debugGroups':          { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
         'debugOTA':             { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
         'debugIAS':             { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
-        'debugAPS':             { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
         'debugDZDB':            { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
         'debugWebServer':       { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
         'debugzigateCmd':       { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
