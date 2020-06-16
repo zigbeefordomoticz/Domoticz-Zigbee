@@ -330,8 +330,8 @@ ZIGATE_COMMANDS = {
         0x0030: {'Sequence': (0x8000, 0x8030), 'Ack': True , 'Command': 'Bind' , 'NwkId 2nd Bytes': False },
         0x0031: {'Sequence': (0x8000, 0x8031), 'Ack': True , 'Command': 'Unbind' , 'NwkId 2nd Bytes': False },
 
-        0x0032: {'Sequence': (0x8000, 0x8030), 'Ack': False ,'Command': 'Bind Group' , 'NwkId 2nd Bytes': False },
-        0x0033: {'Sequence': (0x8000, 0x8031), 'Ack': False ,'Command': 'Unbind Group' , 'NwkId 2nd Bytes': False },
+        0x0032: {'Sequence': (0x8000, 0x8032), 'Ack': False ,'Command': 'Bind Group' , 'NwkId 2nd Bytes': False },
+        0x0033: {'Sequence': (0x8000, 0x8033), 'Ack': False ,'Command': 'Unbind Group' , 'NwkId 2nd Bytes': False },
 
         0x0040: {'Sequence': (0x8000, 0x8040), 'Ack': True , 'Command': 'Network Address request' , 'NwkId 2nd Bytes': False },
         0x0041: {'Sequence': (0x8000, 0x8041), 'Ack': True , 'Command': 'IEEE Address request' , 'NwkId 2nd Bytes': False },
@@ -341,14 +341,17 @@ ZIGATE_COMMANDS = {
         0x0045: {'Sequence': (0x8000, 0x8045), 'Ack': True , 'Command': 'Active Endpoint request' , 'NwkId 2nd Bytes': False },
         0x0046: {'Sequence': (0x8000, 0x8046), 'Ack': True , 'Command': 'Match Descriptor request' , 'NwkId 2nd Bytes': False },
         0x0047: {'Sequence': (0x8000, 0x8047), 'Ack': True , 'Command': 'Management Leave request' , 'NwkId 2nd Bytes': False },
+
         
-        0x0049: {'Sequence': (0x8000,),        'Ack': False, 'Command': 'Permit Joining request' , 'NwkId 2nd Bytes': False },
+        0x0049: {'Sequence': (0x8000, 0x8049), 'Ack': False, 'Command': 'Permit Joining request' , 'NwkId 2nd Bytes': False },
         0x004A: {'Sequence': (0x8000, 0x804A), 'Ack': False ,'Command': 'Management Network Update request' , 'NwkId 2nd Bytes': False },
         0x004B: {'Sequence': (0x8000, 0x804B), 'Ack': True ,'Command': 'System Server Discovery request' , 'NwkId 2nd Bytes': False },
         0x004C: {'Sequence': (0x8000, 0x804C), 'Ack': False ,'Command': 'E_SL_MSG_LEAVE_REQUEST' , 'NwkId 2nd Bytes': False },
         0x004D: {'Sequence': (0x8000, 0x804D), 'Ack': False ,'Command': 'E_SL_MSG_DEVICE_ANNOUNCE' , 'NwkId 2nd Bytes': False },
         0x004E: {'Sequence': (0x8000, 0x804E), 'Ack': True ,'Command': 'Management LQI request' , 'NwkId 2nd Bytes': False },
         0x004F: {'Sequence': (0x8000, 0x804F), 'Ack': False ,'Command': 'E_SL_MSG_DEVICE_ANNOUNCE' , 'NwkId 2nd Bytes': False },
+
+        0x0050: {'Sequence': (0x8000, 0x8050), 'Ack': False ,'Command': 'E_SL_MSG_BASIC_RESET_TO_FACTORY_DEFAULTS' , 'NwkId 2nd Bytes': False },
 
         # Group
         0x0060:{'Sequence': (0x8000, 0x8060),  'Ack': True, 'Command': 'Group Add' , 'NwkId 2nd Bytes': True },
@@ -378,51 +381,53 @@ ZIGATE_COMMANDS = {
 
 
         # Action Hue
-        0x00B0: {'Sequence': (0x8000, ), 'Ack': True, 'Command': 'Move to Hue' , 'NwkId 2nd Bytes': True },
-        0x00B1: {'Sequence': (0x8000, ), 'Ack': True, 'Command': 'Move Hue' , 'NwkId 2nd Bytes': True },
-        0x00B2: {'Sequence': (0x8000, ), 'Ack': True, 'Command': 'Step Hue' , 'NwkId 2nd Bytes': True },
-        0x00B3: {'Sequence': (0x8000, ), 'Ack': True, 'Command': 'Move to saturation' , 'NwkId 2nd Bytes': True },
-        0x00B4: {'Sequence': (0x8000, ), 'Ack': True, 'Command': 'Move saturation' , 'NwkId 2nd Bytes': True },
-        0x00B5: {'Sequence': (0x8000, ), 'Ack': True, 'Command': 'Step saturation' , 'NwkId 2nd Bytes': True },
-        0x00B6: {'Sequence': (0x8000, ), 'Ack': True, 'Command': 'Move to hue and saturation' , 'NwkId 2nd Bytes': True },
-        0x00B7: {'Sequence': (0x8000, ), 'Ack': True, 'Command': 'Move to colour' , 'NwkId 2nd Bytes': True },
-        0x00B8: {'Sequence': (0x8000, ), 'Ack': True, 'Command': 'Move colour' , 'NwkId 2nd Bytes': True },
-        0x00B9: {'Sequence': (0x8000, ), 'Ack': True, 'Command': 'Step Colour' , 'NwkId 2nd Bytes': True },
-        0x00BA: {'Sequence': (0x8000, ), 'Ack': True, 'Command': 'Enhaced Move to Hue' , 'NwkId 2nd Bytes': True },
-        0x00BB: {'Sequence': (0x8000, ), 'Ack': True, 'Command': 'Enhanced Move Hue' , 'NwkId 2nd Bytes': True },
-        0x00BC: {'Sequence': (0x8000, ), 'Ack': True, 'Command': 'Enhanced Step Hue' , 'NwkId 2nd Bytes': True },
-        0x00BD: {'Sequence': (0x8000, ), 'Ack': True, 'Command': 'Enhanced Move to hue and saturation' , 'NwkId 2nd Bytes': True },
-        0x00BE: {'Sequence': (0x8000, ), 'Ack': True, 'Command': 'Colour Loop Set' , 'NwkId 2nd Bytes': True },
-        0x00BF: {'Sequence': (0x8000, ), 'Ack': True, 'Command': 'Stop Move Step' , 'NwkId 2nd Bytes': True },
+        0x00B0: {'Sequence': (0x8000, ),       'Ack': True, 'Command': 'Move to Hue' , 'NwkId 2nd Bytes': True },
+        0x00B1: {'Sequence': (0x8000, ),       'Ack': True, 'Command': 'Move Hue' , 'NwkId 2nd Bytes': True },
+        0x00B2: {'Sequence': (0x8000, ),       'Ack': True, 'Command': 'Step Hue' , 'NwkId 2nd Bytes': True },
+        0x00B3: {'Sequence': (0x8000, ),       'Ack': True, 'Command': 'Move to saturation' , 'NwkId 2nd Bytes': True },
+        0x00B4: {'Sequence': (0x8000, ),       'Ack': True, 'Command': 'Move saturation' , 'NwkId 2nd Bytes': True },
+        0x00B5: {'Sequence': (0x8000, ),       'Ack': True, 'Command': 'Step saturation' , 'NwkId 2nd Bytes': True },
+        0x00B6: {'Sequence': (0x8000, ),       'Ack': True, 'Command': 'Move to hue and saturation' , 'NwkId 2nd Bytes': True },
+        0x00B7: {'Sequence': (0x8000, ),       'Ack': True, 'Command': 'Move to colour' , 'NwkId 2nd Bytes': True },
+        0x00B8: {'Sequence': (0x8000, ),       'Ack': True, 'Command': 'Move colour' , 'NwkId 2nd Bytes': True },
+        0x00B9: {'Sequence': (0x8000, ),       'Ack': True, 'Command': 'Step Colour' , 'NwkId 2nd Bytes': True },
+        0x00BA: {'Sequence': (0x8000, ),       'Ack': True, 'Command': 'Enhaced Move to Hue' , 'NwkId 2nd Bytes': True },
+        0x00BB: {'Sequence': (0x8000, ),       'Ack': True, 'Command': 'Enhanced Move Hue' , 'NwkId 2nd Bytes': True },
+        0x00BC: {'Sequence': (0x8000, ),       'Ack': True, 'Command': 'Enhanced Step Hue' , 'NwkId 2nd Bytes': True },
+        0x00BD: {'Sequence': (0x8000, ),       'Ack': True, 'Command': 'Enhanced Move to hue and saturation' , 'NwkId 2nd Bytes': True },
+        0x00BE: {'Sequence': (0x8000, ),       'Ack': True, 'Command': 'Colour Loop Set' , 'NwkId 2nd Bytes': True },
+        0x00BF: {'Sequence': (0x8000, ),       'Ack': True, 'Command': 'Stop Move Step' , 'NwkId 2nd Bytes': True },
 
         # Action Color
-        0x00C0: {'Sequence': (0x8000, ), 'Ack': True ,'Command': 'Move to colour temperature' , 'NwkId 2nd Bytes': True },
-        0x00C1: {'Sequence': (0x8000, ), 'Ack': True ,'Command': 'Move colour temperature' , 'NwkId 2nd Bytes': True },
-        0x00C2: {'Sequence': (0x8000, ), 'Ack': True ,'Command': 'Step colour temperature' , 'NwkId 2nd Bytes': True },
+        0x00C0: {'Sequence': (0x8000, ),       'Ack': True ,'Command': 'Move to colour temperature' , 'NwkId 2nd Bytes': True },
+        0x00C1: {'Sequence': (0x8000, ),       'Ack': True ,'Command': 'Move colour temperature' , 'NwkId 2nd Bytes': True },
+        0x00C2: {'Sequence': (0x8000, ),       'Ack': True ,'Command': 'Step colour temperature' , 'NwkId 2nd Bytes': True },
 
         # Action Touchlink
         0x00D0: {'Sequence': (0x8000,),        'Ack': False,'Command': 'Initiate Touchlink' , 'NwkId 2nd Bytes': True },
         0x00D2: {'Sequence': (0x8000,),        'Ack': False,'Command': 'Touch link factory reset target' , 'NwkId 2nd Bytes': True },
 
         # Identify Trigger Effect
-        0x00E0: {'Sequence': (0x8000, ), 'Ack': False ,'Command': 'Identify Trigger Effect' , 'NwkId 2nd Bytes': True },
+        0x00E0: {'Sequence': (0x8000, ),       'Ack': False ,'Command': 'Identify Trigger Effect' , 'NwkId 2nd Bytes': True },
 
         # Action Lock/Unlock Door
-        0x00F0: {'Sequence': (0x8000, ), 'Ack': True ,'Command': 'Lock Unlock door' , 'NwkId 2nd Bytes': True },
+        0x00F0: {'Sequence': (0x8000, ),       'Ack': True ,'Command': 'Lock Unlock door' , 'NwkId 2nd Bytes': True },
 
         # Windows Covering
-        0x00FA: {'Sequence': (0x8000, ), 'Ack': True ,'Command': 'Windows covering (v3.0f)' , 'NwkId 2nd Bytes': True },
+        0x00FA: {'Sequence': (0x8000, ),        'Ack': True ,'Command': 'Windows covering (v3.0f)' , 'NwkId 2nd Bytes': True },
 
         # Action Attribute
         0x0100: {'Sequence': (0x8000, 0x8100), 'Ack': True ,'Command': 'Read Attribute Request' , 'NwkId 2nd Bytes': True },
         0x0110: {'Sequence': (0x8000, 0x8110), 'Ack': True ,'Command': 'Write Attribute Request' , 'NwkId 2nd Bytes': True },
-        0x0111: {'Sequence': (0x8000, 0x8002), 'Ack': True ,'Command': 'IAS WD mode' , 'NwkId 2nd Bytes': True },
-        0x0112: {'Sequence': (0x8000, 0x8002), 'Ack': True ,'Command': 'IAS WD Squawk' , 'NwkId 2nd Bytes': True },
+        0x0111: {'Sequence': (0x8000, ), 'Ack': True ,'Command': 'IAS WD mode' , 'NwkId 2nd Bytes': True },
+        0x0112: {'Sequence': (0x8000, ), 'Ack': True ,'Command': 'IAS WD Squawk' , 'NwkId 2nd Bytes': True },
         0x0113: {'Sequence': (0x8000, ),       'Ack': True ,'Command': 'E_SL_MSG_WRITE_ATTRIBUTE_REQUEST_NO_RESPONSE' , 'NwkId 2nd Bytes': True },
         0x0120: {'Sequence': (0x8000, 0x8120), 'Ack': True ,'Command': 'Configure Reporting Request' , 'NwkId 2nd Bytes': True },
         0x0122: {'Sequence': (0x8000, 0x8122), 'Ack': True ,'Command': 'E_SL_MSG_READ_REPORT_CONFIG_REQUEST' , 'NwkId 2nd Bytes': True },
         0x0140: {'Sequence': (0x8000, 0x8140), 'Ack': True ,'Command': 'Attribute Discovery request' , 'NwkId 2nd Bytes': False },
         0x0141: {'Sequence': (0x8000, 0x8141), 'Ack': True ,'Command': 'E_SL_MSG_ATTRIBUTE_EXT_DISCOVERY_REQUEST' , 'NwkId 2nd Bytes': False },
+        0x0150: {'Sequence': (0x8000, 0x8150), 'Ack': True ,'Command': 'E_SL_MSG_ATTRIBUTE_EXT_DISCOVERY_REQUEST' , 'NwkId 2nd Bytes': False },
+        0x0160: {'Sequence': (0x8000, 0x8160), 'Ack': True ,'Command': 'E_SL_MSG_COMMAND_RECEIVED_DISCOVERY_REQUEST' , 'NwkId 2nd Bytes': False },
 
         0x0400: {'Sequence': (0x8000, ),       'Ack': True ,'Command': 'E_SL_MSG_SEND_IAS_ZONE_ENROLL_RSP' , 'NwkId 2nd Bytes': False },
 
@@ -430,11 +435,15 @@ ZIGATE_COMMANDS = {
         0x0500: {'Sequence': (0x8000,),        'Ack': False,'Command': 'E_SL_MSG_LOAD_NEW_IMAGE' , 'NwkId 2nd Bytes': False },
         0x0502: {'Sequence': (0x8000,),        'Ack': False,'Command': 'E_SL_MSG_BLOCK_SEND' , 'NwkId 2nd Bytes': False },
         0x0504: {'Sequence': (0x8000,),        'Ack': False,'Command': 'E_SL_MSG_UPGRADE_END_RESPONSE' , 'NwkId 2nd Bytes': False },
-        0x0506: {'Sequence': (0x8000,),        'Ack': False,'Command': 'E_SL_MSG_IMAGE_NOTIFY' , 'NwkId 2nd Bytes': False },
+        0x0505: {'Sequence': (0x8000,),        'Ack': False,'Command': 'E_SL_MSG_IMAGE_NOTIFY' , 'NwkId 2nd Bytes': False },
+        0x0506: {'Sequence': (0x8000,),        'Ack': False,'Command': 'E_SL_MSG_SEND_WAIT_FOR_DATA_PARAMS' , 'NwkId 2nd Bytes': False },
         # Miscaleneous
         
         0x0530: {'Sequence': (0x8000,),        'Ack': True,'Command': 'Raw APS Data Request' , 'NwkId 2nd Bytes': False },
         0x0531: {'Sequence': (0x8000, 0x8530), 'Ack': True , 'Command': 'Complex Descriptor request' , 'NwkId 2nd Bytes': False },
+        0x0600: {'Sequence': (0x8000, 0x8600), 'Ack': True , 'Command': 'E_SL_MSG_NWK_RECOVERY_EXTRACT_REQ' , 'NwkId 2nd Bytes': False },
+        0x0601: {'Sequence': (0x8000, 0x8601), 'Ack': True , 'Command': 'E_SL_MSG_NWK_RECOVERY_RESTORE_REQ' , 'NwkId 2nd Bytes': False },
+
         0x0806: {'Sequence': (0x8000,),        'Ack': False,'Command': 'AHI Control' , 'NwkId 2nd Bytes': False },
 
         # PDM response
