@@ -480,13 +480,13 @@ def set_acknack_for_sending(self, i_sqn):
 
 def ready_to_send_if_needed( self ):
 
-    if self.zmode == 'ZigBee':
+    readyToSend = True
+    if self.zmode.lower() == 'zigbee':
         readyToSend = len(self.zigateSendQueue) != 0 and len(self._waitFor8000Queue) == 0 and len(self._waitForCmdResponseQueue) == 0
         self.loggingSend(  'Debug', "--- send_data_internal - Q(0x8000): %s Q(Ack/Nack): %s sendNow: %s" 
             %(len(self.zigateSendQueue),len(self._waitFor8000Queue), len(self._waitFor8000Queue) ))
 
-
-    elif self.zmode == 'ZigBeeAck':
+    elif self.zmode.lower() == 'zigbeeack':
         readyToSend = len(self.zigateSendQueue) != 0 and len(self._waitFor8000Queue) == 0 and len(self._waitFor8000Queue) == 0
         self.loggingSend(  'Debug', "--- send_data_internal - Q(0x8000): %s Q(Ack/Nack): %s sendNow: %s" 
             %(len(self.zigateSendQueue),len(self._waitFor8000Queue), len(self._waitFor8000Queue) ))
