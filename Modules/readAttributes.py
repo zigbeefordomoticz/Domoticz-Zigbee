@@ -148,9 +148,11 @@ def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
             '0008': [ 0x0000],
             '000a': [ 0x0000],
             '000c': [ 0x0051, 0x0055, 0x006f, 0xff05],
+            '0020': [ 0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006 ],
             '0100': [ 0x0000, 0x0001, 0x0002, 0x0010, 0x0011],
             '0102': [ 0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0007, 0x0008, 0x0009, 0x000A, 0x000B, 0x0010, 0x0011, 0x0014, 0x0017, 0xfffd],
             '0201': [ 0x0000, 0x0008, 0x0010, 0x0012,  0x0014, 0x0015, 0x0016, 0x001B, 0x001C, 0x001F],
+            '0204': [ 0x0000 ],
             '0300': [ 0x0000, 0x0001, 0x0003, 0x0004, 0x0007, 0x0008, 0x4010],
             '0400': [ 0x0000],
             '0402': [ 0x0000],
@@ -162,6 +164,7 @@ def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
             '0702': [ 0x0000, 0x0200, 0x0301, 0x0302, 0x0303, 0x0306, 0x0400],
             '000f': [ 0x0000, 0x0051, 0x0055, 0x006f, 0xfffd], 
             '0b04': [ 0x0505, 0x0508, 0x050b], # https://docs.smartthings.com/en/latest/ref-docs/zigbee-ref.html
+            '0b05': [ 0x0000 ],
             'fc01': [ 0x0000, 0x0001],
             'fc21': [ 0x0001]
             }
@@ -405,6 +408,22 @@ def ReadAttributeRequest_0008(self, key):
             loggingReadAttributes( self, 'Debug', "Request Level Control via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
             ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0008", 0)
 
+def ReadAttributeRequest_0020(self, key):
+    # Cluster 0x0008 
+
+    loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0020 - Key: %s " %key, nwkid=key)
+    ListOfEp = getListOfEpForCluster( self, key, '0020' )
+    for EPout in ListOfEp:
+        listAttributes = []
+        for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0020'):
+            if iterAttr not in listAttributes:
+                listAttributes.append( iterAttr )
+
+        if listAttributes:
+            loggingReadAttributes( self, 'Debug', "Request Polling via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0020", 0)
+
+
 def ReadAttributeRequest_0300(self, key):
     # Cluster 0x0300 - Color Control
 
@@ -519,6 +538,9 @@ def ReadAttributeRequest_0204(self, key):
     ListOfEp = getListOfEpForCluster( self, key, '0204' )
     for EPout in ListOfEp:
         listAttributes = [0x0001]
+        for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0204'):
+            if iterAttr not in listAttributes:
+                listAttributes.append( iterAttr ) 
         if listAttributes:
             loggingReadAttributes( self, 'Debug', "Request 0204 %s/%s 0204 %s " %(key, EPout, listAttributes), nwkid=key)
             ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0204", listAttributes )
@@ -673,6 +695,22 @@ def ReadAttributeRequest_0702(self, key):
             loggingReadAttributes( self, 'Debug', "Request Metering info  via Read Attribute request Manuf Specific %s/%s %s" %(key, EPout, str(listAttributes)), nwkid=key)
             ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0702", listAttrSpecific, manufacturer_spec = '01', manufacturer = self.ListOfDevices[key]['Manufacturer'] )
 
+def ReadAttributeRequest_0b05(self, key):
+    # Cluster Diagnostic
+
+    loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0b05 - Key: %s " %key, nwkid=key)
+
+    ListOfEp = getListOfEpForCluster( self, key, '0b05' )
+    for EPout in ListOfEp:
+        listAttributes = []
+        for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0b05'):
+            if iterAttr not in listAttributes:
+                listAttributes.append( iterAttr )
+        
+        if listAttributes:
+            loggingReadAttributes( self, 'Debug', "Request Diagnostic info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0b05", listAttributes)
+    
 def ReadAttributeRequest_000f(self, key):
 
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_000f - Key: %s " %key, nwkid=key)
@@ -720,6 +758,7 @@ READ_ATTRIBUTES_REQUEST = {
     '0006' : ( ReadAttributeRequest_0006, 'pollingONOFF' ),
     '0008' : ( ReadAttributeRequest_0008, 'pollingLvlControl' ),
     '000C' : ( ReadAttributeRequest_000C, 'polling000C' ),
+    '0020' : ( ReadAttributeRequest_000C, 'polling0020' ),
     '0100' : ( ReadAttributeRequest_0100, 'polling0100' ),
     '0102' : ( ReadAttributeRequest_0102, 'polling0102' ),
     '0201' : ( ReadAttributeRequest_0201, 'polling0201' ),
@@ -733,6 +772,7 @@ READ_ATTRIBUTES_REQUEST = {
     '0500' : ( ReadAttributeRequest_0500, 'polling0500' ),
     '0502' : ( ReadAttributeRequest_0502, 'polling0502' ),
     '0702' : ( ReadAttributeRequest_0702, 'polling0702' ),
+    '0b05' : ( ReadAttributeRequest_0702, 'polling0b05' ),
     #'000f' : ( ReadAttributeRequest_000f, 'polling000f' ),
     'fc21' : ( ReadAttributeRequest_000f, 'pollingfc21' ),
     #'fc01' : ( ReadAttributeRequest_fc01, 'pollingfc01' ),
