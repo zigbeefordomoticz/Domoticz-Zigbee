@@ -693,7 +693,7 @@ def process_frame(self, frame):
                     InternalSqn = _next_cmd_from_wait_cmdresponse_queue( self )
                     if InternalSqn:
                         self.logging_receive(  'Log', " --  -- - > Receive NACK , un-block CmdResponse [%s] %s %s" 
-                            %(InternalSqn, self.ListOfCommands[ i_sqn ]['Cmd'], self.ListOfCommands[ i_sqn ]['Datas']))
+                            %(InternalSqn, self.ListOfCommands[ InternalSqn ]['Cmd'], self.ListOfCommands[ InternalSqn ]['Datas']))
             self.F_out(frame, None)
             ready_to_send_if_needed( self )
             return
