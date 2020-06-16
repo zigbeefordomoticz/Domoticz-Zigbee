@@ -378,40 +378,40 @@ ZIGATE_COMMANDS = {
 
 
         # Action Hue
-        0x00B0: {'Sequence': (0x8000, 0x8002), 'Ack': True, 'Command': 'Move to Hue' , 'NwkId 2nd Bytes': True },
-        0x00B1: {'Sequence': (0x8000, 0x8002), 'Ack': True, 'Command': 'Move Hue' , 'NwkId 2nd Bytes': True },
-        0x00B2: {'Sequence': (0x8000, 0x8002), 'Ack': True, 'Command': 'Step Hue' , 'NwkId 2nd Bytes': True },
-        0x00B3: {'Sequence': (0x8000, 0x8002), 'Ack': True, 'Command': 'Move to saturation' , 'NwkId 2nd Bytes': True },
-        0x00B4: {'Sequence': (0x8000, 0x8002), 'Ack': True, 'Command': 'Move saturation' , 'NwkId 2nd Bytes': True },
-        0x00B5: {'Sequence': (0x8000, 0x8002), 'Ack': True, 'Command': 'Step saturation' , 'NwkId 2nd Bytes': True },
-        0x00B6: {'Sequence': (0x8000, 0x8002), 'Ack': True, 'Command': 'Move to hue and saturation' , 'NwkId 2nd Bytes': True },
-        0x00B7: {'Sequence': (0x8000, 0x8002), 'Ack': True, 'Command': 'Move to colour' , 'NwkId 2nd Bytes': True },
-        0x00B8: {'Sequence': (0x8000, 0x8002), 'Ack': True, 'Command': 'Move colour' , 'NwkId 2nd Bytes': True },
-        0x00B9: {'Sequence': (0x8000, 0x8002), 'Ack': True, 'Command': 'Step Colour' , 'NwkId 2nd Bytes': True },
-        0x00BA: {'Sequence': (0x8000, 0x8002), 'Ack': True, 'Command': 'Enhaced Move to Hue' , 'NwkId 2nd Bytes': True },
-        0x00BB: {'Sequence': (0x8000, 0x8002), 'Ack': True, 'Command': 'Enhanced Move Hue' , 'NwkId 2nd Bytes': True },
-        0x00BC: {'Sequence': (0x8000, 0x8002), 'Ack': True, 'Command': 'Enhanced Step Hue' , 'NwkId 2nd Bytes': True },
-        0x00BD: {'Sequence': (0x8000, 0x8002), 'Ack': True, 'Command': 'Enhanced Move to hue and saturation' , 'NwkId 2nd Bytes': True },
-        0x00BE: {'Sequence': (0x8000, 0x8002), 'Ack': True, 'Command': 'Colour Loop Set' , 'NwkId 2nd Bytes': True },
-        0x00BF: {'Sequence': (0x8000, 0x8002), 'Ack': True, 'Command': 'Stop Move Step' , 'NwkId 2nd Bytes': True },
+        0x00B0: {'Sequence': (0x8000, ), 'Ack': True, 'Command': 'Move to Hue' , 'NwkId 2nd Bytes': True },
+        0x00B1: {'Sequence': (0x8000, ), 'Ack': True, 'Command': 'Move Hue' , 'NwkId 2nd Bytes': True },
+        0x00B2: {'Sequence': (0x8000, ), 'Ack': True, 'Command': 'Step Hue' , 'NwkId 2nd Bytes': True },
+        0x00B3: {'Sequence': (0x8000, ), 'Ack': True, 'Command': 'Move to saturation' , 'NwkId 2nd Bytes': True },
+        0x00B4: {'Sequence': (0x8000, ), 'Ack': True, 'Command': 'Move saturation' , 'NwkId 2nd Bytes': True },
+        0x00B5: {'Sequence': (0x8000, ), 'Ack': True, 'Command': 'Step saturation' , 'NwkId 2nd Bytes': True },
+        0x00B6: {'Sequence': (0x8000, ), 'Ack': True, 'Command': 'Move to hue and saturation' , 'NwkId 2nd Bytes': True },
+        0x00B7: {'Sequence': (0x8000, ), 'Ack': True, 'Command': 'Move to colour' , 'NwkId 2nd Bytes': True },
+        0x00B8: {'Sequence': (0x8000, ), 'Ack': True, 'Command': 'Move colour' , 'NwkId 2nd Bytes': True },
+        0x00B9: {'Sequence': (0x8000, ), 'Ack': True, 'Command': 'Step Colour' , 'NwkId 2nd Bytes': True },
+        0x00BA: {'Sequence': (0x8000, ), 'Ack': True, 'Command': 'Enhaced Move to Hue' , 'NwkId 2nd Bytes': True },
+        0x00BB: {'Sequence': (0x8000, ), 'Ack': True, 'Command': 'Enhanced Move Hue' , 'NwkId 2nd Bytes': True },
+        0x00BC: {'Sequence': (0x8000, ), 'Ack': True, 'Command': 'Enhanced Step Hue' , 'NwkId 2nd Bytes': True },
+        0x00BD: {'Sequence': (0x8000, ), 'Ack': True, 'Command': 'Enhanced Move to hue and saturation' , 'NwkId 2nd Bytes': True },
+        0x00BE: {'Sequence': (0x8000, ), 'Ack': True, 'Command': 'Colour Loop Set' , 'NwkId 2nd Bytes': True },
+        0x00BF: {'Sequence': (0x8000, ), 'Ack': True, 'Command': 'Stop Move Step' , 'NwkId 2nd Bytes': True },
 
         # Action Color
-        0x00C0: {'Sequence': (0x8000, 0x8002), 'Ack': True ,'Command': 'Move to colour temperature' , 'NwkId 2nd Bytes': True },
-        0x00C1: {'Sequence': (0x8000, 0x8002), 'Ack': True ,'Command': 'Move colour temperature' , 'NwkId 2nd Bytes': True },
-        0x00C2: {'Sequence': (0x8000, 0x8002), 'Ack': True ,'Command': 'Step colour temperature' , 'NwkId 2nd Bytes': True },
+        0x00C0: {'Sequence': (0x8000, ), 'Ack': True ,'Command': 'Move to colour temperature' , 'NwkId 2nd Bytes': True },
+        0x00C1: {'Sequence': (0x8000, ), 'Ack': True ,'Command': 'Move colour temperature' , 'NwkId 2nd Bytes': True },
+        0x00C2: {'Sequence': (0x8000, ), 'Ack': True ,'Command': 'Step colour temperature' , 'NwkId 2nd Bytes': True },
 
         # Action Touchlink
         0x00D0: {'Sequence': (0x8000,),        'Ack': False,'Command': 'Initiate Touchlink' , 'NwkId 2nd Bytes': True },
         0x00D2: {'Sequence': (0x8000,),        'Ack': False,'Command': 'Touch link factory reset target' , 'NwkId 2nd Bytes': True },
 
         # Identify Trigger Effect
-        0x00E0: {'Sequence': (0x8000, 0x8002), 'Ack': False ,'Command': 'Identify Trigger Effect' , 'NwkId 2nd Bytes': True },
+        0x00E0: {'Sequence': (0x8000, ), 'Ack': False ,'Command': 'Identify Trigger Effect' , 'NwkId 2nd Bytes': True },
 
         # Action Lock/Unlock Door
-        0x00F0: {'Sequence': (0x8000, 0x8002), 'Ack': True ,'Command': 'Lock Unlock door' , 'NwkId 2nd Bytes': True },
+        0x00F0: {'Sequence': (0x8000, ), 'Ack': True ,'Command': 'Lock Unlock door' , 'NwkId 2nd Bytes': True },
 
         # Windows Covering
-        0x00FA: {'Sequence': (0x8000, 0x8002), 'Ack': True ,'Command': 'Windows covering (v3.0f)' , 'NwkId 2nd Bytes': True },
+        0x00FA: {'Sequence': (0x8000, ), 'Ack': True ,'Command': 'Windows covering (v3.0f)' , 'NwkId 2nd Bytes': True },
 
         # Action Attribute
         0x0100: {'Sequence': (0x8000, 0x8100), 'Ack': True ,'Command': 'Read Attribute Request' , 'NwkId 2nd Bytes': True },
