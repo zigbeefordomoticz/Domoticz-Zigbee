@@ -687,13 +687,7 @@ def process_frame(self, frame):
                 self.statistics._APSAck += 1
             else:
                 # Nack
-                # In that case as we are waiting for ResponseCommand, no need to wait more.
                 self.statistics._APSNck += 1
-                if len(self._waitForCmdResponseQueue) > 0:
-                    InternalSqn = _next_cmd_from_wait_cmdresponse_queue( self )
-                    if InternalSqn and InternalSqn in self.ListOfCommands:
-                        self.logging_receive(  'Log', " --  -- - > Receive NACK , un-block CmdResponse [%s] %s %s" 
-                            %(InternalSqn, self.ListOfCommands[ InternalSqn ]['Cmd'], self.ListOfCommands[ InternalSqn ]['Datas']))
             self.F_out(frame, None)
             ready_to_send_if_needed( self )
             return
