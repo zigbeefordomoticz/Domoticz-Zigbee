@@ -16,29 +16,15 @@ from Modules.sqnMgmt import sqn_init_stack, sqn_generate_new_internal_sqn, sqn_a
 
 
 STANDALONE_MESSAGE = []
-for x in ZIGATE_RESPONSES:
-    STANDALONE_MESSAGE.append( x )
+
+
 
 PDM_COMMANDS = ( '8300', '8200', '8201', '8204', '8205', '8206', '8207', '8208' )
 CMD_PDM_ON_HOST = []
 CMD_ONLY_STATUS = []
 CMD_WITH_ACK = []
 CMD_NWK_2NDBytes = {}
-CMD_DATA = {}
-for x in ZIGATE_COMMANDS:
-    if ZIGATE_COMMANDS[ x ]['NwkId 2nd Bytes']:
-        CMD_NWK_2NDBytes[ x ] = x
-
-    if ZIGATE_COMMANDS[ x ]['Ack']:
-        CMD_WITH_ACK.append( x )
-
-    if len ( ZIGATE_COMMANDS[ x ]['Sequence']) == 1:
-            CMD_ONLY_STATUS.append( x )
-    elif len ( ZIGATE_COMMANDS[ x ]['Sequence']) == 0:
-            CMD_PDM_ON_HOST.append ( x )
-
-    else:
-        CMD_DATA[ x ] = ZIGATE_COMMANDS[ x ]['Sequence'][1]
+CMD_WITH_RESPONSE = {}
 
 class ZigateTransport(object):
     # """
@@ -47,6 +33,7 @@ class ZigateTransport(object):
     # """
 
     def __init__(self, LOD, transport, statistics, pluginconf, F_out, loggingFileHandle, serialPort = None, wifiAddress = None, wifiPort = None):
+
 
         # Statistics
         self.statistics = statistics
@@ -86,11 +73,7 @@ class ZigateTransport(object):
         # Logging
         self.loggingFileHandle = loggingFileHandle
 
-        #self.loggingSend(  'Debug', "STANDALONE_MESSAGE: %s" %STANDALONE_MESSAGE)
-        #self.loggingSend(  'Debug', "CMD_ONLY_STATUS: %s" %CMD_ONLY_STATUS)
-        #self.loggingSend(  'Debug', "ZIGATE_COMMANDS: %s" %ZIGATE_COMMANDS)
-        #self.loggingSend(  'Debug', "CMD_NWK_2NDBytes: %s" %CMD_NWK_2NDBytes)
-        #self.loggingSend(  'Debug', "CMD_WITH_ACK: %s" %CMD_WITH_ACK)
+        initMatrix( self)
 
         if str(transport) == "USB":
             self._transp = "USB"
@@ -221,8 +204,8 @@ class ZigateTransport(object):
         if int(cmd, 16) in CMD_PDM_ON_HOST:
             self.ListOfCommands[ InternalSqn ]['PDMCommand'] = True
 
-        if int(cmd, 16) in CMD_DATA:
-            self.ListOfCommands[ InternalSqn ]['ResponseExpectedCmd'] = CMD_DATA[int(cmd, 16)]
+        if int(cmd, 16) in CMD_WITH_RESPONSE:
+            self.ListOfCommands[ InternalSqn ]['ResponseExpectedCmd'] = CMD_WITH_RESPONSE[int(cmd, 16)]
             self.ListOfCommands[ InternalSqn ]['ResponseExpected'] = True
 
         if int(cmd, 16) in CMD_WITH_ACK:
@@ -314,6 +297,40 @@ class ZigateTransport(object):
         check_timed_out(self)
       
 # Local Functions
+def initMatrix( self ):
+    for x in ZIGATE_RESPONSES:
+        STANDALONE_MESSAGE.append( x )
+        
+    for x in ZIGATE_COMMANDS:
+        self.loggingSend( 'Debug',"Command: %04x Ack: %s Sequence: %s/%s" 
+            %( x, ZIGATE_COMMANDS[ x ]['Ack'], len( ZIGATE_COMMANDS[ x ]['Sequence'] ),ZIGATE_COMMANDS[ x ]['Sequence'] ))
+
+        if ZIGATE_COMMANDS[ x ]['NwkId 2nd Bytes']:
+            self.loggingSend( 'Debug',"--> 2nd Byte for NwkId")
+            CMD_NWK_2NDBytes[ x ] = x
+
+        if ZIGATE_COMMANDS[ x ]['Ack']:
+            self.loggingSend( 'Debug',"--> Ack")
+            CMD_WITH_ACK.append( x )
+
+        if len( ZIGATE_COMMANDS[ x ]['Sequence'] ) == 0:
+            self.loggingSend( 'Debug',"--> PDM")
+            CMD_PDM_ON_HOST.append ( x )
+
+        elif len( ZIGATE_COMMANDS[ x ]['Sequence'] ) == 1:
+            self.loggingSend( 'Debug',"--> Command Only")
+            CMD_ONLY_STATUS.append( x )
+
+        elif len( ZIGATE_COMMANDS[ x ]['Sequence'] ) == 2:
+            self.loggingSend( 'Debug',"--> Response Expected")
+            CMD_WITH_RESPONSE[ x ] = ZIGATE_COMMANDS[ x ]['Sequence'][1]
+
+    #self.loggingSend( 'Debug', "STANDALONE_MESSAGE: %s" %STANDALONE_MESSAGE)
+    #self.loggingSend( 'Debug', "CMD_ONLY_STATUS: %s" %CMD_ONLY_STATUS)
+    #self.loggingSend( 'Debug', "ZIGATE_COMMANDS: %s" %ZIGATE_COMMANDS)
+    #self.loggingSend( 'Debug', "CMD_NWK_2NDBytes: %s" %CMD_NWK_2NDBytes)
+    #self.loggingSend( 'Debug', "CMD_WITH_RESPONSE: %s" %CMD_WITH_RESPONSE)
+    #self.loggingSend( 'Debug', "CMD_WITH_ACK: %s" %CMD_WITH_ACK)
 
 # Queues Managements
 def _add_cmd_to_send_queue(self, InternalSqn ):
@@ -677,8 +694,8 @@ def process_frame(self, frame):
         # Let's check if we are not expecting any CmdResponse. In that case we remove the Entry
         #self.loggingSend( 'Debug', " 0x8000 - sqn_app: 0x%s/%3s, SQN_APS: 0x%s Response Expected: %s" %(sqn_app, int(sqn_app,16), sqn_aps, self.ListOfCommands[ i_sqn ]['ResponseExpected']))
         if i_sqn in self.ListOfCommands and not (
-            ( self.zmode == 'zigbeeack' and self.ListOfCommands[ i_sqn ]['ExpectedAck']) or \
-            ( self.zmode == 'zigbee'    and self.ListOfCommands[ i_sqn ]['ResponseExpected'])):
+            ( self.zmode == 'zigbeeack' and self.ListOfCommands[ i_sqn ]['ExpectedAck'] ) or \
+            ( self.zmode == 'zigbee'    and self.ListOfCommands[ i_sqn ]['ResponseExpected'] ) ):
 
             self.logging_receive( 'Debug', " [%s] -- zmode: %s ExpectedAck: %s ExpectedResponse: %s" 
                 %(i_sqn, self.zmode, self.ListOfCommands[ i_sqn ]['ExpectedAck'], self.ListOfCommands[ i_sqn ]['ResponseExpected'] ))
