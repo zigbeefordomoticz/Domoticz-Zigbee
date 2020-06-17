@@ -53,7 +53,6 @@ class ZigateTransport(object):
         self.zmode = pluginconf.pluginConf['zmode'].lower()
         self.loggingSend( 'Status', "==> Transport Mode: %s" %self.zmode)
 
-        self.firmware_with_zcl_sqn = False
         sqn_init_stack (self)
 
         # Communication/Transport link attributes

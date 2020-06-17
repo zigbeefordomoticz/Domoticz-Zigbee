@@ -179,18 +179,18 @@ def Decode8000_v2(self, Devices, MsgData, MsgRSSI) : # Status
     Status=MsgData[0:2]
     sqn_aps = sqn_app = MsgData[2:4]
     PacketType=MsgData[4:8]
-    SQN_type = None
+    Ack_expected = None
 
     if MsgLen > 8 :
         #loggingInput( self, 'Log',"Decode8000 - More information . New Firmware ???")
         #loggingInput( self, 'Log',"Decode8000 - %s" %MsgData)
-        sqn_aps = MsgData[8:10]
-        SQN_type = MsgData[10:12]
+        Ack_expected = MsgData[8:10]
+        sqn_aps = MsgData[10:12]
 
 
     if self.pluginconf.pluginConf['debugzigateCmd']:
-        loggingInput( self, 'Debug', "Decode8000 - PacketType: %s sqn_aps %s  sqn_app: %s SQN_type: %s Status: [%s] " \
-                %(PacketType, sqn_aps, sqn_app , SQN_type, Status))
+        loggingInput( self, 'Debug', "Decode8000 - PacketType: %s sqn_aps %s  sqn_app: %s Ack_expected: %s Status: [%s] " \
+                %(PacketType, sqn_aps, sqn_app , Ack_expected, Status))
 
     # Handling Status
     if  Status == "00" : 
@@ -240,8 +240,8 @@ def Decode8000_v2(self, Devices, MsgData, MsgRSSI) : # Status
             self.groupmgt.statusGroupRequest( MsgData )
 
     if str(MsgData[0:2]) != "00" :
-        loggingInput( self, 'Debug', "Decode8000 - PacketType: %s sqn_aps %s  sqn_app: %s SQN_type: %s Status: [%s] - %s" \
-                %(PacketType, sqn_aps, sqn_app , SQN_type, Status, Status))
+        loggingInput( self, 'Debug', "Decode8000 - PacketType: %s sqn_aps %s  sqn_app: %s Ack_expected: %s Status: [%s] - %s" \
+                %(PacketType, sqn_aps, sqn_app , Ack_expected, Status, Status))
 
 def Decode8001(self, Decode, MsgData, MsgRSSI) : # Reception log Level
     MsgLen=len(MsgData)
