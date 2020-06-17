@@ -468,7 +468,7 @@ def set_acknack_for_sending(self, i_sqn):
     CMD_NOACK_ZDP = (  0x0030, 0x0031, 0x0040, 0x0041, 0x0042, 0x0043, 0x0044, 0x0045, 0x0046, 0x0047, 0x0049, 0x004A, 0x004B, 0x004E, 0x0530, 0x0531, 0x0532, 0x0533 )
 
     # If ZigBeeAck mode and Ack Expected
-    if not self.firmware_with_zcl_sqn and int(self.ListOfCommands[ i_sqn ]['Cmd'],16) in CMD_NOACK_ZDP:
+    if not self.firmware_with_aps_sqn and int(self.ListOfCommands[ i_sqn ]['Cmd'],16) in CMD_NOACK_ZDP:
             self.loggingSend( 'Debug', "--- ZDP command no Ack/Nack with that firmware")
             self.ListOfCommands[ i_sqn ]['ExpectedAck'] = False
 
