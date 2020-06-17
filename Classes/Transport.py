@@ -675,7 +675,7 @@ def process_frame(self, frame):
                 Domoticz.Error("i_sqn: %s not found in %s" %(i_sqn, str(self.ListOfCommands.keys())))    
 
         # Let's check if we are not expecting any CmdResponse. In that case we remove the Entry
-        self.loggingSend( 'Debug', " 0x8000 - sqn_app: 0x%s/%3s, SQN_APS: 0x%s Response Expected: %s" %(sqn_app, int(sqn_app,16), sqn_aps, self.ListOfCommands[ i_sqn ]['ResponseExpected']))
+        #self.loggingSend( 'Debug', " 0x8000 - sqn_app: 0x%s/%3s, SQN_APS: 0x%s Response Expected: %s" %(sqn_app, int(sqn_app,16), sqn_aps, self.ListOfCommands[ i_sqn ]['ResponseExpected']))
         if not (
             ( self.zmode == 'zigbeeack' and i_sqn in self.ListOfCommands and self.ListOfCommands[ i_sqn ]['ExpectedAck']) or \
             ( self.zmode == 'zigbee'    and i_sqn in self.ListOfCommands and self.ListOfCommands[ i_sqn ]['ResponseExpected'])):
