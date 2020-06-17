@@ -655,6 +655,24 @@ def cleanup_list_of_commands( self, i_sqn):
 
 # Receiving functions
 def process_frame(self, frame):
+
+    def cleanup_8000_queues( self, status , isqn):
+    
+        # Cleanup if required
+        if Status == '00':
+            if self.zmode == 'zigbeeack' and not self.ListOfCommands[ isqn ]['ExpectedAck']:
+                cleanup_list_of_commands( self, isqn)
+            elif self.zmode == 'zigbee' and not self.ListOfCommands[ isqn ]['ResponseExpected']:
+                cleanup_list_of_commands( self, isqn)
+
+        else:
+            # Status != '00
+            if self.zmode == 'zigbeeack' and self.ListOfCommands[ isqn ]['ExpectedAck']:
+                cleanup_list_of_commands( self, isqn)
+
+            elif self.zmode == 'zigbee' and  self.ListOfCommands[ isqn ]['ResponseExpected']:
+                cleanup_list_of_commands( self, isqn)
+
     # will return the Frame in the Data if any
     # process the Data and check if this is a 0x8000 message
     # in case the message contains several frame, receiveData will be recall
@@ -699,16 +717,7 @@ def process_frame(self, frame):
                    self.ListOfCommands[ i_sqn ]['ExpectedAck'], self.ListOfCommands[ i_sqn ]['ResponseExpected']))
             self.ListOfCommands[ i_sqn ]['Status'] = '8000'
 
-            # Cleanup if required
-            if Status == '00':
-                if ( not self.ListOfCommands[ i_sqn ]['ExpectedAck'] and not self.ListOfCommands[ i_sqn ]['ResponseExpected'] ):
-                    self.loggingSend( 'Log',"-- --> CLEANUP Status: %s [%s] Cmd: %s Data: %s" %( Status, i_sqn, self.ListOfCommands[ i_sqn ]['Cmd'], self.ListOfCommands[ i_sqn ]['Datas'] ))
-                    cleanup_list_of_commands( self, i_sqn)
-            else:
-                # Status != '00
-                if ( not self.ListOfCommands[ i_sqn ]['ExpectedAck'] and not self.ListOfCommands[ i_sqn ]['ResponseExpected'] ):
-                    self.loggingSend( 'Log',"-- --> CLEANUP Status: %s [%s] Cmd: %s Data: %s" %( Status, i_sqn, self.ListOfCommands[ i_sqn ]['Cmd'], self.ListOfCommands[ i_sqn ]['Datas'] ))
-                cleanup_list_of_commands( self, i_sqn)
+            cleanup_8000_queues( self, Status, i_sqn)
 
         else:
             if i_sqn is not None:
