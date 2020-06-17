@@ -599,8 +599,8 @@ def check_timed_out(self):
                 cleanup_list_of_commands( self, InternalSqn)
 
     # Check if there is no TimedOut on ListOfCommands
-    if len(self.ListOfCommands) > 0:
-        self.loggingSend( 'Log', "checkTimedOutForTxQueues ListOfCommands size: %s" %len(self.ListOfCommands))
+    if len(self.ListOfCommands) > 2:
+        self.loggingSend( 'Debug', "checkTimedOutForTxQueues ListOfCommands size: %s" %len(self.ListOfCommands))
     for x in list(self.ListOfCommands.keys()):
         if  self.ListOfCommands[ x ]['SentTimeStamp'] and  (now - self.ListOfCommands[ x ]['SentTimeStamp']) > TIME_OUT_LISTCMD:
             if self.ListOfCommands[ x ]['ResponseExpectedCmd']:
