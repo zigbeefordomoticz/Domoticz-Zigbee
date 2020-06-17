@@ -198,7 +198,7 @@ class ZigateTransport(object):
 
         self.ListOfCommands[ InternalSqn ]['PDMCommand'] = False
         self.ListOfCommands[ InternalSqn ]['ResponseExpected'] = False
-        self.ListOfCommands[ InternalSqn ]['ResponseExpectedCmd'] = None
+        self.ListOfCommands[ InternalSqn ]['ResponseExpectedCmd'] = False
         self.ListOfCommands[ InternalSqn ]['ExpectedAck'] = False 
 
         if int(cmd, 16) in CMD_PDM_ON_HOST:
