@@ -15,11 +15,7 @@ from Modules.tools import is_hex
 from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_RESPONSES, ZIGATE_COMMANDS, RETRANSMIT_COMMAND, ADDRESS_MODE
 from Modules.sqnMgmt import sqn_init_stack, sqn_generate_new_internal_sqn, sqn_add_external_sqn, sqn_get_internal_sqn, E_SQN_APS
 
-
 STANDALONE_MESSAGE = []
-
-
-
 PDM_COMMANDS = ( '8300', '8200', '8201', '8204', '8205', '8206', '8207', '8208' )
 CMD_PDM_ON_HOST = []
 CMD_ONLY_STATUS = []
@@ -428,10 +424,6 @@ def send_data_internal(self, InternalSqn):
     if self.pdm_lock_status() and self.ListOfCommands[ InternalSqn ]['Cmd'] not in PDM_COMMANDS:
         # Only PDM related command can go , all others will be dropped.
         Domoticz.Log("PDM not yet ready, FIFO command %s %s" %(self.ListOfCommands[ InternalSqn ]['Cmd'], self.ListOfCommands[ InternalSqn ]['Datas']))
-
-
-
-
         sendNow = False
 
     if sendNow and self.zmode == 'zigbee':
