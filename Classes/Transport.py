@@ -690,23 +690,24 @@ def process_frame(self, frame):
                 self.firmware_with_aps_sqn = True
 
         i_sqn = process_msg_type8000(self, Status, PacketType, sqn_app, sqn_aps, Ack_expected)
-        self.loggingSend( 'Debug', " 0x8000 - sqn_app: 0x%s/%3s, SQN_APS: 0x%s Ack_expected: %s" %(sqn_app, int(sqn_app,16), sqn_aps, Ack_expected))
+        self.loggingSend( 'Log', "0x8000 - sqn_app: 0x%s/%3s, SQN_APS: 0x%s Ack_expected: %s" %(sqn_app, int(sqn_app,16), sqn_aps, Ack_expected))
         self.F_out(frame, None)
 
         if i_sqn in self.ListOfCommands:
-            self.loggingSend( 'Debug',"Check cleanup Status: %s [%s] Cmd: %s Data: %s ExpectedAck: %s ResponseExpected: %s" 
+            self.loggingSend( 'Log',"--> Check cleanup Status: %s [%s] Cmd: %s Data: %s ExpectedAck: %s ResponseExpected: %s" 
                 %( Status, i_sqn, self.ListOfCommands[ i_sqn ]['Cmd'], self.ListOfCommands[ i_sqn ]['Datas'], 
                    self.ListOfCommands[ i_sqn ]['ExpectedAck'], self.ListOfCommands[ i_sqn ]['ResponseExpected']))
-
             self.ListOfCommands[ i_sqn ]['Status'] = '8000'
 
             # Cleanup if required
             if Status == '00':
                 if ( not self.ListOfCommands[ i_sqn ]['ExpectedAck'] and not self.ListOfCommands[ i_sqn ]['ResponseExpected'] ):
-                    self.loggingSend( 'Debug',"--> CLEANUP Status: %s [%s] Cmd: %s Data: %s" %( Status, i_sqn, self.ListOfCommands[ i_sqn ]['Cmd'], self.ListOfCommands[ i_sqn ]['Datas'] ))
+                    self.loggingSend( 'Log',"-- --> CLEANUP Status: %s [%s] Cmd: %s Data: %s" %( Status, i_sqn, self.ListOfCommands[ i_sqn ]['Cmd'], self.ListOfCommands[ i_sqn ]['Datas'] ))
                     cleanup_list_of_commands( self, i_sqn)
             else:
                 # Status != '00
+                if ( not self.ListOfCommands[ i_sqn ]['ExpectedAck'] and not self.ListOfCommands[ i_sqn ]['ResponseExpected'] ):
+                    self.loggingSend( 'Log',"-- --> CLEANUP Status: %s [%s] Cmd: %s Data: %s" %( Status, i_sqn, self.ListOfCommands[ i_sqn ]['Cmd'], self.ListOfCommands[ i_sqn ]['Datas'] ))
                 cleanup_list_of_commands( self, i_sqn)
 
         else:
