@@ -178,10 +178,18 @@ class ZigateTransport(object):
             return None
 
         # Check if the Cmd/Data is not yet in the pipe
+        alreadyInQueue = False
         for x in self.ListOfCommands:
             if self.ListOfCommands[ x ]['Cmd'] ==  cmd and self.ListOfCommands[ x ]['Datas'] == datas:
-                self.loggingSend(  'Log', "Do not queue again an existing command in the Pipe, we drop the command %s %s" %(cmd, datas))
+                self.loggingSend(  'Log', "Cmd: %s Data: %s already in queue." %(cmd, datas))
+                alreadyInQueue = True
                 return None
+
+        if alreadyInQueue:
+            for x in self.ListOfCommands:
+                Domoticz.Log("Sending Queue: [%s] Cmd: %s Datas: %s Time: %s"
+                    %( x, self.ListOfCommands[ InternalSqn ]['Cmd'], self.ListOfCommands[ InternalSqn ]['Datas'],
+                    self.ListOfCommands[ InternalSqn ]['ReceiveTimeStamp'].strftime("%m/%d/%Y, %H:%M:%S") ))
 
         InternalSqn = sqn_generate_new_internal_sqn(self)
         if InternalSqn in self.ListOfCommands:
@@ -420,10 +428,10 @@ def send_data_internal(self, InternalSqn):
     if self.pdm_lock_status() and self.ListOfCommands[ InternalSqn ]['Cmd'] not in PDM_COMMANDS:
         # Only PDM related command can go , all others will be dropped.
         Domoticz.Log("PDM not yet ready, FIFO command %s %s" %(self.ListOfCommands[ InternalSqn ]['Cmd'], self.ListOfCommands[ InternalSqn ]['Datas']))
-        for x in self.ListOfCommands:
-            Domoticz.Log("Sending Queue: [%s] Cmd: %s Datas: %s Time: %s"
-                %( x, self.ListOfCommands[ InternalSqn ]['Cmd'], self.ListOfCommands[ InternalSqn ]['Datas'],
-                self.ListOfCommands[ InternalSqn ]['ReceiveTimeStamp'].strftime("%m/%d/%Y, %H:%M:%S") ))
+
+
+
+
         sendNow = False
 
     if sendNow and self.zmode == 'zigbee':
