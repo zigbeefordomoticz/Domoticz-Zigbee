@@ -973,10 +973,11 @@ def process_other_type_of_message(self, MsgType):
         self.logging_receive(  'Debug', " --  -- - > - WaitForDataQueue empty")
         return
 
-    FirstTupleWaitForData = self._waitForCmdResponseQueue[0]
-    InternalSqn = FirstTupleWaitForData[0]
+    InternalSqn, TimeStamp = self._waitForCmdResponseQueue[0]
+    
     if InternalSqn not in self.ListOfCommands:
-        Domoticz.Error("process_other_type_of_message - MsgType: %s, InternalSqn: %s not found in ListOfCommands" %( MsgType, InternalSqn))
+        Domoticz.Error("process_other_type_of_message - MsgType: %s, InternalSqn: %s not found in ListOfCommands: %s" 
+            %( MsgType, InternalSqn, str(self.ListOfCommands.keys())))
         ready_to_send_if_needed( self )
         return None
 
