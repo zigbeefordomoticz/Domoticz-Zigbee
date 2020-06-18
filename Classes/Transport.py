@@ -997,12 +997,11 @@ def process_other_type_of_message(self, MsgType, MsgSqn = None):
         # With 3.1c firmware 0x0100 responses are coming on 0x8102
         self.logging_receive(  'Debug', " --  -- - > - expecting 0x8100 and received: %s" %MsgType)
         if MsgSqn is None:
-            Domoticz.Error("process_other_type_of_message - MsgType: %s cannot get i_sqn due to unknown External SQN"
-                %(MsgType))
+            Domoticz.Error("process_other_type_of_message - MsgType: %s cannot get i_sqn due to unknown External SQN" %(MsgType))
             return None
 
         if InternalSqn != sqn_get_internal_sqn(self, MsgSqn, E_SQN_APP):
-            Domoticz.Log("process_other_type_of_message - Async message : %s IntSqn: %s ExtSQN: %s")
+            # Async message no worry
             return None
  
         ready_to_send_if_needed( self )
