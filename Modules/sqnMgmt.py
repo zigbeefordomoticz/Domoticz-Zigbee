@@ -71,8 +71,9 @@ def sqn_get_tuple (self, e_sqn, sqn_type = E_SQN_APP):
 
 def sqn_get_internal_sqn (self, e_sqn, sqn_type = E_SQN_APP):
     sqn_tuple = sqn_get_tuple (self, e_sqn, sqn_type)
-    if sqn_tuple:
-        self.loggingSend(  'Debug',"sqnMgmt sqn_get_internal found i_sqn %s" %(sqn_tuple[I_SQN]))
+    if sqn_tuple is None:
+        return None
+    self.loggingSend(  'Debug',"sqnMgmt sqn_get_internal found i_sqn %s" %(sqn_tuple[I_SQN]))
     return sqn_tuple[I_SQN]
 
 def sqn_cleanup (self, timeout = TIMEOUT):
