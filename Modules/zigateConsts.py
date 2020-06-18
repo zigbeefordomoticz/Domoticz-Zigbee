@@ -419,8 +419,8 @@ ZIGATE_COMMANDS = {
         # Action Attribute
         0x0100:{'Sequence': (0x8000, 0x8100), 'Ack': True ,'Command': 'Read Attribute Request' , 'NwkId 2nd Bytes': True },
         0x0110:{'Sequence': (0x8000, 0x8110), 'Ack': True ,'Command': 'Write Attribute Request' , 'NwkId 2nd Bytes': True },
-        0x0111:{'Sequence': (0x8000, ), 'Ack': True ,'Command': 'IAS WD mode' , 'NwkId 2nd Bytes': True },
-        0x0112:{'Sequence': (0x8000, ), 'Ack': True ,'Command': 'IAS WD Squawk' , 'NwkId 2nd Bytes': True },
+        0x0111:{'Sequence': (0x8000, ),       'Ack': True ,'Command': 'IAS WD mode' , 'NwkId 2nd Bytes': True },
+        0x0112:{'Sequence': (0x8000, ),       'Ack': True ,'Command': 'IAS WD Squawk' , 'NwkId 2nd Bytes': True },
         0x0113:{'Sequence': (0x8000, ),       'Ack': True ,'Command': 'E_SL_MSG_WRITE_ATTRIBUTE_REQUEST_NO_RESPONSE' , 'NwkId 2nd Bytes': True },
         0x0120:{'Sequence': (0x8000, 0x8120), 'Ack': True ,'Command': 'Configure Reporting Request' , 'NwkId 2nd Bytes': True },
         0x0122:{'Sequence': (0x8000, 0x8122), 'Ack': True ,'Command': 'E_SL_MSG_READ_REPORT_CONFIG_REQUEST' , 'NwkId 2nd Bytes': True },
