@@ -202,19 +202,19 @@ class ZigateTransport(object):
         self.ListOfCommands[ InternalSqn ]['SentTimeStamp']       = None
         self.ListOfCommands[ InternalSqn ]['PDMCommand']          = False
         self.ListOfCommands[ InternalSqn ]['ResponseExpected']    = False
-        self.ListOfCommands[ InternalSqn ]['ResponseExpectedCmd'] = False
+        self.ListOfCommands[ InternalSqn ]['MessageResponse']     = None
         self.ListOfCommands[ InternalSqn ]['ExpectedAck']         = False 
 
         if int(cmd, 16) in CMD_PDM_ON_HOST:
             self.ListOfCommands[ InternalSqn ]['PDMCommand']      = True
         if int(cmd, 16) in CMD_WITH_RESPONSE:
-            self.ListOfCommands[ InternalSqn ]['ResponseExpectedCmd'] = CMD_WITH_RESPONSE[int(cmd, 16)]
+            self.ListOfCommands[ InternalSqn ]['MessageResponse'] = CMD_WITH_RESPONSE[int(cmd, 16)]
             self.ListOfCommands[ InternalSqn ]['ResponseExpected'] = True
         if int(cmd, 16) in CMD_WITH_ACK:
             self.ListOfCommands[ InternalSqn ]['ExpectedAck']      = True 
         if self.ListOfCommands[ InternalSqn ]['ResponseExpected']:
             self.loggingSend(  'Debug', "sendData - InternalSQN: %s Cmd: %s Data: %s ExpectedCmd: %04x"
-                %(InternalSqn, cmd, datas, self.ListOfCommands[ InternalSqn ]['ResponseExpectedCmd'] ))
+                %(InternalSqn, cmd, datas, self.ListOfCommands[ InternalSqn ]['MessageResponse'] ))
         else:
             self.loggingSend(  'Debug', "sendData - InternalSQN: %s Cmd: %s Data: %s"
                 %(InternalSqn, cmd, datas ))
@@ -584,10 +584,10 @@ def check_timed_out(self):
         self.loggingSend( 'Debug', "checkTimedOutForTxQueues ListOfCommands size: %s" %len(self.ListOfCommands))
         for x in list(self.ListOfCommands.keys()):
             if  self.ListOfCommands[ x ]['SentTimeStamp'] and  (now - self.ListOfCommands[ x ]['SentTimeStamp']) > TIME_OUT_LISTCMD:
-                if self.ListOfCommands[ x ]['ResponseExpectedCmd']:
+                if self.ListOfCommands[ x ]['MessageResponse']:
                     self.loggingSend( 'Error', " --  --  --  > - Time Out : [%s] %s %s Flags: %s/%s %04x Status: %s Time: %s"
                         %(x, self.ListOfCommands[ x ]['Cmd'], self.ListOfCommands[ x ]['Datas'], self.ListOfCommands[ x ]['ResponseExpected'], 
-                            self.ListOfCommands[ x ]['ExpectedAck'], self.ListOfCommands[ x ]['ResponseExpectedCmd'],
+                            self.ListOfCommands[ x ]['ExpectedAck'], self.ListOfCommands[ x ]['MessageResponse'],
                             self.ListOfCommands[ x ]['Status'] ,
                             self.ListOfCommands[ x ]['ReceiveTimeStamp'].strftime("%m/%d/%Y, %H:%M:%S")) )
                 else:
@@ -603,15 +603,14 @@ def check_timed_out(self):
         if i_sqn not in self.ListOfCommands:
             self.loggingSend( 'Log', " --  --  --  > - %s - Time Out %s  " % ( desc, i_sqn ))
             return
-
-        if self.ListOfCommands[ i_sqn ]['ResponseExpectedCmd']:
+        if self.ListOfCommands[ i_sqn ]['MessageResponse']:
             self.loggingSend( 'Log', " --  --  --  > - Time Out %s [%s] %s sec for  %s %s %04x Time: %s" \
                 % (desc, i_sqn, (now - TimeStamp), self.ListOfCommands[ i_sqn ]['Cmd'], self.ListOfCommands[ i_sqn ]['Datas'], 
-                self.ListOfCommands[ i_sqn ]['ResponseExpectedCmd'], self.ListOfCommands[ InternalSqn ]['ReceiveTimeStamp'].strftime("%m/%d/%Y, %H:%M:%S")  ))
+                self.ListOfCommands[ i_sqn ]['MessageResponse'], self.ListOfCommands[ InternalSqn ]['ReceiveTimeStamp'].strftime("%m/%d/%Y, %H:%M:%S")  ))
         else:
             self.loggingSend( 'Log', " --  --  --  > - Time Out %s [%s] %s sec for  %s %s %s Time: %s" \
                 % (desc, i_sqn, (now - TimeStamp), self.ListOfCommands[ i_sqn ]['Cmd'], self.ListOfCommands[ i_sqn ]['Datas'], 
-                self.ListOfCommands[ i_sqn ]['ResponseExpectedCmd'], self.ListOfCommands[ InternalSqn ]['ReceiveTimeStamp'].strftime("%m/%d/%Y, %H:%M:%S") ))
+                self.ListOfCommands[ i_sqn ]['MessageResponse'], self.ListOfCommands[ InternalSqn ]['ReceiveTimeStamp'].strftime("%m/%d/%Y, %H:%M:%S") ))
 
     # Begin
     TIME_OUT_8000 = self.pluginconf.pluginConf['TimeOut8000']
@@ -824,7 +823,7 @@ def process_msg_type8000(self, Status, PacketType, sqn_app, sqn_aps, Ack_expecte
                 InternalSqn, TimeStamp = _next_cmd_from_wait_cmdresponse_queue( self )
                 self.loggingSend( 'Debug', " --  --  -- - > - unlock waitForData due to command %s failed, remove %s" %(PacketType, InternalSqn))
                 if InternalSqn in self.ListOfCommands:
-                    if self.ListOfCommands[ InternalSqn ]['ResponseExpectedCmd']:
+                    if self.ListOfCommands[ InternalSqn ]['MessageResponse']:
                         self.logging_receive( 'Debug', " - -- Unqueue CmdResponse : [%s] %s %s " 
                         %(InternalSqn, self.ListOfCommands[ InternalSqn ]['Cmd'], self.ListOfCommands[ InternalSqn ]['Datas']))
 
@@ -834,7 +833,7 @@ def process_msg_type8000(self, Status, PacketType, sqn_app, sqn_aps, Ack_expecte
                 InternalSqn, TimeStamp = _next_cmd_to_wait_for_ack_nack_queue( self )
                 self.loggingSend( 'Debug', " --  --  -- - > - unlock waitForAckNack due to command %s failed, remove %s" %(PacketType, InternalSqn))
                 if InternalSqn in self.ListOfCommands:
-                    if self.ListOfCommands[ InternalSqn ]['ResponseExpectedCmd']:
+                    if self.ListOfCommands[ InternalSqn ]['MessageResponse']:
                         self.logging_receive( 'Debug', " - -- Unqueue CmdResponse : [%s] %s %s " 
                         %(InternalSqn, self.ListOfCommands[ InternalSqn ]['Cmd'], self.ListOfCommands[ InternalSqn ]['Datas']))
 
@@ -976,7 +975,7 @@ def process_other_type_of_message(self, MsgType):
         ready_to_send_if_needed( self )
         return None
 
-    expResponse = self.ListOfCommands[ InternalSqn ]['ResponseExpectedCmd']
+    expResponse = self.ListOfCommands[ InternalSqn ]['ResponseExpected']
     if expResponse == 0x8100:
         # In case the expResponse is 0x8100 then we can accept 0x8102
         self.loggingSend( 'Debug', " --  -- - > Internal SQN: %s Received: %s and expecting %s" %(InternalSqn, MsgType, '(0x8100, 0x8102)'  ))
