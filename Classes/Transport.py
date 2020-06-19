@@ -180,7 +180,7 @@ class ZigateTransport(object):
                 break
         if alreadyInQueue:
             for x in self.ListOfCommands:
-                Domoticz.Log("Sending Queue: [%s] Cmd: %s Datas: %s Time: %s"
+                self.loggingSend( 'Debug', "-- > Sending Queue: [%s] Cmd: %s Datas: %s Time: %s"
                     %( x, self.ListOfCommands[ x ]['Cmd'], self.ListOfCommands[ x ]['Datas'],
                     self.ListOfCommands[ x ]['ReceiveTimeStamp'].strftime("%m/%d/%Y, %H:%M:%S") ))
             return None
