@@ -21,7 +21,7 @@ from Modules.actuators import actuators
 
 from Modules.basicOutputs import  sendZigateCmd,identifyEffect, getListofAttribute
 
-from Modules.readAttributes import READ_ATTRIBUTES_REQUEST, ReadAttributeRequest_0000_basic, \
+from Modules.readAttributes import READ_ATTRIBUTES_REQUEST, ping_device_with_read_attribute, \
         ReadAttributeRequest_0000, ReadAttributeRequest_0001, ReadAttributeRequest_0006, ReadAttributeRequest_0008, ReadAttributeRequest_0006_0000, ReadAttributeRequest_0008_0000,\
         ReadAttributeRequest_0100, \
         ReadAttributeRequest_000C, ReadAttributeRequest_0102, ReadAttributeRequest_0102_0008, ReadAttributeRequest_0201, ReadAttributeRequest_0204, ReadAttributeRequest_0300,  \
@@ -232,7 +232,7 @@ def processKnownDevices( self, Devices, NWKID ):
     def submitPing( self, NwkId):
         # Pinging devices to check they are still Alive
         loggingHeartbeat( self, 'Debug', "------------> call readAttributeRequest %s" %NwkId, NwkId)
-        ReadAttributeRequest_0000_basic( self, NwkId)
+        ping_device_with_read_attribute( self, NwkId)
 
     def pingDevices( self, NwkId, health, checkHealthFlag, mainPowerFlag):
 
