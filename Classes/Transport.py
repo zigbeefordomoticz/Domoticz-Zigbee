@@ -461,8 +461,11 @@ def send_data_internal(self, InternalSqn):
             self.ListOfCommands[InternalSqn]['MessageResponse'] = None
 
         if self.zmode in ( 'zigbee31c', 'zigbee31d') and self.ListOfCommands[ InternalSqn ]['ResponseExpected']:
-            self.loggingSend( 'Debug', "--- Add to Queue CommandResponse Queue")
-            _add_cmd_to_wait_for_cmdresponse_queue( self, InternalSqn )
+            if not self.pluginconf.pluginConf['CompatibilityMode'] or self.ListOfCommands[ InternalSqn ]['Cmd'] != '0100':
+                self.loggingSend( 'Debug', "--- Add to Queue CommandResponse Queue")
+                _add_cmd_to_wait_for_cmdresponse_queue( self, InternalSqn )
+            else:
+                self.loggingSend( 'Debug', "--- Compatibility mode enabled, do not block %s" %self.ListOfCommands[ InternalSqn ]['Cmd'])
 
         elif self.zmode == 'zigbeeack' and self.ListOfCommands[ InternalSqn ]['ExpectedAck']:
             set_acknack_for_sending( self, InternalSqn)
@@ -811,6 +814,8 @@ def process_frame(self, frame):
         # If ZigBee Command blocked until response received
         if not self.firmware_with_aps_sqn and MsgType== '8102':
             MsgZclSqn =  MsgData[0:2]
+            self.loggingSend( 'Debug', "--> Receive MsgType: %s with ExtSqn: %s" %(MsgType, MsgZclSqn))
+
             i_sqn = process_other_type_of_message( self, MsgType, MsgZclSqn)
         else:
             i_sqn = process_other_type_of_message( self, MsgType)
@@ -875,7 +880,9 @@ def process_msg_type8000(self, Status, PacketType, sqn_app, sqn_aps, Ack_expecte
                     % (self.ListOfCommands[ InternalSqn ]['Cmd'], PacketType))
             return None
     
-    sqn_add_external_sqn (self, InternalSqn, sqn_app, sqn_aps)
+    if (not self.firmware_with_aps_sqn and self.ListOfCommands[ InternalSqn ]['ExpectedAck']) or (self.firmware_with_aps_sqn and Ack_expected ):
+        sqn_add_external_sqn (self, InternalSqn, sqn_app, sqn_aps)
+
     return InternalSqn
 
 def process_msg_type8011_above31d( self, Status, NwkId, Ep, MsgClusterId, ExternSqn ):
@@ -992,15 +999,17 @@ def process_other_type_of_message(self, MsgType, MsgSqn = None):
         return None
 
     expResponse = self.ListOfCommands[ InternalSqn ]['MessageResponse']
-    self.loggingSend( 'Debug', " --  -- - > Expecting: %s Receiving: %s" %(expResponse,MsgType ))
+    self.loggingSend( 'Debug', " --  -- - > Expecting: %04x Receiving: %s" %(expResponse,MsgType ))
     if expResponse == 0x8100:
         # With 3.1c firmware 0x0100 responses are coming on 0x8102
-        self.logging_receive(  'Debug', " --  -- - > - expecting 0x8100 and received: %s" %MsgType)
+        self.logging_receive(  'Debug', " --  -- - > - expecting 0x8100 and received: %s with ExtSqn: %s" %(MsgType, MsgSqn))
         if MsgSqn is None:
             Domoticz.Error("process_other_type_of_message - MsgType: %s cannot get i_sqn due to unknown External SQN" %(MsgType))
             return None
 
-        if InternalSqn != sqn_get_internal_sqn(self, MsgSqn, E_SQN_APP):
+        isqn = sqn_get_internal_sqn(self, MsgSqn, E_SQN_APP)
+        self.loggingSend( 'Debug', " --  -- - > Expected IntSqn: %s Received ISqn: %s ESqn: %s" %(InternalSqn, isqn, MsgSqn))
+        if InternalSqn != isqn:
             # Async message no worry
             return None
  
