@@ -163,8 +163,10 @@ class ZigateTransport(object):
     def pdm_lock_status( self ):
         return self.PDMCommandOnly
 
-    def sendData(self, cmd, datas , delay = None):
-        self.loggingSend(  'Debug', "sendData - %s %s FIFO: %s" %(cmd, datas, len(self.zigateSendQueue)))
+    def sendData(self, cmd, datas , ackIsDisabled = False):
+
+        # If ackIsDisabled is True, it means that usally a Ack is expected ( ZIGATE_COMMANDS), but here it has been disabled via Address Mode
+        self.loggingSend(  'Debug', "sendData - %s %s ackDisabled: %s FIFO: %s" %(cmd, datas, ackIsDisabled, len(self.zigateSendQueue)))
         if datas is None:
             datas = ''
         if datas != '' and not is_hex( datas):
@@ -206,11 +208,14 @@ class ZigateTransport(object):
 
         if int(cmd, 16) in CMD_PDM_ON_HOST:
             self.ListOfCommands[ InternalSqn ]['PDMCommand']      = True
-        if int(cmd, 16) in CMD_WITH_RESPONSE:
+
+        if int(cmd, 16) in CMD_WITH_RESPONSE and not ackIsDisabled:
             self.ListOfCommands[ InternalSqn ]['MessageResponse'] = CMD_WITH_RESPONSE[int(cmd, 16)]
             self.ListOfCommands[ InternalSqn ]['ResponseExpected'] = True
-        if int(cmd, 16) in CMD_WITH_ACK:
+
+        if int(cmd, 16) in CMD_WITH_ACK and not ackIsDisabled:
             self.ListOfCommands[ InternalSqn ]['ExpectedAck']      = True 
+            
         if self.ListOfCommands[ InternalSqn ]['ResponseExpected']:
             self.loggingSend(  'Debug', "sendData - InternalSQN: %s Cmd: %s Data: %s ExpectedCmd: %04x"
                 %(InternalSqn, cmd, datas, self.ListOfCommands[ InternalSqn ]['MessageResponse'] ))
@@ -451,27 +456,52 @@ def send_data_internal(self, InternalSqn):
         # Add to 0x8000 queue
         _add_cmd_to_wait_for8000_queue( self, InternalSqn )
 
-        # if  self.zmode == 'zigbee31c' and self.ListOfCommands[ InternalSqn ]['Cmd'] == '0100':
-        #     # Do not wait on 0x0100 for 0x8100 as it will come as 0x8102 (which is also Report Attributes)
-        #     self.ListOfCommands[InternalSqn]['ResponseExpected'] = False
-        #     self.ListOfCommands[InternalSqn]['MessageResponse'] = None
-
         if self.ListOfCommands[InternalSqn]['Cmd'] == '0049' and self.ListOfCommands[InternalSqn]['Datas'] == 'FFFC0000' :
             self.ListOfCommands[InternalSqn]['ResponseExpected'] = False
             self.ListOfCommands[InternalSqn]['MessageResponse'] = None
 
         if self.zmode in ( 'zigbee31c', 'zigbee31d') and self.ListOfCommands[ InternalSqn ]['ResponseExpected']:
-            if not self.pluginconf.pluginConf['CompatibilityMode'] or self.ListOfCommands[ InternalSqn ]['Cmd'] != '0100':
-                self.loggingSend( 'Debug', "--- Add to Queue CommandResponse Queue")
-                _add_cmd_to_wait_for_cmdresponse_queue( self, InternalSqn )
-            else:
-                self.loggingSend( 'Debug', "--- Compatibility mode enabled, do not block %s" %self.ListOfCommands[ InternalSqn ]['Cmd'])
+            set_cmdresponse_for_sending( self, InternalSqn)
 
         elif self.zmode == 'zigbeeack' and self.ListOfCommands[ InternalSqn ]['ExpectedAck']:
             set_acknack_for_sending( self, InternalSqn)
 
     # Go!
     _send_data( self, InternalSqn )
+
+def set_cmdresponse_for_sending( self, i_sqn):
+
+    if int(self.ListOfCommands[ i_sqn ]['Cmd'],16) not in CMD_NWK_2NDBytes:
+            if self.ListOfCommands[ i_sqn ]['Cmd'] == '004E' and self.ListOfCommands[ i_sqn ]['Datas'][0:4] == '0000':
+                # Do not wait for LQI request to ZiGate
+                self.loggingSend( 'Debug', "--- LQI request to ZiGate Do not wait for Ack/Nack")
+                self.ListOfCommands[i_sqn]['ResponseExpected'] = False
+                self.ListOfCommands[i_sqn]['MessageResponse'] = None
+
+            else:
+                self.loggingSend( 'Debug', "--- Add to Queue CommandResponse Queue")
+                _add_cmd_to_wait_for_cmdresponse_queue( self, i_sqn )         
+    else:
+        if self.ListOfCommands[ i_sqn ]['Datas'][0:2] == '%02x' %ADDRESS_MODE['group'] and self.ListOfCommands[ i_sqn ]['Datas'][2:6] == '0000':
+            # Do not wait for Response to Groups commands sent to Zigate
+            self.loggingSend( 'Debug', "--- Group command to ZiGate Do not wait for Ack/Nack")
+            self.ListOfCommands[ i_sqn ]['ExpectedAck'] = False
+
+        elif self.ListOfCommands[ i_sqn ]['Datas'][2:6] == '0000':
+            # Do not wait for Response to commands sent to Zigate
+            self.loggingSend( 'Debug', "--- Cmmand to ZiGate Do not wait for Ack/Nack")
+            self.ListOfCommands[ i_sqn ]['ExpectedAck'] = False
+
+        elif self.pluginconf.pluginConf['CompatibilityMode'] and self.ListOfCommands[ i_sqn ]['Cmd'] != '0100':
+            # If Compatibility mode, do not wait for Response on command 0x0100
+            self.ListOfCommands[i_sqn]['ResponseExpected'] = False
+            self.ListOfCommands[i_sqn]['MessageResponse'] = None
+            self.loggingSend( 'Debug', "--- Compatibility mode enabled, do not block %s" %self.ListOfCommands[ i_sqn ]['Cmd'])
+
+        else:
+            self.loggingSend( 'Debug', "--- Add to Queue CommandResponse Queue")
+            _add_cmd_to_wait_for_cmdresponse_queue( self, i_sqn )
+
 
 def set_acknack_for_sending(self, i_sqn):
 

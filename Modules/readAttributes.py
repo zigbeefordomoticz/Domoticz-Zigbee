@@ -21,7 +21,7 @@ from Modules.logging import loggingReadAttributes
 from Modules.tools import getListOfEpForCluster
 
 
-def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes , manufacturer_spec = '00', manufacturer = '0000'):
+def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes , manufacturer_spec = '00', manufacturer = '0000', ackToBeDisabled = False):
 
     def split_list(alist, wanted_parts=1):
         """
@@ -37,9 +37,9 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes , manu
         nbpart = - (  - len(ListOfAttributes) // MAX_READATTRIBUTES_REQ) 
         for shortlist in split_list(ListOfAttributes, wanted_parts=nbpart):
             loggingReadAttributes( self, 'Debug2', "----------> ------- Shorter: " + ", ".join("0x{:04x}".format(num) for num in shortlist), nwkid=addr)
-            normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , shortlist )
+            normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , shortlist , ackToBeDisabled)
 
-def normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes , manufacturer_spec = '00', manufacturer = '0000'):
+def normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes , manufacturer_spec = '00', manufacturer = '0000', ackToBeDisabled = False):
 
     def skipThisAttribute( self, addr, EpOut, Cluster, Attr):
         skipReadAttr = False
@@ -133,8 +133,17 @@ def normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttribu
 
     loggingReadAttributes( self, 'Debug', "-- normalizedReadAttrReq ---- addr =" +str(addr) +" Cluster = " +str(Cluster) +" Attributes = " + ", ".join("0x{:04x}".format(num) for num in ListOfAttributes), nwkid=addr )
     self.ListOfDevices[addr]['ReadAttributes']['TimeStamps'][EpOut+'-'+str(Cluster)] = int(time())
-    datas = "02" + addr + EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + "%02x" %(lenAttr) + Attr
-    sendZigateCmd(self, "0100", datas )
+
+    send_read_attribute_request( self, '02', addr ,EpIn , EpOut ,Cluster ,direction , manufacturer_spec , manufacturer , lenAttr, Attr, ackToBeDisabled )
+
+def send_read_attribute_request( self, addrmode, addr ,EpIn , EpOut ,Cluster ,direction , manufacturer_spec , manufacturer , lenAttr, Attr, ackToBeDisabled = False):
+
+    if addrmode == '02' and (ackToBeDisabled or self.pluginconf.pluginConf['DisableAckOnReadAttributes']):
+        addrmode = '07'
+        ackToBeDisabled = True
+
+    datas +=  addrmode + addr + EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + "%02x" %(lenAttr) + Attr
+    sendZigateCmd(self, "0100", datas , ackToBeDisabled )
 
 def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
 
