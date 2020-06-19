@@ -18,7 +18,7 @@ import json
 from datetime import datetime
 from time import time
 
-from Modules.zigateConsts import ZIGATE_EP, ADDRESS_MODE, ZLL_DEVICES
+from Modules.zigateConsts import ZIGATE_EP, ADDRESS_MODE, ZLL_DEVICES, ZIGATE_COMMANDS
 from Modules.tools import mainPoweredDevice
 from Modules.logging import loggingBasicOutput
 
@@ -31,9 +31,8 @@ def send_zigatecmd_zcl_ack( self, address, cmd, datas ):
         address_mode = '%02x' %ADDRESS_MODE['short']
     else:
         address_mode = '%02x' %ADDRESS_MODE['ieee']
-
-    datas = address_mode + address + datas
-    return send_zigatecmd_raw( self, cmd, datas, ackIsDisabled = False )
+     
+    return send_zigatecmd_raw( self, cmd, address_mode + address + datas, ackIsDisabled = False )
 
 def send_zigatecmd_zcl_noack( self, address, cmd, datas):
     #
@@ -45,8 +44,7 @@ def send_zigatecmd_zcl_noack( self, address, cmd, datas):
     else:
         address_mode = '%02x' %ADDRESS_MODE['ieeenoack']
 
-    datas = address_mode + address + datas
-    return send_zigatecmd_raw( self, cmd, datas, ackIsDisabled = True )
+    return send_zigatecmd_raw( self, cmd, address_mode + address + datas, ackIsDisabled = True )
 
 
 def send_zigatecmd_raw( self, cmd, datas, ackIsDisabled = False ):
@@ -75,6 +73,29 @@ def sendZigateCmd(self, cmd, datas , ackIsDisabled = False):
     ackIsDisabled : If True, it means that usally a Ack is expected ( ZIGATE_COMMANDS), but here it has been disabled via Address Mode
 
     """
+    if int(cmd,16) not in ZIGATE_COMMANDS:
+        Domoticz.Error("Unexpected command: %s %s" %(cmd, datas))
+        return None
+    
+    if ZIGATE_COMMANDS[ int(cmd,16)]['Layer'] == 'ZCL':
+        loggingBasicOutput( self, 'Debug', "sendZigateCmd - ZCL layer %s %s" %(cmd, datas))
+
+        AddrMod = datas[0:2]
+        NwkId = datas[2:6]
+        if NwkId not in self.ListOfDevices:
+            Domoticz.Error("sendZigateCmd - Decoding error %s %s" %(cmd, datas))
+            return None
+        if AddrMod == '01':
+            # Group With Ack
+            return send_zigatecmd_raw( self, cmd, datas ) 
+
+        if AddrMod == '02':
+            # Short with Ack
+            return send_zigatecmd_zcl_ack( self,NwkId, cmd, datas[6:] )   
+
+        if AddrMod == '07':
+            # Short No Ack
+            return send_zigatecmd_zcl_noack( self,NwkId, cmd, datas[6:] )
 
     return send_zigatecmd_raw( self, cmd, datas, ackIsDisabled )
 

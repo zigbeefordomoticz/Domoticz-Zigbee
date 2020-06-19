@@ -16,7 +16,7 @@ from datetime import datetime
 from time import time
 
 from Modules.zigateConsts import  MAX_READATTRIBUTES_REQ,  ZIGATE_EP
-from Modules.basicOutputs import sendZigateCmd
+from Modules.basicOutputs import send_zigatecmd_zcl_ack, send_zigatecmd_zcl_noack
 from Modules.logging import loggingReadAttributes 
 from Modules.tools import getListOfEpForCluster
 
@@ -38,7 +38,6 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes , manu
         for shortlist in split_list(ListOfAttributes, wanted_parts=nbpart):
             loggingReadAttributes( self, 'Debug2', "----------> ------- Shorter: " + ", ".join("0x{:04x}".format(num) for num in shortlist), nwkid=addr)
             normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , shortlist , manufacturer_spec , manufacturer , ackToBeDisabled )
-
 
 def normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes , manufacturer_spec = '00', manufacturer = '0000', ackToBeDisabled = False):
 
@@ -135,16 +134,16 @@ def normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttribu
     loggingReadAttributes( self, 'Debug', "-- normalizedReadAttrReq ---- addr =" +str(addr) +" Cluster = " +str(Cluster) +" Attributes = " + ", ".join("0x{:04x}".format(num) for num in ListOfAttributes), nwkid=addr )
     self.ListOfDevices[addr]['ReadAttributes']['TimeStamps'][EpOut+'-'+str(Cluster)] = int(time())
 
-    send_read_attribute_request( self, '02',     addr ,EpIn , EpOut ,Cluster ,direction , manufacturer_spec , manufacturer , lenAttr, Attr, ackToBeDisabled )
+    send_read_attribute_request( self, addr ,EpIn , EpOut ,Cluster ,direction , manufacturer_spec , manufacturer , lenAttr, Attr, ackToBeDisabled )
 
-def send_read_attribute_request( self, addrmode, addr ,EpIn , EpOut ,Cluster ,direction , manufacturer_spec , manufacturer , lenAttr, Attr, ackToBeDisabled = False):
+def send_read_attribute_request( self, addr ,EpIn , EpOut ,Cluster ,direction , manufacturer_spec , manufacturer , lenAttr, Attr, ackToBeDisabled = False):
 
-    if addrmode == '02' and (ackToBeDisabled or self.pluginconf.pluginConf['DisableAckOnReadAttributes']):
-        addrmode = '07'
-        ackToBeDisabled = True
-
-    datas =  addrmode + addr + EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + "%02x" %(lenAttr) + Attr
-    sendZigateCmd(self, "0100", datas , ackToBeDisabled )
+    withoutack = (ackToBeDisabled or self.pluginconf.pluginConf['DisableAckOnReadAttributes'])
+    
+    if ackToBeDisabled or self.pluginconf.pluginConf['DisableAckOnReadAttributes']:
+        send_zigatecmd_zcl_noack( self, addr, '0100', EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + '%02x' %lenAttr + Attr )
+    else:
+        send_zigatecmd_zcl_ack( self, addr, '0100', EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + '%02x' %lenAttr + Attr )
 
 def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
 
@@ -233,12 +232,13 @@ def ping_device_with_read_attribute(self, key):
     ListOfEp = getListOfEpForCluster( self, key, '0000' ) 
     for EPout in ListOfEp:
         self.ListOfDevices[key]['ReadAttributes']['TimeStamps'][ EPout + '-' + '0000'] = int(time())
-        send_read_attribute_request( self, '02', key ,ZIGATE_EP , EPout ,'0000' , '00' , '00' , '0000' , 0x01, '0000', ackToBeDisabled = False )
+        #send_read_attribute_request( self, '02', key ,ZIGATE_EP , EPout ,'0000' , '00' , '00' , '0000' , 0x01, '0000', ackToBeDisabled = False )
+
+        send_zigatecmd_zcl_ack( self, key, '0100', ZIGATE_EP + EPout + '0000' + '00' + '00' + '0000' + "%02x" %(0x01) + '0000' )
 
         # datas = '02' + key + ZIGATE_EP + EPout + '0000' + '00' + '00' + '0000' + '01' + '0000'
         # sendZigateCmd(self, "0100", datas )
       
-
 def ReadAttributeRequest_0000(self, key, fullScope=True):
     # Basic Cluster
     # The Ep to be used can be challenging, as if we are in the discovery process, the list of Eps is not yet none and it could even be that the Device has only 1 Ep != 01
