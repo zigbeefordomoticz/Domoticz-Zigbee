@@ -22,6 +22,51 @@ from Modules.zigateConsts import ZIGATE_EP, ADDRESS_MODE, ZLL_DEVICES
 from Modules.tools import mainPoweredDevice
 from Modules.logging import loggingBasicOutput
 
+def send_zigatecmd_zcl_ack( self, address, cmd, datas ):
+    #
+    # Send a ZCL command with ack
+    # address can be a shortId or an IEEE
+    if len(address) == 4:
+        # Short address
+        address_mode = '%02x' %ADDRESS_MODE['short']
+    else:
+        address_mode = '%02x' %ADDRESS_MODE['ieee']
+
+    datas = address_mode + address + datas
+    return send_zigatecmd_raw( self, cmd, datas, ackIsDisabled = False )
+
+def send_zigatecmd_zcl_noack( self, address, cmd, datas):
+    #
+    # Send a ZCL command with ack
+    # address can be a shortId or an IEEE
+    if len(address) == 4:
+        # Short address
+        address_mode = '%02x' %ADDRESS_MODE['shortnoack']
+    else:
+        address_mode = '%02x' %ADDRESS_MODE['ieeenoack']
+
+    datas = address_mode + address + datas
+    return send_zigatecmd_raw( self, cmd, datas, ackIsDisabled = True )
+
+
+def send_zigatecmd_raw( self, cmd, datas, ackIsDisabled = False ):
+    #
+    # Send the cmd directly to ZiGate
+
+   if self.ZigateComm is None:
+       Domoticz.Error("Zigate Communication error.")
+       return
+
+   i_sqn = self.ZigateComm.sendData( cmd, datas , ackIsDisabled )
+   if self.pluginconf.pluginConf['debugzigateCmd']:
+       loggingBasicOutput( self, 'Log', "send_zigatecmd_raw - [%s] %s %s Queue Length: %s" %(i_sqn, cmd, datas, self.ZigateComm.loadTransmit()))
+   else:
+       loggingBasicOutput( self, 'Debug', "=====> send_zigatecmd_raw - [%s] %s %s Queue Length: %s" %(i_sqn,cmd, datas, self.ZigateComm.loadTransmit()))
+   if self.ZigateComm.loadTransmit() > 15:
+       loggingBasicOutput( self, 'Log', "WARNING - send_zigatecmd_raw: [%s] %s %18s ZigateQueue: %s" %(i_sqn,cmd, datas, self.ZigateComm.loadTransmit()))
+
+   return i_sqn
+
 def sendZigateCmd(self, cmd, datas , ackIsDisabled = False):
     """
     sendZigateCmd will send command to Zigate by using the SendData method
@@ -31,21 +76,8 @@ def sendZigateCmd(self, cmd, datas , ackIsDisabled = False):
 
     """
 
-    if self.ZigateComm is None:
-        Domoticz.Error("Zigate Communication error.")
-        return
+    return send_zigatecmd_raw( self, cmd, datas, ackIsDisabled )
 
-    i_sqn = self.ZigateComm.sendData( cmd, datas , ackIsDisabled )
-
-    if self.pluginconf.pluginConf['debugzigateCmd']:
-        loggingBasicOutput( self, 'Log', "sendZigateCmd - [%s] %s %s Queue Length: %s" %(i_sqn, cmd, datas, self.ZigateComm.loadTransmit()))
-    else:
-        loggingBasicOutput( self, 'Debug', "=====> sendZigateCmd - [%s] %s %s Queue Length: %s" %(i_sqn,cmd, datas, self.ZigateComm.loadTransmit()))
-
-    if self.ZigateComm.loadTransmit() > 15:
-        loggingBasicOutput( self, 'Log', "WARNING - ZigateCmd: [%s] %s %18s ZigateQueue: %s" %(i_sqn,cmd, datas, self.ZigateComm.loadTransmit()))
-
-    return i_sqn
 
 def ZigatePermitToJoin( self, permit ):
     """
