@@ -22,11 +22,12 @@ from Modules.zigateConsts import ZIGATE_EP, ADDRESS_MODE, ZLL_DEVICES
 from Modules.tools import mainPoweredDevice
 from Modules.logging import loggingBasicOutput
 
-def sendZigateCmd(self, cmd, datas ):
+def sendZigateCmd(self, cmd, datas , ackIsDisabled = False):
     """
     sendZigateCmd will send command to Zigate by using the SendData method
     cmd : 4 hex (str) which correspond to the Zigate command
     datas : string of hex char 
+    ackIsDisabled : If True, it means that usally a Ack is expected ( ZIGATE_COMMANDS), but here it has been disabled via Address Mode
 
     """
 
@@ -34,7 +35,7 @@ def sendZigateCmd(self, cmd, datas ):
         Domoticz.Error("Zigate Communication error.")
         return
 
-    i_sqn = self.ZigateComm.sendData( cmd, datas )
+    i_sqn = self.ZigateComm.sendData( cmd, datas , ackIsDisabled )
 
     if self.pluginconf.pluginConf['debugzigateCmd']:
         loggingBasicOutput( self, 'Log', "sendZigateCmd - [%s] %s %s Queue Length: %s" %(i_sqn, cmd, datas, self.ZigateComm.loadTransmit()))
