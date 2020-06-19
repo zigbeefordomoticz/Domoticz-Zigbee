@@ -146,6 +146,7 @@ SETTINGS = {
         'TimeOut8011':     { 'type':'int', 'default': 8, 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
         'TimeOutResponse': { 'type':'int', 'default': 8, 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
         'CompatibilityMode': { 'type':'bool', 'default': 0, 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+        'DisableAckOnReadAttributes': { 'type':'bool', 'default': 0, 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
         }
     },
 
