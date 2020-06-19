@@ -142,7 +142,7 @@ def send_read_attribute_request( self, addrmode, addr ,EpIn , EpOut ,Cluster ,di
         addrmode = '07'
         ackToBeDisabled = True
 
-    datas +=  addrmode + addr + EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + "%02x" %(lenAttr) + Attr
+    datas =  addrmode + addr + EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + "%02x" %(lenAttr) + Attr
     sendZigateCmd(self, "0100", datas , ackToBeDisabled )
 
 def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
