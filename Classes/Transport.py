@@ -32,6 +32,8 @@ class ZigateTransport(object):
 
     def __init__(self, LOD, transport, statistics, pluginconf, F_out, loggingFileHandle, serialPort = None, wifiAddress = None, wifiPort = None):
 
+        # Logging
+        self.loggingFileHandle = loggingFileHandle
 
         # Statistics
         self.statistics = statistics
@@ -67,8 +69,9 @@ class ZigateTransport(object):
         # Call back function to send back to plugin
         self.F_out = F_out  # Function to call to bring the decoded Frame at plugin
 
-        # Logging
-        self.loggingFileHandle = loggingFileHandle
+
+
+
 
         initMatrix( self)
 
@@ -1074,16 +1077,15 @@ def process_other_type_of_message(self, MsgType, MsgSqn = None, MsgNwkId=None, M
         #else:
         #    Domoticz.Log("Nothing to Do %s" %cmd)
 
-
         self.loggingSend( 'Debug', " --  -- - > Expected IntSqn: %s Received ISqn: %s ESqn: %s" %(InternalSqn, isqn, MsgSqn))
         if isqn and InternalSqn != isqn:
             # Async message no worry
-            self.loggingSend( 'Log', " -- iSqn do not match, no action")
-            self.loggingSend( 'Log', " --  -- - > Expecting: %04x Receiving: %s" %(expResponse,MsgType ))
-            self.loggingSend( 'Log', " --  -- - > Expected IntSqn: %s Received ISqn: %s ESqn: %s" %(InternalSqn, isqn, MsgSqn))
-            self.loggingSend( 'Log', " --  -- - > Expecting: %s %s %s receiving %s %s %s" %( expNwkId, expEp, expCluster, MsgNwkId, MsgEp, MsgClusterId))
+            self.loggingSend( 'Error', " -- I_SQN do not match E_SQN, break")
+            self.loggingSend( 'Error', " --  -- - > Expecting: %04x Receiving: %s" %(expResponse,MsgType ))
+            self.loggingSend( 'Error', " --  -- - > Expected IntSqn: %s Received ISqn: %s ESqn: %s" %(InternalSqn, isqn, MsgSqn))
+            self.loggingSend( 'Error', " --  -- - > Expecting: %s %s %s receiving %s %s %s" %( expNwkId, expEp, expCluster, MsgNwkId, MsgEp, MsgClusterId))
 
-            #return None
+            return None
  
         ready_to_send_if_needed( self )
         return InternalSqn
