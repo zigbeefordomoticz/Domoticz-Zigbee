@@ -197,7 +197,7 @@ def processKnownDevices( self, Devices, NWKID ):
         lastTimeStamp = self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp']
         retry = self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry']
 
-        loggingHeartbeat( self, 'Debug', "--------> ping Retry Check %s Retry: %s Gap: %s" %(NwkId, retry, now - lastTimeStamp), NwkId)
+        loggingHeartbeat( self, 'Log', "--------> ping Retry Check %s Retry: %s Gap: %s" %(NwkId, retry, now - lastTimeStamp), NwkId)
         # Retry #1
         if retry == 0:
             # First retry in the next cycle if possible
@@ -237,18 +237,18 @@ def processKnownDevices( self, Devices, NWKID ):
         if not health:
             pingRetryDueToBadHealth(self, NwkId)
             return
-
-        if checkHealthFlag and self.ZigateComm.loadTransmit() == 0:
-            submitPing( self, NWKID)
-            return
-
+        
         if 'LastPing' not in self.ListOfDevices[NwkId]['Stamp']:
             self.ListOfDevices[NwkId]['Stamp']['LastPing'] = 0
         
         lastPing = self.ListOfDevices[NwkId]['Stamp']['LastPing']
         lastSeen = self.ListOfDevices[NwkId]['Stamp']['LastSeen']
-
         now = int(time.time())
+
+        if checkHealthFlag and now > (lastPing + 60) and self.ZigateComm.loadTransmit() == 0:
+            submitPing( self, NWKID)
+            return
+
         loggingHeartbeat( self, 'Debug', "------> pinDevice %s time: %s LastPing: %s LastSeen: %s Freq: %s" \
                 %(NWKID, now, lastPing, lastSeen, self.pluginconf.pluginConf['pingDevicesFeq'] ), NwkId) 
 
