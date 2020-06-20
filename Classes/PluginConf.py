@@ -145,7 +145,6 @@ SETTINGS = {
         'TimeOut8000':     { 'type':'int', 'default': 1.5 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
         'TimeOut8011':     { 'type':'int', 'default': 8, 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
         'TimeOutResponse': { 'type':'int', 'default': 8, 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
-        'CompatibilityMode': { 'type':'bool', 'default': 0, 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
         'forceAckOnZCL': { 'type':'bool', 'default': 0, 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
         }
     },
