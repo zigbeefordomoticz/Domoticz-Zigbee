@@ -919,7 +919,7 @@ def process_msg_type8000(self, Status, PacketType, sqn_app, sqn_aps, Ack_expecte
     
     if (not self.firmware_with_aps_sqn and self.ListOfCommands[ InternalSqn ]['ExpectedAck']) or (self.firmware_with_aps_sqn and Ack_expected ):
             #WARNING WE NEED TO Set TYPE_APP_ZCL or TYPE_APP_ZDP depending on the type of function, dont add it if ZIGATE function
-            cmd = self.ListOfCommands[ InternalSqn ]['Cmd']
+            cmd = PacketType
 
             if ZIGATE_COMMANDS[ int(cmd,16)]['Layer'] == 'ZCL':
                 #Domoticz.Log("ZCL %s" %cmd)
@@ -1065,13 +1065,13 @@ def process_other_type_of_message(self, MsgType, MsgSqn = None, MsgNwkId=None, M
             return None
 
         #WARNING WE NEED TO Set TYPE_APP_ZCL or TYPE_APP_ZDP depending on the type of function, dont call if ZIGATE function
-        cmd = self.ListOfCommands[ InternalSqn ]['Cmd']
         isqn = None
-        if ZIGATE_COMMANDS[ int(cmd,16)]['Layer'] == 'ZCL':
+        # MsgType is 0x8100 or 0x8102 ( Command was 0x0100) So it is a ZCL command
+        if ZIGATE_COMMANDS[ 0x0100 ]['Layer'] == 'ZCL':
             #Domoticz.Log("ZCL %s" %cmd)
             isqn = sqn_get_internal_sqn_from_app_sqn (self, MsgSqn, TYPE_APP_ZCL)
 
-        elif ZIGATE_COMMANDS[ int(cmd,16)]['Layer'] == 'ZDP':
+        elif ZIGATE_COMMANDS[ 0x0100 ]['Layer'] == 'ZDP':
             #Domoticz.Log("ZDP %s" %cmd)
             isqn = sqn_get_internal_sqn_from_app_sqn (self, MsgSqn, TYPE_APP_ZDP)
         #else:
