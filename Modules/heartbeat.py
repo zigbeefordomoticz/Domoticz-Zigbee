@@ -231,7 +231,7 @@ def processKnownDevices( self, Devices, NWKID ):
 
     def submitPing( self, NwkId):
         # Pinging devices to check they are still Alive
-        loggingHeartbeat( self, 'Log', "------------> call readAttributeRequest %s" %NwkId, NwkId)
+        loggingHeartbeat( self, 'Debug', "------------> call readAttributeRequest %s" %NwkId, NwkId)
         self.ListOfDevices[NwkId]['Stamp']['LastPing'] = int(time.time())
         ping_device_with_read_attribute( self, NwkId)
 
