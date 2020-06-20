@@ -13,7 +13,7 @@ from datetime import datetime
 
 from Modules.tools import is_hex
 from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_RESPONSES, ZIGATE_COMMANDS, RETRANSMIT_COMMAND, ADDRESS_MODE
-from Modules.sqnMgmt import sqn_init_stack, sqn_generate_new_internal_sqn, sqn_add_external_sqn, sqn_get_internal_sqn, E_SQN_APS, E_SQN_APP
+from Modules.sqnMgmt import sqn_init_stack, sqn_generate_new_internal_sqn, sqn_add_external_sqn, sqn_get_internal_sqn_from_aps_sqn, sqn_get_internal_sqn_from_app_sqn, TYPE_APP_ZCL, TYPE_APP_ZDP
 
 STANDALONE_MESSAGE = []
 PDM_COMMANDS = ( '8300', '8200', '8201', '8204', '8205', '8206', '8207', '8208' )
@@ -914,14 +914,15 @@ def process_msg_type8000(self, Status, PacketType, sqn_app, sqn_aps, Ack_expecte
             return None
     
     if (not self.firmware_with_aps_sqn and self.ListOfCommands[ InternalSqn ]['ExpectedAck']) or (self.firmware_with_aps_sqn and Ack_expected ):
-        sqn_add_external_sqn (self, InternalSqn, sqn_app, sqn_aps)
+        #WARNING WE NEED TO Set TYPE_APP_ZCL or TYPE_APP_ZDP depending on the type of function, dont add it if ZIGATE function
+        sqn_add_external_sqn (self, InternalSqn, sqn_app, TYPE_APP_ZCL, sqn_aps)
 
     return InternalSqn
 
 def process_msg_type8011_above31d( self, Status, NwkId, Ep, MsgClusterId, ExternSqn ):
 
     # Get i_sqn from sqnManagement
-    InternSqn = sqn_get_internal_sqn (self, ExternSqn, E_SQN_APS)
+    InternSqn = sqn_get_internal_sqn_from_aps_sqn (self, ExternSqn)
 
     # Let's check that InternalSqn is in the Queue
     item = None
@@ -955,7 +956,7 @@ def process_msg_type8011_below31c( self, Status, NwkId, Ep, MsgClusterId, Extern
     InternSqn, TimeStamps = _next_cmd_to_wait_for_ack_nack_queue( self ) 
 
     if (self.firmware_with_aps_sqn):
-        InternSqn_from_ExternSqn = sqn_get_internal_sqn (self, ExternSqn, E_SQN_APS)
+        InternSqn_from_ExternSqn = sqn_get_internal_sqn_from_aps_sqn (self, ExternSqn)
         if InternSqn != InternSqn_from_ExternSqn:
             Domoticz.Error ("process_msg_type8011_below31c different sqn : InternSqn:%s InternSQN_from_ExternalSQN:%s" %(InternSqn, InternSqn_from_ExternSqn))
 
@@ -1004,7 +1005,7 @@ def process_msg_type8702( self, MsgData):
 
     self.loggingSend( 'Debug',"process_msg_type8702 - ExternalSqn: %s NwkId: %s Ep: %s" %(ExternSqn, NwkId, MsgDataDestEp  ))
 
-    InternSqn = sqn_get_internal_sqn (self, ExternSqn)
+    InternSqn = sqn_get_internal_sqn_from_aps_sqn (self, ExternSqn)
     self.loggingSend( 'Debug', "----------->  ExternalSqn: %s InternalSqn: %s" %(ExternSqn,InternSqn))
 
     return InternSqn
@@ -1049,7 +1050,8 @@ def process_other_type_of_message(self, MsgType, MsgSqn = None, MsgNwkId=None, M
             Domoticz.Error("process_other_type_of_message - MsgType: %s cannot get i_sqn due to unknown External SQN" %(MsgType))
             return None
 
-        isqn = sqn_get_internal_sqn(self, MsgSqn, E_SQN_APP)
+        #WARNING WE NEED TO Set TYPE_APP_ZCL or TYPE_APP_ZDP depending on the type of function, dont call if ZIGATE function
+        isqn = sqn_get_internal_sqn_from_app_sqn (self, MsgSqn, TYPE_APP_ZCL)
         self.loggingSend( 'Debug', " --  -- - > Expected IntSqn: %s Received ISqn: %s ESqn: %s" %(InternalSqn, isqn, MsgSqn))
         if InternalSqn != isqn:
             # Async message no worry

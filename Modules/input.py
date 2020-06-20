@@ -44,7 +44,7 @@ from Modules.pdmHost import pdmHostAvailableRequest, PDMSaveRequest, PDMLoadRequ
             PDMGetBitmapRequest, PDMIncBitmapRequest, PDMExistanceRequest, pdmLoadConfirmed, \
             PDMDeleteRecord, PDMDeleteAllRecord, PDMCreateBitmap, PDMDeleteBitmapRequest
 
-from Modules.sqnMgmt import sqn_get_internal_sqn, E_SQN_APP
+from Modules.sqnMgmt import sqn_get_internal_sqn_from_app_sqn, sqn_get_internal_sqn_from_aps_sqn, sqn_get_internal_sqn_from_aps_sqn, TYPE_APP_ZCL, TYPE_APP_ZDP
 
 #from Modules.adminWidget import updateNotificationWidget, updateStatusWidget
 
@@ -509,10 +509,11 @@ def Decode8011(self, Devices, MsgData, MsgRSSI , TransportInfos= None):
     MsgStatus = MsgData[0:2]
     MsgSrcAddr = MsgData[2:6]
     MsgSrcEp = MsgData[6:8]
-    MsgSEQ = 0
+    MsgSEQ = None
     if MsgLen > 12 :
         MsgSEQ = MsgData[12:14]
 
+    i_sqn = sqn_get_internal_sqn_from_aps_sqn(self.ZigateComm, MsgSEQ)
 
     if MsgSrcAddr not in self.ListOfDevices:
         return
@@ -800,7 +801,7 @@ def Decode8030(self, Devices, MsgData, MsgRSSI) : # Bind response
         Domoticz.Error("Decode8030 - Unknown addr mode %s in %s" %(MsgSrcAddrMode, MsgData))
         return
 
-    i_sqn = sqn_get_internal_sqn(self.ZigateComm,MsgSequenceNumber)
+    i_sqn = sqn_get_internal_sqn_from_app_sqn(self.ZigateComm,MsgSequenceNumber,TYPE_APP_ZDP)
     loggingInput( self, 'Log', "Decode8030 - Bind response, Device: %s Status: %s MsgSequenceNumber: 0x%s/%3s i_sqn: %s" 
         %(MsgSrcAddr, MsgDataStatus,MsgSequenceNumber, int(MsgSequenceNumber,16),i_sqn), MsgSrcAddr)
 
@@ -1595,7 +1596,7 @@ def Decode8100(self, Devices, MsgData, MsgRSSI):
     MsgAttSize=MsgData[20:24]
     MsgClusterData=MsgData[24:len(MsgData)]
 
-    i_sqn = sqn_get_internal_sqn (self.ZigateComm, MsgSQN)
+    i_sqn = sqn_get_internal_sqn_from_app_sqn (self.ZigateComm, MsgSQN, TYPE_APP_ZCL)
 
     loggingInput( self, 'Debug', "Decode8100 - Read Attribute Response: [%s:%s] ClusterID: %s MsgSQN: %s, i_sqn: %s, AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<" \
             %(MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgSQN, i_sqn, MsgAttrID, MsgAttrStatus, MsgAttType, MsgAttSize, MsgClusterData ), MsgSrcAddr)
@@ -1733,7 +1734,7 @@ def Decode8110(self, Devices, MsgData, MsgRSSI):  # Write Attribute response
     if MsgAttSize != '0000':
         MsgClusterData=MsgData[24:len(MsgData)]
 
-    i_sqn = sqn_get_internal_sqn(self.ZigateComm, MsgSQN)
+    i_sqn = sqn_get_internal_sqn_from_app_sqn(self.ZigateComm, MsgSQN, TYPE_APP_ZCL)
 
     loggingInput( self, 'Debug', "Decode8110 - WriteAttributeResponse - MsgSQN: %s,  MsgSrcAddr: %s, MsgSrcEp: %s, MsgClusterId: %s, MsgAttrID: %s, MsgAttrStatus:%s, MsgAttType: %s, MsgAttSize: %s, MsgClusterData: %s. rawData: %s" \
             %( MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus, MsgAttType, MsgAttSize, MsgClusterData, MsgData), MsgSrcAddr)
