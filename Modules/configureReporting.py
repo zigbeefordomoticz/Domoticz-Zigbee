@@ -18,7 +18,7 @@ import json
 from datetime import datetime
 from time import time
 
-from Modules.basicOutputs import  sendZigateCmd
+from Modules.basicOutputs import  send_zigatecmd_zcl_noack
 from Modules.bindings import bindDevice
 
 from Modules.zigateConsts import MAX_LOAD_ZIGATE, CFG_RPT_ATTRIBUTESbyCLUSTERS , ZIGATE_EP
@@ -221,10 +221,12 @@ def processConfigureReporting( self, NWKID=None ):
                         attrLen = 1
                         loggingConfigureReporting( self, 'Debug', "Configure Reporting %s/%s on cluster %s" %(key, Ep, cluster), nwkid=key)
                         loggingConfigureReporting( self, 'Debug', "-->  Len: %s Attribute List: %s" %(attrLen, attrList), nwkid=key)
-                        datas =   addr_mode + key + ZIGATE_EP + Ep + cluster + direction + manufacturer_spec + manufacturer 
+                        #datas =   addr_mode + key + ZIGATE_EP + Ep + cluster + direction + manufacturer_spec + manufacturer 
+                        datas =   ZIGATE_EP + Ep + cluster + direction + manufacturer_spec + manufacturer 
                         datas +=  "%02x" %(attrLen) + attrList
                         loggingConfigureReporting( self, 'Debug', "configureReporting - 0120 - %s" %(datas))
-                        sendZigateCmd(self, "0120", datas )
+                        send_zigatecmd_zcl_noack( self, key, '0120', datas )
+                        #sendZigateCmd(self, "0120", datas )
                     else:
                         # The Command will be issued when out of the loop and all Attributes seens
                         attrDisp.append(attr)
@@ -247,13 +249,17 @@ def processConfigureReporting( self, NWKID=None ):
                         # Let's check if we have to send a chunk
                         if attrLen == MAX_ATTR_PER_REQ:
                             # Prepare the payload
-                            datas =   addr_mode + key + ZIGATE_EP + Ep + cluster + direction + manufacturer_spec + manufacturer 
+                            #datas =   addr_mode + key + ZIGATE_EP + Ep + cluster + direction + manufacturer_spec + manufacturer 
+                            datas =   ZIGATE_EP + Ep + cluster + direction + manufacturer_spec + manufacturer 
+
                             datas +=  "%02x" %(attrLen) + attrList
 
                             loggingConfigureReporting( self, 'Debug', "configureReporting - Splitting in several parts" )
                             loggingConfigureReporting( self, 'Debug', "--> configureReporting - 0120 - %s" %(datas))
                             loggingConfigureReporting( self, 'Debug', "--> Configure Reporting %s/%s on cluster %s Len: %s Attribute List: %s" %(key, Ep, cluster, attrLen, attrList), nwkid=key)
-                            sendZigateCmd( self, "0120", datas )
+                            
+                            send_zigatecmd_zcl_noack( self, key, '0120', datas )
+                            #sendZigateCmd( self, "0120", datas )
 
                             #Reset the Lenght to 0
                             attrList = ''
@@ -263,13 +269,15 @@ def processConfigureReporting( self, NWKID=None ):
                     # Let's check if we have some remaining to send
                     if attrLen != 0 :
                         # Prepare the payload
-                        datas =   addr_mode + key + ZIGATE_EP + Ep + cluster + direction + manufacturer_spec + manufacturer 
+                        #datas =   addr_mode + key + ZIGATE_EP + Ep + cluster + direction + manufacturer_spec + manufacturer 
+                        datas =   ZIGATE_EP + Ep + cluster + direction + manufacturer_spec + manufacturer 
                         datas +=  "%02x" %(attrLen) + attrList
 
                         loggingConfigureReporting( self, 'Debug', "configureReporting - last parts" )
                         loggingConfigureReporting( self, 'Debug', "++> configureReporting - 0120 - %s" %(datas))
                         loggingConfigureReporting( self, 'Debug', "++> Configure Reporting %s/%s on cluster %s Len: %s Attribute List: %s" %(key, Ep, cluster, attrLen, attrList), nwkid=key)
-                        sendZigateCmd( self, "0120", datas )
+                        send_zigatecmd_zcl_noack( self, key, '0120', datas )
+                        #sendZigateCmd( self, "0120", datas )
 
             # End for Cluster
         # End for Ep
