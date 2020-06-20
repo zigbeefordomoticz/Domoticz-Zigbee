@@ -1581,7 +1581,9 @@ def Decode0100(self, Devices, MsgData, MsgRSSI):  # Read Attribute request
         Domoticz.Log("Decode0100 - Request from %s/%s Data: %s Status: %s" %(MsgSrcAddr, MsgSrcEp, MsgUnknown, MsgStatus))
 
 #Reponses Attributs
-def Decode8100(self, Devices, MsgData, MsgRSSI):  # Report Individual Attribute response
+def Decode8100(self, Devices, MsgData, MsgRSSI):
+    # 
+    # Read Attribute Response
 
     MsgSQN=MsgData[0:2]
     MsgSrcAddr=MsgData[2:6]
@@ -1595,7 +1597,7 @@ def Decode8100(self, Devices, MsgData, MsgRSSI):  # Report Individual Attribute 
 
     i_sqn = sqn_get_internal_sqn (self.ZigateComm, MsgSQN)
 
-    loggingInput( self, 'Debug', "Decode8100 - Report Attributes Response : [%s:%s] ClusterID: %s MsgSQN: %s, i_sqn: %s, AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<" \
+    loggingInput( self, 'Debug', "Decode8100 - Read Attribute Response: [%s:%s] ClusterID: %s MsgSQN: %s, i_sqn: %s, AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<" \
             %(MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgSQN, i_sqn, MsgAttrID, MsgAttrStatus, MsgAttType, MsgAttSize, MsgClusterData ), MsgSrcAddr)
 
     updRSSI( self, MsgSrcAddr, MsgRSSI )
@@ -1630,7 +1632,7 @@ def Decode8101(self, Devices, MsgData, MsgRSSI) :  # Default Response
     loggingInput( self, 'Debug', "Decode8101 - Default response - SQN: %s, EP: %s, ClusterID: %s , DataCommand: %s, - Status: [%s] %s" \
             %(MsgDataSQN, MsgDataEp, MsgClusterId, MsgDataCommand, MsgDataStatus,  DisplayStatusCode( MsgDataStatus ) ))
 
-def Decode8102(self, Devices, MsgData, MsgRSSI):  # Report Individual Attribute response
+def Decode8102(self, Devices, MsgData, MsgRSSI):  # Attribute Reports
     MsgSQN=MsgData[0:2]
     MsgSrcAddr=MsgData[2:6]
     MsgSrcEp=MsgData[6:8]
@@ -1641,7 +1643,7 @@ def Decode8102(self, Devices, MsgData, MsgRSSI):  # Report Individual Attribute 
     MsgAttSize=MsgData[20:24]
     MsgClusterData=MsgData[24:len(MsgData)]
 
-    loggingInput( self, 'Debug', "Decode8102 - Read Attributes Response : [%s:%s] MsgSQN: %s ClusterID: %s AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<" \
+    loggingInput( self, 'Debug', "Decode8102 - Attribute Reports : [%s:%s] MsgSQN: %s ClusterID: %s AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<" \
             %(MsgSrcAddr, MsgSrcEp, MsgSQN, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData ), MsgSrcAddr)
 
     if self.PluzzyFirmware:

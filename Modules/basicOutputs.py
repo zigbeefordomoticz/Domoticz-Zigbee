@@ -40,8 +40,12 @@ def send_zigatecmd_zcl_noack( self, address, cmd, datas):
     if len(address) == 4:
         # Short address
         address_mode = '%02x' %ADDRESS_MODE['shortnoack']
+        if self.pluginconf.pluginConf['forceAckOnZCL']:
+            address_mode = '%02x' %ADDRESS_MODE['short']
     else:
         address_mode = '%02x' %ADDRESS_MODE['ieeenoack']
+        if self.pluginconf.pluginConf['forceAckOnZCL']:
+            address_mode = '%02x' %ADDRESS_MODE['ieee']
 
     return send_zigatecmd_raw( self, cmd, address_mode + address + datas, ackIsDisabled = True )
 

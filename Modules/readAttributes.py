@@ -137,10 +137,8 @@ def normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttribu
     send_read_attribute_request( self, addr ,EpIn , EpOut ,Cluster ,direction , manufacturer_spec , manufacturer , lenAttr, Attr, ackToBeDisabled )
 
 def send_read_attribute_request( self, addr ,EpIn , EpOut ,Cluster ,direction , manufacturer_spec , manufacturer , lenAttr, Attr, ackToBeDisabled = False):
-
-    withoutack = (ackToBeDisabled or self.pluginconf.pluginConf['DisableAckOnReadAttributes'])
     
-    if ackToBeDisabled or self.pluginconf.pluginConf['DisableAckOnReadAttributes']:
+    if ackToBeDisabled:
         send_zigatecmd_zcl_noack( self, addr, '0100', EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + '%02x' %lenAttr + Attr )
     else:
         send_zigatecmd_zcl_ack( self, addr, '0100', EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + '%02x' %lenAttr + Attr )

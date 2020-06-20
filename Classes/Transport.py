@@ -502,7 +502,6 @@ def set_cmdresponse_for_sending( self, i_sqn):
             self.loggingSend( 'Debug', "--- Add to Queue CommandResponse Queue")
             _add_cmd_to_wait_for_cmdresponse_queue( self, i_sqn )
 
-
 def set_acknack_for_sending(self, i_sqn):
 
     # These are ZiGate commands which doesn't have Ack/Nack with firmware up to 3.1c
@@ -703,7 +702,6 @@ def check_timed_out(self):
     self.logging_receive( 'Debug', "checkTimedOut  End   - waitQ: %2s ackQ: %2s dataQ: %2s SendingFIFO: %3s" 
         %( len(self._waitFor8000Queue), len(self._waitForAckNack), len(self._waitForCmdResponseQueue), len(self.zigateSendQueue)))
 
-
 def cleanup_list_of_commands( self, i_sqn):
     
     self.loggingSend(  'Debug', " --  -- - > Cleanup Internal SQN: %s" %i_sqn)
@@ -842,13 +840,18 @@ def process_frame(self, frame):
     # But might be a 0x8102 ( as firmware 3.1c and below are reporting Read Attribute response and Report Attribute with the same MsgType)
     if self.zmode in ( 'zigbee31c','zigbee31d'):
         # If ZigBee Command blocked until response received
-        if not self.firmware_with_aps_sqn and MsgType== '8102':
+        if not self.firmware_with_aps_sqn and MsgType == '8102':
             MsgZclSqn =  MsgData[0:2]
+            MsgNwkId = MsgData[2:6]
+            MsgEp = MsgData[6:8]
+            MsgClusterId = MsgData[8:12]
+
             self.loggingSend( 'Debug', "--> Receive MsgType: %s with ExtSqn: %s" %(MsgType, MsgZclSqn))
 
-            i_sqn = process_other_type_of_message( self, MsgType, MsgZclSqn)
+            i_sqn = process_other_type_of_message( self, MsgType, MsgZclSqn, MsgNwkId, MsgEp, MsgClusterId  )
         else:
             i_sqn = process_other_type_of_message( self, MsgType)
+
         if i_sqn in self.ListOfCommands:
             self.ListOfCommands[ i_sqn ]['Status'] = '8XXX'
             cleanup_list_of_commands( self, _next_cmd_from_wait_cmdresponse_queue( self )[0] )
@@ -1006,7 +1009,7 @@ def process_msg_type8702( self, MsgData):
 
     return InternSqn
 
-def process_other_type_of_message(self, MsgType, MsgSqn = None):
+def process_other_type_of_message(self, MsgType, MsgSqn = None, MsgNwkId=None, MsgEp = None, MsgClusterId = None):
     
     self.statistics._data += 1
     # There is a probability that we get an ASYNC message, which is not related to a Command request.
@@ -1030,9 +1033,18 @@ def process_other_type_of_message(self, MsgType, MsgSqn = None):
 
     expResponse = self.ListOfCommands[ InternalSqn ]['MessageResponse']
     self.loggingSend( 'Debug', " --  -- - > Expecting: %04x Receiving: %s" %(expResponse,MsgType ))
-    if expResponse == 0x8100:
-        # With 3.1c firmware 0x0100 responses are coming on 0x8102
-        self.logging_receive(  'Debug', " --  -- - > - expecting 0x8100 and received: %s with ExtSqn: %s" %(MsgType, MsgSqn))
+    if expResponse == 0x8100 and MsgType in ( '8100', '8102'):
+        expNwkId = expEp =  expCluster = None
+        if MsgSqn and MsgNwkId and MsgEp and MsgClusterId:
+            expNwkId =   self.ListOfCommands[ InternalSqn ]['Datas'][2:6]
+            expEp =      self.ListOfCommands[ InternalSqn ]['Datas'][8:10]
+            expCluster = self.ListOfCommands[ InternalSqn ]['Datas'][10:14]
+
+        self.loggingSend(  'Debug', " --  -- - > Expecting: %s %s %s receiving %s %s %s" %( expNwkId, expEp, expCluster, MsgNwkId, MsgEp, MsgClusterId))
+        if (expNwkId != MsgNwkId) or (expEp != MsgEp) or (expCluster != MsgClusterId):
+            self.loggingSend(  'Debug', " --  -- - > Data do not match")
+            return None
+
         if MsgSqn is None:
             Domoticz.Error("process_other_type_of_message - MsgType: %s cannot get i_sqn due to unknown External SQN" %(MsgType))
             return None
@@ -1041,6 +1053,7 @@ def process_other_type_of_message(self, MsgType, MsgSqn = None):
         self.loggingSend( 'Debug', " --  -- - > Expected IntSqn: %s Received ISqn: %s ESqn: %s" %(InternalSqn, isqn, MsgSqn))
         if InternalSqn != isqn:
             # Async message no worry
+            self.loggingSend( 'Debug', " --  -- - > iSqn do not match")
             return None
  
         ready_to_send_if_needed( self )
