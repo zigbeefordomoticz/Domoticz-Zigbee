@@ -15,6 +15,7 @@ from Modules.tools import is_hex
 from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_RESPONSES, ZIGATE_COMMANDS, RETRANSMIT_COMMAND, ADDRESS_MODE
 from Modules.sqnMgmt import sqn_init_stack, sqn_generate_new_internal_sqn, sqn_add_external_sqn, sqn_get_internal_sqn_from_aps_sqn, sqn_get_internal_sqn_from_app_sqn, TYPE_APP_ZCL, TYPE_APP_ZDP
 
+
 STANDALONE_MESSAGE = []
 PDM_COMMANDS = ( '8300', '8200', '8201', '8204', '8205', '8206', '8207', '8208' )
 CMD_PDM_ON_HOST = []
@@ -914,8 +915,18 @@ def process_msg_type8000(self, Status, PacketType, sqn_app, sqn_aps, Ack_expecte
             return None
     
     if (not self.firmware_with_aps_sqn and self.ListOfCommands[ InternalSqn ]['ExpectedAck']) or (self.firmware_with_aps_sqn and Ack_expected ):
-        #WARNING WE NEED TO Set TYPE_APP_ZCL or TYPE_APP_ZDP depending on the type of function, dont add it if ZIGATE function
-        sqn_add_external_sqn (self, InternalSqn, sqn_app, TYPE_APP_ZCL, sqn_aps)
+            #WARNING WE NEED TO Set TYPE_APP_ZCL or TYPE_APP_ZDP depending on the type of function, dont add it if ZIGATE function
+            cmd = self.ListOfCommands[ InternalSqn ]['Cmd']
+
+            if ZIGATE_COMMANDS[ int(cmd,16)]['Layer'] == 'ZCL':
+                #Domoticz.Log("ZCL %s" %cmd)
+                sqn_add_external_sqn (self, InternalSqn, sqn_app, TYPE_APP_ZCL, sqn_aps)
+                
+            elif ZIGATE_COMMANDS[ int(cmd,16)]['Layer'] == 'ZDP':
+                #Domoticz.Log("ZDP %s" %cmd)
+                sqn_add_external_sqn (self, InternalSqn, sqn_app, TYPE_APP_ZDP, sqn_aps)
+            #else:
+            #    Domoticz.Log("Nothing to Do %s" %cmd)
 
     return InternalSqn
 
