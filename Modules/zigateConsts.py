@@ -364,7 +364,7 @@ ZIGATE_COMMANDS = {
         
         # Identify
         0x0070:{'Sequence': (0x8000,),        'Ack': True , 'Layer': 'ZCL', 'Command': 'Identify Send' , 'NwkId 2nd Bytes': True },
-        0x0071:{'Sequence': (0x8000,),        'Ack': True , 'Layer': 'ZCL', 'Command': 'Identify Query' , 'NwkId 2nd Bytes': True },
+        0x0071:{'Sequence': (0x8000,),        'Ack': True , 'Layer': 'ZCL', 'Command': 'Identify Query', 'NwkId 2nd Bytes': True },
 
         # Action Move
         0x0080:{'Sequence': (0x8000,),        'Ack': True,  'Layer': 'ZCL', 'Command': 'Move to Level' , 'NwkId 2nd Bytes': True },

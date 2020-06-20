@@ -16,7 +16,7 @@ from datetime import datetime
 from time import time
 
 from Modules.zigateConsts import  MAX_READATTRIBUTES_REQ,  ZIGATE_EP
-from Modules.basicOutputs import send_zigatecmd_zcl_ack, send_zigatecmd_zcl_noack
+from Modules.basicOutputs import send_zigatecmd_zcl_ack, send_zigatecmd_zcl_noack, identifySend
 from Modules.logging import loggingReadAttributes 
 from Modules.tools import getListOfEpForCluster
 
@@ -227,7 +227,11 @@ def ping_device_with_read_attribute(self, key):
     if 'TimeStamps' not in self.ListOfDevices[key]['ReadAttributes']:
         self.ListOfDevices[key]['ReadAttributes']['TimeStamps'] = {}
 
-    ListOfEp = getListOfEpForCluster( self, key, '0000' ) 
+    ListOfEp = getListOfEpForCluster( self, key, '0003' ) 
+    for EPout in ListOfEp:
+        identifySend( self, key, EPout, duration=0, withAck = True)
+        return
+    ListOfEp = getListOfEpForCluster( self, key, '0003' )
     for EPout in ListOfEp:
         self.ListOfDevices[key]['ReadAttributes']['TimeStamps'][ EPout + '-' + '0000'] = int(time())
         #send_read_attribute_request( self, '02', key ,ZIGATE_EP , EPout ,'0000' , '00' , '00' , '0000' , 0x01, '0000', ackToBeDisabled = False )
