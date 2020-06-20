@@ -229,12 +229,6 @@ def processKnownDevices( self, Devices, NWKID ):
                 self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = now
                 submitPing( self, NwkId)
 
-    def submitPing( self, NwkId):
-        # Pinging devices to check they are still Alive
-        loggingHeartbeat( self, 'Debug', "------------> call readAttributeRequest %s" %NwkId, NwkId)
-        self.ListOfDevices[NwkId]['Stamp']['LastPing'] = int(time.time())
-        ping_device_with_read_attribute( self, NwkId)
-
     def pingDevices( self, NwkId, health, checkHealthFlag, mainPowerFlag):
 
         loggingHeartbeat( self, 'Debug', "------> pinDevicest %s health: %s, checkHealth: %s, mainPower: %s" %(NwkId,health, checkHealthFlag, mainPowerFlag) , NwkId)
@@ -251,14 +245,28 @@ def processKnownDevices( self, Devices, NWKID ):
         if 'LastPing' not in self.ListOfDevices[NwkId]['Stamp']:
             self.ListOfDevices[NwkId]['Stamp']['LastPing'] = 0
         
-        if ( int(time.time()) > ( self.ListOfDevices[NwkId]['Stamp']['LastPing'] + self.pluginconf.pluginConf['pingDevicesFeq'] )) and \
-                 ( int(time.time()) > ( self.ListOfDevices[NwkId]['Stamp']['LastSeen'] + self.pluginconf.pluginConf['pingDevicesFeq'] )) and \
+        lastPing = self.ListOfDevices[NwkId]['Stamp']['LastPing']
+        lastSeen = self.ListOfDevices[NwkId]['Stamp']['LastSeen']
+
+        now = int(time.time())
+        loggingHeartbeat( self, 'Debug', "------> pinDevice %s time: %s LastPing: %s LastSeen: %s Freq: %s" \
+                %(NWKID, now, lastPing, lastSeen, self.pluginconf.pluginConf['pingDevicesFeq'] ), NwkId) 
+
+        if ( now > ( lastPing + self.pluginconf.pluginConf['pingDevicesFeq'] )) and \
+                 ( now > ( lastSeen + self.pluginconf.pluginConf['pingDevicesFeq'] )) and \
                        self.ZigateComm.loadTransmit() == 0:
 
-            loggingHeartbeat( self, 'Debug', "------> pinDevice time: %s LastPing: %s Freq: %s" \
-                %(int(time.time()), self.ListOfDevices[NwkId]['Stamp']['LastPing'], self.pluginconf.pluginConf['pingDevicesFeq'] ), NwkId) 
+            loggingHeartbeat( self, 'Debug', "------> pinDevice %s time: %s LastPing: %s LastSeen: %s Freq: %s" \
+                %(NWKID, now, lastPing, lastSeen, self.pluginconf.pluginConf['pingDevicesFeq'] ), NwkId) 
             
-            submitPing( self, NwkId)         
+            submitPing( self, NwkId)
+
+    def submitPing( self, NwkId):
+        # Pinging devices to check they are still Alive
+        loggingHeartbeat( self, 'Debug', "------------> call readAttributeRequest %s" %NwkId, NwkId)
+        self.ListOfDevices[NwkId]['Stamp']['LastPing'] = int(time.time())
+        ping_device_with_read_attribute( self, NwkId)
+
 
     # Begin   
     # Normalize Hearbeat value if needed
