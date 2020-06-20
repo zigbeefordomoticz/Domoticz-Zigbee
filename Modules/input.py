@@ -1754,6 +1754,16 @@ def Decode8110(self, Devices, MsgData, MsgRSSI):  # Write Attribute response
         self.ListOfDevices[nwkid]['WriteAttribute'][ MsgSrcEp ][MsgClusterId][ MsgAttrID]['Phase'] = 'fullfilled'
         self.ListOfDevices[nwkid]['WriteAttribute'][ MsgSrcEp ][MsgClusterId][ MsgAttrID]['MsgClusterData'] = MsgClusterData
 
+    # information from 8110 are not realiable, lets try with the sqn 
+    if 'WriteAttribute'  in self.ListOfDevices[nwkid]:
+        for EPout in list (self.ListOfDevices[nwkid]['WriteAttribute']):
+            for clusterID in list (self.ListOfDevices[nwkid]['WriteAttribute'][EPout]):
+                for attribute in list (self.ListOfDevices[nwkid]['WriteAttribute'][EPout][clusterID]):
+                    if i_sqn == self.ListOfDevices[nwkid]['WriteAttribute'][EPout][clusterID][attribute]['i_sqn']:
+                        self.ListOfDevices[nwkid]['WriteAttribute'][EPout][clusterID][attribute]['Stamp'] = int(time())
+                        self.ListOfDevices[nwkid]['WriteAttribute'][EPout][clusterID][attribute]['Phase'] = 'fullfilled'
+                        self.ListOfDevices[nwkid]['WriteAttribute'][EPout][clusterID][attribute]['MsgClusterData'] = MsgClusterData       
+
     if MsgClusterId == "0500":
         self.iaszonemgt.receiveIASmessages( MsgSrcAddr, 3, MsgClusterData)
 

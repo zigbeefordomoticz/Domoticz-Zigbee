@@ -22,7 +22,7 @@ from Modules.basicOutputs import sendZigateCmd, raw_APS_request, write_attribute
 from Modules.bindings import webBind, WebBindStatus
 
 from Modules.readAttributes import ReadAttributeRequest_0201, ReadAttributeRequest_0001, ReadAttributeRequest_0702, ReadAttributeRequest_0000
-from Modules.writeAttributes import write_attribute_when_awake
+from Modules.writeAttributes import write_attributeNoResponse_when_awake
 from Modules.logging import loggingSchneider
 from Modules.zigateConsts import ZIGATE_EP,MAX_LOAD_ZIGATE
 from Modules.tools import getAttributeValue
@@ -839,12 +839,12 @@ def schneider_set_contract( self, key, EPout, kva):
     AttributeID = '5121' # Max Current
     DataType = '22' # 24 bits unsigned integer
     data = "%06x" %max_real_milli_amps_before_tripping
-    write_attribute_when_awake(self, key, ZIGATE_EP, EPout,ClusterId,ManufacturerID,ManufacturerSpecfic,AttributeID,DataType,data)
+    write_attributeNoResponse_when_awake(self, key, ZIGATE_EP, EPout,ClusterId,ManufacturerID,ManufacturerSpecfic,AttributeID,DataType,data)
 
     AttributeID = '7003' # Contract Name
     DataType = '42' # String
     data = 'BASE'.encode('utf-8').hex()  # BASE
-    write_attribute_when_awake(self, key, ZIGATE_EP, EPout,ClusterId,ManufacturerID,ManufacturerSpecfic,AttributeID,DataType,data)
+    write_attributeNoResponse_when_awake(self, key, ZIGATE_EP, EPout,ClusterId,ManufacturerID,ManufacturerSpecfic,AttributeID,DataType,data)
 
 
 def schneiderReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
