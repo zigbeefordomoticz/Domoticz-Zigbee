@@ -1062,14 +1062,27 @@ def process_other_type_of_message(self, MsgType, MsgSqn = None, MsgNwkId=None, M
             return None
 
         #WARNING WE NEED TO Set TYPE_APP_ZCL or TYPE_APP_ZDP depending on the type of function, dont call if ZIGATE function
-        isqn = sqn_get_internal_sqn_from_app_sqn (self, MsgSqn, TYPE_APP_ZCL)
+        cmd = self.ListOfCommands[ InternalSqn ]['Cmd']
+        isqn = None
+        if ZIGATE_COMMANDS[ int(cmd,16)]['Layer'] == 'ZCL':
+            #Domoticz.Log("ZCL %s" %cmd)
+            isqn = sqn_get_internal_sqn_from_app_sqn (self, MsgSqn, TYPE_APP_ZCL)
+
+        elif ZIGATE_COMMANDS[ int(cmd,16)]['Layer'] == 'ZDP':
+            #Domoticz.Log("ZDP %s" %cmd)
+            isqn = sqn_get_internal_sqn_from_app_sqn (self, MsgSqn, TYPE_APP_ZDP)
+        #else:
+        #    Domoticz.Log("Nothing to Do %s" %cmd)
+
+
         self.loggingSend( 'Debug', " --  -- - > Expected IntSqn: %s Received ISqn: %s ESqn: %s" %(InternalSqn, isqn, MsgSqn))
-        if InternalSqn != isqn:
+        if isqn and InternalSqn != isqn:
             # Async message no worry
-            self.loggingSend( 'Error', " -- iSqn do not match, no action")
-            self.loggingSend( 'Error', " --  -- - > Expecting: %04x Receiving: %s" %(expResponse,MsgType ))
-            self.loggingSend( 'Error', " --  -- - > Expected IntSqn: %s Received ISqn: %s ESqn: %s" %(InternalSqn, isqn, MsgSqn))
-            self.loggingSend( 'Error', " --  -- - > Expecting: %s %s %s receiving %s %s %s" %( expNwkId, expEp, expCluster, MsgNwkId, MsgEp, MsgClusterId))
+            self.loggingSend( 'Log', " -- iSqn do not match, no action")
+            self.loggingSend( 'Log', " --  -- - > Expecting: %04x Receiving: %s" %(expResponse,MsgType ))
+            self.loggingSend( 'Log', " --  -- - > Expected IntSqn: %s Received ISqn: %s ESqn: %s" %(InternalSqn, isqn, MsgSqn))
+            self.loggingSend( 'Log', " --  -- - > Expecting: %s %s %s receiving %s %s %s" %( expNwkId, expEp, expCluster, MsgNwkId, MsgEp, MsgClusterId))
+
             #return None
  
         ready_to_send_if_needed( self )
