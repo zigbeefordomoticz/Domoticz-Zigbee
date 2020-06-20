@@ -440,7 +440,7 @@ ZIGATE_COMMANDS = {
         0x0506:{'Sequence': (0x8000,),        'Ack': False, 'Layer': 'ZDP', 'Command': 'E_SL_MSG_SEND_WAIT_FOR_DATA_PARAMS' , 'NwkId 2nd Bytes': False },
         # Miscaleneous
         
-        0x0530:{'Sequence': (0x8000,),        'Ack': True,  'Layer': 'RAW', 'Command': 'Raw APS Data Request' , 'NwkId 2nd Bytes': False },
+        0x0530:{'Sequence': (0x8000,),        'Ack': False,  'Layer': 'RAW', 'Command': 'Raw APS Data Request' , 'NwkId 2nd Bytes': False },
         0x0531:{'Sequence': (0x8000, 0x8530), 'Ack': True , 'Layer': 'ZDP', 'Command': 'Complex Descriptor request' , 'NwkId 2nd Bytes': False },
         0x0600:{'Sequence': (0x8000, 0x8600), 'Ack': True , 'Layer': 'ZDP', 'Command': 'E_SL_MSG_NWK_RECOVERY_EXTRACT_REQ' , 'NwkId 2nd Bytes': False },
         0x0601:{'Sequence': (0x8000, 0x8601), 'Ack': True , 'Layer': 'ZDP', 'Command': 'E_SL_MSG_NWK_RECOVERY_RESTORE_REQ' , 'NwkId 2nd Bytes': False },
