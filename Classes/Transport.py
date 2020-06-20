@@ -1053,7 +1053,10 @@ def process_other_type_of_message(self, MsgType, MsgSqn = None, MsgNwkId=None, M
         self.loggingSend( 'Debug', " --  -- - > Expected IntSqn: %s Received ISqn: %s ESqn: %s" %(InternalSqn, isqn, MsgSqn))
         if InternalSqn != isqn:
             # Async message no worry
-            self.loggingSend( 'Debug', " --  -- - > iSqn do not match, no action")
+            self.loggingSend( 'Error', " -- iSqn do not match, no action")
+            self.loggingSend( 'Error', " --  -- - > Expecting: %04x Receiving: %s" %(expResponse,MsgType ))
+            self.loggingSend( 'Error', " --  -- - > Expected IntSqn: %s Received ISqn: %s ESqn: %s" %(InternalSqn, isqn, MsgSqn))
+            self.loggingSend( 'Error', " --  -- - > Expecting: %s %s %s receiving %s %s %s" %( expNwkId, expEp, expCluster, MsgNwkId, MsgEp, MsgClusterId))
             #return None
  
         ready_to_send_if_needed( self )
