@@ -496,7 +496,7 @@ def set_cmdresponse_for_sending( self, i_sqn):
             self.loggingSend( 'Debug', "--- Cmmand to ZiGate Do not wait for Ack/Nack")
             self.ListOfCommands[ i_sqn ]['ExpectedAck'] = False
 
-        elif self.pluginconf.pluginConf['CompatibilityMode'] and self.ListOfCommands[ i_sqn ]['Cmd'] not in ('0100', '0070'):
+        elif self.pluginconf.pluginConf['CompatibilityMode'] and self.ListOfCommands[ i_sqn ]['Cmd'] != '0100':
             # If Compatibility mode, do not wait for Response on command 0x0100
             self.ListOfCommands[i_sqn]['ResponseExpected'] = False
             self.ListOfCommands[i_sqn]['MessageResponse'] = None
