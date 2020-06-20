@@ -197,7 +197,7 @@ def processKnownDevices( self, Devices, NWKID ):
         lastTimeStamp = self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp']
         retry = self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry']
 
-        loggingHeartbeat( self, 'Log', "--------> ping Retry Check %s Retry: %s Gap: %s" %(NwkId, retry, now - lastTimeStamp), NwkId)
+        loggingHeartbeat( self, 'Debug', "--------> ping Retry Check %s Retry: %s Gap: %s" %(NwkId, retry, now - lastTimeStamp), NwkId)
         # Retry #1
         if retry == 0:
             # First retry in the next cycle if possible
