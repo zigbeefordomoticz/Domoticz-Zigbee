@@ -218,9 +218,9 @@ def identifySend( self, nwkid, ep, duration=0, withAck = False):
     loggingBasicOutput( self, 'Debug', "identifySend - send an Identify Message to: %s for %04x seconds Ack: %s" %( nwkid, duration, withAck))
     loggingBasicOutput( self, 'Debug', "identifySend - data sent >%s< " %(datas))
     if withAck:
-        send_zigatecmd_zcl_noack(self, nwkid, "0070", datas )
-    else:
         send_zigatecmd_zcl_ack(self, nwkid, "0070", datas )
+    else:
+        send_zigatecmd_zcl_noack(self, nwkid, "0070", datas )
 
 def maskChannel( channel ):
 
