@@ -228,7 +228,6 @@ def processKnownDevices( self, Devices, NWKID ):
                 self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = now
                 submitPing( self, NwkId)
 
-
     def submitPing( self, NwkId):
         # Pinging devices to check they are still Alive
         loggingHeartbeat( self, 'Debug', "------------> call readAttributeRequest %s" %NwkId, NwkId)
@@ -244,7 +243,7 @@ def processKnownDevices( self, Devices, NWKID ):
             pingRetryDueToBadHealth(self, NwkId)
             return
 
-        if _checkHealth and self.ZigateComm.loadTransmit() == 0:
+        if checkHealthFlag and self.ZigateComm.loadTransmit() == 0:
             submitPing( self, NWKID)
             return
 
