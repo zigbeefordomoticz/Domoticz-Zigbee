@@ -503,6 +503,24 @@ def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, at
     loggingBasicOutput( self, 'Debug', "write_attribute for %s/%s - >%s<" %(key, EPout, datas) )
     send_zigatecmd_zcl_noack(self, key, "0110", str(datas) )
 
+def write_attributeNoResponse( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data):
+    
+    addr_mode = "02" # Short address
+    if key == 'ffff':
+        addr_mode = '04'
+    direction = "00"
+
+    if data_type == '42': # String
+        # In case of Data Type 0x42 ( String ), we have to add the length of string before the string.
+        data = '%02x' %(len(data)//2) + data
+
+    lenght = "01" # Only 1 attribute
+    datas = addr_mode + key + ZIGATE_EP + EPout + clusterID 
+    datas += direction + manuf_spec + manuf_id
+    datas += lenght +attribute + data_type + data
+    loggingBasicOutput( self, 'Log', "write_attribute No Reponse for %s/%s - >%s<" %(key, EPout, datas), key)
+    send_zigatecmd_zcl_noack(self, "0113", datas ) 
+
 ## Scene
 def scene_membership_request( self, nwkid, ep, groupid='0000'):
 
