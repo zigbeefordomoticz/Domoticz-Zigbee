@@ -501,7 +501,7 @@ def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, at
     datas += direction + manuf_spec + manuf_id
     datas += lenght +attribute + data_type + data
     loggingBasicOutput( self, 'Debug', "write_attribute for %s/%s - >%s<" %(key, EPout, datas) )
-    send_zigatecmd_zcl_noack(self, key, "0110", str(datas) )
+    return send_zigatecmd_zcl_noack(self, key, "0110", str(datas) )
 
 def write_attributeNoResponse( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data):
     
@@ -519,7 +519,7 @@ def write_attributeNoResponse( self, key, EPin, EPout, clusterID, manuf_id, manu
     datas += direction + manuf_spec + manuf_id
     datas += lenght +attribute + data_type + data
     loggingBasicOutput( self, 'Log', "write_attribute No Reponse for %s/%s - >%s<" %(key, EPout, datas), key)
-    send_zigatecmd_zcl_noack(self, "0113", datas ) 
+    return send_zigatecmd_zcl_noack(self, key, "0113", datas ) 
 
 ## Scene
 def scene_membership_request( self, nwkid, ep, groupid='0000'):
