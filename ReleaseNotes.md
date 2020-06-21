@@ -12,6 +12,9 @@ If you want to contribue , please let us know , we are looking for help in vario
 - improving the plugin
 - increasing the level of documentation for end user
 
+## 21 June 2020 - 4.9.4
+- [Hardware] - Certified Xiaomi Smart Socket EU Plug ZCZ04LM
+
 ## 14 June 2020 - 4.9.3
 - [Technical] - Livolo parameter
 - [Technical] - Improvement Schneider
