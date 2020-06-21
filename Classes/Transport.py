@@ -168,7 +168,7 @@ class ZigateTransport(object):
         waitForResponse = waitForResponseIn or self.pluginconf.pluginConf['waitForResponse']
 
         # If ackIsDisabled is True, it means that usally a Ack is expected ( ZIGATE_COMMANDS), but here it has been disabled via Address Mode
-        self.loggingSend(  'Log', "sendData - %s %s ackDisabled: %s FIFO: %s" %(cmd, datas, ackIsDisabled, len(self.zigateSendQueue)))
+        self.loggingSend(  'Debug', "sendData - %s %s ackDisabled: %s FIFO: %s" %(cmd, datas, ackIsDisabled, len(self.zigateSendQueue)))
         if datas is None:
             datas = ''
 
@@ -220,10 +220,10 @@ class ZigateTransport(object):
             self.ListOfCommands[ InternalSqn ]['ResponseExpected'] = True
 
         if self.ListOfCommands[ InternalSqn ]['ResponseExpected']:
-            self.loggingSend(  'Log', "sendData - InternalSQN: %s Cmd: %s Data: %s ExpectedCmd: %04x"
+            self.loggingSend(  'Debug', "sendData - InternalSQN: %s Cmd: %s Data: %s ExpectedCmd: %04x"
                 %(InternalSqn, cmd, datas, self.ListOfCommands[ InternalSqn ]['MessageResponse'] ))
         else:
-            self.loggingSend(  'Log', "sendData - InternalSQN: %s Cmd: %s Data: %s"
+            self.loggingSend(  'Debug', "sendData - InternalSQN: %s Cmd: %s Data: %s"
                 %(InternalSqn, cmd, datas ))
 
         send_data_internal ( self, InternalSqn )
