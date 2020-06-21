@@ -459,10 +459,6 @@ def send_data_internal(self, InternalSqn):
         # Add to 0x8000 queue
         _add_cmd_to_wait_for8000_queue( self, InternalSqn )
 
-        if self.ListOfCommands[InternalSqn]['Cmd'] == '0049' and self.ListOfCommands[InternalSqn]['Datas'] == 'FFFC0000' :
-            self.ListOfCommands[InternalSqn]['ResponseExpected'] = False
-            self.ListOfCommands[InternalSqn]['MessageResponse'] = None
-
         if self.zmode in ( 'zigbee31c', 'zigbee31d') and self.ListOfCommands[ InternalSqn ]['ResponseExpected']:
             set_cmdresponse_for_sending( self, InternalSqn)
 
@@ -481,6 +477,10 @@ def set_cmdresponse_for_sending( self, i_sqn):
                 self.ListOfCommands[i_sqn]['ResponseExpected'] = False
                 self.ListOfCommands[i_sqn]['MessageResponse'] = None
 
+            elif self.ListOfCommands[i_sqn]['Cmd'] == '0049' and self.ListOfCommands[i_sqn]['Datas'][0:4] == 'FFFC':
+                self.loggingSend( 'Debug', "--- Permit To Join request to ZiGate Do not wait for Ack/Nack")
+                self.ListOfCommands[i_sqn]['ResponseExpected'] = False
+                self.ListOfCommands[i_sqn]['MessageResponse'] = None
             else:
                 self.loggingSend( 'Debug', "--- Add to Queue CommandResponse Queue")
                 _add_cmd_to_wait_for_cmdresponse_queue( self, i_sqn )         
@@ -647,12 +647,12 @@ def check_timed_out(self):
             self.loggingSend( 'Debug', " --  --  --  > - %s - Time Out %s  " % ( desc, i_sqn ))
             return
         if self.ListOfCommands[ i_sqn ]['MessageResponse']:
-            self.loggingSend( 'Debug', " --  --  --  > Time Out %s [%s] %s sec for  %s %s %s/%s %04x Time: %s" \
+            self.loggingSend( 'Error', " --  --  --  > Time Out %s [%s] %s sec for  %s %s %s/%s %04x Time: %s" \
                 % (desc, i_sqn, (now - TimeStamp), self.ListOfCommands[ i_sqn ]['Cmd'], self.ListOfCommands[ i_sqn ]['Datas'], 
                 self.ListOfCommands[ i_sqn ]['ResponseExpected'], self.ListOfCommands[ i_sqn ]['ExpectedAck'],
                 self.ListOfCommands[ i_sqn ]['MessageResponse'], self.ListOfCommands[ InternalSqn ]['ReceiveTimeStamp'].strftime("%m/%d/%Y, %H:%M:%S")  ))
         else:
-            self.loggingSend( 'Debug', " --  --  --  > Time Out %s [%s] %s sec for  %s %s %s/%s %s Time: %s" \
+            self.loggingSend( 'Error', " --  --  --  > Time Out %s [%s] %s sec for  %s %s %s/%s %s Time: %s" \
                 % (desc, i_sqn, (now - TimeStamp), self.ListOfCommands[ i_sqn ]['Cmd'], self.ListOfCommands[ i_sqn ]['Datas'], 
                 self.ListOfCommands[ i_sqn ]['ResponseExpected'], self.ListOfCommands[ i_sqn ]['ExpectedAck'],
                 self.ListOfCommands[ i_sqn ]['MessageResponse'], self.ListOfCommands[ InternalSqn ]['ReceiveTimeStamp'].strftime("%m/%d/%Y, %H:%M:%S") ))
@@ -702,7 +702,7 @@ def check_timed_out(self):
     self.checkTimedOutFlag = False
     ready_to_send_if_needed( self )
         
-    self.logging_receive( 'Debug', "checkTimedOut  End   - waitQ: %2s ackQ: %2s dataQ: %2s SendingFIFO: %3s" 
+    self.logging_receive( 'Debug2', "checkTimedOut  End   - waitQ: %2s ackQ: %2s dataQ: %2s SendingFIFO: %3s" 
         %( len(self._waitFor8000Queue), len(self._waitForAckNack), len(self._waitForCmdResponseQueue), len(self.zigateSendQueue)))
 
 def cleanup_list_of_commands( self, i_sqn):

@@ -468,13 +468,13 @@ def ReadAttributeRequest_0102(self, key):
     ListOfEp = getListOfEpForCluster( self, key, '0102' )
     for EPout in ListOfEp:
         listAttributes = []
-        for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0102', ackToBeDisabled = True):
+        for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0102'):
             if iterAttr not in listAttributes:
                 listAttributes.append( iterAttr )
 
             if listAttributes:
                 loggingReadAttributes( self, 'Debug', "Request 0x0102 info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
-                ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0102", listAttributes)
+                ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0102", listAttributes , ackToBeDisabled = True )
 
 def ReadAttributeRequest_0102_0008( self, key):
     loggingReadAttributes( self, 'Log', "Request Windows Covering status Read Attribute request: " + key , nwkid=key)
