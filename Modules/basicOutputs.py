@@ -256,7 +256,7 @@ def maskChannel( channel ):
 
     elif isinstance(channel, int):
         if channel in CHANNELS:
-            mask = CHANNELS( channel )
+            mask = CHANNELS[ channel ]
         else:
             Domoticz.Error("Requested channel not supported by Zigate: %s" %channel)
 
