@@ -42,12 +42,14 @@ def send_zigatecmd_zcl_noack( self, address, cmd, datas):
         # Short address
         address_mode = '%02x' %ADDRESS_MODE['shortnoack']
         if self.pluginconf.pluginConf['forceAckOnZCL']:
+            Domoticz.Log("Force Ack")
             address_mode = '%02x' %ADDRESS_MODE['short']
             disableAck = False
     else:
         address_mode = '%02x' %ADDRESS_MODE['ieeenoack']
         if self.pluginconf.pluginConf['forceAckOnZCL']:
             address_mode = '%02x' %ADDRESS_MODE['ieee']
+            Domoticz.Log("Force Ack")
             disableAck = False
 
     return send_zigatecmd_raw( self, cmd, address_mode + address + datas, ackIsDisabled = disableAck )
@@ -501,7 +503,9 @@ def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, at
     datas += direction + manuf_spec + manuf_id
     datas += lenght +attribute + data_type + data
     loggingBasicOutput( self, 'Debug', "write_attribute for %s/%s - >%s<" %(key, EPout, datas) )
-    return send_zigatecmd_zcl_noack(self, key, "0110", str(datas) )
+
+    # ATTENTION "0110" and "0113" are always call with Ack (overwriten by firmware)
+    return send_zigatecmd_zcl_ack(self, key, "0110", str(datas) )
 
 def write_attributeNoResponse( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data):
     
@@ -519,7 +523,9 @@ def write_attributeNoResponse( self, key, EPin, EPout, clusterID, manuf_id, manu
     datas += direction + manuf_spec + manuf_id
     datas += lenght +attribute + data_type + data
     loggingBasicOutput( self, 'Log', "write_attribute No Reponse for %s/%s - >%s<" %(key, EPout, datas), key)
-    return send_zigatecmd_zcl_noack(self, key, "0113", datas ) 
+
+    # ATTENTION "0110" and "0113" are always call with Ack (overwriten by firmware)
+    return send_zigatecmd_zcl_ack(self, key, "0113", datas ) 
 
 ## Scene
 def scene_membership_request( self, nwkid, ep, groupid='0000'):

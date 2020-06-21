@@ -139,10 +139,10 @@ def normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttribu
 def send_read_attribute_request( self, addr ,EpIn , EpOut ,Cluster ,direction , manufacturer_spec , manufacturer , lenAttr, Attr, ackToBeDisabled = False):
     
     if ackToBeDisabled:
-        #Domoticz.Log("send_read_attribute_request - no ack")
+
         send_zigatecmd_zcl_noack( self, addr, '0100', EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + '%02x' %lenAttr + Attr )
     else:
-        #Domoticz.Log("send_read_attribute_request - ack")
+
         send_zigatecmd_zcl_ack( self, addr, '0100', EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + '%02x' %lenAttr + Attr )
 
 def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
@@ -343,7 +343,7 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
                 listAttributes = listAttrGeneric
 
             loggingReadAttributes( self, 'Debug', "Request Basic  via Read Attribute request %s/%s %s" %(key, EPout, str(listAttributes)), nwkid=key)
-            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0000", listAttributes )
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0000", listAttributes, ackToBeDisabled = True )
 
             if listAttrSpecific:
                 loggingReadAttributes( self, 'Debug', "Request Basic  via Read Attribute request Manuf Specific %s/%s %s" %(key, EPout, str(listAttributes)), nwkid=key)
