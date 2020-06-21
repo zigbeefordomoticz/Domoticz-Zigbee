@@ -141,7 +141,7 @@ SETTINGS = {
 
     # Plugin Transport
     'PluginTransport':     { 'Order': 10, 'param': {
-        'zmode':           { 'type':'str', 'default':'Auto' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
+        'Zmode':           { 'type':'str', 'default':'Auto' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
         'TimeOut8000':     { 'type':'int', 'default': 1.5 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
         'TimeOut8011':     { 'type':'int', 'default': 8, 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
         'TimeOutResponse': { 'type':'int', 'default': 8, 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},

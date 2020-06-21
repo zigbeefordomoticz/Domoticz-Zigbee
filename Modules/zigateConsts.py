@@ -328,10 +328,12 @@ ZIGATE_COMMANDS = {
         0x002B:{'Sequence': (0x8000, 0x802B), 'Ack': False, 'SQN': True,  'Layer': 'ZDP',    'Command': 'User Descriptor Set' , 'NwkId 2nd Bytes': False },
         0x002C:{'Sequence': (0x8000, 0x802C), 'Ack': False, 'SQN': True,  'Layer': 'ZDP',    'Command': 'User Descritpor Request' , 'NwkId 2nd Bytes': False },
         0x002F:{'Sequence': (0x8000,),        'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'E_SL_MSG_SET_FLOW_CONTROL' , 'NwkId 2nd Bytes': False },
+
         0x0030:{'Sequence': (0x8000, 0x8030), 'Ack': True , 'SQN': True,  'Layer': 'ZDP',    'Command': 'Bind' , 'NwkId 2nd Bytes': False },
         0x0031:{'Sequence': (0x8000, 0x8031), 'Ack': True , 'SQN': True,  'Layer': 'ZDP',    'Command': 'Unbind' , 'NwkId 2nd Bytes': False },
         0x0032:{'Sequence': (0x8000, 0x8032), 'Ack': False ,'SQN': True,  'Layer': 'ZDP',    'Command': 'Bind Group' , 'NwkId 2nd Bytes': False },
         0x0033:{'Sequence': (0x8000, 0x8033), 'Ack': False ,'SQN': True,  'Layer': 'ZDP',    'Command': 'Unbind Group' , 'NwkId 2nd Bytes': False },
+        
         0x0040:{'Sequence': (0x8000, 0x8040), 'Ack': True , 'SQN': True,  'Layer': 'ZDP',    'Command': 'Network Address request' , 'NwkId 2nd Bytes': False },
         0x0041:{'Sequence': (0x8000, 0x8041), 'Ack': True , 'SQN': True,  'Layer': 'ZDP',    'Command': 'IEEE Address request' , 'NwkId 2nd Bytes': False },
         0x0042:{'Sequence': (0x8000, 0x8042), 'Ack': True , 'SQN': True,  'Layer': 'ZDP',    'Command': 'Node Descriptor request' , 'NwkId 2nd Bytes': False },

@@ -308,7 +308,10 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
                 if "0000" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
                     EPout= tmpEp 
             loggingReadAttributes( self, 'Debug', "Request Basic  via Read Attribute request: " + key + " EPout = " + EPout + " Attributes: " + str(listAttributes), nwkid=key)
-            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0000", listAttributes, ackToBeDisabled = False )
+            if self.ListOfDevices[ key ].get('Power', 'Battery') == 'Main':
+                ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0000", listAttributes, ackToBeDisabled = False )
+            else:
+                ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0000", listAttributes, ackToBeDisabled = True )
 
     else:
         loggingReadAttributes( self, 'Debug', "--> Full scope", nwkid=key)
