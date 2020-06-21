@@ -69,10 +69,6 @@ class ZigateTransport(object):
         # Call back function to send back to plugin
         self.F_out = F_out  # Function to call to bring the decoded Frame at plugin
 
-
-
-
-
         initMatrix( self)
 
         if str(transport) == "USB":
@@ -167,12 +163,16 @@ class ZigateTransport(object):
     def pdm_lock_status( self ):
         return self.PDMCommandOnly
 
-    def sendData(self, cmd, datas , ackIsDisabled = False):
+    def sendData(self, cmd, datas , ackIsDisabled = False, waitForResponseIn = False):
+
+        waitForResponse = waitForResponseIn or self.pluginconf.pluginConf['waitForResponse']
+        Domoticz.Log("    %s  =  %s or %s" %(waitForResponse, waitForResponseIn, self.pluginconf.pluginConf['waitForResponse'] ))
 
         # If ackIsDisabled is True, it means that usally a Ack is expected ( ZIGATE_COMMANDS), but here it has been disabled via Address Mode
-        self.loggingSend(  'Debug', "sendData - %s %s ackDisabled: %s FIFO: %s" %(cmd, datas, ackIsDisabled, len(self.zigateSendQueue)))
+        self.loggingSend(  'Log', "sendData - %s %s ackDisabled: %s FIFO: %s" %(cmd, datas, ackIsDisabled, len(self.zigateSendQueue)))
         if datas is None:
             datas = ''
+
         if datas != '' and not is_hex( datas):
             Domoticz.Error("sendData_internal - receiving a non hexa Data: > %s < " %datas)
             return None
@@ -213,18 +213,18 @@ class ZigateTransport(object):
         if int(cmd, 16) in CMD_PDM_ON_HOST:
             self.ListOfCommands[ InternalSqn ]['PDMCommand']      = True
 
-        if int(cmd, 16) in CMD_WITH_RESPONSE and not ackIsDisabled:
+        if int(cmd, 16) in CMD_WITH_ACK and not ackIsDisabled:
+            self.ListOfCommands[ InternalSqn ]['ExpectedAck']      = True 
+
+        if int(cmd, 16) in CMD_WITH_RESPONSE and ( not ackIsDisabled or waitForResponse):
             self.ListOfCommands[ InternalSqn ]['MessageResponse'] = CMD_WITH_RESPONSE[int(cmd, 16)]
             self.ListOfCommands[ InternalSqn ]['ResponseExpected'] = True
 
-        if int(cmd, 16) in CMD_WITH_ACK and not ackIsDisabled:
-            self.ListOfCommands[ InternalSqn ]['ExpectedAck']      = True 
-            
         if self.ListOfCommands[ InternalSqn ]['ResponseExpected']:
-            self.loggingSend(  'Debug', "sendData - InternalSQN: %s Cmd: %s Data: %s ExpectedCmd: %04x"
+            self.loggingSend(  'Log', "sendData - InternalSQN: %s Cmd: %s Data: %s ExpectedCmd: %04x"
                 %(InternalSqn, cmd, datas, self.ListOfCommands[ InternalSqn ]['MessageResponse'] ))
         else:
-            self.loggingSend(  'Debug', "sendData - InternalSQN: %s Cmd: %s Data: %s"
+            self.loggingSend(  'Log', "sendData - InternalSQN: %s Cmd: %s Data: %s"
                 %(InternalSqn, cmd, datas ))
 
         send_data_internal ( self, InternalSqn )
@@ -346,7 +346,7 @@ def _add_cmd_to_send_queue(self, InternalSqn ):
     # add a command to the waiting list
     timestamp = int(time())
     # Check if the Cmd+Data is not yet in the Queue. If yes forget that message
-    self.loggingSend(  'Debug2', " --  > _add_cmd_to_send_queue - adding to Queue %s %s" %(InternalSqn, timestamp ))
+    #self.loggingSend(  'Debug2', " --  > _add_cmd_to_send_queue - adding to Queue %s %s" %(InternalSqn, timestamp ))
     self.zigateSendQueue.append( (InternalSqn, timestamp))
     # Manage Statistics
     if len(self.zigateSendQueue) > self.statistics._MaxLoad:
@@ -360,13 +360,13 @@ def _next_cmd_from_send_queue(self):
     if len(self.zigateSendQueue) > 0:
         ret = self.zigateSendQueue[0]
         del self.zigateSendQueue[0]
-    self.loggingSend(  'Debug2', " --  > _nextCmdFromSendQueue - Unqueue %s " %( str(ret) ))
+    #self.loggingSend(  'Debug2', " --  > _nextCmdFromSendQueue - Unqueue %s " %( str(ret) ))
     return ret
 
 def _add_cmd_to_wait_for8000_queue(self, InternalSqn ):
     # add a command to the waiting list for 0x8000
     timestamp = int(time())
-    self.loggingSend(  'Debug2', " --  > _add_cmd_to_wait_for8000_queue - adding to Queue %s %s" %(InternalSqn, timestamp))
+    #self.loggingSend(  'Debug2', " --  > _add_cmd_to_wait_for8000_queue - adding to Queue %s %s" %(InternalSqn, timestamp))
     self._waitFor8000Queue.append( (InternalSqn, timestamp) )
 
 def _next_cmd_from_wait_for8000_queue(self):
@@ -375,13 +375,13 @@ def _next_cmd_from_wait_for8000_queue(self):
     if len(self._waitFor8000Queue) > 0:
         ret = self._waitFor8000Queue[0]
         del self._waitFor8000Queue[0]
-    self.loggingSend(  'Debug2', " --  > _nextCmdFromWaitFor8000Queue - Unqueue %s " %( str(ret) ))
+    #self.loggingSend(  'Debug2', " --  > _nextCmdFromWaitFor8000Queue - Unqueue %s " %( str(ret) ))
     return ret
 
 def _add_cmd_to_wait_for_ack_nack_queue( self, InternalSqn):
     # add a command to the AckNack waiting list
     timestamp = int(time())
-    self.loggingSend(  'Debug2', " --  > _addCmdToWaitForAckNackQueue - adding to Queue  %s %s" %(InternalSqn, timestamp))
+    #self.loggingSend(  'Debug2', " --  > _addCmdToWaitForAckNackQueue - adding to Queue  %s %s" %(InternalSqn, timestamp))
     self._waitForAckNack.append( (InternalSqn, timestamp) )
 
 def _next_cmd_to_wait_for_ack_nack_queue( self):
@@ -390,14 +390,14 @@ def _next_cmd_to_wait_for_ack_nack_queue( self):
     if len(self._waitForAckNack) > 0:
         ret = self._waitForAckNack[0]
         del self._waitForAckNack[0]
-    self.loggingSend(  'Debug2', " --  > _next_cmd_to_wait_for_ack_nack_queue - Unqueue %s " %( str(ret) ))
+    #self.loggingSend(  'Debug2', " --  > _next_cmd_to_wait_for_ack_nack_queue - Unqueue %s " %( str(ret) ))
     return ret    
 
 def _add_cmd_to_wait_for_cmdresponse_queue(self, InternalSqn):
     # add a command to the waiting list
     # _waitForDataQueue [ Expected Response Type, Cmd, Data, TimeStamps ]
     timestamp = int(time())
-    self.loggingSend(  'Debug2', " --  > _add_cmd_to_wait_for_cmdresponse_queue - adding to Queue %s %s" %(InternalSqn, timestamp))
+    #self.loggingSend(  'Debug2', " --  > _add_cmd_to_wait_for_cmdresponse_queue - adding to Queue %s %s" %(InternalSqn, timestamp))
     self._waitForCmdResponseQueue.append( (InternalSqn, timestamp) )
 
 def _next_cmd_from_wait_cmdresponse_queue(self):
@@ -406,7 +406,7 @@ def _next_cmd_from_wait_cmdresponse_queue(self):
     if len(self._waitForCmdResponseQueue) > 0:
         ret = self._waitForCmdResponseQueue[0]
         del self._waitForCmdResponseQueue[0]
-    self.loggingSend(  'Debug2', " --  > _next_cmd_from_wait_cmdresponse_queue - Unqueue %s " %( str(ret) ))
+    #self.loggingSend(  'Debug2', " --  > _next_cmd_from_wait_cmdresponse_queue - Unqueue %s " %( str(ret) ))
     return ret
 
 # Sending functions
@@ -745,7 +745,32 @@ def process_frame(self, frame):
     MsgLength = frame[6:10]
     MsgCRC = frame[10:12]
     self.logging_receive( 'Debug', "process_frame - MsgType: %s MsgLength: %s MsgCRC: %s" %(MsgType, MsgLength, MsgCRC))
-    
+
+    if MsgType == '8701':
+        # Route Discovery
+        # self.F_out(frame, None)  # for processing
+        ready_to_send_if_needed( self )
+        return        
+
+    if MsgType == "8702":
+        # APS Failure
+        # i_sqn = process_msg_type8702( self, MsgData )
+        self.statistics._APSFailure += 1
+        self.F_out(frame, None)
+        ready_to_send_if_needed( self )
+        return
+
+    if int(MsgType, 16) in STANDALONE_MESSAGE:  # We receive an async message, just forward it to plugin
+        self.F_out(frame, None )  # for processing
+        ready_to_send_if_needed( self )
+        return
+
+    if len(self._waitFor8000Queue) == 0 and len(self._waitForCmdResponseQueue) == 0 and len(self._waitForAckNack) == 0 :
+        # All queues are empty
+        self.F_out(frame, None)
+        ready_to_send_if_needed( self )
+        return
+
     if len(frame) >= 18:
         #Payload
         MsgData = frame[12:len(frame) - 4]
@@ -780,6 +805,12 @@ def process_frame(self, frame):
             if i_sqn is not None:
                 Domoticz.Error("i_sqn: %s not found in %s" %(i_sqn, str(self.ListOfCommands.keys())))    
 
+        ready_to_send_if_needed( self )
+        return
+
+    if len(self._waitForCmdResponseQueue) == 0 and len(self._waitForAckNack) == 0:
+        # All queues are empty 
+        self.F_out(frame, None)
         ready_to_send_if_needed( self )
         return
 
@@ -821,22 +852,9 @@ def process_frame(self, frame):
             ready_to_send_if_needed( self )
         return
 
-    if MsgType == '8701':
-        # Route Discovery
-        # self.F_out(frame, None)  # for processing
-        ready_to_send_if_needed( self )
-        return        
-
-    if MsgType == "8702":
-        # APS Failure
-        # i_sqn = process_msg_type8702( self, MsgData )
-        self.statistics._APSFailure += 1
+    if len(self._waitForCmdResponseQueue) == 0:
+        # All queues are empty 
         self.F_out(frame, None)
-        ready_to_send_if_needed( self )
-        return
-
-    if int(MsgType, 16) in STANDALONE_MESSAGE:  # We receive an async message, just forward it to plugin
-        self.F_out(frame, None )  # for processing
         ready_to_send_if_needed( self )
         return
 
@@ -859,9 +877,12 @@ def process_frame(self, frame):
         if i_sqn in self.ListOfCommands:
             self.ListOfCommands[ i_sqn ]['Status'] = '8XXX'
             cleanup_list_of_commands( self, _next_cmd_from_wait_cmdresponse_queue( self )[0] )
+    else:
+        #Traiter le firmware 31d ou on force Wait on Response
+        pass
 
-    ready_to_send_if_needed( self )
     self.F_out(frame, None)  # Forward the message to plugin for further processing
+    ready_to_send_if_needed( self )
     self.check_timed_out_for_tx_queues()  # Let's take the opportunity to check TimeOut
 
 def process_msg_type8000(self, Status, PacketType, sqn_app, sqn_aps, Ack_expected):
