@@ -498,18 +498,18 @@ def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, at
         data = '%02x' %(len(data)//2) + data
 
     lenght = "01" # Only 1 attribute
-    datas = addr_mode + key + EPin + EPout + clusterID
-    #datas = EPin + EPout + clusterID
+    #datas = addr_mode + key + EPin + EPout + clusterID
+    datas = EPin + EPout + clusterID
     datas += direction + manuf_spec + manuf_id
     datas += lenght +attribute + data_type + data
     loggingBasicOutput( self, 'Debug', "write_attribute for %s/%s - >%s<" %(key, EPout, datas) )
 
     # ATTENTION "0110" and "0113" are always call with Ack (overwriten by firmware)
-    return send_zigatecmd_raw(self, "0110", str(datas) , ackIsDisabled = False)
+    return send_zigatecmd_zcl_ack(self, key, "0110", str(datas) 
 
 def write_attributeNoResponse( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data):
     
-    addr_mode = "05" # Short address
+    addr_mode = "02" # Short address
     if key == 'ffff':
         addr_mode = '04'
     direction = "00"
@@ -519,13 +519,14 @@ def write_attributeNoResponse( self, key, EPin, EPout, clusterID, manuf_id, manu
         data = '%02x' %(len(data)//2) + data
 
     lenght = "01" # Only 1 attribute
-    datas = addr_mode + key + ZIGATE_EP + EPout + clusterID 
+    #datas = addr_mode + key + ZIGATE_EP + EPout + clusterID 
+    datas = EPin + EPout + clusterID
     datas += direction + manuf_spec + manuf_id
     datas += lenght +attribute + data_type + data
     loggingBasicOutput( self, 'Log', "write_attribute No Reponse for %s/%s - >%s<" %(key, EPout, datas), key)
 
     # ATTENTION "0110" and "0113" are always call with Ack (overwriten by firmware)
-    return send_zigatecmd_raw(self, "0113", str(*datas),  ackIsDisabled = True)
+    return send_zigatecmd_zcl_ack(self, key, "0113", str(datas)
 
 ## Scene
 def scene_membership_request( self, nwkid, ep, groupid='0000'):
