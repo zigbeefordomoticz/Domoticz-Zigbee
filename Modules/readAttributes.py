@@ -231,12 +231,10 @@ def ping_device_with_read_attribute(self, key):
 
     ListOfEp = getListOfEpForCluster( self, key, '0003' ) 
     for EPout in ListOfEp:
-        Domoticz.Log("ping_device_with_read_attribute - Using Identify")
         identifySend( self, key, EPout, duration=0, withAck = True)
         return
     ListOfEp = getListOfEpForCluster( self, key, '0003' )
     for EPout in ListOfEp:
-        Domoticz.Log("ping_device_with_read_attribute - Using ReadAttribute with Ack")
         self.ListOfDevices[key]['ReadAttributes']['TimeStamps'][ EPout + '-' + '0000'] = int(time())
         #send_read_attribute_request( self, '02', key ,ZIGATE_EP , EPout ,'0000' , '00' , '00' , '0000' , 0x01, '0000', ackToBeDisabled = False )
 
