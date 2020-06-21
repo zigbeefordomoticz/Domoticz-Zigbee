@@ -31,13 +31,13 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes , manu
         return [ alist[i*length // wanted_parts: (i+1)*length // wanted_parts] for i in range(wanted_parts) ]
 
     if not isinstance(ListOfAttributes, list) or len (ListOfAttributes) < MAX_READATTRIBUTES_REQ:
-        normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes )
+        normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes , ackToBeDisabled= ackToBeDisabled)
     else:
         loggingReadAttributes( self, 'Debug2', "----------> ------- %s/%s %s ListOfAttributes: " %(addr, EpOut, Cluster) + " ".join("0x{:04x}".format(num) for num in ListOfAttributes), nwkid=addr)
         nbpart = - (  - len(ListOfAttributes) // MAX_READATTRIBUTES_REQ) 
         for shortlist in split_list(ListOfAttributes, wanted_parts=nbpart):
             loggingReadAttributes( self, 'Debug2', "----------> ------- Shorter: " + ", ".join("0x{:04x}".format(num) for num in shortlist), nwkid=addr)
-            normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , shortlist , manufacturer_spec , manufacturer , ackToBeDisabled )
+            normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , shortlist , manufacturer_spec=manufacturer_spec , manufacturer=manufacturer , ackToBeDisabled= ackToBeDisabled)
 
 def normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes , manufacturer_spec = '00', manufacturer = '0000', ackToBeDisabled = False):
 
@@ -134,13 +134,15 @@ def normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttribu
     loggingReadAttributes( self, 'Debug', "-- normalizedReadAttrReq ---- addr =" +str(addr) +" Cluster = " +str(Cluster) +" Attributes = " + ", ".join("0x{:04x}".format(num) for num in ListOfAttributes), nwkid=addr )
     self.ListOfDevices[addr]['ReadAttributes']['TimeStamps'][EpOut+'-'+str(Cluster)] = int(time())
 
-    send_read_attribute_request( self, addr ,EpIn , EpOut ,Cluster ,direction , manufacturer_spec , manufacturer , lenAttr, Attr, ackToBeDisabled )
+    send_read_attribute_request( self, addr ,EpIn , EpOut ,Cluster ,direction , manufacturer_spec , manufacturer , lenAttr, Attr, ackToBeDisabled=ackToBeDisabled )
 
 def send_read_attribute_request( self, addr ,EpIn , EpOut ,Cluster ,direction , manufacturer_spec , manufacturer , lenAttr, Attr, ackToBeDisabled = False):
     
     if ackToBeDisabled:
+        #Domoticz.Log("send_read_attribute_request - no ack")
         send_zigatecmd_zcl_noack( self, addr, '0100', EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + '%02x' %lenAttr + Attr )
     else:
+        #Domoticz.Log("send_read_attribute_request - ack")
         send_zigatecmd_zcl_ack( self, addr, '0100', EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + '%02x' %lenAttr + Attr )
 
 def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
@@ -229,10 +231,12 @@ def ping_device_with_read_attribute(self, key):
 
     ListOfEp = getListOfEpForCluster( self, key, '0003' ) 
     for EPout in ListOfEp:
+        Domoticz.Log("ping_device_with_read_attribute - Using Identify")
         identifySend( self, key, EPout, duration=0, withAck = True)
         return
     ListOfEp = getListOfEpForCluster( self, key, '0003' )
     for EPout in ListOfEp:
+        Domoticz.Log("ping_device_with_read_attribute - Using ReadAttribute with Ack")
         self.ListOfDevices[key]['ReadAttributes']['TimeStamps'][ EPout + '-' + '0000'] = int(time())
         #send_read_attribute_request( self, '02', key ,ZIGATE_EP , EPout ,'0000' , '00' , '00' , '0000' , 0x01, '0000', ackToBeDisabled = False )
 
