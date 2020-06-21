@@ -249,41 +249,62 @@ def retreive8Tag(tag,chain):
 
 def readXiaomiCluster( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
 
+    def decodeFloat( data ):
+        return (int(data[2:4]+data[0:2],16))
+
     if 'Model' not in self.ListOfDevices[MsgSrcAddr]:
         return
     
     # Taging: https://github.com/dresden-elektronik/deconz-rest-plugin/issues/42#issuecomment-370152404
     # 0x0624 might be the LQI indicator and 0x0521 the RSSI dB
 
-    sBatteryLvl = retreive4Tag( "0121", MsgClusterData )
-    sTemp2 =  retreive4Tag( "0328", MsgClusterData )   # Device Temperature
-    stag04 = retreive4Tag( '0424', MsgClusterData )
-    sRSSI = retreive4Tag( '0521', MsgClusterData )[0:2] # RSSI
-    sLQI = retreive8Tag( '0620', MsgClusterData ) # LQI
-    sLighLevel = retreive4Tag( '0b21', MsgClusterData)
+    sBatteryLvl =  retreive4Tag( "0121", MsgClusterData )
+    sTemp2 =       retreive4Tag( "0328", MsgClusterData )         # Device Temperature
+    stag04 =       retreive4Tag( '0424', MsgClusterData )
+    sRSSI =        retreive4Tag( '0521', MsgClusterData )[0:2]    # RSSI
+    sLQI =         retreive8Tag( '0620', MsgClusterData ) # LQI
+    sLighLevel =   retreive4Tag( '0b21', MsgClusterData)
 
-    sOnOff =  retreive4Tag( "6410", MsgClusterData )[0:2]
-    sOnOff2 = retreive4Tag( "6420", MsgClusterData )[0:2]    # OnOff for Aqara Bulb / Current position lift for lumi.curtain
-    sTemp =   retreive4Tag( "6429", MsgClusterData )
-    sOnOff3 =  retreive4Tag( "6510", MsgClusterData ) # On/off lumi.ctrl_ln2 EP 02
-    sHumid =  retreive4Tag( "6521", MsgClusterData )
-    sHumid2 = retreive4Tag( "6529", MsgClusterData )
-    sLevel =  retreive4Tag( "6520", MsgClusterData )[0:2]     # Dim level for Aqara Bulb
-    sPress =  retreive8Tag( "662b", MsgClusterData )
-    #sConso = retreive8Tag( '9539', MsgClusterData )
-    #sPower = retreive8Tag( '9839', MsgClusterData )
+    sOnOff =       retreive4Tag( "6410", MsgClusterData )[0:2]
+    sOnOff2 =      retreive4Tag( "6420", MsgClusterData )[0:2]    # OnOff for Aqara Bulb / Current position lift for lumi.curtain
+    sTemp =        retreive4Tag( "6429", MsgClusterData )
+    sOnOff3 =      retreive4Tag( "6510", MsgClusterData )         # On/off lumi.ctrl_ln2 EP 02
+    sHumid =       retreive4Tag( "6521", MsgClusterData )
+    sHumid2 =      retreive4Tag( "6529", MsgClusterData )
+    sLevel =       retreive4Tag( "6520", MsgClusterData )[0:2]    # Dim level for Aqara Bulb
+    sPress =       retreive8Tag( "662b", MsgClusterData )
 
-    #if sConso != '':
-    #    #Domoticz.Log("ReadCluster - %s/%s Saddr: %s Consumption %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, sConso ))
-    #    #Domoticz.Log("ReadCluster - %s/%s Saddr: %s Consumption %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, int(decodeAttribute( self, '2b', sConso ))))
-    #    Domoticz.Log("ReadCluster - %s/%s Saddr: %s Consumption %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, float(decodeAttribute( self, '39', sConso ))))
-    #    if 'Consumtpion' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
-    #        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['Consumption'] = 0
-    #    self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['Consumption'] = self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['Consumption'] + float(decodeAttribute( self, '39', sConso ))
-    #if sPower != '':
-    #    #Domoticz.Log("ReadCluster - %s/%s Saddr: %s Power %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, sPower ))
-    #    #Domoticz.Log("ReadCluster - %s/%s Saddr: %s Power %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, int(decodeAttribute( self, '2b', sPower ))))
-    #    Domoticz.Log("ReadCluster - %s/%s Saddr: %s Power %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, float(decodeAttribute( self, '39', sPower ))))
+    sConsumption = retreive8Tag( '9539', MsgClusterData )         # Cummulative Consumption
+    sVoltage =     retreive8Tag( '9639', MsgClusterData )         # Voltage
+    sCurrent =     retreive8Tag( '9739', MsgClusterData )         # Ampere
+    sPower =       retreive8Tag( '9839', MsgClusterData )         # Power Watt
+
+    if sConsumption != '':
+        #Domoticz.Log("ReadCluster - %s/%s Saddr: %s/%s Consumption %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, MsgSrcEp, sConsumption ))
+        Domoticz.Log("ReadCluster - %s/%s Saddr: %s Consumption %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, float(decodeFloat( sConsumption )) ))
+        if 'Consumption' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['Consumption'] = 0
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['Consumption'] = self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['Consumption'] + float(decodeFloat( sConsumption ))
+        #checkAndStoreAttributeValue( self, MsgSrcAddr , MsgSrcEp, '0702', '0000' , float(decodeFloat( sConsumption )))
+
+    if sVoltage != '':
+        #Domoticz.Log("ReadCluster - %s/%s Saddr: %s/%s Voltage %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, MsgSrcEp, sVoltage ))
+        Domoticz.Log("ReadCluster - %s/%s Saddr: %s Voltage %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, float(decodeFloat( sVoltage )) ))
+        checkAndStoreAttributeValue( self, MsgSrcAddr , MsgSrcEp, '0001', '0000' , float(decodeFloat( sVoltage )) )
+        # Update Voltage ( cluster 0001 )
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0001", float(decodeFloat( sVoltage )))
+
+    if sCurrent != '':
+        #Domoticz.Log("ReadCluster - %s/%s Saddr: %s/%s Courant %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, MsgSrcEp, sCurrent ))
+        Domoticz.Log("ReadCluster - %s/%s Saddr: %s Courant %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, float(decodeFloat( sCurrent ))))
+
+    if sPower != '':
+        #Domoticz.Log("ReadCluster - %s/%s Saddr: %s/%s Power %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, MsgSrcEp, sPower ))
+        Domoticz.Log("ReadCluster - %s/%s Saddr: %s Power %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, float(decodeFloat( sPower ))))
+        #checkAndStoreAttributeValue( self, MsgSrcAddr , MsgSrcEp, '0702', '0400' , float(decodeFloat( sPower )) )
+        # Update Power Widget
+        #MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0702", float(decodeFloat( sPower ))) 
+
     if sLighLevel != '':
         loggingCluster( self, 'Debug', "ReadCluster - %s/%s Saddr: %s Light Level: %s" 
             %(MsgClusterId, MsgAttrID, MsgSrcAddr,  int(sLighLevel,16)), MsgSrcAddr)
