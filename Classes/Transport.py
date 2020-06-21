@@ -166,7 +166,6 @@ class ZigateTransport(object):
     def sendData(self, cmd, datas , ackIsDisabled = False, waitForResponseIn = False):
 
         waitForResponse = waitForResponseIn or self.pluginconf.pluginConf['waitForResponse']
-        Domoticz.Log("    %s  =  %s or %s" %(waitForResponse, waitForResponseIn, self.pluginconf.pluginConf['waitForResponse'] ))
 
         # If ackIsDisabled is True, it means that usally a Ack is expected ( ZIGATE_COMMANDS), but here it has been disabled via Address Mode
         self.loggingSend(  'Log', "sendData - %s %s ackDisabled: %s FIFO: %s" %(cmd, datas, ackIsDisabled, len(self.zigateSendQueue)))
