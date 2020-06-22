@@ -434,13 +434,13 @@ def send_data_internal(self, InternalSqn):
         Domoticz.Log("PDM not yet ready, FIFO command %s %s" %(self.ListOfCommands[ InternalSqn ]['Cmd'], self.ListOfCommands[ InternalSqn ]['Datas']))
         sendNow = False
 
-    if sendNow and self.zmode == 'zigbee31c':
+    if sendNow and self.zmode == 'zigate31c':
         # Wait on 0x8000 and CmdResponse
         sendNow = (len(self._waitFor8000Queue) == 0 and len(self._waitForCmdResponseQueue) == 0) or self.ListOfCommands[ InternalSqn ]['PDMCommand']
         self.loggingSend(  'Debug', "--- send_data_internal - Command: %s  Q(0x8000): %s Q(Response): %s sendNow: %s" 
             %(self.ListOfCommands[ InternalSqn ]['Cmd'], len(self._waitFor8000Queue), len(self._waitForCmdResponseQueue), sendNow))
 
-    elif sendNow and self.zmode == 'zigbeeack':
+    elif sendNow and self.zmode == 'zigateack':
         # Wait on 0x8000, AckNack and eventually on Response
         sendNow = (len(self._waitFor8000Queue) == 0 and len(self._waitForAckNack) == 0 and len(self._waitForCmdResponseQueue) == 0) or self.ListOfCommands[ InternalSqn ]['PDMCommand']
         self.loggingSend( 'Debug', "--- send_data_internal - Command: %s  Q(0x8000): %s Q(Ack/Nack): %s Q(Response): %s sendNow: %s" 
@@ -464,13 +464,13 @@ def send_data_internal(self, InternalSqn):
         # Add to 0x8000 queue
         _add_cmd_to_wait_for8000_queue( self, InternalSqn )
 
-        if self.ListOfCommands[ InternalSqn ]['ExpectedAck'] and self.zmode == 'zigbeeack':
+        if self.ListOfCommands[ InternalSqn ]['ExpectedAck'] and self.zmode == 'zigateack':
             set_acknack_for_sending( self, InternalSqn)
 
-        if self.zmode in 'zigbee31c' and self.ListOfCommands[ InternalSqn ]['ResponseExpected']:
+        if self.zmode in 'zigate31c' and self.ListOfCommands[ InternalSqn ]['ResponseExpected']:
             set_cmdresponse_for_sending( self, InternalSqn)
 
-        if self.ListOfCommands[ InternalSqn ]['WaitForResponse'] and self.zmode == 'zigbeeack':
+        if self.ListOfCommands[ InternalSqn ]['WaitForResponse'] and self.zmode == 'zigateack':
             set_cmdresponse_for_sending( self, InternalSqn)
 
     # Go!
@@ -578,12 +578,12 @@ def set_acknack_for_sending(self, i_sqn):
 def ready_to_send_if_needed( self ):
 
     readyToSend = True
-    if self.zmode == 'zigbee31c':
+    if self.zmode == 'zigate31c':
         readyToSend = len(self.zigateSendQueue) != 0 and len(self._waitFor8000Queue) == 0 and len(self._waitForCmdResponseQueue) == 0
         self.loggingSend(  'Debug2', "--- send_data_internal - Q(0x8000): %s Q(Ack/Nack): %s sendNow: %s" 
             %(len(self.zigateSendQueue),len(self._waitFor8000Queue), len(self._waitFor8000Queue) ))
 
-    elif self.zmode == 'zigbeeack':
+    elif self.zmode == 'zigateack':
         readyToSend = len(self.zigateSendQueue) != 0 and len(self._waitFor8000Queue) == 0 and len(self._waitFor8000Queue) == 0
         self.loggingSend(  'Debug2', "--- send_data_internal - Q(0x8000): %s Q(Ack/Nack): %s sendNow: %s" 
             %(len(self.zigateSendQueue),len(self._waitFor8000Queue), len(self._waitFor8000Queue) ))
@@ -632,13 +632,13 @@ def check_timed_out(self):
         InternalSqn, TimeStamp = entry
         logExpectedCommand( self, '0x8000', now, TimeStamp, InternalSqn)
         if InternalSqn in self.ListOfCommands:
-            if self.zmode == 'zigbeeack' and  self.ListOfCommands[ InternalSqn ]['ExpectedAck']:
+            if self.zmode == 'zigateack' and  self.ListOfCommands[ InternalSqn ]['ExpectedAck']:
                 _next_cmd_to_wait_for_ack_nack_queue( self )
 
-            if self.zmode == 'zigbeeack' and  self.ListOfCommands[ InternalSqn ]['WaitForResponse']:
+            if self.zmode == 'zigateack' and  self.ListOfCommands[ InternalSqn ]['WaitForResponse']:
                 _next_cmd_from_wait_cmdresponse_queue( self )
 
-            elif self.zmode =='zigbee31c' and self.ListOfCommands[ InternalSqn ]['ResponseExpected']:
+            elif self.zmode =='zigate31c' and self.ListOfCommands[ InternalSqn ]['ResponseExpected']:
                 _next_cmd_from_wait_cmdresponse_queue( self )
 
         cleanup_list_of_commands( self, InternalSqn)
@@ -650,7 +650,7 @@ def check_timed_out(self):
             return
         InternalSqn, TimeStamp = entry
         logExpectedCommand( self, 'Ack', now, TimeStamp, InternalSqn)
-        if self.zmode == 'zigbeeack' and  self.ListOfCommands[ InternalSqn ]['WaitForResponse']:
+        if self.zmode == 'zigateack' and  self.ListOfCommands[ InternalSqn ]['WaitForResponse']:
             _next_cmd_from_wait_cmdresponse_queue( self )
 
         cleanup_list_of_commands( self, InternalSqn)
@@ -727,14 +727,14 @@ def check_timed_out(self):
             timeout_8000( self )
 
     # Check Ack/Nack Queue
-    if len(self._waitForAckNack) > 0 and self.zmode == 'zigbeeack':
+    if len(self._waitForAckNack) > 0 and self.zmode == 'zigateack':
         # We are waiting for APS Ack/Nack
         InternalSqn, TimeStamp = self._waitForAckNack[0]
         if (now - TimeStamp) >= TIME_OUT_ACK:
             timeout_acknack( self )
 
     # Check waitForCommandResponse Queue
-    if len(self._waitForCmdResponseQueue) > 0 and self.zmode == 'zigbee31c':
+    if len(self._waitForCmdResponseQueue) > 0 and self.zmode == 'zigate31c':
         # We are waiting for a Response from a Command
         InternalSqn, TimeStamp = self._waitForCmdResponseQueue[0]
         if (now - TimeStamp) >= TIME_OUT_RESPONSE:
@@ -765,11 +765,11 @@ def process_frame(self, frame):
             cleanup_list_of_commands( self, isqn)
             return
 
-        if self.zmode == 'zigbeeack' and not self.ListOfCommands[ isqn ]['ExpectedAck'] and not self.ListOfCommands[ isqn ]['WaitForResponse']:
+        if self.zmode == 'zigateack' and not self.ListOfCommands[ isqn ]['ExpectedAck'] and not self.ListOfCommands[ isqn ]['WaitForResponse']:
             cleanup_list_of_commands( self, isqn)
             return
 
-        if self.zmode == 'zigbee31c' and not self.ListOfCommands[ isqn ]['ExpectedAck'] \
+        if self.zmode == 'zigate31c' and not self.ListOfCommands[ isqn ]['ExpectedAck'] \
                                      and not self.ListOfCommands[ isqn ]['ResponseExpected'] \
                                      and not self.ListOfCommands[ isqn ]['WaitForResponse']:
             cleanup_list_of_commands( self, isqn)
@@ -781,7 +781,7 @@ def process_frame(self, frame):
             cleanup_list_of_commands( self, isqn)
             return
 
-        if self.zmode == 'zigbeeack'  and not self.ListOfCommands[ isqn ]['WaitForResponse']:
+        if self.zmode == 'zigateack'  and not self.ListOfCommands[ isqn ]['WaitForResponse']:
             cleanup_list_of_commands( self, isqn)
             return
 
@@ -844,13 +844,13 @@ def process_frame(self, frame):
             sqn_aps = MsgData[10:12]
             if not self.firmware_with_aps_sqn:
                 if self.zmode == 'auto':
-                    self.zmode = 'zigbeeack'
-                self.loggingSend( 'Status', "Firmware with APS SQN switching to ZigBeeAck")
+                    self.zmode = 'zigateack'
+                self.loggingSend( 'Status', "Firmware with APS SQN switching to ZiGateAck")
                 self.firmware_with_aps_sqn = True
 
         if self.zmode == 'auto':
-            self.zmode = 'zigbee31c'
-            self.loggingSend( 'Status', "Firmware <= 31d switching to Zigbee31c")
+            self.zmode = 'zigate31c'
+            self.loggingSend( 'Status', "Firmware <= 31d switching to ZiGate31c")
 
         i_sqn = process_msg_type8000(self, Status, PacketType, sqn_app, sqn_aps, Ack_expected)
         self.loggingSend( 'Debug', "0x8000 - [%s] sqn_app: 0x%s/%3s, SQN_APS:non 0x%s Ack_expected: %s" %(i_sqn, sqn_app, int(sqn_app,16), sqn_aps, Ack_expected))
@@ -884,13 +884,13 @@ def process_frame(self, frame):
             # Nack
             self.statistics._APSNck += 1
 
-        if MsgData and self.zmode == 'zigbee31c':
+        if MsgData and self.zmode == 'zigate31c':
             # We do not block on Ack for firmware from 31c and below
             self.F_out(frame, None)
             ready_to_send_if_needed( self )
             return
 
-        if MsgData and self.zmode == 'zigbeeack': 
+        if MsgData and self.zmode == 'zigateack': 
             # This is Optimum with firmware 3.1d and above
             MsgStatus = MsgData[0:2]
             MsgSrcAddr = MsgData[2:6]
@@ -925,7 +925,7 @@ def process_frame(self, frame):
 
     # We reach that stage: Got a message not 0x8000/0x8011/0x8701/0x8202 an not a standolone message
     # But might be a 0x8102 ( as firmware 3.1c and below are reporting Read Attribute response and Report Attribute with the same MsgType)
-    if self.zmode in 'zigbee31c':
+    if self.zmode in 'zigate31c':
         # If ZigBee Command blocked until response received
         if not self.firmware_with_aps_sqn and MsgType == '8102':
             MsgZclSqn =  MsgData[0:2]
@@ -943,7 +943,7 @@ def process_frame(self, frame):
             self.ListOfCommands[ i_sqn ]['Status'] = '8XXX'
             cleanup_list_of_commands( self, _next_cmd_from_wait_cmdresponse_queue( self )[0] )
 
-    elif self.zmode == 'zigbeeack':
+    elif self.zmode == 'zigateack':
         MsgZclSqn =  MsgData[0:2] # It is assumed that SQN are always on the 1st byte
         self.loggingSend( 'Debug', "--> zigbeeack Receive MsgType: %s with ExtSqn: %s" %(MsgType, MsgZclSqn))
         i_sqn = process_other_type_of_message31d( self, MsgType, MsgZclSqn)
@@ -965,7 +965,7 @@ def process_msg_type8000(self, Status, PacketType, sqn_app, sqn_aps, Ack_expecte
 
     if Status != '00':
         self.statistics._ackKO += 1
-        if self.zmode == 'zigbee31c':
+        if self.zmode == 'zigate31c':
             # In that case we need to unblock data, as we will never get it !
             if len(self._waitForCmdResponseQueue) > 0:
                 InternalSqn, TimeStamp = _next_cmd_from_wait_cmdresponse_queue( self )
@@ -975,13 +975,13 @@ def process_msg_type8000(self, Status, PacketType, sqn_app, sqn_aps, Ack_expecte
                         self.logging_receive( 'Debug', " - -- Unqueue CmdResponse : [%s] %s %s " 
                         %(InternalSqn, self.ListOfCommands[ InternalSqn ]['Cmd'], self.ListOfCommands[ InternalSqn ]['Datas']))
 
-        elif self.zmode == 'zigbeeack':
+        elif self.zmode == 'zigateack':
             # In that case we need to unblock ack_nack, as we will never get it !
             if len(self._waitForAckNack) > 0:
                 InternalSqn, TimeStamp = _next_cmd_to_wait_for_ack_nack_queue( self )
                 self.loggingSend( 'Debug', " --  --  -- - > - unlock waitForAckNack due to command %s failed, remove %s" %(PacketType, InternalSqn))
                 if InternalSqn in self.ListOfCommands:
-                    if self.zmode == 'zigbeeack' and  self.ListOfCommands[ InternalSqn ]['WaitForResponse']:
+                    if self.zmode == 'zigateack' and  self.ListOfCommands[ InternalSqn ]['WaitForResponse']:
                         _next_cmd_from_wait_cmdresponse_queue( self )
                         self.logging_receive( 'Debug', " - -- Unqueue CmdResponse : [%s] %s %s " 
                         %(InternalSqn, self.ListOfCommands[ InternalSqn ]['Cmd'], self.ListOfCommands[ InternalSqn ]['Datas']))
