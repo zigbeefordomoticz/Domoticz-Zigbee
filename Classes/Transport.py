@@ -691,12 +691,12 @@ def check_timed_out(self):
             self.loggingSend( 'Debug', " --  --  --  > - %s - Time Out %s  " % ( desc, i_sqn ))
             return
         if self.ListOfCommands[ i_sqn ]['MessageResponse']:
-            self.loggingSend( 'Error', " --  --  --  > Time Out %s [%s] %s sec for  %s %s %s/%s %04x Time: %s" \
+            self.loggingSend( 'Log', " --  --  --  > Time Out %s [%s] %s sec for  %s %s %s/%s %04x Time: %s" \
                 % (desc, i_sqn, (now - TimeStamp), self.ListOfCommands[ i_sqn ]['Cmd'], self.ListOfCommands[ i_sqn ]['Datas'], 
                 self.ListOfCommands[ i_sqn ]['ResponseExpected'], self.ListOfCommands[ i_sqn ]['ExpectedAck'],
                 self.ListOfCommands[ i_sqn ]['MessageResponse'], self.ListOfCommands[ InternalSqn ]['ReceiveTimeStamp'].strftime("%m/%d/%Y, %H:%M:%S")  ))
         else:
-            self.loggingSend( 'Error', " --  --  --  > Time Out %s [%s] %s sec for  %s %s %s/%s %s Time: %s" \
+            self.loggingSend( 'Log', " --  --  --  > Time Out %s [%s] %s sec for  %s %s %s/%s %s Time: %s" \
                 % (desc, i_sqn, (now - TimeStamp), self.ListOfCommands[ i_sqn ]['Cmd'], self.ListOfCommands[ i_sqn ]['Datas'], 
                 self.ListOfCommands[ i_sqn ]['ResponseExpected'], self.ListOfCommands[ i_sqn ]['ExpectedAck'],
                 self.ListOfCommands[ i_sqn ]['MessageResponse'], self.ListOfCommands[ InternalSqn ]['ReceiveTimeStamp'].strftime("%m/%d/%Y, %H:%M:%S") ))
