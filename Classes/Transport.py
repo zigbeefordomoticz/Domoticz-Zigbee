@@ -768,12 +768,10 @@ def process_frame(self, frame):
         if self.zmode == 'zigbeeack' and not self.ListOfCommands[ isqn ]['ExpectedAck'] and not self.ListOfCommands[ isqn ]['WaitForResponse']:
             cleanup_list_of_commands( self, isqn)
             return
-        if self.zmode == 'zigbee31c' and self.ListOfCommands[ isqn ]['ExpectedAck']:
-            # We do cleanup as on zigbee31c we do not manage Ack/Nack
-            cleanup_list_of_commands( self, isqn)
-            return
 
-        if self.zmode == 'zigbee31c' and not self.ListOfCommands[ isqn ]['ResponseExpected']:
+        if self.zmode == 'zigbee31c' and not self.ListOfCommands[ isqn ]['ExpectedAck'] \
+                                     and not self.ListOfCommands[ isqn ]['ResponseExpected'] \
+                                     and not self.ListOfCommands[ isqn ]['WaitForResponse']:
             cleanup_list_of_commands( self, isqn)
             return
 
