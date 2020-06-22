@@ -795,7 +795,6 @@ def process_frame(self, frame):
             cleanup_list_of_commands( self, isqn)
             return
 
-
     # will return the Frame in the Data if any
     # process the Data and check if this is a 0x8000 message
     # in case the message contains several frame, receiveData will be recall
@@ -1011,7 +1010,7 @@ def process_msg_type8000(self, Status, PacketType, sqn_app, sqn_aps, Ack_expecte
     self.loggingSend( 'Debug', " --  --  -- - > InternSqn: %s ExternalSqn: %s ExternalSqnZCL: %s" %(InternalSqn, sqn_app, sqn_aps))
     if InternalSqn not in self.ListOfCommands:
         return None
-
+    self.loggingSend( 'Debug', " --  --  0x8000 > Expect: %s Receive: %s" %(self.ListOfCommands[ InternalSqn ]['Cmd'], PacketType))
     if self.ListOfCommands[ InternalSqn ]['Cmd']:
         IsCommandOk = int(self.ListOfCommands[ InternalSqn ]['Cmd'], 16) == int(PacketType, 16)
         if not IsCommandOk:
