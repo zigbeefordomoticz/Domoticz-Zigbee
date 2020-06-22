@@ -221,7 +221,7 @@ def ping_device_with_read_attribute(self, key):
         self.ListOfDevices[key]['ReadAttributes']['TimeStamps'] = {}
 
     ListOfEp = getListOfEpForCluster( self, key, '0003' ) 
-    if ListOfEp and self.ListOfDevices[ key ].get('Manufacturer Name') in  ('Legrand', 'IKEA of Sweden', 'Schneider' ):
+    if ListOfEp and self.ListOfDevices[ key ].get('Manufacturer Name') in  ('Legrand', 'IKEA of Sweden', 'Schneider', 'Philips' ):
         for EPout in ListOfEp:
             identifySend( self, key, EPout, duration=0, withAck = True)
             return
@@ -366,9 +366,14 @@ def ReadAttributeRequest_0006_400x(self, key):
     ListOfEp = getListOfEpForCluster( self, key, '0006' )
     for EPout in ListOfEp:
         listAttributes = []
+        if 'Manufacturer Name' not in self.ListOfDevices[key]:
+            return
+        if self.ListOfDevices[key]['Manufacturer Name'] not in ( 'Philips', ):
 
-        if 'Model' in self.ListOfDevices[key] and self.ListOfDevices[key][ 'Model' ] in ('LCT001', 'LTW013'):
             Domoticz.Debug("-----requesting Attribute 0x0006/0x4003 for PowerOn state for device : %s" %key)
+            listAttributes.append ( 0x4000 )
+            listAttributes.append ( 0x4001 )
+            listAttributes.append ( 0x4002 )
             listAttributes.append ( 0x4003 )
 
         if listAttributes:
