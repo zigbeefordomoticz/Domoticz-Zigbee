@@ -44,7 +44,7 @@ from Modules.pdmHost import pdmHostAvailableRequest, PDMSaveRequest, PDMLoadRequ
             PDMGetBitmapRequest, PDMIncBitmapRequest, PDMExistanceRequest, pdmLoadConfirmed, \
             PDMDeleteRecord, PDMDeleteAllRecord, PDMCreateBitmap, PDMDeleteBitmapRequest
 
-from Modules.sqnMgmt import sqn_get_internal_sqn_from_app_sqn, sqn_get_internal_sqn_from_aps_sqn, sqn_get_internal_sqn_from_aps_sqn, TYPE_APP_ZCL, TYPE_APP_ZDP
+from Modules.sqnMgmt import sqn_get_internal_sqn_from_app_sqn, sqn_get_internal_sqn_from_aps_sqn, TYPE_APP_ZCL, TYPE_APP_ZDP
 
 #from Modules.adminWidget import updateNotificationWidget, updateStatusWidget
 
