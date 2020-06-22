@@ -226,7 +226,17 @@ class ZigateTransport(object):
 
         if waitForResponseIn:
             self.ListOfCommands[ InternalSqn ]['WaitForResponse'] = True
-        
+
+        if not self.firmware_with_aps_sqn:
+            # We are on firmware <= 31c
+            # 0110 and 0113 are always set with Ack. Overwriten by the firmware
+            if hexCmd in ( 0x0110, 0x0113 ):
+                self.loggingSend( 'Debug', "-- > Patching %s to Ack due to firmware 31c" %hexCmd )
+                self.ListOfCommands[ InternalSqn ]['MessageResponse']  = CMD_WITH_RESPONSE[ hexCmd ]
+                self.ListOfCommands[ InternalSqn ]['ResponseExpected'] = True
+                self.ListOfCommands[ InternalSqn ]['ExpectedAck']      = True 
+                self.ListOfCommands[ InternalSqn ]['WaitForResponse'] = True
+
         printListOfCommands( self, 'from sendData', InternalSqn )
 
         send_data_internal ( self, InternalSqn )

@@ -22,19 +22,23 @@ from Modules.tools import mainPoweredDevice
 from Modules.logging import loggingBasicOutput
 
 def send_zigatecmd_zcl_ack( self, address, cmd, datas ):
-    #
     # Send a ZCL command with ack
     # address can be a shortId or an IEEE
+    ackIsDisabled = False
     if len(address) == 4:
         # Short address
         address_mode = '%02x' %ADDRESS_MODE['short']
+        if self.pluginconf.pluginConf['disableAckOnZCL']:
+            address_mode = '%02x' %ADDRESS_MODE['shortnoack']
+            ackIsDisabled = True
     else:
         address_mode = '%02x' %ADDRESS_MODE['ieee']
-
-    return send_zigatecmd_raw( self, cmd, address_mode + address + datas, ackIsDisabled = False )
+        if self.pluginconf.pluginConf['disableAckOnZCL']:
+            address_mode = '%02x' %ADDRESS_MODE['ieeenoack']
+            ackIsDisabled = True
+    return send_zigatecmd_raw( self, cmd, address_mode + address + datas, ackIsDisabled = ackIsDisabled )
 
 def send_zigatecmd_zcl_noack( self, address, cmd, datas):
-    #
     # Send a ZCL command with ack
     # address can be a shortId or an IEEE
     disableAck = True
@@ -50,8 +54,7 @@ def send_zigatecmd_zcl_noack( self, address, cmd, datas):
         if self.pluginconf.pluginConf['forceAckOnZCL']:
             address_mode = '%02x' %ADDRESS_MODE['ieee']
             Domoticz.Log("Force Ack")
-            disableAck = False
-
+            disableAck = False 
     return send_zigatecmd_raw( self, cmd, address_mode + address + datas, ackIsDisabled = disableAck )
 
 def send_zigatecmd_raw( self, cmd, datas, ackIsDisabled = False ):
@@ -489,27 +492,37 @@ def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zig
 
     send_zigatecmd_raw(self, "0530", addr_mode + targetaddr + zigate_ep + dest_ep + cluster + profileId + security + radius + len_payload + payload)
 
-def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data):
+
+def read_attribute( self, addr ,EpIn , EpOut ,Cluster ,direction , manufacturer_spec , manufacturer , lenAttr, Attr, ackToBeEnabled = False):
     
-    addr_mode = "02" # Short address
+    if ackToBeEnabled:
+        send_zigatecmd_zcl_ack( self, addr, '0100', EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + '%02x' %lenAttr + Attr )
+    else:
+        send_zigatecmd_zcl_noack( self, addr, '0100', EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + '%02x' %lenAttr + Attr )
+
+def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackToBeEnabled = False):
+    
     direction = "00"
     if data_type == '42': # String  
         # In case of Data Type 0x42 ( String ), we have to add the length of string before the string.
         data = '%02x' %(len(data)//2) + data
 
     lenght = "01" # Only 1 attribute
-    #datas = addr_mode + key + EPin + EPout + clusterID
+
     datas = ZIGATE_EP + EPout + clusterID
     datas += direction + manuf_spec + manuf_id
     datas += lenght +attribute + data_type + data
     loggingBasicOutput( self, 'Debug', "write_attribute for %s/%s - >%s<" %(key, EPout, datas) )
 
-    # ATTENTION "0110" and "0113" are always call with Ack (overwriten by firmware)
-    return send_zigatecmd_zcl_ack(self, key, "0110", str(datas))
+    # ATTENTION "0110" with firmware 31c are always call with Ack (overwriten by firmware)
+    if ackToBeEnabled:
+        return send_zigatecmd_zcl_ack(self, key, "0110", str(datas))
+    else:
+        return send_zigatecmd_zcl_ack(self, key, "0110", str(datas))
 
-def write_attributeNoResponse( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data):
+
+def write_attributeNoResponse( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackToBeDisabled = False ):
     
-    addr_mode = "02" # Short address
     if key == 'ffff':
         addr_mode = '04'
     direction = "00"
@@ -519,14 +532,14 @@ def write_attributeNoResponse( self, key, EPin, EPout, clusterID, manuf_id, manu
         data = '%02x' %(len(data)//2) + data
 
     lenght = "01" # Only 1 attribute
-    #datas = addr_mode + key + ZIGATE_EP + EPout + clusterID 
+
     datas = ZIGATE_EP + EPout + clusterID
     datas += direction + manuf_spec + manuf_id
     datas += lenght +attribute + data_type + data
     loggingBasicOutput( self, 'Log', "write_attribute No Reponse for %s/%s - >%s<" %(key, EPout, datas), key)
 
-    # ATTENTION "0110" and "0113" are always call with Ack (overwriten by firmware)
-    return send_zigatecmd_zcl_ack(self, key, "0113", str(datas))
+    # Firmware <= 31c are in fact with ACK
+    return send_zigatecmd_zcl_noack(self, key, "0113", str(datas))
 
 ## Scene
 def scene_membership_request( self, nwkid, ep, groupid='0000'):
