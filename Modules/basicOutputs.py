@@ -492,7 +492,6 @@ def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zig
 
     send_zigatecmd_raw(self, "0530", addr_mode + targetaddr + zigate_ep + dest_ep + cluster + profileId + security + radius + len_payload + payload)
 
-
 def read_attribute( self, addr ,EpIn , EpOut ,Cluster ,direction , manufacturer_spec , manufacturer , lenAttr, Attr, ackToBeEnabled = False):
     
     if ackToBeEnabled:
@@ -519,7 +518,6 @@ def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, at
         return send_zigatecmd_zcl_ack(self, key, "0110", str(datas))
     else:
         return send_zigatecmd_zcl_ack(self, key, "0110", str(datas))
-
 
 def write_attributeNoResponse( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackToBeDisabled = False ):
     
@@ -594,3 +592,37 @@ def identifyEffect( self, nwkid, ep, effect='Blink' ):
     #datas = "02" + "%s"%(nwkid) + ZIGATE_EP + ep + "%02x"%(effect_command[effect])  + "%02x" %0
     datas = ZIGATE_EP + ep + "%02x"%(effect_command[effect])  + "%02x" %0
     send_zigatecmd_zcl_noack(self, nwkid, "00E0", datas )
+
+def set_poweron_afteroffon( self, key, OnOffMode = 0xff):
+    # OSRAM/LEDVANCE
+    # 0xfc0f --> Command 0x01
+    # 0xfc01 --> Command 0x01
+
+    # Tested on Ikea Bulb without any results !
+    PHILIPS_POWERON_MODE = [ 0x00, # Off
+                    0x01, # On
+                    0xff # Previous state
+            ]
+
+    # if 'Manufacturer'  in self.ListOfDevices[key]:
+    #     manuf_spec = "01"
+    #     manuf_id = self.ListOfDevices[key]['Manufacturer']
+    # else:
+    #     manuf_spec = "00"
+    #     manuf_id = "0000"
+
+    manuf_spec = "00"
+    manuf_id = "0000"
+    ListOfEp = getListOfEpForCluster( self, key, '0006' )
+    for EPout in ListOfEp:
+        cluster_id = "0006"
+        attribute = "4003"
+        data_type = "30" # 
+        data = "ff"
+        if OnOffMode in POWERON_MODE:
+            data = "%02x" %OnOffMode
+        else:
+            data = "%02x" %0xff
+        loggingOutput( self, 'Debug', "set_PowerOn_OnOff for %s/%s - OnOff: %s" %(key, EPout, OnOffMode), key)
+        write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data, ackToBeEnabled = False)
+        del self.ListOfDevices[NWKID]['Ep']['0b']['0006']['4003']
