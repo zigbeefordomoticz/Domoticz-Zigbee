@@ -400,4 +400,3 @@ def callBackForWebBindIfNeeded( self , srcNWKID ):
                     destEp = self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId][destNwkid]['TargetEp']
                     # Perforning the bind
                     webBind(self, sourceIeee, Ep, destIeee, destEp, ClusterId)
-
