@@ -1184,12 +1184,12 @@ def process_other_type_of_message31c(self, MsgType, MsgSqn = None, MsgNwkId=None
  
         ready_to_send_if_needed( self )
         return InternalSqn
-    else:
-        self.loggingSend( 'Debug', " --  -- - > Internal SQN: %s Received: %s and expecting %04x" %(InternalSqn, MsgType, expResponse  ))
-        if int(MsgType, 16) != expResponse:
-            self.logging_receive(  'Debug', "         - Async incoming PacketType")
-            ready_to_send_if_needed( self )
-            return None
+
+    self.loggingSend( 'Debug', " --  -- - > Internal SQN: %s Received: %s and expecting %04x" %(InternalSqn, MsgType, expResponse  ))
+    if int(MsgType, 16) != expResponse:
+        self.logging_receive(  'Debug', "         - Async incoming PacketType")
+        ready_to_send_if_needed( self )
+        return None
 
     # If we have Still commands in the queue and the WaitforStatus+Data are free
     ready_to_send_if_needed( self )
