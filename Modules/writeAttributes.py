@@ -70,19 +70,3 @@ def callBackForWriteAttributeIfNeeded(self, key):
                 #else:
                 #    i_sqn = write_attributeNoResponse (self,key,EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data)
                 self.ListOfDevices[key]['WriteAttribute'][EPout][clusterID][attribute]['i_sqn'] = i_sqn
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
