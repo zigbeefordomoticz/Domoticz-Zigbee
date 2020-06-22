@@ -516,8 +516,7 @@ def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, at
     # ATTENTION "0110" with firmware 31c are always call with Ack (overwriten by firmware)
     if ackToBeEnabled:
         return send_zigatecmd_zcl_ack(self, key, "0110", str(datas))
-    else:
-        return send_zigatecmd_zcl_ack(self, key, "0110", str(datas))
+    return send_zigatecmd_zcl_ack(self, key, "0110", str(datas))
 
 def write_attributeNoResponse( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackToBeDisabled = False ):
     
