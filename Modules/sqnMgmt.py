@@ -58,8 +58,7 @@ def sqn_add_external_sqn (self, i_sqn, e_sqnAPP, sqnAPP_type, e_sqnAPS): # to be
 def sqn_get_internal_sqn_from_aps_sqn (self, e_sqn):
     if (e_sqn in self.sqn_aps):
         return self.sqn_aps[e_sqn]
-    else:
-        return None
+    return None
 
 def sqn_get_internal_sqn_from_app_sqn (self, e_sqn, sqnAPP_type):
     if sqnAPP_type == TYPE_APP_ZIGATE:
@@ -72,4 +71,3 @@ def sqn_get_internal_sqn_from_app_sqn (self, e_sqn, sqnAPP_type):
         if e_sqn in self.sqn_zdp:
             return self.sqn_zdp[e_sqn] 
     return None
-
