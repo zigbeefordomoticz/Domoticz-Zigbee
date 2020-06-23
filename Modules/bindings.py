@@ -87,6 +87,16 @@ def bindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
                         return
 
     nwkid = self.IEEE2NWK[ieee]
+
+    loggingBinding( self, 'Debug', "bindDevice - ieee: %s, ep: %s, cluster: %s, Zigate_ieee: %s, Zigate_ep: %s" \
+            %(ieee,ep,cluster,destaddr,destep) , nwkid=nwkid)
+
+    # Read to bind
+    mode = "03"     # Addres Mode to use
+
+    datas =  str(ieee)+str(ep)+str(cluster)+str(mode)+str(destaddr)+str(destep)
+    i_sqn = sendZigateCmd(self, "0030", datas )
+
     if 'Bind' not in self.ListOfDevices[nwkid]:
         self.ListOfDevices[nwkid]['Bind'] = {}
 
@@ -99,15 +109,7 @@ def bindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
         self.ListOfDevices[nwkid]['Bind'][ep][cluster]['Stamp'] = int(time())
         self.ListOfDevices[nwkid]['Bind'][ep][cluster]['Phase'] = 'requested'
         self.ListOfDevices[nwkid]['Bind'][ep][cluster]['Status'] = ''
-
-        loggingBinding( self, 'Debug', "bindDevice - ieee: %s, ep: %s, cluster: %s, Zigate_ieee: %s, Zigate_ep: %s" \
-                %(ieee,ep,cluster,destaddr,destep) , nwkid=nwkid)
-
-        # Read to bind
-        mode = "03"     # Addres Mode to use
-
-        datas =  str(ieee)+str(ep)+str(cluster)+str(mode)+str(destaddr)+str(destep)
-        sendZigateCmd(self, "0030", datas )
+        self.ListOfDevices[nwkid]['Bind'][ep][cluster]['i_sqn'] = i_sqn
 
     return
 
@@ -230,8 +232,8 @@ def webBind( self, sourceIeee, sourceEp, destIeee, destEp, Cluster):
 
     mode = "03"     # IEEE
     datas =  str(sourceIeee)+str(sourceEp)+str(Cluster)+str(mode)+str(destIeee)+str(destEp)
-    sendZigateCmd(self, "0030", datas )
-    loggingBinding( self, 'Debug', "---> %s %s" %("0030", datas), sourceNwkid)
+    i_sqn = sendZigateCmd(self, "0030", datas )
+    loggingBinding( self, 'Debug', "---> %s %s i_sqn: %s" %("0030", datas, i_sqn), sourceNwkid)
 
     if 'WebBind' not in self.ListOfDevices[sourceNwkid]:
         self.ListOfDevices[sourceNwkid]['WebBind'] = {}
@@ -248,6 +250,7 @@ def webBind( self, sourceIeee, sourceEp, destIeee, destEp, Cluster):
     self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster][destNwkid]['TargetEp'] = destEp
     self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster][destNwkid]['Stamp'] = int(time())
     self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster][destNwkid]['Phase'] = 'requested'
+    self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster][destNwkid]['i_sqn'] = i_sqn
     self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster][destNwkid]['Status'] = ''
 
 
@@ -318,6 +321,42 @@ def WebBindStatus( self, sourceIeee, sourceEp, destIeee, destEp, Cluster):
                         return self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster][destNwkid]['Phase'] 
     return None
 
+def callBackForBindIfNeeded( self , srcNWKID ):
+
+    """
+    Check that all Bind are well set
+    """
+
+    if srcNWKID not in self.ListOfDevices:
+        return
+    if 'IEEE' not in self.ListOfDevices[srcNWKID]:
+        return
+    if 'Bind' not in self.ListOfDevices[srcNWKID]:
+        return
+    
+    sourceIeee = self.ListOfDevices[srcNWKID]['IEEE']
+
+    for Ep in list(self.ListOfDevices[srcNWKID]['Bind']):
+        for ClusterId in list(self.ListOfDevices[srcNWKID]['Bind'][ Ep ]):
+            if ('Phase' in self.ListOfDevices[srcNWKID]['Bind'][Ep][ClusterId] and \
+                    self.ListOfDevices[srcNWKID]['Bind'][Ep][ClusterId]['Phase'] == 'requested'):
+
+                if ('Stamp' in self.ListOfDevices[srcNWKID]['Bind'][Ep][ClusterId] and \
+                    time() < self.ListOfDevices[srcNWKID]['Bind'][Ep][ClusterId]['Stamp']+ 5):    # Let's wait 5s before trying again
+                    continue
+
+                loggingBinding( self, 'Log', "Redo a Bind for device that was in requested phase %s ClusterId %s" %(srcNWKID,ClusterId))
+                # Perforning the bind
+                bindDevice(self, sourceIeee, Ep, ClusterId)
+
+            elif ('Phase' in self.ListOfDevices[srcNWKID]['Bind'][Ep][ClusterId] and \
+                                self.ListOfDevices[srcNWKID]['Bind'][Ep][ClusterId]['Phase'] == 'binded') and \
+                    ('i_sqn' not in self.ListOfDevices[srcNWKID]['Bind'][Ep][ClusterId] ):
+                # bind was done with i_sqn, we cant trust it, lets redo it          
+                loggingBinding( self, 'Log', "Redo a WebBind with sqn for device %s that was already binded" %(srcNWKID))
+                # Perforning the bind
+                bindDevice(self, sourceIeee, Ep, ClusterId)
+
 def callBackForWebBindIfNeeded( self , srcNWKID ):
 
     """
@@ -332,14 +371,18 @@ def callBackForWebBindIfNeeded( self , srcNWKID ):
     for Ep in list(self.ListOfDevices[srcNWKID]['WebBind']):
         for ClusterId in list(self.ListOfDevices[srcNWKID]['WebBind'][ Ep ]):
             for destNwkid in list(self.ListOfDevices[srcNWKID]['WebBind'][ Ep ][ClusterId]):
-                if destNwkid in ('Stamp','Target','TargetIEEE','SourceIEEE','TargetEp','Phase','Status'):
+                if destNwkid not in self.ListOfDevices:
+                    del self.ListOfDevices[srcNWKID]['WebBind'][ Ep ][ClusterId][destNwkid]
+                elif destNwkid in ('Stamp','Target','TargetIEEE','SourceIEEE','TargetEp','Phase','Status'):
                     Domoticz.Error("---> delete  destNwkid: %s" %( destNwkid))
                     del self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId][destNwkid]
                 elif ('Phase' in self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId][destNwkid] and \
                                  self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId][destNwkid]['Phase'] == 'requested'):
+
                     if ('Stamp' in self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId][destNwkid] and \
                         time() < self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId][destNwkid]['Stamp']+ 5):    # Let's wait 5s before trying again
                         continue
+
                     loggingBinding( self, 'Log', "Redo a WebBind for device %s" %(srcNWKID))
                     sourceIeee = self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId][destNwkid]['SourceIEEE']
                     destIeee = self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId][destNwkid]['TargetIEEE']
@@ -347,4 +390,13 @@ def callBackForWebBindIfNeeded( self , srcNWKID ):
                     # Perforning the bind
                     webBind(self, sourceIeee, Ep, destIeee, destEp, ClusterId)
 
-                    self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId][destNwkid]['Stamp'] = int(time())
+                elif ('Phase' in self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId][destNwkid] and \
+                                 self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId][destNwkid]['Phase'] == 'binded') and \
+                     ('i_sqn' not in self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId][destNwkid] ):
+                    # bind was done with i_sqn, we cant trust it, lets redo it
+                    loggingBinding( self, 'Log', "Redo a WebBind with sqn for device %s" %(srcNWKID))
+                    sourceIeee = self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId][destNwkid]['SourceIEEE']
+                    destIeee = self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId][destNwkid]['TargetIEEE']
+                    destEp = self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId][destNwkid]['TargetEp']
+                    # Perforning the bind
+                    webBind(self, sourceIeee, Ep, destIeee, destEp, ClusterId)

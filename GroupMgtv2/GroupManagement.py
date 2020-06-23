@@ -127,7 +127,7 @@ class GroupsManagement( object):
         # Check if we have some Scan to be done
         for    NwkId, Ep in self.ScanDevicesToBeDone: 
             self.GroupStatus = 'scan'
-            if len(self.ZigateComm.zigateSendingFIFO) < 3:
+            if self.ZigateComm.loadTransmit() < 3:
                     self.ScanDevicesToBeDone.remove ( [ NwkId, Ep ] )
                     scan_device_for_grp_membership( self, NwkId, Ep )
 

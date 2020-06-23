@@ -153,15 +153,15 @@ def rest_zGroup_lst_avlble_dev( self, verb, data, parameters):
 
 def rest_rescan_group( self, verb, data, parameters):
     
-    self.groupmgt.ScanAllDevicesForGroupMemberShip( )
-
     _response = prepResponseMessage( self ,setupHeadersResponse())
     _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
     action = {}
     if verb != 'GET':
         return _response
-
-    self.groupmgt.ScanAllDevicesForGroupMemberShip( )
+    if self.groupmgt:
+        self.groupmgt.ScanAllDevicesForGroupMemberShip( )
+    else:
+        Domoticz.Error("rest_rescan_group Group not enabled!!!")
     action['Name'] = 'Full Scan'
     action['TimeStamp'] = int(time())
 

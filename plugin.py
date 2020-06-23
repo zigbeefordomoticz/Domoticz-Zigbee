@@ -89,7 +89,7 @@ from Modules.checkingUpdate import checkPluginVersion, checkPluginUpdate, checkF
 from Modules.logging import openLogFile, closeLogFile
 from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
 
-from Classes.APS import APSManagement
+#from Classes.APS import APSManagement
 from Classes.IAS import IAS_Zone_Management
 from Classes.PluginConf import PluginConf
 from Classes.Transport import ZigateTransport
@@ -110,7 +110,7 @@ VERSION_FILENAME = '.hidden/VERSION'
 
 TEMPO_NETWORK = 2    # Start HB totrigget Network Status
 TIMEDOUT_START = 10  # Timeoud for the all startup
-TIMEDOUT_FIRMWARE = 5# HB before request Firmware again
+TIMEDOUT_FIRMWARE = 5 # HB before request Firmware again
 TEMPO_START_ZIGATE = 1 # Nb HB before requesting a Start_Zigate
 
 class BasePlugin:
@@ -128,7 +128,6 @@ class BasePlugin:
         # Objects from Classe
         self.ZigateComm = None
         self.groupmgt = None
-        self.APS = None
         self.networkmap = None
         self.networkenergy = None
         self.domoticzdb_DeviceStatus = None      # Object allowing direct access to Domoticz DB DeviceSatus
@@ -160,8 +159,11 @@ class BasePlugin:
         self.PluginHealth = {}
         self.Ping = {}
         self.connectionState = None
+
         self.HBcount = 0
         self.HeartbeatCount = 0
+        self.internalHB = 0
+
         self.currentChannel = None  # Curent Channel. Set in Decode8009/Decode8024
         self.ZigateIEEE = None       # Zigate IEEE. Set in CDecode8009/Decode8024
         self.ZigateNWKID = None       # Zigate NWKID. Set in CDecode8009/Decode8024
@@ -251,7 +253,7 @@ class BasePlugin:
             openLogFile( self )
 
         loggingPlugin( self, 'Status',  "Switching Heartbeat to %s s interval" %HEARTBEAT)
-        Domoticz.Heartbeat( HEARTBEAT )
+        Domoticz.Heartbeat( 1 )
         loggingPlugin( self, 'Status',  "Python Version - %s" %sys.version)
         assert sys.version_info >= (3, 4)
         loggingPlugin( self, 'Status',  "DomoticzVersion: %s" %Parameters["DomoticzVersion"])
@@ -332,8 +334,8 @@ class BasePlugin:
         self.statistics = TransportStatistics(self.pluginconf)
 
         # Create APS object to manage Transmission Errors
-        if self.pluginconf.pluginConf['enableAPSFailureLoging'] or self.pluginconf.pluginConf['enableAPSFailureReporting']:
-            self.APS = APSManagement( self.ListOfDevices , Devices, self.pluginconf, self.loggingFileHandle)
+        #if self.pluginconf.pluginConf['enableAPSFailureLoging'] or self.pluginconf.pluginConf['enableAPSFailureReporting']:
+        #    self.APS = APSManagement( self.ListOfDevices , Devices, self.pluginconf, self.loggingFileHandle)
 
         # Connect to Zigate only when all initialisation are properly done.
         loggingPlugin( self, 'Status', "Transport mode: %s" %self.transport)
@@ -362,7 +364,7 @@ class BasePlugin:
             return
 
         loggingPlugin( self, 'Debug', "Establish Zigate connection" )
-        self.ZigateComm.openConn()
+        self.ZigateComm.open_conn()
         self.busy = False
 
     def onStop(self):
@@ -377,17 +379,13 @@ class BasePlugin:
         if self.webserver:
             self.webserver.onStop()
 
- 
-        if self.webserver:
-            self.webserver.onStop()
-
         if (not self.VersionNewFashion and (self.DomoticzMajor > 4 or ( self.DomoticzMajor == 4 and self.DomoticzMinor >= 10355))) or self.VersionNewFashion:
             import threading
             for thread in threading.enumerate():
                 if (thread.name != threading.current_thread().name):
                     Domoticz.Error("'"+thread.name+"' is running, it must be shutdown otherwise Domoticz will abort on plugin exit.")
 
-        #self.ZigateComm.closeConn()
+        #self.ZigateComm.close_conn()
         WriteDeviceList(self, 0)
         
         self.statistics.printSummary()
@@ -466,7 +464,7 @@ class BasePlugin:
             Domoticz.Error("Failed to connect ("+str(Status)+")")
             loggingPlugin( self, 'Debug', "Failed to connect ("+str(Status)+") with error: "+Description)
             self.connectionState = 0
-            self.ZigateComm.reConn()
+            self.ZigateComm.re_conn()
             self.PluginHealth['Flag'] = 3
             self.PluginHealth['Txt'] = 'No Communication'
             self.adminWidgets.updateStatusWidget( Devices, 'No Communication')
@@ -516,11 +514,10 @@ class BasePlugin:
             Domoticz.Error("onMessage - empty message received on %s" %Connection)
 
         self.Ping['Nb Ticks'] = 0
-        self.ZigateComm.onMessage(Data)
+        self.ZigateComm.on_message(Data)
 
-    def processFrame( self, Data ):
-
-        ZigateRead( self, Devices, Data )
+    def processFrame( self, Data , i_sqn, TransportInfos=None):
+        ZigateRead( self, Devices, Data, i_sqn )
 
     def onCommand(self, Unit, Command, Level, Color):
 
@@ -578,16 +575,17 @@ class BasePlugin:
             return
 
         if self.ZigateComm:
-            self.ZigateComm.checkTOwaitFor()
+            self.ZigateComm.check_timed_out_for_tx_queues()
 
+        self.internalHB += 1
+        if (self.internalHB % HEARTBEAT) != 0:
+            return
         busy_ = False
+        self.HeartbeatCount += 1 
 
         # Quiet a bad hack. In order to get the needs for ZigateRestart
         # from WebServer
-        if (
-            'startZigateNeeded' in self.zigatedata
-            and self.zigatedata['startZigateNeeded']
-        ):
+        if ( 'startZigateNeeded' in self.zigatedata and self.zigatedata['startZigateNeeded'] ):
             self.startZigateNeeded = self.HeartbeatCount
             del self.zigatedata['startZigateNeeded']
 
@@ -598,11 +596,9 @@ class BasePlugin:
             sendZigateCmd(self, "0010", "")
             return
 
-        self.HeartbeatCount += 1
-
         if self.transport != 'None':
             loggingPlugin( self, 'Debug', "onHeartbeat - busy = %s, Health: %s, startZigateNeeded: %s/%s, InitPhase1: %s InitPhase2: %s, InitPhase3: %s PDM_LOCK: %s" \
-                %(self.busy, self.PluginHealth, self.startZigateNeeded, self.HeartbeatCount, self.InitPhase1, self.InitPhase2, self.InitPhase3, self.ZigateComm.PDMLockStatus() ))
+                %(self.busy, self.PluginHealth, self.startZigateNeeded, self.HeartbeatCount, self.InitPhase1, self.InitPhase2, self.InitPhase3, self.ZigateComm.pdm_lock_status() ))
 
         if self.transport != 'None' and ( self.startZigateNeeded or not self.InitPhase1 or not self.InitPhase2):
             # Require Transport
@@ -679,7 +675,7 @@ class BasePlugin:
             self.PluginHealth['Txt'] = 'Enrollment in Progress'
             self.adminWidgets.updateStatusWidget( Devices, 'Enrollment')
             # Maintain trend statistics
-            self.statistics._Load = len(self.ZigateComm.zigateSendingFIFO)
+            self.statistics._Load = self.ZigateComm.loadTransmit()
             self.statistics.addPointforTrendStats( self.HeartbeatCount )
             return
 
@@ -706,7 +702,7 @@ class BasePlugin:
         if self.HeartbeatCount % ( 3600 // HEARTBEAT) == 0:
             sendZigateCmd(self,"0017", "")
 
-        if len(self.ZigateComm.zigateSendingFIFO) >= MAX_FOR_ZIGATE_BUZY:
+        if self.ZigateComm.loadTransmit() >= MAX_FOR_ZIGATE_BUZY:
             # This mean that 4 commands are on the Queue to be executed by Zigate.
             busy_ = True
 
@@ -729,8 +725,8 @@ class BasePlugin:
 
         # Maintain trend statistics
         self.statistics._Load = 0
-        if len(self.ZigateComm.zigateSendingFIFO) >= MAX_FOR_ZIGATE_BUZY:
-            self.statistics._Load = len(self.ZigateComm.zigateSendingFIFO)
+        if self.ZigateComm.loadTransmit() >= MAX_FOR_ZIGATE_BUZY:
+            self.statistics._Load = self.ZigateComm.loadTransmit()
 
         self.statistics.addPointforTrendStats( self.HeartbeatCount )
 
@@ -821,14 +817,14 @@ def zigateInit_Phase3( self ):
         self.PluzzyFirmware = True
     elif self.FirmwareVersion.lower() == '031b':
         loggingPlugin( self, 'Status', "You are not on the latest firmware version, This version is known to have problem, please consider to upgrae")
-    elif int(self.FirmwareVersion,16) >= 0x031b:
-        # We have ACK/NCK so we disable APSReporting
-        if self.APS:
-            self.pluginconf.pluginConf['enableAPSFailureReporting'] = 0
-            del self.APS
-            self.APS = None
+    #elif int(self.FirmwareVersion,16) >= 0x031b:
+    #    # We have ACK/NCK so we disable APSReporting
+    #    #if self.APS:
+    #    #    self.pluginconf.pluginConf['enableAPSFailureReporting'] = 0
+    #    #    del self.APS
+    #    #    self.APS = None
 
-    elif int(self.FirmwareVersion,16) > 0x031c:
+    elif int(self.FirmwareVersion,16) > 0x031d:
         Domoticz.Error("Firmware %s is not yet supported" %self.FirmwareVersion.lower())
 
     if self.transport != 'None' and int(self.FirmwareVersion,16) >= 0x030f and int(self.FirmwareMajorVersion,16) >= 0x0003:
@@ -927,7 +923,7 @@ def pingZigate( self ):
             self.adminWidgets.updateNotificationWidget( Devices, 'Ping: Connection with Zigate Lost')
             #self.connectionState = 0
             #self.Ping['TimeStamp'] = int(time.time())
-            #self.ZigateComm.reConn()
+            #self.ZigateComm.re_conn()
             restartPluginViaDomoticzJsonApi( self )
 
         else:

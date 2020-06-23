@@ -328,7 +328,7 @@ class WebServer(object):
             Statistics['APSFailure'] =self.statistics._APSFailure
             Statistics['APSAck'] =self.statistics._APSAck
             Statistics['APSNck'] =self.statistics._APSNck
-            Statistics['CurrentLoad'] = len(self.ZigateComm.zigateSendingFIFO)
+            Statistics['CurrentLoad'] = self.ZigateComm.loadTransmit()
             Statistics['MaxLoad'] = self.statistics._MaxLoad
             Statistics['StartTime'] =self.statistics._start
 
@@ -382,8 +382,8 @@ class WebServer(object):
 
             setting_lst = []
             for _theme in SETTINGS:
-                if _theme in ( 'PluginTransport'): 
-                    continue
+                #if _theme in ( 'PluginTransport'): 
+                #    continue
                 if sendDebug and _theme != 'VerboseLogging':
                     continue
                 if _theme == 'VerboseLogging' and not sendDebug:
