@@ -17,6 +17,7 @@ from Modules.zigateConsts import  ZCL_CLUSTERS_LIST , CERTIFICATION_CODE,  ZIGAT
 from Modules.basicOutputs import ZigatePermitToJoin, sendZigateCmd, start_Zigate, setExtendedPANID, zigateBlueLed
 from Modules.legrand_netatmo import legrand_ledInDark, legrand_ledIfOnOnOff, legrand_dimOnOff, legrand_ledShutter
 from Modules.actuators import actuators
+from Modules.philips import philips_set_poweron_after_offon
 from Modules.tools import is_hex
 from Classes.PluginConf import PluginConf,SETTINGS
 
@@ -518,6 +519,10 @@ class WebServer(object):
                                     legrand_ledIfOnOnOff( self, 'On')
                                 else:
                                     legrand_ledIfOnOnOff( self, 'Off')
+
+                        elif param == 'PowerOnAfterOffOn':
+                            self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
+                            philips_set_poweron_after_offon( self, int(setting_lst[setting]['current']))
 
                         elif param == 'debugMatchId':
                             if setting_lst[setting]['current'] == 'ffff':

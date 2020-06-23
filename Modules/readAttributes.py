@@ -370,14 +370,14 @@ def ReadAttributeRequest_0006_400x(self, key):
             return
         if self.ListOfDevices[key]['Manufacturer Name'] not in ( 'Philips', ):
 
-            Domoticz.Debug("-----requesting Attribute 0x0006/0x4003 for PowerOn state for device : %s" %key)
-            listAttributes.append ( 0x4000 )
-            listAttributes.append ( 0x4001 )
-            listAttributes.append ( 0x4002 )
+            loggingReadAttributes( self, 'Log',"-----requesting Attribute 0x0006/0x4003 for PowerOn state for device : %s" %key, nwkid=key)
+            #listAttributes.append ( 0x4000 )
+            #listAttributes.append ( 0x4001 )
+            #listAttributes.append ( 0x4002 )
             listAttributes.append ( 0x4003 )
 
         if listAttributes:
-            loggingReadAttributes( self, 'Debug', "Request OnOff 0x4000x attributes via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
+            loggingReadAttributes( self, 'Log', "Request OnOff 0x4000x attributes via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
             ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0006", listAttributes, ackToBeEnabled = False)
 
 def ReadAttributeRequest_0006(self, key):
