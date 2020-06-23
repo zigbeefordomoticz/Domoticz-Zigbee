@@ -143,10 +143,14 @@ SETTINGS = {
 
     # Plugin Transport
     'PluginTransport':     { 'Order': 10, 'param': {
-        'zmode':           { 'type':'str', 'default':'ZigBee' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
-        'TimeOut8000':     { 'type':'int', 'default': 1.5 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
-        'TimeOut8011':     { 'type':'int', 'default': 7, 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
-        'TimeOutResponse': { 'type':'int', 'default': 7, 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+        'Zmode':           { 'type':'str', 'default':'Auto' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
+        'TimeOut8000':     { 'type':'int', 'default': 1.5 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+        'TimeOut8011':     { 'type':'int', 'default': 8, 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+        'TimeOutResponse': { 'type':'int', 'default': 8, 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+        'forceAckOnZCL':   { 'type':'bool', 'default': 0, 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+        'disableAckOnZCL': { 'type':'bool', 'default': 0, 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+        'CompatibilityMode': { 'type':'bool', 'default': 0, 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+        'waitForResponse': { 'type':'bool', 'default': 0, 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
         }
     },
 
@@ -180,8 +184,8 @@ SETTINGS = {
         'debugWriteAttributes':     { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
         'debugReadAttributes':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
         'debugThermostats':     { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
-        'debugTransportTx':     { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
-        'debugTransportRx':     { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+        'debugTransportTx':     { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+        'debugTransportRx':     { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
         'debugCluster':         { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
         'debugHeartbeat':       { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
         'debugWidget':          { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
@@ -196,7 +200,7 @@ SETTINGS = {
         'debugIAS':             { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
         'debugDZDB':            { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
         'debugWebServer':       { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
-        'debugzigateCmd':       { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+        'debugzigateCmd':       { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
         'debugLegrand':         { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
         'debugLumi':            { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
         'debugLivolo':          { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
@@ -215,6 +219,12 @@ SETTINGS = {
         'EnableDimmer':     { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
         'EnableReleaseButton':     { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
         'LegrandFilPilote': { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+        }
+    },
+
+    # Philips Hue Specific
+    'Philips': {'Order': 13, 'param': {
+        'PowerOnAfterOffOn': {'type':'bool', 'default':1, 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
         }
     },
 
@@ -252,7 +262,6 @@ SETTINGS = {
         'ExpDeviceAnnoucement3': { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
         'XiaomiLeave':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
         'rebindLivolo':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':False},
-        'zmode':  { 'type':'str', 'default':'ZigBee' , 'current': None, 'restart':True , 'hidden':True, 'Advanced':False},
         'APSrteError':  {'type':'bool', 'default':0, 'current': None, 'restart':False , 'hidden':True, 'Advanced':False},
         'APSreTx': {'type':'bool', 'default':0, 'current': None, 'restart':False , 'hidden':True, 'Advanced':False},
         'allowAutoPairing': { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
@@ -312,9 +321,6 @@ class PluginConf:
 
         else:
             self.pluginConf['CertificationCode'] = 0x02
-
-        if self.pluginConf['zmode'] == 'Agressive':
-            self.zmode = 'Agressive'  # We are only waiting for Ack to send the next Command
 
         # Check Path
         for theme in SETTINGS:

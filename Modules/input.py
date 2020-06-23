@@ -44,7 +44,7 @@ from Modules.pdmHost import pdmHostAvailableRequest, PDMSaveRequest, PDMLoadRequ
             PDMGetBitmapRequest, PDMIncBitmapRequest, PDMExistanceRequest, pdmLoadConfirmed, \
             PDMDeleteRecord, PDMDeleteAllRecord, PDMCreateBitmap, PDMDeleteBitmapRequest
 
-from Modules.sqnMgmt import sqn_get_internal_sqn, E_SQN_APP
+from Modules.sqnMgmt import sqn_get_internal_sqn_from_app_sqn, sqn_get_internal_sqn_from_aps_sqn, TYPE_APP_ZCL, TYPE_APP_ZDP
 
 #from Modules.adminWidget import updateNotificationWidget, updateStatusWidget
 
@@ -179,18 +179,18 @@ def Decode8000_v2(self, Devices, MsgData, MsgRSSI) : # Status
     Status=MsgData[0:2]
     sqn_aps = sqn_app = MsgData[2:4]
     PacketType=MsgData[4:8]
-    SQN_type = None
+    Ack_expected = None
 
     if MsgLen > 8 :
         #loggingInput( self, 'Log',"Decode8000 - More information . New Firmware ???")
         #loggingInput( self, 'Log',"Decode8000 - %s" %MsgData)
-        sqn_aps = MsgData[8:10]
-        SQN_type = MsgData[10:12]
+        Ack_expected = MsgData[8:10]
+        sqn_aps = MsgData[10:12]
 
 
     if self.pluginconf.pluginConf['debugzigateCmd']:
-        loggingInput( self, 'Debug', "Decode8000 - PacketType: %s sqn_aps %s  sqn_app: %s SQN_type: %s Status: [%s] " \
-                %(PacketType, sqn_aps, sqn_app , SQN_type, Status))
+        loggingInput( self, 'Debug', "Decode8000 - PacketType: %s sqn_aps %s  sqn_app: %s Ack_expected: %s Status: [%s] " \
+                %(PacketType, sqn_aps, sqn_app , Ack_expected, Status))
 
     # Handling Status
     if  Status == "00" : 
@@ -240,8 +240,8 @@ def Decode8000_v2(self, Devices, MsgData, MsgRSSI) : # Status
             self.groupmgt.statusGroupRequest( MsgData )
 
     if str(MsgData[0:2]) != "00" :
-        loggingInput( self, 'Debug', "Decode8000 - PacketType: %s sqn_aps %s  sqn_app: %s SQN_type: %s Status: [%s] - %s" \
-                %(PacketType, sqn_aps, sqn_app , SQN_type, Status, Status))
+        loggingInput( self, 'Debug', "Decode8000 - PacketType: %s sqn_aps %s  sqn_app: %s Ack_expected: %s Status: [%s] - %s" \
+                %(PacketType, sqn_aps, sqn_app , Ack_expected, Status, Status))
 
 def Decode8001(self, Decode, MsgData, MsgRSSI) : # Reception log Level
     MsgLen=len(MsgData)
@@ -509,10 +509,11 @@ def Decode8011(self, Devices, MsgData, MsgRSSI , TransportInfos= None):
     MsgStatus = MsgData[0:2]
     MsgSrcAddr = MsgData[2:6]
     MsgSrcEp = MsgData[6:8]
-    MsgSEQ = 0
+    MsgSEQ = None
     if MsgLen > 12 :
         MsgSEQ = MsgData[12:14]
 
+    i_sqn = sqn_get_internal_sqn_from_aps_sqn(self.ZigateComm, MsgSEQ)
 
     if MsgSrcAddr not in self.ListOfDevices:
         return
@@ -800,7 +801,7 @@ def Decode8030(self, Devices, MsgData, MsgRSSI) : # Bind response
         Domoticz.Error("Decode8030 - Unknown addr mode %s in %s" %(MsgSrcAddrMode, MsgData))
         return
 
-    i_sqn = sqn_get_internal_sqn(self.ZigateComm,MsgSequenceNumber)
+    i_sqn = sqn_get_internal_sqn_from_app_sqn(self.ZigateComm,MsgSequenceNumber,TYPE_APP_ZDP)
     loggingInput( self, 'Log', "Decode8030 - Bind response, Device: %s Status: %s MsgSequenceNumber: 0x%s/%3s i_sqn: %s" 
         %(MsgSrcAddr, MsgDataStatus,MsgSequenceNumber, int(MsgSequenceNumber,16),i_sqn), MsgSrcAddr)
 
@@ -1581,7 +1582,9 @@ def Decode0100(self, Devices, MsgData, MsgRSSI):  # Read Attribute request
         Domoticz.Log("Decode0100 - Request from %s/%s Data: %s Status: %s" %(MsgSrcAddr, MsgSrcEp, MsgUnknown, MsgStatus))
 
 #Reponses Attributs
-def Decode8100(self, Devices, MsgData, MsgRSSI):  # Report Individual Attribute response
+def Decode8100(self, Devices, MsgData, MsgRSSI):
+    # 
+    # Read Attribute Response
 
     MsgSQN=MsgData[0:2]
     MsgSrcAddr=MsgData[2:6]
@@ -1593,9 +1596,9 @@ def Decode8100(self, Devices, MsgData, MsgRSSI):  # Report Individual Attribute 
     MsgAttSize=MsgData[20:24]
     MsgClusterData=MsgData[24:len(MsgData)]
 
-    i_sqn = sqn_get_internal_sqn (self.ZigateComm, MsgSQN)
+    i_sqn = sqn_get_internal_sqn_from_app_sqn (self.ZigateComm, MsgSQN, TYPE_APP_ZCL)
 
-    loggingInput( self, 'Debug', "Decode8100 - Report Attributes Response : [%s:%s] ClusterID: %s MsgSQN: %s, i_sqn: %s, AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<" \
+    loggingInput( self, 'Debug', "Decode8100 - Read Attribute Response: [%s:%s] ClusterID: %s MsgSQN: %s, i_sqn: %s, AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<" \
             %(MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgSQN, i_sqn, MsgAttrID, MsgAttrStatus, MsgAttType, MsgAttSize, MsgClusterData ), MsgSrcAddr)
 
     updRSSI( self, MsgSrcAddr, MsgRSSI )
@@ -1630,7 +1633,7 @@ def Decode8101(self, Devices, MsgData, MsgRSSI) :  # Default Response
     loggingInput( self, 'Debug', "Decode8101 - Default response - SQN: %s, EP: %s, ClusterID: %s , DataCommand: %s, - Status: [%s] %s" \
             %(MsgDataSQN, MsgDataEp, MsgClusterId, MsgDataCommand, MsgDataStatus,  DisplayStatusCode( MsgDataStatus ) ))
 
-def Decode8102(self, Devices, MsgData, MsgRSSI):  # Report Individual Attribute response
+def Decode8102(self, Devices, MsgData, MsgRSSI):  # Attribute Reports
     MsgSQN=MsgData[0:2]
     MsgSrcAddr=MsgData[2:6]
     MsgSrcEp=MsgData[6:8]
@@ -1641,7 +1644,7 @@ def Decode8102(self, Devices, MsgData, MsgRSSI):  # Report Individual Attribute 
     MsgAttSize=MsgData[20:24]
     MsgClusterData=MsgData[24:len(MsgData)]
 
-    loggingInput( self, 'Debug', "Decode8102 - Read Attributes Response : [%s:%s] MsgSQN: %s ClusterID: %s AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<" \
+    loggingInput( self, 'Debug', "Decode8102 - Attribute Reports : [%s:%s] MsgSQN: %s ClusterID: %s AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<" \
             %(MsgSrcAddr, MsgSrcEp, MsgSQN, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData ), MsgSrcAddr)
 
     if self.PluzzyFirmware:
@@ -1731,7 +1734,7 @@ def Decode8110(self, Devices, MsgData, MsgRSSI):  # Write Attribute response
     if MsgAttSize != '0000':
         MsgClusterData=MsgData[24:len(MsgData)]
 
-    i_sqn = sqn_get_internal_sqn(self.ZigateComm, MsgSQN)
+    i_sqn = sqn_get_internal_sqn_from_app_sqn(self.ZigateComm, MsgSQN, TYPE_APP_ZCL)
 
     loggingInput( self, 'Debug', "Decode8110 - WriteAttributeResponse - MsgSQN: %s,  MsgSrcAddr: %s, MsgSrcEp: %s, MsgClusterId: %s, MsgAttrID: %s, MsgAttrStatus:%s, MsgAttType: %s, MsgAttSize: %s, MsgClusterData: %s. rawData: %s" \
             %( MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus, MsgAttType, MsgAttSize, MsgClusterData, MsgData), MsgSrcAddr)
@@ -1750,6 +1753,16 @@ def Decode8110(self, Devices, MsgData, MsgRSSI):  # Write Attribute response
         self.ListOfDevices[nwkid]['WriteAttribute'][ MsgSrcEp ][MsgClusterId][ MsgAttrID]['Stamp'] = int(time())
         self.ListOfDevices[nwkid]['WriteAttribute'][ MsgSrcEp ][MsgClusterId][ MsgAttrID]['Phase'] = 'fullfilled'
         self.ListOfDevices[nwkid]['WriteAttribute'][ MsgSrcEp ][MsgClusterId][ MsgAttrID]['MsgClusterData'] = MsgClusterData
+
+    # information from 8110 are not realiable, lets try with the sqn 
+    if 'WriteAttribute'  in self.ListOfDevices[nwkid]:
+        for EPout in list (self.ListOfDevices[nwkid]['WriteAttribute']):
+            for clusterID in list (self.ListOfDevices[nwkid]['WriteAttribute'][EPout]):
+                for attribute in list (self.ListOfDevices[nwkid]['WriteAttribute'][EPout][clusterID]):
+                    if i_sqn == self.ListOfDevices[nwkid]['WriteAttribute'][EPout][clusterID][attribute]['i_sqn']:
+                        self.ListOfDevices[nwkid]['WriteAttribute'][EPout][clusterID][attribute]['Stamp'] = int(time())
+                        self.ListOfDevices[nwkid]['WriteAttribute'][EPout][clusterID][attribute]['Phase'] = 'fullfilled'
+                        self.ListOfDevices[nwkid]['WriteAttribute'][EPout][clusterID][attribute]['MsgClusterData'] = MsgClusterData       
 
     if MsgClusterId == "0500":
         self.iaszonemgt.receiveIASmessages( MsgSrcAddr, 3, MsgClusterData)
@@ -2363,6 +2376,8 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         # 4- We will request immediatly the List of EndPoints
         PREFIX_IEEE_XIAOMI = '00158d000'
         if MsgIEEE[0:len(PREFIX_IEEE_XIAOMI)] == PREFIX_IEEE_XIAOMI:
+            ReadAttributeRequest_0000(self, MsgSrcAddr, fullScope=False ) # In order to request Model Name
+        if self.pluginconf.pluginConf['enableSchneiderWiser']:
             ReadAttributeRequest_0000(self, MsgSrcAddr, fullScope=False ) # In order to request Model Name
 
         loggingPairing( self, 'Debug', "Decode004d - Request End Point List ( 0x0045 )")

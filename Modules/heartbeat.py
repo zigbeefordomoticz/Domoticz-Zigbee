@@ -21,8 +21,8 @@ from Modules.actuators import actuators
 
 from Modules.basicOutputs import  sendZigateCmd,identifyEffect, getListofAttribute
 
-from Modules.readAttributes import READ_ATTRIBUTES_REQUEST, ReadAttributeRequest_0000_basic, \
-        ReadAttributeRequest_0000, ReadAttributeRequest_0001, ReadAttributeRequest_0006, ReadAttributeRequest_0008, ReadAttributeRequest_0006_0000, ReadAttributeRequest_0008_0000,\
+from Modules.readAttributes import READ_ATTRIBUTES_REQUEST, ping_device_with_read_attribute, \
+        ReadAttributeRequest_0000, ReadAttributeRequest_0001, ReadAttributeRequest_0006, ReadAttributeRequest_0008, ReadAttributeRequest_0006_0000, ReadAttributeRequest_0006_400x, ReadAttributeRequest_0008_0000,\
         ReadAttributeRequest_0100, \
         ReadAttributeRequest_000C, ReadAttributeRequest_0102, ReadAttributeRequest_0102_0008, ReadAttributeRequest_0201, ReadAttributeRequest_0204, ReadAttributeRequest_0300,  \
         ReadAttributeRequest_0400, ReadAttributeRequest_0402, ReadAttributeRequest_0403, ReadAttributeRequest_0405, \
@@ -156,6 +156,7 @@ def processKnownDevices( self, Devices, NWKID ):
 
         if 'Stamp' not in self.ListOfDevices[NWKID]:
             self.ListOfDevices[NWKID]['Stamp'] = {}
+            self.ListOfDevices[NwkId]['Stamp']['LastPing'] = 0
             self.ListOfDevices[NWKID]['Stamp']['LastSeen'] = 0
             self.ListOfDevices[NWKID]['Health'] = 'unknown'
 
@@ -228,31 +229,44 @@ def processKnownDevices( self, Devices, NWKID ):
                 self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = now
                 submitPing( self, NwkId)
 
-
-    def submitPing( self, NwkId):
-        # Pinging devices to check they are still Alive
-        loggingHeartbeat( self, 'Debug', "------------> call readAttributeRequest %s" %NwkId, NwkId)
-        ReadAttributeRequest_0000_basic( self, NwkId)
-
     def pingDevices( self, NwkId, health, checkHealthFlag, mainPowerFlag):
 
         loggingHeartbeat( self, 'Debug', "------> pinDevicest %s health: %s, checkHealth: %s, mainPower: %s" %(NwkId,health, checkHealthFlag, mainPowerFlag) , NwkId)
         if not mainPowerFlag:
             return
-
         if not health:
             pingRetryDueToBadHealth(self, NwkId)
             return
+        
+        if 'LastPing' not in self.ListOfDevices[NwkId]['Stamp']:
+            self.ListOfDevices[NwkId]['Stamp']['LastPing'] = 0
+        
+        lastPing = self.ListOfDevices[NwkId]['Stamp']['LastPing']
+        lastSeen = self.ListOfDevices[NwkId]['Stamp']['LastSeen']
+        now = int(time.time())
 
-        if _checkHealth and self.ZigateComm.loadTransmit() == 0:
+        if checkHealthFlag and now > (lastPing + 60) and self.ZigateComm.loadTransmit() == 0:
             submitPing( self, NWKID)
             return
 
-        if ( int(time.time()) > ( self.ListOfDevices[NwkId]['Stamp']['LastSeen'] + self.pluginconf.pluginConf['pingDevicesFeq'] )) and \
-                    self.ZigateComm.loadTransmit() == 0:
-            loggingHeartbeat( self, 'Debug', "------> pinDevice time: %s LastSeen: %s Freq: %s" \
-                %(int(time.time()), self.ListOfDevices[NwkId]['Stamp']['LastSeen'], self.pluginconf.pluginConf['pingDevicesFeq'] ), NwkId) 
-            submitPing( self, NwkId)         
+        loggingHeartbeat( self, 'Debug', "------> pinDevice %s time: %s LastPing: %s LastSeen: %s Freq: %s" \
+                %(NWKID, now, lastPing, lastSeen, self.pluginconf.pluginConf['pingDevicesFeq'] ), NwkId) 
+
+        if ( now > ( lastPing + self.pluginconf.pluginConf['pingDevicesFeq'] )) and \
+                 ( now > ( lastSeen + self.pluginconf.pluginConf['pingDevicesFeq'] )) and \
+                       self.ZigateComm.loadTransmit() == 0:
+
+            loggingHeartbeat( self, 'Debug', "------> pinDevice %s time: %s LastPing: %s LastSeen: %s Freq: %s" \
+                %(NWKID, now, lastPing, lastSeen, self.pluginconf.pluginConf['pingDevicesFeq'] ), NwkId) 
+            
+            submitPing( self, NwkId)
+
+    def submitPing( self, NwkId):
+        # Pinging devices to check they are still Alive
+        loggingHeartbeat( self, 'Debug', "------------> call readAttributeRequest %s" %NwkId, NwkId)
+        self.ListOfDevices[NwkId]['Stamp']['LastPing'] = int(time.time())
+        ping_device_with_read_attribute( self, NwkId)
+
 
     # Begin   
     # Normalize Hearbeat value if needed
@@ -313,6 +327,7 @@ def processKnownDevices( self, Devices, NWKID ):
         loggingHeartbeat( self, 'Debug', "processKnownDevices -  %s intHB: %s _mainPowered: %s doReadAttr: %s" \
                 %(NWKID, intHB, _mainPowered, _doReadAttribute ), NWKID)
 
+
         # Read Attributes if enabled
         now = int(time.time())   # Will be used to trigger ReadAttributes
         for tmpEp in self.ListOfDevices[NWKID]['Ep']:    
@@ -368,8 +383,12 @@ def processKnownDevices( self, Devices, NWKID ):
 
                 func(self, NWKID )
 
-    
-    
+    #if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
+    #    if self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Philips':
+    #        if '0b' in self.ListOfDevices[NWKID]['Ep']:
+    #            if '0006' in self.ListOfDevices[NWKID]['Ep']['0b']:
+    #                if '4003' not in self.ListOfDevices[NWKID]['Ep']['0b']['0006']:
+    #                    ReadAttributeRequest_0006_400x( self, NWKID )
 
     # Reenforcement of Legrand devices options if required
     if ( self.HeartbeatCount % LEGRAND_FEATURES ) == 0 :

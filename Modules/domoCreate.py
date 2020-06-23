@@ -257,6 +257,9 @@ def CreateDomoDevice(self, Devices, NWKID):
         elif ("Switch" in Type) and ("LvlControl" in Type):
             loggingWidget(self, 'Debug', "----> LvlControl, let's remove Switch and LvlControl")
             Type = ['LvlControl']
+        if '' in Type:
+            Domoticz.Log('Remove Empty Type')
+            Type.remove( '' )
         loggingWidget( self, "Debug", "CreateDomoDevice - Creating devices based on Type: %s" % Type, NWKID)
 
         if 'ClusterType' not in self.ListOfDevices[NWKID]['Ep'][Ep]:

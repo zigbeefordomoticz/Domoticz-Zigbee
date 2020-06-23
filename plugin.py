@@ -596,7 +596,6 @@ class BasePlugin:
             sendZigateCmd(self, "0010", "")
             return
 
-
         if self.transport != 'None':
             loggingPlugin( self, 'Debug', "onHeartbeat - busy = %s, Health: %s, startZigateNeeded: %s/%s, InitPhase1: %s InitPhase2: %s, InitPhase3: %s PDM_LOCK: %s" \
                 %(self.busy, self.PluginHealth, self.startZigateNeeded, self.HeartbeatCount, self.InitPhase1, self.InitPhase2, self.InitPhase3, self.ZigateComm.pdm_lock_status() ))
@@ -825,7 +824,7 @@ def zigateInit_Phase3( self ):
     #    #    del self.APS
     #    #    self.APS = None
 
-    elif int(self.FirmwareVersion,16) > 0x031c:
+    elif int(self.FirmwareVersion,16) > 0x031d:
         Domoticz.Error("Firmware %s is not yet supported" %self.FirmwareVersion.lower())
 
     if self.transport != 'None' and int(self.FirmwareVersion,16) >= 0x030f and int(self.FirmwareMajorVersion,16) >= 0x0003:

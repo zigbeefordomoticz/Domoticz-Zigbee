@@ -24,7 +24,7 @@ from Modules.bindings import unbindDevice, bindDevice, rebind_Clusters
 from Modules.basicOutputs import  sendZigateCmd, identifyEffect, getListofAttribute
 
         
-from Modules.readAttributes import READ_ATTRIBUTES_REQUEST, ReadAttributeRequest_0000_basic, \
+from Modules.readAttributes import READ_ATTRIBUTES_REQUEST, \
         ReadAttributeRequest_0000, ReadAttributeRequest_0001, ReadAttributeRequest_0006, ReadAttributeRequest_0008, \
         ReadAttributeRequest_0100, \
         ReadAttributeRequest_000C, ReadAttributeRequest_0102, ReadAttributeRequest_0201, ReadAttributeRequest_0204, ReadAttributeRequest_0300,  \
@@ -125,7 +125,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                     self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( '0042' )
                 sendZigateCmd(self,"0042", str(NWKID))     # Request a Node Descriptor
             else:
-                loggingHeartbeat( self, 'Debug', "[%s] NEW OBJECT: %s Model Name: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Manufacturer']), NWKID)
+                loggingHeartbeat( self, 'Debug', "[%s] NEW OBJECT: %s Manufacturer: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Manufacturer']), NWKID)
 
         for iterEp in self.ListOfDevices[NWKID]['Ep']:
             #IAS Zone
