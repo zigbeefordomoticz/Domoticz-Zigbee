@@ -446,13 +446,17 @@ def send_data_internal(self, InternalSqn):
 
     if sendNow and self.zmode == 'zigate31c':
         # Wait on 0x8000 and CmdResponse
-        sendNow = ( (len(self._waitFor8000Queue) == 0 and len(self._waitForCmdResponseQueue) == 0) or self.ListOfCommands[ InternalSqn ]['PDMCommand'] )
+        if ( not self.ListOfCommands[ InternalSqn ]['PDMCommand'] and (len(self._waitFor8000Queue) > 0 or len(self._waitForCmdResponseQueue) > 0)  ):
+            sendNow = False
+        
         self.loggingSend(  'Debug', "--- send_data_internal - Command: %s  Q(0x8000): %s Q(Response): %s sendNow: %s" 
             %(self.ListOfCommands[ InternalSqn ]['Cmd'], len(self._waitFor8000Queue), len(self._waitForCmdResponseQueue), sendNow))
 
     elif sendNow and self.zmode == 'zigateack':
         # Wait on 0x8000, AckNack and eventually on Response
-        sendNow = ( (len(self._waitFor8000Queue) == 0 and len(self._waitForAckNack) == 0 and len(self._waitForCmdResponseQueue) == 0) or self.ListOfCommands[ InternalSqn ]['PDMCommand'] )
+        if ( not self.ListOfCommands[ InternalSqn ]['PDMCommand'] and (len(self._waitFor8000Queue) > 0 or len(self._waitForAckNack) > 0 or len(self._waitForCmdResponseQueue) > 0) ):
+            sendNow = False
+
         self.loggingSend( 'Debug', "--- send_data_internal - Command: %s  Q(0x8000): %s Q(Ack/Nack): %s Q(Response): %s sendNow: %s" 
             %(self.ListOfCommands[ InternalSqn ]['Cmd'], len(self._waitFor8000Queue), len(self._waitForAckNack), len(self._waitForCmdResponseQueue) , sendNow))
 
