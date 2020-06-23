@@ -382,8 +382,8 @@ class WebServer(object):
 
             setting_lst = []
             for _theme in SETTINGS:
-                #if _theme in ( 'PluginTransport'): 
-                #    continue
+                if _theme in ( 'PluginTransport'): 
+                    continue
                 if sendDebug and _theme != 'VerboseLogging':
                     continue
                 if _theme == 'VerboseLogging' and not sendDebug:
@@ -395,6 +395,7 @@ class WebServer(object):
                 }
 
                 for param in self.pluginconf.pluginConf:
+
                     if param not in SETTINGS[_theme]['param']: 
                         continue
 
@@ -421,6 +422,14 @@ class WebServer(object):
                                 setting['current_value'] = '%x' %self.pluginconf.pluginConf[param] 
                             else:
                                 setting['current_value'] = '%x' %int(self.pluginconf.pluginConf[param] ,16)
+                        elif SETTINGS[_theme]['param'][param]['type'] == 'list': 
+                            setting['list'] = []
+                            setting['current_value'] = self.pluginconf.pluginConf[param]
+
+                            for x in SETTINGS[_theme]['param'][param]['list']:
+                                ListItem = {x: SETTINGS[_theme]['param'][param]['list'][x]}
+                                setting['list'].append( ListItem )
+
                         else:
                             setting['current_value'] = self.pluginconf.pluginConf[param]
                         theme['ListOfSettings'].append ( setting )

@@ -532,28 +532,27 @@ def Decode8011(self, Devices, MsgData, MsgRSSI , TransportInfos= None):
     if not _powered:
         return
 
-    if self.pluginconf.pluginConf['enableACKNACK']: 
-        # Handle only NACK for main powered devices
-        timedOutDevice( self, Devices, NwkId = MsgSrcAddr)
-        if 'Health' in self.ListOfDevices[MsgSrcAddr]:
-            if self.ListOfDevices[MsgSrcAddr]['Health'] != 'Not Reachable':
-                self.ListOfDevices[MsgSrcAddr]['Health'] = 'Not Reachable'
+    # Handle only NACK for main powered devices
+    timedOutDevice( self, Devices, NwkId = MsgSrcAddr)
+    if 'Health' in self.ListOfDevices[MsgSrcAddr]:
+        if self.ListOfDevices[MsgSrcAddr]['Health'] != 'Not Reachable':
+            self.ListOfDevices[MsgSrcAddr]['Health'] = 'Not Reachable'
 
-            cmd = ''
-            if TransportInfos:
-                if isinstance(TransportInfos, dict ):
-                    cmd = TransportInfos['Cmd']
-                else:
-                    Domoticz.Error("Transport Info not a dict ! %s" %TransportInfos  )
+        cmd = ''
+        if TransportInfos:
+            if isinstance(TransportInfos, dict ):
+                cmd = TransportInfos['Cmd']
+            else:
+                Domoticz.Error("Transport Info not a dict ! %s" %TransportInfos  )
 
-            if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
-                MsgClusterId = MsgData[8:12]
-                if self.ListOfDevices[MsgSrcAddr]['ZDeviceName'] not in [ {}, '', ]:
-                    loggingInput( self, 'Log', "Receive NACK from %s (%s) clusterId: %s for Command: %s Status: %s" 
-                        %(self.ListOfDevices[MsgSrcAddr]['ZDeviceName'], MsgSrcAddr, MsgClusterId, cmd, MsgStatus), MsgSrcAddr)
-                else:
-                    loggingInput( self, 'Log', "Receive NACK from %s clusterId: %s for Command: %s Status: %s" 
-                        %(MsgSrcAddr, MsgClusterId, cmd, MsgStatus), MsgSrcAddr)
+        if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
+            MsgClusterId = MsgData[8:12]
+            if self.ListOfDevices[MsgSrcAddr]['ZDeviceName'] not in [ {}, '', ]:
+                loggingInput( self, 'Log', "Receive NACK from %s (%s) clusterId: %s for Command: %s Status: %s" 
+                    %(self.ListOfDevices[MsgSrcAddr]['ZDeviceName'], MsgSrcAddr, MsgClusterId, cmd, MsgStatus), MsgSrcAddr)
+            else:
+                loggingInput( self, 'Log', "Receive NACK from %s clusterId: %s for Command: %s Status: %s" 
+                    %(MsgSrcAddr, MsgClusterId, cmd, MsgStatus), MsgSrcAddr)
 
 def Decode8012(self, Devices, MsgData, MsgRSSI ):
     """
@@ -2113,7 +2112,7 @@ def Decode8702(self, Devices, MsgData, MsgRSSI) : # Reception APS Data confirm f
     updRSSI( self, NWKID, MsgRSSI)
     _powered = mainPoweredDevice( self, NWKID)
 
-    if _powered and not self.pluginconf.pluginConf['enableACKNACK']: 
+    if _powered: 
         # Handle only NACK for main powered devices
         timedOutDevice( self, Devices, NwkId = NWKID)
         if 'Health' in self.ListOfDevices[NWKID]:
