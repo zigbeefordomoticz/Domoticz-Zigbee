@@ -18,7 +18,7 @@ from datetime import datetime
 from time import time
 
 from Modules.zigateConsts import ZIGATE_EP, ADDRESS_MODE, ZLL_DEVICES, ZIGATE_COMMANDS
-from Modules.tools import mainPoweredDevice
+from Modules.tools import mainPoweredDevice, getListOfEpForCluster
 from Modules.logging import loggingBasicOutput
 
 def send_zigatecmd_zcl_ack( self, address, cmd, datas ):
@@ -533,7 +533,7 @@ def write_attributeNoResponse( self, key, EPin, EPout, clusterID, manuf_id, manu
     datas = ZIGATE_EP + EPout + clusterID
     datas += direction + manuf_spec + manuf_id
     datas += lenght +attribute + data_type + data
-    loggingBasicOutput( self, 'Log', "write_attribute No Reponse for %s/%s - >%s<" %(key, EPout, datas), key)
+    loggingBasicOutput( self, 'Log', "write_attribute No Reponse for %s/%s - >%s<" %(key, EPout, datas))
 
     # Firmware <= 31c are in fact with ACK
     return send_zigatecmd_zcl_noack(self, key, "0113", str(datas))
@@ -597,31 +597,15 @@ def set_poweron_afteroffon( self, key, OnOffMode = 0xff):
     # 0xfc0f --> Command 0x01
     # 0xfc01 --> Command 0x01
 
-    # Tested on Ikea Bulb without any results !
-    PHILIPS_POWERON_MODE = [ 0x00, # Off
-                    0x01, # On
-                    0xff # Previous state
-            ]
-
-    # if 'Manufacturer'  in self.ListOfDevices[key]:
-    #     manuf_spec = "01"
-    #     manuf_id = self.ListOfDevices[key]['Manufacturer']
-    # else:
-    #     manuf_spec = "00"
-    #     manuf_id = "0000"
-
     manuf_spec = "00"
     manuf_id = "0000"
     ListOfEp = getListOfEpForCluster( self, key, '0006' )
+    cluster_id = "0006"
+    attribute = "4003"
+    data_type = "30" # 
     for EPout in ListOfEp:
-        cluster_id = "0006"
-        attribute = "4003"
-        data_type = "30" # 
         data = "ff"
-        if OnOffMode in POWERON_MODE:
-            data = "%02x" %OnOffMode
-        else:
-            data = "%02x" %0xff
-        loggingOutput( self, 'Debug', "set_PowerOn_OnOff for %s/%s - OnOff: %s" %(key, EPout, OnOffMode), key)
+        data = "%02x" %OnOffMode
+        loggingBasicOutput( self, 'Debug', "set_PowerOn_OnOff for %s/%s - OnOff: %s" %(key, EPout, OnOffMode))
         write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data, ackToBeEnabled = False)
-        del self.ListOfDevices[NWKID]['Ep']['0b']['0006']['4003']
+        del self.ListOfDevices[key]['Ep']['0b']['0006']['4003']
