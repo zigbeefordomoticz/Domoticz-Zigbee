@@ -1123,8 +1123,8 @@ def process_msg_type8000(self, Status, PacketType, sqn_app, sqn_aps, Ack_expecte
         IsCommandOk = int(self.ListOfCommands[InternalSqn]['Cmd'], 16) == int(
             PacketType, 16)
         if not IsCommandOk:
-            self.loggingSend('Error', "DEBUG: process_msg_type8000 - sync error : Expecting %s and Received: %s lenQ: %s"
-                             % (self.ListOfCommands[InternalSqn]['Cmd'], PacketType, len(len(self._waitFor8000Queue))))
+            self.loggingSend('Error', "Debug: process_msg_type8000 - sync error : Expecting %s and Received: %s lenQ: %s"
+                             % (self.ListOfCommands[InternalSqn]['Cmd'], PacketType, len(self._waitFor8000Queue)))
             for x, y in self.debug8000:
                 self.loggingSend('Error', "process_msg_type8000 - remaining tuple in debug8000: %s"  %str(self.debug8000))
                 if x in self.ListOfCommands:
