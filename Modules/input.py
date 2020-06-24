@@ -2112,19 +2112,19 @@ def Decode8702(self, Devices, MsgData, MsgRSSI) : # Reception APS Data confirm f
     updRSSI( self, NWKID, MsgRSSI)
     _powered = mainPoweredDevice( self, NWKID)
 
-    if _powered: 
-        # Handle only NACK for main powered devices
-        timedOutDevice( self, Devices, NwkId = NWKID)
-        if 'Health' in self.ListOfDevices[NWKID]:
-            if self.ListOfDevices[NWKID]['Health'] != 'Not Reachable':
-                self.ListOfDevices[NWKID]['Health'] = 'Not Reachable'
-            if 'ZDeviceName' in self.ListOfDevices[NWKID]:
-                if self.ListOfDevices[NWKID]['ZDeviceName'] not in [ {}, '', ]:
-                    loggingInput( self, 'Log', "Receive APS Failure from %s (%s) with Status: %s" 
-                        %(self.ListOfDevices[NWKID]['ZDeviceName'], NWKID, MsgDataStatus), NWKID)
-                else:
-                    loggingInput( self, 'Log', "Receive APS Failure from %s Status: %s" 
-                        %(NWKID,  MsgDataStatus), NWKID)
+    # if _powered: 
+    #     # Handle only NACK for main powered devices
+    #     timedOutDevice( self, Devices, NwkId = NWKID)
+    #     if 'Health' in self.ListOfDevices[NWKID]:
+    #         if self.ListOfDevices[NWKID]['Health'] != 'Not Reachable':
+    #             self.ListOfDevices[NWKID]['Health'] = 'Not Reachable'
+    #         if 'ZDeviceName' in self.ListOfDevices[NWKID]:
+    #             if self.ListOfDevices[NWKID]['ZDeviceName'] not in [ {}, '', ]:
+    #                 loggingInput( self, 'Log', "Receive APS Failure from %s (%s) with Status: %s" 
+    #                     %(self.ListOfDevices[NWKID]['ZDeviceName'], NWKID, MsgDataStatus), NWKID)
+    #             else:
+    #                 loggingInput( self, 'Log', "Receive APS Failure from %s Status: %s" 
+    #                     %(NWKID,  MsgDataStatus), NWKID)
 
 
 #Device Announce
