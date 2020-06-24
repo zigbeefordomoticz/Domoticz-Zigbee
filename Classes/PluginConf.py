@@ -114,7 +114,7 @@ SETTINGS = {
                             'default':'CE' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
         'CertificationCode':         { 'type':'int',  'default':1 , 'current': None, 'restart':True , 'hidden':True, 'Advanced':False},
         'channel':                   { 'type':'list',  
-                            'list': { '11':11,'12':12,'13':13,'14':14,'15':15,'16':16,'17':17,'18':18,'19':19,'20':20,'21':21,'22':22,'23':23,'24':24,'25':25,'26':26},
+                            'list': { 'default': 0, '11':11,'12':12,'13':13,'14':14,'15':15,'16':16,'17':17,'18':18,'19':19,'20':20,'21':21,'22':22,'23':23,'24':24,'25':25,'26':26},
                             'default':'0' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
         'TXpower_set':               { 'type':'list',  
                             'list': { '0dbM':0, '-9 dbM':1, '-20dbM':2, '-32dbM':3 },
