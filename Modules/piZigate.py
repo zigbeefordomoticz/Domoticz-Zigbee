@@ -130,4 +130,3 @@ def runmode_with_osgpiocommand():
             os.system( GPIO_CMD + " read 2") # nosec
         else:
             Domoticz.Error("%s command missing. Make sure to install wiringPi package" %GPIO_CMD)
-
