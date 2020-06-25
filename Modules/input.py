@@ -31,6 +31,7 @@ from Modules.livolo import livolo_bind
 from Modules.lumi import AqaraOppleDecoding, enableOppleSwitch
 from Modules.configureReporting import processConfigureReporting
 from Modules.schneider_wiser import schneider_wiser_registration, schneiderReadRawAPS
+from Modules.legrand_netatmo import rejoin_legrand_reset
 from Modules.errorCodes import DisplayStatusCode
 from Modules.readClusters import ReadCluster
 from Modules.database import saveZigateNetworkData
@@ -2941,6 +2942,7 @@ def Decode0301(self, Devices, MsgData, MsgRSSI):
 def Decode0302(self, Devices, MsgData, MsgRSSI):
 
     loggingInput( self, 'Log',  "Decode0302 - PDMloadConfirmed: %20.20s" %(MsgData))
+    rejoin_legrand_reset( self )
     pdmLoadConfirmed(self, MsgData )
 
 def Decode0200(self, Devices, MsgData, MsgRSSI):
