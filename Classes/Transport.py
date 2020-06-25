@@ -601,7 +601,7 @@ def set_cmdresponse_for_sending(self, i_sqn):
             self.ListOfCommands[i_sqn]['MessageResponse'] = None
             self.ListOfCommands[i_sqn]['WaitForResponse'] = False
 
-        elif self.ListOfCommands[i_sqn]['Cmd'] != '0110':
+        elif self.ListOfCommands[i_sqn]['Cmd'] == '0110':
             # Firmware 31c buggy never bring 0x8110 !
             self.ListOfCommands[i_sqn]['ResponseExpected'] = False
             self.ListOfCommands[i_sqn]['MessageResponse'] = None
