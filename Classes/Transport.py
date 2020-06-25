@@ -224,6 +224,9 @@ class ZigateTransport(object):
         self.ListOfCommands[InternalSqn]['MessageResponse'] = None
         self.ListOfCommands[InternalSqn]['ExpectedAck'] = False
         self.ListOfCommands[InternalSqn]['WaitForResponse'] = False
+        self.ListOfCommands[InternalSqn]['APP_SQN'] = None
+        self.ListOfCommands[InternalSqn]['APS_SQN'] = None
+        self.ListOfCommands[InternalSqn]['TYP_SQN'] = None
 
         hexCmd = int(cmd, 16)
         if hexCmd in CMD_PDM_ON_HOST:
@@ -779,6 +782,7 @@ def check_timed_out(self):
             self.loggingSend(
                 'Debug', " --  --  --  > - %s - Time Out %s  " % (desc, i_sqn))
             return
+
         if self.ListOfCommands[i_sqn]['MessageResponse']:
             self.loggingSend('Log', " --  --  --  > Time Out %s [%s] %s sec for  %s %s %s/%s %04x Time: %s"
                              % (desc, i_sqn, (now - TimeStamp), self.ListOfCommands[i_sqn]['Cmd'], self.ListOfCommands[i_sqn]['Datas'],
@@ -789,6 +793,8 @@ def check_timed_out(self):
                              % (desc, i_sqn, (now - TimeStamp), self.ListOfCommands[i_sqn]['Cmd'], self.ListOfCommands[i_sqn]['Datas'],
                                 self.ListOfCommands[i_sqn]['ResponseExpected'], self.ListOfCommands[i_sqn]['ExpectedAck'],
                                 self.ListOfCommands[i_sqn]['MessageResponse'], self.ListOfCommands[InternalSqn]['ReceiveTimeStamp'].strftime("%m/%d/%Y, %H:%M:%S")))
+        Domoticz.Log("--  --  --  > i_sqn: %s App_Sqn: %s Aps_Sqn: %s Type_Sqn: %s" \
+            %( i_sqn, self.ListOfCommands[i_sqn]['APP_SQN'], self.ListOfCommands[i_sqn]['APS_SQN'] , self.ListOfCommands[i_sqn]['TYP_SQN']  ))
 
     # Begin
     TIME_OUT_8000 = self.pluginconf.pluginConf['TimeOut8000']
@@ -930,10 +936,10 @@ def process_frame(self, frame):
         PacketType = MsgData[4:8]
 
         sqn_aps = None
-        Ack_expected = None
+        type_sqn = None
         if len(MsgData) == 12:
             # New Firmware 3.1d (get aps sqn)
-            Ack_expected = MsgData[8:10]
+            type_sqn = MsgData[8:10]
             sqn_aps = MsgData[10:12]
             if not self.firmware_with_aps_sqn:
                 if self.zmode == 'auto':
@@ -948,12 +954,15 @@ def process_frame(self, frame):
                 'Status', "Firmware <= 31d switching to ZiGate31c")
 
         i_sqn = process_msg_type8000(
-            self, Status, PacketType, sqn_app, sqn_aps, Ack_expected)
-        self.loggingSend('Debug', "0x8000 - [%s] sqn_app: 0x%s/%3s, SQN_APS:non 0x%s Ack_expected: %s" % (
-            i_sqn, sqn_app, int(sqn_app, 16), sqn_aps, Ack_expected))
+            self, Status, PacketType, sqn_app, sqn_aps, type_sqn)
+        self.loggingSend('Debug', "0x8000 - [%s] sqn_app: 0x%s/%3s, SQN_APS:non 0x%s type_sqn: %s" % (
+            i_sqn, sqn_app, int(sqn_app, 16), sqn_aps, type_sqn))
         self.F_out(frame, None)
 
         if i_sqn in self.ListOfCommands:
+            self.ListOfCommands[i_sqn]['APP_SQN'] = sqn_app
+            self.ListOfCommands[i_sqn]['APS_SQN'] = sqn_aps
+            self.ListOfCommands[i_sqn]['TYP_SQN'] = type_sqn
             self.loggingSend('Debug', "--> Check cleanup Status: %s [%s] Cmd: %s Data: %s ExpectedAck: %s ResponseExpected: %s"
                              % (Status, i_sqn, self.ListOfCommands[i_sqn]['Cmd'], self.ListOfCommands[i_sqn]['Datas'],
                                 self.ListOfCommands[i_sqn]['ExpectedAck'], self.ListOfCommands[i_sqn]['ResponseExpected']))
@@ -1065,13 +1074,13 @@ def process_frame(self, frame):
     self.check_timed_out_for_tx_queues()
 
 
-def process_msg_type8000(self, Status, PacketType, sqn_app, sqn_aps, Ack_expected):
+def process_msg_type8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn):
 
     if PacketType == '':
         return None
 
-    self.loggingSend('Debug', "--> process_msg_type8000 - Status: %s PacketType: %s sqn_app:%s sqn_aps: %s Ack_expected: %s" %
-                     (Status, PacketType, sqn_app, sqn_aps, Ack_expected))
+    self.loggingSend('Debug', "--> process_msg_type8000 - Status: %s PacketType: %s sqn_app:%s sqn_aps: %s type_sqn: %s" %
+                     (Status, PacketType, sqn_app, sqn_aps, type_sqn))
     # Command Failed, Status != 00
 
     if Status != '00':
@@ -1136,7 +1145,7 @@ def process_msg_type8000(self, Status, PacketType, sqn_app, sqn_aps, Ack_expecte
             return None
     self.debug8000.remove( ( InternalSqn, TimeStamp) )
 
-    if (not self.firmware_with_aps_sqn and self.ListOfCommands[InternalSqn]['ExpectedAck']) or (self.firmware_with_aps_sqn and Ack_expected):
+    if (not self.firmware_with_aps_sqn and self.ListOfCommands[InternalSqn]['ExpectedAck']) or (self.firmware_with_aps_sqn and type_sqn):
         # WARNING WE NEED TO Set TYPE_APP_ZCL or TYPE_APP_ZDP depending on the type of function, dont add it if ZIGATE function
         cmd = int(PacketType, 16)
         if cmd not in ZIGATE_COMMANDS:
