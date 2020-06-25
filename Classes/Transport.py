@@ -1037,7 +1037,7 @@ def process_frame(self, frame):
     # But might be a 0x8102 ( as firmware 3.1c and below are reporting Read Attribute response and Report Attribute with the same MsgType)
     if self.zmode in 'zigate31c':
         # If ZigBee Command blocked until response received
-        if not self.firmware_with_aps_sqn and MsgType == '8102':
+        if not self.firmware_with_aps_sqn and MsgType in ( '8110', '8102'):
             MsgZclSqn = MsgData[0:2]
             MsgNwkId = MsgData[2:6]
             MsgEp = MsgData[6:8]
@@ -1315,11 +1315,11 @@ def process_other_type_of_message31c(self, MsgType, MsgSqn=None, MsgNwkId=None, 
         isqn = None
         # MsgType is 0x8100 or 0x8102 ( Command was 0x0100) So it is a ZCL command
     
-        if ZIGATE_COMMANDS[ expCmd ]['Layer'] == 'ZCL':
+        if ZIGATE_COMMANDS[ int(expCmd,16) ]['Layer'] == 'ZCL':
             isqn = sqn_get_internal_sqn_from_app_sqn(
                 self, MsgSqn, TYPE_APP_ZCL)
 
-        elif ZIGATE_COMMANDS[ expCmd ]['Layer'] == 'ZDP':
+        elif ZIGATE_COMMANDS[ int(expCmd,16) ]['Layer'] == 'ZDP':
             isqn = sqn_get_internal_sqn_from_app_sqn(
                 self, MsgSqn, TYPE_APP_ZDP)
 
