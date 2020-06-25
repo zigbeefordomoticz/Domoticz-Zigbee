@@ -792,16 +792,16 @@ def check_timed_out(self):
             return
 
         if self.ListOfCommands[i_sqn]['MessageResponse']:
-            self.loggingSend('Log', " --  --  --  > Time Out %s [%s] %s sec for  %s %s %s/%s %04x Time: %s"
+            self.loggingSend('Debug', " --  --  --  > Time Out %s [%s] %s sec for  %s %s %s/%s %04x Time: %s"
                              % (desc, i_sqn, (now - TimeStamp), self.ListOfCommands[i_sqn]['Cmd'], self.ListOfCommands[i_sqn]['Datas'],
                                 self.ListOfCommands[i_sqn]['ResponseExpected'], self.ListOfCommands[i_sqn]['ExpectedAck'],
                                 self.ListOfCommands[i_sqn]['MessageResponse'], self.ListOfCommands[InternalSqn]['ReceiveTimeStamp'].strftime("%m/%d/%Y, %H:%M:%S")))
         else:
-            self.loggingSend('Log', " --  --  --  > Time Out %s [%s] %s sec for  %s %s %s/%s %s Time: %s"
+            self.loggingSend('Debug', " --  --  --  > Time Out %s [%s] %s sec for  %s %s %s/%s %s Time: %s"
                              % (desc, i_sqn, (now - TimeStamp), self.ListOfCommands[i_sqn]['Cmd'], self.ListOfCommands[i_sqn]['Datas'],
                                 self.ListOfCommands[i_sqn]['ResponseExpected'], self.ListOfCommands[i_sqn]['ExpectedAck'],
                                 self.ListOfCommands[i_sqn]['MessageResponse'], self.ListOfCommands[InternalSqn]['ReceiveTimeStamp'].strftime("%m/%d/%Y, %H:%M:%S")))
-        Domoticz.Log("--  --  --  > i_sqn: %s App_Sqn: %s Aps_Sqn: %s Type_Sqn: %s" \
+        self.loggingSend('Debug',"--  --  --  > i_sqn: %s App_Sqn: %s Aps_Sqn: %s Type_Sqn: %s" \
             %( i_sqn, self.ListOfCommands[i_sqn]['APP_SQN'], self.ListOfCommands[i_sqn]['APS_SQN'] , self.ListOfCommands[i_sqn]['TYP_SQN']  ))
 
     # Begin
