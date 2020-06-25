@@ -601,6 +601,14 @@ def set_cmdresponse_for_sending(self, i_sqn):
             self.ListOfCommands[i_sqn]['MessageResponse'] = None
             self.ListOfCommands[i_sqn]['WaitForResponse'] = False
 
+        elif self.ListOfCommands[i_sqn]['Cmd'] != '0110':
+            # Firmware 31c buggy never bring 0x8110 !
+            self.ListOfCommands[i_sqn]['ResponseExpected'] = False
+            self.ListOfCommands[i_sqn]['MessageResponse'] = None
+            self.ListOfCommands[i_sqn]['WaitForResponse'] = False
+            self.loggingSend('Debug', "--- Compatibility mode enabled, do not block %s" %
+                             self.ListOfCommands[i_sqn]['Cmd'])            
+
         elif self.pluginconf.pluginConf['CompatibilityMode'] and self.ListOfCommands[i_sqn]['Cmd'] != '0100':
             # If Compatibility mode, do not wait for Response on command 0x0100
             self.ListOfCommands[i_sqn]['ResponseExpected'] = False
@@ -1037,7 +1045,7 @@ def process_frame(self, frame):
     # But might be a 0x8102 ( as firmware 3.1c and below are reporting Read Attribute response and Report Attribute with the same MsgType)
     if self.zmode in 'zigate31c':
         # If ZigBee Command blocked until response received
-        if not self.firmware_with_aps_sqn and MsgType in ( '8110', '8102'):
+        if not self.firmware_with_aps_sqn and MsgType in ( '8100', '8110', '8102'):
             MsgZclSqn = MsgData[0:2]
             MsgNwkId = MsgData[2:6]
             MsgEp = MsgData[6:8]
