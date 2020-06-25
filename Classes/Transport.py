@@ -953,13 +953,13 @@ def process_frame(self, frame):
                 if self.zmode == 'auto':
                     self.zmode = 'zigateack'
                 self.loggingSend(
-                    'Status', "Firmware with APS SQN switching to ZiGateAck")
+                    'Status', "Firmware with APS SQN switching to Mode: ZiGateAck")
                 self.firmware_with_aps_sqn = True
 
         if self.zmode == 'auto':
             self.zmode = 'zigate31c'
             self.loggingSend(
-                'Status', "Firmware <= 31d switching to ZiGate31c")
+                'Status', "Firmware <= 31d switching to Mode: ZiGate31c")
 
         i_sqn = process_msg_type8000(
             self, Status, PacketType, sqn_app, sqn_aps, type_sqn)
