@@ -1291,6 +1291,7 @@ def process_other_type_of_message31c(self, MsgType, MsgSqn=None, MsgNwkId=None, 
         return None
 
     expResponse = self.ListOfCommands[InternalSqn]['MessageResponse']
+    expCmd = self.ListOfCommands[InternalSqn]['Cmd']
     self.loggingSend( 'Debug', " --  -- - > Expecting: %04x Receiving: %s" % (expResponse, MsgType))
     if ( expResponse ==  MsgType ) or ( expResponse == 0x8100 and MsgType in ( '8100', '8102') ):
         expNwkId = expEp = expCluster = None
@@ -1313,11 +1314,12 @@ def process_other_type_of_message31c(self, MsgType, MsgSqn=None, MsgNwkId=None, 
         # WARNING WE NEED TO Set TYPE_APP_ZCL or TYPE_APP_ZDP depending on the type of function, dont call if ZIGATE function
         isqn = None
         # MsgType is 0x8100 or 0x8102 ( Command was 0x0100) So it is a ZCL command
-        if ZIGATE_COMMANDS[ int( MsgType, 16) ]['Layer'] == 'ZCL':
+    
+        if ZIGATE_COMMANDS[ expCmd ]['Layer'] == 'ZCL':
             isqn = sqn_get_internal_sqn_from_app_sqn(
                 self, MsgSqn, TYPE_APP_ZCL)
 
-        elif ZIGATE_COMMANDS[ int( MsgType, 16) ]['Layer'] == 'ZDP':
+        elif ZIGATE_COMMANDS[ expCmd ]['Layer'] == 'ZDP':
             isqn = sqn_get_internal_sqn_from_app_sqn(
                 self, MsgSqn, TYPE_APP_ZDP)
 
