@@ -1725,39 +1725,29 @@ def Decode8110( self, Devices, MsgData, MsgRSSI):
 
     if len(MsgData) == 24:
         # Coming from Firmware
-        Decode8110_firmware(self, Devices, MsgData, MsgRSSI)
+        MsgSQN=MsgData[0:2]
+        MsgSrcAddr=MsgData[2:6]
+        MsgSrcEp=MsgData[6:8]
+        MsgClusterId=MsgData[8:12]
+        MsgAttrID=MsgData[12:16]
+        MsgAttrStatus=MsgData[16:18]
+
     else:
         # Coming from Data Indication
-        Decode8110_raw(self, Devices, MsgData, MsgRSSI)
+        MsgSQN=MsgData[0:2]
+        MsgSrcAddr=MsgData[2:6]
+        MsgSrcEp=MsgData[6:8]
+        MsgClusterId=MsgData[8:12]
+        MsgAttrStatus=MsgData[12:14]
 
-def Decode8110_firmware(self, Devices, MsgData, MsgRSSI):  # Write Attribute response
-    MsgSQN=MsgData[0:2]
-    MsgSrcAddr=MsgData[2:6]
-    MsgSrcEp=MsgData[6:8]
-    MsgClusterId=MsgData[8:12]
-    MsgAttrID=MsgData[12:16]
-    MsgAttrStatus=MsgData[16:18]
-    MsgAttType=MsgData[18:20]
-    MsgAttSize=MsgData[20:24]
-    MsgClusterData=''
+    Decode8110_raw(self, Devices, MsgSQN , MsgSrcAddr , MsgSrcEp , MsgClusterId , MsgAttrStatus, MsgRSSI)
 
-    Data = MsgSQN + MsgSrcAddr + MsgSrcEp + MsgClusterId + MsgAttrStatus
-    Decode8110_raw(self, Devices, Data, MsgRSSI)
-
-def Decode8110_raw(self, Devices, MsgData, MsgRSSI):  # Write Attribute response
-    MsgSQN=MsgData[0:2]
-    MsgSrcAddr=MsgData[2:6]
-    MsgSrcEp=MsgData[6:8]
-    MsgClusterId=MsgData[8:12]
-    MsgAttrStatus=MsgData[16:18]
-
-
-    MsgClusterData=MsgData[24:len(MsgData)]
+def Decode8110_raw(self, Devices, MsgSQN , MsgSrcAddr , MsgSrcEp , MsgClusterId , MsgAttrStatus, MsgRSSI):  # Write Attribute response
 
     i_sqn = sqn_get_internal_sqn_from_app_sqn(self.ZigateComm, MsgSQN, TYPE_APP_ZCL)
 
-    loggingInput( self, 'Debug', "Decode8110 - WriteAttributeResponse - MsgSQN: %s,  MsgSrcAddr: %s, MsgSrcEp: %s, MsgClusterId: %s, MsgClusterData: %s. rawData: %s" \
-            %( MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrStatus, MsgClusterData, MsgData), MsgSrcAddr)
+    loggingInput( self, 'Debug', "Decode8110 - WriteAttributeResponse - MsgSQN: %s,  MsgSrcAddr: %s, MsgSrcEp: %s, MsgClusterId: %s Status: %s" \
+            %( MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrStatus), MsgSrcAddr)
 
     timeStamped( self, MsgSrcAddr , 0x8110)
     updSQN( self, MsgSrcAddr, MsgSQN)
@@ -1782,10 +1772,10 @@ def Decode8110_raw(self, Devices, MsgData, MsgRSSI):  # Write Attribute response
                     if i_sqn == self.ListOfDevices[nwkid]['WriteAttribute'][EPout][clusterID][attribute]['i_sqn']:
                         self.ListOfDevices[nwkid]['WriteAttribute'][EPout][clusterID][attribute]['Stamp'] = int(time())
                         self.ListOfDevices[nwkid]['WriteAttribute'][EPout][clusterID][attribute]['Phase'] = 'fullfilled'
-                        self.ListOfDevices[nwkid]['WriteAttribute'][EPout][clusterID][attribute]['MsgClusterData'] = MsgClusterData       
+                        #self.ListOfDevices[nwkid]['WriteAttribute'][EPout][clusterID][attribute]['MsgClusterData'] = MsgClusterData       
 
     if MsgClusterId == "0500":
-        self.iaszonemgt.receiveIASmessages( MsgSrcAddr, 3, MsgClusterData)
+        self.iaszonemgt.receiveIASmessages( MsgSrcAddr, 3, MsgAttrStatus)
 
 def Decode8120(self, Devices, MsgData, MsgRSSI) :  # Configure Reporting response
 

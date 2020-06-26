@@ -928,12 +928,6 @@ def process_frame(self, frame):
         ready_to_send_if_needed(self)
         return
 
-    if len(self._waitFor8000Queue) == 0 and len(self._waitForCmdResponseQueue) == 0 and len(self._waitForAckNack) == 0:
-        # All queues are empty
-        self.F_out(frame, None)
-        ready_to_send_if_needed(self)
-        return
-
     if len(frame) >= 18:
         # Payload
         MsgData = frame[12:len(frame) - 4]
@@ -945,6 +939,11 @@ def process_frame(self, frame):
         ready_to_send_if_needed(self)
         return
 
+    if len(self._waitFor8000Queue) == 0 and len(self._waitForCmdResponseQueue) == 0 and len(self._waitForAckNack) == 0:
+        # All queues are empty
+        self.F_out(frame, None)
+        ready_to_send_if_needed(self)
+        return
     if MsgData and MsgType == "8000":
         Status = MsgData[0:2]
         sqn_app = MsgData[2:4]
@@ -1453,11 +1452,12 @@ def process8002(self, frame):
         'Log', "process8002 Sqn: %s ManufCode: %s Command: %s Data: %s " %(Sqn, ManufacturerCode, Command, Data))
 
     if Command == '01': # Read Attribute response
-        return buildframe_read_attribute_response( self, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
+        return buildframe_read_attribute_response( self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
 
     elif Command == '04': # Write Attribute response
-        return buildframe_write_attribute_response( self, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
+        return buildframe_write_attribute_response( self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
 
+    Domoticz.Log("Unknown Command: %s" %Command)
     return frame
 
 
@@ -1552,14 +1552,32 @@ def is_manufspecific_8002_payload( self, fcf ):
     return ManufSpecif == 1
 
 
-def buildframe_write_attribute_response( self, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data):
+def buildframe_write_attribute_response( self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data):
 
-    return  Sqn + SrcNwkId + SrcEndPoint + ClusterId + '0000' + Data
+    buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId + '0000' + Data
+    newFrame = '01' # 0:2
+    newFrame += '8110' # 2:6   MsgType
+    newFrame += '%4x' %len(buildPayload) # 6:10  Length
+    newFrame += 'ff' # 10:12 CRC
+    newFrame += buildPayload
+    newFrame += frame[len(frame) - 4: len(frame) - 2] # RSSI
+    newFrame += '03'
+
+    return  newFrame
 
 
-def buildframe_read_attribute_response( self, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data ):
+def buildframe_read_attribute_response( self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data ):
 
-    return  Sqn + SrcNwkId + SrcEndPoint + ClusterId + Data
+    buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId + '0000' + Data
+    newFrame = '01' # 0:2
+    newFrame += '8100' # 2:6   MsgType
+    newFrame += '%4x' %len(buildPayload) # 6:10  Length
+    newFrame += 'ff' # 10:12 CRC
+    newFrame += buildPayload
+    newFrame += frame[len(frame) - 4: len(frame) - 2] # RSSI
+    newFrame += '03'
+
+    return  newFrame
 # Logging functions
 
 
