@@ -499,8 +499,9 @@ def read_attribute( self, addr ,EpIn , EpOut ,Cluster ,direction , manufacturer_
     else:
         send_zigatecmd_zcl_noack( self, addr, '0100', EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + '%02x' %lenAttr + Attr )
 
-def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackToBeEnabled = False):
-    
+def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled = True):
+    """ write_attribute unicast , all with ack in < 31d firmware, ack/noack works since 31d
+    """
     direction = "00"
     if data_type == '42': # String  
         # In case of Data Type 0x42 ( String ), we have to add the length of string before the string.
@@ -514,14 +515,16 @@ def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, at
     loggingBasicOutput( self, 'Debug', "write_attribute for %s/%s - >%s<" %(key, EPout, datas) )
 
     # ATTENTION "0110" with firmware 31c are always call with Ack (overwriten by firmware)
-    if ackToBeEnabled:
+    if ackIsDisabled:
+        return send_zigatecmd_zcl_noack(self, key, "0110", str(datas))
+    else:
         return send_zigatecmd_zcl_ack(self, key, "0110", str(datas))
-    return send_zigatecmd_zcl_ack(self, key, "0110", str(datas))
 
-def write_attributeNoResponse( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackToBeDisabled = False ):
-    
-    if key == 'ffff':
-        addr_mode = '04'
+def write_attributeNoResponse( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data):
+    """ write_atttribute broadcast . ack impossible on broadcast
+    """
+    #if key == 'ffff':
+    #    addr_mode = '04'
     direction = "00"
 
     if data_type == '42': # String
@@ -607,5 +610,5 @@ def set_poweron_afteroffon( self, key, OnOffMode = 0xff):
         data = "ff"
         data = "%02x" %OnOffMode
         loggingBasicOutput( self, 'Debug', "set_PowerOn_OnOff for %s/%s - OnOff: %s" %(key, EPout, OnOffMode))
-        write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data, ackToBeEnabled = False)
+        write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled = True)
         del self.ListOfDevices[key]['Ep']['0b']['0006']['4003']

@@ -1754,17 +1754,7 @@ def Decode8110_raw(self, Devices, MsgSQN , MsgSrcAddr , MsgSrcEp , MsgClusterId 
     updRSSI( self, MsgSrcAddr, MsgRSSI)
 
     nwkid = MsgSrcAddr
-    # if ( 'WriteAttribute' in self.ListOfDevices[nwkid] and MsgSrcEp in self.ListOfDevices[nwkid]['WriteAttribute']
-    #             and MsgClusterId in self.ListOfDevices[nwkid]['WriteAttribute'][MsgSrcEp]
-    #             and MsgAttrID in self.ListOfDevices[nwkid]['WriteAttribute'][MsgSrcEp][MsgClusterId]
-    #             and self.ListOfDevices[nwkid]['WriteAttribute'][MsgSrcEp][MsgClusterId][ MsgAttrID ] == 'requested' ):
-# 
-    #     loggingInput( self, 'Debug', "Decode8110 - WriteAttributeResponse on awake done", MsgSrcAddr)
-    #     self.ListOfDevices[nwkid]['WriteAttribute'][ MsgSrcEp ][MsgClusterId][ MsgAttrID]['Stamp'] = int(time())
-    #     self.ListOfDevices[nwkid]['WriteAttribute'][ MsgSrcEp ][MsgClusterId][ MsgAttrID]['Phase'] = 'fullfilled'
-    #     self.ListOfDevices[nwkid]['WriteAttribute'][ MsgSrcEp ][MsgClusterId][ MsgAttrID]['MsgClusterData'] = MsgClusterData
 
-    # information from 8110 are not realiable, lets try with the sqn 
     if 'WriteAttribute'  in self.ListOfDevices[nwkid]:
         for EPout in list (self.ListOfDevices[nwkid]['WriteAttribute']):
             for clusterID in list (self.ListOfDevices[nwkid]['WriteAttribute'][EPout]):
@@ -1772,7 +1762,6 @@ def Decode8110_raw(self, Devices, MsgSQN , MsgSrcAddr , MsgSrcEp , MsgClusterId 
                     if i_sqn == self.ListOfDevices[nwkid]['WriteAttribute'][EPout][clusterID][attribute]['i_sqn']:
                         self.ListOfDevices[nwkid]['WriteAttribute'][EPout][clusterID][attribute]['Stamp'] = int(time())
                         self.ListOfDevices[nwkid]['WriteAttribute'][EPout][clusterID][attribute]['Phase'] = 'fullfilled'
-                        #self.ListOfDevices[nwkid]['WriteAttribute'][EPout][clusterID][attribute]['MsgClusterData'] = MsgClusterData       
 
     if MsgClusterId == "0500":
         self.iaszonemgt.receiveIASmessages( MsgSrcAddr, 3, MsgAttrStatus)

@@ -15,9 +15,6 @@ from time import time
 from Modules.basicOutputs import sendZigateCmd, write_attribute, write_attributeNoResponse
 from Modules.logging import loggingWriteAttributes, loggingBasicOutput
 
-def write_attributeNoResponse_when_awake( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled = False):
-    write_attribute_when_awake ( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled = True)
-
 def write_attribute_when_awake( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled = False):
     
     if 'WriteAttribute' not in self.ListOfDevices[key]:
@@ -65,8 +62,5 @@ def callBackForWriteAttributeIfNeeded(self, key):
                 manuf_spec = self.ListOfDevices[key]['WriteAttribute'][EPout][clusterID][attribute]['manuf_spec']
                 data = self.ListOfDevices[key]['WriteAttribute'][EPout][clusterID][attribute]['data']
                 ackIsDisabled = self.ListOfDevices[key]['WriteAttribute'][EPout][clusterID][attribute]['ackIsDisabled']
-                #if ackIsDisabled:
-                i_sqn = write_attribute (self,key,EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data)
-                #else:
-                #    i_sqn = write_attributeNoResponse (self,key,EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data)
+                i_sqn = write_attribute (self,key,EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled)
                 self.ListOfDevices[key]['WriteAttribute'][EPout][clusterID][attribute]['i_sqn'] = i_sqn
