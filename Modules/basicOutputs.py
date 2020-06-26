@@ -41,21 +41,21 @@ def send_zigatecmd_zcl_ack( self, address, cmd, datas ):
 def send_zigatecmd_zcl_noack( self, address, cmd, datas):
     # Send a ZCL command with ack
     # address can be a shortId or an IEEE
-    disableAck = True
+    ackIsDisabled = True
     if len(address) == 4:
         # Short address
         address_mode = '%02x' %ADDRESS_MODE['shortnoack']
         if self.pluginconf.pluginConf['forceAckOnZCL']:
             Domoticz.Log("Force Ack")
             address_mode = '%02x' %ADDRESS_MODE['short']
-            disableAck = False
+            ackIsDisabled = False
     else:
         address_mode = '%02x' %ADDRESS_MODE['ieeenoack']
         if self.pluginconf.pluginConf['forceAckOnZCL']:
             address_mode = '%02x' %ADDRESS_MODE['ieee']
             Domoticz.Log("Force Ack")
-            disableAck = False 
-    return send_zigatecmd_raw( self, cmd, address_mode + address + datas, ackIsDisabled = disableAck )
+            ackIsDisabled = False
+    return send_zigatecmd_raw( self, cmd, address_mode + address + datas, ackIsDisabled = ackIsDisabled )
 
 def send_zigatecmd_raw( self, cmd, datas, ackIsDisabled = False ):
     #
@@ -492,12 +492,12 @@ def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zig
 
     send_zigatecmd_raw(self, "0530", addr_mode + targetaddr + zigate_ep + dest_ep + cluster + profileId + security + radius + len_payload + payload)
 
-def read_attribute( self, addr ,EpIn , EpOut ,Cluster ,direction , manufacturer_spec , manufacturer , lenAttr, Attr, ackToBeEnabled = False):
+def read_attribute( self, addr ,EpIn , EpOut ,Cluster ,direction , manufacturer_spec , manufacturer , lenAttr, Attr, ackIsDisabled = True):
     
-    if ackToBeEnabled:
-        send_zigatecmd_zcl_ack( self, addr, '0100', EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + '%02x' %lenAttr + Attr )
-    else:
+    if ackIsDisabled:
         send_zigatecmd_zcl_noack( self, addr, '0100', EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + '%02x' %lenAttr + Attr )
+    else:
+        send_zigatecmd_zcl_ack( self, addr, '0100', EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + '%02x' %lenAttr + Attr )
 
 def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled = True):
     """ write_attribute unicast , all with ack in < 31d firmware, ack/noack works since 31d

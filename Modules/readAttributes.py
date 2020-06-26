@@ -21,7 +21,7 @@ from Modules.logging import loggingReadAttributes
 from Modules.tools import getListOfEpForCluster
 
 
-def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes , manufacturer_spec = '00', manufacturer = '0000', ackToBeEnabled = False):
+def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes , manufacturer_spec = '00', manufacturer = '0000', ackIsDisabled = True):
 
     def split_list(alist, wanted_parts=1):
         """
@@ -31,15 +31,15 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes , manu
         return [ alist[i*length // wanted_parts: (i+1)*length // wanted_parts] for i in range(wanted_parts) ]
 
     if not isinstance(ListOfAttributes, list) or len (ListOfAttributes) < MAX_READATTRIBUTES_REQ:
-        normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes , ackToBeEnabled= ackToBeEnabled)
+        normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes , ackIsDisabled= ackIsDisabled)
     else:
         loggingReadAttributes( self, 'Debug2', "----------> ------- %s/%s %s ListOfAttributes: " %(addr, EpOut, Cluster) + " ".join("0x{:04x}".format(num) for num in ListOfAttributes), nwkid=addr)
         nbpart = - (  - len(ListOfAttributes) // MAX_READATTRIBUTES_REQ) 
         for shortlist in split_list(ListOfAttributes, wanted_parts=nbpart):
             loggingReadAttributes( self, 'Debug2', "----------> ------- Shorter: " + ", ".join("0x{:04x}".format(num) for num in shortlist), nwkid=addr)
-            normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , shortlist , manufacturer_spec=manufacturer_spec , manufacturer=manufacturer , ackToBeEnabled= ackToBeEnabled)
+            normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , shortlist , manufacturer_spec=manufacturer_spec , manufacturer=manufacturer , ackIsDisabled= ackIsDisabled)
 
-def normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes , manufacturer_spec = '00', manufacturer = '0000', ackToBeEnabled = False):
+def normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes , manufacturer_spec = '00', manufacturer = '0000', ackIsDisabled = True):
 
     def skipThisAttribute( self, addr, EpOut, Cluster, Attr):
         skipReadAttr = False
@@ -134,7 +134,7 @@ def normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttribu
     loggingReadAttributes( self, 'Debug', "-- normalizedReadAttrReq ---- addr =" +str(addr) +" Cluster = " +str(Cluster) +" Attributes = " + ", ".join("0x{:04x}".format(num) for num in ListOfAttributes), nwkid=addr )
     self.ListOfDevices[addr]['ReadAttributes']['TimeStamps'][EpOut+'-'+str(Cluster)] = int(time())
 
-    read_attribute( self, addr ,EpIn , EpOut ,Cluster ,direction , manufacturer_spec , manufacturer , lenAttr, Attr, ackToBeEnabled=ackToBeEnabled )
+    read_attribute( self, addr ,EpIn , EpOut ,Cluster ,direction , manufacturer_spec , manufacturer , lenAttr, Attr, ackIsDisabled=ackIsDisabled )
 
 def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
 
@@ -295,9 +295,9 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
                     EPout= tmpEp 
             loggingReadAttributes( self, 'Debug', "Request Basic  via Read Attribute request: " + key + " EPout = " + EPout + " Attributes: " + str(listAttributes), nwkid=key)
             if self.ListOfDevices[ key ].get('Power', 'Battery') == 'Main':
-                ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0000", listAttributes, ackToBeEnabled = True )
+                ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0000", listAttributes, ackIsDisabled = False )
             else:
-                ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0000", listAttributes, ackToBeEnabled = False )
+                ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0000", listAttributes, ackIsDisabled = True )
 
     else:
         loggingReadAttributes( self, 'Debug', "--> Full scope", nwkid=key)
@@ -332,11 +332,11 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
                 listAttributes = listAttrGeneric
 
             loggingReadAttributes( self, 'Debug', "Request Basic  via Read Attribute request %s/%s %s" %(key, EPout, str(listAttributes)), nwkid=key)
-            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0000", listAttributes, ackToBeEnabled = False )
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0000", listAttributes, ackIsDisabled = True )
 
             if listAttrSpecific:
                 loggingReadAttributes( self, 'Debug', "Request Basic  via Read Attribute request Manuf Specific %s/%s %s" %(key, EPout, str(listAttributes)), nwkid=key)
-                ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0000", listAttrSpecific,manufacturer_spec = '01', manufacturer = self.ListOfDevices[key]['Manufacturer'] ,ackToBeEnabled = False )
+                ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0000", listAttrSpecific,manufacturer_spec = '01', manufacturer = self.ListOfDevices[key]['Manufacturer'] ,ackIsDisabled = True )
 
 def ReadAttributeRequest_0001(self, key):
 
@@ -351,14 +351,14 @@ def ReadAttributeRequest_0001(self, key):
 
         if listAttributes:
             loggingReadAttributes( self, 'Debug', "Request Power Config via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
-            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0001", listAttributes , ackToBeEnabled = False)
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0001", listAttributes , ackIsDisabled = True)
 
 def ReadAttributeRequest_0006_0000(self, key):
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0006 focus on 0x0000 Key: %s " %key, nwkid=key)
     ListOfEp = getListOfEpForCluster( self, key, '0006' )
     for EPout in ListOfEp:
         listAttributes = [0]
-        ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0006", listAttributes, ackToBeEnabled = False)
+        ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0006", listAttributes, ackIsDisabled = True)
 
 def ReadAttributeRequest_0006_400x(self, key):
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0006 focus on 0x4000x attributes- Key: %s " %key, nwkid=key)
@@ -378,7 +378,7 @@ def ReadAttributeRequest_0006_400x(self, key):
 
         if listAttributes:
             loggingReadAttributes( self, 'Log', "Request OnOff 0x4000x attributes via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
-            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0006", listAttributes, ackToBeEnabled = False)
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0006", listAttributes, ackIsDisabled = True)
 
 def ReadAttributeRequest_0006(self, key):
     # Cluster 0x0006
@@ -393,7 +393,7 @@ def ReadAttributeRequest_0006(self, key):
 
         if listAttributes:
             loggingReadAttributes( self, 'Debug', "Request OnOff status via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
-            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0006", listAttributes, ackToBeEnabled = False)
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0006", listAttributes, ackIsDisabled = True)
 
 def ReadAttributeRequest_0008_0000(self, key):
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0008 focus on 0x0008/0000 Key: %s " %key, nwkid=key)
@@ -401,7 +401,7 @@ def ReadAttributeRequest_0008_0000(self, key):
     for EPout in ListOfEp:
 
         listAttributes = [0]
-        ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0008", listAttributes, ackToBeEnabled = False)
+        ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0008", listAttributes, ackIsDisabled = True)
 
 def ReadAttributeRequest_0008(self, key):
     # Cluster 0x0008 
@@ -416,7 +416,7 @@ def ReadAttributeRequest_0008(self, key):
 
         if listAttributes:
             loggingReadAttributes( self, 'Debug', "Request Level Control via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
-            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0008", 0x0000, ackToBeEnabled = False )
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0008", 0x0000, ackIsDisabled = True )
 
 def ReadAttributeRequest_0300(self, key):
     # Cluster 0x0300 - Color Control
@@ -431,7 +431,7 @@ def ReadAttributeRequest_0300(self, key):
 
         if listAttributes:
             loggingReadAttributes( self, 'Debug', "Request Color Temp infos via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
-            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0300", listAttributes, ackToBeEnabled = False )
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0300", listAttributes, ackIsDisabled = True )
 
 def ReadAttributeRequest_000C(self, key):
     # Cluster 0x000C with attribute 0x0055 / Xiaomi Power and Metering
@@ -442,7 +442,7 @@ def ReadAttributeRequest_000C(self, key):
     for EPout in ListOfEp:
         if listAttributes:
             loggingReadAttributes( self, 'Debug', "Request 0x000c info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
-            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "000C", listAttributes, ackToBeEnabled = False)
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "000C", listAttributes, ackIsDisabled = True)
 
 def ReadAttributeRequest_0100(self, key):
 
@@ -457,7 +457,7 @@ def ReadAttributeRequest_0100(self, key):
 
         if listAttributes:
             loggingReadAttributes( self, 'Debug', "Request 0x0100 info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
-            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0100", listAttributes, ackToBeEnabled = False)
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0100", listAttributes, ackIsDisabled = True)
 
 def ReadAttributeRequest_0102(self, key):
 
@@ -472,14 +472,14 @@ def ReadAttributeRequest_0102(self, key):
 
             if listAttributes:
                 loggingReadAttributes( self, 'Debug', "Request 0x0102 info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
-                ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0102", listAttributes , ackToBeEnabled = False )
+                ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0102", listAttributes , ackIsDisabled = True )
 
 def ReadAttributeRequest_0102_0008( self, key):
     loggingReadAttributes( self, 'Log', "Request Windows Covering status Read Attribute request: " + key , nwkid=key)
     ListOfEp = getListOfEpForCluster( self, key, '0102' )
     for EPout in ListOfEp:
         listAttributes = [0x0008]
-        ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0102", listAttributes, ackToBeEnabled = False)
+        ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0102", listAttributes, ackIsDisabled = True)
 
 def ReadAttributeRequest_0201(self, key):
     # Thermostat 
@@ -519,11 +519,11 @@ def ReadAttributeRequest_0201(self, key):
 
             if listAttributes:
                 loggingReadAttributes( self, 'Debug', "Request 0201 %s/%s 0201 %s " %(key, EPout, listAttributes), nwkid=key)
-                ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0201", listAttributes, ackToBeEnabled = False )
+                ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0201", listAttributes, ackIsDisabled = True )
 
             if listAttrSpecific:
                 loggingReadAttributes( self, 'Debug', "Request Thermostat info via Read Attribute request Manuf Specific %s/%s %s" %(key, EPout, str(listAttributes)), nwkid=key)
-                ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0201", listAttrSpecific, manufacturer_spec = '01', manufacturer = self.ListOfDevices[key]['Manufacturer'] , ackToBeEnabled = False)
+                ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0201", listAttrSpecific, manufacturer_spec = '01', manufacturer = self.ListOfDevices[key]['Manufacturer'] , ackIsDisabled = True)
 
 def ReadAttributeRequest_0204(self, key):
 
@@ -534,7 +534,7 @@ def ReadAttributeRequest_0204(self, key):
         listAttributes = [0x0001]
         if listAttributes:
             loggingReadAttributes( self, 'Debug', "Request 0204 %s/%s 0204 %s " %(key, EPout, listAttributes), nwkid=key)
-            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0204", listAttributes , ackToBeEnabled = False)
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0204", listAttributes , ackIsDisabled = True)
 
 def ReadAttributeRequest_fc00(self, key):
 
@@ -553,7 +553,7 @@ def ReadAttributeRequest_0400(self, key):
 
         if listAttributes:
             loggingReadAttributes( self, 'Debug', "Illuminance info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
-            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0400", listAttributes, ackToBeEnabled = False)
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0400", listAttributes, ackIsDisabled = True)
 
 def ReadAttributeRequest_0402(self, key):
 
@@ -571,7 +571,7 @@ def ReadAttributeRequest_0402(self, key):
 
         if listAttributes:
             loggingReadAttributes( self, 'Debug', "Temperature info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
-            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0402", listAttributes, ackToBeEnabled = False)
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0402", listAttributes, ackIsDisabled = True)
 
 def ReadAttributeRequest_0403(self, key):
 
@@ -588,7 +588,7 @@ def ReadAttributeRequest_0403(self, key):
 
         if listAttributes:
             loggingReadAttributes( self, 'Debug', "Pression Atm info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
-            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0403", listAttributes, ackToBeEnabled = False)
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0403", listAttributes, ackIsDisabled = True)
 
 def ReadAttributeRequest_0405(self, key):
 
@@ -605,7 +605,7 @@ def ReadAttributeRequest_0405(self, key):
 
         if listAttributes:
             loggingReadAttributes( self, 'Debug', "Humidity info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
-            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0405", listAttributes, ackToBeEnabled = False)
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0405", listAttributes, ackIsDisabled = True)
 
 def ReadAttributeRequest_0406(self, key):
 
@@ -623,7 +623,7 @@ def ReadAttributeRequest_0406(self, key):
 
         if listAttributes:
             loggingReadAttributes( self, 'Debug', "Occupancy info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
-            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0406", listAttributes, ackToBeEnabled = False)
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0406", listAttributes, ackIsDisabled = True)
 
 def ReadAttributeRequest_0500(self, key):
 
@@ -637,7 +637,7 @@ def ReadAttributeRequest_0500(self, key):
 
         if listAttributes:
             loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0500 - %s/%s - %s" %(key, EPout, listAttributes), nwkid=key)
-            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0500", listAttributes, ackToBeEnabled = False)
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0500", listAttributes, ackIsDisabled = True)
         
 def ReadAttributeRequest_0502(self, key):
 
@@ -651,7 +651,7 @@ def ReadAttributeRequest_0502(self, key):
 
         if listAttributes:
             loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0502 - %s/%s - %s" %(key, EPout, listAttributes), nwkid=key)
-            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0502", listAttributes, ackToBeEnabled = False)
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0502", listAttributes, ackIsDisabled = True)
 
 def ReadAttributeRequest_0702(self, key):
     # Cluster 0x0702 Metering
@@ -680,11 +680,11 @@ def ReadAttributeRequest_0702(self, key):
     
         if listAttributes:
             loggingReadAttributes( self, 'Debug', "Request Metering info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
-            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0702", listAttributes, ackToBeEnabled = False)
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0702", listAttributes, ackIsDisabled = True)
     
         if listAttrSpecific:
             loggingReadAttributes( self, 'Debug', "Request Metering info  via Read Attribute request Manuf Specific %s/%s %s" %(key, EPout, str(listAttributes)), nwkid=key)
-            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0702", listAttrSpecific, manufacturer_spec = '01', manufacturer = self.ListOfDevices[key]['Manufacturer'], ackToBeEnabled = False )
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0702", listAttrSpecific, manufacturer_spec = '01', manufacturer = self.ListOfDevices[key]['Manufacturer'], ackIsDisabled = True )
 
 def ReadAttributeRequest_000f(self, key):
 
@@ -698,7 +698,7 @@ def ReadAttributeRequest_000f(self, key):
 
         if listAttributes:
             loggingReadAttributes( self, 'Debug', " Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
-            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "000f", listAttributes, ackToBeEnabled = False)
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "000f", listAttributes, ackIsDisabled = True)
 
 def ReadAttributeRequest_fc01(self, key):
     # Cluster Legrand
@@ -707,11 +707,11 @@ def ReadAttributeRequest_fc01(self, key):
     for EPout in ListOfEp:
         listAttributes = [ 0x0000]
         loggingReadAttributes( self, 'Debug', "Request Legrand info via Read Attribute request: " + key + " EPout = " + EPout + " Attributes: " + str(listAttributes), nwkid=key)
-        ReadAttributeReq( self, key, ZIGATE_EP, EPout, "fc01", listAttributes, ackToBeEnabled = False)
+        ReadAttributeReq( self, key, ZIGATE_EP, EPout, "fc01", listAttributes, ackIsDisabled = True)
 
         listAttributes = [ 0x0001 ]
         loggingReadAttributes( self, 'Debug', "Request Legrand info via Read Attribute request: " + key + " EPout = " + EPout + " Attributes: " + str(listAttributes), nwkid=key)
-        ReadAttributeReq( self, key, ZIGATE_EP, EPout, "fc01", listAttributes, ackToBeEnabled = False)
+        ReadAttributeReq( self, key, ZIGATE_EP, EPout, "fc01", listAttributes, ackIsDisabled = True)
 
 def ReadAttributeRequest_fc21(self, key):
     # Cluster PFX Profalux/ Manufacturer specific
@@ -722,7 +722,7 @@ def ReadAttributeRequest_fc21(self, key):
 
     if profalux:
         loggingReadAttributes( self, 'Log', "Request Profalux BSO via Read Attribute request: %s" %key, nwkid=key)
-        read_attribute( self, '02', key ,ZIGATE_EP , '01' ,'fc21' , '00' , '01' , '1110' , 0x01, '0001', ackToBeEnabled = False)
+        read_attribute( self, '02', key ,ZIGATE_EP , '01' ,'fc21' , '00' , '01' , '1110' , 0x01, '0001', ackIsDisabled = True)
 
         # datas = "02" + key + ZIGATE_EP + '01' + 'fc21' + '00' + '01' + '1110' + '01' + '0001'
         # sendZigateCmd(self, "0100", datas )
