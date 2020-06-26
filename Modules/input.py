@@ -1721,7 +1721,16 @@ def Decode8102(self, Devices, MsgData, MsgRSSI):  # Attribute Reports
             u8StartIndex = '00'
             sendZigateCmd(self ,'0041', '02' + MsgSrcAddr + u8RequestType + u8StartIndex )
 
-def Decode8110(self, Devices, MsgData, MsgRSSI):  # Write Attribute response
+def Decode8110( self, Devices, MsgData, MsgRSSI):
+
+    if len(MsgData) == 24:
+        # Coming from Firmware
+        Decode8110_firmware(self, Devices, MsgData, MsgRSSI)
+    else:
+        # Coming from Data Indication
+        Decode8110_raw(self, Devices, MsgData, MsgRSSI)
+
+def Decode8110_firmware(self, Devices, MsgData, MsgRSSI):  # Write Attribute response
     MsgSQN=MsgData[0:2]
     MsgSrcAddr=MsgData[2:6]
     MsgSrcEp=MsgData[6:8]
@@ -1731,28 +1740,39 @@ def Decode8110(self, Devices, MsgData, MsgRSSI):  # Write Attribute response
     MsgAttType=MsgData[18:20]
     MsgAttSize=MsgData[20:24]
     MsgClusterData=''
-    if MsgAttSize != '0000':
-        MsgClusterData=MsgData[24:len(MsgData)]
+
+    Data = MsgSQN + MsgSrcAddr + MsgSrcEp + MsgClusterId + MsgAttrStatus
+    Decode8110_raw(self, Devices, Data, MsgRSSI)
+
+def Decode8110_raw(self, Devices, MsgData, MsgRSSI):  # Write Attribute response
+    MsgSQN=MsgData[0:2]
+    MsgSrcAddr=MsgData[2:6]
+    MsgSrcEp=MsgData[6:8]
+    MsgClusterId=MsgData[8:12]
+    MsgAttrStatus=MsgData[16:18]
+
+
+    MsgClusterData=MsgData[24:len(MsgData)]
 
     i_sqn = sqn_get_internal_sqn_from_app_sqn(self.ZigateComm, MsgSQN, TYPE_APP_ZCL)
 
-    loggingInput( self, 'Debug', "Decode8110 - WriteAttributeResponse - MsgSQN: %s,  MsgSrcAddr: %s, MsgSrcEp: %s, MsgClusterId: %s, MsgAttrID: %s, MsgAttrStatus:%s, MsgAttType: %s, MsgAttSize: %s, MsgClusterData: %s. rawData: %s" \
-            %( MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus, MsgAttType, MsgAttSize, MsgClusterData, MsgData), MsgSrcAddr)
+    loggingInput( self, 'Debug', "Decode8110 - WriteAttributeResponse - MsgSQN: %s,  MsgSrcAddr: %s, MsgSrcEp: %s, MsgClusterId: %s, MsgClusterData: %s. rawData: %s" \
+            %( MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrStatus, MsgClusterData, MsgData), MsgSrcAddr)
 
     timeStamped( self, MsgSrcAddr , 0x8110)
     updSQN( self, MsgSrcAddr, MsgSQN)
     updRSSI( self, MsgSrcAddr, MsgRSSI)
 
     nwkid = MsgSrcAddr
-    if ( 'WriteAttribute' in self.ListOfDevices[nwkid] and MsgSrcEp in self.ListOfDevices[nwkid]['WriteAttribute']
-                and MsgClusterId in self.ListOfDevices[nwkid]['WriteAttribute'][MsgSrcEp]
-                and MsgAttrID in self.ListOfDevices[nwkid]['WriteAttribute'][MsgSrcEp][MsgClusterId]
-                and self.ListOfDevices[nwkid]['WriteAttribute'][MsgSrcEp][MsgClusterId][ MsgAttrID ] == 'requested' ):
-
-        loggingInput( self, 'Debug', "Decode8110 - WriteAttributeResponse on awake done", MsgSrcAddr)
-        self.ListOfDevices[nwkid]['WriteAttribute'][ MsgSrcEp ][MsgClusterId][ MsgAttrID]['Stamp'] = int(time())
-        self.ListOfDevices[nwkid]['WriteAttribute'][ MsgSrcEp ][MsgClusterId][ MsgAttrID]['Phase'] = 'fullfilled'
-        self.ListOfDevices[nwkid]['WriteAttribute'][ MsgSrcEp ][MsgClusterId][ MsgAttrID]['MsgClusterData'] = MsgClusterData
+    # if ( 'WriteAttribute' in self.ListOfDevices[nwkid] and MsgSrcEp in self.ListOfDevices[nwkid]['WriteAttribute']
+    #             and MsgClusterId in self.ListOfDevices[nwkid]['WriteAttribute'][MsgSrcEp]
+    #             and MsgAttrID in self.ListOfDevices[nwkid]['WriteAttribute'][MsgSrcEp][MsgClusterId]
+    #             and self.ListOfDevices[nwkid]['WriteAttribute'][MsgSrcEp][MsgClusterId][ MsgAttrID ] == 'requested' ):
+# 
+    #     loggingInput( self, 'Debug', "Decode8110 - WriteAttributeResponse on awake done", MsgSrcAddr)
+    #     self.ListOfDevices[nwkid]['WriteAttribute'][ MsgSrcEp ][MsgClusterId][ MsgAttrID]['Stamp'] = int(time())
+    #     self.ListOfDevices[nwkid]['WriteAttribute'][ MsgSrcEp ][MsgClusterId][ MsgAttrID]['Phase'] = 'fullfilled'
+    #     self.ListOfDevices[nwkid]['WriteAttribute'][ MsgSrcEp ][MsgClusterId][ MsgAttrID]['MsgClusterData'] = MsgClusterData
 
     # information from 8110 are not realiable, lets try with the sqn 
     if 'WriteAttribute'  in self.ListOfDevices[nwkid]:
