@@ -921,15 +921,10 @@ def process_frame(self, frame):
         ready_to_send_if_needed(self)
         return
 
+
     # We receive an async message, just forward it to plugin
     if int(MsgType, 16) in STANDALONE_MESSAGE:
         self.F_out(frame, None)  # for processing
-        ready_to_send_if_needed(self)
-        return
-
-    if len(self._waitFor8000Queue) == 0 and len(self._waitForCmdResponseQueue) == 0 and len(self._waitForAckNack) == 0:
-        # All queues are empty
-        self.F_out(frame, None)
         ready_to_send_if_needed(self)
         return
 
@@ -938,6 +933,17 @@ def process_frame(self, frame):
         MsgData = frame[12:len(frame) - 4]
         RSSI = frame[len(frame) - 4: len(frame) - 2]
 
+    if MsgData and MsgType == "8002":
+        frame = process8002( self, frame )
+        self.F_out(frame, None)
+        ready_to_send_if_needed(self)
+        return
+
+    if len(self._waitFor8000Queue) == 0 and len(self._waitForCmdResponseQueue) == 0 and len(self._waitForAckNack) == 0:
+        # All queues are empty
+        self.F_out(frame, None)
+        ready_to_send_if_needed(self)
+        return
     if MsgData and MsgType == "8000":
         Status = MsgData[0:2]
         sqn_app = MsgData[2:4]
@@ -1431,6 +1437,147 @@ def process_other_type_of_message31d(self, MsgType, MsgSqn):
     ready_to_send_if_needed(self)
     return InternalSqn
 
+
+def process8002(self, frame):
+
+    SrcNwkId, SrcEndPoint, ClusterId , Payload = extract_nwk_infos_from_8002( self, frame )
+    self.logging_receive(
+        'Log', "process8002 NwkId: %s Ep: %s Cluster: %s Payload: %s" %(SrcNwkId, SrcEndPoint, ClusterId , Payload))
+
+    if SrcNwkId is None:
+        return
+    
+    Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002( self, Payload )
+    self.logging_receive(
+        'Log', "process8002 Sqn: %s ManufCode: %s Command: %s Data: %s " %(Sqn, ManufacturerCode, Command, Data))
+
+    if Command == '01': # Read Attribute response
+        return buildframe_read_attribute_response( self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
+
+    elif Command == '04': # Write Attribute response
+        return buildframe_write_attribute_response( self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
+
+    Domoticz.Log("Unknown Command: %s" %Command)
+    return frame
+
+
+def extract_nwk_infos_from_8002( self, frame ):
+
+    MsgType = frame[2:6]
+    MsgLength = frame[6:10]
+    MsgCRC = frame[10:12]
+
+    if len(frame) >= 18:
+        # Payload
+        MsgData = frame[12:len(frame) - 4]
+        RSSI = frame[len(frame) - 4: len(frame) - 2]
+
+    ProfileId = MsgData[2:6]
+    ClusterId = MsgData[6:10]
+    SrcEndPoint = MsgData[10:12]
+    TargetEndPoint = MsgData[12:14]
+    SrcAddrMode = MsgData[14:16]
+
+    if ProfileId != '0104':
+        Domoticz.Log(
+            "Decode8002 - Not an HA Profile, let's drop the packet %s" % MsgData)
+        return ( None, None, None , None )
+
+    if int(SrcAddrMode, 16) in [ADDRESS_MODE['short'], ADDRESS_MODE['group']]:
+        SrcNwkId = MsgData[16:20]  # uint16_t
+        TargetNwkId = MsgData[20:22]
+
+        if int(TargetNwkId, 16) in [ADDRESS_MODE['short'], ADDRESS_MODE['group'], ]:
+            # Short Address
+            TargetNwkId = MsgData[22:26]  # uint16_t
+            Payload = MsgData[26:len(MsgData)]
+
+        elif int(TargetNwkId, 16) == ADDRESS_MODE['ieee']:  # uint32_t
+            # IEEE
+            TargetNwkId = MsgData[22:38]  # uint32_t
+            Payload = MsgData[38:len(MsgData)]
+
+        else:
+            Domoticz.Log("Decode8002 - Unexpected Destination ADDR_MOD: %s, drop packet %s"
+                         % (TargetNwkId, MsgData))
+            return ( None, None, None , None )
+
+    elif int(SrcAddrMode, 16) == ADDRESS_MODE['ieee']:
+        SrcNwkId = MsgData[16:32]  # uint32_t
+        TargetNwkId = MsgData[32:34]
+
+        if int(TargetNwkId, 16) in [ADDRESS_MODE['short'], ADDRESS_MODE['group'], ]:
+            TargetNwkId = MsgData[34:38]  # uint16_t
+            Payload = MsgData[38:len(MsgData)]
+
+        elif int(TargetNwkId, 16) == ADDRESS_MODE['ieee']:
+            # IEEE
+            TargetNwkId = MsgData[34:40]  # uint32_t
+            Payload = MsgData[40:len(MsgData)]
+        else:
+            Domoticz.Log("Decode8002 - Unexpected Destination ADDR_MOD: %s, drop packet %s"
+                         % (TargetNwkId, MsgData))
+            return ( None, None, None , None )
+    else:
+        Domoticz.Log("Decode8002 - Unexpected Source ADDR_MOD: %s, drop packet %s"
+                     % (SrcAddrMode, MsgData))
+        return ( None, None, None , None )
+
+    return ( SrcNwkId, SrcEndPoint, ClusterId , Payload )
+
+
+def retreive_cmd_payload_from_8002( self, Payload ):
+
+    ManufacturerCode = None
+    if is_manufspecific_8002_payload( self, Payload[0:2] ):
+        ManufacturerCode = Payload[2:6]
+        Sqn = Payload[6:8]
+        Command = Payload[8:10]
+        Data = Payload[10:]
+    else:
+        Sqn = Payload[2:4]
+        Command = Payload[4:6]
+        Data = Payload[6:]
+
+    return ( Sqn, ManufacturerCode, Command, Data)
+
+
+def is_manufspecific_8002_payload( self, fcf ):
+    
+    #FrameType = ( int(fcf, 16) & 0b00000011)
+    ManufSpecif = ( int(fcf, 16) & 0b00000100) >> 2
+    #Direction = ( int(fcf, 16) & 0b00001000) >> 3
+    #DisableDefaultResponse = ( int(fcf, 16) & 0b00010000) >> 4
+
+    return ManufSpecif == 1
+
+
+def buildframe_write_attribute_response( self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data):
+
+    buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId + '0000' + Data
+    newFrame = '01' # 0:2
+    newFrame += '8110' # 2:6   MsgType
+    newFrame += '%4x' %len(buildPayload) # 6:10  Length
+    newFrame += 'ff' # 10:12 CRC
+    newFrame += buildPayload
+    newFrame += frame[len(frame) - 4: len(frame) - 2] # RSSI
+    newFrame += '03'
+
+    return  newFrame
+
+
+def buildframe_read_attribute_response( self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data ):
+
+    buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId + '0000' + Data
+    newFrame = '01' # 0:2
+    newFrame += '8100' # 2:6   MsgType
+    newFrame += '%4x' %len(buildPayload) # 6:10  Length
+    newFrame += 'ff' # 10:12 CRC
+    newFrame += buildPayload
+    newFrame += frame[len(frame) - 4: len(frame) - 2] # RSSI
+    newFrame += '03'
+
+    return  newFrame
 # Logging functions
 
 
