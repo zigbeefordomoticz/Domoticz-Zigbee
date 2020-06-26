@@ -11,7 +11,7 @@ from time import time
 
 from datetime import datetime
 
-from Modules.tools import is_hex
+from Modules.tools import is_hex, retreive_cmd_payload_from_8002, is_manufspecific_8002_payload
 from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_RESPONSES, ZIGATE_COMMANDS, RETRANSMIT_COMMAND, ADDRESS_MODE
 from Modules.sqnMgmt import sqn_init_stack, sqn_generate_new_internal_sqn, sqn_add_external_sqn, sqn_get_internal_sqn_from_aps_sqn, sqn_get_internal_sqn_from_app_sqn, TYPE_APP_ZCL, TYPE_APP_ZDP
 
@@ -1439,28 +1439,28 @@ def process_other_type_of_message31d(self, MsgType, MsgSqn):
 
 def process8002(self, frame):
 
-    SrcNwkId, SrcEndPoint, ClusterId , Payload = extract_nwk_infos_from_8002( self, frame )
+    SrcNwkId, SrcEndPoint, ClusterId , Payload = extract_nwk_infos_from_8002( frame )
     self.logging_receive(
         'Log', "process8002 NwkId: %s Ep: %s Cluster: %s Payload: %s" %(SrcNwkId, SrcEndPoint, ClusterId , Payload))
 
     if SrcNwkId is None:
         return
     
-    Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002( self, Payload )
+    Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002( Payload )
     self.logging_receive(
         'Log', "process8002 Sqn: %s ManufCode: %s Command: %s Data: %s " %(Sqn, ManufacturerCode, Command, Data))
 
     if Command == '01': # Read Attribute response
-        return buildframe_read_attribute_response( self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
+        return buildframe_read_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
 
-    elif Command == '04': # Write Attribute response
-        return buildframe_write_attribute_response( self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
+    if Command == '04': # Write Attribute response
+        return buildframe_write_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
 
     Domoticz.Log("Unknown Command: %s" %Command)
     return frame
 
 
-def extract_nwk_infos_from_8002( self, frame ):
+def extract_nwk_infos_from_8002( frame ):
 
     MsgType = frame[2:6]
     MsgLength = frame[6:10]
@@ -1524,34 +1524,7 @@ def extract_nwk_infos_from_8002( self, frame ):
 
     return ( SrcNwkId, SrcEndPoint, ClusterId , Payload )
 
-
-def retreive_cmd_payload_from_8002( self, Payload ):
-
-    ManufacturerCode = None
-    if is_manufspecific_8002_payload( self, Payload[0:2] ):
-        ManufacturerCode = Payload[2:6]
-        Sqn = Payload[6:8]
-        Command = Payload[8:10]
-        Data = Payload[10:]
-    else:
-        Sqn = Payload[2:4]
-        Command = Payload[4:6]
-        Data = Payload[6:]
-
-    return ( Sqn, ManufacturerCode, Command, Data)
-
-
-def is_manufspecific_8002_payload( self, fcf ):
-    
-    #FrameType = ( int(fcf, 16) & 0b00000011)
-    ManufSpecif = ( int(fcf, 16) & 0b00000100) >> 2
-    #Direction = ( int(fcf, 16) & 0b00001000) >> 3
-    #DisableDefaultResponse = ( int(fcf, 16) & 0b00010000) >> 4
-
-    return ManufSpecif == 1
-
-
-def buildframe_write_attribute_response( self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data):
+def buildframe_write_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data):
 
     buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId + '0000' + Data
     newFrame = '01' # 0:2
@@ -1565,7 +1538,7 @@ def buildframe_write_attribute_response( self, frame, Sqn, SrcNwkId, SrcEndPoint
     return  newFrame
 
 
-def buildframe_read_attribute_response( self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data ):
+def buildframe_read_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data ):
 
     buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId + '0000' + Data
     newFrame = '01' # 0:2
