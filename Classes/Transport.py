@@ -792,16 +792,16 @@ def check_timed_out(self):
             return
 
         if self.ListOfCommands[i_sqn]['MessageResponse']:
-            self.loggingSend('Debug', " --  --  --  > Time Out %s [%s] %s sec for  %s %s %s/%s %04x Time: %s"
+            self.loggingSend('Log', " --  --  --  > Time Out %s [%s] %s sec for  %s %s %s/%s %04x Time: %s"
                              % (desc, i_sqn, (now - TimeStamp), self.ListOfCommands[i_sqn]['Cmd'], self.ListOfCommands[i_sqn]['Datas'],
                                 self.ListOfCommands[i_sqn]['ResponseExpected'], self.ListOfCommands[i_sqn]['ExpectedAck'],
                                 self.ListOfCommands[i_sqn]['MessageResponse'], self.ListOfCommands[InternalSqn]['ReceiveTimeStamp'].strftime("%m/%d/%Y, %H:%M:%S")))
         else:
-            self.loggingSend('Debug', " --  --  --  > Time Out %s [%s] %s sec for  %s %s %s/%s %s Time: %s"
+            self.loggingSend('Log', " --  --  --  > Time Out %s [%s] %s sec for  %s %s %s/%s %s Time: %s"
                              % (desc, i_sqn, (now - TimeStamp), self.ListOfCommands[i_sqn]['Cmd'], self.ListOfCommands[i_sqn]['Datas'],
                                 self.ListOfCommands[i_sqn]['ResponseExpected'], self.ListOfCommands[i_sqn]['ExpectedAck'],
                                 self.ListOfCommands[i_sqn]['MessageResponse'], self.ListOfCommands[InternalSqn]['ReceiveTimeStamp'].strftime("%m/%d/%Y, %H:%M:%S")))
-        self.loggingSend('Debug',"--  --  --  > i_sqn: %s App_Sqn: %s Aps_Sqn: %s Type_Sqn: %s" \
+        self.loggingSend('Log',"--  --  --  > i_sqn: %s App_Sqn: %s Aps_Sqn: %s Type_Sqn: %s" \
             %( i_sqn, self.ListOfCommands[i_sqn]['APP_SQN'], self.ListOfCommands[i_sqn]['APS_SQN'] , self.ListOfCommands[i_sqn]['TYP_SQN']  ))
 
     # Begin
@@ -1143,10 +1143,9 @@ def process_msg_type8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn):
     self.loggingSend('Debug', " --  --  0x8000 > Expect: %s Receive: %s" %
                      (self.ListOfCommands[InternalSqn]['Cmd'], PacketType))
     if self.ListOfCommands[InternalSqn]['Cmd']:
-        IsCommandOk = int(self.ListOfCommands[InternalSqn]['Cmd'], 16) == int(
-            PacketType, 16)
+        IsCommandOk = int(self.ListOfCommands[InternalSqn]['Cmd'], 16) == int(PacketType, 16)
         if not IsCommandOk:
-            self.loggingSend('Error', "Debug: process_msg_type8000 - sync error : Expecting %s and Received: %s lenQ: %s"
+            self.loggingSend('Error', "Error: process_msg_type8000 - sync error : Expecting %s and Received: %s lenQ: %s"
                              % (self.ListOfCommands[InternalSqn]['Cmd'], PacketType, len(self._waitFor8000Queue)))
             for x, y in self.debug8000:
                 self.loggingSend('Error', "process_msg_type8000 - remaining tuple in debug8000: %s"  %str(self.debug8000))
