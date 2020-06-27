@@ -21,7 +21,7 @@ from time import time
 from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_EP, HEARTBEAT, LEGRAND_REMOTES
 from Modules.tools import retreive_cmd_payload_from_8002
 from Modules.logging import loggingLegrand
-from Modules.pollControl import PollControlCheckin, FastPollStop
+
 from Modules.basicOutputs import raw_APS_request, send_zigatecmd_zcl_noack, write_attribute, write_attributeNoResponse
 
 
@@ -89,7 +89,7 @@ def legrandReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP
             LegrandGroupMemberShip = 'fefe'
         elif _count == '02':
             LegrandGroupMemberShip = 'fdfe'
-        # sendFC01Command( self, Sqn, srcNWKID, srcEp, ClusterID, '0c', LegrandGroupMemberShip + _count)
+        sendFC01Command( self, Sqn, srcNWKID, srcEp, ClusterID, '0c', LegrandGroupMemberShip + _count)
 
     elif ClusterID == 'fc01' and Command == '0a': 
         LegrandGroupMemberShip = Data[0:4]
@@ -99,14 +99,11 @@ def legrandReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP
         status = '00'
         #_ieee = '%08x' %struct.unpack('q',struct.pack('>Q',int(ieee,16)))[0]
         _ieee = '4fa5820000740400' # IEEE du Dimmer
-        # sendFC01Command( self, Sqn, srcNWKID, srcEp, ClusterID, '10', status + _code + _ieee )
-
-    elif ClusterID == '0020' and Command == '00':
-        pass 
-        # PollControlCheckin( self, srcNWKID)
-        # FastPollStop( self, srcNWKID)
+        sendFC01Command( self, Sqn, srcNWKID, srcEp, ClusterID, '10', status + _code + _ieee )
 
 def sendFC01Command( self, sqn, nwkid, ep, ClusterID, cmd, data):
+
+    Domoticz.Log("sendFC01Command Cmd: %s Data: %s" %(cmd, data))
 
     if cmd == '00':
         # Read Attribute received
