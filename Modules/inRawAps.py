@@ -5,6 +5,10 @@
 #
 import Domoticz
 
+from Modules.tools import retreive_cmd_payload_from_8002
+from Modules.pollControl import receive_poll_cluster
+
+
 from Modules.schneider_wiser import schneiderReadRawAPS
 from Modules.legrand_netatmo import legrandReadRawAPS
 from Modules.livolo import livoloReadRawAPS
@@ -43,6 +47,13 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, payload)
 
     if srcnwkid not in self.ListOfDevices:
         return
+
+    if cluster == '0020': # Poll Control ( Not implemented in firmware )
+        Domoticz.Log("Cluster 0020 -- POLL CLUSTER")
+        Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002( payload )
+        receive_poll_cluster( self, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, ManufacturerCode, Command, Data )
+        return
+    
     if 'Manufacturer' not in self.ListOfDevices[srcnwkid]:
         return
     
