@@ -808,7 +808,7 @@ def check_timed_out(self):
     self.checkTimedOutFlag = True
     now = int(time())
 
-    self.loggingSend('Debug', "checkTimedOut  Start - Aps_Sqn: %s waitQ: %2s ackQ: %2s dataQ: %2s SendingFIFO: %3s"
+    self.loggingSend('Debug2', "checkTimedOut  Start - Aps_Sqn: %s waitQ: %2s ackQ: %2s dataQ: %2s SendingFIFO: %3s"
                      % (self.firmware_with_aps_sqn, len(self._waitFor8000Queue), len(self._waitForAckNack), len(self._waitForCmdResponseQueue), len(self.zigateSendQueue)))
 
     # Check if we have a Wait for 0x8000 message
