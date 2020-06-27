@@ -19,6 +19,7 @@ from datetime import datetime
 from time import time
 
 from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_EP, HEARTBEAT, LEGRAND_REMOTES
+from Modules.tools import retreive_cmd_payload_from_8002
 from Modules.logging import loggingLegrand
 from Modules.pollControl import PollControlCheckin, FastPollStop
 from Modules.basicOutputs import raw_APS_request, send_zigatecmd_zcl_noack, write_attribute, write_attributeNoResponse
@@ -65,55 +66,47 @@ def legrandReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP
 
     # At Device Annoucement 0x00 and 0x05 are sent by device
 
-    FrameClusterField = MsgPayload[0:2]
+    Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002( MsgPayload )
+    Domoticz.Log(" NwkId: %s/%s Cluster: %s Command: %s Data: %s" %( srcNWKID, srcEp, ClusterID, Command, Data))
 
-    if FrameClusterField in ( '15', ): 
-        # 0x15: Cluster Specifc, Manuf Code, Client to Srerve, Disable Default Response
-        ManufacturerCode = MsgPayload[2:6]
-        SQN = MsgPayload[6:8]
-        Command = MsgPayload[8:10]
-        Data = MsgPayload[10:]
-        
-    elif FrameClusterField in ( '11', ) :
-        # 0x11: Cluster Specific, Client to Server, Disable Default response
-        SQN = MsgPayload[2:4]
-        Command = MsgPayload[4:6]
-        Data = MsgPayload[6:]
-
-    else:
-        Domoticz.Log("legrandReadRawAPS - Unexpected FCF: %s" %(FrameClusterField))
-        return
-
-    if Command == '00': # No data (Cluster 0x0102)
+    if ClusterID == '0102' and Command == '00': # No data (Cluster 0x0102)
         pass
 
-    elif Command == '01': # No data (Cluster 0x0102)
+    elif ClusterID == '0102' and Command == '01': # No data (Cluster 0x0102)
         pass
 
-    elif Command == '02': # 1 Byte lenght ( 0x00 )
-        pass
+    elif ClusterID == 'fc01' and Command == '05':
+        # Get _Ieee of Shutter Device
+        _ieee = '%08x' %struct.unpack('q',struct.pack('>Q',int(Data[0:16],16)))[0] 
 
-    elif Command == '03': # 1 byte Lenght ( 0xff )
-        pass
+    elif ClusterID == 'fc01' and Command == '09':
+        # IEEE of End Device (remote  )
+        _ieee = '%08x' %struct.unpack('q',struct.pack('>Q',int(Data[0:16],16)))[0] 
 
-    elif Command == '09':
-        _ieee = Data[0:16]
-        _count = Data[16:18]
+        _count = Data[16:18] 
         Domoticz.Log("---> Decoding cmd 0x09 Ieee: %s Count: %s" %(_ieee, _count))
-        LegrandGroupMemberShip = 'fefe'
-        sendFC01Command( self, srcNWKID, srcEp, ClusterID, '0c', LegrandGroupMemberShip + _count)
+        if _count == '01':
+            LegrandGroupMemberShip = 'fefe'
+        elif _count == '02':
+            LegrandGroupMemberShip = 'fdfe'
+        # sendFC01Command( self, Sqn, srcNWKID, srcEp, ClusterID, '0c', LegrandGroupMemberShip + _count)
 
-    elif Command == '0a': 
+    elif ClusterID == 'fc01' and Command == '0a': 
         LegrandGroupMemberShip = Data[0:4]
-        _ieee = Data[4:20]
+        _ieee = '%08x' %struct.unpack('q',struct.pack('>Q',int(Data[4:20],16)))[0]   # IEEE of Device
         _code = Data[20:24]
         Domoticz.Log("---> Decoding cmd: 0x0a Group: %s, Ieee: %s Code: %s" %(LegrandGroupMemberShip, _ieee, _code))
         status = '00'
-        #_ieee = '%08X' %struct.unpack('q',struct.pack('>Q',int(ieee,16)))[0]
+        #_ieee = '%08x' %struct.unpack('q',struct.pack('>Q',int(ieee,16)))[0]
         _ieee = '4fa5820000740400' # IEEE du Dimmer
-        sendFC01Command( self, srcNWKID, srcEp, ClusterID, '10', status + _code + _ieee )
+        # sendFC01Command( self, Sqn, srcNWKID, srcEp, ClusterID, '10', status + _code + _ieee )
 
-def sendFC01Command( self, nwkid, ep, ClusterID, cmd, data):
+    elif ClusterID == '0020' and Command == '00':
+        pass 
+        # PollControlCheckin( self, srcNWKID)
+        # FastPollStop( self, srcNWKID)
+
+def sendFC01Command( self, sqn, nwkid, ep, ClusterID, cmd, data):
 
     if cmd == '00':
         # Read Attribute received
@@ -122,7 +115,7 @@ def sendFC01Command( self, nwkid, ep, ClusterID, cmd, data):
         if ClusterID == '0000' and attribute == 'f000':
             # Respond to Time Of Operation
             cmd = "01"
-            sqn = '%02x' %(int(sqn,16) + 1)
+            
             status = "00"
             cluster_frame = "1c"           
             dataType = '23' #Uint32
@@ -133,6 +126,23 @@ def sendFC01Command( self, nwkid, ep, ClusterID, cmd, data):
 
             loggingLegrand( self, 'Log', "loggingLegrand - Nwkid: %s/%s Cluster: %s, Command: %s Payload: %s" \
                 %(nwkid,ep , ClusterID, cmd, data ))
+            return
+
+    if cmd == '0c':
+            
+            manufspec = '2110' # Legrand Manuf Specific : 0x1021
+            status = "00"
+            cluster_frame = "1d"           
+            dataType = '23' #Uint32
+
+            payload = cluster_frame + manufspec + sqn + cmd + data
+            raw_APS_request( self, nwkid, ep, ClusterID, '0104', payload, zigate_ep=ZIGATE_EP)
+
+            loggingLegrand( self, 'Log', "loggingLegrand - Nwkid: %s/%s Cluster: %s, Command: %s Payload: %s" \
+                %(nwkid,ep , ClusterID, cmd, data ))
+
+            return
+
 
 def rejoin_legrand_reset( self ):  
     #

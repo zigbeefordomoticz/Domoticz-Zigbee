@@ -7,6 +7,7 @@ import Domoticz
 
 from Modules.schneider_wiser import schneiderReadRawAPS
 from Modules.legrand_netatmo import legrandReadRawAPS
+from Modules.livolo import livoloReadRawAPS
 from Modules.orvibo import orviboReadRawAPS
 from Modules.lumi import lumiReadRawAPS
 from Modules.philips import philipsReadRawAPS
@@ -29,6 +30,7 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, payload)
 
     CALLBACK_TABLE2 = {
         # Manufacturer Name
+        'LIVOLO': livoloReadRawAPS,
         '欧瑞博': orviboReadRawAPS,
         'Legrand': legrandReadRawAPS,
         'Schneider': schneiderReadRawAPS,

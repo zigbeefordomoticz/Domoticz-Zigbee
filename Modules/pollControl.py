@@ -16,9 +16,7 @@ from Modules.basicOutputs import raw_APS_request
 
 def PollControlCheckin( self, nwkid):
 
-    """
-    Poll Control: Check-in Response
-    """
+    # Poll Control: Check-in Response
 
     if nwkid not in self.ListOfDevices:
         Domoticz.Error("Fast Poll Stop - nwkid: %s do not exist" %nwkid)
@@ -42,9 +40,7 @@ def PollControlCheckin( self, nwkid):
 
 def FastPollStop( self, nwkid):
 
-    """
-    Fast Poll Stop to be called for Remote Devices
-    """
+    # Fast Poll Stop to be called for Remote Devices
 
     if nwkid not in self.ListOfDevices:
         Domoticz.Error("Fast Poll Stop - nwkid: %s do not exist" %nwkid)
