@@ -469,6 +469,7 @@ RETRANSMIT_COMMAND = (
 
 # ZIGATE REPONSES not related to a Zigate command
 ZIGATE_RESPONSES = {
+    0x0302: 'ZiGate ready',
     0x0400: 'IAS Zone enroll response',
     0x8401: 'Zone status change notification',
     0x8001: 'Log Message',

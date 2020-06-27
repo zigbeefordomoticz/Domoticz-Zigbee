@@ -56,8 +56,6 @@ class ZigateTransport(object):
         self._waitForCmdResponseQueue = []
         self._waitForAckNack = []    # Contains list of Command waiting for Ack/Nack
 
-        self.debug8000 = []
-
         self.firmware_with_aps_sqn = False
 
         # ZigBee31c (for  firmware below 31c, when Ack --> WaitForResponse )
@@ -411,8 +409,6 @@ def _add_cmd_to_wait_for8000_queue(self, InternalSqn):
     timestamp = int(time())
     #self.loggingSend(  'Log', " --  > _add_cmd_to_wait_for8000_queue - adding to Queue %s %s" %(InternalSqn, timestamp))
     self._waitFor8000Queue.append((InternalSqn, timestamp))
-
-    self.debug8000.append( (InternalSqn, timestamp) )
 
 
 def _next_cmd_from_wait_for8000_queue(self):
@@ -1138,18 +1134,11 @@ def process_msg_type8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn):
     if self.ListOfCommands[InternalSqn]['Cmd']:
         IsCommandOk = int(self.ListOfCommands[InternalSqn]['Cmd'], 16) == int(PacketType, 16)
         if not IsCommandOk:
-            self.loggingSend('Error', "Error: process_msg_type8000 - sync error : Expecting %s and Received: %s lenQ: %s"
-                             % (self.ListOfCommands[InternalSqn]['Cmd'], PacketType, len(self._waitFor8000Queue)))
-            for x, y in self.debug8000:
-                self.loggingSend('Error', "process_msg_type8000 - remaining tuple in debug8000: %s"  %str(self.debug8000))
-                if x in self.ListOfCommands:
-                    self.loggingSend('Error', "                     - %s %s" %(self.ListOfCommands[ x ]['Cmd'], self.ListOfCommands[ x ]['Datas'] ))
-                else:
-                    self.loggingSend('Error', "                     - i_sqn: %s not known" %x)
-
-            process_msg_type8000 = []
+            self.loggingSend(
+                'Error', 
+                "Error: process_msg_type8000 - sync error : Expecting %s Received: %s , lenQ8000: %s Q8000: %s ListOfCommand: %s"
+                % (self.ListOfCommands[InternalSqn]['Cmd'], PacketType, len(self._waitFor8000Queue), str(self._waitFor8000Queue), str(self.ListOfCommands)))
             return None
-    self.debug8000.remove( ( InternalSqn, TimeStamp) )
 
     if (not self.firmware_with_aps_sqn and self.ListOfCommands[InternalSqn]['ExpectedAck']) or (self.firmware_with_aps_sqn and type_sqn):
         # WARNING WE NEED TO Set TYPE_APP_ZCL or TYPE_APP_ZDP depending on the type of function, dont add it if ZIGATE function
