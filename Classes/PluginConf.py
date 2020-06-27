@@ -151,7 +151,6 @@ SETTINGS = {
         'TimeOutResponse': {'type': 'int',  'default': 8,      'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'forceAckOnZCL':   {'type': 'bool', 'default': 0,      'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'disableAckOnZCL': {'type': 'bool', 'default': 0,      'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
-        'CompatibilityMode': {'type': 'bool', 'default': 0,    'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'waitForResponse': {'type': 'bool', 'default': 0,      'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
     }
     },

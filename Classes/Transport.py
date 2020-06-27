@@ -601,20 +601,13 @@ def set_cmdresponse_for_sending(self, i_sqn):
             self.ListOfCommands[i_sqn]['MessageResponse'] = None
             self.ListOfCommands[i_sqn]['WaitForResponse'] = False
 
-        elif self.ListOfCommands[i_sqn]['Cmd'] == '0110':
-            # Firmware 31c buggy never bring 0x8110 !
+        elif not self.firmware_with_aps_sqn and self.ListOfCommands[i_sqn]['Cmd'] == '0110':
+            #  Compatibility mode with previous Transport version do not wait for Response on command 0x0100
+            self.ListOfCommands[i_sqn]['ExpectedAck'] = False
             self.ListOfCommands[i_sqn]['ResponseExpected'] = False
             self.ListOfCommands[i_sqn]['MessageResponse'] = None
             self.ListOfCommands[i_sqn]['WaitForResponse'] = False
-            self.loggingSend('Debug', "--- Compatibility mode enabled, do not block %s" %
-                             self.ListOfCommands[i_sqn]['Cmd'])            
-
-        elif self.pluginconf.pluginConf['CompatibilityMode'] and self.ListOfCommands[i_sqn]['Cmd'] != '0100':
-            # If Compatibility mode, do not wait for Response on command 0x0100
-            self.ListOfCommands[i_sqn]['ResponseExpected'] = False
-            self.ListOfCommands[i_sqn]['MessageResponse'] = None
-            self.ListOfCommands[i_sqn]['WaitForResponse'] = False
-            self.loggingSend('Debug', "--- Compatibility mode enabled, do not block %s" %
+            self.loggingSend('Debug', "--- 31c do not block 0110 even if Ack expected %s" %
                              self.ListOfCommands[i_sqn]['Cmd'])
 
         else:
