@@ -18,7 +18,7 @@ from datetime import datetime
 from time import time
 
 from Modules.zigateConsts import ZIGATE_EP, ADDRESS_MODE, ZLL_DEVICES, ZIGATE_COMMANDS
-from Modules.tools import mainPoweredDevice
+from Modules.tools import mainPoweredDevice, getListOfEpForCluster
 from Modules.logging import loggingBasicOutput
 
 def send_zigatecmd_zcl_ack( self, address, cmd, datas ):
@@ -41,21 +41,21 @@ def send_zigatecmd_zcl_ack( self, address, cmd, datas ):
 def send_zigatecmd_zcl_noack( self, address, cmd, datas):
     # Send a ZCL command with ack
     # address can be a shortId or an IEEE
-    disableAck = True
+    ackIsDisabled = True
     if len(address) == 4:
         # Short address
         address_mode = '%02x' %ADDRESS_MODE['shortnoack']
         if self.pluginconf.pluginConf['forceAckOnZCL']:
             Domoticz.Log("Force Ack")
             address_mode = '%02x' %ADDRESS_MODE['short']
-            disableAck = False
+            ackIsDisabled = False
     else:
         address_mode = '%02x' %ADDRESS_MODE['ieeenoack']
         if self.pluginconf.pluginConf['forceAckOnZCL']:
             address_mode = '%02x' %ADDRESS_MODE['ieee']
             Domoticz.Log("Force Ack")
-            disableAck = False 
-    return send_zigatecmd_raw( self, cmd, address_mode + address + datas, ackIsDisabled = disableAck )
+            ackIsDisabled = False
+    return send_zigatecmd_raw( self, cmd, address_mode + address + datas, ackIsDisabled = ackIsDisabled )
 
 def send_zigatecmd_raw( self, cmd, datas, ackIsDisabled = False ):
     #
@@ -492,15 +492,16 @@ def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zig
 
     send_zigatecmd_raw(self, "0530", addr_mode + targetaddr + zigate_ep + dest_ep + cluster + profileId + security + radius + len_payload + payload)
 
-def read_attribute( self, addr ,EpIn , EpOut ,Cluster ,direction , manufacturer_spec , manufacturer , lenAttr, Attr, ackToBeEnabled = False):
+def read_attribute( self, addr ,EpIn , EpOut ,Cluster ,direction , manufacturer_spec , manufacturer , lenAttr, Attr, ackIsDisabled = True):
     
-    if ackToBeEnabled:
-        send_zigatecmd_zcl_ack( self, addr, '0100', EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + '%02x' %lenAttr + Attr )
-    else:
+    if ackIsDisabled:
         send_zigatecmd_zcl_noack( self, addr, '0100', EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + '%02x' %lenAttr + Attr )
+    else:
+        send_zigatecmd_zcl_ack( self, addr, '0100', EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + '%02x' %lenAttr + Attr )
 
-def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackToBeEnabled = False):
-    
+def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled = True):
+    """ write_attribute unicast , all with ack in < 31d firmware, ack/noack works since 31d
+    """
     direction = "00"
     if data_type == '42': # String  
         # In case of Data Type 0x42 ( String ), we have to add the length of string before the string.
@@ -514,14 +515,16 @@ def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, at
     loggingBasicOutput( self, 'Debug', "write_attribute for %s/%s - >%s<" %(key, EPout, datas) )
 
     # ATTENTION "0110" with firmware 31c are always call with Ack (overwriten by firmware)
-    if ackToBeEnabled:
+    if ackIsDisabled:
+        return send_zigatecmd_zcl_noack(self, key, "0110", str(datas))
+    else:
         return send_zigatecmd_zcl_ack(self, key, "0110", str(datas))
-    return send_zigatecmd_zcl_ack(self, key, "0110", str(datas))
 
-def write_attributeNoResponse( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackToBeDisabled = False ):
-    
-    if key == 'ffff':
-        addr_mode = '04'
+def write_attributeNoResponse( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data):
+    """ write_atttribute broadcast . ack impossible on broadcast
+    """
+    #if key == 'ffff':
+    #    addr_mode = '04'
     direction = "00"
 
     if data_type == '42': # String
@@ -533,7 +536,7 @@ def write_attributeNoResponse( self, key, EPin, EPout, clusterID, manuf_id, manu
     datas = ZIGATE_EP + EPout + clusterID
     datas += direction + manuf_spec + manuf_id
     datas += lenght +attribute + data_type + data
-    loggingBasicOutput( self, 'Log', "write_attribute No Reponse for %s/%s - >%s<" %(key, EPout, datas), key)
+    loggingBasicOutput( self, 'Log', "write_attribute No Reponse for %s/%s - >%s<" %(key, EPout, datas))
 
     # Firmware <= 31c are in fact with ACK
     return send_zigatecmd_zcl_noack(self, key, "0113", str(datas))
@@ -597,31 +600,15 @@ def set_poweron_afteroffon( self, key, OnOffMode = 0xff):
     # 0xfc0f --> Command 0x01
     # 0xfc01 --> Command 0x01
 
-    # Tested on Ikea Bulb without any results !
-    PHILIPS_POWERON_MODE = [ 0x00, # Off
-                    0x01, # On
-                    0xff # Previous state
-            ]
-
-    # if 'Manufacturer'  in self.ListOfDevices[key]:
-    #     manuf_spec = "01"
-    #     manuf_id = self.ListOfDevices[key]['Manufacturer']
-    # else:
-    #     manuf_spec = "00"
-    #     manuf_id = "0000"
-
     manuf_spec = "00"
     manuf_id = "0000"
     ListOfEp = getListOfEpForCluster( self, key, '0006' )
+    cluster_id = "0006"
+    attribute = "4003"
+    data_type = "30" # 
     for EPout in ListOfEp:
-        cluster_id = "0006"
-        attribute = "4003"
-        data_type = "30" # 
         data = "ff"
-        if OnOffMode in POWERON_MODE:
-            data = "%02x" %OnOffMode
-        else:
-            data = "%02x" %0xff
-        loggingOutput( self, 'Debug', "set_PowerOn_OnOff for %s/%s - OnOff: %s" %(key, EPout, OnOffMode), key)
-        write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data, ackToBeEnabled = False)
-        del self.ListOfDevices[NWKID]['Ep']['0b']['0006']['4003']
+        data = "%02x" %OnOffMode
+        loggingBasicOutput( self, 'Debug', "set_PowerOn_OnOff for %s/%s - OnOff: %s" %(key, EPout, OnOffMode))
+        write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled = True)
+        del self.ListOfDevices[key]['Ep']['0b']['0006']['4003']

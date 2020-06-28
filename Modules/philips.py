@@ -8,8 +8,8 @@ import Domoticz
 from datetime import datetime
 from time import time
 
-from Modules.basicOutputs import raw_APS_request, write_attribute
-from Modules.readAttributes import ReadAttributeRequest_0006_0000, ReadAttributeRequest_0008_0000
+from Modules.basicOutputs import raw_APS_request, write_attribute, set_poweron_afteroffon
+from Modules.readAttributes import ReadAttributeRequest_0006_0000, ReadAttributeRequest_0008_0000, ReadAttributeRequest_0006_400x
 from Modules.logging import loggingPhilips
 
 
@@ -26,7 +26,6 @@ def pollingPhilips( self, key ):
     ReadAttributeRequest_0008_0000( self, key)
 
     return False
-
 
 def callbackDeviceAwake_Philips(self, NwkId, EndPoint, cluster):
     """
@@ -75,3 +74,35 @@ def philipsReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP
 
     loggingPhilips( self, 'Log', "philipsReadRawAPS - Nwkid: %s/%s Cluster: %s, Command: %s Payload: %s" \
         %(srcNWKID,srcEp , ClusterID, cmd, data ))
+
+def philips_set_poweron_after_offon( self, mode):
+    # call from WebServer
+
+    PHILIPS_POWERON_MODE = { 
+        0x00:'Off', # Off
+        0x01:'On', # On
+        0xff:'Previous state' # Previous state
+    }
+
+    if mode not in PHILIPS_POWERON_MODE:
+        Domoticz.Error("philips_set_poweron_after_offon - Unknown mode: %s" %mode)
+
+    for nwkid in self.ListOfDevices:
+        if 'Manufacturer' not in self.ListOfDevices[ nwkid ]:
+            continue
+        if self.ListOfDevices[ nwkid ]['Manufacturer'] != '100b':
+            continue
+        # We have a Philips device
+        if '0b' not in self.ListOfDevices[ nwkid ]['Ep']:
+            continue
+        if '0006' not in self.ListOfDevices[ nwkid ]['Ep']['0b']:
+            continue
+        if '4003' not in self.ListOfDevices[ nwkid ]['Ep']['0b']['0006']:
+            Domoticz.Log("philips_set_poweron_after_offon Device: %s do not have a Set Power Attribute !" %nwkid)
+            ReadAttributeRequest_0006_400x(self, nwkid)
+            continue
+
+        # At that stage, we have a Philips device with Cluster 0006 and the right attribute
+        Domoticz.Log("philips_set_poweron_after_offon - Set PowerOn after OffOn of %s to %s" %(nwkid,PHILIPS_POWERON_MODE[ mode]))
+        set_poweron_afteroffon( self, nwkid, OnOffMode = mode)
+        ReadAttributeRequest_0006_400x(self, nwkid)

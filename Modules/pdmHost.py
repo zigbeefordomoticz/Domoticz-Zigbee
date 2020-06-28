@@ -91,6 +91,9 @@ def savePDM( self):
     #zigatePDMfilename = self.pluginconf.pluginConf['pluginData'] + "zigatePDM-%02d.pck" %self.HardwareID
     #with open( zigatePDMfilename, 'wb') as zigatePDMfile:
     #   pickle.dump( self.ListOfGroups, zigatePDMfile, protocol=pickle.HIGHEST_PROTOCOL)
+
+    if self.PDM is None:
+        return
     zigatePDMfilename = self.pluginconf.pluginConf['pluginData'] + "zigatePDM-%02d.json" %self.HardwareID
     with open( zigatePDMfilename, 'wt') as zigatePDMfile:
         try:

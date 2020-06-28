@@ -383,12 +383,14 @@ def processKnownDevices( self, Devices, NWKID ):
 
                 func(self, NWKID )
 
-    #if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
-    #    if self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Philips':
-    #        if '0b' in self.ListOfDevices[NWKID]['Ep']:
-    #            if '0006' in self.ListOfDevices[NWKID]['Ep']['0b']:
-    #                if '4003' not in self.ListOfDevices[NWKID]['Ep']['0b']['0006']:
-    #                    ReadAttributeRequest_0006_400x( self, NWKID )
+    if ( intHB % 1800) == 0:
+        # Checking PowerOn after OnOff setting ( 0x4003 )
+        if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
+            if self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Philips':
+                if '0b' in self.ListOfDevices[NWKID]['Ep']:
+                    if '0006' in self.ListOfDevices[NWKID]['Ep']['0b']:
+                        if '4003' not in self.ListOfDevices[NWKID]['Ep']['0b']['0006']:
+                            ReadAttributeRequest_0006_400x( self, NWKID )
 
     # Reenforcement of Legrand devices options if required
     if ( self.HeartbeatCount % LEGRAND_FEATURES ) == 0 :
@@ -420,7 +422,8 @@ def processKnownDevices( self, Devices, NWKID ):
             loggingHeartbeat( self, 'Debug', '-- - skip ReadAttribute for now ... system too busy (%s/%s) for %s' 
                     %(self.busy, self.ZigateComm.loadTransmit(), NWKID), NWKID)
             Domoticz.Status("Requesting Node Descriptor for %s" %NWKID)
-            sendZigateCmd(self,"0042", str(NWKID) )         # Request a Node Descriptor
+
+            sendZigateCmd(self,"0042", str(NWKID), ackIsDisabled = True )         # Request a Node Descriptor
 
     if rescheduleAction and intHB != 0: # Reschedule is set because Zigate was busy or Queue was too long to process
         self.ListOfDevices[NWKID]['Heartbeat'] = str( intHB - 1 ) # So next round it trigger again

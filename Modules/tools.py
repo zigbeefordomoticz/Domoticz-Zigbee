@@ -279,89 +279,93 @@ def removeNwkInList( self, NWKID) :
 
 
 
-def removeDeviceInList( self, Devices, IEEE, Unit ) :
+def removeDeviceInList( self, Devices, IEEE, Unit ):
     # Most likely call when a Device is removed from Domoticz
     # This is a tricky one, as you might have several Domoticz devices attached to this IoT and so you must remove only the corredpoing part.
     # Must seach in the NwkID dictionnary and remove only the corresponding device entry in the ClusterType.
     # In case there is no more ClusterType , then the full entry can be removed
 
-    if IEEE in self.IEEE2NWK :
-        key = self.IEEE2NWK[IEEE]
-        ID = Devices[Unit].ID
+    if IEEE not in self.IEEE2NWK:
+        return
 
-        Domoticz.Log("removeDeviceInList - request to remove Device: %s with IEEE: %s " %(key, IEEE))
+    key = self.IEEE2NWK[IEEE]
+    ID = Devices[Unit].ID
 
-        if 'ClusterTye' in self.ListOfDevices[key]:               # We are in the old fasho V. 3.0.x Where ClusterType has been migrated from Domoticz
-            if  str(ID) in self.ListOfDevices[key]['ClusterType']  :
-                Domoticz.Log("removeDeviceInList - removing : "+str(ID) +" in "+str(self.ListOfDevices[key]['ClusterType']) )
-                del self.ListOfDevices[key]['ClusterType'][ID] # Let's remove that entry
-        else :
-            for tmpEp in self.ListOfDevices[key]['Ep'] : 
+    Domoticz.Log("removeDeviceInList - request to remove Device: %s with IEEE: %s " %(key, IEEE))
+
+    if 'ClusterTye' in self.ListOfDevices[key]:               # We are in the old fasho V. 3.0.x Where ClusterType has been migrated from Domoticz
+        if  str(ID) in self.ListOfDevices[key]['ClusterType']  :
+            Domoticz.Log("removeDeviceInList - removing : "+str(ID) +" in "+str(self.ListOfDevices[key]['ClusterType']) )
+            del self.ListOfDevices[key]['ClusterType'][ID] # Let's remove that entry
+    else:
+        for tmpEp in self.ListOfDevices[key]['Ep']: 
                 # Search this DeviceID in ClusterType
-                if 'ClusterType' in self.ListOfDevices[key]['Ep'][tmpEp]:
-                    if str(ID) in self.ListOfDevices[key]['Ep'][tmpEp]['ClusterType'] :
-                        Domoticz.Log("removeDeviceInList - removing : "+str(ID) +" in " +str(tmpEp) + " - " +str(self.ListOfDevices[key]['Ep'][tmpEp]['ClusterType']) )
-                        del self.ListOfDevices[key]['Ep'][tmpEp]['ClusterType'][str(ID)]
+            if (
+                'ClusterType' in self.ListOfDevices[key]['Ep'][tmpEp]
+                and str(ID)
+                in self.ListOfDevices[key]['Ep'][tmpEp]['ClusterType']
+            ):
+                Domoticz.Log("removeDeviceInList - removing : "+str(ID) +" in " +str(tmpEp) + " - " +str(self.ListOfDevices[key]['Ep'][tmpEp]['ClusterType']) )
+                del self.ListOfDevices[key]['Ep'][tmpEp]['ClusterType'][str(ID)]
 
-        # Finaly let's see if there is any Devices left in this .
-        emptyCT = True
-        if 'ClusterType' in self.ListOfDevices[key]: # Empty or Doesn't exist
-            Domoticz.Log("removeDeviceInList - exitsing Global 'ClusterTpe'")
-            if self.ListOfDevices[key]['ClusterType'] != {}:
+    # Finaly let's see if there is any Devices left in this .
+    emptyCT = True
+    if 'ClusterType' in self.ListOfDevices[key]: # Empty or Doesn't exist
+        Domoticz.Log("removeDeviceInList - exitsing Global 'ClusterTpe'")
+        if self.ListOfDevices[key]['ClusterType'] != {}:
+            emptyCT = False
+    for tmpEp in self.ListOfDevices[key]['Ep'] : 
+        if 'ClusterType' in self.ListOfDevices[key]['Ep'][tmpEp]:
+            Domoticz.Log("removeDeviceInList - exitsing Ep 'ClusterTpe'")
+            if self.ListOfDevices[key]['Ep'][tmpEp]['ClusterType'] != {}:
                 emptyCT = False
-        for tmpEp in self.ListOfDevices[key]['Ep'] : 
-            if 'ClusterType' in self.ListOfDevices[key]['Ep'][tmpEp]:
-                Domoticz.Log("removeDeviceInList - exitsing Ep 'ClusterTpe'")
-                if self.ListOfDevices[key]['Ep'][tmpEp]['ClusterType'] != {}:
-                    emptyCT = False
-        
-        if emptyCT :     
-            del self.ListOfDevices[key]
-            del self.IEEE2NWK[IEEE]
 
-            self.adminWidgets.updateNotificationWidget( Devices, 'Device fully removed %s with IEEE: %s' %( Devices[Unit].Name, IEEE ))
-            Domoticz.Status('Device %s with IEEE: %s fully removed from the system.' %(Devices[Unit].Name, IEEE))
+    if emptyCT :     
+        del self.ListOfDevices[key]
+        del self.IEEE2NWK[IEEE]
 
-            return True
-        return False
+        self.adminWidgets.updateNotificationWidget( Devices, 'Device fully removed %s with IEEE: %s' %( Devices[Unit].Name, IEEE ))
+        Domoticz.Status('Device %s with IEEE: %s fully removed from the system.' %(Devices[Unit].Name, IEEE))
+
+        return True
+    return False
 
 
 
-def initDeviceInList(self, Nwkid) :
-    if Nwkid not in self.ListOfDevices:
-        if Nwkid != '' :
-            self.ListOfDevices[Nwkid]={}
-            self.ListOfDevices[Nwkid]['Version']="3"
-            self.ListOfDevices[Nwkid]['ZDeviceName']=""
-            self.ListOfDevices[Nwkid]['Status']="004d"
-            self.ListOfDevices[Nwkid]['SQN']=''
-            self.ListOfDevices[Nwkid]['Ep']={}
-            self.ListOfDevices[Nwkid]['Heartbeat']="0"
-            self.ListOfDevices[Nwkid]['RIA']="0"
-            self.ListOfDevices[Nwkid]['RSSI']={}
-            self.ListOfDevices[Nwkid]['Battery']={}
-            self.ListOfDevices[Nwkid]['Model']= ''
-            self.ListOfDevices[Nwkid]['MacCapa']={}
-            self.ListOfDevices[Nwkid]['IEEE']={}
-            self.ListOfDevices[Nwkid]['Type']={}
-            self.ListOfDevices[Nwkid]['ProfileID']={}
-            self.ListOfDevices[Nwkid]['ZDeviceID']={}
-            self.ListOfDevices[Nwkid]['App Version']=''
-            self.ListOfDevices[Nwkid]['Attributes List']={}
-            self.ListOfDevices[Nwkid]['DeviceType']=''
-            self.ListOfDevices[Nwkid]['HW Version']=''
-            self.ListOfDevices[Nwkid]['Last Cmds']= []
-            self.ListOfDevices[Nwkid]['LogicalType']=''
-            self.ListOfDevices[Nwkid]['Manufacturer']=''
-            self.ListOfDevices[Nwkid]['Manufacturer Name']=''
-            self.ListOfDevices[Nwkid]['NbEp']=''
-            self.ListOfDevices[Nwkid]['PowerSource']=''
-            self.ListOfDevices[Nwkid]['ReadAttributes']={}
-            self.ListOfDevices[Nwkid]['ReceiveOnIdle']=''
-            self.ListOfDevices[Nwkid]['Stack Version']=''
-            self.ListOfDevices[Nwkid]['Stamp']={}
-            self.ListOfDevices[Nwkid]['ZCL Version']=''
-            self.ListOfDevices[Nwkid]['Health']=''
+def initDeviceInList(self, Nwkid):
+    if Nwkid not in self.ListOfDevices and Nwkid != '':
+        self.ListOfDevices[Nwkid]={}
+        self.ListOfDevices[Nwkid]['Version']="3"
+        self.ListOfDevices[Nwkid]['ZDeviceName']=""
+        self.ListOfDevices[Nwkid]['Status']="004d"
+        self.ListOfDevices[Nwkid]['SQN']=''
+        self.ListOfDevices[Nwkid]['Ep']={}
+        self.ListOfDevices[Nwkid]['Heartbeat']="0"
+        self.ListOfDevices[Nwkid]['RIA']="0"
+        self.ListOfDevices[Nwkid]['RSSI']={}
+        self.ListOfDevices[Nwkid]['Battery']={}
+        self.ListOfDevices[Nwkid]['Model']= ''
+        self.ListOfDevices[Nwkid]['MacCapa']={}
+        self.ListOfDevices[Nwkid]['IEEE']={}
+        self.ListOfDevices[Nwkid]['Type']={}
+        self.ListOfDevices[Nwkid]['ProfileID']={}
+        self.ListOfDevices[Nwkid]['ZDeviceID']={}
+        self.ListOfDevices[Nwkid]['App Version']=''
+        self.ListOfDevices[Nwkid]['Attributes List']={}
+        self.ListOfDevices[Nwkid]['DeviceType']=''
+        self.ListOfDevices[Nwkid]['HW Version']=''
+        self.ListOfDevices[Nwkid]['Last Cmds']= []
+        self.ListOfDevices[Nwkid]['LogicalType']=''
+        self.ListOfDevices[Nwkid]['Manufacturer']=''
+        self.ListOfDevices[Nwkid]['Manufacturer Name']=''
+        self.ListOfDevices[Nwkid]['NbEp']=''
+        self.ListOfDevices[Nwkid]['PowerSource']=''
+        self.ListOfDevices[Nwkid]['ReadAttributes']={}
+        self.ListOfDevices[Nwkid]['ReceiveOnIdle']=''
+        self.ListOfDevices[Nwkid]['Stack Version']=''
+        self.ListOfDevices[Nwkid]['Stamp']={}
+        self.ListOfDevices[Nwkid]['ZCL Version']=''
+        self.ListOfDevices[Nwkid]['Health']=''
         
 def timeStamped( self, key, Type ):
     if key in self.ListOfDevices:
@@ -434,26 +438,25 @@ def getTypebyCluster( self, Cluster ) :
 
     return ''
 
-def getListofClusterbyModel( self, Model , InOut ) :
+def getListofClusterbyModel( self, Model , InOut ):
     """
     Provide the list of clusters attached to Ep In
     """
-    listofCluster = list()
+    listofCluster = []
     if InOut == '' or InOut is None :
         return listofCluster
-    if InOut != 'Epin' and InOut != 'Epout' :
+    if InOut not in ['Epin', 'Epout']:
         Domoticz.Error( "getListofClusterbyModel - Argument error : " +Model + " " +InOut )
         return ''
 
-    if Model in self.DeviceConf :
-        if InOut in self.DeviceConf[Model]:
-            for ep in self.DeviceConf[Model][InOut] :
-                seen = ''
-                for cluster in sorted(self.DeviceConf[Model][InOut][ep]) :
-                    if cluster in ( 'ClusterType', 'Type', 'ColorMode') or  cluster == seen :
-                        continue
-                    listofCluster.append( cluster )
-                    seen = cluster
+    if Model in self.DeviceConf and InOut in self.DeviceConf[Model]:
+        for ep in self.DeviceConf[Model][InOut] :
+            seen = ''
+            for cluster in sorted(self.DeviceConf[Model][InOut][ep]) :
+                if cluster in ( 'ClusterType', 'Type', 'ColorMode') or  cluster == seen :
+                    continue
+                listofCluster.append( cluster )
+                seen = cluster
     return listofCluster
 
 
@@ -704,14 +707,13 @@ def loggingMessages( self, msgtype, sAddr=None, ieee=None, RSSI=None, SQN=None):
         ieee = ''
         if sAddr in self.ListOfDevices:
             ieee = self.ListOfDevices[sAddr]['IEEE']
-    if _debugMatchId != 'ffff' and _debugMatchId != sAddr:
+    if _debugMatchId not in ['ffff', sAddr]:
         # If not matching _debugMatchId
         return
 
     zdevname = ''
-    if sAddr in self.ListOfDevices:
-        if 'ZDeviceName' in  self.ListOfDevices[sAddr]:
-            zdevname = self.ListOfDevices[sAddr]['ZDeviceName']
+    if ( sAddr in self.ListOfDevices and 'ZDeviceName' in self.ListOfDevices[sAddr] ):
+        zdevname = self.ListOfDevices[sAddr]['ZDeviceName']
 
     Domoticz.Log("Device activity for | %4s | %14s | %4s | %16s | %3s | 0x%02s |" \
         %( msgtype, zdevname, sAddr, ieee, int(RSSI,16), SQN))
@@ -831,3 +833,29 @@ def getAttributeValue (self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID):
     if MsgAttrID not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]:
         return None
     return self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID]
+
+
+def retreive_cmd_payload_from_8002( Payload ):
+    
+    ManufacturerCode = None
+    if is_manufspecific_8002_payload( Payload[0:2] ):
+        ManufacturerCode = Payload[2:6]
+        Sqn = Payload[6:8]
+        Command = Payload[8:10]
+        Data = Payload[10:]
+    else:
+        Sqn = Payload[2:4]
+        Command = Payload[4:6]
+        Data = Payload[6:]
+
+    return ( Sqn, ManufacturerCode, Command, Data)
+
+
+def is_manufspecific_8002_payload( fcf ):
+    
+    #FrameType = ( int(fcf, 16) & 0b00000011)
+    ManufSpecif = ( int(fcf, 16) & 0b00000100) >> 2
+    #Direction = ( int(fcf, 16) & 0b00001000) >> 3
+    #DisableDefaultResponse = ( int(fcf, 16) & 0b00010000) >> 4
+
+    return ManufSpecif == 1
