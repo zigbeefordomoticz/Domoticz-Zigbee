@@ -1297,8 +1297,12 @@ def Decode8045(self, Devices, MsgData, MsgRSSI): # Reception Active endpoint res
     if self.pluginconf.pluginConf['capturePairingInfos']:
         self.DiscoveryDevices[MsgDataShAddr]['NbEp'] = MsgDataEpCount
 
+    if 'Model' not in self.ListOfDevices[MsgDataShAddr] or ( 'Model' in self.ListOfDevices[MsgDataShAddr] and self.ListOfDevices[MsgDataShAddr]['Model'] in ( '', {} )):
+        ReadAttributeRequest_0000(self, MsgDataShAddr, fullScope=False ) # In order to request Model Name  
+
     for iterEp in self.ListOfDevices[MsgDataShAddr]['Ep']:
         loggingInput( self, 'Status', "[%s] NEW OBJECT: %s Request Simple Descriptor for Ep: %s" %( '-', MsgDataShAddr, iterEp))
+        
         sendZigateCmd(self,"0043", str(MsgDataShAddr)+str(iterEp))
 
     if self.ListOfDevices[MsgDataShAddr]['Status'] != '8045' :
@@ -2377,8 +2381,10 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         PREFIX_IEEE_XIAOMI = '00158d000'
         if MsgIEEE[0:len(PREFIX_IEEE_XIAOMI)] == PREFIX_IEEE_XIAOMI:
             ReadAttributeRequest_0000(self, MsgSrcAddr, fullScope=False ) # In order to request Model Name
-        if self.pluginconf.pluginConf['enableSchneiderWiser']:
-            ReadAttributeRequest_0000(self, MsgSrcAddr, fullScope=False ) # In order to request Model Name
+
+        # Remove , it will be done in Decode8045, when we have at least 1 EndPoint to send the ReadAttributeRequest  
+        #if self.pluginconf.pluginConf['enableSchneiderWiser']:
+        #    ReadAttributeRequest_0000(self, MsgSrcAddr, fullScope=False ) # In order to request Model Name
 
         loggingPairing( self, 'Debug', "Decode004d - Request End Point List ( 0x0045 )")
         self.ListOfDevices[MsgSrcAddr]['Heartbeat'] = "0"
