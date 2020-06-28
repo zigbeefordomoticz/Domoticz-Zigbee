@@ -235,6 +235,7 @@ def processConfigureReporting( self, NWKID=None ):
 
                 attrList = ''
                 attrLen = 0
+                commonData = ZIGATE_EP + Ep + cluster + direction + manufacturer_spec + manufacturer
                 if not self.pluginconf.pluginConf['breakConfigureReporting']:
                     for attr in attrDisp:
                         attrdirection = "00"
@@ -249,16 +250,14 @@ def processConfigureReporting( self, NWKID=None ):
                         # Let's check if we have to send a chunk
                         if attrLen == MAX_ATTR_PER_REQ:
                             # Prepare the payload
-                            #datas =   addr_mode + key + ZIGATE_EP + Ep + cluster + direction + manufacturer_spec + manufacturer 
-                            datas =   ZIGATE_EP + Ep + cluster + direction + manufacturer_spec + manufacturer 
 
-                            datas +=  "%02x" %(attrLen) + attrList
+                            datas = '%02x' %(attrLen) + attrList
 
-                            loggingConfigureReporting( self, 'Debug', "configureReporting - Splitting in several parts" )
-                            loggingConfigureReporting( self, 'Debug', "--> configureReporting - 0120 - %s" %(datas))
-                            loggingConfigureReporting( self, 'Debug', "--> Configure Reporting %s/%s on cluster %s Len: %s Attribute List: %s" %(key, Ep, cluster, attrLen, attrList), nwkid=key)
+                            loggingConfigureReporting( self, 'Log', "configureReporting - Splitting in several parts" )
+                            loggingConfigureReporting( self, 'Log', "--> configureReporting - 0120 - %s" %(datas))
+                            loggingConfigureReporting( self, 'Log', "--> Configure Reporting %s/%s on cluster %s Len: %s Attribute List: %s" %(key, Ep, cluster, attrLen, attrList), nwkid=key)
                             
-                            send_zigatecmd_zcl_noack( self, key, '0120', datas )
+                            send_zigatecmd_zcl_noack( self, key, '0120', commonData + datas )
                             #sendZigateCmd( self, "0120", datas )
 
                             #Reset the Lenght to 0
@@ -273,9 +272,9 @@ def processConfigureReporting( self, NWKID=None ):
                         datas =   ZIGATE_EP + Ep + cluster + direction + manufacturer_spec + manufacturer 
                         datas +=  "%02x" %(attrLen) + attrList
 
-                        loggingConfigureReporting( self, 'Debug', "configureReporting - last parts" )
-                        loggingConfigureReporting( self, 'Debug', "++> configureReporting - 0120 - %s" %(datas))
-                        loggingConfigureReporting( self, 'Debug', "++> Configure Reporting %s/%s on cluster %s Len: %s Attribute List: %s" %(key, Ep, cluster, attrLen, attrList), nwkid=key)
+                        loggingConfigureReporting( self, 'Log', "configureReporting - last parts" )
+                        loggingConfigureReporting( self, 'Log', "++> configureReporting - 0120 - %s" %(datas))
+                        loggingConfigureReporting( self, 'Log', "++> Configure Reporting %s/%s on cluster %s Len: %s Attribute List: %s" %(key, Ep, cluster, attrLen, attrList), nwkid=key)
                         send_zigatecmd_zcl_noack( self, key, '0120', datas )
                         #sendZigateCmd( self, "0120", datas )
 
