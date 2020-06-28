@@ -580,7 +580,7 @@ CFG_RPT_ATTRIBUTESbyCLUSTERS = {
 
     # Thermostat
     '0201': {'Attributes': {'0000': {'DataType': '29', 'MinInterval': '012C', 'MaxInterval': '012C', 'TimeOut': '0000', 'Change': '0001'},
-                            '0008': {'DataType': '29', 'MinInterval': '012C', 'MaxInterval': '0E10', 'TimeOut': '0000', 'Change': '0001'},
+                            '0008': {'DataType': '20', 'MinInterval': '012C', 'MaxInterval': '0E10', 'TimeOut': '0000', 'Change': '01'},
                             '0012': {'DataType': '29', 'MinInterval': '012C', 'MaxInterval': '0E10', 'TimeOut': '0000', 'Change': '0001'},
                             '0014': {'DataType': '29', 'MinInterval': '012C', 'MaxInterval': '0E10', 'TimeOut': '0000', 'Change': '0001'}}},
 
