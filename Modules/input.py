@@ -2186,13 +2186,13 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
     if MsgSrcAddr in self.ListOfDevices:
         if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
             loggingPairing( self, 'Status', "Device Announcement: %s(%s, %s) Join Flag: %s RSSI: %s ChangeShortID: %s " \
-                    %( self.ListOfDevices[MsgSrcAddr]['ZDeviceName'], MsgSrcAddr, MsgIEEE, REJOIN_NETWORK[ MsgRejoinFlag ], int(MsgRSSI,16), newShortId ))
+                    %( self.ListOfDevices[MsgSrcAddr]['ZDeviceName'], MsgSrcAddr, MsgIEEE, MsgRejoinFlag, int(MsgRSSI,16), newShortId ))
         else:
             loggingPairing( self, 'Status', "Device Announcement Addr: %s, IEEE: %s Join Flag: %s RSSI: %s ChangeShortID: %s" \
-                    %( MsgSrcAddr, MsgIEEE, REJOIN_NETWORK[ MsgRejoinFlag ], int(MsgRSSI,16), newShortId))
+                    %( MsgSrcAddr, MsgIEEE, MsgRejoinFlag, int(MsgRSSI,16), newShortId))
     else:
         loggingPairing( self, 'Status', "Device Announcement Addr: %s, IEEE: %s Join Flag: %s RSSI: %s ChangeShortID: %s" \
-                %( MsgSrcAddr, MsgIEEE, REJOIN_NETWORK[ MsgRejoinFlag ], int(MsgRSSI,16), newShortId ) )
+                %( MsgSrcAddr, MsgIEEE, MsgRejoinFlag, int(MsgRSSI,16), newShortId ) )
 
     loggingMessages( self, '004D', MsgSrcAddr, MsgIEEE, int(MsgRSSI,16), None)
 
@@ -2299,7 +2299,7 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         # Let's take the opportunity to trigger some request/adjustement / NOT SURE IF THIS IS GOOD/IMPORTANT/NEEDED
         loggingInput( self, 'Debug', "Decode004D - Request attribute 0x0000 %s" %( MsgSrcAddr), MsgSrcAddr)
         ReadAttributeRequest_0000( self,  MsgSrcAddr)
-        sendZigateCmd(self,"0042", str(MsgSrcAddr) )
+        sendZigateCmd(self,"0042", str(MsgSrcAddr), ackIsDisabled = True ) 
 
         # Let's check if this is a Schneider Wiser
         if 'Manufacturer' in self.ListOfDevices[MsgSrcAddr]:

@@ -422,7 +422,8 @@ def processKnownDevices( self, Devices, NWKID ):
             loggingHeartbeat( self, 'Debug', '-- - skip ReadAttribute for now ... system too busy (%s/%s) for %s' 
                     %(self.busy, self.ZigateComm.loadTransmit(), NWKID), NWKID)
             Domoticz.Status("Requesting Node Descriptor for %s" %NWKID)
-            sendZigateCmd(self,"0042", str(NWKID) )         # Request a Node Descriptor
+
+            sendZigateCmd(self,"0042", str(NWKID), ackIsDisabled = True )         # Request a Node Descriptor
 
     if rescheduleAction and intHB != 0: # Reschedule is set because Zigate was busy or Queue was too long to process
         self.ListOfDevices[NWKID]['Heartbeat'] = str( intHB - 1 ) # So next round it trigger again

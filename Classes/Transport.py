@@ -790,7 +790,7 @@ def check_timed_out(self):
                              % (desc, i_sqn, (now - TimeStamp), self.ListOfCommands[i_sqn]['Cmd'], self.ListOfCommands[i_sqn]['Datas'],
                                 self.ListOfCommands[i_sqn]['ResponseExpected'], self.ListOfCommands[i_sqn]['ExpectedAck'],
                                 self.ListOfCommands[i_sqn]['MessageResponse'], self.ListOfCommands[InternalSqn]['ReceiveTimeStamp'].strftime("%m/%d/%Y, %H:%M:%S")))
-        self.loggingSend('Log',"--  --  --  > i_sqn: %s App_Sqn: %s Aps_Sqn: %s Type_Sqn: %s" \
+        self.loggingSend('Debug',"--  --  --  > i_sqn: %s App_Sqn: %s Aps_Sqn: %s Type_Sqn: %s" \
             %( i_sqn, self.ListOfCommands[i_sqn]['APP_SQN'], self.ListOfCommands[i_sqn]['APS_SQN'] , self.ListOfCommands[i_sqn]['TYP_SQN']  ))
 
     # Begin
@@ -1430,7 +1430,7 @@ def process8002(self, frame):
     
     Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002( Payload )
     self.logging_receive(
-        'Log', "process8002 Sqn: %s ManufCode: %s Command: %s Data: %s " %(Sqn, ManufacturerCode, Command, Data))
+        'Debug', "process8002 Sqn: %s ManufCode: %s Command: %s Data: %s " %(Sqn, ManufacturerCode, Command, Data))
 
     if Command == '01': # Read Attribute response
         return buildframe_read_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
