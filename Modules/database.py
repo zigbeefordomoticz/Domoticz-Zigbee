@@ -32,7 +32,6 @@ def _copyfile( source, dest, move=True ):
             for line in src:
                 dst.write(line)
 
-
 def _versionFile( source , nbversion ):
 
     if nbversion == 0:
@@ -51,7 +50,6 @@ def _versionFile( source , nbversion ):
 
         # Last one
         _copyfile( source, source +  "-%02d" %1 , move=False)
-
 
 def LoadDeviceList( self ):
     # Load DeviceList.txt into ListOfDevices
@@ -182,7 +180,6 @@ def LoadDeviceList( self ):
 
     return res
 
-
 def WriteDeviceList(self, count):
 
     if self.HBcount >= count :
@@ -239,7 +236,6 @@ def importDeviceConf( self ) :
     #    Domoticz.Log("%s - %s" %(iterDevType, self.DeviceConf[iterDevType]))
 
     loggingDatabase( self, "Status", "DeviceConf loaded")
-
 
 def importDeviceConfV2( self ):
 
@@ -302,7 +298,6 @@ def checkDevices2LOD( self, Devices):
             else:
                 self.ListOfDevices[nwkid]['ConsistencyCheck'] = 'not in DZ'
 
-
 def checkListOfDevice2Devices( self, Devices ):
 
     # As of V3 we will be loading only the IEEE information as that is the only one existing in Domoticz area.
@@ -342,7 +337,6 @@ def saveZigateNetworkData( self, nkwdata ):
                 json.dump(nkwdata, json_file, indent=4, sort_keys=True)
         except IOError:
             Domoticz.Error("Error while writing Zigate Network Details%s" %json_filename)
-
 
 def CheckDeviceList(self, key, val):
     '''
@@ -389,13 +383,14 @@ def CheckDeviceList(self, key, val):
             'Attributes List', 
             'Bind', 
             'WebBind',
-            'Capability'
+            'Capability',
             'ColorInfos', 
             'ClusterType', 
             'ConfigSource',
             'DeviceType', 
             'Ep', 
-            'Epv2'
+            'Epv2',
+            'ForceAckCommands',
             'HW Version', 
             'Heartbeat', 
             'IAS',
@@ -461,6 +456,7 @@ def CheckDeviceList(self, key, val):
             continue
 
         self.ListOfDevices[key][ attribute ] = DeviceListVal[ attribute]
+
         # Patching unitialize Model to empty
         if attribute == 'Model' and self.ListOfDevices[key][ attribute ] == {}:
             self.ListOfDevices[key][ attribute ] = ''
@@ -482,6 +478,29 @@ def CheckDeviceList(self, key, val):
             self.IEEE2NWK[IEEE] = key
         else :
             loggingDatabase( self, 'Debug', "CheckDeviceList - IEEE = " + str(DeviceListVal['IEEE']) + " for NWKID = " +str(key) , key )
+
+    check_and_update_ForceAckCommands( self)
+
+
+def check_and_update_ForceAckCommands( self ):
+
+    for x in self.ListOfDevices:
+
+        if 'Model' not in self.ListOfDevices[ x ]:
+            continue
+        if self.ListOfDevices[ x ]['Model'] in ( '', {} ):
+            continue
+        model = self.ListOfDevices[ x ]['Model']
+
+        if model not in self.DeviceConf:
+            continue
+        
+        if 'ForceAckCommands' not in self.DeviceConf[ model ]:
+            self.ListOfDevices[ x ]['ForceAckCommands'] = []
+            continue
+        Domoticz.Log(" Set: %s for device %s " %(self.DeviceConf[ model ]['ForceAckCommands'], x ))
+        self.ListOfDevices[ x ]['ForceAckCommands'] = list(self.DeviceConf[ model ]['ForceAckCommands'] )
+
 
 
 def fixing_Issue566( self, key ):
