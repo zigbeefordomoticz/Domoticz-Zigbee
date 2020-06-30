@@ -22,8 +22,12 @@ def rest_bindLSTcluster( self, verb, data, parameters):
 
         for ep in self.ListOfDevices[key]['Ep']:
             for cluster in self.ListOfDevices[key]['Ep'][ep]:
-                if cluster in ZCL_CLUSTERS_ACT and cluster not in bindCluster:
-                    bindCluster.append( cluster )
+                if cluster in ZCL_CLUSTERS_ACT:
+                    item = {}
+                    item['Cluster'] = cluster
+                    item['Description'] = ZCL_CLUSTERS_ACT[ cluster ]
+                    if item not in bindCluster:
+                        bindCluster.append( item )
     _response["Data"] = json.dumps( bindCluster )
     
     return _response
