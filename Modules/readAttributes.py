@@ -220,11 +220,11 @@ def ping_device_with_read_attribute(self, key):
     if 'TimeStamps' not in self.ListOfDevices[key]['ReadAttributes']:
         self.ListOfDevices[key]['ReadAttributes']['TimeStamps'] = {}
 
-    ListOfEp = getListOfEpForCluster( self, key, '0003' ) 
-    if ListOfEp and self.ListOfDevices[ key ].get('Manufacturer Name') in  ('Legrand', 'IKEA of Sweden', 'Schneider', 'Philips' ):
-        for EPout in ListOfEp:
-            identifySend( self, key, EPout, duration=0, withAck = True)
-            return
+    # ListOfEp = getListOfEpForCluster( self, key, '0003' ) 
+    # if ListOfEp and self.ListOfDevices[ key ].get('Manufacturer Name') in  ('Legrand', 'IKEA of Sweden', 'Schneider', 'Philips' ):
+    #     for EPout in ListOfEp:
+    #         identifySend( self, key, EPout, duration=0, withAck = True)
+    #         return
 
     ListOfEp = getListOfEpForCluster( self, key, '0000' )
     for EPout in ListOfEp:
