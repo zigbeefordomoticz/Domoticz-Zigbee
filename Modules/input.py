@@ -1768,27 +1768,32 @@ def Decode8110_raw(self, Devices, MsgSQN , MsgSrcAddr , MsgSrcEp , MsgClusterId 
 
 def Decode8120(self, Devices, MsgData, MsgRSSI) :  # Configure Reporting response
 
-    loggingInput( self, 'Debug', "Decode8120 - Configure reporting response : %s" %MsgData)
+    if int(self.FirmwareVersion,16) < int('31d',16):
+        Decode8120_31c(self, Devices, MsgData, MsgRSSI)
+    else:
+        Decode8120_31d(self, Devices, MsgData, MsgRSSI)    
+
+
+def Decode8120_31c(self, Devices,  MsgData, MsgRSSI):
+
+    loggingInput( self, 'Debug', "Decode8120_31c - Configure reporting response : %s" %MsgData)
     if len(MsgData) < 14:
-        Domoticz.Error("Decode8120 - uncomplet message %s " %MsgData)
+        Domoticz.Error("Decode8120_31c - uncomplet message %s " %MsgData)
         return
 
-    MsgSQN=MsgData[0:2]
-    MsgSrcAddr=MsgData[2:6]
-    MsgSrcEp=MsgData[6:8]
-    MsgClusterId=MsgData[8:12]
+    MsgSQN = MsgData[0:2]
+    MsgSrcAddr = MsgData[2:6]
+    MsgSrcEp = MsgData[6:8]
+    MsgClusterId = MsgData[8:12]
     RemainData = MsgData[12:len(MsgData)]
 
     loggingInput( self, 'Debug', "--> SQN: %s, SrcAddr: %s, SrcEP: %s, ClusterID: %s, RemainData: %s" %(MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, RemainData), MsgSrcAddr)
-
-
     if MsgSrcAddr not in self.ListOfDevices:
-        Domoticz.Error("Decode8120 - receiving Configure reporting response from unknow  %s" %MsgSrcAddr)
+        Domoticz.Error("Decode8120_31c - receiving Configure reporting response from unknow  %s" %MsgSrcAddr)
         return
 
     if len(MsgData) == 14: # Firmware < 3.0f
         MsgDataStatus=MsgData[12:14]
-
     else:
         MsgAttribute = []
         nbattribute = int(( len(MsgData) - 14 ) // 4)
@@ -1800,7 +1805,7 @@ def Decode8120(self, Devices, MsgData, MsgRSSI) :  # Configure Reporting respons
         MsgDataStatus = MsgData[(12+(nbattribute*4)):(12+(nbattribute*4)+2)]
         loggingInput( self, 'Debug', "--> Attributes : %s status: %s " %(str(MsgAttribute), MsgDataStatus), MsgSrcAddr)
 
-    loggingInput( self, 'Debug', "Decode8120 - Configure Reporting response - ClusterID: %s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s - %s" \
+    loggingInput( self, 'Debug', "Decode8120_31c - Configure Reporting response - ClusterID: %s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s - %s" \
        %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgDataStatus, DisplayStatusCode( MsgDataStatus) ), MsgSrcAddr)
 
     timeStamped( self, MsgSrcAddr , 0x8120)
@@ -1823,13 +1828,18 @@ def Decode8120(self, Devices, MsgData, MsgRSSI) :  # Configure Reporting respons
         self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'] = {}
         self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp] = {}
         self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp][str(MsgClusterId)] = {}
-
     self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp][MsgClusterId] = MsgDataStatus
 
     if MsgDataStatus != '00':
         # Looks like that this Device doesn't handle Configure Reporting, so let's flag it as such, so we won't do it anymore
-        loggingInput( self, 'Debug', "Decode8120 - Configure Reporting response - ClusterID: %s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s - %s" \
+        loggingInput( self, 'Debug', "Decode8120_31c - Configure Reporting response - ClusterID: %s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s - %s" \
             %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgDataStatus, DisplayStatusCode( MsgDataStatus) ), MsgSrcAddr)
+
+
+def Decode8120_31d(self, Devices, MsgData, MsgRSSI):
+    loggingInput( self, 'Debug', "Decode8120_31d - Configure reporting response : %s" %MsgData)
+    Decode8120_31c(self, Devices,  MsgData, MsgRSSI)
+
 
 def Decode8140(self, Devices, MsgData, MsgRSSI) :  # Attribute Discovery response
     MsgComplete=MsgData[0:2]
