@@ -1426,7 +1426,7 @@ def process8002(self, frame):
         'Log', "process8002 NwkId: %s Ep: %s Cluster: %s Payload: %s" %(SrcNwkId, SrcEndPoint, ClusterId , Payload))
 
     if SrcNwkId is None:
-        return
+        return frame
     
     Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002( Payload )
     self.logging_receive(
