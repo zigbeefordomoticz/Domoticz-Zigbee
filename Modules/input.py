@@ -1800,39 +1800,29 @@ def Decode8120(self, Devices, MsgData, MsgRSSI) :  # Configure Reporting respons
         %(MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId,MsgAttributeId, MsgStatus ), MsgSrcAddr)
 
     # Make sure Datastructure is ready
-
     if 'ConfigureReporting'  not in self.ListOfDevices[MsgSrcAddr]:
         self.ListOfDevices[MsgSrcAddr]['ConfigureReporting'] = {}
-
     if 'Ep' not in self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']:
         self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'] = {}
-
     if MsgSrcEp not in self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep']:
         self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp] = {}
-
     if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp]:
         self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp][MsgClusterId] = {}
-
     if 'TimeStamps' not in self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp][MsgClusterId]:
         self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp][MsgClusterId]['TimeStamps'] = 0
-
     if 'iSQN' not in self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp][MsgClusterId]:
         self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp][MsgClusterId]['iSQN'] = {}
-
     if 'Attributes' not in self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp][MsgClusterId]:
         self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp][MsgClusterId]['Attributes'] = {}
+        
 
-    if MsgStatus != '00':
-        loggingInput( self, 'Log', "Decode8120 - Configure Reporting response - ClusterID: %s/%s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s" \
-            %(MsgClusterId, MsgAttributeId, MsgSrcAddr, MsgSrcEp, MsgStatus,  ), MsgSrcAddr)       
+    if int(self.FirmwareVersion,16) >= int('31d', 16) and MsgAttributeId:
         self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp][MsgClusterId]['Attributes'][ MsgAttributeId ] = MsgStatus
-        return
-        
-    # Status Ok
-    if int(self.FirmwareVersion,16) <= int('31c', 16) and MsgAttributeId:
-        self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp][MsgClusterId]['Attributes'][ MsgAttributeId ] = MsgStatus
-        return
-        
+        if MsgStatus != '00':
+            loggingInput( self, 'Log', "Decode8120 - Configure Reporting response - ClusterID: %s/%s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s" \
+                %(MsgClusterId, MsgAttributeId, MsgSrcAddr, MsgSrcEp, MsgStatus ), MsgSrcAddr)
+        return       
+
     # We got a global status for all attributes requested in this command
     i_sqn = sqn_get_internal_sqn_from_app_sqn (self.ZigateComm, MsgSQN, TYPE_APP_ZCL)
     loggingInput( self, 'Debug', "------- - i_sqn: %03d e_sqn: %03d" %( i_sqn, int(MsgSQN,16)))
@@ -1842,10 +1832,9 @@ def Decode8120(self, Devices, MsgData, MsgRSSI) :  # Configure Reporting respons
             continue
         loggingInput( self, 'Debug', "------- - Sqn matches for Attribute: %s" %x)
         self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp][MsgClusterId]['Attributes'][ x ] = MsgStatus
-
-        # Looks like that this Device doesn't handle Configure Reporting, so let's flag it as such, so we won't do it anymore
-        loggingInput( self, 'Debug', "Decode8120 - Configure Reporting response - ClusterID: %s/%s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s - %s" \
-            %(MsgClusterId, MsgAttributeId, MsgSrcAddr, MsgSrcEp, MsgStatus, DisplayStatusCode( MsgStatus) ), MsgSrcAddr)
+        if MsgStatus != '00':
+            loggingInput( self, 'Log', "Decode8120 - Configure Reporting response - ClusterID: %s/%s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s" \
+                %(MsgClusterId, x, MsgSrcAddr, MsgSrcEp, MsgStatus ), MsgSrcAddr)
 
 
 def Decode8140(self, Devices, MsgData, MsgRSSI) :  # Attribute Discovery response
