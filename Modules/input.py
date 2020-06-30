@@ -1810,15 +1810,36 @@ def Decode8120(self, Devices, MsgData, MsgRSSI) :  # Configure Reporting respons
     if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp]:
         self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp][MsgClusterId] = {}
 
-    self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp][MsgClusterId][MsgAttributeId] = MsgStatus
+    if 'TimeStamps' not in self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp][MsgClusterId]:
+        self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp][MsgClusterId]['TimeStamps'] = 0
+
+    if 'iSQN' not in self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp][MsgClusterId]:
+        self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp][MsgClusterId]['iSQN'] = {}
+
+    if 'Attributes' not in self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp][MsgClusterId]:
+        self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp][MsgClusterId]['Attributes'] = {}
 
     if MsgStatus != '00':
+        loggingInput( self, 'Debug', "Decode8120 - Configure Reporting response - ClusterID: %s/%s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s" \
+            %(MsgClusterId, MsgAttributeId, MsgSrcAddr, MsgSrcEp, MsgStatus,  ), MsgSrcAddr)       
+        self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp][MsgClusterId]['Attributes'][ MsgAttributeId ] = MsgStatus
+        return
+        
+    # Status Ok
+    i_sqn = sqn_get_internal_sqn_from_app_sqn (self.ZigateComm, MsgSQN, TYPE_APP_ZCL)
+    loggingInput( self, 'Debug', "------- - i_sqn: %03d e_sqn: %03d" %( i_sqn, int(MsgSQN,16)))
+
+    for x in self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp][MsgClusterId]['iSQN']:
+        if self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp][MsgClusterId]['iSQN'][ x ] != i_sqn:
+            continue
+        loggingInput( self, 'Debug', "------- - Sqn matches for Attribute: %s" %x)
+        self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp][MsgClusterId]['Attributes'][ x ] = MsgStatus
+
         # Looks like that this Device doesn't handle Configure Reporting, so let's flag it as such, so we won't do it anymore
         loggingInput( self, 'Debug', "Decode8120 - Configure Reporting response - ClusterID: %s/%s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s - %s" \
             %(MsgClusterId, MsgAttributeId, MsgSrcAddr, MsgSrcEp, MsgStatus, DisplayStatusCode( MsgStatus) ), MsgSrcAddr)
-    else:
-         loggingInput( self, 'Debug', "Decode8120 - Configure Reporting response - ClusterID: %s/%s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s" \
-            %(MsgClusterId, MsgAttributeId, MsgSrcAddr, MsgSrcEp, MsgStatus,  ), MsgSrcAddr)       
+
+
 
 
 def Decode8140(self, Devices, MsgData, MsgRSSI) :  # Attribute Discovery response

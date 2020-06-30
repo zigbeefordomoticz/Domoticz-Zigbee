@@ -133,15 +133,18 @@ def processConfigureReporting( self, NWKID=None ):
                 if cluster not in self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep]:
                     self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster] = {}
 
-                _idx = Ep + '-' + str(cluster)
-                if 'TimeStamps' not in self.ListOfDevices[key]['ConfigureReporting'] :
-                    self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'] = {}
-                if _idx not in self.ListOfDevices[key]['ConfigureReporting']['TimeStamps']:
-                    self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] = 0
+                if 'TimeStamps' not in self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]:
+                    self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]['TimeStamps'] = 0
 
-                if  self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] != 0:
-                     if now <  ( self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] + (21 * 3600)):  # Do almost every day
-                        loggingConfigureReporting( self, 'Debug2', "------> configurereporting - %s skiping due to done past" %key, nwkid=key)
+                if 'iSQN' not in self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]:
+                    self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]['iSQN'] = {}
+
+                if 'Attributes' not in self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]:
+                    self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]['Attributes'] = {}
+
+                if self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]['TimeStamps'] != 0 and \
+                     now <  ( self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]['TimeStamps'] + (21 * 3600)):  # Do almost every day
+                        loggingConfigureReporting( self, 'Debug', "------> configurereporting - %s skiping due to done past" %key, nwkid=key)
                         continue
 
                 if NWKID is None and (self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE):
@@ -165,7 +168,7 @@ def processConfigureReporting( self, NWKID=None ):
                     else:
                         Domoticz.Error("configureReporting - inconsitency on %s no IEEE found : %s " %(key, str(self.ListOfDevices[key])))
 
-                self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] = int(time())
+                self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]['TimeStamps'] = int(time())
 
                 attrDisp = []   # Used only for printing purposes
                 attrList = ''
@@ -200,19 +203,20 @@ def processConfigureReporting( self, NWKID=None ):
 
                     if int(self.FirmwareVersion,16) <= int('31c',16):
                         # Only Attribte 0000 is reported
-                        if '0000' in self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]:
-                            if self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]['0000'] != {} and \
-                                self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]['0000'] in ( '86', '8c'):
+                        if '0000' in self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]['Attributes']:
+                            if self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]['Attributes']['0000'] != {} and \
+                                self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]['Attributes']['0000'] in ( '86', '8c'):
                                     loggingConfigureReporting( self, 'Debug', "--------> configurereporting - %s skiping due to existing error in the past" %key, nwkid=key)
                                     continue
-                            del self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]['0000']
+                            del self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]['Attributes']['0000']
+                            
                     if int(self.FirmwareVersion,16) > int('31c',16):
-                        if attr in self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]:
-                            if self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster][attr] != {} and \
-                                self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster][attr] in ( '86', '8c'):
+                        if attr in self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]['Attributes']:
+                            if self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]['Attributes'][attr] != {} and \
+                                self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]['Attributes'][attr] in ( '86', '8c'):
                                     loggingConfigureReporting( self, 'Debug', "--------> configurereporting - %s skiping due to existing error in the past" %key, nwkid=key)
                                     continue
-                            del self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster][attr]
+                            del self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]['Attributes'][attr]
 
                     if self.pluginconf.pluginConf['breakConfigureReporting']:
                         # Sending Configur Reporting Attribute One by One
@@ -239,6 +243,7 @@ def processConfigureReporting( self, NWKID=None ):
                 # end of For attr
 
                 # Ready to send the Command in one shoot or in several.
+                attributeList = []
                 attrList = ''
                 attrLen = 0
                 if not self.pluginconf.pluginConf['breakConfigureReporting']:
@@ -249,6 +254,7 @@ def processConfigureReporting( self, NWKID=None ):
                         maxInter = cluster_list[cluster]['Attributes'][attr]['MaxInterval']
                         timeOut =  cluster_list[cluster]['Attributes'][attr]['TimeOut']
                         chgFlag =  cluster_list[cluster]['Attributes'][attr]['Change']
+                        attributeList.append( attr )
                         attrList += attrdirection + attrType + attr + minInter + maxInter + timeOut + chgFlag
                         attrLen += 1
 
@@ -264,11 +270,16 @@ def processConfigureReporting( self, NWKID=None ):
                             loggingConfigureReporting( self, 'Debug', "--> configureReporting - 0120 - %s" %(datas))
                             loggingConfigureReporting( self, 'Debug', "--> Configure Reporting %s/%s on cluster %s Len: %s Attribute List: %s" %(key, Ep, cluster, attrLen, attrList), nwkid=key)
                             
-                            send_zigatecmd_zcl_noack( self, key, '0120', datas )
+                            i_sqn = send_zigatecmd_zcl_noack( self, key, '0120', datas )
+
+                            for x in attributeList:
+                                self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]['iSQN'][ x ] = i_sqn
 
                             #Reset the Lenght to 0
                             attrList = ''
                             attrLen = 0
+                            del attributeList
+                            attributeList = []
                     # end for 
 
                     # Let's check if we have some remaining to send
@@ -281,9 +292,10 @@ def processConfigureReporting( self, NWKID=None ):
                         loggingConfigureReporting( self, 'Debug', "configureReporting - last parts" )
                         loggingConfigureReporting( self, 'Debug', "++> configureReporting - 0120 - %s" %(datas))
                         loggingConfigureReporting( self, 'Debug', "++> Configure Reporting %s/%s on cluster %s Len: %s Attribute List: %s" %(key, Ep, cluster, attrLen, attrList), nwkid=key)
-                        send_zigatecmd_zcl_noack( self, key, '0120', datas )
+                        i_sqn = send_zigatecmd_zcl_noack( self, key, '0120', datas )
+                        for x in attributeList:
+                            self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]['iSQN'][ x ] = i_sqn
 
             # End for Cluster
         # End for Ep
     # End for key
-
