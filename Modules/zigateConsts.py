@@ -255,7 +255,11 @@ ZONE_TYPE = {0x0000: 'standard',
 
 
 ZCL_CLUSTERS_ACT = {
-    '0006', '0008', '0102', '0201', '0201', '0402'}
+    '0006':'On/Off', 
+    '0008':'Dimmer', 
+    '0102':'Windows Covering', 
+    '0201':'Thermostat', 
+    '0402':'Temperature Measurement'}
 
 ZCL_CLUSTERS_LIST = {
     '0000': 'Basic',
