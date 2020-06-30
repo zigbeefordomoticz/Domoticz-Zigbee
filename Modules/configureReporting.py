@@ -119,33 +119,29 @@ def processConfigureReporting( self, NWKID=None ):
                         loggingConfigureReporting( self, 'Debug',"----> Do not Configure Reports cluster %s for Profalux Remote command %s/%s" %(cluster, key, Ep), key)
                         continue
 
-
                 loggingConfigureReporting( self, 'Debug2', "--------> Configurereporting - processing %s/%s - %s" %(key,Ep,cluster), nwkid=key)
-                if 'ConfigureReporting' not in self.ListOfDevices[key]:
+
+                if 'ConfigureReporting'  not in self.ListOfDevices[key]:
                     self.ListOfDevices[key]['ConfigureReporting'] = {}
+
                 if 'Ep' not in self.ListOfDevices[key]['ConfigureReporting']:
                     self.ListOfDevices[key]['ConfigureReporting']['Ep'] = {}
+
                 if Ep not in self.ListOfDevices[key]['ConfigureReporting']['Ep']:
                     self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep] = {}
+
                 if cluster not in self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep]:
                     self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster] = {}
-
-                if self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] in ( '86', '8c') and \
-                        self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] != {} :
-                    loggingConfigureReporting( self, 'Debug', "--------> configurereporting - %s skiping due to existing error in the past" %key, nwkid=key)
-                    continue
 
                 _idx = Ep + '-' + str(cluster)
                 if 'TimeStamps' not in self.ListOfDevices[key]['ConfigureReporting'] :
                     self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'] = {}
+                if _idx not in self.ListOfDevices[key]['ConfigureReporting']['TimeStamps']:
                     self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] = 0
-                else:
-                    if _idx not in self.ListOfDevices[key]['ConfigureReporting']['TimeStamps']:
-                        self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] = 0
 
                 if  self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] != 0:
                      if now <  ( self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] + (21 * 3600)):  # Do almost every day
-                        loggingConfigureReporting( self, 'Debug', "------> configurereporting - %s skiping due to done past" %key, nwkid=key)
+                        loggingConfigureReporting( self, 'Debug2', "------> configurereporting - %s skiping due to done past" %key, nwkid=key)
                         continue
 
                 if NWKID is None and (self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE):
@@ -176,6 +172,7 @@ def processConfigureReporting( self, NWKID=None ):
                 attrLen = 0
                 if 'Attributes' not in cluster_list[cluster]:
                     continue
+
                 for attr in cluster_list[cluster]['Attributes']:
                     # Check if the Attribute is listed in the Attributes List (provided by the Device
                     # In case Attributes List exists, we have git the list of reported attribute.
@@ -192,13 +189,6 @@ def processConfigureReporting( self, NWKID=None ):
                                 continue
                    
                     forceAttribute = False
-                    #if 'Model' in self.ListOfDevices[key]:
-                    #    if self.ListOfDevices[key]['Model'] == 'SPE600':
-                    #        if cluster == '0702' :
-                    #            if attr == '0000':
-                    #                continue #We use only 0x0400
-                    #            elif attr == '0400':
-                    #                forceAttribute = True
 
                     if 'Attributes List' in self.ListOfDevices[key] and not forceAttribute:
                         if 'Ep' in self.ListOfDevices[key]['Attributes List']:
@@ -208,15 +198,30 @@ def processConfigureReporting( self, NWKID=None ):
                                         loggingConfigureReporting( self, 'Debug', "configureReporting: drop attribute %s" %attr, nwkid=key)
                                         continue
 
-            
+                    if int(self.FirmwareVersion,16) <= int('31c',16):
+                        # Only Attribte 0000 is reported
+                        if '0000' in self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]:
+                            if self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]['0000'] != {} and \
+                                self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]['0000'] in ( '86', '8c'):
+                                    loggingConfigureReporting( self, 'Debug', "--------> configurereporting - %s skiping due to existing error in the past" %key, nwkid=key)
+                                    continue
+                            del self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]['0000']
+                    if int(self.FirmwareVersion,16) > int('31c',16):
+                        if attr in self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]:
+                            if self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster][attr] != {} and \
+                                self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster][attr] in ( '86', '8c'):
+                                    loggingConfigureReporting( self, 'Debug', "--------> configurereporting - %s skiping due to existing error in the past" %key, nwkid=key)
+                                    continue
+                            del self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster][attr]
+
                     if self.pluginconf.pluginConf['breakConfigureReporting']:
                         # Sending Configur Reporting Attribute One by One
                         attrdirection = "00"
                         attrType = cluster_list[cluster]['Attributes'][attr]['DataType']
                         minInter = cluster_list[cluster]['Attributes'][attr]['MinInterval']
                         maxInter = cluster_list[cluster]['Attributes'][attr]['MaxInterval']
-                        timeOut = cluster_list[cluster]['Attributes'][attr]['TimeOut']
-                        chgFlag = cluster_list[cluster]['Attributes'][attr]['Change']
+                        timeOut =  cluster_list[cluster]['Attributes'][attr]['TimeOut']
+                        chgFlag =  cluster_list[cluster]['Attributes'][attr]['Change']
                         attrList = attrdirection + attrType + attr + minInter + maxInter + timeOut + chgFlag
                         attrLen = 1
                         loggingConfigureReporting( self, 'Debug', "Configure Reporting %s/%s on cluster %s" %(key, Ep, cluster), nwkid=key)
@@ -233,6 +238,7 @@ def processConfigureReporting( self, NWKID=None ):
                         loggingConfigureReporting( self, 'Debug', "    Configure Reporting %s/%s Cluster %s Adding attr: %s " %(key, Ep, cluster, attr), nwkid=key)
                 # end of For attr
 
+                # Ready to send the Command in one shoot or in several.
                 attrList = ''
                 attrLen = 0
                 if not self.pluginconf.pluginConf['breakConfigureReporting']:
@@ -241,8 +247,8 @@ def processConfigureReporting( self, NWKID=None ):
                         attrType = cluster_list[cluster]['Attributes'][attr]['DataType']
                         minInter = cluster_list[cluster]['Attributes'][attr]['MinInterval']
                         maxInter = cluster_list[cluster]['Attributes'][attr]['MaxInterval']
-                        timeOut = cluster_list[cluster]['Attributes'][attr]['TimeOut']
-                        chgFlag = cluster_list[cluster]['Attributes'][attr]['Change']
+                        timeOut =  cluster_list[cluster]['Attributes'][attr]['TimeOut']
+                        chgFlag =  cluster_list[cluster]['Attributes'][attr]['Change']
                         attrList += attrdirection + attrType + attr + minInter + maxInter + timeOut + chgFlag
                         attrLen += 1
 
@@ -259,7 +265,6 @@ def processConfigureReporting( self, NWKID=None ):
                             loggingConfigureReporting( self, 'Debug', "--> Configure Reporting %s/%s on cluster %s Len: %s Attribute List: %s" %(key, Ep, cluster, attrLen, attrList), nwkid=key)
                             
                             send_zigatecmd_zcl_noack( self, key, '0120', datas )
-                            #sendZigateCmd( self, "0120", datas )
 
                             #Reset the Lenght to 0
                             attrList = ''
@@ -277,7 +282,6 @@ def processConfigureReporting( self, NWKID=None ):
                         loggingConfigureReporting( self, 'Debug', "++> configureReporting - 0120 - %s" %(datas))
                         loggingConfigureReporting( self, 'Debug', "++> Configure Reporting %s/%s on cluster %s Len: %s Attribute List: %s" %(key, Ep, cluster, attrLen, attrList), nwkid=key)
                         send_zigatecmd_zcl_noack( self, key, '0120', datas )
-                        #sendZigateCmd( self, "0120", datas )
 
             # End for Cluster
         # End for Ep
