@@ -123,25 +123,19 @@ def processConfigureReporting( self, NWKID=None ):
 
                 if 'ConfigureReporting'  not in self.ListOfDevices[key]:
                     self.ListOfDevices[key]['ConfigureReporting'] = {}
-
                 if 'Ep' not in self.ListOfDevices[key]['ConfigureReporting']:
                     self.ListOfDevices[key]['ConfigureReporting']['Ep'] = {}
-
                 if Ep not in self.ListOfDevices[key]['ConfigureReporting']['Ep']:
                     self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep] = {}
-
                 if cluster not in self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep]:
                     self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster] = {}
-
                 if 'TimeStamps' not in self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]:
                     self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]['TimeStamps'] = 0
-
                 if 'iSQN' not in self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]:
                     self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]['iSQN'] = {}
-
                 if 'Attributes' not in self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]:
                     self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]['Attributes'] = {}
-
+                    
                 if self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]['TimeStamps'] != 0 and \
                      now <  ( self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]['TimeStamps'] + (21 * 3600)):  # Do almost every day
                         loggingConfigureReporting( self, 'Debug', "------> configurereporting - %s skiping due to done past" %key, nwkid=key)
@@ -209,7 +203,7 @@ def processConfigureReporting( self, NWKID=None ):
                                     loggingConfigureReporting( self, 'Debug', "--------> configurereporting - %s skiping due to existing error in the past" %key, nwkid=key)
                                     continue
                             del self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]['Attributes']['0000']
-                            
+
                     if int(self.FirmwareVersion,16) > int('31c',16):
                         if attr in self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]['Attributes']:
                             if self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]['Attributes'][attr] != {} and \

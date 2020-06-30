@@ -1772,9 +1772,6 @@ def Decode8120(self, Devices, MsgData, MsgRSSI) :  # Configure Reporting respons
     if len(MsgData) < 14:
         Domoticz.Error("Decode8120 - uncomplet message %s " %MsgData)
         return
-    if len(MsgData) == 14:
-        Domoticz.Error("Decode8120 - unsupported firwmare for message %s " %MsgData)
-        return
 
     MsgSQN     = MsgData[0:2]
     MsgSrcAddr = MsgData[2:6]
@@ -1789,8 +1786,14 @@ def Decode8120(self, Devices, MsgData, MsgRSSI) :  # Configure Reporting respons
 
     MsgSrcEp       = MsgData[6:8]
     MsgClusterId   = MsgData[8:12]
-    MsgAttributeId = MsgData[12:16]
-    MsgStatus      = MsgData[16:18]
+
+    if len(MsgData) == 14:
+        # Global answer. Need i_sqn to get match
+        MsgAttributeId = None
+        MsgStatus = MsgData[12:14]
+    else:
+        MsgAttributeId = MsgData[12:16]
+        MsgStatus      = MsgData[16:18]
 
     loggingInput( self, 
         'Debug', "--> SQN: [%s], SrcAddr: %s, SrcEP: %s, ClusterID: %s, Attribute: %s Status: %s" 
@@ -1820,12 +1823,17 @@ def Decode8120(self, Devices, MsgData, MsgRSSI) :  # Configure Reporting respons
         self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp][MsgClusterId]['Attributes'] = {}
 
     if MsgStatus != '00':
-        loggingInput( self, 'Debug', "Decode8120 - Configure Reporting response - ClusterID: %s/%s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s" \
+        loggingInput( self, 'Log', "Decode8120 - Configure Reporting response - ClusterID: %s/%s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s" \
             %(MsgClusterId, MsgAttributeId, MsgSrcAddr, MsgSrcEp, MsgStatus,  ), MsgSrcAddr)       
         self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp][MsgClusterId]['Attributes'][ MsgAttributeId ] = MsgStatus
         return
         
     # Status Ok
+    if int(self.FirmwareVersion,16) <= int('31c', 16) and MsgAttributeId:
+        self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp][MsgClusterId]['Attributes'][ MsgAttributeId ] = MsgStatus
+        return
+        
+    # We got a global status for all attributes requested in this command
     i_sqn = sqn_get_internal_sqn_from_app_sqn (self.ZigateComm, MsgSQN, TYPE_APP_ZCL)
     loggingInput( self, 'Debug', "------- - i_sqn: %03d e_sqn: %03d" %( i_sqn, int(MsgSQN,16)))
 
@@ -1838,8 +1846,6 @@ def Decode8120(self, Devices, MsgData, MsgRSSI) :  # Configure Reporting respons
         # Looks like that this Device doesn't handle Configure Reporting, so let's flag it as such, so we won't do it anymore
         loggingInput( self, 'Debug', "Decode8120 - Configure Reporting response - ClusterID: %s/%s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s - %s" \
             %(MsgClusterId, MsgAttributeId, MsgSrcAddr, MsgSrcEp, MsgStatus, DisplayStatusCode( MsgStatus) ), MsgSrcAddr)
-
-
 
 
 def Decode8140(self, Devices, MsgData, MsgRSSI) :  # Attribute Discovery response
