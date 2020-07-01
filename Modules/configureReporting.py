@@ -59,9 +59,11 @@ def processConfigureReporting( self, NWKID=None ):
         if key not in self.ListOfDevices:
             Domoticz.Error("processConfigureReporting - Unknown key: %s" %key)
             continue
+
         if 'Status' not in self.ListOfDevices[key]:
             Domoticz.Error("processConfigureReporting - no 'Status' flag for device %s !!!" %key)
             continue
+
         if self.ListOfDevices[key]['Status'] != 'inDB': 
             continue
 
@@ -121,7 +123,6 @@ def processConfigureReporting( self, NWKID=None ):
 
                 loggingConfigureReporting( self, 'Debug2', "--------> Configurereporting - processing %s/%s - %s" %(key,Ep,cluster), nwkid=key)
 
-                check_datastruct( self, 'ConfigureReporting', key, Ep, cluster )
                 if not is_time_to_perform_work(self, 'ConfigureReporting', key, Ep, cluster, now, (21 * 3600) ):
                     loggingConfigureReporting( self, 'Debug', "--------> Not time to perform  %s/%s - %s" %(key,Ep,cluster), nwkid=key)
                     continue
