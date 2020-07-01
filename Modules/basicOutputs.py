@@ -110,6 +110,10 @@ def sendZigateCmd(self, cmd, datas , ackIsDisabled = False):
     return send_zigatecmd_raw( self, cmd, datas, ackIsDisabled )
 
 def send_zigate_mode( self, mode ):
+    # Mode: cf. https://github.com/fairecasoimeme/ZiGate/pull/307
+    #  0x00 - ZiGate in norml operation
+    #  0x01 - ZiGate in RAW mode
+    #  0x02 - ZiGate in Hybrid mode ( All inbound messages are received via 0x8002 in addition of the normal one)
 
     send_zigatecmd_raw( self, '0002', '%02x' %mode )
     
