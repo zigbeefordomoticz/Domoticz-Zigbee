@@ -142,7 +142,8 @@ def sendFC01Command( self, sqn, nwkid, ep, ClusterID, cmd, data):
 
 
 def rejoin_legrand_reset( self ):  
-    #
+
+    
     # Check if we have any Legrand devices if so send teh Reset to the Air
     for x in self.ListOfDevices:
         if ( 'Manufacturer' in self.ListOfDevices[x] and self.ListOfDevices[x]['Manufacturer'] == '1021' ):
@@ -154,8 +155,9 @@ def rejoin_legrand_reset( self ):
         return
 
     #Send a Write Attributes no responses
-    Domoticz.Log("Detected Legrand IEEE, broadcast Write Attribute 0x0000/0xf000")
+    Domoticz.Status("Detected Legrand IEEE, broadcast Write Attribute 0x0000/0xf000")
     write_attributeNoResponse( self, 'ffff', ZIGATE_EP, '01', '0000', '1021', '01', 'f000', '23', '00000000')
+
 
 def legrand_fc01( self, nwkid, command, OnOff):
 
