@@ -162,19 +162,20 @@ def LoadDeviceList( self ):
 
         if self.pluginconf.pluginConf['resetReadAttributes']:
             loggingDatabase( self, "Log", "ReadAttributeReq - Reset ReadAttributes data %s" %addr)
-            self.ListOfDevices[addr]['ReadAttributes'] = {}
-            self.ListOfDevices[addr]['ReadAttributes']['Ep'] = {}
-            for iterEp in self.ListOfDevices[addr]['Ep']:
-                self.ListOfDevices[addr]['ReadAttributes']['Ep'][iterEp] = {}
-                self.ListOfDevices[addr]['ReadAttributes']['TimeStamps'] = {}
+            Modules.tools.reset_datastruct( self,'ReadAttributes', addr )
+            #self.ListOfDevices[addr]['ReadAttributes'] = {}
+            #self.ListOfDevices[addr]['ReadAttributes']['Ep'] = {}
+            #for iterEp in self.ListOfDevices[addr]['Ep']:
+            #    self.ListOfDevices[addr]['ReadAttributes']['Ep'][iterEp] = {}
+
 
         if self.pluginconf.pluginConf['resetConfigureReporting']:
             loggingDatabase( self, "Log", "Reset ConfigureReporting data %s" %addr)
-            self.ListOfDevices[addr]['ConfigureReporting'] = {}
-            self.ListOfDevices[addr]['ConfigureReporting']['Ep'] = {}
-            for iterEp in self.ListOfDevices[addr]['Ep']:
-                self.ListOfDevices[addr]['ConfigureReporting']['Ep'][iterEp] = {}
-                self.ListOfDevices[addr]['ConfigureReporting']['TimeStamps'] = {}
+            Modules.tools.reset_datastruct( self,'ConfigureReporting', addr )
+            #self.ListOfDevices[addr]['ConfigureReporting'] = {}
+            #self.ListOfDevices[addr]['ConfigureReporting']['Ep'] = {}
+            #for iterEp in self.ListOfDevices[addr]['Ep']:
+            #    self.ListOfDevices[addr]['ConfigureReporting']['Ep'][iterEp] = {}
 
     loggingDatabase( self, "Status", "Entries loaded from " +str(_DeviceListFileName)  )
 

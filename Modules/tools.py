@@ -916,16 +916,11 @@ def get_status_datastruct(self, DeviceAttribute, key, endpoint, clusterId, Attri
     return None
 
 def is_attr_unvalid_datastruct( self, DeviceAttribute, key, endpoint, clusterId , AttributeId ):
-    
-    validAttr = False
     lastStatus = get_status_datastruct(self, DeviceAttribute, key, endpoint, clusterId, AttributeId )
-
     if lastStatus is None:
         return False
-
     if lastStatus in ( '86', '8c' ):
         return True
-
     return lastStatus != '00'
 
 def reset_attr_datastruct( self, DeviceAttribute, key, endpoint, clusterId , AttributeId ):
@@ -947,5 +942,5 @@ def clean_old_datastruct(self,DeviceAttribute, key , endpoint, clusterId, Attrib
     check_datastruct( self, DeviceAttribute, key, endpoint, clusterId )
     if AttributeId in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]:
         del self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId][ AttributeId ]
-    if 'TimeStamp' in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]:
-        del self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId][ 'TimeStamp' ]
+    if 'TimeStamp' in self.ListOfDevices[key][DeviceAttribute]:
+        del self.ListOfDevices[key][DeviceAttribute][ 'TimeStamp' ]

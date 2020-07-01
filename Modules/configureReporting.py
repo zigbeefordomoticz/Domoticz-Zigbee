@@ -22,7 +22,8 @@ from Modules.basicOutputs import  send_zigatecmd_zcl_noack
 from Modules.bindings import bindDevice
 
 from Modules.zigateConsts import MAX_LOAD_ZIGATE, CFG_RPT_ATTRIBUTESbyCLUSTERS , ZIGATE_EP
-from Modules.tools import getClusterListforEP, mainPoweredDevice
+from Modules.tools import getClusterListforEP, mainPoweredDevice, \
+    check_datastruct, is_time_to_perform_work, set_isqn_datastruct, set_status_datastruct, set_timestamp_datastruct, is_attr_unvalid_datastruct, reset_attr_datastruct
 from Modules.logging import loggingConfigureReporting
 
 MAX_ATTR_PER_REQ = 3
@@ -37,7 +38,6 @@ def processConfigureReporting( self, NWKID=None ):
         if they support Cluster we want to configure Reporting 
 
     '''
-
 
     now = int(time())
     if NWKID is None :
@@ -121,28 +121,13 @@ def processConfigureReporting( self, NWKID=None ):
 
                 loggingConfigureReporting( self, 'Debug2', "--------> Configurereporting - processing %s/%s - %s" %(key,Ep,cluster), nwkid=key)
 
-                if 'ConfigureReporting'  not in self.ListOfDevices[key]:
-                    self.ListOfDevices[key]['ConfigureReporting'] = {}
-                if 'Ep' not in self.ListOfDevices[key]['ConfigureReporting']:
-                    self.ListOfDevices[key]['ConfigureReporting']['Ep'] = {}
-                if Ep not in self.ListOfDevices[key]['ConfigureReporting']['Ep']:
-                    self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep] = {}
-                if cluster not in self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep]:
-                    self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster] = {}
-                if 'TimeStamps' not in self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]:
-                    self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]['TimeStamps'] = 0
-                if 'iSQN' not in self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]:
-                    self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]['iSQN'] = {}
-                if 'Attributes' not in self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]:
-                    self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]['Attributes'] = {}
-                    
-                if self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]['TimeStamps'] != 0 and \
-                     now <  ( self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]['TimeStamps'] + (21 * 3600)):  # Do almost every day
-                        loggingConfigureReporting( self, 'Debug', "------> configurereporting - %s skiping due to done past" %key, nwkid=key)
-                        continue
+                check_datastruct( self, 'ConfigureReporting', key, Ep, cluster )
+                if not is_time_to_perform_work(self, 'ConfigureReporting', key, Ep, cluster, now, (21 * 3600) ):
+                    loggingConfigureReporting( self, 'Debug', "--------> Not time to perform  %s/%s - %s" %(key,Ep,cluster), nwkid=key)
+                    continue
 
                 if NWKID is None and (self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE):
-                    loggingConfigureReporting( self, 'Debug2', "---> configureReporting - %s skip configureReporting for now ... system too busy (%s/%s) for %s"
+                    loggingConfigureReporting( self, 'Debug', "---> configureReporting - %s skip configureReporting for now ... system too busy (%s/%s) for %s"
                         %(key, self.busy, self.ZigateComm.loadTransmit(), key), nwkid=key)
                     return # Will do at the next round
 
@@ -162,7 +147,7 @@ def processConfigureReporting( self, NWKID=None ):
                     else:
                         Domoticz.Error("configureReporting - inconsitency on %s no IEEE found : %s " %(key, str(self.ListOfDevices[key])))
 
-                self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]['TimeStamps'] = int(time())
+                set_timestamp_datastruct(self, 'ConfigureReporting', key, Ep, cluster, int(time()) )
 
                 attrDisp = []   # Used only for printing purposes
                 attrList = ''
@@ -196,21 +181,15 @@ def processConfigureReporting( self, NWKID=None ):
                                         continue
 
                     if int(self.FirmwareVersion,16) <= int('31c',16):
-                        # Only Attribte 0000 is reported
-                        if '0000' in self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]['Attributes']:
-                            if self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]['Attributes']['0000'] != {} and \
-                                self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]['Attributes']['0000'] in ( '86', '8c'):
-                                    loggingConfigureReporting( self, 'Debug', "--------> configurereporting - %s skiping due to existing error in the past" %key, nwkid=key)
-                                    continue
-                            del self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]['Attributes']['0000']
-
+                        if is_attr_unvalid_datastruct( self, 'ConfigureReporting', key, Ep, cluster , '0000' ):
+                            continue
+                        reset_attr_datastruct( self, 'ConfigureReporting', key, Ep, cluster , '0000' )
+                        
                     if int(self.FirmwareVersion,16) > int('31c',16):
-                        if attr in self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]['Attributes']:
-                            if self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]['Attributes'][attr] != {} and \
-                                self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]['Attributes'][attr] in ( '86', '8c'):
-                                    loggingConfigureReporting( self, 'Debug', "--------> configurereporting - %s skiping due to existing error in the past" %key, nwkid=key)
-                                    continue
-                            del self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]['Attributes'][attr]
+                        if is_attr_unvalid_datastruct( self, 'ConfigureReporting', key, Ep, cluster , attr ):
+                            continue
+                        reset_attr_datastruct( self, 'ConfigureReporting', key, Ep, cluster , attr )
+
 
                     if self.pluginconf.pluginConf['breakConfigureReporting']:
                         # Sending Configur Reporting Attribute One by One
@@ -267,8 +246,8 @@ def processConfigureReporting( self, NWKID=None ):
                             i_sqn = send_zigatecmd_zcl_noack( self, key, '0120', datas )
 
                             for x in attributeList:
-                                self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]['iSQN'][ x ] = i_sqn
-
+                                set_isqn_datastruct(self, 'ConfigureReporting', key, Ep, cluster, x, i_sqn )
+    
                             #Reset the Lenght to 0
                             attrList = ''
                             attrLen = 0
@@ -288,7 +267,8 @@ def processConfigureReporting( self, NWKID=None ):
                         loggingConfigureReporting( self, 'Debug', "++> Configure Reporting %s/%s on cluster %s Len: %s Attribute List: %s" %(key, Ep, cluster, attrLen, attrList), nwkid=key)
                         i_sqn = send_zigatecmd_zcl_noack( self, key, '0120', datas )
                         for x in attributeList:
-                            self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster]['iSQN'][ x ] = i_sqn
+                            set_isqn_datastruct(self, 'ConfigureReporting', key, Ep, cluster, x, i_sqn )
+                            
 
             # End for Cluster
         # End for Ep

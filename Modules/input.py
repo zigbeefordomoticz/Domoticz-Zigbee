@@ -22,7 +22,8 @@ import json
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import lastSeenUpdate, timedOutDevice
 from Modules.tools import timeStamped, updSQN, updRSSI, DeviceExist, getSaddrfromIEEE, IEEEExist, initDeviceInList, mainPoweredDevice, loggingMessages, \
-                            lookupForIEEE, ReArrangeMacCapaBasedOnModel, decodeMacCapa, NwkIdExist
+                            lookupForIEEE, ReArrangeMacCapaBasedOnModel, decodeMacCapa, NwkIdExist, \
+                            check_datastruct, is_time_to_perform_work, set_status_datastruct, get_isqn_datastruct, get_list_isqn_attr_datastruct
 from Modules.logging import loggingPairing, loggingInput
 from Modules.basicOutputs import sendZigateCmd, leaveMgtReJoin, setTimeServer, ZigatePermitToJoin
 from Modules.readAttributes import ReadAttributeRequest_0000, ReadAttributeRequest_0001
@@ -1621,7 +1622,7 @@ def Decode8100(self, Devices, MsgData, MsgRSSI):
         self.ListOfDevices[MsgSrcAddr]['Health'] = 'Live'
     updSQN( self, MsgSrcAddr, MsgSQN)
     updRSSI( self, MsgSrcAddr, MsgRSSI)
-    ReadCluster(self, Devices, MsgData)
+    ReadCluster(self, Devices, '8100', MsgData)
     callbackDeviceAwake( self, MsgSrcAddr, MsgSrcEp, MsgClusterId)
 
 def Decode8101(self, Devices, MsgData, MsgRSSI) :  # Default Response
@@ -1697,7 +1698,7 @@ def Decode8102(self, Devices, MsgData, MsgRSSI):  # Attribute Reports
         timeStamped( self, MsgSrcAddr , 0x8102)
         updSQN( self, MsgSrcAddr, str(MsgSQN) )
         updRSSI( self, MsgSrcAddr, MsgRSSI)
-        ReadCluster(self, Devices, MsgData)
+        ReadCluster(self, Devices, '8102', MsgData)
         callbackDeviceAwake( self, MsgSrcAddr, MsgSrcEp, MsgClusterId)
     else:
         # This device is unknown, and we don't have the IEEE to check if there is a device coming with a new sAddr
@@ -1775,7 +1776,6 @@ def Decode8120(self, Devices, MsgData, MsgRSSI) :  # Configure Reporting respons
 
     MsgSQN     = MsgData[0:2]
     MsgSrcAddr = MsgData[2:6]
-
     if MsgSrcAddr not in self.ListOfDevices:
         Domoticz.Error("Decode8120 - receiving Configure reporting response from unknow  %s" %MsgSrcAddr)
         return
@@ -1799,25 +1799,8 @@ def Decode8120(self, Devices, MsgData, MsgRSSI) :  # Configure Reporting respons
         'Debug', "--> SQN: [%s], SrcAddr: %s, SrcEP: %s, ClusterID: %s, Attribute: %s Status: %s" 
         %(MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId,MsgAttributeId, MsgStatus ), MsgSrcAddr)
 
-    # Make sure Datastructure is ready
-    if 'ConfigureReporting'  not in self.ListOfDevices[MsgSrcAddr]:
-        self.ListOfDevices[MsgSrcAddr]['ConfigureReporting'] = {}
-    if 'Ep' not in self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']:
-        self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'] = {}
-    if MsgSrcEp not in self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep']:
-        self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp] = {}
-    if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp]:
-        self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp][MsgClusterId] = {}
-    if 'TimeStamps' not in self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp][MsgClusterId]:
-        self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp][MsgClusterId]['TimeStamps'] = 0
-    if 'iSQN' not in self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp][MsgClusterId]:
-        self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp][MsgClusterId]['iSQN'] = {}
-    if 'Attributes' not in self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp][MsgClusterId]:
-        self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp][MsgClusterId]['Attributes'] = {}
-        
-
     if int(self.FirmwareVersion,16) >= int('31d', 16) and MsgAttributeId:
-        self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp][MsgClusterId]['Attributes'][ MsgAttributeId ] = MsgStatus
+        set_status_datastruct(self, 'ConfigureReporting', MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus )
         if MsgStatus != '00':
             loggingInput( self, 'Log', "Decode8120 - Configure Reporting response - ClusterID: %s/%s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s" \
                 %(MsgClusterId, MsgAttributeId, MsgSrcAddr, MsgSrcEp, MsgStatus ), MsgSrcAddr)
@@ -1825,13 +1808,14 @@ def Decode8120(self, Devices, MsgData, MsgRSSI) :  # Configure Reporting respons
 
     # We got a global status for all attributes requested in this command
     i_sqn = sqn_get_internal_sqn_from_app_sqn (self.ZigateComm, MsgSQN, TYPE_APP_ZCL)
-    loggingInput( self, 'Debug', "------- - i_sqn: %03d e_sqn: %03d" %( i_sqn, int(MsgSQN,16)))
-
-    for x in self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp][MsgClusterId]['iSQN']:
-        if self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp][MsgClusterId]['iSQN'][ x ] != i_sqn:
+    loggingInput( self, 'Debug', "------- - i_sqn: %0s e_sqn: %s" %( i_sqn, MsgSQN))
+    
+    for x in list(get_list_isqn_attr_datastruct(self, 'ConfigureReporting', MsgSrcAddr, MsgSrcEp, MsgClusterId)):
+        if get_isqn_datastruct(self, 'ConfigureReporting', MsgSrcAddr, MsgSrcEp, MsgClusterId, x ) != i_sqn:
             continue
+        
         loggingInput( self, 'Debug', "------- - Sqn matches for Attribute: %s" %x)
-        self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp][MsgClusterId]['Attributes'][ x ] = MsgStatus
+        set_status_datastruct(self, 'ConfigureReporting', MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus )
         if MsgStatus != '00':
             loggingInput( self, 'Log', "Decode8120 - Configure Reporting response - ClusterID: %s/%s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s" \
                 %(MsgClusterId, x, MsgSrcAddr, MsgSrcEp, MsgStatus ), MsgSrcAddr)

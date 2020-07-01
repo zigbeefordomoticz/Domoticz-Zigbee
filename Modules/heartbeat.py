@@ -36,7 +36,7 @@ from Modules.philips import pollingPhilips
 from Modules.gledopto import pollingGledopto
 from Modules.lumi import setXiaomiVibrationSensitivity
 
-from Modules.tools import removeNwkInList, mainPoweredDevice, ReArrangeMacCapaBasedOnModel
+from Modules.tools import removeNwkInList, mainPoweredDevice, ReArrangeMacCapaBasedOnModel, is_time_to_perform_work
 from Modules.logging import loggingPairing, loggingHeartbeat
 from Modules.domoTools import timedOutDevice
 from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE, CLUSTERS_LIST, LEGRAND_REMOTES, LEGRAND_REMOTE_SHUTTER, LEGRAND_REMOTE_SWITCHS, ZIGATE_EP
@@ -337,18 +337,12 @@ def processKnownDevices( self, Devices, NWKID ):
             for Cluster in READ_ATTRIBUTES_REQUEST:
                 if Cluster in ( 'Type', 'ClusterType', 'ColorMode' ): 
                     continue
-
                 if Cluster not in self.ListOfDevices[NWKID]['Ep'][tmpEp]:
                     continue
-
-                if 'ReadAttributes' not in self.ListOfDevices[NWKID]:
-                    self.ListOfDevices[NWKID]['ReadAttributes'] = {}
-                    self.ListOfDevices[NWKID]['ReadAttributes']['Ep'] = {}
 
                 if 'Model' in self.ListOfDevices[NWKID]:
                     if self.ListOfDevices[NWKID]['Model'] == 'lumi.ctrl_neutral1' and tmpEp != '02': # All Eps other than '02' are blacklisted
                         continue
-                    
                     if  self.ListOfDevices[NWKID]['Model'] == 'lumi.ctrl_neutral2' and tmpEp not in ( '02' , '03' ):
                         continue
 
@@ -359,7 +353,6 @@ def processKnownDevices( self, Devices, NWKID ):
                     continue # Do not break, so we can keep all clusters on the same states
    
                 func = READ_ATTRIBUTES_REQUEST[Cluster][0]
-  
                 # For now it is a hack, but later we might put all parameters 
                 if READ_ATTRIBUTES_REQUEST[Cluster][1] in self.pluginconf.pluginConf:
                     timing =  self.pluginconf.pluginConf[ READ_ATTRIBUTES_REQUEST[Cluster][1] ]
@@ -369,14 +362,8 @@ def processKnownDevices( self, Devices, NWKID ):
                     continue
  
                 # Let's check the timing
-                if 'TimeStamps' in self.ListOfDevices[NWKID]['ReadAttributes']:
-                    _idx = tmpEp + '-' + str(Cluster)
-                    if _idx in self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps']:
-                        if self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx] != {}:
-                            if now < (self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx] + timing):
-                                continue
-                        loggingHeartbeat( self, 'Debug', "processKnownDevices -  %s/%s with cluster %s TimeStamps: %s, Timing: %s , Now: %s "
-                                %(NWKID, tmpEp, Cluster, self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx], timing, now), NWKID)
+                if not is_time_to_perform_work(self, 'ReadAttributes', NWKID, tmpEp, Cluster, now, timing ):
+                    continue
 
                 loggingHeartbeat( self, 'Debug', "-- -  %s/%s and time to request ReadAttribute for %s" \
                         %( NWKID, tmpEp, Cluster ), NWKID)
