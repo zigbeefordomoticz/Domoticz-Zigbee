@@ -860,3 +860,91 @@ def is_manufspecific_8002_payload( fcf ):
     #DisableDefaultResponse = ( int(fcf, 16) & 0b00010000) >> 4
 
     return ManufSpecif == 1
+
+# Functions to manage Device Attributes infos ( ConfigureReporting)
+def check_datastruct( self, DeviceAttribute, key, endpoint, clusterId ):
+    # Make sure all tree exists
+    if DeviceAttribute  not in self.ListOfDevices[key]:
+        self.ListOfDevices[key][DeviceAttribute] = {}
+    if 'Ep' not in self.ListOfDevices[key][DeviceAttribute]:
+        self.ListOfDevices[key][DeviceAttribute]['Ep'] = {}
+    if endpoint not in self.ListOfDevices[key][DeviceAttribute]['Ep']:
+        self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint] = {}
+    if clusterId not in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint]:
+        self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId] = {}
+    if 'TimeStamp' not in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]:
+        self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['TimeStamp'] = 0
+    if 'iSQN' not in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]:
+        self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['iSQN'] = {}
+    if 'Attributes' not in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]:
+        self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['Attributes'] = {}
+
+def is_time_to_perform_work(self, DeviceAttribute, key, endpoint, clusterId, now, timeoutperiod ):
+    # Based on a timeout period return True or False.
+    check_datastruct( self, DeviceAttribute, key, endpoint, clusterId )
+    return ( now >= self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId][ 'TimeStamp' ] + timeoutperiod )
+
+def set_timestamp_datastruct(self, DeviceAttribute, key, endpoint, clusterId, now ):
+    check_datastruct( self, DeviceAttribute, key, endpoint, clusterId )
+    self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['TimeStamp'] = now
+
+def get_list_isqn_attr_datastruct(self, DeviceAttribute, key, endpoint, clusterId):
+    check_datastruct( self, DeviceAttribute, key, endpoint, clusterId )
+    attrlst = []
+    for x in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['iSQN']:
+        attrlst.append( x )
+    return x
+
+def set_isqn_datastruct(self, DeviceAttribute, key, endpoint, clusterId, AttributeId, isqn ):
+    check_datastruct( self, DeviceAttribute, key, endpoint, clusterId )
+    self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['iSQN'][ AttributeId ] = isqn
+
+def get_isqn_datastruct(self, DeviceAttribute, key, endpoint, clusterId, AttributeId ):
+    check_datastruct( self, DeviceAttribute, key, endpoint, clusterId )
+    if AttributeId in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['iSQN']:
+        return self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['iSQN'][ AttributeId ]
+    return None
+
+def set_status_datastruct(self, DeviceAttribute, key, endpoint, clusterId, AttributeId, status ):
+    check_datastruct( self, DeviceAttribute, key, endpoint, clusterId )
+    self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['Attributes'][ AttributeId ] = status
+    clean_old_datastruct(self,DeviceAttribute, key , endpoint, clusterId, AttributeId )
+    
+def get_status_datastruct(self, DeviceAttribute, key, endpoint, clusterId, AttributeId ):
+    check_datastruct( self, DeviceAttribute, key, endpoint, clusterId )
+    if AttributeId in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['Attributes']:
+        return self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['Attributes'][ AttributeId ]
+    return None
+
+def is_attr_unvalid_datastruct( self, DeviceAttribute, key, endpoint, clusterId , AttributeId ):
+    lastStatus = get_status_datastruct(self, DeviceAttribute, key, endpoint, clusterId, AttributeId )
+    if lastStatus is None:
+        return False
+
+    if lastStatus in ( '86', '8c' ):
+        # 8c Not supported, 86 No cluster match
+        return True
+
+    return lastStatus != '00'
+
+def reset_attr_datastruct( self, DeviceAttribute, key, endpoint, clusterId , AttributeId ):
+    check_datastruct( self, DeviceAttribute, key, endpoint, clusterId )
+    if AttributeId in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['Attributes']:
+        del self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['Attributes'][ AttributeId ]
+    if AttributeId in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['iSQN']:
+        del self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['iSQN'][ AttributeId ]
+
+def reset_datastruct( self,DeviceAttribute, key ):
+
+    if key not in self.ListOfDevices:
+        return
+    if DeviceAttribute in self.ListOfDevices[key]:
+        del self.ListOfDevices[key][DeviceAttribute]
+    self.ListOfDevices[key][DeviceAttribute] = {}
+
+def clean_old_datastruct(self,DeviceAttribute, key , endpoint, clusterId, AttributeId ):
+    check_datastruct( self, DeviceAttribute, key, endpoint, clusterId )
+    if AttributeId in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]:
+        del self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId][ AttributeId ]
+    if 'TimeStamp' in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]:
+        del self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId][ 'TimeStamp' ]
