@@ -109,6 +109,10 @@ def sendZigateCmd(self, cmd, datas , ackIsDisabled = False):
 
     return send_zigatecmd_raw( self, cmd, datas, ackIsDisabled )
 
+def send_zigate_mode( self, mode ):
+
+    send_zigatecmd_raw( self, '0002', '%02x' %mode )
+    
 def ZigatePermitToJoin( self, permit ):
     """
     ZigatePermitToJoin will switch the Zigate in the Pairing mode or not based on the permit flag

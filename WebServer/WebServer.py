@@ -14,7 +14,7 @@ from time import time
 
 from Modules.zigateConsts import  ZCL_CLUSTERS_LIST , CERTIFICATION_CODE,  ZIGATE_COMMANDS
 
-from Modules.basicOutputs import ZigatePermitToJoin, sendZigateCmd, start_Zigate, setExtendedPANID, zigateBlueLed
+from Modules.basicOutputs import ZigatePermitToJoin, sendZigateCmd, start_Zigate, setExtendedPANID, zigateBlueLed, send_zigate_mode
 from Modules.legrand_netatmo import legrand_ledInDark, legrand_ledIfOnOnOff, legrand_dimOnOff, legrand_ledShutter
 from Modules.actuators import actuators
 from Modules.philips import philips_set_poweron_after_offon
@@ -1135,4 +1135,18 @@ class WebServer(object):
                             dev_capabilities['Types'].append( 'LivoloSWR' )
 
         _response["Data"] = json.dumps( dev_capabilities )
+        return _response
+
+    def rest_zigate_mode( self, verb, data, parameters):
+    
+        Domoticz.Log("rest_zigate_mode mode: %s" %parameters)
+        _response = prepResponseMessage( self ,setupHeadersResponse())
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+        if verb == 'GET':
+            _response["Data"] = None
+            if len(parameters) == 1:
+                mode = parameters[0]
+                if mode  in ( '0', '1', '2'):
+                    send_zigate_mode( self, int(mode) ) 
+                    _response["Data"] = { "ZiGate mode: %s requested" %mode} 
         return _response
