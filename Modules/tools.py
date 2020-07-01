@@ -871,6 +871,8 @@ def check_datastruct( self, DeviceAttribute, key, endpoint, clusterId ):
         self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint] = {}
     if clusterId not in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint]:
         self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId] = {}
+    if not isinstance( self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId], dict):
+        self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId] = {}
     if 'TimeStamp' not in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]:
         self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['TimeStamp'] = 0
     if 'iSQN' not in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]:
