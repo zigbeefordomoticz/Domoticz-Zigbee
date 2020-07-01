@@ -835,7 +835,7 @@ def getAttributeValue (self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID):
         return None
     return self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID]
 
-
+# Function to manage 0x8002 payloads
 def retreive_cmd_payload_from_8002( Payload ):
     
     ManufacturerCode = None
@@ -850,7 +850,6 @@ def retreive_cmd_payload_from_8002( Payload ):
         Data = Payload[6:]
 
     return ( Sqn, ManufacturerCode, Command, Data)
-
 
 def is_manufspecific_8002_payload( fcf ):
     
@@ -917,12 +916,14 @@ def get_status_datastruct(self, DeviceAttribute, key, endpoint, clusterId, Attri
     return None
 
 def is_attr_unvalid_datastruct( self, DeviceAttribute, key, endpoint, clusterId , AttributeId ):
+    
+    validAttr = False
     lastStatus = get_status_datastruct(self, DeviceAttribute, key, endpoint, clusterId, AttributeId )
+
     if lastStatus is None:
         return False
 
     if lastStatus in ( '86', '8c' ):
-        # 8c Not supported, 86 No cluster match
         return True
 
     return lastStatus != '00'
