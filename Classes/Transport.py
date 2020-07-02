@@ -1428,9 +1428,14 @@ def process8002(self, frame):
     if SrcNwkId is None:
         return frame
     
-    Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002( Payload )
+    GlobalCommand, Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002( Payload )
+    if not GlobalCommand:
+        # This is not a Global Command (Read Attribute, Write Attribute and so on)
+        return frame
+
     self.logging_receive(
         'Debug', "process8002 Sqn: %s ManufCode: %s Command: %s Data: %s " %(Sqn, ManufacturerCode, Command, Data))
+
 
     if Command == '01': # Read Attribute response
         return buildframe_read_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )

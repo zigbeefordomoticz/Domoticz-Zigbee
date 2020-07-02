@@ -839,7 +839,10 @@ def getAttributeValue (self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID):
 def retreive_cmd_payload_from_8002( Payload ):
     
     ManufacturerCode = None
-    if is_manufspecific_8002_payload( Payload[0:2] ):
+    fcf = Payload[0:2] 
+
+    GlobalCommand = is_golbalcommand( fcf )
+    if is_manufspecific_8002_payload( fcf ):
         ManufacturerCode = Payload[2:6]
         Sqn = Payload[6:8]
         Command = Payload[8:10]
@@ -849,11 +852,13 @@ def retreive_cmd_payload_from_8002( Payload ):
         Command = Payload[4:6]
         Data = Payload[6:]
 
-    return ( Sqn, ManufacturerCode, Command, Data)
+    return ( GlobalCommand, Sqn, ManufacturerCode, Command, Data)
+
+def is_golbalcommand( fcf ):
+    FrameTypeSubField = ( int(fcf, 16) & 0b00000011)
+    return FrameTypeSubField == 0
 
 def is_manufspecific_8002_payload( fcf ):
-    
-    #FrameType = ( int(fcf, 16) & 0b00000011)
     ManufSpecif = ( int(fcf, 16) & 0b00000100) >> 2
     #Direction = ( int(fcf, 16) & 0b00001000) >> 3
     #DisableDefaultResponse = ( int(fcf, 16) & 0b00010000) >> 4

@@ -85,7 +85,7 @@ def livoloReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP,
 
     # At Device Annoucement 0x00 and 0x05 are sent by device
 
-    SQN, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002( MsgPayload )
+    GlobalCmd, SQN, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002( MsgPayload )
     #Domoticz.Log(" NwkId: %s/%s Cluster: %s Command: %s Data: %s" %( srcNWKID, srcEp, ClusterID, Command, Data))
 
     if Command == '00': #On/Off event
