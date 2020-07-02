@@ -91,7 +91,7 @@ def normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttribu
     for x in ListOfAttributes:
         Attr_ = "%04x" %(x)
         if skipThisAttribute(self,  addr, EpOut, Cluster, Attr_):
-            Domoticz.Log("Skiping attribute %s/%s %s %s" %(addr, EpOut, Cluster, Attr_))
+            #Domoticz.Log("Skiping attribute %s/%s %s %s" %(addr, EpOut, Cluster, Attr_))
             continue
         if not is_time_to_perform_work(self, 'ReadAttributes', addr, EpOut, Cluster, now, 60 ):
             # Do not perform more than once every minute !
