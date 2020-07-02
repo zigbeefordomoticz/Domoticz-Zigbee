@@ -181,12 +181,12 @@ def processConfigureReporting( self, NWKID=None ):
                                         loggingConfigureReporting( self, 'Debug', "configureReporting: drop attribute %s" %attr, nwkid=key)
                                         continue
 
-                    if int(self.FirmwareVersion,16) <= int('31c',16):
+                    if self.FirmwareVersion and int(self.FirmwareVersion,16) <= int('31c',16):
                         if is_attr_unvalid_datastruct( self, 'ConfigureReporting', key, Ep, cluster , '0000' ):
                             continue
                         reset_attr_datastruct( self, 'ConfigureReporting', key, Ep, cluster , '0000' )
                         
-                    if int(self.FirmwareVersion,16) > int('31c',16):
+                    if self.FirmwareVersion and int(self.FirmwareVersion,16) > int('31c',16):
                         if is_attr_unvalid_datastruct( self, 'ConfigureReporting', key, Ep, cluster , attr ):
                             continue
                         reset_attr_datastruct( self, 'ConfigureReporting', key, Ep, cluster , attr )

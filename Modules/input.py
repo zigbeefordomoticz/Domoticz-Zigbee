@@ -343,11 +343,11 @@ def Decode8002(self, Devices, MsgData, MsgRSSI) : # Data indication
     if MsgProfilID == '0104':
         GlobalCommand, Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002( MsgPayload )
         if GlobalCommand and int(Command,16) in ZIGBEE_COMMAND_IDENTIFIER:
-            logginginRawAPS( self, 'Log',"0x8002 - NwkId: %s Ep: %s Cluster: %s GlobalCommand: %5s Command: %s (%s) Data: %s" 
+            logginginRawAPS( self, 'Log',"0x8002 - NwkId: %s Ep: %s Cluster: %s GlobalCommand: %5s Command: %s (%33s) Data: %s" 
                 %( srcnwkid, MsgSourcePoint,  MsgClusterID, GlobalCommand, Command, ZIGBEE_COMMAND_IDENTIFIER[ int(Command,16) ], Data ))
         else:
-            logginginRawAPS( self, 'Log',"0x8002 - NwkId: %s Ep: %s Cluster: %s GlobalCommand: %5s Command: %s Data: %s" 
-                %( srcnwkid, MsgSourcePoint,  MsgClusterID, GlobalCommand, Command, Data ))
+            logginginRawAPS( self, 'Log',"0x8002 - NwkId: %s Ep: %s Cluster: %s GlobalCommand: %5s Command: %s (%33s) Data: %s" 
+                %( srcnwkid, MsgSourcePoint,  MsgClusterID, GlobalCommand, Command, '', Data ))
     else:
         logginginRawAPS( self, 'Log',"0x8002 - NwkId: %s Ep: %s Cluster: %s Payload: %s" 
             %( srcnwkid, MsgSourcePoint,  MsgClusterID, MsgPayload )) 
@@ -1813,7 +1813,7 @@ def Decode8120(self, Devices, MsgData, MsgRSSI) :  # Configure Reporting respons
         'Debug', "--> SQN: [%s], SrcAddr: %s, SrcEP: %s, ClusterID: %s, Attribute: %s Status: %s" 
         %(MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId,MsgAttributeId, MsgStatus ), MsgSrcAddr)
 
-    if int(self.FirmwareVersion,16) >= int('31d', 16) and MsgAttributeId:
+    if self.FirmwareVersion and int(self.FirmwareVersion,16) >= int('31d', 16) and MsgAttributeId:
         set_status_datastruct(self, 'ConfigureReporting', MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus )
         if MsgStatus != '00':
             loggingInput( self, 'Log', "Decode8120 - Configure Reporting response - ClusterID: %s/%s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s" \
