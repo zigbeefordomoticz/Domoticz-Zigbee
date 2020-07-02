@@ -208,8 +208,9 @@ SETTINGS = {
         'debugProfalux':        {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'debugSchneider':       {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'debugPhilips':         {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
-        'debugPDM':             {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True}
-    }
+        'debugPDM':             {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
+        'debuginRawAPS':        {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
+        }
     },
 
     # Legrand Specific
@@ -220,7 +221,7 @@ SETTINGS = {
         'EnableDimmer':         {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'EnableReleaseButton':  {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'LegrandFilPilote':     {'type': 'bool', 'default': 1, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
-    }
+        }
     },
 
     # Philips Hue Specific
@@ -228,14 +229,14 @@ SETTINGS = {
         'PowerOnAfterOffOn':    {'type': 'list',
                                  'list': {'Off': 0, 'On': 1, 'Previous': 255},
                                  'default': 1, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
-    }
+        }
     },
 
     # Schneider Wiser configuration
     'Schneider Wiser':          {'Order': 14, 'param': {
         'enableSchneiderWiser': {'type': 'bool', 'default': 0,   'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'reenforcementWiser':   {'type': 'int',  'default': 300, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
-    }
+        }
     },
 
     # Others
@@ -250,12 +251,12 @@ SETTINGS = {
         'vibrationAqarasensitivity': {'type': 'list',
                                       'list': {'high': 'high', 'medium': 'medium', 'low': 'low'},
                                       'default': 'medium', 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
-    }
+     }
     },
 
     'Patching': {'Order': 16, 'param': {
         'Bug566':                {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
-    }
+     }
     },
 
     # Experimental
@@ -267,7 +268,7 @@ SETTINGS = {
         'XiaomiLeave':           {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'rebindLivolo':          {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': False},
         'allowAutoPairing':      {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
-    }
+        }
     }
 }
 

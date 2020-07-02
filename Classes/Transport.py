@@ -1423,7 +1423,7 @@ def process8002(self, frame):
 
     SrcNwkId, SrcEndPoint, ClusterId , Payload = extract_nwk_infos_from_8002( frame )
     self.logging_receive(
-        'Log', "process8002 NwkId: %s Ep: %s Cluster: %s Payload: %s" %(SrcNwkId, SrcEndPoint, ClusterId , Payload))
+        'Debug', "process8002 NwkId: %s Ep: %s Cluster: %s Payload: %s" %(SrcNwkId, SrcEndPoint, ClusterId , Payload))
 
     if SrcNwkId is None:
         return frame
@@ -1438,7 +1438,6 @@ def process8002(self, frame):
     if Command == '04': # Write Attribute response
         return buildframe_write_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
 
-    Domoticz.Log("Unknown Command: %s" %Command)
     return frame
 
 

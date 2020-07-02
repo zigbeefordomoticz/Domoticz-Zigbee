@@ -222,3 +222,9 @@ def loggingPDM( self, logType, message, nwkid=None):
         _logginfilter( self, message, nwkid)
     else:
         loggingDirector(self, logType, message )
+
+def logginginRawAPS(self, logType, message, nwkid=None):
+    if self.pluginconf.pluginConf['debuginRawAPS'] and logType == 'Debug':
+            _logginfilter( self, message, nwkid)
+    else:
+        loggingDirector(self, logType, message )

@@ -492,6 +492,23 @@ ZIGATE_RESPONSES = {
     0x004D: 'Device Annouce'
 }
 
+ZIGBEE_COMMAND_IDENTIFIER = {
+    0x00: 'Read Attributes',
+    0x01: 'Read Attributes Response',
+    0x02: 'Write Attributes',
+    0x03: 'Write Attributes Undivided',
+    0x04: 'Write Attributes Response',
+    0x05: 'Write Attributes No Response',
+    0x06: 'Configure Reporting',
+    0x07: 'Configure Reporting Response',
+    0x08: 'Read Reporting Configuration',
+    0x09: 'Read Reporting Configuration response',
+    0x0a: 'Report attributes',
+    0x0b: 'Default Response',
+    0x0c: 'Discover Attributes',
+    0x0d: 'Discover Attributes Response'
+}
+
 ZIGATE_MSG_PROC_TANSPORT = {
     0x8000: 'Command Response',
     0x8011: 'Ack/Nack Response',

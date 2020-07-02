@@ -23,8 +23,9 @@ from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import lastSeenUpdate, timedOutDevice
 from Modules.tools import timeStamped, updSQN, updRSSI, DeviceExist, getSaddrfromIEEE, IEEEExist, initDeviceInList, mainPoweredDevice, loggingMessages, \
                             lookupForIEEE, ReArrangeMacCapaBasedOnModel, decodeMacCapa, NwkIdExist, \
-                            check_datastruct, is_time_to_perform_work, set_status_datastruct, get_isqn_datastruct, get_list_isqn_attr_datastruct
-from Modules.logging import loggingPairing, loggingInput
+                            check_datastruct, is_time_to_perform_work, set_status_datastruct, get_isqn_datastruct, get_list_isqn_attr_datastruct, \
+                            retreive_cmd_payload_from_8002
+from Modules.logging import loggingPairing, loggingInput, logginginRawAPS
 from Modules.basicOutputs import sendZigateCmd, leaveMgtReJoin, setTimeServer, ZigatePermitToJoin
 from Modules.readAttributes import ReadAttributeRequest_0000, ReadAttributeRequest_0001
 from Modules.bindings import rebind_Clusters, reWebBind_Clusters
@@ -36,7 +37,7 @@ from Modules.legrand_netatmo import rejoin_legrand_reset
 from Modules.errorCodes import DisplayStatusCode
 from Modules.readClusters import ReadCluster
 from Modules.database import saveZigateNetworkData
-from Modules.zigateConsts import ADDRESS_MODE, ZCL_CLUSTERS_LIST, LEGRAND_REMOTES, LEGRAND_REMOTE_SWITCHS, ZIGATE_EP
+from Modules.zigateConsts import ADDRESS_MODE, ZCL_CLUSTERS_LIST, LEGRAND_REMOTES, LEGRAND_REMOTE_SWITCHS, ZIGATE_EP, ZIGBEE_COMMAND_IDENTIFIER
 from Modules.pluzzy import pluzzyDecode8102
 from Modules.zigate import  initLODZigate, receiveZigateEpList, receiveZigateEpDescriptor
 
@@ -341,11 +342,14 @@ def Decode8002(self, Devices, MsgData, MsgRSSI) : # Data indication
     if 'Manufacturer' not in self.ListOfDevices[srcnwkid]:
         return
 
+    Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002( MsgPayload )
+    logginginRawAPS( self, 'Debug',"0x8002 - NwkId: %s Ep: %s Cluster: %s Command: %s (%s) Data: %s" 
+        %( srcnwkid, MsgSourcePoint,  MsgClusterID, Command, ZIGBEE_COMMAND_IDENTIFIER[ int(Command,16) ], Data ))
+
     updRSSI( self, srcnwkid, MsgRSSI )
 
     # Send for processing to the Brand specifics
-    inRawAps( self, Devices, srcnwkid, MsgSourcePoint,  MsgClusterID, dstnwkid, MsgDestPoint, MsgPayload)
-
+    inRawAps( self, Devices, srcnwkid, MsgSourcePoint,  MsgClusterID, dstnwkid, MsgDestPoint, Sqn, ManufacturerCode, Command, Data, MsgPayload)
     callbackDeviceAwake( self, srcnwkid, MsgSourcePoint, MsgClusterID)
 
 def Decode8003(self, Devices, MsgData, MsgRSSI): # Device cluster list
