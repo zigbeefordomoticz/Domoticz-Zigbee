@@ -1458,10 +1458,10 @@ def extract_nwk_infos_from_8002( frame ):
     TargetEndPoint = MsgData[12:14]
     SrcAddrMode = MsgData[14:16]
 
-    if ProfileId != '0104':
-        Domoticz.Log(
-            "Decode8002 - Not an HA Profile, let's drop the packet %s" % MsgData)
-        return ( None, None, None , None )
+    # if ProfileId != '0104':
+    #     Domoticz.Log(
+    #         "Decode8002 - Not an HA Profile, let's drop the packet %s" % MsgData)
+    #     return ( None, None, None , None )
 
     if int(SrcAddrMode, 16) in [ADDRESS_MODE['short'], ADDRESS_MODE['group']]:
         SrcNwkId = MsgData[16:20]  # uint16_t

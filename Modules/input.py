@@ -266,9 +266,9 @@ def Decode8002(self, Devices, MsgData, MsgRSSI) : # Data indication
     #Domoticz.Log("Decode8002 - MsgLogLvl: %s , MsgProfilID: %s, MsgClusterID: %s MsgSourcePoint: %s, MsgDestPoint: %s, MsgSourceAddressMode: %s" \
     #        %(MsgLogLvl, MsgProfilID, MsgClusterID, MsgSourcePoint, MsgDestPoint, MsgSourceAddressMode))
 
-    if MsgProfilID != '0104':
-        Domoticz.Log("Decode8002 - Not an HA Profile, let's drop the packet %s" %MsgData)
-        return
+    #if MsgProfilID != '0104':    
+    #    Domoticz.Log("Decode8002 - Not an HA Profile, let's drop the packet %s" %MsgData)
+    #    return
 
     if int(MsgSourceAddressMode,16) == ADDRESS_MODE['short'] or \
             int(MsgSourceAddressMode,16) == ADDRESS_MODE['group']:
@@ -308,6 +308,7 @@ def Decode8002(self, Devices, MsgData, MsgRSSI) : # Data indication
             Domoticz.Log("Decode8002 - Unexpected Destination ADDR_MOD: %s, drop packet %s" \
                     %(MsgDestinationAddressMode, MsgData))
             return
+
     else:
         Domoticz.Log("Decode8002 - Unexpected Source ADDR_MOD: %s, drop packet %s" \
                 %(MsgSourceAddressMode, MsgData))
@@ -319,7 +320,7 @@ def Decode8002(self, Devices, MsgData, MsgRSSI) : # Data indication
     srcnwkid = dstnwkid = None
     if len(MsgSourceAddress) == 4:
         # Short address
-        if MsgSourceAddress not in self.ListOfDevices:
+        if MsgSourceAddress != '0000' and MsgSourceAddress not in self.ListOfDevices:
             return
         srcnwkid = MsgSourceAddress
     else:
@@ -330,7 +331,7 @@ def Decode8002(self, Devices, MsgData, MsgRSSI) : # Data indication
 
     if len(MsgDestinationAddress) == 4:
         # Short address
-        if MsgDestinationAddress not in self.ListOfDevices:
+        if MsgDestinationAddress != '0000' and MsgDestinationAddress not in self.ListOfDevices:
             return
         dstnwkid = MsgDestinationAddress
     else:
@@ -339,16 +340,25 @@ def Decode8002(self, Devices, MsgData, MsgRSSI) : # Data indication
             return
         dstnwkid = self.IEEE2NWK[ MsgDestinationAddress ]
 
-    if 'Manufacturer' not in self.ListOfDevices[srcnwkid]:
+    if MsgProfilID == '0104':
+        Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002( MsgPayload )
+        if int(Command,16) in ZIGBEE_COMMAND_IDENTIFIER:
+            logginginRawAPS( self, 'Debug',"0x8002 - NwkId: %s Ep: %s Cluster: %s Command: %s (%s) Data: %s" 
+                %( srcnwkid, MsgSourcePoint,  MsgClusterID, Command, ZIGBEE_COMMAND_IDENTIFIER[ int(Command,16) ], Data ))
+        else:
+            logginginRawAPS( self, 'Debug',"0x8002 - NwkId: %s Ep: %s Cluster: %s Command: %s (%s) Data: %s" 
+                %( srcnwkid, MsgSourcePoint,  MsgClusterID, Command, Command, Data ))
+    else:
+        logginginRawAPS( self, 'Debug',"0x8002 - NwkId: %s Ep: %s Cluster: %s Payload: %s" 
+            %( srcnwkid, MsgSourcePoint,  MsgClusterID, MsgPayload )) 
         return
-
-    Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002( MsgPayload )
-    logginginRawAPS( self, 'Debug',"0x8002 - NwkId: %s Ep: %s Cluster: %s Command: %s (%s) Data: %s" 
-        %( srcnwkid, MsgSourcePoint,  MsgClusterID, Command, ZIGBEE_COMMAND_IDENTIFIER[ int(Command,16) ], Data ))
 
     updRSSI( self, srcnwkid, MsgRSSI )
 
     # Send for processing to the Brand specifics
+    if 'Manufacturer' not in self.ListOfDevices[srcnwkid]:
+        return
+
     inRawAps( self, Devices, srcnwkid, MsgSourcePoint,  MsgClusterID, dstnwkid, MsgDestPoint, Sqn, ManufacturerCode, Command, Data, MsgPayload)
     callbackDeviceAwake( self, srcnwkid, MsgSourcePoint, MsgClusterID)
 
