@@ -61,13 +61,13 @@ def legrand_fake_read_attribute_response( self, nwkid ):
 
 def legrandReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
     
-    Domoticz.Log("legrandReadRawAPS - Nwkid: %s Ep: %s, Cluster: %s, dstNwkid: %s, dstEp: %s, Payload: %s" \
+    loggingLegrand( self, 'Debug',"legrandReadRawAPS - Nwkid: %s Ep: %s, Cluster: %s, dstNwkid: %s, dstEp: %s, Payload: %s" \
             %(srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload))
 
     # At Device Annoucement 0x00 and 0x05 are sent by device
 
     Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002( MsgPayload )
-    Domoticz.Log(" NwkId: %s/%s Cluster: %s Command: %s Data: %s" %( srcNWKID, srcEp, ClusterID, Command, Data))
+    loggingLegrand( self, 'Debug'," NwkId: %s/%s Cluster: %s Command: %s Data: %s" %( srcNWKID, srcEp, ClusterID, Command, Data))
 
     if ClusterID == '0102' and Command == '00': # No data (Cluster 0x0102)
         pass
@@ -84,7 +84,7 @@ def legrandReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP
         _ieee = '%08x' %struct.unpack('q',struct.pack('>Q',int(Data[0:16],16)))[0] 
 
         _count = Data[16:18] 
-        Domoticz.Log("---> Decoding cmd 0x09 Ieee: %s Count: %s" %(_ieee, _count))
+        loggingLegrand( self, 'Debug',"---> Decoding cmd 0x09 Ieee: %s Count: %s" %(_ieee, _count))
         if _count == '01':
             LegrandGroupMemberShip = 'fefe'
         elif _count == '02':
@@ -95,7 +95,7 @@ def legrandReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP
         LegrandGroupMemberShip = Data[0:4]
         _ieee = '%08x' %struct.unpack('q',struct.pack('>Q',int(Data[4:20],16)))[0]   # IEEE of Device
         _code = Data[20:24]
-        Domoticz.Log("---> Decoding cmd: 0x0a Group: %s, Ieee: %s Code: %s" %(LegrandGroupMemberShip, _ieee, _code))
+        loggingLegrand( self, 'Debug',"---> Decoding cmd: 0x0a Group: %s, Ieee: %s Code: %s" %(LegrandGroupMemberShip, _ieee, _code))
         status = '00'
         #_ieee = '%08x' %struct.unpack('q',struct.pack('>Q',int(ieee,16)))[0]
         _ieee = '4fa5820000740400' # IEEE du Dimmer
@@ -103,7 +103,7 @@ def legrandReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP
 
 def sendFC01Command( self, sqn, nwkid, ep, ClusterID, cmd, data):
 
-    Domoticz.Log("sendFC01Command Cmd: %s Data: %s" %(cmd, data))
+    loggingLegrand( self, 'Debug',"sendFC01Command Cmd: %s Data: %s" %(cmd, data))
 
     if cmd == '00':
         # Read Attribute received
@@ -438,7 +438,7 @@ def registrationLegrand( self, nwkid):
         return
 
     if self.ListOfDevices['Model'] in LEGRAND_REMOTES:
-        Domoticz.Log("registrationLegrand - Poll Control Management")
+        loggingLegrand( self, 'Debug',"registrationLegrand - Poll Control Management")
         PollControlCheckin(self, nwkid)
         FastPollStop(self, nwkid)
 
