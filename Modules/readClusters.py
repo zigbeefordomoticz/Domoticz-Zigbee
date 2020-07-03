@@ -928,7 +928,6 @@ def Cluster000c( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         loggingCluster( self, 'Debug', "EPforPower: %s, EPforMeter: %s, EPforPowerMeter: %s" %(EPforPower, EPforMeter, EPforPowerMeter), MsgSrcAddr)
        
         if len(EPforPower) == len(EPforMeter) == len(EPforPowerMeter) == 0:
-
             rotation_angle = struct.unpack('f',struct.pack('I',int(MsgClusterData,16)))[0]
             loggingCluster( self, 'Debug', "ReadCluster - ClusterId=000c - Magic Cube angle: %s" %rotation_angle, MsgSrcAddr)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(int(rotation_angle)), Attribute_ = '0055' )
@@ -955,6 +954,7 @@ def Cluster000c( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0702'] = {}
                     if '0400' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0702']:
                         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0702']['0400'] = {}
+                    
                     self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0702']['0400'] = str(value)
                     MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0702',str(value))   # For to Power Cluster
                     break      # We just need to send once
