@@ -2171,7 +2171,7 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
 
         if self.FirmwareVersion and int(self.FirmwareVersion,16) > 0x031b and MsgRejoinFlag is None:
             # Device does exist, we will rely on ZPS_EVENT_NWK_NEW_NODE_HAS_JOINED in order to have the JoinFlag
-            loggingInput( self, 'Log', "------> Droping no rejoin flag! )", MsgSrcAddr)
+            loggingInput( self, 'Debug', "------> Droping no rejoin flag! %s %s )" %(MsgSrcAddr, MsgIEEE), MsgSrcAddr)
             timeStamped( self, MsgSrcAddr , 0x004d)
             lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
             return
