@@ -157,7 +157,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     Options['EnergyMeterMode'] = '0' # By default from device
 
                 # Did we get Summation from Data Structure
-                if summation:
+                if summation != 0:
                     # We got summation from Device, let's check that EnergyMeterMode is
                     # correctly set to 0, if not adjust
                     if Options['EnergyMeterMode'] != '0':
