@@ -342,7 +342,7 @@ def initDeviceInList(self, Nwkid):
         self.ListOfDevices[Nwkid]['Ep']={}
         self.ListOfDevices[Nwkid]['Heartbeat']="0"
         self.ListOfDevices[Nwkid]['RIA']="0"
-        self.ListOfDevices[Nwkid]['RSSI']={}
+        self.ListOfDevices[Nwkid]['LQI']={}
         self.ListOfDevices[Nwkid]['Battery']={}
         self.ListOfDevices[Nwkid]['Model']= ''
         self.ListOfDevices[Nwkid]['ForceAckCommands'] = []
@@ -391,27 +391,27 @@ def updSQN( self, key, newSQN) :
     self.ListOfDevices[key]['SQN'] = newSQN
     return
 
-def updRSSI( self, key, RSSI):
+def updLQI( self, key, LQI):
 
     if key not in self.ListOfDevices:
         return
 
-    if 'RSSI' not in self.ListOfDevices[ key ]:
-        self.ListOfDevices[ key ]['RSSI'] = {}
+    if 'LQI' not in self.ListOfDevices[ key ]:
+        self.ListOfDevices[ key ]['LQI'] = {}
         
-    if RSSI == '00':
+    if LQI == '00':
         return
     
-    if is_hex( RSSI ): # Check if the RSSI is Correct
+    if is_hex( LQI ): # Check if the LQI is Correct
 
-        self.ListOfDevices[ key ]['RSSI'] = int( RSSI, 16)
+        self.ListOfDevices[ key ]['LQI'] = int( LQI, 16)
 
         if 'RollingRSSI' not in self.ListOfDevices[ key ]:
            self.ListOfDevices[ key ]['RollingRSSI'] = []   
 
         if len(self.ListOfDevices[key]['RollingRSSI']) > 10:
             del self.ListOfDevices[key]['RollingRSSI'][0]
-        self.ListOfDevices[ key ]['RollingRSSI'].append( int(RSSI, 16))
+        self.ListOfDevices[ key ]['RollingRSSI'].append( int(LQI, 16))
 
     return
 
@@ -691,7 +691,7 @@ def mainPoweredDevice( self, nwkid):
     return mainPower
 
 
-def loggingMessages( self, msgtype, sAddr=None, ieee=None, RSSI=None, SQN=None):
+def loggingMessages( self, msgtype, sAddr=None, ieee=None, LQI=None, SQN=None):
 
     if not self.pluginconf.pluginConf['logFORMAT']:
         return
@@ -717,7 +717,7 @@ def loggingMessages( self, msgtype, sAddr=None, ieee=None, RSSI=None, SQN=None):
         zdevname = self.ListOfDevices[sAddr]['ZDeviceName']
 
     Domoticz.Log("Device activity for | %4s | %14s | %4s | %16s | %3s | 0x%02s |" \
-        %( msgtype, zdevname, sAddr, ieee, int(RSSI,16), SQN))
+        %( msgtype, zdevname, sAddr, ieee, int(LQI,16), SQN))
 
 
 def lookupForIEEE( self, nwkid , reconnect=False):

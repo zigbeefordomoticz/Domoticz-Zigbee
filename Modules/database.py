@@ -428,7 +428,7 @@ def CheckDeviceList(self, key, val):
             'Last Cmds',
             'Neighbours',
             'ReadAttributes', 
-            'RSSI',
+            'LQI',
             'SQN', 
             'Stamp', 
             'Health',

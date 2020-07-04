@@ -1,7 +1,8 @@
 
 import Domoticz
+from time import time
 
-from Modules.tools import decodeMacCapa, ReArrangeMacCapaBasedOnModel, timeStamped, IEEEExist, DeviceExist, initDeviceInList
+from Modules.tools import loggingMessages, decodeMacCapa, ReArrangeMacCapaBasedOnModel, timeStamped, IEEEExist, DeviceExist, initDeviceInList
 from Modules.logging import loggingInput, loggingPairing
 from Modules.domoTools import lastSeenUpdate, timedOutDevice
 from Modules.readAttributes import ReadAttributeRequest_0000, ReadAttributeRequest_0001
@@ -14,7 +15,7 @@ from Modules.legrand_netatmo import legrand_refresh_battery_remote
 from Modules.lumi import  enableOppleSwitch
 
 
-#
+
 # When receiving a Device Annoucement the Rejoin Flag can give us some information
 # 0x00 The device was not on the network. 
 #      Most-likely it has been reset, and all Unbind, Bind , Report, must be redone
@@ -29,10 +30,76 @@ REJOIN_NETWORK = {
     '01': '0x01 - joining directly or rejoining the network using the orphaning procedure',
     '02': '0x02 - joining the network using the NWK rejoining procedure.',
     '03': '0x03 - change the operational network channel to that identified in the ScanChannels parameter.',
-    '99': '0x99 - Unknown value received.'
     }
 
+def device_annoucementv1( self, Devices, MsgData, MsgRSSI  ):
 
+    MsgSrcAddr = MsgData[0:4]
+    MsgIEEE = MsgData[4:20]
+    MsgMacCapa = MsgData[20:22]
+    MsgRejoinFlag = None
+    newShortId = False
+
+    if len(MsgData) > 22: # Firmware 3.1b 
+        MsgRejoinFlag = MsgData[22:24]
+
+    loggingInput( self, 'Debug', "Decode004D - Device Annoucement: NwkId: %s Ieee: %s MacCap: %s ReJoin: %s LQI: %s" 
+        %( MsgSrcAddr,MsgIEEE, MsgMacCapa, MsgRejoinFlag, MsgRSSI ), MsgSrcAddr)
+
+
+    if is_device_exist_in_db( self, MsgIEEE):
+        # This device is known
+        newShortId = ( self.IEEE2NWK[ MsgIEEE ] != MsgSrcAddr )
+        loggingInput( self, 'Debug', "------>  Known device: NwkId: %s Ieee: %s MacCap: %s ReJoin: %s LQI: %s newShortId: %s" 
+            %( MsgSrcAddr,MsgIEEE, MsgMacCapa, MsgRejoinFlag, MsgRSSI, newShortId ), MsgSrcAddr)
+
+        if self.FirmwareVersion and int(self.FirmwareVersion,16) > 0x031b and MsgRejoinFlag is None:
+            # Device does exist, we will rely on ZPS_EVENT_NWK_NEW_NODE_HAS_JOINED in order to have the JoinFlag
+            loggingInput( self, 'Debug', "------> Droping no rejoin flag! %s %s )" %(MsgSrcAddr, MsgIEEE), MsgSrcAddr)
+            timeStamped( self, MsgSrcAddr , 0x004d)
+            lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
+            return
+
+        if MsgSrcAddr in self.ListOfDevices and self.ListOfDevices[MsgSrcAddr]['Status'] in ( '004d', '0045', '0043', '8045', '8043'):
+            # In case we receive a Device Annoucement we are alreday doing the provisioning.
+            # Same IEEE and same Short Address.
+            # We will drop the message, as there is no reason to process it.
+            loggingInput( self, 'Debug', "------> Droping (provisioning in progress) Status: %s" %self.ListOfDevices[MsgSrcAddr]['Status'], MsgSrcAddr)
+            return
+
+    now = time()
+    loggingMessages( self, '004D', MsgSrcAddr, MsgIEEE, int(MsgRSSI,16), None)
+
+    # Test if Device Exist, if Left then we can reconnect, otherwise initialize the ListOfDevice for this entry
+    if DeviceExist(self, Devices, MsgSrcAddr, MsgIEEE):
+        decode004d_existing_device( self, Devices, MsgSrcAddr, MsgIEEE , MsgMacCapa, MsgRejoinFlag, newShortId, MsgRSSI, now )
+    else:
+        loggingPairing( self, 'Status', "Device Announcement Addr: %s, IEEE: %s LQI: %s" \
+                %( MsgSrcAddr, MsgIEEE, int(MsgRSSI,16) ) )
+        decode004d_new_device( self, Devices, MsgSrcAddr, MsgIEEE , MsgMacCapa, MsgRejoinFlag, MsgData, MsgRSSI, now )
+
+
+def device_annoucementv2( self, Devices, MsgData, MsgRSSI ):
+
+    # There are 2 types of Device Annoucement the plugin can received from firmware >= 31a
+    # (1) Device Annoucement with a JoinFlags and LQI. This one could be issued from:
+    #     - device association (but transaction key not yet exchanged)
+
+    MsgSrcAddr = MsgData[0:4]
+    MsgIEEE = MsgData[4:20]
+    MsgMacCapa = MsgData[20:22]
+    MsgRejoinFlag = None
+    newShortId = False
+
+    if len(MsgData) > 22: # Firmware 3.1b 
+        MsgRejoinFlag = MsgData[22:24]
+
+
+
+def is_device_exist_in_db( self, ieee):
+    return ieee in self.IEEE2NWK
+
+        
 def decode004d_existing_device( self, Devices, MsgSrcAddr, MsgIEEE , MsgMacCapa, MsgRejoinFlag, newShortId, MsgRSSI, now ):
     # ############
     # Device exist, Reconnection has been done by DeviceExist()
@@ -51,7 +118,7 @@ def decode004d_existing_device( self, Devices, MsgSrcAddr, MsgIEEE , MsgMacCapa,
     self.ListOfDevices[MsgSrcAddr]['Announced']['newShortId'] = newShortId
 
     if MsgRejoinFlag in ( '01', '02' ) and self.ListOfDevices[MsgSrcAddr]['Status'] != 'Left':
-        loggingInput( self, 'Debug', "--> drop packet for %s due to  Rejoining network as %s, RSSI: %s" \
+        loggingInput( self, 'Debug', "--> drop packet for %s due to  Rejoining network as %s, LQI: %s" \
             %(MsgSrcAddr, MsgRejoinFlag, int(MsgRSSI,16)), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Announced']['TimeStamp'] = now
         timeStamped( self, MsgSrcAddr , 0x004d)
@@ -69,10 +136,10 @@ def decode004d_existing_device( self, Devices, MsgSrcAddr, MsgIEEE , MsgMacCapa,
 
     if MsgSrcAddr in self.ListOfDevices:
         if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
-            loggingPairing( self, 'Status', "Device Announcement: %s(%s, %s) Join Flag: %s RSSI: %s ChangeShortID: %s " \
+            loggingPairing( self, 'Status', "Device Announcement: %s(%s, %s) Join Flag: %s LQI: %s ChangeShortID: %s " \
                     %( self.ListOfDevices[MsgSrcAddr]['ZDeviceName'], MsgSrcAddr, MsgIEEE, MsgRejoinFlag, int(MsgRSSI,16), newShortId ))
         else:
-            loggingPairing( self, 'Status', "Device Announcement Addr: %s, IEEE: %s Join Flag: %s RSSI: %s ChangeShortID: %s" \
+            loggingPairing( self, 'Status', "Device Announcement Addr: %s, IEEE: %s Join Flag: %s LQI: %s ChangeShortID: %s" \
                     %( MsgSrcAddr, MsgIEEE, MsgRejoinFlag, int(MsgRSSI,16), newShortId))
 
 
