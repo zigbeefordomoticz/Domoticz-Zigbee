@@ -422,14 +422,13 @@ def legrandReenforcement( self, NWKID):
                 rescheduleAction = True
     return rescheduleAction
 
-def refresh_battery_remote( self, nwkid):
+def legrand_refresh_battery_remote( self, nwkid):
 
     if 'Model' not in self.ListOfDevices[ nwkid ]:
         return
     if self.ListOfDevices[ nwkid ]['Model'] not in LEGRAND_REMOTES:
         return
-    if 'BatteryUpdateTime' in self.ListOfDevices[ nwkid ]:
-        if self.ListOfDevices[ nwkid ]['BatteryUpdateTime'] + 3600 > time():
-            return
+    if ( 'BatteryUpdateTime' in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]['BatteryUpdateTime'] + 3600 > time() ):
+        return
     ReadAttributeRequest_0001( self,  nwkid) 
             
