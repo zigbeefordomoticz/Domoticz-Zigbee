@@ -54,7 +54,7 @@ def voltage2batteryP( voltage, volt_max, volt_min):
 
 def IEEEExist(self, IEEE):
     #check in ListOfDevices for an existing IEEE
-    return IEEE in self.ListOfDevices and IEEE != ''
+    return IEEE != '' and IEEE in self.IEEE2NWK
 
 def NwkIdExist( self, Nwkid):
     return Nwkid in self.ListOfDevices

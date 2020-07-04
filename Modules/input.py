@@ -138,8 +138,8 @@ def ZigateRead(self, Devices, Data, TransportInfos=None):
 
     #loggingInput( self, 'Debug', "ZigateRead - decoded data : " + Data + " lenght : " + str(len(Data)) )
 
-    FrameStart=Data[0:2]
-    FrameStop=Data[len(Data)-2:len(Data)]
+    FrameStart = Data[0:2]
+    FrameStop = Data[len(Data)-2:len(Data)]
     if ( FrameStart != "01" and FrameStop != "03" ): 
         Domoticz.Error("ZigateRead received a non-zigate frame Data : " + Data + " FS/FS = " + FrameStart + "/" + FrameStop )
         return
@@ -2119,8 +2119,10 @@ def Decode8702(self, Devices, MsgData, MsgLQI) : # Reception APS Data confirm fa
 #Device Announce
 def Decode004D(self, Devices, MsgData, MsgLQI) : # Reception Device announce
 
-    device_annoucementv1( self, Devices, MsgData, MsgLQI)
-
+    if self.pluginconf.pluginConf['AnnoucementV2']:
+        device_annoucementv2( self, Devices, MsgData, MsgLQI)
+    else:
+        device_annoucementv1( self, Devices, MsgData, MsgLQI)
 
 
 def Decode8085(self, Devices, MsgData, MsgLQI) :
