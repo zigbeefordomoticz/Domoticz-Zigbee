@@ -896,10 +896,7 @@ def set_timestamp_datastruct(self, DeviceAttribute, key, endpoint, clusterId, no
 
 def get_list_isqn_attr_datastruct(self, DeviceAttribute, key, endpoint, clusterId):
     check_datastruct( self, DeviceAttribute, key, endpoint, clusterId )
-    attrlst = []
-    for x in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['iSQN']:
-        attrlst.append( x )
-    return x
+    return [ x for x in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['iSQN'] ]
 
 def set_isqn_datastruct(self, DeviceAttribute, key, endpoint, clusterId, AttributeId, isqn ):
     check_datastruct( self, DeviceAttribute, key, endpoint, clusterId )
