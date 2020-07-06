@@ -174,10 +174,13 @@ class ZigateTransport(object):
 
     def sendData(self, cmd, datas, ackIsDisabled=False, waitForResponseIn=False):
 
-        waitForResponse = waitForResponseIn or self.pluginconf.pluginConf['waitForResponse']
+        waitForResponse = False
+        if waitForResponseIn  or self.pluginconf.pluginConf['waitForResponse']:
+            waitForResponse = True
+        self.loggingSend('Debug2',"   -> waitForResponse: %s waitForResponseIn: %s" %(waitForResponse, waitForResponseIn))
 
         # If ackIsDisabled is True, it means that usally a Ack is expected ( ZIGATE_COMMANDS), but here it has been disabled via Address Mode
-        self.loggingSend('Debug', "sendData - %s %s ackDisabled: %s FIFO: %s" %
+        self.loggingSend('Debug2', "sendData - %s %s ackDisabled: %s FIFO: %s" %
                          (cmd, datas, ackIsDisabled, len(self.zigateSendQueue)))
         if datas is None:
             datas = ''
@@ -188,19 +191,19 @@ class ZigateTransport(object):
             return None
 
         # Check if the Cmd/Data is not yet in the pipe
-        # alreadyInQueue = False
-        # for x in self.ListOfCommands:
-        #     if self.ListOfCommands[x]['Cmd'] == cmd and self.ListOfCommands[x]['Datas'] == datas:
-        #         self.loggingSend(
-        #             'Debug', "Cmd: %s Data: %s already in queue." % (cmd, datas))
-        #         alreadyInQueue = True
-        #         break
-        # if alreadyInQueue:
-        #     for x in self.ListOfCommands:
-        #         self.loggingSend('Debug', "-- > Sending Queue: [%s] Cmd: %s Datas: %s Time: %s"
-        #                          % (x, self.ListOfCommands[x]['Cmd'], self.ListOfCommands[x]['Datas'],
-        #                             self.ListOfCommands[x]['ReceiveTimeStamp'].strftime("%m/%d/%Y, %H:%M:%S")))
-        #     return None
+        alreadyInQueue = False
+        for x in self.ListOfCommands:
+            if self.ListOfCommands[x]['Cmd'] == cmd and self.ListOfCommands[x]['Datas'] == datas:
+                self.loggingSend(
+                    'Log', "Cmd: %s Data: %s already in queue." % (cmd, datas))
+                alreadyInQueue = True
+                break
+        if alreadyInQueue:
+            for x in self.ListOfCommands:
+                self.loggingSend('Debug', "-- > Sending Queue: [%s] Cmd: %s Datas: %s Time: %s"
+                                % (x, self.ListOfCommands[x]['Cmd'], self.ListOfCommands[x]['Datas'],
+                                    self.ListOfCommands[x]['ReceiveTimeStamp'].strftime("%m/%d/%Y, %H:%M:%S")))
+            #return None
 
         # Let's move on, create an internal Sqn for tracking
         InternalSqn = sqn_generate_new_internal_sqn(self)
@@ -218,10 +221,12 @@ class ZigateTransport(object):
         self.ListOfCommands[InternalSqn]['ReceiveTimeStamp'] = datetime.now()
         self.ListOfCommands[InternalSqn]['SentTimeStamp'] = None
         self.ListOfCommands[InternalSqn]['PDMCommand'] = False
+
         self.ListOfCommands[InternalSqn]['ResponseExpected'] = False
-        self.ListOfCommands[InternalSqn]['MessageResponse'] = None
         self.ListOfCommands[InternalSqn]['ExpectedAck'] = False
         self.ListOfCommands[InternalSqn]['WaitForResponse'] = False
+        self.ListOfCommands[InternalSqn]['MessageResponse'] = None
+
         self.ListOfCommands[InternalSqn]['APP_SQN'] = None
         self.ListOfCommands[InternalSqn]['APS_SQN'] = None
         self.ListOfCommands[InternalSqn]['TYP_SQN'] = None
@@ -237,8 +242,8 @@ class ZigateTransport(object):
             self.ListOfCommands[InternalSqn]['MessageResponse'] = CMD_WITH_RESPONSE[hexCmd]
             self.ListOfCommands[InternalSqn]['ResponseExpected'] = True
 
-        if waitForResponseIn:
-            self.ListOfCommands[InternalSqn]['WaitForResponse'] = True
+        #if waitForResponseIn:
+        #    self.ListOfCommands[InternalSqn]['WaitForResponse'] = True
 
         if not self.firmware_with_aps_sqn:
             # We are on firmware <= 31c
@@ -856,17 +861,24 @@ def process_frame(self, frame):
 
     def cleanup_8000_queues(self, status, isqn):
         # Cleanup if required
+        #self.logging_receive('Log', "Q8000: %s Q8011: %s QResponse: %s QLstCmd: %s zMode: %s ExpectedAck: %s WaitForResponse: %s ResponseExpected: %s" 
+        #    %( len(self._waitFor8000Queue),  len(self._waitForAckNack), len(self._waitForCmdResponseQueue), len(self.ListOfCommands),
+        #    self.zmode, self.ListOfCommands[isqn]['ExpectedAck'], self.ListOfCommands[isqn]['WaitForResponse'], 
+        #    self.ListOfCommands[isqn]['ResponseExpected']))
+        #for x in self.ListOfCommands:
+        #    self.logging_receive('Log', "---- [%s] Cmd: %s Data: %s" %(x, self.ListOfCommands[x]['Cmd'], self.ListOfCommands[x]['Datas']))
+
         if Status != '00':
             cleanup_list_of_commands(self, isqn)
             return
 
+        # Status 0x00
         if self.zmode == 'zigateack' and not self.ListOfCommands[isqn]['ExpectedAck'] and not self.ListOfCommands[isqn]['WaitForResponse']:
             cleanup_list_of_commands(self, isqn)
             return
 
-        if self.zmode == 'zigate31c' and not self.ListOfCommands[isqn]['ExpectedAck'] \
-                and not self.ListOfCommands[isqn]['ResponseExpected'] \
-                and not self.ListOfCommands[isqn]['WaitForResponse']:
+        if self.zmode == 'zigate31c' and not self.ListOfCommands[isqn]['WaitForResponse'] and not self.ListOfCommands[isqn]['ResponseExpected']:
+
             cleanup_list_of_commands(self, isqn)
             return
 
