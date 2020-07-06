@@ -188,19 +188,19 @@ class ZigateTransport(object):
             return None
 
         # Check if the Cmd/Data is not yet in the pipe
-        alreadyInQueue = False
-        for x in self.ListOfCommands:
-            if self.ListOfCommands[x]['Cmd'] == cmd and self.ListOfCommands[x]['Datas'] == datas:
-                self.loggingSend(
-                    'Debug', "Cmd: %s Data: %s already in queue." % (cmd, datas))
-                alreadyInQueue = True
-                break
-        if alreadyInQueue:
-            for x in self.ListOfCommands:
-                self.loggingSend('Debug', "-- > Sending Queue: [%s] Cmd: %s Datas: %s Time: %s"
-                                 % (x, self.ListOfCommands[x]['Cmd'], self.ListOfCommands[x]['Datas'],
-                                    self.ListOfCommands[x]['ReceiveTimeStamp'].strftime("%m/%d/%Y, %H:%M:%S")))
-            return None
+        # alreadyInQueue = False
+        # for x in self.ListOfCommands:
+        #     if self.ListOfCommands[x]['Cmd'] == cmd and self.ListOfCommands[x]['Datas'] == datas:
+        #         self.loggingSend(
+        #             'Debug', "Cmd: %s Data: %s already in queue." % (cmd, datas))
+        #         alreadyInQueue = True
+        #         break
+        # if alreadyInQueue:
+        #     for x in self.ListOfCommands:
+        #         self.loggingSend('Debug', "-- > Sending Queue: [%s] Cmd: %s Datas: %s Time: %s"
+        #                          % (x, self.ListOfCommands[x]['Cmd'], self.ListOfCommands[x]['Datas'],
+        #                             self.ListOfCommands[x]['ReceiveTimeStamp'].strftime("%m/%d/%Y, %H:%M:%S")))
+        #     return None
 
         # Let's move on, create an internal Sqn for tracking
         InternalSqn = sqn_generate_new_internal_sqn(self)
