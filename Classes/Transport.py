@@ -920,7 +920,7 @@ def process_frame(self, frame):
     if len(frame) >= 18:
         # Payload
         MsgData = frame[12:len(frame) - 4]
-        RSSI = frame[len(frame) - 4: len(frame) - 2]
+        LQI = frame[len(frame) - 4: len(frame) - 2]
 
     if MsgData and MsgType == "8002":
         frame = process8002( self, frame )
@@ -1455,7 +1455,7 @@ def extract_nwk_infos_from_8002( frame ):
     if len(frame) >= 18:
         # Payload
         MsgData = frame[12:len(frame) - 4]
-        RSSI = frame[len(frame) - 4: len(frame) - 2]
+        LQI = frame[len(frame) - 4: len(frame) - 2]
 
     ProfileId = MsgData[2:6]
     ClusterId = MsgData[6:10]
@@ -1518,7 +1518,7 @@ def buildframe_write_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clus
     newFrame += '%4x' %len(buildPayload) # 6:10  Length
     newFrame += 'ff' # 10:12 CRC
     newFrame += buildPayload
-    newFrame += frame[len(frame) - 4: len(frame) - 2] # RSSI
+    newFrame += frame[len(frame) - 4: len(frame) - 2] # LQI
     newFrame += '03'
 
     return  newFrame
@@ -1532,7 +1532,7 @@ def buildframe_read_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clust
     newFrame += '%4x' %len(buildPayload) # 6:10  Length
     newFrame += 'ff' # 10:12 CRC
     newFrame += buildPayload
-    newFrame += frame[len(frame) - 4: len(frame) - 2] # RSSI
+    newFrame += frame[len(frame) - 4: len(frame) - 2] # LQI
     newFrame += '03'
 
     return  newFrame

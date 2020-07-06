@@ -25,7 +25,7 @@ from Modules.tools import timeStamped, updSQN, updLQI, DeviceExist, getSaddrfrom
                             lookupForIEEE, ReArrangeMacCapaBasedOnModel, decodeMacCapa, NwkIdExist, \
                             check_datastruct, is_time_to_perform_work, set_status_datastruct, get_isqn_datastruct, get_list_isqn_attr_datastruct, \
                             retreive_cmd_payload_from_8002
-from Modules.deviceAnnoucement import device_annoucementv1, device_annoucementv2
+from Modules.deviceAnnoucement import device_annoucementv0, device_annoucementv1, device_annoucementv2
 from Modules.logging import loggingPairing, loggingInput, logginginRawAPS
 from Modules.basicOutputs import sendZigateCmd, leaveMgtReJoin, setTimeServer, ZigatePermitToJoin
 from Modules.readAttributes import ReadAttributeRequest_0000, ReadAttributeRequest_0001
@@ -2119,11 +2119,14 @@ def Decode8702(self, Devices, MsgData, MsgLQI) : # Reception APS Data confirm fa
 #Device Announce
 def Decode004D(self, Devices, MsgData, MsgLQI) : # Reception Device announce
 
-    if self.pluginconf.pluginConf['AnnoucementV2']:
-        device_annoucementv2( self, Devices, MsgData, MsgLQI)
-    else:
+    if self.pluginconf.pluginConf['AnnoucementV0']:
+        device_annoucementv0( self, Devices, MsgData, MsgLQI)
+
+    elif self.pluginconf.pluginConf['AnnoucementV1']:
         device_annoucementv1( self, Devices, MsgData, MsgLQI)
 
+    elif self.pluginconf.pluginConf['AnnoucementV2']:
+        device_annoucementv2( self, Devices, MsgData, MsgLQI)
 
 def Decode8085(self, Devices, MsgData, MsgLQI) :
     'Remote button pressed'

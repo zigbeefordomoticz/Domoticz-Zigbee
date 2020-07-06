@@ -406,12 +406,12 @@ def updLQI( self, key, LQI):
 
         self.ListOfDevices[ key ]['LQI'] = int( LQI, 16)
 
-        if 'RollingRSSI' not in self.ListOfDevices[ key ]:
-           self.ListOfDevices[ key ]['RollingRSSI'] = []   
+        if 'RollingLQI' not in self.ListOfDevices[ key ]:
+           self.ListOfDevices[ key ]['RollingLQI'] = []   
 
-        if len(self.ListOfDevices[key]['RollingRSSI']) > 10:
-            del self.ListOfDevices[key]['RollingRSSI'][0]
-        self.ListOfDevices[ key ]['RollingRSSI'].append( int(LQI, 16))
+        if len(self.ListOfDevices[key]['RollingLQI']) > 10:
+            del self.ListOfDevices[key]['RollingLQI'][0]
+        self.ListOfDevices[ key ]['RollingLQI'].append( int(LQI, 16))
 
     return
 
