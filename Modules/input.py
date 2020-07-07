@@ -1703,7 +1703,7 @@ def read_report_attributes( self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp
     ieee = lookupForIEEE( self, MsgSrcAddr , True)
     if ieee:
         loggingInput( self, 'Log',"Found IEEE for short address: %s is %s" %(MsgSrcAddr, ieee))
-        if MsgSrcAddr in self.UnknownDevices.remove:
+        if MsgSrcAddr in self.UnknownDevices:
             self.UnknownDevices.remove( MsgSrcAddr )
     else:
         # If we didn't find it, let's trigger a NetworkMap scan if not one in progress
