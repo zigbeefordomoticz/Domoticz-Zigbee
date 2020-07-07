@@ -142,6 +142,8 @@ class BasePlugin:
         self.LOD = None # Object managing all plugin devices
         self.transport = None         # USB or Wifi
         #self._ReqRcv = bytearray()
+
+        self.UnknownDevices = []   # List of unknown Device NwkId
         self.permitTojoin = {}
         self.permitTojoin['Duration'] = 0
         self.permitTojoin['Starttime'] = 0
