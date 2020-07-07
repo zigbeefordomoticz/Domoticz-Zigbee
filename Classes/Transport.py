@@ -904,7 +904,7 @@ def process_frame(self, frame):
         Domoticz.Error("               - In process: %s" %self.protectMessage )
         Domoticz.Error("               - New comer : %s" %frame)
         for x in self.ListOfCommands:
-            Domoticz.Error("[%s] Cmd: %s Datas: %s Status: %s" %(x, self.ListOfCommands[i_sqn]['Cmd'], self.ListOfCommands[i_sqn]['Datas'], self.ListOfCommands[i_sqn]['Status']))
+            Domoticz.Error("[%s] Cmd: %s Datas: %s Status: %s" %(x, self.ListOfCommands[x]['Cmd'], self.ListOfCommands[x]['Datas'], self.ListOfCommands[x]['Status']))
         return
     self.protectMessage = frame
 
