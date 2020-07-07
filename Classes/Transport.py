@@ -899,7 +899,7 @@ def process_frame(self, frame):
     # process the Data and check if this is a 0x8000 message
     # in case the message contains several frame, receiveData will be recall
 
-    if self.protectMessage:
+    if self.pluginconf.pluginConf['CheckReEntrance'] and self.protectMessage:
         Domoticz.Error(" process_frame - already in !!! " )
         Domoticz.Error("               - In process: %s" %self.protectMessage )
         Domoticz.Error("               - New comer : %s" %frame)
