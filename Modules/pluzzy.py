@@ -14,13 +14,13 @@ import Domoticz
 from Modules.logging import loggingPairing, loggingInput
 
 
-def pluzzyDecode004D( self, MsgSrcAddr, MsgIEEE, MsgMacCapa, decodedMacCapa, RSSI):
+def pluzzyDecode004D( self, MsgSrcAddr, MsgIEEE, MsgMacCapa, decodedMacCapa, LQI):
 
     self.logging( 'Debug',  "Pluzzy-Decode004D - Device Annoucement %s %s %s" %(MsgSrcAddr, MsgIEEE, decodedMacCapa))
 
     return
 
-def pluzzyDecode8102( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, MsgRSSI):
+def pluzzyDecode8102( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, MsgLQI):
 
     """
     Receiving a 8102 message and we are using the pluzzy Firmware.
@@ -39,10 +39,9 @@ def pluzzyDecode8102( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAt
         Domoticz.Error("Pluzzy-Decode8102 - Device %s in UNKNOWN state" %MsgSrcAddr)
         return
 
-    if 'Model' in self.ListOfDevices[MsgSrcAddr]:
-        if  self.ListOfDevices[MsgSrcAddr]['Model'] != {}:
-            # Model alreday defined, so we assumed everything is in order.
-            return
+    if ( 'Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Model'] != {} ):
+        # Model alreday defined, so we assumed everything is in order.
+        return
 
     # Let's force the Model name based on Cluster receive
     if MsgClusterId == '0702': 
@@ -51,9 +50,8 @@ def pluzzyDecode8102( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAt
         self.ListOfDevices[MsgSrcAddr]['ZDeviceID'] = '0002'
         self.ListOfDevices[MsgSrcAddr]['Model'] = 'Pluzzy-Plug'
 
-    if MsgClusterId == '0402' or MsgClusterId == '0405':
+    if MsgClusterId in ['0402', '0405']:
         # Pluzzy Temp+Humi
         self.ListOfDevices[MsgSrcAddr]['ProfileID'] = '0104'
         self.ListOfDevices[MsgSrcAddr]['ZDeviceID'] = '0302'
         self.ListOfDevices[MsgSrcAddr]['Model'] = 'Pluzzy-TH'
-

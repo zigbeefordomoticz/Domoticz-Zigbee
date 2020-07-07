@@ -177,7 +177,7 @@ SETTINGS = {
         'logDeviceUpdate':      {'type': 'bool', 'default': 1,     'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'logFORMAT':            {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': True, 'Advanced': True},
         'capturePairingInfos':  {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
-        'debugRSSI':            {'type': 'int',  'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
+        'debugLQI':            {'type': 'int',  'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'debugInput':           {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'debugBasicOutput':     {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'debugBinding':         {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
@@ -261,10 +261,10 @@ SETTINGS = {
 
     # Experimental
     'Experimental': {'Order': 17, 'param': {
+        'AnnoucementV0':         {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
+        'AnnoucementV1':         {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
+        'AnnoucementV2':         {'type': 'bool', 'default': 1, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'expJsonDatabase':       {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
-        'ExpDeviceAnnoucement1': {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
-        'ExpDeviceAnnoucement2': {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
-        'ExpDeviceAnnoucement3': {'type': 'bool', 'default': 1, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'XiaomiLeave':           {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'rebindLivolo':          {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': False},
         'allowAutoPairing':      {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': True},

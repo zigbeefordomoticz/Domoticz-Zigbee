@@ -21,6 +21,7 @@ from time import time
 from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_EP, HEARTBEAT, LEGRAND_REMOTES
 from Modules.tools import retreive_cmd_payload_from_8002
 from Modules.logging import loggingLegrand
+from Modules.readAttributes import ReadAttributeRequest_0001
 
 from Modules.basicOutputs import raw_APS_request, send_zigatecmd_zcl_noack, write_attribute, write_attributeNoResponse
 
@@ -421,29 +422,13 @@ def legrandReenforcement( self, NWKID):
                 rescheduleAction = True
     return rescheduleAction
 
-def registrationLegrand( self, nwkid):
-    
-    # FCF: 0x40
-    # dstEp: 01
-    # Cluster: 0xfc01
-    # Command: 0x0e
-    # Data: 01
+def legrand_refresh_battery_remote( self, nwkid):
 
-    if nwkid not in self.ListOfDevices:
-        Domoticz.Error("registrationLegrand - unknown device %s" %nwkid)
+    if 'Model' not in self.ListOfDevices[ nwkid ]:
         return
-
-    if 'Model' not in self.ListOfDevices:
-        Domoticz.Error("registrationLegrand - device without a Model Name %s" %nwkid)
+    if self.ListOfDevices[ nwkid ]['Model'] not in LEGRAND_REMOTES:
         return
-
-    if self.ListOfDevices['Model'] in LEGRAND_REMOTES:
-        loggingLegrand( self, 'Debug',"registrationLegrand - Poll Control Management")
-        PollControlCheckin(self, nwkid)
-        FastPollStop(self, nwkid)
-
-def ZigateTimeOfOperation( self):
-    # Send a Read Attribute Request to Zigate to get it's Reporting Time of Operation
-    loggingLegrand( self, 'Log', "ZigateTimeOfOperation sending a Request to Zigate", '0000')
-    datas = '01' + '01' + '0000' + '00' + '00' + '0000' + '01' + 'f000'
-    send_zigatecmd_zcl_noack(self, '0000', "0100", datas )
+    if ( 'BatteryUpdateTime' in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]['BatteryUpdateTime'] + 3600 > time() ):
+        return
+    ReadAttributeRequest_0001( self,  nwkid) 
+            
