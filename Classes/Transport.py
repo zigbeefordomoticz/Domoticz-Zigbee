@@ -42,7 +42,7 @@ class ZigateTransport(object):
         self.pluginconf = pluginconf
 
         # Protect messages
-        self.protectMessage = False
+        self.protectMessage = None
 
         # PDM attributes
         self.lock = False   # PDM Lock
@@ -910,7 +910,7 @@ def process_frame(self, frame):
 
     self.logging_receive('Debug', "process_frame - Frame: %s" % frame)
     if frame == '' or frame is None or len(frame) < 12:
-        self.protectMessage = False
+        self.protectMessage = None
         return
 
     Status = None
@@ -926,7 +926,7 @@ def process_frame(self, frame):
         # Route Discovery
         # self.F_out(frame, None)  # for processing
         ready_to_send_if_needed(self)
-        self.protectMessage = False
+        self.protectMessage = None
         return
 
     if MsgType == "8702":
@@ -935,7 +935,7 @@ def process_frame(self, frame):
         self.statistics._APSFailure += 1
         self.F_out(frame, None)
         ready_to_send_if_needed(self)
-        self.protectMessage = False
+        self.protectMessage = None
         return
 
 
@@ -943,7 +943,7 @@ def process_frame(self, frame):
     if int(MsgType, 16) in STANDALONE_MESSAGE:
         self.F_out(frame, None)  # for processing
         ready_to_send_if_needed(self)
-        self.protectMessage = False
+        self.protectMessage = None
         return
 
     if len(frame) >= 18:
@@ -955,14 +955,14 @@ def process_frame(self, frame):
         frame = process8002( self, frame )
         self.F_out(frame, None)
         ready_to_send_if_needed(self)
-        self.protectMessage = False
+        self.protectMessage = None
         return
 
     if len(self._waitFor8000Queue) == 0 and len(self._waitForCmdResponseQueue) == 0 and len(self._waitForAckNack) == 0:
         # All queues are empty
         self.F_out(frame, None)
         ready_to_send_if_needed(self)
-        self.protectMessage = False
+        self.protectMessage = None
         return
 
     if MsgData and MsgType == "8000":
@@ -1010,14 +1010,14 @@ def process_frame(self, frame):
                                (i_sqn, str(self.ListOfCommands.keys())))
 
         ready_to_send_if_needed(self)
-        self.protectMessage = False
+        self.protectMessage = None
         return
 
     if len(self._waitForCmdResponseQueue) == 0 and len(self._waitForAckNack) == 0:
         # All queues are empty
         self.F_out(frame, None)
         ready_to_send_if_needed(self)
-        self.protectMessage = False
+        self.protectMessage = None
         return
 
     if MsgType == '8011':
@@ -1032,7 +1032,7 @@ def process_frame(self, frame):
             # We do not block on Ack for firmware from 31c and below
             self.F_out(frame, None)
             ready_to_send_if_needed(self)
-            self.protectMessage = False
+            self.protectMessage = None
             return
 
         if MsgData and self.zmode == 'zigateack':
@@ -1063,14 +1063,14 @@ def process_frame(self, frame):
                     cleanup_list_of_commands(self, i_sqn)
 
             ready_to_send_if_needed(self)
-            self.protectMessage = False
+        self.protectMessage = None
         return
 
     if len(self._waitForCmdResponseQueue) == 0:
         # All queues are empty
         self.F_out(frame, None)
         ready_to_send_if_needed(self)
-        self.protectMessage = False
+        self.protectMessage = None
         return
 
     # We reach that stage: Got a message not 0x8000/0x8011/0x8701/0x8202 an not a standolone message
@@ -1112,7 +1112,7 @@ def process_frame(self, frame):
     ready_to_send_if_needed(self)
     # Let's take the opportunity to check TimeOut
     self.check_timed_out_for_tx_queues()
-    self.protectMessage = False
+    self.protectMessage = None
 
 
 def process_msg_type8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn):
