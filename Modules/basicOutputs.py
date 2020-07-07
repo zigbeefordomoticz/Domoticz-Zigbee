@@ -67,11 +67,11 @@ def send_zigatecmd_raw( self, cmd, datas, ackIsDisabled = False ):
 
    i_sqn = self.ZigateComm.sendData( cmd, datas , ackIsDisabled )
    if self.pluginconf.pluginConf['debugzigateCmd']:
-       loggingBasicOutput( self, 'Log', "send_zigatecmd_raw - [%s] %s %s Queue Length: %s" %(i_sqn, cmd, datas, self.ZigateComm.loadTransmit()))
+       loggingBasicOutput( self, 'Log', "send_zigatecmd_raw - [%s] %s %s Queue Length: %s / %s" %(i_sqn, cmd, datas, self.ZigateComm.loadTransmit(), len(self.ZigateComm.ListOfCommands)))
    else:
-       loggingBasicOutput( self, 'Debug', "=====> send_zigatecmd_raw - [%s] %s %s Queue Length: %s" %(i_sqn,cmd, datas, self.ZigateComm.loadTransmit()))
+       loggingBasicOutput( self, 'Debug', "=====> send_zigatecmd_raw - [%s] %s %s Queue Length: %s / %s" %(i_sqn,cmd, datas, self.ZigateComm.loadTransmit(), len(self.ZigateComm.ListOfCommands)))
    if self.ZigateComm.loadTransmit() > 15:
-       loggingBasicOutput( self, 'Log', "WARNING - send_zigatecmd_raw: [%s] %s %18s ZigateQueue: %s" %(i_sqn,cmd, datas, self.ZigateComm.loadTransmit()))
+       loggingBasicOutput( self, 'Log', "WARNING - send_zigatecmd_raw: [%s] %s %18s ZigateQueue: %s / %s" %(i_sqn,cmd, datas, self.ZigateComm.loadTransmit(), len(self.ZigateComm.ListOfCommands)))
 
    return i_sqn
 
@@ -618,5 +618,6 @@ def set_poweron_afteroffon( self, key, OnOffMode = 0xff):
         data = "ff"
         data = "%02x" %OnOffMode
         loggingBasicOutput( self, 'Debug', "set_PowerOn_OnOff for %s/%s - OnOff: %s" %(key, EPout, OnOffMode))
-        return write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled = True)
         del self.ListOfDevices[key]['Ep']['0b']['0006']['4003']
+        return write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled = True)
+        
