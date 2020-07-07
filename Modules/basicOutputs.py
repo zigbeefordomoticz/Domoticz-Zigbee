@@ -621,3 +621,17 @@ def set_poweron_afteroffon( self, key, OnOffMode = 0xff):
         del self.ListOfDevices[key]['Ep']['0b']['0006']['4003']
         return write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled = True)
         
+def unknown_device_nwkid( self, nwkid ):
+    
+    if nwkid in self.UnknownDevices:
+        return
+    
+    self.UnknownDevices.append( nwkid )
+
+    # If we didn't find it, let's trigger a NetworkMap scan if not one in progress
+    if self.networkmap and not self.networkmap.NetworkMapPhase():
+        self.networkmap.start_scan()
+
+    u8RequestType = '00'
+    u8StartIndex = '00'
+    sendZigateCmd(self ,'0041', '02' + nwkid + u8RequestType + u8StartIndex )

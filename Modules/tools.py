@@ -948,19 +948,3 @@ def clean_old_datastruct(self,DeviceAttribute, key , endpoint, clusterId, Attrib
         del self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId][ AttributeId ]
     if 'TimeStamp' in self.ListOfDevices[key][DeviceAttribute]:
         del self.ListOfDevices[key][DeviceAttribute][ 'TimeStamp' ]
-
-def unknown_device_nwkid( self, nwkid ):
-
-    if nwkid in self.UnknownDevices:
-        return
-    
-    self.UnknownDevices.append( nwkid )
-
-    # If we didn't find it, let's trigger a NetworkMap scan if not one in progress
-    if self.networkmap and not self.networkmap.NetworkMapPhase():
-        self.networkmap.start_scan()
-
-    u8RequestType = '00'
-    u8StartIndex = '00'
-    sendZigateCmd(self ,'0041', '02' + nwkid + u8RequestType + u8StartIndex )
-

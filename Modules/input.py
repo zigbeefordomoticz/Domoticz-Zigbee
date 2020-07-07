@@ -24,10 +24,10 @@ from Modules.domoTools import lastSeenUpdate, timedOutDevice
 from Modules.tools import timeStamped, updSQN, updLQI, DeviceExist, getSaddrfromIEEE, IEEEExist, initDeviceInList, mainPoweredDevice, loggingMessages, \
                             lookupForIEEE, ReArrangeMacCapaBasedOnModel, decodeMacCapa, NwkIdExist, \
                             check_datastruct, is_time_to_perform_work, set_status_datastruct, get_isqn_datastruct, get_list_isqn_attr_datastruct, \
-                            retreive_cmd_payload_from_8002, unknown_device_nwkid
+                            retreive_cmd_payload_from_8002
 from Modules.deviceAnnoucement import device_annoucementv0, device_annoucementv1, device_annoucementv2
 from Modules.logging import loggingPairing, loggingInput, logginginRawAPS
-from Modules.basicOutputs import sendZigateCmd, leaveMgtReJoin, setTimeServer, ZigatePermitToJoin
+from Modules.basicOutputs import sendZigateCmd, leaveMgtReJoin, setTimeServer, ZigatePermitToJoin, unknown_device_nwkid
 from Modules.readAttributes import ReadAttributeRequest_0000, ReadAttributeRequest_0001
 from Modules.bindings import rebind_Clusters, reWebBind_Clusters
 from Modules.livolo import livolo_bind
