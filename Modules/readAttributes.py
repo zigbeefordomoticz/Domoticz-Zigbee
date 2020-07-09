@@ -655,6 +655,22 @@ def ReadAttributeRequest_0702(self, key):
             loggingReadAttributes( self, 'Debug', "Request Metering info  via Read Attribute request Manuf Specific %s/%s %s" %(key, EPout, str(listAttributes)), nwkid=key)
             ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0702", listAttrSpecific, manufacturer_spec = '01', manufacturer = self.ListOfDevices[key]['Manufacturer'], ackIsDisabled = True )
 
+def ReadAttributeRequest_0b04(self, key):
+    # Cluster 0x0702 Metering
+
+    loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0702 - Key: %s " %key, nwkid=key)
+    _manuf = 'Manufacturer' in self.ListOfDevices[key]
+    ListOfEp = getListOfEpForCluster( self, key, '0b04' )
+    for EPout in ListOfEp:
+        listAttributes = []
+        for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0b04'):
+            if iterAttr not in listAttributes:
+                listAttributes.append( iterAttr )
+    
+        if listAttributes:
+            loggingReadAttributes( self, 'Debug', "Request Metering info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0b04", listAttributes, ackIsDisabled = True)
+
 def ReadAttributeRequest_000f(self, key):
 
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_000f - Key: %s " %key, nwkid=key)
@@ -717,6 +733,7 @@ READ_ATTRIBUTES_REQUEST = {
     '0500' : ( ReadAttributeRequest_0500, 'polling0500' ),
     '0502' : ( ReadAttributeRequest_0502, 'polling0502' ),
     '0702' : ( ReadAttributeRequest_0702, 'polling0702' ),
+    '0b04' : ( ReadAttributeRequest_0b04, 'polling0702' ),
     #'000f' : ( ReadAttributeRequest_000f, 'polling000f' ),
     'fc21' : ( ReadAttributeRequest_000f, 'pollingfc21' ),
     #'fc01' : ( ReadAttributeRequest_fc01, 'pollingfc01' ),
