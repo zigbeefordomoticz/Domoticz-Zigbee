@@ -625,7 +625,8 @@ def UpdateBatteryAttribute( self, MsgSrcAddr, MsgSrcEp ):
                                'lumi.remote.b286opcn01-bulb', 'lumi.remote.b486opcn01-bulb', 'lumi.remote.b686opcn01-bulb',
                                'lumi.sen_ill.mgl01')
 
-    BATTERY_200PERCENT = ( "SML001" , "RWL021", "SPZB0001", "WarningDevice" , "SmokeSensor-N", "SMOK_V16", "RH3001" ,"TS0201", "COSensor-N" )
+    BATTERY_200PERCENT = ( "SML001" , "RWL021", "SPZB0001", "WarningDevice" , "SmokeSensor-N", "SmokeSensor-EM", 
+                           "SMOK_V16", "RH3001" ,"TS0201", "COSensor-N", "COSensor-EM" )
     BATTERY_3VOLTS = ( "lumi.sen_ill.mgl01", "3AFE130104020015", "3AFE140103020000", "3AFE14010402000D", "3AFE170100510001" ) + LEGRAND_REMOTES
 
     BATTERY_15_VOLTS = ( )
@@ -2071,11 +2072,22 @@ def Cluster0b04( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" \
             %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
-    if MsgAttrID == "050b":
+    if MsgAttrID == "050b": # Active Power
         value = int(decodeAttribute( self, MsgAttType, MsgClusterData ))
-        loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s Power %s" \
+        loggingCluster( self, 'Log', "ReadCluster %s - %s/%s Power %s" \
             %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value))
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value))
+
+    elif MsgAttrID == "0505": # RMS Voltage
+        value = int(decodeAttribute( self, MsgAttType, MsgClusterData ))
+        loggingCluster( self, 'Log', "ReadCluster %s - %s/%s Voltage %s" \
+            %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value))
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0001", str(value))
+
+    elif MsgAttrID == "0508": #RMSCurrent
+        value = int(decodeAttribute( self, MsgAttType, MsgClusterData ))
+        loggingCluster( self, 'Log', "ReadCluster %s - %s/%s Current %s" \
+            %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value))
 
     else:
         loggingCluster( self, 'Log', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" \
