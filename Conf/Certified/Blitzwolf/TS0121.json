@@ -11,11 +11,11 @@
 			"0702":"", 
 			"0b04":"",
 			"0019":"", 
-			"Type":"Plug/Power/Meter"}
+			"Type":"Plug/Power/Meter/Voltage"}
 	},
 	"Type":"",
 	"bindEp": "01",
-	"ClusterToBind": [ "0006", "0702", "0019" ],
+	"ClusterToBind": [ "0006", "0702", "0b04", "0019" ],
 	"ConfigureReporting": {
 		"0006": {"Attributes": { "0000": {"DataType": "10", "MinInterval":"0001", "MaxInterval":"012C", "TimeOut":"0258","Change":"01"}}},
 		"0b04": {"Attributes": { "050b": {"DataType": "29", "MinInterval": "0005", "MaxInterval": "012C", "TimeOut": "0258","Change": "0001"}}},
@@ -27,6 +27,6 @@
 		"0000": [ "0000", "0001", "0004", "0005" ],
 		"0006": [ "0000" ],
 		"0702": [ "0000", "0200", "0300", "0301","0302", "0303", "0306", "0400"],
-		"0b04": [ "0000", "0505", "050b", "0508" ]
+		"0b04": [ "0505", "050b", "0508" ]
 	}
 }
