@@ -117,14 +117,6 @@ def device_annoucementv0( self, Devices, MsgData, MsgLQI  ):
         self.ListOfDevices[MsgSrcAddr]['Announced']['Rejoin'] = str(MsgRejoinFlag)
         self.ListOfDevices[MsgSrcAddr]['Announced']['newShortId'] = newShortId
 
-        if self.pluginconf.pluginConf['ExpDeviceAnnoucement1'] and MsgRejoinFlag == '99':
-            if 'Health' in self.ListOfDevices[MsgSrcAddr]:
-                if self.ListOfDevices[MsgSrcAddr]['Health'] == 'Live':
-                    loggingInput( self, 'Log', "        -> ExpDeviceAnnoucement 1: droping packet for %s due to MsgRejoinFlag: 99. Health: %s, MacCapa: %s, LQI: %s" \
-                        %( MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Health'], str(deviceMacCapa), int(MsgLQI,16)), MsgSrcAddr)
-                    timeStamped( self, MsgSrcAddr , 0x004d)
-                    lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
-                    return
    
         #if self.pluginconf.pluginConf['ExpDeviceAnnoucement2'] and 'Main Powered' in deviceMacCapa:
         #    if 'Health' in self.ListOfDevices[MsgSrcAddr]:
@@ -135,8 +127,8 @@ def device_annoucementv0( self, Devices, MsgData, MsgLQI  ):
         #            lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
         #            return
 
-        if self.pluginconf.pluginConf['ExpDeviceAnnoucement3'] and MsgRejoinFlag in ( '01', '02' ):
-            loggingInput( self, 'Log', "        -> ExpDeviceAnnoucement 3: drop packet for %s due to  Rejoining network as %s, LQI: %s" \
+        if MsgRejoinFlag in ( '01', '02' ):
+            loggingInput( self, 'Log', "        ->  drop packet for %s due to  Rejoining network as %s, LQI: %s" \
                 %(MsgSrcAddr, MsgRejoinFlag, int(MsgLQI,16)), MsgSrcAddr)
             self.ListOfDevices[MsgSrcAddr]['Announced']['TimeStamp'] = now
             timeStamped( self, MsgSrcAddr , 0x004d)
@@ -249,7 +241,7 @@ def device_annoucementv0( self, Devices, MsgData, MsgLQI  ):
         self.ListOfDevices[MsgSrcAddr]['MacCapa'] = MsgMacCapa
         self.ListOfDevices[MsgSrcAddr]['Capability'] = deviceMacCapa
         self.ListOfDevices[MsgSrcAddr]['IEEE'] = MsgIEEE
-        self.ListOfDevices[MsgSrcAddr]['Announced'] = now
+        self.ListOfDevices[MsgSrcAddr]['Announced']['TimeStamp'] = now
 
         if 'Main Powered' in self.ListOfDevices[MsgSrcAddr]['Capability']:
             self.ListOfDevices[MsgSrcAddr]['PowerSource'] = 'Main'
@@ -328,7 +320,7 @@ def device_annoucementv2( self, Devices, MsgData, MsgLQI ):
             # We can create the device in Plugin Db, and start the Discovery process
             loggingInput( self, 'Log', "------------ > Adding a new device %s %s )" %(NwkId, Ieee), NwkId)
             decode004d_new_devicev2( self, Devices, NwkId, Ieee , MacCapa, MsgData, MsgLQI, now )
-            if 'Announced' not in self.ListOfDevices[NwkId]:
+            if 'Announced' in self.ListOfDevices[NwkId]:
                 del self.ListOfDevices[NwkId]['Announced']
         return
 
@@ -353,7 +345,8 @@ def device_annoucementv2( self, Devices, MsgData, MsgLQI ):
         legrand_refresh_battery_remote( self, NwkId)
         return
 
-    if 'TimeStamp' in self.ListOfDevices[NwkId]['Announced'] and now < self.ListOfDevices[NwkId]['Announced']['TimeStamp'] + 15:
+    # Annouced is in the ListOfDevices[NwkId]
+    if 'TimeStamp' in self.ListOfDevices[NwkId]['Announced'] and (now < (self.ListOfDevices[NwkId]['Announced']['TimeStamp'] + 15)):
         # If the TimeStamp is > 15, the Data are invalid and we will do process this.
         if ( 'Rejoin' in self.ListOfDevices[NwkId]['Announced'] and self.ListOfDevices[NwkId]['Announced']['Rejoin'] in ('01', '02') \
             and self.ListOfDevices[NwkId]['Status'] != 'Left' ):
@@ -370,7 +363,7 @@ def device_annoucementv2( self, Devices, MsgData, MsgLQI ):
     # This should be the first one, let's take the information and drop it
     loggingInput( self, 'Log', "------------ > Finally do the existing device and rebind if needed")
     decode004d_existing_devicev2( self, Devices, NwkId, Ieee , MacCapa, MsgLQI, now )
-    if 'Announced' not in self.ListOfDevices[NwkId]:
+    if 'Announced' in self.ListOfDevices[NwkId]:
         del self.ListOfDevices[NwkId]['Announced']
 
 def decode004d_existing_devicev2( self, Devices, NwkId, MsgIEEE , MsgMacCapa, MsgLQI, now ):
@@ -486,7 +479,7 @@ def decode004d_new_devicev2( self, Devices, NwkId, MsgIEEE , MsgMacCapa, MsgData
     self.ListOfDevices[NwkId]['MacCapa'] = MsgMacCapa
     self.ListOfDevices[NwkId]['Capability'] = deviceMacCapa
     self.ListOfDevices[NwkId]['IEEE'] = MsgIEEE
-    self.ListOfDevices[NwkId]['Announced'] = now
+    self.ListOfDevices[NwkId]['Announced']['TimeStamp'] = now
 
     if 'Main Powered' in self.ListOfDevices[NwkId]['Capability']:
         self.ListOfDevices[NwkId]['PowerSource'] = 'Main'
@@ -715,7 +708,7 @@ def decode004d_new_devicev1( self, Devices, MsgSrcAddr, MsgIEEE , MsgMacCapa, Ms
     self.ListOfDevices[MsgSrcAddr]['MacCapa'] = MsgMacCapa
     self.ListOfDevices[MsgSrcAddr]['Capability'] = deviceMacCapa
     self.ListOfDevices[MsgSrcAddr]['IEEE'] = MsgIEEE
-    self.ListOfDevices[MsgSrcAddr]['Announced'] = now
+    self.ListOfDevices[MsgSrcAddr]['Announced']['TimeStamp'] = now
 
     if 'Main Powered' in self.ListOfDevices[MsgSrcAddr]['Capability']:
         self.ListOfDevices[MsgSrcAddr]['PowerSource'] = 'Main'
