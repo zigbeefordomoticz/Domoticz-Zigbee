@@ -130,7 +130,10 @@ def device_annoucementv0( self, Devices, MsgData, MsgLQI  ):
         if MsgRejoinFlag in ( '01', '02' ):
             loggingInput( self, 'Log', "        ->  drop packet for %s due to  Rejoining network as %s, LQI: %s" \
                 %(MsgSrcAddr, MsgRejoinFlag, int(MsgLQI,16)), MsgSrcAddr)
+            if 'Announced' not in self.ListOfDevices[MsgSrcAddr]:
+                self.ListOfDevices[MsgSrcAddr]['Announced'] ={}
             self.ListOfDevices[MsgSrcAddr]['Announced']['TimeStamp'] = now
+
             timeStamped( self, MsgSrcAddr , 0x004d)
             lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
             return
@@ -142,7 +145,8 @@ def device_annoucementv0( self, Devices, MsgData, MsgLQI  ):
                     # Looks like we have a duplicate Device Announced in less than 15s
                     loggingInput( self, 'Debug', "Decode004D - Duplicate Device Annoucement for %s -> Drop" %( MsgSrcAddr), MsgSrcAddr)
                     return
-
+        if 'Announced' not in self.ListOfDevices[MsgSrcAddr]:
+            self.ListOfDevices[MsgSrcAddr]['Announced'] ={}
         self.ListOfDevices[MsgSrcAddr]['Announced']['TimeStamp'] = now
 
         # If this is a rejoin after a leave, let's update the Status
@@ -241,7 +245,10 @@ def device_annoucementv0( self, Devices, MsgData, MsgLQI  ):
         self.ListOfDevices[MsgSrcAddr]['MacCapa'] = MsgMacCapa
         self.ListOfDevices[MsgSrcAddr]['Capability'] = deviceMacCapa
         self.ListOfDevices[MsgSrcAddr]['IEEE'] = MsgIEEE
+        if 'Announced' not in self.ListOfDevices[MsgSrcAddr]:
+            self.ListOfDevices[MsgSrcAddr]['Announced'] ={}
         self.ListOfDevices[MsgSrcAddr]['Announced']['TimeStamp'] = now
+
 
         if 'Main Powered' in self.ListOfDevices[MsgSrcAddr]['Capability']:
             self.ListOfDevices[MsgSrcAddr]['PowerSource'] = 'Main'
@@ -479,6 +486,8 @@ def decode004d_new_devicev2( self, Devices, NwkId, MsgIEEE , MsgMacCapa, MsgData
     self.ListOfDevices[NwkId]['MacCapa'] = MsgMacCapa
     self.ListOfDevices[NwkId]['Capability'] = deviceMacCapa
     self.ListOfDevices[NwkId]['IEEE'] = MsgIEEE
+    if 'Announced' not in self.ListOfDevices[NwkId]:
+        self.ListOfDevices[NwkId]['Announced'] ={}
     self.ListOfDevices[NwkId]['Announced']['TimeStamp'] = now
 
     if 'Main Powered' in self.ListOfDevices[NwkId]['Capability']:
@@ -590,7 +599,10 @@ def decode004d_existing_devicev1( self, Devices, MsgSrcAddr, MsgIEEE , MsgMacCap
     if MsgRejoinFlag in ( '01', '02' ) and self.ListOfDevices[MsgSrcAddr]['Status'] != 'Left':
         loggingInput( self, 'Debug', "--> drop packet for %s due to  Rejoining network as %s, LQI: %s" \
             %(MsgSrcAddr, MsgRejoinFlag, int(MsgLQI,16)), MsgSrcAddr)
+        if 'Announced' not in self.ListOfDevices[MsgSrcAddr]:
+            self.ListOfDevices[MsgSrcAddr]['Announced'] ={}
         self.ListOfDevices[MsgSrcAddr]['Announced']['TimeStamp'] = now
+
         timeStamped( self, MsgSrcAddr , 0x004d)
         lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
         legrand_refresh_battery_remote( self, MsgSrcAddr)
@@ -612,7 +624,8 @@ def decode004d_existing_devicev1( self, Devices, MsgSrcAddr, MsgIEEE , MsgMacCap
             loggingPairing( self, 'Status', "Device Announcement Addr: %s, IEEE: %s Join Flag: %s LQI: %s ChangeShortID: %s" \
                     %( MsgSrcAddr, MsgIEEE, MsgRejoinFlag, int(MsgLQI,16), newShortId))
 
-
+    if 'Announced' not in self.ListOfDevices[MsgSrcAddr]:
+        self.ListOfDevices[MsgSrcAddr]['Announced'] ={}
     self.ListOfDevices[MsgSrcAddr]['Announced']['TimeStamp'] = now
     # If this is a rejoin after a leave, let's update the Status
 
@@ -708,6 +721,9 @@ def decode004d_new_devicev1( self, Devices, MsgSrcAddr, MsgIEEE , MsgMacCapa, Ms
     self.ListOfDevices[MsgSrcAddr]['MacCapa'] = MsgMacCapa
     self.ListOfDevices[MsgSrcAddr]['Capability'] = deviceMacCapa
     self.ListOfDevices[MsgSrcAddr]['IEEE'] = MsgIEEE
+
+    if 'Announced' not in self.ListOfDevices[MsgSrcAddr]:
+        self.ListOfDevices[MsgSrcAddr]['Announced'] ={}
     self.ListOfDevices[MsgSrcAddr]['Announced']['TimeStamp'] = now
 
     if 'Main Powered' in self.ListOfDevices[MsgSrcAddr]['Capability']:
