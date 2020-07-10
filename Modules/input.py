@@ -2094,14 +2094,15 @@ def Decode8702(self, Devices, MsgData, MsgLQI) : # Reception APS Data confirm fa
 #Device Announce
 def Decode004D(self, Devices, MsgData, MsgLQI) : # Reception Device announce
 
-    if self.pluginconf.pluginConf['AnnoucementV0']:
-        device_annoucementv0( self, Devices, MsgData, MsgLQI)
-
-    elif self.pluginconf.pluginConf['AnnoucementV1']:
+    if self.FirmwareVersion and int(self.FirmwareVersion,16) >= 0x031c and self.pluginconf.pluginConf['AnnoucementV1']:
         device_annoucementv1( self, Devices, MsgData, MsgLQI)
 
-    elif self.pluginconf.pluginConf['AnnoucementV2']:
+    elif self.FirmwareVersion and int(self.FirmwareVersion,16) >= 0x031c and self.pluginconf.pluginConf['AnnoucementV2']:
         device_annoucementv2( self, Devices, MsgData, MsgLQI)
+    
+    else:
+        device_annoucementv0( self, Devices, MsgData, MsgLQI)
+
 
 def Decode8085(self, Devices, MsgData, MsgLQI) :
     'Remote button pressed'
