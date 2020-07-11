@@ -285,7 +285,7 @@ def importDeviceConfV2( self ):
                 except:
                     Domoticz.Error("--> Unexpected error when loading a configuration file")
 
-    loggingDatabase( self, 'Status', "--> Config loaded: %s" %self.DeviceConf.keys())
+    loggingDatabase( self, 'Debug', "--> Config loaded: %s" %self.DeviceConf.keys())
 
 def checkDevices2LOD( self, Devices):
 
