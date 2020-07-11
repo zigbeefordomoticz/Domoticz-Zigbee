@@ -848,16 +848,16 @@ def zigateInit_Phase3( self ):
         # Create Network Map object and trigger one scan
         if self.networkmap is None:
             self.networkmap = NetworkMap( self.pluginconf, self.ZigateComm, self.ListOfDevices, Devices, self.HardwareID, self.loggingFileHandle)
-            if len(self.ListOfDevices) > 1:
-                loggingPlugin( self, 'Status', "Trigger a Topology Scan")
-                self.networkmap.start_scan( ) 
+        #    if len(self.ListOfDevices) > 1:
+        #        loggingPlugin( self, 'Status', "Trigger a Topology Scan")
+        #        self.networkmap.start_scan( ) 
      
         # Create Network Energy object and trigger one scan
         if self.networkenergy is None:
             self.networkenergy = NetworkEnergy( self.pluginconf, self.ZigateComm, self.ListOfDevices, Devices, self.HardwareID, self.loggingFileHandle)
-            if len(self.ListOfDevices) > 1:
-                loggingPlugin( self, 'Status', "Trigger a Energy Level Scan")
-                self.networkenergy.start_scan()
+        #    if len(self.ListOfDevices) > 1:
+        #        loggingPlugin( self, 'Status', "Trigger a Energy Level Scan")
+        #        self.networkenergy.start_scan()
 
     # In case we have Transport = None , let's check if we have to active Group management or not. (For Test and Web UI Dev purposes
     if self.transport == 'None' and self.groupmgt is None and self.pluginconf.pluginConf['enablegroupmanagement']:
