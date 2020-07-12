@@ -367,6 +367,13 @@ class BasePlugin:
 
         loggingPlugin( self, 'Debug', "Establish Zigate connection" )
         self.ZigateComm.open_conn()
+
+        # IAS Zone Management
+        if self.iaszonemgt is None:
+            # Create IAS Zone object
+            #Domoticz.Log("Init IAS_Zone_management ZigateComm: %s" %self.ZigateComm)
+            self.iaszonemgt = IAS_Zone_Management( self.pluginconf, self.ZigateComm , self.ListOfDevices, self.loggingFileHandle)
+
         self.busy = False
 
     def onStop(self):
@@ -646,10 +653,10 @@ class BasePlugin:
         # Manage all entries in  ListOfDevices (existing and up-coming devices)
         processListOfDevices( self , Devices )
 
-        # IAS Zone Management
-        if not self.iaszonemgt:
-            # Create IAS Zone object
-            self.iaszonemgt = IAS_Zone_Management( self.pluginconf, self.ZigateComm , self.ListOfDevices, self.loggingFileHandle)
+
+
+
+
         self.iaszonemgt.IAS_heartbeat( )
 
         # Reset Motion sensors
@@ -783,6 +790,7 @@ def zigateInit_Phase2( self):
     # Request List of Active Devices
     sendZigateCmd(self, "0015", "") 
 
+
     # Ready for next phase
     self.InitPhase2 = True
 
@@ -844,6 +852,11 @@ def zigateInit_Phase3( self ):
             if self.pluginconf.pluginConf['zigatePartOfGroup0000']:
                 # Add Zigate NwkId 0x0000 Ep 0x01 to GroupId 0x0000
                 self.groupmgt.addGroupMemberShip( '0000', '01', '0000')
+
+
+
+
+
 
         # Create Network Map object and trigger one scan
         if self.networkmap is None:

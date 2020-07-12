@@ -92,8 +92,10 @@ def RetreiveSignalLvlBattery( self, NwkID):
     #Domoticz.Log("RetreiveSignalLvlBattery - convert ZiGate LQI: %s to Domoticz LQI: %s" %(SignalLevel, DomoticzRSSI ))
     SignalLevel = DomoticzRSSI
 
+
     BatteryLevel = ''
     if 'Battery' in self.ListOfDevices[NwkID] and self.ListOfDevices[NwkID]['Battery'] != {}:
+        #Domoticz.Log("RetreiveSignalLvlBattery NwkId: %s Battery: %s" %(NwkID,self.ListOfDevices[NwkID]['Battery'] ))
         BatteryLevel = int(round((self.ListOfDevices[NwkID]['Battery'])))
 
     if BatteryLevel == '' or (not isinstance(BatteryLevel, int)):

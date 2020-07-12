@@ -477,8 +477,11 @@ def Decode8009(self, Devices, MsgData, MsgLQI): # Network State response (Firm v
 
     self.currentChannel = int(Channel,16)
 
+    #Domoticz.Log("IAS Zone: %s" %self.iaszonemgt)
     if self.iaszonemgt:
+        #Domoticz.Log("Update IAS Zone - IEEE: %s" %extaddr)
         self.iaszonemgt.setZigateIEEE( extaddr )
+        
     if self.groupmgt:
         self.groupmgt.updateZigateIEEE( extaddr) 
 
@@ -1967,7 +1970,7 @@ def Decode8401(self, Devices, MsgData, MsgLQI) : # Reception Zone status change 
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, MsgClusterId, '%02d' %( alarm1 or alarm2) )
 
         if battdef or battery:
-            self.ListOfDevices[MsgSrcAddr]['Battery'] = '1'
+            self.ListOfDevices[MsgSrcAddr]['Battery'] = 1
 
         if 'IAS' in self.ListOfDevices[MsgSrcAddr]:
             if 'ZoneStatus' in self.ListOfDevices[MsgSrcAddr]['IAS']:

@@ -32,48 +32,35 @@ class IAS_Zone_Management:
         self.HB = 0
         self.ZigateComm = ZigateComm
         self.ZigateIEEE = None
-        if ZigateIEEE != '':
+        if ZigateIEEE:
             self.ZigateIEEE = ZigateIEEE
         self.pluginconf = pluginconf
         self.loggingFileHandle = loggingFileHandle
 
     def _loggingStatus( self, message):
 
-        if self.pluginconf.pluginConf['useDomoticzLog']:
-            Domoticz.Status( message )
-        else:
-            if self.loggingFileHandle:
-                Domoticz.Status( message )
-                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
-                self.loggingFileHandle.write( message )
-                self.loggingFileHandle.flush()
-            else:
-                Domoticz.Status( message )
+        Domoticz.Status( message )
+        if ( not self.pluginconf.pluginConf['useDomoticzLog'] and self.loggingFileHandle ):
+            message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+            self.loggingFileHandle.write( message )
+            self.loggingFileHandle.flush()
 
     def _loggingLog( self, message):
 
-        if self.pluginconf.pluginConf['useDomoticzLog']:
-            Domoticz.Log( message )
-        else:
-            if self.loggingFileHandle:
-                Domoticz.Log( message )
-                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
-                self.loggingFileHandle.write( message )
-                self.loggingFileHandle.flush()
-            else:
-                Domoticz.Log( message )
+        Domoticz.Log( message )
+        if ( not self.pluginconf.pluginConf['useDomoticzLog'] and self.loggingFileHandle ):
+            message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+            self.loggingFileHandle.write( message )
+            self.loggingFileHandle.flush()
 
     def _loggingDebug( self, message):
 
-        if self.pluginconf.pluginConf['useDomoticzLog']:
-            Domoticz.Log( message )
+        if ( not self.pluginconf.pluginConf['useDomoticzLog'] and self.loggingFileHandle ):
+            message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+            self.loggingFileHandle.write( message )
+            self.loggingFileHandle.flush()
         else:
-            if self.loggingFileHandle:
-                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
-                self.loggingFileHandle.write( message )
-                self.loggingFileHandle.flush()
-            else:
-                Domoticz.Log( message )
+            Domoticz.Log( message )
 
     def logging( self, logType, message):
 
@@ -94,7 +81,8 @@ class IAS_Zone_Management:
         datas = addr_mode + key + EPin + EPout + clusterID
         datas += direction + manuf_spec + manuf_id
         datas += lenght +attribute + data_type + data
-        self.ZigateComm.sendData( "0110", datas )
+        Domoticz.Log("__write_attribute : %s" %self.ZigateComm)
+        self.ZigateComm.sendData( '0110', datas, ackIsDisabled=False)
         return
 
 
@@ -124,7 +112,7 @@ class IAS_Zone_Management:
 
     def setZigateIEEE(self, ZigateIEEE):
 
-        self.logging( 'Debug', "setZigateIEEE - Set Zigate IEEE: %s" %ZigateIEEE)
+        self.logging( 'Log', "setZigateIEEE - Set Zigate IEEE: %s" %ZigateIEEE)
         self.ZigateIEEE = ZigateIEEE
         return
 
