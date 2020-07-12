@@ -81,7 +81,7 @@ class IAS_Zone_Management:
         datas = addr_mode + key + EPin + EPout + clusterID
         datas += direction + manuf_spec + manuf_id
         datas += lenght +attribute + data_type + data
-        Domoticz.Log("__write_attribute : %s" %self.ZigateComm)
+        #Domoticz.Log("__write_attribute : %s" %self.ZigateComm)
         self.ZigateComm.sendData( '0110', datas, ackIsDisabled=False)
         return
 
@@ -107,7 +107,7 @@ class IAS_Zone_Management:
                 Attr_ = "%04x" %(x)
                 Attr += Attr_
         datas = "02" + addr + EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + "%02x" %(lenAttr) + Attr
-        self.ZigateComm.sendData( "0100", datas )
+        self.ZigateComm.sendData( "0100", datas, ackIsDisabled=False )
         return
 
     def setZigateIEEE(self, ZigateIEEE):
@@ -119,6 +119,10 @@ class IAS_Zone_Management:
     def setIASzoneControlerIEEE( self, key, Epout ):
 
         self.logging( 'Debug', "setIASzoneControlerIEEE for %s allow: %s" %(key, Epout))
+        if not self.ZigateIEEE:
+            self.logging( 'Error', "readConfirmEnroll - Zigate IEEE not yet known")
+            return
+
         manuf_id = "0000"
         if 'Manufacturer' in self.ListOfDevices[key]:
             manuf_id = self.ListOfDevices[key]['Manufacturer']
@@ -133,7 +137,7 @@ class IAS_Zone_Management:
     def readConfirmEnroll( self, key, Epout ):
 
         if not self.ZigateIEEE:
-            self.logging( 'Log', "readConfirmEnroll - Zigate IEEE not yet known")
+            self.logging( 'Error', "readConfirmEnroll - Zigate IEEE not yet known")
             return
         if key not in self.devices:
             self.logging( 'Log', "readConfirmEnroll - while not yet started")
@@ -147,7 +151,7 @@ class IAS_Zone_Management:
         '''2.the CIE sends a ‘enroll’ message to the IAS Zone device'''
 
         if not self.ZigateIEEE:
-            self.logging( 'Log', "IASZone_enroll_response_ - Zigate IEEE not yet known")
+            self.logging( 'Error', "IASZone_enroll_response_ - Zigate IEEE not yet known")
             return
         if nwkid not in self.devices:
             self.logging( 'Log', "IASZone_enroll_response - while not yet started")
@@ -166,7 +170,7 @@ class IAS_Zone_Management:
         '''4.the CIE sends again a ‘response’ message to the IAS Zone device with ZoneID'''
 
         if not self.ZigateIEEE:
-            self.logging( 'Log', "IASZone_enroll_response_zoneID - Zigate IEEE not yet known")
+            self.logging( 'Error', "IASZone_enroll_response_zoneID - Zigate IEEE not yet known")
             return
         if nwkid not in self.devices:
             self.logging( 'Log', "IASZone_enroll_response_zoneID - while not yet started")
@@ -194,7 +198,7 @@ class IAS_Zone_Management:
     def IASZone_attributes( self, nwkid, Epout):
 
         if not self.ZigateIEEE:
-            self.logging( 'Log', "IASZone_attributes - Zigate IEEE not yet known")
+            self.logging( 'Error', "IASZone_attributes - Zigate IEEE not yet known")
             return
         if nwkid not in self.devices:
             self.logging( 'Log', "IASZone_attributes - while not yet started")
@@ -208,7 +212,7 @@ class IAS_Zone_Management:
 
         self.logging( 'Debug', "IASZone_triggerenrollement - Addr: %s Ep: %s" %(nwkid, Epout))
         if not self.ZigateIEEE:
-            self.logging( 'Log', "IASZone_triggerenrollement - Zigate IEEE not yet known")
+            self.logging( 'Error', "IASZone_triggerenrollement - Zigate IEEE not yet known")
             return
         if nwkid not in self.devices:
             self.devices[nwkid] = {}
@@ -309,7 +313,7 @@ class IAS_Zone_Management:
             return
         self.logging( 'Debug', "IAS_heartbeat ")
         if not self.ZigateIEEE:
-            self.logging( 'Log', "IAS_heartbeat - Zigate IEEE not yet known")
+            self.logging( 'Debug', "IAS_heartbeat - Zigate IEEE not yet known")
             return
         remove_devices =[]
         for iterKey in self.devices:
