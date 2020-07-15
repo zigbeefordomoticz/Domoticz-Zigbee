@@ -1312,8 +1312,9 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     value = decodeAttribute( self, MsgAttType, MsgClusterData)
 
-
     if MsgAttrID =='0000':  # Local Temperature (Zint16)
+        if ( 'Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Model'] == 'VOC_Sensor' ):
+            return
         ValueTemp=round(int(value)/100,2)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0402',ValueTemp)
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  ValueTemp )
@@ -1488,27 +1489,32 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     elif MsgAttrID in ( '4000', '4001', '4002', '4003', '4008' ):
 
         eurotronics = False
-        if 'Manufacturer' in self.ListOfDevices[MsgSrcAddr]:
-            if self.ListOfDevices[MsgSrcAddr]['Manufacturer'] == '1037':
-                eurotronics = True
-        if 'Manufacturer Name' in self.ListOfDevices[MsgSrcAddr]:
-            if self.ListOfDevices[MsgSrcAddr]['Manufacturer Name'] == 'Eurotronic':
-                eurotronics = True
+        if (
+            'Manufacturer' in self.ListOfDevices[MsgSrcAddr]
+            and self.ListOfDevices[MsgSrcAddr]['Manufacturer'] == '1037'
+        ):
+            eurotronics = True
+        if (
+            'Manufacturer Name' in self.ListOfDevices[MsgSrcAddr]
+            and self.ListOfDevices[MsgSrcAddr]['Manufacturer Name']
+            == 'Eurotronic'
+        ):
+            eurotronics = True
 
         if eurotronics:
             # Eurotronic SPZB Specifics
             if MsgAttrID == '4000': # TRV Mode for EUROTRONICS
                 loggingCluster( self, 'Debug', "ReadCluster - 0201 - %s/%s TRV Mode: %s" %(MsgSrcAddr, MsgSrcEp,value), MsgSrcAddr)
                 checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  value )
-     
+
             elif MsgAttrID == '4001': # Valve position for EUROTRONICS
                 loggingCluster( self, 'Debug', "ReadCluster - 0201 - %s/%s Valve position: %s" %(MsgSrcAddr, MsgSrcEp,value), MsgSrcAddr)
                 checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  value )
-     
+
             elif MsgAttrID == '4002': # Erreors for EUROTRONICS
                 loggingCluster( self, 'Debug', "ReadCluster - 0201 - %s/%s Status: %s" %(MsgSrcAddr, MsgSrcEp,value), MsgSrcAddr)
                 checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  value )
-     
+
             elif MsgAttrID == '4003': # Current Temperature Set point for EUROTRONICS
                 setPoint = ValueTemp = round(int(value)/100,2)
                 if '0012' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]:
@@ -1519,7 +1525,7 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                     MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0201',ValueTemp, Attribute_=MsgAttrID)
                     checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  ValueTemp )
                     checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, '0012',  ValueTemp )
-    
+
             elif MsgAttrID == '4008': # Host Flags for EUROTRONICS
                 HOST_FLAGS = {
                         0x000002:'Display Flipped',
@@ -1530,7 +1536,7 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                         }
                 loggingCluster( self, 'Debug', "ReadCluster - 0201 - %s/%s Host Flags: %s" %(MsgSrcAddr, MsgSrcEp,value), MsgSrcAddr)
                 checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  value )
-        
+
     elif MsgAttrID in ( 'e010', 'e011', 'e012', 'e013', 'e014', 'e030', 'e031', 'e020'):
         if MsgAttrID == 'e010': # Schneider Thermostat Mode
             THERMOSTAT_MODE = { '00': 'Mode Off', '01': 'Manual',
@@ -1722,28 +1728,25 @@ def Cluster0402( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         value = int(decodeAttribute( self, MsgAttType, MsgClusterData))
         loggingCluster( self, 'Log', "readCluster - %s - %s/%s Atribute 0x0001: %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr)
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
-        if 'Model' in self.ListOfDevices[ MsgSrcAddr ]:
-            if self.ListOfDevices[ MsgSrcAddr ]['Model'] == 'VOC_Sensor':
-                # Humidity
-                MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0405', value // 100 )
+        if ( 'Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Model'] == 'VOC_Sensor' ):
+            # Humidity
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0405', value // 100 )
 
     elif MsgAttrID == '0002':
         value = int(decodeAttribute( self, MsgAttType, MsgClusterData))
         loggingCluster( self, 'Log', "readCluster - %s - %s/%s Atribute 0x0002: %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr)
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
-        if 'Model' in self.ListOfDevices[ MsgSrcAddr ]:
-            if self.ListOfDevices[ MsgSrcAddr ]['Model'] == 'VOC_Sensor':
-                # ECO2
-                MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value )
+        if ( 'Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Model'] == 'VOC_Sensor' ):
+            # ECO2
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value )
 
     elif MsgAttrID == '0003':
         value = int(decodeAttribute( self, MsgAttType, MsgClusterData))
         loggingCluster( self, 'Log', "readCluster - %s - %s/%s Atribute 0x0003: %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr)
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
-        if 'Model' in self.ListOfDevices[ MsgSrcAddr ]:
-            if self.ListOfDevices[ MsgSrcAddr ]['Model'] == 'VOC_Sensor':
-                # VOC
-                MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgClusterData )
+        if ( 'Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Model'] == 'VOC_Sensor' ):
+            # VOC
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgClusterData )
 
     else:
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, MsgClusterData )
