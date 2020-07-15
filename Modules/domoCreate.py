@@ -383,6 +383,13 @@ def CreateDomoDevice(self, Devices, NWKID):
                 loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in Ikea Round" %(t), NWKID)
 
             # ==== Classic Widget
+            if t in ( 'AirQuality', ):
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 255, Subtype_ = 0, Switchtype_= 38) 
+                loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in Alarm" %(t), NWKID)
+            if t in ( 'CO', ):
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 255, Subtype_ = 0, Switchtype_= 38) 
+                loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in Alarm" %(t), NWKID)
+
             if t in ( 'Alarm', ):
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 243, Subtype_ = 22, Switchtype_= 0) 
                 loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in Alarm" %(t), NWKID)
@@ -446,7 +453,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 246, Subtype_ = 1, Switchtype_ = 0 )
                 loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in Lux" %(t), NWKID)
 
-            if t in ( "Switch", "SwitchButton", "HeatingSwitch"):  
+            if t in ( "Switch", "SwitchButton", "HeatingSwitch", "DoorLock" ):  
                 # inter sans fils 1 touche 86sw1 xiaomi
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 244, Subtype_ = 73, Switchtype_ = 0 )
                 loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in Switch" %(t), NWKID)

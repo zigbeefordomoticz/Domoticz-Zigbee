@@ -29,6 +29,7 @@ from Modules.domoTools import UpdateDevice_v2, RetreiveSignalLvlBattery, Retreiv
 from Classes.IAS import IAS_Zone_Management
 from Modules.zigateConsts import THERMOSTAT_LEVEL_2_MODE, ZIGATE_EP
 from Modules.widgets import SWITCH_LVL_MATRIX
+from Modules.cmdsDoorLock import cluster0101_lock_door, cluster0101_unlock_door
 
 def debugDevices( self, Devices, Unit):
 
@@ -197,6 +198,9 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         elif DeviceType == "HeatingSwitch":
             thermostat_Mode( self, NWKID, 'Off' )
 
+        elif DeviceType == 'DoorLock':
+            cluster0101_lock_door( self, NWKID)
+
         else:
             # Remaining Slider widget
             if profalux: # Profalux are define as LvlControl but should be managed as Blind Inverted
@@ -256,6 +260,9 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
 
         elif DeviceType == "HeatingSwitch":
             thermostat_Mode( self, NWKID, 'Heat' )
+
+        elif DeviceType == 'DoorLock':
+            cluster0101_unlock_door( self, NWKID)
 
         else:
             # Remaining Slider widget

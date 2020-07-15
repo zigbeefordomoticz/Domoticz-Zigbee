@@ -381,6 +381,16 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 NewSvalue = '%s;%s;%s;%s;%s' % (SplitData[0], SplitData[1], SplitData[2], baroValue, Bar_forecast)
                 UpdateDevice_v2(self, Devices, DeviceUnit, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
 
+        if ClusterType == 'Temp' and WidgetType == 'AirQuality':
+            # AirQuality for VOC_Sensor from Nexturn is provided via Temp cluster
+            value = '%s' %int(value)
+            UpdateDevice_v2(self, Devices, DeviceUnit, 0, value, BatteryLevel, SignalLevel)
+
+        if ClusterType == 'Temp' and WidgetType == 'CO':
+            # Co for VOC_Sensor from Nexturn is provided via Temp cluster
+            value = '%s' %round(value,1)
+            UpdateDevice_v2(self, Devices, DeviceUnit, 0, value, BatteryLevel, SignalLevel)
+
         if 'BSO-Orientation' in ClusterType: # 0xfc21 Not fully tested / So far developped for Profalux
             # value is str
             if WidgetType == "BSO-Orientation":
@@ -391,8 +401,9 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 sValue = str(selector)
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
 
-        if ClusterType in ( 'Alarm', 'Door', 'Switch', 'SwitchButton', 'AqaraOppleMiddle', 'Motion', 
-                            'Ikea_Round_5b', 'Ikea_Round_OnOff', 'Vibration', 'OrviboRemoteSquare', 'Button_3'): # Plug, Door, Switch, Button ...
+        if ClusterType in ( 'Alarm', 'Door', 'DoorLock', 'Switch', 'SwitchButton', 'AqaraOppleMiddle', 'Motion', 
+                            'Ikea_Round_5b', 'Ikea_Round_OnOff', 'Vibration', 'OrviboRemoteSquare', 'Button_3'): 
+            # Plug, Door, Switch, Button ...
             # We reach this point because ClusterType is Door or Switch. It means that Cluster 0x0006 or 0x0500
             # So we might also have to manage case where we receive a On or Off for a LvlControl WidgetType like a dimming Bulb.
             loggingWidget( self, "Debug", "------> Generic Widget for %s ClusterType: %s WidgetType: %s Value: %s" %(NWKID, WidgetType, ClusterType , value), NWKID)
