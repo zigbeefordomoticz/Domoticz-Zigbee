@@ -1715,21 +1715,21 @@ def Cluster0402( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             loggingCluster( self, 'Log', "readCluster - %s - %s/%s Invalid Temperature Measurement: %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr)
         else:
             value = round(value/100,1)
-            loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Temperature Measurement: %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr)
+            loggingCluster( self, 'Log', "readCluster - %s - %s/%s Temperature Measurement: %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value )
             
     elif MsgAttrID == '0001':
         value = int(decodeAttribute( self, MsgAttType, MsgClusterData))
-        loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Atribute 0x0001: %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr)
+        loggingCluster( self, 'Log', "readCluster - %s - %s/%s Atribute 0x0001: %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr)
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
         if 'Model' in self.ListOfDevices[ MsgSrcAddr ]:
             if self.ListOfDevices[ MsgSrcAddr ]['Model'] == 'VOC_Sensor':
                 # Humidity
-                MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0405', value / 100 )
+                MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0405', value // 100 )
 
     elif MsgAttrID == '0002':
         value = int(decodeAttribute( self, MsgAttType, MsgClusterData))
-        loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Atribute 0x0002: %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr)
+        loggingCluster( self, 'Log', "readCluster - %s - %s/%s Atribute 0x0002: %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr)
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
         if 'Model' in self.ListOfDevices[ MsgSrcAddr ]:
             if self.ListOfDevices[ MsgSrcAddr ]['Model'] == 'VOC_Sensor':
@@ -1738,7 +1738,7 @@ def Cluster0402( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     elif MsgAttrID == '0003':
         value = int(decodeAttribute( self, MsgAttType, MsgClusterData))
-        loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Atribute 0x0003: %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr)
+        loggingCluster( self, 'Log', "readCluster - %s - %s/%s Atribute 0x0003: %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr)
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
         if 'Model' in self.ListOfDevices[ MsgSrcAddr ]:
             if self.ListOfDevices[ MsgSrcAddr ]['Model'] == 'VOC_Sensor':
