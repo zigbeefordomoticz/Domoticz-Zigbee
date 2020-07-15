@@ -12,6 +12,20 @@ If you want to contribue , please let us know , we are looking for help in vario
 - improving the plugin
 - increasing the level of documentation for end user
 
+##              - 4.10
+- [Technical] - Implement a full SQN management and Synchro based on firmware 31d
+- [Technical] - By default use NOACK ZCL command if response is expected. Other commands are send with ACK
+- [Technical] - Bind and ConfigureReporting based on SQN
+- [Hardware] - SonOff devicess
+- [Technical] - Disable automatic start of Network Topology and Interferences reports
+- [Technical] - Follow Device Annoucement protocol (Rejoin)
+- [Technical] - Replace RSSI related label to LQI
+- [Hardware] - Integrate new Heiman Sensors ( Smoke and CO)
+- [Issue] - Fix an issue related to pairing of IAS devices
+
+
+
+
 
 ##  5 June 2020 - 4.9.1 (Last release supporting Firmware below 3.1c)
 - [Technical] - Ready for PDM on host.
