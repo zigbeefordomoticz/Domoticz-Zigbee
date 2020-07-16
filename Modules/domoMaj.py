@@ -281,12 +281,12 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
         if ClusterType == 'Temp' and WidgetType == 'AirQuality' and Attribute_ == '0002':
             # eco2 for VOC_Sensor from Nexturn is provided via Temp cluster
-            value = '%s' %(round(value,1))
+            value = '%d' %(round(value,0))
             UpdateDevice_v2(self, Devices, DeviceUnit, 0, value, BatteryLevel, SignalLevel)
 
         if ClusterType == 'Temp' and WidgetType == 'Voc' and Attribute_ == '0003':
             # voc for VOC_Sensor from Nexturn is provided via Temp cluster
-            value = '%s' %(round(value,0))
+            value = '%d' %(round(value,0))
             UpdateDevice_v2(self, Devices, DeviceUnit, 0, value, BatteryLevel, SignalLevel)
 
         if ClusterType == 'Temp' and WidgetType in ( 'Temp', 'Temp+Hum', 'Temp+Hum+Baro') and  Attribute_ == '':  # temperature
