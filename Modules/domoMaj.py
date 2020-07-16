@@ -279,12 +279,12 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
                     loggingWidget( self, "Debug", "------>  Thermostat Mode: %s %s" %(nValue,sValue), NWKID)
 
-        if ClusterType == 'Temp' and WidgetType == 'CO' and Attribute_ == '0002':
+        if ClusterType == 'Temp' and WidgetType == 'Carbon Dioxyde' and Attribute_ == '0002':
             # Co for VOC_Sensor from Nexturn is provided via Temp cluster
             value = '%s' %(round(value,1))
             UpdateDevice_v2(self, Devices, DeviceUnit, 0, value, BatteryLevel, SignalLevel)
 
-        if ClusterType == 'Temp' and WidgetType == 'AirQuality' and Attribute_ == '0003':
+        if ClusterType == 'Temp' and WidgetType == 'Air Quality' and Attribute_ == '0003':
             # AirQuality for VOC_Sensor from Nexturn is provided via Temp cluster
             value = '%s' %(round(value,0))
             UpdateDevice_v2(self, Devices, DeviceUnit, 0, value, BatteryLevel, SignalLevel)
