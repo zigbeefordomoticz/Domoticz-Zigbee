@@ -106,7 +106,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
         # Attribute_ : If used This is the Attribute from readCluster. Will help to route to the right action
         # Color_     : If used This is the color value to be set
 
-        loggingWidget( self, 'Debug', "------> WidgetEp: %s WidgetId: %s WidgetType: %s" %( WidgetEp , WidgetId, WidgetType), NWKID)
+        loggingWidget( self, 'Debug', "------> ClusterType: %s WidgetEp: %s WidgetId: %s WidgetType: %s Attribute_: %s" %( ClusterType, WidgetEp , WidgetId, WidgetType, Attribute_), NWKID)
 
         SignalLevel,BatteryLevel = RetreiveSignalLvlBattery( self, NWKID)
 
