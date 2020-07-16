@@ -1726,26 +1726,29 @@ def Cluster0402( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             
     elif MsgAttrID == '0001':
         value = int(decodeAttribute( self, MsgAttType, MsgClusterData))
-        loggingCluster( self, 'Log', "readCluster - %s - %s/%s Atribute 0x0001: %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr)
+        loggingCluster( self, 'Log', "readCluster - %s - %s/%s Attribute 0x0001: %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr)
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
         if ( 'Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Model'] == 'VOC_Sensor' ):
             # Humidity
+            Domoticz.Log("Update VOC Sensor Humidity: %s" %value)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0405', value // 100 , Attribute_ = MsgAttrID)
 
     elif MsgAttrID == '0002':
         value = int(decodeAttribute( self, MsgAttType, MsgClusterData))
-        loggingCluster( self, 'Log', "readCluster - %s - %s/%s Atribute 0x0002: %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr)
+        loggingCluster( self, 'Log', "readCluster - %s - %s/%s Attribute 0x0002: %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr)
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
         if ( 'Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Model'] == 'VOC_Sensor' ):
             # ECO2
+            Domoticz.Log("Update VOC Sensor ECO2: %s" %value)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value ,  Attribute_ = MsgAttrID)
 
     elif MsgAttrID == '0003':
         value = int(decodeAttribute( self, MsgAttType, MsgClusterData))
-        loggingCluster( self, 'Log', "readCluster - %s - %s/%s Atribute 0x0003: %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr)
+        loggingCluster( self, 'Log', "readCluster - %s - %s/%s Attribute 0x0003: %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr)
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
         if ( 'Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Model'] == 'VOC_Sensor' ):
             # VOC
+            Domoticz.Log("Update VOC Sensor VOC: %s" %value)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value ,  Attribute_ = MsgAttrID)
 
     else:
