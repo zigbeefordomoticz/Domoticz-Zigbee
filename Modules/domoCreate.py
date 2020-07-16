@@ -384,10 +384,10 @@ def CreateDomoDevice(self, Devices, NWKID):
 
             # ==== Classic Widget
             if t in ( 'AirQuality', ):
-                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 255, Subtype_ = 0, Switchtype_= 38, widgetOptions='1;AQI') 
-                loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in Alarm" %(t), NWKID)
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, "Air Quality", "Air Quality")
+                loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in AirQuality" %(t), NWKID)
             if t in ( 'CO', ):
-                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 255, Subtype_ = 0, Switchtype_= 38, widgetOptions='1;AQI') 
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, "Carbon Dioxyde", "Air Quality")
                 loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in Alarm" %(t), NWKID)
 
             if t in ( 'Alarm', ):
