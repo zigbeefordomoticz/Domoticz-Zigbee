@@ -279,6 +279,16 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
                     loggingWidget( self, "Debug", "------>  Thermostat Mode: %s %s" %(nValue,sValue), NWKID)
 
+        if ClusterType == 'Temp' and WidgetType == 'CO' and Attribute_ == '0002':
+            # Co for VOC_Sensor from Nexturn is provided via Temp cluster
+            value = '%s' %(round(value,1))
+            UpdateDevice_v2(self, Devices, DeviceUnit, 0, value, BatteryLevel, SignalLevel)
+
+        if ClusterType == 'Temp' and WidgetType == 'AirQuality' and Attribute_ == '0003':
+            # AirQuality for VOC_Sensor from Nexturn is provided via Temp cluster
+            value = '%s' %(round(value,0))
+            UpdateDevice_v2(self, Devices, DeviceUnit, 0, value, BatteryLevel, SignalLevel)
+
         if ClusterType == 'Temp' and WidgetType in ( 'Temp', 'Temp+Hum', 'Temp+Hum+Baro') and  Attribute_ == '':  # temperature
             loggingWidget( self, "Debug", "------>  Temp: %s, WidgetType: >%s<" %(value,WidgetType), NWKID)
             adjvalue = 0
@@ -380,17 +390,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
             elif WidgetType == "Temp+Hum+Baro":
                 NewSvalue = '%s;%s;%s;%s;%s' % (SplitData[0], SplitData[1], SplitData[2], baroValue, Bar_forecast)
                 UpdateDevice_v2(self, Devices, DeviceUnit, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
-
-        if ClusterType == 'Temp' and WidgetType == 'AirQuality'  and Attribute_ == '0003':
-            # AirQuality for VOC_Sensor from Nexturn is provided via Temp cluster
-            # Value is a Str
-            UpdateDevice_v2(self, Devices, DeviceUnit, 0, value, BatteryLevel, SignalLevel)
-            value = int(value,16)
-
-        if ClusterType == 'Temp' and WidgetType == 'CO'  and Attribute_ == '0002':
-            # Co for VOC_Sensor from Nexturn is provided via Temp cluster
-            value = '%s' %round(value,1)
-            UpdateDevice_v2(self, Devices, DeviceUnit, 0, value, BatteryLevel, SignalLevel)
 
         if 'BSO-Orientation' in ClusterType: # 0xfc21 Not fully tested / So far developped for Profalux
             # value is str

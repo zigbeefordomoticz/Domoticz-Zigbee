@@ -1746,7 +1746,7 @@ def Cluster0402( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
         if ( 'Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Model'] == 'VOC_Sensor' ):
             # VOC
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgClusterData ,  Attribute_ = MsgAttrID)
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value ,  Attribute_ = MsgAttrID)
 
     else:
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, MsgClusterData )
