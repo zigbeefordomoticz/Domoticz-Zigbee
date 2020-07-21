@@ -16,10 +16,11 @@
 	"Type":"",
         "ClusterToBind": [ "0000", "0001", "0402", "0405" ],
         "ConfigureReporting":{
+			"0001": {"Attributes": { "0021": {"DataType": "20", "MinInterval":"012C", "MaxInterval":"012C", "TimeOut":"0FFF","Change":"01"}}}
 		},
 		"ReadAttributes": {
 			"0000": [ "0000", "0004", "0005" ],
 			"0402": [ ],
 			"0405": []
-        }
+		}
 }
