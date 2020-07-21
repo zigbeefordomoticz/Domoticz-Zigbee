@@ -21,6 +21,7 @@ from time import time
 from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_EP, HEARTBEAT, LEGRAND_REMOTES
 from Modules.tools import retreive_cmd_payload_from_8002
 from Modules.logging import loggingLegrand
+from Modules.readAttributes import ReadAttributeRequest_0001
 
 from Modules.basicOutputs import raw_APS_request, send_zigatecmd_zcl_noack, write_attribute, write_attributeNoResponse
 
@@ -61,13 +62,13 @@ def legrand_fake_read_attribute_response( self, nwkid ):
 
 def legrandReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
     
-    Domoticz.Log("legrandReadRawAPS - Nwkid: %s Ep: %s, Cluster: %s, dstNwkid: %s, dstEp: %s, Payload: %s" \
+    loggingLegrand( self, 'Debug',"legrandReadRawAPS - Nwkid: %s Ep: %s, Cluster: %s, dstNwkid: %s, dstEp: %s, Payload: %s" \
             %(srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload))
 
     # At Device Annoucement 0x00 and 0x05 are sent by device
 
-    Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002( MsgPayload )
-    Domoticz.Log(" NwkId: %s/%s Cluster: %s Command: %s Data: %s" %( srcNWKID, srcEp, ClusterID, Command, Data))
+    GlobalCommand, Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002( MsgPayload )
+    loggingLegrand( self, 'Debug'," NwkId: %s/%s Cluster: %s Command: %s Data: %s" %( srcNWKID, srcEp, ClusterID, Command, Data))
 
     if ClusterID == '0102' and Command == '00': # No data (Cluster 0x0102)
         pass
@@ -84,7 +85,7 @@ def legrandReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP
         _ieee = '%08x' %struct.unpack('q',struct.pack('>Q',int(Data[0:16],16)))[0] 
 
         _count = Data[16:18] 
-        Domoticz.Log("---> Decoding cmd 0x09 Ieee: %s Count: %s" %(_ieee, _count))
+        loggingLegrand( self, 'Debug',"---> Decoding cmd 0x09 Ieee: %s Count: %s" %(_ieee, _count))
         if _count == '01':
             LegrandGroupMemberShip = 'fefe'
         elif _count == '02':
@@ -95,7 +96,7 @@ def legrandReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP
         LegrandGroupMemberShip = Data[0:4]
         _ieee = '%08x' %struct.unpack('q',struct.pack('>Q',int(Data[4:20],16)))[0]   # IEEE of Device
         _code = Data[20:24]
-        Domoticz.Log("---> Decoding cmd: 0x0a Group: %s, Ieee: %s Code: %s" %(LegrandGroupMemberShip, _ieee, _code))
+        loggingLegrand( self, 'Debug',"---> Decoding cmd: 0x0a Group: %s, Ieee: %s Code: %s" %(LegrandGroupMemberShip, _ieee, _code))
         status = '00'
         #_ieee = '%08x' %struct.unpack('q',struct.pack('>Q',int(ieee,16)))[0]
         _ieee = '4fa5820000740400' # IEEE du Dimmer
@@ -103,7 +104,7 @@ def legrandReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP
 
 def sendFC01Command( self, sqn, nwkid, ep, ClusterID, cmd, data):
 
-    Domoticz.Log("sendFC01Command Cmd: %s Data: %s" %(cmd, data))
+    loggingLegrand( self, 'Debug',"sendFC01Command Cmd: %s Data: %s" %(cmd, data))
 
     if cmd == '00':
         # Read Attribute received
@@ -142,7 +143,8 @@ def sendFC01Command( self, sqn, nwkid, ep, ClusterID, cmd, data):
 
 
 def rejoin_legrand_reset( self ):  
-    #
+
+    
     # Check if we have any Legrand devices if so send teh Reset to the Air
     for x in self.ListOfDevices:
         if ( 'Manufacturer' in self.ListOfDevices[x] and self.ListOfDevices[x]['Manufacturer'] == '1021' ):
@@ -154,8 +156,9 @@ def rejoin_legrand_reset( self ):
         return
 
     #Send a Write Attributes no responses
-    Domoticz.Log("Detected Legrand IEEE, broadcast Write Attribute 0x0000/0xf000")
+    Domoticz.Status("Detected Legrand IEEE, broadcast Write Attribute 0x0000/0xf000")
     write_attributeNoResponse( self, 'ffff', ZIGATE_EP, '01', '0000', '1021', '01', 'f000', '23', '00000000')
+
 
 def legrand_fc01( self, nwkid, command, OnOff):
 
@@ -419,29 +422,13 @@ def legrandReenforcement( self, NWKID):
                 rescheduleAction = True
     return rescheduleAction
 
-def registrationLegrand( self, nwkid):
-    
-    # FCF: 0x40
-    # dstEp: 01
-    # Cluster: 0xfc01
-    # Command: 0x0e
-    # Data: 01
+def legrand_refresh_battery_remote( self, nwkid):
 
-    if nwkid not in self.ListOfDevices:
-        Domoticz.Error("registrationLegrand - unknown device %s" %nwkid)
+    if 'Model' not in self.ListOfDevices[ nwkid ]:
         return
-
-    if 'Model' not in self.ListOfDevices:
-        Domoticz.Error("registrationLegrand - device without a Model Name %s" %nwkid)
+    if self.ListOfDevices[ nwkid ]['Model'] not in LEGRAND_REMOTES:
         return
-
-    if self.ListOfDevices['Model'] in LEGRAND_REMOTES:
-        Domoticz.Log("registrationLegrand - Poll Control Management")
-        PollControlCheckin(self, nwkid)
-        FastPollStop(self, nwkid)
-
-def ZigateTimeOfOperation( self):
-    # Send a Read Attribute Request to Zigate to get it's Reporting Time of Operation
-    loggingLegrand( self, 'Log', "ZigateTimeOfOperation sending a Request to Zigate", '0000')
-    datas = '01' + '01' + '0000' + '00' + '00' + '0000' + '01' + 'f000'
-    send_zigatecmd_zcl_noack(self, '0000', "0100", datas )
+    if ( 'BatteryUpdateTime' in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]['BatteryUpdateTime'] + 3600 > time() ):
+        return
+    ReadAttributeRequest_0001( self,  nwkid) 
+            

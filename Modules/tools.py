@@ -30,7 +30,6 @@ def returnlen(taille , value) :
         value="0"+value
     return str(value)
 
-
 def Hex_Format(taille, value):
     value = hex(int(value))[2:]
     if len(value) > taille:
@@ -54,7 +53,7 @@ def voltage2batteryP( voltage, volt_max, volt_min):
 
 def IEEEExist(self, IEEE):
     #check in ListOfDevices for an existing IEEE
-    return IEEE in self.ListOfDevices and IEEE != ''
+    return IEEE != '' and IEEE in self.IEEE2NWK
 
 def NwkIdExist( self, Nwkid):
     return Nwkid in self.ListOfDevices
@@ -277,8 +276,6 @@ def removeNwkInList( self, NWKID) :
 
     del self.ListOfDevices[NWKID]
 
-
-
 def removeDeviceInList( self, Devices, IEEE, Unit ):
     # Most likely call when a Device is removed from Domoticz
     # This is a tricky one, as you might have several Domoticz devices attached to this IoT and so you must remove only the corredpoing part.
@@ -330,8 +327,6 @@ def removeDeviceInList( self, Devices, IEEE, Unit ):
         return True
     return False
 
-
-
 def initDeviceInList(self, Nwkid):
     if Nwkid not in self.ListOfDevices and Nwkid != '':
         self.ListOfDevices[Nwkid]={}
@@ -342,9 +337,10 @@ def initDeviceInList(self, Nwkid):
         self.ListOfDevices[Nwkid]['Ep']={}
         self.ListOfDevices[Nwkid]['Heartbeat']="0"
         self.ListOfDevices[Nwkid]['RIA']="0"
-        self.ListOfDevices[Nwkid]['RSSI']={}
+        self.ListOfDevices[Nwkid]['LQI']={}
         self.ListOfDevices[Nwkid]['Battery']={}
         self.ListOfDevices[Nwkid]['Model']= ''
+        self.ListOfDevices[Nwkid]['ForceAckCommands'] = []
         self.ListOfDevices[Nwkid]['MacCapa']={}
         self.ListOfDevices[Nwkid]['IEEE']={}
         self.ListOfDevices[Nwkid]['Type']={}
@@ -376,7 +372,6 @@ def timeStamped( self, key, Type ):
         self.ListOfDevices[key]['Stamp']['Time'] = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
         self.ListOfDevices[key]['Stamp']['MsgType'] = "%4x" %(Type)
 
-
 def updSQN( self, key, newSQN) :
 
     if key not in self.ListOfDevices:
@@ -390,27 +385,27 @@ def updSQN( self, key, newSQN) :
     self.ListOfDevices[key]['SQN'] = newSQN
     return
 
-def updRSSI( self, key, RSSI):
+def updLQI( self, key, LQI):
 
     if key not in self.ListOfDevices:
         return
 
-    if 'RSSI' not in self.ListOfDevices[ key ]:
-        self.ListOfDevices[ key ]['RSSI'] = {}
+    if 'LQI' not in self.ListOfDevices[ key ]:
+        self.ListOfDevices[ key ]['LQI'] = {}
         
-    if RSSI == '00':
+    if LQI == '00':
         return
     
-    if is_hex( RSSI ): # Check if the RSSI is Correct
+    if is_hex( LQI ): # Check if the LQI is Correct
 
-        self.ListOfDevices[ key ]['RSSI'] = int( RSSI, 16)
+        self.ListOfDevices[ key ]['LQI'] = int( LQI, 16)
 
-        if 'RollingRSSI' not in self.ListOfDevices[ key ]:
-           self.ListOfDevices[ key ]['RollingRSSI'] = []   
+        if 'RollingLQI' not in self.ListOfDevices[ key ]:
+           self.ListOfDevices[ key ]['RollingLQI'] = []   
 
-        if len(self.ListOfDevices[key]['RollingRSSI']) > 10:
-            del self.ListOfDevices[key]['RollingRSSI'][0]
-        self.ListOfDevices[ key ]['RollingRSSI'].append( int(RSSI, 16))
+        if len(self.ListOfDevices[key]['RollingLQI']) > 10:
+            del self.ListOfDevices[key]['RollingLQI'][0]
+        self.ListOfDevices[ key ]['RollingLQI'].append( int(LQI, 16))
 
     return
 
@@ -459,14 +454,12 @@ def getListofClusterbyModel( self, Model , InOut ):
                 seen = cluster
     return listofCluster
 
-
 def getListofInClusterbyModel( self, Model ) :
     return getListofClusterbyModel( self, Model, 'Epin' )
 
 def getListofOutClusterbyModel( self, Model ) :
     return getListofClusterbyModel( self, Model, 'Epout' )
-
-    
+  
 def getListofTypebyModel( self, Model ):
     """
     Provide a list of Tuple ( Ep, Type ) for a given Model name if found. Else return an empty list
@@ -488,7 +481,6 @@ def getModelbyZDeviceIDProfileID( self, ZDeviceID, ProfileID):
         if self.DeviceConf[model]['ProfileID'] == ProfileID and self.DeviceConf[model]['ZDeviceID'] == ZDeviceID :
             return model
     return ''
-
 
 def getListofType( self, Type ):
     """
@@ -553,8 +545,6 @@ def xy_to_rgb(x, y, brightness=1):
 
     return {'r': round(r * 255, 3), 'g': round(g * 255, 3), 'b': round(b * 255, 3)}
 
-
-
 def rgb_to_hsl(rgb):
     ''' convert rgb tuple to hls tuple '''
     r, g, b = rgb
@@ -610,8 +600,7 @@ def decodeMacCapa( inMacCapa ):
     else:
         MacCapa.append('NwkAddr need to be allocated')
     return MacCapa
-
-        
+      
 def ReArrangeMacCapaBasedOnModel( self, nwkid, inMacCapa):
     """
     Function to check if the MacCapa should not be updated based on Model.
@@ -644,12 +633,14 @@ def ReArrangeMacCapaBasedOnModel( self, nwkid, inMacCapa):
         # Aqara Opple Switch, must be converted to Battery Devices
         self.ListOfDevices[nwkid]['MacCapa'] = '80'
         self.ListOfDevices[nwkid]['PowerSource'] = 'Battery'
-        if (
-            'Capability' in self.ListOfDevices[nwkid]
-            and 'Main Powered' in self.ListOfDevices[nwkid]['Capability']
-        ):
+        if ( 'Capability' in self.ListOfDevices[nwkid] and 'Main Powered' in self.ListOfDevices[nwkid]['Capability'] ):
             self.ListOfDevices[nwkid]['Capability'].remove( 'Main Powered')
         return '80'
+
+    if self.ListOfDevices[nwkid]['MacCapa'] == '80' and \
+        ( self.ListOfDevices[nwkid]['PowerSource'] == '' or 'PowerSource' not in self.ListOfDevices[nwkid] ):
+        # This is needed for VOC_Sensor from Nextrum for instance. (Looks like the device do not provide Node Descriptor )
+        self.ListOfDevices[nwkid]['PowerSource'] = 'Battery'
 
     return inMacCapa
 
@@ -689,8 +680,7 @@ def mainPoweredDevice( self, nwkid):
 
     return mainPower
 
-
-def loggingMessages( self, msgtype, sAddr=None, ieee=None, RSSI=None, SQN=None):
+def loggingMessages( self, msgtype, sAddr=None, ieee=None, LQI=None, SQN=None):
 
     if not self.pluginconf.pluginConf['logFORMAT']:
         return
@@ -716,8 +706,7 @@ def loggingMessages( self, msgtype, sAddr=None, ieee=None, RSSI=None, SQN=None):
         zdevname = self.ListOfDevices[sAddr]['ZDeviceName']
 
     Domoticz.Log("Device activity for | %4s | %14s | %4s | %16s | %3s | 0x%02s |" \
-        %( msgtype, zdevname, sAddr, ieee, int(RSSI,16), SQN))
-
+        %( msgtype, zdevname, sAddr, ieee, int(LQI,16), SQN))
 
 def lookupForIEEE( self, nwkid , reconnect=False):
 
@@ -834,11 +823,14 @@ def getAttributeValue (self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID):
         return None
     return self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID]
 
-
+# Function to manage 0x8002 payloads
 def retreive_cmd_payload_from_8002( Payload ):
     
     ManufacturerCode = None
-    if is_manufspecific_8002_payload( Payload[0:2] ):
+    fcf = Payload[0:2] 
+
+    GlobalCommand = is_golbalcommand( fcf )
+    if is_manufspecific_8002_payload( fcf ):
         ManufacturerCode = Payload[2:6]
         Sqn = Payload[6:8]
         Command = Payload[8:10]
@@ -848,14 +840,99 @@ def retreive_cmd_payload_from_8002( Payload ):
         Command = Payload[4:6]
         Data = Payload[6:]
 
-    return ( Sqn, ManufacturerCode, Command, Data)
+    return ( GlobalCommand, Sqn, ManufacturerCode, Command, Data)
 
+def is_golbalcommand( fcf ):
+    FrameTypeSubField = ( int(fcf, 16) & 0b00000011)
+    return FrameTypeSubField == 0
 
 def is_manufspecific_8002_payload( fcf ):
-    
-    #FrameType = ( int(fcf, 16) & 0b00000011)
     ManufSpecif = ( int(fcf, 16) & 0b00000100) >> 2
     #Direction = ( int(fcf, 16) & 0b00001000) >> 3
     #DisableDefaultResponse = ( int(fcf, 16) & 0b00010000) >> 4
 
     return ManufSpecif == 1
+
+# Functions to manage Device Attributes infos ( ConfigureReporting)
+def check_datastruct( self, DeviceAttribute, key, endpoint, clusterId ):
+    # Make sure all tree exists
+    if DeviceAttribute  not in self.ListOfDevices[key]:
+        self.ListOfDevices[key][DeviceAttribute] = {}
+    if 'Ep' not in self.ListOfDevices[key][DeviceAttribute]:
+        self.ListOfDevices[key][DeviceAttribute]['Ep'] = {}
+    if endpoint not in self.ListOfDevices[key][DeviceAttribute]['Ep']:
+        self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint] = {}
+    if clusterId not in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint]:
+        self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId] = {}
+    if not isinstance( self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId], dict):
+        self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId] = {}
+    if 'TimeStamp' not in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]:
+        self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['TimeStamp'] = 0
+    if 'iSQN' not in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]:
+        self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['iSQN'] = {}
+    if 'Attributes' not in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]:
+        self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['Attributes'] = {}
+
+def is_time_to_perform_work(self, DeviceAttribute, key, endpoint, clusterId, now, timeoutperiod ):
+    # Based on a timeout period return True or False.
+    check_datastruct( self, DeviceAttribute, key, endpoint, clusterId )
+    return ( now >= self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId][ 'TimeStamp' ] + timeoutperiod )
+
+def set_timestamp_datastruct(self, DeviceAttribute, key, endpoint, clusterId, now ):
+    check_datastruct( self, DeviceAttribute, key, endpoint, clusterId )
+    self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['TimeStamp'] = now
+
+def get_list_isqn_attr_datastruct(self, DeviceAttribute, key, endpoint, clusterId):
+    check_datastruct( self, DeviceAttribute, key, endpoint, clusterId )
+    return [ x for x in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['iSQN'] ]
+
+def set_isqn_datastruct(self, DeviceAttribute, key, endpoint, clusterId, AttributeId, isqn ):
+    check_datastruct( self, DeviceAttribute, key, endpoint, clusterId )
+    self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['iSQN'][ AttributeId ] = isqn
+
+def get_isqn_datastruct(self, DeviceAttribute, key, endpoint, clusterId, AttributeId ):
+    check_datastruct( self, DeviceAttribute, key, endpoint, clusterId )
+    if AttributeId in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['iSQN']:
+        return self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['iSQN'][ AttributeId ]
+    return None
+
+def set_status_datastruct(self, DeviceAttribute, key, endpoint, clusterId, AttributeId, status ):
+    check_datastruct( self, DeviceAttribute, key, endpoint, clusterId )
+    self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['Attributes'][ AttributeId ] = status
+    clean_old_datastruct(self,DeviceAttribute, key , endpoint, clusterId, AttributeId )
+    
+def get_status_datastruct(self, DeviceAttribute, key, endpoint, clusterId, AttributeId ):
+    check_datastruct( self, DeviceAttribute, key, endpoint, clusterId )
+    if AttributeId in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['Attributes']:
+        return self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['Attributes'][ AttributeId ]
+    return None
+
+def is_attr_unvalid_datastruct( self, DeviceAttribute, key, endpoint, clusterId , AttributeId ):
+    lastStatus = get_status_datastruct(self, DeviceAttribute, key, endpoint, clusterId, AttributeId )
+    if lastStatus is None:
+        return False
+    if lastStatus in ( '86', '8c' ):
+        return True
+    return lastStatus != '00'
+
+def reset_attr_datastruct( self, DeviceAttribute, key, endpoint, clusterId , AttributeId ):
+    check_datastruct( self, DeviceAttribute, key, endpoint, clusterId )
+    if AttributeId in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['Attributes']:
+        del self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['Attributes'][ AttributeId ]
+    if AttributeId in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['iSQN']:
+        del self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['iSQN'][ AttributeId ]
+
+def reset_datastruct( self,DeviceAttribute, key ):
+
+    if key not in self.ListOfDevices:
+        return
+    if DeviceAttribute in self.ListOfDevices[key]:
+        del self.ListOfDevices[key][DeviceAttribute]
+    self.ListOfDevices[key][DeviceAttribute] = {}
+
+def clean_old_datastruct(self,DeviceAttribute, key , endpoint, clusterId, AttributeId ):
+    check_datastruct( self, DeviceAttribute, key, endpoint, clusterId )
+    if AttributeId in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]:
+        del self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId][ AttributeId ]
+    if 'TimeStamp' in self.ListOfDevices[key][DeviceAttribute]:
+        del self.ListOfDevices[key][DeviceAttribute][ 'TimeStamp' ]

@@ -18,7 +18,7 @@ from Modules.philips import philipsReadRawAPS
 
 ## Requires Zigate firmware > 3.1d
 
-def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, payload):
+def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, ManufacturerCode, Command, Data, payload):
 
     """
     This function is called by Decode8002
@@ -42,15 +42,11 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, payload)
         'Philips' : philipsReadRawAPS,
     }
 
-    #Domoticz.Log("inRawAps - NwkId: %s Ep: %s, Cluster: %s, dstNwkId: %s, dstEp: %s, Payload: %s" \
-    #        %(srcnwkid, srcep, cluster, dstnwkid, dstep, payload))
-
     if srcnwkid not in self.ListOfDevices:
         return
 
     if cluster == '0020': # Poll Control ( Not implemented in firmware )
         Domoticz.Log("Cluster 0020 -- POLL CLUSTER")
-        Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002( payload )
         receive_poll_cluster( self, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, ManufacturerCode, Command, Data )
         return
     
@@ -63,8 +59,6 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, payload)
         manuf_name = self.ListOfDevices[srcnwkid][ 'Manufacturer Name']
 
     manuf = self.ListOfDevices[srcnwkid]['Manufacturer']
-    #Domoticz.Log("  - Manuf: %s" %manuf)
-    #Domoticz.Log("  - Manuf: %s" %manuf_name)
 
     if manuf in CALLBACK_TABLE:
         #Domoticz.Log("Found in CALLBACK_TABLE")

@@ -142,6 +142,8 @@ class BasePlugin:
         self.LOD = None # Object managing all plugin devices
         self.transport = None         # USB or Wifi
         #self._ReqRcv = bytearray()
+
+        self.UnknownDevices = []   # List of unknown Device NwkId
         self.permitTojoin = {}
         self.permitTojoin['Duration'] = 0
         self.permitTojoin['Starttime'] = 0
@@ -365,6 +367,13 @@ class BasePlugin:
 
         loggingPlugin( self, 'Debug', "Establish Zigate connection" )
         self.ZigateComm.open_conn()
+
+        # IAS Zone Management
+        if self.iaszonemgt is None:
+            # Create IAS Zone object
+            #Domoticz.Log("Init IAS_Zone_management ZigateComm: %s" %self.ZigateComm)
+            self.iaszonemgt = IAS_Zone_Management( self.pluginconf, self.ZigateComm , self.ListOfDevices, self.loggingFileHandle)
+
         self.busy = False
 
     def onStop(self):
@@ -486,20 +495,8 @@ class BasePlugin:
         self.Ping['Permit'] = None
         self.Ping['Nb Ticks'] = 1
 
-        # Create IAS Zone object
-        self.iaszonemgt = IAS_Zone_Management( self.pluginconf, self.ZigateComm , self.ListOfDevices, self.loggingFileHandle)
 
-        # Create Network Map object and trigger one scan
-        self.networkmap = NetworkMap( self.pluginconf, self.ZigateComm, self.ListOfDevices, Devices, self.HardwareID, self.loggingFileHandle)
-        if len(self.ListOfDevices) > 1:
-            loggingPlugin( self, 'Status', "Trigger a Topology Scan")
-            self.networkmap.start_scan( ) 
-     
-        # Create Network Energy object and trigger one scan
-        self.networkenergy = NetworkEnergy( self.pluginconf, self.ZigateComm, self.ListOfDevices, Devices, self.HardwareID, self.loggingFileHandle)
-        if len(self.ListOfDevices) > 1:
-            loggingPlugin( self, 'Status', "Trigger a Energy Level Scan")
-            self.networkenergy.start_scan()
+
 
         return True
 
@@ -589,7 +586,7 @@ class BasePlugin:
             self.startZigateNeeded = self.HeartbeatCount
             del self.zigatedata['startZigateNeeded']
 
-        # Startding PDM on Host firmware version, we have to wait that Zigate is fully initialized ( PDM loaded into memory from Host).
+        # Starting PDM on Host firmware version, we have to wait that Zigate is fully initialized ( PDM loaded into memory from Host).
         # We wait for self.zigateReady which is set to True in th pdmZigate module
         if not (self.transport == 'None' or self.PDMready):
             loggingPlugin( self, 'Debug', "PDMready: %s requesting Get version" %( self.PDMready))
@@ -656,9 +653,11 @@ class BasePlugin:
         # Manage all entries in  ListOfDevices (existing and up-coming devices)
         processListOfDevices( self , Devices )
 
-        # IAS Zone Management
-        if self.iaszonemgt:
-            self.iaszonemgt.IAS_heartbeat( )
+
+
+
+
+        self.iaszonemgt.IAS_heartbeat( )
 
         # Reset Motion sensors
         ResetDevice( self, Devices, "Motion",5)
@@ -791,6 +790,7 @@ def zigateInit_Phase2( self):
     # Request List of Active Devices
     sendZigateCmd(self, "0015", "") 
 
+
     # Ready for next phase
     self.InitPhase2 = True
 
@@ -837,7 +837,7 @@ def zigateInit_Phase3( self ):
         set_TxPower( self, self.pluginconf.pluginConf['TXpower_set'])
 
         # Set Certification Code
-        if self.transport != 'None' and self.pluginconf.pluginConf['CertificationCode'] in CERTIFICATION:
+        if self.pluginconf.pluginConf['CertificationCode'] in CERTIFICATION:
             loggingPlugin( self, 'Status', "Zigate set to Certification : %s" %CERTIFICATION[self.pluginconf.pluginConf['CertificationCode']])
             sendZigateCmd(self, '0019', '%02x' %self.pluginconf.pluginConf['CertificationCode'])
 
@@ -852,6 +852,25 @@ def zigateInit_Phase3( self ):
             if self.pluginconf.pluginConf['zigatePartOfGroup0000']:
                 # Add Zigate NwkId 0x0000 Ep 0x01 to GroupId 0x0000
                 self.groupmgt.addGroupMemberShip( '0000', '01', '0000')
+
+
+
+
+
+
+        # Create Network Map object and trigger one scan
+        if self.networkmap is None:
+            self.networkmap = NetworkMap( self.pluginconf, self.ZigateComm, self.ListOfDevices, Devices, self.HardwareID, self.loggingFileHandle)
+        #    if len(self.ListOfDevices) > 1:
+        #        loggingPlugin( self, 'Status', "Trigger a Topology Scan")
+        #        self.networkmap.start_scan( ) 
+     
+        # Create Network Energy object and trigger one scan
+        if self.networkenergy is None:
+            self.networkenergy = NetworkEnergy( self.pluginconf, self.ZigateComm, self.ListOfDevices, Devices, self.HardwareID, self.loggingFileHandle)
+        #    if len(self.ListOfDevices) > 1:
+        #        loggingPlugin( self, 'Status', "Trigger a Energy Level Scan")
+        #        self.networkenergy.start_scan()
 
     # In case we have Transport = None , let's check if we have to active Group management or not. (For Test and Web UI Dev purposes
     if self.transport == 'None' and self.groupmgt is None and self.pluginconf.pluginConf['enablegroupmanagement']:

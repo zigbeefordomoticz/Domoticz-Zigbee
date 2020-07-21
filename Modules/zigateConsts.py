@@ -255,7 +255,11 @@ ZONE_TYPE = {0x0000: 'standard',
 
 
 ZCL_CLUSTERS_ACT = {
-    '0006', '0008', '0102', '0201', '0201', '0402'}
+    '0006':'On/Off', 
+    '0008':'Dimmer', 
+    '0102':'Windows Covering', 
+    '0201':'Thermostat', 
+    '0402':'Temperature Measurement'}
 
 ZCL_CLUSTERS_LIST = {
     '0000': 'Basic',
@@ -303,29 +307,29 @@ ZCL_CLUSTERS_LIST = {
 
 # Zigate Commands, with there sequence of response ( Status + Data)
 ZIGATE_COMMANDS = {
-    0x0002: {'Sequence': (0x8000,),         'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'set rawmode', 'NwkId 2nd Bytes': False},
+    0x0002: {'Sequence': (0x8000, ),        'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'set rawmode', 'NwkId 2nd Bytes': False},
     0x0009: {'Sequence': (0x8000, 0x8009), 'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'Get Network State (Firm v3.0d)', 'NwkId 2nd Bytes': False},
     0x0010: {'Sequence': (0x8010, ),       'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'Get Version', 'NwkId 2nd Bytes': False},
-    0x0011: {'Sequence': (0x8000,),        'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'Reset', 'NwkId 2nd Bytes': False},
-    0x0012: {'Sequence': (0x8000,),        'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'Erase Persistent Data', 'NwkId 2nd Bytes': False},
-    0x0013: {'Sequence': (0x8000,),        'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'ZLO/ZLL “Factory New” Reset', 'NwkId 2nd Bytes': False},
+    0x0011: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'Reset', 'NwkId 2nd Bytes': False},
+    0x0012: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'Erase Persistent Data', 'NwkId 2nd Bytes': False},
+    0x0013: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'ZLO/ZLL “Factory New” Reset', 'NwkId 2nd Bytes': False},
     0x0014: {'Sequence': (0x8000, 0x8014), 'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'Permit Join', 'NwkId 2nd Bytes': False},
     0x0015: {'Sequence': (0x8000, 0x8015), 'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'Get devices list', 'NwkId 2nd Bytes': False},
-    0x0016: {'Sequence': (0x8000,),        'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'Set Time server (v3.0f)', 'NwkId 2nd Bytes': False},
+    0x0016: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'Set Time server (v3.0f)', 'NwkId 2nd Bytes': False},
     0x0017: {'Sequence': (0x8000, 0x8017), 'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'GetTime server (v3.0f)', 'NwkId 2nd Bytes': False},
-    0x0018: {'Sequence': (0x8000,),        'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'SetLed (v3.0f)', 'NwkId 2nd Bytes': False},
-    0x0019: {'Sequence': (0x8000,),        'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'Set Certification (v3.0f)', 'NwkId 2nd Bytes': False},
-    0x0020: {'Sequence': (0x8000,),        'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'Set Expended PANID', 'NwkId 2nd Bytes': False},
-    0x0021: {'Sequence': (0x8000,),        'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'Set Channel Mask', 'NwkId 2nd Bytes': False},
-    0x0022: {'Sequence': (0x8000,),        'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'Set Security State + Key', 'NwkId 2nd Bytes': False},
-    0x0023: {'Sequence': (0x8000,),        'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'Set device Type', 'NwkId 2nd Bytes': False},
+    0x0018: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'SetLed (v3.0f)', 'NwkId 2nd Bytes': False},
+    0x0019: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'Set Certification (v3.0f)', 'NwkId 2nd Bytes': False},
+    0x0020: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'Set Expended PANID', 'NwkId 2nd Bytes': False},
+    0x0021: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'Set Channel Mask', 'NwkId 2nd Bytes': False},
+    0x0022: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'Set Security State + Key', 'NwkId 2nd Bytes': False},
+    0x0023: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'Set device Type', 'NwkId 2nd Bytes': False},
     0x0024: {'Sequence': (0x8000, 0x8024), 'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'Start Network', 'NwkId 2nd Bytes': False},
-    0x0025: {'Sequence': (0x8000,),        'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'Start Network Scan', 'NwkId 2nd Bytes': False},
-    0x0026: {'Sequence': (0x8000,),        'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'Remove Device', 'NwkId 2nd Bytes': False},
-    0x0027: {'Sequence': (0x8000,),        'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'Enable Permissions Controlled Joins', 'NwkId 2nd Bytes': False},
+    0x0025: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'Start Network Scan', 'NwkId 2nd Bytes': False},
+    0x0026: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'Remove Device', 'NwkId 2nd Bytes': False},
+    0x0027: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'Enable Permissions Controlled Joins', 'NwkId 2nd Bytes': False},
     0x0028: {'Sequence': (0x8000, 0x8028), 'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'Authenticate Device', 'NwkId 2nd Bytes': False},
-    0x0029: {'Sequence': (0x8000,),        'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'Out of Band Commissioning Data Request', 'NwkId 2nd Bytes': False},
-    0x002A: {'Sequence': (0x8000,),        'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'E_SL_MSG_UPDATE_AUTHENTICATE_DEVICE', 'NwkId 2nd Bytes': False},
+    0x0029: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'Out of Band Commissioning Data Request', 'NwkId 2nd Bytes': False},
+    0x002A: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'E_SL_MSG_UPDATE_AUTHENTICATE_DEVICE', 'NwkId 2nd Bytes': False},
     0x002B: {'Sequence': (0x8000, 0x802B), 'Ack': False, 'SQN': True,  'Layer': 'ZDP',    'Command': 'User Descriptor Set', 'NwkId 2nd Bytes': False},
     0x002C: {'Sequence': (0x8000, 0x802C), 'Ack': False, 'SQN': True,  'Layer': 'ZDP',    'Command': 'User Descritpor Request', 'NwkId 2nd Bytes': False},
     0x002F: {'Sequence': (0x8000,),        'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'E_SL_MSG_SET_FLOW_CONTROL', 'NwkId 2nd Bytes': False},
@@ -357,24 +361,24 @@ ZIGATE_COMMANDS = {
     0x0061: {'Sequence': (0x8000, 0x8061),  'Ack': True, 'SQN': True, 'Layer': 'ZCL',    'Command': 'Group View', 'NwkId 2nd Bytes': True},
     0x0062: {'Sequence': (0x8000, 0x8062),  'Ack': True, 'SQN': True, 'Layer': 'ZCL',    'Command': 'Get Group membership', 'NwkId 2nd Bytes': True},
     0x0063: {'Sequence': (0x8000, 0x8063),  'Ack': True, 'SQN': True, 'Layer': 'ZCL',    'Command': 'Group Remove', 'NwkId 2nd Bytes': True},
-    0x0064: {'Sequence': (0x8000,),         'Ack': True, 'SQN': False, 'Layer': 'ZCL',    'Command': 'Remove all Groups', 'NwkId 2nd Bytes': True},
-    0x0065: {'Sequence': (0x8000,),         'Ack': True, 'SQN': False, 'Layer': 'ZCL',    'Command': 'Group Add by Identify', 'NwkId 2nd Bytes': True},
+    0x0064: {'Sequence': (0x8000, ),        'Ack': True, 'SQN': False, 'Layer': 'ZCL',    'Command': 'Remove all Groups', 'NwkId 2nd Bytes': True},
+    0x0065: {'Sequence': (0x8000, ),        'Ack': True, 'SQN': False, 'Layer': 'ZCL',    'Command': 'Group Add by Identify', 'NwkId 2nd Bytes': True},
 
     # Identify
-    0x0070: {'Sequence': (0x8000,),        'Ack': True, 'SQN': False, 'Layer': 'ZCL',    'Command': 'Identify Send', 'NwkId 2nd Bytes': True},
-    0x0071: {'Sequence': (0x8000,),        'Ack': True, 'SQN': False, 'Layer': 'ZCL',    'Command': 'Identify Query', 'NwkId 2nd Bytes': True},
+    0x0070: {'Sequence': (0x8000, ),       'Ack': True, 'SQN': False, 'Layer': 'ZCL',    'Command': 'Identify Send', 'NwkId 2nd Bytes': True},
+    0x0071: {'Sequence': (0x8000, ),       'Ack': True, 'SQN': False, 'Layer': 'ZCL',    'Command': 'Identify Query', 'NwkId 2nd Bytes': True},
 
     # Action Move
-    0x0080: {'Sequence': (0x8000,),        'Ack': True,  'SQN': False, 'Layer': 'ZCL',    'Command': 'Move to Level', 'NwkId 2nd Bytes': True},
-    0x0081: {'Sequence': (0x8000,),        'Ack': True,  'SQN': False, 'Layer': 'ZCL',    'Command': 'Move to Level with/without on/off', 'NwkId 2nd Bytes': True},
-    0x0082: {'Sequence': (0x8000,),        'Ack': True,  'SQN': False, 'Layer': 'ZCL',    'Command': 'Move Step', 'NwkId 2nd Bytes': True},
-    0x0083: {'Sequence': (0x8000,),        'Ack': True,  'SQN': False, 'Layer': 'ZCL',    'Command': 'Move Stop Move', 'NwkId 2nd Bytes': True},
-    0x0084: {'Sequence': (0x8000,),        'Ack': True,  'SQN': False, 'Layer': 'ZCL',    'Command': 'Move Stop with On Off', 'NwkId 2nd Bytes': True},
+    0x0080: {'Sequence': (0x8000, ),       'Ack': True,  'SQN': False, 'Layer': 'ZCL',    'Command': 'Move to Level', 'NwkId 2nd Bytes': True},
+    0x0081: {'Sequence': (0x8000, ),       'Ack': True,  'SQN': False, 'Layer': 'ZCL',    'Command': 'Move to Level with/without on/off', 'NwkId 2nd Bytes': True},
+    0x0082: {'Sequence': (0x8000, ),       'Ack': True,  'SQN': False, 'Layer': 'ZCL',    'Command': 'Move Step', 'NwkId 2nd Bytes': True},
+    0x0083: {'Sequence': (0x8000, ),       'Ack': True,  'SQN': False, 'Layer': 'ZCL',    'Command': 'Move Stop Move', 'NwkId 2nd Bytes': True},
+    0x0084: {'Sequence': (0x8000, ),       'Ack': True,  'SQN': False, 'Layer': 'ZCL',    'Command': 'Move Stop with On Off', 'NwkId 2nd Bytes': True},
 
     # Action ON/OFF
-    0x0092: {'Sequence': (0x8000,),        'Ack': True,  'SQN': False, 'Layer': 'ZCL',    'Command': 'Action ON/OFF', 'NwkId 2nd Bytes': True},
-    0x0093: {'Sequence': (0x8000,),        'Ack': True,  'SQN': False, 'Layer': 'ZCL',    'Command': 'On/off timed send', 'NwkId 2nd Bytes': True},
-    0x0094: {'Sequence': (0x8000,),        'Ack': True,  'SQN': False, 'Layer': 'ZCL',    'Command': 'On/off with effects send', 'NwkId 2nd Bytes': True},
+    0x0092: {'Sequence': (0x8000, ),       'Ack': True,  'SQN': False, 'Layer': 'ZCL',    'Command': 'Action ON/OFF', 'NwkId 2nd Bytes': True},
+    0x0093: {'Sequence': (0x8000, ),       'Ack': True,  'SQN': False, 'Layer': 'ZCL',    'Command': 'On/off timed send', 'NwkId 2nd Bytes': True},
+    0x0094: {'Sequence': (0x8000, ),       'Ack': True,  'SQN': False, 'Layer': 'ZCL',    'Command': 'On/off with effects send', 'NwkId 2nd Bytes': True},
 
     # Scene
 
@@ -403,8 +407,8 @@ ZIGATE_COMMANDS = {
     0x00C2: {'Sequence': (0x8000, ),       'Ack': True, 'SQN': False, 'Layer': 'ZCL', 'Command': 'Step colour temperature', 'NwkId 2nd Bytes': True},
 
     # Action Touchlink
-    0x00D0: {'Sequence': (0x8000,),        'Ack': False, 'SQN': False, 'Layer': 'ZDP', 'Command': 'Initiate Touchlink', 'NwkId 2nd Bytes': True},
-    0x00D2: {'Sequence': (0x8000,),        'Ack': False, 'SQN': False, 'Layer': 'ZDP', 'Command': 'Touch link factory reset target', 'NwkId 2nd Bytes': True},
+    0x00D0: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZDP', 'Command': 'Initiate Touchlink', 'NwkId 2nd Bytes': True},
+    0x00D2: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZDP', 'Command': 'Touch link factory reset target', 'NwkId 2nd Bytes': True},
 
     # Identify Trigger Effect
     0x00E0: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZCL', 'Command': 'Identify Trigger Effect', 'NwkId 2nd Bytes': True},
@@ -431,19 +435,19 @@ ZIGATE_COMMANDS = {
     0x0400: {'Sequence': (0x8000, ),       'Ack': True, 'SQN': False, 'Layer': 'ZCL', 'Command': 'E_SL_MSG_SEND_IAS_ZONE_ENROLL_RSP', 'NwkId 2nd Bytes': True},
 
     # OTA
-    0x0500: {'Sequence': (0x8000,),        'Ack': False, 'SQN': False, 'Layer': 'ZDP', 'Command': 'E_SL_MSG_LOAD_NEW_IMAGE', 'NwkId 2nd Bytes': False},
-    0x0502: {'Sequence': (0x8000,),        'Ack': False, 'SQN': False, 'Layer': 'ZDP', 'Command': 'E_SL_MSG_BLOCK_SEND', 'NwkId 2nd Bytes': False},
-    0x0504: {'Sequence': (0x8000,),        'Ack': False, 'SQN': False, 'Layer': 'ZDP', 'Command': 'E_SL_MSG_UPGRADE_END_RESPONSE', 'NwkId 2nd Bytes': False},
-    0x0505: {'Sequence': (0x8000,),        'Ack': False, 'SQN': False, 'Layer': 'ZDP', 'Command': 'E_SL_MSG_IMAGE_NOTIFY', 'NwkId 2nd Bytes': False},
-    0x0506: {'Sequence': (0x8000,),        'Ack': False, 'SQN': False, 'Layer': 'ZDP', 'Command': 'E_SL_MSG_SEND_WAIT_FOR_DATA_PARAMS', 'NwkId 2nd Bytes': False},
+    0x0500: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZDP', 'Command': 'E_SL_MSG_LOAD_NEW_IMAGE', 'NwkId 2nd Bytes': False},
+    0x0502: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZDP', 'Command': 'E_SL_MSG_BLOCK_SEND', 'NwkId 2nd Bytes': False},
+    0x0504: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZDP', 'Command': 'E_SL_MSG_UPGRADE_END_RESPONSE', 'NwkId 2nd Bytes': False},
+    0x0505: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZDP', 'Command': 'E_SL_MSG_IMAGE_NOTIFY', 'NwkId 2nd Bytes': False},
+    0x0506: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZDP', 'Command': 'E_SL_MSG_SEND_WAIT_FOR_DATA_PARAMS', 'NwkId 2nd Bytes': False},
     # Miscaleneous
 
-    0x0530: {'Sequence': (0x8000,),        'Ack': False, 'SQN': False, 'Layer': 'RAW', 'Command': 'Raw APS Data Request', 'NwkId 2nd Bytes': False},
+    0x0530: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'RAW', 'Command': 'Raw APS Data Request', 'NwkId 2nd Bytes': False},
     0x0531: {'Sequence': (0x8000, 0x8530), 'Ack': True, 'SQN': False, 'Layer': 'ZDP', 'Command': 'Complex Descriptor request', 'NwkId 2nd Bytes': False},
     0x0600: {'Sequence': (0x8000, 0x8600), 'Ack': True, 'SQN': False, 'Layer': 'ZDP', 'Command': 'E_SL_MSG_NWK_RECOVERY_EXTRACT_REQ', 'NwkId 2nd Bytes': False},
     0x0601: {'Sequence': (0x8000, 0x8601), 'Ack': True, 'SQN': False, 'Layer': 'ZDP', 'Command': 'E_SL_MSG_NWK_RECOVERY_RESTORE_REQ', 'NwkId 2nd Bytes': False},
 
-    0x0806: {'Sequence': (0x8000,),        'Ack': False, 'SQN': False, 'Layer': 'ZDP', 'Command': 'AHI Control', 'NwkId 2nd Bytes': False},
+    0x0806: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZDP', 'Command': 'AHI Control', 'NwkId 2nd Bytes': False},
 
     # PDM response
     0x0034: {'Sequence': (),             'Ack': False, 'SQN': False, 'Layer': 'PDM', 'Command': 'PE_SL_MSG_DEBUG_PDM', 'NwkId 2nd Bytes': False},
@@ -486,6 +490,33 @@ ZIGATE_RESPONSES = {
     0x8101: 'Default response',
     # 0x8102: 'Report Individual Attribute response',
     0x004D: 'Device Annouce'
+}
+
+ZIGBEE_COMMAND_IDENTIFIER = {
+    # https://zigbeealliance.org/wp-content/uploads/2019/12/07-5123-06-zigbee-cluster-library-specification.pdf
+    0x00: 'Read Attributes',
+    0x01: 'Read Attributes Response',
+    0x02: 'Write Attributes',
+    0x03: 'Write Attributes Undivided',
+    0x04: 'Write Attributes Response',
+    0x05: 'Write Attributes No Response',
+    0x06: 'Configure Reporting',
+    0x07: 'Configure Reporting Response',
+    0x08: 'Read Reporting Configuration',
+    0x09: 'Read Reporting Configuration response',
+    0x0a: 'Report attributes',
+    0x0b: 'Default Response',
+    0x0c: 'Discover Attributes',
+    0x0d: 'Discover Attributes Response',
+    0x0e: 'Read Attributes Structured',
+    0x0f: 'Write Attributes Structured',
+    0x10: 'Write Attributes Structured Response',
+    0x11: 'Discover Commands Received',
+    0x12: 'Discover Commands Received Response',
+    0x13: 'Discover Commands Generated',
+    0x14: 'Discover Commands Generated Response',
+    0x15: 'Discover Attributes Extended',
+    0x16: 'Discover Attributes Extended response'
 }
 
 ZIGATE_MSG_PROC_TANSPORT = {
@@ -544,7 +575,7 @@ CLUSTERS_LIST = [
     '0204',            # Thermostat UI
     '0300',            # Colour Control
     '0000',            # Basic
-    '0b04',             # Electrical Meansurement
+    '0b04',             # Electrical Measurement
     'ff02',             # Used by Xiaomi devices for battery informations.
     'fc21'              # Cluster Profalux PFX
 ]

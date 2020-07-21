@@ -41,6 +41,9 @@ class ZigateTransport(object):
         self.statistics = statistics
         self.pluginconf = pluginconf
 
+        # Protect messages
+        self.protectMessage = None
+
         # PDM attributes
         self.lock = False   # PDM Lock
         # This flag indicate if any command can be sent to Zigate or only PDM related one
@@ -174,10 +177,13 @@ class ZigateTransport(object):
 
     def sendData(self, cmd, datas, ackIsDisabled=False, waitForResponseIn=False):
 
-        waitForResponse = waitForResponseIn or self.pluginconf.pluginConf['waitForResponse']
+        waitForResponse = False
+        if waitForResponseIn  or self.pluginconf.pluginConf['waitForResponse']:
+            waitForResponse = True
+        self.loggingSend('Debug2',"   -> waitForResponse: %s waitForResponseIn: %s" %(waitForResponse, waitForResponseIn))
 
         # If ackIsDisabled is True, it means that usally a Ack is expected ( ZIGATE_COMMANDS), but here it has been disabled via Address Mode
-        self.loggingSend('Debug', "sendData - %s %s ackDisabled: %s FIFO: %s" %
+        self.loggingSend('Debug2', "sendData - %s %s ackDisabled: %s FIFO: %s" %
                          (cmd, datas, ackIsDisabled, len(self.zigateSendQueue)))
         if datas is None:
             datas = ''
@@ -190,17 +196,17 @@ class ZigateTransport(object):
         # Check if the Cmd/Data is not yet in the pipe
         alreadyInQueue = False
         for x in self.ListOfCommands:
-            if self.ListOfCommands[x]['Cmd'] == cmd and self.ListOfCommands[x]['Datas'] == datas:
+            if self.ListOfCommands[x]['Status'] in ( '', 'TO-SEND', 'QUEUED' ) and self.ListOfCommands[x]['Cmd'] == cmd and self.ListOfCommands[x]['Datas'] == datas:
                 self.loggingSend(
-                    'Debug', "Cmd: %s Data: %s already in queue." % (cmd, datas))
+                    'Log', "Cmd: %s Data: %s already in queue." % (cmd, datas))
                 alreadyInQueue = True
                 break
         if alreadyInQueue:
             for x in self.ListOfCommands:
                 self.loggingSend('Debug', "-- > Sending Queue: [%s] Cmd: %s Datas: %s Time: %s"
-                                 % (x, self.ListOfCommands[x]['Cmd'], self.ListOfCommands[x]['Datas'],
+                                % (x, self.ListOfCommands[x]['Cmd'], self.ListOfCommands[x]['Datas'],
                                     self.ListOfCommands[x]['ReceiveTimeStamp'].strftime("%m/%d/%Y, %H:%M:%S")))
-            return None
+            #return None
 
         # Let's move on, create an internal Sqn for tracking
         InternalSqn = sqn_generate_new_internal_sqn(self)
@@ -218,10 +224,12 @@ class ZigateTransport(object):
         self.ListOfCommands[InternalSqn]['ReceiveTimeStamp'] = datetime.now()
         self.ListOfCommands[InternalSqn]['SentTimeStamp'] = None
         self.ListOfCommands[InternalSqn]['PDMCommand'] = False
+
         self.ListOfCommands[InternalSqn]['ResponseExpected'] = False
-        self.ListOfCommands[InternalSqn]['MessageResponse'] = None
         self.ListOfCommands[InternalSqn]['ExpectedAck'] = False
         self.ListOfCommands[InternalSqn]['WaitForResponse'] = False
+        self.ListOfCommands[InternalSqn]['MessageResponse'] = None
+
         self.ListOfCommands[InternalSqn]['APP_SQN'] = None
         self.ListOfCommands[InternalSqn]['APS_SQN'] = None
         self.ListOfCommands[InternalSqn]['TYP_SQN'] = None
@@ -237,8 +245,8 @@ class ZigateTransport(object):
             self.ListOfCommands[InternalSqn]['MessageResponse'] = CMD_WITH_RESPONSE[hexCmd]
             self.ListOfCommands[InternalSqn]['ResponseExpected'] = True
 
-        if waitForResponseIn:
-            self.ListOfCommands[InternalSqn]['WaitForResponse'] = True
+        #if waitForResponseIn:
+        #    self.ListOfCommands[InternalSqn]['WaitForResponse'] = True
 
         if not self.firmware_with_aps_sqn:
             # We are on firmware <= 31c
@@ -856,17 +864,24 @@ def process_frame(self, frame):
 
     def cleanup_8000_queues(self, status, isqn):
         # Cleanup if required
+        #self.logging_receive('Log', "Q8000: %s Q8011: %s QResponse: %s QLstCmd: %s zMode: %s ExpectedAck: %s WaitForResponse: %s ResponseExpected: %s" 
+        #    %( len(self._waitFor8000Queue),  len(self._waitForAckNack), len(self._waitForCmdResponseQueue), len(self.ListOfCommands),
+        #    self.zmode, self.ListOfCommands[isqn]['ExpectedAck'], self.ListOfCommands[isqn]['WaitForResponse'], 
+        #    self.ListOfCommands[isqn]['ResponseExpected']))
+        #for x in self.ListOfCommands:
+        #    self.logging_receive('Log', "---- [%s] Cmd: %s Data: %s" %(x, self.ListOfCommands[x]['Cmd'], self.ListOfCommands[x]['Datas']))
+
         if Status != '00':
             cleanup_list_of_commands(self, isqn)
             return
 
+        # Status 0x00
         if self.zmode == 'zigateack' and not self.ListOfCommands[isqn]['ExpectedAck'] and not self.ListOfCommands[isqn]['WaitForResponse']:
             cleanup_list_of_commands(self, isqn)
             return
 
-        if self.zmode == 'zigate31c' and not self.ListOfCommands[isqn]['ExpectedAck'] \
-                and not self.ListOfCommands[isqn]['ResponseExpected'] \
-                and not self.ListOfCommands[isqn]['WaitForResponse']:
+        if self.zmode == 'zigate31c' and not self.ListOfCommands[isqn]['WaitForResponse'] and not self.ListOfCommands[isqn]['ResponseExpected']:
+
             cleanup_list_of_commands(self, isqn)
             return
 
@@ -883,8 +898,19 @@ def process_frame(self, frame):
     # will return the Frame in the Data if any
     # process the Data and check if this is a 0x8000 message
     # in case the message contains several frame, receiveData will be recall
+
+    if self.pluginconf.pluginConf['CheckReEntrance'] and self.protectMessage:
+        Domoticz.Error(" process_frame - already in !!! " )
+        Domoticz.Error("               - In process: %s" %self.protectMessage )
+        Domoticz.Error("               - New comer : %s" %frame)
+        for x in self.ListOfCommands:
+            Domoticz.Error("[%s] Cmd: %s Datas: %s Status: %s" %(x, self.ListOfCommands[x]['Cmd'], self.ListOfCommands[x]['Datas'], self.ListOfCommands[x]['Status']))
+        return
+    self.protectMessage = frame
+
     self.logging_receive('Debug', "process_frame - Frame: %s" % frame)
     if frame == '' or frame is None or len(frame) < 12:
+        self.protectMessage = None
         return
 
     Status = None
@@ -900,6 +926,7 @@ def process_frame(self, frame):
         # Route Discovery
         # self.F_out(frame, None)  # for processing
         ready_to_send_if_needed(self)
+        self.protectMessage = None
         return
 
     if MsgType == "8702":
@@ -908,6 +935,7 @@ def process_frame(self, frame):
         self.statistics._APSFailure += 1
         self.F_out(frame, None)
         ready_to_send_if_needed(self)
+        self.protectMessage = None
         return
 
 
@@ -915,22 +943,25 @@ def process_frame(self, frame):
     if int(MsgType, 16) in STANDALONE_MESSAGE:
         self.F_out(frame, None)  # for processing
         ready_to_send_if_needed(self)
+        self.protectMessage = None
         return
 
     if len(frame) >= 18:
         # Payload
         MsgData = frame[12:len(frame) - 4]
-        RSSI = frame[len(frame) - 4: len(frame) - 2]
+        LQI = frame[len(frame) - 4: len(frame) - 2]
 
     if MsgData and MsgType == "8002":
         self.F_out( process8002( self, frame ), None)
         ready_to_send_if_needed(self)
+        self.protectMessage = None
         return
 
     if len(self._waitFor8000Queue) == 0 and len(self._waitForCmdResponseQueue) == 0 and len(self._waitForAckNack) == 0:
         # All queues are empty
         self.F_out(frame, None)
         ready_to_send_if_needed(self)
+        self.protectMessage = None
         return
         
     if MsgData and MsgType == "8000":
@@ -978,12 +1009,14 @@ def process_frame(self, frame):
                                (i_sqn, str(self.ListOfCommands.keys())))
 
         ready_to_send_if_needed(self)
+        self.protectMessage = None
         return
 
     if len(self._waitForCmdResponseQueue) == 0 and len(self._waitForAckNack) == 0:
         # All queues are empty
         self.F_out(frame, None)
         ready_to_send_if_needed(self)
+        self.protectMessage = None
         return
 
     if MsgType == '8011':
@@ -998,6 +1031,7 @@ def process_frame(self, frame):
             # We do not block on Ack for firmware from 31c and below
             self.F_out(frame, None)
             ready_to_send_if_needed(self)
+            self.protectMessage = None
             return
 
         if MsgData and self.zmode == 'zigateack':
@@ -1028,12 +1062,14 @@ def process_frame(self, frame):
                     cleanup_list_of_commands(self, i_sqn)
 
             ready_to_send_if_needed(self)
+        self.protectMessage = None
         return
 
     if len(self._waitForCmdResponseQueue) == 0:
         # All queues are empty
         self.F_out(frame, None)
         ready_to_send_if_needed(self)
+        self.protectMessage = None
         return
 
     # We reach that stage: Got a message not 0x8000/0x8011/0x8701/0x8202 an not a standolone message
@@ -1075,6 +1111,7 @@ def process_frame(self, frame):
     ready_to_send_if_needed(self)
     # Let's take the opportunity to check TimeOut
     self.check_timed_out_for_tx_queues()
+    self.protectMessage = None
 
 
 def process_msg_type8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn):
@@ -1135,9 +1172,9 @@ def process_msg_type8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn):
         IsCommandOk = int(self.ListOfCommands[InternalSqn]['Cmd'], 16) == int(PacketType, 16)
         if not IsCommandOk:
             self.loggingSend(
-                'Error', 
-                "Error: process_msg_type8000 - sync error : Expecting %s Received: %s , lenQ8000: %s Q8000: %s ListOfCommand: %s"
-                % (self.ListOfCommands[InternalSqn]['Cmd'], PacketType, len(self._waitFor8000Queue), str(self._waitFor8000Queue), str(self.ListOfCommands)))
+                'Log', 
+                "Error: process_msg_type8000 - [%s] sync error : Expecting %s Received: %s , lenQ8000: %s Q8000: %s ListOfCommand: %s"
+                % (InternalSqn, self.ListOfCommands[InternalSqn]['Cmd'], PacketType, len(self._waitFor8000Queue), str(self._waitFor8000Queue), str(self.ListOfCommands)))
             return None
 
     if (not self.firmware_with_aps_sqn and self.ListOfCommands[InternalSqn]['ExpectedAck']) or (self.firmware_with_aps_sqn and type_sqn):
@@ -1423,14 +1460,19 @@ def process8002(self, frame):
 
     SrcNwkId, SrcEndPoint, ClusterId , Payload = extract_nwk_infos_from_8002( frame )
     self.logging_receive(
-        'Log', "process8002 NwkId: %s Ep: %s Cluster: %s Payload: %s" %(SrcNwkId, SrcEndPoint, ClusterId , Payload))
+        'Debug', "process8002 NwkId: %s Ep: %s Cluster: %s Payload: %s" %(SrcNwkId, SrcEndPoint, ClusterId , Payload))
 
     if SrcNwkId is None:
         return frame
     
-    Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002( Payload )
+    GlobalCommand, Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002( Payload )
+    if not GlobalCommand:
+        # This is not a Global Command (Read Attribute, Write Attribute and so on)
+        return frame
+
     self.logging_receive(
         'Debug', "process8002 Sqn: %s ManufCode: %s Command: %s Data: %s " %(Sqn, ManufacturerCode, Command, Data))
+
 
     if Command == '01': # Read Attribute response
         return buildframe_read_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
@@ -1438,7 +1480,6 @@ def process8002(self, frame):
     if Command == '04': # Write Attribute response
         return buildframe_write_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
 
-    Domoticz.Log("Unknown Command: %s" %Command)
     return frame
 
 
@@ -1451,7 +1492,7 @@ def extract_nwk_infos_from_8002( frame ):
     if len(frame) >= 18:
         # Payload
         MsgData = frame[12:len(frame) - 4]
-        RSSI = frame[len(frame) - 4: len(frame) - 2]
+        LQI = frame[len(frame) - 4: len(frame) - 2]
 
     ProfileId = MsgData[2:6]
     ClusterId = MsgData[6:10]
@@ -1514,7 +1555,7 @@ def buildframe_write_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clus
     newFrame += '%4x' %len(buildPayload) # 6:10  Length
     newFrame += 'ff' # 10:12 CRC
     newFrame += buildPayload
-    newFrame += frame[len(frame) - 4: len(frame) - 2] # RSSI
+    newFrame += frame[len(frame) - 4: len(frame) - 2] # LQI
     newFrame += '03'
 
     return  newFrame
@@ -1528,7 +1569,7 @@ def buildframe_read_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clust
     newFrame += '%4x' %len(buildPayload) # 6:10  Length
     newFrame += 'ff' # 10:12 CRC
     newFrame += buildPayload
-    newFrame += frame[len(frame) - 4: len(frame) - 2] # RSSI
+    newFrame += frame[len(frame) - 4: len(frame) - 2] # LQI
     newFrame += '03'
 
     return  newFrame

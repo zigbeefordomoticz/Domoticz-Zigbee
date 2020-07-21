@@ -433,4 +433,3 @@ class NetworkEnergy():
 
         self.EnergyLevel[ root ][ entry ]['Status'] = 'Completed'
         return
-

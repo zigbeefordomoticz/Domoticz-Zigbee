@@ -65,6 +65,7 @@ SETTINGS = {
         'pollingLvlControl': {'type': 'int', 'default': 900,   'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'polling000C':      {'type': 'int', 'default': 3600,  'current': None, 'restart': False, 'hidden': True, 'Advanced': True},
         'polling0100':      {'type': 'int', 'default': 3600,  'current': None, 'restart': False, 'hidden': True, 'Advanced': True},
+        'polling0101':      {'type': 'int', 'default': 3600,  'current': None, 'restart': False, 'hidden': True, 'Advanced': True},
         'polling0102':      {'type': 'int', 'default': 900,   'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'polling0201':      {'type': 'int', 'default': 900,   'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'polling0204':      {'type': 'int', 'default': 86400, 'current': None, 'restart': False, 'hidden': True, 'Advanced': True},
@@ -177,7 +178,7 @@ SETTINGS = {
         'logDeviceUpdate':      {'type': 'bool', 'default': 1,     'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'logFORMAT':            {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': True, 'Advanced': True},
         'capturePairingInfos':  {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
-        'debugRSSI':            {'type': 'int',  'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
+        'debugLQI':            {'type': 'int',  'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'debugInput':           {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'debugBasicOutput':     {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'debugBinding':         {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
@@ -208,8 +209,9 @@ SETTINGS = {
         'debugProfalux':        {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'debugSchneider':       {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'debugPhilips':         {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
-        'debugPDM':             {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True}
-    }
+        'debugPDM':             {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
+        'debuginRawAPS':        {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
+        }
     },
 
     # Legrand Specific
@@ -220,7 +222,7 @@ SETTINGS = {
         'EnableDimmer':         {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'EnableReleaseButton':  {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'LegrandFilPilote':     {'type': 'bool', 'default': 1, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
-    }
+        }
     },
 
     # Philips Hue Specific
@@ -228,14 +230,14 @@ SETTINGS = {
         'PowerOnAfterOffOn':    {'type': 'list',
                                  'list': {'Off': 0, 'On': 1, 'Previous': 255},
                                  'default': 1, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
-    }
+        }
     },
 
     # Schneider Wiser configuration
     'Schneider Wiser':          {'Order': 14, 'param': {
         'enableSchneiderWiser': {'type': 'bool', 'default': 0,   'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'reenforcementWiser':   {'type': 'int',  'default': 300, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
-    }
+        }
     },
 
     # Others
@@ -250,24 +252,25 @@ SETTINGS = {
         'vibrationAqarasensitivity': {'type': 'list',
                                       'list': {'high': 'high', 'medium': 'medium', 'low': 'low'},
                                       'default': 'medium', 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
-    }
+     }
     },
 
     'Patching': {'Order': 16, 'param': {
         'Bug566':                {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
-    }
+     }
     },
 
     # Experimental
     'Experimental': {'Order': 17, 'param': {
+        'AnnoucementV0':         {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
+        'AnnoucementV1':         {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
+        'AnnoucementV2':         {'type': 'bool', 'default': 1, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
+        'CheckReEntrance':       {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'expJsonDatabase':       {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
-        'ExpDeviceAnnoucement1': {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
-        'ExpDeviceAnnoucement2': {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
-        'ExpDeviceAnnoucement3': {'type': 'bool', 'default': 1, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'XiaomiLeave':           {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'rebindLivolo':          {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': False},
         'allowAutoPairing':      {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
-    }
+        }
     }
 }
 

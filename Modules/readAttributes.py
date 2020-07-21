@@ -18,7 +18,8 @@ from time import time
 from Modules.zigateConsts import  MAX_READATTRIBUTES_REQ,  ZIGATE_EP
 from Modules.basicOutputs import send_zigatecmd_zcl_ack, send_zigatecmd_zcl_noack, identifySend, read_attribute
 from Modules.logging import loggingReadAttributes 
-from Modules.tools import getListOfEpForCluster
+from Modules.tools import getListOfEpForCluster, check_datastruct, is_time_to_perform_work, set_isqn_datastruct, \
+              set_status_datastruct, set_timestamp_datastruct, is_attr_unvalid_datastruct, reset_attr_datastruct
 
 
 def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes , manufacturer_spec = '00', manufacturer = '0000', ackIsDisabled = True):
@@ -42,70 +43,38 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes , manu
 def normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes , manufacturer_spec = '00', manufacturer = '0000', ackIsDisabled = True):
 
     def skipThisAttribute( self, addr, EpOut, Cluster, Attr):
-        skipReadAttr = False
 
-        if 'TimeStamps' not in  self.ListOfDevices[addr]['ReadAttributes']:
-            skipReadAttr = True
-        if not skipReadAttr and str(EpOut+'-'+str(Cluster)) not in self.ListOfDevices[addr]['ReadAttributes']['TimeStamps']:
-            skipReadAttr = True
-        if not skipReadAttr and 'ReadAttributes' not in self.ListOfDevices[addr]:
-            skipReadAttr = True
-        if not skipReadAttr and 'Ep' not in self.ListOfDevices[addr]['ReadAttributes']:
-            skipReadAttr = True
-        if not skipReadAttr and EpOut not in  self.ListOfDevices[addr]['ReadAttributes']['Ep']:
-            skipReadAttr = True
-        if not skipReadAttr and str(Cluster) not in  self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut]:
-            skipReadAttr = True
-        if not skipReadAttr and Attr not in self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)]:
-            skipReadAttr = False
+        if is_attr_unvalid_datastruct( self, 'ReadAttributes', addr, EpOut, Cluster , Attr ):
+            return True
 
-        #if  not skipReadAttr and self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] == {} and \
-        #        self.ListOfDevices[addr]['ReadAttributes']['TimeStamps'][EpOut+'-'+str(Cluster)] != 0:
-        #    loggingReadAttributes( self, 'Debug2', "normalizedReadAttrReq - cannot get Attribute self.ListOfDevices[%s]['ReadAttributes']['Ep'][%s][%s][%s]: %s"
-        #             %(addr, EpOut, Cluster, Attr, self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] ), nwkid=addr)
-        #    skipReadAttr = True
-        if not skipReadAttr and self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] in ( '86', '8c'):    # 8c Not supported, 86 No cluster match
-            loggingReadAttributes( self, 'Debug2', "normalizedReadAttrReq - Last status self.ListOfDevices[%s]['ReadAttributes']['Ep'][%s][%s][%s]: %s"
-                     %(addr, EpOut, Cluster, Attr, self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] ), nwkid=addr)
-            skipReadAttr = True
-        if not skipReadAttr and self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] != '00' and \
-                self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] != {}:
-            loggingReadAttributes( self, 'Debug2', "normalizedReadAttrReq - Last status self.ListOfDevices[%s]['ReadAttributes']['Ep'][%s][%s][%s]: %s"
-                     %(addr, EpOut, Cluster, Attr, self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] ), nwkid=addr)
-            skipReadAttr = True
+        if 'Model' in self.ListOfDevices[addr]:
+            return False
 
-        if not skipReadAttr and 'Model' in self.ListOfDevices[addr]:
-            if self.ListOfDevices[addr]['Model'] in self.DeviceConf:
-                #Domoticz.Log("-----> Checking Attributes from Model for device %s" %addr)
-                if 'ReadAttributes' in self.DeviceConf[ self.ListOfDevices[addr]['Model'] ]:
-                    #Domoticz.Log("-------> Checking Attributes from Model is IN")
-                    if Cluster in  self.DeviceConf[ self.ListOfDevices[addr]['Model'] ]['ReadAttributes']:
-                        #Domoticz.Log("---------> Checking Attributes %s from Model is IN, Cluster %s against %s" %( Attr, Cluster, self.DeviceConf[ self.ListOfDevices[addr]['Model'] ]['ReadAttributes'][Cluster]))
-                        if Attr not in self.DeviceConf[ self.ListOfDevices[addr]['Model'] ]['ReadAttributes'][Cluster]:
-                            loggingReadAttributes( self, 'Debug2', "normalizedReadAttrReq - Skip Read Attribute due to DeviceConf Nwkid: %s Cluster: %s Attribute: %s"
-                                    %(addr, Cluster, Attr ), nwkid=addr)
-                            skipReadAttr = True
+        if self.ListOfDevices[addr]['Model'] not in self.DeviceConf:
+            return False
 
-        return skipReadAttr
+        model = self.ListOfDevices[addr]['Model']
+        if 'ReadAttributes' not in self.DeviceConf[ model ]:
+            return False
+
+        if Cluster not in self.DeviceConf[ model ]['ReadAttributes']:
+            return False
+
+        if Attr in self.DeviceConf[ model ]['ReadAttributes'][Cluster]:
+            Domoticz.Log("Skip Attribute 6 %s/%s %s %s" %(addr, EpOut, Cluster , Attr))
+            loggingReadAttributes( self, 'Debug2', "normalizedReadAttrReq - Skip Read Attribute due to DeviceConf Nwkid: %s Cluster: %s Attribute: %s"
+                    %(addr, Cluster, Attr ), nwkid=addr)
+            return False
+
+        return True
+
 
     # Start method
     if 'Health' in self.ListOfDevices[addr]:
         if self.ListOfDevices[addr]['Health'] == 'Not Reachable':
             return
-
     direction = '00'
-
-    if 'ReadAttributes' not in self.ListOfDevices[addr]:
-        self.ListOfDevices[addr]['ReadAttributes'] = {}
-    if 'Ep' not in self.ListOfDevices[addr]['ReadAttributes']:
-        self.ListOfDevices[addr]['ReadAttributes']['Ep'] = {}
-    if EpOut not in self.ListOfDevices[addr]['ReadAttributes']['Ep']:
-        self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut] = {}
-    if str(Cluster) not in self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut]:
-        self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)] = {}
-    if 'TimeStamps' not in self.ListOfDevices[addr]['ReadAttributes']:
-        self.ListOfDevices[addr]['ReadAttributes']['TimeStamps'] = {}
-        self.ListOfDevices[addr]['ReadAttributes']['TimeStamps'][EpOut+'-'+str(Cluster)] = 0
+    check_datastruct( self, 'ReadAttributes', addr, EpOut, Cluster )
 
     if not isinstance(ListOfAttributes, list):
         # We received only 1 attribute
@@ -113,28 +82,38 @@ def normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttribu
         ListOfAttributes = []
         ListOfAttributes.append( _tmpAttr)
 
+    now = int(time())
     lenAttr = 0
     weight = int ((lenAttr ) / 2) + 1
     Attr =''
+    attributeList = []
     loggingReadAttributes( self, 'Debug2', "attributes: " +str(ListOfAttributes), nwkid=addr)
     for x in ListOfAttributes:
         Attr_ = "%04x" %(x)
-        if Attr_ in self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)]:
-            if skipThisAttribute(self,  addr, EpOut, Cluster, Attr_):
-                continue
+        if skipThisAttribute(self,  addr, EpOut, Cluster, Attr_):
+            #Domoticz.Log("Skiping attribute %s/%s %s %s" %(addr, EpOut, Cluster, Attr_))
+            continue
+        if not is_time_to_perform_work(self, 'ReadAttributes', addr, EpOut, Cluster, now, 60 ):
+            # Do not perform more than once every minute !
+            continue
 
-            loggingReadAttributes( self, 'Debug2', "normalizedReadAttrReq: %s for %s/%s" %(Attr_, addr, self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr_]), nwkid=addr)
-            self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr_] = {}
+        reset_attr_datastruct( self, 'ReadAttributes', addr, EpOut, Cluster , Attr_ )
         Attr += Attr_
         lenAttr += 1
-
+        attributeList.append( Attr_ )
+        
     if lenAttr == 0:
         return
 
-    loggingReadAttributes( self, 'Debug', "-- normalizedReadAttrReq ---- addr =" +str(addr) +" Cluster = " +str(Cluster) +" Attributes = " + ", ".join("0x{:04x}".format(num) for num in ListOfAttributes), nwkid=addr )
-    self.ListOfDevices[addr]['ReadAttributes']['TimeStamps'][EpOut+'-'+str(Cluster)] = int(time())
+    loggingReadAttributes( self, 
+        'Debug', 
+        "-- normalizedReadAttrReq ---- addr =" +str(addr) +" Cluster = " +str(Cluster) +" Attributes = " + ", ".join("0x{:04x}".format(num) for num in ListOfAttributes), nwkid=addr )
+    i_sqn = read_attribute( self, addr ,EpIn , EpOut ,Cluster ,direction , manufacturer_spec , manufacturer , lenAttr, Attr, ackIsDisabled=ackIsDisabled )
 
-    read_attribute( self, addr ,EpIn , EpOut ,Cluster ,direction , manufacturer_spec , manufacturer , lenAttr, Attr, ackIsDisabled=ackIsDisabled )
+    for x in attributeList:
+        set_isqn_datastruct(self, 'ReadAttributes', addr, EpOut, Cluster, x, i_sqn )
+        
+    set_timestamp_datastruct(self, 'ReadAttributes', addr, EpOut, Cluster, now ) 
 
 def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
 
@@ -150,6 +129,7 @@ def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
             '000c': [ 0x0051, 0x0055, 0x006f, 0xff05],
             '0020': [ 0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006 ],
             '0100': [ 0x0000, 0x0001, 0x0002, 0x0010, 0x0011],
+            '0101': [ 0x0000, 0x0001, 0x0002, 0x0010, 0x0011, 0x0012, 0x0013, 0x0014, 0x0015, 0x0016, 0x0017, 0x0018, 0x0019, 0x0020, 0x0023, 0x0025, 0x0026, 0x0027, 0x0028, 0x0030, 0x0032, 0x0034, 0x0040, 0x0042, 0x0043, 0xfffd],
             '0102': [ 0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0007, 0x0008, 0x0009, 0x000A, 0x000B, 0x0010, 0x0011, 0x0014, 0x0017, 0xfffd],
             '0201': [ 0x0000, 0x0008, 0x0010, 0x0012,  0x0014, 0x0015, 0x0016, 0x001B, 0x001C, 0x001F],
             '0204': [ 0x0000 ],
@@ -216,24 +196,14 @@ def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
 def ping_device_with_read_attribute(self, key):
     # In order to ping a device, we simply send a Read Attribute on Cluster 0x0000 and looking for Attribute 0x0000
     # This Cluster/Attribute is mandatory for each devices.
-
     loggingReadAttributes( self, 'Debug', "Ping Device Physical device - Key: %s" %(key), nwkid=key)
-    if 'ReadAttributes' not in self.ListOfDevices[key]:
-        self.ListOfDevices[key]['ReadAttributes'] = {}
-    if 'TimeStamps' not in self.ListOfDevices[key]['ReadAttributes']:
-        self.ListOfDevices[key]['ReadAttributes']['TimeStamps'] = {}
-
-    ListOfEp = getListOfEpForCluster( self, key, '0003' ) 
-    if ListOfEp and self.ListOfDevices[ key ].get('Manufacturer Name') in  ('Legrand', 'IKEA of Sweden', 'Schneider', 'Philips' ):
-        for EPout in ListOfEp:
-            identifySend( self, key, EPout, duration=0, withAck = True)
-            return
 
     ListOfEp = getListOfEpForCluster( self, key, '0000' )
     for EPout in ListOfEp:
-        self.ListOfDevices[key]['ReadAttributes']['TimeStamps'][ EPout + '-' + '0000'] = int(time())
-        send_zigatecmd_zcl_ack( self, key, '0100', ZIGATE_EP + EPout + '0000' + '00' + '00' + '0000' + "%02x" %(0x01) + '0000' )
-    
+        check_datastruct( self, 'ReadAttributes', key, EPout, '0000' )
+        i_sqn = send_zigatecmd_zcl_ack( self, key, '0100', ZIGATE_EP + EPout + '0000' + '00' + '00' + '0000' + "%02x" %(0x01) + '0000' )
+        set_isqn_datastruct(self, 'ReadAttributes', key, EPout, '0000', '0000', i_sqn )
+
 def ReadAttributeRequest_0000(self, key, fullScope=True):
     # Basic Cluster
     # The Ep to be used can be challenging, as if we are in the discovery process, the list of Eps is not yet none and it could even be that the Device has only 1 Ep != 01
@@ -478,6 +448,22 @@ def ReadAttributeRequest_0100(self, key):
             loggingReadAttributes( self, 'Debug', "Request 0x0100 info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
             ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0100", listAttributes, ackIsDisabled = True)
 
+def ReadAttributeRequest_0101(self, key):
+
+    loggingReadAttributes( self, 'Debug', "Request Doorlock Read Attribute request: " + key , nwkid=key)
+
+    ListOfEp = getListOfEpForCluster( self, key, '0101' )
+    for EPout in ListOfEp:
+        listAttributes = []
+        for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0101'):
+            if iterAttr not in listAttributes:
+                listAttributes.append( iterAttr )
+
+            if listAttributes:
+                loggingReadAttributes( self, 'Debug', "Request 0x0101 info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
+                ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0101", listAttributes , ackIsDisabled = True )
+
+
 def ReadAttributeRequest_0102(self, key):
 
     loggingReadAttributes( self, 'Debug', "Request Windows Covering status Read Attribute request: " + key , nwkid=key)
@@ -494,7 +480,7 @@ def ReadAttributeRequest_0102(self, key):
                 ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0102", listAttributes , ackIsDisabled = True )
 
 def ReadAttributeRequest_0102_0008( self, key):
-    loggingReadAttributes( self, 'Log', "Request Windows Covering status Read Attribute request: " + key , nwkid=key)
+    loggingReadAttributes( self, 'Debug', "Request Windows Covering status Read Attribute request: " + key , nwkid=key)
     ListOfEp = getListOfEpForCluster( self, key, '0102' )
     for EPout in ListOfEp:
         listAttributes = [0x0008]
@@ -724,6 +710,22 @@ def ReadAttributeRequest_0b05(self, key):
             loggingReadAttributes( self, 'Debug', "Request Diagnostic info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
             ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0b05", listAttributes)
     
+def ReadAttributeRequest_0b04(self, key):
+    # Cluster 0x0702 Metering
+
+    loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0702 - Key: %s " %key, nwkid=key)
+    _manuf = 'Manufacturer' in self.ListOfDevices[key]
+    ListOfEp = getListOfEpForCluster( self, key, '0b04' )
+    for EPout in ListOfEp:
+        listAttributes = []
+        for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0b04'):
+            if iterAttr not in listAttributes:
+                listAttributes.append( iterAttr )
+    
+        if listAttributes:
+            loggingReadAttributes( self, 'Debug', "Request Metering info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0b04", listAttributes, ackIsDisabled = True)
+
 def ReadAttributeRequest_000f(self, key):
 
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_000f - Key: %s " %key, nwkid=key)
@@ -775,6 +777,7 @@ READ_ATTRIBUTES_REQUEST = {
     '000C' : ( ReadAttributeRequest_000C, 'polling000C' ),
     '0020' : ( ReadAttributeRequest_000C, 'polling0020' ),
     '0100' : ( ReadAttributeRequest_0100, 'polling0100' ),
+    '0101' : ( ReadAttributeRequest_0101, 'polling0101' ),
     '0102' : ( ReadAttributeRequest_0102, 'polling0102' ),
     '0201' : ( ReadAttributeRequest_0201, 'polling0201' ),
     '0204' : ( ReadAttributeRequest_0204, 'polling0204' ),
@@ -788,6 +791,7 @@ READ_ATTRIBUTES_REQUEST = {
     '0502' : ( ReadAttributeRequest_0502, 'polling0502' ),
     '0702' : ( ReadAttributeRequest_0702, 'polling0702' ),
     '0b05' : ( ReadAttributeRequest_0702, 'polling0b05' ),
+    '0b04' : ( ReadAttributeRequest_0b04, 'polling0702' ),
     #'000f' : ( ReadAttributeRequest_000f, 'polling000f' ),
     'fc21' : ( ReadAttributeRequest_000f, 'pollingfc21' ),
     #'fc01' : ( ReadAttributeRequest_fc01, 'pollingfc01' ),

@@ -45,15 +45,15 @@ def send_zigatecmd_zcl_noack( self, address, cmd, datas):
     if len(address) == 4:
         # Short address
         address_mode = '%02x' %ADDRESS_MODE['shortnoack']
-        if self.pluginconf.pluginConf['forceAckOnZCL']:
-            Domoticz.Log("Force Ack")
+        if self.pluginconf.pluginConf['forceAckOnZCL'] or  ( address != 'ffff' and cmd in self.ListOfDevices[ address ]['ForceAckCommands']):
+            loggingBasicOutput( self, 'Debug', "Force Ack on %s %s" %(cmd, datas))
             address_mode = '%02x' %ADDRESS_MODE['short']
             ackIsDisabled = False
     else:
         address_mode = '%02x' %ADDRESS_MODE['ieeenoack']
         if self.pluginconf.pluginConf['forceAckOnZCL']:
             address_mode = '%02x' %ADDRESS_MODE['ieee']
-            Domoticz.Log("Force Ack")
+            loggingBasicOutput( self, 'Debug', "Force Ack on %s %s" %(cmd, datas))
             ackIsDisabled = False
     return send_zigatecmd_raw( self, cmd, address_mode + address + datas, ackIsDisabled = ackIsDisabled )
 
@@ -67,11 +67,11 @@ def send_zigatecmd_raw( self, cmd, datas, ackIsDisabled = False ):
 
    i_sqn = self.ZigateComm.sendData( cmd, datas , ackIsDisabled )
    if self.pluginconf.pluginConf['debugzigateCmd']:
-       loggingBasicOutput( self, 'Log', "send_zigatecmd_raw - [%s] %s %s Queue Length: %s" %(i_sqn, cmd, datas, self.ZigateComm.loadTransmit()))
+       loggingBasicOutput( self, 'Log', "send_zigatecmd_raw - [%s] %s %s Queue Length: %s / %s" %(i_sqn, cmd, datas, self.ZigateComm.loadTransmit(), len(self.ZigateComm.ListOfCommands)))
    else:
-       loggingBasicOutput( self, 'Debug', "=====> send_zigatecmd_raw - [%s] %s %s Queue Length: %s" %(i_sqn,cmd, datas, self.ZigateComm.loadTransmit()))
+       loggingBasicOutput( self, 'Debug', "=====> send_zigatecmd_raw - [%s] %s %s Queue Length: %s / %s" %(i_sqn,cmd, datas, self.ZigateComm.loadTransmit(), len(self.ZigateComm.ListOfCommands)))
    if self.ZigateComm.loadTransmit() > 15:
-       loggingBasicOutput( self, 'Log', "WARNING - send_zigatecmd_raw: [%s] %s %18s ZigateQueue: %s" %(i_sqn,cmd, datas, self.ZigateComm.loadTransmit()))
+       loggingBasicOutput( self, 'Log', "WARNING - send_zigatecmd_raw: [%s] %s %18s ZigateQueue: %s / %s" %(i_sqn,cmd, datas, self.ZigateComm.loadTransmit(), len(self.ZigateComm.ListOfCommands)))
 
    return i_sqn
 
@@ -109,6 +109,14 @@ def sendZigateCmd(self, cmd, datas , ackIsDisabled = False):
 
     return send_zigatecmd_raw( self, cmd, datas, ackIsDisabled )
 
+def send_zigate_mode( self, mode ):
+    # Mode: cf. https://github.com/fairecasoimeme/ZiGate/pull/307
+    #  0x00 - ZiGate in norml operation
+    #  0x01 - ZiGate in RAW mode
+    #  0x02 - ZiGate in Hybrid mode ( All inbound messages are received via 0x8002 in addition of the normal one)
+
+    send_zigatecmd_raw( self, '0002', '%02x' %mode )
+    
 def ZigatePermitToJoin( self, permit ):
     """
     ZigatePermitToJoin will switch the Zigate in the Pairing mode or not based on the permit flag
@@ -164,15 +172,15 @@ def start_Zigate(self, Mode='Controller'):
     setChannel(self, str(self.pluginconf.pluginConf['channel']))
     
     if Mode == 'Controller':
-        loggingBasicOutput( self, "Status", "Set Zigate as a Coordinator" )
-        send_zigatecmd_raw(self, "0023","00")
-
-        loggingBasicOutput( self, "Status", "Set Zigate as a TimeServer" )
-        setTimeServer( self)
+        # loggingBasicOutput( self, "Status", "Set Zigate as a Coordinator" )
+        # send_zigatecmd_raw(self, "0023","00")
 
         loggingBasicOutput( self, "Status", "Start network" )
         send_zigatecmd_raw(self, "0024", "" )   # Start Network
     
+        loggingBasicOutput( self, "Status", "Set Zigate as a TimeServer" )
+        setTimeServer( self)
+
         loggingBasicOutput( self, 'Debug', "Request network Status" )
         send_zigatecmd_raw( self, "0014", "" ) # Request status
         send_zigatecmd_raw( self, "0009", "" ) # Request status
@@ -223,9 +231,9 @@ def identifySend( self, nwkid, ep, duration=0, withAck = False):
     loggingBasicOutput( self, 'Debug', "identifySend - send an Identify Message to: %s for %04x seconds Ack: %s" %( nwkid, duration, withAck))
     loggingBasicOutput( self, 'Debug', "identifySend - data sent >%s< " %(datas))
     if withAck:
-        send_zigatecmd_zcl_ack(self, nwkid, "0070", datas )
+        return send_zigatecmd_zcl_ack(self, nwkid, "0070", datas )
     else:
-        send_zigatecmd_zcl_noack(self, nwkid, "0070", datas )
+        return send_zigatecmd_zcl_noack(self, nwkid, "0070", datas )
 
 def maskChannel( channel ):
 
@@ -335,7 +343,7 @@ def leaveMgtReJoin( self, saddr, ieee, rejoin=True):
     loggingBasicOutput( self, 'Log', "leaveMgtReJoin - sAddr: %s , ieee: %s, [%s/%s]" %( saddr, ieee,  self.pluginconf.pluginConf['allowAutoPairing'], rejoin))
     if not self.pluginconf.pluginConf['allowAutoPairing']:
         loggingBasicOutput( self, 'Log', "leaveMgtReJoin - no action taken as 'allowAutoPairing' is %s" %self.pluginconf.pluginConf['allowAutoPairing'])
-        return
+        return None
 
     if rejoin:
         loggingBasicOutput( self, "Status", "Switching Zigate in pairing mode to allow %s (%s) coming back" %(saddr, ieee))
@@ -369,7 +377,7 @@ def leaveMgtReJoin( self, saddr, ieee, rejoin=True):
 
         datas = saddr + ieee + _rejoin + _dnt_rmv_children
         loggingBasicOutput( self, "Status", "Request a rejoin of (%s/%s)" %(saddr, ieee))
-        send_zigatecmd_raw(self, "0047", datas )
+        return send_zigatecmd_raw(self, "0047", datas )
 
 def leaveRequest( self, ShortAddr=None, IEEE= None, RemoveChild=0x00, Rejoin=0x00 ):
     """
@@ -388,7 +396,7 @@ def leaveRequest( self, ShortAddr=None, IEEE= None, RemoveChild=0x00, Rejoin=0x0
             _ieee = self.ListOfDevices[ShortAddr]['IEEE']
         else:
             Domoticz.Error("leaveRequest - Unable to determine IEEE address for %s %s" %(ShortAddr, IEEE))
-            return
+            return None
 
     _rmv_children = '%02X' %RemoveChild
     _rejoin = '%02X' %Rejoin
@@ -396,7 +404,7 @@ def leaveRequest( self, ShortAddr=None, IEEE= None, RemoveChild=0x00, Rejoin=0x0
     datas = _ieee + _rmv_children + _rejoin
     #loggingBasicOutput( self, "Status", "Sending a leaveRequest - %s %s" %( '0047', datas))
     loggingBasicOutput( self, 'Debug', "---------> Sending a leaveRequest - NwkId: %s, IEEE: %s, RemoveChild: %s, Rejoin: %s" %( ShortAddr, IEEE, RemoveChild, Rejoin))
-    send_zigatecmd_raw(self, "0047", datas )
+    return send_zigatecmd_raw(self, "0047", datas )
 
 def removeZigateDevice( self, IEEE ):
     """
@@ -417,7 +425,7 @@ def removeZigateDevice( self, IEEE ):
     """
 
     if IEEE not in self.IEEE2NWK:
-        return
+        return None
 
     nwkid = self.IEEE2NWK[ IEEE ]
     loggingBasicOutput( self, "Status", "Remove from Zigate Device = " + " IEEE = " +str(IEEE) )
@@ -428,11 +436,11 @@ def removeZigateDevice( self, IEEE ):
     else:
         if self.ZigateIEEE is None:
             Domoticz.Error("Zigae IEEE unknown: %s" %self.ZigateIEEE)
-            return
+            return None
         ParentAddr = self.ZigateIEEE
 
     ChildAddr = IEEE
-    send_zigatecmd_raw(self, "0026", ParentAddr + ChildAddr )
+    return send_zigatecmd_raw(self, "0026", ParentAddr + ChildAddr )
 
 def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep=ZIGATE_EP):
 
@@ -490,14 +498,14 @@ def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zig
 
     loggingBasicOutput( self, 'Debug', "raw_APS_request - Addr: %s Ep: %s Cluster: %s ProfileId: %s Payload: %s" %(targetaddr, dest_ep, cluster, profileId, payload))
 
-    send_zigatecmd_raw(self, "0530", addr_mode + targetaddr + zigate_ep + dest_ep + cluster + profileId + security + radius + len_payload + payload)
+    return send_zigatecmd_raw(self, "0530", addr_mode + targetaddr + zigate_ep + dest_ep + cluster + profileId + security + radius + len_payload + payload)
 
 def read_attribute( self, addr ,EpIn , EpOut ,Cluster ,direction , manufacturer_spec , manufacturer , lenAttr, Attr, ackIsDisabled = True):
     
     if ackIsDisabled:
-        send_zigatecmd_zcl_noack( self, addr, '0100', EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + '%02x' %lenAttr + Attr )
+        return send_zigatecmd_zcl_noack( self, addr, '0100', EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + '%02x' %lenAttr + Attr )
     else:
-        send_zigatecmd_zcl_ack( self, addr, '0100', EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + '%02x' %lenAttr + Attr )
+        return send_zigatecmd_zcl_ack( self, addr, '0100', EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + '%02x' %lenAttr + Attr )
 
 def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled = True):
     """ write_attribute unicast , all with ack in < 31d firmware, ack/noack works since 31d
@@ -545,7 +553,7 @@ def write_attributeNoResponse( self, key, EPin, EPout, clusterID, manuf_id, manu
 def scene_membership_request( self, nwkid, ep, groupid='0000'):
 
     datas = ZIGATE_EP + ep +  groupid
-    send_zigatecmd_zcl_noack(self, nwkid, "00A6", datas )
+    return send_zigatecmd_zcl_noack(self, nwkid, "00A6", datas )
 
 def identifyEffect( self, nwkid, ep, effect='Blink' ):
 
@@ -586,14 +594,14 @@ def identifyEffect( self, nwkid, ep, effect='Blink' ):
         identify = True
 
     if not identify:
-        return
+        return None
 
     if effect not in effect_command:
         effect = 'Blink'
 
     #datas = "02" + "%s"%(nwkid) + ZIGATE_EP + ep + "%02x"%(effect_command[effect])  + "%02x" %0
     datas = ZIGATE_EP + ep + "%02x"%(effect_command[effect])  + "%02x" %0
-    send_zigatecmd_zcl_noack(self, nwkid, "00E0", datas )
+    return send_zigatecmd_zcl_noack(self, nwkid, "00E0", datas )
 
 def set_poweron_afteroffon( self, key, OnOffMode = 0xff):
     # OSRAM/LEDVANCE
@@ -610,5 +618,20 @@ def set_poweron_afteroffon( self, key, OnOffMode = 0xff):
         data = "ff"
         data = "%02x" %OnOffMode
         loggingBasicOutput( self, 'Debug', "set_PowerOn_OnOff for %s/%s - OnOff: %s" %(key, EPout, OnOffMode))
-        write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled = True)
         del self.ListOfDevices[key]['Ep']['0b']['0006']['4003']
+        return write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled = True)
+        
+def unknown_device_nwkid( self, nwkid ):
+    
+    if nwkid in self.UnknownDevices:
+        return
+    
+    self.UnknownDevices.append( nwkid )
+
+    # If we didn't find it, let's trigger a NetworkMap scan if not one in progress
+    if self.networkmap and not self.networkmap.NetworkMapPhase():
+        self.networkmap.start_scan()
+
+    u8RequestType = '00'
+    u8StartIndex = '00'
+    sendZigateCmd(self ,'0041', '02' + nwkid + u8RequestType + u8StartIndex )

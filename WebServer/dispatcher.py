@@ -51,6 +51,7 @@ def do_rest( self, Connection, verb, data, version, command, parameters):
         'zgroup-list-available-device':   {'Name':'zgroup-list-available-device','Verbs':{'GET'}, 'function':self.rest_zGroup_lst_avlble_dev},
         'zigate':        {'Name':'zigate',        'Verbs':{'GET'}, 'function':self.rest_zigate},
         'zigate-erase-PDM':{'Name':'zigate-erase-PDM', 'Verbs':{'GET'}, 'function':self.rest_zigate_erase_PDM},
+        'zigate-mode':   {'Name':'zigate-mode',   'Verbs':{'GET'}, 'function': self.rest_zigate_mode},
         'rescan-groups': {'Name':'rescan-groups', 'Verbs':{'GET'}, 'function':self.rest_rescan_group},
         'scan-device-for-grp': {'Name':'ScanDevscan-device-for-grpiceForGrp',  'Verbs':{'PUT'}, 'function':self.rest_scan_devices_for_group},
         }

@@ -106,7 +106,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
         # Attribute_ : If used This is the Attribute from readCluster. Will help to route to the right action
         # Color_     : If used This is the color value to be set
 
-        loggingWidget( self, 'Debug', "------> WidgetEp: %s WidgetId: %s WidgetType: %s" %( WidgetEp , WidgetId, WidgetType), NWKID)
+        loggingWidget( self, 'Debug', "------> ClusterType: %s WidgetEp: %s WidgetId: %s WidgetType: %s Attribute_: %s" %( ClusterType, WidgetEp , WidgetId, WidgetType, Attribute_), NWKID)
 
         SignalLevel,BatteryLevel = RetreiveSignalLvlBattery( self, NWKID)
 
@@ -157,7 +157,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     Options['EnergyMeterMode'] = '0' # By default from device
 
                 # Did we get Summation from Data Structure
-                if summation:
+                if summation != 0:
                     # We got summation from Device, let's check that EnergyMeterMode is
                     # correctly set to 0, if not adjust
                     if Options['EnergyMeterMode'] != '0':
@@ -279,7 +279,18 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
                     loggingWidget( self, "Debug", "------>  Thermostat Mode: %s %s" %(nValue,sValue), NWKID)
 
-        if ClusterType == 'Temp' and WidgetType in ( 'Temp', 'Temp+Hum', 'Temp+Hum+Baro'):  # temperature
+        if ClusterType == 'Temp' and WidgetType == 'AirQuality' and Attribute_ == '0002':
+            # eco2 for VOC_Sensor from Nexturn is provided via Temp cluster
+            nvalue = round(value,0)
+            svalue = '%d' %(nvalue)
+            UpdateDevice_v2(self, Devices, DeviceUnit, nvalue, svalue, BatteryLevel, SignalLevel)
+
+        if ClusterType == 'Temp' and WidgetType == 'Voc' and Attribute_ == '0003':
+            # voc for VOC_Sensor from Nexturn is provided via Temp cluster
+            value = '%d' %(round(value,0))
+            UpdateDevice_v2(self, Devices, DeviceUnit, 0, value, BatteryLevel, SignalLevel)
+
+        if ClusterType == 'Temp' and WidgetType in ( 'Temp', 'Temp+Hum', 'Temp+Hum+Baro') and  Attribute_ == '':  # temperature
             loggingWidget( self, "Debug", "------>  Temp: %s, WidgetType: >%s<" %(value,WidgetType), NWKID)
             adjvalue = 0
             if self.domoticzdb_DeviceStatus:
@@ -391,8 +402,9 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 sValue = str(selector)
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
 
-        if ClusterType in ( 'Alarm', 'Door', 'Switch', 'SwitchButton', 'AqaraOppleMiddle', 'Motion', 
-                            'Ikea_Round_5b', 'Ikea_Round_OnOff', 'Vibration', 'OrviboRemoteSquare', 'Button_3'): # Plug, Door, Switch, Button ...
+        if ClusterType in ( 'Alarm', 'Door', 'DoorLock', 'Switch', 'SwitchButton', 'AqaraOppleMiddle', 'Motion', 
+                            'Ikea_Round_5b', 'Ikea_Round_OnOff', 'Vibration', 'OrviboRemoteSquare', 'Button_3'): 
+            # Plug, Door, Switch, Button ...
             # We reach this point because ClusterType is Door or Switch. It means that Cluster 0x0006 or 0x0500
             # So we might also have to manage case where we receive a On or Off for a LvlControl WidgetType like a dimming Bulb.
             loggingWidget( self, "Debug", "------> Generic Widget for %s ClusterType: %s WidgetType: %s Value: %s" %(NWKID, WidgetType, ClusterType , value), NWKID)

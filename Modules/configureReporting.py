@@ -22,7 +22,8 @@ from Modules.basicOutputs import  send_zigatecmd_zcl_noack
 from Modules.bindings import bindDevice
 
 from Modules.zigateConsts import MAX_LOAD_ZIGATE, CFG_RPT_ATTRIBUTESbyCLUSTERS , ZIGATE_EP
-from Modules.tools import getClusterListforEP, mainPoweredDevice
+from Modules.tools import getClusterListforEP, mainPoweredDevice, \
+    check_datastruct, is_time_to_perform_work, set_isqn_datastruct, set_status_datastruct, set_timestamp_datastruct, is_attr_unvalid_datastruct, reset_attr_datastruct
 from Modules.logging import loggingConfigureReporting
 
 MAX_ATTR_PER_REQ = 3
@@ -37,7 +38,6 @@ def processConfigureReporting( self, NWKID=None ):
         if they support Cluster we want to configure Reporting 
 
     '''
-
 
     now = int(time())
     if NWKID is None :
@@ -59,9 +59,11 @@ def processConfigureReporting( self, NWKID=None ):
         if key not in self.ListOfDevices:
             Domoticz.Error("processConfigureReporting - Unknown key: %s" %key)
             continue
+
         if 'Status' not in self.ListOfDevices[key]:
             Domoticz.Error("processConfigureReporting - no 'Status' flag for device %s !!!" %key)
             continue
+
         if self.ListOfDevices[key]['Status'] != 'inDB': 
             continue
 
@@ -121,37 +123,14 @@ def processConfigureReporting( self, NWKID=None ):
                         loggingConfigureReporting( self, 'Debug',"----> Do not Configure Reports cluster %s for Profalux Remote command %s/%s" %(cluster, key, Ep), key)
                         continue
 
-
                 loggingConfigureReporting( self, 'Debug2', "--------> Configurereporting - processing %s/%s - %s" %(key,Ep,cluster), nwkid=key)
-                if 'ConfigureReporting' not in self.ListOfDevices[key]:
-                    self.ListOfDevices[key]['ConfigureReporting'] = {}
-                if 'Ep' not in self.ListOfDevices[key]['ConfigureReporting']:
-                    self.ListOfDevices[key]['ConfigureReporting']['Ep'] = {}
-                if Ep not in self.ListOfDevices[key]['ConfigureReporting']['Ep']:
-                    self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep] = {}
-                if cluster not in self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep]:
-                    self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster] = {}
 
-                if self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] in ( '86', '8c') and \
-                        self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] != {} :
-                    loggingConfigureReporting( self, 'Debug', "--------> configurereporting - %s skiping due to existing error in the past" %key, nwkid=key)
+                if not is_time_to_perform_work(self, 'ConfigureReporting', key, Ep, cluster, now, (21 * 3600) ):
+                    loggingConfigureReporting( self, 'Debug', "--------> Not time to perform  %s/%s - %s" %(key,Ep,cluster), nwkid=key)
                     continue
 
-                _idx = Ep + '-' + str(cluster)
-                if 'TimeStamps' not in self.ListOfDevices[key]['ConfigureReporting'] :
-                    self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'] = {}
-                    self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] = 0
-                else:
-                    if _idx not in self.ListOfDevices[key]['ConfigureReporting']['TimeStamps']:
-                        self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] = 0
-
-                if  self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] != 0:
-                     if now <  ( self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] + (21 * 3600)):  # Do almost every day
-                        loggingConfigureReporting( self, 'Debug', "------> configurereporting - %s skiping due to done past" %key, nwkid=key)
-                        continue
-
                 if NWKID is None and (self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE):
-                    loggingConfigureReporting( self, 'Debug2', "---> configureReporting - %s skip configureReporting for now ... system too busy (%s/%s) for %s"
+                    loggingConfigureReporting( self, 'Debug', "---> configureReporting - %s skip configureReporting for now ... system too busy (%s/%s) for %s"
                         %(key, self.busy, self.ZigateComm.loadTransmit(), key), nwkid=key)
                     return # Will do at the next round
 
@@ -171,7 +150,7 @@ def processConfigureReporting( self, NWKID=None ):
                     else:
                         Domoticz.Error("configureReporting - inconsitency on %s no IEEE found : %s " %(key, str(self.ListOfDevices[key])))
 
-                self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] = int(time())
+                set_timestamp_datastruct(self, 'ConfigureReporting', key, Ep, cluster, int(time()) )
 
                 if 'Attributes' not in cluster_list[cluster]:
                     continue
