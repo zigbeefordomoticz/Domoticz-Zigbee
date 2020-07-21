@@ -9,18 +9,19 @@
 			"0201":"",
 			"0402":"",
 			"0405":"",
-			"fc03":"",
 			"Type":"Temp/Humi/AirQuality/Voc"
 		}
 	},
 	"Type":"",
-        "ClusterToBind": [ "0000", "0001", "0402", "0405" ],
+        "ClusterToBind": [ "0000", "0001", "0003", "0402" ],
         "ConfigureReporting":{
 			"0001": {"Attributes": { "0021": {"DataType": "20", "MinInterval":"012C", "MaxInterval":"012C", "TimeOut":"0FFF","Change":"01"}}}
 		},
 		"ReadAttributes": {
 			"0000": [ "0000", "0004", "0005" ],
-			"0402": [ ],
+			"0001": [ "0021" ],
+			"0201": [],
+			"0402": [ "0000", "0001", "0002", "0003"],
 			"0405": []
 		}
 }
