@@ -30,7 +30,6 @@ def returnlen(taille , value) :
         value="0"+value
     return str(value)
 
-
 def Hex_Format(taille, value):
     value = hex(int(value))[2:]
     if len(value) > taille:
@@ -277,8 +276,6 @@ def removeNwkInList( self, NWKID) :
 
     del self.ListOfDevices[NWKID]
 
-
-
 def removeDeviceInList( self, Devices, IEEE, Unit ):
     # Most likely call when a Device is removed from Domoticz
     # This is a tricky one, as you might have several Domoticz devices attached to this IoT and so you must remove only the corredpoing part.
@@ -330,8 +327,6 @@ def removeDeviceInList( self, Devices, IEEE, Unit ):
         return True
     return False
 
-
-
 def initDeviceInList(self, Nwkid):
     if Nwkid not in self.ListOfDevices and Nwkid != '':
         self.ListOfDevices[Nwkid]={}
@@ -376,7 +371,6 @@ def timeStamped( self, key, Type ):
             self.ListOfDevices[key]['Stamp']['MsgType'] = {}
         self.ListOfDevices[key]['Stamp']['Time'] = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
         self.ListOfDevices[key]['Stamp']['MsgType'] = "%4x" %(Type)
-
 
 def updSQN( self, key, newSQN) :
 
@@ -460,14 +454,12 @@ def getListofClusterbyModel( self, Model , InOut ):
                 seen = cluster
     return listofCluster
 
-
 def getListofInClusterbyModel( self, Model ) :
     return getListofClusterbyModel( self, Model, 'Epin' )
 
 def getListofOutClusterbyModel( self, Model ) :
     return getListofClusterbyModel( self, Model, 'Epout' )
-
-    
+  
 def getListofTypebyModel( self, Model ):
     """
     Provide a list of Tuple ( Ep, Type ) for a given Model name if found. Else return an empty list
@@ -489,7 +481,6 @@ def getModelbyZDeviceIDProfileID( self, ZDeviceID, ProfileID):
         if self.DeviceConf[model]['ProfileID'] == ProfileID and self.DeviceConf[model]['ZDeviceID'] == ZDeviceID :
             return model
     return ''
-
 
 def getListofType( self, Type ):
     """
@@ -554,8 +545,6 @@ def xy_to_rgb(x, y, brightness=1):
 
     return {'r': round(r * 255, 3), 'g': round(g * 255, 3), 'b': round(b * 255, 3)}
 
-
-
 def rgb_to_hsl(rgb):
     ''' convert rgb tuple to hls tuple '''
     r, g, b = rgb
@@ -611,8 +600,7 @@ def decodeMacCapa( inMacCapa ):
     else:
         MacCapa.append('NwkAddr need to be allocated')
     return MacCapa
-
-        
+      
 def ReArrangeMacCapaBasedOnModel( self, nwkid, inMacCapa):
     """
     Function to check if the MacCapa should not be updated based on Model.
@@ -645,12 +633,14 @@ def ReArrangeMacCapaBasedOnModel( self, nwkid, inMacCapa):
         # Aqara Opple Switch, must be converted to Battery Devices
         self.ListOfDevices[nwkid]['MacCapa'] = '80'
         self.ListOfDevices[nwkid]['PowerSource'] = 'Battery'
-        if (
-            'Capability' in self.ListOfDevices[nwkid]
-            and 'Main Powered' in self.ListOfDevices[nwkid]['Capability']
-        ):
+        if ( 'Capability' in self.ListOfDevices[nwkid] and 'Main Powered' in self.ListOfDevices[nwkid]['Capability'] ):
             self.ListOfDevices[nwkid]['Capability'].remove( 'Main Powered')
         return '80'
+
+    if self.ListOfDevices[nwkid]['MacCapa'] == '80' and \
+        ( self.ListOfDevices[nwkid]['PowerSource'] == '' or 'PowerSource' not in self.ListOfDevices[nwkid] ):
+        # This is needed for VOC_Sensor from Nextrum for instance. (Looks like the device do not provide Node Descriptor )
+        self.ListOfDevices[nwkid]['PowerSource'] = 'Battery'
 
     return inMacCapa
 
@@ -690,7 +680,6 @@ def mainPoweredDevice( self, nwkid):
 
     return mainPower
 
-
 def loggingMessages( self, msgtype, sAddr=None, ieee=None, LQI=None, SQN=None):
 
     if not self.pluginconf.pluginConf['logFORMAT']:
@@ -718,7 +707,6 @@ def loggingMessages( self, msgtype, sAddr=None, ieee=None, LQI=None, SQN=None):
 
     Domoticz.Log("Device activity for | %4s | %14s | %4s | %16s | %3s | 0x%02s |" \
         %( msgtype, zdevname, sAddr, ieee, int(LQI,16), SQN))
-
 
 def lookupForIEEE( self, nwkid , reconnect=False):
 

@@ -162,9 +162,10 @@ def CreateDomoDevice(self, Devices, NWKID):
 
         elif widgetOptions:
             # In case of widgetOptions, we have a Selector widget
-            Type_ = 244
-            Subtype_ = 62
-            Switchtype_ = 18
+            if Type_ is None and Subtype_ is None and Switchtype_ is None:
+                Type_ = 244
+                Subtype_ = 62
+                Switchtype_ = 18
             myDev = Domoticz.Device( DeviceID = ieee, Name = widgetName, Unit = unit, 
                                         Type = Type_, Subtype = Subtype_, Switchtype = Switchtype_, 
                                         Options = widgetOptions )
@@ -383,8 +384,27 @@ def CreateDomoDevice(self, Devices, NWKID):
                 loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in Ikea Round" %(t), NWKID)
 
             # ==== Classic Widget
+            if t in ( 'AirQuality', ):
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetType="Air Quality")
+                loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in Air Quality" %(t), NWKID)
+
+            if t in ( 'Voc', ):
+                Options = '1;ppm'
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetType ="Custom")
+                loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in VOC" %(t), NWKID)
+                
+            if t in ( 'CarbonDioxyde', ):
+                Options = '1;ppm'
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 0xF3, Subtype_ = 31, Switchtype_= 0, widgetOptions = Options)
+                loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in Carbon Dioxyde" %(t), NWKID)
+                
+            if t in ( 'CarbonMonoxyde', ):
+                Options = '1;ppm'
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 0xF3, Subtype_ = 31, Switchtype_= 0, widgetOptions = Options)
+                loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in Carbon Monoxyde" %(t), NWKID)
+
             if t in ( 'Alarm', ):
-                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 243, Subtype_ = 22, Switchtype_= 0) 
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 243, Subtype_ = 22, Switchtype_= 0, widgetOptions = Options) 
                 loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in Alarm" %(t), NWKID)
 
             if t in ( "ThermoSetpoint", "TempSetCurrent"):
@@ -450,6 +470,10 @@ def CreateDomoDevice(self, Devices, NWKID):
                 # inter sans fils 1 touche 86sw1 xiaomi
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 244, Subtype_ = 73, Switchtype_ = 0 )
                 loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in Switch" %(t), NWKID)
+
+            if t == 'DoorLock':
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 244, Subtype_ = 73, Switchtype_ = 19 )
+                loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in Button" %(t), NWKID)
 
             if t == "Button":  
                 # inter sans fils 1 touche 86sw1 xiaomi

@@ -428,7 +428,7 @@ def TypeFromCluster( self, cluster, create_=False, ProfileID_='', ZDeviceID_='')
         TypeFromCluster = "XCube"
 
     elif cluster == "0101": 
-        TypeFromCluster = "Vibration"
+        TypeFromCluster = "DoorLock"
 
     elif cluster == "0102": 
         TypeFromCluster = "WindowCovering"
