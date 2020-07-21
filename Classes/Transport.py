@@ -923,8 +923,7 @@ def process_frame(self, frame):
         RSSI = frame[len(frame) - 4: len(frame) - 2]
 
     if MsgData and MsgType == "8002":
-        frame = process8002( self, frame )
-        self.F_out(frame, None)
+        self.F_out( process8002( self, frame ), None)
         ready_to_send_if_needed(self)
         return
 
@@ -933,6 +932,7 @@ def process_frame(self, frame):
         self.F_out(frame, None)
         ready_to_send_if_needed(self)
         return
+        
     if MsgData and MsgType == "8000":
         Status = MsgData[0:2]
         sqn_app = MsgData[2:4]
@@ -1426,7 +1426,7 @@ def process8002(self, frame):
         'Log', "process8002 NwkId: %s Ep: %s Cluster: %s Payload: %s" %(SrcNwkId, SrcEndPoint, ClusterId , Payload))
 
     if SrcNwkId is None:
-        return
+        return frame
     
     Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002( Payload )
     self.logging_receive(
@@ -1461,7 +1461,7 @@ def extract_nwk_infos_from_8002( frame ):
 
     if ProfileId != '0104':
         Domoticz.Log(
-            "Decode8002 - Not an HA Profile, let's drop the packet %s" % MsgData)
+            "extract_nwk_infos_from_8002 - Not an HA Profile, let's drop the packet %s" % MsgData)
         return ( None, None, None , None )
 
     if int(SrcAddrMode, 16) in [ADDRESS_MODE['short'], ADDRESS_MODE['group']]:
