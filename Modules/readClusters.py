@@ -625,7 +625,7 @@ def UpdateBatteryAttribute( self, MsgSrcAddr, MsgSrcEp ):
                                'lumi.remote.b286opcn01-bulb', 'lumi.remote.b486opcn01-bulb', 'lumi.remote.b686opcn01-bulb',
                                'lumi.sen_ill.mgl01')
 
-    BATTERY_200PERCENT = ( "SML001" , "RWL021", "SPZB0001", "WarningDevice" , "SmokeSensor-N", "SmokeSensor-EM", 
+    BATTERY_200PERCENT = ( "V3-BTZB", "SML001" , "RWL021", "SPZB0001", "WarningDevice" , "SmokeSensor-N", "SmokeSensor-EM", 
                            "SMOK_V16", "RH3001" ,"TS0201", "COSensor-N", "COSensor-EM" )
     BATTERY_3VOLTS = ( "lumi.sen_ill.mgl01", "3AFE130104020015", "3AFE140103020000", "3AFE14010402000D", "3AFE170100510001" ) + LEGRAND_REMOTES
 
@@ -1144,6 +1144,7 @@ def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         loggingCluster( self, 'Debug', "ReadCluster 0101 - Dev: Enabled "  + str(MsgClusterData), MsgSrcAddr)
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,MsgClusterData)
 
+    # Aqara related
     elif MsgAttrID ==  "0055":   # Aqara Vibration: Vibration, Tilt, Drop
         loggingCluster( self, 'Debug', "ReadCluster %s/%s - Aqara Vibration - Event: %s" %(MsgClusterId, MsgAttrID, MsgClusterData) , MsgSrcAddr)
         state = decode_vibr( MsgClusterData )

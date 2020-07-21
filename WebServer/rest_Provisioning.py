@@ -128,6 +128,8 @@ def rest_rcv_nw_hrdwr( self, verb, data, parameters):
     for nwkid in listOfPairedDevices:
         if not self.zigatedata:
             _fake += 1
+        if nwkid not in self.ListOfDevices:
+            continue
         newdev = {}
         newdev['NwkId'] = nwkid
 

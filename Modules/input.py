@@ -26,7 +26,7 @@ from Modules.tools import timeStamped, updSQN, updLQI, DeviceExist, getSaddrfrom
                             check_datastruct, is_time_to_perform_work, set_status_datastruct, get_isqn_datastruct, get_list_isqn_attr_datastruct, \
                             retreive_cmd_payload_from_8002
 from Modules.deviceAnnoucement import device_annoucementv0, device_annoucementv1, device_annoucementv2
-from Modules.logging import loggingPairing, loggingInput, logginginRawAPS
+from Modules.logging import loggingPairing, loggingInput, logginginRawAPS, loggingPDM
 from Modules.basicOutputs import sendZigateCmd, leaveMgtReJoin, setTimeServer, ZigatePermitToJoin, unknown_device_nwkid
 from Modules.readAttributes import ReadAttributeRequest_0000, ReadAttributeRequest_0001
 from Modules.bindings import rebind_Clusters, reWebBind_Clusters
@@ -2632,20 +2632,58 @@ def Decode8035(self, Devices, MsgData, MsgLQI):
             '07': 'E_PDM_SYSTEM_EVENT_SYSTEM_INTERNAL_BUFFER_WEAR_COUNT_SWAP',
             '08': 'E_PDM_SYSTEM_EVENT_SYSTEM_DUPLICATE_FILE_SEGMENT_DETECTED',
             '09': 'E_PDM_SYSTEM_EVENT_SYSTEM_ERROR',
-            '10': 'E_PDM_SYSTEM_EVENT_SEGMENT_PREWRITE',
-            '11': 'E_PDM_SYSTEM_EVENT_SEGMENT_POSTWRITE',
-            '12': 'E_PDM_SYSTEM_EVENT_SEQUENCE_DUPLICATE_DETECTED',
-            '13': 'E_PDM_SYSTEM_EVENT_SEQUENCE_VERIFY_FAIL',
-            '14': 'E_PDM_SYSTEM_EVENT_PDM_SMART_SAVE',
-            '15': 'E_PDM_SYSTEM_EVENT_PDM_FULL_SAVE'
+            '0a': 'E_PDM_SYSTEM_EVENT_SEGMENT_PREWRITE',
+            '0b': 'E_PDM_SYSTEM_EVENT_SEGMENT_POSTWRITE',
+            '0c': 'E_PDM_SYSTEM_EVENT_SEQUENCE_DUPLICATE_DETECTED',
+            '0d': 'E_PDM_SYSTEM_EVENT_SEQUENCE_VERIFY_FAIL',
+            '0e': 'E_PDM_SYSTEM_EVENT_PDM_SMART_SAVE',
+            '0f': 'E_PDM_SYSTEM_EVENT_PDM_FULL_SAVE'
             }
 
-    eventStatus = MsgData[0:2]
-    recordID = MsgData[2:10] 
+    eventCode = MsgData[0:2]
+    u32eventNumber = MsgData[2:10]
 
-    if eventStatus in PDU_EVENT:
-        loggingInput( self, 'Debug2', "Decode8035 - PDM event : recordID: %s - eventStatus: %s (%s)"  %(recordID, eventStatus, PDU_EVENT[ eventStatus ]), 'ffff')
+    if eventCode in PDU_EVENT:
+        loggingPDM( self, 'Debug', "eventCode: %s (%s) eventNumber: %s" %(eventCode,PDU_EVENT[eventCode], u32eventNumber))
+        if eventCode == '00': # E_PDM_SYSTEM_EVENT_WEAR_COUNT_TRIGGER_VALUE_REACHED=0,
+            pass
+        elif eventCode == '01': # E_PDM_SYSTEM_EVENT_DESCRIPTOR_SAVE_FAILED,
+            # Fatal Error
+            Domoticz.Error( "Decode8035 - PDM Fata Error %s (%s) Record Failure: %s. Factory Reset might be needed!" %(eventCode,PDU_EVENT[eventCode], u32eventNumber))
 
+        elif eventCode == '02': # E_PDM_SYSTEM_EVENT_PDM_NOT_ENOUGH_SPACE,
+            # Fatal Error
+            Domoticz.Error( "Decode8035 - PDM Fata Error %s (%s) Record Failure %s. Factory Reset might be needed!" %(eventCode,PDU_EVENT[eventCode], u32eventNumber))
+
+        elif eventCode == '03': # E_PDM_SYSTEM_EVENT_LARGEST_RECORD_FULL_SAVE_NO_LONGER_POSSIBLE,
+            u16IdValue = u32eventNumber
+            pass
+        elif eventCode == '04': # E_PDM_SYSTEM_EVENT_SEGMENT_DATA_CHECKSUM_FAIL,
+            pass
+        elif eventCode == '05': # E_PDM_SYSTEM_EVENT_SEGMENT_SAVE_OK,
+            pass
+        elif eventCode == '06': # E_PDM_SYSTEM_EVENT_EEPROM_SEGMENT_HEADER_REPAIRED,
+            # This code can be ignored by the application software and only needs to be logged 
+            # if requested by NXP Tech-nical Support.
+            pass
+        elif eventCode == '07': # E_PDM_SYSTEM_EVENT_SYSTEM_INTERNAL_BUFFER_WEAR_COUNT_SWAP,
+            # This code can be ignored by the application software and only needs to be logged 
+            # if requested by NXP Tech-nical Support.
+            pass
+        elif eventCode == '08': # E_PDM_SYSTEM_EVENT_SYSTEM_DUPLICATE_FILE_SEGMENT_DETECTED,
+            # This code can be ignored by the application software and only needs to be logged 
+            # if requested by NXP Tech-nical Support.
+            pass
+        elif eventCode == '09': # E_PDM_SYSTEM_EVENT_SYSTEM_ERROR,
+            # This code can be ignored by the application software and only needs to be logged 
+            # if requested by NXP Tech-nical Support.
+            pass
+        else:
+            loggingPDM( self, 'Debug', "Decode8035 - PDM event : eventCode: %s (%s) eventNumber"  %(eventCode, PDU_EVENT[ eventCode ], u32eventNumber))
+    else:
+        loggingPDM( self, 'Debug', "Decode8035 - PDM event : eventCode: %s eventNumber"  %(eventCode, u32eventNumber))
+
+ 
 ## PDM HOST
 def Decode0300(self, Devices, MsgData, MsgLQI):
 

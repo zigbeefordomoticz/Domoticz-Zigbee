@@ -128,6 +128,7 @@ def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
             '000a': [ 0x0000],
             '000c': [ 0x0051, 0x0055, 0x006f, 0xff05],
             '0100': [ 0x0000, 0x0001, 0x0002, 0x0010, 0x0011],
+            '0101': [ 0x0000, 0x0001, 0x0002, 0x0010, 0x0011, 0x0012, 0x0013, 0x0014, 0x0015, 0x0016, 0x0017, 0x0018, 0x0019, 0x0020, 0x0023, 0x0025, 0x0026, 0x0027, 0x0028, 0x0030, 0x0032, 0x0034, 0x0040, 0x0042, 0x0043, 0xfffd],
             '0102': [ 0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0007, 0x0008, 0x0009, 0x000A, 0x000B, 0x0010, 0x0011, 0x0014, 0x0017, 0xfffd],
             '0201': [ 0x0000, 0x0008, 0x0010, 0x0012,  0x0014, 0x0015, 0x0016, 0x001B, 0x001C, 0x001F],
             '0300': [ 0x0000, 0x0001, 0x0003, 0x0004, 0x0007, 0x0008, 0x4010],
@@ -428,6 +429,22 @@ def ReadAttributeRequest_0100(self, key):
             loggingReadAttributes( self, 'Debug', "Request 0x0100 info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
             ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0100", listAttributes, ackIsDisabled = True)
 
+def ReadAttributeRequest_0101(self, key):
+
+    loggingReadAttributes( self, 'Debug', "Request Doorlock Read Attribute request: " + key , nwkid=key)
+
+    ListOfEp = getListOfEpForCluster( self, key, '0101' )
+    for EPout in ListOfEp:
+        listAttributes = []
+        for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0101'):
+            if iterAttr not in listAttributes:
+                listAttributes.append( iterAttr )
+
+            if listAttributes:
+                loggingReadAttributes( self, 'Debug', "Request 0x0101 info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
+                ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0101", listAttributes , ackIsDisabled = True )
+
+
 def ReadAttributeRequest_0102(self, key):
 
     loggingReadAttributes( self, 'Debug', "Request Windows Covering status Read Attribute request: " + key , nwkid=key)
@@ -721,6 +738,7 @@ READ_ATTRIBUTES_REQUEST = {
     '0008' : ( ReadAttributeRequest_0008, 'pollingLvlControl' ),
     '000C' : ( ReadAttributeRequest_000C, 'polling000C' ),
     '0100' : ( ReadAttributeRequest_0100, 'polling0100' ),
+    '0101' : ( ReadAttributeRequest_0101, 'polling0101' ),
     '0102' : ( ReadAttributeRequest_0102, 'polling0102' ),
     '0201' : ( ReadAttributeRequest_0201, 'polling0201' ),
     '0204' : ( ReadAttributeRequest_0204, 'polling0204' ),
