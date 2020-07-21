@@ -1,4 +1,6 @@
 {
+	"Comment": "Air Quality (CO2), VOC, Temp and Humidity sensors using the 0x0402 cluster",
+	"Version": "1.0",
 	"Ep":{
 		"01":{
 			"0000":"",
