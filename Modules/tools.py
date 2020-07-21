@@ -897,7 +897,12 @@ def get_isqn_datastruct(self, DeviceAttribute, key, endpoint, clusterId, Attribu
     return None
 
 def set_status_datastruct(self, DeviceAttribute, key, endpoint, clusterId, AttributeId, status ):
+    Domoticz.Log("1 %s Key: %s/%s CLuster: %s Attribute: %s Status: %s"
+        %(DeviceAttribute, key, endpoint, clusterId, AttributeId, status))
+
     check_datastruct( self, DeviceAttribute, key, endpoint, clusterId )
+    Domoticz.Log("2 %s Key: %s/%s CLuster: %s Attribute: %s Status: %s"
+        %(DeviceAttribute, key, endpoint, clusterId, AttributeId, status))
     self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['Attributes'][ AttributeId ] = status
     clean_old_datastruct(self,DeviceAttribute, key , endpoint, clusterId, AttributeId )
     

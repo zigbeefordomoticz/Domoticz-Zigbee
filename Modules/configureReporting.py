@@ -191,21 +191,28 @@ def processConfigureReporting( self, NWKID=None ):
 
                     # Check if we have a Manufacturer Specific Cluster/Attribute. If that is the case, we need to send what we have , 
                     # and then pile what we have until we switch back to non manufacturer specific
-                    if cluster == '0201' and attr in ( '4000',) and 'Model' in self.ListOfDevices[ key ] and self.ListOfDevices[ key ]['Model'] == 'eTRV0100':
+                    if cluster == '0201' and attr in ( '4000', '4012') \
+                       and 'Model' in self.ListOfDevices[ key ] and self.ListOfDevices[ key ]['Model'] == 'eTRV0100':
+                       
                         # Send what we have 
-                        prepare_and_send_configure_reporting( self, key, Ep, cluster_list, cluster, direction, manufacturer_spec, manufacturer, ListOfAttributesToConfigure)
+                        if ListOfAttributesToConfigure:
+                            prepare_and_send_configure_reporting( self, key, Ep, cluster_list, cluster, direction, manufacturer_spec, manufacturer, ListOfAttributesToConfigure)
                         
+                        loggingConfigureReporting( self, 'Debug', "    Configure Reporting: Manuf Specific Attribute %s" %attr, nwkid=key)
                         # Process the Attribute
                         ListOfAttributesToConfigure = []
-                        manufacturer = "1246" # Danfoss
-                        manufacturer_spec = "01"
+                        #manufacturer_spec = "01"
+                        #manufacturer = "1246" # Danfoss
+                        
                         ListOfAttributesToConfigure.append(attr)
                         prepare_and_send_configure_reporting( self, key, Ep, cluster_list, cluster, direction, manufacturer_spec, manufacturer, ListOfAttributesToConfigure)
                         
                         # Look for the next attribute and do not assume it is Manuf Specif
                         ListOfAttributesToConfigure = []
-                        manufacturer = "0000"
+
                         manufacturer_spec = "00"
+                        manufacturer = "0000"
+                        
                         continue # Next Attribute
 
                     ListOfAttributesToConfigure.append(attr)
@@ -238,7 +245,7 @@ def prepare_and_send_configure_reporting( self, key, Ep, cluster_list, cluster, 
 
         # Let's check if we have to send a chunk
         if attrLen == MAX_ATTR_PER_REQ:
-            send_configure_reporting_attributes_set( self, key, Ep, cluster, direction, manufacturer_spec, manufacturer, attrLen, attrLen, attrList , attributeList)
+            send_configure_reporting_attributes_set( self, key, Ep, cluster, direction, manufacturer_spec, manufacturer, attrLen, attrList , attributeList)
 
             #Reset the Lenght to 0
             attrList = ''
@@ -257,8 +264,8 @@ def send_configure_reporting_attributes_set( self, key, Ep, cluster, direction, 
     datas =   ZIGATE_EP + Ep + cluster + direction + manufacturer_spec + manufacturer 
     datas +=  "%02x" %(attrLen) + attrList
 
-    loggingConfigureReporting( self, 'Debug', "--> configureReporting - 0120 - %s" %(datas))
-    loggingConfigureReporting( self, 'Debug', "--> Configure Reporting %s/%s on cluster %s Len: %s Attribute List: %s" %(key, Ep, cluster, attrLen, attrList), nwkid=key)
+    loggingConfigureReporting( self, 'Debug', "--> send_configure_reporting_attributes_set - 0120 - %s" %(datas))
+    loggingConfigureReporting( self, 'Debug', "--> send_configure_reporting_attributes_set Reporting %s/%s on cluster %s Len: %s Attribute List: %s" %(key, Ep, cluster, attrLen, attrList), nwkid=key)
     
     i_sqn = send_zigatecmd_zcl_noack( self, key, '0120', datas )
 

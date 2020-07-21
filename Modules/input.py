@@ -181,56 +181,44 @@ def Decode8000_v2(self, Devices, MsgData, MsgLQI) : # Status
         return
 
     Status=MsgData[0:2]
-    sqn_aps = sqn_app = MsgData[2:4]
+    sqn_app = MsgData[2:4]
     PacketType=MsgData[4:8]
-    Ack_expected = None
+    type_sqn = sqn_aps = None
 
-    if MsgLen > 8 :
-        #loggingInput( self, 'Log',"Decode8000 - More information . New Firmware ???")
-        #loggingInput( self, 'Log',"Decode8000 - %s" %MsgData)
-        Ack_expected = MsgData[8:10]
+    if len(MsgData) == 12:
+        # New Firmware 3.1d (get aps sqn)
+        type_sqn = MsgData[8:10]
         sqn_aps = MsgData[10:12]
 
-
     if self.pluginconf.pluginConf['debugzigateCmd']:
-        loggingInput( self, 'Debug', "Decode8000 - PacketType: %s sqn_aps %s  sqn_app: %s Ack_expected: %s Status: [%s] " \
-                %(PacketType, sqn_aps, sqn_app , Ack_expected, Status))
+        loggingInput( self, 'Log', "Decode8000 - PacketType: %s TypeSqn: %s sqn_app: %s sqn_aps: %s Status: [%s] " \
+                %(PacketType, type_sqn, sqn_app, sqn_aps , Status))
 
     # Handling Status
     if  Status == "00" : 
         Status = "Success"
-
     elif Status == "01" : 
         Status = "Incorrect Parameters"
-
     elif Status == "02" : 
         Status = "Unhandled Command"
-
     elif Status == "03" : 
         Status = "Command Failed"
-
     elif Status == "04" : 
         Status = "Busy"
-
     elif Status == "05" : 
         Status = "Stack Already Started"
-
     elif int(Status,16) >= 128 and int(Status,16) <= 244 : 
         Status="ZigBee Error Code "+ DisplayStatusCode(Status)
 
     # Handling PacketType 
     if  PacketType == "0012" : 
         loggingInput( self, 'Log',"Erase Persistent Data cmd status : " +  Status )
-
     elif PacketType == "0024" : 
         loggingInput( self, 'Log',"Start Network status : " +  Status )
-
     elif PacketType == "0026" : 
         loggingInput( self, 'Log',"Remove Device cmd status : " +  Status )
-
     elif PacketType == "0044" : 
         loggingInput( self, 'Log',"request Power Descriptor status : " +  Status )
-
     if PacketType == "0012":
         # Let's trigget a zigate_Start
         #self.startZigateNeeded = self.HeartbeatCount
@@ -244,8 +232,8 @@ def Decode8000_v2(self, Devices, MsgData, MsgLQI) : # Status
             self.groupmgt.statusGroupRequest( MsgData )
 
     if str(MsgData[0:2]) != "00" :
-        loggingInput( self, 'Debug', "Decode8000 - PacketType: %s sqn_aps %s  sqn_app: %s Ack_expected: %s Status: [%s] - %s" \
-                %(PacketType, sqn_aps, sqn_app , Ack_expected, Status, Status))
+        loggingInput( self, 'Log', "Decode8000 - PacketType: %s TypeSqn: %s sqn_app: %s sqn_aps: %s Status: [%s] " \
+            %(PacketType, type_sqn, sqn_app, sqn_aps , Status))
 
 def Decode8001(self, Decode, MsgData, MsgLQI) : # Reception log Level
     MsgLen=len(MsgData)
@@ -1766,7 +1754,7 @@ def Decode8110_raw(self, Devices, MsgSQN , MsgSrcAddr , MsgSrcEp , MsgClusterId 
 
 def Decode8120(self, Devices, MsgData, MsgLQI) :  # Configure Reporting response
 
-    loggingInput( self, 'Debug', "Decode8120 - Configure reporting response : %s" %MsgData)
+    loggingInput( self, 'Log', "Decode8120 - Configure reporting response : %s" %MsgData)
     if len(MsgData) < 14:
         Domoticz.Error("Decode8120 - uncomplet message %s " %MsgData)
         return
@@ -1793,7 +1781,7 @@ def Decode8120(self, Devices, MsgData, MsgLQI) :  # Configure Reporting response
         MsgStatus      = MsgData[16:18]
 
     loggingInput( self, 
-        'Debug', "--> SQN: [%s], SrcAddr: %s, SrcEP: %s, ClusterID: %s, Attribute: %s Status: %s" 
+        'Log', "--> SQN: [%s], SrcAddr: %s, SrcEP: %s, ClusterID: %s, Attribute: %s Status: %s" 
         %(MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId,MsgAttributeId, MsgStatus ), MsgSrcAddr)
 
     if self.FirmwareVersion and int(self.FirmwareVersion,16) >= int('31d', 16) and MsgAttributeId:
@@ -1804,18 +1792,19 @@ def Decode8120(self, Devices, MsgData, MsgLQI) :  # Configure Reporting response
         return       
 
     # We got a global status for all attributes requested in this command
+    # We need to find the Attributes related to the i_sqn
     i_sqn = sqn_get_internal_sqn_from_app_sqn (self.ZigateComm, MsgSQN, TYPE_APP_ZCL)
-    loggingInput( self, 'Debug', "------- - i_sqn: %0s e_sqn: %s" %( i_sqn, MsgSQN))
+    loggingInput( self, 'Log', "------- - i_sqn: %0s e_sqn: %s" %( i_sqn, MsgSQN))
     
-    for x in list(get_list_isqn_attr_datastruct(self, 'ConfigureReporting', MsgSrcAddr, MsgSrcEp, MsgClusterId)):
-        if get_isqn_datastruct(self, 'ConfigureReporting', MsgSrcAddr, MsgSrcEp, MsgClusterId, x ) != i_sqn:
+    for matchAttributeId in list(get_list_isqn_attr_datastruct(self, 'ConfigureReporting', MsgSrcAddr, MsgSrcEp, MsgClusterId)):
+        if get_isqn_datastruct(self, 'ConfigureReporting', MsgSrcAddr, MsgSrcEp, MsgClusterId, matchAttributeId ) != i_sqn:
             continue
         
-        loggingInput( self, 'Debug', "------- - Sqn matches for Attribute: %s" %x)
-        set_status_datastruct(self, 'ConfigureReporting', MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus )
+        loggingInput( self, 'Log', "------- - Sqn matches for Attribute: %s" %matchAttributeId)
+        set_status_datastruct(self, 'ConfigureReporting', MsgSrcAddr, MsgSrcEp, MsgClusterId, matchAttributeId, MsgStatus )
         if MsgStatus != '00':
             loggingInput( self, 'Log', "Decode8120 - Configure Reporting response - ClusterID: %s/%s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s" \
-                %(MsgClusterId, x, MsgSrcAddr, MsgSrcEp, MsgStatus ), MsgSrcAddr)
+                %(MsgClusterId, matchAttributeId, MsgSrcAddr, MsgSrcEp, MsgStatus ), MsgSrcAddr)
 
 def Decode8140(self, Devices, MsgData, MsgLQI) :  # Attribute Discovery response
     MsgComplete=MsgData[0:2]
