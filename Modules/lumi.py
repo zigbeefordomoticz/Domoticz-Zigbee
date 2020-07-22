@@ -40,13 +40,13 @@ def setXiaomiVibrationSensitivity( self, key, sensitivity = 'medium'):
     if sensitivity not in VIBRATION_SENSIBILITY:
         sensitivity = 'medium'
 
-    manuf_id = "115F"
-    manuf_spec = "00"
+    manuf_id = "115f"
+    manuf_spec = "01"
     cluster_id = "%04x" %0x0000
     attribute = "%04x" %0xFF0D
     data_type = "20" # Int8
     data = "%02x" %VIBRATION_SENSIBILITY[sensitivity]
-    write_attribute( self, key, "01", "01", cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
+    write_attribute( self, key, ZIGATE_EP, "01", cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
 
 def enableOppleSwitch( self, nwkid ):
 
