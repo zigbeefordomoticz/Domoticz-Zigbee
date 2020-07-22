@@ -1725,13 +1725,13 @@ def Decode8110( self, Devices, MsgData, MsgLQI):
         MsgSrcEp=MsgData[6:8]
         MsgClusterId=MsgData[8:12]
         MsgAttrStatus=MsgData[12:14]
+        MsgAttrID = None
 
-    Decode8110_raw(self, Devices, MsgSQN , MsgSrcAddr , MsgSrcEp , MsgClusterId , MsgAttrStatus, MsgLQI)
+    Decode8110_raw(self, Devices, MsgSQN , MsgSrcAddr , MsgSrcEp , MsgClusterId , MsgAttrStatus, MsgAttrID, MsgLQI)
 
 def Decode8110_raw(self, Devices, MsgSQN , MsgSrcAddr , MsgSrcEp , MsgClusterId , MsgAttrStatus, MsgLQI):  # Write Attribute response
 
     i_sqn = sqn_get_internal_sqn_from_app_sqn(self.ZigateComm, MsgSQN, TYPE_APP_ZCL)
-
     loggingInput( self, 'Debug', "Decode8110 - WriteAttributeResponse - MsgSQN: %s,  MsgSrcAddr: %s, MsgSrcEp: %s, MsgClusterId: %s Status: %s" \
             %( MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrStatus), MsgSrcAddr)
 
@@ -1739,15 +1739,28 @@ def Decode8110_raw(self, Devices, MsgSQN , MsgSrcAddr , MsgSrcEp , MsgClusterId 
     updSQN( self, MsgSrcAddr, MsgSQN)
     updLQI( self, MsgSrcAddr, MsgLQI)
 
-    nwkid = MsgSrcAddr
+    if self.FirmwareVersion and int(self.FirmwareVersion,16) >= int('31d', 16) and MsgAttrID:
+        set_status_datastruct(self, 'WriteAttributes', MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus )
+        set_request_phase_datastruct( self, 'WriteAttributes', MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID , 'fullfilled')
+        if MsgStatus != '00':
+            loggingInput( self, 'Log', "Decode8110 - Write Attribute Respons response - ClusterID: %s/%s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s" \
+                %(MsgClusterId, MsgAttributeId, MsgSrcAddr, MsgSrcEp, MsgAttrStatus ), MsgSrcAddr)
+        return       
 
-    if 'WriteAttribute'  in self.ListOfDevices[nwkid]:
-        for EPout in list (self.ListOfDevices[nwkid]['WriteAttribute']):
-            for clusterID in list (self.ListOfDevices[nwkid]['WriteAttribute'][EPout]):
-                for attribute in list (self.ListOfDevices[nwkid]['WriteAttribute'][EPout][clusterID]):
-                    if i_sqn == self.ListOfDevices[nwkid]['WriteAttribute'][EPout][clusterID][attribute]['i_sqn']:
-                        self.ListOfDevices[nwkid]['WriteAttribute'][EPout][clusterID][attribute]['Stamp'] = int(time())
-                        self.ListOfDevices[nwkid]['WriteAttribute'][EPout][clusterID][attribute]['Phase'] = 'fullfilled'
+    # We got a global status for all attributes requested in this command
+    # We need to find the Attributes related to the i_sqn
+    i_sqn = sqn_get_internal_sqn_from_app_sqn (self.ZigateComm, MsgSQN, TYPE_APP_ZCL)
+    loggingInput( self, 'Log', "------- - i_sqn: %0s e_sqn: %s" %( i_sqn, MsgSQN))
+    
+    for matchAttributeId in list(get_list_isqn_attr_datastruct(self, 'WriteAttributes', MsgSrcAddr, MsgSrcEp, MsgClusterId)):
+        if get_isqn_datastruct(self, 'WriteAttributes', MsgSrcAddr, MsgSrcEp, MsgClusterId, matchAttributeId ) != i_sqn:
+            continue
+        
+        loggingInput( self, 'Log', "------- - Sqn matches for Attribute: %s" %matchAttributeId)
+        set_status_datastruct(self, 'WriteAttributes', MsgSrcAddr, MsgSrcEp, MsgClusterId, matchAttributeId, MsgAttrStatus )
+        if MsgStatus != '00':
+            loggingInput( self, 'Log', "Decode8110 - Write Attribute Response response - ClusterID: %s/%s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s" \
+                %(MsgClusterId, matchAttributeId, MsgSrcAddr, MsgSrcEp, MsgAttrStatus ), MsgSrcAddr)
 
     if MsgClusterId == "0500":
         self.iaszonemgt.receiveIASmessages( MsgSrcAddr, 3, MsgAttrStatus)

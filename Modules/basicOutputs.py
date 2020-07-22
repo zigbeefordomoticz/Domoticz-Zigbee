@@ -18,7 +18,7 @@ from datetime import datetime
 from time import time
 
 from Modules.zigateConsts import ZIGATE_EP, ADDRESS_MODE, ZLL_DEVICES, ZIGATE_COMMANDS
-from Modules.tools import mainPoweredDevice, getListOfEpForCluster
+from Modules.tools import mainPoweredDevice, getListOfEpForCluster, set_request_datastruct, set_isqn_datastruct
 from Modules.logging import loggingBasicOutput
 
 def send_zigatecmd_zcl_ack( self, address, cmd, datas ):
@@ -508,8 +508,8 @@ def read_attribute( self, addr ,EpIn , EpOut ,Cluster ,direction , manufacturer_
         return send_zigatecmd_zcl_ack( self, addr, '0100', EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + '%02x' %lenAttr + Attr )
 
 def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled = True):
-    """ write_attribute unicast , all with ack in < 31d firmware, ack/noack works since 31d
-    """
+    #  write_attribute unicast , all with ack in < 31d firmware, ack/noack works since 31d
+    #
     direction = "00"
     if data_type == '42': # String  
         # In case of Data Type 0x42 ( String ), we have to add the length of string before the string.
@@ -524,9 +524,16 @@ def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, at
 
     # ATTENTION "0110" with firmware 31c are always call with Ack (overwriten by firmware)
     if ackIsDisabled:
-        return send_zigatecmd_zcl_noack(self, key, "0110", str(datas))
+        i_sqn = send_zigatecmd_zcl_noack(self, key, "0110", str(datas))
     else:
-        return send_zigatecmd_zcl_ack(self, key, "0110", str(datas))
+        i_sqn = send_zigatecmd_zcl_ack(self, key, "0110", str(datas))
+
+    for x in attributeList:
+        set_isqn_datastruct(self, 'WriteAttributes', key, EPout, clusterID, x, i_sqn )
+
+    set_request_datastruct( self, 'WriteAttributes', key, EPout, clusterID, x, data_type, EPin, EPout, manuf_id, manuf_spec, data, ackIsDisabled , 'requested')
+    set_timestamp_datastruct(self, 'WriteAttributes', addr, EpOut, Cluster, int(time()) ) 
+
 
 def write_attributeNoResponse( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data):
     """ write_atttribute broadcast . ack impossible on broadcast

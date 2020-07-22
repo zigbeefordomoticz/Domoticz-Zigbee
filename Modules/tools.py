@@ -872,6 +872,8 @@ def check_datastruct( self, DeviceAttribute, key, endpoint, clusterId ):
         self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['iSQN'] = {}
     if 'Attributes' not in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]:
         self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['Attributes'] = {}
+    if 'ZigateRequest' not in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]:
+        self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'] = {}
 
 def is_time_to_perform_work(self, DeviceAttribute, key, endpoint, clusterId, now, timeoutperiod ):
     # Based on a timeout period return True or False.
@@ -885,6 +887,51 @@ def set_timestamp_datastruct(self, DeviceAttribute, key, endpoint, clusterId, no
 def get_list_isqn_attr_datastruct(self, DeviceAttribute, key, endpoint, clusterId):
     check_datastruct( self, DeviceAttribute, key, endpoint, clusterId )
     return [ x for x in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['iSQN'] ]
+
+def set_request_datastruct( self, DeviceAttribute, key, endpoint, clusterId, AttributeId, 
+                                    datatype, EPin, EPout, manuf_id, manuf_spec, data, ackIsDisabled , phase):
+    check_datastruct( self, DeviceAttribute, key, endpoint, clusterId )
+    self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeID ]['Satus'] = phase
+    self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeID ]['DataType'] = datatype
+    self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeID ]['EPin'] = EPin
+    self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeID ]['EPout'] = EPout
+    self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeID ]['manuf_id'] = manuf_id
+    self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeID ]['manuf_spec'] = manuf_spec
+    self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeID ]['data'] = data
+    self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeID ]['ackIsDisabled'] = ackIsDisabled
+
+def get_request_datastruct( self, DeviceAttribute, key, endpoint, clusterId, AttributeId ):
+    # Return all arguments to make the WriteAttribute
+
+    check_datastruct( self, DeviceAttribute, key, endpoint, clusterId )
+    if AttributeId in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest']:
+        return (
+            self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeID ]['DataType'],
+            self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeID ]['EPin'],
+            self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeID ]['EPout'],
+            self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeID ]['manuf_id'],
+            self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeID ]['manuf_spec'],
+            self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeID ]['data'] ,
+            self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeID ]['ackIsDisabled']  
+        )
+    return None
+
+def set_request_phase_datastruct( self, DeviceAttribute, key, endpoint, clusterId, AttributeId , phase):
+    check_datastruct( self, DeviceAttribute, key, endpoint, clusterId )
+    if AttributeId in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest']:
+        self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeID ]['Satus'] = phase
+
+
+def get_list_waiting_request_datastruct( self, DeviceAttribute, key, endpoint, clusterId ):
+    # Return a list of Attributes which are waiting to be writeAttrbutes
+
+    check_datastruct( self, DeviceAttribute, key, endpoint, clusterId )
+    lstofwait = []
+    for x in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest']:
+        if self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeID ]['Satus'] == 'waiting':
+            lstofwait.append( x )
+    return lstofwait
+
 
 def set_isqn_datastruct(self, DeviceAttribute, key, endpoint, clusterId, AttributeId, isqn ):
     check_datastruct( self, DeviceAttribute, key, endpoint, clusterId )
@@ -926,6 +973,8 @@ def reset_attr_datastruct( self, DeviceAttribute, key, endpoint, clusterId , Att
         del self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['Attributes'][ AttributeId ]
     if AttributeId in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['iSQN']:
         del self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['iSQN'][ AttributeId ]
+    if AttributeId in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest']:
+        del self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeId ]
 
 def reset_datastruct( self,DeviceAttribute, key ):
 

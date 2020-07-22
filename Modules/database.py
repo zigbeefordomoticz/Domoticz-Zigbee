@@ -423,11 +423,12 @@ def CheckDeviceList(self, key, val):
     # List of Attributes whcih are going to be loaded, ut in case of Reset (resetPluginDS) they will be re-initialized.
     BUILD_ATTRIBUTES = (
             'Battery', 
-            'ConfigureReporting',
             'GroupMemberShip',
             'Last Cmds',
             'Neighbours',
-            'ReadAttributes', 
+            'ConfigureReporting',
+            'ReadAttributes',
+            'WriteAttributes', 
             'LQI',
             'SQN', 
             'Stamp', 
