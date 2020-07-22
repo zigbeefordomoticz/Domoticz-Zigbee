@@ -18,7 +18,7 @@ from datetime import datetime
 from time import time
 
 from Modules.zigateConsts import ZIGATE_EP, ADDRESS_MODE, ZLL_DEVICES, ZIGATE_COMMANDS
-from Modules.tools import mainPoweredDevice, getListOfEpForCluster, set_request_datastruct, set_isqn_datastruct
+from Modules.tools import mainPoweredDevice, getListOfEpForCluster, set_request_datastruct, set_isqn_datastruct, set_timestamp_datastruct
 from Modules.logging import loggingBasicOutput
 
 def send_zigatecmd_zcl_ack( self, address, cmd, datas ):
@@ -528,11 +528,10 @@ def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, at
     else:
         i_sqn = send_zigatecmd_zcl_ack(self, key, "0110", str(datas))
 
-    for x in attributeList:
-        set_isqn_datastruct(self, 'WriteAttributes', key, EPout, clusterID, x, i_sqn )
+    set_isqn_datastruct(self, 'WriteAttributes', key, EPout, clusterID, attribute, i_sqn )
 
-    set_request_datastruct( self, 'WriteAttributes', key, EPout, clusterID, x, data_type, EPin, EPout, manuf_id, manuf_spec, data, ackIsDisabled , 'requested')
-    set_timestamp_datastruct(self, 'WriteAttributes', addr, EpOut, Cluster, int(time()) ) 
+    set_request_datastruct( self, 'WriteAttributes', key, EPout, clusterID, attribute, data_type, EPin, EPout, manuf_id, manuf_spec, data, ackIsDisabled , 'requested')
+    set_timestamp_datastruct(self, 'WriteAttributes', key, EPout, clusterID, int(time()) ) 
 
 
 def write_attributeNoResponse( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data):

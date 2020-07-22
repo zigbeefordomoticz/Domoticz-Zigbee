@@ -428,7 +428,7 @@ def CheckDeviceList(self, key, val):
             'Neighbours',
             'ConfigureReporting',
             'ReadAttributes',
-            'WriteAttributes', 
+            #'WriteAttributes', 
             'LQI',
             'SQN', 
             'Stamp', 

@@ -891,14 +891,17 @@ def get_list_isqn_attr_datastruct(self, DeviceAttribute, key, endpoint, clusterI
 def set_request_datastruct( self, DeviceAttribute, key, endpoint, clusterId, AttributeId, 
                                     datatype, EPin, EPout, manuf_id, manuf_spec, data, ackIsDisabled , phase):
     check_datastruct( self, DeviceAttribute, key, endpoint, clusterId )
-    self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeID ]['Satus'] = phase
-    self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeID ]['DataType'] = datatype
-    self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeID ]['EPin'] = EPin
-    self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeID ]['EPout'] = EPout
-    self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeID ]['manuf_id'] = manuf_id
-    self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeID ]['manuf_spec'] = manuf_spec
-    self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeID ]['data'] = data
-    self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeID ]['ackIsDisabled'] = ackIsDisabled
+    if AttributeId not in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest']:
+        self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][AttributeId] = {}
+
+    self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeId ]['Satus'] = phase
+    self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeId ]['DataType'] = datatype
+    self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeId ]['EPin'] = EPin
+    self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeId ]['EPout'] = EPout
+    self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeId ]['manuf_id'] = manuf_id
+    self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeId ]['manuf_spec'] = manuf_spec
+    self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeId ]['data'] = data
+    self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeId ]['ackIsDisabled'] = ackIsDisabled
 
 def get_request_datastruct( self, DeviceAttribute, key, endpoint, clusterId, AttributeId ):
     # Return all arguments to make the WriteAttribute
@@ -906,20 +909,20 @@ def get_request_datastruct( self, DeviceAttribute, key, endpoint, clusterId, Att
     check_datastruct( self, DeviceAttribute, key, endpoint, clusterId )
     if AttributeId in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest']:
         return (
-            self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeID ]['DataType'],
-            self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeID ]['EPin'],
-            self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeID ]['EPout'],
-            self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeID ]['manuf_id'],
-            self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeID ]['manuf_spec'],
-            self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeID ]['data'] ,
-            self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeID ]['ackIsDisabled']  
+            self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeId ]['DataType'],
+            self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeId ]['EPin'],
+            self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeId ]['EPout'],
+            self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeId ]['manuf_id'],
+            self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeId ]['manuf_spec'],
+            self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeId ]['data'] ,
+            self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeId ]['ackIsDisabled']  
         )
     return None
 
 def set_request_phase_datastruct( self, DeviceAttribute, key, endpoint, clusterId, AttributeId , phase):
     check_datastruct( self, DeviceAttribute, key, endpoint, clusterId )
     if AttributeId in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest']:
-        self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeID ]['Satus'] = phase
+        self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeId ]['Satus'] = phase
 
 
 def get_list_waiting_request_datastruct( self, DeviceAttribute, key, endpoint, clusterId ):
@@ -928,7 +931,7 @@ def get_list_waiting_request_datastruct( self, DeviceAttribute, key, endpoint, c
     check_datastruct( self, DeviceAttribute, key, endpoint, clusterId )
     lstofwait = []
     for x in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest']:
-        if self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeID ]['Satus'] == 'waiting':
+        if self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ x ]['Satus'] == 'waiting':
             lstofwait.append( x )
     return lstofwait
 
@@ -944,12 +947,8 @@ def get_isqn_datastruct(self, DeviceAttribute, key, endpoint, clusterId, Attribu
     return None
 
 def set_status_datastruct(self, DeviceAttribute, key, endpoint, clusterId, AttributeId, status ):
-    Domoticz.Log("1 %s Key: %s/%s CLuster: %s Attribute: %s Status: %s"
-        %(DeviceAttribute, key, endpoint, clusterId, AttributeId, status))
 
     check_datastruct( self, DeviceAttribute, key, endpoint, clusterId )
-    Domoticz.Log("2 %s Key: %s/%s CLuster: %s Attribute: %s Status: %s"
-        %(DeviceAttribute, key, endpoint, clusterId, AttributeId, status))
     self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['Attributes'][ AttributeId ] = status
     clean_old_datastruct(self,DeviceAttribute, key , endpoint, clusterId, AttributeId )
     

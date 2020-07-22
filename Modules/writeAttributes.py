@@ -26,11 +26,19 @@ def write_attribute_when_awake( self, key, EPin, EPout, clusterID, manuf_id, man
 def callBackForWriteAttributeIfNeeded(self, key):
     # Scan for this device if there are any pending Write Attributes needed.
 
-    for attribute in list(get_list_waiting_request_datastruct( self, 'WriteAttributes', key, endpoint, clusterId )):
-        loggingWriteAttributes( self, 'Debug', "device awake let's write attribute for %s/%s" %(key, EPout), key)
-        request = get_request_datastruct( self, 
-            'WriteAttributes', key, endpoint, clusterId, AttributeId )
-        if request is None:
-            continue
-        data_type, EPin, EPout, manuf_id, manuf_spec, data, ackIsDisabled = request
-        write_attribute (self,key,EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled)
+    if key not in self.ListOfDevices:
+        return
+    if 'Ep' not in self.ListOfDevices[ key ]:
+        return
+    for endpoint in self.ListOfDevices[ key ]['Ep']:
+        for clusterId in self.ListOfDevices[ key ]['Ep'][ endpoint ]:
+            if clusterId in ( 'Type', 'ColorMode', 'ClusterType' ):
+                continue
+  
+            for attribute in list(get_list_waiting_request_datastruct( self, 'WriteAttributes', key, endpoint, clusterId )):
+                loggingWriteAttributes( self, 'Debug', "device awake let's write attribute for %s/%s" %(key, EPout), key)
+                request = get_request_datastruct( self, 'WriteAttributes', key, endpoint, clusterId, AttributeId )
+                if request is None:
+                    continue
+                data_type, EPin, EPout, manuf_id, manuf_spec, data, ackIsDisabled = request
+                write_attribute (self,key,EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled)
