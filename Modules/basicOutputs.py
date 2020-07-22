@@ -533,7 +533,6 @@ def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, at
     set_request_datastruct( self, 'WriteAttributes', key, EPout, clusterID, attribute, data_type, EPin, EPout, manuf_id, manuf_spec, data, ackIsDisabled , 'requested')
     set_timestamp_datastruct(self, 'WriteAttributes', key, EPout, clusterID, int(time()) ) 
 
-
 def write_attributeNoResponse( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data):
     """ write_atttribute broadcast . ack impossible on broadcast
     """
