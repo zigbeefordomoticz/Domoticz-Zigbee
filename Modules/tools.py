@@ -894,7 +894,7 @@ def set_request_datastruct( self, DeviceAttribute, key, endpoint, clusterId, Att
     if AttributeId not in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest']:
         self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][AttributeId] = {}
 
-    self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeId ]['Satus'] = phase
+    self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeId ]['Status'] = phase
     self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeId ]['DataType'] = datatype
     self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeId ]['EPin'] = EPin
     self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeId ]['EPout'] = EPout
@@ -922,7 +922,7 @@ def get_request_datastruct( self, DeviceAttribute, key, endpoint, clusterId, Att
 def set_request_phase_datastruct( self, DeviceAttribute, key, endpoint, clusterId, AttributeId , phase):
     check_datastruct( self, DeviceAttribute, key, endpoint, clusterId )
     if AttributeId in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest']:
-        self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeId ]['Satus'] = phase
+        self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeId ]['Status'] = phase
 
 
 def get_list_waiting_request_datastruct( self, DeviceAttribute, key, endpoint, clusterId ):
@@ -931,7 +931,7 @@ def get_list_waiting_request_datastruct( self, DeviceAttribute, key, endpoint, c
     check_datastruct( self, DeviceAttribute, key, endpoint, clusterId )
     lstofwait = []
     for x in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest']:
-        if self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ x ]['Satus'] == 'waiting':
+        if self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ x ]['Status'] == 'waiting':
             lstofwait.append( x )
     return lstofwait
 
