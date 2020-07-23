@@ -1732,7 +1732,7 @@ def Decode8110( self, Devices, MsgData, MsgLQI):
 def Decode8110_raw(self, Devices, MsgSQN , MsgSrcAddr , MsgSrcEp , MsgClusterId , MsgAttrStatus, MsgAttrID, MsgLQI):  # Write Attribute response
 
     i_sqn = sqn_get_internal_sqn_from_app_sqn(self.ZigateComm, MsgSQN, TYPE_APP_ZCL)
-    loggingInput( self, 'Log', "Decode8110 - WriteAttributeResponse - MsgSQN: %s,  MsgSrcAddr: %s, MsgSrcEp: %s, MsgClusterId: %s MsgAttrID: %s Status: %s" \
+    loggingInput( self, 'Debug', "Decode8110 - WriteAttributeResponse - MsgSQN: %s,  MsgSrcAddr: %s, MsgSrcEp: %s, MsgClusterId: %s MsgAttrID: %s Status: %s" \
             %( MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus), MsgSrcAddr)
 
     timeStamped( self, MsgSrcAddr , 0x8110)
@@ -1750,13 +1750,13 @@ def Decode8110_raw(self, Devices, MsgSQN , MsgSrcAddr , MsgSrcEp , MsgClusterId 
     # We got a global status for all attributes requested in this command
     # We need to find the Attributes related to the i_sqn
     i_sqn = sqn_get_internal_sqn_from_app_sqn (self.ZigateComm, MsgSQN, TYPE_APP_ZCL)
-    loggingInput( self, 'Log', "------- - i_sqn: %0s e_sqn: %s" %( i_sqn, MsgSQN))
+    loggingInput( self, 'Debug', "------- - i_sqn: %0s e_sqn: %s" %( i_sqn, MsgSQN))
     
     for matchAttributeId in list(get_list_isqn_attr_datastruct(self, 'WriteAttributes', MsgSrcAddr, MsgSrcEp, MsgClusterId)):
         if get_isqn_datastruct(self, 'WriteAttributes', MsgSrcAddr, MsgSrcEp, MsgClusterId, matchAttributeId ) != i_sqn:
             continue
         
-        loggingInput( self, 'Log', "------- - Sqn matches for Attribute: %s" %matchAttributeId)
+        loggingInput( self, 'Debug', "------- - Sqn matches for Attribute: %s" %matchAttributeId)
         set_status_datastruct(self, 'WriteAttributes', MsgSrcAddr, MsgSrcEp, MsgClusterId, matchAttributeId, MsgAttrStatus )
         set_request_phase_datastruct( self, 'WriteAttributes', MsgSrcAddr, MsgSrcEp, MsgClusterId, matchAttributeId , 'fullfilled')
         if MsgAttrStatus != '00':
@@ -1768,7 +1768,7 @@ def Decode8110_raw(self, Devices, MsgSQN , MsgSrcAddr , MsgSrcEp , MsgClusterId 
 
 def Decode8120(self, Devices, MsgData, MsgLQI) :  # Configure Reporting response
 
-    loggingInput( self, 'Log', "Decode8120 - Configure reporting response : %s" %MsgData)
+    loggingInput( self, 'Debug', "Decode8120 - Configure reporting response : %s" %MsgData)
     if len(MsgData) < 14:
         Domoticz.Error("Decode8120 - uncomplet message %s " %MsgData)
         return
@@ -1795,7 +1795,7 @@ def Decode8120(self, Devices, MsgData, MsgLQI) :  # Configure Reporting response
         MsgStatus      = MsgData[16:18]
 
     loggingInput( self, 
-        'Log', "--> SQN: [%s], SrcAddr: %s, SrcEP: %s, ClusterID: %s, Attribute: %s Status: %s" 
+        'Debug', "--> SQN: [%s], SrcAddr: %s, SrcEP: %s, ClusterID: %s, Attribute: %s Status: %s" 
         %(MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId,MsgAttributeId, MsgStatus ), MsgSrcAddr)
 
     if self.FirmwareVersion and int(self.FirmwareVersion,16) >= int('31d', 16) and MsgAttributeId:
@@ -1808,13 +1808,13 @@ def Decode8120(self, Devices, MsgData, MsgLQI) :  # Configure Reporting response
     # We got a global status for all attributes requested in this command
     # We need to find the Attributes related to the i_sqn
     i_sqn = sqn_get_internal_sqn_from_app_sqn (self.ZigateComm, MsgSQN, TYPE_APP_ZCL)
-    loggingInput( self, 'Log', "------- - i_sqn: %0s e_sqn: %s" %( i_sqn, MsgSQN))
+    loggingInput( self, 'Debug', "------- - i_sqn: %0s e_sqn: %s" %( i_sqn, MsgSQN))
     
     for matchAttributeId in list(get_list_isqn_attr_datastruct(self, 'ConfigureReporting', MsgSrcAddr, MsgSrcEp, MsgClusterId)):
         if get_isqn_datastruct(self, 'ConfigureReporting', MsgSrcAddr, MsgSrcEp, MsgClusterId, matchAttributeId ) != i_sqn:
             continue
         
-        loggingInput( self, 'Log', "------- - Sqn matches for Attribute: %s" %matchAttributeId)
+        loggingInput( self, 'Debug', "------- - Sqn matches for Attribute: %s" %matchAttributeId)
         set_status_datastruct(self, 'ConfigureReporting', MsgSrcAddr, MsgSrcEp, MsgClusterId, matchAttributeId, MsgStatus )
         if MsgStatus != '00':
             loggingInput( self, 'Log', "Decode8120 - Configure Reporting response - ClusterID: %s/%s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s" \
@@ -1898,14 +1898,14 @@ def Decode8401(self, Devices, MsgData, MsgLQI) : # Reception Zone status change 
     updSQN( self, MsgSrcAddr, MsgSQN)
     updLQI( self, MsgSrcAddr, MsgLQI)
 
-    Model = ''
-    if MsgSrcAddr in self.ListOfDevices:
-        if 'Model' in self.ListOfDevices[MsgSrcAddr]:
-            Model =  self.ListOfDevices[MsgSrcAddr]['Model']
-    else:
-        loggingInput( self, 'Log',"Decode8401 - receive a message for an unknown device %s : %s" %( MsgSrcAddr, MsgData))
+
+    if MsgSrcAddr not in self.ListOfDevices:
+        loggingInput( self, 'Log',"Decode8401 - receive a message for an unknown device %s : %s" %( MsgSrcAddr, MsgData), MsgSrcAddr)
         return
 
+    Model = ''
+    if 'Model' in self.ListOfDevices[MsgSrcAddr]:
+        Model =  self.ListOfDevices[MsgSrcAddr]['Model']
 
     loggingInput( self, 'Debug', "Decode8401 - MsgSQN: %s MsgSrcAddr: %s MsgEp:%s MsgClusterId: %s MsgZoneStatus: %s MsgExtStatus: %s MsgZoneID: %s MsgDelay: %s" \
             %( MsgSQN, MsgSrcAddr, MsgEp, MsgClusterId, MsgZoneStatus, MsgExtStatus, MsgZoneID, MsgDelay), MsgSrcAddr)
