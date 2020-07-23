@@ -148,8 +148,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                             #summation = int(self.ListOfDevices[NWKID]['Ep'][Ep]['0702']['0000'])
                             summation = (self.ListOfDevices[NWKID]['Ep'][Ep]['0702']['0000'])
 
-                Domoticz.Log("Summation: %s" %summation)
-
                 Options = {}
                 # Do we have the Energy Mode calculation already set ?
                 if 'EnergyMeterMode' in Devices[ DeviceUnit ].Options:
