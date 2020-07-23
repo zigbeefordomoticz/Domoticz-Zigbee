@@ -476,34 +476,34 @@ def cube_decode(self, value, MsgSrcAddr):
         return value
 
     if value == 0x0000:         
-        loggingCluster( self, 'Debug', "cube action: " + 'Shake' , MsgSrcAddr)
+        loggingLumi( self, 'Debug', "cube action: " + 'Shake' , MsgSrcAddr)
         value='10'
     elif value == 0x0002:            
-        loggingCluster( self, 'Debug', "cube action: " + 'Wakeup' , MsgSrcAddr)
+        loggingLumi( self, 'Debug', "cube action: " + 'Wakeup' , MsgSrcAddr)
         value = '20'
     elif value == 0x0003:
-        loggingCluster( self, 'Debug', "cube action: " + 'Drop' , MsgSrcAddr)
+        loggingLumi( self, 'Debug', "cube action: " + 'Drop' , MsgSrcAddr)
         value = '30'
     elif value & 0x0040 != 0:    
         face = value ^ 0x0040
         face1 = face >> 3
         face2 = face ^ (face1 << 3)
-        loggingCluster( self, 'Debug', "cube action: " + 'Flip90_{}{}'.format(face1, face2), MsgSrcAddr)
+        loggingLumi( self, 'Debug', "cube action: " + 'Flip90_{}{}'.format(face1, face2), MsgSrcAddr)
         value = '40'
     elif value & 0x0080 != 0:  
         face = value ^ 0x0080
-        loggingCluster( self, 'Debug', "cube action: " + 'Flip180_{}'.format(face) , MsgSrcAddr)
+        loggingLumi( self, 'Debug', "cube action: " + 'Flip180_{}'.format(face) , MsgSrcAddr)
         value = '50'
     elif value & 0x0100 != 0:  
         face = value ^ 0x0100
-        loggingCluster( self, 'Debug', "cube action: " + 'Push/Move_{}'.format(face) , MsgSrcAddr)
+        loggingLumi( self, 'Debug', "cube action: " + 'Push/Move_{}'.format(face) , MsgSrcAddr)
         value = '60'
     elif value & 0x0200 != 0:  # double_tap
         face = value ^ 0x0200
-        loggingCluster( self, 'Debug', "cube action: " + 'Double_tap_{}'.format(face) , MsgSrcAddr)
+        loggingLumi( self, 'Debug', "cube action: " + 'Double_tap_{}'.format(face) , MsgSrcAddr)
         value = '70'
     else:  
-        loggingCluster( self, 'Debug', "cube action: Not expected value %s" %value , MsgSrcAddr)
+        loggingLumi( self, 'Debug', "cube action: Not expected value %s" %value , MsgSrcAddr)
     return value
 
 def decode_vibr(value):         #Decoding XIAOMI Vibration sensor 
