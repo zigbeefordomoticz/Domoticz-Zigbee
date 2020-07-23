@@ -154,6 +154,10 @@ def LoadDeviceList( self ):
     self.DeviceListSize = os.path.getsize( _DeviceListFileName )
 
     for addr in self.ListOfDevices:
+
+        # Fixing mistake done in the code.
+        fixing_consumption_lumi(self, addr)
+
         # Check if 566 fixs are needed
         if self.pluginconf.pluginConf['Bug566']:
             if 'Model' in self.ListOfDevices[addr]:
@@ -504,6 +508,11 @@ def check_and_update_ForceAckCommands( self ):
         self.ListOfDevices[ x ]['ForceAckCommands'] = list(self.DeviceConf[ model ]['ForceAckCommands'] )
 
 
+def fixing_consumption_lumi( self , key ):
+
+    for ep in self.ListOfDevices[key]['Ep']:
+        if 'Consumption' in self.ListOfDevices[key]['Ep'][ep]:
+            del self.ListOfDevices[key]['Ep'][ep]['Consumption']
 
 def fixing_Issue566( self, key ):
 
