@@ -1605,7 +1605,6 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
 #Reponses Attributs
 def Decode8100(self, Devices, MsgData, MsgLQI): # Read Attribute Response
 
-    Domoticz.Log("Decode8100: >%s<" %MsgData)
     MsgSQN=MsgData[0:2]
     MsgSrcAddr=MsgData[2:6]
     MsgSrcEp=MsgData[6:8]
