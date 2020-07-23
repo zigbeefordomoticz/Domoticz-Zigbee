@@ -232,8 +232,7 @@ def identifySend( self, nwkid, ep, duration=0, withAck = False):
     loggingBasicOutput( self, 'Debug', "identifySend - data sent >%s< " %(datas))
     if withAck:
         return send_zigatecmd_zcl_ack(self, nwkid, "0070", datas )
-    else:
-        return send_zigatecmd_zcl_noack(self, nwkid, "0070", datas )
+    return send_zigatecmd_zcl_noack(self, nwkid, "0070", datas )
 
 def maskChannel( channel ):
 
@@ -504,8 +503,7 @@ def read_attribute( self, addr ,EpIn , EpOut ,Cluster ,direction , manufacturer_
     
     if ackIsDisabled:
         return send_zigatecmd_zcl_noack( self, addr, '0100', EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + '%02x' %lenAttr + Attr )
-    else:
-        return send_zigatecmd_zcl_ack( self, addr, '0100', EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + '%02x' %lenAttr + Attr )
+    return send_zigatecmd_zcl_ack( self, addr, '0100', EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + '%02x' %lenAttr + Attr )
 
 def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled = True):
     #  write_attribute unicast , all with ack in < 31d firmware, ack/noack works since 31d

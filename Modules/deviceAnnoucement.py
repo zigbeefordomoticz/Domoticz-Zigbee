@@ -312,7 +312,7 @@ def device_annoucementv2( self, Devices, MsgData, MsgLQI ):
     Ieee = MsgData[4:20]
     MacCapa = MsgData[20:22]
 
-    newDeviceForPlugin = IEEEExist(self, Ieee) == False
+    newDeviceForPlugin = not IEEEExist(self, Ieee)
 
     loggingInput( self, 'Log', "Decode004D V2 - Device Annoucement: NwkId: %s Ieee: %s MacCap: %s ReJoin: %s LQI: %s NewDevice: %s" 
         %( NwkId, Ieee, MacCapa, RejoinFlag, MsgLQI, newDeviceForPlugin ), NwkId)
