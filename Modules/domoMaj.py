@@ -145,7 +145,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     if '0000' in self.ListOfDevices[NWKID]['Ep'][Ep]['0702']:
                         if self.ListOfDevices[NWKID]['Ep'][Ep]['0702']['0000'] != {} and self.ListOfDevices[NWKID]['Ep'][Ep]['0702']['0000'] != '' and \
                                 self.ListOfDevices[NWKID]['Ep'][Ep]['0702']['0000'] != '0':
-                            summation = int(self.ListOfDevices[NWKID]['Ep'][Ep]['0702']['0000'])
+                            #summation = int(self.ListOfDevices[NWKID]['Ep'][Ep]['0702']['0000'])
+                            summation = (self.ListOfDevices[NWKID]['Ep'][Ep]['0702']['0000'])
 
                 Options = {}
                 # Do we have the Energy Mode calculation already set ?

@@ -530,8 +530,13 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
 def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
 
-    value = decodeAttribute( self, MsgAttType, MsgClusterData)
     checkAttribute( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID )
+
+    if MsgAttrID == "0000" and MsgAttType == '00':
+        # Xiaomi !!
+        value = int(MsgClusterData[2:4]+MsgClusterData[0:2],16)
+    else:
+        value = decodeAttribute( self, MsgAttType, MsgClusterData)
 
     if MsgAttrID == "0000":    # Voltage
         value = round(int(value)/10, 1)
@@ -588,6 +593,11 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(value))
 
     elif MsgAttrID == "0021": # Battery %
+        if value == 0xff:
+            # Invalid measure 
+            loggingCluster( self, 'Log', "readCluster 0001 - %s invalid Battery Percentage: %s " %(MsgSrcAddr, value) , MsgSrcAddr)
+            value = 0
+
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
         loggingCluster( self, 'Debug', "readCluster 0001 - %s Battery Percentage: %s " %(MsgSrcAddr, value) , MsgSrcAddr)
 
@@ -1149,16 +1159,16 @@ def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         loggingCluster( self, 'Debug', "ReadCluster %s/%s - Aqara Vibration - Event: %s" %(MsgClusterId, MsgAttrID, MsgClusterData) , MsgSrcAddr)
         state = decode_vibr( MsgClusterData )
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, state )
-        checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,state, Attribute_=MsgAttrID)
+        checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,state)
 
     elif MsgAttrID == "0503":   # Bed activties: Tilt angle
         loggingCluster( self, 'Debug', "ReadCluster %s/%s -  Vibration Angle: %s" %(MsgClusterId, MsgAttrID, MsgClusterData) , MsgSrcAddr)
-        checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,MsgClusterData)
+        checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, MsgClusterData)
 
         if MsgClusterData == "0054": # Following Tilt
             state = "10"
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, state )
-            checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,state, Attribute_=MsgAttrID)
+            checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, state)
 
     elif MsgAttrID == "0505":   # Vibration Strenght
         # The vibration sensor has a function in the mihome app called "vibration curve" 
@@ -2118,19 +2128,19 @@ def Cluster0b04( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     if MsgAttrID == "050b": # Active Power
         value = int(decodeAttribute( self, MsgAttType, MsgClusterData ))
-        loggingCluster( self, 'Log', "ReadCluster %s - %s/%s Power %s" \
+        loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s Power %s" \
             %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value))
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value))
 
     elif MsgAttrID == "0505": # RMS Voltage
         value = int(decodeAttribute( self, MsgAttType, MsgClusterData ))
-        loggingCluster( self, 'Log', "ReadCluster %s - %s/%s Voltage %s" \
+        loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s Voltage %s" \
             %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value))
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0001", str(value))
 
     elif MsgAttrID == "0508": #RMSCurrent
         value = int(decodeAttribute( self, MsgAttType, MsgClusterData ))
-        loggingCluster( self, 'Log', "ReadCluster %s - %s/%s Current %s" \
+        loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s Current %s" \
             %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value))
 
     else:

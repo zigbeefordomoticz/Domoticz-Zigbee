@@ -12,7 +12,7 @@ from Modules.basicOutputs import sendZigateCmd
 from Modules.livolo import livolo_bind
 from Modules.configureReporting import processConfigureReporting
 from Modules.legrand_netatmo import legrand_refresh_battery_remote
-from Modules.lumi import  enableOppleSwitch
+from Modules.lumi import  enableOppleSwitch, setXiaomiVibrationSensitivity
 
 # Version 0 
 def device_annoucementv0( self, Devices, MsgData, MsgLQI  ):
@@ -312,7 +312,7 @@ def device_annoucementv2( self, Devices, MsgData, MsgLQI ):
     Ieee = MsgData[4:20]
     MacCapa = MsgData[20:22]
 
-    newDeviceForPlugin = IEEEExist(self, Ieee) == False
+    newDeviceForPlugin = not IEEEExist(self, Ieee)
 
     loggingInput( self, 'Log', "Decode004D V2 - Device Annoucement: NwkId: %s Ieee: %s MacCap: %s ReJoin: %s LQI: %s NewDevice: %s" 
         %( NwkId, Ieee, MacCapa, RejoinFlag, MsgLQI, newDeviceForPlugin ), NwkId)
@@ -444,6 +444,14 @@ def decode004d_existing_devicev2( self, Devices, NwkId, MsgIEEE , MsgMacCapa, Ms
     if 'Manufacturer' in self.ListOfDevices[NwkId]:
         if self.ListOfDevices[NwkId]['Manufacturer'] == '105e':
             schneider_wiser_registration( self, Devices, NwkId )
+
+    # Set the sensitivity for Xiaomi Vibration
+    if  self.ListOfDevices[NwkId]['Model'] == 'lumi.vibration.aq1':
+        Domoticz.Status('processNotinDBDevices - set viration Aqara %s sensitivity to %s' \
+                    %(NwkId, self.pluginconf.pluginConf['vibrationAqarasensitivity']))
+        setXiaomiVibrationSensitivity( self, NwkId, sensitivity = self.pluginconf.pluginConf['vibrationAqarasensitivity'])
+
+
 
 def decode004d_new_devicev2( self, Devices, NwkId, MsgIEEE , MsgMacCapa, MsgData, MsgLQI, now ):
     # New Device coming for provisioning

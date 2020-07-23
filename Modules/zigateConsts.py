@@ -118,6 +118,7 @@ SIZE_DATA_TYPE = {
     '21': 2,    # uint16
     '22': 3,    # Uint24
     '23': 4,    # Uint32
+    '24': 5,    # Uint40
     '25': 6,    # Uint48
     '28': 1,    # int8
     '29': 2,    # int16
@@ -126,6 +127,7 @@ SIZE_DATA_TYPE = {
     '2d': 6,    # int48
     '30': 1,    # enum8
     '31': 2,    # enum16
+    '39': 4,    # Single Float
 }
 
 ZLL_DEVICES = {
@@ -611,7 +613,7 @@ CFG_RPT_ATTRIBUTESbyCLUSTERS = {
 
     # Thermostat
     '0201': {'Attributes': {'0000': {'DataType': '29', 'MinInterval': '012C', 'MaxInterval': '012C', 'TimeOut': '0000', 'Change': '0001'},
-                            '0008': {'DataType': '29', 'MinInterval': '012C', 'MaxInterval': '0E10', 'TimeOut': '0000', 'Change': '0001'},
+                            '0008': {'DataType': '20', 'MinInterval': '012C', 'MaxInterval': '0E10', 'TimeOut': '0000', 'Change': '01'},
                             '0012': {'DataType': '29', 'MinInterval': '012C', 'MaxInterval': '0E10', 'TimeOut': '0000', 'Change': '0001'},
                             '0014': {'DataType': '29', 'MinInterval': '012C', 'MaxInterval': '0E10', 'TimeOut': '0000', 'Change': '0001'}}},
 

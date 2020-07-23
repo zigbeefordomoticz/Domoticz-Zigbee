@@ -19,9 +19,19 @@ from math import atan, sqrt, pi
 
 from Modules.domoMaj import MajDomoDevice
 from Modules.basicOutputs import ZigatePermitToJoin, leaveRequest, write_attribute
-from Modules.zigateConsts import ZIGATE_EP
-from Modules.logging import loggingLumi, loggingCluster
+from Modules.zigateConsts import ZIGATE_EP,  SIZE_DATA_TYPE
+from Modules.logging import loggingLumi
 from Modules.tools import voltage2batteryP, checkAttribute, checkAndStoreAttributeValue
+
+
+XIAOMI_POWERMETER_EP = {
+    'lumi.plug': '02',
+    'lumi.ctrl_ln2': '03',
+    'lumi.ctrl_ln2.aq1': '03',
+    'lumi.plug.mmeu01': '15',
+    'lumi.relay.c2acn01': '01'
+}
+
 
 def xiaomi_leave( self, NWKID):
     
@@ -40,13 +50,13 @@ def setXiaomiVibrationSensitivity( self, key, sensitivity = 'medium'):
     if sensitivity not in VIBRATION_SENSIBILITY:
         sensitivity = 'medium'
 
-    manuf_id = "115F"
-    manuf_spec = "00"
+    manuf_id = "115f"
+    manuf_spec = "01"
     cluster_id = "%04x" %0x0000
     attribute = "%04x" %0xFF0D
     data_type = "20" # Int8
     data = "%02x" %VIBRATION_SENSIBILITY[sensitivity]
-    write_attribute( self, key, "01", "01", cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
+    write_attribute( self, key, ZIGATE_EP, "01", cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
 
 def enableOppleSwitch( self, nwkid ):
 
@@ -247,29 +257,90 @@ def retreive8Tag(tag,chain):
         return ''
     return chain[c:(c+8)]
 
-def readXiaomiCluster( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
+def readXiaomiClusterv2( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
 
-    def decodeFloat( data ):
-        return (int(data[2:4]+data[0:2],16))
+    XIAOMI_TAGS = {
+        # ( Tag, Data Type)
+        ('01', '21'): 'BatteryLevel' , # Battery Level
+        ('03', '20'): 'DeviceTemp', # Device Temp
+        #('05', '21'): 'RSSI', # RSSI db
+        #('06', '24'): 'LQI', # LQI
+        ('0b', '21'): 'LightLevel', # Light Level
+        ('64', '10'): 'OnOff', # OnOff lumi.ctrl_ln2 endpoint 01
+        ('64', '20'): 'OnOff2', # OnOff for Aqara Bulb / Current position lift for lumi.curtain /lumi.sensor_smoke/lumi.sensor_natgas
+        ('64', '29'): 'Temp', # Temp
+        ('65', '10'): 'OnOff3', # OnOff lumi.ctrl_ln2 endpoint 02
+        ('65', '21'): 'Humi', # Humi
+        ('66', '2b'): 'Pressure', # Pressure
+        ('95', '39'): 'Consumption', # Consumption to be multiplied by 1000 to get Wh
+        ('96', '39'): 'Voltage', # Voltage
+        ('97', '39'): 'Current', # Current mA
+        ('98', '39'): 'Power', # Power W
+        ('9b', '10'): 'ConsumerConnected', # Consumer connected lumi.plug.mmeu01
+    }
+
+    for idx in range(len(MsgClusterData)):
+        if ( MsgClusterData[idx:idx+2] , MsgClusterData[idx+2:idx+4]) in XIAOMI_TAGS:
+
+            TagXiaomi = MsgClusterData[idx:idx+2]
+            dtype = MsgClusterData[idx+2:idx+4]
+            infos = XIAOMI_TAGS[( TagXiaomi , dtype) ]
+
+            Domoticz.Log("Infos: %s Tag: %s Dtype: %s" %( infos, TagXiaomi, dtype))
+            if dtype not in SIZE_DATA_TYPE:
+                Domoticz.Log("Unknown DType: %s for Tage: %s" %(dtype, TagXiaomi))
+                continue
+
+            nbByteToRead = 2 * SIZE_DATA_TYPE[dtype]
+            svalue = MsgClusterData[ idx + 4: idx+4+ nbByteToRead]
+
+            Domoticz.Log("----- svalue: %s" %( svalue))
+
+            if dtype == '10':
+                value = svalue
+
+            elif dtype == '20':
+                value = int(svalue)
+
+            elif dtype == '21':
+                value = struct.unpack('>H',struct.pack('H',int(svalue,16)))[0]
+
+            elif dtype == '24': # 40Uint
+                value = struct.unpack('>Q',struct.pack('Q',int(svalue,16)))[0]
+
+            elif dtype == '29':
+                value = struct.unpack('>h',struct.pack('H',int(svalue,16)))[0]
+
+            elif dtype == '2b':
+                value = struct.unpack('>i',struct.pack('I',int(svalue,16)))[0]
+
+            elif dtype == '39':
+                value = struct.unpack('>f',struct.pack('I',int(svalue,16)))[0]
+
+            loggingLumi( self, 'Log', "-----  value: %s" %( value),MsgSrcAddr )
+            
+
+def readXiaomiCluster( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
 
     if 'Model' not in self.ListOfDevices[MsgSrcAddr]:
         return
-    
+    model = self.ListOfDevices[MsgSrcAddr]['Model']
+
     # Taging: https://github.com/dresden-elektronik/deconz-rest-plugin/issues/42#issuecomment-370152404
     # 0x0624 might be the LQI indicator and 0x0521 the RSSI dB
 
-    sBatteryLvl =  retreive4Tag( "0121", MsgClusterData )
-    sTemp2 =       retreive4Tag( "0328", MsgClusterData )         # Device Temperature
+    sBatteryLvl =  retreive4Tag( "0121", MsgClusterData )         # 16BitUint
+    sTemp2 =       retreive4Tag( "0328", MsgClusterData )         # Device Temperature (int8)
     stag04 =       retreive4Tag( '0424', MsgClusterData )
-    sRSSI =        retreive4Tag( '0521', MsgClusterData )[0:2]    # RSSI
-    sLQI =         retreive8Tag( '0620', MsgClusterData ) # LQI
-    sLighLevel =   retreive4Tag( '0b21', MsgClusterData)
+    sRSSI =        retreive4Tag( '0521', MsgClusterData )[0:2]    # RSSI (16BitUint)
+    sLQI =         retreive8Tag( '0620', MsgClusterData )         # LQI
+    sLighLevel =   retreive4Tag( '0b21', MsgClusterData)          # 16BitUint
 
-    sOnOff =       retreive4Tag( "6410", MsgClusterData )[0:2]
+    sOnOff =       retreive4Tag( "6410", MsgClusterData )[0:2]    # Bool
     sOnOff2 =      retreive4Tag( "6420", MsgClusterData )[0:2]    # OnOff for Aqara Bulb / Current position lift for lumi.curtain
     sTemp =        retreive4Tag( "6429", MsgClusterData )
-    sOnOff3 =      retreive4Tag( "6510", MsgClusterData )         # On/off lumi.ctrl_ln2 EP 02
-    sHumid =       retreive4Tag( "6521", MsgClusterData )
+    sOnOff3 =      retreive4Tag( "6510", MsgClusterData )         # On/off lumi.ctrl_ln2 EP 02 (Bool)
+    sHumid =       retreive4Tag( "6521", MsgClusterData )         # 16BitUint
     sHumid2 =      retreive4Tag( "6529", MsgClusterData )
     sLevel =       retreive4Tag( "6520", MsgClusterData )[0:2]    # Dim level for Aqara Bulb
     sPress =       retreive8Tag( "662b", MsgClusterData )
@@ -279,101 +350,122 @@ def readXiaomiCluster( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId
     sCurrent =     retreive8Tag( '9739', MsgClusterData )         # Ampere
     sPower =       retreive8Tag( '9839', MsgClusterData )         # Power Watt
 
+
+    if sTemp2 != '':
+        loggingLumi( self, 'Debug', "ReadCluster - %s/%s Saddr: %s sTemp2 %s Temp2 %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, sTemp2, int(sTemp2,16)),MsgSrcAddr )
+        store_lumi_attribute( self, MsgSrcAddr, 'DeviceTemperature', round( int(sTemp2,16)/100,1 ) )
+
     if sConsumption != '':
-        #Domoticz.Log("ReadCluster - %s/%s Saddr: %s/%s Consumption %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, MsgSrcEp, sConsumption ))
-        Domoticz.Log("ReadCluster - %s/%s Saddr: %s Consumption %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, float(decodeFloat( sConsumption )) ))
-        if 'Consumption' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
-            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['Consumption'] = 0
-        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['Consumption'] = self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['Consumption'] + float(decodeFloat( sConsumption ))
-        #checkAndStoreAttributeValue( self, MsgSrcAddr , MsgSrcEp, '0702', '0000' , float(decodeFloat( sConsumption )))
+        # Consumption/Summation
+        consumption = (struct.unpack('f',struct.pack('>I',int(sConsumption,16)))[0]) * 1000
+        loggingLumi( self, 'Debug', "ReadCluster - %s/%s Saddr: %s sConsumption %s Consumption %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, sConsumption, consumption ))
+        store_lumi_attribute( self, MsgSrcAddr, 'Consumption', consumption )
+        if model in XIAOMI_POWERMETER_EP:
+            EPforMeter = XIAOMI_POWERMETER_EP[ model ]
+        else:
+            EPforMeter = MsgSrcEp
+        checkAndStoreAttributeValue( self, MsgSrcAddr , EPforMeter, '0702', '0000' , consumption )
 
     if sVoltage != '':
-        #Domoticz.Log("ReadCluster - %s/%s Saddr: %s/%s Voltage %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, MsgSrcEp, sVoltage ))
-        Domoticz.Log("ReadCluster - %s/%s Saddr: %s Voltage %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, float(decodeFloat( sVoltage )) ))
-        checkAndStoreAttributeValue( self, MsgSrcAddr , MsgSrcEp, '0001', '0000' , float(decodeFloat( sVoltage )) )
+        voltage = (struct.unpack('f',struct.pack('>I',int(sVoltage,16)))[0])
+        loggingLumi( self, 'Debug',"ReadCluster - %s/%s Saddr: %s Voltage %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, voltage ))
+        checkAndStoreAttributeValue( self, MsgSrcAddr , MsgSrcEp, '0001', '0000' , voltage )
+        store_lumi_attribute( self, MsgSrcAddr, 'Voltage', voltage )
         # Update Voltage ( cluster 0001 )
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0001", float(decodeFloat( sVoltage )))
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0001", voltage )
 
     if sCurrent != '':
-        #Domoticz.Log("ReadCluster - %s/%s Saddr: %s/%s Courant %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, MsgSrcEp, sCurrent ))
-        Domoticz.Log("ReadCluster - %s/%s Saddr: %s Courant %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, float(decodeFloat( sCurrent ))))
+        current = (struct.unpack('f',struct.pack('>I',int(sCurrent,16)))[0])
+        loggingLumi( self, 'Debug',"ReadCluster - %s/%s Saddr: %s Courant %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, current))
+        store_lumi_attribute( self, MsgSrcAddr, 'Current', current )
 
     if sPower != '':
-        #Domoticz.Log("ReadCluster - %s/%s Saddr: %s/%s Power %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, MsgSrcEp, sPower ))
-        Domoticz.Log("ReadCluster - %s/%s Saddr: %s Power %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, float(decodeFloat( sPower ))))
-        #checkAndStoreAttributeValue( self, MsgSrcAddr , MsgSrcEp, '0702', '0400' , float(decodeFloat( sPower )) )
+        # Instant Power
+        power = (struct.unpack('f',struct.pack('>I',int(sPower,16)))[0])
+        loggingLumi( self, 'Debug',"ReadCluster - %s/%s Saddr: %s sPower %s Power %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, sPower, power))
+        store_lumi_attribute( self, MsgSrcAddr, 'Power', power )
+        if model in XIAOMI_POWERMETER_EP:
+            EPforPower = XIAOMI_POWERMETER_EP[ model ]
+        else:
+            EPforPower = MsgSrcEp
+
+        checkAndStoreAttributeValue( self, MsgSrcAddr , EPforPower, '0702', '0400' , str(power) )
         # Update Power Widget
-        #MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0702", float(decodeFloat( sPower ))) 
+        MajDomoDevice(self, Devices, MsgSrcAddr, EPforPower, "0702", str(power) ) 
 
     if sLighLevel != '':
-        loggingCluster( self, 'Debug', "ReadCluster - %s/%s Saddr: %s Light Level: %s" 
+        loggingLumi( self, 'Log', "ReadCluster - %s/%s Saddr: %s Light Level: %s" 
             %(MsgClusterId, MsgAttrID, MsgSrcAddr,  int(sLighLevel,16)), MsgSrcAddr)
 
-    if sRSSI != '':
-        loggingCluster( self, 'Debug', "ReadCluster - %s/%s Saddr: %s RSSI: %s" 
-            %(MsgClusterId, MsgAttrID, MsgSrcAddr,  int(sRSSI,16)), MsgSrcAddr)
+    # if sRSSI != '':
+    #     RSSI = value = struct.unpack('>H',struct.pack('H',int(sRSSI,16)))[0]
+    #     loggingLumi( self, 'Debug', "ReadCluster - %s/%s Saddr: %s RSSI: %s" 
+    #         %(MsgClusterId, MsgAttrID, MsgSrcAddr, RSSI ), MsgSrcAddr)
+    #     store_lumi_attribute( self, MsgSrcAddr, 'RSSI', RSSI)
 
-    if sLQI != '':
-        loggingCluster( self, 'Debug', "ReadCluster - %s/%s Saddr: %s LQI: %s" 
-            %(MsgClusterId, MsgAttrID, MsgSrcAddr,  int(sLQI,16)), MsgSrcAddr)
+    # if sLQI != '':
+    #     LQI = int(sLQI,16)
+    #     loggingLumi( self, 'Debug', "ReadCluster - %s/%s Saddr: %s LQI: %s" 
+    #         %(MsgClusterId, MsgAttrID, MsgSrcAddr, LQI ), MsgSrcAddr)
+    #     store_lumi_attribute( self, MsgSrcAddr, 'LQI', LQI )
 
     if sBatteryLvl != '' and self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '8e' and self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '84' and self.ListOfDevices[MsgSrcAddr]['PowerSource'] != 'Main':
         voltage = '%s%s' % (str(sBatteryLvl[2:4]),str(sBatteryLvl[0:2]))
         voltage = int(voltage, 16 )
         ValueBattery = voltage2batteryP( voltage, 3150, 2750)
-        loggingCluster( self, 'Debug', "ReadCluster - %s/%s Saddr: %s Battery: %s Voltage: %s MacCapa: %s PowerSource: %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, ValueBattery, voltage,  self.ListOfDevices[MsgSrcAddr]['MacCapa'], self.ListOfDevices[MsgSrcAddr]['PowerSource']), MsgSrcAddr)
+        loggingLumi( self, 'Debug', "ReadCluster - %s/%s Saddr: %s Battery: %s Voltage: %s MacCapa: %s PowerSource: %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, ValueBattery, voltage,  self.ListOfDevices[MsgSrcAddr]['MacCapa'], self.ListOfDevices[MsgSrcAddr]['PowerSource']), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Battery'] = ValueBattery
         self.ListOfDevices[MsgSrcAddr]['BatteryUpdateTime'] = int(time.time())
         checkAndStoreAttributeValue( self, MsgSrcAddr , MsgSrcEp, '0001', '0000' , voltage)
+        store_lumi_attribute( self, MsgSrcAddr, 'BatteryVoltage', voltage)
 
     if sTemp != '':
         Temp = struct.unpack('h',struct.pack('>H',int(sTemp,16)))[0]
-        ValueTemp=round(Temp/100,1)
-        loggingCluster( self, 'Debug', "ReadCluster - 0000/ff01 Saddr: " + str(MsgSrcAddr) + " Temperature : " + str(ValueTemp) , MsgSrcAddr)
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0402", ValueTemp)
-        checkAndStoreAttributeValue( self, MsgSrcAddr , MsgSrcEp, '0402', '0000' , ValueTemp)
+        if Temp != -10000:
+            ValueTemp=round(Temp/100,1)
+            loggingLumi( self, 'Debug', "ReadCluster - 0000/ff01 Saddr: " + str(MsgSrcAddr) + " Temperature : " + str(ValueTemp) , MsgSrcAddr)
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0402", ValueTemp)
+            checkAndStoreAttributeValue( self, MsgSrcAddr , MsgSrcEp, '0402', '0000' , ValueTemp)
 
     if sHumid != '':
         ValueHumid = struct.unpack('H',struct.pack('>H',int(sHumid,16)))[0]
         ValueHumid = round(ValueHumid/100,1)
-        loggingCluster( self, 'Debug', "ReadCluster - 0000/ff01 Saddr: " + str(MsgSrcAddr) + " Humidity : " + str(ValueHumid) , MsgSrcAddr)
+        loggingLumi( self, 'Debug', "ReadCluster - 0000/ff01 Saddr: " + str(MsgSrcAddr) + " Humidity : " + str(ValueHumid) , MsgSrcAddr)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0405",ValueHumid)
         checkAndStoreAttributeValue( self, MsgSrcAddr , MsgSrcEp, '0405', '0000' , ValueHumid)
 
     if sHumid2 != '':
         Humid2 = struct.unpack('h',struct.pack('>H',int(sHumid2,16)))[0]
         ValueHumid2=round(Humid2/100,1)
-        loggingCluster( self, 'Debug', "ReadCluster - 0000/ff01 Saddr: " + str(MsgSrcAddr) + " Humidity2 : " + str(ValueHumid2) , MsgSrcAddr)
+        loggingLumi( self, 'Debug', "ReadCluster - 0000/ff01 Saddr: " + str(MsgSrcAddr) + " Humidity2 : " + str(ValueHumid2) , MsgSrcAddr)
 
     if sPress != '':
         Press = '%s%s%s%s' % (str(sPress[6:8]),str(sPress[4:6]),str(sPress[2:4]),str(sPress[0:2])) 
         ValuePress=round((struct.unpack('i',struct.pack('i',int(Press,16)))[0])/100,1)
-        loggingCluster( self, 'Debug', "ReadCluster - 0000/ff01 Saddr: " + str(MsgSrcAddr) + " Atmospheric Pressure : " + str(ValuePress) , MsgSrcAddr)
+        loggingLumi( self, 'Debug',"ReadCluster - 0000/ff01 Saddr: " + str(MsgSrcAddr) + " Atmospheric Pressure : " + str(ValuePress) , MsgSrcAddr)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0403",ValuePress)
         checkAndStoreAttributeValue( self, MsgSrcAddr , MsgSrcEp, '0403', '0000' , sPress)
 
     if sOnOff != '':
         if self.ListOfDevices[MsgSrcAddr]['Model'] == 'lumi.sensor_wleak.aq1':
-            loggingCluster( self, 'Debug', " --- Do not process this sOnOff: %s  because it is a leak sensor : %s" %(sOnOff, MsgSrcAddr), MsgSrcAddr)
+            loggingLumi( self, 'Debug', " --- Do not process this sOnOff: %s  because it is a leak sensor : %s" %(sOnOff, MsgSrcAddr), MsgSrcAddr)
             # Wleak send status via 0x8401 and Zone change. Looks like we get some false positive here.
             return
-
-        loggingCluster( self, 'Debug', "ReadCluster - 0000/ff01 Saddr: %s sOnOff: %s" %(MsgSrcAddr, sOnOff), MsgSrcAddr)
+        loggingLumi( self, 'Debug', "ReadCluster - 0000/ff01 Saddr: %s sOnOff: %s" %(MsgSrcAddr, sOnOff), MsgSrcAddr)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0006",sOnOff)
         checkAndStoreAttributeValue( self,  MsgSrcAddr , MsgSrcEp, '0006', '0000' , sOnOff)
 
-
     if sOnOff2 != '' and self.ListOfDevices[MsgSrcAddr]['MacCapa'] == '8e': # Aqara Bulb / Lumi Curtain - Position
         if self.ListOfDevices[MsgSrcAddr]['Model'] == 'lumi.sensor_wleak.aq1':
-            loggingCluster( self, 'Debug', " --- Do not process this sOnOff: %s  because it is a leak sensor : %s" %(sOnOff, MsgSrcAddr), MsgSrcAddr)
+            loggingLumi( self, 'Debug', " --- Do not process this sOnOff: %s  because it is a leak sensor : %s" %(sOnOff, MsgSrcAddr), MsgSrcAddr)
             # Wleak send status via 0x8401 and Zone change. Looks like we get some false positive here.
             return
-        loggingCluster( self, 'Debug', "ReadCluster - 0000/ff01 Saddr: %s sOnOff2: %s" %(MsgSrcAddr, sOnOff2), MsgSrcAddr)
+        loggingLumi( self, 'Debug', "ReadCluster - 0000/ff01 Saddr: %s sOnOff2: %s" %(MsgSrcAddr, sOnOff2), MsgSrcAddr)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006',sOnOff2)
         checkAndStoreAttributeValue( self,  MsgSrcAddr , MsgSrcEp, '0006', '0000' , sOnOff)
 
     if sLevel != '':
-        loggingCluster( self, 'Debug', "ReadCluster - 0000/ff01 Saddr: %s sLevel: %s" %(MsgSrcAddr, sLevel), MsgSrcAddr)
+        loggingLumi( self, 'Debug', "ReadCluster - 0000/ff01 Saddr: %s sLevel: %s" %(MsgSrcAddr, sLevel), MsgSrcAddr)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0008',sLevel)
         checkAndStoreAttributeValue( self, MsgSrcAddr , MsgSrcEp, '0008', '0000' , sLevel)
 
@@ -384,34 +476,34 @@ def cube_decode(self, value, MsgSrcAddr):
         return value
 
     if value == 0x0000:         
-        loggingCluster( self, 'Debug', "cube action: " + 'Shake' , MsgSrcAddr)
+        loggingLumi( self, 'Debug', "cube action: " + 'Shake' , MsgSrcAddr)
         value='10'
     elif value == 0x0002:            
-        loggingCluster( self, 'Debug', "cube action: " + 'Wakeup' , MsgSrcAddr)
+        loggingLumi( self, 'Debug', "cube action: " + 'Wakeup' , MsgSrcAddr)
         value = '20'
     elif value == 0x0003:
-        loggingCluster( self, 'Debug', "cube action: " + 'Drop' , MsgSrcAddr)
+        loggingLumi( self, 'Debug', "cube action: " + 'Drop' , MsgSrcAddr)
         value = '30'
     elif value & 0x0040 != 0:    
         face = value ^ 0x0040
         face1 = face >> 3
         face2 = face ^ (face1 << 3)
-        loggingCluster( self, 'Debug', "cube action: " + 'Flip90_{}{}'.format(face1, face2), MsgSrcAddr)
+        loggingLumi( self, 'Debug', "cube action: " + 'Flip90_{}{}'.format(face1, face2), MsgSrcAddr)
         value = '40'
     elif value & 0x0080 != 0:  
         face = value ^ 0x0080
-        loggingCluster( self, 'Debug', "cube action: " + 'Flip180_{}'.format(face) , MsgSrcAddr)
+        loggingLumi( self, 'Debug', "cube action: " + 'Flip180_{}'.format(face) , MsgSrcAddr)
         value = '50'
     elif value & 0x0100 != 0:  
         face = value ^ 0x0100
-        loggingCluster( self, 'Debug', "cube action: " + 'Push/Move_{}'.format(face) , MsgSrcAddr)
+        loggingLumi( self, 'Debug', "cube action: " + 'Push/Move_{}'.format(face) , MsgSrcAddr)
         value = '60'
     elif value & 0x0200 != 0:  # double_tap
         face = value ^ 0x0200
-        loggingCluster( self, 'Debug', "cube action: " + 'Double_tap_{}'.format(face) , MsgSrcAddr)
+        loggingLumi( self, 'Debug', "cube action: " + 'Double_tap_{}'.format(face) , MsgSrcAddr)
         value = '70'
     else:  
-        loggingCluster( self, 'Debug', "cube action: Not expected value %s" %value , MsgSrcAddr)
+        loggingLumi( self, 'Debug', "cube action: Not expected value %s" %value , MsgSrcAddr)
     return value
 
 def decode_vibr(value):         #Decoding XIAOMI Vibration sensor 
@@ -444,3 +536,9 @@ def decode_vibrAngle( rawData):
     if x2 + y2 != 0: 
         angleZ = round( atan( z / sqrt(x2+y2)) * 180 / pi)
     return (angleX, angleY, angleZ)
+
+def store_lumi_attribute( self, NwkId, Attribute, Value ):
+    
+    if 'LUMI' not in self.ListOfDevices[ NwkId ]:
+        self.ListOfDevices[ NwkId ]['LUMI'] = {}
+    self.ListOfDevices[ NwkId ]['LUMI'][ Attribute ] = Value

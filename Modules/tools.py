@@ -872,6 +872,8 @@ def check_datastruct( self, DeviceAttribute, key, endpoint, clusterId ):
         self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['iSQN'] = {}
     if 'Attributes' not in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]:
         self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['Attributes'] = {}
+    if 'ZigateRequest' not in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]:
+        self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'] = {}
 
 def is_time_to_perform_work(self, DeviceAttribute, key, endpoint, clusterId, now, timeoutperiod ):
     # Based on a timeout period return True or False.
@@ -886,6 +888,54 @@ def get_list_isqn_attr_datastruct(self, DeviceAttribute, key, endpoint, clusterI
     check_datastruct( self, DeviceAttribute, key, endpoint, clusterId )
     return [ x for x in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['iSQN'] ]
 
+def set_request_datastruct( self, DeviceAttribute, key, endpoint, clusterId, AttributeId, 
+                                    datatype, EPin, EPout, manuf_id, manuf_spec, data, ackIsDisabled , phase):
+    check_datastruct( self, DeviceAttribute, key, endpoint, clusterId )
+    if AttributeId not in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest']:
+        self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][AttributeId] = {}
+
+    self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeId ]['Status'] = phase
+    self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeId ]['DataType'] = datatype
+    self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeId ]['EPin'] = EPin
+    self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeId ]['EPout'] = EPout
+    self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeId ]['manuf_id'] = manuf_id
+    self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeId ]['manuf_spec'] = manuf_spec
+    self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeId ]['data'] = data
+    self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeId ]['ackIsDisabled'] = ackIsDisabled
+
+def get_request_datastruct( self, DeviceAttribute, key, endpoint, clusterId, AttributeId ):
+    # Return all arguments to make the WriteAttribute
+
+    check_datastruct( self, DeviceAttribute, key, endpoint, clusterId )
+    if AttributeId in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest']:
+        return (
+            self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeId ]['DataType'],
+            self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeId ]['EPin'],
+            self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeId ]['EPout'],
+            self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeId ]['manuf_id'],
+            self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeId ]['manuf_spec'],
+            self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeId ]['data'] ,
+            self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeId ]['ackIsDisabled']  
+        )
+    return None
+
+def set_request_phase_datastruct( self, DeviceAttribute, key, endpoint, clusterId, AttributeId , phase):
+    check_datastruct( self, DeviceAttribute, key, endpoint, clusterId )
+    if AttributeId in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest']:
+        self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeId ]['Status'] = phase
+
+
+def get_list_waiting_request_datastruct( self, DeviceAttribute, key, endpoint, clusterId ):
+    # Return a list of Attributes which are waiting to be writeAttrbutes
+
+    check_datastruct( self, DeviceAttribute, key, endpoint, clusterId )
+    lstofwait = []
+    for x in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest']:
+        if self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ x ]['Status'] == 'waiting':
+            lstofwait.append( x )
+    return lstofwait
+
+
 def set_isqn_datastruct(self, DeviceAttribute, key, endpoint, clusterId, AttributeId, isqn ):
     check_datastruct( self, DeviceAttribute, key, endpoint, clusterId )
     self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['iSQN'][ AttributeId ] = isqn
@@ -897,6 +947,7 @@ def get_isqn_datastruct(self, DeviceAttribute, key, endpoint, clusterId, Attribu
     return None
 
 def set_status_datastruct(self, DeviceAttribute, key, endpoint, clusterId, AttributeId, status ):
+
     check_datastruct( self, DeviceAttribute, key, endpoint, clusterId )
     self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['Attributes'][ AttributeId ] = status
     clean_old_datastruct(self,DeviceAttribute, key , endpoint, clusterId, AttributeId )
@@ -921,6 +972,8 @@ def reset_attr_datastruct( self, DeviceAttribute, key, endpoint, clusterId , Att
         del self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['Attributes'][ AttributeId ]
     if AttributeId in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['iSQN']:
         del self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['iSQN'][ AttributeId ]
+    if AttributeId in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest']:
+        del self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeId ]
 
 def reset_datastruct( self,DeviceAttribute, key ):
 
