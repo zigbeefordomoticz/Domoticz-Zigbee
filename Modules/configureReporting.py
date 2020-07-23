@@ -201,8 +201,8 @@ def processConfigureReporting( self, NWKID=None ):
                         loggingConfigureReporting( self, 'Debug', "    Configure Reporting: Manuf Specific Attribute %s" %attr, nwkid=key)
                         # Process the Attribute
                         ListOfAttributesToConfigure = []
-                        #manufacturer_spec = "01"
-                        #manufacturer = "1246" # Danfoss
+                        manufacturer_spec = "01"
+                        manufacturer = "1246" # Danfoss
                         
                         ListOfAttributesToConfigure.append(attr)
                         prepare_and_send_configure_reporting( self, key, Ep, cluster_list, cluster, direction, manufacturer_spec, manufacturer, ListOfAttributesToConfigure)

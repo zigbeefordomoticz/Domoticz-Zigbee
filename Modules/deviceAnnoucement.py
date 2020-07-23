@@ -337,6 +337,7 @@ def device_annoucementv2( self, Devices, MsgData, MsgLQI ):
 
     if RejoinFlag:
         # Just make sure to use the NwkId currently in the plugin DB and not the new one if exists
+        # Looks like on 31c with Xiaomi, we got only that one , and not the True DeviceAnnoucement!
         store_annoucement( self, self.IEEE2NWK[ Ieee ], RejoinFlag, now )
         loggingInput( self, 'Log', "------------ > Store device Rejoin Flag: %s droping" %RejoinFlag, NwkId)
         return

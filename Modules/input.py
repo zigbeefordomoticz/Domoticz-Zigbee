@@ -182,17 +182,27 @@ def Decode8000_v2(self, Devices, MsgData, MsgLQI) : # Status
 
     Status=MsgData[0:2]
     sqn_app = MsgData[2:4]
+    dsqn_app = int(sqn_app,16)
     PacketType=MsgData[4:8]
     type_sqn = sqn_aps = None
+    sqn_aps = 0
 
     if len(MsgData) == 12:
         # New Firmware 3.1d (get aps sqn)
         type_sqn = MsgData[8:10]
         sqn_aps = MsgData[10:12]
+        dsqn_aps = int(sqn_aps,16)
 
     if self.pluginconf.pluginConf['debugzigateCmd']:
-        loggingInput( self, 'Log', "Decode8000 - PacketType: %s TypeSqn: %s sqn_app: %s sqn_aps: %s Status: [%s] " \
-                %(PacketType, type_sqn, sqn_app, sqn_aps , Status))
+        i_sqn = None
+        if PacketType in ( '0100', '0120', '0110'):
+            i_sqn = sqn_get_internal_sqn_from_app_sqn (self.ZigateComm, sqn_app, TYPE_APP_ZCL)
+        if i_sqn:
+            loggingInput( self, 'Log', "Decode8000 - [%3s] PacketType: %s TypeSqn: %s sqn_app: %s/%s sqn_aps: %s/%s Status: [%s] " \
+               %(i_sqn, PacketType, type_sqn, sqn_app, dsqn_app, sqn_aps , dsqn_aps, Status))
+        else:
+            loggingInput( self, 'Log', "Decode8000 - [  ] PacketType: %s TypeSqn: %s sqn_app: %s/%s sqn_aps: %s/%s Status: [%s] " \
+                %( PacketType, type_sqn, sqn_app, dsqn_app, sqn_aps , dsqn_aps, Status))
 
     # Handling Status
     if  Status == "00" : 
@@ -1594,6 +1604,8 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
 
 #Reponses Attributs
 def Decode8100(self, Devices, MsgData, MsgLQI): # Read Attribute Response
+
+    Domoticz.Log("Decode8100: >%s<" %MsgData)
     MsgSQN=MsgData[0:2]
     MsgSrcAddr=MsgData[2:6]
     MsgSrcEp=MsgData[6:8]
@@ -1625,6 +1637,7 @@ def Decode8101(self, Devices, MsgData, MsgLQI) :  # Default Response
             %(MsgDataSQN, MsgDataEp, MsgClusterId, MsgDataCommand, MsgDataStatus,  DisplayStatusCode( MsgDataStatus ) ))
 
 def Decode8102(self, Devices, MsgData, MsgLQI):  # Attribute Reports
+
     MsgSQN=MsgData[0:2]
     MsgSrcAddr=MsgData[2:6]
     MsgSrcEp=MsgData[6:8]
@@ -1667,7 +1680,6 @@ def Decode8102(self, Devices, MsgData, MsgLQI):  # Attribute Reports
     callbackDeviceAwake( self, MsgSrcAddr, MsgSrcEp, MsgClusterId)
 
 def read_report_attributes( self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, MsgData):
-
 
     if DeviceExist(self, Devices, MsgSrcAddr):
         if ( self.pluginconf.pluginConf['debugLQI'] and self.ListOfDevices[MsgSrcAddr]['LQI'] <= self.pluginconf.pluginConf['debugLQI'] ):
@@ -1742,9 +1754,9 @@ def Decode8110_raw(self, Devices, MsgSQN , MsgSrcAddr , MsgSrcEp , MsgClusterId 
     if self.FirmwareVersion and int(self.FirmwareVersion,16) >= int('31d', 16) and MsgAttrID:
         set_status_datastruct(self, 'WriteAttributes', MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus )
         set_request_phase_datastruct( self, 'WriteAttributes', MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID , 'fullfilled')
-        if MsgStatus != '00':
+        if MsgAttrStatus != '00':
             loggingInput( self, 'Log', "Decode8110 - Write Attribute Respons response - ClusterID: %s/%s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s" \
-                %(MsgClusterId, MsgAttributeId, MsgSrcAddr, MsgSrcEp, MsgAttrStatus ), MsgSrcAddr)
+                %(MsgClusterId, MsgAttrID, MsgSrcAddr, MsgSrcEp, MsgAttrStatus ), MsgSrcAddr)
         return       
 
     # We got a global status for all attributes requested in this command
