@@ -12,7 +12,7 @@ from time import time
 from datetime import datetime
 
 from Modules.tools import is_hex, retreive_cmd_payload_from_8002, is_manufspecific_8002_payload
-from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_RESPONSES, ZIGATE_COMMANDS, RETRANSMIT_COMMAND, ADDRESS_MODE
+from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_RESPONSES, ZIGATE_COMMANDS, RETRANSMIT_COMMAND, ADDRESS_MODE, SIZE_DATA_TYPE
 from Modules.sqnMgmt import sqn_init_stack, sqn_generate_new_internal_sqn, sqn_add_external_sqn, sqn_get_internal_sqn_from_aps_sqn, sqn_get_internal_sqn_from_app_sqn, TYPE_APP_ZCL, TYPE_APP_ZDP
 
 
@@ -1563,7 +1563,32 @@ def buildframe_write_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clus
 
 def buildframe_read_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data ):
 
-    buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId + '0000' + Data
+    #Domoticz.Log("buildframe_read_attribute_response ===========> Data: %s" %Data)
+    idx = 0
+    buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId
+    while idx < len(Data):
+        Attribute = Data[idx+2:idx+4] + Data[idx+0:idx+2]
+        idx += 4
+        Status = Data[idx:idx+2]
+        idx += 2
+        DType = Data[idx:idx+2]
+        idx += 2
+        if DType in SIZE_DATA_TYPE:
+            size = SIZE_DATA_TYPE[ DType ] * 2
+        elif DType == '42': # String
+            size = int(Data[idx:idx+2],16)
+            idx += 2
+        else: 
+            Domoticz.Error("buildframe_read_attribute_response - Unknown DataType size: %s " %DType)
+            return frame
+        value = Data[idx:idx + size]
+        idx += size
+        lenData = '%04x' %size
+        buildPayload += Attribute + Status + DType + lenData + value
+        
+
+    #Domoticz.Log("buildframe_read_attribute_response - NwkId: %s Ep: %s ClusterId: %s Data: %s" %(SrcNwkId, SrcEndPoint, ClusterId, buildPayload))
+    
     newFrame = '01' # 0:2
     newFrame += '8100' # 2:6   MsgType
     newFrame += '%4x' %len(buildPayload) # 6:10  Length
