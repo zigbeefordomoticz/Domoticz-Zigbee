@@ -530,8 +530,13 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
 def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
 
-    value = decodeAttribute( self, MsgAttType, MsgClusterData)
     checkAttribute( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID )
+
+    if MsgAttrID == "0000" and MsgAttType == '00':
+        # Xiaomi !!
+        value = int(MsgClusterData[2:4]+MsgClusterData[0:2],16)
+    else:
+        value = decodeAttribute( self, MsgAttType, MsgClusterData)
 
     if MsgAttrID == "0000":    # Voltage
         value = round(int(value)/10, 1)
