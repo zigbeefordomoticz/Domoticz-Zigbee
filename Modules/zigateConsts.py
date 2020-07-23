@@ -118,6 +118,7 @@ SIZE_DATA_TYPE = {
     '21': 2,    # uint16
     '22': 3,    # Uint24
     '23': 4,    # Uint32
+    '24': 5,    # Uint40
     '25': 6,    # Uint48
     '28': 1,    # int8
     '29': 2,    # int16
@@ -126,6 +127,7 @@ SIZE_DATA_TYPE = {
     '2d': 6,    # int48
     '30': 1,    # enum8
     '31': 2,    # enum16
+    '39': 4,    # Single Float
 }
 
 ZLL_DEVICES = {
