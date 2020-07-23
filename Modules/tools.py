@@ -878,7 +878,7 @@ def retreive_cmd_payload_from_8002( Payload ):
         Command = Payload[4:6]
         Data = Payload[6:]
 
-    Domoticz.Log("retreive_cmd_payload_from_8002 ======> Payload: %s " %Data)
+    #Domoticz.Log("retreive_cmd_payload_from_8002 ======> Payload: %s " %Data)
     return ( GlobalCommand, Sqn, ManufacturerCode, Command, Data)
 
 
