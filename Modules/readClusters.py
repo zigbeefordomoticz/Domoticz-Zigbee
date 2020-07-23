@@ -2128,19 +2128,19 @@ def Cluster0b04( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     if MsgAttrID == "050b": # Active Power
         value = int(decodeAttribute( self, MsgAttType, MsgClusterData ))
-        loggingCluster( self, 'Log', "ReadCluster %s - %s/%s Power %s" \
+        loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s Power %s" \
             %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value))
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value))
 
     elif MsgAttrID == "0505": # RMS Voltage
         value = int(decodeAttribute( self, MsgAttType, MsgClusterData ))
-        loggingCluster( self, 'Log', "ReadCluster %s - %s/%s Voltage %s" \
+        loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s Voltage %s" \
             %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value))
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0001", str(value))
 
     elif MsgAttrID == "0508": #RMSCurrent
         value = int(decodeAttribute( self, MsgAttType, MsgClusterData ))
-        loggingCluster( self, 'Log', "ReadCluster %s - %s/%s Current %s" \
+        loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s Current %s" \
             %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value))
 
     else:
