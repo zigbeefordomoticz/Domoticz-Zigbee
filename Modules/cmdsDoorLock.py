@@ -25,12 +25,14 @@ def cluster0101_lock_door( self, NwkId):
         sqn = '%02x' %(int(self.ListOfDevices[NwkId]['SQN'],16) + 1)
 
     # Cluster Frame:
-    #  Frame Type: Cluster Command (1)
-    #  Manufacturer Specific True
-    #  Command Direction: Client to Server (0)
-    #  Disable default response: false
-    #  Reserved : 0x00
-    cluster_frame = '00'
+    # 0b xxxx xxxx
+    #           |- Frame Type: Cluster Specific (0x01)
+    #          |-- Manufacturer Specific False
+    #         |--- Command Direction: Client to Server (0)
+    #       | ---- Disable default response: True
+    #    |||- ---- Reserved : 0x000
+    #  ClusterFrame: 0b0001 0001
+    cluster_frame = '11'
     
     payload = cluster_frame + sqn + cmd
     raw_APS_request( self, NwkId, '01', '0008', '0104', payload, zigate_ep=ZIGATE_EP)
@@ -46,12 +48,14 @@ def cluster0101_unlock_door( self, NwkId):
         sqn = '%02x' %(int(self.ListOfDevices[NwkId]['SQN'],16) + 1)
 
     # Cluster Frame:
-    #  Frame Type: Cluster Command (1)
-    #  Manufacturer Specific True
-    #  Command Direction: Client to Server (0)
-    #  Disable default response: false
-    #  Reserved : 0x00
-    cluster_frame = '00'
+    # 0b xxxx xxxx
+    #           |- Frame Type: Cluster Specific (0x01)
+    #          |-- Manufacturer Specific False
+    #         |--- Command Direction: Client to Server (0)
+    #       | ---- Disable default response: True
+    #    |||- ---- Reserved : 0x000
+    #  ClusterFrame: 0b0001 0001
+    cluster_frame = '11'
     
     payload = cluster_frame + sqn + cmd
     raw_APS_request( self, NwkId, '01', '0008', '0104', payload, zigate_ep=ZIGATE_EP)
@@ -66,12 +70,14 @@ def cluster0101_toggle_door( self, NwkId):
         sqn = '%02x' %(int(self.ListOfDevices[NwkId]['SQN'],16) + 1)
 
     # Cluster Frame:
-    #  Frame Type: Cluster Command (1)
-    #  Manufacturer Specific True
-    #  Command Direction: Client to Server (0)
-    #  Disable default response: false
-    #  Reserved : 0x00
-    cluster_frame = '00'
+    # 0b xxxx xxxx
+    #           |- Frame Type: Cluster Specific (0x01)
+    #          |-- Manufacturer Specific False
+    #         |--- Command Direction: Client to Server (0)
+    #       | ---- Disable default response: True
+    #    |||- ---- Reserved : 0x000
+    #  ClusterFrame: 0b0001 0001
+    cluster_frame = '11'
 
     payload = cluster_frame + sqn + cmd
     raw_APS_request( self, NwkId, '01', '0008', '0104', payload, zigate_ep=ZIGATE_EP)
