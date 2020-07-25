@@ -472,6 +472,8 @@ def CreateDomoDevice(self, Devices, NWKID):
                 loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in Switch" %(t), NWKID)
 
             if t == 'DoorLock':
+                # Switchtype_ = 20 DoorlockInvertded
+                # Switchtype_ = 19 Doorlock
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 244, Subtype_ = 73, Switchtype_ = 20 )
                 loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in Button" %(t), NWKID)
 
