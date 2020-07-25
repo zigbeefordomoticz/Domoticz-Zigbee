@@ -1162,10 +1162,10 @@ def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgClusterData )
         if MsgClusterData == '01':
             loggingCluster( self, 'Debug', "ReadCluster 0101 - %s/%s Update Door contact if needed to: %s " %( MsgSrcAddr, MsgSrcEp,'01' ) , MsgSrcAddr)
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0500', '01' )
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0500', '00' )
         else:
             loggingCluster( self, 'Debug', "ReadCluster 0101 - %s/%s Update Door contact if needed to: %s " %( MsgSrcAddr, MsgSrcEp,'00' ) , MsgSrcAddr)
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0500', '00' )
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0500', '01' )
 
         if MsgClusterData in LOCKSTATE:
             loggingCluster( self, 'Debug', "ReadCluster 0101 - %s/%s Dev: Lock state %s (%s)" %(MsgSrcAddr, MsgSrcEp, MsgClusterData, LOCKSTATE[ MsgClusterData ]) , MsgSrcAddr)
