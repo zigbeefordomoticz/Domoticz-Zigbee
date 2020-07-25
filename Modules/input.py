@@ -185,7 +185,7 @@ def Decode8000_v2(self, Devices, MsgData, MsgLQI) : # Status
     dsqn_app = int(sqn_app,16)
     PacketType=MsgData[4:8]
     type_sqn = sqn_aps = None
-    sqn_aps = 0
+    dsqn_aps = 0
 
     if len(MsgData) == 12:
         # New Firmware 3.1d (get aps sqn)
