@@ -1314,12 +1314,13 @@ def Decode8045(self, Devices, MsgData, MsgLQI): # Reception Active endpoint resp
     if self.pluginconf.pluginConf['capturePairingInfos']:
         self.DiscoveryDevices[MsgDataShAddr]['NbEp'] = MsgDataEpCount
 
-    if 'Model' not in self.ListOfDevices[MsgDataShAddr] or ( 'Model' in self.ListOfDevices[MsgDataShAddr] and self.ListOfDevices[MsgDataShAddr]['Model'] in ( '', {} )):
+    if 'Model' not in self.ListOfDevices[MsgDataShAddr] or self.ListOfDevices[MsgDataShAddr]['Model'] in ('', {}):
+        loggingInput( self, 'Log', "[%s] NEW OBJECT: %s/%s Request Model Name" %( '-', MsgDataShAddr, iterEp))
         ReadAttributeRequest_0000(self, MsgDataShAddr, fullScope=False ) # In order to request Model Name  
 
     for iterEp in self.ListOfDevices[MsgDataShAddr]['Ep']:
         loggingInput( self, 'Status', "[%s] NEW OBJECT: %s Request Simple Descriptor for Ep: %s" %( '-', MsgDataShAddr, iterEp))
-        
+
         sendZigateCmd(self,"0043", str(MsgDataShAddr)+str(iterEp))
 
     if self.ListOfDevices[MsgDataShAddr]['Status'] != '8045' :
