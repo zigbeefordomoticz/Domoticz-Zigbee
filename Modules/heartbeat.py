@@ -23,7 +23,7 @@ from Modules.basicOutputs import  sendZigateCmd,identifyEffect, getListofAttribu
 
 from Modules.readAttributes import READ_ATTRIBUTES_REQUEST, ping_device_with_read_attribute, \
         ReadAttributeRequest_0000, ReadAttributeRequest_0001, ReadAttributeRequest_0006, ReadAttributeRequest_0008, ReadAttributeRequest_0006_0000, ReadAttributeRequest_0006_400x, ReadAttributeRequest_0008_0000,\
-        ReadAttributeRequest_0100, \
+        ReadAttributeRequest_0100, ReadAttributeRequest_0101_0000,\
         ReadAttributeRequest_000C, ReadAttributeRequest_0102, ReadAttributeRequest_0102_0008, ReadAttributeRequest_0201, ReadAttributeRequest_0204, ReadAttributeRequest_0300,  \
         ReadAttributeRequest_0400, ReadAttributeRequest_0402, ReadAttributeRequest_0403, ReadAttributeRequest_0405, \
         ReadAttributeRequest_0406, ReadAttributeRequest_0500, ReadAttributeRequest_0502, ReadAttributeRequest_0702, ReadAttributeRequest_000f, ReadAttributeRequest_fc01, ReadAttributeRequest_fc21
@@ -134,17 +134,22 @@ def processKnownDevices( self, Devices, NWKID ):
             if '0006' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
                 ReadAttributeRequest_0006_0000( self, NWKID)
                 loggingHeartbeat( self, 'Debug', "++ pollingDeviceStatus -  %s  for ON/OFF" \
-                %(NWKID), NWKID)
+                    %(NWKID), NWKID)
 
             if '0008' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
                 ReadAttributeRequest_0008_0000( self, NWKID)
                 loggingHeartbeat( self, 'Debug', "++ pollingDeviceStatus -  %s  for LVLControl" \
-                %(NWKID), NWKID)
+                    %(NWKID), NWKID)
 
             if '0102' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
                 ReadAttributeRequest_0102_0008( self, NWKID)
-            loggingHeartbeat( self, 'Debug', "++ pollingDeviceStatus -  %s  for WindowCOvering" \
-            %(NWKID), NWKID)
+                loggingHeartbeat( self, 'Debug', "++ pollingDeviceStatus -  %s  for WindowCovering" \
+                    %(NWKID), NWKID)
+
+            if '0101' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                ReadAttributeRequest_0101_0000( self, NWKID)
+                loggingHeartbeat( self, 'Debug', "++ pollingDeviceStatus -  %s  for DoorLock" \
+                    %(NWKID), NWKID)
 
         return False
     
@@ -297,7 +302,11 @@ def processKnownDevices( self, Devices, NWKID ):
         loggingHeartbeat( self, 'Log', "processKnownDevices -  %s recover from Non Reachable" %NWKID, NWKID) 
         del self.ListOfDevices[NWKID]['pingDeviceRetry']
 
-    ## Starting this point, it is ony relevant for Main Powered Devices.
+    #model = ''
+    #if 'Model' in self.ListOfDevices[ NWKID ]:
+    #    model = self.ListOfDevices[ NWKID ]['Model']
+    ## Starting this point, it is ony relevant for Main Powered Devices. 
+    #if not _mainPowered and ( intHB == 1 and model != 'V3-BTZB'):
     if not _mainPowered:
        return
 
@@ -326,7 +335,6 @@ def processKnownDevices( self, Devices, NWKID ):
     if _doReadAttribute:
         loggingHeartbeat( self, 'Debug', "processKnownDevices -  %s intHB: %s _mainPowered: %s doReadAttr: %s" \
                 %(NWKID, intHB, _mainPowered, _doReadAttribute ), NWKID)
-
 
         # Read Attributes if enabled
         now = int(time.time())   # Will be used to trigger ReadAttributes

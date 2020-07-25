@@ -1315,7 +1315,7 @@ def Decode8045(self, Devices, MsgData, MsgLQI): # Reception Active endpoint resp
         self.DiscoveryDevices[MsgDataShAddr]['NbEp'] = MsgDataEpCount
 
     if 'Model' not in self.ListOfDevices[MsgDataShAddr] or self.ListOfDevices[MsgDataShAddr]['Model'] in ('', {}):
-        loggingInput( self, 'Log', "[%s] NEW OBJECT: %s/%s Request Model Name" %( '-', MsgDataShAddr, iterEp))
+        loggingInput( self, 'Log', "[%s] NEW OBJECT: %s Request Model Name" %( '-', MsgDataShAddr))
         ReadAttributeRequest_0000(self, MsgDataShAddr, fullScope=False ) # In order to request Model Name  
 
     for iterEp in self.ListOfDevices[MsgDataShAddr]['Ep']:

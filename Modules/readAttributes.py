@@ -463,6 +463,13 @@ def ReadAttributeRequest_0101(self, key):
                 loggingReadAttributes( self, 'Debug', "Request 0x0101 info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
                 ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0101", listAttributes , ackIsDisabled = True )
 
+def ReadAttributeRequest_0101_0000( self, key):
+    loggingReadAttributes( self, 'Debug', "Request DoorLock Read Attribute request: " + key , nwkid=key)
+    ListOfEp = getListOfEpForCluster( self, key, '0101' )
+    for EPout in ListOfEp:
+        listAttributes = [0x0000]
+        ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0101", listAttributes, ackIsDisabled = True)
+
 
 def ReadAttributeRequest_0102(self, key):
 
