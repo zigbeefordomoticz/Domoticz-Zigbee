@@ -35,7 +35,7 @@ def cluster0101_lock_door( self, NwkId):
     cluster_frame = '11'
     
     payload = cluster_frame + sqn + cmd
-    raw_APS_request( self, NwkId, '01', '0008', '0104', payload, zigate_ep=ZIGATE_EP)
+    raw_APS_request( self, NwkId, '01', '0101', '0104', payload, zigate_ep=ZIGATE_EP)
 
 
 def cluster0101_unlock_door( self, NwkId):
@@ -58,7 +58,7 @@ def cluster0101_unlock_door( self, NwkId):
     cluster_frame = '11'
     
     payload = cluster_frame + sqn + cmd
-    raw_APS_request( self, NwkId, '01', '0008', '0104', payload, zigate_ep=ZIGATE_EP)
+    raw_APS_request( self, NwkId, '01', '0101', '0104', payload, zigate_ep=ZIGATE_EP)
 
 def cluster0101_toggle_door( self, NwkId):
 
@@ -80,4 +80,4 @@ def cluster0101_toggle_door( self, NwkId):
     cluster_frame = '11'
 
     payload = cluster_frame + sqn + cmd
-    raw_APS_request( self, NwkId, '01', '0008', '0104', payload, zigate_ep=ZIGATE_EP)
+    raw_APS_request( self, NwkId, '01', '0101', '0104', payload, zigate_ep=ZIGATE_EP)
