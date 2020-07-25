@@ -403,7 +403,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 sValue = str(selector)
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
 
-        if ClusterType in ( 'Alarm', 'Door', 'DoorLock', 'Switch', 'SwitchButton', 'AqaraOppleMiddle', 'Motion', 
+        if ClusterType == WidgetType and ClusterType in ( 'Alarm', 'Door', 'DoorLock', 'Switch', 'SwitchButton', 'AqaraOppleMiddle', 'Motion', 
                             'Ikea_Round_5b', 'Ikea_Round_OnOff', 'Vibration', 'OrviboRemoteSquare', 'Button_3'): 
             # Plug, Door, Switch, Button ...
             # We reach this point because ClusterType is Door or Switch. It means that Cluster 0x0006 or 0x0500
