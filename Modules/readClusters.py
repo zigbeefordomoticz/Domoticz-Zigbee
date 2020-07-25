@@ -1158,13 +1158,20 @@ def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             'ff': 'Undefined'
         }
 
-        if MsgClusterData in LOCKSTATE:
-            loggingCluster( self, 'Debug', "ReadCluster 0101 - Dev: Lock state %s (%s)" %(MsgClusterData, LOCKSTATE[ MsgClusterData ]) , MsgSrcAddr)
-        else:
-            loggingCluster( self, 'Debug', "ReadCluster 0101 - Dev: Lock state " +str(MsgClusterData) , MsgSrcAddr)
-
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,MsgClusterData)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgClusterData )
+        if MsgClusterData == '01':
+            loggingCluster( self, 'Debug', "ReadCluster 0101 - %s/%s Update Door contact if needed to: %s " %( MsgSrcAddr, MsgSrcEp,'01' ) , MsgSrcAddr)
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0500', '01' )
+        else:
+            loggingCluster( self, 'Debug', "ReadCluster 0101 - %s/%s Update Door contact if needed to: %s " %( MsgSrcAddr, MsgSrcEp,'00' ) , MsgSrcAddr)
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0500', '00' )
+
+        if MsgClusterData in LOCKSTATE:
+            loggingCluster( self, 'Debug', "ReadCluster 0101 - %s/%s Dev: Lock state %s (%s)" %(MsgSrcAddr, MsgSrcEp, MsgClusterData, LOCKSTATE[ MsgClusterData ]) , MsgSrcAddr)
+        else:
+            oggingCluster( self, 'Debug', "ReadCluster 0101 - %s/%s Dev: Lock state %s " %(MsgSrcAddr, MsgSrcEp, MsgClusterData) , MsgSrcAddr)
+        
 
     elif MsgAttrID == "0001":         # Locktype
         loggingCluster( self, 'Debug', "ReadCluster 0101 - Dev: Lock type "  + str(MsgClusterData), MsgSrcAddr)

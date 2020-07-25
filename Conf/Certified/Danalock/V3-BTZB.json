@@ -12,7 +12,7 @@
 	    "0b05":"",
 	    "000a":"",
 	    "0019":"",
-	    "Type": "DoorLock" } 
+	    "Type": "DoorLock/Door" } 
   },
   "Type": "",
   "ClusterToBind": [ "0001", "000a", "0101", "0019" ],
