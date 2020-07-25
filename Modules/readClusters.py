@@ -1124,10 +1124,30 @@ def Cluster0012( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, _modelName), MsgSrcAddr)
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  MsgClusterData )
 
-def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
-    # Door Lock Cluster
+        
+def Cluster0100( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
 
+    checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,MsgClusterData)
+    
+    if MsgAttrID == "0000":
+        loggingCluster( self, 'Debug', "ReadCluster 0100 - Shade Config: PhysicalClosedLimit: %s" %MsgClusterData, MsgSrcAddr)
+    elif MsgAttrID == "0001":
+        loggingCluster( self, 'Debug', "ReadCluster 0100 - Shade Config: MotorStepSize: %s" %MsgClusterData, MsgSrcAddr)
+    elif MsgAttrID == "0002":
+        loggingCluster( self, 'Debug', "ReadCluster 0100 - Shade Config: Status: %s" %MsgClusterData, MsgSrcAddr)
+    elif MsgAttrID == "0010":
+        loggingCluster( self, 'Debug', "ReadCluster 0100 - Shade Config: ClosedLimit: %s" %MsgClusterData, MsgSrcAddr)
+    elif MsgAttrID == "0011":
+        loggingCluster( self, 'Debug', "ReadCluster 0100 - Shade Config: Mode: %s" %MsgClusterData, MsgSrcAddr)
+    else:
+        loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" \
+            %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
+
+def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
+    
+    # Door Lock Cluster
     loggingCluster( self, 'Debug', "ReadCluster 0101 - Dev: %s, EP:%s AttrID: %s, AttrType: %s, AttrSize: %s Attribute: %s Len: %s" \
+
             %( MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, len(MsgClusterData)), MsgSrcAddr)
 
     if MsgAttrID == "0000":          # Lockstate
@@ -1139,7 +1159,7 @@ def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         }
 
         if MsgClusterData in LOCKSTATE:
-            loggingCluster( self, 'Log', "ReadCluster 0101 - Dev: Lock state %s (%s)" %(MsgClusterData, LOCKSTATE[ MsgClusterData ]) , MsgSrcAddr)
+            loggingCluster( self, 'Debug', "ReadCluster 0101 - Dev: Lock state %s (%s)" %(MsgClusterData, LOCKSTATE[ MsgClusterData ]) , MsgSrcAddr)
         else:
             loggingCluster( self, 'Debug', "ReadCluster 0101 - Dev: Lock state " +str(MsgClusterData) , MsgSrcAddr)
 
@@ -1194,25 +1214,9 @@ def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         
     else:
         loggingCluster( self, 'Log', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
-        checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,MsgClusterData)
-        
-def Cluster0100( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
 
-    checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,MsgClusterData)
-    
-    if MsgAttrID == "0000":
-        loggingCluster( self, 'Debug', "ReadCluster 0100 - Shade Config: PhysicalClosedLimit: %s" %MsgClusterData, MsgSrcAddr)
-    elif MsgAttrID == "0001":
-        loggingCluster( self, 'Debug', "ReadCluster 0100 - Shade Config: MotorStepSize: %s" %MsgClusterData, MsgSrcAddr)
-    elif MsgAttrID == "0002":
-        loggingCluster( self, 'Debug', "ReadCluster 0100 - Shade Config: Status: %s" %MsgClusterData, MsgSrcAddr)
-    elif MsgAttrID == "0010":
-        loggingCluster( self, 'Debug', "ReadCluster 0100 - Shade Config: ClosedLimit: %s" %MsgClusterData, MsgSrcAddr)
-    elif MsgAttrID == "0011":
-        loggingCluster( self, 'Debug', "ReadCluster 0100 - Shade Config: Mode: %s" %MsgClusterData, MsgSrcAddr)
-    else:
-        loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" \
-            %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
+        checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,MsgClusterData)
+
 
 def Cluster0102( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
     # Windows Covering / Shutter
