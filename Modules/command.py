@@ -200,7 +200,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
 
         elif DeviceType == 'DoorLock':
             cluster0101_lock_door( self, NWKID)
-            UpdateDevice_v2(self, Devices, Unit, 1, "Closed",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            UpdateDevice_v2(self, Devices, Unit, 0, "Closed",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             self.ListOfDevices[NWKID]['Heartbeat'] = 0 
             return
 
