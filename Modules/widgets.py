@@ -19,10 +19,15 @@ SWITCH_LVL_MATRIX = {
         "01": ( 1, "On") , 
         "ForceUpdate": False },
 
-    "Door":  { 
-        "00": ( 0, "Closed"), 
-        "01": ( 1, "Open"), 
+    "Door":  {
+        "00": ( 0, "Closed"),
+        "01": ( 1, "Open"),
         "ForceUpdate": False},
+
+    "DoorLock":  {
+        "00": ( 0, "Closed" ),
+        "01": ( 1, "Open" ),
+        "ForceUpdate": False },
 
     "Smoke": { 
         "00": ( 0, "Off"), 
@@ -248,10 +253,10 @@ SWITCH_LVL_MATRIX = {
         }
     },
 
-    "DoorLock":  { 
-        "01": ( 0, "Closed" ), 
-        "02": ( 1, "Open" ), 
-        "ForceUpdate": False },
+
+
+
+
 
     "Vibration": {
         "00": (0, "00"),

@@ -403,6 +403,9 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                             else:
                                 Domoticz.Error("Uncorrect GroupMembership definition %s" %str(self.DeviceConf[ self.ListOfDevices[NWKID]['Model'] ]['GroupMembership']))
 
+            # Reset HB in order to force Read Attribute Status
+            self.ListOfDevices[NWKID]['Heartbeat'] = 0
+
             writeDiscoveryInfos( self )
 
         #end if ( self.ListOfDevices[NWKID]['Status']=="8043" or self.ListOfDevices[NWKID]['Model']!= {} )

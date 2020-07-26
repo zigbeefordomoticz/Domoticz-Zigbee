@@ -1147,7 +1147,6 @@ def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     
     # Door Lock Cluster
     loggingCluster( self, 'Debug', "ReadCluster 0101 - Dev: %s, EP:%s AttrID: %s, AttrType: %s, AttrSize: %s Attribute: %s Len: %s" \
-
             %( MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, len(MsgClusterData)), MsgSrcAddr)
 
     if MsgAttrID == "0000":          # Lockstate
@@ -1159,18 +1158,28 @@ def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         }
 
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,MsgClusterData)
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgClusterData )
         if MsgClusterData == '01':
-            loggingCluster( self, 'Debug', "ReadCluster 0101 - %s/%s Update Door contact if needed to: %s " %( MsgSrcAddr, MsgSrcEp,'01' ) , MsgSrcAddr)
+            # Locked
+            if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
+                loggingCluster( self, 'Status', "%s DoorLock state %s (%s)" %(self.ListOfDevices[ MsgSrcAddr ]['ZDeviceName'], MsgClusterData, LOCKSTATE[ MsgClusterData ]) , MsgSrcAddr)
+
+            # Update the DoorLock widget
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, '00' )
+            # Update the Door contact widget ( status )
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0500', '00' )
-        else:
-            loggingCluster( self, 'Debug', "ReadCluster 0101 - %s/%s Update Door contact if needed to: %s " %( MsgSrcAddr, MsgSrcEp,'00' ) , MsgSrcAddr)
+
+        elif MsgClusterData in ( '00', '02', 'ff' ):
+            # Not locked
+            if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
+                loggingCluster( self, 'Status', "%s DoorLock state %s (%s)" %(self.ListOfDevices[ MsgSrcAddr ]['ZDeviceName'], MsgClusterData, LOCKSTATE[ MsgClusterData ]) , MsgSrcAddr)
+
+            # Update the DoorLock widget
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, '01' )
+            # Update the Door contact widget
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0500', '01' )
 
-        if MsgClusterData in LOCKSTATE:
-            loggingCluster( self, 'Debug', "ReadCluster 0101 - %s/%s Dev: Lock state %s (%s)" %(MsgSrcAddr, MsgSrcEp, MsgClusterData, LOCKSTATE[ MsgClusterData ]) , MsgSrcAddr)
         else:
-            oggingCluster( self, 'Debug', "ReadCluster 0101 - %s/%s Dev: Lock state %s " %(MsgSrcAddr, MsgSrcEp, MsgClusterData) , MsgSrcAddr)
+            loggingCluster( self, 'Error', "ReadCluster 0101 - %s/%s Dev: Lock state %s " %(MsgSrcAddr, MsgSrcEp, MsgClusterData) , MsgSrcAddr)
         
 
     elif MsgAttrID == "0001":         # Locktype
