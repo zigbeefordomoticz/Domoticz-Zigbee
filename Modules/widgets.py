@@ -25,8 +25,9 @@ SWITCH_LVL_MATRIX = {
         "ForceUpdate": False},
 
     "DoorLock":  {
-        "00": ( 0, "Closed" ),
-        "01": ( 1, "Open" ),
+        # Doorlock widget seems to behave inverted
+        "01": ( 0, "Closed" ),
+        "00": ( 1, "Open" ),
         "ForceUpdate": False },
 
     "Smoke": { 
