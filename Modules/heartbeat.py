@@ -291,6 +291,10 @@ def processKnownDevices( self, Devices, NWKID ):
     # Pinging devices to check they are still Alive
     pingDevices( self, NWKID, health, _checkHealth, _mainPowered)
 
+    # Check if we are in the process of provisioning a new device. If so, just stop
+    if self.CommiSSionning: 
+        return
+
     # If device flag as Not Reachable, don't do anything
     if not health:
         loggingHeartbeat( self, 'Debug', "processKnownDevices -  %s stop here due to Health %s" \
@@ -306,8 +310,15 @@ def processKnownDevices( self, Devices, NWKID ):
     #if 'Model' in self.ListOfDevices[ NWKID ]:
     #    model = self.ListOfDevices[ NWKID ]['Model']
     ## Starting this point, it is ony relevant for Main Powered Devices. 
-    #if not _mainPowered and ( intHB == 1 and model != 'V3-BTZB'):
-    if not _mainPowered:
+
+    # Some battery based end device with ZigBee 30 use polling and can receive commands.
+    # We should authporized them for Polling After Action, in order to get confirmation.
+
+    enabledEndDevicePolling = False
+    if 'PollingEnabled' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['PollingEnabled']:
+        enabledEndDevicePolling = True
+
+    if not _mainPowered and not enabledEndDevicePolling:
        return
 
     # Action not taken, must be reschedule to next cycle
@@ -320,11 +331,6 @@ def processKnownDevices( self, Devices, NWKID ):
     # Polling Manufacturer Specific devices ( Philips, Gledopto  ) if applicable
     rescheduleAction = (rescheduleAction or pollingManufSpecificDevices( self, NWKID))
 
-    # Check if we are in the process of provisioning a new device. If so, just stop
-    if self.CommiSSionning: 
-        return
-
-    # In order to limit the load, we do it only every 15s
     _doReadAttribute = False
     if self.pluginconf.pluginConf['enableReadAttributes'] or self.pluginconf.pluginConf['resetReadAttributes']:
         if ( intHB % READATTRIBUTE_FEQ ) == 0:
@@ -397,11 +403,11 @@ def processKnownDevices( self, Devices, NWKID ):
         rescheduleAction = ( rescheduleAction or schneiderRenforceent(self, NWKID))
 
     # Do Attribute Disocvery if needed
-    if ( intHB % 1800) == 0:
+    if not enabledEndDevicePolling and ( intHB % 1800) == 0:
         rescheduleAction = ( rescheduleAction or attributeDiscovery( self, NWKID ) )
 
     # If corresponding Attributes not present, let's do a Request Node Description
-    if ( intHB % 1800) == 0:
+    if not enabledEndDevicePolling and ( intHB % 1800) == 0:
         req_node_descriptor = False
         if 'Manufacturer' not in self.ListOfDevices[NWKID] or \
                 'DeviceType' not in self.ListOfDevices[NWKID] or \

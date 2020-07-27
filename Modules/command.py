@@ -199,10 +199,9 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             thermostat_Mode( self, NWKID, 'Off' )
 
         elif DeviceType == 'DoorLock':
-
             cluster0101_lock_door( self, NWKID)
-            #Doorlock widget seems to behave inverted
-            UpdateDevice_v2(self, Devices, Unit, 1, "Open",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            Domoticz.Log("Received Command: OFF - %s" %Command)
+            UpdateDevice_v2(self, Devices, Unit, 0, "Closed",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             self.ListOfDevices[NWKID]['Heartbeat'] = 0 
             return
 
@@ -268,8 +267,8 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
 
         elif DeviceType == 'DoorLock':
             cluster0101_unlock_door( self, NWKID)
-            # Doorlock widget seems to behave inverted
-            UpdateDevice_v2(self, Devices, Unit, 0, "Closed",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            Domoticz.Log("Received Command: ON -  %s" %Command)
+            UpdateDevice_v2(self, Devices, Unit, 1, "Open",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             self.ListOfDevices[NWKID]['Heartbeat'] = 0 
             return
         else:
