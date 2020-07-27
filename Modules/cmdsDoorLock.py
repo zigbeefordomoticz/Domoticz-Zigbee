@@ -16,6 +16,7 @@ from Modules.basicOutputs import raw_APS_request
 
 
 def cluster0101_lock_door( self, NwkId):
+    Domoticz.Log("lock door")
 
     cmd = '00'
     # determine which Endpoint
@@ -39,6 +40,7 @@ def cluster0101_lock_door( self, NwkId):
 
 
 def cluster0101_unlock_door( self, NwkId):
+    Domoticz.Log("unkock door")
 
     cmd = '01'
     # determine which Endpoint
