@@ -879,12 +879,11 @@ def Cluster0008( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             %(MsgClusterId, MsgSrcAddr, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
     if MsgAttrID == '0000': # Current Level
-        if 'Model' in self.ListOfDevices[MsgSrcAddr]:
-            if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TI0001' and MsgSrcEp == '06': # Livolo switch
-                loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0008 - %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, : %s" \
-                    %(MsgSrcAddr, MsgSrcEp,MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
-                # Do nothing as the Livolo state is given by 0x0100
-                return
+        if ( 'Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Model'] == 'TI0001' and MsgSrcEp == '06' ): # Livolo switch
+            loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0008 - %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, : %s" \
+                %(MsgSrcAddr, MsgSrcEp,MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
+            # Do nothing as the Livolo state is given by 0x0100
+            return
         loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0008 - %s/%s Level Control: %s" %(MsgSrcAddr,MsgSrcEp,MsgClusterData) , MsgSrcAddr)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgClusterData)
 
@@ -1163,7 +1162,7 @@ def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
                 loggingCluster( self, 'Status', "%s DoorLock state %s (%s)" %(self.ListOfDevices[ MsgSrcAddr ]['ZDeviceName'], MsgClusterData, LOCKSTATE[ MsgClusterData ]) , MsgSrcAddr)
 
-            # Update the DoorLock widget
+            # Update the DoorLock widget seems to be inverted 
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, '00' )
             # Update the Door contact widget ( status )
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0500', '00' )
@@ -1173,7 +1172,7 @@ def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
                 loggingCluster( self, 'Status', "%s DoorLock state %s (%s)" %(self.ListOfDevices[ MsgSrcAddr ]['ZDeviceName'], MsgClusterData, LOCKSTATE[ MsgClusterData ]) , MsgSrcAddr)
 
-            # Update the DoorLock widget
+            # Update the DoorLock widget seems to be inverted 
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, '01' )
             # Update the Door contact widget
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0500', '01' )
@@ -1284,32 +1283,26 @@ def Cluster0102( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         # 01000000 - 0-Timer Controlled, 1-Encoder Controlled
         # 10000000 - Reserved
 
-        if MsgClusterData != '03':
-            loggingCluster( self, 'Debug', "ReadCluster - %s - %s/%s - Config Status: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
-        else:
-            loggingCluster( self, 'Debug', "ReadCluster - %s - %s/%s - Config Status: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
-
+        loggingCluster( self, 'Debug', "ReadCluster - %s - %s/%s - Config Status: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
     elif MsgAttrID == "0008":
         loggingCluster( self, 'Debug', "ReadCluster - %s - %s/%s - Current position lift in %%: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
-        if 'Model' in self.ListOfDevices[MsgSrcAddr]:
-            if self.ListOfDevices[MsgSrcAddr]['Model'] != {}:
-                if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TS0302' and value == 50:
-                    # Zemismart Blind shutter switch send 50 went the swicth is on wait mode
-                    # do not update
-                    return
+        if (
+            'Model' in self.ListOfDevices[MsgSrcAddr]
+            and self.ListOfDevices[MsgSrcAddr]['Model'] != {}
+        ):
+            if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TS0302' and value == 50:
+                # Zemismart Blind shutter switch send 50 went the swicth is on wait mode
+                # do not update
+                return
 
-                if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TS0302':
-                    if value > 100:
-                        value = 0
-                    else:
-                        value = 100 - value
-
-                elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'Shutter switch with neutral':
-                    # The Shutter should have the Led on its right
-                    # Present Value: 0x01 -> Open
-                    # Present Value: 0x00 -> Closed
-                    value = value
-                    #value = 100 - value
+            if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TS0302':
+                value = 0 if value > 100 else 100 - value
+            elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'Shutter switch with neutral':
+                # The Shutter should have the Led on its right
+                # Present Value: 0x01 -> Open
+                # Present Value: 0x00 -> Closed
+                value = value
+                #value = 100 - value
 
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, "%02x" %value )
 
@@ -2005,8 +1998,7 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         else:
             # Old fashion
             value = round(conso/10, 3)
-            if 'Model' in self.ListOfDevices[MsgSrcAddr]:
-                if self.ListOfDevices[MsgSrcAddr]['Model'] == 'EH-ZB-SPD-V2':
+            if 'Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Model'] == 'EH-ZB-SPD-V2':
                     value = round(conso, 3)
 
         return ( value )
