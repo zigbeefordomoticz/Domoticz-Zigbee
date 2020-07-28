@@ -741,7 +741,7 @@ def check_timed_out(self):
         # If we timeout on 0x8000 , we cannot really assumed were we stand in terms of synchronisation with ZiGate
         # Get all queues reset
         _reset_mgt_queue(self)
-        for x in self.ListOfCommands:
+        for x in list(self.ListOfCommands):
             if self.ListOfCommands[x]['Status'] not in ( '', 'QUEUED'):
                 Domoticz.Error("Remove %x from Queue %s %s" %(x, self.ListOfCommands[x]['Cmd'], self.ListOfCommands[x]['Datas']))
                 del self.ListOfCommands[x]
