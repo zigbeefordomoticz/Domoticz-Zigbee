@@ -320,6 +320,8 @@ class WebServer(object):
             Statistics['APSNck'] =  0
             Statistics['StartTime'] = int(time()) - 120
         else:
+            Statistics['ZiGateReactingTimeMax'] = self.statistics._maxTiming8000
+            Statistics['ZiGateReactingTimeAverage'] = self.statistics._averageTiming8000
             Statistics['CRC'] =self.statistics._crcErrors
             Statistics['FrameErrors'] =self.statistics._frameErrors
             Statistics['Sent'] =self.statistics._sent
