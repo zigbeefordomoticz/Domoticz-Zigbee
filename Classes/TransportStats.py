@@ -29,8 +29,7 @@ class TransportStatistics:
         self._reTx = 0
         self._Load = 0
         self._MaxLoad = 0
-        self._maxTiming8000 = 0
-        self._averageTiming8000 = 0
+        self._maxTiming8000 = self._cumulTiming8000 = self._cntTiming8000 = self._averageTiming8000 = 0
         self._start = int(time())
         self.TrendStats = []
         self.pluginconf = pluginconf
@@ -41,10 +40,12 @@ class TransportStatistics:
 
     def add_timing8000( self, timing):
 
-        self._averageTiming8000 = round( ((self._averageTiming8000 + timing ) / 2), 2)
+        self._cumulTiming8000 += timing
+        self._cntTiming8000 += 1
+        self._averageTiming8000 = round( (self._cumulTiming8000 / self._cntTiming8000), 2)
         if timing > self._maxTiming8000:
             self._maxTiming8000 = round(timing,2)
-            Domoticz.Log("ZiGate reacting time Max: %s Average: %s" %(self._maxTiming8000,self._averageTiming8000 ))
+            Domoticz.Log("ZiGate reacting time Max: %s with an of average: %s" %(self._maxTiming8000, self._averageTiming8000 ))
         
 
     def addPointforTrendStats( self, TimeStamp ):
