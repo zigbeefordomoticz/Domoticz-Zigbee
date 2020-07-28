@@ -41,9 +41,9 @@ class TransportStatistics:
 
     def add_timing8000( self, timing):
 
-        self._averageTiming8000 = ( self._averageTiming8000 + timing ) / 2
+        self._averageTiming8000 = round( ((self._averageTiming8000 + timing ) / 2), 2)
         if timing > self._maxTiming8000:
-            self._maxTiming8000 = timing
+            self._maxTiming8000 = round(timing,2)
             Domoticz.Log("ZiGate reacting time Max: %s Average: %s" %(self._maxTiming8000,self._averageTiming8000 ))
         
 
