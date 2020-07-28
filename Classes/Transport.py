@@ -388,6 +388,23 @@ def initMatrix(self):
 
 # Queues Managements
 
+def _reset_mgt_queue(self):
+    _reset_cmd_to_wait_for8000_queue(self)
+    _reset_cmd_to_wait_for_ack_nack_queue(self)
+    _reset_cmd_to_wait_for_cmdresponse_queue(self)
+
+def _reset_cmd_to_wait_for8000_queue(self):
+    del self._waitFor8000Queue
+    self._waitFor8000Queue = []
+
+def _reset_cmd_to_wait_for_ack_nack_queue(self):
+    del self._waitForAckNack
+    self._waitForAckNack = []
+
+def _reset_cmd_to_wait_for_cmdresponse_queue(self):
+    del self._waitForCmdResponseQueue
+    self._waitForCmdResponseQueue = []
+
 
 def _add_cmd_to_send_queue(self, InternalSqn):
     # add a command to the waiting list
@@ -718,6 +735,17 @@ def _send_data(self, InternalSqn):
 
 def check_timed_out(self):
 
+    def timeout_8000_v2(self):
+
+        # Principle/ Only one command waiting for 0x8000. We cannot have more 
+        # If we timeout on 0x8000 , we cannot really assumed were we stand in terms of synchronisation with ZiGate
+        # Get all queues reset
+        _reset_mgt_queue(self)
+        for x in self.ListOfCommands:
+            if self.ListOfCommands[x]['Status'] not in ( '', 'QUEUED'):
+                Domoticz.Error("Remove %x from Queue %s %s" %(x, self.ListOfCommands[x]['Cmd'], self.ListOfCommands[x]['Datas']))
+                del self.ListOfCommands[x]
+
     def timeout_8000(self):
         # Timed Out 0x8000
         self.statistics._TOstatus += 1
@@ -725,14 +753,14 @@ def check_timed_out(self):
         if entry is None:
             return
         InternalSqn, TimeStamp = entry
+        if InternalSqn in self.ListOfCommands:
+            self.ListOfCommands[InternalSqn]['Status'] = 'TO_8000'
         logExpectedCommand(self, '0x8000', now, TimeStamp, InternalSqn)
         if InternalSqn in self.ListOfCommands:
             if self.zmode == 'zigateack' and self.ListOfCommands[InternalSqn]['ExpectedAck']:
                 _next_cmd_to_wait_for_ack_nack_queue(self)
-
             if self.zmode == 'zigateack' and self.ListOfCommands[InternalSqn]['WaitForResponse']:
                 _next_cmd_from_wait_cmdresponse_queue(self)
-
             elif self.zmode == 'zigate31c' and self.ListOfCommands[InternalSqn]['ResponseExpected']:
                 _next_cmd_from_wait_cmdresponse_queue(self)
 
@@ -744,6 +772,8 @@ def check_timed_out(self):
         if entry is None:
             return
         InternalSqn, TimeStamp = entry
+        if InternalSqn in self.ListOfCommands:
+            self.ListOfCommands[InternalSqn]['Status'] = 'TO_ACKNACK'
         logExpectedCommand(self, 'Ack', now, TimeStamp, InternalSqn)
         if self.zmode == 'zigateack' and self.ListOfCommands[InternalSqn]['WaitForResponse']:
             _next_cmd_from_wait_cmdresponse_queue(self)
@@ -756,6 +786,8 @@ def check_timed_out(self):
         InternalSqn, TimeStamp = _next_cmd_from_wait_cmdresponse_queue(self)
         if InternalSqn not in self.ListOfCommands:
             return
+        if InternalSqn in self.ListOfCommands:
+           self.ListOfCommands[InternalSqn]['Status'] = 'TO_CMDRSP'
         logExpectedCommand(self, 'CmdResponse', now, TimeStamp, InternalSqn)
         cleanup_list_of_commands(self, InternalSqn)
 
@@ -767,6 +799,8 @@ def check_timed_out(self):
             'Debug', "-- checkTimedOutForTxQueues ListOfCommands size: %s" % len(self.ListOfCommands))
         for x in list(self.ListOfCommands.keys()):
             if self.ListOfCommands[x]['SentTimeStamp'] and (now - self.ListOfCommands[x]['SentTimeStamp']) > TIME_OUT_LISTCMD:
+                if self.ListOfCommands[x]['Status'] in ( 'TO_CMDRSP', 'TO_ACKNACK', 'TO_8000'):
+                    Domoticz.Log("-- checkTimedOutForTxQueues has already TimedOut Isqn: %s Cmd: %s Data: %s" %(x, self.ListOfCommands[x]['Cmd'], self.ListOfCommands[x]['Datas']))
                 if self.ListOfCommands[x]['MessageResponse']:
                     self.loggingSend('Debug', " --  --  --  > - Time Out : [%s] %s %s Flags: %s/%s %04x Status: %s Time: %s"
                                      % (x, self.ListOfCommands[x]['Cmd'], self.ListOfCommands[x]['Datas'], self.ListOfCommands[x]['ResponseExpected'],
@@ -824,7 +858,10 @@ def check_timed_out(self):
         # We are waiting for 0x8000
         InternalSqn, TimeStamp = self._waitFor8000Queue[0]
         if (now - TimeStamp) >= TIME_OUT_8000:
-            timeout_8000(self)
+            if self.pluginconf.pluginConf['TimeOutv2']:
+                timeout_8000_v2(self)
+            else:
+                timeout_8000(self)
 
     # Check Ack/Nack Queue
     if len(self._waitForAckNack) > 0 and self.zmode == 'zigateack':

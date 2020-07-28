@@ -422,12 +422,12 @@ ZIGATE_COMMANDS = {
     0x00FA: {'Sequence': (0x8000, ),        'Ack': True, 'SQN': False, 'Layer': 'ZCL', 'Command': 'Windows covering (v3.0f)', 'NwkId 2nd Bytes': True},
 
     # Action Attribute
-    0x0100: {'Sequence': (0x8000, 0x8100), 'Ack': True, 'SQN': True, 'Layer': 'ZCL', 'Command': 'Read Attribute Request', 'NwkId 2nd Bytes': True},
-    0x0110: {'Sequence': (0x8000, 0x8110), 'Ack': True, 'SQN': True, 'Layer': 'ZCL', 'Command': 'Write Attribute Request', 'NwkId 2nd Bytes': True},
+    0x0100: {'Sequence': (0x8000, 0x8100), 'Ack': True, 'SQN': True,  'Layer': 'ZCL', 'Command': 'Read Attribute Request', 'NwkId 2nd Bytes': True},
+    0x0110: {'Sequence': (0x8000, 0x8110), 'Ack': True, 'SQN': True,  'Layer': 'ZCL', 'Command': 'Write Attribute Request', 'NwkId 2nd Bytes': True},
     0x0111: {'Sequence': (0x8000, ),       'Ack': True, 'SQN': False, 'Layer': 'ZCL', 'Command': 'IAS WD mode', 'NwkId 2nd Bytes': True},
     0x0112: {'Sequence': (0x8000, ),       'Ack': True, 'SQN': False, 'Layer': 'ZCL', 'Command': 'IAS WD Squawk', 'NwkId 2nd Bytes': True},
     0x0113: {'Sequence': (0x8000, ),       'Ack': True, 'SQN': False, 'Layer': 'ZCL', 'Command': 'E_SL_MSG_WRITE_ATTRIBUTE_REQUEST_NO_RESPONSE', 'NwkId 2nd Bytes': True},
-    0x0120: {'Sequence': (0x8000, 0x8120), 'Ack': True, 'SQN': True, 'Layer': 'ZCL', 'Command': 'Configure Reporting Request', 'NwkId 2nd Bytes': True},
+    0x0120: {'Sequence': (0x8000, 0x8120), 'Ack': True, 'SQN': True,  'Layer': 'ZCL', 'Command': 'Configure Reporting Request', 'NwkId 2nd Bytes': True},
     0x0122: {'Sequence': (0x8000, 0x8122), 'Ack': True, 'SQN': False, 'Layer': 'ZCL', 'Command': 'E_SL_MSG_READ_REPORT_CONFIG_REQUEST', 'NwkId 2nd Bytes': True},
     0x0140: {'Sequence': (0x8000, 0x8140), 'Ack': True, 'SQN': False, 'Layer': 'ZCL', 'Command': 'Attribute Discovery request', 'NwkId 2nd Bytes': True},
     0x0141: {'Sequence': (0x8000, 0x8141), 'Ack': True, 'SQN': False, 'Layer': 'ZCL', 'Command': 'E_SL_MSG_ATTRIBUTE_EXT_DISCOVERY_REQUEST', 'NwkId 2nd Bytes': True},
