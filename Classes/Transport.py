@@ -50,6 +50,7 @@ class ZigateTransport(object):
         self.PDMCommandOnly = False
 
         # Queue Management attributes
+        self.Timing8000 = 0
         self.checkTimedOutFlag = None
         # List of ( Command, Data ) to be or in process
         self.ListOfCommands = {}
@@ -414,7 +415,8 @@ def _next_cmd_from_send_queue(self):
 
 def _add_cmd_to_wait_for8000_queue(self, InternalSqn):
     # add a command to the waiting list for 0x8000
-    timestamp = int(time())
+    #timestamp = int(time())
+    timestamp = time()
     #self.loggingSend(  'Log', " --  > _add_cmd_to_wait_for8000_queue - adding to Queue %s %s" %(InternalSqn, timestamp))
     self._waitFor8000Queue.append((InternalSqn, timestamp))
 
@@ -989,6 +991,7 @@ def process_frame(self, frame):
 
         i_sqn = process_msg_type8000(
             self, Status, PacketType, sqn_app, sqn_aps, type_sqn)
+        
         self.loggingSend('Debug', "0x8000 - [%s] sqn_app: 0x%s/%3s, SQN_APS:non 0x%s type_sqn: %s" % (
             i_sqn, sqn_app, int(sqn_app, 16), sqn_aps, type_sqn))
         self.F_out(frame, None)
@@ -1166,6 +1169,14 @@ def process_msg_type8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn):
                      (InternalSqn, sqn_app, sqn_aps))
     if InternalSqn not in self.ListOfCommands:
         return None
+
+    # Statistics on ZiGate reacting time to process the command
+    if self.pluginconf.pluginConf['ZiGateMaxReactTime']:
+        now = time()
+        if (now - TimeStamp) > self.Timing8000:
+            self.Timing8000 = (now - TimeStamp)
+            Domoticz.Log("ZiGate max reacting time goes to :%s seconds" %(self.Timing8000))
+
     self.loggingSend('Debug', " --  --  0x8000 > Expect: %s Receive: %s" %
                      (self.ListOfCommands[InternalSqn]['Cmd'], PacketType))
     if self.ListOfCommands[InternalSqn]['Cmd']:
