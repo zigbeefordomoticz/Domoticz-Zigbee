@@ -1141,7 +1141,7 @@ def process_msg_type8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn):
         self.statistics.add_timing8000( timing )
         if timing > 1:
             Domoticz.Log("Reacting time seems long %s sec for %s %s" 
-                %(round( (now - TimeStamp), 2 ), self.ListOfCommands[InternalSqn]['Cmd'], self.ListOfCommands[InternalSqn]['Datas']))
+                %(round( timing, 2 ), self.ListOfCommands[InternalSqn]['Cmd'], self.ListOfCommands[InternalSqn]['Datas']))
 
 
     self.loggingSend('Debug', " --  --  0x8000 > Expect: %s Receive: %s" %
