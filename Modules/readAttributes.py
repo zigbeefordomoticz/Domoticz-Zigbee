@@ -145,7 +145,7 @@ def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
             '000f': [ 0x0000, 0x0051, 0x0055, 0x006f, 0xfffd], 
             '0b04': [ 0x0505, 0x0508, 0x050b], # https://docs.smartthings.com/en/latest/ref-docs/zigbee-ref.html
             '0b05': [ 0x0000 ],
-            'fc01': [ 0x0000, 0x0001],
+            'fc01': [ 0x0000, 0x0001, 0x0002 ],# Legrand Cluster
             'fc21': [ 0x0001]
             }
 
@@ -750,14 +750,15 @@ def ReadAttributeRequest_000f(self, key):
 def ReadAttributeRequest_fc01(self, key):
     # Cluster Legrand
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_fc01 - Key: %s " %key, nwkid=key)
-    ListOfEp = getListOfEpForCluster( self, key, 'fc01' )
-    for EPout in ListOfEp:
-        listAttributes = [ 0x0000]
-        loggingReadAttributes( self, 'Debug', "Request Legrand info via Read Attribute request: " + key + " EPout = " + EPout + " Attributes: " + str(listAttributes), nwkid=key)
-        ReadAttributeReq( self, key, ZIGATE_EP, EPout, "fc01", listAttributes, ackIsDisabled = True)
+    EPout = '01'
 
-        listAttributes = [ 0x0001 ]
-        loggingReadAttributes( self, 'Debug', "Request Legrand info via Read Attribute request: " + key + " EPout = " + EPout + " Attributes: " + str(listAttributes), nwkid=key)
+    listAttributes = []
+    for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  'fc01'):
+        if iterAttr not in listAttributes:
+            listAttributes.append( iterAttr )
+    
+    if listAttributes:
+        loggingReadAttributes( self, 'Debug', "Request Legrand attributes info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
         ReadAttributeReq( self, key, ZIGATE_EP, EPout, "fc01", listAttributes, ackIsDisabled = True)
 
 def ReadAttributeRequest_fc21(self, key):
@@ -800,6 +801,7 @@ READ_ATTRIBUTES_REQUEST = {
     '0b05' : ( ReadAttributeRequest_0702, 'polling0b05' ),
     '0b04' : ( ReadAttributeRequest_0b04, 'polling0b04' ),
     #'000f' : ( ReadAttributeRequest_000f, 'polling000f' ),
+    'fc01' : ( ReadAttributeRequest_fc01, 'pollingfc01' ),
     'fc21' : ( ReadAttributeRequest_000f, 'pollingfc21' ),
-    #'fc01' : ( ReadAttributeRequest_fc01, 'pollingfc01' ),
+
     }
