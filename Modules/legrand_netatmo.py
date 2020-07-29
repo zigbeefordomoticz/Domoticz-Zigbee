@@ -430,7 +430,6 @@ def legrandReenforcement( self, NWKID):
             self.ListOfDevices[NWKID]['Legrand'][ cmd ] = 0xff
 
         if self.pluginconf.pluginConf[ cmd ] != self.ListOfDevices[NWKID]['Legrand'][ cmd ]:
-            Domoticz.Log("Performing change %s for device %s model %s from %s to %s" %(cmd, NWKID, model, self.ListOfDevices[NWKID]['Legrand'][ cmd ],self.pluginconf.pluginConf[ cmd ] ))
             if self.pluginconf.pluginConf[ cmd ]:
                 legrand_fc01( self, NWKID, cmd , 'On')
             else:
