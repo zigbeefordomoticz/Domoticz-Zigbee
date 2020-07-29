@@ -21,10 +21,17 @@ from time import time
 from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_EP, HEARTBEAT, LEGRAND_REMOTES
 from Modules.tools import retreive_cmd_payload_from_8002
 from Modules.logging import loggingLegrand
-from Modules.readAttributes import ReadAttributeRequest_0001
+from Modules.readAttributes import ReadAttributeRequest_0001, ReadAttributeRequest_fc01
 
 from Modules.basicOutputs import raw_APS_request, send_zigatecmd_zcl_noack, write_attribute, write_attributeNoResponse
 
+LEGRAND_CLUSTER_FC01 = {
+        'Dimmer switch wo neutral':  { 'EnableLedInDark': '0001'  , 'EnableDimmer': '0000'   , 'EnableLedIfOn': '0002' },
+        'Connected outlet': { 'EnableLedIfOn': '0002' },
+        'Mobile outlet': { 'EnableLedIfOn': '0002' },
+        'Shutter switch with neutral': { 'EnableLedShutter': '0001' },
+        'Micromodule switch': { 'None': 'None' },
+        'Cable outlet': { 'LegrandFilPilote': '0000' } }
 
 def pollingLegrand( self, key ):
 
@@ -33,6 +40,7 @@ def pollingLegrand( self, key ):
     The frequency is defined in the pollingSchneider parameter (in number of seconds)
     """
     return False
+
 
 def callbackDeviceAwake_Legrand(self, NwkId, EndPoint, cluster):
 
@@ -46,19 +54,6 @@ def callbackDeviceAwake_Legrand(self, NwkId, EndPoint, cluster):
 
     return
 
-def legrand_fake_read_attribute_response( self, nwkid ):
-
-    cluster_frame = '11'
-    sqn = '00'
-    if (
-        'SQN' in self.ListOfDevices[nwkid]
-        and self.ListOfDevices[nwkid]['SQN'] != {}
-        and self.ListOfDevices[nwkid]['SQN'] != ''
-    ):
-        sqn = '%02x' %(int(self.ListOfDevices[nwkid]['SQN'],16) + 1)
-    payload = cluster_frame + sqn + '0100F0002311000000'
-    raw_APS_request( self, nwkid, '01', '0000', '0104', payload)
-    loggingLegrand( self, 'Debug', "legrand_fake_read_attribute_response nwkid: %s" %nwkid, nwkid)
 
 def legrandReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
     
@@ -101,6 +96,7 @@ def legrandReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP
         #_ieee = '%08x' %struct.unpack('q',struct.pack('>Q',int(ieee,16)))[0]
         _ieee = '4fa5820000740400' # IEEE du Dimmer
         sendFC01Command( self, Sqn, srcNWKID, srcEp, ClusterID, '10', status + _code + _ieee )
+
 
 def sendFC01Command( self, sqn, nwkid, ep, ClusterID, cmd, data):
 
@@ -162,51 +158,39 @@ def rejoin_legrand_reset( self ):
 
 def legrand_fc01( self, nwkid, command, OnOff):
 
-            # EnableLedInDark -> enable to detect the device in dark 
-            # EnableDimmer -> enable/disable dimmer
-            # EnableLedIfOn -> enable Led with device On
+    # EnableLedInDark -> enable to detect the device in dark 
+    # EnableDimmer -> enable/disable dimmer
+    # EnableLedIfOn -> enable Led with device On
 
     loggingLegrand( self, 'Debug', "legrand_fc01 Nwkid: %s Cmd: %s OnOff: %s " %(nwkid, command, OnOff), nwkid)
 
     LEGRAND_REFRESH_TIME = ( 3 * 3600) + 15
-    LEGRAND_CLUSTER_FC01 = {
-            'Dimmer switch wo neutral':  { 'EnableLedInDark': '0001'  , 'EnableDimmer': '0000'   , 'EnableLedIfOn': '0002' },
-            'Connected outlet': { 'EnableLedIfOn': '0002' },
-            'Mobile outlet': { 'EnableLedIfOn': '0002' },
-            'Shutter switch with neutral': { 'EnableLedShutter': '0001' },
-            'Micromodule switch': { 'None': 'None' },
-            'Cable outlet': { 'LegrandFilPilote': '0000' } }
 
     LEGRAND_COMMAND_NAME = ( 'LegrandFilPilote', 'EnableLedInDark', 'EnableDimmer', 'EnableLedIfOn', 'EnableLedShutter')
 
     if nwkid not in self.ListOfDevices:
         return
-
     if command not in LEGRAND_COMMAND_NAME:
         Domoticz.Error("Unknown Legrand command %s" %command)
         return
-
     if 'Model' not in self.ListOfDevices[nwkid]:
         return
-
     if self.ListOfDevices[nwkid]['Model'] == {} or self.ListOfDevices[nwkid]['Model'] == '':
         return
-
     if self.ListOfDevices[nwkid]['Model'] not in LEGRAND_CLUSTER_FC01:
         loggingLegrand( self, 'Error', "%s is not an Legrand known model: %s" %( nwkid, self.ListOfDevices[nwkid]['Model']), nwkid)
         return
-
     if 'Legrand' not in self.ListOfDevices[nwkid]:
         self.ListOfDevices[nwkid]['Legrand'] = {}
-
     for cmd in LEGRAND_COMMAND_NAME:
         if cmd not in self.ListOfDevices[nwkid]['Legrand']:
-            self.ListOfDevices[nwkid]['Legrand'][ cmd ] = 0
+            self.ListOfDevices[nwkid]['Legrand'][ cmd ] = 0xff
 
     if command == 'EnableLedInDark' and command in LEGRAND_CLUSTER_FC01[ self.ListOfDevices[nwkid]['Model'] ]:
-        if time() < self.ListOfDevices[nwkid]['Legrand']['EnableLedInDark'] + LEGRAND_REFRESH_TIME:
+        if self.FirmwareVersion and self.FirmwareVersion.lower() <= '031c' and time() < self.ListOfDevices[nwkid]['Legrand']['EnableLedInDark'] + LEGRAND_REFRESH_TIME:
             return
-        self.ListOfDevices[nwkid]['Legrand']['EnableLedInDark'] = int(time())
+        if self.FirmwareVersion and self.FirmwareVersion.lower() <= '031c':
+            self.ListOfDevices[nwkid]['Legrand']['EnableLedInDark'] = int(time())
         data_type = "10" # Bool
         if OnOff == 'On': 
             Hdata = '01' # Enable Led in Dark
@@ -216,9 +200,10 @@ def legrand_fc01( self, nwkid, command, OnOff):
         loggingLegrand( self, 'Debug', "--------> %s  Nwkid: %s  data_type: %s Hdata: %s " %( command, nwkid, data_type, Hdata), nwkid)
         
     elif command == 'EnableLedShutter' and command in LEGRAND_CLUSTER_FC01[ self.ListOfDevices[nwkid]['Model'] ]:
-        if time() < self.ListOfDevices[nwkid]['Legrand']['EnableLedShutter'] + LEGRAND_REFRESH_TIME:
+        if self.FirmwareVersion and self.FirmwareVersion.lower() <= '031c' and time() < self.ListOfDevices[nwkid]['Legrand']['EnableLedShutter'] + LEGRAND_REFRESH_TIME:
             return
-        self.ListOfDevices[nwkid]['Legrand']['EnableLedShutter'] = int(time())
+        if self.FirmwareVersion and self.FirmwareVersion.lower() <= '031c':
+            self.ListOfDevices[nwkid]['Legrand']['EnableLedShutter'] = int(time())
         data_type = "10" # Bool
         if OnOff == 'On': 
             Hdata = '01' # Enable Led in Dark
@@ -228,9 +213,10 @@ def legrand_fc01( self, nwkid, command, OnOff):
         loggingLegrand( self, 'Debug', "--------> %s  Nwkid: %s  data_type: %s Hdata: %s " %( command, nwkid, data_type, Hdata), nwkid)
         
     elif command == 'EnableDimmer' and command in LEGRAND_CLUSTER_FC01[ self.ListOfDevices[nwkid]['Model'] ]:
-        if time() < self.ListOfDevices[nwkid]['Legrand']['EnableDimmer'] + LEGRAND_REFRESH_TIME:
+        if self.FirmwareVersion and self.FirmwareVersion.lower() <= '031c' and time() < self.ListOfDevices[nwkid]['Legrand']['EnableDimmer'] + LEGRAND_REFRESH_TIME:
             return
-        self.ListOfDevices[nwkid]['Legrand']['EnableDimmer'] = int(time())
+        if self.FirmwareVersion and self.FirmwareVersion.lower() <= '031c':
+            self.ListOfDevices[nwkid]['Legrand']['EnableDimmer'] = int(time())
         data_type = "09" #16-bit Data
         if OnOff == 'On': 
             Hdata = '0101' # Enable Dimmer
@@ -240,9 +226,10 @@ def legrand_fc01( self, nwkid, command, OnOff):
         loggingLegrand( self, 'Debug', "--------> %s  Nwkid: %s  data_type: %s Hdata: %s " %( command, nwkid, data_type, Hdata), nwkid)
 
     elif command == 'LegrandFilPilote' and command in LEGRAND_CLUSTER_FC01[ self.ListOfDevices[nwkid]['Model'] ]:
-        if time() < self.ListOfDevices[nwkid]['Legrand']['LegrandFilPilote'] + LEGRAND_REFRESH_TIME:
+        if self.FirmwareVersion and self.FirmwareVersion.lower() <= '031c' and time() < self.ListOfDevices[nwkid]['Legrand']['LegrandFilPilote'] + LEGRAND_REFRESH_TIME:
             return
-        self.ListOfDevices[nwkid]['Legrand']['LegrandFilPilote'] = int(time())
+        if self.FirmwareVersion and self.FirmwareVersion.lower() <= '031c':
+            self.ListOfDevices[nwkid]['Legrand']['LegrandFilPilote'] = int(time())
         data_type = "09" #  16-bit Data
         if OnOff == 'On': 
             Hdata = '0001' # Enable 
@@ -252,9 +239,10 @@ def legrand_fc01( self, nwkid, command, OnOff):
         loggingLegrand( self, 'Debug', "--------> %s  Nwkid: %s  data_type: %s Hdata: %s " %( command, nwkid, data_type, Hdata), nwkid)
 
     elif command == 'EnableLedIfOn' and command in LEGRAND_CLUSTER_FC01[ self.ListOfDevices[nwkid]['Model'] ]:
-        if time() < self.ListOfDevices[nwkid]['Legrand']['EnableLedIfOn'] + LEGRAND_REFRESH_TIME:
+        if self.FirmwareVersion and self.FirmwareVersion.lower() <= '031c' and time() < self.ListOfDevices[nwkid]['Legrand']['EnableLedIfOn'] + LEGRAND_REFRESH_TIME:
             return
-        self.ListOfDevices[nwkid]['Legrand']['EnableLedIfOn'] = int(time())
+        if self.FirmwareVersion and self.FirmwareVersion.lower() <= '031c':
+            self.ListOfDevices[nwkid]['Legrand']['EnableLedIfOn'] = int(time())
         data_type = "10" # Bool
         if OnOff == 'On': 
             Hdata = '01' # Enable Led when On
@@ -407,20 +395,50 @@ def legrand_ledInDark( self, OnOff):
 
 def legrandReenforcement( self, NWKID):
 
-    rescheduleAction = False
-    if (
-        'Manufacturer Name' in self.ListOfDevices[NWKID]
-        and self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand'
-    ):
-        for cmd in ( 'LegrandFilPilote', 'EnableLedInDark', 'EnableDimmer', 'EnableLedIfOn', 'EnableLedShutter'):
-            if not self.busy and self.ZigateComm.loadTransmit() <= MAX_LOAD_ZIGATE:
-                if self.pluginconf.pluginConf[ cmd ]:
-                    legrand_fc01( self, NWKID, cmd , 'On')
-                else:
-                    legrand_fc01( self, NWKID, cmd, 'Off')
+    if 'Health' in self.ListOfDevices[NWKID]['Health'] and  self.ListOfDevices[NWKID]['Health'] == 'Not Reachable':
+        return False
+        
+    if 'Manufacturer Name' not in self.ListOfDevices[NWKID]:
+        return False
+
+    if self.ListOfDevices[NWKID]['Manufacturer Name'] != 'Legrand':
+        return False
+
+    if 'Legrand' not in self.ListOfDevices[NWKID]:
+        self.ListOfDevices[NWKID]['Legrand'] = {}
+        self.ListOfDevices[NWKID]['Legrand']['EnableDimmer'] = 0xff
+        self.ListOfDevices[NWKID]['Legrand']['EnableLedIfOn'] = 0xff
+        self.ListOfDevices[NWKID]['Legrand']['EnableLedShutter'] = 0xff
+        self.ListOfDevices[NWKID]['Legrand']['EnableLedInDark'] = 0xff
+        self.ListOfDevices[NWKID]['Legrand']['LegrandFilPilote'] = 0xff
+   
+    if 'Model' not in self.ListOfDevices[NWKID]:
+        return False
+
+    model = self.ListOfDevices[NWKID]['Model']
+    if model not in LEGRAND_CLUSTER_FC01:
+        return False
+
+    for cmd in  LEGRAND_CLUSTER_FC01[ model ]:
+        if cmd == 'None':
+            continue
+
+        if self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE:
+            return True
+
+        if cmd not in self.ListOfDevices[NWKID]['Legrand']:
+            self.ListOfDevices[NWKID]['Legrand'][ cmd ] = 0xff
+
+        if self.pluginconf.pluginConf[ cmd ] != self.ListOfDevices[NWKID]['Legrand'][ cmd ]:
+            Domoticz.Log("Performing change %s for device %s model %s from %s to %s" %(cmd, NWKID, model, self.ListOfDevices[NWKID]['Legrand'][ cmd ],self.pluginconf.pluginConf[ cmd ] ))
+            if self.pluginconf.pluginConf[ cmd ]:
+                legrand_fc01( self, NWKID, cmd , 'On')
             else:
-                rescheduleAction = True
-    return rescheduleAction
+                legrand_fc01( self, NWKID, cmd, 'Off')
+
+            ReadAttributeRequest_fc01(self, NWKID)
+
+    return False
 
 def legrand_refresh_battery_remote( self, nwkid):
 
