@@ -106,9 +106,14 @@ class WebServer(object):
         self.homedirectory = HomeDirectory
         self.hardwareID = hardwareID
         mimetypes.init()
+
+        self.FirmwareVersion = None
         # Start the WebServer
         self.startWebServer( )                    
 
+    def update_firmware( self, firmwareversion):
+        self.FirmwareVersion = firmwareversion
+        
     def rest_plugin_health( self, verb, data, parameters):
 
         _response = prepResponseMessage( self ,setupHeadersResponse())
