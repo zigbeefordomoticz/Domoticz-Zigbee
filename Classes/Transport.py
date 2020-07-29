@@ -12,7 +12,7 @@ from time import time
 from datetime import datetime
 
 from Modules.tools import is_hex, retreive_cmd_payload_from_8002, is_manufspecific_8002_payload
-from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_RESPONSES, ZIGATE_COMMANDS, RETRANSMIT_COMMAND, ADDRESS_MODE, SIZE_DATA_TYPE
+from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_RESPONSES, ZIGATE_COMMANDS, ADDRESS_MODE, SIZE_DATA_TYPE
 from Modules.sqnMgmt import sqn_init_stack, sqn_generate_new_internal_sqn, sqn_add_external_sqn, sqn_get_internal_sqn_from_aps_sqn, sqn_get_internal_sqn_from_app_sqn, TYPE_APP_ZCL, TYPE_APP_ZDP
 
 
@@ -1139,7 +1139,7 @@ def process_msg_type8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn):
     if self.pluginconf.pluginConf['ZiGateReactTime']:
         timing = time() - TimeStamp
         self.statistics.add_timing8000( timing )
-        if timing > 1:
+        if self.statistics._averageTiming8000 != 0 and timing >= (3 * self.statistics._averageTiming8000):
             Domoticz.Log("Reacting time seems long %s sec for %s %s" 
                 %(round( timing, 2 ), self.ListOfCommands[InternalSqn]['Cmd'], self.ListOfCommands[InternalSqn]['Datas']))
 
@@ -1541,10 +1541,12 @@ def buildframe_write_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clus
 
 def buildframe_read_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data ):
 
-    #Domoticz.Log("buildframe_read_attribute_response ===========> Data: %s" %Data)
+    Domoticz.Log("buildframe_read_attribute_response ===========> Data: %s" %Data)
+    nbAttribute = 0
     idx = 0
     buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId
     while idx < len(Data):
+        nbAttribute += 1
         Attribute = Data[idx+2:idx+4] + Data[idx+0:idx+2]
         idx += 4
         Status = Data[idx:idx+2]
@@ -1557,15 +1559,14 @@ def buildframe_read_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clust
             size = int(Data[idx:idx+2],16)
             idx += 2
         else: 
-            Domoticz.Error("buildframe_read_attribute_response - Unknown DataType size: %s " %DType)
+            Domoticz.Error("buildframe_read_attribute_response - Unknown DataType size: >%s< vs. %s " %(DType, str(SIZE_DATA_TYPE)))
             return frame
         value = Data[idx:idx + size]
         idx += size
         lenData = '%04x' %size
         buildPayload += Attribute + Status + DType + lenData + value
-        
 
-    #Domoticz.Log("buildframe_read_attribute_response - NwkId: %s Ep: %s ClusterId: %s Data: %s" %(SrcNwkId, SrcEndPoint, ClusterId, buildPayload))
+    Domoticz.Log("buildframe_read_attribute_response - NwkId: %s Ep: %s ClusterId: %s nbAttribute: %s Data: %s" %(SrcNwkId, SrcEndPoint, ClusterId, nbAttribute, buildPayload))
     
     newFrame = '01' # 0:2
     newFrame += '8100' # 2:6   MsgType
