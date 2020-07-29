@@ -1606,6 +1606,43 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
 #Reponses Attributs
 def Decode8100(self, Devices, MsgData, MsgLQI): # Read Attribute Response
 
+    Domoticz.Log("8100 - MsgData: %s" %MsgData) 
+    MsgSQN=MsgData[0:2]
+    i_sqn = sqn_get_internal_sqn_from_app_sqn (self.ZigateComm, MsgSQN, TYPE_APP_ZCL)
+
+    MsgSrcAddr=MsgData[2:6]
+    timeStamped( self, MsgSrcAddr , 0x8100)
+    loggingMessages( self, '8100', MsgSrcAddr, None, MsgLQI, MsgSQN)
+    updLQI( self, MsgSrcAddr, MsgLQI )
+
+    MsgSrcEp=MsgData[6:8]
+    MsgClusterId=MsgData[8:12]
+    idx = 12
+    while idx < len(MsgData):
+        MsgAttrID = MsgAttStatus = MsgAttType = MsgAttSize = MsgClusterData = ''
+        MsgAttrID = MsgData[idx:idx+4]
+        idx += 4
+        MsgAttStatus = MsgData[idx:idx+2]
+        idx += 2
+        MsgAttType = MsgData[idx:idx+2]
+        idx += 2
+        MsgAttSize = MsgData[idx:idx+4]
+        idx += 4
+        size = int(MsgAttSize,16)
+        MsgClusterData = MsgData[idx: idx + size]
+        idx += size
+
+        loggingInput( self, 'Log', "Decode8100 - idx: %s Read Attribute Response: [%s:%s] ClusterID: %s MsgSQN: %s, i_sqn: %s, AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<" \
+            %(idx, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgSQN, i_sqn, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData ), MsgSrcAddr)
+
+        NewMsgData = MsgSQN + MsgSrcAddr + MsgSrcEp + MsgClusterId + MsgAttrID + MsgAttStatus + MsgAttType + MsgAttSize + MsgClusterData
+        read_report_attributes( self,  Devices, '8100', MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, NewMsgData)
+
+    callbackDeviceAwake( self, MsgSrcAddr, MsgSrcEp, MsgClusterId)
+
+
+
+def Decode8100_v0(self, Devices, MsgData, MsgLQI): # Read Attribute Response
     MsgSQN=MsgData[0:2]
     MsgSrcAddr=MsgData[2:6]
     MsgSrcEp=MsgData[6:8]
@@ -1617,7 +1654,6 @@ def Decode8100(self, Devices, MsgData, MsgLQI): # Read Attribute Response
     MsgClusterData=MsgData[24:len(MsgData)]
 
     i_sqn = sqn_get_internal_sqn_from_app_sqn (self.ZigateComm, MsgSQN, TYPE_APP_ZCL)
-
     loggingInput( self, 'Debug', "Decode8100 - Read Attribute Response: [%s:%s] ClusterID: %s MsgSQN: %s, i_sqn: %s, AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<" \
             %(MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgSQN, i_sqn, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData ), MsgSrcAddr)
 
