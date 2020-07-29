@@ -2258,10 +2258,46 @@ def Clusterfc00( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
 def Clusterfc01( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
 
-    checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  MsgClusterData )
 
-    loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" \
+    checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  MsgClusterData )
+    loggingCluster( self, 'Log', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" \
             %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
+
+    if 'Model' not in self.ListOfDevices[MsgSrcAddr]:
+        return
+    model = self.ListOfDevices[MsgSrcAddr]['Model']
+
+    if 'Legrand' not in self.ListOfDevices[MsgSrcAddr]:
+        self.ListOfDevices[MsgSrcAddr]['Legrand'] = {}
+
+    if MsgAttrID == '0000':
+        if model == 'Dimmer switch wo neutral':
+            # Enable Dimmer  ( 16bitData)
+            if MsgClusterData == '0101':
+                #'0101' # Enable Dimmer
+                self.ListOfDevices[MsgSrcAddr]['Legrand'][ 'EnableDimmer' ] = 1
+            else:
+                #'0100' # Disable Dimmer
+                self.ListOfDevices[MsgSrcAddr]['Legrand'][ 'EnableDimmer' ] = 0
+
+        elif model == 'Cable outlet':
+            # Legrand Fil Pilote ( 16bitData) 1-Enable, 2-Disable
+            self.ListOfDevices[MsgSrcAddr]['Legrand'][ 'LegrandFilPilote' ] = int(MsgClusterData,16)
+
+    elif MsgAttrID == '0001':
+        if model == 'Dimmer switch wo neutral':
+            # Enable Led in Dark
+            self.ListOfDevices[MsgSrcAddr]['Legrand'][ 'EnableLedInDark' ] = int(MsgClusterData,16)
+
+        elif model == 'Shutter switch with neutral':
+            # Enable Led Shutter
+            self.ListOfDevices[MsgSrcAddr]['Legrand'][ 'EnableLedShutter' ] = int(MsgClusterData,16)
+
+    elif MsgAttrID == '0002':
+        if model in [ 'Dimmer switch wo neutral', 'Connected outlet', 'Mobile outlet', ]:
+            # Enable Led if On
+            self.ListOfDevices[MsgSrcAddr]['Legrand'][ 'EnableLedIfOn' ] = int(MsgClusterData,16)
+
 
 def Clusterfc21( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
 
