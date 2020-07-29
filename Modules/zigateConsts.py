@@ -106,10 +106,7 @@ ZHA_DATA_TYPE = {
 }
 
 SIZE_DATA_TYPE = {
-    """ 
-        For each Data Type, provide the length in number of bytes
-        """
-
+    #    For each Data Type, provide the length in number of bytes
     '09': 2,    # 16bit data
     '10': 1,    # Bool
     '18': 1,    # 8bitmap
@@ -467,12 +464,12 @@ ZIGATE_COMMANDS = {
 }
 
 # Zigate command to be retransmited by Transport if expected Data not received
-RETRANSMIT_COMMAND = (
-    # ON/OFF
-    0x0092, 0x0093, 0x0094,
-    # Level Control
-    0x0080, 0x0081, 0x0082, 0x0083, 0x0084
-)
+# RETRANSMIT_COMMAND = (
+#     # ON/OFF
+#     0x0092, 0x0093, 0x0094,
+#     # Level Control
+#     0x0080, 0x0081, 0x0082, 0x0083, 0x0084
+# )
 
 # ZIGATE REPONSES not related to a Zigate command
 ZIGATE_RESPONSES = {
@@ -557,29 +554,30 @@ THERMOSTAT_MODE_2_LEVEL = {
 # Ordered List - Important for binding
 CLUSTERS_LIST = [
     'fc00',  # Private cluster Philips Hue - Required for Remote
-    '0500',            # IAS Zone
-    '0406',            # Occupancy Sensing
-    '0400',            # Illuminance Measurement
-    '0402',            # Temperature Measurement
-    '0001',            # Power Configuration
-    '0019',            # OTA
-    '0009',            # Alarm
-    '000f',            # Binary Input (Basic)
-    '0100',            # Shade Configuration
-    '0102',            # Windows Covering / SHutter
-    '0403',            # Measurement: Pression atmospherique
-    '0405',            # Relative Humidity Measurement
-    '0702',            # Smart Energy Metering
-    '0006',            # On/Off
-    '0502',            # IAS WD Zone
-    '0008',            # Level Control
-    '0201',            # Thermostat
-    '0204',            # Thermostat UI
-    '0300',            # Colour Control
-    '0000',            # Basic
-    '0b04',             # Electrical Measurement
-    'ff02',             # Used by Xiaomi devices for battery informations.
-    'fc21'              # Cluster Profalux PFX
+    '0500',  # IAS Zone
+    '0406',  # Occupancy Sensing
+    '0400',  # Illuminance Measurement
+    '0402',  # Temperature Measurement
+    '0001',  # Power Configuration
+    '0019',  # OTA
+    '0009',  # Alarm
+    '000f',  # Binary Input (Basic)
+    '0100',  # Shade Configuration
+    '0102',  # Windows Covering / SHutter
+    '0403',  # Measurement: Pression atmospherique
+    '0405',  # Relative Humidity Measurement
+    '0702',  # Smart Energy Metering
+    '0006',  # On/Off
+    '0502',  # IAS WD Zone
+    '0008',  # Level Control
+    '0201',  # Thermostat
+    '0204',  # Thermostat UI
+    '0300',  # Colour Control
+    '0000',  # Basic
+    '0b04',  # Electrical Measurement
+    'ff02',  # Used by Xiaomi devices for battery informations.
+    'fc01',  # Legrand 
+    'fc21'   # Cluster Profalux PFX
 ]
 
 LEGRAND_REMOTES = ('Remote switch', 'Double gangs remote switch',
