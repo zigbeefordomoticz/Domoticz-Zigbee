@@ -21,6 +21,7 @@ from Modules.zigateConsts import ZIGATE_EP, ADDRESS_MODE, ZLL_DEVICES, ZIGATE_CO
 from Modules.tools import mainPoweredDevice, getListOfEpForCluster, set_request_datastruct, set_isqn_datastruct, set_timestamp_datastruct
 from Modules.logging import loggingBasicOutput
 
+
 def send_zigatecmd_zcl_ack( self, address, cmd, datas ):
     # Send a ZCL command with ack
     # address can be a shortId or an IEEE
@@ -37,6 +38,7 @@ def send_zigatecmd_zcl_ack( self, address, cmd, datas ):
             address_mode = '%02x' %ADDRESS_MODE['ieeenoack']
             ackIsDisabled = True
     return send_zigatecmd_raw( self, cmd, address_mode + address + datas, ackIsDisabled = ackIsDisabled )
+
 
 def send_zigatecmd_zcl_noack( self, address, cmd, datas):
     # Send a ZCL command with ack
@@ -75,6 +77,7 @@ def send_zigatecmd_raw( self, cmd, datas, ackIsDisabled = False ):
 
    return i_sqn
 
+
 def sendZigateCmd(self, cmd, datas , ackIsDisabled = False):
     """
     sendZigateCmd will send command to Zigate by using the SendData method
@@ -109,6 +112,7 @@ def sendZigateCmd(self, cmd, datas , ackIsDisabled = False):
 
     return send_zigatecmd_raw( self, cmd, datas, ackIsDisabled )
 
+
 def send_zigate_mode( self, mode ):
     # Mode: cf. https://github.com/fairecasoimeme/ZiGate/pull/307
     #  0x00 - ZiGate in norml operation
@@ -116,7 +120,8 @@ def send_zigate_mode( self, mode ):
     #  0x02 - ZiGate in Hybrid mode ( All inbound messages are received via 0x8002 in addition of the normal one)
 
     send_zigatecmd_raw( self, '0002', '%02x' %mode )
-    
+
+
 def ZigatePermitToJoin( self, permit ):
     """
     ZigatePermitToJoin will switch the Zigate in the Pairing mode or not based on the permit flag
@@ -147,13 +152,15 @@ def ZigatePermitToJoin( self, permit ):
     loggingBasicOutput( self, 'Debug', "---> self.permitTojoin['Starttime']: %s" %self.permitTojoin['Starttime'] )
     loggingBasicOutput( self, 'Debug', "---> self.permitTojoin['Duration'] : %s" %self.permitTojoin['Duration'] )
 
+
 def PermitToJoin( self, Interval, TargetAddress='FFFC'):
     
     send_zigatecmd_raw(self, "0049", TargetAddress + Interval + '00' )
     if TargetAddress == 'FFFC':
         # Request a Status to update the various permitTojoin structure
         send_zigatecmd_raw( self, "0014", "" ) # Request status
- 
+
+
 def start_Zigate(self, Mode='Controller'):
     """
     Purpose is to run the start sequence for the Zigate
@@ -188,6 +195,7 @@ def start_Zigate(self, Mode='Controller'):
         # Request a Status to update the various permitTojoin structure
         send_zigatecmd_raw( self, "0014", "" ) # Request status
 
+
 def setTimeServer( self ):
 
     EPOCTime = datetime(2000,1,1)
@@ -198,6 +206,7 @@ def setTimeServer( self ):
     #Request Time
     send_zigatecmd_raw(self, "0017", "")
 
+
 def zigateBlueLed( self, OnOff):
 
     if OnOff:
@@ -207,6 +216,7 @@ def zigateBlueLed( self, OnOff):
         loggingBasicOutput( self, 'Log', "Switch Blue Led off" )
         send_zigatecmd_raw(self, "0018","00")
 
+
 def getListofAttribute(self, nwkid, EpOut, cluster):
     
     #datas = "{:02n}".format(2) + nwkid + ZIGATE_EP + EpOut + cluster + "0000" + "00" + "00" + "0000" + "FF"
@@ -214,15 +224,18 @@ def getListofAttribute(self, nwkid, EpOut, cluster):
     loggingBasicOutput( self, 'Debug', "attribute_discovery_request - " +str(datas) )
     send_zigatecmd_zcl_noack(self, nwkid, "0140", datas )
 
+
 def initiateTouchLink( self):
 
     loggingBasicOutput( self, "Status", "initiate Touch Link")
     send_zigatecmd_raw(self, "00D0", '' )
 
+
 def factoryresetTouchLink( self):
 
     loggingBasicOutput( self, "Status", "Factory Reset Touch Link Over The Air")
     send_zigatecmd_raw(self, "00D2", '' )
+
 
 def identifySend( self, nwkid, ep, duration=0, withAck = False):
 
@@ -233,6 +246,7 @@ def identifySend( self, nwkid, ep, duration=0, withAck = False):
     if withAck:
         return send_zigatecmd_zcl_ack(self, nwkid, "0070", datas )
     return send_zigatecmd_zcl_noack(self, nwkid, "0070", datas )
+
 
 def maskChannel( channel ):
 
@@ -285,6 +299,7 @@ def maskChannel( channel ):
 
     return mask
 
+
 def setChannel( self, channel):
     '''
     The channel list
@@ -297,17 +312,20 @@ def setChannel( self, channel):
 
     send_zigatecmd_raw(self, "0021", "%08.x" %(mask))
 
+
 def channelChangeInitiate( self, channel ):
 
     loggingBasicOutput( self, "Status", "Change channel from [%s] to [%s] with nwkUpdateReq" %(self.currentChannel, channel))
     Domoticz.Log("Not Implemented")
     #NwkMgtUpdReq( self, channel, 'change')
 
+
 def channelChangeContinue( self ):
 
     loggingBasicOutput( self, "Status", "Restart network")
     send_zigatecmd_raw(self, "0024", "" )   # Start Network
     send_zigatecmd_raw(self, "0009", "")     # In order to get Zigate IEEE and NetworkID
+
 
 def setExtendedPANID(self, extPANID):
     '''
@@ -321,6 +339,7 @@ def setExtendedPANID(self, extPANID):
     loggingBasicOutput( self, 'Debug', "set ExtendedPANID - %016x "\
             %( extPANID) )
     send_zigatecmd_raw(self, "0020", datas )
+
 
 def leaveMgtReJoin( self, saddr, ieee, rejoin=True):
     """
@@ -378,6 +397,7 @@ def leaveMgtReJoin( self, saddr, ieee, rejoin=True):
         loggingBasicOutput( self, "Status", "Request a rejoin of (%s/%s)" %(saddr, ieee))
         return send_zigatecmd_raw(self, "0047", datas )
 
+
 def leaveRequest( self, ShortAddr=None, IEEE= None, RemoveChild=0x00, Rejoin=0x00 ):
     """
     E_SL_MSG_LEAVE_REQUEST / 0x004C / ZPS_eAplZdoLeaveNetwork
@@ -404,6 +424,7 @@ def leaveRequest( self, ShortAddr=None, IEEE= None, RemoveChild=0x00, Rejoin=0x0
     #loggingBasicOutput( self, "Status", "Sending a leaveRequest - %s %s" %( '0047', datas))
     loggingBasicOutput( self, 'Debug', "---------> Sending a leaveRequest - NwkId: %s, IEEE: %s, RemoveChild: %s, Rejoin: %s" %( ShortAddr, IEEE, RemoveChild, Rejoin))
     return send_zigatecmd_raw(self, "0047", datas )
+
 
 def removeZigateDevice( self, IEEE ):
     """
@@ -441,54 +462,42 @@ def removeZigateDevice( self, IEEE ):
     ChildAddr = IEEE
     return send_zigatecmd_raw(self, "0026", ParentAddr + ChildAddr )
 
-def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep=ZIGATE_EP):
 
-    """" Command
-    This function submits a request to send data to a remote node, with no restrictions
-    on the type of transmission, destination address, destination application profile,
-    destination cluster and destination endpoint number - these destination parameters
-    do not need to be known to the stack or defined in the ZPS configuration. In this
-    sense, this is most general of the Data Transfer functions.
+def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep=ZIGATE_EP, ackIsDisabled = True):
+    # This function submits a request to send data to a remote node, with no restrictions
+    # on the type of transmission, destination address, destination application profile,
+    # destination cluster and destination endpoint number - these destination parameters
+    # do not need to be known to the stack or defined in the ZPS configuration. In this
+    # sense, this is most general of the Data Transfer functions.
 
-    The data is sent in an Application Protocol Data Unit (APDU) instance,
+    # The data is sent in an Application Protocol Data Unit (APDU) instance,
+    #   Command 0x0530
+    #   address mode
+    #   target short address 4
+    #   source endpoint 2
+    #   destination endpoint 2
+    #   clusterId 4
+    #   profileId 4
+    #   security mode 2
+    #   radius 2
+    #   data length 2
+    #   data Array of 2
 
-    Command 0x0530
-    address mode
-    target short address 4
-    source endpoint 2
-    destination endpoint 2
-    clusterId 4
-    profileId 4
-    security mode 2
-    radius 2
-    data length 2
-    data Array of 2
+    # eSecurityMode is the security mode for the data transfer, one of:
+    #         0x00 : ZPS_E_APL_AF_UNSECURE (no security enabled)
+    #         0x01 : ZPS_E_APL_AF_SECURE Application-level security using link key and network key)
+    #         0x02 : ZPS_E_APL_AF_SECURE_NWK (Network-level security using network key)
+    #         0x10 : ZPS_E_APL_AF_SECURE | ZPS_E_APL_AF_EXT_NONCE (Application-level security using link key and network key with the extended NONCE included in the frame)
+    #         0x20 : ZPS_E_APL_AF_WILD_PROFILE (May be combined with above flags using OR operator. Sends the message using the wild card profile (0xFFFF) instead of the profile in the associated Simple descriptor)
+    # u8Radius is the maximum number of hops permitted to the destination node (zero value specifies that default maximum is to be used)
 
-    eSecurityMode is the security mode for the data transfer, one of:
-            0x00 : ZPS_E_APL_AF_UNSECURE (no security enabled)
-            0x01 : ZPS_E_APL_AF_SECURE Application-level security using link key and network key)
-            0x02 : ZPS_E_APL_AF_SECURE_NWK (Network-level security using network key)
-            0x10 : ZPS_E_APL_AF_SECURE | ZPS_E_APL_AF_EXT_NONCE (Application-level security using link key and network key with the extended NONCE included in the frame)
-            0x20 : ZPS_E_APL_AF_WILD_PROFILE (May be combined with above flags using OR operator. Sends the message using the wild card profile (0xFFFF) instead of the profile in the associated Simple descriptor)
-    u8Radius is the maximum number of hops permitted to the destination node (zero value specifies that default maximum is to be used)
-
-    """
-    """ APS request command Payload
-
-    target addr ( IEEE )
-    target ep
-    clusterID
-    dest addr mode
-    dest addr
-    dest ep
-
-    """
-
-    #SECURITY = 0x33
     SECURITY = 0x30
     RADIUS = 0x00
 
     addr_mode ='%02X' % ADDRESS_MODE['short']
+    # if ackIsDisabled:
+    #     addr_mode ='%02X' % ADDRESS_MODE['shortnoack']
+        
     security = '%02X' %SECURITY
     radius = '%02X' %RADIUS
 
@@ -499,11 +508,16 @@ def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zig
 
     return send_zigatecmd_raw(self, "0530", addr_mode + targetaddr + zigate_ep + dest_ep + cluster + profileId + security + radius + len_payload + payload)
 
+
 def read_attribute( self, addr ,EpIn , EpOut ,Cluster ,direction , manufacturer_spec , manufacturer , lenAttr, Attr, ackIsDisabled = True):
+    
+    if self.pluginconf.pluginConf['RawReadAttribute']:
+        return rawaps_read_attribute_req( self, addr ,EpIn , EpOut ,Cluster ,direction , manufacturer_spec , manufacturer ,Attr, ackIsDisabled=ackIsDisabled  )
     
     if ackIsDisabled:
         return send_zigatecmd_zcl_noack( self, addr, '0100', EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + '%02x' %lenAttr + Attr )
     return send_zigatecmd_zcl_ack( self, addr, '0100', EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + '%02x' %lenAttr + Attr )
+
 
 def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled = True):
     #  write_attribute unicast , all with ack in < 31d firmware, ack/noack works since 31d
@@ -520,16 +534,21 @@ def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, at
     datas += lenght +attribute + data_type + data
     loggingBasicOutput( self, 'Debug', "write_attribute for %s/%s - >%s<" %(key, EPout, datas) )
 
-    # ATTENTION "0110" with firmware 31c are always call with Ack (overwriten by firmware)
-    if ackIsDisabled:
-        i_sqn = send_zigatecmd_zcl_noack(self, key, "0110", str(datas))
+
+    if self.pluginconf.pluginConf['RawWritAttribute']:
+        i_sqn = rawaps_write_attribute_req( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled)
     else:
-        i_sqn = send_zigatecmd_zcl_ack(self, key, "0110", str(datas))
+        # ATTENTION "0110" with firmware 31c are always call with Ack (overwriten by firmware)
+        if ackIsDisabled:
+            i_sqn = send_zigatecmd_zcl_noack(self, key, "0110", str(datas))
+        else:
+            i_sqn = send_zigatecmd_zcl_ack(self, key, "0110", str(datas))
 
     set_isqn_datastruct(self, 'WriteAttributes', key, EPout, clusterID, attribute, i_sqn )
 
     set_request_datastruct( self, 'WriteAttributes', key, EPout, clusterID, attribute, data_type, EPin, EPout, manuf_id, manuf_spec, data, ackIsDisabled , 'requested')
     set_timestamp_datastruct(self, 'WriteAttributes', key, EPout, clusterID, int(time()) ) 
+
 
 def write_attributeNoResponse( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data):
     """ write_atttribute broadcast . ack impossible on broadcast
@@ -552,11 +571,91 @@ def write_attributeNoResponse( self, key, EPin, EPout, clusterID, manuf_id, manu
     # Firmware <= 31c are in fact with ACK
     return send_zigatecmd_zcl_noack(self, key, "0113", str(datas))
 
+
+def rawaps_read_attribute_req( self, NwkId ,EpIn , EpOut ,Cluster ,direction , manufacturer_spec , manufacturer , Attr, ackIsDisabled = True ):    
+
+    Domoticz.Log("rawaps_read_attribute_req %s/%s Cluster: %s Attribute: %s" %(NwkId, EpOut, Cluster, Attr))
+    cmd = "00" # Read Attribute Command Identifier
+    
+    # Cluster Frame:
+    # 0b xxxx xxxx
+    #           |- Frame Type: Cluster Specific (0x00)
+    #          |-- Manufacturer Specific False
+    #         |--- Command Direction: Client to Server (0)
+    #       | ---- Disable default response: True
+    #    |||- ---- Reserved : 0x000
+    # 
+
+    cluster_frame = 0b00010000
+    if manufacturer_spec == '01':
+        cluster_frame += 0b00000100
+    fcf = '%02x' %cluster_frame
+
+    sqn = '00'
+    if ( 'SQN' in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]['SQN'] != {} and self.ListOfDevices[NwkId]['SQN'] != '' ):
+        sqn = '%02x' % (int(self.ListOfDevices[NwkId]['SQN'],16) + 1)
+
+    payload = fcf 
+    if manufacturer_spec == '01':
+        payload += manufacturer_spec + manufacturer[4:2] + manufacturer[0:2]
+    
+    payload += sqn + cmd 
+    idx = 0
+    while idx < len(Attr):
+        attribute = Attr[idx: idx+4]
+        idx += 4
+        payload += '%04x' %struct.unpack('>H',struct.pack('H',int(attribute,16)))[0] 
+
+    Domoticz.Log("rawaps_read_attribute_req - %s/%s %s payload: %s" %(NwkId, EpOut, Cluster, payload,))
+    raw_APS_request( self, NwkId, EpOut, Cluster, '0104', payload, zigate_ep=EpIn, ackIsDisabled = ackIsDisabled )
+
+
+def rawaps_write_attribute_req( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled = True):
+
+    Domoticz.Log("rawaps_write_attribute_req %s/%s Cluster: %s Attribute: %s DataType: %s Value: %s" %(key, EPout, clusterID, attribute, data_type, data))
+    cmd = "02" # Read Attribute Command Identifier
+    cluster_frame = 0b00010000
+    if manuf_spec == '01':
+        cluster_frame += 0b00000100
+    fcf = '%02x' %cluster_frame
+
+    sqn = '00'
+    if ( 'SQN' in self.ListOfDevices[key] and self.ListOfDevices[key]['SQN'] != {} and self.ListOfDevices[key]['SQN'] != '' ):
+        sqn = '%02x' % (int(self.ListOfDevices[key]['SQN'],16) + 1)
+
+    payload = fcf 
+    if manuf_spec == '01':
+        payload += manuf_spec + '%04x' %struct.unpack('>H',struct.pack('H',int(manuf_id,16)))[0]
+    payload += sqn + cmd
+    payload += '%04x' %struct.unpack('>H',struct.pack('H',int(attribute,16)))[0] 
+    payload += data_type
+
+    if data_type in ( '10', '18', '20', '28', '30'):
+        payload += data
+
+    elif data_type in ('09', '16', '21', '29', '31'):
+        payload += '%04x' %struct.unpack('>H',struct.pack('H',int(data,16)))[0]
+
+    elif data_type in ( '22', '2a'):
+        payload += '%06x' %struct.unpack('>i',struct.pack('I',int(data,16)))[0]
+
+    elif data_type in ( '23', '2b', '39'):
+        payload += '%08x' %struct.unpack('>f',struct.pack('I',int(data,16)))[0]
+
+    else:
+        payload += data
+        
+
+    Domoticz.Log("rawaps_write_attribute_req - %s/%s %s payload: %s" %(key, EPout, clusterID, payload,))
+    raw_APS_request( self, key, EPout, clusterID, '0104', payload, zigate_ep=EPin, ackIsDisabled = ackIsDisabled )
+
+
 ## Scene
 def scene_membership_request( self, nwkid, ep, groupid='0000'):
 
     datas = ZIGATE_EP + ep +  groupid
     return send_zigatecmd_zcl_noack(self, nwkid, "00A6", datas )
+
 
 def identifyEffect( self, nwkid, ep, effect='Blink' ):
 
@@ -606,6 +705,7 @@ def identifyEffect( self, nwkid, ep, effect='Blink' ):
     datas = ZIGATE_EP + ep + "%02x"%(effect_command[effect])  + "%02x" %0
     return send_zigatecmd_zcl_noack(self, nwkid, "00E0", datas )
 
+
 def set_poweron_afteroffon( self, key, OnOffMode = 0xff):
     # OSRAM/LEDVANCE
     # 0xfc0f --> Command 0x01
@@ -623,7 +723,8 @@ def set_poweron_afteroffon( self, key, OnOffMode = 0xff):
         loggingBasicOutput( self, 'Debug', "set_PowerOn_OnOff for %s/%s - OnOff: %s" %(key, EPout, OnOffMode))
         del self.ListOfDevices[key]['Ep']['0b']['0006']['4003']
         return write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled = True)
-        
+
+
 def unknown_device_nwkid( self, nwkid ):
     
     if nwkid in self.UnknownDevices:
