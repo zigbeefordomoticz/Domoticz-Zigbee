@@ -334,7 +334,7 @@ def readXiaomiCluster( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId
     stag04 =       retreive4Tag( '0424', MsgClusterData )
     sRSSI =        retreive4Tag( '0521', MsgClusterData )[0:2]    # RSSI (16BitUint)
     sLQI =         retreive8Tag( '0620', MsgClusterData )         # LQI
-    sLighLevel =   retreive4Tag( '0b21', MsgClusterData)          # 16BitUint
+    #sLighLevel =   retreive4Tag( '0b21', MsgClusterData)          # 16BitUint
 
     sOnOff =       retreive4Tag( "6410", MsgClusterData )[0:2]    # Bool
     sOnOff2 =      retreive4Tag( "6420", MsgClusterData )[0:2]    # OnOff for Aqara Bulb / Current position lift for lumi.curtain
@@ -393,9 +393,9 @@ def readXiaomiCluster( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId
         # Update Power Widget
         MajDomoDevice(self, Devices, MsgSrcAddr, EPforPower, "0702", str(power) ) 
 
-    if sLighLevel != '':
-        loggingLumi( self, 'Log', "ReadCluster - %s/%s Saddr: %s Light Level: %s" 
-            %(MsgClusterId, MsgAttrID, MsgSrcAddr,  int(sLighLevel,16)), MsgSrcAddr)
+    # if sLighLevel != '':
+    #     loggingLumi( self, 'Log', "ReadCluster - %s/%s Saddr: %s Light Level: %s" 
+    #         %(MsgClusterId, MsgAttrID, MsgSrcAddr,  int(sLighLevel,16)), MsgSrcAddr)
 
     # if sRSSI != '':
     #     RSSI = value = struct.unpack('>H',struct.pack('H',int(sRSSI,16)))[0]
