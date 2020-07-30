@@ -1527,6 +1527,7 @@ def extract_nwk_infos_from_8002( frame ):
 
 def buildframe_write_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data):
 
+    # This is based on assumption that we only Write 1 attribute at a time
     buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId + '0000' + Data
     newFrame = '01' # 0:2
     newFrame += '8110' # 2:6   MsgType
@@ -1547,24 +1548,43 @@ def buildframe_read_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clust
     buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId
     while idx < len(Data):
         nbAttribute += 1
-        Attribute = Data[idx+2:idx+4] + Data[idx+0:idx+2]
+        Attribute = '%04x' %struct.unpack('H',struct.pack('>H',int(Data[idx:idx+4],16)))[0]
         idx += 4
         Status = Data[idx:idx+2]
         idx += 2
-        DType = Data[idx:idx+2]
-        idx += 2
-        if DType in SIZE_DATA_TYPE:
-            size = SIZE_DATA_TYPE[ DType ] * 2
-        elif DType == '42': # String
-            size = int(Data[idx:idx+2],16)
+        if Status == '00':
+            DType = Data[idx:idx+2]
             idx += 2
-        else: 
-            Domoticz.Error("buildframe_read_attribute_response - Unknown DataType size: >%s< vs. %s " %(DType, str(SIZE_DATA_TYPE)))
-            return frame
-        value = Data[idx:idx + size]
-        idx += size
-        lenData = '%04x' %size
-        buildPayload += Attribute + Status + DType + lenData + value
+            if DType in SIZE_DATA_TYPE:
+                size = SIZE_DATA_TYPE[ DType ] * 2
+            elif DType == '42': # String
+                size = int(Data[idx:idx+2],16)
+                idx += 2
+            else: 
+                Domoticz.Error("buildframe_read_attribute_response - Unknown DataType size: >%s< vs. %s " %(DType, str(SIZE_DATA_TYPE)))
+                return frame
+
+            data = Data[idx:idx + size]
+            if DType in ( '10', '18', '20', '28', '30'):
+                value = data
+
+            elif DType in ('09', '16', '21', '29', '31'):
+                value = '%04x' %struct.unpack('>H',struct.pack('H',int(data,16)))[0]
+
+            elif DType in ( '22', '2a'):
+                value= '%06x' %struct.unpack('>I',struct.pack('I',int(data,16)))[0]
+
+            elif DType in ( '23', '2b', '39'):
+                value = '%08x' %struct.unpack('>f',struct.pack('I',int(data,16)))[0]
+            else:
+                value = data
+            Domoticz.Log("-------> Data Type: %s from %s to %s" %(DType, data, value))
+
+            idx += size
+            lenData = '%04x' %size
+            buildPayload += Attribute + Status + DType + lenData + value
+        else:
+            buildPayload += Attribute + Status 
 
     Domoticz.Log("buildframe_read_attribute_response - NwkId: %s Ep: %s ClusterId: %s nbAttribute: %s Data: %s" %(SrcNwkId, SrcEndPoint, ClusterId, nbAttribute, buildPayload))
     
