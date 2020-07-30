@@ -9,7 +9,7 @@ import json
 
 from GroupMgtv2.GrpCommands import set_kelvin_color, set_rgb_color, set_hue_saturation
 from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl
-from Modules.zigateConsts import ADDRESS_MODE, MAX_LOAD_ZIGATE, ZIGATE_EP
+from Modules.zigateConsts import ADDRESS_MODE, ZIGATE_EP
 
 from Classes.AdminWidgets import AdminWidgets
 

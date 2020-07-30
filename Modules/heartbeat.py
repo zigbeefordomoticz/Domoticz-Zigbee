@@ -535,13 +535,13 @@ def processListOfDevices( self , Devices ):
             self.networkmap.start_scan( )
         elif phase == 2:
             loggingHeartbeat( self, 'Debug', "processListOfDevices Topology scan is possible %s" %self.ZigateComm.loadTransmit())
-            if self.ZigateComm.loadTransmit() < 3:
+            if self.ZigateComm.loadTransmit() <= MAX_LOAD_ZIGATE:
                     self.networkmap.continue_scan( )
 
     #if (self.HeartbeatCount > QUIET_AFTER_START) and (self.HeartbeatCount > NETWORK_ENRG_START):
     #    # Network Energy Level
     if self.networkenergy:
-        if self.ZigateComm.loadTransmit() < 3:
+        if self.ZigateComm.loadTransmit() <= MAX_LOAD_ZIGATE:
             self.networkenergy.do_scan()
 
     loggingHeartbeat( self, 'Debug', "processListOfDevices END with HB: %s, Busy: %s, Enroll: %s, Load: %s" \

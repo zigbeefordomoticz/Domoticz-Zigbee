@@ -742,12 +742,11 @@ def loggingMessages( self, msgtype, sAddr=None, ieee=None, LQI=None, SQN=None):
 
 
 def lookupForIEEE( self, nwkid , reconnect=False):
+    # """
+    # Purpose of this function is to search a Nwkid in the Neighbours table and find an IEEE
+    # """
 
-    """
-    Purpose of this function is to search a Nwkid in the Neighbours table and find an IEEE
-    """
-
-    Domoticz.Log("lookupForIEEE - looking for %s in Neighbourgs table" %nwkid)
+    # Domoticz.Log("lookupForIEEE - looking for %s in Neighbourgs table" %nwkid)
     for key in self.ListOfDevices:
         if 'Neighbours' not in self.ListOfDevices[key]:
             continue
@@ -773,7 +772,7 @@ def lookupForIEEE( self, nwkid , reconnect=False):
                         return None
                     if reconnect:
                         reconnectNWkDevice( self, nwkid, ieee, oldNWKID)
-                Domoticz.Log("lookupForIEEE found IEEE %s for %s in %s known as %s  Neighbourg table" %(ieee, nwkid, oldNWKID, key))
+                    Domoticz.Log("lookupForIEEE found IEEE %s for %s in %s known as %s  Neighbourg table" %(ieee, nwkid, oldNWKID, key))
                 return ieee
 
     return None
