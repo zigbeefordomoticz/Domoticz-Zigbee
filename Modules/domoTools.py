@@ -208,16 +208,17 @@ def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, 
         Devices[Unit].BatteryLevel != int(BatteryLvl) or \
         Devices[Unit].TimedOut:
 
-        if self.pluginconf.pluginConf['forceSwitchSelectorPushButton'] and ForceUpdate_:
-            if (Devices[Unit].nValue == int(nValue)) and  (Devices[Unit].sValue == sValue):
-                # Due to new version of Domoticz which do not log in case we Update the same value
-                nReset = 0
-                sReset = '0'
-                if 'LevelOffHidden' in Devices[Unit].Options:
-                    LevelOffHidden = Devices[Unit].Options['LevelOffHidden']
-                    if LevelOffHidden == 'false':
-                        sReset = '00'
-                Devices[Unit].Update(nValue=nReset, sValue=sReset)
+        if ( self.pluginconf.pluginConf['forceSwitchSelectorPushButton'] and ForceUpdate_ and \
+               (Devices[Unit].nValue == int(nValue)) and (Devices[Unit].sValue == sValue) ):
+
+            # Due to new version of Domoticz which do not log in case we Update the same value
+            nReset = 0
+            sReset = '0'
+            if 'LevelOffHidden' in Devices[Unit].Options:
+                LevelOffHidden = Devices[Unit].Options['LevelOffHidden']
+                if LevelOffHidden == 'false':
+                    sReset = '00'
+            Devices[Unit].Update(nValue=nReset, sValue=sReset)
 
         if self.pluginconf.pluginConf['logDeviceUpdate']:
             Domoticz.Log("UpdateDevice - (%15s) %s:%s" %( Devices[Unit].Name, nValue, sValue ))
