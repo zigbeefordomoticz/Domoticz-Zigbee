@@ -139,8 +139,7 @@ def sendFC01Command( self, sqn, nwkid, ep, ClusterID, cmd, data):
 
 
 def rejoin_legrand_reset( self ):  
-
-    
+ 
     # Check if we have any Legrand devices if so send teh Reset to the Air
     for x in self.ListOfDevices:
         if ( 'Manufacturer' in self.ListOfDevices[x] and self.ListOfDevices[x]['Manufacturer'] == '1021' ):
@@ -315,6 +314,9 @@ def legrand_dimOnOff( self, OnOff):
             if 'Legrand' in self.ListOfDevices[NWKID]:
                 self.ListOfDevices[NWKID]['Legrand']['EnableDimmer'] = 0
             legrand_fc01( self, NWKID, 'EnableDimmer', OnOff)
+            if self.FirmwareVersion >= '31d':
+                del self.ListOfDevices[NWKID]['Legrand']['EnableDimmer'] 
+                ReadAttributeRequest_fc01(self, NWKID)
                         #else:
                         #    Domoticz.Error("legrand_ledOnOff not a matching device, skip it .... %s " %self.ListOfDevices[NWKID]['Model'])
 
@@ -342,6 +344,9 @@ def legrand_ledIfOnOnOff( self, OnOff):
             if 'Legrand' in self.ListOfDevices[NWKID]:
                 self.ListOfDevices[NWKID]['Legrand']['EnableLedIfOn'] = 0
             legrand_fc01( self, NWKID, 'EnableLedIfOn', OnOff)
+            if self.FirmwareVersion >= '31d':
+                del self.ListOfDevices[NWKID]['Legrand']['EnableLedIfOn'] 
+                ReadAttributeRequest_fc01(self, NWKID)
                         #else:
                         #    Domoticz.Error("legrand_ledOnOff not a matching device, skip it .... %s " %self.ListOfDevices[NWKID]['Model'])
 
@@ -363,6 +368,9 @@ def legrand_ledShutter( self, OnOff):
             if 'Legrand' in self.ListOfDevices[NWKID]:
                 self.ListOfDevices[NWKID]['Legrand']['EnableLedShutter'] = 0
             legrand_fc01( self, NWKID, 'EnableLedShutter', OnOff)
+            if self.FirmwareVersion >= '31d':
+                self.ListOfDevices[NWKID]['Legrand']['EnableLedShutter']
+                ReadAttributeRequest_fc01(self, NWKID)
                         #else:
                         #    Domoticz.Error("legrand_ledInDark not a matching device, skip it .... %s " %self.ListOfDevices[NWKID]['Model'])
 
@@ -390,6 +398,9 @@ def legrand_ledInDark( self, OnOff):
             if 'Legrand' in self.ListOfDevices[NWKID]:
                 self.ListOfDevices[NWKID]['Legrand']['EnableLedInDark'] = 0
             legrand_fc01( self, NWKID, 'EnableLedInDark', OnOff)
+            if self.FirmwareVersion >= '31d':
+                del self.ListOfDevices[NWKID]['Legrand']['EnableLedInDark']
+                ReadAttributeRequest_fc01(self, NWKID)
                         #else:
                         #    Domoticz.Error("legrand_ledInDark not a matching device, skip it .... %s " %self.ListOfDevices[NWKID]['Model'])
 
@@ -434,8 +445,6 @@ def legrandReenforcement( self, NWKID):
                 legrand_fc01( self, NWKID, cmd , 'On')
             else:
                 legrand_fc01( self, NWKID, cmd, 'Off')
-
-            ReadAttributeRequest_fc01(self, NWKID)
 
     return False
 
