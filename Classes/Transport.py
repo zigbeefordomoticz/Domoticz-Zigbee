@@ -779,6 +779,10 @@ def check_timed_out(self):
                 del self.ListOfCommands[x]
 
     def logExpectedCommand(self, desc, now, TimeStamp, i_sqn):
+
+        if not self.pluginconf.pluginConf['showTimeOutMsg']:
+            return
+
         if i_sqn not in self.ListOfCommands:
             self.loggingSend(
                 'Debug', " --  --  --  > - %s - Time Out %s  " % (desc, i_sqn))

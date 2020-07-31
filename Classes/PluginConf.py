@@ -124,8 +124,9 @@ SETTINGS = {
                                       'list': {'0dbM': 0, '-9 dbM': 1, '-20dbM': 2, '-32dbM': 3},
                                       'default': 0,   'current': None, 'restart': True, 'hidden': False, 'Advanced': True},
 
-        'extendedPANID':             {'type': 'hex',  'default': 0,   'current': None, 'restart': True, 'hidden': False, 'Advanced': True}
-    }
+        'extendedPANID':             {'type': 'hex',  'default': 0,   'current': None, 'restart': True, 'hidden': False, 'Advanced': True},
+        'showTimeOutMsg':            {'type': 'bool', 'default': 0,      'current': None, 'restart': False, 'hidden': False,  'Advanced': True}
+        }
     },
 
     # Command Transitionin tenth of seconds
@@ -157,7 +158,8 @@ SETTINGS = {
         'forceAckOnZCL':   {'type': 'bool', 'default': 0,      'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'disableAckOnZCL': {'type': 'bool', 'default': 0,      'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'waitForResponse': {'type': 'bool', 'default': 0,      'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
-    }
+        
+        }
     },
 
     # Plugin Directories
@@ -272,7 +274,7 @@ SETTINGS = {
         'AnnoucementV0':         {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'AnnoucementV1':         {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'AnnoucementV2':         {'type': 'bool', 'default': 1, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
-        'CheckReEntrance':       {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
+
         'expJsonDatabase':       {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'XiaomiLeave':           {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'rebindLivolo':          {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': False},
