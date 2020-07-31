@@ -1742,7 +1742,7 @@ def read_report_attributes( self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp
     # Will request in the next hearbeat to for a IEEE request
     ieee = lookupForIEEE( self, MsgSrcAddr , True)
     if ieee:
-        loggingInput( self, 'Log',"Found IEEE for short address: %s is %s" %(MsgSrcAddr, ieee))
+        loggingInput( self, 'Debug',"Found IEEE for short address: %s is %s" %(MsgSrcAddr, ieee))
         if MsgSrcAddr in self.UnknownDevices:
             self.UnknownDevices.remove( MsgSrcAddr )
     else:
