@@ -325,8 +325,8 @@ class WebServer(object):
             Statistics['APSNck'] =  0
             Statistics['StartTime'] = int(time()) - 120
         else:
-            Statistics['ZiGateReactingTimeMax'] = self.statistics._maxTiming8000
-            Statistics['ZiGateReactingTimeAverage'] = self.statistics._averageTiming8000
+            Statistics['ZiGateRoundTimeMax'] = self.statistics._maxTiming8000
+            Statistics['ZiGateRoundTimeAverage'] = self.statistics._averageTiming8000
             Statistics['CRC'] =self.statistics._crcErrors
             Statistics['FrameErrors'] =self.statistics._frameErrors
             Statistics['Sent'] =self.statistics._sent
@@ -647,7 +647,7 @@ class WebServer(object):
                     if len(self.Devices[x].DeviceID)  != 16:
                         continue
 
-                    device_info = device_info = getDeviceInfos( self, x)
+                    device_info = getDeviceInfos( self, x)
                     device_lst.append( device_info )
                 _response["Data"] = json.dumps( device_lst, sort_keys=True )
 
