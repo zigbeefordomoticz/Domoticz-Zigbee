@@ -769,12 +769,12 @@ def lookupForIEEE( self, nwkid , reconnect=False):
                         Domoticz.Log("lookupForIEEE found an inconsitency %s nt existing but pointed by %s"
                             %( oldNWKID, ieee ))
                         del self.IEEE2NWK[ ieee ]
-                        return None
+                        continue
+                    
                     if reconnect:
                         reconnectNWkDevice( self, nwkid, ieee, oldNWKID)
                     Domoticz.Log("lookupForIEEE found IEEE %s for %s in %s known as %s  Neighbourg table" %(ieee, nwkid, oldNWKID, key))
-                return ieee
-
+                    return ieee
     return None
 
 
