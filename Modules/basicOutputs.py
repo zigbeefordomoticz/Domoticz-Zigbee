@@ -37,7 +37,9 @@ def send_zigatecmd_zcl_ack( self, address, cmd, datas ):
         if self.pluginconf.pluginConf['disableAckOnZCL']:
             address_mode = '%02x' %ADDRESS_MODE['ieeenoack']
             ackIsDisabled = True
-    return send_zigatecmd_raw( self, cmd, address_mode + address + datas, ackIsDisabled = ackIsDisabled )
+    isqn = send_zigatecmd_raw( self, cmd, address_mode + address + datas, ackIsDisabled = ackIsDisabled )
+    loggingBasicOutput( self, 'Debug', "send_zigatecmd_zcl_ack - [%s] %s %s %s" %(isqn, cmd, address_mode, datas))
+    return isqn
 
 
 def send_zigatecmd_zcl_noack( self, address, cmd, datas):
@@ -57,7 +59,9 @@ def send_zigatecmd_zcl_noack( self, address, cmd, datas):
             address_mode = '%02x' %ADDRESS_MODE['ieee']
             loggingBasicOutput( self, 'Debug', "Force Ack on %s %s" %(cmd, datas))
             ackIsDisabled = False
-    return send_zigatecmd_raw( self, cmd, address_mode + address + datas, ackIsDisabled = ackIsDisabled )
+    isqn = send_zigatecmd_raw( self, cmd, address_mode + address + datas, ackIsDisabled = ackIsDisabled )
+    loggingBasicOutput( self, 'Debug', "send_zigatecmd_zcl_noack - [%s] %s %s %s" %(isqn, cmd, address_mode, datas))
+    return isqn
 
 def send_zigatecmd_raw( self, cmd, datas, ackIsDisabled = False ):
     #
@@ -69,11 +73,11 @@ def send_zigatecmd_raw( self, cmd, datas, ackIsDisabled = False ):
 
    i_sqn = self.ZigateComm.sendData( cmd, datas , ackIsDisabled )
    if self.pluginconf.pluginConf['debugzigateCmd']:
-       loggingBasicOutput( self, 'Log', "send_zigatecmd_raw - [%s] %s %s Queue Length: %s / %s" %(i_sqn, cmd, datas, self.ZigateComm.loadTransmit(), len(self.ZigateComm.ListOfCommands)))
+       loggingBasicOutput( self, 'Log', "send_zigatecmd_raw       - [%s] %s %s Queue Length: %s / %s" %(i_sqn, cmd, datas, self.ZigateComm.loadTransmit(), len(self.ZigateComm.ListOfCommands)))
    else:
-       loggingBasicOutput( self, 'Debug', "=====> send_zigatecmd_raw - [%s] %s %s Queue Length: %s / %s" %(i_sqn,cmd, datas, self.ZigateComm.loadTransmit(), len(self.ZigateComm.ListOfCommands)))
+       loggingBasicOutput( self, 'Debug', "====> send_zigatecmd_raw - [%s] %s %s Queue Length: %s / %s" %(i_sqn,cmd, datas, self.ZigateComm.loadTransmit(), len(self.ZigateComm.ListOfCommands)))
    if self.ZigateComm.loadTransmit() > 15:
-       loggingBasicOutput( self, 'Log', "WARNING - send_zigatecmd_raw: [%s] %s %18s ZigateQueue: %s / %s" %(i_sqn,cmd, datas, self.ZigateComm.loadTransmit(), len(self.ZigateComm.ListOfCommands)))
+       loggingBasicOutput( self, 'Log', "WARNING - send_zigatecmd : [%s] %s %18s ZigateQueue: %s / %s" %(i_sqn,cmd, datas, self.ZigateComm.loadTransmit(), len(self.ZigateComm.ListOfCommands)))
 
    return i_sqn
 
