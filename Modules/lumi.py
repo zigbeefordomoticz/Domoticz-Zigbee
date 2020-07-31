@@ -332,9 +332,12 @@ def readXiaomiCluster( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId
     sBatteryLvl =  retreive4Tag( "0121", MsgClusterData )         # 16BitUint
     sTemp2 =       retreive4Tag( "0328", MsgClusterData )         # Device Temperature (int8)
     stag04 =       retreive4Tag( '0424', MsgClusterData )
-    sRSSI =        retreive4Tag( '0521', MsgClusterData )[0:2]    # RSSI (16BitUint)
-    sLQI =         retreive8Tag( '0620', MsgClusterData )         # LQI
-    #sLighLevel =   retreive4Tag( '0b21', MsgClusterData)          # 16BitUint
+    sRSSI =        retreive4Tag( '0521', MsgClusterData )         # RSSI (16BitUint)
+    sCountEvent =  retreive4Tag( '0541', MsgClusterData )
+    sLQI =         retreive4Tag( '0620', MsgClusterData )         # LQI
+    sLighLevel =   retreive4Tag( '0b21', MsgClusterData )         # 16BitUint
+
+    
 
     sOnOff =       retreive4Tag( "6410", MsgClusterData )[0:2]    # Bool
     sOnOff2 =      retreive4Tag( "6420", MsgClusterData )[0:2]    # OnOff for Aqara Bulb / Current position lift for lumi.curtain
@@ -350,6 +353,10 @@ def readXiaomiCluster( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId
     sCurrent =     retreive8Tag( '9739', MsgClusterData )         # Ampere
     sPower =       retreive8Tag( '9839', MsgClusterData )         # Power Watt
 
+    if sCountEvent != '':
+        value = int(sCountEvent,16)
+        store_lumi_attribute( self, MsgSrcAddr, 'EventCounter', value )
+        loggingLumi( self, 'Debug', "ReadCluster - %s/%s Saddr: %s Count of events sent %s/%s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, sCountEvent, value),MsgSrcAddr )
 
     if sTemp2 != '':
         loggingLumi( self, 'Debug', "ReadCluster - %s/%s Saddr: %s sTemp2 %s Temp2 %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, sTemp2, int(sTemp2,16)),MsgSrcAddr )
@@ -388,26 +395,30 @@ def readXiaomiCluster( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId
             EPforPower = XIAOMI_POWERMETER_EP[ model ]
         else:
             EPforPower = MsgSrcEp
-
         checkAndStoreAttributeValue( self, MsgSrcAddr , EPforPower, '0702', '0400' , str(power) )
         # Update Power Widget
         MajDomoDevice(self, Devices, MsgSrcAddr, EPforPower, "0702", str(power) ) 
 
-    # if sLighLevel != '':
-    #     loggingLumi( self, 'Log', "ReadCluster - %s/%s Saddr: %s Light Level: %s" 
-    #         %(MsgClusterId, MsgAttrID, MsgSrcAddr,  int(sLighLevel,16)), MsgSrcAddr)
+    if sLighLevel != '':
+        value = struct.unpack('>H',struct.pack('H',int(sLighLevel,16)))[0]
+        if model in ( 'lumi.sensor_motion', 'lumi.sensor_motion.aq2'):
+            # Lux
+            store_lumi_attribute( self, MsgSrcAddr, 'Lux', value )
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0400", str(value) )
+        else:
+            loggingLumi( self, 'Log', "ReadCluster - %s/%s Saddr: %s Light Level: %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr,  value), MsgSrcAddr)
 
-    # if sRSSI != '':
-    #     RSSI = value = struct.unpack('>H',struct.pack('H',int(sRSSI,16)))[0]
-    #     loggingLumi( self, 'Debug', "ReadCluster - %s/%s Saddr: %s RSSI: %s" 
-    #         %(MsgClusterId, MsgAttrID, MsgSrcAddr, RSSI ), MsgSrcAddr)
-    #     store_lumi_attribute( self, MsgSrcAddr, 'RSSI', RSSI)
+    if sRSSI != '':
+        RSSI = struct.unpack('>H',struct.pack('H',int(sRSSI,16)))[0]
+        loggingLumi( self, 'Debug', "ReadCluster - %s/%s Saddr: %s RSSI: %s/%s" 
+            %(MsgClusterId, MsgAttrID, MsgSrcAddr, sRSSI, RSSI ), MsgSrcAddr)
+        store_lumi_attribute( self, MsgSrcAddr, 'RSSI', sRSSI)
 
-    # if sLQI != '':
-    #     LQI = int(sLQI,16)
-    #     loggingLumi( self, 'Debug', "ReadCluster - %s/%s Saddr: %s LQI: %s" 
-    #         %(MsgClusterId, MsgAttrID, MsgSrcAddr, LQI ), MsgSrcAddr)
-    #     store_lumi_attribute( self, MsgSrcAddr, 'LQI', LQI )
+    if sLQI != '':
+        LQI = int(sLQI,16)
+        loggingLumi( self, 'Debug', "ReadCluster - %s/%s Saddr: %s LQI: %s/%s" 
+            %(MsgClusterId, MsgAttrID, MsgSrcAddr, sLQI, LQI ), MsgSrcAddr)
+        store_lumi_attribute( self, MsgSrcAddr, 'LQI', sLQI )
 
     if sBatteryLvl != '' and self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '8e' and self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '84' and self.ListOfDevices[MsgSrcAddr]['PowerSource'] != 'Main':
         voltage = '%s%s' % (str(sBatteryLvl[2:4]),str(sBatteryLvl[0:2]))
