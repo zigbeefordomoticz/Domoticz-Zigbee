@@ -1140,8 +1140,13 @@ def process_msg_type8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn):
         timing = time() - TimeStamp
         self.statistics.add_timing8000( timing )
         if self.statistics._averageTiming8000 != 0 and timing >= (3 * self.statistics._averageTiming8000):
-            Domoticz.Log("Reacting time seems long %s sec for %s %s" 
-                %(round( timing, 2 ), self.ListOfCommands[InternalSqn]['Cmd'], self.ListOfCommands[InternalSqn]['Datas']))
+            Domoticz.Log("Zigate round trip time seems long. %s ms for %s %s SendingQueue: %s LoC: %s" 
+                %(round( timing * 100, 1 ), 
+                self.ListOfCommands[InternalSqn]['Cmd'], 
+                self.ListOfCommands[InternalSqn]['Datas'], 
+                self.loadTransmit(), 
+                len(self.ListOfCommands)
+                ))
 
 
     self.loggingSend('Debug', " --  --  0x8000 > Expect: %s Receive: %s" %
