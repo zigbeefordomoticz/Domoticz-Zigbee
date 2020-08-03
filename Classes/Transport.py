@@ -1464,7 +1464,10 @@ def process8002(self, frame):
     if Command == '01': # Read Attribute response
         return buildframe_read_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
 
-    if Command == '04': # Write Attribute response
+    elif Command == '0a':
+        return buildframe_report_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
+
+    elif Command == '04': # Write Attribute response
         return buildframe_write_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
 
     return frame
@@ -1606,6 +1609,68 @@ def buildframe_read_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clust
     newFrame += '03'
 
     return  newFrame
+
+
+def buildframe_report_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data ):
+
+    # (Zigate) process8002 NwkId: cf64 Ep: 01 Cluster: 0b04 Payload: 18960a0b05290000
+    # (Zigate) 0x8002 - NwkId: cf64 Ep: 01 Cluster: 0b04 GlobalCommand:  True Command: 0a (                Report attributes) Data: 0b05290000
+
+    # (Zigate) process8002 NwkId: d207 Ep: 01 Cluster: 0b04 Payload: 188e0a0b05290000
+    # (Zigate) 0x8002 - NwkId: d207 Ep: 01 Cluster: 0b04 GlobalCommand:  True Command: 0a (                Report attributes) Data: 0b05290000
+    # (Zigate) process8002 NwkId: fdb7 Ep: 0b Cluster: 0204 Payload: 185c0a01002000
+    # (Zigate) 0x8002 - NwkId: fdb7 Ep: 0b Cluster: 0204 GlobalCommand:  True Command: 0a (                Report attributes) Data: 01002000
+    # (Zigate) Zigate round trip time seems long. 243.2 ms for 0110 07842c010b02010001105e01e0103000 SendingQueue: 0 LoC: 1
+    # (Zigate) process8002 NwkId: 842c Ep: 0b Cluster: 0204 Payload: 18c40a01002000
+    # (Zigate) 0x8002 - NwkId: 842c Ep: 0b Cluster: 0204 GlobalCommand:  True Command: 0a (                Report attributes) Data: 01002000
+
+    Domoticz.Log("buildframe_report_attribute_response ===========> Data: %s" %Data)
+    nbAttribute = 0
+    idx = 0
+    buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId
+    while idx < len(Data):
+        nbAttribute += 1
+        Attribute = '%04x' %struct.unpack('H',struct.pack('>H',int(Data[idx:idx+4],16)))[0]
+        idx += 4
+        DType = Data[idx:idx+2]
+        idx += 2
+        if DType in SIZE_DATA_TYPE:
+            size = SIZE_DATA_TYPE[ DType ] * 2
+        elif DType == '42': # String
+            size = int(Data[idx:idx+2],16)
+            idx += 2
+        else: 
+            Domoticz.Error("buildframe_report_attribute_response - Unknown DataType size: >%s< vs. %s " %(DType, str(SIZE_DATA_TYPE)))
+            return frame
+        data = Data[idx:idx + size]
+        if DType in ( '10', '18', '20', '28', '30'):
+            value = data
+        elif DType in ('09', '16', '21', '29', '31'):
+            value = '%04x' %struct.unpack('>H',struct.pack('H',int(data,16)))[0]
+        elif DType in ( '22', '2a'):
+            value= '%06x' %struct.unpack('>I',struct.pack('I',int(data,16)))[0]
+        elif DType in ( '23', '2b', '39'):
+            value = '%08x' %struct.unpack('>f',struct.pack('I',int(data,16)))[0]
+        else:
+            value = data
+        Domoticz.Log("-------> Data Type: %s from %s to %s" %(DType, data, value))
+        idx += size
+        lenData = '%04x' %size
+        buildPayload += Attribute + Status + DType + lenData + value
+
+    Domoticz.Log("buildframe_report_attribute_response - NwkId: %s Ep: %s ClusterId: %s nbAttribute: %s Data: %s" %(SrcNwkId, SrcEndPoint, ClusterId, nbAttribute, buildPayload))
+
+    newFrame = '01' # 0:2
+    newFrame += '8102' # 2:6   MsgType
+    newFrame += '%4x' %len(buildPayload) # 6:10  Length
+    newFrame += 'ff' # 10:12 CRC
+    newFrame += buildPayload
+    newFrame += frame[len(frame) - 4: len(frame) - 2] # LQI
+    newFrame += '03'
+    return  newFrame
+
+
+
 # Logging functions
 
 
