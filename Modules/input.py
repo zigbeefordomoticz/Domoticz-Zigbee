@@ -1835,11 +1835,18 @@ def Decode8120(self, Devices, MsgData, MsgLQI) :  # Configure Reporting response
 
     if len(MsgData) == 14:
         # Global answer. Need i_sqn to get match
-        MsgAttributeId = None
         MsgStatus = MsgData[12:14]
+        Decode8120_attribute( self,MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, None, MsgStatus  )
     else:
-        MsgAttributeId = MsgData[12:16]
-        MsgStatus      = MsgData[16:18]
+        idx = 12
+        while idx < len(MsgData):  
+            MsgAttributeId = MsgData[idx:idx+4]
+            idx += 4
+            MsgStatus      = MsgData[idx:idx+2]
+            idx += 4
+            Decode8120_attribute( self,MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus  )
+
+def Decode8120_attribute( self, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus  ):
 
     loggingInput( self, 
         'Debug', "--> SQN: [%s], SrcAddr: %s, SrcEP: %s, ClusterID: %s, Attribute: %s Status: %s" 
@@ -1866,6 +1873,7 @@ def Decode8120(self, Devices, MsgData, MsgLQI) :  # Configure Reporting response
         if MsgStatus != '00':
             loggingInput( self, 'Log', "Decode8120 - Configure Reporting response - ClusterID: %s/%s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s" \
                 %(MsgClusterId, matchAttributeId, MsgSrcAddr, MsgSrcEp, MsgStatus ), MsgSrcAddr)
+
 
 def Decode8140(self, Devices, MsgData, MsgLQI) :  # Attribute Discovery response
     MsgComplete=MsgData[0:2]

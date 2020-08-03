@@ -1467,6 +1467,9 @@ def process8002(self, frame):
     elif Command == '0a':
         return buildframe_report_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
 
+    elif Command == '08':
+        return buildframe_configure_reporting_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
+
     elif Command == '04': # Write Attribute response
         return buildframe_write_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
 
@@ -1656,7 +1659,7 @@ def buildframe_report_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clu
         Domoticz.Log("-------> Data Type: %s from %s to %s" %(DType, data, value))
         idx += size
         lenData = '%04x' %size
-        buildPayload += Attribute + Status + DType + lenData + value
+        buildPayload += Attribute + '00' + DType + lenData + value
 
     Domoticz.Log("buildframe_report_attribute_response - NwkId: %s Ep: %s ClusterId: %s nbAttribute: %s Data: %s" %(SrcNwkId, SrcEndPoint, ClusterId, nbAttribute, buildPayload))
 
@@ -1669,8 +1672,32 @@ def buildframe_report_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clu
     newFrame += '03'
     return  newFrame
 
+def buildframe_configure_reporting_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data ):
 
+    if len(Data) == 2:
+        buildPayload = Sqn + SrcNwkId + SrcEndPoint + MsgClusterId + Data 
+    else:
+        idx = 0
+        buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId
+        while idx < len(Data):
+            Status = Data[idx:idx+2]
+            idx += 2
+            Direction = Data[idx:idx+2]
+            idx += 2
+            Attribute = '%04x' %struct.unpack('H',struct.pack('>H',int(Data[idx:idx+4],16)))[0]
+            idx += 4
+            buildPayload += Attribute + Status
+        return  frame
 
+    Domoticz.Log("buildframe_configure_reporting_response - NwkId: %s Ep: %s ClusterId: %s nbAttribute: %s Data: %s" %(SrcNwkId, SrcEndPoint, ClusterId, buildPayload))
+    newFrame = '01' # 0:2
+    newFrame += '8120' # 2:6   MsgType
+    newFrame += '%4x' %len(buildPayload) # 6:10  Length
+    newFrame += 'ff' # 10:12 CRC
+    newFrame += buildPayload
+    newFrame += frame[len(frame) - 4: len(frame) - 2] # LQI
+    newFrame += '03'
+    return  newFrame
 # Logging functions
 
 
