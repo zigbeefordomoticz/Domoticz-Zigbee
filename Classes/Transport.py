@@ -1460,14 +1460,13 @@ def process8002(self, frame):
     self.logging_receive(
         'Debug', "process8002 Sqn: %s ManufCode: %s Command: %s Data: %s " %(Sqn, ManufacturerCode, Command, Data))
 
-
     if Command == '01': # Read Attribute response
         return buildframe_read_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
 
     elif Command == '0a':
         return buildframe_report_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
 
-    elif Command == '08':
+    elif Command == '07':
         return buildframe_configure_reporting_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
 
     elif Command == '04': # Write Attribute response
@@ -1557,7 +1556,6 @@ def buildframe_write_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clus
 
 def buildframe_read_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data ):
 
-    Domoticz.Log("buildframe_read_attribute_response ===========> Data: %s" %Data)
     nbAttribute = 0
     idx = 0
     buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId
@@ -1593,7 +1591,7 @@ def buildframe_read_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clust
                 value = '%08x' %struct.unpack('>f',struct.pack('I',int(data,16)))[0]
             else:
                 value = data
-            Domoticz.Log("-------> Data Type: %s from %s to %s" %(DType, data, value))
+                Domoticz.Log("-------> Data Type: %s from %s to %s" %(DType, data, value))
 
             idx += size
             lenData = '%04x' %size
@@ -1613,21 +1611,8 @@ def buildframe_read_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clust
 
     return  newFrame
 
-
 def buildframe_report_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data ):
 
-    # (Zigate) process8002 NwkId: cf64 Ep: 01 Cluster: 0b04 Payload: 18960a0b05290000
-    # (Zigate) 0x8002 - NwkId: cf64 Ep: 01 Cluster: 0b04 GlobalCommand:  True Command: 0a (                Report attributes) Data: 0b05290000
-
-    # (Zigate) process8002 NwkId: d207 Ep: 01 Cluster: 0b04 Payload: 188e0a0b05290000
-    # (Zigate) 0x8002 - NwkId: d207 Ep: 01 Cluster: 0b04 GlobalCommand:  True Command: 0a (                Report attributes) Data: 0b05290000
-    # (Zigate) process8002 NwkId: fdb7 Ep: 0b Cluster: 0204 Payload: 185c0a01002000
-    # (Zigate) 0x8002 - NwkId: fdb7 Ep: 0b Cluster: 0204 GlobalCommand:  True Command: 0a (                Report attributes) Data: 01002000
-    # (Zigate) Zigate round trip time seems long. 243.2 ms for 0110 07842c010b02010001105e01e0103000 SendingQueue: 0 LoC: 1
-    # (Zigate) process8002 NwkId: 842c Ep: 0b Cluster: 0204 Payload: 18c40a01002000
-    # (Zigate) 0x8002 - NwkId: 842c Ep: 0b Cluster: 0204 GlobalCommand:  True Command: 0a (                Report attributes) Data: 01002000
-
-    Domoticz.Log("buildframe_report_attribute_response ===========> Data: %s" %Data)
     nbAttribute = 0
     idx = 0
     buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId
@@ -1656,7 +1641,7 @@ def buildframe_report_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clu
             value = '%08x' %struct.unpack('>f',struct.pack('I',int(data,16)))[0]
         else:
             value = data
-        Domoticz.Log("-------> Data Type: %s from %s to %s" %(DType, data, value))
+            Domoticz.Log("-------> Data Type: %s from %s to %s" %(DType, data, value))
         idx += size
         lenData = '%04x' %size
         buildPayload += Attribute + '00' + DType + lenData + value
@@ -1702,6 +1687,7 @@ def buildframe_configure_reporting_response( frame, Sqn, SrcNwkId, SrcEndPoint, 
 
 
 def _write_message(self, message):
+
     message = str(datetime.now().strftime(
         '%b %d %H:%M:%S.%f')) + " " + message + '\n'
     self.loggingFileHandle.write(message)
