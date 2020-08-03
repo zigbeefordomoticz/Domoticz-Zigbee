@@ -1754,22 +1754,24 @@ def read_report_attributes( self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp
 
 def Decode8110( self, Devices, MsgData, MsgLQI):
 
-    if len(MsgData) == 24:
-        # Coming from Firmware
-        MsgSQN=MsgData[0:2]
-        MsgSrcAddr=MsgData[2:6]
-        MsgSrcEp=MsgData[6:8]
-        MsgClusterId=MsgData[8:12]
+    if not self.FirmwareVersion:
+        return
+
+    MsgSrcAddr=MsgData[2:6]
+    # Coming from Data Indication
+    MsgSQN=MsgData[0:2]
+    MsgSrcEp=MsgData[6:8]
+    MsgClusterId=MsgData[8:12]
+    if len(MsgData) != 24:
+        MsgAttrStatus=MsgData[12:14]
+        MsgAttrID = None
+    elif int(self.FirmwareVersion,16) < int('31d', 16):
         MsgAttrID=MsgData[12:16]
         MsgAttrStatus=MsgData[16:18]
-
     else:
-        # Coming from Data Indication
-        MsgSQN=MsgData[0:2]
-        MsgSrcAddr=MsgData[2:6]
-        MsgSrcEp=MsgData[6:8]
-        MsgClusterId=MsgData[8:12]
-        MsgAttrStatus=MsgData[12:14]
+        # Firmware >= 31d
+        MsgUnkn1=MsgData[12:14]
+        MsgAttrStatus=MsgData[14:16]
         MsgAttrID = None
 
     Decode8110_raw(self, Devices, MsgSQN , MsgSrcAddr , MsgSrcEp , MsgClusterId , MsgAttrStatus, MsgAttrID, MsgLQI)
