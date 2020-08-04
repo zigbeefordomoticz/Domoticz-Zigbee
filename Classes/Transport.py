@@ -15,6 +15,7 @@ from Modules.tools import is_hex, retreive_cmd_payload_from_8002, is_manufspecif
 from Modules.zigateConsts import ZIGATE_RESPONSES, ZIGATE_COMMANDS, ADDRESS_MODE, SIZE_DATA_TYPE
 from Modules.sqnMgmt import sqn_init_stack, sqn_generate_new_internal_sqn, sqn_add_external_sqn, sqn_get_internal_sqn_from_aps_sqn, sqn_get_internal_sqn_from_app_sqn, TYPE_APP_ZCL, TYPE_APP_ZDP
 
+import serial
 
 STANDALONE_MESSAGE = []
 PDM_COMMANDS = ('8300', '8200', '8201', '8204', '8205', '8206', '8207', '8208')
@@ -32,9 +33,10 @@ class ZigateTransport(object):
     # Managed also the Command - > Status - > Data sequence
     # """
 
-    def __init__(self, LOD, transport, statistics, pluginconf, F_out, loggingFileHandle, serialPort=None, wifiAddress=None, wifiPort=None):
+    def __init__(self, MsgQueue, LOD, transport, statistics, pluginconf, F_out, loggingFileHandle, serialPort=None, wifiAddress=None, wifiPort=None):
 
         # Logging
+        self.messageQueue = MsgQueue
         self.loggingFileHandle = loggingFileHandle
 
         # Statistics
@@ -92,6 +94,11 @@ class ZigateTransport(object):
         else:
             Domoticz.Error("Unknown Transport Mode: %s" % transport)
 
+
+    def SendingToZigate( self, Data, Delay):
+        self.messageQueue.put(Data)
+
+
     def loggingSend(self, logType, message):
         # Log all activties towards ZiGate
         if self.pluginconf.pluginConf['debugTransportTx'] and logType == 'Debug':
@@ -130,8 +137,10 @@ class ZigateTransport(object):
                 Domoticz.Status(
                     "Connection Name: Zigate, Transport: Serial, Address: %s" % (self._serialPort))
                 BAUDS = 115200
-                self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
-                                                       Address=self._serialPort, Baud=BAUDS)
+                #self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
+                #                                       Address=self._serialPort, Baud=BAUDS)
+#
+                self._connection = serial.Serial(self._serialPort, baudrate = BAUDS, timeout = 0)
 
         elif self._transp == "Wifi":
             Domoticz.Status("Connection Name: Zigate, Transport: TCP/IP, Address: %s:%s" %
@@ -141,19 +150,28 @@ class ZigateTransport(object):
         else:
             Domoticz.Error("Unknown Transport Mode: %s" % self._transp)
 
+
+
+
     def open_conn(self):
         self.set_connection()
-        if self._connection:
-            self._connection.Connect()
-        else:
-            Domoticz.Error("openConn _connection note set!")
+
+    
+
+        #if self._connection:
+        #    self._connection.Connect()
+        #else:
+        #    Domoticz.Error("openConn _connection note set!")
         Domoticz.Status("Connection open: %s" % self._connection)
 
     def close_conn(self):
         Domoticz.Status("Connection close: %s" % self._connection)
-        self._connection.Disconnect()
-        del self._connection
-        self._connection = None
+        # self._connection.Disconnect()
+        # del self._connection
+        # self._connection = None
+
+        self._connection.close()
+
 
     def re_conn(self):
         Domoticz.Status("Reconnection: %s" % self._connection)
@@ -262,7 +280,7 @@ class ZigateTransport(object):
     def on_message(self, Data):
         # Process/Decode Data
 
-        #self.logging_receive( 'Debug2', "onMessage - %s" %(Data))
+        #self.logging_receive( 'Log', "onMessage - %s" %(Data))
         FrameIsKo = 0
 
         if Data is not None:
@@ -708,7 +726,8 @@ def _send_data(self, InternalSqn):
 
     # self.loggingSend(  'Debug', "---  --  > _send_data - sending encoded Cmd: %s length: %s CRC: %s Data: %s" \
     #            %(str(zigate_encode(cmd)), str(zigate_encode(length)), str(zigate_encode(strchecksum)), str(zigate_encode(datas))))
-    self._connection.Send(bytes.fromhex(str(lineinput)), 0)
+    #self._connection.Send(bytes.fromhex(str(lineinput)), 0)
+    self.SendingToZigate(bytes.fromhex(str(lineinput)), 0)
     self.statistics._sent += 1
 
 
