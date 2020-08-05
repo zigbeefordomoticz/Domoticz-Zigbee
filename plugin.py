@@ -164,6 +164,7 @@ class BasePlugin:
 
         self.PluginHealth = {}
         self.Ping = {}
+        self.Ping['Nb Ticks'] =  self.Ping['Status'] = self.Ping['TimeStamp'] = None
         self.connectionState = None
 
         self.HBcount = 0
@@ -419,7 +420,7 @@ class BasePlugin:
 
         if self.ZigateComm:
             self.ZigateComm.close_conn()
-            
+
         if self.webserver:
             self.webserver.onStop()
 
