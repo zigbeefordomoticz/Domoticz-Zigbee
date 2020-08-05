@@ -99,6 +99,7 @@ class ZigateTransport(object):
             Domoticz.Error("Unknown Transport Mode: %s" % transport)
 
         self.running = True
+        self.ListeningThreadevent = None
         self.ListeningThread = None
         self.messageQueue = queue.Queue()
 
@@ -108,7 +109,8 @@ class ZigateTransport(object):
     def listen_and_send( self ):
         while self._connection  is None:
             Domoticz.Log("Waiting for serial connection open")
-            time.sleep(1.0)
+            #time.sleep(1.0)
+            self.ListeningThreadevent.wait(1.0)
         
         serialConnection = self._connection
         Domoticz.Log("Serial Connection open: %s" %serialConnection)
@@ -127,7 +129,8 @@ class ZigateTransport(object):
                     #Domoticz.Log("Data: %s" %encoded_data)
                     serialConnection.write( encoded_data )
             else:
-                time.sleep(0.25)
+                self.ListeningThreadevent.wait(.05)
+                #time.sleep(0.25)
 
         Domoticz.Log("Thread listen_and_send ended!!")
 
@@ -166,14 +169,19 @@ class ZigateTransport(object):
 
         if self._transp in ["USB", "DIN", "PI"]:
             if self._serialPort.find('/dev/') != -1 or self._serialPort.find('COM') != -1:
-                Domoticz.Status(
-                    "Connection Name: Zigate, Transport: Serial, Address: %s" % (self._serialPort))
+                Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" % (self._serialPort))
                 BAUDS = 115200
                 #self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
                 #                                       Address=self._serialPort, Baud=BAUDS)
+                try:
+                    self._connection = serial.Serial(self._serialPort, baudrate = BAUDS, timeout = 0)
 
-                self._connection = serial.Serial(self._serialPort, baudrate = BAUDS, timeout = 0)
-                self.ListeningThread = threading.Thread(name="ListeningThread", target=ZigateTransport.listen_and_send, args=(self,))
+                except serial.SerialException as e:
+                    Domoticz.Error("Cannot open Zigate port %s error: %s" %(self._serialPort, e))
+                    return
+                Domoticz.Status("Starting Listening and Sending Thread")
+                self.ListeningThreadevent = threading.Event()
+                self.ListeningThread = threading.Thread(name="ZiGateSerialListenThread", target=ZigateTransport.listen_and_send, args=(self,))
                 self.ListeningThread.start()
 
         elif self._transp == "Wifi":
@@ -186,7 +194,9 @@ class ZigateTransport(object):
 
 
     def open_conn(self):
-        self.set_connection()
+
+        if not self._connection:
+            self.set_connection()
 
         #if self._connection:
         #    self._connection.Connect()
@@ -201,7 +211,8 @@ class ZigateTransport(object):
         # self._connection = None
 
         self.running = False
-        self._connection.close()
+        if self._connection:
+            self._connection.close()
 
 
     def re_conn(self):
