@@ -151,12 +151,8 @@ class ZigateTransport(object):
             Domoticz.Error("Unknown Transport Mode: %s" % self._transp)
 
 
-
-
     def open_conn(self):
         self.set_connection()
-
-    
 
         #if self._connection:
         #    self._connection.Connect()

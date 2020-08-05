@@ -207,6 +207,7 @@ class BasePlugin:
 
     def listen_and_send( self ):
 
+        needToWait = True
         while  self.ZigateComm is None:
             Domoticz.Log("Waiting for serial connection open")
             time.sleep(1)
@@ -214,23 +215,22 @@ class BasePlugin:
         serialConnection = self.ZigateComm._connection
         Domoticz.Log("Serial Connection open: %s" %serialConnection)
         while self.running:
- 
             nb = serialConnection.in_waiting
             while nb:
                 self.Ping['Nb Ticks'] = 0
                 data = serialConnection.read( nb )
                 self.ZigateComm.on_message(data)
-                #if len(data) > 0:
-                #    Domoticz.Log("Received %s" %str(hexlify(data).decode('utf-8')))
-                #    self.ZigateComm.on_message(data)
-                #    Domoticz.Log("back from on_message")
                 nb = serialConnection.in_waiting
+                needToWait = False
             else:
                 while self.messageQueue.qsize() > 0:
                     encoded_data = self.messageQueue.get_nowait()
                     #Domoticz.Log("Data: %s" %encoded_data)
                     serialConnection.write( encoded_data )
-            time.sleep(0.5)
+                    needToWait = False
+            if needToWait:
+                time.sleep(0.25)
+            needToWait = True
 
         Domoticz.Log("Thread listen_and_send ended!!")
 
