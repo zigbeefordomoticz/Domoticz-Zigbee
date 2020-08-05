@@ -42,10 +42,11 @@ class TransportStatistics:
 
         self._cumulTiming8000 += timing
         self._cntTiming8000 += 1
-        self._averageTiming8000 = round( (self._cumulTiming8000 / self._cntTiming8000), 2)
+        self._averageTiming8000 = int( (self._cumulTiming8000 / self._cntTiming8000))
         if timing > self._maxTiming8000:
-            self._maxTiming8000 = round(timing,2)
-            Domoticz.Log("Zigate command round trip Max: %s ms with an of average: %s ms" %(round(100 * self._maxTiming8000,1), (round( 100 * self._averageTiming8000,1) )))
+            self._maxTiming8000 = timing
+            Domoticz.Log("Zigate command round trip Max: %s ms with an of average: %s ms" 
+                %(self._maxTiming8000, self._averageTiming8000 ))
         
 
     def addPointforTrendStats( self, TimeStamp ):

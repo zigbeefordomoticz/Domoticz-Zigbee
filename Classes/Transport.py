@@ -1262,11 +1262,11 @@ def process_msg_type8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn):
 
     # Statistics on ZiGate reacting time to process the command
     if self.pluginconf.pluginConf['ZiGateReactTime']:
-        timing = time.time() - TimeStamp
+        timing = int( ( time.time() - TimeStamp ) * 1000 )
         self.statistics.add_timing8000( timing )
         if self.statistics._averageTiming8000 != 0 and timing >= (3 * self.statistics._averageTiming8000):
             Domoticz.Log("Zigate round trip time seems long. %s ms for %s %s SendingQueue: %s LoC: %s" 
-                %(round( timing * 100, 1 ), 
+                %( timing , 
                 self.ListOfCommands[InternalSqn]['Cmd'], 
                 self.ListOfCommands[InternalSqn]['Datas'], 
                 self.loadTransmit(), 
