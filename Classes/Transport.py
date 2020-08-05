@@ -7,7 +7,8 @@
 import Domoticz
 import binascii
 import struct
-from time import time
+
+import time
 
 from datetime import datetime
 
@@ -16,6 +17,9 @@ from Modules.zigateConsts import ZIGATE_RESPONSES, ZIGATE_COMMANDS, ADDRESS_MODE
 from Modules.sqnMgmt import sqn_init_stack, sqn_generate_new_internal_sqn, sqn_add_external_sqn, sqn_get_internal_sqn_from_aps_sqn, sqn_get_internal_sqn_from_app_sqn, TYPE_APP_ZCL, TYPE_APP_ZDP
 
 import serial
+import threading
+import queue
+from binascii import unhexlify, hexlify
 
 STANDALONE_MESSAGE = []
 PDM_COMMANDS = ('8300', '8200', '8201', '8204', '8205', '8206', '8207', '8208')
@@ -33,10 +37,10 @@ class ZigateTransport(object):
     # Managed also the Command - > Status - > Data sequence
     # """
 
-    def __init__(self, MsgQueue, LOD, transport, statistics, pluginconf, F_out, loggingFileHandle, serialPort=None, wifiAddress=None, wifiPort=None):
+    def __init__(self, LOD, transport, statistics, pluginconf, F_out, loggingFileHandle, serialPort=None, wifiAddress=None, wifiPort=None):
 
         # Logging
-        self.messageQueue = MsgQueue
+    
         self.loggingFileHandle = loggingFileHandle
 
         # Statistics
@@ -94,10 +98,38 @@ class ZigateTransport(object):
         else:
             Domoticz.Error("Unknown Transport Mode: %s" % transport)
 
+        self.running = True
+        self.ListeningThread = None
+        self.messageQueue = queue.Queue()
 
     def SendingToZigate( self, Data, Delay):
         self.messageQueue.put(Data)
 
+    def listen_and_send( self ):
+        while self._connection  is None:
+            Domoticz.Log("Waiting for serial connection open")
+            time.sleep(1.0)
+        
+        serialConnection = self._connection
+        Domoticz.Log("Serial Connection open: %s" %serialConnection)
+
+        while self.running:
+            nb = serialConnection.in_waiting
+            if nb:
+                while nb:
+                    data = serialConnection.read( nb )
+                    self.on_message(data)
+                    nb = serialConnection.in_waiting
+
+            elif self.messageQueue.qsize() > 0:
+                while self.messageQueue.qsize() > 0:
+                    encoded_data = self.messageQueue.get_nowait()
+                    #Domoticz.Log("Data: %s" %encoded_data)
+                    serialConnection.write( encoded_data )
+            else:
+                time.sleep(0.25)
+
+        Domoticz.Log("Thread listen_and_send ended!!")
 
     def loggingSend(self, logType, message):
         # Log all activties towards ZiGate
@@ -139,8 +171,10 @@ class ZigateTransport(object):
                 BAUDS = 115200
                 #self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
                 #                                       Address=self._serialPort, Baud=BAUDS)
-#
+
                 self._connection = serial.Serial(self._serialPort, baudrate = BAUDS, timeout = 0)
+                self.ListeningThread = threading.Thread(name="ListeningThread", target=ZigateTransport.listen_and_send, args=(self,))
+                self.ListeningThread.start()
 
         elif self._transp == "Wifi":
             Domoticz.Status("Connection Name: Zigate, Transport: TCP/IP, Address: %s:%s" %
@@ -166,6 +200,7 @@ class ZigateTransport(object):
         # del self._connection
         # self._connection = None
 
+        self.running = False
         self._connection.close()
 
 
@@ -400,7 +435,7 @@ def initMatrix(self):
 
 def _add_cmd_to_send_queue(self, InternalSqn):
     # add a command to the waiting list
-    timestamp = int(time())
+    timestamp = int(time.time())
     # Check if the Cmd+Data is not yet in the Queue. If yes forget that message
     #self.loggingSend(  'Debug2', " --  > _add_cmd_to_send_queue - adding to Queue %s %s" %(InternalSqn, timestamp ))
     self.zigateSendQueue.append((InternalSqn, timestamp))
@@ -423,8 +458,8 @@ def _next_cmd_from_send_queue(self):
 
 def _add_cmd_to_wait_for8000_queue(self, InternalSqn):
     # add a command to the waiting list for 0x8000
-    #timestamp = int(time())
-    timestamp = time()
+    #timestamp = int(time.time())
+    timestamp = time.time()
     #self.loggingSend(  'Log', " --  > _add_cmd_to_wait_for8000_queue - adding to Queue %s %s" %(InternalSqn, timestamp))
     self._waitFor8000Queue.append((InternalSqn, timestamp))
 
@@ -441,7 +476,7 @@ def _next_cmd_from_wait_for8000_queue(self):
 
 def _add_cmd_to_wait_for_ack_nack_queue(self, InternalSqn):
     # add a command to the AckNack waiting list
-    timestamp = int(time())
+    timestamp = int(time.time())
     #self.loggingSend(  'Log', " --  > _addCmdToWaitForAckNackQueue - adding to Queue  %s %s" %(InternalSqn, timestamp))
     self._waitForAckNack.append((InternalSqn, timestamp))
 
@@ -459,7 +494,7 @@ def _next_cmd_to_wait_for_ack_nack_queue(self):
 def _add_cmd_to_wait_for_cmdresponse_queue(self, InternalSqn):
     # add a command to the waiting list
 
-    timestamp = int(time())
+    timestamp = int(time.time())
     #self.loggingSend(  'Log', " --  > _add_cmd_to_wait_for_cmdresponse_queue - adding to Queue %s %s" %(InternalSqn, timestamp))
     self._waitForCmdResponseQueue.append((InternalSqn, timestamp))
 
@@ -697,7 +732,7 @@ def _send_data(self, InternalSqn):
     cmd = self.ListOfCommands[InternalSqn]['Cmd']
     datas = self.ListOfCommands[InternalSqn]['Datas']
     self.ListOfCommands[InternalSqn]['Status'] = 'SENT'
-    self.ListOfCommands[InternalSqn]['SentTimeStamp'] = int(time())
+    self.ListOfCommands[InternalSqn]['SentTimeStamp'] = int(time.time())
 
     self.loggingSend('Debug', "======================== _send_data - [%s] %s %s ExpectAck: %s ExpectResponse: %s" % (
         InternalSqn, cmd, datas, self.ListOfCommands[InternalSqn]['ExpectedAck'], self.ListOfCommands[InternalSqn]['ResponseExpected']))
@@ -822,7 +857,7 @@ def check_timed_out(self):
     TIME_OUT_ACK = self.pluginconf.pluginConf['TimeOut8011']
     TIME_OUT_LISTCMD = 10
 
-    now = int(time())
+    now = int(time.time())
 
     self.loggingSend('Debug2', "checkTimedOut  Start - Aps_Sqn: %s waitQ: %2s ackQ: %2s dataQ: %2s SendingFIFO: %3s"
                      % (self.firmware_with_aps_sqn, len(self._waitFor8000Queue), len(self._waitForAckNack), len(self._waitForCmdResponseQueue), len(self.zigateSendQueue)))
@@ -1156,7 +1191,7 @@ def process_msg_type8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn):
 
     # Statistics on ZiGate reacting time to process the command
     if self.pluginconf.pluginConf['ZiGateReactTime']:
-        timing = time() - TimeStamp
+        timing = time.time() - TimeStamp
         self.statistics.add_timing8000( timing )
         if self.statistics._averageTiming8000 != 0 and timing >= (3 * self.statistics._averageTiming8000):
             Domoticz.Log("Zigate round trip time seems long. %s ms for %s %s SendingQueue: %s LoC: %s" 

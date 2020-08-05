@@ -201,38 +201,33 @@ class BasePlugin:
         self.startZigateNeeded = False
 
         self.SchneiderZone = None        # Manage Zone for Wiser Thermostat and HACT
-        self.running = True
-        self.messageQueue = queue.Queue()
-        self.ListeningThread = threading.Thread(name="ListeningThread", target=BasePlugin.listen_and_send, args=(self,))
 
-    def listen_and_send( self ):
 
-        needToWait = True
-        while  self.ZigateComm is None:
-            Domoticz.Log("Waiting for serial connection open")
-            time.sleep(1)
-        
-        serialConnection = self.ZigateComm._connection
-        Domoticz.Log("Serial Connection open: %s" %serialConnection)
-        while self.running:
-            nb = serialConnection.in_waiting
-            while nb:
-                self.Ping['Nb Ticks'] = 0
-                data = serialConnection.read( nb )
-                self.ZigateComm.on_message(data)
-                nb = serialConnection.in_waiting
-                needToWait = False
-            else:
-                while self.messageQueue.qsize() > 0:
-                    encoded_data = self.messageQueue.get_nowait()
-                    #Domoticz.Log("Data: %s" %encoded_data)
-                    serialConnection.write( encoded_data )
-                    needToWait = False
-            if needToWait:
-                time.sleep(0.25)
-            needToWait = True
 
-        Domoticz.Log("Thread listen_and_send ended!!")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     def onStart(self):
 
@@ -375,21 +370,21 @@ class BasePlugin:
         #if self.pluginconf.pluginConf['enableAPSFailureLoging'] or self.pluginconf.pluginConf['enableAPSFailureReporting']:
         #    self.APS = APSManagement( self.ListOfDevices , Devices, self.pluginconf, self.loggingFileHandle)
 
-        self.ListeningThread.start()
+
         # Connect to Zigate only when all initialisation are properly done.
         loggingPlugin( self, 'Status', "Transport mode: %s" %self.transport)
         if  self.transport == "USB":
-            self.ZigateComm = ZigateTransport( self.messageQueue, self.LOD, self.transport, self.statistics, self.pluginconf, self.processFrame,\
+            self.ZigateComm = ZigateTransport( self.LOD, self.transport, self.statistics, self.pluginconf, self.processFrame,\
                     self.loggingFileHandle, serialPort=Parameters["SerialPort"] )
         elif  self.transport == "DIN":
-            self.ZigateComm = ZigateTransport( self.messageQueue, self.LOD, self.transport, self.statistics, self.pluginconf, self.processFrame,\
+            self.ZigateComm = ZigateTransport( self.LOD, self.transport, self.statistics, self.pluginconf, self.processFrame,\
                     self.loggingFileHandle, serialPort=Parameters["SerialPort"] )
         elif  self.transport == "PI":
             switchPiZigate_mode( self, 'run' )
-            self.ZigateComm = ZigateTransport( self.messageQueue, self.LOD, self.transport, self.statistics, self.pluginconf, self.processFrame,\
+            self.ZigateComm = ZigateTransport( self.LOD, self.transport, self.statistics, self.pluginconf, self.processFrame,\
                     self.loggingFileHandle, serialPort=Parameters["SerialPort"] )
         elif  self.transport == "Wifi":
-            self.ZigateComm = ZigateTransport( self.messageQueue, self.LOD, self.transport, self.statistics, self.pluginconf, self.processFrame,\
+            self.ZigateComm = ZigateTransport( self.LOD, self.transport, self.statistics, self.pluginconf, self.processFrame,\
                     self.loggingFileHandle, wifiAddress= Parameters["Address"], wifiPort=Parameters["Port"] )
         elif self.transport == "None":
             loggingPlugin( self, 'Status', "Transport mode set to None, no communication.")
@@ -415,17 +410,20 @@ class BasePlugin:
 
     def onStop(self):
         loggingPlugin( self, 'Status', "onStop called")
-        self.running = False
+
         if self.domoticzdb_DeviceStatus:
             self.domoticzdb_DeviceStatus.closeDB()
 
         if self.domoticzdb_Hardware:
             self.domoticzdb_Hardware.closeDB()
 
+        if self.ZigateComm:
+            self.ZigateComm.close_conn()
+            
         if self.webserver:
             self.webserver.onStop()
 
-        if (not self.VersionNewFashion and (self.DomoticzMajor > 4 or ( self.DomoticzMajor == 4 and self.DomoticzMinor >= 10355))) or self.VersionNewFashion:
+        if ( self.DomoticzMajor > 4 or self.DomoticzMajor == 4 and self.DomoticzMinor >= 10355 or self.VersionNewFashion ):
             import threading
             for thread in threading.enumerate():
                 if (thread.name != threading.current_thread().name):
@@ -433,7 +431,7 @@ class BasePlugin:
 
         #self.ZigateComm.close_conn()
         WriteDeviceList(self, 0)
-        
+
         self.statistics.printSummary()
         self.statistics.writeReport()
         self.PluginHealth['Flag'] = 3

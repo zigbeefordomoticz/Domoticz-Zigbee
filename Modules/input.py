@@ -144,6 +144,7 @@ def ZigateRead(self, Devices, Data, TransportInfos=None):
         Domoticz.Error("ZigateRead received a non-zigate frame Data : " + Data + " FS/FS = " + FrameStart + "/" + FrameStop )
         return
 
+    self.Ping['Nb Ticks']  = 0 # We receive a valid packet
     MsgType=Data[2:6]
     MsgType = MsgType.lower()
     MsgLength=Data[6:10]
