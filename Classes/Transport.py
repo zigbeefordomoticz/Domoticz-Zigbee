@@ -17,6 +17,9 @@ from Modules.zigateConsts import ZIGATE_RESPONSES, ZIGATE_COMMANDS, ADDRESS_MODE
 from Modules.sqnMgmt import sqn_init_stack, sqn_generate_new_internal_sqn, sqn_add_external_sqn, sqn_get_internal_sqn_from_aps_sqn, sqn_get_internal_sqn_from_app_sqn, TYPE_APP_ZCL, TYPE_APP_ZDP
 
 import serial
+import select
+import socket
+
 import threading
 import queue
 from binascii import unhexlify, hexlify
@@ -106,10 +109,9 @@ class ZigateTransport(object):
     def SendingToZigate( self, Data, Delay):
         self.messageQueue.put(Data)
 
-    def listen_and_send( self ):
+    def serial_listen_and_send( self ):
         while self._connection  is None:
             Domoticz.Log("Waiting for serial connection open")
-            #time.sleep(1.0)
             self.ListeningThreadevent.wait(1.0)
         
         serialConnection = self._connection
@@ -130,9 +132,43 @@ class ZigateTransport(object):
                     serialConnection.write( encoded_data )
             else:
                 self.ListeningThreadevent.wait(.05)
-                #time.sleep(0.25)
 
         Domoticz.Log("Thread listen_and_send ended!!")
+
+    def tcpip_listen_and_send( self ):
+
+        while self._connection  is None:
+            Domoticz.Log("Waiting for tcpip connection open")
+            self.ListeningThreadevent.wait(1.0)
+        
+        tcpipConnection = self._connection
+        tcpiConnectionList = [ tcpipConnection ]
+        Domoticz.Log("tcpip Connection open: %s" %tcpipConnection) 
+        inputSocket  = outputSocket = [ tcpipConnection ]
+
+        while self.running:
+            
+            readable, writable, exceptional = select.select(inputSocket, outputSocket, inputSocket)
+
+            if readable:
+                data = tcpipConnection.recv(1024)
+                if data: 
+                    self.on_message(data)
+
+            if writable:
+                if self.messageQueue.qsize() > 0:
+                    while self.messageQueue.qsize() > 0:
+                        encoded_data = self.messageQueue.get_nowait()
+
+                        try:
+                            tcpipConnection.send( encoded_data )
+                        except socket.OSError as e:
+                            Domoticz.Error("Socket %s error %s" %(tcpipConnection, e))
+
+            if exceptional:
+                Domoticz.Error("We have detected an error .... on %s" %inputSocket)
+
+            self.ListeningThreadevent.wait(.05)
 
     def loggingSend(self, logType, message):
         # Log all activties towards ZiGate
@@ -163,16 +199,7 @@ class ZigateTransport(object):
     # Transport / Opening / Closing Communication
     def set_connection(self):
 
-        if self._connection is not None:
-            del self._connection
-            self._connection = None
-
-        if self._transp in ["USB", "DIN", "PI"]:
-            if self._serialPort.find('/dev/') != -1 or self._serialPort.find('COM') != -1:
-                Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" % (self._serialPort))
-                BAUDS = 115200
-                #self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
-                #                                       Address=self._serialPort, Baud=BAUDS)
+        def open_serial( self ):
                 try:
                     self._connection = serial.Serial(self._serialPort, baudrate = BAUDS, timeout = 0)
 
@@ -181,14 +208,47 @@ class ZigateTransport(object):
                     return
                 Domoticz.Status("Starting Listening and Sending Thread")
                 self.ListeningThreadevent = threading.Event()
-                self.ListeningThread = threading.Thread(name="ZiGateSerialListenThread", target=ZigateTransport.listen_and_send, args=(self,))
+                self.ListeningThread = threading.Thread(
+                                                name="ZiGateSerialListenThread", 
+                                                target=ZigateTransport.serial_listen_and_send, 
+                                                args=(self,))
                 self.ListeningThread.start()
+
+        def open_tcpip( self ):
+            try:
+                self._connection = socket.create_connection( (self._wifiAddress, self._wifiPort) )
+                self._connection.setblocking(0)
+
+            except socket.Exception:
+                Domoticz.Error("Cannot open Zigate Wifi %s Port %s error: %s" %(self._wifiAddress, self._serialPort, e))
+                return
+
+            self.ListeningThreadevent = threading.Event()
+            self.ListeningThread = threading.Thread(
+                                            name="ZiGateSerialListenThread", 
+                                            target=ZigateTransport.tcpip_listen_and_send, 
+                                            args=(self,))
+            self.ListeningThread.start()
+
+
+        if self._connection is not None:
+            del self._connection
+            self._connection = None
+
+        if self._transp in ["USB", "DIN", "PI"]:
+            if self._serialPort.find('/dev/') != -1 or self._serialPort.find('COM') != -1:
+                Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" % (self._serialPort))
+                BAUDS = 115200
+
+                open_serial( self)
+
 
         elif self._transp == "Wifi":
             Domoticz.Status("Connection Name: Zigate, Transport: TCP/IP, Address: %s:%s" %
                             (self._serialPort, self._wifiPort))
-            self._connection = Domoticz.Connection(Name="Zigate", Transport="TCP/IP", Protocol="None ",
-                                                   Address=self._wifiAddress, Port=self._wifiPort)
+
+            open_tcpip( self )
+
         else:
             Domoticz.Error("Unknown Transport Mode: %s" % self._transp)
 
