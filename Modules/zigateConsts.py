@@ -568,6 +568,7 @@ CLUSTERS_LIST = [
     '0405',  # Relative Humidity Measurement
     '0702',  # Smart Energy Metering
     '0006',  # On/Off
+    '0501',  # IAS ACE (Ancillary Control Equipment
     '0502',  # IAS WD Zone
     '0008',  # Level Control
     '0201',  # Thermostat
