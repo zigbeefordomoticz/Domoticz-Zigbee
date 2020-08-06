@@ -66,13 +66,13 @@
 """
 
 import Domoticz
-import binascii
 from datetime import datetime
 import time
 import struct
 import json
 import queue
 import sys
+import threading
 
 from Modules.piZigate import switchPiZigate_mode
 from Modules.tools import removeDeviceInList
@@ -112,6 +112,9 @@ TEMPO_NETWORK = 2    # Start HB totrigget Network Status
 TIMEDOUT_START = 10  # Timeoud for the all startup
 TIMEDOUT_FIRMWARE = 5 # HB before request Firmware again
 TEMPO_START_ZIGATE = 1 # Nb HB before requesting a Start_Zigate
+
+
+
 
 class BasePlugin:
     enabled = False
@@ -160,6 +163,7 @@ class BasePlugin:
 
         self.PluginHealth = {}
         self.Ping = {}
+        self.Ping['Nb Ticks'] =  self.Ping['Status'] = self.Ping['TimeStamp'] = None
         self.connectionState = None
 
         self.HBcount = 0
@@ -339,6 +343,7 @@ class BasePlugin:
         #if self.pluginconf.pluginConf['enableAPSFailureLoging'] or self.pluginconf.pluginConf['enableAPSFailureReporting']:
         #    self.APS = APSManagement( self.ListOfDevices , Devices, self.pluginconf, self.loggingFileHandle)
 
+
         # Connect to Zigate only when all initialisation are properly done.
         loggingPlugin( self, 'Status', "Transport mode: %s" %self.transport)
         if  self.transport == "USB":
@@ -385,18 +390,20 @@ class BasePlugin:
         if self.domoticzdb_Hardware:
             self.domoticzdb_Hardware.closeDB()
 
+        if self.ZigateComm:
+            self.ZigateComm.close_conn()
+
         if self.webserver:
             self.webserver.onStop()
 
-        if (not self.VersionNewFashion and (self.DomoticzMajor > 4 or ( self.DomoticzMajor == 4 and self.DomoticzMinor >= 10355))) or self.VersionNewFashion:
-            import threading
+        if ( self.DomoticzMajor > 4 or self.DomoticzMajor == 4 and self.DomoticzMinor >= 10355 or self.VersionNewFashion ):
             for thread in threading.enumerate():
                 if (thread.name != threading.current_thread().name):
-                    Domoticz.Error("'"+thread.name+"' is running, it must be shutdown otherwise Domoticz will abort on plugin exit.")
+                    Domoticz.Log("'"+thread.name+"' is running, it must be shutdown otherwise Domoticz will abort on plugin exit.")
 
         #self.ZigateComm.close_conn()
         WriteDeviceList(self, 0)
-        
+
         self.statistics.printSummary()
         self.statistics.writeReport()
         self.PluginHealth['Flag'] = 3
