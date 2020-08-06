@@ -33,7 +33,7 @@ CMD_NWK_2NDBytes = {}
 CMD_WITH_RESPONSE = {}
 RESPONSE_SQN = []
 
-WAITING_THREAD_MS = 20 / 1000    # 20ms of waiting time if nothing to do
+THREAD_RELAX_TIME_MS = 20 / 1000    # 20ms of waiting time if nothing to do
 
 
 class ZigateTransport(object):
@@ -62,7 +62,6 @@ class ZigateTransport(object):
         self._waitForCmdResponseQueue = [] # list of command sent for which status received and waiting for data
         self._waitForAckNack = []          # Contains list of Command waiting for Ack/Nack
 
-        
 
         # ZigBee31c (for  firmware below 31c, when Ack --> WaitForResponse )
         # ZigBeeack ( for firmware above 31d, When Ack --> WaitForAck )
@@ -143,7 +142,7 @@ class ZigateTransport(object):
                         Domoticz.Error("serial_listen_and_send - error while writing %s" %(e))
 
             else:
-                self.ListeningThreadevent.wait( WAITING_THREAD_MS )
+                self.ListeningThreadevent.wait( THREAD_RELAX_TIME_MS )
         Domoticz.Status("ZigateTransport: ZiGateSerialListen Thread stop.")
 
     def tcpip_listen_and_send( self ):
@@ -176,7 +175,7 @@ class ZigateTransport(object):
                 Domoticz.Error("We have detected an error .... on %s" %inputSocket)
 
             else:
-                self.ListeningThreadevent.wait( WAITING_THREAD_MS )
+                self.ListeningThreadevent.wait( THREAD_RELAX_TIME_MS )
 
 
 
@@ -254,14 +253,20 @@ class ZigateTransport(object):
             if self._serialPort.find('/dev/') != -1 or self._serialPort.find('COM') != -1:
                 Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" % (self._serialPort))
                 BAUDS = 115200
-
-                open_serial( self)
+                if self.pluginconf.pluginConf['MultiThreaded']:
+                    open_serial( self)
+                else:
+                    self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
+                                                       Address=self._serialPort, Baud=BAUDS)
 
         elif self._transp == "Wifi":
             Domoticz.Status("Connection Name: Zigate, Transport: TCP/IP, Address: %s:%s" %
                             (self._serialPort, self._wifiPort))
-
-            open_tcpip( self )
+            if self.pluginconf.pluginConf['MultiThreaded']:
+                open_tcpip( self )
+            else:
+                self._connection = Domoticz.Connection(Name="Zigate", Transport="TCP/IP", Protocol="None ",
+                                                   Address=self._wifiAddress, Port=self._wifiPort)
 
         else:
             Domoticz.Error("Unknown Transport Mode: %s" % self._transp)
@@ -270,23 +275,36 @@ class ZigateTransport(object):
     def open_conn(self):
         if not self._connection:
             self.set_connection()
+
+        if not self.pluginconf.pluginConf['MultiThreaded'] and self._connection:
+            self._connection.Connect()
+
         Domoticz.Status("Connection open: %s" % self._connection)
 
     def close_conn(self):
         Domoticz.Status("Connection close: %s" % self._connection)
         self.running = False # It will shutdown the Thread 
-        if self._connection:
-            self._connection.close()
+        if self.pluginconf.pluginConf['MultiThreaded']:
+            if self._connection:
+                self._connection.close()
+        else:
+            self._connection.Disconnect()
+
+        self._connection = None
 
 
     def re_conn(self):
         Domoticz.Status("Reconnection: %s" % self._connection)
-        if self._connection:
-            Domoticz.Log(" --  > still connected!")
-            self._connection.close()
-            time.sleep(1.0)
+        if self.pluginconf.pluginConf['MultiThreaded']:
+            if self._connection:
+                self._connection.close()
+                time.sleep(1.0)
+        else:
+            if self._connection.Connected():
+                self.close_conn()
 
         self.open_conn()
+
 
     # PDMonhost related
     def pdm_lock(self, lock):
@@ -836,7 +854,10 @@ def _send_data(self, InternalSqn):
     #            %(str(zigate_encode(cmd)), str(zigate_encode(length)), str(zigate_encode(strchecksum)), str(zigate_encode(datas))))
     #self._connection.Send(bytes.fromhex(str(lineinput)), 0)
 
-    self.messageQueue.put(bytes.fromhex(str(lineinput)))
+    if self.pluginconf.pluginConf['MultiThreaded'] and self.messageQueue:
+        self.messageQueue.put(bytes.fromhex(str(lineinput)))
+    else:
+        self._connection.Send(bytes.fromhex(str(lineinput)), 0)
     self.statistics._sent += 1
 
 

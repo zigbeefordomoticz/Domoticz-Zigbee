@@ -155,10 +155,10 @@ SETTINGS = {
         'TimeOut8000':     {'type': 'int',  'default': 3,      'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'TimeOut8011':     {'type': 'int',  'default': 8,      'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'TimeOutResponse': {'type': 'int',  'default': 8,      'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
-        'forceAckOnZCL':   {'type': 'bool', 'default': 0,      'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
-        'disableAckOnZCL': {'type': 'bool', 'default': 0,      'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
+        'forceAckOnZCL':   {'type': 'bool', 'default': 0,      'current': None, 'restart': False, 'hidden': False,  'Advanced': True},
+        'disableAckOnZCL': {'type': 'bool', 'default': 0,      'current': None, 'restart': False, 'hidden': False,  'Advanced': True},
         'waitForResponse': {'type': 'bool', 'default': 0,      'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
-        
+        'MultiThreaded':   {'type': 'bool', 'default': 1,      'current': None, 'restart': True, 'hidden': False,  'Advanced': True},
         }
     },
 

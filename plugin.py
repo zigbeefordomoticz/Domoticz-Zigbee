@@ -203,33 +203,6 @@ class BasePlugin:
 
         self.SchneiderZone = None        # Manage Zone for Wiser Thermostat and HACT
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     def onStart(self):
 
         self.pluginParameters = dict(Parameters)
@@ -428,7 +401,7 @@ class BasePlugin:
             import threading
             for thread in threading.enumerate():
                 if (thread.name != threading.current_thread().name):
-                    Domoticz.Error("'"+thread.name+"' is running, it must be shutdown otherwise Domoticz will abort on plugin exit.")
+                    Domoticz.Log("'"+thread.name+"' is running, it must be shutdown otherwise Domoticz will abort on plugin exit.")
 
         #self.ZigateComm.close_conn()
         WriteDeviceList(self, 0)
