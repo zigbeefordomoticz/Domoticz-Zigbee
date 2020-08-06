@@ -66,13 +66,13 @@
 """
 
 import Domoticz
-import binascii
 from datetime import datetime
 import time
 import struct
 import json
 import queue
 import sys
+import threading
 
 from Modules.piZigate import switchPiZigate_mode
 from Modules.tools import removeDeviceInList
@@ -113,9 +113,8 @@ TIMEDOUT_START = 10  # Timeoud for the all startup
 TIMEDOUT_FIRMWARE = 5 # HB before request Firmware again
 TEMPO_START_ZIGATE = 1 # Nb HB before requesting a Start_Zigate
 
-import threading
-import queue
-from binascii import unhexlify, hexlify
+
+
 
 class BasePlugin:
     enabled = False
@@ -398,7 +397,6 @@ class BasePlugin:
             self.webserver.onStop()
 
         if ( self.DomoticzMajor > 4 or self.DomoticzMajor == 4 and self.DomoticzMinor >= 10355 or self.VersionNewFashion ):
-            import threading
             for thread in threading.enumerate():
                 if (thread.name != threading.current_thread().name):
                     Domoticz.Log("'"+thread.name+"' is running, it must be shutdown otherwise Domoticz will abort on plugin exit.")
