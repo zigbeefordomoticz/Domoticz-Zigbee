@@ -1463,15 +1463,18 @@ def process8002(self, frame):
     if Command == '01': # Read Attribute response
         return buildframe_read_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
 
-    elif Command == '0a':
+    if Command == '0a':
         return buildframe_report_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
 
-    elif Command == '07':
+    if Command == '07':
         return buildframe_configure_reporting_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
 
-    elif Command == '04': # Write Attribute response
+    if Command == '04': # Write Attribute response
         return buildframe_write_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
 
+    self.logging_receive(
+        'Log', "process8002 Unknown Command: %s NwkId: %s Ep: %s Cluster: %s Payload: %s" %(Command, SrcNwkId, SrcEndPoint, ClusterId , Data))
+        
     return frame
 
 
@@ -1553,6 +1556,23 @@ def buildframe_write_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clus
 
     return  newFrame
 
+def decode_endian_data( data, datatype):
+    if datatype in ( '10', '18', '20', '28', '30'):
+        value = data
+
+    elif datatype in ('09', '16', '21', '29', '31'):
+        value = '%04x' %struct.unpack('>H',struct.pack('H',int(data,16)))[0]
+
+    elif datatype in ( '22', '2a'):
+        value= '%06x' %struct.unpack('>I',struct.pack('I',int(data,16)))[0]
+
+    elif datatype in ( '23', '2b', '39'):
+        value = '%08x' %struct.unpack('>f',struct.pack('I',int(data,16)))[0]
+    else:
+        value = data
+        Domoticz.Log("-------> Data not decoded Type: %s Value: %s " % (datatype, value))
+    return value
+
 
 def buildframe_read_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data ):
 
@@ -1578,22 +1598,8 @@ def buildframe_read_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clust
                 return frame
 
             data = Data[idx:idx + size]
-            if DType in ( '10', '18', '20', '28', '30'):
-                value = data
-
-            elif DType in ('09', '16', '21', '29', '31'):
-                value = '%04x' %struct.unpack('>H',struct.pack('H',int(data,16)))[0]
-
-            elif DType in ( '22', '2a'):
-                value= '%06x' %struct.unpack('>I',struct.pack('I',int(data,16)))[0]
-
-            elif DType in ( '23', '2b', '39'):
-                value = '%08x' %struct.unpack('>f',struct.pack('I',int(data,16)))[0]
-            else:
-                value = data
-                Domoticz.Log("-------> Data Type: %s from %s to %s" %(DType, data, value))
-
             idx += size
+            value = decode_endian_data( data, DType)
             lenData = '%04x' %size
             buildPayload += Attribute + Status + DType + lenData + value
         else:
@@ -1631,18 +1637,9 @@ def buildframe_report_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clu
             Domoticz.Error("buildframe_report_attribute_response - Unknown DataType size: >%s< vs. %s " %(DType, str(SIZE_DATA_TYPE)))
             return frame
         data = Data[idx:idx + size]
-        if DType in ( '10', '18', '20', '28', '30'):
-            value = data
-        elif DType in ('09', '16', '21', '29', '31'):
-            value = '%04x' %struct.unpack('>H',struct.pack('H',int(data,16)))[0]
-        elif DType in ( '22', '2a'):
-            value= '%06x' %struct.unpack('>I',struct.pack('I',int(data,16)))[0]
-        elif DType in ( '23', '2b', '39'):
-            value = '%08x' %struct.unpack('>f',struct.pack('I',int(data,16)))[0]
-        else:
-            value = data
-            Domoticz.Log("-------> Data Type: %s from %s to %s" %(DType, data, value))
         idx += size
+        value = decode_endian_data( data, DType)
+
         lenData = '%04x' %size
         buildPayload += Attribute + '00' + DType + lenData + value
 
