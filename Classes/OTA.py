@@ -279,7 +279,6 @@ class OTAManagement(object):
         self.OTA['Filename'][key] = {}
         self.OTA['Filename'][key]['subfolder'] = subfolder
         self.OTA['Filename'][key]['image'] = image
-        subfolder, image
 
         if key in BATTERY_TYPES:    # In such case let's pile it so we will expsoe it a while after the powered Devices Type.
             self.logging( 'Debug', "ota_decode_new_image - Firmware for battery type detected - %s %s" %(key, image))
