@@ -3,29 +3,29 @@
 # Author: zaraki673 & pipiche38
 #
 
-"""
-    References: 
-        - https://www.nxp.com/docs/en/user-guide/JN-UG-3115.pdf ( section 40 - OTA Upgrade Cluster
-        - https://github.com/fairecasoimeme/ZiGate/issues?utf8=%E2%9C%93&q=OTA
-
-    Server      Zigate      Client
-
-    0x0500 ----->
-    0x0505 ----------------->
-    0x8501 <------------------
-    0x0502 ------------------>
-
-    0x8503 <------------------
-
-    'Upgraded Device':
-        - Notified
-        - Block Requested
-        - Transfer Progress
-        - Transfer Completed
-        - Transfer Aborted
-        - Timeout
-
-"""
+# """
+#     References: 
+#         - https://www.nxp.com/docs/en/user-guide/JN-UG-3115.pdf ( section 40 - OTA Upgrade Cluster
+#         - https://github.com/fairecasoimeme/ZiGate/issues?utf8=%E2%9C%93&q=OTA
+# 
+#     Server      Zigate      Client
+# 
+#     0x0500 ----->
+#     0x0505 ----------------->
+#     0x8501 <------------------
+#     0x0502 ------------------>
+# 
+#     0x8503 <------------------
+# 
+#     'Upgraded Device':
+#         - Notified
+#         - Block Requested
+#         - Transfer Progress
+#         - Transfer Completed
+#         - Transfer Aborted
+#         - Timeout
+# 
+# """
 
 import Domoticz
 
@@ -161,7 +161,7 @@ class OTAManagement(object):
             self._loggingLog( message )
         elif logType == 'Status':
             self._loggingStatus( message)
-        return
+
 
     # Low level commands/messages
     def ota_decode_new_image( self, subfolder, image ):
@@ -288,7 +288,7 @@ class OTAManagement(object):
         return key
 
     def ota_load_new_image( self, key):
-        " Send the image headers to Zigate."
+        # " Send the image headers to Zigate."
 
         if key not in self.OTA['Images']:
             self.logging( 'Debug', "ota_load_new_image - Unknown Image %s in %s" %(key, str(self.OTA['Images']).keys() ))
@@ -323,9 +323,9 @@ class OTAManagement(object):
 
     def notify_device( self, MsgManufCode, MsgImageType, MsgImageVersion, MsgSrcAddr, MsgEpOut=None ):
 
-        """
-        Purpose is to notifiy a specifc device.
-        """
+        #  """
+        #  Purpose is to notifiy a specifc device.
+        #  """
         self.logging( 'Log', "notify_device: Manuf: 0x%x Type: 0x%04x Version: 0x%08x Nwkid: %s EPOut: %s" %(MsgManufCode, MsgImageType, MsgImageVersion, MsgSrcAddr, MsgEpOut))
 
         if MsgImageType not in self.OTA['Images']:
@@ -349,9 +349,9 @@ class OTAManagement(object):
 
     def async_request( self, MsgSrcAddr, MsgIEEE, MsgFileOffset, MsgImageVersion, MsgImageType, MsgManufCode, MsgBlockRequestDelay, MsgMaxDataSize, MsgFieldControl):
 
-        """
-        Purpose is to handle an Async request (most-likely Legrand), when there is nothing to do
-        """
+        #  """
+        #  Purpose is to handle an Async request (most-likely Legrand), when there is nothing to do
+        #  """
 
         if self.upgradeInProgress:
             self.logging( 'Debug', "async_request: There is an upgrade in progress, drop request from %s" %(MsgSrcAddr))
@@ -380,7 +380,7 @@ class OTAManagement(object):
         self.notify_device( MsgManufCode, MsgImageType, MsgImageVersion, MsgSrcAddr)
 
     def ota_request_firmware( self , MsgData):
-        'BLOCK_REQUEST 	0x8501 	ZiGate will receive this command when device asks OTA firmware'
+        # 'BLOCK_REQUEST 	0x8501 	ZiGate will receive this command when device asks OTA firmware'
 
         self.logging( 'Debug', "Decode8501 - Request Firmware Block (%s) %s" %(len(MsgData), MsgData))
 
@@ -405,7 +405,7 @@ class OTAManagement(object):
 
         self.logging( 'Debug', "Decode8501 - [%3s] OTA image Block request - %s/%s Offset: %s version: 0x%08X Type: 0%04X Code: 0x%04X Delay: %s MaxSize: %s Control: 0x%02X"
             %(int(MsgSQN,16), MsgSrcAddr, MsgEP, int(MsgFileOffset,16), MsgImageVersion, MsgImageType, MsgManufCode, int(MsgBlockRequestDelay,16), int(MsgMaxDataSize,16), MsgFieldControl))
-        
+
         # Patching in order to make Legrand update with Image Page Request working
         if MsgManufCode == 0x00C8 and self.TypeInProgress:
             # Request a Page , and Note a Block
@@ -418,17 +418,18 @@ class OTAManagement(object):
             self.logging( 'Debug', "  Fixing   - [%3s] OTA image Block request - %s/%s Offset: %s version: 0x%08X Type: 0%04X Code: 0x%04X Delay: %s MaxSize: %s Control: 0x%02X"
                 %(int(MsgSQN,16), MsgSrcAddr, MsgEP, int(MsgFileOffset,16), MsgImageVersion, MsgImageType, MsgManufCode, int(MsgBlockRequestDelay,16), int(MsgMaxDataSize,16), MsgFieldControl))
 
-        block_request = {}
-        block_request['ReqAddr'] = MsgSrcAddr
-        block_request['ReqEp'] = MsgEP
-        block_request['Offset'] = MsgFileOffset
-        block_request['ImageVersion'] = MsgImageVersion
-        block_request['ImageType'] = MsgImageType
-        block_request['ManufCode'] = MsgManufCode
-        block_request['BlockReqDelay'] = MsgBlockRequestDelay
-        block_request['MaxDataSize'] = MsgMaxDataSize
-        block_request['FieldControl'] = MsgFieldControl
-        block_request['Sequence'] = MsgSQN
+        block_request = {
+            'ReqAddr': MsgSrcAddr,
+            'ReqEp': MsgEP,
+            'Offset': MsgFileOffset,
+            'ImageVersion': MsgImageVersion,
+            'ImageType': MsgImageType,
+            'ManufCode': MsgManufCode,
+            'BlockReqDelay': MsgBlockRequestDelay,
+            'MaxDataSize': MsgMaxDataSize,
+            'FieldControl': MsgFieldControl,
+            'Sequence': MsgSQN,
+        }
 
         if MsgSrcAddr not in self.OTA['Upgraded Device']:
             Domoticz.Error("OTA image Block request - Not in upgrade mode ...")
@@ -484,7 +485,7 @@ class OTAManagement(object):
         self.ota_block_send( MsgSrcAddr, MsgEP, MsgImageType, block_request )
 
     def ota_block_send( self , dest_addr, dest_ep, image, block_request):
-        'BLOCK_SEND 	0x0502 	This is used to transfer firmware BLOCKS to device when it sends request 0x8501.'
+        # 'BLOCK_SEND 	0x0502 	This is used to transfer firmware BLOCKS to device when it sends request 0x8501.'
 
         self.logging( 'Debug', "ota_block_send - Addr: %s/%s Type: 0x%X" %(dest_addr, dest_ep, image))
         if image not in self.OTA['Images']:
@@ -520,11 +521,11 @@ class OTAManagement(object):
 
         sequence = int(block_request['Sequence'],16)
         
-        """
-        Indicates whether a data block is included in the response:
-            OTA_STATUS_SUCCESS: ( 0x00)  A data block is included
-            OTA_STATUS_WAIT_FOR_DATA (0x97) : No data block is included - client should re-request a data block after a waiting time
-        """
+        # """
+        # Indicates whether a data block is included in the response:
+        #     OTA_STATUS_SUCCESS: ( 0x00)  A data block is included
+        #     OTA_STATUS_WAIT_FOR_DATA (0x97) : No data block is included - client should re-request a data block after a waiting time
+        # """
         _status = 0x00
 
         # Build the data block to be send based on the request
@@ -551,13 +552,13 @@ class OTAManagement(object):
                 %( dest_addr, dest_ep, _offset, _lenght))
 
     def ota_upgrade_end_response( self, dest_addr, dest_ep, MsgImageVersion, MsgImageType, MsgManufCode ):
-        """
-        This function issues an Upgrade End Response to a client to which the server has been
-        downloading an application image. The function is called after receiving an Upgrade 
-        End Request from the client, indicating that the client has received the entire 
-        application image and verified it
-        """
-        'UPGRADE_END_RESPONSE 	0x0504'
+        #"""
+        #This function issues an Upgrade End Response to a client to which the server has been
+        #downloading an application image. The function is called after receiving an Upgrade 
+        #End Request from the client, indicating that the client has received the entire 
+        #application image and verified it
+        #"""
+        #'UPGRADE_END_RESPONSE 	0x0504'
 
         # u32UpgradeTime is the UTC time, in seconds, at which the client should upgrade the running image with the downloaded image
         _UpgradeTime = 0x00 
@@ -594,24 +595,24 @@ class OTAManagement(object):
         self.ListOfDevices[ dest_addr ]['OTA'][ now ]['Type'] =  '%04X' %_ImageType
 
     def ota_image_advertize(self, dest_addr, dest_ep, image_version = 0xFFFFFFFF, image_type = 0xFFFF, manufacturer_code = 0xFFFF, Flag_=False ):
-        'IMAGE_NOTIFY 	0x0505 	Notify desired device that ota is available. After loading headers use this.'
+        # 'IMAGE_NOTIFY 	0x0505 	Notify desired device that ota is available. After loading headers use this.'
 
-        """
-        The 'query jitter' mechanism can be used to prevent a flood of replies to an Image Notify broadcast
-        or multicast (Step 2 above). The server includes a number, n, in the range 1-100 in the notification. 
-        If interested in the image, the receiving client generates a random number in the range 1-100. 
-        If this number is greater than n, the client discards the notification, otherwise it responds with 
-        a Query Next Image Request. This results in only a fraction of interested clients res
-        """
+        # """
+        # The 'query jitter' mechanism can be used to prevent a flood of replies to an Image Notify broadcast
+        # or multicast (Step 2 above). The server includes a number, n, in the range 1-100 in the notification. 
+        # If interested in the image, the receiving client generates a random number in the range 1-100. 
+        # If this number is greater than n, the client discards the notification, otherwise it responds with 
+        # a Query Next Image Request. This results in only a fraction of interested clients res
+        # """
         JITTER_OPTION = 100
 
-        """
-        teOTA_ImageNotifyPayloadType
-          - 0 : E_CLD_OTA_QUERY_JITTER Include only ‘Query Jitter’ in payload
-          - 1 : E_CLD_OTA_MANUFACTURER_ID_AND_JITTER Include ‘Manufacturer Code’ and ‘Query Jitter’ in payload
-          - 2 : E_CLD_OTA_ITYPE_MDID_JITTER Include ‘Image Type’, ‘Manufacturer Code’ and ‘Query Jit- ter’ in payload
-          - 3 : E_CLD_OTA_ITYPE_MDID_FVERSION_JITTER Include ‘Image Type’, ‘Manufacturer Code’, ‘File Version’ and ‘Query Jitter’ in payload
-        """
+        # """
+        # teOTA_ImageNotifyPayloadType
+        #   - 0 : E_CLD_OTA_QUERY_JITTER Include only ‘Query Jitter’ in payload
+        #   - 1 : E_CLD_OTA_MANUFACTURER_ID_AND_JITTER Include ‘Manufacturer Code’ and ‘Query Jitter’ in payload
+        #   - 2 : E_CLD_OTA_ITYPE_MDID_JITTER Include ‘Image Type’, ‘Manufacturer Code’ and ‘Query Jit- ter’ in payload
+        #   - 3 : E_CLD_OTA_ITYPE_MDID_FVERSION_JITTER Include ‘Image Type’, ‘Manufacturer Code’, ‘File Version’ and ‘Query Jitter’ in payload
+        # """
         IMG_NTFY_PAYLOAD_TYPE = 3
 
         if IMG_NTFY_PAYLOAD_TYPE == 0:
@@ -638,7 +639,7 @@ class OTAManagement(object):
         self.ZigateComm.sendData( "0505", datas)
 
     def ota_management( self, MsgSrcAddr, MsgEP ):
-        'SEND_WAIT_FOR_DATA_PARAMS 	0x0506 	Can be used to delay/pause OTA update'
+        # 'SEND_WAIT_FOR_DATA_PARAMS 	0x0506 	Can be used to delay/pause OTA update'
 
         # OTA_STATUS_WAIT_FOR_DATA: No data block is included - client should re-request
         #                           a data block after a waiting time
@@ -668,7 +669,7 @@ class OTAManagement(object):
         self.ZigateComm.sendData( "0506", datas)
 
     def ota_request_firmware_completed( self , MsgData):
-        'UPGRADE_END_REQUEST 	0x8503 	Device will send this when it has received last part of firmware'
+        # 'UPGRADE_END_REQUEST 	0x8503 	Device will send this when it has received last part of firmware'
 
         self.logging( 'Debug', "Decode8503 - Request Firmware Block %s/%s" %(MsgData, len(MsgData)))
         MsgSQN = MsgData[0:2]
@@ -768,9 +769,9 @@ class OTAManagement(object):
         self.adminWidgets.updateNotificationWidget( self.Devices, _textmsg)
 
     def ota_scan_folder( self):
-        """
-        Scanning the Firmware folder and processing them
-        """
+        # """
+        # Scanning the Firmware folder and processing them
+        # """
 
         for brand in ('IKEA-TRADFRI', 'LEDVANCE', 'LEGRAND' , 'PHILIPS'):
             ota_dir = self.pluginconf.pluginConf['pluginOTAFirmware'] + brand
@@ -782,7 +783,7 @@ class OTAManagement(object):
                 key = self.ota_decode_new_image( brand, ota_image_file )
 
     def heartbeat( self ):
-        """ call by plugin onHeartbeat """
+        # """ call by plugin onHeartbeat """
 
 
         if self.stopOTA:
@@ -853,7 +854,8 @@ class OTAManagement(object):
         if self.upgradableDev is None: 
             self.upgradableDev = []
             for iterDev in self.ListOfDevices:
-                if iterDev in ( '0000', 'ffff' ): continue
+                if iterDev in ( '0000', 'ffff' ): 
+                    continue
                 if self.ListOfDevices[iterDev]['Health'] in ( 'TimedOut', 'Not Reachable'):
                     self.logging( 'Debug', "OTA heartbeat - skip %s not Live device" %iterDev)
                     continue
