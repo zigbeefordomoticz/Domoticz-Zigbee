@@ -37,7 +37,6 @@ from Modules.schneider_wiser import schneider_wiser_registration, schneiderReadR
 from Modules.legrand_netatmo import rejoin_legrand_reset
 from Modules.errorCodes import DisplayStatusCode
 from Modules.readClusters import ReadCluster
-from Modules.database import saveZigateNetworkData
 from Modules.zigateConsts import ADDRESS_MODE, ZCL_CLUSTERS_LIST, LEGRAND_REMOTES, LEGRAND_REMOTE_SWITCHS, ZIGATE_EP, ZIGBEE_COMMAND_IDENTIFIER
 from Modules.pluzzy import pluzzyDecode8102
 from Modules.zigate import  initLODZigate, receiveZigateEpList, receiveZigateEpDescriptor
@@ -476,7 +475,6 @@ def Decode8009(self, Devices, MsgData, MsgLQI): # Network State response (Firm v
 
     self.currentChannel = int(Channel,16)
 
-    #Domoticz.Log("IAS Zone: %s" %self.iaszonemgt)
     if self.iaszonemgt:
         #Domoticz.Log("Update IAS Zone - IEEE: %s" %extaddr)
         self.iaszonemgt.setZigateIEEE( extaddr )
@@ -500,7 +498,6 @@ def Decode8009(self, Devices, MsgData, MsgLQI): # Network State response (Firm v
     self.zigatedata['Channel'] = int(Channel,16)
     self.zigatedata['PANID'] = PanID
     self.zigatedata['Extended PANID'] = extPanID
-    saveZigateNetworkData( self , self.zigatedata )
 
 def Decode8010(self, Devices, MsgData, MsgLQI): # Reception Version list
     MsgLen=len(MsgData)
