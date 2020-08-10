@@ -85,6 +85,7 @@ class ZigateTransport(object):
         self.ListeningThreadevent = None
         self.ListeningThread = None
         self.messageQueue = queue.Queue()
+        self.processFrameThread = []
 
         # Call back function to send back to plugin
         self.F_out = F_out  # Function to call to bring the decoded Frame at plugin
@@ -109,6 +110,28 @@ class ZigateTransport(object):
 
     # Thread handling Serial Input/Output
     # Priority on Reading
+
+    def thread_processFrame( self, frame ):
+
+        self.logging_receive('Debug', "In thread ")
+        try:
+            self.logging_receive('Debug', ">>>> In thread for frame:  %s" %frame)
+            self.F_out( frame, None )
+            self.logging_receive('Debug', ">>>> Out thread for frame: %s" %frame)
+        except Exception as e :
+            Domoticz.Error("thread_processFrame Cannot call F_out %s" %e)
+        
+
+    def launch_thread_processFrame( self, frame ):
+
+        self.logging_receive('Debug', "launch_thread_processFrame - Create Thread for %s" %frame) 
+        processFrameThread = threading.Thread(
+                name="ZiGateSerialListenThread_%s" %len(self.processFrameThread), 
+                target=ZigateTransport.thread_processFrame, 
+                args=(self, frame,))
+        processFrameThread.start()
+
+    
     def serial_listen_and_send( self ):
 
         while self._connection  is None:
@@ -144,6 +167,7 @@ class ZigateTransport(object):
             else:
                 self.ListeningThreadevent.wait( THREAD_RELAX_TIME_MS )
         Domoticz.Status("ZigateTransport: ZiGateSerialListen Thread stop.")
+
 
     def tcpip_listen_and_send( self ):
 
@@ -181,6 +205,7 @@ class ZigateTransport(object):
 
         Domoticz.Status("ZigateTransport: ZiGateTcpIpListen Thread stop.")
 
+
     def loggingSend(self, logType, message):
         # Log all activties towards ZiGate
         if self.pluginconf.pluginConf['debugTransportTx'] and logType == 'Debug':
@@ -191,6 +216,7 @@ class ZigateTransport(object):
             _logging_status(self, message)
         elif logType == 'Error':
             _logging_error(self, message)
+
 
     def logging_receive(self, logType, message):
         # Log all activities received from ZiGate
@@ -203,9 +229,11 @@ class ZigateTransport(object):
         elif logType == 'Error':
             _logging_error(self, message)
 
+
     def loadTransmit(self):
         # Provide the Load of the Sending Queue
         return len(self.zigateSendQueue)
+
 
     # Transport / Opening / Closing Communication
     def set_connection(self):
@@ -281,6 +309,7 @@ class ZigateTransport(object):
 
         Domoticz.Status("Connection open: %s" % self._connection)
 
+
     def close_conn(self):
         Domoticz.Status("Connection close: %s" % self._connection)
         self.running = False # It will shutdown the Thread 
@@ -311,8 +340,10 @@ class ZigateTransport(object):
         # Take a Lock to protect all communications from/to ZiGate (PDM on Host)
         self.PDMCommandOnly = lock
 
+
     def pdm_lock_status(self):
         return self.PDMCommandOnly
+
 
     def sendData(self, cmd, datas, ackIsDisabled=False, waitForResponseIn=False):
 
@@ -403,6 +434,7 @@ class ZigateTransport(object):
         send_data_internal(self, InternalSqn)
         return InternalSqn
 
+
     def on_message(self, Data):
         # Process/Decode Data
 
@@ -479,6 +511,7 @@ class ZigateTransport(object):
                 AsciiMsg = binascii.hexlify(BinMsg).decode('utf-8')
                 self.statistics._received += 1
                 process_frame(self, AsciiMsg)
+
 
     def check_timed_out_for_tx_queues(self):
         check_timed_out(self)
@@ -1070,7 +1103,11 @@ def process_frame(self, frame):
 
     # We receive an async message, just forward it to plugin
     if int(MsgType, 16) in STANDALONE_MESSAGE:
-        self.F_out(frame, None)  # for processing
+        
+        if self.pluginconf.pluginConf['MultiThreaded']:
+            self.launch_thread_processFrame( frame )
+        else:
+            self.F_out(frame, None)  # for processing
         ready_to_send_if_needed(self)
         return
 
@@ -1086,7 +1123,10 @@ def process_frame(self, frame):
 
     if len(self._waitFor8000Queue) == 0 and len(self._waitForCmdResponseQueue) == 0 and len(self._waitForAckNack) == 0:
         # All queues are empty
-        self.F_out(frame, None)
+        if self.pluginconf.pluginConf['MultiThreaded']:
+            self.launch_thread_processFrame( frame )
+        else:
+            self.F_out(frame, None)
         ready_to_send_if_needed(self)
         return
         
@@ -1140,7 +1180,10 @@ def process_frame(self, frame):
 
     if len(self._waitForCmdResponseQueue) == 0 and len(self._waitForAckNack) == 0:
         # All queues are empty
-        self.F_out(frame, None)
+        if self.pluginconf.pluginConf['MultiThreaded']:
+            self.launch_thread_processFrame( frame )
+        else:
+            self.F_out(frame, None)
         ready_to_send_if_needed(self)
         return
 
@@ -1190,7 +1233,10 @@ def process_frame(self, frame):
 
     if len(self._waitForCmdResponseQueue) == 0:
         # All queues are empty
-        self.F_out(frame, None)
+        if self.pluginconf.pluginConf['MultiThreaded']:
+            self.launch_thread_processFrame( frame )
+        else:
+            self.F_out(frame, None)
         ready_to_send_if_needed(self)
         return
 
@@ -1229,7 +1275,11 @@ def process_frame(self, frame):
                 self, _next_cmd_from_wait_cmdresponse_queue(self)[0])
 
     # Forward the message to plugin for further processing
-    self.F_out(frame, None)
+    if self.pluginconf.pluginConf['MultiThreaded']:
+        self.launch_thread_processFrame( frame )
+    else:
+        self.F_out(frame, None)
+
     ready_to_send_if_needed(self)
     # Let's take the opportunity to check TimeOut
     self.check_timed_out_for_tx_queues()
@@ -1739,11 +1789,12 @@ def buildframe_read_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clust
             idx += 2
             if DType in SIZE_DATA_TYPE:
                 size = SIZE_DATA_TYPE[ DType ] * 2
-            elif DType == '42': # String
+            elif DType in ( '41', '42'): # ZigBee_OctedString = 0x41, ZigBee_CharacterString = 0x42
                 size = int(Data[idx:idx+2],16)
                 idx += 2
             else: 
                 Domoticz.Error("buildframe_read_attribute_response - Unknown DataType size: >%s< vs. %s " %(DType, str(SIZE_DATA_TYPE)))
+                Domoticz.Error("buildframe_read_attribute_response - ClusterId: %s Attribute: %s Data: %s" %(ClusterId, Attribute, Data))
                 return frame
 
             data = Data[idx:idx + size]
@@ -1779,12 +1830,14 @@ def buildframe_report_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clu
         idx += 2
         if DType in SIZE_DATA_TYPE:
             size = SIZE_DATA_TYPE[ DType ] * 2
-        elif DType == '42': # String
+        elif DType in ( '41', '42'): # ZigBee_OctedString = 0x41, ZigBee_CharacterString = 0x42
             size = int(Data[idx:idx+2],16)
             idx += 2
         else: 
             Domoticz.Error("buildframe_report_attribute_response - Unknown DataType size: >%s< vs. %s " %(DType, str(SIZE_DATA_TYPE)))
+            Domoticz.Error("buildframe_report_attribute_response - ClusterId: %s Attribute: %s Data: %s" %(ClusterId, Attribute, Data))
             return frame
+
         data = Data[idx:idx + size]
         idx += size
         value = decode_endian_data( data, DType)
