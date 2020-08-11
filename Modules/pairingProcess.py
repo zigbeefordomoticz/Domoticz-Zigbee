@@ -258,14 +258,10 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         for x in Devices:
             if self.ListOfDevices[NWKID].get('IEEE'):
                 if Devices[x].DeviceID == str(self.ListOfDevices[NWKID]['IEEE']):
-                    if self.pluginconf.pluginConf['capturePairingInfos'] == 1:
-                        Domoticz.Log("processNotinDBDevices - Devices already exist. "  + Devices[x].Name + " with " + str(self.ListOfDevices[NWKID]) )
-                        Domoticz.Log("processNotinDBDevices - ForceCreationDevice enable, we continue")
-                    else:
-                        IsCreated = True
-                        Domoticz.Error("processNotinDBDevices - Devices already exist. "  + Devices[x].Name + " with " + str(self.ListOfDevices[NWKID]) )
-                        Domoticz.Error("processNotinDBDevices - Please cross check the consistency of the Domoticz and Plugin database.")
-                        break
+                    IsCreated = True
+                    Domoticz.Error("processNotinDBDevices - Devices already exist. "  + Devices[x].Name + " with " + str(self.ListOfDevices[NWKID]) )
+                    Domoticz.Error("processNotinDBDevices - Please cross check the consistency of the Domoticz and Plugin database.")
+                    break
 
         if not IsCreated:
             loggingPairing( self, 'Debug', "processNotinDBDevices - ready for creation: %s , Model: %s " %(self.ListOfDevices[NWKID], self.ListOfDevices[NWKID]['Model']))
