@@ -192,19 +192,20 @@ SWITCH_LVL_MATRIX = {
             }
         },
 
-    "SwitchAQ3": { 
-        "1": (0, "00"), 
-        "2": (1, "10"), 
-        "01": (0, "00"), 
-        "02": (1, "10"), 
-        "16": (2, "20"), 
-        "17": (3, "30"), 
-        "18": (4, "40"), 
-        "ForceUpdate": True, 
+    "SwitchAQ3": {
+        "1": (0, "00"),
+        "2": (1, "10"),
+        "01": (0, "00"),
+        "02": (1, "10"),
+        "16": (2, "20"),
+        "17": (3, "30"),
+        "18": (4, "40"),
+        "00": (0, "00"),
+        "ForceUpdate": True,
         "LevelNames": "Click|Double click|Long click|Release click|Shake",
         "Language": {
             "fr-FR": {"LevelNames": "Click|Double click|Long click|Relacher click|Remuer"}
-            }
+             }
         },
 
     "DSwitch": {
@@ -253,11 +254,6 @@ SWITCH_LVL_MATRIX = {
             "fr-FR": {"LevelNames": "Arrêt|Agiter|Alerte|Chute libre|Retourner_90|Retourner_180|Bouger|Frapper|Rotation Horaire|Rotation Antihoraire"}
         }
     },
-
-
-
-
-
 
     "Vibration": {
         "00": (0, "00"),
@@ -418,5 +414,18 @@ SWITCH_LVL_MATRIX = {
         100: (10, "100"),
         "ForceUpdate": True,
         "LevelNames": "Off|0°|10°|20°|30°|40°|50°|60°|70°|80°|90°",
+    },
+
+    "IAS_ACE": { 
+        "00": (0, "00"), 
+        "01": (1, "10"), # Arm Day (Home Zones Only) - Command Arm 0x00 - Payload 0x01
+        "02": (0, "20"), # Emergency - Command Emergency 0x02
+        "03": (1, "30"), # Arm All Zones - Command Arm 0x00 - Payload Arm all Zone 0x03
+        "04": (2, "40"), # Disarm - Command 0x00 - Payload Disarm 0x00
+        "ForceUpdate": True, 
+        "LevelNames": "Off|Emergency|Arm Day (Home Zones Only)|Arm All Zones|Disarm",
+        "Language": {
+            "fr-FR": {"LevelNames": "Off|Urgence|Armer (zone maison)|Armer (toutes zones)|Désarmer"}
+            }
     },
 }
