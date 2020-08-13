@@ -211,7 +211,14 @@ def loggingPhilips( self, logType, message, nwkid=None):
 
 def loggingLivolo( self, logType, message, nwkid=None):
     
-    if self.pluginconf.pluginConf['debugPhilips'] and logType == 'Debug':
+    if self.pluginconf.pluginConf['debugLivolo'] and logType == 'Debug':
+        _logginfilter( self, message, nwkid)
+    else:
+        loggingDirector(self, logType, message )
+
+def loggingTuya( self, logType, message, nwkid=None):
+    
+    if self.pluginconf.pluginConf['debugTuya'] and logType == 'Debug':
         _logginfilter( self, message, nwkid)
     else:
         loggingDirector(self, logType, message )

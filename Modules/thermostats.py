@@ -10,6 +10,7 @@ from Modules.logging import loggingThermostats
 from Modules.readAttributes import ReadAttributeRequest_0201
 from Modules.basicOutputs import write_attribute
 from Modules.schneider_wiser import schneider_setpoint
+from Modules.tuya import tuya_setpoint
  
 def thermostat_Setpoint_SPZB(  self, key, setpoint):
 
@@ -35,14 +36,22 @@ def thermostat_Setpoint( self, key, setpoint):
 
     loggingThermostats( self, 'Debug', "thermostat_Setpoint - for %s with value %s" %(key,setpoint), nwkid=key)
 
-    if ( 'Model' in self.ListOfDevices[key] and self.ListOfDevices[key]['Model'] != {} ):
+    if 'Model' in self.ListOfDevices[key] and self.ListOfDevices[key]['Model'] != {}:
         if self.ListOfDevices[key]['Model'] == 'SPZB0001':
+            # Eurotronic
             loggingThermostats( self, 'Debug', "thermostat_Setpoint - calling SPZB for %s with value %s" %(key,setpoint), nwkid=key)
             thermostat_Setpoint_SPZB( self, key, setpoint)
 
         elif self.ListOfDevices[key]['Model'] in ( 'EH-ZB-RTS', 'EH-ZB-HACT', 'EH-ZB-VACT' ):
+            # Schneider
             loggingThermostats( self, 'Debug', "thermostat_Setpoint - calling Schneider for %s with value %s" %(key,setpoint), nwkid=key)
             schneider_setpoint(self, key, setpoint)
+            return
+        
+        elif self.ListOfDevices[key]['Model'] in ( 'TS0601', ):
+            # Tuya
+            loggingThermostats( self, 'Debug', "thermostat_Setpoint - calling Tuya for %s with value %s" %(key,setpoint), nwkid=key)
+            tuya_setpoint(self, key, setpoint)
             return
 
     loggingThermostats( self, 'Debug', "thermostat_Setpoint - standard for %s with value %s" %(key,setpoint), nwkid=key)

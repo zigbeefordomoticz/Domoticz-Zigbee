@@ -577,7 +577,8 @@ CLUSTERS_LIST = [
     '0b04',  # Electrical Measurement
     'ff02',  # Used by Xiaomi devices for battery informations.
     'fc01',  # Legrand 
-    'fc21'   # Cluster Profalux PFX
+    'fc21',  # Cluster Profalux PFX
+    'ef00'   # Tuya TRV
 ]
 
 LEGRAND_REMOTES = ('Remote switch', 'Double gangs remote switch',
