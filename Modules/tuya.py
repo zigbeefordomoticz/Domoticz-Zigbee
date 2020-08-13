@@ -161,9 +161,12 @@ def tuya_setpoint( self, nwkid, setpoint_value):
     tuya_cmd( self, cluster_frame, sqn, cmd, action, data)
 
 
-def tuya_cmd( self, cluster_frame, sqn, cmd, action, data ):
+def tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data ):
 
-    if 'Tuya' not in self.ListOfDevices['nwkid']:
+    if nwkid not in self.ListOfDevices:
+        return
+        
+    if 'Tuya' not in self.ListOfDevices[nwkid]:
         self.ListOfDevices['nwkid']['Tuya'] = {}
 
     if 'TuyaTransactionId' not in self.ListOfDevices['nwkid']:
@@ -176,4 +179,4 @@ def tuya_cmd( self, cluster_frame, sqn, cmd, action, data ):
     transid = '%02x' %self.ListOfDevices['nwkid']['TuyaTransactionId']
     payload = cluster_frame + sqn + cmd + '00' + transid + action + '00' + '%02x' %len(data) + data
     raw_APS_request( self, nwkid, EPout, 'ef00', '0104', payload, zigate_ep=ZIGATE_EP)
-    loggingTuya( self, 'Debug', "tuya_cmd - %s/%s cmd: %s payload: %s" %(nwkid, ep , cmd, payload))
+    loggingTuya( self, 'Debug', "tuya_cmd - %s/%s cmd: %s payload: %s" %(nwkid, EPout , cmd, payload))
