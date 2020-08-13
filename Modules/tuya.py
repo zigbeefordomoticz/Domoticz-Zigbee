@@ -158,7 +158,7 @@ def tuya_setpoint( self, nwkid, setpoint_value):
     cmd = '00' # Setpoint
     action = '0202'
     data = '%08x' %setpoint_value
-    tuya_cmd( self, cluster_frame, sqn, cmd, action, data)
+    tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 
 
 def tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data ):

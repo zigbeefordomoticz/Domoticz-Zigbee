@@ -284,7 +284,7 @@ def CreateDomoDevice(self, Devices, NWKID):
             # 3 Selectors, Style 0
             if t in ("Toggle", "ThermoMode_2"): 
                 Options = createSwitchSelector( 3 , DeviceType = t, SelectorStyle = 0)
-                createDomoticzWidget( self, subtypeRGB_FromProfile_Device_IDs, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                 loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in Toggle/ThermoMode_2" %(t), NWKID)
 
             # 3 Selector , OffHidden, Style 0 (command)
