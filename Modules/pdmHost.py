@@ -84,7 +84,7 @@ def openPDM( self ):
 
             except json.decoder.JSONDecodeError as e:
                 Domoticz.Error("error while reading Zigate PDM on Host %s, not JSON: %s" %( zigatePDMfilename,e))
-    return
+
 
 def savePDM( self):
 
@@ -100,7 +100,7 @@ def savePDM( self):
             json.dump( self.PDM, zigatePDMfile, indent=4, sort_keys=True)
         except IOError:
             Domoticz.Error("Error while writing Zigate Network Details%s" %zigatePDMfile)
-    return
+
 
 def pdmHostAvailableRequest(self, MsgData ):
     #Decode0300
@@ -118,7 +118,6 @@ def pdmHostAvailableRequest(self, MsgData ):
         openPDM( self )
     sendZigateCmd(self, "8300", status )
 
-    return
 
 def pdmLoadConfirmed( self, MsgData):
 
@@ -175,7 +174,7 @@ def PDMSaveRequest( self, MsgData):
     if (int(u16BlocksWritten,16) + 1) == int(u16NumberOfWrites,16):
         # Allow ALL traffic
         self.ZigateComm.pdm_lock( False )
-    return
+
 
 def PDMLoadRequest(self, MsgData):
     """
@@ -260,7 +259,7 @@ def PDMLoadRequest(self, MsgData):
             if not bMoreData:
                 # Allow ALL traffic
                 self.ZigateComm.pdm_lock( False )
-    return
+
 
 def PDMDeleteAllRecord( self , MsgData):
     "E_SL_MSG_DELETE_ALL_PDM_RECORDS_REQUEST"
@@ -274,7 +273,6 @@ def PDMDeleteAllRecord( self , MsgData):
     if self.PDMready:
         savePDM(self)
 
-    return
 
 def PDMDeleteRecord( self, MsgData):
     "E_SL_MSG_DELETE_PDM_RECORD_REQUEST"
@@ -291,7 +289,6 @@ def PDMDeleteRecord( self, MsgData):
     if self.PDMready:
         savePDM(self)
 
-    return
 
 def PDMCreateBitmap( self, MsgData):
     #create a bitmap counter
@@ -355,7 +352,6 @@ def PDMDeleteBitmapRequest( self, MsgData):
     if 'Bitmap' in self.PDM[ RecordId]:
         del self.PDM[ RecordId]['Bitmap']
 
-    return
 
 def PDMGetBitmapRequest( self, MsgData):
     """
@@ -398,7 +394,6 @@ def PDMGetBitmapRequest( self, MsgData):
     sendZigateCmd(self, "8206", datas )
     loggingPDM( self, 'Debug',  "PDMGetBitmapRequest - Sending 0x8206 data: %s" %(datas))
 
-    return
 
 def PDMIncBitmapRequest( self, MsgData):
     """
@@ -446,7 +441,6 @@ def PDMIncBitmapRequest( self, MsgData):
     loggingPDM( self, 'Debug',  "PDMIncBitmapRequest - Sending 0x8207 data: %s" %(datas))
     savePDM(self)
 
-    return
 
 def PDMExistanceRequest( self, MsgData):
     "E_SL_MSG_PDM_EXISTENCE_REQUEST"
@@ -476,4 +470,3 @@ def PDMExistanceRequest( self, MsgData):
 
     sendZigateCmd( self, "8208", datas)
     loggingPDM( self, 'Debug',  "PDMExistanceRequest - Sending 0x8208 data: %s" %(datas))
-    return

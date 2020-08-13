@@ -521,7 +521,12 @@ class BasePlugin:
         self.ZigateComm.on_message(Data)
 
     def processFrame( self, Data , i_sqn, TransportInfos=None):
+
+        #start_time = int(time.time() *1000)
+        #Domoticz.Log("### Processing: %s" %Data)
         ZigateRead( self, Devices, Data, i_sqn )
+        #stop_time = int(time.time() *1000)
+        #Domoticz.Log("### Completion: %s is %s ms" %(Data, ( stop_time - start_time)))
 
     def onCommand(self, Unit, Command, Level, Color):
 

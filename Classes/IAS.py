@@ -71,7 +71,7 @@ class IAS_Zone_Management:
             self._loggingLog( message )
         elif logType == 'Status':
             self._loggingStatus( message)
-        return
+
 
     def __write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data):
 
@@ -83,7 +83,7 @@ class IAS_Zone_Management:
         datas += lenght +attribute + data_type + data
         #Domoticz.Log("__write_attribute : %s" %self.ZigateComm)
         self.ZigateComm.sendData( '0110', datas, ackIsDisabled=False)
-        return
+
 
 
     def __ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
@@ -108,13 +108,13 @@ class IAS_Zone_Management:
                 Attr += Attr_
         datas = "02" + addr + EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + "%02x" %(lenAttr) + Attr
         self.ZigateComm.sendData( "0100", datas, ackIsDisabled=False )
-        return
+
 
     def setZigateIEEE(self, ZigateIEEE):
 
         self.logging( 'Log', "setZigateIEEE - Set Zigate IEEE: %s" %ZigateIEEE)
         self.ZigateIEEE = ZigateIEEE
-        return
+
 
     def setIASzoneControlerIEEE( self, key, Epout ):
 
@@ -164,7 +164,7 @@ class IAS_Zone_Management:
 
         datas = addr_mode + nwkid + ZIGATE_EP + Epout + enroll_rsp_code + zoneid
         self.ZigateComm.sendData( "0400", datas )
-        return
+
 
     def IASZone_enroll_response_zoneID( self, nwkid, Epout ):
         '''4.the CIE sends again a ‘response’ message to the IAS Zone device with ZoneID'''
@@ -183,7 +183,7 @@ class IAS_Zone_Management:
 
         datas = addr_mode + nwkid + ZIGATE_EP + Epout + enroll_rsp_code + zoneid
         self.ZigateComm.sendData( "0400", datas )
-        return
+
 
     def IASWD_enroll( self, nwkid, Epout):
 
@@ -222,7 +222,7 @@ class IAS_Zone_Management:
         self.devices[nwkid]['Step'] = 2
         self.devices[nwkid]['Ep'] = Epout
         self.setIASzoneControlerIEEE( nwkid, Epout)
-        return
+
 
     def receiveIASmessages(self, nwkid , step, value):
 
@@ -272,7 +272,7 @@ class IAS_Zone_Management:
             self.readConfirmEnroll(nwkid, iterEp)
             del self.devices[nwkid]
 
-        return
+
 
     def decode8401(self, MsgSQN, MsgEp, MsgClusterId, MsgSrcAddrMode, MsgSrcAddr, MsgZoneStatus, MsgExtStatus, MsgZoneID, MsgDelay):
 
@@ -359,7 +359,6 @@ class IAS_Zone_Management:
         for iter in remove_devices:
             del iter
 
-        return
 
     def write_IAS_WD_Squawk( self, nwkid, ep, SquawkMode):
 
@@ -415,6 +414,7 @@ class IAS_Zone_Management:
     # IAS Warning Device Cluster
     # https://www.nxp.com/docs/en/user-guide/JN-UG-3077.pdf
     # Section 28 - page 545
+
     def _write_IASWD( self, nwkid, ep, warning_mode, warning_duration, strobe_duty, strobe_level):
 
         """
@@ -490,48 +490,41 @@ class IAS_Zone_Management:
                 strobe_duty = 0x1E  # % duty cycle in 10% steps
                 strobe_level = STROBE_LEVEL['Low']
             elif mode == 'siren':
-                warning_mode = WARNING_MODE['Fire'] + STROBE_MODE['No Strobe'] 
-            elif mode == 'strobe':
-                warning_mode = WARNING_MODE['Stop'] + STROBE_MODE['Use Strobe'] 
-                strobe_duty = 0x1E  # % duty cycle in 10% steps
-                strobe_level = STROBE_LEVEL['Low']
+                warning_mode = WARNING_MODE['Fire'] + STROBE_MODE['No Strobe']
             elif mode == 'stop':
                 warning_mode = WARNING_MODE['Stop']
 
+            elif mode == 'strobe':
+                warning_mode = WARNING_MODE['Stop'] + STROBE_MODE['Use Strobe']
+                strobe_duty = 0x1E  # % duty cycle in 10% steps
+                strobe_level = STROBE_LEVEL['Low']
         warning_duration = self.pluginconf.pluginConf['alarmDuration']
 
         self.logging( 'Debug', "warningMode - Mode: %s, Duration: %s, Duty: %s, Level: %s" \
                 %(bin(warning_mode), warning_duration, strobe_duty, strobe_level))
         self._write_IASWD( nwkid, ep, warning_mode, warning_duration, strobe_duty, strobe_level)
 
-        return
 
     def siren_both( self, nwkid, ep):
-
         self.logging( 'Debug', "Device Alarm On ( Siren + Strobe)")
         self.warningMode( nwkid, ep, 'both' )
-        return
+
 
     def siren_only( self, nwkid, ep):
-
         self.logging( 'Debug', "Device Alarm On (Siren)")
         self.warningMode( nwkid, ep, 'siren' )
-        return
+
 
     def strobe_only( self, nwkid, ep):
-
         self.logging( 'Debug', "Device Alarm On ( Strobe)")
         self.warningMode( nwkid, ep, 'strobe' )
-        return
+
 
     def alarm_on( self, nwkid, ep):
-
         self.siren_both( nwkid, ep)
-        return
+
 
     def alarm_off( self, nwkid, ep):
-
         self.logging( 'Debug', "Device Alarm Off")
         self.warningMode( nwkid, ep, 'stop' )
-        return
 

@@ -268,7 +268,7 @@ class WebServer(object):
                 else:
                     Domoticz.Error("Removing Nwk-Energy %s not found" %timestamp )
                     _response['Data'] = json.dumps( [] , sort_keys=True)
-            return _response
+
 
         elif verb == 'GET':
             if len(parameters) == 0:
@@ -283,6 +283,7 @@ class WebServer(object):
                             _response['Data'] = json.dumps( r['MeshRouters'], sort_keys=True )
                 else:
                     _response['Data'] = json.dumps( [] , sort_keys=True)
+
         return _response
 
     def rest_plugin_restart( self, verb, data, parameters):

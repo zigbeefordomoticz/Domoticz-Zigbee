@@ -37,7 +37,6 @@ from Modules.schneider_wiser import schneider_wiser_registration, schneiderReadR
 from Modules.legrand_netatmo import rejoin_legrand_reset
 from Modules.errorCodes import DisplayStatusCode
 from Modules.readClusters import ReadCluster
-from Modules.database import saveZigateNetworkData
 from Modules.zigateConsts import ADDRESS_MODE, ZCL_CLUSTERS_LIST, LEGRAND_REMOTES, LEGRAND_REMOTE_SWITCHS, ZIGATE_EP, ZIGBEE_COMMAND_IDENTIFIER
 from Modules.pluzzy import pluzzyDecode8102
 from Modules.zigate import  initLODZigate, receiveZigateEpList, receiveZigateEpDescriptor
@@ -476,7 +475,6 @@ def Decode8009(self, Devices, MsgData, MsgLQI): # Network State response (Firm v
 
     self.currentChannel = int(Channel,16)
 
-    #Domoticz.Log("IAS Zone: %s" %self.iaszonemgt)
     if self.iaszonemgt:
         #Domoticz.Log("Update IAS Zone - IEEE: %s" %extaddr)
         self.iaszonemgt.setZigateIEEE( extaddr )
@@ -500,7 +498,6 @@ def Decode8009(self, Devices, MsgData, MsgLQI): # Network State response (Firm v
     self.zigatedata['Channel'] = int(Channel,16)
     self.zigatedata['PANID'] = PanID
     self.zigatedata['Extended PANID'] = extPanID
-    saveZigateNetworkData( self , self.zigatedata )
 
 def Decode8010(self, Devices, MsgData, MsgLQI): # Reception Version list
     MsgLen=len(MsgData)
@@ -1755,22 +1752,24 @@ def read_report_attributes( self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp
 
 def Decode8110( self, Devices, MsgData, MsgLQI):
 
-    if len(MsgData) == 24:
-        # Coming from Firmware
-        MsgSQN=MsgData[0:2]
-        MsgSrcAddr=MsgData[2:6]
-        MsgSrcEp=MsgData[6:8]
-        MsgClusterId=MsgData[8:12]
+    if not self.FirmwareVersion:
+        return
+
+    MsgSrcAddr=MsgData[2:6]
+    # Coming from Data Indication
+    MsgSQN=MsgData[0:2]
+    MsgSrcEp=MsgData[6:8]
+    MsgClusterId=MsgData[8:12]
+    if len(MsgData) != 24:
+        MsgAttrStatus=MsgData[12:14]
+        MsgAttrID = None
+    elif int(self.FirmwareVersion,16) < int('31d', 16):
         MsgAttrID=MsgData[12:16]
         MsgAttrStatus=MsgData[16:18]
-
     else:
-        # Coming from Data Indication
-        MsgSQN=MsgData[0:2]
-        MsgSrcAddr=MsgData[2:6]
-        MsgSrcEp=MsgData[6:8]
-        MsgClusterId=MsgData[8:12]
-        MsgAttrStatus=MsgData[12:14]
+        # Firmware >= 31d
+        MsgUnkn1=MsgData[12:14]
+        MsgAttrStatus=MsgData[14:16]
         MsgAttrID = None
 
     Decode8110_raw(self, Devices, MsgSQN , MsgSrcAddr , MsgSrcEp , MsgClusterId , MsgAttrStatus, MsgAttrID, MsgLQI)
@@ -1834,11 +1833,18 @@ def Decode8120(self, Devices, MsgData, MsgLQI) :  # Configure Reporting response
 
     if len(MsgData) == 14:
         # Global answer. Need i_sqn to get match
-        MsgAttributeId = None
         MsgStatus = MsgData[12:14]
+        Decode8120_attribute( self,MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, None, MsgStatus  )
     else:
-        MsgAttributeId = MsgData[12:16]
-        MsgStatus      = MsgData[16:18]
+        idx = 12
+        while idx < len(MsgData):  
+            MsgAttributeId = MsgData[idx:idx+4]
+            idx += 4
+            MsgStatus      = MsgData[idx:idx+2]
+            idx += 4
+            Decode8120_attribute( self,MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus  )
+
+def Decode8120_attribute( self, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus  ):
 
     loggingInput( self, 
         'Debug', "--> SQN: [%s], SrcAddr: %s, SrcEP: %s, ClusterID: %s, Attribute: %s Status: %s" 
@@ -1865,6 +1871,7 @@ def Decode8120(self, Devices, MsgData, MsgLQI) :  # Configure Reporting response
         if MsgStatus != '00':
             loggingInput( self, 'Log', "Decode8120 - Configure Reporting response - ClusterID: %s/%s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s" \
                 %(MsgClusterId, matchAttributeId, MsgSrcAddr, MsgSrcEp, MsgStatus ), MsgSrcAddr)
+
 
 def Decode8140(self, Devices, MsgData, MsgLQI) :  # Attribute Discovery response
     MsgComplete=MsgData[0:2]

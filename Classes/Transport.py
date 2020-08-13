@@ -85,6 +85,7 @@ class ZigateTransport(object):
         self.ListeningThreadevent = None
         self.ListeningThread = None
         self.messageQueue = queue.Queue()
+        self.processFrameThread = []
 
         # Call back function to send back to plugin
         self.F_out = F_out  # Function to call to bring the decoded Frame at plugin
@@ -109,6 +110,8 @@ class ZigateTransport(object):
 
     # Thread handling Serial Input/Output
     # Priority on Reading
+        
+    
     def serial_listen_and_send( self ):
 
         while self._connection  is None:
@@ -130,7 +133,7 @@ class ZigateTransport(object):
                         data = None
                     if data:
                         self.on_message(data)
-                        nb = serialConnection.in_waiting
+                    nb = serialConnection.in_waiting
 
             elif self.messageQueue.qsize() > 0:
                 while self.messageQueue.qsize() > 0:
@@ -144,6 +147,7 @@ class ZigateTransport(object):
             else:
                 self.ListeningThreadevent.wait( THREAD_RELAX_TIME_MS )
         Domoticz.Status("ZigateTransport: ZiGateSerialListen Thread stop.")
+
 
     def tcpip_listen_and_send( self ):
 
@@ -173,13 +177,14 @@ class ZigateTransport(object):
 
             elif exceptional:
                 Domoticz.Error("We have detected an error .... on %s" %inputSocket)
-
+                self.ListeningThreadevent.wait( THREAD_RELAX_TIME_MS )
             else:
                 self.ListeningThreadevent.wait( THREAD_RELAX_TIME_MS )
 
 
 
         Domoticz.Status("ZigateTransport: ZiGateTcpIpListen Thread stop.")
+
 
     def loggingSend(self, logType, message):
         # Log all activties towards ZiGate
@@ -192,6 +197,7 @@ class ZigateTransport(object):
         elif logType == 'Error':
             _logging_error(self, message)
 
+
     def logging_receive(self, logType, message):
         # Log all activities received from ZiGate
         if self.pluginconf.pluginConf['debugTransportRx'] and logType == 'Debug':
@@ -203,9 +209,11 @@ class ZigateTransport(object):
         elif logType == 'Error':
             _logging_error(self, message)
 
+
     def loadTransmit(self):
         # Provide the Load of the Sending Queue
         return len(self.zigateSendQueue)
+
 
     # Transport / Opening / Closing Communication
     def set_connection(self):
@@ -281,6 +289,7 @@ class ZigateTransport(object):
 
         Domoticz.Status("Connection open: %s" % self._connection)
 
+
     def close_conn(self):
         Domoticz.Status("Connection close: %s" % self._connection)
         self.running = False # It will shutdown the Thread 
@@ -311,8 +320,10 @@ class ZigateTransport(object):
         # Take a Lock to protect all communications from/to ZiGate (PDM on Host)
         self.PDMCommandOnly = lock
 
+
     def pdm_lock_status(self):
         return self.PDMCommandOnly
+
 
     def sendData(self, cmd, datas, ackIsDisabled=False, waitForResponseIn=False):
 
@@ -403,6 +414,7 @@ class ZigateTransport(object):
         send_data_internal(self, InternalSqn)
         return InternalSqn
 
+
     def on_message(self, Data):
         # Process/Decode Data
 
@@ -479,6 +491,7 @@ class ZigateTransport(object):
                 AsciiMsg = binascii.hexlify(BinMsg).decode('utf-8')
                 self.statistics._received += 1
                 process_frame(self, AsciiMsg)
+
 
     def check_timed_out_for_tx_queues(self):
         check_timed_out(self)
@@ -1069,10 +1082,11 @@ def process_frame(self, frame):
 
 
     # We receive an async message, just forward it to plugin
-    if int(MsgType, 16) in STANDALONE_MESSAGE:
+    if int(MsgType, 16) in STANDALONE_MESSAGE:        
         self.F_out(frame, None)  # for processing
         ready_to_send_if_needed(self)
         return
+        
 
     if len(frame) >= 18:
         # Payload
@@ -1085,7 +1099,6 @@ def process_frame(self, frame):
         return
 
     if len(self._waitFor8000Queue) == 0 and len(self._waitForCmdResponseQueue) == 0 and len(self._waitForAckNack) == 0:
-        # All queues are empty
         self.F_out(frame, None)
         ready_to_send_if_needed(self)
         return
@@ -1111,7 +1124,7 @@ def process_frame(self, frame):
         if self.zmode == 'auto':
             self.zmode = 'zigate31c'
             self.loggingSend(
-                'Status', "Firmware <= 31d switching to Mode: ZiGate31c")
+                'Status', "Firmware < 31d switching to Mode: ZiGate31c")
 
         i_sqn = process_msg_type8000(
             self, Status, PacketType, sqn_app, sqn_aps, type_sqn)
@@ -1139,7 +1152,6 @@ def process_frame(self, frame):
         return
 
     if len(self._waitForCmdResponseQueue) == 0 and len(self._waitForAckNack) == 0:
-        # All queues are empty
         self.F_out(frame, None)
         ready_to_send_if_needed(self)
         return
@@ -1230,6 +1242,7 @@ def process_frame(self, frame):
 
     # Forward the message to plugin for further processing
     self.F_out(frame, None)
+
     ready_to_send_if_needed(self)
     # Let's take the opportunity to check TimeOut
     self.check_timed_out_for_tx_queues()
@@ -1609,13 +1622,21 @@ def process8002(self, frame):
     self.logging_receive(
         'Debug', "process8002 Sqn: %s ManufCode: %s Command: %s Data: %s " %(Sqn, ManufacturerCode, Command, Data))
 
-
     if Command == '01': # Read Attribute response
         return buildframe_read_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
+
+    if Command == '0a':
+        return buildframe_report_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
+
+    if Command == '07':
+        return buildframe_configure_reporting_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
 
     if Command == '04': # Write Attribute response
         return buildframe_write_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
 
+    self.logging_receive(
+        'Log', "process8002 Unknown Command: %s NwkId: %s Ep: %s Cluster: %s Payload: %s" %(Command, SrcNwkId, SrcEndPoint, ClusterId , Data))
+        
     return frame
 
 
@@ -1697,10 +1718,31 @@ def buildframe_write_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clus
 
     return  newFrame
 
+def decode_endian_data( data, datatype):
+    if datatype in ( '10', '18', '20', '28', '30'):
+        value = data
+
+    elif datatype in ('09', '16', '21', '29', '31'):
+        value = '%04x' %struct.unpack('>H',struct.pack('H',int(data,16)))[0]
+
+    elif datatype in ( '22', '2a'):
+        value= '%06x' %struct.unpack('>I',struct.pack('I',int(data,16)))[0]
+
+    elif datatype in ( '23', '2b', '39'):
+        value = '%08x' %struct.unpack('>f',struct.pack('I',int(data,16)))[0]
+
+    elif datatype in ( '41', '42'):
+        value = data
+
+    else:
+        value = data
+        Domoticz.Log("-------> Data not decoded Type: %s Value: %s " % (datatype, value))
+    return value
+
 
 def buildframe_read_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data ):
 
-    Domoticz.Log("buildframe_read_attribute_response ===========> Data: %s" %Data)
+
     nbAttribute = 0
     idx = 0
     buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId
@@ -1715,30 +1757,17 @@ def buildframe_read_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clust
             idx += 2
             if DType in SIZE_DATA_TYPE:
                 size = SIZE_DATA_TYPE[ DType ] * 2
-            elif DType == '42': # String
+            elif DType in ( '41', '42'): # ZigBee_OctedString = 0x41, ZigBee_CharacterString = 0x42
                 size = int(Data[idx:idx+2],16)
                 idx += 2
             else: 
                 Domoticz.Error("buildframe_read_attribute_response - Unknown DataType size: >%s< vs. %s " %(DType, str(SIZE_DATA_TYPE)))
+                Domoticz.Error("buildframe_read_attribute_response - ClusterId: %s Attribute: %s Data: %s" %(ClusterId, Attribute, Data))
                 return frame
 
             data = Data[idx:idx + size]
-            if DType in ( '10', '18', '20', '28', '30'):
-                value = data
-
-            elif DType in ('09', '16', '21', '29', '31'):
-                value = '%04x' %struct.unpack('>H',struct.pack('H',int(data,16)))[0]
-
-            elif DType in ( '22', '2a'):
-                value= '%06x' %struct.unpack('>I',struct.pack('I',int(data,16)))[0]
-
-            elif DType in ( '23', '2b', '39'):
-                value = '%08x' %struct.unpack('>f',struct.pack('I',int(data,16)))[0]
-            else:
-                value = data
-            Domoticz.Log("-------> Data Type: %s from %s to %s" %(DType, data, value))
-
             idx += size
+            value = decode_endian_data( data, DType)
             lenData = '%04x' %size
             buildPayload += Attribute + Status + DType + lenData + value
         else:
@@ -1755,10 +1784,79 @@ def buildframe_read_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clust
     newFrame += '03'
 
     return  newFrame
+
+def buildframe_report_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data ):
+
+    nbAttribute = 0
+    idx = 0
+    buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId
+    while idx < len(Data):
+        nbAttribute += 1
+        Attribute = '%04x' %struct.unpack('H',struct.pack('>H',int(Data[idx:idx+4],16)))[0]
+        idx += 4
+        DType = Data[idx:idx+2]
+        idx += 2
+        if DType in SIZE_DATA_TYPE:
+            size = SIZE_DATA_TYPE[ DType ] * 2
+
+        elif DType in ( '41', '42'): # ZigBee_OctedString = 0x41, ZigBee_CharacterString = 0x42
+            size = int(Data[idx:idx+2],16)
+            idx += 2
+
+        else: 
+            Domoticz.Error("buildframe_report_attribute_response - Unknown DataType size: >%s< vs. %s " %(DType, str(SIZE_DATA_TYPE)))
+            Domoticz.Error("buildframe_report_attribute_response - NwkId: %s ClusterId: %s Attribute: %s Frame: %s" %(SrcNwkId, ClusterId, Attribute, frame))
+            return frame
+
+        data = Data[idx:idx + size]
+        idx += size
+        value = decode_endian_data( data, DType)
+
+        lenData = '%04x' %size
+        buildPayload += Attribute + '00' + DType + lenData + value
+
+    Domoticz.Log("buildframe_report_attribute_response - NwkId: %s Ep: %s ClusterId: %s nbAttribute: %s Data: %s" %(SrcNwkId, SrcEndPoint, ClusterId, nbAttribute, buildPayload))
+
+    newFrame = '01' # 0:2
+    newFrame += '8102' # 2:6   MsgType
+    newFrame += '%4x' %len(buildPayload) # 6:10  Length
+    newFrame += 'ff' # 10:12 CRC
+    newFrame += buildPayload
+    newFrame += frame[len(frame) - 4: len(frame) - 2] # LQI
+    newFrame += '03'
+    return  newFrame
+
+def buildframe_configure_reporting_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data ):
+
+    if len(Data) == 2:
+        buildPayload = Sqn + SrcNwkId + SrcEndPoint + MsgClusterId + Data 
+    else:
+        idx = 0
+        buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId
+        while idx < len(Data):
+            Status = Data[idx:idx+2]
+            idx += 2
+            Direction = Data[idx:idx+2]
+            idx += 2
+            Attribute = '%04x' %struct.unpack('H',struct.pack('>H',int(Data[idx:idx+4],16)))[0]
+            idx += 4
+            buildPayload += Attribute + Status
+        return  frame
+
+    Domoticz.Log("buildframe_configure_reporting_response - NwkId: %s Ep: %s ClusterId: %s nbAttribute: %s Data: %s" %(SrcNwkId, SrcEndPoint, ClusterId, buildPayload))
+    newFrame = '01' # 0:2
+    newFrame += '8120' # 2:6   MsgType
+    newFrame += '%4x' %len(buildPayload) # 6:10  Length
+    newFrame += 'ff' # 10:12 CRC
+    newFrame += buildPayload
+    newFrame += frame[len(frame) - 4: len(frame) - 2] # LQI
+    newFrame += '03'
+    return  newFrame
 # Logging functions
 
 
 def _write_message(self, message):
+
     message = str(datetime.now().strftime(
         '%b %d %H:%M:%S.%f')) + " " + message + '\n'
     self.loggingFileHandle.write(message)
