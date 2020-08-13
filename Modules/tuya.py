@@ -167,16 +167,16 @@ def tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data ):
         return
         
     if 'Tuya' not in self.ListOfDevices[nwkid]:
-        self.ListOfDevices['nwkid']['Tuya'] = {}
+        self.ListOfDevices[nwkid]['Tuya'] = {}
 
-    if 'TuyaTransactionId' not in self.ListOfDevices['nwkid']:
-        self.ListOfDevices['nwkid']['TuyaTransactionId'] = 0x00
-    self.ListOfDevices['nwkid']['TuyaTransactionId'] += 1
+    if 'TuyaTransactionId' not in self.ListOfDevices[nwkid]:
+        self.ListOfDevices[nwkid]['TuyaTransactionId'] = 0x00
+    self.ListOfDevices[nwkid]['TuyaTransactionId'] += 1
 
-    if self.ListOfDevices['nwkid']['TuyaTransactionId'] > 0xff:
-        self.ListOfDevices['nwkid']['TuyaTransactionId'] = 0x00
+    if self.ListOfDevices[nwkid]['TuyaTransactionId'] > 0xff:
+        self.ListOfDevices[nwkid]['TuyaTransactionId'] = 0x00
     
-    transid = '%02x' %self.ListOfDevices['nwkid']['TuyaTransactionId']
+    transid = '%02x' %self.ListOfDevices[nwkid]['TuyaTransactionId']
     payload = cluster_frame + sqn + cmd + '00' + transid + action + '00' + '%02x' %len(data) + data
     raw_APS_request( self, nwkid, EPout, 'ef00', '0104', payload, zigate_ep=ZIGATE_EP)
     loggingTuya( self, 'Debug', "tuya_cmd - %s/%s cmd: %s payload: %s" %(nwkid, EPout , cmd, payload))
