@@ -4,9 +4,12 @@
 # Author: zaraki673 & pipiche38
 #
 import Domoticz
+import struct
 
 from Modules.tools import retreive_cmd_payload_from_8002
 from Modules.pollControl import receive_poll_cluster
+
+
 
 
 from Modules.schneider_wiser import schneiderReadRawAPS
@@ -42,6 +45,8 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Man
         'Philips' : philipsReadRawAPS,
     }
 
+    Domoticz.Log("inRawAps %s/%s Cluster %s Manuf: %s Command: %s Data: %s Payload: %s"
+        %(srcnwkid, srcep, cluster,  ManufacturerCode, Command, Data, payload))
     if srcnwkid not in self.ListOfDevices:
         return
 
@@ -49,6 +54,31 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Man
         Domoticz.Log("Cluster 0020 -- POLL CLUSTER")
         receive_poll_cluster( self, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, ManufacturerCode, Command, Data )
         return
+
+    if cluster == '0019': # OTA Cluster
+        Domoticz.Log("Cluster 0019 -- OTA CLUSTER")
+
+        if Command == '01': 
+            # Query Next Image Request
+            Domoticz.Log("Cluster 0019 -- OTA CLUSTER Command 01")
+            #fieldcontrol = Data[0:2]
+            manufcode = '%04x' %struct.unpack('H',struct.pack('>H',int(Data[2:6],16)))[0] 
+            imagetype = '%04x' %struct.unpack('H',struct.pack('>H',int(Data[6:10],16)))[0] 
+            currentVersion = '%08x' %struct.unpack('I',struct.pack('>I',int(Data[10:18],16)))[0]
+    
+            Domoticz.Log("Cluster 0019 -- OTA CLUSTER Command 01Device %s Request OTA with current ManufCode: %s ImageType: %s Version: %s"
+                %(srcnwkid ,manufcode, imagetype, currentVersion  ))
+
+            if 'OTA' not in self.ListOfDevices[ srcnwkid ]:
+                self.ListOfDevices[ srcnwkid ]['OTA'] = {}
+            self.ListOfDevices[ srcnwkid ]['OTA']['ManufacturerCode'] = manufcode
+            self.ListOfDevices[ srcnwkid ]['OTA']['ImageType'] = imagetype
+            self.ListOfDevices[ srcnwkid ]['OTA']['CurrentImageVersion'] = currentVersion
+
+            return
+
+
+
     
     if 'Manufacturer' not in self.ListOfDevices[srcnwkid]:
         return
