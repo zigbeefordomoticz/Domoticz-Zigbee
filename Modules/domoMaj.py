@@ -202,7 +202,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 loggingWidget( self, "Debug", "------>  Thermostat Setpoint: %s %s" %(0,setpoint), NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
     
-        if 'ThermoMode' in ClusterType: # Thermostat Mode
+        if 'ThermoMode' in ClusterType or 'ThermoMode_2' in ClustertType: # Thermostat Mode
            
             if WidgetType == 'ThermoModeEHZBRTS' and Attribute_ == "e010": # Thermostat Wiser
                  # value is str
@@ -268,6 +268,19 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                                     loggingWidget( self, "Debug", "------>  Disable FIP widget: %s" %(value), NWKID)
                                     nValue =  0
                     UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
+
+            elif WidgetType == 'ThermoMode_2':
+                # Use by Tuya TRV
+                nValue = value
+                if 'ThermoMode_2' not in SWITCH_LVL_MATRIX:
+                    continue
+                if nValue not in SWITCH_LVL_MATRIX[ 'ThermoMode_2']:
+                    Domoticz.Error("Unknown TermoMode2 value: %s" %nValue)
+                    continue
+                sValue = SWITCH_LVL_MATRIX[ 'ThermoMode_2'][ nValue ]
+                loggingWidget( self, "Debug", "------>  Thermostat Mode 2 %s" %value, NWKID)
+                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
+                loggingWidget( self, "Debug", "------>  Thermostat Mode 2: %s %s" %(nValue,sValue), NWKID)
 
             elif WidgetType == 'ThermoMode' and Attribute_ == '001c':
                 # value seems to come as int or str. To be fixed

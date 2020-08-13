@@ -15,6 +15,7 @@ from Modules.livolo import livoloReadRawAPS
 from Modules.orvibo import orviboReadRawAPS
 from Modules.lumi import lumiReadRawAPS
 from Modules.philips import philipsReadRawAPS
+from Modules.tuya import tuyaReadRawAPS
 
 ## Requires Zigate firmware > 3.1d
 
@@ -30,6 +31,7 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Man
         '1021' : legrandReadRawAPS ,
         '115f' : lumiReadRawAPS,
         '100b' : philipsReadRawAPS,
+        '1002' : tuyaReadRawAPS,
         }
 
     CALLBACK_TABLE2 = {
@@ -40,6 +42,7 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Man
         'Schneider': schneiderReadRawAPS,
         'LUMI': lumiReadRawAPS,
         'Philips' : philipsReadRawAPS,
+        '_TZE200_ckud7u2l' : tuyaReadRawAPS ,
     }
 
     if srcnwkid not in self.ListOfDevices:
