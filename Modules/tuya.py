@@ -111,7 +111,7 @@ def tuyaReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, M
         %(srcNWKID,srcEp , ClusterID, cmd, data ))
 
     loggingTuya( self, 'Log', "tuyaReadRawAPS - Nwkid: %s/%s fcf: %s sqn: %s cmd: %s status: %s transid: %s dp: %s decodeDP: %s fn: %s data: %s"
-        %(srcNWKID,srcEp, fcf, sqn, status, transid, dp, decode_dp, fn, data))
+        %(srcNWKID, srcEp, fcf, sqn, cmd, status, transid, dp, decode_dp, fn, data))
 
     if decode_dp == 0x0202:
         # Setpoint Change target temp
