@@ -1617,23 +1617,27 @@ def Decode8100(self, Devices, MsgData, MsgLQI): # Read Attribute Response (in ca
     MsgSrcEp=MsgData[6:8]
     MsgClusterId=MsgData[8:12]
     idx = 12
-    while idx < len(MsgData):
-        MsgAttrID = MsgAttStatus = MsgAttType = MsgAttSize = MsgClusterData = ''
-        MsgAttrID = MsgData[idx:idx+4]
-        idx += 4
-        MsgAttStatus = MsgData[idx:idx+2]
-        idx += 2
-        MsgAttType = MsgData[idx:idx+2]
-        idx += 2
-        MsgAttSize = MsgData[idx:idx+4]
-        idx += 4
-        size = int(MsgAttSize,16)
-        MsgClusterData = MsgData[idx: idx + size]
-        idx += size
-        loggingInput( self, 'Debug', "Decode8100 - idx: %s Read Attribute Response: [%s:%s] ClusterID: %s MsgSQN: %s, i_sqn: %s, AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<" \
-            %(idx, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgSQN, i_sqn, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData ), MsgSrcAddr)
-        NewMsgData = MsgSQN + MsgSrcAddr + MsgSrcEp + MsgClusterId + MsgAttrID + MsgAttStatus + MsgAttType + MsgAttSize + MsgClusterData
-        read_report_attributes( self,  Devices, '8100', MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, NewMsgData)
+    try:
+        while idx < len(MsgData):
+            MsgAttrID = MsgAttStatus = MsgAttType = MsgAttSize = MsgClusterData = ''
+            MsgAttrID = MsgData[idx:idx+4]
+            idx += 4
+            MsgAttStatus = MsgData[idx:idx+2]
+            idx += 2
+            MsgAttType = MsgData[idx:idx+2]
+            idx += 2
+            MsgAttSize = MsgData[idx:idx+4]
+            idx += 4
+            size = int(MsgAttSize,16)
+            MsgClusterData = MsgData[idx: idx + size]
+            idx += size
+            loggingInput( self, 'Debug', "Decode8100 - idx: %s Read Attribute Response: [%s:%s] ClusterID: %s MsgSQN: %s, i_sqn: %s, AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<" \
+                %(idx, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgSQN, i_sqn, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData ), MsgSrcAddr)
+            NewMsgData = MsgSQN + MsgSrcAddr + MsgSrcEp + MsgClusterId + MsgAttrID + MsgAttStatus + MsgAttType + MsgAttSize + MsgClusterData
+            read_report_attributes( self,  Devices, '8100', MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, NewMsgData)
+    except Exception as e:
+        Domoticz.Error("Decode8100 - Catch error while decoding %s/%s cluster: %s MsgData: %s" %( MsgSrcAddr, MsgSrcEp, MsgClusterId))    
+    
     callbackDeviceAwake( self, MsgSrcAddr, MsgSrcEp, MsgClusterId)
 
 
