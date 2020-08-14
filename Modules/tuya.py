@@ -105,7 +105,7 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
     sqn = MsgPayload[2:4] # uint8
     cmd = MsgPayload[4:6] # uint8
 
-    if cmd not in ('00', '01'):
+    if cmd not in ('00', '01', '02'):
         loggingTuya( self, 'Log', "tuyaReadRawAPS - Unknown command %s MsgPayload %s" %(cmd, MsgPayload))
         return
 
