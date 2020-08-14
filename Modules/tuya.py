@@ -53,7 +53,7 @@ def callbackDeviceAwake_Tuya(self, NwkId, EndPoint, cluster):
 
     return
 
-def tuyaReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
+def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
 
     # Zigbee Tuya Command on Cluster 0xef00:
     # 
@@ -83,19 +83,19 @@ def tuyaReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, M
     # 0x0303, Temp Room temperature
     # 0x0215, Battery status
     
-    if srcNWKID not in self.ListOfDevices:
+    if NwkId not in self.ListOfDevices:
         return
 
     if ClusterID != 'ef00':
         return
 
     loggingTuya( self, 'Debug', "tuyaReadRawAPS - Nwkid: %s Ep: %s, Cluster: %s, dstNwkid: %s, dstEp: %s, Payload: %s" \
-            %(srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload), srcNWKID)
+            %(NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload), NwkId)
 
-    if 'Model' not in self.ListOfDevices[srcNWKID]:
+    if 'Model' not in self.ListOfDevices[NwkId]:
         return
     
-    _ModelName = self.ListOfDevices[srcNWKID]['Model']
+    _ModelName = self.ListOfDevices[NwkId]['Model']
 
     if len(MsgPayload) < 6:
         loggingTuya( self, 'Log', "tuyaReadRawAPS - MsgPayload %s too short" %(MsgPayload))
@@ -118,53 +118,53 @@ def tuyaReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, M
     data = MsgPayload[18:]
 
     loggingTuya( self, 'Log', "tuyaReadRawAPS - Nwkid: %s/%s Cluster: %s, Command: %s Payload: %s" \
-        %(srcNWKID,srcEp , ClusterID, cmd, data ))
+        %(NwkId,srcEp , ClusterID, cmd, data ))
 
     loggingTuya( self, 'Log', "tuyaReadRawAPS - Nwkid: %s/%s fcf: %s sqn: %s cmd: %s status: %s transid: %s dp: %s decodeDP: %s fn: %s data: %s"
-        %(srcNWKID, srcEp, fcf, sqn, cmd, status, transid, dp, decode_dp, fn, data))
+        %(NwkId, srcEp, fcf, sqn, cmd, status, transid, dp, decode_dp, fn, data))
 
     if decode_dp == 0x0202:
         # Setpoint Change target temp
         # data is setpoint
-        loggingTuya( self, 'Log', "tuyaReadRawAPS - Nwkid: %s/%s Setpoint: %s" %(srcNWKID,srcEp ,int(data,16)))
-        MajDomoDevice(self, Devices, srcNWKID, srcEp, '0201', ( int(data,16) / 10 ), Attribute_ = '0012' )
-        checkAndStoreAttributeValue( self, MsgSrcAddr , '01', '0201', '0012' , int(data,16) )
+        loggingTuya( self, 'Log', "tuyaReadRawAPS - Nwkid: %s/%s Setpoint: %s" %(NwkId,srcEp ,int(data,16)))
+        MajDomoDevice(self, Devices, NwkId, srcEp, '0201', ( int(data,16) / 10 ), Attribute_ = '0012' )
+        checkAndStoreAttributeValue( self, NwkId , '01', '0201', '0012' , int(data,16) )
 
 
     elif decode_dp in (0x0203, 0x0303):
         # Temperature notification
         # data is the temp
-        loggingTuya( self, 'Log', "tuyaReadRawAPS - Nwkid: %s/%s Temperature: %s" %(srcNWKID,srcEp , int(data,16)))
-        MajDomoDevice(self, Devices, srcNWKID, srcEp, '0402', (int(data,16) / 10 ))
-        checkAndStoreAttributeValue( self, MsgSrcAddr , '01', '0402', '0000' , int(data,16)  )
+        loggingTuya( self, 'Log', "tuyaReadRawAPS - Nwkid: %s/%s Temperature: %s" %(NwkId,srcEp , int(data,16)))
+        MajDomoDevice(self, Devices, NwkId, srcEp, '0402', (int(data,16) / 10 ))
+        checkAndStoreAttributeValue( self, NwkId , '01', '0402', '0000' , int(data,16)  )
 
 
     elif decode_dp == 0x0215:
         # Battery status
-        loggingTuya( self, 'Log', "tuyaReadRawAPS - Nwkid: %s/%s Battery status %s" %(srcNWKID,srcEp ,int(data,16)))
-        checkAndStoreAttributeValue( self, MsgSrcAddr , '01', '0001', '0000' , int(data,16) )
-        self.ListOfDevices[ srcNWKID ]['Battery'] = int(data,16)
+        loggingTuya( self, 'Log', "tuyaReadRawAPS - Nwkid: %s/%s Battery status %s" %(NwkId,srcEp ,int(data,16)))
+        checkAndStoreAttributeValue( self, NwkId , '01', '0001', '0000' , int(data,16) )
+        self.ListOfDevices[ NwkId ]['Battery'] = int(data,16)
 
 
     elif decode_dp == 0x0404:
         # Change mode
         if data == '00':
             # Offline
-            loggingTuya( self, 'Log', "tuyaReadRawAPS - Nwkid: %s/%s Mode to Offline" %(srcNWKID,srcEp ))
-            MajDomoDevice(self, Devices, srcNWKID, srcEp, '0201', 0, Attribute_ = '001c' )
-            checkAndStoreAttributeValue( self, MsgSrcAddr , '01', '0201', '001c' , 'OffLine' )
+            loggingTuya( self, 'Log', "tuyaReadRawAPS - Nwkid: %s/%s Mode to Offline" %(NwkId,srcEp ))
+            MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 0, Attribute_ = '001c' )
+            checkAndStoreAttributeValue( self, NwkId , '01', '0201', '001c' , 'OffLine' )
 
         elif data == '01':
             # Auto
-            loggingTuya( self, 'Log', "tuyaReadRawAPS - Nwkid: %s/%s Mode to Auto" %(srcNWKID,srcEp ))
-            MajDomoDevice(self, Devices, srcNWKID, srcEp, '0201', 1, Attribute_ = '001c' )
-            checkAndStoreAttributeValue( self, MsgSrcAddr , '01', '0201', '001c' , 'Auto' )
+            loggingTuya( self, 'Log', "tuyaReadRawAPS - Nwkid: %s/%s Mode to Auto" %(NwkId,srcEp ))
+            MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 1, Attribute_ = '001c' )
+            checkAndStoreAttributeValue( self, NwkId , '01', '0201', '001c' , 'Auto' )
 
         elif data == '02':
             # Manual
-            loggingTuya( self, 'Log', "tuyaReadRawAPS - Nwkid: %s/%s Mode to Manual" %(srcNWKID,srcEp ))
-            MajDomoDevice(self, Devices, srcNWKID, srcEp, '0201', 2, Attribute_ = '001c' )
-            checkAndStoreAttributeValue( self, MsgSrcAddr , '01', '0201', '001c' , 'Manual' )
+            loggingTuya( self, 'Log', "tuyaReadRawAPS - Nwkid: %s/%s Mode to Manual" %(NwkId,srcEp ))
+            MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 2, Attribute_ = '001c' )
+            checkAndStoreAttributeValue( self, NwkId , '01', '0201', '001c' , 'Manual' )
 
 
 def tuya_setpoint( self, nwkid, setpoint_value):
