@@ -190,7 +190,7 @@ def tuya_setpoint( self, nwkid, setpoint_value):
     
 def tuya_trv_mode( self, nwkid, mode):
 
-    loggingTuya( self, 'Debug', "tuya_setpoint - %s setpoint: %s" %(nwkid, mode))
+    loggingTuya( self, 'Debug', "tuya_setpoint - %s tuya_trv_mode: %s" %(nwkid, mode))
 
     # In Domoticz Setpoint is in ° , In Modules/command.py we multiplied by 100 (as this is the Zigbee standard).
     # Looks like in the Tuya 0xef00 cluster it is only expressed in 10th of degree
@@ -205,7 +205,7 @@ def tuya_trv_mode( self, nwkid, mode):
     cluster_frame = '11'
     cmd = '00' # Command
     action = '0404' # Mode
-    data = '%02x' %( mode / 10 )
+    data = '%02x' %( mode // 10 )
     tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)   
 
 def tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data ):
