@@ -22,6 +22,7 @@ from Modules.logging import loggingCommand
 from Modules.basicOutputs import sendZigateCmd
 from Modules.thermostats import thermostat_Setpoint, thermostat_Mode
 from Modules.livolo import livolo_OnOff
+from Modules.tuya import tuya_trv_mode
 from Modules.legrand_netatmo import  legrand_fc40
 from Modules.schneider_wiser import schneider_EHZBRTS_thermoMode, schneider_hact_fip_mode, schneider_set_contract, schneider_temp_Setcurrent, schneider_hact_heater_type
 from Modules.profalux import profalux_stop, profalux_MoveToLiftAndTilt
@@ -66,7 +67,7 @@ DEVICE_SWITCH_MATRIX = {
 ACTIONATORS = [ 'Switch', 'Plug', 'SwitchAQ2', 'Smoke', 'DSwitch', 'LivoloSWL', 'LivoloSWR', 'Toggle',
             'Venetian', 'VenetianInverted', 'WindowCovering', 'BSO', 'BSO-Orientation', 'BSO-Volet',
             'LvlControl', 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl',
-            'ThermoSetpoint', 'ThermoMode', 'ThermoModeEHZBRTS', 'TempSetCurrent', 'AlarmWD',
+            'ThermoSetpoint', 'ThermoMode', 'ThermoMode_2', 'ThermoModeEHZBRTS', 'TempSetCurrent', 'AlarmWD',
             'LegrandFilPilote', 'FIP', 'HACTMODE','ContractPower','HeatingSwitch', 'DoorLock' ]
             
 def mgtCommand( self, Devices, Unit, Command, Level, Color ):
@@ -168,6 +169,12 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             # Let's force a refresh of Attribute in the next Heartbeat 
             self.ListOfDevices[NWKID]['Heartbeat'] = 0  
             return
+
+        if DeviceType == 'ThermoMode_2':
+            loggingCommand( self, 'Log', "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" 
+                %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
+            loggingCommand( self, 'Debug', "ThermoMode - requested Level: %s" %Level, NWKID)
+            tuya_trv_mode( self, NWKID, 0 )
 
         if DeviceType == 'ThermoModeEHZBRTS':
             loggingCommand( self, 'Debug', "MajDomoDevice EHZBRTS Schneider Thermostat Mode Off", NWKID )
@@ -431,6 +438,14 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             if Level in THERMOSTAT_LEVEL_2_MODE:
                 loggingCommand( self, 'Debug', " - Set Thermostat Mode to : %s / %s" %( Level, THERMOSTAT_LEVEL_2_MODE[Level]), NWKID)
                 thermostat_Mode( self, NWKID, THERMOSTAT_LEVEL_2_MODE[Level] )
+
+        if DeviceType == 'ThermoMode_2':
+            loggingCommand( self, 'Log', "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" 
+                %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
+            loggingCommand( self, 'Log', "ThermoMode_2 - requested Level: %s" %Level, NWKID)
+
+            tuya_trv_mode( self, NWKID, Level )
+
 
         elif DeviceType == 'BSO-Volet':
             if profalux:
