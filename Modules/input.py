@@ -61,6 +61,7 @@ def ZigateRead(self, Devices, Data, TransportInfos=None):
 
     DECODERS = {
         '0100': Decode0100,
+        '010f': Decode010f, #Read Attribute Request build by transport
         '004d': Decode004D,
         '8000': Decode8000_v2, 
         '8001': Decode8001, 
@@ -1556,6 +1557,20 @@ def Decode80A6(self, Devices, MsgData, MsgLQI) : # Scene Membership response
             MsgScene.append( scene )
     loggingInput( self, 'Log',"           - Scene List: %s" %(str(MsgScene)))
 
+def Decode010f( self, Devices, MsgData, MsgLQI):  # Read Attribute request from Transport buildframe_read_attribute_request )
+
+    MsgSrcAddr = MsgData[0:4]
+    MsgSrcEp = MsgData[4:6]
+    MsgCluster = MsgData[6:10]
+
+    nbAttribute = 0
+    idx = 10
+    while idx < len(MsgData):
+        nbAttribute += 1
+        Attribute = MsgData[idx:idx+4]
+        idx += 4
+        loggingInput( self, 'Log',"Decode010f - %s/%s Cluster %s Attribute %s" %( MsgSrcAddr, MsgSrcEp, MsgCluster, Attribute))
+
 def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
     # Seems to come with Livolo and Firmware 3.1b
 
@@ -1610,6 +1625,7 @@ def Decode8100(self, Devices, MsgData, MsgLQI): # Read Attribute Response (in ca
     MsgSQN=MsgData[0:2]
     i_sqn = sqn_get_internal_sqn_from_app_sqn (self.ZigateComm, MsgSQN, TYPE_APP_ZCL)
 
+
     MsgSrcAddr=MsgData[2:6]
     timeStamped( self, MsgSrcAddr , 0x8100)
     loggingMessages( self, '8100', MsgSrcAddr, None, MsgLQI, MsgSQN)
@@ -1617,46 +1633,30 @@ def Decode8100(self, Devices, MsgData, MsgLQI): # Read Attribute Response (in ca
     MsgSrcEp=MsgData[6:8]
     MsgClusterId=MsgData[8:12]
     idx = 12
-    while idx < len(MsgData):
-        MsgAttrID = MsgAttStatus = MsgAttType = MsgAttSize = MsgClusterData = ''
-        MsgAttrID = MsgData[idx:idx+4]
-        idx += 4
-        MsgAttStatus = MsgData[idx:idx+2]
-        idx += 2
-        MsgAttType = MsgData[idx:idx+2]
-        idx += 2
-        MsgAttSize = MsgData[idx:idx+4]
-        idx += 4
-        size = int(MsgAttSize,16)
-        MsgClusterData = MsgData[idx: idx + size]
-        idx += size
-        loggingInput( self, 'Debug', "Decode8100 - idx: %s Read Attribute Response: [%s:%s] ClusterID: %s MsgSQN: %s, i_sqn: %s, AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<" \
-            %(idx, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgSQN, i_sqn, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData ), MsgSrcAddr)
-        NewMsgData = MsgSQN + MsgSrcAddr + MsgSrcEp + MsgClusterId + MsgAttrID + MsgAttStatus + MsgAttType + MsgAttSize + MsgClusterData
-        read_report_attributes( self,  Devices, '8100', MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, NewMsgData)
+
+    try:
+        while idx < len(MsgData):
+            MsgAttrID = MsgAttStatus = MsgAttType = MsgAttSize = MsgClusterData = ''
+            MsgAttrID = MsgData[idx:idx+4]
+            idx += 4
+            MsgAttStatus = MsgData[idx:idx+2]
+            idx += 2
+            MsgAttType = MsgData[idx:idx+2]
+            idx += 2
+            MsgAttSize = MsgData[idx:idx+4]
+            idx += 4
+            size = (int(MsgAttSize,16) * 2)
+            MsgClusterData = MsgData[idx: idx + size]
+            idx += size
+            loggingInput( self, 'Debug', "Decode8100 - idx: %s Read Attribute Response: [%s:%s] ClusterID: %s MsgSQN: %s, i_sqn: %s, AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<" \
+                %(idx, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgSQN, i_sqn, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData ), MsgSrcAddr)
+            NewMsgData = MsgSQN + MsgSrcAddr + MsgSrcEp + MsgClusterId + MsgAttrID + MsgAttStatus + MsgAttType + MsgAttSize + MsgClusterData
+            read_report_attributes( self,  Devices, '8100', MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, NewMsgData)
+
+    except Exception as e:
+        Domoticz.Error("Decode8100 - Catch error while decoding %s/%s cluster: %s MsgData: %s Error: %s" %( MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgData, e))    
+    
     callbackDeviceAwake( self, MsgSrcAddr, MsgSrcEp, MsgClusterId)
-
-
-# def Decode8100_v0(self, Devices, MsgData, MsgLQI): # Read Attribute Response
-#     MsgSQN=MsgData[0:2]
-#     MsgSrcAddr=MsgData[2:6]
-#     MsgSrcEp=MsgData[6:8]
-#     MsgClusterId=MsgData[8:12]
-#     MsgAttrID = MsgData[12:16]
-#     MsgAttStatus = MsgData[16:18]
-#     MsgAttType=MsgData[18:20]
-#     MsgAttSize=MsgData[20:24]
-#     MsgClusterData=MsgData[24:len(MsgData)]
-# 
-#     i_sqn = sqn_get_internal_sqn_from_app_sqn (self.ZigateComm, MsgSQN, TYPE_APP_ZCL)
-#     loggingInput( self, 'Debug', "Decode8100 - Read Attribute Response: [%s:%s] ClusterID: %s MsgSQN: %s, i_sqn: %s, AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<" \
-#             %(MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgSQN, i_sqn, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData ), MsgSrcAddr)
-# 
-#     timeStamped( self, MsgSrcAddr , 0x8100)
-#     loggingMessages( self, '8100', MsgSrcAddr, None, MsgLQI, MsgSQN)
-#     updLQI( self, MsgSrcAddr, MsgLQI )
-#     read_report_attributes( self,  Devices, '8100', MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, MsgData)
-#     callbackDeviceAwake( self, MsgSrcAddr, MsgSrcEp, MsgClusterId)
 
 def Decode8101(self, Devices, MsgData, MsgLQI) :  # Default Response
     MsgDataSQN=MsgData[0:2]

@@ -1622,6 +1622,9 @@ def process8002(self, frame):
     self.logging_receive(
         'Debug', "process8002 Sqn: %s ManufCode: %s Command: %s Data: %s " %(Sqn, ManufacturerCode, Command, Data))
 
+    if Command == '00': # Read Attribute
+        return buildframe_read_attribute_request( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data  )
+
     if Command == '01': # Read Attribute response
         return buildframe_read_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
 
@@ -1704,6 +1707,29 @@ def extract_nwk_infos_from_8002( frame ):
 
     return ( SrcNwkId, SrcEndPoint, ClusterId , Payload )
 
+
+def buildframe_read_attribute_request( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data  ):
+
+    buildPayload = SrcNwkId + SrcEndPoint+ ClusterId 
+    idx = nbAttribute = 0
+    while idx < len(Data):
+        nbAttribute += 1
+        Attribute = '%04x' %struct.unpack('H',struct.pack('>H',int(Data[idx:idx+4],16)))[0]
+        idx += 4
+        buildPayload += Attribute
+
+    Domoticz.Log("buildframe_read_attribute_request - NwkId: %s Ep: %s ClusterId: %s nbAttribute: %s Data: %s" 
+            %(SrcNwkId, SrcEndPoint, ClusterId, nbAttribute, Data))
+
+    newFrame = '01' # 0:2
+    newFrame += '010f' # 2:6   MsgType
+    newFrame += '%4x' %len(buildPayload) # 6:10  Length
+    newFrame += 'ff' # 10:12 CRC
+    newFrame += buildPayload
+    newFrame += frame[len(frame) - 4: len(frame) - 2] # LQI
+    newFrame += '03'
+    return  newFrame
+
 def buildframe_write_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data):
 
     # This is based on assumption that we only Write 1 attribute at a time
@@ -1731,7 +1757,7 @@ def decode_endian_data( data, datatype):
     elif datatype in ( '23', '2b', '39'):
         value = '%08x' %struct.unpack('>f',struct.pack('I',int(data,16)))[0]
 
-    elif datatype in ( '41', '42'):
+    elif datatype in ( '00', '41', '42'):
         value = data
 
     else:
@@ -1741,7 +1767,6 @@ def decode_endian_data( data, datatype):
 
 
 def buildframe_read_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data ):
-
 
     nbAttribute = 0
     idx = 0
@@ -1760,6 +1785,8 @@ def buildframe_read_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clust
             elif DType in ( '41', '42'): # ZigBee_OctedString = 0x41, ZigBee_CharacterString = 0x42
                 size = int(Data[idx:idx+2],16)
                 idx += 2
+            elif DType == '00':
+                return frame
             else: 
                 Domoticz.Error("buildframe_read_attribute_response - Unknown DataType size: >%s< vs. %s " %(DType, str(SIZE_DATA_TYPE)))
                 Domoticz.Error("buildframe_read_attribute_response - ClusterId: %s Attribute: %s Data: %s" %(ClusterId, Attribute, Data))
@@ -1803,6 +1830,9 @@ def buildframe_report_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clu
             size = int(Data[idx:idx+2],16)
             idx += 2
 
+        elif DType == '00':
+            return frame
+            
         else: 
             Domoticz.Error("buildframe_report_attribute_response - Unknown DataType size: >%s< vs. %s " %(DType, str(SIZE_DATA_TYPE)))
             Domoticz.Error("buildframe_report_attribute_response - NwkId: %s ClusterId: %s Attribute: %s Frame: %s" %(SrcNwkId, ClusterId, Attribute, frame))

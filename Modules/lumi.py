@@ -21,7 +21,7 @@ from Modules.domoMaj import MajDomoDevice
 from Modules.basicOutputs import ZigatePermitToJoin, leaveRequest, write_attribute
 from Modules.zigateConsts import ZIGATE_EP,  SIZE_DATA_TYPE
 from Modules.logging import loggingLumi
-from Modules.tools import voltage2batteryP, checkAttribute, checkAndStoreAttributeValue
+from Modules.tools import voltage2batteryP, checkAndStoreAttributeValue
 
 
 XIAOMI_POWERMETER_EP = {
