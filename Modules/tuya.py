@@ -16,6 +16,7 @@ import struct
 
 from Modules.zigateConsts import ZIGATE_EP
 from Modules.basicOutputs import sendZigateCmd, raw_APS_request
+from Modules.tools import  checkAndStoreAttributeValue
 
 from Modules.logging import loggingTuya
 from Modules.domoMaj import MajDomoDevice
@@ -96,12 +97,21 @@ def tuyaReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, M
     
     _ModelName = self.ListOfDevices[srcNWKID]['Model']
 
+    if len(MsgPayload) < 6:
+        loggingTuya( self, 'Log', "tuyaReadRawAPS - MsgPayload %s too short" %(MsgPayload))
+        return
+
     fcf = MsgPayload[0:2] # uint8
     sqn = MsgPayload[2:4] # uint8
     cmd = MsgPayload[4:6] # uint8
-    status = MsgPayload[6:8] #uint8
+
+    if cmd not in ('00', '01'):
+        loggingTuya( self, 'Log', "tuyaReadRawAPS - Unknown command %s MsgPayload %s" %(cmd, MsgPayload))
+        return
+
+    status = MsgPayload[6:8]   #uint8
     transid = MsgPayload[8:10] # uint8
-    dp = MsgPayload[10:14] # uint16
+    dp = MsgPayload[10:14]     # uint16
     decode_dp = struct.unpack('>H',struct.pack('H',int(dp,16)))[0]
     fn = MsgPayload[14:16]
     len_data = MsgPayload[16:18]
@@ -118,6 +128,7 @@ def tuyaReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, M
         # data is setpoint
         loggingTuya( self, 'Log', "tuyaReadRawAPS - Nwkid: %s/%s Setpoint: %s" %(srcNWKID,srcEp ,int(data,16)))
         MajDomoDevice(self, Devices, srcNWKID, srcEp, '0201', ( int(data,16) / 10 ), Attribute_ = '0012' )
+        checkAndStoreAttributeValue( self, MsgSrcAddr , '01', '0201', '0012' , int(data,16) )
 
 
     elif decode_dp in (0x0203, 0x0303):
@@ -125,11 +136,14 @@ def tuyaReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, M
         # data is the temp
         loggingTuya( self, 'Log', "tuyaReadRawAPS - Nwkid: %s/%s Temperature: %s" %(srcNWKID,srcEp , int(data,16)))
         MajDomoDevice(self, Devices, srcNWKID, srcEp, '0402', (int(data,16) / 10 ))
+        checkAndStoreAttributeValue( self, MsgSrcAddr , '01', '0402', '0000' , int(data,16)  )
 
 
     elif decode_dp == 0x0215:
         # Battery status
         loggingTuya( self, 'Log', "tuyaReadRawAPS - Nwkid: %s/%s Battery status %s" %(srcNWKID,srcEp ,int(data,16)))
+        checkAndStoreAttributeValue( self, MsgSrcAddr , '01', '0001', '0000' , int(data,16) )
+        self.ListOfDevices[ srcNWKID ]['Battery'] = int(data,16)
 
 
     elif decode_dp == 0x0404:
@@ -138,16 +152,19 @@ def tuyaReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, M
             # Offline
             loggingTuya( self, 'Log', "tuyaReadRawAPS - Nwkid: %s/%s Mode to Offline" %(srcNWKID,srcEp ))
             MajDomoDevice(self, Devices, srcNWKID, srcEp, '0201', 0, Attribute_ = '001c' )
+            checkAndStoreAttributeValue( self, MsgSrcAddr , '01', '0201', '001c' , 'OffLine' )
 
         elif data == '01':
             # Auto
             loggingTuya( self, 'Log', "tuyaReadRawAPS - Nwkid: %s/%s Mode to Auto" %(srcNWKID,srcEp ))
             MajDomoDevice(self, Devices, srcNWKID, srcEp, '0201', 1, Attribute_ = '001c' )
+            checkAndStoreAttributeValue( self, MsgSrcAddr , '01', '0201', '001c' , 'Auto' )
 
         elif data == '02':
             # Manual
             loggingTuya( self, 'Log', "tuyaReadRawAPS - Nwkid: %s/%s Mode to Manual" %(srcNWKID,srcEp ))
             MajDomoDevice(self, Devices, srcNWKID, srcEp, '0201', 2, Attribute_ = '001c' )
+            checkAndStoreAttributeValue( self, MsgSrcAddr , '01', '0201', '001c' , 'Manual' )
 
 
 def tuya_setpoint( self, nwkid, setpoint_value):
