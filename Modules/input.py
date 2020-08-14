@@ -1563,11 +1563,11 @@ def Decode010f( self, Devices, MsgData, MsgLQI):  # Read Attribute request from 
     MsgSrcEp = MsgData[4:6]
     MsgCluster = MsgData[6:10]
 
-    idx = nbAttribute = 0
-    while idx < len(Data):
+    nbAttribute = 0
+    for idx in range(10, len(MsgData), 4):
         nbAttribute += 1
         Attribute = Data[idx:idx+4]
-        idx += 4
+        loggingInput( self, 'Log',"Decode010f - %s/%s Cluster %s Attribute %s" %( MsgSrcAddr, MsgSrcEp, MsgCluster, Attribute))
 
 def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
     # Seems to come with Livolo and Firmware 3.1b
