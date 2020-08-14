@@ -319,6 +319,16 @@ SWITCH_LVL_MATRIX = {
         }
     },
 
+    "ThermoMode_2": {
+       0: (0, "Off"), 
+       1: (1, "10"), 
+       2: (2, "20"),  
+       "ForceUpdate": True,
+       "LevelNames": "Off|Auto|Manual",
+       "Language": {
+           "fr-FR": {"LevelNames": "Arrêt|Auto|Manuel"}
+       }
+   },
     "ThermoMode": {
         0: (0, "Off"), 
         1: (1, "10"), 
