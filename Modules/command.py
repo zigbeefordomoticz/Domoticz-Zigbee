@@ -171,7 +171,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             return
 
         if DeviceType == 'ThermoMode_2':
-            loggingCommand( self, 'Log', "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" 
+            loggingCommand( self, 'Debug', "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" 
                 %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
             loggingCommand( self, 'Debug', "ThermoMode - requested Level: %s" %Level, NWKID)
             tuya_trv_mode( self, NWKID, 0 )
@@ -432,7 +432,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             return
 
         if DeviceType == 'ThermoMode':
-            loggingCommand( self, 'Log', "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" 
+            loggingCommand( self, 'Debug', "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" 
                 %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
             loggingCommand( self, 'Debug', "ThermoMode - requested Level: %s" %Level, NWKID)
             if Level in THERMOSTAT_LEVEL_2_MODE:
@@ -440,10 +440,9 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
                 thermostat_Mode( self, NWKID, THERMOSTAT_LEVEL_2_MODE[Level] )
 
         if DeviceType == 'ThermoMode_2':
-            loggingCommand( self, 'Log', "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" 
+            loggingCommand( self, 'Debug', "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" 
                 %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
-            loggingCommand( self, 'Log', "ThermoMode_2 - requested Level: %s" %Level, NWKID)
-
+            loggingCommand( self, 'Debug', "ThermoMode_2 - requested Level: %s" %Level, NWKID)
             tuya_trv_mode( self, NWKID, Level )
 
 
