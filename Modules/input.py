@@ -1635,8 +1635,9 @@ def Decode8100(self, Devices, MsgData, MsgLQI): # Read Attribute Response (in ca
                 %(idx, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgSQN, i_sqn, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData ), MsgSrcAddr)
             NewMsgData = MsgSQN + MsgSrcAddr + MsgSrcEp + MsgClusterId + MsgAttrID + MsgAttStatus + MsgAttType + MsgAttSize + MsgClusterData
             read_report_attributes( self,  Devices, '8100', MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, NewMsgData)
+
     except Exception as e:
-        Domoticz.Error("Decode8100 - Catch error while decoding %s/%s cluster: %s MsgData: %s" %( MsgSrcAddr, MsgSrcEp, MsgClusterId))    
+        Domoticz.Error("Decode8100 - Catch error while decoding %s/%s cluster: %s MsgData: %s Error: %s" %( MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgData, e))    
     
     callbackDeviceAwake( self, MsgSrcAddr, MsgSrcEp, MsgClusterId)
 
