@@ -61,6 +61,7 @@ def ZigateRead(self, Devices, Data, TransportInfos=None):
 
     DECODERS = {
         '0100': Decode0100,
+        '010f': Decode010f, #Read Attribute Request build by transport
         '004d': Decode004D,
         '8000': Decode8000_v2, 
         '8001': Decode8001, 
@@ -1555,6 +1556,18 @@ def Decode80A6(self, Devices, MsgData, MsgLQI) : # Scene Membership response
         if scene not in MsgScene:
             MsgScene.append( scene )
     loggingInput( self, 'Log',"           - Scene List: %s" %(str(MsgScene)))
+
+def Decode010f( self, Devices, MsgData, MsgLQI):  # Read Attribute request from Transport buildframe_read_attribute_request )
+
+    MsgSrcAddr = MsgData[0:4]
+    MsgSrcEp = MsgData[4:6]
+    MsgCluster = MsgData[6:10]
+
+    idx = nbAttribute = 0
+    while idx < len(Data):
+        nbAttribute += 1
+        Attribute = Data[idx:idx+4]
+        idx += 4
 
 def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
     # Seems to come with Livolo and Firmware 3.1b
