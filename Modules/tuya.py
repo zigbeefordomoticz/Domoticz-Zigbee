@@ -147,7 +147,7 @@ def tuyaReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, M
 
 def tuya_setpoint( self, nwkid, setpoint_value):
 
-    loggingTuya( self, 'Log', "tuya_setpoint - %s/%s setpoint: %s" %(nwkid, EPout , setpoint_value))
+    loggingTuya( self, 'Log', "tuya_setpoint - %s setpoint: %s" %(nwkid, setpoint_value))
 
     # In Domoticz Setpoint is in ° , In Modules/command.py we multiplied by 100 (as this is the Zigbee standard).
     # Looks like in the Tuya 0xef00 cluster it is only expressed in 10th of degree
