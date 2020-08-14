@@ -1567,7 +1567,7 @@ def Decode010f( self, Devices, MsgData, MsgLQI):  # Read Attribute request from 
     idx = 10
     while idx < len(MsgData):
         nbAttribute += 1
-        Attribute = Data[idx:idx+4]
+        Attribute = MsgData[idx:idx+4]
         idx += 4
         loggingInput( self, 'Log',"Decode010f - %s/%s Cluster %s Attribute %s" %( MsgSrcAddr, MsgSrcEp, MsgCluster, Attribute))
 
