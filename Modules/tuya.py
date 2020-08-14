@@ -116,35 +116,35 @@ def tuyaReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, M
     if decode_dp == 0x0202:
         # Setpoint Change target temp
         # data is setpoint
-        loggingTuya( self, 'Log', "tuyaReadRawAPS - Nwkid: %s/%s Setpoint: %s" %int(data,16))
+        loggingTuya( self, 'Log', "tuyaReadRawAPS - Nwkid: %s/%s Setpoint: %s" %(srcNWKID,srcEp ,int(data,16)))
         MajDomoDevice(self, Devices, srcNWKID, srcEp, '0201', int(data,16))
 
 
     elif decode_dp in (0x0203, 0x0303):
         # Temperature notification
         # data is the temp
-        loggingTuya( self, 'Log', "tuyaReadRawAPS - Nwkid: %s/%s Temperature: %s" %int(data,16))
+        loggingTuya( self, 'Log', "tuyaReadRawAPS - Nwkid: %s/%s Temperature: %s" %(srcNWKID,srcEp , int(data,16)))
         MajDomoDevice(self, Devices, srcNWKID, srcEp, '0402', int(data,16))
 
 
     elif decode_dp == 0x0215:
         # Battery status
-        loggingTuya( self, 'Log', "tuyaReadRawAPS - Nwkid: %s/%s Battery status %s" %int(data,16))
+        loggingTuya( self, 'Log', "tuyaReadRawAPS - Nwkid: %s/%s Battery status %s" %(srcNWKID,srcEp ,int(data,16)))
 
 
     elif decode_dp == 0x0404:
         # Change mode
         if data == '00':
             # Offline
-            loggingTuya( self, 'Log', "tuyaReadRawAPS - Nwkid: %s/%s Mode to Offline")
+            loggingTuya( self, 'Log', "tuyaReadRawAPS - Nwkid: %s/%s Mode to Offline" %(srcNWKID,srcEp ))
 
         elif data == '01':
             # Auto
-            loggingTuya( self, 'Log', "tuyaReadRawAPS - Nwkid: %s/%s Mode to Auto")
+            loggingTuya( self, 'Log', "tuyaReadRawAPS - Nwkid: %s/%s Mode to Auto" %(srcNWKID,srcEp ))
 
         elif data == '02':
             # Manual
-            loggingTuya( self, 'Log', "tuyaReadRawAPS - Nwkid: %s/%s Mode to Manual")
+            loggingTuya( self, 'Log', "tuyaReadRawAPS - Nwkid: %s/%s Mode to Manual" %(srcNWKID,srcEp ))
 
 
 def tuya_setpoint( self, nwkid, setpoint_value):
