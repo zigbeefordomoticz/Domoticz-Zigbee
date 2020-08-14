@@ -50,7 +50,7 @@ def thermostat_Setpoint( self, key, setpoint):
         
         elif self.ListOfDevices[key]['Model'] in ( 'TS0601', ):
             # Tuya
-            loggingThermostats( self, 'Debug', "thermostat_Setpoint - calling Tuya for %s with value %s" %(key,setpoint), nwkid=key)
+            loggingThermostats( self, 'Log', "thermostat_Setpoint - calling Tuya for %s with value %s" %(key, setpoint), nwkid=key)
             tuya_setpoint(self, key, setpoint)
             return
 
