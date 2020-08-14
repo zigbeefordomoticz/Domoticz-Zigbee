@@ -1731,7 +1731,7 @@ def decode_endian_data( data, datatype):
     elif datatype in ( '23', '2b', '39'):
         value = '%08x' %struct.unpack('>f',struct.pack('I',int(data,16)))[0]
 
-    elif datatype in ( '41', '42'):
+    elif datatype in ( '00', '41', '42'):
         value = data
 
     else:
@@ -1760,6 +1760,8 @@ def buildframe_read_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clust
             elif DType in ( '41', '42'): # ZigBee_OctedString = 0x41, ZigBee_CharacterString = 0x42
                 size = int(Data[idx:idx+2],16)
                 idx += 2
+            elif DType == '00':
+                return frame
             else: 
                 Domoticz.Error("buildframe_read_attribute_response - Unknown DataType size: >%s< vs. %s " %(DType, str(SIZE_DATA_TYPE)))
                 Domoticz.Error("buildframe_read_attribute_response - ClusterId: %s Attribute: %s Data: %s" %(ClusterId, Attribute, Data))
@@ -1803,6 +1805,9 @@ def buildframe_report_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clu
             size = int(Data[idx:idx+2],16)
             idx += 2
 
+        elif DType == '00':
+            return frame
+            
         else: 
             Domoticz.Error("buildframe_report_attribute_response - Unknown DataType size: >%s< vs. %s " %(DType, str(SIZE_DATA_TYPE)))
             Domoticz.Error("buildframe_report_attribute_response - NwkId: %s ClusterId: %s Attribute: %s Frame: %s" %(SrcNwkId, ClusterId, Attribute, frame))
