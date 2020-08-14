@@ -1610,6 +1610,7 @@ def Decode8100(self, Devices, MsgData, MsgLQI): # Read Attribute Response (in ca
     MsgSQN=MsgData[0:2]
     i_sqn = sqn_get_internal_sqn_from_app_sqn (self.ZigateComm, MsgSQN, TYPE_APP_ZCL)
 
+
     MsgSrcAddr=MsgData[2:6]
     timeStamped( self, MsgSrcAddr , 0x8100)
     loggingMessages( self, '8100', MsgSrcAddr, None, MsgLQI, MsgSQN)
@@ -1617,18 +1618,25 @@ def Decode8100(self, Devices, MsgData, MsgLQI): # Read Attribute Response (in ca
     MsgSrcEp=MsgData[6:8]
     MsgClusterId=MsgData[8:12]
     idx = 12
+
+    Domoticz.Log("---> NwkId: %s Ep: %s Cluster: %s" %(MsgSrcAddr,MsgSrcEp, MsgClusterId  ))
+
     try:
         while idx < len(MsgData):
             MsgAttrID = MsgAttStatus = MsgAttType = MsgAttSize = MsgClusterData = ''
             MsgAttrID = MsgData[idx:idx+4]
+            Domoticz.Log("---> Attribute: %s" %MsgAttrID)
             idx += 4
             MsgAttStatus = MsgData[idx:idx+2]
+            Domoticz.Log("---> Status:    %s" %MsgAttStatus)
             idx += 2
             MsgAttType = MsgData[idx:idx+2]
+            Domoticz.Log("---> Type:      %s" %MsgAttType)
             idx += 2
             MsgAttSize = MsgData[idx:idx+4]
+            Domoticz.Log("---> Size:      %s" %MsgAttSize)
             idx += 4
-            size = int(MsgAttSize,16)
+            size = (int(MsgAttSize,16) * 2)
             MsgClusterData = MsgData[idx: idx + size]
             idx += size
             loggingInput( self, 'Debug', "Decode8100 - idx: %s Read Attribute Response: [%s:%s] ClusterID: %s MsgSQN: %s, i_sqn: %s, AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<" \

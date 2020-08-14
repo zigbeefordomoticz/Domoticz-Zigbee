@@ -117,14 +117,14 @@ def tuyaReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, M
         # Setpoint Change target temp
         # data is setpoint
         loggingTuya( self, 'Log', "tuyaReadRawAPS - Nwkid: %s/%s Setpoint: %s" %(srcNWKID,srcEp ,int(data,16)))
-        MajDomoDevice(self, Devices, srcNWKID, srcEp, '0201', int(data,16))
+        MajDomoDevice(self, Devices, srcNWKID, srcEp, '0201', ( int(data,16) / 10 ), Attribute_ = '0012' )
 
 
     elif decode_dp in (0x0203, 0x0303):
         # Temperature notification
         # data is the temp
         loggingTuya( self, 'Log', "tuyaReadRawAPS - Nwkid: %s/%s Temperature: %s" %(srcNWKID,srcEp , int(data,16)))
-        MajDomoDevice(self, Devices, srcNWKID, srcEp, '0402', int(data,16))
+        MajDomoDevice(self, Devices, srcNWKID, srcEp, '0402', (int(data,16) / 10 ))
 
 
     elif decode_dp == 0x0215:
@@ -137,14 +137,17 @@ def tuyaReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, M
         if data == '00':
             # Offline
             loggingTuya( self, 'Log', "tuyaReadRawAPS - Nwkid: %s/%s Mode to Offline" %(srcNWKID,srcEp ))
+            MajDomoDevice(self, Devices, srcNWKID, srcEp, '0201', 0, Attribute_ = '001c' )
 
         elif data == '01':
             # Auto
             loggingTuya( self, 'Log', "tuyaReadRawAPS - Nwkid: %s/%s Mode to Auto" %(srcNWKID,srcEp ))
+            MajDomoDevice(self, Devices, srcNWKID, srcEp, '0201', 1, Attribute_ = '001c' )
 
         elif data == '02':
             # Manual
             loggingTuya( self, 'Log', "tuyaReadRawAPS - Nwkid: %s/%s Mode to Manual" %(srcNWKID,srcEp ))
+            MajDomoDevice(self, Devices, srcNWKID, srcEp, '0201', 2, Attribute_ = '001c' )
 
 
 def tuya_setpoint( self, nwkid, setpoint_value):

@@ -268,7 +268,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                                     nValue =  0
                     UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
 
-            elif WidgetType == 'ThermoMode_2':
+            elif WidgetType == 'ThermoMode_2' and Attribute_ == '001c':
                 # Use by Tuya TRV
                 nValue = value
                 if 'ThermoMode_2' not in SWITCH_LVL_MATRIX:
