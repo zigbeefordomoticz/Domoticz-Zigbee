@@ -606,6 +606,9 @@ def Decode8014(self, Devices, MsgData, MsgLQI): # "Permit Join" status response
 
     loggingInput( self, 'Debug',"Decode8014 - Permit Join status: %s" %( Status == '01' ) , 'ffff')
 
+    if 'Permit' not in self.Ping:
+        self.Ping['Permit'] = None
+        
     prev = self.Ping['Permit']
 
     if Status == "00": 
