@@ -343,13 +343,13 @@ def Decode8002(self, Devices, MsgData, MsgLQI) : # Data indication
     if MsgProfilID == '0104':
         GlobalCommand, Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002( MsgPayload )
         if GlobalCommand and int(Command,16) in ZIGBEE_COMMAND_IDENTIFIER:
-            logginginRawAPS( self, 'Log',"0x8002 - NwkId: %s Ep: %s Cluster: %s GlobalCommand: %5s Command: %s (%33s) Data: %s" 
+            logginginRawAPS( self, 'Log',"Decod8002 - NwkId: %s Ep: %s Cluster: %s GlobalCommand: %5s Command: %s (%33s) Data: %s" 
                 %( srcnwkid, MsgSourcePoint,  MsgClusterID, GlobalCommand, Command, ZIGBEE_COMMAND_IDENTIFIER[ int(Command,16) ], Data ))
         else:
-            logginginRawAPS( self, 'Log',"0x8002 - NwkId: %s Ep: %s Cluster: %s GlobalCommand: %5s Command: %s (%33s) Data: %s" 
+            logginginRawAPS( self, 'Log',"Decod8002 - NwkId: %s Ep: %s Cluster: %s GlobalCommand: %5s Command: %s (%33s) Data: %s" 
                 %( srcnwkid, MsgSourcePoint,  MsgClusterID, GlobalCommand, Command, '', Data ))
     else:
-        logginginRawAPS( self, 'Log',"0x8002 - NwkId: %s Ep: %s Cluster: %s Payload: %s" 
+        logginginRawAPS( self, 'Log',"Decod8002 - NwkId: %s Ep: %s Cluster: %s Payload: %s" 
             %( srcnwkid, MsgSourcePoint,  MsgClusterID, MsgPayload )) 
         return
 

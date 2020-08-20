@@ -70,7 +70,7 @@ def philipsReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP
 
     GlobalCommand, sqn, ManufacturerCode,  cmd, data = retreive_cmd_payload_from_8002( MsgPayload )
 
-    if _ModelName == 'RWL021' and cmd = '00' and GlobalCommand:
+    if _ModelName == 'RWL021' and cmd == '00' and ClusterID == 'fc00':
         # This is handle by the firmware
         return
     
