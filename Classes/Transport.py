@@ -264,7 +264,8 @@ class ZigateTransport(object):
         if self._transp in ["USB", "DIN", "PI"]:
             if self._serialPort.find('/dev/') != -1 or self._serialPort.find('COM') != -1:
                 Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" % (self._serialPort))
-                BAUDS = 460800
+                #BAUDS = 460800
+                BAUDS = 115200
                 if self.pluginconf.pluginConf['MultiThreaded']:
                     open_serial( self)
                 else:
