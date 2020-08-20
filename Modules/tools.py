@@ -867,6 +867,10 @@ def retreive_cmd_payload_from_8002( Payload ):
     fcf = Payload[0:2] 
 
     GlobalCommand = is_golbalcommand( fcf )
+    if GlobalCommand is None:
+        Domoticz.Error("Strange payload: %s" %Payload)
+        return ( None, None, None, None, None)
+
     if is_manufspecific_8002_payload( fcf ):
         ManufacturerCode = Payload[2:6]
         Sqn = Payload[6:8]
@@ -882,16 +886,11 @@ def retreive_cmd_payload_from_8002( Payload ):
 
 
 def is_golbalcommand( fcf ):
-    FrameTypeSubField = ( int(fcf, 16) & 0b00000011)
-    return FrameTypeSubField == 0
+    return ( int(fcf, 16) & 0b00000011) == 0
 
 
 def is_manufspecific_8002_payload( fcf ):
-    ManufSpecif = ( int(fcf, 16) & 0b00000100) >> 2
-    #Direction = ( int(fcf, 16) & 0b00001000) >> 3
-    #DisableDefaultResponse = ( int(fcf, 16) & 0b00010000) >> 4
-
-    return ManufSpecif == 1
+    return (( int(fcf, 16) & 0b00000100) >> 2) == 1
 
 
 # Functions to manage Device Attributes infos ( ConfigureReporting)
