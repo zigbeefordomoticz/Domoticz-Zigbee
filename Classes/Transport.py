@@ -124,6 +124,7 @@ class ZigateTransport(object):
         while self.running:
             nb = serialConnection.in_waiting
             if nb > 0:
+                # Readinng messages
                 while nb:
                     try:
                         data = serialConnection.read( nb )
@@ -136,6 +137,7 @@ class ZigateTransport(object):
                     nb = serialConnection.in_waiting
 
             elif self.messageQueue.qsize() > 0:
+                # Sending messages
                 while self.messageQueue.qsize() > 0:
                     encoded_data = self.messageQueue.get_nowait()
                     try:
@@ -1623,6 +1625,9 @@ def process8002(self, frame):
     if SrcNwkId is None:
         return frame
     
+    if len(Payload) < 10:
+        return frame
+        
     GlobalCommand, Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002( Payload )
     if not GlobalCommand:
         # This is not a Global Command (Read Attribute, Write Attribute and so on)
@@ -1868,11 +1873,14 @@ def buildframe_report_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clu
 def buildframe_configure_reporting_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data ):
 
     if len(Data) == 2:
-        buildPayload = Sqn + SrcNwkId + SrcEndPoint + MsgClusterId + Data 
+        nbAttribute = 1
+        buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId + Data 
     else:
         idx = 0
+        nbAttribute = 0
         buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId
         while idx < len(Data):
+            nbAttribute += 1
             Status = Data[idx:idx+2]
             idx += 2
             Direction = Data[idx:idx+2]
@@ -1882,7 +1890,7 @@ def buildframe_configure_reporting_response( frame, Sqn, SrcNwkId, SrcEndPoint, 
             buildPayload += Attribute + Status
         return  frame
 
-    Domoticz.Log("buildframe_configure_reporting_response - NwkId: %s Ep: %s ClusterId: %s nbAttribute: %s Data: %s" %(SrcNwkId, SrcEndPoint, ClusterId, buildPayload))
+    Domoticz.Log("buildframe_configure_reporting_response - NwkId: %s Ep: %s ClusterId: %s nbAttribute: %s Data: %s" %(SrcNwkId, SrcEndPoint, ClusterId, nbAttribute, buildPayload))
     newFrame = '01' # 0:2
     newFrame += '8120' # 2:6   MsgType
     newFrame += '%4x' %len(buildPayload) # 6:10  Length
