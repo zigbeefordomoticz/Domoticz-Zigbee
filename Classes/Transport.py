@@ -145,7 +145,11 @@ class ZigateTransport(object):
                         Domoticz.Error("serial_listen_and_send - error while writing %s" %(e))
 
             else:
-                self.ListeningThreadevent.wait( THREAD_RELAX_TIME_MS )
+                if self.lock:
+                    # If PDM lock is set, we are currently feeding PDM and we have to be more agressive
+                    self.ListeningThreadevent.wait( 0.001 ) # 1ms waiting
+                else:
+                    self.ListeningThreadevent.wait( THREAD_RELAX_TIME_MS )
         Domoticz.Status("ZigateTransport: ZiGateSerialListen Thread stop.")
 
 
@@ -260,7 +264,7 @@ class ZigateTransport(object):
         if self._transp in ["USB", "DIN", "PI"]:
             if self._serialPort.find('/dev/') != -1 or self._serialPort.find('COM') != -1:
                 Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" % (self._serialPort))
-                BAUDS = 115200
+                BAUDS = 460800
                 if self.pluginconf.pluginConf['MultiThreaded']:
                     open_serial( self)
                 else:
@@ -924,7 +928,7 @@ def check_timed_out(self):
         self.loggingSend(
             'Debug', "-- checkTimedOutForTxQueues ListOfCommands size: %s" % len(self.ListOfCommands))
         for x in list(self.ListOfCommands.keys()):
-            if self.ListOfCommands[x]['SentTimeStamp'] and (now - self.ListOfCommands[x]['SentTimeStamp']) > TIME_OUT_LISTCMD:
+            if 'SentTimeStamp' in self.ListOfCommands[x] and self.ListOfCommands[x]['SentTimeStamp'] and (now - self.ListOfCommands[x]['SentTimeStamp']) > TIME_OUT_LISTCMD:
                 if self.ListOfCommands[x]['MessageResponse']:
                     self.loggingSend('Debug', " --  --  --  > - Time Out : [%s] %s %s Flags: %s/%s %04x Status: %s Time: %s"
                                      % (x, self.ListOfCommands[x]['Cmd'], self.ListOfCommands[x]['Datas'], self.ListOfCommands[x]['ResponseExpected'],
@@ -1256,6 +1260,10 @@ def process_msg_type8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn):
     self.loggingSend('Debug', "--> process_msg_type8000 - Status: %s PacketType: %s sqn_app:%s sqn_aps: %s type_sqn: %s" %
                      (Status, PacketType, sqn_app, sqn_aps, type_sqn))
     # Command Failed, Status != 00
+
+    if int(PacketType,16) in CMD_PDM_ON_HOST:
+        # No sync on PDM commands
+        return None
 
     if Status != '00':
         self.statistics._ackKO += 1

@@ -134,7 +134,8 @@ def pdmLoadConfirmed( self, MsgData):
 def PDMSaveRequest( self, MsgData):
     """
     We received from the zigate a buffer to write down to the PDM.
-    Data can come in several blocks for the same RecordID
+    Data can come in several blocks for the same RecordID.
+    Only copmplete record must be save into the Persistent structure
     #Decode0200
     """
 
@@ -148,23 +149,28 @@ def PDMSaveRequest( self, MsgData):
     RecordId = MsgData[:4]                #record ID
     u16Size = MsgData[4:8]                # total PDM record size
     u16NumberOfWrites = MsgData[8:12]     # total number of block writes expected
-    u16BlocksWritten = MsgData[12:16]     # This number corresponds to the block id
+    u16BlocksWritten = MsgData[12:16]     # This number corresponds to the block id from 0 to (NumberOfWrite - 1)
     dataReceived = int(MsgData[16:20],16) # Send size of this particular block (number of bytes)
     sWriteData = MsgData[20:20+(2*dataReceived)] # bytes is coded into 2 chars 
 
-    loggingPDM( self, 'Debug',  "      --------- RecordId: %s, u16Size: %s, u16BlocksWritten: %s, u16NumberOfWrites: %s, dataReceived: %s " \
+    loggingPDM( self, 'Log',  "      --------- RecordId: %s, u16Size: %s, u16BlocksWritten: %s, u16NumberOfWrites: %s, dataReceived: %s " \
             %( RecordId, u16Size, u16BlocksWritten, u16NumberOfWrites, dataReceived))
 
     if RecordId not in self.PDM:
         self.PDM[RecordId] = {}
-    else:
-        if int(u16BlocksWritten,16) > 0:
-            # We assume block comes in the righ order
-            sWriteData = self.PDM[RecordId]['PersistedData'] + sWriteData
-    self.PDM[RecordId]['RecSize'] = u16Size
-    self.PDM[RecordId]['PersistedData'] = sWriteData
+        
+    # We assume block comes in the righ order
+    if int(u16BlocksWritten,16) == 0:
+        # First block, we rest the Temporary structure
+        self.PDM[RecordId]['ReceivingData'] = ''                   
+    self.PDM[RecordId]['ReceivingData'] += sWriteData
+
     if int(u16NumberOfWrites,16) == int(u16BlocksWritten,16) + 1:
-        Domoticz.Log("Saving on Disk")
+        # All Blocks received
+        Domoticz.Log("Saving on Disk RecordId: %s RecordData: %s" %(RecordId, self.PDM[RecordId]['ReceivingData'] ))
+        self.PDM[RecordId]['RecSize'] = u16Size
+        self.PDM[RecordId]['PersistedData'] = self.PDM[RecordId]['ReceivingData']
+        self.PDM[RecordId]['ReceivingData'] = ''
         if self.PDMready:
             savePDM(self)
 
@@ -178,7 +184,7 @@ def PDMSaveRequest( self, MsgData):
 
 def PDMLoadRequest(self, MsgData):
     """
-    Retreive RecordID intothe PDM and send it back to Zigate
+    Retreive RecordID from PDM (on Host) and send it back to Zigate
     Must be split into bocks as a block size is limited to 
     """
     #Decode0201
