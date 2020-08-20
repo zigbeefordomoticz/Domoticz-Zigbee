@@ -450,17 +450,40 @@ ZIGATE_COMMANDS = {
 
     # PDM response
     0x0034: {'Sequence': (),             'Ack': False, 'SQN': False, 'Layer': 'PDM', 'Command': 'PE_SL_MSG_DEBUG_PDM', 'NwkId 2nd Bytes': False},
-
+    
+    0x0202: {'Sequence': (),             'Ack': False, 'SQN': False, 'Layer': 'PDM', 'Command': 'E_SL_MSG_DELETE_ALL_PDM_RECORDS_REQUEST', 'NwkId 2nd Bytes': False},
+ 
+    0x0200: {'Sequence': (),             'Ack': False, 'SQN': False, 'Layer': 'PDM', 'Command': 'E_SL_MSG_SAVE_PDM_RECORD_REQUEST', 'NwkId 2nd Bytes': False},
     0x8200: {'Sequence': (),             'Ack': False, 'SQN': False, 'Layer': 'PDM', 'Command': 'PDM Save Request', 'NwkId 2nd Bytes': False},
+
+    0x0201: {'Sequence': (),             'Ack': False, 'SQN': False, 'Layer': 'PDM', 'Command': 'E_SL_MSG_LOAD_PDM_RECORD_REQUEST', 'NwkId 2nd Bytes': False},
     0x8201: {'Sequence': (),             'Ack': False, 'SQN': False, 'Layer': 'PDM', 'Command': 'PDM Load Request', 'NwkId 2nd Bytes': False},
+
+    0x0202: {'Sequence': (),             'Ack': False, 'SQN': False, 'Layer': 'PDM', 'Command': 'E_SL_MSG_DELETE_ALL_PDM_RECORDS_REQUEST', 'NwkId 2nd Bytes': False},
     0x8202: {'Sequence': (),             'Ack': False, 'SQN': False, 'Layer': 'PDM', 'Command': 'PDM ', 'NwkId 2nd Bytes': False},
+
+    0x0203: {'Sequence': (),             'Ack': False, 'SQN': False, 'Layer': 'PDM', 'Command': 'E_SL_MSG_DELETE_PDM_RECORD_REQUEST', 'NwkId 2nd Bytes': False},
     0x8203: {'Sequence': (),             'Ack': False, 'SQN': False, 'Layer': 'PDM', 'Command': 'PDM ', 'NwkId 2nd Bytes': False},
+
+    0x0204: {'Sequence': (),             'Ack': False, 'SQN': False, 'Layer': 'PDM', 'Command': 'E_SL_MSG_CREATE_BITMAP_RECORD_REQUEST', 'NwkId 2nd Bytes': False},
     0x8204: {'Sequence': (),             'Ack': False, 'SQN': False, 'Layer': 'PDM', 'Command': 'PDM Create Bitmap', 'NwkId 2nd Bytes': False},
+    
+    0x0205: {'Sequence': (),             'Ack': False, 'SQN': False, 'Layer': 'PDM', 'Command': 'E_SL_MSG_DELETE_BITMAP_RECORD_REQUEST', 'NwkId 2nd Bytes': False},
     0x8205: {'Sequence': (),             'Ack': False, 'SQN': False, 'Layer': 'PDM', 'Command': 'PDM Delete Bitmap', 'NwkId 2nd Bytes': False},
+
+    0x0206: {'Sequence': (),             'Ack': False, 'SQN': False, 'Layer': 'PDM', 'Command': 'E_SL_MSG_GET_BITMAP_RECORD_REQUEST', 'NwkId 2nd Bytes': False},
     0x8206: {'Sequence': (),             'Ack': False, 'SQN': False, 'Layer': 'PDM', 'Command': 'PDM Get Bitmap', 'NwkId 2nd Bytes': False},
+ 
+    0x0207: {'Sequence': (),             'Ack': False, 'SQN': False, 'Layer': 'PDM', 'Command': 'E_SL_MSG_INCREMENT_BITMAP_RECORD_REQUEST', 'NwkId 2nd Bytes': False},
     0x8207: {'Sequence': (),             'Ack': False, 'SQN': False, 'Layer': 'PDM', 'Command': 'PDM Inc Bitmap', 'NwkId 2nd Bytes': False},
+ 
+    0x0208: {'Sequence': (),             'Ack': False, 'SQN': False, 'Layer': 'PDM', 'Command': 'E_SL_MSG_PDM_EXISTENCE_REQUEST', 'NwkId 2nd Bytes': False},
     0x8208: {'Sequence': (),             'Ack': False, 'SQN': False, 'Layer': 'PDM', 'Command': 'PDM Existance Request', 'NwkId 2nd Bytes': False},
-    0x8300: {'Sequence': (),             'Ack': False, 'SQN': False, 'Layer': 'PDM', 'Command': 'Ack PDM Hosts Available', 'NwkId 2nd Bytes': False}
+
+    0x0300: {'Sequence': (),             'Ack': False, 'SQN': False, 'Layer': 'PDM', 'Command': 'E_SL_MSG_PDM_HOST_AVAILABLE', 'NwkId 2nd Bytes': False},
+    0x8300: {'Sequence': (),             'Ack': False, 'SQN': False, 'Layer': 'PDM', 'Command': 'Ack PDM Hosts Available', 'NwkId 2nd Bytes': False},
+
+    0x0302: {'Sequence': (),             'Ack': False, 'SQN': False, 'Layer': 'PDM', 'Command': 'E_SL_MSG_PDM_LOADED', 'NwkId 2nd Bytes': False}
 }
 
 # Zigate command to be retransmited by Transport if expected Data not received
