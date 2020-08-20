@@ -11,6 +11,7 @@ from time import time
 from Modules.basicOutputs import raw_APS_request, write_attribute, set_poweron_afteroffon
 from Modules.readAttributes import ReadAttributeRequest_0006_0000, ReadAttributeRequest_0008_0000, ReadAttributeRequest_0006_400x
 from Modules.logging import loggingPhilips
+from Modules.tools import retreive_cmd_payload_from_8002
 
 
 def pollingPhilips( self, key ):
@@ -54,7 +55,7 @@ def philipsReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP
     if srcNWKID not in self.ListOfDevices:
         return
 
-    loggingPhilips( self, 'Log', "philipsReadRawAPS - Nwkid: %s Ep: %s, Cluster: %s, dstNwkid: %s, dstEp: %s, Payload: %s" \
+    loggingPhilips( self, 'Debug', "philipsReadRawAPS - Nwkid: %s Ep: %s, Cluster: %s, dstNwkid: %s, dstEp: %s, Payload: %s" \
             %(srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload), srcNWKID)
 
     # Motion
@@ -64,16 +65,19 @@ def philipsReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP
 
     if 'Model' not in self.ListOfDevices[srcNWKID]:
         return
-    
+
     _ModelName = self.ListOfDevices[srcNWKID]['Model']
 
-    fcf = MsgPayload[0:2] # uint8
-    sqn = MsgPayload[2:4] # uint8
-    cmd = MsgPayload[4:6] # uint8
-    data = MsgPayload[6:] # all the rest
+    GlobalCommand, sqn, ManufacturerCode,  cmd, data = retreive_cmd_payload_from_8002( MsgPayload )
 
-    loggingPhilips( self, 'Log', "philipsReadRawAPS - Nwkid: %s/%s Cluster: %s, Command: %s Payload: %s" \
-        %(srcNWKID,srcEp , ClusterID, cmd, data ))
+    if _ModelName == 'RWL021' and cmd = '00' and GlobalCommand:
+        # This is handle by the firmware
+        return
+    
+    loggingPhilips( self, 'Log', "philipsReadRawAPS - Nwkid: %s/%s Cluster: %s, GlobalCommand: %s sqn: %s, Command: %s Payload: %s" \
+        %(srcNWKID,srcEp , ClusterID, GlobalCommand, sqn, cmd, data ))
+
+
 
 def philips_set_poweron_after_offon( self, mode):
     # call from WebServer
