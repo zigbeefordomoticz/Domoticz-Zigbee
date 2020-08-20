@@ -153,7 +153,7 @@ def PDMSaveRequest( self, MsgData):
     dataReceived = int(MsgData[16:20],16) # Send size of this particular block (number of bytes)
     sWriteData = MsgData[20:20+(2*dataReceived)] # bytes is coded into 2 chars 
 
-    loggingPDM( self, 'Log',  "      --------- RecordId: %s, u16Size: %s, u16BlocksWritten: %s, u16NumberOfWrites: %s, dataReceived: %s " \
+    loggingPDM( self, 'Debug',  "      --------- RecordId: %s, u16Size: %s, u16BlocksWritten: %s, u16NumberOfWrites: %s, dataReceived: %s " \
             %( RecordId, u16Size, u16BlocksWritten, u16NumberOfWrites, dataReceived))
 
     if RecordId not in self.PDM:
