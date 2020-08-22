@@ -505,7 +505,6 @@ class WebServer(object):
                                 else:
                                     legrand_ledShutter( self, 'Off')
 
-
                         elif param == 'EnableLedInDark':
                             if self.pluginconf.pluginConf[param] != setting_lst[setting]['current']:
                                 self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
@@ -996,7 +995,7 @@ class WebServer(object):
                 data = json.loads(data)
                 Domoticz.Log("---> Data: %s" %str(data))
                 self.logging( 'Log', "rest_dev_command - Command: %s on object: %s with extra %s %s" %(data['Command'], data['NwkId'], data['Value'],  data['Color']))
-                _response["Data"] = json.dumps( "Executing %s on %s" %(data['Command'], data['NwkId']) ) 
+                _response["Data"] = json.dumps( "Executing %s on %s" %(data['Command'], data['NwkId']) )
                 if 'Command' not in data:
                     return _response
                 if data['Command'] == '':
@@ -1012,21 +1011,16 @@ class WebServer(object):
                 color = ''
                 if data['Color'] == '' or data['Color'] is None:
                     Hue_List = {}
-                    Color = json.dumps( Hue_List )
                 else:
                     # Decoding RGB
                     # rgb(30,96,239)
                     ColorMode = data['Color'].split('(')[0]
                     ColorValue = data['Color'].split('(')[1].split(')')[0]
                     if ColorMode == 'rgb':
-                        Hue_List = {}
-                        Hue_List['m'] = 3
-                        Hue_List['r'], Hue_List['g'], Hue_List['b'] = ColorValue.split(',') 
+                        Hue_List = {'m': 3}
+                        Hue_List['r'], Hue_List['g'], Hue_List['b'] = ColorValue.split(',')
                     self.logging( 'Log', "rest_dev_command -        Color decoding m: %s r:%s g: %s b: %s"  %(Hue_List['m'], Hue_List['r'], Hue_List['g'], Hue_List['b']))
-                    Color = json.dumps( Hue_List )
-
-
-
+                Color = json.dumps( Hue_List )
                 epout = '01'
                 if 'Type' not in data:
                     actuators( self,  data['Command'], data['NwkId'], epout , 'Switch')
@@ -1047,7 +1041,7 @@ class WebServer(object):
                     else:
                         clusterCode = SWITCH_2_CLUSTER[ data['Type'] ]
 
-                    for tmpEp in self.ListOfDevices[data['NwkId']]['Ep']:
+                    for tmpEp in self.ListOfDevices[key]['Ep']:
                         if clusterCode  in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
                             epout=tmpEp
                     actuators( self,  data['Command'], key, epout , data['Type'], value=Level, color=Color)
@@ -1124,7 +1118,6 @@ class WebServer(object):
                         'Value': False if action['Value'] == '' else action['Value'],
                         'Type': True if len(action['Type']) != 0 else False,
                         }
-
                     dev_capabilities['Capabilities'].append( _capabilitie )
 
                     for cap in action['Type']:
@@ -1141,6 +1134,15 @@ class WebServer(object):
                             dev_capabilities['Types'].append( 'LivoloSWL' )
                         if 'LivoloSWR' not in dev_capabilities['Types']:
                             dev_capabilities['Types'].append( 'LivoloSWR' )
+
+                if cluster == '0006' and '0403' in self.ListOfDevices[_nwkid]['Ep'][ep]['0006']:
+                    _capabilitie = {
+                        'actuator': 'PowerStateAfterOffOn',
+                        'Value': 'hex',
+                        'Type': False
+                        }
+                    dev_capabilities['Capabilities'].append( _capabilitie )
+
 
         _response["Data"] = json.dumps( dev_capabilities )
         return _response
