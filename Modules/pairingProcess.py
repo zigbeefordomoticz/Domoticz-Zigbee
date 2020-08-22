@@ -4,7 +4,7 @@
 # Author: zaraki673 & pipiche38
 #
 """
-    Module: z_heartbeat.py
+    Module: pairingProcess.py
 
     Description: Manage all actions done during the onHeartbeat() call
 
@@ -17,20 +17,15 @@ import datetime
 import struct
 import json
 
-from Modules.actuators import actuators
+
 from Modules.schneider_wiser import schneider_wiser_registration
-from Modules.legrand_netatmo import legrand_fc01
+#
 from Modules.bindings import unbindDevice, bindDevice, rebind_Clusters
 from Modules.basicOutputs import  sendZigateCmd, identifyEffect, getListofAttribute
 
         
 from Modules.readAttributes import READ_ATTRIBUTES_REQUEST, \
-        ReadAttributeRequest_0000, ReadAttributeRequest_0001, ReadAttributeRequest_0006, ReadAttributeRequest_0008, \
-        ReadAttributeRequest_0100, \
-        ReadAttributeRequest_000C, ReadAttributeRequest_0102, ReadAttributeRequest_0201, ReadAttributeRequest_0204, ReadAttributeRequest_0300,  \
-        ReadAttributeRequest_0400, ReadAttributeRequest_0402, ReadAttributeRequest_0403, ReadAttributeRequest_0405, \
-        ReadAttributeRequest_0406, ReadAttributeRequest_0500, ReadAttributeRequest_0502, ReadAttributeRequest_0702, ReadAttributeRequest_000f, \
-        ReadAttributeRequest_fc01, ReadAttributeRequest_fc21
+        ReadAttributeRequest_0000
 
 from Modules.lumi import enableOppleSwitch, setXiaomiVibrationSensitivity
 from Modules.livolo import livolo_bind
@@ -39,13 +34,7 @@ from Modules.configureReporting import processConfigureReporting
 from Modules.profalux import profalux_fake_deviceModel
 from Modules.logging import loggingHeartbeat, loggingPairing
 from Modules.domoCreate import CreateDomoDevice
-from Modules.zigateConsts import HEARTBEAT, CLUSTERS_LIST, LEGRAND_REMOTES, LEGRAND_REMOTE_SHUTTER, LEGRAND_REMOTE_SWITCHS, ZIGATE_EP
-
-from Classes.IAS import IAS_Zone_Management
-from Classes.Transport import ZigateTransport
-from Classes.AdminWidgets import AdminWidgets
-from Classes.NetworkMap import NetworkMap
-
+from Modules.zigateConsts import CLUSTERS_LIST
 
 def writeDiscoveryInfos( self ):
 
