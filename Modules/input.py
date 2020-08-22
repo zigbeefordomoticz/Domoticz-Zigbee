@@ -61,7 +61,6 @@ def ZigateRead(self, Devices, Data, TransportInfos=None):
 
     DECODERS = {
         '0100': Decode0100,
-        '010f': Decode010f, #Read Attribute Request build by transport
         '004d': Decode004D,
         '8000': Decode8000_v2, 
         '8001': Decode8001, 
@@ -1560,53 +1559,42 @@ def Decode80A6(self, Devices, MsgData, MsgLQI) : # Scene Membership response
             MsgScene.append( scene )
     loggingInput( self, 'Log',"           - Scene List: %s" %(str(MsgScene)))
 
-def Decode010f( self, Devices, MsgData, MsgLQI):  # Read Attribute request from Transport buildframe_read_attribute_request )
 
-    MsgSrcAddr = MsgData[0:4]
-    MsgSrcEp = MsgData[4:6]
-    MsgCluster = MsgData[6:10]
-
-    nbAttribute = 0
-    idx = 10
-    while idx < len(MsgData):
-        nbAttribute += 1
-        Attribute = MsgData[idx:idx+4]
-        idx += 4
-        loggingInput( self, 'Log',"Decode010f - %s/%s Cluster %s Attribute %s" %( MsgSrcAddr, MsgSrcEp, MsgCluster, Attribute))
 
 def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
-    # Seems to come with Livolo and Firmware 3.1b
 
     MsgMode = MsgData[0:2]
     MsgSrcAddr = MsgData[2:6]
     MsgSrcEp = MsgData[6:8]
     MsgDstEp = MsgData[8:10]
-    MsgStatus = MsgData[30:32]
 
     updLQI( self, MsgSrcAddr, MsgLQI )
-
-    # What is expected on the Widget is:
-    # Left Off: 00
-    # Left On: 01
-    # Right Off: 02
-    # Right On: 03
-    loggingInput( self, 'Debug', "Decode0100 - Livolo %s/%s Data: %s" %(MsgSrcAddr, MsgSrcEp, MsgStatus), MsgSrcAddr)
 
     brand = ''
     if MsgSrcAddr not in self.ListOfDevices:
         return
+
     if ( 'Manufacturer Name' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Manufacturer Name'] == 'LIVOLO' ):
         brand = 'Livolo'
     if ( 'Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Model'] == 'TI0001' ):
         brand = 'Livolo'
 
     if brand == 'Livolo':
+        # LIvolo use Read ATtribute Request to share Switch status
         if 'Ep' not in self.ListOfDevices[MsgSrcAddr]:
             return
         if MsgSrcEp not in self.ListOfDevices[MsgSrcAddr]['Ep']:
             return
         if '0006' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
             return
+
+        # What is expected on the Widget is:
+        # Left Off: 00
+        # Left On: 01
+        # Right Off: 02
+        # Right On: 03
+        MsgStatus = MsgData[30:32]
+        loggingInput( self, 'Debug', "Decode0100 - Livolo %s/%s Data: %s" %(MsgSrcAddr, MsgSrcEp, MsgStatus), MsgSrcAddr)
 
         if MsgStatus == '00': # Left / Single - Off
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', '00')
@@ -1618,9 +1606,16 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', '11')
 
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006']['0000'] = MsgStatus
-    else:
-        MsgUnknown = MsgData[10:30]
-        Domoticz.Log("Decode0100 - Request from %s/%s Data: %s Status: %s" %(MsgSrcAddr, MsgSrcEp, MsgUnknown, MsgStatus))
+        return
+
+    # Handling the Standard Read Attribute Request
+    MsgCluster = MsgData[10:14]
+    nbAttribute = 0
+    for idx in range(14, len(MsgData), 4):
+        nbAttribute += 1
+        Attribute = MsgData[idx:idx+4]
+        loggingInput( self, 'Log',"Decode0100 - Read Attribute Request %s/%s Cluster %s Attribute %s" %( MsgSrcAddr, MsgSrcEp, MsgCluster, Attribute))
+
 
 #Reponses Attributs
 def Decode8100(self, Devices, MsgData, MsgLQI): # Read Attribute Response (in case there are several Attribute call several time rad_report_attributes)
@@ -2170,7 +2165,7 @@ def Decode004D(self, Devices, MsgData, MsgLQI) : # Reception Device announce
         device_annoucementv0( self, Devices, MsgData, MsgLQI)
 
 
-def Decode8085(self, Devices, MsgData, MsgLQI) :
+def Decode8085(self, Devices, MsgData, MsgLQI):
     'Remote button pressed'
 
     MsgSQN = MsgData[0:2]
@@ -2201,20 +2196,21 @@ def Decode8085(self, Devices, MsgData, MsgLQI) :
     if self.ListOfDevices[MsgSrcAddr]['Status'] != 'inDB':
         return
 
-    if 'Ep' in self.ListOfDevices[MsgSrcAddr]:
-        if MsgEP in self.ListOfDevices[MsgSrcAddr]['Ep']:
-            if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP]:
-                self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId] = {}
-            if not isinstance( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId] , dict):
-                self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId] = {}
-            if '0000' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]:
-                self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = {}
+    if ( 'Ep' in self.ListOfDevices[MsgSrcAddr] and MsgEP in self.ListOfDevices[MsgSrcAddr]['Ep'] ):
+        if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP]:
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId] = {}
+        if not isinstance( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId] , dict):
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId] = {}
+        if '0000' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]:
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = {}
 
-    if 'SQN' in self.ListOfDevices[MsgSrcAddr]:
-        if MsgSQN == self.ListOfDevices[MsgSrcAddr]['SQN']:
-            return
+    if (
+        'SQN' in self.ListOfDevices[MsgSrcAddr]
+        and MsgSQN == self.ListOfDevices[MsgSrcAddr]['SQN']
+    ):
+        return
 
-    updSQN( self, MsgSrcAddr, MsgSQN) 
+    updSQN( self, MsgSrcAddr, MsgSQN)
     updLQI( self,MsgSrcAddr, MsgLQI )
     timeStamped( self, MsgSrcAddr , 0x8085)
     lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
@@ -2226,30 +2222,25 @@ def Decode8085(self, Devices, MsgData, MsgLQI) :
     _ModelName = self.ListOfDevices[MsgSrcAddr]['Model']
 
     if _ModelName == 'TRADFRI remote control':
-        if MsgClusterId == '0008':
-            if MsgCmd in TYPE_ACTIONS:
-                selector = TYPE_ACTIONS[MsgCmd]
-                loggingInput( self, 'Debug', "Decode8085 - Selector: %s" %selector, MsgSrcAddr)
-                MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", selector )
-                self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = selector
-            else:
-                loggingInput( self, 'Log',"Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s" \
-                        %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
-                self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
+        if MsgClusterId == '0008' and MsgCmd in TYPE_ACTIONS:
+            selector = TYPE_ACTIONS[MsgCmd]
+            loggingInput( self, 'Debug', "Decode8085 - Selector: %s" %selector, MsgSrcAddr)
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", selector )
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = selector
         else:
             loggingInput( self, 'Log',"Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s" \
                     %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
-
-    elif  _ModelName == 'TRADFRI on/off switch':
+    elif _ModelName == 'TRADFRI on/off switch':
         #Ikea Switch On/Off
-        
-        if  MsgClusterId == '0008' and MsgCmd == '05': #Push Up
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, '0006', '02' )
-        elif MsgClusterId == '0008' and MsgCmd == '01': # Push Down
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, '0006', '03' )
-        elif MsgClusterId == '0008' and MsgCmd == '07': # Release Up & Down
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, '0006', '04' )
+
+        if MsgClusterId == '0008':
+            if MsgCmd == '05': #Push Up
+                MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, '0006', '02' )
+            elif MsgCmd == '01': # Push Down
+                MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, '0006', '03' )
+            elif MsgCmd == '07': # Release Up & Down
+                MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, '0006', '04' )
 
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = MsgCmd
 
@@ -2342,7 +2333,6 @@ def Decode8085(self, Devices, MsgData, MsgLQI) :
         elif step_mod == '07':
             # Stop Moving
             loggingInput( self, 'Debug', "Decode8085 - =====> Stop moving step_size: %s transition: %s" %( step_size, transition), MsgSrcAddr)
-            pass
         else:
             loggingInput( self, 'Log', "Decode8085 - =====> Unknown step_mod: %s up_down: %s step_size: %s transition: %s" \
                     %(step_mod, up_down, step_size, transition), MsgSrcAddr)
@@ -2382,12 +2372,12 @@ def Decode8085(self, Devices, MsgData, MsgLQI) :
                     #loggingInput( self, 'Log',"Receive: %s/%s %s REQUEST UPDATE" %(MsgSrcAddr,MsgEP,selector))
                     MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, selector )
                     self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = selector
-   
+
     elif _ModelName == 'Lightify Switch Mini':
-        
+
         #OSRAM Lightify Switch Mini
         #Force Ep 03 to update Domoticz Widget
-        
+
         step_mod = MsgData[14:16]
         up_down = step_size = transition = None
         if len(MsgData) >= 18:
@@ -2419,7 +2409,7 @@ def Decode8085(self, Devices, MsgData, MsgLQI) :
 
     elif _ModelName in ('lumi.remote.b686opcn01-bulb', 'lumi.remote.b486opcn01-bulb', 'lumi.remote.b286opcn01-bulb'):  
         AqaraOppleDecoding( self, Devices, MsgSrcAddr , MsgEP, MsgClusterId, _ModelName, MsgData)
-    
+
     elif 'Manufacturer' in self.ListOfDevices[MsgSrcAddr]:
         if self.ListOfDevices[MsgSrcAddr]['Manufacturer'] == '1110': # Profalux
             loggingInput( self, 'Log',"MsgData: %s" %MsgData)
@@ -2453,9 +2443,9 @@ def Decode8085(self, Devices, MsgData, MsgLQI) :
                 MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, selector )
 
     else:
-       loggingInput( self, 'Log',"Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " \
-               %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
-       self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
+        loggingInput( self, 'Log',"Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " \
+                %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
 
 def Decode8095(self, Devices, MsgData, MsgLQI):
     'Remote button pressed ON/OFF'

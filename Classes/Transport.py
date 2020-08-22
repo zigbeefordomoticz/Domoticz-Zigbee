@@ -246,7 +246,7 @@ class ZigateTransport(object):
                 self._connection = socket.create_connection( (self._wifiAddress, self._wifiPort) )
                 self._connection.setblocking(0)
 
-            except socket.Exception:
+            except socket.Exception as e:
                 Domoticz.Error("Cannot open Zigate Wifi %s Port %s error: %s" %(self._wifiAddress, self._serialPort, e))
                 return
 
@@ -1723,7 +1723,7 @@ def extract_nwk_infos_from_8002( frame ):
 
 def buildframe_read_attribute_request( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data  ):
 
-    buildPayload = SrcNwkId + SrcEndPoint+ ClusterId 
+    buildPayload = '02' + SrcNwkId + SrcEndPoint + '01' + ClusterId 
     idx = nbAttribute = 0
     while idx < len(Data):
         nbAttribute += 1
@@ -1735,7 +1735,7 @@ def buildframe_read_attribute_request( frame, Sqn, SrcNwkId, SrcEndPoint, Cluste
             %(SrcNwkId, SrcEndPoint, ClusterId, nbAttribute, Data))
 
     newFrame = '01' # 0:2
-    newFrame += '010f' # 2:6   MsgType
+    newFrame += '0100' # 2:6   MsgType
     newFrame += '%4x' %len(buildPayload) # 6:10  Length
     newFrame += 'ff' # 10:12 CRC
     newFrame += buildPayload
