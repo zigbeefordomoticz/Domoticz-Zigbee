@@ -665,10 +665,6 @@ class BasePlugin:
         # Manage all entries in  ListOfDevices (existing and up-coming devices)
         processListOfDevices( self , Devices )
 
-
-
-
-
         self.iaszonemgt.IAS_heartbeat( )
 
         # Reset Motion sensors
