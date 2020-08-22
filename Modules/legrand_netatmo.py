@@ -71,6 +71,11 @@ def legrandReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP
     elif ClusterID == '0102' and Command == '01': # No data (Cluster 0x0102)
         pass
 
+    elif ClusterID == 'fc01' and Command == '04': # Write Attribute Responsee
+        
+        pass
+
+
     elif ClusterID == 'fc01' and Command == '05':
         # Get _Ieee of Shutter Device
         _ieee = '%08x' %struct.unpack('q',struct.pack('>Q',int(Data[0:16],16)))[0] 
@@ -457,4 +462,3 @@ def legrand_refresh_battery_remote( self, nwkid):
     if ( 'BatteryUpdateTime' in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]['BatteryUpdateTime'] + 3600 > time() ):
         return
     ReadAttributeRequest_0001( self,  nwkid) 
-            
