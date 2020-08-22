@@ -48,18 +48,16 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Man
         '_TZE200_ckud7u2l' : tuyaReadRawAPS ,
     }
 
-    Domoticz.Log("inRawAps %s/%s Cluster %s Manuf: %s Command: %s Data: %s Payload: %s"
-        %(srcnwkid, srcep, cluster,  ManufacturerCode, Command, Data, payload))
     if srcnwkid not in self.ListOfDevices:
         return
 
     if cluster == '0020': # Poll Control ( Not implemented in firmware )
-        Domoticz.Log("Cluster 0020 -- POLL CLUSTER")
+        #Domoticz.Log("Cluster 0020 -- POLL CLUSTER")
         receive_poll_cluster( self, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, ManufacturerCode, Command, Data )
         return
 
     if cluster == '0019': # OTA Cluster
-        Domoticz.Log("Cluster 0019 -- OTA CLUSTER")
+        #Domoticz.Log("Cluster 0019 -- OTA CLUSTER")
 
         if Command == '01': 
             # Query Next Image Request
@@ -80,9 +78,6 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Man
 
             return
 
-
-
-    
     if 'Manufacturer' not in self.ListOfDevices[srcnwkid]:
         return
     
@@ -97,9 +92,12 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Man
         #Domoticz.Log("Found in CALLBACK_TABLE")
         func = CALLBACK_TABLE[ manuf ]
         func( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, payload)
+
     elif manuf_name in CALLBACK_TABLE2:
         #Domoticz.Log("Found in CALLBACK_TABLE2")
         func = CALLBACK_TABLE2[manuf_name]
         func( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, payload)
 
-    return
+    else:
+        Domoticz.Log("inRawAps %s/%s Cluster %s Manuf: %s Command: %s Data: %s Payload: %s"
+            %(srcnwkid, srcep, cluster,  ManufacturerCode, Command, Data, payload))
