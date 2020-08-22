@@ -4,7 +4,7 @@
 # Author: zaraki673 & pipiche38
 #
 """
-    Module: z_heartbeat.py
+    Module: heartbeat.py
 
     Description: Manage all actions done during the onHeartbeat() call
 
@@ -18,30 +18,24 @@ import struct
 import json
 
 from Modules.actuators import actuators
-
 from Modules.basicOutputs import  sendZigateCmd,identifyEffect, getListofAttribute
-
 from Modules.readAttributes import READ_ATTRIBUTES_REQUEST, ping_device_with_read_attribute, \
         ReadAttributeRequest_0000, ReadAttributeRequest_0001, ReadAttributeRequest_0006, ReadAttributeRequest_0008, ReadAttributeRequest_0006_0000, ReadAttributeRequest_0006_400x, ReadAttributeRequest_0008_0000,\
         ReadAttributeRequest_0100, ReadAttributeRequest_0101_0000,\
         ReadAttributeRequest_000C, ReadAttributeRequest_0102, ReadAttributeRequest_0102_0008, ReadAttributeRequest_0201, ReadAttributeRequest_0204, ReadAttributeRequest_0300,  \
         ReadAttributeRequest_0400, ReadAttributeRequest_0402, ReadAttributeRequest_0403, ReadAttributeRequest_0405, \
         ReadAttributeRequest_0406, ReadAttributeRequest_0500, ReadAttributeRequest_0502, ReadAttributeRequest_0702, ReadAttributeRequest_000f, ReadAttributeRequest_fc01, ReadAttributeRequest_fc21
-
 from Modules.configureReporting import processConfigureReporting
-
 from Modules.legrand_netatmo import  legrandReenforcement
 from Modules.schneider_wiser import schneiderRenforceent, pollingSchneider
 from Modules.philips import pollingPhilips
 from Modules.gledopto import pollingGledopto
 from Modules.lumi import setXiaomiVibrationSensitivity
-
 from Modules.tools import removeNwkInList, mainPoweredDevice, ReArrangeMacCapaBasedOnModel, is_time_to_perform_work
 from Modules.logging import loggingPairing, loggingHeartbeat
 from Modules.domoTools import timedOutDevice
 from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE, CLUSTERS_LIST, LEGRAND_REMOTES, LEGRAND_REMOTE_SHUTTER, LEGRAND_REMOTE_SWITCHS, ZIGATE_EP
 from Modules.pairingProcess import processNotinDBDevices
-
 from Classes.IAS import IAS_Zone_Management
 from Classes.Transport import ZigateTransport
 from Classes.AdminWidgets import AdminWidgets
@@ -70,20 +64,24 @@ def processKnownDevices( self, Devices, NWKID ):
         # If Attributes not yet discovered, let's do it
 
         if 'ConfigSource' not in self.ListOfDevices[NWKID]:
-            return
+            return False
 
-        if self.ListOfDevices[NWKID]['ConfigSource'] != 'DeviceConf':
-            if 'Attributes List' not in self.ListOfDevices[NWKID]:
-                for iterEp in self.ListOfDevices[NWKID]['Ep']:
-                    if iterEp == 'ClusterType': 
-                        continue
-                    for iterCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                        if iterCluster in ( 'Type', 'ClusterType', 'ColorMode' ): 
-                            continue
-                        if not self.busy and self.ZigateComm.loadTransmit() <= MAX_LOAD_ZIGATE:
-                            getListofAttribute( self, NWKID, iterEp, iterCluster)
-                        else:
-                            rescheduleAction = True
+        if self.ListOfDevices[NWKID]['ConfigSource'] == 'DeviceConf':
+            return False
+
+        if 'Attributes List' in self.ListOfDevices[NWKID]:
+            return False
+
+        for iterEp in self.ListOfDevices[NWKID]['Ep']:
+            if iterEp == 'ClusterType': 
+                continue
+            for iterCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                if iterCluster in ( 'Type', 'ClusterType', 'ColorMode' ): 
+                    continue
+                if not self.busy and self.ZigateComm.loadTransmit() <= MAX_LOAD_ZIGATE:
+                    getListofAttribute( self, NWKID, iterEp, iterCluster)
+                else:
+                    rescheduleAction = True
 
         return rescheduleAction
 
@@ -132,21 +130,29 @@ def processKnownDevices( self, Devices, NWKID ):
 
         for iterEp in self.ListOfDevices[NWKID]['Ep']:
             if '0006' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                if self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE:
+                    return True
                 ReadAttributeRequest_0006_0000( self, NWKID)
                 loggingHeartbeat( self, 'Debug', "++ pollingDeviceStatus -  %s  for ON/OFF" \
                     %(NWKID), NWKID)
 
             if '0008' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                if self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE:
+                    return True                
                 ReadAttributeRequest_0008_0000( self, NWKID)
                 loggingHeartbeat( self, 'Debug', "++ pollingDeviceStatus -  %s  for LVLControl" \
                     %(NWKID), NWKID)
 
             if '0102' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                if self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE:
+                    return True
                 ReadAttributeRequest_0102_0008( self, NWKID)
                 loggingHeartbeat( self, 'Debug', "++ pollingDeviceStatus -  %s  for WindowCovering" \
                     %(NWKID), NWKID)
 
             if '0101' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                if self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE:
+                    return True
                 ReadAttributeRequest_0101_0000( self, NWKID)
                 loggingHeartbeat( self, 'Debug', "++ pollingDeviceStatus -  %s  for DoorLock" \
                     %(NWKID), NWKID)
@@ -171,14 +177,19 @@ def processKnownDevices( self, Devices, NWKID ):
 
         if int(time.time()) > (self.ListOfDevices[NWKID]['Stamp']['LastSeen'] + 21200) : # Age is above 6 hours
             if self.ListOfDevices[NWKID]['Health'] == 'Live':
-                Domoticz.Error("Device Health - Nwkid: %s,Ieee: %s , Model: %s seems to be out of the network" \
-                    %(NWKID, self.ListOfDevices[NWKID]['IEEE'], self.ListOfDevices[NWKID]['Model']))
+                if 'ZDeviceName' in self.ListOfDevices[NWKID]:
+                    Domoticz.Error("Device Health - %s Nwkid: %s,Ieee: %s , Model: %s seems to be out of the network" \
+                        %(self.ListOfDevices[NWKID]['ZDeviceName'], NWKID, self.ListOfDevices[NWKID]['IEEE'], self.ListOfDevices[NWKID]['Model']))
+                else:
+                    Domoticz.Error("Device Health - Nwkid: %s,Ieee: %s , Model: %s seems to be out of the network" \
+                        %(NWKID, self.ListOfDevices[NWKID]['IEEE'], self.ListOfDevices[NWKID]['Model']))
                 self.ListOfDevices[NWKID]['Health'] = 'Not seen last 24hours'
 
         # If device flag as Not Reachable, don't do anything
         if 'Health' in self.ListOfDevices[NWKID]:
             if self.ListOfDevices[NWKID]['Health'] == 'Not Reachable':
                 return False
+
         return True
 
     def pingRetryDueToBadHealth( self, NwkId):
@@ -457,6 +468,7 @@ def processListOfDevices( self , Devices ):
 
         if status == "failDB":
             entriesToBeRemoved.append( NWKID )
+            continue
 
         ########## Known Devices 
         if status == "inDB":
@@ -546,4 +558,4 @@ def processListOfDevices( self , Devices ):
 
     loggingHeartbeat( self, 'Debug', "processListOfDevices END with HB: %s, Busy: %s, Enroll: %s, Load: %s" \
         %(self.HeartbeatCount, self.busy, self.CommiSSionning, self.ZigateComm.loadTransmit() ))
-    return True
+    return
