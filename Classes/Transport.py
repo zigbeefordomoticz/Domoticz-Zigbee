@@ -1082,25 +1082,29 @@ def process_frame(self, frame):
     if MsgType == "8702":
         # APS Failure
         # i_sqn = process_msg_type8702( self, MsgData )
+        self.logging_receive(
+            'Debug', "process_frame - APS Failure MsgType: %s MsgLength: %s MsgCRC: %s" % (MsgType, MsgLength, MsgCRC))
         self.statistics._APSFailure += 1
         self.F_out(frame, None)
         ready_to_send_if_needed(self)
         return
 
-
     # We receive an async message, just forward it to plugin
-    if int(MsgType, 16) in STANDALONE_MESSAGE:        
+    if int(MsgType, 16) in STANDALONE_MESSAGE:
+        self.logging_receive(
+            'Debug', "process_frame - STANDALONE_MESSAGE MsgType: %s MsgLength: %s MsgCRC: %s" % (MsgType, MsgLength, MsgCRC))    
         self.F_out(frame, None)  # for processing
         ready_to_send_if_needed(self)
         return
         
-
     if len(frame) >= 18:
         # Payload
         MsgData = frame[12:len(frame) - 4]
         LQI = frame[len(frame) - 4: len(frame) - 2]
 
     if MsgData and MsgType == "8002":
+        self.logging_receive(
+            'Debug', "process_frame - 8002 MsgType: %s MsgLength: %s MsgCRC: %s" % (MsgType, MsgLength, MsgCRC))  
         self.F_out( process8002( self, frame ), None)
         ready_to_send_if_needed(self)
         return
@@ -1625,7 +1629,7 @@ def process8002(self, frame):
     if SrcNwkId is None:
         return frame
     
-    if len(Payload) < 10:
+    if len(Payload) < 8:
         return frame
         
     GlobalCommand, Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002( Payload )
@@ -1635,21 +1639,16 @@ def process8002(self, frame):
 
     self.logging_receive(
         'Debug', "process8002 Sqn: %s ManufCode: %s Command: %s Data: %s " %(Sqn, ManufacturerCode, Command, Data))
-
     if Command == '00': # Read Attribute
         return buildframe_read_attribute_request( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data  )
-
     if Command == '01': # Read Attribute response
         return buildframe_read_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
-
-    if Command == '0a':
-        return buildframe_report_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
-
-    if Command == '07':
-        return buildframe_configure_reporting_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
-
     if Command == '04': # Write Attribute response
         return buildframe_write_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
+    if Command == '07':
+        return buildframe_configure_reporting_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
+    if Command == '0a':
+        return buildframe_report_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
 
     self.logging_receive(
         'Log', "process8002 Unknown Command: %s NwkId: %s Ep: %s Cluster: %s Payload: %s" %(Command, SrcNwkId, SrcEndPoint, ClusterId , Data))
@@ -1744,6 +1743,7 @@ def buildframe_read_attribute_request( frame, Sqn, SrcNwkId, SrcEndPoint, Cluste
     newFrame += '03'
     return  newFrame
 
+
 def buildframe_write_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data):
 
     # This is based on assumption that we only Write 1 attribute at a time
@@ -1757,6 +1757,7 @@ def buildframe_write_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clus
     newFrame += '03'
 
     return  newFrame
+
 
 def decode_endian_data( data, datatype):
     if datatype in ( '10', '18', '20', '28', '30'):
