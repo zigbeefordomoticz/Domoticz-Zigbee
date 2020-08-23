@@ -1672,12 +1672,16 @@ def process8002(self, frame):
         'Debug', "process8002 Sqn: %s ManufCode: %s Command: %s Data: %s " %(Sqn, ManufacturerCode, Command, Data))
     if Command == '00': # Read Attribute
         return buildframe_read_attribute_request( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Data  )
+
     if Command == '01': # Read Attribute response
         return buildframe_read_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
+
     if Command == '04': # Write Attribute response
         return buildframe_write_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
+
     if Command == '07':
         return buildframe_configure_reporting_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
+
     if Command == '0a':
         return buildframe_report_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
 
@@ -1840,7 +1844,7 @@ def buildframe_read_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clust
             if DType in SIZE_DATA_TYPE:
                 size = SIZE_DATA_TYPE[ DType ] * 2
             elif DType in ( '41', '42'): # ZigBee_OctedString = 0x41, ZigBee_CharacterString = 0x42
-                size = int(Data[idx:idx+2],16)
+                size = int(Data[idx:idx+2],16) * 2
                 idx += 2
             elif DType == '00':
                 return frame
@@ -1871,10 +1875,9 @@ def buildframe_read_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clust
 
 
 def buildframe_report_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data ):
-
+    buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId
     nbAttribute = 0
     idx = 0
-    buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId
     while idx < len(Data):
         nbAttribute += 1
         Attribute = '%04x' %struct.unpack('H',struct.pack('>H',int(Data[idx:idx+4],16)))[0]
@@ -1885,10 +1888,12 @@ def buildframe_report_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clu
             size = SIZE_DATA_TYPE[ DType ] * 2
 
         elif DType in ( '41', '42'): # ZigBee_OctedString = 0x41, ZigBee_CharacterString = 0x42
-            size = int(Data[idx:idx+2],16)
+            size = int(Data[idx:idx+2],16) * 2
             idx += 2
 
         elif DType == '00':
+            Domoticz.Error("buildframe_report_attribute_response %s/%s Cluster: %s nbAttribute: %s Attribute: %s DType: %s idx: %s frame: %s" 
+                %(SrcNwkId, SrcEndPoint, ClusterId,nbAttribute, Attribute, DType, idx, frame ))
             return frame
             
         else: 
@@ -1902,6 +1907,8 @@ def buildframe_report_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clu
 
         lenData = '%04x' %size
         buildPayload += Attribute + '00' + DType + lenData + value
+        # Domoticz.Log("buildframe_report_attribute_response - Attribute: %s DType: %s Size: %s Value: %s"
+        #     %(Attribute, DType, lenData, value))
 
     Domoticz.Log("buildframe_report_attribute_response - NwkId: %s Ep: %s ClusterId: %s nbAttribute: %s Data: %s" %(SrcNwkId, SrcEndPoint, ClusterId, nbAttribute, buildPayload))
 
