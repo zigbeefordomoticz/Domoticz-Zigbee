@@ -96,7 +96,7 @@ def add_Last_Cmds( self, isqn, address_mode, nwkid, cmd, datas):
     if isinstance(self.ListOfDevices[nwkid]['Last Cmds'], dict ):
         self.ListOfDevices[nwkid]['Last Cmds'] = []
 
-    if len(self.ListOfDevices[nwkid]['Last Cmds']) >= 5:
+    if len(self.ListOfDevices[nwkid]['Last Cmds']) >= 10:
         # Remove the First element in the list.
         self.ListOfDevices[nwkid]['Last Cmds'].pop(0)
 

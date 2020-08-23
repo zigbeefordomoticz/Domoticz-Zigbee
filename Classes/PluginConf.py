@@ -229,16 +229,28 @@ SETTINGS = {
         'EnableDimmer':         {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'EnableReleaseButton':  {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'LegrandFilPilote':     {'type': 'bool', 'default': 1, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
+        'LegrandPowerOnAfterOffOn':    {'type': 'list',
+                                 'list': {'Off': 0, 'On': 1, 'Previous': 255},
+                                 'default': 1, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         }
     },
 
     # Philips Hue Specific
     'Philips': {'Order': 13, 'param': {
-        'PowerOnAfterOffOn':    {'type': 'list',
+        'PhilipsPowerOnAfterOffOn':    {'type': 'list',
                                  'list': {'Off': 0, 'On': 1, 'Previous': 255},
                                  'default': 1, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         }
     },
+
+    #
+     'IkeaTradfri': {'Order': 13, 'param': {
+        'IkeaPowerOnAfterOffOn':    {'type': 'list',
+                                 'list': {'Off': 0, 'On': 1, 'Previous': 255},
+                                 'default': 1, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
+        }
+    },
+   
 
     # Schneider Wiser configuration
     'Schneider Wiser':          {'Order': 14, 'param': {

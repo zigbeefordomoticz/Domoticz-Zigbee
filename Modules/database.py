@@ -428,7 +428,6 @@ def CheckDeviceList(self, key, val):
     BUILD_ATTRIBUTES = (
             'Battery', 
             'GroupMemberShip',
-            'Last Cmds',
             'Neighbours',
             'ConfigureReporting',
             'ReadAttributes',

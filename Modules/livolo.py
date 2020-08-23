@@ -86,41 +86,53 @@ def livoloReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP,
     # At Device Annoucement 0x00 and 0x05 are sent by device
 
     GlobalCmd, SQN, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002( MsgPayload )
-    #Domoticz.Log(" NwkId: %s/%s Cluster: %s Command: %s Data: %s" %( srcNWKID, srcEp, ClusterID, Command, Data))
 
-    if Command == '00': #On/Off event
+
+    if Command == '00': #Read Attribute request with On/Off status
         OnOff = Data[-2: ]
-        Domoticz.Log("OnOff: %s" %OnOff)
 
 
+def livolo_read_attribute_request( self, Devices, NwkId, Ep, Status):
+    # What is expected on the Widget is:
+    # Left Off: 00
+    # Left On: 01
+    # Right Off: 02
+    # Right On: 03
+
+    loggingLivolo( self, 'Debug', "Decode0100 - Livolo %s/%s Data: %s" %(NwkId, Ep, Status), NwkId)
+
+    if Status == '00': # Left / Single - Off
+        MajDomoDevice(self, Devices, NwkId, Ep, '0006', '00')
+    elif Status == '01': # Left / Single - On
+        MajDomoDevice(self, Devices, NwkId, Ep, '0006', '01')
+
+    if Status == '02': # Right - Off
+        MajDomoDevice(self, Devices, NwkId, Ep, '0006', '10')
+    elif Status == '03': # Right - On
+        MajDomoDevice(self, Devices, NwkId, Ep, '0006', '11')
+
+    self.ListOfDevices[NwkId]['Ep'][Ep]['0006']['0000'] = Status
+          
 def livolo_onoff_status( self, Devices, nwkid, ep, onoff):
 
     if nwkid not in self.ListOfDevices:
         return
-
     if 'Ep' not in self.ListOfDevices[nwkid]:
         return
-
     if ep not in self.ListOfDevices[nwkid]['Ep']:
         return
-
     if '0006' not in self.ListOfDevices[nwkid]['Ep'][ep]:
         return
-
     if onoff == '00': # Left / Single - Off
         #MajDomoDevice(self, Devices, nwkid, ep, '0006', '00')
         pass
-
     elif onoff == '01': # Left / Single - On
         #MajDomoDevice(self, Devices, nwkid, ep, '0006', '01')
         pass
-
     if onoff == '02': # Right - Off
         #MajDomoDevice(self, Devices, nwkid, ep, '0006', '10')
         pass
-
     elif onoff == '03': # Right - On
         #MajDomoDevice(self, Devices, nwkid, ep, '0006', '11')
         pass
-
     #self.ListOfDevices[MsgSrcAddr]['Ep'][ep]['0006']['0000'] = MsgStatus

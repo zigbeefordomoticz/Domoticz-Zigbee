@@ -104,7 +104,6 @@ from WebServer.WebServer import WebServer
 from Classes.NetworkMap import NetworkMap
 from Classes.NetworkEnergy import NetworkEnergy
 
-from Classes.ListOfDevices import ListOfDevices
 
 VERSION_FILENAME = '.hidden/VERSION'
 
@@ -142,7 +141,6 @@ class BasePlugin:
         self.statistics = None
         self.iaszonemgt = None      # Object to manage IAS Zone
         self.webserver = None
-        #self.LOD = None # Object managing all plugin devices
         self.transport = None         # USB or Wifi
         #self._ReqRcv = bytearray()
 
@@ -332,9 +330,6 @@ class BasePlugin:
 
         loggingPlugin( self, 'Debug', "ListOfDevices after checkListOfDevice2Devices: " +str(self.ListOfDevices) )
         loggingPlugin( self, 'Debug', "IEEE2NWK after checkListOfDevice2Devices     : " +str(self.IEEE2NWK) )
-
-        # Initialize the ListOfDevices Objetc
-        #self.LOD = ListOfDevices( self.ListOfDevices, self.IEEE2NWK)
 
         # Create Statistics object
         self.statistics = TransportStatistics(self.pluginconf)
