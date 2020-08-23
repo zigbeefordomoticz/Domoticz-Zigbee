@@ -1135,7 +1135,7 @@ class WebServer(object):
                         if 'LivoloSWR' not in dev_capabilities['Types']:
                             dev_capabilities['Types'].append( 'LivoloSWR' )
 
-                if cluster == '0006' and '0403' in self.ListOfDevices[_nwkid]['Ep'][ep]['0006']:
+                if cluster == '0006' and '4003' in self.ListOfDevices[_nwkid]['Ep'][ep]['0006']:
                     _capabilitie = {
                         'actuator': 'PowerStateAfterOffOn',
                         'Value': 'hex',
