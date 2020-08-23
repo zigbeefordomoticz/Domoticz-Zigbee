@@ -38,6 +38,7 @@ def send_zigatecmd_zcl_ack( self, address, cmd, datas ):
             address_mode = '%02x' %ADDRESS_MODE['ieeenoack']
             ackIsDisabled = True
     isqn = send_zigatecmd_raw( self, cmd, address_mode + address + datas, ackIsDisabled = ackIsDisabled )
+    add_Last_Cmds( self, isqn, address_mode, address, cmd, datas)
     loggingBasicOutput( self, 'Debug', "send_zigatecmd_zcl_ack - [%s] %s %s %s" %(isqn, cmd, address_mode, datas))
     return isqn
 
@@ -60,8 +61,10 @@ def send_zigatecmd_zcl_noack( self, address, cmd, datas):
             loggingBasicOutput( self, 'Debug', "Force Ack on %s %s" %(cmd, datas))
             ackIsDisabled = False
     isqn = send_zigatecmd_raw( self, cmd, address_mode + address + datas, ackIsDisabled = ackIsDisabled )
+    add_Last_Cmds( self, isqn, address_mode, address, cmd, datas)
     loggingBasicOutput( self, 'Debug', "send_zigatecmd_zcl_noack - [%s] %s %s %s" %(isqn, cmd, address_mode, datas))
     return isqn
+
 
 def send_zigatecmd_raw( self, cmd, datas, ackIsDisabled = False ):
     #
@@ -80,6 +83,32 @@ def send_zigatecmd_raw( self, cmd, datas, ackIsDisabled = False ):
        loggingBasicOutput( self, 'Log', "WARNING - send_zigatecmd : [%s] %s %18s ZigateQueue: %s / %s" %(i_sqn,cmd, datas, self.ZigateComm.loadTransmit(), len(self.ZigateComm.ListOfCommands)))
 
    return i_sqn
+
+
+def add_Last_Cmds( self, isqn, address_mode, nwkid, cmd, datas):
+
+    if nwkid not in self.ListOfDevices:
+        return
+        
+    if 'Last Cmds' not in self.ListOfDevices[nwkid]:
+        self.ListOfDevices[nwkid]['Last Cmds'] = []
+
+    if isinstance(self.ListOfDevices[nwkid]['Last Cmds'], dict ):
+        self.ListOfDevices[nwkid]['Last Cmds'] = []
+
+    if len(self.ListOfDevices[nwkid]['Last Cmds']) >= 5:
+        # Remove the First element in the list.
+        self.ListOfDevices[nwkid]['Last Cmds'].pop(0)
+
+    self.ListOfDevices[nwkid]['Last Cmds'].append( 
+        (
+            isqn,
+            address_mode,
+            nwkid,
+            cmd,
+            datas
+        )
+     )
 
 
 def sendZigateCmd(self, cmd, datas , ackIsDisabled = False):
