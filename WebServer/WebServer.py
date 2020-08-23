@@ -527,7 +527,15 @@ class WebServer(object):
                                 else:
                                     legrand_ledIfOnOnOff( self, 'Off')
 
-                        elif param == 'PowerOnAfterOffOn':
+                        elif param == 'PhilipsPowerOnAfterOffOn':
+                            self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
+                            philips_set_poweron_after_offon( self, int(setting_lst[setting]['current']))
+
+                        elif param == 'LegrandPowerOnAfterOffOn':
+                            self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
+                            philips_set_poweron_after_offon( self, int(setting_lst[setting]['current']))
+
+                        elif param == 'IkeaPowerOnAfterOffOn':
                             self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
                             philips_set_poweron_after_offon( self, int(setting_lst[setting]['current']))
 

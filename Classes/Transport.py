@@ -124,14 +124,12 @@ class ZigateTransport(object):
             thr.join( timeout = 0.0 )
             return thr.is_alive()
 
-        Domoticz.Log("Watch dog started")
         while self.running:
             Domoticz.Log("Checking if %s alive" %self.ListeningThread.name)
             if self.running and not check_thread_alive( self.ListeningThread):
                 Domoticz.Error("Thread %s seems to be dead, restarting" %self.ListeningThread.name)
                 self.ListeningThread.start()
             time.sleep ( 60.0) 
-        Domoticz.Log("Watch dog stop")
 
 
     def lock_mutex(self):
@@ -1673,7 +1671,7 @@ def process8002(self, frame):
     self.logging_receive(
         'Debug', "process8002 Sqn: %s ManufCode: %s Command: %s Data: %s " %(Sqn, ManufacturerCode, Command, Data))
     if Command == '00': # Read Attribute
-        return buildframe_read_attribute_request( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data  )
+        return buildframe_read_attribute_request( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Data  )
     if Command == '01': # Read Attribute response
         return buildframe_read_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
     if Command == '04': # Write Attribute response
@@ -1754,15 +1752,26 @@ def extract_nwk_infos_from_8002( frame ):
     return ( SrcNwkId, SrcEndPoint, ClusterId , Payload )
 
 
-def buildframe_read_attribute_request( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data  ):
+def buildframe_read_attribute_request( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Data  ):
 
-    buildPayload = '02' + SrcNwkId + SrcEndPoint + '01' + ClusterId 
+    if len(Data) % 4 != 0:
+        Domoticz.Log("Most Likely Livolo Frame : %s (%s)" %(Data, len(Data)))
+        return frame
+    
+    ManufSpec = '00'
+    ManufCode = '0000'
+    if ManufacturerCode:
+        ManufSpec = '01'
+        ManufCode = ManufacturerCode
+
+    buildPayload = '02' + SrcNwkId + SrcEndPoint + '01' + ClusterId + '01' + ManufSpec + ManufCode + '%02x' %(len(Data) // 4)
     idx = nbAttribute = 0
     while idx < len(Data):
         nbAttribute += 1
         Attribute = '%04x' %struct.unpack('H',struct.pack('>H',int(Data[idx:idx+4],16)))[0]
         idx += 4
         buildPayload += Attribute
+
 
     Domoticz.Log("buildframe_read_attribute_request - NwkId: %s Ep: %s ClusterId: %s nbAttribute: %s Data: %s" 
             %(SrcNwkId, SrcEndPoint, ClusterId, nbAttribute, Data))

@@ -30,7 +30,7 @@ from Modules.logging import loggingPairing, loggingInput, logginginRawAPS, loggi
 from Modules.basicOutputs import sendZigateCmd, leaveMgtReJoin, setTimeServer, ZigatePermitToJoin, unknown_device_nwkid
 from Modules.readAttributes import ReadAttributeRequest_0000, ReadAttributeRequest_0001
 from Modules.bindings import rebind_Clusters, reWebBind_Clusters
-from Modules.livolo import livolo_bind
+from Modules.livolo import livolo_bind, livolo_read_attribute_request
 from Modules.lumi import AqaraOppleDecoding, enableOppleSwitch
 from Modules.configureReporting import processConfigureReporting
 from Modules.schneider_wiser import schneider_wiser_registration, schneiderReadRawAPS
@@ -171,6 +171,46 @@ def ZigateRead(self, Devices, Data, TransportInfos=None):
 
     Domoticz.Error("ZigateRead - Decoder not found for %s" %(MsgType))
 
+def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
+
+    MsgMode = MsgData[0:2]
+    MsgSrcAddr = MsgData[2:6]
+    MsgSrcEp = MsgData[6:8]
+    MsgDstEp = MsgData[8:10]
+
+
+    updLQI( self, MsgSrcAddr, MsgLQI )
+    timeStamped( self, MsgSrcAddr , 0x0100)
+    lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
+
+    brand = ''
+    if MsgSrcAddr not in self.ListOfDevices:
+        return 
+
+    if ( 'Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Model'] == 'TI0001' ) or \
+        ( 'Manufacturer Name' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Manufacturer Name'] == 'LIVOLO' ):
+        loggingInput( self, 'Debug',"Decode0100 - (Livolo) Read Attribute Request %s/%s Data %s" %( MsgSrcAddr, MsgSrcEp, MsgData))
+        livolo_read_attribute_request( self, Devices, MsgSrcAddr, MsgSrcEp, MsgData[30:32])
+        return
+
+    # Handling the Standard Read Attribute Request
+    MsgClusterId = MsgData[10:14]
+    MsgDirection = MsgData[14:16]
+    MsgManufSpec = MsgData[16:18]
+    MsgManufCode = MsgData[18:22]
+    nbAttribute = MsgData[22:24]
+
+
+    Domoticz.Log("Decode0100 - MsgData: %s" %MsgData)
+    loggingInput( self, 'Log',"Decode0100 - Mode: %s NwkId: %s SrcEP: %s DstEp: %s ClusterId: %s Direction: %s ManufSpec: %s ManufCode: %s nbAttribute: %s"
+    %( MsgMode , MsgSrcAddr, MsgSrcEp, MsgDstEp, MsgClusterId, MsgDirection, MsgManufSpec, MsgManufCode, nbAttribute ))
+
+    nbAttribute = 0
+    for idx in range(24, len(MsgData), 4):
+        nbAttribute += 1
+        Attribute = MsgData[idx:idx+4]
+        loggingInput( self, 'Log',"Decode0100 - Read Attribute Request %s/%s Cluster %s Attribute %s" %( MsgSrcAddr, MsgSrcEp, MsgClusterId, Attribute))
+
 
 #Responses
 def Decode8000_v2(self, Devices, MsgData, MsgLQI) : # Status
@@ -242,7 +282,7 @@ def Decode8000_v2(self, Devices, MsgData, MsgLQI) : # Status
             self.groupmgt.statusGroupRequest( MsgData )
 
     if str(MsgData[0:2]) != "00" :
-        loggingInput( self, 'Log', "Decode8000 - PacketType: %s TypeSqn: %s sqn_app: %s sqn_aps: %s Status: [%s] " \
+        loggingInput( self, 'Debug', "Decode8000 - PacketType: %s TypeSqn: %s sqn_app: %s sqn_aps: %s Status: [%s] " \
             %(PacketType, type_sqn, sqn_app, sqn_aps , Status))
 
 def Decode8001(self, Decode, MsgData, MsgLQI) : # Reception log Level
@@ -1558,63 +1598,6 @@ def Decode80A6(self, Devices, MsgData, MsgLQI) : # Scene Membership response
         if scene not in MsgScene:
             MsgScene.append( scene )
     loggingInput( self, 'Log',"           - Scene List: %s" %(str(MsgScene)))
-
-
-
-def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
-
-    MsgMode = MsgData[0:2]
-    MsgSrcAddr = MsgData[2:6]
-    MsgSrcEp = MsgData[6:8]
-    MsgDstEp = MsgData[8:10]
-
-    updLQI( self, MsgSrcAddr, MsgLQI )
-
-    brand = ''
-    if MsgSrcAddr not in self.ListOfDevices:
-        return
-
-    if ( 'Manufacturer Name' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Manufacturer Name'] == 'LIVOLO' ):
-        brand = 'Livolo'
-    if ( 'Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Model'] == 'TI0001' ):
-        brand = 'Livolo'
-
-    if brand == 'Livolo':
-        # LIvolo use Read ATtribute Request to share Switch status
-        if 'Ep' not in self.ListOfDevices[MsgSrcAddr]:
-            return
-        if MsgSrcEp not in self.ListOfDevices[MsgSrcAddr]['Ep']:
-            return
-        if '0006' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
-            return
-
-        # What is expected on the Widget is:
-        # Left Off: 00
-        # Left On: 01
-        # Right Off: 02
-        # Right On: 03
-        MsgStatus = MsgData[30:32]
-        loggingInput( self, 'Debug', "Decode0100 - Livolo %s/%s Data: %s" %(MsgSrcAddr, MsgSrcEp, MsgStatus), MsgSrcAddr)
-
-        if MsgStatus == '00': # Left / Single - Off
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', '00')
-        elif MsgStatus == '01': # Left / Single - On
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', '01')
-        if MsgStatus == '02': # Right - Off
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', '10')
-        elif MsgStatus == '03': # Right - On
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', '11')
-
-        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006']['0000'] = MsgStatus
-        return
-
-    # Handling the Standard Read Attribute Request
-    MsgCluster = MsgData[10:14]
-    nbAttribute = 0
-    for idx in range(14, len(MsgData), 4):
-        nbAttribute += 1
-        Attribute = MsgData[idx:idx+4]
-        loggingInput( self, 'Log',"Decode0100 - Read Attribute Request %s/%s Cluster %s Attribute %s" %( MsgSrcAddr, MsgSrcEp, MsgCluster, Attribute))
 
 
 #Reponses Attributs
