@@ -395,14 +395,13 @@ def processKnownDevices( self, Devices, NWKID ):
 
                 func(self, NWKID )
 
-    if ( intHB % 1800) == 0:
+    if ( intHB % 900) == 0:
         # Checking PowerOn after OnOff setting ( 0x4003 )
-        if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
-            if self.ListOfDevices[NWKID]['Manufacturer Name'] in ( 'Philips', 'IKEA of Sweden', 'Legrand'):
-                for ep in self.ListOfDevices[NWKID]['Ep']:
-                    if '0006' in self.ListOfDevices[NWKID]['Ep'][ep]:
-                        if '4003' not in self.ListOfDevices[NWKID]['Ep'][ep]['0006']:
-                            ReadAttributeRequest_0006_400x( self, NWKID )
+        if 'Manufacturer Name' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['Manufacturer Name'] in ( 'Philips', 'IKEA of Sweden', 'Legrand'):
+            for ep in self.ListOfDevices[NWKID]['Ep']:
+                if '0006' in self.ListOfDevices[NWKID]['Ep'][ep]:
+                    if '4003' not in self.ListOfDevices[NWKID]['Ep'][ep]['0006']:
+                        ReadAttributeRequest_0006_400x( self, NWKID )
 
     # Reenforcement of Legrand devices options if required
     if ( self.HeartbeatCount % LEGRAND_FEATURES ) == 0 :
