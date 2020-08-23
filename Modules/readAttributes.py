@@ -342,12 +342,13 @@ def ReadAttributeRequest_0006_400x(self, key):
         if 'Manufacturer Name' not in self.ListOfDevices[key]:
             return
         if self.ListOfDevices[key]['Manufacturer Name'] not in ( 'Philips', 'IKEA of Sweden', 'Legrand'):
+            continue
 
-            loggingReadAttributes( self, 'Log',"-----requesting Attribute 0x0006/0x4003 for PowerOn state for device : %s" %key, nwkid=key)
-            #listAttributes.append ( 0x4000 )
-            #listAttributes.append ( 0x4001 )
-            #listAttributes.append ( 0x4002 )
-            listAttributes.append ( 0x4003 )
+        loggingReadAttributes( self, 'Log',"-----requesting Attribute 0x0006/0x4003 for PowerOn state for device : %s" %key, nwkid=key)
+        #listAttributes.append ( 0x4000 )
+        #listAttributes.append ( 0x4001 )
+        #listAttributes.append ( 0x4002 )
+        listAttributes.append ( 0x4003 )
 
         if listAttributes:
             loggingReadAttributes( self, 'Log', "Request OnOff 0x4000x attributes via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
