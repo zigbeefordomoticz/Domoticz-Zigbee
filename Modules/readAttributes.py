@@ -73,6 +73,12 @@ def normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttribu
     if 'Health' in self.ListOfDevices[addr]:
         if self.ListOfDevices[addr]['Health'] == 'Not Reachable':
             return
+    now = int(time())
+
+    if not is_time_to_perform_work(self, 'ReadAttributes', addr, EpOut, Cluster, now, 30 ):
+        # Do not perform more than once every minute !
+        return
+
     direction = '00'
     check_datastruct( self, 'ReadAttributes', addr, EpOut, Cluster )
 
@@ -82,7 +88,7 @@ def normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttribu
         ListOfAttributes = []
         ListOfAttributes.append( _tmpAttr)
 
-    now = int(time())
+    
     lenAttr = 0
     weight = int ((lenAttr ) / 2) + 1
     Attr =''
@@ -92,9 +98,6 @@ def normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttribu
         Attr_ = "%04x" %(x)
         if skipThisAttribute(self,  addr, EpOut, Cluster, Attr_):
             #Domoticz.Log("Skiping attribute %s/%s %s %s" %(addr, EpOut, Cluster, Attr_))
-            continue
-        if not is_time_to_perform_work(self, 'ReadAttributes', addr, EpOut, Cluster, now, 60 ):
-            # Do not perform more than once every minute !
             continue
 
         reset_attr_datastruct( self, 'ReadAttributes', addr, EpOut, Cluster , Attr_ )
@@ -339,15 +342,7 @@ def ReadAttributeRequest_0006_400x(self, key):
     ListOfEp = getListOfEpForCluster( self, key, '0006' )
     for EPout in ListOfEp:
         listAttributes = []
-        if 'Manufacturer Name' not in self.ListOfDevices[key]:
-            return
-        if self.ListOfDevices[key]['Manufacturer Name'] not in ( 'Philips', 'IKEA of Sweden', 'Legrand'):
-            continue
-
         loggingReadAttributes( self, 'Log',"-----requesting Attribute 0x0006/0x4003 for PowerOn state for device : %s" %key, nwkid=key)
-        #listAttributes.append ( 0x4000 )
-        #listAttributes.append ( 0x4001 )
-        #listAttributes.append ( 0x4002 )
         listAttributes.append ( 0x4003 )
 
         if listAttributes:
@@ -553,7 +548,6 @@ def ReadAttributeRequest_0204(self, key):
             ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0204", listAttributes , ackIsDisabled = True)
 
 def ReadAttributeRequest_fc00(self, key):
-
     pass
 
 def ReadAttributeRequest_0400(self, key):
