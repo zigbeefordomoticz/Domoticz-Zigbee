@@ -72,14 +72,14 @@ def enableOppleSwitch( self, nwkid ):
         self.ListOfDevices[nwkid]['Lumi']['AqaraOppleBulbMode'] = True
         return
 
-    manuf_id = '115F'
+    manuf_id = '115f'
     manuf_spec = "01"
-    cluster_id = 'FCC0'
+    cluster_id = 'fcc0'
     Hattribute = '0009'
     data_type = '20'
     Hdata = '01'
 
-    loggingLumi( self, 'Debug', "Write Attributes LUMI Magic Word Nwkid: %s" %nwkid, nwkid)
+    loggingLumi( self, 'Debug', "Write Attributes LUMI Opple Magic Word Nwkid: %s" %nwkid, nwkid)
     write_attribute( self, nwkid, ZIGATE_EP, '01', cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
 
 def lumiReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
@@ -257,6 +257,12 @@ def retreive8Tag(tag,chain):
         return ''
     return chain[c:(c+8)]
 
+def twos_comp(val, bits):
+    """compute the 2's complement of int value val"""
+    if (val & (1 << (bits - 1))) != 0: # if sign bit is set e.g., 8bit: 128-255
+        val = val - (1 << bits)        # compute negative value
+    return val                         # return positive value as is
+
 def readXiaomiClusterv2( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
 
     XIAOMI_TAGS = {
@@ -332,12 +338,11 @@ def readXiaomiCluster( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId
     sBatteryLvl =  retreive4Tag( "0121", MsgClusterData )         # 16BitUint
     sTemp2 =       retreive4Tag( "0328", MsgClusterData )         # Device Temperature (int8)
     stag04 =       retreive4Tag( '0424', MsgClusterData )
-    sRSSI =        retreive4Tag( '0521', MsgClusterData )         # RSSI (16BitUint)
+    sRSSI =        retreive4Tag( '0521', MsgClusterData )        # RSSI (16BitUint)
     sCountEvent =  retreive4Tag( '0541', MsgClusterData )
-    sLQI =         retreive4Tag( '0620', MsgClusterData )         # LQI
+    sLQI =         retreive4Tag( '0624', MsgClusterData )         # LQI
     sLighLevel =   retreive4Tag( '0b21', MsgClusterData )         # 16BitUint
 
-    
 
     sOnOff =       retreive4Tag( "6410", MsgClusterData )[0:2]    # Bool
     sOnOff2 =      retreive4Tag( "6420", MsgClusterData )[0:2]    # OnOff for Aqara Bulb / Current position lift for lumi.curtain
@@ -409,10 +414,12 @@ def readXiaomiCluster( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId
             loggingLumi( self, 'Log', "ReadCluster - %s/%s Saddr: %s Light Level: %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr,  value), MsgSrcAddr)
 
     if sRSSI != '':
-        RSSI = struct.unpack('>H',struct.pack('H',int(sRSSI,16)))[0]
-        loggingLumi( self, 'Debug', "ReadCluster - %s/%s Saddr: %s RSSI: %s/%s" 
+        #RSSI = struct.unpack('>H',struct.pack('H',int(sRSSI,16)))[0]
+        RSSI = int( sRSSI[0:2], 16) - 256
+
+        loggingLumi( self, 'Log', "ReadCluster - %s/%s Saddr: %s RSSI: %s/%s" 
             %(MsgClusterId, MsgAttrID, MsgSrcAddr, sRSSI, RSSI ), MsgSrcAddr)
-        store_lumi_attribute( self, MsgSrcAddr, 'RSSI', sRSSI)
+        store_lumi_attribute( self, MsgSrcAddr, 'RSSI dB', RSSI)
 
     if sLQI != '':
         LQI = int(sLQI,16)
