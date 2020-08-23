@@ -398,7 +398,7 @@ def processKnownDevices( self, Devices, NWKID ):
     if ( intHB % 1800) == 0:
         # Checking PowerOn after OnOff setting ( 0x4003 )
         if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
-            if self.ListOfDevices[NWKID]['Manufacturer Name'] in ( 'Philips', 'IKEA of Sweden'):
+            if self.ListOfDevices[NWKID]['Manufacturer Name'] in ( 'Philips', 'IKEA of Sweden', 'Legrand'):
                 for ep in self.ListOfDevices[NWKID]['Ep']:
                     if '0006' in self.ListOfDevices[NWKID]['Ep'][ep]:
                         if '4003' not in self.ListOfDevices[NWKID]['Ep'][ep]['0006']:
