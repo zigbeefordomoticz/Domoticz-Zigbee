@@ -20,7 +20,7 @@ import serial
 import select
 import socket
 
-import threading
+from threading import Thread, Lock, Event
 import queue
 from binascii import unhexlify, hexlify
 
@@ -42,7 +42,7 @@ class ZigateTransport(object):
     # Managed also the Command - > Status - > Data sequence
     # """
 
-    def __init__(self, LOD, transport, statistics, pluginconf, F_out, loggingFileHandle, serialPort=None, wifiAddress=None, wifiPort=None):
+    def __init__(self, transport, statistics, pluginconf, F_out, loggingFileHandle, serialPort=None, wifiAddress=None, wifiPort=None):
 
         # Logging
         self.loggingFileHandle = loggingFileHandle
@@ -82,8 +82,10 @@ class ZigateTransport(object):
 
         # Thread management
         self.running = True
+        self.WatchDogThread = None
         self.ListeningThreadevent = None
         self.ListeningThread = None
+        self.ListeningMutex = None
         self.messageQueue = queue.Queue()
         self.processFrameThread = []
 
@@ -111,10 +113,39 @@ class ZigateTransport(object):
     # Thread handling Serial Input/Output
     # Priority on Reading
         
-    
+    def start_thread_watchdog( self ):
+        if self.WatchDogThread is None:
+            Domoticz.Status("Starting Watch dog")
+            self.WatchDogThread = Thread( name="ZiGateWatchDog",  target=ZigateTransport.threads_watchdog,  args=(self,))
+            self.WatchDogThread.start()
+
+    def threads_watchdog(self):
+        def check_thread_alive( thr ):
+            thr.join( timeout = 0.0 )
+            return thr.is_alive()
+
+        Domoticz.Log("Watch dog started")
+        while self.running:
+            Domoticz.Log("Checking if %s alive" %self.ListeningThread.name)
+            if self.running and not check_thread_alive( self.ListeningThread):
+                Domoticz.Error("Thread %s seems to be dead, restarting" %self.ListeningThread.name)
+                self.ListeningThread.start()
+            time.sleep ( 60.0) 
+        Domoticz.Log("Watch dog stop")
+
+
+    def lock_mutex(self):
+        if self.ListeningMutex:
+            self.ListeningMutex.acquire()
+
+    def unlock_mutex(self):
+        if self.ListeningMutex:
+            self.ListeningMutex.release()
+
+
     def serial_listen_and_send( self ):
 
-        while self._connection  is None:
+        while self._connection is None:
             #Domoticz.Log("Waiting for serial connection open")
             self.ListeningThreadevent.wait(1.0)
         
@@ -223,23 +254,26 @@ class ZigateTransport(object):
 
     # Transport / Opening / Closing Communication
     def set_connection(self):
-
         def open_serial( self ):
-                try:
-                    self._connection = serial.Serial(self._serialPort, baudrate = BAUDS, timeout = 0)
+            try:
+                self._connection = serial.Serial(self._serialPort, baudrate = BAUDS, timeout = 0)
 
-                except serial.SerialException as e:
-                    Domoticz.Error("Cannot open Zigate port %s error: %s" %(self._serialPort, e))
-                    return
-                Domoticz.Status("Starting Listening and Sending Thread")
-                if self.ListeningThreadevent is None:
-                    self.ListeningThreadevent = threading.Event()
-                if self.ListeningThread is None:
-                    self.ListeningThread = threading.Thread(
-                                                name="ZiGateSerialListenThread", 
-                                                target=ZigateTransport.serial_listen_and_send, 
-                                                args=(self,))
-                    self.ListeningThread.start()
+            except serial.SerialException as e:
+                Domoticz.Error("Cannot open Zigate port %s error: %s" %(self._serialPort, e))
+                return
+            Domoticz.Status("Starting Listening and Sending Thread")
+            if self.ListeningMutex is None:
+                self.ListeningMutex= Lock()
+            if self.ListeningThreadevent is None:
+                self.ListeningThreadevent = Event()
+            if self.ListeningThread is None:
+                self.ListeningThread = Thread(
+                                            name="ZiGate serial line listner", 
+                                            target=ZigateTransport.serial_listen_and_send, 
+                                            args=(self,))
+
+                self.ListeningThread.start()
+            self.start_thread_watchdog( )
 
         def open_tcpip( self ):
             try:
@@ -249,16 +283,19 @@ class ZigateTransport(object):
             except socket.Exception as e:
                 Domoticz.Error("Cannot open Zigate Wifi %s Port %s error: %s" %(self._wifiAddress, self._serialPort, e))
                 return
-
+            if self.ListeningMutex is None:
+                self.ListeningMutex= Lock()
             if self.ListeningThreadevent is None:
-                self.ListeningThreadevent = threading.Event()
+                self.ListeningThreadevent = Event()
             if self.ListeningThread is None:
-                self.ListeningThread = threading.Thread(
-                                            name="ZiGateSerialListenThread", 
+                self.ListeningThread = Thread(
+                                            name="ZiGate tcpip listner", 
                                             target=ZigateTransport.tcpip_listen_and_send, 
                                             args=(self,))
                 self.ListeningThread.start()
+            self.start_thread_watchdog( )
 
+        # Begining
         if self._connection is not None:
             del self._connection
             self._connection = None
@@ -1261,6 +1298,15 @@ def process_frame(self, frame):
 
 def process_msg_type8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn):
 
+    def error_8000_log( self, Status, PacketType, InternalSqn):
+        if InternalSqn in self.ListOfCommands:
+            Domoticz.Log("ZiGate reports error %s on submitted command %s/%s" 
+                %( Status, self.ListOfCommands[InternalSqn]['Cmd'], self.ListOfCommands[InternalSqn]['Datas']) )
+        else:
+            Domoticz.Log("ZiGate reports error %s for PacketType: %s. Unable to find command out of %s commands"
+                %( Status, PacketType, len(self.ListOfCommands)))
+
+
     if PacketType == '':
         return None
 
@@ -1277,27 +1323,14 @@ def process_msg_type8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn):
         if self.zmode == 'zigate31c':
             # In that case we need to unblock data, as we will never get it !
             if len(self._waitForCmdResponseQueue) > 0:
-                InternalSqn, TimeStamp = _next_cmd_from_wait_cmdresponse_queue(
-                    self)
-                self.loggingSend(
-                    'Debug', " --  --  -- - > - unlock waitForData due to command %s failed, remove %s" % (PacketType, InternalSqn))
-                if InternalSqn in self.ListOfCommands:
-                    if self.ListOfCommands[InternalSqn]['MessageResponse']:
-                        self.logging_receive('Debug', " - -- Unqueue CmdResponse : [%s] %s %s "
-                                             % (InternalSqn, self.ListOfCommands[InternalSqn]['Cmd'], self.ListOfCommands[InternalSqn]['Datas']))
+                InternalSqn, TimeStamp = _next_cmd_from_wait_cmdresponse_queue(self)
+                error_8000_log( self, Status, PacketType, InternalSqn)
 
         elif self.zmode == 'zigateack':
             # In that case we need to unblock ack_nack, as we will never get it !
             if len(self._waitForAckNack) > 0:
-                InternalSqn, TimeStamp = _next_cmd_to_wait_for_ack_nack_queue(
-                    self)
-                self.loggingSend(
-                    'Debug', " --  --  -- - > - unlock waitForAckNack due to command %s failed, remove %s" % (PacketType, InternalSqn))
-                if InternalSqn in self.ListOfCommands:
-                    if self.zmode == 'zigateack' and self.ListOfCommands[InternalSqn]['WaitForResponse']:
-                        _next_cmd_from_wait_cmdresponse_queue(self)
-                        self.logging_receive('Debug', " - -- Unqueue CmdResponse : [%s] %s %s "
-                                             % (InternalSqn, self.ListOfCommands[InternalSqn]['Cmd'], self.ListOfCommands[InternalSqn]['Datas']))
+                InternalSqn, TimeStamp = _next_cmd_to_wait_for_ack_nack_queue(self)
+                error_8000_log( self, Status, PacketType, InternalSqn)
 
         # Finaly freeup the 0x8000 queue
         NextCmdFromWaitFor8000 = _next_cmd_from_wait_for8000_queue(self)
@@ -1827,6 +1860,7 @@ def buildframe_read_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clust
 
     return  newFrame
 
+
 def buildframe_report_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data ):
 
     nbAttribute = 0
@@ -1870,6 +1904,7 @@ def buildframe_report_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clu
     newFrame += frame[len(frame) - 4: len(frame) - 2] # LQI
     newFrame += '03'
     return  newFrame
+
 
 def buildframe_configure_reporting_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data ):
 
