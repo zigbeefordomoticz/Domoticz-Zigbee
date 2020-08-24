@@ -828,7 +828,7 @@ def zigateInit_Phase3( self ):
             del self.APS
             self.APS = None
 
-    elif int(self.FirmwareVersion,16) > 0x031c:
+    elif int(self.FirmwareVersion,16) > 0x031d:
         Domoticz.Error("Firmware %s is not yet supported" %self.FirmwareVersion.lower())
 
     if self.transport != 'None' and int(self.FirmwareVersion,16) >= 0x030f and int(self.FirmwareMajorVersion,16) >= 0x0003:
