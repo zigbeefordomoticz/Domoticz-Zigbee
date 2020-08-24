@@ -12,21 +12,28 @@ If you want to contribue , please let us know , we are looking for help in vario
 - improving the plugin
 - increasing the level of documentation for end user
 
+## 24 Aug 2020 - 4.9.5
+
+- [Technical] - Don't warn in case of Firmware 31d
+
 ## 21 June 2020 - 4.9.4
+
 - [Hardware] - Certified Xiaomi Smart Socket EU Plug ZCZ04LM
 
 ## 14 June 2020 - 4.9.3
+
 - [Technical] - Livolo parameter
 - [Technical] - Improvement Schneider
 
+## 8 June 2020 - 4.9.2
 
-##  8 June 2020 - 4.9.2
 - [Technical] - Smooth pairing for Schneider devices
 - [Issue] - Do not poll battery based devices
 - [Issue] - Require plugin restart after enabling Reset Read Attribute or Group Management
 - [WebAdmin] - Security fixes
 
-##  5 June 2020 - 4.9.1 (Last release supporting Firmware below 3.1c)
+## 5 June 2020 - 4.9.1 (Last release supporting Firmware below 3.1c)
+
 - [Technical] - Ready for PDM on host.
 - [Technical] - Scrip for PiZiGate on Fedora distribution
 - [Technical] - Provide Firmware
