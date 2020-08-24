@@ -269,7 +269,11 @@ def Decode8000_v2(self, Devices, MsgData, MsgRSSI) : # Status
         loggingInput( self, 'Log',"Decode8000 - uncomplete message : %s" %MsgData)
         return
 
-    if MsgLen > 8 :
+    if MsgLen == 12:
+        # Firmware 31d or above
+        pass
+
+    if MsgLen > 12 :
         loggingInput( self, 'Log',"Decode8000 - More information . New Firmware ???")
         loggingInput( self, 'Log',"Decode8000 - %s" %MsgData)
 
