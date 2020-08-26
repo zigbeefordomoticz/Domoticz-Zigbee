@@ -1622,13 +1622,15 @@ def Decode8100(self, Devices, MsgData, MsgLQI): # Read Attribute Response (in ca
             idx += 4
             MsgAttStatus = MsgData[idx:idx+2]
             idx += 2
-            MsgAttType = MsgData[idx:idx+2]
-            idx += 2
-            MsgAttSize = MsgData[idx:idx+4]
-            idx += 4
-            size = (int(MsgAttSize,16) * 2)
-            MsgClusterData = MsgData[idx: idx + size]
-            idx += size
+            MsgAttType = MsgAttSize = MsgClusterData = None
+            if MsgAttStatus == '00':
+                MsgAttType = MsgData[idx:idx+2]
+                idx += 2
+                MsgAttSize = MsgData[idx:idx+4]
+                idx += 4
+                size = (int(MsgAttSize,16) * 2)
+                MsgClusterData = MsgData[idx: idx + size]
+                idx += size
             loggingInput( self, 'Debug', "Decode8100 - idx: %s Read Attribute Response: [%s:%s] ClusterID: %s MsgSQN: %s, i_sqn: %s, AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<" \
                 %(idx, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgSQN, i_sqn, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData ), MsgSrcAddr)
             NewMsgData = MsgSQN + MsgSrcAddr + MsgSrcEp + MsgClusterId + MsgAttrID + MsgAttStatus + MsgAttType + MsgAttSize + MsgClusterData
