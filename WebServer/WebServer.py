@@ -328,6 +328,9 @@ class WebServer(object):
         else:
             Statistics['ZiGateRoundTimeMax'] = self.statistics._maxTiming8000
             Statistics['ZiGateRoundTimeAverage'] = self.statistics._averageTiming8000
+            Statistics['ZiGateProcessTimeOnRxMax'] = self.statistics._maxRxProcesses
+            Statistics['ZiGateProcessTimeOnRxAverage'] = self.statistics._averageRxProcess
+
             Statistics['CRC'] =self.statistics._crcErrors
             Statistics['FrameErrors'] =self.statistics._frameErrors
             Statistics['Sent'] =self.statistics._sent

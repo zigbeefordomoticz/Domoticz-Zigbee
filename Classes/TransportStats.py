@@ -30,6 +30,7 @@ class TransportStatistics:
         self._Load = 0
         self._MaxLoad = 0
         self._maxTiming8000 = self._cumulTiming8000 = self._cntTiming8000 = self._averageTiming8000 = 0
+        self._maxRxProcesses = self._cumulRxProcess = self._cntRxProcess = self._averageRxProcess = 0
         self._start = int(time())
         self.TrendStats = []
         self.pluginconf = pluginconf
@@ -48,6 +49,16 @@ class TransportStatistics:
             Domoticz.Log("Zigate command round trip Max: %s ms with an of average: %s ms" 
                 %(self._maxTiming8000, self._averageTiming8000 ))
         
+    def add_rxTiming( self, timing ):
+
+        self._cumulRxProcess += timing
+        self._cntRxProcess += 1
+        self._averageRxProcess = int( (self._cumulRxProcess / self._cntRxProcess))
+        if timing > self._maxRxProcesses:
+            self._maxRxProcesses = timing
+            Domoticz.Log("Zigate receive message processing time Max: %s ms with an of average: %s ms" 
+                %(self._maxRxProcesses, self._averageRxProcess ))
+
 
     def addPointforTrendStats( self, TimeStamp ):
 
@@ -117,6 +128,9 @@ class TransportStatistics:
         Domoticz.Status("ZiGate reacting time")
         Domoticz.Status("   Max              : %s sec" % (self._maxTiming8000))
         Domoticz.Status("   Average          : %s sec" % (self._averageTiming8000))
+        Domoticz.Status("ZiGate processing time on Rx")
+        Domoticz.Status("   Max              : %s sec" % (self._maxRxProcesses))
+        Domoticz.Status("   Average          : %s sec" % (self._averageRxProcess))
         Domoticz.Status("Sent:")
         Domoticz.Status("   TX commands      : %s" % (self.sent()))
         Domoticz.Status("   Max Load (Queue) : %s " % (self._MaxLoad))

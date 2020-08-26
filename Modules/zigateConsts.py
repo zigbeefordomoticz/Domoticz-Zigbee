@@ -111,6 +111,8 @@ SIZE_DATA_TYPE = {
     '10': 1,    # Bool
     '18': 1,    # 8bitmap
     '16': 2,    # 16bitmap
+    '19': 2,    # 16BitBitMap = 0x19
+
     '20': 1,    # uint8
     '21': 2,    # uint16
     '22': 3,    # Uint24

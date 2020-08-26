@@ -532,7 +532,14 @@ class ZigateTransport(object):
             if FrameIsKo == 0:
                 AsciiMsg = binascii.hexlify(BinMsg).decode('utf-8')
                 self.statistics._received += 1
+
+                if self.pluginconf.pluginConf['ZiGateReactTime']:
+                    start_time = time.time()
+
                 process_frame(self, AsciiMsg)
+                if self.pluginconf.pluginConf['ZiGateReactTime']:
+                    timing = int( (time.time() - start_time )* 1000 )
+                    self.statistics.add_rxTiming( timing )
 
 
     def check_timed_out_for_tx_queues(self):
@@ -1094,6 +1101,7 @@ def process_frame(self, frame):
     # will return the Frame in the Data if any
     # process the Data and check if this is a 0x8000 message
     # in case the message contains several frame, receiveData will be recall
+
 
     self.logging_receive('Debug', "process_frame - Frame: %s" % frame)
     if frame == '' or frame is None or len(frame) < 12:
@@ -1809,14 +1817,14 @@ def decode_endian_data( data, datatype):
     if datatype in ( '10', '18', '20', '28', '30'):
         value = data
 
-    elif datatype in ('09', '16', '21', '29', '31'):
+    elif datatype in ('09', '19', '21', '29', '31'):
         value = '%04x' %struct.unpack('>H',struct.pack('H',int(data,16)))[0]
 
     elif datatype in ( '22', '2a'):
         value= '%06x' %struct.unpack('>I',struct.pack('I',int(data,16)))[0]
 
     elif datatype in ( '23', '2b', '39'):
-        value = '%08x' %struct.unpack('>f',struct.pack('I',int(data,16)))[0]
+        value = '%08x' %struct.unpack('>i',struct.pack('I',int(data,16)))[0]
 
     elif datatype in ( '00', '41', '42'):
         value = data
@@ -1846,8 +1854,6 @@ def buildframe_read_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clust
             elif DType in ( '41', '42'): # ZigBee_OctedString = 0x41, ZigBee_CharacterString = 0x42
                 size = int(Data[idx:idx+2],16) * 2
                 idx += 2
-            elif DType == '00':
-                return frame
             else: 
                 Domoticz.Error("buildframe_read_attribute_response - Unknown DataType size: >%s< vs. %s " %(DType, str(SIZE_DATA_TYPE)))
                 Domoticz.Error("buildframe_read_attribute_response - ClusterId: %s Attribute: %s Data: %s" %(ClusterId, Attribute, Data))
@@ -1907,8 +1913,8 @@ def buildframe_report_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clu
 
         lenData = '%04x' %size
         buildPayload += Attribute + '00' + DType + lenData + value
-        # Domoticz.Log("buildframe_report_attribute_response - Attribute: %s DType: %s Size: %s Value: %s"
-        #     %(Attribute, DType, lenData, value))
+        Domoticz.Log("buildframe_report_attribute_response - Attribute: %s DType: %s Size: %s Value: %s"
+            %(Attribute, DType, lenData, value))
 
     Domoticz.Log("buildframe_report_attribute_response - NwkId: %s Ep: %s ClusterId: %s nbAttribute: %s Data: %s" %(SrcNwkId, SrcEndPoint, ClusterId, nbAttribute, buildPayload))
 
