@@ -25,7 +25,7 @@ from Modules.basicOutputs import  sendZigateCmd, identifyEffect, getListofAttrib
 
         
 from Modules.readAttributes import READ_ATTRIBUTES_REQUEST, \
-        ReadAttributeRequest_0000
+        ReadAttributeRequest_0000, ReadAttributeRequest_0300
 
 from Modules.lumi import enableOppleSwitch, setXiaomiVibrationSensitivity
 from Modules.livolo import livolo_bind
