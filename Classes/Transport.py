@@ -387,14 +387,14 @@ class ZigateTransport(object):
 
         # Check if the Cmd/Data is not yet in the pipe
         alreadyInQueue = False
-        for x in self.ListOfCommands:
+        for x in list(self.ListOfCommands.keys()):
             if self.ListOfCommands[x]['Status'] in ( '', 'TO-SEND', 'QUEUED' ) and self.ListOfCommands[x]['Cmd'] == cmd and self.ListOfCommands[x]['Datas'] == datas:
                 self.loggingSend(
                     'Log', "Cmd: %s Data: %s already in queue." % (cmd, datas))
                 alreadyInQueue = True
                 break
         if alreadyInQueue:
-            for x in self.ListOfCommands:
+            for x in list(self.ListOfCommands.keys()):
                 self.loggingSend('Debug', "-- > Sending Queue: [%s] Cmd: %s Datas: %s Time: %s"
                                 % (x, self.ListOfCommands[x]['Cmd'], self.ListOfCommands[x]['Datas'],
                                     self.ListOfCommands[x]['ReceiveTimeStamp'].strftime("%m/%d/%Y, %H:%M:%S")))
@@ -1826,7 +1826,7 @@ def decode_endian_data( data, datatype):
     elif datatype in ( '23', '2b', '39'):
         value = '%08x' %struct.unpack('>i',struct.pack('I',int(data,16)))[0]
 
-    elif datatype in ( '00', '41', '42'):
+    elif datatype in ( '00', '41', '42', '4c'):
         value = data
 
     else:
@@ -1851,6 +1851,17 @@ def buildframe_read_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clust
             idx += 2
             if DType in SIZE_DATA_TYPE:
                 size = SIZE_DATA_TYPE[ DType ] * 2
+            elif DType == '4c':
+                nbElement =Data[ idx+2:idx+4] +  Data[ idx:idx+2 ]
+                idx += 4
+                # Today found for attribute 0xff02 Xiaomi, just take all data
+                size = len(Data) - idx 
+                Domoticz.Log("Data: %s" %Data)
+                Domoticz.Log("Attribute: %s" %Attribute)
+                Domoticz.Log("DType: %s" %DType)
+                Domoticz.Log("size: %s" %size)
+                Domoticz.Log("data: %s" %Data[ idx:idx + size])
+
             elif DType in ( '41', '42'): # ZigBee_OctedString = 0x41, ZigBee_CharacterString = 0x42
                 size = int(Data[idx:idx+2],16) * 2
                 idx += 2
@@ -1862,12 +1873,12 @@ def buildframe_read_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clust
             data = Data[idx:idx + size]
             idx += size
             value = decode_endian_data( data, DType)
-            lenData = '%04x' %size
+            lenData = '%04x' %(size // 2 )
             buildPayload += Attribute + Status + DType + lenData + value
         else:
             buildPayload += Attribute + Status 
 
-    Domoticz.Log("buildframe_read_attribute_response - NwkId: %s Ep: %s ClusterId: %s nbAttribute: %s Data: %s" %(SrcNwkId, SrcEndPoint, ClusterId, nbAttribute, buildPayload))
+    Domoticz.Log("buildframe_read_attribute_response - NwkId: %s Ep: %s ClusterId: %s nbAttribute: %s Data: %s from frame: %s" %(SrcNwkId, SrcEndPoint, ClusterId, nbAttribute, buildPayload, frame))
     
     newFrame = '01' # 0:2
     newFrame += '8100' # 2:6   MsgType
@@ -1893,6 +1904,17 @@ def buildframe_report_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clu
         if DType in SIZE_DATA_TYPE:
             size = SIZE_DATA_TYPE[ DType ] * 2
 
+        elif DType == '4c':
+                # Today found for attribute 0xff02 Xiaomi, just take all data
+                nbElement =Data[ idx+2:idx+4] +  Data[ idx:idx+2 ]
+                idx += 4
+                size = len(Data) - idx 
+                Domoticz.Log("Data: %s" %Data)
+                Domoticz.Log("Attribute: %s" %Attribute)
+                Domoticz.Log("DType: %s" %DType)
+                Domoticz.Log("size: %s" %size)
+                Domoticz.Log("data: %s" %Data[ idx:idx + size])
+
         elif DType in ( '41', '42'): # ZigBee_OctedString = 0x41, ZigBee_CharacterString = 0x42
             size = int(Data[idx:idx+2],16) * 2
             idx += 2
@@ -1911,7 +1933,7 @@ def buildframe_report_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clu
         idx += size
         value = decode_endian_data( data, DType)
 
-        lenData = '%04x' %size
+        lenData = '%04x' %(size // 2 )
         buildPayload += Attribute + '00' + DType + lenData + value
         Domoticz.Log("buildframe_report_attribute_response - Attribute: %s DType: %s Size: %s Value: %s"
             %(Attribute, DType, lenData, value))
