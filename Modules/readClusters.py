@@ -127,24 +127,24 @@ def storeReadAttributeStatus( self, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgCl
     set_status_datastruct(self, 'ReadAttributes', MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus )
     set_timestamp_datastruct(self, 'ReadAttributes', MsgSrcAddr, MsgSrcEp, MsgClusterId, int(time()) )
 
-def ReadCluster(self, Devices, MsgType, MsgData):
+def ReadCluster(self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus, MsgAttType, MsgAttSize, MsgClusterData):
 
-    MsgLen=len(MsgData)
+    #=len(MsgData)
 
-    if MsgLen < 24:
-        Domoticz.Error("ReadCluster - MsgData lenght is too short: " + str(MsgLen) + " out of 24+")
-        Domoticz.Error("ReadCluster - MsgData: '" +str(MsgData) + "'")
-        return
+    #if MsgLen < 24:
+    #    Domoticz.Error("ReadCluster - MsgData lenght is too short: " + str(MsgLen) + " out of 24+")
+    #    Domoticz.Error("ReadCluster - MsgData: '" +str(MsgData) + "'")
+    #    return
 
-    MsgSQN=MsgData[0:2]
-    MsgSrcAddr=MsgData[2:6]
-    MsgSrcEp=MsgData[6:8]
-    MsgClusterId=MsgData[8:12]
-    MsgAttrID=MsgData[12:16]
-    MsgAttrStatus=MsgData[16:18]
-    MsgAttType=MsgData[18:20]
-    MsgAttSize=MsgData[20:24]
-    MsgClusterData=MsgData[24:len(MsgData)]
+    #MsgSQN=MsgData[0:2]
+    #MsgSrcAddr=MsgData[2:6]
+    #MsgSrcEp=MsgData[6:8]
+    #MsgClusterId=MsgData[8:12]
+    #MsgAttrID=MsgData[12:16]
+    #MsgAttrStatus=MsgData[16:18]
+    #MsgAttType=MsgData[18:20]
+    #MsgAttSize=MsgData[20:24]
+    #MsgClusterData=MsgData[24:len(MsgData)]
 
     self.statistics._clusterOK += 1
 
@@ -155,7 +155,7 @@ def ReadCluster(self, Devices, MsgType, MsgData):
     lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
     if not DeviceExist(self, Devices, MsgSrcAddr):
         #Pas sur de moi, mais je vois pas pkoi continuer, pas sur que de mettre a jour un device bancale soit utile
-        Domoticz.Error("ReadCluster - KeyError: MsgData = " + MsgData)
+        #Domoticz.Error("ReadCluster - KeyError: MsgData = " + MsgData)
         return
 
     # Can we receive a Custer while the Device is not yet in the ListOfDevices ??????

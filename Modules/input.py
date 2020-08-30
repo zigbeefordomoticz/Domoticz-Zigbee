@@ -1606,7 +1606,6 @@ def Decode8100(self, Devices, MsgData, MsgLQI): # Read Attribute Response (in ca
     MsgSQN=MsgData[0:2]
     i_sqn = sqn_get_internal_sqn_from_app_sqn (self.ZigateComm, MsgSQN, TYPE_APP_ZCL)
 
-
     MsgSrcAddr=MsgData[2:6]
     timeStamped( self, MsgSrcAddr , 0x8100)
     loggingMessages( self, '8100', MsgSrcAddr, None, MsgLQI, MsgSQN)
@@ -1622,7 +1621,9 @@ def Decode8100(self, Devices, MsgData, MsgLQI): # Read Attribute Response (in ca
             idx += 4
             MsgAttStatus = MsgData[idx:idx+2]
             idx += 2
-            MsgAttType = MsgAttSize = MsgClusterData = None
+            MsgAttType = '00'
+            MsgAttSize = '0000'
+            MsgClusterData = '00'
             if MsgAttStatus == '00':
                 MsgAttType = MsgData[idx:idx+2]
                 idx += 2
@@ -1634,7 +1635,7 @@ def Decode8100(self, Devices, MsgData, MsgLQI): # Read Attribute Response (in ca
             loggingInput( self, 'Debug', "Decode8100 - idx: %s Read Attribute Response: [%s:%s] ClusterID: %s MsgSQN: %s, i_sqn: %s, AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<" \
                 %(idx, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgSQN, i_sqn, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData ), MsgSrcAddr)
             NewMsgData = MsgSQN + MsgSrcAddr + MsgSrcEp + MsgClusterId + MsgAttrID + MsgAttStatus + MsgAttType + MsgAttSize + MsgClusterData
-            read_report_attributes( self,  Devices, '8100', MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, NewMsgData)
+            read_report_attributes( self,  Devices, '8100', MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData)
 
     except Exception as e:
         Domoticz.Error("Decode8100 - Catch error while decoding %s/%s cluster: %s MsgData: %s Error: %s" %( MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgData, e))    
@@ -1690,10 +1691,10 @@ def Decode8102(self, Devices, MsgData, MsgLQI):  # Attribute Reports
     timeStamped( self, MsgSrcAddr , 0x8102)
     loggingMessages( self, '8102', MsgSrcAddr, None, MsgLQI, MsgSQN)
     updLQI( self, MsgSrcAddr, MsgLQI )
-    read_report_attributes( self,  Devices, '8102', MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, MsgData)
+    read_report_attributes( self,  Devices, '8102', MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData)
     callbackDeviceAwake( self, MsgSrcAddr, MsgSrcEp, MsgClusterId)
 
-def read_report_attributes( self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, MsgData):
+def read_report_attributes( self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData):
 
     if DeviceExist(self, Devices, MsgSrcAddr):
         if ( self.pluginconf.pluginConf['debugLQI'] and self.ListOfDevices[MsgSrcAddr]['LQI'] <= self.pluginconf.pluginConf['debugLQI'] ):
@@ -1716,7 +1717,7 @@ def read_report_attributes( self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp
             self.ListOfDevices[MsgSrcAddr]['Health'] = 'Live'
 
         updSQN( self, MsgSrcAddr, str(MsgSQN) )
-        ReadCluster(self, Devices, MsgType, MsgData)
+        ReadCluster(self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData)
         return
         
     # This device is unknown, and we don't have the IEEE to check if there is a device coming with a new sAddr
