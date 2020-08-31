@@ -1730,8 +1730,7 @@ def read_report_attributes( self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp
     else:
         # If we didn't find it, let's trigger a NetworkMap scan if not one in progress
         unknown_device_nwkid( self, MsgSrcAddr )
-        loggingInput( self, 'Log',"Decode8102 - Receiving a message from unknown device : " + str(MsgSrcAddr) + " with Data : " +str(MsgData) )
-        loggingInput( self, 'Log',"           - [%s:%s] ClusterID: %s AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<" \
+        loggingInput( self, 'Log',"Decode8102 - Receiving a message from unknown device : [%s:%s] ClusterID: %s AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<" \
             %(MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData ), MsgSrcAddr)
 
 def Decode8110( self, Devices, MsgData, MsgLQI):
