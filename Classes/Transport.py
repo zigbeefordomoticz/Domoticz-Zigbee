@@ -388,6 +388,10 @@ class ZigateTransport(object):
         # Check if the Cmd/Data is not yet in the pipe
         alreadyInQueue = False
         for x in list(self.ListOfCommands.keys()):
+            if x not in self.ListOfCommands:
+                continue
+            if 'Status' not in self.ListOfCommands[x] or 'Cmd' not in self.ListOfCommands[x] or 'Datas' not in self.ListOfCommands[x]:
+                continue
             if self.ListOfCommands[x]['Status'] in ( '', 'TO-SEND', 'QUEUED' ) and self.ListOfCommands[x]['Cmd'] == cmd and self.ListOfCommands[x]['Datas'] == datas:
                 self.loggingSend(
                     'Log', "Cmd: %s Data: %s already in queue." % (cmd, datas))
@@ -395,6 +399,8 @@ class ZigateTransport(object):
                 break
         if alreadyInQueue:
             for x in list(self.ListOfCommands.keys()):
+                if x not in self.ListOfCommands:
+                    continue
                 self.loggingSend('Debug', "-- > Sending Queue: [%s] Cmd: %s Datas: %s Time: %s"
                                 % (x, self.ListOfCommands[x]['Cmd'], self.ListOfCommands[x]['Datas'],
                                     self.ListOfCommands[x]['ReceiveTimeStamp'].strftime("%m/%d/%Y, %H:%M:%S")))
