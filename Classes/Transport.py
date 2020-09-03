@@ -125,7 +125,7 @@ class ZigateTransport(object):
             return thr.is_alive()
 
         while self.running:
-            Domoticz.Log("Checking if %s alive" %self.ListeningThread.name)
+            #Domoticz.Log("Checking if %s alive" %self.ListeningThread.name)
             if self.running and not check_thread_alive( self.ListeningThread):
                 Domoticz.Error("Thread %s seems to be dead, restarting" %self.ListeningThread.name)
                 self.ListeningThread.start()
