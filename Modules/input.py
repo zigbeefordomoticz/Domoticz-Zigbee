@@ -28,6 +28,7 @@ from Modules.tools import timeStamped, updSQN, updLQI, DeviceExist, getSaddrfrom
 from Modules.deviceAnnoucement import device_annoucementv0, device_annoucementv1, device_annoucementv2
 from Modules.logging import loggingPairing, loggingInput, logginginRawAPS, loggingPDM
 from Modules.basicOutputs import sendZigateCmd, leaveMgtReJoin, setTimeServer, ZigatePermitToJoin, unknown_device_nwkid
+from Modules.timeServer import timeserver_read_attribute_request
 from Modules.readAttributes import ReadAttributeRequest_0000, ReadAttributeRequest_0001
 from Modules.bindings import rebind_Clusters, reWebBind_Clusters
 from Modules.livolo import livolo_bind, livolo_read_attribute_request
@@ -178,6 +179,8 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
     MsgSrcEp = MsgData[6:8]
     MsgDstEp = MsgData[8:10]
 
+    sqn = '00'
+
 
     updLQI( self, MsgSrcAddr, MsgLQI )
     timeStamped( self, MsgSrcAddr , 0x0100)
@@ -209,8 +212,10 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
     for idx in range(24, len(MsgData), 4):
         nbAttribute += 1
         Attribute = MsgData[idx:idx+4]
-        loggingInput( self, 'Log',"Decode0100 - Read Attribute Request %s/%s Cluster %s Attribute %s" %( MsgSrcAddr, MsgSrcEp, MsgClusterId, Attribute))
-
+        if MsgClusterId == '000a':
+            timeserver_read_attribute_request( self, sqn, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgManufSpec, MsgManufCode , Attribute)
+        else:
+            loggingInput( self, 'Log',"Decode0100 - Read Attribute Request %s/%s Cluster %s Attribute %s" %( MsgSrcAddr, MsgSrcEp, MsgClusterId, Attribute))
 
 #Responses
 def Decode8000_v2(self, Devices, MsgData, MsgLQI) : # Status
