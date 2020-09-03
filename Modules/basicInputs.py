@@ -5,6 +5,7 @@
 #
 
 import Domoticz
+import struct
 
 from Modules.basicOutputs import raw_APS_request 
 from Modules.zigateConsts import SIZE_DATA_TYPE, ZIGATE_EP
@@ -16,7 +17,9 @@ def read_attribute_response( self, nwkid, ep, sqn, cluster, status, data_type, a
     if manuf_code == '0000':
         manuf_specific = '00'
 
-    cluster_frame = "1d"           
+    cluster_frame = "18"    # Profile-wide, Server to Client, Disable default Response
+
+    attribute = '%04x' %struct.unpack('H',struct.pack('>H',int(attribute)))[0]       
 
     if manuf_code == '0000':
         payload = cluster_frame + sqn + cmd 

@@ -203,9 +203,7 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
     MsgManufCode = MsgData[18:22]
     nbAttribute = MsgData[22:24]
 
-
-    Domoticz.Log("Decode0100 - MsgData: %s" %MsgData)
-    loggingInput( self, 'Log',"Decode0100 - Mode: %s NwkId: %s SrcEP: %s DstEp: %s ClusterId: %s Direction: %s ManufSpec: %s ManufCode: %s nbAttribute: %s"
+    loggingInput( self, 'Debug',"Decode0100 - Mode: %s NwkId: %s SrcEP: %s DstEp: %s ClusterId: %s Direction: %s ManufSpec: %s ManufCode: %s nbAttribute: %s"
     %( MsgMode , MsgSrcAddr, MsgSrcEp, MsgDstEp, MsgClusterId, MsgDirection, MsgManufSpec, MsgManufCode, nbAttribute ))
 
     nbAttribute = 0
