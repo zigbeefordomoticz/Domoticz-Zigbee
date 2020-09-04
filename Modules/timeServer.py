@@ -11,13 +11,13 @@ from datetime import datetime
 
 
 def timeserver_read_attribute_request( self, sqn, nwkid, ep, cluster, manuf_spec, manuf_code , attribute):
-    Domoticz.Log("timeserver_read_attribute_request [%s] %s/%s Cluster: %s Attribute: %s" %(sqn, nwkid, ep, cluster,attribute))
+    #Domoticz.Log("timeserver_read_attribute_request [%s] %s/%s Cluster: %s Attribute: %s" %(sqn, nwkid, ep, cluster,attribute))
 
     data_type = value = None
     status = '86'
 
     if attribute == '0000': # Time (should be probded by ZiGate)
-        Domoticz.Log("-->Local Time: %s" %datetime.now())
+        #Domoticz.Log("-->Local Time: %s" %datetime.now())
         EPOCTime = datetime(2000,1,1)
         UTCTime = int((datetime.now() - EPOCTime).total_seconds())
         value = "%08x" %UTCTime
@@ -31,7 +31,7 @@ def timeserver_read_attribute_request( self, sqn, nwkid, ep, cluster, manuf_spec
 
 
     elif attribute == '0007': # LocalTime
-        Domoticz.Log("-->Local Time: %s" %datetime.now())
+        #Domoticz.Log("-->Local Time: %s" %datetime.now())
         EPOCTime = datetime(2000,1,1)
         UTCTime = int((datetime.now() - EPOCTime).total_seconds())
         value = "%08x" %UTCTime
