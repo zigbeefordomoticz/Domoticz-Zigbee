@@ -1782,7 +1782,7 @@ def buildframe_read_attribute_request( frame, Sqn, SrcNwkId, SrcEndPoint, Cluste
         ManufSpec = '01'
         ManufCode = ManufacturerCode
 
-    buildPayload = '02' + SrcNwkId + SrcEndPoint + '01' + ClusterId + '01' + ManufSpec + ManufCode + '%02x' %(len(Data) // 4)
+    buildPayload = Sqn + SrcNwkId + SrcEndPoint + '01' + ClusterId + '01' + ManufSpec + ManufCode + '%02x' %(len(Data) // 4)
     idx = nbAttribute = 0
     while idx < len(Data):
         nbAttribute += 1

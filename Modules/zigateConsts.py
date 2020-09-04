@@ -127,6 +127,7 @@ SIZE_DATA_TYPE = {
     '30': 1,    # enum8
     '31': 2,    # enum16
     '39': 4,    # Single Float
+    'e2': 4,    # UTCtime 
 }
 
 ZLL_DEVICES = {

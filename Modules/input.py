@@ -179,9 +179,6 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
     MsgSrcEp = MsgData[6:8]
     MsgDstEp = MsgData[8:10]
 
-    sqn = '00'
-
-
     updLQI( self, MsgSrcAddr, MsgLQI )
     timeStamped( self, MsgSrcAddr , 0x0100)
     lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
@@ -211,7 +208,7 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
         nbAttribute += 1
         Attribute = MsgData[idx:idx+4]
         if MsgClusterId == '000a':
-            timeserver_read_attribute_request( self, sqn, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgManufSpec, MsgManufCode , Attribute)
+            timeserver_read_attribute_request( self, MsgMode, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgManufSpec, MsgManufCode , Attribute)
         else:
             loggingInput( self, 'Log',"Decode0100 - Read Attribute Request %s/%s Cluster %s Attribute %s" %( MsgSrcAddr, MsgSrcEp, MsgClusterId, Attribute))
 
