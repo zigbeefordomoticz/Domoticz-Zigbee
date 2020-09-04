@@ -37,7 +37,7 @@ def timeserver_read_attribute_request( self, sqn, nwkid, ep, cluster, manuf_spec
         EPOCTime = datetime(2000,1,1)
         UTCTime = int((datetime.now() - EPOCTime).total_seconds())
         value = "%08x" %UTCTime
-        data_type = 'e2'
+        data_type = '23'
         status = '00'
 
     read_attribute_response( self, nwkid, ep, sqn, cluster, status, data_type, attribute, value, manuf_code='0000')
