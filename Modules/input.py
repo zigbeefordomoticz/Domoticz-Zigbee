@@ -2495,12 +2495,10 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
         else:
             loggingInput( self, 'Log',"Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
-
     elif  _ModelName == 'TRADFRI on/off switch':
         #Ikea Switch On/Off 
         MajDomoDevice( self, Devices, MsgSrcAddr, MsgEP, "0006", MsgCmd)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
-
     elif _ModelName == 'RC 110':
         #INNR RC 110 Remote command
 
@@ -2521,7 +2519,6 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
         else:
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
             loggingInput( self, 'Log', "Decode8095 - RC 110 Unknown Command: %s for %s/%s, Cmd: %s, Unknown: %s " %(MsgCmd, MsgSrcAddr, MsgEP, MsgCmd, unknown_), MsgSrcAddr)
-
     elif _ModelName in LEGRAND_REMOTE_SWITCHS:
         # Legrand remote switch
 
@@ -2534,7 +2531,6 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
             MajDomoDevice( self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd)
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId] = {}
             loggingInput( self, 'Debug', "Decode8095 - Legrand: %s/%s, Cmd: %s, Unknown: %s " %( MsgSrcAddr, MsgEP, MsgCmd, unknown_), MsgSrcAddr)
-
     elif _ModelName == 'Lightify Switch Mini':
         #        OSRAM Lightify Switch Mini
 
@@ -2546,10 +2542,19 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
         else:
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
             loggingInput( self, 'Log', "Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr)
-
     elif _ModelName in ( 'lumi.remote.b686opcn01-bulb', 'lumi.remote.b486opcn01-bulb', 'lumi.remote.b286opcn01-bulb'):
         AqaraOppleDecoding( self, Devices, MsgSrcAddr , MsgEP, MsgClusterId, _ModelName, MsgData)
-
+    elif _ModelName == 'WB01':
+        # 0x02 -> 1 Click
+        # 0x01 -> 2 Click
+        # 0x00 -> Long Click
+        if MsgCmd == '00':
+            WidgetSelector = '03'
+        elif MsgCmd == '01':
+            WidgetSelector = '02'
+        elif MsgCmd == '02':
+            WidgetSelector = '01'
+        MajDomoDevice( self, Devices, MsgSrcAddr, MsgEP, "0006", WidgetSelector)
     else:
         MajDomoDevice( self, Devices, MsgSrcAddr, MsgEP, "0006", MsgCmd)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
