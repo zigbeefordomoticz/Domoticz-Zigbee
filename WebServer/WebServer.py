@@ -68,7 +68,7 @@ class WebServer(object):
 
     hearbeats = 0 
 
-    def __init__( self, networkenergy, networkmap, ZigateData, PluginParameters, PluginConf, Statistics, adminWidgets, ZigateComm, HomeDirectory, hardwareID, DevicesInPairingMode, groupManagement, Devices, ListOfDevices, IEEE2NWK , permitTojoin, WebUserName, WebPassword, PluginHealth, httpPort, loggingFileHandle):
+    def __init__( self, networkenergy, networkmap, ZigateData, PluginParameters, PluginConf, Statistics, adminWidgets, ZigateComm, HomeDirectory, hardwareID, DevicesInPairingMode, groupManagement, Devices, ListOfDevices, IEEE2NWK , permitTojoin, WebUserName, WebPassword, PluginHealth, httpPort, loggingFileHandle, LogErrorHistory):
 
         self.httpServerConn = None
         self.httpClientConn = None
@@ -101,6 +101,7 @@ class WebServer(object):
         self.fakeDevicesInPairingMode = 0
         self.IEEE2NWK = IEEE2NWK
         self.Devices = Devices
+        self.LogErrorHistory = LogErrorHistory
 
         self.restart_needed = {'RestartNeeded': False}
         self.homedirectory = HomeDirectory
@@ -1170,4 +1171,15 @@ class WebServer(object):
                 if mode  in ( '0', '1', '2'):
                     send_zigate_mode( self, int(mode) ) 
                     _response["Data"] = { "ZiGate mode: %s requested" %mode} 
+        return _response
+
+    def rest_logErrorHistory( self, verb, data, parameters):
+
+        _response = prepResponseMessage( self ,setupHeadersResponse())
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+ 
+        if verb == 'GET':
+            if self.LogErrorHistory is None or len(self.LogErrorHistory) == 0:
+                return _response
+            _response["Data"] =  json.dumps( self.LogErrorHistory, sort_keys=False ) 
         return _response
