@@ -734,6 +734,7 @@ class BasePlugin:
 
         self.statistics.addPointforTrendStats( self.HeartbeatCount )
 
+        loggingCleaningErrorHistory(self)
         return True
 
 def zigateInit_Phase1(self ):
@@ -899,7 +900,8 @@ def zigateInit_Phase3( self ):
         loggingPlugin( self, 'Status', "Start Web Server connection")
         self.webserver = WebServer( self.networkenergy, self.networkmap, self.zigatedata, self.pluginParameters, self.pluginconf, self.statistics, 
             self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], self.HardwareID, self.DevicesInPairingMode, self.groupmgt, Devices, 
-            self.ListOfDevices, self.IEEE2NWK , self.permitTojoin , self.WebUsername, self.WebPassword, self.PluginHealth, Parameters['Mode4'], self.loggingFileHandle)
+            self.ListOfDevices, self.IEEE2NWK , self.permitTojoin , self.WebUsername, self.WebPassword, self.PluginHealth, Parameters['Mode4'], 
+            self.loggingFileHandle,self.LogErrorHistory)
         if self.FirmwareVersion:
             self.webserver.update_firmware( self.FirmwareVersion )
 
