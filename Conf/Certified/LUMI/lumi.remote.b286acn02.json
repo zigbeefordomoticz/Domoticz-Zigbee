@@ -9,7 +9,6 @@
 			"0012":"",
 			"0019":"",
 			"ffff":"",
-			"Type":"DButton_3"
 		},
 		"02":{
 			"Type":""
@@ -20,9 +19,9 @@
 			"0006":"",
 			"000c":"",
 			"0012":"",
-			"Type":"DButton_3"
 		}
 	},
+	"Type":"DButton_3",
 	"ClusterToBind": [],
         "ConfigureReporting":{},
 	"ReadAttributes": {
