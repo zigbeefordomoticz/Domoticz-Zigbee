@@ -417,7 +417,7 @@ def readXiaomiCluster( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId
         #RSSI = struct.unpack('>H',struct.pack('H',int(sRSSI,16)))[0]
         RSSI = int( sRSSI[0:2], 16) - 256
 
-        loggingLumi( self, 'Log', "ReadCluster - %s/%s Saddr: %s RSSI: %s/%s" 
+        loggingLumi( self, 'Debug', "ReadCluster - %s/%s Saddr: %s RSSI: %s/%s" 
             %(MsgClusterId, MsgAttrID, MsgSrcAddr, sRSSI, RSSI ), MsgSrcAddr)
         store_lumi_attribute( self, MsgSrcAddr, 'RSSI dB', RSSI)
 
