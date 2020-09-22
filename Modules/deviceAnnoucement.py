@@ -589,26 +589,26 @@ def decode004d_existing_devicev2(
         NwkId,
     )
 
-    if NwkId in self.ListOfDevices:
-        if "ZDeviceName" in self.ListOfDevices[NwkId]:
-            loggingPairing(
-                self,
-                "Status",
-                "Device Announcement: %s (%s, %s) LQI: %s "
-                % (
-                    self.ListOfDevices[NwkId]["ZDeviceName"],
-                    NwkId,
-                    MsgIEEE,
-                    int(MsgLQI, 16),
-                ),
-            )
-        else:
-            loggingPairing(
-                self,
-                "Status",
-                "Device Announcement Addr: %s, IEEE: %s LQI: %s "
-                % (NwkId, MsgIEEE, int(MsgLQI, 16)),
-            )
+    #if NwkId in self.ListOfDevices:
+    #    if "ZDeviceName" in self.ListOfDevices[NwkId]:
+    #        loggingPairing(
+    #            self,
+    #            "Status",
+    #            "Device Announcement: %s (%s, %s) LQI: %s "
+    #            % (
+    #                self.ListOfDevices[NwkId]["ZDeviceName"],
+    #                NwkId,
+    #                MsgIEEE,
+    #                int(MsgLQI, 16),
+    #            ),
+    #        )
+    #    else:
+    #        loggingPairing(
+    #            self,
+    #            "Status",
+    #            "Device Announcement Addr: %s, IEEE: %s LQI: %s "
+    #            % (NwkId, MsgIEEE, int(MsgLQI, 16)),
+    #        )
 
     # If this is a rejoin after a leave, let's update the Status
 

@@ -2373,10 +2373,10 @@ def buildframe_read_attribute_request(
         idx += 4
         buildPayload += Attribute
 
-    Domoticz.Log(
-        "buildframe_read_attribute_request - NwkId: %s Ep: %s ClusterId: %s nbAttribute: %s Data: %s"
-        % (SrcNwkId, SrcEndPoint, ClusterId, nbAttribute, Data)
-    )
+    #Domoticz.Log(
+    #    "buildframe_read_attribute_request - NwkId: %s Ep: %s ClusterId: %s nbAttribute: %s Data: %s"
+    #    % (SrcNwkId, SrcEndPoint, ClusterId, nbAttribute, Data)
+    #)
 
     newFrame = "01"  # 0:2
     newFrame += "0100"  # 2:6   MsgType
@@ -2423,9 +2423,9 @@ def decode_endian_data(data, datatype):
 
     else:
         value = data
-        Domoticz.Log(
-            "-------> Data not decoded Type: %s Value: %s " % (datatype, value)
-        )
+        #Domoticz.Log(
+        #    "-------> Data not decoded Type: %s Value: %s " % (datatype, value)
+        #)
     return value
 
 
@@ -2486,10 +2486,10 @@ def buildframe_read_attribute_response(
         else:
             buildPayload += Attribute + Status
 
-    Domoticz.Log(
-        "buildframe_read_attribute_response for 0x8100 - NwkId: %s Ep: %s ClusterId: %s nbAttribute: %s Data: %s from frame: %s"
-        % (SrcNwkId, SrcEndPoint, ClusterId, nbAttribute, buildPayload, frame)
-    )
+    #Domoticz.Log(
+    #    "buildframe_read_attribute_response for 0x8100 - NwkId: %s Ep: %s ClusterId: %s nbAttribute: %s Data: %s from frame: %s"
+    #    % (SrcNwkId, SrcEndPoint, ClusterId, nbAttribute, buildPayload, frame)
+    #)
 
     newFrame = "01"  # 0:2
     newFrame += "8100"  # 2:6   MsgType
@@ -2573,10 +2573,10 @@ def buildframe_report_attribute_response(
         # Domoticz.Log("buildframe_report_attribute_response - Attribute: %s DType: %s Size: %s Value: %s"
         #    %(Attribute, DType, lenData, value))
 
-    Domoticz.Log(
-        "buildframe_report_attribute_response - NwkId: %s Ep: %s ClusterId: %s nbAttribute: %s Data: %s"
-        % (SrcNwkId, SrcEndPoint, ClusterId, nbAttribute, buildPayload)
-    )
+    #Domoticz.Log(
+    #    "buildframe_report_attribute_response - NwkId: %s Ep: %s ClusterId: %s nbAttribute: %s Data: %s"
+    #    % (SrcNwkId, SrcEndPoint, ClusterId, nbAttribute, buildPayload)
+    #)
 
     newFrame = "01"  # 0:2
     newFrame += "8102"  # 2:6   MsgType
@@ -2613,10 +2613,10 @@ def buildframe_configure_reporting_response(
             buildPayload += Attribute + Status
         return frame
 
-    Domoticz.Log(
-        "buildframe_configure_reporting_response - NwkId: %s Ep: %s ClusterId: %s nbAttribute: %s Data: %s"
-        % (SrcNwkId, SrcEndPoint, ClusterId, nbAttribute, buildPayload)
-    )
+    #Domoticz.Log(
+    #    "buildframe_configure_reporting_response - NwkId: %s Ep: %s ClusterId: %s nbAttribute: %s Data: %s"
+    #    % (SrcNwkId, SrcEndPoint, ClusterId, nbAttribute, buildPayload)
+    #)
     newFrame = "01"  # 0:2
     newFrame += "8120"  # 2:6   MsgType
     newFrame += "%4x" % len(buildPayload)  # 6:10  Length

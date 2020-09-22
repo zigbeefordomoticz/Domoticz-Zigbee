@@ -552,7 +552,7 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
         if GlobalCommand and int(Command, 16) in ZIGBEE_COMMAND_IDENTIFIER:
             logginginRawAPS(
                 self,
-                "Log",
+                "Debug",
                 "Decode8002 - NwkId: %s Ep: %s Cluster: %s GlobalCommand: %5s Command: %s (%33s) Data: %s"
                 % (
                     srcnwkid,
@@ -567,7 +567,7 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
         else:
             logginginRawAPS(
                 self,
-                "Log",
+                "Debug",
                 "Decode8002 - NwkId: %s Ep: %s Cluster: %s GlobalCommand: %5s Command: %s Data: %s"
                 % (
                     srcnwkid,
@@ -581,7 +581,7 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
     else:
         logginginRawAPS(
             self,
-            "Log",
+            "Debug",
             "Decode8002 - NwkId: %s Ep: %s Cluster: %s Payload: %s"
             % (srcnwkid, MsgSourcePoint, MsgClusterID, MsgPayload),
         )
