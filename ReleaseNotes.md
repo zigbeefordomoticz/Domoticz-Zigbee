@@ -12,6 +12,11 @@ If you want to contribue , please let us know , we are looking for help in vario
 - improving the plugin
 - increasing the level of documentation for end user
 
+Release Numbering
+
+- Odd numbers --> Stable
+- Even numbers  --> Beta
+
 ##              - 4.11.1 (Supporting Firmware 3.1d)
 - [Technical] - Implement a full SQN management and Synchro based on firmware 31d
 - [Technical] - By default use NOACK ZCL command if response is expected. Other commands are send with ACK
