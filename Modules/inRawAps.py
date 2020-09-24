@@ -9,8 +9,7 @@ import struct
 from Modules.tools import retreive_cmd_payload_from_8002
 from Modules.pollControl import receive_poll_cluster
 
-
-
+from Modules.domoMaj import MajDomoDevice
 
 from Modules.schneider_wiser import schneiderReadRawAPS
 from Modules.legrand_netatmo import legrandReadRawAPS
@@ -77,6 +76,32 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Man
             self.ListOfDevices[ srcnwkid ]['OTA']['CurrentImageVersion'] = currentVersion
 
             return
+
+    if cluster == '0501': # IAS ACE
+        # "00"
+        # "01" Arm Day (Home Zones Only) - Command Arm 0x00 - Payload 0x01
+        # "02" Emergency - Command Emergency 0x02
+        # "03" Arm All Zones - Command Arm 0x00 - Payload Arm all Zone 0x03
+        # "04" Disarm - Command 0x00 - Payload Disarm 0x00
+
+        if Command == '00' and Data[0:2] == '00':
+            # Disarm 
+            MajDomoDevice( self, Devices, srcnwkid, srcep, "0006", '04')
+
+        elif Command == '00' and Data[0:2] == '01':
+            # Command Arm Day (Home Zones Only) 
+            MajDomoDevice( self, Devices, srcnwkid, srcep, "0006", '01')
+
+
+        elif Command == '00' and Data[0:2] == '03':
+            # Arm All Zones
+            MajDomoDevice( self, Devices, srcnwkid, srcep, "0006", '03')
+
+        elif Command == '02':
+            # Emergency
+            MajDomoDevice( self, Devices, srcnwkid, srcep, "0006", '02')
+
+        return
 
     if 'Manufacturer' not in self.ListOfDevices[srcnwkid]:
         return
