@@ -45,7 +45,7 @@ Release Numbering
 - [Technical] - Handle for LUMI tag and so decode more informations
 - [Hardware] - SmartThings outlet
 - [Hardware] - SONOFF Switch
-
+- [Hardware] - Integration of the Heiman Remote Control RC-EM
 
 
 
