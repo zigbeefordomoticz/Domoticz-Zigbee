@@ -40,12 +40,12 @@ Release Numbering
 - [Hardware] - Danfoss eTRV 
 - [Hardware] - Tuya 
 - [Hardware] - ZigLight
-- [Hardware] - LUMI b286acn02
+- [Hardware] - LUMI WXKG06LM and WXKG07LM b186acn02/ b286acn02
 - [Technical] - Web UI enhancement ( Bind/Unbind, Enable PowerOn after Off/On)
 - [Technical] - Handle for LUMI tag and so decode more informations
 - [Hardware] - SmartThings outlet
 - [Hardware] - SONOFF Switch
-- [Hardware] - Integration of the Heiman Remote Control RC-EM
+- [Hardware] - Integration of the Heiman Remote Control RC-EM ( firm 31d)
 
 
 
