@@ -429,9 +429,9 @@ SWITCH_LVL_MATRIX = {
     "IAS_ACE": { 
         "00": (0, "00"), 
         "01": (1, "10"), # Arm Day (Home Zones Only) - Command Arm 0x00 - Payload 0x01
-        "02": (0, "20"), # Emergency - Command Emergency 0x02
-        "03": (1, "30"), # Arm All Zones - Command Arm 0x00 - Payload Arm all Zone 0x03
-        "04": (2, "40"), # Disarm - Command 0x00 - Payload Disarm 0x00
+        "02": (2, "20"), # Emergency - Command Emergency 0x02
+        "03": (3, "30"), # Arm All Zones - Command Arm 0x00 - Payload Arm all Zone 0x03
+        "04": (4, "40"), # Disarm - Command 0x00 - Payload Disarm 0x00
         "ForceUpdate": True, 
         "LevelNames": "Off|Emergency|Arm Day (Home Zones Only)|Arm All Zones|Disarm",
         "Language": {
