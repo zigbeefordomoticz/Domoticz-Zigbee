@@ -959,13 +959,13 @@ def Decode8014(self, Devices, MsgData, MsgLQI):  # "Permit Join" status response
     prev = self.Ping["Permit"]
 
     if Status == "00":
-        if self.permitTojoin["Starttime"] == 0:
-            # First Status after plugin start
-            # Let's force a Permit Join of Duration 0
-            ZigatePermitToJoin(self, 0)
-            self.permitTojoin["Starttime"] = timestamp
+        #if self.permitTojoin["Starttime"] == 0 and self.pluginconf.pluginConf['resetPermit2Join']:
+        #    # First Status after plugin start
+        #    # Let's force a Permit Join of Duration 0
+        #    ZigatePermitToJoin(self, 0)
+        self.permitTojoin["Starttime"] = timestamp
 
-        elif (self.Ping["Permit"] is None) or (
+        if (self.Ping["Permit"] is None) or (
             self.permitTojoin["Starttime"] >= timestamp - 240
         ):
             loggingInput(self, "Status", "Accepting new Hardware: Disable")
