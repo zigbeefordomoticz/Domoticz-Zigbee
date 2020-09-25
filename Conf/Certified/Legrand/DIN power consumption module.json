@@ -16,7 +16,7 @@
 	"ClusterToBind": [ "0b04", "0003" ],
 	"ConfigureReporting": {
 		"0b04": {"Attributes": { 
-			"050b": {"DataType": "29", "MinInterval": "0005", "MaxInterval": "012C", "TimeOut": "0258","Change": "0001"}
+			"050b": {"DataType": "29", "MinInterval": "0005", "MaxInterval": "012C", "TimeOut": "0000","Change": "0001"}
 		}}
 	},
 	"ReadAttributes": {

@@ -12,7 +12,12 @@ If you want to contribue , please let us know , we are looking for help in vario
 - improving the plugin
 - increasing the level of documentation for end user
 
-##              - 4.10
+Release Numbering
+
+- Odd numbers --> Stable
+- Even numbers  --> Beta
+
+##              - 4.11.1 (Supporting Firmware 3.1d)
 - [Technical] - Implement a full SQN management and Synchro based on firmware 31d
 - [Technical] - By default use NOACK ZCL command if response is expected. Other commands are send with ACK
 - [Technical] - Bind and ConfigureReporting based on SQN
@@ -22,8 +27,26 @@ If you want to contribue , please let us know , we are looking for help in vario
 - [Technical] - Replace RSSI related label to LQI
 - [Hardware] - Integrate new Heiman Sensors ( Smoke and CO)
 - [Issue] - Fix an issue related to pairing of IAS devices
-
-
+- [Hardware] - Suport of Wiser Thermostat + HACT + VACT eco-system (simulating Wiser Hub)
+- [Hardware] - Support Danalock device
+- [Technical] - Support Zigbee Polling Control
+- [Technical] - Measure Reacting time and Processing time
+- [Hardware] - Support Legrand Manufacturer Specific Cluster 0xfc01 (firm 31d)
+- [Technical] - Support the Firm 31d Hybrid mode
+- [Technical] - Support sending Read Attribute and Write Attribute in Raw mode
+- [Technical] - Full review of use of ACK or not when sending command
+- [Technical] - Firm 31d - implement 0x8110 accordingly to the new change
+- [Technical] - Implement Multi-Threading capabilities (not enabled on 4.11 )
+- [Hardware] - Danfoss eTRV 
+- [Hardware] - Tuya 
+- [Hardware] - ZigLight
+- [Hardware] - LUMI WXKG06LM and WXKG07LM b186acn02/ b286acn02
+- [Technical] - Web UI enhancement ( Bind/Unbind, Enable PowerOn after Off/On)
+- [Technical] - Handle for LUMI tag and so decode more informations
+- [Hardware] - SmartThings outlet
+- [Hardware] - SONOFF Switch
+- [Hardware] - Integration of the Heiman Remote Control RC-EM ( firm 31d)
+- [Hardware– - Heiman Remote Control RC-EM ( 4 buttons )
 
 
 

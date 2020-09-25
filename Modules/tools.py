@@ -193,7 +193,7 @@ def DeviceExist(self, Devices, lookupNwkId , lookupIEEE = ''):
             # Should not happen
             # We have an entry in IEEE2NWK, but no corresponding
             # in ListOfDevices !!
-            # Let's clenup
+            # Let's cleanup
             del self.IEEE2NWK[ lookupIEEE ]
             return False
 
@@ -215,7 +215,7 @@ def DeviceExist(self, Devices, lookupNwkId , lookupIEEE = ''):
             # we need to restart from the begiging and remove all existing datastructutre.
             # In case we receive asynchronously messages (which should be possible), they must be
             # droped in the corresponding Decodexxx function
-            Domoticz.Status("DeviceExist - Device %s changed its ShortId: from %s to %s during provisioing. Restarting !" 
+            Domoticz.Status("DeviceExist - Device %s changed its ShortId: from %s to %s during provisioning. Restarting !"
                 %( lookupIEEE, exitsingNwkId , lookupNwkId ))
 
             # Delete the entry in IEEE2NWK as it will be recreated in Decode004d
