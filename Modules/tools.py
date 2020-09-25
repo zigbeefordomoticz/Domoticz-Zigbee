@@ -193,7 +193,7 @@ def DeviceExist(self, Devices, lookupNwkId , lookupIEEE = ''):
             # Should not happen
             # We have an entry in IEEE2NWK, but no corresponding
             # in ListOfDevices !!
-            # Let's clenup
+            # Let's cleanup
             del self.IEEE2NWK[ lookupIEEE ]
             return False
 
