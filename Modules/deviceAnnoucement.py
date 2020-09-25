@@ -497,7 +497,17 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
         return
 
     # Let's call DeviceExist. If needed it will reconnect with a new ShortId.
-    DeviceExist(self, Devices, NwkId, Ieee)
+    if not DeviceExist(self, Devices, NwkId, Ieee):
+        # Something wrong happen , most-likely the ShortId changed during the provisioning and we cannot handle that.
+        # All Data structutre have been cleaned during the DeviceExist call.
+        loggingInput(
+            self,
+            "Error",
+            "Something wrong on Device %s %s pairing process. (aborting)"
+            % (NwkId, Ieee),
+            NwkId,
+        )
+        return
 
     if "ZDeviceName" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId][
         "ZDeviceName"
@@ -589,7 +599,7 @@ def decode004d_existing_devicev2(
         NwkId,
     )
 
-    #if NwkId in self.ListOfDevices:
+    # if NwkId in self.ListOfDevices:
     #    if "ZDeviceName" in self.ListOfDevices[NwkId]:
     #        loggingPairing(
     #            self,
