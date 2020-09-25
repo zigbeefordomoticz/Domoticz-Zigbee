@@ -2145,7 +2145,7 @@ def Cluster0b04( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s Power %s" \
             %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value))
         if 'Model' in self.ListOfDevices[ MsgSrcAddr ] and self.ListOfDevices[ MsgSrcAddr ]['Model'] == 'outletv4':
-            value = value / 10
+            value /= 10
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value))
 
     elif MsgAttrID == "0505": # RMS Voltage
@@ -2153,7 +2153,7 @@ def Cluster0b04( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s Voltage %s" \
             %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value))
         if 'Model' in self.ListOfDevices[ MsgSrcAddr ] and self.ListOfDevices[ MsgSrcAddr ]['Model'] == 'outletv4':
-            value = value / 10
+            value /= 10
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0001", str(value))
 
     elif MsgAttrID == "0508": #RMSCurrent
