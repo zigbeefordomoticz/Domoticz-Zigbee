@@ -46,7 +46,7 @@ Release Numbering
 - [Hardware] - SmartThings outlet
 - [Hardware] - SONOFF Switch
 - [Hardware] - Integration of the Heiman Remote Control RC-EM ( firm 31d)
-
+- [Hardware– - Heiman Remote Control RC-EM ( 4 buttons )
 
 
 
