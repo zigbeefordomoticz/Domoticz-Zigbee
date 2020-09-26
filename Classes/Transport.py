@@ -1729,7 +1729,8 @@ def process_frame(self, frame):
 def process_msg_type8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn):
     def error_8000_log(self, Status, PacketType, InternalSqn):
         if InternalSqn in self.ListOfCommands:
-            Domoticz.Log(
+            self.loggingSend(
+                "Debug",
                 "ZiGate reports error %s on submitted command %s/%s"
                 % (
                     Status,
@@ -1738,7 +1739,8 @@ def process_msg_type8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn):
                 )
             )
         else:
-            Domoticz.Log(
+            self.loggingSend(
+                "Debug",
                 "ZiGate reports error %s for PacketType: %s. Unable to find command out of %s commands"
                 % (Status, PacketType, len(self.ListOfCommands))
             )
