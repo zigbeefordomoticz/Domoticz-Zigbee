@@ -171,7 +171,11 @@ def processConfigureReporting( self, NWKID=None ):
                                 loggingConfigureReporting( self, 'Debug',"configureReporting - %s/%s skip Attribute %s for Cluster %s due to ZDeviceID %s" %(key,Ep,attr, cluster, ZDeviceID), nwkid=key)
                                 continue
                    
-                    if 'Attributes List' in self.ListOfDevices[key]:
+                    # Check against Attribute List only if the Model is not defined in the Certified Conf.
+                    if 'Model' in self.ListOfDevices[key] and \
+                        self.ListOfDevices[key]['Model'] != {} and \
+                            self.ListOfDevices[key]['Model'] not in self.DeviceConf and \
+                                'Attributes List' in self.ListOfDevices[key]:
                         if 'Ep' in self.ListOfDevices[key]['Attributes List']:
                             if Ep in self.ListOfDevices[key]['Attributes List']['Ep']:
                                 if cluster in self.ListOfDevices[key]['Attributes List']['Ep'][Ep]:
