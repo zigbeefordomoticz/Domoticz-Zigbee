@@ -1077,7 +1077,6 @@ def Decode8015(
                     + " LQI = {:03n}".format((int(rssi, 16)))
                     + " Power = "
                     + power
-                    + " HB = {:02n}".format(int(self.ListOfDevices[saddr]["Heartbeat"]))
                     + " Model = "
                     + modelName 
                     + " " + nickName,
