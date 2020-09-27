@@ -1080,8 +1080,7 @@ def Decode8015(
                     + " HB = {:02n}".format(int(self.ListOfDevices[saddr]["Heartbeat"]))
                     + " Model = "
                     + modelName 
-                    + " " + nickName
-                    + " found in ListOfDevices",
+                    + " " + nickName,
                 )
                 self.ListOfDevices[saddr]["LQI"] = int(rssi, 16) if rssi != "00" else 0
                 loggingInput(
