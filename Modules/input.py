@@ -316,7 +316,6 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
                 % (MsgSrcAddr, MsgSrcEp, MsgClusterId, Attribute),
             )
 
-
 # Responses
 def Decode8000_v2(self, Devices, MsgData, MsgLQI):  # Status
     MsgLen = len(MsgData)

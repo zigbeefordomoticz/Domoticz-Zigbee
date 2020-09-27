@@ -4,6 +4,7 @@
 # Author: zaraki673 & pipiche38
 #
 """
+
 <plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="4.11" wikilink="https://www.domoticz.com/wiki/Zigate" externallink="https://github.com/pipiche38/Domoticz-Zigate/wiki">
     <description>
         <h2> Plugin Zigate for Domoticz </h2><br/>
@@ -820,12 +821,14 @@ def zigateInit_Phase3( self ):
         self.PluzzyFirmware = True
     elif self.FirmwareVersion.lower() == '031b':
         loggingPlugin( self, 'Status', "You are not on the latest firmware version, This version is known to have problem, please consider to upgrae")
+
     #elif int(self.FirmwareVersion,16) >= 0x031b:
     #    # We have ACK/NCK so we disable APSReporting
     #    #if self.APS:
     #    #    self.pluginconf.pluginConf['enableAPSFailureReporting'] = 0
     #    #    del self.APS
     #    #    self.APS = None
+
 
     elif int(self.FirmwareVersion,16) > 0x031d:
         Domoticz.Error("Firmware %s is not yet supported" %self.FirmwareVersion.lower())

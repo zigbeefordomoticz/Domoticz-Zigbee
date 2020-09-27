@@ -17,7 +17,7 @@ Release Numbering
 - Odd numbers --> Stable
 - Even numbers  --> Beta
 
-##              - 4.11.1 (Supporting Firmware 3.1d)
+## 27 Sept. 2020  - 4.11.1 (Supporting Firmware 3.1d)
 - [Technical] - Implement a full SQN management and Synchro based on firmware 31d
 - [Technical] - By default use NOACK ZCL command if response is expected. Other commands are send with ACK
 - [Technical] - Bind and ConfigureReporting based on SQN
@@ -49,8 +49,28 @@ Release Numbering
 - [Hardware– - Heiman Remote Control RC-EM ( 4 buttons )
 
 
+## 24 Aug 2020 - 4.9.5
 
-##  5 June 2020 - 4.9.1 (Last release supporting Firmware below 3.1c)
+- [Technical] - Don't warn in case of Firmware 31d
+
+## 21 June 2020 - 4.9.4
+
+- [Hardware] - Certified Xiaomi Smart Socket EU Plug ZCZ04LM
+
+## 14 June 2020 - 4.9.3
+
+- [Technical] - Livolo parameter
+- [Technical] - Improvement Schneider
+
+## 8 June 2020 - 4.9.2
+
+- [Technical] - Smooth pairing for Schneider devices
+- [Issue] - Do not poll battery based devices
+- [Issue] - Require plugin restart after enabling Reset Read Attribute or Group Management
+- [WebAdmin] - Security fixes
+
+## 5 June 2020 - 4.9.1 (Last release supporting Firmware below 3.1c)
+
 - [Technical] - Ready for PDM on host.
 - [Technical] - Scrip for PiZiGate on Fedora distribution
 - [Technical] - Provide Firmware
@@ -200,7 +220,6 @@ Release Numbering
 
 - [Technical] Disable APS failure reporting. If still want to use it, you can enable it enableAPSFailurereporting in PluginConf.txt
 
->>>>>>> stable
 
 ## 24 April 2019 - 4.2.0 <https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/4.2>
 
@@ -399,4 +418,4 @@ Mainly a technical version in order to split the code in pieces.
 
 ## 8 September 2018 - 2.4.0 <https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/2.4.0>
 
-Thanks to : zaraki673, pipiche38, smanar, thiklop, dennoo, lboue, cldfr, sbhc68
+Thanks to : zaraki673, pipiche38, badz, smanar, thiklop, dennoo, lboue, cldfr, sbhc68
