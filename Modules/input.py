@@ -1059,9 +1059,14 @@ def Decode8015(
             rssi = MsgData[idx + 24 : idx + 26]
 
             if DeviceExist(self, Devices, saddr, ieee):
+                nickName = modelName = ''
+                if 'ZDeviceName' in self.ListOfDevices[ saddr  ] and self.ListOfDevices[ saddr ]['ZDeviceName'] != {}:
+                    nickName = '( ' + self.ListOfDevices[ saddr ]['ZDeviceName'] + ' ) '
+                if 'Model' in self.ListOfDevices[ saddr  ] and self.ListOfDevices[ saddr ]['Model'] != {}:
+                    modelName = self.ListOfDevices[ saddr ]['Model']
                 loggingInput(
                     self,
-                    "Debug",
+                    "Status",
                     "[{:02n}".format((round(idx / 26)))
                     + "] DevID = "
                     + DevID
@@ -1073,6 +1078,9 @@ def Decode8015(
                     + " Power = "
                     + power
                     + " HB = {:02n}".format(int(self.ListOfDevices[saddr]["Heartbeat"]))
+                    + " Model = "
+                    + modelName 
+                    + " " + nickName
                     + " found in ListOfDevices",
                 )
                 self.ListOfDevices[saddr]["LQI"] = int(rssi, 16) if rssi != "00" else 0
