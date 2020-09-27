@@ -16,6 +16,7 @@ if (not os.environ.get('PYTHONHTTPSVERIFY', '') and getattr(ssl, '_create_unveri
 
 
 f = urllib.request.urlopen("http://fw.ota.homesmart.ikea.net/feed/version_info.json")
+#f = urllib.request.urlopen("http://fw.test.ota.homesmart.ikea.net/feed/version_info.json")
 data = f.read().decode('utf-8')
 
 try:
