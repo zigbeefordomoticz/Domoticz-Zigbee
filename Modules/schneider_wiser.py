@@ -53,11 +53,11 @@ def callbackDeviceAwake_Schneider(self, NwkId, EndPoint, cluster):
             %(NwkId, EndPoint, cluster),NwkId )
     if cluster == '0201':
         callbackDeviceAwake_Schneider_SetPoints( self, NwkId, EndPoint, cluster)
-#    if 'Model' in self.ListOfDevices[NwkId]:
- #       if self.ListOfDevices[NwkId]['Model'] in ('EH-ZB-HACT','EH-ZB-BMS', 'EH-ZB-SPD', 'EH-ZB-LMACT', 'EH-ZB-SPD-V2'):
-  #          if getAttributeValue(self, NwkId, EndPoint, '0702', '0301') == None or getAttributeValue(self, NwkId, EndPoint, '0702', '0302') == None:
+    #if 'Model' in self.ListOfDevices[NwkId]:
+    #    if self.ListOfDevices[NwkId]['Model'] in ('EH-ZB-HACT','EH-ZB-BMS', 'EH-ZB-SPD', 'EH-ZB-LMACT', 'EH-ZB-SPD-V2'):
+    #        if getAttributeValue(self, NwkId, EndPoint, '0702', '0301') == None or getAttributeValue(self, NwkId, EndPoint, '0702', '0302') == None:
                # ReadAttributeRequest_0702(self, NwkId)
-   #            pass
+    #           pass
 
     #if 'Model' in self.ListOfDevices[NwkId]:
     #    if self.ListOfDevices[NwkId]['Model'] in ('EH-ZB-RTS','EH-ZB-VACT', 'EH-ZB-BMS'):
@@ -136,15 +136,15 @@ def schneider_wiser_registration( self, Devices, key ):
             %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
     write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
     
-    if self.ListOfDevices[key]['Model'] == 'EH-ZB-RTS': # Thermostat
+    if self.ListOfDevices[key]['Model'] in ('EH-ZB-RTS', 'EH-ZB-VACT'): # Thermostat
         # Set Language
         manuf_id = "105e"
         manuf_spec = "01"
         cluster_id = "%04x" %0x0000
         Hattribute = "%04x" %0x5011
         data_type = "42" # String
-        data = '656e'  # 'en'
-        loggingSchneider( self, 'Debug', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
+        data = 'en'.encode('utf-8').hex()  # 'en'
+        loggingSchneider( self, 'Debug', "Schneider Write Attribute (Lang) %s with value %s / cluster: %s, attribute: %s type: %s"
                 %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
         write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
 

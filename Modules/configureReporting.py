@@ -94,8 +94,8 @@ def processConfigureReporting( self, NWKID=None ):
         manufacturer_spec = "00"
         direction = "00"
 
-        if self.pluginconf.pluginConf['breakConfigureReporting']:
-            MAX_ATTR_PER_REQ =1
+
+
 
         for Ep in self.ListOfDevices[key]['Ep']:
             loggingConfigureReporting( self, 'Debug2', "------> Configurereporting - processing %s/%s" %(key,Ep), nwkid=key)
@@ -171,7 +171,11 @@ def processConfigureReporting( self, NWKID=None ):
                                 loggingConfigureReporting( self, 'Debug',"configureReporting - %s/%s skip Attribute %s for Cluster %s due to ZDeviceID %s" %(key,Ep,attr, cluster, ZDeviceID), nwkid=key)
                                 continue
                    
-                    if 'Attributes List' in self.ListOfDevices[key]:
+                    # Check against Attribute List only if the Model is not defined in the Certified Conf.
+                    if 'Model' in self.ListOfDevices[key] and \
+                        self.ListOfDevices[key]['Model'] != {} and \
+                            self.ListOfDevices[key]['Model'] not in self.DeviceConf and \
+                                'Attributes List' in self.ListOfDevices[key]:
                         if 'Ep' in self.ListOfDevices[key]['Attributes List']:
                             if Ep in self.ListOfDevices[key]['Attributes List']['Ep']:
                                 if cluster in self.ListOfDevices[key]['Attributes List']['Ep'][Ep]:
@@ -232,6 +236,10 @@ def prepare_and_send_configure_reporting( self, key, Ep, cluster_list, cluster, 
     attrList = ''       # Command List ready of those attributes and their details
     attrLen = 0         # Number of Attribute
 
+    maxAttributesPerRequest = MAX_ATTR_PER_REQ
+    if self.pluginconf.pluginConf['breakConfigureReporting']:
+        maxAttributesPerRequest =1
+
     for attr in ListOfAttributesToConfigure:
         attrdirection = "00"
         attrType = cluster_list[cluster]['Attributes'][attr]['DataType']
@@ -244,7 +252,7 @@ def prepare_and_send_configure_reporting( self, key, Ep, cluster_list, cluster, 
         attrLen += 1
 
         # Let's check if we have to send a chunk
-        if attrLen == MAX_ATTR_PER_REQ:
+        if attrLen == maxAttributesPerRequest:
             send_configure_reporting_attributes_set( self, key, Ep, cluster, direction, manufacturer_spec, manufacturer, attrLen, attrList , attributeList)
 
             #Reset the Lenght to 0

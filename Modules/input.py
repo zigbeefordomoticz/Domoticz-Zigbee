@@ -316,7 +316,6 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
                 % (MsgSrcAddr, MsgSrcEp, MsgClusterId, Attribute),
             )
 
-
 # Responses
 def Decode8000_v2(self, Devices, MsgData, MsgLQI):  # Status
     MsgLen = len(MsgData)
@@ -1060,9 +1059,14 @@ def Decode8015(
             rssi = MsgData[idx + 24 : idx + 26]
 
             if DeviceExist(self, Devices, saddr, ieee):
+                nickName = modelName = ''
+                if 'ZDeviceName' in self.ListOfDevices[ saddr  ] and self.ListOfDevices[ saddr ]['ZDeviceName'] != {}:
+                    nickName = '( ' + self.ListOfDevices[ saddr ]['ZDeviceName'] + ' ) '
+                if 'Model' in self.ListOfDevices[ saddr  ] and self.ListOfDevices[ saddr ]['Model'] != {}:
+                    modelName = self.ListOfDevices[ saddr ]['Model']
                 loggingInput(
                     self,
-                    "Debug",
+                    "Status",
                     "[{:02n}".format((round(idx / 26)))
                     + "] DevID = "
                     + DevID
@@ -1073,8 +1077,9 @@ def Decode8015(
                     + " LQI = {:03n}".format((int(rssi, 16)))
                     + " Power = "
                     + power
-                    + " HB = {:02n}".format(int(self.ListOfDevices[saddr]["Heartbeat"]))
-                    + " found in ListOfDevices",
+                    + " Model = "
+                    + modelName 
+                    + " " + nickName,
                 )
                 self.ListOfDevices[saddr]["LQI"] = int(rssi, 16) if rssi != "00" else 0
                 loggingInput(
