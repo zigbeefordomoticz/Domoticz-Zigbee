@@ -34,6 +34,7 @@ from Modules.configureReporting import processConfigureReporting
 from Modules.profalux import profalux_fake_deviceModel
 from Modules.logging import loggingHeartbeat, loggingPairing
 from Modules.domoCreate import CreateDomoDevice
+from Modules.tools import reset_cluster_datastruct
 from Modules.zigateConsts import CLUSTERS_LIST
 
 def writeDiscoveryInfos( self ):
@@ -328,13 +329,16 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             for iterEp in self.ListOfDevices[NWKID]['Ep']:
                 # Let's scan each Endpoint cluster and check if there is anything to read
                 for iterReadAttrCluster in CLUSTERS_LIST:
-                    if iterReadAttrCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                        if iterReadAttrCluster in READ_ATTRIBUTES_REQUEST:
-                            if self.pluginconf.pluginConf['capturePairingInfos']:
-                                self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'RA_' + iterEp + '_' + iterReadAttrCluster )
-
-                            func = READ_ATTRIBUTES_REQUEST[iterReadAttrCluster][0]
-                            func( self, NWKID)
+                    if iterReadAttrCluster not in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                        continue
+                    if iterReadAttrCluster not in READ_ATTRIBUTES_REQUEST:
+                        continue
+                    if self.pluginconf.pluginConf['capturePairingInfos']:
+                        self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'RA_' + iterEp + '_' + iterReadAttrCluster )
+                    #if iterReadAttrCluster == '0000':
+                    #    reset_cluster_datastruct( self, 'ReadAttributes', NWKID, iterEp, iterReadAttrCluster  )
+                    func = READ_ATTRIBUTES_REQUEST[iterReadAttrCluster][0]
+                    func( self, NWKID)
 
             # In case of Schneider Wiser, let's do the Registration Process
             if 'Manufacturer' in self.ListOfDevices[NWKID]:
