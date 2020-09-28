@@ -106,7 +106,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
         # Attribute_ : If used This is the Attribute from readCluster. Will help to route to the right action
         # Color_     : If used This is the color value to be set
 
-        loggingWidget( self, 'Debug', "------> WidgetEp: %s WidgetId: %s WidgetType: %s" %( WidgetEp , WidgetId, WidgetType), NWKID)
+        loggingWidget( self, 'Debug', "------> ClusterType: %s WidgetEp: %s WidgetId: %s WidgetType: %s Attribute_: %s" %( ClusterType, WidgetEp , WidgetId, WidgetType, Attribute_), NWKID)
 
         SignalLevel,BatteryLevel = RetreiveSignalLvlBattery( self, NWKID)
 
@@ -145,7 +145,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     if '0000' in self.ListOfDevices[NWKID]['Ep'][Ep]['0702']:
                         if self.ListOfDevices[NWKID]['Ep'][Ep]['0702']['0000'] != {} and self.ListOfDevices[NWKID]['Ep'][Ep]['0702']['0000'] != '' and \
                                 self.ListOfDevices[NWKID]['Ep'][Ep]['0702']['0000'] != '0':
-                            summation = int(self.ListOfDevices[NWKID]['Ep'][Ep]['0702']['0000'])
+                            #summation = int(self.ListOfDevices[NWKID]['Ep'][Ep]['0702']['0000'])
+                            summation = (self.ListOfDevices[NWKID]['Ep'][Ep]['0702']['0000'])
 
                 Options = {}
                 # Do we have the Energy Mode calculation already set ?
@@ -157,7 +158,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     Options['EnergyMeterMode'] = '0' # By default from device
 
                 # Did we get Summation from Data Structure
-                if summation:
+                if summation != 0:
                     # We got summation from Device, let's check that EnergyMeterMode is
                     # correctly set to 0, if not adjust
                     if Options['EnergyMeterMode'] != '0':
@@ -227,7 +228,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 elif value == 4:
                     UpdateDevice_v2(self, Devices, DeviceUnit, 1, 'On', BatteryLevel, SignalLevel)
 
-
             elif WidgetType == 'HACTMODE' and Attribute_ == "e011":#  Wiser specific Fil Pilote
                  # value is str
                 loggingWidget( self, "Debug", "------>  ThermoMode HACTMODE: %s" %(value), NWKID)
@@ -268,6 +268,20 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                                     nValue =  0
                     UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
 
+            elif WidgetType == 'ThermoMode_2' and Attribute_ == '001c':
+                # Use by Tuya TRV
+                
+                if 'ThermoMode_2' not in SWITCH_LVL_MATRIX:
+                    continue
+                if value not in SWITCH_LVL_MATRIX[ 'ThermoMode_2']:
+                    Domoticz.Error("Unknown TermoMode2 value: %s" %value)
+                    continue
+                nValue = SWITCH_LVL_MATRIX[ 'ThermoMode_2'][ value ][0]
+                sValue = SWITCH_LVL_MATRIX[ 'ThermoMode_2'][ value ][1]
+                loggingWidget( self, "Log", "------>  Thermostat Mode 2 %s %s:%s" %(value, nValue, sValue), NWKID)
+                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
+
+
             elif WidgetType == 'ThermoMode' and Attribute_ == '001c':
                 # value seems to come as int or str. To be fixed
                 loggingWidget( self, "Debug", "------>  Thermostat Mode %s" %value, NWKID)
@@ -279,7 +293,18 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
                     loggingWidget( self, "Debug", "------>  Thermostat Mode: %s %s" %(nValue,sValue), NWKID)
 
-        if ClusterType == 'Temp' and WidgetType in ( 'Temp', 'Temp+Hum', 'Temp+Hum+Baro'):  # temperature
+        if ClusterType == 'Temp' and WidgetType == 'AirQuality' and Attribute_ == '0002':
+            # eco2 for VOC_Sensor from Nexturn is provided via Temp cluster
+            nvalue = round(value,0)
+            svalue = '%d' %(nvalue)
+            UpdateDevice_v2(self, Devices, DeviceUnit, nvalue, svalue, BatteryLevel, SignalLevel)
+
+        if ClusterType == 'Temp' and WidgetType == 'Voc' and Attribute_ == '0003':
+            # voc for VOC_Sensor from Nexturn is provided via Temp cluster
+            value = '%d' %(round(value,0))
+            UpdateDevice_v2(self, Devices, DeviceUnit, 0, value, BatteryLevel, SignalLevel)
+
+        if ClusterType == 'Temp' and WidgetType in ( 'Temp', 'Temp+Hum', 'Temp+Hum+Baro') and  Attribute_ == '':  # temperature
             loggingWidget( self, "Debug", "------>  Temp: %s, WidgetType: >%s<" %(value,WidgetType), NWKID)
             adjvalue = 0
             if self.domoticzdb_DeviceStatus:
@@ -391,8 +416,15 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 sValue = str(selector)
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
 
-        if ClusterType in ( 'Alarm', 'Door', 'Switch', 'SwitchButton', 'AqaraOppleMiddle', 'Motion', 
-                            'Ikea_Round_5b', 'Ikea_Round_OnOff', 'Vibration', 'OrviboRemoteSquare', 'Button_3'): # Plug, Door, Switch, Button ...
+        # if ClusterType == WidgetType and ClusterType in ( 'Alarm', 'Door', 'DoorLock', 'Switch', 'SwitchButton', 'AqaraOppleMiddle', 'Motion', 
+        #                     'Ikea_Round_5b', 'Ikea_Round_OnOff', 'Vibration', 'OrviboRemoteSquare', 'Button_3'): 
+
+        if ClusterType in ( 'IAS_ACE', 'Alarm', 'Door', 'Switch', 'SwitchButton', 'AqaraOppleMiddle', 'Motion', 
+                        'Ikea_Round_5b', 'Ikea_Round_OnOff', 'Vibration', 'OrviboRemoteSquare', 'Button_3') \
+            or ClusterType == WidgetType == 'DoorLock' \
+            or ( ClusterType == 'DoorLock' and WidgetType == 'Vibration'):
+
+            # Plug, Door, Switch, Button ...
             # We reach this point because ClusterType is Door or Switch. It means that Cluster 0x0006 or 0x0500
             # So we might also have to manage case where we receive a On or Off for a LvlControl WidgetType like a dimming Bulb.
             loggingWidget( self, "Debug", "------> Generic Widget for %s ClusterType: %s WidgetType: %s Value: %s" %(NWKID, WidgetType, ClusterType , value), NWKID)

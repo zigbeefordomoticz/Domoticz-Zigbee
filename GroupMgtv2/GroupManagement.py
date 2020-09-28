@@ -60,6 +60,7 @@ from GroupMgtv2.GrpServices import scan_device_for_grp_membership
 from GroupMgtv2.GrpDatabase import build_group_list_from_list_of_devices
 from GroupMgtv2.GrpDomoticz import LookForGroupAndCreateIfNeeded
 from GroupMgtv2.GrpMigration import GrpMgtv2Migration
+from Modules.zigateConsts import MAX_LOAD_ZIGATE
 
 
 class GroupsManagement( object):
@@ -127,7 +128,7 @@ class GroupsManagement( object):
         # Check if we have some Scan to be done
         for    NwkId, Ep in self.ScanDevicesToBeDone: 
             self.GroupStatus = 'scan'
-            if len(self.ZigateComm.zigateSendingFIFO) < 3:
+            if self.ZigateComm.loadTransmit() <= MAX_LOAD_ZIGATE:
                     self.ScanDevicesToBeDone.remove ( [ NwkId, Ep ] )
                     scan_device_for_grp_membership( self, NwkId, Ep )
 

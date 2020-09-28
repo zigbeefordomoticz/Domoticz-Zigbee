@@ -12,6 +12,43 @@ If you want to contribue , please let us know , we are looking for help in vario
 - improving the plugin
 - increasing the level of documentation for end user
 
+Release Numbering
+
+- Odd numbers --> Stable
+- Even numbers  --> Beta
+
+## 27 Sept. 2020  - 4.11.1 (Supporting Firmware 3.1d)
+- [Technical] - Implement a full SQN management and Synchro based on firmware 31d
+- [Technical] - By default use NOACK ZCL command if response is expected. Other commands are send with ACK
+- [Technical] - Bind and ConfigureReporting based on SQN
+- [Hardware] - SonOff devicess
+- [Technical] - Disable automatic start of Network Topology and Interferences reports
+- [Technical] - Follow Device Annoucement protocol (Rejoin)
+- [Technical] - Replace RSSI related label to LQI
+- [Hardware] - Integrate new Heiman Sensors ( Smoke and CO)
+- [Issue] - Fix an issue related to pairing of IAS devices
+- [Hardware] - Suport of Wiser Thermostat + HACT + VACT eco-system (simulating Wiser Hub)
+- [Hardware] - Support Danalock device
+- [Technical] - Support Zigbee Polling Control
+- [Technical] - Measure Reacting time and Processing time
+- [Hardware] - Support Legrand Manufacturer Specific Cluster 0xfc01 (firm 31d)
+- [Technical] - Support the Firm 31d Hybrid mode
+- [Technical] - Support sending Read Attribute and Write Attribute in Raw mode
+- [Technical] - Full review of use of ACK or not when sending command
+- [Technical] - Firm 31d - implement 0x8110 accordingly to the new change
+- [Technical] - Implement Multi-Threading capabilities (not enabled on 4.11 )
+- [Hardware] - Danfoss eTRV 
+- [Hardware] - Tuya 
+- [Hardware] - ZigLight
+- [Hardware] - LUMI WXKG06LM and WXKG07LM b186acn02/ b286acn02
+- [Technical] - Web UI enhancement ( Bind/Unbind, Enable PowerOn after Off/On)
+- [Technical] - Handle for LUMI tag and so decode more informations
+- [Hardware] - SmartThings outlet
+- [Hardware] - SONOFF Switch
+- [Hardware] - Integration of the Heiman Remote Control RC-EM ( firm 31d)
+- [Hardware– - Heiman Remote Control RC-EM ( 4 buttons )
+
+
 ## 24 Aug 2020 - 4.9.5
 
 - [Technical] - Don't warn in case of Firmware 31d
@@ -183,7 +220,6 @@ If you want to contribue , please let us know , we are looking for help in vario
 
 - [Technical] Disable APS failure reporting. If still want to use it, you can enable it enableAPSFailurereporting in PluginConf.txt
 
->>>>>>> stable
 
 ## 24 April 2019 - 4.2.0 <https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/4.2>
 
@@ -382,4 +418,4 @@ Mainly a technical version in order to split the code in pieces.
 
 ## 8 September 2018 - 2.4.0 <https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/2.4.0>
 
-Thanks to : zaraki673, pipiche38, smanar, thiklop, dennoo, lboue, cldfr, sbhc68
+Thanks to : zaraki673, pipiche38, badz, smanar, thiklop, dennoo, lboue, cldfr, sbhc68

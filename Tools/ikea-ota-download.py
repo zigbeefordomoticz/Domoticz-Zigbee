@@ -9,7 +9,14 @@ import sys
 import json
 import urllib.request
 
-f = urllib.request.urlopen("https://fw.ota.homesmart.ikea.net/feed/version_info.json")
+import ssl
+
+if (not os.environ.get('PYTHONHTTPSVERIFY', '') and getattr(ssl, '_create_unverified_context', None)):
+    ssl._create_default_https_context = ssl._create_unverified_context
+
+
+f = urllib.request.urlopen("http://fw.ota.homesmart.ikea.net/feed/version_info.json")
+#f = urllib.request.urlopen("http://fw.test.ota.homesmart.ikea.net/feed/version_info.json")
 data = f.read().decode('utf-8')
 
 try:

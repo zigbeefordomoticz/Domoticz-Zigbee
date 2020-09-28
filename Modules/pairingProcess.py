@@ -4,7 +4,7 @@
 # Author: zaraki673 & pipiche38
 #
 """
-    Module: z_heartbeat.py
+    Module: pairingProcess.py
 
     Description: Manage all actions done during the onHeartbeat() call
 
@@ -17,20 +17,15 @@ import datetime
 import struct
 import json
 
-from Modules.actuators import actuators
+
 from Modules.schneider_wiser import schneider_wiser_registration
-from Modules.legrand_netatmo import legrand_fc01
+#
 from Modules.bindings import unbindDevice, bindDevice, rebind_Clusters
 from Modules.basicOutputs import  sendZigateCmd, identifyEffect, getListofAttribute
 
         
-from Modules.readAttributes import READ_ATTRIBUTES_REQUEST, ReadAttributeRequest_0000_basic, \
-        ReadAttributeRequest_0000, ReadAttributeRequest_0001, ReadAttributeRequest_0006, ReadAttributeRequest_0008, \
-        ReadAttributeRequest_0100, \
-        ReadAttributeRequest_000C, ReadAttributeRequest_0102, ReadAttributeRequest_0201, ReadAttributeRequest_0204, ReadAttributeRequest_0300,  \
-        ReadAttributeRequest_0400, ReadAttributeRequest_0402, ReadAttributeRequest_0403, ReadAttributeRequest_0405, \
-        ReadAttributeRequest_0406, ReadAttributeRequest_0500, ReadAttributeRequest_0502, ReadAttributeRequest_0702, ReadAttributeRequest_000f, \
-        ReadAttributeRequest_fc01, ReadAttributeRequest_fc21
+from Modules.readAttributes import READ_ATTRIBUTES_REQUEST, \
+        ReadAttributeRequest_0000, ReadAttributeRequest_0300
 
 from Modules.lumi import enableOppleSwitch, setXiaomiVibrationSensitivity
 from Modules.livolo import livolo_bind
@@ -39,13 +34,7 @@ from Modules.configureReporting import processConfigureReporting
 from Modules.profalux import profalux_fake_deviceModel
 from Modules.logging import loggingHeartbeat, loggingPairing
 from Modules.domoCreate import CreateDomoDevice
-from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE, CLUSTERS_LIST, LEGRAND_REMOTES, LEGRAND_REMOTE_SHUTTER, LEGRAND_REMOTE_SWITCHS, ZIGATE_EP
-
-from Classes.IAS import IAS_Zone_Management
-from Classes.Transport import ZigateTransport
-from Classes.AdminWidgets import AdminWidgets
-from Classes.NetworkMap import NetworkMap
-
+from Modules.zigateConsts import CLUSTERS_LIST
 
 def writeDiscoveryInfos( self ):
 
@@ -125,7 +114,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                     self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( '0042' )
                 sendZigateCmd(self,"0042", str(NWKID))     # Request a Node Descriptor
             else:
-                loggingHeartbeat( self, 'Debug', "[%s] NEW OBJECT: %s Model Name: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Manufacturer']), NWKID)
+                loggingHeartbeat( self, 'Debug', "[%s] NEW OBJECT: %s Manufacturer: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Manufacturer']), NWKID)
 
         for iterEp in self.ListOfDevices[NWKID]['Ep']:
             #IAS Zone
@@ -258,14 +247,10 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         for x in Devices:
             if self.ListOfDevices[NWKID].get('IEEE'):
                 if Devices[x].DeviceID == str(self.ListOfDevices[NWKID]['IEEE']):
-                    if self.pluginconf.pluginConf['capturePairingInfos'] == 1:
-                        Domoticz.Log("processNotinDBDevices - Devices already exist. "  + Devices[x].Name + " with " + str(self.ListOfDevices[NWKID]) )
-                        Domoticz.Log("processNotinDBDevices - ForceCreationDevice enable, we continue")
-                    else:
-                        IsCreated = True
-                        Domoticz.Error("processNotinDBDevices - Devices already exist. "  + Devices[x].Name + " with " + str(self.ListOfDevices[NWKID]) )
-                        Domoticz.Error("processNotinDBDevices - Please cross check the consistency of the Domoticz and Plugin database.")
-                        break
+                    IsCreated = True
+                    Domoticz.Error("processNotinDBDevices - Devices already exist. "  + Devices[x].Name + " with " + str(self.ListOfDevices[NWKID]) )
+                    Domoticz.Error("processNotinDBDevices - Please cross check the consistency of the Domoticz and Plugin database.")
+                    break
 
         if not IsCreated:
             loggingPairing( self, 'Debug', "processNotinDBDevices - ready for creation: %s , Model: %s " %(self.ListOfDevices[NWKID], self.ListOfDevices[NWKID]['Model']))
@@ -402,6 +387,9 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                                 self.groupmgt.addGroupMemberShip( NWKID, groupToAdd[0], groupToAdd[1] )
                             else:
                                 Domoticz.Error("Uncorrect GroupMembership definition %s" %str(self.DeviceConf[ self.ListOfDevices[NWKID]['Model'] ]['GroupMembership']))
+
+            # Reset HB in order to force Read Attribute Status
+            self.ListOfDevices[NWKID]['Heartbeat'] = 0
 
             writeDiscoveryInfos( self )
 

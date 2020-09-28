@@ -41,6 +41,8 @@ def checkToRemoveGroup( self, NwkId, Ep, GroupId ):
     """
 
     self.logging( 'Debug', "checkToRemoveGroup NwkId: %s Ep: %s GrouId: %s" %(NwkId, Ep, GroupId))
+    if NwkId not in self.ListOfDevices:
+        return
     if 'IEEE' not in self.ListOfDevices[ NwkId]:
         return
     Ieee = self.ListOfDevices[ NwkId]['IEEE']

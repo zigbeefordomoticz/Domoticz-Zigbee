@@ -9,7 +9,7 @@ import json
 
 from GroupMgtv2.GrpCommands import set_kelvin_color, set_rgb_color, set_hue_saturation
 from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl
-from Modules.zigateConsts import ADDRESS_MODE, MAX_LOAD_ZIGATE, ZIGATE_EP
+from Modules.zigateConsts import ADDRESS_MODE, ZIGATE_EP
 
 from Classes.AdminWidgets import AdminWidgets
 
@@ -513,7 +513,7 @@ def processCommand( self, unit, GrpId, Command, Level, Color_ ) :
         sValue = 'Off'
         self.Devices[unit].Update(nValue = int(nValue), sValue = str(sValue))
 
-    if Command == 'On' :
+    elif Command == 'On' :
         zigate_cmd = "0092"
         zigate_param = '01'
         nValue = '1'
@@ -530,7 +530,7 @@ def processCommand( self, unit, GrpId, Command, Level, Color_ ) :
         sValue = 'On'
         self.Devices[unit].Update(nValue = int(nValue), sValue = str(sValue))
 
-    if Command == 'Set Level':
+    elif Command == 'Set Level':
         # Level: % value of move
         # Converted to value , raw value from 0 to 255
         # sValue is just a string of Level
@@ -553,7 +553,7 @@ def processCommand( self, unit, GrpId, Command, Level, Color_ ) :
         sValue = str( Level)
         self.Devices[unit].Update(nValue = int(nValue), sValue = str(sValue))
 
-    if Command == "Set Color" :
+    elif Command == "Set Color" :
         Hue_List = json.loads(Color_)
         transitionRGB = '%04x' %self.pluginconf.pluginConf['moveToColourRGB']
         transitionMoveLevel = '%04x' %self.pluginconf.pluginConf['moveToLevel']
@@ -619,4 +619,6 @@ def processCommand( self, unit, GrpId, Command, Level, Color_ ) :
         nValue = 1
         sValue = str(Level)
         self.Devices[unit].Update(nValue = int(nValue), sValue = str(sValue), Color = Color_)
+
+    # Request to force ReadAttribute to each devices part of that group
     resetDevicesHearttBeat( self, GrpId)

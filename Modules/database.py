@@ -32,7 +32,6 @@ def _copyfile( source, dest, move=True ):
             for line in src:
                 dst.write(line)
 
-
 def _versionFile( source , nbversion ):
 
     if nbversion == 0:
@@ -51,7 +50,6 @@ def _versionFile( source , nbversion ):
 
         # Last one
         _copyfile( source, source +  "-%02d" %1 , move=False)
-
 
 def LoadDeviceList( self ):
     # Load DeviceList.txt into ListOfDevices
@@ -156,6 +154,10 @@ def LoadDeviceList( self ):
     self.DeviceListSize = os.path.getsize( _DeviceListFileName )
 
     for addr in self.ListOfDevices:
+
+        # Fixing mistake done in the code.
+        fixing_consumption_lumi(self, addr)
+
         # Check if 566 fixs are needed
         if self.pluginconf.pluginConf['Bug566']:
             if 'Model' in self.ListOfDevices[addr]:
@@ -164,24 +166,24 @@ def LoadDeviceList( self ):
 
         if self.pluginconf.pluginConf['resetReadAttributes']:
             loggingDatabase( self, "Log", "ReadAttributeReq - Reset ReadAttributes data %s" %addr)
-            self.ListOfDevices[addr]['ReadAttributes'] = {}
-            self.ListOfDevices[addr]['ReadAttributes']['Ep'] = {}
-            for iterEp in self.ListOfDevices[addr]['Ep']:
-                self.ListOfDevices[addr]['ReadAttributes']['Ep'][iterEp] = {}
-                self.ListOfDevices[addr]['ReadAttributes']['TimeStamps'] = {}
+            Modules.tools.reset_datastruct( self,'ReadAttributes', addr )
+            #self.ListOfDevices[addr]['ReadAttributes'] = {}
+            #self.ListOfDevices[addr]['ReadAttributes']['Ep'] = {}
+            #for iterEp in self.ListOfDevices[addr]['Ep']:
+            #    self.ListOfDevices[addr]['ReadAttributes']['Ep'][iterEp] = {}
+
 
         if self.pluginconf.pluginConf['resetConfigureReporting']:
             loggingDatabase( self, "Log", "Reset ConfigureReporting data %s" %addr)
-            self.ListOfDevices[addr]['ConfigureReporting'] = {}
-            self.ListOfDevices[addr]['ConfigureReporting']['Ep'] = {}
-            for iterEp in self.ListOfDevices[addr]['Ep']:
-                self.ListOfDevices[addr]['ConfigureReporting']['Ep'][iterEp] = {}
-                self.ListOfDevices[addr]['ConfigureReporting']['TimeStamps'] = {}
+            Modules.tools.reset_datastruct( self,'ConfigureReporting', addr )
+            #self.ListOfDevices[addr]['ConfigureReporting'] = {}
+            #self.ListOfDevices[addr]['ConfigureReporting']['Ep'] = {}
+            #for iterEp in self.ListOfDevices[addr]['Ep']:
+            #    self.ListOfDevices[addr]['ConfigureReporting']['Ep'][iterEp] = {}
 
     loggingDatabase( self, "Status", "Entries loaded from " +str(_DeviceListFileName)  )
 
     return res
-
 
 def WriteDeviceList(self, count):
 
@@ -240,7 +242,6 @@ def importDeviceConf( self ) :
 
     loggingDatabase( self, "Status", "DeviceConf loaded")
 
-
 def importDeviceConfV2( self ):
 
     from os import listdir
@@ -288,7 +289,7 @@ def importDeviceConfV2( self ):
                 except:
                     Domoticz.Error("--> Unexpected error when loading a configuration file")
 
-    loggingDatabase( self, 'Status', "--> Config loaded: %s" %self.DeviceConf.keys())
+    loggingDatabase( self, 'Debug', "--> Config loaded: %s" %self.DeviceConf.keys())
 
 def checkDevices2LOD( self, Devices):
 
@@ -301,7 +302,6 @@ def checkDevices2LOD( self, Devices):
                     break
             else:
                 self.ListOfDevices[nwkid]['ConsistencyCheck'] = 'not in DZ'
-
 
 def checkListOfDevice2Devices( self, Devices ):
 
@@ -342,7 +342,6 @@ def saveZigateNetworkData( self, nkwdata ):
                 json.dump(nkwdata, json_file, indent=4, sort_keys=True)
         except IOError:
             Domoticz.Error("Error while writing Zigate Network Details%s" %json_filename)
-
 
 def CheckDeviceList(self, key, val):
     '''
@@ -389,13 +388,14 @@ def CheckDeviceList(self, key, val):
             'Attributes List', 
             'Bind', 
             'WebBind',
-            'Capability'
+            'Capability',
             'ColorInfos', 
             'ClusterType', 
             'ConfigSource',
             'DeviceType', 
             'Ep', 
-            'Epv2'
+            'Epv2',
+            'ForceAckCommands',
             'HW Version', 
             'Heartbeat', 
             'IAS',
@@ -427,12 +427,12 @@ def CheckDeviceList(self, key, val):
     # List of Attributes whcih are going to be loaded, ut in case of Reset (resetPluginDS) they will be re-initialized.
     BUILD_ATTRIBUTES = (
             'Battery', 
-            'ConfigureReporting',
             'GroupMemberShip',
-            'Last Cmds',
             'Neighbours',
-            'ReadAttributes', 
-            'RSSI',
+            'ConfigureReporting',
+            'ReadAttributes',
+            'WriteAttributes', 
+            'LQI',
             'SQN', 
             'Stamp', 
             'Health',
@@ -461,6 +461,7 @@ def CheckDeviceList(self, key, val):
             continue
 
         self.ListOfDevices[key][ attribute ] = DeviceListVal[ attribute]
+
         # Patching unitialize Model to empty
         if attribute == 'Model' and self.ListOfDevices[key][ attribute ] == {}:
             self.ListOfDevices[key][ attribute ] = ''
@@ -483,6 +484,34 @@ def CheckDeviceList(self, key, val):
         else :
             loggingDatabase( self, 'Debug', "CheckDeviceList - IEEE = " + str(DeviceListVal['IEEE']) + " for NWKID = " +str(key) , key )
 
+    check_and_update_ForceAckCommands( self)
+
+
+def check_and_update_ForceAckCommands( self ):
+
+    for x in self.ListOfDevices:
+
+        if 'Model' not in self.ListOfDevices[ x ]:
+            continue
+        if self.ListOfDevices[ x ]['Model'] in ( '', {} ):
+            continue
+        model = self.ListOfDevices[ x ]['Model']
+
+        if model not in self.DeviceConf:
+            continue
+        
+        if 'ForceAckCommands' not in self.DeviceConf[ model ]:
+            self.ListOfDevices[ x ]['ForceAckCommands'] = []
+            continue
+        Domoticz.Log(" Set: %s for device %s " %(self.DeviceConf[ model ]['ForceAckCommands'], x ))
+        self.ListOfDevices[ x ]['ForceAckCommands'] = list(self.DeviceConf[ model ]['ForceAckCommands'] )
+
+
+def fixing_consumption_lumi( self , key ):
+
+    for ep in self.ListOfDevices[key]['Ep']:
+        if 'Consumption' in self.ListOfDevices[key]['Ep'][ep]:
+            del self.ListOfDevices[key]['Ep'][ep]['Consumption']
 
 def fixing_Issue566( self, key ):
 

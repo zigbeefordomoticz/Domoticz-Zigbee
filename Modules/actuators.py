@@ -15,7 +15,8 @@ import json
 
 from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl
 from Modules.logging import loggingCommand
-from Modules.basicOutputs import sendZigateCmd
+from Modules.basicOutputs import sendZigateCmd, set_poweron_afteroffon
+from Modules.readAttributes import ReadAttributeRequest_0006_400x
 from Modules.thermostats import thermostat_Setpoint
 from Modules.zigateConsts import ZIGATE_EP
 
@@ -47,6 +48,9 @@ def actuators( self, action, nwkid, epout, DeviceType, cmd=None, value=None, col
         actuator_identify( self, nwkid, epout)
     elif action == 'IdentifyEffect':
         actuator_identify( self, nwkid, epout, value)
+    elif action == 'PowerStateAfterOffOn':
+        set_poweron_afteroffon( self, nwkid, OnOffMode = value)
+        ReadAttributeRequest_0006_400x(self, nwkid)
     else:
         Domoticz.Error("actuators - Command: %s not yet implemented: %s/%s %s %s" %(action, nwkid, epout, value, color))
 
@@ -61,7 +65,6 @@ def actuator_stop( self, nwkid, EPout, DeviceType):
 
     if DeviceType == "WindowCovering":
         # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
-        Domoticz.Log("Sending STOP to Zigate .. Queue: %s" %(self.ZigateComm.zigateSendingFIFO))
         sendZigateCmd(self, "00FA","02" + nwkid + ZIGATE_EP + EPout + "02")
     else:
         sendZigateCmd(self, "0083","02" + nwkid + ZIGATE_EP + EPout )

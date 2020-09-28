@@ -62,10 +62,10 @@ def RetreiveWidgetTypeList( self, Devices, NwkId, DeviceUnit = None):
 def RetreiveSignalLvlBattery( self, NwkID):
     
     
-    # Takes the opportunity to update RSSI and Battery
+    # Takes the opportunity to update LQI and Battery
     SignalLevel = '' 
-    if 'RSSI' in self.ListOfDevices[NwkID]:
-        SignalLevel = self.ListOfDevices[NwkID]['RSSI']
+    if 'LQI' in self.ListOfDevices[NwkID]:
+        SignalLevel = self.ListOfDevices[NwkID]['LQI']
 
     DomoticzRSSI = 12  # Unknown
 
@@ -76,24 +76,26 @@ def RetreiveSignalLvlBattery( self, NwkID):
         SEUIL3 = 180
         DomoticzRSSI = 0
         if SignalLevel >= SEUIL3:
-            #  SEUIL3 < ZiGate RSSI < 255 -> 11
+            #  SEUIL3 < ZiGate LQI < 255 -> 11
             DomoticzRSSI = 11
         elif SignalLevel >= SEUIL2:
-            # SEUIL2 <= ZiGate RSSI <= SEUIL3 --> 4 - 10 ( 6 )
+            # SEUIL2 <= ZiGate LQI <= SEUIL3 --> 4 - 10 ( 6 )
             gamme = SEUIL3 - SEUIL2
             SignalLevel = SignalLevel - SEUIL2
             DomoticzRSSI = 4 + round((SignalLevel * 6) / gamme)
         elif SignalLevel >= SEUIL1:
-            # SEUIL1 < ZiGate RSSI < SEUIL2 --> 1 - 3 ( 3 )
+            # SEUIL1 < ZiGate LQI < SEUIL2 --> 1 - 3 ( 3 )
             gamme = SEUIL2 - SEUIL1
             SignalLevel = SignalLevel - SEUIL1
             DomoticzRSSI =  1 + round((SignalLevel * 3) / gamme)
           
-    #Domoticz.Log("RetreiveSignalLvlBattery - convert ZiGate RSSI: %s to Domoticz RSSI: %s" %(SignalLevel, DomoticzRSSI ))
+    #Domoticz.Log("RetreiveSignalLvlBattery - convert ZiGate LQI: %s to Domoticz LQI: %s" %(SignalLevel, DomoticzRSSI ))
     SignalLevel = DomoticzRSSI
 
+
     BatteryLevel = ''
-    if 'Battery' in self.ListOfDevices[NwkID] and self.ListOfDevices[NwkID]['Battery'] != {}:
+    if 'Battery' in self.ListOfDevices[NwkID] and self.ListOfDevices[NwkID]['Battery'] != {} and isinstance(self.ListOfDevices[NwkID]['Battery'], int):
+        #Domoticz.Log("RetreiveSignalLvlBattery NwkId: %s Battery: %s" %(NwkID,self.ListOfDevices[NwkID]['Battery'] ))
         BatteryLevel = int(round((self.ListOfDevices[NwkID]['Battery'])))
 
     if BatteryLevel == '' or (not isinstance(BatteryLevel, int)):
@@ -206,16 +208,17 @@ def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, 
         Devices[Unit].BatteryLevel != int(BatteryLvl) or \
         Devices[Unit].TimedOut:
 
-        if self.pluginconf.pluginConf['forceSwitchSelectorPushButton'] and ForceUpdate_:
-            if (Devices[Unit].nValue == int(nValue)) and  (Devices[Unit].sValue == sValue):
-                # Due to new version of Domoticz which do not log in case we Update the same value
-                nReset = 0
-                sReset = '0'
-                if 'LevelOffHidden' in Devices[Unit].Options:
-                    LevelOffHidden = Devices[Unit].Options['LevelOffHidden']
-                    if LevelOffHidden == 'false':
-                        sReset = '00'
-                Devices[Unit].Update(nValue=nReset, sValue=sReset)
+        if ( self.pluginconf.pluginConf['forceSwitchSelectorPushButton'] and ForceUpdate_ and \
+               (Devices[Unit].nValue == int(nValue)) and (Devices[Unit].sValue == sValue) ):
+
+            # Due to new version of Domoticz which do not log in case we Update the same value
+            nReset = 0
+            sReset = '0'
+            if 'LevelOffHidden' in Devices[Unit].Options:
+                LevelOffHidden = Devices[Unit].Options['LevelOffHidden']
+                if LevelOffHidden == 'false':
+                    sReset = '00'
+            Devices[Unit].Update(nValue=nReset, sValue=sReset)
 
         if self.pluginconf.pluginConf['logDeviceUpdate']:
             Domoticz.Log("UpdateDevice - (%15s) %s:%s" %( Devices[Unit].Name, nValue, sValue ))
@@ -426,7 +429,7 @@ def TypeFromCluster( self, cluster, create_=False, ProfileID_='', ZDeviceID_='')
         TypeFromCluster = "XCube"
 
     elif cluster == "0101": 
-        TypeFromCluster = "Vibration"
+        TypeFromCluster = "DoorLock"
 
     elif cluster == "0102": 
         TypeFromCluster = "WindowCovering"

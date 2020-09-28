@@ -277,9 +277,9 @@ class NetworkMap():
         def storeLQIforEndDevice( self, child, router, lqi):
             if child not in self.ListOfDevices:
                 return
-            if 'LQI' not in self.ListOfDevices[ child ]:
-                self.ListOfDevices[ child ]['LQI'] = {}
-            self.ListOfDevices[ child ]['LQI'][ nwkid ] = lqi
+            if 'MapLQI' not in self.ListOfDevices[ child ]:
+                self.ListOfDevices[ child ]['MapLQI'] = {}
+            self.ListOfDevices[ child ]['MapLQI'][ nwkid ] = lqi
 
 
         # Write the report onto file
@@ -393,7 +393,7 @@ class NetworkMap():
             self.logging( 'Debug', "LQIresp - MsgSrc: %s" %MsgSrc)
 
         if Status != '00':
-            self.logging( 'Debug', "LQI:LQIresp - Status: %s for %s (raw data: %s)" %(Status, MsgData[len(MsgData) - 4: len(MsgData)],MsgData))
+            self.logging( 'Debug', "LQI:LQIresp - Status: %s for %s Sqn:%s (raw data: %s)" %(Status, MsgData[len(MsgData) - 4: len(MsgData)],SQN, MsgData))
             return
         if len(self.LQIreqInProgress) == 0:
             self.logging( 'Debug', "LQI:LQIresp - Receive unexpected message %s"  %(MsgData))

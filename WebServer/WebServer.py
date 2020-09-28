@@ -14,9 +14,10 @@ from time import time
 
 from Modules.zigateConsts import  ZCL_CLUSTERS_LIST , CERTIFICATION_CODE,  ZIGATE_COMMANDS
 
-from Modules.basicOutputs import ZigatePermitToJoin, sendZigateCmd, start_Zigate, setExtendedPANID, zigateBlueLed
+from Modules.basicOutputs import ZigatePermitToJoin, sendZigateCmd, start_Zigate, setExtendedPANID, zigateBlueLed, send_zigate_mode
 from Modules.legrand_netatmo import legrand_ledInDark, legrand_ledIfOnOnOff, legrand_dimOnOff, legrand_ledShutter
 from Modules.actuators import actuators
+from Modules.philips import philips_set_poweron_after_offon
 from Modules.tools import is_hex
 from Classes.PluginConf import PluginConf,SETTINGS
 
@@ -105,9 +106,14 @@ class WebServer(object):
         self.homedirectory = HomeDirectory
         self.hardwareID = hardwareID
         mimetypes.init()
+
+        self.FirmwareVersion = None
         # Start the WebServer
         self.startWebServer( )                    
 
+    def update_firmware( self, firmwareversion):
+        self.FirmwareVersion = firmwareversion
+        
     def rest_plugin_health( self, verb, data, parameters):
 
         _response = prepResponseMessage( self ,setupHeadersResponse())
@@ -262,7 +268,7 @@ class WebServer(object):
                 else:
                     Domoticz.Error("Removing Nwk-Energy %s not found" %timestamp )
                     _response['Data'] = json.dumps( [] , sort_keys=True)
-            return _response
+
 
         elif verb == 'GET':
             if len(parameters) == 0:
@@ -277,6 +283,7 @@ class WebServer(object):
                             _response['Data'] = json.dumps( r['MeshRouters'], sort_keys=True )
                 else:
                     _response['Data'] = json.dumps( [] , sort_keys=True)
+
         return _response
 
     def rest_plugin_restart( self, verb, data, parameters):
@@ -319,6 +326,11 @@ class WebServer(object):
             Statistics['APSNck'] =  0
             Statistics['StartTime'] = int(time()) - 120
         else:
+            Statistics['ZiGateRoundTimeMax'] = self.statistics._maxTiming8000
+            Statistics['ZiGateRoundTimeAverage'] = self.statistics._averageTiming8000
+            Statistics['ZiGateProcessTimeOnRxMax'] = self.statistics._maxRxProcesses
+            Statistics['ZiGateProcessTimeOnRxAverage'] = self.statistics._averageRxProcess
+
             Statistics['CRC'] =self.statistics._crcErrors
             Statistics['FrameErrors'] =self.statistics._frameErrors
             Statistics['Sent'] =self.statistics._sent
@@ -328,7 +340,7 @@ class WebServer(object):
             Statistics['APSFailure'] =self.statistics._APSFailure
             Statistics['APSAck'] =self.statistics._APSAck
             Statistics['APSNck'] =self.statistics._APSNck
-            Statistics['CurrentLoad'] = len(self.ZigateComm.zigateSendingFIFO)
+            Statistics['CurrentLoad'] = self.ZigateComm.loadTransmit()
             Statistics['MaxLoad'] = self.statistics._MaxLoad
             Statistics['StartTime'] =self.statistics._start
 
@@ -395,6 +407,7 @@ class WebServer(object):
                 }
 
                 for param in self.pluginconf.pluginConf:
+
                     if param not in SETTINGS[_theme]['param']: 
                         continue
 
@@ -421,6 +434,14 @@ class WebServer(object):
                                 setting['current_value'] = '%x' %self.pluginconf.pluginConf[param] 
                             else:
                                 setting['current_value'] = '%x' %int(self.pluginconf.pluginConf[param] ,16)
+                        elif SETTINGS[_theme]['param'][param]['type'] == 'list': 
+                            setting['list'] = []
+                            setting['current_value'] = self.pluginconf.pluginConf[param]
+
+                            for x in SETTINGS[_theme]['param'][param]['list']:
+                                ListItem = {x: SETTINGS[_theme]['param'][param]['list'][x]}
+                                setting['list'].append( ListItem )
+
                         else:
                             setting['current_value'] = self.pluginconf.pluginConf[param]
                         theme['ListOfSettings'].append ( setting )
@@ -487,7 +508,6 @@ class WebServer(object):
                                 else:
                                     legrand_ledShutter( self, 'Off')
 
-
                         elif param == 'EnableLedInDark':
                             if self.pluginconf.pluginConf[param] != setting_lst[setting]['current']:
                                 self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
@@ -509,6 +529,18 @@ class WebServer(object):
                                     legrand_ledIfOnOnOff( self, 'On')
                                 else:
                                     legrand_ledIfOnOnOff( self, 'Off')
+
+                        elif param == 'PhilipsPowerOnAfterOffOn':
+                            self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
+                            philips_set_poweron_after_offon( self, int(setting_lst[setting]['current']))
+
+                        elif param == 'LegrandPowerOnAfterOffOn':
+                            self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
+                            philips_set_poweron_after_offon( self, int(setting_lst[setting]['current']))
+
+                        elif param == 'IkeaPowerOnAfterOffOn':
+                            self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
+                            philips_set_poweron_after_offon( self, int(setting_lst[setting]['current']))
 
                         elif param == 'debugMatchId':
                             if setting_lst[setting]['current'] == 'ffff':
@@ -626,7 +658,7 @@ class WebServer(object):
                     if len(self.Devices[x].DeviceID)  != 16:
                         continue
 
-                    device_info = device_info = getDeviceInfos( self, x)
+                    device_info = getDeviceInfos( self, x)
                     device_lst.append( device_info )
                 _response["Data"] = json.dumps( device_lst, sort_keys=True )
 
@@ -700,7 +732,7 @@ class WebServer(object):
                     continue
 
                 device = {'_NwkId': x}
-                for item in ( 'ZDeviceName', 'IEEE', 'Model', 'MacCapa', 'Status', 'ConsistencyCheck', 'Health', 'RSSI', 'Battery'):
+                for item in ( 'ZDeviceName', 'IEEE', 'Model', 'MacCapa', 'Status', 'ConsistencyCheck', 'Health', 'LQI', 'Battery'):
                     if item in self.ListOfDevices[x]:
                         if item == 'MacCapa':
                             device['MacCapa'] = []
@@ -815,7 +847,7 @@ class WebServer(object):
                         continue
                     device = {'_NwkId': item}
                     # Main Attributes
-                    for attribut in ( 'ZDeviceName', 'ConsistencyCheck', 'Stamp', 'Health', 'Status', 'Battery', 'RSSI', 'Model', 'IEEE', 'ProfileID', 'ZDeviceID', 'Manufacturer', 'DeviceType', 'LogicalType', 'PowerSource', 'ReceiveOnIdle', 'App Version', 'Stack Version', 'HW Version' ):
+                    for attribut in ( 'ZDeviceName', 'ConsistencyCheck', 'Stamp', 'Health', 'Status', 'Battery', 'LQI', 'Model', 'IEEE', 'ProfileID', 'ZDeviceID', 'Manufacturer', 'DeviceType', 'LogicalType', 'PowerSource', 'ReceiveOnIdle', 'App Version', 'Stack Version', 'HW Version' ):
 
                         if attribut in self.ListOfDevices[item]:
                             if self.ListOfDevices[item][attribut] == {}:
@@ -974,7 +1006,7 @@ class WebServer(object):
                 data = json.loads(data)
                 Domoticz.Log("---> Data: %s" %str(data))
                 self.logging( 'Log', "rest_dev_command - Command: %s on object: %s with extra %s %s" %(data['Command'], data['NwkId'], data['Value'],  data['Color']))
-                _response["Data"] = json.dumps( "Executing %s on %s" %(data['Command'], data['NwkId']) ) 
+                _response["Data"] = json.dumps( "Executing %s on %s" %(data['Command'], data['NwkId']) )
                 if 'Command' not in data:
                     return _response
                 if data['Command'] == '':
@@ -990,21 +1022,16 @@ class WebServer(object):
                 color = ''
                 if data['Color'] == '' or data['Color'] is None:
                     Hue_List = {}
-                    Color = json.dumps( Hue_List )
                 else:
                     # Decoding RGB
                     # rgb(30,96,239)
                     ColorMode = data['Color'].split('(')[0]
                     ColorValue = data['Color'].split('(')[1].split(')')[0]
                     if ColorMode == 'rgb':
-                        Hue_List = {}
-                        Hue_List['m'] = 3
-                        Hue_List['r'], Hue_List['g'], Hue_List['b'] = ColorValue.split(',') 
+                        Hue_List = {'m': 3}
+                        Hue_List['r'], Hue_List['g'], Hue_List['b'] = ColorValue.split(',')
                     self.logging( 'Log', "rest_dev_command -        Color decoding m: %s r:%s g: %s b: %s"  %(Hue_List['m'], Hue_List['r'], Hue_List['g'], Hue_List['b']))
-                    Color = json.dumps( Hue_List )
-
-
-
+                Color = json.dumps( Hue_List )
                 epout = '01'
                 if 'Type' not in data:
                     actuators( self,  data['Command'], data['NwkId'], epout , 'Switch')
@@ -1025,7 +1052,7 @@ class WebServer(object):
                     else:
                         clusterCode = SWITCH_2_CLUSTER[ data['Type'] ]
 
-                    for tmpEp in self.ListOfDevices[data['NwkId']]['Ep']:
+                    for tmpEp in self.ListOfDevices[key]['Ep']:
                         if clusterCode  in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
                             epout=tmpEp
                     actuators( self,  data['Command'], key, epout , data['Type'], value=Level, color=Color)
@@ -1102,7 +1129,6 @@ class WebServer(object):
                         'Value': False if action['Value'] == '' else action['Value'],
                         'Type': True if len(action['Type']) != 0 else False,
                         }
-
                     dev_capabilities['Capabilities'].append( _capabilitie )
 
                     for cap in action['Type']:
@@ -1120,5 +1146,28 @@ class WebServer(object):
                         if 'LivoloSWR' not in dev_capabilities['Types']:
                             dev_capabilities['Types'].append( 'LivoloSWR' )
 
+                if cluster == '0006' and '4003' in self.ListOfDevices[_nwkid]['Ep'][ep]['0006']:
+                    _capabilitie = {
+                        'actuator': 'PowerStateAfterOffOn',
+                        'Value': 'hex',
+                        'Type': False
+                        }
+                    dev_capabilities['Capabilities'].append( _capabilitie )
+
+
         _response["Data"] = json.dumps( dev_capabilities )
+        return _response
+
+    def rest_zigate_mode( self, verb, data, parameters):
+    
+        Domoticz.Log("rest_zigate_mode mode: %s" %parameters)
+        _response = prepResponseMessage( self ,setupHeadersResponse())
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+        if verb == 'GET':
+            _response["Data"] = None
+            if len(parameters) == 1:
+                mode = parameters[0]
+                if mode  in ( '0', '1', '2'):
+                    send_zigate_mode( self, int(mode) ) 
+                    _response["Data"] = { "ZiGate mode: %s requested" %mode} 
         return _response

@@ -4,7 +4,8 @@
 # Author: zaraki673 & pipiche38
 #
 """
-<plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="4.9" wikilink="https://www.domoticz.com/wiki/Zigate" externallink="https://github.com/pipiche38/Domoticz-Zigate/wiki">
+
+<plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="4.11" wikilink="https://www.domoticz.com/wiki/Zigate" externallink="https://github.com/pipiche38/Domoticz-Zigate/wiki">
     <description>
         <h2> Plugin Zigate for Domoticz </h2><br/>
     <h3> Short description </h3>
@@ -21,7 +22,7 @@
             <ul style="list-style-type:square">
                 <li> Serial Port: this is the serial port where your USB or DIN Zigate is connected. (The plugin will provide you the list of possible ports)</li>
                 </ul>
-            <li> Erase Persistent Data: This will erase the Zigate memory and you will delete all pairing information. After that you'll have to re-pair each devices. This is not removing any data from Domoticz nor the plugin database.</li>
+            <li> Initialize ZiGate with plugin: This is a required step, with a new ZiGate or if you have done an Erase EEPROM. This will for instance create a new ZigBee Network. Be aware this will erase the Zigate memory and you will delete all pairing information. After that you'll have to re-pair each devices. This is not removing any data from Domoticz nor the plugin database.</li>
     </ul>
     <h3> Support </h3>
     Please use first the Domoticz forums in order to qualify your issue. Select the ZigBee or Zigate topic.
@@ -40,7 +41,7 @@
         <param field="Port" label="Port" width="150px" required="true" default="9999"/>
         <param field="SerialPort" label="Serial Port" width="150px" required="true" default="/dev/ttyUSB0"/>
 
-        <param field="Mode3" label="Erase Persistent Data ( !!! full devices setup need !!! ) " width="75px" required="true" default="False" >
+        <param field="Mode3" label="Initialize ZiGate (Erase Memory) " width="75px" required="true" default="False" >
             <options>
                 <option label="True" value="True"/>
                 <option label="False" value="False" default="true" />
@@ -66,13 +67,13 @@
 """
 
 import Domoticz
-import binascii
 from datetime import datetime
 import time
 import struct
 import json
 import queue
 import sys
+import threading
 
 from Modules.piZigate import switchPiZigate_mode
 from Modules.tools import removeDeviceInList
@@ -89,7 +90,7 @@ from Modules.checkingUpdate import checkPluginVersion, checkPluginUpdate, checkF
 from Modules.logging import openLogFile, closeLogFile
 from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
 
-from Classes.APS import APSManagement
+#from Classes.APS import APSManagement
 from Classes.IAS import IAS_Zone_Management
 from Classes.PluginConf import PluginConf
 from Classes.Transport import ZigateTransport
@@ -104,14 +105,16 @@ from WebServer.WebServer import WebServer
 from Classes.NetworkMap import NetworkMap
 from Classes.NetworkEnergy import NetworkEnergy
 
-from Classes.ListOfDevices import ListOfDevices
 
 VERSION_FILENAME = '.hidden/VERSION'
 
 TEMPO_NETWORK = 2    # Start HB totrigget Network Status
 TIMEDOUT_START = 10  # Timeoud for the all startup
-TIMEDOUT_FIRMWARE = 5# HB before request Firmware again
+TIMEDOUT_FIRMWARE = 5 # HB before request Firmware again
 TEMPO_START_ZIGATE = 1 # Nb HB before requesting a Start_Zigate
+
+
+
 
 class BasePlugin:
     enabled = False
@@ -128,7 +131,6 @@ class BasePlugin:
         # Objects from Classe
         self.ZigateComm = None
         self.groupmgt = None
-        self.APS = None
         self.networkmap = None
         self.networkenergy = None
         self.domoticzdb_DeviceStatus = None      # Object allowing direct access to Domoticz DB DeviceSatus
@@ -140,9 +142,10 @@ class BasePlugin:
         self.statistics = None
         self.iaszonemgt = None      # Object to manage IAS Zone
         self.webserver = None
-        self.LOD = None # Object managing all plugin devices
         self.transport = None         # USB or Wifi
         #self._ReqRcv = bytearray()
+
+        self.UnknownDevices = []   # List of unknown Device NwkId
         self.permitTojoin = {}
         self.permitTojoin['Duration'] = 0
         self.permitTojoin['Starttime'] = 0
@@ -159,9 +162,13 @@ class BasePlugin:
 
         self.PluginHealth = {}
         self.Ping = {}
+        self.Ping['Nb Ticks'] =  self.Ping['Status'] = self.Ping['TimeStamp'] = None
         self.connectionState = None
+
         self.HBcount = 0
         self.HeartbeatCount = 0
+        self.internalHB = 0
+
         self.currentChannel = None  # Curent Channel. Set in Decode8009/Decode8024
         self.ZigateIEEE = None       # Zigate IEEE. Set in CDecode8009/Decode8024
         self.ZigateNWKID = None       # Zigate NWKID. Set in CDecode8009/Decode8024
@@ -251,7 +258,7 @@ class BasePlugin:
             openLogFile( self )
 
         loggingPlugin( self, 'Status',  "Switching Heartbeat to %s s interval" %HEARTBEAT)
-        Domoticz.Heartbeat( HEARTBEAT )
+        Domoticz.Heartbeat( 1 )
         loggingPlugin( self, 'Status',  "Python Version - %s" %sys.version)
         assert sys.version_info >= (3, 4)
         loggingPlugin( self, 'Status',  "DomoticzVersion: %s" %Parameters["DomoticzVersion"])
@@ -325,30 +332,28 @@ class BasePlugin:
         loggingPlugin( self, 'Debug', "ListOfDevices after checkListOfDevice2Devices: " +str(self.ListOfDevices) )
         loggingPlugin( self, 'Debug', "IEEE2NWK after checkListOfDevice2Devices     : " +str(self.IEEE2NWK) )
 
-        # Initialize the ListOfDevices Objetc
-        self.LOD = ListOfDevices( self.ListOfDevices, self.IEEE2NWK)
-
         # Create Statistics object
         self.statistics = TransportStatistics(self.pluginconf)
 
         # Create APS object to manage Transmission Errors
-        if self.pluginconf.pluginConf['enableAPSFailureLoging'] or self.pluginconf.pluginConf['enableAPSFailureReporting']:
-            self.APS = APSManagement( self.ListOfDevices , Devices, self.pluginconf, self.loggingFileHandle)
+        #if self.pluginconf.pluginConf['enableAPSFailureLoging'] or self.pluginconf.pluginConf['enableAPSFailureReporting']:
+        #    self.APS = APSManagement( self.ListOfDevices , Devices, self.pluginconf, self.loggingFileHandle)
+
 
         # Connect to Zigate only when all initialisation are properly done.
         loggingPlugin( self, 'Status', "Transport mode: %s" %self.transport)
         if  self.transport == "USB":
-            self.ZigateComm = ZigateTransport( self.LOD, self.transport, self.statistics, self.pluginconf, self.processFrame,\
+            self.ZigateComm = ZigateTransport( self.transport, self.statistics, self.pluginconf, self.processFrame,\
                     self.loggingFileHandle, serialPort=Parameters["SerialPort"] )
         elif  self.transport == "DIN":
-            self.ZigateComm = ZigateTransport( self.LOD, self.transport, self.statistics, self.pluginconf, self.processFrame,\
+            self.ZigateComm = ZigateTransport( self.transport, self.statistics, self.pluginconf, self.processFrame,\
                     self.loggingFileHandle, serialPort=Parameters["SerialPort"] )
         elif  self.transport == "PI":
             switchPiZigate_mode( self, 'run' )
-            self.ZigateComm = ZigateTransport( self.LOD, self.transport, self.statistics, self.pluginconf, self.processFrame,\
+            self.ZigateComm = ZigateTransport( self.transport, self.statistics, self.pluginconf, self.processFrame,\
                     self.loggingFileHandle, serialPort=Parameters["SerialPort"] )
         elif  self.transport == "Wifi":
-            self.ZigateComm = ZigateTransport( self.LOD, self.transport, self.statistics, self.pluginconf, self.processFrame,\
+            self.ZigateComm = ZigateTransport( self.transport, self.statistics, self.pluginconf, self.processFrame,\
                     self.loggingFileHandle, wifiAddress= Parameters["Address"], wifiPort=Parameters["Port"] )
         elif self.transport == "None":
             loggingPlugin( self, 'Status', "Transport mode set to None, no communication.")
@@ -362,7 +367,14 @@ class BasePlugin:
             return
 
         loggingPlugin( self, 'Debug', "Establish Zigate connection" )
-        self.ZigateComm.openConn()
+        self.ZigateComm.open_conn()
+
+        # IAS Zone Management
+        if self.iaszonemgt is None:
+            # Create IAS Zone object
+            #Domoticz.Log("Init IAS_Zone_management ZigateComm: %s" %self.ZigateComm)
+            self.iaszonemgt = IAS_Zone_Management( self.pluginconf, self.ZigateComm , self.ListOfDevices, self.loggingFileHandle)
+
         self.busy = False
 
     def onStop(self):
@@ -374,22 +386,20 @@ class BasePlugin:
         if self.domoticzdb_Hardware:
             self.domoticzdb_Hardware.closeDB()
 
+        if self.ZigateComm:
+            self.ZigateComm.close_conn()
+
         if self.webserver:
             self.webserver.onStop()
 
- 
-        if self.webserver:
-            self.webserver.onStop()
-
-        if (not self.VersionNewFashion and (self.DomoticzMajor > 4 or ( self.DomoticzMajor == 4 and self.DomoticzMinor >= 10355))) or self.VersionNewFashion:
-            import threading
+        if ( self.DomoticzMajor > 4 or self.DomoticzMajor == 4 and self.DomoticzMinor >= 10355 or self.VersionNewFashion ):
             for thread in threading.enumerate():
                 if (thread.name != threading.current_thread().name):
-                    Domoticz.Error("'"+thread.name+"' is running, it must be shutdown otherwise Domoticz will abort on plugin exit.")
+                    Domoticz.Log("'"+thread.name+"' is running, it must be shutdown otherwise Domoticz will abort on plugin exit.")
 
-        #self.ZigateComm.closeConn()
+        #self.ZigateComm.close_conn()
         WriteDeviceList(self, 0)
-        
+
         self.statistics.printSummary()
         self.statistics.writeReport()
         self.PluginHealth['Flag'] = 3
@@ -466,7 +476,7 @@ class BasePlugin:
             Domoticz.Error("Failed to connect ("+str(Status)+")")
             loggingPlugin( self, 'Debug', "Failed to connect ("+str(Status)+") with error: "+Description)
             self.connectionState = 0
-            self.ZigateComm.reConn()
+            self.ZigateComm.re_conn()
             self.PluginHealth['Flag'] = 3
             self.PluginHealth['Txt'] = 'No Communication'
             self.adminWidgets.updateStatusWidget( Devices, 'No Communication')
@@ -488,20 +498,8 @@ class BasePlugin:
         self.Ping['Permit'] = None
         self.Ping['Nb Ticks'] = 1
 
-        # Create IAS Zone object
-        self.iaszonemgt = IAS_Zone_Management( self.pluginconf, self.ZigateComm , self.ListOfDevices, self.loggingFileHandle)
 
-        # Create Network Map object and trigger one scan
-        self.networkmap = NetworkMap( self.pluginconf, self.ZigateComm, self.ListOfDevices, Devices, self.HardwareID, self.loggingFileHandle)
-        if len(self.ListOfDevices) > 1:
-            loggingPlugin( self, 'Status', "Trigger a Topology Scan")
-            self.networkmap.start_scan( ) 
-     
-        # Create Network Energy object and trigger one scan
-        self.networkenergy = NetworkEnergy( self.pluginconf, self.ZigateComm, self.ListOfDevices, Devices, self.HardwareID, self.loggingFileHandle)
-        if len(self.ListOfDevices) > 1:
-            loggingPlugin( self, 'Status', "Trigger a Energy Level Scan")
-            self.networkenergy.start_scan()
+
 
         return True
 
@@ -516,11 +514,15 @@ class BasePlugin:
             Domoticz.Error("onMessage - empty message received on %s" %Connection)
 
         self.Ping['Nb Ticks'] = 0
-        self.ZigateComm.onMessage(Data)
+        self.ZigateComm.on_message(Data)
 
-    def processFrame( self, Data ):
+    def processFrame( self, Data , i_sqn, TransportInfos=None):
 
-        ZigateRead( self, Devices, Data )
+        #start_time = int(time.time() *1000)
+        #Domoticz.Log("### Processing: %s" %Data)
+        ZigateRead( self, Devices, Data, i_sqn )
+        #stop_time = int(time.time() *1000)
+        #Domoticz.Log("### Completion: %s is %s ms" %(Data, ( stop_time - start_time)))
 
     def onCommand(self, Unit, Command, Level, Color):
 
@@ -578,31 +580,30 @@ class BasePlugin:
             return
 
         if self.ZigateComm:
-            self.ZigateComm.checkTOwaitFor()
+            self.ZigateComm.check_timed_out_for_tx_queues()
 
+        self.internalHB += 1
+        if (self.internalHB % HEARTBEAT) != 0:
+            return
         busy_ = False
+        self.HeartbeatCount += 1 
 
         # Quiet a bad hack. In order to get the needs for ZigateRestart
         # from WebServer
-        if (
-            'startZigateNeeded' in self.zigatedata
-            and self.zigatedata['startZigateNeeded']
-        ):
+        if ( 'startZigateNeeded' in self.zigatedata and self.zigatedata['startZigateNeeded'] ):
             self.startZigateNeeded = self.HeartbeatCount
             del self.zigatedata['startZigateNeeded']
 
-        # Startding PDM on Host firmware version, we have to wait that Zigate is fully initialized ( PDM loaded into memory from Host).
+        # Starting PDM on Host firmware version, we have to wait that Zigate is fully initialized ( PDM loaded into memory from Host).
         # We wait for self.zigateReady which is set to True in th pdmZigate module
         if not (self.transport == 'None' or self.PDMready):
             loggingPlugin( self, 'Debug', "PDMready: %s requesting Get version" %( self.PDMready))
             sendZigateCmd(self, "0010", "")
             return
 
-        self.HeartbeatCount += 1
-
         if self.transport != 'None':
             loggingPlugin( self, 'Debug', "onHeartbeat - busy = %s, Health: %s, startZigateNeeded: %s/%s, InitPhase1: %s InitPhase2: %s, InitPhase3: %s PDM_LOCK: %s" \
-                %(self.busy, self.PluginHealth, self.startZigateNeeded, self.HeartbeatCount, self.InitPhase1, self.InitPhase2, self.InitPhase3, self.ZigateComm.PDMLockStatus() ))
+                %(self.busy, self.PluginHealth, self.startZigateNeeded, self.HeartbeatCount, self.InitPhase1, self.InitPhase2, self.InitPhase3, self.ZigateComm.pdm_lock_status() ))
 
         if self.transport != 'None' and ( self.startZigateNeeded or not self.InitPhase1 or not self.InitPhase2):
             # Require Transport
@@ -660,9 +661,7 @@ class BasePlugin:
         # Manage all entries in  ListOfDevices (existing and up-coming devices)
         processListOfDevices( self , Devices )
 
-        # IAS Zone Management
-        if self.iaszonemgt:
-            self.iaszonemgt.IAS_heartbeat( )
+        self.iaszonemgt.IAS_heartbeat( )
 
         # Reset Motion sensors
         ResetDevice( self, Devices, "Motion",5)
@@ -679,7 +678,7 @@ class BasePlugin:
             self.PluginHealth['Txt'] = 'Enrollment in Progress'
             self.adminWidgets.updateStatusWidget( Devices, 'Enrollment')
             # Maintain trend statistics
-            self.statistics._Load = len(self.ZigateComm.zigateSendingFIFO)
+            self.statistics._Load = self.ZigateComm.loadTransmit()
             self.statistics.addPointforTrendStats( self.HeartbeatCount )
             return
 
@@ -706,7 +705,7 @@ class BasePlugin:
         if self.HeartbeatCount % ( 3600 // HEARTBEAT) == 0:
             sendZigateCmd(self,"0017", "")
 
-        if len(self.ZigateComm.zigateSendingFIFO) >= MAX_FOR_ZIGATE_BUZY:
+        if self.ZigateComm.loadTransmit() >= MAX_FOR_ZIGATE_BUZY:
             # This mean that 4 commands are on the Queue to be executed by Zigate.
             busy_ = True
 
@@ -729,8 +728,8 @@ class BasePlugin:
 
         # Maintain trend statistics
         self.statistics._Load = 0
-        if len(self.ZigateComm.zigateSendingFIFO) >= MAX_FOR_ZIGATE_BUZY:
-            self.statistics._Load = len(self.ZigateComm.zigateSendingFIFO)
+        if self.ZigateComm.loadTransmit() >= MAX_FOR_ZIGATE_BUZY:
+            self.statistics._Load = self.ZigateComm.loadTransmit()
 
         self.statistics.addPointforTrendStats( self.HeartbeatCount )
 
@@ -795,6 +794,7 @@ def zigateInit_Phase2( self):
     # Request List of Active Devices
     sendZigateCmd(self, "0015", "") 
 
+
     # Ready for next phase
     self.InitPhase2 = True
 
@@ -821,12 +821,14 @@ def zigateInit_Phase3( self ):
         self.PluzzyFirmware = True
     elif self.FirmwareVersion.lower() == '031b':
         loggingPlugin( self, 'Status', "You are not on the latest firmware version, This version is known to have problem, please consider to upgrae")
-    elif int(self.FirmwareVersion,16) >= 0x031b:
-        # We have ACK/NCK so we disable APSReporting
-        if self.APS:
-            self.pluginconf.pluginConf['enableAPSFailureReporting'] = 0
-            del self.APS
-            self.APS = None
+
+    #elif int(self.FirmwareVersion,16) >= 0x031b:
+    #    # We have ACK/NCK so we disable APSReporting
+    #    #if self.APS:
+    #    #    self.pluginconf.pluginConf['enableAPSFailureReporting'] = 0
+    #    #    del self.APS
+    #    #    self.APS = None
+
 
     elif int(self.FirmwareVersion,16) > 0x031d:
         Domoticz.Error("Firmware %s is not yet supported" %self.FirmwareVersion.lower())
@@ -841,7 +843,7 @@ def zigateInit_Phase3( self ):
         set_TxPower( self, self.pluginconf.pluginConf['TXpower_set'])
 
         # Set Certification Code
-        if self.transport != 'None' and self.pluginconf.pluginConf['CertificationCode'] in CERTIFICATION:
+        if self.pluginconf.pluginConf['CertificationCode'] in CERTIFICATION:
             loggingPlugin( self, 'Status', "Zigate set to Certification : %s" %CERTIFICATION[self.pluginconf.pluginConf['CertificationCode']])
             sendZigateCmd(self, '0019', '%02x' %self.pluginconf.pluginConf['CertificationCode'])
 
@@ -856,6 +858,25 @@ def zigateInit_Phase3( self ):
             if self.pluginconf.pluginConf['zigatePartOfGroup0000']:
                 # Add Zigate NwkId 0x0000 Ep 0x01 to GroupId 0x0000
                 self.groupmgt.addGroupMemberShip( '0000', '01', '0000')
+
+
+
+
+
+
+        # Create Network Map object and trigger one scan
+        if self.networkmap is None:
+            self.networkmap = NetworkMap( self.pluginconf, self.ZigateComm, self.ListOfDevices, Devices, self.HardwareID, self.loggingFileHandle)
+        #    if len(self.ListOfDevices) > 1:
+        #        loggingPlugin( self, 'Status', "Trigger a Topology Scan")
+        #        self.networkmap.start_scan( ) 
+     
+        # Create Network Energy object and trigger one scan
+        if self.networkenergy is None:
+            self.networkenergy = NetworkEnergy( self.pluginconf, self.ZigateComm, self.ListOfDevices, Devices, self.HardwareID, self.loggingFileHandle)
+        #    if len(self.ListOfDevices) > 1:
+        #        loggingPlugin( self, 'Status', "Trigger a Energy Level Scan")
+        #        self.networkenergy.start_scan()
 
     # In case we have Transport = None , let's check if we have to active Group management or not. (For Test and Web UI Dev purposes
     if self.transport == 'None' and self.groupmgt is None and self.pluginconf.pluginConf['enablegroupmanagement']:
@@ -880,6 +901,8 @@ def zigateInit_Phase3( self ):
         self.webserver = WebServer( self.networkenergy, self.networkmap, self.zigatedata, self.pluginParameters, self.pluginconf, self.statistics, 
             self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], self.HardwareID, self.DevicesInPairingMode, self.groupmgt, Devices, 
             self.ListOfDevices, self.IEEE2NWK , self.permitTojoin , self.WebUsername, self.WebPassword, self.PluginHealth, Parameters['Mode4'], self.loggingFileHandle)
+        if self.FirmwareVersion:
+            self.webserver.update_firmware( self.FirmwareVersion )
 
     loggingPlugin( self, 'Status', "Plugin with Zigate firmware %s correctly initialized" %self.FirmwareVersion)
 
@@ -927,7 +950,7 @@ def pingZigate( self ):
             self.adminWidgets.updateNotificationWidget( Devices, 'Ping: Connection with Zigate Lost')
             #self.connectionState = 0
             #self.Ping['TimeStamp'] = int(time.time())
-            #self.ZigateComm.reConn()
+            #self.ZigateComm.re_conn()
             restartPluginViaDomoticzJsonApi( self )
 
         else:

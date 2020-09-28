@@ -388,11 +388,11 @@ class NetworkEnergy():
             return
 
         if len(self.nwkidInQueue) == 0 and MsgSrc:
-            self.logging( 'Log', "NwkScanResponse - Empty Queue, Receive infos from %s" %MsgSrc)
+            #self.logging( 'Log', "NwkScanResponse - Empty Queue, Receive infos from %s" %MsgSrc)
             return
 
         if len(self.nwkidInQueue) == 0:
-            self.logging( 'Log', "NwkScanResponse - Empty Queue ")
+            #self.logging( 'Log', "NwkScanResponse - Empty Queue ")
             return
 
         if len(self.nwkidInQueue) > 0 and MsgSrc:
@@ -433,4 +433,3 @@ class NetworkEnergy():
 
         self.EnergyLevel[ root ][ entry ]['Status'] = 'Completed'
         return
-
