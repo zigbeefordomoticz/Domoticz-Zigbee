@@ -248,7 +248,12 @@ def prepare_and_send_configure_reporting( self, key, Ep, cluster_list, cluster, 
         timeOut =  cluster_list[cluster]['Attributes'][attr]['TimeOut']
         chgFlag =  cluster_list[cluster]['Attributes'][attr]['Change']
         attributeList.append( attr )
-        attrList += attrdirection + attrType + attr + minInter + maxInter + timeOut + chgFlag
+        if int(attrType, 16) < 0x30:
+            attrList += attrdirection + attrType + attr + minInter + maxInter + timeOut + chgFlag
+        else:
+            # Data Type above 0x30 (included) are considered as discret/analog values and the change flag is not considered.
+            # in such NXP stack do not expect that information in the payload
+            attrList += attrdirection + attrType + attr + minInter + maxInter + timeOut
         attrLen += 1
 
         # Let's check if we have to send a chunk
