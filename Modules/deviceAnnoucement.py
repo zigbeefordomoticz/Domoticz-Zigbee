@@ -515,18 +515,22 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
         loggingInput(
             self,
             "Status",
-            "Decode004D V2 - Device Annoucementv2: %s NwkId: %s Ieee: %s MacCap: %s"
+            "Device Annoucementv2: %s NwkId: %s Ieee: %s MacCap: %s"
             % (self.ListOfDevices[NwkId]["ZDeviceName"], NwkId, Ieee, MacCapa),
             NwkId,
         )
+        self.adminWidgets.updateNotificationWidget( Devices, 'Device Annoucement: %s NwkId: %s Ieee: %s MacCap: %s' 
+            %((self.ListOfDevices[NwkId]["ZDeviceName"], NwkId, Ieee, MacCapa)))
     else:
         loggingInput(
             self,
             "Status",
-            "Decode004D V2 - Device Annoucementv2: NwkId: %s Ieee: %s MacCap: %s"
+            "Device Annoucementv2: NwkId: %s Ieee: %s MacCap: %s"
             % (NwkId, Ieee, MacCapa),
             NwkId,
         )
+        self.adminWidgets.updateNotificationWidget( Devices, 'Device Annoucement: NwkId: %s Ieee: %s MacCap: %s' 
+            %(( NwkId, Ieee, MacCapa)))
 
     # We are receiving the Real Device Annoucement. what to do
     if "Announced" not in self.ListOfDevices[NwkId]:
