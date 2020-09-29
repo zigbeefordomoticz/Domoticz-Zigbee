@@ -17,7 +17,19 @@ Release Numbering
 - Odd numbers --> Stable
 - Even numbers  --> Beta
 
+## 29 Sept. 2020  - 4.11.2
+
+- [Issue] - Spelling mistake for lumi.sensor_switch label in French
+- [Issue] - Comply with Zigbee standard as regards to configure reporting of Data type >= 0x30 ( #697 )
+- [Technical] - Re-factor the Read attribute loop in pairingProcess
+- [Issue] - fix potential issues of unbound local variables
+- [Technical] - add decoding attributes for cluster 0x0204
+- [Issue] - fix issue in ReadAttribute preventing to read all attributes, and using manufacture code.
+- [Issue] - revert black formatting of Transport
+- [Improvement] - send a notification to Domoticz Notification widget when a device announcement is received.
+
 ## 27 Sept. 2020  - 4.11.1 (Supporting Firmware 3.1d)
+
 - [Technical] - Implement a full SQN management and Synchro based on firmware 31d
 - [Technical] - By default use NOACK ZCL command if response is expected. Other commands are send with ACK
 - [Technical] - Bind and ConfigureReporting based on SQN
@@ -37,8 +49,8 @@ Release Numbering
 - [Technical] - Full review of use of ACK or not when sending command
 - [Technical] - Firm 31d - implement 0x8110 accordingly to the new change
 - [Technical] - Implement Multi-Threading capabilities (not enabled on 4.11 )
-- [Hardware] - Danfoss eTRV 
-- [Hardware] - Tuya 
+- [Hardware] - Danfoss eTRV
+- [Hardware] - Tuya
 - [Hardware] - ZigLight
 - [Hardware] - LUMI WXKG06LM and WXKG07LM b186acn02/ b286acn02
 - [Technical] - Web UI enhancement ( Bind/Unbind, Enable PowerOn after Off/On)
@@ -46,8 +58,7 @@ Release Numbering
 - [Hardware] - SmartThings outlet
 - [Hardware] - SONOFF Switch
 - [Hardware] - Integration of the Heiman Remote Control RC-EM ( firm 31d)
-- [Hardware– - Heiman Remote Control RC-EM ( 4 buttons )
-
+- [Hardware] - Heiman Remote Control RC-EM ( 4 buttons )
 
 ## 24 Aug 2020 - 4.9.5
 
@@ -219,7 +230,6 @@ Release Numbering
 ## 30 April 2019 - 4.2.1
 
 - [Technical] Disable APS failure reporting. If still want to use it, you can enable it enableAPSFailurereporting in PluginConf.txt
-
 
 ## 24 April 2019 - 4.2.0 <https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/4.2>
 
