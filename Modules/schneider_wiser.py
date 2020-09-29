@@ -114,7 +114,7 @@ def schneider_wiser_registration( self, Devices, key ):
         Domoticz.Error("Undefined Model, registration !!!")
         return
 
-    # Set Commissioning as Done
+    # 1/ Set Commissioning as Done
     manuf_id = "105e"
     manuf_spec = "01"
     cluster_id = "%04x" %0x0000
@@ -125,7 +125,7 @@ def schneider_wiser_registration( self, Devices, key ):
             %(key,data,EPout,cluster_id,Hattribute,data_type), nwkid=key)
     write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
 
-    # Write Location to 0x0000/0x5000 for all devices
+    # 2/ Write Location to 0x0000/0x5000 for all devices
     manuf_id = "0000"
     manuf_spec = "00"
     cluster_id = "%04x" %0x0000
@@ -136,8 +136,8 @@ def schneider_wiser_registration( self, Devices, key ):
             %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
     write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
     
-    if self.ListOfDevices[key]['Model'] in ('EH-ZB-RTS', 'EH-ZB-VACT'): # Thermostat
-        # Set Language
+    # Set Language to en
+    if self.ListOfDevices[key]['Model'] in ( 'EH-ZB-RTS',): # Thermostat 
         manuf_id = "105e"
         manuf_spec = "01"
         cluster_id = "%04x" %0x0000
@@ -160,12 +160,11 @@ def schneider_wiser_registration( self, Devices, key ):
         schneider_thermostat_check_and_bind (self, key)
         
 
-
+    # Set 0x01 to 0x0201/0xe013 : ATTRIBUTE_THERMOSTAT_OPEN_WINDOW_DETECTION_THRESHOLD
     if self.ListOfDevices[key]['Model'] in ( 'EH-ZB-VACT'): # Thermostatic Valve
         cluster_id = "%04x" %0x0201
         manuf_id = "0000"
         manuf_spec = "00"
-        # Set 0x01 to 0x0201/0xe013 : ATTRIBUTE_THERMOSTAT_OPEN_WINDOW_DETECTION_THRESHOLD
         Hattribute = "%04x" %0xe013
         data_type = "20"
         # 0x00  After a first Pairing
@@ -175,12 +174,12 @@ def schneider_wiser_registration( self, Devices, key ):
                 %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
         write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
 
+    # Set 0x00 to 0x0201/0x0010 : Calibration 
     if self.ListOfDevices[key]['Model'] in ( 'EH-ZB-HACT', 'EH-ZB-VACT' ): # Actuator, Valve
         # Set no Calibration
         manuf_id = "0000"
         manuf_spec = "00"
         cluster_id = "%04x" %0x0201
-        # Set 0x00 to 0x0201/0x0010
         Hattribute = "%04x" %0x0010
         data_type = "28" 
         data = '00'  
@@ -188,46 +187,38 @@ def schneider_wiser_registration( self, Devices, key ):
                 %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
         write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
 
-        # ATTRIBUTE_THERMOSTAT_ZONE_MODE
+    # ATTRIBUTE_THERMOSTAT_ZONE_MODE
+    # Set 0x0201/0xe010
+    # 0x01 User Mode Manual
+    # 0x02 User Mode Schedule
+    # 0x03 User Mode Manual Energy Saver
+    if self.ListOfDevices[key]['Model'] in ( 'EH-ZB-HACT', 'EH-ZB-VACT' ): # Actuator, Valve 
         manuf_id = "105e"
         manuf_spec = "01"
         cluster_id = "%04x" %0x0201
-        # Set 0x01 to 0x0201/0xe010
         Hattribute = "%04x" %0xe010
         data_type = "30"
-        # 0x01 User Mode Manual
-        # 0x02 User Mode Schedule
-        # 0x03 User Mode Manual Energy Saver
         data = '01'  
         loggingSchneider( self, 'Debug', "Schneider Write Attribute (zone_mode) %s with value %s / cluster: %s, attribute: %s type: %s"
                 %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
         write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
 
+    # set fip mode if nothing and dont touch if already exists
     if self.ListOfDevices[key]['Model'] in ( 'EH-ZB-HACT' ): # Actuator
-        schneider_hact_heater_type (self,key,'registration')# set fip mode if nothing and dont touch if already exists
+        schneider_hact_heater_type (self,key,'registration')
         schneider_actuator_check_and_bind (self, key)
 
-
-    if self.ListOfDevices[key]['Model'] == 'EH-ZB-BMS': # current monitoring system
-        cluster_id = "%04x" %0x0009 # lets initialize the alarm widget to 00
+    # current monitoring system
+    # lets initialize the alarm widget to 00
+    if self.ListOfDevices[key]['Model'] == 'EH-ZB-BMS': 
+        cluster_id = "%04x" %0x0009 
         value = '00'
         loggingSchneider( self, 'Debug', "Schneider update Alarm Domoticz device Attribute %s Endpoint:%s / cluster: %s to %s"
                 %(key,EPout,cluster_id,value), nwkid=key)
         MajDomoDevice(self, Devices, key, EPout, cluster_id, value)
 
-
-
-    #if self.ListOfDevices[key]['Model'] in ( 'EH-ZB-VACT' ): # Valve
-    #    setpoint = 2000
-    #    if 'Schneider' in self.ListOfDevices[key]:
-    #        if 'Target SetPoint' in self.ListOfDevices[key]['Schneider']:
-    #            if self.ListOfDevices[key]['Schneider']['Target SetPoint'] is not Null:
-    #                setpoint = self.ListOfDevices[key]['Schneider']['Target SetPoint']
-    #
-    #    schneider_setpoint( self, key, setpoint)
-    #    self.ListOfDevices[key]['Heartbeat'] = 0
-
-    if self.ListOfDevices[key]['Model'] in ( 'EH-ZB-LMACT'): # Pilotage Chaffe eau
+    # Pilotage Chauffe eau
+    if self.ListOfDevices[key]['Model'] in ( 'EH-ZB-LMACT'): 
         sendZigateCmd(self, "0092","02" + key + ZIGATE_EP + EPout + "00")
         sendZigateCmd(self, "0092","02" + key + ZIGATE_EP + EPout + "01")
     

@@ -1024,6 +1024,11 @@ def reset_attr_datastruct( self, DeviceAttribute, key, endpoint, clusterId , Att
     if AttributeId in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest']:
         del self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['ZigateRequest'][ AttributeId ]
 
+def reset_cluster_datastruct( self, DeviceAttribute, key, endpoint, clusterId ):
+    check_datastruct( self, DeviceAttribute, key, endpoint, clusterId )
+    if clusterId in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint]:
+        del self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]
+
 
 def reset_datastruct( self,DeviceAttribute, key ):
     if key not in self.ListOfDevices:
