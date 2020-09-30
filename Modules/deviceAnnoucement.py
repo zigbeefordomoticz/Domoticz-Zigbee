@@ -540,7 +540,7 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
         timeStamped(self, NwkId, 0x004D)
         lastSeenUpdate(self, Devices, NwkId=NwkId)
         legrand_refresh_battery_remote(self, NwkId)
-        decode004d_existing_devicev2(self, Devices, NwkId, Ieee, MacCapa, MsgLQI, now)
+        #decode004d_existing_devicev2(self, Devices, NwkId, Ieee, MacCapa, MsgLQI, now)
         return
 
     # Annouced is in the ListOfDevices[NwkId]
