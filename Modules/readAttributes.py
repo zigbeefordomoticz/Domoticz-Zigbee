@@ -746,9 +746,9 @@ def ReadAttributeRequest_0b05(self, key):
             ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0b05", listAttributes)
     
 def ReadAttributeRequest_0b04(self, key):
-    # Cluster 0x0702 Metering
+    # Cluster 0x0b04 Metering
 
-    loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0702 - Key: %s " %key, nwkid=key)
+    loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0b04 - Key: %s " %key, nwkid=key)
     _manuf = 'Manufacturer' in self.ListOfDevices[key]
     ListOfEp = getListOfEpForCluster( self, key, '0b04' )
     for EPout in ListOfEp:
