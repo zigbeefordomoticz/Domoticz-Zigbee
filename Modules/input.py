@@ -925,21 +925,28 @@ def Decode8012(self, Devices, MsgData, MsgLQI):
     MsgDstEp = MsgData[4:6]
     MsgAddrMode = MsgData[6:8]
 
+
     if int(MsgAddrMode, 16) == 0x03:  # IEEE
         MsgSrcIEEE = MsgData[8:24]
         MsgSQN = MsgData[24:26]
         if MsgSrcIEEE in self.IEEE2NWK:
             MsgSrcNwkId = self.IEEE2NWK[MsgSrcIEEE]
+            loggingInput(
+                self,
+                "Log",
+                "Decode8012 - Src: %s, SrcEp: %s,Status: %s"
+                % (MsgSrcNwkId, MsgSrcEp, MsgStatus),
+            )
     else:
         MsgSrcNwkid = MsgData[8:12]
         MsgSQN = MsgData[12:14]
 
-    loggingInput(
-        self,
-        "Log",
-        "Decode8012 - Src: %s, SrcEp: %s,Status: %s"
-        % (MsgSrcNwkid, MsgSrcEp, MsgStatus),
-    )
+        loggingInput(
+            self,
+            "Log",
+            "Decode8012 - Src: %s, SrcEp: %s,Status: %s"
+            % (MsgSrcNwkid, MsgSrcEp, MsgStatus),
+        )
 
 
 def Decode8014(self, Devices, MsgData, MsgLQI):  # "Permit Join" status response
@@ -1309,8 +1316,8 @@ def Decode8030(self, Devices, MsgData, MsgLQI):  # Bind response
         )
 
     elif int(MsgSrcAddrMode, 16) == ADDRESS_MODE["ieee"]:
-        loggingInput(self, "Debug", "Decode8030 - Bind reponse for %s" % (MsgSrcAddr))
         MsgSrcAddr = MsgData[6:14]
+        loggingInput(self, "Debug", "Decode8030 - Bind reponse for %s" % (MsgSrcAddr))
         if MsgSrcAddr not in self.IEEE2NWK:
             Domoticz.Error("Decode8030 - Do no find %s in IEEE2NWK" % MsgSrcAddr)
             return
@@ -2156,6 +2163,13 @@ def Decode8045(self, Devices, MsgData, MsgLQI):  # Reception Active endpoint res
             "[%s] NEW OBJECT: %s Active Endpoint Response Ep: %s LQI: %s"
             % ("-", MsgDataShAddr, tmpEp, int(MsgLQI, 16)),
         )
+        if self.ListOfDevices[MsgDataShAddr]["Status"] != "8045":
+            loggingInput(
+                self,
+                "Log",
+                "[%s] NEW OBJECT: %s/%s receiving 0x8043 while in status: %s"
+                % ("-", MsgDataShAddr, tmpEp, self.ListOfDevices[MsgDataShAddr]["Status"]),
+            )
     self.ListOfDevices[MsgDataShAddr]["NbEp"] = str(
         int(MsgDataEpCount, 16)
     )  # Store the number of EPs
@@ -2181,14 +2195,6 @@ def Decode8045(self, Devices, MsgData, MsgLQI):  # Reception Active endpoint res
         )
 
         sendZigateCmd(self, "0043", str(MsgDataShAddr) + str(iterEp))
-
-    if self.ListOfDevices[MsgDataShAddr]["Status"] != "8045":
-        loggingInput(
-            self,
-            "Log",
-            "[%s] NEW OBJECT: %s/%s receiving 0x8043 while in status: %s"
-            % ("-", MsgDataShAddr, tmpEp, self.ListOfDevices[MsgDataShAddr]["Status"]),
-        )
 
     self.ListOfDevices[MsgDataShAddr]["Heartbeat"] = "0"
     self.ListOfDevices[MsgDataShAddr]["Status"] = "0043"
@@ -3338,6 +3344,13 @@ def Decode8401(
         MsgExtStatus = MsgData[30:32]  # extended status: uint8_t
         MsgZoneID = MsgData[32:34]  # zone id : uint8_t
         MsgDelay = MsgData[34:38]  # delay: data each element uint16_t
+    else:
+        loggingInput(
+            self,
+            "Error",
+            "Decode8401 - Reception Zone status change notification but incorrect Address Mode: " + MsgSrcAddrMode + " with MsgData " + MsgData,
+        )
+        return
 
     # 0  0  0    0  1    1    1  2  2
     # 0  2  4    8  0    4    8  0  2
@@ -3591,12 +3604,15 @@ def Decode8701(
         self, "Debug", "Decode8701 - MsgData: %s MsgLen: %s" % (MsgData, MsgLen)
     )
 
-    if MsgLen >= 4:
-        # This is the reverse of what is documented. Suspecting that we got a BigEndian uint16 instead of 2 uint8
-        NwkStatus = MsgData[0:2]
-        Status = MsgData[2:4]
-        MsgSrcAddr = ""
-        MsgSrcIEEE = ""
+    if MsgLen < 4:
+        return
+
+    # This is the reverse of what is documented. Suspecting that we got a BigEndian uint16 instead of 2 uint8
+    NwkStatus = MsgData[0:2]
+    Status = MsgData[2:4]
+    MsgSrcAddr = ""
+    MsgSrcIEEE = ""
+
     if MsgLen >= 8:
         MsgSrcAddr = MsgData[4:8]
         if MsgSrcAddr in self.ListOfDevices:
@@ -3876,6 +3892,8 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
             selector = SCENES[up_down]
         elif TYPE_ACTIONS[step_mod] in "stop":
             selector = TYPE_ACTIONS[step_mod]
+        else:
+            return
 
         loggingInput(
             self,
@@ -4024,6 +4042,7 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
                 "Decode8085 - Unknown state for %s step_mod: %s up_down: %s"
                 % (MsgSrcAddr, step_mod, up_down)
             )
+            return
 
         loggingInput(
             self, "Debug", "Decode8085 - Legrand selector: %s" % selector, MsgSrcAddr
@@ -4366,6 +4385,8 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
             WidgetSelector = "02"
         elif MsgCmd == "02":
             WidgetSelector = "01"
+        else:
+            return
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0006", WidgetSelector)
     else:
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0006", MsgCmd)
