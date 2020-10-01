@@ -120,9 +120,9 @@ def storeReadAttributeStatus( self, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgCl
     i_sqnFromMessage = sqn_get_internal_sqn_from_app_sqn (self.ZigateComm, MsgSQN, TYPE_APP_ZCL)
     i_sqn_expected = get_isqn_datastruct(self, 'ReadAttributes', MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID )
 
-    if MsgType == '8100' and i_sqn_expected and i_sqnFromMessage and i_sqn_expected != i_sqnFromMessage:
-        Domoticz.Log("+++ SQN Missmatch in ReadCluster %s/%s %s %s i_sqn: %s e_sqn: %s i_esqn: %s " 
-            %( MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, i_sqn_expected, MsgSQN, i_sqnFromMessage ))
+    # if MsgType == '8100' and i_sqn_expected and i_sqnFromMessage and i_sqn_expected != i_sqnFromMessage:
+    #     Domoticz.Log("+++ SQN Missmatch in ReadCluster %s/%s %s %s i_sqn: %s e_sqn: %s i_esqn: %s " 
+    #         %( MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, i_sqn_expected, MsgSQN, i_sqnFromMessage ))
 
     set_status_datastruct(self, 'ReadAttributes', MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus )
     set_timestamp_datastruct(self, 'ReadAttributes', MsgSrcAddr, MsgSrcEp, MsgClusterId, int(time()) )
@@ -1103,7 +1103,7 @@ def Cluster0012( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  MsgClusterData )
         AqaraOppleDecoding0012(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
 
-    elif _modelName in ( 'lumi.remote.b1acn01', 'lumi.remote.b186acn01', 'lumi.remote.b286acn01'):
+    elif _modelName in ( 'lumi.remote.b1acn01', 'lumi.remote.b186acn01', 'lumi.remote.b186acn02', 'lumi.remote.b286acn01', 'lumi.remote.b286acn02'):
         # 0 -> Hold
         # 1 -> Short Release
         # 2 -> Double press
@@ -1637,12 +1637,20 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
 def Cluster0204( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
 
+
     logging( self, "Cluster", 'Debug', "ReadCluster 0204 - Addr: %s Ep: %s AttrId: %s AttrType: %s AttSize: %s Data: %s"
             %(MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
     checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  MsgClusterData )
 
-    if MsgAttrID == '0001':
+    if MsgAttrID == '0000':
+        # TemperatureDisplayMode
+        if MsgClusterData == '00':
+            loggingCluster( self, 'Debug', "ReadCluster %s/%s 0204 - Temperature Display Mode : %s --> °C" %( MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
+        elif MsgClusterData == '01':
+            loggingCluster( self, 'Debug', "ReadCluster %s/%s 0204 - Temperature Display Mode : %s -->  °F" %( MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
+
+    elif MsgAttrID == '0001':
         # Keypad Lock Mode
         KEYPAD_LOCK = {
             '00': 'no lockout'
@@ -1651,6 +1659,7 @@ def Cluster0204( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         logging( self, "Cluster", 'Debug', "ReadCluster 0204 - Lock Mode: %s" %value, MsgSrcAddr)
     else:
         logging( self, "Cluster", 'Debug', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
+
 
 def Cluster0300( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
     
@@ -1749,7 +1758,7 @@ def Cluster0400( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     # Input on Lux calculation is coming from PhilipsHue / Domoticz integration.
 
     value = int(decodeAttribute( self, MsgAttType, MsgClusterData))
-
+    lux = int(pow( 10, ((value -1) / 10000.00)))
     if 'Model' in self.ListOfDevices[MsgSrcAddr]:
         if str(self.ListOfDevices[MsgSrcAddr]['Model']).find('lumi.sensor') != -1:
             # In case of Xiaomi, we got direct value
@@ -1757,6 +1766,7 @@ def Cluster0400( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         else:
             lux = int(pow( 10, ((value -1) / 10000.00)))
     logging( self, "Cluster", 'Debug', "ReadCluster - %s - %s/%s - LUX Sensor: %s/%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData, lux), MsgSrcAddr)
+
     MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(lux))
     checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, lux)
 
@@ -2181,7 +2191,7 @@ def Cluster0b04( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         logging( self, "Cluster", 'Debug', "ReadCluster %s - %s/%s Power %s" \
             %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value))
         if 'Model' in self.ListOfDevices[ MsgSrcAddr ] and self.ListOfDevices[ MsgSrcAddr ]['Model'] == 'outletv4':
-            value = value / 10
+            value /= 10
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value))
 
     elif MsgAttrID == "0505": # RMS Voltage
@@ -2189,7 +2199,7 @@ def Cluster0b04( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         logging( self, "Cluster", 'Debug', "ReadCluster %s - %s/%s Voltage %s" \
             %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value))
         if 'Model' in self.ListOfDevices[ MsgSrcAddr ] and self.ListOfDevices[ MsgSrcAddr ]['Model'] == 'outletv4':
-            value = value / 10
+            value /= 10
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0001", str(value))
 
     elif MsgAttrID == "0508": #RMSCurrent

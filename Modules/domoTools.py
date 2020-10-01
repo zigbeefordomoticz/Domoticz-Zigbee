@@ -94,7 +94,7 @@ def RetreiveSignalLvlBattery( self, NwkID):
 
 
     BatteryLevel = ''
-    if 'Battery' in self.ListOfDevices[NwkID] and self.ListOfDevices[NwkID]['Battery'] != {}:
+    if 'Battery' in self.ListOfDevices[NwkID] and self.ListOfDevices[NwkID]['Battery'] != {} and isinstance(self.ListOfDevices[NwkID]['Battery'], int):
         #Domoticz.Log("RetreiveSignalLvlBattery NwkId: %s Battery: %s" %(NwkID,self.ListOfDevices[NwkID]['Battery'] ))
         BatteryLevel = int(round((self.ListOfDevices[NwkID]['Battery'])))
 

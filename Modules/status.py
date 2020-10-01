@@ -19,6 +19,93 @@ STATUS_CODE = {
     '05': 'Stack Already Started'
 }
 
+ZCL_STATUS_CODE = {
+    # General
+    '00': 'E_ZCL_SUCCESS',
+    '01': 'E_ZCL_FAIL',                 
+    '02': 'Specified parameter pointer was null',   
+    '03': 'A parameter value was out-of-range ',  
+    '04': 'ZCL heap is out-of-memory',      
+
+    # Specific ZCL status codes
+    '05': 'Specified endpoint number was out-of-range ',          
+    '06': 'Specified endpoint has not been registered with the ZCL',        
+    '07': 'Security value is out-of-range ',    
+    '08': 'Specified endpoint has no clusters ',         
+    '09': 'Specified pointer to a cluster was null ',      
+    '0a': 'Specified cluster has not been registered with the ZCL', 
+    '0b': 'Specified cluster ID was out-of-range  ',  
+    '0c': 'Specified pointer to an attribute was null',   
+    '0d': 'List of attributes to be read was empty',      
+    '0e': 'Attempt was made to read write-only attribute',      
+    '0f': 'Attempt was made to write to read-only attribute',      
+    '10': 'Error occurred while accessing attribute ', 
+    '11': 'pecified attribute was of unsupported type ',
+    '12': 'Specified attribute was not found',  
+    '13': 'Specified pointer to a callback function was null',        
+    '14': 'No buffer available to transmit message',         
+    '15': 'ZigBee PRO stack has reported a transmission error ',       
+    '16': 'Cluster instance of wrong kind (e.g. client instead of server) ', 
+    '17': 'No timer resource was available',       
+    '18': 'Attempt made by a cluster client to read a client attribute ',  
+    '19': 'Attempt made by a cluster server to read a server attribute ',  
+    '1a': 'Attribute value is out-of-range ',      
+    '1b': 'E_ZCL_ERR_ATTRIBUTE_MISMATCH',   
+    '1c': 'E_ZCL_ERR_KEY_ESTABLISHMENT_MORE_THAN_ONE_CLUSTER',
+    '1d': 'E_ZCL_ERR_INSUFFICIENT_SPACE',    
+    '1e': 'E_ZCL_ERR_NO_REPORTABLE_CHANGE',  
+    '1f': 'E_ZCL_ERR_NO_REPORT_ENTRIES',     
+    '20': 'E_ZCL_ERR_ATTRIBUTE_NOT_REPORTABLE', 
+    '21': 'E_ZCL_ERR_ATTRIBUTE_ID_ORDER',    
+    '22': 'E_ZCL_ERR_MALFORMED_MESSAGE',     
+    '23': 'Inconsistency in a manufacturer-specific cluster definition has been found', 
+    '24': 'E_ZCL_ERR_PROFILE_ID',            
+    '25': 'E_ZCL_ERR_INVALID_VALUE',         
+    '26': 'E_ZCL_ERR_CERT_NOT_FOUND',        
+    '27': 'E_ZCL_ERR_CUSTOM_DATA_NULL',      
+    '28': 'E_ZCL_ERR_TIME_NOT_SYNCHRONISED', 
+    '29': 'E_ZCL_ERR_SIGNATURE_VERIFY_FAILED',
+    '2a': 'E_ZCL_ERR_ZRECEIVE_FAIL',          
+    '2b': 'E_ZCL_ERR_KEY_ESTABLISHMENT_END_POINT_NOT_FOUND',  
+    '2c': 'E_ZCL_ERR_KEY_ESTABLISHMENT_CLUSTER_ENTRY_NOT_FOUND',
+    '2d': 'E_ZCL_ERR_KEY_ESTABLISHMENT_CALLBACK_ERROR', 
+    '2e': 'E_ZCL_ERR_SECURITY_INSUFFICIENT_FOR_CLUSTER',
+    '2f': 'E_ZCL_ERR_CUSTOM_COMMAND_HANDLER_NULL_OR_RETURNED_ERROR', 
+    '30': 'OTA image size is not in the correct range',      
+    '31': 'OTA image version is not in the correct range',   
+    '32': "‘Read attributes’ request not completely fulfilled",  
+    '33': 'Write access to attribute is denied',       
+    '34': 'ZigBee PRO stack has reported a receive error',           
+    '35': 'E_ZCL_ERR_CLUSTER_COMMAND_NOT_FOUND',
+    '36': 'E_ZCL_ERR_SCENE_NOT_FOUND',
+    '37': 'E_ZCL_RESTORE_DEFAULT_REPORT_CONFIGURATION',
+    '38': 'E_ZCL_ERR_ENUM_END'
+}
+
+ZCL_EXTENDED_ERROR_CODES = {
+    '01': 'Fatal error - retrying will cause the error again',
+    '02': 'Endpoint is not valid for loopback (fatal error)',
+    '03': 'No output cluster in the Simple descriptor for this endpoint/cluster (fatal error)',
+    '04': 'Fragmented data requests must be sent with APS ack (fatal error)',
+    '05': 'Bad parameter has been passed to the command manager (fatal error)',
+    '06': 'Address parameter is out-of-range (fatal error), e.g. broadcast address when calling unicast function',
+    '07': 'TX ACK bit has been set when attempting to post to a local endpoint (fatal error)',
+    '08': 'Resource error/shortage - retrying may succeed',
+    '80': "No free NPDUs (resource error) - the number of NPDUs is set in the 'Number of NPDUs' property of the 'PDU Manager' section of the ZPS Configuration Editor ",
+    '81': "No free APDUs (resource error) - the number of APDUs is set in the 'Instances' property of the appropriate 'APDU' child of the 'PDU Manager' section of the ZPS Configuration Editor",
+    '82': "No free simultaneous data request handles (resource error) - the number of handles is set in the 'Maximum Number of Simultaneous Data Requests' field of the 'APS layer configuration' section of the ZPS Configuration Editor",
+    '83': "No free APS acknowledgement handles (resource error) - the number of handles is set in the 'Maximum Number of Simultaneous Data Requests with Acks' field of the 'APS layer configuration' section of the ZPS Configuration Editor",
+    '84': "No free fragment record handles (resource error) - the number of handles is set in the 'Maximum Number of Transmitted Simultaneous Fragmented Messages' field of the 'APS layer configuration' section of the ZPS Configuration Editor",
+    '85': 'No free MCPS request descriptors (resource error) - there are 8 MCPS request descriptors and these are only ever likely to be exhausted under a very heavy network load or when trying to transmit too many frames too close together',
+    '86': 'Loopback send is currently busy (resource error) - there can be only one loopback request at a time',
+    '87': 'No free entries in the extended address table (resource error) - this table is configured in the ZPS Configuration Editor',
+    '88': 'Simple descriptor does not exist for this endpoint/cluster',
+    '89': 'Bad parameter has been found while processing an APSDE request or response',
+    '8a': 'No routing table entries free',
+    '8b': 'No Broadcast transaction table entries free'
+}
+
+
 ZCL_NWK_CODE = {
     'c1' : 'An invalid or out-of-range parameter has been passed',
     'c2' : 'Request cannot be processed',
@@ -102,35 +189,15 @@ ZCL_MAC_CODES = {
     'f4': 'PIB Set/Get on unsupported attribute',
 }
 
-ZCL_EXTENDED_ERROR_CODES = {
-    '01': 'Fatal error - retrying will cause the error again',
-    '02': 'Endpoint is not valid for loopback (fatal error)',
-    '03': 'No output cluster in the Simple descriptor for this endpoint/cluster (fatal error)',
-    '04': 'Fragmented data requests must be sent with APS ack (fatal error)',
-    '05': 'Bad parameter has been passed to the command manager (fatal error)',
-    '06': 'Address parameter is out-of-range (fatal error), e.g. broadcast address when calling unicast function',
-    '07': 'TX ACK bit has been set when attempting to post to a local endpoint (fatal error)',
-    '08': 'Resource error/shortage - retrying may succeed',
-    '80': "No free NPDUs (resource error) - the number of NPDUs is set in the 'Number of NPDUs' property of the 'PDU Manager' section of the ZPS Configuration Editor ",
-    '81': "No free APDUs (resource error) - the number of APDUs is set in the 'Instances' property of the appropriate 'APDU' child of the 'PDU Manager' section of the ZPS Configuration Editor",
-    '82': "No free simultaneous data request handles (resource error) - the number of handles is set in the 'Maximum Number of Simultaneous Data Requests' field of the 'APS layer configuration' section of the ZPS Configuration Editor",
-    '83': "No free APS acknowledgement handles (resource error) - the number of handles is set in the 'Maximum Number of Simultaneous Data Requests with Acks' field of the 'APS layer configuration' section of the ZPS Configuration Editor",
-    '84': "No free fragment record handles (resource error) - the number of handles is set in the 'Maximum Number of Transmitted Simultaneous Fragmented Messages' field of the 'APS layer configuration' section of the ZPS Configuration Editor",
-    '85': 'No free MCPS request descriptors (resource error) - there are 8 MCPS request descriptors and these are only ever likely to be exhausted under a very heavy network load or when trying to transmit too many frames too close together',
-    '86': 'Loopback send is currently busy (resource error) - there can be only one loopback request at a time',
-    '87': 'No free entries in the extended address table (resource error) - this table is configured in the ZPS Configuration Editor',
-    '88': 'Simple descriptor does not exist for this endpoint/cluster',
-    '89': 'Bad parameter has been found while processing an APSDE request or response',
-    '8a': 'No routing table entries free',
-    '8b': 'No Broadcast transaction table entries free'
-}
 
 
 def DisplayStatusCode( StatusCode ) :
 
-
     if StatusCode in STATUS_CODE:
         return STATUS_CODE[ StatusCode ]
+
+    if StatusCode in ZCL_STATUS_CODE:
+       return ZCL_STATUS_CODE[ StatusCode ] 
 
     if StatusCode in ZCL_NWK_CODE:
         return ZCL_NWK_CODE[ StatusCode ]
