@@ -87,7 +87,7 @@ from Modules.command import mgtCommand
 from Modules.zigateConsts import HEARTBEAT, CERTIFICATION, MAX_LOAD_ZIGATE, MAX_FOR_ZIGATE_BUZY
 from Modules.txPower import set_TxPower, get_TxPower
 from Modules.checkingUpdate import checkPluginVersion, checkPluginUpdate, checkFirmwareUpdate
-from Modules.logging import openLogFile, closeLogFile
+from Modules.logging import openLogFile, closeLogFile, loggingCleaningErrorHistory
 from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
 
 #from Classes.APS import APSManagement
@@ -127,6 +127,7 @@ class BasePlugin:
         self.IEEE2NWK = {}
         self.zigatedata = {}
         self.DeviceConf = {} # Store DeviceConf.txt, all known devices configuration
+        self.LogErrorHistory = {}
 
         # Objects from Classe
         self.ZigateComm = None
@@ -254,8 +255,7 @@ class BasePlugin:
         Domoticz.Status( "load PluginConf" )
         self.pluginconf = PluginConf(Parameters["HomeFolder"], self.HardwareID)
 
-        if self.pluginconf.pluginConf['useDomoticzLog']:
-            openLogFile( self )
+        openLogFile( self )
 
         loggingPlugin( self, 'Status',  "Switching Heartbeat to %s s interval" %HEARTBEAT)
         Domoticz.Heartbeat( 1 )
@@ -703,7 +703,9 @@ class BasePlugin:
             self.Ping['Nb Ticks'] += 1
 
         if self.HeartbeatCount % ( 3600 // HEARTBEAT) == 0:
+            loggingCleaningErrorHistory(self)
             sendZigateCmd(self,"0017", "")
+            
 
         if self.ZigateComm.loadTransmit() >= MAX_FOR_ZIGATE_BUZY:
             # This mean that 4 commands are on the Queue to be executed by Zigate.
@@ -733,6 +735,7 @@ class BasePlugin:
 
         self.statistics.addPointforTrendStats( self.HeartbeatCount )
 
+        loggingCleaningErrorHistory(self)
         return True
 
 def zigateInit_Phase1(self ):
@@ -900,7 +903,8 @@ def zigateInit_Phase3( self ):
         loggingPlugin( self, 'Status', "Start Web Server connection")
         self.webserver = WebServer( self.networkenergy, self.networkmap, self.zigatedata, self.pluginParameters, self.pluginconf, self.statistics, 
             self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], self.HardwareID, self.DevicesInPairingMode, self.groupmgt, Devices, 
-            self.ListOfDevices, self.IEEE2NWK , self.permitTojoin , self.WebUsername, self.WebPassword, self.PluginHealth, Parameters['Mode4'], self.loggingFileHandle)
+            self.ListOfDevices, self.IEEE2NWK , self.permitTojoin , self.WebUsername, self.WebPassword, self.PluginHealth, Parameters['Mode4'], 
+            self.loggingFileHandle,self.LogErrorHistory)
         if self.FirmwareVersion:
             self.webserver.update_firmware( self.FirmwareVersion )
 
