@@ -227,6 +227,10 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0000 - Key: %s , Scope: %s" %(key, fullScope), nwkid=key)
     EPout = '01'
 
+    disableAck = True
+    if 'PowerSource' in self.ListOfDevices[ key ] and self.ListOfDevices[ key ]['PowerSource'] == 'Battery':
+        disableAck = False
+
     listAttributes = []
 
     # Checking if Ep list is empty, in that case we are in discovery mode and 
@@ -330,13 +334,13 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
             if listAttributes:
                 #loggingReadAttributes( self, 'Debug', "Request Basic  via Read Attribute request %s/%s %s" %(key, EPout, str(listAttributes)), nwkid=key)
                 loggingReadAttributes( self, 'Debug', "Request Basic  via Read Attribute request %s/%s " %(key, EPout) + " ".join("0x{:04x}".format(num) for num in listAttributes), nwkid=key)
-                ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0000", listAttributes, ackIsDisabled = True )
+                ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0000", listAttributes, ackIsDisabled = disableAck )
 
             #Domoticz.Log("List Attributes Manuf Spec: " + " ".join("0x{:04x}".format(num) for num in listAttrSpecific) )
             if listAttrSpecific:
                 #loggingReadAttributes( self, 'Debug', "Request Basic  via Read Attribute request Manuf Specific %s/%s %s" %(key, EPout, str(listAttrSpecific)), nwkid=key)
                 loggingReadAttributes( self, 'Debug', "Request Basic  via Read Attribute request Manuf Specific %s/%s " %(key, EPout) + " ".join("0x{:04x}".format(num) for num in listAttrSpecific), nwkid=key)
-                ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0000", listAttrSpecific, manufacturer_spec = '01', manufacturer = manufacturer_code , ackIsDisabled = True )
+                ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0000", listAttrSpecific, manufacturer_spec = '01', manufacturer = manufacturer_code , ackIsDisabled = disableAck )
 
 def ReadAttributeRequest_0001(self, key):
 
@@ -521,6 +525,10 @@ def ReadAttributeRequest_0201(self, key):
     if 'Model' in self.ListOfDevices[key]:
         _model = True
 
+    disableAck = True
+    if 'PowerSource' in self.ListOfDevices[ key ] and self.ListOfDevices[ key ]['PowerSource'] == 'Battery':
+        disableAck = False
+
     ListOfEp = getListOfEpForCluster( self, key, '0201' )
     for EPout in ListOfEp:
         listAttributes = []
@@ -558,13 +566,30 @@ def ReadAttributeRequest_0201(self, key):
         if listAttributes:
             #loggingReadAttributes( self, 'Debug', "Request 0201 %s/%s 0201 %s " %(key, EPout, listAttributes), nwkid=key)
             loggingReadAttributes( self, 'Debug', "Request Thermostat  via Read Attribute request %s/%s " %(key, EPout) + " ".join("0x{:04x}".format(num) for num in listAttributes), nwkid=key)
-            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0201", listAttributes, ackIsDisabled = True )
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0201", listAttributes, ackIsDisabled = disableAck )
 
         #Domoticz.Log("List Attributes Manuf Spec: " + " ".join("0x{:04x}".format(num) for num in listAttrSpecific) )
         if listAttrSpecific:
             #loggingReadAttributes( self, 'Debug', "Request Thermostat info via Read Attribute request Manuf Specific %s/%s %s" %(key, EPout, str(listAttrSpecific)), nwkid=key)
             loggingReadAttributes( self, 'Debug', "Request Thermostat  via Read Attribute request Manuf Specific %s/%s " %(key, EPout) + " ".join("0x{:04x}".format(num) for num in listAttrSpecific), nwkid=key)
-            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0201", listAttrSpecific, manufacturer_spec = '01', manufacturer =  manufacturer_code , ackIsDisabled = True)
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0201", listAttrSpecific, manufacturer_spec = '01', manufacturer =  manufacturer_code , ackIsDisabled = disableAck)
+
+def ReadAttributeRequest_0201_0012(self, key):
+
+    loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0201 - Key: %s " %key, nwkid=key)
+    _model = False
+    if 'Model' in self.ListOfDevices[key]:
+        _model = True
+
+    disableAck = True
+    if 'PowerSource' in self.ListOfDevices[ key ] and self.ListOfDevices[ key ]['PowerSource'] == 'Battery':
+        disableAck = False
+
+    ListOfEp = getListOfEpForCluster( self, key, '0201' )
+    for EPout in ListOfEp:
+        listAttributes = [ 0x0012 ]
+
+        ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0201", listAttributes, ackIsDisabled = disableAck )
 
 def ReadAttributeRequest_0204(self, key):
 
