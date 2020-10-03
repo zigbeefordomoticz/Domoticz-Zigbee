@@ -196,7 +196,15 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
 
 def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, Color_='', ForceUpdate_=False):
 
-    loggingWidget( self, "Debug", "UpdateDevice_v2 %s:%s:%s   %3s:%3s:%5s (%15s)" %( nValue, sValue, Color_, BatteryLvl, SignalLvl, ForceUpdate_, Devices[Unit].Name), self.IEEE2NWK[Devices[Unit].DeviceID])
+    if Unit not in Devices:
+        Domoticz.Error("Droping Update to Device due to Unit %s not found" %Unit )
+        return
+    if Devices[Unit].DeviceID not in self.IEEE2NWK:
+        Domoticz.Error("Droping Update to Device due to DeviceID %s not found in IEEE2NWK" %(Devices[Unit].DeviceID,self.IEEE2NWK ))
+        return
+
+    loggingWidget( self, "Debug", "UpdateDevice_v2 %s:%s:%s   %3s:%3s:%5s (%15s)" 
+        %( nValue, sValue, Color_, BatteryLvl, SignalLvl, ForceUpdate_, Devices[Unit].Name), self.IEEE2NWK[Devices[Unit].DeviceID])
 
     # Make sure that the Domoticz device still exists (they can be deleted) before updating it
     if Unit not in Devices:

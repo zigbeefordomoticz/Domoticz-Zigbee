@@ -184,7 +184,7 @@ def actuator_setcolor( self, nwkid, EPout, value, Color ):
     #    uint8_t ww;    // Range:0..255, Warm white level (also used as level for monochrome white)
     #
 
-    self.ListOfDevices[nwkid]['Heartbeat'] = 0  # As we update the Device, let's restart and do the next pool in 5'
+    self.ListOfDevices[nwkid]['Heartbeat'] = '0'  # As we update the Device, let's restart and do the next pool in 5'
 
     #First manage level
     Domoticz.Log("----> Value: >%s<" %value)
