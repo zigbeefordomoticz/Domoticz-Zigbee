@@ -259,7 +259,7 @@ class IAS_Zone_Management:
             self.readConfirmEnroll(nwkid, iterEp)
             self.IASZone_enroll_response_zoneID( nwkid, iterEp )
 
-        elif step == 5: # Receive Attribute 0x0001 and 0x0002
+        elif step == 5: # Receive Attribute 0x0000 (Enrollment)
 
             if 'ticks_5' not in self.devices[nwkid]:
                 self.devices[nwkid]['ticks_5'] = 0
@@ -269,21 +269,16 @@ class IAS_Zone_Management:
                 return
 
             self.HB = 0
-            if self.devices[nwkid]['Step'] <= 7 && value == '01':
+            if self.devices[nwkid]['Step'] <= 7 and value == '01':
                 self.devices[nwkid]['Step'] = 7
-	        self.readConfirmIEEE(nwkid, iterEp)
+                self.readConfirmIEEE(nwkid, iterEp)
             self.IASZone_enroll_response_zoneID( nwkid, iterEp )
             self.readConfirmEnroll(nwkid, iterEp)
 
-
             self.devices[nwkid]['ticks_5'] += 1
 
-        elif step == 7: # Receive Confirming Enrollement
-            self.HB = 0
-            self.wip = False
-            self.devices[nwkid]['Step'] = 0
-            self.readConfirmEnroll(nwkid, iterEp)
-            del self.devices[nwkid]
+        elif step == 7: # Receive Enrollement IEEEE
+            self.logging( 'Debug', "IAS_heartbeat - Enrollment with IEEE:%s" %value)
 
 
 
