@@ -1949,10 +1949,10 @@ def Cluster0500( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneType'] = int(MsgClusterData,16)
         else: 
             logging( self, "Cluster", 'Debug', "ReadCluster0500 - Device: %s - Unknown ZoneType: %s" %(MsgSrcAddr, MsgClusterData), MsgSrcAddr)
-        self.iaszonemgt.receiveIASmessages( MsgSrcAddr, 5, MsgClusterData)
+        #self.iaszonemgt.receiveIASmessages( MsgSrcAddr, 5, MsgClusterData) #not needed for IAS procedure
 
     elif MsgAttrID == "0002": # Zone Status
-        self.iaszonemgt.receiveIASmessages( MsgSrcAddr, 5, MsgClusterData)
+        #self.iaszonemgt.receiveIASmessages( MsgSrcAddr, 5, MsgClusterData) #not needed for IAS procedure
         if MsgClusterData != '' and MsgAttType == '19':
             alarm1 = int(MsgClusterData,16) & 0b0000000000000001
             alarm2 = (int(MsgClusterData,16) & 0b0000000000000010 ) >> 1
