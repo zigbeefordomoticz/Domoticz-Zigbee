@@ -852,6 +852,7 @@ class WebServer(object):
                         if attribut in self.ListOfDevices[item]:
                             if self.ListOfDevices[item][attribut] == {}:
                                 device[attribut] = ''
+                                
                             elif self.ListOfDevices[item][attribut] == '' and self.ListOfDevices[item]['MacCapa'] == '8e':
                                 if attribut == 'DeviceType':
                                     device[attribut] = 'FFD'
@@ -859,6 +860,13 @@ class WebServer(object):
                                     device[attribut] = 'Router'
                                 elif attribut == 'PowerSource':
                                     device[attribut] = 'Main'
+
+                            elif attribut == 'LogicalType' and self.ListOfDevices[item][attribut] not in ( 'Router', 'Coordinator',"End Device"):
+                                if self.ListOfDevices[item]['MacCapa'] == '8e':
+                                    device[attribut] = 'Router'
+                                elif self.ListOfDevices[item]['MacCapa'] == '80':
+                                    device[attribut] = 'End Device'
+
                             else:
                                 device[attribut] = self.ListOfDevices[item][attribut]
                         else:

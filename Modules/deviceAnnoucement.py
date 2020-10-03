@@ -55,6 +55,7 @@ def device_annoucementv0(self, Devices, MsgData, MsgLQI):
     # 0x02, 0x03 The device was on the network and coming back.
     #       Here we can assumed the device was not reset.
     # 0x99  We have no clue !
+
     REJOIN_NETWORK = {
         "00": "0x00 - join a network through association",
         "01": "0x01 - joining directly or rejoining the network using the orphaning procedure",
@@ -430,6 +431,7 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
     #     - Real Device Annoucement for Devices which do not send a Rejoin Request
 
     # Decoding what we receive
+
     RejoinFlag = None
     if len(MsgData) > 22:  # Firmware 3.1b
         RejoinFlag = MsgData[22:24]
@@ -443,7 +445,7 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
     loggingInput(
         self,
         "Debug",
-        "Decode004D V2 - Device Annoucementv2: NwkId: %s Ieee: %s MacCap: %s ReJoin: %s LQI: %s NewDevice: %s"
+        "Decode004D V2 - Device Annoucement: NwkId: %s Ieee: %s MacCap: %s ReJoin: %s LQI: %s NewDevice: %s"
         % (NwkId, Ieee, MacCapa, RejoinFlag, MsgLQI, newDeviceForPlugin),
         NwkId,
     )
@@ -515,7 +517,7 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
         loggingInput(
             self,
             "Status",
-            "Device Annoucementv2: %s NwkId: %s Ieee: %s MacCap: %s"
+            "Device Annoucement: %s NwkId: %s Ieee: %s MacCap: %s"
             % (self.ListOfDevices[NwkId]["ZDeviceName"], NwkId, Ieee, MacCapa),
             NwkId,
         )
@@ -525,7 +527,7 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
         loggingInput(
             self,
             "Status",
-            "Device Annoucementv2: NwkId: %s Ieee: %s MacCap: %s"
+            "Device Annoucement: NwkId: %s Ieee: %s MacCap: %s"
             % (NwkId, Ieee, MacCapa),
             NwkId,
         )
@@ -534,13 +536,17 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
 
     # We are receiving the Real Device Annoucement. what to do
     if "Announced" not in self.ListOfDevices[NwkId]:
+        # As exemple this is what happen when you switch Off and the On an Ikea Bulb, a Legrand remote switch.
+        # No Re Join flag. 
+        # This is a known device
+        # Do nothing, except for legrand we request battery level (as it is never repored)
         loggingInput(
             self, "Debug", "------------ > No Rejoin Flag seen, droping", NwkId
         )
         timeStamped(self, NwkId, 0x004D)
         lastSeenUpdate(self, Devices, NwkId=NwkId)
         legrand_refresh_battery_remote(self, NwkId)
-        decode004d_existing_devicev2(self, Devices, NwkId, Ieee, MacCapa, MsgLQI, now)
+        #decode004d_existing_devicev2(self, Devices, NwkId, Ieee, MacCapa, MsgLQI, now)
         return
 
     # Annouced is in the ListOfDevices[NwkId]
@@ -710,9 +716,7 @@ def decode004d_existing_devicev2(
         )
 
 
-def decode004d_new_devicev2(
-    self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgData, MsgLQI, now
-):
+def decode004d_new_devicev2(    self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgData, MsgLQI, now):
     # New Device coming for provisioning
     # Decode Device Capabiities
     deviceMacCapa = list(decodeMacCapa(MsgMacCapa))
@@ -812,7 +816,8 @@ def decode004d_new_devicev2(
         ReadAttributeRequest_0000(
             self, NwkId, fullScope=False
         )  # In order to request Model Name
-    if self.pluginconf.pluginConf["enableSchneiderWiser"]:
+    PREFIX_IEEE_WISER = '00124b000'
+    if self.pluginconf.pluginConf["enableSchneiderWiser"] and MsgIEEE[0 : len(PREFIX_IEEE_WISER)] == PREFIX_IEEE_WISER:
         ReadAttributeRequest_0000(
             self, NwkId, fullScope=False
         )  # In order to request Model Name
