@@ -816,7 +816,8 @@ def decode004d_new_devicev2(    self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgDa
         ReadAttributeRequest_0000(
             self, NwkId, fullScope=False
         )  # In order to request Model Name
-    if self.pluginconf.pluginConf["enableSchneiderWiser"]:
+    PREFIX_IEEE_WISER = '00124b000'
+    if self.pluginconf.pluginConf["enableSchneiderWiser"] and MsgIEEE[0 : len(PREFIX_IEEE_WISER)] == PREFIX_IEEE_WISER:
         ReadAttributeRequest_0000(
             self, NwkId, fullScope=False
         )  # In order to request Model Name

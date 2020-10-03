@@ -326,7 +326,7 @@ def maskChannel( channel ):
                 else:
                     Domoticz.Error("Requested channel not supported by Zigate: %s" %channel)
             else:
-                Domoticz.Error("maskChannel - invalid channel %s" %c)
+                Domoticz.Error("maskChannel - invalid channel %s" %channel)
     else:
         Domoticz.Errors("Requested channel is invalid: %s" %channel)
 
@@ -527,9 +527,6 @@ def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zig
     SECURITY = 0x30
     RADIUS = 0x00
 
-
-
-        
     security = '%02X' %SECURITY
     radius = '%02X' %RADIUS
 

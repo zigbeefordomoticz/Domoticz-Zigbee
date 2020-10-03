@@ -877,16 +877,14 @@ def ready_to_send_if_needed(self):
 
     readyToSend = True
     if self.zmode == 'zigate31c':
-        readyToSend = len(self.zigateSendQueue) != 0 and len(
-            self._waitFor8000Queue) == 0 and len(self._waitForCmdResponseQueue) == 0
-        self.loggingSend('Debug2', "--- send_data_internal - Q(0x8000): %s Q(Ack/Nack): %s sendNow: %s"
-                         % (len(self.zigateSendQueue), len(self._waitFor8000Queue), len(self._waitFor8000Queue)))
+        readyToSend = len(self._waitFor8000Queue) == 0 and len(self._waitForCmdResponseQueue) == 0
+        #self.loggingSend('Debug2', "--- send_data_internal - Q(0x8000): %s Q(Ack/Nack): %s sendNow: %s"
+        #    % (len(self.zigateSendQueue), len(self._waitFor8000Queue), len(self._waitFor8000Queue)))
 
     elif self.zmode == 'zigateack':
-        readyToSend = len(self.zigateSendQueue) != 0 and len(
-            self._waitFor8000Queue) == 0 and len(self._waitFor8000Queue) == 0
-        self.loggingSend('Debug2', "--- send_data_internal - Q(0x8000): %s Q(Ack/Nack): %s sendNow: %s"
-                         % (len(self.zigateSendQueue), len(self._waitFor8000Queue), len(self._waitFor8000Queue)))
+        readyToSend = len(self._waitFor8000Queue) == 0 and len(self._waitForAckNack) == 0 and len(self._waitForCmdResponseQueue) == 0
+        #self.loggingSend('Debug2', "--- send_data_internal - Q(0x8000): %s Q(Ack/Nack): %s sendNow: %s"
+        #    % (len(self.zigateSendQueue), len(self._waitFor8000Queue), len(self._waitFor8000Queue)))
 
     if readyToSend and len(self.zigateSendQueue) > 0:
         send_data_internal(self, _next_cmd_from_send_queue(self)[0])

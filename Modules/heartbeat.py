@@ -22,7 +22,7 @@ from Modules.basicOutputs import  sendZigateCmd,identifyEffect, getListofAttribu
 from Modules.readAttributes import READ_ATTRIBUTES_REQUEST, ping_device_with_read_attribute, \
         ReadAttributeRequest_0000, ReadAttributeRequest_0001, ReadAttributeRequest_0006, ReadAttributeRequest_0008, ReadAttributeRequest_0006_0000, ReadAttributeRequest_0006_400x, ReadAttributeRequest_0008_0000,\
         ReadAttributeRequest_0100, ReadAttributeRequest_0101_0000,\
-        ReadAttributeRequest_000C, ReadAttributeRequest_0102, ReadAttributeRequest_0102_0008, ReadAttributeRequest_0201, ReadAttributeRequest_0204, ReadAttributeRequest_0300,  \
+        ReadAttributeRequest_000C, ReadAttributeRequest_0102, ReadAttributeRequest_0102_0008, ReadAttributeRequest_0201, ReadAttributeRequest_0201_0012, ReadAttributeRequest_0204, ReadAttributeRequest_0300,  \
         ReadAttributeRequest_0400, ReadAttributeRequest_0402, ReadAttributeRequest_0403, ReadAttributeRequest_0405, \
         ReadAttributeRequest_0406, ReadAttributeRequest_0500, ReadAttributeRequest_0502, ReadAttributeRequest_0702, ReadAttributeRequest_000f, ReadAttributeRequest_fc01, ReadAttributeRequest_fc21
 from Modules.configureReporting import processConfigureReporting
@@ -157,6 +157,12 @@ def processKnownDevices( self, Devices, NWKID ):
                 loggingHeartbeat( self, 'Debug', "++ pollingDeviceStatus -  %s  for DoorLock" \
                     %(NWKID), NWKID)
 
+            if '0201' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                if self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE:
+                    return True
+                ReadAttributeRequest_0201_0012( self, NWKID)
+                loggingHeartbeat( self, 'Debug', "++ pollingDeviceStatus -  %s  for DoorLock" \
+                    %(NWKID), NWKID)
         return False
     
     def checkHealth( self, NwkId):
@@ -317,18 +323,17 @@ def processKnownDevices( self, Devices, NWKID ):
         loggingHeartbeat( self, 'Log', "processKnownDevices -  %s recover from Non Reachable" %NWKID, NWKID) 
         del self.ListOfDevices[NWKID]['pingDeviceRetry']
 
-    #model = ''
-    #if 'Model' in self.ListOfDevices[ NWKID ]:
-    #    model = self.ListOfDevices[ NWKID ]['Model']
-    ## Starting this point, it is ony relevant for Main Powered Devices. 
-
-    # Some battery based end device with ZigBee 30 use polling and can receive commands.
-    # We should authporized them for Polling After Action, in order to get confirmation.
+    model = ''
+    if 'Model' in self.ListOfDevices[ NWKID ]:
+        model = self.ListOfDevices[ NWKID ]['Model']
 
     enabledEndDevicePolling = False
-    if 'PollingEnabled' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['PollingEnabled']:
+    if model in self.DeviceConf and 'PollingEnabled' in self.DeviceConf[ model ] and self.DeviceConf[ model ]['PollingEnabled']:
         enabledEndDevicePolling = True
 
+    ## Starting this point, it is ony relevant for Main Powered Devices. 
+    # Some battery based end device with ZigBee 30 use polling and can receive commands.
+    # We should authporized them for Polling After Action, in order to get confirmation.
     if not _mainPowered and not enabledEndDevicePolling:
        return
 
