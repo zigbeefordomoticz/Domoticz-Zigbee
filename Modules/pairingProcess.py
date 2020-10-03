@@ -351,8 +351,9 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                     if 'ConfigSource' in self.ListOfDevices[NWKID]:
                         if self.ListOfDevices[NWKID]['ConfigSource'] != 'DeviceConf':
                             getListofAttribute( self, NWKID, iterEp, iterCluster)
-
-             for iterEp in self.ListOfDevices[NWKID]['Ep']:
+                            
+            #Check if IAS Zone enrollment needed
+            for iterEp in self.ListOfDevices[NWKID]['Ep']:
                 #IAS Zone
                 if '0500' in self.ListOfDevices[NWKID]['Ep'][iterEp] or \
                         '0502'  in self.ListOfDevices[NWKID]['Ep'][iterEp]:
