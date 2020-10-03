@@ -340,7 +340,7 @@ class IAS_Zone_Management:
                 self.devices[iterKey]['Ep'] = iterEp
                 self.logging( 'Debug', "IAS_heartbeat - TO restart self.IASZone_attributes")
                 self.IASZone_enroll_response_zoneID( iterKey, iterEp)
-                self.readConfirmEnroll(iterKey, iterEp)
+                self.IASZone_attributes(iterKey, iterEp)
 		
             elif self.HB > 1 and self.devices[iterKey]['Step'] == 4:
                 self.tryHB += self.tryHB
