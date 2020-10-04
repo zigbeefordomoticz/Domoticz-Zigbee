@@ -12,6 +12,7 @@
 """
 
 import Domoticz
+import json
 from datetime import datetime
 
 def openLogFile( self ):
@@ -20,12 +21,28 @@ def openLogFile( self ):
         #logfilename =  self.pluginconf.pluginConf['pluginLogs'] + "/" + "Zigate" + '_' + '%02d' %self.HardwareID + "_" + str(datetime.now().strftime('%Y-%m-%d_%H-%M-%S')) + ".log"
         logfilename =  self.pluginconf.pluginConf['pluginLogs'] + "/" + "Zigate" + '_' + '%02d' %self.HardwareID + "_" + str(datetime.now().strftime('%Y-%m-%d')) + ".log"
         self.loggingFileHandle = open( logfilename, "a+", encoding='utf-8')
+    
+    jsonLogHistory =  self.pluginconf.pluginConf['pluginLogs'] + "/" + "Zigate_log_error_history.json"
+    try:
+        handle = open( jsonLogHistory, "r", encoding='utf-8')
+    except Exception as e:
+        Domoticz.Status("Log history not found, no error logged")
+        #Domoticz.Error(repr(e))
+        return
+    try:
+        self.LogErrorHistory = json.load( handle, encoding=dict)
+    except json.decoder.JSONDecodeError as e:
+        res = "Failed"
+        Domoticz.Error("load Json LogErrorHistory poorly-formed %s, not JSON: %s" %(jsonLogHistory,e))
+    handle.close()
+
 
 def closeLogFile( self ):
 
     if self.loggingFileHandle:
         self.loggingFileHandle.close()
         self.loggingFileHandle = None
+    loggingWriteErrorHistory(self)
 
 def logToFile( self, message ):
 
@@ -77,6 +94,72 @@ def loggingDirector( self, logType, message):
         _loggingLog( self,  message )
     elif logType == 'Status':
         _loggingStatus( self, message )
+        
+def logging( self, module, logType, message, nwkid=None, context=None):
+    if logType == 'Error':
+        loggingError(self, module, message, nwkid, context)
+    elif logType == 'Debug':
+        pluginConfModule = "debug"+str(module)
+        if pluginConfModule in self.pluginconf.pluginConf:
+            if self.pluginconf.pluginConf[pluginConfModule]:
+                _logginfilter( self, message, nwkid)
+        else:
+            _loggingDebug(self, message)
+    else:
+        loggingDirector(self, logType, message )
+
+def loggingError(self, module, message, nwkid, context):
+    Domoticz.Error(message)
+    if module is None:
+        return
+
+    if module not in self.LogErrorHistory:
+        self.LogErrorHistory[module] = {
+            'LastLog' : 0,
+            '0': loggingBuildContext(self, module, message, nwkid, context)
+            }
+    elif self.LogErrorHistory[module]['LastLog'] != 4:
+        logIndex = self.LogErrorHistory[module]['LastLog'] + 1
+        self.LogErrorHistory[module]['LastLog'] = logIndex
+        self.LogErrorHistory[module][str(logIndex)] = loggingBuildContext(self, module, message, nwkid, context)
+    else: #log full for this module, rotate
+        self.LogErrorHistory[module]['0'] = self.LogErrorHistory[module]['1'].copy()
+        self.LogErrorHistory[module]['1'] = self.LogErrorHistory[module]['2'].copy()
+        self.LogErrorHistory[module]['2'] = self.LogErrorHistory[module]['3'].copy()
+        self.LogErrorHistory[module]['3'] = self.LogErrorHistory[module]['4'].copy()
+        self.LogErrorHistory[module]['4']: loggingBuildContext(self, module, message, nwkid, context)
+
+    loggingWriteErrorHistory(self)
+
+def loggingBuildContext(self, module, message, nwkid, context):
+    _context = {
+                'time' : str(datetime.now()),
+                'nwkid' : nwkid,
+                'PluginHealth' : self.PluginHealth['Txt'],
+                'context' : context.copy()
+            }
+    return _context
+
+def loggingWriteErrorHistory( self ):
+    jsonLogHistory =  self.pluginconf.pluginConf['pluginLogs'] + "/" + "Zigate_log_error_history.json"
+    with open( jsonLogHistory, "w", encoding='utf-8') as json_file:
+        json.dump( self.LogErrorHistory, json_file)
+        json_file.write('\n')
+
+def loggingCleaningErrorHistory( self ):
+    _now = datetime.now()
+    for module in self.LogErrorHistory:
+        _delta = _now - datetime.fromisoformat(self.LogErrorHistory[module]['0']['time'])
+        if _delta.days > 7:
+            for i in range(0,self.LogErrorHistory[module]['LastLog']):
+                self.LogErrorHistory[module][str(i)] = self.LogErrorHistory[module][str(i+1)].copy()
+            self.LogErrorHistory[module].pop(str(self.LogErrorHistory[module]['LastLog']))
+            if self.LogErrorHistory[module]['LastLog'] == 0:
+                self.LogErrorHistory.pop(module)
+            else:
+                self.LogErrorHistory[module]['LastLog'] -= 1
+        return #one by one is enouhgt to prevent too much time in the function
+
 
 def loggingPairing( self, logType, message):
     
