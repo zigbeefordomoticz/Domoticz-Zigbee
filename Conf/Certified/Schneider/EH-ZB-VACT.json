@@ -11,7 +11,7 @@
 	    "0201": "", 
 	    "0204": "", 
 	    "fe02": "", 
-	    "Type": "Temp/ThermoSetpoint/Door/ThermoModeEHZBRTSTemp" } 
+	    "Type": "Temp/ThermoSetpoint/Door/ThermoModeEHZBRTS" } 
   },
   "Type": "",
   "overwriteZigateEpBind": "0b",
