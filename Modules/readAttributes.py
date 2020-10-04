@@ -223,7 +223,7 @@ def ping_device_with_read_attribute(self, key):
         set_isqn_datastruct(self, 'ReadAttributes', key, EPout, PING_CLUSTER, PING_CLUSTER_ATTRIBUTE, i_sqn )
 
 def ackDisableOrEnable( self, key ):
-    disableAck = True
+    disableAck = False
     if 'PowerSource' in self.ListOfDevices[ key ] and self.ListOfDevices[ key ]['PowerSource'] == 'Battery':
         disableAck = False
 
