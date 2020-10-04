@@ -118,6 +118,23 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                 loggingHeartbeat( self, 'Debug', "[%s] NEW OBJECT: %s Manufacturer: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Manufacturer']), NWKID)
 
         for iterEp in self.ListOfDevices[NWKID]['Ep']:
+            #IAS Zone
+            if '0500' in self.ListOfDevices[NWKID]['Ep'][iterEp] or \
+                    '0502'  in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                # We found a Cluster 0x0500 IAS. May be time to start the IAS Zone process
+                Domoticz.Status("[%s] NEW OBJECT: %s 0x%04s - IAS Zone controler setting" \
+                        %( RIA, NWKID, status))
+                if self.pluginconf.pluginConf['capturePairingInfos']:
+                    self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'IAS-ENROLL' )
+                self.iaszonemgt.IASZone_triggerenrollement( NWKID, iterEp)
+                if '0502'  in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                    Domoticz.Status("[%s] NEW OBJECT: %s 0x%04s - IAS WD enrolment" \
+                        %( RIA, NWKID, status))
+                    if self.pluginconf.pluginConf['capturePairingInfos']:
+                        self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'IASWD-ENROLL' )
+                    self.iaszonemgt.IASWD_enroll( NWKID, iterEp)
+
+        for iterEp in self.ListOfDevices[NWKID]['Ep']:
             # ColorMode
             if '0300' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
                 if 'ColorInfos' in self.ListOfDevices[NWKID]:
@@ -351,25 +368,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                     if 'ConfigSource' in self.ListOfDevices[NWKID]:
                         if self.ListOfDevices[NWKID]['ConfigSource'] != 'DeviceConf':
                             getListofAttribute( self, NWKID, iterEp, iterCluster)
-                            
-            #Check if IAS Zone enrollment needed
-            for iterEp in self.ListOfDevices[NWKID]['Ep']:
-                #IAS Zone
-                if '0500' in self.ListOfDevices[NWKID]['Ep'][iterEp] or \
-                        '0502'  in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                    # We found a Cluster 0x0500 IAS. May be time to start the IAS Zone process
-                    Domoticz.Status("[%s] NEW OBJECT: %s 0x%04s - IAS Zone controler setting" \
-                            %( RIA, NWKID, status))
-                    if self.pluginconf.pluginConf['capturePairingInfos']:
-                        self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'IAS-ENROLL' )
-                    self.iaszonemgt.IASZone_triggerenrollement( NWKID, iterEp)
-                    if '0502'  in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                        Domoticz.Status("[%s] NEW OBJECT: %s 0x%04s - IAS WD enrolment" \
-                            %( RIA, NWKID, status))
-                        if self.pluginconf.pluginConf['capturePairingInfos']:
-                            self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'IASWD-ENROLL' )
-                        self.iaszonemgt.IASWD_enroll( NWKID, iterEp)
-                    
+
             # Set the sensitivity for Xiaomi Vibration
             if  self.ListOfDevices[NWKID]['Model'] == 'lumi.vibration.aq1':
                  Domoticz.Status('processNotinDBDevices - set viration Aqara %s sensitivity to %s' \
