@@ -1073,3 +1073,17 @@ def clean_old_datastruct(self,DeviceAttribute, key , endpoint, clusterId, Attrib
         del self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId][ AttributeId ]
     if 'TimeStamp' in self.ListOfDevices[key][DeviceAttribute]:
         del self.ListOfDevices[key][DeviceAttribute][ 'TimeStamp' ]
+
+
+def ackDisableOrEnable( self, key ):
+
+    if 'PowerSource' in self.ListOfDevices[ key ] and self.ListOfDevices[ key ]['PowerSource'] == 'Battery':
+        return False
+
+    if 'MacCapa' in self.ListOfDevices[ key ] and self.ListOfDevices[ key ]['MacCapa'] == '80':
+        return False
+    
+    if 'Model' in self.ListOfDevices[ key ] and self.ListOfDevices[ key ]['Model'] == 'EH-ZB-VACT':
+        return False
+
+    return True
