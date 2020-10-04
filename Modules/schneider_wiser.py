@@ -18,8 +18,9 @@ import struct
 import Domoticz
 
 from Modules.domoMaj import MajDomoDevice
-from Modules.basicOutputs import sendZigateCmd, raw_APS_request, write_attribute, read_attribute
-from Modules.configureReporting import prepare_and_send_configure_reporting
+from Modules.basicOutputs import sendZigateCmd, raw_APS_request, write_attribute, read_attribute, ZigatePermitToJoin
+from Modules.configureReporting import prepare_and_send_configure_reporting, send_configure_reporting_attributes_set
+
 from Modules.bindings import webBind, WebBindStatus
 
 from Modules.readAttributes import ReadAttributeRequest_0201, ReadAttributeRequest_0001, ReadAttributeRequest_0702, ReadAttributeRequest_0000
@@ -74,29 +75,7 @@ def callbackDeviceAwake_Schneider(self, NwkId, EndPoint, cluster):
                         (self.ListOfDevices[ NwkId ]['Schneider']['Registration'] + ( 14 * 60)) <= time():
 
         Domoticz.Log("%s/%s Switching Reporting to NORMAL mode" %(NwkId, EndPoint))
-
-        AttributesConfig = {
-            "0020": {"DataType": "20", "MinInterval": "0E10", "MaxInterval": "0E10", "TimeOut": "0000","Change":"01"}}
-        schneider_UpdateConfigureReporting( self, NwkId, EndPoint, '0001', AttributesConfig)
-
-        ## Set the Window Detection to 0x04
-        wiser_set_thermostat_window_detection(self, NwkId, EndPoint, 0x04)  
-
-        AttributesConfig = {
-            "0012": {"DataType": "29", "MinInterval": "0258", "MaxInterval": "0258", "TimeOut": "0000","Change":"7FFF"},
-            "0000": {"DataType": "29", "MinInterval": "003C", "MaxInterval": "0258", "TimeOut": "0000","Change":"0001"},
-            "e030": {"DataType": "20", "MinInterval": "003C", "MaxInterval": "0258", "TimeOut": "0000","Change":"01"},
-            "e031": {"DataType": "30", "MinInterval": "000A", "MaxInterval": "0258", "TimeOut": "0000","Change":"01"},
-            "e012": {"DataType": "30", "MinInterval": "000A", "MaxInterval": "0258", "TimeOut": "0000","Change":"01"}}
-        schneider_UpdateConfigureReporting( self, NwkId, EndPoint, '0201', AttributesConfig)
-
-        AttributesConfig = {
-            "0001": {"DataType": "30", "MinInterval": "001E", "MaxInterval": "0258", "TimeOut": "0000","Change":"00"}}
-
-        schneider_UpdateConfigureReporting( self, NwkId, EndPoint, '0204', AttributesConfig) 
-
-        self.ListOfDevices[ NwkId ]['Schneider']['ReportingMode']  = 'Normal'    
-
+        vact_config_reporting_normal(self, NwkId, EndPoint)
 
 
 def callbackDeviceAwake_Schneider_SetPoints( self, NwkId, EndPoint, cluster):
@@ -179,7 +158,14 @@ def schneider_wiser_registration( self, Devices, key ):
 
     # Set default Thermostat temp
     if self.ListOfDevices[key]['Model'] in ( 'EH-ZB-RTS', 'EH-ZB-VACT'): # Thermostat
-        wiser_set_thermostat_default_temp(self, Devices, key, EPout)
+        cluster_id = "%04x" %0x0201
+        Hattribute = "%04x" %0x0012
+        default_temperature = 2000
+        setpoint = schneider_find_attribute_and_set(self,key,EPout,cluster_id,Hattribute,default_temperature)
+        schneider_update_ThermostatDevice(self, Devices, key, EPout, cluster_id, setpoint)
+
+    # Bind thermostat if needed
+    if self.ListOfDevices[key]['Model'] in ( 'EH-ZB-RTS', ): # Thermostat
         schneider_thermostat_check_and_bind (self, key)
         
     # set fip mode if nothing and dont touch if already exists
@@ -201,13 +187,12 @@ def schneider_wiser_registration( self, Devices, key ):
         sendZigateCmd(self, "0092","02" + key + ZIGATE_EP + EPout + "01")
     
     # Redo Temp
-    if self.ListOfDevices[key]['Model'] in ( 'EH-ZB-HACT', 'EH-ZB-VACT' ): # Actuator, Valve
+    if self.ListOfDevices[key]['Model'] in ( 'EH-ZB-VACT' ): # Actuator, Valve
         wiser_set_calibration( self, key, EPout)
     self.ListOfDevices[key]['Heartbeat'] = '0'
 
-
-
-
+    # Close the Network
+    #ZigatePermitToJoin( self, 0 )
 
 def wiser_set_zone_mode( self, key, EPout): # 0x0201/0xe010
     
@@ -1093,6 +1078,32 @@ def schneider_find_attribute_and_set(self, NWKID, EP, ClusterID ,attr ,defaultVa
     return found
 
 
+
+def vact_config_reporting_normal(self, NwkId, EndPoint):
+    
+    AttributesConfig = {
+        "0020": {"DataType": "20", "MinInterval": "0E10", "MaxInterval": "0E10", "TimeOut": "0000","Change":"01"}}
+    schneider_UpdateConfigureReporting( self, NwkId, EndPoint, '0001', AttributesConfig)
+
+    ## Set the Window Detection to 0x04
+    wiser_set_thermostat_window_detection(self, NwkId, EndPoint, 0x04)  
+
+    AttributesConfig = {
+        "0012": {"DataType": "29", "MinInterval": "0258", "MaxInterval": "0258", "TimeOut": "0000","Change":"7FFF"},
+        "0000": {"DataType": "29", "MinInterval": "003C", "MaxInterval": "0258", "TimeOut": "0000","Change":"0001"},
+        "e030": {"DataType": "20", "MinInterval": "003C", "MaxInterval": "0258", "TimeOut": "0000","Change":"01"},
+        "e031": {"DataType": "30", "MinInterval": "000A", "MaxInterval": "0258", "TimeOut": "0000","Change":"01"},
+        "e012": {"DataType": "30", "MinInterval": "000A", "MaxInterval": "0258", "TimeOut": "0000","Change":"01"}}
+    schneider_UpdateConfigureReporting( self, NwkId, EndPoint, '0201', AttributesConfig)
+
+    AttributesConfig = {
+        "0001": {"DataType": "30", "MinInterval": "001E", "MaxInterval": "0258", "TimeOut": "0000","Change":"00"}}
+
+    schneider_UpdateConfigureReporting( self, NwkId, EndPoint, '0204', AttributesConfig) 
+
+    self.ListOfDevices[ NwkId ]['Schneider']['ReportingMode']  = 'Normal'    
+
+
 def schneider_UpdateConfigureReporting( self, NwkId, Ep, ClusterId = None, AttributesConfig= None):
     """
     Will send a Config reporting to a specific Endpoint of a Wiser Device. 
@@ -1143,6 +1154,7 @@ def schneider_UpdateConfigureReporting( self, NwkId, Ep, ClusterId = None, Attri
 
     attrList = ''
     attrLen = 0
+    attributeList = []             
     for attr in AttributesConfig:
         attrdirection = "00"
         attrType = AttributesConfig[attr]['DataType']
@@ -1150,6 +1162,7 @@ def schneider_UpdateConfigureReporting( self, NwkId, Ep, ClusterId = None, Attri
         maxInter = AttributesConfig[attr]['MaxInterval']
         timeOut =  AttributesConfig[attr]['TimeOut']
         chgFlag =  AttributesConfig[attr]['Change']
+        attributeList.append( attr )
         if int(attrType, 16) < 0x30:
                 attrList += attrdirection + attrType + attr + minInter + maxInter + timeOut + chgFlag
         else:
@@ -1161,18 +1174,21 @@ def schneider_UpdateConfigureReporting( self, NwkId, Ep, ClusterId = None, Attri
         # Let's check if we have to send a chunk
         if attrLen == MAX_ATTR_PER_REQ:
             # Prepare the payload
-            datas =   addr_mode + NwkId + ZIGATE_EP + Ep + ClusterId + direction + manufacturer_spec + manufacturer 
-            datas +=  "%02x" %(attrLen) + attrList
-            sendZigateCmd( self, "0120", datas )
+            #datas =   addr_mode + NwkId + ZIGATE_EP + Ep + ClusterId + direction + manufacturer_spec + manufacturer 
+            #datas +=  "%02x" %(attrLen) + attrList
+            #sendZigateCmd( self, "0120", datas )
+            send_configure_reporting_attributes_set( self, NwkId, Ep, ClusterId, direction, manufacturer_spec, manufacturer, attrLen, attrList , attributeList)
 
             #Reset the Lenght to 0
             attrList = ''
             attrLen = 0
+            attributeList = []             
     # end for 
 
     # Let's check if we have some remaining to send
     if attrLen != 0 :
         # Prepare the payload
-        datas =   addr_mode + NwkId + SCHNEIDER_BASE_EP + Ep + ClusterId + direction + manufacturer_spec + manufacturer 
-        datas +=  "%02x" %(attrLen) + attrList
-        sendZigateCmd( self, "0120", datas )
+        #datas =   addr_mode + NwkId + SCHNEIDER_BASE_EP + Ep + ClusterId + direction + manufacturer_spec + manufacturer 
+        #datas +=  "%02x" %(attrLen) + attrList
+        #sendZigateCmd( self, "0120", datas )
+        send_configure_reporting_attributes_set( self, NwkId, Ep, ClusterId, direction, manufacturer_spec, manufacturer, attrLen, attrList , attributeList)
