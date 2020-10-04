@@ -29,8 +29,8 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes , manu
         """
         Split the list of attrributes in wanted part
         """
-        n = wanted_parts
-        return [l[x: x+n] for x in range(0, len(l), n)]
+        Domoticz.Log("Breaking %s ListOfAttribute into chunks of %s ==> %s" %( l, wanted_parts, str([  l[x: x+wanted_parts] for x in range(0, len(l), wanted_parts) ])))
+        return [  l[x: x+wanted_parts] for x in range(0, len(l), wanted_parts) ]
 
     # That one is put in comment as it has some bad behaviour. It prevents doing 2 commands in the same minutes.
     #if checkTime:
@@ -42,16 +42,14 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes , manu
 
     # Check if we are in pairing mode and Read Attribute must be broken down in 1 attribute max, otherwise use the default value
     maxReadAttributesByRequest = MAX_READATTRIBUTES_REQ
-    if 'Status' in self.ListOfDevices[ addr ] and self.ListOfDevices[ addr ]['Status'] != 'inDB':
+    if 'PairingInProgress' in self.ListOfDevices[ addr ] and self.ListOfDevices[ addr ]['PairingInProgress']:
         maxReadAttributesByRequest = 1
 
     if not isinstance(ListOfAttributes, list) or len (ListOfAttributes) <= maxReadAttributesByRequest:
         normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes , manufacturer_spec, manufacturer, ackIsDisabled )
     else:
         loggingReadAttributes( self, 'Debug2', "----------> ------- %s/%s %s ListOfAttributes: " %(addr, EpOut, Cluster) + " ".join("0x{:04x}".format(num) for num in ListOfAttributes), nwkid=addr)
-        nbpart = - (  - len(ListOfAttributes) // maxReadAttributesByRequest) 
-
-        for shortlist in split_list(ListOfAttributes, wanted_parts = nbpart):
+        for shortlist in split_list(ListOfAttributes, wanted_parts = maxReadAttributesByRequest):
             loggingReadAttributes( self, 'Debug2', "----------> ------- Shorter: " + ", ".join("0x{:04x}".format(num) for num in shortlist), nwkid=addr)
             normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , shortlist , manufacturer_spec , manufacturer , ackIsDisabled)
 

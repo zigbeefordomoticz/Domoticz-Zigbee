@@ -641,7 +641,7 @@ def decode004d_existing_devicev2(
 
     timeStamped(self, NwkId, 0x004D)
     lastSeenUpdate(self, Devices, NwkId=NwkId)
-
+    self.ListOfDevices[NwkId]['PairingInProgress'] = True
     # If we reach this stage we are in a case of a Device Reset, or
     # we have no evidence and so will do the same
     # Reset the device Hearbeat, This should allow to trigger Read Request
@@ -714,6 +714,7 @@ def decode004d_existing_devicev2(
             NwkId,
             sensitivity=self.pluginconf.pluginConf["vibrationAqarasensitivity"],
         )
+    self.ListOfDevices[NwkId]['PairingInProgress'] = False
 
 
 def decode004d_new_devicev2(    self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgData, MsgLQI, now):
