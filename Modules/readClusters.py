@@ -1612,6 +1612,8 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         elif MsgAttrID == 'e012':  # 57362, ATTRIBUTE_THERMOSTAT_OPEN_WINDOW_DETECTION_STATUS
             logging( self, "Cluster", 'Debug', "readCluster - %s - %s/%s Schneider ATTRIBUTE_THERMOSTAT_OPEN_WINDOW_DETECTION_STATUS  %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
             checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  MsgClusterData )
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0500',MsgClusterData )
+
         elif MsgAttrID == 'e013': # 57363, ATTRIBUTE_THERMOSTAT_OPEN_WINDOW_DETECTION_THRESHOLD
             logging( self, "Cluster", 'Debug', "readCluster - %s - %s/%s Schneider ATTRIBUTE_THERMOSTAT_OPEN_WINDOW_DETECTION_THRESHOLD  %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
             checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  MsgClusterData )
@@ -1636,7 +1638,6 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  MsgClusterData )
 
 def Cluster0204( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
-
 
     logging( self, "Cluster", 'Debug', "ReadCluster 0204 - Addr: %s Ep: %s AttrId: %s AttrType: %s AttSize: %s Data: %s"
             %(MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
@@ -1948,11 +1949,12 @@ def Cluster0500( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             logging( self, "Cluster", 'Debug', "ReadCluster0500 - Device: %s - ZoneType: %s" %(MsgSrcAddr, ZONE_TYPE[int(MsgClusterData,16)]), MsgSrcAddr)
             self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneType'] = int(MsgClusterData,16)
         else: 
+
             logging( self, "Cluster", 'Debug', "ReadCluster0500 - Device: %s - Unknown ZoneType: %s" %(MsgSrcAddr, MsgClusterData), MsgSrcAddr)
         self.iaszonemgt.receiveIASmessages( MsgSrcAddr, 5, MsgClusterData)
 
     elif MsgAttrID == "0002": # Zone Status
-        self.iaszonemgt.receiveIASmessages( MsgSrcAddr, 5, MsgClusterData)
+        #self.iaszonemgt.receiveIASmessages( MsgSrcAddr, 5, MsgClusterData)     #Not needed for enrollment procedure
         if MsgClusterData != '' and MsgAttType == '19':
             alarm1 = int(MsgClusterData,16) & 0b0000000000000001
             alarm2 = (int(MsgClusterData,16) & 0b0000000000000010 ) >> 1
