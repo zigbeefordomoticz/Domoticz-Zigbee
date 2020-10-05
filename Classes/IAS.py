@@ -5,9 +5,7 @@
 #
 """
     Module: z_IAS.py
-
     Description: IAS Zone management
-
 """
 
 
@@ -146,6 +144,20 @@ class IAS_Zone_Management:
         cluster_id = "%04x" %0x0500
         attribute = 0x0000
         self.__ReadAttributeReq( key, ZIGATE_EP, Epout, cluster_id , attribute )
+	
+	
+    def readConfirmIEEE( self, key, Epout ):
+
+        if not self.ZigateIEEE:
+            self.logging( 'Error', "readConfirmEnroll - Zigate IEEE not yet known")
+            return
+        if key not in self.devices:
+            self.logging( 'Log', "readConfirmEnroll - while not yet started")
+            return
+
+        cluster_id = "%04x" %0x0500
+        attribute = 0x0010
+        self.__ReadAttributeReq( key, ZIGATE_EP, Epout, cluster_id , attribute )
 
     def IASZone_enroll_response_( self, nwkid, Epout ):
         '''2.the CIE sends a ‘enroll’ message to the IAS Zone device'''
@@ -243,10 +255,9 @@ class IAS_Zone_Management:
             if self.devices[nwkid]['Step'] <= 4:
                 self.devices[nwkid]['Step'] = 4
             self.readConfirmEnroll(nwkid, iterEp)
-            self.IASZone_attributes( nwkid, iterEp)
             self.IASZone_enroll_response_zoneID( nwkid, iterEp )
 
-        elif step == 5: # Receive Attribute 0x0001 and 0x0002
+        elif step == 5: # Receive Attribute 0x0000 (Enrollment)
 
             if 'ticks_5' not in self.devices[nwkid]:
                 self.devices[nwkid]['ticks_5'] = 0
@@ -256,21 +267,16 @@ class IAS_Zone_Management:
                 return
 
             self.HB = 0
-            if self.devices[nwkid]['Step'] <= 7:
+            if self.devices[nwkid]['Step'] <= 7 and value == '01':
                 self.devices[nwkid]['Step'] = 7
-            self.IASZone_attributes( nwkid, iterEp)
+                self.readConfirmIEEE(nwkid, iterEp)
             self.IASZone_enroll_response_zoneID( nwkid, iterEp )
             self.readConfirmEnroll(nwkid, iterEp)
 
             self.devices[nwkid]['ticks_5'] += 1
 
-        elif step == 7: # Receive Confirming Enrollement
-            self.HB = 0
-            self.wip = False
-            self.devices[nwkid]['Step'] = 0
-            self.IASZone_attributes( nwkid, iterEp)
-            self.readConfirmEnroll(nwkid, iterEp)
-            del self.devices[nwkid]
+        elif step == 7: # Receive Enrollement IEEEE
+            self.logging( 'Debug', "IAS_heartbeat - Enrollment with IEEE:%s" %value)
 
 
 
@@ -327,8 +333,8 @@ class IAS_Zone_Management:
                 self.devices[iterKey]['Ep'] = iterEp
                 self.logging( 'Debug', "IAS_heartbeat - TO restart self.IASZone_attributes")
                 self.IASZone_enroll_response_zoneID( iterKey, iterEp)
-                self.IASZone_attributes( iterKey, iterEp)
-
+                self.IASZone_attributes(iterKey, iterEp)
+		
             elif self.HB > 1 and self.devices[iterKey]['Step'] == 4:
                 self.tryHB += self.tryHB
                 self.HB = 0
@@ -357,7 +363,7 @@ class IAS_Zone_Management:
                 remove_devices.append(iterKey)
         
         for iter in remove_devices:
-            del iter
+            del self.devices[iter]
 
 
     def write_IAS_WD_Squawk( self, nwkid, ep, SquawkMode):
@@ -371,7 +377,6 @@ class IAS_Zone_Management:
         <manufacturer specific: uint8_t>
         <manufacturer id: uint16_t>
         <SquawkModeStrobeAndLevel: uint8_t>
-
         Bits 	Description
         0-3 	Squawk Mode - indicates the meaning of the required ‘squawk’:
             0 - System is armed
@@ -527,4 +532,3 @@ class IAS_Zone_Management:
     def alarm_off( self, nwkid, ep):
         self.logging( 'Debug', "Device Alarm Off")
         self.warningMode( nwkid, ep, 'stop' )
-

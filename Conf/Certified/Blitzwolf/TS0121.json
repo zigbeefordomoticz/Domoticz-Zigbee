@@ -20,9 +20,7 @@
 		"0006": {"Attributes": { "0000": {"DataType": "10", "MinInterval":"0001", "MaxInterval":"012C", "TimeOut":"0258","Change":"01"}}},
 		"0b04": {"Attributes": { "050b": {"DataType": "29", "MinInterval": "0005", "MaxInterval": "012C", "TimeOut": "0258","Change": "0001"}}},
 		"0702": { "Attributes": {
-			"0000": { "Change": "0000ffffffffffff", "DataType": "25", "MaxInterval": "001E", "MinInterval": "001E", "TimeOut": "0000" },
-			"0400": { "Change": "00000190", "DataType": "2a", "MaxInterval": "001E", "MinInterval": "001E", "TimeOut": "0000" }}}
-	},
+			"0000": { "Change": "0000ffffffffffff", "DataType": "25", "MaxInterval": "001E", "MinInterval": "001E", "TimeOut": "0000" }}}},
 	"ReadAttributes": {
 		"0000": [ "0000", "0001", "0004", "0005" ],
 		"0006": [ "0000" ],
