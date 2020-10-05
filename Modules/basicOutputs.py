@@ -759,13 +759,13 @@ def unknown_device_nwkid( self, nwkid ):
     
     if nwkid in self.UnknownDevices:
         return
+
+    loggingBasicOutput( self, 'Debug', "unknown_device_nwkid is DISaBLED for now !!!" )
     
-    self.UnknownDevices.append( nwkid )
-
-    # If we didn't find it, let's trigger a NetworkMap scan if not one in progress
-    if self.networkmap and not self.networkmap.NetworkMapPhase():
-        self.networkmap.start_scan()
-
-    u8RequestType = '00'
-    u8StartIndex = '00'
-    sendZigateCmd(self ,'0041', '02' + nwkid + u8RequestType + u8StartIndex )
+    #self.UnknownDevices.append( nwkid )
+    ## If we didn't find it, let's trigger a NetworkMap scan if not one in progress
+    #if self.networkmap and not self.networkmap.NetworkMapPhase():
+    #    self.networkmap.start_scan()
+    #u8RequestType = '00'
+    #u8StartIndex = '00'
+    #sendZigateCmd(self ,'0041', '02' + nwkid + u8RequestType + u8StartIndex )
