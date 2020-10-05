@@ -1077,13 +1077,14 @@ def clean_old_datastruct(self,DeviceAttribute, key , endpoint, clusterId, Attrib
 
 def ackDisableOrEnable( self, key ):
 
+    if 'PairingInProgress' in self.ListOfDevices[ key ] and self.ListOfDevices[ key ]['PairingInProgress']:
+        return False
+
     if 'PowerSource' in self.ListOfDevices[ key ] and self.ListOfDevices[ key ]['PowerSource'] == 'Battery':
         return False
 
     if 'MacCapa' in self.ListOfDevices[ key ] and self.ListOfDevices[ key ]['MacCapa'] == '80':
         return False
-    
-    if 'Model' in self.ListOfDevices[ key ] and self.ListOfDevices[ key ]['Model'] == 'EH-ZB-VACT':
-        return False
+
 
     return True
