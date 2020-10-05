@@ -568,10 +568,12 @@ def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, at
         i_sqn = rawaps_write_attribute_req( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data)
     else:
         # ATTENTION "0110" with firmware 31c are always call with Ack (overwriten by firmware)
-        if ackIsDisabled:
-            i_sqn = send_zigatecmd_zcl_noack(self, key, "0110", str(datas))
-        else:
-            i_sqn = send_zigatecmd_zcl_ack(self, key, "0110", str(datas))
+        #if ackIsDisabled:
+        #    i_sqn = send_zigatecmd_zcl_noack(self, key, "0110", str(datas))
+        #else:
+        #    i_sqn = send_zigatecmd_zcl_ack(self, key, "0110", str(datas))
+        # For now send Write Attribute ALWAYS with Ack.
+        i_sqn = send_zigatecmd_zcl_ack(self, key, "0110", str(datas))
 
     set_isqn_datastruct(self, 'WriteAttributes', key, EPout, clusterID, attribute, i_sqn )
 
