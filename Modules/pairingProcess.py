@@ -118,23 +118,6 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                 loggingHeartbeat( self, 'Debug', "[%s] NEW OBJECT: %s Manufacturer: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Manufacturer']), NWKID)
 
         for iterEp in self.ListOfDevices[NWKID]['Ep']:
-            #IAS Zone
-            if '0500' in self.ListOfDevices[NWKID]['Ep'][iterEp] or \
-                    '0502'  in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                # We found a Cluster 0x0500 IAS. May be time to start the IAS Zone process
-                Domoticz.Status("[%s] NEW OBJECT: %s 0x%04s - IAS Zone controler setting" \
-                        %( RIA, NWKID, status))
-                if self.pluginconf.pluginConf['capturePairingInfos']:
-                    self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'IAS-ENROLL' )
-                self.iaszonemgt.IASZone_triggerenrollement( NWKID, iterEp)
-                if '0502'  in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                    Domoticz.Status("[%s] NEW OBJECT: %s 0x%04s - IAS WD enrolment" \
-                        %( RIA, NWKID, status))
-                    if self.pluginconf.pluginConf['capturePairingInfos']:
-                        self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'IASWD-ENROLL' )
-                    self.iaszonemgt.IASWD_enroll( NWKID, iterEp)
-
-        for iterEp in self.ListOfDevices[NWKID]['Ep']:
             # ColorMode
             if '0300' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
                 if 'ColorInfos' in self.ListOfDevices[NWKID]:
@@ -340,10 +323,27 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                     func = READ_ATTRIBUTES_REQUEST[iterReadAttrCluster][0]
                     func( self, NWKID)
 
-            # In case of Schneider Wiser, let's do the Registration Process
-            if 'Manufacturer' in self.ListOfDevices[NWKID]:
-                if self.ListOfDevices[NWKID]['Manufacturer'] == '105e':
-                    schneider_wiser_registration( self, Devices, NWKID )
+            #4. IAS Enrollment
+            for iterEp in self.ListOfDevices[NWKID]['Ep']:
+                #IAS Zone
+                if '0500' in self.ListOfDevices[NWKID]['Ep'][iterEp] or \
+                        '0502'  in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                    # We found a Cluster 0x0500 IAS. May be time to start the IAS Zone process
+                    Domoticz.Status("[%s] NEW OBJECT: %s 0x%04s - IAS Zone controler setting" \
+                            %( RIA, NWKID, status))
+                    if self.pluginconf.pluginConf['capturePairingInfos']:
+                        self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'IAS-ENROLL' )
+                    self.iaszonemgt.IASZone_triggerenrollement( NWKID, iterEp)
+                    if '0502'  in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                        Domoticz.Status("[%s] NEW OBJECT: %s 0x%04s - IAS WD enrolment" \
+                            %( RIA, NWKID, status))
+                        if self.pluginconf.pluginConf['capturePairingInfos']:
+                            self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'IASWD-ENROLL' )
+                        self.iaszonemgt.IASWD_enroll( NWKID, iterEp)
+                # In case of Schneider Wiser, let's do the Registration Process
+                if 'Manufacturer' in self.ListOfDevices[NWKID]:
+                    if self.ListOfDevices[NWKID]['Manufacturer'] == '105e':
+                        schneider_wiser_registration( self, Devices, NWKID )
 
             # In case of Orvibo Scene controller let's Registration
             if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
