@@ -21,7 +21,7 @@ def pollingBlitzwolfPower( self, key ):
     if  ( self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE):
         return True
 
-    if 'Model' in self.ListOfDevices [' key'] and self.ListOfDevices['key']['Model'] == 'TS0121':
+    if 'Model' in self.ListOfDevices [key] and self.ListOfDevices[key]['Model'] == 'TS0121':
         ReadAttributeRequest_0b04_050b( self, key)
 
     return False
