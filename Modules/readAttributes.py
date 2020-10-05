@@ -19,18 +19,20 @@ from Modules.zigateConsts import  MAX_READATTRIBUTES_REQ,  ZIGATE_EP
 from Modules.basicOutputs import send_zigatecmd_zcl_ack, send_zigatecmd_zcl_noack, identifySend, read_attribute
 from Modules.logging import loggingReadAttributes 
 from Modules.tools import getListOfEpForCluster, check_datastruct, is_time_to_perform_work, set_isqn_datastruct, \
-              set_status_datastruct, set_timestamp_datastruct, is_attr_unvalid_datastruct, reset_attr_datastruct
+              set_status_datastruct, set_timestamp_datastruct, is_attr_unvalid_datastruct, reset_attr_datastruct, \
+              ackDisableOrEnable
 
 
 def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes , manufacturer_spec = '00', manufacturer = '0000', ackIsDisabled = True, checkTime=True):
 
-    def split_list(alist, wanted_parts=1):
+    def split_list(l, wanted_parts=1):
         """
         Split the list of attrributes in wanted part
         """
-        length = len(alist)
-        return [ alist[i*length // wanted_parts: (i+1)*length // wanted_parts] for i in range(wanted_parts) ]
+        Domoticz.Log("Breaking %s ListOfAttribute into chunks of %s ==> %s" %( l, wanted_parts, str([  l[x: x+wanted_parts] for x in range(0, len(l), wanted_parts) ])))
+        return [  l[x: x+wanted_parts] for x in range(0, len(l), wanted_parts) ]
 
+    # That one is put in comment as it has some bad behaviour. It prevents doing 2 commands in the same minutes.
     #if checkTime:
     #    if not is_time_to_perform_work(self, 'ReadAttributes', addr, EpOut, Cluster, int(time()), 60 ):
     #        Domoticz.Log("Protection Not more than a Read Attribute per minute %s/%s Cluster: %s Attribute: %s"
@@ -38,14 +40,16 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes , manu
     #        # Do not perform more than once every minute !
     #        return
 
-    #Domoticz.Log("--> ReadAttributeReq --> manufacturer_spec = '%s', manufacturer = '%s'" %(manufacturer_spec, manufacturer))
-    if not isinstance(ListOfAttributes, list) or len (ListOfAttributes) < MAX_READATTRIBUTES_REQ:
+    # Check if we are in pairing mode and Read Attribute must be broken down in 1 attribute max, otherwise use the default value
+    maxReadAttributesByRequest = MAX_READATTRIBUTES_REQ
+    if 'PairingInProgress' in self.ListOfDevices[ addr ] and self.ListOfDevices[ addr ]['PairingInProgress']:
+        maxReadAttributesByRequest = 1
+
+    if not isinstance(ListOfAttributes, list) or len (ListOfAttributes) <= maxReadAttributesByRequest:
         normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes , manufacturer_spec, manufacturer, ackIsDisabled )
     else:
         loggingReadAttributes( self, 'Debug2', "----------> ------- %s/%s %s ListOfAttributes: " %(addr, EpOut, Cluster) + " ".join("0x{:04x}".format(num) for num in ListOfAttributes), nwkid=addr)
-        nbpart = - (  - len(ListOfAttributes) // MAX_READATTRIBUTES_REQ) 
-
-        for shortlist in split_list(ListOfAttributes, wanted_parts=nbpart):
+        for shortlist in split_list(ListOfAttributes, wanted_parts = maxReadAttributesByRequest):
             loggingReadAttributes( self, 'Debug2', "----------> ------- Shorter: " + ", ".join("0x{:04x}".format(num) for num in shortlist), nwkid=addr)
             normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , shortlist , manufacturer_spec , manufacturer , ackIsDisabled)
 
@@ -222,12 +226,11 @@ def ping_device_with_read_attribute(self, key):
         i_sqn = send_zigatecmd_zcl_ack( self, key, '0100', ZIGATE_EP + EPout + PING_CLUSTER + '00' + '00' + '0000' + "%02x" %(0x01) + PING_CLUSTER_ATTRIBUTE )
         set_isqn_datastruct(self, 'ReadAttributes', key, EPout, PING_CLUSTER, PING_CLUSTER_ATTRIBUTE, i_sqn )
 
-def ackDisableOrEnable( self, key ):
-    disableAck = True
-    if 'PowerSource' in self.ListOfDevices[ key ] and self.ListOfDevices[ key ]['PowerSource'] == 'Battery':
-        disableAck = False
 
-    return disableAck
+
+
+
+
 
 def ReadAttributeRequest_0000(self, key, fullScope=True):
     # Basic Cluster
@@ -793,6 +796,16 @@ def ReadAttributeRequest_0b04(self, key):
         if listAttributes:
             loggingReadAttributes( self, 'Debug', "Request Metering info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
             ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0b04", listAttributes, ackIsDisabled = ackDisableOrEnable(self, key))
+
+def ReadAttributeRequest_0b04_050b( self, key):
+    # Cluster 0x0b04 Metering / Specific 0x050B Attribute ( Instant Power)
+    ListOfEp = getListOfEpForCluster( self, key, '0b04' )
+    for EPout in ListOfEp:
+        listAttributes = [ 0x050b ]
+    
+        loggingReadAttributes( self, 'Debug', "Request Metering Instant Power on 0x0b04 cluster: " + key + " EPout = " + EPout , nwkid=key)
+        ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0b04", listAttributes, ackIsDisabled = ackDisableOrEnable(self, key))
+
 
 def ReadAttributeRequest_000f(self, key):
 

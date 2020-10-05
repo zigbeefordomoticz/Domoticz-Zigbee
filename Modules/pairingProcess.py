@@ -73,7 +73,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
     if status not in ( '004d', '0043', '0045', '8045', '8043') and 'Model' in self.ListOfDevices[NWKID]:
         return
 
-
+    self.ListOfDevices[NWKID]['PairingInProgress'] = True
     knownModel = False
     if self.ListOfDevices[NWKID]['Model'] != {} and self.ListOfDevices[NWKID]['Model'] != '':
         Domoticz.Status("[%s] NEW OBJECT: %s Model Name: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Model']))
@@ -396,6 +396,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             self.ListOfDevices[NWKID]['Heartbeat'] = 0
 
             writeDiscoveryInfos( self )
-
+            self.ListOfDevices[NWKID]['PairingInProgress'] = False
+            
         #end if ( self.ListOfDevices[NWKID]['Status']=="8043" or self.ListOfDevices[NWKID]['Model']!= {} )
     #end ( self.pluginconf.storeDiscoveryFrames == 0 and status != "UNKNOW" and status != "DUP")  or (  self.pluginconf.storeDiscoveryFrames == 1 and status == "8043" )

@@ -27,6 +27,7 @@ from Modules.readAttributes import READ_ATTRIBUTES_REQUEST, ping_device_with_rea
         ReadAttributeRequest_0406, ReadAttributeRequest_0500, ReadAttributeRequest_0502, ReadAttributeRequest_0702, ReadAttributeRequest_000f, ReadAttributeRequest_fc01, ReadAttributeRequest_fc21
 from Modules.configureReporting import processConfigureReporting
 from Modules.legrand_netatmo import  legrandReenforcement
+from Modules.blitzwolf import pollingBlitzwolfPower
 from Modules.schneider_wiser import schneiderRenforceent, pollingSchneider
 from Modules.philips import pollingPhilips
 from Modules.gledopto import pollingGledopto
@@ -88,11 +89,12 @@ def processKnownDevices( self, Devices, NWKID ):
     def pollingManufSpecificDevices( self, NWKID):
 
         POLLING_TABLE_SPECIFICS = {
-            '100b':     ( 'Philips',  'pollingPhilips', pollingPhilips ),
-            'Philips':  ( 'Philips',  'pollingPhilips', pollingPhilips),
-            'GLEDOPTO': ( 'Gledopto', 'pollingGledopto',pollingGledopto ),
-            '105e':     ( 'Schneider', 'pollingSchneider', pollingSchneider),
-            'Schneider':( 'Schneider', 'pollingSchneider', pollingSchneider)
+            '100b':             ( 'Philips',        'pollingPhilips',        pollingPhilips ),
+            'Philips':          ( 'Philips',        'pollingPhilips',        pollingPhilips),
+            'GLEDOPTO':         ( 'Gledopto',       'pollingGledopto',       pollingGledopto ),
+            '105e':             ( 'Schneider',      'pollingSchneider',      pollingSchneider),
+            'Schneider':        ( 'Schneider',      'pollingSchneider',      pollingSchneider),
+            '_TZ3000_g5xawfcq': ( 'BlitzwolfPower', 'pollingBlitzwolfPower', pollingBlitzwolfPower, )
         }
 
         rescheduleAction = False
