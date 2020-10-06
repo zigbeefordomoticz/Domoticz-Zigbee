@@ -32,7 +32,7 @@ from Modules.schneider_wiser import schneiderRenforceent, pollingSchneider
 from Modules.philips import pollingPhilips
 from Modules.gledopto import pollingGledopto
 from Modules.lumi import setXiaomiVibrationSensitivity
-from Modules.tools import removeNwkInList, mainPoweredDevice, ReArrangeMacCapaBasedOnModel, is_time_to_perform_work
+from Modules.tools import removeNwkInList, mainPoweredDevice, ReArrangeMacCapaBasedOnModel, is_time_to_perform_work, getListOfEpForCluster
 from Modules.logging import loggingPairing, loggingHeartbeat
 from Modules.domoTools import timedOutDevice
 from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE, CLUSTERS_LIST, LEGRAND_REMOTES, LEGRAND_REMOTE_SHUTTER, LEGRAND_REMOTE_SWITCHS, ZIGATE_EP
@@ -130,41 +130,40 @@ def processKnownDevices( self, Devices, NWKID ):
         Purpose is to trigger ReadAttrbute 0x0006 and 0x0008 on attribute 0x0000 if applicable
         """
 
-        for iterEp in self.ListOfDevices[NWKID]['Ep']:
-            if '0006' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                if self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE:
-                    return True
-                ReadAttributeRequest_0006_0000( self, NWKID)
-                loggingHeartbeat( self, 'Debug', "++ pollingDeviceStatus -  %s  for ON/OFF" \
-                    %(NWKID), NWKID)
+        if len(getListOfEpForCluster( self, NWKID, '0006' )) != 0: 
+            if self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE:
+                return True
+            ReadAttributeRequest_0006_0000( self, NWKID)
+            loggingHeartbeat( self, 'Debug', "++ pollingDeviceStatus -  %s  for ON/OFF" \
+                %(NWKID), NWKID)
 
-            if '0008' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                if self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE:
-                    return True                
-                ReadAttributeRequest_0008_0000( self, NWKID)
-                loggingHeartbeat( self, 'Debug', "++ pollingDeviceStatus -  %s  for LVLControl" \
-                    %(NWKID), NWKID)
+        if len(getListOfEpForCluster( self, NWKID, '0008' )) != 0: 
+            if self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE:
+                return True                
+            ReadAttributeRequest_0008_0000( self, NWKID)
+            loggingHeartbeat( self, 'Debug', "++ pollingDeviceStatus -  %s  for LVLControl" \
+                %(NWKID), NWKID)
 
-            if '0102' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                if self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE:
-                    return True
-                ReadAttributeRequest_0102_0008( self, NWKID)
-                loggingHeartbeat( self, 'Debug', "++ pollingDeviceStatus -  %s  for WindowCovering" \
-                    %(NWKID), NWKID)
+        if len(getListOfEpForCluster( self, NWKID, '0102' )) != 0: 
+            if self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE:
+                return True
+            ReadAttributeRequest_0102_0008( self, NWKID)
+            loggingHeartbeat( self, 'Debug', "++ pollingDeviceStatus -  %s  for WindowCovering" \
+                %(NWKID), NWKID)
 
-            if '0101' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                if self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE:
-                    return True
-                ReadAttributeRequest_0101_0000( self, NWKID)
-                loggingHeartbeat( self, 'Debug', "++ pollingDeviceStatus -  %s  for DoorLock" \
-                    %(NWKID), NWKID)
+        if len(getListOfEpForCluster( self, NWKID, '0101' )) != 0: 
+            if self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE:
+                return True
+            ReadAttributeRequest_0101_0000( self, NWKID)
+            loggingHeartbeat( self, 'Debug', "++ pollingDeviceStatus -  %s  for DoorLock" \
+                %(NWKID), NWKID)
 
-            if '0201' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                if self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE:
-                    return True
-                ReadAttributeRequest_0201_0012( self, NWKID)
-                loggingHeartbeat( self, 'Debug', "++ pollingDeviceStatus -  %s  for DoorLock" \
-                    %(NWKID), NWKID)
+        if len(getListOfEpForCluster( self, NWKID, '0201' )) != 0: 
+            if self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE:
+                return True
+            ReadAttributeRequest_0201_0012( self, NWKID)
+            loggingHeartbeat( self, 'Debug', "++ pollingDeviceStatus -  %s  for Thermostat" \
+                %(NWKID), NWKID)
         return False
     
     def checkHealth( self, NwkId):
