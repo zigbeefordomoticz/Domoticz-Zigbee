@@ -255,7 +255,7 @@ def processKnownDevices( self, Devices, NWKID ):
 
     def pingDevices( self, NwkId, health, checkHealthFlag, mainPowerFlag):
 
-        loggingHeartbeat( self, 'Debug', "------> pinDevicest %s health: %s, checkHealth: %s, mainPower: %s" %(NwkId,health, checkHealthFlag, mainPowerFlag) , NwkId)
+        loggingHeartbeat( self, 'Debug', "------> pinDevices %s health: %s, checkHealth: %s, mainPower: %s" %(NwkId,health, checkHealthFlag, mainPowerFlag) , NwkId)
         if not mainPowerFlag:
             return
         if not health:
@@ -297,7 +297,7 @@ def processKnownDevices( self, Devices, NWKID ):
     intHB = int( self.ListOfDevices[NWKID]['Heartbeat'])
     if intHB > 0xffff:
         intHB -= 0xfff0
-        self.ListOfDevices[NWKID]['Heartbeat'] = intHB
+        self.ListOfDevices[NWKID]['Heartbeat'] = str(intHB)
 
     # Hack bad devices
     ReArrangeMacCapaBasedOnModel( self, NWKID, self.ListOfDevices[NWKID]['MacCapa'])
@@ -308,10 +308,11 @@ def processKnownDevices( self, Devices, NWKID ):
     health = checkHealth( self, NWKID)
  
     # Pinging devices to check they are still Alive
-    pingDevices( self, NWKID, health, _checkHealth, _mainPowered)
+    if self.pluginconf.pluginConf['pingDevices']:
+        pingDevices( self, NWKID, health, _checkHealth, _mainPowered)
 
     # Check if we are in the process of provisioning a new device. If so, just stop
-    if self.CommiSSionning: 
+    if self.CommiSSionning:
         return
 
     # If device flag as Not Reachable, don't do anything
@@ -343,8 +344,11 @@ def processKnownDevices( self, Devices, NWKID ):
     rescheduleAction = False
 
     if self.pluginconf.pluginConf['forcePollingAfterAction'] and (intHB == 1): # HB has been reset to 0 as for a Group command
+        # intHB is 1 as if it has been reset, we get +1 in ProcessListOfDevices
         loggingHeartbeat( self, 'Debug', "processKnownDevices -  %s due to intHB %s" %(NWKID, intHB), NWKID)
         rescheduleAction = (rescheduleAction or pollingDeviceStatus( self, NWKID))
+        # Priority on getting the status, nothing more to be done!
+        return
 
     # Polling Manufacturer Specific devices ( Philips, Gledopto  ) if applicable
     rescheduleAction = (rescheduleAction or pollingManufSpecificDevices( self, NWKID))
@@ -470,7 +474,8 @@ def processListOfDevices( self , Devices ):
         else:
             RIA = 0
             self.ListOfDevices[NWKID]['RIA'] = '0'
-        self.ListOfDevices[NWKID]['Heartbeat']=str(int(self.ListOfDevices[NWKID]['Heartbeat'])+1)
+
+        self.ListOfDevices[NWKID]['Heartbeat']=str(int(self.ListOfDevices[NWKID]['Heartbeat']) + 1)
 
         if status == "failDB":
             entriesToBeRemoved.append( NWKID )
