@@ -32,6 +32,7 @@ import json
 import Domoticz
 
 from Classes.AdminWidgets import AdminWidgets
+from Classes.LoggingManagement import LoggingManagement
 
 class NetworkMap():
 
