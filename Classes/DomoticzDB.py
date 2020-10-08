@@ -16,12 +16,13 @@ import os.path
 from base64 import b64decode
 from time import time
 from datetime import datetime
+from Classes.LoggingManagement import LoggingManagement
 
 CACHE_TIMEOUT = ((15 * 60) + 15)   # num seconds
 
 class DomoticzDB_Preferences:
 
-    def __init__(self, database, pluginconf, loggingFileHandle):
+    def __init__(self, database, pluginconf, log):
         self.dbConn = None
         self.dbCursor = None
         self.preferences = None
@@ -30,14 +31,15 @@ class DomoticzDB_Preferences:
         self.database = database
         self.debugDZDB = None
         self.pluginconf = pluginconf
-        self.loggingFileHandle = loggingFileHandle
+        self.log = log
 
         # Check if we have access to the database, if not Error and return
         if not os.path.isfile( database ) :
             Domoticz.Error("DB_DeviceStatus - Not existing DB %s" %self.database)
             return 
 
-
+    def logging( self, logType, message):
+        self.log.logging('DZDB', logType, message)
 
     def _openDB( self):
 
@@ -157,7 +159,7 @@ class DomoticzDB_Preferences:
 
 class DomoticzDB_Hardware:
 
-    def __init__(self, database, pluginconf, hardwareID , loggingFileHandle):
+    def __init__(self, database, pluginconf, hardwareID , log):
         self.Devices = {}
         self.dbConn = None
         self.dbCursor = None
@@ -165,12 +167,15 @@ class DomoticzDB_Hardware:
         self.database = database
         self.debugDZDB = None
         self.pluginconf = pluginconf
-        self.loggingFileHandle = loggingFileHandle
+        self.log = log
 
         # Check if we have access to the database, if not Error and return
         if not os.path.isfile( database ) :
             Domoticz.Error("DB_DeviceStatus - Not existing DB %s" %self.database)
             return
+            
+    def logging( self, logType, message):
+        self.log.logging('DZDB', logType, message)
 
     def _openDB( self ):
 
@@ -207,7 +212,7 @@ class DomoticzDB_Hardware:
 
 class DomoticzDB_DeviceStatus:
 
-    def __init__(self, database, pluginconf, hardwareID , loggingFileHandle):
+    def __init__(self, database, pluginconf, hardwareID , log):
         self.database = database
         self.Devices = {}
         self.dbConn = None
@@ -215,12 +220,15 @@ class DomoticzDB_DeviceStatus:
         self.HardwareID = hardwareID
         self.debugDZDB = None
         self.pluginconf = pluginconf
-        self.loggingFileHandle = loggingFileHandle
+        self.log = log
 
         self.AdjValue = {'Baro': {}, 'TimeOutMotion': {}, 'Temp': {}}
         # Check if we have access to the database, if not Error and return
         if not os.path.isfile( database ) :
             return
+            
+    def logging( self, logType, message):
+        self.log.logging('DZDB', logType, message)
 
     def _openDB( self):
 
@@ -385,44 +393,3 @@ class DomoticzDB_DeviceStatus:
             Domoticz.Error("retreiveAddjValue_temp - Unexpected exception for ID: %s HardwareID: Ms" %(ID, self.HardwareID))
             self.closeDB()
             return 0
-
-
-def logging( self, logType, message):
-
-    self.debugDZDB = self.pluginconf.pluginConf['debugDZDB']
-    if logType == 'Debug' and self.debugDZDB:
-        _logging_debug( self, message)
-    elif logType == 'Log':
-        _logging_log( self, message )
-    elif logType == 'Status':
-        _logging_status( self, message)
-
-
-def _write_message(self, message):
-    message = str(datetime.now().strftime(
-        '%b %d %H:%M:%S.%f')) + " " + message + '\n'
-    self.loggingFileHandle.write(message)
-    self.loggingFileHandle.flush()
-
-def _logging_status(self, message):
-    Domoticz.Status(message)
-    if (not self.pluginconf.pluginConf['useDomoticzLog'] and self.loggingFileHandle):
-        _write_message(self, message)
-
-def _logging_log(self, message):
-    Domoticz.Log(message)
-    if (not self.pluginconf.pluginConf['useDomoticzLog'] and self.loggingFileHandle):
-        _write_message(self, message)
-
-def _logging_debug(self, message):
-    if (not self.pluginconf.pluginConf['useDomoticzLog'] and self.loggingFileHandle):
-        _write_message(self, message)
-    else:
-        Domoticz.Log(message)
-
-
-def _logging_error(self, message):
-    if (not self.pluginconf.pluginConf['useDomoticzLog'] and self.loggingFileHandle):
-        _write_message(self, message)
-    else:
-        Domoticz.Error(message)
