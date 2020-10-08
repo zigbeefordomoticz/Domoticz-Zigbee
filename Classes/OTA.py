@@ -121,7 +121,7 @@ class OTAManagement(object):
 
 
     def logging( self, logType, message):
-        self.log.logging('IAS', logType, message)
+        self.log.logging('OTA', logType, message)
 
 
     # Low level commands/messages
