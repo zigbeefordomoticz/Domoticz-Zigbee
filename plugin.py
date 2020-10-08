@@ -259,7 +259,7 @@ class BasePlugin:
         
         if self.log == None:
             self.log = LoggingManagement(self.pluginconf)
-            self.open()
+            self.openLogFile()
         
         openLogFile( self )
 
