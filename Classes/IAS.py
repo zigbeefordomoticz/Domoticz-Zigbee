@@ -122,9 +122,6 @@ class IAS_Zone_Management:
             return
 
         manuf_id = "0000"
-        if 'Manufacturer' in self.ListOfDevices[key]:
-            manuf_id = self.ListOfDevices[key]['Manufacturer']
-
         manuf_spec = "00"
         cluster_id = "%04x" %0x0500
         attribute = "%04x" %0x0010
