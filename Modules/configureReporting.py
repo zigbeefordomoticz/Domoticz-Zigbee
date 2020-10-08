@@ -18,11 +18,12 @@ import json
 from datetime import datetime
 from time import time
 
-from Modules.basicOutputs import  send_zigatecmd_zcl_noack
+from Modules.basicOutputs import  send_zigatecmd_zcl_noack, send_zigatecmd_zcl_ack
 from Modules.bindings import bindDevice
 
 from Modules.zigateConsts import MAX_LOAD_ZIGATE, CFG_RPT_ATTRIBUTESbyCLUSTERS , ZIGATE_EP
 from Modules.tools import getClusterListforEP, mainPoweredDevice, \
+    ackDisableOrEnable, \
     check_datastruct, is_time_to_perform_work, set_isqn_datastruct, set_status_datastruct, set_timestamp_datastruct, is_attr_unvalid_datastruct, reset_attr_datastruct
 from Modules.logging import loggingConfigureReporting
 
@@ -280,7 +281,10 @@ def send_configure_reporting_attributes_set( self, key, Ep, cluster, direction, 
     loggingConfigureReporting( self, 'Debug', "--> send_configure_reporting_attributes_set - 0120 - %s" %(datas))
     loggingConfigureReporting( self, 'Debug', "--> send_configure_reporting_attributes_set Reporting %s/%s on cluster %s Len: %s Attribute List: %s" %(key, Ep, cluster, attrLen, attrList), nwkid=key)
     
-    i_sqn = send_zigatecmd_zcl_noack( self, key, '0120', datas )
+    if ackDisableOrEnable( self, key ):
+        i_sqn = send_zigatecmd_zcl_noack( self, key, '0120', datas )
+    else:
+        i_sqn = send_zigatecmd_zcl_ack( self, key, '0120', datas )
 
     for x in attributeList:
         set_isqn_datastruct(self, 'ConfigureReporting', key, Ep, cluster, x, i_sqn )

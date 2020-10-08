@@ -540,14 +540,18 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
             return
         dstnwkid = self.IEEE2NWK[MsgDestinationAddress]
 
+    timeStamped(self, srcnwkid, 0x8002)
+    updLQI(self, srcnwkid, MsgLQI)
+
     if MsgProfilID == "0104":
-        (
-            GlobalCommand,
-            Sqn,
-            ManufacturerCode,
-            Command,
-            Data,
-        ) = retreive_cmd_payload_from_8002(MsgPayload)
+        ( GlobalCommand, Sqn, ManufacturerCode, Command, Data, ) = retreive_cmd_payload_from_8002(MsgPayload)
+        if Sqn == self.ListOfDevices[ srcnwkid ]['SQN']:
+            Domoticz.Log("Decode8002 - Duplicate message drop NwkId: %s Ep: %s Cluster: %s GlobalCommand: %5s Command: %s Data: %s"
+                % ( srcnwkid, MsgSourcePoint, MsgClusterID, GlobalCommand, Command, Data, ))
+            return
+
+        updSQN(self, srcnwkid, Sqn)
+
         if GlobalCommand and int(Command, 16) in ZIGBEE_COMMAND_IDENTIFIER:
             logginginRawAPS(
                 self,

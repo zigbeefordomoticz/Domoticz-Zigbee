@@ -326,7 +326,7 @@ def maskChannel( channel ):
                 else:
                     Domoticz.Error("Requested channel not supported by Zigate: %s" %channel)
             else:
-                Domoticz.Error("maskChannel - invalid channel %s" %c)
+                Domoticz.Error("maskChannel - invalid channel %s" %channel)
     else:
         Domoticz.Errors("Requested channel is invalid: %s" %channel)
 
@@ -527,9 +527,6 @@ def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zig
     SECURITY = 0x30
     RADIUS = 0x00
 
-
-
-        
     security = '%02X' %SECURITY
     radius = '%02X' %RADIUS
 
@@ -571,10 +568,12 @@ def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, at
         i_sqn = rawaps_write_attribute_req( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data)
     else:
         # ATTENTION "0110" with firmware 31c are always call with Ack (overwriten by firmware)
-        if ackIsDisabled:
-            i_sqn = send_zigatecmd_zcl_noack(self, key, "0110", str(datas))
-        else:
-            i_sqn = send_zigatecmd_zcl_ack(self, key, "0110", str(datas))
+        #if ackIsDisabled:
+        #    i_sqn = send_zigatecmd_zcl_noack(self, key, "0110", str(datas))
+        #else:
+        #    i_sqn = send_zigatecmd_zcl_ack(self, key, "0110", str(datas))
+        # For now send Write Attribute ALWAYS with Ack.
+        i_sqn = send_zigatecmd_zcl_ack(self, key, "0110", str(datas))
 
     set_isqn_datastruct(self, 'WriteAttributes', key, EPout, clusterID, attribute, i_sqn )
 
@@ -760,13 +759,13 @@ def unknown_device_nwkid( self, nwkid ):
     
     if nwkid in self.UnknownDevices:
         return
+
+    loggingBasicOutput( self, 'Debug', "unknown_device_nwkid is DISaBLED for now !!!" )
     
-    self.UnknownDevices.append( nwkid )
-
-    # If we didn't find it, let's trigger a NetworkMap scan if not one in progress
-    if self.networkmap and not self.networkmap.NetworkMapPhase():
-        self.networkmap.start_scan()
-
-    u8RequestType = '00'
-    u8StartIndex = '00'
-    sendZigateCmd(self ,'0041', '02' + nwkid + u8RequestType + u8StartIndex )
+    #self.UnknownDevices.append( nwkid )
+    ## If we didn't find it, let's trigger a NetworkMap scan if not one in progress
+    #if self.networkmap and not self.networkmap.NetworkMapPhase():
+    #    self.networkmap.start_scan()
+    #u8RequestType = '00'
+    #u8StartIndex = '00'
+    #sendZigateCmd(self ,'0041', '02' + nwkid + u8RequestType + u8StartIndex )
