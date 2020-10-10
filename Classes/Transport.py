@@ -1682,9 +1682,6 @@ def process8002(self, frame):
     if SrcNwkId is None:
         return frame
 
-    if ClusterId == '0201': # Issue #696
-        return frame
-    
     if len(Payload) < 8:
         return frame
         
