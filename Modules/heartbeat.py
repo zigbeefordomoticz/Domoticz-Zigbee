@@ -130,37 +130,30 @@ def processKnownDevices( self, Devices, NWKID ):
         Purpose is to trigger ReadAttrbute 0x0006 and 0x0008 on attribute 0x0000 if applicable
         """
 
+        if self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE:
+            return True
+
         if len(getListOfEpForCluster( self, NWKID, '0006' )) != 0: 
-            if self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE:
-                return True
             ReadAttributeRequest_0006_0000( self, NWKID)
             loggingHeartbeat( self, 'Debug', "++ pollingDeviceStatus -  %s  for ON/OFF" \
                 %(NWKID), NWKID)
 
         if len(getListOfEpForCluster( self, NWKID, '0008' )) != 0: 
-            if self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE:
-                return True                
             ReadAttributeRequest_0008_0000( self, NWKID)
             loggingHeartbeat( self, 'Debug', "++ pollingDeviceStatus -  %s  for LVLControl" \
                 %(NWKID), NWKID)
 
         if len(getListOfEpForCluster( self, NWKID, '0102' )) != 0: 
-            if self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE:
-                return True
             ReadAttributeRequest_0102_0008( self, NWKID)
             loggingHeartbeat( self, 'Debug', "++ pollingDeviceStatus -  %s  for WindowCovering" \
                 %(NWKID), NWKID)
 
         if len(getListOfEpForCluster( self, NWKID, '0101' )) != 0: 
-            if self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE:
-                return True
             ReadAttributeRequest_0101_0000( self, NWKID)
             loggingHeartbeat( self, 'Debug', "++ pollingDeviceStatus -  %s  for DoorLock" \
                 %(NWKID), NWKID)
 
         if len(getListOfEpForCluster( self, NWKID, '0201' )) != 0: 
-            if self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE:
-                return True
             ReadAttributeRequest_0201_0012( self, NWKID)
             loggingHeartbeat( self, 'Debug', "++ pollingDeviceStatus -  %s  for Thermostat" \
                 %(NWKID), NWKID)
