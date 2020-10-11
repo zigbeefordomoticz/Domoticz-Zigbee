@@ -343,7 +343,7 @@ class BasePlugin:
 
         # Create APS object to manage Transmission Errors
         #if self.pluginconf.pluginConf['enableAPSFailureLoging'] or self.pluginconf.pluginConf['enableAPSFailureReporting']:
-        #    self.APS = APSManagement( self.ListOfDevices , Devices, self.pluginconf, self.loggingFileHandle)
+        #    self.APS = APSManagement( self.ListOfDevices , Devices, self.pluginconf, self.log)
 
 
         # Connect to Zigate only when all initialisation are properly done.
@@ -861,7 +861,7 @@ def zigateInit_Phase3( self ):
         if self.groupmgt is None and self.pluginconf.pluginConf['enablegroupmanagement']:
             self.log.logging( 'Plugin', 'Status', "Start Group Management")
             self.groupmgt = GroupsManagement( self.pluginconf, self.ZigateComm, self.adminWidgets, Parameters["HomeFolder"],
-                    self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK, self.loggingFileHandle )
+                    self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK, self.log )
             if self.groupmgt and self.ZigateIEEE:
                 self.groupmgt.updateZigateIEEE( self.ZigateIEEE) 
 
@@ -891,7 +891,7 @@ def zigateInit_Phase3( self ):
     # In case we have Transport = None , let's check if we have to active Group management or not. (For Test and Web UI Dev purposes
     if self.transport == 'None' and self.groupmgt is None and self.pluginconf.pluginConf['enablegroupmanagement']:
            self.groupmgt = GroupsManagement( self.pluginconf, self.ZigateComm, self.adminWidgets, Parameters["HomeFolder"],
-                   self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK, self.loggingFileHandle )
+                   self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK, self.log )
            if self.groupmgt and self.ZigateIEEE:
                self.groupmgt.updateZigateIEEE( self.ZigateIEEE) 
                
@@ -911,7 +911,7 @@ def zigateInit_Phase3( self ):
         self.webserver = WebServer( self.networkenergy, self.networkmap, self.zigatedata, self.pluginParameters, self.pluginconf, self.statistics, 
             self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], self.HardwareID, self.DevicesInPairingMode, self.groupmgt, Devices, 
             self.ListOfDevices, self.IEEE2NWK , self.permitTojoin , self.WebUsername, self.WebPassword, self.PluginHealth, Parameters['Mode4'], 
-            self.loggingFileHandle,self.LogErrorHistory)
+            self.log,self.LogErrorHistory)
         if self.FirmwareVersion:
             self.webserver.update_firmware( self.FirmwareVersion )
 
