@@ -20,7 +20,7 @@ from Modules.actuators import actuators
 from Modules.philips import philips_set_poweron_after_offon
 from Modules.tools import is_hex
 from Classes.PluginConf import PluginConf,SETTINGS
-
+from Classes.LoggingManagement import LoggingManagement
 from Classes.DomoticzDB import DomoticzDB_Preferences
 
 from WebServer.headerResponse import setupHeadersResponse, prepResponseMessage
@@ -55,8 +55,7 @@ MIMETYPES = {
 class WebServer(object):
 
     from WebServer.com import startWebServer, onStop, onConnect, onDisconnect
-    from WebServer.dispatcher import do_rest  
-    from WebServer.logging import logging
+    from WebServer.dispatcher import do_rest
     from WebServer.onMessage import onMessage
     from WebServer.rest_Bindings import rest_bindLSTcluster, rest_bindLSTdevice, rest_binding, rest_unbinding
     from WebServer.rest_Energy import rest_req_nwk_full, rest_req_nwk_inter
@@ -68,13 +67,13 @@ class WebServer(object):
 
     hearbeats = 0 
 
-    def __init__( self, networkenergy, networkmap, ZigateData, PluginParameters, PluginConf, Statistics, adminWidgets, ZigateComm, HomeDirectory, hardwareID, DevicesInPairingMode, groupManagement, Devices, ListOfDevices, IEEE2NWK , permitTojoin, WebUserName, WebPassword, PluginHealth, httpPort, loggingFileHandle, LogErrorHistory):
+    def __init__( self, networkenergy, networkmap, ZigateData, PluginParameters, PluginConf, Statistics, adminWidgets, ZigateComm, HomeDirectory, hardwareID, DevicesInPairingMode, groupManagement, Devices, ListOfDevices, IEEE2NWK , permitTojoin, WebUserName, WebPassword, PluginHealth, httpPort, log, LogErrorHistory):
 
         self.httpServerConn = None
         self.httpClientConn = None
         self.httpServerConns = {}
         self.httpPort = httpPort
-        self.loggingFileHandle = loggingFileHandle
+        self.log = log
 
         self.httpsServerConn = None
         self.httpsClientConn = None
@@ -1191,3 +1190,7 @@ class WebServer(object):
                 return _response
             _response["Data"] =  json.dumps( self.LogErrorHistory, sort_keys=False ) 
         return _response
+
+
+    def logging( self, logType, message):
+        self.log.logging('WebServer', logType, message)
