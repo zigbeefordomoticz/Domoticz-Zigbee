@@ -509,7 +509,7 @@ def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zig
     #   target short address 4
     #   source endpoint 2
     #   destination endpoint 2
-    #   clusterId 4
+    #   clusterId 4/
     #   profileId 4
     #   security mode 2
     #   radius 2
@@ -524,7 +524,7 @@ def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zig
     #         0x20 : ZPS_E_APL_AF_WILD_PROFILE (May be combined with above flags using OR operator. Sends the message using the wild card profile (0xFFFF) instead of the profile in the associated Simple descriptor)
     # u8Radius is the maximum number of hops permitted to the destination node (zero value specifies that default maximum is to be used)
 
-    SECURITY = 0x30
+    SECURITY = 0x02
     RADIUS = 0x00
 
     security = '%02X' %SECURITY
@@ -535,6 +535,11 @@ def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zig
     
     # APS RAW is always sent in NO-ACK
     loggingBasicOutput( self, 'Debug', "raw_APS_request - Addr: %s Ep: %s Cluster: %s ProfileId: %s Payload: %s" %(targetaddr, dest_ep, cluster, profileId, payload))
+
+    if self.pluginconf.pluginConf['ieeeForRawAps']:
+        ieee = self.ListOfDevices[ targetaddr]['IEEE']
+        return send_zigatecmd_raw(self, "0530", '03' + ieee + zigate_ep + dest_ep + cluster + profileId + security + radius + len_payload + payload)
+
     return send_zigatecmd_raw(self, "0530", '02' + targetaddr + zigate_ep + dest_ep + cluster + profileId + security + radius + len_payload + payload)
 
 
