@@ -16,8 +16,10 @@ import datetime
 import json
 import pickle
 
+from Classes.LoggingManagement import LoggingManagement
+
 import Modules.tools
-from Modules.logging import loggingDatabase
+
 
 def _copyfile( source, dest, move=True ):
 
@@ -60,7 +62,7 @@ def LoadDeviceList( self ):
 
         res = "Success"
         with open( dbName , 'r') as myfile2:
-            loggingDatabase( self, 'Debug',  "Open : " + dbName )
+            self.log.logging( "Database", 'Debug',  "Open : " + dbName )
             nb = 0
             for line in myfile2:
                 if not line.strip() :
@@ -79,7 +81,7 @@ def LoadDeviceList( self ):
                     Domoticz.Error("LoadDeviceList failed on %s" %val)
                     continue
 
-                loggingDatabase( self, 'Debug', "LoadDeviceList - " +str(key) + " => dlVal " +str(dlVal) , key)
+                self.log.logging( "Database", 'Debug', "LoadDeviceList - " +str(key) + " => dlVal " +str(dlVal) , key)
 
                 if not dlVal.get('Version') :
                     if key == '0000': # Bug fixed in later version
@@ -146,7 +148,7 @@ def LoadDeviceList( self ):
             return True 
       
 
-    loggingDatabase( self, 'Debug', "LoadDeviceList - DeviceList filename : " + _DeviceListFileName )
+    self.log.logging( "Database", 'Debug', "LoadDeviceList - DeviceList filename : " + _DeviceListFileName )
 
     _versionFile( _DeviceListFileName , self.pluginconf.pluginConf['numDeviceListVersion'])
 
@@ -165,7 +167,7 @@ def LoadDeviceList( self ):
                    fixing_Issue566( self, addr )
 
         if self.pluginconf.pluginConf['resetReadAttributes']:
-            loggingDatabase( self, "Log", "ReadAttributeReq - Reset ReadAttributes data %s" %addr)
+            self.log.logging( "Database", "Log", "ReadAttributeReq - Reset ReadAttributes data %s" %addr)
             Modules.tools.reset_datastruct( self,'ReadAttributes', addr )
             #self.ListOfDevices[addr]['ReadAttributes'] = {}
             #self.ListOfDevices[addr]['ReadAttributes']['Ep'] = {}
@@ -174,14 +176,14 @@ def LoadDeviceList( self ):
 
 
         if self.pluginconf.pluginConf['resetConfigureReporting']:
-            loggingDatabase( self, "Log", "Reset ConfigureReporting data %s" %addr)
+            self.log.logging( "Database", "Log", "Reset ConfigureReporting data %s" %addr)
             Modules.tools.reset_datastruct( self,'ConfigureReporting', addr )
             #self.ListOfDevices[addr]['ConfigureReporting'] = {}
             #self.ListOfDevices[addr]['ConfigureReporting']['Ep'] = {}
             #for iterEp in self.ListOfDevices[addr]['Ep']:
             #    self.ListOfDevices[addr]['ConfigureReporting']['Ep'][iterEp] = {}
 
-    loggingDatabase( self, "Status", "Entries loaded from " +str(_DeviceListFileName)  )
+    self.log.logging( "Database", "Status", "Entries loaded from " +str(_DeviceListFileName)  )
 
     return res
 
@@ -196,7 +198,7 @@ def WriteDeviceList(self, count):
         # Write in classic format ( .txt )
         try:
             _DeviceListFileName = self.pluginconf.pluginConf['pluginData'] + self.DeviceListName
-            loggingDatabase( self, 'Debug', "Write " + _DeviceListFileName + " = " + str(self.ListOfDevices))
+            self.log.logging( "Database", 'Debug', "Write " + _DeviceListFileName + " = " + str(self.ListOfDevices))
             with open( _DeviceListFileName , 'wt') as file:
                 for key in self.ListOfDevices :
                     try:
@@ -209,12 +211,12 @@ def WriteDeviceList(self, count):
         # If enabled, write in JSON
         if self.pluginconf.pluginConf['expJsonDatabase']:
             _DeviceListFileName = self.pluginconf.pluginConf['pluginData'] + self.DeviceListName[:-3] + 'json'
-            loggingDatabase( self, 'Debug', "Write " + _DeviceListFileName + " = " + str(self.ListOfDevices))
+            self.log.logging( "Database", 'Debug', "Write " + _DeviceListFileName + " = " + str(self.ListOfDevices))
             with open( _DeviceListFileName , 'wt') as file:
                 json.dump( self.ListOfDevices, file, sort_keys=True, indent=2)
 
         self.HBcount=0
-        loggingDatabase( self, 'Debug', "WriteDeviceList - flush Plugin db to %s" %_DeviceListFileName)
+        self.log.logging( "Database", 'Debug', "WriteDeviceList - flush Plugin db to %s" %_DeviceListFileName)
     else :
         self.HBcount=self.HBcount+1
 
@@ -240,7 +242,7 @@ def importDeviceConf( self ) :
     #for iterDevType in list(self.DeviceConf):
     #    Domoticz.Log("%s - %s" %(iterDevType, self.DeviceConf[iterDevType]))
 
-    loggingDatabase( self, "Status", "DeviceConf loaded")
+    self.log.logging( "Database", "Status", "DeviceConf loaded")
 
 def importDeviceConfV2( self ):
 
@@ -282,14 +284,14 @@ def importDeviceConfV2( self ):
                     device_model_name = model_device.rsplit('.',1)[0]
     
                     if device_model_name not in self.DeviceConf:
-                        loggingDatabase( self, "Debug", "--> Config for %s/%s" %( str(brand), str(device_model_name)))
+                        self.log.logging( "Database", "Debug", "--> Config for %s/%s" %( str(brand), str(device_model_name)))
                         self.DeviceConf[ device_model_name ] = dict(model_definition)
                     else:
-                        loggingDatabase( self, "Debug", "--> Config for %s/%s not loaded as already defined" %(str(brand), str(device_model_name)))
+                        self.log.logging( "Database", "Debug", "--> Config for %s/%s not loaded as already defined" %(str(brand), str(device_model_name)))
                 except:
                     Domoticz.Error("--> Unexpected error when loading a configuration file")
 
-    loggingDatabase( self, 'Debug', "--> Config loaded: %s" %self.DeviceConf.keys())
+    self.log.logging( "Database", 'Debug', "--> Config loaded: %s" %self.DeviceConf.keys())
 
 def checkDevices2LOD( self, Devices):
 
@@ -322,21 +324,21 @@ def checkListOfDevice2Devices( self, Devices ):
         # Let's check if this is End Node
         if str(ID) not in self.IEEE2NWK:
             if self.pluginconf.pluginConf['allowForceCreationDomoDevice'] == 1:
-                loggingDatabase( self, "Log", "checkListOfDevice2Devices - " +str(Devices[x].Name) + " - " +str(ID) + " not found in Plugin Database" )
+                self.log.logging( "Database", "Log", "checkListOfDevice2Devices - " +str(Devices[x].Name) + " - " +str(ID) + " not found in Plugin Database" )
             else:
                 Domoticz.Error("checkListOfDevice2Devices - " +str(Devices[x].Name) + " - " +str(ID) + " not found in Plugin Database" )
-                loggingDatabase( self, 'Debug', "checkListOfDevice2Devices - " +str(ID) + " not found in " +str(self.IEEE2NWK) )
+                self.log.logging( "Database", 'Debug', "checkListOfDevice2Devices - " +str(ID) + " not found in " +str(self.IEEE2NWK) )
             continue
         NWKID = self.IEEE2NWK[ID]
         if str(NWKID) in self.ListOfDevices :
-            loggingDatabase( self, 'Debug', "checkListOfDevice2Devices - we found a matching entry for ID " +str(x) + " as DeviceID = " +str(ID) +" NWK_ID = " + str(NWKID) , NWKID)
+            self.log.logging( "Database", 'Debug', "checkListOfDevice2Devices - we found a matching entry for ID " +str(x) + " as DeviceID = " +str(ID) +" NWK_ID = " + str(NWKID) , NWKID)
         else :
             Domoticz.Error("loadListOfDevices -  : " +Devices[x].Name +" with IEEE = " +str(ID) +" not found in Zigate plugin Database!" )
 
 def saveZigateNetworkData( self, nkwdata ):
 
         json_filename = self.pluginconf.pluginConf['pluginData'] + "Zigate.json" 
-        loggingDatabase( self, 'Debug', "Write " + json_filename + " = " + str(self.ListOfDevices))
+        self.log.logging( "Database", 'Debug', "Write " + json_filename + " = " + str(self.ListOfDevices))
         try:
             with open (json_filename, 'wt') as json_file:
                 json.dump(nkwdata, json_file, indent=4, sort_keys=True)
@@ -348,8 +350,8 @@ def CheckDeviceList(self, key, val):
         This function is call during DeviceList load
     '''
 
-    loggingDatabase( self, 'Debug', "CheckDeviceList - Address search : " + str(key), key)
-    loggingDatabase( self, 'Debug', "CheckDeviceList - with value : " + str(val), key)
+    self.log.logging( "Database", 'Debug', "CheckDeviceList - Address search : " + str(key), key)
+    self.log.logging( "Database", 'Debug', "CheckDeviceList - with value : " + str(val), key)
 
     DeviceListVal=eval(val)
     # Do not load Devices in State == 'unknown' or 'left' 
@@ -358,7 +360,7 @@ def CheckDeviceList(self, key, val):
         'failDB',
         'DUP',
     ):
-        loggingDatabase( self, 'Status', "Not Loading %s as Status: %s" %( key, DeviceListVal['Status']))
+        self.log.logging( "Database", 'Status', "Not Loading %s as Status: %s" %( key, DeviceListVal['Status']))
         return
 
     if Modules.tools.DeviceExist(self, key, DeviceListVal.get('IEEE','')):
@@ -442,22 +444,22 @@ def CheckDeviceList(self, key, val):
             'Legrand', 'Schneider', 'Lumi' )
 
     if self.pluginconf.pluginConf['resetPluginDS']:
-        loggingDatabase( self, 'Status', "Reset Build Attributes for %s" %DeviceListVal['IEEE'])
+        self.log.logging( "Database", 'Status', "Reset Build Attributes for %s" %DeviceListVal['IEEE'])
         IMPORT_ATTRIBUTES = list(set(MANDATORY_ATTRIBUTES))
 
     elif key == '0000':
         # Reduce the number of Attributes loaded for Zigate
-        loggingDatabase( self, 'Debug', "CheckDeviceList - Zigate (IEEE)  = %s Load Zigate Attributes" %DeviceListVal['IEEE'])
+        self.log.logging( "Database", 'Debug', "CheckDeviceList - Zigate (IEEE)  = %s Load Zigate Attributes" %DeviceListVal['IEEE'])
         IMPORT_ATTRIBUTES = list(set(ZIGATE_ATTRIBUTES))
-        loggingDatabase( self, 'Debug', "--> Attributes loaded: %s" %IMPORT_ATTRIBUTES)
+        self.log.logging( "Database", 'Debug', "--> Attributes loaded: %s" %IMPORT_ATTRIBUTES)
     else:
-        loggingDatabase( self, 'Debug', "CheckDeviceList - DeviceID (IEEE)  = %s Load Full Attributes" %DeviceListVal['IEEE'])
+        self.log.logging( "Database", 'Debug', "CheckDeviceList - DeviceID (IEEE)  = %s Load Full Attributes" %DeviceListVal['IEEE'])
         IMPORT_ATTRIBUTES = list(set(MANDATORY_ATTRIBUTES + BUILD_ATTRIBUTES + MANUFACTURER_ATTRIBUTES))
 
-    loggingDatabase( self, 'Debug', "--> Attributes loaded: %s" %IMPORT_ATTRIBUTES)
+    self.log.logging( "Database", 'Debug', "--> Attributes loaded: %s" %IMPORT_ATTRIBUTES)
     for attribute in IMPORT_ATTRIBUTES:
         if attribute not in DeviceListVal:
-            loggingDatabase( self, 'Debug', "--> Attributes not existing: %s" %attribute)
+            self.log.logging( "Database", 'Debug', "--> Attributes not existing: %s" %attribute)
             continue
 
         self.ListOfDevices[key][ attribute ] = DeviceListVal[ attribute]
@@ -477,12 +479,12 @@ def CheckDeviceList(self, key, val):
 
     if 'IEEE' in DeviceListVal:
         self.ListOfDevices[key]['IEEE'] = DeviceListVal['IEEE']
-        loggingDatabase( self, 'Debug', "CheckDeviceList - DeviceID (IEEE)  = " + str(DeviceListVal['IEEE']) + " for NetworkID = " +str(key) , key)
+        self.log.logging( "Database", 'Debug', "CheckDeviceList - DeviceID (IEEE)  = " + str(DeviceListVal['IEEE']) + " for NetworkID = " +str(key) , key)
         if  DeviceListVal['IEEE']:
             IEEE = DeviceListVal['IEEE']
             self.IEEE2NWK[IEEE] = key
         else :
-            loggingDatabase( self, 'Debug', "CheckDeviceList - IEEE = " + str(DeviceListVal['IEEE']) + " for NWKID = " +str(key) , key )
+            self.log.logging( "Database", 'Debug', "CheckDeviceList - IEEE = " + str(DeviceListVal['IEEE']) + " for NWKID = " +str(key) , key )
 
     check_and_update_ForceAckCommands( self)
 
