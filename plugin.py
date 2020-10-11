@@ -258,7 +258,7 @@ class BasePlugin:
         self.pluginconf = PluginConf(Parameters["HomeFolder"], self.HardwareID)
         
         if self.log == None:
-            self.log = LoggingManagement(self.pluginconf)
+            self.log = LoggingManagement(self.pluginconf, self.PluginHealth)
             self.log.openLogFile()
         
         openLogFile( self )
