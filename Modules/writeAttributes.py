@@ -12,8 +12,10 @@
 """
 
 from time import time
+
+from Classes.LoggingManagement import LoggingManagement
+
 from Modules.basicOutputs import write_attribute
-from Modules.logging import loggingWriteAttributes, loggingBasicOutput
 from Modules.tools import get_request_datastruct, set_request_datastruct, get_list_waiting_request_datastruct
 
 def write_attribute_when_awake( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled = False):
