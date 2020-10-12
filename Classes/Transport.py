@@ -92,9 +92,6 @@ class ZigateTransport(object):
         # Call back function to send back to plugin
         self.F_out = F_out  # Function to call to bring the decoded Frame at plugin
 
-        # Multi Threading disabled on Stable 4.11
-        self.pluginconf.pluginConf["MultiThreaded"] = 0
-
         initMatrix(self)
 
         if str(transport) == "USB":
