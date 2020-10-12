@@ -12,6 +12,8 @@ import time
 
 from datetime import datetime
 
+from Classes.LoggingManagement import LoggingManagement
+
 from Modules.tools import is_hex, retreive_cmd_payload_from_8002, is_manufspecific_8002_payload
 from Modules.zigateConsts import ZIGATE_RESPONSES, ZIGATE_COMMANDS, ADDRESS_MODE, SIZE_DATA_TYPE
 from Modules.sqnMgmt import sqn_init_stack, sqn_generate_new_internal_sqn, sqn_add_external_sqn, sqn_get_internal_sqn_from_aps_sqn, sqn_get_internal_sqn_from_app_sqn, TYPE_APP_ZCL, TYPE_APP_ZDP
@@ -42,10 +44,10 @@ class ZigateTransport(object):
     # Managed also the Command - > Status - > Data sequence
     # """
 
-    def __init__(self, transport, statistics, pluginconf, F_out, loggingFileHandle, serialPort=None, wifiAddress=None, wifiPort=None):
+    def __init__(self, transport, statistics, pluginconf, F_out, log, serialPort=None, wifiAddress=None, wifiPort=None):
 
         # Logging
-        self.loggingFileHandle = loggingFileHandle
+        self.log = log
 
         # Statistics
         self.statistics = statistics
@@ -223,26 +225,12 @@ class ZigateTransport(object):
 
     def loggingSend(self, logType, message):
         # Log all activties towards ZiGate
-        if self.pluginconf.pluginConf['debugTransportTx'] and logType == 'Debug':
-            _logging_debug(self, message)
-        elif logType == 'Log':
-            _logging_log(self, message)
-        elif logType == 'Status':
-            _logging_status(self, message)
-        elif logType == 'Error':
-            _logging_error(self, message)
+        self.log.logging('TransportTx', logType, message)
 
 
     def logging_receive(self, logType, message):
         # Log all activities received from ZiGate
-        if self.pluginconf.pluginConf['debugTransportRx'] and logType == 'Debug':
-            _logging_debug(self, message)
-        elif logType == 'Log':
-            _logging_log(self, message)
-        elif logType == 'Status':
-            _logging_status(self, message)
-        elif logType == 'Error':
-            _logging_error(self, message)
+        self.log.logging('TransportRx', logType, message)
 
 
     def loadTransmit(self):
@@ -1989,41 +1977,7 @@ def buildframe_configure_reporting_response( frame, Sqn, SrcNwkId, SrcEndPoint, 
     newFrame += frame[len(frame) - 4: len(frame) - 2] # LQI
     newFrame += '03'
     return  newFrame
-# Logging functions
 
-
-def _write_message(self, message):
-
-    message = str(datetime.now().strftime(
-        '%b %d %H:%M:%S.%f')) + " " + message + '\n'
-    self.loggingFileHandle.write(message)
-    self.loggingFileHandle.flush()
-
-
-def _logging_status(self, message):
-    Domoticz.Status(message)
-    if (not self.pluginconf.pluginConf['useDomoticzLog'] and self.loggingFileHandle):
-        _write_message(self, message)
-
-
-def _logging_log(self, message):
-    Domoticz.Log(message)
-    if (not self.pluginconf.pluginConf['useDomoticzLog'] and self.loggingFileHandle):
-        _write_message(self, message)
-
-
-def _logging_debug(self, message):
-    if (not self.pluginconf.pluginConf['useDomoticzLog'] and self.loggingFileHandle):
-        _write_message(self, message)
-    else:
-        Domoticz.Log(message)
-
-
-def _logging_error(self, message):
-    if (not self.pluginconf.pluginConf['useDomoticzLog'] and self.loggingFileHandle):
-        _write_message(self, message)
-    else:
-        Domoticz.Error(message)
 
 
 def zigate_encode(Data):

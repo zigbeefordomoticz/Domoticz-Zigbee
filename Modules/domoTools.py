@@ -13,7 +13,8 @@ import time
 
 import Domoticz
 
-from Modules.logging import loggingWidget
+from Classes.LoggingManagement import LoggingManagement
+
 from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
 from Modules.widgets import SWITCH_LVL_MATRIX
 
@@ -28,12 +29,12 @@ def RetreiveWidgetTypeList( self, Devices, NwkId, DeviceUnit = None):
     ClusterTypeList = []
     if DeviceUnit:
         WidgetId = str(Devices[ DeviceUnit].ID)
-        loggingWidget( self, 'Debug', "------> Looking for %s" %WidgetId, NwkId)
+        self.log.logging( "Widget", 'Debug', "------> Looking for %s" %WidgetId, NwkId)
 
     if ( 'ClusterType' in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]['ClusterType'] != '' and self.ListOfDevices[NwkId]['ClusterType'] != {} ):
         # we are on the old fashion with Type at the global level like for the ( Xiaomi lumi.remote.n286acn01 )
         # In that case we don't need a match with the incoming Ep as the correct one is the Widget EndPoint
-        loggingWidget( self, 'Debug', "------> OldFashion 'ClusterType': %s" %self.ListOfDevices[NwkId]['ClusterType'], NwkId)
+        self.log.logging( "Widget", 'Debug', "------> OldFashion 'ClusterType': %s" %self.ListOfDevices[NwkId]['ClusterType'], NwkId)
         if DeviceUnit:
             if WidgetId in self.ListOfDevices[NwkId]['ClusterType']:
                 WidgetType = self.ListOfDevices[NwkId]['ClusterType'][WidgetId]
@@ -46,7 +47,7 @@ def RetreiveWidgetTypeList( self, Devices, NwkId, DeviceUnit = None):
 
     for iterEp in self.ListOfDevices[NwkId]['Ep']:  
         if 'ClusterType' in self.ListOfDevices[NwkId]['Ep'][iterEp]:
-            loggingWidget( self, 'Debug', "------> 'ClusterType': %s" %self.ListOfDevices[NwkId]['Ep'][iterEp]['ClusterType'], NwkId)
+            self.log.logging( "Widget", 'Debug', "------> 'ClusterType': %s" %self.ListOfDevices[NwkId]['Ep'][iterEp]['ClusterType'], NwkId)
             if DeviceUnit:
                 if WidgetId in self.ListOfDevices[NwkId]['Ep'][iterEp]['ClusterType']:
                     WidgetType = self.ListOfDevices[NwkId]['Ep'][iterEp]['ClusterType'][WidgetId] 
@@ -129,7 +130,7 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
             if self.domoticzdb_DeviceStatus.retreiveTimeOut_Motion( Devices[unit].ID) > 0:
                 return
         if (now - lastupdate) >= TimedOut:
-            loggingWidget( self, "Debug", "Last update of the devices %s %s was %s ago" %( unit, WidgetType, (now - lastupdate)), NwkId)
+            self.log.logging( "Widget", "Debug", "Last update of the devices %s %s was %s ago" %( unit, WidgetType, (now - lastupdate)), NwkId)
             #UpdateDevice_v2(self, Devices, unit, 0, "Off", BatteryLvl, SignalLevel)
             Devices[unit].Update(nValue=0, sValue='Off')
 
@@ -148,7 +149,7 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
         if LevelOffHidden == 'false':
             sValue = '00'
 
-        loggingWidget( self, "Debug", "Last update of the devices %s WidgetType: %s was %s ago" %( unit, WidgetType, (now - lastupdate)), NwkId) 
+        self.log.logging( "Widget", "Debug", "Last update of the devices %s WidgetType: %s was %s ago" %( unit, WidgetType, (now - lastupdate)), NwkId) 
         #Domoticz.Log(" Update nValue: %s sValue: %s" %(nValue, sValue))
         Devices[unit].Update(nValue=nValue, sValue=sValue)
 
@@ -203,7 +204,7 @@ def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, 
         Domoticz.Error("Droping Update to Device due to DeviceID %s not found in IEEE2NWK" %(Devices[Unit].DeviceID,self.IEEE2NWK ))
         return
 
-    loggingWidget( self, "Debug", "UpdateDevice_v2 %s:%s:%s   %3s:%3s:%5s (%15s)" 
+    self.log.logging( "Widget", "Debug", "UpdateDevice_v2 %s:%s:%s   %3s:%3s:%5s (%15s)" 
         %( nValue, sValue, Color_, BatteryLvl, SignalLvl, ForceUpdate_, Devices[Unit].Name), self.IEEE2NWK[Devices[Unit].DeviceID])
 
     # Make sure that the Domoticz device still exists (they can be deleted) before updating it
@@ -230,7 +231,7 @@ def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, 
 
         if self.pluginconf.pluginConf['logDeviceUpdate']:
             Domoticz.Log("UpdateDevice - (%15s) %s:%s" %( Devices[Unit].Name, nValue, sValue ))
-        loggingWidget( self, "Debug", "--->  [Unit: %s] %s:%s:%s %s:%s %s (%15s)" %( Unit, nValue, sValue, Color_, BatteryLvl, SignalLvl, ForceUpdate_, Devices[Unit].Name), self.IEEE2NWK[Devices[Unit].DeviceID])
+        self.log.logging( "Widget", "Debug", "--->  [Unit: %s] %s:%s:%s %s:%s %s (%15s)" %( Unit, nValue, sValue, Color_, BatteryLvl, SignalLvl, ForceUpdate_, Devices[Unit].Name), self.IEEE2NWK[Devices[Unit].DeviceID])
         if Color_:
             Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Color=Color_, SignalLevel=int(SignalLvl), BatteryLevel=int(BatteryLvl), TimedOut=0)
         else:
@@ -264,11 +265,11 @@ def timedOutDevice( self, Devices, Unit=None, NwkId=None, MarkTimedOut=True):
                 if Devices[_Unit].TimedOut:
                     if MarkTimedOut:
                         continue
-                    loggingWidget( self, 'Debug', 'reset timedOutDevice unit %s nwkid: %s ' % (Devices[_Unit].Name, NwkId), NwkId, )
+                    self.log.logging( "Widget", 'Debug', 'reset timedOutDevice unit %s nwkid: %s ' % (Devices[_Unit].Name, NwkId), NwkId, )
                     Devices[_Unit].Update(nValue=_nValue, sValue=_sValue, TimedOut=0)
                 else:
                     if MarkTimedOut:
-                        loggingWidget( self, 'Debug', 'timedOutDevice unit %s nwkid: %s ' % (Devices[_Unit].Name, NwkId), NwkId, )
+                        self.log.logging( "Widget", 'Debug', 'timedOutDevice unit %s nwkid: %s ' % (Devices[_Unit].Name, NwkId), NwkId, )
                         Devices[_Unit].Update(nValue=_nValue, sValue=_sValue, TimedOut=1)
 
 def lastSeenUpdate( self, Devices, Unit=None, NwkId=None):
@@ -277,9 +278,9 @@ def lastSeenUpdate( self, Devices, Unit=None, NwkId=None):
     # It might required to call Touch everytime we receive a message from the device and not only when update is requested.
 
     if Unit:
-        loggingWidget( self, "Debug", "Touch unit %s" %( Devices[Unit].Name ))
+        self.log.logging( "Widget", "Debug", "Touch unit %s" %( Devices[Unit].Name ))
         if (not self.VersionNewFashion and (self.DomoticzMajor < 4 or ( self.DomoticzMajor == 4 and self.DomoticzMinor < 10547))):
-            loggingWidget( self, "Debug", "Not the good Domoticz level for lastSeenUpdate %s %s %s" 
+            self.log.logging( "Widget", "Debug", "Not the good Domoticz level for lastSeenUpdate %s %s %s" 
                 %(self.VersionNewFashion, self.DomoticzMajor, self.DomoticzMinor ), NwkId)
             return
         # Extract NwkId from Device Unit
@@ -313,19 +314,19 @@ def lastSeenUpdate( self, Devices, Unit=None, NwkId=None):
         self.ListOfDevices[NwkId]['Health'] = 'Live'
 
         #if time.time() < self.ListOfDevices[NwkId]['Stamp']['LastSeen'] + 5*60:
-        #    #loggingWidget( self, "Debug", "Too early for a new update of lastSeenUpdate %s" %NwkId, NwkId)
+        #    #self.log.logging( "Widget", "Debug", "Too early for a new update of lastSeenUpdate %s" %NwkId, NwkId)
         #    return
-        #loggingWidget( self, "Debug", "Update LastSeen for device %s" %NwkId, NwkId)
+        #self.log.logging( "Widget", "Debug", "Update LastSeen for device %s" %NwkId, NwkId)
 
         self.ListOfDevices[NwkId]['Stamp']['LastSeen'] = int(time.time())
 
         _IEEE = self.ListOfDevices[NwkId]['IEEE']
         if (not self.VersionNewFashion and (self.DomoticzMajor < 4 or ( self.DomoticzMajor == 4 and self.DomoticzMinor < 10547))):
-            loggingWidget( self, "Debug", "Not the good Domoticz level for Touch %s %s %s" %(self.VersionNewFashion, self.DomoticzMajor, self.DomoticzMinor ), NwkId)
+            self.log.logging( "Widget", "Debug", "Not the good Domoticz level for Touch %s %s %s" %(self.VersionNewFashion, self.DomoticzMajor, self.DomoticzMinor ), NwkId)
             return
         for x in Devices:
             if Devices[x].DeviceID == _IEEE:
-                loggingWidget( self, "Debug",  "Touch unit %s nwkid: %s " %( Devices[x].Name, NwkId ), NwkId)
+                self.log.logging( "Widget", "Debug",  "Touch unit %s nwkid: %s " %( Devices[x].Name, NwkId ), NwkId)
                 if Devices[x].TimedOut:
                     timedOutDevice( self, Devices, Unit=x, MarkTimedOut=0)
                 else:
@@ -333,7 +334,7 @@ def lastSeenUpdate( self, Devices, Unit=None, NwkId=None):
 
 def GetType(self, Addr, Ep):
     Type = ""
-    loggingWidget( self, "Debug", "GetType - Model " + str(self.ListOfDevices[Addr]['Model']) + " Profile ID : " + str(
+    self.log.logging( "Widget", "Debug", "GetType - Model " + str(self.ListOfDevices[Addr]['Model']) + " Profile ID : " + str(
         self.ListOfDevices[Addr]['ProfileID']) + " ZDeviceID : " + str(self.ListOfDevices[Addr]['ZDeviceID']), Addr)
 
     _Model = self.ListOfDevices[Addr]['Model']
@@ -344,19 +345,19 @@ def GetType(self, Addr, Ep):
             if 'Type' in self.DeviceConf[ _Model ]['Ep'][Ep]:
                 Domoticz.Log(" 'Type' entry found inf DeviceConf")
                 if self.DeviceConf[ _Model ]['Ep'][Ep]['Type'] != "":
-                    loggingWidget( self, "Debug", "GetType - Found Type in DeviceConf : %s" %self.DeviceConf[ _Model ]['Ep'][Ep]['Type'], Addr)
+                    self.log.logging( "Widget", "Debug", "GetType - Found Type in DeviceConf : %s" %self.DeviceConf[ _Model ]['Ep'][Ep]['Type'], Addr)
                     Type = self.DeviceConf[ _Model ]['Ep'][Ep]['Type']
                     Type = str(Type)
                 else:
-                    loggingWidget( self, 'Debug'"GetType - Found EpEmpty Type in DeviceConf for %s/%s" %(Addr, Ep), Addr)
+                    self.log.logging( "Widget", 'Debug'"GetType - Found EpEmpty Type in DeviceConf for %s/%s" %(Addr, Ep), Addr)
             else:
-                loggingWidget( self, 'Debug'"GetType - EpType not found in DeviceConf for %s/%s" %(Addr, Ep), Addr)   
+                self.log.logging( "Widget", 'Debug'"GetType - EpType not found in DeviceConf for %s/%s" %(Addr, Ep), Addr)   
         else:
             Type = self.DeviceConf[ _Model ]['Type']
-            loggingWidget( self, "Debug", "GetType - Found Type in DeviceConf for %s/%s: %s " %(Addr, Ep, Type), Addr)            
+            self.log.logging( "Widget", "Debug", "GetType - Found Type in DeviceConf for %s/%s: %s " %(Addr, Ep, Type), Addr)            
     else:
-        loggingWidget( self, "Debug", "GetType - Model:  >%s< not found with Ep: %s in DeviceConf. Continue with ClusterSearch" %( self.ListOfDevices[Addr]['Model'], Ep), Addr)
-        loggingWidget( self, "Debug", "        - List of Entries: %s" %str(self.DeviceConf.keys() ), Addr)
+        self.log.logging( "Widget", "Debug", "GetType - Model:  >%s< not found with Ep: %s in DeviceConf. Continue with ClusterSearch" %( self.ListOfDevices[Addr]['Model'], Ep), Addr)
+        self.log.logging( "Widget", "Debug", "        - List of Entries: %s" %str(self.DeviceConf.keys() ), Addr)
         Type = ""
 
         # Check ProfileID/ZDeviceD
@@ -371,7 +372,7 @@ def GetType(self, Addr, Ep):
             elif self.ListOfDevices[Addr]['Manufacturer'] == '100b': # Philipps Hue
                 pass
             elif str(self.ListOfDevices[Addr]['Manufacturer']).find('LIVOLO') != -1:
-                loggingWidget( self, "Debug", "GetType - Found Livolo based on Manufacturer", Addr)
+                self.log.logging( "Widget", "Debug", "GetType - Found Livolo based on Manufacturer", Addr)
                 return 'LivoloSWL/LivoloSWR'
 
         # Finaly Chec on Cluster
@@ -379,13 +380,13 @@ def GetType(self, Addr, Ep):
             if cluster in ('Type', 'ClusterType', 'ColorMode'): 
                 continue
 
-            loggingWidget( self, "Debug", "GetType - check Type for Cluster : " + str(cluster))
+            self.log.logging( "Widget", "Debug", "GetType - check Type for Cluster : " + str(cluster))
 
             if Type != "" and Type[:1] != "/":
                 Type += "/"
 
             Type += TypeFromCluster(self, cluster, create_=True)
-            loggingWidget( self, "Debug", "GetType - Type will be set to : " + str(Type))
+            self.log.logging( "Widget", "Debug", "GetType - Type will be set to : " + str(Type))
 
         # Type+=Type
         # Ne serait-il pas plus simple de faire un .split( '/' ), puis un join ('/')
@@ -401,15 +402,15 @@ def GetType(self, Addr, Ep):
         if Type[0:] == "/":
             Type = Type[1:]
 
-        loggingWidget( self, "Debug", "GetType - ClusterSearch return : %s" %Type, Addr)
+        self.log.logging( "Widget", "Debug", "GetType - ClusterSearch return : %s" %Type, Addr)
 
-    loggingWidget(self, 'Debug', "GetType returning: %s" %Type, Addr)
+    self.log.logging( "Widget", 'Debug', "GetType returning: %s" %Type, Addr)
 
     return Type
 
 def TypeFromCluster( self, cluster, create_=False, ProfileID_='', ZDeviceID_=''):
 
-    loggingWidget( self, "Debug", "---> ClusterSearch - Cluster: %s, ProfileID: %s, ZDeviceID: %s, create: %s" %(cluster, ProfileID_, ZDeviceID_, create_))
+    self.log.logging( "Widget", "Debug", "---> ClusterSearch - Cluster: %s, ProfileID: %s, ZDeviceID: %s, create: %s" %(cluster, ProfileID_, ZDeviceID_, create_))
 
     TypeFromCluster = ''
     if ProfileID_ == 'c05e' and ZDeviceID_ == '0830':

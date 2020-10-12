@@ -40,6 +40,7 @@ from datetime import datetime
 from Modules.zigateConsts import ADDRESS_MODE, HEARTBEAT, MAX_LOAD_ZIGATE, ZIGATE_EP
 
 from Classes.AdminWidgets import AdminWidgets
+from Classes.LoggingManagement import LoggingManagement
 
 OTA_CLUSTER_ID = '0019'
 OTA_CYLCLE = 21600      # We check Firmware upgrade every 5 minutes
@@ -85,7 +86,7 @@ BATTERY_TYPES = ( 4545, 4546, 4548, 4549 )
 
 class OTAManagement(object):
 
-    def __init__( self, PluginConf, adminWidgets, ZigateComm, HomeDirectory, hardwareID, Devices, ListOfDevices, IEEE2NWK, loggingFileHandle, PluginHealth ):
+    def __init__( self, PluginConf, adminWidgets, ZigateComm, HomeDirectory, hardwareID, Devices, ListOfDevices, IEEE2NWK, log, PluginHealth ):
 
         self.HB = 0
         self.ListOfDevices = ListOfDevices  # Point to the Global ListOfDevices
@@ -109,58 +110,14 @@ class OTAManagement(object):
         self.upgradeDone = None
         self.upgradeOTAImageType = None        
         self.stopOTA = None
-        self.loggingFileHandle = loggingFileHandle
+        self.log = log
         self.PluginHealth = PluginHealth
 
         self.ota_scan_folder()
 
-    def _loggingStatus( self, message):
-
-        if self.pluginconf.pluginConf['useDomoticzLog']:
-            Domoticz.Status( message )
-        else:
-            if self.loggingFileHandle:
-                Domoticz.Status( message )
-                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
-                self.loggingFileHandle.write( message )
-                self.loggingFileHandle.flush()
-            else:
-                Domoticz.Status( message )
-
-    def _loggingLog( self, message):
-
-        if self.pluginconf.pluginConf['useDomoticzLog']:
-            Domoticz.Log( message )
-        else:
-            if self.loggingFileHandle:
-                Domoticz.Log( message )
-                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
-                self.loggingFileHandle.write( message )
-                self.loggingFileHandle.flush()
-            else:
-                Domoticz.Log( message )
-
-    def _loggingDebug( self, message):
-
-        if self.pluginconf.pluginConf['useDomoticzLog']:
-            Domoticz.Log( message )
-        else:
-            if self.loggingFileHandle:
-                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
-                self.loggingFileHandle.write( message )
-                self.loggingFileHandle.flush()
-            else:
-                Domoticz.Log( message )
 
     def logging( self, logType, message):
-
-        self.debugOTA = self.pluginconf.pluginConf['debugOTA']
-        if logType == 'Debug' and self.debugOTA:
-            self._loggingDebug( message)
-        elif logType == 'Log':
-            self._loggingLog( message )
-        elif logType == 'Status':
-            self._loggingStatus( message)
+        self.log.logging('OTA', logType, message)
 
 
     # Low level commands/messages

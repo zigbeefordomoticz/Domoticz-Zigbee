@@ -61,6 +61,8 @@ from GroupMgtv2.GrpDatabase import build_group_list_from_list_of_devices
 from GroupMgtv2.GrpDomoticz import LookForGroupAndCreateIfNeeded
 from GroupMgtv2.GrpMigration import GrpMgtv2Migration
 from Modules.zigateConsts import MAX_LOAD_ZIGATE
+from Classes.LoggingManagement import LoggingManagement
+
 
 
 class GroupsManagement( object):
@@ -72,10 +74,9 @@ class GroupsManagement( object):
     from GroupMgtv2.GrpDatabase import  write_groups_list, load_groups_list_from_json, update_due_to_nwk_id_change
     from GroupMgtv2.GrpServices import FullRemoveOfGroup, checkAndTriggerIfMajGroupNeeded, addGroupMemberShip, RemoveNwkIdFromAllGroups
     from GroupMgtv2.GrpWebServices import process_web_request, ScanAllDevicesForGroupMemberShip, ScanDevicesForGroupMemberShip
-    from GroupMgtv2.GrpLogging import logging
     from GroupMgtv2.GrpIkeaRemote import manageIkeaTradfriRemoteLeftRight
     
-    def __init__(self, PluginConf, ZigateComm, adminWidgets, HomeDirectory, hardwareID, Devices, ListOfDevices, IEEE2NWK , loggingFileHandle):
+    def __init__(self, PluginConf, ZigateComm, adminWidgets, HomeDirectory, hardwareID, Devices, ListOfDevices, IEEE2NWK , log):
 
         self.HB = 0
         self.pluginconf = PluginConf
@@ -86,7 +87,7 @@ class GroupsManagement( object):
         self.ListOfDevices = ListOfDevices    # Point to the Global ListOfDevices
         self.IEEE2NWK = IEEE2NWK                        # Point to the List of IEEE to NWKID
         self.ListOfGroups = {}                            # Data structutre to store all groups
-        self.loggingFileHandle = loggingFileHandle
+        self.log = log
         self.GroupListFileName = None             # Filename of Group cashing file
         self.ZigateIEEE = None
         self.ScanDevicesToBeDone     = []         # List of Devices for which a GrpMemberShip request as to be performed
@@ -142,3 +143,7 @@ class GroupsManagement( object):
         if self.pluginconf.pluginConf['reComputeGroupState'] and (self.HB % 2 ) == 0:
             for GroupId in self.ListOfGroups:
                 self.update_domoticz_group_device( GroupId )
+
+
+    def logging( self, logType, message):
+            self.log.logging('Groups', logType, message)

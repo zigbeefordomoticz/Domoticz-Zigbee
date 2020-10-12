@@ -10,9 +10,9 @@ from time import time
 
 from Modules.basicOutputs import raw_APS_request, write_attribute, set_poweron_afteroffon
 from Modules.readAttributes import ReadAttributeRequest_0006_0000, ReadAttributeRequest_0008_0000, ReadAttributeRequest_0006_400x
-from Modules.logging import loggingPhilips
 from Modules.tools import retreive_cmd_payload_from_8002
 
+from Classes.LoggingManagement import LoggingManagement
 
 def pollingPhilips( self, key ):
     """
@@ -55,7 +55,7 @@ def philipsReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP
     if srcNWKID not in self.ListOfDevices:
         return
 
-    loggingPhilips( self, 'Debug', "philipsReadRawAPS - Nwkid: %s Ep: %s, Cluster: %s, dstNwkid: %s, dstEp: %s, Payload: %s" \
+    self.log.logging( "Philips", 'Debug', "philipsReadRawAPS - Nwkid: %s Ep: %s, Cluster: %s, dstNwkid: %s, dstEp: %s, Payload: %s" \
             %(srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload), srcNWKID)
 
     # Motion
@@ -74,7 +74,7 @@ def philipsReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP
         # This is handle by the firmware
         return
     
-    loggingPhilips( self, 'Log', "philipsReadRawAPS - Nwkid: %s/%s Cluster: %s, GlobalCommand: %s sqn: %s, Command: %s Payload: %s" \
+    self.log.logging( "Philips", 'Log', "philipsReadRawAPS - Nwkid: %s/%s Cluster: %s, GlobalCommand: %s sqn: %s, Command: %s Payload: %s" \
         %(srcNWKID,srcEp , ClusterID, GlobalCommand, sqn, cmd, data ))
 
 

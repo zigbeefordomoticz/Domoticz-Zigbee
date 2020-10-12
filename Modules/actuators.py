@@ -13,8 +13,9 @@
 import Domoticz
 import json
 
+from Classes.LoggingManagement import LoggingManagement
+
 from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl
-from Modules.logging import loggingCommand
 from Modules.basicOutputs import sendZigateCmd, set_poweron_afteroffon
 from Modules.readAttributes import ReadAttributeRequest_0006_400x
 from Modules.thermostats import thermostat_Setpoint
@@ -22,7 +23,7 @@ from Modules.zigateConsts import ZIGATE_EP
 
 def actuators( self, action, nwkid, epout, DeviceType, cmd=None, value=None, color=None):
 
-    loggingCommand( self, 'Log', "actuators - Action: %s on %s/%s with %s %s %s %s" 
+    self.log.logging( "Command", 'Log', "actuators - Action: %s on %s/%s with %s %s %s %s" 
             %(action , nwkid, epout, DeviceType, cmd, value, color))
 
     if nwkid not in self.ListOfDevices:
@@ -203,7 +204,7 @@ def actuator_setcolor( self, nwkid, EPout, value, Color ):
     if Hue_List['m'] == 1:
         ww = int(Hue_List['ww']) # Can be used as level for monochrome white
         #TODO : Jamais vu un device avec ca encore
-        loggingCommand( self, 'Debug', "Not implemented device color 1", nwkid)
+        self.log.logging( "Command", 'Debug', "Not implemented device color 1", nwkid)
     #ColorModeTemp = 2   // White with color temperature. Valid fields: t
     if Hue_List['m'] == 2:
         #Value is in mireds (not kelvin)
@@ -226,7 +227,7 @@ def actuator_setcolor( self, nwkid, EPout, value, Color ):
         cw = int(Hue_List['cw'])
         x, y = rgb_to_xy((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))    
         #TODO, Pas trouve de device avec ca encore ...
-        loggingCommand( self, 'Debug', "Not implemented device color 2", nwkid)
+        self.log.logging( "Command", 'Debug', "Not implemented device color 2", nwkid)
     #With saturation and hue, not seen in domoticz but present on zigate, and some device need it
     elif Hue_List['m'] == 9998:
         h,l,s = rgb_to_hsl((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))
@@ -247,8 +248,8 @@ def actuator_identify( self, nwkid, ep, value=None):
     if value is None:
 
         datas = "02" + "%s"%(nwkid) + ZIGATE_EP + ep + "%04x"%(duration)
-        loggingCommand( self, 'Log', "identifySend - send an Identify Message to: %s for %04x seconds" %( nwkid, duration), nwkid=nwkid)
-        loggingCommand( self, 'Log', "identifySend - data sent >%s< " %(datas) , nwkid=nwkid)
+        self.log.logging( "Command", 'Log', "identifySend - send an Identify Message to: %s for %04x seconds" %( nwkid, duration), nwkid=nwkid)
+        self.log.logging( "Command", 'Log', "identifySend - data sent >%s< " %(datas) , nwkid=nwkid)
         sendZigateCmd(self, "0070", datas )
 
     else:
@@ -264,7 +265,6 @@ def actuator_identify( self, nwkid, ep, value=None):
                 color = 0x03 # Blue
 
         datas = "02" + "%s"%(nwkid) + ZIGATE_EP + ep + "%02x"%value  + "%02x" %color
-        loggingCommand( self, 'Log', "identifyEffect - send an Identify Effecty Message to: %s for %04x seconds" %( nwkid, duration), nwkid=nwkid)
-        loggingCommand( self, 'Log', "identifyEffect - data sent >%s< " %(datas) , nwkid=nwkid)
+        self.log.logging( "Command", 'Log', "identifyEffect - send an Identify Effecty Message to: %s for %04x seconds" %( nwkid, duration), nwkid=nwkid)
+        self.log.logging( "Command", 'Log', "identifyEffect - data sent >%s< " %(datas) , nwkid=nwkid)
         sendZigateCmd(self, "00E0", datas )
-

@@ -6,7 +6,8 @@
 
 import Domoticz
 
-from Modules.logging import loggingThermostats
+from Classes.LoggingManagement import LoggingManagement
+
 from Modules.readAttributes import ReadAttributeRequest_0201
 from Modules.basicOutputs import write_attribute
 from Modules.schneider_wiser import schneider_setpoint
@@ -19,57 +20,57 @@ def thermostat_Setpoint_SPZB(  self, key, setpoint):
     cluster_id = "%04x" %0x0201
     Hattribute = "%04x" %0x4003
     data_type = "29" # Int16
-    loggingThermostats( self, 'Debug', "setpoint: %s" %setpoint, nwkid=key)
+    self.log.logging( "Thermostats", 'Debug', "setpoint: %s" %setpoint, nwkid=key)
     setpoint = int(( setpoint * 2 ) / 2)   # Round to 0.5 degrees
-    loggingThermostats( self, 'Debug', "setpoint: %s" %setpoint, nwkid=key)
+    self.log.logging( "Thermostats", 'Debug', "setpoint: %s" %setpoint, nwkid=key)
     Hdata = "%04x" %setpoint
     EPout = '01'
     for tmpEp in self.ListOfDevices[key]['Ep']:
         if "0201" in self.ListOfDevices[key]['Ep'][tmpEp]:
             EPout= tmpEp
 
-    loggingThermostats( self, 'Debug', "thermostat_Setpoint_SPZB - for %s with value %s / cluster: %s, attribute: %s type: %s"
+    self.log.logging( "Thermostats", 'Debug', "thermostat_Setpoint_SPZB - for %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,Hdata,cluster_id,Hattribute,data_type), nwkid=key)
     write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
 
 def thermostat_Setpoint( self, key, setpoint):
 
-    loggingThermostats( self, 'Debug', "thermostat_Setpoint - for %s with value %s" %(key,setpoint), nwkid=key)
+    self.log.logging( "Thermostats", 'Debug', "thermostat_Setpoint - for %s with value %s" %(key,setpoint), nwkid=key)
 
     if 'Model' in self.ListOfDevices[key] and self.ListOfDevices[key]['Model'] != {}:
         if self.ListOfDevices[key]['Model'] == 'SPZB0001':
             # Eurotronic
-            loggingThermostats( self, 'Debug', "thermostat_Setpoint - calling SPZB for %s with value %s" %(key,setpoint), nwkid=key)
+            self.log.logging( "Thermostats", 'Debug', "thermostat_Setpoint - calling SPZB for %s with value %s" %(key,setpoint), nwkid=key)
             thermostat_Setpoint_SPZB( self, key, setpoint)
 
         elif self.ListOfDevices[key]['Model'] in ( 'EH-ZB-RTS', 'EH-ZB-HACT', 'EH-ZB-VACT' ):
             # Schneider
-            loggingThermostats( self, 'Debug', "thermostat_Setpoint - calling Schneider for %s with value %s" %(key,setpoint), nwkid=key)
+            self.log.logging( "Thermostats", 'Debug', "thermostat_Setpoint - calling Schneider for %s with value %s" %(key,setpoint), nwkid=key)
             schneider_setpoint(self, key, setpoint)
             return
         
         elif self.ListOfDevices[key]['Model'] in ( 'TS0601', ):
             # Tuya
-            loggingThermostats( self, 'Log', "thermostat_Setpoint - calling Tuya for %s with value %s" %(key, setpoint), nwkid=key)
+            self.log.logging( "Thermostats", 'Log', "thermostat_Setpoint - calling Tuya for %s with value %s" %(key, setpoint), nwkid=key)
             tuya_setpoint(self, key, setpoint)
             return
 
-    loggingThermostats( self, 'Debug', "thermostat_Setpoint - standard for %s with value %s" %(key,setpoint), nwkid=key)
+    self.log.logging( "Thermostats", 'Debug', "thermostat_Setpoint - standard for %s with value %s" %(key,setpoint), nwkid=key)
     manuf_id = "0000"
     manuf_spec = "00"
     cluster_id = "%04x" %0x0201
     Hattribute = "%04x" %0x0012
     data_type = "29" # Int16
-    loggingThermostats( self, 'Debug', "setpoint: %s" %setpoint, nwkid=key)
+    self.log.logging( "Thermostats", 'Debug', "setpoint: %s" %setpoint, nwkid=key)
     setpoint = int(( setpoint * 2 ) / 2)   # Round to 0.5 degrees
-    loggingThermostats( self, 'Debug', "setpoint: %s" %setpoint, nwkid=key)
+    self.log.logging( "Thermostats", 'Debug', "setpoint: %s" %setpoint, nwkid=key)
     Hdata = "%04x" %setpoint
     EPout = '01'
     for tmpEp in self.ListOfDevices[key]['Ep']:
         if "0201" in self.ListOfDevices[key]['Ep'][tmpEp]:
             EPout= tmpEp
 
-    loggingThermostats( self, 'Debug', "thermostat_Setpoint - for %s with value %s / cluster: %s, attribute: %s type: %s"
+    self.log.logging( "Thermostats", 'Debug', "thermostat_Setpoint - for %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,Hdata,cluster_id,Hattribute,data_type), nwkid=key)
     write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
 
@@ -86,7 +87,7 @@ def thermostat_eurotronic_hostflag( self, key, action):
             }
 
     if action not in HOSTFLAG_ACTION:
-        loggingThermostats( self, 'Log', "thermostat_eurotronic_hostflag - unknown action %s" %action)
+        self.log.logging( "Thermostats", 'Log', "thermostat_eurotronic_hostflag - unknown action %s" %action)
         return
 
     manuf_id = "0000"
@@ -100,7 +101,7 @@ def thermostat_eurotronic_hostflag( self, key, action):
         if "0201" in self.ListOfDevices[key]['Ep'][tmpEp]:
             EPout= tmpEp
     write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
-    loggingThermostats( self, 'Debug', "thermostat_eurotronic_hostflag - for %s with value %s / cluster: %s, attribute: %s type: %s action: %s"
+    self.log.logging( "Thermostats", 'Debug', "thermostat_eurotronic_hostflag - for %s with value %s / cluster: %s, attribute: %s type: %s action: %s"
             %(key,data,cluster_id,attribute,data_type, action), nwkid=key)
 
 def thermostat_Calibration( self, key, calibration):
@@ -116,7 +117,7 @@ def thermostat_Calibration( self, key, calibration):
         if "0201" in self.ListOfDevices[key]['Ep'][tmpEp]:
             EPout= tmpEp
     write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
-    loggingThermostats( self, 'Debug', "thermostat_Calibration - for %s with value %s / cluster: %s, attribute: %s type: %s"
+    self.log.logging( "Thermostats", 'Debug', "thermostat_Calibration - for %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,data,cluster_id,attribute,data_type), nwkid=key)
 
 def configHeatSetpoint( self, key ):
@@ -151,7 +152,7 @@ def thermostat_Mode( self, key, mode ):
         if "0201" in self.ListOfDevices[key]['Ep'][tmpEp]:
             EPout= tmpEp
     write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
-    loggingThermostats( self, 'Debug', "thermostat_Mode - for %s with value %s / cluster: %s, attribute: %s type: %s"
+    self.log.logging( "Thermostats", 'Debug', "thermostat_Mode - for %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,data,cluster_id,attribute,data_type), nwkid=key)
 
 def Thermostat_LockMode( self, key, lockmode):
@@ -171,7 +172,7 @@ def Thermostat_LockMode( self, key, lockmode):
     cluster_id = "%04x" %0x0204
     Hattribute = "%04x" %0x0001
     data_type = "30" # Int16
-    loggingThermostats( self, 'Debug', "lockmode: %s" %lockmode, nwkid=key)
+    self.log.logging( "Thermostats", 'Debug', "lockmode: %s" %lockmode, nwkid=key)
     lockmode = LOCK_MODE[lockmode]
     Hdata = "%02x" %lockmode
     EPout = '01'
@@ -179,6 +180,6 @@ def Thermostat_LockMode( self, key, lockmode):
         if "0204" in self.ListOfDevices[key]['Ep'][tmpEp]:
             EPout= tmpEp
 
-    loggingThermostats( self, 'Debug', "Thermostat_LockMode - for %s with value %s / cluster: %s, attribute: %s type: %s"
+    self.log.logging( "Thermostats", 'Debug', "Thermostat_LockMode - for %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,Hdata,cluster_id,Hattribute,data_type), nwkid=key)
     write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
