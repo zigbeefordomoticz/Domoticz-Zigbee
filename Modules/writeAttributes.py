@@ -21,7 +21,7 @@ def write_attribute_when_awake( self, key, EPin, EPout, clusterID, manuf_id, man
 
     set_request_datastruct( self, 
         'WriteAttributes', key, EPout, clusterID, attribute, data_type, EPin, EPout, manuf_id, manuf_spec, data, ackIsDisabled, 'waiting' )
-    loggingWriteAttributes( self, 'Debug', "write_attribute_when_awake for %s/%s - >%s<" %(key, EPout, data), key)
+    self.log.logging( "WriteAttributes", 'Debug', "write_attribute_when_awake for %s/%s - >%s<" %(key, EPout, data), key)
 
 def callBackForWriteAttributeIfNeeded(self, key):
     # Scan for this device if there are any pending Write Attributes needed.
@@ -36,7 +36,7 @@ def callBackForWriteAttributeIfNeeded(self, key):
                 continue
   
             for attribute in list(get_list_waiting_request_datastruct( self, 'WriteAttributes', key, endpoint, clusterId )):
-                loggingWriteAttributes( self, 'Debug', "device awake let's write attribute for %s/%s" %(key, endpoint), key)
+                self.log.logging( "WriteAttributes", 'Debug', "device awake let's write attribute for %s/%s" %(key, endpoint), key)
                 request = get_request_datastruct( self, 'WriteAttributes', key, endpoint, clusterId, attribute )
                 if request is None:
                     continue
