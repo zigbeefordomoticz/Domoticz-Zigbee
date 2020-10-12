@@ -160,6 +160,7 @@ SETTINGS = {
         'disableAckOnZCL': {'type': 'bool', 'default': 0,      'current': None, 'restart': False, 'hidden': False,  'Advanced': True},
         'waitForResponse': {'type': 'bool', 'default': 0,      'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'MultiThreaded':   {'type': 'bool', 'default': 0,      'current': None, 'restart': True, 'hidden': True,  'Advanced': True},
+        'ieeeForRawAps':   {'type': 'bool', 'default': 0,      'current': None, 'restart': True, 'hidden': True,  'Advanced': True},
         }
     },
 
@@ -256,7 +257,8 @@ SETTINGS = {
     # Schneider Wiser configuration
     'Schneider Wiser':          {'Order': 14, 'param': {
         'enableSchneiderWiser': {'type': 'bool', 'default': 0,   'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
-        'reenforcementWiser':   {'type': 'int',  'default': 300, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
+        'reenforcementWiser':   {'type': 'int',  'default': 300, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
+        'forceWiserRegistration': {'type': 'bool', 'default': 0,   'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         }
     },
 

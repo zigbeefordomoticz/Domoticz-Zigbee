@@ -61,7 +61,7 @@ from Modules.bindings import rebind_Clusters, reWebBind_Clusters
 from Modules.livolo import livolo_bind, livolo_read_attribute_request
 from Modules.lumi import AqaraOppleDecoding, enableOppleSwitch
 from Modules.configureReporting import processConfigureReporting
-from Modules.schneider_wiser import schneider_wiser_registration, schneiderReadRawAPS
+from Modules.schneider_wiser import schneider_wiser_registration, wiser_read_attribute_request
 from Modules.legrand_netatmo import rejoin_legrand_reset
 from Modules.errorCodes import DisplayStatusCode
 from Modules.readClusters import ReadCluster
@@ -237,7 +237,7 @@ def ZigateRead(self, Devices, Data, TransportInfos=None):
 
 def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
 
-    MsgMode = MsgData[0:2]
+    MsgSqn = MsgData[0:2]
     MsgSrcAddr = MsgData[2:6]
     MsgSrcEp = MsgData[6:8]
     MsgDstEp = MsgData[8:10]
@@ -250,6 +250,7 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
     if MsgSrcAddr not in self.ListOfDevices:
         return
 
+    # Livolo case, where livolo provide Switch status update via a Malformed read Attribute request
     if (
         "Model" in self.ListOfDevices[MsgSrcAddr]
         and self.ListOfDevices[MsgSrcAddr]["Model"] == "TI0001"
@@ -280,7 +281,7 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
         "Debug",
         "Decode0100 - Mode: %s NwkId: %s SrcEP: %s DstEp: %s ClusterId: %s Direction: %s ManufSpec: %s ManufCode: %s nbAttribute: %s"
         % (
-            MsgMode,
+            MsgSqn,
             MsgSrcAddr,
             MsgSrcEp,
             MsgDstEp,
@@ -292,14 +293,21 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
         ),
     )
 
-    nbAttribute = 0
+    manuf = manuf_name = model = ''
+    if 'Model' in self.ListOfDevices[MsgSrcAddr ] and self.ListOfDevices[MsgSrcAddr ]['Model'] not in ( '', {} ):
+        model = self.ListOfDevices[MsgSrcAddr ]['Model']
+    if 'Manufacturer Name' in self.ListOfDevices[MsgSrcAddr]:
+        manuf_name = self.ListOfDevices[MsgSrcAddr][ 'Manufacturer Name']
+    if 'Manufacturer' in self.ListOfDevices[MsgSrcAddr]:
+        manuf= self.ListOfDevices[MsgSrcAddr][ 'Manufacturer']
+
     for idx in range(24, len(MsgData), 4):
-        nbAttribute += 1
         Attribute = MsgData[idx : idx + 4]
         if MsgClusterId == "000a":
+            # Cluster OTA
             timeserver_read_attribute_request(
                 self,
-                MsgMode,
+                MsgSqn,
                 MsgSrcAddr,
                 MsgSrcEp,
                 MsgClusterId,
@@ -307,6 +315,10 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
                 MsgManufCode,
                 Attribute,
             )
+        elif MsgClusterId == '0201' and ( manuf == '105e' or manuf_name == 'Schneider'):
+            # Cluster Thermostat for Wiser
+            wiser_read_attribute_request( self, MsgSrcAddr, MsgSrcEp, MsgSqn, MsgClusterId, Attribute)
+
         else:
             self.log.logging( 
                 "Input",
@@ -2586,10 +2598,9 @@ def Decode80A6(self, Devices, MsgData, MsgLQI):  # Scene Membership response
     MsgSceneList = MsgData[18 : 18 + MsgSceneCount * 2]
     if len(MsgData) > 18 + MsgSceneCount * 2:
         MsgSrcAddr = MsgData[18 + MsgSceneCount * 2 : (18 + MsgSceneCount * 2) + 4]
-    idx = 0
     MsgScene = []
-    while idx < MsgSceneCount:
-        scene = MsgSceneList[idx : idx * 2]
+    for idx in range(0, MsgSceneCount, 2):
+        scene = MsgSceneList[idx : idx + 2]
         if scene not in MsgScene:
             MsgScene.append(scene)
     self.log.logging( "Input", "Log", "           - Scene List: %s" % (str(MsgScene)))

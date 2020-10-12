@@ -82,32 +82,36 @@ def callbackDeviceAwake_Schneider(self, NwkId, EndPoint, cluster):
 
 def callbackDeviceAwake_Schneider_SetPoints( self, NwkId, EndPoint, cluster):
 
-    # Schneider Wiser Valve Thermostat is a battery device, which receive commands only when it has sent a Report Attribute
-    if 'Model' in self.ListOfDevices[NwkId]:
-        if self.ListOfDevices[NwkId]['Model'] == 'EH-ZB-VACT':
-            now = time()
-            # Manage SetPoint
-            if '0201' in self.ListOfDevices[NwkId]['Ep'][EndPoint]:
-                if '0012' in self.ListOfDevices[NwkId]['Ep'][EndPoint]['0201']:
-                    if 'Schneider' not in self.ListOfDevices[NwkId]:
-                        self.ListOfDevices[NwkId]['Schneider'] = {}
-                    if 'Target SetPoint' in self.ListOfDevices[NwkId]['Schneider']:
-                        if  self.ListOfDevices[NwkId]['Schneider']['Target SetPoint'] and \
-                            self.ListOfDevices[NwkId]['Schneider']['Target SetPoint'] != int( self.ListOfDevices[NwkId]['Ep'][EndPoint]['0201']['0012'] ):
-                            # Protect against overloading Zigate
-                            if now > self.ListOfDevices[NwkId]['Schneider']['TimeStamp SetPoint'] + 15:
-                                schneider_setpoint( self, NwkId, self.ListOfDevices[NwkId]['Schneider']['Target SetPoint'] )
-            # Manage Zone Mode
-                if 'e010' in self.ListOfDevices[NwkId]['Ep'][EndPoint]['0201']:
-                    if 'Target Mode' in self.ListOfDevices[NwkId]['Schneider']:
-                        EHZBRTS_THERMO_MODE = { 0: 0x00, 10: 0x01, 20: 0x02, 30: 0x03, 40: 0x04, 50: 0x05, 60: 0x06, }
-                        if self.ListOfDevices[NwkId]['Schneider']['Target Mode'] is not None:
-                            if EHZBRTS_THERMO_MODE[self.ListOfDevices[NwkId]['Schneider']['Target Mode']] == int(self.ListOfDevices[NwkId]['Ep'][EndPoint]['0201']['e010'],16):
-                                self.ListOfDevices[NwkId]['Schneider']['Target Mode'] = None
-                                self.ListOfDevices[NwkId]['Schneider']['TimeStamp Mode'] = None
-                            else:
-                                if now > self.ListOfDevices[NwkId]['Schneider']['TimeStamp Mode'] + 15:
-                                    schneider_EHZBRTS_thermoMode( self, NwkId, self.ListOfDevices[NwkId]['Schneider']['Target Mode'] )
+    # Schneider Wiser Valve Thermostat is a battery device, which receive commands only when it has sent a Report Attribut
+    if 'Model' not in self.ListOfDevices[NwkId]:
+        return
+    if self.ListOfDevices[NwkId]['Model'] != 'EH-ZB-VACT':
+        return
+    if '0201' not in self.ListOfDevices[NwkId]['Ep'][EndPoint]:
+        return
+
+    # Manage SetPoint
+    now = time()
+    if '0012' in self.ListOfDevices[NwkId]['Ep'][EndPoint]['0201']:
+        if 'Schneider' not in self.ListOfDevices[NwkId]:
+            self.ListOfDevices[NwkId]['Schneider'] = {}
+        if 'Target SetPoint' in self.ListOfDevices[NwkId]['Schneider']:
+            if  self.ListOfDevices[NwkId]['Schneider']['Target SetPoint'] and \
+                self.ListOfDevices[NwkId]['Schneider']['Target SetPoint'] != int( self.ListOfDevices[NwkId]['Ep'][EndPoint]['0201']['0012'] ):
+                # Protect against overloading Zigate
+                if now > self.ListOfDevices[NwkId]['Schneider']['TimeStamp SetPoint'] + 15:
+                    schneider_setpoint( self, NwkId, self.ListOfDevices[NwkId]['Schneider']['Target SetPoint'] )
+    # Manage Zone Mode
+    if 'e010' in self.ListOfDevices[NwkId]['Ep'][EndPoint]['0201']:
+        if 'Target Mode' in self.ListOfDevices[NwkId]['Schneider']:
+            EHZBRTS_THERMO_MODE = { 0: 0x00, 10: 0x01, 20: 0x02, 30: 0x03, 40: 0x04, 50: 0x05, 60: 0x06, }
+            if self.ListOfDevices[NwkId]['Schneider']['Target Mode'] is not None:
+                if EHZBRTS_THERMO_MODE[self.ListOfDevices[NwkId]['Schneider']['Target Mode']] == int(self.ListOfDevices[NwkId]['Ep'][EndPoint]['0201']['e010'],16):
+                    self.ListOfDevices[NwkId]['Schneider']['Target Mode'] = None
+                    self.ListOfDevices[NwkId]['Schneider']['TimeStamp Mode'] = None
+                else:
+                    if now > self.ListOfDevices[NwkId]['Schneider']['TimeStamp Mode'] + 15:
+                        schneider_EHZBRTS_thermoMode( self, NwkId, self.ListOfDevices[NwkId]['Schneider']['Target Mode'] )
 
 
 def schneider_wiser_registration( self, Devices, key ):
@@ -457,26 +461,28 @@ def schneider_thermostat_check_and_bind (self, key, forceRebind = False):
     Cluster_bind1 = '0201'
     Cluster_bind2 = '0402'
     for zone in self.SchneiderZone:
-        if self.SchneiderZone[ zone ]['Thermostat']['NWKID'] == key :
-            for hact in self.SchneiderZone[ zone ]['Thermostat']['HACT']:
+        if self.SchneiderZone[ zone ]['Thermostat']['NWKID'] != key :
+            continue
 
-                if hact not in self.ListOfDevices:
-                    continue
+        for hact in self.SchneiderZone[ zone ]['Thermostat']['HACT']:
 
-                srcIeee = self.SchneiderZone[ zone ]['Thermostat']['IEEE']
-                targetIeee = self.SchneiderZone[ zone ]['Thermostat']['HACT'][hact]['IEEE']
-                statusBind1 = WebBindStatus (self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind1)
-                
-                if (not (statusBind1 == 'requested')):
-                    if (statusBind1 != 'binded') or forceRebind:
-                        webBind(self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind1)
-                        webBind(self, targetIeee,SCHNEIDER_BASE_EP,srcIeee,SCHNEIDER_BASE_EP,Cluster_bind1)
+            if hact not in self.ListOfDevices:
+                continue
 
-                statusBind2 = WebBindStatus (self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind2)
-                if not (statusBind2 == 'requested'):
-                    if (statusBind2 != 'binded') or forceRebind:
-                        webBind(self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind2)
-                        webBind(self, targetIeee,SCHNEIDER_BASE_EP,srcIeee,SCHNEIDER_BASE_EP,Cluster_bind2)
+            srcIeee = self.SchneiderZone[ zone ]['Thermostat']['IEEE']
+            targetIeee = self.SchneiderZone[ zone ]['Thermostat']['HACT'][hact]['IEEE']
+            statusBind1 = WebBindStatus (self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind1)
+            
+            if (not (statusBind1 == 'requested')):
+                if (statusBind1 != 'binded') or forceRebind:
+                    webBind(self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind1)
+                    webBind(self, targetIeee,SCHNEIDER_BASE_EP,srcIeee,SCHNEIDER_BASE_EP,Cluster_bind1)
+
+            statusBind2 = WebBindStatus (self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind2)
+            if not (statusBind2 == 'requested'):
+                if (statusBind2 != 'binded') or forceRebind:
+                    webBind(self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind2)
+                    webBind(self, targetIeee,SCHNEIDER_BASE_EP,srcIeee,SCHNEIDER_BASE_EP,Cluster_bind2)
 
 
 def schneider_actuator_check_and_bind (self, key, forceRebind = False):
@@ -495,24 +501,26 @@ def schneider_actuator_check_and_bind (self, key, forceRebind = False):
     Cluster_bind2 = '0402'
     for zone in self.SchneiderZone:
         for hact in self.SchneiderZone[ zone ]['Thermostat']['HACT']:
-            if hact == key :
-                thermostat_key = self.SchneiderZone[ zone ]['Thermostat']['NWKID']
-                if thermostat_key not in self.ListOfDevices:
-                    continue
+            if hact != key :
+                continue
+            
+            thermostat_key = self.SchneiderZone[ zone ]['Thermostat']['NWKID']
+            if thermostat_key not in self.ListOfDevices:
+                continue
 
-                srcIeee = self.SchneiderZone[ zone ]['Thermostat']['HACT'][hact]['IEEE']
-                targetIeee = self.SchneiderZone[ zone ]['Thermostat']['IEEE']
-                statusBind1 = WebBindStatus (self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind1)
-                if not (statusBind1 == 'requested'):
-                    if (statusBind1 != 'binded') or forceRebind:
-                        webBind(self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind1)
-                        webBind(self, targetIeee,SCHNEIDER_BASE_EP,srcIeee,SCHNEIDER_BASE_EP,Cluster_bind1)
+            srcIeee = self.SchneiderZone[ zone ]['Thermostat']['HACT'][hact]['IEEE']
+            targetIeee = self.SchneiderZone[ zone ]['Thermostat']['IEEE']
+            statusBind1 = WebBindStatus (self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind1)
+            if not (statusBind1 == 'requested'):
+                if (statusBind1 != 'binded') or forceRebind:
+                    webBind(self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind1)
+                    webBind(self, targetIeee,SCHNEIDER_BASE_EP,srcIeee,SCHNEIDER_BASE_EP,Cluster_bind1)
 
-                statusBind2 = WebBindStatus (self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind2)
-                if not (statusBind2 == 'requested'):
-                    if (statusBind2 != 'binded') or forceRebind:
-                        webBind(self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind2)
-                        webBind(self, targetIeee,SCHNEIDER_BASE_EP,srcIeee,SCHNEIDER_BASE_EP,Cluster_bind2)
+            statusBind2 = WebBindStatus (self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind2)
+            if not (statusBind2 == 'requested'):
+                if (statusBind2 != 'binded') or forceRebind:
+                    webBind(self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind2)
+                    webBind(self, targetIeee,SCHNEIDER_BASE_EP,srcIeee,SCHNEIDER_BASE_EP,Cluster_bind2)
 
 
 def schneider_setpoint_thermostat( self, key, setpoint):
@@ -923,8 +931,10 @@ def schneiderReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dst
                 nbAttribute += 1
                 Attribute = '%04x' %struct.unpack('H',struct.pack('>H',int(Data[idx:idx+4],16)))[0]
                 idx += 4
-                if int(self.FirmwareVersion,16) <= 0x031c:
+
+                if self.FirmwareVersion and int(self.FirmwareVersion,16) <= 0x031c:
                     wiser_unsupported_attribute( self, srcNWKID, srcEp, Sqn, ClusterID, dstNWKID, dstEP, Attribute )
+
                 else:
                     self.log.logging( "Schneider", 'Debug','Schneider cmd 0x00 [%s] Read Attribute Request on %s/%s' %(Sqn, ClusterID,Attribute ),srcNWKID)
                     schneider_thermostat_answer_attribute_request(self, srcNWKID, srcEp, ClusterID, Sqn, Attribute)
@@ -943,8 +953,17 @@ def schneiderReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dst
             self.log.logging( "Schneider", 'Debug','Schneider cmd 0x50',srcNWKID)
             schneiderAlarmReceived (self, Devices, srcNWKID, srcEp, ClusterID, False, Data)
 
+def wiser_read_attribute_request( self, NwkId, Ep, Sqn, ClusterId, Attribute):
 
-def wiser_unsupported_attribute( self, srcNWKID, srcEp, Sqn, ClusterID, dstNWKID, dstEP, attribute ):
+    if int(self.FirmwareVersion,16) <= 0x031c:
+        # We shouldn't reach here, as the firmware itself will reject and respond.
+        wiser_unsupported_attribute( self, NwkId, Ep, Sqn, ClusterId, Attribute )
+    else:
+        loggingSchneider( self, 'Debug','Schneider cmd 0x00 [%s] Read Attribute Request on %s/%s' %(Sqn, ClusterId,Attribute ),NwkId)
+        schneider_thermostat_answer_attribute_request(self, NwkId, Ep, ClusterId, Sqn, Attribute)
+
+
+def wiser_unsupported_attribute( self, srcNWKID, srcEp, Sqn, ClusterID, attribute ):
     cluster_frame = '18'
     cmd = '01'
     payload = cluster_frame + Sqn + cmd + attribute[2:4] + attribute[0:2] + '86'  
