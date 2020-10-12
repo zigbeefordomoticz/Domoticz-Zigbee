@@ -77,7 +77,6 @@ import threading
 
 from Modules.piZigate import switchPiZigate_mode
 from Modules.tools import removeDeviceInList
-from Modules.logging import loggingPlugin
 from Modules.basicOutputs import sendZigateCmd, removeZigateDevice, start_Zigate, setExtendedPANID, setTimeServer, leaveRequest, zigateBlueLed, ZigatePermitToJoin
 from Modules.input import ZigateRead
 from Modules.heartbeat import processListOfDevices
@@ -87,7 +86,6 @@ from Modules.command import mgtCommand
 from Modules.zigateConsts import HEARTBEAT, CERTIFICATION, MAX_LOAD_ZIGATE, MAX_FOR_ZIGATE_BUZY
 from Modules.txPower import set_TxPower, get_TxPower
 from Modules.checkingUpdate import checkPluginVersion, checkPluginUpdate, checkFirmwareUpdate
-from Modules.logging import openLogFile, closeLogFile, loggingCleaningErrorHistory
 from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
 
 #from Classes.APS import APSManagement
@@ -128,7 +126,6 @@ class BasePlugin:
         self.IEEE2NWK = {}
         self.zigatedata = {}
         self.DeviceConf = {} # Store DeviceConf.txt, all known devices configuration
-        self.LogErrorHistory = {}
 
         # Objects from Classe
         self.ZigateComm = None
@@ -261,7 +258,6 @@ class BasePlugin:
             self.log = LoggingManagement(self.pluginconf, self.PluginHealth)
             self.log.openLogFile()
         
-        openLogFile( self )
 
         self.log.logging( 'Plugin', 'Status',  "Switching Heartbeat to %s s interval" %HEARTBEAT)
         Domoticz.Heartbeat( 1 )
@@ -412,7 +408,6 @@ class BasePlugin:
         self.PluginHealth['Txt'] = 'No Communication'
         self.adminWidgets.updateStatusWidget( Devices, 'No Communication')
 
-        closeLogFile( self )
         self.log.closeLogFile()
 
     def onDeviceRemoved( self, Unit ) :
@@ -742,7 +737,6 @@ class BasePlugin:
 
         self.statistics.addPointforTrendStats( self.HeartbeatCount )
 
-        loggingCleaningErrorHistory(self)
         return True
 
 def zigateInit_Phase1(self ):
@@ -911,7 +905,7 @@ def zigateInit_Phase3( self ):
         self.webserver = WebServer( self.networkenergy, self.networkmap, self.zigatedata, self.pluginParameters, self.pluginconf, self.statistics, 
             self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], self.HardwareID, self.DevicesInPairingMode, self.groupmgt, Devices, 
             self.ListOfDevices, self.IEEE2NWK , self.permitTojoin , self.WebUsername, self.WebPassword, self.PluginHealth, Parameters['Mode4'], 
-            self.log,self.LogErrorHistory)
+            self.log)
         if self.FirmwareVersion:
             self.webserver.update_firmware( self.FirmwareVersion )
 
