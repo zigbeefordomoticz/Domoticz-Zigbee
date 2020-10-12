@@ -13,7 +13,6 @@ from Modules.legrand_netatmo import callbackDeviceAwake_Legrand
 from Modules.basicOutputs import write_attribute
 from Modules.writeAttributes import callBackForWriteAttributeIfNeeded
 from Modules.bindings import webBind, callBackForBindIfNeeded, callBackForWebBindIfNeeded
-from Modules.logging import loggingWriteAttributes, loggingBinding
 
 
 def callbackDeviceAwake(self, nwkid, endpoint, cluster):

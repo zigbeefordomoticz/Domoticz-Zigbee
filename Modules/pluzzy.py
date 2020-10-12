@@ -11,12 +11,12 @@
 """
 
 import Domoticz
-from Modules.logging import loggingPairing, loggingInput
+from Classes.LoggingManagement import LoggingManagement
 
 
 def pluzzyDecode004D( self, MsgSrcAddr, MsgIEEE, MsgMacCapa, decodedMacCapa, LQI):
 
-    self.logging( 'Debug',  "Pluzzy-Decode004D - Device Annoucement %s %s %s" %(MsgSrcAddr, MsgIEEE, decodedMacCapa))
+    self.log.logging( "Input", 'Debug',  "Pluzzy-Decode004D - Device Annoucement %s %s %s" %(MsgSrcAddr, MsgIEEE, decodedMacCapa))
 
     return
 
@@ -28,7 +28,7 @@ def pluzzyDecode8102( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAt
     (2) if we are in the pairing/widget creation process, let's specify Model Name for Pluzzy devices.
     """
 
-    loggingInput( self, 'Debug',  "Pluzzy-Decode8102 - Individual Attribute response : [%s:%s] ClusterID: %s AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<" \
+    self.log.logging( "Input", 'Debug',  "Pluzzy-Decode8102 - Individual Attribute response : [%s:%s] ClusterID: %s AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<" \
             %(MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData ))
 
     if MsgSrcAddr not in self.ListOfDevices:

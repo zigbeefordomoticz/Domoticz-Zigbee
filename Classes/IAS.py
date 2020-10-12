@@ -14,7 +14,7 @@ from datetime import datetime
 
 from Modules.zigateConsts import ADDRESS_MODE, ZIGATE_EP, ZONE_TYPE
 from Classes.PluginConf import PluginConf
-
+from Classes.LoggingManagement import LoggingManagement
 
 ENROLL_RESPONSE_CODE =  0x00
 
@@ -22,7 +22,7 @@ ZONE_ID = 0x00
 
 class IAS_Zone_Management:
 
-    def __init__( self , pluginconf, ZigateComm, ListOfDevices, loggingFileHandle, ZigateIEEE = None):
+    def __init__( self , pluginconf, ZigateComm, ListOfDevices, log, ZigateIEEE = None):
         self.devices = {}
         self.ListOfDevices = ListOfDevices
         self.tryHB = 0
@@ -33,42 +33,10 @@ class IAS_Zone_Management:
         if ZigateIEEE:
             self.ZigateIEEE = ZigateIEEE
         self.pluginconf = pluginconf
-        self.loggingFileHandle = loggingFileHandle
-
-    def _loggingStatus( self, message):
-
-        Domoticz.Status( message )
-        if ( not self.pluginconf.pluginConf['useDomoticzLog'] and self.loggingFileHandle ):
-            message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
-            self.loggingFileHandle.write( message )
-            self.loggingFileHandle.flush()
-
-    def _loggingLog( self, message):
-
-        Domoticz.Log( message )
-        if ( not self.pluginconf.pluginConf['useDomoticzLog'] and self.loggingFileHandle ):
-            message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
-            self.loggingFileHandle.write( message )
-            self.loggingFileHandle.flush()
-
-    def _loggingDebug( self, message):
-
-        if ( not self.pluginconf.pluginConf['useDomoticzLog'] and self.loggingFileHandle ):
-            message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
-            self.loggingFileHandle.write( message )
-            self.loggingFileHandle.flush()
-        else:
-            Domoticz.Log( message )
+        self.log = log
 
     def logging( self, logType, message):
-
-        self.debugIAS = self.pluginconf.pluginConf['debugIAS']
-        if logType == 'Debug' and self.debugIAS:
-            self._loggingDebug( message)
-        elif logType == 'Log':
-            self._loggingLog( message )
-        elif logType == 'Status':
-            self._loggingStatus( message)
+        self.log.logging('IAS', logType, message)
 
 
     def __write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data):
