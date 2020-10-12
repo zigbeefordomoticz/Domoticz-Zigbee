@@ -929,8 +929,10 @@ def schneiderReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dst
                 nbAttribute += 1
                 Attribute = '%04x' %struct.unpack('H',struct.pack('>H',int(Data[idx:idx+4],16)))[0]
                 idx += 4
-                if int(self.FirmwareVersion,16) <= 0x031c:
-                    wiser_unsupported_attribute( self, srcNWKID, srcEp, Sqn, ClusterID, Attribute )
+
+                if self.FirmwareVersion and int(self.FirmwareVersion,16) <= 0x031c:
+                    wiser_unsupported_attribute( self, srcNWKID, srcEp, Sqn, ClusterID, dstNWKID, dstEP, Attribute )
+
                 else:
                     loggingSchneider( self, 'Debug','Schneider cmd 0x00 [%s] Read Attribute Request on %s/%s' %(Sqn, ClusterID,Attribute ),srcNWKID)
                     schneider_thermostat_answer_attribute_request(self, srcNWKID, srcEp, ClusterID, Sqn, Attribute)
