@@ -2495,7 +2495,7 @@ def Decode80A3(self, Devices, MsgData, MsgLQI):  # Remove All Scene response
     MsgDataStatus = MsgData[8:10]
     MsgGroupID = MsgData[10:14]
 
-   self.log.logging( 
+    self.log.logging( 
         "Input",
         "Log",
         "ZigateRead - MsgType 80A3 - Remove All Scene response, Sequence number : "
