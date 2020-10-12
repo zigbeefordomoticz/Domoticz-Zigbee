@@ -18,9 +18,9 @@ import json
 from Modules.zigateConsts import ZIGATE_EP
 from Modules.tools import retreive_cmd_payload_from_8002
 from Modules.basicOutputs import sendZigateCmd
-from Modules.logging import loggingLivolo
 from Modules.domoMaj import MajDomoDevice
 
+from Classes.LoggingManagement import LoggingManagement
 
 # Livolo commands.
 # 
@@ -52,13 +52,13 @@ def livolo_OnOff( self, nwkid , EPout, devunit, onoff):
     Right Unit: Timing 2
     """
 
-    loggingLivolo( self, 'Debug', "livolo_OnOff - devunit: %s, onoff: %s" %(devunit, onoff), nwkid=nwkid)
+    self.log.logging( "Livolo", 'Debug', "livolo_OnOff - devunit: %s, onoff: %s" %(devunit, onoff), nwkid=nwkid)
 
     if onoff not in ( 'On', 'Off', 'Toggle'): return
     if devunit not in ( 'Left', 'Right', 'All'): return
 
     if onoff == 'Toggle' and devunit == 'All':
-        loggingLivolo( self, 'Debug', "livolo_toggle" , nwkid=nwkid)
+        self.log.logging( "Livolo", 'Debug', "livolo_toggle" , nwkid=nwkid)
         sendZigateCmd(self, "0092","02" + nwkid + ZIGATE_EP + EPout + '02')
     else:
         level_value = timing_value = None
@@ -73,7 +73,7 @@ def livolo_OnOff( self, nwkid , EPout, devunit, onoff):
             timing_value = '0002'
 
         if level_value is not None and timing_value is not None:
-            loggingLivolo( self, 'Debug', "livolo_OnOff - %s/%s Level: %s, Timing: %s" %( nwkid, EPout, level_value, timing_value), nwkid=nwkid)
+            self.log.logging( "Livolo", 'Debug', "livolo_OnOff - %s/%s Level: %s, Timing: %s" %( nwkid, EPout, level_value, timing_value), nwkid=nwkid)
             sendZigateCmd(self, "0081","02" + nwkid + ZIGATE_EP + EPout + '00' + level_value + timing_value)
         else:
             Domoticz.Error( "livolo_OnOff - Wrong parameters sent ! onoff: %s devunit: %s" %(onoff, devunit))
@@ -99,7 +99,7 @@ def livolo_read_attribute_request( self, Devices, NwkId, Ep, Status):
     # Right Off: 02
     # Right On: 03
 
-    loggingLivolo( self, 'Debug', "Decode0100 - Livolo %s/%s Data: %s" %(NwkId, Ep, Status), NwkId)
+    self.log.logging( "Livolo", 'Debug', "Decode0100 - Livolo %s/%s Data: %s" %(NwkId, Ep, Status), NwkId)
 
     if Status == '00': # Left / Single - Off
         MajDomoDevice(self, Devices, NwkId, Ep, '0006', '00')
