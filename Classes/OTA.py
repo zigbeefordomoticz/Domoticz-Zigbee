@@ -60,8 +60,11 @@ PHILIPS_MANUF_NAME = 'Philips'
 WISER_MANUF_CODE = 0x105e
 WISER_MANUF_NAME = 'Schneider Electric'
 
-OTA_MANUF_CODE = ( IKEA_MANUF_CODE, LEDVANCE_MANUF_CODE, OSRAM_MANUF_CODE , LEGRAND_MANUF_CODE, PHILIPS_MANUF_CODE, WISER_MANUF_CODE)
-OTA_MANUF_NAME = ( '117c', 'IKEA of Sweden', '1189', 'LEDVANCE', 'bbaa', '110c', 'OSRAM', '1021', 'Legrand', '100b', 'Philips', '105e', 'Schneider Electric')
+OTA_MANUF_CODE_W_WISER = ( IKEA_MANUF_CODE, LEDVANCE_MANUF_CODE, OSRAM_MANUF_CODE , LEGRAND_MANUF_CODE, PHILIPS_MANUF_CODE, WISER_MANUF_CODE )
+OTA_MANUF_CODE = ( IKEA_MANUF_CODE, LEDVANCE_MANUF_CODE, OSRAM_MANUF_CODE , LEGRAND_MANUF_CODE, PHILIPS_MANUF_CODE)
+
+OTA_MANUF_NAME_W_WISER = ( '117c', 'IKEA of Sweden', '1189', 'LEDVANCE', 'bbaa', '110c', 'OSRAM', '1021', 'Legrand', '100b', 'Philips', '105e', 'Schneider Electric')
+OTA_MANUF_NAME = ( '117c', 'IKEA of Sweden', '1189', 'LEDVANCE', 'bbaa', '110c', 'OSRAM', '1021', 'Legrand', '100b', 'Philips')
 
 
 BATTERY_TYPES = ( 4545, 4546, 4548, 4549 )
@@ -877,11 +880,13 @@ class OTAManagement(object):
                 otaDevice = False
                 manufCode = None
                 if 'Manufacturer Name' in self.ListOfDevices[ iterDev ]:
-                    if self.ListOfDevices[iterDev]['Manufacturer'] in OTA_MANUF_NAME:
+                    if (self.pluginconf.pluginConf['allowWiserUpgade'] and self.ListOfDevices[iterDev]['Manufacturer'] in OTA_MANUF_NAME_W_WISER) or \
+                       ( self.ListOfDevices[iterDev]['Manufacturer'] in OTA_MANUF_NAME) :
                         manufCode = self.ListOfDevices[iterDev]['Manufacturer']
                         otaDevice = True
                 if not otaDevice and 'Manufacturer' in self.ListOfDevices[ iterDev ]:
-                    if self.ListOfDevices[iterDev]['Manufacturer Name'] in OTA_MANUF_NAME:
+                    if (self.pluginconf.pluginConf['allowWiserUpgade'] and self.ListOfDevices[iterDev]['Manufacturer Name'] in OTA_MANUF_NAME_W_WISER) or \
+                       ( self.ListOfDevices[iterDev]['Manufacturer Name'] in OTA_MANUF_NAME) :
                         manufCode = self.ListOfDevices[iterDev]['Manufacturer']
                         otaDevice = True
 
@@ -891,9 +896,9 @@ class OTAManagement(object):
 
                 upgradable = False
                 for manufCode in self.availableManufCode:
-                    if manufCode in OTA_MANUF_CODE:
-                        upgradable = True
-                        self.upgradableDev.append( iterDev )
+                    if (self.pluginconf.pluginConf['allowWiserUpgade'] and manufCode in OTA_MANUF_CODE_W_WISER) or manufCode in OTA_MANUF_CODE:
+                            upgradable = True
+                            self.upgradableDev.append( iterDev )
 
                 if not upgradable:
                     self.logging( 'Debug', "OTA heartbeat - skip %s manufcode %s is not in %s" %(iterDev, str( OTA_MANUF_CODE ), self.availableManufCode))
@@ -941,8 +946,8 @@ class OTAManagement(object):
                         break
                 for x in self.OTA['Images']:
                     if x == 'Upgraded Device': continue
-                    if self.OTA['Images'][x]['Decoded Header']['manufacturer_code'] in OTA_MANUF_CODE and \
-                        self.ListOfDevices[self.upgradeInProgress]['Manufacturer'] in OTA_MANUF_NAME:
+                    if (self.OTA['Images'][x]['Decoded Header']['manufacturer_code'] in OTA_MANUF_CODE and self.ListOfDevices[self.upgradeInProgress]['Manufacturer'] in OTA_MANUF_NAME) or \
+                        (self.pluginconf.pluginConf['allowWiserUpgade'] and self.OTA['Images'][x]['Decoded Header']['manufacturer_code'] in OTA_MANUF_CODE_W_WISER and self.ListOfDevices[self.upgradeInProgress]['Manufacturer'] in OTA_MANUF_NAME_W_WISER):
                         if self.upgradeInProgress in self.ListOfDevices:
                             if 'Manufacturer' in self.ListOfDevices[self.upgradeInProgress]:
                                 if int(self.ListOfDevices[self.upgradeInProgress]['Manufacturer'],16) != self.OTA['Images'][x]['Decoded Header']['manufacturer_code']:
