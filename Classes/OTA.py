@@ -57,12 +57,8 @@ LEGRAND_MANUF_NAME = 'Legrand'
 PHILIPS_MANUF_CODE = 0x100b
 PHILIPS_MANUF_NAME = 'Philips'
 
-
-WISER_MANUF_CODE = 0x105e
-WISER_MANUF_NAME = 'Schneider Electric'
-
-OTA_MANUF_CODE = ( IKEA_MANUF_CODE, LEDVANCE_MANUF_CODE, OSRAM_MANUF_CODE , LEGRAND_MANUF_CODE, PHILIPS_MANUF_CODE, WISER_MANUF_CODE)
-OTA_MANUF_NAME = ( '117c', 'IKEA of Sweden', '1189', 'LEDVANCE', 'bbaa', '110c', 'OSRAM', '1021', 'Legrand', '100b', 'Philips', '105e', 'Schneider Electric')
+OTA_MANUF_CODE = ( IKEA_MANUF_CODE, LEDVANCE_MANUF_CODE, OSRAM_MANUF_CODE , LEGRAND_MANUF_CODE, PHILIPS_MANUF_CODE)
+OTA_MANUF_NAME = ( '117c', 'IKEA of Sweden', '1189', 'LEDVANCE', 'bbaa', '110c', 'OSRAM', '1021', 'Legrand', '100b', 'Philips')
 
 
 BATTERY_TYPES = ( 4545, 4546, 4548, 4549 )
@@ -776,7 +772,7 @@ class OTAManagement(object):
         # Scanning the Firmware folder and processing them
         # """
 
-        for brand in ('IKEA-TRADFRI', 'LEDVANCE', 'LEGRAND' , 'PHILIPS', 'SCHNEIDER-WISER/'):
+        for brand in ('IKEA-TRADFRI', 'LEDVANCE', 'LEGRAND' , 'PHILIPS'):
             ota_dir = self.pluginconf.pluginConf['pluginOTAFirmware'] + brand
             ota_image_files = [ f for f in listdir(ota_dir) if isfile(join(ota_dir, f))]
 
