@@ -210,6 +210,8 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         if 'CreateWidgetDomoticz' in self.DeviceConf[ self.ListOfDevices[NWKID]['Model'] ]:
             if not self.DeviceConf[ self.ListOfDevices[NWKID]['Model'] ]['CreateWidgetDomoticz']:
                 self.ListOfDevices[NWKID]['Status'] = 'notDB'
+                self.ListOfDevices[NWKID]['PairingInProgress'] = False
+                self.CommiSSionning = False
                 return
 
         # Let's check if we have a profalux device, and if that is a remote. In such case, just drop this
@@ -217,6 +219,8 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             if self.ListOfDevices[NWKID]['Manufacturer'] == '1110':
                 if self.ListOfDevices[NWKID]['ZDeviceID'] == '0201': # Remote
                     self.ListOfDevices[NWKID]['Status'] = 'notDB'
+                    self.ListOfDevices[NWKID]['PairingInProgress'] = False
+                    self.CommiSSionning = False
                     return
 
         # Check once more if we have received the Model Name
@@ -258,9 +262,11 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             #Don't know why we need as this seems very weird
             if NWKID not in self.ListOfDevices:
                 Domoticz.Error("processNotinDBDevices - %s doesn't exist in Post creation widget" %NWKID)
+                self.CommiSSionning = False
                 return
             if 'Ep' not in self.ListOfDevices[NWKID]:
                 Domoticz.Error("processNotinDBDevices - %s doesn't have Ep in Post creation widget" %NWKID)
+                self.CommiSSionning = False
                 return
 
             ######
