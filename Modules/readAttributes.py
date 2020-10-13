@@ -29,7 +29,6 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes , manu
         """
         Split the list of attrributes in wanted part
         """
-        Domoticz.Log("Breaking %s ListOfAttribute into chunks of %s ==> %s" %( l, wanted_parts, str([  l[x: x+wanted_parts] for x in range(0, len(l), wanted_parts) ])))
         return [  l[x: x+wanted_parts] for x in range(0, len(l), wanted_parts) ]
 
     # That one is put in comment as it has some bad behaviour. It prevents doing 2 commands in the same minutes.
