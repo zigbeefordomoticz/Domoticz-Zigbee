@@ -1647,9 +1647,9 @@ def Cluster0204( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     if MsgAttrID == '0000':
         # TemperatureDisplayMode
         if MsgClusterData == '00':
-            loggingCluster( self, 'Debug', "ReadCluster %s/%s 0204 - Temperature Display Mode : %s --> °C" %( MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
+            self.log.logging( "Cluster", 'Debug', "ReadCluster %s/%s 0204 - Temperature Display Mode : %s --> °C" %( MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
         elif MsgClusterData == '01':
-            loggingCluster( self, 'Debug', "ReadCluster %s/%s 0204 - Temperature Display Mode : %s -->  °F" %( MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
+            self.log.logging( "Cluster", 'Debug', "ReadCluster %s/%s 0204 - Temperature Display Mode : %s -->  °F" %( MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
 
     elif MsgAttrID == '0001':
         # Keypad Lock Mode

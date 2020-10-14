@@ -380,7 +380,7 @@ def device_annoucementv0(self, Devices, MsgData, MsgLQI):
         )
         if MsgSrcAddr not in self.DevicesInPairingMode:
             self.DevicesInPairingMode.append(MsgSrcAddr)
-        loggingPairing(self, "Log", "--> %s" % str(self.DevicesInPairingMode))
+        self.log.logging( "Pairing", "Log", "--> %s" % str(self.DevicesInPairingMode))
 
         # 3- Store the Pairing info if needed
         if self.pluginconf.pluginConf["capturePairingInfos"]:
@@ -404,7 +404,7 @@ def device_annoucementv0(self, Devices, MsgData, MsgLQI):
                 self, MsgSrcAddr, fullScope=False
             )  # In order to request Model Name
 
-        loggingPairing(self, "Debug", "Decode004d - Request End Point List ( 0x0045 )")
+        self.log.logging( "Pairing", "Debug", "Decode004d - Request End Point List ( 0x0045 )")
         self.ListOfDevices[MsgSrcAddr]["Heartbeat"] = "0"
         self.ListOfDevices[MsgSrcAddr]["Status"] = "0045"
 
@@ -827,7 +827,7 @@ def decode004d_new_devicev2(    self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgDa
             self, NwkId, fullScope=False
         )  # In order to request Model Name
 
-    loggingPairing(self, "Debug", "Decode004d - Request End Point List ( 0x0045 )")
+    self.log.logging( "Pairing", "Debug", "Decode004d - Request End Point List ( 0x0045 )")
     self.ListOfDevices[NwkId]["Heartbeat"] = "0"
     self.ListOfDevices[NwkId]["Status"] = "0045"
 
@@ -1207,7 +1207,7 @@ def decode004d_new_devicev1(
     )
     if MsgSrcAddr not in self.DevicesInPairingMode:
         self.DevicesInPairingMode.append(MsgSrcAddr)
-    loggingPairing(self, "Log", "--> %s" % str(self.DevicesInPairingMode))
+    self.log.logging( "Pairing", "Log", "--> %s" % str(self.DevicesInPairingMode))
 
     # 3- Store the Pairing info if needed
     if self.pluginconf.pluginConf["capturePairingInfos"]:
@@ -1231,7 +1231,7 @@ def decode004d_new_devicev1(
             self, MsgSrcAddr, fullScope=False
         )  # In order to request Model Name
 
-    loggingPairing(self, "Debug", "Decode004d - Request End Point List ( 0x0045 )")
+    self.log.logging( "Pairing", "Debug", "Decode004d - Request End Point List ( 0x0045 )")
     self.ListOfDevices[MsgSrcAddr]["Heartbeat"] = "0"
     self.ListOfDevices[MsgSrcAddr]["Status"] = "0045"
 
