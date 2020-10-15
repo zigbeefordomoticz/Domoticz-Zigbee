@@ -605,6 +605,8 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(value))
 
     elif MsgAttrID == "0021": # Battery %
+        if 'Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Model'] == 'RC-EM':
+            return
         if value == 0xff:
             # Invalid measure 
             self.log.logging( "Cluster", 'Log', "readCluster 0001 - %s invalid Battery Percentage: %s " %(MsgSrcAddr, value) , MsgSrcAddr)
@@ -667,7 +669,7 @@ def UpdateBatteryAttribute( self, MsgSrcAddr, MsgSrcEp ):
                 return
 
     # Compute Battery %
-    mainVolt = battVolt = battRemainingVolt = battRemainPer = 0.0
+    mainVolt = battVolt = battRemainingVolt = battRemainPer = None
 
     if '0000' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']:
         mainVolt = float(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']['0000'])
@@ -675,36 +677,39 @@ def UpdateBatteryAttribute( self, MsgSrcAddr, MsgSrcEp ):
     if '0010' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']:
         battVolt = float(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']['0010'])
 
-    if '0020' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']:
+    if '0020' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001'] and self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']['0020'] != {}:
         battRemainingVolt = float(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']['0020'])
 
-    if '0021' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']:
+    if '0021' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001'] and self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']['0021'] != {}:
         battRemainPer = float(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']['0021'])
 
 
     self.log.logging( "Cluster", 'Debug', "readCluster 0001 - Device: %s Model: %s mainVolt:%s , battVolt:%s, battRemainingVolt: %s, battRemainPer:%s " %(MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Model'], mainVolt, battVolt, battRemainingVolt, battRemainPer) , MsgSrcAddr)
 
     value = None
-    if battRemainPer != 0:
+    # Based on % ( 0x0021 )
+    if battRemainPer:
         value = battRemainPer
         if 'Model' in self.ListOfDevices[MsgSrcAddr]:
             if self.ListOfDevices[MsgSrcAddr]['Model'] in BATTERY_200PERCENT:
                 value = round(battRemainPer / 2)
+        #Domoticz.Log("Value from battRemainingVolt : %s" %value)
 
-    elif battRemainingVolt != 0: 
+    # Based on Remaining Voltage
+    elif battRemainingVolt: 
         max_voltage = 30
-        min_voltage = 27
+        min_voltage = 25
         if '0001' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
             if '0036' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']:
                 if self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']['0036'] != {} and self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']['0036'] != '':
                     battery_voltage_threshold = round(int(str(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']['0036']))/10)
                     
         if 'Model' in self.ListOfDevices[MsgSrcAddr]:
-            if self.ListOfDevices[MsgSrcAddr]['Model'] in LEGRAND_REMOTES:
-                max_voltage = 30 
-                min_voltage = 25
+            #if self.ListOfDevices[MsgSrcAddr]['Model'] in LEGRAND_REMOTES:
+            #    max_voltage = 30 
+            #    min_voltage = 25
 
-            elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'EH-ZB-RTS':
+            if self.ListOfDevices[MsgSrcAddr]['Model'] == 'EH-ZB-RTS':
                 max_voltage = 3 * 1.5 * 10 #  3 * 1.5v batteries in RTS - value are stored in volts * 10
                 min_voltage = 3 * 1 * 10
 
@@ -717,6 +722,11 @@ def UpdateBatteryAttribute( self, MsgSrcAddr, MsgSrcEp ):
                 min_voltage = 2 * 1
 
         value = voltage2batteryP( battRemainingVolt, max_voltage, min_voltage)
+        #Domoticz.Log("Value from battRemainingVolt : %s with %s %s %s" %(value, battRemainingVolt, max_voltage, min_voltage))
+
+    #else:
+    #    Domoticz.Log("battRelainingVolt: %s %s, battReainPer: %s %s" %( battRemainingVolt, type(battRemainingVolt),
+    #    battRemainingVolt, type(battRemainingVolt) ))
 
     if value:
        self.log.logging( "Cluster", 'Debug', "readCluster 0001 - Device: %s Model: %s Updating battery %s to %s" 
