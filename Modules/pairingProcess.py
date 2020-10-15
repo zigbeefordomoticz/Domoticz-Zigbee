@@ -201,13 +201,15 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
 
     if status in ( 'createDB', '8043' ):
         #We will try to create the device(s) based on the Model , if we find it in DeviceConf or against the Cluster
-        if self.ListOfDevices[NWKID]['Model'] == {} or self.ListOfDevices[NWKID]['Model'] == '':
+        if 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['Model'] == {} or self.ListOfDevices[NWKID]['Model'] == '':
             if status == '8043' and int(self.ListOfDevices[NWKID]['RIA'],10) < 3:     # Let's take one more chance to get Model
                 loggingPairing( self, 'Debug', "Too early, let's try to get the Model")
                 return
 
         # Let's check if we have to disable the widget creation
-        if 'CreateWidgetDomoticz' in self.DeviceConf[ self.ListOfDevices[NWKID]['Model'] ]:
+        if 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['Model'] != {} and \
+            self.ListOfDevices[NWKID]['Model'] in self.DeviceConf and \
+            'CreateWidgetDomoticz' in self.DeviceConf[ self.ListOfDevices[NWKID]['Model'] ]:
             if not self.DeviceConf[ self.ListOfDevices[NWKID]['Model'] ]['CreateWidgetDomoticz']:
                 self.ListOfDevices[NWKID]['Status'] = 'notDB'
                 self.ListOfDevices[NWKID]['PairingInProgress'] = False
