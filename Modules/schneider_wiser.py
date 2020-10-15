@@ -959,7 +959,7 @@ def wiser_read_attribute_request( self, NwkId, Ep, Sqn, ClusterId, Attribute):
         # We shouldn't reach here, as the firmware itself will reject and respond.
         wiser_unsupported_attribute( self, NwkId, Ep, Sqn, ClusterId, Attribute )
     else:
-        loggingSchneider( self, 'Debug','Schneider cmd 0x00 [%s] Read Attribute Request on %s/%s' %(Sqn, ClusterId,Attribute ),NwkId)
+        self.log.logging( "Schneider", 'Debug','Schneider cmd 0x00 [%s] Read Attribute Request on %s/%s' %(Sqn, ClusterId,Attribute ),NwkId)
         schneider_thermostat_answer_attribute_request(self, NwkId, Ep, ClusterId, Sqn, Attribute)
 
 
