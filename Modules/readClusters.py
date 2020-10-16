@@ -514,7 +514,11 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     elif MsgAttrID in ( 'ff0d', 'ff22', 'ff23'): # Xiaomi Code
         self.log.logging( "Cluster", 'Debug', "ReadCluster - 0x0000 - %s/%s Attribut %s %s %s %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData) , MsgSrcAddr)
 
-    elif MsgAttrID == 'ff30':
+    elif MsgAttrID == 'ff30': # Xiaomi Locking status
+        # 1107xx -> Wrong Key or bad insert
+        # 1207xx -> Unlock everything to neutral state
+        # 1211xx -> Key in the lock
+        # xx is the key number
         self.log.logging( "Cluster", 'Debug', "ReadCluster - %s %s Saddr: %s ClusterData: %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, MsgClusterData), MsgSrcAddr)
         readXiaomiCluster( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData )
 
