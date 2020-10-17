@@ -134,7 +134,7 @@ class LoggingManagement:
             self.LogErrorHistory[module]['1'] = self.LogErrorHistory[module]['2'].copy()
             self.LogErrorHistory[module]['2'] = self.LogErrorHistory[module]['3'].copy()
             self.LogErrorHistory[module]['3'] = self.LogErrorHistory[module]['4'].copy()
-            #self.LogErrorHistory[module]['4']: self.loggingBuildContext( module, message, nwkid, context)
+            self.LogErrorHistory[module]['4'] = self.loggingBuildContext( module, message, nwkid, context)
 
         self.loggingWriteErrorHistory()
 
