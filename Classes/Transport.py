@@ -1339,7 +1339,10 @@ def process_msg_type8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn):
 
         # Finaly freeup the 0x8000 queue
         NextCmdFromWaitFor8000 = _next_cmd_from_wait_for8000_queue(self)
-        return None
+        if NextCmdFromWaitFor8000 is None:
+            return None
+        InternalSqn, TimeStamp = NextCmdFromWaitFor8000
+        return InternalSqn
 
     # Status is '00' -> Valid command sent !
     self.statistics._ack += 1
