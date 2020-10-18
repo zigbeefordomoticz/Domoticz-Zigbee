@@ -84,7 +84,8 @@ SETTINGS = {
         'polling0b05':      {'type': 'int', 'default': 86400, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'polling000f':      {'type': 'int', 'default': 900,   'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'pollingfc01':      {'type': 'int', 'default': 900,   'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
-        'pollingfc21':      {'type': 'int', 'default': 900,   'current': None, 'restart': False, 'hidden': True,  'Advanced': True}
+        'pollingfc21':      {'type': 'int', 'default': 900,   'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
+        'pollingfc40':      {'type': 'int', 'default': 900,   'current': None, 'restart': False, 'hidden': True,  'Advanced': True}
         }
     },
 
@@ -230,7 +231,6 @@ SETTINGS = {
         'EnableLedShutter':     {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'EnableDimmer':         {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'EnableReleaseButton':  {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
-        'LegrandFilPilote':     {'type': 'bool', 'default': 1, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'LegrandPowerOnAfterOffOn':    {'type': 'list',
                                  'list': {'Off': 0, 'On': 1, 'Previous': 255},
                                  'default': 1, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
