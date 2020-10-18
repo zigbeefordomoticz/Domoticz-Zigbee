@@ -263,15 +263,16 @@ def cable_connected_mode( self, nwkid, Mode ):
     Hdata = '0000'
 
     if Mode == '10':
-        # FIP
-        # Radiateur avec FIP: 0x0200 + Bind fc40 + configReporting ( fc40 / 0000 / TimeOut 600 )
-        Hdata = '0200' # Enable FIP
-
-    elif Mode == '20':
         # Sortie de Cable: 0x0100
         # Radiateur sans FIP: 0x0100
         # Appareil de cuisine: 0x0100
         Hdata = '0100' # Disable FIP
+
+    elif Mode == '20':
+        # FIP
+        # Radiateur avec FIP: 0x0200 + Bind fc40 + configReporting ( fc40 / 0000 / TimeOut 600 )
+        Hdata = '0200' # Enable FIP
+
     
     manuf_id = "0000"
     manuf_spec = "00"
@@ -282,7 +283,7 @@ def cable_connected_mode( self, nwkid, Mode ):
         if "fc01" in self.ListOfDevices[nwkid]['Ep'][tmpEp]:
             EPout= tmpEp
 
-    write_attribute( self, nwkid, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
+    write_attribute( self, nwkid, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata[2:4]+Hdata[0:2] )
     ReadAttributeRequest_0006_0000(self, nwkid)
     ReadAttributeRequest_0b04_050b( self, nwkid)
     ReadAttributeRequest_fc40( self, nwkid)
@@ -301,7 +302,9 @@ def legrand_fc40( self, nwkid, Mode ):
             }
 
     if Mode not in CABLE_OUTLET_MODE:
+        Domoticz.Error(" Bad Mode : %s for %s" %( Mode, nwkid))
         return
+
     Hattribute = '0000'
     data_type = '30' # 8bit Enum
     Hdata = CABLE_OUTLET_MODE[ Mode ]
@@ -317,7 +320,6 @@ def legrand_fc40( self, nwkid, Mode ):
     self.log.logging( "Legrand", 'Debug', "legrand %s Set Fil pilote mode - for %s with value %s / cluster: %s, attribute: %s type: %s"
             %( Mode, nwkid,Hdata,cluster_id,Hattribute,data_type), nwkid=nwkid)
 
-    # FCF = 0x15 ( Cluster-Specific, ManufSpec, Disable Default Response
     sqn = '01'
     if ( 'SQN' in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]['SQN'] != {} and self.ListOfDevices[nwkid]['SQN'] != '' ):
         sqn = '%02x' %(int(self.ListOfDevices[nwkid]['SQN'],16) + 1)

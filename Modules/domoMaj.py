@@ -575,9 +575,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                             # We do update only if this is a On/off
                             UpdateDevice_v2(self, Devices, DeviceUnit, 1, 'On', BatteryLevel, SignalLevel)
             
-            else:
-                self.log.logging( "Widget", "Error", "------>  [%s:%s] WidgetType: %s not found in  SWITCH_LVL_MATRIX, ClusterType: %s Value: %s " 
-                    %( NWKID, Ep, WidgetType, ClusterType, value), NWKID )
 
         if 'WindowCovering' in ClusterType: # 0x0102
             if WidgetType in ( 'VenetianInverted', 'Venetian', 'WindowCovering'):

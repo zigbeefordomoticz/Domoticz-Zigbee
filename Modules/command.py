@@ -24,7 +24,7 @@ from Modules.basicOutputs import sendZigateCmd
 from Modules.thermostats import thermostat_Setpoint, thermostat_Mode
 from Modules.livolo import livolo_OnOff
 from Modules.tuya import tuya_trv_mode
-from Modules.legrand_netatmo import  legrand_fc40
+from Modules.legrand_netatmo import  legrand_fc40, cable_connected_mode
 from Modules.schneider_wiser import schneider_EHZBRTS_thermoMode, schneider_hact_fip_mode, schneider_set_contract, schneider_temp_Setcurrent, schneider_hact_heater_type
 from Modules.profalux import profalux_stop, profalux_MoveToLiftAndTilt
 from Modules.domoTools import UpdateDevice_v2, RetreiveSignalLvlBattery, RetreiveWidgetTypeList
@@ -69,7 +69,7 @@ ACTIONATORS = [ 'Switch', 'Plug', 'SwitchAQ2', 'Smoke', 'DSwitch', 'LivoloSWL', 
             'Venetian', 'VenetianInverted', 'WindowCovering', 'BSO', 'BSO-Orientation', 'BSO-Volet',
             'LvlControl', 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl',
             'ThermoSetpoint', 'ThermoMode', 'ThermoMode_2', 'ThermoModeEHZBRTS', 'TempSetCurrent', 'AlarmWD',
-            'LegrandFilPilote', 'FIP', 'HACTMODE','ContractPower','HeatingSwitch', 'DoorLock' ]
+            'FIP', 'HACTMODE','LegranCableMode', 'ContractPower','HeatingSwitch', 'DoorLock' ]
             
 def mgtCommand( self, Devices, Unit, Command, Level, Color ):
 
@@ -360,6 +360,13 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
             return
 
+        if DeviceType == 'LegranCableMode':
+            self.log.logging( "Command", 'Debug', "mgtCommand : Set Level for Legrand Cable Mode: %s EPout: %s Unit: %s DeviceType: %s Level: %s" %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
+            cable_connected_mode( self, NWKID, str(Level) )
+            UpdateDevice_v2(self, Devices, Unit, int(Level), Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
+            return
+
         if DeviceType == 'ContractPower':
             self.log.logging( "Command", 'Debug', "mgtCommand : Set Level for ContractPower Mode: %s EPout: %s Unit: %s DeviceType: %s Level: %s" 
                 %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
@@ -394,39 +401,25 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
                 50: 'Frost Protection',
                 60: 'Off',
                 }
-            self.log.logging( "Command", 'Log', "mgtCommand : Set Level for FIP: %s EPout: %s Unit: %s DeviceType: %s Level: %s" 
+            self.log.logging( "Command", 'Debug', "mgtCommand : Set Level for FIP: %s EPout: %s Unit: %s DeviceType: %s Level: %s" 
                 %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
             if 'Schneider Wiser' not in self.ListOfDevices[NWKID]:
                 self.ListOfDevices[NWKID]['Schneider Wiser'] ={}
 
             if Level in FIL_PILOT_MODE:
-                self.log.logging( "Command", 'Log', "mgtCommand : -----> Fil Pilote mode: %s - %s" %(Level, FIL_PILOT_MODE[ Level ]), NWKID)
+                
                 if 'Model' in self.ListOfDevices[NWKID]:
                     if self.ListOfDevices[NWKID]['Model'] == 'EH-ZB-HACT':
+                        self.log.logging( "Command", 'Debug', "mgtCommand : -----> HACT -> Fil Pilote mode: %s - %s" %(Level, FIL_PILOT_MODE[ Level ]), NWKID)
                         self.ListOfDevices[NWKID]['Schneider Wiser']['HACT FIP Mode'] = FIL_PILOT_MODE[ Level ]
                         schneider_hact_fip_mode( self, NWKID,  FIL_PILOT_MODE[ Level ] )
                         UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
 
-            # Let's force a refresh of Attribute in the next Heartbeat  
-            self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
-            return
+                    elif self.ListOfDevices[NWKID]['Model'] == 'Cable outlet':
+                        self.log.logging( "Command", 'Debug', "mgtCommand : -----> Fil Pilote mode: %s - %s" %(Level, FIL_PILOT_MODE[ Level ]), NWKID)
+                        legrand_fc40( self, NWKID, FIL_PILOT_MODE[ Level ])
+                        UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
 
-        if DeviceType == 'LegrandFilPilote':
-            FIL_PILOTE_MODE = {
-                10: 'Confort',
-                20: 'Confort -1',
-                30: 'Confort -2',
-                40: 'Eco',
-                50: 'Hors Gel',
-                60: 'Off',
-                }
-
-            self.log.logging( "Command", 'Log', "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" 
-                %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
-            if Level in FIL_PILOTE_MODE:
-                self.log.logging( "Command", 'Log', "mgtCommand : -----> Fil Pilote mode: %s - %s" %(Level, FIL_PILOTE_MODE[ Level ]), NWKID)
-                legrand_fc40( self, FIL_PILOTE_MODE[ Level ])
-                UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
 
             # Let's force a refresh of Attribute in the next Heartbeat  
             self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
