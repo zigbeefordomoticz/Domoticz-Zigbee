@@ -216,7 +216,8 @@ def ReadCluster(self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgCluster
             "000f": Cluster000f,
             "fc01": Clusterfc01,
             "fc21": Clusterfc21,
-            "fcc0": Clusterfcc0
+            "fcc0": Clusterfcc0,
+            "fc40": Clusterfc40
             }
 
     if MsgClusterId in DECODE_CLUSTER:
@@ -2357,8 +2358,11 @@ def Clusterfc01( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 self.ListOfDevices[MsgSrcAddr]['Legrand'][ 'EnableDimmer' ] = 0
 
         elif model == 'Cable outlet':
+            # 0200 FIP
+            # 0100 Normal
             # Legrand Fil Pilote ( 16bitData) 1-Enable, 2-Disable
             self.ListOfDevices[MsgSrcAddr]['Legrand'][ 'LegrandFilPilote' ] = int(MsgClusterData,16)
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgClusterData)
 
     elif MsgAttrID == '0001':
         if model == 'Dimmer switch wo neutral':
@@ -2374,6 +2378,30 @@ def Clusterfc01( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             # Enable Led if On
             self.ListOfDevices[MsgSrcAddr]['Legrand'][ 'EnableLedIfOn' ] = int(MsgClusterData,16)
 
+def Clusterfc40( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
+    
+    self.log.logging( "Cluster", 'Debug', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" \
+        %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)   
+        
+    checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID,  MsgClusterData )
+    self.log.logging( "Cluster", 'Debug', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" \
+            %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
+
+    if 'Model' not in self.ListOfDevices[MsgSrcAddr]:
+        return
+    model = self.ListOfDevices[MsgSrcAddr]['Model']
+
+    if 'Legrand' not in self.ListOfDevices[MsgSrcAddr]:
+        self.ListOfDevices[MsgSrcAddr]['Legrand'] = {}
+
+    if MsgAttrID == '0000':
+        # Confort': 0x00,
+        # Confort -1' : 0x01,
+        # Confort -2' : 0x02,
+        # Eco': 0x03,
+        # Hors-gel' : 0x04,
+        # Off': 0x05
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgClusterData)
 
 def Clusterfc21( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
 

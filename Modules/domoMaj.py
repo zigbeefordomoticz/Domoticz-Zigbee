@@ -243,7 +243,23 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     nValue = _mode + 1
                     UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
 
-            elif WidgetType == 'FIP' and Attribute_ == "e020":#  Wiser specific Fil Pilote
+            elif WidgetType == 'LegranCableMode' and clusterID == 'fc01':#  Legrand
+                 # value is str
+                self.log.logging( "Widget", "Debug", "------>  Legrand Mode: %s" %(value), NWKID)
+                THERMOSTAT_MODE = {
+                    0x0100:'10', # Conventional heater
+                    0x0200:'20'  # fip enabled heater
+                    }
+                _mode = int(value,16)
+
+                if _mode not in THERMOSTAT_MODE:
+                    return
+
+                sValue = THERMOSTAT_MODE[ _mode ]
+                nValue = int( sValue) // 10
+                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
+
+            elif WidgetType == 'FIP' and Attribute_ in ( "0000", "e020") :#  Wiser specific Fil Pilote
                  # value is str
                 self.log.logging( "Widget", "Debug", "------>  ThermoMode FIP: %s" %(value), NWKID)
                 FIL_PILOT_MODE = {
@@ -255,10 +271,12 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     5 : '60'
                 }
                 _mode = int(value,16)
-
-                if _mode in FIL_PILOT_MODE:
-                    sValue = FIL_PILOT_MODE[ _mode ]
-                    nValue = _mode + 1
+                if _mode not in FIL_PILOT_MODE:
+                    return
+                nValue = _mode + 1
+                sValue = FIL_PILOT_MODE[ _mode ]
+            
+                if Attribute_ == "e020":#  Wiser specific Fil Pilote
                     if '0201' in self.ListOfDevices[NWKID]['Ep'][Ep]:
                         if 'e011' in self.ListOfDevices[NWKID]['Ep'][Ep]['0201']:
                             if self.ListOfDevices[NWKID]['Ep'][Ep]['0201']['e011'] != {} and self.ListOfDevices[NWKID]['Ep'][Ep]['0201']['e011'] != '' :
@@ -268,6 +286,10 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                                     self.log.logging( "Widget", "Debug", "------>  Disable FIP widget: %s" %(value), NWKID)
                                     nValue =  0
                     UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
+
+                elif clusterID == 'fc40': # Legrand FIP
+                    UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
+ 
 
             elif WidgetType == 'ThermoMode_2' and Attribute_ == '001c':
                 # Use by Tuya TRV
@@ -553,9 +575,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                             # We do update only if this is a On/off
                             UpdateDevice_v2(self, Devices, DeviceUnit, 1, 'On', BatteryLevel, SignalLevel)
             
-            else:
-                self.log.logging( "Widget", "Error", "------>  [%s:%s] WidgetType: %s not found in  SWITCH_LVL_MATRIX, ClusterType: %s Value: %s " 
-                    %( NWKID, Ep, WidgetType, ClusterType, value), NWKID )
 
         if 'WindowCovering' in ClusterType: # 0x0102
             if WidgetType in ( 'VenetianInverted', 'Venetian', 'WindowCovering'):

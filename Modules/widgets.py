@@ -366,10 +366,13 @@ SWITCH_LVL_MATRIX = {
         }
     },
 
-    "LegrandFilPilote": { 
-        "LevelNames": "Off|Confort|Confort -1|Confort -2|Eco|Frost Protection|Off",
+    "LegranCableMode": {
+        "0100": ( 1, "10"), # Normal
+        "0200": ( 2, "20"), # FIP
+        "ForceUpdate": False,
+        "LevelNames": "Off|Conventional|Fil Pilote",
         "Language": {
-            "fr-FR": {"LevelNames": "Arrêt|Confort|Confort -1|Confort -2|Eco|Hors Gel|Arrêt"}
+            "fr-FR": {"LevelNames": "Arrêt|Normal|Fil Pilote"}
         }
     },
 

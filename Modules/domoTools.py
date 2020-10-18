@@ -494,6 +494,9 @@ def TypeFromCluster( self, cluster, create_=False, ProfileID_='', ZDeviceID_='')
     elif cluster == "Orientation": 
         TypeFromCluster = "Orientation"
 
+    elif cluster == "fc40": # FIP Legrand
+        TypeFromCluster = "ThermoMode"
+
     return TypeFromCluster
 
 def subtypeRGB_FromProfile_Device_IDs( EndPoints, Model, ProfileID, ZDeviceID, ColorInfos=None):
