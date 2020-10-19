@@ -334,7 +334,7 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
                 ( 'Manufacturer Name' in self.ListOfDevices[key] and self.ListOfDevices[key]['Manufacturer Name'] == 'Schneider Electric' ) or \
                 ( 'Model' in self.ListOfDevices[key] and self.ListOfDevices[key]['Model'] in ( 'EH-ZB-VAC') ):
                 # We need to break the Read Attribute between Manufacturer specifcs one and teh generic one
-                Domoticz.Log("Specific Manufacturer !!!!")
+                #Domoticz.Log("Specific Manufacturer !!!!")
                 manufacturer_code = '105e'
                 for _attr in list(listAttributes):
                     if _attr in ( 0xe000, 0xe001, 0xe002 ):
