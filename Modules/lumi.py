@@ -139,6 +139,7 @@ def AqaraOppleDecoding( self, Devices, nwkid, Ep, ClusterId, ModelName, payload)
     def buttonFromCluster0008( StepSize ):
     
         # Button
+        action =''
         if StepSize == '00': # Right
             action += 'right'            
         elif StepSize == '01': # Left
@@ -148,7 +149,7 @@ def AqaraOppleDecoding( self, Devices, nwkid, Ep, ClusterId, ModelName, payload)
 
     def actionFromCluster0300(StepMode , EnhancedStepSize ):
 
-        action =''
+        action = ''
         if EnhancedStepSize == '4500': 
             if StepMode == '01':
                 action = 'click_left'
@@ -215,11 +216,14 @@ def AqaraOppleDecoding( self, Devices, nwkid, Ep, ClusterId, ModelName, payload)
             OPPLE_MAPPING_4_6_BUTTONS = {
                 'click_left': '02','click_right': '03',
             }   
+        else:
+            return
+
+        action = actionFromCluster0300(StepMode , EnhancedStepSize )  
 
         self.log.logging( "Lumi", 'Debug', "AqaraOppleDecoding - Nwkid: %s, Ep: %s, ColorControl, StepMode: %s, EnhancedStepSize: %s, TransitionTime: %s, ColorTempMinimumMired: %s, ColorTempMaximumMired: %s action: %s" \
             %(nwkid, Ep,StepMode,EnhancedStepSize,TransitionTime,ColorTempMinimumMired, ColorTempMaximumMired, action), nwkid)
-        
-        action = actionFromCluster0300(StepMode , EnhancedStepSize )       
+
         if action in OPPLE_MAPPING_4_6_BUTTONS:
             MajDomoDevice( self, Devices, nwkid, '03', "0006", OPPLE_MAPPING_4_6_BUTTONS[ action ])
 
@@ -323,9 +327,49 @@ def readXiaomiClusterv2( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgCluster
 
             elif dtype == '39':
                 value = struct.unpack('>f',struct.pack('I',int(svalue,16)))[0]
+            else:
+                return
 
             self.log.logging( "Lumi", 'Log', "-----  value: %s" %( value),MsgSrcAddr )
             
+
+def readLumiLock( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
+
+    #  11 01 ff ffffffffff  Clé non autorisée    #     # 
+    #  11 07 ff ffffffffff  Anomalie (forçage de la serrure / clé mal introduit)
+
+    #  12 01 01 ffffffffff  Clé autorisée (clé numéro 1)    #     # 
+    #  12 01 02 ffffffffff  Clé autorisée (clé numéro 2)    #     # 
+    #  12 11 01 ffffffffff  Clé est restée dans la serrure (clé numéro 1)
+    #  12 11 02 ffffffffff  Clé est restée dans la serrure (clé numéro 2)
+    
+    #  13 11 01 ffffffffff  Ajout d'une clé (clé numéro 1)    #     # 
+    #  13 11 02 ffffffffff  Ajout d'une clé (clé numéro 2)    #     # 
+
+    #  16 01 ff ffffffffff  Suppression des clés
+    
+    LUMI_LOCK = {
+        '1101': 'Unauthorized' ,
+        '1107': 'Bad Insert',
+        '1207': 'Unlock all to neutral',
+        '1601': 'All Key Removed',
+        '1201': 'Autorized Key',
+        '1211': 'Key in lock',
+        '1311': 'New Key',
+    }
+
+    LUMI_LOCK_KEY = ( '1201', '1211')
+
+    lumilockData = MsgClusterData[ 0:4 ]
+
+    if lumilockData in LUMI_LOCK_KEY:
+        lumilockData += MsgClusterData[4:6]
+
+    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "LumiLock", lumilockData)
+    checkAndStoreAttributeValue( self,  MsgSrcAddr , MsgSrcEp, MsgClusterId, MsgAttrID , MsgClusterData)
+    store_lumi_attribute( self, MsgSrcAddr, 'LumiLock', lumilockData )
+
+
 
 def readXiaomiCluster( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
 
