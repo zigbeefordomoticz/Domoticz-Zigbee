@@ -159,7 +159,8 @@ def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
             '0b04': [ 0x0505, 0x0508, 0x050b], # https://docs.smartthings.com/en/latest/ref-docs/zigbee-ref.html
             '0b05': [ 0x0000 ],
             'fc01': [ 0x0000, 0x0001, 0x0002 ],# Legrand Cluster
-            'fc21': [ 0x0001]
+            'fc21': [ 0x0001], 
+            'fc40': [ 0x0000] # Legrand
             }
 
     targetAttribute = None
@@ -838,6 +839,20 @@ def ReadAttributeRequest_fc01(self, key):
         self.log.logging( "ReadAttributes", 'Debug', "Request Legrand attributes info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
         ReadAttributeReq( self, key, ZIGATE_EP, EPout, "fc01", listAttributes, ackIsDisabled = ackDisableOrEnable(self, key))
 
+def ReadAttributeRequest_fc40(self, key):
+    # Cluster Legrand
+    self.log.logging( "ReadAttributes", 'Debug', "ReadAttributeRequest_fc40 - Key: %s " %key, nwkid=key)
+    EPout = '01'
+
+    listAttributes = []
+    for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  'fc40'):
+        if iterAttr not in listAttributes:
+            listAttributes.append( iterAttr )
+    
+    if listAttributes:
+        self.log.logging( "ReadAttributes", 'Debug', "Request Legrand fc40 attributes info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
+        ReadAttributeReq( self, key, ZIGATE_EP, EPout, "fc40", listAttributes, ackIsDisabled = ackDisableOrEnable(self, key))
+
 def ReadAttributeRequest_fc21(self, key):
     # Cluster PFX Profalux/ Manufacturer specific
 
@@ -880,5 +895,5 @@ READ_ATTRIBUTES_REQUEST = {
     #'000f' : ( ReadAttributeRequest_000f, 'polling000f' ),
     'fc01' : ( ReadAttributeRequest_fc01, 'pollingfc01' ),
     'fc21' : ( ReadAttributeRequest_000f, 'pollingfc21' ),
-
+    'fc40': ( ReadAttributeRequest_fc40, 'pollingfc40' ),
     }

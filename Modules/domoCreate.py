@@ -289,7 +289,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Toggle/ThermoMode_2" %(t), NWKID)
 
             # 3 Selector , OffHidden, Style 0 (command)
-            if t in ('HACTMODE', ):
+            if t in ('HACTMODE', 'LegranCableMode' ):
                 Options = createSwitchSelector( 3, DeviceType = t, OffHidden = True, SelectorStyle = 0 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in HACTMODE..." %(t), NWKID)
@@ -390,6 +390,11 @@ def CreateDomoDevice(self, Devices, NWKID):
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Ikea Round" %(t), NWKID)
 
+            if t in ( 'LumiLock'):
+                Options = createSwitchSelector( 16,  DeviceType = t,SelectorStyle = 1 )
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
+                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Lumi Lock" %(t), NWKID)
+               
             # ==== Classic Widget
             if t in ( 'AirQuality', ):
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetType="Air Quality")
