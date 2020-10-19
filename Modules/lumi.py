@@ -365,7 +365,10 @@ def readLumiLock( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, Msg
     if lumilockData in LUMI_LOCK_KEY:
         lumilockData += MsgClusterData[4:6]
 
+
+    self.log.logging( "Lumi", 'Log', "ReadCluster - %s/%s  LUMI LOCK %s lumilockData: %s" %( MsgSrcAddr, MsgSrcEp, MsgClusterData, lumilockData))
     MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "LumiLock", lumilockData)
+
     checkAndStoreAttributeValue( self,  MsgSrcAddr , MsgSrcEp, MsgClusterId, MsgAttrID , MsgClusterData)
     store_lumi_attribute( self, MsgSrcAddr, 'LumiLock', lumilockData )
 
