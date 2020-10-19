@@ -38,14 +38,14 @@ SWITCH_LVL_MATRIX = {
         '1311':   ( 5,  "50"), # New Key
         '120101': ( 6,  "60"), # Authorized #1
         '121101': ( 7,  "70"), # Key in Lock #1
-        '120101': ( 8,  "80"), # Key 2
-        '121101': ( 9,  "90"),
-        '120101': (10, "100"), # Key 3
-        '121101': (11, "110"),
-        '120101': (12, "120"), # Key 4
-        '121101': (13, "130"),
-        '120101': (14, "140"), # Key 5
-        '121101': (15, "150"),
+        '120102': ( 8,  "80"), # Key 2
+        '121102': ( 9,  "90"),
+        '120103': (10, "100"), # Key 3
+        '121103': (11, "110"),
+        '120104': (12, "120"), # Key 4
+        '121104': (13, "130"),
+        '120105': (14, "140"), # Key 5
+        '121105': (15, "150"),
         "ForceUpdate": True,
         "LevelNames": "Off|Unauthorized|Bad Insert|Unlock all to neutral|All Key Removed|New Key|Autorized Key #1|Key in lock #1|Autorized Key #2|Key in lock #2|Autorized Key #3|Key in lock #3|Autorized Key #4|Key in lock #4|Autorized Key #5|Key in lock #5",
         "Language": { 
