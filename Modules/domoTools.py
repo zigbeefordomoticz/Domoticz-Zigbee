@@ -487,6 +487,9 @@ def TypeFromCluster( self, cluster, create_=False, ProfileID_='', ZDeviceID_='')
     elif cluster == "rmt1": 
         TypeFromCluster = "Ikea_Round_5b"
 
+    elif cluster == "LumiLock":
+        TypeFromCluster = "LumiLock"
+
     # Xiaomi Strenght for Vibration
     elif cluster == "Strenght": 
         TypeFromCluster = "Strenght"

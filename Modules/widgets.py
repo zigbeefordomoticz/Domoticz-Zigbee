@@ -30,6 +30,29 @@ SWITCH_LVL_MATRIX = {
         "00": ( 1, "Open" ),
         "ForceUpdate": False },
 
+    "LumiLock": {
+        '1101':   ( 1,  "10"), # Unauthorized
+        '1107':   ( 2,  "20"), # Bad Insert
+        '1207':   ( 3,  "30"), # Unlock all to neutral
+        '1601':   ( 4,  "40"), # All Key Removed
+        '1311':   ( 5,  "50"), # New Key
+        '120101': ( 6,  "60"), # Authorized #1
+        '121101': ( 7,  "70"), # Key in Lock #1
+        '120102': ( 8,  "80"), # Key 2
+        '121102': ( 9,  "90"),
+        '120103': (10, "100"), # Key 3
+        '121103': (11, "110"),
+        '120104': (12, "120"), # Key 4
+        '121104': (13, "130"),
+        '120105': (14, "140"), # Key 5
+        '121105': (15, "150"),
+        "ForceUpdate": True,
+        "LevelNames": "Off|Unauthorized|Bad Insert|Unlock all to neutral|All Key Removed|New Key|Autorized Key #1|Key in lock #1|Autorized Key #2|Key in lock #2|Autorized Key #3|Key in lock #3|Autorized Key #4|Key in lock #4|Autorized Key #5|Key in lock #5",
+        "Language": { 
+            "fr-FR": {"Off|Unauthorized|Bad Insert|Unlock all to neutral|All Key Removed|New Key|Autorized Key #1|Key in lock #1|Autorized Key #2|Key in lock #2|Autorized Key #3|Key in lock #3|Autorized Key #4|Key in lock #4|Autorized Key #5|Key in lock #5"}
+        }
+    },
+
     "Smoke": { 
         "00": ( 0, "Off"), 
         "01": ( 1, "On"), 
@@ -329,6 +352,7 @@ SWITCH_LVL_MATRIX = {
            "fr-FR": {"LevelNames": "Arrêt|Auto|Manuel"}
        }
    },
+   
     "ThermoMode": {
         0: (0, "Off"), 
         1: (1, "10"), 
