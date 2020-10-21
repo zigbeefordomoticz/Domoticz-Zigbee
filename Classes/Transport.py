@@ -67,6 +67,9 @@ class ZigateTransport(object):
 
         # ZigBee31c (for  firmware below 31c, when Ack --> WaitForResponse )
         # ZigBeeack ( for firmware above 31d, When Ack --> WaitForAck )
+
+        self.FirmwareVersion = None
+        self.FirmwareMajorVersion = None
         self.zmode = pluginconf.pluginConf['Zmode'].lower()
         self.loggingSend('Status', "==> Transport Mode: %s" % self.zmode)
         self.firmware_with_aps_sqn = False
@@ -114,7 +117,11 @@ class ZigateTransport(object):
 
     # Thread handling Serial Input/Output
     # Priority on Reading
-        
+
+    def update_ZiGate_Version ( self, FirmwareVersion, FirmwareMajorVersion):
+        self.FirmwareVersion = FirmwareVersion
+        self.FirmwareMajorVersion = FirmwareMajorVersion
+
     def start_thread_watchdog( self ):
         if self.WatchDogThread is None:
             Domoticz.Status("Starting Watch dog")
@@ -434,6 +441,7 @@ class ZigateTransport(object):
         #if waitForResponseIn:
         #    self.ListOfCommands[InternalSqn]['WaitForResponse'] = True
 
+
         if not self.firmware_with_aps_sqn:
             # We are on firmware <= 31c
             # 0110 and 0113 are always set with Ack. Overwriten by the firmware
@@ -444,6 +452,11 @@ class ZigateTransport(object):
                 self.ListOfCommands[InternalSqn]['ResponseExpected'] = True
                 self.ListOfCommands[InternalSqn]['ExpectedAck'] = True
                 self.ListOfCommands[InternalSqn]['WaitForResponse'] = True
+
+        if hexCmd == 0x0530 and self.FirmwareVersion and int(self.FirmwareVersion,16) <= 0x031d:
+            # Starting 0x031e Firmware, the RAW APS command can use address mode to request ACK/NO-ACK
+            # below this firmware it is always NO-ACK
+            self.ListOfCommands[InternalSqn]['ExpectedAck'] = False
 
         printListOfCommands(self, 'from sendData', InternalSqn)
 
@@ -531,6 +544,7 @@ class ZigateTransport(object):
                     start_time = time.time()
 
                 process_frame(self, AsciiMsg)
+                
                 if self.pluginconf.pluginConf['ZiGateReactTime']:
                     timing = int( (time.time() - start_time )* 1000 )
                     self.statistics.add_rxTiming( timing )
@@ -1447,12 +1461,12 @@ def process_msg_type8011_above31d(self, Status, NwkId, Ep, MsgClusterId, ExternS
 
     if Status == '00':
         if InternSqn in self.ListOfCommands:
-            self.loggingSend('Debug', " - Above 3.1d [%s] receive Ack for Cmd: %s - size of SendQueue: %s" % (
+            self.loggingSend('Log', " - Above 3.1d [%s] receive Ack for Cmd: %s - size of SendQueue: %s" % (
                 InternSqn,  self.ListOfCommands[InternSqn]['Cmd'], self.loadTransmit()))
         self.statistics._APSAck += 1
     else:
         if InternSqn in self.ListOfCommands:
-            self.loggingSend('Debug', " - Above 3.1d [%s] receive Nack for Cmd: %s - size of SendQueue: %s" % (
+            self.loggingSend('Log', " - Above 3.1d [%s] receive Nack for Cmd: %s - size of SendQueue: %s" % (
                 InternSqn,  self.ListOfCommands[InternSqn]['Cmd'], self.loadTransmit()))
         self.statistics._APSNck += 1
 
