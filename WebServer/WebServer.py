@@ -535,7 +535,7 @@ class WebServer(object):
                             self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
                             philips_set_poweron_after_offon( self, int(setting_lst[setting]['current']))
 
-                       elif param == 'EnkiPowerOnAfterOffOn':
+                        elif param == 'EnkiPowerOnAfterOffOn':
                             self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
                             enki_set_poweron_after_offon( self, int(setting_lst[setting]['current']))
 
