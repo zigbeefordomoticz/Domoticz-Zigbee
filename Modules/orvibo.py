@@ -8,6 +8,7 @@
 
 import Domoticz
 from  Modules.basicOutputs import sendZigateCmd, write_attribute
+from Modules.tools import is_ack_tobe_disabled
 from Modules.domoMaj import MajDomoDevice
 from Modules.zigateConsts import ZIGATE_EP
 
@@ -112,4 +113,4 @@ def OrviboRegistration( self, nwkid ):
     data = '01'
    
     Domoticz.Log("Orvibo registration for %s" %nwkid)
-    write_attribute( self, nwkid, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)    
+    write_attribute( self, nwkid, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data, ackIsDisabled = is_ack_tobe_disabled(self, nwkid))    

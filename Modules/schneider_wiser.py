@@ -29,7 +29,7 @@ from Modules.readAttributes import ReadAttributeRequest_0201, ReadAttributeReque
 from Modules.writeAttributes import write_attribute_when_awake
 
 from Modules.zigateConsts import ZIGATE_EP,MAX_LOAD_ZIGATE, HEARTBEAT
-from Modules.tools import getAttributeValue, retreive_cmd_payload_from_8002
+from Modules.tools import getAttributeValue, retreive_cmd_payload_from_8002, is_ack_tobe_disabled
 
 SCHNEIDER_BASE_EP = '0b'
 
@@ -335,7 +335,7 @@ def schneider_hact_heater_type( self, key, type_heater ):
     data = '%02X' %new_value
     self.log.logging( "Schneider", 'Debug', "schneider_hact_heater_type Write Attribute (heating mode) %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
-    write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
+    write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data, ackIsDisabled = is_ack_tobe_disabled(self, key))
 
     if EPout in self.ListOfDevices[ key ]['Ep']:
         if '0201' in  self.ListOfDevices[ key ]['Ep'][EPout]:
@@ -389,7 +389,7 @@ def schneider_hact_heating_mode( self, key, mode ):
     data = '%02X' %new_value
     self.log.logging( "Schneider", 'Debug', "schneider_hact_heating_mode Write Attribute (heating mode) %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
-    write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
+    write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data, ackIsDisabled = is_ack_tobe_disabled(self, key))
     # Reset Heartbeat in order to force a ReadAttribute when possible
     self.ListOfDevices[key]['Heartbeat'] = '0'
     #ReadAttributeRequest_0201(self,key)
@@ -442,7 +442,7 @@ def schneider_hact_fip_mode( self, key, mode):
     self.log.logging( "Schneider", 'Debug', "schneider_hact_fip_mode for device %s sending command: %s , zone_monde: %s, fipmode: %s" 
             %(key, cmd, zone_mode, fipmode))
 
-    raw_APS_request( self, key, EPout, '0201', '0104', payload, zigate_ep=ZIGATE_EP)
+    raw_APS_request( self, key, EPout, '0201', '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = is_ack_tobe_disabled(self, key))
     # Reset Heartbeat in order to force a ReadAttribute when possible
     self.ListOfDevices[key]['Heartbeat'] = '0'
 
@@ -612,7 +612,7 @@ def schneider_setpoint_actuator( self, key, setpoint):
 
     payload = cluster_frame + sqn + cmd + '00' + zone + setpoint[2:4] + setpoint[0:2] + 'ff'
 
-    raw_APS_request( self, key, EPout, '0201', '0104', payload, zigate_ep=ZIGATE_EP)
+    raw_APS_request( self, key, EPout, '0201', '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = is_ack_tobe_disabled(self, key))
     # Reset Heartbeat in order to force a ReadAttribute when possible
     self.ListOfDevices[key]['Heartbeat'] = '0'
     #ReadAttributeRequest_0201(self,key)
@@ -670,7 +670,7 @@ def schneider_temp_Setcurrent( self, key, setpoint):
     if 'PowerSource' in self.ListOfDevices[ key ] and self.ListOfDevices[ key ]['PowerSource'] == 'Battery':
         disableAck = False
     read_attribute( self, key ,ZIGATE_EP , EPout ,'0201' ,'00' , '00' , '0000' , 1 , '0012', ackIsDisabled = disableAck)
-    raw_APS_request( self, key, EPout, '0402', '0104', payload, zigate_ep=ZIGATE_EP)
+    raw_APS_request( self, key, EPout, '0402', '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = is_ack_tobe_disabled(self, key))
     self.ListOfDevices[key]['Heartbeat'] = '0'
 
 
@@ -719,11 +719,8 @@ def schneider_EHZBRTS_thermoMode( self, key, mode):
     self.log.logging( "Schneider", 'Debug', "Schneider EH-ZB-RTS Thermo Mode  %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
 
-    disableAck = True
-    if 'PowerSource' in self.ListOfDevices[ key ] and self.ListOfDevices[ key ]['PowerSource'] == 'Battery':
-        disableAck = False
 
-    write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data, ackIsDisabled = disableAck)
+    write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data, ackIsDisabled = is_ack_tobe_disabled(self, key))
 
     self.ListOfDevices[key]['Heartbeat'] = '0'
 
@@ -799,7 +796,7 @@ def schneider_thermostat_answer_attribute_request(self, NWKID, EPout, ClusterID,
     elif dataType == '30':
         payload = cluster_frame + sqn + cmd + attr[2:4] + attr[0:2] + status + dataType + data
 
-    raw_APS_request( self, NWKID, EPout, ClusterID, '0104', payload, zigate_ep=ZIGATE_EP)
+    raw_APS_request( self, NWKID, EPout, ClusterID, '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = is_ack_tobe_disabled(self, NWKID))
 
 
 def schneider_update_ThermostatDevice (self, Devices, NWKID, srcEp, ClusterID, setpoint):
@@ -969,7 +966,7 @@ def wiser_unsupported_attribute( self, srcNWKID, srcEp, Sqn, ClusterID, attribut
     payload = cluster_frame + Sqn + cmd + attribute[2:4] + attribute[0:2] + '86'  
     self.log.logging( "Schneider", 'Debug', "wiser_unsupported_attribute for device %s sending command: %s , attribute: %s" 
             %(srcNWKID, cmd, attribute))
-    raw_APS_request( self, srcNWKID, '0b', ClusterID, '0104', payload, zigate_ep=ZIGATE_EP)
+    raw_APS_request( self, srcNWKID, '0b', ClusterID, '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = is_ack_tobe_disabled(self, srcNWKID))
 
 
 def importSchneiderZoning( self ):
