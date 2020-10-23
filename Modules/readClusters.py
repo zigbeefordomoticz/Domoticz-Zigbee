@@ -1946,10 +1946,14 @@ def Cluster0500( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, MsgClusterData )
 
     if 'IAS' not in  self.ListOfDevices[MsgSrcAddr]:
-         self.ListOfDevices[MsgSrcAddr]['IAS'] = {}
-         self.ListOfDevices[MsgSrcAddr]['IAS']['EnrolledStatus'] = {}
-         self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneType'] = {}
-         self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus'] = {}
+        self.ListOfDevices[MsgSrcAddr]['IAS'] = {}
+
+    if MsgSrcEp not in self.ListOfDevices[MsgSrcAddr]['IAS']:
+        self.ListOfDevices[MsgSrcAddr]['IAS'][MsgSrcEp] = {}
+        self.ListOfDevices[MsgSrcAddr]['IAS'][MsgSrcEp]['EnrolledStatus'] = {}
+        self.ListOfDevices[MsgSrcAddr]['IAS'][MsgSrcEp]['ZoneType'] = {}
+        self.ListOfDevices[MsgSrcAddr]['IAS'][MsgSrcEp]['ZoneTypeName'] = {}
+        self.ListOfDevices[MsgSrcAddr]['IAS'][MsgSrcEp]['ZoneStatus'] = {}
 
     if not isinstance(self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus'], dict):
         self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus'] = {}
@@ -1967,6 +1971,7 @@ def Cluster0500( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         if int(MsgClusterData,16) in ZONE_TYPE:
             self.log.logging( "Cluster", 'Debug', "ReadCluster0500 - Device: %s - ZoneType: %s" %(MsgSrcAddr, ZONE_TYPE[int(MsgClusterData,16)]), MsgSrcAddr)
             self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneType'] = int(MsgClusterData,16)
+            self.ListOfDevices[MsgSrcAddr]['IAS'][MsgSrcEp]['ZoneTypeName'] = ZONE_TYPE[int(MsgClusterData,16)]
         else: 
 
             self.log.logging( "Cluster", 'Debug', "ReadCluster0500 - Device: %s - Unknown ZoneType: %s" %(MsgSrcAddr, MsgClusterData), MsgSrcAddr)
@@ -1992,17 +1997,19 @@ def Cluster0500( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             self.log.logging( "Cluster", 'Debug', "ReadCluster 0500/0002 - IAS Zone - Device:%s status alarm1: %s, alarm2: %s, tamper: %s, batter: %s, srepor: %s, rrepor: %s, troubl: %s, acmain: %s, test: %s, batdef: %s" \
                     %( MsgSrcAddr, alarm1, alarm2, tamper, batter, srepor, rrepor, troubl, acmain, test, batdef), MsgSrcAddr)
 
-            if ( 'IAS' in self.ListOfDevices[MsgSrcAddr] and 'ZoneStatus' in self.ListOfDevices[MsgSrcAddr]['IAS'] ):
-                self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['alarm1'] = alarm1
-                self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['alarm2'] = alarm2
-                self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['tamper'] = tamper
-                self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['battery'] = batter
-                self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['Support Reporting'] = srepor
-                self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['Restore Reporting'] = rrepor
-                self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['trouble'] = troubl
-                self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['acmain'] = acmain
-                self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['test'] = test
-                self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['battdef'] = batdef
+            if ( 'IAS' in self.ListOfDevices[MsgSrcAddr] and 
+                    MsgSrcEp in self.ListOfDevices[MsgSrcAddr]['IAS'] and 
+                    'ZoneStatus' in self.ListOfDevices[MsgSrcAddr]['IAS'][MsgSrcEp] ):
+                self.ListOfDevices[MsgSrcAddr]['IAS'][MsgSrcEp]['ZoneStatus']['alarm1'] = alarm1
+                self.ListOfDevices[MsgSrcAddr]['IAS'][MsgSrcEp]['ZoneStatus']['alarm2'] = alarm2
+                self.ListOfDevices[MsgSrcAddr]['IAS'][MsgSrcEp]['ZoneStatus']['tamper'] = tamper
+                self.ListOfDevices[MsgSrcAddr]['IAS'][MsgSrcEp]['ZoneStatus']['battery'] = batter
+                self.ListOfDevices[MsgSrcAddr]['IAS'][MsgSrcEp]['ZoneStatus']['Support Reporting'] = srepor
+                self.ListOfDevices[MsgSrcAddr]['IAS'][MsgSrcEp]['ZoneStatus']['Restore Reporting'] = rrepor
+                self.ListOfDevices[MsgSrcAddr]['IAS'][MsgSrcEp]['ZoneStatus']['trouble'] = troubl
+                self.ListOfDevices[MsgSrcAddr]['IAS'][MsgSrcEp]['ZoneStatus']['acmain'] = acmain
+                self.ListOfDevices[MsgSrcAddr]['IAS'][MsgSrcEp]['ZoneStatus']['test'] = test
+                self.ListOfDevices[MsgSrcAddr]['IAS'][MsgSrcEp]['ZoneStatus']['battdef'] = batdef
 
             self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['GlobalInfos'] = "%s;%s;%s;%s;%s;%s;%s;%s;%s;%s" \
                     %( alarm1, alarm2, tamper, batter, srepor, rrepor, troubl, acmain, test, batdef)
