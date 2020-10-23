@@ -465,4 +465,52 @@ SWITCH_LVL_MATRIX = {
             "fr-FR": {"LevelNames": "Off|Urgence|Armer (zone maison)|Armer (toutes zones)|Désarmer"}
             }
     },
+    'PAC-MODE': {
+        "00": (0, "00"), # "Off",
+        "01": (1, "10"), # "Auto"
+        "02": (2, "20"), # dehumidifier
+        "03": (3, "30"), # COLD
+        "04": (4, "40"), # HOT
+        "05": (5, "50"), # FAN only
+        "ForceUpdate": False, 
+        "LevelNames": "Off|Auto|dehumidifier|Cold|Hot|Fan",
+        "Language": {
+            "fr-FR": {"LevelNames": "Off|Auto|Déshumidicateur|Froid|Chaud|Ventilateur"}
+            }
+    },
+    'PAC-RATE': {
+        "00": (0, "00"), # Off
+        "01": (1, "10"), # Auto
+        "02": (2, "20"), # Silence
+        "03": (3, "30"), # Level 1
+        "04": (4, "40"), # Level 2
+        "05": (5, "50"), # Level 3
+        "06": (6, "60"), # Level 4
+        "07": (7, "70"), # Level 5
+        "ForceUpdate": False, 
+        "LevelNames": "Off|Auto|Silence|Lvl1|Lvl2|Lvl3|Lvl4|Lvl5",
+        "Language": {
+            "fr-FR": {"LevelNames": "Off|Auto|Silence|Lvl1|Lvl2|Lvl3|Lvl4|Lvl5"}
+        }
+    },
+    'PAC-WING': {
+        "00": (0, "00"), # Off - All wings stopped
+        "01": (1, "10"), # Vertigal wings motion
+        "02": (2, "20"), # Horizontal wings motion
+        "03": (3, "30"), # Vertical and Horizontal wings motion 
+        "ForceUpdate": False, 
+        "LevelNames": "Off|Vertical|Horizontal|Both",
+        "Language": {
+            "fr-FR": {"LevelNames": "Off|Horizontal|Vertical|Les deux"}
+        }
+    },
+    'PAC-SWITCH': {
+        "00": (0, "00"), # Off
+        "01": (1, "10"), # On
+        "ForceUpdate": False, 
+        "LevelNames": "Off|On",
+        "Language": {
+            "fr-FR": {"LevelNames": "Arrêt|Allumer"}
+        }
+    },
 }

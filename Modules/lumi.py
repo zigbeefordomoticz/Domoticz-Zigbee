@@ -20,7 +20,7 @@ from math import atan, sqrt, pi
 from Modules.domoMaj import MajDomoDevice
 from Modules.basicOutputs import ZigatePermitToJoin, leaveRequest, write_attribute
 from Modules.zigateConsts import ZIGATE_EP,  SIZE_DATA_TYPE
-from Modules.tools import voltage2batteryP, checkAndStoreAttributeValue
+from Modules.tools import voltage2batteryP, checkAndStoreAttributeValue, is_ack_tobe_disabled
 
 from Classes.LoggingManagement import LoggingManagement
 
@@ -57,7 +57,7 @@ def setXiaomiVibrationSensitivity( self, key, sensitivity = 'medium'):
     attribute = "%04x" %0xFF0D
     data_type = "20" # Int8
     data = "%02x" %VIBRATION_SENSIBILITY[sensitivity]
-    write_attribute( self, key, ZIGATE_EP, "01", cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
+    write_attribute( self, key, ZIGATE_EP, "01", cluster_id, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled = is_ack_tobe_disabled(self, key))
 
 def enableOppleSwitch( self, nwkid ):
 
@@ -81,7 +81,7 @@ def enableOppleSwitch( self, nwkid ):
     Hdata = '01'
 
     self.log.logging( "Lumi", 'Debug', "Write Attributes LUMI Opple Magic Word Nwkid: %s" %nwkid, nwkid)
-    write_attribute( self, nwkid, ZIGATE_EP, '01', cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
+    write_attribute( self, nwkid, ZIGATE_EP, '01', cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, ackIsDisabled = is_ack_tobe_disabled(self, key))
 
 def lumiReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
 

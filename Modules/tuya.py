@@ -18,7 +18,7 @@ from Classes.LoggingManagement import LoggingManagement
 
 from Modules.zigateConsts import ZIGATE_EP
 from Modules.basicOutputs import sendZigateCmd, raw_APS_request
-from Modules.tools import  checkAndStoreAttributeValue
+from Modules.tools import  checkAndStoreAttributeValue, is_ack_tobe_disabled
 
 from Modules.domoMaj import MajDomoDevice
 
@@ -226,5 +226,5 @@ def tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data ):
     
     transid = '%02x' %self.ListOfDevices[nwkid]['TuyaTransactionId']
     payload = cluster_frame + sqn + cmd + '00' + transid + action + '00' + '%02x' %len(data) + data
-    raw_APS_request( self, nwkid, EPout, 'ef00', '0104', payload, zigate_ep=ZIGATE_EP)
+    raw_APS_request( self, nwkid, EPout, 'ef00', '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = is_ack_tobe_disabled(self, nwkid))
     self.log.logging( "Tuya", 'Debug', "tuya_cmd - %s/%s cmd: %s payload: %s" %(nwkid, EPout , cmd, payload))

@@ -21,7 +21,7 @@ from time import time
 from Classes.LoggingManagement import LoggingManagement
 
 from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_EP, HEARTBEAT, LEGRAND_REMOTES
-from Modules.tools import retreive_cmd_payload_from_8002
+from Modules.tools import retreive_cmd_payload_from_8002, is_ack_tobe_disabled
 from Modules.readAttributes import ReadAttributeRequest_0001, ReadAttributeRequest_0006_0000, ReadAttributeRequest_0b04_050b, ReadAttributeRequest_fc01, ReadAttributeRequest_fc40
 
 from Modules.basicOutputs import raw_APS_request, write_attribute,  write_attributeNoResponse
@@ -120,7 +120,7 @@ def sendFC01Command( self, sqn, nwkid, ep, ClusterID, cmd, data):
             PluginTimeOfOperation = '%08X' %(self.HeartbeatCount * HEARTBEAT) # Time since the plugin started
 
             payload = cluster_frame + sqn + cmd + attribute + status + dataType + PluginTimeOfOperation[6:8] + PluginTimeOfOperation[4:6] + PluginTimeOfOperation[0:2] + PluginTimeOfOperation[2:4]
-            raw_APS_request( self, nwkid, ep, ClusterID, '0104', payload, zigate_ep=ZIGATE_EP)
+            raw_APS_request( self, nwkid, ep, ClusterID, '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = is_ack_tobe_disabled(self, nwkid))
 
             self.log.logging( "Legrand", 'Log', "loggingLegrand - Nwkid: %s/%s Cluster: %s, Command: %s Payload: %s" \
                 %(nwkid,ep , ClusterID, cmd, data ))
@@ -134,7 +134,7 @@ def sendFC01Command( self, sqn, nwkid, ep, ClusterID, cmd, data):
             dataType = '23' #Uint32
 
             payload = cluster_frame + manufspec + sqn + cmd + data
-            raw_APS_request( self, nwkid, ep, ClusterID, '0104', payload, zigate_ep=ZIGATE_EP)
+            raw_APS_request( self, nwkid, ep, ClusterID, '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = is_ack_tobe_disabled(self, nwkid))
 
             self.log.logging( "Legrand", 'Log', "loggingLegrand - Nwkid: %s/%s Cluster: %s, Command: %s Payload: %s" \
                 %(nwkid,ep , ClusterID, cmd, data ))
@@ -254,7 +254,7 @@ def legrand_fc01( self, nwkid, command, OnOff):
 
     self.log.logging( "Legrand", 'Debug', "legrand %s OnOff - for %s with value %s / cluster: %s, attribute: %s type: %s"
             %(command, nwkid,Hdata,cluster_id,Hattribute,data_type), nwkid=nwkid)
-    write_attribute( self, nwkid, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
+    write_attribute( self, nwkid, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, ackIsDisabled = is_ack_tobe_disabled(self, nwkid))
 
 def cable_connected_mode( self, nwkid, Mode ):
 
@@ -283,7 +283,7 @@ def cable_connected_mode( self, nwkid, Mode ):
         if "fc01" in self.ListOfDevices[nwkid]['Ep'][tmpEp]:
             EPout= tmpEp
 
-    write_attribute( self, nwkid, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata[2:4]+Hdata[0:2] )
+    write_attribute( self, nwkid, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata[2:4]+Hdata[0:2], ackIsDisabled = is_ack_tobe_disabled(self, nwkid) )
     ReadAttributeRequest_0006_0000(self, nwkid)
     ReadAttributeRequest_0b04_050b( self, nwkid)
     ReadAttributeRequest_fc40( self, nwkid)
@@ -329,7 +329,7 @@ def legrand_fc40( self, nwkid, Mode ):
     cmd = '00'
     data = '%02x' %CABLE_OUTLET_MODE[ Mode ]
     payload = fcf + manufcode[2:4] + manufcode[0:2] + sqn + cmd + data
-    raw_APS_request( self, nwkid, EPout, 'fc40', '0104', payload, zigate_ep=ZIGATE_EP)
+    raw_APS_request( self, nwkid, EPout, 'fc40', '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = is_ack_tobe_disabled(self, nwkid))
 
 
 def legrand_dimOnOff( self, OnOff):

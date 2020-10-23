@@ -245,6 +245,14 @@ SETTINGS = {
         }
     },
 
+    # ENKI
+    'Enki Lexman': {'Order': 13, 'param': {
+        'EnkiPowerOnAfterOffOn':    {'type': 'list',
+                                 'list': {'Off': 0, 'On': 1, 'Previous': 255},
+                                 'default': 1, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
+        }
+    },
+
     #
      'IkeaTradfri': {'Order': 13, 'param': {
         'IkeaPowerOnAfterOffOn':    {'type': 'list',
