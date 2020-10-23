@@ -281,6 +281,17 @@ def CreateDomoDevice(self, Devices, NWKID):
             self.log.logging("Widget", "Debug", "CreateDomoDevice - DevId: %s DevEp: %s Type: %s" %(DeviceID_IEEE, Ep, t), NWKID)
 
             # === Selector Switches
+            if t in ( 'PAC-MODE', ):
+                pass
+
+            if t in ( 'PAC-RATE', ):
+                pass
+
+            if t in ( 'PAC-WING', ):
+                pass
+
+            if t in ( 'PAC-SWITCH', ):
+                pass
 
             # 3 Selectors, Style 0
             if t in ("Toggle", "ThermoMode_2"): 
