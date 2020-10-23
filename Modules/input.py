@@ -3108,7 +3108,7 @@ def Decode8110_raw(
             )
 
     if MsgClusterId == "0500":
-        self.iaszonemgt.receiveIASmessages(MsgSrcAddr, 3, MsgAttrStatus)
+        self.iaszonemgt.receiveIASmessages(MsgSrcAddr, MsgSrcEp, 3, MsgAttrStatus)
 
 
 def Decode8120(self, Devices, MsgData, MsgLQI):  # Configure Reporting response

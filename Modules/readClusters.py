@@ -1946,34 +1946,39 @@ def Cluster0500( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, MsgClusterData )
 
     if 'IAS' not in  self.ListOfDevices[MsgSrcAddr]:
-         self.ListOfDevices[MsgSrcAddr]['IAS'] = {}
-         self.ListOfDevices[MsgSrcAddr]['IAS']['EnrolledStatus'] = {}
-         self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneType'] = {}
-         self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus'] = {}
+        self.ListOfDevices[MsgSrcAddr]['IAS'] = {}
 
-    if not isinstance(self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus'], dict):
-        self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus'] = {}
+    if MsgSrcEp not in self.ListOfDevices[MsgSrcAddr]['IAS']:
+        self.ListOfDevices[MsgSrcAddr]['IAS'][MsgSrcEp] = {}
+        self.ListOfDevices[MsgSrcAddr]['IAS'][MsgSrcEp]['EnrolledStatus'] = {}
+        self.ListOfDevices[MsgSrcAddr]['IAS'][MsgSrcEp]['ZoneType'] = {}
+        self.ListOfDevices[MsgSrcAddr]['IAS'][MsgSrcEp]['ZoneTypeName'] = {}
+        self.ListOfDevices[MsgSrcAddr]['IAS'][MsgSrcEp]['ZoneStatus'] = {}
+
+    if not isinstance(self.ListOfDevices[MsgSrcAddr]['IAS'][MsgSrcEp]['ZoneStatus'], dict):
+        self.ListOfDevices[MsgSrcAddr]['IAS'][MsgSrcEp]['ZoneStatus'] = {}
 
     if MsgAttrID == "0000": # ZoneState ( 0x00 Not Enrolled / 0x01 Enrolled )
         if int(MsgClusterData,16) == 0x00:
             self.log.logging( "Cluster", 'Debug', "ReadCluster0500 - Device: %s NOT ENROLLED (0x%02d)" %(MsgSrcAddr,  int(MsgClusterData,16)), MsgSrcAddr)
-            self.ListOfDevices[MsgSrcAddr]['IAS']['EnrolledStatus'] = int(MsgClusterData,16)
+            self.ListOfDevices[MsgSrcAddr]['IAS'][MsgSrcEp]['EnrolledStatus'] = int(MsgClusterData,16)
         elif  int(MsgClusterData,16) == 0x01:
             self.log.logging( "Cluster", 'Debug', "ReadCluster0500 - Device: %s ENROLLED (0x%02d)" %(MsgSrcAddr,  int(MsgClusterData,16)), MsgSrcAddr)
-            self.ListOfDevices[MsgSrcAddr]['IAS']['EnrolledStatus'] = int(MsgClusterData,16)
-        self.iaszonemgt.receiveIASmessages( MsgSrcAddr, 5, MsgClusterData)
+            self.ListOfDevices[MsgSrcAddr]['IAS'][MsgSrcEp]['EnrolledStatus'] = int(MsgClusterData,16)
+        self.iaszonemgt.receiveIASmessages( MsgSrcAddr, MsgSrcEp, 5, MsgClusterData)
 
     elif MsgAttrID == "0001": # ZoneType
         if int(MsgClusterData,16) in ZONE_TYPE:
             self.log.logging( "Cluster", 'Debug', "ReadCluster0500 - Device: %s - ZoneType: %s" %(MsgSrcAddr, ZONE_TYPE[int(MsgClusterData,16)]), MsgSrcAddr)
-            self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneType'] = int(MsgClusterData,16)
+            self.ListOfDevices[MsgSrcAddr]['IAS'][MsgSrcEp]['ZoneType'] = int(MsgClusterData,16)
+            self.ListOfDevices[MsgSrcAddr]['IAS'][MsgSrcEp]['ZoneTypeName'] = ZONE_TYPE[int(MsgClusterData,16)]
         else: 
 
             self.log.logging( "Cluster", 'Debug', "ReadCluster0500 - Device: %s - Unknown ZoneType: %s" %(MsgSrcAddr, MsgClusterData), MsgSrcAddr)
-        self.iaszonemgt.receiveIASmessages( MsgSrcAddr, 5, MsgClusterData)
+        self.iaszonemgt.receiveIASmessages( MsgSrcAddr, MsgSrcEp, 5, MsgClusterData)
 
     elif MsgAttrID == "0002": # Zone Status
-        #self.iaszonemgt.receiveIASmessages( MsgSrcAddr, 5, MsgClusterData)     #Not needed for enrollment procedure
+        #self.iaszonemgt.receiveIASmessages( MsgSrcAddr, MsgSrcEp,  5, MsgClusterData)     #Not needed for enrollment procedure
         if MsgClusterData != '' and MsgAttType == '19':
             alarm1 = int(MsgClusterData,16) & 0b0000000000000001
             alarm2 = (int(MsgClusterData,16) & 0b0000000000000010 ) >> 1
@@ -1992,21 +1997,23 @@ def Cluster0500( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             self.log.logging( "Cluster", 'Debug', "ReadCluster 0500/0002 - IAS Zone - Device:%s status alarm1: %s, alarm2: %s, tamper: %s, batter: %s, srepor: %s, rrepor: %s, troubl: %s, acmain: %s, test: %s, batdef: %s" \
                     %( MsgSrcAddr, alarm1, alarm2, tamper, batter, srepor, rrepor, troubl, acmain, test, batdef), MsgSrcAddr)
 
-            if ( 'IAS' in self.ListOfDevices[MsgSrcAddr] and 'ZoneStatus' in self.ListOfDevices[MsgSrcAddr]['IAS'] ):
-                self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['alarm1'] = alarm1
-                self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['alarm2'] = alarm2
-                self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['tamper'] = tamper
-                self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['battery'] = batter
-                self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['Support Reporting'] = srepor
-                self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['Restore Reporting'] = rrepor
-                self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['trouble'] = troubl
-                self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['acmain'] = acmain
-                self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['test'] = test
-                self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['battdef'] = batdef
+            if ( 'IAS' in self.ListOfDevices[MsgSrcAddr] and 
+                    MsgSrcEp in self.ListOfDevices[MsgSrcAddr]['IAS'] and 
+                    'ZoneStatus' in self.ListOfDevices[MsgSrcAddr]['IAS'][MsgSrcEp] ):
+                self.ListOfDevices[MsgSrcAddr]['IAS'][MsgSrcEp]['ZoneStatus']['alarm1'] = alarm1
+                self.ListOfDevices[MsgSrcAddr]['IAS'][MsgSrcEp]['ZoneStatus']['alarm2'] = alarm2
+                self.ListOfDevices[MsgSrcAddr]['IAS'][MsgSrcEp]['ZoneStatus']['tamper'] = tamper
+                self.ListOfDevices[MsgSrcAddr]['IAS'][MsgSrcEp]['ZoneStatus']['battery'] = batter
+                self.ListOfDevices[MsgSrcAddr]['IAS'][MsgSrcEp]['ZoneStatus']['Support Reporting'] = srepor
+                self.ListOfDevices[MsgSrcAddr]['IAS'][MsgSrcEp]['ZoneStatus']['Restore Reporting'] = rrepor
+                self.ListOfDevices[MsgSrcAddr]['IAS'][MsgSrcEp]['ZoneStatus']['trouble'] = troubl
+                self.ListOfDevices[MsgSrcAddr]['IAS'][MsgSrcEp]['ZoneStatus']['acmain'] = acmain
+                self.ListOfDevices[MsgSrcAddr]['IAS'][MsgSrcEp]['ZoneStatus']['test'] = test
+                self.ListOfDevices[MsgSrcAddr]['IAS'][MsgSrcEp]['ZoneStatus']['battdef'] = batdef
 
-            self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['GlobalInfos'] = "%s;%s;%s;%s;%s;%s;%s;%s;%s;%s" \
+            self.ListOfDevices[MsgSrcAddr]['IAS'][MsgSrcEp]['ZoneStatus']['GlobalInfos'] = "%s;%s;%s;%s;%s;%s;%s;%s;%s;%s" \
                     %( alarm1, alarm2, tamper, batter, srepor, rrepor, troubl, acmain, test, batdef)
-            self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['TimeStamp'] = int(time())
+            self.ListOfDevices[MsgSrcAddr]['IAS'][MsgSrcEp]['ZoneStatus']['TimeStamp'] = int(time())
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, '%02d' %( alarm1 or alarm2) )
             
         else:
@@ -2014,7 +2021,7 @@ def Cluster0500( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     elif MsgAttrID == "0010": # IAS CIE Address
         self.log.logging( "Cluster", 'Debug', "ReadCluster0500 - IAS CIE Address: %s" %MsgClusterData, MsgSrcAddr)
-        self.iaszonemgt.receiveIASmessages( MsgSrcAddr, 7, MsgClusterData)
+        self.iaszonemgt.receiveIASmessages( MsgSrcAddr, MsgSrcEp, 7, MsgClusterData)
 
     elif MsgAttrID == "0011": # Zone ID
         self.log.logging( "Cluster", 'Debug', "ReadCluster0500 - ZoneID : %s" %MsgClusterData, MsgSrcAddr)
