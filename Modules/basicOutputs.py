@@ -496,7 +496,7 @@ def removeZigateDevice( self, IEEE ):
     return send_zigatecmd_raw(self, "0026", ParentAddr + ChildAddr )
 
 
-def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep=ZIGATE_EP):
+def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep=ZIGATE_EP, ackIsDisabled = True ):
     # This function submits a request to send data to a remote node, with no restrictions
     # on the type of transmission, destination address, destination application profile,
     # destination cluster and destination endpoint number - these destination parameters
@@ -533,19 +533,24 @@ def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zig
     len_payload = (len(payload)) // 2
     len_payload = '%02x' %len_payload
     
-    # APS RAW is always sent in NO-ACK
-    self.log.logging( "BasicOutput", 'Debug', "raw_APS_request - Addr: %s Ep: %s Cluster: %s ProfileId: %s Payload: %s" %(targetaddr, dest_ep, cluster, profileId, payload))
+    # APS RAW is always sent in NO-ACK below 31d (included)
+    # APS RAW has ACK/NO-ACK option as of 31e
+    self.log.logging( "debuginRawAPS", 'Log', "raw_APS_request - ackIsDisabled: %s Addr: %s Ep: %s Cluster: %s ProfileId: %s Payload: %s" %(ackIsDisabled , targetaddr, dest_ep, cluster, profileId, payload))
     if self.pluginconf.pluginConf['ieeeForRawAps']:
         ieee = self.ListOfDevices[ targetaddr]['IEEE']
-        return send_zigatecmd_raw(self, "0530", '03' + ieee + zigate_ep + dest_ep + cluster + profileId + security + radius + len_payload + payload)
+        if ackIsDisabled:
+            return send_zigatecmd_raw(self, "0530", '08' + ieee + zigate_ep + dest_ep + cluster + profileId + security + radius + len_payload + payload, ackIsDisabled = ackIsDisabled )
+        return send_zigatecmd_raw(self, "0530", '03' + ieee + zigate_ep + dest_ep + cluster + profileId + security + radius + len_payload + payload, ackIsDisabled = ackIsDisabled )
     
-    return send_zigatecmd_raw(self, "0530", '02' + targetaddr + zigate_ep + dest_ep + cluster + profileId + security + radius + len_payload + payload)
+    if ackIsDisabled:
+        return send_zigatecmd_raw(self, "0530", '07' + targetaddr + zigate_ep + dest_ep + cluster + profileId + security + radius + len_payload + payload, ackIsDisabled = ackIsDisabled)
+    return send_zigatecmd_raw(self, "0530", '02' + targetaddr + zigate_ep + dest_ep + cluster + profileId + security + radius + len_payload + payload, ackIsDisabled = ackIsDisabled)
 
 
 def read_attribute( self, addr ,EpIn , EpOut ,Cluster ,direction , manufacturer_spec , manufacturer , lenAttr, Attr, ackIsDisabled = True):
     
     if self.pluginconf.pluginConf['RawReadAttribute']:
-        return rawaps_read_attribute_req( self, addr ,EpIn , EpOut ,Cluster ,direction , manufacturer_spec , manufacturer ,Attr  )
+        return rawaps_read_attribute_req( self, addr ,EpIn , EpOut ,Cluster ,direction , manufacturer_spec , manufacturer ,Attr, ackIsDisabled  )
     
     if ackIsDisabled:
         return send_zigatecmd_zcl_noack( self, addr, '0100', EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + '%02x' %lenAttr + Attr )
@@ -569,7 +574,7 @@ def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, at
 
 
     if self.pluginconf.pluginConf['RawWritAttribute']:
-        i_sqn = rawaps_write_attribute_req( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data)
+        i_sqn = rawaps_write_attribute_req( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled)
     else:
         # ATTENTION "0110" with firmware 31c are always call with Ack (overwriten by firmware)
         #if ackIsDisabled:
@@ -607,7 +612,7 @@ def write_attributeNoResponse( self, key, EPin, EPout, clusterID, manuf_id, manu
     return send_zigatecmd_zcl_noack(self, key, "0113", str(datas))
 
 
-def rawaps_read_attribute_req( self, NwkId ,EpIn , EpOut ,Cluster ,direction , manufacturer_spec , manufacturer , Attr ):    
+def rawaps_read_attribute_req( self, NwkId ,EpIn , EpOut ,Cluster ,direction , manufacturer_spec , manufacturer , Attr , ackIsDisabled = True):    
 
     Domoticz.Log("rawaps_read_attribute_req %s/%s Cluster: %s Attribute: %s" %(NwkId, EpOut, Cluster, Attr))
     cmd = "00" # Read Attribute Command Identifier
@@ -642,10 +647,10 @@ def rawaps_read_attribute_req( self, NwkId ,EpIn , EpOut ,Cluster ,direction , m
         payload += '%04x' %struct.unpack('>H',struct.pack('H',int(attribute,16)))[0] 
 
     Domoticz.Log("rawaps_read_attribute_req - %s/%s %s payload: %s" %(NwkId, EpOut, Cluster, payload,))
-    raw_APS_request( self, NwkId, EpOut, Cluster, '0104', payload, zigate_ep=EpIn )
+    raw_APS_request( self, NwkId, EpOut, Cluster, '0104', payload, zigate_ep=EpIn , ackIsDisabled=ackIsDisabled)
 
 
-def rawaps_write_attribute_req( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data):
+def rawaps_write_attribute_req( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled = True):
 
     Domoticz.Log("rawaps_write_attribute_req %s/%s Cluster: %s Attribute: %s DataType: %s Value: %s" %(key, EPout, clusterID, attribute, data_type, data))
     cmd = "02" # Read Attribute Command Identifier
@@ -681,7 +686,7 @@ def rawaps_write_attribute_req( self, key, EPin, EPout, clusterID, manuf_id, man
         payload += data
         
     Domoticz.Log("rawaps_write_attribute_req - %s/%s %s payload: %s" %(key, EPout, clusterID, payload,))
-    raw_APS_request( self, key, EPout, clusterID, '0104', payload, zigate_ep=EPin )
+    raw_APS_request( self, key, EPout, clusterID, '0104', payload, zigate_ep=EPin, ackIsDisabled= ackIsDisabled )
 
 
 ## Scene

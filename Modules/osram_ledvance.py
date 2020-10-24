@@ -15,6 +15,7 @@ from Classes.LoggingManagement import LoggingManagement
 
 from Modules.basicOutputs import write_attribute
 from Modules.readAttributes import ReadAttributeRequest_0006_400x
+from Modules.tools import is_ack_tobe_disabled
 
 def setPowerOn_OnOff( self, key, OnOffMode=0xff):
     
@@ -46,7 +47,7 @@ def setPowerOn_OnOff( self, key, OnOffMode=0xff):
             data = "ff"
             data = '%02x' % OnOffMode if OnOffMode in POWERON_MODE else '%02x' % 255
             self.log.logging( "Output", 'Debug', "set_PowerOn_OnOff for %s/%s - OnOff: %s" %(key, EPout, OnOffMode), key)
-            write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
+            write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled = is_ack_tobe_disabled(self, key))
             ReadAttributeRequest_0006_400x( self, key)
 
         #if '0008' in self.ListOfDevices[key]['Ep'][tmpEp]:

@@ -40,6 +40,7 @@ def look_for_group_member_ship(self, NwkId, DeviceEp, group_list = None):
     else:
         if isinstance(group_list, list):
             lenGrpLst = len(group_list)
+            group_list_ = ''
             for x in group_list:
                 group_list_ += "%04x" %(x)
         else:
@@ -126,5 +127,5 @@ def set_hue_saturation( self, mode, addr, EPin, EPout, r, g, b, transit = None):
     hue = int(hue*254//360)
     saturation = int(saturation*254//100)
     self.logging( 'Log', "---------- Set Hue X: %s Saturation: %s" %(hue, saturation))
-    self.ZigateComm.sendData( "00B6","%02d" %ADDRESS_MODE['group'] + GrpId + ZIGATE_EP + EPout + Hex_Format(2,hue) + Hex_Format(2,saturation) + transit)
+    self.ZigateComm.sendData( "00B6","%02d" %ADDRESS_MODE['group'] + addr + ZIGATE_EP + EPout + Hex_Format(2,hue) + Hex_Format(2,saturation) + transit)
     return l

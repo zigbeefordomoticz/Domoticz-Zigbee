@@ -843,6 +843,9 @@ def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
         if self.webserver:
             self.webserver.update_firmware(self.FirmwareVersion)
 
+        if self.ZigateComm:
+            self.ZigateComm.update_ZiGate_Version ( self.FirmwareVersion, self.FirmwareMajorVersion)
+
     self.PDMready = True
 
 
@@ -3105,7 +3108,7 @@ def Decode8110_raw(
             )
 
     if MsgClusterId == "0500":
-        self.iaszonemgt.receiveIASmessages(MsgSrcAddr, 3, MsgAttrStatus)
+        self.iaszonemgt.receiveIASmessages(MsgSrcAddr, MsgSrcEp, 3, MsgAttrStatus)
 
 
 def Decode8120(self, Devices, MsgData, MsgLQI):  # Configure Reporting response
@@ -3730,22 +3733,14 @@ def Decode8702(self, Devices, MsgData, MsgLQI):  # Reception APS Data confirm fa
 # Device Announce
 def Decode004D(self, Devices, MsgData, MsgLQI):  # Reception Device announce
 
-    if (
-        self.FirmwareVersion
-        and int(self.FirmwareVersion, 16) >= 0x031C
-        and self.pluginconf.pluginConf["AnnoucementV1"]
-    ):
+    if ( self.FirmwareVersion and int(self.FirmwareVersion, 16) >= 0x031C and self.pluginconf.pluginConf["AnnoucementV1"] ):
         device_annoucementv1(self, Devices, MsgData, MsgLQI)
 
-    elif (
-        self.FirmwareVersion
-        and int(self.FirmwareVersion, 16) >= 0x031C
-        and self.pluginconf.pluginConf["AnnoucementV2"]
-    ):
+    elif ( self.FirmwareVersion and int(self.FirmwareVersion, 16) >= 0x031C and self.pluginconf.pluginConf["AnnoucementV2"] ):
         device_annoucementv2(self, Devices, MsgData, MsgLQI)
 
     else:
-        device_annoucementv0(self, Devices, MsgData, MsgLQI)
+        device_annoucementv2(self, Devices, MsgData, MsgLQI)
 
 
 def Decode8085(self, Devices, MsgData, MsgLQI):

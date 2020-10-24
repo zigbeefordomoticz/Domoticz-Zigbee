@@ -30,6 +30,29 @@ SWITCH_LVL_MATRIX = {
         "00": ( 1, "Open" ),
         "ForceUpdate": False },
 
+    "LumiLock": {
+        '1101':   ( 1,  "10"), # Unauthorized
+        '1107':   ( 2,  "20"), # Bad Insert
+        '1207':   ( 3,  "30"), # Unlock all to neutral
+        '1601':   ( 4,  "40"), # All Key Removed
+        '1311':   ( 5,  "50"), # New Key
+        '120101': ( 6,  "60"), # Authorized #1
+        '121101': ( 7,  "70"), # Key in Lock #1
+        '120102': ( 8,  "80"), # Key 2
+        '121102': ( 9,  "90"),
+        '120103': (10, "100"), # Key 3
+        '121103': (11, "110"),
+        '120104': (12, "120"), # Key 4
+        '121104': (13, "130"),
+        '120105': (14, "140"), # Key 5
+        '121105': (15, "150"),
+        "ForceUpdate": True,
+        "LevelNames": "Off|Unauthorized|Bad Insert|Unlock all to neutral|All Key Removed|New Key|Autorized Key #1|Key in lock #1|Autorized Key #2|Key in lock #2|Autorized Key #3|Key in lock #3|Autorized Key #4|Key in lock #4|Autorized Key #5|Key in lock #5",
+        "Language": { 
+            "fr-FR": {"Off|Unauthorized|Bad Insert|Unlock all to neutral|All Key Removed|New Key|Autorized Key #1|Key in lock #1|Autorized Key #2|Key in lock #2|Autorized Key #3|Key in lock #3|Autorized Key #4|Key in lock #4|Autorized Key #5|Key in lock #5"}
+        }
+    },
+
     "Smoke": { 
         "00": ( 0, "Off"), 
         "01": ( 1, "On"), 
@@ -329,6 +352,7 @@ SWITCH_LVL_MATRIX = {
            "fr-FR": {"LevelNames": "Arrêt|Auto|Manuel"}
        }
    },
+   
     "ThermoMode": {
         0: (0, "Off"), 
         1: (1, "10"), 
@@ -366,10 +390,13 @@ SWITCH_LVL_MATRIX = {
         }
     },
 
-    "LegrandFilPilote": { 
-        "LevelNames": "Off|Confort|Confort -1|Confort -2|Eco|Frost Protection|Off",
+    "LegranCableMode": {
+        "0100": ( 1, "10"), # Normal
+        "0200": ( 2, "20"), # FIP
+        "ForceUpdate": False,
+        "LevelNames": "Off|Conventional|Fil Pilote",
         "Language": {
-            "fr-FR": {"LevelNames": "Arrêt|Confort|Confort -1|Confort -2|Eco|Hors Gel|Arrêt"}
+            "fr-FR": {"LevelNames": "Arrêt|Normal|Fil Pilote"}
         }
     },
 
@@ -437,5 +464,53 @@ SWITCH_LVL_MATRIX = {
         "Language": {
             "fr-FR": {"LevelNames": "Off|Urgence|Armer (zone maison)|Armer (toutes zones)|Désarmer"}
             }
+    },
+    'PAC-MODE': {
+        "00": (0, "00"), # "Off",
+        "01": (1, "10"), # "Auto"
+        "02": (2, "20"), # dehumidifier
+        "03": (3, "30"), # COLD
+        "04": (4, "40"), # HOT
+        "05": (5, "50"), # FAN only
+        "ForceUpdate": False, 
+        "LevelNames": "Off|Auto|dehumidifier|Cold|Hot|Fan",
+        "Language": {
+            "fr-FR": {"LevelNames": "Off|Auto|Déshumidicateur|Froid|Chaud|Ventilateur"}
+            }
+    },
+    'PAC-RATE': {
+        "00": (0, "00"), # Off
+        "01": (1, "10"), # Auto
+        "02": (2, "20"), # Silence
+        "03": (3, "30"), # Level 1
+        "04": (4, "40"), # Level 2
+        "05": (5, "50"), # Level 3
+        "06": (6, "60"), # Level 4
+        "07": (7, "70"), # Level 5
+        "ForceUpdate": False, 
+        "LevelNames": "Off|Auto|Silence|Lvl1|Lvl2|Lvl3|Lvl4|Lvl5",
+        "Language": {
+            "fr-FR": {"LevelNames": "Off|Auto|Silence|Lvl1|Lvl2|Lvl3|Lvl4|Lvl5"}
+        }
+    },
+    'PAC-WING': {
+        "00": (0, "00"), # Off - All wings stopped
+        "01": (1, "10"), # Vertigal wings motion
+        "02": (2, "20"), # Horizontal wings motion
+        "03": (3, "30"), # Vertical and Horizontal wings motion 
+        "ForceUpdate": False, 
+        "LevelNames": "Off|Vertical|Horizontal|Both",
+        "Language": {
+            "fr-FR": {"LevelNames": "Off|Horizontal|Vertical|Les deux"}
+        }
+    },
+    'PAC-SWITCH': {
+        "00": (0, "00"), # Off
+        "01": (1, "10"), # On
+        "ForceUpdate": False, 
+        "LevelNames": "Off|On",
+        "Language": {
+            "fr-FR": {"LevelNames": "Arrêt|Allumer"}
+        }
     },
 }

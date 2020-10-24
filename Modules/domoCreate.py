@@ -19,6 +19,194 @@ from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
 from Modules.widgets import SWITCH_LVL_MATRIX
 from Modules.domoTools import GetType, subtypeRGB_FromProfile_Device_IDs
 
+
+def cleanup_widget_Type( widget_type_list ):
+
+    if ("ColorControlFull" in widget_type_list) and ( "ColorControl" in widget_type_list ):
+        widget_type_list.remove( "ColorControlFull")
+    if ("ColorControlRGB" in widget_type_list) and ("ColorControlRGBWW" in widget_type_list):
+        widget_type_list.remove( 'ColorControlRGB')
+    if ("ColorControlWW" in widget_type_list) and ("ColorControlRGBWW" in widget_type_list):
+        widget_type_list.remove( 'ColorControlWW')
+    if ("ColorControlRGBWW" in widget_type_list) and  ( "ColorControl" in widget_type_list ):
+        widget_type_list.remove( 'ColorControlRGBWW')
+
+    if ("Switch" in widget_type_list) and ("LvlControl" in widget_type_list):
+        widget_type_list.remove( 'Switch')
+    if ("LvlControl" in widget_type_list) and ("ColorControl" in widget_type_list):
+        widget_type_list.remove( 'LvlControl')
+
+    if '' in widget_type_list:
+        widget_type_list.remove( '' )
+
+    return widget_type_list
+
+def deviceName( self, NWKID, DeviceType, IEEE_, EP_ ):
+    """
+    Return the Name of device to be created
+    """
+
+    _Model = _NickName = None
+    devName = ''
+    self.log.logging("Widget", "Debug", "deviceName - %s/%s - %s %s" %(NWKID, EP_, IEEE_, DeviceType), NWKID)
+    if ( 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['Model'] != {} ):
+        _Model = self.ListOfDevices[NWKID]['Model']
+        self.log.logging("Widget", "Debug", "deviceName - Model found: %s" %_Model, NWKID)
+        if _Model in self.DeviceConf and 'NickName' in self.DeviceConf[_Model]:
+            _NickName = self.DeviceConf[_Model]['NickName']
+            self.log.logging("Widget", "Debug", "deviceName - NickName found %s" %_NickName, NWKID)
+
+    if _NickName is None and _Model is None:
+        _Model = ''
+    elif _NickName:
+        devName = _NickName + '_'
+    elif _Model:
+        devName = _Model+ '_'
+
+    devName +=  DeviceType + "-" + IEEE_ + "-" + EP_
+    self.log.logging("Widget", "Debug", "deviceName - Dev Name: %s" %devName, NWKID)
+
+    return devName
+
+def FreeUnit(self, Devices, nbunit_=1):
+    '''
+    FreeUnit
+    Look for a Free Unit number. If nbunit > 1 then we look for nbunit consecutive slots
+    '''
+    FreeUnit = ""
+    for x in range(1, 255):
+        if x not in Devices:
+            if nbunit_ == 1:
+                return x
+            nb = 1
+            for y in range(x+1, 255):
+                if y not in Devices:
+                    nb += 1
+                else: 
+                    break
+                if nb == nbunit_: # We have found nbunit consecutive slots
+                    self.log.logging("Widget", "Debug", "FreeUnit - device " + str(x) + " available")
+                    return x
+
+    else:
+        self.log.logging("Widget", "Debug", "FreeUnit - device " + str(len(Devices) + 1))
+        return len(Devices) + 1
+
+def createSwitchSelector( self,  nbSelector, DeviceType= None, OffHidden = False, SelectorStyle = 0 ):
+    """
+    Generate an Options attribute to handle the number of required button, if Off is hidden or notand SelectorStype
+
+    Options = {"LevelActions": "|||", 
+                "LevelNames": "1 Click|2 Clicks|3 Clicks|4+ Clicks",
+                "LevelOffHidden": "false", "SelectorStyle": "1"}
+    """
+
+    Options = {}
+    #Domoticz.Log( "createSwitchSelector -  nbSelector: %s DeviceType: %s OffHidden: %s SelectorStyle %s " %(nbSelector,DeviceType,OffHidden,SelectorStyle))
+    if nbSelector <= 1:
+        return Options
+
+    Options[ 'LevelNames' ] = ''
+    Options[ 'LevelActions'] = ''
+    Options[ 'LevelOffHidden'] = 'false'
+    Options[ 'SelectorStyle'] = '0'
+
+    if DeviceType:
+        if DeviceType in SWITCH_LVL_MATRIX:
+            # In all cases let's populate with the Standard LevelNames
+            if 'LevelNames' in SWITCH_LVL_MATRIX[ DeviceType ]:
+                Options[ 'LevelNames' ] = SWITCH_LVL_MATRIX[ DeviceType ]['LevelNames']
+
+            # In case we have a localized version, we will overwrite the standard vesion
+            if ( self.pluginconf.pluginConf['Lang'] != 'en-US' and 'Language' in SWITCH_LVL_MATRIX[DeviceType] ):
+                lang = self.pluginconf.pluginConf['Lang']
+                if (
+                    lang in SWITCH_LVL_MATRIX[DeviceType]['Language']
+                    and 'LevelNames'
+                    in SWITCH_LVL_MATRIX[DeviceType]['Language'][lang]
+                ):
+                    Options[ 'LevelNames'] = SWITCH_LVL_MATRIX[ DeviceType ]['Language'][ lang ]['LevelNames']
+
+            if Options[ 'LevelNames' ] != '':
+                count = sum(map(lambda x : 1 if '|' in x else 0, Options[ 'LevelNames' ]))
+                #Domoticz.Log("----> How many Levels: %s" %count)
+                for _ in range(count):
+                    Options[ 'LevelActions'] += '|'
+    else:
+        for bt in range(nbSelector):
+            Options[ 'LevelNames' ] += 'BT %03s | ' %bt
+            Options[ 'LevelActions'] += '|'
+
+        Options[ 'LevelNames' ] = Options[ 'LevelNames' ][:-2] # Remove the last '| '
+        Options[ 'LevelActions' ] = Options[ 'LevelActions' ][:-1] # Remove the last '|'
+
+    if SelectorStyle:
+        Options[ 'SelectorStyle'] = '%s' %SelectorStyle
+
+    if OffHidden:
+        Options[ 'LevelOffHidden'] = 'true'
+
+    #Domoticz.Log(" --> Options: %s" %str(Options))
+    return Options
+
+
+def createDomoticzWidget( self, Devices, nwkid, ieee, ep, cType, 
+                            widgetType = None, Type_ = None, Subtype_ = None, Switchtype_ = None, 
+                            widgetOptions = None, 
+                            Image = None,
+                            ForceClusterType = None):
+    """
+    widgetType are pre-defined widget Type
+    Type_, Subtype_ and Switchtype_ allow to create a widget ( Switchtype_ is optional )
+    Image is an optional parameter
+    forceClusterType if you want to overwrite the ClusterType usally based with cType
+    """
+
+    unit = FreeUnit(self, Devices)
+    self.log.logging("Widget", "Debug", "CreateDomoDevice - unit: %s" %unit, nwkid)
+    
+    self.log.logging("Widget", "Debug", "--- cType: %s widgetType: %s Type: %s Subtype: %s SwitchType: %s widgetOption: %s Image: %s ForceCluster: %s" \
+        %(cType, widgetType , Type_ , Subtype_, Switchtype_ , widgetOptions , Image ,ForceClusterType), nwkid)
+    
+    widgetName = deviceName( self, nwkid, cType, ieee, ep)
+    #oldFashionWidgetName = cType + "-" + ieee + "-" + ep
+
+    if widgetType:
+        # We only base the creation on widgetType
+        myDev = Domoticz.Device( DeviceID = ieee, Name = widgetName, Unit = unit, TypeName = widgetType ) 
+
+    elif widgetOptions:
+        # In case of widgetOptions, we have a Selector widget
+        if Type_ is None and Subtype_ is None and Switchtype_ is None:
+            Type_ = 244
+            Subtype_ = 62
+            Switchtype_ = 18
+        myDev = Domoticz.Device( DeviceID = ieee, Name = widgetName, Unit = unit, 
+                                    Type = Type_, Subtype = Subtype_, Switchtype = Switchtype_, 
+                                    Options = widgetOptions )
+    elif Image:
+        myDev = Domoticz.Device( DeviceID = ieee, Name = widgetName, Unit = unit, 
+                                    Type = Type_, Subtype = Subtype_, Switchtype = Switchtype_, Image= Image )       
+    elif Switchtype_:
+        myDev = Domoticz.Device( DeviceID = ieee, Name = widgetName, Unit = unit, 
+                                    Type = Type_, Subtype = Subtype_, Switchtype = Switchtype_ )      
+    else:
+        myDev = Domoticz.Device( DeviceID = ieee, Name = widgetName, Unit = unit, 
+                                    Type = Type_, Subtype = Subtype_ )   
+
+    myDev.Create()
+    ID = myDev.ID
+    if myDev.ID == -1 :
+        self.ListOfDevices[nwkid]['Status'] = "failDB"
+        Domoticz.Error("Domoticz widget creation failed. Check that Domoticz can Accept New Hardware [%s]" %myDev )
+    else:
+        self.ListOfDevices[nwkid]['Status'] = "inDB"
+        if ForceClusterType:
+            self.ListOfDevices[nwkid]['Ep'][ep]['ClusterType'][str(ID)] = ForceClusterType
+        else:
+            self.ListOfDevices[nwkid]['Ep'][ep]['ClusterType'][str(ID)] = cType
+
+ 
 def CreateDomoDevice(self, Devices, NWKID):
     """
     CreateDomoDevice
@@ -26,173 +214,6 @@ def CreateDomoDevice(self, Devices, NWKID):
     Create Domoticz Device accordingly to the Type.
 
     """
-
-    def deviceName( self, NWKID, DeviceType, IEEE_, EP_ ):
-        """
-        Return the Name of device to be created
-        """
-
-        _Model = _NickName = None
-        devName = ''
-        self.log.logging("Widget", "Debug", "deviceName - %s/%s - %s %s" %(NWKID, EP_, IEEE_, DeviceType), NWKID)
-        if ( 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['Model'] != {} ):
-            _Model = self.ListOfDevices[NWKID]['Model']
-            self.log.logging("Widget", "Debug", "deviceName - Model found: %s" %_Model, NWKID)
-            if _Model in self.DeviceConf and 'NickName' in self.DeviceConf[_Model]:
-                _NickName = self.DeviceConf[_Model]['NickName']
-                self.log.logging("Widget", "Debug", "deviceName - NickName found %s" %_NickName, NWKID)
-
-        if _NickName is None and _Model is None:
-            _Model = ''
-        elif _NickName:
-            devName = _NickName + '_'
-        elif _Model:
-            devName = _Model+ '_'
-
-        devName +=  DeviceType + "-" + IEEE_ + "-" + EP_
-        self.log.logging("Widget", "Debug", "deviceName - Dev Name: %s" %devName, NWKID)
-
-        return devName
-
-    def FreeUnit(self, Devices, nbunit_=1):
-        '''
-        FreeUnit
-        Look for a Free Unit number. If nbunit > 1 then we look for nbunit consecutive slots
-        '''
-        FreeUnit = ""
-        for x in range(1, 255):
-            if x not in Devices:
-                if nbunit_ == 1:
-                    return x
-                nb = 1
-                for y in range(x+1, 255):
-                    if y not in Devices:
-                        nb += 1
-                    else: 
-                        break
-                    if nb == nbunit_: # We have found nbunit consecutive slots
-                        self.log.logging("Widget", "Debug", "FreeUnit - device " + str(x) + " available")
-                        return x
-
-        else:
-            self.log.logging("Widget", "Debug", "FreeUnit - device " + str(len(Devices) + 1))
-            return len(Devices) + 1
-
-    def createSwitchSelector( nbSelector, DeviceType= None, OffHidden = False, SelectorStyle = 0 ):
-        """
-        Generate an Options attribute to handle the number of required button, if Off is hidden or notand SelectorStype
-
-        Options = {"LevelActions": "|||", 
-                    "LevelNames": "1 Click|2 Clicks|3 Clicks|4+ Clicks",
-                    "LevelOffHidden": "false", "SelectorStyle": "1"}
-        """
-
-        Options = {}
-        #Domoticz.Log( "createSwitchSelector -  nbSelector: %s DeviceType: %s OffHidden: %s SelectorStyle %s " %(nbSelector,DeviceType,OffHidden,SelectorStyle))
-        if nbSelector <= 1:
-            return Options
-
-        Options[ 'LevelNames' ] = ''
-        Options[ 'LevelActions'] = ''
-        Options[ 'LevelOffHidden'] = 'false'
-        Options[ 'SelectorStyle'] = '0'
-
-        if DeviceType:
-            if DeviceType in SWITCH_LVL_MATRIX:
-                # In all cases let's populate with the Standard LevelNames
-                if 'LevelNames' in SWITCH_LVL_MATRIX[ DeviceType ]:
-                    Options[ 'LevelNames' ] = SWITCH_LVL_MATRIX[ DeviceType ]['LevelNames']
-
-                # In case we have a localized version, we will overwrite the standard vesion
-                if ( self.pluginconf.pluginConf['Lang'] != 'en-US' and 'Language' in SWITCH_LVL_MATRIX[DeviceType] ):
-                    lang = self.pluginconf.pluginConf['Lang']
-                    if (
-                        lang in SWITCH_LVL_MATRIX[DeviceType]['Language']
-                        and 'LevelNames'
-                        in SWITCH_LVL_MATRIX[DeviceType]['Language'][lang]
-                    ):
-                        Options[ 'LevelNames'] = SWITCH_LVL_MATRIX[ DeviceType ]['Language'][ lang ]['LevelNames']
-
-                if Options[ 'LevelNames' ] != '':
-                    count = sum(map(lambda x : 1 if '|' in x else 0, Options[ 'LevelNames' ]))
-                    #Domoticz.Log("----> How many Levels: %s" %count)
-                    for _ in range(count):
-                        Options[ 'LevelActions'] += '|'
-        else:
-            for bt in range(nbSelector):
-                Options[ 'LevelNames' ] += 'BT %03s | ' %bt
-                Options[ 'LevelActions'] += '|'
-
-            Options[ 'LevelNames' ] = Options[ 'LevelNames' ][:-2] # Remove the last '| '
-            Options[ 'LevelActions' ] = Options[ 'LevelActions' ][:-1] # Remove the last '|'
-
-        if SelectorStyle:
-            Options[ 'SelectorStyle'] = '%s' %SelectorStyle
-
-        if OffHidden:
-            Options[ 'LevelOffHidden'] = 'true'
-
-        #Domoticz.Log(" --> Options: %s" %str(Options))
-        return Options
-
-
-    def createDomoticzWidget( self, Devices, nwkid, ieee, ep, cType, 
-                                widgetType = None, Type_ = None, Subtype_ = None, Switchtype_ = None, 
-                                widgetOptions = None, 
-                                Image = None,
-                                ForceClusterType = None):
-        """
-        widgetType are pre-defined widget Type
-        Type_, Subtype_ and Switchtype_ allow to create a widget ( Switchtype_ is optional )
-        Image is an optional parameter
-        forceClusterType if you want to overwrite the ClusterType usally based with cType
-        """
-
-        unit = FreeUnit(self, Devices)
-        self.log.logging("Widget", "Debug", "CreateDomoDevice - unit: %s" %unit, nwkid)
-        
-        self.log.logging("Widget", "Debug", "--- cType: %s widgetType: %s Type: %s Subtype: %s SwitchType: %s widgetOption: %s Image: %s ForceCluster: %s" \
-            %(cType, widgetType , Type_ , Subtype_, Switchtype_ , widgetOptions , Image ,ForceClusterType), nwkid)
-     
-        widgetName = deviceName( self, nwkid, cType, ieee, ep)
-        #oldFashionWidgetName = cType + "-" + ieee + "-" + ep
-
-        if widgetType:
-            # We only base the creation on widgetType
-            myDev = Domoticz.Device( DeviceID = ieee, Name = widgetName, Unit = unit, TypeName = widgetType ) 
-
-        elif widgetOptions:
-            # In case of widgetOptions, we have a Selector widget
-            if Type_ is None and Subtype_ is None and Switchtype_ is None:
-                Type_ = 244
-                Subtype_ = 62
-                Switchtype_ = 18
-            myDev = Domoticz.Device( DeviceID = ieee, Name = widgetName, Unit = unit, 
-                                        Type = Type_, Subtype = Subtype_, Switchtype = Switchtype_, 
-                                        Options = widgetOptions )
-        elif Image:
-            myDev = Domoticz.Device( DeviceID = ieee, Name = widgetName, Unit = unit, 
-                                        Type = Type_, Subtype = Subtype_, Switchtype = Switchtype_, Image= Image )       
-        elif Switchtype_:
-            myDev = Domoticz.Device( DeviceID = ieee, Name = widgetName, Unit = unit, 
-                                        Type = Type_, Subtype = Subtype_, Switchtype = Switchtype_ )      
-        else:
-            myDev = Domoticz.Device( DeviceID = ieee, Name = widgetName, Unit = unit, 
-                                        Type = Type_, Subtype = Subtype_ )   
- 
-        myDev.Create()
-        ID = myDev.ID
-        if myDev.ID == -1 :
-            self.ListOfDevices[nwkid]['Status'] = "failDB"
-            Domoticz.Error("Domoticz widget creation failed. Check that Domoticz can Accept New Hardware [%s]" %myDev )
-        else:
-            self.ListOfDevices[nwkid]['Status'] = "inDB"
-            if ForceClusterType:
-                self.ListOfDevices[nwkid]['Ep'][ep]['ClusterType'][str(ID)] = ForceClusterType
-            else:
-                self.ListOfDevices[nwkid]['Ep'][ep]['ClusterType'][str(ID)] = cType
-
- 
 
     # Sanity check before starting the processing 
     if NWKID == '' or NWKID not in self.ListOfDevices:
@@ -233,9 +254,8 @@ def CreateDomoDevice(self, Devices, NWKID):
             else:
                 GlobalEP = True
                 if 'Type' in self.ListOfDevices[NWKID]:
-                    if self.ListOfDevices[NWKID]['Type'] != '':
-                        Type = self.ListOfDevices[NWKID]['Type'].split("/")
-                        self.log.logging("Widget", "Debug", "CreateDomoDevice - Type : '" + str(Type) + "'", NWKID)
+                    Type = self.ListOfDevices[NWKID]['Type'].split("/")
+                    self.log.logging("Widget", "Debug", "CreateDomoDevice - Type : '" + str(Type) + "'", NWKID)
 
         # Check if Type is known
         if len(Type) == 1 and Type[0] == '':
@@ -251,6 +271,8 @@ def CreateDomoDevice(self, Devices, NWKID):
         # We want to avoid creating of 3 widgets while 1 is enought.
         # if self.ListOfDevices[NWKID][ 'Model'] not in self.DeviceConf:
         self.log.logging( "Widget",'Debug', "---> Check if we need to reduce Type: %s" %Type)
+        Type = cleanup_widget_Type( Type )
+
         if ("Switch" in Type) and ("LvlControl" in Type) and ("ColorControl" in Type):
             # We need to detect what is the ColorControl ( can be RGB, Full, WW)
             self.log.logging( "Widget", 'Debug', "----> Colortype, let's remove Switch and LvlControl")
@@ -281,114 +303,130 @@ def CreateDomoDevice(self, Devices, NWKID):
             self.log.logging("Widget", "Debug", "CreateDomoDevice - DevId: %s DevEp: %s Type: %s" %(DeviceID_IEEE, Ep, t), NWKID)
 
             # === Selector Switches
+            if t in ( 'PAC-MODE', ):
+                pass
+
+            if t in ( 'PAC-RATE', ):
+                pass
+
+            if t in ( 'PAC-WING', ):
+                pass
+
+            if t in ( 'PAC-SWITCH', ):
+                pass
 
             # 3 Selectors, Style 0
             if t in ("Toggle", "ThermoMode_2"): 
-                Options = createSwitchSelector( 3 , DeviceType = t, SelectorStyle = 0)
+                Options = createSwitchSelector( self, 3 , DeviceType = t, SelectorStyle = 0)
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Toggle/ThermoMode_2" %(t), NWKID)
 
             # 3 Selector , OffHidden, Style 0 (command)
-            if t in ('HACTMODE', ):
-                Options = createSwitchSelector( 3, DeviceType = t, OffHidden = True, SelectorStyle = 0 )
+            if t in ('HACTMODE', 'LegranCableMode' ):
+                Options = createSwitchSelector( self,  3, DeviceType = t, OffHidden = True, SelectorStyle = 0 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in HACTMODE..." %(t), NWKID)
 
             # 4 Selector , OffHidden, Style 0 (command)
             if t in ('DSwitch',):
-                Options = createSwitchSelector( 4, DeviceType = t, OffHidden = True, SelectorStyle = 0 )
+                Options = createSwitchSelector( self,  4, DeviceType = t, OffHidden = True, SelectorStyle = 0 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in DSwitch..." %(t), NWKID)
 
             # 5 Selector , OffHidden, Style 0 (command)
             if t in ('ContractPower', ):
-                Options = createSwitchSelector( 6, DeviceType = t, OffHidden = True, SelectorStyle = 0 )
+                Options = createSwitchSelector( self,  6, DeviceType = t, OffHidden = True, SelectorStyle = 0 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in ContractPower ..." %(t), NWKID)
 
             # 4 Selectors, OffHidden, Style 1
             if t in ('DButton', ):  
-                Options = createSwitchSelector( 4, DeviceType = t, OffHidden= True, SelectorStyle = 1 )
+                Options = createSwitchSelector( self,  4, DeviceType = t, OffHidden= True, SelectorStyle = 1 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in DButton" %(t), NWKID)
 
             # 4 Selectors, Style 1  
             if t in ('Vibration', 'Button_3' , 'SwitchAQ2'):  
-                Options = createSwitchSelector( 4, DeviceType = t, SelectorStyle = 1 )
+                Options = createSwitchSelector( self,  4, DeviceType = t, SelectorStyle = 1 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Vibration" %(t), NWKID)
 
             # 5 Selectors, Style 0 ( mode command)
             if t in ('ThermoMode', ):
-                Options = createSwitchSelector( 5,  DeviceType = t,SelectorStyle = 0 )
+                Options = createSwitchSelector( self,  5,  DeviceType = t,SelectorStyle = 0 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in ThermoMode" %(t), NWKID)
 
             # 5 Selectors, Style 1
             if t in ('Generic_5_buttons', 'LegrandSelector', 'SwitchAQ3', 'SwitchIKEA', 'AqaraOppleMiddleBulb'): 
-                Options = createSwitchSelector( 5,  DeviceType = t,SelectorStyle = 1 )
+                Options = createSwitchSelector( self,  5,  DeviceType = t,SelectorStyle = 1 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Generic_5" %(t), NWKID)
 
             # 5 Selectors, Style 1, OffHidden
             if t in ('IAS_ACE', ): 
-                Options = createSwitchSelector( 5,  DeviceType = t, OffHidden= True, SelectorStyle = 1 )
+                Options = createSwitchSelector( self,  5,  DeviceType = t, OffHidden= True, SelectorStyle = 1 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Generic_5" %(t), NWKID)
 
             # 6 Selectors, Style 1
             if t in ('AlarmWD', ):        
-                Options = createSwitchSelector( 6,  DeviceType = t,SelectorStyle = 1 )
+                Options = createSwitchSelector( self,  6,  DeviceType = t,SelectorStyle = 1 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in AlarmWD" %(t), NWKID)
 
             # 6 Buttons, Style 1, OffHidden
             if t in ('GenericLvlControl', 'AqaraOppleMiddle'): 
-            
-               Options = createSwitchSelector( 6,  DeviceType = t,OffHidden= True, SelectorStyle = 1 )
+
+               Options = createSwitchSelector( self,  6,  DeviceType = t,OffHidden= True, SelectorStyle = 1 )
                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in GenericLvlControl" %(t), NWKID)
-            
+
             # 7 Selectors, Style 1
             if t in ('ThermoModeEHZBRTS', 'INNR_RC110_LIGHT'):             
-                Options = createSwitchSelector( 7,  DeviceType = t,SelectorStyle = 1 )
+                Options = createSwitchSelector( self,  7,  DeviceType = t,SelectorStyle = 1 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t,widgetOptions = Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in ThermoModeEHZBRTS" %(t), NWKID)
 
             # 7 Selectors, Style 0, OffHidden
             if t in ('LegrandFilPilote', ):
-               Options = createSwitchSelector( 7,  DeviceType = t,OffHidden = True, SelectorStyle = 0 )
+               Options = createSwitchSelector( self,  7,  DeviceType = t,OffHidden = True, SelectorStyle = 0 )
                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in LegrandFilPilote" %(t), NWKID)
 
             # 7 Selectors, Style 0, OffHidden, SelectorStyle 1
             if t in ('FIP',  ):
-               Options = createSwitchSelector( 7,  DeviceType = t,OffHidden = True, SelectorStyle = 1 )
+               Options = createSwitchSelector( self,  7,  DeviceType = t,OffHidden = True, SelectorStyle = 1 )
                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in FIP" %(t), NWKID)
 
             # 10 Selectors, Style 1, OffHidden
             if t in ('DButton_3', ):  
-               Options = createSwitchSelector( 10,  DeviceType = t,OffHidden = True, SelectorStyle = 1 )
+               Options = createSwitchSelector( self,  10,  DeviceType = t,OffHidden = True, SelectorStyle = 1 )
                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in DButton3" %(t), NWKID) 
 
             # 12 Selectors
             if t in ( 'OrviboRemoteSquare'):
-                Options = createSwitchSelector( 13,  DeviceType = t,OffHidden = True, SelectorStyle = 1 )
+                Options = createSwitchSelector( self,  13,  DeviceType = t,OffHidden = True, SelectorStyle = 1 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)                 
 
             # 13 Selectors, Style 1
             if t in ('INNR_RC110_SCENE', ):
-                Options = createSwitchSelector( 13,  DeviceType = t,SelectorStyle = 1 )
+                Options = createSwitchSelector( self,  13,  DeviceType = t,SelectorStyle = 1 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in INNR SCENE" %(t), NWKID)
 
             # 14 Selectors, Style 1
             if t in ('Ikea_Round_5b', ): 
-                Options = createSwitchSelector( 14,  DeviceType = t,SelectorStyle = 1 )
+                Options = createSwitchSelector( self,  14,  DeviceType = t,SelectorStyle = 1 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Ikea Round" %(t), NWKID)
+
+            if t in ( 'LumiLock'):
+                Options = createSwitchSelector( self,  16,  DeviceType = t,SelectorStyle = 1 )
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
+                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Lumi Lock" %(t), NWKID)
 
             # ==== Classic Widget
             if t in ( 'AirQuality', ):
@@ -399,12 +437,12 @@ def CreateDomoDevice(self, Devices, NWKID):
                 Options = '1;ppm'
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetType ="Custom")
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in VOC" %(t), NWKID)
-                
+
             if t in ( 'CarbonDioxyde', ):
                 Options = '1;ppm'
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 0xF3, Subtype_ = 31, Switchtype_= 0, widgetOptions = Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Carbon Dioxyde" %(t), NWKID)
-                
+
             if t in ( 'CarbonMonoxyde', ):
                 Options = '1;ppm'
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 0xF3, Subtype_ = 31, Switchtype_= 0, widgetOptions = Options)
@@ -417,7 +455,7 @@ def CreateDomoDevice(self, Devices, NWKID):
             if t in ( "ThermoSetpoint", "TempSetCurrent"):
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 242, Subtype_ = 1)  
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in ThermoSetPoint" %(t), NWKID)
-               
+
             if t == "Temp":
                 # Detecteur temp
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, "Temperature")
@@ -496,7 +534,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 # Xiaomi Magic Cube
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 # Create the XCube Widget
-                Options = createSwitchSelector( 10,  DeviceType = t, OffHidden = True, SelectorStyle = 1 )
+                Options = createSwitchSelector( self,  10,  DeviceType = t, OffHidden = True, SelectorStyle = 1 )
                 unit = FreeUnit(self, Devices, nbunit_=2) # Look for 2 consecutive slots
                 myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                                 Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)
@@ -507,7 +545,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
-                
+
                 # Create the Status (Text) Widget to report Rotation angle
                 unit += 1
                 myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
@@ -543,7 +581,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 # P1 Smart Meter Energy Type 250, Subtype = 250
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 250, Subtype_ = 1, Switchtype_ = 1 )
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in P1Meter" %(t), NWKID)
- 
+
             # ====== Blind and Venetian
             # Subtype = 
             # Blind / Window covering
@@ -564,10 +602,10 @@ def CreateDomoDevice(self, Devices, NWKID):
             if t == 'BSO-Orientation':
                 # BSO Orientation for Profalux, Create a Switch selector instead of Slider
                 #createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 244, Subtype_ = 73, Switchtype_ = 13 )
-                Options = createSwitchSelector( 11,  DeviceType = t,OffHidden = True, SelectorStyle = 1 )
+                Options = createSwitchSelector( self,  11,  DeviceType = t,OffHidden = True, SelectorStyle = 1 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)       
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in BSO-Orientation" %(t), NWKID)
-            
+
             if t == 'BlindInverted':
                 # Blind Percentage Inverterd
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 244, Subtype_ = 73, Switchtype_ = 16, ForceClusterType = 'LvlControl' )
@@ -585,7 +623,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                     createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 244, Subtype_ = 73, Switchtype_ = 16 )
                 elif self.ListOfDevices[NWKID]['ProfileID'] == '0104' and self.ListOfDevices[NWKID]['ZDeviceID'] == '0200':
                     createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 244, Subtype_ = 73, Switchtype_ = 15 )
-                
+
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in WindowCovering" %(t), NWKID)
 
             # ======= Level Control / Dimmer

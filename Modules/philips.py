@@ -8,7 +8,7 @@ import Domoticz
 from datetime import datetime
 from time import time
 
-from Modules.basicOutputs import raw_APS_request, write_attribute, set_poweron_afteroffon
+from Modules.basicOutputs import set_poweron_afteroffon
 from Modules.readAttributes import ReadAttributeRequest_0006_0000, ReadAttributeRequest_0008_0000, ReadAttributeRequest_0006_400x
 from Modules.tools import retreive_cmd_payload_from_8002
 
