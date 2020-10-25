@@ -1309,7 +1309,7 @@ def Cluster0102( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 # do not update
                 return
 
-            if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TS0302':
+            if self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'TS0302', '1GANGSHUTTER1'):
                 value = 0 if value > 100 else 100 - value
             elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'Shutter switch with neutral':
                 # The Shutter should have the Led on its right
