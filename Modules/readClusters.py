@@ -2168,12 +2168,16 @@ def Cluster0b04( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
     if MsgAttrID == "050b": # Active Power
-        value = int(decodeAttribute( self, MsgAttType, MsgClusterData ))
-        loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s Power %s" \
-            %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value))
-        if 'Model' in self.ListOfDevices[ MsgSrcAddr ] and self.ListOfDevices[ MsgSrcAddr ]['Model'] == 'outletv4':
-            value /= 10
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value))
+        if -32768 <= int(MsgClusterData[0:4]) <= 32767:
+            value = int(decodeAttribute( self, MsgAttType, MsgClusterData[0:4] ))
+            loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s Power %s" \
+                %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value))
+            if 'Model' in self.ListOfDevices[ MsgSrcAddr ] and self.ListOfDevices[ MsgSrcAddr ]['Model'] == 'outletv4':
+                value /= 10
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value))
+        else:
+           loggingCluster( self, 'Error', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s Out of Range!!" \
+            %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
     elif MsgAttrID == "0505": # RMS Voltage
         value = int(decodeAttribute( self, MsgAttType, MsgClusterData ))
