@@ -463,7 +463,8 @@ def readXiaomiCluster( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId
             ValuePress=round((struct.unpack('i',struct.pack('i',int(Press,16)))[0])/100,1)
             
         except Exception as e :
-            loggingLumi( self, 'Error',"ReadCluster - 0000/ff01 Saddr: " + str(MsgSrcAddr) + " Wrong Atmospheric Pressure : " + Press + " Error " +e, MsgSrcAddr)
+            loggingLumi( self, 'Error',"ReadCluster - 0000/ff01 Saddr: %s Wrong Atmospheric Pressure: orig: %s, convert: %s Error: %s" \
+                %(MsgSrcAddr,sPress,Press,e), MsgSrcAddr)
             return
 
         loggingLumi( self, 'Debug',"ReadCluster - 0000/ff01 Saddr: " + str(MsgSrcAddr) + " Atmospheric Pressure : " + str(ValuePress) , MsgSrcAddr)
