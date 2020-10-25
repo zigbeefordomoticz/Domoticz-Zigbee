@@ -12,7 +12,7 @@
 			"0102": "",
 			"0b05": "",
 			"ff17": "",
-			"Type": "LvlControl/VenetianInverted" 
+			"Type": "LvlControl/Venetian" 
 		},
 		"05": {
 			"0000": "",
@@ -22,7 +22,7 @@
 			"0102": "",
 			"0b05": "",
 			"0019": "",
-			"Type": "VenetianInverted" 
+			"Type": "Venetian" 
 		}
 	},
 	"Type": "",
