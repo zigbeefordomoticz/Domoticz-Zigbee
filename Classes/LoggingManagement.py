@@ -14,6 +14,7 @@
 import Domoticz
 import json
 from datetime import datetime
+import time
 
 class LoggingManagement:
 
@@ -158,7 +159,12 @@ class LoggingManagement:
     def loggingCleaningErrorHistory( self ):
         _now = datetime.now()
         for module in self.LogErrorHistory:
-            _delta = _now -  datetime.strptime(self.LogErrorHistory[module]['0']['time'],"%Y-%m-%d %H:%M:%S.%f")
+            try:  #https://bugs.python.org/issue27400 use fromisoformat when 3.5 support will not be needed
+                _date = datetime.strptime(self.LogErrorHistory[module]['0']['time'],"%Y-%m-%d %H:%M:%S.%f")
+            except Exception as updateError :
+                _date = datetime(*(time.strptime(self.LogErrorHistory[module]['0']['time'],"%Y-%m-%d %H:%M:%S.%f")[0:6]))
+
+            _delta = _now - _date
             if _delta.days > 7:
                 for i in range(0,self.LogErrorHistory[module]['LastLog']):
                     self.LogErrorHistory[module][str(i)] = self.LogErrorHistory[module][str(i+1)].copy()
