@@ -158,7 +158,7 @@ class LoggingManagement:
     def loggingCleaningErrorHistory( self ):
         _now = datetime.now()
         for module in self.LogErrorHistory:
-            delta = now -  datetime.strptime(self.LogErrorHistory[module]['0']['time'],"%Y-%m-%d %H:%M:%S.%f")
+            _delta = _now -  datetime.strptime(self.LogErrorHistory[module]['0']['time'],"%Y-%m-%d %H:%M:%S.%f")
             if _delta.days > 7:
                 for i in range(0,self.LogErrorHistory[module]['LastLog']):
                     self.LogErrorHistory[module][str(i)] = self.LogErrorHistory[module][str(i+1)].copy()
