@@ -67,7 +67,11 @@ def decodeAttribute(self, AttType, Attribute, handleErrors=False):
         return int(Attribute, 16 )
 
     if int(AttType,16) == 0x29:   # 16Bitint   -> tested on Measurement clusters
-        return str(struct.unpack('h',struct.pack('H',int(Attribute,16)))[0])
+        try:
+            return str(struct.unpack('h',struct.pack('H',int(Attribute,16)))[0])
+        except Exception as e :
+            loggingCluster( self, 'Error', "decodeAttribut(%s, %s) Out of Range %s" %(AttType, Attribute, e))
+            return Attribute
 
     if int(AttType,16) == 0x2a:   # ZigBee_24BitInt
         loggingCluster( self, 'Debug', "decodeAttribut(%s, %s) untested, returning %s " %(AttType, Attribute, \
