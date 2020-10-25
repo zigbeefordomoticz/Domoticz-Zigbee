@@ -273,17 +273,6 @@ def CreateDomoDevice(self, Devices, NWKID):
         self.log.logging( "Widget",'Debug', "---> Check if we need to reduce Type: %s" %Type)
         Type = cleanup_widget_Type( Type )
 
-        if ("Switch" in Type) and ("LvlControl" in Type) and ("ColorControl" in Type):
-            # We need to detect what is the ColorControl ( can be RGB, Full, WW)
-            self.log.logging( "Widget", 'Debug', "----> Colortype, let's remove Switch and LvlControl")
-            Type.remove( 'Switch')
-            Type.remove( 'LvlControl')
-        elif ("Switch" in Type) and ("LvlControl" in Type):
-            self.log.logging( "Widget", 'Debug', "----> LvlControl, let's remove Switch and LvlControl")
-            Type = ['LvlControl']
-        if '' in Type:
-            Domoticz.Log('Remove Empty Type')
-            Type.remove( '' )
         self.log.logging("Widget", "Debug", "CreateDomoDevice - Creating devices based on Type: %s" % Type, NWKID)
 
         if 'ClusterType' not in self.ListOfDevices[NWKID]['Ep'][Ep]:
