@@ -536,14 +536,14 @@ def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zig
     # APS RAW is always sent in NO-ACK below 31d (included)
     # APS RAW has ACK/NO-ACK option as of 31e
     self.log.logging( "debuginRawAPS", 'Log', "raw_APS_request - ackIsDisabled: %s Addr: %s Ep: %s Cluster: %s ProfileId: %s Payload: %s" %(ackIsDisabled , targetaddr, dest_ep, cluster, profileId, payload))
-    if self.pluginconf.pluginConf['ieeeForRawAps']:
-        ieee = self.ListOfDevices[ targetaddr]['IEEE']
-        if ackIsDisabled:
-            return send_zigatecmd_raw(self, "0530", '08' + ieee + zigate_ep + dest_ep + cluster + profileId + security + radius + len_payload + payload, ackIsDisabled = ackIsDisabled )
-        return send_zigatecmd_raw(self, "0530", '03' + ieee + zigate_ep + dest_ep + cluster + profileId + security + radius + len_payload + payload, ackIsDisabled = ackIsDisabled )
+    #if self.pluginconf.pluginConf['ieeeForRawAps']:
+    #    ieee = self.ListOfDevices[ targetaddr]['IEEE']
+    #    if ackIsDisabled:
+    #        return send_zigatecmd_raw(self, "0530", '08' + ieee + zigate_ep + dest_ep + cluster + profileId + security + radius + len_payload + payload, ackIsDisabled = ackIsDisabled )
+    #    return send_zigatecmd_raw(self, "0530", '03' + ieee + zigate_ep + dest_ep + cluster + profileId + security + radius + len_payload + payload, ackIsDisabled = ackIsDisabled )
     
-    if ackIsDisabled:
-        return send_zigatecmd_raw(self, "0530", '07' + targetaddr + zigate_ep + dest_ep + cluster + profileId + security + radius + len_payload + payload, ackIsDisabled = ackIsDisabled)
+    #if ackIsDisabled:
+    #    return send_zigatecmd_raw(self, "0530", '07' + targetaddr + zigate_ep + dest_ep + cluster + profileId + security + radius + len_payload + payload, ackIsDisabled = ackIsDisabled)
     return send_zigatecmd_raw(self, "0530", '02' + targetaddr + zigate_ep + dest_ep + cluster + profileId + security + radius + len_payload + payload, ackIsDisabled = ackIsDisabled)
 
 
