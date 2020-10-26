@@ -64,11 +64,12 @@ class WebServer(object):
     from WebServer.rest_Provisioning import rest_new_hrdwr, rest_rcv_nw_hrdwr
     from WebServer.rest_Topology import rest_netTopologie, rest_req_topologie
     from WebServer.sendresponse import sendResponse
-    from WebServer.tools import keepConnectionAlive, DumpHTTPResponseToLog          
+    from WebServer.tools import keepConnectionAlive, DumpHTTPResponseToLog    
+    from WebServer.rest_Ota import rest_ota_firmware_update      
 
     hearbeats = 0 
 
-    def __init__( self, networkenergy, networkmap, ZigateData, PluginParameters, PluginConf, Statistics, adminWidgets, ZigateComm, HomeDirectory, hardwareID, DevicesInPairingMode, groupManagement, Devices, ListOfDevices, IEEE2NWK , permitTojoin, WebUserName, WebPassword, PluginHealth, httpPort, log):
+    def __init__( self, networkenergy, networkmap, ZigateData, PluginParameters, PluginConf, Statistics, adminWidgets, ZigateComm, HomeDirectory, hardwareID, DevicesInPairingMode, groupManagement, OTA, Devices, ListOfDevices, IEEE2NWK , permitTojoin, WebUserName, WebPassword, PluginHealth, httpPort, log):
 
         self.httpServerConn = None
         self.httpClientConn = None
@@ -96,6 +97,7 @@ class WebServer(object):
         self.permitTojoin = permitTojoin
 
         self.groupmgt = groupManagement if groupManagement else None
+        self.OTA = OTA if OTA else None
         self.ListOfDevices = ListOfDevices
         self.DevicesInPairingMode = DevicesInPairingMode
         self.fakeDevicesInPairingMode = 0

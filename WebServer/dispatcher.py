@@ -54,6 +54,7 @@ def do_rest( self, Connection, verb, data, version, command, parameters):
         'zigate-mode':   {'Name':'zigate-mode',        'Verbs':{'GET'},          'function': self.rest_zigate_mode},
         'rescan-groups': {'Name':'rescan-groups',      'Verbs':{'GET'},          'function':self.rest_rescan_group},
         'scan-device-for-grp': {'Name':'ScanDevscan-device-for-grpiceForGrp',  'Verbs':{'PUT'}, 'function':self.rest_scan_devices_for_group},
+        'ota-firmware-update': {'Name':'update',       'Verbs':{'PUT'}, 'function':self.rest_ota_firmware_update},
         }
 
     self.logging( 'Debug', "do_rest - Verb: %s, Command: %s, Param: %s" %(verb, command, parameters))
