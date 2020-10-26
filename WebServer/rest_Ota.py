@@ -11,6 +11,48 @@ from Modules.bindings import webBind, webUnBind
 from WebServer.headerResponse import setupHeadersResponse, prepResponseMessage
 from time import time
 
+def rest_ota_firmware_list( self, verb, data, parameters):
+
+    _response = prepResponseMessage( self ,setupHeadersResponse(  ))
+    _response["Data"] = None
+
+    if self.OTA and verb == 'GET' and len(parameters) == 0:
+        _response['Data'] = json.dumps( self.OTA.restapi_list_of_firmware( ) , sort_keys=True)
+
+    return _response    
+
+def rest_ota_devices_for_manufcode( self, verb, data, parameters):
+
+    _response = prepResponseMessage( self ,setupHeadersResponse(  ))
+    _response["Data"] = None
+
+    if self.OTA and verb == 'GET' and len(parameters) == 1:
+        manuf_code = parameters[0]
+        device_list = []
+        _response["Data"] = []
+        for x in self.ListOfDevices:
+            if 'Manufacturer' in self.ListOfDevices[x] and self.ListOfDevices[x]['Manufacturer'] == manuf_code:
+                Domoticz.Log("Found device: %s" %x)
+                ep = '01'
+                for y in self.ListOfDevices[x]['Ep']:
+                    if '0019' in self.ListOfDevices[x]['Ep'][ y ]:
+                        ep = y
+                        break
+                device_name = swbuild_3 = swbuild_1 = ''
+                if 'ZDeviceName' in self.ListOfDevices[x] and self.ListOfDevices[x]['ZDeviceName'] != {}:
+                    device_name = self.ListOfDevices[x]['ZDeviceName']
+                if 'SWBUILD_3' in self.ListOfDevices[x] and self.ListOfDevices[x]['SWBUILD_3'] != {}:
+                    swbuild_3 = self.ListOfDevices[x]['SWBUILD_3']
+                if 'SWBUILD_1' in self.ListOfDevices[x] and self.ListOfDevices[x]['SWBUILD_1'] != {}:
+                    swbuild_1 = self.ListOfDevices[x]['SWBUILD_1']
+
+                device = {'Nwkid': x, 'Ep': ep, 'DeviceName': device_name, 'SWBUILD_1': swbuild_3,'SWBUILD_3':swbuild_1}
+                device_list.append( device )
+        _response["Data"] = json.dumps(  device_list , sort_keys=True )
+
+    return _response                
+
+
 def rest_ota_firmware_update( self, verb, data, parameter):
 
     # wget --method=PUT --body-data='{
@@ -21,8 +63,9 @@ def rest_ota_firmware_update( self, verb, data, parameter):
     # }' http://127.0.0.1:9440/rest-zigate/1/ota-firmware-update
     _response = prepResponseMessage( self ,setupHeadersResponse(  ))
     _response["Data"] = None
-    if self.groupmgt is None:
-        # Group is not enabled!
+
+    if self.OTA is None:
+        # OTA is not enabled!
         return _response
 
     if verb != 'PUT':

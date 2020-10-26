@@ -65,7 +65,7 @@ class WebServer(object):
     from WebServer.rest_Topology import rest_netTopologie, rest_req_topologie
     from WebServer.sendresponse import sendResponse
     from WebServer.tools import keepConnectionAlive, DumpHTTPResponseToLog    
-    from WebServer.rest_Ota import rest_ota_firmware_update      
+    from WebServer.rest_Ota import rest_ota_firmware_update, rest_ota_firmware_list, rest_ota_devices_for_manufcode
 
     hearbeats = 0 
 

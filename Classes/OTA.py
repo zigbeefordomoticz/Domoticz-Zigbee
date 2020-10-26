@@ -250,7 +250,7 @@ class OTAManagement(object):
                     'StackBuild':         '%02x' % ((self.ListOfImages['Brands'][x][y]['intImageVersion'] & 0x000000ff)),
                 }
                 brand[x].append( image )
-            available_firmware.append( brand )
+        available_firmware.append( brand )
         return available_firmware
 
 
@@ -331,7 +331,6 @@ def ota_load_image_to_zigate( self, image_type): # OK 13/10
 
 
 def ota_send_block( self , dest_addr, dest_ep, image_type, block_request): # OK 24/10
-
     # 'BLOCK_SEND 	0x0502 	This is used to transfer firmware BLOCKS to device when it sends request 0x8501.'
 
     logging( self,  'Debug2', "ota_send_block - Addr: %s/%s Type: 0x%X" %(dest_addr, dest_ep, image_type))
@@ -375,7 +374,7 @@ def ota_send_block( self , dest_addr, dest_ep, image_type, block_request): # OK 
     self.ZigateComm.sendData( "0502", datas)
 
 
-def ota_image_advertize(self, dest_addr, dest_ep, image_version = 0xA5080004, image_type = 0xFFFF, manufacturer_code = 0xFFFF, Flag_=False ):
+def ota_image_advertize(self, dest_addr, dest_ep, image_version = 0xA5080004, image_type = 0xFFFF, manufacturer_code = 0xFFFF, Flag_=False ): # OK 24/10
     # 'IMAGE_NOTIFY 	0x0505 	Notify desired device that ota is available. After loading headers use this.'
 
     # """
@@ -414,19 +413,17 @@ def ota_image_advertize(self, dest_addr, dest_ep, image_version = 0xA5080004, im
     self.ZigateComm.sendData( "0505", datas)
 
 
-def ota_upgrade_end_response( self, dest_addr, dest_ep, intMsgImageVersion, image_type, intMsgManufCode ):
-    #"""
-    #This function issues an Upgrade End Response to a client to which the server has been
-    #downloading an application image. The function is called after receiving an Upgrade 
-    #End Request from the client, indicating that the client has received the entire 
-    #application image and verified it
-    #"""
-    #'UPGRADE_END_RESPONSE 	0x0504'
-
+def ota_upgrade_end_response( self, dest_addr, dest_ep, intMsgImageVersion, image_type, intMsgManufCode ): # OK 24/10 with Firmware Ok
+    # This function issues an Upgrade End Response to a client to which the server has been
+    # downloading an application image. The function is called after receiving an Upgrade 
+    # End Request from the client, indicating that the client has received the entire 
+    # application image and verified it
+    # 
+    # UPGRADE_END_RESPONSE 	0x0504
     # u32UpgradeTime is the UTC time, in seconds, at which the client should upgrade the running image with the downloaded image
-    _UpgradeTime = 0x00 
-
+    
     # u32CurrentTime is the current UTC time, in seconds, on the server.
+    _UpgradeTime = 0x00 
     EPOCTime = datetime(2000,1,1)
     UTCTime = int((datetime.now() - EPOCTime).total_seconds())
 
@@ -434,19 +431,19 @@ def ota_upgrade_end_response( self, dest_addr, dest_ep, intMsgImageVersion, imag
     _ImageType = image_type
     _ManufacturerCode = intMsgManufCode
 
-    datas = "%02x" %ADDRESS_MODE['short'] + dest_addr + ZIGATE_EP + dest_ep 
-    datas += "%08x" %_UpgradeTime
-    datas += "%08x" %0x00
-    datas += "%08x" %_FileVersion
-    datas += "%04x" %_ImageType
-    datas += "%04x" %_ManufacturerCode
-
-    logging( self,  'Log', "ota_management - sending Upgrade End Response, for %s Version: 0x%08X Type: 0x%04x, Manuf: 0x%04X" %( dest_addr, _FileVersion, _ImageType, _ManufacturerCode))
-
+    datas = "%02x"  % ADDRESS_MODE['short'] + dest_addr + ZIGATE_EP + dest_ep 
+    datas += "%08x" % _UpgradeTime
+    datas += "%08x" % 0x00
+    datas += "%08x" % _FileVersion
+    datas += "%04x" % _ImageType
+    datas += "%04x" % _ManufacturerCode
     self.ZigateComm.sendData( "0504", datas)
+
+    logging( self,  'Log', "ota_management - sending Upgrade End Response, for %s Version: 0x%08X Type: 0x%04x, Manuf: 0x%04X" % ( dest_addr, _FileVersion, _ImageType, _ManufacturerCode))
 
     if 'OTA' not in self.ListOfDevices[ dest_addr ]:
         self.ListOfDevices[ dest_addr ]['OTA'] = {}
+
     if not isinstance(  self.ListOfDevices[ dest_addr ]['OTA'], dict):
         del  self.ListOfDevices[ dest_addr ]['OTA']
         self.ListOfDevices[ dest_addr ]['OTA'] = {}
@@ -747,11 +744,12 @@ def ota_management( self, MsgSrcAddr, MsgEP ):
     self.ZigateComm.sendData( "0506", datas)
 
 
-def notify_upgrade_end( self, Status, MsgSrcAddr, MsgEP, image_type, intMsgManufCode, intMsgImageVersion, ):
+def notify_upgrade_end( self, Status, MsgSrcAddr, MsgEP, image_type, intMsgManufCode, intMsgImageVersion, ): # OK 26/10
 
     _transferTime_hh, _transferTime_mm, _transferTime_ss = convertTime( int(time() - self.ListInUpdate['StartTime']))
     _ieee = self.ListOfDevices[MsgSrcAddr]['IEEE']
     _name = None
+    _textmsg = ''
     for x in self.Devices:
         if self.Devices[x].DeviceID == _ieee:
             _name = self.Devices[x].Name
@@ -765,25 +763,25 @@ def notify_upgrade_end( self, Status, MsgSrcAddr, MsgEP, image_type, intMsgManuf
 
     elif Status == 'Aborted':
         _textmsg = 'Firmware update aborted error code %s for Device %s in %s hour %s min %s sec' \
-            %(MsgStatus, _name, _transferTime_hh, _transferTime_mm, _transferTime_ss)
+            %(Status, _name, _transferTime_hh, _transferTime_mm, _transferTime_ss)
 
         if ( 'Firmware Update' in self.PluginHealth and len(self.PluginHealth['Firmware Update']) > 0 ):
             self.PluginHealth['Firmware Update']['Progress'] = 'Aborted'
     elif Status == 'Failed':
         _textmsg = 'Firmware update aborted error code %s for Device %s in %s hour %s min %s sec' \
-            %(MsgStatus, _name, _transferTime_hh, _transferTime_mm, _transferTime_ss)
+            %(Status, _name, _transferTime_hh, _transferTime_mm, _transferTime_ss)
         if ( 'Firmware Update' in self.PluginHealth and len(self.PluginHealth['Firmware Update']) > 0 ):
             self.PluginHealth['Firmware Update']['Progress'] = 'Failed'
     elif Status == 'More':
         _textmsg = 'Device: %s has been updated to latest firmware in %s hour %s min %s sec, but additional Image needed' \
-            %(MsgStatus, _name, _transferTime_hh, _transferTime_mm, _transferTime_ss)
+            %(Status, _name, _transferTime_hh, _transferTime_mm, _transferTime_ss)
         if ( 'Firmware Update' in self.PluginHealth and len(self.PluginHealth['Firmware Update']) > 0 ):
             self.PluginHealth['Firmware Update']['Progress'] = 'More'
 
     self.adminWidgets.updateNotificationWidget( self.Devices, _textmsg)
 
 
-def convertTime( _timeInSec):
+def convertTime( _timeInSec): # Ok 13/10
 
     _timeInSec_hh = _timeInSec // 3600
     _timeInSec = _timeInSec - ( _timeInSec_hh * 3600)
@@ -837,9 +835,9 @@ def _logging_headers( self, headers ): # OK 13/10
 def display_percentage_progress( self, MsgSrcAddr, MsgEP, intMsgImageType, MsgFileOffset  ):
 
     _size = self.ListInUpdate['intSize']
-    _completion = round( ((int(MsgFileOffset,16) / _size ) * 100), 2 )
+    _completion = round( ( (int(MsgFileOffset,16) / _size ) * 100), 1 )
 
-    if (_completion % 5) == 0:
+    if ( _completion % 5) == 0:
         logging( self,  'Log', "Firmware transfert for %s/%s - Progress: %4s %%" %(MsgSrcAddr, MsgEP, _completion))
         if 'Firmware Update' not in self.PluginHealth:
             self.PluginHealth['Firmware Update'] = {}
