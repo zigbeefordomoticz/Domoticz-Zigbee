@@ -73,7 +73,6 @@ class OTAManagement(object):
         self.log = log
         self.PluginHealth = PluginHealth
 
-
         self.batteryTypeFirmware = []
 
         self.ListOfImages = {}
@@ -714,8 +713,14 @@ def async_request(  # OK 24/10
     # If yes, then load the firmware on ZiGate
 
     logging( self,  'Debug', "async_request: There is async request comming %s" %(MsgSrcAddr))
+        
+    if self.ListInUpdate['NwkId'] is None:
+        # We need to prevent looping on serving if it is not expected!
+        logging( self,  'Error', "async_request: There is no upgrade plan for that device, drop request from %s" %(MsgSrcAddr))
+        return False
+
     if self.ListInUpdate['NwkId']:
-        logging( self,  'Debug', "async_request: There is an upgrade in progress, drop request from %s" %(MsgSrcAddr))
+        logging( self,  'Debug', "async_request: There is an upgrade in progress %s, drop request from %s" %(self.ListInUpdate['NwkId'], MsgSrcAddr))
         return False
 
     if image_type not in self.ListOfImages['ImageType']:
