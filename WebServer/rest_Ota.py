@@ -11,10 +11,17 @@ from Modules.bindings import webBind, webUnBind
 from WebServer.headerResponse import setupHeadersResponse, prepResponseMessage
 from time import time
 
-MATRIX_MANUFACTURER_NAME = { 
-    '105e': 'Schneider Electric',
+MATRIX_MANUFACTURER_NAME = {
     '117c': 'IKEA of Sweden',
+    '1189': 'LEDVANCE',
+    'bbaa': 'OSRAM',
+    '110C': 'OSRAM',
+    '1021': 'Legrand',
+    '100b': 'Philips',
+    '105e': 'Schneider Electric',
+    '1078': 'Computime',
 }
+
 
 def rest_ota_firmware_list( self, verb, data, parameters):
 
