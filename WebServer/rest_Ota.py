@@ -11,19 +11,25 @@ from Modules.bindings import webBind, webUnBind
 from WebServer.headerResponse import setupHeadersResponse, prepResponseMessage
 from time import time
 
+MATRIX_MANUFACTURER_NAME = { 
+    '105e': 'Schneider Electric',
+    '117c': 'IKEA of Sweden',
+}
+
 def rest_ota_firmware_list( self, verb, data, parameters):
 
     _response = prepResponseMessage( self ,setupHeadersResponse(  ))
     _response["Data"] = None
 
-
     if self.OTA and verb == 'GET' and len(parameters) == 0:
-        if self.zigatedata:
-            _response['Data'] = json.dumps( self.OTA.restapi_list_of_firmware( ) , sort_keys=True)
-        else:
+        if  len(self.zigatedata) == 0:
             _response['Data'] = fake_rest_ota_firmware_list()
+            return _response  
+            
+        _response['Data'] = json.dumps( self.OTA.restapi_list_of_firmware( ) , sort_keys=True)
                 
-    return _response    
+    return _response      
+
 
 def fake_rest_ota_firmware_list():
 
@@ -85,38 +91,57 @@ def rest_ota_devices_for_manufcode( self, verb, data, parameters):
     _response = prepResponseMessage( self ,setupHeadersResponse(  ))
     _response["Data"] = None
 
-    if self.OTA and verb == 'GET' and len(parameters) == 1:
-        manuf_code = parameters[0]
-        device_list = []
-        _response["Data"] = []
-        if self.zigatedata:
-            for x in self.ListOfDevices:
-                if 'Manufacturer' in self.ListOfDevices[x] and self.ListOfDevices[x]['Manufacturer'] == manuf_code:
-                    Domoticz.Log("Found device: %s" %x)
-                    ep = '01'
-                    for y in self.ListOfDevices[x]['Ep']:
-                        if '0019' in self.ListOfDevices[x]['Ep'][ y ]:
-                            ep = y
-                            break
-                    device_name = swbuild_3 = swbuild_1 = ''
-                    if 'ZDeviceName' in self.ListOfDevices[x] and self.ListOfDevices[x]['ZDeviceName'] != {}:
-                        device_name = self.ListOfDevices[x]['ZDeviceName']
-                    if 'SWBUILD_3' in self.ListOfDevices[x] and self.ListOfDevices[x]['SWBUILD_3'] != {}:
-                        swbuild_3 = self.ListOfDevices[x]['SWBUILD_3']
-                    if 'SWBUILD_1' in self.ListOfDevices[x] and self.ListOfDevices[x]['SWBUILD_1'] != {}:
-                        swbuild_1 = self.ListOfDevices[x]['SWBUILD_1']
+    if self.OTA is None or verb != 'GET' or len(parameters) != 1:
+      return _response 
 
-                    device = {'Nwkid': x, 'Ep': ep, 'DeviceName': device_name, 'SWBUILD_1': swbuild_3,'SWBUILD_3':swbuild_1}
-                    device_list.append( device )
-            _response["Data"] = json.dumps(  device_list , sort_keys=True )
-        else:
-            _response["Data"] = fake_rest_ota_devices_for_manufcode()
+    if  len(self.zigatedata) == 0:
+        _response["Data"] = fake_rest_ota_devices_for_manufcode()
+        return _response
 
+    manuf_code = parameters[0]
+    device_list = []
+    for x in self.ListOfDevices:
+        if 'Manufacturer' not in self.ListOfDevices[x] and 'Manufacturer Name' not in self.ListOfDevices[x]:
+            continue
+        
+        compatible = False
+        if manuf_code in MATRIX_MANUFACTURER_NAME and 'Manufacturer Name' in self.ListOfDevices[x] and MATRIX_MANUFACTURER_NAME[manuf_code] == self.ListOfDevices[x]['Manufacturer Name']:
+            compatible = True
+            
+        if not compatible and self.ListOfDevices[x]['Manufacturer'] != manuf_code:
+            continue
+        
+        Domoticz.Log("Found device: %s" %x)
+        ep = '01'
+        for y in self.ListOfDevices[x]['Ep']:
+            if '0019' in self.ListOfDevices[x]['Ep'][ y ]:
+                ep = y
+                break
+
+        device_name = swbuild_3 = swbuild_1 = ''
+        if 'ZDeviceName' in self.ListOfDevices[x] and self.ListOfDevices[x]['ZDeviceName'] != {}:
+            device_name = self.ListOfDevices[x]['ZDeviceName']
+
+        if 'SWBUILD_3' in self.ListOfDevices[x] and self.ListOfDevices[x]['SWBUILD_3'] != {}:
+            swbuild_3 = self.ListOfDevices[x]['SWBUILD_3']
+
+        if 'SWBUILD_1' in self.ListOfDevices[x] and self.ListOfDevices[x]['SWBUILD_1'] != {}:
+            swbuild_1 = self.ListOfDevices[x]['SWBUILD_1']
+
+        device = {'Nwkid': x, 'Ep': ep, 'DeviceName': device_name, 'SWBUILD_1': swbuild_3,'SWBUILD_3':swbuild_1}
+        device_list.append( device )
+    _response["Data"] = json.dumps(  device_list , sort_keys=True )
     return _response                
+
 
 def fake_rest_ota_devices_for_manufcode():
     return json.dumps( 
-        [{"DeviceName": "", "Ep": "01", "Nwkid": "6d8c", "SWBUILD_1": "2.3.050", "SWBUILD_3": ""}],
+        [{"DeviceName": "Chambre", "Ep": "01", "Nwkid": "6d8c", "SWBUILD_1": "20151006091c090", "SWBUILD_3": ""},
+         {"DeviceName": "Bureau", "Ep": "0b", "Nwkid": "fd8e", "SWBUILD_1": "", "SWBUILD_3": "2.2.005"},
+         {"DeviceName": "Placard", "Ep": "07", "Nwkid": "6e87", "SWBUILD_1": "09-30-2018", "SWBUILD_3": ""},
+         {"DeviceName": "Tracteur", "Ep": "01", "Nwkid": "775e", "SWBUILD_1": "2.3.050", "SWBUILD_3": "1.2.214"},
+         {"DeviceName": "Patatte", "Ep": "06", "Nwkid": "45ef", "SWBUILD_1": "20160331", "SWBUILD_3": "","OTALastTime" : "2020-06-08 10:02:54","OTAVersion" : "02015120","OTAType" : "0027"},
+         {"DeviceName": "Boum", "Ep": "01", "Nwkid": "2812", "SWBUILD_1": "SNP.R.04.01.14", "SWBUILD_3": ""}],
         sort_keys=True )
 
 
