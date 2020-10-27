@@ -55,8 +55,6 @@ OTA_CODES = {
     'Salus':     { 'Folder': 'SALUS',           'ManufCode': 0x1078, 'ManufName': 'Computime',          'Enabled': True},
 }
 
-BATTERY_TYPES = ( 4545, 4546, 4548, 4549 )
-
 
 class OTAManagement(object):
 
@@ -73,14 +71,14 @@ class OTAManagement(object):
         self.log = log
         self.PluginHealth = PluginHealth
 
-        self.batteryTypeFirmware = []
 
-        self.ListOfImages = {}
-        self.ImagesNotified = {}
-        self.ListInUpdate = {
+        self.ListOfImages = {}      # List of available firmware loaded at plugin startup
+        self.ImagesNotified = {}    # Indicates information of the current Firmware/Image loaded on ZiGate
+        self.ListInUpdate = {       # Tracking requested update information
             'intImageType': None,
             'NwkId': None,
             'intManufacturerCode': None,
+            'AuthorizedForUpdate': []
         }
 
         self.once = True
@@ -110,7 +108,7 @@ class OTAManagement(object):
         if self.ListInUpdate['NwkId'] is None:
             logging( self,  'Debug', "ota_request_firmware - Async request from device: %s." %(MsgSrcAddr))
             if not async_request( self, MsgSrcAddr, MsgEP, MsgIEEE, MsgFileOffset, intMsgImageVersion, intMsgImageType, intMsgManufCode, MsgBlockRequestDelay, MsgMaxDataSize, intMsgFieldControl):
-                logging( self,  'Error', "ota_request_firmware %s/%s - Async request failed %s " %(MsgSrcAddr, MsgEP, self.ListInUpdate))
+                logging( self,  'Debug', "ota_request_firmware %s/%s - Async request failed %s " %(MsgSrcAddr, MsgEP, self.ListInUpdate))
                 return
 
         # Get all block information, and patch if needed ( Legrand )
@@ -133,7 +131,7 @@ class OTAManagement(object):
             %(int(MsgSQN,16), MsgSrcAddr, MsgEP, int(MsgFileOffset,16), intMsgImageVersion, intMsgImageType, intMsgManufCode, int(MsgBlockRequestDelay,16), int(MsgMaxDataSize,16), intMsgFieldControl))
 
         if self.ListInUpdate['NwkId'] is None:
-            start_upgrade_infos( self, MsgSrcAddr, intMsgImageType, intMsgManufCode, MsgFileOffset)
+            start_upgrade_infos( self, MsgSrcAddr, intMsgImageType, intMsgManufCode, MsgFileOffset, MsgMaxDataSize)
 
         display_percentage_progress( self, MsgSrcAddr, MsgEP, intMsgImageType, MsgFileOffset )
 
@@ -162,7 +160,7 @@ class OTAManagement(object):
         #define OTA_MALFORMED_COMMAND                     (uint8)0x80
         #define OTA_UNSUP_CLUSTER_COMMAND                 (uint8)0x81
         #define OTA_REQUIRE_MORE_IMAGE                    (uint8)0x99
-        logging( self,  'Debug', "Decode8503 - Request Firmware Block %s/%s" %(MsgData, len(MsgData)))
+        logging( self,  'Debug2', "Decode8503 - Request Firmware Completed %s/%s" %(MsgData, len(MsgData)))
         MsgSQN             = MsgData[0:2]
         MsgEP              = MsgData[2:4]
         MsgClusterId       = MsgData[4:8]
@@ -173,14 +171,14 @@ class OTAManagement(object):
         intMsgManufCode    = int(MsgData[26:30],16)
         MsgStatus          = MsgData[30:32]
 
-        if self.ListInUpdate['NwkId'] is None:
-            logging( self,  'Debug', "ota_request_firmware_completed - Receive Firmware Completed from %s most likely a duplicated packet as there is nothing in Progress. " %(MsgSrcAddr))
-            return
-
-        logging( self, 'Status', "ota_request_firmware_completed - OTA upgrade completed - %s/%s %s Version: 0x%08x Type: 0x%04x Code: 0x%04x Status: %s"
+        logging( self, 'Debug', "OTA upgrade completed - %s/%s %s Version: 0x%08x Type: 0x%04x Code: 0x%04x Status: %s"
             %(MsgSrcAddr, MsgEP, MsgClusterId, intMsgImageVersion, image_type, intMsgManufCode, MsgStatus))
 
-        if MsgSrcAddr != self.ListInUpdate['NwkId']:
+        if self.ListInUpdate['NwkId'] is None:
+            logging( self,  'Log', "ota_request_firmware_completed - Receive Firmware Completed from %s most likely a duplicated packet as there is nothing in Progress. " %(MsgSrcAddr))
+            return
+        
+        if self.ListInUpdate['NwkId'] and MsgSrcAddr != self.ListInUpdate['NwkId']:
             logging( self, 'Error', "ota_request_firmware_completed - OTA upgrade completed - %s not in Upgraded devices" %MsgSrcAddr)
             return
 
@@ -189,7 +187,8 @@ class OTAManagement(object):
             return
 
         if MsgStatus == '00': # OTA_STATUS_SUCCESS
-            logging( self,  'Status', "ota_request_firmware_completed - OTA Firmware upload completed with success")
+            logging( self, 'Status', "OTA upgrade completed with success - %s/%s %s Version: 0x%08x Type: 0x%04x Code: 0x%04x Status: %s"
+                %(MsgSrcAddr, MsgEP, MsgClusterId, intMsgImageVersion, image_type, intMsgManufCode, MsgStatus))
             ota_upgrade_end_response( self, MsgSrcAddr, MsgEP,intMsgImageVersion, image_type, intMsgManufCode )
             notify_upgrade_end( self, 'OK', MsgSrcAddr, MsgEP, image_type, intMsgManufCode, intMsgImageVersion )
 
@@ -211,7 +210,13 @@ class OTAManagement(object):
             logging( self,  'Error',"ota_request_firmware_completed - OTA Firmware unexpected error %s" %MsgStatus)
             notify_upgrade_end( self, 'Aborted', MsgSrcAddr, MsgEP, image_type, intMsgManufCode, intMsgImageVersion )
 
-        self.ListInUpdate['Nwkid'] = None
+        cleanup_after_completed_upgrade( self, MsgSrcAddr, MsgStatus)
+
+
+
+
+
+
 
 
     def heartbeat( self ):
@@ -219,7 +224,16 @@ class OTAManagement(object):
         if self.ListInUpdate['NwkId'] is None:
             return
 
-        if self.ListInUpdate['LastBlockSent'] != 0 and self.ListInUpdate['TimeStamps'] + 60 < time():
+        if ( len(self.ListInUpdate['AuthorizedForUpdate']) > 0 and self.ListInUpdate['TimeStamps'] + 15 < time() ):
+            Domoticz.Log("RETRY %s" %self.ListInUpdate['NwkId'])
+            ota_image_advertize(self, 
+                    self.ListInUpdate['NwkId'], 
+                    self.ListInUpdate['Ep'], 
+                    self.ListInUpdate['intImageVersion'] , 
+                    self.ListInUpdate['intImageType'] , 
+                    self.ListInUpdate['intManufCode'] )
+
+        if self.ListInUpdate['TimeStamps'] + 300 < time():
             Domoticz.Log("TIMEOUT %s" %self.ListInUpdate['NwkId'])
             self.ListInUpdate['NwkId'] = None
 
@@ -472,6 +486,14 @@ def ota_management( self, MsgSrcAddr, MsgEP , delay = 500):
 
 ################
 # Local routines
+def cleanup_after_completed_upgrade( self, NwkId, Status):
+        # Cleanup
+        logging( self,  'Debug',"cleanup_after_completed_upgrade - Cleanup and house keeping %s %s" %( NwkId, Status))
+        self.ListInUpdate['NwkId'] = None
+        if NwkId in self.ListInUpdate['AuthorizedForUpdate'] and Status == '00':
+            self.ListInUpdate['AuthorizedForUpdate'].remove( NwkId )
+        logging( self,  'Debug',"cleanup_after_completed_upgrade - After cleanup self.ListInUpdate['Nwkid']: %s self.ListInUpdate['AuthorizedForUpdate']: %s" 
+            %( self.ListInUpdate['NwkId'], self.ListInUpdate['AuthorizedForUpdate']))
 
 def firmware_update( self, brand, file_name, target_nwkid, target_ep , force_update=False):
     
@@ -500,6 +522,8 @@ def firmware_update( self, brand, file_name, target_nwkid, target_ep , force_upd
     manuf_code = self.ListOfImages['Brands'][brand][file_name]['intManufCode']
     image_version = self.ListOfImages['Brands'][brand][file_name]['intImageVersion']
 
+
+    self.ListInUpdate['AuthorizedForUpdate'].append ( target_nwkid )
     # Do we have to overwrite the Image Version in order to force update
     if force_update:
         initial_version = image_version
@@ -714,7 +738,7 @@ def async_request(  # OK 24/10
 
     logging( self,  'Debug', "async_request: There is async request comming %s" %(MsgSrcAddr))
         
-    if self.ListInUpdate['NwkId'] is None:
+    if MsgSrcAddr not in self.ListInUpdate['AuthorizedForUpdate']:
         # We need to prevent looping on serving if it is not expected!
         logging( self,  'Error', "async_request: There is no upgrade plan for that device, drop request from %s" %(MsgSrcAddr))
         return False
@@ -853,7 +877,7 @@ def display_percentage_progress( self, MsgSrcAddr, MsgEP, intMsgImageType, MsgFi
     self.PluginHealth['Firmware Update']['Device'] = MsgSrcAddr
 
 
-def start_upgrade_infos( self, MsgSrcAddr, intMsgImageType, intMsgManufCode, MsgFileOffset): # OK 24/10/2020
+def start_upgrade_infos( self, MsgSrcAddr, intMsgImageType, intMsgManufCode, MsgFileOffset, MsgMaxDataSize): # OK 24/10/2020
 
     entry = retreive_image( self, intMsgImageType )
     if entry is None:
@@ -886,12 +910,15 @@ def start_upgrade_infos( self, MsgSrcAddr, intMsgImageType, intMsgManufCode, Msg
     self.PluginHealth['Firmware Update']['Progress'] = '0%'
     self.PluginHealth['Firmware Update']['Device'] = MsgSrcAddr
 
-        #    _ieee = self.ListOfDevices[MsgSrcAddr]['IEEE']
-        #    _name = None
-                #            _name = self.Devices[x].Name
-        #    for x in self.Devices:
-        #        if self.Devices[x].DeviceID == _ieee:
-            #    _durhh, _durmm, _durss = convertTime( self.OTA['Images'][intMsgImageType]['Decoded Header']['size'] // int(MsgMaxDataSize,16) )
-        #    _textmsg = 'Firmware update started for Device: %s with %s - Estimated Time: %s H %s min %s sec ' \
-        #        %(_name, self.OTA['Images'][intMsgImageType]['Filename'], _durhh, _durmm, _durss)
-        #    self.adminWidgets.updateNotificationWidget( self.Devices, _textmsg)
+    _ieee = self.ListOfDevices[MsgSrcAddr]['IEEE']
+    _name = None
+    
+    for x in self.Devices:
+        if self.Devices[x].DeviceID == _ieee:
+            _name = self.Devices[x].Name
+            break
+
+    _durhh, _durmm, _durss = convertTime( self.ListInUpdate['intSize'] // int(MsgMaxDataSize,16) )
+    _textmsg = 'Firmware update started for Device: %s with %s - Estimated Time: %s H %s min %s sec ' \
+        %(_name, self.ListInUpdate['FileName'], _durhh, _durmm, _durss)
+    self.adminWidgets.updateNotificationWidget( self.Devices, _textmsg)
