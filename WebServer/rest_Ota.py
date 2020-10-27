@@ -173,25 +173,22 @@ def rest_ota_firmware_update( self, verb, data, parameter):
     # We receive a JSON with a list of NwkId to be scaned
     data = data.decode('utf8')
 
-    self.logging( 'Log', "rest_ota_firmware_update - Data received  %s " %(data))
+    self.logging( 'Debug', "rest_ota_firmware_update - Data received  %s " %(data))
 
     data = json.loads(data)
     self.logging( 'Debug', "rest_ota_firmware_update - Trigger OTA upgrade  %s " %(data))
 
-    if 'Brand' not in data or 'FileName' not in data or 'NwkId' not in data or 'Ep' not in data:
-        self.logging( 'Error', "rest_ota_firmware_update - Missing key parameters  %s " %(data))
-        _response["Data"] = json.dumps( {'Error': 'Missing attributes'} , sort_keys=True )
-        return _response
+    # Check
+    for x in data:
+        if 'Brand' not in x or 'FileName' not in x or 'NwkId' not in x or 'Ep' not in x or 'ForceUpdate' not in x:
+            self.logging( 'Error', "rest_ota_firmware_update - Missing key parameters  %s " %(data))
+            _response["Data"] = json.dumps( {'Error': 'Missing attributes'} , sort_keys=True )
+            return _response
 
-    brand = data['Brand']
-    file_name = data['FileName']
-    target_nwkid = data['NwkId']
-    target_ep = data['Ep']
-
-    self.logging( 'Log', "rest_ota_firmware_update - Brand: %s FileName: %s Target %s/%s " %(brand, file_name, target_nwkid, target_ep))
+    self.logging( 'Debug', "rest_ota_firmware_update - data: %s" %(data))
 
     if self.OTA:
-        self.OTA.restapi_firmware_update( brand, file_name, target_nwkid, target_ep)
+        self.OTA.restapi_firmware_update( data )
 
     action = {'Name': 'OTA requested.', 'TimeStamp': int(time())}
     _response["Data"] = json.dumps( action , sort_keys=True )

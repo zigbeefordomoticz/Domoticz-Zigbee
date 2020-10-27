@@ -220,16 +220,7 @@ class OTAManagement(object):
 
 
     def heartbeat( self ):
-        if len(self.ListOfImages) == 0:
-            return
-
-        Domoticz.Log("ota hearbeat)")
-        if self.once:
-            Domoticz.Log("List of available firmware: %s" %str(self.restapi_list_of_firmware() ))       
-            self.once = False
-
-        #if self.ListInUpdate['NwkId'] is None:
-        #    self.restapi_firmware_update(  'Schneider', 'EH_ZB_SNP_R_04_01_14_VACT.zigbee', '2866', '0b')
+        return
 
 
     def restapi_list_of_firmware( self ): # OK 26/10
@@ -254,36 +245,18 @@ class OTAManagement(object):
         return available_firmware
 
 
-    def restapi_firmware_update( self, brand, file_name, target_nwkid, target_ep, force_version=None): # OK 26/10
+    def restapi_firmware_update( self, data): # 
 
-        if self.ListInUpdate['NwkId']:
-            logging( self,  'Error', "There is already an Image loaded %s for device: %s %s please come back later" 
-                %(self.ListInUpdate['OtaImage'], self.ListInUpdate['NwkId']))
-            return False
-
-        if brand not in self.ListOfImages['Brands']:
-            Domoticz.Error("restapi_firmware_update Brands %s unknown" %brand)
-            return False
-
-        if file_name not in self.ListOfImages['Brands'][brand]:
-            Domoticz.Error("restapi_firmware_update FileName %s unknown in this Brand %s" %(file_name,brand ))
-            return False
-
-        if target_nwkid not in self.ListOfDevices:
-            Domoticz.Error("restapi_firmware_update NwkId: %s unknown" %target_nwkid)
-            return False
-
-        if target_ep not in self.ListOfDevices[ target_nwkid]['Ep']:
-            Domoticz.Error("restapi_firmware_update NwkId: %s Ep: %s unknown" %(target_nwkid, target_ep))
-            return False
-
-        image_type = self.ListOfImages['Brands'][brand][file_name]['ImageType']
-        manuf_code = self.ListOfImages['Brands'][brand][file_name]['intManufCode']
-        image_version =    self.ListOfImages['Brands'][brand][file_name]['intImageVersion']
-
-        ota_load_image_to_zigate( self, image_type)
-        ota_image_advertize(self, target_nwkid, target_ep, image_version = image_version, image_type = image_type, manufacturer_code = manuf_code, Flag_=False )
-        return True
+        if len(data) > 1:
+            logging( self,  'Error', "For now we support only Update of 1 device at a time!")
+            return
+        for x in data:
+            brand = x['Brand']
+            file_name = x['FileName']
+            target_nwkid = x['NwkId']
+            target_ep = x['Ep']
+            force_update = x['ForceUpdate']
+            firmware_update( self, brand, file_name, target_nwkid, target_ep, force_update )
 
 
 # Routines sending Data
@@ -458,6 +431,45 @@ def ota_upgrade_end_response( self, dest_addr, dest_ep, intMsgImageVersion, imag
 ################
 # Local routines
 
+def firmware_update( self, brand, file_name, target_nwkid, target_ep , force_update=False):
+    
+        if self.ListInUpdate['NwkId']:
+            logging( self,  'Error', "There is already an Image loaded %s for device: %s %s please come back later" 
+                %(self.ListInUpdate['OtaImage'], self.ListInUpdate['NwkId']))
+            return False
+
+        if brand not in self.ListOfImages['Brands']:
+            Domoticz.Error("restapi_firmware_update Brands %s unknown" %brand)
+            return False
+
+        if file_name not in self.ListOfImages['Brands'][brand]:
+            Domoticz.Error("restapi_firmware_update FileName %s unknown in this Brand %s" %(file_name,brand ))
+            return False
+
+        if target_nwkid not in self.ListOfDevices:
+            Domoticz.Error("restapi_firmware_update NwkId: %s unknown" %target_nwkid)
+            return False
+
+        if target_ep not in self.ListOfDevices[ target_nwkid]['Ep']:
+            Domoticz.Error("restapi_firmware_update NwkId: %s Ep: %s unknown" %(target_nwkid, target_ep))
+            return False
+
+        image_type = self.ListOfImages['Brands'][brand][file_name]['ImageType']
+        manuf_code = self.ListOfImages['Brands'][brand][file_name]['intManufCode']
+        image_version = self.ListOfImages['Brands'][brand][file_name]['intImageVersion']
+
+        # Do we have to overwrite the Image Version in order to force update
+        if force_update:
+            initial_version = image_version
+            image_version = image_version * 2
+            logging( self,  'Status', "----> Forcing update for Image: 0x%s from Version: 0x%08X to Version: 0x%08X" 
+                %( image_type, initial_version, image_version))
+
+        ota_load_image_to_zigate( self, image_type)
+        ota_image_advertize(self, target_nwkid, target_ep, image_version = image_version, image_type = image_type, manufacturer_code = manuf_code, Flag_=False )
+        return True
+
+
 def logging( self, logType, message): # OK 13/10   
     self.log.logging('OTA', logType, message)
 
@@ -566,12 +578,12 @@ def ota_extract_image_headers( self, subfolder, image ): # OK 13/10
     logging( self,  'Status', "Available Firmware - ManufCode: %4x ImageType: 0x%04x FileVersion: %8x Size: %8s Bytes Filename: %s" \
             %(headers['manufacturer_code'], headers['image_type'],  headers['image_version'], headers['size'], image ))
 
-    # Do we have to overwrite the Image Version in order to force update
-    if self.pluginconf.pluginConf['forceOTAUpgrade']:
-        initial_version = headers['image_version']
-        headers['image_version'] = headers['image_version'] + self.pluginconf.pluginConf['forceOTAMask']
-        logging( self,  'Log', "----> Forcing update for Image: 0x%s from Version: 0x%08X to Version: 0x%08X" 
-            %( image, initial_version, headers['image_version']))
+
+
+
+
+
+
         
     return ( headers['image_type'], headers, ota_image )
 
@@ -845,8 +857,8 @@ def display_percentage_progress( self, MsgSrcAddr, MsgEP, intMsgImageType, MsgFi
         if self.PluginHealth['Firmware Update'] is None:
             self.PluginHealth['Firmware Update'] = {}
 
-        self.PluginHealth['Firmware Update']['Progress'] = '%s %%' %round(_completion)
-        self.PluginHealth['Firmware Update']['Device'] = MsgSrcAddr
+    self.PluginHealth['Firmware Update']['Progress'] = '%s %%' %round(_completion)
+    self.PluginHealth['Firmware Update']['Device'] = MsgSrcAddr
 
 
 def start_upgrade_infos( self, MsgSrcAddr, intMsgImageType, intMsgManufCode, MsgFileOffset): # OK 24/10/2020
