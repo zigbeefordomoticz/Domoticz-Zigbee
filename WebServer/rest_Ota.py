@@ -119,26 +119,45 @@ def rest_ota_devices_for_manufcode( self, verb, data, parameters):
             continue
         
         Domoticz.Log("Found device: %s" %x)
-        ep = '01'
-        for y in self.ListOfDevices[x]['Ep']:
-            if '0019' in self.ListOfDevices[x]['Ep'][ y ]:
-                ep = y
-                break
-
-        device_name = swbuild_3 = swbuild_1 = ''
-        if 'ZDeviceName' in self.ListOfDevices[x] and self.ListOfDevices[x]['ZDeviceName'] != {}:
-            device_name = self.ListOfDevices[x]['ZDeviceName']
-
-        if 'SWBUILD_3' in self.ListOfDevices[x] and self.ListOfDevices[x]['SWBUILD_3'] != {}:
-            swbuild_3 = self.ListOfDevices[x]['SWBUILD_3']
-
-        if 'SWBUILD_1' in self.ListOfDevices[x] and self.ListOfDevices[x]['SWBUILD_1'] != {}:
-            swbuild_1 = self.ListOfDevices[x]['SWBUILD_1']
-
-        device = {'Nwkid': x, 'Ep': ep, 'DeviceName': device_name, 'SWBUILD_1': swbuild_3,'SWBUILD_3':swbuild_1}
-        device_list.append( device )
+        
+        device_list.append( get_device_informations( self, x) )
     _response["Data"] = json.dumps(  device_list , sort_keys=True )
     return _response                
+
+
+def get_device_informations( self, Nwkid):
+    time_update = LastImageVersion = LastImageType = ''
+    ep = '01'
+    for y in self.ListOfDevices[Nwkid]['Ep']:
+        if '0019' in self.ListOfDevices[Nwkid]['Ep'][ y ]:
+            ep = y
+            break
+    device_name = model_name = swbuild_3 = swbuild_1 = ''
+    if 'ZDeviceName' in self.ListOfDevices[Nwkid] and self.ListOfDevices[Nwkid]['ZDeviceName'] != {}:
+        device_name = self.ListOfDevices[Nwkid]['ZDeviceName']
+    if 'Model' in self.ListOfDevices[Nwkid] and self.ListOfDevices[Nwkid]['Model'] != {}:
+        model_name = self.ListOfDevices[Nwkid]['Model']
+    if 'SWBUILD_3' in self.ListOfDevices[Nwkid] and self.ListOfDevices[Nwkid]['SWBUILD_3'] != {}:
+        swbuild_3 = self.ListOfDevices[Nwkid]['SWBUILD_3']
+    if 'SWBUILD_1' in self.ListOfDevices[Nwkid] and self.ListOfDevices[Nwkid]['SWBUILD_1'] != {}:
+        swbuild_1 = self.ListOfDevices[Nwkid]['SWBUILD_1']
+    if 'OTA' in self.ListOfDevices[Nwkid]:
+        prev_ts = 0
+        
+        for ts in self.ListOfDevices[Nwkid]['OTA']:
+            if ts > prev_ts:
+                time_update = self.ListOfDevices[Nwkid]['OTA'][ts]['Time']
+                LastImageVersion = self.ListOfDevices[Nwkid]['OTA'][ts]['Version']
+                LastImageType = self.ListOfDevices[Nwkid]['OTA'][ts]['Type']
+
+    return {'Nwkid':  Nwkid, 'Ep': ep, 
+        'DeviceName': device_name, 
+        'SWBUILD_1':  swbuild_3,
+        'SWBUILD_3':  swbuild_1, 
+        'LastUpdate': time_update, 
+        'LastUpdateVersion': LastImageVersion,
+        'LastImageType': LastImageType
+        }
 
 
 def fake_rest_ota_devices_for_manufcode():
@@ -147,7 +166,8 @@ def fake_rest_ota_devices_for_manufcode():
          {"DeviceName": "Bureau", "Ep": "0b", "Nwkid": "fd8e", "SWBUILD_1": "", "SWBUILD_3": "2.2.005"},
          {"DeviceName": "Placard", "Ep": "07", "Nwkid": "6e87", "SWBUILD_1": "09-30-2018", "SWBUILD_3": ""},
          {"DeviceName": "Tracteur", "Ep": "01", "Nwkid": "775e", "SWBUILD_1": "2.3.050", "SWBUILD_3": "1.2.214"},
-         {"DeviceName": "Patatte", "Ep": "06", "Nwkid": "45ef", "SWBUILD_1": "20160331", "SWBUILD_3": "","OTALastTime" : "2020-06-08 10:02:54","OTAVersion" : "02015120","OTAType" : "0027"},
+         {"DeviceName": "Patatte", "Ep": "06", "Nwkid": "45ef", "SWBUILD_1": "20160331", "SWBUILD_3": "",
+         "LastUpdate" : "2020-06-08 10:02:54","LastUpdateVersion" : "02015120","LastImageType" : "0027"},
          {"DeviceName": "Boum", "Ep": "01", "Nwkid": "2812", "SWBUILD_1": "SNP.R.04.01.14", "SWBUILD_3": ""}],
         sort_keys=True )
 
