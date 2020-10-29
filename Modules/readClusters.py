@@ -38,27 +38,25 @@ def decodeAttribute(self, AttType, Attribute, handleErrors=False):
     #self.log.logging( "Cluster", 'Debug', "decodeAttribute( %s, %s) " %(AttType, Attribute) )
 
     if int(AttType,16) == 0x10:    # Boolean
-        return Attribute
+        return Attribute[0:2]
 
     if int(AttType,16) == 0x18:  # 8Bit bitmap
-        return int(Attribute, 16 )
+        return int(Attribute[0:8], 16 )
 
     if int(AttType,16) == 0x19:  # 16BitBitMap
-        return str(int(Attribute, 16 ))
+        return str(int(Attribute[0:4], 16 ))
 
     if int(AttType,16) == 0x20:  # Uint8 / unsigned char
-        return int(Attribute, 16 )
+        return int(Attribute[0:2], 16 )
 
     if int(AttType,16) == 0x21:   # 16BitUint
-        return str(struct.unpack('H',struct.pack('H',int(Attribute,16)))[0])
+        return str(struct.unpack('H',struct.pack('H',int(Attribute[0:4],16)))[0])
 
     if int(AttType,16) == 0x22:   # ZigBee_24BitUint
         return str(struct.unpack('I',struct.pack('I',int("0"+Attribute,16)))[0])
 
     if int(AttType,16) == 0x23:   # 32BitUint
-        self.log.logging( "Cluster", 'Debug', "decodeAttribut(%s, %s) returning %s " %(AttType, Attribute, \
-                                str(struct.unpack('I',struct.pack('I',int(Attribute,16)))[0])))
-        return str(struct.unpack('I',struct.pack('I',int(Attribute,16)))[0])
+        return str(struct.unpack('I',struct.pack('I',int(Attribute[0:8],16)))[0])
 
     if int(AttType,16) == 0x25:   # ZigBee_48BitUint
         return str(struct.unpack('Q',struct.pack('Q',int(Attribute,16)))[0])
@@ -67,28 +65,22 @@ def decodeAttribute(self, AttType, Attribute, handleErrors=False):
         return int(Attribute, 16 )
 
     if int(AttType,16) == 0x29:   # 16Bitint   -> tested on Measurement clusters
-        return str(struct.unpack('h',struct.pack('H',int(Attribute,16)))[0])
+        return str(struct.unpack('h',struct.pack('H',int(Attribute[0:4],16)))[0])
 
     if int(AttType,16) == 0x2a:   # ZigBee_24BitInt
-        self.log.logging( "Cluster", 'Debug', "decodeAttribut(%s, %s) untested, returning %s " %(AttType, Attribute, \
-                                str(struct.unpack('i',struct.pack('I',int("0"+Attribute,16)))[0])))
         return str(struct.unpack('i',struct.pack('I',int("0"+Attribute,16)))[0])
 
     if int(AttType,16) == 0x2b:   # 32Bitint
-        self.log.logging( "Cluster", 'Debug', "decodeAttribut(%s, %s) untested, returning %s " %(AttType, Attribute, \
-                                str(struct.unpack('i',struct.pack('I',int(Attribute,16)))[0])))
-        return str(struct.unpack('i',struct.pack('I',int(Attribute,16)))[0])
+        return str(struct.unpack('i',struct.pack('I',int(Attribute[0:8],16)))[0])
 
     if int(AttType,16) == 0x2d:   # ZigBee_48Bitint
-        self.log.logging( "Cluster", 'Debug', "decodeAttribut(%s, %s) untested, returning %s " %(AttType, Attribute, \
-                                str(struct.unpack('Q',struct.pack('Q',int(Attribute,16)))[0])))
         return str(struct.unpack('q',struct.pack('Q',int(Attribute,16)))[0])
 
     if int(AttType,16) == 0x30:  # 8BitEnum
-        return int(Attribute,16 )
+        return int(Attribute[0:2],16 )
 
     if int(AttType,16)  == 0x31: # 16BitEnum 
-        return str(struct.unpack('h',struct.pack('H',int(Attribute,16)))[0])
+        return str(struct.unpack('h',struct.pack('H',int(Attribute[0:4],16)))[0])
 
     if int(AttType,16) == 0x39:  # Xiaomi Float
         return str(struct.unpack('f',struct.pack('I',int(Attribute,16)))[0])
@@ -2189,6 +2181,11 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, str(conso) )
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(conso)
 
+    elif MsgAttrID == "0430":
+        # ZBEE_ZCL_ATTR_ID_MET_CUR_WEEK_CON_DEL Attribute Reported by INNR SP 120 Plug ( DataType: 0x27)
+        checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, str(value) )
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(value)
+
     elif MsgAttrID == '0801':
         self.log.logging( "Cluster", 'Debug', "Cluster0702 - %s/%s Electricty Alarm Mask: %s " %(MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr)
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
@@ -2218,12 +2215,16 @@ def Cluster0b04( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
     if MsgAttrID == "050b": # Active Power
-        value = int(decodeAttribute( self, MsgAttType, MsgClusterData ))
-        self.log.logging( "Cluster", 'Debug', "ReadCluster %s - %s/%s Power %s" \
-            %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value))
-        if 'Model' in self.ListOfDevices[ MsgSrcAddr ] and self.ListOfDevices[ MsgSrcAddr ]['Model'] == 'outletv4':
-            value /= 10
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value))
+        if -32768 <= int(MsgClusterData[0:4],16) <= 32767:
+            value = int(decodeAttribute( self, MsgAttType, MsgClusterData[0:4] ))
+            self.log.logging( "Cluster",  'Debug', "ReadCluster %s - %s/%s Power %s" \
+                %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value))
+            if 'Model' in self.ListOfDevices[ MsgSrcAddr ] and self.ListOfDevices[ MsgSrcAddr ]['Model'] == 'outletv4':
+                value /= 10
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value))
+        else:
+           self.log.logging( "Cluster",  'Error', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s Out of Range!!" \
+            %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
     elif MsgAttrID == "0505": # RMS Voltage
         value = int(decodeAttribute( self, MsgAttType, MsgClusterData ))
@@ -2237,6 +2238,9 @@ def Cluster0b04( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         value = int(decodeAttribute( self, MsgAttType, MsgClusterData ))
         self.log.logging( "Cluster", 'Debug', "ReadCluster %s - %s/%s Current %s" \
             %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value))
+        value /= 100
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value), Attribute_=MsgAttrID)
+
 
     else:
         self.log.logging( "Cluster", 'Log', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" \
