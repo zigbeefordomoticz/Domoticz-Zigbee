@@ -2173,7 +2173,7 @@ def Cluster0b04( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
     if MsgAttrID == "050b": # Active Power
-        if -32768 <= int(MsgClusterData[0:4]) <= 32767:
+        if -32768 <= int(MsgClusterData[0:4],16) <= 32767:
             value = int(decodeAttribute( self, MsgAttType, MsgClusterData[0:4] ))
             loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s Power %s" \
                 %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value))
