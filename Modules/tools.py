@@ -647,9 +647,9 @@ def ReArrangeMacCapaBasedOnModel( self, nwkid, inMacCapa):
         return inMacCapa
 
     # Convert battery annouced devices to main powered
-    if self.ListOfDevices[nwkid]['Model'] in ( 'TI0001', 'TS0011'):
-        # Livol Switch, must be converted to Main Powered
-        # Patch some status as Device Annouced doesn't provide much info
+    # Livol Switch, must be converted to Main Powered
+    # Patch some status as Device Annouced doesn't provide much info
+    if self.ListOfDevices[nwkid]['Model'] in ( 'TI0001', 'TS0011', 'TS0013'):                
         self.ListOfDevices[nwkid]['LogicalType'] = 'Router'
         self.ListOfDevices[nwkid]['DevideType'] = 'FFD'
         self.ListOfDevices[nwkid]['MacCapa'] = '8e'

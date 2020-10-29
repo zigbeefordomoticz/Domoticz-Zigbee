@@ -18,6 +18,7 @@ from Modules.basicOutputs import ZigatePermitToJoin, sendZigateCmd, start_Zigate
 from Modules.legrand_netatmo import legrand_ledInDark, legrand_ledIfOnOnOff, legrand_dimOnOff, legrand_ledShutter
 from Modules.actuators import actuators
 from Modules.philips import philips_set_poweron_after_offon
+from Modules.enki import enki_set_poweron_after_offon
 from Modules.tools import is_hex
 from Classes.PluginConf import PluginConf,SETTINGS
 
@@ -533,6 +534,10 @@ class WebServer(object):
                         elif param == 'PhilipsPowerOnAfterOffOn':
                             self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
                             philips_set_poweron_after_offon( self, int(setting_lst[setting]['current']))
+
+                        elif param == 'EnkiPowerOnAfterOffOn':
+                            self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
+                            enki_set_poweron_after_offon( self, int(setting_lst[setting]['current']))
 
                         elif param == 'LegrandPowerOnAfterOffOn':
                             self.pluginconf.pluginConf[param] = setting_lst[setting]['current']

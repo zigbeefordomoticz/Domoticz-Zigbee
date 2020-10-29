@@ -3728,18 +3728,10 @@ def Decode8702(self, Devices, MsgData, MsgLQI):  # Reception APS Data confirm fa
 # Device Announce
 def Decode004D(self, Devices, MsgData, MsgLQI):  # Reception Device announce
 
-    if (
-        self.FirmwareVersion
-        and int(self.FirmwareVersion, 16) >= 0x031C
-        and self.pluginconf.pluginConf["AnnoucementV1"]
-    ):
+    if ( self.FirmwareVersion and int(self.FirmwareVersion, 16) >= 0x031C and self.pluginconf.pluginConf["AnnoucementV1"] ):
         device_annoucementv1(self, Devices, MsgData, MsgLQI)
 
-    elif (
-        self.FirmwareVersion
-        and int(self.FirmwareVersion, 16) >= 0x031C
-        and self.pluginconf.pluginConf["AnnoucementV2"]
-    ):
+    elif ( self.FirmwareVersion and int(self.FirmwareVersion, 16) >= 0x031D ):
         device_annoucementv2(self, Devices, MsgData, MsgLQI)
 
     else:

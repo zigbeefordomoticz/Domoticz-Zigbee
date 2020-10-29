@@ -110,6 +110,13 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
         SignalLevel,BatteryLevel = RetreiveSignalLvlBattery( self, NWKID)
 
+        if 'Ampere' in ClusterType:
+            if WidgetType == 'Ampere' and Attribute_ == '0508':
+                nValue = 0
+                sValue = "%s" %(round(float(value),2))
+                loggingWidget( self, "Debug", "------>  Ampere : " + sValue, NWKID)
+                UpdateDevice_v2(self, Devices, DeviceUnit, 0, str(sValue), BatteryLevel, SignalLevel)
+
         if 'Power' in ClusterType: # Instant Power/Watts
             # Power and Meter usage are triggered only with the Instant Power usage.
             # it is assumed that if there is also summation provided by the device, that
@@ -185,7 +192,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
         if 'Voltage' in ClusterType:  # Volts
             # value is str
-            if WidgetType == "Voltage": 
+            if WidgetType == "Voltage" and Attribute_ == '': 
                 nValue = round(float(value),2)
                 sValue = "%s;%s" % (nValue, nValue)
                 loggingWidget( self, "Debug", "------>  : " + sValue, NWKID)
@@ -416,13 +423,13 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 sValue = str(selector)
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
 
-        # if ClusterType == WidgetType and ClusterType in ( 'Alarm', 'Door', 'DoorLock', 'Switch', 'SwitchButton', 'AqaraOppleMiddle', 'Motion', 
-        #                     'Ikea_Round_5b', 'Ikea_Round_OnOff', 'Vibration', 'OrviboRemoteSquare', 'Button_3'): 
-
-        if ClusterType in ( 'IAS_ACE', 'Alarm', 'Door', 'Switch', 'SwitchButton', 'AqaraOppleMiddle', 'Motion', 
-                        'Ikea_Round_5b', 'Ikea_Round_OnOff', 'Vibration', 'OrviboRemoteSquare', 'Button_3') \
-            or ClusterType == WidgetType == 'DoorLock' \
-            or ( ClusterType == 'DoorLock' and WidgetType == 'Vibration'):
+        if WidgetType not in ( 'ThermoModeEHZBRTS', ) and \
+            (
+                ( ClusterType in ( 'IAS_ACE', 'Alarm', 'Door', 'Switch', 'SwitchButton', 'AqaraOppleMiddle', 'Motion',
+                                 'Ikea_Round_5b', 'Ikea_Round_OnOff', 'Vibration', 'OrviboRemoteSquare', 'Button_3', 'LumiLock') ) or \
+                ( ClusterType == WidgetType == 'DoorLock') or \
+                ( ClusterType == 'DoorLock' and WidgetType == 'Vibration')
+            ):
 
             # Plug, Door, Switch, Button ...
             # We reach this point because ClusterType is Door or Switch. It means that Cluster 0x0006 or 0x0500

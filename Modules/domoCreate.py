@@ -18,6 +18,28 @@ from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
 from Modules.widgets import SWITCH_LVL_MATRIX
 from Modules.domoTools import GetType, subtypeRGB_FromProfile_Device_IDs
 
+def cleanup_widget_Type( widget_type_list ):
+
+    if ("ColorControlFull" in widget_type_list) and ( "ColorControl" in widget_type_list ):
+        widget_type_list.remove( "ColorControlFull")
+    if ("ColorControlRGB" in widget_type_list) and ("ColorControlRGBWW" in widget_type_list):
+        widget_type_list.remove( 'ColorControlRGB')
+    if ("ColorControlWW" in widget_type_list) and ("ColorControlRGBWW" in widget_type_list):
+        widget_type_list.remove( 'ColorControlWW')
+    if ("ColorControlRGBWW" in widget_type_list) and  ( "ColorControl" in widget_type_list ):
+        widget_type_list.remove( 'ColorControlRGBWW')
+
+
+    if ("Switch" in widget_type_list) and ("LvlControl" in widget_type_list):
+        widget_type_list.remove( 'Switch')
+    if ("LvlControl" in widget_type_list) and ("ColorControl" in widget_type_list):
+        widget_type_list.remove( 'LvlControl')
+
+    if '' in widget_type_list:
+        widget_type_list.remove( '' )
+
+    return widget_type_list
+
 def CreateDomoDevice(self, Devices, NWKID):
     """
     CreateDomoDevice
@@ -250,17 +272,8 @@ def CreateDomoDevice(self, Devices, NWKID):
         # We want to avoid creating of 3 widgets while 1 is enought.
         # if self.ListOfDevices[NWKID][ 'Model'] not in self.DeviceConf:
         loggingWidget(self, 'Debug', "---> Check if we need to reduce Type: %s" %Type)
-        if ("Switch" in Type) and ("LvlControl" in Type) and ("ColorControl" in Type):
-            # We need to detect what is the ColorControl ( can be RGB, Full, WW)
-            loggingWidget(self, 'Debug', "----> Colortype, let's remove Switch and LvlControl")
-            Type.remove( 'Switch')
-            Type.remove( 'LvlControl')
-        elif ("Switch" in Type) and ("LvlControl" in Type):
-            loggingWidget(self, 'Debug', "----> LvlControl, let's remove Switch and LvlControl")
-            Type = ['LvlControl']
-        if '' in Type:
-            Domoticz.Log('Remove Empty Type')
-            Type.remove( '' )
+        Type = cleanup_widget_Type( Type )
+
         loggingWidget( self, "Debug", "CreateDomoDevice - Creating devices based on Type: %s" % Type, NWKID)
 
         if 'ClusterType' not in self.ListOfDevices[NWKID]['Ep'][Ep]:
@@ -431,6 +444,11 @@ def CreateDomoDevice(self, Devices, NWKID):
                 # Detecteur Baro
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, "Barometer")
                 loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in Barometer" %(t), NWKID)
+
+            if t == "Ampere":
+                # Will display Watt real time
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 243, Subtype_ = 23)
+                loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in Power" %(t), NWKID)
 
             if t == "Power":  
                # Will display Watt real time

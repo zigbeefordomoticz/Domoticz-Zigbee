@@ -435,7 +435,7 @@ class BasePlugin:
                     # for a remove in case device didn't send the leave
                     if self.ZigateIEEE:
                         sendZigateCmd(self, "0026", self.ZigateIEEE + IEEE )
-                        loggingPlugin( self, 'Status', "onDeviceRemoved - removing Device %s -> %s in Zigate" %(Devices[Unit].Name, IEEE))
+                        loggingPlugin( self, 'Status', "onDeviceRemoved - removing Device %s -> %s in Zigate" %(Devices[Unit].Name, IEEE) )
                     else:
                         Domoticz.Error("onDeviceRemoved - too early, Zigate and plugin initialisation not completed")
                 else:
@@ -596,7 +596,11 @@ class BasePlugin:
 
         # Starting PDM on Host firmware version, we have to wait that Zigate is fully initialized ( PDM loaded into memory from Host).
         # We wait for self.zigateReady which is set to True in th pdmZigate module
-        if not (self.transport == 'None' or self.PDMready):
+        if ( self.transport != 'None' and not self.PDMready and self.HeartbeatCount > (60 // HEARTBEAT) ):
+            loggingPlugin( self, 'Error', "[%3s] I have hard time to get ZiGate Version. Mostlikly ZiGate communication doesn't work" %( self.HeartbeatCount))
+            loggingPlugin( self, 'Error', "[   ] Stop the plugin and check ZiGate.")
+
+        if self.transport != 'None' and not self.PDMready:
             loggingPlugin( self, 'Debug', "PDMready: %s requesting Get version" %( self.PDMready))
             sendZigateCmd(self, "0010", "")
             return
