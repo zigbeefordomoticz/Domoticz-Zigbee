@@ -507,7 +507,14 @@ def readXiaomiCluster( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId
 
     if sPress != '':
         Press = '%s%s%s%s' % (str(sPress[6:8]),str(sPress[4:6]),str(sPress[2:4]),str(sPress[0:2])) 
-        ValuePress=round((struct.unpack('i',struct.pack('i',int(Press,16)))[0])/100,1)
+        try:
+            ValuePress=round((struct.unpack('i',struct.pack('i',int(Press,16)))[0])/100,1)
+            
+        except Exception as e :
+            self.log.logging( "Lumi", 'Error',"ReadCluster - 0000/ff01 Saddr: %s Wrong Atmospheric Pressure: orig: %s, convert: %s Error: %s" \
+                %(MsgSrcAddr,sPress,Press,e), MsgSrcAddr)
+            return
+
         self.log.logging( "Lumi", 'Debug',"ReadCluster - 0000/ff01 Saddr: " + str(MsgSrcAddr) + " Atmospheric Pressure : " + str(ValuePress) , MsgSrcAddr)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0403",ValuePress)
         checkAndStoreAttributeValue( self, MsgSrcAddr , MsgSrcEp, '0403', '0000' , sPress)
