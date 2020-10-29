@@ -11,7 +11,7 @@
 			"0702": "",
 			"0019": "",
 			"000a": "", 
-			"Type": "Plug/Power/Meter/Voltage"
+			"Type": "Plug/Power/Meter/Voltage/Ampere"
 		},
 		"02": {
 			"1000":"",

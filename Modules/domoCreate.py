@@ -445,6 +445,11 @@ def CreateDomoDevice(self, Devices, NWKID):
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, "Barometer")
                 loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in Barometer" %(t), NWKID)
 
+            if t == "Ampere":
+                # Will display Watt real time
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 243, Subtype_ = 23)
+                loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in Power" %(t), NWKID)
+
             if t == "Power":  
                # Will display Watt real time
                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, "Usage")

@@ -110,6 +110,13 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
         SignalLevel,BatteryLevel = RetreiveSignalLvlBattery( self, NWKID)
 
+        if 'Ampere' in ClusterType:
+            if WidgetType == 'Ampere' and Attribute_ == '0508':
+                nValue = 0
+                sValue = "%s" %(round(float(value),2))
+                loggingWidget( self, "Debug", "------>  Ampere : " + sValue, NWKID)
+                UpdateDevice_v2(self, Devices, DeviceUnit, 0, str(sValue), BatteryLevel, SignalLevel)
+
         if 'Power' in ClusterType: # Instant Power/Watts
             # Power and Meter usage are triggered only with the Instant Power usage.
             # it is assumed that if there is also summation provided by the device, that
@@ -185,7 +192,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
         if 'Voltage' in ClusterType:  # Volts
             # value is str
-            if WidgetType == "Voltage": 
+            if WidgetType == "Voltage" and Attribute_ == '': 
                 nValue = round(float(value),2)
                 sValue = "%s;%s" % (nValue, nValue)
                 loggingWidget( self, "Debug", "------>  : " + sValue, NWKID)
