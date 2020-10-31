@@ -193,6 +193,7 @@ def ReadCluster(self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgCluster
             "0101": Cluster0101, 
             "0102": Cluster0102,
             "0201": Cluster0201, 
+            "0202": Cluster0202, 
             "0204": Cluster0204,
             "0300": Cluster0300,
             "0400": Cluster0400, 
