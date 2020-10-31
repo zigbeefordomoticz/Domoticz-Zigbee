@@ -1,0 +1,20 @@
+{
+	"Ep":{
+		"04":{
+			"0000":"",
+			"0500":"",
+			"Type":"Switch"
+		}
+	},
+	"Type":"",
+        "ClusterToBind": [ "0402", "0405" ],
+        "ConfigureReporting":{
+		"0402": {"Attributes": {"0000": {"DataType": "29", "MinInterval": "000A", "MaxInterval": "012C", "TimeOut": "0000", "Change": "0001"}}},
+		"0405": {"Attributes": {"0000": {"DataType": "21", "MinInterval": "003C", "MaxInterval": "0384", "TimeOut": "0000", "Change": "0001"}}}
+	},
+	"ReadAttributes": {
+		"0000": [ "0000", "0004", "0005", "0006", "0007"],
+	    "0003": [],
+	    "0500": [ "0000", "0001", "0002", "0010", "0011" ]
+        }
+}
