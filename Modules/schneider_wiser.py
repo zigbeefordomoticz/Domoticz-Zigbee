@@ -232,7 +232,7 @@ def wiser_set_location(self, key, EPout): # 0x0000/0x0010
 
 
 def wiser_set_calibration( self, key, EPout):  # 0x0201/0x0010
-    # Set no Calibration
+    #  This is used to set the Local Temperature Calibration ( specifies  the  offset  that  can  be  added/subtracted  to  the  actual displayed room temperature )
     manuf_id = "0000"
     manuf_spec = "00"
     cluster_id = "%04x" %0x0201

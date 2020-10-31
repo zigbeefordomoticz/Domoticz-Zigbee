@@ -32,6 +32,7 @@ from Classes.IAS import IAS_Zone_Management
 from Modules.zigateConsts import THERMOSTAT_LEVEL_2_MODE, ZIGATE_EP
 from Modules.widgets import SWITCH_LVL_MATRIX
 from Modules.cmdsDoorLock import cluster0101_lock_door, cluster0101_unlock_door
+from Modules.fanControl import change_fan_mode
 
 def debugDevices( self, Devices, Unit):
 
@@ -68,7 +69,7 @@ DEVICE_SWITCH_MATRIX = {
 ACTIONATORS = [ 'Switch', 'Plug', 'SwitchAQ2', 'Smoke', 'DSwitch', 'LivoloSWL', 'LivoloSWR', 'Toggle',
             'Venetian', 'VenetianInverted', 'WindowCovering', 'BSO', 'BSO-Orientation', 'BSO-Volet',
             'LvlControl', 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl',
-            'ThermoSetpoint', 'ThermoMode', 'ThermoMode_2', 'ThermoModeEHZBRTS', 'TempSetCurrent', 'AlarmWD',
+            'ThermoSetpoint', 'ThermoMode', 'ThermoMode_2', 'ThermoModeEHZBRTS', 'FanControl','TempSetCurrent', 'AlarmWD',
             'FIP', 'HACTMODE','LegranCableMode', 'ContractPower','HeatingSwitch', 'DoorLock' ]
             
 def mgtCommand( self, Devices, Unit, Command, Level, Color ):
@@ -181,7 +182,20 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             self.log.logging( "Command", 'Debug', "MajDomoDevice EHZBRTS Schneider Thermostat Mode Off", NWKID )
             schneider_EHZBRTS_thermoMode( self, NWKID, 0 )
             UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            # Let's force a refresh of Attribute in the next Heartbeat 
+            self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
+            return
 
+        if DeviceType == 'FanControl':
+            change_fan_mode( self, NWKID, EPout, 'Off' )
+            UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            # Let's force a refresh of Attribute in the next Heartbeat 
+            self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
+            return
+
+        if DeviceType == 'ThermoMode':
+            thermostat_Mode( self, NWKID, 'Off' )
+            UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             # Let's force a refresh of Attribute in the next Heartbeat 
             self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
             return
@@ -278,6 +292,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             UpdateDevice_v2(self, Devices, Unit, 1, "Open",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             self.ListOfDevices[NWKID]['Heartbeat'] = 0 
             return
+
         else:
             # Remaining Slider widget
             if profalux:
@@ -432,6 +447,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             if Level in THERMOSTAT_LEVEL_2_MODE:
                 self.log.logging( "Command", 'Debug', " - Set Thermostat Mode to : %s / %s" %( Level, THERMOSTAT_LEVEL_2_MODE[Level]), NWKID)
                 thermostat_Mode( self, NWKID, THERMOSTAT_LEVEL_2_MODE[Level] )
+                UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            # Let's force a refresh of Attribute in the next Heartbeat  
+            self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
+            return
 
         if DeviceType == 'ThermoMode_2':
             self.log.logging( "Command", 'Debug', "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" 
@@ -439,6 +458,21 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             self.log.logging( "Command", 'Debug', "ThermoMode_2 - requested Level: %s" %Level, NWKID)
             tuya_trv_mode( self, NWKID, Level )
 
+        if DeviceType == 'FanControl':
+
+            CMD_MODE = {
+                0:  'Off',
+                20: 'Low',
+                30: 'Medium',
+                40: 'High',
+                10: 'Auto',
+            }
+            if Level in CMD_MODE:
+                change_fan_mode( self, NWKID, EPout, CMD_MODE[ Level] )
+                UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            # Let's force a refresh of Attribute in the next Heartbeat  
+            self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
+            return
 
         elif DeviceType == 'BSO-Volet':
             if profalux:

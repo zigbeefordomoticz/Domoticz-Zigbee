@@ -20,7 +20,7 @@ import string
 
 from time import time
 
-from Modules.zigateConsts import LEGRAND_REMOTE_SHUTTER, LEGRAND_REMOTE_SWITCHS, LEGRAND_REMOTES, ZONE_TYPE
+from Modules.zigateConsts import LEGRAND_REMOTE_SHUTTER, LEGRAND_REMOTE_SWITCHS, LEGRAND_REMOTES, ZONE_TYPE, THERMOSTAT_MODE_2_LEVEL
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import lastSeenUpdate, timedOutDevice
 from Modules.tools import DeviceExist, getEPforClusterType, is_hex, voltage2batteryP, checkAttribute, checkAndStoreAttributeValue, \
@@ -1512,17 +1512,8 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  MsgClusterData )
 
     elif MsgAttrID == '001c':
-        SYSTEM_MODE = { 0x00: 'Off' ,
-                0x01: 'Auto' ,
-                0x02: 'Reserved' ,
-                0x03: 'Cool',
-                0x04: 'Heat' ,
-                0x05: 'Emergency Heating',
-                0x06: 'Pre-cooling',
-                0x07: 'Fan only'  }
-
-        if int(value) in SYSTEM_MODE:
-            self.log.logging( "Cluster", 'Debug', "ReadCluster - 0201 - System Mode: %s / %s" %(value, SYSTEM_MODE[value]), MsgSrcAddr)
+        if int(value) in THERMOSTAT_MODE_2_LEVEL:
+            self.log.logging( "Cluster", 'Debug', "ReadCluster - 0201 - System Mode: %s / %s" %(value, THERMOSTAT_MODE_2_LEVEL[value]), MsgSrcAddr)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value, Attribute_=MsgAttrID )
         else:
             self.log.logging( "Cluster", 'Debug', "ReadCluster - 0201 - Attribute 1C: %s" %value, MsgSrcAddr)

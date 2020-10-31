@@ -274,7 +274,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 elif clusterID == 'fc40': # Legrand FIP
                     UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
  
-
             elif WidgetType == 'ThermoMode_2' and Attribute_ == '001c':
                 # Use by Tuya TRV
                 
@@ -287,7 +286,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 sValue = SWITCH_LVL_MATRIX[ 'ThermoMode_2'][ value ][1]
                 self.log.logging( "Widget", "Log", "------>  Thermostat Mode 2 %s %s:%s" %(value, nValue, sValue), NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
-
 
             elif WidgetType == 'ThermoMode' and Attribute_ == '001c':
                 # value seems to come as int or str. To be fixed

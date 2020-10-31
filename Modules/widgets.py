@@ -354,15 +354,17 @@ SWITCH_LVL_MATRIX = {
    },
    
     "ThermoMode": {
-        0: (0, "Off"), 
-        1: (1, "10"), 
-        2: (2, "20"), 
-        3: (3, "30"), 
-        4: (4, "40"),
+        0x00: (0, "Off"), # Off
+        0x01: (1, "10"),  # Auto
+        0x03: (2, "20"),  # Cool
+        0x04: (3, "30"),  # Heat
+        0x05: (4, "40"),  # Force heat
+        0x08: (5, "50"),  # Dry
+        0x07: (6, "60"),  # Fan
         "ForceUpdate": False,
-        "LevelNames": "Off|Auto|Cool|Heat|Force Heat",
+        "LevelNames": "Off|Auto|Cool|Heat|Force Heat|Dry|Fan",
         "Language": {
-            "fr-FR": {"LevelNames": "Arrêt|Auto|Froid|Chaud|Chaud Forcé"}
+            "fr-FR": {"LevelNames": "Arrêt|Auto|Froid|Chaud|Chaud Forcé|Déshumidicateur|Ventilateur"}
         }
     },
 
@@ -465,34 +467,20 @@ SWITCH_LVL_MATRIX = {
             "fr-FR": {"LevelNames": "Off|Urgence|Armer (zone maison)|Armer (toutes zones)|Désarmer"}
             }
     },
-    'PAC-MODE': {
-        "00": (0, "00"), # "Off",
-        "01": (1, "10"), # "Auto"
-        "02": (2, "20"), # dehumidifier
-        "03": (3, "30"), # COLD
-        "04": (4, "40"), # HOT
-        "05": (5, "50"), # FAN only
-        "ForceUpdate": False, 
-        "LevelNames": "Off|Auto|dehumidifier|Cold|Hot|Fan",
-        "Language": {
-            "fr-FR": {"LevelNames": "Off|Auto|Déshumidicateur|Froid|Chaud|Ventilateur"}
-            }
-    },
+    
     'FanControl': {
         "00": (0, "00"), # Off
         "01": (1, "10"), # Auto
-        "02": (2, "20"), # Silence
-        "03": (3, "30"), # Level 1
-        "04": (4, "40"), # Level 2
-        "05": (5, "50"), # Level 3
-        "06": (6, "60"), # Level 4
-        "07": (7, "70"), # Level 5
+        "02": (2, "20"), # Low
+        "03": (3, "30"), # Moyen
+        "04": (4, "40"), # Fort
         "ForceUpdate": False, 
-        "LevelNames": "Off|Auto|Silence|Lvl1|Lvl2|Lvl3|Lvl4|Lvl5",
+        "LevelNames": "Off|Auto|Low|Medium|High",
         "Language": {
-            "fr-FR": {"LevelNames": "Off|Auto|Silence|Lvl1|Lvl2|Lvl3|Lvl4|Lvl5"}
+            "fr-FR": {"LevelNames": "Off|Auto|Bas|Moyen|Fort"}
         }
     },
+    
     'PAC-WING': {
         "00": (0, "00"), # Off - All wings stopped
         "01": (1, "10"), # Vertigal wings motion

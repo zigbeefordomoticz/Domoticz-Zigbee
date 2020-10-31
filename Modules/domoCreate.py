@@ -298,7 +298,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in PAC-MODE" %(t), NWKID)
 
             if t in ( 'FanControl', ): # 8
-                Options = createSwitchSelector( self, 8 , DeviceType = t, SelectorStyle = 0)
+                Options = createSwitchSelector( self, 5 , DeviceType = t, SelectorStyle = 0)
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in FanControl" %(t), NWKID)        
 
@@ -350,7 +350,7 @@ def CreateDomoDevice(self, Devices, NWKID):
 
             # 5 Selectors, Style 0 ( mode command)
             if t in ('ThermoMode', ):
-                Options = createSwitchSelector( self,  5,  DeviceType = t,SelectorStyle = 0 )
+                Options = createSwitchSelector( self,  7,  DeviceType = t,SelectorStyle = 0 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in ThermoMode" %(t), NWKID)
 
