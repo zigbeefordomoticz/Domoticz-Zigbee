@@ -1,0 +1,19 @@
+{
+	"_comment": "Tuya 3 switch remote (Single, Double,Long press)",
+	"_version": "Initial Version",
+	"Ep":{
+		"01": { "0000": "", "0001": "", "0006": "", "000a":"", "0019": "", "Type": "Button_3" },
+		"02": { "0000": "", "0001": "", "0006": "", "Type": "Button_3" },
+		"03": { "0000": "", "0001": "", "0006": "", "Type": "Button_3" }
+	},
+	"Type":"",
+	"ClusterToUnbind": [ ],
+	"ClusterToBind": [ "0006" ],
+        "ConfigureReporting": {
+	},
+	"ReadAttributes": {
+		"0000": [ "0000", "0001", "0004", "0005", "ffe2", "ffdf" ],
+		"0001": [ "0020", "0021" ],
+		"0006": []
+	}
+}
