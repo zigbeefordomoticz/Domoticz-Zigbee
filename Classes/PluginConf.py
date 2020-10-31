@@ -70,6 +70,7 @@ SETTINGS = {
         'polling0101':      {'type': 'int', 'default': 3600,  'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'polling0102':      {'type': 'int', 'default': 900,   'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'polling0201':      {'type': 'int', 'default': 900,   'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
+        'polling0202':      {'type': 'int', 'default': 900,   'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'polling0204':      {'type': 'int', 'default': 86400, 'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'polling0300':      {'type': 'int', 'default': 900,   'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'polling0400':      {'type': 'int', 'default': 900,   'current': None, 'restart': False, 'hidden': True,  'Advanced': True},

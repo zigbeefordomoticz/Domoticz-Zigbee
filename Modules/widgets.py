@@ -478,7 +478,7 @@ SWITCH_LVL_MATRIX = {
             "fr-FR": {"LevelNames": "Off|Auto|Déshumidicateur|Froid|Chaud|Ventilateur"}
             }
     },
-    'PAC-RATE': {
+    'FanControl': {
         "00": (0, "00"), # Off
         "01": (1, "10"), # Auto
         "02": (2, "20"), # Silence

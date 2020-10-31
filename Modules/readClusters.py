@@ -193,6 +193,7 @@ def ReadCluster(self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgCluster
             "0101": Cluster0101, 
             "0102": Cluster0102,
             "0201": Cluster0201, 
+            "0202": Cluster0202, 
             "0204": Cluster0204,
             "0300": Cluster0300,
             "0400": Cluster0400, 
@@ -1484,6 +1485,10 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.log.logging( "Cluster", 'Debug', "ReadCluster - 0201 - Max SetPoint: %s" %ValueTemp, MsgSrcAddr)
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  ValueTemp )
 
+    elif MsgAttrID == '001a': # Remote Sensing
+        checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  MsgClusterData )
+        self.log.logging( "Cluster", 'Debug', "ReadCluster - %s - %s/%s Remote Sensing: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
+
     elif MsgAttrID == '0025':   # Scheduler state
         # Bit #0 => disable/enable Scheduler
         self.log.logging( "Cluster", 'Debug', "ReadCluster - 0201 - Scheduler state:  %s" %value, MsgSrcAddr)
@@ -1648,6 +1653,23 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     else:
         self.log.logging( "Cluster", 'Debug', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  MsgClusterData )
+
+def Cluster0202( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
+
+    # Thermostat cluster
+    self.log.logging( "Cluster", 'Debug', "ReadCluster - 0202 - %s/%s AttrId: %s AttrType: %s AttSize: %s Data: %s"
+            %(MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
+
+    value = decodeAttribute( self, MsgAttType, MsgClusterData)
+    checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  value )
+
+    if MsgAttrID =='0000':  # Fan Mode
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgAttrID, value)
+        self.log.logging( "Cluster", 'Debug', "ReadCluster - 0202 - Fan Mode: %s" %value, MsgSrcAddr)
+
+    elif MsgAttrID == '0001': # Fan Mode Sequence
+        self.log.logging( "Cluster", 'Debug', "ReadCluster - %s - %s/%s Fan Mode Sequenec: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
+
 
 def Cluster0204( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
 

@@ -292,17 +292,25 @@ def CreateDomoDevice(self, Devices, NWKID):
             self.log.logging("Widget", "Debug", "CreateDomoDevice - DevId: %s DevEp: %s Type: %s" %(DeviceID_IEEE, Ep, t), NWKID)
 
             # === Selector Switches
-            if t in ( 'PAC-MODE', ):
-                pass
+            if t in ( 'PAC-MODE', ): # 6
+                Options = createSwitchSelector( self, 6 , DeviceType = t, SelectorStyle = 0)
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
+                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in PAC-MODE" %(t), NWKID)
 
-            if t in ( 'PAC-RATE', ):
-                pass
+            if t in ( 'FanControl', ): # 8
+                Options = createSwitchSelector( self, 8 , DeviceType = t, SelectorStyle = 0)
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
+                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in FanControl" %(t), NWKID)        
 
-            if t in ( 'PAC-WING', ):
-                pass
+            if t in ( 'PAC-WING', ): # 4
+                Options = createSwitchSelector( self, 4 , DeviceType = t, SelectorStyle = 0)
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
+                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in PAC-WING" %(t), NWKID)
 
-            if t in ( 'PAC-SWITCH', ):
-                pass
+            if t in ( 'PAC-SWITCH', ): # 2
+                Options = createSwitchSelector( self, 2 , DeviceType = t, SelectorStyle = 0)
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
+                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in PAC-SWITCH" %(t), NWKID)           
 
             # 3 Selectors, Style 0
             if t in ("Toggle", "ThermoMode_2"): 
