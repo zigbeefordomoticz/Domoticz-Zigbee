@@ -34,6 +34,8 @@ from Modules.widgets import SWITCH_LVL_MATRIX
 from Modules.cmdsDoorLock import cluster0101_lock_door, cluster0101_unlock_door
 from Modules.fanControl import change_fan_mode
 
+from Modules.casaia import write_multi_pairing_code_request, swing_OnOff
+
 def debugDevices( self, Devices, Unit):
 
     Domoticz.Log("Device Name: %s" %Devices[Unit].Name)
@@ -69,7 +71,7 @@ DEVICE_SWITCH_MATRIX = {
 ACTIONATORS = [ 'Switch', 'Plug', 'SwitchAQ2', 'Smoke', 'DSwitch', 'LivoloSWL', 'LivoloSWR', 'Toggle',
             'Venetian', 'VenetianInverted', 'WindowCovering', 'BSO', 'BSO-Orientation', 'BSO-Volet',
             'LvlControl', 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl',
-            'ThermoSetpoint', 'ThermoMode', 'ThermoMode_2', 'ThermoModeEHZBRTS', 'FanControl','TempSetCurrent', 'AlarmWD',
+            'ThermoSetpoint', 'ThermoMode', 'ThermoMode_2', 'ThermoModeEHZBRTS', 'FanControl', 'PAC-WING','TempSetCurrent', 'AlarmWD',
             'FIP', 'HACTMODE','LegranCableMode', 'ContractPower','HeatingSwitch', 'DoorLock' ]
             
 def mgtCommand( self, Devices, Unit, Command, Level, Color ):
@@ -197,6 +199,13 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             thermostat_Mode( self, NWKID, 'Off' )
             UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             # Let's force a refresh of Attribute in the next Heartbeat 
+            self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
+            return
+
+        if DeviceType == 'PAC-WING':
+            swing_OnOff( self, NWKID, '00')
+            UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            # Let's force a refresh of Attribute in the next Heartbeat  
             self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
             return
 
@@ -467,12 +476,22 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
                 40: 'High',
                 10: 'Auto',
             }
+
+            write_multi_pairing_code_request( self, NWKID )
             if Level in CMD_MODE:
                 change_fan_mode( self, NWKID, EPout, CMD_MODE[ Level] )
                 UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             # Let's force a refresh of Attribute in the next Heartbeat  
             self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
             return
+
+        if DeviceType == 'PAC-WING':
+            swing_OnOff( self, NWKID, '01')
+            UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            # Let's force a refresh of Attribute in the next Heartbeat  
+            self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
+            return
+
 
         elif DeviceType == 'BSO-Volet':
             if profalux:

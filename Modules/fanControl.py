@@ -30,7 +30,7 @@ def change_fan_mode( self, NwkId, Ep, fan_mode):
 
     data = '%02x' %FAN_MODE[ fan_mode ]
 
-    write_attribute (self, NwkId, ZIGATE_EP, Ep, '0202', '0000', '00', '0000', '30', data, ackIsDisabled = is_ack_tobe_disabled(self, NwkId))
+    write_attribute (self, NwkId, ZIGATE_EP, Ep, '0202', '0000',   '00', '0000', '30', data, ackIsDisabled = is_ack_tobe_disabled(self, NwkId))
 
 
 
