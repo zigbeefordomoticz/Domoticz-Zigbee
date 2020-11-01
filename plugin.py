@@ -48,7 +48,7 @@
             </options>
         </param>
 
-        <param field="Mode4" label="Listening port for Web Admin GUI " width="75px" required="true" default="9440" />
+        <param field="Mode4" label="Listening port for Web Admin GUI (put None to disable)" width="75px" required="true" default="9440" />
 
         <param field="Mode6" label="Verbors and Debuging" width="150px" required="true" default="None">
             <options>
@@ -202,7 +202,8 @@ class BasePlugin:
         self.SchneiderZone = None        # Manage Zone for Wiser Thermostat and HACT
 
     def onStart(self):
-
+    
+        Domoticz.Heartbeat( 1 )
         self.pluginParameters = dict(Parameters)
 
         with open( Parameters["HomeFolder"] + VERSION_FILENAME, 'rt') as versionfile:
@@ -257,10 +258,8 @@ class BasePlugin:
         if self.log == None:
             self.log = LoggingManagement(self.pluginconf, self.PluginHealth)
             self.log.openLogFile()
-        
 
-        self.log.logging( 'Plugin', 'Status',  "Switching Heartbeat to %s s interval" %HEARTBEAT)
-        Domoticz.Heartbeat( 1 )
+
         self.log.logging( 'Plugin', 'Status',  "Python Version - %s" %sys.version)
         assert sys.version_info >= (3, 4)
         self.log.logging( 'Plugin', 'Status',  "DomoticzVersion: %s" %Parameters["DomoticzVersion"])
@@ -468,7 +467,7 @@ class BasePlugin:
         decodedConnection = decodeConnection ( str(Connection) )
         if 'Protocol' in decodedConnection:
             if decodedConnection['Protocol'] in ( 'HTTP', 'HTTPS') : # We assumed that is the Web Server 
-                if self.pluginconf.pluginConf['enableWebServer']:
+                if self.webserver:
                     self.webserver.onConnect( Connection, Status, Description)
                 return
 
@@ -508,7 +507,7 @@ class BasePlugin:
     def onMessage(self, Connection, Data):
         #self.log.logging( 'Plugin', 'Debug', "onMessage called on Connection " + " Data = '" +str(Data) + "'")
         if isinstance(Data, dict):
-            if self.pluginconf.pluginConf['enableWebServer']:
+            if self.webserver:
                 self.webserver.onMessage( Connection, Data)
             return
 
@@ -566,7 +565,7 @@ class BasePlugin:
 
         if 'Protocol' in decodedConnection:
             if decodedConnection['Protocol'] in ( 'HTTP', 'HTTPS') : # We assumed that is the Web Server 
-                if self.pluginconf.pluginConf['enableWebServer']:
+                if self.webserver:
                     self.webserver.onDisconnect( Connection )
                 return
 
@@ -585,7 +584,7 @@ class BasePlugin:
             self.ZigateComm.check_timed_out_for_tx_queues()
 
         self.internalHB += 1
-        if (self.internalHB % HEARTBEAT) != 0:
+        if self.PDMready and (self.internalHB % HEARTBEAT) != 0:
             return
         busy_ = False
         self.HeartbeatCount += 1 
@@ -830,13 +829,6 @@ def zigateInit_Phase3( self ):
     elif self.FirmwareVersion.lower() == '031b':
         self.log.logging( 'Plugin', 'Status', "You are not on the latest firmware version, This version is known to have problem, please consider to upgrae")
 
-    #elif int(self.FirmwareVersion,16) >= 0x031b:
-    #    # We have ACK/NCK so we disable APSReporting
-    #    #if self.APS:
-    #    #    self.pluginconf.pluginConf['enableAPSFailureReporting'] = 0
-    #    #    del self.APS
-    #    #    self.APS = None
-
 
     elif int(self.FirmwareVersion,16) > 0x031d:
         Domoticz.Error("Firmware %s is not yet supported" %self.FirmwareVersion.lower())
@@ -867,24 +859,13 @@ def zigateInit_Phase3( self ):
                 # Add Zigate NwkId 0x0000 Ep 0x01 to GroupId 0x0000
                 self.groupmgt.addGroupMemberShip( '0000', '01', '0000')
 
-
-
-
-
-
         # Create Network Map object and trigger one scan
         if self.networkmap is None:
             self.networkmap = NetworkMap( self.pluginconf, self.ZigateComm, self.ListOfDevices, Devices, self.HardwareID, self.log)
-        #    if len(self.ListOfDevices) > 1:
-        #        self.log.logging( 'Plugin', 'Status', "Trigger a Topology Scan")
-        #        self.networkmap.start_scan( ) 
      
         # Create Network Energy object and trigger one scan
         if self.networkenergy is None:
-            self.networkenergy = NetworkEnergy( self.pluginconf, self.ZigateComm, self.ListOfDevices, Devices, self.HardwareID, self.log)
-        #    if len(self.ListOfDevices) > 1:
-        #        self.log.logging( 'Plugin', 'Status', "Trigger a Energy Level Scan")
-        #        self.networkenergy.start_scan()
+            self.networkenergy = NetworkEnergy( self.pluginconf, self.ZigateComm, self.ListOfDevices, Devices, self.HardwareID, self.log)        #    if len(self.ListOfDevices) > 1:        #        self.log.logging( 'Plugin', 'Status', "Trigger a Energy Level Scan")        #        self.networkenergy.start_scan()
 
     # In case we have Transport = None , let's check if we have to active Group management or not. (For Test and Web UI Dev purposes
     if self.transport == 'None' and self.groupmgt is None and self.pluginconf.pluginConf['enablegroupmanagement']:
@@ -894,24 +875,23 @@ def zigateInit_Phase3( self ):
                self.groupmgt.updateZigateIEEE( self.ZigateIEEE) 
                
     # Starting WebServer
-    if self.webserver is None and self.pluginconf.pluginConf['enableWebServer']:
-        if (not self.VersionNewFashion and (self.DomoticzMajor < 4 or ( self.DomoticzMajor == 4 and self.DomoticzMinor < 10901))):
-            Domoticz.Log("self.VersionNewFashion: %s" %self.VersionNewFashion)
-            Domoticz.Log("self.DomoticzMajor    : %s" %self.DomoticzMajor)
-            Domoticz.Log("self.DomoticzMinor    : %s" %self.DomoticzMinor)
-            Domoticz.Error("ATTENTION: the WebServer part is not supported with this version of Domoticz. Please upgrade to a version greater than 4.10901")
+    if self.webserver is None:
+        if Parameters['Mode4'].isdigit():
+            if (not self.VersionNewFashion and (self.DomoticzMajor < 4 or ( self.DomoticzMajor == 4 and self.DomoticzMinor < 10901))):
+                Domoticz.Log("self.VersionNewFashion: %s" %self.VersionNewFashion)
+                Domoticz.Log("self.DomoticzMajor    : %s" %self.DomoticzMajor)
+                Domoticz.Log("self.DomoticzMinor    : %s" %self.DomoticzMinor)
+                Domoticz.Error("ATTENTION: the WebServer part is not supported with this version of Domoticz. Please upgrade to a version greater than 4.10901")
 
-        if not Parameters['Mode4'].isdigit():
-            self.domoticzdb_Hardware.updateMode4( '9440' )
-            Parameters['Mode4'] = '9440'
-
-        self.log.logging( 'Plugin', 'Status', "Start Web Server connection")
-        self.webserver = WebServer( self.networkenergy, self.networkmap, self.zigatedata, self.pluginParameters, self.pluginconf, self.statistics, 
-            self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], self.HardwareID, self.DevicesInPairingMode, self.groupmgt, Devices, 
-            self.ListOfDevices, self.IEEE2NWK , self.permitTojoin , self.WebUsername, self.WebPassword, self.PluginHealth, Parameters['Mode4'], 
-            self.log)
-        if self.FirmwareVersion:
-            self.webserver.update_firmware( self.FirmwareVersion )
+            self.log.logging( 'Plugin', 'Status', "Start Web Server connection")
+            self.webserver = WebServer( self.networkenergy, self.networkmap, self.zigatedata, self.pluginParameters, self.pluginconf, self.statistics, 
+                self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], self.HardwareID, self.DevicesInPairingMode, self.groupmgt, Devices, 
+                self.ListOfDevices, self.IEEE2NWK , self.permitTojoin , self.WebUsername, self.WebPassword, self.PluginHealth, Parameters['Mode4'], 
+                self.log)
+            if self.FirmwareVersion:
+                self.webserver.update_firmware( self.FirmwareVersion )
+        else:
+            Domoticz.Error("WebServer disabled du to Parameter Mode4 set to %s" %Parameters['Mode4'])
 
     self.log.logging( 'Plugin', 'Status', "Plugin with Zigate firmware %s correctly initialized" %self.FirmwareVersion)
 
