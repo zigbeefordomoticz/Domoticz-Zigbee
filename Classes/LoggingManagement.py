@@ -143,7 +143,8 @@ class LoggingManagement:
         _context = {
                     'Time' : int(time.time()),
                     'nwkid' : nwkid,
-                    'PluginHealth' : self.PluginHealth['Txt']
+                    'PluginHealth' : self.PluginHealth['Txt'],
+                    'message' : message
                 }
         if context is not None:
             _context['context'] = context.copy()
