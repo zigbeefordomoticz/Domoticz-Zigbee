@@ -64,11 +64,12 @@ class WebServer(object):
     from WebServer.rest_Provisioning import rest_new_hrdwr, rest_rcv_nw_hrdwr
     from WebServer.rest_Topology import rest_netTopologie, rest_req_topologie
     from WebServer.sendresponse import sendResponse
-    from WebServer.tools import keepConnectionAlive, DumpHTTPResponseToLog          
+    from WebServer.tools import keepConnectionAlive, DumpHTTPResponseToLog    
+    from WebServer.rest_Ota import rest_ota_firmware_update, rest_ota_firmware_list, rest_ota_devices_for_manufcode
 
     hearbeats = 0 
 
-    def __init__( self, networkenergy, networkmap, ZigateData, PluginParameters, PluginConf, Statistics, adminWidgets, ZigateComm, HomeDirectory, hardwareID, DevicesInPairingMode, groupManagement, Devices, ListOfDevices, IEEE2NWK , permitTojoin, WebUserName, WebPassword, PluginHealth, httpPort, log):
+    def __init__( self, networkenergy, networkmap, ZigateData, PluginParameters, PluginConf, Statistics, adminWidgets, ZigateComm, HomeDirectory, hardwareID, DevicesInPairingMode, groupManagement, OTA, Devices, ListOfDevices, IEEE2NWK , permitTojoin, WebUserName, WebPassword, PluginHealth, httpPort, log):
 
         self.httpServerConn = None
         self.httpClientConn = None
@@ -96,6 +97,7 @@ class WebServer(object):
         self.permitTojoin = permitTojoin
 
         self.groupmgt = groupManagement if groupManagement else None
+        self.OTA = OTA if OTA else None
         self.ListOfDevices = ListOfDevices
         self.DevicesInPairingMode = DevicesInPairingMode
         self.fakeDevicesInPairingMode = 0
@@ -371,6 +373,11 @@ class WebServer(object):
         Statistics['Rxps'] = round(Statistics['Received'] / Statistics['Uptime'], 2)
         Statistics['Rxpm'] = round(Statistics['Received'] / Statistics['Uptime'] * 60, 2)
         Statistics['Rxph'] = round(Statistics['Received'] / Statistics['Uptime'] * 3600, 2)
+        
+        if self.log.LogErrorHistory:
+            Statistics['Error'] = True
+        else:
+            Statistics['Error'] = False
 
         _response = prepResponseMessage( self ,setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
@@ -1190,9 +1197,17 @@ class WebServer(object):
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
  
         if verb == 'GET':
-            if self.log.LogErrorHistory is None or len(self.log.LogErrorHistory) == 0:
-                return _response
-            _response["Data"] =  json.dumps( self.log.LogErrorHistory, sort_keys=False ) 
+            if self.log.LogErrorHistory:
+                _response["Data"] =  json.dumps( self.log.LogErrorHistory, sort_keys=False ) 
+        return _response
+        
+    def rest_logErrorHistoryClear( self, verb, data, parameters):
+
+        _response = prepResponseMessage( self ,setupHeadersResponse())
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+        if verb == 'GET':
+            self.logging( 'Status', "Erase Log History")
+            self.log.loggingClearErrorHistory()
         return _response
 
 
