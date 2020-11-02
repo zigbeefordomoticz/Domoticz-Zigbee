@@ -84,6 +84,7 @@ class OTAManagement(object):
             }
 
         self.ListInUpdate = {       # Tracking requested update information
+            'FileName': None,
             'intImageType': None,
             'intImageVersion': None,
             'ImageVersion': None,
