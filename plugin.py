@@ -873,7 +873,12 @@ def zigateInit_Phase3( self ):
                    self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK, self.log )
            if self.groupmgt and self.ZigateIEEE:
                self.groupmgt.updateZigateIEEE( self.ZigateIEEE) 
-               
+
+    # Enable Over The Air Upgrade if applicable
+    if self.OTA is None and self.pluginconf.pluginConf['allowOTA']:
+        self.OTA = OTAManagement( self.pluginconf, self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"],
+                    self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK, self.log, self.PluginHealth)
+
     # Starting WebServer
     if self.webserver is None:
         if Parameters['Mode4'].isdigit():
@@ -885,7 +890,7 @@ def zigateInit_Phase3( self ):
 
             self.log.logging( 'Plugin', 'Status', "Start Web Server connection")
             self.webserver = WebServer( self.networkenergy, self.networkmap, self.zigatedata, self.pluginParameters, self.pluginconf, self.statistics, 
-                self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], self.HardwareID, self.DevicesInPairingMode, self.groupmgt, Devices, 
+                self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], self.HardwareID, self.DevicesInPairingMode, self.groupmgt,self.OTA, Devices, 
                 self.ListOfDevices, self.IEEE2NWK , self.permitTojoin , self.WebUsername, self.WebPassword, self.PluginHealth, Parameters['Mode4'], 
                 self.log)
             if self.FirmwareVersion:
@@ -894,11 +899,6 @@ def zigateInit_Phase3( self ):
             Domoticz.Error("WebServer disabled du to Parameter Mode4 set to %s" %Parameters['Mode4'])
 
     self.log.logging( 'Plugin', 'Status', "Plugin with Zigate firmware %s correctly initialized" %self.FirmwareVersion)
-
-    # Enable Over The Air Upgrade if applicable
-    if self.OTA is None and self.pluginconf.pluginConf['allowOTA']:
-        self.OTA = OTAManagement( self.pluginconf, self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"],
-                    self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK, self.log, self.PluginHealth)
 
     # If firmware above 3.0d, Get Network State 
     if (
