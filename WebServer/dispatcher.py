@@ -50,10 +50,16 @@ def do_rest( self, Connection, verb, data, version, command, parameters):
                          {'Name':'zgroup-list-available-device','Verbs':{'GET'}, 'function':self.rest_zGroup_lst_avlble_dev},
         'zigate':        {'Name':'zigate',             'Verbs':{'GET'},          'function':self.rest_zigate},
         'log-error-history':{'Name':'log-error-history','Verbs':{'GET'},         'function':self.rest_logErrorHistory},
+        'clear-error-history':{'Name':'clear-error-history','Verbs':{'GET'},         'function':self.rest_logErrorHistoryClear},
         'zigate-erase-PDM':{'Name':'zigate-erase-PDM', 'Verbs':{'GET'},          'function':self.rest_zigate_erase_PDM},
         'zigate-mode':   {'Name':'zigate-mode',        'Verbs':{'GET'},          'function': self.rest_zigate_mode},
         'rescan-groups': {'Name':'rescan-groups',      'Verbs':{'GET'},          'function':self.rest_rescan_group},
         'scan-device-for-grp': {'Name':'ScanDevscan-device-for-grpiceForGrp',  'Verbs':{'PUT'}, 'function':self.rest_scan_devices_for_group},
+        'ota-firmware-update': {'Name':'ota-firmware-update',   'Verbs':{'PUT'}, 'function':self.rest_ota_firmware_update},
+        'ota-firmware-list': {'Name':'ota-firmware-list',       'Verbs':{'GET'}, 'function':self.rest_ota_firmware_list},
+        'ota-firmware-device-list': {'Name':'ota-firmware-list','Verbs':{'GET'}, 'function':self.rest_ota_devices_for_manufcode}
+        
+
         }
 
     self.logging( 'Debug', "do_rest - Verb: %s, Command: %s, Param: %s" %(verb, command, parameters))
