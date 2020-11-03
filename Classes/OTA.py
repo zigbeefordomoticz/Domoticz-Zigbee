@@ -490,7 +490,7 @@ def ota_upgrade_end_response( self, dest_addr, dest_ep, intMsgImageVersion, imag
     # u32UpgradeTime is the UTC time, in seconds, at which the client should upgrade the running image with the downloaded image
     
     # u32CurrentTime is the current UTC time, in seconds, on the server.
-    _UpgradeTime = 0x00 
+    _UpgradeTime = 0x00
     EPOCTime = datetime(2000,1,1)
     UTCTime = int((datetime.now() - EPOCTime).total_seconds())
 
@@ -498,7 +498,7 @@ def ota_upgrade_end_response( self, dest_addr, dest_ep, intMsgImageVersion, imag
     _ImageType = image_type
     _ManufacturerCode = intMsgManufCode
 
-    datas = "%02x"  % ADDRESS_MODE['short'] + dest_addr + ZIGATE_EP + dest_ep 
+    datas = "%02x"  % ADDRESS_MODE['short'] + dest_addr + ZIGATE_EP + dest_ep
     datas += "%08x" % _UpgradeTime
     datas += "%08x" % 0x00
     datas += "%08x" % _FileVersion
@@ -516,8 +516,10 @@ def ota_upgrade_end_response( self, dest_addr, dest_ep, intMsgImageVersion, imag
         self.ListOfDevices[ dest_addr ]['OTA'] = {}
 
     now = int(time())
-    self.ListOfDevices[ dest_addr ]['OTA'][ now ] = {}
-    self.ListOfDevices[ dest_addr ]['OTA'][ now ]['Time'] = datetime.fromtimestamp(time()).strftime('%Y-%m-%d %H:%M:%S')
+    self.ListOfDevices[dest_addr]['OTA'][now] = {
+        'Time': datetime.fromtimestamp(time()).strftime('%Y-%m-%d %H:%M:%S')
+    }
+
     self.ListOfDevices[ dest_addr ]['OTA'][ now ]['Version'] =  '%08X' %_FileVersion
     self.ListOfDevices[ dest_addr ]['OTA'][ now ]['Type'] =  '%04X' %_ImageType
 
