@@ -71,7 +71,7 @@ DEVICE_SWITCH_MATRIX = {
 ACTIONATORS = [ 'Switch', 'Plug', 'SwitchAQ2', 'Smoke', 'DSwitch', 'LivoloSWL', 'LivoloSWR', 'Toggle',
             'Venetian', 'VenetianInverted', 'WindowCovering', 'BSO', 'BSO-Orientation', 'BSO-Volet',
             'LvlControl', 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl',
-            'ThermoSetpoint', 'ThermoMode', 'ThermoMode_2', 'ThermoModeEHZBRTS', 'FanControl', 'PAC-WING','TempSetCurrent', 'AlarmWD',
+            'ThermoSetpoint', 'ThermoMode', 'ThermoMode_2', 'ThermoModeEHZBRTS', 'FanControl', 'PAC-SWITCH', 'PAC-MODE', 'PAC-WING','TempSetCurrent', 'AlarmWD',
             'FIP', 'HACTMODE','LegranCableMode', 'ContractPower','HeatingSwitch', 'DoorLock' ]
             
 def mgtCommand( self, Devices, Unit, Command, Level, Color ):
@@ -188,26 +188,11 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
             return
 
-        if DeviceType == 'FanControl':
-            change_fan_mode( self, NWKID, EPout, 'Off' )
-            UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
-            # Let's force a refresh of Attribute in the next Heartbeat 
-            self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
-            return
-
-        if DeviceType == 'ThermoMode':
-            thermostat_Mode( self, NWKID, 'Off' )
-            UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
-            # Let's force a refresh of Attribute in the next Heartbeat 
-            self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
-            return
-
-        if DeviceType == 'PAC-WING':
+        if DeviceType == 'PAC-SWITCH':
             swing_OnOff( self, NWKID, '00')
-            UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             # Let's force a refresh of Attribute in the next Heartbeat  
             self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
-            return
 
         if DeviceType == 'BSO-Volet':
             if profalux:
@@ -264,8 +249,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
 
         if DeviceType == 'LivoloSWL':
             livolo_OnOff( self, NWKID , EPout, 'Left', 'On')
-            UpdateDevice_v2(self, Devices, Unit, 1, "On",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
-                        
+            UpdateDevice_v2(self, Devices, Unit, 1, "On",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)                      
             # Let's force a refresh of Attribute in the next Heartbeat 
             self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
             return
@@ -275,6 +259,19 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             UpdateDevice_v2(self, Devices, Unit, 1, "On",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
 
             # Let's force a refresh of Attribute in the next Heartbeat 
+            self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
+            return
+
+        if DeviceType == 'DoorLock':
+            cluster0101_lock_door( self, NWKID)
+            UpdateDevice_v2(self, Devices, Unit, 1, "Open",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            self.ListOfDevices[NWKID]['Heartbeat'] = 0 
+            return
+
+        if DeviceType == 'PAC-SWITCH':
+            swing_OnOff( self, NWKID, '01')
+            # Let's force a refresh of Attribute in the next Heartbeat  
+            UpdateDevice_v2(self, Devices, Unit, 1, "On",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
             return
 
@@ -296,11 +293,6 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         elif DeviceType == "HeatingSwitch":
             thermostat_Mode( self, NWKID, 'Heat' )
 
-        elif DeviceType == 'DoorLock':
-            cluster0101_lock_door( self, NWKID)
-            UpdateDevice_v2(self, Devices, Unit, 1, "Open",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
-            self.ListOfDevices[NWKID]['Heartbeat'] = 0 
-            return
 
         else:
             # Remaining Slider widget
@@ -486,12 +478,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             return
 
         if DeviceType == 'PAC-WING':
-            swing_OnOff( self, NWKID, '01')
             UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             # Let's force a refresh of Attribute in the next Heartbeat  
             self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
             return
-
 
         elif DeviceType == 'BSO-Volet':
             if profalux:

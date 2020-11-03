@@ -482,25 +482,34 @@ SWITCH_LVL_MATRIX = {
     },
     
     'PAC-WING': {
-        "00": (0, "00"), # Off - All wings stopped
-        "01": (1, "10"), # Vertigal wings motion
-        "02": (2, "20"), # Horizontal wings motion
-        "03": (3, "30"), # Vertical and Horizontal wings motion 
+        "ff": (0, "00"), # Off - All wings stopped
+        "00": (1, "10"), # Off Mode
+        "01": (2, "20"), # Auto On
         "ForceUpdate": False, 
-        "LevelNames": "Off|Vertical|Horizontal|Both",
+        "LevelNames": "Off|Off|Auto",
         "Language": {
-            "fr-FR": {"LevelNames": "Off|Horizontal|Vertical|Les deux"}
+            "fr-FR": {"LevelNames": "Off|Off|Auto"}
         }
     },
-    'PAC-SWITCH': {
-        "00": (0, "00"), # Off
-        "01": (1, "10"), # On
-        "ForceUpdate": False, 
-        "LevelNames": "Off|On",
+    "PAC-MODE": {
+        0x00: (0, "Off"), # Off
+        0x03: (2, "20"),  # Cool
+        0x04: (3, "30"),  # Heat
+        0x08: (5, "50"),  # Dry
+        0x07: (6, "60"),  # Fan
+        "ForceUpdate": False,
+        "LevelNames": "Off|Cool|Heat|Dry|Fan",
         "Language": {
-            "fr-FR": {"LevelNames": "Arrêt|Allumer"}
+            "fr-FR": {"LevelNames": "Arrêt|Froid|Chaud|Déshumidicateur|Ventilateur"}
         }
     },
+
+    "PAC-SWITCH": { 
+        "00": ( 0,"Off"), 
+        "01": ( 1,"On") , 
+        "ForceUpdate": False},
+
+
     'KF204Switch': {
         "00": (0, "00"), # Off
         "01": (1, "10"), # Button 0 ( left)

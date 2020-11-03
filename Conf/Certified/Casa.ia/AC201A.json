@@ -9,7 +9,7 @@
 			"0202":"",
 			"0402":"",
 			"ffad":"",
-			"Type":"Temp/ThermoSetpoint/FanControl/ThermoMode/PAC-WING/PAC-SWITCH"
+			"Type":"Temp/ThermoSetpoint/FanControl/PAC-MODE/PAC-WING/PAC-SWITCH"
 		}
 	},
 	"Type":"",
