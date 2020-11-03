@@ -3462,6 +3462,10 @@ def Decode8401(
                 MsgSrcAddr,
             )
     else:  ## default
+
+        if MsgSrcAddr not in self.ListOfDevices:
+            return
+            
         alarm1 = int(MsgZoneStatus, 16) & 1
         alarm2 = (int(MsgZoneStatus, 16) >> 1) & 1
         tamper = (int(MsgZoneStatus, 16) >> 2) & 1
