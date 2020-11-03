@@ -1461,12 +1461,12 @@ def process_msg_type8011_above31d(self, Status, NwkId, Ep, MsgClusterId, ExternS
 
     if Status == '00':
         if InternSqn in self.ListOfCommands:
-            self.loggingSend('Log', " - Above 3.1d [%s] receive Ack for Cmd: %s - size of SendQueue: %s" % (
+            self.loggingSend('Debug', " - Above 3.1d [%s] receive Ack for Cmd: %s - size of SendQueue: %s" % (
                 InternSqn,  self.ListOfCommands[InternSqn]['Cmd'], self.loadTransmit()))
         self.statistics._APSAck += 1
     else:
         if InternSqn in self.ListOfCommands:
-            self.loggingSend('Log', " - Above 3.1d [%s] receive Nack for Cmd: %s - size of SendQueue: %s" % (
+            self.loggingSend('Debug', " - Above 3.1d [%s] receive Nack for Cmd: %s - size of SendQueue: %s" % (
                 InternSqn,  self.ListOfCommands[InternSqn]['Cmd'], self.loadTransmit()))
         self.statistics._APSNck += 1
 

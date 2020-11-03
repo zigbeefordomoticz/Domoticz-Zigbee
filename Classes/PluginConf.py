@@ -22,9 +22,8 @@ SETTINGS = {
     'Services': {'Order': 1, 'param': {
         'enablegroupmanagement':  {'type': 'bool', 'default': 0, 'current': None, 'restart': True, 'hidden': False, 'Advanced': False},
         'enableReadAttributes':   {'type': 'bool', 'default': 0, 'current': None, 'restart': True, 'hidden': False, 'Advanced': False},
-        'enableWebServer':        {'type': 'bool', 'default': 1, 'current': None, 'restart': True, 'hidden': False, 'Advanced': False},
         'internetAccess':         {'type': 'bool', 'default': 1, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
-        'allowOTA':               {'type': 'bool', 'default': 0, 'current': None, 'restart': True, 'hidden': False, 'Advanced': False},
+        'allowOTA':               {'type': 'bool', 'default': 1, 'current': None, 'restart': True, 'hidden': True, 'Advanced': False},
         'pingDevices':            {'type': 'bool', 'default': 1, 'current': None, 'restart': True, 'hidden': False, 'Advanced': False},
     }
     },
@@ -70,6 +69,7 @@ SETTINGS = {
         'polling0101':      {'type': 'int', 'default': 3600,  'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'polling0102':      {'type': 'int', 'default': 900,   'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'polling0201':      {'type': 'int', 'default': 900,   'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
+        'polling0202':      {'type': 'int', 'default': 900,   'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'polling0204':      {'type': 'int', 'default': 86400, 'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'polling0300':      {'type': 'int', 'default': 900,   'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'polling0400':      {'type': 'int', 'default': 900,   'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
@@ -141,14 +141,14 @@ SETTINGS = {
     },
 
     # Over The Air Upgrade
-    'OverTheAirUpgrade': {'Order': 9, 'param': {
-        'forceOTAUpgrade':   {'type': 'bool', 'default': 0,    'current': None, 'restart': True, 'hidden': False, 'Advanced': True},
-        'forceOTAMask':      {'type': 'hex',  'default': 0,    'current': None, 'restart': True, 'hidden': False, 'Advanced': True},
-        'batteryOTA':        {'type': 'bool', 'default': 0,    'current': None, 'restart': True, 'hidden': False, 'Advanced': False},
-        'waitingOTA':        {'type': 'int',  'default': 3600, 'current': None, 'restart': True, 'hidden': False, 'Advanced': False},
-        'OTAwait4nextImage': {'type': 'int',  'default': 60,   'current': None, 'restart': False, 'hidden': False, 'Advanced': True}
-    }
-    },
+    # 'OverTheAirUpgrade': {'Order': 9, 'param': {
+    #     'forceOTAUpgrade':   {'type': 'bool', 'default': 0,    'current': None, 'restart': True, 'hidden': False, 'Advanced': True},
+    #     'forceOTAMask':      {'type': 'hex',  'default': 0,    'current': None, 'restart': True, 'hidden': False, 'Advanced': True},
+    #     'batteryOTA':        {'type': 'bool', 'default': 0,    'current': None, 'restart': True, 'hidden': False, 'Advanced': False},
+    #     'waitingOTA':        {'type': 'int',  'default': 3600, 'current': None, 'restart': True, 'hidden': False, 'Advanced': False},
+    #     'OTAwait4nextImage': {'type': 'int',  'default': 60,   'current': None, 'restart': False, 'hidden': False, 'Advanced': True}
+    # }
+    # },
 
     # Plugin Transport
     'PluginTransport':     {'Order': 10, 'param': {
@@ -267,7 +267,6 @@ SETTINGS = {
         'enableSchneiderWiser': {'type': 'bool', 'default': 0,   'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'reenforcementWiser':   {'type': 'int',  'default': 300, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'forceWiserRegistration': {'type': 'bool', 'default': 0,   'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
-        'allowWiserUpgade':     {'type': 'bool', 'default': 0,   'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         }
     },
 

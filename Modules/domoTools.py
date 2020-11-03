@@ -446,6 +446,9 @@ def TypeFromCluster( self, cluster, create_=False, ProfileID_='', ZDeviceID_='')
     elif cluster == "0201": 
         TypeFromCluster = "Temp/ThermoSetpoint/ThermoMode"
 
+    elif cluster == '0202':
+        TypeFromCluster = "FanControl"
+
     elif cluster == "0300": 
         TypeFromCluster = "ColorControl"
 

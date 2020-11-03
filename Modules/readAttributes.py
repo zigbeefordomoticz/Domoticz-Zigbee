@@ -145,6 +145,7 @@ def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
             '0101': [ 0x0000, 0x0001, 0x0002, 0x0010, 0x0011, 0x0012, 0x0013, 0x0014, 0x0015, 0x0016, 0x0017, 0x0018, 0x0019, 0x0020, 0x0023, 0x0025, 0x0026, 0x0027, 0x0028, 0x0030, 0x0032, 0x0034, 0x0040, 0x0042, 0x0043, 0xfffd],
             '0102': [ 0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0007, 0x0008, 0x0009, 0x000A, 0x000B, 0x0010, 0x0011, 0x0014, 0x0017, 0xfffd],
             '0201': [ 0x0000, 0x0008, 0x0010, 0x0012,  0x0014, 0x0015, 0x0016, 0x001B, 0x001C, 0x001F],
+            '0202': [ 0x0000, 0x0001 ],
             '0204': [ 0x0000, 0x0001, 0x0002 ],
             '0300': [ 0x0000, 0x0001, 0x0003, 0x0004, 0x0007, 0x0008, 0x4010],
             '0400': [ 0x0000],
@@ -606,6 +607,21 @@ def ReadAttributeRequest_0201_0012(self, key):
 
         ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0201", listAttributes, ackIsDisabled = is_ack_tobe_disabled(self, key) )
 
+def ReadAttributeRequest_0202(self, key):
+    # Fan Control
+    self.log.logging( "ReadAttributes", 'Debug', "ReadAttributeRequest_0202 - Key: %s " %key, nwkid=key)
+
+    ListOfEp = getListOfEpForCluster( self, key, '0202' )
+    for EPout in ListOfEp:
+        listAttributes = [0x0001]
+        for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0202'):
+            if iterAttr not in listAttributes:
+                listAttributes.append( iterAttr ) 
+        if listAttributes:
+            self.log.logging( "ReadAttributes", 'Debug', "Request 0202 %s/%s 0202 %s " %(key, EPout, listAttributes), nwkid=key)
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0202", listAttributes , ackIsDisabled = is_ack_tobe_disabled(self, key))
+
+
 def ReadAttributeRequest_0204(self, key):
 
     self.log.logging( "ReadAttributes", 'Debug', "ReadAttributeRequest_0204 - Key: %s " %key, nwkid=key)
@@ -880,6 +896,7 @@ READ_ATTRIBUTES_REQUEST = {
     '0101' : ( ReadAttributeRequest_0101, 'polling0101' ),
     '0102' : ( ReadAttributeRequest_0102, 'polling0102' ),
     '0201' : ( ReadAttributeRequest_0201, 'polling0201' ),
+    '0202' : ( ReadAttributeRequest_0202, 'polling0202' ),
     '0204' : ( ReadAttributeRequest_0204, 'polling0204' ),
     '0300' : ( ReadAttributeRequest_0300, 'polling0300' ),
     '0400' : ( ReadAttributeRequest_0400, 'polling0400' ),
