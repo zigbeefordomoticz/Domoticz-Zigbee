@@ -373,6 +373,11 @@ class WebServer(object):
         Statistics['Rxps'] = round(Statistics['Received'] / Statistics['Uptime'], 2)
         Statistics['Rxpm'] = round(Statistics['Received'] / Statistics['Uptime'] * 60, 2)
         Statistics['Rxph'] = round(Statistics['Received'] / Statistics['Uptime'] * 3600, 2)
+        
+        if self.log.LogErrorHistory:
+            Statistics['Error'] = True
+        else:
+            Statistics['Error'] = False
 
         _response = prepResponseMessage( self ,setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
@@ -1192,9 +1197,17 @@ class WebServer(object):
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
  
         if verb == 'GET':
-            if self.log.LogErrorHistory is None or len(self.log.LogErrorHistory) == 0:
-                return _response
-            _response["Data"] =  json.dumps( self.log.LogErrorHistory, sort_keys=False ) 
+            if self.log.LogErrorHistory:
+                _response["Data"] =  json.dumps( self.log.LogErrorHistory, sort_keys=False ) 
+        return _response
+        
+    def rest_logErrorHistoryClear( self, verb, data, parameters):
+
+        _response = prepResponseMessage( self ,setupHeadersResponse())
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+        if verb == 'GET':
+            self.logging( 'Status', "Erase Log History")
+            self.log.loggingClearErrorHistory()
         return _response
 
 
