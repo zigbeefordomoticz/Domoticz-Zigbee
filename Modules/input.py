@@ -4371,8 +4371,7 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
     elif _ModelName in (
         "lumi.remote.b686opcn01-bulb",
         "lumi.remote.b486opcn01-bulb",
-        "lumi.remote.b286opcn01-bulb",
-    ):
+        "lumi.remote.b286opcn01-bulb" ):
         AqaraOppleDecoding(
             self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, _ModelName, MsgData
         )
@@ -4389,6 +4388,14 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
         else:
             return
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0006", WidgetSelector)
+    elif _ModelName == "KF204": # CASA IA
+        # Decode8095 - SQN: 07, Addr: ad12, Ep: 02, Cluster: 0006, Cmd: 00, Unknown: 02 ( Button X)
+        # Decode8095 - SQN: 08, Addr: ad12, Ep: 02, Cluster: 0006, Cmd: 01, Unknown: 02 ( Button 0)
+        if MsgCmd == '00':
+            MajDomoDevice(self, Devices, MsgSrcAddr, "01", "0006", '02')
+        elif MsgCmd == '01':
+            MajDomoDevice(self, Devices, MsgSrcAddr, "01", "0006", '01')
+
     else:
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0006", MsgCmd)
         self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId][

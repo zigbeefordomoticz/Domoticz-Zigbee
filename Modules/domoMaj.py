@@ -426,8 +426,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 ( ClusterType in ( 'IAS_ACE', 'Alarm', 'Door', 'Switch', 'SwitchButton', 'AqaraOppleMiddle', 'Motion', 
                                  'Ikea_Round_5b', 'Ikea_Round_OnOff', 'Vibration', 'OrviboRemoteSquare', 'Button_3', 'LumiLock') ) or \
                 ( ClusterType == WidgetType == 'DoorLock') or \
-                ( ClusterType == 'DoorLock' and WidgetType == 'Vibration')
-            ):
+                ( ClusterType == 'DoorLock' and WidgetType == 'Vibration'
+                ( WidgetType == 'KF204Switch' and ClusterType in ( 'Switch', 'Door')))   ):
 
             # Plug, Door, Switch, Button ...
             # We reach this point because ClusterType is Door or Switch. It means that Cluster 0x0006 or 0x0500

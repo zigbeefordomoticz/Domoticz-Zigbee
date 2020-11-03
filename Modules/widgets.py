@@ -501,4 +501,16 @@ SWITCH_LVL_MATRIX = {
             "fr-FR": {"LevelNames": "Arrêt|Allumer"}
         }
     },
+    'KF204Switch': {
+        "00": (0, "00"), # Off
+        "01": (1, "10"), # Button 0 ( left)
+        "02": (2, "20"), # Button X ( right)
+        "03": (3, "30"), # Button - ( Down )
+        "04": (4, "40"), # Button + ( Up )
+        "ForceUpdate": True, 
+        "LevelNames": "Off|0|X|+|-",
+        "Language": {
+            "fr-FR": {"LevelNames": "Off|0|X|+|-"}
+        }
+    },
 }
