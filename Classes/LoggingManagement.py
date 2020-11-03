@@ -118,24 +118,16 @@ class LoggingManagement:
 
     def loggingError(self, module, message, nwkid, context):
         Domoticz.Error(message)
-        if module is None:
-            return
 
-        if module not in self.LogErrorHistory:
-            self.LogErrorHistory[module] = {
-                'LastLog' : 0,
-                '0': self.loggingBuildContext(module, message, nwkid, context)
-                }
-        elif self.LogErrorHistory[module]['LastLog'] != 4:
-            logIndex = self.LogErrorHistory[module]['LastLog'] + 1
-            self.LogErrorHistory[module]['LastLog'] = logIndex
-            self.LogErrorHistory[module][str(logIndex)] = self.loggingBuildContext( module, message, nwkid, context)
-        else: #log full for this module, rotate
-            self.LogErrorHistory[module]['0'] = self.LogErrorHistory[module]['1'].copy()
-            self.LogErrorHistory[module]['1'] = self.LogErrorHistory[module]['2'].copy()
-            self.LogErrorHistory[module]['2'] = self.LogErrorHistory[module]['3'].copy()
-            self.LogErrorHistory[module]['3'] = self.LogErrorHistory[module]['4'].copy()
-            self.LogErrorHistory[module]['4'] = self.loggingBuildContext( module, message, nwkid, context)
+        if not self.LogErrorHistory:
+            self.LogErrorHistory['LastLog'] = 0
+            self.LogErrorHistory['0'] = self.loggingBuildContext(module, message, nwkid, context)
+        else:
+            self.LogErrorHistory['LastLog'] = int(self.LogErrorHistory['LastLog']) + 1
+            self.LogErrorHistory[str(self.LogErrorHistory['LastLog'])] = self.loggingBuildContext( module, message, nwkid, context)
+            if len(self.LogErrorHistory) > 20: #log full for this module, remove older
+                idx = list(self.LogErrorHistory.keys())[1]
+                self.LogErrorHistory.pop(idx)
 
         self.loggingWriteErrorHistory()
 
@@ -158,17 +150,10 @@ class LoggingManagement:
             json_file.write('\n')
 
     def loggingCleaningErrorHistory( self ):
-        _now = time.time()
-        for module in self.LogErrorHistory:
-            if _now - self.LogErrorHistory[module]['0']['Time'] > 1360800: #7 days
-                for i in range(0,self.LogErrorHistory[module]['LastLog']):
-                    self.LogErrorHistory[module][str(i)] = self.LogErrorHistory[module][str(i+1)].copy()
-                self.LogErrorHistory[module].pop(str(self.LogErrorHistory[module]['LastLog']))
-                if self.LogErrorHistory[module]['LastLog'] == 0:
-                    self.LogErrorHistory.pop(module)
-                else:
-                    self.LogErrorHistory[module]['LastLog'] -= 1
-            return #one by one is enouhgt to prevent too much time in the function
+        idx = list(self.LogErrorHistory.keys())[1]
+        if time.time() - self.LogErrorHistory[idx]['Time'] > 1360800: #7 days
+            self.LogErrorHistory.pop(idx)
+
             
     def loggingClearErrorHistory( self ):
         self.LogErrorHistory.clear()
