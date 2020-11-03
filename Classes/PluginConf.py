@@ -267,7 +267,6 @@ SETTINGS = {
         'enableSchneiderWiser': {'type': 'bool', 'default': 0,   'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'reenforcementWiser':   {'type': 'int',  'default': 300, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'forceWiserRegistration': {'type': 'bool', 'default': 0,   'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
-        'allowWiserUpgade':     {'type': 'bool', 'default': 0,   'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         }
     },
 
