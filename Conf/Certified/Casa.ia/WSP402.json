@@ -1,0 +1,29 @@
+{
+	"Ep":{
+		"01":{
+			"0000":"",
+			"0003":"",
+			"0004":"",
+			"0005":"",
+			"0006":"",
+			"0702":"",
+			"fc01":"",
+			"Type":"Plug/Power/Meter"
+		}
+	},
+	"Type":"",
+	"ClusterToBind": [ "0001", "0006", "0402", "0702"  ],
+	"ConfigureReporting": {
+		"0006": { "Attributes": { "0000": {"DataType": "10", "MinInterval":"0001", "MaxInterval":"012C", "TimeOut":"0FFF","Change":"01"}}},
+		"0702": { "Attributes": { 
+			"0000": {"DataType": "25", "MinInterval":"0005", "MaxInterval":"012C", "TimeOut":"0FFF","Change":"000000000000000a"},
+			"0400": {"DataType": "2a", "MinInterval":"0005", "MaxInterval":"012C", "TimeOut":"0FFF","Change":"0000000a"}}}
+	},
+	"ReadAttributes": {
+		"0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0006", "0007", "fffd" ],
+		"0006": [ "0000" ],
+		"0702": [ "0000",  "0200", "0300", "0302", "0303", "0306", "0400" ],
+		"fc01": []
+	}
+
+}
