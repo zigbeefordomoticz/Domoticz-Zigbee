@@ -34,7 +34,7 @@ from Modules.widgets import SWITCH_LVL_MATRIX
 from Modules.cmdsDoorLock import cluster0101_lock_door, cluster0101_unlock_door
 from Modules.fanControl import change_fan_mode
 
-from Modules.casaia import write_multi_pairing_code_request, swing_OnOff
+from Modules.casaia import write_multi_pairing_code_request,  casaia_swing_OnOff, casaia_setpoint, casaia_system_mode
 
 def debugDevices( self, Devices, Unit):
 
@@ -189,7 +189,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             return
 
         if DeviceType == 'PAC-SWITCH':
-            swing_OnOff( self, NWKID, '00')
+            casaia_swing_OnOff( self, NWKID, '00')
             UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             # Let's force a refresh of Attribute in the next Heartbeat  
             self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
@@ -269,7 +269,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             return
 
         if DeviceType == 'PAC-SWITCH':
-            swing_OnOff( self, NWKID, '01')
+            casaia_swing_OnOff( self, NWKID, '01')
             # Let's force a refresh of Attribute in the next Heartbeat  
             UpdateDevice_v2(self, Devices, Unit, 1, "On",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
