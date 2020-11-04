@@ -418,7 +418,7 @@ def Decode8000_v2(self, Devices, MsgData, MsgLQI):  # Status
     if str(MsgData[0:2]) != "00":
         self.log.logging( 
             "Input",
-            "Debug",
+            "Error",
             "Decode8000 - PacketType: %s TypeSqn: %s sqn_app: %s sqn_aps: %s Status: [%s] "
             % (PacketType, type_sqn, sqn_app, sqn_aps, Status),
         )
