@@ -254,7 +254,11 @@ class BasePlugin:
 
         Domoticz.Status( "load PluginConf" )
         self.pluginconf = PluginConf(Parameters["HomeFolder"], self.HardwareID)
-        
+
+        # Create the adminStatusWidget if needed
+        self.PluginHealth['Flag'] = 1
+        self.PluginHealth['Txt'] = 'Startup'
+                
         if self.log == None:
             self.log = LoggingManagement(self.pluginconf, self.PluginHealth)
             self.log.openLogFile()
@@ -292,9 +296,9 @@ class BasePlugin:
             self.WebUsername, self.WebPassword = self.domoticzdb_Preferences.retreiveWebUserNamePassword()
             #Domoticz.Status("Domoticz Website credentials %s/%s" %(self.WebUsername, self.WebPassword))
 
-        # Create the adminStatusWidget if needed
-        self.PluginHealth['Flag'] = 1
-        self.PluginHealth['Txt'] = 'Startup'
+
+
+
         self.adminWidgets = AdminWidgets( self.pluginconf, Devices, self.ListOfDevices, self.HardwareID )
         self.adminWidgets.updateStatusWidget( Devices, 'Startup')
         
