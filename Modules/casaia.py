@@ -11,11 +11,16 @@ from Classes.LoggingManagement import LoggingManagement
 from Modules.basicOutputs import write_attribute, sendZigateCmd, raw_APS_request
 from Modules.tools import retreive_cmd_payload_from_8002, is_ack_tobe_disabled
 from Modules.zigateConsts import ZIGATE_EP
+
 import struct
+import json
+import os
 
 CASAIA_MANUF_CODE = '113c'
 CASAIA_MANUF_CODE_BE = '3c11'
 CASAIA_AC201_CLUSTER = 'ffad'
+
+CASAIA_CONFIG_FILENAME = "Casa.ia.json"
 
 
 
@@ -233,4 +238,39 @@ def brand_searching_request( self, NwkId):
     payload = cluster_frame + CASAIA_MANUF_CODE_BE + sqn + cmd 
     payload += device_type_dt + device_type + brand_id_dt + brand_id + group_id_dt + group_id + auto_search_dt + auto_search + pairing_code
     raw_APS_request( self, NwkId, EPout, 'ffad', '0104', payload, zigate_ep=ZIGATE_EP)
-    self.log.logging( "Casaia", 'Debug', "write_AC_status_request ++++ %s/%s payload: %s" %( NwkId, EPout, payload), NwkId)        
+    self.log.logging( "Casaia", 'Debug', "write_AC_status_request ++++ %s/%s payload: %s" %( NwkId, EPout, payload), NwkId)
+
+
+def open_casa_config( self ):
+
+    casaiafilename =  self.pluginconf.pluginConf['pluginConf'] + "/" + CASAIA_CONFIG_FILENAME
+    if os.path.isfile( casaiafilename ):
+        with open( casaiafilename , 'rt') as handle:
+            self.CasaiaPAC = {}
+            try:
+                self.CasaiaPAC = json.load( handle, encoding=dict)
+            except json.decoder.JSONDecodeError as e:
+                res = "Failed"
+                Domoticz.Error("loadJsonDatabase poorly-formed %s, not JSON: %s" %(self.pluginConf['filename'],e))
+
+
+def add_pac_entry(self, ieee):
+
+    if self.CasaiaPAC is None:
+        open_casa_config( self )
+
+    self.CasaiaPAC[ieee] = {'IRCode': '000'}
+    
+    casaiafilename =  self.pluginconf.pluginConf['pluginConf'] + "/" + CASAIA_CONFIG_FILENAME
+    with open( casaiafilename , 'wt') as handle:
+        json.dump( self.CasaiaPAC, handle, sort_keys=True, indent=2)
+
+
+def get_pac_code(self, ieee):
+
+    if self.CasaiaPAC is None:
+        open_casa_config( self )
+    if ieee in self.CasaiaPAC and self.CasaiaPAC[ ieee ] and 'IRCode' in self.CasaiaPAC[ ieee ] and  self.CasaiaPAC[ ieee ]['IRCode'] != '000':
+        return self.CasaiaPAC[ ieee ]['IRCode']
+    else:
+        return None
