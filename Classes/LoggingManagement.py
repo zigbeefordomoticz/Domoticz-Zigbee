@@ -122,6 +122,9 @@ class LoggingManagement:
         if not self.LogErrorHistory:
             self.LogErrorHistory['LastLog'] = 0
             self.LogErrorHistory['0'] = self.loggingBuildContext(module, message, nwkid, context)
+        elif 'LastLog' not in self.LogErrorHistory: 
+            self.LogErrorHistory['LastLog'] = 0
+            self.LogErrorHistory['0'] = self.loggingBuildContext(module, message, nwkid, context)
         else:
             self.LogErrorHistory['LastLog'] = int(self.LogErrorHistory['LastLog']) + 1
             self.LogErrorHistory[str(self.LogErrorHistory['LastLog'])] = self.loggingBuildContext( module, message, nwkid, context)
@@ -132,10 +135,16 @@ class LoggingManagement:
         self.loggingWriteErrorHistory()
 
     def loggingBuildContext(self, module, message, nwkid, context):
+        if not self.PluginHealth:
+            _txt = 'Not Started'
+        if 'Txt' not in self.PluginHealth:
+            _txt = 'Not Started'
+        else:
+            _txt = self.PluginHealth['Txt']
         _context = {
                     'Time' : int(time.time()),
                     'nwkid' : nwkid,
-                    'PluginHealth' : self.PluginHealth['Txt'],
+                    'PluginHealth' : _txt,
                     'message' : message
                 }
         if context is not None:
