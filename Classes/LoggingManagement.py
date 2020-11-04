@@ -119,10 +119,7 @@ class LoggingManagement:
     def loggingError(self, module, message, nwkid, context):
         Domoticz.Error(message)
 
-        if not self.LogErrorHistory:
-            self.LogErrorHistory['LastLog'] = 0
-            self.LogErrorHistory['0'] = self.loggingBuildContext(module, message, nwkid, context)
-        elif 'LastLog' not in self.LogErrorHistory: 
+        if not self.LogErrorHistory or 'LastLog' not in self.LogErrorHistory:
             self.LogErrorHistory['LastLog'] = 0
             self.LogErrorHistory['0'] = self.loggingBuildContext(module, message, nwkid, context)
         else:
@@ -159,9 +156,12 @@ class LoggingManagement:
             json_file.write('\n')
 
     def loggingCleaningErrorHistory( self ):
-        idx = list(self.LogErrorHistory.keys())[1]
-        if time.time() - self.LogErrorHistory[idx]['Time'] > 1360800: #7 days
-            self.LogErrorHistory.pop(idx)
+        if len(self.LogErrorHistory) > 1:
+            idx = list(self.LogErrorHistory.keys())[1]
+            if time.time() - self.LogErrorHistory[idx]['Time'] > 1360800: #7 days
+                self.LogErrorHistory.pop(idx)
+        elif len(self.LogErrorHistory) == 1:
+            self.LogErrorHistory.clear()
 
             
     def loggingClearErrorHistory( self ):
