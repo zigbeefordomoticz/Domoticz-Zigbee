@@ -444,15 +444,13 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
 
     if (
         int(MsgSourceAddressMode, 16) == ADDRESS_MODE["short"]
-        or int(MsgSourceAddressMode, 16) == ADDRESS_MODE["group"]
-    ):
+        or int(MsgSourceAddressMode, 16) == ADDRESS_MODE["group"]):
         MsgSourceAddress = MsgData[16:20]  # uint16_t
         MsgDestinationAddressMode = MsgData[20:22]
 
         if (
             int(MsgDestinationAddressMode, 16) == ADDRESS_MODE["short"]
-            or int(MsgDestinationAddressMode, 16) == ADDRESS_MODE["group"]
-        ):
+            or int(MsgDestinationAddressMode, 16) == ADDRESS_MODE["group"]):
             # Short Address
             MsgDestinationAddress = MsgData[22:26]  # uint16_t
             MsgPayload = MsgData[26 : len(MsgData)]
@@ -465,8 +463,7 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
         else:
             Domoticz.Log(
                 "Decode8002 - Unexpected Destination ADDR_MOD: %s, drop packet %s"
-                % (MsgDestinationAddressMode, MsgData)
-            )
+                % (MsgDestinationAddressMode, MsgData))
             return
 
     elif int(MsgSourceAddressMode, 16) == ADDRESS_MODE["ieee"]:
@@ -475,8 +472,7 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
 
         if (
             int(MsgDestinationAddressMode, 16) == ADDRESS_MODE["short"]
-            or int(MsgDestinationAddressMode, 16) == ADDRESS_MODE["group"]
-        ):
+            or int(MsgDestinationAddressMode, 16) == ADDRESS_MODE["group"]):
             MsgDestinationAddress = MsgData[34:38]  # uint16_t
             MsgPayload = MsgData[38 : len(MsgData)]
 
@@ -487,8 +483,7 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
         else:
             Domoticz.Log(
                 "Decode8002 - Unexpected Destination ADDR_MOD: %s, drop packet %s"
-                % (MsgDestinationAddressMode, MsgData)
-            )
+                % (MsgDestinationAddressMode, MsgData))
             return
 
     else:
@@ -510,107 +505,74 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
         + " ClusterID : "
         + MsgClusterID
         + " Message Payload : "
-        + MsgPayload,
-    )
+        + MsgPayload,)
 
     # Let's check if this is an Schneider related APS. In that case let's process
     srcnwkid = dstnwkid = None
-    if len(MsgSourceAddress) == 4:
-        # Short address
-        if MsgSourceAddress != "0000" and MsgSourceAddress not in self.ListOfDevices:
-            return
-        srcnwkid = MsgSourceAddress
-    else:
-        # IEEE
-        if MsgSourceAddress not in self.IEEE2NWK:
-            return
-        srcnwkid = self.IEEE2NWK[MsgSourceAddress]
+    if len(MsgSourceAddress) != 4:
+        Domoticz.Error("not handling IEEE address")
+        return
 
-    if len(MsgDestinationAddress) == 4:
-        # Short address
-        if (
-            MsgDestinationAddress != "0000"
-            and MsgDestinationAddress not in self.ListOfDevices
-        ):
-            return
-        dstnwkid = MsgDestinationAddress
-    else:
-        # IEEE
-        if MsgDestinationAddress not in self.IEEE2NWK:
-            return
-        dstnwkid = self.IEEE2NWK[MsgDestinationAddress]
+    if len(MsgDestinationAddress) !=4:
+        Domoticz.Error("not handling IEEE address")
+        return
+
+    # Short address
+    # if MsgSourceAddress == "0000":
+    #     return
+    srcnwkid = MsgSourceAddress
+
+    # Short address
+    # if MsgDestinationAddress == "0000":
+    #     return
+        
+    dstnwkid = MsgDestinationAddress
 
     timeStamped(self, srcnwkid, 0x8002)
     updLQI(self, srcnwkid, MsgLQI)
 
-    if MsgProfilID == "0104":
-        ( GlobalCommand, Sqn, ManufacturerCode, Command, Data, ) = retreive_cmd_payload_from_8002(MsgPayload)
-        if Sqn == self.ListOfDevices[ srcnwkid ]['SQN']:
+    if MsgProfilID != "0104":
+        logginginRawAPS(self,"Debug","Decode8002 - NwkId: %s Ep: %s Cluster: %s Payload: %s"
+            % (srcnwkid, MsgSourcePoint, MsgClusterID, MsgPayload),)
+        return
+
+    ( GlobalCommand, Sqn, ManufacturerCode, Command, Data, ) = retreive_cmd_payload_from_8002(MsgPayload)
+    if Sqn == self.ListOfDevices[ srcnwkid ]['SQN']:
             Domoticz.Log("Decode8002 - Duplicate message drop NwkId: %s Ep: %s Cluster: %s GlobalCommand: %5s Command: %s Data: %s"
                 % ( srcnwkid, MsgSourcePoint, MsgClusterID, GlobalCommand, Command, Data, ))
             return
 
-        updSQN(self, srcnwkid, Sqn)
+    updSQN(self, srcnwkid, Sqn)
 
-        if GlobalCommand and int(Command, 16) in ZIGBEE_COMMAND_IDENTIFIER:
-            logginginRawAPS(
-                self,
-                "Debug",
-                "Decode8002 - NwkId: %s Ep: %s Cluster: %s GlobalCommand: %5s Command: %s (%33s) Data: %s"
-                % (
-                    srcnwkid,
-                    MsgSourcePoint,
-                    MsgClusterID,
-                    GlobalCommand,
-                    Command,
-                    ZIGBEE_COMMAND_IDENTIFIER[int(Command, 16)],
-                    Data,
-                ),
-            )
-        else:
-            logginginRawAPS(
-                self,
-                "Debug",
-                "Decode8002 - NwkId: %s Ep: %s Cluster: %s GlobalCommand: %5s Command: %s Data: %s"
-                % (
-                    srcnwkid,
-                    MsgSourcePoint,
-                    MsgClusterID,
-                    GlobalCommand,
-                    Command,
-                    Data,
-                ),
-            )
+    if GlobalCommand and int(Command, 16) in ZIGBEE_COMMAND_IDENTIFIER:
+            logginginRawAPS(self,"Debug","Decode8002 - NwkId: %s Ep: %s Cluster: %s GlobalCommand: %5s Command: %s (%33s) Data: %s"
+                % ( srcnwkid, MsgSourcePoint, MsgClusterID, GlobalCommand, Command, ZIGBEE_COMMAND_IDENTIFIER[int(Command, 16)], Data,),)
     else:
-        logginginRawAPS(
-            self,
-            "Debug",
-            "Decode8002 - NwkId: %s Ep: %s Cluster: %s Payload: %s"
-            % (srcnwkid, MsgSourcePoint, MsgClusterID, MsgPayload),
-        )
-        return
+        logginginRawAPS( self, "Debug", "Decode8002 - NwkId: %s Ep: %s Cluster: %s GlobalCommand: %5s Command: %s Data: %s"
+                % ( srcnwkid, MsgSourcePoint, MsgClusterID, GlobalCommand, Command, Data,),)
 
     updLQI(self, srcnwkid, MsgLQI)
+
+    if MsgClusterID == '0005' and MsgPayload[0:2] == '05':
+        # Scene Control
+        # 057c11630701010d00
+        cmd = MsgPayload[8:10]
+        direction = MsgPayload[10:12]
+
+        data = Sqn + MsgSourcePoint + MsgClusterID + cmd + direction + '000000' + srcnwkid
+
+        logginginRawAPS( self, "Debug", "Decode8002 - Sqn: %s NwkId %s Ep %s Cluster %s Cmd %s Direction %s"
+                % ( Sqn, srcnwkid, MsgClusterID, MsgClusterID, cmd, direction,),)
+        Decode80A7( self, Devices, data, MsgLQI)
+        return
 
     # Send for processing to the Brand specifics
     if "Manufacturer" not in self.ListOfDevices[srcnwkid]:
         return
 
-    inRawAps(
-        self,
-        Devices,
-        srcnwkid,
-        MsgSourcePoint,
-        MsgClusterID,
-        dstnwkid,
-        MsgDestPoint,
-        Sqn,
-        ManufacturerCode,
-        Command,
-        Data,
-        MsgPayload,
-    )
+    inRawAps( self, Devices, srcnwkid, MsgSourcePoint, MsgClusterID, dstnwkid, MsgDestPoint, Sqn, ManufacturerCode, Command, Data, MsgPayload,)
     callbackDeviceAwake(self, srcnwkid, MsgSourcePoint, MsgClusterID)
+
 
 
 def Decode8003(self, Devices, MsgData, MsgLQI):  # Device cluster list
@@ -4417,13 +4379,9 @@ def Decode80A7(self, Devices, MsgData, MsgLQI):
     TYPE_DIRECTIONS = {"00": "right", "01": "left", "02": "middle"}
     TYPE_ACTIONS = {"07": "click", "08": "hold", "09": "release"}
 
-    loggingInput(
-        self,
-        "Debug",
-        "Decode80A7 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Direction: %s, Unknown_ %s"
-        % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgDirection, unkown_),
-        MsgSrcAddr,
-    )
+    loggingInput( self, "Debug", "Decode80A7 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Direction: %s, Unknown_ %s"
+        % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgDirection, unkown_), MsgSrcAddr, )
+
     if MsgSrcAddr not in self.ListOfDevices:
         return
     if self.ListOfDevices[MsgSrcAddr]["Status"] != "inDB":
@@ -4448,7 +4406,7 @@ def Decode80A7(self, Devices, MsgData, MsgLQI):
             # Might be in the case of Release Left or Right
             loggingInput(
                 self,
-                "Log",
+                "Debug",
                 "Decode80A7 - Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Direction: %s, Unknown_ %s"
                 % (MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgDirection, unkown_),
             )
