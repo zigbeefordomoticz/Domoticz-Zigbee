@@ -329,9 +329,8 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
 
 # Responses
 def Decode8000_v2(self, Devices, MsgData, MsgLQI):  # Status
-    MsgLen = len(MsgData)
 
-    if MsgLen < 8:
+    if len(MsgData) < 8:
         self.log.logging( "Input", "Log", "Decode8000 - uncomplete message : %s" % MsgData)
         return
 
@@ -351,58 +350,40 @@ def Decode8000_v2(self, Devices, MsgData, MsgLQI):  # Status
     if self.pluginconf.pluginConf["debugzigateCmd"]:
         i_sqn = None
         if PacketType in ("0100", "0120", "0110"):
-            i_sqn = sqn_get_internal_sqn_from_app_sqn(
-                self.ZigateComm, sqn_app, TYPE_APP_ZCL
-            )
+            i_sqn = sqn_get_internal_sqn_from_app_sqn( self.ZigateComm, sqn_app, TYPE_APP_ZCL )
         if i_sqn:
-            self.log.logging( 
-                "Input",
-                "Log",
-                "Decode8000 - [%3s] PacketType: %s TypeSqn: %s sqn_app: %s/%s sqn_aps: %s/%s Status: [%s] "
-                % (
-                    i_sqn,
-                    PacketType,
-                    type_sqn,
-                    sqn_app,
-                    dsqn_app,
-                    sqn_aps,
-                    dsqn_aps,
-                    Status,
-                ),
-            )
+            self.log.logging(  "Input", "Log", "Decode8000 - [%3s] PacketType: %s TypeSqn: %s sqn_app: %s/%s sqn_aps: %s/%s Status: [%s] "
+                % ( i_sqn, PacketType, type_sqn, sqn_app, dsqn_app, sqn_aps, dsqn_aps, Status, ), )
         else:
-            self.log.logging( 
-                "Input",
-                "Log",
-                "Decode8000 - [  ] PacketType: %s TypeSqn: %s sqn_app: %s/%s sqn_aps: %s/%s Status: [%s] "
-                % (PacketType, type_sqn, sqn_app, dsqn_app, sqn_aps, dsqn_aps, Status),
-            )
+            self.log.logging(  "Input", "Log", "Decode8000 - [  ] PacketType: %s TypeSqn: %s sqn_app: %s/%s sqn_aps: %s/%s Status: [%s] "
+                % (PacketType, type_sqn, sqn_app, dsqn_app, sqn_aps, dsqn_aps, Status),)
 
-    # Handling Status
-    if Status == "00":
-        Status = "Success"
-    elif Status == "01":
-        Status = "Incorrect Parameters"
-    elif Status == "02":
-        Status = "Unhandled Command"
-    elif Status == "03":
-        Status = "Command Failed"
-    elif Status == "04":
-        Status = "Busy"
-    elif Status == "05":
-        Status = "Stack Already Started"
+    STATUS_CODE = {
+        '00': "Success",
+        '01': "Incorrect Parameters",
+        '02': "Unhandled Command",
+        '03': "Command Failed",
+        '04': "Busy",
+        '05': "Stack Already Started",
+        '14': "E_ZCL_ERR_ZBUFFER_FAIL",
+        '15': "E_ZCL_ERR_ZTRANSMIT_FAIL",
+    }
+
+    if Status in STATUS_CODE:
+        Status = STATUS_CODE[ Status ]
     elif int(Status, 16) >= 128 and int(Status, 16) <= 244:
         Status = "ZigBee Error Code " + DisplayStatusCode(Status)
 
     # Handling PacketType
-    if PacketType == "0012":
-        self.log.logging( "Input", "Log", "Erase Persistent Data cmd status : " + Status)
-    elif PacketType == "0024":
-        self.log.logging( "Input", "Log", "Start Network status : " + Status)
-    elif PacketType == "0026":
-        self.log.logging( "Input", "Log", "Remove Device cmd status : " + Status)
-    elif PacketType == "0044":
-        self.log.logging( "Input", "Log", "request Power Descriptor status : " + Status)
+    SPECIFIC_PACKET_TYPE = {
+        '0012': "Erase Persistent Data cmd status",
+        '0024': "Start Network status",
+        '0026': "Remove Device cmd status",
+        '0044': "request Power Descriptor status",
+    }
+    if PacketType in SPECIFIC_PACKET_TYPE:
+        self.log.logging( "Input", "Log", SPECIFIC_PACKET_TYPE[ PacketType ] + Status )
+
     if PacketType == "0012":
         # Let's trigget a zigate_Start
         # self.startZigateNeeded = self.HeartbeatCount
@@ -415,13 +396,9 @@ def Decode8000_v2(self, Devices, MsgData, MsgLQI):  # Status
         if self.groupmgt:
             self.groupmgt.statusGroupRequest(MsgData)
 
-    if str(MsgData[0:2]) != "00":
-        self.log.logging( 
-            "Input",
-            "Error",
-            "Decode8000 - PacketType: %s TypeSqn: %s sqn_app: %s sqn_aps: %s Status: [%s] "
-            % (PacketType, type_sqn, sqn_app, sqn_aps, Status),
-        )
+    if MsgData[0:2] != "00":
+        self.log.logging(  "Input", "Error", "Decode8000 - PacketType: %s TypeSqn: %s sqn_app: %s sqn_aps: %s Status: [%s] " 
+            % (PacketType, type_sqn, sqn_app, sqn_aps, Status), )
 
 
 def Decode8001(self, Decode, MsgData, MsgLQI):  # Reception log Level
@@ -430,11 +407,7 @@ def Decode8001(self, Decode, MsgData, MsgLQI):  # Reception log Level
     MsgLogLvl = MsgData[0:2]
     MsgDataMessage = MsgData[2 : len(MsgData)]
 
-    self.log.logging( 
-        "Input",
-        "Status",
-        "Reception log Level 0x: " + MsgLogLvl + "Message : " + MsgDataMessage,
-    )
+    self.log.logging(  "Input", "Status", "Reception log Level 0x: " + MsgLogLvl + "Message : " + MsgDataMessage, )
 
 
 def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
