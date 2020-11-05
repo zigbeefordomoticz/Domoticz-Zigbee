@@ -18,11 +18,12 @@ import time
 
 class LoggingManagement:
 
-    def __init__(self, pluginconf, PluginHealth):
+    def __init__(self, pluginconf, PluginHealth, HardwareID):
         self.LogErrorHistory = {}
         self.pluginconf = pluginconf
         self.loggingFileHandle = None
         self.PluginHealth =  PluginHealth
+        self.HardwareID = HardwareID
         
     def openLogFile( self ):
 
