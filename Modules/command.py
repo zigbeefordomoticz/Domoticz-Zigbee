@@ -189,7 +189,8 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             return
 
         if DeviceType == 'PAC-SWITCH':
-            casaia_swing_OnOff( self, NWKID, '00')
+            casaia_system_mode( self, NWKID, 'Off')
+            
             UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             # Let's force a refresh of Attribute in the next Heartbeat  
             self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
@@ -269,7 +270,8 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             return
 
         if DeviceType == 'PAC-SWITCH':
-            casaia_swing_OnOff( self, NWKID, '01')
+            casaia_system_mode( self, NWKID, 'On')
+            
             # Let's force a refresh of Attribute in the next Heartbeat  
             UpdateDevice_v2(self, Devices, Unit, 1, "On",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
@@ -460,25 +462,53 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             tuya_trv_mode( self, NWKID, Level )
 
         if DeviceType == 'FanControl':
-
-            CMD_MODE = {
-                0:  'Off',
-                20: 'Low',
-                30: 'Medium',
-                40: 'High',
-                10: 'Auto',
-            }
-
-            write_multi_pairing_code_request( self, NWKID )
-            if Level in CMD_MODE:
-                change_fan_mode( self, NWKID, EPout, CMD_MODE[ Level] )
+            if Level == '10':
+                casaia_system_mode( self, NWKID, 'FanAuto')
                 UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            elif Level == '20':
+                casaia_system_mode( self, NWKID, 'FanLow')
+                UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            elif Level == '30':
+                casaia_system_mode( self, NWKID, 'FanMedium')
+                UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            elif Level == '40':
+                casaia_system_mode( self, NWKID, 'FanHigh')
+                UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+                
             # Let's force a refresh of Attribute in the next Heartbeat  
             self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
             return
 
         if DeviceType == 'PAC-WING':
-            UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            if Level == '10':
+                casaia_swing_OnOff( self, NWKID, '00')
+                UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            elif Level == '20':
+                casaia_swing_OnOff( self, NWKID, '01')
+                UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+
+            # Let's force a refresh of Attribute in the next Heartbeat  
+            self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
+            return
+
+        if DeviceType == 'PAC-MODE':
+            if Level == '10':
+                casaia_system_mode( self, NWKID, 'FanAuto')
+                UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            elif Level == '20':
+                casaia_system_mode( self, NWKID, 'Cool')
+                UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            elif Level == '30':
+                casaia_system_mode( self, NWKID, 'Heat')
+                UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            elif Level == '50':
+                casaia_system_mode( self, NWKID, 'Dry')
+                UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            elif Level == '60':
+                casaia_system_mode( self, NWKID, 'Fan')
+                UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+
+
             # Let's force a refresh of Attribute in the next Heartbeat  
             self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
             return
