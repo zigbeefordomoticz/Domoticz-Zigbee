@@ -18,12 +18,11 @@ import time
 
 class LoggingManagement:
 
-    def __init__(self, pluginconf, PluginHealth, HardwareID):
+    def __init__(self, pluginconf, PluginHealth):
         self.LogErrorHistory = {}
         self.pluginconf = pluginconf
         self.loggingFileHandle = None
         self.PluginHealth =  PluginHealth
-        self.HardwareID = HardwareID
         
     def openLogFile( self ):
 
@@ -140,10 +139,11 @@ class LoggingManagement:
         else:
             _txt = self.PluginHealth['Txt']
         _context = {
-                    'Time' : int(time.time()),
-                    'nwkid' : nwkid,
-                    'PluginHealth' : _txt,
-                    'message' : message
+                    'Time': int(time.time()),
+                    'Module': module,
+                    'nwkid': nwkid,
+                    'PluginHealth': _txt,
+                    'message': message
                 }
         if context is not None:
             _context['context'] = context.copy()
