@@ -11,7 +11,7 @@ from datetime import datetime
 
 
 def timeserver_read_attribute_request( self, sqn, nwkid, ep, cluster, manuf_spec, manuf_code , attribute):
-    #Domoticz.Log("timeserver_read_attribute_request [%s] %s/%s Cluster: %s Attribute: %s" %(sqn, nwkid, ep, cluster,attribute))
+    Domoticz.Log("timeserver_read_attribute_request [%s] %s/%s Cluster: %s Attribute: %s" %(sqn, nwkid, ep, cluster,attribute))
 
     data_type = value = None
     status = '86'
@@ -24,11 +24,16 @@ def timeserver_read_attribute_request( self, sqn, nwkid, ep, cluster, manuf_spec
         data_type = 'e2' # UTC Type
         status = '00'
 
+    elif attribute == '0001': # Time status
+        #Domoticz.Log("-->Time Status: %s" %0b00001100)
+        value = "%08x" %0b00001100
+        data_type = '18' # map8
+        status = '00'        
+
     elif attribute == '0002': # Timezone
         value = "%08x" %0x00000000
         data_type = '23' # unint32
         status = '00'
-
 
     elif attribute == '0007': # LocalTime
         #Domoticz.Log("-->Local Time: %s" %datetime.now())

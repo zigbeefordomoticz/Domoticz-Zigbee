@@ -276,22 +276,8 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
     MsgManufCode = MsgData[18:22]
     nbAttribute = MsgData[22:24]
 
-    self.log.logging( 
-        "Input",
-        "Debug",
-        "Decode0100 - Mode: %s NwkId: %s SrcEP: %s DstEp: %s ClusterId: %s Direction: %s ManufSpec: %s ManufCode: %s nbAttribute: %s"
-        % (
-            MsgSqn,
-            MsgSrcAddr,
-            MsgSrcEp,
-            MsgDstEp,
-            MsgClusterId,
-            MsgDirection,
-            MsgManufSpec,
-            MsgManufCode,
-            nbAttribute,
-        ),
-    )
+    self.log.logging(  "Input", "Debug", "Decode0100 - Mode: %s NwkId: %s SrcEP: %s DstEp: %s ClusterId: %s Direction: %s ManufSpec: %s ManufCode: %s nbAttribute: %s"
+        % (MsgSqn,MsgSrcAddr,MsgSrcEp,MsgDstEp,MsgClusterId,MsgDirection,MsgManufSpec,MsgManufCode,nbAttribute,),)
 
     manuf = manuf_name = model = ''
     if 'Model' in self.ListOfDevices[MsgSrcAddr ] and self.ListOfDevices[MsgSrcAddr ]['Model'] not in ( '', {} ):
@@ -304,28 +290,16 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
     for idx in range(24, len(MsgData), 4):
         Attribute = MsgData[idx : idx + 4]
         if MsgClusterId == "000a":
-            # Cluster OTA
-            timeserver_read_attribute_request(
-                self,
-                MsgSqn,
-                MsgSrcAddr,
-                MsgSrcEp,
-                MsgClusterId,
-                MsgManufSpec,
-                MsgManufCode,
-                Attribute,
-            )
+            # Cluster TimeServer
+            timeserver_read_attribute_request( self, MsgSqn, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgManufSpec, MsgManufCode, Attribute, )
+
         elif MsgClusterId == '0201' and ( manuf == '105e' or manuf_name == 'Schneider'):
             # Cluster Thermostat for Wiser
             wiser_read_attribute_request( self, MsgSrcAddr, MsgSrcEp, MsgSqn, MsgClusterId, Attribute)
 
         else:
-            self.log.logging( 
-                "Input",
-                "Log",
-                "Decode0100 - Read Attribute Request %s/%s Cluster %s Attribute %s"
-                % (MsgSrcAddr, MsgSrcEp, MsgClusterId, Attribute),
-            )
+            self.log.logging(  "Input", "Log", "Decode0100 - Read Attribute Request %s/%s Cluster %s Attribute %s"
+                % (MsgSrcAddr, MsgSrcEp, MsgClusterId, Attribute),)
 
 # Responses
 def Decode8000_v2(self, Devices, MsgData, MsgLQI):  # Status

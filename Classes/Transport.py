@@ -1792,14 +1792,16 @@ def buildframe_read_attribute_request( frame, Sqn, SrcNwkId, SrcEndPoint, Cluste
         ManufSpec = '01'
         ManufCode = ManufacturerCode
 
-    buildPayload = Sqn + SrcNwkId + SrcEndPoint + '01' + ClusterId + '01' + ManufSpec + ManufCode + '%02x' %(len(Data) // 4)
+    buildPayload = Sqn + SrcNwkId + SrcEndPoint + '01' + ClusterId + '01' + ManufSpec + ManufCode
     idx = nbAttribute = 0
+    payloadOfAttributes = ''
     while idx < len(Data):
         nbAttribute += 1
         Attribute = '%04x' %struct.unpack('H',struct.pack('>H',int(Data[idx:idx+4],16)))[0]
         idx += 4
-        buildPayload += Attribute
+        payloadOfAttributes += Attribute
 
+    buildPayload += '%02x' %(nbAttribute) + payloadOfAttributes
 
     #Domoticz.Log("buildframe_read_attribute_request - NwkId: %s Ep: %s ClusterId: %s nbAttribute: %s Data: %s" 
     #        %(SrcNwkId, SrcEndPoint, ClusterId, nbAttribute, Data))
