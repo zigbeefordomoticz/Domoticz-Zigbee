@@ -12,6 +12,7 @@ from Modules.readAttributes import ReadAttributeRequest_0201
 from Modules.basicOutputs import write_attribute
 from Modules.schneider_wiser import schneider_setpoint
 from Modules.tuya import tuya_setpoint
+from Modules.casaia import casaia_setpoint
  
 def thermostat_Setpoint_SPZB(  self, key, setpoint):
 
@@ -53,6 +54,10 @@ def thermostat_Setpoint( self, key, setpoint):
             # Tuya
             self.log.logging( "Thermostats", 'Log', "thermostat_Setpoint - calling Tuya for %s with value %s" %(key, setpoint), nwkid=key)
             tuya_setpoint(self, key, setpoint)
+            return
+
+        elif self.ListOfDevices[key]['Model'] in ( 'AC201A', ):
+            casaia_setpoint(self, key, setpoint)
             return
 
     self.log.logging( "Thermostats", 'Debug', "thermostat_Setpoint - standard for %s with value %s" %(key,setpoint), nwkid=key)
