@@ -69,8 +69,7 @@ def enableOppleSwitch( self, nwkid ):
 
     if ( self.ListOfDevices[nwkid]['Model'] in ('lumi.remote.b686opcn01-bulb','lumi.remote.b486opcn01-bulb','lumi.remote.b286opcn01-bulb' )
                                                 and 'Lumi' not in self.ListOfDevices[nwkid] ):
-        self.ListOfDevices[nwkid]['Lumi'] = {}
-        self.ListOfDevices[nwkid]['Lumi']['AqaraOppleBulbMode'] = True
+        self.ListOfDevices[nwkid]['Lumi'] = {'AqaraOppleBulbMode': True}
         return
 
     manuf_id = '115f'
@@ -81,7 +80,7 @@ def enableOppleSwitch( self, nwkid ):
     Hdata = '01'
 
     self.log.logging( "Lumi", 'Debug', "Write Attributes LUMI Opple Magic Word Nwkid: %s" %nwkid, nwkid)
-    write_attribute( self, nwkid, ZIGATE_EP, '01', cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, ackIsDisabled = is_ack_tobe_disabled(self, key))
+    write_attribute( self, nwkid, ZIGATE_EP, '01', cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, ackIsDisabled = is_ack_tobe_disabled(self, nwkid))
 
 def lumiReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
 
@@ -123,49 +122,6 @@ def lumiReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, M
 
 def AqaraOppleDecoding( self, Devices, nwkid, Ep, ClusterId, ModelName, payload):
 
-    def actionFromCluster0008(StepMode ):
-    
-        action =''
-        # Action
-        if StepMode == '02': # 1 Click
-            action = 'click_'
-        elif StepMode == '01': # Long Click
-            action = 'long_'
-        elif StepMode == '03': # Release
-            action = 'release'
-
-        return action
-
-    def buttonFromCluster0008( StepSize ):
-    
-        # Button
-        action =''
-        if StepSize == '00': # Right
-            action += 'right'            
-        elif StepSize == '01': # Left
-            action += 'left'
-
-        return action
-
-    def actionFromCluster0300(StepMode , EnhancedStepSize ):
-
-        action = ''
-        if EnhancedStepSize == '4500': 
-            if StepMode == '01':
-                action = 'click_left'
-            elif StepMode == '03':
-                action = 'click_right'
-
-        elif EnhancedStepSize == '0f00': 
-            if StepMode == '01':
-                action = 'long_left'
-            elif StepMode == '03':
-                action = 'long_right'
-            elif StepMode == '00':
-                action = 'release'
-
-        return action
-
     if 'Model' not in self.ListOfDevices[nwkid]:
         return
 
@@ -191,7 +147,7 @@ def AqaraOppleDecoding( self, Devices, nwkid, Ep, ClusterId, ModelName, payload)
             'release': '04'
         }
 
-        action = actionFromCluster0008(StepMode ) + buttonFromCluster0008( StepSize )
+        action = opal_actionFromCluster0008(StepMode ) + opal_buttonFromCluster0008( StepSize )
 
         self.log.logging( "Lumi", 'Debug', "AqaraOppleDecoding - Nwkid: %s, Ep: %s, LvlControl, StepMode: %s, StepSize: %s, TransitionTime: %s, unknown: %s action: %s" \
             %(nwkid, Ep,StepMode,StepSize,TransitionTime,unknown, action), nwkid)
@@ -219,7 +175,7 @@ def AqaraOppleDecoding( self, Devices, nwkid, Ep, ClusterId, ModelName, payload)
         else:
             return
 
-        action = actionFromCluster0300(StepMode , EnhancedStepSize )  
+        action = opal_actionFromCluster0300(StepMode , EnhancedStepSize )  
 
         self.log.logging( "Lumi", 'Debug', "AqaraOppleDecoding - Nwkid: %s, Ep: %s, ColorControl, StepMode: %s, EnhancedStepSize: %s, TransitionTime: %s, ColorTempMinimumMired: %s, ColorTempMaximumMired: %s action: %s" \
             %(nwkid, Ep,StepMode,EnhancedStepSize,TransitionTime,ColorTempMinimumMired, ColorTempMaximumMired, action), nwkid)
@@ -229,6 +185,49 @@ def AqaraOppleDecoding( self, Devices, nwkid, Ep, ClusterId, ModelName, payload)
 
     return
  
+def opal_actionFromCluster0008(StepMode ):
+    
+    action =''
+    # Action
+    if StepMode == '02': # 1 Click
+        action = 'click_'
+    elif StepMode == '01': # Long Click
+        action = 'long_'
+    elif StepMode == '03': # Release
+        action = 'release'
+
+    return action
+
+def opal_buttonFromCluster0008( StepSize ):
+    
+    # Button
+    action =''
+    if StepSize == '00': # Right
+        action += 'right'            
+    elif StepSize == '01': # Left
+        action += 'left'
+
+    return action
+
+def opal_actionFromCluster0300(StepMode , EnhancedStepSize ):
+
+    action = ''
+    if EnhancedStepSize == '4500': 
+        if StepMode == '01':
+            action = 'click_left'
+        elif StepMode == '03':
+            action = 'click_right'
+
+    elif EnhancedStepSize == '0f00': 
+        if StepMode == '01':
+            action = 'long_left'
+        elif StepMode == '03':
+            action = 'long_right'
+        elif StepMode == '00':
+            action = 'release'
+
+    return action        
+                
 def AqaraOppleDecoding0012(self, Devices, nwkid, Ep, ClusterId, AttributeId, Value):
 
     # Ep : 01 (left)
