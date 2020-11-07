@@ -191,9 +191,9 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         if DeviceType == 'PAC-SWITCH':
             casaia_system_mode( self, NWKID, 'Off')
             
-            UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
-            # Let's force a refresh of Attribute in the next Heartbeat  
-            self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
+            #UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            ## Let's force a refresh of Attribute in the next Heartbeat  
+            #self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
             return
 
         if DeviceType == 'BSO-Volet':
@@ -273,9 +273,9 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         if DeviceType == 'PAC-SWITCH':
             casaia_system_mode( self, NWKID, 'On')
             
-            # Let's force a refresh of Attribute in the next Heartbeat  
-            UpdateDevice_v2(self, Devices, Unit, 1, "On",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
-            self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
+            ## Let's force a refresh of Attribute in the next Heartbeat  
+            #UpdateDevice_v2(self, Devices, Unit, 1, "On",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            #self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
             return
 
         if DeviceType == 'BSO-Volet':
@@ -483,25 +483,25 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         if DeviceType == 'PAC-WING':
             if Level == 10:
                 casaia_swing_OnOff( self, NWKID, '00')
-                UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+                #UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             elif Level == 20:
                 casaia_swing_OnOff( self, NWKID, '01')
-                UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+                #UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return
 
         if DeviceType == 'PAC-MODE':
             if Level == 10:
                 casaia_system_mode( self, NWKID, 'Cool')
-                UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+                #UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             elif Level == 20:
                 casaia_system_mode( self, NWKID, 'Heat')
-                UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+                #UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             elif Level == 30:
                 casaia_system_mode( self, NWKID, 'Dry')
-                UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+                #UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             elif Level == 40:
                 casaia_system_mode( self, NWKID, 'Fan')
-                UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+                #UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return
 
         elif DeviceType == 'BSO-Volet':

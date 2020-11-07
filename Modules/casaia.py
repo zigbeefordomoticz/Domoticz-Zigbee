@@ -289,20 +289,25 @@ def read_AC_status_response( self, Devices, NwkId, Ep, payload):
 
     # Update Current Temperature Widget
     temp = round( current_temp / 100 , 1)
+    self.log.logging( "CasaIA", "Debug" , "read_AC_status_response Status: %s request Update Temp: %s" %( NwkId, temp))
     MajDomoDevice(self, Devices, NwkId, Ep, '0402', temp)
 
     # Update System Mode
+    self.log.logging( "CasaIA", "Debug" , "read_AC_status_response Status: %s request Update System Mode: %s" %( NwkId, system_mode))
     MajDomoDevice(self, Devices, NwkId, Ep, '0201', system_mode)
 
     # Update Fan Mode
+    self.log.logging( "CasaIA", "Debug" , "read_AC_status_response Status: %s request Update System Mode: %s" %( NwkId, system_mode))
     MajDomoDevice(self, Devices, NwkId, Ep, '0202', fan_mode)
 
     # Update SetPoint
     if system_mode == '04':
         setpoint = round( heat_setpoint/100)
+        self.log.logging( "CasaIA", "Debug" , "read_AC_status_response Status: %s request Update Setpoint: %s" %( NwkId, setpoint))
         MajDomoDevice(self, Devices, NwkId, Ep, '0201', setpoint, Attribute_ ='0012')
     elif system_mode == '03':
         setpoint = round( cool_stepoint/100)
+        self.log.logging( "CasaIA", "Debug" , "read_AC_status_response Status: %s request Update Setpoint: %s" %( NwkId, setpoint))
         MajDomoDevice(self, Devices, NwkId, Ep, '0201', setpoint, Attribute_ ='0012')
 
 

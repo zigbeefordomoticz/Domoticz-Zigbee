@@ -96,7 +96,7 @@ def processKnownDevices( self, Devices, NWKID ):
             '105e':             ( 'Schneider',      'pollingSchneider',      pollingSchneider),
             'Schneider':        ( 'Schneider',      'pollingSchneider',      pollingSchneider),
             '_TZ3000_g5xawfcq': ( 'BlitzwolfPower', 'pollingBlitzwolfPower', pollingBlitzwolfPower, ),
-            'Casaia':           ( 'CasaiaAC201',    'pollingCasaiaAC201',    pollingCasaia, )
+            'OWON':             ( 'CasaiaAC201',    'pollingCasaiaAC201',    pollingCasaia, )
         }
 
         rescheduleAction = False

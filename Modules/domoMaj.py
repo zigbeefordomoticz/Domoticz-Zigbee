@@ -426,6 +426,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                                  'Ikea_Round_5b', 'Ikea_Round_OnOff', 'Vibration', 'OrviboRemoteSquare', 'Button_3', 'LumiLock') ) or \
                 ( ClusterType == WidgetType == 'DoorLock') or \
                 ( ClusterType == 'DoorLock' and WidgetType == 'Vibration') or \
+                ( ClusterType == 'FanControl' and WidgetType == 'FanControl') or \
+                ( 'ThermoMode' in ClusterType and WidgetType == 'PAC-SWITCH' ) or \
                 ( WidgetType == 'KF204Switch' and ClusterType in ( 'Switch', 'Door'))):
 
             # Plug, Door, Switch, Button ...
