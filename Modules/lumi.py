@@ -138,6 +138,7 @@ def AqaraOppleDecoding( self, Devices, nwkid, Ep, ClusterId, ModelName, payload)
     def buttonFromCluster0008( StepSize ):
     
         # Button
+        action = ''
         if StepSize == '00': # Right
             action += 'right'            
         elif StepSize == '01': # Left
@@ -203,6 +204,7 @@ def AqaraOppleDecoding( self, Devices, nwkid, Ep, ClusterId, ModelName, payload)
         ColorTempMinimumMired = payload[24:28]
         ColorTempMaximumMired = payload[28:32]
         unknown = payload[32:36]
+        OPPLE_MAPPING_4_6_BUTTONS = {}
 
         if _ModelName == 'lumi.remote.b686opcn01': # Ok
             OPPLE_MAPPING_4_6_BUTTONS = {
@@ -215,10 +217,11 @@ def AqaraOppleDecoding( self, Devices, nwkid, Ep, ClusterId, ModelName, payload)
                 'click_left': '02','click_right': '03',
             }   
 
+        action = actionFromCluster0300(StepMode , EnhancedStepSize )
+
         loggingLumi( self, 'Debug', "AqaraOppleDecoding - Nwkid: %s, Ep: %s, ColorControl, StepMode: %s, EnhancedStepSize: %s, TransitionTime: %s, ColorTempMinimumMired: %s, ColorTempMaximumMired: %s action: %s" \
             %(nwkid, Ep,StepMode,EnhancedStepSize,TransitionTime,ColorTempMinimumMired, ColorTempMaximumMired, action), nwkid)
         
-        action = actionFromCluster0300(StepMode , EnhancedStepSize )       
         if action in OPPLE_MAPPING_4_6_BUTTONS:
             MajDomoDevice( self, Devices, nwkid, '03', "0006", OPPLE_MAPPING_4_6_BUTTONS[ action ])
 
