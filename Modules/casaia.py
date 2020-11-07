@@ -297,7 +297,7 @@ def read_AC_status_response( self, Devices, NwkId, Ep, payload):
     MajDomoDevice(self, Devices, NwkId, Ep, '0201', system_mode)
 
     # Update Fan Mode
-    self.log.logging( "CasaIA", "Debug" , "read_AC_status_response Status: %s request Update System Mode: %s" %( NwkId, system_mode))
+    self.log.logging( "CasaIA", "Debug" , "read_AC_status_response Status: %s request Update Fan Mode: %s" %( NwkId, fan_mode))
     MajDomoDevice(self, Devices, NwkId, Ep, '0202', fan_mode)
 
     # Update SetPoint
