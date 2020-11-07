@@ -1439,7 +1439,10 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
         if 'Model' in self.ListOfDevices[MsgSrcAddr]:
 
-            if self.ListOfDevices[MsgSrcAddr]['Model'] == 'EH-ZB-VACT':
+            if self.ListOfDevices[MsgSrcAddr]['Model'] == 'AC201A':
+                # We do not report this, as AC201 rely on 0xffad cluster
+                pass
+            elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'EH-ZB-VACT':
                 # In case of Schneider Wiser Valve, we have to 
                 self.log.logging( "Cluster", 'Debug', "ReadCluster - 0201 - ValueTemp: %s" %int( ((ValueTemp * 100) * 2) / 2 ), MsgSrcAddr)
                 if 'Schneider' in self.ListOfDevices[MsgSrcAddr]:
@@ -1470,6 +1473,7 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 # As Eurotronics will rely on 0x4003 attributes
                 self.log.logging( "Cluster", 'Debug', "ReadCluster - 0201 - Request update on Domoticz %s not a Schneider, not a Eurotronics" %MsgSrcAddr, MsgSrcAddr)
                 MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,ValueTemp,Attribute_=MsgAttrID)
+                                
 
     elif MsgAttrID == '0014':   # Unoccupied Heating
         self.log.logging( "Cluster", 'Debug', "ReadCluster - 0201 - Unoccupied Heating:  %s" %value, MsgSrcAddr)

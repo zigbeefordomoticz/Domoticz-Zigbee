@@ -46,12 +46,15 @@ DEVICE_ID = '01'
 AC201_COMMAND = {
     'Off':       '010000',  # Ok 6/11
     'On':        '010100',  # Ok 6/11
-    'Fan':       '010200',
+
     'Cool':      '010300',  # Ok 6/11
     'Heat':      '010400',  # Ok 6/11
-    'Dry':       '010500',
-    
-    'Setpoint':  '02',     # Ok 6/11
+
+    'Fan':       '010700',  # Ok 7/11
+    'Dry':       '010800',  # Ok 7/11
+
+    'HeatSetpoint':  '02', # Heat Setpoint Ok 7/11
+    'CoolSetpoint':  '03', # Cool Setpoint Ok 7/11
 
     'FanLow':    '040100', # Ok 6/11
     'FanMedium': '040200', # Ok 6/11
@@ -134,8 +137,13 @@ def casaia_swing_OnOff( self, NwkId, OnOff):
     self.log.logging( "Casaia", 'Debug', "swing_OnOff ++++ %s/%s OnOff: %s" %( NwkId, EPout, OnOff), NwkId)
 
 def casaia_setpoint(self, NwkId, setpoint):
-
-    write_AC201_status_request( self, NwkId, 'Setpoint', setpoint)
+    self.log.logging( "CasaIA", "Debug" , "casaia_setpoint %s SetPoint: %s" %(NwkId, setpoint ))
+    if  str(check_hot_cold_setpoint(self, NwkId)) == 'Heat':
+        write_AC201_status_request( self, NwkId, 'HeatSetpoint', setpoint)
+    elif str(check_hot_cold_setpoint(self, NwkId)) == 'Cool':
+        write_AC201_status_request( self, NwkId, 'CoolSetpoint', setpoint)
+    else:
+      read_AC_status_request( self, NwkId)  
 
 def casaia_system_mode( self, NwkId, Action):
     self.log.logging( "CasaIA", "Debug" , "casaia_system_mode %s Action: %s" %(NwkId, Action ))
@@ -164,7 +172,6 @@ def write_multi_pairing_code_request( self, NwkId , pairing_code_value ):
     device_id = DEVICE_ID
 
     pairing_code = '%04x' %struct.unpack('H',struct.pack('>H', int(pairing_code_value)))[0]
-
     cmd = '01'
     payload =  cmd + device_type + device_id + pairing_code
     send_manuf_specific_cmd( self, NwkId, payload)
@@ -199,7 +206,7 @@ def write_AC201_status_request( self, NwkId, Action, setpoint = None):
     if Action not in AC201_COMMAND:
         self.log.logging( "Casaia", 'Error', "write_AC201_status_request - %s Unknow action: %s" %(NwkId,Action))
         return
-    if Action == 'Setpoint' and setpoint is None:
+    if Action in ( 'HeatSetpoint', 'CoolSetpoint') and setpoint is None:
         self.log.logging( "Casaia", 'Error', "write_AC201_status_request - %s Setpoint without a setpoint value !" %(NwkId))
         return        
 
@@ -207,7 +214,7 @@ def write_AC201_status_request( self, NwkId, Action, setpoint = None):
     device_type = '00' # Device type
     device_id = DEVICE_ID
     command = AC201_COMMAND[ Action ]
-    if Action == 'Setpoint':
+    if Action in ( 'HeatSetpoint', 'CoolSetpoint'):
         command += '%04x' %struct.unpack('H',struct.pack('>H', setpoint))[0]
 
     cmd = '03'
@@ -244,7 +251,7 @@ def read_learned_data_group_status_request(self, NwkId):
 
 ## 0xFFAD Server to Client
 
-def read_multi_pairing_response( self, Devices, NwkId, payload):
+def read_multi_pairing_response( self, Devices, NwkId, Ep, payload):
     # Command 0x00
     # 00 01 ffff 02 ffff 03 ffff 04 ffff 05 ffff
     self.log.logging( "CasaIA", "Debug" , "read_multi_pairing_response %s payload: %s" %(NwkId , payload))
@@ -261,8 +268,7 @@ def read_multi_pairing_response( self, Devices, NwkId, payload):
 
 def read_AC_status_response( self, Devices, NwkId, Ep, payload):
     # Command 0x02
-    #00 00 01 4d03 c007 01 d007 280a 01
-    #00 00 01 ffff 5308 01 d007 280a 01
+
     self.log.logging( "CasaIA", "Debug" , "read_AC_status_response %s payload: %s" %(NwkId , payload))
 
     status = payload[0:2]
@@ -287,28 +293,36 @@ def read_AC_status_response( self, Devices, NwkId, Ep, payload):
     store_casaia_attribute( self, NwkId, 'CoolSetpoint', cool_stepoint , device_id = device_id)
     store_casaia_attribute( self, NwkId, 'FanMode', fan_mode , device_id = device_id)
 
+
     # Update Current Temperature Widget
     temp = round( current_temp / 100 , 1)
     self.log.logging( "CasaIA", "Debug" , "read_AC_status_response Status: %s request Update Temp: %s" %( NwkId, temp))
     MajDomoDevice(self, Devices, NwkId, Ep, '0402', temp)
 
+    # Update Fan Mode
+    self.log.logging( "CasaIA", "Debug" , "read_AC_status_response Status: %s request Update Fan Mode: %s" %( NwkId, fan_mode))
+    if system_mode == '00':
+        MajDomoDevice(self, Devices, NwkId, Ep, '0202', '00')
+    else:
+        MajDomoDevice(self, Devices, NwkId, Ep, '0202', fan_mode)
+
+    # Update SetPoint
+    if str(check_hot_cold_setpoint(self, NwkId)) == 'Heat':
+        setpoint = str(round( heat_setpoint / 100, 1))
+        self.log.logging( "CasaIA", "Debug" , "read_AC_status_response Status: %s request Update Setpoint: %s" %( NwkId, setpoint))
+        MajDomoDevice(self, Devices, NwkId, Ep, '0201', setpoint, Attribute_ ='0012')
+
+    elif str(check_hot_cold_setpoint(self, NwkId)) == 'Cool':
+        setpoint = str(round( cool_stepoint / 100, 1))
+        self.log.logging( "CasaIA", "Debug" , "read_AC_status_response Status: %s request Update Setpoint: %s" %( NwkId, setpoint))
+        MajDomoDevice(self, Devices, NwkId, Ep, '0201', setpoint, Attribute_ ='0012')
+
     # Update System Mode
     self.log.logging( "CasaIA", "Debug" , "read_AC_status_response Status: %s request Update System Mode: %s" %( NwkId, system_mode))
     MajDomoDevice(self, Devices, NwkId, Ep, '0201', system_mode)
+    
+    
 
-    # Update Fan Mode
-    self.log.logging( "CasaIA", "Debug" , "read_AC_status_response Status: %s request Update Fan Mode: %s" %( NwkId, fan_mode))
-    MajDomoDevice(self, Devices, NwkId, Ep, '0202', fan_mode)
-
-    # Update SetPoint
-    if system_mode == '04':
-        setpoint = round( heat_setpoint/100)
-        self.log.logging( "CasaIA", "Debug" , "read_AC_status_response Status: %s request Update Setpoint: %s" %( NwkId, setpoint))
-        MajDomoDevice(self, Devices, NwkId, Ep, '0201', setpoint, Attribute_ ='0012')
-    elif system_mode == '03':
-        setpoint = round( cool_stepoint/100)
-        self.log.logging( "CasaIA", "Debug" , "read_AC_status_response Status: %s request Update Setpoint: %s" %( NwkId, setpoint))
-        MajDomoDevice(self, Devices, NwkId, Ep, '0201', setpoint, Attribute_ ='0012')
 
 
 def read_learned_data_group_status_request(self, NwkId, payload):
@@ -329,6 +343,15 @@ def read_learned_data_group_status_request(self, NwkId, payload):
 
 
 ## Internal
+
+def check_hot_cold_setpoint(self, NwkId):
+    system_mode = get_casaia_attribute( self, NwkId, 'SystemMode', device_id = DEVICE_ID )
+    if system_mode == '04':
+        return 'Heat'
+    if system_mode == '03':
+        return 'Cool'
+    return None
+
 
 def send_manuf_specific_cmd( self, NwkId, payload):
 

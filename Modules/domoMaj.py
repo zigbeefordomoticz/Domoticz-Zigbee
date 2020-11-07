@@ -427,7 +427,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 ( ClusterType == WidgetType == 'DoorLock') or \
                 ( ClusterType == 'DoorLock' and WidgetType == 'Vibration') or \
                 ( ClusterType == 'FanControl' and WidgetType == 'FanControl') or \
-                ( 'ThermoMode' in ClusterType and WidgetType == 'PAC-SWITCH' ) or \
+                ( 'ThermoMode' in ClusterType and WidgetType == 'PAC-MODE' ) or \
                 ( WidgetType == 'KF204Switch' and ClusterType in ( 'Switch', 'Door'))):
 
             # Plug, Door, Switch, Button ...
@@ -435,6 +435,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
             # So we might also have to manage case where we receive a On or Off for a LvlControl WidgetType like a dimming Bulb.
             self.log.logging( "Widget", "Debug", "------> Generic Widget for %s ClusterType: %s WidgetType: %s Value: %s" %(NWKID, WidgetType, ClusterType , value), NWKID)
                        
+
             if WidgetType == "DSwitch":
                 # double switch avec EP different 
                 value = int(value)

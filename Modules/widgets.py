@@ -469,47 +469,41 @@ SWITCH_LVL_MATRIX = {
     },
     
     'FanControl': {
-        "00": (0, "00"), # Off
-        "01": (1, "10"), # Auto
-        "02": (2, "20"), # Low
-        "03": (3, "30"), # Moyen
-        "04": (4, "40"), # Fort
-        "ForceUpdate": False, 
+        "00": (0, "Off"), # Off
+        "05": (1, "10"), # Auto
+        "01": (2, "20"), # Low
+        "02": (3, "30"), # Moyen
+        "03": (4, "40"), # Fort
+        "ForceUpdate": True, 
         "LevelNames": "Off|Auto|Low|Medium|High",
         "Language": {
-            "fr-FR": {"LevelNames": "Off|Auto|Bas|Moyen|Fort"}
+            "fr-FR": {"LevelNames": "Arrêt|Auto|Bas|Moyen|Fort"}
         }
     },
     
-    'PAC-WING': {
-        "ff": (0, "00"), # Off - All wings stopped
-        "00": (1, "10"), # Off Mode
-        "01": (2, "20"), # Auto On
-        "ForceUpdate": False, 
-        "LevelNames": "Off|Off|Auto",
-        "Language": {
-            "fr-FR": {"LevelNames": "Off|Off|Auto"}
-        }
-    },
     "PAC-MODE": {
-        0x00: (0, "Off"), # Off
-        0x03: (2, "20"),  # Cool
-        0x04: (3, "30"),  # Heat
-        0x08: (5, "50"),  # Dry
-        0x07: (6, "60"),  # Fan
-        "ForceUpdate": False,
+        "00": (0, "Off"), # Off
+        "03": (1, "10"),  # Cool
+        "04": (2, "20"),  # Heat
+        "08": (3, "30"),  # Dry
+        "07": (4, "40"),  # Fan
+        "ForceUpdate": True,
         "LevelNames": "Off|Cool|Heat|Dry|Fan",
         "Language": {
             "fr-FR": {"LevelNames": "Arrêt|Froid|Chaud|Déshumidicateur|Ventilateur"}
         }
     },
 
-    "PAC-SWITCH": { 
-        "00": ( 0,"Off"), 
-        "01": ( 1,"On") , 
-        "ForceUpdate": False},
-
-
+    'PAC-WING': {
+        "ff": (0, "Off"), # Off - All wings stopped
+        "00": (1, "10"), # Off Mode
+        "01": (2, "20"), # Auto On
+        "ForceUpdate": True, 
+        "LevelNames": "Off|Off|Auto",
+        "Language": {
+            "fr-FR": {"LevelNames": "Arrêt|Off|Auto"}
+        }
+    },
     'KF204Switch': {
         "00": (0, "00"), # Off
         "01": (1, "10"), # Button 0 ( left)
