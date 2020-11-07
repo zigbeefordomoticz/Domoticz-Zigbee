@@ -291,6 +291,7 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
         Attribute = MsgData[idx : idx + 4]
         if MsgClusterId == "000a":
             # Cluster TimeServer
+            self.log.logging(  "Input", "Debug", "Decode0100 - Received Time Server Cluster %s/%s Idx: %s  Attribute: %s" %(idx, Attribute))
             timeserver_read_attribute_request( self, MsgSqn, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgManufSpec, MsgManufCode, Attribute, )
 
         elif MsgClusterId == '0201' and ( manuf == '105e' or manuf_name == 'Schneider'):
