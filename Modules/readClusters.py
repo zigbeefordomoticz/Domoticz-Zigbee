@@ -1287,7 +1287,8 @@ def Cluster0102( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         loggingCluster( self, 'Debug', "ReadCluster - %s - %s/%s - Config Status: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
 
     elif MsgAttrID == "0008":
-        loggingCluster( self, 'Debug', "ReadCluster - %s - %s/%s - Current position lift in %%: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - %s - %s/%s - Current position lift in %%: %s, Type: %s, Size: %s Data: %s-%s" 
+            %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
         if ( 'Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Model'] != {} ):
     
             if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TS0302' and value == 50:
@@ -1295,13 +1296,14 @@ def Cluster0102( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 # do not update
                 return
 
-            if self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'TS0302', '1GANGSHUTTER1'):
+            if   self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'TS0302', '1GANGSHUTTER1'):
                 value = 0 if value > 100 else 100 - value
 
             elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'Shutter switch with neutral':
                 # The Shutter should have the Led on its right
                 loggingCluster( self, 'Debug', "ReadCluster - %s - %s/%s - Shutter switch with neutral Source: %s value: %s" 
                     %(MsgClusterId, MsgSrcAddr, MsgSrcEp, Source, value), MsgSrcAddr)
+
                 if 'SWBUILD_3' in self.ListOfDevices[MsgSrcAddr]:
                     loggingCluster( self, 'Debug', "ReadCluster - %s - %s/%s - Shutter switch with neutral SWBUILD_3: %0X" 
                         %int(self.ListOfDevices[MsgSrcAddr]['SWBUILD_3'],16), MsgSrcAddr)
@@ -1311,8 +1313,8 @@ def Cluster0102( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                         if Source and Source == '8102':
                             value = 100 - value
 
-            loggingCluster( self, 'Debug', "ReadCluster - %s - %s/%s - Shutter switch with neutral After correction value: %s" 
-                %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value))
+        loggingCluster( self, 'Debug', "ReadCluster - %s - %s/%s - Shutter switch with neutral After correction value: %s" 
+            %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value))
 
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, "%02x" %value )
 
