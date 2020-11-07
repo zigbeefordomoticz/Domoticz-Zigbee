@@ -487,6 +487,9 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
         
     dstnwkid = MsgDestinationAddress
 
+    if srcnwkid not in self.ListOfDevices:
+        return
+        
     timeStamped(self, srcnwkid, 0x8002)
     updLQI(self, srcnwkid, MsgLQI)
 
