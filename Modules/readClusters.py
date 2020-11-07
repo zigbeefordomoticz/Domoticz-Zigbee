@@ -1306,7 +1306,7 @@ def Cluster0102( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
                 if 'SWBUILD_3' in self.ListOfDevices[MsgSrcAddr]:
                     loggingCluster( self, 'Debug', "ReadCluster - %s - %s/%s - Shutter switch with neutral SWBUILD_3: %0X" 
-                        %int(self.ListOfDevices[MsgSrcAddr]['SWBUILD_3'],16), MsgSrcAddr)
+                        %(MsgAttrID, MsgSrcAddr, MsgSrcEp, int(self.ListOfDevices[MsgSrcAddr]['SWBUILD_3'],16)), MsgSrcAddr)
 
                     if int(self.ListOfDevices[MsgSrcAddr]['SWBUILD_3'],16) >= 0x001a:
                         # Looks like after firmware 1a the Shutter report an inverted number
@@ -1314,7 +1314,7 @@ def Cluster0102( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                             value = 100 - value
 
         loggingCluster( self, 'Debug', "ReadCluster - %s - %s/%s - Shutter switch with neutral After correction value: %s" 
-            %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value))
+            %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr)
 
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, "%02x" %value )
 
