@@ -145,7 +145,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         elif DeviceType in ( "WindowCovering", "VenetianInverted", "Venetian"):
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
             sendZigateCmd(self, "00FA","02" + NWKID + ZIGATE_EP + EPout + "02")
-            UpdateDevice_v2(self, Devices, Unit, 2, "50", BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            UpdateDevice_v2(self, Devices, Unit, 17, "Stopped", BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
                     
         # Let's force a refresh of Attribute in the next Heartbeat 
         self.ListOfDevices[NWKID]['Heartbeat'] = '0'  

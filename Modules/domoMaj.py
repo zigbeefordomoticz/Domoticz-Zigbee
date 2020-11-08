@@ -73,6 +73,9 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
             Domoticz.Error("Device %s not found !!!" %WidgetId)
             return
 
+        Switchtype = Devices[ DeviceUnit ].SwitchType
+        Subtype = Devices[ DeviceUnit ].SubType
+
         # DeviceUnit is the Device unit
         # WidgetEp is the Endpoint to which the widget is linked to
         # WidgetId is the Device ID
@@ -564,6 +567,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     value = 100 - value
                     self.log.logging( "Widget", "Debug", "------>  Patching %s/%s Value: %s" %(NWKID, Ep,value), NWKID)
 
+                # nValue will depends if we are on % or not
                 if value == 0: 
                     nValue = 0
 
@@ -571,7 +575,10 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     nValue = 1
 
                 else: 
-                    nValue = 2
+                    if Switchtype in ( 4, 15 ):
+                        nValue = 17
+                    else:
+                        nValue = 2
 
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(value), BatteryLevel, SignalLevel)
 
@@ -900,7 +907,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
         # Check if this Device belongs to a Group. In that case update group
         CheckUpdateGroup( self, NWKID, Ep,  clusterID )
-
 
 def CheckUpdateGroup( self, NwkId, Ep, ClusterId):
     
