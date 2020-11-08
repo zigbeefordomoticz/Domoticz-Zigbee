@@ -291,7 +291,8 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
         Attribute = MsgData[idx : idx + 4]
         if MsgClusterId == "000a":
             # Cluster TimeServer
-            self.log.logging(  "Input", "Debug", "Decode0100 - Received Time Server Cluster %s/%s Idx: %s  Attribute: %s" %(idx, Attribute))
+            self.log.logging(  "Input", "Debug", "Decode0100 - Received Time Server Cluster %s/%s Idx: %s  Attribute: %s" 
+                %(MsgSrcAddr, MsgSrcEp,idx, Attribute))
             timeserver_read_attribute_request( self, MsgSqn, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgManufSpec, MsgManufCode, Attribute, )
 
         elif MsgClusterId == '0201' and ( manuf == '105e' or manuf_name == 'Schneider'):
@@ -765,7 +766,7 @@ def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
 def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
 
     # APP APS ACK
-    self.log.logging( "Input", "Debug", "Decode8011 - APS ACK: %s" % MsgData)
+    self.log.logging( "Input", "Debug2", "Decode8011 - APS ACK: %s" % MsgData)
     MsgLen = len(MsgData)
     MsgStatus = MsgData[0:2]
     MsgSrcAddr = MsgData[2:6]
@@ -785,17 +786,9 @@ def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
 
     if MsgStatus == "00":
         lastSeenUpdate(self, Devices, NwkId=MsgSrcAddr)
-        if (
-            "Health" in self.ListOfDevices[MsgSrcAddr]
-            and self.ListOfDevices[MsgSrcAddr]["Health"] != "Live"
-        ):
-            self.log.logging( 
-                "Input",
-                "Log",
-                "Receive an APS Ack from %s, let's put the device back to Live"
-                % MsgSrcAddr,
-                MsgSrcAddr,
-            )
+        if ( "Health" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Health"] != "Live" ):
+            self.log.logging(  "Input", "Log", "Receive an APS Ack from %s, let's put the device back to Live"
+                % MsgSrcAddr, MsgSrcAddr, )
             self.ListOfDevices[MsgSrcAddr]["Health"] = "Live"
         return
 
@@ -817,31 +810,12 @@ def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
 
         if "ZDeviceName" in self.ListOfDevices[MsgSrcAddr]:
             MsgClusterId = MsgData[8:12]
-            if self.ListOfDevices[MsgSrcAddr]["ZDeviceName"] not in [
-                {},
-                "",
-            ]:
-                self.log.logging( 
-                    "Input",
-                    "Log",
-                    "Receive NACK from %s (%s) clusterId: %s for Command: %s Status: %s"
-                    % (
-                        self.ListOfDevices[MsgSrcAddr]["ZDeviceName"],
-                        MsgSrcAddr,
-                        MsgClusterId,
-                        cmd,
-                        MsgStatus,
-                    ),
-                    MsgSrcAddr,
-                )
+            if self.ListOfDevices[MsgSrcAddr]["ZDeviceName"] not in [ {}, "", ]:
+                self.log.logging(  "Input", "Log", "Receive NACK from %s (%s) clusterId: %s for Command: %s Status: %s"
+                    % ( self.ListOfDevices[MsgSrcAddr]["ZDeviceName"], MsgSrcAddr, MsgClusterId, cmd, MsgStatus, ), MsgSrcAddr, )
             else:
-                self.log.logging( 
-                    "Input",
-                    "Log",
-                    "Receive NACK from %s clusterId: %s for Command: %s Status: %s"
-                    % (MsgSrcAddr, MsgClusterId, cmd, MsgStatus),
-                    MsgSrcAddr,
-                )
+                self.log.logging(  "Input", "Log", "Receive NACK from %s clusterId: %s for Command: %s Status: %s" 
+                   % (MsgSrcAddr, MsgClusterId, cmd, MsgStatus), MsgSrcAddr, )
 
 
 def Decode8012(self, Devices, MsgData, MsgLQI):
@@ -2523,9 +2497,7 @@ def Decode80A6(self, Devices, MsgData, MsgLQI):  # Scene Membership response
 
 
 # Reponses Attributs
-def Decode8100(
-    self, Devices, MsgData, MsgLQI
-):  # Read Attribute Response (in case there are several Attribute call several time rad_report_attributes)
+def Decode8100( self, Devices, MsgData, MsgLQI ):  # Read Attribute Response (in case there are several Attribute call several time rad_report_attributes)
 
     MsgSQN = MsgData[0:2]
     i_sqn = sqn_get_internal_sqn_from_app_sqn(self.ZigateComm, MsgSQN, TYPE_APP_ZCL)
@@ -2841,6 +2813,7 @@ def read_report_attributes(
             MsgAttType,
             MsgAttSize,
             MsgClusterData,
+            Source=MsgType
         )
         return
 
