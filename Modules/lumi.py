@@ -161,6 +161,7 @@ def AqaraOppleDecoding( self, Devices, nwkid, Ep, ClusterId, ModelName, payload)
         ColorTempMinimumMired = payload[24:28]
         ColorTempMaximumMired = payload[28:32]
         unknown = payload[32:36]
+        OPPLE_MAPPING_4_6_BUTTONS = {}
 
         if _ModelName == 'lumi.remote.b686opcn01': # Ok
             OPPLE_MAPPING_4_6_BUTTONS = {
