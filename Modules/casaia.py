@@ -74,16 +74,31 @@ def casaia_AC201_pairing( self, NwkId):
     # Call during the Zigbee pairing process
     self.log.logging( "CasaIA", "Debug" , "casaia_AC201_pairing %s" %(NwkId ))
 
+    # Read Existing Pairing Infos: Command 0x00
+    read_multi_pairing_code_request( self, NwkId )
+
+    # Add an entry in the PAC Casa file in order to get the IRCode
     add_pac_entry(self, self.ListOfDevices[ NwkId ]['IEEE'])
 
-    # Read Existing Pairing Infos
-    read_multi_pairing_code_request( self, NwkId )
+    # 
+    # command_mysterious( self, NwkId, '000000')
+
+    # In case we have already the IRCode 
+    casaia_ac201_ir_pairing( self, NwkId)
 
     # Read Current AC Status
     read_AC_status_request( self, NwkId)
 
-    # In case we have already the IRCode 
-    casaia_ac201_ir_pairing( self, NwkId)
+    # Command 0x11 - Payload 00
+    # read_learned_data_group_status_request( self, NwkId)
+
+    # Command 0x12 - Payload 000000
+    # read_learned_data_group_name_request(self, NwkId)
+
+    # Command 0x06 - Payload 000000 or 0x000100
+    # command_mysterious( self, NwkId, '000100')
+
+
 
 
 def callbackDeviceAwake_Casaia(self, NwkId, EndPoint, cluster):
@@ -126,7 +141,6 @@ def casaiaReadRawAPS(self, Devices, NwkId, srcEp, ClusterId, dstNWKID, dstEP, Ms
         elif Command in ['11', '12']:
             read_learned_data_group_status_request(self, Devices, NwkId, srcEp, Data)
     
-
 def casaia_swing_OnOff( self, NwkId, OnOff):
     
     if OnOff not in ('00', '01'):
@@ -165,7 +179,6 @@ def read_multi_pairing_code_request( self, NwkId ):
     raw_APS_request( self, NwkId, EPout, 'ffad', '0104', payload, zigate_ep=ZIGATE_EP)
     self.log.logging( "Casaia", 'Debug', "read_multi_pairing_code_request ++++ %s payload: %s" %( NwkId, payload), NwkId)
 
-
 def write_multi_pairing_code_request( self, NwkId , pairing_code_value ):
     # Command 0x01
     device_type = DEVICE_TYPE
@@ -177,8 +190,6 @@ def write_multi_pairing_code_request( self, NwkId , pairing_code_value ):
     send_manuf_specific_cmd( self, NwkId, payload)
     self.log.logging( "Casaia", 'Debug', "write_multi_pairing_code_request ++++ %s payload: %s" %( NwkId, payload), NwkId)
 
-
-
 def read_AC_status_request( self, NwkId):
     # Command 0x02
     self.log.logging( "Casaia", 'Debug', "read_AC_status_request NwkId: %s" %( NwkId), NwkId) 
@@ -188,8 +199,6 @@ def read_AC_status_request( self, NwkId):
     payload =  cmd + device_type + device_id
     send_manuf_specific_cmd( self, NwkId, payload)
     self.log.logging( "Casaia", 'Debug', "read_AC_status_request ++++ %s payload: %s" %( NwkId, payload), NwkId)
-
-
 
 def write_AC201_status_request( self, NwkId, Action, setpoint = None):
     # Command 0x03
@@ -224,7 +233,6 @@ def write_AC201_status_request( self, NwkId, Action, setpoint = None):
     self.log.logging( "Casaia", 'Debug', "write_AC201_status_request ++++ %s payload: %s" %( NwkId, payload), NwkId) 
     read_AC_status_request( self, NwkId)
 
-
 def read_learned_data_group_status_request( self, NwkId):
     # Command 0x11
     EPout = get_ffad_endpoint(self, NwkId)
@@ -236,7 +244,7 @@ def read_learned_data_group_status_request( self, NwkId):
     raw_APS_request( self, NwkId, EPout, 'ffad', '0104', payload, zigate_ep=ZIGATE_EP)
     self.log.logging( "Casaia", 'Debug', "read_learned_data_group_status_request ++++ %s/%s payload: %s" %( NwkId, EPout, payload), NwkId)
 
-def read_learned_data_group_status_request(self, NwkId):
+def read_learned_data_group_name_request(self, NwkId):
     # Command 0x12
     device_type = DEVICE_TYPE
     group_bitmap = '0000'
@@ -247,7 +255,14 @@ def read_learned_data_group_status_request(self, NwkId):
 
     self.log.logging( "Casaia", 'Debug', "read_learned_data_group_status_request ++++ %s payload: %s" %( NwkId, payload), NwkId)
 
+def command_mysterious( self, NwkId, magic):
+    # Command 0x06
 
+    cmd = '06'
+    payload = cmd + magic
+    send_manuf_specific_cmd( self, NwkId, payload)
+
+    self.log.logging( "Casaia", 'Debug', "read_learned_data_group_status_request ++++ %s payload: %s" %( NwkId, payload), NwkId)  
 
 ## 0xFFAD Server to Client
 
@@ -325,12 +340,12 @@ def read_AC_status_response( self, Devices, NwkId, Ep, payload):
 
 
 
-def read_learned_data_group_status_request(self, NwkId, payload):
+def read_learned_data_group_status_request_response(self, Devices, NwkId, srcEp, payload):
     # Command 0x11
     device_type = payload[0:2]
     status = payload[2:6]
 
-def read_learned_data_group_status_request(self, NwkId, payload):
+def read_learned_data_group_name_request_response(self, Devices, NwkId, srcEp, payload):
     # Cmmand 0x12
     device_type= payload[0:2]
     group_bitmap = payload[2:6]
