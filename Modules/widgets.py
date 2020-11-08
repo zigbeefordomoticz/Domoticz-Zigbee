@@ -469,7 +469,7 @@ SWITCH_LVL_MATRIX = {
     },
     
     'FanControl': {
-        "00": (0, "Off"), # Off
+        "00": (0, "00"), # Off
         "05": (1, "10"), # Auto
         "01": (2, "20"), # Low
         "02": (3, "30"), # Moyen
@@ -482,7 +482,7 @@ SWITCH_LVL_MATRIX = {
     },
     
     "PAC-MODE": {
-        "00": (0, "Off"), # Off
+        "00": (0, "00"), # Off
         "03": (1, "10"),  # Cool
         "04": (2, "20"),  # Heat
         "08": (3, "30"),  # Dry
