@@ -114,6 +114,7 @@ class OTAManagement(object):
         # ota_request_firmware(self, Devices, MsgData, MsgLQI):  # OTA image block request
         # BLOCK_REQUEST  0x8501  ZiGate will receive this command when device asks OTA firmware
         logging( self,  'Debug+', "ota_request_firmware - Request Firmware Block (%s) %s" %(len(MsgData), MsgData))
+
         MsgSQN =                 MsgData[0:2]
         MsgEP =                  MsgData[2:4]
         # MsgClusterId =         MsgData[4:8]
@@ -193,6 +194,7 @@ class OTAManagement(object):
         #define OTA_UNSUP_CLUSTER_COMMAND                 (uint8)0x81
         #define OTA_REQUIRE_MORE_IMAGE                    (uint8)0x99
         logging( self,  'Debug2', "Decode8503 - Request Firmware Completed %s/%s" %(MsgData, len(MsgData)))
+        
         MsgSQN             = MsgData[0:2]
         MsgEP              = MsgData[2:4]
         MsgClusterId       = MsgData[4:8]
@@ -233,6 +235,10 @@ class OTAManagement(object):
             logging( self,  'Error',"ota_request_firmware_completed - OTA Firmware image validation failed")
             notify_upgrade_end( self, 'Failed', MsgSrcAddr, MsgEP, image_type, intMsgManufCode, intMsgImageVersion )
 
+        elif MsgStatus == '97': # OTA_STATUS_WAIT_FOR_DATA
+            logging( self,  'Log',"ota_request_firmware_completed - OTA Firmware image wait for data")
+            return 
+            
         elif MsgStatus == '99': # OTA_REQUIRE_MORE_IMAGE: The downloaded image was successfully received 
                                 # and verified, but the client requires multiple images before performing an upgrade
             logging( self,  'Status', "ota_request_firmware_completed - OTA Firmware  The downloaded image was successfully received, but there is a need for additional image")
