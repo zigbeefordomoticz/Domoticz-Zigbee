@@ -1325,9 +1325,17 @@ def Cluster0102( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.log.logging( "Cluster", self, 'Debug', "ReadCluster - %s - %s/%s - Config Status: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
 
     elif MsgAttrID == "0008":
-        self.log.logging( "Cluster", 'Debug', "ReadCluster - %s - %s/%s - Current position lift in %%: %s, Type: %s, Size: %s Data: %s-%s" 
-            %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
+        self.log.logging( "Cluster", 'Debug', "ReadCluster 0x%s - %s - %s/%s - Current position lift in %%: %s, Type: %s, Size: %s Data: %s-%s" 
+            %(Source, MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
+
+        if 'SWBUILD_3' in self.ListOfDevices[MsgSrcAddr]:
+            self.log.logging( "Cluster",  'Debug', "ReadCluster - %s - %s/%s - SWBUILD_3: %0X" 
+                %(MsgAttrID, MsgSrcAddr, MsgSrcEp, int(self.ListOfDevices[MsgSrcAddr]['SWBUILD_3'],16)), MsgSrcAddr)
+
         if ( 'Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Model'] != {} ):
+
+            self.log.logging( "Cluster",  'Debug', "ReadCluster - %s - %s/%s - Model: %s" 
+                %(MsgAttrID, MsgSrcAddr, MsgSrcEp, self.ListOfDevices[MsgSrcAddr]['Model']), MsgSrcAddr)
     
             if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TS0302' and value == 50:
                 # Zemismart Blind shutter switch send 50 went the swicth is on wait mode
@@ -1339,17 +1347,11 @@ def Cluster0102( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
             elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'Shutter switch with neutral':
                 # The Shutter should have the Led on its right
-                self.log.logging( "Cluster", 'Debug', "ReadCluster - %s - %s/%s - Shutter switch with neutral Source: %s value: %s" 
-                    %(MsgClusterId, MsgSrcAddr, MsgSrcEp, Source, value), MsgSrcAddr)
-
-                if 'SWBUILD_3' in self.ListOfDevices[MsgSrcAddr]:
-                    self.log.logging( "Cluster",  'Debug', "ReadCluster - %s - %s/%s - Shutter switch with neutral SWBUILD_3: %0X" 
-                        %(MsgAttrID, MsgSrcAddr, MsgSrcEp, int(self.ListOfDevices[MsgSrcAddr]['SWBUILD_3'],16)), MsgSrcAddr)
-
-                    if int(self.ListOfDevices[MsgSrcAddr]['SWBUILD_3'],16) >= 0x001a:
-                        # Looks like after firmware 1a the Shutter report an inverted number
-                        if Source and Source == '8102':
-                            value = 100 - value
+                # Value: 100 -> Closed
+                # Value: 0   -> Open
+                # Value: 50  -> Stopped
+                if value != 50:
+                    return
 
         self.log.logging( "Cluster", 'Debug', "ReadCluster - %s - %s/%s - Shutter switch with neutral After correction value: %s" 
             %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr)
