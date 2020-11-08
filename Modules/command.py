@@ -188,7 +188,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
             return
 
-        if DeviceType == 'PAC-MODE':
+        if DeviceType in ( 'PAC-MODE', 'FanControl') :
             casaia_system_mode( self, NWKID, 'Off')
             
             #UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
@@ -210,7 +210,6 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             sendZigateCmd(self, "00FA","02" + NWKID + ZIGATE_EP + EPout + "00") # Venetian /Blind (Off, for Close)
                 
         elif DeviceType == "AlarmWD":
-            Domoticz.Log("Alarm WarningDevice - value: %s" %Level)
             self.iaszonemgt.alarm_off( NWKID, EPout)
 
         elif DeviceType == "HeatingSwitch":
