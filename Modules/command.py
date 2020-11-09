@@ -32,6 +32,9 @@ from Classes.IAS import IAS_Zone_Management
 from Modules.zigateConsts import THERMOSTAT_LEVEL_2_MODE, ZIGATE_EP
 from Modules.widgets import SWITCH_LVL_MATRIX
 from Modules.cmdsDoorLock import cluster0101_lock_door, cluster0101_unlock_door
+from Modules.fanControl import change_fan_mode
+
+from Modules.casaia import write_multi_pairing_code_request,  casaia_swing_OnOff, casaia_setpoint, casaia_system_mode
 
 def debugDevices( self, Devices, Unit):
 
@@ -68,7 +71,7 @@ DEVICE_SWITCH_MATRIX = {
 ACTIONATORS = [ 'Switch', 'Plug', 'SwitchAQ2', 'Smoke', 'DSwitch', 'LivoloSWL', 'LivoloSWR', 'Toggle',
             'Venetian', 'VenetianInverted', 'WindowCovering', 'BSO', 'BSO-Orientation', 'BSO-Volet',
             'LvlControl', 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl',
-            'ThermoSetpoint', 'ThermoMode', 'ThermoMode_2', 'ThermoModeEHZBRTS', 'TempSetCurrent', 'AlarmWD',
+            'ThermoSetpoint', 'ThermoMode', 'ThermoMode_2', 'ThermoModeEHZBRTS', 'FanControl', 'PAC-SWITCH', 'PAC-MODE', 'PAC-WING','TempSetCurrent', 'AlarmWD',
             'FIP', 'HACTMODE','LegranCableMode', 'ContractPower','HeatingSwitch', 'DoorLock' ]
             
 def mgtCommand( self, Devices, Unit, Command, Level, Color ):
@@ -181,9 +184,16 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             self.log.logging( "Command", 'Debug', "MajDomoDevice EHZBRTS Schneider Thermostat Mode Off", NWKID )
             schneider_EHZBRTS_thermoMode( self, NWKID, 0 )
             UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
-
             # Let's force a refresh of Attribute in the next Heartbeat 
             self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
+            return
+
+        if DeviceType in ( 'PAC-MODE', 'FanControl') :
+            casaia_system_mode( self, NWKID, 'Off')
+            
+            #UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            ## Let's force a refresh of Attribute in the next Heartbeat  
+            #self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
             return
 
         if DeviceType == 'BSO-Volet':
@@ -200,7 +210,6 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             sendZigateCmd(self, "00FA","02" + NWKID + ZIGATE_EP + EPout + "00") # Venetian /Blind (Off, for Close)
                 
         elif DeviceType == "AlarmWD":
-            Domoticz.Log("Alarm WarningDevice - value: %s" %Level)
             self.iaszonemgt.alarm_off( NWKID, EPout)
 
         elif DeviceType == "HeatingSwitch":
@@ -241,8 +250,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
 
         if DeviceType == 'LivoloSWL':
             livolo_OnOff( self, NWKID , EPout, 'Left', 'On')
-            UpdateDevice_v2(self, Devices, Unit, 1, "On",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
-                        
+            UpdateDevice_v2(self, Devices, Unit, 1, "On",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)                      
             # Let's force a refresh of Attribute in the next Heartbeat 
             self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
             return
@@ -253,6 +261,17 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
 
             # Let's force a refresh of Attribute in the next Heartbeat 
             self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
+            return
+
+        if DeviceType == 'DoorLock':
+            cluster0101_lock_door( self, NWKID)
+            UpdateDevice_v2(self, Devices, Unit, 1, "Open",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            self.ListOfDevices[NWKID]['Heartbeat'] = 0 
+            return
+            
+            ## Let's force a refresh of Attribute in the next Heartbeat  
+            #UpdateDevice_v2(self, Devices, Unit, 1, "On",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            #self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
             return
 
         if DeviceType == 'BSO-Volet':
@@ -273,11 +292,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         elif DeviceType == "HeatingSwitch":
             thermostat_Mode( self, NWKID, 'Heat' )
 
-        elif DeviceType == 'DoorLock':
-            cluster0101_lock_door( self, NWKID)
-            UpdateDevice_v2(self, Devices, Unit, 1, "Open",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
-            self.ListOfDevices[NWKID]['Heartbeat'] = 0 
-            return
+
         else:
             # Remaining Slider widget
             if profalux:
@@ -432,6 +447,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             if Level in THERMOSTAT_LEVEL_2_MODE:
                 self.log.logging( "Command", 'Debug', " - Set Thermostat Mode to : %s / %s" %( Level, THERMOSTAT_LEVEL_2_MODE[Level]), NWKID)
                 thermostat_Mode( self, NWKID, THERMOSTAT_LEVEL_2_MODE[Level] )
+                UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            # Let's force a refresh of Attribute in the next Heartbeat  
+            self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
+            return
 
         if DeviceType == 'ThermoMode_2':
             self.log.logging( "Command", 'Debug', "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" 
@@ -439,6 +458,44 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             self.log.logging( "Command", 'Debug', "ThermoMode_2 - requested Level: %s" %Level, NWKID)
             tuya_trv_mode( self, NWKID, Level )
 
+        if DeviceType == 'FanControl':
+            if Level == 10:
+                casaia_system_mode( self, NWKID, 'FanAuto')
+                #UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            elif Level == 20:
+                casaia_system_mode( self, NWKID, 'FanLow')
+                #UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            elif Level == 30:
+                casaia_system_mode( self, NWKID, 'FanMedium')
+                #UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            elif Level == 40:
+                casaia_system_mode( self, NWKID, 'FanHigh')
+                #UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            return
+
+        if DeviceType == 'PAC-WING':
+            if Level == 10:
+                casaia_swing_OnOff( self, NWKID, '00')
+                #UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            elif Level == 20:
+                casaia_swing_OnOff( self, NWKID, '01')
+                #UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            return
+
+        if DeviceType == 'PAC-MODE':
+            if Level == 10:
+                casaia_system_mode( self, NWKID, 'Cool')
+                #UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            elif Level == 20:
+                casaia_system_mode( self, NWKID, 'Heat')
+                #UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            elif Level == 30:
+                casaia_system_mode( self, NWKID, 'Dry')
+                #UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            elif Level == 40:
+                casaia_system_mode( self, NWKID, 'Fan')
+                #UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            return
 
         elif DeviceType == 'BSO-Volet':
             if profalux:

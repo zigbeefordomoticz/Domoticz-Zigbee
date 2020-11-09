@@ -354,15 +354,17 @@ SWITCH_LVL_MATRIX = {
    },
    
     "ThermoMode": {
-        0: (0, "Off"), 
-        1: (1, "10"), 
-        2: (2, "20"), 
-        3: (3, "30"), 
-        4: (4, "40"),
+        0x00: (0, "Off"), # Off
+        0x01: (1, "10"),  # Auto
+        0x03: (2, "20"),  # Cool
+        0x04: (3, "30"),  # Heat
+        0x05: (4, "40"),  # Force heat
+        0x08: (5, "50"),  # Dry
+        0x07: (6, "60"),  # Fan
         "ForceUpdate": False,
-        "LevelNames": "Off|Auto|Cool|Heat|Force Heat",
+        "LevelNames": "Off|Auto|Cool|Heat|Force Heat|Dry|Fan",
         "Language": {
-            "fr-FR": {"LevelNames": "Arrêt|Auto|Froid|Chaud|Chaud Forcé"}
+            "fr-FR": {"LevelNames": "Arrêt|Auto|Froid|Chaud|Chaud Forcé|Déshumidicateur|Ventilateur"}
         }
     },
 
@@ -465,52 +467,53 @@ SWITCH_LVL_MATRIX = {
             "fr-FR": {"LevelNames": "Off|Urgence|Armer (zone maison)|Armer (toutes zones)|Désarmer"}
             }
     },
-    'PAC-MODE': {
-        "00": (0, "00"), # "Off",
-        "01": (1, "10"), # "Auto"
-        "02": (2, "20"), # dehumidifier
-        "03": (3, "30"), # COLD
-        "04": (4, "40"), # HOT
-        "05": (5, "50"), # FAN only
-        "ForceUpdate": False, 
-        "LevelNames": "Off|Auto|dehumidifier|Cold|Hot|Fan",
-        "Language": {
-            "fr-FR": {"LevelNames": "Off|Auto|Déshumidicateur|Froid|Chaud|Ventilateur"}
-            }
-    },
+    
     'FanControl': {
         "00": (0, "00"), # Off
-        "01": (1, "10"), # Auto
-        "02": (2, "20"), # Silence
-        "03": (3, "30"), # Level 1
-        "04": (4, "40"), # Level 2
-        "05": (5, "50"), # Level 3
-        "06": (6, "60"), # Level 4
-        "07": (7, "70"), # Level 5
-        "ForceUpdate": False, 
-        "LevelNames": "Off|Auto|Silence|Lvl1|Lvl2|Lvl3|Lvl4|Lvl5",
+        "05": (1, "10"), # Auto
+        "01": (2, "20"), # Low
+        "02": (3, "30"), # Moyen
+        "03": (4, "40"), # Fort
+        "ForceUpdate": True, 
+        "LevelNames": "Off|Auto|Low|Medium|High",
         "Language": {
-            "fr-FR": {"LevelNames": "Off|Auto|Silence|Lvl1|Lvl2|Lvl3|Lvl4|Lvl5"}
+            "fr-FR": {"LevelNames": "Arrêt|Auto|Bas|Moyen|Fort"}
         }
     },
-    'PAC-WING': {
-        "00": (0, "00"), # Off - All wings stopped
-        "01": (1, "10"), # Vertigal wings motion
-        "02": (2, "20"), # Horizontal wings motion
-        "03": (3, "30"), # Vertical and Horizontal wings motion 
-        "ForceUpdate": False, 
-        "LevelNames": "Off|Vertical|Horizontal|Both",
-        "Language": {
-            "fr-FR": {"LevelNames": "Off|Horizontal|Vertical|Les deux"}
-        }
-    },
-    'PAC-SWITCH': {
+    
+    "PAC-MODE": {
         "00": (0, "00"), # Off
-        "01": (1, "10"), # On
-        "ForceUpdate": False, 
-        "LevelNames": "Off|On",
+        "03": (1, "10"),  # Cool
+        "04": (2, "20"),  # Heat
+        "08": (3, "30"),  # Dry
+        "07": (4, "40"),  # Fan
+        "ForceUpdate": True,
+        "LevelNames": "Off|Cool|Heat|Dry|Fan",
         "Language": {
-            "fr-FR": {"LevelNames": "Arrêt|Allumer"}
+            "fr-FR": {"LevelNames": "Arrêt|Froid|Chaud|Déshumidicateur|Ventilateur"}
+        }
+    },
+
+    'PAC-WING': {
+        "ff": (0, "Off"), # Off - All wings stopped
+        "00": (1, "10"), # Off Mode
+        "01": (2, "20"), # Auto On
+        "ForceUpdate": True, 
+        "LevelNames": "Off|Off|Auto",
+        "Language": {
+            "fr-FR": {"LevelNames": "Arrêt|Off|Auto"}
+        }
+    },
+    'KF204Switch': {
+        "00": (0, "00"), # Off
+        "01": (1, "10"), # Button 0 ( left)
+        "02": (2, "20"), # Button X ( right)
+        "03": (3, "30"), # Button - ( Down )
+        "04": (4, "40"), # Button + ( Up )
+        "ForceUpdate": True, 
+        "LevelNames": "Off|0|X|+|-",
+        "Language": {
+            "fr-FR": {"LevelNames": "Off|0|X|+|-"}
         }
     },
 }

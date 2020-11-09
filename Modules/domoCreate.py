@@ -293,24 +293,19 @@ def CreateDomoDevice(self, Devices, NWKID):
 
             # === Selector Switches
             if t in ( 'PAC-MODE', ): # 6
-                Options = createSwitchSelector( self, 6 , DeviceType = t, SelectorStyle = 0)
-                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
+                Options = createSwitchSelector( self, 5 , DeviceType = t, OffHidden = False, SelectorStyle = 1)
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options, Image = 16)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in PAC-MODE" %(t), NWKID)
 
             if t in ( 'FanControl', ): # 8
-                Options = createSwitchSelector( self, 8 , DeviceType = t, SelectorStyle = 0)
-                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
+                Options = createSwitchSelector( self, 5 , DeviceType = t, OffHidden = False, SelectorStyle = 1)
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options, Image = 7)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in FanControl" %(t), NWKID)        
 
-            if t in ( 'PAC-WING', ): # 4
-                Options = createSwitchSelector( self, 4 , DeviceType = t, SelectorStyle = 0)
+            if t in ( 'PAC-WING', ): # 3
+                Options = createSwitchSelector( self, 3 , DeviceType = t, OffHidden = True, SelectorStyle = 1)
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
-                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in PAC-WING" %(t), NWKID)
-
-            if t in ( 'PAC-SWITCH', ): # 2
-                Options = createSwitchSelector( self, 2 , DeviceType = t, SelectorStyle = 0)
-                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
-                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in PAC-SWITCH" %(t), NWKID)           
+                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in PAC-WING" %(t), NWKID)        
 
             # 3 Selectors, Style 0
             if t in ("Toggle", "ThermoMode_2"): 
@@ -331,7 +326,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in DSwitch..." %(t), NWKID)
 
             # 5 Selector , OffHidden, Style 0 (command)
-            if t in ('ContractPower', ):
+            if t in ('ContractPower','KF204Switch' ):
                 Options = createSwitchSelector( self,  6, DeviceType = t, OffHidden = True, SelectorStyle = 0 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in ContractPower ..." %(t), NWKID)
@@ -350,7 +345,7 @@ def CreateDomoDevice(self, Devices, NWKID):
 
             # 5 Selectors, Style 0 ( mode command)
             if t in ('ThermoMode', ):
-                Options = createSwitchSelector( self,  5,  DeviceType = t,SelectorStyle = 0 )
+                Options = createSwitchSelector( self,  7,  DeviceType = t,SelectorStyle = 0 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in ThermoMode" %(t), NWKID)
 
@@ -513,7 +508,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 246, Subtype_ = 1, Switchtype_ = 0 )
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Lux" %(t), NWKID)
 
-            if t in ( "Switch", "SwitchButton", "HeatingSwitch"):  
+            if t in ( "Switch", "SwitchButton", "HeatingSwitch", "PAC-SWITCH"):  
                 # inter sans fils 1 touche 86sw1 xiaomi
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 244, Subtype_ = 73, Switchtype_ = 0 )
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Switch" %(t), NWKID)

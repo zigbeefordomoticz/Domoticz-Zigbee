@@ -37,6 +37,7 @@ from Modules.profalux import profalux_fake_deviceModel
 from Modules.domoCreate import CreateDomoDevice
 from Modules.tools import reset_cluster_datastruct
 from Modules.zigateConsts import CLUSTERS_LIST
+from Modules.casaia import casaia_AC201_pairing
 
 def writeDiscoveryInfos( self ):
 
@@ -407,6 +408,10 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                             else:
                                 Domoticz.Error("Uncorrect GroupMembership definition %s" %str(self.DeviceConf[ self.ListOfDevices[NWKID]['Model'] ]['GroupMembership']))
 
+            if 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['Model'] in ( 'AC201A', ):
+                casaia_AC201_pairing( self, NWKID)
+                
+                
             # Reset HB in order to force Read Attribute Status
             self.ListOfDevices[NWKID]['Heartbeat'] = 0
 

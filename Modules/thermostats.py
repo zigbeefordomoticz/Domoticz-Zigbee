@@ -12,6 +12,7 @@ from Modules.readAttributes import ReadAttributeRequest_0201
 from Modules.basicOutputs import write_attribute
 from Modules.schneider_wiser import schneider_setpoint
 from Modules.tuya import tuya_setpoint
+from Modules.casaia import casaia_setpoint
  
 def thermostat_Setpoint_SPZB(  self, key, setpoint):
 
@@ -53,6 +54,10 @@ def thermostat_Setpoint( self, key, setpoint):
             # Tuya
             self.log.logging( "Thermostats", 'Log', "thermostat_Setpoint - calling Tuya for %s with value %s" %(key, setpoint), nwkid=key)
             tuya_setpoint(self, key, setpoint)
+            return
+
+        elif self.ListOfDevices[key]['Model'] in ( 'AC201A', ):
+            casaia_setpoint(self, key, setpoint)
             return
 
     self.log.logging( "Thermostats", 'Debug', "thermostat_Setpoint - standard for %s with value %s" %(key,setpoint), nwkid=key)
@@ -133,8 +138,9 @@ def thermostat_Mode( self, key, mode ):
             'Heat' :  0x04,
             'Emergency Heating' : 0x05,
             'Pre-cooling' : 0x06,
-            'Fan only' : 0x07 }
-
+            'Fan Only' : 0x07 ,
+            'Dry': 0x08,
+            'Sleep': 0x09}
 
     if mode not in SYSTEM_MODE:
         Domoticz.Error("thermostat_Mode - unknown system mode: %s" %mode)
@@ -151,6 +157,7 @@ def thermostat_Mode( self, key, mode ):
     for tmpEp in self.ListOfDevices[key]['Ep']:
         if "0201" in self.ListOfDevices[key]['Ep'][tmpEp]:
             EPout= tmpEp
+
     write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
     self.log.logging( "Thermostats", 'Debug', "thermostat_Mode - for %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,data,cluster_id,attribute,data_type), nwkid=key)

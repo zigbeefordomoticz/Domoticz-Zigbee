@@ -200,6 +200,7 @@ class BasePlugin:
         self.startZigateNeeded = False
 
         self.SchneiderZone = None        # Manage Zone for Wiser Thermostat and HACT
+        self.CasaiaPAC = None  # To manage Casa IA PAC configuration
 
     def onStart(self):
     

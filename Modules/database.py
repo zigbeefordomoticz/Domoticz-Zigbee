@@ -441,7 +441,7 @@ def CheckDeviceList(self, key, val):
             )
 
     MANUFACTURER_ATTRIBUTES = (
-            'Legrand', 'Schneider', 'Lumi' )
+            'Legrand', 'Schneider', 'Lumi', 'CASA.IA' )
 
     if self.pluginconf.pluginConf['resetPluginDS']:
         self.log.logging( "Database", 'Status', "Reset Build Attributes for %s" %DeviceListVal['IEEE'])

@@ -29,6 +29,7 @@ from Modules.configureReporting import processConfigureReporting
 from Modules.legrand_netatmo import  legrandReenforcement
 from Modules.blitzwolf import pollingBlitzwolfPower
 from Modules.schneider_wiser import schneiderRenforceent, pollingSchneider
+from Modules.casaia import pollingCasaia
 from Modules.philips import pollingPhilips
 from Modules.gledopto import pollingGledopto
 from Modules.lumi import setXiaomiVibrationSensitivity
@@ -94,7 +95,8 @@ def processKnownDevices( self, Devices, NWKID ):
             'GLEDOPTO':         ( 'Gledopto',       'pollingGledopto',       pollingGledopto ),
             '105e':             ( 'Schneider',      'pollingSchneider',      pollingSchneider),
             'Schneider':        ( 'Schneider',      'pollingSchneider',      pollingSchneider),
-            '_TZ3000_g5xawfcq': ( 'BlitzwolfPower', 'pollingBlitzwolfPower', pollingBlitzwolfPower, )
+            '_TZ3000_g5xawfcq': ( 'BlitzwolfPower', 'pollingBlitzwolfPower', pollingBlitzwolfPower, ),
+            'OWON':             ( 'CasaiaAC201',    'pollingCasaiaAC201',    pollingCasaia, )
         }
 
         rescheduleAction = False

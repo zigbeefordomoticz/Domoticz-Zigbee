@@ -277,7 +277,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 elif clusterID == 'fc40': # Legrand FIP
                     UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
  
-
             elif WidgetType == 'ThermoMode_2' and Attribute_ == '001c':
                 # Use by Tuya TRV
                 
@@ -290,7 +289,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 sValue = SWITCH_LVL_MATRIX[ 'ThermoMode_2'][ value ][1]
                 self.log.logging( "Widget", "Log", "------>  Thermostat Mode 2 %s %s:%s" %(value, nValue, sValue), NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
-
 
             elif WidgetType == 'ThermoMode' and Attribute_ == '001c':
                 # value seems to come as int or str. To be fixed
@@ -427,18 +425,20 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
 
         if WidgetType not in ( 'ThermoModeEHZBRTS', ) and \
-            ( 
-                ( ClusterType in ( 'IAS_ACE', 'Alarm', 'Door', 'Switch', 'SwitchButton', 'AqaraOppleMiddle', 'Motion', 
+            (   ( ClusterType in ( 'IAS_ACE', 'Alarm', 'Door', 'Switch', 'SwitchButton', 'AqaraOppleMiddle', 'Motion', 
                                  'Ikea_Round_5b', 'Ikea_Round_OnOff', 'Vibration', 'OrviboRemoteSquare', 'Button_3', 'LumiLock') ) or \
                 ( ClusterType == WidgetType == 'DoorLock') or \
-                ( ClusterType == 'DoorLock' and WidgetType == 'Vibration')
-            ):
+                ( ClusterType == 'DoorLock' and WidgetType == 'Vibration') or \
+                ( ClusterType == 'FanControl' and WidgetType == 'FanControl') or \
+                ( 'ThermoMode' in ClusterType and WidgetType == 'PAC-MODE' ) or \
+                ( WidgetType == 'KF204Switch' and ClusterType in ( 'Switch', 'Door'))):
 
             # Plug, Door, Switch, Button ...
             # We reach this point because ClusterType is Door or Switch. It means that Cluster 0x0006 or 0x0500
             # So we might also have to manage case where we receive a On or Off for a LvlControl WidgetType like a dimming Bulb.
             self.log.logging( "Widget", "Debug", "------> Generic Widget for %s ClusterType: %s WidgetType: %s Value: %s" %(NWKID, WidgetType, ClusterType , value), NWKID)
                        
+
             if WidgetType == "DSwitch":
                 # double switch avec EP different 
                 value = int(value)

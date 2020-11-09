@@ -1,0 +1,33 @@
+{
+	"Ep":{
+		"01":{
+			"0000":"",
+			"0003":"",
+			"0004":"",
+			"0005":"",
+			"0201":"",
+			"0202":"",
+			"000a":"",
+			"ffac":"",
+			"Type":"Temp/ThermoSetpoint/FanControl/ThermoMode/PAC-WING/PAC-SWITCH"
+		}
+	},
+	"Type":"",
+        "ClusterToBind": [ "0201" ],
+        "ConfigureReporting":{
+		"0201": {"Attributes": {
+			"0000": {"DataType": "29", "MinInterval":"003C", "MaxInterval":"0E10", "TimeOut":"0000","Change":"0050"},
+			"0011": {"DataType": "29", "MinInterval":"003C", "MaxInterval":"0E10", "TimeOut":"0000","Change":"0050"},
+			"0012": {"DataType": "29", "MinInterval":"003C", "MaxInterval":"0E10", "TimeOut":"0000","Change":"0050"},
+			"001c": {"DataType": "30", "MinInterval":"0001", "MaxInterval":"A8C0", "TimeOut":"0000","Change":"01"},
+			"0045": {"DataType": "30", "MinInterval":"0001", "MaxInterval":"A8C0", "TimeOut":"0000","Change":"01"},
+			"FD00": {"DataType": "10", "MinInterval":"012C", "MaxInterval":"A8C0", "TimeOut":"0000","Change":"01"}
+			}}
+		},
+	"ReadAttributes": {
+		"0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0006", "0007"],
+	    	"0003": [ ],
+		"0201": [ "0000", "000", "0004", "0005", "0006", "0012", "0019", "001b", "001c", "0045", "fd00" ],
+		"0202": [ "0000", "0001"]
+	}
+}

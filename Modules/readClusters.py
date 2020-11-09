@@ -20,7 +20,7 @@ import string
 
 from time import time
 
-from Modules.zigateConsts import LEGRAND_REMOTE_SHUTTER, LEGRAND_REMOTE_SWITCHS, LEGRAND_REMOTES, ZONE_TYPE
+from Modules.zigateConsts import LEGRAND_REMOTE_SHUTTER, LEGRAND_REMOTE_SWITCHS, LEGRAND_REMOTES, ZONE_TYPE, THERMOSTAT_MODE_2_LEVEL
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import lastSeenUpdate, timedOutDevice
 from Modules.tools import DeviceExist, getEPforClusterType, is_hex, voltage2batteryP, checkAttribute, checkAndStoreAttributeValue, \
@@ -1451,7 +1451,10 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
         if 'Model' in self.ListOfDevices[MsgSrcAddr]:
 
-            if self.ListOfDevices[MsgSrcAddr]['Model'] == 'EH-ZB-VACT':
+            if self.ListOfDevices[MsgSrcAddr]['Model'] == 'AC201A':
+                # We do not report this, as AC201 rely on 0xffad cluster
+                pass
+            elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'EH-ZB-VACT':
                 # In case of Schneider Wiser Valve, we have to 
                 self.log.logging( "Cluster", 'Debug', "ReadCluster - 0201 - ValueTemp: %s" %int( ((ValueTemp * 100) * 2) / 2 ), MsgSrcAddr)
                 if 'Schneider' in self.ListOfDevices[MsgSrcAddr]:
@@ -1482,6 +1485,7 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 # As Eurotronics will rely on 0x4003 attributes
                 self.log.logging( "Cluster", 'Debug', "ReadCluster - 0201 - Request update on Domoticz %s not a Schneider, not a Eurotronics" %MsgSrcAddr, MsgSrcAddr)
                 MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,ValueTemp,Attribute_=MsgAttrID)
+                                
 
     elif MsgAttrID == '0014':   # Unoccupied Heating
         self.log.logging( "Cluster", 'Debug', "ReadCluster - 0201 - Unoccupied Heating:  %s" %value, MsgSrcAddr)
@@ -1524,17 +1528,8 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  MsgClusterData )
 
     elif MsgAttrID == '001c':
-        SYSTEM_MODE = { 0x00: 'Off' ,
-                0x01: 'Auto' ,
-                0x02: 'Reserved' ,
-                0x03: 'Cool',
-                0x04: 'Heat' ,
-                0x05: 'Emergency Heating',
-                0x06: 'Pre-cooling',
-                0x07: 'Fan only'  }
-
-        if int(value) in SYSTEM_MODE:
-            self.log.logging( "Cluster", 'Debug', "ReadCluster - 0201 - System Mode: %s / %s" %(value, SYSTEM_MODE[value]), MsgSrcAddr)
+        if int(value) in THERMOSTAT_MODE_2_LEVEL:
+            self.log.logging( "Cluster", 'Debug', "ReadCluster - 0201 - System Mode: %s / %s" %(value, THERMOSTAT_MODE_2_LEVEL[value]), MsgSrcAddr)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value, Attribute_=MsgAttrID )
         else:
             self.log.logging( "Cluster", 'Debug', "ReadCluster - 0201 - Attribute 1C: %s" %value, MsgSrcAddr)
@@ -1666,7 +1661,8 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.log.logging( "Cluster", 'Debug', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  MsgClusterData )
 
-def Cluster0202( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData , Source):
+        
+def Cluster0202( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source ):
     
     # Thermostat cluster
     self.log.logging( "Cluster", 'Debug', "ReadCluster - 0202 - %s/%s AttrId: %s AttrType: %s AttSize: %s Data: %s"
@@ -2432,7 +2428,8 @@ def Clusterfc01( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             # Enable Led if On
             self.ListOfDevices[MsgSrcAddr]['Legrand'][ 'EnableLedIfOn' ] = int(MsgClusterData,16)
 
-def Clusterfc40( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData , Source):
+
+def Clusterfc40( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source ):
     
     self.log.logging( "Cluster", 'Debug', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" \
         %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)   

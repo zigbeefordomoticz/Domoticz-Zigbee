@@ -21,6 +21,7 @@ from Modules.livolo import livolo_bind
 from Modules.configureReporting import processConfigureReporting
 from Modules.legrand_netatmo import legrand_refresh_battery_remote
 from Modules.lumi import enableOppleSwitch, setXiaomiVibrationSensitivity
+from Modules.casaia import casaia_AC201_pairing
 
 # Version 0
 def device_annoucementv0(self, Devices, MsgData, MsgLQI):
@@ -594,9 +595,7 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
         del self.ListOfDevices[NwkId]["Announced"]
 
 
-def decode004d_existing_devicev2(
-    self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgLQI, now
-):
+def decode004d_existing_devicev2( self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgLQI, now):
     # ############
     # Device exist, Reconnection has been done by DeviceExist()
     #
@@ -693,6 +692,7 @@ def decode004d_existing_devicev2(
     if "ConfigureReporting" in self.ListOfDevices[NwkId]:
         del self.ListOfDevices[NwkId]["ConfigureReporting"]
 
+
     processConfigureReporting(self, NWKID=NwkId)
 
     # Let's take the opportunity to trigger some request/adjustement / NOT SURE IF THIS IS GOOD/IMPORTANT/NEEDED
@@ -706,6 +706,10 @@ def decode004d_existing_devicev2(
     if "Manufacturer" in self.ListOfDevices[NwkId]:
         if self.ListOfDevices[NwkId]["Manufacturer"] == "105e":
             schneider_wiser_registration(self, Devices, NwkId)
+
+    if 'Model' in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]['Model'] in ( 'AC201A', ):
+        casaia_AC201_pairing( self, NwkId)
+
 
     # Set the sensitivity for Xiaomi Vibration
     if self.ListOfDevices[NwkId]["Model"] == "lumi.vibration.aq1":
