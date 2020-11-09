@@ -133,11 +133,7 @@ def schneider_wiser_registration( self, Devices, key ):
     EPout = SCHNEIDER_BASE_EP
 
     if 'Model' not in self.ListOfDevices[key]:
-        _context = {
-            'Error code': 'SCHN0001',
-            'Device': self.ListOfDevices[key]
-        }
-        self.log.logging("Schneider", 'Error', "Undefined Model, registration !!!", key, _context)
+        Domoticz.Error("Undefined Model, registration !!!")
         return
 
     # Set Commissioning as Done 0x0000/0xe050 (Manuf Specific)
@@ -355,14 +351,9 @@ def schneider_hact_heating_mode( self, key, mode ):
 
     MODE = { 'setpoint' : 0x02, 'FIP': 0x03 }
 
-    self.log.logging("Schneider", 'Debug', "schneider_hact_heating_mode for device %s requesting mode: %s" %(key, mode))
+    self.log.logging( "Schneider", 'Debug', "schneider_hact_heating_mode for device %s requesting mode: %s" %(key, mode))
     if mode not in MODE:
-        _context = {
-            'Error code': 'SCHN0002',
-            'mode': mode,
-            'MODE': MODE
-        }
-        self.log.logging("Schneider", 'Error', "schneider_hact_heating_mode - %s unknown mode %s" %(key, mode), key, _context)
+        Domoticz.Error("schneider_hact_heating_mode - %s unknown mode %s" %(key, mode))
         return
 
     EPout = SCHNEIDER_BASE_EP
@@ -426,12 +417,7 @@ def schneider_hact_fip_mode( self, key, mode):
     self.log.logging( "Schneider", 'Debug', "schneider_hact_fip_mode for device %s requesting mode: %s" %(key, mode))
 
     if mode not in MODE:
-        _context = {
-            'Error code': 'SCHN0003',
-            'mode': mode,
-            'MODE': MODE
-        }
-        self.log.logging( "Schneider", 'Error', "schneider_hact_fip_mode - %s unknown mode: %s" %mode, key, _context)
+        Domoticz.Error("schneider_hact_fip_mode - %s unknown mode: %s" %mode)
 
     EPout = SCHNEIDER_BASE_EP
 
@@ -706,16 +692,11 @@ def schneider_EHZBRTS_thermoMode( self, key, mode):
             }
 
 
-    self.log.logging("Schneider", 'Debug', "schneider_EHZBRTS_thermoMode - %s Mode: %s" %(key, mode), key)
+    self.log.logging( "Schneider", 'Debug', "schneider_EHZBRTS_thermoMode - %s Mode: %s" %(key, mode), key)
 
 
     if mode not in EHZBRTS_THERMO_MODE:
-        _context = {
-            'Error code': 'SCHN0004',
-            'mode': mode,
-            'MODE': EHZBRTS_THERMO_MODE
-        }
-        self.log.logging("Schneider", 'Error', "Unknow Thermostat Mode %s for %s" %(mode, key), key, _context)
+        Domoticz.Error("Unknow Thermostat Mode %s for %s" %(mode, key))
         return
 
     if 'Schneider' not in self.ListOfDevices[key]:
@@ -1024,23 +1005,12 @@ def importSchneiderZoning( self ):
     for zone in SchneiderZoning:
         if 'ieee_thermostat' not in SchneiderZoning[zone]:
             # Missing Thermostat
-            _context = {
-                'Error code': 'SCHN0005',
-                'zone': zone,
-                'SchneiderZoning': SchneiderZoning[zone]
-            }
-            self.log.logging( "Schneider", 'Error', "importSchneiderZoning - Missing Thermostat entry in %s" %SchneiderZoning[zone], None, _context)
+            self.log.logging( "Schneider", 'Error', "importSchneiderZoning - Missing Thermostat entry in %s" %SchneiderZoning[zone])
             continue
 
         if SchneiderZoning[zone]['ieee_thermostat'] not in self.IEEE2NWK:
             # Thermostat IEEE not known!
-            _context = {
-                'Error code': 'SCHN0006',
-                'zone': zone,
-                'SchneiderZoning[zone]':SchneiderZoning[zone]['ieee_thermostat'],
-                'IEEE': self.IEEE2NWK
-            }
-            self.log.logging( "Schneider",  'Error', "importSchneiderZoning - Thermostat IEEE %s do not exist" %SchneiderZoning[zone]['ieee_thermostat'], None, _context)
+            self.log.logging( "Schneider",  'Error', "importSchneiderZoning - Thermostat IEEE %s do not exist" %SchneiderZoning[zone]['ieee_thermostat'])
             continue
         
         self.SchneiderZone[ zone ] = {}
@@ -1052,12 +1022,7 @@ def importSchneiderZoning( self ):
         
         if 'actuator' not in SchneiderZoning[zone]:
             # We just have a simple Thermostat
-            _context = {
-                'Error code': 'SCHN0007',
-                'zone': zone,
-                'SchneiderZoning': SchneiderZoning[zone]
-            }
-            self.log.logging( "Schneider",  'Debug', "importSchneiderZoning - No actuators for this Zone: %s" %zone, None, _context)
+            self.log.logging( "Schneider",  'Debug', "importSchneiderZoning - No actuators for this Zone: %s" %zone)
             continue
 
         for hact in SchneiderZoning[zone]['actuator']:
@@ -1065,25 +1030,12 @@ def importSchneiderZoning( self ):
                 _nwkid = self.IEEE2NWK[ hact ]
                 if hact not in self.IEEE2NWK:
                     # Unknown in IEEE2NWK
-                    _context = {
-                        'Error code': 'SCHN0008',
-                        'zone': zone,
-                        'hact': hact,
-                        'SchneiderZoning[zone]':SchneiderZoning[zone]['actuator'],
-                        'IEEE': self.IEEE2NWK
-                    }
-                    self.log.logging( "Schneider",  'Error', "importSchneiderZoning - Unknown HACT: %s" %hact, _nwkid, _context)
+                    self.log.logging( "Schneider",  'Error', "importSchneiderZoning - Unknown HACT: %s" %hact)
                     continue
 
                 if self.IEEE2NWK[ hact ] not in self.ListOfDevices:
                     # Unknown in ListOfDevices
-                    _context = {
-                        'Error code': 'SCHN0009',
-                        'zone': zone,
-                        'hact': hact,
-                        'SchneiderZoning[zone]':SchneiderZoning[zone]['actuator']
-                    }
-                    self.log.logging( "Schneider",  'Error', "importSchneiderZoning - Unknown HACT: %s" %_nwkid, _nwkid, _context)
+                    self.log.logging( "Schneider",  'Error', "importSchneiderZoning - Unknown HACT: %s" %_nwkid)
                     continue
 
                 self.SchneiderZone[ zone ]['Thermostat']['HACT'][ _nwkid ] = {}
