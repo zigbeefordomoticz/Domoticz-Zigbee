@@ -293,12 +293,12 @@ def CreateDomoDevice(self, Devices, NWKID):
 
             # === Selector Switches
             if t in ( 'PAC-MODE', ): # 6
-                Options = createSwitchSelector( self, 5 , DeviceType = t, OffHidden = False, SelectorStyle = 1)
+                Options = createSwitchSelector( self, 5 , DeviceType = t, OffHidden = False, SelectorStyle = 1, Image = 16)
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in PAC-MODE" %(t), NWKID)
 
             if t in ( 'FanControl', ): # 8
-                Options = createSwitchSelector( self, 5 , DeviceType = t, OffHidden = False, SelectorStyle = 1)
+                Options = createSwitchSelector( self, 5 , DeviceType = t, OffHidden = False, SelectorStyle = 1, Image = 7)
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in FanControl" %(t), NWKID)        
 
