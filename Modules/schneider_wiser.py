@@ -1057,7 +1057,7 @@ def importSchneiderZoning( self ):
                 'zone': zone,
                 'SchneiderZoning': SchneiderZoning[zone]
             }
-            self.log.logging( "Schneider",  'Debug', "importSchneiderZoning - No actuators for this Zone: %s" %zone, None, _context))
+            self.log.logging( "Schneider",  'Debug', "importSchneiderZoning - No actuators for this Zone: %s" %zone, None, _context)
             continue
 
         for hact in SchneiderZoning[zone]['actuator']:
