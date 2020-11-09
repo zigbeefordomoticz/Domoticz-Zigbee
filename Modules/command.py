@@ -148,7 +148,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         elif DeviceType in ( "WindowCovering", "VenetianInverted", "Venetian"):
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
             sendZigateCmd(self, "00FA","02" + NWKID + ZIGATE_EP + EPout + "02")
-            UpdateDevice_v2(self, Devices, Unit, 17, "Stopped", BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            UpdateDevice_v2(self, Devices, Unit, 17, "0", BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
                     
         # Let's force a refresh of Attribute in the next Heartbeat 
         self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
@@ -585,8 +585,19 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             else:
                 sendZigateCmd(self, "0081","02" + NWKID + ZIGATE_EP + EPout + OnOff + value + "0010")
 
-        if Devices[Unit].SwitchType in (13,14,15,16):
+        if Devices[Unit].SwitchType in (13,16):
             UpdateDevice_v2(self, Devices, Unit, 2, str(Level) ,BatteryLevel, SignalLevel) 
+
+        elif Devices[Unit].SwitchType in ( 14, 15 ):
+            if Level == 0:
+                UpdateDevice_v2(self, Devices, Unit, 0, '0', BatteryLevel, SignalLevel)
+            elif Level == 100:
+                UpdateDevice_v2(self, Devices, Unit, 1, '1', BatteryLevel, SignalLevel)
+            elif Level == 50:
+                UpdateDevice_v2(self, Devices, Unit, 17, '0',BatteryLevel, SignalLevel)
+            else:
+                UpdateDevice_v2(self, Devices, Unit, 2, str(Level),BatteryLevel, SignalLevel)
+
         else:
             # A bit hugly, but '1' instead of '2' is needed for the ColorSwitch dimmer to behave correctky
             UpdateDevice_v2(self, Devices, Unit, 1, str(Level) ,BatteryLevel, SignalLevel)
