@@ -26,7 +26,7 @@ def timeserver_read_attribute_request( self, sqn, nwkid, ep, cluster, manuf_spec
 
     elif attribute == '0001': # Time status
         self.log.logging(  "Input", "Debug", "-->Time Status: %s" %0b00001100)
-        value = "%08x" %0b00001100
+        value = "%08x" %0b00000111  # Time Status: 0x07, Master, Synchronized, Master for Time Zone and DST
         data_type = '18' # map8
         status = '00'        
 
