@@ -336,7 +336,20 @@ def read_AC_status_response( self, Devices, NwkId, Ep, payload):
     self.log.logging( "CasaIA", "Debug" , "read_AC_status_response Status: %s request Update System Mode: %s" %( NwkId, system_mode))
     MajDomoDevice(self, Devices, NwkId, Ep, '0201', system_mode)
     
-    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -443,6 +456,19 @@ def add_pac_entry(self, ieee): # OK 6/11/2020
     with open( casaiafilename , 'wt') as handle:
         json.dump( self.CasaiaPAC, handle, sort_keys=True, indent=2)
 
+def update_pac_entry(self, nwkid, ircode):
+
+    if nwkid not in self.ListOfDevices:
+        return
+
+    if self.CasaiaPAC is None:
+        open_casa_config( self )
+
+    self.CasaiaPAC[ self.ListOfDevices[nwkid]['IEEE'] ] = ircode
+    casaiafilename =  self.pluginconf.pluginConf['pluginConfig'] + "/" + CASAIA_CONFIG_FILENAME
+    with open( casaiafilename , 'wt') as handle:
+        json.dump( self.CasaiaPAC, handle, sort_keys=True, indent=2)
+
 def get_pac_code(self, ieee):
 
     open_casa_config( self )
@@ -450,3 +476,26 @@ def get_pac_code(self, ieee):
         return self.CasaiaPAC[ ieee ]['IRCode']
     else:
         return None
+
+# REST API
+def list_casaia_ac201( self ):
+    # Return a list of ac201 devices
+
+    _casaiaDeviceList = []
+    for x in self.ListOfDevices:
+        if 'Model' in self.ListOfDevices[x] and self.ListOfDevices[x]['Model'] in ('AC201A',):
+            _device = {
+                'NwkId': x,
+                'IEEE': self.ListOfDevices[x]['IEEE'],
+                'Model': self.ListOfDevices[x]['Model'],
+                'Name': '',
+                'IRCode': get_pac_code(self, self.ListOfDevices[ x ]['IEEE']),
+            }
+            if 'ZDeviceName' in self.ListOfDevices[ x ]:
+                _device['Name'] = self.ListOfDevices[ x ]['ZDeviceName']
+
+            if _device['IRCode'] is None:
+                _device['IRCode'] = '000'
+
+            _casaiaDeviceList.append( _device )
+    return _casaiaDeviceList
