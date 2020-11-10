@@ -443,6 +443,19 @@ def add_pac_entry(self, ieee): # OK 6/11/2020
     with open( casaiafilename , 'wt') as handle:
         json.dump( self.CasaiaPAC, handle, sort_keys=True, indent=2)
 
+def update_pac_entry(self, nwkid, ircode):
+    
+    if nwkid not in self.ListOfDevices:
+        return
+
+    if self.CasaiaPAC is None:
+        open_casa_config( self )
+
+    self.CasaiaPAC[ self.ListOfDevices[nwkid]['IEEE'] ] = ircode
+    casaiafilename =  self.pluginconf.pluginConf['pluginConfig'] + "/" + CASAIA_CONFIG_FILENAME
+    with open( casaiafilename , 'wt') as handle:
+        json.dump( self.CasaiaPAC, handle, sort_keys=True, indent=2)
+
 def get_pac_code(self, ieee):
 
     open_casa_config( self )
@@ -450,3 +463,25 @@ def get_pac_code(self, ieee):
         return self.CasaiaPAC[ ieee ]['IRCode']
     else:
         return None
+
+# REST API
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

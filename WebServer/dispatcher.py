@@ -57,9 +57,11 @@ def do_rest( self, Connection, verb, data, version, command, parameters):
         'scan-device-for-grp': {'Name':'ScanDevscan-device-for-grpiceForGrp',  'Verbs':{'PUT'}, 'function':self.rest_scan_devices_for_group},
         'ota-firmware-update': {'Name':'ota-firmware-update',   'Verbs':{'PUT'}, 'function':self.rest_ota_firmware_update},
         'ota-firmware-list': {'Name':'ota-firmware-list',       'Verbs':{'GET'}, 'function':self.rest_ota_firmware_list},
-        'ota-firmware-device-list': {'Name':'ota-firmware-list','Verbs':{'GET'}, 'function':self.rest_ota_devices_for_manufcode}
-        
+        'ota-firmware-device-list': {'Name':'ota-firmware-list','Verbs':{'GET'}, 'function':self.rest_ota_devices_for_manufcode},
 
+        'casaia-list-devices':  { 'Name':'casaia-list-devices','Verbs':{'GET'}, 'function':self.rest_casa_device_list},
+        'casaia-update-ircode': { 'Name':'casaia-list-devices','Verbs':{'PUT'}, 'function':self.rest_casa_device_ircode_update}
+        
         }
 
     self.logging( 'Debug', "do_rest - Verb: %s, Command: %s, Param: %s" %(verb, command, parameters))

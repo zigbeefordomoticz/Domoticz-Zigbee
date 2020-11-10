@@ -66,6 +66,7 @@ class WebServer(object):
     from WebServer.sendresponse import sendResponse
     from WebServer.tools import keepConnectionAlive, DumpHTTPResponseToLog    
     from WebServer.rest_Ota import rest_ota_firmware_update, rest_ota_firmware_list, rest_ota_devices_for_manufcode
+    from WebServer.rest_Casaia import rest_casa_device_list, rest_casa_device_ircode_update
 
     hearbeats = 0 
 
