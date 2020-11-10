@@ -112,7 +112,7 @@ def rest_casa_device_ircode_update( self, verb, data, parameters ):
 
     action = {' Name': 'IRCode update performed status: %s' %status, 'TimeStamp': int(time())}
     _response["Data"] = json.dumps( action , sort_keys=True )
-    return 
+    return _response
 
 
 
