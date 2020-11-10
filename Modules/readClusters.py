@@ -1055,6 +1055,14 @@ def Cluster000f( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                     value = '%02x' %100
                 else:
                     value = '%02x' %0
+
+                if 'SWBUILD_3' in self.ListOfDevices[MsgSrcAddr]:
+                    if int(self.ListOfDevices[MsgSrcAddr]['SWBUILD_3'],16) >= 0x01a:
+                        # Do not use Present Value anymore
+                        self.log.logging( "Cluster",  'Debug', "ReadCluster - %s - %s/%s - SWBUILD_3: %0X do not report present value %s"
+                            %(MsgAttrID, MsgSrcAddr, MsgSrcEp, int(self.ListOfDevices[MsgSrcAddr]['SWBUILD_3'],16), value), MsgSrcAddr)
+                        return
+
                 MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0102', value)
 
             elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'Dimmer switch wo neutral' ):
@@ -1350,9 +1358,7 @@ def Cluster0102( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 # Value: 100 -> Closed
                 # Value: 0   -> Open
                 # Value: 50  -> Stopped
-                if Source == '8102' and value != 50:
-                    # Looks like the reporting from Shutter switch is somehow inconsistent !
-                    return
+                pass
 
         self.log.logging( "Cluster", 'Debug', "ReadCluster - %s - %s/%s - Shutter switch with neutral After correction value: %s" 
             %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr)

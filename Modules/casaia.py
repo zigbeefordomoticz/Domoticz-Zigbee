@@ -336,20 +336,7 @@ def read_AC_status_response( self, Devices, NwkId, Ep, payload):
     self.log.logging( "CasaIA", "Debug" , "read_AC_status_response Status: %s request Update System Mode: %s" %( NwkId, system_mode))
     MajDomoDevice(self, Devices, NwkId, Ep, '0201', system_mode)
     
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    
 
 
 
@@ -457,7 +444,7 @@ def add_pac_entry(self, ieee): # OK 6/11/2020
         json.dump( self.CasaiaPAC, handle, sort_keys=True, indent=2)
 
 def update_pac_entry(self, nwkid, ircode):
-
+    
     if nwkid not in self.ListOfDevices:
         return
 
