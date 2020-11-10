@@ -465,24 +465,23 @@ def get_pac_code(self, ieee):
         return None
 
 # REST API
-def list_casaia_ac201( self ):
-    # Return a list of ac201 devices
 
-    _casaiaDeviceList = []
-    for x in self.ListOfDevices:
-        if 'Model' in self.ListOfDevices[x] and self.ListOfDevices[x]['Model'] in ('AC201A',):
-            _device = {
-                'NwkId': x,
-                'IEEE': self.ListOfDevices[x]['IEEE'],
-                'Model': self.ListOfDevices[x]['Model'],
-                'Name': '',
-                'IRCode': get_pac_code(self, self.ListOfDevices[ x ]['IEEE']),
-            }
-            if 'ZDeviceName' in self.ListOfDevices[ x ]:
-                _device['Name'] = self.ListOfDevices[ x ]['ZDeviceName']
 
-            if _device['IRCode'] is None:
-                _device['IRCode'] = '000'
 
-            _casaiaDeviceList.append( _device )
-    return _casaiaDeviceList
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

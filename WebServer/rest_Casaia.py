@@ -7,30 +7,31 @@ import Domoticz
 import json
 
 
-from Modules.casaia import list_casaia_ac201, update_pac_entry
+from Modules.casaia import DEVICE_ID
 from WebServer.headerResponse import setupHeadersResponse, prepResponseMessage
 from time import time
 
 
 
-def rest_casa_device_list( self, verb, data, parameters):
+def rest_casa_device_list( self, verb, data, parameters): # Ok 10/11/2020
     
     _response = prepResponseMessage( self ,setupHeadersResponse(  ))
     _response["Data"] = None
 
     _response['Data'] = list_casaia_ac201( self )
 
-    if self.OTA and verb == 'GET' and len(parameters) == 0:
+    if verb == 'GET' and len(parameters) == 0:
         if  len(self.zigatedata) == 0:
-            _response['Data'] = fake_list_casaia_ac201()
+            _response['Data'] = json.dumps( fake_list_casaia_ac201(), sort_keys=True)
             return _response  
             
-        _response['Data'] = json.dumps( self.OTA.restapi_list_of_firmware( ) , sort_keys=True)
+        _response['Data'] = json.dumps( list_casaia_ac201( self ) , sort_keys=True)
                 
     return _response      
 
 
 def fake_list_casaia_ac201():
+    Domoticz.Log("fake_list_casaia_ac201")
 
     return [ 
             { 
@@ -98,13 +99,45 @@ def rest_casa_device_ircode_update( self, verb, data, parameters ):
     data = json.loads(data)
     self.logging( 'Debug', "rest_casa_device_ircode_update - List of Device IRCode  %s " %(data))
 
+    status = 0
     for x in data:
         if 'NwkId' not in x and 'IRCode' not in x:
+            status = 1
             continue
-        if x[ 'NwkId'] in self.ListOfDevices:
-            update_pac_entry(self, x[ 'NwkId'], x[ 'IRCode'])
+
+        if ( x['NwkId'] in self.ListOfDevices and 'CASA.IA' in self.ListOfDevices[x['NwkId']] ):
+            Domoticz.Log("Updating : %s with %s" %( x['NwkId'], x[ 'IRCode']))
+            self.ListOfDevices[ x[ 'NwkId'] ]['CASA.IA'][ DEVICE_ID ]['IRCode'] = x[ 'IRCode']
+
+
+    action = {' Name': 'IRCode update performed status: %s' %status, 'TimeStamp': int(time())}
+    _response["Data"] = json.dumps( action , sort_keys=True )
+    return 
 
 
 
+def list_casaia_ac201( self ):
+    # Return a list of ac201 devices
 
+    self.log.logging( "CasaIA", "Debug" , "list_casaia_ac201")
+
+    _casaiaDeviceList = []
+    for x in self.ListOfDevices:
+        if 'CASA.IA' in  self.ListOfDevices[x] and 'Model' in self.ListOfDevices[x] and self.ListOfDevices[x]['Model'] in ('AC201A',):
+            _device = {
+                'NwkId': x,
+                'IEEE': self.ListOfDevices[x]['IEEE'],
+                'Model': self.ListOfDevices[x]['Model'],
+                'Name': '',
+                'IRCode': self.ListOfDevices[x]['CASA.IA'][ DEVICE_ID ]['IRCode'],
+            }
+            if 'ZDeviceName' in self.ListOfDevices[ x ]:
+                _device['Name'] = self.ListOfDevices[ x ]['ZDeviceName']
+
+            if _device['IRCode'] is None:
+                _device['IRCode'] = '000'
+
+            self.log.logging( "CasaIA", "Debug" , "list_casaia_ac201 adding %s"%x)
+            _casaiaDeviceList.append( _device )
+    return _casaiaDeviceList
     
