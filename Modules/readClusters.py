@@ -312,6 +312,11 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                     # Overwrite the Confif file
                     modelName += '-bulb'
 
+        if modelName == 'PIR323' and MsgSrcEp == '03':
+            # Very bad hack, but Owon use the same model name for 2 devices!
+            modelName = 'THS317'
+
+
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = AttrModelName # We store the original one
         self.log.logging( "Cluster", 'Debug', "ReadCluster - %s / %s - Recepion Model: >%s<" %(MsgClusterId, MsgAttrID, modelName), MsgSrcAddr)
         if modelName == '':

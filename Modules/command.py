@@ -34,7 +34,7 @@ from Modules.widgets import SWITCH_LVL_MATRIX
 from Modules.cmdsDoorLock import cluster0101_lock_door, cluster0101_unlock_door
 from Modules.fanControl import change_fan_mode
 
-from Modules.casaia import write_multi_pairing_code_request,  casaia_swing_OnOff, casaia_setpoint, casaia_system_mode
+from Modules.casaia import casaia_swing_OnOff, casaia_setpoint, casaia_system_mode 
 
 def debugDevices( self, Devices, Unit):
 

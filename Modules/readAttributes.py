@@ -144,7 +144,7 @@ def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
             '0100': [ 0x0000, 0x0001, 0x0002, 0x0010, 0x0011],
             '0101': [ 0x0000, 0x0001, 0x0002, 0x0010, 0x0011, 0x0012, 0x0013, 0x0014, 0x0015, 0x0016, 0x0017, 0x0018, 0x0019, 0x0020, 0x0023, 0x0025, 0x0026, 0x0027, 0x0028, 0x0030, 0x0032, 0x0034, 0x0040, 0x0042, 0x0043, 0xfffd],
             '0102': [ 0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0007, 0x0008, 0x0009, 0x000A, 0x000B, 0x0010, 0x0011, 0x0014, 0x0017, 0xfffd],
-            '0201': [ 0x0000, 0x0008, 0x0010, 0x0012,  0x0014, 0x0015, 0x0016, 0x001B, 0x001C, 0x001F],
+            '0201': [ 0x0000, 0x0008, 0x0010, 0x0012,  0x0014, 0x0015, 0x0016, 0x001B, 0x001C, 0x001F, 0xfd00],
             '0202': [ 0x0000, 0x0001 ],
             '0204': [ 0x0000, 0x0001, 0x0002 ],
             '0300': [ 0x0000, 0x0001, 0x0003, 0x0004, 0x0007, 0x0008, 0x4010],
@@ -568,9 +568,13 @@ def ReadAttributeRequest_0201(self, key):
         if ( 'Manufacturer' in self.ListOfDevices[key] and self.ListOfDevices[key]['Manufacturer'] == '105e' ) or \
             ( 'Manufacturer Name' in self.ListOfDevices[key] and self.ListOfDevices[key]['Manufacturer Name'] == 'Schneider Electric' ):
             # We need to break the Read Attribute between Manufacturer specifcs one and teh generic one
-            manufacturer_code = '105e'
+            if self.ListOfDevices[key]['Manufacturer Name'] == 'Schneider Electric':
+                manufacturer_code = '105e'
+            elif self.ListOfDevices[key]['Manufacturer Name'] == 'OWON':
+                manufacturer_code = '113c'
+
             for _attr in list(listAttributes):
-                if _attr in ( 0xe011, 0x0e20 ):
+                if _attr in ( 0xe011, 0x0e20 , 0xfd00 ):
                     listAttrSpecific.append( _attr )
                 else:
                     listAttrGeneric.append( _attr )

@@ -108,10 +108,7 @@ def rest_casa_device_ircode_update( self, verb, data, parameters ):
         if ( x['NwkId'] in self.ListOfDevices and 'CASA.IA' in self.ListOfDevices[x['NwkId']] ):
             Domoticz.Log("Updating : %s with %s" %( x['NwkId'], x[ 'IRCode']))
             if self.ListOfDevices[x['NwkId']] and 'Model' in self.ListOfDevices[x['NwkId']]:
-                if self.ListOfDevices[x['NwkId']]['Model'] == 'AC201A':
                     self.ListOfDevices[ x[ 'NwkId'] ]['CASA.IA'][ DEVICE_ID ]['IRCode'] = x[ 'IRCode']
-                elif self.ListOfDevices[x['NwkId']]['Model'] == 'AC211':
-                    self.ListOfDevices[ x[ 'NwkId'] ]['CASA.IA']['IRCode'] = x[ 'IRCode']
 
     action = {' Name': 'IRCode update performed status: %s' %status, 'TimeStamp': int(time())}
     _response["Data"] = json.dumps( action , sort_keys=True )
@@ -128,19 +125,19 @@ def list_casaia_ac201( self ):
     for x in self.ListOfDevices:
         if 'CASA.IA' in  self.ListOfDevices[x] and 'Model' in self.ListOfDevices[x] and self.ListOfDevices[x]['Model'] in ('AC201A', 'AC211'):
             irCode = '0000'
-            if self.ListOfDevices[x]['Model'] == 'AC201A':
+            if 'IRCode' in self.ListOfDevices[x]['CASA.IA'][ DEVICE_ID ]:
                 irCode = self.ListOfDevices[x]['CASA.IA'][ DEVICE_ID ]['IRCode']
-            elif self.ListOfDevices[x]['Model'] == 'AC211':
-                 irCode = self.ListOfDevices[x]['CASA.IA']['IRCode']
+            zName = ''
+            if 'ZDeviceName' in self.ListOfDevices[ x ]:
+                zName = self.ListOfDevices[ x ]['ZDeviceName']
+
             _device = {
                 'NwkId': x,
                 'IEEE': self.ListOfDevices[x]['IEEE'],
                 'Model': self.ListOfDevices[x]['Model'],
-                'Name': '',
+                'Name': zName,
                 'IRCode': irCode,
             }
-            if 'ZDeviceName' in self.ListOfDevices[ x ]:
-                _device['Name'] = self.ListOfDevices[ x ]['ZDeviceName']
 
             self.log.logging( "CasaIA", "Debug" , "list_casaia_ac201 adding %s"%x)
             _casaiaDeviceList.append( _device )
