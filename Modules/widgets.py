@@ -353,20 +353,20 @@ SWITCH_LVL_MATRIX = {
        }
    },
    
-    "ThermoMode": {
-        0x00: (0, "Off"), # Off
-        0x01: (1, "10"),  # Auto
-        0x03: (2, "20"),  # Cool
-        0x04: (3, "30"),  # Heat
-        0x05: (4, "40"),  # Force heat
-        0x08: (5, "50"),  # Dry
-        0x07: (6, "60"),  # Fan
-        "ForceUpdate": False,
-        "LevelNames": "Off|Auto|Cool|Heat|Force Heat|Dry|Fan",
-        "Language": {
-            "fr-FR": {"LevelNames": "Arrêt|Auto|Froid|Chaud|Chaud Forcé|Déshumidicateur|Ventilateur"}
-        }
-    },
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     "HACTMODE": {
         "00": ( 1, "10"),
@@ -494,14 +494,27 @@ SWITCH_LVL_MATRIX = {
         }
     },
 
-    'PAC-WING': {
-        "ff": (0, "Off"), # Off - All wings stopped
-        "00": (1, "10"), # Off Mode
-        "01": (2, "20"), # Auto On
-        "ForceUpdate": True, 
-        "LevelNames": "Off|Off|Auto",
+    "ThermoMode": {
+        '00': (0, "00"), # Off
+        '01': (1, "10"),  # Auto
+        '03': (2, "20"),  # Cool
+        '04': (3, "30"),  # Heat
+        '08': (4, "40"),  # Dry
+        '07': (5, "50"),  # Fan
+        "ForceUpdate": False,
+        "LevelNames": "Off|Auto|Cool|Heat|Dry|Fan",
         "Language": {
-            "fr-FR": {"LevelNames": "Arrêt|Off|Auto"}
+            "fr-FR": {"LevelNames": "Arrêt|Auto|Froid|Chaud|Déshumidicateur|Ventilateur"}
+        }
+    },
+
+    'PAC-WING': {
+        "00": (0, "00"), # Off - All wings stopped
+        "01": (1, "10"), # On Mode
+        "ForceUpdate": True, 
+        "LevelNames": "Off|On",
+        "Language": {
+            "fr-FR": {"LevelNames": "Arrêt|Allumé"}
         }
     },
     'KF204Switch': {

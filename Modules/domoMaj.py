@@ -278,8 +278,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
  
             elif WidgetType == 'ThermoMode_2' and Attribute_ == '001c':
-                # Use by Tuya TRV
-                
+                # Use by Tuya TRV    
                 if 'ThermoMode_2' not in SWITCH_LVL_MATRIX:
                     continue
                 if value not in SWITCH_LVL_MATRIX[ 'ThermoMode_2']:
@@ -287,17 +286,15 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     continue
                 nValue = SWITCH_LVL_MATRIX[ 'ThermoMode_2'][ value ][0]
                 sValue = SWITCH_LVL_MATRIX[ 'ThermoMode_2'][ value ][1]
-                self.log.logging( "Widget", "Log", "------>  Thermostat Mode 2 %s %s:%s" %(value, nValue, sValue), NWKID)
+                self.log.logging( "Widget", "Debug", "------>  Thermostat Mode 2 %s %s:%s" %(value, nValue, sValue), NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
 
             elif WidgetType == 'ThermoMode' and Attribute_ == '001c':
                 # value seems to come as int or str. To be fixed
-                self.log.logging( "Widget", "Debug", "------>  Thermostat Mode %s" %value, NWKID)
-                nValue = value
-                if isinstance( value, str):
-                    nValue = int(value,16)
-                if nValue in THERMOSTAT_MODE_2_LEVEL:
-                    sValue = THERMOSTAT_MODE_2_LEVEL[nValue]
+                self.log.logging( "Widget", "Debug", "------>  Thermostat Mode %s type: %s" %(value, type(value)), NWKID)
+                if value in THERMOSTAT_MODE_2_LEVEL:
+                    sValue = THERMOSTAT_MODE_2_LEVEL[value]
+                    nValue = int(sValue) // 10
                     UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
                     self.log.logging( "Widget", "Debug", "------>  Thermostat Mode: %s %s" %(nValue,sValue), NWKID)
 
@@ -431,6 +428,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 ( ClusterType == 'DoorLock' and WidgetType == 'Vibration') or \
                 ( ClusterType == 'FanControl' and WidgetType == 'FanControl') or \
                 ( 'ThermoMode' in ClusterType and WidgetType == 'PAC-MODE' ) or \
+                ( 'ThermoMode' in ClusterType and WidgetType == 'PAC-WING' and Attribute_ =='fd00') or \
                 ( WidgetType == 'KF204Switch' and ClusterType in ( 'Switch', 'Door'))):
 
             # Plug, Door, Switch, Button ...

@@ -11,6 +11,7 @@ from Classes.LoggingManagement import LoggingManagement
 from Modules.basicOutputs import write_attribute
 from Modules.tools import get_request_datastruct, set_request_datastruct, get_list_waiting_request_datastruct, is_ack_tobe_disabled
 from Modules.zigateConsts import  ZIGATE_EP
+from Modules.casaia import casaia_check_irPairing
 
 FAN_MODE = {
     'Off': 0x00,
@@ -28,6 +29,12 @@ def change_fan_mode( self, NwkId, Ep, fan_mode):
     if fan_mode not in FAN_MODE:
         return
 
-    data = '%02x' %FAN_MODE[ fan_mode ]
+    if 'Model' in self.ListOfDevices[ NwkId ] and self.ListOfDevices[ NwkId ]['Model'] in ( 'AC211', ):
+        casaia_check_irPairing( self, NwkId)
 
-    write_attribute (self, NwkId, ZIGATE_EP, Ep, '0202', '0000',   '00', '0000', '30', data, ackIsDisabled = is_ack_tobe_disabled(self, NwkId))
+    # Fan Mode Sequence
+    data = '%02x' %0x02
+    write_attribute (self, NwkId, ZIGATE_EP, Ep, '0202', '0000',  '00', '0001', '30', data, ackIsDisabled = is_ack_tobe_disabled(self, NwkId))
+
+    data = '%02x' %FAN_MODE[ fan_mode ]
+    write_attribute (self, NwkId, ZIGATE_EP, Ep, '0202', '0000',  '00', '0000', '30', data, ackIsDisabled = is_ack_tobe_disabled(self, NwkId))

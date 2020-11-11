@@ -34,7 +34,7 @@ from Modules.widgets import SWITCH_LVL_MATRIX
 from Modules.cmdsDoorLock import cluster0101_lock_door, cluster0101_unlock_door
 from Modules.fanControl import change_fan_mode
 
-from Modules.casaia import casaia_swing_OnOff, casaia_setpoint, casaia_system_mode 
+from Modules.casaia import casaia_swing_OnOff, casaia_setpoint, casaia_system_mode , casaia_ac201_fan_control
 
 def debugDevices( self, Devices, Unit):
 
@@ -174,6 +174,24 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
             return
 
+        if DeviceType == 'ThermoMode':
+            self.log.logging( "Command", 'Debug', "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" 
+                %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
+            
+            if 'Model' in self.ListOfDevices[ NWKID ] and self.ListOfDevices[ NWKID ]['Model'] in ('AC211',):
+                casaia_swing_OnOff( self, NWKID, '00')
+                change_fan_mode( self, NWKID, EPout, '00')
+
+
+            self.log.logging( "Command", 'Debug', "ThermoMode - requested Level: %s" %Level, NWKID)
+            self.log.logging( "Command", 'Debug', " - Set Thermostat Mode to : %s / %s" %( Level, THERMOSTAT_LEVEL_2_MODE[Level]), NWKID)
+            thermostat_Mode( self, NWKID, 'Off' )
+            UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+
+            # Let's force a refresh of Attribute in the next Heartbeat  
+            self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
+            return
+
         if DeviceType == 'ThermoMode_2':
             self.log.logging( "Command", 'Debug', "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" 
                 %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
@@ -195,6 +213,11 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             ## Let's force a refresh of Attribute in the next Heartbeat  
             #self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
             return
+
+        if DeviceType == 'PAC-WING':
+            if 'Model' in self.ListOfDevices[ NWKID ] and self.ListOfDevices[ NWKID ]['Model'] == 'AC201A':
+                casaia_swing_OnOff( self, NWKID, '00')
+                UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
 
         if DeviceType == 'BSO-Volet':
             if profalux:
@@ -459,25 +482,25 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             tuya_trv_mode( self, NWKID, Level )
 
         if DeviceType == 'FanControl':
-            if Level == 10:
-                casaia_system_mode( self, NWKID, 'FanAuto')
-                #UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
-            elif Level == 20:
-                casaia_system_mode( self, NWKID, 'FanLow')
-                #UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
-            elif Level == 30:
-                casaia_system_mode( self, NWKID, 'FanMedium')
-                #UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
-            elif Level == 40:
-                casaia_system_mode( self, NWKID, 'FanHigh')
-                #UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
-            return
+
+            if 'Model' in self.ListOfDevices[ NWKID ] and self.ListOfDevices[ NWKID ]['Model'] == 'AC201A':
+                casaia_ac201_fan_control( self, NWKID, Level)
+                return
+
+            FAN_MODE = {
+                0: 'Off',
+                20: 'Low',
+                30: 'Medium',
+                40: 'High',
+                10: 'Auto',
+            }
+
+            if Level in FAN_MODE:
+                change_fan_mode( self, NWKID, EPout, FAN_MODE[ Level ])
+            self.ListOfDevices[NWKID]['Heartbeat'] = '0' 
 
         if DeviceType == 'PAC-WING':
             if Level == 10:
-                casaia_swing_OnOff( self, NWKID, '00')
-                #UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
-            elif Level == 20:
                 casaia_swing_OnOff( self, NWKID, '01')
                 #UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return

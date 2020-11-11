@@ -292,18 +292,18 @@ def CreateDomoDevice(self, Devices, NWKID):
             self.log.logging("Widget", "Debug", "CreateDomoDevice - DevId: %s DevEp: %s Type: %s" %(DeviceID_IEEE, Ep, t), NWKID)
 
             # === Selector Switches
-            if t in ( 'PAC-MODE', ): # 6
+            if t in ( 'PAC-MODE', ): # 5
                 Options = createSwitchSelector( self, 5 , DeviceType = t, OffHidden = False, SelectorStyle = 1)
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options, Image = 16)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in PAC-MODE" %(t), NWKID)
 
-            if t in ( 'FanControl', ): # 8
-                Options = createSwitchSelector( self, 5 , DeviceType = t, OffHidden = False, SelectorStyle = 1)
+            if t in ( 'FanControl', ): # 6
+                Options = createSwitchSelector( self, 6 , DeviceType = t, OffHidden = False, SelectorStyle = 1)
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options, Image = 7)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in FanControl" %(t), NWKID)        
 
-            if t in ( 'PAC-WING', ): # 3
-                Options = createSwitchSelector( self, 3 , DeviceType = t, OffHidden = True, SelectorStyle = 1)
+            if t in ( 'PAC-WING', ): # 2
+                Options = createSwitchSelector( self, 2 , DeviceType = t, SelectorStyle = 1)
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in PAC-WING" %(t), NWKID)        
 
@@ -345,7 +345,7 @@ def CreateDomoDevice(self, Devices, NWKID):
 
             # 5 Selectors, Style 0 ( mode command)
             if t in ('ThermoMode', ):
-                Options = createSwitchSelector( self,  7,  DeviceType = t,SelectorStyle = 0 )
+                Options = createSwitchSelector( self,  6,  DeviceType = t,SelectorStyle = 1 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in ThermoMode" %(t), NWKID)
 
