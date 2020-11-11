@@ -66,8 +66,9 @@ AC201_COMMAND = {
 def pollingCasaia( self, NwkId ):
     # This fonction is call if enabled to perform any Manufacturer specific polling action
     # The frequency is defined in the pollingSchneider parameter (in number of seconds)
-    self.log.logging( "CasaIA", "Debug" , "pollingCasaia %s" %(NwkId ))
-    AC201_read_AC_status_request( self, NwkId)
+    if 'Model' in self.ListOfDevices[ NwkId] and self.ListOfDevices[ NwkId]['Model'] == 'AC201A':
+        self.log.logging( "CasaIA", "Debug" , "pollingCasaia %s" %(NwkId ))
+        AC201_read_AC_status_request( self, NwkId)
     return False
 
 
@@ -109,8 +110,7 @@ def casaiaReadRawAPS(self, Devices, NwkId, srcEp, ClusterId, dstNWKID, dstEP, Ms
 
         elif Command == '01':
             AC211_ReadLearnedStatesResponse( self, Devices, NwkId, srcEp, Data)
-               
-    
+                 
 def casaia_swing_OnOff( self, NwkId, OnOff):
     
     if OnOff not in ('00', '01'):
@@ -129,7 +129,7 @@ def casaia_setpoint(self, NwkId, setpoint):
         elif str(check_hot_cold_setpoint(self, NwkId)) == 'Cool':
             write_AC201_status_request( self, NwkId, 'CoolSetpoint', setpoint)
         else:
-          AC201_read_AC_status_request( self, NwkId)  
+            AC201_read_AC_status_request( self, NwkId)  
 
 def casaia_system_mode( self, NwkId, Action):
 
@@ -146,14 +146,51 @@ def casaia_pairing( self, NwkId):
         elif self.ListOfDevices[NwkId]['Model'] == 'AC211':
             casaia_AC211_pairing(self, NwkId)
 
+def casaia_check_irPairing( self, NwkId):
+
+    if 'CASA.IA' not in self.ListOfDevices[ NwkId ]:
+        self.log.logging( "Casaia", 'Error', "casaia_check_irPairing - %s No CASA.IA Attributes" %NwkId)
+        AC201_read_AC_status_request( self, NwkId)
+        return None
+
+    if DEVICE_ID not in self.ListOfDevices[NwkId]['CASA.IA']:
+        self.log.logging( "Casaia", 'Error', "casaia_check_irPairing - %s No DEVICE_ID Attributes" %NwkId)
+        AC201_read_AC_status_request( self, NwkId)
+        return None
+
+    if 'IRCode' not in self.ListOfDevices[NwkId]['CASA.IA'][DEVICE_ID]:
+        self.log.logging( "Casaia", 'Error', "casaia_check_irPairing - %s No IRCode Attributes" %NwkId)
+        AC201_read_AC_status_request( self, NwkId)
+        return None
+
+    if self.ListOfDevices[NwkId]['CASA.IA'][DEVICE_ID]['IRCode'] in ( 0x0, 0xffff):
+        self.log.logging( "Casaia", 'Error', "casaia_check_irPairing - %s IRCode %s not in place" %(NwkId, self.ListOfDevices[NwkId]['CASA.IA'][DEVICE_ID]['IRCode']))
+        return None
+        
+    if 'ModuleIRCode' in self.ListOfDevices[NwkId]['CASA.IA'][DEVICE_ID] and int(self.ListOfDevices[NwkId]['CASA.IA'][DEVICE_ID]['ModuleIRCode'],16) == int(self.ListOfDevices[NwkId]['CASA.IA'][DEVICE_ID]['IRCode'],16):
+        return True
+
+    if 'ModuleIRCode' not in self.ListOfDevices[NwkId]['CASA.IA'][DEVICE_ID]:
+        AC201_read_AC_status_request( self, NwkId)
+        AC201_read_multi_pairing_code_request( self, NwkId )
+
+    if 'Model' in self.ListOfDevices[ NwkId] and self.ListOfDevices[ NwkId]['Model'] == 'AC201A':
+        casaia_ac201_ir_pairing( self, NwkId)
+        AC201_read_AC_status_request( self, NwkId)
+    
+    elif 'Model' in self.ListOfDevices[ NwkId] and self.ListOfDevices[ NwkId]['Model'] == 'AC211':
+        casaia_ac211_ir_pairing( self, NwkId)
+        AC201_read_AC_status_request( self, NwkId)
+
+    return None
+
+
 
 # Model Specifics
 #####################################################################################
 def casaia_AC211_pairing(self, NwkId):
     # Call during the Zigbee pairing process
     self.log.logging( "CasaIA", "Debug" , "casaia_AC211_pairing %s" %(NwkId ))
-
-    add_pac_entry(self, self.ListOfDevices[ NwkId ]['IEEE'])
 
     # 0x00
     AC211_ReadPairingCodeRequest( self, NwkId )
@@ -162,10 +199,18 @@ def casaia_AC211_pairing(self, NwkId):
     AC211_ReadLearnedStatesRequest( self, NwkId )
 
     # 0x20
-    AC211_WritePairingCodeRequest( self, NwkId , '861' )
+    casaia_check_irPairing( self, NwkId)
 
+    # 0x00
     AC211_ReadPairingCodeRequest( self, NwkId )
 
+
+def casaia_ac211_ir_pairing( self, NwkId):
+    self.log.logging( "CasaIA", "Debug" , "casaia_ac211_ir_pairing %s" %(NwkId ))
+    pac_code = get_pac_code(self, self.ListOfDevices[ NwkId ]['IEEE'])
+    self.log.logging( "CasaIA", "Debug" , "casaia_ac211_ir_pairing %s IRCode: %s" %(NwkId, pac_code ))
+    if pac_code and int(pac_code,16) not in ( 0x0000, 0xffff):
+        AC211_WritePairingCodeRequest( self, NwkId , pac_code )
 
 
 def casaia_AC201_pairing( self, NwkId):
@@ -175,11 +220,8 @@ def casaia_AC201_pairing( self, NwkId):
     # Read Existing Pairing Infos: Command 0x00
     AC201_read_multi_pairing_code_request( self, NwkId )
 
-    # Add an entry in the PAC Casa file in order to get the IRCode
-    add_pac_entry(self, self.ListOfDevices[ NwkId ]['IEEE'])
-
     # In case we have already the IRCode 
-    casaia_ac201_ir_pairing( self, NwkId)
+    casaia_check_irPairing( self, NwkId)
 
     # Read Current AC Status
     AC201_read_AC_status_request( self, NwkId)
@@ -189,8 +231,10 @@ def casaia_ac201_ir_pairing( self, NwkId):
     self.log.logging( "CasaIA", "Debug" , "casaia_ac201_ir_pairing %s" %(NwkId ))
     pac_code = get_pac_code(self, self.ListOfDevices[ NwkId ]['IEEE'])
     self.log.logging( "CasaIA", "Debug" , "casaia_ac201_ir_pairing %s IRCode: %s" %(NwkId, pac_code ))
-    if pac_code and pac_code != '000':
+    if pac_code and int(pac_code,16) not in ( 0x0, 0xffff):
         AC201_write_multi_pairing_code_request( self, NwkId , pac_code )
+    else:
+        self.log.logging( "Casaia", 'Error', "casaia_ac201_ir_pairing - %s IRCode %s not in place" %(NwkId, pac_code))
 
 
 
@@ -263,24 +307,21 @@ def AC201_write_multi_pairing_code_request( self, NwkId , pairing_code_value ):
 
 def AC201_read_AC_status_request( self, NwkId):
     # Command 0x02
-    self.log.logging( "Casaia", 'Debug', "AC201_read_AC_status_request NwkId: %s" %( NwkId), NwkId) 
+
+    #self.log.logging( "Casaia", 'Debug', "AC201_read_AC_status_request NwkId: %s" %( NwkId), NwkId) 
     device_type = DEVICE_TYPE
     device_id = DEVICE_ID
     cmd = '02'
     payload =  cmd + device_type + device_id
     ffad_send_manuf_specific_cmd( self, NwkId, payload)
-    self.log.logging( "Casaia", 'Debug', "AC201_read_AC_status_request ++++ %s payload: %s" %( NwkId, payload), NwkId)
+    #self.log.logging( "Casaia", 'Debug', "AC201_read_AC_status_request ++++ %s payload: %s" %( NwkId, payload), NwkId)
 
 def write_AC201_status_request( self, NwkId, Action, setpoint = None):
     # Command 0x03
-    # 03 00 01 0001010000
-    self.log.logging( "Casaia", 'Debug', "write_AC201_status_request NwkId: %s Action: %s Setpoint: %s" %( NwkId, Action, setpoint), NwkId) 
 
-    # Check if the IRCode is set!
-    ir_code = get_casaia_attribute( self, NwkId, 'IRCode', device_id = DEVICE_ID)
-    if ir_code is None or ir_code == 'ffff':
-        self.log.logging( "Casaia", 'Error', "write_AC201_status_request - %s IRCode %s not in place" %(NwkId, ir_code))
-        casaia_ac201_ir_pairing( self, NwkId)
+    #self.log.logging( "Casaia", 'Debug', "write_AC201_status_request NwkId: %s Action: %s Setpoint: %s" %( NwkId, Action, setpoint), NwkId) 
+
+    if casaia_check_irPairing( self, NwkId) is None:
         return
 
     if Action not in AC201_COMMAND:
@@ -301,7 +342,7 @@ def write_AC201_status_request( self, NwkId, Action, setpoint = None):
     payload =  cmd + device_type + device_id  + command
 
     ffad_send_manuf_specific_cmd( self, NwkId, payload)
-    self.log.logging( "Casaia", 'Debug', "write_AC201_status_request ++++ %s payload: %s" %( NwkId, payload), NwkId) 
+    # self.log.logging( "Casaia", 'Debug', "write_AC201_status_request ++++ %s payload: %s" %( NwkId, payload), NwkId) 
     AC201_read_AC_status_request( self, NwkId)
 
 def AC201_read_learned_data_group_status_request( self, NwkId):
@@ -346,7 +387,7 @@ def AC211_ReadPairingCodeResponse( self, Devices, NwkId, Ep, payload):
     # ffff
     self.log.logging( "CasaIA", "Debug" , "AC211_read_multi_pairing_response %s payload: %s" %(NwkId , payload))
     pairing_code = payload[0:4]
-    store_casaia_attribute( self, NwkId, 'IRCode', pairing_code )
+    store_casaia_attribute( self, NwkId, 'ModuleIRCode', pairing_code , device_id = DEVICE_ID)
 
 
 def AC211_ReadLearnedStatesResponse( self, Devices, NwkId, Ep, payload):
@@ -354,10 +395,7 @@ def AC211_ReadLearnedStatesResponse( self, Devices, NwkId, Ep, payload):
     # 00
     self.log.logging( "CasaIA", "Debug" , "AC211_command_01_response %s payload: %s" %(NwkId , payload))
     value = payload[0:2]
-    store_casaia_attribute( self, NwkId, 'LearnedState', value )
-
-
-
+    store_casaia_attribute( self, NwkId, 'LearnedState', value , device_id = DEVICE_ID)
 
 
 
@@ -375,7 +413,7 @@ def AC201_read_multi_pairing_response( self, Devices, NwkId, Ep, payload):
         device_id = payload[idx:idx+2]
         idx += 2
         pairing_code = payload[idx:idx+4]
-        store_casaia_attribute( self, NwkId, 'IRCode', pairing_code , device_id = device_id)
+        store_casaia_attribute( self, NwkId, 'ModuleIRCode', pairing_code , device_id = device_id)
         idx += 4
 
 def AC201_read_AC_status_response( self, Devices, NwkId, Ep, payload):
@@ -397,7 +435,7 @@ def AC201_read_AC_status_response( self, Devices, NwkId, Ep, payload):
         %( status, device_type, device_id, pairing_code, current_temp, system_mode, heat_setpoint, cool_stepoint, fan_mode))
 
     store_casaia_attribute( self, NwkId, 'DeviceType', device_type )
-    store_casaia_attribute( self, NwkId, 'IRCode', str(pairing_code) , device_id = device_id)
+    store_casaia_attribute( self, NwkId, 'ModuleIRCode', str(pairing_code) , device_id = device_id)
     store_casaia_attribute( self, NwkId, 'DeviceStatus', status , device_id = device_id)
     store_casaia_attribute( self, NwkId, 'CurrentTemp', current_temp , device_id = device_id)
     store_casaia_attribute( self, NwkId, 'SystemMode', system_mode , device_id = device_id)
@@ -533,56 +571,19 @@ def open_casa_config( self ): # OK 6/11/2020
                 res = "Failed"
                 Domoticz.Error("loadJsonDatabase poorly-formed %s, not JSON: %s" %(self.pluginConf['filename'],e))
 
-def add_pac_entry(self, ieee): # OK 6/11/2020
-
-    if self.CasaiaPAC is None:
-        open_casa_config( self )
-
-    if ieee not in self.CasaiaPAC:
-        self.CasaiaPAC[ieee] = {'IRCode': '000'}
-    
-    casaiafilename =  self.pluginconf.pluginConf['pluginConfig'] + "/" + CASAIA_CONFIG_FILENAME
-    with open( casaiafilename , 'wt') as handle:
-        json.dump( self.CasaiaPAC, handle, sort_keys=True, indent=2)
-
-def update_pac_entry(self, nwkid, ircode):
-    
-    if nwkid not in self.ListOfDevices:
-        return
-
-    if self.CasaiaPAC is None:
-        open_casa_config( self )
-
-    self.CasaiaPAC[ self.ListOfDevices[nwkid]['IEEE'] ] = ircode
-    casaiafilename =  self.pluginconf.pluginConf['pluginConfig'] + "/" + CASAIA_CONFIG_FILENAME
-    with open( casaiafilename , 'wt') as handle:
-        json.dump( self.CasaiaPAC, handle, sort_keys=True, indent=2)
-
 def get_pac_code(self, ieee):
 
-    open_casa_config( self )
-    if ieee in self.CasaiaPAC and self.CasaiaPAC[ ieee ] and 'IRCode' in self.CasaiaPAC[ ieee ] and  self.CasaiaPAC[ ieee ]['IRCode'] != '000':
-        return self.CasaiaPAC[ ieee ]['IRCode']
-    else:
+    nwkid = self.IEEE2NWK[ ieee ]
+    if 'CASA.IA' not in self.ListOfDevices[nwkid]:
         return None
 
+    if DEVICE_ID not in self.ListOfDevices[nwkid]['CASA.IA']:
+        return None
 
+    if 'IRCode' not in self.ListOfDevices[nwkid]['CASA.IA'][DEVICE_ID]:
+        return None
 
+    if int(self.ListOfDevices[nwkid]['CASA.IA'][DEVICE_ID]['IRCode'],16) in (0x0, 0xffff):
+        return None
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    return self.ListOfDevices[nwkid]['CASA.IA'][DEVICE_ID]['IRCode']
