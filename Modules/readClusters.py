@@ -1459,16 +1459,30 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.log.logging( "Cluster", 'Debug', "ReadCluster - 0201 - Cooling Setpoint: %s" %ValueTemp, MsgSrcAddr)
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  ValueTemp )
 
+        if self.ListOfDevices[MsgSrcAddr]['Model'] == 'AC211':
+            # We do report if AC211 and AC in Cool mode
+            if MsgClusterId in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
+                if '001c' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]:
+                    if self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]['001c'] == 0x03:
+                        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,ValueTemp,Attribute_='0012')         
+
+
     elif MsgAttrID == '0012':   # Heat Setpoint (Zinte16)
         ValueTemp = round(int(value)/100,2)
         self.log.logging( "Cluster", 'Debug', "ReadCluster - 0201 - Heating Setpoint: %s ==> %s" %(value, ValueTemp), MsgSrcAddr)
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  int(value) )
 
         if 'Model' in self.ListOfDevices[MsgSrcAddr]:
-
             if self.ListOfDevices[MsgSrcAddr]['Model'] == 'AC201A':
                 # We do not report this, as AC201 rely on 0xffad cluster
                 pass
+            elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'AC211':
+                # We do report if AC211 and AC in Heat mode
+                if MsgClusterId in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
+                    if '001c' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]:
+                        if self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]['001c'] == 0x04:
+                            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,ValueTemp,Attribute_=MsgAttrID)
+
             elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'EH-ZB-VACT':
                 # In case of Schneider Wiser Valve, we have to 
                 self.log.logging( "Cluster", 'Debug', "ReadCluster - 0201 - ValueTemp: %s" %int( ((ValueTemp * 100) * 2) / 2 ), MsgSrcAddr)

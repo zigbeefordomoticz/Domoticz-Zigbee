@@ -61,19 +61,31 @@ def thermostat_Setpoint( self, NwkId, setpoint):
             return
 
     self.log.logging( "Thermostats", 'Debug', "thermostat_Setpoint - standard for %s with value %s" %(NwkId,setpoint), nwkid=NwkId)
-    manuf_id = "0000"
-    manuf_spec = "00"
+
+    EPout = '01'
+    for tmpEp in self.ListOfDevices[NwkId]['Ep']:
+        if "0201" in self.ListOfDevices[NwkId]['Ep'][tmpEp]:
+            EPout= tmpEp
+
+    # Heat setpoint by default
     cluster_id = "%04x" %0x0201
     Hattribute = "%04x" %0x0012
+
+    if cluster_id in self.ListOfDevices[NwkId]['Ep'][EPout]:
+        if '001c' in self.ListOfDevices[NwkId]['Ep'][EPout][cluster_id]:
+            if self.ListOfDevices[NwkId]['Ep'][EPout][cluster_id]['001c'] == 0x03:
+                # Cool Setpoint
+                Hattribute = "%04x" %0x0011
+
+    manuf_id = "0000"
+    manuf_spec = "00"
+    
     data_type = "29" # Int16
     self.log.logging( "Thermostats", 'Debug', "setpoint: %s" %setpoint, nwkid=NwkId)
     setpoint = int(( setpoint * 2 ) / 2)   # Round to 0.5 degrees
     self.log.logging( "Thermostats", 'Debug', "setpoint: %s" %setpoint, nwkid=NwkId)
     Hdata = "%04x" %setpoint
     EPout = '01'
-    for tmpEp in self.ListOfDevices[NwkId]['Ep']:
-        if "0201" in self.ListOfDevices[NwkId]['Ep'][tmpEp]:
-            EPout= tmpEp
 
     self.log.logging( "Thermostats", 'Debug', "thermostat_Setpoint - for %s with value %s / cluster: %s, attribute: %s type: %s"
             %(NwkId,Hdata,cluster_id,Hattribute,data_type), nwkid=NwkId)
