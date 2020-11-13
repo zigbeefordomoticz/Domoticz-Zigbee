@@ -2112,29 +2112,28 @@ def Cluster0502( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     else:
         self.log.logging( "Cluster", 'Log', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
+def compute_conso( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, raw_value ):
+
+    conso = raw_value # Raw value
+    if '0302' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]:
+        diviser = self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]['0302']
+        value = round( conso / ( diviser / 1000 ),3)
+        self.log.logging( "Cluster", 'Debug', "compute_conso - %s Power %s, div: %s --> %s Watts" %( MsgAttrID, conso, diviser, value))
+    elif '0301' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]:
+        multiplier = self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]['0301']
+        value = round( conso * multiplier, 3)
+        self.log.logging( "Cluster", 'Debug', "compute_conso - %s Power %s, multiply: %s --> %s Watts" %( MsgAttrID, conso, multiplier, value))
+    else:
+        # Old fashion
+        value = round(conso/10, 3)
+        if 'Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Model'] == 'EH-ZB-SPD-V2':
+                value = round(conso, 3)
+        if 'Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Model'] == 'TS0121':
+                value = conso*10
+
+    return ( value )
+
 def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData , Source):
-    
-    def compute_conso( self, MsgSrcAddr, raw_value ):
-
-        conso = raw_value # Raw value
-        if '0302' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]:
-            diviser = self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]['0302']
-            value = round( conso / ( diviser / 1000 ),3)
-            self.log.logging( "Cluster", 'Debug', "Cluster0702 - %s Instant demand %s, div: %s --> %s Watts" %( MsgAttrID, conso, diviser, value))
-        elif '0301' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]:
-            multiplier = self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]['0301']
-            value = round( conso * multiplier, 3)
-            self.log.logging( "Cluster", 'Debug', "Cluster0702 - %s Instant demand %s, multiply: %s --> %s Watts" %( MsgAttrID, conso, multiplier, value))
-        else:
-            # Old fashion
-            value = round(conso/10, 3)
-            if 'Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Model'] == 'EH-ZB-SPD-V2':
-                    value = round(conso, 3)
-            if 'Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Model'] == 'TS0121':
-                    value = conso*10
-
-        return ( value )
-
 
     # Smart Energy Metering
     if int(MsgAttSize,16) == 0:
@@ -2164,7 +2163,7 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     self.log.logging( "Cluster", 'Debug', "Cluster0702 - MsgAttrID: %s MsgAttType: %s DataLen: %s Data: %s decodedValue: %s" %(MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
 
     if MsgAttrID == "0000": # CurrentSummationDelivered
-        conso = compute_conso( self,  MsgSrcAddr, value)
+        conso = compute_conso( self,  MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID,value)
         self.log.logging( "Cluster", 'Debug', "Cluster0702 - 0x0000 CURRENT_SUMMATION_DELIVERED Value: %s Conso: %s " %(value, conso), MsgSrcAddr)
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, conso )
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(conso), Attribute_='0000' )
@@ -2184,6 +2183,11 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     elif MsgAttrID == "000b": #FAST_POLL_UPDATE_PERIOD
         self.log.logging( "Cluster", 'Debug', "Cluster0702 - FAST_POLL_UPDATE_PERIOD %s " %(value), MsgSrcAddr)
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
+
+    elif MsgAttrID == "0017": # Inlet Temperature
+        checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
+        value /= 10
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0402',value)
 
     elif MsgAttrID == "0200": 
         METERING_STATUS = { 0: 'Ok',
@@ -2244,7 +2248,7 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         # InstantDemand will be transfer to Domoticz in Watts
         if value < 0:
             return
-        conso = compute_conso( self, MsgSrcAddr, value )
+        conso = compute_conso( self, MsgSrcAddr,MsgSrcEp, MsgClusterId, MsgAttrID, value )
 
         self.log.logging( "Cluster", 'Debug', "Cluster0702 - 0x0400 Instant demand raw_value: %s Conso: %s" %(value, conso), MsgSrcAddr)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(conso))
@@ -2283,19 +2287,38 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                         '4100', '4101', '4102', '4103', '4104', '4105', '4106' ,
                         ):
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
-
         # Report Line 1 on fake Ep "f1"
         # Report Line 2 on fake Ep "f2"
         # Report Line 3 on fake Ep "f3"
 
-        if MsgAttrID in ( '3000', '3001', '3002'): # Voltage
-            if value == 0xffff:
-                return
+        if MsgAttrID in ( '2000', '2001', '2002'): # Lx phase Power
+            line = 1 + (int(MsgAttrID,16) - 0x2000)
+            fake_ep = 'f%s' %line
+            conso = compute_conso( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID,value )
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0702']['0400'] = str(conso)
+            self.log.logging( "Cluster", 'Log', "readCluster - %s - %s/%s CASAIA PC321 phase Power Line: %s Power %s" %( MsgClusterId, MsgSrcAddr, MsgSrcEp, line, conso))
+            MajDomoDevice(self, Devices, MsgSrcAddr, fake_ep, '0702', str(conso) )
+
+        elif MsgAttrID in ( '3000', '3001', '3002'): # Lx Voltage
             line = 1 + (int(MsgAttrID,16) - 0x3000)
             fake_ep = 'f%s' %line
             value /= 10
+            self.log.logging( "Cluster", 'Log', "readCluster - %s - %s/%s CASAIA PC321 phase Power Line: %s Voltage %s" %( MsgClusterId, MsgSrcAddr, MsgSrcEp, line, value))
             MajDomoDevice(self, Devices, MsgSrcAddr, fake_ep, '0001', str(value) )
 
+        elif MsgAttrID in ( '3100', '3101', '3102'): # Lx Current/Ampere
+            line = 1 + (int(MsgAttrID,16) - 0x3100)
+            fake_ep = 'f%s' %line
+            self.log.logging( "Cluster", 'Log', "readCluster - %s - %s/%s CASAIA PC321 phase Power Line: %s Current %s" %( MsgClusterId, MsgSrcAddr, MsgSrcEp, line, value))
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0b04', str(value), Attribute_='0508')
+
+        elif MsgAttrID in ( '4000', '4001', '4002'): # Lx Energy Consuption
+            line = 1 + (int(MsgAttrID,16) - 0x4000)
+            fake_ep = 'f%s' %line
+            conso = compute_conso( self, MsgSrcAddr,MsgSrcEp, MsgClusterId, MsgAttrID, value )
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0702']['0000'] = str(conso)
+            self.log.logging( "Cluster", 'Log', "readCluster - %s - %s/%s CASAIA PC321 phase Power Line: %s Summation Power %s" %( MsgClusterId, MsgSrcAddr, MsgSrcEp, line, conso))
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0702', str(conso), Attribute_='0000')
         else:
 
             self.log.logging( "Cluster", 'Log', "readCluster - %s - %s/%s CASAIA PC321 phase Power Clamp: %s %s %s %s (value: %s)" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)    
