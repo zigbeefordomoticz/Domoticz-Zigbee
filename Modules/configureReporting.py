@@ -198,8 +198,8 @@ def processConfigureReporting( self, NWKID=None ):
 
                     # Check if we have a Manufacturer Specific Cluster/Attribute. If that is the case, we need to send what we have , 
                     # and then pile what we have until we switch back to non manufacturer specific
-                    if cluster == '0201' and attr in ( '4000', '4012', 'fd00') \
-                       and 'Model' in self.ListOfDevices[ key ] and self.ListOfDevices[ key ]['Model'] in ( 'eTRV0100', 'AC221', 'AC211'):
+                    if (  attr in ( '4000', '4012', 'fd00') and  cluster == '0201' and 'Model' in self.ListOfDevices[ key ] and self.ListOfDevices[ key ]['Model'] in ( 'eTRV0100', 'AC221', 'AC211')) or \
+                        ( cluster == 'fc21' and 'Manufacturer' in self.ListOfDevices[ key ] and self.ListOfDevices[ key ]['Manufacturer'] == '1110') :
                        
                         # Send what we have 
                         if ListOfAttributesToConfigure:
@@ -213,6 +213,8 @@ def processConfigureReporting( self, NWKID=None ):
                             manufacturer = "1246" # Danfoss
                         elif self.ListOfDevices[ key ]['Model']  in ( 'AC221', 'AC211'):
                             manufacturer = "113c"
+                        elif self.ListOfDevices[ key ]['Manufacturer'] == '1110':
+                            manufacturer = "1110"
                         
                         ListOfAttributesToConfigure.append(attr)
                         prepare_and_send_configure_reporting( self, key, Ep, cluster_list, cluster, direction, manufacturer_spec, manufacturer, ListOfAttributesToConfigure)
