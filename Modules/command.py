@@ -146,9 +146,14 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             profalux_stop( self, NWKID)
 
         elif DeviceType in ( "WindowCovering", "VenetianInverted", "Venetian"):
-            # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
-            sendZigateCmd(self, "00FA","02" + NWKID + ZIGATE_EP + EPout + "02")
+            if 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[ NWKID ]['Model'] == 'PR412':
+                profalux_stop( self, NWKID)
+            else:
+                # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
+                sendZigateCmd(self, "00FA","02" + NWKID + ZIGATE_EP + EPout + "02")
             UpdateDevice_v2(self, Devices, Unit, 17, "0", BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+        else:
+            sendZigateCmd(self, "0083","02" + NWKID + ZIGATE_EP + EPout + "02")
                     
         # Let's force a refresh of Attribute in the next Heartbeat 
         self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
@@ -227,10 +232,16 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             sendZigateCmd(self, "00FA","02" + NWKID + ZIGATE_EP + EPout + "01") # Blind inverted (On, for Close)
 
         elif DeviceType == "VenetianInverted":
-            sendZigateCmd(self, "00FA","02" + NWKID + ZIGATE_EP + EPout + "01") # Venetian Inverted/Blind (On, for Close)
+            if 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[ NWKID ]['Model'] == 'PR412':
+                sendZigateCmd(self, "0092","02" + NWKID + ZIGATE_EP + EPout + "01")
+            else:
+                sendZigateCmd(self, "00FA","02" + NWKID + ZIGATE_EP + EPout + "01") # Venetian Inverted/Blind (On, for Close)
 
         elif DeviceType == "Venetian":
-            sendZigateCmd(self, "00FA","02" + NWKID + ZIGATE_EP + EPout + "00") # Venetian /Blind (Off, for Close)
+            if 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[ NWKID ]['Model'] == 'PR412':
+                sendZigateCmd(self, "0092","02" + NWKID + ZIGATE_EP + EPout + "00")
+            else:
+                sendZigateCmd(self, "00FA","02" + NWKID + ZIGATE_EP + EPout + "00") # Venetian /Blind (Off, for Close)
                 
         elif DeviceType == "AlarmWD":
             self.iaszonemgt.alarm_off( NWKID, EPout)
@@ -307,10 +318,16 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             sendZigateCmd(self, "00FA","02" + NWKID + ZIGATE_EP + EPout + "00") # Blind inverted (Off, for Open)
 
         elif DeviceType == "VenetianInverted":
-            sendZigateCmd(self, "00FA","02" + NWKID + ZIGATE_EP + EPout + "00") # Venetian inverted/Blind (Off, for Open)
+            if 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[ NWKID ]['Model'] == 'PR412':
+                sendZigateCmd(self, "0092","02" + NWKID + ZIGATE_EP + EPout + "00")
+            else:
+                sendZigateCmd(self, "00FA","02" + NWKID + ZIGATE_EP + EPout + "00") # Venetian inverted/Blind (Off, for Open)
 
         elif DeviceType == "Venetian":
-            sendZigateCmd(self, "00FA","02" + NWKID + ZIGATE_EP + EPout + '01') # Venetian/Blind (On, for Open)
+            if 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[ NWKID ]['Model'] == 'PR412':
+                sendZigateCmd(self, "0092","02" + NWKID + ZIGATE_EP + EPout + "01")
+            else:
+                sendZigateCmd(self, "00FA","02" + NWKID + ZIGATE_EP + EPout + '01') # Venetian/Blind (On, for Open)
 
         elif DeviceType == "HeatingSwitch":
             thermostat_Mode( self, NWKID, 'Heat' )
