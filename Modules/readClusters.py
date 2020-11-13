@@ -2274,6 +2274,33 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
         else:
             self.log.logging( "Cluster", 'Debug', "readCluster - %s - %s/%s Schneider Attribute: %s  Raw Data: %s Decoded Data: %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgClusterData, value), MsgSrcAddr)
+
+    elif MsgAttrID in ( '2000', '2001', '2002', 
+                        '2100', '2101', '2102', '2103' ,
+                        '3000', '3001', '3002', # Voltage
+                        '3100', '3101', '3102', '3103' ,
+                        '4000', '4001', '4002', 
+                        '4100', '4101', '4102', '4103', '4104', '4105', '4106' ,
+                        ):
+        checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
+
+        # Report Line 1 on fake Ep "f1"
+        # Report Line 2 on fake Ep "f2"
+        # Report Line 3 on fake Ep "f3"
+
+        if MsgAttrID in ( '3000', '3001', '3002'): # Voltage
+            if value == 0xffff:
+                return
+            line = 1 + (int(MsgAttrID,16) - 0x3000)
+            fake_ep = 'f%s' %line
+            value /= 10
+            MajDomoDevice(self, Devices, MsgSrcAddr, fake_ep, '0001', str(value) )
+
+        else:
+
+            self.log.logging( "Cluster", 'Log', "readCluster - %s - %s/%s CASAIA PC321 phase Power Clamp: %s %s %s %s (value: %s)" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)    
+
+
     else:
         self.log.logging( "Cluster", 'Log', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
