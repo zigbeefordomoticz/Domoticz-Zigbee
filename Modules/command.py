@@ -183,11 +183,6 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             self.log.logging( "Command", 'Debug', "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" 
                 %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
             
-            if 'Model' in self.ListOfDevices[ NWKID ] and self.ListOfDevices[ NWKID ]['Model'] in ('AC211',):
-                casaia_swing_OnOff( self, NWKID, '00')
-                change_fan_mode( self, NWKID, EPout, '00')
-
-
             self.log.logging( "Command", 'Debug', "ThermoMode - requested Level: %s" %Level, NWKID)
             self.log.logging( "Command", 'Debug', " - Set Thermostat Mode to : %s / %s" %( Level, THERMOSTAT_LEVEL_2_MODE[Level]), NWKID)
             thermostat_Mode( self, NWKID, 'Off' )

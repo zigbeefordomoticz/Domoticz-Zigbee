@@ -434,7 +434,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
             # Plug, Door, Switch, Button ...
             # We reach this point because ClusterType is Door or Switch. It means that Cluster 0x0006 or 0x0500
             # So we might also have to manage case where we receive a On or Off for a LvlControl WidgetType like a dimming Bulb.
-            self.log.logging( "Widget", "Debug", "------> Generic Widget for %s ClusterType: %s WidgetType: %s Value: %s" %(NWKID, WidgetType, ClusterType , value), NWKID)
+            self.log.logging( "Widget", "Log", "------> Generic Widget for %s ClusterType: %s WidgetType: %s Value: %s" %(NWKID, WidgetType, ClusterType , value), NWKID)
                        
 
             if WidgetType == "DSwitch":
@@ -546,12 +546,22 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                             # We do update only if this is a On/off
                             UpdateDevice_v2(self, Devices, DeviceUnit, 1, 'On', BatteryLevel, SignalLevel)
 
+            elif (( ClusterType == 'FanControl' and WidgetType == 'FanControl') or \
+                ( 'ThermoMode' in ClusterType and WidgetType == 'PAC-WING' and Attribute_ =='fd00'))  and \
+                'Model' in self.ListOfDevices[ NWKID ] and self.ListOfDevices[ NWKID ]['Model'] in ( 'AC211', 'AC221') and \
+                 'Ep' in self.ListOfDevices[ NWKID ] and WidgetEp in self.ListOfDevices[ NWKID ]['Ep'] and \
+                    '0201' in self.ListOfDevices[ NWKID ]['Ep'][ WidgetEp] and '001c' in self.ListOfDevices[ NWKID ]['Ep'][ WidgetEp]['0201'] \
+                        and self.ListOfDevices[ NWKID ]['Ep'][ WidgetEp]['0201']['001c'] == 0x0:
+                    # Thermo mode is Off, let's switch off Wing and Fan
+                    self.log.logging( "Widget", "Log", "------> Switch off as System Mode is Off")
+                    UpdateDevice_v2(self, Devices, DeviceUnit, 0, '00', BatteryLevel, SignalLevel)
+
             elif WidgetType in SWITCH_LVL_MATRIX and value in SWITCH_LVL_MATRIX[ WidgetType ]:
                 self.log.logging( "Widget", "Debug", "------> Auto Update %s" %str(SWITCH_LVL_MATRIX[ WidgetType ][ value ])) 
                 if len(SWITCH_LVL_MATRIX[ WidgetType ][ value] ) == 2:
                     nValue, sValue = SWITCH_LVL_MATRIX[ WidgetType ][ value ]
                     _ForceUpdate =  SWITCH_LVL_MATRIX[ WidgetType ]['ForceUpdate']
-                    self.log.logging( "Widget", "Debug", "------> Switch update WidgetType: %s with %s" %(WidgetType, str(SWITCH_LVL_MATRIX[ WidgetType ])), NWKID)
+                    self.log.logging( "Widget", "Log", "------> Switch update WidgetType: %s with %s" %(WidgetType, str(SWITCH_LVL_MATRIX[ WidgetType ])), NWKID)
                     UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_= _ForceUpdate) 
                 else:
                     self.log.logging( "Widget", "Error", "------>  len(SWITCH_LVL_MATRIX[ %s ][ %s ]) == %s" %(WidgetType,value, len(SWITCH_LVL_MATRIX[ WidgetType ])), NWKID ) 

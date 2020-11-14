@@ -1567,6 +1567,13 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value, Attribute_=MsgAttrID )
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  value )
 
+        # We shoudl also force Shutdown of FanControl and eventualy Wong
+        if value == 0x00 and 'Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'AC211', 'AC221'):
+            # Shutdown the other widgets
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0202', '%02x' %0x0)
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, '%02x' %0x0, Attribute_='fd00')
+            
+
     elif MsgAttrID == '001d':
 
         self.log.logging( "Cluster", 'Debug', "ReadCluster - 0201 - Alarm Mask: %s" %value, MsgSrcAddr)
