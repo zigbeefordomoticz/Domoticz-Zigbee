@@ -434,7 +434,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
             # Plug, Door, Switch, Button ...
             # We reach this point because ClusterType is Door or Switch. It means that Cluster 0x0006 or 0x0500
             # So we might also have to manage case where we receive a On or Off for a LvlControl WidgetType like a dimming Bulb.
-            self.log.logging( "Widget", "Log", "------> Generic Widget for %s ClusterType: %s WidgetType: %s Value: %s" %(NWKID, WidgetType, ClusterType , value), NWKID)
+            self.log.logging( "Widget", "Log", "------> Generic Widget for %s ClusterType: %s WidgetType: %s Value: %s" %(NWKID, ClusterType, WidgetType, value), NWKID)
                        
 
             if WidgetType == "DSwitch":
@@ -546,6 +546,24 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                             # We do update only if this is a On/off
                             UpdateDevice_v2(self, Devices, DeviceUnit, 1, 'On', BatteryLevel, SignalLevel)
 
+            elif WidgetType in ( 'VenetianInverted', 'Venetian', 'WindowCovering'):
+                value = int(value,16)
+                self.log.logging( "Widget", "Debug", "------>  %s/%s ClusterType: %s Updating %s Value: %s" %(NWKID, Ep, ClusterType, WidgetType,value), NWKID)
+                if WidgetType == "VenetianInverted":
+                    value = 100 - value
+                    self.log.logging( "Widget", "Debug", "------>  Patching %s/%s Value: %s" %(NWKID, Ep,value), NWKID)
+                # nValue will depends if we are on % or not
+                if value == 0: 
+                    nValue = 0
+                elif value == 100: 
+                    nValue = 1
+                else: 
+                    if Switchtype in ( 4, 15 ):
+                        nValue = 17
+                    else:
+                        nValue = 2
+                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(value), BatteryLevel, SignalLevel)
+
             elif (( ClusterType == 'FanControl' and WidgetType == 'FanControl') or \
                 ( 'ThermoMode' in ClusterType and WidgetType == 'PAC-WING' and Attribute_ =='fd00'))  and \
                 'Model' in self.ListOfDevices[ NWKID ] and self.ListOfDevices[ NWKID ]['Model'] in ( 'AC211', 'AC221') and \
@@ -553,15 +571,16 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     '0201' in self.ListOfDevices[ NWKID ]['Ep'][ WidgetEp] and '001c' in self.ListOfDevices[ NWKID ]['Ep'][ WidgetEp]['0201'] \
                         and self.ListOfDevices[ NWKID ]['Ep'][ WidgetEp]['0201']['001c'] == 0x0:
                     # Thermo mode is Off, let's switch off Wing and Fan
-                    self.log.logging( "Widget", "Log", "------> Switch off as System Mode is Off")
+                    self.log.logging( "Widget", "Debug", "------> Switch off as System Mode is Off")
                     UpdateDevice_v2(self, Devices, DeviceUnit, 0, '00', BatteryLevel, SignalLevel)
+
 
             elif WidgetType in SWITCH_LVL_MATRIX and value in SWITCH_LVL_MATRIX[ WidgetType ]:
                 self.log.logging( "Widget", "Debug", "------> Auto Update %s" %str(SWITCH_LVL_MATRIX[ WidgetType ][ value ])) 
                 if len(SWITCH_LVL_MATRIX[ WidgetType ][ value] ) == 2:
                     nValue, sValue = SWITCH_LVL_MATRIX[ WidgetType ][ value ]
                     _ForceUpdate =  SWITCH_LVL_MATRIX[ WidgetType ]['ForceUpdate']
-                    self.log.logging( "Widget", "Log", "------> Switch update WidgetType: %s with %s" %(WidgetType, str(SWITCH_LVL_MATRIX[ WidgetType ])), NWKID)
+                    self.log.logging( "Widget", "Debug", "------> Switch update WidgetType: %s with %s" %(WidgetType, str(SWITCH_LVL_MATRIX[ WidgetType ])), NWKID)
                     UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_= _ForceUpdate) 
                 else:
                     self.log.logging( "Widget", "Error", "------>  len(SWITCH_LVL_MATRIX[ %s ][ %s ]) == %s" %(WidgetType,value, len(SWITCH_LVL_MATRIX[ WidgetType ])), NWKID ) 
@@ -569,25 +588,20 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
         if 'WindowCovering' in ClusterType: # 0x0102
             if WidgetType in ( 'VenetianInverted', 'Venetian', 'WindowCovering'):
                 value = int(value,16)
-                self.log.logging( "Widget", "Debug", "------>  %s/%s Updating %s Value: %s" %(NWKID, Ep, WidgetType,value), NWKID)
-
+                self.log.logging( "Widget", "Debug", "------>  %s/%s ClusterType: %s Updating %s Value: %s" %(NWKID, Ep, ClusterType, WidgetType,value), NWKID)
                 if WidgetType == "VenetianInverted":
                     value = 100 - value
                     self.log.logging( "Widget", "Debug", "------>  Patching %s/%s Value: %s" %(NWKID, Ep,value), NWKID)
-
                 # nValue will depends if we are on % or not
                 if value == 0: 
                     nValue = 0
-
                 elif value == 100: 
                     nValue = 1
-
                 else: 
                     if Switchtype in ( 4, 15 ):
                         nValue = 17
                     else:
                         nValue = 2
-
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(value), BatteryLevel, SignalLevel)
 
         if 'LvlControl' in ClusterType: # LvlControl ( 0x0008)
