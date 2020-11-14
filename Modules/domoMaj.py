@@ -289,7 +289,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 self.log.logging( "Widget", "Debug", "------>  Thermostat Mode 2 %s %s:%s" %(value, nValue, sValue), NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
 
-            elif WidgetType == 'ThermoMode' and Attribute_ == '001c':
+            elif WidgetType in ( 'ThermoMode', 'ThermoModeCASAIA') and Attribute_ == '001c':
                 # value seems to come as int or str. To be fixed
                 self.log.logging( "Widget", "Debug", "------>  Thermostat Mode %s type: %s" %(value, type(value)), NWKID)
                 if value in THERMOSTAT_MODE_2_LEVEL:

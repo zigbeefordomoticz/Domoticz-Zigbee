@@ -352,21 +352,6 @@ SWITCH_LVL_MATRIX = {
            "fr-FR": {"LevelNames": "Arrêt|Auto|Manuel"}
        }
    },
-   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     "HACTMODE": {
         "00": ( 1, "10"),
@@ -505,6 +490,18 @@ SWITCH_LVL_MATRIX = {
         "LevelNames": "Off|Auto|Cool|Heat|Dry|Fan",
         "Language": {
             "fr-FR": {"LevelNames": "Arrêt|Auto|Froid|Chaud|Déshumidicateur|Ventilateur"}
+        }
+    },
+    "ThermoModeCASAIA": {
+        '00': (0, "00"), # Off
+        '03': (1, "10"),  # Cool
+        '04': (2, "20"),  # Heat
+        '08': (3, "30"),  # Dry
+        '07': (4, "40"),  # Fan
+        "ForceUpdate": False,
+        "LevelNames": "Off|Cool|Heat|Dry|Fan",
+        "Language": {
+            "fr-FR": {"LevelNames": "Arrêt|Froid|Chaud|Déshumidicateur|Ventilateur"}
         }
     },
 

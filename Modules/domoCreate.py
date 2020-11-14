@@ -349,6 +349,11 @@ def CreateDomoDevice(self, Devices, NWKID):
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in ThermoMode" %(t), NWKID)
 
+            if t in ('ThermoModeCASAIA', ):
+                Options = createSwitchSelector( self,  5,  DeviceType = t,SelectorStyle = 1 )
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
+                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in ThermoModeCASAIA" %(t), NWKID)
+
             # 5 Selectors, Style 1
             if t in ('Generic_5_buttons', 'LegrandSelector', 'SwitchAQ3', 'SwitchIKEA', 'AqaraOppleMiddleBulb'): 
                 Options = createSwitchSelector( self,  5,  DeviceType = t,SelectorStyle = 1 )

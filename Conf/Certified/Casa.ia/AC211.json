@@ -14,7 +14,7 @@
 			"000a":"",
 			"0019":"",
 			"ffac":"",
-			"Type":"Temp/ThermoSetpoint/FanControl/ThermoMode"
+			"Type":"Temp/ThermoSetpoint/FanControl/ThermoModeCASAIA"
 		}
 	},
 	"Type":"",
