@@ -434,7 +434,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
             # Plug, Door, Switch, Button ...
             # We reach this point because ClusterType is Door or Switch. It means that Cluster 0x0006 or 0x0500
             # So we might also have to manage case where we receive a On or Off for a LvlControl WidgetType like a dimming Bulb.
-            self.log.logging( "Widget", "Log", "------> Generic Widget for %s ClusterType: %s WidgetType: %s Value: %s" %(NWKID, ClusterType, WidgetType, value), NWKID)
+            self.log.logging( "Widget", "Debug", "------> Generic Widget for %s ClusterType: %s WidgetType: %s Value: %s" %(NWKID, ClusterType, WidgetType, value), NWKID)
                        
 
             if WidgetType == "DSwitch":
