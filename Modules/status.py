@@ -199,6 +199,9 @@ def DisplayStatusCode( StatusCode ) :
     if StatusCode in ZCL_STATUS_CODE:
        return ZCL_STATUS_CODE[ StatusCode ] 
 
+    if StatusCode in  ZCL_EXTENDED_ERROR_CODES:
+        return ZCL_EXTENDED_ERROR_CODES[ StatusCode ]
+
     if StatusCode in ZCL_NWK_CODE:
         return ZCL_NWK_CODE[ StatusCode ]
 
@@ -211,8 +214,6 @@ def DisplayStatusCode( StatusCode ) :
     if StatusCode in  ZCL_MAC_CODES:
         return ZCL_MAC_CODES[ StatusCode ]
 
-    if StatusCode in  ZCL_EXTENDED_ERROR_CODES:
-        return ZCL_EXTENDED_ERROR_CODES[ StatusCode ]
 
     return ''
 
