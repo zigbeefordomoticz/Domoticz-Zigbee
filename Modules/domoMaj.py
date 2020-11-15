@@ -289,7 +289,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 self.log.logging( "Widget", "Debug", "------>  Thermostat Mode 2 %s %s:%s" %(value, nValue, sValue), NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
 
-            elif WidgetType in ( 'ThermoMode', 'ThermoModeCASAIA') and Attribute_ == '001c':
+            elif WidgetType in ( 'ThermoMode', 'ACMode') and Attribute_ == '001c':
                 # value seems to come as int or str. To be fixed
                 self.log.logging( "Widget", "Debug", "------>  Thermostat Mode %s type: %s" %(value, type(value)), NWKID)
                 if value in THERMOSTAT_MODE_2_LEVEL:
@@ -427,8 +427,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 ( ClusterType == WidgetType == 'DoorLock') or \
                 ( ClusterType == 'DoorLock' and WidgetType == 'Vibration') or \
                 ( ClusterType == 'FanControl' and WidgetType == 'FanControl') or \
-                ( 'ThermoMode' in ClusterType and WidgetType == 'PAC-MODE' ) or \
-                ( 'ThermoMode' in ClusterType and WidgetType == 'PAC-WING' and Attribute_ =='fd00') or \
+                ( 'ThermoMode' in ClusterType and WidgetType == 'ACMode_2' ) or \
+                ( 'ThermoMode' in ClusterType and WidgetType == 'ACSwing' and Attribute_ =='fd00') or \
                 ( WidgetType == 'KF204Switch' and ClusterType in ( 'Switch', 'Door'))):
 
             # Plug, Door, Switch, Button ...
@@ -565,7 +565,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(value), BatteryLevel, SignalLevel)
 
             elif (( ClusterType == 'FanControl' and WidgetType == 'FanControl') or \
-                ( 'ThermoMode' in ClusterType and WidgetType == 'PAC-WING' and Attribute_ =='fd00'))  and \
+                ( 'ThermoMode' in ClusterType and WidgetType == 'ACSwing' and Attribute_ =='fd00'))  and \
                 'Model' in self.ListOfDevices[ NWKID ] and self.ListOfDevices[ NWKID ]['Model'] in ( 'AC211', 'AC221') and \
                  'Ep' in self.ListOfDevices[ NWKID ] and WidgetEp in self.ListOfDevices[ NWKID ]['Ep'] and \
                     '0201' in self.ListOfDevices[ NWKID ]['Ep'][ WidgetEp] and '001c' in self.ListOfDevices[ NWKID ]['Ep'][ WidgetEp]['0201'] \

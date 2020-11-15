@@ -71,7 +71,7 @@ DEVICE_SWITCH_MATRIX = {
 ACTIONATORS = [ 'Switch', 'Plug', 'SwitchAQ2', 'Smoke', 'DSwitch', 'LivoloSWL', 'LivoloSWR', 'Toggle',
             'Venetian', 'VenetianInverted', 'WindowCovering', 'BSO', 'BSO-Orientation', 'BSO-Volet',
             'LvlControl', 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl',
-            'ThermoSetpoint', 'ThermoMode', 'ThermoMode_2', 'ThermoModeEHZBRTS', 'FanControl', 'PAC-SWITCH', 'PAC-MODE', 'PAC-WING','TempSetCurrent', 'AlarmWD',
+            'ThermoSetpoint', 'ThermoMode', 'ACMode', 'ThermoMode_2', 'ThermoModeEHZBRTS', 'FanControl', 'PAC-SWITCH', 'ACMode_2', 'ACSwing','TempSetCurrent', 'AlarmWD',
             'FIP', 'HACTMODE','LegranCableMode', 'ContractPower','HeatingSwitch', 'DoorLock' ]
             
 def mgtCommand( self, Devices, Unit, Command, Level, Color ):
@@ -179,7 +179,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
             return
 
-        if DeviceType == 'ThermoMode':
+        if DeviceType in ( 'ThermoMode', 'ACMode'):
             self.log.logging( "Command", 'Debug', "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" 
                 %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
             
@@ -206,7 +206,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
             return
 
-        if DeviceType in ( 'PAC-MODE', 'FanControl') :
+        if DeviceType in ( 'ACMode_2', 'FanControl') :
             casaia_system_mode( self, NWKID, 'Off')
             
             #UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
@@ -214,7 +214,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             #self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
             return
 
-        if DeviceType == 'PAC-WING':
+        if DeviceType == 'ACSwing':
             if 'Model' in self.ListOfDevices[ NWKID ] and self.ListOfDevices[ NWKID ]['Model'] == 'AC201A':
                 casaia_swing_OnOff( self, NWKID, '00')
                 UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
@@ -475,7 +475,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
             return
 
-        if DeviceType == 'ThermoMode':
+        if DeviceType in  ('ThermoMode', 'ACMode'):
             self.log.logging( "Command", 'Debug', "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" 
                 %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
             self.log.logging( "Command", 'Debug', "ThermoMode - requested Level: %s" %Level, NWKID)
@@ -511,13 +511,13 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
                 change_fan_mode( self, NWKID, EPout, FAN_MODE[ Level ])
             self.ListOfDevices[NWKID]['Heartbeat'] = '0' 
 
-        if DeviceType == 'PAC-WING':
+        if DeviceType == 'ACSwing':
             if Level == 10:
                 casaia_swing_OnOff( self, NWKID, '01')
                 #UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return
 
-        if DeviceType == 'PAC-MODE':
+        if DeviceType == 'ACMode_2':
             if Level == 10:
                 casaia_system_mode( self, NWKID, 'Cool')
                 #UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)

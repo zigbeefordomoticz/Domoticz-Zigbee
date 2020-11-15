@@ -466,7 +466,7 @@ SWITCH_LVL_MATRIX = {
         }
     },
     
-    "PAC-MODE": {
+    "ACMode_2": {
         "00": (0, "00"), # Off
         "03": (1, "10"),  # Cool
         "04": (2, "20"),  # Heat
@@ -492,7 +492,7 @@ SWITCH_LVL_MATRIX = {
             "fr-FR": {"LevelNames": "Arrêt|Auto|Froid|Chaud|Déshumidicateur|Ventilateur"}
         }
     },
-    "ThermoModeCASAIA": {
+    "ACMode": {
         '00': (0, "00"), # Off
         '03': (1, "10"),  # Cool
         '04': (2, "20"),  # Heat
@@ -505,7 +505,7 @@ SWITCH_LVL_MATRIX = {
         }
     },
 
-    'PAC-WING': {
+    'ACSwing': {
         "00": (0, "00"), # Off - All wings stopped
         "01": (1, "10"), # On Mode
         "ForceUpdate": True, 
