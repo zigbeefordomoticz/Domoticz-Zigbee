@@ -2236,6 +2236,10 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.log.logging( "Cluster", 'Debug', "Cluster0702 - %s/%s Summation Formatting: %s" %(MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr)
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
 
+    elif MsgAttrID == "0304":   # TotalActivePower
+        self.log.logging( "Cluster", 'Debug', "Cluster0702 - %s/%s TotalActivePower: %s" %(MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr)
+        checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
+
     elif MsgAttrID == "0306":   # Device Type
         MEASURE_DEVICE_TYPE = { 0: "Electric Metering",
                 1: "Gas Metering",
