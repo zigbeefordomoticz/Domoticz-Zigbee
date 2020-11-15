@@ -2122,21 +2122,31 @@ def Cluster0502( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 def compute_conso( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, raw_value ):
 
     conso = raw_value # Raw value
-    if '0302' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]:
+    if ( MsgSrcEp in self.ListOfDevices[MsgSrcAddr]['Ep']
+       and MsgClusterId in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp] 
+       and '0302' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]):
         diviser = self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]['0302']
         value = round( conso / ( diviser / 1000 ),3)
         self.log.logging( "Cluster", 'Debug', "compute_conso - %s Power %s, div: %s --> %s Watts" %( MsgAttrID, conso, diviser, value))
-    elif '0301' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]:
+    elif ( MsgSrcEp in self.ListOfDevices[MsgSrcAddr]['Ep']
+           and MsgClusterId in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp] 
+           and '0301' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]):
         multiplier = self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]['0301']
         value = round( conso * multiplier, 3)
         self.log.logging( "Cluster", 'Debug', "compute_conso - %s Power %s, multiply: %s --> %s Watts" %( MsgAttrID, conso, multiplier, value))
     else:
         # Old fashion
         value = round(conso/10, 3)
-        if 'Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Model'] == 'EH-ZB-SPD-V2':
+        if 'Model' in self.ListOfDevices[MsgSrcAddr]:
+            if self.ListOfDevices[MsgSrcAddr]['Model'] == 'EH-ZB-SPD-V2':
                 value = round(conso, 3)
-        if 'Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Model'] == 'TS0121':
-                value = conso*10
+
+            elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'TS0121':
+                value = round(conso * 10,3)
+
+            elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'PC321':
+                value = round(conso ,3)
+        
 
     return ( value )
 
@@ -2306,7 +2316,10 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             line = 1 + (int(MsgAttrID,16) - 0x2000)
             fake_ep = 'f%s' %line
             conso = compute_conso( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID,value )
+
+            checkAndStoreAttributeValue( self, MsgSrcAddr, fake_ep, MsgClusterId, MsgAttrID, str(conso) )
             self.ListOfDevices[MsgSrcAddr]['Ep'][fake_ep][MsgClusterId]['0400'] = str(conso)
+
             self.log.logging( "Cluster", 'Log', "readCluster - %s - %s/%s CASAIA PC321 phase Power Line: %s Power %s" %( MsgClusterId, MsgSrcAddr, fake_ep, line, conso))
             MajDomoDevice(self, Devices, fake_ep, fake_ep, MsgClusterId, str(conso) )
 
@@ -2314,6 +2327,12 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             line = 1 + (int(MsgAttrID,16) - 0x3000)
             fake_ep = 'f%s' %line
             value /= 10
+
+            checkAndStoreAttributeValue( self, MsgSrcAddr, fake_ep, MsgClusterId, MsgAttrID, str(value) )
+            if '0001' not in self.ListOfDevices[ MsgSrcAddr ]['Ep'][ fake_ep ]:
+                self.ListOfDevices[ MsgSrcAddr ]['Ep'][ fake_ep ]['0001'] = {}
+            self.ListOfDevices[MsgSrcAddr]['Ep'][fake_ep]['0001']['0000'] = str(value)
+
             self.log.logging( "Cluster", 'Log', "readCluster - %s - %s/%s CASAIA PC321 phase Power Line: %s Voltage %s" %( MsgClusterId, MsgSrcAddr, fake_ep, line, value))
             MajDomoDevice(self, Devices, MsgSrcAddr, fake_ep, '0001', str(value) )
 
@@ -2321,6 +2340,12 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             line = 1 + (int(MsgAttrID,16) - 0x3100)
             fake_ep = 'f%s' %line
             value /= 1000
+
+            checkAndStoreAttributeValue( self, MsgSrcAddr, fake_ep, MsgClusterId, MsgAttrID, str(value) )
+            if '0b04' not in self.ListOfDevices[ MsgSrcAddr ]['Ep'][ fake_ep ]:
+                self.ListOfDevices[ MsgSrcAddr ]['Ep'][ fake_ep ]['0b04'] = {}
+            self.ListOfDevices[MsgSrcAddr]['Ep'][fake_ep]['0b04']['0508'] = str(value)
+
             self.log.logging( "Cluster", 'Log', "readCluster - %s - %s/%s CASAIA PC321 phase Power Line: %s Current %s" %( MsgClusterId, MsgSrcAddr, fake_ep, line, value))
             MajDomoDevice(self, Devices, MsgSrcAddr, fake_ep, '0b04', str(value), Attribute_='0508')
 
@@ -2328,9 +2353,13 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             line = 1 + (int(MsgAttrID,16) - 0x4000)
             fake_ep = 'f%s' %line
             conso = compute_conso( self, MsgSrcAddr,MsgSrcEp, MsgClusterId, '0000', value )
+
+            checkAndStoreAttributeValue( self, MsgSrcAddr, fake_ep,MsgClusterId, MsgAttrID, str(value) )
             self.ListOfDevices[MsgSrcAddr]['Ep'][fake_ep][MsgClusterId]['0000'] = str(conso)
+
             self.log.logging( "Cluster", 'Log', "readCluster - %s - %s/%s CASAIA PC321 phase Power Line: %s Summation Power %s" %( MsgClusterId, MsgSrcAddr, fake_ep, line, conso))
             MajDomoDevice(self, Devices, MsgSrcAddr, fake_ep, '0702', str(conso), Attribute_='0000')
+
         else:
 
             self.log.logging( "Cluster", 'Log', "readCluster - %s - %s/%s CASAIA PC321 phase Power Clamp: %s %s %s %s (value: %s)" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)    
