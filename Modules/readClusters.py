@@ -2305,7 +2305,7 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         if MsgAttrID in ( '2000', '2001', '2002'): # Lx phase Power
             line = 1 + (int(MsgAttrID,16) - 0x2000)
             fake_ep = 'f%s' %line
-            conso = compute_conso( self, MsgSrcAddr, fake_ep, MsgClusterId, MsgAttrID,value )
+            conso = compute_conso( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID,value )
             self.ListOfDevices[MsgSrcAddr]['Ep'][fake_ep][MsgClusterId]['0400'] = str(conso)
             self.log.logging( "Cluster", 'Log', "readCluster - %s - %s/%s CASAIA PC321 phase Power Line: %s Power %s" %( MsgClusterId, MsgSrcAddr, fake_ep, line, conso))
             MajDomoDevice(self, Devices, fake_ep, fake_ep, MsgClusterId, str(conso) )
@@ -2327,7 +2327,7 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         elif MsgAttrID in ( '4000', '4001', '4002'): # Lx Energy Consuption (Meter)
             line = 1 + (int(MsgAttrID,16) - 0x4000)
             fake_ep = 'f%s' %line
-            conso = compute_conso( self, MsgSrcAddr,fake_ep, MsgClusterId, '0000', value )
+            conso = compute_conso( self, MsgSrcAddr,MsgSrcEp, MsgClusterId, '0000', value )
             self.ListOfDevices[MsgSrcAddr]['Ep'][fake_ep][MsgClusterId]['0000'] = str(conso)
             self.log.logging( "Cluster", 'Log', "readCluster - %s - %s/%s CASAIA PC321 phase Power Line: %s Summation Power %s" %( MsgClusterId, MsgSrcAddr, fake_ep, line, conso))
             MajDomoDevice(self, Devices, MsgSrcAddr, fake_ep, '0702', str(conso), Attribute_='0000')
