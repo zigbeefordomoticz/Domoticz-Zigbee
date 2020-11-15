@@ -2321,7 +2321,7 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             self.ListOfDevices[MsgSrcAddr]['Ep'][fake_ep][MsgClusterId]['0400'] = str(conso)
 
             self.log.logging( "Cluster", 'Log', "readCluster - %s - %s/%s CASAIA PC321 phase Power Line: %s Power %s" %( MsgClusterId, MsgSrcAddr, fake_ep, line, conso))
-            MajDomoDevice(self, Devices, fake_ep, fake_ep, MsgClusterId, str(conso) )
+            MajDomoDevice(self, Devices, MsgSrcAddr, fake_ep, MsgClusterId, str(conso) )
 
         elif MsgAttrID in ( '3000', '3001', '3002'): # Lx Voltage
             line = 1 + (int(MsgAttrID,16) - 0x3000)
@@ -2362,7 +2362,7 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
         else:
 
-            self.log.logging( "Cluster", 'Log', "readCluster - %s - %s/%s CASAIA PC321 phase Power Clamp: %s %s %s %s (value: %s)" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)    
+            self.log.logging( "Cluster", 'Debug', "readCluster - %s - %s/%s CASAIA PC321 phase Power Clamp: %s %s %s %s (value: %s)" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)    
 
 
     else:
