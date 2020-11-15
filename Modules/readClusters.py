@@ -1459,7 +1459,7 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.log.logging( "Cluster", 'Debug', "ReadCluster - 0201 - Cooling Setpoint: %s" %ValueTemp, MsgSrcAddr)
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  ValueTemp )
 
-        if self.ListOfDevices[MsgSrcAddr]['Model'] == 'AC211':
+        if self.ListOfDevices[MsgSrcAddr]['Model'] in  ('AC211', 'AC221'):
             # We do report if AC211 and AC in Cool mode
             if MsgClusterId in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
                 if '001c' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]:
@@ -1476,7 +1476,7 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             if self.ListOfDevices[MsgSrcAddr]['Model'] == 'AC201A':
                 # We do not report this, as AC201 rely on 0xffad cluster
                 pass
-            elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'AC211':
+            elif self.ListOfDevices[MsgSrcAddr]['Model'] in ('AC211', 'AC221'):
                 # We do report if AC211 and AC in Heat mode
                 if MsgClusterId in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
                     if '001c' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]:
