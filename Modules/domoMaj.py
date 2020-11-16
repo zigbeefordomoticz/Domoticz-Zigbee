@@ -416,11 +416,15 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
             if WidgetType == "BSO-Orientation":
                 # Receveive Level (orientation) in degrees to convert into % for the slider
                 # Translate the Angle into Selector item
-                selector = ( int(value,16) // 10 ) * 10
-                Domoticz.Log("----- Angle: %s Converted into: %s" %(value, selector))
-                nValue = selector // 10
-                sValue = str(selector)
-                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
+                nValue = ( int(value,16) // 10 )
+                if nValue > 10:
+                    nValue = 10
+
+                sValue = str(nValue * 10)
+                Domoticz.Log("----- Angle: %s/%s Converted into: %s" %(value, int(value,16), nValue))
+                Domoticz.Log("----Update Device: %s with nValue: %s sValue: %s" %(DeviceUnit, nValue, sValue))
+                #UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
+                return
 
         if WidgetType not in ( 'ThermoModeEHZBRTS', ) and \
             (   ( ClusterType in ( 'IAS_ACE', 'Alarm', 'Door', 'Switch', 'SwitchButton', 'AqaraOppleMiddle', 'Motion', 
