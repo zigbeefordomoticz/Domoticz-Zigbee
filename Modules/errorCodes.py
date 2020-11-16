@@ -112,29 +112,23 @@ ZCL_EXTENDED_ERROR_CODES = {
     '8b': 'No Broadcast transaction table entries free'
 }
 
-def DisplayStatusCode( StatusCode ) :
+def DisplayStatusCode( StatusCode ):
 
     StatusMsg=""
     if StatusCode in ZIGATE_CODES:
-        StatusMsg = "ZIGATE - [%s] %s" %(StatusCode,ZIGATE_CODES[StatusCode])
+        return "ZIGATE - [%s] %s" %(StatusCode,ZIGATE_CODES[StatusCode])
 
     elif StatusCode in APS_CODES:
-        StatusMsg = "APS - [%s] %s" %(StatusCode,APS_CODES[StatusCode])
+        return "APS - [%s] %s" %(StatusCode,APS_CODES[StatusCode])
 
     elif StatusCode in NWK_CODES:
-        StatusMsg = "NWK - [%s] %s" %(StatusCode,NWK_CODES[StatusCode])
+        return "NWK - [%s] %s" %(StatusCode,NWK_CODES[StatusCode])
 
     elif StatusCode in MAC_CODES:
-        StatusMsg = "MAC - [%s] %s" %(StatusCode,MAC_CODES[StatusCode])
+        return "MAC - [%s] %s" %(StatusCode,MAC_CODES[StatusCode])
 
-    elif StatusCode in ZCL_EXTENDED_ERROR_CODES:
-        StatusMsg = "Extended Error Code - [%s] %s" %(StatusCode,ZCL_EXTENDED_ERROR_CODES[StatusCode])
-        
     else:
-        StatusMsg="Unknown code : %s" %StatusCode
-
-
-    return StatusMsg
+        return "Unknown code : %s" %StatusCode
 
 
 

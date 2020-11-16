@@ -63,7 +63,7 @@ from Modules.lumi import AqaraOppleDecoding, enableOppleSwitch
 from Modules.configureReporting import processConfigureReporting
 from Modules.schneider_wiser import schneider_wiser_registration, wiser_read_attribute_request
 from Modules.legrand_netatmo import rejoin_legrand_reset
-from Modules.errorCodes import DisplayStatusCode
+from Modules.errorCodes import DisplayStatusCode, ZCL_EXTENDED_ERROR_CODES
 from Modules.readClusters import ReadCluster
 from Modules.zigateConsts import (
     ADDRESS_MODE,
@@ -4571,4 +4571,17 @@ def Decode0208(self, Devices, MsgData, MsgLQI):
 
 def Decode9999(self, Devices, MsgData, MsgLQI):
 
-    Domoticz.Error("Decode9999: MsgData: %s" %MsgData)
+    
+
+    StatusMsg = ''
+    if  MsgData in ZCL_EXTENDED_ERROR_CODES:
+        StatusMsg = ZCL_EXTENDED_ERROR_CODES[MsgData]
+
+    _context = {
+        'Error code': 'ZIG9999',
+        'Device': None,
+        'ExtendedErrorCode': MsgData,
+        'ExtendedErrorDesc': StatusMsg
+    }
+
+    self.log.logging( "PDM", "Error", "decode9999 - PDM event : Extended Error code: %s" % (MsgData), None, _context)
