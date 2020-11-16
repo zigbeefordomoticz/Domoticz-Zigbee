@@ -183,6 +183,7 @@ def ZigateRead(self, Devices, Data, TransportInfos=None):
         "0206": Decode0206,
         "0207": Decode0207,
         "0208": Decode0208,
+        "9999": Decode9999,
     }
 
     NOT_IMPLEMENTED = ("00d1", "8029", "80a0", "80a1", "80a2", "80a3", "80a4")
@@ -4553,3 +4554,9 @@ def Decode0208(self, Devices, MsgData, MsgLQI):
 
     # self.log.logging( "Input", 'Debug',  "Decode0208 - PDMExistanceRequest: %20.20s" %(MsgData))
     PDMExistanceRequest(self, MsgData)
+
+
+
+def Decode9999(self, Devices, MsgData, MsgLQI):
+
+    Domoticz.Error("Decode9999: MsgData: %s" %MsgData)
