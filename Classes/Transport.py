@@ -749,8 +749,9 @@ def send_data_internal(self, InternalSqn):
             set_cmdresponse_for_sending(self, InternalSqn)
 
     # Go!
-    self.loggingSend('Debug', "--- send_data_internal - Command: %s  Q(0x8000): %s Q(Ack/Nack): %s Q(Response): %s sendNow: %s"
-        % (self.ListOfCommands[InternalSqn]['Cmd'], len(self._waitFor8000Queue), len(self._waitForAckNack), len(self._waitForCmdResponseQueue), sendNow))
+    if self.pluginconf.pluginConf["debugzigateCmd"]:
+        self.loggingSend('Log', "--- send_data_internal - Command: %s  Q(0x8000): %s Q(Ack/Nack): %s Q(Response): %s sendNow: %s"
+            % (self.ListOfCommands[InternalSqn]['Cmd'], len(self._waitFor8000Queue), len(self._waitForAckNack), len(self._waitForCmdResponseQueue), sendNow))
 
     #printListOfCommands( self, 'after correction before sending', InternalSqn )
     _send_data(self, InternalSqn)
@@ -905,11 +906,12 @@ def _send_data(self, InternalSqn):
     self.ListOfCommands[InternalSqn]['Status'] = 'SENT'
     self.ListOfCommands[InternalSqn]['SentTimeStamp'] = int(time.time())
 
-    self.loggingSend('Debug', "======================== Send to Zigate - [%s] %s %s ExpectAck: %s ExpectResponse: %s WaitForResponse: %s" % (
-        InternalSqn, cmd, datas, 
-        self.ListOfCommands[InternalSqn]['ExpectedAck'], 
-        self.ListOfCommands[InternalSqn]['ResponseExpected'], 
-        self.ListOfCommands[InternalSqn]['WaitForResponse']))
+    if self.pluginconf.pluginConf["debugzigateCmd"]:
+        self.loggingSend('Log', "======================== Send to Zigate - [%s] %s %s ExpectAck: %s ExpectResponse: %s WaitForResponse: %s" % (
+            InternalSqn, cmd, datas, 
+            self.ListOfCommands[InternalSqn]['ExpectedAck'], 
+            self.ListOfCommands[InternalSqn]['ResponseExpected'], 
+            self.ListOfCommands[InternalSqn]['WaitForResponse']))
 
     if datas == "":
         length = "0000"
@@ -1180,7 +1182,7 @@ def process_frame(self, frame):
 
         sqn_aps = None
         type_sqn = None
-        if len(MsgData) == 12:
+        if len(MsgData) >= 12:
             # New Firmware 3.1d (get aps sqn)
             type_sqn = MsgData[8:10]
             sqn_aps = MsgData[10:12]
@@ -1474,13 +1476,15 @@ def process_msg_type8011_above31d(self, Status, NwkId, Ep, MsgClusterId, ExternS
 
     if Status == '00':
         if InternSqn in self.ListOfCommands:
-            self.loggingSend('Debug', " - Above 3.1d [%s] receive Ack for Cmd: %s - size of SendQueue: %s" % (
-                InternSqn,  self.ListOfCommands[InternSqn]['Cmd'], self.loadTransmit()))
+            if self.pluginconf.pluginConf["debugzigateCmd"]:
+                self.loggingSend('Log', " - Above 3.1d [%s] receive Ack for Cmd: %s - size of SendQueue: %s" % (
+                    InternSqn,  self.ListOfCommands[InternSqn]['Cmd'], self.loadTransmit()))
         self.statistics._APSAck += 1
     else:
         if InternSqn in self.ListOfCommands:
-            self.loggingSend('Debug', " - Above 3.1d [%s] receive Nack for Cmd: %s - size of SendQueue: %s" % (
-                InternSqn,  self.ListOfCommands[InternSqn]['Cmd'], self.loadTransmit()))
+            if self.pluginconf.pluginConf["debugzigateCmd"]:
+                self.loggingSend('Log', " - Above 3.1d [%s] receive Nack for Cmd: %s - size of SendQueue: %s" % (
+                    InternSqn,  self.ListOfCommands[InternSqn]['Cmd'], self.loadTransmit()))
 
             # In that case we should remove the WaitFor Response if any !
         if len(self._waitForCmdResponseQueue) > 0:
