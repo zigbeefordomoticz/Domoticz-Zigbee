@@ -324,16 +324,22 @@ def Decode8000_v2(self, Devices, MsgData, MsgLQI):  # Status
         sqn_aps = MsgData[10:12]
         dsqn_aps = int(sqn_aps, 16)
 
+    npdu = apdu = None
+    if len(MsgData) == 16:
+        # Debuging infos
+        npdu =MsgData[12:14]
+        apdu = MsgData[14:16]
+
     if self.pluginconf.pluginConf["debugzigateCmd"]:
         i_sqn = None
         if PacketType in ("0100", "0120", "0110"):
             i_sqn = sqn_get_internal_sqn_from_app_sqn( self.ZigateComm, sqn_app, TYPE_APP_ZCL )
         if i_sqn:
-            self.log.logging(  "Input", "Log", "Decode8000 - [%3s] PacketType: %s TypeSqn: %s sqn_app: %s/%s sqn_aps: %s/%s Status: [%s] "
-                % ( i_sqn, PacketType, type_sqn, sqn_app, dsqn_app, sqn_aps, dsqn_aps, Status, ), )
+            self.log.logging(  "Input", "Log", "Decode8000 - [%3s] PacketType: %s TypeSqn: %s sqn_app: %s/%s sqn_aps: %s/%s Status: [%s] npdu: %s apdu: %s "
+                % ( i_sqn, PacketType, type_sqn, sqn_app, dsqn_app, sqn_aps, dsqn_aps, Status, npdu, apdu ), )
         else:
-            self.log.logging(  "Input", "Log", "Decode8000 - [  ] PacketType: %s TypeSqn: %s sqn_app: %s/%s sqn_aps: %s/%s Status: [%s] "
-                % (PacketType, type_sqn, sqn_app, dsqn_app, sqn_aps, dsqn_aps, Status),)
+            self.log.logging(  "Input", "Log", "Decode8000 - [  ] PacketType: %s TypeSqn: %s sqn_app: %s/%s sqn_aps: %s/%s Status: [%s] npdu: %s apdu: %s"
+                % (PacketType, type_sqn, sqn_app, dsqn_app, sqn_aps, dsqn_aps, Status, npdu, apdu),)
 
     STATUS_CODE = {
         '00': "Success",
