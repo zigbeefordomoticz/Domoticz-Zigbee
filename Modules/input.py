@@ -3364,6 +3364,12 @@ def Decode8401(
         test = (int(MsgZoneStatus, 16) >> 8) & 1
         battdef = (int(MsgZoneStatus, 16) >> 9) & 1
 
+
+        if 'Ep' not in self.ListOfDevices[MsgSrcAddr]:
+            return
+        if MsgEp not in self.ListOfDevices[MsgSrcAddr]['Ep']:
+            return
+
         if "0500" not in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEp]:
             self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEp]["0500"] = {}
         if not isinstance(self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEp]["0500"], dict):

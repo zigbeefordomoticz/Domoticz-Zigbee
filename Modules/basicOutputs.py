@@ -535,7 +535,7 @@ def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zig
     
     # APS RAW is always sent in NO-ACK below 31d (included)
     # APS RAW has ACK/NO-ACK option as of 31e
-    self.log.logging( "debuginRawAPS", 'Log', "raw_APS_request - ackIsDisabled: %s Addr: %s Ep: %s Cluster: %s ProfileId: %s Payload: %s" %(ackIsDisabled , targetaddr, dest_ep, cluster, profileId, payload))
+    self.log.logging( "debuginRawAPS", 'Debug', "raw_APS_request - ackIsDisabled: %s Addr: %s Ep: %s Cluster: %s ProfileId: %s Payload: %s" %(ackIsDisabled , targetaddr, dest_ep, cluster, profileId, payload))
     #if self.pluginconf.pluginConf['ieeeForRawAps']:
     #    ieee = self.ListOfDevices[ targetaddr]['IEEE']
     #    if ackIsDisabled:

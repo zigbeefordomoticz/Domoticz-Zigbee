@@ -332,6 +332,9 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                         continue
                     if iterReadAttrCluster not in READ_ATTRIBUTES_REQUEST:
                         continue
+                    if iterReadAttrCluster == '0500':
+                        # Skip IAS as it is address by IAS Enrollment
+                        continue
                     if self.pluginconf.pluginConf['capturePairingInfos']:
                         self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'RA_' + iterEp + '_' + iterReadAttrCluster )
                     #if iterReadAttrCluster == '0000':
