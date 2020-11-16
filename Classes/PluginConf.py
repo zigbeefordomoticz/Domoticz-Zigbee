@@ -306,6 +306,7 @@ SETTINGS = {
         'rebindLivolo':          {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': False},
         'allowAutoPairing':      {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'forceAckOnZCL':         {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
+        'forceFullSeqMode':      {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False,  'Advanced': True}
         }
     }
 }
