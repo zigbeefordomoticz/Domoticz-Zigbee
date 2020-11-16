@@ -66,6 +66,8 @@ class ZigateTransport(object):
         # ZigBee31c (for  firmware below 31c, when Ack --> WaitForResponse )
         # ZigBeeack ( for firmware above 31d, When Ack --> WaitForAck )
 
+        self.FirmwareVersion = None
+        self.FirmwareMajorVersion = None
         self.zmode = pluginconf.pluginConf['Zmode'].lower()
         self.loggingSend('Status', "==> Transport Mode: %s" % self.zmode)
         self.firmware_with_aps_sqn = False
@@ -114,8 +116,13 @@ class ZigateTransport(object):
         else:
             Domoticz.Error("Unknown Transport Mode: %s" % transport)
 
+
     # Thread handling Serial Input/Output
     # Priority on Reading
+    
+    def update_ZiGate_Version ( self, FirmwareVersion, FirmwareMajorVersion):
+        self.FirmwareVersion = FirmwareVersion
+        self.FirmwareMajorVersion = FirmwareMajorVersion
 
     def start_thread_watchdog( self ):
         if self.WatchDogThread is None:
