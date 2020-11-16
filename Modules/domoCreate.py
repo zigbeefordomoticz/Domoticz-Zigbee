@@ -292,20 +292,20 @@ def CreateDomoDevice(self, Devices, NWKID):
             self.log.logging("Widget", "Debug", "CreateDomoDevice - DevId: %s DevEp: %s Type: %s" %(DeviceID_IEEE, Ep, t), NWKID)
 
             # === Selector Switches
-            if t in ( 'PAC-MODE', ): # 6
+            if t in ( 'ACMode_2', ): # 5
                 Options = createSwitchSelector( self, 5 , DeviceType = t, OffHidden = False, SelectorStyle = 1)
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options, Image = 16)
-                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in PAC-MODE" %(t), NWKID)
+                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in ACMode_2" %(t), NWKID)
 
-            if t in ( 'FanControl', ): # 8
-                Options = createSwitchSelector( self, 5 , DeviceType = t, OffHidden = False, SelectorStyle = 1)
+            if t in ( 'FanControl', ): # 6
+                Options = createSwitchSelector( self, 6 , DeviceType = t, OffHidden = False, SelectorStyle = 1)
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options, Image = 7)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in FanControl" %(t), NWKID)        
 
-            if t in ( 'PAC-WING', ): # 3
-                Options = createSwitchSelector( self, 3 , DeviceType = t, OffHidden = True, SelectorStyle = 1)
+            if t in ( 'ACSwing', ): # 2
+                Options = createSwitchSelector( self, 2 , DeviceType = t, SelectorStyle = 1)
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
-                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in PAC-WING" %(t), NWKID)        
+                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in ACSwing" %(t), NWKID)        
 
             # 3 Selectors, Style 0
             if t in ("Toggle", "ThermoMode_2"): 
@@ -345,9 +345,14 @@ def CreateDomoDevice(self, Devices, NWKID):
 
             # 5 Selectors, Style 0 ( mode command)
             if t in ('ThermoMode', ):
-                Options = createSwitchSelector( self,  7,  DeviceType = t,SelectorStyle = 0 )
+                Options = createSwitchSelector( self,  6,  DeviceType = t,SelectorStyle = 1 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in ThermoMode" %(t), NWKID)
+
+            if t in ('ACMode', ):
+                Options = createSwitchSelector( self,  5,  DeviceType = t,SelectorStyle = 1 )
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
+                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in ACMode" %(t), NWKID)
 
             # 5 Selectors, Style 1
             if t in ('Generic_5_buttons', 'LegrandSelector', 'SwitchAQ3', 'SwitchIKEA', 'AqaraOppleMiddleBulb'): 

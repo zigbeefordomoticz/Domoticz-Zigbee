@@ -278,9 +278,9 @@ def lastSeenUpdate( self, Devices, Unit=None, NwkId=None):
     # It might required to call Touch everytime we receive a message from the device and not only when update is requested.
 
     if Unit:
-        self.log.logging( "Widget", "Debug", "Touch unit %s" %( Devices[Unit].Name ))
+        self.log.logging( "Widget", "Debug2", "Touch unit %s" %( Devices[Unit].Name ))
         if (not self.VersionNewFashion and (self.DomoticzMajor < 4 or ( self.DomoticzMajor == 4 and self.DomoticzMinor < 10547))):
-            self.log.logging( "Widget", "Debug", "Not the good Domoticz level for lastSeenUpdate %s %s %s" 
+            self.log.logging( "Widget", "Debug2", "Not the good Domoticz level for lastSeenUpdate %s %s %s" 
                 %(self.VersionNewFashion, self.DomoticzMajor, self.DomoticzMinor ), NwkId)
             return
         # Extract NwkId from Device Unit
@@ -326,7 +326,7 @@ def lastSeenUpdate( self, Devices, Unit=None, NwkId=None):
             return
         for x in Devices:
             if Devices[x].DeviceID == _IEEE:
-                self.log.logging( "Widget", "Debug",  "Touch unit %s nwkid: %s " %( Devices[x].Name, NwkId ), NwkId)
+                self.log.logging( "Widget", "Debug2",  "Touch unit %s nwkid: %s " %( Devices[x].Name, NwkId ), NwkId)
                 if Devices[x].TimedOut:
                     timedOutDevice( self, Devices, Unit=x, MarkTimedOut=0)
                 else:

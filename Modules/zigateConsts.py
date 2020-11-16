@@ -565,23 +565,20 @@ THERMOSTAT_LEVEL_2_MODE = {
     10: 'Auto',
     20: 'Cool',
     30: 'Heat',
-    40: 'Emergency Heating',
-    50: 'Dry',
-    60: 'Fan Only',
-    70: 'Sleep',
+    40: 'Dry',
+    50: 'Fan Only',
     }
-
 
 THERMOSTAT_MODE_2_LEVEL = {
     0x00: '00',  # Off
     0x01: '10',  # Auto
     0x03: '20',  # Cool
     0x04: '30',  # Heat
-    0x05: '40',  # Force Heat
-    0x06: '50',  # Precooling
-    0x07: '60',  # Fan only
-    0x08: '70',  # Dry
-    0x09: '80',  # Sleep
+    0x05: '30',  # Force Heat
+    0x06: '10',  # Precooling
+    0x07: '50',  # Fan only
+    0x08: '40',  # Dry
+    0x09: '00',  # Sleep
     }
 
 
