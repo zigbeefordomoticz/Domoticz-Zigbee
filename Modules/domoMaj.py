@@ -416,7 +416,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
             if WidgetType == "BSO-Orientation":
                 # Receveive Level (orientation) in degrees to convert into % for the slider
                 # Translate the Angle into Selector item
-                nValue = ( int(value,16) // 10 )
+                nValue = round( int(value,16) / 10 )
                 if nValue > 10:
                     nValue = 10
 
