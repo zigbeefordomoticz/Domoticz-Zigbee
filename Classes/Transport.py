@@ -994,17 +994,24 @@ def check_timed_out(self):
         for x in list(self.ListOfCommands.keys()):
             if 'SentTimeStamp' in self.ListOfCommands[x] and self.ListOfCommands[x]['SentTimeStamp'] and (now - self.ListOfCommands[x]['SentTimeStamp']) > TIME_OUT_LISTCMD:
                 if self.ListOfCommands[x]['MessageResponse']:
-                    self.loggingSend('Debug', " --  --  --  > - Time Out : [%s] %s %s Flags: %s/%s %04x Status: %s Time: %s"
-                                     % (x, self.ListOfCommands[x]['Cmd'], self.ListOfCommands[x]['Datas'], self.ListOfCommands[x]['ResponseExpected'],
-                                        self.ListOfCommands[x]['ExpectedAck'], self.ListOfCommands[x]['MessageResponse'],
-                                        self.ListOfCommands[x]['Status'],
-                                        self.ListOfCommands[x]['ReceiveTimeStamp'].strftime("%m/%d/%Y, %H:%M:%S")))
+                    try:
+                        self.loggingSend('Debug', " --  --  --  > - Time Out : [%s] %s %s Flags: %s/%s %04x Status: %s Time: %s"
+                                         % (x, self.ListOfCommands[x]['Cmd'], self.ListOfCommands[x]['Datas'], self.ListOfCommands[x]['ResponseExpected'],
+                                            self.ListOfCommands[x]['ExpectedAck'], self.ListOfCommands[x]['MessageResponse'],
+                                            self.ListOfCommands[x]['Status'],
+                                            self.ListOfCommands[x]['ReceiveTimeStamp'].strftime("%m/%d/%Y, %H:%M:%S")))
+                    except:
+                        self.loggingSend('Error', "--  --  --  > - Time Out Missing flag in ListOfCommands: [%s] %s" %(x, self.ListOfCommands[x]))
+
                 else:
-                    self.loggingSend('Debug', " --  --  --  > - Time Out : [%s] %s %s Flags: %s/%s Status: %s Time: %s "
-                                     % (x, self.ListOfCommands[x]['Cmd'], self.ListOfCommands[x]['Datas'],
-                                        self.ListOfCommands[x]['ResponseExpected'], self.ListOfCommands[x]['ExpectedAck'],
-                                        self.ListOfCommands[x]['Status'],
-                                        self.ListOfCommands[x]['ReceiveTimeStamp'].strftime("%m/%d/%Y, %H:%M:%S")))
+                    try:
+                        self.loggingSend('Debug', " --  --  --  > - Time Out : [%s] %s %s Flags: %s/%s Status: %s Time: %s "
+                                         % (x, self.ListOfCommands[x]['Cmd'], self.ListOfCommands[x]['Datas'],
+                                            self.ListOfCommands[x]['ResponseExpected'], self.ListOfCommands[x]['ExpectedAck'],
+                                            self.ListOfCommands[x]['Status'],
+                                            self.ListOfCommands[x]['ReceiveTimeStamp'].strftime("%m/%d/%Y, %H:%M:%S")))
+                    except:
+                        self.loggingSend('Error', "--  --  --  > - Time Out Missing flag in ListOfCommands: [%s] %s" %(x, self.ListOfCommands[x]))
 
                 del self.ListOfCommands[x]
 
