@@ -1890,7 +1890,7 @@ def Cluster0402( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         if ( 'Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Model'] == 'VOC_Sensor' ):
             # Humidity
             #Domoticz.Log("Update VOC Sensor Humidity: %s" %value)
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0405', value // 100 , Attribute_ = MsgAttrID)
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0405', round( value / 100 ), Attribute_ = MsgAttrID)
 
     elif MsgAttrID == '0002':
         value = int(decodeAttribute( self, MsgAttType, MsgClusterData))
