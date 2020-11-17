@@ -423,7 +423,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 sValue = str(nValue * 10)
                 Domoticz.Log("----- Angle: %s/%s Converted into: %s" %(value, int(value,16), nValue))
                 Domoticz.Log("----Update Device: %s with nValue: %s sValue: %s" %(DeviceUnit, nValue, sValue))
-                #UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
+                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
                 return
 
         if WidgetType not in ( 'ThermoModeEHZBRTS', ) and \
