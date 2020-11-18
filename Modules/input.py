@@ -843,22 +843,12 @@ def Decode8012(self, Devices, MsgData, MsgLQI):
         MsgSQN = MsgData[24:26]
         if MsgSrcIEEE in self.IEEE2NWK:
             MsgSrcNwkId = self.IEEE2NWK[MsgSrcIEEE]
-            self.log.logging( 
-                "Input",
-                "Log",
-                "Decode8012 - Src: %s, SrcEp: %s,Status: %s"
-                % (MsgSrcNwkId, MsgSrcEp, MsgStatus),
-            )
+            self.log.logging(  "Input", "Log", "Decode8012 - Src: %s, SrcEp: %s,Status: %s" % (MsgSrcNwkId, MsgSrcEp, MsgStatus), )
     else:
         MsgSrcNwkid = MsgData[8:12]
         MsgSQN = MsgData[12:14]
 
-        self.log.logging( 
-            "Input",
-            "Log",
-            "Decode8012 - Src: %s, SrcEp: %s,Status: %s"
-            % (MsgSrcNwkid, MsgSrcEp, MsgStatus),
-        )
+        self.log.logging(  "Input", "Log", "Decode8012 - Src: %s, SrcEp: %s,Status: %s" % (MsgSrcNwkid, MsgSrcEp, MsgStatus), )
 
 
 def Decode8014(self, Devices, MsgData, MsgLQI):  # "Permit Join" status response
