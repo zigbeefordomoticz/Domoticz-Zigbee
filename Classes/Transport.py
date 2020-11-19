@@ -971,7 +971,7 @@ def check_timed_out(self):
             return
         InternalSqn, TimeStamp = entry
         logExpectedCommand(self, 'Ack', now, TimeStamp, InternalSqn)
-        if self.zmode == 'zigateack' and self.ListOfCommands[InternalSqn]['WaitForResponse']:
+        if self.zmode == 'zigateack' and InternalSqn in self.ListOfCommands and self.ListOfCommands[InternalSqn]['WaitForResponse']:
             _next_cmd_from_wait_cmdresponse_queue(self)
 
         cleanup_list_of_commands(self, InternalSqn)
