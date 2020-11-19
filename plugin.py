@@ -778,7 +778,7 @@ def zigateInit_Phase2( self):
     """
     Make sure that all setup is in place
     """
-
+    Domoticz.Log("IN zigateInit_Phase2")
     if self.FirmwareVersion is None  or self.ZigateIEEE is None or self.ZigateNWKID == 'ffff':
         if self.FirmwareVersion is None:
             # Ask for Firmware Version
@@ -809,11 +809,12 @@ def zigateInit_Phase2( self):
 
     # Ready for next phase
     self.InitPhase2 = True
+    Domoticz.Log("OUT zigateInit_Phase2")
 
 def zigateInit_Phase3( self ):
 
     # We can now do what must be done when we known the Firmware version
-
+    Domoticz.Log("zigateInit_Phase3")
     if self.FirmwareVersion is None:
         return
 
