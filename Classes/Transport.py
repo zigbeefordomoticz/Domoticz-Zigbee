@@ -38,6 +38,7 @@ RESPONSE_SQN = []
 THREAD_RELAX_TIME_MS = 20 / 1000    # 20ms of waiting time if nothing to do
 
 
+
 class ZigateTransport(object):
     # """
     # Class in charge of Transport mecanishm to and from Zigate
@@ -691,7 +692,7 @@ def send_data_internal(self, InternalSqn):
         Domoticz.Error("send_data_internal - unexpected 1 %s not in ListOfCommands: %s" %
                        (InternalSqn, str(self.ListOfCommands.keys())))
         return
-    self.loggingSend('Debug2', "--- send_data_internal - %s FIFO: %s" %
+    self.loggingSend('Debug', "--- send_data_internal - %s FIFO: %s" %
                      (InternalSqn, len(self.zigateSendQueue)))
 
     sendNow = True
@@ -884,17 +885,19 @@ def set_acknack_for_sending(self, i_sqn):
 def ready_to_send_if_needed(self):
 
     readyToSend = True
+
     if self.zmode == 'zigate31c':
         readyToSend = len(self._waitFor8000Queue) == 0 and len(self._waitForCmdResponseQueue) == 0
-        #self.loggingSend('Debug2', "--- send_data_internal - Q(0x8000): %s Q(Ack/Nack): %s sendNow: %s"
-        #    % (len(self.zigateSendQueue), len(self._waitFor8000Queue), len(self._waitFor8000Queue)))
+        self.loggingSend('Debug', "--- ready_to_send_if_needed 31c - Q(0x8000): %s Q(Ack/Nack): %s sendNow: %s"
+            % ( len(self._waitFor8000Queue), len(self._waitFor8000Queue), len(self.zigateSendQueue),))
 
     elif self.zmode == 'zigateack':
-        readyToSend = len(self._waitFor8000Queue) == 0 and len(self._waitForAckNack) == 0 and len(self._waitForCmdResponseQueue) == 0
-        #self.loggingSend('Debug2', "--- send_data_internal - Q(0x8000): %s Q(Ack/Nack): %s sendNow: %s"
-        #    % (len(self.zigateSendQueue), len(self._waitFor8000Queue), len(self._waitFor8000Queue)))
+        readyToSend = ((len(self._waitFor8000Queue) == 0) and (len(self._waitForAckNack) == 0) and (len(self._waitForCmdResponseQueue) == 0))
+        self.loggingSend('Debug', "--- ready_to_send_if_needed 31d - Q(0x8000): %s Q(Ack/Nack): %s Q(waitForResponse): %s sendNow: %s readyToSend: %s"
+            % ( len(self._waitFor8000Queue), len(self._waitForAckNack), len(self._waitForCmdResponseQueue), len(self.zigateSendQueue),readyToSend ))
 
     if readyToSend and len(self.zigateSendQueue) > 0:
+        # Send next data
         send_data_internal(self, _next_cmd_from_send_queue(self)[0])
 
 
@@ -941,108 +944,113 @@ def _send_data(self, InternalSqn):
         self._connection.Send(bytes.fromhex(str(lineinput)), 0)
     self.statistics._sent += 1
 
-
-def check_timed_out(self):
-
-    def timeout_8000(self):
-        # Timed Out 0x8000
-        self.statistics._TOstatus += 1
-        entry = _next_cmd_from_wait_for8000_queue(self)
-        if entry is None:
-            return
-        InternalSqn, TimeStamp = entry
-        logExpectedCommand(self, '0x8000', now, TimeStamp, InternalSqn)
-        if InternalSqn in self.ListOfCommands:
-            if self.zmode == 'zigateack' and self.ListOfCommands[InternalSqn]['ExpectedAck']:
-                _next_cmd_to_wait_for_ack_nack_queue(self)
-
-            if self.zmode == 'zigateack' and self.ListOfCommands[InternalSqn]['WaitForResponse']:
-                _next_cmd_from_wait_cmdresponse_queue(self)
-
-            elif self.zmode == 'zigate31c' and self.ListOfCommands[InternalSqn]['ResponseExpected']:
-                _next_cmd_from_wait_cmdresponse_queue(self)
-
-        cleanup_list_of_commands(self, InternalSqn)
-
-    def timeout_acknack(self):
-        self.statistics._TOstatus += 1
-        entry = _next_cmd_to_wait_for_ack_nack_queue(self)
-        if entry is None:
-            return
-        InternalSqn, TimeStamp = entry
-        logExpectedCommand(self, 'Ack', now, TimeStamp, InternalSqn)
+def timeout_8000(self):
+    # Timed Out 0x8000
+    self.statistics._TOstatus += 1
+    entry = _next_cmd_from_wait_for8000_queue(self)
+    if entry is None:
+        return
+    InternalSqn, TimeStamp = entry
+    logExpectedCommand(self, '0x8000', int(time.time()), TimeStamp, InternalSqn)
+    if InternalSqn in self.ListOfCommands:
+        if self.zmode == 'zigateack' and self.ListOfCommands[InternalSqn]['ExpectedAck']:
+            _next_cmd_to_wait_for_ack_nack_queue(self)
         if self.zmode == 'zigateack' and self.ListOfCommands[InternalSqn]['WaitForResponse']:
             _next_cmd_from_wait_cmdresponse_queue(self)
+        elif self.zmode == 'zigate31c' and self.ListOfCommands[InternalSqn]['ResponseExpected']:
+            _next_cmd_from_wait_cmdresponse_queue(self)
+    cleanup_list_of_commands(self, InternalSqn)
 
-        cleanup_list_of_commands(self, InternalSqn)
 
-    def timeout_cmd_response(self):
-        # No response ! We Timed Out
-        self.statistics._TOdata += 1
-        InternalSqn, TimeStamp = _next_cmd_from_wait_cmdresponse_queue(self)
-        if InternalSqn not in self.ListOfCommands:
-            return
-        logExpectedCommand(self, 'CmdResponse', now, TimeStamp, InternalSqn)
-        cleanup_list_of_commands(self, InternalSqn)
+def timeout_acknack(self):
+    self.statistics._TOstatus += 1
+    entry = _next_cmd_to_wait_for_ack_nack_queue(self)
+    if entry is None:
+        return
+    InternalSqn, TimeStamp = entry
+    logExpectedCommand(self, 'Ack', int(time.time()), TimeStamp, InternalSqn)
+    if self.zmode == 'zigateack' and self.ListOfCommands[InternalSqn]['WaitForResponse']:
+        _next_cmd_from_wait_cmdresponse_queue(self)
 
-    def check_and_timeout_listofcommand(self):
-        if len(self.ListOfCommands) == 0:
-            return
+    cleanup_list_of_commands(self, InternalSqn)
 
+def timeout_cmd_response(self):
+    # No response ! We Timed Out
+    self.statistics._TOdata += 1
+    InternalSqn, TimeStamp = _next_cmd_from_wait_cmdresponse_queue(self)
+    if InternalSqn not in self.ListOfCommands:
+        return
+    logExpectedCommand(self, 'CmdResponse', int(time()), TimeStamp, InternalSqn)
+    cleanup_list_of_commands(self, InternalSqn)
+
+def check_and_timeout_listofcommand(self):
+
+
+
+    TIME_OUT_LISTCMD = 10
+
+    if len(self.ListOfCommands) == 0:
+        return
+
+    self.loggingSend(
+        'Debug', "-- checkTimedOutForTxQueues ListOfCommands size: %s" % len(self.ListOfCommands))
+    for x in list(self.ListOfCommands.keys()):
+        if 'SentTimeStamp' in self.ListOfCommands[x] and self.ListOfCommands[x]['SentTimeStamp'] and (int(time.time()) - self.ListOfCommands[x]['SentTimeStamp']) > TIME_OUT_LISTCMD:
+            if self.ListOfCommands[x]['MessageResponse']:
+                try:
+                    self.loggingSend('Debug', " --  --  --  > - Time Out : [%s] %s %s Flags: %s/%s %04x Status: %s Time: %s"
+                                        % (x, self.ListOfCommands[x]['Cmd'], self.ListOfCommands[x]['Datas'], self.ListOfCommands[x]['ResponseExpected'],
+                                        self.ListOfCommands[x]['ExpectedAck'], self.ListOfCommands[x]['MessageResponse'],
+                                        self.ListOfCommands[x]['Status'],
+                                        self.ListOfCommands[x]['ReceiveTimeStamp'].strftime("%m/%d/%Y, %H:%M:%S")))
+                except:
+                    self.loggingSend('Error', "--  --  --  > - Time Out Missing flag in ListOfCommands: [%s] %s" %(x, self.ListOfCommands[x]))
+
+            else:
+                try:
+                    self.loggingSend('Debug', " --  --  --  > - Time Out : [%s] %s %s Flags: %s/%s Status: %s Time: %s "
+                                        % (x, self.ListOfCommands[x]['Cmd'], self.ListOfCommands[x]['Datas'],
+                                        self.ListOfCommands[x]['ResponseExpected'], self.ListOfCommands[x]['ExpectedAck'],
+                                        self.ListOfCommands[x]['Status'],
+                                        self.ListOfCommands[x]['ReceiveTimeStamp'].strftime("%m/%d/%Y, %H:%M:%S")))
+                except:
+                    self.loggingSend('Error', "--  --  --  > - Time Out Missing flag in ListOfCommands: [%s] %s" %(x, self.ListOfCommands[x]))
+
+            del self.ListOfCommands[x]
+
+def logExpectedCommand(self, desc, now, TimeStamp, i_sqn):
+
+    if not self.pluginconf.pluginConf['showTimeOutMsg']:
+        return
+
+    if i_sqn not in self.ListOfCommands:
         self.loggingSend(
-            'Debug', "-- checkTimedOutForTxQueues ListOfCommands size: %s" % len(self.ListOfCommands))
-        for x in list(self.ListOfCommands.keys()):
-            if 'SentTimeStamp' in self.ListOfCommands[x] and self.ListOfCommands[x]['SentTimeStamp'] and (now - self.ListOfCommands[x]['SentTimeStamp']) > TIME_OUT_LISTCMD:
-                if self.ListOfCommands[x]['MessageResponse']:
-                    try:
-                        self.loggingSend('Debug', " --  --  --  > - Time Out : [%s] %s %s Flags: %s/%s %04x Status: %s Time: %s"
-                                         % (x, self.ListOfCommands[x]['Cmd'], self.ListOfCommands[x]['Datas'], self.ListOfCommands[x]['ResponseExpected'],
-                                            self.ListOfCommands[x]['ExpectedAck'], self.ListOfCommands[x]['MessageResponse'],
-                                            self.ListOfCommands[x]['Status'],
-                                            self.ListOfCommands[x]['ReceiveTimeStamp'].strftime("%m/%d/%Y, %H:%M:%S")))
-                    except:
-                        self.loggingSend('Error', "--  --  --  > - Time Out Missing flag in ListOfCommands: [%s] %s" %(x, self.ListOfCommands[x]))
+            'Debug', " --  --  --  > - %s - Time Out %s  " % (desc, i_sqn))
+        return
 
-                else:
-                    try:
-                        self.loggingSend('Debug', " --  --  --  > - Time Out : [%s] %s %s Flags: %s/%s Status: %s Time: %s "
-                                         % (x, self.ListOfCommands[x]['Cmd'], self.ListOfCommands[x]['Datas'],
-                                            self.ListOfCommands[x]['ResponseExpected'], self.ListOfCommands[x]['ExpectedAck'],
-                                            self.ListOfCommands[x]['Status'],
-                                            self.ListOfCommands[x]['ReceiveTimeStamp'].strftime("%m/%d/%Y, %H:%M:%S")))
-                    except:
-                        self.loggingSend('Error', "--  --  --  > - Time Out Missing flag in ListOfCommands: [%s] %s" %(x, self.ListOfCommands[x]))
+    if self.ListOfCommands[i_sqn]['MessageResponse']:
+        self.loggingSend('Debug', " --  --  --  > Time Out %s [%s] %s sec for  %s %s %s/%s %04x Time: %s"
+                            % (desc, i_sqn, (now - TimeStamp), self.ListOfCommands[i_sqn]['Cmd'], self.ListOfCommands[i_sqn]['Datas'],
+                            self.ListOfCommands[i_sqn]['ResponseExpected'], self.ListOfCommands[i_sqn]['ExpectedAck'],
+                            self.ListOfCommands[i_sqn]['MessageResponse'], self.ListOfCommands[i_sqn]['ReceiveTimeStamp'].strftime("%m/%d/%Y, %H:%M:%S")))
+    else:
+        self.loggingSend('Debug', " --  --  --  > Time Out %s [%s] %s sec for  %s %s %s/%s %s Time: %s"
+                            % (desc, i_sqn, (now - TimeStamp), self.ListOfCommands[i_sqn]['Cmd'], self.ListOfCommands[i_sqn]['Datas'],
+                            self.ListOfCommands[i_sqn]['ResponseExpected'], self.ListOfCommands[i_sqn]['ExpectedAck'],
+                            self.ListOfCommands[i_sqn]['MessageResponse'], self.ListOfCommands[i_sqn]['ReceiveTimeStamp'].strftime("%m/%d/%Y, %H:%M:%S")))
+    self.loggingSend('Debug',"--  --  --  > i_sqn: %s App_Sqn: %s Aps_Sqn: %s Type_Sqn: %s" \
+        %( i_sqn, self.ListOfCommands[i_sqn]['APP_SQN'], self.ListOfCommands[i_sqn]['APS_SQN'] , self.ListOfCommands[i_sqn]['TYP_SQN']  ))
 
-                del self.ListOfCommands[x]
 
-    def logExpectedCommand(self, desc, now, TimeStamp, i_sqn):
-
-        if not self.pluginconf.pluginConf['showTimeOutMsg']:
-            return
-
-        if i_sqn not in self.ListOfCommands:
-            self.loggingSend(
-                'Debug', " --  --  --  > - %s - Time Out %s  " % (desc, i_sqn))
-            return
-
-        if self.ListOfCommands[i_sqn]['MessageResponse']:
-            self.loggingSend('Debug', " --  --  --  > Time Out %s [%s] %s sec for  %s %s %s/%s %04x Time: %s"
-                             % (desc, i_sqn, (now - TimeStamp), self.ListOfCommands[i_sqn]['Cmd'], self.ListOfCommands[i_sqn]['Datas'],
-                                self.ListOfCommands[i_sqn]['ResponseExpected'], self.ListOfCommands[i_sqn]['ExpectedAck'],
-                                self.ListOfCommands[i_sqn]['MessageResponse'], self.ListOfCommands[InternalSqn]['ReceiveTimeStamp'].strftime("%m/%d/%Y, %H:%M:%S")))
-        else:
-            self.loggingSend('Debug', " --  --  --  > Time Out %s [%s] %s sec for  %s %s %s/%s %s Time: %s"
-                             % (desc, i_sqn, (now - TimeStamp), self.ListOfCommands[i_sqn]['Cmd'], self.ListOfCommands[i_sqn]['Datas'],
-                                self.ListOfCommands[i_sqn]['ResponseExpected'], self.ListOfCommands[i_sqn]['ExpectedAck'],
-                                self.ListOfCommands[i_sqn]['MessageResponse'], self.ListOfCommands[InternalSqn]['ReceiveTimeStamp'].strftime("%m/%d/%Y, %H:%M:%S")))
-        self.loggingSend('Debug',"--  --  --  > i_sqn: %s App_Sqn: %s Aps_Sqn: %s Type_Sqn: %s" \
-            %( i_sqn, self.ListOfCommands[i_sqn]['APP_SQN'], self.ListOfCommands[i_sqn]['APS_SQN'] , self.ListOfCommands[i_sqn]['TYP_SQN']  ))
+def check_timed_out(self):
 
     # Begin
     TIME_OUT_8000 = self.pluginconf.pluginConf['TimeOut8000']
     TIME_OUT_RESPONSE = self.pluginconf.pluginConf['TimeOutResponse']
-    TIME_OUT_ACK = self.pluginconf.pluginConf['TimeOut8011']
-    TIME_OUT_LISTCMD = 10
+    TIME_OUT_ACK = self.pluginconf.pluginConf['TimeOut8011']    
+    
+    
+    
 
     now = int(time.time())
 
@@ -1870,24 +1878,21 @@ def buildframe_write_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clus
 
 def decode_endian_data( data, datatype):
     if datatype in ( '10', '18', '20', '28', '30'):
-        value = data
+        return data
 
     elif datatype in ('09', '19', '21', '29', '31'):
-        value = '%04x' %struct.unpack('>H',struct.pack('H',int(data,16)))[0]
+        return '%04x' %struct.unpack('>H',struct.pack('H',int(data,16)))[0]
 
     elif datatype in ( '22', '2a'):
-        value= '%06x' %struct.unpack('>I',struct.pack('I',int(data,16)))[0]
+        return '%06x' %struct.unpack('>I',struct.pack('I',int(data,16)))[0]
 
     elif datatype in ( '23', '2b', '39'):
-        value = '%08x' %struct.unpack('>i',struct.pack('I',int(data,16)))[0]
+        return '%08x' %struct.unpack('>i',struct.pack('I',int(data,16)))[0]
 
     elif datatype in ( '00', '41', '42', '4c'):
-        value = data
+        return data
 
-    else:
-        value = data
-        #Domoticz.Log("-------> Data not decoded Type: %s Value: %s " % (datatype, value))
-    return value
+    return data
 
 
 def buildframe_read_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data ):
