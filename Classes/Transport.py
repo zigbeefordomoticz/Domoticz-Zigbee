@@ -64,7 +64,7 @@ class ZigateTransport(object):
         self._waitFor8000Queue = []        # list of command sent and waiting for status 0x8000
         self._waitForCmdResponseQueue = [] # list of command sent for which status received and waiting for data
         self._waitForAckNack = []          # Contains list of Command waiting for Ack/Nack
-
+        self._waitForAPDUfree = []         # We are wiating for aPdu free. Implemented on 31e. (wait for 0x8012 or 0x8702 )
 
         # ZigBee31c (for  firmware below 31c, when Ack --> WaitForResponse )
         # ZigBeeack ( for firmware above 31d, When Ack --> WaitForAck )
@@ -645,6 +645,25 @@ def _next_cmd_from_wait_for8000_queue(self):
     return ret
 
 
+
+def _add_cmd_to_wait_forAPDU_queue(self, InternalSqn):
+    # add a command to the waiting list for 0x8012/0x8702
+    #timestamp = int(time.time())
+    timestamp = time.time()
+    #self.loggingSend(  'Log', " --  > _add_cmd_to_wait_for8000_queue - adding to Queue %s %s" %(InternalSqn, timestamp))
+    self._waitForAPDUfree.append((InternalSqn, timestamp))
+
+
+def _next_cmd_from_wait_forAPDU_queue(self):
+    # return the entry waiting for a Status
+    ret = (None, None)
+    if len(self._waitForAPDUfree) > 0:
+        ret = self._waitForAPDUfree[0]
+        del self._waitForAPDUfree[0]
+    #self.loggingSend(  'Debug2', " --  > _nextCmdFromWaitFor8000Queue - Unqueue %s " %( str(ret) ))
+    return ret
+
+
 def _add_cmd_to_wait_for_ack_nack_queue(self, InternalSqn):
     # add a command to the AckNack waiting list
     timestamp = int(time.time())
@@ -678,6 +697,8 @@ def _next_cmd_from_wait_cmdresponse_queue(self):
         del self._waitForCmdResponseQueue[0]
     #self.loggingSend(  'Debug', " --  > _next_cmd_from_wait_cmdresponse_queue - Unqueue %s " %( str(ret) ))
     return ret
+
+
 
 # Sending functions
 
