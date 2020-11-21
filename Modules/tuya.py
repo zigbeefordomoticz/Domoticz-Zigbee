@@ -57,32 +57,38 @@ def callbackDeviceAwake_Tuya(self, NwkId, EndPoint, cluster):
 def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
 
     # Zigbee Tuya Command on Cluster 0xef00:
+    # https://medium.com/@dzegarra/zigbee2mqtt-how-to-add-support-for-a-new-tuya-based-device-part-2-5492707e882d
     # 
     #   0x00 Used by the ZC to send commands to the ZEDs.
     #   0x01 Used by the ZED to inform of changes in its state.
     #   0x02 Send by the ZED after receiving a 0x00 command. 
     #        Its data payload uses the same format as the 0x01 commands.
     # cmd, data
-    # 0x0404, 0x02 Change mode from Auto -> Manual
-    # 0x0202, Setpoint Change target temp after mode chg
-    # 0x0203, Temperature Notif temp after mode chg
-
-    # 0x0404, 0x00 Change mode from Manual -> Off
-    # 0x0202, Setpoint Change target temp after mode chg 
-    # 0x0203, Temperature Notif temp after mode chg
-
-    # 0x0404, 0x01 Change mode from Off -> Auto
-    # 0x0202, Setpoint Change target temp after mode chg
-    # 0x0203, Temperature Notif temp after mode chg
 
     # 0x0107, 0x01 Child lock On
     # 0x0107, 0x00 Child lock Off
     # 0x0114, 0x01 Valve check enable
     # 0x0112, 0x01 Window detection enabled
+    # 0x016c, 0x00 Manual 0x01 Auto
+    # 0x0165, 0x00 Off, 0x01 Manu
+    # 0x0114, Valve state On/off 
+
+    # 0x0202, Setpoint Change target temp after mode chg 
+    # 0x0203, Temperature Notif temp after mode chg
+    # 0x0215, Battery status 
+    # 0x0255, Min Temp
+    # 0x0267, Max Temp
+    # 0x026d, Valve position
+    # 0x022c, Temp Calibration
+
+    # 0x0303, Temp Room temperature
+
+    # 0x0404, 0x01 Change mode from Off -> Auto
+    # 0x0404, 0x02 Change mode from Auto -> Manual
+    # 0x0404, 0x00 Change mode from Manual -> Off
     # 0x0411, 0x00 Valve problem ??
     # 0x0413, 0x00 Valve problem ??
-    # 0x0303, Temp Room temperature
-    # 0x0215, Battery status
+    # 0x046a, Mode 0x00 Auto, 0x01 Heat, 0x02 Off
     
     if NwkId not in self.ListOfDevices:
         return

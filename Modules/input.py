@@ -380,8 +380,12 @@ def Decode8000_v2(self, Devices, MsgData, MsgLQI):  # Status
             self.groupmgt.statusGroupRequest(MsgData)
 
     if MsgData[0:2] != "00":
-        self.log.logging(  "Input", "Error", "Decode8000 - PacketType: %s TypeSqn: %s sqn_app: %s sqn_aps: %s Status: [%s] " 
-            % (PacketType, type_sqn, sqn_app, sqn_aps, Status), )
+        if MsgData[0:2] in ( '80', '14', '15'):
+            self.log.logging(  "Input", "Log", "Decode8000 - PacketType: %s TypeSqn: %s sqn_app: %s sqn_aps: %s Status: [%s] " 
+                % (PacketType, type_sqn, sqn_app, sqn_aps, Status), )
+        else:
+            self.log.logging(  "Input", "Error", "Decode8000 - PacketType: %s TypeSqn: %s sqn_app: %s sqn_aps: %s Status: [%s] "
+                % (PacketType, type_sqn, sqn_app, sqn_aps, Status), )
 
 
 def Decode8001(self, Decode, MsgData, MsgLQI):  # Reception log Level
