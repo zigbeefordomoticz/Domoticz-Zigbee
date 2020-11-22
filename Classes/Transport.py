@@ -63,8 +63,8 @@ class ZigateTransport(object):
         self.zigateSendQueue = []          # list of normal priority commands
         self._waitFor8000Queue = []        # list of command sent and waiting for status 0x8000
         self._waitForCmdResponseQueue = [] # list of command sent for which status received and waiting for data
-        self._waitForAckNack = []          # Contains list of Command waiting for Ack/Nack
-        self._waitForAPDUfree = []         # We are wiating for aPdu free. Implemented on 31e. (wait for 0x8012 or 0x8702 )
+        self._waitForAckNackQueue = []          # Contains list of Command waiting for Ack/Nack
+        self._waitFor8012Queue = []         # We are wiating for aPdu free. Implemented on 31e. (wait for 0x8012 or 0x8702 )
 
         # ZigBee31c (for  firmware below 31c, when Ack --> WaitForResponse )
         # ZigBeeack ( for firmware above 31d, When Ack --> WaitForAck )
@@ -411,64 +411,8 @@ class ZigateTransport(object):
                            (InternalSqn, str(self.ListOfCommands[InternalSqn]), cmd, datas))
             return None
 
-        self.ListOfCommands[InternalSqn] = {}
-        self.ListOfCommands[InternalSqn]['Cmd'] = cmd
-        self.ListOfCommands[InternalSqn]['Datas'] = datas
-        self.ListOfCommands[InternalSqn]['ReTransmit'] = 0
-        self.ListOfCommands[InternalSqn]['Status'] = ''
-        self.ListOfCommands[InternalSqn]['ReceiveTimeStamp'] = datetime.now()
-        self.ListOfCommands[InternalSqn]['SentTimeStamp'] = None
-        self.ListOfCommands[InternalSqn]['PDMCommand'] = False
-
-        self.ListOfCommands[InternalSqn]['ResponseExpected'] = False    # Means that there is an Expected Response for that Command
-        self.ListOfCommands[InternalSqn]['MessageResponse'] = None      # Is the expected MsgType in response for the command
-        self.ListOfCommands[InternalSqn]['ExpectedAck'] = False         # Expected ACK
-        self.ListOfCommands[InternalSqn]['WaitForResponse'] = False     # Used in Zigbee31d to wait for a Response
-        self.ListOfCommands[InternalSqn]['Expect8011'] = False
-
-        self.ListOfCommands[InternalSqn]['APP_SQN'] = None
-        self.ListOfCommands[InternalSqn]['APS_SQN'] = None
-        self.ListOfCommands[InternalSqn]['TYP_SQN'] = None
-
-        hexCmd = int(cmd, 16)
-        if hexCmd in CMD_PDM_ON_HOST:
-            self.ListOfCommands[InternalSqn]['PDMCommand'] = True
-
-        if not ackIsDisabled and hexCmd in CMD_WITH_ACK:
-            self.ListOfCommands[InternalSqn]['ExpectedAck'] = True
-
-        if (not ackIsDisabled or waitForResponse) and hexCmd in CMD_WITH_RESPONSE and hexCmd in RESPONSE_SQN:
-            self.ListOfCommands[InternalSqn]['MessageResponse'] = CMD_WITH_RESPONSE[hexCmd]
-            self.ListOfCommands[InternalSqn]['ResponseExpected'] = True
-
-
-        if not self.firmware_with_aps_sqn:
-            # We are on firmware <= 31c
-            # 0110 and 0113 are always set with Ack. Overwriten by the firmware
-            if hexCmd in (0x0110, 0x0113):
-                self.loggingSend(
-                    'Debug', "-- > Patching %s to Ack due to firmware 31c" % hexCmd)
-                self.ListOfCommands[InternalSqn]['MessageResponse'] = CMD_WITH_RESPONSE[hexCmd]
-                self.ListOfCommands[InternalSqn]['ResponseExpected'] = True
-                self.ListOfCommands[InternalSqn]['ExpectedAck'] = True
-                self.ListOfCommands[InternalSqn]['WaitForResponse'] = True
-
-        if hexCmd == 0x0530 and self.FirmwareVersion and int(self.FirmwareVersion,16) <= 0x031d:
-            # Starting 0x031e Firmware, the RAW APS command can use address mode to request ACK/NO-ACK
-            # below this firmware it is always NO-ACK
-            self.ListOfCommands[InternalSqn]['ExpectedAck'] = False
-
-        # Ack to force Waiting for the Expected Response
-        if self.pluginconf.pluginConf['forceFullSeqMode'] and self.ListOfCommands[InternalSqn]['ResponseExpected'] and (not ackIsDisabled or waitForResponse):
-            self.ListOfCommands[InternalSqn]['WaitForResponse'] = True
-
-        self.loggingSend('Debug', "sendData - %s %s ackDisabled: %s FIFO: %s ResponseExpected: %s WaitForResponse: %s MessageResponse: 0x%s" 
-            %(cmd, datas, ackIsDisabled, len(self.zigateSendQueue), 
-            self.ListOfCommands[InternalSqn]['ResponseExpected'], 
-            self.ListOfCommands[InternalSqn]['WaitForResponse'],
-            self.ListOfCommands[InternalSqn]['MessageResponse']))
+        store_ISQN_infos( self, InternalSqn, cmd, datas, ackIsDisabled, waitForResponse )
         printListOfCommands(self, 'from sendData', InternalSqn)
-
         send_data_internal(self, InternalSqn)
         return InternalSqn
 
@@ -563,6 +507,68 @@ class ZigateTransport(object):
 
 # Local Functions
 
+def store_ISQN_infos( self, InternalSqn, cmd, datas, ackIsDisabled, waitForResponse ):
+    self.ListOfCommands[InternalSqn] = {}
+    self.ListOfCommands[InternalSqn]['Cmd'] = cmd
+    self.ListOfCommands[InternalSqn]['Datas'] = datas
+    self.ListOfCommands[InternalSqn]['ReTransmit'] = 0
+    self.ListOfCommands[InternalSqn]['Status'] = ''
+    self.ListOfCommands[InternalSqn]['ReceiveTimeStamp'] = datetime.now()
+    self.ListOfCommands[InternalSqn]['SentTimeStamp'] = None
+    self.ListOfCommands[InternalSqn]['PDMCommand'] = False
+
+    self.ListOfCommands[InternalSqn]['ResponseExpected'] = False    # Means that there is an Expected Response for that Command
+    self.ListOfCommands[InternalSqn]['MessageResponse'] = None      # Is the expected MsgType in response for the command
+    self.ListOfCommands[InternalSqn]['Expected8011'] = False        # Expected ACK
+    self.ListOfCommands[InternalSqn]['WaitForResponse'] = False     # Used in Zigbee31d to wait for a Response
+    self.ListOfCommands[InternalSqn]['Expected8012'] = False        # Used as of 31e
+
+    self.ListOfCommands[InternalSqn]['APP_SQN'] = None
+    self.ListOfCommands[InternalSqn]['APS_SQN'] = None
+    self.ListOfCommands[InternalSqn]['TYP_SQN'] = None
+
+    hexCmd = int(cmd, 16)
+    if hexCmd in CMD_PDM_ON_HOST:
+        self.ListOfCommands[InternalSqn]['PDMCommand'] = True
+
+    if self.zmode == 'zigate31e' and ZIGATE_COMMANDS[hexCmd]['Layer'] != 'ZIGATE':
+        self.ListOfCommands[InternalSqn]['Expected8012']  = True
+
+
+    if not ackIsDisabled and hexCmd in CMD_WITH_ACK:
+        self.ListOfCommands[InternalSqn]['Expected8011'] = True
+
+    if (not ackIsDisabled or waitForResponse) and hexCmd in CMD_WITH_RESPONSE and hexCmd in RESPONSE_SQN:
+        self.ListOfCommands[InternalSqn]['MessageResponse'] = CMD_WITH_RESPONSE[hexCmd]
+        self.ListOfCommands[InternalSqn]['ResponseExpected'] = True
+
+
+    if not self.firmware_with_aps_sqn:
+        # We are on firmware <= 31c
+        # 0110 and 0113 are always set with Ack. Overwriten by the firmware
+        if hexCmd in (0x0110, 0x0113):
+            self.loggingSend(
+                'Debug', "-- > Patching %s to Ack due to firmware 31c" % hexCmd)
+            self.ListOfCommands[InternalSqn]['MessageResponse'] = CMD_WITH_RESPONSE[hexCmd]
+            self.ListOfCommands[InternalSqn]['ResponseExpected'] = True
+            self.ListOfCommands[InternalSqn]['Expected8011'] = True
+            self.ListOfCommands[InternalSqn]['WaitForResponse'] = True
+
+    if hexCmd == 0x0530 and self.FirmwareVersion and int(self.FirmwareVersion,16) <= 0x031d:
+        # Starting 0x031e Firmware, the RAW APS command can use address mode to request ACK/NO-ACK
+        # below this firmware it is always NO-ACK
+        self.ListOfCommands[InternalSqn]['Expected8011'] = False
+
+    # Ack to force Waiting for the Expected Response
+    if self.pluginconf.pluginConf['forceFullSeqMode'] and self.ListOfCommands[InternalSqn]['ResponseExpected'] and (not ackIsDisabled or waitForResponse):
+        self.ListOfCommands[InternalSqn]['WaitForResponse'] = True
+
+    self.loggingSend('Debug', "sendData - %s %s ackDisabled: %s FIFO: %s ResponseExpected: %s WaitForResponse: %s MessageResponse: 0x%s" 
+        %(cmd, datas, ackIsDisabled, len(self.zigateSendQueue), 
+        self.ListOfCommands[InternalSqn]['ResponseExpected'], 
+        self.ListOfCommands[InternalSqn]['WaitForResponse'],
+        self.ListOfCommands[InternalSqn]['MessageResponse']))
+
 
 def initMatrix(self):
     for x in ZIGATE_RESPONSES:
@@ -647,38 +653,43 @@ def _next_cmd_from_wait_for8000_queue(self):
     return ret
 
 
-def _add_cmd_to_wait_forAPDU_queue(self, InternalSqn):
+def _add_cmd_to_wait_for8012_queue(self, InternalSqn):
     # add a command to the waiting list for 0x8012/0x8702
+    Domoticz.Log("Add %s to 8012 Queue" %InternalSqn)
     #timestamp = int(time.time())
     timestamp = time.time()
     #self.loggingSend(  'Log', " --  > _add_cmd_to_wait_for8000_queue - adding to Queue %s %s" %(InternalSqn, timestamp))
-    self._waitForAPDUfree.append((InternalSqn, timestamp))
+    self._waitFor8012Queue.append((InternalSqn, timestamp))
 
 
-def _next_cmd_from_wait_forAPDU_queue(self):
+def _next_cmd_from_wait_for8012_queue(self):
     # return the entry waiting for a Status
+    
     ret = (None, None)
-    if len(self._waitForAPDUfree) > 0:
-        ret = self._waitForAPDUfree[0]
-        del self._waitForAPDUfree[0]
+    if len(self._waitFor8012Queue) > 0:
+        ret = self._waitFor8012Queue[0]
+        del self._waitFor8012Queue[0]
     #self.loggingSend(  'Debug2', " --  > _nextCmdFromWaitFor8000Queue - Unqueue %s " %( str(ret) ))
+    Domoticz.Log("Retreive %s to 8012 Queue" %(str(ret)))
     return ret
 
 
 def _add_cmd_to_wait_for_ack_nack_queue(self, InternalSqn):
     # add a command to the AckNack waiting list
+    Domoticz.Log("Add %s to 8011 Queue" %InternalSqn)
     timestamp = int(time.time())
     #self.loggingSend(  'Log', " --  > _addCmdToWaitForAckNackQueue - adding to Queue  %s %s" %(InternalSqn, timestamp))
-    self._waitForAckNack.append((InternalSqn, timestamp))
+    self._waitForAckNackQueue.append((InternalSqn, timestamp))
 
 
 def _next_cmd_to_wait_for_ack_nack_queue(self):
     # return the entry waiting for Data
     ret = (None, None)
-    if len(self._waitForAckNack) > 0:
-        ret = self._waitForAckNack[0]
-        del self._waitForAckNack[0]
+    if len(self._waitForAckNackQueue) > 0:
+        ret = self._waitForAckNackQueue[0]
+        del self._waitForAckNackQueue[0]
     #self.loggingSend(  'Debug2', " --  > _next_cmd_to_wait_for_ack_nack_queue - Unqueue %s " %( str(ret) ))
+    Domoticz.Log("Retreive %s to 8011 Queue" %(str(ret)))
     return ret
 
 
@@ -702,7 +713,6 @@ def _next_cmd_from_wait_cmdresponse_queue(self):
 
 
 # Sending functions
-
 
 def send_data_internal(self, InternalSqn):
     #
@@ -736,16 +746,16 @@ def send_data_internal(self, InternalSqn):
 
     elif sendNow and self.zmode == 'zigate31d':
         # Wait on 0x8000, AckNack and eventually on Response
-        if (not self.ListOfCommands[InternalSqn]['PDMCommand'] and (len(self._waitFor8000Queue) > 0 or len(self._waitForAckNack) > 0 or len(self._waitForCmdResponseQueue) > 0)):
+        if (not self.ListOfCommands[InternalSqn]['PDMCommand'] and (len(self._waitFor8000Queue) > 0 or len(self._waitForAckNackQueue) > 0 or len(self._waitForCmdResponseQueue) > 0)):
             sendNow = False
 
     elif sendNow and self.zmode == 'zigate31e':
         # Wait on 0x8000, 8012/8702 AckNack and eventually on Response
-        if (not self.ListOfCommands[InternalSqn]['PDMCommand'] and ( len(self._waitFor8000Queue) > 0 or len(self._waitForAPDUfree) > 0 or len(self._waitForAckNack) > 0 or len(self._waitForCmdResponseQueue) > 0)):
+        if (not self.ListOfCommands[InternalSqn]['PDMCommand'] and ( len(self._waitFor8000Queue) > 0 or len(self._waitFor8012Queue) > 0 or len(self._waitForAckNackQueue) > 0 or len(self._waitForCmdResponseQueue) > 0)):
             sendNow = False
 
         self.loggingSend('Debug', "--- send_data_internal - Command: %s  Q(0x8000): %s Q(8012/8702): %s Q(Ack/Nack): %s Q(Response): %s sendNow: %s"
-                         % (self.ListOfCommands[InternalSqn]['Cmd'], len(self._waitFor8000Queue), len(self._waitForAPDUfree), len(self._waitForAckNack), len(self._waitForCmdResponseQueue), sendNow))
+                         % (self.ListOfCommands[InternalSqn]['Cmd'], len(self._waitFor8000Queue), len(self._waitFor8012Queue), len(self._waitForAckNackQueue), len(self._waitForCmdResponseQueue), sendNow))
 
     # In case the cmd is part of the PDM on Host commands, that is High Priority and must go through.
     if not sendNow:
@@ -757,8 +767,8 @@ def send_data_internal(self, InternalSqn):
         return
 
     # Sending Command
-    self.loggingSend('Debug', "--- send_data_internal - sending now zmode: %s Ack: %s ResponseExpected: %s" %
-                     (self.zmode, self.ListOfCommands[InternalSqn]['ExpectedAck'], self.ListOfCommands[InternalSqn]['ResponseExpected']))
+    self.loggingSend('Log', "--- send_data_internal - sending now zmode: %s Ack: %s ResponseExpected: %s" %
+                     (self.zmode, self.ListOfCommands[InternalSqn]['Expected8011'], self.ListOfCommands[InternalSqn]['ResponseExpected']))
 
     if not self.ListOfCommands[InternalSqn]['PDMCommand']:
         # That is a Standard command (not PDM on  Host), let's process as usall
@@ -767,62 +777,50 @@ def send_data_internal(self, InternalSqn):
         # Add to 0x8000 queue
         _add_cmd_to_wait_for8000_queue(self, InternalSqn)
 
-        if self.zmode in 'zigate31e' and ZIGATE_COMMANDS[ int(self.ListOfCommands[InternalSqn]['Cmd'],16) ]['Layer'] != 'ZIGATE':
+        if self.ListOfCommands[InternalSqn]['Expected8012'] and self.zmode in 'zigate31e':
             # In addition to 0x8000 we have to wait 0x8012 or 0x8702
-            _add_cmd_to_wait_forAPDU_queue(self, InternalSqn)
+            patch_8012_for_sending( self, InternalSqn)
 
-        if self.ListOfCommands[InternalSqn]['ExpectedAck'] and self.zmode == 'zigate31d':
-            set_acknack_for_sending(self, InternalSqn)
+        if self.ListOfCommands[InternalSqn]['Expected8011'] and self.zmode == 'zigate31d':
+            patch_8011_for_sending(self, InternalSqn)
 
-        if self.zmode in 'zigate31c' and self.ListOfCommands[InternalSqn]['ResponseExpected']:
-            set_cmdresponse_for_sending(self, InternalSqn)
+        if self.ListOfCommands[InternalSqn]['ResponseExpected'] and self.zmode == 'zigate31c':
+            patch_cmdresponse_for_sending(self, InternalSqn)
 
         if self.ListOfCommands[InternalSqn]['WaitForResponse'] and self.zmode == 'zigate31d':
-            set_cmdresponse_for_sending(self, InternalSqn)
+            patch_cmdresponse_for_sending(self, InternalSqn)
 
     # Go!
     if self.pluginconf.pluginConf["debugzigateCmd"]:
-        self.loggingSend('Log', "--- send_data_internal - Command: %s  Q(0x8000): %s Q(Ack/Nack): %s Q(Response): %s sendNow: %s"
-            % (self.ListOfCommands[InternalSqn]['Cmd'], len(self._waitFor8000Queue), len(self._waitForAckNack), len(self._waitForCmdResponseQueue), sendNow))
+        self.loggingSend('Log', "--- send_data_internal - Command: %s  Q(0x8000): %s Q(8012): %s Q(Ack/Nack): %s Q(Response): %s sendNow: %s"
+            % (self.ListOfCommands[InternalSqn]['Cmd'], len(self._waitFor8000Queue), len(self._waitFor8012Queue), len(self._waitForAckNackQueue), len(self._waitForCmdResponseQueue), sendNow))
 
-    #printListOfCommands( self, 'after correction before sending', InternalSqn )
+    printListOfCommands( self, 'after correction before sending', InternalSqn )
     _send_data(self, InternalSqn)
 
-
 def printListOfCommands(self, comment, isqn):
-    self.loggingSend('Debug', "=======  %s:" % comment)
-    self.loggingSend('Debug', "  - Cmd:              %s" %
-                     self.ListOfCommands[isqn]['Cmd'])
-    self.loggingSend('Debug', "  - Datas:            %s" %
-                     self.ListOfCommands[isqn]['Datas'])
-    self.loggingSend('Debug', "  - ReTransmit:       %s" %
-                     self.ListOfCommands[isqn]['ReTransmit'])
-    self.loggingSend('Debug', "  - Status:           %s" %
-                     self.ListOfCommands[isqn]['Status'])
-    self.loggingSend('Debug', "  - ReceiveTimeStamp: %s" %
-                     self.ListOfCommands[isqn]['ReceiveTimeStamp'])
-    self.loggingSend('Debug', "  - SentTimeStamp:    %s" %
-                     self.ListOfCommands[isqn]['SentTimeStamp'])
-    self.loggingSend('Debug', "  - PDMCommand:       %s" %
-                     self.ListOfCommands[isqn]['PDMCommand'])
-    self.loggingSend('Debug', "  - ResponseExpected: %s" %
-                     self.ListOfCommands[isqn]['ResponseExpected'])
-    self.loggingSend('Debug', "  - MessageResponse:  %s" %
-                     self.ListOfCommands[isqn]['MessageResponse'])
-    self.loggingSend('Debug', "  - ExpectedAck:      %s" %
-                     self.ListOfCommands[isqn]['ExpectedAck'])
-    self.loggingSend('Debug', "  - WaitForResponse:  %s" %
-                     self.ListOfCommands[isqn]['WaitForResponse'])
+    self.loggingSend('Log', "=======  %s:" % comment)
+    self.loggingSend('Log', "[%s]  - Cmd:              %s" % ( isqn, self.ListOfCommands[isqn]['Cmd']))
+    self.loggingSend('Log', "[%s]  - Datas:            %s" % ( isqn, self.ListOfCommands[isqn]['Datas']))
+    self.loggingSend('Log', "[%s]  - ReTransmit:       %s" % ( isqn, self.ListOfCommands[isqn]['ReTransmit']))
+    self.loggingSend('Log', "[%s]  - Status:           %s" % ( isqn, self.ListOfCommands[isqn]['Status']))
+    self.loggingSend('Log', "[%s]  - ReceiveTimeStamp: %s" % ( isqn, self.ListOfCommands[isqn]['ReceiveTimeStamp']))
+    self.loggingSend('Log', "[%s]  - SentTimeStamp:    %s" % ( isqn, self.ListOfCommands[isqn]['SentTimeStamp']))
+    self.loggingSend('Log', "[%s]  - PDMCommand:       %s" % ( isqn, self.ListOfCommands[isqn]['PDMCommand']))
+    self.loggingSend('Log', "[%s]  - ResponseExpected: %s" % ( isqn, self.ListOfCommands[isqn]['ResponseExpected']))
+    self.loggingSend('Log', "[%s]  - MessageResponse:  %s" % ( isqn, self.ListOfCommands[isqn]['MessageResponse']))
+    self.loggingSend('Log', "[%s]  - ExpectedAck:      %s" % ( isqn, self.ListOfCommands[isqn]['Expected8011']))
+    self.loggingSend('Log', "[%s]  - Expected8012:     %s" % ( isqn, self.ListOfCommands[isqn]['Expected8012']))
+    self.loggingSend('Log', "[%s]  - WaitForResponse:  %s" % ( isqn, self.ListOfCommands[isqn]['WaitForResponse']))
 
-
-def set_cmdresponse_for_sending(self, i_sqn):
+def patch_cmdresponse_for_sending(self, i_sqn):
 
     if int(self.ListOfCommands[i_sqn]['Cmd'], 16) not in CMD_NWK_2NDBytes:
         if self.ListOfCommands[i_sqn]['Cmd'] == '004E' and self.ListOfCommands[i_sqn]['Datas'][0:4] == '0000':
             # Do not wait for LQI request to ZiGate
             self.loggingSend(
                 'Debug', "--- LQI request to ZiGate Do not wait for Ack/Nack")
-            self.ListOfCommands[i_sqn]['ExpectedAck'] = False
+            self.ListOfCommands[i_sqn]['Expected8011'] = False
             self.ListOfCommands[i_sqn]['ResponseExpected'] = False
             self.ListOfCommands[i_sqn]['MessageResponse'] = None
             self.ListOfCommands[i_sqn]['WaitForResponse'] = False
@@ -830,10 +828,11 @@ def set_cmdresponse_for_sending(self, i_sqn):
         elif self.ListOfCommands[i_sqn]['Cmd'] == '0049' and self.ListOfCommands[i_sqn]['Datas'][0:4] == 'FFFC':
             self.loggingSend(
                 'Debug', "--- Permit To Join request to ZiGate Do not wait for Ack/Nack")
-            self.ListOfCommands[i_sqn]['ExpectedAck'] = False
+            self.ListOfCommands[i_sqn]['Expected8011'] = False
             self.ListOfCommands[i_sqn]['ResponseExpected'] = False
             self.ListOfCommands[i_sqn]['MessageResponse'] = None
             self.ListOfCommands[i_sqn]['WaitForResponse'] = False
+        
         else:
             self.loggingSend('Debug', "--- Add to Queue CommandResponse Queue")
             _add_cmd_to_wait_for_cmdresponse_queue(self, i_sqn)
@@ -842,7 +841,7 @@ def set_cmdresponse_for_sending(self, i_sqn):
             # Do not wait for Response to Groups commands sent to Zigate
             self.loggingSend(
                 'Debug', "--- Group command to ZiGate Do not wait for Ack/Nack")
-            self.ListOfCommands[i_sqn]['ExpectedAck'] = False
+            self.ListOfCommands[i_sqn]['Expected8011'] = False
             self.ListOfCommands[i_sqn]['ResponseExpected'] = False
             self.ListOfCommands[i_sqn]['MessageResponse'] = None
             self.ListOfCommands[i_sqn]['WaitForResponse'] = False
@@ -851,14 +850,14 @@ def set_cmdresponse_for_sending(self, i_sqn):
             # Do not wait for Response to commands sent to Zigate
             self.loggingSend(
                 'Debug', "--- Cmmand to ZiGate Do not wait for Ack/Nack")
-            self.ListOfCommands[i_sqn]['ExpectedAck'] = False
+            self.ListOfCommands[i_sqn]['Expected8011'] = False
             self.ListOfCommands[i_sqn]['ResponseExpected'] = False
             self.ListOfCommands[i_sqn]['MessageResponse'] = None
             self.ListOfCommands[i_sqn]['WaitForResponse'] = False
 
         elif not self.firmware_with_aps_sqn and self.ListOfCommands[i_sqn]['Cmd'] == '0110':
             #  Compatibility mode with previous Transport version do not wait for Response on command 0x0100
-            self.ListOfCommands[i_sqn]['ExpectedAck'] = False
+            self.ListOfCommands[i_sqn]['Expected8011'] = False
             self.ListOfCommands[i_sqn]['ResponseExpected'] = False
             self.ListOfCommands[i_sqn]['MessageResponse'] = None
             self.ListOfCommands[i_sqn]['WaitForResponse'] = False
@@ -869,8 +868,28 @@ def set_cmdresponse_for_sending(self, i_sqn):
             self.loggingSend('Debug', "--- Add to Queue CommandResponse Queue")
             _add_cmd_to_wait_for_cmdresponse_queue(self, i_sqn)
 
+def patch_8012_for_sending( self, i_sqn):
 
-def set_acknack_for_sending(self, i_sqn):
+    Domoticz.Log("patch_8012_for_sending Cmd: %s Data: %s" %(self.ListOfCommands[i_sqn]['Cmd'], self.ListOfCommands[i_sqn]['Datas'][0:4]))
+
+    if int(self.ListOfCommands[i_sqn]['Cmd'], 16) not in CMD_NWK_2NDBytes:
+        if self.ListOfCommands[i_sqn]['Cmd'] == '004E' and self.ListOfCommands[i_sqn]['Datas'][0:4] == '0000':
+            # Do not wait for LQI request to ZiGate
+            self.ListOfCommands[i_sqn]['Expected8012'] = False
+
+        elif self.ListOfCommands[i_sqn]['Cmd'] == '0049' and self.ListOfCommands[i_sqn]['Datas'][0:4] == 'FFFC':
+            self.ListOfCommands[i_sqn]['Expected8012'] = False
+        
+        else:
+            _add_cmd_to_wait_for8012_queue(self, i_sqn)
+    else:
+        if self.ListOfCommands[i_sqn]['Datas'][2:6] == '0000':
+            self.ListOfCommands[i_sqn]['Expected8012'] = False
+
+        else:
+            _add_cmd_to_wait_for8012_queue(self, i_sqn)
+
+def patch_8011_for_sending(self, i_sqn):
 
     # These are ZiGate commands which doesn't have Ack/Nack with firmware up to 3.1c
     CMD_NOACK_ZDP = (0x0030, 0x0031, 0x0040, 0x0041, 0x0042, 0x0043, 0x0044, 0x0045,
@@ -881,14 +900,14 @@ def set_acknack_for_sending(self, i_sqn):
         # This only apply to firmware on 31c and below
         self.loggingSend(
             'Debug', "--- ZDP command no Ack/Nack with that firmware")
-        self.ListOfCommands[i_sqn]['ExpectedAck'] = False
+        self.ListOfCommands[i_sqn]['Expected8011'] = False
 
     elif int(self.ListOfCommands[i_sqn]['Cmd'], 16) not in CMD_NWK_2NDBytes:
         if self.ListOfCommands[i_sqn]['Cmd'] == '004E' and self.ListOfCommands[i_sqn]['Datas'][0:4] == '0000':
             # Do not wait for LQI request to ZiGate
             self.loggingSend(
                 'Debug', "--- LQI request to ZiGate Do not wait for Ack/Nack")
-            self.ListOfCommands[i_sqn]['ExpectedAck'] = False
+            self.ListOfCommands[i_sqn]['Expected8011'] = False
         else:
             # Wait for Ack/Nack
             self.loggingSend('Debug', "--- Add to Queue Ack/Nack")
@@ -898,20 +917,19 @@ def set_acknack_for_sending(self, i_sqn):
             # Do not wait for Ack/Nack as the command to Groups
             self.loggingSend(
                 'Debug', "--- Group command to ZiGate Do not wait for Ack/Nack")
-            self.ListOfCommands[i_sqn]['ExpectedAck'] = False
+            self.ListOfCommands[i_sqn]['Expected8011'] = False
 
         elif self.ListOfCommands[i_sqn]['Datas'][2:6] == '0000':
             # Do not wait for Ack/Nack as the command is sent for ZiGate
             self.loggingSend(
                 'Debug', "--- Cmmand to ZiGate Do not wait for Ack/Nack")
-            self.ListOfCommands[i_sqn]['ExpectedAck'] = False
+            self.ListOfCommands[i_sqn]['Expected8011'] = False
 
         else:
             # Wait for Ack/Nack if NwkId != '0000' and Address Mode (ZiGate)
             self.loggingSend('Debug', "--- Add to Queue Ack/Nack %s %s" %
                              (self.ListOfCommands[i_sqn]['Cmd'], self.ListOfCommands[i_sqn]['Datas']))
             _add_cmd_to_wait_for_ack_nack_queue(self, i_sqn)
-
 
 def ready_to_send_if_needed(self):
 
@@ -923,14 +941,14 @@ def ready_to_send_if_needed(self):
             % ( len(self._waitFor8000Queue), len(self._waitFor8000Queue), len(self.zigateSendQueue),))
 
     elif self.zmode == 'zigate31d':
-        readyToSend = ((len(self._waitFor8000Queue) == 0) and (len(self._waitForAckNack) == 0) and (len(self._waitForCmdResponseQueue) == 0))
+        readyToSend = ((len(self._waitFor8000Queue) == 0) and (len(self._waitForAckNackQueue) == 0) and (len(self._waitForCmdResponseQueue) == 0))
         self.loggingSend('Debug', "--- ready_to_send_if_needed 31d - Q(0x8000): %s Q(Ack/Nack): %s Q(waitForResponse): %s sendNow: %s readyToSend: %s"
-            % ( len(self._waitFor8000Queue), len(self._waitForAckNack), len(self._waitForCmdResponseQueue), len(self.zigateSendQueue),readyToSend ))
+            % ( len(self._waitFor8000Queue), len(self._waitForAckNackQueue), len(self._waitForCmdResponseQueue), len(self.zigateSendQueue),readyToSend ))
 
     elif self.zmode == 'zigate31e':
-        readyToSend = self._waitFor8000Queue and self._waitForAPDUfree and self._waitForAckNack and self._waitForCmdResponseQueue
-        self.loggingSend('Debug', "--- ready_to_send_if_needed 31e - Q(0x8000): %s Q(8012/7-8702): %s Q(Ack/Nack): %s Q(waitForResponse): %s sendNow: %s readyToSend: %s"
-            % ( len(self._waitFor8000Queue), len(self._waitForAPDUfree), len(self._waitForAckNack), len(self._waitForCmdResponseQueue), len(self.zigateSendQueue),readyToSend ))
+        readyToSend = len(self._waitFor8000Queue) == 0 and len(self._waitFor8012Queue) == 0 and len(self._waitForAckNackQueue) == 0 and len(self._waitForCmdResponseQueue) == 0
+        self.loggingSend('Log', "--- ready_to_send_if_needed 31e - Q(0x8000): %s Q(8012/7-8702): %s Q(Ack/Nack): %s Q(waitForResponse): %s sendNow: %s readyToSend: %s"
+            % ( len(self._waitFor8000Queue), len(self._waitFor8012Queue), len(self._waitForAckNackQueue), len(self._waitForCmdResponseQueue), len(self.zigateSendQueue),readyToSend ))
 
     if readyToSend and len(self.zigateSendQueue) > 0:
         # Send next data
@@ -947,7 +965,7 @@ def _send_data(self, InternalSqn):
     if self.pluginconf.pluginConf["debugzigateCmd"]:
         self.loggingSend('Log', "======================== Send to Zigate - [%s] %s %s ExpectAck: %s ExpectResponse: %s WaitForResponse: %s" % (
             InternalSqn, cmd, datas, 
-            self.ListOfCommands[InternalSqn]['ExpectedAck'], 
+            self.ListOfCommands[InternalSqn]['Expected8011'], 
             self.ListOfCommands[InternalSqn]['ResponseExpected'], 
             self.ListOfCommands[InternalSqn]['WaitForResponse']))
 
@@ -979,6 +997,9 @@ def _send_data(self, InternalSqn):
         self._connection.Send(bytes.fromhex(str(lineinput)), 0)
     self.statistics._sent += 1
 
+
+# TimeOut Management
+
 def timeout_8000(self):
     # Timed Out 0x8000
     self.statistics._TOstatus += 1
@@ -988,7 +1009,7 @@ def timeout_8000(self):
     InternalSqn, TimeStamp = entry
     logExpectedCommand(self, '0x8000', int(time.time()), TimeStamp, InternalSqn)
     if InternalSqn in self.ListOfCommands:
-        if self.zmode == 'zigate31d' and self.ListOfCommands[InternalSqn]['ExpectedAck']:
+        if self.zmode == 'zigate31d' and self.ListOfCommands[InternalSqn]['Expected8011']:
             _next_cmd_to_wait_for_ack_nack_queue(self)
         if self.zmode == 'zigate31d' and self.ListOfCommands[InternalSqn]['WaitForResponse']:
             _next_cmd_from_wait_cmdresponse_queue(self)
@@ -1010,14 +1031,23 @@ def timeout_acknack(self):
 
 def timeout_8012(self):
 
-    self.statistics._TOstatus += 1
-    entry = _next_cmd_from_wait_forAPDU_queue(self)
+    if self.zmode != 'zigate31e':
+        return
+
+    entry = _next_cmd_from_wait_for8012_queue(self)
     if entry is None:
         return
+    Domoticz.Log("timeout_8012 : Entry : %s" %str(entry))
+
     InternalSqn, TimeStamp = entry
     logExpectedCommand(self, '8012', int(time.time()), TimeStamp, InternalSqn)
-    if self.zmode == 'zigate31e' and self.ListOfCommands[InternalSqn]['ExpectedAck']:
+
+    if InternalSqn not in self.ListOfCommands:
+        Domoticz.Error("timeout_8012 it has been removed from ListOfCommands!!!")
+
+    if self.zmode == 'zigate31e' and InternalSqn in self.ListOfCommands and self.ListOfCommands[InternalSqn]['Expected8011']:
             _next_cmd_to_wait_for_ack_nack_queue(self)
+
     if self.zmode == 'zigate31e' and InternalSqn in self.ListOfCommands and self.ListOfCommands[InternalSqn]['WaitForResponse']:
         _next_cmd_from_wait_cmdresponse_queue(self)
 
@@ -1047,7 +1077,7 @@ def check_and_timeout_listofcommand(self):
                 try:
                     self.loggingSend('Debug', " --  --  --  > - Time Out : [%s] %s %s Flags: %s/%s %04x Status: %s Time: %s"
                                         % (x, self.ListOfCommands[x]['Cmd'], self.ListOfCommands[x]['Datas'], self.ListOfCommands[x]['ResponseExpected'],
-                                        self.ListOfCommands[x]['ExpectedAck'], self.ListOfCommands[x]['MessageResponse'],
+                                        self.ListOfCommands[x]['Expected8011'], self.ListOfCommands[x]['MessageResponse'],
                                         self.ListOfCommands[x]['Status'],
                                         self.ListOfCommands[x]['ReceiveTimeStamp'].strftime("%m/%d/%Y, %H:%M:%S")))
                 except:
@@ -1057,7 +1087,7 @@ def check_and_timeout_listofcommand(self):
                 try:
                     self.loggingSend('Debug', " --  --  --  > - Time Out : [%s] %s %s Flags: %s/%s Status: %s Time: %s "
                                         % (x, self.ListOfCommands[x]['Cmd'], self.ListOfCommands[x]['Datas'],
-                                        self.ListOfCommands[x]['ResponseExpected'], self.ListOfCommands[x]['ExpectedAck'],
+                                        self.ListOfCommands[x]['ResponseExpected'], self.ListOfCommands[x]['Expected8011'],
                                         self.ListOfCommands[x]['Status'],
                                         self.ListOfCommands[x]['ReceiveTimeStamp'].strftime("%m/%d/%Y, %H:%M:%S")))
                 except:
@@ -1078,12 +1108,12 @@ def logExpectedCommand(self, desc, now, TimeStamp, i_sqn):
     if self.ListOfCommands[i_sqn]['MessageResponse']:
         self.loggingSend('Debug', " --  --  --  > Time Out %s [%s] %s sec for  %s %s %s/%s %04x Time: %s"
                             % (desc, i_sqn, (now - TimeStamp), self.ListOfCommands[i_sqn]['Cmd'], self.ListOfCommands[i_sqn]['Datas'],
-                            self.ListOfCommands[i_sqn]['ResponseExpected'], self.ListOfCommands[i_sqn]['ExpectedAck'],
+                            self.ListOfCommands[i_sqn]['ResponseExpected'], self.ListOfCommands[i_sqn]['Expected8011'],
                             self.ListOfCommands[i_sqn]['MessageResponse'], self.ListOfCommands[i_sqn]['ReceiveTimeStamp'].strftime("%m/%d/%Y, %H:%M:%S")))
     else:
         self.loggingSend('Debug', " --  --  --  > Time Out %s [%s] %s sec for  %s %s %s/%s %s Time: %s"
                             % (desc, i_sqn, (now - TimeStamp), self.ListOfCommands[i_sqn]['Cmd'], self.ListOfCommands[i_sqn]['Datas'],
-                            self.ListOfCommands[i_sqn]['ResponseExpected'], self.ListOfCommands[i_sqn]['ExpectedAck'],
+                            self.ListOfCommands[i_sqn]['ResponseExpected'], self.ListOfCommands[i_sqn]['Expected8011'],
                             self.ListOfCommands[i_sqn]['MessageResponse'], self.ListOfCommands[i_sqn]['ReceiveTimeStamp'].strftime("%m/%d/%Y, %H:%M:%S")))
     self.loggingSend('Debug',"--  --  --  > i_sqn: %s App_Sqn: %s Aps_Sqn: %s Type_Sqn: %s" \
         %( i_sqn, self.ListOfCommands[i_sqn]['APP_SQN'], self.ListOfCommands[i_sqn]['APS_SQN'] , self.ListOfCommands[i_sqn]['TYP_SQN']  ))
@@ -1099,7 +1129,7 @@ def check_timed_out(self):
     now = int(time.time())
 
     self.loggingSend('Debug2', "checkTimedOut  Start - Aps_Sqn: %s waitQ: %2s ackQ: %2s dataQ: %2s SendingFIFO: %3s"
-                     % (self.firmware_with_aps_sqn, len(self._waitFor8000Queue), len(self._waitForAckNack), len(self._waitForCmdResponseQueue), len(self.zigateSendQueue)))
+                     % (self.firmware_with_aps_sqn, len(self._waitFor8000Queue), len(self._waitForAckNackQueue), len(self._waitForCmdResponseQueue), len(self.zigateSendQueue)))
 
     # Check if we have a Wait for 0x8000 message
     if len(self._waitFor8000Queue) > 0:
@@ -1109,15 +1139,15 @@ def check_timed_out(self):
             timeout_8000(self)
 
     # Tmeout 8012/8702
-    if self._waitForAPDUfree:
-        InternalSqn, TimeStamp = self._waitForAPDUfree[0]
-        if (now - TimeStamp) >= TIME_OUT_8000:
+    if self._waitFor8012Queue:
+        InternalSqn, TimeStamp = self._waitFor8012Queue[0]
+        if (now - TimeStamp) >= TIME_OUT_8012:
             timeout_8012(self)
 
     # Check Ack/Nack Queue
-    if len(self._waitForAckNack) > 0 and self.zmode == 'zigate31d':
+    if len(self._waitForAckNackQueue) > 0 and self.zmode == 'zigate31d':
         # We are waiting for APS Ack/Nack
-        InternalSqn, TimeStamp = self._waitForAckNack[0]
+        InternalSqn, TimeStamp = self._waitForAckNackQueue[0]
         if (now - TimeStamp) >= TIME_OUT_ACK:
             timeout_acknack(self)
 
@@ -1134,7 +1164,7 @@ def check_timed_out(self):
     ready_to_send_if_needed(self)
 
     self.logging_receive('Debug2', "checkTimedOut  End   - waitQ: %2s ackQ: %2s dataQ: %2s SendingFIFO: %3s"
-                         % (len(self._waitFor8000Queue), len(self._waitForAckNack), len(self._waitForCmdResponseQueue), len(self.zigateSendQueue)))
+                         % (len(self._waitFor8000Queue), len(self._waitForAckNackQueue), len(self._waitForCmdResponseQueue), len(self.zigateSendQueue)))
 
 def cleanup_list_of_commands(self, i_sqn):
 
@@ -1144,146 +1174,19 @@ def cleanup_list_of_commands(self, i_sqn):
         del self.ListOfCommands[i_sqn]
 
 # Receiving functions
-
-def cleanup_8000_queues(self, status, isqn):
-    if status != '00':
-        cleanup_list_of_commands(self, isqn)
-        return
-    # Status 0x00
-    if self.zmode == 'zigate31d' and not self.ListOfCommands[isqn]['ExpectedAck'] and not self.ListOfCommands[isqn]['WaitForResponse']:
-        cleanup_list_of_commands(self, isqn)
-        return
-    if self.zmode == 'zigate31c' and not self.ListOfCommands[isqn]['WaitForResponse'] and not self.ListOfCommands[isqn]['ResponseExpected']:
-        cleanup_list_of_commands(self, isqn)
-        return
-
-def cleanup_8011_queues(self, status, isqn):
-    # Cleanup if required
-    if status != '00':
-        cleanup_list_of_commands(self, isqn)
-        return
-    if self.zmode == 'zigate31d' and not self.ListOfCommands[isqn]['WaitForResponse']:
-        cleanup_list_of_commands(self, isqn)
-        return
-
-def handle_8000( self, MsgType, MsgData, frame):
-    
-        Status = MsgData[0:2]
-        sqn_app = MsgData[2:4]
-        PacketType = MsgData[4:8]
-
-        sqn_aps = None
-        type_sqn = None
-        if not self.firmware_with_aps_sqn and len(MsgData) >= 12:
-            # New Firmware 3.1d (get aps sqn)
-            type_sqn = MsgData[8:10]
-            sqn_aps = MsgData[10:12]
-            self.firmware_with_aps_sqn = True
-            if len(MsgData) == 12:
-                self.zmode = 'zigate31d'
-                self.loggingSend( 'Status', "Firmware with APS SQN switching to Mode: ZiGate31d")                
-            #if len(MsgData) == 16:
-            #    # Firmware 31e
-            #    npdu =MsgData[12:14]
-            #    apdu = MsgData[14:16]
-            #    self.firmware_with_8012 = True
-            #    self.zmode = 'zigate31e'
-            #    self.loggingSend( 'Status', "Firmware with xPDU switching to Mode: ZiGate31e")
-
-        if self.zmode == 'auto':
-            self.zmode = 'zigate31c'
-            self.loggingSend( 'Status', "Firmware < 31d switching to Compatibility Mode: ZiGate31c")
-
-        i_sqn = check_and_process_8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn)
-
-        self.loggingSend('Log', "0x8000 - [%s] sqn_app: 0x%s/%3s, SQN_APS:non 0x%s type_sqn: %s" % (
-            i_sqn, sqn_app, int(sqn_app, 16), sqn_aps, type_sqn))
-
-        self.F_out(frame, None)
-
-        if i_sqn in self.ListOfCommands:
-            self.ListOfCommands[i_sqn]['APP_SQN'] = sqn_app
-            self.ListOfCommands[i_sqn]['APS_SQN'] = sqn_aps
-            self.ListOfCommands[i_sqn]['TYP_SQN'] = type_sqn
-            self.loggingSend('Debug', "--> Check cleanup Status: %s [%s] Cmd: %s Data: %s ExpectedAck: %s ResponseExpected: %s"
-                             % (Status, i_sqn, self.ListOfCommands[i_sqn]['Cmd'], self.ListOfCommands[i_sqn]['Datas'],
-                                self.ListOfCommands[i_sqn]['ExpectedAck'], self.ListOfCommands[i_sqn]['ResponseExpected']))
-            self.ListOfCommands[i_sqn]['Status'] = '8000'
-            cleanup_8000_queues(self, Status, i_sqn)
-
-        else:
-            if i_sqn is not None:
-                Domoticz.Error("i_sqn: %s not found in %s" %
-                               (i_sqn, str(self.ListOfCommands.keys())))
-
-        ready_to_send_if_needed(self)
-        return
-
-def handle_8011( self, MsgType, MsgData, frame):
-        MsgStatus = MsgData[0:2]
-        MsgSrcAddr = MsgData[2:6]
-        MsgSrcEp = MsgData[6:8]
-        MsgClusterId = MsgData[8:12]
-        MsgSEQ = '00'
-        if len(MsgData) > 12:
-            MsgSEQ = MsgData[12:14]
-        
-        Domoticz.Log("MsgType: %s Status: %s NwkId: %s Ep: %s ClusterId: %s Seq: %s self.zmode: %s FirmAckNoAck: %s" 
-            %(MsgType, MsgStatus, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgSEQ, self.zmode, self.firmware_with_aps_sqn ))
-        
-        if MsgStatus == '00':
-            # Ack
-            self.statistics._APSAck += 1
-        else:
-            # Nack
-            self.statistics._APSNck += 1
-
-        if MsgData and self.zmode == 'zigate31c':
-            # We do not block on Ack for firmware from 31c and below
-            self.F_out(frame, None)
-            ready_to_send_if_needed(self)
-            return
-
-        if MsgData and self.zmode in ( 'zigate31d', 'zigate31e'):
-            # This is Optimum with firmware 3.1d and above 
-            if self.firmware_with_aps_sqn:
-                i_sqn = check_and_process_8011_31d( self, MsgStatus, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgSEQ)
-            else:
-                i_sqn = check_and_process_8011_31c( self, MsgStatus, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgSEQ)
-
-            ReportingCommand = None
-            if i_sqn in self.ListOfCommands:
-                self.ListOfCommands[i_sqn]['Status'] = '8011'
-                ReportingCommand = dict(self.ListOfCommands[i_sqn])
-                # Forward the message to plugin for further processing
-                self.F_out(frame, ReportingCommand)
-                # We receive Response for Command, let's cleanup
-                if not self.ListOfCommands[i_sqn]['WaitForResponse']:
-                    cleanup_list_of_commands(self, i_sqn)
-            else:
-                Domoticz.Log("i_sqn %s not in ListOfCommands" %i_sqn)
-            ready_to_send_if_needed(self)
-            return
-
-        self.F_out(frame, None)
-        ready_to_send_if_needed(self)
-        return        
-
 def process_frame(self, frame):
-
     # process the Data and check if this is a 0x8000 message
     # in case the message contains several frame, receiveData will be recall
-
 
     self.logging_receive('Debug', "process_frame - Frame: %s" % frame)
     if frame == '' or frame is None or len(frame) < 12:
         return
 
-    Status = None
     i_sqn = None
     MsgType = frame[2:6]
     MsgLength = frame[6:10]
     MsgCRC = frame[10:12]
+
     self.logging_receive('Log', "process_frame - MsgType: %s MsgLength: %s MsgCRC: %s" % (MsgType, MsgLength, MsgCRC))
 
     if MsgType == '8701':
@@ -1311,7 +1214,7 @@ def process_frame(self, frame):
         ready_to_send_if_needed(self)
         return
 
-    if len(self._waitFor8000Queue) == 0 and len(self._waitForAPDUfree) == 0 and len(self._waitForCmdResponseQueue) == 0 and len(self._waitForAckNack) == 0:
+    if len(self._waitFor8000Queue) == 0 and len(self._waitFor8012Queue) == 0 and len(self._waitForCmdResponseQueue) == 0 and len(self._waitForAckNackQueue) == 0:
         self.F_out(frame, None)
         ready_to_send_if_needed(self)
         return
@@ -1321,25 +1224,32 @@ def process_frame(self, frame):
         self.logging_receive('Log', "process_frame - MsgType: %s" %MsgType)
         if MsgType == '8702':
             self.statistics._APSFailure += 1
-        i_sqn = process_msg_PDU( self, MsgData )
+        i_sqn = handle_8012_8702( self, MsgType, MsgData, frame)
         self.F_out(frame, None)
         ready_to_send_if_needed(self)
 
-    if len(self._waitFor8000Queue) == 0 and len(self._waitForCmdResponseQueue) == 0 and len(self._waitForAckNack) == 0:
+    if len(self._waitFor8000Queue) == 0 and len(self._waitForCmdResponseQueue) == 0 and len(self._waitForAckNackQueue) == 0:
         self.F_out(frame, None)
         ready_to_send_if_needed(self)
         return
 
     if MsgData and MsgType == "8000":
         handle_8000( self, MsgType, MsgData, frame)
+        self.F_out(frame, None)
+        ready_to_send_if_needed(self)
+        return
 
-    if len(self._waitForCmdResponseQueue) == 0 and len(self._waitForAckNack) == 0:
+    if len(self._waitForCmdResponseQueue) == 0 and len(self._waitForAckNackQueue) == 0:
         self.F_out(frame, None)
         ready_to_send_if_needed(self)
         return
 
     if MsgType == '8011':
+        self.logging_receive('Log', "process_frame - MsgType: %s" %MsgType)
         handle_8011( self, MsgType, MsgData, frame)
+        self.F_out(frame, None)
+        ready_to_send_if_needed(self)
+        return
 
     if len(self._waitForCmdResponseQueue) == 0:
         # All queues are empty
@@ -1358,8 +1268,7 @@ def process_frame(self, frame):
             MsgClusterId = MsgData[8:12]
 
             self.loggingSend( 'Debug', "--> zigbee31c Receive MsgType: %s with ExtSqn: %s" % (MsgType, MsgZclSqn))
-            i_sqn = check_and_process_others_31c(
-                self, MsgType, MsgZclSqn, MsgNwkId, MsgEp, MsgClusterId)
+            i_sqn = check_and_process_others_31c( self, MsgType, MsgZclSqn, MsgNwkId, MsgEp, MsgClusterId)
         else:
             i_sqn = check_and_process_others_31c(self, MsgType)
 
@@ -1378,26 +1287,65 @@ def process_frame(self, frame):
 
     # Forward the message to plugin for further processing
     self.F_out(frame, None)
-
     ready_to_send_if_needed(self)
+
     # Let's take the opportunity to check TimeOut
     self.check_timed_out_for_tx_queues()
 
-def error_8000_log( self, Status, PacketType, InternalSqn):
-        if InternalSqn in self.ListOfCommands:
-            self.loggingSend(
-                "Debug","ZiGate reports error %s on submitted command %s/%s" 
-                %( Status, self.ListOfCommands[InternalSqn]['Cmd'], self.ListOfCommands[InternalSqn]['Datas']) 
-            )
-        else:
-            self.loggingSend(
-                "Debug",
-                "ZiGate reports error %s for PacketType: %s. Unable to find command out of %s commands"
-                % (Status, PacketType, len(self.ListOfCommands))
-            )
+# 1 ### 0x8000
+
+def handle_8000( self, MsgType, MsgData, frame):
+
+    Status = MsgData[0:2]
+    sqn_app = MsgData[2:4]
+    PacketType = MsgData[4:8]
+
+    sqn_aps = None
+    type_sqn = None
+    if not self.firmware_with_aps_sqn and len(MsgData) >= 12:
+        # New Firmware 3.1d (get aps sqn)
+        type_sqn = MsgData[8:10]
+        sqn_aps = MsgData[10:12]
+        self.firmware_with_aps_sqn = True
+        if len(MsgData) == 12:
+            self.zmode = 'zigate31d'
+            self.loggingSend('Status', "==> Transport Mode switch to: %s" % self.zmode)
+
+        if len(MsgData) == 16:
+            # Firmware 31e
+            npdu =MsgData[12:14]
+            apdu = MsgData[14:16]
+            self.firmware_with_8012 = True
+            self.zmode = 'zigate31e'
+            self.loggingSend('Status', "==> Transport Mode switch to: %s" % self.zmode)
+
+    if self.zmode == 'auto':
+        self.zmode = 'zigate31c'
+        self.loggingSend('Status', "==> Transport Mode switch to: %s" % self.zmode)
+
+    i_sqn = check_and_process_8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn)
+
+    self.loggingSend('Log', "0x8000 - [%s] sqn_app: 0x%s/%3s, SQN_APS:non 0x%s type_sqn: %s" % (
+        i_sqn, sqn_app, int(sqn_app, 16), sqn_aps, type_sqn))
+
+    if i_sqn in self.ListOfCommands:
+        self.ListOfCommands[i_sqn]['APP_SQN'] = sqn_app
+        self.ListOfCommands[i_sqn]['APS_SQN'] = sqn_aps
+        self.ListOfCommands[i_sqn]['TYP_SQN'] = type_sqn
+        self.loggingSend('Debug', "--> Check cleanup Status: %s [%s] Cmd: %s Data: %s ExpectedAck: %s ResponseExpected: %s"
+                            % (Status, i_sqn, self.ListOfCommands[i_sqn]['Cmd'], self.ListOfCommands[i_sqn]['Datas'],
+                            self.ListOfCommands[i_sqn]['Expected8011'], self.ListOfCommands[i_sqn]['ResponseExpected']))
+        self.ListOfCommands[i_sqn]['Status'] = '8000'
+        clean_lstcmds_from8000(self, Status, i_sqn)
+
+    else:
+        if i_sqn is not None:
+            Domoticz.Error("i_sqn: %s not found in %s" %(i_sqn, str(self.ListOfCommands.keys())))
+
+    return
 
 def check_and_process_8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn):
-
+    
     if PacketType == '':
         return None
 
@@ -1411,21 +1359,21 @@ def check_and_process_8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn)
 
     if Status != '00':
         self.statistics._ackKO += 1
-        if self.zmode == 'zigate31c':
-            # In that case we need to unblock data, as we will never get it !
-            if len(self._waitForCmdResponseQueue) > 0:
-                InternalSqn, TimeStamp = _next_cmd_from_wait_cmdresponse_queue(self)
-                error_8000_log( self, Status, PacketType, InternalSqn)
 
-        elif self.zmode == 'zigate31d':
-            # In that case we need to unblock ack_nack, as we will never get it !
-            if len(self._waitForAckNack) > 0:
-                InternalSqn, TimeStamp = _next_cmd_to_wait_for_ack_nack_queue(self)
-                error_8000_log( self, Status, PacketType, InternalSqn)
+        # In that case we need to unblock data, as we will never get it !
+        if len(self._waitForCmdResponseQueue) > 0:
+            InternalSqn, TimeStamp = _next_cmd_from_wait_cmdresponse_queue(self)
 
-            # In that case we should remove the WaitFor Response if any !
-            if len(self._waitForCmdResponseQueue) > 0:
-                InternalSqn, TimeStamp = _next_cmd_from_wait_cmdresponse_queue(self)
+        if  len(self._waitFor8012Queue) > 0:
+            InternalSqn, TimeStamp = _next_cmd_from_wait_for8012_queue(self)
+
+        # In that case we need to unblock ack_nack, as we will never get it !
+        if len(self._waitForAckNackQueue) > 0:
+            InternalSqn, TimeStamp = _next_cmd_to_wait_for_ack_nack_queue(self)
+
+        # In that case we should remove the WaitFor Response if any !
+        if len(self._waitForCmdResponseQueue) > 0:
+            InternalSqn, TimeStamp = _next_cmd_from_wait_cmdresponse_queue(self)
 
         # Finaly freeup the 0x8000 queue
         NextCmdFromWaitFor8000 = _next_cmd_from_wait_for8000_queue(self)
@@ -1444,6 +1392,7 @@ def check_and_process_8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn)
     InternalSqn, TimeStamp = NextCmdFromWaitFor8000
     self.loggingSend('Debug', " --  --  -- - > InternSqn: %s ExternalSqn: %s ExternalSqnZCL: %s" %
                      (InternalSqn, sqn_app, sqn_aps))
+
     if InternalSqn not in self.ListOfCommands:
         return None
 
@@ -1460,109 +1409,47 @@ def check_and_process_8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn)
                 len(self.ListOfCommands)
                 ))
 
-
-    self.loggingSend('Debug', " --  --  0x8000 > Expect: %s Receive: %s" %
-                     (self.ListOfCommands[InternalSqn]['Cmd'], PacketType))
+    self.loggingSend('Debug', " --  --  0x8000 > Expect: %s Receive: %s" %(self.ListOfCommands[InternalSqn]['Cmd'], PacketType))
     if self.ListOfCommands[InternalSqn]['Cmd']:
         IsCommandOk = int(self.ListOfCommands[InternalSqn]['Cmd'], 16) == int(PacketType, 16)
         if not IsCommandOk:
-            self.loggingSend(
-                'Log', 
-                "Error: check_and_process_8000 - [%s] sync error : Expecting %s Received: %s , lenQ8000: %s Q8000: %s ListOfCommand: %s"
+            self.loggingSend( 'Log',  "Error: check_and_process_8000 - [%s] sync error : Expecting %s Received: %s , lenQ8000: %s Q8000: %s ListOfCommand: %s"
                 % (InternalSqn, self.ListOfCommands[InternalSqn]['Cmd'], PacketType, len(self._waitFor8000Queue), str(self._waitFor8000Queue), str(self.ListOfCommands)))
             return None
 
-    if (not self.firmware_with_aps_sqn and self.ListOfCommands[InternalSqn]['ExpectedAck']) or (self.firmware_with_aps_sqn and type_sqn):
+    if (not self.firmware_with_aps_sqn and self.ListOfCommands[InternalSqn]['Expected8011']) or (self.firmware_with_aps_sqn and type_sqn):
         # WARNING WE NEED TO Set TYPE_APP_ZCL or TYPE_APP_ZDP depending on the type of function, dont add it if ZIGATE function
         cmd = int(PacketType, 16)
         if cmd not in ZIGATE_COMMANDS:
-            Domoticz.Error(
-                "check_and_process_8000 received an unknown packet type: %s" % PacketType)
+            self.loggingSend( 'Error', "check_and_process_8000 received an unknown packet type: %s" % PacketType)
             return None
 
         if ZIGATE_COMMANDS[cmd]['Layer'] == 'ZCL':
-            sqn_add_external_sqn(
-                self, InternalSqn, sqn_app, TYPE_APP_ZCL, sqn_aps)
+            sqn_add_external_sqn( self, InternalSqn, sqn_app, TYPE_APP_ZCL, sqn_aps)
 
         elif ZIGATE_COMMANDS[cmd]['Layer'] == 'ZDP':
-            sqn_add_external_sqn(
-                self, InternalSqn, sqn_app, TYPE_APP_ZDP, sqn_aps)
+            sqn_add_external_sqn(self, InternalSqn, sqn_app, TYPE_APP_ZDP, sqn_aps)
 
     return InternalSqn
 
-def check_and_process_8011_31c(self, Status, NwkId, Ep, MsgClusterId, ExternSqn):
+def clean_lstcmds_from8000(self, status, isqn):
+    if status != '00':
+        cleanup_list_of_commands(self, isqn)
+        return
 
-    self.loggingSend('Log', "--> check_and_process_8011_31c - Status: %s ExternalSqn: %s NwkId: %s Ep: %s ClusterId: %s" %
-                     (Status, ExternSqn, NwkId, Ep, MsgClusterId))
-    # Unqueue the Command in order to free for the next
-    InternSqn, TimeStamps = _next_cmd_to_wait_for_ack_nack_queue(self)
-    Domoticz.Log("----------> i_sqn: %s e_sqn: %s TimeStamps: %s" %( InternSqn, ExternSqn, TimeStamps))
+    # Status 0x00
+    if self.zmode in ( 'zigate31d', 'zigate31e')  and not self.ListOfCommands[isqn]['Expected8012'] and not self.ListOfCommands[isqn]['Expected8011'] and not self.ListOfCommands[isqn]['WaitForResponse']:
+        cleanup_list_of_commands(self, isqn)
+        return
 
-    if (self.firmware_with_aps_sqn):
-        InternSqn_from_ExternSqn = sqn_get_internal_sqn_from_aps_sqn(
-            self, ExternSqn)
-        if InternSqn != InternSqn_from_ExternSqn:
-            Domoticz.Error("check_and_process_8011_31c different sqn : InternSqn:%s InternSQN_from_ExternalSQN:%s" % (
-                InternSqn, InternSqn_from_ExternSqn))
+    if self.zmode == 'zigate31c' and not self.ListOfCommands[isqn]['WaitForResponse'] and not self.ListOfCommands[isqn]['ResponseExpected']:
+        cleanup_list_of_commands(self, isqn)
+        return
 
-    if Status == '00':
-        if InternSqn in self.ListOfCommands:
-            self.loggingSend('Debug', " - [%s] receive Ack for Cmd: %s - size of SendQueue: %s" % (
-                InternSqn,  self.ListOfCommands[InternSqn]['Cmd'], self.loadTransmit()))
-        self.statistics._APSAck += 1
-    else:
-        if InternSqn in self.ListOfCommands:
-            self.loggingSend('Debug', " - [%s] receive Nack for Cmd: %s - size of SendQueue: %s" % (
-                InternSqn,  self.ListOfCommands[InternSqn]['Cmd'], self.loadTransmit()))
-        self.statistics._APSNck += 1
-    return InternSqn
 
-def check_and_process_8011_31d(self, Status, NwkId, Ep, MsgClusterId, ExternSqn):
+# 2 ### 0x8012/0x8702
+def handle_8012_8702( self, MsgType, MsgData, frame):
 
-    self.loggingSend('Log', "--> check_and_process_8011_31d - Status: %s ExternalSqn: %s NwkId: %s Ep: %s ClusterId: %s" %
-                     (Status, ExternSqn, NwkId, Ep, MsgClusterId))
-
-    # Get i_sqn from sqnManagement
-    InternSqn = sqn_get_internal_sqn_from_aps_sqn(self, ExternSqn)
-
-    if InternSqn is None:
-        self.loggingSend('Log', "check_and_process_8011_31d - Not SQN match found! e_sqn: %s" %ExternSqn)
- 
-    # Let's check that InternalSqn is in the Queue
-    item = None
-    for x in self._waitForAckNack:
-        if x[0] == InternSqn:
-            # Item found
-            item = x
-            break
-
-    if item is None:
-        # We receive an un expected Ack
-        return None
-
-    if Status == '00':
-        if InternSqn in self.ListOfCommands:
-            if self.pluginconf.pluginConf["debugzigateCmd"]:
-                self.loggingSend('Log', " - Above 3.1d [%s] receive Ack for Cmd: %s - size of SendQueue: %s" % (
-                    InternSqn,  self.ListOfCommands[InternSqn]['Cmd'], self.loadTransmit()))
-        self.statistics._APSAck += 1
-    else:
-        if InternSqn in self.ListOfCommands:
-            if self.pluginconf.pluginConf["debugzigateCmd"]:
-                self.loggingSend('Log', " - Above 3.1d [%s] receive Nack for Cmd: %s - size of SendQueue: %s" % (
-                    InternSqn,  self.ListOfCommands[InternSqn]['Cmd'], self.loadTransmit()))
-
-            # In that case we should remove the WaitFor Response if any !
-        if len(self._waitForCmdResponseQueue) > 0:
-            _next_cmd_from_wait_cmdresponse_queue( self )
-
-        self.statistics._APSNck += 1
-
-    self._waitForAckNack.remove(item)
-
-    return InternSqn
-
-def process_msg_PDU( self, MsgData ):
     MsgStatus = MsgData[0:2]
     MsgDataDestMode = MsgData[6:8]
 
@@ -1583,49 +1470,219 @@ def process_msg_PDU( self, MsgData ):
         nPDU = MsgData[14:16]
         aPDU = MsgData[16:18]
     else:
-        Domoticz.Log("process_msg_PDU Unknown address mode : %s" %MsgDataDestMode)
+        self.loggingSend( 'Error',"handle_8012_8702 Unknown address mode : %s in frame: %s" %(MsgDataDestMode, frame))
         return None
 
-    self.loggingSend( 'Log',"--> process_msg_PDU Status: %s Addr: %s Ep: %s npdu: %s / apdu: %s" %(MsgStatus, MsgAddr,MsgSQN, nPDU, aPDU))
-    InternSqn = sqn_get_internal_sqn_from_aps_sqn(self, MsgSQN)
-    self.loggingSend( 'Log',"--> process_msg_PDU i_sqn: %s e_sqn: %s Status: %s Addr: %s Ep: %s npdu: %s / apdu: %s" %(InternSqn, MsgSQN, MsgStatus, MsgAddr,MsgSQN, nPDU, aPDU))
-
-    if InternSqn is None:
-        self.loggingSend( 'Log',"--> process_msg_PDU e_sqn: %s not found in i_sqn" %MsgSQN)
-
-    # Let's check that InternalSqn is in the Queue
-    item = None
-    for x in self._waitForAPDUfree:
-        if x[0] == InternSqn:
-            # Item found
-            item = x
-            break
-    if item is None:
-        # We receive an un expected Ack
+    
+    self.loggingSend( 'Log', "handle_8012_8702 MsgType: %s Status: %s NwkId: %s Seq: %s self.zmode: %s FirmAckNoAck: %s" 
+        %(MsgType, MsgStatus, MsgAddr,  MsgSQN, self.zmode, self.firmware_with_aps_sqn ))
+    
+    if MsgData is None:
         return None
 
     if MsgStatus == '00':
-        if InternSqn in self.ListOfCommands:
-            if self.pluginconf.pluginConf["debugzigateCmd"]:
-                self.loggingSend('Log', " - Above 3.1e [%s] receive 8012/8702 for Command: %s - size of SendQueue: %s" % (
-                    InternSqn,  self.ListOfCommands[InternSqn]['Cmd'], self.loadTransmit()))
-
+        self.statistics._APSAck += 1
     else:
-        if InternSqn in self.ListOfCommands:
-            if self.pluginconf.pluginConf["debugzigateCmd"]:
-                self.loggingSend('Log', " - Above 3.1e [%s] receive 8012/8702 for Command: %s - size of SendQueue: %s" % (
-                    InternSqn,  self.ListOfCommands[InternSqn]['Cmd'], self.loadTransmit()))
+        self.statistics._APSNck += 1
 
-        # In that case we should remove the WaitForAckNack if any !
+    if MsgData and self.zmode == 'zigate31c':
+        # We do not block on Ack for firmware from 31c and below
+        return None
+
+    # This is Optimum with firmware 3.1d and above 
+    i_sqn = None
+    if self.firmware_with_aps_sqn:
+        i_sqn = check_and_process_8012_31e( self, MsgStatus, MsgAddr, MsgSQN, nPDU, aPDU )
+
+    if i_sqn in self.ListOfCommands:
+        self.ListOfCommands[i_sqn]['Status'] = MsgType
+        # Forward the message to plugin for further processing
+        cleanup_8012_queues(self, MsgStatus, i_sqn)
+        return i_sqn
+
+    self.loggingSend( 'Log', "i_sqn %s not in ListOfCommands" %i_sqn)
+    return i_sqn
+
+def check_and_process_8012_31e( self, MsgStatus, MsgAddr, MsgSQN, nPDU, aPDU ):
+
+    self.loggingSend( 'Log',"--> check_and_process_8012_31e Status: %s Addr: %s Sqn: %s/%s npdu: %s / apdu: %s" %(MsgStatus, MsgAddr, int(MsgSQN,16), MsgSQN, nPDU, aPDU))
+    InternSqn = sqn_get_internal_sqn_from_aps_sqn(self, MsgSQN)
+    self.loggingSend( 'Log',"--> check_and_process_8012_31e i_sqn: %s e_sqn: 0x%04x/%s Status: %s Addr: %s Ep: %s npdu: %s / apdu: %s"
+        %(InternSqn, int(MsgSQN,16), MsgSQN, MsgStatus, MsgAddr,MsgSQN, nPDU, aPDU))
+
+
+
+
+
+    # Let's check that we are waiting on that I_sqn
+    if len(self._waitFor8012Queue) == 0:
+        self.loggingSend('Error', "check_and_process_8012_31e - _waitFor8012Queue empty while receiving Ack/Nack !!!")
+        return None
+
+    if InternSqn:
+        self.loggingSend( 'Log',"--> check_and_process_8012_31e e_sqn: %s/%s not found in i_sqn" %( int(MsgSQN,16),MsgSQN ))
+        # We will then expect taht is the one expected.
+
+        i_sqn, ts = self._waitFor8012Queue[0]
+        if i_sqn != InternSqn:
+            self.loggingSend('Error', "check_and_process_8012_31e - Miss-match on InterSqn: 0x%04x/%s and i_sqn: 0x%04x/%s" %( InternSqn, InternSqn, i_sqn, i_sqn))
+            return None
+    
+        if ( InternSqn in self.ListOfCommands and self.pluginconf.pluginConf["debugzigateCmd"] ):
+            self.loggingSend('Log', " - Above 3.1e [%s] receive 8012/8702 for Command: %s with status: %s - size of SendQueue: %s" % (
+                InternSqn,  self.ListOfCommands[InternSqn]['Cmd'], MsgStatus, self.loadTransmit()))
+    
+    if MsgStatus != '00':
+        # In that case we need to unblock ack_nack, as we will never get it !
+        if len(self._waitForAckNackQueue) > 0:
+            InternalSqn, TimeStamp = _next_cmd_to_wait_for_ack_nack_queue(self)
+
+        # In that case we should remove the WaitFor Response if any !
+        if len(self._waitForCmdResponseQueue) > 0:
+            InternalSqn, TimeStamp = _next_cmd_from_wait_cmdresponse_queue(self)
 
         # In that case we should remove the WaitFor Response if any !
         if len(self._waitForCmdResponseQueue) > 0:
             _next_cmd_from_wait_cmdresponse_queue( self )
 
+    _next_cmd_from_wait_for8012_queue( self )
+    return InternSqn
+
+def cleanup_8012_queues(self, status, isqn):
+    # Cleanup if required
+    if status != '00':
+        cleanup_list_of_commands(self, isqn)
+        return
+    if self.zmode == 'zigate31e' and not self.ListOfCommands[isqn]['Expected8012']:
+        cleanup_list_of_commands(self, isqn)
+        return
+
+
+# 3 ### 0x8011
+
+def handle_8011( self, MsgType, MsgData, frame):
+    MsgStatus = MsgData[0:2]
+    MsgSrcAddr = MsgData[2:6]
+    MsgSrcEp = MsgData[6:8]
+    MsgClusterId = MsgData[8:12]
+    MsgSEQ = '00'
+    if len(MsgData) > 12:
+        MsgSEQ = MsgData[12:14]
+    
+    Domoticz.Log("MsgType: %s Status: %s NwkId: %s Ep: %s ClusterId: %s Seq: %s/%s self.zmode: %s FirmAckNoAck: %s" 
+        %(MsgType, MsgStatus, MsgSrcAddr, MsgSrcEp,MsgClusterId, int(MsgSEQ,16), MsgSEQ, self.zmode, self.firmware_with_aps_sqn ))
+    
+    if MsgData is None:
+        return None
+
+    if MsgStatus == '00':
+        self.statistics._APSAck += 1
+    else:
         self.statistics._APSNck += 1
 
-    self._waitForAPDUfree.remove(item)
+    if MsgData and self.zmode == 'zigate31c':
+        # We do not block on Ack for firmware from 31c and below
+        return None
+
+    # This is Optimum with firmware 3.1d and above 
+    if self.firmware_with_aps_sqn:
+        i_sqn = check_and_process_8011_31d( self, MsgStatus, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgSEQ)
+    else:
+        i_sqn = check_and_process_8011_31c( self, MsgStatus, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgSEQ)
+
+    ReportingCommand = None
+    if i_sqn in self.ListOfCommands:
+        self.ListOfCommands[i_sqn]['Status'] = '8011'
+        # We receive Response for Command, let's cleanup
+        if not self.ListOfCommands[i_sqn]['WaitForResponse']:
+            cleanup_list_of_commands(self, i_sqn)
+        return i_sqn
+
+    Domoticz.Log("i_sqn %s not in ListOfCommands" %i_sqn)
+
+
+    return i_sqn
+
+def check_and_process_8011_31c(self, Status, NwkId, Ep, MsgClusterId, ExternSqn):
+
+    self.loggingSend('Log', "--> check_and_process_8011_31c - Status: %s ExternalSqn: %s NwkId: %s Ep: %s ClusterId: %s" %
+                     (Status, ExternSqn, NwkId, Ep, MsgClusterId))
+    # Unqueue the Command in order to free for the next
+    InternSqn, TimeStamps = _next_cmd_to_wait_for_ack_nack_queue(self)
+    Domoticz.Log("----------> i_sqn: %s e_sqn: %s TimeStamps: %s" %( InternSqn, ExternSqn, TimeStamps))
+
+    if (self.firmware_with_aps_sqn):
+        InternSqn_from_ExternSqn = sqn_get_internal_sqn_from_aps_sqn(
+            self, ExternSqn)
+        if InternSqn != InternSqn_from_ExternSqn:
+            self.loggingSend('Error', "check_and_process_8011_31c different sqn : InternSqn:%s InternSQN_from_ExternalSQN:%s" % (
+                InternSqn, InternSqn_from_ExternSqn))
+
+    if Status == '00':
+        if InternSqn in self.ListOfCommands:
+            self.loggingSend('Debug', " - [%s] receive Ack for Cmd: %s - size of SendQueue: %s" % ( InternSqn,  self.ListOfCommands[InternSqn]['Cmd'], self.loadTransmit()))
+        self.statistics._APSAck += 1
+    else:
+        if InternSqn in self.ListOfCommands:
+            self.loggingSend('Debug', " - [%s] receive Nack for Cmd: %s - size of SendQueue: %s" % ( InternSqn,  self.ListOfCommands[InternSqn]['Cmd'], self.loadTransmit()))
+        self.statistics._APSNck += 1
     return InternSqn
+
+def check_and_process_8011_31d(self, Status, NwkId, Ep, MsgClusterId, ExternSqn):
+
+    self.loggingSend('Log', "--> check_and_process_8011_31d - Status: %s ExternalSqn: 0x%04x/%s NwkId: %s Ep: %s ClusterId: %s" %
+                     (Status, int(ExternSqn,16), ExternSqn, NwkId, Ep, MsgClusterId))
+
+    # Get i_sqn from sqnManagement
+    InternSqn = sqn_get_internal_sqn_from_aps_sqn(self, ExternSqn)
+
+    if InternSqn is None:
+        self.loggingSend('Error', "check_and_process_8011_31d - ExternSqn not found 0x%04x/%s !!!" %(int(ExternSqn,16), ExternSqn))
+        return None
+
+    # Let's check that we are waiting on that I_sqn
+    if len(self._waitForAckNackQueue) == 0:
+        self.loggingSend('Error', "check_and_process_8011_31d - _waitForAckNackQueue empty while receiving Ack/Nack !!!")
+        return None
+    
+    i_sqn, ts = self._waitForAckNackQueue[0]
+    if i_sqn != InternSqn:
+        self.loggingSend('Error', "check_and_process_8011_31d - Miss-match on InterSqn: 0x%04x/%s and i_sqn: %04x/%s" %( InternSqn, InternSqn, i_sqn, i_sqn))
+        return None
+
+    if Status == '00':
+        self.statistics._APSAck += 1
+        if InternSqn in self.ListOfCommands:
+            if self.pluginconf.pluginConf["debugzigateCmd"]:
+                self.loggingSend('Log', " - Above 3.1d [%s] receive Ack for Cmd: %s - size of SendQueue: %s" % (
+                    InternSqn,  self.ListOfCommands[InternSqn]['Cmd'], self.loadTransmit()))
+        
+    else:
+        self.statistics._APSNck += 1
+        if InternSqn in self.ListOfCommands:
+            if self.pluginconf.pluginConf["debugzigateCmd"]:
+                self.loggingSend('Log', " - Above 3.1d [%s] receive Nack for Cmd: %s - size of SendQueue: %s" % (
+                    InternSqn,  self.ListOfCommands[InternSqn]['Cmd'], self.loadTransmit()))
+
+            # In that case we should remove the WaitFor Response if any !
+        if len(self._waitForCmdResponseQueue) > 0:
+            _next_cmd_from_wait_cmdresponse_queue( self )
+
+    _next_cmd_to_wait_for_ack_nack_queue(self)
+
+    return InternSqn
+
+def cleanup_8011_queues(self, status, isqn):
+    # Cleanup if required
+    if status != '00':
+        cleanup_list_of_commands(self, isqn)
+        return
+    if self.zmode == 'zigate31d' and not self.ListOfCommands[isqn]['WaitForResponse']:
+        cleanup_list_of_commands(self, isqn)
+        return
+
+
+# 4 ### Other message types like Response and Async messages
 
 
 def check_and_process_others_31c(self, MsgType, MsgSqn=None, MsgNwkId=None, MsgEp=None, MsgClusterId=None):
@@ -1645,7 +1702,6 @@ def check_and_process_others_31c(self, MsgType, MsgSqn=None, MsgNwkId=None, MsgE
     InternalSqn, TimeStamp = self._waitForCmdResponseQueue[0]
     if InternalSqn not in self.ListOfCommands:
         self.logging_receive( 'Error',"process_other_type_of_message - MsgType: %s, InternalSqn: %s not found in ListOfCommands: %s" % (MsgType, InternalSqn, str(self.ListOfCommands.keys())))
-        ready_to_send_if_needed(self)
         return None
 
     expResponse = self.ListOfCommands[InternalSqn]['MessageResponse']
@@ -1685,17 +1741,14 @@ def check_and_process_others_31c(self, MsgType, MsgSqn=None, MsgNwkId=None, MsgE
             self.loggingSend( 'Debug', " --  -- - > Expecting: %s %s %s receiving %s %s %s" % (expNwkId, expEp, expCluster, MsgNwkId, MsgEp, MsgClusterId))
             return None
 
-        ready_to_send_if_needed(self)
         return InternalSqn
 
     self.loggingSend('Debug', " --  -- - > Internal SQN: %s Received: %s and expecting %04x" % (InternalSqn, MsgType, expResponse))
     if int(MsgType, 16) != expResponse:
         self.logging_receive('Debug', "         - Async incoming PacketType")
-        ready_to_send_if_needed(self)
         return None
 
     # If we have Still commands in the queue and the WaitforStatus+Data are free
-    ready_to_send_if_needed(self)
     return InternalSqn
 
 
@@ -1714,7 +1767,6 @@ def check_and_process_others_31d(self, MsgType, MsgSqn):
 
     if len(self._waitForCmdResponseQueue) == 0:
         self.logging_receive('Debug', " --  -- - > - WaitForDataQueue empty")
-        ready_to_send_if_needed(self)
         return
 
     # We are waiting for a Response to a command
@@ -1723,7 +1775,6 @@ def check_and_process_others_31d(self, MsgType, MsgSqn):
     if InternalSqn not in self.ListOfCommands:
         self.logging_receive('Error',"check_and_process_others_31d - MsgType: %s, InternalSqn: %s not found in ListOfCommands: %s"
                        % (MsgType, InternalSqn, str(self.ListOfCommands.keys())))
-        ready_to_send_if_needed(self)
         return None
 
     cmd = None
@@ -1739,7 +1790,6 @@ def check_and_process_others_31d(self, MsgType, MsgSqn):
         # We drop, unknown Command
         self.logging_receive('Error', "check_and_process_others_31d - [%s] Unknown Message Type for Receied MsgType: %04x Cmd: %s Data: %s" 
                 %( InternalSqn, int(MsgType, 16), self.ListOfCommands[InternalSqn]['Cmd'], self.ListOfCommands[InternalSqn]['Datas']))
-        ready_to_send_if_needed(self)
         return None
 
     expResponse = self.ListOfCommands[InternalSqn]['MessageResponse']
@@ -1764,10 +1814,8 @@ def check_and_process_others_31d(self, MsgType, MsgSqn):
 
     if int(MsgType, 16) != expResponse:
         self.logging_receive('Debug', "         - Async incoming PacketType")
-        ready_to_send_if_needed(self)
         return None
 
-    ready_to_send_if_needed(self)
     return InternalSqn
 
 
@@ -1789,7 +1837,7 @@ def process8002(self, frame):
         return frame
 
     self.logging_receive(
-        'Debug', "process8002 Sqn: %s ManufCode: %s Command: %s Data: %s " %(Sqn, ManufacturerCode, Command, Data))
+        'Debug', "process8002 Sqn: %s/%s ManufCode: %s Command: %s Data: %s " %(int(Sqn,16), Sqn , ManufacturerCode, Command, Data))
     if Command == '00': # Read Attribute
         return buildframe_read_attribute_request( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Data  )
 

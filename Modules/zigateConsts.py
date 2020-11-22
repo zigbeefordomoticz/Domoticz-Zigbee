@@ -309,7 +309,8 @@ ZCL_CLUSTERS_LIST = {
 
 # Zigate Commands, with there sequence of response ( Status + Data)
 ZIGATE_COMMANDS = {
-    0x0002: {'Sequence': (0x8000, ),        'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'set rawmode', 'NwkId 2nd Bytes': False},
+    0x0002: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'set rawmode', 'NwkId 2nd Bytes': False},
+    0x0003: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'set hybrid mode', 'NwkId 2nd Bytes': False},
     0x0009: {'Sequence': (0x8000, 0x8009), 'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'Get Network State (Firm v3.0d)', 'NwkId 2nd Bytes': False},
     0x0010: {'Sequence': (0x8010, ),       'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'Get Version', 'NwkId 2nd Bytes': False},
     0x0011: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'Reset', 'NwkId 2nd Bytes': False},
@@ -449,7 +450,7 @@ ZIGATE_COMMANDS = {
     0x0600: {'Sequence': (0x8000, 0x8600), 'Ack': True, 'SQN': False, 'Layer': 'ZDP', 'Command': 'E_SL_MSG_NWK_RECOVERY_EXTRACT_REQ', 'NwkId 2nd Bytes': False},
     0x0601: {'Sequence': (0x8000, 0x8601), 'Ack': True, 'SQN': False, 'Layer': 'ZDP', 'Command': 'E_SL_MSG_NWK_RECOVERY_RESTORE_REQ', 'NwkId 2nd Bytes': False},
 
-    0x0806: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZDP', 'Command': 'AHI Control', 'NwkId 2nd Bytes': False},
+    0x0806: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', 'Command': 'AHI Control', 'NwkId 2nd Bytes': False},
 
     # PDM response
     0x0034: {'Sequence': (),             'Ack': False, 'SQN': False, 'Layer': 'PDM', 'Command': 'PE_SL_MSG_DEBUG_PDM', 'NwkId 2nd Bytes': False},
