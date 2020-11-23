@@ -673,7 +673,7 @@ def _next_cmd_from_wait_for8012_queue(self):
     return ret
 
 
-def _add_cmd_to_wait_for_ack_nack_queue(self, InternalSqn):
+def _add_cmd_to_wait_for8011_queue(self, InternalSqn):
     # add a command to the AckNack waiting list
     Domoticz.Log("Add %s to 8011 Queue" %InternalSqn)
     timestamp = int(time.time())
@@ -681,13 +681,13 @@ def _add_cmd_to_wait_for_ack_nack_queue(self, InternalSqn):
     self._waitFor8011Queue.append((InternalSqn, timestamp))
 
 
-def _next_cmd_to_wait_for_ack_nack_queue(self):
+def _next_cmd_to_wait_for8011_queue(self):
     # return the entry waiting for Data
     ret = (None, None)
     if len(self._waitFor8011Queue) > 0:
         ret = self._waitFor8011Queue[0]
         del self._waitFor8011Queue[0]
-    #self.loggingSend(  'Debug2', " --  > _next_cmd_to_wait_for_ack_nack_queue - Unqueue %s " %( str(ret) ))
+    #self.loggingSend(  'Debug2', " --  > _next_cmd_to_wait_for8011_queue - Unqueue %s " %( str(ret) ))
     Domoticz.Log("Retreive %s to 8011 Queue" %(str(ret)))
     return ret
 
@@ -776,7 +776,7 @@ def send_data_internal(self, InternalSqn):
         # Add to 0x8000 queue
         _add_cmd_to_wait_for8000_queue(self, InternalSqn)
 
-        if self.ListOfCommands[InternalSqn]['Expected8012'] and self.zmode in 'zigate31e':
+        if self.ListOfCommands[InternalSqn]['Expected8012'] and self.zmode == 'zigate31e':
             # In addition to 0x8000 we have to wait 0x8012 or 0x8702
             patch_8012_for_sending( self, InternalSqn)
 
@@ -908,8 +908,8 @@ def patch_8011_for_sending(self, i_sqn):
             self.ListOfCommands[i_sqn]['Expected8011'] = False
         else:
             # Wait for Ack/Nack
-            self.loggingSend('Debug', "--- Add to Queue Ack/Nack")
-            _add_cmd_to_wait_for_ack_nack_queue(self, i_sqn)
+            self.loggingSend('Log', "--- Add to Queue Ack/Nack")
+            _add_cmd_to_wait_for8011_queue(self, i_sqn)
     else:
         if self.ListOfCommands[i_sqn]['Datas'][0:2] == '%02x' % ADDRESS_MODE['group']:
             # Do not wait for Ack/Nack as the command to Groups
@@ -925,9 +925,9 @@ def patch_8011_for_sending(self, i_sqn):
 
         else:
             # Wait for Ack/Nack if NwkId != '0000' and Address Mode (ZiGate)
-            self.loggingSend('Debug', "--- Add to Queue Ack/Nack %s %s" %
+            self.loggingSend('Log', "--- Add to Queue Ack/Nack %s %s" %
                              (self.ListOfCommands[i_sqn]['Cmd'], self.ListOfCommands[i_sqn]['Datas']))
-            _add_cmd_to_wait_for_ack_nack_queue(self, i_sqn)
+            _add_cmd_to_wait_for8011_queue(self, i_sqn)
 
 def ready_to_send_if_needed(self):
 
@@ -1011,7 +1011,7 @@ def timeout_8000(self):
             if self.ListOfCommands[InternalSqn]['Expected8012']:
                 _next_cmd_from_wait_for8012_queue(self)
             if self.ListOfCommands[InternalSqn]['Expected8011']:
-                _next_cmd_to_wait_for_ack_nack_queue(self)
+                _next_cmd_to_wait_for8011_queue(self)
             if self.ListOfCommands[InternalSqn]['WaitForResponse']:
                 _next_cmd_from_wait_cmdresponse_queue(self)
 
@@ -1021,7 +1021,7 @@ def timeout_8000(self):
 
 def timeout_acknack(self):
     self.statistics._TOstatus += 1
-    entry = _next_cmd_to_wait_for_ack_nack_queue(self)
+    entry = _next_cmd_to_wait_for8011_queue(self)
     if entry is None:
         return
     InternalSqn, TimeStamp = entry
@@ -1048,7 +1048,7 @@ def timeout_8012(self):
         Domoticz.Error("timeout_8012 it has been removed from ListOfCommands!!!")
 
     if  InternalSqn in self.ListOfCommands and self.ListOfCommands[InternalSqn]['Expected8011']:
-        _next_cmd_to_wait_for_ack_nack_queue(self)
+        _next_cmd_to_wait_for8011_queue(self)
 
     if  InternalSqn in self.ListOfCommands and self.ListOfCommands[InternalSqn]['WaitForResponse']:
         _next_cmd_from_wait_cmdresponse_queue(self)
@@ -1190,6 +1190,8 @@ def process_frame(self, frame):
     MsgCRC = frame[10:12]
 
     self.logging_receive('Log', "process_frame - MsgType: %s MsgLength: %s MsgCRC: %s" % (MsgType, MsgLength, MsgCRC))
+    self.loggingSend('Log', "process_frame - Q(0x8000): %s Q(8012/7-8702): %s Q(Ack/Nack): %s Q(waitForResponse): %s sendNow: %s"
+            % ( len(self._waitFor8000Queue), len(self._waitFor8012Queue), len(self._waitFor8011Queue), len(self._waitForCmdResponseQueue), len(self.zigateSendQueue) ))
 
     if MsgType == '8701':
         # Route Discovery
@@ -1216,9 +1218,10 @@ def process_frame(self, frame):
         ready_to_send_if_needed(self)
         return
 
-    if len(self._waitFor8000Queue) == 0 and len(self._waitFor8012Queue) == 0 and len(self._waitForCmdResponseQueue) == 0 and len(self._waitFor8011Queue) == 0:
+    if len(self._waitFor8000Queue) == 0 and len(self._waitFor8012Queue) == 0 and len(self._waitFor8011Queue) == 0 and len(self._waitForCmdResponseQueue) == 0:
         self.F_out(frame, None)
         ready_to_send_if_needed(self)
+        self.logging_receive( 'Log', "process_frame - return  1") 
         return
 
     if MsgType in ( '8012', '8702') and self.zmode == 'zigate31e':
@@ -1234,6 +1237,7 @@ def process_frame(self, frame):
     if len(self._waitFor8000Queue) == 0 and len(self._waitForCmdResponseQueue) == 0 and len(self._waitFor8011Queue) == 0:
         self.F_out(frame, None)
         ready_to_send_if_needed(self)
+        self.logging_receive( 'Log', "process_frame - return  2") 
         return
 
     if MsgData and MsgType == "8000":
@@ -1245,6 +1249,7 @@ def process_frame(self, frame):
     if len(self._waitForCmdResponseQueue) == 0 and len(self._waitFor8011Queue) == 0:
         self.F_out(frame, None)
         ready_to_send_if_needed(self)
+        self.logging_receive( 'Log', "process_frame - return  3") 
         return
 
     if MsgType == '8011':
@@ -1258,6 +1263,7 @@ def process_frame(self, frame):
         # All queues are empty
         self.F_out(frame, None)
         ready_to_send_if_needed(self)
+        self.logging_receive( 'Log', "process_frame - return  4") 
         return
 
     # We reach that stage: Got a message not 0x8000/0x8011/0x8701/0x8202 an not a standolone message
@@ -1305,22 +1311,26 @@ def handle_8000( self, MsgType, MsgData, frame):
 
     sqn_aps = None
     type_sqn = None
-    if not self.firmware_with_aps_sqn and len(MsgData) >= 12:
+    if len(MsgData) >= 12:
         # New Firmware 3.1d (get aps sqn)
         type_sqn = MsgData[8:10]
         sqn_aps = MsgData[10:12]
-        self.firmware_with_aps_sqn = True
-        if len(MsgData) == 12:
-            self.zmode = 'zigate31d'
-            self.loggingSend('Status', "==> Transport Mode switch to: %s" % self.zmode)
-
+        
         if len(MsgData) == 16:
             # Firmware 31e
             npdu =MsgData[12:14]
             apdu = MsgData[14:16]
-            self.firmware_with_8012 = True
-            self.zmode = 'zigate31e'
+            if not self.firmware_with_8012:
+                self.firmware_with_aps_sqn = True
+                self.firmware_with_8012 = True
+                self.zmode = 'zigate31e'
+                self.loggingSend('Status', "==> Transport Mode switch to: %s" % self.zmode)
+
+        elif not self.firmware_with_aps_sqn:
+            self.firmware_with_aps_sqn = True
+            self.zmode = 'zigate31d'
             self.loggingSend('Status', "==> Transport Mode switch to: %s" % self.zmode)
+
 
     if self.zmode == 'auto':
         self.zmode = 'zigate31c'
@@ -1372,7 +1382,7 @@ def check_and_process_8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn)
 
         # In that case we need to unblock ack_nack, as we will never get it !
         if len(self._waitFor8011Queue) > 0:
-            InternalSqn, TimeStamp = _next_cmd_to_wait_for_ack_nack_queue(self)
+            InternalSqn, TimeStamp = _next_cmd_to_wait_for8011_queue(self)
 
         # In that case we should remove the WaitFor Response if any !
         if len(self._waitForCmdResponseQueue) > 0:
@@ -1413,6 +1423,7 @@ def check_and_process_8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn)
                 ))
 
     self.loggingSend('Debug', " --  --  0x8000 > Expect: %s Receive: %s" %(self.ListOfCommands[InternalSqn]['Cmd'], PacketType))
+
     if self.ListOfCommands[InternalSqn]['Cmd']:
         IsCommandOk = int(self.ListOfCommands[InternalSqn]['Cmd'], 16) == int(PacketType, 16)
         if not IsCommandOk:
@@ -1420,6 +1431,7 @@ def check_and_process_8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn)
                 % (InternalSqn, self.ListOfCommands[InternalSqn]['Cmd'], PacketType, len(self._waitFor8000Queue), str(self._waitFor8000Queue), str(self.ListOfCommands)))
             return None
 
+    Domoticz.Log("-- -- firmware_with_aps_sqn: %s Expected8011: %s type_sqn: %s" %(self.firmware_with_aps_sqn,self.ListOfCommands[InternalSqn]['Expected8011'], type_sqn ))
     if (not self.firmware_with_aps_sqn and self.ListOfCommands[InternalSqn]['Expected8011']) or (self.firmware_with_aps_sqn and type_sqn):
         # WARNING WE NEED TO Set TYPE_APP_ZCL or TYPE_APP_ZDP depending on the type of function, dont add it if ZIGATE function
         cmd = int(PacketType, 16)
@@ -1432,6 +1444,9 @@ def check_and_process_8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn)
 
         elif ZIGATE_COMMANDS[cmd]['Layer'] == 'ZDP':
             sqn_add_external_sqn(self, InternalSqn, sqn_app, TYPE_APP_ZDP, sqn_aps)
+
+        else:
+            self.loggingSend( 'Error', "check_and_process_8000 SQN_TYPE not found for commands: %s" % PacketType)
 
     return InternalSqn
 
@@ -1539,7 +1554,7 @@ def check_and_process_8012_31e( self, MsgStatus, MsgAddr, MsgSQN, nPDU, aPDU ):
     if MsgStatus != '00':
         # In that case we need to unblock ack_nack, as we will never get it !
         if len(self._waitFor8011Queue) > 0:
-            InternalSqn, TimeStamp = _next_cmd_to_wait_for_ack_nack_queue(self)
+            InternalSqn, TimeStamp = _next_cmd_to_wait_for8011_queue(self)
 
         # In that case we should remove the WaitFor Response if any !
         if len(self._waitForCmdResponseQueue) > 0:
@@ -1612,7 +1627,7 @@ def check_and_process_8011_31c(self, Status, NwkId, Ep, MsgClusterId, ExternSqn)
     self.loggingSend('Log', "--> check_and_process_8011_31c - Status: %s ExternalSqn: %s NwkId: %s Ep: %s ClusterId: %s" %
                      (Status, ExternSqn, NwkId, Ep, MsgClusterId))
     # Unqueue the Command in order to free for the next
-    InternSqn, TimeStamps = _next_cmd_to_wait_for_ack_nack_queue(self)
+    InternSqn, TimeStamps = _next_cmd_to_wait_for8011_queue(self)
     Domoticz.Log("----------> i_sqn: %s e_sqn: %s TimeStamps: %s" %( InternSqn, ExternSqn, TimeStamps))
 
     if (self.firmware_with_aps_sqn):
@@ -1672,7 +1687,7 @@ def check_and_process_8011_31d(self, Status, NwkId, Ep, MsgClusterId, ExternSqn)
         if len(self._waitForCmdResponseQueue) > 0:
             _next_cmd_from_wait_cmdresponse_queue( self )
 
-    _next_cmd_to_wait_for_ack_nack_queue(self)
+    _next_cmd_to_wait_for8011_queue(self)
 
     return InternSqn
 
