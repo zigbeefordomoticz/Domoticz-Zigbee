@@ -1338,7 +1338,7 @@ def handle_8000( self, MsgType, MsgData, frame):
 
     i_sqn = check_and_process_8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn)
 
-    self.loggingSend('Log', "0x8000 - [%s] sqn_app: 0x%s/%3s, SQN_APS:non 0x%s type_sqn: %s" % (
+    self.loggingSend('Log', "0x8000 - [%s] sqn_app: 0x%s/%3s, SQN_APS: 0x%s type_sqn: %s" % (
         i_sqn, sqn_app, int(sqn_app, 16), sqn_aps, type_sqn))
 
     if i_sqn in self.ListOfCommands:
@@ -1471,30 +1471,28 @@ def clean_lstcmds_from8000(self, status, isqn):
 
 # 2 ### 0x8012/0x8702
 def handle_8012_8702( self, MsgType, MsgData, frame):
-
-    MsgStatus = MsgData[0:2]
-    MsgDataDestMode = MsgData[6:8]
+    
+    unknown1 = MsgData[0:2]
+    MsgStatus = MsgData[2:4]
+    unknown2 = MsgData[4:8]
+    MsgDataDestMode = MsgData[8:10]
 
     MsgSQN = MsgAddr = None
     if MsgDataDestMode == '01':  # IEEE
-        MsgAddr = MsgData[8:24]
-        MsgSQN = MsgData[24:26]
-        nPDU = MsgData[26:28]
-        aPDU = MsgData[28:30]
-    elif MsgDataDestMode == '02':  # Short Address
-        MsgAddr = MsgData[8:12]
-        MsgSQN = MsgData[12:14]
-        nPDU = MsgData[14:16]
-        aPDU = MsgData[16:18]
-    elif MsgDataDestMode == '03':  # Group
-        MsgAddr = MsgData[8:12]
-        MsgSQN = MsgData[12:14]
-        nPDU = MsgData[14:16]
-        aPDU = MsgData[16:18]
+        MsgAddr = MsgData[10:26]
+        MsgSQN = MsgData[26:28]
+        nPDU = MsgData[28:30]
+        aPDU = MsgData[30:32]
+    elif MsgDataDestMode in  ('02', '03'):  # Short Address/Group
+        MsgAddr = MsgData[10:14]
+        MsgSQN = MsgData[14:16]
+        nPDU = MsgData[16:18]
+        aPDU = MsgData[18:20]
     else:
         self.loggingSend( 'Error',"handle_8012_8702 Unknown address mode : %s in frame: %s" %(MsgDataDestMode, frame))
         return None
 
+    Domoticz.Log("handle_8012_8702 - MsgType: %s MsgData: %s" %(MsgType, MsgData))
     
     self.loggingSend( 'Log', "handle_8012_8702 MsgType: %s Status: %s NwkId: %s Seq: %s self.zmode: %s FirmAckNoAck: %s" 
         %(MsgType, MsgStatus, MsgAddr,  MsgSQN, self.zmode, self.firmware_with_aps_sqn ))
@@ -1528,8 +1526,10 @@ def handle_8012_8702( self, MsgType, MsgData, frame):
 def check_and_process_8012_31e( self, MsgStatus, MsgAddr, MsgSQN, nPDU, aPDU ):
 
     self.loggingSend( 'Log',"--> check_and_process_8012_31e Status: %s Addr: %s Sqn: %s/%s npdu: %s / apdu: %s" %(MsgStatus, MsgAddr, int(MsgSQN,16), MsgSQN, nPDU, aPDU))
+
     InternSqn = sqn_get_internal_sqn_from_aps_sqn(self, MsgSQN)
-    self.loggingSend( 'Log',"--> check_and_process_8012_31e i_sqn: %s e_sqn: 0x%04x/%s Status: %s Addr: %s Ep: %s npdu: %s / apdu: %s"
+
+    self.loggingSend( 'Log',"--> check_and_process_8012_31e i_sqn: %s e_sqn: 0x%02x/%s Status: %s Addr: %s Ep: %s npdu: %s / apdu: %s"
         %(InternSqn, int(MsgSQN,16), MsgSQN, MsgStatus, MsgAddr,MsgSQN, nPDU, aPDU))
 
 
@@ -1538,7 +1538,7 @@ def check_and_process_8012_31e( self, MsgStatus, MsgAddr, MsgSQN, nPDU, aPDU ):
         self.loggingSend('Error', "check_and_process_8012_31e - _waitFor8012Queue empty while receiving Ack/Nack !!!")
         return None
 
-    if InternSqn:
+    if not InternSqn:
         self.loggingSend( 'Log',"--> check_and_process_8012_31e e_sqn: %s/%s not found in i_sqn" %( int(MsgSQN,16),MsgSQN ))
         # We will then expect taht is the one expected.
 
@@ -1654,6 +1654,7 @@ def check_and_process_8011_31d(self, Status, NwkId, Ep, MsgClusterId, ExternSqn)
 
     # Get i_sqn from sqnManagement
     InternSqn = sqn_get_internal_sqn_from_aps_sqn(self, ExternSqn)
+    Domoticz.Log("check_and_process_8011_31d i_sqn: %s from e_sqn: %s" %(InternSqn, ExternSqn))
 
     if InternSqn is None:
         self.loggingSend('Error', "check_and_process_8011_31d - ExternSqn not found %s/0x%s !!!" %(int(ExternSqn,16), ExternSqn))
