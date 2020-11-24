@@ -381,7 +381,7 @@ def Decode8000_v2(self, Devices, MsgData, MsgLQI):  # Status
 
     if MsgData[0:2] != "00":
         if MsgData[0:2] in ( '80', '14', '15'):
-            self.log.logging(  "Input", "Log", "Decode8000 - PacketType: %s TypeSqn: %s sqn_app: %s sqn_aps: %s Status: [%s] " 
+            self.log.logging(  "Input", "Error", "Decode8000 - PacketType: %s TypeSqn: %s sqn_app: %s sqn_aps: %s Status: [%s] " 
                 % (PacketType, type_sqn, sqn_app, sqn_aps, Status), )
         else:
             self.log.logging(  "Input", "Error", "Decode8000 - PacketType: %s TypeSqn: %s sqn_app: %s sqn_aps: %s Status: [%s] "
@@ -4572,8 +4572,6 @@ def Decode0208(self, Devices, MsgData, MsgLQI):
 
 
 def Decode9999(self, Devices, MsgData, MsgLQI):
-
-    
 
     StatusMsg = ''
     if  MsgData in ZCL_EXTENDED_ERROR_CODES:
