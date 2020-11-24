@@ -1,5 +1,5 @@
 {
-	"_comment": "blitzwolf zigbee plug",
+	"_comment": "blitzwolf zigbee plug. Attention TUYA has a similar plug with the same Model Name. Unfortunatly Power/Metering not supported by Tuya",
 	"_version": "1.0",
 	"Ep":{
 		"01":{ 
