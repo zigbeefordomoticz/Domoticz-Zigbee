@@ -994,7 +994,7 @@ def timeout_8000(self):
         'ISQN': InternalSqn,
         'TimeStamp': TimeStamp,
         'zmode': self.zmode,
-        'Command': self.ListOfCommands[InternalSqn],
+        'Commands': self.ListOfCommands,
     }
     self.loggingSend('Error', "timeout_8000", context=_context)
 
@@ -1023,7 +1023,7 @@ def timeout_acknack(self):
         'ISQN': InternalSqn,
         'TimeStamp': TimeStamp,
         'zmode': self.zmode,
-        'Command': self.ListOfCommands[InternalSqn],
+        'Commands': self.ListOfCommands,
     }
     self.loggingSend('Error', "timeout_acknack", context=_context)
     logExpectedCommand(self, 'Ack', int(time.time()), TimeStamp, InternalSqn)
@@ -1045,7 +1045,7 @@ def timeout_8012(self):
         'ISQN': InternalSqn,
         'TimeStamp': TimeStamp,
         'zmode': self.zmode,
-        'Command': self.ListOfCommands[InternalSqn],
+        'Commands': self.ListOfCommands,
     }
     self.loggingSend('Error', "timeout_8012", context=_context)
     logExpectedCommand(self, '8012', int(time.time()), TimeStamp, InternalSqn)
@@ -1070,7 +1070,7 @@ def timeout_cmd_response(self):
         'ISQN': InternalSqn,
         'TimeStamp': TimeStamp,
         'zmode': self.zmode,
-        'Command': self.ListOfCommands[InternalSqn],
+        'Commands': self.ListOfCommands,
     }
     self.loggingSend('Error', "timeout_cmd_response", context=_context)
     if InternalSqn not in self.ListOfCommands:
@@ -1428,7 +1428,7 @@ def check_and_process_8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn)
                 'PacketType': PacketType,
                 '8000Queue': self._waitFor8000Queue,
                 'ListOfCommands': self.ListOfCommands,
-                'Command': self.ListOfCommands[InternalSqn]
+                'Commands': self.ListOfCommands,
             }
             self.loggingSend('Error', "check_and_process_8000", context=_context)
             return None
@@ -1439,6 +1439,7 @@ def check_and_process_8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn)
         if cmd not in ZIGATE_COMMANDS:
             _context = {
                 'Error code': 'TRANSPORT00d',
+                'Commands': self.ListOfCommands,
             }
             self.loggingSend('Error', "check_and_process_8000", context=_context)
             return None
@@ -1494,6 +1495,7 @@ def handle_8012_8702( self, MsgType, MsgData, frame):
             'Error code': 'TRANSPORT005',
             'MsgType': MsgType,
             'MsgData': MsgData,
+            'Commands': self.ListOfCommands,
         }
         self.loggingSend('Error', "handle_8012_8702", context=_context)
 
@@ -1545,7 +1547,7 @@ def check_and_process_8012_31e( self, MsgStatus, MsgAddr, MsgSQN, nPDU, aPDU ):
             'eSQN': MsgSQN,
             'nPDU': nPDU,
             'aPDU': aPDU,
-            'Command': self.ListOfCommands[InternSqn],
+            'Commands': self.ListOfCommands,
         }
         self.loggingSend('Error', "check_and_process_8012_31e", context=_context)
         return None
@@ -1576,7 +1578,7 @@ def check_and_process_8012_31e( self, MsgStatus, MsgAddr, MsgSQN, nPDU, aPDU ):
             'eSQN': MsgSQN,
             'nPDU': nPDU,
             'aPDU': aPDU,
-            'Command': self.ListOfCommands[InternSqn],
+            'Commands': self.ListOfCommands,
         }
         self.loggingSend('Error', "check_and_process_8012_31e", context=_context)
         return None
@@ -1669,7 +1671,7 @@ def check_and_process_8011_31c(self, Status, NwkId, Ep, MsgClusterId, ExternSqn)
                 'Status': Status,
                 'Addr': NwkId,
                 'eSQN': ExternSqn,
-                'Command': self.ListOfCommands[InternSqn],
+                'Commands': self.ListOfCommands,
             }
             self.loggingSend('Error', "check_and_process_8011_31c", context=_context)
 
@@ -1697,7 +1699,7 @@ def check_and_process_8011_31d(self, Status, NwkId, Ep, MsgClusterId, ExternSqn)
             'Status': Status,
             'Addr': NwkId,
             'eSQN': ExternSqn,
-            'Command': self.ListOfCommands[InternSqn],
+            'Commands': self.ListOfCommands,
         }
         self.loggingSend('Error', "check_and_process_8011_31d", context=_context)
         return None
@@ -1712,13 +1714,14 @@ def check_and_process_8011_31d(self, Status, NwkId, Ep, MsgClusterId, ExternSqn)
             'Status': Status,
             'Addr': NwkId,
             'eSQN': ExternSqn,
-            'Command': self.ListOfCommands[InternSqn],
+            'Commands': self.ListOfCommands,
         }
         self.loggingSend('Error', "check_and_process_8011_31d", context=_context)
         return None
     
     i_sqn, ts = self._waitFor8011Queue[0]
     if i_sqn != InternSqn:
+
         _context = {
             'Error code': 'TRANSPORT00c',
             '8011Queue': self._waitFor8011Queue[0],
@@ -1727,7 +1730,7 @@ def check_and_process_8011_31d(self, Status, NwkId, Ep, MsgClusterId, ExternSqn)
             'Status': Status,
             'Addr': NwkId,
             'eSQN': ExternSqn,
-            'Command': self.ListOfCommands[InternSqn],
+            'Commands': self.ListOfCommands,
         }
         self.loggingSend('Error', "check_and_process_8011_31d", context=_context)
         return None
