@@ -1453,6 +1453,9 @@ def check_and_process_8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn)
                 'Error code': 'TRANSPORT00c',
                 'iSQN': InternalSqn,
                 'PacketType': PacketType,
+                'SQN_APP': sqn_app, 
+                'SQN_APS': sqn_aps, 
+                'TYP_SQN': type_sqn
             }
             self.logging_send_error(  "check_and_process_8000", context=_context)
             return None
@@ -1465,6 +1468,9 @@ def check_and_process_8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn)
                 'Error code': 'TRANSPORT00d',
                 'PacketType': PacketType,
                 'iSQN': InternalSqn,
+                'SQN_APP': sqn_app, 
+                'SQN_APS': sqn_aps, 
+                'TYP_SQN': type_sqn
             }
             self.logging_send_error(  "check_and_process_8000", context=_context)
             return None
