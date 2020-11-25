@@ -245,7 +245,7 @@ class ZigateTransport(object):
     def logging_send_error( self, message, _context=None):
         if _context is None:
             _context = {}
-            
+
         _context['Queues'] = {
             '8000 Queue':     list(self._waitFor8000Queue),
             '8011 Queue':     list(self._waitFor8011Queue),
@@ -530,7 +530,7 @@ def store_ISQN_infos( self, InternalSqn, cmd, datas, ackIsDisabled, waitForRespo
     self.ListOfCommands[InternalSqn]['Datas'] = datas
     self.ListOfCommands[InternalSqn]['ReTransmit'] = 0
     self.ListOfCommands[InternalSqn]['Status'] = ''
-    self.ListOfCommands[InternalSqn]['ReceiveTimeStamp'] = datetime.now()
+    self.ListOfCommands[InternalSqn]['ReceiveTimeStamp'] = str((datetime.now()).strftime("%m/%d/%Y, %H:%M:%S"))
     self.ListOfCommands[InternalSqn]['SentTimeStamp'] = None
     self.ListOfCommands[InternalSqn]['PDMCommand'] = False
 
@@ -1116,7 +1116,7 @@ def check_and_timeout_listofcommand(self):
                                         % (x, self.ListOfCommands[x]['Cmd'], self.ListOfCommands[x]['Datas'], self.ListOfCommands[x]['ResponseExpected'],
                                         self.ListOfCommands[x]['Expected8011'], self.ListOfCommands[x]['MessageResponse'],
                                         self.ListOfCommands[x]['Status'],
-                                        self.ListOfCommands[x]['ReceiveTimeStamp'].strftime("%m/%d/%Y, %H:%M:%S")))
+                                        self.ListOfCommands[x]['ReceiveTimeStamp']))
                 except:
                     self.logging_send('Error', "--  --  --  > - Time Out Missing flag in ListOfCommands: [%s] %s" %(x, self.ListOfCommands[x]))
 
@@ -1126,7 +1126,7 @@ def check_and_timeout_listofcommand(self):
                                         % (x, self.ListOfCommands[x]['Cmd'], self.ListOfCommands[x]['Datas'],
                                         self.ListOfCommands[x]['ResponseExpected'], self.ListOfCommands[x]['Expected8011'],
                                         self.ListOfCommands[x]['Status'],
-                                        self.ListOfCommands[x]['ReceiveTimeStamp'].strftime("%m/%d/%Y, %H:%M:%S")))
+                                        self.ListOfCommands[x]['ReceiveTimeStamp']))
                 except:
                     self.logging_send('Error', "--  --  --  > - Time Out Missing flag in ListOfCommands: [%s] %s" %(x, self.ListOfCommands[x]))
 
@@ -1146,12 +1146,12 @@ def logExpectedCommand(self, desc, now, TimeStamp, i_sqn):
         self.logging_send('Debug', " --  --  --  > Time Out %s [%s] %s sec for  %s %s %s/%s %04x Time: %s"
                             % (desc, i_sqn, (now - TimeStamp), self.ListOfCommands[i_sqn]['Cmd'], self.ListOfCommands[i_sqn]['Datas'],
                             self.ListOfCommands[i_sqn]['ResponseExpected'], self.ListOfCommands[i_sqn]['Expected8011'],
-                            self.ListOfCommands[i_sqn]['MessageResponse'], self.ListOfCommands[i_sqn]['ReceiveTimeStamp'].strftime("%m/%d/%Y, %H:%M:%S")))
+                            self.ListOfCommands[i_sqn]['MessageResponse'], self.ListOfCommands[i_sqn]['ReceiveTimeStamp']))
     else:
         self.logging_send('Debug', " --  --  --  > Time Out %s [%s] %s sec for  %s %s %s/%s %s Time: %s"
                             % (desc, i_sqn, (now - TimeStamp), self.ListOfCommands[i_sqn]['Cmd'], self.ListOfCommands[i_sqn]['Datas'],
                             self.ListOfCommands[i_sqn]['ResponseExpected'], self.ListOfCommands[i_sqn]['Expected8011'],
-                            self.ListOfCommands[i_sqn]['MessageResponse'], self.ListOfCommands[i_sqn]['ReceiveTimeStamp'].strftime("%m/%d/%Y, %H:%M:%S")))
+                            self.ListOfCommands[i_sqn]['MessageResponse'], self.ListOfCommands[i_sqn]['ReceiveTimeStamp']))
     self.logging_send('Debug',"--  --  --  > i_sqn: %s App_Sqn: %s Aps_Sqn: %s Type_Sqn: %s" \
         %( i_sqn, self.ListOfCommands[i_sqn]['APP_SQN'], self.ListOfCommands[i_sqn]['APS_SQN'] , self.ListOfCommands[i_sqn]['TYP_SQN']  ))
 
