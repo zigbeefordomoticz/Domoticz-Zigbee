@@ -246,6 +246,10 @@ class ZigateTransport(object):
         if context is None:
             context = {}
 
+        context['Firmware'] = {
+                'Firmware Version': self.FirmwareVersion,
+                'Firmware Major': self.FirmwareMajorVersion
+                }
         context['Queues'] = {
             '8000 Queue':     list(self._waitFor8000Queue),
             '8011 Queue':     list(self._waitFor8011Queue),
@@ -264,8 +268,7 @@ class ZigateTransport(object):
             'sqn_APS': self.sqn_aps,
             'current_SQN': self.current_sqn,
             }
-        if Nwkid:
-            if Nwkid in self.ListOfDevices:
+        if Nwkid and Nwkid in self.ListOfDevices:
                 context['Device Infos'] = {
                         'IEEE': self.ListOfDevices[ Nwkid ]['IEEE']
                         }
