@@ -1199,7 +1199,6 @@ class WebServer(object):
  
         if verb == 'GET':
             if self.log.LogErrorHistory:
-                Domoticz.Log("self.log.LogErrorHistory: %s" %str(self.log.LogErrorHistory))
                 _response["Data"] =  json.dumps( self.log.LogErrorHistory, sort_keys=False ) 
         return _response
         
