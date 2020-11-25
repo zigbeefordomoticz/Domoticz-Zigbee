@@ -140,10 +140,6 @@ class LoggingManagement:
         else:
             _txt = self.PluginHealth['Txt']
         _context = {
-                    'Firmware': {
-                        'Firmware Version': self.FirmwareVersion,
-                        'Firmware Major': self.FirmwareMajorVersion
-                        },
                     'Time': int(time.time()),
                     'Module': module,
                     'nwkid': nwkid,
