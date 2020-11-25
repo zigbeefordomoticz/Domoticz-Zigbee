@@ -264,6 +264,11 @@ class ZigateTransport(object):
             'sqn_APS': self.sqn_aps,
             'current_SQN': self.current_sqn,
             }
+        if nwkid:
+            if nwkid in self.ListOfDevices:
+                context['Device Infos'] = {
+                        'IEEE': self.ListOfDevices[ nwkid ]['IEEE']
+                        }
         self.logging_send('Error', message,  nwkid, context)
 
 
@@ -1343,6 +1348,10 @@ def handle_8000( self, MsgType, MsgData, frame):
                 self.firmware_with_8012 = True
                 self.zmode = 'zigate31e'
                 self.logging_send('Status', "==> Transport Mode switch to: %s" % self.zmode)
+            if self.statistics._MaxaPdu > int(apdu,16):
+                self.statistics._MaxaPdu = int(apdu,16)
+            if self.statistics._MaxnPdu > int(npdu,16):
+                self.statistics._MaxnPdu = int(npdu,16)
 
         elif not self.firmware_with_aps_sqn:
             self.firmware_with_aps_sqn = True

@@ -29,6 +29,8 @@ class TransportStatistics:
         self._reTx = 0
         self._Load = 0
         self._MaxLoad = 0
+        self._MaxaPdu = 0
+        self._MaxnPdu = 0
         self._maxTiming8000 = self._cumulTiming8000 = self._cntTiming8000 = self._averageTiming8000 = 0
         self._maxRxProcesses = self._cumulRxProcess = self._cntRxProcess = self._averageRxProcess = 0
         self._start = int(time())
@@ -134,6 +136,8 @@ class TransportStatistics:
         Domoticz.Status("Sent:")
         Domoticz.Status("   TX commands      : %s" % (self.sent()))
         Domoticz.Status("   Max Load (Queue) : %s " % (self._MaxLoad))
+        Domoticz.Status("   Max aPDU (Queue) : %s " % (self._MaxaPdu))
+        Domoticz.Status("   Max nPDU (Queue) : %s " % (self._MaxnPdu))
         Domoticz.Status("   TX failed        : %s (%s" % (self.ackKOReceived(), round((self.ackKOReceived()/self.sent())*10,2)) + '%)')
         Domoticz.Status("   TX timeout       : %s (%s" % (self.TOstatus(), round((self.TOstatus()/self.sent())*100,2)) + '%)')
         Domoticz.Status("   TX data timeout  : %s (%s" % (self.TOdata(), round((self.TOdata()/self.sent())*100,2)) + '%)')
