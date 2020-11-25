@@ -242,7 +242,7 @@ class ZigateTransport(object):
         self.log.logging('TransportRx', logType, message, nwkid=nwkid, context = context)
 
 
-    def logging_send_error( self, message, nwkid=None, context=None):
+    def logging_send_error( self, message, Nwkid=None, context=None):
         if context is None:
             context = {}
 
@@ -264,12 +264,12 @@ class ZigateTransport(object):
             'sqn_APS': self.sqn_aps,
             'current_SQN': self.current_sqn,
             }
-        if nwkid:
-            if nwkid in self.ListOfDevices:
+        if Nwkid:
+            if Nwkid in self.ListOfDevices:
                 context['Device Infos'] = {
-                        'IEEE': self.ListOfDevices[ nwkid ]['IEEE']
+                        'IEEE': self.ListOfDevices[ Nwkid ]['IEEE']
                         }
-        self.logging_send('Error', message,  nwkid, context)
+        self.logging_send('Error', message,  Nwkid, context)
 
 
     def loadTransmit(self):
@@ -1522,7 +1522,7 @@ def handle_8012_8702( self, MsgType, MsgData, frame):
             'MsgType': MsgType,
             'MsgData': MsgData,
         }
-        self.logging_send_error(  "handle_8012_8702", nwkid=MsgAddr, context=_context)
+        self.logging_send_error(  "handle_8012_8702", Nwkid=MsgAddr, context=_context)
 
         return None
     
