@@ -232,43 +232,43 @@ class ZigateTransport(object):
         Domoticz.Status("ZigateTransport: ZiGateTcpIpListen Thread stop.")
 
 
-    def logging_send(self, logType, message, context=None, NwkId = None):
+    def logging_send(self, logType, message, NwkId = None, _context=None):
         # Log all activties towards ZiGate
-        self.log.logging('TransportTx', logType, message, context = context)
+        self.log.logging('TransportTx', logType, message, context = _context)
 
 
-    def logging_receive(self, logType, message, nwkid=None, context=None):
+    def logging_receive(self, logType, message, nwkid=None, _context=None):
         # Log all activities received from ZiGate
-        self.log.logging('TransportRx', logType, message, nwkid=nwkid, context = context)
+        self.log.logging('TransportRx', logType, message, nwkid=nwkid, context = _context)
 
 
-    def logging_send_error( self, message, Nwkid=None, context=None):
-        if context is None:
-            context = {}
+    def logging_send_error( self, message, Nwkid=None, _context=None):
+        if _context is None:
+            _context = {}
 
-        context['Firmware'] = {
+        _context['Firmware'] = {
                 'Firmware Version': self.FirmwareVersion,
                 'Firmware Major': self.FirmwareMajorVersion
                 }
-        context['Queues'] = {
+        _context['Queues'] = {
             '8000 Queue':     list(self._waitFor8000Queue),
             '8011 Queue':     list(self._waitFor8011Queue),
             '8012 Queue':     list(self._waitFor8012Queue),
             'Send Queue':     list(self.zigateSendQueue),
             'ListOfCommands': dict(self.ListOfCommands),
             }
-        context['Firmware'] = {
+        _context['Firmware'] = {
             'zmode': self.zmode,
             'with_aps_sqn': self.firmware_with_aps_sqn ,
             'with_8012': self.firmware_with_8012,
             }
-        context['Sqn Management'] = {
+        _context['Sqn Management'] = {
             'sqn_ZCL': self.sqn_zcl,
             'sqn_ZDP': self.sqn_zdp,
             'sqn_APS': self.sqn_aps,
             'current_SQN': self.current_sqn,
             }
-        self.logging_send('Error', message,  Nwkid, context)
+        self.logging_send('Error', message,  Nwkid, _context)
 
 
     def loadTransmit(self):
