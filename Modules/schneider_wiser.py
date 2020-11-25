@@ -431,7 +431,7 @@ def schneider_hact_fip_mode( self, key, mode):
             'mode': mode,
             'MODE': MODE
         }
-        self.log.logging( "Schneider", 'Error', "schneider_hact_fip_mode - %s unknown mode: %s" %mode, key, _context)
+        self.log.logging( "Schneider", 'Error', "schneider_hact_fip_mode - %s unknown mode: %s" %(key, mode), key, _context)
 
     EPout = SCHNEIDER_BASE_EP
 
