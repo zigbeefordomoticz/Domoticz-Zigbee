@@ -268,10 +268,6 @@ class ZigateTransport(object):
             'sqn_APS': self.sqn_aps,
             'current_SQN': self.current_sqn,
             }
-        if Nwkid and Nwkid in self.ListOfDevices:
-                context['Device Infos'] = {
-                        'IEEE': self.ListOfDevices[ Nwkid ]['IEEE']
-                        }
         self.logging_send('Error', message,  Nwkid, context)
 
 
