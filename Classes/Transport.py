@@ -242,33 +242,33 @@ class ZigateTransport(object):
         self.log.logging('TransportRx', logType, message, nwkid=nwkid, context = _context)
 
 
-    def logging_send_error( self, message, Nwkid=None, _context=None):
-        if _context is None:
-            _context = {}
+    def logging_send_error( self, message, Nwkid=None, context=None):
+        if context is None:
+            context = {}
 
-        _context['Firmware'] = {
+        context['Firmware'] = {
                 'Firmware Version': self.FirmwareVersion,
                 'Firmware Major': self.FirmwareMajorVersion
                 }
-        _context['Queues'] = {
+        context['Queues'] = {
             '8000 Queue':     list(self._waitFor8000Queue),
             '8011 Queue':     list(self._waitFor8011Queue),
             '8012 Queue':     list(self._waitFor8012Queue),
             'Send Queue':     list(self.zigateSendQueue),
             'ListOfCommands': dict(self.ListOfCommands),
             }
-        _context['Firmware'] = {
+        context['Firmware'] = {
             'zmode': self.zmode,
             'with_aps_sqn': self.firmware_with_aps_sqn ,
             'with_8012': self.firmware_with_8012,
             }
-        _context['Sqn Management'] = {
+        context['Sqn Management'] = {
             'sqn_ZCL': self.sqn_zcl,
             'sqn_ZDP': self.sqn_zdp,
             'sqn_APS': self.sqn_aps,
             'current_SQN': self.current_sqn,
             }
-        self.logging_send('Error', message,  Nwkid, _context)
+        self.logging_send('Error', message,  Nwkid, context)
 
 
     def loadTransmit(self):
