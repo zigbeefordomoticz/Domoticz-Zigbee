@@ -242,20 +242,30 @@ class ZigateTransport(object):
         self.log.logging('TransportRx', logType, message, context = context)
 
 
-    def logging_send_error( self, message, additional_context=None):
-        _context = {
+    def logging_send_error( self, message, _context=None):
+        if _context is None:
+            _context = {}
+            
+        _context['Queues'] = {
             '8000 Queue':     list(self._waitFor8000Queue),
             '8011 Queue':     list(self._waitFor8011Queue),
             '8012 Queue':     list(self._waitFor8012Queue),
             'Send Queue':     list(self.zigateSendQueue),
             'ListOfCommands': dict(self.ListOfCommands),
+            }
+        _context['Firmware'] = {
             'Firmware Version': self.FirmwareVersion,
             'Firmware Major': self.FirmwareMajorVersion,
             'zmode': self.zmode,
             'with_aps_sqn': self.firmware_with_aps_sqn ,
             'with_8012': self.firmware_with_8012,
-        }
-        _context += additional_context
+            }
+        _context['Sqn Management'] = {
+            'sqn_ZCL': self.sqn_zcl,
+            'sqn_ZDP': self.sqn_zdp,
+            'sqn_APS': self.sqn_aps,
+            'current_SQN': self.current_sqn,
+            }
         self.logging_send('Error', message, _context)
 
 
@@ -1011,7 +1021,7 @@ def timeout_8000(self):
         'ISQN': InternalSqn,
         'TimeStamp': TimeStamp,
     }
-    self.logging_send_error( self, "timeout_8000", _context)
+    self.logging_send_error(  "timeout_8000", _context)
 
     logExpectedCommand(self, '0x8000', int(time.time()), TimeStamp, InternalSqn)
     if InternalSqn in self.ListOfCommands:
@@ -1038,7 +1048,7 @@ def timeout_acknack(self):
         'ISQN': InternalSqn,
         'TimeStamp': TimeStamp,
     }
-    self.logging_send_error( self, "timeout_acknack", _context)
+    self.logging_send_error(  "timeout_acknack", _context)
 
     logExpectedCommand(self, 'Ack', int(time.time()), TimeStamp, InternalSqn)
     if self.zmode in ('zigate31d', 'zigate31e') and InternalSqn in self.ListOfCommands and self.ListOfCommands[InternalSqn]['WaitForResponse']:
@@ -1059,7 +1069,7 @@ def timeout_8012(self):
         'ISQN': InternalSqn,
         'TimeStamp': TimeStamp,
     }
-    self.logging_send_error( self, "timeout_8012", _context)
+    self.logging_send_error(  "timeout_8012", _context)
 
     logExpectedCommand(self, '8012', int(time.time()), TimeStamp, InternalSqn)
 
@@ -1083,7 +1093,7 @@ def timeout_cmd_response(self):
         'ISQN': InternalSqn,
         'TimeStamp': TimeStamp,
     }
-    self.logging_send_error( self, "timeout_cmd_response", _context)
+    self.logging_send_error(  "timeout_cmd_response", _context)
     if InternalSqn not in self.ListOfCommands:
         return
     logExpectedCommand(self, 'CmdResponse', int(time()), TimeStamp, InternalSqn)
@@ -1438,7 +1448,7 @@ def check_and_process_8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn)
                 'iSQN': InternalSqn,
                 'PacketType': PacketType,
             }
-            self.logging_send_error( self, "check_and_process_8000", _context)
+            self.logging_send_error(  "check_and_process_8000", _context)
             return None
 
     if (not self.firmware_with_aps_sqn and self.ListOfCommands[InternalSqn]['Expected8011']) or (self.firmware_with_aps_sqn and type_sqn):
@@ -1450,7 +1460,7 @@ def check_and_process_8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn)
                 'PacketType': PacketType,
                 'iSQN': InternalSqn,
             }
-            self.logging_send_error( self, "check_and_process_8000", _context)
+            self.logging_send_error(  "check_and_process_8000", _context)
             return None
 
         if ZIGATE_COMMANDS[cmd]['Layer'] == 'ZCL':
@@ -1505,7 +1515,7 @@ def handle_8012_8702( self, MsgType, MsgData, frame):
             'MsgType': MsgType,
             'MsgData': MsgData,
         }
-        self.logging_send_error( self, "handle_8012_8702", _context)
+        self.logging_send_error(  "handle_8012_8702", _context)
 
         return None
     
@@ -1555,7 +1565,7 @@ def check_and_process_8012_31e( self, MsgStatus, MsgAddr, MsgSQN, nPDU, aPDU ):
             'nPDU': nPDU,
             'aPDU': aPDU,
         }
-        self.logging_send_error( self, "check_and_process_8012_31e", _context)
+        self.logging_send_error(  "check_and_process_8012_31e", _context)
         return None
 
     if InternSqn is None:
@@ -1568,7 +1578,7 @@ def check_and_process_8012_31e( self, MsgStatus, MsgAddr, MsgSQN, nPDU, aPDU ):
             'nPDU': nPDU,
             'aPDU': aPDU,
         }
-        self.logging_send_error( self, "check_and_process_8012_31e", _context)
+        self.logging_send_error(  "check_and_process_8012_31e", _context)
         return None
 
     i_sqn, ts = self._waitFor8012Queue[0]
@@ -1582,7 +1592,7 @@ def check_and_process_8012_31e( self, MsgStatus, MsgAddr, MsgSQN, nPDU, aPDU ):
             'nPDU': nPDU,
             'aPDU': aPDU,
         }
-        self.logging_send_error( self, "check_and_process_8012_31e", _context)
+        self.logging_send_error(  "check_and_process_8012_31e", _context)
         return None
 
     if ( InternSqn in self.ListOfCommands and self.pluginconf.pluginConf["debugzigateCmd"] ):
@@ -1674,7 +1684,7 @@ def check_and_process_8011_31c(self, Status, NwkId, Ep, MsgClusterId, ExternSqn)
                 'Addr': NwkId,
                 'eSQN': ExternSqn,
             }
-            self.logging_send_error( self, "check_and_process_8011_31c", _context)
+            self.logging_send_error(  "check_and_process_8011_31c", _context)
 
     if Status == '00':
         if InternSqn in self.ListOfCommands:
@@ -1689,8 +1699,10 @@ def check_and_process_8011_31c(self, Status, NwkId, Ep, MsgClusterId, ExternSqn)
 def check_and_process_8011_31d(self, Status, NwkId, Ep, MsgClusterId, ExternSqn):
     # Get i_sqn from sqnManagement
     InternSqn = sqn_get_internal_sqn_from_aps_sqn(self, ExternSqn)
-    self.logging_send('Debug', "--> check_and_process_8011_31d - Status: %s ExternalSqn: %s/0x%s InterSqn: %s NwkId: %s Ep: %s ClusterId: %s" %
-                     (Status, int(ExternSqn,16), ExternSqn, InternSqn, NwkId, Ep, MsgClusterId))
+    self.logging_send( 'Debug', 
+                        "--> check_and_process_8011_31d - Status: %s ExternalSqn: %s/0x%s InterSqn: %s NwkId: %s Ep: %s ClusterId: %s" %
+                        (Status, int(ExternSqn,16), ExternSqn, InternSqn, NwkId, Ep, MsgClusterId)
+                        )
 
     if InternSqn is None:
         _context = {
@@ -1701,7 +1713,7 @@ def check_and_process_8011_31d(self, Status, NwkId, Ep, MsgClusterId, ExternSqn)
             'Addr': NwkId,
             'eSQN': ExternSqn,
         }
-        self.logging_send_error( self, "check_and_process_8011_31d", _context)
+        self.logging_send_error( "check_and_process_8011_31d", _context)
         return None
 
     # Let's check that we are waiting on that I_sqn
@@ -1714,12 +1726,11 @@ def check_and_process_8011_31d(self, Status, NwkId, Ep, MsgClusterId, ExternSqn)
             'Addr': NwkId,
             'eSQN': ExternSqn,
         }
-        self.logging_send_error( self, "check_and_process_8011_31d", _context)
+        self.logging_send_error(  "check_and_process_8011_31d", _context)
         return None
     
     i_sqn, ts = self._waitFor8011Queue[0]
     if i_sqn != InternSqn:
-
         _context = {
             'Error code': 'TRANSPORT00c',
             'eSQN': ExternSqn,
@@ -1728,7 +1739,7 @@ def check_and_process_8011_31d(self, Status, NwkId, Ep, MsgClusterId, ExternSqn)
             'Addr': NwkId,
             'eSQN': ExternSqn,
         }
-        self.logging_send_error( self, "check_and_process_8011_31d", _context)
+        self.logging_send_error(  "check_and_process_8011_31d", _context)
         return None
 
     if Status == '00':
