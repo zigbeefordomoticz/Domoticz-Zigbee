@@ -261,6 +261,8 @@ class ZigateTransport(object):
             'sqn_APS': self.sqn_aps,
             'current_SQN': self.current_sqn,
             }
+
+        message += " Error Code: %s" %context['Error code']
         self.logging_send('Error', message,  Nwkid, context)
 
 
