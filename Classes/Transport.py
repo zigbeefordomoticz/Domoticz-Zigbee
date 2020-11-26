@@ -1652,12 +1652,7 @@ def handle_8011( self, MsgType, MsgData, frame):
     
     if MsgData is None:
         return None
-
-    if MsgStatus == '00':
-        self.statistics._APSAck += 1
-    else:
-        self.statistics._APSNck += 1
-
+                
     if MsgData and self.zmode == 'zigate31c':
         # We do not block on Ack for firmware from 31c and below
         return None
@@ -1668,13 +1663,19 @@ def handle_8011( self, MsgType, MsgData, frame):
     else:
         i_sqn = check_and_process_8011_31c( self, MsgStatus, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgSEQ)
 
-    ReportingCommand = None
+    if i_sqn is None:
+        return None
+
+    if MsgStatus == '00':
+        self.statistics._APSAck += 1
+    else:
+        self.statistics._APSNck += 1
+
     if i_sqn in self.ListOfCommands:
         self.ListOfCommands[i_sqn]['Status'] = '8011'
         # We receive Response for Command, let's cleanup
         if not self.ListOfCommands[i_sqn]['WaitForResponse']:
             cleanup_list_of_commands(self, i_sqn)
-
     return i_sqn
 
 def check_and_process_8011_31c(self, Status, NwkId, Ep, MsgClusterId, ExternSqn):
@@ -1714,14 +1715,15 @@ def check_and_process_8011_31d(self, Status, NwkId, Ep, MsgClusterId, ExternSqn)
                         )
 
     if InternSqn is None:
-        _context = {
-            'Error code': 'TRANSPORT00a',
-            'eSQN': ExternSqn,
-            'iSQN': InternSqn,
-            'Status': Status,
-            'eSQN': ExternSqn,
-        }
-        self.logging_send_error( "check_and_process_8011_31d", Nwkid=NwkId, context=_context)
+        # We just receive an unexpected ACK. Drop
+        #_context = {
+        #    'Error code': 'TRANSPORT00a',
+        #    'eSQN': ExternSqn,
+        #    'iSQN': InternSqn,
+        #    'Status': Status,
+        #    'eSQN': ExternSqn,
+        #}
+        #self.logging_send_error( "check_and_process_8011_31d", Nwkid=NwkId, context=_context)
         return None
 
     # Let's check that we are waiting on that I_sqn
