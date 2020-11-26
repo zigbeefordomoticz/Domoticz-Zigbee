@@ -1048,7 +1048,7 @@ def timeout_acknack(self):
     self.logging_send_error(  "timeout_acknack", context=_context)
 
     logExpectedCommand(self, 'Ack', int(time.time()), TimeStamp, InternalSqn)
-    if self._waitForResponseQueue:
+    if self._waitForCmdResponseQueue:
         _next_cmd_from_wait_cmdresponse_queue(self)
     cleanup_list_of_commands(self, InternalSqn)
 
@@ -1074,7 +1074,7 @@ def timeout_8012(self):
 
     if self._waitFor8011Queue:
         _next_cmd_to_wait_for8011_queue(self)
-    if self._waitForResponseQueue:
+    if self._waitForCmdResponseQueue:
         _next_cmd_from_wait_cmdresponse_queue(self)
     cleanup_list_of_commands(self, InternalSqn)
 
@@ -1116,7 +1116,7 @@ def check_and_timeout_listofcommand(self):
                 'COMMAND': x,
                 'TimeOut': timeoutValue,
             }
-            self.logging_send_error(  "timeout_8012", context=_context)
+            self.logging_send_error(  "check_and_timeout_listofcommand", context=_context)
             del self.ListOfCommands[x]
 
 def logExpectedCommand(self, desc, now, TimeStamp, i_sqn):

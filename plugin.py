@@ -751,7 +751,6 @@ def zigateInit_Phase1(self ):
     """
     Mainly managed Erase PDM if required
     """
-
     self.log.logging( 'Plugin', 'Debug', "zigateInit_Phase1 PDMDone: %s" %(self.ErasePDMDone))
     # Check if we have to Erase PDM.
     if Parameters["Mode3"] == "True" and not self.ErasePDMDone: # Erase PDM
@@ -778,7 +777,6 @@ def zigateInit_Phase2( self):
     """
     Make sure that all setup is in place
     """
-    Domoticz.Log("IN zigateInit_Phase2")
     if self.FirmwareVersion is None  or self.ZigateIEEE is None or self.ZigateNWKID == 'ffff':
         if self.FirmwareVersion is None:
             # Ask for Firmware Version
@@ -814,7 +812,6 @@ def zigateInit_Phase2( self):
 def zigateInit_Phase3( self ):
 
     # We can now do what must be done when we known the Firmware version
-    Domoticz.Log("zigateInit_Phase3")
     if self.FirmwareVersion is None:
         return
 
