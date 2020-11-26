@@ -1484,23 +1484,10 @@ def check_and_process_8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn)
     return InternalSqn
 
 def clean_lstcmds_from8000(self, status, isqn):
-    if status != '00':
-        cleanup_list_of_commands(self, isqn)
-        return
 
-    # Status 0x00
-    if self.zmode == 'zigate31e'  and not self.ListOfCommands[isqn]['Expected8012'] and not self.ListOfCommands[isqn]['Expected8011'] and not self.ListOfCommands[isqn]['WaitForResponse']:
+    if len(self._waitFor8000Queue) == 0 and len(self._waitFor8012Queue) == 0 and len(self._waitFor8011Queue) and len(self._waitForCmdResponseQueue) == 0:
         cleanup_list_of_commands(self, isqn)
-        return
-
-    if self.zmode == 'zigate31d' and not self.ListOfCommands[isqn]['Expected8011'] and not self.ListOfCommands[isqn]['WaitForResponse']:
-        cleanup_list_of_commands(self, isqn)
-        return
-
-    if self.zmode == 'zigate31c' and not self.ListOfCommands[isqn]['WaitForResponse'] and not self.ListOfCommands[isqn]['ResponseExpected']:
-        cleanup_list_of_commands(self, isqn)
-        return
-
+    return
 
 # 2 ### 0x8012/0x8702
 def handle_8012_8702( self, MsgType, MsgData, frame):
@@ -1551,7 +1538,7 @@ def handle_8012_8702( self, MsgType, MsgData, frame):
     if self.firmware_with_aps_sqn:
         i_sqn = check_and_process_8012_31e( self, MsgStatus, MsgAddr, MsgSQN, nPDU, aPDU )
 
-    if i_sqn in self.ListOfCommands:
+    if i_sqn and i_sqn in self.ListOfCommands:
         self.ListOfCommands[i_sqn]['Status'] = MsgType
         # Forward the message to plugin for further processing
         cleanup_8012_queues(self, MsgStatus, i_sqn)
@@ -1612,26 +1599,23 @@ def check_and_process_8012_31e( self, MsgStatus, MsgAddr, MsgSQN, nPDU, aPDU ):
     # We have got the i_sqn
     if MsgStatus != '00':
         # In that case we need to unblock ack_nack, as we will never get it !
-        if len(self._waitFor8011Queue) > 0:
+        if self._waitFor8011Queue:
             InternalSqn, TimeStamp = _next_cmd_to_wait_for8011_queue(self)
 
         # In that case we should remove the WaitFor Response if any !
-        if len(self._waitForCmdResponseQueue) > 0:
+        if self._waitForCmdResponseQueue:
             InternalSqn, TimeStamp = _next_cmd_from_wait_cmdresponse_queue(self)
 
         # In that case we should remove the WaitFor Response if any !
-        if len(self._waitForCmdResponseQueue) > 0:
+        if self._waitForCmdResponseQueue:
             _next_cmd_from_wait_cmdresponse_queue( self )
-    else:
-        _next_cmd_from_wait_for8012_queue( self )
+
+    _next_cmd_from_wait_for8012_queue( self )
     return InternSqn
 
 def cleanup_8012_queues(self, status, isqn):
-    # Cleanup if required
-    if status != '00':
-        cleanup_list_of_commands(self, isqn)
-        return
-    if self.zmode == 'zigate31e' and not self.ListOfCommands[isqn]['Expected8012']:
+
+    if len(self._waitFor8000Queue) == 0 and len(self._waitFor8012Queue) == 0 and len(self._waitFor8011Queue) and len(self._waitForCmdResponseQueue) == 0:
         cleanup_list_of_commands(self, isqn)
         return
 
@@ -1772,13 +1756,10 @@ def check_and_process_8011_31d(self, Status, NwkId, Ep, MsgClusterId, ExternSqn)
     return InternSqn
 
 def cleanup_8011_queues(self, status, isqn):
-    # Cleanup if required
-    if status != '00':
+
+    if len(self._waitFor8000Queue) == 0 and len(self._waitFor8012Queue) == 0 and len(self._waitFor8011Queue) and len(self._waitForCmdResponseQueue) == 0:
         cleanup_list_of_commands(self, isqn)
-        return
-    if self.zmode in ('zigate31d','zigate31e') and not self.ListOfCommands[isqn]['WaitForResponse']:
-        cleanup_list_of_commands(self, isqn)
-        return
+    return
 
 
 # 4 ### Other message types like Response and Async messages
