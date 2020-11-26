@@ -1474,10 +1474,8 @@ def check_and_process_8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn)
     return InternalSqn
 
 def clean_lstcmds_from8000(self, status, isqn):
-
     if len(self._waitFor8000Queue) == 0 and len(self._waitFor8012Queue) == 0 and len(self._waitFor8011Queue) == 0 and len(self._waitForCmdResponseQueue) == 0:
         cleanup_list_of_commands(self, isqn)
-    return
 
 # 2 ### 0x8012/0x8702
 def handle_8012_8702( self, MsgType, MsgData, frame):
@@ -1662,7 +1660,6 @@ def check_and_process_8011_31c(self, Status, NwkId, Ep, MsgClusterId, ExternSqn)
                 'eSQN': ExternSqn,
                 'iSQN': InternSqn_from_ExternSqn,
                 'Status': Status,
-                'eSQN': ExternSqn,
             }
             self.logging_send_error(  "check_and_process_8011_31c", Nwkid=NwkId, context=_context)
 

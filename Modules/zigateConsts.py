@@ -459,7 +459,6 @@ ZIGATE_COMMANDS = {
     0x8200: {'Sequence': (),             'Ack': False, 'SQN': False, 'Layer': 'PDM', '8012': False,'Command': 'PDM Save Request', 'NwkId 2nd Bytes': False},
     0x0201: {'Sequence': (),             'Ack': False, 'SQN': False, 'Layer': 'PDM', '8012': False,'Command': 'E_SL_MSG_LOAD_PDM_RECORD_REQUEST', 'NwkId 2nd Bytes': False},
     0x8201: {'Sequence': (),             'Ack': False, 'SQN': False, 'Layer': 'PDM', '8012': False,'Command': 'PDM Load Request', 'NwkId 2nd Bytes': False},
-    0x0202: {'Sequence': (),             'Ack': False, 'SQN': False, 'Layer': 'PDM', '8012': False,'Command': 'E_SL_MSG_DELETE_ALL_PDM_RECORDS_REQUEST', 'NwkId 2nd Bytes': False},
     0x8202: {'Sequence': (),             'Ack': False, 'SQN': False, 'Layer': 'PDM', '8012': False,'Command': 'PDM ', 'NwkId 2nd Bytes': False},
     0x0203: {'Sequence': (),             'Ack': False, 'SQN': False, 'Layer': 'PDM', '8012': False,'Command': 'E_SL_MSG_DELETE_PDM_RECORD_REQUEST', 'NwkId 2nd Bytes': False},
     0x8203: {'Sequence': (),             'Ack': False, 'SQN': False, 'Layer': 'PDM', '8012': False,'Command': 'PDM ', 'NwkId 2nd Bytes': False},
