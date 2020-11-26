@@ -155,15 +155,15 @@ SETTINGS = {
     'PluginTransport':     {'Order': 10, 'param': {
         'Zmode':           {'type': 'str',  'default': 'Auto', 'current': None, 'restart': True,  'hidden': True,  'Advanced': True},
 
-        'TimeOut8000':     {'type': 'int',  'default': 2,      'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
-        'TimeOut8011':     {'type': 'int',  'default': 8,      'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
-        'TimeOut8012':     {'type': 'int',  'default': 3,      'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
-        'TimeOutResponse': {'type': 'int',  'default': 8,      'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
+        'TimeOut8000':     {'type': 'int',  'default': 2,      'current': None, 'restart': False, 'hidden': True,   'Advanced': True},
+        'TimeOut8011':     {'type': 'int',  'default': 8,      'current': None, 'restart': False, 'hidden': True,   'Advanced': True},
+        'TimeOut8012':     {'type': 'int',  'default': 8,      'current': None, 'restart': False, 'hidden': True,   'Advanced': True},
+        'TimeOutResponse': {'type': 'int',  'default': 8,      'current': None, 'restart': False, 'hidden': True,   'Advanced': True},
         'forceAckOnZCL':   {'type': 'bool', 'default': 0,      'current': None, 'restart': False, 'hidden': False,  'Advanced': True},
         'disableAckOnZCL': {'type': 'bool', 'default': 0,      'current': None, 'restart': False, 'hidden': False,  'Advanced': True},
-        'waitForResponse': {'type': 'bool', 'default': 0,      'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
-        'MultiThreaded':   {'type': 'bool', 'default': 0,      'current': None, 'restart': True, 'hidden': True,  'Advanced': True},
-        'ieeeForRawAps':   {'type': 'bool', 'default': 0,      'current': None, 'restart': True, 'hidden': True,  'Advanced': True},
+        'waitForResponse': {'type': 'bool', 'default': 0,      'current': None, 'restart': False, 'hidden': True,   'Advanced': True},
+        'MultiThreaded':   {'type': 'bool', 'default': 0,      'current': None, 'restart': True,  'hidden': True,   'Advanced': True},
+        'ieeeForRawAps':   {'type': 'bool', 'default': 0,      'current': None, 'restart': True,  'hidden': True,   'Advanced': True},
         }
     },
 

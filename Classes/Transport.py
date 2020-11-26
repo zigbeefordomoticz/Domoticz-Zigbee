@@ -142,7 +142,6 @@ class ZigateTransport(object):
                 self.ListeningThread.start()
             time.sleep ( 60.0) 
 
-
     def lock_mutex(self):
         if self.ListeningMutex:
             self.ListeningMutex.acquire()
@@ -150,7 +149,6 @@ class ZigateTransport(object):
     def unlock_mutex(self):
         if self.ListeningMutex:
             self.ListeningMutex.release()
-
 
     def serial_listen_and_send( self ):
 
@@ -194,7 +192,6 @@ class ZigateTransport(object):
                     self.ListeningThreadevent.wait( THREAD_RELAX_TIME_MS )
         Domoticz.Status("ZigateTransport: ZiGateSerialListen Thread stop.")
 
-
     def tcpip_listen_and_send( self ):
 
         while self._connection  is None:
@@ -231,21 +228,17 @@ class ZigateTransport(object):
 
         Domoticz.Status("ZigateTransport: ZiGateTcpIpListen Thread stop.")
 
-
     def logging_send(self, logType, message, NwkId = None, _context=None):
         # Log all activties towards ZiGate
         self.log.logging('TransportTx', logType, message, context = _context)
-
 
     def logging_receive(self, logType, message, nwkid=None, _context=None):
         # Log all activities received from ZiGate
         self.log.logging('TransportRx', logType, message, nwkid=nwkid, context = _context)
 
-
     def logging_send_error( self, message, Nwkid=None, context=None):
         if context is None:
             context = {}
-
         context['Firmware'] = {
                 'Firmware Version': self.FirmwareVersion,
                 'Firmware Major': self.FirmwareMajorVersion
@@ -1019,7 +1012,7 @@ def timeout_8000(self):
         return
     InternalSqn, TimeStamp = entry
     _context = {
-        'Error code': 'TRANSPORT0001',
+        'Error code': 'TRANS-TO8000-01',
         'ISQN': InternalSqn,
         'TimeStamp': TimeStamp,
     }
@@ -1035,7 +1028,7 @@ def timeout_8000(self):
             if self.ListOfCommands[InternalSqn]['WaitForResponse']:
                 _next_cmd_from_wait_cmdresponse_queue(self)
 
-        elif self.zmode == 'zigate31c' and self.ListOfCommands[InternalSqn]['ResponseExpected']:
+        elif self._waitForResponse:
             _next_cmd_from_wait_cmdresponse_queue(self)
     cleanup_list_of_commands(self, InternalSqn)
 
@@ -1046,14 +1039,14 @@ def timeout_acknack(self):
         return
     InternalSqn, TimeStamp = entry
     _context = {
-        'Error code': 'TRANSPORT0002',
+        'Error code': 'TRANS-TO8011-01',
         'ISQN': InternalSqn,
         'TimeStamp': TimeStamp,
     }
     self.logging_send_error(  "timeout_acknack", context=_context)
 
     logExpectedCommand(self, 'Ack', int(time.time()), TimeStamp, InternalSqn)
-    if self.zmode in ('zigate31d', 'zigate31e') and InternalSqn in self.ListOfCommands and self.ListOfCommands[InternalSqn]['WaitForResponse']:
+    if self._waitForResponseQueue:
         _next_cmd_from_wait_cmdresponse_queue(self)
     cleanup_list_of_commands(self, InternalSqn)
 
@@ -1067,23 +1060,20 @@ def timeout_8012(self):
 
     InternalSqn, TimeStamp = entry
     _context = {
-        'Error code': 'TRANSPORT0003',
+        'Error code': 'TRANS-TO8012-01',
         'ISQN': InternalSqn,
         'TimeStamp': TimeStamp,
     }
     self.logging_send_error(  "timeout_8012", context=_context)
-
     logExpectedCommand(self, '8012', int(time.time()), TimeStamp, InternalSqn)
 
     if InternalSqn not in self.ListOfCommands:
         Domoticz.Error("timeout_8012 it has been removed from ListOfCommands!!!")
 
-    if  InternalSqn in self.ListOfCommands and self.ListOfCommands[InternalSqn]['Expected8011']:
+    if self._waitFor8011Queue:
         _next_cmd_to_wait_for8011_queue(self)
-
-    if  InternalSqn in self.ListOfCommands and self.ListOfCommands[InternalSqn]['WaitForResponse']:
+    if self._waitForResponseQueue:
         _next_cmd_from_wait_cmdresponse_queue(self)
-
     cleanup_list_of_commands(self, InternalSqn)
 
 def timeout_cmd_response(self):
@@ -1091,7 +1081,7 @@ def timeout_cmd_response(self):
     self.statistics._TOdata += 1
     InternalSqn, TimeStamp = _next_cmd_from_wait_cmdresponse_queue(self)
     _context = {
-        'Error code': 'TRANSPORT0004',
+        'Error code': 'TRANS-TOCMD-01',
         'ISQN': InternalSqn,
         'TimeStamp': TimeStamp,
     }
@@ -1103,35 +1093,28 @@ def timeout_cmd_response(self):
 
 def check_and_timeout_listofcommand(self):
 
-    TIME_OUT_LISTCMD = 10
+    TIME_OUT_LISTCMD = 15
 
     if len(self.ListOfCommands) == 0:
         return
 
-    self.logging_send(
-        'Debug', "-- checkTimedOutForTxQueues ListOfCommands size: %s" % len(self.ListOfCommands))
+    self.logging_send( 'Debug', "-- checkTimedOutForTxQueues ListOfCommands size: %s" % len(self.ListOfCommands))
     for x in list(self.ListOfCommands.keys()):
-        if 'SentTimeStamp' in self.ListOfCommands[x] and self.ListOfCommands[x]['SentTimeStamp'] and (int(time.time()) - self.ListOfCommands[x]['SentTimeStamp']) > TIME_OUT_LISTCMD:
-            if self.ListOfCommands[x]['MessageResponse']:
-                try:
-                    self.logging_send('Debug', " --  --  --  > - Time Out : [%s] %s %s Flags: %s/%s %04x Status: %s Time: %s"
-                                        % (x, self.ListOfCommands[x]['Cmd'], self.ListOfCommands[x]['Datas'], self.ListOfCommands[x]['ResponseExpected'],
-                                        self.ListOfCommands[x]['Expected8011'], self.ListOfCommands[x]['MessageResponse'],
-                                        self.ListOfCommands[x]['Status'],
-                                        self.ListOfCommands[x]['ReceiveTimeStamp']))
-                except:
-                    self.logging_send('Error', "--  --  --  > - Time Out Missing flag in ListOfCommands: [%s] %s" %(x, self.ListOfCommands[x]))
+        if 'SentTimeStamp' not in self.ListOfCommands[x] or self.ListOfCommands[x]['SentTimeStamp'] is None:
+            # Hum !
+            errorCode = 'TRANS-CHKTOLSTCMD-01'
+            timeoutValue = 0
+        else:    
+            errorCode =   'TRANS-CHKTOLSTCMD-02'  
+            timeoutValue = (int(time.time()) - self.ListOfCommands[x]['SentTimeStamp'])
 
-            else:
-                try:
-                    self.logging_send('Debug', " --  --  --  > - Time Out : [%s] %s %s Flags: %s/%s Status: %s Time: %s "
-                                        % (x, self.ListOfCommands[x]['Cmd'], self.ListOfCommands[x]['Datas'],
-                                        self.ListOfCommands[x]['ResponseExpected'], self.ListOfCommands[x]['Expected8011'],
-                                        self.ListOfCommands[x]['Status'],
-                                        self.ListOfCommands[x]['ReceiveTimeStamp']))
-                except:
-                    self.logging_send('Error', "--  --  --  > - Time Out Missing flag in ListOfCommands: [%s] %s" %(x, self.ListOfCommands[x]))
-
+        if timeoutValue > TIME_OUT_LISTCMD:
+            _context = {
+                'Error code': errorCode,
+                'COMMAND': x,
+                'TimeOut': timeoutValue,
+            }
+            self.logging_send_error(  "timeout_8012", context=_context)
             del self.ListOfCommands[x]
 
 def logExpectedCommand(self, desc, now, TimeStamp, i_sqn):
@@ -1160,10 +1143,10 @@ def logExpectedCommand(self, desc, now, TimeStamp, i_sqn):
 def check_timed_out(self):
 
     # Begin
-    TIME_OUT_8000 = self.pluginconf.pluginConf['TimeOut8000']
-    TIME_OUT_8012 = self.pluginconf.pluginConf['TimeOut8012']
+    TIME_OUT_8000     = self.pluginconf.pluginConf['TimeOut8000']
+    TIME_OUT_8012     = self.pluginconf.pluginConf['TimeOut8012']
     TIME_OUT_RESPONSE = self.pluginconf.pluginConf['TimeOutResponse']
-    TIME_OUT_ACK = self.pluginconf.pluginConf['TimeOut8011']    
+    TIME_OUT_ACK      = self.pluginconf.pluginConf['TimeOut8011']    
 
     now = int(time.time())
 
@@ -1171,7 +1154,7 @@ def check_timed_out(self):
                      % (self.firmware_with_aps_sqn, len(self._waitFor8000Queue), len(self._waitFor8011Queue), len(self._waitForCmdResponseQueue), len(self.zigateSendQueue)))
 
     # Check if we have a Wait for 0x8000 message
-    if len(self._waitFor8000Queue) > 0:
+    if self._waitFor8000Queue:
         InternalSqn, TimeStamp = self._waitFor8000Queue[0]
         if (now - TimeStamp) >= TIME_OUT_8000:
             timeout_8000(self)
@@ -1337,7 +1320,7 @@ def handle_8000( self, MsgType, MsgData, frame):
         # New Firmware 3.1d (get aps sqn)
         type_sqn = MsgData[8:10]
         sqn_aps = MsgData[10:12]
-        
+
         if len(MsgData) == 16:
             # Firmware 31e
             npdu =MsgData[12:14]
@@ -1347,16 +1330,13 @@ def handle_8000( self, MsgType, MsgData, frame):
                 self.firmware_with_8012 = True
                 self.zmode = 'zigate31e'
                 self.logging_send('Status', "==> Transport Mode switch to: %s" % self.zmode)
-            if self.statistics._MaxaPdu > int(apdu,16):
-                self.statistics._MaxaPdu = int(apdu,16)
-            if self.statistics._MaxnPdu > int(npdu,16):
-                self.statistics._MaxnPdu = int(npdu,16)
+            self.statistics._MaxaPdu = max(self.statistics._MaxaPdu, int(apdu,16))
+            self.statistics._MaxnPdu = max(self.statistics._MaxnPdu, int(npdu,16))
 
         elif not self.firmware_with_aps_sqn:
             self.firmware_with_aps_sqn = True
             self.zmode = 'zigate31d'
             self.logging_send('Status', "==> Transport Mode switch to: %s" % self.zmode)
-
 
     if self.zmode == 'auto':
         self.zmode = 'zigate31c'
@@ -1377,10 +1357,8 @@ def handle_8000( self, MsgType, MsgData, frame):
         self.ListOfCommands[i_sqn]['Status'] = '8000'
         clean_lstcmds_from8000(self, Status, i_sqn)
 
-    return
-
 def check_and_process_8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn):
-    
+
     if PacketType == '':
         return None
 
@@ -1394,21 +1372,16 @@ def check_and_process_8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn)
 
     if Status != '00':
         self.statistics._ackKO += 1
-
         # In that case we need to unblock data, as we will never get it !
-        if len(self._waitForCmdResponseQueue) > 0:
+        if self._waitForCmdResponseQueue:
             InternalSqn, TimeStamp = _next_cmd_from_wait_cmdresponse_queue(self)
 
-        if  len(self._waitFor8012Queue) > 0:
+        if  self._waitFor8012Queue:
             InternalSqn, TimeStamp = _next_cmd_from_wait_for8012_queue(self)
 
         # In that case we need to unblock ack_nack, as we will never get it !
-        if len(self._waitFor8011Queue) > 0:
+        if self._waitFor8011Queue:
             InternalSqn, TimeStamp = _next_cmd_to_wait_for8011_queue(self)
-
-        # In that case we should remove the WaitFor Response if any !
-        if len(self._waitForCmdResponseQueue) > 0:
-            InternalSqn, TimeStamp = _next_cmd_from_wait_cmdresponse_queue(self)
 
         # Finaly freeup the 0x8000 queue
         NextCmdFromWaitFor8000 = _next_cmd_from_wait_for8000_queue(self)
@@ -1420,15 +1393,32 @@ def check_and_process_8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn)
     # Status is '00' -> Valid command sent !
     self.statistics._ack += 1
     NextCmdFromWaitFor8000 = _next_cmd_from_wait_for8000_queue(self)
+
     if NextCmdFromWaitFor8000 is None:
-        self.logging_send('Debug', " --  --  -- - > - Empty Queue")
+        _context = {
+            'Error code': 'TRANS-CHKPROC8000-01',
+            'iSQN': None,
+            'PacketType': PacketType,
+            'SQN_APP': sqn_app, 
+            'SQN_APS': sqn_aps, 
+            'TYP_SQN': type_sqn
+        }
+        self.logging_send_error(  "check_and_process_8000", context=_context)
         return None
 
     InternalSqn, TimeStamp = NextCmdFromWaitFor8000
-    self.logging_send('Debug', " --  --  -- - > InternSqn: %s ExternalSqn: %s ExternalSqnZCL: %s" %
-                     (InternalSqn, sqn_app, sqn_aps))
+    self.logging_send('Debug', " --  --  -- - > InternSqn: %s ExternalSqn: %s ExternalSqnZCL: %s" %(InternalSqn, sqn_app, sqn_aps))
 
     if InternalSqn not in self.ListOfCommands:
+        _context = {
+            'Error code': 'TRANS-CHKPROC8000-02',
+            'iSQN': InternalSqn,
+            'PacketType': PacketType,
+            'SQN_APP': sqn_app, 
+            'SQN_APS': sqn_aps, 
+            'TYP_SQN': type_sqn
+        }
+        self.logging_send_error(  "check_and_process_8000", context=_context)
         return None
 
     # Statistics on ZiGate reacting time to process the command
@@ -1450,7 +1440,7 @@ def check_and_process_8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn)
         IsCommandOk = int(self.ListOfCommands[InternalSqn]['Cmd'], 16) == int(PacketType, 16)
         if not IsCommandOk:
             _context = {
-                'Error code': 'TRANSPORT00c',
+                'Error code': 'TRANS-CHKPROC8000-03',
                 'iSQN': InternalSqn,
                 'PacketType': PacketType,
                 'SQN_APP': sqn_app, 
@@ -1465,7 +1455,7 @@ def check_and_process_8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn)
         cmd = int(PacketType, 16)
         if cmd not in ZIGATE_COMMANDS:
             _context = {
-                'Error code': 'TRANSPORT00d',
+                'Error code': 'TRANS-CHKPROC8000-04',
                 'PacketType': PacketType,
                 'iSQN': InternalSqn,
                 'SQN_APP': sqn_app, 
@@ -1485,7 +1475,7 @@ def check_and_process_8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn)
 
 def clean_lstcmds_from8000(self, status, isqn):
 
-    if len(self._waitFor8000Queue) == 0 and len(self._waitFor8012Queue) == 0 and len(self._waitFor8011Queue) and len(self._waitForCmdResponseQueue) == 0:
+    if len(self._waitFor8000Queue) == 0 and len(self._waitFor8012Queue) == 0 and len(self._waitFor8011Queue) == 0 and len(self._waitForCmdResponseQueue) == 0:
         cleanup_list_of_commands(self, isqn)
     return
 
@@ -1510,12 +1500,11 @@ def handle_8012_8702( self, MsgType, MsgData, frame):
         aPDU = MsgData[18:20]
     else:
         _context = {
-            'Error code': 'TRANSPORT005',
+            'Error code': 'TRANS-HDL8012-01',
             'MsgType': MsgType,
             'MsgData': MsgData,
         }
         self.logging_send_error(  "handle_8012_8702", Nwkid=MsgAddr, context=_context)
-
         return None
     
     self.logging_send( 'Debug', "handle_8012_8702 MsgType: %s Status: %s NwkId: %s Seq: %s self.zmode: %s FirmAckNoAck: %s" 
@@ -1543,7 +1532,6 @@ def handle_8012_8702( self, MsgType, MsgData, frame):
         # Forward the message to plugin for further processing
         cleanup_8012_queues(self, MsgStatus, i_sqn)
         return i_sqn
-
     return i_sqn
 
 def check_and_process_8012_31e( self, MsgStatus, MsgAddr, MsgSQN, nPDU, aPDU ):
@@ -1556,7 +1544,7 @@ def check_and_process_8012_31e( self, MsgStatus, MsgAddr, MsgSQN, nPDU, aPDU ):
     # Let's check that we are waiting on that I_sqn
     if len(self._waitFor8012Queue) == 0:
         _context = {
-            'Error code': 'TRANSPORT006',
+            'Error code': 'TRANS-CHKPROC8012-01',
             'iSQN': InternSqn,
             'Status': MsgStatus,
 
@@ -1569,7 +1557,7 @@ def check_and_process_8012_31e( self, MsgStatus, MsgAddr, MsgSQN, nPDU, aPDU ):
 
     if InternSqn is None:
         _context = {
-            'Error code': 'TRANSPORT007',
+            'Error code': 'TRANS-CHKPROC8012-02',
             'iSQN': InternSqn,
             'Status': MsgStatus,
             'eSQN': MsgSQN,
@@ -1582,7 +1570,7 @@ def check_and_process_8012_31e( self, MsgStatus, MsgAddr, MsgSQN, nPDU, aPDU ):
     i_sqn, ts = self._waitFor8012Queue[0]
     if i_sqn != InternSqn:
         _context = {
-            'Error code': 'TRANSPORT008',
+            'Error code': 'TRANS-CHKPROC8012-03',
             'iSQN': InternSqn,
             'Status': MsgStatus,
             'eSQN': MsgSQN,
@@ -1614,10 +1602,8 @@ def check_and_process_8012_31e( self, MsgStatus, MsgAddr, MsgSQN, nPDU, aPDU ):
     return InternSqn
 
 def cleanup_8012_queues(self, status, isqn):
-
-    if len(self._waitFor8000Queue) == 0 and len(self._waitFor8012Queue) == 0 and len(self._waitFor8011Queue) and len(self._waitForCmdResponseQueue) == 0:
+    if len(self._waitFor8000Queue) == 0 and len(self._waitFor8012Queue) == 0 and len(self._waitFor8011Queue) == 0 and len(self._waitForCmdResponseQueue) == 0:
         cleanup_list_of_commands(self, isqn)
-        return
 
 
 # 3 ### 0x8011
@@ -1672,7 +1658,7 @@ def check_and_process_8011_31c(self, Status, NwkId, Ep, MsgClusterId, ExternSqn)
         InternSqn_from_ExternSqn = sqn_get_internal_sqn_from_aps_sqn(self, ExternSqn)
         if InternSqn != InternSqn_from_ExternSqn:
             _context = {
-                'Error code': 'TRANSPORT009',
+                'Error code': 'TRANS-CHKPROC8011-01',
                 'eSQN': ExternSqn,
                 'iSQN': InternSqn_from_ExternSqn,
                 'Status': Status,
@@ -1705,7 +1691,6 @@ def check_and_process_8011_31d(self, Status, NwkId, Ep, MsgClusterId, ExternSqn)
         #    'eSQN': ExternSqn,
         #    'iSQN': InternSqn,
         #    'Status': Status,
-        #    'eSQN': ExternSqn,
         #}
         #self.logging_send_error( "check_and_process_8011_31d", Nwkid=NwkId, context=_context)
         return None
@@ -1713,11 +1698,10 @@ def check_and_process_8011_31d(self, Status, NwkId, Ep, MsgClusterId, ExternSqn)
     # Let's check that we are waiting on that I_sqn
     if len(self._waitFor8011Queue) == 0:
         _context = {
-            'Error code': 'TRANSPORT00b',
+            'Error code': 'TRANS-CHKPROC8011-02',
             'eSQN': ExternSqn,
             'iSQN': InternSqn,
             'Status': Status,
-            'eSQN': ExternSqn,
         }
         self.logging_send_error(  "check_and_process_8011_31d", Nwkid=NwkId, context=_context)
         return None
@@ -1725,11 +1709,10 @@ def check_and_process_8011_31d(self, Status, NwkId, Ep, MsgClusterId, ExternSqn)
     i_sqn, ts = self._waitFor8011Queue[0]
     if i_sqn != InternSqn:
         _context = {
-            'Error code': 'TRANSPORT00c',
+            'Error code': 'TRANS-CHKPROC8011-03',
             'eSQN': ExternSqn,
             'iSQN': InternSqn,
             'Status': Status,
-            'eSQN': ExternSqn,
         }
         self.logging_send_error(  "check_and_process_8011_31d", Nwkid=NwkId, context=_context)
         return None
@@ -1756,10 +1739,8 @@ def check_and_process_8011_31d(self, Status, NwkId, Ep, MsgClusterId, ExternSqn)
     return InternSqn
 
 def cleanup_8011_queues(self, status, isqn):
-
-    if len(self._waitFor8000Queue) == 0 and len(self._waitFor8012Queue) == 0 and len(self._waitFor8011Queue) and len(self._waitForCmdResponseQueue) == 0:
+    if len(self._waitFor8000Queue) == 0 and len(self._waitFor8012Queue) == 0 and len(self._waitFor8011Queue) == 0 and len(self._waitForCmdResponseQueue) == 0:
         cleanup_list_of_commands(self, isqn)
-    return
 
 
 # 4 ### Other message types like Response and Async messages
@@ -2060,16 +2041,16 @@ def decode_endian_data( data, datatype):
     if datatype in ( '10', '18', '20', '28', '30'):
         return data
 
-    elif datatype in ('09', '19', '21', '29', '31'):
+    if datatype in ('09', '19', '21', '29', '31'):
         return '%04x' %struct.unpack('>H',struct.pack('H',int(data,16)))[0]
 
-    elif datatype in ( '22', '2a'):
+    if datatype in ( '22', '2a'):
         return '%06x' %struct.unpack('>I',struct.pack('I',int(data,16)))[0]
 
-    elif datatype in ( '23', '2b', '39'):
+    if datatype in ( '23', '2b', '39'):
         return '%08x' %struct.unpack('>i',struct.pack('I',int(data,16)))[0]
 
-    elif datatype in ( '00', '41', '42', '4c'):
+    if datatype in ( '00', '41', '42', '4c'):
         return data
 
     return data
