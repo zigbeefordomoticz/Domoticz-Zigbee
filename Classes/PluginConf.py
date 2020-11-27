@@ -157,6 +157,7 @@ SETTINGS = {
         'TimeOut8011':     {'type': 'int',  'default': 8,      'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'TimeOutResponse': {'type': 'int',  'default': 8,      'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'forceAckOnZCL':   {'type': 'bool', 'default': 0,      'current': None, 'restart': False, 'hidden': False,  'Advanced': True},
+        'forceFullSeqMode':   {'type': 'bool', 'default': 0,      'current': None, 'restart': False, 'hidden': False,  'Advanced': True},
         'disableAckOnZCL': {'type': 'bool', 'default': 0,      'current': None, 'restart': False, 'hidden': False,  'Advanced': True},
         'waitForResponse': {'type': 'bool', 'default': 0,      'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'MultiThreaded':   {'type': 'bool', 'default': 0,      'current': None, 'restart': True, 'hidden': True,  'Advanced': True},

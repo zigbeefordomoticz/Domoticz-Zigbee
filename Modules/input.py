@@ -405,13 +405,10 @@ def Decode8000_v2(self, Devices, MsgData, MsgLQI):  # Status
             self.groupmgt.statusGroupRequest(MsgData)
 
     if str(MsgData[0:2]) != "00":
-        loggingInput(
-            self,
-            "Error",
-            "Decode8000 - PacketType: %s TypeSqn: %s sqn_app: %s sqn_aps: %s Status: [%s] "
-            % (PacketType, type_sqn, sqn_app, sqn_aps, Status),
-        )
-
+        if MsgData[0:2] in ( '80', '14', '15' ):
+            loggingInput( self, "Log", "Decode8000 - PacketType: %s TypeSqn: %s sqn_app: %s sqn_aps: %s Status: [%s] " % (PacketType, type_sqn, sqn_app, sqn_aps, Status), ) 
+        else:
+            loggingInput( self, "Error", "Decode8000 - PacketType: %s TypeSqn: %s sqn_app: %s sqn_aps: %s Status: [%s] " % (PacketType, type_sqn, sqn_app, sqn_aps, Status), ) 
 
 def Decode8001(self, Decode, MsgData, MsgLQI):  # Reception log Level
     MsgLen = len(MsgData)
@@ -793,6 +790,9 @@ def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
 
         if self.webserver:
             self.webserver.update_firmware(self.FirmwareVersion)
+
+        if self.ZigateComm:
+            self.ZigateComm.update_ZiGate_Version ( self.FirmwareVersion, self.FirmwareMajorVersion)
 
     self.PDMready = True
 
@@ -2567,9 +2567,7 @@ def Decode80A6(self, Devices, MsgData, MsgLQI):  # Scene Membership response
 
 
 # Reponses Attributs
-def Decode8100(
-    self, Devices, MsgData, MsgLQI
-):  # Read Attribute Response (in case there are several Attribute call several time rad_report_attributes)
+def Decode8100( self, Devices, MsgData, MsgLQI ):  # Read Attribute Response (in case there are several Attribute call several time rad_report_attributes)
 
     MsgSQN = MsgData[0:2]
     i_sqn = sqn_get_internal_sqn_from_app_sqn(self.ZigateComm, MsgSQN, TYPE_APP_ZCL)
@@ -2885,6 +2883,7 @@ def read_report_attributes(
             MsgAttType,
             MsgAttSize,
             MsgClusterData,
+            Source=MsgType
         )
         return
 
