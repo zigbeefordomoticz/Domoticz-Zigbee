@@ -140,9 +140,12 @@ class ZigateTransport(object):
             return thr.is_alive()
 
         while self.running:
-            #Domoticz.Log("Checking if %s alive" %self.ListeningThread.name)
             if self.running and not check_thread_alive( self.ListeningThread):
-                Domoticz.Error("Thread %s seems to be dead, restarting" %self.ListeningThread.name)
+                _context = {
+                    'Error code': 'TRANS-THREADWATCHDOG-01',
+                    'Thread Name': self.ListeningThread.name,
+                }
+                self.logging_send_error( "threads_watchdog", context=_context)
                 self.ListeningThread.start()
             time.sleep ( 60.0) 
 
@@ -183,6 +186,8 @@ class ZigateTransport(object):
                 while self.messageQueue.qsize() > 0:
                     encoded_data = self.messageQueue.get_nowait()
                     try:
+                        #if not self.lock:
+                        #    self.ListeningThreadevent.wait( 0.1 )
                         serialConnection.write( encoded_data )
                     except TypeError as e:
                         #Disconnect of USB->UART occured
@@ -267,6 +272,9 @@ class ZigateTransport(object):
             'sqn_APS': self.sqn_aps,
             'current_SQN': self.current_sqn,
             }
+        context['inMessage'] = {
+            'ReqRcv': str(self._ReqRcv),
+        }
 
         message += " Error Code: %s" %context['Error code']
         self.logging_send('Error', message,  Nwkid, context)
@@ -408,7 +416,14 @@ class ZigateTransport(object):
             datas = ''
 
         if datas != '' and not is_hex(datas):
-            Domoticz.Error("sendData_internal - receiving a non hexa Data: > %s < " % datas)
+            _context = {
+                'Error code': 'TRANS-SENDDATA-01',
+                'Cmd': cmd,
+                'Datas': datas,
+                'ackIsDisabled': ackIsDisabled,
+                'waitForResponseIn': waitForResponseIn,
+            }
+            self.logging_send_error( "sendData", context=_context)
             return None
 
         # Check if the Cmd/Data is not yet in the pipe
@@ -427,8 +442,15 @@ class ZigateTransport(object):
         InternalSqn = sqn_generate_new_internal_sqn(self)
         if InternalSqn in self.ListOfCommands:
             # Unexpected !
-            Domoticz.Error("sendData - Existing Internal SQN: %s for %s versus new %s/%s" %
-                           (InternalSqn, str(self.ListOfCommands[InternalSqn]), cmd, datas))
+            _context = {
+                'Error code': 'TRANS-SENDDATA-02',
+                'Cmd': cmd,
+                'Datas': datas,
+                'ackIsDisabled': ackIsDisabled,
+                'waitForResponseIn': waitForResponseIn,
+                'iSQN': InternalSqn
+            }
+            self.logging_send_error( "sendData", context=_context)
             return None
 
         store_ISQN_infos( self, InternalSqn, cmd, datas, ackIsDisabled, waitForResponse )
@@ -465,8 +487,14 @@ class ZigateTransport(object):
                 return
 
             if Zero1 != 0:
-                Domoticz.Error(
-                    "onMessage : we have probably lost some datas, zero1 = " + str(Zero1))
+                _context = {
+                    'Error code': 'TRANS-onMESS-01',
+                    'Data': Data,
+                    'Zero1': Zero1,
+                    'Zero3': Zero3,
+                    'idx': idx
+                }
+                self.logging_send_error( "on_message", context=_context)
 
             # uncode the frame
             # DEBUG ###_uncoded = str(self._ReqRcv[Zero1:Zero3]) + ''
@@ -480,24 +508,43 @@ class ZigateTransport(object):
                 BinMsg.append(iByte)  # copy
 
             if len(BinMsg) <= 6:
-                Domoticz.Error(
-                    "onMessage error - processing an uncomplet message: %s" % BinMsg)
+                _context = {
+                    'Error code': 'TRANS-onMESS-02',
+                    'Data': Data,
+                    'Zero1': Zero1,
+                    'Zero3': Zero3,
+                    'idx': idx,
+                    'BinMsg': str(BinMsg),
+                    'len': len(BinMsg)
+                }
+                self.logging_send_error( "on_message", context=_context)
                 return
 
             # What is after 0x03 has to be reworked.
             self._ReqRcv = self._ReqRcv[Zero3:]
 
             # Check length
-            Zero1, MsgType, Length, ReceivedChecksum = struct.unpack(
-                '>BHHB', BinMsg[0:6])
+            Zero1, MsgType, Length, ReceivedChecksum = struct.unpack('>BHHB', BinMsg[0:6])
             ComputedLength = Length + 7
             ReceveidLength = len(BinMsg)
             if ComputedLength != ReceveidLength:
                 FrameIsKo = 1
                 self.statistics._frameErrors += 1
-                Domoticz.Error("onMessage : Frame size is bad, computed = " +
-                               str(ComputedLength) + " received = " + str(ReceveidLength))
-
+                _context = {
+                    'Error code': 'TRANS-onMESS-03',
+                    'Data': Data,
+                    'Zero1': Zero1,
+                    'Zero3': Zero3,
+                    'idx': idx,
+                    'BinMsg': str(BinMsg),
+                    'len': len(BinMsg),
+                    'MsgType': MsgType,
+                    'Length': Length,
+                    'ReceivedChecksum': ReceivedChecksum,
+                    'ComputedLength': ComputedLength,
+                    'ReceveidLength': ReceveidLength,
+                }
+                self.logging_send_error( "on_message", context=_context)
             # Compute checksum
             ComputedChecksum = 0
             for idx, val in enumerate(BinMsg[1:-1]):
@@ -506,8 +553,22 @@ class ZigateTransport(object):
             if ComputedChecksum != ReceivedChecksum:
                 FrameIsKo = 1
                 self.statistics._crcErrors += 1
-                Domoticz.Error("onMessage : Frame CRC is bad, computed = " + str(ComputedChecksum) +
-                               " received = " + str(ReceivedChecksum))
+                _context = {
+                    'Error code': 'TRANS-onMESS-04',
+                    'Data': Data,
+                    'Zero1': Zero1,
+                    'Zero3': Zero3,
+                    'idx': idx,
+                    'BinMsg': str(BinMsg),
+                    'len': len(BinMsg),
+                    'MsgType': MsgType,
+                    'Length': Length,
+                    'ComputedChecksum': ComputedChecksum,
+                    'ReceivedChecksum': ReceivedChecksum,
+                    'ComputedLength': ComputedLength,
+                    'ReceveidLength': ReceveidLength,
+                }
+                self.logging_send_error( "on_message", context=_context)
 
             if FrameIsKo == 0:
                 AsciiMsg = binascii.hexlify(BinMsg).decode('utf-8')
@@ -1234,11 +1295,12 @@ def process_frame(self, frame):
         return
 
     if MsgType in ( '8012', '8702') and self.zmode == 'zigate31e':
+        Domoticz.Log("%s Received" %MsgType)
         # As of 31e we use the 0x8012 or 8702 to release commands instead of using 0x8000 to send the next command
         if MsgType == '8702':
             self.statistics._APSFailure += 1
         i_sqn = handle_8012_8702( self, MsgType, MsgData, frame)
-        self.F_out(frame, None)
+        #self.F_out(frame, None)
         ready_to_send_if_needed(self)
         return
 
@@ -1259,8 +1321,9 @@ def process_frame(self, frame):
         return
 
     if MsgType == '8011':
+        Domoticz.Log("%s Received" %MsgType)
         handle_8011( self, MsgType, MsgData, frame)
-        self.F_out(frame, None)
+        #self.F_out(frame, None)
         ready_to_send_if_needed(self)
         return
 
@@ -1318,7 +1381,7 @@ def handle_9999( self, MsgData):
         'ExtendedErrorCode': MsgData,
         'ExtendedErrorDesc': StatusMsg
     }
-    self.logging_send_error(  "handle_9999", context=_context)
+    self.logging_send_error(  "handle_9999 Extended Code: %s" %MsgData, context=_context)
 
 
 
@@ -1373,7 +1436,7 @@ def handle_8000( self, MsgType, MsgData, frame):
                             % (Status, i_sqn, self.ListOfCommands[i_sqn]['Cmd'], self.ListOfCommands[i_sqn]['Datas'],
                             self.ListOfCommands[i_sqn]['Expected8011'], self.ListOfCommands[i_sqn]['ResponseExpected']))
         self.ListOfCommands[i_sqn]['Status'] = '8000'
-        clean_lstcmds_from8000(self, Status, i_sqn)
+        clean_lstcmds(self, Status, i_sqn)
 
 def check_and_process_8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn):
 
@@ -1405,6 +1468,7 @@ def check_and_process_8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn)
         NextCmdFromWaitFor8000 = _next_cmd_from_wait_for8000_queue(self)
         if NextCmdFromWaitFor8000 is None:
             return None
+
         InternalSqn, TimeStamp = NextCmdFromWaitFor8000
         return InternalSqn
 
@@ -1413,6 +1477,8 @@ def check_and_process_8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn)
     NextCmdFromWaitFor8000 = _next_cmd_from_wait_for8000_queue(self)
 
     if NextCmdFromWaitFor8000 is None:
+        # We received a 0x8000, but nothing is expected !!!
+        # Might do some check against the 8011 and 8012 queues in regards to the APS SQN provided !
         _context = {
             'Error code': 'TRANS-CHKPROC8000-01',
             'iSQN': None,
@@ -1491,14 +1557,13 @@ def check_and_process_8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn)
 
     return InternalSqn
 
-def clean_lstcmds_from8000(self, status, isqn):
+def clean_lstcmds(self, status, isqn):
     if len(self._waitFor8000Queue) == 0 and len(self._waitFor8012Queue) == 0 and len(self._waitFor8011Queue) == 0 and len(self._waitForCmdResponseQueue) == 0:
         cleanup_list_of_commands(self, isqn)
 
 # 2 ### 0x8012/0x8702
 def handle_8012_8702( self, MsgType, MsgData, frame):
     
-
     MsgStatus = MsgData[0:2]
     unknown2 = MsgData[4:8]
     MsgDataDestMode = MsgData[6:8]
@@ -1547,7 +1612,7 @@ def handle_8012_8702( self, MsgType, MsgData, frame):
     if i_sqn and i_sqn in self.ListOfCommands:
         self.ListOfCommands[i_sqn]['Status'] = MsgType
         # Forward the message to plugin for further processing
-        cleanup_8012_queues(self, MsgStatus, i_sqn)
+        clean_lstcmds(self, MsgStatus, i_sqn)
         return i_sqn
     return i_sqn
 
@@ -1591,29 +1656,11 @@ def check_and_process_8012_31e( self, MsgStatus, MsgAddr, MsgSQN, nPDU, aPDU ):
         return None
 
     if ( InternSqn in self.ListOfCommands and self.pluginconf.pluginConf["debugzigateCmd"] ):
-        self.logging_send('Log', " - Above 3.1e [%s] receive 8012/8702 for Command: %s with status: %s - size of SendQueue: %s" % (
+        self.logging_send('Log', "8012/8702 Received [%s] for Command: %s with status: %s - size of SendQueue: %s" % (
             InternSqn,  self.ListOfCommands[InternSqn]['Cmd'], MsgStatus, self.loadTransmit()))
-    
-    # We have got the i_sqn
-    if MsgStatus != '00':
-        # In that case we need to unblock ack_nack, as we will never get it !
-        if self._waitFor8011Queue:
-            InternalSqn, TimeStamp = _next_cmd_to_wait_for8011_queue(self)
-
-        # In that case we should remove the WaitFor Response if any !
-        if self._waitForCmdResponseQueue:
-            InternalSqn, TimeStamp = _next_cmd_from_wait_cmdresponse_queue(self)
-
-        # In that case we should remove the WaitFor Response if any !
-        if self._waitForCmdResponseQueue:
-            _next_cmd_from_wait_cmdresponse_queue( self )
 
     _next_cmd_from_wait_for8012_queue( self )
     return InternSqn
-
-def cleanup_8012_queues(self, status, isqn):
-    if len(self._waitFor8000Queue) == 0 and len(self._waitFor8012Queue) == 0 and len(self._waitFor8011Queue) == 0 and len(self._waitForCmdResponseQueue) == 0:
-        cleanup_list_of_commands(self, isqn)
 
 
 # 3 ### 0x8011
@@ -1690,8 +1737,7 @@ def check_and_process_8011_31d(self, Status, NwkId, Ep, MsgClusterId, ExternSqn)
     InternSqn = sqn_get_internal_sqn_from_aps_sqn(self, ExternSqn)
     self.logging_send( 'Debug', 
                         "--> check_and_process_8011_31d - Status: %s ExternalSqn: %s/0x%s InterSqn: %s NwkId: %s Ep: %s ClusterId: %s" %
-                        (Status, int(ExternSqn,16), ExternSqn, InternSqn, NwkId, Ep, MsgClusterId)
-                        )
+                        (Status, int(ExternSqn,16), ExternSqn, InternSqn, NwkId, Ep, MsgClusterId))
 
     if InternSqn is None:
         # ZiGate firmware currently can report ACk which are not link to a command sent from the plugin
@@ -1724,14 +1770,14 @@ def check_and_process_8011_31d(self, Status, NwkId, Ep, MsgClusterId, ExternSqn)
         self.statistics._APSAck += 1
         if InternSqn in self.ListOfCommands:
             if self.pluginconf.pluginConf["debugzigateCmd"]:
-                self.logging_send('Log', " - Above 3.1d [%s] receive Ack for Cmd: %s - size of SendQueue: %s" % (
+                self.logging_send('Log', "8011 Received [%s] Ack for Cmd: %s - size of SendQueue: %s" % (
                     InternSqn,  self.ListOfCommands[InternSqn]['Cmd'], self.loadTransmit()))
         
     else:
         self.statistics._APSNck += 1
         if InternSqn in self.ListOfCommands:
             if self.pluginconf.pluginConf["debugzigateCmd"]:
-                self.logging_send('Log', " - Above 3.1d [%s] receive Nack for Cmd: %s - size of SendQueue: %s" % (
+                self.logging_send('Log', "8011 Received [%s] Nack for Cmd: %s - size of SendQueue: %s" % (
                     InternSqn,  self.ListOfCommands[InternSqn]['Cmd'], self.loadTransmit()))
 
             # In that case we should remove the WaitFor Response if any !
@@ -1741,9 +1787,6 @@ def check_and_process_8011_31d(self, Status, NwkId, Ep, MsgClusterId, ExternSqn)
     _next_cmd_to_wait_for8011_queue(self)
     return InternSqn
 
-def cleanup_8011_queues(self, status, isqn):
-    if len(self._waitFor8000Queue) == 0 and len(self._waitFor8012Queue) == 0 and len(self._waitFor8011Queue) == 0 and len(self._waitForCmdResponseQueue) == 0:
-        cleanup_list_of_commands(self, isqn)
 
 # 4 ### Other message types like Response and Async messages
 

@@ -807,7 +807,6 @@ def zigateInit_Phase2( self):
 
     # Ready for next phase
     self.InitPhase2 = True
-    Domoticz.Log("OUT zigateInit_Phase2")
 
 def zigateInit_Phase3( self ):
 
