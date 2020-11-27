@@ -17,6 +17,7 @@ from Classes.LoggingManagement import LoggingManagement
 from Modules.tools import is_hex, retreive_cmd_payload_from_8002, is_manufspecific_8002_payload
 from Modules.zigateConsts import ZIGATE_RESPONSES, ZIGATE_COMMANDS, ADDRESS_MODE, SIZE_DATA_TYPE
 from Modules.sqnMgmt import sqn_init_stack, sqn_generate_new_internal_sqn, sqn_add_external_sqn, sqn_get_internal_sqn_from_aps_sqn, sqn_get_internal_sqn_from_app_sqn, TYPE_APP_ZCL, TYPE_APP_ZDP
+from Modules.errorCodes import ZCL_EXTENDED_ERROR_CODES
 
 import serial
 import select
@@ -75,6 +76,9 @@ class ZigateTransport(object):
         self.logging_send('Status', "==> Transport Mode: %s" % self.zmode)
         self.firmware_with_aps_sqn = False  # Available from 31d
         self.firmware_with_8012 = False     # Available from 31e
+
+        self.npdu = 0
+        self.apdu = 0 
 
         # Initialise SQN Management
         sqn_init_stack(self)
@@ -254,6 +258,8 @@ class ZigateTransport(object):
             'zmode': self.zmode,
             'with_aps_sqn': self.firmware_with_aps_sqn ,
             'with_8012': self.firmware_with_8012,
+            'nPDU': self.npdu,
+            'aPDU': self.apdu,
             }
         context['Sqn Management'] = {
             'sqn_ZCL': self.sqn_zcl,
@@ -745,39 +751,25 @@ def send_data_internal(self, InternalSqn):
             self.ListOfCommands[InternalSqn]['Cmd'], self.ListOfCommands[InternalSqn]['Datas']))
         sendNow = False
 
-    if sendNow and self.zmode == 'zigate31c':
-        # Wait on 0x8000 and CmdResponse
-        if (not self.ListOfCommands[InternalSqn]['PDMCommand'] and (len(self._waitFor8000Queue) > 0 or len(self._waitForCmdResponseQueue) > 0)):
-            sendNow = False
+    if self._waitFor8000Queue or self._waitFor8012Queue or self._waitFor8011Queue or self._waitForCmdResponseQueue:
+        sendNow = False
 
-        self.logging_send('Debug', "--- send_data_internal - Command: %s  Q(0x8000): %s Q(Response): %s sendNow: %s"
-                         % (self.ListOfCommands[InternalSqn]['Cmd'], len(self._waitFor8000Queue), len(self._waitForCmdResponseQueue), sendNow))
+    if self.pluginconf.pluginConf["debugzigateCmd"]:
+        self.logging_send('Log', "--- before sending - Command: %s  Q(0x8000): %s Q(8012): %s Q(Ack/Nack): %s Q(Response): %s sendNow: %s"
+            % (self.ListOfCommands[InternalSqn]['Cmd'],  len(self._waitFor8000Queue), len(self._waitFor8012Queue), len(self._waitFor8011Queue), len(self._waitForCmdResponseQueue), sendNow))
 
-    elif sendNow and self.zmode == 'zigate31d':
-        # Wait on 0x8000, AckNack and eventually on Response
-        if (not self.ListOfCommands[InternalSqn]['PDMCommand'] and (len(self._waitFor8000Queue) > 0 or len(self._waitFor8011Queue) > 0 or len(self._waitForCmdResponseQueue) > 0)):
-            sendNow = False
 
-    elif sendNow and self.zmode == 'zigate31e':
-        # Wait on 0x8000, 8012/8702 AckNack and eventually on Response
-        if (not self.ListOfCommands[InternalSqn]['PDMCommand'] and ( self._waitFor8000Queue or self._waitFor8012Queue or self._waitFor8011Queue or self._waitForCmdResponseQueue)):
-            sendNow = False
-
-        self.logging_send('Debug', "--- send_data_internal - Command: %s  Q(0x8000): %s Q(8012/8702): %s Q(Ack/Nack): %s Q(Response): %s sendNow: %s"
-                         % (self.ListOfCommands[InternalSqn]['Cmd'], len(self._waitFor8000Queue), len(self._waitFor8012Queue), len(self._waitFor8011Queue), len(self._waitForCmdResponseQueue), sendNow))
-
-    # In case the cmd is part of the PDM on Host commands, that is High Priority and must go through.
     if not sendNow:
         # Put in FIFO
-        self.logging_send(
-            'Debug2', "--- send_data_internal - put in waiting queue")
+        self.logging_send( 'Log', "--- send_data_internal - put in waiting queue")
         self.ListOfCommands[InternalSqn]['Status'] = 'QUEUED'
         _add_cmd_to_send_queue(self, InternalSqn)
         return
 
     # Sending Command
-    self.logging_send('Debug', "--- send_data_internal - sending now zmode: %s Ack: %s ResponseExpected: %s" %
-                     (self.zmode, self.ListOfCommands[InternalSqn]['Expected8011'], self.ListOfCommands[InternalSqn]['ResponseExpected']))
+
+
+
 
     if not self.ListOfCommands[InternalSqn]['PDMCommand']:
         # That is a Standard command (not PDM on  Host), let's process as usall
@@ -800,7 +792,7 @@ def send_data_internal(self, InternalSqn):
             patch_cmdresponse_for_sending(self, InternalSqn)
     # Go!
     if self.pluginconf.pluginConf["debugzigateCmd"]:
-        self.logging_send('Log', "--- send_data_internal - Command: %s  Q(0x8000): %s Q(8012): %s Q(Ack/Nack): %s Q(Response): %s sendNow: %s"
+        self.logging_send('Log', "+++ send_data_internal ready (queues set) - Command: %s  Q(0x8000): %s Q(8012): %s Q(Ack/Nack): %s Q(Response): %s sendNow: %s"
             % (self.ListOfCommands[InternalSqn]['Cmd'], len(self._waitFor8000Queue), len(self._waitFor8012Queue), len(self._waitFor8011Queue), len(self._waitForCmdResponseQueue), sendNow))
 
     printListOfCommands( self, 'after correction before sending', InternalSqn )
@@ -1224,6 +1216,11 @@ def process_frame(self, frame):
     if len(frame) >= 18:
         MsgData = frame[12:len(frame) - 4]
 
+    if MsgType == '9999':
+        handle_9999( self, MsgData )
+        ready_to_send_if_needed(self)
+        return
+
     if MsgData and MsgType == "8002":
         # Data indication
         self.logging_receive( 'Debug', "process_frame - 8002 MsgType: %s MsgLength: %s MsgCRC: %s" % (MsgType, MsgLength, MsgCRC))  
@@ -1241,7 +1238,7 @@ def process_frame(self, frame):
         if MsgType == '8702':
             self.statistics._APSFailure += 1
         i_sqn = handle_8012_8702( self, MsgType, MsgData, frame)
-        #self.F_out(frame, None)
+        self.F_out(frame, None)
         ready_to_send_if_needed(self)
         return
 
@@ -1308,6 +1305,23 @@ def process_frame(self, frame):
     # Let's take the opportunity to check TimeOut
     self.check_timed_out_for_tx_queues()
 
+# Extended Error Code:
+
+def handle_9999( self, MsgData):
+
+    StatusMsg = ''
+    if  MsgData in ZCL_EXTENDED_ERROR_CODES:
+        StatusMsg = ZCL_EXTENDED_ERROR_CODES[MsgData]
+
+    _context = {
+        'Error code': 'TRANS-9999-01',
+        'ExtendedErrorCode': MsgData,
+        'ExtendedErrorDesc': StatusMsg
+    }
+    self.logging_send_error(  "handle_9999", context=_context)
+
+
+
 # 1 ### 0x8000
 
 def handle_8000( self, MsgType, MsgData, frame):
@@ -1327,13 +1341,15 @@ def handle_8000( self, MsgType, MsgData, frame):
             # Firmware 31e
             npdu =MsgData[12:14]
             apdu = MsgData[14:16]
+            update_xPDU( self, npdu, apdu)
+
             if not self.firmware_with_8012:
                 self.firmware_with_aps_sqn = True
                 self.firmware_with_8012 = True
                 self.zmode = 'zigate31e'
                 self.logging_send('Status', "==> Transport Mode switch to: %s" % self.zmode)
-            self.statistics._MaxaPdu = max(self.statistics._MaxaPdu, int(apdu,16))
-            self.statistics._MaxnPdu = max(self.statistics._MaxnPdu, int(npdu,16))
+
+
 
         elif not self.firmware_with_aps_sqn:
             self.firmware_with_aps_sqn = True
@@ -1482,22 +1498,22 @@ def clean_lstcmds_from8000(self, status, isqn):
 # 2 ### 0x8012/0x8702
 def handle_8012_8702( self, MsgType, MsgData, frame):
     
-    unknown1 = MsgData[0:2]
-    MsgStatus = MsgData[2:4]
+
+    MsgStatus = MsgData[0:2]
     unknown2 = MsgData[4:8]
-    MsgDataDestMode = MsgData[8:10]
+    MsgDataDestMode = MsgData[6:8]
 
     MsgSQN = MsgAddr = None
     if MsgDataDestMode == '01':  # IEEE
-        MsgAddr = MsgData[10:26]
-        MsgSQN = MsgData[26:28]
-        nPDU = MsgData[28:30]
-        aPDU = MsgData[30:32]
+        MsgAddr = MsgData[8:24]
+        MsgSQN = MsgData[24:26]
+        nPDU = MsgData[26:28]
+        aPDU = MsgData[28:30]
     elif MsgDataDestMode in  ('02', '03'):  # Short Address/Group
-        MsgAddr = MsgData[10:14]
-        MsgSQN = MsgData[14:16]
-        nPDU = MsgData[16:18]
-        aPDU = MsgData[18:20]
+        MsgAddr = MsgData[8:12]
+        MsgSQN = MsgData[12:14]
+        nPDU = MsgData[14:16]
+        aPDU = MsgData[16:18]
     else:
         _context = {
             'Error code': 'TRANS-HDL8012-01',
@@ -1506,7 +1522,8 @@ def handle_8012_8702( self, MsgType, MsgData, frame):
         }
         self.logging_send_error(  "handle_8012_8702", Nwkid=MsgAddr, context=_context)
         return None
-    
+
+    update_xPDU( self, nPDU, aPDU)
     self.logging_send( 'Debug', "handle_8012_8702 MsgType: %s Status: %s NwkId: %s Seq: %s self.zmode: %s FirmAckNoAck: %s" 
         %(MsgType, MsgStatus, MsgAddr,  MsgSQN, self.zmode, self.firmware_with_aps_sqn ))
     
@@ -1547,10 +1564,7 @@ def check_and_process_8012_31e( self, MsgStatus, MsgAddr, MsgSQN, nPDU, aPDU ):
             'Error code': 'TRANS-CHKPROC8012-01',
             'iSQN': InternSqn,
             'Status': MsgStatus,
-
             'eSQN': MsgSQN,
-            'nPDU': nPDU,
-            'aPDU': aPDU,
         }
         self.logging_send_error(  "check_and_process_8012_31e", Nwkid=MsgAddr, context=_context)
         return None
@@ -1561,8 +1575,6 @@ def check_and_process_8012_31e( self, MsgStatus, MsgAddr, MsgSQN, nPDU, aPDU ):
             'iSQN': InternSqn,
             'Status': MsgStatus,
             'eSQN': MsgSQN,
-            'nPDU': nPDU,
-            'aPDU': aPDU,
         }
         self.logging_send_error(  "check_and_process_8012_31e", Nwkid=MsgAddr, context=_context)
         return None
@@ -1574,8 +1586,6 @@ def check_and_process_8012_31e( self, MsgStatus, MsgAddr, MsgSQN, nPDU, aPDU ):
             'iSQN': InternSqn,
             'Status': MsgStatus,
             'eSQN': MsgSQN,
-            'nPDU': nPDU,
-            'aPDU': aPDU,
         }
         self.logging_send_error(  "check_and_process_8012_31e", Nwkid=MsgAddr, context=_context)
         return None
@@ -1684,14 +1694,7 @@ def check_and_process_8011_31d(self, Status, NwkId, Ep, MsgClusterId, ExternSqn)
                         )
 
     if InternSqn is None:
-        # We just receive an unexpected ACK. Drop
-        #_context = {
-        #    'Error code': 'TRANSPORT00a',
-        #    'eSQN': ExternSqn,
-        #    'iSQN': InternSqn,
-        #    'Status': Status,
-        #}
-        #self.logging_send_error( "check_and_process_8011_31d", Nwkid=NwkId, context=_context)
+        # ZiGate firmware currently can report ACk which are not link to a command sent from the plugin
         return None
 
     # Let's check that we are waiting on that I_sqn
@@ -1707,13 +1710,14 @@ def check_and_process_8011_31d(self, Status, NwkId, Ep, MsgClusterId, ExternSqn)
     
     i_sqn, ts = self._waitFor8011Queue[0]
     if i_sqn != InternSqn:
-        _context = {
-            'Error code': 'TRANS-CHKPROC8011-03',
-            'eSQN': ExternSqn,
-            'iSQN': InternSqn,
-            'Status': Status,
-        }
-        self.logging_send_error(  "check_and_process_8011_31d", Nwkid=NwkId, context=_context)
+        # ZiGate firmware currently can report ACk which are not link to a command sent from the plugin
+        #_context = {
+        #    'Error code': 'TRANS-CHKPROC8011-03',
+        #    'eSQN': ExternSqn,
+        #    'iSQN': InternSqn,
+        #    'Status': Status,
+        #}
+        #self.logging_send_error(  "check_and_process_8011_31d", Nwkid=NwkId, context=_context)
         return None
 
     if Status == '00':
@@ -1740,7 +1744,6 @@ def check_and_process_8011_31d(self, Status, NwkId, Ep, MsgClusterId, ExternSqn)
 def cleanup_8011_queues(self, status, isqn):
     if len(self._waitFor8000Queue) == 0 and len(self._waitFor8012Queue) == 0 and len(self._waitFor8011Queue) == 0 and len(self._waitForCmdResponseQueue) == 0:
         cleanup_list_of_commands(self, isqn)
-
 
 # 4 ### Other message types like Response and Async messages
 
@@ -2199,7 +2202,11 @@ def buildframe_configure_reporting_response( frame, Sqn, SrcNwkId, SrcEndPoint, 
     newFrame += '03'
     return  newFrame
 
-
+def update_xPDU( self, npdu, apdu):
+    self.npdu = int(npdu,16)
+    self.apdu = int(apdu,16)
+    self.statistics._MaxaPdu = max(self.statistics._MaxaPdu, int(apdu,16))
+    self.statistics._MaxnPdu = max(self.statistics._MaxnPdu, int(npdu,16))
 
 def zigate_encode(Data):
     # The encoding is the following:
