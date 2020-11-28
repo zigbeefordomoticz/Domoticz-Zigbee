@@ -38,6 +38,8 @@ RESPONSE_SQN = []
 
 THREAD_RELAX_TIME_MS = 20 / 1000    # 20ms of waiting time if nothing to do
 
+NB_SEND_PER_SECONDE = 5
+MAX_THROUGHPUT = 1 // NB_SEND_PER_SECONDE          
 
 
 class ZigateTransport(object):
@@ -77,6 +79,7 @@ class ZigateTransport(object):
         self.firmware_with_aps_sqn = False  # Available from 31d
         self.firmware_with_8012 = False     # Available from 31e
 
+        self.lastsent_time = 0
         self.npdu = 0
         self.apdu = 0 
 
@@ -179,16 +182,16 @@ class ZigateTransport(object):
                         data = None
                     if data:
                         self.on_message(data)
-                    nb = serialConnection.in_waiting
+                    nb = serialConnection.in_waiting        
 
-            elif self.messageQueue.qsize() > 0:
+            elif self.messageQueue.qsize() > 0 and (( time.time() - self.lastsent_time) > MAX_THROUGHPUT):
                 # Sending messages
                 while self.messageQueue.qsize() > 0:
                     encoded_data = self.messageQueue.get_nowait()
                     try:
-                        #if not self.lock:
-                        #    self.ListeningThreadevent.wait( 0.1 )
                         serialConnection.write( encoded_data )
+                        Domoticz.Log("Message Sent !!!!")
+                        self.lastsent_time = time.time()
                     except TypeError as e:
                         #Disconnect of USB->UART occured
                         Domoticz.Error("serial_listen_and_send - error while writing %s" %(e))
@@ -612,7 +615,7 @@ def store_ISQN_infos( self, InternalSqn, cmd, datas, ackIsDisabled, waitForRespo
     if hexCmd in CMD_PDM_ON_HOST:
         self.ListOfCommands[InternalSqn]['PDMCommand'] = True
 
-    if self.zmode == 'zigate31e' and ZIGATE_COMMANDS[hexCmd]['8012']:
+    if self.zmode == 'zigate31e' and ackIsDisabled and ZIGATE_COMMANDS[hexCmd]['8012']:
         self.ListOfCommands[InternalSqn]['Expected8012']  = True
 
     if not ackIsDisabled and hexCmd in CMD_WITH_ACK:
@@ -1599,7 +1602,7 @@ def handle_8012_8702( self, MsgType, MsgData, frame):
     # This is Optimum with firmware 3.1d and above 
     i_sqn = None
     if self.firmware_with_aps_sqn:
-        i_sqn = check_and_process_8012_31e( self, MsgStatus, MsgAddr, MsgSQN, nPDU, aPDU )
+        i_sqn = check_and_process_8012_31e( self, MsgType, MsgStatus, MsgAddr, MsgSQN, nPDU, aPDU )
 
     if i_sqn and i_sqn in self.ListOfCommands:
         self.ListOfCommands[i_sqn]['Status'] = MsgType
@@ -1608,7 +1611,7 @@ def handle_8012_8702( self, MsgType, MsgData, frame):
         return i_sqn
     return i_sqn
 
-def check_and_process_8012_31e( self, MsgStatus, MsgAddr, MsgSQN, nPDU, aPDU ):
+def check_and_process_8012_31e( self, MsgType, MsgStatus, MsgAddr, MsgSQN, nPDU, aPDU ):
 
     # Let's check that we are waiting on that I_sqn
     if len(self._waitFor8012Queue) == 0:
@@ -1629,7 +1632,11 @@ def check_and_process_8012_31e( self, MsgStatus, MsgAddr, MsgSQN, nPDU, aPDU ):
         self.logging_send('Log', "8012/8702 Received [%s] for Command: %s with status: %s e_sqn: 0x%02x/%s npdu: %s / apdu: %s - size of SendQueue: %s" % (
             InternSqn,  self.ListOfCommands[InternSqn]['Cmd'], MsgStatus, int(MsgSQN,16), MsgSQN, nPDU, aPDU , self.loadTransmit()))
 
+    if i_sqn in self.ListOfCommands:
+        self.ListOfCommands[i_sqn]['Status'] = MsgType
+
     _next_cmd_from_wait_for8012_queue( self )
+                                
     return InternSqn
 
 
@@ -2230,3 +2237,10 @@ def get_checksum(msgtype, length, datas):
         temp ^= int(datas[i:i + 2], 16)
         chk = hex(temp)
     return chk[2:4]
+
+
+
+
+
+
+
