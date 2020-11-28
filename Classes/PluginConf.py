@@ -156,8 +156,8 @@ SETTINGS = {
         'Zmode':           {'type': 'str',  'default': 'Auto', 'current': None, 'restart': True,  'hidden': True,  'Advanced': True},
 
         'TimeOut8000':     {'type': 'int',  'default': 2,      'current': None, 'restart': False, 'hidden': True,   'Advanced': True},
-        'TimeOut8011':     {'type': 'int',  'default': 9,      'current': None, 'restart': False, 'hidden': True,   'Advanced': True},
-        'TimeOut8012':     {'type': 'int',  'default': 9,      'current': None, 'restart': False, 'hidden': True,   'Advanced': True},
+        'TimeOut8012':     {'type': 'int',  'default': 12,      'current': None, 'restart': False, 'hidden': True,   'Advanced': True},
+        'TimeOut8011':     {'type': 'int',  'default': 14,      'current': None, 'restart': False, 'hidden': True,   'Advanced': True},
         'TimeOutResponse': {'type': 'int',  'default': 9,      'current': None, 'restart': False, 'hidden': True,   'Advanced': True},
         'forceAckOnZCL':   {'type': 'bool', 'default': 0,      'current': None, 'restart': False, 'hidden': False,  'Advanced': True},
         'disableAckOnZCL': {'type': 'bool', 'default': 0,      'current': None, 'restart': False, 'hidden': False,  'Advanced': True},
