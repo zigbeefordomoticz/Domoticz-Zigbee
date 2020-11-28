@@ -434,7 +434,7 @@ class ZigateTransport(object):
             if 'Status' not in self.ListOfCommands[x] or 'Cmd' not in self.ListOfCommands[x] or 'Datas' not in self.ListOfCommands[x]:
                 continue
             if self.ListOfCommands[x]['Status'] in ( '', 'TO-SEND', 'QUEUED' ) and self.ListOfCommands[x]['Cmd'] == cmd and self.ListOfCommands[x]['Datas'] == datas:
-                self.logging_send( 'Log', "Cmd: %s Data: %s already in queue. drop that command" % (cmd, datas))
+                self.logging_send( 'Debug', "Cmd: %s Data: %s already in queue. drop that command" % (cmd, datas))
                 alreadyInQueue = True
                 return None
 
@@ -815,23 +815,17 @@ def send_data_internal(self, InternalSqn):
     if self._waitFor8000Queue or self._waitFor8012Queue or self._waitFor8011Queue or self._waitForCmdResponseQueue:
         sendNow = False
 
-    if self.pluginconf.pluginConf["debugzigateCmd"]:
-        self.logging_send('Log', "--- before sending - Command: %s  Q(0x8000): %s Q(8012): %s Q(Ack/Nack): %s Q(Response): %s sendNow: %s"
-            % (self.ListOfCommands[InternalSqn]['Cmd'],  len(self._waitFor8000Queue), len(self._waitFor8012Queue), len(self._waitFor8011Queue), len(self._waitForCmdResponseQueue), sendNow))
-
+    self.logging_send('Debug', "--- before sending - Command: %s  Q(0x8000): %s Q(8012): %s Q(Ack/Nack): %s Q(Response): %s sendNow: %s"
+        % (self.ListOfCommands[InternalSqn]['Cmd'],  len(self._waitFor8000Queue), len(self._waitFor8012Queue), len(self._waitFor8011Queue), len(self._waitForCmdResponseQueue), sendNow))
 
     if not sendNow:
         # Put in FIFO
-        self.logging_send( 'Log', "--- send_data_internal - put in waiting queue")
+        self.logging_send( 'Debug', "--- send_data_internal - put in waiting queue")
         self.ListOfCommands[InternalSqn]['Status'] = 'QUEUED'
         _add_cmd_to_send_queue(self, InternalSqn)
         return
 
     # Sending Command
-
-
-
-
     if not self.ListOfCommands[InternalSqn]['PDMCommand']:
         # That is a Standard command (not PDM on  Host), let's process as usall
         self.ListOfCommands[InternalSqn]['Status'] = 'TO-SEND'
@@ -1295,7 +1289,6 @@ def process_frame(self, frame):
         return
 
     if MsgType in ( '8012', '8702') and self.zmode == 'zigate31e':
-        Domoticz.Log("%s Received" %MsgType)
         # As of 31e we use the 0x8012 or 8702 to release commands instead of using 0x8000 to send the next command
         if MsgType == '8702':
             self.statistics._APSFailure += 1
@@ -1321,7 +1314,6 @@ def process_frame(self, frame):
         return
 
     if MsgType == '8011':
-        Domoticz.Log("%s Received" %MsgType)
         handle_8011( self, MsgType, MsgData, frame)
         #self.F_out(frame, None)
         ready_to_send_if_needed(self)
@@ -1984,8 +1976,7 @@ def extract_nwk_infos_from_8002( frame ):
     SrcAddrMode = MsgData[14:16]
 
     if ProfileId != '0104':
-        Domoticz.Log(
-            "extract_nwk_infos_from_8002 - Not an HA Profile, let's drop the packet %s" % MsgData)
+        Domoticz.Log("extract_nwk_infos_from_8002 - Not an HA Profile, let's drop the packet %s" % MsgData)
         return ( None, None, None , None )
 
     if int(SrcAddrMode, 16) in [ADDRESS_MODE['short'], ADDRESS_MODE['group']]:
@@ -2003,8 +1994,7 @@ def extract_nwk_infos_from_8002( frame ):
             Payload = MsgData[38:len(MsgData)]
 
         else:
-            Domoticz.Log("Decode8002 - Unexpected Destination ADDR_MOD: %s, drop packet %s"
-                         % (TargetNwkId, MsgData))
+            Domoticz.Log("Decode8002 - Unexpected Destination ADDR_MOD: %s, drop packet %s"% (TargetNwkId, MsgData))
             return ( None, None, None , None )
 
     elif int(SrcAddrMode, 16) == ADDRESS_MODE['ieee']:
