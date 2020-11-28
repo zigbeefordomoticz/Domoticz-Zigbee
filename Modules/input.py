@@ -335,11 +335,12 @@ def Decode8000_v2(self, Devices, MsgData, MsgLQI):  # Status
         i_sqn = None
         if PacketType in ("0100", "0120", "0110"):
             i_sqn = sqn_get_internal_sqn_from_app_sqn( self.ZigateComm, sqn_app, TYPE_APP_ZCL )
+
         if i_sqn:
-            self.log.logging(  "Input", "Log", "Decode8000 - [%3s] PacketType: %s TypeSqn: %s sqn_app: %s/%s sqn_aps: %s/%s Status: [%s] npdu: %s apdu: %s "
+            self.log.logging(  "Input", "Log", "Decod8000 Received [%s] PacketType:  %s TypeSqn: %s sqn_app: %s/%s sqn_aps: %s/%s Status: [%s] npdu: %s apdu: %s "
                 % ( i_sqn, PacketType, type_sqn, sqn_app, dsqn_app, sqn_aps, dsqn_aps, Status, npdu, apdu ), )
         else:
-            self.log.logging(  "Input", "Log", "Decode8000 - [  ] PacketType: %s TypeSqn: %s sqn_app: %s/%s sqn_aps: %s/%s Status: [%s] npdu: %s apdu: %s"
+            self.log.logging(  "Input", "Log", "Decod8000 Received [  ] PacketType:  %s TypeSqn: %s sqn_app: %s/%s sqn_aps: %s/%s Status: [%s] npdu: %s apdu: %s "
                 % (PacketType, type_sqn, sqn_app, dsqn_app, sqn_aps, dsqn_aps, Status, npdu, apdu),)
 
     STATUS_CODE = {
@@ -382,7 +383,7 @@ def Decode8000_v2(self, Devices, MsgData, MsgLQI):  # Status
 
     if MsgData[0:2] != "00":
         if MsgData[0:2] in ( '80', '14', '15'):
-            self.log.logging(  "Input", "Log", "Decode8000 - PacketType: %s TypeSqn: %s sqn_app: %s sqn_aps: %s Status: [%s] " 
+            self.log.logging(  "Input", "Error", "Decode8000 - PacketType: %s TypeSqn: %s sqn_app: %s sqn_aps: %s Status: [%s] " 
                 % (PacketType, type_sqn, sqn_app, sqn_aps, Status), )
         else:
             self.log.logging(  "Input", "Error", "Decode8000 - PacketType: %s TypeSqn: %s sqn_app: %s sqn_aps: %s Status: [%s] "
@@ -755,7 +756,10 @@ def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
     InstaVersNum = MsgData[4:8]
     try:
         self.log.logging( "Input", "Debug", "Decode8010 - Reception Version list : " + MsgData)
-        self.log.logging( "Input", "Status", "Major Version Num: " + MajorVersNum)
+        if MajorVersNum == '0003':
+          self.log.logging( "Input", "Status", "ZiGate Classic")
+        elif MajorVersNum == '0004':
+            self.log.logging( "Input", "Status", "ZiGate V2")
         self.log.logging( "Input", "Status", "Installer Version Number: " + InstaVersNum)
     except:
         Domoticz.Error("Decode8010 - Reception Version list : " + MsgData)
@@ -766,6 +770,11 @@ def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
             str(MajorVersNum) + " - " + str(InstaVersNum)
         )
 
+
+
+
+
+        
         if self.webserver:
             self.webserver.update_firmware(self.FirmwareVersion)
 
@@ -795,6 +804,10 @@ def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
     updLQI(self, MsgSrcAddr, MsgLQI)
     _powered = mainPoweredDevice(self, MsgSrcAddr)
     timeStamped(self, MsgSrcAddr, 0x8011)
+
+    if self.pluginconf.pluginConf["debugzigateCmd"]:
+        self.log.logging( 'Input', 'Log', "8011      Received [%s] for Nwkid  : %s with status: %s e_sqn: 0x%02x/%s" 
+            % (i_sqn, MsgSrcAddr, MsgStatus, int(MsgSEQ,16), MsgSEQ), MsgSrcAddr)
 
     if MsgStatus == "00":
         lastSeenUpdate(self, Devices, NwkId=MsgSrcAddr)
@@ -841,29 +854,22 @@ def Decode8012(self, Devices, MsgData, MsgLQI):
     MsgSrcEp = MsgData[2:4]
     MsgDstEp = MsgData[4:6]
     MsgAddrMode = MsgData[6:8]
-
+    MsgSrcNwkid = None
 
     if int(MsgAddrMode, 16) == 0x03:  # IEEE
         MsgSrcIEEE = MsgData[8:24]
         MsgSQN = MsgData[24:26]
         if MsgSrcIEEE in self.IEEE2NWK:
             MsgSrcNwkId = self.IEEE2NWK[MsgSrcIEEE]
-            self.log.logging( 
-                "Input",
-                "Log",
-                "Decode8012 - Src: %s, SrcEp: %s,Status: %s"
-                % (MsgSrcNwkId, MsgSrcEp, MsgStatus),
-            )
     else:
         MsgSrcNwkid = MsgData[8:12]
         MsgSQN = MsgData[12:14]
 
-        self.log.logging( 
-            "Input",
-            "Log",
-            "Decode8012 - Src: %s, SrcEp: %s,Status: %s"
-            % (MsgSrcNwkid, MsgSrcEp, MsgStatus),
-        )
+    i_sqn = sqn_get_internal_sqn_from_aps_sqn(self.ZigateComm, MsgSQN)
+    if self.pluginconf.pluginConf["debugzigateCmd"]:
+        self.log.logging( 'Input', 'Log', "8012      Received [%s] for Nwkid  : %s with status: %s e_sqn: 0x%02x/%s" 
+            % (i_sqn, MsgSrcNwkid, MsgStatus, int(MsgSQN,16), MsgSQN), MsgSrcNwkid)
+
 
 
 def Decode8014(self, Devices, MsgData, MsgLQI):  # "Permit Join" status response
@@ -3564,26 +3570,21 @@ def Decode8702(self, Devices, MsgData, MsgLQI):  # Reception APS Data confirm fa
             IEEE = self.ListOfDevices[MsgDataDestAddr]["IEEE"]
 
     if NWKID is None or IEEE is None:
-        self.log.logging( 
-            "Input",
-            "Log",
-            "Decode8702 - Unknown Address %s : (%s,%s)"
-            % (MsgDataDestAddr, NWKID, IEEE),
-        )
+        self.log.logging( "Input","Log","Decode8702 - Unknown Address %s : (%s,%s)"
+            % (MsgDataDestAddr, NWKID, IEEE),)
         return
 
-    self.log.logging( 
-        "Input",
-        "Debug",
-        "Decode8702 - IEEE: %s Nwkid: %s Status: %s" % (IEEE, NWKID, MsgDataStatus),
-        NWKID,
-    )
+    self.log.logging(  "Input", "Debug", "Decode8702 - IEEE: %s Nwkid: %s Status: %s" % (IEEE, NWKID, MsgDataStatus), NWKID, )
 
     timeStamped(self, NWKID, 0x8702)
     updSQN(self, NWKID, MsgDataSQN)
     updLQI(self, NWKID, MsgLQI)
     _powered = mainPoweredDevice(self, NWKID)
 
+    i_sqn = sqn_get_internal_sqn_from_aps_sqn(self.ZigateComm, MsgDataSQN)
+    if self.pluginconf.pluginConf["debugzigateCmd"]:
+        self.log.logging( 'Input', 'Log', "8702      Received [%s] for Nwkid  : %s with status: %s e_sqn: 0x%02x/%s" 
+            % (i_sqn, NWKID, MsgDataStatus, int(MsgDataSQN,16), MsgDataSQN), NWKID)
 
 # Device Announce
 def Decode004D(self, Devices, MsgData, MsgLQI):  # Reception Device announce
@@ -4562,8 +4563,6 @@ def Decode0208(self, Devices, MsgData, MsgLQI):
 
 
 def Decode9999(self, Devices, MsgData, MsgLQI):
-
-    
 
     StatusMsg = ''
     if  MsgData in ZCL_EXTENDED_ERROR_CODES:

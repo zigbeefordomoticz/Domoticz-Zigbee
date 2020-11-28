@@ -347,6 +347,9 @@ class WebServer(object):
             Statistics['MaxLoad'] = self.statistics._MaxLoad
             Statistics['StartTime'] =self.statistics._start
 
+            Statistics['MaxApdu'] = self.statistics._MaxaPdu
+            Statistics['MaxNpdu'] = self.statistics._MaxnPdu 
+
             _nbitems = len(self.statistics.TrendStats)
 
             minTS = 0
@@ -1199,7 +1202,10 @@ class WebServer(object):
  
         if verb == 'GET':
             if self.log.LogErrorHistory:
-                _response["Data"] =  json.dumps( self.log.LogErrorHistory, sort_keys=False ) 
+                try:
+                    _response["Data"] =  json.dumps( self.log.LogErrorHistory, sort_keys=False ) 
+                except Exception as e:
+                    Domoticz.Error("rest_logErrorHistory - Exception %s while saving: %s" %(e, str(self.log.LogErrorHistory)))
         return _response
         
     def rest_logErrorHistoryClear( self, verb, data, parameters):
