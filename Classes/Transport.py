@@ -1704,40 +1704,24 @@ def check_and_process_8011_31c(self, Status, NwkId, Ep, MsgClusterId, ExternSqn)
 
 def check_and_process_8011_31d(self, Status, NwkId, Ep, MsgClusterId, ExternSqn):
     # Get i_sqn from sqnManagement
+
+    # Let's check that we are waiting on that I_sqn
+    if len(self._waitFor8011Queue) == 0:
+        return None
+
     InternSqn = sqn_get_internal_sqn_from_aps_sqn(self, ExternSqn)
-    self.logging_send( 'Debug', 
-                        "--> check_and_process_8011_31d - Status: %s ExternalSqn: %s/0x%s InterSqn: %s NwkId: %s Ep: %s ClusterId: %s" %
-                        (Status, int(ExternSqn,16), ExternSqn, InternSqn, NwkId, Ep, MsgClusterId))
+    self.logging_send( 'Debug',  "--> check_and_process_8011_31d - Status: %s ExternalSqn: %s/0x%s InterSqn: %s NwkId: %s Ep: %s ClusterId: %s" %
+            (Status, int(ExternSqn,16), ExternSqn, InternSqn, NwkId, Ep, MsgClusterId))
 
     if InternSqn is None:
         # ZiGate firmware currently can report ACk which are not link to a command sent from the plugin
         return None
 
-    # Let's check that we are waiting on that I_sqn
-    if len(self._waitFor8011Queue) == 0:
-        _context = {
-            'Error code': 'TRANS-CHKPROC8011-02',
-            'eSQN': ExternSqn,
-            'iSQN': InternSqn,
-            'Status': Status,
-        }
-        self.logging_send_error(  "check_and_process_8011_31d", Nwkid=NwkId, context=_context)
-        return None
-    
     i_sqn, ts = self._waitFor8011Queue[0]
     if i_sqn != InternSqn:
-        # ZiGate firmware currently can report ACk which are not link to a command sent from the plugin
-        #_context = {
-        #    'Error code': 'TRANS-CHKPROC8011-03',
-        #    'eSQN': ExternSqn,
-        #    'iSQN': InternSqn,
-        #    'Status': Status,
-        #}
-        #self.logging_send_error(  "check_and_process_8011_31d", Nwkid=NwkId, context=_context)
         return None
 
-    if InternSqn in self.ListOfCommands:
-        if self.pluginconf.pluginConf["debugzigateCmd"]:
+    if InternSqn in self.ListOfCommands and self.pluginconf.pluginConf["debugzigateCmd"]:
             self.logging_send('Log', "8011      Received [%s] for Command: %s with status: %s e_sqn: 0x%02x/%s                     - size of SendQueue: %s" 
                 % (InternSqn,  self.ListOfCommands[InternSqn]['Cmd'], Status, int(ExternSqn,16), ExternSqn, self.loadTransmit()))
 
