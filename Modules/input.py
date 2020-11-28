@@ -805,6 +805,10 @@ def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
     _powered = mainPoweredDevice(self, MsgSrcAddr)
     timeStamped(self, MsgSrcAddr, 0x8011)
 
+    if self.pluginconf.pluginConf["debugzigateCmd"]:
+        self.log.logging( 'Input', 'Log', "8011      Received [%s] for Nwkid  : %s with status: %s e_sqn: 0x%02x/%s" 
+            % (i_sqn, MsgSrcAddr, MsgStatus, int(MsgSEQ,16), MsgSEQ), MsgSrcAddr)
+
     if MsgStatus == "00":
         lastSeenUpdate(self, Devices, NwkId=MsgSrcAddr)
         if ( "Health" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Health"] != "Live" ):
@@ -850,19 +854,22 @@ def Decode8012(self, Devices, MsgData, MsgLQI):
     MsgSrcEp = MsgData[2:4]
     MsgDstEp = MsgData[4:6]
     MsgAddrMode = MsgData[6:8]
-
+    MsgSrcNwkid = None
 
     if int(MsgAddrMode, 16) == 0x03:  # IEEE
         MsgSrcIEEE = MsgData[8:24]
         MsgSQN = MsgData[24:26]
         if MsgSrcIEEE in self.IEEE2NWK:
             MsgSrcNwkId = self.IEEE2NWK[MsgSrcIEEE]
-            self.log.logging(  "Input", "Log", "Decode8012 - Src: %s, SrcEp: %s,Status: %s" % (MsgSrcNwkId, MsgSrcEp, MsgStatus), )
     else:
         MsgSrcNwkid = MsgData[8:12]
         MsgSQN = MsgData[12:14]
 
-        self.log.logging(  "Input", "Log", "Decode8012 - Src: %s, SrcEp: %s,Status: %s" % (MsgSrcNwkid, MsgSrcEp, MsgStatus), )
+    i_sqn = sqn_get_internal_sqn_from_aps_sqn(self.ZigateComm, MsgSQN)
+    if self.pluginconf.pluginConf["debugzigateCmd"]:
+        self.log.logging( 'Input', 'Log', "8012      Received [%s] for Nwkid  : %s with status: %s e_sqn: 0x%02x/%s" 
+            % (i_sqn, MsgSrcNwkid, MsgStatus, int(MsgSQN,16), MsgSQN), MsgSrcNwkid)
+
 
 
 def Decode8014(self, Devices, MsgData, MsgLQI):  # "Permit Join" status response
@@ -3563,26 +3570,21 @@ def Decode8702(self, Devices, MsgData, MsgLQI):  # Reception APS Data confirm fa
             IEEE = self.ListOfDevices[MsgDataDestAddr]["IEEE"]
 
     if NWKID is None or IEEE is None:
-        self.log.logging( 
-            "Input",
-            "Log",
-            "Decode8702 - Unknown Address %s : (%s,%s)"
-            % (MsgDataDestAddr, NWKID, IEEE),
-        )
+        self.log.logging( "Input","Log","Decode8702 - Unknown Address %s : (%s,%s)"
+            % (MsgDataDestAddr, NWKID, IEEE),)
         return
 
-    self.log.logging( 
-        "Input",
-        "Debug",
-        "Decode8702 - IEEE: %s Nwkid: %s Status: %s" % (IEEE, NWKID, MsgDataStatus),
-        NWKID,
-    )
+    self.log.logging(  "Input", "Debug", "Decode8702 - IEEE: %s Nwkid: %s Status: %s" % (IEEE, NWKID, MsgDataStatus), NWKID, )
 
     timeStamped(self, NWKID, 0x8702)
     updSQN(self, NWKID, MsgDataSQN)
     updLQI(self, NWKID, MsgLQI)
     _powered = mainPoweredDevice(self, NWKID)
 
+    i_sqn = sqn_get_internal_sqn_from_aps_sqn(self.ZigateComm, MsgDataSQN)
+    if self.pluginconf.pluginConf["debugzigateCmd"]:
+        self.log.logging( 'Input', 'Log', "8702      Received [%s] for Nwkid  : %s with status: %s e_sqn: 0x%02x/%s" 
+            % (i_sqn, NWKID, MsgDataStatus, int(MsgDataSQN,16), MsgDataSQN), NWKID)
 
 # Device Announce
 def Decode004D(self, Devices, MsgData, MsgLQI):  # Reception Device announce
