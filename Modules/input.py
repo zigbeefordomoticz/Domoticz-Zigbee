@@ -337,10 +337,10 @@ def Decode8000_v2(self, Devices, MsgData, MsgLQI):  # Status
             i_sqn = sqn_get_internal_sqn_from_app_sqn( self.ZigateComm, sqn_app, TYPE_APP_ZCL )
 
         if i_sqn:
-            self.log.logging(  "Input", "Log", "Decod8000 Received [%s] PacketType: %s TypeSqn: %s sqn_app: %s/%s sqn_aps: %s/%s Status: [%s] npdu: %s apdu: %s "
+            self.log.logging(  "Input", "Log", "Decod8000 Received [%s] PacketType:  %s TypeSqn: %s sqn_app: %s/%s sqn_aps: %s/%s Status: [%s] npdu: %s apdu: %s "
                 % ( i_sqn, PacketType, type_sqn, sqn_app, dsqn_app, sqn_aps, dsqn_aps, Status, npdu, apdu ), )
         else:
-            self.log.logging(  "Input", "Log", "Decod8000 Received [  ] PacketType: %s TypeSqn: %s sqn_app: %s/%s sqn_aps: %s/%s Status: [%s] npdu: %s apdu: %s "
+            self.log.logging(  "Input", "Log", "Decod8000 Received [  ] PacketType:  %s TypeSqn: %s sqn_app: %s/%s sqn_aps: %s/%s Status: [%s] npdu: %s apdu: %s "
                 % (PacketType, type_sqn, sqn_app, dsqn_app, sqn_aps, dsqn_aps, Status, npdu, apdu),)
 
     STATUS_CODE = {

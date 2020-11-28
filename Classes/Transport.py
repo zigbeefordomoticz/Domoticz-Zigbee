@@ -1610,40 +1610,19 @@ def handle_8012_8702( self, MsgType, MsgData, frame):
 
 def check_and_process_8012_31e( self, MsgStatus, MsgAddr, MsgSQN, nPDU, aPDU ):
 
+    # Let's check that we are waiting on that I_sqn
+    if len(self._waitFor8012Queue) == 0:
+        return None
+
     InternSqn = sqn_get_internal_sqn_from_aps_sqn(self, MsgSQN)
     self.logging_send( 'Debug',"--> check_and_process_8012_31e i_sqn: %s e_sqn: 0x%02x/%s Status: %s Addr: %s Ep: %s npdu: %s / apdu: %s"
         %(InternSqn, int(MsgSQN,16), MsgSQN, MsgStatus, MsgAddr,MsgSQN, nPDU, aPDU))
 
-    # Let's check that we are waiting on that I_sqn
-    if len(self._waitFor8012Queue) == 0:
-        _context = {
-            'Error code': 'TRANS-CHKPROC8012-01',
-            'iSQN': InternSqn,
-            'Status': MsgStatus,
-            'eSQN': MsgSQN,
-        }
-        self.logging_send_error(  "check_and_process_8012_31e", Nwkid=MsgAddr, context=_context)
-        return None
-
     if InternSqn is None:
-        _context = {
-            'Error code': 'TRANS-CHKPROC8012-02',
-            'iSQN': InternSqn,
-            'Status': MsgStatus,
-            'eSQN': MsgSQN,
-        }
-        self.logging_send_error(  "check_and_process_8012_31e", Nwkid=MsgAddr, context=_context)
         return None
 
     i_sqn, ts = self._waitFor8012Queue[0]
     if i_sqn != InternSqn:
-        _context = {
-            'Error code': 'TRANS-CHKPROC8012-03',
-            'iSQN': InternSqn,
-            'Status': MsgStatus,
-            'eSQN': MsgSQN,
-        }
-        self.logging_send_error(  "check_and_process_8012_31e", Nwkid=MsgAddr, context=_context)
         return None
 
     if ( InternSqn in self.ListOfCommands and self.pluginconf.pluginConf["debugzigateCmd"] ):
