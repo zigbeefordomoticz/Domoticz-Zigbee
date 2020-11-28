@@ -980,7 +980,7 @@ def timeout_cmd_response(self):
     InternalSqn, TimeStamp = _next_cmd_from_wait_cmdresponse_queue(self)
     if InternalSqn not in self.ListOfCommands:
         return
-    logExpectedCommand(self, 'CmdResponse', int(time()), TimeStamp, InternalSqn)
+    logExpectedCommand(self, 'CmdResponse', int(time.time()), TimeStamp, InternalSqn)
     cleanup_list_of_commands(self, InternalSqn)
 
 def check_and_timeout_listofcommand(self):
