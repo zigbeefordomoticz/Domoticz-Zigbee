@@ -347,6 +347,9 @@ class WebServer(object):
             Statistics['MaxLoad'] = self.statistics._MaxLoad
             Statistics['StartTime'] =self.statistics._start
 
+            Statistics['MaxApdu'] = self.statistics._MaxaPdu
+            Statistics['MaxNpdu'] = self.statistics._MaxnPdu 
+
             _nbitems = len(self.statistics.TrendStats)
 
             minTS = 0
