@@ -147,9 +147,9 @@ class LoggingManagement:
                     'message': message
                 }
         if context is not None:
-            if type(context) is dict:
+            if isinstance(context, dict):
                 _context['context'] = context.copy()
-            elif type(context) is str or type(context) is int:
+            elif isinstance(context, (str, int)):
                 _context['context'] = str(context)
         return _context
 

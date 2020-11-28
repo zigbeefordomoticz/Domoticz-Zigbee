@@ -447,8 +447,8 @@ class PluginConf:
         self.write_Settings()
 
     def write_Settings(self):
-        ' serialize json format the pluginConf '
-        ' Only the arameters which are different than default '
+        # serialize json format the pluginConf '
+        # Only the arameters which are different than default '
 
         self.pluginConf['filename'] = self.pluginConf['pluginConfig'] + \
             "PluginConf-%02d.json" % self.hardwareid
@@ -466,8 +466,8 @@ class PluginConf:
             json.dump(write_pluginConf, handle, sort_keys=True, indent=2)
 
     def _load_Settings(self):
-        ' deserialize json format of pluginConf'
-        ' load parameters '
+        # deserialize json format of pluginConf'
+        # load parameters '
 
         with open(self.pluginConf['filename'], 'rt') as handle:
             _pluginConf = {}

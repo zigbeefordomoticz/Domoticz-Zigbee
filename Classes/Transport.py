@@ -38,8 +38,8 @@ RESPONSE_SQN = []
 
 THREAD_RELAX_TIME_MS = 20 / 1000    # 20ms of waiting time if nothing to do
 
-NB_SEND_PER_SECONDE = 5
-MAX_THROUGHPUT = 1 // NB_SEND_PER_SECONDE          
+NB_SEND_PER_SECONDE = 10
+MAX_THROUGHPUT = 1 / NB_SEND_PER_SECONDE          
 
 
 class ZigateTransport(object):
@@ -190,7 +190,6 @@ class ZigateTransport(object):
                     encoded_data = self.messageQueue.get_nowait()
                     try:
                         serialConnection.write( encoded_data )
-                        Domoticz.Log("Message Sent !!!!")
                         self.lastsent_time = time.time()
                     except TypeError as e:
                         #Disconnect of USB->UART occured
@@ -1670,11 +1669,6 @@ def handle_8011( self, MsgType, MsgData, frame):
     if i_sqn is None:
         return None
 
-    if MsgStatus == '00':
-        self.statistics._APSAck += 1
-    else:
-        self.statistics._APSNck += 1
-
     if i_sqn in self.ListOfCommands:
         self.ListOfCommands[i_sqn]['Status'] = '8011'
         # We receive Response for Command, let's cleanup
@@ -1698,6 +1692,7 @@ def check_and_process_8011_31c(self, Status, NwkId, Ep, MsgClusterId, ExternSqn)
                 'Status': Status,
             }
             self.logging_send_error(  "check_and_process_8011_31c", Nwkid=NwkId, context=_context)
+
 
     if Status == '00':
         if InternSqn in self.ListOfCommands:
@@ -2237,10 +2232,3 @@ def get_checksum(msgtype, length, datas):
         temp ^= int(datas[i:i + 2], 16)
         chk = hex(temp)
     return chk[2:4]
-
-
-
-
-
-
-
