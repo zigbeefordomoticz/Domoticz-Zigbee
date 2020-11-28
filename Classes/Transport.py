@@ -1614,7 +1614,6 @@ def check_and_process_8012_31e( self, MsgStatus, MsgAddr, MsgSQN, nPDU, aPDU ):
     self.logging_send( 'Debug',"--> check_and_process_8012_31e i_sqn: %s e_sqn: 0x%02x/%s Status: %s Addr: %s Ep: %s npdu: %s / apdu: %s"
         %(InternSqn, int(MsgSQN,16), MsgSQN, MsgStatus, MsgAddr,MsgSQN, nPDU, aPDU))
 
-
     # Let's check that we are waiting on that I_sqn
     if len(self._waitFor8012Queue) == 0:
         _context = {
@@ -1648,8 +1647,8 @@ def check_and_process_8012_31e( self, MsgStatus, MsgAddr, MsgSQN, nPDU, aPDU ):
         return None
 
     if ( InternSqn in self.ListOfCommands and self.pluginconf.pluginConf["debugzigateCmd"] ):
-        self.logging_send('Log', "8012/8702 Received [%s] for Command: %s with status: %s - size of SendQueue: %s" % (
-            InternSqn,  self.ListOfCommands[InternSqn]['Cmd'], MsgStatus, self.loadTransmit()))
+        self.logging_send('Log', "8012/8702 Received [%s] for Command: %s with status: %s e_sqn: 0x%02x/%s npdu: %s / apdu: %s - size of SendQueue: %s" % (
+            InternSqn,  self.ListOfCommands[InternSqn]['Cmd'], MsgStatus, int(MsgSQN,16), MsgSQN, nPDU, aPDU , self.loadTransmit()))
 
     _next_cmd_from_wait_for8012_queue( self )
     return InternSqn
@@ -1758,21 +1757,16 @@ def check_and_process_8011_31d(self, Status, NwkId, Ep, MsgClusterId, ExternSqn)
         #self.logging_send_error(  "check_and_process_8011_31d", Nwkid=NwkId, context=_context)
         return None
 
+    if InternSqn in self.ListOfCommands:
+        if self.pluginconf.pluginConf["debugzigateCmd"]:
+            self.logging_send('Log', "8011      Received [%s] for Command: %s with status: %s e_sqn: 0x%02x/%s                     - size of SendQueue: %s" 
+                % (InternSqn,  self.ListOfCommands[InternSqn]['Cmd'], Status, int(ExternSqn,16), ExternSqn, self.loadTransmit()))
+
     if Status == '00':
         self.statistics._APSAck += 1
-        if InternSqn in self.ListOfCommands:
-            if self.pluginconf.pluginConf["debugzigateCmd"]:
-                self.logging_send('Log', "8011 Received [%s] Ack for Cmd: %s - size of SendQueue: %s" % (
-                    InternSqn,  self.ListOfCommands[InternSqn]['Cmd'], self.loadTransmit()))
-        
     else:
         self.statistics._APSNck += 1
-        if InternSqn in self.ListOfCommands:
-            if self.pluginconf.pluginConf["debugzigateCmd"]:
-                self.logging_send('Log', "8011 Received [%s] Nack for Cmd: %s - size of SendQueue: %s" % (
-                    InternSqn,  self.ListOfCommands[InternSqn]['Cmd'], self.loadTransmit()))
-
-            # In that case we should remove the WaitFor Response if any !
+        # In that case we should remove the WaitFor Response if any !
         if len(self._waitForCmdResponseQueue) > 0:
             _next_cmd_from_wait_cmdresponse_queue( self )
 
@@ -1781,7 +1775,6 @@ def check_and_process_8011_31d(self, Status, NwkId, Ep, MsgClusterId, ExternSqn)
 
 
 # 4 ### Other message types like Response and Async messages
-
 
 def check_and_process_others_31c(self, MsgType, MsgSqn=None, MsgNwkId=None, MsgEp=None, MsgClusterId=None):
 
