@@ -1143,7 +1143,7 @@ def timeout_cmd_response(self):
     self.logging_send_error(  "timeout_cmd_response", context=_context)
     if InternalSqn not in self.ListOfCommands:
         return
-    logExpectedCommand(self, 'CmdResponse', int(time()), TimeStamp, InternalSqn)
+    logExpectedCommand(self, 'CmdResponse', int(time.time()), TimeStamp, InternalSqn)
     cleanup_list_of_commands(self, InternalSqn)
 
 def check_and_timeout_listofcommand(self):

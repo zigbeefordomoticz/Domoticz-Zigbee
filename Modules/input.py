@@ -41,6 +41,7 @@ from Modules.tools import (
     get_isqn_datastruct,
     get_list_isqn_attr_datastruct,
     set_request_phase_datastruct,
+    checkAndStoreAttributeValue,
     retreive_cmd_payload_from_8002,
 )
 from Modules.deviceAnnoucement import (
@@ -3978,11 +3979,7 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
             "0000"
         ] = "Cmd: %s, %s" % (MsgCmd, unknown_)
 
-    elif _ModelName in (
-        "lumi.remote.b686opcn01-bulb",
-        "lumi.remote.b486opcn01-bulb",
-        "lumi.remote.b286opcn01-bulb",
-    ):
+    elif _ModelName in ( "lumi.remote.b686opcn01-bulb", "lumi.remote.b486opcn01-bulb", "lumi.remote.b286opcn01-bulb", ):
         AqaraOppleDecoding(
             self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, _ModelName, MsgData
         )
@@ -4050,17 +4047,14 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
     unknown_ = MsgData[8:10]
     MsgSrcAddr = MsgData[10:14]
     MsgCmd = MsgData[14:16]
+    MsgPayload = None
+    if len(MsgData) > 16:
+        MsgPayload = MsgData[16:len(MsgData)]
 
     updLQI(self, MsgSrcAddr, MsgLQI)
 
-    # self.log.logging( "Input", 'Debug', "Decode8095 - MsgData: %s "  %MsgData, MsgSrcAddr)
-    self.log.logging( 
-        "Input",
-        "Debug",
-        "Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s "
-        % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
-        MsgSrcAddr,
-    )
+    self.log.logging(  "Input", "Debug", "Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Payload: %s Unknown: %s "
+        % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgPayload, unknown_), MsgSrcAddr, )
 
     if MsgSrcAddr not in self.ListOfDevices:
         return
@@ -4068,23 +4062,15 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
     if self.ListOfDevices[MsgSrcAddr]["Status"] != "inDB":
         return
 
-    if (
-        "Ep" in self.ListOfDevices[MsgSrcAddr]
-        and MsgEP in self.ListOfDevices[MsgSrcAddr]["Ep"]
-    ):
+    if ( "Ep" in self.ListOfDevices[MsgSrcAddr] and MsgEP in self.ListOfDevices[MsgSrcAddr]["Ep"] ):
         if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP]:
             self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId] = {}
-        if not isinstance(
-            self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId], dict
-        ):
+        if not isinstance( self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId], dict ):
             self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId] = {}
         if "0000" not in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]:
             self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = {}
 
-    if (
-        "SQN" in self.ListOfDevices[MsgSrcAddr]
-        and MsgSQN == self.ListOfDevices[MsgSrcAddr]["SQN"]
-    ):
+    if ( "SQN" in self.ListOfDevices[MsgSrcAddr] and MsgSQN == self.ListOfDevices[MsgSrcAddr]["SQN"] ):
         return
 
     updSQN(self, MsgSrcAddr, MsgSQN)
@@ -4105,15 +4091,10 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
         if MsgClusterId == "0006" and MsgCmd == "02":
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", "toggle")
         else:
-            self.log.logging( 
-                "Input",
-                "Log",
-                "Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s "
-                % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
-            )
-        self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId][
-            "0000"
-        ] = "Cmd: %s, %s" % (MsgCmd, unknown_)
+            self.log.logging(  "Input", "Log", "Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " 
+                % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), )
+        self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId][ "0000" ] = "Cmd: %s, %s" % (MsgCmd, unknown_)
+
     elif _ModelName == "TRADFRI motion sensor":
         # Ikea Motion Sensor
         if MsgClusterId == "0006" and MsgCmd == "42":  # Motion Sensor On
@@ -4128,12 +4109,14 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
         self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId][
             "0000"
         ] = "Cmd: %s, %s" % (MsgCmd, unknown_)
+
     elif _ModelName == "TRADFRI on/off switch":
         # Ikea Switch On/Off
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0006", MsgCmd)
         self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId][
             "0000"
         ] = "Cmd: %s, %s" % (MsgCmd, unknown_)
+
     elif _ModelName == "RC 110":
         # INNR RC 110 Remote command
 
@@ -4167,6 +4150,7 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
                 % (MsgCmd, MsgSrcAddr, MsgEP, MsgCmd, unknown_),
                 MsgSrcAddr,
             )
+
     elif _ModelName in LEGRAND_REMOTE_SWITCHS:
         # Legrand remote switch
 
@@ -4193,6 +4177,7 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
                 % (MsgSrcAddr, MsgEP, MsgCmd, unknown_),
                 MsgSrcAddr,
             )
+
     elif _ModelName == "Lightify Switch Mini":
         #        OSRAM Lightify Switch Mini
 
@@ -4220,13 +4205,10 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
                 % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
                 MsgSrcAddr,
             )
-    elif _ModelName in (
-        "lumi.remote.b686opcn01-bulb",
-        "lumi.remote.b486opcn01-bulb",
-        "lumi.remote.b286opcn01-bulb" ):
-        AqaraOppleDecoding(
-            self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, _ModelName, MsgData
-        )
+
+    elif _ModelName in ( "lumi.remote.b686opcn01-bulb", "lumi.remote.b486opcn01-bulb", "lumi.remote.b286opcn01-bulb" ):
+        AqaraOppleDecoding( self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, _ModelName, MsgData )
+
     elif _ModelName == "WB01":
         # 0x02 -> 1 Click
         # 0x01 -> 2 Click
@@ -4240,6 +4222,7 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
         else:
             return
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0006", WidgetSelector)
+
     elif _ModelName == "KF204": # CASA IA
         # Decode8095 - SQN: 07, Addr: ad12, Ep: 02, Cluster: 0006, Cmd: 00, Unknown: 02 ( Button X)
         # Decode8095 - SQN: 08, Addr: ad12, Ep: 02, Cluster: 0006, Cmd: 01, Unknown: 02 ( Button 0)
@@ -4248,18 +4231,23 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
         elif MsgCmd == '01':
             MajDomoDevice(self, Devices, MsgSrcAddr, "01", "0006", '01')
 
+    elif _ModelName == "TS0043": # Tuya remote
+        if MsgCmd[0:2] == 'fd' and MsgPayload:
+            if MsgPayload == '00':
+                MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0006", '01') # Click
+                checkAndStoreAttributeValue( self, MsgSrcAddr, MsgEP,MsgClusterId, '0000', MsgPayload )
+            elif MsgPayload == '01':
+                MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0006", '02') # Double Click
+                checkAndStoreAttributeValue( self, MsgSrcAddr, MsgEP,MsgClusterId, '0000', MsgPayload )
+            elif MsgPayload == '02':
+                MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0006", '03') # Long Click
+                checkAndStoreAttributeValue( self, MsgSrcAddr, MsgEP,MsgClusterId, '0000', MsgPayload )
+
     else:
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0006", MsgCmd)
-        self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId][
-            "0000"
-        ] = "Cmd: %s, %s" % (MsgCmd, unknown_)
-        self.log.logging( 
-            "Input",
-            "Log",
-            "Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s "
-            % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
-            MsgSrcAddr,
-        )
+        self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId][ "0000" ] = "Cmd: %s, %s" % (MsgCmd, unknown_)
+        self.log.logging( "Input","Log","Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s "
+            % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr, )
 
 
 def Decode80A7(self, Devices, MsgData, MsgLQI):

@@ -147,8 +147,10 @@ class LoggingManagement:
                     'message': message
                 }
         if context is not None:
-            _context['context'] = context.copy()
-            
+            if type(context) is dict:
+                _context['context'] = context.copy()
+            elif type(context) is str or type(context) is int:
+                _context['context'] = str(context)
         return _context
 
     def loggingWriteErrorHistory( self ):
