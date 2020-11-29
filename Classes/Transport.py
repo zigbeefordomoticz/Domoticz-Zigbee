@@ -38,7 +38,7 @@ RESPONSE_SQN = []
 
 THREAD_RELAX_TIME_MS = 20 / 1000    # 20ms of waiting time if nothing to do
 
-NB_SEND_PER_SECONDE = 10
+NB_SEND_PER_SECONDE = 5
 MAX_THROUGHPUT = 1 / NB_SEND_PER_SECONDE          
 
 
@@ -1317,7 +1317,7 @@ def process_frame(self, frame):
 
     if MsgType == '8011':
         handle_8011( self, MsgType, MsgData, frame)
-        #self.F_out(frame, None)
+        self.F_out(frame, None)
         ready_to_send_if_needed(self)
         return
 
