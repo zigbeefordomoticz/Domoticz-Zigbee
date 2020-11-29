@@ -318,18 +318,17 @@ def Decode8000_v2(self, Devices, MsgData, MsgLQI):  # Status
     PacketType = MsgData[4:8]
     type_sqn = sqn_aps = None
     dsqn_aps = 0
+    npdu = apdu = None
 
-    if len(MsgData) == 12:
+    if len(MsgData) >= 12:
         # New Firmware 3.1d (get aps sqn)
         type_sqn = MsgData[8:10]
         sqn_aps = MsgData[10:12]
         dsqn_aps = int(sqn_aps, 16)
-
-    npdu = apdu = None
-    if len(MsgData) == 16:
-        # Debuging infos
-        npdu =MsgData[12:14]
-        apdu = MsgData[14:16]
+        if len(MsgData) == 16:
+            # Debuging infos
+            npdu =MsgData[12:14]
+            apdu = MsgData[14:16]
 
     if self.pluginconf.pluginConf["debugzigateCmd"]:
         i_sqn = None
@@ -806,7 +805,7 @@ def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
     timeStamped(self, MsgSrcAddr, 0x8011)
 
     if self.pluginconf.pluginConf["debugzigateCmd"]:
-        self.log.logging( 'Input', 'Log', "8011      Received [%s] for Nwkid  : %s with status: %s e_sqn: 0x%02x/%s" 
+        self.log.logging( 'Input', 'Log', "Decod8011  Received [%s] for Nwkid  : %s with status: %s e_sqn: 0x%02x/%s" 
             % (i_sqn, MsgSrcAddr, MsgStatus, int(MsgSEQ,16), MsgSEQ), MsgSrcAddr)
 
     if MsgStatus == "00":
@@ -867,7 +866,7 @@ def Decode8012(self, Devices, MsgData, MsgLQI):
 
     i_sqn = sqn_get_internal_sqn_from_aps_sqn(self.ZigateComm, MsgSQN)
     if self.pluginconf.pluginConf["debugzigateCmd"]:
-        self.log.logging( 'Input', 'Log', "8012      Received [%s] for Nwkid  : %s with status: %s e_sqn: 0x%02x/%s" 
+        self.log.logging( 'Input', 'Log', "Decod8012 Received [%s] for Nwkid  : %s with status: %s e_sqn: 0x%02x/%s" 
             % (i_sqn, MsgSrcNwkid, MsgStatus, int(MsgSQN,16), MsgSQN), MsgSrcNwkid)
 
 
