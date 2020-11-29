@@ -58,36 +58,36 @@ NETWORK_TOPO_START =  900 // HEARTBEAT
 NETWORK_ENRG_START = 1800 // HEARTBEAT
 
 
-def processKnownDevices( self, Devices, NWKID ):
 
-    def attributeDiscovery( self, NWKID ):
+
+def attributeDiscovery( self, NwkId ):
 
         rescheduleAction = False
         # If Attributes not yet discovered, let's do it
 
-        if 'ConfigSource' not in self.ListOfDevices[NWKID]:
+        if 'ConfigSource' not in self.ListOfDevices[NwkId]:
             return False
 
-        if self.ListOfDevices[NWKID]['ConfigSource'] == 'DeviceConf':
+        if self.ListOfDevices[NwkId]['ConfigSource'] == 'DeviceConf':
             return False
 
-        if 'Attributes List' in self.ListOfDevices[NWKID]:
+        if 'Attributes List' in self.ListOfDevices[NwkId]:
             return False
 
-        for iterEp in self.ListOfDevices[NWKID]['Ep']:
+        for iterEp in self.ListOfDevices[NwkId]['Ep']:
             if iterEp == 'ClusterType': 
                 continue
-            for iterCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+            for iterCluster in self.ListOfDevices[NwkId]['Ep'][iterEp]:
                 if iterCluster in ( 'Type', 'ClusterType', 'ColorMode' ): 
                     continue
                 if not self.busy and self.ZigateComm.loadTransmit() <= MAX_LOAD_ZIGATE:
-                    getListofAttribute( self, NWKID, iterEp, iterCluster)
+                    getListofAttribute( self, NwkId, iterEp, iterCluster)
                 else:
                     rescheduleAction = True
 
         return rescheduleAction
 
-    def pollingManufSpecificDevices( self, NWKID):
+def pollingManufSpecificDevices( self, NwkId):
 
         POLLING_TABLE_SPECIFICS = {
             '100b':             ( 'Philips',        'pollingPhilips',        pollingPhilips ),
@@ -102,10 +102,10 @@ def processKnownDevices( self, Devices, NWKID ):
         rescheduleAction = False
 
         devManufCode = devManufName = ''
-        if 'Manufacturer' in self.ListOfDevices[NWKID]:
-            devManufCode = self.ListOfDevices[NWKID]['Manufacturer']
-        if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
-            devManufName = self.ListOfDevices[NWKID]['Manufacturer Name']
+        if 'Manufacturer' in self.ListOfDevices[NwkId]:
+            devManufCode = self.ListOfDevices[NwkId]['Manufacturer']
+        if 'Manufacturer Name' in self.ListOfDevices[NwkId]:
+            devManufName = self.ListOfDevices[NwkId]['Manufacturer Name']
 
         brand = func = param = None
         if devManufCode in POLLING_TABLE_SPECIFICS:
@@ -116,176 +116,182 @@ def processKnownDevices( self, Devices, NWKID ):
         if brand is None:
             return False
 
-        _HB = int(self.ListOfDevices[NWKID]['Heartbeat'])
+        _HB = int(self.ListOfDevices[NwkId]['Heartbeat'])
         _FEQ = self.pluginconf.pluginConf[ param ] // HEARTBEAT
 
         if _FEQ and (( _HB % _FEQ ) == 0):
             self.log.logging( "Heartbeat", 'Debug', "++ pollingManufSpecificDevices -  %s Found: %s - %s %s %s" \
-                %(NWKID, brand, devManufCode, devManufName, param), NWKID)       
-            rescheduleAction = ( rescheduleAction or func( self, NWKID) )
+                %(NwkId, brand, devManufCode, devManufName, param), NwkId)       
+            rescheduleAction = ( rescheduleAction or func( self, NwkId) )
 
         return rescheduleAction
 
-    def pollingDeviceStatus( self, NWKID):
-
-        """
-        Purpose is to trigger ReadAttrbute 0x0006 and 0x0008 on attribute 0x0000 if applicable
-        """
+def pollingDeviceStatus( self, NwkId):
+        # """
+        # Purpose is to trigger ReadAttrbute 0x0006 and 0x0008 on attribute 0x0000 if applicable
+        # """
 
         if self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE:
             return True
-
-        if len(getListOfEpForCluster( self, NWKID, '0006' )) != 0: 
-            ReadAttributeRequest_0006_0000( self, NWKID)
+        self.log.logging( "Heartbeat", 'Debug', "--------> pollingDeviceStatus Device %s" %NwkId, NwkId)
+        if len(getListOfEpForCluster( self, NwkId, '0006' )) != 0: 
+            ReadAttributeRequest_0006_0000( self, NwkId)
             self.log.logging( "Heartbeat", 'Debug', "++ pollingDeviceStatus -  %s  for ON/OFF" \
-                %(NWKID), NWKID)
+                %(NwkId), NwkId)
 
-        if len(getListOfEpForCluster( self, NWKID, '0008' )) != 0: 
-            ReadAttributeRequest_0008_0000( self, NWKID)
+        if len(getListOfEpForCluster( self, NwkId, '0008' )) != 0: 
+            ReadAttributeRequest_0008_0000( self, NwkId)
             self.log.logging( "Heartbeat", 'Debug', "++ pollingDeviceStatus -  %s  for LVLControl" \
-                %(NWKID), NWKID)
+                %(NwkId), NwkId)
 
-        if len(getListOfEpForCluster( self, NWKID, '0102' )) != 0: 
-            ReadAttributeRequest_0102_0008( self, NWKID)
+        if len(getListOfEpForCluster( self, NwkId, '0102' )) != 0: 
+            ReadAttributeRequest_0102_0008( self, NwkId)
             self.log.logging( "Heartbeat", 'Debug', "++ pollingDeviceStatus -  %s  for WindowCovering" \
-                %(NWKID), NWKID)
+                %(NwkId), NwkId)
 
-        if len(getListOfEpForCluster( self, NWKID, '0101' )) != 0: 
-            ReadAttributeRequest_0101_0000( self, NWKID)
+        if len(getListOfEpForCluster( self, NwkId, '0101' )) != 0: 
+            ReadAttributeRequest_0101_0000( self, NwkId)
             self.log.logging( "Heartbeat", 'Debug', "++ pollingDeviceStatus -  %s  for DoorLock" \
-                %(NWKID), NWKID)
+                %(NwkId), NwkId)
 
-        if len(getListOfEpForCluster( self, NWKID, '0201' )) != 0: 
-            ReadAttributeRequest_0201_0012( self, NWKID)
+        if len(getListOfEpForCluster( self, NwkId, '0201' )) != 0: 
+            ReadAttributeRequest_0201_0012( self, NwkId)
             self.log.logging( "Heartbeat", 'Debug', "++ pollingDeviceStatus -  %s  for Thermostat" \
-                %(NWKID), NWKID)
+                %(NwkId), NwkId)
         return False
-    
-    def checkHealth( self, NwkId):
+
+def checkHealth( self, NwkId):
     
         # Checking current state of the this Nwk
-        if 'Health' not in self.ListOfDevices[NWKID]:
-            self.ListOfDevices[NWKID]['Health'] = ''
+        if 'Health' not in self.ListOfDevices[NwkId]:
+            self.ListOfDevices[NwkId]['Health'] = ''
 
-        if 'Stamp' not in self.ListOfDevices[NWKID]:
-            self.ListOfDevices[NWKID]['Stamp'] = {}
+        if 'Stamp' not in self.ListOfDevices[NwkId]:
+            self.ListOfDevices[NwkId]['Stamp'] = {}
             self.ListOfDevices[NwkId]['Stamp']['LastPing'] = 0
-            self.ListOfDevices[NWKID]['Stamp']['LastSeen'] = 0
-            self.ListOfDevices[NWKID]['Health'] = 'unknown'
+            self.ListOfDevices[NwkId]['Stamp']['LastSeen'] = 0
+            self.ListOfDevices[NwkId]['Health'] = 'unknown'
 
-        if 'LastSeen' not in self.ListOfDevices[NWKID]['Stamp']:
-            self.ListOfDevices[NWKID]['Stamp']['LastSeen'] = 0
-            self.ListOfDevices[NWKID]['Health'] = 'unknown'
+        if 'LastSeen' not in self.ListOfDevices[NwkId]['Stamp']:
+            self.ListOfDevices[NwkId]['Stamp']['LastSeen'] = 0
+            self.ListOfDevices[NwkId]['Health'] = 'unknown'
 
-        if int(time.time()) > (self.ListOfDevices[NWKID]['Stamp']['LastSeen'] + 21200) : # Age is above 6 hours
-            if self.ListOfDevices[NWKID]['Health'] == 'Live':
-                if 'ZDeviceName' in self.ListOfDevices[NWKID]:
+        if int(time.time()) > (self.ListOfDevices[NwkId]['Stamp']['LastSeen'] + 21200) : # Age is above 6 hours
+            if self.ListOfDevices[NwkId]['Health'] == 'Live':
+                if 'ZDeviceName' in self.ListOfDevices[NwkId]:
                     Domoticz.Error("Device Health - %s Nwkid: %s,Ieee: %s , Model: %s seems to be out of the network" \
-                        %(self.ListOfDevices[NWKID]['ZDeviceName'], NWKID, self.ListOfDevices[NWKID]['IEEE'], self.ListOfDevices[NWKID]['Model']))
+                        %(self.ListOfDevices[NwkId]['ZDeviceName'], NwkId, self.ListOfDevices[NwkId]['IEEE'], self.ListOfDevices[NwkId]['Model']))
                 else:
                     Domoticz.Error("Device Health - Nwkid: %s,Ieee: %s , Model: %s seems to be out of the network" \
-                        %(NWKID, self.ListOfDevices[NWKID]['IEEE'], self.ListOfDevices[NWKID]['Model']))
-                self.ListOfDevices[NWKID]['Health'] = 'Not seen last 24hours'
+                        %(NwkId, self.ListOfDevices[NwkId]['IEEE'], self.ListOfDevices[NwkId]['Model']))
+                self.ListOfDevices[NwkId]['Health'] = 'Not seen last 24hours'
 
         # If device flag as Not Reachable, don't do anything
-        if 'Health' in self.ListOfDevices[NWKID]:
-            if self.ListOfDevices[NWKID]['Health'] == 'Not Reachable':
+        if 'Health' in self.ListOfDevices[NwkId]:
+            if self.ListOfDevices[NwkId]['Health'] == 'Not Reachable':
                 return False
 
         return True
 
-    def pingRetryDueToBadHealth( self, NwkId):
+def pingRetryDueToBadHealth( self, NwkId):
 
-        now = int(time.time())
-        # device is on Non Reachable state
-        self.log.logging( "Heartbeat", 'Debug', "--------> ping Retry Check %s" %NwkId, NwkId)
-        if 'pingDeviceRetry' not in self.ListOfDevices[NwkId]:
-            self.ListOfDevices[NwkId]['pingDeviceRetry'] = {}
-            self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] = 0
+    now = int(time.time())
+    # device is on Non Reachable state
+    self.log.logging( "Heartbeat", 'Debug', "--------> ping Retry Check %s" %NwkId, NwkId)
+    if 'pingDeviceRetry' not in self.ListOfDevices[NwkId]:
+        self.ListOfDevices[NwkId]['pingDeviceRetry'] = {}
+        self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] = 0
+        self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = now
+
+    if self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] == 3:
+        return
+    
+    if 'Retry' in self.ListOfDevices[NwkId]['pingDeviceRetry'] and 'TimeStamp' not in self.ListOfDevices[NwkId]['pingDeviceRetry']:
+        # This could be due to a previous version without TimeStamp
+        self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] = 0
+        self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = now
+
+    lastTimeStamp = self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp']
+    retry = self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry']
+
+    self.log.logging( "Heartbeat", 'Debug', "--------> ping Retry Check %s Retry: %s Gap: %s" %(NwkId, retry, now - lastTimeStamp), NwkId)
+    # Retry #1
+    if retry == 0:
+        # First retry in the next cycle if possible
+        if self.ZigateComm.loadTransmit() == 0 and now > ( lastTimeStamp + 30 ): # 30s
+            self.log.logging( "Heartbeat", 'Debug', "--------> ping Retry 1 Check %s" %NwkId, NwkId)
+            self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] += 1
             self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = now
-
-        if self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] == 3:
+            submitPing( self, NwkId)
             return
-        
-        if 'Retry' in self.ListOfDevices[NwkId]['pingDeviceRetry'] and 'TimeStamp' not in self.ListOfDevices[NwkId]['pingDeviceRetry']:
-            # This could be due to a previous version without TimeStamp
-            self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] = 0
+
+    # Retry #2
+    if retry == 1:
+        # Second retry in the next 30"
+        if self.ZigateComm.loadTransmit() == 0 and now > ( lastTimeStamp + 120 ): # 30 + 120s
+            # Let's retry
+            self.log.logging( "Heartbeat", 'Debug', "--------> ping Retry 2 Check %s" %NwkId, NwkId)
+            self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] += 1
             self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = now
-
-        lastTimeStamp = self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp']
-        retry = self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry']
-
-        self.log.logging( "Heartbeat", 'Debug', "--------> ping Retry Check %s Retry: %s Gap: %s" %(NwkId, retry, now - lastTimeStamp), NwkId)
-        # Retry #1
-        if retry == 0:
-            # First retry in the next cycle if possible
-            if self.ZigateComm.loadTransmit() == 0 and now > ( lastTimeStamp + 30 ):
-                self.log.logging( "Heartbeat", 'Debug', "--------> ping Retry 1 Check %s" %NwkId, NwkId)
-                self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] += 1
-                self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = now
-                submitPing( self, NwkId)
-                return
-
-        # Retry #2
-        if retry == 1:
-            # Second retry in the next 30"
-            if self.ZigateComm.loadTransmit() == 0 and now > ( lastTimeStamp + 120 ):
-                # Let's retry
-                self.log.logging( "Heartbeat", 'Debug', "--------> ping Retry 2 Check %s" %NwkId, NwkId)
-                self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] += 1
-                self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = now
-                submitPing( self, NwkId)
-                return
-
-        # Retry #3
-        if retry == 2:
-            # Last retry after 5 minutes
-            if self.ZigateComm.loadTransmit() == 0 and now > ( lastTimeStamp + 300):
-                # Let's retry
-                self.log.logging( "Heartbeat", 'Debug', "--------> ping Retry 3 (last) Check %s" %NwkId, NwkId)
-                self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] += 1
-                self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = now
-                submitPing( self, NwkId)
-
-    def pingDevices( self, NwkId, health, checkHealthFlag, mainPowerFlag):
-
-        self.log.logging( "Heartbeat", 'Debug', "------> pinDevices %s health: %s, checkHealth: %s, mainPower: %s" %(NwkId,health, checkHealthFlag, mainPowerFlag) , NwkId)
-        if not mainPowerFlag:
-            return
-        if not health:
-            pingRetryDueToBadHealth(self, NwkId)
-            return
-        
-        if 'LastPing' not in self.ListOfDevices[NwkId]['Stamp']:
-            self.ListOfDevices[NwkId]['Stamp']['LastPing'] = 0
-        
-        lastPing = self.ListOfDevices[NwkId]['Stamp']['LastPing']
-        lastSeen = self.ListOfDevices[NwkId]['Stamp']['LastSeen']
-        now = int(time.time())
-
-        if checkHealthFlag and now > (lastPing + 60) and self.ZigateComm.loadTransmit() == 0:
-            submitPing( self, NWKID)
+            submitPing( self, NwkId)
             return
 
-        self.log.logging( "Heartbeat", 'Debug', "------> pinDevice %s time: %s LastPing: %s LastSeen: %s Freq: %s" \
-                %(NWKID, now, lastPing, lastSeen, self.pluginconf.pluginConf['pingDevicesFeq'] ), NwkId) 
-
-        if ( now > ( lastPing + self.pluginconf.pluginConf['pingDevicesFeq'] )) and \
-                 ( now > ( lastSeen + self.pluginconf.pluginConf['pingDevicesFeq'] )) and \
-                       self.ZigateComm.loadTransmit() == 0:
-
-            self.log.logging( "Heartbeat", 'Debug', "------> pinDevice %s time: %s LastPing: %s LastSeen: %s Freq: %s" \
-                %(NWKID, now, lastPing, lastSeen, self.pluginconf.pluginConf['pingDevicesFeq'] ), NwkId) 
-            
+    # Retry #3
+    if retry == 2:
+        # Last retry after 5 minutes
+        if self.ZigateComm.loadTransmit() == 0 and now > ( lastTimeStamp + 300): # 30 + 120 + 300
+            # Let's retry
+            self.log.logging( "Heartbeat", 'Debug', "--------> ping Retry 3 (last) Check %s" %NwkId, NwkId)
+            self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] += 1
+            self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = now
             submitPing( self, NwkId)
 
-    def submitPing( self, NwkId):
-        # Pinging devices to check they are still Alive
-        self.log.logging( "Heartbeat", 'Debug', "------------> call readAttributeRequest %s" %NwkId, NwkId)
-        self.ListOfDevices[NwkId]['Stamp']['LastPing'] = int(time.time())
-        ping_device_with_read_attribute( self, NwkId)
+def pingDevices( self, NwkId, health, checkHealthFlag, mainPowerFlag):
 
+    if 'pingDeviceRetry' in self.ListOfDevices[NwkId]:
+            self.log.logging( "Heartbeat", 'Debug', "------> pinDevices %s health: %s, checkHealth: %s, mainPower: %s, retry: %s" 
+            %(NwkId,health, checkHealthFlag, mainPowerFlag, self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry']) , NwkId)
+    else:
+        self.log.logging( "Heartbeat", 'Debug', "------> pinDevices %s health: %s, checkHealth: %s, mainPower: %s" 
+                %(NwkId,health, checkHealthFlag, mainPowerFlag) , NwkId)
 
+    if not mainPowerFlag:
+        return
+
+    if not health:
+        pingRetryDueToBadHealth(self, NwkId)
+        return
+    
+    if 'LastPing' not in self.ListOfDevices[NwkId]['Stamp']:
+        self.ListOfDevices[NwkId]['Stamp']['LastPing'] = 0
+    
+    lastPing = self.ListOfDevices[NwkId]['Stamp']['LastPing']
+    lastSeen = self.ListOfDevices[NwkId]['Stamp']['LastSeen']
+    now = int(time.time())
+
+    if checkHealthFlag and now > (lastPing + 60) and self.ZigateComm.loadTransmit() == 0:
+        submitPing( self, NwkId)
+        return
+
+    self.log.logging( "Heartbeat", 'Debug', "------> pinDevice %s time: %s LastPing: %s LastSeen: %s Freq: %s" \
+            %(NwkId, now, lastPing, lastSeen, self.pluginconf.pluginConf['pingDevicesFeq'] ), NwkId) 
+
+    if ( now > ( lastPing + self.pluginconf.pluginConf['pingDevicesFeq'] )) and \
+                ( now > ( lastSeen + self.pluginconf.pluginConf['pingDevicesFeq'] )) and \
+                    self.ZigateComm.loadTransmit() == 0:
+
+        self.log.logging( "Heartbeat", 'Debug', "------> pinDevice %s time: %s LastPing: %s LastSeen: %s Freq: %s" \
+            %(NwkId, now, lastPing, lastSeen, self.pluginconf.pluginConf['pingDevicesFeq'] ), NwkId) 
+        
+        submitPing( self, NwkId)
+
+def submitPing( self, NwkId):
+    # Pinging devices to check they are still Alive
+    self.log.logging( "Heartbeat", 'Debug', "------------> call readAttributeRequest %s" %NwkId, NwkId)
+    self.ListOfDevices[NwkId]['Stamp']['LastPing'] = int(time.time())
+    ping_device_with_read_attribute( self, NwkId)
+
+def processKnownDevices( self, Devices, NWKID ):
     # Begin   
     # Normalize Hearbeat value if needed
     intHB = int( self.ListOfDevices[NWKID]['Heartbeat'])
