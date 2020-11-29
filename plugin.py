@@ -146,9 +146,10 @@ class BasePlugin:
         #self._ReqRcv = bytearray()
 
         self.UnknownDevices = []   # List of unknown Device NwkId
-        self.permitTojoin = {}
-        self.permitTojoin['Duration'] = 0
-        self.permitTojoin['Starttime'] = 0
+        self.permitTojoin = {
+            'Duration': 0, 
+            'Starttime': 0
+            }
         self.CommiSSionning = False    # This flag is raised when a Device Annocement is receive, in order to give priority to commissioning
 
         self.busy = False    # This flag is raised when a Device Annocement is receive, in order to give priority to commissioning
@@ -201,6 +202,7 @@ class BasePlugin:
 
         self.SchneiderZone = None        # Manage Zone for Wiser Thermostat and HACT
         self.CasaiaPAC = None  # To manage Casa IA PAC configuration
+
 
     def onStart(self):
     
