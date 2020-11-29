@@ -157,7 +157,7 @@ class LoggingManagement:
         jsonLogHistory =  self.pluginconf.pluginConf['pluginLogs'] + "/" + "Zigate_log_error_history.json"
         with open( jsonLogHistory, "w", encoding='utf-8') as json_file:
             try:
-                json.dump( self.LogErrorHistory, json_file)
+                json.dump( dict(self.LogErrorHistory), json_file)
                 json_file.write('\n')
             except Exception as e:
                 Domoticz.Error("Hops ! Unable to write LogErrorHistory error: %s log: %s" %(e,self.LogErrorHistory ))
