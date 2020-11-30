@@ -170,19 +170,23 @@ class ZigateTransport(object):
         Domoticz.Status("ZigateTransport: Serial Connection open: %s" %serialConnection)
 
         while self.running:
-            nb = serialConnection.in_waiting
-            if nb > 0:
+            nb_in = serialConnection.in_waiting
+            nb_out = serialConnection.out_waiting
+            self.statistics._serialInWaiting = max(self.statistics._serialInWaiting, nb_in)
+            self.statistics._serialOutWaiting =max(self.statistics._serialOutWaiting, nb_out)
+            if nb_in > 0:
                 # Readinng messages
-                while nb:
+                while nb_in:
                     try:
-                        data = serialConnection.read( nb )
+                        data = serialConnection.read( nb_in )
                     except serial.SerialException as e:
                         #There is no new data from serial port
                         Domoticz.Error("serial_listen_and_send - error while reading %s" %(e))
                         data = None
                     if data:
                         self.on_message(data)
-                    nb = serialConnection.in_waiting        
+                    nb_in = serialConnection.in_waiting 
+                    self.statistics._serialInWaiting = max(self.statistics._serialInWaiting, nb_in)       
 
             elif self.messageQueue.qsize() > 0 and (( time.time() - self.lastsent_time) > MAX_THROUGHPUT):
                 # Sending messages
@@ -409,11 +413,11 @@ class ZigateTransport(object):
         waitForResponse = False
         if waitForResponseIn  or self.pluginconf.pluginConf['waitForResponse']:
             waitForResponse = True
-        self.logging_send('Debug2',"   -> waitForResponse: %s waitForResponseIn: %s" %(waitForResponse, waitForResponseIn))
+        #self.logging_send('Debug2',"   -> waitForResponse: %s waitForResponseIn: %s" %(waitForResponse, waitForResponseIn))
 
         # If ackIsDisabled is True, it means that usally a Ack is expected ( ZIGATE_COMMANDS), but here it has been disabled via Address Mode
-        self.logging_send('Debug2', "sendData - %s %s ackDisabled: %s FIFO: %s" %
-                         (cmd, datas, ackIsDisabled, len(self.zigateSendQueue)))
+        #self.logging_send('Debug2', "sendData - %s %s ackDisabled: %s FIFO: %s" %
+        #                 (cmd, datas, ackIsDisabled, len(self.zigateSendQueue)))
         if datas is None:
             datas = ''
 
@@ -491,7 +495,7 @@ class ZigateTransport(object):
             if Zero1 != 0:
                 _context = {
                     'Error code': 'TRANS-onMESS-01',
-                    'Data': Data,
+                    'Data': str(Data),
                     'Zero1': Zero1,
                     'Zero3': Zero3,
                     'idx': idx
@@ -512,7 +516,7 @@ class ZigateTransport(object):
             if len(BinMsg) <= 6:
                 _context = {
                     'Error code': 'TRANS-onMESS-02',
-                    'Data': Data,
+                    'Data': str(Data),
                     'Zero1': Zero1,
                     'Zero3': Zero3,
                     'idx': idx,
@@ -534,7 +538,7 @@ class ZigateTransport(object):
                 self.statistics._frameErrors += 1
                 _context = {
                     'Error code': 'TRANS-onMESS-03',
-                    'Data': Data,
+                    'Data': str(Data),
                     'Zero1': Zero1,
                     'Zero3': Zero3,
                     'idx': idx,
@@ -557,7 +561,7 @@ class ZigateTransport(object):
                 self.statistics._crcErrors += 1
                 _context = {
                     'Error code': 'TRANS-onMESS-04',
-                    'Data': Data,
+                    'Data': str(Data),
                     'Zero1': Zero1,
                     'Zero3': Zero3,
                     'idx': idx,
@@ -657,31 +661,31 @@ def initMatrix(self):
         STANDALONE_MESSAGE.append(x)
 
     for x in ZIGATE_COMMANDS:
-        self.logging_send('Debug2', "Command: %04x Ack: %s Sequence: %s/%s"
-                         % (x, ZIGATE_COMMANDS[x]['Ack'], len(ZIGATE_COMMANDS[x]['Sequence']), ZIGATE_COMMANDS[x]['Sequence']))
+        #self.logging_send('Debug2', "Command: %04x Ack: %s Sequence: %s/%s"
+        #                 % (x, ZIGATE_COMMANDS[x]['Ack'], len(ZIGATE_COMMANDS[x]['Sequence']), ZIGATE_COMMANDS[x]['Sequence']))
 
         if ZIGATE_COMMANDS[x]['NwkId 2nd Bytes']:
-            self.logging_send('Debug2', "--> 2nd Byte for NwkId")
+            #self.logging_send('Debug2', "--> 2nd Byte for NwkId")
             CMD_NWK_2NDBytes[x] = x
 
         if ZIGATE_COMMANDS[x]['Ack']:
-            self.logging_send('Debug2', "--> Ack")
+            #self.logging_send('Debug2', "--> Ack")
             CMD_WITH_ACK.append(x)
 
         if ZIGATE_COMMANDS[x]['SQN']:
             RESPONSE_SQN.append(x)
 
         if len(ZIGATE_COMMANDS[x]['Sequence']) == 0:
-            self.logging_send('Debug2', "--> PDM")
+            #self.logging_send('Debug2', "--> PDM")
             CMD_PDM_ON_HOST.append(x)
 
         elif len(ZIGATE_COMMANDS[x]['Sequence']) == 1:
-            self.logging_send('Debug2', "--> Command Only")
+            #self.logging_send('Debug2', "--> Command Only")
             CMD_ONLY_STATUS.append(x)
 
         elif len(ZIGATE_COMMANDS[x]['Sequence']) == 2:
-            self.logging_send('Debug2', "--> Response Expected for %04x -> %s" %
-                             (x, ZIGATE_COMMANDS[x]['Sequence'][1]))
+            #self.logging_send('Debug2', "--> Response Expected for %04x -> %s" %
+            #                 (x, ZIGATE_COMMANDS[x]['Sequence'][1]))
             CMD_WITH_RESPONSE[x] = ZIGATE_COMMANDS[x]['Sequence'][1]
 
     #self.logging_send( 'Debug', "STANDALONE_MESSAGE: %s" %STANDALONE_MESSAGE)
@@ -1201,8 +1205,8 @@ def check_timed_out(self):
 
     now = int(time.time())
 
-    self.logging_send('Debug2', "checkTimedOut  Start - Aps_Sqn: %s waitQ: %2s ackQ: %2s dataQ: %2s SendingFIFO: %3s"
-                     % (self.firmware_with_aps_sqn, len(self._waitFor8000Queue), len(self._waitFor8011Queue), len(self._waitForCmdResponseQueue), len(self.zigateSendQueue)))
+    #self.logging_send('Debug2', "checkTimedOut  Start - Aps_Sqn: %s waitQ: %2s ackQ: %2s dataQ: %2s SendingFIFO: %3s"
+    #                 % (self.firmware_with_aps_sqn, len(self._waitFor8000Queue), len(self._waitFor8011Queue), len(self._waitForCmdResponseQueue), len(self.zigateSendQueue)))
 
     # Check if we have a Wait for 0x8000 message
     if self._waitFor8000Queue:
@@ -1387,6 +1391,8 @@ def handle_8000( self, MsgType, MsgData, frame):
     sqn_app = MsgData[2:4]
     PacketType = MsgData[4:8]
 
+    #Domoticz.Log("handle_8000 - MsgType: %s MsgData: %s" %(MsgType, MsgData))
+
     sqn_aps = None
     type_sqn = None
     if len(MsgData) >= 12:
@@ -1558,6 +1564,11 @@ def clean_lstcmds(self, status, isqn):
 # 2 ### 0x8012/0x8702
 def handle_8012_8702( self, MsgType, MsgData, frame):
     
+    if len(MsgData) not in ( 26, 30, 14, 18):
+        Domoticz.Error("handle_8012_8702 - Wrong lenght received %s %s" %( MsgData, len(MsgData)))
+        MsgData = MsgData[2:]
+
+
     MsgStatus = MsgData[0:2]
     unknown2 = MsgData[4:8]
     MsgDataDestMode = MsgData[6:8]
@@ -2194,6 +2205,8 @@ def buildframe_configure_reporting_response( frame, Sqn, SrcNwkId, SrcEndPoint, 
     return  newFrame
 
 def update_xPDU( self, npdu, apdu):
+    if npdu == '' or apdu == '':
+        return
     self.npdu = int(npdu,16)
     self.apdu = int(apdu,16)
     self.statistics._MaxaPdu = max(self.statistics._MaxaPdu, int(apdu,16))
