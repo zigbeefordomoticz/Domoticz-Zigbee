@@ -41,7 +41,8 @@ THREAD_RELAX_TIME_MS = 20 / 1000    # 20ms of waiting time if nothing to do
 NB_SEND_PER_SECONDE = 5
 MAX_THROUGHPUT = 1 / NB_SEND_PER_SECONDE          
 
-
+#BAUDS = 460800
+BAUDS = 115200
 class ZigateTransport(object):
     # """
     # Class in charge of Transport mecanishm to and from Zigate
@@ -99,7 +100,7 @@ class ZigateTransport(object):
         self.WatchDogThread = None
         self.ListeningThreadevent = None
         self.ListeningThread = None
-        self.ListeningMutex = None
+        self.listening_transport_mutex = None
         self.messageQueue = queue.Queue()
         self.processFrameThread = []
 
@@ -108,21 +109,21 @@ class ZigateTransport(object):
 
         initMatrix(self)
 
-        if str(transport) == "USB":
-            self._transp = "USB"
+        Domoticz.Log("Transport: >%s<" %transport)
+        Domoticz.Log("Type %s" %type(transport))
+
+        if transport in ( "USB", "DIN", "V2", "PI"):
+            self._transp = transport
             self._serialPort = serialPort
-        elif str(transport) == "DIN":
-            self._transp = "DIN"
-            self._serialPort = serialPort
-        elif str(transport) == "PI":
-            self._transp = "PI"
-            self._serialPort = serialPort
+
         elif str(transport) == "Wifi":
-            self._transp = "Wifi"
+            self._transp = transport
             self._wifiAddress = wifiAddress
             self._wifiPort = wifiPort
+
         else:
             Domoticz.Error("Unknown Transport Mode: %s" % transport)
+            self._transp = 'None'
 
     # Thread handling Serial Input/Output
     # Priority on Reading
@@ -131,13 +132,14 @@ class ZigateTransport(object):
         self.FirmwareVersion = FirmwareVersion
         self.FirmwareMajorVersion = FirmwareMajorVersion
 
-    def start_thread_watchdog( self ):
+    def start_thread_transport_watchdog( self ):
         if self.WatchDogThread is None:
             Domoticz.Status("Starting Watch dog")
-            self.WatchDogThread = Thread( name="ZiGateWatchDog",  target=ZigateTransport.threads_watchdog,  args=(self,))
+            self.WatchDogThread = Thread( name="ZiGateWatchDog",  target=ZigateTransport.thread_transport_watchdog,  args=(self,))
             self.WatchDogThread.start()
 
-    def threads_watchdog(self):
+    def thread_transport_watchdog(self):
+
         def check_thread_alive( thr ):
             thr.join( timeout = 0.0 )
             return thr.is_alive()
@@ -148,24 +150,72 @@ class ZigateTransport(object):
                     'Error code': 'TRANS-THREADWATCHDOG-01',
                     'Thread Name': self.ListeningThread.name,
                 }
-                self.logging_send_error( "threads_watchdog", context=_context)
+                self.logging_send_error( "thread_transport_watchdog", context=_context)
                 self.ListeningThread.start()
-            time.sleep ( 60.0) 
+            time.sleep ( 5.0) 
 
-    def lock_mutex(self):
-        if self.ListeningMutex:
-            self.ListeningMutex.acquire()
+    def thread_transport_shutdown( self ):
+        self.running = False
 
-    def unlock_mutex(self):
-        if self.ListeningMutex:
-            self.ListeningMutex.release()
+    def lock_transport_mutex(self):
+        if self.listening_transport_mutex:
+            self.listening_transport_mutex.acquire()
+
+    def unlock_transport_mutex(self):
+        if self.listening_transport_mutex:
+            self.listening_transport_mutex.release()
+
+    def open_serial( self ):
+        try:
+            self._connection = serial.Serial(self._serialPort, baudrate = BAUDS, rtscts = False, dsrdtr = False, timeout = 0)
+            if self._transp in ('DIN', ):
+                self._connection.rtscts = True
+            if self._transp in ( 'V2', ):
+                self._connection.dsrdtr = True
+
+        except serial.SerialException as e:
+            Domoticz.Error("Cannot open Zigate port %s error: %s" %(self._serialPort, e))
+            return
+        Domoticz.Status("Starting Listening and Sending Thread")
+        if self.listening_transport_mutex is None:
+            self.listening_transport_mutex= Lock()
+        if self.ListeningThreadevent is None:
+            self.ListeningThreadevent = Event()
+        if self.ListeningThread is None:
+            self.ListeningThread = Thread(
+                                        name="ZiGate serial line listner", 
+                                        target=ZigateTransport.serial_listen_and_send, 
+                                        args=(self,))
+
+            self.ListeningThread.start()
+        self.start_thread_transport_watchdog( )
+
+    def open_tcpip( self ):
+        try:
+            self._connection = socket.create_connection( (self._wifiAddress, self._wifiPort) )
+            self._connection.setblocking(0)
+
+        except socket.Exception as e:
+            Domoticz.Error("Cannot open Zigate Wifi %s Port %s error: %s" %(self._wifiAddress, self._serialPort, e))
+            return
+        if self.listening_transport_mutex is None:
+            self.listening_transport_mutex= Lock()
+        if self.ListeningThreadevent is None:
+            self.ListeningThreadevent = Event()
+        if self.ListeningThread is None:
+            self.ListeningThread = Thread(
+                                        name="ZiGate tcpip listner", 
+                                        target=ZigateTransport.tcpip_listen_and_send, 
+                                        args=(self,))
+            self.ListeningThread.start()
+        self.start_thread_transport_watchdog( )
 
     def serial_listen_and_send( self ):
 
         while self._connection is None:
             #Domoticz.Log("Waiting for serial connection open")
             self.ListeningThreadevent.wait(1.0)
-        
+
         serialConnection = self._connection
         Domoticz.Status("ZigateTransport: Serial Connection open: %s" %serialConnection)
 
@@ -180,7 +230,6 @@ class ZigateTransport(object):
                     try:
                         data = serialConnection.read( nb_in )
                     except serial.SerialException as e:
-                        #There is no new data from serial port
                         Domoticz.Error("serial_listen_and_send - error while reading %s" %(e))
                         data = None
                     if data:
@@ -193,7 +242,9 @@ class ZigateTransport(object):
                 while self.messageQueue.qsize() > 0:
                     encoded_data = self.messageQueue.get_nowait()
                     try:
-                        serialConnection.write( encoded_data )
+                        nb_write = serialConnection.write( encoded_data )
+                        if nb_write != len( encoded_data ):
+                            Domoticz.Error("serial_listen_and_send - Looks like we have write less bytes than expected %s vs. %s" %(nb_write, encoded_data))
                         self.lastsent_time = time.time()
                     except TypeError as e:
                         #Disconnect of USB->UART occured
@@ -291,61 +342,22 @@ class ZigateTransport(object):
         return len(self.zigateSendQueue)
 
 
+
     # Transport / Opening / Closing Communication
     def set_connection(self):
-        def open_serial( self ):
-            try:
-                self._connection = serial.Serial(self._serialPort, baudrate = BAUDS, timeout = 0)
-
-            except serial.SerialException as e:
-                Domoticz.Error("Cannot open Zigate port %s error: %s" %(self._serialPort, e))
-                return
-            Domoticz.Status("Starting Listening and Sending Thread")
-            if self.ListeningMutex is None:
-                self.ListeningMutex= Lock()
-            if self.ListeningThreadevent is None:
-                self.ListeningThreadevent = Event()
-            if self.ListeningThread is None:
-                self.ListeningThread = Thread(
-                                            name="ZiGate serial line listner", 
-                                            target=ZigateTransport.serial_listen_and_send, 
-                                            args=(self,))
-
-                self.ListeningThread.start()
-            self.start_thread_watchdog( )
-
-        def open_tcpip( self ):
-            try:
-                self._connection = socket.create_connection( (self._wifiAddress, self._wifiPort) )
-                self._connection.setblocking(0)
-
-            except socket.Exception as e:
-                Domoticz.Error("Cannot open Zigate Wifi %s Port %s error: %s" %(self._wifiAddress, self._serialPort, e))
-                return
-            if self.ListeningMutex is None:
-                self.ListeningMutex= Lock()
-            if self.ListeningThreadevent is None:
-                self.ListeningThreadevent = Event()
-            if self.ListeningThread is None:
-                self.ListeningThread = Thread(
-                                            name="ZiGate tcpip listner", 
-                                            target=ZigateTransport.tcpip_listen_and_send, 
-                                            args=(self,))
-                self.ListeningThread.start()
-            self.start_thread_watchdog( )
 
         # Begining
         if self._connection is not None:
             del self._connection
             self._connection = None
 
-        if self._transp in ["USB", "DIN", "PI"]:
+        if self._transp in ["USB", "DIN", "PI", "V2"]:
             if self._serialPort.find('/dev/') != -1 or self._serialPort.find('COM') != -1:
                 Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" % (self._serialPort))
-                #BAUDS = 460800
-                BAUDS = 115200
+
+
                 if self.pluginconf.pluginConf['MultiThreaded']:
-                    open_serial( self)
+                    self.open_serial( )
                 else:
                     self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
                                                        Address=self._serialPort, Baud=BAUDS)
@@ -354,7 +366,7 @@ class ZigateTransport(object):
             Domoticz.Status("Connection Name: Zigate, Transport: TCP/IP, Address: %s:%s" %
                             (self._serialPort, self._wifiPort))
             if self.pluginconf.pluginConf['MultiThreaded']:
-                open_tcpip( self )
+                self.open_tcpip(  )
             else:
                 self._connection = Domoticz.Connection(Name="Zigate", Transport="TCP/IP", Protocol="None ",
                                                    Address=self._wifiAddress, Port=self._wifiPort)
@@ -1083,7 +1095,7 @@ def timeout_8000(self):
             if self.ListOfCommands[InternalSqn]['WaitForResponse']:
                 _next_cmd_from_wait_cmdresponse_queue(self)
 
-        elif self._waitForResponse:
+        elif self._waitForCmdResponseQueue :
             _next_cmd_from_wait_cmdresponse_queue(self)
     cleanup_list_of_commands(self, InternalSqn)
 
@@ -2211,6 +2223,119 @@ def update_xPDU( self, npdu, apdu):
     self.apdu = int(apdu,16)
     self.statistics._MaxaPdu = max(self.statistics._MaxaPdu, int(apdu,16))
     self.statistics._MaxnPdu = max(self.statistics._MaxnPdu, int(npdu,16))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 def zigate_encode(Data):
     # The encoding is the following:
