@@ -350,6 +350,9 @@ class WebServer(object):
             Statistics['MaxApdu'] = self.statistics._MaxaPdu
             Statistics['MaxNpdu'] = self.statistics._MaxnPdu 
 
+            Statistics['MaxSerialInWaiting'] = self.statistics._serialInWaiting
+            Statistics['MaxSerialOutWaiting'] = self.statistics._serialOutWaiting
+
             _nbitems = len(self.statistics.TrendStats)
 
             minTS = 0
