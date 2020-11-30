@@ -388,8 +388,9 @@ class ZigateTransport(object):
     def close_conn(self):
         Domoticz.Status("Connection close: %s" % self._connection)
         self.running = False # It will shutdown the Thread 
+    
         if self.pluginconf.pluginConf['MultiThreaded']:
-            if self._connection:
+            if self._connection and isinstance( self._connection, serial.serialposix.Serial):
                 self._connection.close()
         else:
             self._connection.Disconnect()
