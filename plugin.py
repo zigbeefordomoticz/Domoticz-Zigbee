@@ -263,7 +263,7 @@ class BasePlugin:
         self.PluginHealth['Txt'] = 'Startup'
                 
         if self.log is None:
-            self.log = LoggingManagement(self.pluginconf, self.PluginHealth, self.HardwareID)
+            self.log = LoggingManagement(self.pluginconf, self.PluginHealth, self.HardwareID, self.ListOfDevices, self.permitTojoin )
             self.log.openLogFile()
 
 

@@ -18,12 +18,16 @@ import time
 
 class LoggingManagement:
 
-    def __init__(self, pluginconf, PluginHealth, HardwareID):
+    def __init__(self, pluginconf, PluginHealth, HardwareID, ListOfDevices, permitTojoin):
         self.LogErrorHistory = {}
         self.pluginconf = pluginconf
         self.loggingFileHandle = None
         self.PluginHealth =  PluginHealth
         self.HardwareID = HardwareID
+        self.ListOfDevices = ListOfDevices
+        self.permitTojoin = permitTojoin
+        self.FirmwareVersion = None
+        self.FirmwareMajorVersion = None
         
     def openLogFile( self ):
 
@@ -133,6 +137,7 @@ class LoggingManagement:
         self.loggingWriteErrorHistory()
 
     def loggingBuildContext(self, module, message, nwkid, context):
+        
         if not self.PluginHealth:
             _txt = 'Not Started'
         if 'Txt' not in self.PluginHealth:
@@ -144,8 +149,13 @@ class LoggingManagement:
                     'Module': module,
                     'nwkid': nwkid,
                     'PluginHealth': _txt,
-                    'message': message
+                    'message': message,
+                    'PermitToJoin': self.permitTojoin,
+                    'FirmwareVersion': self.FirmwareVersion,
+                    'FirmwareMajorVersion': self.FirmwareMajorVersion
                 }
+        if nwkid:
+            _context[ 'DeviceInfos'] = dict(self.ListOfDevices[ nwkid ])
         if context is not None:
             if isinstance(context, dict):
                 _context['context'] = context.copy()
