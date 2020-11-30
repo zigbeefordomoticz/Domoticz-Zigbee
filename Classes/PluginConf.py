@@ -162,7 +162,7 @@ SETTINGS = {
         'forceAckOnZCL':   {'type': 'bool', 'default': 0,      'current': None, 'restart': False, 'hidden': False,  'Advanced': True},
         'disableAckOnZCL': {'type': 'bool', 'default': 0,      'current': None, 'restart': False, 'hidden': False,  'Advanced': True},
         'waitForResponse': {'type': 'bool', 'default': 0,      'current': None, 'restart': False, 'hidden': True,   'Advanced': True},
-        'MultiThreaded':   {'type': 'bool', 'default': 0,      'current': None, 'restart': True,  'hidden': True,   'Advanced': True},
+        'MultiThreaded':   {'type': 'bool', 'default': 0,      'current': None, 'restart': True,  'hidden': False,   'Advanced': True},
         'ieeeForRawAps':   {'type': 'bool', 'default': 0,      'current': None, 'restart': True,  'hidden': True,   'Advanced': True},
         }
     },
@@ -307,7 +307,8 @@ SETTINGS = {
         'rebindLivolo':          {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': False},
         'allowAutoPairing':      {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'forceAckOnZCL':         {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
-        'forceFullSeqMode':      {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False,  'Advanced': True}
+        'forceFullSeqMode':      {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
+        'MultiThreaded':         {'type': 'bool', 'default': 0, 'current': None, 'restart': True,  'hidden': False,  'Advanced': True},
         }
     }
 }
