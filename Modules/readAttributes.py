@@ -216,9 +216,7 @@ def ping_device_with_read_attribute(self, key):
 
     self.log.logging( "ReadAttributes", 'Debug', "Ping Device Physical device - Key: %s" %(key), nwkid=key)
 
-    if 'Model' in self.ListOfDevices[key] and self.ListOfDevices[key][
-        'Model'
-    ] in ('GL-B-007Z',):
+    if 'Model' in self.ListOfDevices[key] and self.ListOfDevices[key]['Model'] in ('GL-B-007Z',):
         PING_CLUSTER = '0006'
         PING_CLUSTER_ATTRIBUTE = '0000'
 

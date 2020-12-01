@@ -30,10 +30,11 @@
     <params>
         <param field="Mode1" label="Zigate Model" width="75px" required="true" default="None">
             <options>
-                <option label="USB" value="USB" default="true" />
-                <option label="DIN" value="DIN" />
-                <option label="PI" value="PI" />
-                <option label="Wifi" value="Wifi"/>
+                <option label="ZiGate USB" value="USB" default="true" />
+                <option label="ZiGate DIN" value="DIN" />
+                <option label="ZiGate PI" value="PI" />
+                <option label="ZiGate Wifi" value="Wifi"/>
+                <option label="ZiGate V2" value="V2"/>
                 <option label="None" value="None"/>
             </options>
         </param>
@@ -146,9 +147,10 @@ class BasePlugin:
         #self._ReqRcv = bytearray()
 
         self.UnknownDevices = []   # List of unknown Device NwkId
-        self.permitTojoin = {}
-        self.permitTojoin['Duration'] = 0
-        self.permitTojoin['Starttime'] = 0
+        self.permitTojoin = {
+            'Duration': 0, 
+            'Starttime': 0
+            }
         self.CommiSSionning = False    # This flag is raised when a Device Annocement is receive, in order to give priority to commissioning
 
         self.busy = False    # This flag is raised when a Device Annocement is receive, in order to give priority to commissioning
@@ -202,8 +204,9 @@ class BasePlugin:
         self.SchneiderZone = None        # Manage Zone for Wiser Thermostat and HACT
         self.CasaiaPAC = None  # To manage Casa IA PAC configuration
 
+
     def onStart(self):
-    
+
         Domoticz.Heartbeat( 1 )
         self.pluginParameters = dict(Parameters)
 
@@ -261,7 +264,7 @@ class BasePlugin:
         self.PluginHealth['Txt'] = 'Startup'
                 
         if self.log is None:
-            self.log = LoggingManagement(self.pluginconf, self.PluginHealth, self.HardwareID)
+            self.log = LoggingManagement(self.pluginconf, self.PluginHealth, self.HardwareID, self.ListOfDevices, self.permitTojoin )
             self.log.openLogFile()
 
 
@@ -296,9 +299,6 @@ class BasePlugin:
 
             self.WebUsername, self.WebPassword = self.domoticzdb_Preferences.retreiveWebUserNamePassword()
             #Domoticz.Status("Domoticz Website credentials %s/%s" %(self.WebUsername, self.WebPassword))
-
-
-
 
         self.adminWidgets = AdminWidgets( self.pluginconf, Devices, self.ListOfDevices, self.HardwareID )
         self.adminWidgets.updateStatusWidget( Devices, 'Startup')
@@ -348,19 +348,19 @@ class BasePlugin:
 
         # Connect to Zigate only when all initialisation are properly done.
         self.log.logging( 'Plugin', 'Status', "Transport mode: %s" %self.transport)
-        if  self.transport == "USB":
+        if  self.transport in ("USB", "DIN", "V2"):
             self.ZigateComm = ZigateTransport( self.transport, self.statistics, self.pluginconf, self.processFrame,\
                     self.log, serialPort=Parameters["SerialPort"] )
-        elif  self.transport == "DIN":
-            self.ZigateComm = ZigateTransport( self.transport, self.statistics, self.pluginconf, self.processFrame,\
-                    self.log, serialPort=Parameters["SerialPort"] )
+
         elif  self.transport == "PI":
             switchPiZigate_mode( self, 'run' )
             self.ZigateComm = ZigateTransport( self.transport, self.statistics, self.pluginconf, self.processFrame,\
                     self.log, serialPort=Parameters["SerialPort"] )
+
         elif  self.transport == "Wifi":
             self.ZigateComm = ZigateTransport( self.transport, self.statistics, self.pluginconf, self.processFrame,\
                     self.log, wifiAddress= Parameters["Address"], wifiPort=Parameters["Port"] )
+
         elif self.transport == "None":
             self.log.logging( 'Plugin', 'Status', "Transport mode set to None, no communication.")
             self.FirmwareVersion = '031c'

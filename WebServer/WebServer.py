@@ -329,8 +329,13 @@ class WebServer(object):
             Statistics['APSNck'] =  0
             Statistics['StartTime'] = int(time()) - 120
         else:
-            Statistics['ZiGateRoundTimeMax'] = self.statistics._maxTiming8000
-            Statistics['ZiGateRoundTimeAverage'] = self.statistics._averageTiming8000
+            Statistics['ZiGateRound8000TimeMaxms'] = self.statistics._maxTiming8000
+            Statistics['ZiGateRound8000TimeAveragems'] = self.statistics._averageTiming8000
+            Statistics['ZiGateRound8011TimeMaxms'] = self.statistics._maxTiming8011
+            Statistics['ZiGateRound8011TimeAveragems'] = self.statistics._averageTiming8011
+            Statistics['ZiGateRound8012TimeMaxms'] = self.statistics._maxTiming8012
+            Statistics['ZiGateRound8012TimeAveragems'] = self.statistics._averageTiming8012
+
             Statistics['ZiGateProcessTimeOnRxMax'] = self.statistics._maxRxProcesses
             Statistics['ZiGateProcessTimeOnRxAverage'] = self.statistics._averageRxProcess
 
@@ -349,6 +354,9 @@ class WebServer(object):
 
             Statistics['MaxApdu'] = self.statistics._MaxaPdu
             Statistics['MaxNpdu'] = self.statistics._MaxnPdu 
+
+            Statistics['MaxSerialInWaiting'] = self.statistics._serialInWaiting
+            Statistics['MaxSerialOutWaiting'] = self.statistics._serialOutWaiting
 
             _nbitems = len(self.statistics.TrendStats)
 

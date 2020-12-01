@@ -37,11 +37,11 @@ CMD_WITH_RESPONSE = {}
 RESPONSE_SQN = []
 
 THREAD_RELAX_TIME_MS = 20 / 1000    # 20ms of waiting time if nothing to do
-
-NB_SEND_PER_SECONDE = 10
+NB_SEND_PER_SECONDE = 5
 MAX_THROUGHPUT = 1 / NB_SEND_PER_SECONDE          
 
-
+#BAUDS = 460800
+BAUDS = 115200
 class ZigateTransport(object):
     # """
     # Class in charge of Transport mecanishm to and from Zigate
@@ -99,7 +99,7 @@ class ZigateTransport(object):
         self.WatchDogThread = None
         self.ListeningThreadevent = None
         self.ListeningThread = None
-        self.ListeningMutex = None
+        self.listening_transport_mutex = None
         self.messageQueue = queue.Queue()
         self.processFrameThread = []
 
@@ -108,21 +108,21 @@ class ZigateTransport(object):
 
         initMatrix(self)
 
-        if str(transport) == "USB":
-            self._transp = "USB"
+        Domoticz.Log("Transport: >%s<" %transport)
+        Domoticz.Log("Type %s" %type(transport))
+
+        if transport in ( "USB", "DIN", "V2", "PI"):
+            self._transp = transport
             self._serialPort = serialPort
-        elif str(transport) == "DIN":
-            self._transp = "DIN"
-            self._serialPort = serialPort
-        elif str(transport) == "PI":
-            self._transp = "PI"
-            self._serialPort = serialPort
+
         elif str(transport) == "Wifi":
-            self._transp = "Wifi"
+            self._transp = transport
             self._wifiAddress = wifiAddress
             self._wifiPort = wifiPort
+
         else:
             Domoticz.Error("Unknown Transport Mode: %s" % transport)
+            self._transp = 'None'
 
     # Thread handling Serial Input/Output
     # Priority on Reading
@@ -131,13 +131,14 @@ class ZigateTransport(object):
         self.FirmwareVersion = FirmwareVersion
         self.FirmwareMajorVersion = FirmwareMajorVersion
 
-    def start_thread_watchdog( self ):
+    def start_thread_transport_watchdog( self ):
         if self.WatchDogThread is None:
             Domoticz.Status("Starting Watch dog")
-            self.WatchDogThread = Thread( name="ZiGateWatchDog",  target=ZigateTransport.threads_watchdog,  args=(self,))
+            self.WatchDogThread = Thread( name="ZiGateWatchDog",  target=ZigateTransport.thread_transport_watchdog,  args=(self,))
             self.WatchDogThread.start()
 
-    def threads_watchdog(self):
+    def thread_transport_watchdog(self):
+
         def check_thread_alive( thr ):
             thr.join( timeout = 0.0 )
             return thr.is_alive()
@@ -148,52 +149,91 @@ class ZigateTransport(object):
                     'Error code': 'TRANS-THREADWATCHDOG-01',
                     'Thread Name': self.ListeningThread.name,
                 }
-                self.logging_send_error( "threads_watchdog", context=_context)
+                self.logging_send_error( "thread_transport_watchdog", context=_context)
                 self.ListeningThread.start()
-            time.sleep ( 60.0) 
+            time.sleep ( 5.0) 
 
-    def lock_mutex(self):
-        if self.ListeningMutex:
-            self.ListeningMutex.acquire()
+    def thread_transport_shutdown( self ):
+        self.running = False
 
-    def unlock_mutex(self):
-        if self.ListeningMutex:
-            self.ListeningMutex.release()
+    def lock_transport_mutex(self):
+        if self.listening_transport_mutex:
+            self.listening_transport_mutex.acquire()
+
+    def unlock_transport_mutex(self):
+        if self.listening_transport_mutex:
+            self.listening_transport_mutex.release()
+
+    def open_serial( self ):
+        try:
+            self._connection = serial.Serial(self._serialPort, baudrate = BAUDS, rtscts = False, dsrdtr = False, timeout = 0)
+            if self._transp in ('DIN', ):
+                self._connection.rtscts = True
+            if self._transp in ( 'V2', ):
+                self._connection.dsrdtr = True
+
+        except serial.SerialException as e:
+            Domoticz.Error("Cannot open Zigate port %s error: %s" %(self._serialPort, e))
+            return
+        Domoticz.Status("Starting Listening and Sending Thread")
+        if self.listening_transport_mutex is None:
+            self.listening_transport_mutex= Lock()
+        if self.ListeningThreadevent is None:
+            self.ListeningThreadevent = Event()
+        if self.ListeningThread is None:
+            self.ListeningThread = Thread(
+                                        name="ZiGate serial line listner", 
+                                        target=ZigateTransport.serial_listen_and_send, 
+                                        args=(self,))
+
+            self.ListeningThread.start()
+        self.start_thread_transport_watchdog( )
+
+    def open_tcpip( self ):
+        try:
+            self._connection = socket.create_connection( (self._wifiAddress, self._wifiPort) )
+            self._connection.setblocking(0)
+
+        except socket.Exception as e:
+            Domoticz.Error("Cannot open Zigate Wifi %s Port %s error: %s" %(self._wifiAddress, self._serialPort, e))
+            return
+        if self.listening_transport_mutex is None:
+            self.listening_transport_mutex= Lock()
+        if self.ListeningThreadevent is None:
+            self.ListeningThreadevent = Event()
+        if self.ListeningThread is None:
+            self.ListeningThread = Thread(
+                                        name="ZiGate tcpip listner", 
+                                        target=ZigateTransport.tcpip_listen_and_send, 
+                                        args=(self,))
+            self.ListeningThread.start()
+        self.start_thread_transport_watchdog( )
 
     def serial_listen_and_send( self ):
 
         while self._connection is None:
             #Domoticz.Log("Waiting for serial connection open")
             self.ListeningThreadevent.wait(1.0)
-        
+
         serialConnection = self._connection
         Domoticz.Status("ZigateTransport: Serial Connection open: %s" %serialConnection)
 
         while self.running:
-            nb = serialConnection.in_waiting
-            if nb > 0:
+            nb_in = serialConnection.in_waiting
+            nb_out = serialConnection.out_waiting
+            instrument_serial( self, nb_in, nb_out)
+
+            if nb_in > 0:
                 # Readinng messages
-                while nb:
-                    try:
-                        data = serialConnection.read( nb )
-                    except serial.SerialException as e:
-                        #There is no new data from serial port
-                        Domoticz.Error("serial_listen_and_send - error while reading %s" %(e))
-                        data = None
-                    if data:
-                        self.on_message(data)
-                    nb = serialConnection.in_waiting        
+                data = read_from_zigate( self, serialConnection, nb_in)
+                if data:
+                    self.on_message(data)
 
             elif self.messageQueue.qsize() > 0 and (( time.time() - self.lastsent_time) > MAX_THROUGHPUT):
-                # Sending messages
-                while self.messageQueue.qsize() > 0:
-                    encoded_data = self.messageQueue.get_nowait()
-                    try:
-                        serialConnection.write( encoded_data )
-                        self.lastsent_time = time.time()
-                    except TypeError as e:
-                        #Disconnect of USB->UART occured
-                        Domoticz.Error("serial_listen_and_send - error while writing %s" %(e))
+                # Sending messages ( only 1 at a time )
+                encoded_data = self.messageQueue.get_nowait()
+                write_to_zigate( self, serialConnection, encoded_data )
+                self.lastsent_time = time.time()
 
             else:
                 if self.lock:
@@ -202,6 +242,7 @@ class ZigateTransport(object):
                 else:
                     self.ListeningThreadevent.wait( THREAD_RELAX_TIME_MS )
         Domoticz.Status("ZigateTransport: ZiGateSerialListen Thread stop.")
+
 
     def tcpip_listen_and_send( self ):
 
@@ -287,61 +328,22 @@ class ZigateTransport(object):
         return len(self.zigateSendQueue)
 
 
+
     # Transport / Opening / Closing Communication
     def set_connection(self):
-        def open_serial( self ):
-            try:
-                self._connection = serial.Serial(self._serialPort, baudrate = BAUDS, timeout = 0)
-
-            except serial.SerialException as e:
-                Domoticz.Error("Cannot open Zigate port %s error: %s" %(self._serialPort, e))
-                return
-            Domoticz.Status("Starting Listening and Sending Thread")
-            if self.ListeningMutex is None:
-                self.ListeningMutex= Lock()
-            if self.ListeningThreadevent is None:
-                self.ListeningThreadevent = Event()
-            if self.ListeningThread is None:
-                self.ListeningThread = Thread(
-                                            name="ZiGate serial line listner", 
-                                            target=ZigateTransport.serial_listen_and_send, 
-                                            args=(self,))
-
-                self.ListeningThread.start()
-            self.start_thread_watchdog( )
-
-        def open_tcpip( self ):
-            try:
-                self._connection = socket.create_connection( (self._wifiAddress, self._wifiPort) )
-                self._connection.setblocking(0)
-
-            except socket.Exception as e:
-                Domoticz.Error("Cannot open Zigate Wifi %s Port %s error: %s" %(self._wifiAddress, self._serialPort, e))
-                return
-            if self.ListeningMutex is None:
-                self.ListeningMutex= Lock()
-            if self.ListeningThreadevent is None:
-                self.ListeningThreadevent = Event()
-            if self.ListeningThread is None:
-                self.ListeningThread = Thread(
-                                            name="ZiGate tcpip listner", 
-                                            target=ZigateTransport.tcpip_listen_and_send, 
-                                            args=(self,))
-                self.ListeningThread.start()
-            self.start_thread_watchdog( )
 
         # Begining
         if self._connection is not None:
             del self._connection
             self._connection = None
 
-        if self._transp in ["USB", "DIN", "PI"]:
+        if self._transp in ["USB", "DIN", "PI", "V2"]:
             if self._serialPort.find('/dev/') != -1 or self._serialPort.find('COM') != -1:
                 Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" % (self._serialPort))
-                #BAUDS = 460800
-                BAUDS = 115200
+
+
                 if self.pluginconf.pluginConf['MultiThreaded']:
-                    open_serial( self)
+                    self.open_serial( )
                 else:
                     self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
                                                        Address=self._serialPort, Baud=BAUDS)
@@ -350,7 +352,7 @@ class ZigateTransport(object):
             Domoticz.Status("Connection Name: Zigate, Transport: TCP/IP, Address: %s:%s" %
                             (self._serialPort, self._wifiPort))
             if self.pluginconf.pluginConf['MultiThreaded']:
-                open_tcpip( self )
+                self.open_tcpip(  )
             else:
                 self._connection = Domoticz.Connection(Name="Zigate", Transport="TCP/IP", Protocol="None ",
                                                    Address=self._wifiAddress, Port=self._wifiPort)
@@ -372,8 +374,9 @@ class ZigateTransport(object):
     def close_conn(self):
         Domoticz.Status("Connection close: %s" % self._connection)
         self.running = False # It will shutdown the Thread 
+    
         if self.pluginconf.pluginConf['MultiThreaded']:
-            if self._connection:
+            if self._connection and isinstance( self._connection, serial.serialposix.Serial):
                 self._connection.close()
         else:
             self._connection.Disconnect()
@@ -409,11 +412,11 @@ class ZigateTransport(object):
         waitForResponse = False
         if waitForResponseIn  or self.pluginconf.pluginConf['waitForResponse']:
             waitForResponse = True
-        self.logging_send('Debug2',"   -> waitForResponse: %s waitForResponseIn: %s" %(waitForResponse, waitForResponseIn))
+        #self.logging_send('Debug2',"   -> waitForResponse: %s waitForResponseIn: %s" %(waitForResponse, waitForResponseIn))
 
         # If ackIsDisabled is True, it means that usally a Ack is expected ( ZIGATE_COMMANDS), but here it has been disabled via Address Mode
-        self.logging_send('Debug2', "sendData - %s %s ackDisabled: %s FIFO: %s" %
-                         (cmd, datas, ackIsDisabled, len(self.zigateSendQueue)))
+        #self.logging_send('Debug2', "sendData - %s %s ackDisabled: %s FIFO: %s" %
+        #                 (cmd, datas, ackIsDisabled, len(self.zigateSendQueue)))
         if datas is None:
             datas = ''
 
@@ -491,7 +494,7 @@ class ZigateTransport(object):
             if Zero1 != 0:
                 _context = {
                     'Error code': 'TRANS-onMESS-01',
-                    'Data': Data,
+                    'Data': str(Data),
                     'Zero1': Zero1,
                     'Zero3': Zero3,
                     'idx': idx
@@ -512,7 +515,7 @@ class ZigateTransport(object):
             if len(BinMsg) <= 6:
                 _context = {
                     'Error code': 'TRANS-onMESS-02',
-                    'Data': Data,
+                    'Data': str(Data),
                     'Zero1': Zero1,
                     'Zero3': Zero3,
                     'idx': idx,
@@ -534,7 +537,7 @@ class ZigateTransport(object):
                 self.statistics._frameErrors += 1
                 _context = {
                     'Error code': 'TRANS-onMESS-03',
-                    'Data': Data,
+                    'Data': str(Data),
                     'Zero1': Zero1,
                     'Zero3': Zero3,
                     'idx': idx,
@@ -557,7 +560,7 @@ class ZigateTransport(object):
                 self.statistics._crcErrors += 1
                 _context = {
                     'Error code': 'TRANS-onMESS-04',
-                    'Data': Data,
+                    'Data': str(Data),
                     'Zero1': Zero1,
                     'Zero3': Zero3,
                     'idx': idx,
@@ -657,31 +660,31 @@ def initMatrix(self):
         STANDALONE_MESSAGE.append(x)
 
     for x in ZIGATE_COMMANDS:
-        self.logging_send('Debug2', "Command: %04x Ack: %s Sequence: %s/%s"
-                         % (x, ZIGATE_COMMANDS[x]['Ack'], len(ZIGATE_COMMANDS[x]['Sequence']), ZIGATE_COMMANDS[x]['Sequence']))
+        #self.logging_send('Debug2', "Command: %04x Ack: %s Sequence: %s/%s"
+        #                 % (x, ZIGATE_COMMANDS[x]['Ack'], len(ZIGATE_COMMANDS[x]['Sequence']), ZIGATE_COMMANDS[x]['Sequence']))
 
         if ZIGATE_COMMANDS[x]['NwkId 2nd Bytes']:
-            self.logging_send('Debug2', "--> 2nd Byte for NwkId")
+            #self.logging_send('Debug2', "--> 2nd Byte for NwkId")
             CMD_NWK_2NDBytes[x] = x
 
         if ZIGATE_COMMANDS[x]['Ack']:
-            self.logging_send('Debug2', "--> Ack")
+            #self.logging_send('Debug2', "--> Ack")
             CMD_WITH_ACK.append(x)
 
         if ZIGATE_COMMANDS[x]['SQN']:
             RESPONSE_SQN.append(x)
 
         if len(ZIGATE_COMMANDS[x]['Sequence']) == 0:
-            self.logging_send('Debug2', "--> PDM")
+            #self.logging_send('Debug2', "--> PDM")
             CMD_PDM_ON_HOST.append(x)
 
         elif len(ZIGATE_COMMANDS[x]['Sequence']) == 1:
-            self.logging_send('Debug2', "--> Command Only")
+            #self.logging_send('Debug2', "--> Command Only")
             CMD_ONLY_STATUS.append(x)
 
         elif len(ZIGATE_COMMANDS[x]['Sequence']) == 2:
-            self.logging_send('Debug2', "--> Response Expected for %04x -> %s" %
-                             (x, ZIGATE_COMMANDS[x]['Sequence'][1]))
+            #self.logging_send('Debug2', "--> Response Expected for %04x -> %s" %
+            #                 (x, ZIGATE_COMMANDS[x]['Sequence'][1]))
             CMD_WITH_RESPONSE[x] = ZIGATE_COMMANDS[x]['Sequence'][1]
 
     #self.logging_send( 'Debug', "STANDALONE_MESSAGE: %s" %STANDALONE_MESSAGE)
@@ -1047,6 +1050,7 @@ def _send_data(self, InternalSqn):
     #self._connection.Send(bytes.fromhex(str(lineinput)), 0)
 
     if self.pluginconf.pluginConf['MultiThreaded'] and self.messageQueue:
+        #write_to_zigate( self, self._connection, bytes.fromhex(str(lineinput)) )
         self.messageQueue.put(bytes.fromhex(str(lineinput)))
     else:
         self._connection.Send(bytes.fromhex(str(lineinput)), 0)
@@ -1079,7 +1083,7 @@ def timeout_8000(self):
             if self.ListOfCommands[InternalSqn]['WaitForResponse']:
                 _next_cmd_from_wait_cmdresponse_queue(self)
 
-        elif self._waitForResponse:
+        elif self._waitForCmdResponseQueue :
             _next_cmd_from_wait_cmdresponse_queue(self)
     cleanup_list_of_commands(self, InternalSqn)
 
@@ -1201,8 +1205,8 @@ def check_timed_out(self):
 
     now = int(time.time())
 
-    self.logging_send('Debug2', "checkTimedOut  Start - Aps_Sqn: %s waitQ: %2s ackQ: %2s dataQ: %2s SendingFIFO: %3s"
-                     % (self.firmware_with_aps_sqn, len(self._waitFor8000Queue), len(self._waitFor8011Queue), len(self._waitForCmdResponseQueue), len(self.zigateSendQueue)))
+    #self.logging_send('Debug2', "checkTimedOut  Start - Aps_Sqn: %s waitQ: %2s ackQ: %2s dataQ: %2s SendingFIFO: %3s"
+    #                 % (self.firmware_with_aps_sqn, len(self._waitFor8000Queue), len(self._waitFor8011Queue), len(self._waitForCmdResponseQueue), len(self.zigateSendQueue)))
 
     # Check if we have a Wait for 0x8000 message
     if self._waitFor8000Queue:
@@ -1317,7 +1321,7 @@ def process_frame(self, frame):
 
     if MsgType == '8011':
         handle_8011( self, MsgType, MsgData, frame)
-        #self.F_out(frame, None)
+        self.F_out(frame, None)
         ready_to_send_if_needed(self)
         return
 
@@ -1387,6 +1391,8 @@ def handle_8000( self, MsgType, MsgData, frame):
     sqn_app = MsgData[2:4]
     PacketType = MsgData[4:8]
 
+    #Domoticz.Log("handle_8000 - MsgType: %s MsgData: %s" %(MsgType, MsgData))
+
     sqn_aps = None
     type_sqn = None
     if len(MsgData) >= 12:
@@ -1439,13 +1445,23 @@ def check_and_process_8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn)
 
     self.logging_send('Debug', "--> check_and_process_8000 - Status: %s PacketType: %s sqn_app:%s sqn_aps: %s type_sqn: %s" 
         % (Status, PacketType, sqn_app, sqn_aps, type_sqn))
-    # Command Failed, Status != 00
 
     if int(PacketType,16) in CMD_PDM_ON_HOST:
         # No sync on PDM commands
         return None
 
     if Status != '00':
+        _context = {
+            'Error code': 'TRANS-CHKPROC8000-99',
+            'Status': Status,
+            'iSQN': None,
+            'PacketType': PacketType,
+            'SQN_APP': sqn_app, 
+            'SQN_APS': sqn_aps, 
+            'TYP_SQN': type_sqn
+        }
+        self.logging_send_error(  "check_and_process_8000", context=_context)
+
         self.statistics._ackKO += 1
         # In that case we need to unblock data, as we will never get it !
         if self._waitForCmdResponseQueue:
@@ -1504,7 +1520,7 @@ def check_and_process_8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn)
         timing = int( ( time.time() - TimeStamp ) * 1000 )
         self.statistics.add_timing8000( timing )
         if self.statistics._averageTiming8000 != 0 and timing >= (3 * self.statistics._averageTiming8000):
-            Domoticz.Log("Zigate round trip time seems long. %s ms for %s %s SendingQueue: %s LoC: %s" 
+            Domoticz.Log("Zigate round trip 0x8000 time seems long. %s ms for %s %s SendingQueue: %s LoC: %s" 
                 %( timing , 
                 self.ListOfCommands[InternalSqn]['Cmd'], 
                 self.ListOfCommands[InternalSqn]['Datas'], 
@@ -1558,6 +1574,11 @@ def clean_lstcmds(self, status, isqn):
 # 2 ### 0x8012/0x8702
 def handle_8012_8702( self, MsgType, MsgData, frame):
     
+    if len(MsgData) not in ( 26, 30, 14, 18):
+        Domoticz.Error("handle_8012_8702 - Wrong lenght received %s %s" %( MsgData, len(MsgData)))
+        MsgData = MsgData[2:]
+
+
     MsgStatus = MsgData[0:2]
     unknown2 = MsgData[4:8]
     MsgDataDestMode = MsgData[6:8]
@@ -1589,11 +1610,6 @@ def handle_8012_8702( self, MsgType, MsgData, frame):
     if MsgData is None:
         return None
 
-    if MsgStatus == '00':
-        self.statistics._APSAck += 1
-    else:
-        self.statistics._APSNck += 1
-
     if MsgData and self.zmode == 'zigate31c':
         # We do not block on Ack for firmware from 31c and below
         return None
@@ -1618,12 +1634,12 @@ def check_and_process_8012_31e( self, MsgType, MsgStatus, MsgAddr, MsgSQN, nPDU,
 
     InternSqn = sqn_get_internal_sqn_from_aps_sqn(self, MsgSQN)
     self.logging_send( 'Debug',"--> check_and_process_8012_31e i_sqn: %s e_sqn: 0x%02x/%s Status: %s Addr: %s Ep: %s npdu: %s / apdu: %s"
-        %(InternSqn, int(MsgSQN,16), MsgSQN, MsgStatus, MsgAddr,MsgSQN, nPDU, aPDU))
+        %(InternSqn, int(MsgSQN,16), int(MsgSQN,16), MsgStatus, MsgAddr,MsgSQN, nPDU, aPDU))
 
     if InternSqn is None:
         return None
 
-    i_sqn, ts = self._waitFor8012Queue[0]
+    i_sqn, TimeStamp = self._waitFor8012Queue[0]
     if i_sqn != InternSqn:
         return None
 
@@ -1633,6 +1649,20 @@ def check_and_process_8012_31e( self, MsgType, MsgStatus, MsgAddr, MsgSQN, nPDU,
 
     if i_sqn in self.ListOfCommands:
         self.ListOfCommands[i_sqn]['Status'] = MsgType
+
+    # Statistics on ZiGate reacting time to process the command
+    if self.pluginconf.pluginConf['ZiGateReactTime']:
+        timing = int( ( time.time() - TimeStamp ) * 1000 )
+        self.statistics.add_timing8012( timing )
+        if self.statistics._averageTiming8012 != 0 and timing >= (3 * self.statistics._averageTiming8012):
+            Domoticz.Log("Zigate round trip 0x8012 time seems long. %s ms for %s %s SendingQueue: %s LoC: %s" 
+                %( timing , 
+                self.ListOfCommands[i_sqn]['Cmd'], 
+                self.ListOfCommands[i_sqn]['Datas'], 
+                self.loadTransmit(), 
+                len(self.ListOfCommands)
+                ))
+
 
     _next_cmd_from_wait_for8012_queue( self )
                                 
@@ -1651,7 +1681,7 @@ def handle_8011( self, MsgType, MsgData, frame):
         MsgSEQ = MsgData[12:14]
     
     self.logging_send('Debug', "MsgType: %s Status: %s NwkId: %s Ep: %s ClusterId: %s Seq: %s/%s self.zmode: %s FirmAckNoAck: %s" 
-        %(MsgType, MsgStatus, MsgSrcAddr, MsgSrcEp,MsgClusterId, int(MsgSEQ,16), MsgSEQ, self.zmode, self.firmware_with_aps_sqn ))
+        %(MsgType, MsgStatus, MsgSrcAddr, MsgSrcEp,MsgClusterId, int(MsgSEQ,16), int(MsgSEQ,16), self.zmode, self.firmware_with_aps_sqn ))
     
     if MsgData is None:
         return None
@@ -1719,13 +1749,26 @@ def check_and_process_8011_31d(self, Status, NwkId, Ep, MsgClusterId, ExternSqn)
         # ZiGate firmware currently can report ACk which are not link to a command sent from the plugin
         return None
 
-    i_sqn, ts = self._waitFor8011Queue[0]
+    i_sqn, TimeStamp = self._waitFor8011Queue[0]
     if i_sqn != InternSqn:
         return None
 
     if InternSqn in self.ListOfCommands and self.pluginconf.pluginConf["debugzigateCmd"]:
-            self.logging_send('Log', "8011      Received [%s] for Command: %s with status: %s e_sqn: 0x%02x/%s                     - size of SendQueue: %s" 
-                % (InternSqn,  self.ListOfCommands[InternSqn]['Cmd'], Status, int(ExternSqn,16), ExternSqn, self.loadTransmit()))
+        self.logging_send('Log', "8011      Received [%s] for Command: %s with status: %s e_sqn: 0x%02x/%s                     - size of SendQueue: %s" 
+            % (InternSqn,  self.ListOfCommands[InternSqn]['Cmd'], Status, int(ExternSqn,16), ExternSqn, self.loadTransmit()))
+
+    # Statistics on ZiGate reacting time to process the command
+    if InternSqn in self.ListOfCommands and self.pluginconf.pluginConf['ZiGateReactTime']:
+        timing = int( ( time.time() - TimeStamp ) * 1000 )
+        self.statistics.add_timing8011( timing )
+        if self.statistics._averageTiming8011 != 0 and timing >= (3 * self.statistics._averageTiming8011):
+            Domoticz.Log("Zigate round trip 0x8011 time seems long. %s ms for %s %s SendingQueue: %s LoC: %s" 
+                %( timing , 
+                self.ListOfCommands[i_sqn]['Cmd'], 
+                self.ListOfCommands[i_sqn]['Datas'], 
+                self.loadTransmit(), 
+                len(self.ListOfCommands)
+                ))
 
     if Status == '00':
         self.statistics._APSAck += 1
@@ -2194,10 +2237,47 @@ def buildframe_configure_reporting_response( frame, Sqn, SrcNwkId, SrcEndPoint, 
     return  newFrame
 
 def update_xPDU( self, npdu, apdu):
+    if npdu == '' or apdu == '':
+        return
     self.npdu = int(npdu,16)
     self.apdu = int(apdu,16)
     self.statistics._MaxaPdu = max(self.statistics._MaxaPdu, int(apdu,16))
     self.statistics._MaxnPdu = max(self.statistics._MaxnPdu, int(npdu,16))
+
+def instrument_serial( self, nb_in, nb_out):
+    
+    if nb_in > self.statistics._serialInWaiting:
+        self.statistics._serialInWaiting = nb_in
+        Domoticz.Log("instrument_serial - serialInWaiting up to %s" %self.statistics._serialInWaiting)
+    
+    if nb_out > self.statistics._serialOutWaiting:
+        self.statistics._serialOutWaiting = nb_out
+        Domoticz.Log("instrument_serial - serialOutWaiting up to %s" %self.statistics._serialOutWaiting)
+
+### Low level Read/Write from/to ZiGate when in Multithreaded.
+def read_from_zigate( self, serialConnection, nb_in):
+    try:
+        data = serialConnection.read( nb_in )
+    except serial.SerialException as e:
+        Domoticz.Error("serial_listen_and_send - error while reading %s" %(e))
+        data = None 
+    return data
+
+def write_to_zigate( self, serialConnection, encoded_data ):
+    try:
+        nb_write = serialConnection.write( encoded_data )
+        if nb_write != len( encoded_data ):
+            _context = {
+                'Error code': 'TRANS-WRTZGTE-01',
+                'EncodedData': str(encoded_data),
+                'NbWrite': nb_write,
+            }
+            self.logging_send_error(  "write_to_zigate", context=_context)
+        
+    except TypeError as e:
+        #Disconnect of USB->UART occured
+        Domoticz.Error("serial_listen_and_send - error while writing %s" %(e))
+
 
 def zigate_encode(Data):
     # The encoding is the following:
@@ -2221,7 +2301,6 @@ def zigate_encode(Data):
                 Out += Outtmp
             Outtmp = ""
     return Out
-
 
 def get_checksum(msgtype, length, datas):
     temp = 0 ^ int(msgtype[0:2], 16)
