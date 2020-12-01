@@ -37,7 +37,6 @@ CMD_WITH_RESPONSE = {}
 RESPONSE_SQN = []
 
 THREAD_RELAX_TIME_MS = 20 / 1000    # 20ms of waiting time if nothing to do
-
 NB_SEND_PER_SECONDE = 5
 MAX_THROUGHPUT = 1 / NB_SEND_PER_SECONDE          
 
@@ -222,33 +221,29 @@ class ZigateTransport(object):
         while self.running:
             nb_in = serialConnection.in_waiting
             nb_out = serialConnection.out_waiting
-            self.statistics._serialInWaiting = max(self.statistics._serialInWaiting, nb_in)
-            self.statistics._serialOutWaiting =max(self.statistics._serialOutWaiting, nb_out)
+            instrument_serial( self, nb_in, nb_out)
+
             if nb_in > 0:
                 # Readinng messages
-                while nb_in:
-                    try:
-                        data = serialConnection.read( nb_in )
-                    except serial.SerialException as e:
-                        Domoticz.Error("serial_listen_and_send - error while reading %s" %(e))
-                        data = None
-                    if data:
-                        self.on_message(data)
-                    nb_in = serialConnection.in_waiting 
-                    self.statistics._serialInWaiting = max(self.statistics._serialInWaiting, nb_in)       
+                try:
+                    data = serialConnection.read( nb_in )
+                except serial.SerialException as e:
+                    Domoticz.Error("serial_listen_and_send - error while reading %s" %(e))
+                    data = None
+                if data:
+                    self.on_message(data)
 
             elif self.messageQueue.qsize() > 0 and (( time.time() - self.lastsent_time) > MAX_THROUGHPUT):
-                # Sending messages
-                while self.messageQueue.qsize() > 0:
-                    encoded_data = self.messageQueue.get_nowait()
-                    try:
-                        nb_write = serialConnection.write( encoded_data )
-                        if nb_write != len( encoded_data ):
-                            Domoticz.Error("serial_listen_and_send - Looks like we have write less bytes than expected %s vs. %s" %(nb_write, encoded_data))
-                        self.lastsent_time = time.time()
-                    except TypeError as e:
-                        #Disconnect of USB->UART occured
-                        Domoticz.Error("serial_listen_and_send - error while writing %s" %(e))
+                # Sending messages ( only 1 at a time )
+                encoded_data = self.messageQueue.get_nowait()
+                try:
+                    nb_write = serialConnection.write( encoded_data )
+                    if nb_write != len( encoded_data ):
+                        Domoticz.Error("serial_listen_and_send - Looks like we have write less bytes than expected %s vs. %s" %(nb_write, encoded_data))
+                    self.lastsent_time = time.time()
+                except TypeError as e:
+                    #Disconnect of USB->UART occured
+                    Domoticz.Error("serial_listen_and_send - error while writing %s" %(e))
 
             else:
                 if self.lock:
@@ -1458,13 +1453,23 @@ def check_and_process_8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn)
 
     self.logging_send('Debug', "--> check_and_process_8000 - Status: %s PacketType: %s sqn_app:%s sqn_aps: %s type_sqn: %s" 
         % (Status, PacketType, sqn_app, sqn_aps, type_sqn))
-    # Command Failed, Status != 00
 
     if int(PacketType,16) in CMD_PDM_ON_HOST:
         # No sync on PDM commands
         return None
 
     if Status != '00':
+        _context = {
+            'Error code': 'TRANS-CHKPROC8000-99',
+            'Status': Status,
+            'iSQN': None,
+            'PacketType': PacketType,
+            'SQN_APP': sqn_app, 
+            'SQN_APS': sqn_aps, 
+            'TYP_SQN': type_sqn
+        }
+        self.logging_send_error(  "check_and_process_8000", context=_context)
+
         self.statistics._ackKO += 1
         # In that case we need to unblock data, as we will never get it !
         if self._waitForCmdResponseQueue:
@@ -1612,11 +1617,6 @@ def handle_8012_8702( self, MsgType, MsgData, frame):
     
     if MsgData is None:
         return None
-
-    if MsgStatus == '00':
-        self.statistics._APSAck += 1
-    else:
-        self.statistics._APSNck += 1
 
     if MsgData and self.zmode == 'zigate31c':
         # We do not block on Ack for firmware from 31c and below
@@ -2225,117 +2225,15 @@ def update_xPDU( self, npdu, apdu):
     self.statistics._MaxaPdu = max(self.statistics._MaxaPdu, int(apdu,16))
     self.statistics._MaxnPdu = max(self.statistics._MaxnPdu, int(npdu,16))
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+def instrument_serial( self, nb_in, nb_out):
+    
+    if nb_in > self.statistics._serialInWaiting:
+        self.statistics._serialInWaiting = nb_in
+        Domoticz.Log("instrument_serial - serialInWaiting up to %s" %self.statistics._serialInWaiting)
+    
+    if nb_out > self.statistics._serialOutWaiting:
+        self.statistics._serialOutWaiting = nb_out
+        Domoticz.Log("instrument_serial - serialOutWaiting up to %s" %self.statistics._serialOutWaiting)
 
 
 def zigate_encode(Data):
@@ -2360,6 +2258,14 @@ def zigate_encode(Data):
                 Out += Outtmp
             Outtmp = ""
     return Out
+
+
+
+
+
+
+
+
 
 
 def get_checksum(msgtype, length, datas):
