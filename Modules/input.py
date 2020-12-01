@@ -805,7 +805,7 @@ def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
     timeStamped(self, MsgSrcAddr, 0x8011)
 
     if self.pluginconf.pluginConf["debugzigateCmd"]:
-        self.log.logging( 'Input', 'Log', "Decod8011  Received [%s] for Nwkid  : %s with status: %s e_sqn: 0x%02x/%s" 
+        self.log.logging( 'Input', 'Log', "Decod8011 Received [%s] for Nwkid  : %s with status: %s e_sqn: 0x%02x/%s" 
             % (i_sqn, MsgSrcAddr, MsgStatus, int(MsgSEQ,16), MsgSEQ), MsgSrcAddr)
 
     if MsgStatus == "00":
