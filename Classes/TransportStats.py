@@ -34,6 +34,8 @@ class TransportStatistics:
         self._serialInWaiting = 0
         self._serialOutWaiting = 0
         self._maxTiming8000 = self._cumulTiming8000 = self._cntTiming8000 = self._averageTiming8000 = 0
+        self._maxTiming8011 = self._cumulTiming8011 = self._cntTiming8011 = self._averageTiming8011 = 0
+        self._maxTiming8012 = self._cumulTiming8012 = self._cntTiming8012 = self._averageTiming8012 = 0
         self._maxRxProcesses = self._cumulRxProcess = self._cntRxProcess = self._averageRxProcess = 0
         self._start = int(time())
         self.TrendStats = []
@@ -50,9 +52,30 @@ class TransportStatistics:
         self._averageTiming8000 = int( (self._cumulTiming8000 / self._cntTiming8000))
         if timing > self._maxTiming8000:
             self._maxTiming8000 = timing
-            Domoticz.Log("Zigate command round trip Max: %s ms with an of average: %s ms" 
+            Domoticz.Log("Zigate command round trip 0x8000 Max: %s ms with an of average: %s ms" 
                 %(self._maxTiming8000, self._averageTiming8000 ))
-        
+
+    def add_timing8011( self, timing):
+    
+        self._cumulTiming8011 += timing
+        self._cntTiming8011 += 1
+        self._averageTiming8011 = int( (self._cumulTiming8011 / self._cntTiming8011))
+        if timing > self._maxTiming8011:
+            self._maxTiming8011 = timing
+            Domoticz.Log("Zigate command round trip 0x8011 Max: %s ms with an of average: %s ms" 
+                %(self._maxTiming8011, self._averageTiming8011 ))
+
+    def add_timing8012( self, timing):
+    
+        self._cumulTiming8012 += timing
+        self._cntTiming8012 += 1
+        self._averageTiming8012 = int( (self._cumulTiming8012 / self._cntTiming8012))
+        if timing > self._maxTiming8012:
+            self._maxTiming8012 = timing
+            Domoticz.Log("Zigate command round trip 0x8012 Max: %s ms with an of average: %s ms" 
+                %(self._maxTiming8012, self._averageTiming8012 ))
+
+
     def add_rxTiming( self, timing ):
 
         self._cumulRxProcess += timing

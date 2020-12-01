@@ -225,25 +225,15 @@ class ZigateTransport(object):
 
             if nb_in > 0:
                 # Readinng messages
-                try:
-                    data = serialConnection.read( nb_in )
-                except serial.SerialException as e:
-                    Domoticz.Error("serial_listen_and_send - error while reading %s" %(e))
-                    data = None
+                data = read_from_zigate( self, serialConnection, nb_in)
                 if data:
                     self.on_message(data)
 
             elif self.messageQueue.qsize() > 0 and (( time.time() - self.lastsent_time) > MAX_THROUGHPUT):
                 # Sending messages ( only 1 at a time )
                 encoded_data = self.messageQueue.get_nowait()
-                try:
-                    nb_write = serialConnection.write( encoded_data )
-                    if nb_write != len( encoded_data ):
-                        Domoticz.Error("serial_listen_and_send - Looks like we have write less bytes than expected %s vs. %s" %(nb_write, encoded_data))
-                    self.lastsent_time = time.time()
-                except TypeError as e:
-                    #Disconnect of USB->UART occured
-                    Domoticz.Error("serial_listen_and_send - error while writing %s" %(e))
+                write_to_zigate( self, serialConnection, encoded_data )
+                self.lastsent_time = time.time()
 
             else:
                 if self.lock:
@@ -252,6 +242,7 @@ class ZigateTransport(object):
                 else:
                     self.ListeningThreadevent.wait( THREAD_RELAX_TIME_MS )
         Domoticz.Status("ZigateTransport: ZiGateSerialListen Thread stop.")
+
 
     def tcpip_listen_and_send( self ):
 
@@ -1059,6 +1050,7 @@ def _send_data(self, InternalSqn):
     #self._connection.Send(bytes.fromhex(str(lineinput)), 0)
 
     if self.pluginconf.pluginConf['MultiThreaded'] and self.messageQueue:
+        #write_to_zigate( self, self._connection, bytes.fromhex(str(lineinput)) )
         self.messageQueue.put(bytes.fromhex(str(lineinput)))
     else:
         self._connection.Send(bytes.fromhex(str(lineinput)), 0)
@@ -1528,7 +1520,7 @@ def check_and_process_8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn)
         timing = int( ( time.time() - TimeStamp ) * 1000 )
         self.statistics.add_timing8000( timing )
         if self.statistics._averageTiming8000 != 0 and timing >= (3 * self.statistics._averageTiming8000):
-            Domoticz.Log("Zigate round trip time seems long. %s ms for %s %s SendingQueue: %s LoC: %s" 
+            Domoticz.Log("Zigate round trip 0x8000 time seems long. %s ms for %s %s SendingQueue: %s LoC: %s" 
                 %( timing , 
                 self.ListOfCommands[InternalSqn]['Cmd'], 
                 self.ListOfCommands[InternalSqn]['Datas'], 
@@ -1642,12 +1634,12 @@ def check_and_process_8012_31e( self, MsgType, MsgStatus, MsgAddr, MsgSQN, nPDU,
 
     InternSqn = sqn_get_internal_sqn_from_aps_sqn(self, MsgSQN)
     self.logging_send( 'Debug',"--> check_and_process_8012_31e i_sqn: %s e_sqn: 0x%02x/%s Status: %s Addr: %s Ep: %s npdu: %s / apdu: %s"
-        %(InternSqn, int(MsgSQN,16), MsgSQN, MsgStatus, MsgAddr,MsgSQN, nPDU, aPDU))
+        %(InternSqn, int(MsgSQN,16), int(MsgSQN,16), MsgStatus, MsgAddr,MsgSQN, nPDU, aPDU))
 
     if InternSqn is None:
         return None
 
-    i_sqn, ts = self._waitFor8012Queue[0]
+    i_sqn, TimeStamp = self._waitFor8012Queue[0]
     if i_sqn != InternSqn:
         return None
 
@@ -1657,6 +1649,20 @@ def check_and_process_8012_31e( self, MsgType, MsgStatus, MsgAddr, MsgSQN, nPDU,
 
     if i_sqn in self.ListOfCommands:
         self.ListOfCommands[i_sqn]['Status'] = MsgType
+
+    # Statistics on ZiGate reacting time to process the command
+    if self.pluginconf.pluginConf['ZiGateReactTime']:
+        timing = int( ( time.time() - TimeStamp ) * 1000 )
+        self.statistics.add_timing8012( timing )
+        if self.statistics._averageTiming8012 != 0 and timing >= (3 * self.statistics._averageTiming8012):
+            Domoticz.Log("Zigate round trip 0x8012 time seems long. %s ms for %s %s SendingQueue: %s LoC: %s" 
+                %( timing , 
+                self.ListOfCommands[i_sqn]['Cmd'], 
+                self.ListOfCommands[i_sqn]['Datas'], 
+                self.loadTransmit(), 
+                len(self.ListOfCommands)
+                ))
+
 
     _next_cmd_from_wait_for8012_queue( self )
                                 
@@ -1675,7 +1681,7 @@ def handle_8011( self, MsgType, MsgData, frame):
         MsgSEQ = MsgData[12:14]
     
     self.logging_send('Debug', "MsgType: %s Status: %s NwkId: %s Ep: %s ClusterId: %s Seq: %s/%s self.zmode: %s FirmAckNoAck: %s" 
-        %(MsgType, MsgStatus, MsgSrcAddr, MsgSrcEp,MsgClusterId, int(MsgSEQ,16), MsgSEQ, self.zmode, self.firmware_with_aps_sqn ))
+        %(MsgType, MsgStatus, MsgSrcAddr, MsgSrcEp,MsgClusterId, int(MsgSEQ,16), int(MsgSEQ,16), self.zmode, self.firmware_with_aps_sqn ))
     
     if MsgData is None:
         return None
@@ -1743,13 +1749,26 @@ def check_and_process_8011_31d(self, Status, NwkId, Ep, MsgClusterId, ExternSqn)
         # ZiGate firmware currently can report ACk which are not link to a command sent from the plugin
         return None
 
-    i_sqn, ts = self._waitFor8011Queue[0]
+    i_sqn, TimeStamp = self._waitFor8011Queue[0]
     if i_sqn != InternSqn:
         return None
 
     if InternSqn in self.ListOfCommands and self.pluginconf.pluginConf["debugzigateCmd"]:
-            self.logging_send('Log', "8011      Received [%s] for Command: %s with status: %s e_sqn: 0x%02x/%s                     - size of SendQueue: %s" 
-                % (InternSqn,  self.ListOfCommands[InternSqn]['Cmd'], Status, int(ExternSqn,16), ExternSqn, self.loadTransmit()))
+        self.logging_send('Log', "8011      Received [%s] for Command: %s with status: %s e_sqn: 0x%02x/%s                     - size of SendQueue: %s" 
+            % (InternSqn,  self.ListOfCommands[InternSqn]['Cmd'], Status, int(ExternSqn,16), ExternSqn, self.loadTransmit()))
+
+    # Statistics on ZiGate reacting time to process the command
+    if InternSqn in self.ListOfCommands and self.pluginconf.pluginConf['ZiGateReactTime']:
+        timing = int( ( time.time() - TimeStamp ) * 1000 )
+        self.statistics.add_timing8011( timing )
+        if self.statistics._averageTiming8011 != 0 and timing >= (3 * self.statistics._averageTiming8011):
+            Domoticz.Log("Zigate round trip 0x8011 time seems long. %s ms for %s %s SendingQueue: %s LoC: %s" 
+                %( timing , 
+                self.ListOfCommands[i_sqn]['Cmd'], 
+                self.ListOfCommands[i_sqn]['Datas'], 
+                self.loadTransmit(), 
+                len(self.ListOfCommands)
+                ))
 
     if Status == '00':
         self.statistics._APSAck += 1
@@ -2235,6 +2254,30 @@ def instrument_serial( self, nb_in, nb_out):
         self.statistics._serialOutWaiting = nb_out
         Domoticz.Log("instrument_serial - serialOutWaiting up to %s" %self.statistics._serialOutWaiting)
 
+### Low level Read/Write from/to ZiGate when in Multithreaded.
+def read_from_zigate( self, serialConnection, nb_in):
+    try:
+        data = serialConnection.read( nb_in )
+    except serial.SerialException as e:
+        Domoticz.Error("serial_listen_and_send - error while reading %s" %(e))
+        data = None 
+    return data
+
+def write_to_zigate( self, serialConnection, encoded_data ):
+    try:
+        nb_write = serialConnection.write( encoded_data )
+        if nb_write != len( encoded_data ):
+            _context = {
+                'Error code': 'TRANS-WRTZGTE-01',
+                'EncodedData': str(encoded_data),
+                'NbWrite': nb_write,
+            }
+            self.logging_send_error(  "write_to_zigate", context=_context)
+        
+    except TypeError as e:
+        #Disconnect of USB->UART occured
+        Domoticz.Error("serial_listen_and_send - error while writing %s" %(e))
+
 
 def zigate_encode(Data):
     # The encoding is the following:
@@ -2258,15 +2301,6 @@ def zigate_encode(Data):
                 Out += Outtmp
             Outtmp = ""
     return Out
-
-
-
-
-
-
-
-
-
 
 def get_checksum(msgtype, length, datas):
     temp = 0 ^ int(msgtype[0:2], 16)
