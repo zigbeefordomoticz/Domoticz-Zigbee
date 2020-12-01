@@ -295,9 +295,9 @@ SETTINGS = {
 
     # Experimental
     'Experimental': {'Order': 17, 'param': {
-        'ZiGateReactTime':       {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True, 'Advanced': False},
-        'RawReadAttribute':      {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True, 'Advanced': False},
-        'RawWritAttribute':      {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True, 'Advanced': False},
+        'ZiGateReactTime':       {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
+        'RawReadAttribute':      {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
+        'RawWritAttribute':      {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'AnnoucementV0':         {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True, 'Advanced': False},
         'AnnoucementV1':         {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True, 'Advanced': False},
         'AnnoucementV2':         {'type': 'bool', 'default': 1, 'current': None, 'restart': False, 'hidden': True, 'Advanced': False},
