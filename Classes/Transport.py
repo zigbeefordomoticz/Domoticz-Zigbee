@@ -4,6 +4,7 @@
 # Author: zaraki673 & pipiche38
 #
 
+from io import BufferedIOBase
 import Domoticz
 import binascii
 import struct
@@ -484,10 +485,12 @@ class ZigateTransport(object):
                 continue           
 
             AsciiMsg = binascii.hexlify(BinMsg).decode('utf-8')
+
             Domoticz.Log("on_message AsciiMsg: %s , Remaining buffer: %s" %(AsciiMsg, 
-                binascii.hexlify(decode_frame(self._ReqRcv)).decode('utf-8')
-                )
-                )
+                self._ReqRcv
+                ))
+
+               
             self.statistics._received += 1
 
             if not self.pluginconf.pluginConf['ZiGateReactTime']:
@@ -2226,97 +2229,99 @@ def write_to_zigate( self, serialConnection, encoded_data ):
         #Disconnect of USB->UART occured
         Domoticz.Error("serial_listen_and_send - error while writing %s" %(e))
 
-def get_frame_from_raw_message(self):
+#def get_frame_from_raw_message(self):
+#
+#    return decode_frame( get_raw_frame_from_raw_message( self ))
+#
+#def get_raw_frame_from_raw_message( self ):
+#    # Search the 1st occurance of 0x03 (end Frame)
+#    zero3_position = self._ReqRcv.find(b'\x03')
+#
+#    # Search the 1st psoition of 0x01 until the position of 0x03
+#    frame_start = self._ReqRcv.rfind(b'\x01', 0, zero3_position)
+#
+#    if frame_start == -1 or frame_start > zero3_position:
+#        # Most likely we didn't find a full frame.
+#        # We need to wait for the next round
+#        return None
+#
+#    # Remove the frame from the buffer (new buffer start at frame +1)
+#    self._ReqRcv = self._ReqRcv[zero3_position + 1:]
+#    # New 1st occurance of 0x03 (end Frame)
+#    zero3_position = self._ReqRcv.find(b'\x03')
+#    return self._ReqRcv[frame_start:zero3_position + 1]
 
-    return decode_frame( get_raw_frame_from_raw_message( self ))
 
-def get_raw_frame_from_raw_message( self ):
-    # Search the 1st occurance of 0x03 (end Frame)
-    zero3_position = self._ReqRcv.find(b'\x03')
+# def decode_frame( frame ):
+#     if frame is None or frame == b'':
+#         return None
+#     BinMsg = bytearray()
+#     iterReqRcv = iter(frame)
+#     for iByte in iterReqRcv:  # for each received byte
+#         if iByte == 0x02:  # Coded flag ?
+#             # then uncode the next value
+#             iByte = next(iterReqRcv) ^ 0x10
+#         BinMsg.append(iByte)  # copy
+#     if len(BinMsg) <= 6:
+#         Domoticz.Log("Error: %s/%s" %(frame,BinMsg))
+#         return None
+#     return BinMsg
 
-    # Search the 1st psoition of 0x01 until the position of 0x03
-    frame_start = self._ReqRcv.rfind(b'\x01', 0, zero3_position)
+        
 
-    if frame_start == -1 or frame_start > zero3_position:
-        Domoticz.Log("Protocol error on packet received, drop it %s" %str(self._ReqRcv))
+def get_frame_from_raw_message( self ):
 
-    # Remove the frame from the buffer (new buffer start at frame +1)
-    self._ReqRcv = self._ReqRcv[zero3_position + 1:]
-    # New 1st occurance of 0x03 (end Frame)
-    zero3_position = self._ReqRcv.find(b'\x03')
-    return self._ReqRcv[frame_start:zero3_position + 1]
+    Zero1 = Zero3 = -1
+    idx = 0
+    for val in self._ReqRcv[0:len(self._ReqRcv)]:
+        if Zero1 == - 1 and Zero3 == -1 and val == 1:  # Do we get a 0x01
+            Zero1 = idx  # we have identify the Frame start
 
+        if Zero1 != -1 and val == 3:  # If we have already started a Frame and do we get a 0x03
+            Zero3 = idx + 1
+            break  # If we got 0x03, let process the Frame
+        idx += 1
 
-def decode_frame( frame ):
-    if frame is None or frame == b'':
+    if Zero3 == -1:  # No 0x03 in the Buffer, let's break and wait to get more data
         return None
+
+    if Zero1 != 0:
+        _context = {
+            'Error code': 'TRANS-onMESS-01',
+            '_ReqRcv': str(self._ReqRcv),
+            'Zero1': Zero1,
+            'Zero3': Zero3,
+            'idx': idx
+        }
+        self.logging_send_error( "on_message", context=_context)
+
+    # uncode the frame
+    # DEBUG ###_uncoded = str(self._ReqRcv[Zero1:Zero3]) + ''
     BinMsg = bytearray()
-    iterReqRcv = iter(frame)
+    iterReqRcv = iter(self._ReqRcv[Zero1:Zero3])
+
     for iByte in iterReqRcv:  # for each received byte
         if iByte == 0x02:  # Coded flag ?
             # then uncode the next value
             iByte = next(iterReqRcv) ^ 0x10
         BinMsg.append(iByte)  # copy
+
     if len(BinMsg) <= 6:
-        Domoticz.Log("Error: %s/%s" %(frame,BinMsg))
+        _context = {
+            'Error code': 'TRANS-onMESS-02',
+            '_ReqRcv': str(self._ReqRcv),
+            'Zero1': Zero1,
+            'Zero3': Zero3,
+            'idx': idx,
+            'BinMsg': str(BinMsg),
+            'len': len(BinMsg)
+        }
+        self.logging_send_error( "on_message", context=_context)
         return None
+
+    # What is after 0x03 has to be reworked.
+    self._ReqRcv = self._ReqRcv[Zero3:]
     return BinMsg
-
-        
-
-#def get_frame_from_raw_message( self ):
-#    Domoticz.Log("self._ReqRcv: %s" %self._ReqRcv)
-#    Zero1 = Zero3 = -1
-#    idx = 0
-#    for val in self._ReqRcv[0:len(self._ReqRcv)]:
-#        if Zero1 == - 1 and Zero3 == -1 and val == 1:  # Do we get a 0x01
-#            Zero1 = idx  # we have identify the Frame start
-#
-#        if Zero1 != -1 and val == 3:  # If we have already started a Frame and do we get a 0x03
-#            Zero3 = idx + 1
-#            break  # If we got 0x03, let process the Frame
-#        idx += 1
-#
-#    if Zero3 == -1:  # No 0x03 in the Buffer, let's break and wait to get more data
-#        return None
-#
-#    if Zero1 != 0:
-#        _context = {
-#            'Error code': 'TRANS-onMESS-01',
-#            '_ReqRcv': str(self._ReqRcv),
-#            'Zero1': Zero1,
-#            'Zero3': Zero3,
-#            'idx': idx
-#        }
-#        self.logging_send_error( "on_message", context=_context)
-#
-#    # uncode the frame
-#    # DEBUG ###_uncoded = str(self._ReqRcv[Zero1:Zero3]) + ''
-#    BinMsg = bytearray()
-#    iterReqRcv = iter(self._ReqRcv[Zero1:Zero3])
-#
-#    for iByte in iterReqRcv:  # for each received byte
-#        if iByte == 0x02:  # Coded flag ?
-#            # then uncode the next value
-#            iByte = next(iterReqRcv) ^ 0x10
-#        BinMsg.append(iByte)  # copy
-#
-#    if len(BinMsg) <= 6:
-#        _context = {
-#            'Error code': 'TRANS-onMESS-02',
-#            '_ReqRcv': str(self._ReqRcv),
-#            'Zero1': Zero1,
-#            'Zero3': Zero3,
-#            'idx': idx,
-#            'BinMsg': str(BinMsg),
-#            'len': len(BinMsg)
-#        }
-#        self.logging_send_error( "on_message", context=_context)
-#        return None
-#
-#    # What is after 0x03 has to be reworked.
-#    self._ReqRcv = self._ReqRcv[Zero3:]
-#    return BinMsg
             
 
 def check_frame_crc(self, BinMsg):
