@@ -38,7 +38,8 @@ RESPONSE_SQN = []
 
 THREAD_RELAX_TIME_MS = 20 / 1000    # 20ms of waiting time if nothing to do
 NB_SEND_PER_SECONDE = 5
-MAX_THROUGHPUT = 1 / NB_SEND_PER_SECONDE          
+MAX_THROUGHPUT = 1 / NB_SEND_PER_SECONDE
+MAX_THROUGHPUT = 0 
 
 #BAUDS = 460800
 BAUDS = 115200
@@ -167,10 +168,10 @@ class ZigateTransport(object):
     def open_serial( self ):
         try:
             self._connection = serial.Serial(self._serialPort, baudrate = BAUDS, rtscts = False, dsrdtr = False, timeout = 0)
-            if self._transp in ('DIN', ):
+            if self._transp in ('DIN', 'V2' ):
                 self._connection.rtscts = True
-            if self._transp in ( 'V2', ):
-                self._connection.dsrdtr = True
+            #if self._transp in ( 'V2', ):
+            #    self._connection.dsrdtr = True
 
         except serial.SerialException as e:
             Domoticz.Error("Cannot open Zigate port %s error: %s" %(self._serialPort, e))
@@ -229,6 +230,7 @@ class ZigateTransport(object):
                 if data:
                     self.on_message(data)
 
+            # Recommendation @badz - Write directemennt dans _send_data. Le thread se focalise que sur les reads
             #elif self.messageQueue.qsize() > 0 and (( time.time() - self.lastsent_time) > MAX_THROUGHPUT):
             #    # Sending messages ( only 1 at a time )
             #    encoded_data = self.messageQueue.get_nowait()
@@ -468,124 +470,29 @@ class ZigateTransport(object):
         # Process/Decode Data
 
         #self.logging_receive( 'Log', "onMessage - %s" %(Data))
-        FrameIsKo = 0
-
         if Data is not None:
             self._ReqRcv += Data  # Add the incoming data
             #Domoticz.Debug("onMessage incoming data : '" + str(binascii.hexlify(self._ReqRcv).decode('utf-8')) + "'")
 
-        # Zigate Frames start with 0x01 and finished with 0x03
-        # It happens that we get some
-        while 1:  # Loop until we have 0x03
-            Zero1 = Zero3 = -1
-            idx = 0
-            for val in self._ReqRcv[0:len(self._ReqRcv)]:
-                if Zero1 == - 1 and Zero3 == -1 and val == 1:  # Do we get a 0x01
-                    Zero1 = idx  # we have identify the Frame start
+        while 1:  # Loop, detect frame and process them.
 
-                if Zero1 != -1 and val == 3:  # If we have already started a Frame and do we get a 0x03
-                    Zero3 = idx + 1
-                    break  # If we got 0x03, let process the Frame
-                idx += 1
-
-            if Zero3 == -1:  # No 0x03 in the Buffer, let's break and wait to get more data
+            BinMsg = get_frame_from_raw_message( self )
+            if BinMsg is None:
                 return
+            
+            if not check_frame_lenght( self, BinMsg) or not check_frame_crc(self, BinMsg):
+                continue           
 
-            if Zero1 != 0:
-                _context = {
-                    'Error code': 'TRANS-onMESS-01',
-                    'Data': str(Data),
-                    'Zero1': Zero1,
-                    'Zero3': Zero3,
-                    'idx': idx
-                }
-                self.logging_send_error( "on_message", context=_context)
+            AsciiMsg = binascii.hexlify(BinMsg).decode('utf-8')
+            self.statistics._received += 1
 
-            # uncode the frame
-            # DEBUG ###_uncoded = str(self._ReqRcv[Zero1:Zero3]) + ''
-            BinMsg = bytearray()
-            iterReqRcv = iter(self._ReqRcv[Zero1:Zero3])
-
-            for iByte in iterReqRcv:  # for each received byte
-                if iByte == 0x02:  # Coded flag ?
-                    # then uncode the next value
-                    iByte = next(iterReqRcv) ^ 0x10
-                BinMsg.append(iByte)  # copy
-
-            if len(BinMsg) <= 6:
-                _context = {
-                    'Error code': 'TRANS-onMESS-02',
-                    'Data': str(Data),
-                    'Zero1': Zero1,
-                    'Zero3': Zero3,
-                    'idx': idx,
-                    'BinMsg': str(BinMsg),
-                    'len': len(BinMsg)
-                }
-                self.logging_send_error( "on_message", context=_context)
-                return
-
-            # What is after 0x03 has to be reworked.
-            self._ReqRcv = self._ReqRcv[Zero3:]
-
-            # Check length
-            Zero1, MsgType, Length, ReceivedChecksum = struct.unpack('>BHHB', BinMsg[0:6])
-            ComputedLength = Length + 7
-            ReceveidLength = len(BinMsg)
-            if ComputedLength != ReceveidLength:
-                FrameIsKo = 1
-                self.statistics._frameErrors += 1
-                _context = {
-                    'Error code': 'TRANS-onMESS-03',
-                    'Data': str(Data),
-                    'Zero1': Zero1,
-                    'Zero3': Zero3,
-                    'idx': idx,
-                    'BinMsg': str(BinMsg),
-                    'len': len(BinMsg),
-                    'MsgType': MsgType,
-                    'Length': Length,
-                    'ReceivedChecksum': ReceivedChecksum,
-                    'ComputedLength': ComputedLength,
-                    'ReceveidLength': ReceveidLength,
-                }
-                self.logging_send_error( "on_message", context=_context)
-            # Compute checksum
-            ComputedChecksum = 0
-            for idx, val in enumerate(BinMsg[1:-1]):
-                if idx != 4:  # Jump the checksum itself
-                    ComputedChecksum ^= val
-            if ComputedChecksum != ReceivedChecksum:
-                FrameIsKo = 1
-                self.statistics._crcErrors += 1
-                _context = {
-                    'Error code': 'TRANS-onMESS-04',
-                    'Data': str(Data),
-                    'Zero1': Zero1,
-                    'Zero3': Zero3,
-                    'idx': idx,
-                    'BinMsg': str(BinMsg),
-                    'len': len(BinMsg),
-                    'MsgType': MsgType,
-                    'Length': Length,
-                    'ComputedChecksum': ComputedChecksum,
-                    'ReceivedChecksum': ReceivedChecksum,
-                    'ComputedLength': ComputedLength,
-                    'ReceveidLength': ReceveidLength,
-                }
-                self.logging_send_error( "on_message", context=_context)
-
-            if FrameIsKo == 0:
-                AsciiMsg = binascii.hexlify(BinMsg).decode('utf-8')
-                self.statistics._received += 1
-
-                if not self.pluginconf.pluginConf['ZiGateReactTime']:
-                    process_frame(self, AsciiMsg)
-                else:
-                    start_time = time.time()
-                    process_frame(self, AsciiMsg)                
-                    timing = int( (time.time() - start_time ) * 1000 )
-                    self.statistics.add_rxTiming( timing )
+            if not self.pluginconf.pluginConf['ZiGateReactTime']:
+                process_frame(self, AsciiMsg)
+            else:
+                start_time = time.time()
+                process_frame(self, AsciiMsg)                
+                timing = int( (time.time() - start_time ) * 1000 )
+                self.statistics.add_rxTiming( timing )
 
                     
     def check_timed_out_for_tx_queues(self):
@@ -832,6 +739,11 @@ def send_data_internal(self, InternalSqn):
 
     # Sending Command
     if not self.ListOfCommands[InternalSqn]['PDMCommand']:
+
+        # Limit throughtput
+        if (( time.time() - self.lastsent_time) < MAX_THROUGHPUT):
+            return
+
         # That is a Standard command (not PDM on  Host), let's process as usall
         self.ListOfCommands[InternalSqn]['Status'] = 'TO-SEND'
         self.ListOfCommands[InternalSqn]['StatusTimeStamp'] = str((datetime.now()).strftime("%m/%d/%Y, %H:%M:%S"))
@@ -1021,6 +933,7 @@ def _send_data(self, InternalSqn):
     self.ListOfCommands[InternalSqn]['Status'] = 'SENT'
     self.ListOfCommands[InternalSqn]['StatusTimeStamp'] = str((datetime.now()).strftime("%m/%d/%Y, %H:%M:%S"))
     self.ListOfCommands[InternalSqn]['SentTimeStamp'] = int(time.time())
+    
 
     if self.pluginconf.pluginConf["debugzigateCmd"]:
         self.logging_send('Log', "======================== Send to Zigate - [%s] %s %s ExpectAck: %s ExpectResponse: %s WaitForResponse: %s" % (
@@ -1051,7 +964,10 @@ def _send_data(self, InternalSqn):
     #            %(str(zigate_encode(cmd)), str(zigate_encode(length)), str(zigate_encode(strchecksum)), str(zigate_encode(datas))))
     #self._connection.Send(bytes.fromhex(str(lineinput)), 0)
 
+
+    #Domoticz.Log("_send_data: raw command: %s" %str(bytes.fromhex(str(lineinput))))
     if self.pluginconf.pluginConf['MultiThreaded'] and self.messageQueue:
+        # Recommendation @badz
         write_to_zigate( self, self._connection, bytes.fromhex(str(lineinput)) )
         #self.messageQueue.put(bytes.fromhex(str(lineinput)))
     else:
@@ -2306,6 +2222,103 @@ def write_to_zigate( self, serialConnection, encoded_data ):
         #Disconnect of USB->UART occured
         Domoticz.Error("serial_listen_and_send - error while writing %s" %(e))
 
+def get_frame_from_raw_message( self ):
+    Zero1 = Zero3 = -1
+    idx = 0
+    for val in self._ReqRcv[0:len(self._ReqRcv)]:
+        if Zero1 == - 1 and Zero3 == -1 and val == 1:  # Do we get a 0x01
+            Zero1 = idx  # we have identify the Frame start
+
+        if Zero1 != -1 and val == 3:  # If we have already started a Frame and do we get a 0x03
+            Zero3 = idx + 1
+            break  # If we got 0x03, let process the Frame
+        idx += 1
+
+    if Zero3 == -1:  # No 0x03 in the Buffer, let's break and wait to get more data
+        return None
+
+    if Zero1 != 0:
+        _context = {
+            'Error code': 'TRANS-onMESS-01',
+            '_ReqRcv': str(self._ReqRcv),
+            'Zero1': Zero1,
+            'Zero3': Zero3,
+            'idx': idx
+        }
+        self.logging_send_error( "on_message", context=_context)
+
+    # uncode the frame
+    # DEBUG ###_uncoded = str(self._ReqRcv[Zero1:Zero3]) + ''
+    BinMsg = bytearray()
+    iterReqRcv = iter(self._ReqRcv[Zero1:Zero3])
+
+    for iByte in iterReqRcv:  # for each received byte
+        if iByte == 0x02:  # Coded flag ?
+            # then uncode the next value
+            iByte = next(iterReqRcv) ^ 0x10
+        BinMsg.append(iByte)  # copy
+
+    if len(BinMsg) <= 6:
+        _context = {
+            'Error code': 'TRANS-onMESS-02',
+            '_ReqRcv': str(self._ReqRcv),
+            'Zero1': Zero1,
+            'Zero3': Zero3,
+            'idx': idx,
+            'BinMsg': str(BinMsg),
+            'len': len(BinMsg)
+        }
+        self.logging_send_error( "on_message", context=_context)
+        return None
+
+    # What is after 0x03 has to be reworked.
+    self._ReqRcv = self._ReqRcv[Zero3:]
+    return BinMsg
+            
+
+def check_frame_crc(self, BinMsg):
+    ComputedChecksum = 0
+    Zero1, MsgType, Length, ReceivedChecksum = struct.unpack('>BHHB', BinMsg[0:6])
+    for idx, val in enumerate(BinMsg[1:-1]):
+        if idx != 4:  # Jump the checksum itself
+            ComputedChecksum ^= val
+    if ComputedChecksum != ReceivedChecksum:
+        self.statistics._crcErrors += 1
+        _context = {
+            'Error code': 'TRANS-onMESS-04',
+            'BinMsg': str(BinMsg),
+            'len': len(BinMsg),
+            'MsgType': MsgType,
+            'Length': Length,
+            'ComputedChecksum': ComputedChecksum,
+            'ReceivedChecksum': ReceivedChecksum,
+        }
+        self.logging_send_error( "on_message", context=_context)
+        return False
+    return True
+
+
+def check_frame_lenght( self, BinMsg):
+    # Check length
+    Zero1, MsgType, Length, ReceivedChecksum = struct.unpack('>BHHB', BinMsg[0:6])
+    ComputedLength = Length + 7
+    ReceveidLength = len(BinMsg)
+    if ComputedLength != ReceveidLength:
+        self.statistics._frameErrors += 1
+        _context = {
+            'Error code': 'TRANS-onMESS-03',
+            'Zero1': Zero1,
+            'BinMsg': str(BinMsg),
+            'len': len(BinMsg),
+            'MsgType': MsgType,
+            'Length': Length,
+            'ReceivedChecksum': ReceivedChecksum,
+            'ComputedLength': ComputedLength,
+            'ReceveidLength': ReceveidLength,
+        }
+        self.logging_send_error( "on_message", context=_context)
+        return False
+    return True
 
 def zigate_encode(Data):
     # The encoding is the following:
