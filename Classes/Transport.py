@@ -221,6 +221,8 @@ class ZigateTransport(object):
         Domoticz.Status("ZigateTransport: Serial Connection open: %s" %serialConnection)
 
         while self.running:
+            # We loop until self.running is set to False, which indicate plugin shutdown
+
             nb_in = serialConnection.in_waiting
             nb_out = serialConnection.out_waiting
             instrument_serial( self, nb_in, nb_out)
@@ -228,7 +230,7 @@ class ZigateTransport(object):
             if nb_in > 0:
                 # Reading messages
                 data = read_from_zigate( self, serialConnection, nb_in)
-                if data:
+                if len(data) > 0:
                     self.on_message(data)
 
             # Recommendation @badz - Write directemennt dans _send_data. Le thread se focalise que sur les reads
@@ -239,11 +241,14 @@ class ZigateTransport(object):
             #    self.lastsent_time = time.time()
 
             else:
+                # We wait for some ms ony if we have nothing to read!
                 if self.lock:
                     # If PDM lock is set, we are currently feeding PDM and we have to be more agressive
                     self.ListeningThreadevent.wait( 0.001 ) # 1ms waiting
                 else:
                     self.ListeningThreadevent.wait( THREAD_RELAX_TIME_MS )
+
+
         Domoticz.Status("ZigateTransport: ZiGateSerialListen Thread stop.")
 
 
@@ -476,21 +481,22 @@ class ZigateTransport(object):
             #Domoticz.Debug("onMessage incoming data : '" + str(binascii.hexlify(self._ReqRcv).decode('utf-8')) + "'")
 
         while 1:  # Loop, detect frame and process them.
+            if len(self._ReqRcv) == 0:
+                return
 
-            BinMsg = get_frame_from_raw_message( self )
+            BinMsg = get_frame_and_decode( self )
             if BinMsg is None:
                 return
-            
+
             if not check_frame_lenght( self, BinMsg) or not check_frame_crc(self, BinMsg):
+                Domoticz.Error("on_message Frame error Crc/len %s" %(BinMsg))
                 continue           
 
             AsciiMsg = binascii.hexlify(BinMsg).decode('utf-8')
 
-            Domoticz.Log("on_message AsciiMsg: %s , Remaining buffer: %s" %(AsciiMsg, 
-                self._ReqRcv
-                ))
+            if self.pluginconf.pluginConf["debugzigateCmd"]:
+                self.logging_send('Log', "on_message AsciiMsg: %s , Remaining buffer: %s" %(AsciiMsg,  self._ReqRcv ))
 
-               
             self.statistics._received += 1
 
             if not self.pluginconf.pluginConf['ZiGateReactTime']:
@@ -2229,47 +2235,53 @@ def write_to_zigate( self, serialConnection, encoded_data ):
         #Disconnect of USB->UART occured
         Domoticz.Error("serial_listen_and_send - error while writing %s" %(e))
 
-#def get_frame_from_raw_message(self):
-#
-#    return decode_frame( get_raw_frame_from_raw_message( self ))
-#
-#def get_raw_frame_from_raw_message( self ):
-#    # Search the 1st occurance of 0x03 (end Frame)
-#    zero3_position = self._ReqRcv.find(b'\x03')
-#
-#    # Search the 1st psoition of 0x01 until the position of 0x03
-#    frame_start = self._ReqRcv.rfind(b'\x01', 0, zero3_position)
-#
-#    if frame_start == -1 or frame_start > zero3_position:
-#        # Most likely we didn't find a full frame.
-#        # We need to wait for the next round
-#        return None
-#
-#    # Remove the frame from the buffer (new buffer start at frame +1)
-#    self._ReqRcv = self._ReqRcv[zero3_position + 1:]
-#    # New 1st occurance of 0x03 (end Frame)
-#    zero3_position = self._ReqRcv.find(b'\x03')
-#    return self._ReqRcv[frame_start:zero3_position + 1]
+def get_frame_and_decode(self):
+    return get_frame_and_decodev1( self )
+    #return decode_frame( get_raw_frame_from_raw_message( self ))
+
+def get_raw_frame_from_raw_message( self ):
+
+    frame = bytearray()
+    # Search the 1st occurance of 0x03 (end Frame)
+    zero3_position = self._ReqRcv.find(b'\x03')
+
+    # Search the 1st position of 0x01 until the position of 0x03
+    frame_start = self._ReqRcv.rfind(b'\x01', 0, zero3_position)
+
+    if frame_start == -1:
+        # no frame found 
+        Domoticz.Log("Uncomplete frame, wait for the next round %s" %self._ReqRcv)
+        return None
+    
+    if frame_start <= zero3_position:
+        frame = self._ReqRcv[frame_start:zero3_position + 1]
+    else:
+        # Most likely we didn't find a full frame.
+        # We need to wait for the next round
+        Domoticz.Log("Frame error we will drop the buffer!! %s" %self._ReqRcv)        
+
+    # Remove the frame from the buffer (new buffer start at frame +1)
+    self._ReqRcv = self._ReqRcv[zero3_position + 1:]
+    return frame
 
 
-# def decode_frame( frame ):
-#     if frame is None or frame == b'':
-#         return None
-#     BinMsg = bytearray()
-#     iterReqRcv = iter(frame)
-#     for iByte in iterReqRcv:  # for each received byte
-#         if iByte == 0x02:  # Coded flag ?
-#             # then uncode the next value
-#             iByte = next(iterReqRcv) ^ 0x10
-#         BinMsg.append(iByte)  # copy
-#     if len(BinMsg) <= 6:
-#         Domoticz.Log("Error: %s/%s" %(frame,BinMsg))
-#         return None
-#     return BinMsg
+def decode_frame( frame ):
+    if frame is None or frame == b'':
+        return None
+    BinMsg = bytearray()
+    iterReqRcv = iter(frame)
+    for iByte in iterReqRcv:  # for each received byte
+        if iByte == 0x02:  # Coded flag ?
+            # then uncode the next value
+            iByte = next(iterReqRcv) ^ 0x10
+        BinMsg.append(iByte)  # copy
+    if len(BinMsg) <= 6:
+        Domoticz.Log("Error: %s/%s" %(frame,BinMsg))
+        return None
+    return BinMsg
 
         
-
-def get_frame_from_raw_message( self ):
+def get_frame_and_decodev1( self ):
 
     Zero1 = Zero3 = -1
     idx = 0
