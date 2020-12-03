@@ -390,12 +390,22 @@ def Decode8000_v2(self, Devices, MsgData, MsgLQI):  # Status
 
 
 def Decode8001(self, Decode, MsgData, MsgLQI):  # Reception log Level
-    MsgLen = len(MsgData)
+
+    LOG_FILE = "ZiGate"
 
     MsgLogLvl = MsgData[0:2]
-    MsgDataMessage = MsgData[2 : len(MsgData)]
+    log_message = binascii.unhexlify(MsgData[2:]).decode('utf-8')
+    logfilename =  self.pluginconf.pluginConf['pluginLogs'] + "/" + LOG_FILE + '_' + '%02d' %self.HardwareID + "_" + ".log"
+    try:
+        
 
-    self.log.logging(  "Input", "Status", "Reception log Level 0x: " + MsgLogLvl + "Message : " + MsgDataMessage, )
+        with open( logfilename , 'at', encoding='utf-8') as file:
+            try:
+                file.write( "%s %s %s" %(str(datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]), MsgLogLvl,log_message) + "\n")
+            except IOError:
+                Domoticz.Error("Error while writing to ZiGate log file %s" %logfilename)
+    except IOError:
+        Domoticz.Error("Error while Opening ZiGate log file %s" %logfilename)
 
 
 def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
@@ -414,15 +424,11 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
     #    Domoticz.Log("Decode8002 - Not an HA Profile, let's drop the packet %s" %MsgData)
     #    return
 
-    if (
-        int(MsgSourceAddressMode, 16) == ADDRESS_MODE["short"]
-        or int(MsgSourceAddressMode, 16) == ADDRESS_MODE["group"]):
+    if int(MsgSourceAddressMode, 16) in [ ADDRESS_MODE["short"], ADDRESS_MODE["group"], ]:
         MsgSourceAddress = MsgData[16:20]  # uint16_t
         MsgDestinationAddressMode = MsgData[20:22]
 
-        if (
-            int(MsgDestinationAddressMode, 16) == ADDRESS_MODE["short"]
-            or int(MsgDestinationAddressMode, 16) == ADDRESS_MODE["group"]):
+        if int(MsgDestinationAddressMode, 16) in [ ADDRESS_MODE["short"], ADDRESS_MODE["group"], ]:
             # Short Address
             MsgDestinationAddress = MsgData[22:26]  # uint16_t
             MsgPayload = MsgData[26 : len(MsgData)]
@@ -442,9 +448,7 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
         MsgSourceAddress = MsgData[16:32]  # uint32_t
         MsgDestinationAddressMode = MsgData[32:34]
 
-        if (
-            int(MsgDestinationAddressMode, 16) == ADDRESS_MODE["short"]
-            or int(MsgDestinationAddressMode, 16) == ADDRESS_MODE["group"]):
+        if int(MsgDestinationAddressMode, 16) in [ ADDRESS_MODE["short"], ADDRESS_MODE["group"], ]:
             MsgDestinationAddress = MsgData[34:38]  # uint16_t
             MsgPayload = MsgData[38 : len(MsgData)]
 
@@ -497,12 +501,12 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
     # Short address
     # if MsgDestinationAddress == "0000":
     #     return
-        
+
     dstnwkid = MsgDestinationAddress
 
     if srcnwkid not in self.ListOfDevices:
         return
-        
+
     timeStamped(self, srcnwkid, 0x8002)
     updLQI(self, srcnwkid, MsgLQI)
 
