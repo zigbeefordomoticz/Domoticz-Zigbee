@@ -105,6 +105,8 @@ class ZigateTransport(object):
         self.messageQueue = queue.Queue()
         self.processFrameThread = []
 
+        self.thread_timing = 0
+
         # Call back function to send back to plugin
         self.F_out = F_out  # Function to call to bring the decoded Frame at plugin
 
@@ -226,6 +228,11 @@ class ZigateTransport(object):
             nb_in = serialConnection.in_waiting
             nb_out = serialConnection.out_waiting
             instrument_serial( self, nb_in, nb_out)
+            
+            if time.time() - self.thread_timing > 1:
+                Domoticz.Error("serial_listen_and_send more than 1s in the loop ! (%s) InWait %s OutWait %s" 
+                    %((time.time() - self.thread_timing), nb_in, nb_out))
+            self.thread_timing = time.time()
 
             if nb_in > 0:
                 # Reading messages
