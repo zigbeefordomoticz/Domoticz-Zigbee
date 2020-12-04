@@ -2377,6 +2377,7 @@ def check_frame_lenght( self, BinMsg):
             'ReceveidLength': ReceveidLength,
         }
         self.logging_send_error( "on_message", context=_context)
+        Domoticz.Log("BinMsg: %s ExpectedLen: %s ComputedLen: %s" %(BinMsg, ReceveidLength,ComputedLength ))
         return False
     return True
 

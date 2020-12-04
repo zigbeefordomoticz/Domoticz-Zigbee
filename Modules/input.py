@@ -116,7 +116,7 @@ def ZigateRead(self, Devices, Data, TransportInfos=None):
         "0100": Decode0100,
         "004d": Decode004D,
         "8000": Decode8000_v2,
-        "8001": Decode8001,
+        #"8001": Decode8001,
         "8002": Decode8002,
         "8003": Decode8003,
         "8004": Decode8004,
@@ -218,12 +218,8 @@ def ZigateRead(self, Devices, Data, TransportInfos=None):
         MsgData = ""
         MsgLQI = "00"
 
-    self.log.logging(
-        "Input",
-        "Debug",
-        "ZigateRead - MsgType: %s, MsgLength: %s, MsgCRC: %s, Data: %s, LQI: %s"
-        % (MsgType, MsgLength, MsgCRC, MsgData, int(MsgLQI, 16)),
-    )
+    self.log.logging( "Input", "Debug", "ZigateRead - MsgType: %s, MsgLength: %s, MsgCRC: %s, Data: %s, LQI: %s"
+        % (MsgType, MsgLength, MsgCRC, MsgData, int(MsgLQI, 16)),)
 
     if MsgType in DECODERS:
         _decoding = DECODERS[MsgType]
@@ -232,6 +228,9 @@ def ZigateRead(self, Devices, Data, TransportInfos=None):
 
     if MsgType == "8011":
         Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos)
+        return
+    if MsgType == "8001": # No LQI provided for 0x8001
+        Decode8001( self,Devices, MsgData + MsgLQI, '00' )
         return
 
     Domoticz.Error("ZigateRead - Decoder not found for %s" % (MsgType))
@@ -2556,52 +2555,14 @@ def Decode8100( self, Devices, MsgData, MsgLQI ):  # Read Attribute Response (in
                 "Input",
                 "Debug",
                 "Decode8100 - idx: %s Read Attribute Response: [%s:%s] ClusterID: %s MsgSQN: %s, i_sqn: %s, AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<"
-                % (
-                    idx,
-                    MsgSrcAddr,
-                    MsgSrcEp,
-                    MsgClusterId,
-                    MsgSQN,
-                    i_sqn,
-                    MsgAttrID,
-                    MsgAttStatus,
-                    MsgAttType,
-                    MsgAttSize,
-                    MsgClusterData,
-                ),
-                MsgSrcAddr,
-            )
-            NewMsgData = (
-                MsgSQN
-                + MsgSrcAddr
-                + MsgSrcEp
-                + MsgClusterId
-                + MsgAttrID
-                + MsgAttStatus
-                + MsgAttType
-                + MsgAttSize
-                + MsgClusterData
-            )
-            read_report_attributes(
-                self,
-                Devices,
-                "8100",
-                MsgSQN,
-                MsgSrcAddr,
-                MsgSrcEp,
-                MsgClusterId,
-                MsgAttrID,
-                MsgAttStatus,
-                MsgAttType,
-                MsgAttSize,
-                MsgClusterData,
-            )
+                % ( idx, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgSQN, i_sqn, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, ), MsgSrcAddr, )
+            NewMsgData = ( MsgSQN + MsgSrcAddr + MsgSrcEp + MsgClusterId + MsgAttrID + MsgAttStatus + MsgAttType + MsgAttSize + MsgClusterData )
+            read_report_attributes( self, Devices, "8100", MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, )
 
     except Exception as e:
         Domoticz.Error(
             "Decode8100 - Catch error while decoding %s/%s cluster: %s MsgData: %s Error: %s"
-            % (MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgData, e)
-        )
+            % (MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgData, e))
 
     callbackDeviceAwake(self, MsgSrcAddr, MsgSrcEp, MsgClusterId)
 
@@ -2639,23 +2600,8 @@ def Decode8102(self, Devices, MsgData, MsgLQI):  # Attribute Reports
     MsgAttSize = MsgData[20:24]
     MsgClusterData = MsgData[24 : len(MsgData)]
 
-    self.log.logging( 
-        "Input",
-        "Debug",
-        "Decode8102 - Attribute Reports : [%s:%s] MsgSQN: %s ClusterID: %s AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<"
-        % (
-            MsgSrcAddr,
-            MsgSrcEp,
-            MsgSQN,
-            MsgClusterId,
-            MsgAttrID,
-            MsgAttStatus,
-            MsgAttType,
-            MsgAttSize,
-            MsgClusterData,
-        ),
-        MsgSrcAddr,
-    )
+    self.log.logging(  "Input", "Debug", "Decode8102 - Attribute Reports : [%s:%s] MsgSQN: %s ClusterID: %s AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<"
+        % ( MsgSrcAddr, MsgSrcEp, MsgSQN, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, ), MsgSrcAddr, )
 
     if self.PluzzyFirmware:
         self.log.logging( "Input", "Log", "Patching payload:", MsgSrcAddr)
@@ -2667,143 +2613,41 @@ def Decode8102(self, Devices, MsgData, MsgLQI):  # Attribute Reports
         _newsize = "00" + _size[0:2]
         _newdata = MsgAttSize[2:4] + MsgClusterData
 
-        self.log.logging( 
-            "Input", "Log", " MsgAttStatus: %s -> %s" % (MsgAttStatus, _status), MsgSrcAddr
-        )
-        self.log.logging( 
-            "Input", "Log", " MsgAttType: %s -> %s" % (MsgAttType, _type), MsgSrcAddr
-        )
-        self.log.logging( 
-            "Input", "Log", " MsgAttSize: %s -> %s" % (MsgAttSize, _newsize), MsgSrcAddr
-        )
-        self.log.logging( 
-            "Input",
-            "Log",
-            " MsgClusterData: %s -> %s" % (MsgClusterData, _newdata),
-            MsgSrcAddr,
-        )
+        self.log.logging(  "Input", "Log", " MsgAttStatus: %s -> %s" % (MsgAttStatus, _status), MsgSrcAddr )
+        self.log.logging(  "Input", "Log", " MsgAttType: %s -> %s" % (MsgAttType, _type), MsgSrcAddr )
+        self.log.logging(  "Input", "Log", " MsgAttSize: %s -> %s" % (MsgAttSize, _newsize), MsgSrcAddr )
+        self.log.logging(  "Input", "Log", " MsgClusterData: %s -> %s" % (MsgClusterData, _newdata), MsgSrcAddr, )
 
         MsgAttStatus = _status
         MsgAttType = _type
         MsgAttSize = _newsize
         MsgClusterData = _newdata
-        MsgData = (
-            MsgSQN
-            + MsgSrcAddr
-            + MsgSrcEp
-            + MsgClusterId
-            + MsgAttrID
-            + MsgAttStatus
-            + MsgAttType
-            + MsgAttSize
-            + MsgClusterData
-        )
-        pluzzyDecode8102(
-            self,
-            MsgSrcAddr,
-            MsgSrcEp,
-            MsgClusterId,
-            MsgAttrID,
-            MsgAttStatus,
-            MsgAttType,
-            MsgAttSize,
-            MsgClusterData,
-            MsgLQI,
-        )
+        MsgData = ( MsgSQN + MsgSrcAddr + MsgSrcEp + MsgClusterId + MsgAttrID + MsgAttStatus + MsgAttType + MsgAttSize + MsgClusterData )
+        pluzzyDecode8102( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, MsgLQI, )
 
     timeStamped(self, MsgSrcAddr, 0x8102)
     loggingMessages(self, "8102", MsgSrcAddr, None, MsgLQI, MsgSQN)
     updLQI(self, MsgSrcAddr, MsgLQI)
-    read_report_attributes(
-        self,
-        Devices,
-        "8102",
-        MsgSQN,
-        MsgSrcAddr,
-        MsgSrcEp,
-        MsgClusterId,
-        MsgAttrID,
-        MsgAttStatus,
-        MsgAttType,
-        MsgAttSize,
-        MsgClusterData,
-    )
+    read_report_attributes( self, Devices, "8102", MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, )
     callbackDeviceAwake(self, MsgSrcAddr, MsgSrcEp, MsgClusterId)
 
 
-def read_report_attributes(
-    self,
-    Devices,
-    MsgType,
-    MsgSQN,
-    MsgSrcAddr,
-    MsgSrcEp,
-    MsgClusterId,
-    MsgAttrID,
-    MsgAttStatus,
-    MsgAttType,
-    MsgAttSize,
-    MsgClusterData,
-):
+def read_report_attributes( self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, ):
 
     if DeviceExist(self, Devices, MsgSrcAddr):
-        if (
-            self.pluginconf.pluginConf["debugLQI"]
-            and self.ListOfDevices[MsgSrcAddr]["LQI"]
-            <= self.pluginconf.pluginConf["debugLQI"]
-        ):
+        if ( self.pluginconf.pluginConf["debugLQI"] and self.ListOfDevices[MsgSrcAddr]["LQI"] <= self.pluginconf.pluginConf["debugLQI"] ):
             if "ZDeviceName" in self.ListOfDevices[MsgSrcAddr]:
-                if self.ListOfDevices[MsgSrcAddr]["ZDeviceName"] not in [
-                    "",
-                    {},
-                ]:
-                    self.log.logging( 
-                        "Input",
-                        "Log",
-                        "Decode8102 - LQI: %3s Received Cluster:%s Attribute: %4s Value: %4s from (%4s/%2s)%s"
-                        % (
-                            self.ListOfDevices[MsgSrcAddr]["LQI"],
-                            MsgClusterId,
-                            MsgAttrID,
-                            MsgClusterData,
-                            MsgSrcAddr,
-                            MsgSrcEp,
-                            self.ListOfDevices[MsgSrcAddr]["ZDeviceName"],
-                        ),
-                    )
+                if self.ListOfDevices[MsgSrcAddr]["ZDeviceName"] not in [ "", {}, ]:
+                    self.log.logging(  "Input", "Log", "Decode8102 - LQI: %3s Received Cluster:%s Attribute: %4s Value: %4s from (%4s/%2s)%s"
+                        % ( self.ListOfDevices[MsgSrcAddr]["LQI"], MsgClusterId, MsgAttrID, MsgClusterData, MsgSrcAddr, MsgSrcEp, self.ListOfDevices[MsgSrcAddr]["ZDeviceName"], ), )
                 else:
-                    self.log.logging( 
-                        "Input",
-                        "Log",
-                        "Decode8102 - LQI: %3s Received Cluster:%s Attribute: %4s Value: %4s from (%4s/%2s)"
-                        % (
-                            self.ListOfDevices[MsgSrcAddr]["LQI"],
-                            MsgClusterId,
-                            MsgAttrID,
-                            MsgClusterData,
-                            MsgSrcAddr,
-                            MsgSrcEp,
-                        ),
-                    )
+                    self.log.logging(  "Input", "Log", "Decode8102 - LQI: %3s Received Cluster:%s Attribute: %4s Value: %4s from (%4s/%2s)"
+                        % ( self.ListOfDevices[MsgSrcAddr]["LQI"], MsgClusterId, MsgAttrID, MsgClusterData, MsgSrcAddr, MsgSrcEp, ), )
             else:
-                self.log.logging(
-                    "Input",
-                    "Log",
-                    "Decode8102 - LQI: %3s Received Cluster:%s Attribute: %4s Value: %4s from (%4s/%2s)"
-                    % (
-                        self.ListOfDevices[MsgSrcAddr]["LQI"],
-                        MsgClusterId,
-                        MsgAttrID,
-                        MsgClusterData,
-                        MsgSrcAddr,
-                        MsgSrcEp,
-                    ),
-                )
+                self.log.logging( "Input", "Log", "Decode8102 - LQI: %3s Received Cluster:%s Attribute: %4s Value: %4s from (%4s/%2s)"
+                    % ( self.ListOfDevices[MsgSrcAddr]["LQI"], MsgClusterId, MsgAttrID, MsgClusterData, MsgSrcAddr, MsgSrcEp, ), )
 
-        self.log.logging( 
-            "Input",
-            "Debug2",
-            "Decode8102 : Attribute Report from "
+        self.log.logging(  "Input", "Debug2", "Decode8102 : Attribute Report from "
             + str(MsgSrcAddr)
             + " SQN = "
             + str(MsgSQN)
@@ -2821,51 +2665,21 @@ def read_report_attributes(
             self.ListOfDevices[MsgSrcAddr]["Health"] = "Live"
 
         updSQN(self, MsgSrcAddr, str(MsgSQN))
-        ReadCluster(
-            self,
-            Devices,
-            MsgType,
-            MsgSQN,
-            MsgSrcAddr,
-            MsgSrcEp,
-            MsgClusterId,
-            MsgAttrID,
-            MsgAttStatus,
-            MsgAttType,
-            MsgAttSize,
-            MsgClusterData,
-            Source=MsgType
-        )
+        ReadCluster( self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, Source=MsgType )
         return
 
     # This device is unknown, and we don't have the IEEE to check if there is a device coming with a new sAddr
     # Will request in the next hearbeat to for a IEEE request
     ieee = lookupForIEEE(self, MsgSrcAddr, True)
     if ieee:
-        self.log.logging( 
-            "Input", "Debug", "Found IEEE for short address: %s is %s" % (MsgSrcAddr, ieee)
-        )
+        self.log.logging(  "Input", "Debug", "Found IEEE for short address: %s is %s" % (MsgSrcAddr, ieee) )
         if MsgSrcAddr in self.UnknownDevices:
             self.UnknownDevices.remove(MsgSrcAddr)
     else:
         # If we didn't find it, let's trigger a NetworkMap scan if not one in progress
         unknown_device_nwkid(self, MsgSrcAddr)
-        self.log.logging( 
-            "Input",
-            "Log",
-            "Decode8102 - Receiving a message from unknown device : [%s:%s] ClusterID: %s AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<"
-            % (
-                MsgSrcAddr,
-                MsgSrcEp,
-                MsgClusterId,
-                MsgAttrID,
-                MsgAttStatus,
-                MsgAttType,
-                MsgAttSize,
-                MsgClusterData,
-            ),
-            MsgSrcAddr,
-        )
+        self.log.logging(  "Input", "Log", "Decode8102 - Receiving a message from unknown device : [%s:%s] ClusterID: %s AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<"
+            % ( MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, ), MsgSrcAddr, )
 
 
 def Decode8110(self, Devices, MsgData, MsgLQI):
