@@ -105,15 +105,12 @@ class ZigateTransport(object):
         self.messageQueue = queue.Queue()
         self.processFrameThread = []
 
-        self.thread_timing = 0
+        self.thread_timestamp = None
 
         # Call back function to send back to plugin
         self.F_out = F_out  # Function to call to bring the decoded Frame at plugin
 
         initMatrix(self)
-
-        Domoticz.Log("Transport: >%s<" %transport)
-        Domoticz.Log("Type %s" %type(transport))
 
         if transport in ( "USB", "DIN", "V2", "PI"):
             self._transp = transport
@@ -127,6 +124,9 @@ class ZigateTransport(object):
         else:
             Domoticz.Error("Unknown Transport Mode: %s" % transport)
             self._transp = 'None'
+    
+        if self.pluginconf.pluginConf['SerialReadV2']:
+            Domoticz.Status("Serial Line open with new Read algo...")
 
     # Thread handling Serial Input/Output
     # Priority on Reading
@@ -169,12 +169,11 @@ class ZigateTransport(object):
             self.listening_transport_mutex.release()
 
     def open_serial( self ):
+
         try:
             self._connection = serial.Serial(self._serialPort, baudrate = BAUDS, rtscts = False, dsrdtr = False, timeout = 0)
             if self._transp in ('DIN', 'V2' ):
                 self._connection.rtscts = True
-            #if self._transp in ( 'V2', ):
-            #    self._connection.dsrdtr = True
 
         except serial.SerialException as e:
             Domoticz.Error("Cannot open Zigate port %s error: %s" %(self._serialPort, e))
@@ -187,7 +186,7 @@ class ZigateTransport(object):
         if self.ListeningThread is None:
             self.ListeningThread = Thread(
                                         name="ZiGate serial line listner", 
-                                        target=ZigateTransport.serial_listen_and_send, 
+                                        target=ZigateTransport.serial_read_from_zigate, 
                                         args=(self,))
 
             self.ListeningThread.start()
@@ -213,7 +212,7 @@ class ZigateTransport(object):
             self.ListeningThread.start()
         self.start_thread_transport_watchdog( )
 
-    def serial_listen_and_send( self ):
+    def serial_read_from_zigate( self ):
 
         while self._connection is None:
             #Domoticz.Log("Waiting for serial connection open")
@@ -228,24 +227,17 @@ class ZigateTransport(object):
             nb_in = serialConnection.in_waiting
             nb_out = serialConnection.out_waiting
             instrument_serial( self, nb_in, nb_out)
-            
-            if time.time() - self.thread_timing > 1:
-                Domoticz.Error("serial_listen_and_send more than 1s in the loop ! (%s) InWait %s OutWait %s" 
-                    %((time.time() - self.thread_timing), nb_in, nb_out))
-            self.thread_timing = time.time()
+
+            if self.pluginconf.pluginConf['ZiGateReactTime'] and self.thread_timestamp:
+                timing = int( ( time.time() - self.thread_timestamp ) * 1000 )   
+                self.statistics.add_timing_thread( timing)
+            self.thread_timestamp = time.time()
 
             if nb_in > 0:
                 # Reading messages
                 data = read_from_zigate( self, serialConnection, nb_in)
                 if len(data) > 0:
                     self.on_message(data)
-
-            # Recommendation @badz - Write directemennt dans _send_data. Le thread se focalise que sur les reads
-            #elif self.messageQueue.qsize() > 0 and (( time.time() - self.lastsent_time) > MAX_THROUGHPUT):
-            #    # Sending messages ( only 1 at a time )
-            #    encoded_data = self.messageQueue.get_nowait()
-            #    write_to_zigate( self, serialConnection, encoded_data )
-            #    self.lastsent_time = time.time()
 
             else:
                 # We wait for some ms ony if we have nothing to read!
@@ -254,8 +246,6 @@ class ZigateTransport(object):
                     self.ListeningThreadevent.wait( 0.001 ) # 1ms waiting
                 else:
                     self.ListeningThreadevent.wait( THREAD_RELAX_TIME_MS )
-
-
         Domoticz.Status("ZigateTransport: ZiGateSerialListen Thread stop.")
 
 
@@ -271,27 +261,31 @@ class ZigateTransport(object):
 
         inputSocket  = outputSocket = [ tcpipConnection ]
         while self.running:
+            if self.pluginconf.pluginConf['ZiGateReactTime'] and self.thread_timestamp !=0 :
+                timing = int( ( time.time() - self.thread_timestamp ) * 1000 )   
+                self.statistics.add_timing_thread( timing)
+            self.thread_timestamp = time.time()
+
             readable, writable, exceptional = select.select(inputSocket, outputSocket, inputSocket)
             if readable:
                 # We have something to read
                 data = tcpipConnection.recv(1024)
                 if data: 
                     self.on_message(data)
+
             elif writable and self.messageQueue.qsize() > 0:
-                while self.messageQueue.qsize() > 0:
-                    encoded_data = self.messageQueue.get_nowait()
-                    try:
-                        tcpipConnection.send( encoded_data )
-                    except socket.OSError as e:
-                        Domoticz.Error("Socket %s error %s" %(tcpipConnection, e))
+                encoded_data = self.messageQueue.get_nowait()
+                try:
+                    tcpipConnection.send( encoded_data )
+                except socket.OSError as e:
+                    Domoticz.Error("Socket %s error %s" %(tcpipConnection, e))
 
             elif exceptional:
                 Domoticz.Error("We have detected an error .... on %s" %inputSocket)
                 self.ListeningThreadevent.wait( THREAD_RELAX_TIME_MS )
+
             else:
                 self.ListeningThreadevent.wait( THREAD_RELAX_TIME_MS )
-
-
 
         Domoticz.Status("ZigateTransport: ZiGateTcpIpListen Thread stop.")
 
@@ -759,30 +753,11 @@ def send_data_internal(self, InternalSqn):
 
     # Sending Command
     if not self.ListOfCommands[InternalSqn]['PDMCommand']:
-
         # Limit throughtput
         if (( time.time() - self.lastsent_time) < MAX_THROUGHPUT):
             return
+        load_queues_before_sending( self, InternalSqn )
 
-        # That is a Standard command (not PDM on  Host), let's process as usall
-        self.ListOfCommands[InternalSqn]['Status'] = 'TO-SEND'
-        self.ListOfCommands[InternalSqn]['StatusTimeStamp'] = str((datetime.now()).strftime("%m/%d/%Y, %H:%M:%S"))
-
-        # Add to 0x8000 queue
-        _add_cmd_to_wait_for8000_queue(self, InternalSqn)
-
-        if self.ListOfCommands[InternalSqn]['Expected8012'] and self.zmode == 'zigate31e':
-            # In addition to 0x8000 we have to wait 0x8012 or 0x8702
-            patch_8012_for_sending( self, InternalSqn)
-
-        if self.ListOfCommands[InternalSqn]['Expected8011'] and self.zmode in ( 'zigate31d', 'zigate31e'):
-            patch_8011_for_sending(self, InternalSqn)
-
-        if self.ListOfCommands[InternalSqn]['WaitForResponse'] and self.zmode in ( 'zigate31d', 'zigate31e'):
-            patch_cmdresponse_for_sending(self, InternalSqn)
-
-        if self.ListOfCommands[InternalSqn]['ResponseExpected'] and self.zmode == 'zigate31c':
-            patch_cmdresponse_for_sending(self, InternalSqn)
     # Go!
     if self.pluginconf.pluginConf["debugzigateCmd"]:
         self.logging_send('Log', "+++ send_data_internal ready (queues set) - Command: %s  Q(0x8000): %s Q(8012): %s Q(Ack/Nack): %s Q(Response): %s sendNow: %s"
@@ -790,6 +765,29 @@ def send_data_internal(self, InternalSqn):
 
     printListOfCommands( self, 'after correction before sending', InternalSqn )
     _send_data(self, InternalSqn)
+
+
+def load_queues_before_sending( self, InternalSqn ):
+    # That is a Standard command (not PDM on  Host), let's process as usall
+    self.ListOfCommands[InternalSqn]['Status'] = 'TO-SEND'
+    self.ListOfCommands[InternalSqn]['StatusTimeStamp'] = str((datetime.now()).strftime("%m/%d/%Y, %H:%M:%S"))
+
+    # Add to 0x8000 queue
+    _add_cmd_to_wait_for8000_queue(self, InternalSqn)
+
+    if self.ListOfCommands[InternalSqn]['Expected8012'] and self.zmode == 'zigate31e':
+        # In addition to 0x8000 we have to wait 0x8012 or 0x8702
+        patch_8012_for_sending( self, InternalSqn)
+
+    if self.ListOfCommands[InternalSqn]['Expected8011'] and self.zmode in ( 'zigate31d', 'zigate31e'):
+        patch_8011_for_sending(self, InternalSqn)
+
+    if self.ListOfCommands[InternalSqn]['WaitForResponse'] and self.zmode in ( 'zigate31d', 'zigate31e'):
+        patch_cmdresponse_for_sending(self, InternalSqn)
+
+    if self.ListOfCommands[InternalSqn]['ResponseExpected'] and self.zmode == 'zigate31c':
+        patch_cmdresponse_for_sending(self, InternalSqn)
+
 
 def printListOfCommands(self, comment, isqn):
     self.logging_send('Debug', "=======  %s:" % comment)
@@ -996,7 +994,6 @@ def _send_data(self, InternalSqn):
 
 
 # TimeOut Management
-
 def timeout_8000(self, isqn, ts):
     # Timed Out 0x8000
     _context = {
@@ -1005,7 +1002,6 @@ def timeout_8000(self, isqn, ts):
        'TimeStamp': ts,
     }
     self.logging_send_error(  "timeout_8000", context=_context)
-
 
     entry = _next_cmd_from_wait_for8000_queue(self)
     if entry is None:
@@ -2208,6 +2204,7 @@ def update_xPDU( self, npdu, apdu):
     self.statistics._MaxaPdu = max(self.statistics._MaxaPdu, int(apdu,16))
     self.statistics._MaxnPdu = max(self.statistics._MaxnPdu, int(npdu,16))
 
+# Serial Line Management
 def instrument_serial( self, nb_in, nb_out):
     
     if nb_in > self.statistics._serialInWaiting:
@@ -2223,11 +2220,17 @@ def read_from_zigate( self, serialConnection, nb_in):
     try:
         data = serialConnection.read( nb_in )
     except serial.SerialException as e:
-        Domoticz.Error("serial_listen_and_send - error while reading %s" %(e))
+        Domoticz.Error("serial_read_from_zigate - error while reading %s" %(e))
         data = None 
     return data
 
 def write_to_zigate( self, serialConnection, encoded_data ):
+
+    if self._transp == "Wifi":
+        self.messageQueue.put(bytes.fromhex(str(encoded_data)))
+        return
+
+    # Wifi
     try:
         nb_write = serialConnection.write( encoded_data )
         if nb_write != len( encoded_data ):
@@ -2240,12 +2243,14 @@ def write_to_zigate( self, serialConnection, encoded_data ):
         
     except TypeError as e:
         #Disconnect of USB->UART occured
-        Domoticz.Error("serial_listen_and_send - error while writing %s" %(e))
+        Domoticz.Error("serial_read_from_zigate - error while writing %s" %(e))
 
 def get_frame_and_decode(self):
+    if self.pluginconf.pluginConf['SerialReadV2']:
+        return decode_frame( get_raw_frame_from_raw_message( self ))
     return get_frame_and_decodev1( self )
-    #return decode_frame( get_raw_frame_from_raw_message( self ))
 
+# V2
 def get_raw_frame_from_raw_message( self ):
 
     frame = bytearray()
@@ -2271,7 +2276,6 @@ def get_raw_frame_from_raw_message( self ):
     self._ReqRcv = self._ReqRcv[zero3_position + 1:]
     return frame
 
-
 def decode_frame( frame ):
     if frame is None or frame == b'':
         return None
@@ -2287,7 +2291,8 @@ def decode_frame( frame ):
         return None
     return BinMsg
 
-        
+
+# V1
 def get_frame_and_decodev1( self ):
 
     Zero1 = Zero3 = -1
@@ -2342,7 +2347,6 @@ def get_frame_and_decodev1( self ):
     self._ReqRcv = self._ReqRcv[Zero3:]
     return BinMsg
             
-
 def check_frame_crc(self, BinMsg):
     ComputedChecksum = 0
     Zero1, MsgType, Length, ReceivedChecksum = struct.unpack('>BHHB', BinMsg[0:6])
@@ -2363,7 +2367,6 @@ def check_frame_crc(self, BinMsg):
         self.logging_send_error( "on_message", context=_context)
         return False
     return True
-
 
 def check_frame_lenght( self, BinMsg):
     # Check length

@@ -358,6 +358,9 @@ class WebServer(object):
             Statistics['MaxSerialInWaiting'] = self.statistics._serialInWaiting
             Statistics['MaxSerialOutWaiting'] = self.statistics._serialOutWaiting
 
+            Statistics['MaxThreadTime'] = self.statistics._maxthread_timing
+            Statistics['AvgThreadTime'] = self.statistics._averagethread_timing
+
             _nbitems = len(self.statistics.TrendStats)
 
             minTS = 0
