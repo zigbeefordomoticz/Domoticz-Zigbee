@@ -293,6 +293,10 @@ SETTINGS = {
      }
     },
 
+    'Reenforcement': { 'Order': 18, 'param': {
+        'ConfigureReporting':       {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
+        }
+    },
     # Experimental
     'Experimental': {'Order': 17, 'param': {
         'ZiGateReactTime':       {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
@@ -313,7 +317,6 @@ SETTINGS = {
     }
 }
 
-
 class PluginConf:
 
     def __init__(self, homedir, hardwareid):
@@ -323,129 +326,50 @@ class PluginConf:
         self.hardwareid = hardwareid
         self.pluginConf["pluginHome"] = homedir
 
-        for theme in SETTINGS:
-            for param in SETTINGS[theme]['param']:
-                if param == 'pluginHome':
-                    continue
-                if param == 'homedirectory':
-                    self.pluginConf[param] = homedir
-                elif param == 'pluginConfig':
-                    self.pluginConf[param] = self.pluginConf['pluginHome'] + 'Conf/'
-                elif param == 'pluginData':
-                    self.pluginConf[param] = self.pluginConf['pluginHome'] + 'Data/'
-                elif param == 'pluginLogs':
-                    self.pluginConf[param] = self.pluginConf['pluginHome'] + 'Logs/'
-                elif param == 'pluginOTAFirmware':
-                    self.pluginConf[param] = self.pluginConf['pluginHome'] + \
-                        'OTAFirmware/'
-                elif param == 'pluginReports':
-                    self.pluginConf[param] = self.pluginConf['pluginHome'] + 'Reports/'
-                elif param == 'pluginWWW':
-                    self.pluginConf[param] = self.pluginConf['pluginHome'] + 'www/'
-                else:
-                    self.pluginConf[param] = SETTINGS[theme]['param'][param]['default']
+        setup_folder_parameters( self, homedir )
 
         self.pluginConf['filename'] = self.pluginConf['pluginConfig'] + \
             "PluginConf-%02d.json" % hardwareid
         if os.path.isfile(self.pluginConf['filename']):
-            self._load_Settings()
+            _load_Settings( self )
 
         else:
-            self._load_oldfashon(homedir, hardwareid)
+            _load_oldfashon( self, homedir, hardwareid)
 
         # Reset eraseZigatePDM to default
         self.pluginConf['eraseZigatePDM'] = 0
-
         # Sanity Checks
         if self.pluginConf['TradfriKelvinStep'] < 0 or self.pluginConf['TradfriKelvinStep'] > 255:
             self.pluginConf['TradfriKelvinStep'] = 75
-
-        if (
-            self.pluginConf['Certification'] == 'CE'
-            or self.pluginConf['Certification'] != 'FCC'
-        ):
+        if ( self.pluginConf['Certification'] == 'CE' or self.pluginConf['Certification'] != 'FCC' ):
             self.pluginConf['CertificationCode'] = 0x01
-
         else:
             self.pluginConf['CertificationCode'] = 0x02
+        _path_check( self )
+        _param_checking( self )
 
-        # Check Path
-        for theme in SETTINGS:
-            for param in SETTINGS[theme]['param']:
-                if SETTINGS[theme]['param'][param]['type'] == 'path' and not os.path.exists(self.pluginConf[param]):
-                    Domoticz.Error("Cannot access path: %s" %
-                                   self.pluginConf[param])
+def _path_check( self ):
 
-        # Let's check the Type
-        for theme in SETTINGS:
-            for param in SETTINGS[theme]['param']:
-                if self.pluginConf[param] != SETTINGS[theme]['param'][param]['default']:
-                    if SETTINGS[theme]['param'][param]['type'] == 'hex':
-                        if isinstance(self.pluginConf[param], str):
-                            self.pluginConf[param] = int(
-                                self.pluginConf[param], 16)
-                        Domoticz.Status("%s set to 0x%x" %
-                                        (param, self.pluginConf[param]))
-                    else:
-                        Domoticz.Status("%s set to %s" %
-                                        (param, self.pluginConf[param]))
+    for theme in SETTINGS:
+        for param in SETTINGS[theme]['param']:
+            if SETTINGS[theme]['param'][param]['type'] == 'path' and not os.path.exists(self.pluginConf[param]):
+                Domoticz.Error("Cannot access path: %s" %
+                                self.pluginConf[param])
 
-    def _load_oldfashon(self, homedir, hardwareid):
-
-        # Import PluginConf.txt
-        # Migration
-        self.pluginConf['filename'] = self.pluginConf['pluginConfig'] + \
-            "PluginConf-%02d.txt" % hardwareid
-        if not os.path.isfile(self.pluginConf['filename']):
-            self.pluginConf['filename'] = self.pluginConf['pluginConfig'] + \
-                "PluginConf-%d.txt" % hardwareid
-            if not os.path.isfile(self.pluginConf['filename']):
-                self.pluginConf['filename'] = self.pluginConf['pluginConfig'] + \
-                    "PluginConf.txt"
-                if not os.path.isfile(self.pluginConf['filename']):
-                    self.write_Settings()
-                    return
-
-        tmpPluginConf = ""
-        if not os.path.isfile(self.pluginConf['filename']):
-            return
-        with open(self.pluginConf['filename'], 'r') as myPluginConfFile:
-            tmpPluginConf += myPluginConfFile.read().replace('\n', '')
-
-        PluginConf = {}
-
-        try:
-            PluginConf = eval(tmpPluginConf)
-        except SyntaxError:
-            Domoticz.Error(
-                "Syntax Error in %s, all plugin parameters set to default" % self.filename)
-        except (NameError, TypeError, ZeroDivisionError):
-            Domoticz.Error(
-                "Error while importing %s, all plugin parameters set to default" % self.filename)
-        else:
-            for theme in SETTINGS:
-                for param in SETTINGS[theme]['param']:
-                    if PluginConf.get(param):
-                        if SETTINGS[theme]['param'][param]['type'] == 'hex':
-                            if is_hex(PluginConf.get(param)):
-                                self.pluginConf[param] = int(
-                                    PluginConf[param], 16)
-                            else:
-                                Domoticz.Error("Wrong parameter type for %s, keeping default %s"
-                                               % (param, self.pluginConf[param]['default']))
-                                self.pluginConf[param] = self.pluginConf[param]['default']
-
-                        elif SETTINGS[theme]['param'][param]['type'] in ('bool', 'int'):
-                            if PluginConf.get(param).isdigit():
-                                self.pluginConf[param] = int(PluginConf[param])
-                            else:
-                                Domoticz.Error("Wrong parameter type for %s, keeping default %s"
-                                               % (param, self.pluginConf[param]['default']))
-                                self.pluginConf[param] = self.pluginConf[param]['default']
-                        elif SETTINGS[theme]['param'][param]['type'] == ('path', 'str'):
-                            self.pluginConf[param] = PluginConf[param]
-
-        self.write_Settings()
+def _param_checking( self ):
+    # Let's check the Type
+    for theme in SETTINGS:
+        for param in SETTINGS[theme]['param']:
+            if self.pluginConf[param] != SETTINGS[theme]['param'][param]['default']:
+                if SETTINGS[theme]['param'][param]['type'] == 'hex':
+                    if isinstance(self.pluginConf[param], str):
+                        self.pluginConf[param] = int(
+                            self.pluginConf[param], 16)
+                    Domoticz.Status("%s set to 0x%x" %
+                                    (param, self.pluginConf[param]))
+                else:
+                    Domoticz.Status("%s set to %s" %
+                                    (param, self.pluginConf[param]))
 
     def write_Settings(self):
         # serialize json format the pluginConf '
@@ -466,19 +390,101 @@ class PluginConf:
         with open(pluginConfFile, 'wt') as handle:
             json.dump(write_pluginConf, handle, sort_keys=True, indent=2)
 
-    def _load_Settings(self):
-        # deserialize json format of pluginConf'
-        # load parameters '
+def _load_Settings(self):
+    # deserialize json format of pluginConf'
+    # load parameters '
 
-        with open(self.pluginConf['filename'], 'rt') as handle:
-            _pluginConf = {}
-            try:
-                _pluginConf = json.load(handle, encoding=dict)
+    with open(self.pluginConf['filename'], 'rt') as handle:
+        _pluginConf = {}
+        try:
+            _pluginConf = json.load(handle, encoding=dict)
 
-            except json.decoder.JSONDecodeError as e:
-                Domoticz.Error("poorly-formed %s, not JSON: %s" %
-                               (self.pluginConf['filename'], e))
+        except json.decoder.JSONDecodeError as e:
+            Domoticz.Error("poorly-formed %s, not JSON: %s" %
+                            (self.pluginConf['filename'], e))
+            return
+
+        for param in _pluginConf:
+            self.pluginConf[param] = _pluginConf[param]
+
+def _load_oldfashon(self, homedir, hardwareid):
+    # Import PluginConf.txt
+    # Migration
+    self.pluginConf['filename'] = self.pluginConf['pluginConfig'] + \
+        "PluginConf-%02d.txt" % hardwareid
+    if not os.path.isfile(self.pluginConf['filename']):
+        self.pluginConf['filename'] = self.pluginConf['pluginConfig'] + \
+            "PluginConf-%d.txt" % hardwareid
+        if not os.path.isfile(self.pluginConf['filename']):
+            self.pluginConf['filename'] = self.pluginConf['pluginConfig'] + \
+                "PluginConf.txt"
+            if not os.path.isfile(self.pluginConf['filename']):
+                self.write_Settings()
                 return
 
-            for param in _pluginConf:
-                self.pluginConf[param] = _pluginConf[param]
+    tmpPluginConf = ""
+    if not os.path.isfile(self.pluginConf['filename']):
+        return
+    with open(self.pluginConf['filename'], 'r') as myPluginConfFile:
+        tmpPluginConf += myPluginConfFile.read().replace('\n', '')
+
+    PluginConf = {}
+    _import_oldfashon_param( self, tmpPluginConf)
+
+def _import_oldfashon_param( self, tmpPluginConf):
+    try:
+        PluginConf = eval(tmpPluginConf)
+    except SyntaxError:
+        Domoticz.Error(
+            "Syntax Error in %s, all plugin parameters set to default" % self.filename)
+    except (NameError, TypeError, ZeroDivisionError):
+        Domoticz.Error(
+            "Error while importing %s, all plugin parameters set to default" % self.filename)
+    else:
+        for theme in SETTINGS:
+            for param in SETTINGS[theme]['param']:
+                if PluginConf.get(param):
+                    if SETTINGS[theme]['param'][param]['type'] == 'hex':
+                        if is_hex(PluginConf.get(param)):
+                            self.pluginConf[param] = int(
+                                PluginConf[param], 16)
+                        else:
+                            Domoticz.Error("Wrong parameter type for %s, keeping default %s"
+                                            % (param, self.pluginConf[param]['default']))
+                            self.pluginConf[param] = self.pluginConf[param]['default']
+
+                    elif SETTINGS[theme]['param'][param]['type'] in ('bool', 'int'):
+                        if PluginConf.get(param).isdigit():
+                            self.pluginConf[param] = int(PluginConf[param])
+                        else:
+                            Domoticz.Error("Wrong parameter type for %s, keeping default %s"
+                                            % (param, self.pluginConf[param]['default']))
+                            self.pluginConf[param] = self.pluginConf[param]['default']
+                    elif SETTINGS[theme]['param'][param]['type'] == ('path', 'str'):
+                        self.pluginConf[param] = PluginConf[param]
+
+    self.write_Settings()
+
+        
+def setup_folder_parameters( self , homedir):
+    for theme in SETTINGS:
+        for param in SETTINGS[theme]['param']:
+            if param == 'pluginHome':
+                continue
+            if param == 'homedirectory':
+                self.pluginConf[param] = homedir
+            elif param == 'pluginConfig':
+                self.pluginConf[param] = self.pluginConf['pluginHome'] + 'Conf/'
+            elif param == 'pluginData':
+                self.pluginConf[param] = self.pluginConf['pluginHome'] + 'Data/'
+            elif param == 'pluginLogs':
+                self.pluginConf[param] = self.pluginConf['pluginHome'] + 'Logs/'
+            elif param == 'pluginOTAFirmware':
+                self.pluginConf[param] = self.pluginConf['pluginHome'] + \
+                    'OTAFirmware/'
+            elif param == 'pluginReports':
+                self.pluginConf[param] = self.pluginConf['pluginHome'] + 'Reports/'
+            elif param == 'pluginWWW':
+                self.pluginConf[param] = self.pluginConf['pluginHome'] + 'www/'
+            else:
+                self.pluginConf[param] = SETTINGS[theme]['param'][param]['default']
