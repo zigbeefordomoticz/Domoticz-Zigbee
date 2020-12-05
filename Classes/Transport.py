@@ -2270,7 +2270,7 @@ def get_raw_frame_from_raw_message( self ):
     else:
         # Most likely we didn't find a full frame.
         # We need to wait for the next round
-        Domoticz.Log("Frame error we will drop the buffer!! %s" %self._ReqRcv)        
+        Domoticz.Log("Frame error we will drop the buffer!! start: %s zero3: %s buffer: %s" %( frame_start,  zero3_position, self._ReqRcv, )   )     
 
     # Remove the frame from the buffer (new buffer start at frame +1)
     self._ReqRcv = self._ReqRcv[zero3_position + 1:]
