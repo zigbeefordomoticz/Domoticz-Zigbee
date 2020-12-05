@@ -299,12 +299,12 @@ SETTINGS = {
     },
     # Experimental
     'Experimental': {'Order': 17, 'param': {
-        'ZiGateReactTime':       {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
-        'RawReadAttribute':      {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
-        'RawWritAttribute':      {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
-        'AnnoucementV0':         {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True, 'Advanced': False},
-        'AnnoucementV1':         {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True, 'Advanced': False},
-        'AnnoucementV2':         {'type': 'bool', 'default': 1, 'current': None, 'restart': False, 'hidden': True, 'Advanced': False},
+        'ZiGateReactTime':       {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
+        'RawReadAttribute':      {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
+        'RawWritAttribute':      {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
+        'AnnoucementV0':         {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True, 'Advanced': True},
+        'AnnoucementV1':         {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True, 'Advanced': True},
+        'AnnoucementV2':         {'type': 'bool', 'default': 1, 'current': None, 'restart': False, 'hidden': True, 'Advanced': True},
 
         'expJsonDatabase':       {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'XiaomiLeave':           {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
