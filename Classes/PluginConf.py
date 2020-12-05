@@ -348,29 +348,6 @@ class PluginConf:
         _path_check( self )
         _param_checking( self )
 
-def _path_check( self ):
-
-    for theme in SETTINGS:
-        for param in SETTINGS[theme]['param']:
-            if SETTINGS[theme]['param'][param]['type'] == 'path' and not os.path.exists(self.pluginConf[param]):
-                Domoticz.Error("Cannot access path: %s" %
-                                self.pluginConf[param])
-
-def _param_checking( self ):
-    # Let's check the Type
-    for theme in SETTINGS:
-        for param in SETTINGS[theme]['param']:
-            if self.pluginConf[param] != SETTINGS[theme]['param'][param]['default']:
-                if SETTINGS[theme]['param'][param]['type'] == 'hex':
-                    if isinstance(self.pluginConf[param], str):
-                        self.pluginConf[param] = int(
-                            self.pluginConf[param], 16)
-                    Domoticz.Status("%s set to 0x%x" %
-                                    (param, self.pluginConf[param]))
-                else:
-                    Domoticz.Status("%s set to %s" %
-                                    (param, self.pluginConf[param]))
-
     def write_Settings(self):
         # serialize json format the pluginConf '
         # Only the arameters which are different than default '
@@ -465,7 +442,31 @@ def _import_oldfashon_param( self, tmpPluginConf):
 
     self.write_Settings()
 
-        
+def _path_check( self ):
+    
+    for theme in SETTINGS:
+        for param in SETTINGS[theme]['param']:
+            if SETTINGS[theme]['param'][param]['type'] == 'path' and not os.path.exists(self.pluginConf[param]):
+                Domoticz.Error("Cannot access path: %s" %
+                                self.pluginConf[param])
+
+def _param_checking( self ):
+    # Let's check the Type
+    for theme in SETTINGS:
+        for param in SETTINGS[theme]['param']:
+            if self.pluginConf[param] == SETTINGS[theme]['param'][param]['default']:
+                continue
+
+            if SETTINGS[theme]['param'][param]['type'] == 'hex':
+                if isinstance(self.pluginConf[param], str):
+                    self.pluginConf[param] = int(
+                        self.pluginConf[param], 16)
+                Domoticz.Status("%s set to 0x%x" %
+                                (param, self.pluginConf[param]))
+            else:
+                Domoticz.Status("%s set to %s" %
+                                (param, self.pluginConf[param]))
+     
 def setup_folder_parameters( self , homedir):
     for theme in SETTINGS:
         for param in SETTINGS[theme]['param']:
