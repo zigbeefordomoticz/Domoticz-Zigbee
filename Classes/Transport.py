@@ -37,7 +37,7 @@ CMD_NWK_2NDBytes = {}
 CMD_WITH_RESPONSE = {}
 RESPONSE_SQN = []
 
-THREAD_RELAX_TIME_MS = 20 / 1000    # 20ms of waiting time if nothing to do
+THREAD_RELAX_TIME_MS = 35 / 1000    # 20ms of waiting time if nothing to do
 NB_SEND_PER_SECONDE = 5
 MAX_THROUGHPUT = 1 / NB_SEND_PER_SECONDE
 MAX_THROUGHPUT = 0 
@@ -2260,14 +2260,8 @@ def get_raw_frame_from_raw_message( self ):
     # Search the 1st position of 0x01 until the position of 0x03
     frame_start = self._ReqRcv.rfind(b'\x01', 0, zero3_position)
 
-    if frame_start == -1:
-        # no start frame found 
-        Domoticz.Log("Uncomplete frame, wait for the next round %s" %self._ReqRcv)
-        return None
-
-    if zero3_position == -1:
-        # no end frame found
-        Domoticz.Log("Uncomplete frame, wait for the next round %s" %self._ReqRcv)
+    if frame_start == -1 or zero3_position == -1:
+        # no start and end frame found (missing one of the two)
         return None
     
     if frame_start > zero3_position:
