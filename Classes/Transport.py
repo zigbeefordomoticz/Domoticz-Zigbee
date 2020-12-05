@@ -1244,7 +1244,7 @@ def process_frame(self, frame):
 
     if len(self._waitFor8000Queue) == 0 and len(self._waitFor8012Queue) == 0 and len(self._waitFor8011Queue) == 0 and len(self._waitForCmdResponseQueue) == 0:
         if MsgType in ( '8000', '8012', '8011'):
-            Domoticz.Error("process_frame - Message not processed, no active queues. Msgtype: %s MsgData: %s" %(MsgType, MsgData))
+            Domoticz.Log("process_frame - Message not processed, no active queues. Msgtype: %s MsgData: %s" %(MsgType, MsgData))
         else:
             self.F_out(frame, None)
         ready_to_send_if_needed(self)
@@ -1261,7 +1261,7 @@ def process_frame(self, frame):
 
     if len(self._waitFor8000Queue) == 0 and len(self._waitForCmdResponseQueue) == 0 and len(self._waitFor8011Queue) == 0:
         if MsgType in ( '8000', '8012', '8011'):
-            Domoticz.Error("process_frame - Message not processed, no active queues. Msgtype: %s MsgData: %s" %(MsgType, MsgData))
+            Domoticz.Log("process_frame - Message not processed, no active queues. Msgtype: %s MsgData: %s" %(MsgType, MsgData))
         else:
             self.F_out(frame, None)
         ready_to_send_if_needed(self)
@@ -1275,7 +1275,7 @@ def process_frame(self, frame):
 
     if len(self._waitForCmdResponseQueue) == 0 and len(self._waitFor8011Queue) == 0:
         if MsgType in ( '8000', '8012', '8011'):
-            Domoticz.Error("process_frame - Message not processed, no active queues. Msgtype: %s MsgData: %s" %(MsgType, MsgData))
+            Domoticz.Log("process_frame - Message not processed, no active queues. Msgtype: %s MsgData: %s" %(MsgType, MsgData))
         else:
             self.F_out(frame, None)
         ready_to_send_if_needed(self)
@@ -1290,7 +1290,7 @@ def process_frame(self, frame):
     if len(self._waitForCmdResponseQueue) == 0:
         # All queues are empty
         if MsgType in ( '8000', '8012', '8011'):
-            Domoticz.Error("process_frame - Message not processed, no active queues. Msgtype: %s MsgData: %s" %(MsgType, MsgData))
+            Domoticz.Log("process_frame - Message not processed, no active queues. Msgtype: %s MsgData: %s" %(MsgType, MsgData))
         else:
             self.F_out(frame, None)
         ready_to_send_if_needed(self)
