@@ -2261,18 +2261,22 @@ def get_raw_frame_from_raw_message( self ):
     frame_start = self._ReqRcv.rfind(b'\x01', 0, zero3_position)
 
     if frame_start == -1:
-        # no frame found 
+        # no start frame found 
+        Domoticz.Log("Uncomplete frame, wait for the next round %s" %self._ReqRcv)
+        return None
+
+    if zero3_position == -1:
+        # no end frame found
         Domoticz.Log("Uncomplete frame, wait for the next round %s" %self._ReqRcv)
         return None
     
-    if frame_start <= zero3_position:
-        frame = self._ReqRcv[frame_start:zero3_position + 1]
-    else:
-        # Most likely we didn't find a full frame.
-        # We need to wait for the next round
-        Domoticz.Log("Frame error we will drop the buffer!! start: %s zero3: %s buffer: %s" %( frame_start,  zero3_position, self._ReqRcv, )   )     
+    if frame_start > zero3_position:
+        Domoticz.Error("Frame error we will drop the buffer!! start: %s zero3: %s buffer: %s" %( frame_start,  zero3_position, self._ReqRcv, )   ) 
+        return None
+            
 
     # Remove the frame from the buffer (new buffer start at frame +1)
+    frame = self._ReqRcv[frame_start:zero3_position + 1]
     self._ReqRcv = self._ReqRcv[zero3_position + 1:]
     return frame
 
