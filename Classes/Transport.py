@@ -529,17 +529,18 @@ def check_thread_alive( thr ):
     thr.join( timeout = 0.0 )
     return thr.is_alive()
 
-
 def handle_error_in_serial_receive( self, e, nb_in, nb_out, data):
     trace = []
     tb = e.__traceback__
+    Domoticz.Error("'%s' failed '%s'" %(tb.tb_frame.f_code.co_name, str(e)))
     while tb is not None:
-        trace.append({
+        trace.append(
+            {
             "Module": tb.tb_frame.f_code.co_filename,
-            "Funcion": tb.tb_frame.f_code.co_name,
+            "Function": tb.tb_frame.f_code.co_name,
             "Line": tb.tb_lineno
         })
-        Domoticz.Error("    %s %s %s" %(tb.tb_frame.f_code.co_filename, tb.tb_frame.f_code.co_name, tb.tb_lineno))
+        Domoticz.Error("----> Line %s in '%s', function %s" %( tb.tb_lineno, tb.tb_frame.f_code.co_filename,  tb.tb_frame.f_code.co_name,  ))
         tb = tb.tb_next
 
     context = {
