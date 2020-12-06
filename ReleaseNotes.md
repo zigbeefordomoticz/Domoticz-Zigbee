@@ -18,6 +18,7 @@ Release Numbering
 - Even numbers  --> Beta
 
 ## 27 Nov.  2020  - 4.11.11
+
 - [Hardware] - Handle the behaviour of the Legrand shutter when firmware above 0x1a
 
 ##  5 Nov.  2020  - 4.11.9
