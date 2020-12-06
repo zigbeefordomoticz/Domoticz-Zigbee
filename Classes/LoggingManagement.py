@@ -33,6 +33,8 @@ class LoggingManagement:
         
         
     def loggingUpdateFirmware(self, FirmwareVersion, FirmwareMajorVersion):
+        if self.FirmwareVersion and self.FirmwareMajorVersion:
+            return
         self.FirmwareVersion = FirmwareVersion
         self.FirmwareMajorVersion = FirmwareMajorVersion
         if self.LogErrorHistory:
