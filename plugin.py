@@ -262,7 +262,7 @@ class BasePlugin:
         # Create the adminStatusWidget if needed
         self.PluginHealth['Flag'] = 1
         self.PluginHealth['Txt'] = 'Startup'
-                
+
         if self.log is None:
             self.log = LoggingManagement(self.pluginconf, self.PluginHealth, self.HardwareID, self.ListOfDevices, self.permitTojoin )
             self.log.openLogFile()
@@ -542,11 +542,13 @@ class BasePlugin:
         elif self.groupmgt:
             #if Devices[Unit].DeviceID in self.groupmgt.ListOfGroups:
             #    # Command belongs to a Zigate group
-            self.log.logging( 'Plugin', 'Debug', "Command: %s/%s/%s to Group: %s" %(Command,Level,Color, Devices[Unit].DeviceID))
+            if self.log:
+                self.log.logging( 'Plugin', 'Debug', "Command: %s/%s/%s to Group: %s" %(Command,Level,Color, Devices[Unit].DeviceID))
             self.groupmgt.processCommand( Unit, Devices[Unit].DeviceID, Command, Level, Color )
 
         elif Devices[Unit].DeviceID.find('Zigate-01-') != -1:
-            self.log.logging( 'Plugin', 'Debug', "onCommand - Command adminWidget: %s " %Command)
+            if self.log:
+                self.log.logging( 'Plugin', 'Debug', "onCommand - Command adminWidget: %s " %Command)
             self.adminWidgets.handleCommand( self, Command)
 
         else:
