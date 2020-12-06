@@ -154,7 +154,7 @@ class LoggingManagement:
                     'FirmwareVersion': self.FirmwareVersion,
                     'FirmwareMajorVersion': self.FirmwareMajorVersion
                 }
-        if nwkid:
+        if nwkid and nwkid in self.ListOfDevices:
             _context[ 'DeviceInfos'] = dict(self.ListOfDevices[ nwkid ])
         if context is not None:
             if isinstance(context, dict):

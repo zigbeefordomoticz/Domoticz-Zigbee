@@ -10,6 +10,7 @@ import binascii
 import struct
 
 import time
+import sys, os, traceback
 
 from datetime import datetime
 
@@ -106,6 +107,7 @@ class ZigateTransport(object):
         self.processFrameThread = []
 
         self.thread_timestamp = None
+        self.watchdog_timing = None
 
         # Call back function to send back to plugin
         self.F_out = F_out  # Function to call to bring the decoded Frame at plugin
@@ -135,19 +137,24 @@ class ZigateTransport(object):
         self.FirmwareVersion = FirmwareVersion
         self.FirmwareMajorVersion = FirmwareMajorVersion
 
+    def thread_transport_shutdown( self ):
+        self.running = False
+
     def start_thread_transport_watchdog( self ):
         if self.WatchDogThread is None:
             Domoticz.Status("Starting Watch dog")
             self.WatchDogThread = Thread( name="ZiGateWatchDog",  target=ZigateTransport.thread_transport_watchdog,  args=(self,))
             self.WatchDogThread.start()
 
-    def thread_transport_watchdog(self):
-
-        def check_thread_alive( thr ):
-            thr.join( timeout = 0.0 )
-            return thr.is_alive()
-
+    def thread_transport_watchdog(self): 
         while self.running:
+
+            if self.pluginconf.pluginConf['ZiGateReactTime'] and self.watchdog_timing:
+                timing = int( ( time.time() - self.watchdog_timing ) * 1000 )   
+                if timing > 5000:
+                    Domoticz.Log("thread_transport_watchdog spend more than 5s on previous loop ( %s )" %timing)
+                self.watchdog_timing = time.time()
+                
             if self.running and not check_thread_alive( self.ListeningThread):
                 _context = {
                     'Error code': 'TRANS-THREADWATCHDOG-01',
@@ -155,10 +162,7 @@ class ZigateTransport(object):
                 }
                 self.logging_send_error( "thread_transport_watchdog", context=_context)
                 self.ListeningThread.start()
-            time.sleep ( 5.0) 
-
-    def thread_transport_shutdown( self ):
-        self.running = False
+            time.sleep ( 4.0) 
 
     def lock_transport_mutex(self):
         if self.listening_transport_mutex:
@@ -184,11 +188,7 @@ class ZigateTransport(object):
         if self.ListeningThreadevent is None:
             self.ListeningThreadevent = Event()
         if self.ListeningThread is None:
-            self.ListeningThread = Thread(
-                                        name="ZiGate serial line listner", 
-                                        target=ZigateTransport.serial_read_from_zigate, 
-                                        args=(self,))
-
+            self.ListeningThread = Thread( name="ZiGate serial line listner",  target=ZigateTransport.serial_read_from_zigate,  args=(self,))
             self.ListeningThread.start()
         self.start_thread_transport_watchdog( )
 
@@ -223,7 +223,7 @@ class ZigateTransport(object):
 
         while self.running:
             # We loop until self.running is set to False, which indicate plugin shutdown
-
+            data = ModuleNotFoundError
             nb_in = serialConnection.in_waiting
             nb_out = serialConnection.out_waiting
             instrument_serial( self, nb_in, nb_out)
@@ -231,14 +231,20 @@ class ZigateTransport(object):
             if self.pluginconf.pluginConf['ZiGateReactTime'] and self.thread_timestamp:
                 timing = int( ( time.time() - self.thread_timestamp ) * 1000 )   
                 self.statistics.add_timing_thread( timing)
+                if timing > 1000:
+                    Domoticz.Log("serial_read_from_zigate spend more than 1s on previous loop ( %s )" %timing)
+
             self.thread_timestamp = time.time()
 
             if nb_in > 0:
-                # Reading messages
-                data = read_from_zigate( self, serialConnection, nb_in)
-                if len(data) > 0:
-                    self.on_message(data)
-
+                # Reading messages. Catch exception
+                try:
+                    data = read_from_zigate( self, serialConnection, nb_in)
+                    if len(data) > 0:
+                        self.on_message(data)
+                except Exception as e:
+                    Domoticz.Error("Error while receiving a ZiGate message")
+                    handle_error_in_serial_receive( self, e, nb_in, nb_out, data)
             else:
                 # We wait for some ms ony if we have nothing to read!
                 if self.lock:
@@ -443,11 +449,14 @@ class ZigateTransport(object):
         # Check if the Cmd/Data is not yet in the pipe
         alreadyInQueue = False
         for x in list(self.ListOfCommands.keys()):
-            if x not in self.ListOfCommands:
+            if x in self.ListOfCommands and 'Status' not in self.ListOfCommands[x]:
                 continue
-            if 'Status' not in self.ListOfCommands[x] or 'Cmd' not in self.ListOfCommands[x] or 'Datas' not in self.ListOfCommands[x]:
+            if x in self.ListOfCommands and 'Cmd' not in self.ListOfCommands[x]:
                 continue
-            if self.ListOfCommands[x]['Status'] in ( '', 'TO-SEND', 'QUEUED' ) and self.ListOfCommands[x]['Cmd'] == cmd and self.ListOfCommands[x]['Datas'] == datas:
+            if x in self.ListOfCommands and 'Datas' not in self.ListOfCommands[x]:
+                continue
+
+            if x in self.ListOfCommands and self.ListOfCommands[x]['Status'] in ( '', 'TO-SEND', 'QUEUED' ) and self.ListOfCommands[x]['Cmd'] == cmd and self.ListOfCommands[x]['Datas'] == datas:
                 self.logging_send( 'Debug', "Cmd: %s Data: %s already in queue. drop that command" % (cmd, datas))
                 alreadyInQueue = True
                 return None
@@ -507,11 +516,45 @@ class ZigateTransport(object):
                 process_frame(self, AsciiMsg)                
                 timing = int( (time.time() - start_time ) * 1000 )
                 self.statistics.add_rxTiming( timing )
+                if timing > 1000:
+                    Domoticz.Log("on_message: process_frame spend more than 1s (%s) AsciiMsg: %s" %( timing, AsciiMsg))
 
                     
     def check_timed_out_for_tx_queues(self):
         check_timed_out(self)
 
+# Thread Function
+
+def check_thread_alive( thr ):
+    thr.join( timeout = 0.0 )
+    return thr.is_alive()
+
+
+def handle_error_in_serial_receive( self, e, nb_in, nb_out, data):
+    trace = []
+    tb = e.__traceback__
+    while tb is not None:
+        trace.append({
+            "Module": tb.tb_frame.f_code.co_filename,
+            "Funcion": tb.tb_frame.f_code.co_name,
+            "Line": tb.tb_lineno
+        })
+        Domoticz.Error("    %s %s %s" %(tb.tb_frame.f_code.co_filename, tb.tb_frame.f_code.co_name, tb.tb_lineno))
+        tb = tb.tb_next
+
+    context = {
+        'Error Code': 'TRANS-SERIALIN-01',
+        'Type:': type(e).__name__,
+        'Message code:': str(e),
+        'Stack Trace': trace,
+        'nb_in': nb_in,
+        'nb_out': nb_out,
+        'Data': str(data),
+    }
+    self.logging_receive( 'Error', "serial_read_from_zigate ", _context=context)
+
+
+                    
 # Local Functions
 
 def store_ISQN_infos( self, InternalSqn, cmd, datas, ackIsDisabled, waitForResponse ):
@@ -1130,12 +1173,16 @@ def check_and_timeout_listofcommand(self):
 
     self.logging_send( 'Debug', "-- checkTimedOutForTxQueues ListOfCommands size: %s" % len(self.ListOfCommands))
     for x in list(self.ListOfCommands.keys()):
-        if 'SentTimeStamp' not in self.ListOfCommands[x] or self.ListOfCommands[x]['SentTimeStamp'] is None:
-            # Hum !
+        if x in self.ListOfCommands and 'SentTimeStamp' not in self.ListOfCommands[x]:
             errorCode = 'TRANS-CHKTOLSTCMD-01'
             timeoutValue = 0
+        
+        elif x in self.ListOfCommands and self.ListOfCommands[x]['SentTimeStamp'] is None:
+            # Hum !
+            errorCode = 'TRANS-CHKTOLSTCMD-02'
+            timeoutValue = 0
         else:    
-            errorCode =   'TRANS-CHKTOLSTCMD-02'  
+            errorCode =   'TRANS-CHKTOLSTCMD-03'  
             timeoutValue = (int(time.time()) - self.ListOfCommands[x]['SentTimeStamp'])
 
         if timeoutValue > TIME_OUT_LISTCMD:
@@ -2268,7 +2315,6 @@ def get_raw_frame_from_raw_message( self ):
         Domoticz.Error("Frame error we will drop the buffer!! start: %s zero3: %s buffer: %s" %( frame_start,  zero3_position, self._ReqRcv, )   ) 
         return None
             
-
     # Remove the frame from the buffer (new buffer start at frame +1)
     frame = self._ReqRcv[frame_start:zero3_position + 1]
     self._ReqRcv = self._ReqRcv[zero3_position + 1:]
