@@ -45,6 +45,7 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Man
         'LUMI': lumiReadRawAPS,
         'Philips' : philipsReadRawAPS,
         '_TZE200_ckud7u2l' : tuyaReadRawAPS ,
+        '_TYST11_zivfvd7h': tuyaReadRawAPS,
     }
 
     if srcnwkid not in self.ListOfDevices:
