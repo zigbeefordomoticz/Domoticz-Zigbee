@@ -475,13 +475,33 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
             return
 
-        if DeviceType in  ('ThermoMode', 'ACMode'):
+        if DeviceType in  ('ThermoMode', ):
             self.log.logging( "Command", 'Debug', "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" 
                 %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
             self.log.logging( "Command", 'Debug', "ThermoMode - requested Level: %s" %Level, NWKID)
             if Level in THERMOSTAT_LEVEL_2_MODE:
                 self.log.logging( "Command", 'Debug', " - Set Thermostat Mode to : %s / %s" %( Level, THERMOSTAT_LEVEL_2_MODE[Level]), NWKID)
                 thermostat_Mode( self, NWKID, THERMOSTAT_LEVEL_2_MODE[Level] )
+                UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            # Let's force a refresh of Attribute in the next Heartbeat  
+            self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
+            return
+
+        if DeviceType == 'ACMode':
+            ACLEVEL_TO_MODE = {
+                0: 'Off',
+                10: 'Cool',
+                20: 'Heat',
+                30: 'Dry',
+                40: 'Fan Only',
+
+            }
+            self.log.logging( "Command", 'Debug', "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" 
+                %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
+            self.log.logging( "Command", 'Debug', "ThermoMode - requested Level: %s" %Level, NWKID)
+            if Level in ACLEVEL_TO_MODE:
+                self.log.logging( "Command", 'Debug', " - Set Thermostat Mode to : %s / %s" %( Level, ACLEVEL_TO_MODE[Level]), NWKID)
+                thermostat_Mode( self, NWKID, ACLEVEL_TO_MODE[Level] )
                 UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             # Let's force a refresh of Attribute in the next Heartbeat  
             self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
