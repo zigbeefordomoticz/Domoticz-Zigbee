@@ -331,9 +331,8 @@ def schneider_hact_heater_type( self, key, type_heater ):
             %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
     write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
 
-    if EPout in self.ListOfDevices[ key ]['Ep']:
-        if '0201' in  self.ListOfDevices[ key ]['Ep'][EPout]:
-            self.ListOfDevices[ key ]['Ep'][EPout]['0201']['e011'] = "%02x" %(new_value + 0x80)
+    if ( EPout in self.ListOfDevices[key]['Ep'] and '0201' in self.ListOfDevices[key]['Ep'][EPout] ):
+        self.ListOfDevices[ key ]['Ep'][EPout]['0201']['e011'] = "%02x" %(new_value + 0x80)
 
 
 def schneider_hact_heating_mode( self, key, mode ):
@@ -368,6 +367,7 @@ def schneider_hact_heating_mode( self, key, mode ):
     current_value = current_value - 0x80
     if (mode == "setpoint"):
         new_value = current_value & 0xFE # we set the bit 0 to 0 and dont touch the other ones . logical_AND 1111 1110
+
     elif (mode == "FIP"):
         new_value = current_value | 1  # we set the bit 0 to 1 and dont touch the other ones . logical_OR 0000 0001
 
@@ -441,7 +441,7 @@ def schneider_hact_fip_mode( self, key, mode):
     self.ListOfDevices[key]['Heartbeat'] = '0'
 
 
-def schneider_thermostat_check_and_bind (self, key, forceRebind = False):
+def schneider_thermostat_check_and_bind(self, key, forceRebind = False):
     """ bind the thermostat to the actuators based on the zoning json fie
     Arguments:
         key {[type]} -- [description]
@@ -455,7 +455,7 @@ def schneider_thermostat_check_and_bind (self, key, forceRebind = False):
     Cluster_bind1 = '0201'
     Cluster_bind2 = '0402'
     for zone in self.SchneiderZone:
-        if self.SchneiderZone[ zone ]['Thermostat']['NWKID'] == key :
+        if self.SchneiderZone[ zone ]['Thermostat']['NWKID'] == key:
             for hact in self.SchneiderZone[ zone ]['Thermostat']['HACT']:
 
                 if hact not in self.ListOfDevices:
@@ -464,20 +464,18 @@ def schneider_thermostat_check_and_bind (self, key, forceRebind = False):
                 srcIeee = self.SchneiderZone[ zone ]['Thermostat']['IEEE']
                 targetIeee = self.SchneiderZone[ zone ]['Thermostat']['HACT'][hact]['IEEE']
                 statusBind1 = WebBindStatus (self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind1)
-                
-                if (not (statusBind1 == 'requested')):
-                    if (statusBind1 != 'binded') or forceRebind:
-                        webBind(self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind1)
-                        webBind(self, targetIeee,SCHNEIDER_BASE_EP,srcIeee,SCHNEIDER_BASE_EP,Cluster_bind1)
+
+                if statusBind1 != 'requested' and ( (statusBind1 != 'binded') or forceRebind ):
+                    webBind(self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind1)
+                    webBind(self, targetIeee,SCHNEIDER_BASE_EP,srcIeee,SCHNEIDER_BASE_EP,Cluster_bind1)
 
                 statusBind2 = WebBindStatus (self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind2)
-                if not (statusBind2 == 'requested'):
-                    if (statusBind2 != 'binded') or forceRebind:
-                        webBind(self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind2)
-                        webBind(self, targetIeee,SCHNEIDER_BASE_EP,srcIeee,SCHNEIDER_BASE_EP,Cluster_bind2)
+                if statusBind2 != 'requested' and ( (statusBind2 != 'binded') or forceRebind ):
+                    webBind(self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind2)
+                    webBind(self, targetIeee,SCHNEIDER_BASE_EP,srcIeee,SCHNEIDER_BASE_EP,Cluster_bind2)
 
 
-def schneider_actuator_check_and_bind (self, key, forceRebind = False):
+def schneider_actuator_check_and_bind(self, key, forceRebind = False):
     """[summary]
         bind the actuators to the thermostat based on the zoning json fie
     Arguments:
@@ -493,7 +491,7 @@ def schneider_actuator_check_and_bind (self, key, forceRebind = False):
     Cluster_bind2 = '0402'
     for zone in self.SchneiderZone:
         for hact in self.SchneiderZone[ zone ]['Thermostat']['HACT']:
-            if hact == key :
+            if hact == key:
                 thermostat_key = self.SchneiderZone[ zone ]['Thermostat']['NWKID']
                 if thermostat_key not in self.ListOfDevices:
                     continue
@@ -501,16 +499,14 @@ def schneider_actuator_check_and_bind (self, key, forceRebind = False):
                 srcIeee = self.SchneiderZone[ zone ]['Thermostat']['HACT'][hact]['IEEE']
                 targetIeee = self.SchneiderZone[ zone ]['Thermostat']['IEEE']
                 statusBind1 = WebBindStatus (self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind1)
-                if not (statusBind1 == 'requested'):
-                    if (statusBind1 != 'binded') or forceRebind:
-                        webBind(self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind1)
-                        webBind(self, targetIeee,SCHNEIDER_BASE_EP,srcIeee,SCHNEIDER_BASE_EP,Cluster_bind1)
+                if statusBind1 != 'requested' and ( (statusBind1 != 'binded') or forceRebind ):
+                    webBind(self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind1)
+                    webBind(self, targetIeee,SCHNEIDER_BASE_EP,srcIeee,SCHNEIDER_BASE_EP,Cluster_bind1)
 
                 statusBind2 = WebBindStatus (self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind2)
-                if not (statusBind2 == 'requested'):
-                    if (statusBind2 != 'binded') or forceRebind:
-                        webBind(self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind2)
-                        webBind(self, targetIeee,SCHNEIDER_BASE_EP,srcIeee,SCHNEIDER_BASE_EP,Cluster_bind2)
+                if statusBind2 != 'requested' and ( (statusBind2 != 'binded') or forceRebind ):
+                    webBind(self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind2)
+                    webBind(self, targetIeee,SCHNEIDER_BASE_EP,srcIeee,SCHNEIDER_BASE_EP,Cluster_bind2)
 
 
 def schneider_setpoint_thermostat( self, key, setpoint):
@@ -567,6 +563,10 @@ def schneider_setpoint_actuator( self, key, setpoint):
     #                                                        |--|--------------------------------> SQN
     #                                                   |--|-------------------------------------> Cluster Frame
 
+    if key not in self.ListOfDevices:
+        loggingSchneider( self, 'Debug', "schneider_setpoint_actuator - unknown key: %s in ListOfDevices!" %(key))
+        return
+
     cluster_frame = '11'
     sqn = '00'
 
@@ -610,6 +610,10 @@ def schneider_setpoint_actuator( self, key, setpoint):
 
 def schneider_setpoint( self, key, setpoint):
 
+    if key not in self.ListOfDevices:
+        loggingSchneider( self, 'Debug', "schneider_setpoint - unknown key: %s in ListOfDevices!" %(key))
+        return
+
     if 'Model' in self.ListOfDevices[key]:
         if self.ListOfDevices[key]['Model'] == 'EH-ZB-RTS':
             schneider_setpoint_thermostat(self, key, setpoint)
@@ -628,6 +632,10 @@ def schneider_temp_Setcurrent( self, key, setpoint):
     #                                                             |--|---------------------------> Command 0xe0
     #                                                        |--|--------------------------------> SQN
     #                                                   |--|-------------------------------------> Cluster Frame
+
+    if key not in self.ListOfDevices:
+        loggingSchneider( self, 'Debug', "schneider_temp_Setcurrent - unknown key: %s in ListOfDevices!" %(key))
+        return
 
     cluster_frame = '18'
     attr = '0000'
@@ -681,6 +689,9 @@ def schneider_EHZBRTS_thermoMode( self, key, mode):
             60: 0x06,
             }
 
+    if key not in self.ListOfDevices:
+        loggingSchneider( self, 'Debug', "schneider_EHZBRTS_thermoMode - unknown key: %s in ListOfDevices!" %(key))
+        return
 
     loggingSchneider( self, 'Debug', "schneider_EHZBRTS_thermoMode - %s Mode: %s" %(key, mode), key)
 
@@ -719,7 +730,11 @@ def schneider_EHZBRTS_thermoMode( self, key, mode):
 
 
 def schneiderRenforceent( self, NWKID):
-    
+
+    if NWKID not in self.ListOfDevices:
+        loggingSchneider( self, 'Debug', "schneiderRenforceent - unknown key: %s in ListOfDevices!" %(NWKID))
+        return
+
     rescheduleAction = False
     if 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['Model'] == 'EH-ZB-VACT':
         return rescheduleAction
@@ -972,7 +987,6 @@ def importSchneiderZoning( self ):
 
     SCHNEIDER_ZONING = 'schneider_zoning.json'
 
-    
     self.SchneiderZoningFilename = self.pluginconf.pluginConf['pluginConfig'] + SCHNEIDER_ZONING
 
     if not os.path.isfile( self.SchneiderZoningFilename ) :
@@ -994,14 +1008,14 @@ def importSchneiderZoning( self ):
             # Thermostat IEEE not known!
             loggingSchneider(self,  'Error', "importSchneiderZoning - Thermostat IEEE %s do not exist" %SchneiderZoning[zone]['ieee_thermostat'])
             continue
-        
-        self.SchneiderZone[ zone ] = {}
-        self.SchneiderZone[ zone ]['Thermostat'] = {}
 
-        self.SchneiderZone[ zone ]['Thermostat']['IEEE'] = SchneiderZoning[zone]['ieee_thermostat']
+        self.SchneiderZone[zone] = {
+            'Thermostat': {'IEEE': SchneiderZoning[zone]['ieee_thermostat']}
+        }
+
         self.SchneiderZone[ zone ]['Thermostat']['NWKID'] = self.IEEE2NWK[ SchneiderZoning[zone]['ieee_thermostat'] ]
         self.SchneiderZone[ zone ]['Thermostat']['HACT'] = {}
-        
+
         if 'actuator' not in SchneiderZoning[zone]:
             # We just have a simple Thermostat
             loggingSchneider(self,  'Debug', "importSchneiderZoning - No actuators for this Zone: %s" %zone)
@@ -1020,9 +1034,7 @@ def importSchneiderZoning( self ):
                     loggingSchneider(self,  'Error', "importSchneiderZoning - Unknown HACT: %s" %_nwkid)
                     continue
 
-                self.SchneiderZone[ zone ]['Thermostat']['HACT'][ _nwkid ] = {}
-                self.SchneiderZone[ zone ]['Thermostat']['HACT'][ _nwkid ]['IEEE'] = hact
-
+                self.SchneiderZone[ zone ]['Thermostat']['HACT'][ _nwkid ] = {'IEEE': hact}
     # At that stage we have imported all informations
     loggingSchneider(self, 'Debug', "importSchneiderZoning - Zone Information: %s " %self.SchneiderZone )
 
@@ -1149,14 +1161,14 @@ def schneider_UpdateConfigureReporting( self, NwkId, Ep, ClusterId = None, Attri
     manufacturer = "0000"
     manufacturer_spec = "00"
     direction = "00"
-    
+
     addr_mode = "02"
 
     attrList = ''
     attrLen = 0
-    attributeList = []             
+    attributeList = []  
+    attrdirection = "00"           
     for attr in AttributesConfig:
-        attrdirection = "00"
         attrType = AttributesConfig[attr]['DataType']
         minInter = AttributesConfig[attr]['MinInterval']
         maxInter = AttributesConfig[attr]['MaxInterval']
