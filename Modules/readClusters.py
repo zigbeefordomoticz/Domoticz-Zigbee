@@ -1364,10 +1364,9 @@ def Cluster0102( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 # Value: 100 -> Closed
                 # Value: 0   -> Open
                 # Value: 50  -> Stopped
-                if ( 'SWBUILD_3' in self.ListOfDevices[MsgSrcAddr] and int(self.ListOfDevices[MsgSrcAddr]['SWBUILD_3'], 16) >= 0x1A and Source == '8102' ):
+                if self.pluginconf.pluginConf['InvertShutter']:
                     Domoticz.Log("==>INVERSE===")
                     value = 100 - value
-
 
         self.log.logging( "Cluster", 'Debug', "ReadCluster - %s - %s/%s - Shutter switch with neutral After correction value: %s" 
             %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr)

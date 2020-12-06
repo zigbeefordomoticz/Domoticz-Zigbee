@@ -233,6 +233,7 @@ SETTINGS = {
         'EnableLedInDark':      {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'EnableLedShutter':     {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'EnableDimmer':         {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
+        'InvertShutter':        {'type': 'bool', 'default': 1, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'EnableReleaseButton':  {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'LegrandPowerOnAfterOffOn':    {'type': 'list',
                                  'list': {'Off': 0, 'On': 1, 'Previous': 255},
