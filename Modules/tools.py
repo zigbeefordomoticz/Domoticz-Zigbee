@@ -378,13 +378,12 @@ def initDeviceInList(self, Nwkid):
 
 
 def timeStamped( self, key, Type ):
-    if key in self.ListOfDevices:
-        if 'Stamp' not in self.ListOfDevices[key]:
-            self.ListOfDevices[key]['Stamp'] = {}
-            self.ListOfDevices[key]['Stamp']['Time'] = {}
-            self.ListOfDevices[key]['Stamp']['MsgType'] = {}
-        self.ListOfDevices[key]['Stamp']['Time'] = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
-        self.ListOfDevices[key]['Stamp']['MsgType'] = "%4x" %(Type)
+    if key not in self.ListOfDevices:
+        return
+    if 'Stamp' not in self.ListOfDevices[key]:
+        self.ListOfDevices[key]['Stamp'] = {'Time': {}, 'MsgType': {}}
+    self.ListOfDevices[key]['Stamp']['Time'] = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+    self.ListOfDevices[key]['Stamp']['MsgType'] = "%4x" %(Type)
 
 
 def updSQN( self, key, newSQN) :
