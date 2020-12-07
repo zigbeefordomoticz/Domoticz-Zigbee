@@ -39,8 +39,8 @@ class LoggingManagement:
         self.FirmwareMajorVersion = FirmwareMajorVersion
         if self.LogErrorHistory:
             if self.LogErrorHistory['LastLog']:
-                if 'TimeStamp' in self.LogErrorHistory[str(self.LogErrorHistory['LastLog'])]:
-                    if self.LogErrorHistory[str(self.LogErrorHistory['LastLog'])]['TimeStamp'] == self._startTime:
+                if 'StartTime' in self.LogErrorHistory[str(self.LogErrorHistory['LastLog'])]:
+                    if self.LogErrorHistory[str(self.LogErrorHistory['LastLog'])]['StartTime'] == self._startTime:
                         self.LogErrorHistory[str(self.LogErrorHistory['LastLog'])]['FirmwareVersion'] = FirmwareVersion
                         self.LogErrorHistory[str(self.LogErrorHistory['LastLog'])]['FirmwareMajorVersion'] = FirmwareMajorVersion
 
@@ -145,7 +145,7 @@ class LoggingManagement:
             self.LogErrorHistory['LastLog'] = 0
             self.LogErrorHistory['0'] = {}
             self.LogErrorHistory['0']['LastLog'] = 0
-            self.LogErrorHistory['0']['TimeStamp'] = self._startTime
+            self.LogErrorHistory['0']['StartTime'] = self._startTime
             self.LogErrorHistory['0']['FirmwareVersion'] = self.FirmwareVersion
             self.LogErrorHistory['0']['FirmwareMajorVersion'] = self.FirmwareMajorVersion
             self.LogErrorHistory['0']['0'] = self.loggingBuildContext(module, message, nwkid, context)
@@ -153,10 +153,10 @@ class LoggingManagement:
             return # log created, leaving
         
         #check if existing log contains plugin launch time
-        if 'TimeStamp' in self.LogErrorHistory[str(self.LogErrorHistory['LastLog'])]:
+        if 'StartTime' in self.LogErrorHistory[str(self.LogErrorHistory['LastLog'])]:
             index = self.LogErrorHistory['LastLog']
             #check if launch time if the same, otherwise, create a new entry
-            if self.LogErrorHistory[str(index)]['TimeStamp'] != self._startTime:
+            if self.LogErrorHistory[str(index)]['StartTime'] != self._startTime:
                 index += 1
         else: #compatibility with older version
             index = self.LogErrorHistory['LastLog'] + 1
@@ -166,7 +166,7 @@ class LoggingManagement:
             self.LogErrorHistory['LastLog'] += 1
             self.LogErrorHistory[str(index)] = {}
             self.LogErrorHistory[str(index)]['LastLog'] = 0
-            self.LogErrorHistory[str(index)]['TimeStamp'] = self._startTime
+            self.LogErrorHistory[str(index)]['StartTime'] = self._startTime
             self.LogErrorHistory[str(index)]['FirmwareVersion'] = self.FirmwareVersion
             self.LogErrorHistory[str(index)]['FirmwareMajorVersion'] = self.FirmwareMajorVersion
             self.LogErrorHistory[str(index)]['0'] = self.loggingBuildContext(module, message, nwkid, context)
