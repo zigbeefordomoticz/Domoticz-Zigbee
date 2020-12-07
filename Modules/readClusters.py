@@ -119,24 +119,23 @@ def storeReadAttributeStatus( self, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgCl
     set_status_datastruct(self, 'ReadAttributes', MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus )
     set_timestamp_datastruct(self, 'ReadAttributes', MsgSrcAddr, MsgSrcEp, MsgClusterId, int(time()) )
 
+
 def ReadCluster(self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus, MsgAttType, MsgAttSize, MsgClusterData, Source=None):
+    start = 1000 * time()
+    instrumented_ReadCluster(self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus, MsgAttType, MsgAttSize, MsgClusterData, Source)
+    stop = 1000 * time()
+    self.ReadCluster_timing = stop - start
 
-    #=len(MsgData)
+    if self.MaxReadCluster_timing and self.ReadCluster_timing > 100:
+        self.MaxReadCluster_timing = self.ReadCluster_timing
+        Domoticz.Error("ReadCluster - required more time that time %s ms for ReadCluster(self, Devices, %s, %s, %s, %s, %s, %s, %s)" 
+            %(self.ReadCluster_timing, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID,MsgClusterData))
 
-    #if MsgLen < 24:
-    #    Domoticz.Error("ReadCluster - MsgData lenght is too short: " + str(MsgLen) + " out of 24+")
-    #    Domoticz.Error("ReadCluster - MsgData: '" +str(MsgData) + "'")
-    #    return
+    elif self.MaxReadCluster_timing is None:
+        self.MaxReadCluster_timing = self.ReadCluster_timing
 
-    #MsgSQN=MsgData[0:2]
-    #MsgSrcAddr=MsgData[2:6]
-    #MsgSrcEp=MsgData[6:8]
-    #MsgClusterId=MsgData[8:12]
-    #MsgAttrID=MsgData[12:16]
-    #MsgAttrStatus=MsgData[16:18]
-    #MsgAttType=MsgData[18:20]
-    #MsgAttSize=MsgData[20:24]
-    #MsgClusterData=MsgData[24:len(MsgData)]
+
+def instrumented_ReadCluster(self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus, MsgAttType, MsgAttSize, MsgClusterData, Source):
 
     self.statistics._clusterOK += 1
 
@@ -1397,7 +1396,7 @@ def Cluster0102( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.log.logging( "Cluster", 'Log', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
 def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData , Source):
-    
+
     # Thermostat cluster
     self.log.logging( "Cluster", 'Debug', "ReadCluster - 0201 - %s/%s AttrId: %s AttrType: %s AttSize: %s Data: %s"
             %(MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)

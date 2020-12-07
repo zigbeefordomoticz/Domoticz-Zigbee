@@ -204,6 +204,10 @@ class BasePlugin:
         self.SchneiderZone = None        # Manage Zone for Wiser Thermostat and HACT
         self.CasaiaPAC = None  # To manage Casa IA PAC configuration
 
+        self.MajDomoDevice_timing = self.MaxMajDomoDevice_timing = None
+        self.ReadCluster_timing = self.MaxReadCluster_timing = None
+        self.ZigateRead_timing = self.ZigateRead_timing = None
+
 
     def onStart(self):
 

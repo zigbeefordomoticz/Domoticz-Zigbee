@@ -22,6 +22,20 @@ from Modules.domoTools import TypeFromCluster, RetreiveSignalLvlBattery, UpdateD
 
 
 def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Color_=''):
+
+    start = 1000 * time.time()
+    instrumented_MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_, Color_)
+    stop = 1000 * time.time()
+    self.MajDomoDevice_timing = ( stop - start)
+
+    if self.MaxMajDomoDevice_timing and self.MajDomoDevice_timing > 100:
+        self.MaxMajDomoDevice_timing = self.MajDomoDevice_timing
+        Domoticz.Error("MajDomoDevice - required more time that time %s ms for MajDomoDevice(self, Devices, %s, %s, %s, %s, %s, %s)" 
+            %(self.MajDomoDevice_timing, NWKID, Ep, clusterID, value, Attribute_, Color_))
+    elif self.MaxMajDomoDevice_timing is None:
+        self.MaxMajDomoDevice_timing = self.MajDomoDevice_timing
+
+def instrumented_MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_, Color_):
     """
     MajDomoDevice
     Update domoticz device accordingly to Type found in EP and value/Color provided

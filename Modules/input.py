@@ -16,7 +16,7 @@ import time
 from datetime import datetime
 import struct
 import queue
-from time import time
+
 import json
 
 from Modules.domoMaj import MajDomoDevice
@@ -110,7 +110,26 @@ from Classes.OTA import OTAManagement
 from Classes.NetworkMap import NetworkMap
 
 
+
 def ZigateRead(self, Devices, Data, TransportInfos=None):
+
+    start = 1000 * time.time()
+    instrumented_ZigateRead(self, Devices, Data, TransportInfos)
+    stop = 1000 * time.time()
+    self.ZigateRead_timing = stop - start
+
+    if self.MaxReadCluster_timing and self.ZigateRead_timing > 100:
+        self.MaxReadCluster_timing = self.ZigateRead_timing
+        Domoticz.Error("ZigateRead - required more time that time %s ms for ZigateRead(self, Devices, %s, %s, )" 
+            %(self.ZigateRead_timing, Data, TransportInfos))
+
+    elif self.MaxReadCluster_timing is None:
+        self.MaxReadCluster_timing = self.ZigateRead_timing
+
+
+
+
+def instrumented_ZigateRead(self, Devices, Data, TransportInfos):
 
     DECODERS = {
         "0100": Decode0100,
@@ -878,7 +897,7 @@ def Decode8014(self, Devices, MsgData, MsgLQI):  # "Permit Join" status response
 
     MsgLen = len(MsgData)
     Status = MsgData[0:2]
-    timestamp = int(time())
+    timestamp = int(time.time())
 
     self.log.logging( "Input", "Debug", "Decode8014 - Permit Join status: %s" % (Status == "01"), "ffff")
 
@@ -939,7 +958,7 @@ def Decode8014(self, Devices, MsgData, MsgLQI):  # "Permit Join" status response
         "ffff",
     )
 
-    self.Ping["TimeStamp"] = int(time())
+    self.Ping["TimeStamp"] = int(time.time())
     self.Ping["Status"] = "Receive"
 
     self.log.logging( "Input", "Debug", "Ping - received", "ffff")
@@ -1297,7 +1316,7 @@ def Decode8030(self, Devices, MsgData, MsgLQI):  # Bind response
                             MsgSrcAddr,
                         )
                         self.ListOfDevices[nwkid]["Bind"][Ep][cluster]["Stamp"] = int(
-                            time()
+                            time.time()
                         )
                         self.ListOfDevices[nwkid]["Bind"][Ep][cluster][
                             "Phase"
@@ -1360,7 +1379,7 @@ def Decode8030(self, Devices, MsgData, MsgLQI):  # Bind response
                             )
                             self.ListOfDevices[nwkid]["WebBind"][Ep][cluster][
                                 destNwkid
-                            ]["Stamp"] = int(time())
+                            ]["Stamp"] = int(time.time())
                             self.ListOfDevices[nwkid]["WebBind"][Ep][cluster][
                                 destNwkid
                             ]["Phase"] = "binded"
@@ -2625,6 +2644,7 @@ def Decode8102(self, Devices, MsgData, MsgLQI):  # Attribute Reports
         MsgData = ( MsgSQN + MsgSrcAddr + MsgSrcEp + MsgClusterId + MsgAttrID + MsgAttStatus + MsgAttType + MsgAttSize + MsgClusterData )
         pluzzyDecode8102( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, MsgLQI, )
 
+
     timeStamped(self, MsgSrcAddr, 0x8102)
     loggingMessages(self, "8102", MsgSrcAddr, None, MsgLQI, MsgSQN)
     updLQI(self, MsgSrcAddr, MsgLQI)
@@ -2660,7 +2680,6 @@ def read_report_attributes( self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp
             MsgSrcAddr,
         )
 
-        lastSeenUpdate(self, Devices, NwkId=MsgSrcAddr)
         if "Health" in self.ListOfDevices[MsgSrcAddr]:
             self.ListOfDevices[MsgSrcAddr]["Health"] = "Live"
 
@@ -3263,7 +3282,7 @@ def Decode8401(
                 self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["GlobalInfos"] = (
                     "%s;%s;%s;%s;%s;%s;%s;%s;%s;%s"
                     % ( alarm1, alarm2, tamper, battery, suprrprt, restrprt, trouble, acmain, test, battdef, ) )
-                self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["TimeStamp"] = int( time() )
+                self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["TimeStamp"] = int( time.time() )
 
 
 # OTA and Remote decoding kindly authorized by https://github.com/ISO-B
