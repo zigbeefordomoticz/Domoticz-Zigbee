@@ -846,14 +846,14 @@ def zigateInit_Phase3( self ):
             zigateBlueLed( self, True)
         else:
             zigateBlueLed( self, False)
-
+#
         # Set the TX Power
         set_TxPower( self, self.pluginconf.pluginConf['TXpower_set'])
 
         # Set Certification Code
-        if self.pluginconf.pluginConf['CertificationCode'] in CERTIFICATION:
-            self.log.logging( 'Plugin', 'Status', "Zigate set to Certification : %s" %CERTIFICATION[self.pluginconf.pluginConf['CertificationCode']])
-            sendZigateCmd(self, '0019', '%02x' %self.pluginconf.pluginConf['CertificationCode'])
+        #if self.pluginconf.pluginConf['CertificationCode'] in CERTIFICATION:
+        #    self.log.logging( 'Plugin', 'Status', "Zigate set to Certification : %s" %CERTIFICATION[self.pluginconf.pluginConf['CertificationCode']])
+        #    sendZigateCmd(self, '0019', '%02x' %self.pluginconf.pluginConf['CertificationCode'])
 
         # Enable Group Management
         if self.groupmgt is None and self.pluginconf.pluginConf['enablegroupmanagement']:

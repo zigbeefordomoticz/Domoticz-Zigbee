@@ -828,7 +828,7 @@ def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
 
     if self.pluginconf.pluginConf["debugzigateCmd"]:
         self.log.logging( 'Input', 'Log', "Decod8011 Received [%s] for Nwkid  : %s with status: %s e_sqn: 0x%02x/%s" 
-            % (i_sqn, MsgSrcAddr, MsgStatus, int(MsgSEQ,16), MsgSEQ), MsgSrcAddr)
+            % (i_sqn, MsgSrcAddr, MsgStatus, int(MsgSEQ,16), int(MsgSEQ,16)), MsgSrcAddr)
 
     if MsgStatus == "00":
         lastSeenUpdate(self, Devices, NwkId=MsgSrcAddr)
@@ -889,7 +889,7 @@ def Decode8012(self, Devices, MsgData, MsgLQI):
     i_sqn = sqn_get_internal_sqn_from_aps_sqn(self.ZigateComm, MsgSQN)
     if self.pluginconf.pluginConf["debugzigateCmd"]:
         self.log.logging( 'Input', 'Log', "Decod8012 Received [%s] for Nwkid  : %s with status: %s e_sqn: 0x%02x/%s" 
-            % (i_sqn, MsgSrcNwkid, MsgStatus, int(MsgSQN,16), MsgSQN), MsgSrcNwkid)
+            % (i_sqn, MsgSrcNwkid, MsgStatus, int(MsgSQN,16), int(MsgSQN,16)), MsgSrcNwkid)
 
 
 

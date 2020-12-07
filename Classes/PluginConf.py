@@ -97,6 +97,7 @@ SETTINGS = {
         'allowForceCreationDomoDevice':  {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True, 'Advanced': True},
         'resetPluginDS':                 {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True, 'Advanced': True},
         'resetConfigureReporting':       {'type': 'bool', 'default': 0, 'current': None, 'restart': True, 'hidden': False, 'Advanced': True},
+        'reenforceConfigureReporting':   {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'resetReadAttributes':           {'type': 'bool', 'default': 0, 'current': None, 'restart': True, 'hidden': False, 'Advanced': True},
         'resetMotiondelay':              {'type': 'int',  'default': 30, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'resetSwitchSelectorPushButton': {'type': 'int',  'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
@@ -293,10 +294,6 @@ SETTINGS = {
      }
     },
 
-    'Reenforcement': { 'Order': 18, 'param': {
-        'ConfigureReporting':       {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
-        }
-    },
     # Experimental
     'Experimental': {'Order': 17, 'param': {
         'ZiGateReactTime':       {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},

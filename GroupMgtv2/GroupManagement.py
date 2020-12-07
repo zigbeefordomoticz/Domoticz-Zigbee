@@ -133,11 +133,8 @@ class GroupsManagement( object):
                     self.ScanDevicesToBeDone.remove ( [ NwkId, Ep ] )
                     scan_device_for_grp_membership( self, NwkId, Ep )
 
-        if len(self.ScanDevicesToBeDone) == 0:
-            self.GroupStatus = 'ready'
-        else:
-            self.GroupStatus = 'scan'
-            
+        self.GroupStatus = 'ready' if len(self.ScanDevicesToBeDone) == 0 else 'scan'
+
         # Group Widget are updated based on Device update
         # Might be good to do the update also on a regular basic
         if self.pluginconf.pluginConf['reComputeGroupState'] and (self.HB % 2 ) == 0:
