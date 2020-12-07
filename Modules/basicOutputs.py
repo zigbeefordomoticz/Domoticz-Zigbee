@@ -496,7 +496,7 @@ def removeZigateDevice( self, IEEE ):
     return send_zigatecmd_raw(self, "0026", ParentAddr + ChildAddr )
 
 
-def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep=ZIGATE_EP, ackIsDisabled = True ):
+def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep=ZIGATE_EP, ackIsDisabled = False ):
     # This function submits a request to send data to a remote node, with no restrictions
     # on the type of transmission, destination address, destination application profile,
     # destination cluster and destination endpoint number - these destination parameters
@@ -536,15 +536,24 @@ def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zig
     # APS RAW is always sent in NO-ACK below 31d (included)
     # APS RAW has ACK/NO-ACK option as of 31e
     self.log.logging( "debuginRawAPS", 'Debug', "raw_APS_request - ackIsDisabled: %s Addr: %s Ep: %s Cluster: %s ProfileId: %s Payload: %s" %(ackIsDisabled , targetaddr, dest_ep, cluster, profileId, payload))
-    #if self.pluginconf.pluginConf['ieeeForRawAps']:
-    #    ieee = self.ListOfDevices[ targetaddr]['IEEE']
-    #    if ackIsDisabled:
-    #        return send_zigatecmd_raw(self, "0530", '08' + ieee + zigate_ep + dest_ep + cluster + profileId + security + radius + len_payload + payload, ackIsDisabled = ackIsDisabled )
-    #    return send_zigatecmd_raw(self, "0530", '03' + ieee + zigate_ep + dest_ep + cluster + profileId + security + radius + len_payload + payload, ackIsDisabled = ackIsDisabled )
-    
-    #if ackIsDisabled:
-    #    return send_zigatecmd_raw(self, "0530", '07' + targetaddr + zigate_ep + dest_ep + cluster + profileId + security + radius + len_payload + payload, ackIsDisabled = ackIsDisabled)
-    return send_zigatecmd_raw(self, "0530", '02' + targetaddr + zigate_ep + dest_ep + cluster + profileId + security + radius + len_payload + payload, ackIsDisabled = ackIsDisabled)
+
+    # In case of Firmware < 31e 0x0530 is always on noack even if address mode 0x02 is used.
+    overwrittenackIsDisabled = ackIsDisabled
+    if self.FirmwareVersion <= '031d':
+        ackIsDisabled = False  # Force the usage of 0x02 address mode
+        overwrittenackIsDisabled = True # Indicate that we are without Ack
+
+
+    Domoticz.Log("Raw APS - ackIsDisabled: %s overwrittenackIsDisabled: %s" %(ackIsDisabled,overwrittenackIsDisabled))
+    if self.pluginconf.pluginConf['ieeeForRawAps']:
+        ieee = self.ListOfDevices[ targetaddr]['IEEE']
+        if ackIsDisabled:
+            return send_zigatecmd_raw(self, "0530", '08' + ieee + zigate_ep + dest_ep + cluster + profileId + security + radius + len_payload + payload, ackIsDisabled = overwrittenackIsDisabled )
+        return send_zigatecmd_raw(self, "0530", '03' + ieee + zigate_ep + dest_ep + cluster + profileId + security + radius + len_payload + payload, ackIsDisabled = overwrittenackIsDisabled )
+
+    if ackIsDisabled:
+        return send_zigatecmd_raw(self, "0530", '07' + targetaddr + zigate_ep + dest_ep + cluster + profileId + security + radius + len_payload + payload, ackIsDisabled = ackIsDisabled)
+    return send_zigatecmd_raw(self, "0530", '02' + targetaddr + zigate_ep + dest_ep + cluster + profileId + security + radius + len_payload + payload, ackIsDisabled = overwrittenackIsDisabled)
 
 
 def read_attribute( self, addr ,EpIn , EpOut ,Cluster ,direction , manufacturer_spec , manufacturer , lenAttr, Attr, ackIsDisabled = True):
