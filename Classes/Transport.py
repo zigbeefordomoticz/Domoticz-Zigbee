@@ -583,7 +583,7 @@ def store_ISQN_infos( self, InternalSqn, cmd, datas, ackIsDisabled, waitForRespo
     if hexCmd in CMD_PDM_ON_HOST:
         self.ListOfCommands[InternalSqn]['PDMCommand'] = True
 
-    if self.zmode == 'zigate31e' and ackIsDisabled and ZIGATE_COMMANDS[hexCmd]['8012']:
+    if self.firmware_with_8012 and ackIsDisabled and ZIGATE_COMMANDS[hexCmd]['8012']:
         self.ListOfCommands[InternalSqn]['Expected8012']  = True
 
     if not ackIsDisabled and hexCmd in CMD_WITH_ACK:
