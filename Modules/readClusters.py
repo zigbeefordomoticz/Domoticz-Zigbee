@@ -22,7 +22,7 @@ from time import time
 
 from Modules.zigateConsts import LEGRAND_REMOTE_SHUTTER, LEGRAND_REMOTE_SWITCHS, LEGRAND_REMOTES, ZONE_TYPE
 from Modules.domoMaj import MajDomoDevice
-from Modules.domoTools import lastSeenUpdate, timedOutDevice
+from Modules.domoTools import timedOutDevice
 from Modules.tools import DeviceExist, getEPforClusterType, is_hex, voltage2batteryP, checkAttribute, checkAndStoreAttributeValue, \
                         set_status_datastruct, set_timestamp_datastruct, get_isqn_datastruct
 from Modules.logging import loggingCluster
@@ -144,7 +144,7 @@ def ReadCluster(self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgCluster
         Domoticz.Error("ReadCluster - unknown device: %s" %(MsgSrcAddr))
         return
 
-    lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
+
     if not DeviceExist(self, Devices, MsgSrcAddr):
         #Pas sur de moi, mais je vois pas pkoi continuer, pas sur que de mettre a jour un device bancale soit utile
         #Domoticz.Error("ReadCluster - KeyError: MsgData = " + MsgData)
