@@ -38,7 +38,6 @@ CMD_NWK_2NDBytes = {}
 CMD_WITH_RESPONSE = {}
 RESPONSE_SQN = []
 
-THREAD_RELAX_TIME_MS = float(35 / 1000)    # 20ms of waiting time if nothing to do
 NB_SEND_PER_SECONDE = 5
 MAX_THROUGHPUT = 1 / NB_SEND_PER_SECONDE
 
@@ -155,10 +154,7 @@ class ZigateTransport(object):
 
     def thread_process_messages(self):
         Domoticz.Status("ZigateTransport: thread_process_messages Thread start.")
-        while self.frame_queue is None:
-            time.sleep( .5 )
 
-        Domoticz.Status("ZigateTransport: enter in infinite loop with Relax Time to %s" %THREAD_RELAX_TIME_MS)
         while self.running:
             frame = None
             # Sending messages ( only 1 at a time )
@@ -272,6 +268,8 @@ class ZigateTransport(object):
                 if self.pluginconf.pluginConf['ZiGateReactTime']:
                     timing = int( ( 1000 * time.time()) - self.reading_thread_timing ) 
                     self.statistics.add_timing_thread( timing)
+                    if timing > 1000:
+                        Domoticz.Log("serial_read_from_zigate %s ms spent in on_message()" %timing)
 
 
         Domoticz.Status("ZigateTransport: ZiGateSerialListen Thread stop.")
