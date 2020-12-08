@@ -168,9 +168,9 @@ class ZigateTransport(object):
                 if not self.pluginconf.pluginConf['ZiGateReactTime']: 
                     self.F_out(frame, None)            
                 else:
-                    start_time = time.time()
+                    start_time = 1000 * time.time()
                     self.F_out(frame, None)            
-                    timing = int( (time.time() - start_time ) * 1000 )
+                    timing = int( ( 1000 * time.time()) - start_time )
                     self.statistics.add_rxTiming( timing )
                     if timing > 1000:
                         Domoticz.Log("on_message: process_frame spend more than 1s (%s) Frame: %s" %( timing, frame))
@@ -247,15 +247,11 @@ class ZigateTransport(object):
         while self.running:
             # We loop until self.running is set to False, which indicate plugin shutdown
             data = None  
-            if self.pluginconf.pluginConf['ZiGateReactTime'] and self.reading_thread_timing:
-                timing = int( ( time.time() - self.reading_thread_timing ) * 1000 )   
-                self.statistics.add_timing_thread( timing)
-            self.reading_thread_timing = time.time()
 
             try:
                 data = serialConnection.read()  # Blocking Read
             except serial.SerialTimeoutException:
-                pass
+                data = None 
 
             except serial.SerialException as e:
                 Domoticz.Error("serial_read_from_zigate - error while reading %s" %(e))
@@ -267,7 +263,16 @@ class ZigateTransport(object):
                    nb_out = serialConnection.out_waiting
                    instrument_serial( self, nb_in, nb_out)
                    data += serialConnection.read( nb_in )
+
+                if self.pluginconf.pluginConf['ZiGateReactTime']:
+                    self.reading_thread_timing = 1000 * time.time()
+
                 self.on_message(data)
+
+                if self.pluginconf.pluginConf['ZiGateReactTime']:
+                    timing = int( ( 1000 * time.time()) - self.reading_thread_timing ) 
+                    self.statistics.add_timing_thread( timing)
+
 
         Domoticz.Status("ZigateTransport: ZiGateSerialListen Thread stop.")
 

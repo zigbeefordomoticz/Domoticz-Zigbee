@@ -24,7 +24,7 @@ from Modules.zigateConsts import LEGRAND_REMOTE_SHUTTER, LEGRAND_REMOTE_SWITCHS,
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import lastSeenUpdate, timedOutDevice
 from Modules.tools import DeviceExist, getEPforClusterType, is_hex, voltage2batteryP, checkAttribute, checkAndStoreAttributeValue, \
-                        set_status_datastruct, set_timestamp_datastruct, get_isqn_datastruct
+                        set_status_datastruct, set_timestamp_datastruct, get_isqn_datastruct, instrument_timing
 from Modules.sqnMgmt import sqn_get_internal_sqn_from_app_sqn, TYPE_APP_ZCL
 
 from Modules.lumi import AqaraOppleDecoding0012, readXiaomiCluster, xiaomi_leave, cube_decode, decode_vibr, decode_vibrAngle, readLumiLock
@@ -124,15 +124,15 @@ def ReadCluster(self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgCluster
     start = 1000 * time()
     instrumented_ReadCluster(self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus, MsgAttType, MsgAttSize, MsgClusterData, Source)
     stop = 1000 * time()
-    self.ReadCluster_timing = int( stop - start)
 
-    if self.MaxReadCluster_timing and self.ReadCluster_timing > 100:
-        self.MaxReadCluster_timing = self.ReadCluster_timing
-        Domoticz.Log("ReadCluster - required more time that time %s ms for ReadCluster(self, Devices, %s, %s, %s, %s, %s, %s, %s)" 
-            %(self.ReadCluster_timing, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID,MsgClusterData))
 
-    elif self.MaxReadCluster_timing is None:
-        self.MaxReadCluster_timing = self.ReadCluster_timing
+    self.ReadCluster_timing_cnt, self.ReadCluster_timing_cumul, \
+        self.ReadCluster_timing_avrg, self.ReadCluster_timing_max = instrument_timing( 'ReadCluster', int( stop - start), 
+                                                                    self.ReadCluster_timing_cnt, 
+                                                                    self.ReadCluster_timing_cumul, 
+                                                                    self.ReadCluster_timing_avrg, 
+                                                                    self.ReadCluster_timing_max)
+
 
 
 def instrumented_ReadCluster(self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus, MsgAttType, MsgAttSize, MsgClusterData, Source):

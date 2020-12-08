@@ -1099,3 +1099,15 @@ def is_ack_tobe_disabled( self, key ):
         and ( 'PowerSource' not in self.ListOfDevices[key] or self.ListOfDevices[key]['PowerSource'] != 'Battery' )
         and ( 'MacCapa' not in self.ListOfDevices[key] or self.ListOfDevices[key]['MacCapa'] != '80' )
     )
+
+
+def instrument_timing( module, timing, cnt, cumul, average, max):
+
+    cumul += timing
+    cnt += 1
+    average = int(cumul / cnt)
+    if timing > max:
+        Domoticz.Log("%s report a timing %s ms greated than the current max %s ms" %(module, timing, max))
+        max = timing
+
+    return cnt, cumul, average, max

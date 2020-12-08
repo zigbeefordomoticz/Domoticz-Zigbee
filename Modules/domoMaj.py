@@ -17,6 +17,7 @@ from Classes.LoggingManagement import LoggingManagement
 
 from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
 from Modules.widgets import SWITCH_LVL_MATRIX
+from Modules.tools import instrument_timing
 
 from Modules.domoTools import TypeFromCluster, RetreiveSignalLvlBattery, UpdateDevice_v2, RetreiveWidgetTypeList
 
@@ -26,14 +27,15 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
     start = 1000 * time.time()
     instrumented_MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_, Color_)
     stop = 1000 * time.time()
-    self.MajDomoDevice_timing = int(( stop - start))
 
-    if self.MaxMajDomoDevice_timing and self.MajDomoDevice_timing > 100:
-        self.MaxMajDomoDevice_timing = self.MajDomoDevice_timing
-        Domoticz.Log("MajDomoDevice - required more time that time %s ms for MajDomoDevice(self, Devices, %s, %s, %s, %s, %s, %s)" 
-            %(self.MajDomoDevice_timing, NWKID, Ep, clusterID, value, Attribute_, Color_))
-    elif self.MaxMajDomoDevice_timing is None:
-        self.MaxMajDomoDevice_timing = self.MajDomoDevice_timing
+    self.MajDomoDevice_timing_cnt,  self.MajDomoDevice_timing_cumul, \
+        self.MajDomoDevice_timing_avrg, self.MajDomoDevice_timing_max = instrument_timing( 'MajDomoDevices', int( stop - start), 
+                                                                    self.MajDomoDevice_timing_cnt, 
+                                                                    self.MajDomoDevice_timing_cumul, 
+                                                                    self.MajDomoDevice_timing_avrg, 
+                                                                    self.MajDomoDevice_timing_max)
+
+
 
 def instrumented_MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_, Color_):
     """
