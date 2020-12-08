@@ -37,7 +37,7 @@ class TransportStatistics:
         self._maxTiming8011 = self._cumulTiming8011 = self._cntTiming8011 = self._averageTiming8011 = 0
         self._maxTiming8012 = self._cumulTiming8012 = self._cntTiming8012 = self._averageTiming8012 = 0
         self._maxRxProcesses = self._cumulRxProcess = self._cntRxProcess = self._averageRxProcess = 0
-        self._maxthread_timing = self._cumulthread_timing = self._cntthread_timing = self._averagethread_timing = 0
+        self._max_reading_thread_timing = self._cumul_reading_thread_timing = self._cnt_reading_thread_timing = self._average_reading_thread_timing = 0
         self._start = int(time())
         self.TrendStats = []
         self.pluginconf = pluginconf
@@ -47,13 +47,13 @@ class TransportStatistics:
         return self._start
 
     def add_timing_thread( self, timing):
-        self._cumulthread_timing += timing
-        self._cntthread_timing += 1
-        self._averagethread_timing = int( (self._cumulthread_timing / self._cntthread_timing))
-        if timing > self._maxthread_timing:
-            self._maxthread_timing = timing
+        self._cumul_reading_thread_timing += timing
+        self._cnt_reading_thread_timing += 1
+        self._average_reading_thread_timing = int( (self._cumul_reading_thread_timing / self._cnt_reading_thread_timing))
+        if timing > self._max_reading_thread_timing:
+            self._max_reading_thread_timing = timing
             Domoticz.Log("Zigate Thread Serial Read Max: %s ms with an of average: %s ms" 
-                %(self._maxthread_timing, self._averagethread_timing ))
+                %(self._max_reading_thread_timing, self._average_reading_thread_timing ))
 
     def add_timing8000( self, timing):
 

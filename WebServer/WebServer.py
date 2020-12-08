@@ -336,8 +336,8 @@ class WebServer(object):
             Statistics['ZiGateRound8012TimeMaxms'] = self.statistics._maxTiming8012
             Statistics['ZiGateRound8012TimeAveragems'] = self.statistics._averageTiming8012
 
-            Statistics['ZiGateProcessTimeOnRxMax'] = self.statistics._maxRxProcesses
-            Statistics['ZiGateProcessTimeOnRxAverage'] = self.statistics._averageRxProcess
+            Statistics['ZiGateMessageProcessTimeOnRxMax'] = self.statistics._maxRxProcesses
+            Statistics['ZiGateMessageProcessTimeOnRxAverage'] = self.statistics._averageRxProcess
 
             Statistics['CRC'] =self.statistics._crcErrors
             Statistics['FrameErrors'] =self.statistics._frameErrors
@@ -358,8 +358,8 @@ class WebServer(object):
             Statistics['MaxSerialInWaiting'] = self.statistics._serialInWaiting
             Statistics['MaxSerialOutWaiting'] = self.statistics._serialOutWaiting
 
-            Statistics['MaxThreadTime'] = self.statistics._maxthread_timing
-            Statistics['AvgThreadTime'] = self.statistics._averagethread_timing
+            Statistics['MaxReadingThreadTime'] = self.statistics._max_reading_thread_timing
+            Statistics['AvgReadingThreadTime'] = self.statistics._average_reading_thread_timing
 
             _nbitems = len(self.statistics.TrendStats)
 

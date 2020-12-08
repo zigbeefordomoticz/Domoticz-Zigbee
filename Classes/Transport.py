@@ -110,7 +110,7 @@ class ZigateTransport(object):
         self.frame_queue = queue.Queue()
         self.start_thread_processing_messages( )
 
-        self.thread_timestamp = None
+        self.reading_thread_timing = None
         self.watchdog_timing = None
 
         # Call back function to send back to plugin
@@ -262,12 +262,12 @@ class ZigateTransport(object):
             nb_out = serialConnection.out_waiting
             instrument_serial( self, nb_in, nb_out)
             
-            if self.pluginconf.pluginConf['ZiGateReactTime'] and self.thread_timestamp:
-                timing = int( ( time.time() - self.thread_timestamp ) * 1000 )   
+            if self.pluginconf.pluginConf['ZiGateReactTime'] and self.reading_thread_timing:
+                timing = int( ( time.time() - self.reading_thread_timing ) * 1000 )   
                 self.statistics.add_timing_thread( timing)
                 if timing > 1000:
                     Domoticz.Log("serial_read_from_zigate spend more than 1s on previous loop ( %s )" %timing)
-            self.thread_timestamp = time.time()
+            self.reading_thread_timing = time.time()
 
             if nb_in > 0:
                 # Reading messages. Catch exception
@@ -322,10 +322,10 @@ class ZigateTransport(object):
 
         inputSocket  = outputSocket = [ tcpipConnection ]
         while self.running:
-            if self.pluginconf.pluginConf['ZiGateReactTime'] and self.thread_timestamp !=0 :
-                timing = int( ( time.time() - self.thread_timestamp ) * 1000 )   
+            if self.pluginconf.pluginConf['ZiGateReactTime'] and self.reading_thread_timing !=0 :
+                timing = int( ( time.time() - self.reading_thread_timing ) * 1000 )   
                 self.statistics.add_timing_thread( timing)
-            self.thread_timestamp = time.time()
+            self.reading_thread_timing = time.time()
 
             readable, writable, exceptional = select.select(inputSocket, outputSocket, inputSocket)
             if readable:
@@ -532,7 +532,7 @@ class ZigateTransport(object):
             self._ReqRcv += Data  # Add the incoming data
             #Domoticz.Debug("onMessage incoming data : '" + str(binascii.hexlify(self._ReqRcv).decode('utf-8')) + "'")
 
-        while 1:  # Loop, detect frame and process them.
+        while 1:  # Loop, detect frame and process, until there is no more frame.
             if len(self._ReqRcv) == 0:
                 return
 

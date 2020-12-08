@@ -124,11 +124,11 @@ def ReadCluster(self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgCluster
     start = 1000 * time()
     instrumented_ReadCluster(self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus, MsgAttType, MsgAttSize, MsgClusterData, Source)
     stop = 1000 * time()
-    self.ReadCluster_timing = stop - start
+    self.ReadCluster_timing = int( stop - start)
 
     if self.MaxReadCluster_timing and self.ReadCluster_timing > 100:
         self.MaxReadCluster_timing = self.ReadCluster_timing
-        Domoticz.Error("ReadCluster - required more time that time %s ms for ReadCluster(self, Devices, %s, %s, %s, %s, %s, %s, %s)" 
+        Domoticz.Log("ReadCluster - required more time that time %s ms for ReadCluster(self, Devices, %s, %s, %s, %s, %s, %s, %s)" 
             %(self.ReadCluster_timing, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID,MsgClusterData))
 
     elif self.MaxReadCluster_timing is None:

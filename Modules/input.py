@@ -116,11 +116,11 @@ def ZigateRead(self, Devices, Data, TransportInfos=None):
     start = 1000 * time.time()
     instrumented_ZigateRead(self, Devices, Data, TransportInfos)
     stop = 1000 * time.time()
-    self.ZigateRead_timing = stop - start
+    self.ZigateRead_timing = int( stop - start)
 
     if self.MaxReadCluster_timing and self.ZigateRead_timing > 100:
         self.MaxReadCluster_timing = self.ZigateRead_timing
-        Domoticz.Error("ZigateRead - required more time that time %s ms for ZigateRead(self, Devices, %s, %s, )" 
+        Domoticz.Log("ZigateRead - required more time that time %s ms for ZigateRead(self, Devices, %s, %s, )" 
             %(self.ZigateRead_timing, Data, TransportInfos))
 
     elif self.MaxReadCluster_timing is None:
