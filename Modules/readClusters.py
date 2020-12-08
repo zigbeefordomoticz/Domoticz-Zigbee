@@ -629,7 +629,7 @@ def UpdateBatteryAttribute( self, MsgSrcAddr, MsgSrcEp ):
                                'lumi.sen_ill.mgl01')
 
     BATTERY_200PERCENT = ( "Danalock V3", "V3-BTZB", "SML001" , "RWL021", "SPZB0001", "WarningDevice" , "SmokeSensor-N", "SmokeSensor-EM", 
-                           "SMOK_V16", "RH3001" ,"TS0201", "COSensor-N", "COSensor-EM" )
+                           "SMOK_V16", "RH3001" ,"TS0201", "COSensor-N", "COSensor-EM", "TH01", "DS01", "WB01" )
     BATTERY_3VOLTS = ( "lumi.sen_ill.mgl01", "3AFE130104020015", "3AFE140103020000", "3AFE14010402000D", "3AFE170100510001" ) + LEGRAND_REMOTES
 
     BATTERY_15_VOLTS = ( )
