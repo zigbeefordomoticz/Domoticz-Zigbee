@@ -196,13 +196,7 @@ class ZigateTransport(object):
 
     def thread_transport_watchdog(self): 
         while self.running:
-
-            if self.pluginconf.pluginConf['ZiGateReactTime'] and self.watchdog_timing:
-                timing = int( ( time.time() - self.watchdog_timing ) * 1000 )   
-                if timing > 5000:
-                    Domoticz.Log("thread_transport_watchdog spend more than 5s on previous loop ( %s )" %timing)
-                self.watchdog_timing = time.time()
-                
+            self.Thread_listen_and_read.join( timeout = 4)
             if self.running and not check_thread_alive( self.Thread_listen_and_read):
                 _context = {
                     'Error code': 'TRANS-THREADWATCHDOG-01',
@@ -210,7 +204,7 @@ class ZigateTransport(object):
                 }
                 self.logging_send_error( "thread_transport_watchdog", context=_context)
                 self.Thread_listen_and_read.start()
-            time.sleep ( 4.0) 
+
 
     #def lock_transport_mutex(self):
     #    if self.listening_transport_mutex:
@@ -260,9 +254,13 @@ class ZigateTransport(object):
 
             try:
                 data = serialConnection.read()  # Blocking Read
+            except serial.SerialTimeoutException:
+                pass
+
             except serial.SerialException as e:
                 Domoticz.Error("serial_read_from_zigate - error while reading %s" %(e))
                 data = None 
+
             if len(data) > 0:
                 nb_in = serialConnection.in_waiting
                 if nb_in > 0:
@@ -277,7 +275,8 @@ class ZigateTransport(object):
     def open_tcpip( self ):
         try:
             self._connection = socket.create_connection( (self._wifiAddress, self._wifiPort) )
-            self._connection.setblocking(0)
+            self._connection.settimeout(4.0)
+            #self._connection.setblocking(0)
 
         except socket.Exception as e:
             Domoticz.Error("Cannot open Zigate Wifi %s Port %s error: %s" %(self._wifiAddress, self._serialPort, e))
@@ -286,40 +285,34 @@ class ZigateTransport(object):
             self.listening_transport_mutex= Lock()
         if self.Event_listen_and_read is None:
             self.Event_listen_and_read = Event()
+
         if self.Thread_listen_and_read is None:
-            self.Thread_listen_and_read = Thread(
-                                        name="ZiGate tcpip listner", 
-                                        target=ZigateTransport.tcpip_listen_and_send, 
-                                        args=(self,))
+            self.Thread_listen_and_read = Thread( name="ZiGate tcpip listner",  target=ZigateTransport.tcpip_listen_and_send,  args=(self,))
             self.Thread_listen_and_read.start()
+
         self.start_thread_transport_watchdog( )
 
     def tcpip_listen_and_send( self ):
 
-        while self._connection  is None:
-            Domoticz.Log("Waiting for tcpip connection open")
-            self.Event_listen_and_read.wait(1.0)
-
         Domoticz.Status("ZigateTransport: TcpIp Connection open: %s" %self._connection)
         tcpipConnection = self._connection
-        tcpiConnectionList = [ tcpipConnection ]
 
-        inputSocket  = outputSocket = [ tcpipConnection ]
         while self.running:
+
             if self.pluginconf.pluginConf['ZiGateReactTime'] and self.reading_thread_timing !=0 :
                 timing = int( ( time.time() - self.reading_thread_timing ) * 1000 )   
                 self.statistics.add_timing_thread( timing)
             self.reading_thread_timing = time.time()
 
-            readable, writable, exceptional = select.select(inputSocket, outputSocket, inputSocket)
-            if readable:
-                # We have something to read
+            data = None
+            try:
                 data = tcpipConnection.recv(1024)
-                if data: 
-                    self.on_message(data)
+            except socket.timeout:
+                # No data after 0.5 seconds
+                pass
 
-            else:
-                self.Event_listen_and_read.wait( THREAD_RELAX_TIME_MS )
+            if data: 
+                self.on_message(data)
 
         Domoticz.Status("ZigateTransport: ZiGateTcpIpListen Thread stop.")
 
