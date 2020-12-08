@@ -389,6 +389,7 @@ class WebServer(object):
         Statistics['Rxpm'] = round(Statistics['Received'] / Statistics['Uptime'] * 60, 2)
         Statistics['Rxph'] = round(Statistics['Received'] / Statistics['Uptime'] * 3600, 2)
 
+        # LogErrorHistory . Hardcode on the UI side
         Statistics['Error'] = bool(self.log.LogErrorHistory)
         _response = prepResponseMessage( self ,setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
