@@ -388,12 +388,8 @@ class WebServer(object):
         Statistics['Rxps'] = round(Statistics['Received'] / Statistics['Uptime'], 2)
         Statistics['Rxpm'] = round(Statistics['Received'] / Statistics['Uptime'] * 60, 2)
         Statistics['Rxph'] = round(Statistics['Received'] / Statistics['Uptime'] * 3600, 2)
-        
-        if self.log.LogErrorHistory:
-            Statistics['Error'] = True
-        else:
-            Statistics['Error'] = False
 
+        Statistics['LogErrorHistory'] = bool(self.log.LogErrorHistory)
         _response = prepResponseMessage( self ,setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
