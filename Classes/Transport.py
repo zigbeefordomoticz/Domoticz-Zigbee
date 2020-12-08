@@ -159,7 +159,7 @@ class ZigateTransport(object):
             frame = None
             # Sending messages ( only 1 at a time )
             try:
-                frame = self.frame_queue.get( timeout=1 )
+                frame = self.frame_queue.get( )
                 
                 if not self.pluginconf.pluginConf['ZiGateReactTime']: 
                     self.F_out(frame, None)            
@@ -214,7 +214,7 @@ class ZigateTransport(object):
     def open_serial( self ):
 
         try:
-            self._connection = serial.Serial(self._serialPort, baudrate = BAUDS, rtscts = False, dsrdtr = False, timeout = 1)
+            self._connection = serial.Serial(self._serialPort, baudrate = BAUDS, rtscts = False, dsrdtr = False, timeout = None)
             if self._transp in ('DIN', 'V2' ):
                 self._connection.rtscts = True
 
@@ -272,7 +272,9 @@ class ZigateTransport(object):
                         Domoticz.Log("serial_read_from_zigate %s ms spent in on_message()" %timing)
 
 
+        self.frame_queue.put("")
         Domoticz.Status("ZigateTransport: ZiGateSerialListen Thread stop.")
+        self.Thread_proc_zigate_frame.join()
 
     # Manage TCP connection
     def open_tcpip( self ):
@@ -414,6 +416,8 @@ class ZigateTransport(object):
         self.running = False # It will shutdown the Thread 
     
         if self.pluginconf.pluginConf['MultiThreaded'] and self._connection and isinstance( self._connection, serial.serialposix.Serial):
+            self._connection.cancel_read()
+            self.Thread_listen_and_read.join()
             self._connection.close()
         else:
             self._connection.Disconnect()
