@@ -152,7 +152,6 @@ def ReadCluster(self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgCluster
         self.log.logging(  "Cluster", 'Error',"ReadCluster - unknown device: %s" %(MsgSrcAddr),MsgSrcAddr,_context)
         return
 
-    lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
     if not DeviceExist(self, Devices, MsgSrcAddr):
         #Pas sur de moi, mais je vois pas pkoi continuer, pas sur que de mettre a jour un device bancale soit utile
         #Domoticz.Error("ReadCluster - KeyError: MsgData = " + MsgData)
