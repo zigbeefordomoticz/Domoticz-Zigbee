@@ -77,6 +77,7 @@ class ZigateTransport(object):
         self.FirmwareMajorVersion = None
         self.zmode = pluginconf.pluginConf['Zmode'].lower()
         self.logging_send('Status', "==> Transport Mode: %s" % self.zmode)
+        
         self.firmware_with_aps_sqn = False  # Available from 31d
         self.firmware_with_8012 = False     # Available from 31e
 
@@ -2508,6 +2509,7 @@ def get_checksum(msgtype, length, datas):
     temp ^= int(msgtype[2:4], 16)
     temp ^= int(length[0:2], 16)
     temp ^= int(length[2:4], 16)
+    chk = 0
     for i in range(0, len(datas), 2):
         temp ^= int(datas[i:i + 2], 16)
         chk = hex(temp)
