@@ -4,7 +4,6 @@
 # Author: zaraki673 & pipiche38
 #
 
-from io import BufferedIOBase
 import Domoticz
 import binascii
 import struct
