@@ -115,13 +115,9 @@ def getEPforClusterType( self, NWKID, ClusterType ) :
     return EPlist
 
 
-def getClusterListforEP( self, NWKID, Ep ) :
+def getClusterListforEP( self, NWKID, Ep ):
 
-    ClusterList = []
-
-    for cluster in ['fc00', '0500', '0502', '0406', '0400', '0402', '0001']:
-        if cluster in self.ListOfDevices[NWKID]['Ep'][Ep]:
-            ClusterList.append(cluster)
+    ClusterList = [ cluster for cluster in ['fc00', '0500', '0502', '0406', '0400', '0402', '0001'] if cluster in self.ListOfDevices[NWKID]['Ep'][Ep] ]
 
     if self.ListOfDevices[NWKID]['Ep'][Ep] :
         for cluster in self.ListOfDevices[NWKID]['Ep'][Ep] :
@@ -137,10 +133,7 @@ def getEpForCluster( self, nwkid, ClusterId):
     If not found return Ep: 01
     """
 
-    EPout = []
-    for tmpEp in self.ListOfDevices[nwkid]['Ep']:
-        if ClusterId in self.ListOfDevices[nwkid]['Ep'][tmpEp]:
-            EPout.append( tmpEp )
+    EPout = [ tmpEp for tmpEp in self.ListOfDevices[nwkid]['Ep'] if ClusterId in self.ListOfDevices[nwkid]['Ep'][tmpEp] ]
 
     if not EPout:
         return EPout
@@ -284,7 +277,6 @@ def reconnectNWkDevice( self, newNWKID, IEEE, oldNWKID):
 
 
 def removeNwkInList( self, NWKID) :
-
     del self.ListOfDevices[NWKID]
 
 
@@ -300,21 +292,17 @@ def removeDeviceInList( self, Devices, IEEE, Unit ):
     key = self.IEEE2NWK[IEEE]
     ID = Devices[Unit].ID
 
-    Domoticz.Log("removeDeviceInList - request to remove Device: %s with IEEE: %s " %(key, IEEE))
+    Domoticz.Log("removeDeviceInList - request to remove Device: %s with IEEE: %s " %(key, IEEE) )
 
     if 'ClusterTye' in self.ListOfDevices[key]:               # We are in the old fasho V. 3.0.x Where ClusterType has been migrated from Domoticz
         if  str(ID) in self.ListOfDevices[key]['ClusterType']  :
-            Domoticz.Log("removeDeviceInList - removing : "+str(ID) +" in "+str(self.ListOfDevices[key]['ClusterType']) )
+            Domoticz.Log("removeDeviceInList - removing : %s in %s" %(ID,str(self.ListOfDevices[key]['ClusterType']) ))
             del self.ListOfDevices[key]['ClusterType'][ID] # Let's remove that entry
     else:
         for tmpEp in self.ListOfDevices[key]['Ep']: 
                 # Search this DeviceID in ClusterType
-            if (
-                'ClusterType' in self.ListOfDevices[key]['Ep'][tmpEp]
-                and str(ID)
-                in self.ListOfDevices[key]['Ep'][tmpEp]['ClusterType']
-            ):
-                Domoticz.Log("removeDeviceInList - removing : "+str(ID) +" in " +str(tmpEp) + " - " +str(self.ListOfDevices[key]['Ep'][tmpEp]['ClusterType']) )
+            if ( 'ClusterType' in self.ListOfDevices[key]['Ep'][tmpEp] and str(ID) in self.ListOfDevices[key]['Ep'][tmpEp]['ClusterType'] ):
+                Domoticz.Log("removeDeviceInList - removing : %s with Ep: %s in - %s" %(ID, tmpEp,str(self.ListOfDevices[key]['Ep'][tmpEp]['ClusterType']) ))
                 del self.ListOfDevices[key]['Ep'][tmpEp]['ClusterType'][str(ID)]
 
     # Finaly let's see if there is any Devices left in this .
@@ -335,46 +323,48 @@ def removeDeviceInList( self, Devices, IEEE, Unit ):
 
         self.adminWidgets.updateNotificationWidget( Devices, 'Device fully removed %s with IEEE: %s' %( Devices[Unit].Name, IEEE ))
         Domoticz.Status('Device %s with IEEE: %s fully removed from the system.' %(Devices[Unit].Name, IEEE))
-
         return True
     return False
 
 
 def initDeviceInList(self, Nwkid):
-    if Nwkid not in self.ListOfDevices and Nwkid != '':
-        self.ListOfDevices[Nwkid]={}
-        self.ListOfDevices[Nwkid]['Version']="3"
-        self.ListOfDevices[Nwkid]['ZDeviceName']=""
-        self.ListOfDevices[Nwkid]['Status']="004d"
-        self.ListOfDevices[Nwkid]['SQN']=''
-        self.ListOfDevices[Nwkid]['Ep']={}
-        self.ListOfDevices[Nwkid]['Heartbeat']="0"
-        self.ListOfDevices[Nwkid]['RIA']="0"
-        self.ListOfDevices[Nwkid]['LQI']={}
-        self.ListOfDevices[Nwkid]['Battery']={}
-        self.ListOfDevices[Nwkid]['Model']= ''
-        self.ListOfDevices[Nwkid]['ForceAckCommands'] = []
-        self.ListOfDevices[Nwkid]['MacCapa']={}
-        self.ListOfDevices[Nwkid]['IEEE']={}
-        self.ListOfDevices[Nwkid]['Type']={}
-        self.ListOfDevices[Nwkid]['ProfileID']={}
-        self.ListOfDevices[Nwkid]['ZDeviceID']={}
-        self.ListOfDevices[Nwkid]['App Version']=''
-        self.ListOfDevices[Nwkid]['Attributes List']={}
-        self.ListOfDevices[Nwkid]['DeviceType']=''
-        self.ListOfDevices[Nwkid]['HW Version']=''
-        self.ListOfDevices[Nwkid]['Last Cmds']= []
-        self.ListOfDevices[Nwkid]['LogicalType']=''
-        self.ListOfDevices[Nwkid]['Manufacturer']=''
-        self.ListOfDevices[Nwkid]['Manufacturer Name']=''
-        self.ListOfDevices[Nwkid]['NbEp']=''
-        self.ListOfDevices[Nwkid]['PowerSource']=''
-        self.ListOfDevices[Nwkid]['ReadAttributes']={}
-        self.ListOfDevices[Nwkid]['ReceiveOnIdle']=''
-        self.ListOfDevices[Nwkid]['Stack Version']=''
-        self.ListOfDevices[Nwkid]['Stamp']={}
-        self.ListOfDevices[Nwkid]['ZCL Version']=''
-        self.ListOfDevices[Nwkid]['Health']=''
+    if Nwkid in self.ListOfDevices or Nwkid == '':
+        return
+
+    self.ListOfDevices[Nwkid] = {
+        'Version': "3",
+        'ZDeviceName': "",
+        'Status': "004d",
+        'SQN': '',
+        'Ep': {},
+        'Heartbeat': "0",
+        'RIA': "0",
+        'LQI': {},
+        'Battery': {},
+        'Model': '',
+        'ForceAckCommands': [],
+        'MacCapa': {},
+        'IEEE': {},
+        'Type': {},
+        'ProfileID': {},
+        'ZDeviceID': {},
+        'App Version': '',
+        'Attributes List': {},
+        'DeviceType': '',
+        'HW Version': '',
+        'Last Cmds': [],
+        'LogicalType': '',
+        'Manufacturer': '',
+        'Manufacturer Name': '',
+        'NbEp': '',
+        'PowerSource': '',
+        'ReadAttributes': {},
+        'ReceiveOnIdle': '',
+        'Stack Version': '',
+        'Stamp': {},
+        'ZCL Version': '',
+        'Health': '',
+    }
 
 
 def timeStamped( self, key, Type ):
