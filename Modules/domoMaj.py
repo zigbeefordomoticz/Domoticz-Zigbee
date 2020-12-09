@@ -24,12 +24,15 @@ from Modules.domoTools import TypeFromCluster, RetreiveSignalLvlBattery, UpdateD
 
 def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Color_=''):
 
-    start = 1000 * time.time()
+    if self.pluginconf.pluginConf['ZiGateReactTime']: 
+        start = 1000 * time.time()
+    
     instrumented_MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_, Color_)
-    stop = 1000 * time.time()
 
-    self.MajDomoDevice_timing_cnt,  self.MajDomoDevice_timing_cumul, \
-        self.MajDomoDevice_timing_avrg, self.MajDomoDevice_timing_max = instrument_timing( 'MajDomoDevices', int( stop - start), 
+    if self.pluginconf.pluginConf['ZiGateReactTime']: 
+        stop = 1000 * time.time()
+        self.MajDomoDevice_timing_cnt,  self.MajDomoDevice_timing_cumul, \
+            self.MajDomoDevice_timing_avrg, self.MajDomoDevice_timing_max = instrument_timing( 'MajDomoDevices', int( stop - start), 
                                                                     self.MajDomoDevice_timing_cnt, 
                                                                     self.MajDomoDevice_timing_cumul, 
                                                                     self.MajDomoDevice_timing_avrg, 

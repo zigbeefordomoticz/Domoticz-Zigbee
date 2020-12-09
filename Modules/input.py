@@ -113,16 +113,20 @@ from Classes.NetworkMap import NetworkMap
 
 def ZigateRead(self, Devices, Data, TransportInfos=None):
 
-    start = 1000 * time.time()
+    if self.pluginconf.pluginConf['ZiGateReactTime']: 
+        start = 1000 * time.time()
+
     instrumented_ZigateRead(self, Devices, Data, TransportInfos)
-    stop = 1000 * time.time()
-         
-    self.ZigateRead_timing_cnt, self.ZigateRead_timing_cumul, \
-        self.ZigateRead_timing_avrg, self.ZigateRead_timing_max  = instrument_timing( 'ZigateRead', int( stop - start) , 
-                                            self.ZigateRead_timing_cnt, 
-                                            self.ZigateRead_timing_cumul, 
-                                            self.ZigateRead_timing_avrg, 
-                                            self.ZigateRead_timing_max)
+
+    if self.pluginconf.pluginConf['ZiGateReactTime']: 
+        stop = 1000 * time.time()
+             
+        self.ZigateRead_timing_cnt, self.ZigateRead_timing_cumul, \
+            self.ZigateRead_timing_avrg, self.ZigateRead_timing_max  = instrument_timing( 'ZigateRead', int( stop - start) , 
+                                                self.ZigateRead_timing_cnt, 
+                                                self.ZigateRead_timing_cumul, 
+                                                self.ZigateRead_timing_avrg, 
+                                                self.ZigateRead_timing_max)
 
 def instrumented_ZigateRead(self, Devices, Data, TransportInfos):
 
