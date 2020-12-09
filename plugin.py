@@ -246,18 +246,24 @@ class BasePlugin:
 
         # Import PluginConf.txt
         Domoticz.Log("DomoticzVersion: %s" %Parameters["DomoticzVersion"])
-        if Parameters["DomoticzVersion"].find('build') == -1:
-            self.VersionNewFashion = False
-            # Old fashon Versioning
-            major, minor = Parameters["DomoticzVersion"].split('.')
-            Domoticz.Error("Domoticz version %s %s %s not supported, please upgrade to a more recent" %(Parameters["DomoticzVersion"], major, minor))
+        lst_version = Parameters["DomoticzVersion"].split(' ')
+        if len(lst_version) == 1:
+            # No Build 
+            major, minor = lst_version[0].split('.')
+            if major < 2020:
+                self.VersionNewFashion = False
+                # Old fashon Versioning
+                Domoticz.Error("Domoticz version %s %s %s not supported, please upgrade to a more recent" %(Parameters["DomoticzVersion"], major, minor))
+                return
+
+        if len(lst_version) != 3:
+            Domoticz.Error("Domoticz version %s unknown not supported, please upgrade to a more recent" %(Parameters["DomoticzVersion"]))
             return
 
+        major, minor = lst_version[0].split('.')
+        build = lst_version[2].strip(')')
         self.VersionNewFashion = True
-        majorminor, dummy, build = Parameters["DomoticzVersion"].split(' ')
-        build = build.strip(')')
         self.DomoticzBuild = int(build)
-        major, minor = majorminor.split('.')
         self.DomoticzMajor = int(major)
         self.DomoticzMinor = int(minor)
 
