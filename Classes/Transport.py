@@ -160,7 +160,7 @@ class ZigateTransport(object):
             # Sending messages ( only 1 at a time )
             try:
                 frame = self.frame_queue.get( )
-                if frame == '':
+                if frame == 'STOP':
                     break
                 
                 if not self.pluginconf.pluginConf['ZiGateReactTime']: 
@@ -276,7 +276,7 @@ class ZigateTransport(object):
                         Domoticz.Log("serial_read_from_zigate %s ms spent in on_message()" %timing)
 
 
-        self.frame_queue.put("") # In order to unblock the Blocking get()
+        self.frame_queue.put("STOP") # In order to unblock the Blocking get()
         Domoticz.Status("ZigateTransport: ZiGateSerialListen Thread stop.")
         self.Thread_proc_zigate_frame.join()
 
@@ -1308,7 +1308,7 @@ def process_frame(self, frame):
         # Data indication
         self.logging_receive( 'Debug', "process_frame - 8002 MsgType: %s MsgLength: %s MsgCRC: %s" % (MsgType, MsgLength, MsgCRC))  
         #self.F_out( process8002( self, frame ), None)
-        self.frame_queue.put( frame )
+        self.frame_queue.put( process8002( self, frame ) )
         ready_to_send_if_needed(self)
         return
 
