@@ -1427,7 +1427,7 @@ def handle_9999( self, MsgData):
     #    'ExtendedErrorDesc': StatusMsg
     #}
     #self.logging_send_error(  "handle_9999 Extended Code: %s" %MsgData, context=_context)
-    self.logging_send( 'Log', "handle_9999 - Extended Error Code: [%s] %s" %(MsgData, StatusMsg))
+    self.logging_send( 'Log', "handle_9999 - Last PDUs infos ( n: %s a: %s) Extended Error Code: [%s] %s" %(self.npdu, self.apdu, MsgData, StatusMsg))
 
 # 1 ### 0x8000
 
