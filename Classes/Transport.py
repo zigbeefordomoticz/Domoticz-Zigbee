@@ -1421,12 +1421,13 @@ def handle_9999( self, MsgData):
     if  MsgData in ZCL_EXTENDED_ERROR_CODES:
         StatusMsg = ZCL_EXTENDED_ERROR_CODES[MsgData]
 
-    _context = {
-        'Error code': 'TRANS-9999-01',
-        'ExtendedErrorCode': MsgData,
-        'ExtendedErrorDesc': StatusMsg
-    }
-    self.logging_send_error(  "handle_9999 Extended Code: %s" %MsgData, context=_context)
+    #_context = {
+    #    'Error code': 'TRANS-9999-01',
+    #    'ExtendedErrorCode': MsgData,
+    #    'ExtendedErrorDesc': StatusMsg
+    #}
+    #self.logging_send_error(  "handle_9999 Extended Code: %s" %MsgData, context=_context)
+    self.logging_send( 'Log', "handle_9999 - Extended Error Code: [%s] %s" %(MsgData, StatusMsg))
 
 # 1 ### 0x8000
 
@@ -1688,7 +1689,7 @@ def check_and_process_8012_31e( self, MsgType, MsgStatus, MsgAddr, MsgSQN, nPDU,
 
     if ( InternSqn in self.ListOfCommands and self.pluginconf.pluginConf["debugzigateCmd"] ):
         self.logging_send('Log', "8012/8702 Received [%s] for Command: %s with status: %s e_sqn: 0x%02x/%s npdu: %s / apdu: %s - size of SendQueue: %s" % (
-            InternSqn,  self.ListOfCommands[InternSqn]['Cmd'], MsgStatus, int(MsgSQN,16), MsgSQN, nPDU, aPDU , self.loadTransmit()))
+            InternSqn,  self.ListOfCommands[InternSqn]['Cmd'], MsgStatus, int(MsgSQN,16), int(MsgSQN,16), nPDU, aPDU , self.loadTransmit()))
 
     # Statistics on ZiGate reacting time to process the command
     if self.pluginconf.pluginConf['ZiGateReactTime']:
@@ -1796,7 +1797,7 @@ def check_and_process_8011_31d(self, Status, NwkId, Ep, MsgClusterId, ExternSqn)
 
     if InternSqn in self.ListOfCommands and self.pluginconf.pluginConf["debugzigateCmd"]:
         self.logging_send('Log', "8011      Received [%s] for Command: %s with status: %s e_sqn: 0x%02x/%s                     - size of SendQueue: %s" 
-            % (InternSqn,  self.ListOfCommands[InternSqn]['Cmd'], Status, int(ExternSqn,16), ExternSqn, self.loadTransmit()))
+            % (InternSqn,  self.ListOfCommands[InternSqn]['Cmd'], Status, int(ExternSqn,16), int(ExternSqn,16), self.loadTransmit()))
 
     # Statistics on ZiGate reacting time to process the command
     if InternSqn in self.ListOfCommands and self.pluginconf.pluginConf['ZiGateReactTime']:
