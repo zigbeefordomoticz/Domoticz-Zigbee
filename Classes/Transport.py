@@ -9,7 +9,7 @@ import binascii
 import struct
 
 import time
-import sys, os, traceback
+import os
 
 from datetime import datetime
 

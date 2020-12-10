@@ -1091,13 +1091,13 @@ def is_ack_tobe_disabled( self, key ):
     )
 
 
-def instrument_timing( module, timing, cnt, cumul, average, max):
+def instrument_timing( module, timing, cnt_timing, cumul_timing, aver_timing, max_timing):
 
-    cumul += timing
-    cnt += 1
-    average = int(cumul / cnt)
-    if timing > max:
-        Domoticz.Log("%s report a timing %s ms greated than the current max %s ms" %(module, timing, max))
-        max = timing
+    cumul_timing += timing
+    cnt_timing += 1
+    aver_timing = int(cumul_timing / cnt_timing)
+    if timing > max_timing:
+        Domoticz.Log("%s report a timing %s ms greated than the current max %s ms" %(module, timing, max_timing))
+        max_timing = timing
 
-    return cnt, cumul, average, max
+    return cnt_timing, cumul_timing, aver_timing, max_timing

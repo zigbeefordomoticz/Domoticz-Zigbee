@@ -838,9 +838,7 @@ def zigateInit_Phase3( self ):
         self.log.logging( 'Plugin', 'Error', "Firmware level not supported, please update ZiGate firmware")
         return
 
-    elif self.FirmwareVersion.lower() == '030e':
-        self.log.logging( 'Plugin', 'Status', "You are not on the latest firmware version, This version is known to have problem loosing Xiaomi devices, please consider to upgrae")
-    elif self.FirmwareVersion.lower() == '030f' and self.FirmwareMajorVersion == '0002':
+    if self.FirmwareVersion.lower() == '030f' and self.FirmwareMajorVersion == '0002':
         Domoticz.Error("You are not running on the Official 3.0f version (it was a pre-3.0f)")
     elif self.FirmwareVersion.lower() == '2100':
         self.log.logging( 'Plugin', 'Status', "Firmware for Pluzzy devices")

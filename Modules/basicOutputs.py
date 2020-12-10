@@ -319,14 +319,14 @@ def maskChannel( channel ):
 
     elif isinstance(channel, str):
         lstOfChannels = channel.strip().split(',')
-        for channel in lstOfChannels:
-            if channel.isdigit():
-                if int(channel) in CHANNELS:
-                    mask += CHANNELS[int(channel)]
+        for chnl in lstOfChannels:
+            if chnl.isdigit():
+                if int(chnl) in CHANNELS:
+                    mask += CHANNELS[int(chnl)]
                 else:
-                    Domoticz.Error("Requested channel not supported by Zigate: %s" %channel)
+                    Domoticz.Error("Requested channel not supported by Zigate: %s" %chnl)
             else:
-                Domoticz.Error("maskChannel - invalid channel %s" %channel)
+                Domoticz.Error("maskChannel - invalid channel %s" %chnl)
     else:
         Domoticz.Errors("Requested channel is invalid: %s" %channel)
 
@@ -787,4 +787,3 @@ def unknown_device_nwkid( self, nwkid ):
     u8RequestType = '00'
     u8StartIndex = '00'
     sendZigateCmd(self ,'0041', '02' + nwkid + u8RequestType + u8StartIndex )
-
