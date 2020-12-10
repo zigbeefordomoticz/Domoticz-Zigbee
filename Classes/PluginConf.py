@@ -97,6 +97,7 @@ SETTINGS = {
         'allowForceCreationDomoDevice':  {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True, 'Advanced': True},
         'resetPluginDS':                 {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True, 'Advanced': True},
         'resetConfigureReporting':       {'type': 'bool', 'default': 0, 'current': None, 'restart': True, 'hidden': False, 'Advanced': True},
+        'reenforceConfigureReporting':   {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'resetReadAttributes':           {'type': 'bool', 'default': 0, 'current': None, 'restart': True, 'hidden': False, 'Advanced': True},
         'resetMotiondelay':              {'type': 'int',  'default': 30, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'resetSwitchSelectorPushButton': {'type': 'int',  'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
@@ -162,7 +163,7 @@ SETTINGS = {
         'forceAckOnZCL':   {'type': 'bool', 'default': 0,      'current': None, 'restart': False, 'hidden': False,  'Advanced': True},
         'disableAckOnZCL': {'type': 'bool', 'default': 0,      'current': None, 'restart': False, 'hidden': False,  'Advanced': True},
         'waitForResponse': {'type': 'bool', 'default': 0,      'current': None, 'restart': False, 'hidden': True,   'Advanced': True},
-        'MultiThreaded':   {'type': 'bool', 'default': 0,      'current': None, 'restart': True,  'hidden': False,   'Advanced': True},
+        'MultiThreaded':   {'type': 'bool', 'default': 1,      'current': None, 'restart': True,  'hidden': False,   'Advanced': True},
         'ieeeForRawAps':   {'type': 'bool', 'default': 0,      'current': None, 'restart': True,  'hidden': True,   'Advanced': True},
         }
     },
@@ -294,10 +295,6 @@ SETTINGS = {
      }
     },
 
-    'Reenforcement': { 'Order': 18, 'param': {
-        'ConfigureReporting':       {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
-        }
-    },
     # Experimental
     'Experimental': {'Order': 17, 'param': {
         'ZiGateReactTime':       {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
@@ -306,7 +303,7 @@ SETTINGS = {
         'AnnoucementV0':         {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True, 'Advanced': True},
         'AnnoucementV1':         {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True, 'Advanced': True},
         'AnnoucementV2':         {'type': 'bool', 'default': 1, 'current': None, 'restart': False, 'hidden': True, 'Advanced': True},
-
+        'SerialReadV2':          {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'expJsonDatabase':       {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'XiaomiLeave':           {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'rebindLivolo':          {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': False},
@@ -349,8 +346,6 @@ class PluginConf:
         _path_check( self )
         _param_checking( self )
 
-
-
     def write_Settings(self):
         # serialize json format the pluginConf '
         # Only the arameters which are different than default '
@@ -369,32 +364,6 @@ class PluginConf:
 
         with open(pluginConfFile, 'wt') as handle:
             json.dump(write_pluginConf, handle, sort_keys=True, indent=2)
-
-
-def _path_check( self ):
-    
-    for theme in SETTINGS:
-        for param in SETTINGS[theme]['param']:
-            if SETTINGS[theme]['param'][param]['type'] == 'path' and not os.path.exists(self.pluginConf[param]):
-                Domoticz.Error("Cannot access path: %s" %
-                                self.pluginConf[param])
-
-
-
-def _param_checking( self ):
-    # Let's check the Type
-    for theme in SETTINGS:
-        for param in SETTINGS[theme]['param']:
-            if self.pluginConf[param] != SETTINGS[theme]['param'][param]['default']:
-                if SETTINGS[theme]['param'][param]['type'] == 'hex':
-                    if isinstance(self.pluginConf[param], str):
-                        self.pluginConf[param] = int(
-                            self.pluginConf[param], 16)
-                    Domoticz.Status("%s set to 0x%x" %
-                                    (param, self.pluginConf[param]))
-                else:
-                    Domoticz.Status("%s set to %s" %
-                                    (param, self.pluginConf[param]))
 
 def _load_Settings(self):
     # deserialize json format of pluginConf'
@@ -471,7 +440,31 @@ def _import_oldfashon_param( self, tmpPluginConf):
 
     self.write_Settings()
 
-        
+def _path_check( self ):
+    
+    for theme in SETTINGS:
+        for param in SETTINGS[theme]['param']:
+            if SETTINGS[theme]['param'][param]['type'] == 'path' and not os.path.exists(self.pluginConf[param]):
+                Domoticz.Error("Cannot access path: %s" %
+                                self.pluginConf[param])
+
+def _param_checking( self ):
+    # Let's check the Type
+    for theme in SETTINGS:
+        for param in SETTINGS[theme]['param']:
+            if self.pluginConf[param] == SETTINGS[theme]['param'][param]['default']:
+                continue
+
+            if SETTINGS[theme]['param'][param]['type'] == 'hex':
+                if isinstance(self.pluginConf[param], str):
+                    self.pluginConf[param] = int(
+                        self.pluginConf[param], 16)
+                Domoticz.Status("%s set to 0x%x" %
+                                (param, self.pluginConf[param]))
+            else:
+                Domoticz.Status("%s set to %s" %
+                                (param, self.pluginConf[param]))
+     
 def setup_folder_parameters( self , homedir):
     for theme in SETTINGS:
         for param in SETTINGS[theme]['param']:

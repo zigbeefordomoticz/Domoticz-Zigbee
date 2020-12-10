@@ -300,11 +300,7 @@ def lastSeenUpdate( self, Devices, Unit=None, NwkId=None):
             return
 
         if 'Stamp' not in self.ListOfDevices[NwkId]:
-            self.ListOfDevices[NwkId]['Stamp'] = {}
-            self.ListOfDevices[NwkId]['Stamp']['Time'] = {}
-            self.ListOfDevices[NwkId]['Stamp']['MsgType'] = {}
-            self.ListOfDevices[NwkId]['Stamp']['LastSeen'] = 0
-
+            self.ListOfDevices[NwkId]['Stamp'] = {'Time': {}, 'MsgType': {}, 'LastSeen': 0}
         if 'LastSeen' not in self.ListOfDevices[NwkId]['Stamp']:
             self.ListOfDevices[NwkId]['Stamp']['LastSeen'] = 0
 

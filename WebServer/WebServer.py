@@ -336,8 +336,8 @@ class WebServer(object):
             Statistics['ZiGateRound8012TimeMaxms'] = self.statistics._maxTiming8012
             Statistics['ZiGateRound8012TimeAveragems'] = self.statistics._averageTiming8012
 
-            Statistics['ZiGateProcessTimeOnRxMax'] = self.statistics._maxRxProcesses
-            Statistics['ZiGateProcessTimeOnRxAverage'] = self.statistics._averageRxProcess
+            Statistics['ZiGateMessageProcessTimeOnRxMax'] = self.statistics._maxRxProcesses
+            Statistics['ZiGateMessageProcessTimeOnRxAverage'] = self.statistics._averageRxProcess
 
             Statistics['CRC'] =self.statistics._crcErrors
             Statistics['FrameErrors'] =self.statistics._frameErrors
@@ -357,6 +357,9 @@ class WebServer(object):
 
             Statistics['MaxSerialInWaiting'] = self.statistics._serialInWaiting
             Statistics['MaxSerialOutWaiting'] = self.statistics._serialOutWaiting
+
+            Statistics['MaxReadingThreadTime'] = self.statistics._max_reading_thread_timing
+            Statistics['AvgReadingThreadTime'] = self.statistics._average_reading_thread_timing
 
             _nbitems = len(self.statistics.TrendStats)
 
@@ -385,12 +388,9 @@ class WebServer(object):
         Statistics['Rxps'] = round(Statistics['Received'] / Statistics['Uptime'], 2)
         Statistics['Rxpm'] = round(Statistics['Received'] / Statistics['Uptime'] * 60, 2)
         Statistics['Rxph'] = round(Statistics['Received'] / Statistics['Uptime'] * 3600, 2)
-        
-        if self.log.LogErrorHistory:
-            Statistics['Error'] = True
-        else:
-            Statistics['Error'] = False
 
+        # LogErrorHistory . Hardcode on the UI side
+        Statistics['Error'] = bool(self.log.LogErrorHistory)
         _response = prepResponseMessage( self ,setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':

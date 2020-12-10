@@ -17,11 +17,30 @@ from Classes.LoggingManagement import LoggingManagement
 
 from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
 from Modules.widgets import SWITCH_LVL_MATRIX
+from Modules.tools import instrument_timing
 
 from Modules.domoTools import TypeFromCluster, RetreiveSignalLvlBattery, UpdateDevice_v2, RetreiveWidgetTypeList
 
 
 def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Color_=''):
+
+    if self.pluginconf.pluginConf['ZiGateReactTime']: 
+        start = 1000 * time.time()
+    
+    instrumented_MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_, Color_)
+
+    if self.pluginconf.pluginConf['ZiGateReactTime']: 
+        stop = 1000 * time.time()
+        self.MajDomoDevice_timing_cnt,  self.MajDomoDevice_timing_cumul, \
+            self.MajDomoDevice_timing_avrg, self.MajDomoDevice_timing_max = instrument_timing( 'MajDomoDevices', int( stop - start), 
+                                                                    self.MajDomoDevice_timing_cnt, 
+                                                                    self.MajDomoDevice_timing_cumul, 
+                                                                    self.MajDomoDevice_timing_avrg, 
+                                                                    self.MajDomoDevice_timing_max)
+
+
+
+def instrumented_MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_, Color_):
     """
     MajDomoDevice
     Update domoticz device accordingly to Type found in EP and value/Color provided
