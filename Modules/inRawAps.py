@@ -48,7 +48,11 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Man
         'Schneider': schneiderReadRawAPS,
         'LUMI': lumiReadRawAPS,
         'Philips' : philipsReadRawAPS,
+        "_TYST11_jeaxp72v" : tuyaReadRawAPS ,
+        "_TYST11_kfvq6avy" : tuyaReadRawAPS ,
+        '_TYST11_zivfvd7h': tuyaReadRawAPS,
         '_TZE200_ckud7u2l' : tuyaReadRawAPS ,
+        "_TZE200_kfvq6avy" : tuyaReadRawAPS ,
         'OWON': casaiaReadRawAPS,
     }
 
