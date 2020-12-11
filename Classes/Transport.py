@@ -171,7 +171,7 @@ class ZigateTransport(object):
                     timing = int( ( 1000 * time.time()) - start_time )
                     self.statistics.add_rxTiming( timing )
                     if timing > 1000:
-                        Domoticz.Log("on_message: process_frame spend more than 1s (%s) Frame: %s" %( timing, frame))
+                        Domoticz.Log("thread_process_messages (F_out) spend more than 1s (%s) Frame: %s" %( timing, frame))
 
             except queue.Empty:
                 # Empty Queue, timeout.
@@ -243,11 +243,13 @@ class ZigateTransport(object):
         Domoticz.Status("ZigateTransport: Serial Connection open: %s" %serialConnection)
 
         while self.running:
-            # We loop until self.running is set to False, which indicate plugin shutdown
+            # We loop until self.running is set to False, 
+            # which indicate plugin shutdown
             data = None  
 
             try:
                 data = serialConnection.read()  # Blocking Read
+
             except serial.SerialTimeoutException:
                 data = None 
 
@@ -261,6 +263,9 @@ class ZigateTransport(object):
                    nb_out = serialConnection.out_waiting
                    instrument_serial( self, nb_in, nb_out)
                    data += serialConnection.read( nb_in )
+                   
+                if self.pluginconf.pluginConf["debugzigateCmd"]:
+                    self.logging_send('Log', "serial_read_from_zigate %s" %str(data))
 
                 if self.pluginconf.pluginConf['ZiGateReactTime']:
                     # Start
