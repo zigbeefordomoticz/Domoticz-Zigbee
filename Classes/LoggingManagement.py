@@ -14,6 +14,7 @@
 import Domoticz
 import json
 from datetime import datetime
+import threading
 import time
 
 class LoggingManagement:
@@ -37,12 +38,11 @@ class LoggingManagement:
             return
         self.FirmwareVersion = FirmwareVersion
         self.FirmwareMajorVersion = FirmwareMajorVersion
-        if self.LogErrorHistory:
-            if self.LogErrorHistory['LastLog']:
-                if 'StartTime' in self.LogErrorHistory[str(self.LogErrorHistory['LastLog'])]:
-                    if self.LogErrorHistory[str(self.LogErrorHistory['LastLog'])]['StartTime'] == self._startTime:
-                        self.LogErrorHistory[str(self.LogErrorHistory['LastLog'])]['FirmwareVersion'] = FirmwareVersion
-                        self.LogErrorHistory[str(self.LogErrorHistory['LastLog'])]['FirmwareMajorVersion'] = FirmwareMajorVersion
+        if ( self.LogErrorHistory and self.LogErrorHistory['LastLog'] and\
+             'StartTime' in self.LogErrorHistory[str(self.LogErrorHistory['LastLog'])] and\
+                self.LogErrorHistory[str(self.LogErrorHistory['LastLog'])][ 'StartTime' ] == self._startTime ):
+            self.LogErrorHistory[str(self.LogErrorHistory['LastLog'])]['FirmwareVersion'] = FirmwareVersion
+            self.LogErrorHistory[str(self.LogErrorHistory['LastLog'])]['FirmwareMajorVersion'] = FirmwareMajorVersion
 
         
     def openLogFile( self ):
@@ -143,15 +143,17 @@ class LoggingManagement:
         #Log empty
         if not self.LogErrorHistory or 'LastLog' not in self.LogErrorHistory:
             self.LogErrorHistory['LastLog'] = 0
-            self.LogErrorHistory['0'] = {}
-            self.LogErrorHistory['0']['LastLog'] = 0
-            self.LogErrorHistory['0']['StartTime'] = self._startTime
-            self.LogErrorHistory['0']['FirmwareVersion'] = self.FirmwareVersion
-            self.LogErrorHistory['0']['FirmwareMajorVersion'] = self.FirmwareMajorVersion
+            self.LogErrorHistory['0'] = {
+                'LastLog': 0,
+                'StartTime': self._startTime,
+                'FirmwareVersion': self.FirmwareVersion,
+                'FirmwareMajorVersion': self.FirmwareMajorVersion,
+            }
+
             self.LogErrorHistory['0']['0'] = self.loggingBuildContext(module, message, nwkid, context)
             self.loggingWriteErrorHistory()
             return # log created, leaving
-        
+
         #check if existing log contains plugin launch time
         if 'StartTime' in self.LogErrorHistory[str(self.LogErrorHistory['LastLog'])]:
             index = self.LogErrorHistory['LastLog']
@@ -160,12 +162,11 @@ class LoggingManagement:
                 index += 1
         else: #compatibility with older version
             index = self.LogErrorHistory['LastLog'] + 1
-        
+
         #check if it's a new entry
         if str(index) not in self.LogErrorHistory:
             self.LogErrorHistory['LastLog'] += 1
-            self.LogErrorHistory[str(index)] = {}
-            self.LogErrorHistory[str(index)]['LastLog'] = 0
+            self.LogErrorHistory[str(index)] = {'LastLog': 0}
             self.LogErrorHistory[str(index)]['StartTime'] = self._startTime
             self.LogErrorHistory[str(index)]['FirmwareVersion'] = self.FirmwareVersion
             self.LogErrorHistory[str(index)]['FirmwareMajorVersion'] = self.FirmwareMajorVersion
@@ -173,11 +174,11 @@ class LoggingManagement:
         else:
             self.LogErrorHistory[str(index)]['LastLog'] += 1
             self.LogErrorHistory[str(index)][str(self.LogErrorHistory[str(index)]['LastLog'])] = self.loggingBuildContext(module, message, nwkid, context)
-            
+
             if len(self.LogErrorHistory[str(index)]) > 20+4: #log full for this launch time, remove oldest
                 idx = list(self.LogErrorHistory[str(index)].keys())[4]
                 self.LogErrorHistory[str(index)].pop(idx)
-        
+
         if len(self.LogErrorHistory) > 5+1: #log full, remove oldest
                 idx = list(self.LogErrorHistory.keys())[1]
                 self.LogErrorHistory.pop(idx)
@@ -198,7 +199,8 @@ class LoggingManagement:
                     'nwkid': nwkid,
                     'PluginHealth': _txt,
                     'message': message,
-                    'PermitToJoin': self.permitTojoin
+                    'PermitToJoin': self.permitTojoin,
+                    'Thread': threading.current_thread().name
                 }
         if nwkid and nwkid in self.ListOfDevices:
             _context[ 'DeviceInfos'] = dict(self.ListOfDevices[ nwkid ])
