@@ -1498,23 +1498,8 @@ def Decode8041(self, Devices, MsgData, MsgLQI):  # IEEE Address response
     MsgStartIndex = MsgData[26:28]
     MsgDeviceList = MsgData[28 : len(MsgData)]
 
-    self.log.logging( 
-        "Input",
-        "Log",
-        "Decode8041 - IEEE Address response, Sequence number : "
-        + MsgSequenceNumber
-        + " Status : "
-        + DisplayStatusCode(MsgDataStatus)
-        + " IEEE : "
-        + MsgIEEE
-        + " Short Address : "
-        + MsgShortAddress
-        + " number of associated devices : "
-        + MsgNumAssocDevices
-        + " Start Index : "
-        + MsgStartIndex
-        + " Device List : "
-        + MsgDeviceList,
+    self.log.logging(  "Input", "Log", "Decode8041 - IEEE Address response, Sequence number : "
+        + MsgSequenceNumber + " Status : " + DisplayStatusCode(MsgDataStatus) + " IEEE : " + MsgIEEE + " Short Address : " + MsgShortAddress + " number of associated devices : " + MsgNumAssocDevices + " Start Index : " + MsgStartIndex + " Device List : " + MsgDeviceList,
     )
 
     timeStamped(self, MsgShortAddress, 0x8041)
@@ -2664,23 +2649,14 @@ def read_report_attributes( self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp
                 self.log.logging( "Input", "Log", "Decode8102 - LQI: %3s Received Cluster:%s Attribute: %4s Value: %4s from (%4s/%2s)"
                     % ( self.ListOfDevices[MsgSrcAddr]["LQI"], MsgClusterId, MsgAttrID, MsgClusterData, MsgSrcAddr, MsgSrcEp, ), )
 
-        self.log.logging(  "Input", "Debug2", "Decode8102 : Attribute Report from "
-            + str(MsgSrcAddr)
-            + " SQN = "
-            + str(MsgSQN)
-            + " ClusterID = "
-            + str(MsgClusterId)
-            + " AttrID = "
-            + str(MsgAttrID)
-            + " Attribute Data = "
-            + str(MsgClusterData),
-            MsgSrcAddr,
-        )
+        self.log.logging(  "Input", "Debug2", "Decode8102 : Attribute Report from " + str(MsgSrcAddr) + " SQN = " + str(MsgSQN) + " ClusterID = " + str(MsgClusterId)+ " AttrID = "
+                + str(MsgAttrID)+ " Attribute Data = "+ str(MsgClusterData),MsgSrcAddr,)
 
         if "Health" in self.ListOfDevices[MsgSrcAddr]:
             self.ListOfDevices[MsgSrcAddr]["Health"] = "Live"
 
         updSQN(self, MsgSrcAddr, str(MsgSQN))
+        lastSeenUpdate(self, Devices, NwkId=MsgSrcAddr)
         ReadCluster( self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, Source=MsgType )
         return
 
@@ -2720,36 +2696,14 @@ def Decode8110(self, Devices, MsgData, MsgLQI):
         MsgAttrStatus = MsgData[14:16]
         MsgAttrID = None
 
-    Decode8110_raw(
-        self,
-        Devices,
-        MsgSQN,
-        MsgSrcAddr,
-        MsgSrcEp,
-        MsgClusterId,
-        MsgAttrStatus,
-        MsgAttrID,
-        MsgLQI,
-    )
+    
+    Decode8110_raw( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrStatus, MsgAttrID, MsgLQI, )
 
 
-def Decode8110_raw(
-    self,
-    Devices,
-    MsgSQN,
-    MsgSrcAddr,
-    MsgSrcEp,
-    MsgClusterId,
-    MsgAttrStatus,
-    MsgAttrID,
-    MsgLQI,
-):  # Write Attribute response
+def Decode8110_raw( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrStatus, MsgAttrID, MsgLQI, ):  # Write Attribute response
 
     i_sqn = sqn_get_internal_sqn_from_app_sqn(self.ZigateComm, MsgSQN, TYPE_APP_ZCL)
-    self.log.logging( 
-        "Input",
-        "Debug",
-        "Decode8110 - WriteAttributeResponse - MsgSQN: %s,  MsgSrcAddr: %s, MsgSrcEp: %s, MsgClusterId: %s MsgAttrID: %s Status: %s"
+    self.log.logging(  "Input", "Debug", "Decode8110 - WriteAttributeResponse - MsgSQN: %s,  MsgSrcAddr: %s, MsgSrcEp: %s, MsgClusterId: %s MsgAttrID: %s Status: %s"
         % (MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus),
         MsgSrcAddr,
     )
@@ -2757,35 +2711,13 @@ def Decode8110_raw(
     timeStamped(self, MsgSrcAddr, 0x8110)
     updSQN(self, MsgSrcAddr, MsgSQN)
     updLQI(self, MsgSrcAddr, MsgLQI)
+    lastSeenUpdate(self, Devices, NwkId=MsgSrcAddr)
 
-    if (
-        self.FirmwareVersion
-        and int(self.FirmwareVersion, 16) >= int("31d", 16)
-        and MsgAttrID
-    ):
-        set_status_datastruct(
-            self,
-            "WriteAttributes",
-            MsgSrcAddr,
-            MsgSrcEp,
-            MsgClusterId,
-            MsgAttrID,
-            MsgAttrStatus,
-        )
-        set_request_phase_datastruct(
-            self,
-            "WriteAttributes",
-            MsgSrcAddr,
-            MsgSrcEp,
-            MsgClusterId,
-            MsgAttrID,
-            "fullfilled",
-        )
+    if ( self.FirmwareVersion and int(self.FirmwareVersion, 16) >= int("31d", 16) and MsgAttrID ):
+        set_status_datastruct( self, "WriteAttributes", MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus, )
+        set_request_phase_datastruct( self, "WriteAttributes", MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, "fullfilled", )
         if MsgAttrStatus != "00":
-            self.log.logging(
-                "Input",
-                "Log",
-                "Decode8110 - Write Attribute Respons response - ClusterID: %s/%s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s"
+            self.log.logging( "Input", "Log", "Decode8110 - Write Attribute Respons response - ClusterID: %s/%s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s"
                 % (MsgClusterId, MsgAttrID, MsgSrcAddr, MsgSrcEp, MsgAttrStatus),
                 MsgSrcAddr,
             )
@@ -2796,53 +2728,16 @@ def Decode8110_raw(
     i_sqn = sqn_get_internal_sqn_from_app_sqn(self.ZigateComm, MsgSQN, TYPE_APP_ZCL)
     self.log.logging( "Input", "Debug", "------- - i_sqn: %0s e_sqn: %s" % (i_sqn, MsgSQN))
 
-    for matchAttributeId in list(
-        get_list_isqn_attr_datastruct(
-            self, "WriteAttributes", MsgSrcAddr, MsgSrcEp, MsgClusterId
-        )
-    ):
-        if (
-            get_isqn_datastruct(
-                self,
-                "WriteAttributes",
-                MsgSrcAddr,
-                MsgSrcEp,
-                MsgClusterId,
-                matchAttributeId,
-            )
-            != i_sqn
-        ):
+    for matchAttributeId in list( get_list_isqn_attr_datastruct( self, "WriteAttributes", MsgSrcAddr, MsgSrcEp, MsgClusterId ) ):
+        if ( get_isqn_datastruct( self, "WriteAttributes", MsgSrcAddr, MsgSrcEp, MsgClusterId, matchAttributeId, ) != i_sqn ):
             continue
 
-        self.log.logging( 
-            "Input", "Debug", "------- - Sqn matches for Attribute: %s" % matchAttributeId
-        )
-        set_status_datastruct(
-            self,
-            "WriteAttributes",
-            MsgSrcAddr,
-            MsgSrcEp,
-            MsgClusterId,
-            matchAttributeId,
-            MsgAttrStatus,
-        )
-        set_request_phase_datastruct(
-            self,
-            "WriteAttributes",
-            MsgSrcAddr,
-            MsgSrcEp,
-            MsgClusterId,
-            matchAttributeId,
-            "fullfilled",
-        )
+        self.log.logging(  "Input", "Debug", "------- - Sqn matches for Attribute: %s" % matchAttributeId )
+        set_status_datastruct(self,"WriteAttributes",MsgSrcAddr,MsgSrcEp,MsgClusterId,matchAttributeId,MsgAttrStatus,)
+        set_request_phase_datastruct( self, "WriteAttributes", MsgSrcAddr, MsgSrcEp, MsgClusterId, matchAttributeId, "fullfilled", )
         if MsgAttrStatus != "00":
-            self.log.logging( 
-                "Input",
-                "Log",
-                "Decode8110 - Write Attribute Response response - ClusterID: %s/%s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s"
-                % (MsgClusterId, matchAttributeId, MsgSrcAddr, MsgSrcEp, MsgAttrStatus),
-                MsgSrcAddr,
-            )
+            self.log.logging(  "Input", "Log", "Decode8110 - Write Attribute Response response - ClusterID: %s/%s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s"
+                % (MsgClusterId, matchAttributeId, MsgSrcAddr, MsgSrcEp, MsgAttrStatus), MsgSrcAddr, )
 
     if MsgClusterId == "0500":
         self.iaszonemgt.receiveIASmessages(MsgSrcAddr, MsgSrcEp, 3, MsgAttrStatus)
@@ -2850,9 +2745,7 @@ def Decode8110_raw(
 
 def Decode8120(self, Devices, MsgData, MsgLQI):  # Configure Reporting response
 
-    self.log.logging( 
-        "Input", "Debug", "Decode8120 - Configure reporting response : %s" % MsgData
-    )
+    self.log.logging(  "Input", "Debug", "Decode8120 - Configure reporting response : %s" % MsgData )
     if len(MsgData) < 14:
         Domoticz.Error("Decode8120 - uncomplet message %s " % MsgData)
         return
@@ -2860,15 +2753,13 @@ def Decode8120(self, Devices, MsgData, MsgLQI):  # Configure Reporting response
     MsgSQN = MsgData[0:2]
     MsgSrcAddr = MsgData[2:6]
     if MsgSrcAddr not in self.ListOfDevices:
-        Domoticz.Error(
-            "Decode8120 - receiving Configure reporting response from unknow  %s"
-            % MsgSrcAddr
-        )
+        Domoticz.Error( "Decode8120 - receiving Configure reporting response from unknow  %s" % MsgSrcAddr )
         return
 
     timeStamped(self, MsgSrcAddr, 0x8120)
     updSQN(self, MsgSrcAddr, MsgSQN)
     updLQI(self, MsgSrcAddr, MsgLQI)
+    lastSeenUpdate(self, Devices, NwkId=MsgSrcAddr)
 
     MsgSrcEp = MsgData[6:8]
     MsgClusterId = MsgData[8:12]
@@ -2876,9 +2767,7 @@ def Decode8120(self, Devices, MsgData, MsgLQI):  # Configure Reporting response
     if len(MsgData) == 14:
         # Global answer. Need i_sqn to get match
         MsgStatus = MsgData[12:14]
-        Decode8120_attribute(
-            self, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, None, MsgStatus
-        )
+        Decode8120_attribute( self, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, None, MsgStatus )
     else:
         idx = 12
         while idx < len(MsgData):
@@ -2886,48 +2775,20 @@ def Decode8120(self, Devices, MsgData, MsgLQI):  # Configure Reporting response
             idx += 4
             MsgStatus = MsgData[idx : idx + 2]
             idx += 4
-            Decode8120_attribute(
-                self,
-                MsgSQN,
-                MsgSrcAddr,
-                MsgSrcEp,
-                MsgClusterId,
-                MsgAttributeId,
-                MsgStatus,
-            )
+            Decode8120_attribute( self, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus, )
 
 
-def Decode8120_attribute(
-    self, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus
-):
+def Decode8120_attribute( self, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus ):
 
-    self.log.logging( 
-        "Input",
-        "Debug",
-        "--> SQN: [%s], SrcAddr: %s, SrcEP: %s, ClusterID: %s, Attribute: %s Status: %s"
+    self.log.logging(  "Input", "Debug", "--> SQN: [%s], SrcAddr: %s, SrcEP: %s, ClusterID: %s, Attribute: %s Status: %s"
         % (MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus),
         MsgSrcAddr,
     )
 
-    if (
-        self.FirmwareVersion
-        and int(self.FirmwareVersion, 16) >= int("31d", 16)
-        and MsgAttributeId
-    ):
-        set_status_datastruct(
-            self,
-            "ConfigureReporting",
-            MsgSrcAddr,
-            MsgSrcEp,
-            MsgClusterId,
-            MsgAttributeId,
-            MsgStatus,
-        )
+    if ( self.FirmwareVersion and int(self.FirmwareVersion, 16) >= int("31d", 16) and MsgAttributeId ):
+        set_status_datastruct( self, "ConfigureReporting", MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus, )
         if MsgStatus != "00":
-            self.log.logging( 
-                "Input",
-                "Log",
-                "Decode8120 - Configure Reporting response - ClusterID: %s/%s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s"
+            self.log.logging(  "Input", "Log", "Decode8120 - Configure Reporting response - ClusterID: %s/%s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s"
                 % (MsgClusterId, MsgAttributeId, MsgSrcAddr, MsgSrcEp, MsgStatus),
                 MsgSrcAddr,
             )
@@ -2938,41 +2799,14 @@ def Decode8120_attribute(
     i_sqn = sqn_get_internal_sqn_from_app_sqn(self.ZigateComm, MsgSQN, TYPE_APP_ZCL)
     self.log.logging( "Input", "Debug", "------- - i_sqn: %0s e_sqn: %s" % (i_sqn, MsgSQN))
 
-    for matchAttributeId in list(
-        get_list_isqn_attr_datastruct(
-            self, "ConfigureReporting", MsgSrcAddr, MsgSrcEp, MsgClusterId
-        )
-    ):
-        if (
-            get_isqn_datastruct(
-                self,
-                "ConfigureReporting",
-                MsgSrcAddr,
-                MsgSrcEp,
-                MsgClusterId,
-                matchAttributeId,
-            )
-            != i_sqn
-        ):
+    for matchAttributeId in list( get_list_isqn_attr_datastruct( self, "ConfigureReporting", MsgSrcAddr, MsgSrcEp, MsgClusterId ) ):
+        if ( get_isqn_datastruct( self, "ConfigureReporting", MsgSrcAddr, MsgSrcEp, MsgClusterId, matchAttributeId, ) != i_sqn ):
             continue
 
-        self.log.logging( 
-            "Input", "Debug", "------- - Sqn matches for Attribute: %s" % matchAttributeId
-        )
-        set_status_datastruct(
-            self,
-            "ConfigureReporting",
-            MsgSrcAddr,
-            MsgSrcEp,
-            MsgClusterId,
-            matchAttributeId,
-            MsgStatus,
-        )
+        self.log.logging(  "Input", "Debug", "------- - Sqn matches for Attribute: %s" % matchAttributeId )
+        set_status_datastruct( self, "ConfigureReporting", MsgSrcAddr, MsgSrcEp, MsgClusterId, matchAttributeId, MsgStatus, )
         if MsgStatus != "00":
-            self.log.logging(
-                "Input",
-                "Log",
-                "Decode8120 - Configure Reporting response - ClusterID: %s/%s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s"
+            self.log.logging( "Input", "Log", "Decode8120 - Configure Reporting response - ClusterID: %s/%s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s"
                 % (MsgClusterId, matchAttributeId, MsgSrcAddr, MsgSrcEp, MsgStatus),
                 MsgSrcAddr,
             )
@@ -3061,9 +2895,7 @@ def Decode8140(self, Devices, MsgData, MsgLQI):  # Attribute Discovery response
 
 
 # IAS Zone
-def Decode8401(
-    self, Devices, MsgData, MsgLQI
-):  # Reception Zone status change notification
+def Decode8401( self, Devices, MsgData, MsgLQI ):  # Reception Zone status change notification
 
     self.log.logging( 
         "Input",
@@ -3453,10 +3285,7 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
     }
 
     # self.log.logging( "Input", 'Debug', "Decode8085 - MsgData: %s "  %MsgData, MsgSrcAddr)
-    self.log.logging( 
-        "Input",
-        "Debug",
-        "Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s "
+    self.log.logging(  "Input", "Debug", "Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s "
         % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
         MsgSrcAddr,
     )
@@ -3467,10 +3296,7 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
     if self.ListOfDevices[MsgSrcAddr]["Status"] != "inDB":
         return
 
-    if (
-        "Ep" in self.ListOfDevices[MsgSrcAddr]
-        and MsgEP in self.ListOfDevices[MsgSrcAddr]["Ep"]
-    ):
+    if ( "Ep" in self.ListOfDevices[MsgSrcAddr] and MsgEP in self.ListOfDevices[MsgSrcAddr]["Ep"] ):
         if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP]:
             self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId] = {}
         if not isinstance(
@@ -3480,10 +3306,7 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
         if "0000" not in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]:
             self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = {}
 
-    if (
-        "SQN" in self.ListOfDevices[MsgSrcAddr]
-        and MsgSQN == self.ListOfDevices[MsgSrcAddr]["SQN"]
-    ):
+    if ( "SQN" in self.ListOfDevices[MsgSrcAddr] and MsgSQN == self.ListOfDevices[MsgSrcAddr]["SQN"] ):
         return
 
     updSQN(self, MsgSrcAddr, MsgSQN)
