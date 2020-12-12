@@ -246,7 +246,7 @@ class ZigateTransport(object):
             # We loop until self.running is set to False, 
             # which indicate plugin shutdown
             data = None  
-
+            Domoticz.Log("before Read")
             try:
                 data = serialConnection.read()  # Blocking Read
 
@@ -271,7 +271,9 @@ class ZigateTransport(object):
                     # Start
                     self.reading_thread_timing = 1000 * time.time()
 
+                Domoticz.Log("Before on_message")
                 self.on_message(data)
+                Domoticz.Log("After on_message")
 
                 if self.pluginconf.pluginConf['ZiGateReactTime']:
                     # Stop
@@ -484,17 +486,18 @@ class ZigateTransport(object):
         # Check if the Cmd/Data is not yet in the pipe
         alreadyInQueue = False
         for x in list(self.ListOfCommands.keys()):
-            if x in self.ListOfCommands and 'Status' not in self.ListOfCommands[x]:
-                continue
-            if x in self.ListOfCommands and 'Cmd' not in self.ListOfCommands[x]:
-                continue
-            if x in self.ListOfCommands and 'Datas' not in self.ListOfCommands[x]:
+            if (x in self.ListOfCommands and 'Status'  in self.ListOfCommands[x] and self.ListOfCommands[x]['Status'] not in ('', 'TO-SEND', 'QUEUED')):
                 continue
 
-            if x in self.ListOfCommands and self.ListOfCommands[x]['Status'] in ( '', 'TO-SEND', 'QUEUED' ) and self.ListOfCommands[x]['Cmd'] == cmd and self.ListOfCommands[x]['Datas'] == datas:
-                self.logging_send( 'Debug', "Cmd: %s Data: %s already in queue. drop that command" % (cmd, datas))
-                alreadyInQueue = True
-                return None
+            if (x in self.ListOfCommands and 'Cmd' in self.ListOfCommands[x] and self.ListOfCommands[x]['Cmd'] != cmd):
+                continue
+
+            if ( x in self.ListOfCommands and 'Datas'  in self.ListOfCommands[x] and self.ListOfCommands[x]['Datas'] != datas ):
+                continue
+
+            self.logging_send( 'Log', "Cmd: %s Data: %s already in queue. drop that command" % (cmd, datas))
+            alreadyInQueue = True
+            return None
 
         # Let's move on, create an internal Sqn for tracking
         InternalSqn = sqn_generate_new_internal_sqn(self)
@@ -1071,7 +1074,8 @@ def timeout_8000(self, isqn, ts):
        'ISQN': isqn,
        'TimeStamp': ts,
     }
-    self.logging_send_error(  "timeout_8000", context=_context)
+    if self.pluginconf.pluginConf['trackError']:
+        self.logging_send_error(  "timeout_8000", context=_context)
 
     entry = _next_cmd_from_wait_for8000_queue(self)
     if entry is None:
@@ -1080,7 +1084,8 @@ def timeout_8000(self, isqn, ts):
            'ISQN': isqn,
            'TimeStamp': ts,
         }
-        self.logging_send_error(  "timeout_8000", context=_context)
+        if self.pluginconf.pluginConf['trackError']:
+            self.logging_send_error(  "timeout_8000", context=_context)
         return
 
     InternalSqn, TimeStamp = entry
@@ -1091,7 +1096,8 @@ def timeout_8000(self, isqn, ts):
            'TimeStamp': ts,
            'InternalSqn': InternalSqn,
         }
-        self.logging_send_error(  "timeout_8000", context=_context)
+        if self.pluginconf.pluginConf['trackError']:
+            self.logging_send_error(  "timeout_8000", context=_context)
 
     self.statistics._TOstatus += 1
     if InternalSqn in self.ListOfCommands:
@@ -1114,7 +1120,8 @@ def timeout_8011(self, isqn, ts):
         'ISQN': isqn,
         'TimeStamp': ts,
     }
-    self.logging_send_error(  "timeout_8011", context=_context)
+    if self.pluginconf.pluginConf['trackError']:
+        self.logging_send_error(  "timeout_8011", context=_context)
     entry = _next_cmd_to_wait_for8011_queue(self)
     if entry is None:
         _context = {
@@ -1122,7 +1129,8 @@ def timeout_8011(self, isqn, ts):
             'ISQN': isqn,
             'TimeStamp': ts,
         }
-        self.logging_send_error(  "timeout_8011", context=_context)
+        if self.pluginconf.pluginConf['trackError']:
+            self.logging_send_error(  "timeout_8011", context=_context)
         return
     InternalSqn, TimeStamp = entry
     if isqn != InternalSqn:
@@ -1132,7 +1140,8 @@ def timeout_8011(self, isqn, ts):
            'TimeStamp': ts,
            'InternalSqn': InternalSqn,
         }
-        self.logging_send_error(  "timeout_8011", context=_context)
+        if self.pluginconf.pluginConf['trackError']:
+            self.logging_send_error(  "timeout_8011", context=_context)
 
     if self._waitForCmdResponseQueue:
         _next_cmd_from_wait_cmdresponse_queue(self)
@@ -1147,7 +1156,8 @@ def timeout_8012(self, isqn, ts):
         'ISQN': isqn,
         'TimeStamp': ts,
     }
-    self.logging_send_error(  "timeout_8012", context=_context)
+    if self.pluginconf.pluginConf['trackError']:
+        self.logging_send_error(  "timeout_8012", context=_context)
     entry = _next_cmd_from_wait_for8012_queue(self)
     if entry is None:
         _context = {
@@ -1155,7 +1165,8 @@ def timeout_8012(self, isqn, ts):
             'ISQN': isqn,
             'TimeStamp': ts,
         }
-        self.logging_send_error(  "timeout_8012", context=_context)
+        if self.pluginconf.pluginConf['trackError']:
+            self.logging_send_error(  "timeout_8012", context=_context)
         return
 
     InternalSqn, TimeStamp = entry
@@ -1166,7 +1177,8 @@ def timeout_8012(self, isqn, ts):
            'TimeStamp': ts,
            'InternalSqn': InternalSqn,
         }
-        self.logging_send_error(  "timeout_8012", context=_context)
+        if self.pluginconf.pluginConf['trackError']:
+            self.logging_send_error(  "timeout_8012", context=_context)
 
     if InternalSqn not in self.ListOfCommands:
         Domoticz.Error("timeout_8012 it has been removed from ListOfCommands!!!")
@@ -1186,7 +1198,8 @@ def timeout_cmd_response(self,isqn, ts):
         'ISQN': InternalSqn,
         'TimeStamp': TimeStamp,
     }
-    self.logging_send_error(  "timeout_cmd_response", context=_context)
+    if self.pluginconf.pluginConf['trackError']:
+        self.logging_send_error(  "timeout_cmd_response", context=_context)
     if InternalSqn not in self.ListOfCommands:
         return
     cleanup_list_of_commands(self, InternalSqn)
@@ -1218,7 +1231,8 @@ def check_and_timeout_listofcommand(self):
                 'COMMAND': x,
                 'TimeOut': timeoutValue,
             }
-            self.logging_send_error(  "check_and_timeout_listofcommand", context=_context)
+            if self.pluginconf.pluginConf['trackError']:
+                self.logging_send_error(  "check_and_timeout_listofcommand", context=_context)
             del self.ListOfCommands[x]
 
 def check_timed_out(self):
@@ -1282,19 +1296,17 @@ def process_frame(self, frame):
     MsgLength = frame[6:10]
     MsgCRC = frame[10:12]
 
-    self.logging_send('Debug', "process_frame - Q(0x8000): %s Q(8012/7-8702): %s Q(Ack/Nack): %s Q(waitForResponse): %s sendNow: %s"
+    self.logging_send('Log', "process_frame - Q(0x8000): %s Q(8012/7-8702): %s Q(Ack/Nack): %s Q(waitForResponse): %s sendNow: %s"
             % ( len(self._waitFor8000Queue), len(self._waitFor8012Queue), len(self._waitFor8011Queue), len(self._waitForCmdResponseQueue), len(self.zigateSendQueue) ))
 
     if MsgType == '8701':
         # Route Discovery
-        # self.F_out(frame, None)  # for processing
         ready_to_send_if_needed(self)
         return
 
     # We receive an async message, just forward it to plugin
     if int(MsgType, 16) in STANDALONE_MESSAGE:
         self.logging_receive( 'Debug', "process_frame - STANDALONE_MESSAGE MsgType: %s MsgLength: %s MsgCRC: %s" % (MsgType, MsgLength, MsgCRC))    
-        #self.F_out(frame, None)  # for processing
         self.frame_queue.put( frame )
         ready_to_send_if_needed(self)
         return
@@ -1312,7 +1324,6 @@ def process_frame(self, frame):
     if MsgData and MsgType == "8002":
         # Data indication
         self.logging_receive( 'Debug', "process_frame - 8002 MsgType: %s MsgLength: %s MsgCRC: %s" % (MsgType, MsgLength, MsgCRC))  
-        #self.F_out( process8002( self, frame ), None)
         self.frame_queue.put( process8002( self, frame ) )
         ready_to_send_if_needed(self)
         return
@@ -1323,7 +1334,6 @@ def process_frame(self, frame):
             if self.pluginconf.pluginConf["debugzigateCmd"]:
                 Domoticz.Log("process_frame - Message not processed, no active queues. Msgtype: %s MsgData: %s" %(MsgType, MsgData))
         else:
-            #self.F_out(frame, None)
             self.frame_queue.put( frame )
         ready_to_send_if_needed(self)
         return
@@ -1333,7 +1343,6 @@ def process_frame(self, frame):
         if MsgType == '8702':
             self.statistics._APSFailure += 1
         i_sqn = handle_8012_8702( self, MsgType, MsgData, frame)
-        #self.F_out(frame, None)
         self.frame_queue.put( frame )
         ready_to_send_if_needed(self)
         return
@@ -1343,13 +1352,11 @@ def process_frame(self, frame):
             Domoticz.Log("process_frame - Message not processed, no active queues. Msgtype: %s MsgData: %s" %(MsgType, MsgData))
         else:
             self.frame_queue.put( frame )
-        #    self.F_out(frame, None)
         ready_to_send_if_needed(self)
         return
 
     if MsgData and MsgType == "8000":
         handle_8000( self, MsgType, MsgData, frame)
-        #self.F_out(frame, None)
         self.frame_queue.put( frame )
         ready_to_send_if_needed(self)
         return
@@ -1360,13 +1367,11 @@ def process_frame(self, frame):
                 Domoticz.Log("process_frame - Message not processed, no active queues. Msgtype: %s MsgData: %s" %(MsgType, MsgData))
         else:
             self.frame_queue.put( frame )
-        #    self.F_out(frame, None)
         ready_to_send_if_needed(self)
         return
 
     if MsgType == '8011':
         handle_8011( self, MsgType, MsgData, frame)
-        #self.F_out(frame, None)
         self.frame_queue.put( frame )
         ready_to_send_if_needed(self)
         return
@@ -1377,7 +1382,6 @@ def process_frame(self, frame):
             Domoticz.Log("process_frame - Message not processed, no active queues. Msgtype: %s MsgData: %s" %(MsgType, MsgData))
         else:
             self.frame_queue.put( frame )
-        #    self.F_out(frame, None)
         ready_to_send_if_needed(self)
         return
 
@@ -1412,7 +1416,6 @@ def process_frame(self, frame):
             cleanup_list_of_commands( self, _next_cmd_from_wait_cmdresponse_queue(self)[0])
 
     # Forward the message to plugin for further processing
-    #self.F_out(frame, None)
     self.frame_queue.put( frame )
     ready_to_send_if_needed(self)
 
@@ -1432,7 +1435,8 @@ def handle_9999( self, MsgData):
     #    'ExtendedErrorDesc': StatusMsg
     #}
     #self.logging_send_error(  "handle_9999 Extended Code: %s" %MsgData, context=_context)
-    self.logging_send( 'Log', "handle_9999 - Last PDUs infos ( n: %s a: %s) Extended Error Code: [%s] %s" %(self.npdu, self.apdu, MsgData, StatusMsg))
+    if self.pluginconf.pluginConf['trackError']:
+        self.logging_send( 'Log', "handle_9999 - Last PDUs infos ( n: %s a: %s) Extended Error Code: [%s] %s" %(self.npdu, self.apdu, MsgData, StatusMsg))
 
 # 1 ### 0x8000
 
@@ -1709,7 +1713,6 @@ def check_and_process_8012_31e( self, MsgType, MsgStatus, MsgAddr, MsgSQN, nPDU,
                 len(self.ListOfCommands)
                 ))
 
-
     _next_cmd_from_wait_for8012_queue( self )
                                 
     return InternSqn
@@ -1769,7 +1772,6 @@ def check_and_process_8011_31c(self, Status, NwkId, Ep, MsgClusterId, ExternSqn)
                 'Status': Status,
             }
             self.logging_send_error(  "check_and_process_8011_31c", Nwkid=NwkId, context=_context)
-
 
     if Status == '00':
         if InternSqn in self.ListOfCommands:

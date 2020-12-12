@@ -821,13 +821,14 @@ def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
 
     updLQI(self, MsgSrcAddr, MsgLQI)
     _powered = mainPoweredDevice(self, MsgSrcAddr)
-    timeStamped(self, MsgSrcAddr, 0x8011)
+ 
 
     if self.pluginconf.pluginConf["debugzigateCmd"]:
         self.log.logging( 'Input', 'Log', "Decod8011 Received [%s] for Nwkid  : %s with status: %s e_sqn: 0x%02x/%s" 
             % (i_sqn, MsgSrcAddr, MsgStatus, int(MsgSEQ,16), int(MsgSEQ,16)), MsgSrcAddr)
 
     if MsgStatus == "00":
+        timeStamped(self, MsgSrcAddr, 0x8011)
         lastSeenUpdate(self, Devices, NwkId=MsgSrcAddr)
         if ( "Health" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Health"] != "Live" ):
             self.log.logging(  "Input", "Log", "Receive an APS Ack from %s, let's put the device back to Live"
