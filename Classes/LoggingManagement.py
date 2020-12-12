@@ -77,7 +77,7 @@ class LoggingManagement:
     def logToFile( self, message ):
 
             Domoticz.Status( message )
-            message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+            message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " [" + threading.current_thread().name + "] " + message + '\n'
             self.loggingFileHandle.write( message )
             self.loggingFileHandle.flush()
 
@@ -139,6 +139,12 @@ class LoggingManagement:
 
     def loggingError(self, module, message, nwkid, context):
         Domoticz.Error(message)
+        
+        #Log to file
+        if not self.pluginconf.pluginConf['useDomoticzLog']:
+            if self.loggingFileHandle is None:
+                self.openLogFile()
+            self.logToFile( message )
 
         #Log empty
         if not self.LogErrorHistory or 'LastLog' not in self.LogErrorHistory:

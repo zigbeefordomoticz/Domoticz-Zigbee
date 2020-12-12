@@ -25,6 +25,8 @@ import select
 import socket
 
 from threading import Thread, Lock, Event
+import multiprocessing
+
 import queue
 from binascii import unhexlify, hexlify
 
@@ -96,13 +98,11 @@ class ZigateTransport(object):
         self._wifiPort = None  # wifi port
 
         # Thread management
+        self.lock = Lock()
         self.running = True
         self.WatchDogThread = None
         self.Event_listen_and_read = None
         self.Thread_listen_and_read = None
-        self.listening_transport_mutex = None
-
-
         self.Thread_proc_zigate_frame = None
         self.Event_proc_zigate_frame = None
         self.frame_queue = queue.SimpleQueue( )
@@ -149,7 +149,7 @@ class ZigateTransport(object):
             self.Event_proc_zigate_frame = Event()
 
         if self.Thread_proc_zigate_frame is None:
-            self.Thread_proc_zigate_frame = Thread( name="ZiGate Plugin Process Incoming Messages",  target=ZigateTransport.thread_process_messages,  args=(self,))
+            self.Thread_proc_zigate_frame = Thread( name="ZiGateMessage",  target=ZigateTransport.thread_process_messages,  args=(self,))
             self.Thread_proc_zigate_frame.start()
 
     def thread_process_messages(self):
@@ -203,15 +203,6 @@ class ZigateTransport(object):
                 self.logging_send_error( "thread_transport_watchdog", context=_context)
                 self.Thread_listen_and_read.start()
 
-
-    #def lock_transport_mutex(self):
-    #    if self.listening_transport_mutex:
-    #        self.listening_transport_mutex.acquire()
-
-    #def unlock_transport_mutex(self):
-    #    if self.listening_transport_mutex:
-    #        self.listening_transport_mutex.release()
-
     # Manage Serial Line
     def open_serial( self ):
 
@@ -225,14 +216,12 @@ class ZigateTransport(object):
             return
 
         Domoticz.Status("Starting Listening and Sending Thread")
-        if self.listening_transport_mutex is None:
-            self.listening_transport_mutex= Lock()
 
         if self.Event_listen_and_read is None:
             self.Event_listen_and_read = Event()
 
         if self.Thread_listen_and_read is None:
-            self.Thread_listen_and_read = Thread( name="ZiGate serial line listner",  target=ZigateTransport.serial_read_from_zigate,  args=(self,))
+            self.Thread_listen_and_read = Thread( name="ZiGateSerial",  target=ZigateTransport.serial_read_from_zigate,  args=(self,))
             self.Thread_listen_and_read.start()
 
         self.start_thread_transport_watchdog( )
@@ -245,11 +234,16 @@ class ZigateTransport(object):
         while self.running:
             # We loop until self.running is set to False, 
             # which indicate plugin shutdown
-            data = None  
+            
+            data = None
+            nb_in = serialConnection.in_waiting
+            nb_out = serialConnection.out_waiting
+            instrument_serial( self, nb_in, nb_out)
+
             if self.pluginconf.pluginConf["debugzigateCmd"]:
-                Domoticz.Log("before Read")
+                self.logging_send('Log', "before Read")
             try:
-                data = serialConnection.read()  # Blocking Read
+                data = serialConnection.read( serialConnection.in_waiting or 1)  # Blocking Read
 
             except serial.SerialTimeoutException:
                 data = None 
@@ -258,31 +252,31 @@ class ZigateTransport(object):
                 Domoticz.Error("serial_read_from_zigate - error while reading %s" %(e))
                 data = None 
 
-            if len(data) > 0:
-                nb_in = serialConnection.in_waiting
-                if nb_in > 0:
-                   nb_out = serialConnection.out_waiting
-                   instrument_serial( self, nb_in, nb_out)
-                   data += serialConnection.read( nb_in )
-                   
-                if self.pluginconf.pluginConf["debugzigateCmd"]:
-                    self.logging_send('Log', "serial_read_from_zigate %s" %str(data))
+            if data is None:
+                continue
 
-                if self.pluginconf.pluginConf['ZiGateReactTime']:
-                    # Start
-                    self.reading_thread_timing = 1000 * time.time()
-                if self.pluginconf.pluginConf["debugzigateCmd"]:
-                    Domoticz.Log("Before on_message")
-                self.on_message(data)
-                if self.pluginconf.pluginConf["debugzigateCmd"]:
-                    Domoticz.Log("After on_message")
+            if self.pluginconf.pluginConf["debugzigateCmd"]:
+                self.logging_send('Log', "serial_read_from_zigate %s" %str(data))
 
-                if self.pluginconf.pluginConf['ZiGateReactTime']:
-                    # Stop
-                    timing = int( ( 1000 * time.time()) - self.reading_thread_timing ) 
-                    self.statistics.add_timing_thread( timing)
-                    if timing > 1000:
-                        Domoticz.Log("serial_read_from_zigate %s ms spent in on_message()" %timing)
+            if self.pluginconf.pluginConf['ZiGateReactTime']:
+                # Start
+                self.reading_thread_timing = 1000 * time.time()
+
+            if self.pluginconf.pluginConf["debugzigateCmd"]:
+                self.logging_send('Log', "Before on_message")
+
+            self.on_message(data)
+
+            if self.pluginconf.pluginConf["debugzigateCmd"]:
+                self.logging_send('Log', "After on_message")
+
+            if self.pluginconf.pluginConf['ZiGateReactTime']:
+                # Stop
+                timing = int( ( 1000 * time.time()) - self.reading_thread_timing )
+
+                self.statistics.add_timing_thread( timing)
+                if timing > 1000:
+                    self.logging_send('Log', "serial_read_from_zigate %s ms spent in on_message()" %timing)
 
 
         self.frame_queue.put("STOP") # In order to unblock the Blocking get()
@@ -305,7 +299,7 @@ class ZigateTransport(object):
             self.Event_listen_and_read = Event()
 
         if self.Thread_listen_and_read is None:
-            self.Thread_listen_and_read = Thread( name="ZiGate tcpip listner",  target=ZigateTransport.tcpip_listen_and_send,  args=(self,))
+            self.Thread_listen_and_read = Thread( name="ZiGateTCPIP",  target=ZigateTransport.tcpip_listen_and_send,  args=(self,))
             self.Thread_listen_and_read.start()
 
         self.start_thread_transport_watchdog( )
@@ -1346,7 +1340,7 @@ def process_frame(self, frame):
         if MsgType == '8702':
             self.statistics._APSFailure += 1
         i_sqn = handle_8012_8702( self, MsgType, MsgData, frame)
-        self.frame_queue.put( frame )
+        # self.frame_queue.put( frame )
         ready_to_send_if_needed(self)
         return
 

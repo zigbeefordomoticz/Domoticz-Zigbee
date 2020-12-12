@@ -868,28 +868,7 @@ def Decode8012(self, Devices, MsgData, MsgLQI):
     passed down the stack to the MAC layer and has made its first hop towards
     its destination (an acknowledgment has been received from the next hop node).
     """
-
-    MsgStatus = MsgData[0:2]
-    MsgSrcEp = MsgData[2:4]
-    MsgDstEp = MsgData[4:6]
-    MsgAddrMode = MsgData[6:8]
-    MsgSrcNwkid = None
-
-    if int(MsgAddrMode, 16) == 0x03:  # IEEE
-        MsgSrcIEEE = MsgData[8:24]
-        MsgSQN = MsgData[24:26]
-        if MsgSrcIEEE in self.IEEE2NWK:
-            MsgSrcNwkId = self.IEEE2NWK[MsgSrcIEEE]
-    else:
-        MsgSrcNwkid = MsgData[8:12]
-        MsgSQN = MsgData[12:14]
-
-    i_sqn = sqn_get_internal_sqn_from_aps_sqn(self.ZigateComm, MsgSQN)
-    if self.pluginconf.pluginConf["debugzigateCmd"]:
-        self.log.logging( 'Input', 'Log', "Decod8012 Received [%s] for Nwkid  : %s with status: %s e_sqn: 0x%02x/%s" 
-            % (i_sqn, MsgSrcNwkid, MsgStatus, int(MsgSQN,16), int(MsgSQN,16)), MsgSrcNwkid)
-
-
+    return
 
 def Decode8014(self, Devices, MsgData, MsgLQI):  # "Permit Join" status response
 
@@ -3178,79 +3157,9 @@ def Decode8701(
 
 # Réponses APS
 def Decode8702(self, Devices, MsgData, MsgLQI):  # Reception APS Data confirm fail
-    #
-    # Status: d4 - Unicast frame does not have a route available but it is buffered for automatic resend
-    # Status: e9 - No acknowledgement received when expected
-    # Status: f0 - Pending transaction has expired and data discarded
-    # Status: cf - Attempt at route discovery has failed due to lack of table spac
-    #
+    # Nothing to do as handled in transport.py
+    return
 
-    MsgLen = len(MsgData)
-    if MsgLen == 0:
-        return
-
-    MsgDataStatus = MsgData[0:2]
-    MsgDataSrcEp = MsgData[2:4]
-    MsgDataDestEp = MsgData[4:6]
-    MsgDataDestMode = MsgData[6:8]
-
-    if not self.FirmwareVersion:
-        MsgDataDestAddr = MsgData[8:24]
-        MsgDataSQN = MsgData[24:26]
-        if int(MsgDataDestAddr, 16) == (int(MsgDataDestAddr, 16) & 0xFFFF000000000000):
-            MsgDataDestAddr = MsgDataDestAddr[0:4]
-
-    elif self.FirmwareVersion.lower() <= "030f":
-        MsgDataDestAddr = MsgData[8:24]
-        MsgDataSQN = MsgData[24:26]
-        if int(MsgDataDestAddr, 16) == (int(MsgDataDestAddr, 16) & 0xFFFF000000000000):
-            MsgDataDestAddr = MsgDataDestAddr[0:4]
-
-    else:  # Fixed by https://github.com/fairecasoimeme/ZiGate/issues/161
-        # self.log.logging( "Input", 'Debug', "Decode8702 - with Firmware > 3.0f")
-        if int(MsgDataDestMode, 16) == ADDRESS_MODE["short"]:
-            MsgDataDestAddr = MsgData[8:12]
-            MsgDataSQN = MsgData[12:14]
-        elif int(MsgDataDestMode, 16) == ADDRESS_MODE["group"]:
-            MsgDataDestAddr = MsgData[8:12]
-            MsgDataSQN = MsgData[12:14]
-        elif int(MsgDataDestMode, 16) == ADDRESS_MODE["ieee"]:
-            MsgDataDestAddr = MsgData[8:24]
-            MsgDataSQN = MsgData[24:26]
-        else:
-            Domoticz.Error(
-                "Decode8702 - Unexpected addmode %s for data %s"
-                % (MsgDataDestMode, MsgData)
-            )
-            return
-
-    NWKID = None
-    IEEE = None
-    if int(MsgDataDestMode, 16) == ADDRESS_MODE["ieee"]:
-        if MsgDataDestAddr in self.IEEE2NWK:
-            NWKID = self.IEEE2NWK[MsgDataDestAddr]
-            IEEE = MsgDataDestAddr
-    else:
-        if MsgDataDestAddr in self.ListOfDevices:
-            NWKID = MsgDataDestAddr
-            IEEE = self.ListOfDevices[MsgDataDestAddr]["IEEE"]
-
-    if NWKID is None or IEEE is None:
-        self.log.logging( "Input","Log","Decode8702 - Unknown Address %s : (%s,%s)"
-            % (MsgDataDestAddr, NWKID, IEEE),)
-        return
-
-    self.log.logging(  "Input", "Debug", "Decode8702 - IEEE: %s Nwkid: %s Status: %s" % (IEEE, NWKID, MsgDataStatus), NWKID, )
-
-    timeStamped(self, NWKID, 0x8702)
-    updSQN(self, NWKID, MsgDataSQN)
-    updLQI(self, NWKID, MsgLQI)
-    _powered = mainPoweredDevice(self, NWKID)
-
-    i_sqn = sqn_get_internal_sqn_from_aps_sqn(self.ZigateComm, MsgDataSQN)
-    if self.pluginconf.pluginConf["debugzigateCmd"]:
-        self.log.logging( 'Input', 'Log', "8702      Received [%s] for Nwkid  : %s with status: %s e_sqn: 0x%02x/%s" 
-            % (i_sqn, NWKID, MsgDataStatus, int(MsgDataSQN,16), MsgDataSQN), NWKID)
 
 # Device Announce
 def Decode004D(self, Devices, MsgData, MsgLQI):  # Reception Device announce
