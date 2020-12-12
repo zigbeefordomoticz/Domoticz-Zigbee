@@ -139,6 +139,12 @@ class LoggingManagement:
 
     def loggingError(self, module, message, nwkid, context):
         Domoticz.Error(message)
+        
+        #Log to file
+        if not self.pluginconf.pluginConf['useDomoticzLog']:
+            if self.loggingFileHandle is None:
+                self.openLogFile()
+            self.logToFile( message )
 
         #Log empty
         if not self.LogErrorHistory or 'LastLog' not in self.LogErrorHistory:
