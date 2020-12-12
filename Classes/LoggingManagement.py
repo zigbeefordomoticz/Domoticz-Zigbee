@@ -77,7 +77,7 @@ class LoggingManagement:
     def logToFile( self, message ):
 
             Domoticz.Status( message )
-            message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+            message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " [" + threading.current_thread().name + "] " + message + '\n'
             self.loggingFileHandle.write( message )
             self.loggingFileHandle.flush()
 
