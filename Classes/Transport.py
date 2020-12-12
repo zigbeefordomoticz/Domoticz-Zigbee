@@ -246,7 +246,8 @@ class ZigateTransport(object):
             # We loop until self.running is set to False, 
             # which indicate plugin shutdown
             data = None  
-            Domoticz.Log("before Read")
+            if self.pluginconf.pluginConf["debugzigateCmd"]:
+                Domoticz.Log("before Read")
             try:
                 data = serialConnection.read()  # Blocking Read
 
@@ -270,10 +271,11 @@ class ZigateTransport(object):
                 if self.pluginconf.pluginConf['ZiGateReactTime']:
                     # Start
                     self.reading_thread_timing = 1000 * time.time()
-
-                Domoticz.Log("Before on_message")
+                if self.pluginconf.pluginConf["debugzigateCmd"]:
+                    Domoticz.Log("Before on_message")
                 self.on_message(data)
-                Domoticz.Log("After on_message")
+                if self.pluginconf.pluginConf["debugzigateCmd"]:
+                    Domoticz.Log("After on_message")
 
                 if self.pluginconf.pluginConf['ZiGateReactTime']:
                     # Stop
@@ -1296,7 +1298,8 @@ def process_frame(self, frame):
     MsgLength = frame[6:10]
     MsgCRC = frame[10:12]
 
-    self.logging_send('Log', "process_frame - Q(0x8000): %s Q(8012/7-8702): %s Q(Ack/Nack): %s Q(waitForResponse): %s sendNow: %s"
+    if self.pluginconf.pluginConf["debugzigateCmd"]:
+        self.logging_send('Log', "process_frame - Q(0x8000): %s Q(8012/7-8702): %s Q(Ack/Nack): %s Q(waitForResponse): %s sendNow: %s"
             % ( len(self._waitFor8000Queue), len(self._waitFor8012Queue), len(self._waitFor8011Queue), len(self._waitForCmdResponseQueue), len(self.zigateSendQueue) ))
 
     if MsgType == '8701':

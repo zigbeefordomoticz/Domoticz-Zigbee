@@ -223,11 +223,14 @@ class LoggingManagement:
     def loggingCleaningErrorHistory( self ):
         if len(self.LogErrorHistory) > 1:
             idx = list(self.LogErrorHistory.keys())[1]
-            if len(self.LogErrorHistory[str(idx)]) > 4:
+            if 'Time' in self.LogErrorHistory[str(idx)]:
+                if time.time() - self.LogErrorHistory[str(idx)]['Time'] > 1360800: #7 days for old structure
+                    self.LogErrorHistory.pop(idx)
+            elif len(self.LogErrorHistory[str(idx)]) > 4:
                 idx2 = list(self.LogErrorHistory[str(idx)].keys())[4]
-                if time.time() - self.LogErrorHistory[str(idx)][str(idx2)]['Time'] > 1360800: #7 days
+                if 'Time' in self.LogErrorHistory[str(idx)][str(idx2)] and (time.time() - self.LogErrorHistory[str(idx)][str(idx2)]['Time'] > 1360800): #7 days
                     self.LogErrorHistory[idx].pop(idx2)
-            if len(self.LogErrorHistory[str(idx)]) == 4:
+            else:
                 self.LogErrorHistory.pop(idx)
         if len(self.LogErrorHistory) == 1:
             self.LogErrorHistory.clear()
