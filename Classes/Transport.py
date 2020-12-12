@@ -60,7 +60,7 @@ class ZigateTransport(object):
         self.pluginconf = pluginconf
 
         # PDM attributes
-        self.lock = False   # PDM Lock
+        self.Thread_protection = False   # PDM Lock
         self.PDMCommandOnly = False # This flag indicate if any command can be sent to Zigate or only PDM related one
 
         # Queue Management attributes 
@@ -98,15 +98,16 @@ class ZigateTransport(object):
         self._wifiPort = None  # wifi port
 
         # Thread management
-        self.lock = Lock()
+        self.Thread_protection = Lock()
         self.running = True
         self.WatchDogThread = None
-        self.Event_listen_and_read = None
         self.Thread_listen_and_read = None
+        self.Thread_process_and_send = None
         self.Thread_proc_zigate_frame = None
-        self.Event_proc_zigate_frame = None
-        self.frame_queue = queue.SimpleQueue( )
+        self.Thread_process_and_sendQueue = queue.SimpleQueue( )
+        self.Thread_proc_recvQueue_and_process = queue.SimpleQueue( )
         self.start_thread_processing_messages( )
+        self.start_thread_processing_and_sending( )
 
         self.reading_thread_timing = None
         self.watchdog_timing = None
@@ -145,21 +146,19 @@ class ZigateTransport(object):
 
     # Thread to manage Message/Frame processing
     def start_thread_processing_messages( self ):
-        if self.Event_proc_zigate_frame is None:
-            self.Event_proc_zigate_frame = Event()
 
         if self.Thread_proc_zigate_frame is None:
             self.Thread_proc_zigate_frame = Thread( name="ZiGateMessage",  target=ZigateTransport.thread_process_messages,  args=(self,))
             self.Thread_proc_zigate_frame.start()
 
     def thread_process_messages(self):
-        Domoticz.Status("ZigateTransport: thread_process_messages Thread start.")
+        self.logging_send('Status',"ZigateTransport: thread_process_messages Thread start.")
 
         while self.running:
             frame = None
             # Sending messages ( only 1 at a time )
             try:
-                frame = self.frame_queue.get( )
+                frame = self.Thread_proc_recvQueue_and_process.get( )
                 if frame == 'STOP':
                     break
                 
@@ -181,9 +180,44 @@ class ZigateTransport(object):
                 Domoticz.Error("Error while receiving a ZiGate message: %s" %e)
                 handle_error_in_thread( self, e, 0, 0, frame)
 
-        Domoticz.Status("ZigateTransport: thread_process_messages Thread stop.")
+        self.logging_send('Status',"ZigateTransport: thread_process_messages Thread stop.")
 
+    def start_thread_processing_and_sending( self ):
 
+        if self.Thread_process_and_send is None:
+            self.Thread_process_and_send = Thread( name="ZiGateSending",  target=ZigateTransport.thread_processing_and_sending,  args=(self,))
+            self.Thread_process_and_send.start()
+
+    def thread_processing_and_sending( self ):
+        self.logging_send('Status', "ZigateTransport: thread_processing_and_sending Thread start.")
+
+        while self.running:
+            frame = None
+            # Sending messages ( only 1 at a time )
+            try:
+                self.logging_send( 'Log', "Waiting for next command")
+                message = self.Thread_process_and_sendQueue.get( )
+                self.logging_send( 'Log', "Command to be send to ZiGate: %s" %message)
+                
+                if isinstance( message, dict ) and 'cmd' in message and 'datas' in message and 'ackIsDisabled' in message and 'waitForResponseIn' in message:
+                        self.thread_sendData( message['cmd'], message['datas'], message['ackIsDisabled'], message['waitForResponseIn'])
+                        self.logging_send( 'Log', "Command sent!!!!")
+
+                elif message == 'STOP':
+                    break
+
+                else:
+                    Domoticz.Error("Hops ... Don't known what to do with that %s" %message)
+
+            except queue.Empty:
+                # Empty Queue, timeout.
+                pass
+
+            except Exception as e:
+                Domoticz.Error("Error while receiving a ZiGate message: %s" %e)
+                handle_error_in_thread( self, e, 0, 0, frame)
+
+        self.logging_send('Status',"ZigateTransport: thread_processing_and_sending Thread stop.")
 
 # Thread Transport Watchdog, Serial, Tcpip
     def start_thread_transport_watchdog( self ):
@@ -216,9 +250,6 @@ class ZigateTransport(object):
             return
 
         Domoticz.Status("Starting Listening and Sending Thread")
-
-        if self.Event_listen_and_read is None:
-            self.Event_listen_and_read = Event()
 
         if self.Thread_listen_and_read is None:
             self.Thread_listen_and_read = Thread( name="ZiGateSerial",  target=ZigateTransport.serial_read_from_zigate,  args=(self,))
@@ -279,9 +310,11 @@ class ZigateTransport(object):
                     self.logging_send('Log', "serial_read_from_zigate %s ms spent in on_message()" %timing)
 
 
-        self.frame_queue.put("STOP") # In order to unblock the Blocking get()
+        self.Thread_proc_recvQueue_and_process.put("STOP") # In order to unblock the Blocking get()
+        self.Thread_process_and_sendQueue.put("STOP")
         Domoticz.Status("ZigateTransport: ZiGateSerialListen Thread stop.")
         self.Thread_proc_zigate_frame.join()
+        self.Thread_process_and_send.join()
 
     # Manage TCP connection
     def open_tcpip( self ):
@@ -293,10 +326,6 @@ class ZigateTransport(object):
         except socket.Exception as e:
             Domoticz.Error("Cannot open Zigate Wifi %s Port %s error: %s" %(self._wifiAddress, self._serialPort, e))
             return
-        if self.listening_transport_mutex is None:
-            self.listening_transport_mutex= Lock()
-        if self.Event_listen_and_read is None:
-            self.Event_listen_and_read = Event()
 
         if self.Thread_listen_and_read is None:
             self.Thread_listen_and_read = Thread( name="ZiGateTCPIP",  target=ZigateTransport.tcpip_listen_and_send,  args=(self,))
@@ -453,9 +482,17 @@ class ZigateTransport(object):
     def pdm_lock_status(self):
         return self.PDMCommandOnly
 
-
-
     def sendData(self, cmd, datas, ackIsDisabled=False, waitForResponseIn=False):
+
+        message = {
+            'cmd': cmd,
+            'datas': datas,
+            'ackIsDisabled': ackIsDisabled,
+            'waitForResponseIn': waitForResponseIn
+        }
+        self.Thread_process_and_sendQueue.put( message )
+
+    def thread_sendData(self, cmd, datas, ackIsDisabled=False, waitForResponseIn=False):
 
         waitForResponse = False
         if waitForResponseIn  or self.pluginconf.pluginConf['waitForResponse']:
@@ -689,97 +726,102 @@ def initMatrix(self):
 
 def _add_cmd_to_send_queue(self, InternalSqn):
     # add a command to the waiting list
-    timestamp = int(time.time())
-    # Check if the Cmd+Data is not yet in the Queue. If yes forget that message
-    #self.logging_send(  'Debug2', " --  > _add_cmd_to_send_queue - adding to Queue %s %s" %(InternalSqn, timestamp ))
-    self.zigateSendQueue.append((InternalSqn, timestamp))
-    # Manage Statistics
-    if len(self.zigateSendQueue) > self.statistics._MaxLoad:
-        self.statistics._MaxLoad = len(self.zigateSendQueue)
-    self.statistics._Load = len(self.zigateSendQueue)
+
+        timestamp = int(time.time())
+        # Check if the Cmd+Data is not yet in the Queue. If yes forget that message
+        #self.logging_send(  'Debug2', " --  > _add_cmd_to_send_queue - adding to Queue %s %s" %(InternalSqn, timestamp ))
+        self.zigateSendQueue.append((InternalSqn, timestamp))
+        # Manage Statistics
+        if len(self.zigateSendQueue) > self.statistics._MaxLoad:
+            self.statistics._MaxLoad = len(self.zigateSendQueue)
+        self.statistics._Load = len(self.zigateSendQueue)
 
 
 def _next_cmd_from_send_queue(self):
 
     # return the next Command to send (pop)
-    ret = (None, None)
-    if len(self.zigateSendQueue) > 0:
-        ret = self.zigateSendQueue[0]
-        del self.zigateSendQueue[0]
-    #self.logging_send(  'Debug2', " --  > _nextCmdFromSendQueue - Unqueue %s " %( str(ret) ))
-    return ret
+
+        ret = (None, None)
+        if len(self.zigateSendQueue) > 0:
+            ret = self.zigateSendQueue[0]
+            del self.zigateSendQueue[0]
+        #self.logging_send(  'Debug2', " --  > _nextCmdFromSendQueue - Unqueue %s " %( str(ret) ))
+        return ret
 
 
 def _add_cmd_to_wait_for8000_queue(self, InternalSqn):
     # add a command to the waiting list for 0x8000
-    #timestamp = int(time.time())
-    timestamp = time.time()
-    #self.logging_send(  'Log', " --  > _add_cmd_to_wait_for8000_queue - adding to Queue %s %s" %(InternalSqn, timestamp))
-    self._waitFor8000Queue.append((InternalSqn, timestamp))
+
+        #timestamp = int(time.time())
+        timestamp = time.time()
+        #self.logging_send(  'Log', " --  > _add_cmd_to_wait_for8000_queue - adding to Queue %s %s" %(InternalSqn, timestamp))
+        self._waitFor8000Queue.append((InternalSqn, timestamp))
 
 
 def _next_cmd_from_wait_for8000_queue(self):
     # return the entry waiting for a Status
-    ret = (None, None)
-    if len(self._waitFor8000Queue) > 0:
-        ret = self._waitFor8000Queue[0]
-        del self._waitFor8000Queue[0]
-    #self.logging_send(  'Debug2', " --  > _nextCmdFromWaitFor8000Queue - Unqueue %s " %( str(ret) ))
-    return ret
+
+        ret = (None, None)
+        if len(self._waitFor8000Queue) > 0:
+            ret = self._waitFor8000Queue[0]
+            del self._waitFor8000Queue[0]
+        #self.logging_send(  'Debug2', " --  > _nextCmdFromWaitFor8000Queue - Unqueue %s " %( str(ret) ))
+        return ret
 
 
 def _add_cmd_to_wait_for8012_queue(self, InternalSqn):
     # add a command to the waiting list for 0x8012/0x8702
-    #timestamp = int(time.time())
-    timestamp = time.time()
-    #self.logging_send(  'Log', " --  > _add_cmd_to_wait_for8000_queue - adding to Queue %s %s" %(InternalSqn, timestamp))
-    self._waitFor8012Queue.append((InternalSqn, timestamp))
+
+        #timestamp = int(time.time())
+        timestamp = time.time()
+        #self.logging_send(  'Log', " --  > _add_cmd_to_wait_for8000_queue - adding to Queue %s %s" %(InternalSqn, timestamp))
+        self._waitFor8012Queue.append((InternalSqn, timestamp))
 
 
 def _next_cmd_from_wait_for8012_queue(self):
     # return the entry waiting for a Status
-    
-    ret = (None, None)
-    if len(self._waitFor8012Queue) > 0:
-        ret = self._waitFor8012Queue[0]
-        del self._waitFor8012Queue[0]
-    #self.logging_send(  'Debug2', " --  > _nextCmdFromWaitFor8000Queue - Unqueue %s " %( str(ret) ))
-    return ret
+
+        ret = (None, None)
+        if len(self._waitFor8012Queue) > 0:
+            ret = self._waitFor8012Queue[0]
+            del self._waitFor8012Queue[0]
+        #self.logging_send(  'Debug2', " --  > _nextCmdFromWaitFor8000Queue - Unqueue %s " %( str(ret) ))
+        return ret
 
 
 def _add_cmd_to_wait_for8011_queue(self, InternalSqn):
     # add a command to the AckNack waiting list
-    timestamp = int(time.time())
-    #self.logging_send(  'Log', " --  > _addCmdToWaitForAckNackQueue - adding to Queue  %s %s" %(InternalSqn, timestamp))
-    self._waitFor8011Queue.append((InternalSqn, timestamp))
+
+        timestamp = int(time.time())
+        #self.logging_send(  'Log', " --  > _addCmdToWaitForAckNackQueue - adding to Queue  %s %s" %(InternalSqn, timestamp))
+        self._waitFor8011Queue.append((InternalSqn, timestamp))
 
 
 def _next_cmd_to_wait_for8011_queue(self):
     # return the entry waiting for Data
-    ret = (None, None)
-    if len(self._waitFor8011Queue) > 0:
-        ret = self._waitFor8011Queue[0]
-        del self._waitFor8011Queue[0]
-    #self.logging_send(  'Debug2', " --  > _next_cmd_to_wait_for8011_queue - Unqueue %s " %( str(ret) ))
-    return ret
+        ret = (None, None)
+        if len(self._waitFor8011Queue) > 0:
+            ret = self._waitFor8011Queue[0]
+            del self._waitFor8011Queue[0]
+        #self.logging_send(  'Debug2', " --  > _next_cmd_to_wait_for8011_queue - Unqueue %s " %( str(ret) ))
+        return ret
 
 
 def _add_cmd_to_wait_for_cmdresponse_queue(self, InternalSqn):
     # add a command to the waiting list
-
-    timestamp = int(time.time())
-    #self.logging_send(  'Log', " --  > _add_cmd_to_wait_for_cmdresponse_queue - adding to Queue %s %s" %(InternalSqn, timestamp))
-    self._waitForCmdResponseQueue.append((InternalSqn, timestamp))
+        timestamp = int(time.time())
+        #self.logging_send(  'Log', " --  > _add_cmd_to_wait_for_cmdresponse_queue - adding to Queue %s %s" %(InternalSqn, timestamp))
+        self._waitForCmdResponseQueue.append((InternalSqn, timestamp))
 
 
 def _next_cmd_from_wait_cmdresponse_queue(self):
     # return the entry waiting for Data
-    ret = (None, None)
-    if len(self._waitForCmdResponseQueue) > 0:
-        ret = self._waitForCmdResponseQueue[0]
-        del self._waitForCmdResponseQueue[0]
-    #self.logging_send(  'Debug', " --  > _next_cmd_from_wait_cmdresponse_queue - Unqueue %s " %( str(ret) ))
-    return ret
+        ret = (None, None)
+        if len(self._waitForCmdResponseQueue) > 0:
+            ret = self._waitForCmdResponseQueue[0]
+            del self._waitForCmdResponseQueue[0]
+        #self.logging_send(  'Debug', " --  > _next_cmd_from_wait_cmdresponse_queue - Unqueue %s " %( str(ret) ))
+        return ret
 
 
 
@@ -793,10 +835,10 @@ def send_data_internal(self, InternalSqn):
     if InternalSqn not in self.ListOfCommands:
         # Unexpected
         Domoticz.Error("send_data_internal - unexpected 1 %s not in ListOfCommands: %s" %
-                       (InternalSqn, str(self.ListOfCommands.keys())))
+                        (InternalSqn, str(self.ListOfCommands.keys())))
         return
     self.logging_send('Debug', "--- send_data_internal - %s FIFO: %s" %
-                     (InternalSqn, len(self.zigateSendQueue)))
+                        (InternalSqn, len(self.zigateSendQueue)))
 
     sendNow = True
     # PDM Management.
@@ -806,6 +848,7 @@ def send_data_internal(self, InternalSqn):
         Domoticz.Log("PDM not yet ready, FIFO command %s %s" % (
             self.ListOfCommands[InternalSqn]['Cmd'], self.ListOfCommands[InternalSqn]['Datas']))
         sendNow = False
+
 
     if self._waitFor8000Queue or self._waitFor8012Queue or self._waitFor8011Queue or self._waitForCmdResponseQueue:
         sendNow = False
@@ -834,6 +877,7 @@ def send_data_internal(self, InternalSqn):
             % (self.ListOfCommands[InternalSqn]['Cmd'], len(self._waitFor8000Queue), len(self._waitFor8012Queue), len(self._waitFor8011Queue), len(self._waitForCmdResponseQueue), sendNow))
 
     printListOfCommands( self, 'after correction before sending', InternalSqn )
+
     _send_data(self, InternalSqn)
 
 
@@ -993,7 +1037,6 @@ def patch_8011_for_sending(self, i_sqn):
 def ready_to_send_if_needed(self):
 
     readyToSend = True
-
     if self.zmode == 'zigate31c':
         readyToSend = len(self._waitFor8000Queue) == 0 and len(self._waitForCmdResponseQueue) == 0
         self.logging_send('Debug', "--- ready_to_send_if_needed 31c - Q(0x8000): %s Q(Ack/Nack): %s sendNow: %s"
@@ -1239,10 +1282,11 @@ def check_timed_out(self):
     TIME_OUT_RESPONSE = self.pluginconf.pluginConf['TimeOutResponse']
     TIME_OUT_ACK      = self.pluginconf.pluginConf['TimeOut8011']    
 
-    now = int(time.time())
-
     #self.logging_send('Debug2', "checkTimedOut  Start - Aps_Sqn: %s waitQ: %2s ackQ: %2s dataQ: %2s SendingFIFO: %3s"
     #                 % (self.firmware_with_aps_sqn, len(self._waitFor8000Queue), len(self._waitFor8011Queue), len(self._waitForCmdResponseQueue), len(self.zigateSendQueue)))
+
+
+    now = int(time.time())
 
     # Check if we have a Wait for 0x8000 message
     if self._waitFor8000Queue:
@@ -1304,7 +1348,7 @@ def process_frame(self, frame):
     # We receive an async message, just forward it to plugin
     if int(MsgType, 16) in STANDALONE_MESSAGE:
         self.logging_receive( 'Debug', "process_frame - STANDALONE_MESSAGE MsgType: %s MsgLength: %s MsgCRC: %s" % (MsgType, MsgLength, MsgCRC))    
-        self.frame_queue.put( frame )
+        self.Thread_proc_recvQueue_and_process.put( frame )
         ready_to_send_if_needed(self)
         return
 
@@ -1321,7 +1365,7 @@ def process_frame(self, frame):
     if MsgData and MsgType == "8002":
         # Data indication
         self.logging_receive( 'Debug', "process_frame - 8002 MsgType: %s MsgLength: %s MsgCRC: %s" % (MsgType, MsgLength, MsgCRC))  
-        self.frame_queue.put( process8002( self, frame ) )
+        self.Thread_proc_recvQueue_and_process.put( process8002( self, frame ) )
         ready_to_send_if_needed(self)
         return
 
@@ -1331,7 +1375,7 @@ def process_frame(self, frame):
             if self.pluginconf.pluginConf["debugzigateCmd"]:
                 Domoticz.Log("process_frame - Message not processed, no active queues. Msgtype: %s MsgData: %s" %(MsgType, MsgData))
         else:
-            self.frame_queue.put( frame )
+            self.Thread_proc_recvQueue_and_process.put( frame )
         ready_to_send_if_needed(self)
         return
 
@@ -1340,7 +1384,7 @@ def process_frame(self, frame):
         if MsgType == '8702':
             self.statistics._APSFailure += 1
         i_sqn = handle_8012_8702( self, MsgType, MsgData, frame)
-        # self.frame_queue.put( frame )
+        # self.Thread_proc_recvQueue_and_process.put( frame )
         ready_to_send_if_needed(self)
         return
 
@@ -1348,13 +1392,13 @@ def process_frame(self, frame):
         if MsgType in ( '8000', '8012', '8011'):
             Domoticz.Log("process_frame - Message not processed, no active queues. Msgtype: %s MsgData: %s" %(MsgType, MsgData))
         else:
-            self.frame_queue.put( frame )
+            self.Thread_proc_recvQueue_and_process.put( frame )
         ready_to_send_if_needed(self)
         return
 
     if MsgData and MsgType == "8000":
         handle_8000( self, MsgType, MsgData, frame)
-        self.frame_queue.put( frame )
+        self.Thread_proc_recvQueue_and_process.put( frame )
         ready_to_send_if_needed(self)
         return
 
@@ -1363,13 +1407,13 @@ def process_frame(self, frame):
             if self.pluginconf.pluginConf["debugzigateCmd"]:
                 Domoticz.Log("process_frame - Message not processed, no active queues. Msgtype: %s MsgData: %s" %(MsgType, MsgData))
         else:
-            self.frame_queue.put( frame )
+            self.Thread_proc_recvQueue_and_process.put( frame )
         ready_to_send_if_needed(self)
         return
 
     if MsgType == '8011':
         handle_8011( self, MsgType, MsgData, frame)
-        self.frame_queue.put( frame )
+        self.Thread_proc_recvQueue_and_process.put( frame )
         ready_to_send_if_needed(self)
         return
 
@@ -1378,7 +1422,7 @@ def process_frame(self, frame):
         if MsgType in ( '8000', '8012', '8011'):
             Domoticz.Log("process_frame - Message not processed, no active queues. Msgtype: %s MsgData: %s" %(MsgType, MsgData))
         else:
-            self.frame_queue.put( frame )
+            self.Thread_proc_recvQueue_and_process.put( frame )
         ready_to_send_if_needed(self)
         return
 
@@ -1413,7 +1457,7 @@ def process_frame(self, frame):
             cleanup_list_of_commands( self, _next_cmd_from_wait_cmdresponse_queue(self)[0])
 
     # Forward the message to plugin for further processing
-    self.frame_queue.put( frame )
+    self.Thread_proc_recvQueue_and_process.put( frame )
     ready_to_send_if_needed(self)
 
     # Let's take the opportunity to check TimeOut
