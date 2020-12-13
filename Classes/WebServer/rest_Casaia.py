@@ -8,7 +8,7 @@ import json
 
 
 from Modules.casaia import DEVICE_ID
-from WebServer.headerResponse import setupHeadersResponse, prepResponseMessage
+from Classes.WebServer.headerResponse import setupHeadersResponse, prepResponseMessage
 from time import time
 
 

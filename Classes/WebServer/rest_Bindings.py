@@ -8,7 +8,7 @@ import json
 
 from Modules.zigateConsts import ZCL_CLUSTERS_ACT
 from Modules.bindings import webBind, webUnBind
-from WebServer.headerResponse import setupHeadersResponse, prepResponseMessage
+from Classes.WebServer.headerResponse import setupHeadersResponse, prepResponseMessage
 
 
 def rest_bindLSTcluster( self, verb, data, parameters):

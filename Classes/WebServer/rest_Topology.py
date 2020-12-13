@@ -11,7 +11,7 @@ import os.path
 from time import time
 from datetime import datetime
 
-from WebServer.headerResponse import setupHeadersResponse, prepResponseMessage
+from Classes.WebServer.headerResponse import setupHeadersResponse, prepResponseMessage
 
 
 def rest_req_topologie( self, verb, data, parameters):
