@@ -24,7 +24,7 @@ from Classes.PluginConf import PluginConf,SETTINGS
 from Classes.LoggingManagement import LoggingManagement
 from Classes.DomoticzDB import DomoticzDB_Preferences
 
-from WebServer.headerResponse import setupHeadersResponse, prepResponseMessage
+from Classes.WebServer.headerResponse import setupHeadersResponse, prepResponseMessage
 
 MIMETYPES = { 
         "gif": "image/gif" ,
@@ -55,18 +55,18 @@ MIMETYPES = {
 
 class WebServer(object):
 
-    from WebServer.com import startWebServer, onStop, onConnect, onDisconnect
-    from WebServer.dispatcher import do_rest
-    from WebServer.onMessage import onMessage
-    from WebServer.rest_Bindings import rest_bindLSTcluster, rest_bindLSTdevice, rest_binding, rest_unbinding
-    from WebServer.rest_Energy import rest_req_nwk_full, rest_req_nwk_inter
-    from WebServer.rest_Groups import rest_zGroup, rest_zGroup_lst_avlble_dev, rest_rescan_group, rest_scan_devices_for_group
-    from WebServer.rest_Provisioning import rest_new_hrdwr, rest_rcv_nw_hrdwr
-    from WebServer.rest_Topology import rest_netTopologie, rest_req_topologie
-    from WebServer.sendresponse import sendResponse
-    from WebServer.tools import keepConnectionAlive, DumpHTTPResponseToLog    
-    from WebServer.rest_Ota import rest_ota_firmware_update, rest_ota_firmware_list, rest_ota_devices_for_manufcode
-    from WebServer.rest_Casaia import rest_casa_device_list, rest_casa_device_ircode_update
+    from Classes.WebServer.com import startWebServer, onStop, onConnect, onDisconnect
+    from Classes.WebServer.dispatcher import do_rest
+    from Classes.WebServer.onMessage import onMessage
+    from Classes.WebServer.rest_Bindings import rest_bindLSTcluster, rest_bindLSTdevice, rest_binding, rest_unbinding
+    from Classes.WebServer.rest_Energy import rest_req_nwk_full, rest_req_nwk_inter
+    from Classes.WebServer.rest_Groups import rest_zGroup, rest_zGroup_lst_avlble_dev, rest_rescan_group, rest_scan_devices_for_group
+    from Classes.WebServer.rest_Provisioning import rest_new_hrdwr, rest_rcv_nw_hrdwr
+    from Classes.WebServer.rest_Topology import rest_netTopologie, rest_req_topologie
+    from Classes.WebServer.sendresponse import sendResponse
+    from Classes.WebServer.tools import keepConnectionAlive, DumpHTTPResponseToLog    
+    from Classes.WebServer.rest_Ota import rest_ota_firmware_update, rest_ota_firmware_list, rest_ota_devices_for_manufcode
+    from Classes.WebServer.rest_Casaia import rest_casa_device_list, rest_casa_device_ircode_update
 
     hearbeats = 0 
 

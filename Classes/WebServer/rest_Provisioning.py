@@ -9,7 +9,7 @@ import json
 
 from Modules.zigateConsts import  ZCL_CLUSTERS_LIST ,PROFILE_ID, ZHA_DEVICES, ZLL_DEVICES
 from Modules.basicOutputs import ZigatePermitToJoin, sendZigateCmd, start_Zigate, setExtendedPANID, zigateBlueLed
-from WebServer.headerResponse import setupHeadersResponse, prepResponseMessage
+from Classes.WebServer.headerResponse import setupHeadersResponse, prepResponseMessage
 
 
 def rest_new_hrdwr( self, verb, data, parameters):
