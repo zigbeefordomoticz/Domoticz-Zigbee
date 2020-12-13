@@ -101,7 +101,7 @@ class ZigateTransport(object):
         self.lock = Lock()
         self.running = True
         self.WatchDogThread = None
-        self.Event_listen_and_read = None
+
         self.Thread_listen_and_read = None
         self.Thread_proc_zigate_frame = None
         self.Event_proc_zigate_frame = None
@@ -216,10 +216,6 @@ class ZigateTransport(object):
             return
 
         Domoticz.Status("Starting Listening and Sending Thread")
-
-        if self.Event_listen_and_read is None:
-            self.Event_listen_and_read = Event()
-
         if self.Thread_listen_and_read is None:
             self.Thread_listen_and_read = Thread( name="ZiGateSerial",  target=ZigateTransport.serial_read_from_zigate,  args=(self,))
             self.Thread_listen_and_read.start()
@@ -287,16 +283,10 @@ class ZigateTransport(object):
     def open_tcpip( self ):
         try:
             self._connection = socket.create_connection( (self._wifiAddress, self._wifiPort) )
-            self._connection.settimeout(4.0)
-            #self._connection.setblocking(0)
 
         except socket.Exception as e:
             Domoticz.Error("Cannot open Zigate Wifi %s Port %s error: %s" %(self._wifiAddress, self._serialPort, e))
             return
-        if self.listening_transport_mutex is None:
-            self.listening_transport_mutex= Lock()
-        if self.Event_listen_and_read is None:
-            self.Event_listen_and_read = Event()
 
         if self.Thread_listen_and_read is None:
             self.Thread_listen_and_read = Thread( name="ZiGateTCPIP",  target=ZigateTransport.tcpip_listen_and_send,  args=(self,))
@@ -311,11 +301,9 @@ class ZigateTransport(object):
 
         while self.running:
 
-            if self.pluginconf.pluginConf['ZiGateReactTime'] and self.reading_thread_timing !=0 :
-                timing = int( ( time.time() - self.reading_thread_timing ) * 1000 )   
-                self.statistics.add_timing_thread( timing)
-
-            self.reading_thread_timing = time.time()
+            if self.pluginconf.pluginConf['ZiGateReactTime']:
+                # Start
+                self.reading_thread_timing = 1000 * time.time()
 
             data = None
             try:
@@ -327,6 +315,15 @@ class ZigateTransport(object):
             if data: 
                 self.on_message(data)
 
+            if self.pluginconf.pluginConf['ZiGateReactTime']:
+                # Stop
+                timing = int( ( 1000 * time.time()) - self.reading_thread_timing )
+
+                self.statistics.add_timing_thread( timing)
+                if timing > 1000:
+                    self.logging_send('Log', "tcpip_listen_and_send %s ms spent in on_message()" %timing)
+
+        self.frame_queue.put("STOP") # In order to unblock the Blocking get()
         Domoticz.Status("ZigateTransport: ZiGateTcpIpListen Thread stop.")
 
     # Login mecanism
@@ -427,6 +424,12 @@ class ZigateTransport(object):
             self._connection.cancel_read()
             self.Thread_listen_and_read.join()
             self._connection.close()
+
+        elif self.pluginconf.pluginConf['MultiThreaded'] and self._connection and isinstance( self._connection, socket.socket):
+            self._connection.shutdown( socket.SHUT_RDWR )
+            self._connection.close()
+            self.Thread_listen_and_read.join()
+
         else:
             self._connection.Disconnect()
 
