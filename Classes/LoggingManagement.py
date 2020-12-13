@@ -76,15 +76,15 @@ class LoggingManagement:
 
     def logToFile( self, message ):
 
-            Domoticz.Status( message )
-            message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " [" + threading.current_thread().name + "] " + message + '\n'
+            Domoticz.Log( " [%15s] " %threading.current_thread().name + message )
+            message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) +  " [%15s] " %threading.current_thread().name + message + '\n'
             self.loggingFileHandle.write( message )
             self.loggingFileHandle.flush()
 
     def _loggingStatus( self, message):
 
         if self.pluginconf.pluginConf['useDomoticzLog']:
-            Domoticz.Status( message )
+            Domoticz.Status(  " [%15s] " %threading.current_thread().name + message)
         else:
             if self.loggingFileHandle is None:
                 self.openLogFile()
@@ -93,7 +93,7 @@ class LoggingManagement:
     def _loggingLog( self, message):
 
         if self.pluginconf.pluginConf['useDomoticzLog']:
-            Domoticz.Log( message )
+            Domoticz.Log(  " [%15s] " %threading.current_thread().name + message )
         else: 
             if self.loggingFileHandle is None:
                 self.openLogFile()
@@ -102,7 +102,7 @@ class LoggingManagement:
     def _loggingDebug(self, message):
 
         if self.pluginconf.pluginConf['useDomoticzLog']:
-            Domoticz.Log( message )
+            Domoticz.Log(  " [%15s] " %threading.current_thread().name + message )
         else: 
             if self.loggingFileHandle is None:
                 self.openLogFile()

@@ -92,7 +92,7 @@ from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
 #from Classes.APS import APSManagement
 from Classes.IAS import IAS_Zone_Management
 from Classes.PluginConf import PluginConf
-from Classes.Transport import ZigateTransport
+from Classes.Transport.Transport import ZigateTransport
 from Classes.TransportStats import TransportStatistics
 from Classes.LoggingManagement import LoggingManagement
 
@@ -574,6 +574,7 @@ class BasePlugin:
         self.log.logging( 'Plugin', 'Status', "onDisconnect called")
 
     def onHeartbeat(self):
+        self.log.logging( 'Plugin', 'Log', "onHeartbeat")
         if not self.VersionNewFashion:
             return
 

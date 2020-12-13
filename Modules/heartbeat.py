@@ -37,11 +37,11 @@ from Modules.tools import removeNwkInList, mainPoweredDevice, ReArrangeMacCapaBa
 from Modules.domoTools import timedOutDevice
 from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE, CLUSTERS_LIST, LEGRAND_REMOTES, LEGRAND_REMOTE_SHUTTER, LEGRAND_REMOTE_SWITCHS, ZIGATE_EP
 from Modules.pairingProcess import processNotinDBDevices
-from Classes.IAS import IAS_Zone_Management
-from Classes.Transport import ZigateTransport
-from Classes.AdminWidgets import AdminWidgets
-from Classes.NetworkMap import NetworkMap
-from Classes.LoggingManagement import LoggingManagement
+#from Classes.IAS import IAS_Zone_Management
+#from Classes.Transport import ZigateTransport
+##from Classes.AdminWidgets import AdminWidgets
+#from Classes.NetworkMap import NetworkMap
+#from Classes.LoggingManagement import LoggingManagement
 
 # Read Attribute trigger: Every 10"
 # Configure Reporting trigger: Every 15
