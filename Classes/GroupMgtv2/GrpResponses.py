@@ -12,8 +12,8 @@ from time import time
 from Modules.zigateConsts import ADDRESS_MODE, ZIGATE_EP
 from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl
 
-from GroupMgtv2.GrpCallBackResponses import checkToCreateOrUpdateGroup, checkToRemoveGroup
-from GroupMgtv2.GrpCommands import check_group_member_ship
+from Classes.GroupMgtv2.GrpCallBackResponses import checkToCreateOrUpdateGroup, checkToRemoveGroup
+from Classes.GroupMgtv2.GrpCommands import check_group_member_ship
 
 
 # Group Management Command

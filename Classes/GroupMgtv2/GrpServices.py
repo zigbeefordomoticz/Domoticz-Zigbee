@@ -9,13 +9,13 @@ from time import time
 
 from Modules.tools import mainPoweredDevice
 
-from GroupMgtv2.GrpDomoticz import create_domoticz_group_device, remove_domoticz_group_device
+from Classes.GroupMgtv2.GrpDomoticz import create_domoticz_group_device, remove_domoticz_group_device
 
-from GroupMgtv2.GrpIkeaRemote import checkIfIkeaRound5BToBeAdded, checkIfIkeaRound5BToBeRemoved
+from Classes.GroupMgtv2.GrpIkeaRemote import checkIfIkeaRound5BToBeAdded, checkIfIkeaRound5BToBeRemoved
 
 # remove_domoticz_group_device, update_domoticz_group_device
-from GroupMgtv2.GrpDatabase import create_group, checkNwkIdAndUpdateIfAny, remove_nwkid_from_all_groups, check_if_group_empty, remove_group
-from GroupMgtv2.GrpCommands import remove_group_member_ship, add_group_member_ship, check_group_member_ship, look_for_group_member_ship, send_group_member_ship_identify_effect
+from Classes.GroupMgtv2.GrpDatabase import create_group, checkNwkIdAndUpdateIfAny, remove_nwkid_from_all_groups, check_if_group_empty, remove_group
+from Classes.GroupMgtv2.GrpCommands import remove_group_member_ship, add_group_member_ship, check_group_member_ship, look_for_group_member_ship, send_group_member_ship_identify_effect
 
 
 def SendGroupIdentifyEffect( self, GrpId):

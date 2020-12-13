@@ -96,7 +96,7 @@ from Classes.Transport import ZigateTransport
 from Classes.TransportStats import TransportStatistics
 from Classes.LoggingManagement import LoggingManagement
 
-from GroupMgtv2.GroupManagement import GroupsManagement
+from Classes.GroupMgtv2.GroupManagement import GroupsManagement
 from Classes.AdminWidgets import AdminWidgets
 from Classes.OTA import OTAManagement
 
