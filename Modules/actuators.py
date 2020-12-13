@@ -24,13 +24,13 @@ from Modules.zigateConsts import ZIGATE_EP
 def actuators( self, action, nwkid, epout, DeviceType, cmd=None, value=None, color=None):
 
     self.log.logging( "Command", 'Log', "actuators - Action: %s on %s/%s with %s %s %s %s" 
-            %(action , nwkid, epout, DeviceType, cmd, value, color))
+            %(action , nwkid, epout, DeviceType, cmd, value, color),nwkid)
 
     if nwkid not in self.ListOfDevices:
-        Domoticz.Error("actuators - Unknown device: %s" %(nwkid))
+        self.log.logging( "Command", 'Error', "actuators - Unknown device: %s" %(nwkid), nwkid, self.ListOfDevices)
         return
     if epout not in self.ListOfDevices[nwkid]['Ep']:
-        Domoticz.Error("actuators - Unknown Ep: %s for device: %s" %(epout,nwkid))
+        self.log.logging( "Command", 'Error', "actuators - Unknown Ep: %s for device: %s" %(epout,nwkid), nwkid, self.ListOfDevices[nwkid]['Ep'])
         return
 
     if action == 'On':
@@ -53,7 +53,8 @@ def actuators( self, action, nwkid, epout, DeviceType, cmd=None, value=None, col
         set_poweron_afteroffon( self, nwkid, OnOffMode = value)
         ReadAttributeRequest_0006_400x(self, nwkid)
     else:
-        Domoticz.Error("actuators - Command: %s not yet implemented: %s/%s %s %s" %(action, nwkid, epout, value, color))
+        self.log.logging( "Command", 'Error', "actuators - Command: %s not yet implemented: %s/%s %s %s" %(action, nwkid, epout, value, color), nwkid,
+            {'action' = action, 'epout' = epout, 'value' = value, 'color' = color})
 
 
 def actuator_toggle( self, nwkid, EPout, DeviceType):
