@@ -54,7 +54,7 @@ def actuators( self, action, nwkid, epout, DeviceType, cmd=None, value=None, col
         ReadAttributeRequest_0006_400x(self, nwkid)
     else:
         self.log.logging( "Command", 'Error', "actuators - Command: %s not yet implemented: %s/%s %s %s" %(action, nwkid, epout, value, color), nwkid,
-            {'action' = action, 'epout' = epout, 'value' = value, 'color' = color})
+            {'action' : action, 'epout' : epout, 'value' : value, 'color' : color})
 
 
 def actuator_toggle( self, nwkid, EPout, DeviceType):
