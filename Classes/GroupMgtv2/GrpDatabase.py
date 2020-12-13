@@ -19,7 +19,7 @@ Methodes which manipulate the Groups Data Structure
 import os
 import json
 
-from GroupMgtv2.GrpIkeaRemote import Ikea_update_due_to_nwk_id_change
+from Classes.GroupMgtv2.GrpIkeaRemote import Ikea_update_due_to_nwk_id_change
 
 
 def write_groups_list( self):
