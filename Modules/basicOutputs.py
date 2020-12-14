@@ -79,7 +79,8 @@ def send_zigatecmd_raw( self, cmd, datas, ackIsDisabled = False ):
     # Send the cmd directly to ZiGate
 
    if self.ZigateComm is None:
-       self.log.logging( "BasicOutput", 'Error', "Zigate Communication error.")
+       self.log.logging( "BasicOutput", 'Error', "Zigate Communication error.", None,
+            {'Error code': 'BOUTPUTS-CMDRAW-01'})
        return
 
    i_sqn = self.ZigateComm.sendData( cmd, datas , ackIsDisabled )
@@ -128,7 +129,8 @@ def sendZigateCmd(self, cmd, datas , ackIsDisabled = False):
 
     """
     if int(cmd,16) not in ZIGATE_COMMANDS:
-        self.log.logging( "BasicOutput", 'Error', "Unexpected command: %s %s" %(cmd, datas),None,{'Cmd':cmd,'datas':datas})
+        self.log.logging( "BasicOutput", 'Error', "Unexpected command: %s %s" %(cmd, datas),
+            None, {'Error code': 'BOUTPUTS-CMD-01', 'Cmd':cmd, 'datas':datas})
         return None
     
     if ZIGATE_COMMANDS[ int(cmd,16)]['Layer'] == 'ZCL':
@@ -138,7 +140,8 @@ def sendZigateCmd(self, cmd, datas , ackIsDisabled = False):
         self.log.logging( "BasicOutput", 'Debug', "sendZigateCmd - ZCL layer %s %s" %(cmd, datas),NwkId)
         
         if NwkId not in self.ListOfDevices:
-            self.log.logging( "BasicOutput", 'Error', "sendZigateCmd - Decoding error %s %s" %(cmd, datas), NwkId, {'ListOfDevices' : self.ListOfDevices})
+            self.log.logging( "BasicOutput", 'Error', "sendZigateCmd - Decoding error %s %s" %(cmd, datas), 
+                NwkId, {'Error code': 'BOUTPUTS-CMD-02', 'ListOfDevices' : self.ListOfDevices})
             return None
         if AddrMod == '01':
             # Group With Ack
@@ -213,7 +216,8 @@ def start_Zigate(self, Mode='Controller'):
     ZIGATE_MODE = ( 'Controller', 'Router' )
 
     if Mode not in ZIGATE_MODE:
-        self.log.logging( "BasicOutput", 'Error', "start_Zigate - Unknown mode: %s" %Mode, None, {'Mode':Mode,'ZIGATE_MODE':ZIGATE_MODE})
+        self.log.logging( "BasicOutput", 'Error', "start_Zigate - Unknown mode: %s" %Mode, None, 
+            {'Error code': 'BOUTPUTS-START-01', 'Mode':Mode,'ZIGATE_MODE':ZIGATE_MODE})
         return
 
     self.log.logging( "BasicOutput", "Status", "ZigateConf setting Channel(s) to: %s" \
@@ -318,13 +322,15 @@ def maskChannel( channel ):
                 if int(c) in CHANNELS:
                     mask += CHANNELS[int(c)]
             else:
-                self.log.logging( "BasicOutput", 'Error', "maskChannel - invalid channel %s" %c, None, {'channel':channel})
+                self.log.logging( "BasicOutput", 'Error', "maskChannel - invalid channel %s" %c, 
+                    None, {'Error code': 'BOUTPUTS-CHANNEL-01', 'channel':channel})
 
     elif isinstance(channel, int):
         if channel in CHANNELS:
             mask = CHANNELS[ channel ]
         else:
-            self.log.logging( "BasicOutput", 'Error', "Requested channel not supported by Zigate: %s" %channel,  None, {'channel':channel})
+            self.log.logging( "BasicOutput", 'Error', "Requested channel not supported by Zigate: %s" %channel,
+                None, {'Error code': 'BOUTPUTS-CHANNEL-02', 'channel':channel})
 
     elif isinstance(channel, str):
         lstOfChannels = channel.strip().split(',')
@@ -333,11 +339,14 @@ def maskChannel( channel ):
                 if int(chnl) in CHANNELS:
                     mask += CHANNELS[int(chnl)]
                 else:
-                    self.log.logging( "BasicOutput", 'Error', "Requested channel not supported by Zigate: %s" %chnl, None, {'channel':channel})
+                    self.log.logging( "BasicOutput", 'Error', "Requested channel not supported by Zigate: %s" %chnl, 
+                        None, {'Error code': 'BOUTPUTS-CHANNEL-03', 'channel':channel})
             else:
-                self.log.logging( "BasicOutput", 'Error', "maskChannel - invalid channel %s" %chnl, None, {'channel':channel})
+                self.log.logging( "BasicOutput", 'Error', "maskChannel - invalid channel %s" %chnl, 
+                    None, {'Error code': 'BOUTPUTS-CHANNEL-04', 'channel':channel})
     else:
-        self.log.logging( "BasicOutput", 'Error', "Requested channel is invalid: %s" %channel, None, {'channel':channel})
+        self.log.logging( "BasicOutput", 'Error', "Requested channel is invalid: %s" %channel,
+            None, {'Error code': 'BOUTPUTS-CHANNEL-05', 'channel':channel})
 
     return mask
 
@@ -457,7 +466,7 @@ def leaveRequest( self, ShortAddr=None, IEEE= None, RemoveChild=0x00, Rejoin=0x0
             _ieee = self.ListOfDevices[ShortAddr]['IEEE']
         else:
             self.log.logging( "BasicOutput", 'Error', "leaveRequest - Unable to determine IEEE address for %s %s" %(ShortAddr, IEEE),
-                ShortAddr,  {'ListOfDevices' : self.ListOfDevices})
+                ShortAddr,  {'Error code': 'BOUTPUTS-LEAVE-01', 'ListOfDevices' : self.ListOfDevices})
             return None
 
     _rmv_children = '%02X' %RemoveChild
@@ -499,7 +508,8 @@ def removeZigateDevice( self, IEEE ):
         ParentAddr = IEEE
     else:
         if self.ZigateIEEE is None:
-            self.log.logging( "BasicOutput", "Error", "Zigae IEEE unknown: %s" %self.ZigateIEEE)
+            self.log.logging( "BasicOutput", "Error", "Zigae IEEE unknown: %s" %self.ZigateIEEE, None,
+                {'Error code': 'BOUTPUTS-REMOVE-01'})
             return None
         ParentAddr = self.ZigateIEEE
 
