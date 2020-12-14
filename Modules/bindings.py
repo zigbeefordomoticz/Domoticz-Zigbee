@@ -162,8 +162,8 @@ def reWebBind_Clusters( self, NWKID):
         for cluster in list(self.ListOfDevices[NWKID]['WebBind'][ Ep ]):
             for destNwkid in list(self.ListOfDevices[NWKID]['WebBind'][ Ep ][cluster]):
                 if destNwkid in ('Stamp','Target','TargetIEEE','SourceIEEE','TargetEp','Phase','Status'): # delete old mechanism
-                    self.log.logging( "Binding", 'Error', "---> delete  destNwkid: %s" %( destNwkid), destNwkid, 
-                        {'Error code': 'BINDINGS-REWEBCLS-01','ListOfDevices[NWKID]': ListOfDevices[NWKID]})
+                    self.log.logging( "Binding", 'Error', "---> delete  destNwkid: %s" %( destNwkid), NWKID, 
+                        {'Error code': 'BINDINGS-REWEBCLS-01'})
                     del self.ListOfDevices[NWKID]['WebBind'][Ep][cluster][destNwkid]
                 if self.ListOfDevices[NWKID]['WebBind'][Ep][cluster][destNwkid]['Phase'] == 'binded':
                     self.log.logging( "Binding", 'Debug', "Request a rewebbind for : nwkid %s ep: %s cluster: %s destNwkid: %s" 
@@ -226,8 +226,7 @@ def webBind( self, sourceIeee, sourceEp, destIeee, destEp, Cluster):
 
     if sourceEp not in self.ListOfDevices[sourceNwkid]['Ep']:
         self.log.logging( "Binding", 'Error', "---> unknown sourceEp: %s for sourceNwkid: %s" %(sourceEp, sourceNwkid),
-            None, {'Error code': 'BINDINGS-WEBBIND-03', 'sourceEp': sourceEp, 'sourceNwkid': sourceNwkid,
-            'ListOfDevices[sourceNwkid]':self.ListOfDevices[sourceNwkid]})
+            None, {'Error code': 'BINDINGS-WEBBIND-03', 'sourceEp': sourceEp, 'sourceNwkid': sourceNwkid})
         return
     self.log.logging( "Binding", 'Debug', "Binding Device %s/%s with Device target %s/%s on Cluster: %s"\
         %(sourceIeee, sourceEp, destIeee, destEp, Cluster), sourceNwkid)
@@ -235,15 +234,14 @@ def webBind( self, sourceIeee, sourceEp, destIeee, destEp, Cluster):
         self.log.logging( "Binding", 'Error', "---> Cluster %s not find in %s --> %s" \
             %( Cluster, sourceNwkid, self.ListOfDevices[sourceNwkid]['Ep'][sourceEp].keys()), None, 
             {'Error code': 'BINDINGS-WEBBIND-04', 'sourceEp': sourceEp, 'sourceNwkid': sourceNwkid, 
-            'Cluster': Cluster, 'ListOfDevices[sourceNwkid]':self.ListOfDevices[sourceNwkid]})
+            'Cluster': Cluster})
         return
     self.log.logging( "Binding", 'Debug', "Binding Device %s/%s with Device target %s/%s on Cluster: %s"\
         %(sourceIeee, sourceEp, destIeee, destEp, Cluster), destNwkid)
 
     if destEp not in self.ListOfDevices[destNwkid]['Ep']:
         self.log.logging( "Binding", 'Error', "---> unknown destEp: %s for destNwkid: %s" %(destEp, destNwkid), None, 
-            {'Error code': 'BINDINGS-WEBBIND-05', 'sourceEp': sourceEp, 'sourceNwkid': sourceNwkid, 'destEp': destEp,
-            'ListOfDevices[sourceNwkid]':self.ListOfDevices[sourceNwkid]})
+            {'Error code': 'BINDINGS-WEBBIND-05', 'sourceEp': sourceEp, 'sourceNwkid': sourceNwkid, 'destEp': destEp})
         return
 
     mode = "03"     # IEEE
@@ -287,24 +285,21 @@ def webUnBind( self, sourceIeee, sourceEp, destIeee, destEp, Cluster):
 
     if sourceEp not in self.ListOfDevices[sourceNwkid]['Ep']:
         self.log.logging( "Binding", 'Error', "---> unknown sourceEp: %s for sourceNwkid: %s"\
-            %(sourceEp, sourceNwkid), None, {'Error code': 'BINDINGS-WEBUNBIND-03', 'sourceEp': sourceEp,
-            'ListOfDevices[sourceNwkid]': self.ListOfDevices[sourceNwkid]})
+            %(sourceEp, sourceNwkid), sourceNwkid, {'Error code': 'BINDINGS-WEBUNBIND-03', 'sourceEp': sourceEp})
         return
     self.log.logging( "Binding", 'Debug', "UnBinding Device %s/%s with Device target %s/%s on Cluster: %s"\
         %(sourceIeee, sourceEp, destIeee, destEp, Cluster), sourceNwkid)
     if Cluster not in self.ListOfDevices[sourceNwkid]['Ep'][sourceEp]:
         self.log.logging( "Binding", 'Error', "---> Cluster %s not find in %s --> %s"\
-            %( Cluster, sourceNwkid, self.ListOfDevices[sourceNwkid]['Ep'][sourceEp].keys()), None, 
-            {'Error code': 'BINDINGS-WEBUNBIND-04', 'Cluster': Cluster, 
-            'ListOfDevices[sourceNwkid]': self.ListOfDevices[sourceNwkid]})
+            %( Cluster, sourceNwkid, self.ListOfDevices[sourceNwkid]['Ep'][sourceEp].keys()), sourceNwkid, 
+            {'Error code': 'BINDINGS-WEBUNBIND-04', 'Cluster': Cluster})
         return
     self.log.logging( "Binding", 'Debug', "UnBinding Device %s/%s with Device target %s/%s on Cluster: %s"\
         %(sourceIeee, sourceEp, destIeee, destEp, Cluster), destNwkid)
 
     if destEp not in self.ListOfDevices[destNwkid]['Ep']:
         self.log.logging( "Binding", 'Error', "---> unknown destEp: %s for destNwkid: %s" %(destEp, destNwkid)
-            , None, {'Error code': 'BINDINGS-WEBUNBIND-05', 'destEp': destEp, 'destNwkid': destNwkid,
-            'ListOfDevices[destNwkid]': self.ListOfDevices[destNwkid]})
+            , destNwkid, {'Error code': 'BINDINGS-WEBUNBIND-05', 'destEp': destEp, 'destNwkid': destNwkid})
         return
 
     mode = "03"     # IEEE
