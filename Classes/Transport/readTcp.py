@@ -8,7 +8,8 @@ import Domoticz
 import socket
 import time
 
-
+from Classes.Transport.tools import stop_waiting_on_queues
+from Classes.Transport.tools import waiting_for_end_thread
 
 # Manage TCP connection
 def open_tcpip( self ):
@@ -50,6 +51,7 @@ def tcpip_read_from_zigate( self ):
             if timing > 1000:
                 self.logging_send('Log', "tcpip_listen_and_send %s ms spent in decode_and_split_message()" %timing)
 
-    self.frame_queue.put("STOP") # In order to unblock the Blocking get()
-    self.Thread_process_and_sendQueue.put("STOP")
+
+    stop_waiting_on_queues( self )
     Domoticz.Status("ZigateTransport: ZiGateTcpIpListen Thread stop.")
+    waiting_for_end_thread( self )

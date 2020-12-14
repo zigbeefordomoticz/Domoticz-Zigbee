@@ -83,34 +83,13 @@ class ZigateTransport(object):
         }
         self.writer_prio_queue.put( 5, message ) # Prio 5 to allow prio 1 if we have to retransmit 
 
-
     # Transport / Opening / Closing Communication
     def set_connection(self):
         if self._connection is not None:
             del self._connection
             self._connection = None
 
-        if self._transp in ["USB", "DIN", "PI", "V2"]:
-            if self._serialPort.find('/dev/') != -1 or self._serialPort.find('COM') != -1:
-                Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" % (self._serialPort))
-
-                if self.pluginconf.pluginConf['MultiThreaded']:
-                    open_zigate_and_start_reader( self, 'serial' )
-                    self.open_serial( )
-                else:
-                    self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None", Address=self._serialPort, Baud=BAUDS)
-
-        elif self._transp == "Wifi":
-            Domoticz.Status("Connection Name: Zigate, Transport: TCP/IP, Address: %s:%s" %
-                            (self._serialPort, self._wifiPort))
-            if self.pluginconf.pluginConf['MultiThreaded']:
-                open_zigate_and_start_reader( self, 'tcpip' )
-                self.open_tcpip(  )
-            else:
-                self._connection = Domoticz.Connection(Name="Zigate", Transport="TCP/IP", Protocol="None ", Address=self._wifiAddress, Port=self._wifiPort)
-
-        else:
-            Domoticz.Error("Unknown Transport Mode: %s" % self._transp)
+        open_connection( self )
 
     def open_conn(self):
         if not self._connection:
@@ -185,8 +164,23 @@ class ZigateTransport(object):
         message += " Error Code: %s" %context['Error code']
         self.logging_send('Error', message,  Nwkid, context)
 
-    # Give Load indication
-    def loadTransmit(self):
-        # Provide the Load of the Sending Queue
-        return len(self.zigateSendQueue)
+def open_connection( self ):
 
+    if self._transp in ["USB", "DIN", "PI", "V2"]:
+        if self._serialPort.find('/dev/') != -1 or self._serialPort.find('COM') != -1:
+            Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" % (self._serialPort))
+            if self.pluginconf.pluginConf['MultiThreaded']:
+                open_zigate_and_start_reader( self, 'serial' )
+            else:
+                self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None", Address=self._serialPort, Baud=115200)
+
+    elif self._transp == "Wifi":
+        Domoticz.Status("Connection Name: Zigate, Transport: TCP/IP, Address: %s:%s" %
+                        (self._serialPort, self._wifiPort))
+        if self.pluginconf.pluginConf['MultiThreaded']:
+            open_zigate_and_start_reader( self, 'tcpip' )
+        else:
+            self._connection = Domoticz.Connection(Name="Zigate", Transport="TCP/IP", Protocol="None ", Address=self._wifiAddress, Port=self._wifiPort)
+
+    else:
+        Domoticz.Error("Unknown Transport Mode: %s" % self._transp)

@@ -8,13 +8,16 @@ import Domoticz
 import serial
 import time
 
+from Classes.Transport.tools import stop_waiting_on_queues
+from Classes.Transport.tools import waiting_for_end_thread
+from Classes.Transport.readDecoder import decode_and_split_message
 
-BAUDS = 115200
+
 # Manage Serial Line
 def open_serial( self ):
 
     try:
-        self._connection = serial.Serial(self._serialPort, baudrate = BAUDS, rtscts = False, dsrdtr = False, timeout = None)
+        self._connection = serial.Serial(self._serialPort, baudrate = 115200, rtscts = False, dsrdtr = False, timeout = None)
         if self._transp in ('DIN', 'V2' ):
             self._connection.rtscts = True
 
@@ -56,7 +59,7 @@ def serial_read_from_zigate( self ):
         if self.pluginconf.pluginConf["debugzigateCmd"]:
             self.logging_send('Log', "Before decode_and_split_message")
 
-        self.decode_and_split_message(data)
+        decode_and_split_message(self, data)
 
         if self.pluginconf.pluginConf["debugzigateCmd"]:
             self.logging_send('Log', "After decode_and_split_message")
@@ -70,8 +73,8 @@ def serial_read_from_zigate( self ):
                 self.logging_send('Log', "serial_read_from_zigate %s ms spent in decode_and_split_message()" %timing)
 
 
-    self.Thread_proc_recvQueue_and_process.put("STOP") # In order to unblock the Blocking get()
-    self.Thread_process_and_sendQueue.put("STOP")
+
+    stop_waiting_on_queues( self )
     Domoticz.Status("ZigateTransport: ZiGateSerialListen Thread stop.")
-    self.Thread_proc_zigate_frame.join()
-    self.Thread_process_and_send.join()
+    waiting_for_end_thread( self )
+

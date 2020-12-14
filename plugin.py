@@ -586,9 +586,6 @@ class BasePlugin:
         if self.pluginconf is None:
             return
 
-        if self.ZigateComm:
-            self.ZigateComm.check_timed_out_for_tx_queues()
-
         self.internalHB += 1
         if self.PDMready and (self.internalHB % HEARTBEAT) != 0:
             return
