@@ -70,9 +70,7 @@
 import Domoticz
 from datetime import datetime
 import time
-import struct
 import json
-import queue
 import sys
 import threading
 
@@ -215,9 +213,16 @@ class BasePlugin:
         Domoticz.Heartbeat( 1 )
         self.pluginParameters = dict(Parameters)
 
+        Domoticz.Log("%s" %(self.pluginParameters))
+
         # Open VERSION file in .hidden
+        Domoticz.Error("opening: %s " %( Parameters["HomeFolder"]+ VERSION_FILENAME))
         with open( Parameters["HomeFolder"] + VERSION_FILENAME, 'rt') as versionfile:
-            _pluginversion = json.load( versionfile, encoding=dict)
+            try:
+                _pluginversion = json.load( versionfile, encoding=dict)
+            except Exception as e:
+                Domoticz.Error("Error when opening: %s -- %e" %( Parameters["HomeFolder"] + VERSION_FILENAME, e))
+
         self.pluginParameters['PluginBranch'] = _pluginversion['branch']
         self.pluginParameters['PluginVersion'] = _pluginversion['version']
 

@@ -15,7 +15,6 @@ import binascii
 import time
 from datetime import datetime
 import struct
-import queue
 
 import json
 
@@ -94,7 +93,7 @@ from Modules.pdmHost import (
     PDMDeleteBitmapRequest,
 )
 
-from Modules.sqnMgmt import (
+from Classes.Transport.sqnMgmt import (
     sqn_get_internal_sqn_from_app_sqn,
     sqn_get_internal_sqn_from_aps_sqn,
     TYPE_APP_ZCL,
