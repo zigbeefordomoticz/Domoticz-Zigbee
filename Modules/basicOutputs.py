@@ -556,7 +556,8 @@ def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zig
     
     # APS RAW is always sent in NO-ACK below 31d (included)
     # APS RAW has ACK/NO-ACK option as of 31e
-    self.log.logging( "debuginRawAPS", 'Debug', "raw_APS_request - ackIsDisabled: %s Addr: %s Ep: %s Cluster: %s ProfileId: %s Payload: %s" %(ackIsDisabled , targetaddr, dest_ep, cluster, profileId, payload),dest_ep)
+    self.log.logging( "debuginRawAPS", 'Debug', "raw_APS_request - ackIsDisabled: %s Addr: %s Ep: %s Cluster: %s ProfileId: %s Payload: %s"\
+                     %(ackIsDisabled , targetaddr, dest_ep, cluster, profileId, payload), targetaddr)
 
     # In case of Firmware < 31e 0x0530 is always on noack even if address mode 0x02 is used.
     overwrittenackIsDisabled = ackIsDisabled
