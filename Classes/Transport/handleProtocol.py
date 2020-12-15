@@ -4,17 +4,28 @@
 # Author: pipiche38
 #
 
+import Domoticz
+import binascii
+import datetime
 
-def process_frame(self, decode_frame):
-    
+from Classes.Transport.decode8002 import decode8002_and_process
+from Classes.Transport.tools import ( STANDALONE_MESSAGE, PDM_COMMANDS,CMD_PDM_ON_HOST,CMD_ONLY_STATUS,CMD_WITH_ACK,CMD_NWK_2NDBytes,CMD_WITH_RESPONSE,RESPONSE_SQN,)
+from Modules.errorCodes import ZCL_EXTENDED_ERROR_CODES
+
+def process_frame(self, decoded_frame):
+
+    self.logging_receive( 'Log', "process_frame - receive frame: %s" %decoded_frame)
+
     # Sanity Check
-    if decode_frame == '' or decode_frame is None or len(decode_frame) < 12:
+    if decoded_frame == '' or decoded_frame is None or len(decoded_frame) < 12:
         return
 
     i_sqn = None
-    MsgType = decode_frame[2:6]
-    MsgLength = decode_frame[6:10]
-    MsgCRC = decode_frame[10:12]
+    MsgType = decoded_frame[2:6]
+    MsgLength = decoded_frame[6:10]
+    MsgCRC = decoded_frame[10:12]
+
+    self.logging_receive( 'Log', "process_frame - MsgType: %s MsgLenght: %s MsgCrc: %s" %( MsgType, MsgLength, MsgCRC))
 
     if MsgType == '8701':
         # Route Discovery, we don't handle it
@@ -22,48 +33,62 @@ def process_frame(self, decode_frame):
 
     # We receive an async message, just forward it to plugin
     if int(MsgType, 16) in STANDALONE_MESSAGE:
-        self.logging_receive( 'Debug', "process_frame - STANDALONE_MESSAGE MsgType: %s MsgLength: %s MsgCRC: %s" % (MsgType, MsgLength, MsgCRC))    
-        # Send to Queue for F_OUT()
+        self.logging_receive( 'Log', "process_frame - STANDALONE_MESSAGE MsgType: %s MsgLength: %s MsgCRC: %s" % (MsgType, MsgLength, MsgCRC))    
+        self.forwarder_queue.put( decoded_frame)
         return
 
     # Payload
     MsgData = None
-    if len(decode_frame) < 18:
+    if len(decoded_frame) < 18:
         return
 
-    MsgData = decode_frame[12:len(decode_frame) - 4]
+    MsgData = decoded_frame[12:len(decoded_frame) - 4]
+
+    if MsgType == '8001':
+        NXP_log_message(self, MsgData)
+        return
+
+    elif MsgType == '9999':
+        NXP_Extended_Error_Code( self, MsgData)
+        return
 
     if MsgType in ( '8000', '8012', '8702', '8011'):
         # Protocol Management with 31d and 31e
-        pass
-
+        self.semaphore_gate.release()
+        return
 
     if MsgData and MsgType == "8002":
         # Data indication
-        self.logging_receive( 'Debug', "process_frame - 8002 MsgType: %s MsgLength: %s MsgCRC: %s" % (MsgType, MsgLength, MsgCRC))  
-        self.Thread_proc_recvQueue_and_process.put( process8002( self, frame ) )
+        self.logging_receive( 'Log', "process_frame - 8002 MsgType: %s MsgLength: %s MsgCRC: %s" % (MsgType, MsgLength, MsgCRC))  
+        self.forwarder_queue.put( decode8002_and_process( self, decoded_frame ) )
         return
 
-
-    # We reach that stage: Got a message not 0x8000/0x8011/0x8701/0x8202 an not a standolone message
-    # But might be a 0x8102 ( as firmware 3.1c and below are reporting Read Attribute response and Report Attribute with the same MsgType)
-    if not self.firmware_with_aps_sqn:
-        MsgZclSqn = MsgData[0:2]
-        MsgNwkId = MsgData[2:6]
-        MsgEp = MsgData[6:8]
-        MsgClusterId = MsgData[8:12]
-        # Old Fashion Protocol Managemet. We are waiting for a Command Response before sending the next command
-
-        return
 
     # Forward the message to plugin for further processing
+    self.forwarder_queue.put( decoded_frame)
 
 # Extended Error Code:
-def handle_9999( self, MsgData):
+def NXP_Extended_Error_Code( self, MsgData):
 
     StatusMsg = ''
     if  MsgData in ZCL_EXTENDED_ERROR_CODES:
         StatusMsg = ZCL_EXTENDED_ERROR_CODES[MsgData]
 
     if self.pluginconf.pluginConf['trackError']:
-        self.logging_send( 'Log', "handle_9999 - Last PDUs infos ( n: %s a: %s) Extended Error Code: [%s] %s" %(self.npdu, self.apdu, MsgData, StatusMsg))
+        self.logging_send( 'Log', "NXP_Extended_Error_Code - Last PDUs infos ( n: %s a: %s) Extended Error Code: [%s] %s" %(self.npdu, self.apdu, MsgData, StatusMsg))
+
+def NXP_log_message(self, MsgData):  # Reception log Level
+
+    LOG_FILE = "ZiGate"
+
+    MsgLogLvl = MsgData[0:2]
+    log_message = binascii.unhexlify(MsgData[2:]).decode('utf-8')
+    logfilename =  self.pluginconf.pluginConf['pluginLogs'] + "/" + LOG_FILE + '_' + '%02d' %self.HardwareID + "_" + ".log"
+    try:
+        with open( logfilename , 'at', encoding='utf-8') as file:
+            try:
+                file.write( "%s %s %s" %(str(datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]), MsgLogLvl,log_message) + "\n")
+            except IOError:
+                Domoticz.Error("Error while writing to ZiGate log file %s" %logfilename)
+    except IOError:
+        Domoticz.Error("Error while Opening ZiGate log file %s" %logfilename)

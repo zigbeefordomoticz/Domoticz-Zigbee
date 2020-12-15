@@ -525,12 +525,12 @@ class BasePlugin:
         self.Ping['Nb Ticks'] = 0
         self.ZigateComm.on_message(Data)
 
-    def processFrame( self, Data , i_sqn, TransportInfos=None):
+    def processFrame( self, Data ):
         if not self.VersionNewFashion:
             return
         #start_time = int(time.time() *1000)
         #Domoticz.Log("### Processing: %s" %Data)
-        ZigateRead( self, Devices, Data, i_sqn )
+        ZigateRead( self, Devices, Data)
         #stop_time = int(time.time() *1000)
         #Domoticz.Log("### Completion: %s is %s ms" %(Data, ( stop_time - start_time)))
 

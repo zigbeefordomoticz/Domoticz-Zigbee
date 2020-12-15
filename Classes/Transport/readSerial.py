@@ -6,7 +6,7 @@
 
 import Domoticz
 import serial
-import time
+
 
 from Classes.Transport.tools import stop_waiting_on_queues
 from Classes.Transport.tools import waiting_for_end_thread
@@ -25,52 +25,27 @@ def open_serial( self ):
         Domoticz.Error("Cannot open Zigate port %s error: %s" %(self._serialPort, e))
         return False
 
-    Domoticz.Status("ZigateTransport: Serial Connection open: %s" %self._connection)
+    self.logging_receive( 'Log', "ZigateTransport: Serial Connection open: %s" %self._connection)
     return True
 
 def serial_read_from_zigate( self ):
 
-    serialConnection = self._connection
+    self.logging_receive( 'Log', "serial_read_from_zigate - listening")
 
     while self.running:
         # We loop until self.running is set to False, 
         # which indicate plugin shutdown   
         data = None
-        nb_in = serialConnection.in_waiting
-        if self.pluginconf.pluginConf["debugzigateCmd"]:
-            self.logging_send('Log', "before Read")
+
         try:
-            data = serialConnection.read( serialConnection.in_waiting or 1)  # Blocking Read
-        except serial.SerialTimeoutException:
-            data = None
+            data = self._connection.read( )  # Blocking Read
+
         except serial.SerialException as e:
             Domoticz.Error("serial_read_from_zigate - error while reading %s" %(e))
             data = None
-        if data is None:
-            continue
 
-        if self.pluginconf.pluginConf["debugzigateCmd"]:
-            self.logging_send('Log', "serial_read_from_zigate %s" %str(data))
-
-        if self.pluginconf.pluginConf['ZiGateReactTime']:
-            # Start
-            self.reading_thread_timing = 1000 * time.time()
-
-        if self.pluginconf.pluginConf["debugzigateCmd"]:
-            self.logging_send('Log', "Before decode_and_split_message")
-
-        decode_and_split_message(self, data)
-
-        if self.pluginconf.pluginConf["debugzigateCmd"]:
-            self.logging_send('Log', "After decode_and_split_message")
-
-        if self.pluginconf.pluginConf['ZiGateReactTime']:
-            # Stop
-            timing = int( ( 1000 * time.time()) - self.reading_thread_timing )
-
-            self.statistics.add_timing_thread( timing)
-            if timing > 1000:
-                self.logging_send('Log', "serial_read_from_zigate %s ms spent in decode_and_split_message()" %timing)
+        if data:
+            decode_and_split_message(self, data)
 
 
 

@@ -110,12 +110,12 @@ from Classes.OTA import OTAManagement
 from Classes.NetworkMap import NetworkMap
 
 
-def ZigateRead(self, Devices, Data, TransportInfos=None):
+def ZigateRead(self, Devices, Data):
 
     if self.pluginconf.pluginConf['ZiGateReactTime']: 
         start = 1000 * time.time()
 
-    instrumented_ZigateRead(self, Devices, Data, TransportInfos)
+    instrumented_ZigateRead(self, Devices, Data)
 
     if self.pluginconf.pluginConf['ZiGateReactTime']: 
         stop = 1000 * time.time()
@@ -127,13 +127,12 @@ def ZigateRead(self, Devices, Data, TransportInfos=None):
                                                 self.ZigateRead_timing_avrg, 
                                                 self.ZigateRead_timing_max)
 
-def instrumented_ZigateRead(self, Devices, Data, TransportInfos):
+def instrumented_ZigateRead(self, Devices, Data):
 
     DECODERS = {
         "0100": Decode0100,
         "004d": Decode004D,
         "8000": Decode8000_v2,
-        #"8001": Decode8001,
         "8002": Decode8002,
         "8003": Decode8003,
         "8004": Decode8004,
@@ -143,7 +142,6 @@ def instrumented_ZigateRead(self, Devices, Data, TransportInfos):
         "8009": Decode8009,
         "8010": Decode8010,
         #'8011': Decode8011,
-        "8012": Decode8012,
         "8014": Decode8014,
         "8015": Decode8015,
         "8017": Decode8017,
@@ -186,7 +184,6 @@ def instrumented_ZigateRead(self, Devices, Data, TransportInfos):
         "8501": Decode8501,
         "8503": Decode8503,
         "8701": Decode8701,
-        "8702": Decode8702,
         "8806": Decode8806,
         "8807": Decode8807,
         "0300": Decode0300,
@@ -245,9 +242,6 @@ def instrumented_ZigateRead(self, Devices, Data, TransportInfos):
 
     if MsgType == "8011":
         Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos)
-        return
-    if MsgType == "8001": # No LQI provided for 0x8001
-        Decode8001( self,Devices, MsgData + MsgLQI, '00' )
         return
 
     Domoticz.Error("ZigateRead - Decoder not found for %s" % (MsgType))

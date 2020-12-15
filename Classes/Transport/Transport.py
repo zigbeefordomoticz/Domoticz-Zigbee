@@ -10,14 +10,22 @@ import serial
 import queue
 import time
 
-from queue import PriorityQueue
+from threading import Semaphore
+from queue import PriorityQueue, SimpleQueue
 
-from Classes.Transport.sqnMgmt import sqn_init_stack
+from Classes.Transport.sqnMgmt import sqn_init_stack, sqn_generate_new_internal_sqn
 from Classes.Transport.readerThread import open_zigate_and_start_reader, shutdown_reader_thread
+from Classes.Transport.writerThread import start_writer_thread
+from Classes.Transport.forwarderThread import start_forwarder_thread
+from Classes.Transport.tools import initialize_command_protocol_parameters
 
+MAX_SIMULTANEOUS_ZIGATE_COMMANDS = 1
 class ZigateTransport(object):
 
     def __init__(self, transport, statistics, pluginconf, F_out, log, serialPort=None, wifiAddress=None, wifiPort=None):
+        # Call back function to send back to plugin
+        self.F_out = F_out  # Function to call to bring the decoded Frame at plugin
+
         # Logging
         self.log = log
 
@@ -33,21 +41,40 @@ class ZigateTransport(object):
         self._wifiAddress = None  # ip address in case of Wifi
         self._wifiPort = None  # wifi port
 
+        # Semaphore to manage when to send a commande to ZiGate
+        self.semaphore_gate = Semaphore( value = MAX_SIMULTANEOUS_ZIGATE_COMMANDS)
+
+        # Running flag for Thread. Switch to False to stop the Threads
+        self.running = True
+
         # Writer
-        self.writer_prio_queue = PriorityQueue()
+        self.writer_queue = SimpleQueue()
         self.writer_thread = None
 
         # Reader
         self.reader_thread = None
 
         # Forwarder
-        self.forwarder_prio_queue = PriorityQueue()
+        self.forwarder_queue = SimpleQueue()
         self.forwarder_thread = None
+
+
+        # Firmware Management
+        self.FirmwareVersion = None
+        self.FirmwareMajorVersion = None
+        self.zmode = pluginconf.pluginConf['Zmode'].lower()
+
+        self.firmware_with_aps_sqn = False  # Available from 31d
+        self.firmware_with_8012 = False     # Available from 31e
+        self.PDMCommandOnly = False
 
         # Initialise SQN Management
         sqn_init_stack(self)
 
-        self.running = True
+        # Initialise Command Protocol Parameters
+        initialize_command_protocol_parameters( )
+
+
         if transport in ( "USB", "DIN", "V2", "PI"):
             self._transp = transport
             self._serialPort = serialPort
@@ -67,21 +94,35 @@ class ZigateTransport(object):
     def thread_transport_shutdown( self ):
         self.running = False
 
+    def pdm_lock_status(self):
+        return self.PDMCommandOnly
+
+
     def loadTransmit(self):
         # Provide the Load of the Sending Queue
-        return self.writer_prio_queue.qsize()
+        return self.writer_queue.qsize()
 
     def sendData(self, cmd, datas, ackIsDisabled=False, waitForResponseIn=False):
         # We receive a send Message command from above ( plugin ), 
         # send it to the sending queue
 
+        InternalSqn = sqn_generate_new_internal_sqn(self)
         message = {
-        'cmd': cmd,
-        'datas': datas,
-        'ackIsDisabled': ackIsDisabled,
-        'waitForResponseIn': waitForResponseIn
+            'cmd': cmd,
+            'datas': datas,
+            'ackIsDisabled': ackIsDisabled,
+            'waitForResponseIn': waitForResponseIn,
+            'InternalSqn': InternalSqn
         }
-        self.writer_prio_queue.put( 5, message ) # Prio 5 to allow prio 1 if we have to retransmit 
+        try:
+            self.writer_queue.put( message ) # Prio 5 to allow prio 1 if we have to retransmit 
+        except queue.Full:
+            Domoticz.Error("sendData - writer_queue Full")
+
+        except Exception as e:
+            Domoticz.Error("sendData - Error: %s" %e)
+        
+        return InternalSqn
 
     # Transport / Opening / Closing Communication
     def set_connection(self):
@@ -100,8 +141,9 @@ class ZigateTransport(object):
 
     def close_conn(self):
         Domoticz.Status("Connection close: %s" % self._connection)
+
         self.running = False # It will shutdown the Thread 
-    
+
         if self.pluginconf.pluginConf['MultiThreaded']:
             shutdown_reader_thread( self )
 
@@ -121,6 +163,7 @@ class ZigateTransport(object):
                 self.close_conn()
 
         self.open_conn()
+
     # Login mecanism
     def logging_send(self, logType, message, NwkId = None, _context=None):
         # Log all activties towards ZiGate
@@ -171,6 +214,9 @@ def open_connection( self ):
             Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" % (self._serialPort))
             if self.pluginconf.pluginConf['MultiThreaded']:
                 open_zigate_and_start_reader( self, 'serial' )
+                start_writer_thread( self )
+                start_forwarder_thread( self )
+
             else:
                 self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None", Address=self._serialPort, Baud=115200)
 
@@ -179,6 +225,8 @@ def open_connection( self ):
                         (self._serialPort, self._wifiPort))
         if self.pluginconf.pluginConf['MultiThreaded']:
             open_zigate_and_start_reader( self, 'tcpip' )
+            start_writer_thread( self )
+            start_forwarder_thread( self)
         else:
             self._connection = Domoticz.Connection(Name="Zigate", Transport="TCP/IP", Protocol="None ", Address=self._wifiAddress, Port=self._wifiPort)
 
