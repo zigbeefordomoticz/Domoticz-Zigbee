@@ -19,7 +19,7 @@ from Classes.Transport.writerThread import start_writer_thread
 from Classes.Transport.forwarderThread import start_forwarder_thread
 from Classes.Transport.tools import initialize_command_protocol_parameters, waiting_for_end_thread
 
-MAX_SIMULTANEOUS_ZIGATE_COMMANDS = 1
+MAX_SIMULTANEOUS_ZIGATE_COMMANDS = 1  # Number of silmutaneous command sent to ZiGate. It must be 1 in case of firmware below 31c
 class ZigateTransport(object):
 
     def __init__(self, transport, statistics, pluginconf, F_out, log, serialPort=None, wifiAddress=None, wifiPort=None):
@@ -47,6 +47,9 @@ class ZigateTransport(object):
         # Running flag for Thread. Switch to False to stop the Threads
         self.running = True
 
+        # Management of Commands sent to ZiGate
+        self.ListOfCommands = {}
+
         # Writer
         self.writer_queue = SimpleQueue()
         self.writer_thread = None
@@ -57,7 +60,6 @@ class ZigateTransport(object):
         # Forwarder
         self.forwarder_queue = SimpleQueue()
         self.forwarder_thread = None
-
 
         # Firmware Management
         self.FirmwareVersion = None

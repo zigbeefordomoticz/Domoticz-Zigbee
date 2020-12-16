@@ -38,12 +38,12 @@ def writer_thread( self ):
                     self.statistics._MaxLoad = self.writer_queue.qsize()
                 self.statistics._Load = self.writer_queue.qsize()
 
-                self.logging_send( 'Log', "Waiting for a write slot . Semaphore %s" %(self.semaphore_gate))
-
-                self.semaphore_gate.acquire( blocking = True, timeout = 8.0) # Blocking until 8s Tiemout
+                self.logging_send( 'Log', "Waiting for a write slot . Semaphore %s ATTENTION NO TIMEOUT FOR TEST PURPOSES" %(self.semaphore_gate))
+                self.semaphore_gate.acquire( blocking = True, timeout = None) # Blocking until 8s Tiemout
+                self.logging_send( 'Log', "Get semaphore %s" %(self.semaphore_gate._value))
         
                 thread_sendData( self, command['cmd'], command['datas'], command['ackIsDisabled'], command['waitForResponseIn'], command['InternalSqn'])
-                self.logging_send( 'Log', "Command sent!!!!")
+                self.logging_send( 'Log', "Command sent!!!! %s" %command)
 
             elif command == 'STOP':
                 break
@@ -75,26 +75,35 @@ def thread_sendData(self, cmd, datas, ackIsDisabled, waitForResponseIn, isqn ):
             'Datas': datas,
             'ackIsDisabled': ackIsDisabled,
             'waitForResponseIn': waitForResponseIn,
+            'InternalSqn': isqn
         }
         self.logging_send_error( "sendData", context=_context)
         return None
+
+    self.ListOfCommands[ isqn ] = {
+        'cmd': cmd,
+        'datas': datas,
+        'ackIsDisabled': ackIsDisabled,
+        'waitForResponseIn': waitForResponseIn,
+        'Status': 'SENT',
+        'Semaphore': self.semaphore_gate._value
+    }
+    write_to_zigate( self, self._connection, bytes.fromhex(  encode_message( cmd, datas)) )
+
+
+def encode_message( cmd, datas):
 
     if datas == "":
         length = "0000"
         checksumCmd = get_checksum(cmd, length, "0")
         strchecksum = '0' + checksumCmd if len(checksumCmd) == 1 else checksumCmd
-        lineinput = "01" + zigate_encode(cmd) + zigate_encode(length) + zigate_encode(strchecksum) + "03"
+        return ( "01" + zigate_encode(cmd) + zigate_encode(length) + zigate_encode(strchecksum) + "03" )
+
     else:
         length = '%04x' % (len(datas)//2)
         checksumCmd = get_checksum(cmd, length, datas)
         strchecksum = '0' + checksumCmd if len(checksumCmd) == 1 else checksumCmd
-        lineinput = "01" + zigate_encode(cmd) + zigate_encode(length) + zigate_encode(strchecksum) + zigate_encode(datas) + "03"
-
-
-    write_to_zigate( self, self._connection, bytes.fromhex(str(lineinput)) )
-    self.statistics._sent += 1
-
-
+        return ( "01" + zigate_encode(cmd) + zigate_encode(length) + zigate_encode(strchecksum) + zigate_encode(datas) + "03" )
 
 def zigate_encode(Data):
     # The encoding is the following:

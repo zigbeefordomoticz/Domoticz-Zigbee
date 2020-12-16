@@ -9,7 +9,13 @@ import binascii
 import datetime
 
 from Classes.Transport.decode8002 import decode8002_and_process
-from Classes.Transport.tools import ( STANDALONE_MESSAGE, PDM_COMMANDS,CMD_PDM_ON_HOST,CMD_ONLY_STATUS,CMD_WITH_ACK,CMD_NWK_2NDBytes,CMD_WITH_RESPONSE,RESPONSE_SQN,)
+from Classes.Transport.decode8000 import decode8000
+from Classes.Transport.decode8012 import decode8012_8702
+from Classes.Transport.decode8011 import decode8011
+from Classes.Transport.tools import ( release_command, get_isqn_from_ListOfCommands, STANDALONE_MESSAGE,)
+from Classes.Transport.handleFirmware31c import check_and_process_others_31c
+
+
 from Modules.errorCodes import ZCL_EXTENDED_ERROR_CODES
 
 def process_frame(self, decoded_frame):
@@ -27,10 +33,6 @@ def process_frame(self, decoded_frame):
 
     self.logging_receive( 'Log', "process_frame - MsgType: %s MsgLenght: %s MsgCrc: %s" %( MsgType, MsgLength, MsgCRC))
 
-    if MsgType == '8701':
-        # Route Discovery, we don't handle it
-        return
-
     # We receive an async message, just forward it to plugin
     if int(MsgType, 16) in STANDALONE_MESSAGE:
         self.logging_receive( 'Log', "process_frame - STANDALONE_MESSAGE MsgType: %s MsgLength: %s MsgCRC: %s" % (MsgType, MsgLength, MsgCRC))    
@@ -45,25 +47,51 @@ def process_frame(self, decoded_frame):
     MsgData = decoded_frame[12:len(decoded_frame) - 4]
 
     if MsgType == '8001':
-        NXP_log_message(self, MsgData)
+        #Async message
+        NXP_log_message(self, decoded_frame)
         return
 
-    elif MsgType == '9999':
-        NXP_Extended_Error_Code( self, MsgData)
+    if MsgType == '9999':
+        # Async message
+        NXP_Extended_Error_Code( self, decoded_frame)
         return
 
-    if MsgType in ( '8000', '8012', '8702', '8011'):
-        # Protocol Management with 31d and 31e
-        self.logging_receive( 'Log', "self.logging_receive - Release semaphore %s" %self.semaphore_gate)
-        self.semaphore_gate.release()
+    if MsgType == '8000': # Command Ack
+        decode8000( self, decoded_frame)
+        self.forwarder_queue.put( decoded_frame)
         return
 
-    if MsgData and MsgType == "8002":
+    if MsgType in ( '8012', '8702'): # Transmission Akc for no-ack commands
+        decode8012_8702( self, decoded_frame)
+        return
+
+    if MsgType == '8011': # Command Ack (from target device)
+        decode8011( self, decoded_frame)
+        self.forwarder_queue.put( decoded_frame)
+        return
+
+    if MsgType in ( '8010', ):
+        self.forwarder_queue.put( decoded_frame)
+        release_command( self, get_isqn_from_ListOfCommands( self, MsgType))
+        return
+
+    if MsgType == '8701':
+        # Async message
+        # Route Discovery, we don't handle it
+        return
+
+    if not self.firmware_with_aps_sqn and MsgType in ( '8100', '8110', '8102'):
+        # We are in a 31c and below firmware.
+        # we will release next command only when receiving expected response for a command
+        check_and_process_others_31c(self, MsgType, MsgData)
+        self.forwarder_queue.put( decoded_frame)
+        return
+
+    if MsgType == "8002" and MsgData:
         # Data indication
         self.logging_receive( 'Log', "process_frame - 8002 MsgType: %s MsgLength: %s MsgCRC: %s" % (MsgType, MsgLength, MsgCRC))  
         self.forwarder_queue.put( decode8002_and_process( self, decoded_frame ) )
         return
-
 
     # Forward the message to plugin for further processing
     self.forwarder_queue.put( decoded_frame)

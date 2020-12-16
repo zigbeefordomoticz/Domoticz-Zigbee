@@ -579,7 +579,7 @@ class BasePlugin:
         self.log.logging( 'Plugin', 'Status', "onDisconnect called")
 
     def onHeartbeat(self):
-        self.log.logging( 'Plugin', 'Log', "onHeartbeat")
+
         if not self.VersionNewFashion:
             return
 

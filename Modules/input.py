@@ -241,7 +241,7 @@ def instrumented_ZigateRead(self, Devices, Data):
         return
 
     if MsgType == "8011":
-        Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos)
+        Decode8011(self, Devices, MsgData, MsgLQI)
         return
 
     Domoticz.Error("ZigateRead - Decoder not found for %s" % (MsgType))
@@ -838,21 +838,14 @@ def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
         if self.ListOfDevices[MsgSrcAddr]["Health"] != "Not Reachable":
             self.ListOfDevices[MsgSrcAddr]["Health"] = "Not Reachable"
 
-        cmd = ""
-        if TransportInfos:
-            if isinstance(TransportInfos, dict):
-                cmd = TransportInfos["Cmd"]
-            else:
-                Domoticz.Error("Transport Info not a dict ! %s" % TransportInfos)
-
         if "ZDeviceName" in self.ListOfDevices[MsgSrcAddr]:
             MsgClusterId = MsgData[8:12]
             if self.ListOfDevices[MsgSrcAddr]["ZDeviceName"] not in [ {}, "", ]:
-                self.log.logging(  "Input", "Log", "Receive NACK from %s (%s) clusterId: %s for Command: %s Status: %s"
-                    % ( self.ListOfDevices[MsgSrcAddr]["ZDeviceName"], MsgSrcAddr, MsgClusterId, cmd, MsgStatus, ), MsgSrcAddr, )
+                self.log.logging(  "Input", "Log", "Receive NACK from %s (%s) clusterId: %s Status: %s"
+                    % ( self.ListOfDevices[MsgSrcAddr]["ZDeviceName"], MsgSrcAddr, MsgClusterId, MsgStatus, ), MsgSrcAddr, )
             else:
-                self.log.logging(  "Input", "Log", "Receive NACK from %s clusterId: %s for Command: %s Status: %s" 
-                   % (MsgSrcAddr, MsgClusterId, cmd, MsgStatus), MsgSrcAddr, )
+                self.log.logging(  "Input", "Log", "Receive NACK from %s clusterId: %s Status: %s" 
+                   % (MsgSrcAddr, MsgClusterId,  MsgStatus), MsgSrcAddr, )
 
 
 def Decode8012(self, Devices, MsgData, MsgLQI):

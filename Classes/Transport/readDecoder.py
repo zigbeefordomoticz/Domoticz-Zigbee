@@ -21,11 +21,9 @@ def decode_and_split_message(self, raw_message):
     while 1:  # Loop, detect frame and process, until there is no more frame.
         if len(self._ReqRcv) == 0:
             return
-
         BinMsg = decode_frame( get_raw_frame_from_raw_message( self ))
         if BinMsg is None:
             return
-
         if not check_frame_lenght( self, BinMsg) or not check_frame_crc(self, BinMsg):
             Domoticz.Error("on_message Frame error Crc/len %s" %(BinMsg))
             continue           
@@ -36,7 +34,6 @@ def decode_and_split_message(self, raw_message):
             self.logging_send('Log', "on_message AsciiMsg: %s , Remaining buffer: %s" %(AsciiMsg,  self._ReqRcv ))
 
         self.statistics._received += 1
-
         process_frame(self, AsciiMsg)
 
 def get_raw_frame_from_raw_message( self ):
@@ -116,6 +113,5 @@ def check_frame_lenght( self, BinMsg):
             'ReceveidLength': ReceveidLength,
         }
         self.logging_send_error( "on_message", context=_context)
-        Domoticz.Log("BinMsg: %s ExpectedLen: %s ComputedLen: %s" %(BinMsg, ReceveidLength,ComputedLength ))
         return False
     return True
