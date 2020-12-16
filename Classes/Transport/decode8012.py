@@ -4,8 +4,9 @@
 # Author: pipiche38
 #
 
-from Classes.Transport.tools import release_command, update_xPDU, is_final_step
+from Classes.Transport.tools import release_command, update_xPDU, print_listofcommands
 from Classes.Transport.sqnMgmt import sqn_get_internal_sqn_from_aps_sqn
+from Classes.Transport.isFinal import is_final_step
 
 def decode8012_8702( self, decoded_frame):
     MsgType = decoded_frame[2:6]
@@ -40,6 +41,8 @@ def decode8012_8702( self, decoded_frame):
     if isqn not in self.ListOfCommands:
         self.logging_receive( 'Log', "decode8012_8702 - 0x8012 not for us eSqn: %s " %(MsgSQN))
         return
+
+    print_listofcommands( self, isqn )
 
     if MsgType == '8702':
         release_command( self, isqn)

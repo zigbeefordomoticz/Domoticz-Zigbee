@@ -529,7 +529,7 @@ class BasePlugin:
         if not self.VersionNewFashion:
             return
         #start_time = int(time.time() *1000)
-        #Domoticz.Log("### Processing: %s" %Data)
+        Domoticz.Log("### Processing: %s" %Data)
         ZigateRead( self, Devices, Data)
         #stop_time = int(time.time() *1000)
         #Domoticz.Log("### Completion: %s is %s ms" %(Data, ( stop_time - start_time)))

@@ -40,7 +40,7 @@ def writer_thread( self ):
 
                 self.logging_send( 'Log', "Waiting for a write slot . Semaphore %s ATTENTION NO TIMEOUT FOR TEST PURPOSES" %(self.semaphore_gate))
                 self.semaphore_gate.acquire( blocking = True, timeout = None) # Blocking until 8s Tiemout
-                self.logging_send( 'Log', "Get semaphore %s" %(self.semaphore_gate._value))
+                self.logging_send( 'Log', "=============  Get semaphore %s==============" %(self.semaphore_gate._value))
         
                 thread_sendData( self, command['cmd'], command['datas'], command['ackIsDisabled'], command['waitForResponseIn'], command['InternalSqn'])
                 self.logging_send( 'Log', "Command sent!!!! %s" %command)
@@ -88,6 +88,7 @@ def thread_sendData(self, cmd, datas, ackIsDisabled, waitForResponseIn, isqn ):
         'Status': 'SENT',
         'Semaphore': self.semaphore_gate._value
     }
+    self.statistics._sent += 1
     write_to_zigate( self, self._connection, bytes.fromhex(  encode_message( cmd, datas)) )
 
 

@@ -48,34 +48,41 @@ def process_frame(self, decoded_frame):
 
     if MsgType == '8001':
         #Async message
+        self.logging_receive( 'Log', "process_frame - MsgType: %s " %( MsgType))
         NXP_log_message(self, decoded_frame)
         return
 
     if MsgType == '9999':
         # Async message
+        self.logging_receive( 'Log', "process_frame - MsgType: %s MsgData: %s" %( MsgType, MsgData))
         NXP_Extended_Error_Code( self, decoded_frame)
         return
 
     if MsgType == '8000': # Command Ack
+        self.logging_receive( 'Log', "process_frame - MsgType: %s MsgData: %s decode and forwarde" %( MsgType, MsgData))
         decode8000( self, decoded_frame)
         self.forwarder_queue.put( decoded_frame)
         return
 
-    if MsgType in ( '8012', '8702'): # Transmission Akc for no-ack commands
+    if self.firmware_with_8012 and MsgType in ( '8012', '8702'): # Transmission Akc for no-ack commands
+        self.logging_receive( 'Log', "process_frame - MsgType: %s MsgData: %s decode" %( MsgType, MsgData))
         decode8012_8702( self, decoded_frame)
         return
 
     if MsgType == '8011': # Command Ack (from target device)
+        self.logging_receive( 'Log', "process_frame - MsgType: %s MsgData: %s decode and forward" %( MsgType, MsgData))
         decode8011( self, decoded_frame)
         self.forwarder_queue.put( decoded_frame)
         return
 
     if MsgType in ( '8010', ):
+        self.logging_receive( 'Log', "process_frame - MsgType: %s Forward and release" %( MsgType))
         self.forwarder_queue.put( decoded_frame)
         release_command( self, get_isqn_from_ListOfCommands( self, MsgType))
         return
 
     if MsgType == '8701':
+        self.logging_receive( 'Log', "process_frame - MsgType: %s No action" %( MsgType))
         # Async message
         # Route Discovery, we don't handle it
         return

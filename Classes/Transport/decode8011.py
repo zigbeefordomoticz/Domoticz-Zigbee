@@ -4,7 +4,7 @@
 # Author: pipiche38
 #
 
-from Classes.Transport.tools import release_command
+from Classes.Transport.tools import release_command, print_listofcommands
 from Classes.Transport.sqnMgmt import sqn_get_internal_sqn_from_aps_sqn
 
 def decode8011( self, decoded_frame):
@@ -42,6 +42,8 @@ def decode8011( self, decoded_frame):
     if isqn not in self.ListOfCommands:
         self.logging_receive( 'Log', "decode8011 - 0x8011 not for us eSqn: %s iSqn: %s" %(MsgSEQ, isqn))
         return
-        
+    
+    print_listofcommands( self, isqn )
+
     self.ListOfCommands[ isqn ]['Status'] = '8011'
     release_command( self, isqn)

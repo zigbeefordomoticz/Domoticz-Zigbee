@@ -4,7 +4,7 @@
 # Author: pipiche38
 #
 from Modules.zigateConsts import ZIGATE_COMMANDS
-from Classes.Transport.tools import get_response_from_command, CMD_WITH_RESPONSE, release_command
+from Classes.Transport.tools import get_response_from_command, CMD_WITH_RESPONSE, release_command, print_listofcommands
 from Classes.Transport.sqnMgmt import TYPE_APP_ZCL, TYPE_APP_ZDP
 
 
@@ -27,6 +27,9 @@ def check_and_process_others_31c(self, MsgType, MsgData):
         return
 
     isqn = self.ListOfCommands.keys()[0]
+
+    print_listofcommands( self, isqn )
+    
     cmd_in_pipe = self.ListOfCommands[ isqn ]['cmd']
     exp_response = get_response_from_command(  cmd_in_pipe )
 

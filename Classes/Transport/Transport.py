@@ -179,19 +179,10 @@ class ZigateTransport(object):
     def logging_send_error( self, message, Nwkid=None, context=None):
         if context is None:
             context = {}
-        context['Firmware'] = {
-                'Firmware Version': self.FirmwareVersion,
-                'Firmware Major': self.FirmwareMajorVersion
-                }
         context['Queues'] = {
-            '8000 Queue':     list(self._waitFor8000Queue),
-            '8011 Queue':     list(self._waitFor8011Queue),
-            '8012 Queue':     list(self._waitFor8012Queue),
-            'Send Queue':     list(self.zigateSendQueue),
             'ListOfCommands': dict(self.ListOfCommands),
             }
         context['Firmware'] = {
-            'zmode': self.zmode,
             'with_aps_sqn': self.firmware_with_aps_sqn ,
             'with_8012': self.firmware_with_8012,
             'nPDU': self.npdu,

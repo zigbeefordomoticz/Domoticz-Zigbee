@@ -4,9 +4,10 @@
 # Author: pipiche38
 #
 
-from Classes.Transport.tools import  update_xPDU
-from Classes.Transport.tools import  CMD_PDM_ON_HOST, ZIGATE_COMMANDS, is_final_step, get_isqn_from_ListOfCommands, release_command
+from Classes.Transport.tools import  update_xPDU, print_listofcommands
+from Classes.Transport.tools import  CMD_PDM_ON_HOST, ZIGATE_COMMANDS, get_isqn_from_ListOfCommands, release_command
 from Classes.Transport.sqnMgmt import sqn_add_external_sqn, TYPE_APP_ZCL, TYPE_APP_ZDP
+from Classes.Transport.isFinal import is_final_step
 
 def decode8000(self, decoded_frame):
 
@@ -26,7 +27,9 @@ def decode8000(self, decoded_frame):
     if isqn is None:
         self.logging_receive( 'Log', "decode8000 - cannot get isqn for MsgType %s" %(PacketType))
         return
-    
+
+    print_listofcommands( self, isqn )
+
     # Sanity Check
     if self.ListOfCommands[ isqn ]['cmd'] != PacketType:
         self.logging_receive( 'Log', "decode8000 - command miss-match %s vs. %s" %(self.ListOfCommands[ isqn ]['cmd'] , PacketType))

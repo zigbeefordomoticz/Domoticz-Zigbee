@@ -29,10 +29,10 @@ def forwarder_thread( self ):
             if message == 'STOP':
                 break
 
-            self.logging_receive( 'Log', "New message: message: %s" %(message))
+            self.logging_receive( 'Log', "Receive a message to forward: %s" %(message))
             self.statistics._data += 1
             self.F_out(  message )
-            self.logging_receive( 'Log', "message sent!!!!")
+            self.logging_receive( 'Log', "message forwarded!!!!")
 
         except queue.Empty:
             # Empty Queue, timeout.
