@@ -51,7 +51,5 @@ def tcpip_read_from_zigate( self ):
             if timing > 1000:
                 self.logging_send('Log', "tcpip_listen_and_send %s ms spent in decode_and_split_message()" %timing)
 
-
     stop_waiting_on_queues( self )
     Domoticz.Status("ZigateTransport: ZiGateTcpIpListen Thread stop.")
-    waiting_for_end_thread( self )

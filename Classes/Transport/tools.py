@@ -41,19 +41,22 @@ def initialize_command_protocol_parameters():
             CMD_WITH_RESPONSE[x] = ZIGATE_COMMANDS[x]['Sequence'][1]
 
 
-
-
 def stop_waiting_on_queues( self ):
     if self.writer_queue:
         self.writer_queue.put( 'STOP' ) # Stop Writer
+
     if self.forwarder_queue:
         self.forwarder_queue.put( 'STOP' ) # Stop Forwarded
 
 
 def waiting_for_end_thread( self ):
+
     self.reader_thread.join()
+    self.logging_receive( 'Log', "waiting_for_end_thread - readThread done")
     self.forwarder_thread.join()
+    self.logging_receive( 'Log', "waiting_for_end_thread - forwardedThread done")
     self.writer_thread.join()
+    self.logging_receive( 'Log', "waiting_for_end_thread - writerThread done")
 
 
 def handle_thread_error( self, e, nb_in, nb_out, data):

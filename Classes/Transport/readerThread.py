@@ -49,11 +49,9 @@ def shutdown_reader_thread( self):
         if isinstance(self._connection, serial.serialposix.Serial):
             self.logging_receive( 'Log', "cancel_read")
             self._connection.cancel_read()
-            time.sleep( 1.5 )
 
         elif isinstance(self._connection, socket.socket):
             self.logging_receive( 'Log', "shutdown socket")
             self._connection.shutdown( socket.SHUT_RDWR )
         self.logging_receive( 'Log', "close connection")
         self._connection.close()
-        self.reader_thread.join()

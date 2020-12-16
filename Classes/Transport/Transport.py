@@ -17,7 +17,7 @@ from Classes.Transport.sqnMgmt import sqn_init_stack, sqn_generate_new_internal_
 from Classes.Transport.readerThread import open_zigate_and_start_reader, shutdown_reader_thread
 from Classes.Transport.writerThread import start_writer_thread
 from Classes.Transport.forwarderThread import start_forwarder_thread
-from Classes.Transport.tools import initialize_command_protocol_parameters
+from Classes.Transport.tools import initialize_command_protocol_parameters, waiting_for_end_thread
 
 MAX_SIMULTANEOUS_ZIGATE_COMMANDS = 1
 class ZigateTransport(object):
@@ -146,6 +146,7 @@ class ZigateTransport(object):
 
         if self.pluginconf.pluginConf['MultiThreaded']:
             shutdown_reader_thread( self )
+            waiting_for_end_thread( self )
 
         else:
             self._connection.Disconnect()

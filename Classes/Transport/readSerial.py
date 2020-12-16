@@ -47,9 +47,6 @@ def serial_read_from_zigate( self ):
         if data:
             decode_and_split_message(self, data)
 
-
-
     stop_waiting_on_queues( self )
     Domoticz.Status("ZigateTransport: ZiGateSerialListen Thread stop.")
-    waiting_for_end_thread( self )
 

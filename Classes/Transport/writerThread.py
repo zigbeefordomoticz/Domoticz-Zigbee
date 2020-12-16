@@ -35,7 +35,8 @@ def writer_thread( self ):
 
             if isinstance( command, dict ) and 'cmd' in command and 'datas' in command and 'ackIsDisabled' in command and 'waitForResponseIn' in command and 'InternalSqn' in command:
                 self.logging_send( 'Log', "Waiting for a write slot . Semaphore %s" %(self.semaphore_gate))
-                self.semaphore_gate.acquire( blocking = True, timeout = 8) # Blocking until 8s Tiemout
+
+                self.semaphore_gate.acquire( blocking = True, timeout = 8.0) # Blocking until 8s Tiemout
         
                 thread_sendData( self, command['cmd'], command['datas'], command['ackIsDisabled'], command['waitForResponseIn'], command['InternalSqn'])
                 self.logging_send( 'Log', "Command sent!!!!")

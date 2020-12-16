@@ -54,6 +54,7 @@ def process_frame(self, decoded_frame):
 
     if MsgType in ( '8000', '8012', '8702', '8011'):
         # Protocol Management with 31d and 31e
+        self.logging_receive( 'Log', "self.logging_receive - Release semaphore %s" %self.semaphore_gate)
         self.semaphore_gate.release()
         return
 
