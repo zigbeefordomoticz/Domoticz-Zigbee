@@ -34,6 +34,10 @@ def writer_thread( self ):
             Domoticz.Log("New command:  %s" %(command))
 
             if isinstance( command, dict ) and 'cmd' in command and 'datas' in command and 'ackIsDisabled' in command and 'waitForResponseIn' in command and 'InternalSqn' in command:
+                if self.writer_queue.qsize() > self.statistics._MaxLoad:
+                    self.statistics._MaxLoad = self.writer_queue.qsize()
+                self.statistics._Load = self.writer_queue.qsize()
+
                 self.logging_send( 'Log', "Waiting for a write slot . Semaphore %s" %(self.semaphore_gate))
 
                 self.semaphore_gate.acquire( blocking = True, timeout = 8.0) # Blocking until 8s Tiemout
@@ -88,6 +92,7 @@ def thread_sendData(self, cmd, datas, ackIsDisabled, waitForResponseIn, isqn ):
 
 
     write_to_zigate( self, self._connection, bytes.fromhex(str(lineinput)) )
+    self.statistics._sent += 1
 
 
 

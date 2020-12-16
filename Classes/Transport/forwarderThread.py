@@ -30,7 +30,7 @@ def forwarder_thread( self ):
                 break
 
             Domoticz.Log("New message: message: %s" %(message))
-
+            self.statistics._data += 1
             self.F_out(  message )
             self.logging_receive( 'Log', "message sent!!!!")
 
