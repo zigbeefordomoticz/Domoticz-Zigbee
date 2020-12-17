@@ -74,7 +74,7 @@ def actuator_stop( self, nwkid, EPout, DeviceType):
 def actuator_off(  self, nwkid, EPout, DeviceType):
 
     if DeviceType == "AlarmWD":
-        Domoticz.Log("Alarm WarningDevice - value: %s" %'off')
+        self.log.logging( "Command", 'Log',"Alarm WarningDevice - value: %s" %'off')
         self.iaszonemgt.alarm_off( nwkid, EPout)
 
     elif DeviceType == 'LivoloSWL':
@@ -120,7 +120,7 @@ def actuator_setlevel( self, nwkid, EPout, value, DeviceType):
         elif value >= 100:
             value = 99
         value = '%02x' %value
-        Domoticz.Log("WindowCovering - Lift Percentage Command - %s/%s value: 0x%s %s" %(nwkid, EPout, value, value))
+        self.log.logging( "Command", 'Log', "WindowCovering - Lift Percentage Command - %s/%s value: 0x%s %s" %(nwkid, EPout, value, value))
         sendZigateCmd(self, "00FA","02" + nwkid + ZIGATE_EP + EPout + "05" + value)
     else:
         OnOff = '01' # 00 = off, 01 = on
@@ -138,7 +138,7 @@ def actuator_setlevel( self, nwkid, EPout, value, DeviceType):
 
 def actuator_setthermostat( self, nwkid, ep, value ):
 
-    Domoticz.Log("ThermoMode - requested value: %s" %value)
+    self.log.logging( "Command", 'Log', "ThermoMode - requested value: %s" %value)
     #'Off' : 0x00 ,
     #'Auto' : 0x01 ,
     #'Reserved' : 0x02,
@@ -153,12 +153,12 @@ def actuator_setthermostat( self, nwkid, ep, value ):
 
 def actuator_setpoint(  self, nwkid, ep, value ):
     value = int(float(value)*100)
-    Domoticz.Log("Calling thermostat_Setpoint( %s, %s) " %(nwkid, value))
+    self.log.logging( "Command", 'Log', "Calling thermostat_Setpoint( %s, %s) " %(nwkid, value))
     thermostat_Setpoint( self, nwkid, value )
 
 def actuator_setalarm( self, nwkid, EPout, value ):
 
-    Domoticz.Log("Alarm WarningDevice - value: %s" %value)
+    self.log.logging( "Command", 'Log', "Alarm WarningDevice - value: %s" %value)
     if value == 0: # Stop
         self.iaszonemgt.alarm_off( nwkid, EPout)
     elif value == 10: # Alarm
@@ -189,14 +189,14 @@ def actuator_setcolor( self, nwkid, EPout, value, Color ):
     self.ListOfDevices[nwkid]['Heartbeat'] = '0'  # As we update the Device, let's restart and do the next pool in 5'
 
     #First manage level
-    Domoticz.Log("----> Value: >%s<" %value)
+    self.log.logging( "Command", 'Log',"----> Value: >%s<" %value)
 
     OnOff = '01' # 00 = off, 01 = on
     value=Hex_Format(2,round(1+value*254/100)) #To prevent off state
     sendZigateCmd(self, "0081","02" + nwkid + ZIGATE_EP + EPout + OnOff + value + "0000")
 
     if len(Hue_List) == 0:
-        Domoticz.Log("actuator_setcolor - Unable to decode Color: %s --> %s" %(Color, Hue_List))
+        self.log.logging( "Command", 'Log', "actuator_setcolor - Unable to decode Color: %s --> %s" %(Color, Hue_List))
         return
 
     #Now color
@@ -255,8 +255,8 @@ def actuator_identify( self, nwkid, ep, value=None):
 
     else:
     
-        Domoticz.Log("value: %s" %value)
-        Domoticz.Log("Type: %s" %type(value))
+        self.log.logging( "Command", 'Log', "value: %s" %value)
+        self.log.logging( "Command", 'Log', "Type: %s" %type(value))
 
         color = 0x00 # Default
         if value is None or value == 0:
