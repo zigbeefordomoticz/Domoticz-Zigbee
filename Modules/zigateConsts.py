@@ -309,6 +309,7 @@ ZCL_CLUSTERS_LIST = {
 
 # Zigate Commands, with there sequence of response ( Status + Data)
 ZIGATE_COMMANDS = {
+    0x0001: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', '8012': False, 'Command': 'set logmode', 'NwkId 2nd Bytes': False},
     0x0002: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', '8012': False, 'Command': 'set rawmode', 'NwkId 2nd Bytes': False},
     0x0003: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', '8012': False, 'Command': 'set hybrid mode', 'NwkId 2nd Bytes': False},
     0x0009: {'Sequence': (0x8000, 0x8009), 'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', '8012': False, 'Command': 'Get Network State (Firm v3.0d)', 'NwkId 2nd Bytes': False},
