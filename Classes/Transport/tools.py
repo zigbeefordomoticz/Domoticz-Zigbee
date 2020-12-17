@@ -51,10 +51,15 @@ def stop_waiting_on_queues( self ):
 
 def waiting_for_end_thread( self ):
 
+    # Release Semaphore
+    self.semaphore_gate.release( )
+
     self.reader_thread.join()
     self.logging_receive( 'Log', "waiting_for_end_thread - readThread done")
+
     self.forwarder_thread.join()
     self.logging_receive( 'Log', "waiting_for_end_thread - forwardedThread done")
+
     self.writer_thread.join()
     self.logging_receive( 'Log', "waiting_for_end_thread - writerThread done")
 

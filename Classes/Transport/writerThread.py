@@ -91,7 +91,6 @@ def thread_sendData(self, cmd, datas, ackIsDisabled, waitForResponseIn, isqn ):
     self.statistics._sent += 1
     write_to_zigate( self, self._connection, bytes.fromhex(  encode_message( cmd, datas)) )
 
-
 def encode_message( cmd, datas):
 
     if datas == "":
