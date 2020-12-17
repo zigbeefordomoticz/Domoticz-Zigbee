@@ -39,7 +39,7 @@ def writer_thread( self ):
                     self.statistics._MaxLoad = self.writer_queue.qsize()
                 self.statistics._Load = self.writer_queue.qsize()
 
-                self.logging_send( 'Log', "Waiting for a write slot . Semaphore %s ATTENTION NO TIMEOUT FOR TEST PURPOSES" %(self.semaphore_gate))
+                self.logging_send( 'Log', "Waiting for a write slot . Semaphore %s ATTENTION NO TIMEOUT FOR TEST PURPOSES" %(self.semaphore_gate._value))
 
                 # Now we will block on Semaphore to serialize and limit the number of concurent commands on ZiGate
                 # By using the Semaphore Timeout , we will make sure that the Semaphore is not acquired for ever.

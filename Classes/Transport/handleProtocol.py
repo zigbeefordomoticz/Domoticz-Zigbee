@@ -33,12 +33,6 @@ def process_frame(self, decoded_frame):
 
     self.logging_receive( 'Log', "process_frame - MsgType: %s MsgLenght: %s MsgCrc: %s" %( MsgType, MsgLength, MsgCRC))
 
-    # We receive an async message, just forward it to plugin
-
-
-
-
-
     # Payload
     MsgData = None
     if len(decoded_frame) < 18:
@@ -46,11 +40,12 @@ def process_frame(self, decoded_frame):
 
     MsgData = decoded_frame[12:len(decoded_frame) - 4]
 
-    if MsgType == '0302': # PDM loaded, ZiGate ready
+    if MsgType == '0302': # PDM loaded, ZiGate ready (after an internal error, but also after an ErasePDM)
         self.logging_receive( 'Log', "process_frame - PDM loaded, ZiGate ready: %s MsgData %s" % (MsgType, MsgData))
+        for x in list(self.ListOfCommands):
+            if self.ListOfCommands[x]['cmd'] == '0012':
+                release_command( self, x)
         # This could be also linked to a Reboot of the ZiGate firmware. In such case, it might be important to release Semaphore
-        for _ in range( 1, MAX_SIMULTANEOUS_ZIGATE_COMMANDS):
-            self.semaphore_gate.release( )
         # Must be sent above in order to issue a rejoin_legrand_reset() if needed
         #rejoin_legrand_reset(self)
         return
@@ -96,11 +91,11 @@ def process_frame(self, decoded_frame):
         self.forwarder_queue.put( decoded_frame)
         return
 
-    if MsgType in ( '8010', ):
-        self.logging_receive( 'Log', "process_frame - MsgType: %s Forward and release" %( MsgType))
-        self.forwarder_queue.put( decoded_frame)
-        release_command( self, get_isqn_from_ListOfCommands( self, MsgType))
-        return
+    #if MsgType in ( '8010', ):
+    #    self.logging_receive( 'Log', "process_frame - MsgType: %s Forward and release" %( MsgType))
+    #    self.forwarder_queue.put( decoded_frame)
+    #    release_command( self, get_isqn_from_ListOfCommands( self, MsgType))
+    #    return
 
     if MsgType == '8701':
         self.logging_receive( 'Log', "process_frame - MsgType: %s No action" %( MsgType))

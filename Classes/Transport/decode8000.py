@@ -62,8 +62,9 @@ def decode8000(self, decoded_frame):
     self.ListOfCommands[ isqn ]['SQN_APS'] = sqn_aps
     self.ListOfCommands[ isqn ]['SQN_TYP'] = type_sqn
     update_isqn(self, int(PacketType,16), isqn, sqn_app, sqn_aps, type_sqn )
-
     self.ListOfCommands[ isqn ]['Status'] = '8000'
+    
+    print_listofcommands( self, isqn )
 
 
 

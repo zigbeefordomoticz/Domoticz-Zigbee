@@ -6,7 +6,7 @@
 
 import Domoticz
 
-from Modules.zigateConsts import ZIGATE_COMMANDS, ZIGATE_RESPONSES
+from Modules.zigateConsts import ZIGATE_COMMANDS, ZIGATE_RESPONSES, MAX_SIMULTANEOUS_ZIGATE_COMMANDS
 
 STANDALONE_MESSAGE = []
 PDM_COMMANDS = ('8300', '8200', '8201', '8204', '8205', '8206', '8207', '8208')
@@ -103,8 +103,10 @@ def release_command( self, isqn):
     # Release Semaphore
     if isqn and isqn in self.ListOfCommands:
         del self.ListOfCommands[ isqn ]
-    self.logging_receive( 'Log', "self.release_command - Release semaphore %s" %self.semaphore_gate)
-    self.semaphore_gate.release()
+    self.logging_receive( 'Log', "============= - Release semaphore %s" %self.semaphore_gate._value)
+    if self.semaphore_gate._value < MAX_SIMULTANEOUS_ZIGATE_COMMANDS:
+        self.semaphore_gate.release()
+    self.logging_receive( 'Log', "============= - Semaphore released !! %s" %self.semaphore_gate._value)
 
 def get_isqn_from_ListOfCommands( self, PacketType):
     for x in  list(self.ListOfCommands):
