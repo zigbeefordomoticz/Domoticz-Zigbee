@@ -12,7 +12,7 @@ from Classes.Transport.decode8002 import decode8002_and_process
 from Classes.Transport.decode8000 import decode8000
 from Classes.Transport.decode8012 import decode8012_8702
 from Classes.Transport.decode8011 import decode8011
-from Classes.Transport.tools import ( release_command, get_isqn_from_ListOfCommands, STANDALONE_MESSAGE,)
+from Classes.Transport.tools import ( release_command, get_isqn_from_ListOfCommands, STANDALONE_MESSAGE, CMD_PDM_ON_HOST)
 from Classes.Transport.handleFirmware31c import check_and_process_others_31c
 
 
@@ -46,6 +46,17 @@ def process_frame(self, decoded_frame):
 
     MsgData = decoded_frame[12:len(decoded_frame) - 4]
 
+    if MsgType == '0302': # PDM loaded, ZiGate ready
+        self.logging_receive( 'Log', "process_frame - PDM loaded, ZiGate ready: %s MsgData %s" % (MsgType, MsgData)) 
+        # Must be sent above in order to issue a rejoin_legrand_reset() if needed
+        #rejoin_legrand_reset(self)
+        return
+
+    if MsgType in CMD_PDM_ON_HOST:
+        # Manage PDM on Host commands
+        self.logging_receive( 'Log', "process_frame - CMD_PDM_ON_HOST MsgType: %s MsgData %s" % (MsgType, MsgData))  
+        return
+
     if MsgType == '8001':
         #Async message
         self.logging_receive( 'Log', "process_frame - MsgType: %s " %( MsgType))
@@ -64,9 +75,10 @@ def process_frame(self, decoded_frame):
         self.forwarder_queue.put( decoded_frame)
         return
 
-    if self.firmware_with_8012 and MsgType in ( '8012', '8702'): # Transmission Akc for no-ack commands
+    if MsgType in ( '8012', '8702'): # Transmission Akc for no-ack commands
         self.logging_receive( 'Log', "process_frame - MsgType: %s MsgData: %s decode" %( MsgType, MsgData))
-        decode8012_8702( self, decoded_frame)
+        if self.firmware_with_8012:
+            decode8012_8702( self, decoded_frame)
         return
 
     if MsgType == '8011': # Command Ack (from target device)

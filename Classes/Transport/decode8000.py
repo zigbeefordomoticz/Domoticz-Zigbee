@@ -31,7 +31,7 @@ def decode8000(self, decoded_frame):
     print_listofcommands( self, isqn )
 
     # Sanity Check
-    if self.ListOfCommands[ isqn ]['cmd'] != PacketType:
+    if int(self.ListOfCommands[ isqn ]['cmd'],16) != int(PacketType,16):
         self.logging_receive( 'Log', "decode8000 - command miss-match %s vs. %s" %(self.ListOfCommands[ isqn ]['cmd'] , PacketType))
         return
 
