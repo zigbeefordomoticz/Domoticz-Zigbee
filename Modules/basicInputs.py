@@ -28,14 +28,14 @@ def encode_endian_data( data, datatype):
 
     else:
         value = data
-        Domoticz.Log("-------> Data not decoded Type: %s Value: %s " % (datatype, value))
+        self.log.logging( None, 'Log', "-------> Data not decoded Type: %s Value: %s " % (datatype, value))
     
-    #Domoticz.Log("encode_endian %s -> %s" %(data, value))
+    #self.log.logging( None, 'Log', "encode_endian %s -> %s" %(data, value))
     return value
 
 
 def read_attribute_response( self, nwkid, ep, sqn, cluster, status, data_type, attribute, value, manuf_code='0000'):
-    #Domoticz.Log("Nwkid: %s Ep: %s Sqn: %s Cluster: %s Status: %s Data_Type: %s Attribute: %s Value: %s"
+    #self.log.logging( None, 'Log', "Nwkid: %s Ep: %s Sqn: %s Cluster: %s Status: %s Data_Type: %s Attribute: %s Value: %s" \
     #    %( nwkid, ep, sqn, cluster, status, data_type, attribute, value))
 
     cmd = '01' # Attribute Response
@@ -55,5 +55,5 @@ def read_attribute_response( self, nwkid, ep, sqn, cluster, status, data_type, a
     if status == '00':
         payload += data_type + encode_endian_data( value, data_type)
 
-    #Domoticz.Log("read_attribute_response - %s/%s Cluster: %s Payload: %s" %(nwkid, ep, cluster, payload))
+    #self.log.logging( None, 'Log', "read_attribute_response - %s/%s Cluster: %s Payload: %s" %(nwkid, ep, cluster, payload))
     raw_APS_request( self, nwkid, ep, cluster, '0104', payload, zigate_ep=ZIGATE_EP)
