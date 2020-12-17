@@ -7,9 +7,7 @@
 import Domoticz
 import serial
 
-
-from Classes.Transport.tools import stop_waiting_on_queues
-from Classes.Transport.tools import waiting_for_end_thread
+from Classes.Transport.tools import stop_waiting_on_queues, handle_thread_error
 from Classes.Transport.readDecoder import decode_and_split_message
 
 
@@ -43,6 +41,10 @@ def serial_read_from_zigate( self ):
         except serial.SerialException as e:
             Domoticz.Error("serial_read_from_zigate - error while reading %s" %(e))
             data = None
+
+        except Exception as e:
+            Domoticz.Error("Error while receiving a ZiGate command: %s" %e)
+            handle_thread_error( self, e, 0, 0, data)
 
         if data:
             decode_and_split_message(self, data)

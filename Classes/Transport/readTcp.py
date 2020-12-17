@@ -8,8 +8,7 @@ import Domoticz
 import socket
 import time
 
-from Classes.Transport.tools import stop_waiting_on_queues
-from Classes.Transport.tools import waiting_for_end_thread
+from Classes.Transport.tools import stop_waiting_on_queues, handle_thread_error
 
 # Manage TCP connection
 def open_tcpip( self ):
@@ -36,20 +35,18 @@ def tcpip_read_from_zigate( self ):
         data = None
         try:
             data = tcpipConnection.recv(1024)
+
         except socket.timeout:
             # No data after 0.5 seconds
             pass
 
+        except Exception as e:
+            Domoticz.Error("Error while receiving a ZiGate command: %s" %e)
+            handle_thread_error( self, e, 0, 0, data)
+
         if data: 
             self.decode_and_split_message(data)
 
-        if self.pluginconf.pluginConf['ZiGateReactTime']:
-            # Stop
-            timing = int( ( 1000 * time.time()) - self.reading_thread_timing )
-
-            self.statistics.add_timing_thread( timing)
-            if timing > 1000:
-                self.logging_send('Log', "tcpip_listen_and_send %s ms spent in decode_and_split_message()" %timing)
 
     stop_waiting_on_queues( self )
     Domoticz.Status("ZigateTransport: ZiGateTcpIpListen Thread stop.")

@@ -25,6 +25,9 @@ MAX_FOR_ZIGATE_BUZY = 6
 # If there is a need to read more than 4 Attributes at a time, then breakdown the request into several.
 MAX_READATTRIBUTES_REQ = 4   # Number of Attributes to be requested via 0x0100
 
+# Number of silmutaneous command sent to ZiGate. It must be 1 in case of firmware below 31c
+MAX_SIMULTANEOUS_ZIGATE_COMMANDS = 1  
+
 CERTIFICATION = {
     0x01: 'CE',
     0x02: 'FCC'}

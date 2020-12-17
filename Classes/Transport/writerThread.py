@@ -9,6 +9,7 @@ import Domoticz
 import queue
 import socket
 import select
+import time
 from threading import Thread
 
 from Modules.tools import is_hex
@@ -31,7 +32,7 @@ def writer_thread( self ):
             self.logging_send( 'Log', "Waiting for next command")
             command = self.writer_queue.get( )
 
-            Domoticz.Log("New command:  %s" %(command))
+            self.logging_send( 'Log', "New command:  %s" %(command))
 
             if isinstance( command, dict ) and 'cmd' in command and 'datas' in command and 'ackIsDisabled' in command and 'waitForResponseIn' in command and 'InternalSqn' in command:
                 if self.writer_queue.qsize() > self.statistics._MaxLoad:
@@ -39,8 +40,12 @@ def writer_thread( self ):
                 self.statistics._Load = self.writer_queue.qsize()
 
                 self.logging_send( 'Log', "Waiting for a write slot . Semaphore %s ATTENTION NO TIMEOUT FOR TEST PURPOSES" %(self.semaphore_gate))
+
+                # Now we will block on Semaphore to serialize and limit the number of concurent commands on ZiGate
+                # By using the Semaphore Timeout , we will make sure that the Semaphore is not acquired for ever.
+                # However, if the Sem is relaed due to Timeout, we will not be notified !
                 self.semaphore_gate.acquire( blocking = True, timeout = None) # Blocking until 8s Tiemout
-                self.logging_send( 'Log', "=============  Get semaphore %s==============" %(self.semaphore_gate._value))
+                self.logging_send( 'Log', "============= semaphore %s given ==============" %(self.semaphore_gate._value))
         
                 thread_sendData( self, command['cmd'], command['datas'], command['ackIsDisabled'], command['waitForResponseIn'], command['InternalSqn'])
                 self.logging_send( 'Log', "Command sent!!!! %s" %command)
@@ -86,6 +91,7 @@ def thread_sendData(self, cmd, datas, ackIsDisabled, waitForResponseIn, isqn ):
         'ackIsDisabled': ackIsDisabled,
         'waitForResponseIn': waitForResponseIn,
         'Status': 'SENT',
+        'TimeStamp': time.time(),
         'Semaphore': self.semaphore_gate._value
     }
     self.statistics._sent += 1

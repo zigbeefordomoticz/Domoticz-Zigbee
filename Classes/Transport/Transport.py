@@ -19,7 +19,7 @@ from Classes.Transport.writerThread import start_writer_thread
 from Classes.Transport.forwarderThread import start_forwarder_thread
 from Classes.Transport.tools import initialize_command_protocol_parameters, waiting_for_end_thread
 
-MAX_SIMULTANEOUS_ZIGATE_COMMANDS = 1  # Number of silmutaneous command sent to ZiGate. It must be 1 in case of firmware below 31c
+from Modules.zigateConsts import MAX_SIMULTANEOUS_ZIGATE_COMMANDS
 class ZigateTransport(object):
 
     def __init__(self, transport, statistics, pluginconf, F_out, log, serialPort=None, wifiAddress=None, wifiPort=None):
