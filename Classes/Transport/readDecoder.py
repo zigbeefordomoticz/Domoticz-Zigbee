@@ -25,7 +25,7 @@ def decode_and_split_message(self, raw_message):
         if BinMsg is None:
             return
         if not check_frame_lenght( self, BinMsg) or not check_frame_crc(self, BinMsg):
-            Domoticz.Error("on_message Frame error Crc/len %s" %(BinMsg))
+            self.logging_receive('Error',"on_message Frame error Crc/len %s" %(BinMsg))
             continue           
 
         AsciiMsg = binascii.hexlify(BinMsg).decode('utf-8')
@@ -50,7 +50,7 @@ def get_raw_frame_from_raw_message( self ):
         return None
     
     if frame_start > zero3_position:
-        Domoticz.Error("Frame error we will drop the buffer!! start: %s zero3: %s buffer: %s" %( frame_start,  zero3_position, self._ReqRcv, )   ) 
+        self.logging_receive('Error',"Frame error we will drop the buffer!! start: %s zero3: %s buffer: %s" %( frame_start,  zero3_position, self._ReqRcv, )   ) 
         return None
             
     # Remove the frame from the buffer (new buffer start at frame +1)
@@ -69,7 +69,6 @@ def decode_frame( frame ):
             iByte = next(iterReqRcv) ^ 0x10
         BinMsg.append(iByte)  # copy
     if len(BinMsg) <= 6:
-        Domoticz.Log("Error: %s/%s" %(frame,BinMsg))
         return None
     return BinMsg
           

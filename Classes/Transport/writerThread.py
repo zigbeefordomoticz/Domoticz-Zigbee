@@ -29,46 +29,46 @@ def writer_thread( self ):
         frame = None
         # Sending messages ( only 1 at a time )
         try:
-            self.logging_send( 'Log', "Waiting for next command")
+            self.logging_send( 'Debug', "Waiting for next command Qsize: %s" %self.writer_queue.qsize())
             command = self.writer_queue.get( )
 
-            self.logging_send( 'Log', "New command:  %s" %(command))
+            self.logging_send( 'Debug', "New command received:  %s" %(command))
 
             if isinstance( command, dict ) and 'cmd' in command and 'datas' in command and 'ackIsDisabled' in command and 'waitForResponseIn' in command and 'InternalSqn' in command:
                 if self.writer_queue.qsize() > self.statistics._MaxLoad:
                     self.statistics._MaxLoad = self.writer_queue.qsize()
                 self.statistics._Load = self.writer_queue.qsize()
 
-                self.logging_send( 'Log', "Waiting for a write slot . Semaphore %s ATTENTION NO TIMEOUT FOR TEST PURPOSES" %(self.semaphore_gate._value))
+                self.logging_send( 'Debug', "Waiting for a write slot . Semaphore %s ATTENTION NO TIMEOUT FOR TEST PURPOSES" %(self.semaphore_gate._value))
 
                 # Now we will block on Semaphore to serialize and limit the number of concurent commands on ZiGate
                 # By using the Semaphore Timeout , we will make sure that the Semaphore is not acquired for ever.
                 # However, if the Sem is relaed due to Timeout, we will not be notified !
                 self.semaphore_gate.acquire( blocking = True, timeout = None) # Blocking until 8s Tiemout
-                self.logging_send( 'Log', "============= semaphore %s given ==============" %(self.semaphore_gate._value))
+                self.logging_send( 'Debug', "============= semaphore %s given ============== Len: ListOfCmd %s" %(self.semaphore_gate._value, len(self.ListOfCommands)))
         
                 thread_sendData( self, command['cmd'], command['datas'], command['ackIsDisabled'], command['waitForResponseIn'], command['InternalSqn'])
-                self.logging_send( 'Log', "Command sent!!!! %s" %command)
+                self.logging_send( 'Debug', "Command sent!!!! %s" %command)
 
             elif command == 'STOP':
                 break
 
             else:
-                Domoticz.Error("Hops ... Don't known what to do with that %s" %command)
+                self.logging_send( 'Error', "Hops ... Don't known what to do with that %s" %command)
 
         except queue.Empty:
             # Empty Queue, timeout.
             pass
 
         except Exception as e:
-            Domoticz.Error("Error while receiving a ZiGate command: %s" %e)
+            self.logging_send( 'Error',"Error while receiving a ZiGate command: %s" %e)
             handle_thread_error( self, e, 0, 0, frame)
 
     self.logging_send('Status',"ZigateTransport: thread_processing_and_sending Thread stop.")
 
 
 def thread_sendData(self, cmd, datas, ackIsDisabled, waitForResponseIn, isqn ):
-    self.logging_send('Log', "thread_sendData")
+    self.logging_send('Debug', "thread_sendData")
     if datas is None:
         datas = ''
 
@@ -146,7 +146,7 @@ def get_checksum(msgtype, length, datas):
     return chk[2:4]
 
 def write_to_zigate( self, serialConnection, encoded_data ):
-    self.logging_send('Log', "write_to_zigate")
+    self.logging_send('Debug', "write_to_zigate")
 
     if self._transp == "Wifi":
         tcpipConnection = self._connection
@@ -157,10 +157,10 @@ def write_to_zigate( self, serialConnection, encoded_data ):
             try:
                 tcpipConnection.send( encoded_data )
             except socket.OSError as e:
-                Domoticz.Error("Socket %s error %s" %(tcpipConnection, e))
+                self.logging_send( 'Error',"Socket %s error %s" %(tcpipConnection, e))
 
         elif exceptional:
-            Domoticz.Error("We have detected an error .... on %s" %inputSocket)
+            self.logging_send( 'Error',"We have detected an error .... on %s" %inputSocket)
         return
 
     # Serial
@@ -176,4 +176,4 @@ def write_to_zigate( self, serialConnection, encoded_data ):
 
     except TypeError as e:
         #Disconnect of USB->UART occured
-        Domoticz.Error("serial_read_from_zigate - error while writing %s" %(e))
+        self.logging_send( 'Error',"serial_read_from_zigate - error while writing %s" %(e))

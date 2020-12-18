@@ -78,7 +78,7 @@ def send_zigatecmd_raw( self, cmd, datas, ackIsDisabled = False ):
    if self.pluginconf.pluginConf['debugzigateCmd']:
        self.log.logging( "BasicOutput", 'Log', "send_zigatecmd_raw       - [%s] %s %s Queue Length: %s" %(i_sqn, cmd, datas, self.ZigateComm.loadTransmit()  ))
    else:
-       self.log.logging( "BasicOutput", 'Log', "====> send_zigatecmd_raw - [%s] %s %s Queue Length: %s" %(i_sqn,cmd, datas, self.ZigateComm.loadTransmit()   ))
+       self.log.logging( "BasicOutput", 'Debug', "====> send_zigatecmd_raw - [%s] %s %s Queue Length: %s" %(i_sqn,cmd, datas, self.ZigateComm.loadTransmit()   ))
    if self.ZigateComm.loadTransmit() > 15:
        self.log.logging( "BasicOutput", 'Log', "WARNING - send_zigatecmd : [%s] %s %18s ZigateQueue: %s" %(i_sqn,cmd, datas, self.ZigateComm.loadTransmit()  ))
 

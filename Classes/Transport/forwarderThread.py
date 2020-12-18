@@ -9,7 +9,7 @@ import Domoticz
 import queue
 from threading import Thread
 from Classes.Transport.tools import handle_thread_error
-from Classes.Transport.instrumentation import time_spent
+from Classes.Transport.instrumentation import time_spent_forwarder
 
 def start_forwarder_thread( self ):
     
@@ -24,10 +24,9 @@ def forwarder_thread( self ):
         frame = None
         # Sending messages ( only 1 at a time )
         try:
-            self.logging_receive( 'Log', "Waiting for next message")
+            self.logging_receive( 'Debug', "Waiting for next message")
             message = self.forwarder_queue.get( )
-            
-
+        
             if message == 'STOP':
                 break
 
@@ -38,15 +37,15 @@ def forwarder_thread( self ):
             pass
 
         except Exception as e:
-            Domoticz.Error("Error while receiving a ZiGate command: %s" %e)
+            self.logging_receive('Error', "Error while receiving a ZiGate command: %s" %e)
             handle_thread_error( self, e, 0, 0, frame)
 
     self.logging_receive('Status',"ZigateTransport: thread_processing_and_sending Thread stop.")
 
-@time_spent( True )
+@time_spent_forwarder( )
 def forward_message( self, message ):
 
-    self.logging_receive( 'Log', "Receive a message to forward: %s" %(message))
+    self.logging_receive( 'Debug', "Receive a message to forward: %s" %(message))
     self.statistics._data += 1
     self.F_out(  message )
-    self.logging_receive( 'Log', "message forwarded!!!!")    
+    self.logging_receive( 'Debug', "message forwarded!!!!")    

@@ -30,28 +30,27 @@ def is_final_step( self, isqn, step):
     if step == 0x8012:
         return is_final_step_8012( self, isqn, cmd)
 
-    self.logging_receive( 'Log', "is_final_step - returning False by default Cmd: 0x%04d" %cmd)
+    self.logging_receive( 'Debug', "is_final_step - returning False by default Cmd: 0x%04d" %cmd)
     return False
 
 def is_final_step_8012(self, isqn, cmd):
     if cmd in ZIGATE_COMMANDS:
         return is_8011_expected_after_8012( self, isqn, cmd )
-    self.logging_receive( 'Log', "is_final_step_8012 - returning False by default Cmd: 0x%04d" %cmd)
+    self.logging_receive( 'Debug', "is_final_step_8012 - returning False by default Cmd: 0x%04d" %cmd)
 
 
 def is_8011_expected_after_8000( self, isqn, cmd ):
     if cmd in ZIGATE_COMMANDS:
         return ZIGATE_COMMANDS[ cmd ]['Ack']
-    self.logging_receive( 'Log', "is_8011_expected_after_8000 - returning False by default Cmd: 0x%04d" %cmd)
+    self.logging_receive( 'Debug', "is_8011_expected_after_8000 - returning False by default Cmd: 0x%04d" %cmd)
     return False
 
 
 def is_8012_expected_after_8000( self, isqn, cmd ):
     if cmd in ZIGATE_COMMANDS:
         return ZIGATE_COMMANDS[ cmd ]['8012']
-    self.logging_receive( 'Log', "is_8012_expected_after_8000 - returning False by default Cmd: 0x%04d" %cmd)
+    self.logging_receive( 'Debug', "is_8012_expected_after_8000 - returning False by default Cmd: 0x%04d" %cmd)
     return False
-
 
 def is_8011_expected_after_8012( self, isqn, cmd ):
     expAck = ZIGATE_COMMANDS[ cmd ]['Ack']

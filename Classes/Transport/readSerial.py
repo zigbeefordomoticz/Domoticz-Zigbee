@@ -9,7 +9,6 @@ import serial
 
 from Classes.Transport.tools import stop_waiting_on_queues, handle_thread_error
 from Classes.Transport.readDecoder import decode_and_split_message
-from Classes.Transport.instrumentation import time_spent
 
 # Manage Serial Line
 def open_serial( self ):
@@ -20,7 +19,7 @@ def open_serial( self ):
             self._connection.rtscts = True
 
     except serial.SerialException as e:
-        Domoticz.Error("Cannot open Zigate port %s error: %s" %(self._serialPort, e))
+        self.logging_receive('Error',"Cannot open Zigate port %s error: %s" %(self._serialPort, e))
         return False
 
     self.logging_receive( 'Log', "ZigateTransport: Serial Connection open: %s" %self._connection)
@@ -36,19 +35,19 @@ def serial_read_from_zigate( self ):
         data = None
 
         try:
-            data = self._connection.read( )  # Blocking Read
+            nb_inwaiting = self._connection.in_waiting
+            data = self._connection.read( nb_inwaiting or 1)  # Blocking Read
 
         except serial.SerialException as e:
-            Domoticz.Error("serial_read_from_zigate - error while reading %s" %(e))
+            self.logging_receive('Error',"serial_read_from_zigate - error while reading %s" %(e))
             data = None
 
         except Exception as e:
-            Domoticz.Error("Error while receiving a ZiGate command: %s" %e)
+            self.logging_receive('Error',"Error while receiving a ZiGate command: %s" %e)
             handle_thread_error( self, e, 0, 0, data)
 
         if data:
             decode_and_split_message(self, data)
 
     stop_waiting_on_queues( self )
-    Domoticz.Status("ZigateTransport: ZiGateSerialListen Thread stop.")
-
+    self.logging_receive('Status', "ZigateTransport: ZiGateSerialListen Thread stop.")

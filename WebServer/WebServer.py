@@ -329,15 +329,17 @@ class WebServer(object):
             Statistics['APSNck'] =  0
             Statistics['StartTime'] = int(time()) - 120
         else:
-            Statistics['ZiGateRound8000TimeMaxms'] = self.statistics._maxTiming8000
-            Statistics['ZiGateRound8000TimeAveragems'] = self.statistics._averageTiming8000
-            Statistics['ZiGateRound8011TimeMaxms'] = self.statistics._maxTiming8011
-            Statistics['ZiGateRound8011TimeAveragems'] = self.statistics._averageTiming8011
-            Statistics['ZiGateRound8012TimeMaxms'] = self.statistics._maxTiming8012
-            Statistics['ZiGateRound8012TimeAveragems'] = self.statistics._averageTiming8012
+            Statistics['MaxZiGateRoundTime8000 '] = self.statistics._maxTiming8000
+            Statistics['AvgZiGateRoundTime8000 '] = self.statistics._averageTiming8000
+            Statistics['MaxZiGateRoundTime8011 '] = self.statistics._maxTiming8011
+            Statistics['AvgZiGateRoundTime8011 '] = self.statistics._averageTiming8011
+            Statistics['MaxZiGateRoundTime8012 '] = self.statistics._maxTiming8012
+            Statistics['AvgZiGateRoundTime8012 '] = self.statistics._averageTiming8012
+            Statistics['MaxTimeSpentInProcFrame'] = self.statistics._max_reading_thread_timing
+            Statistics['AvgTimeSpentInProcFrame'] = self.statistics._average_reading_thread_timing
 
-            Statistics['ZiGateMessageProcessTimeOnRxMax'] = self.statistics._maxRxProcesses
-            Statistics['ZiGateMessageProcessTimeOnRxAverage'] = self.statistics._averageRxProcess
+            Statistics['MaxTimeSpentInForwarder'] = self.statistics._maxRxProcesses
+            Statistics['AvgTimeSpentInForwarder'] = self.statistics._averageRxProcess
 
             Statistics['CRC'] =self.statistics._crcErrors
             Statistics['FrameErrors'] =self.statistics._frameErrors
@@ -354,12 +356,6 @@ class WebServer(object):
 
             Statistics['MaxApdu'] = self.statistics._MaxaPdu
             Statistics['MaxNpdu'] = self.statistics._MaxnPdu 
-
-            Statistics['MaxSerialInWaiting'] = self.statistics._serialInWaiting
-            Statistics['MaxSerialOutWaiting'] = self.statistics._serialOutWaiting
-
-            Statistics['MaxReadingThreadTime'] = self.statistics._max_reading_thread_timing
-            Statistics['AvgReadingThreadTime'] = self.statistics._average_reading_thread_timing
 
             _nbitems = len(self.statistics.TrendStats)
 

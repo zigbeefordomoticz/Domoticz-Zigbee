@@ -38,11 +38,11 @@ def decode8011( self, decoded_frame):
     isqn = sqn_get_internal_sqn_from_aps_sqn(self, MsgSEQ)
 
     if isqn is None:
-        self.logging_receive( 'Log', "decode8011 - 0x8011 not for us eSqn: %s" %MsgSEQ)
+        self.logging_receive( 'Debug', "decode8011 - 0x8011 not for us eSqn: %s" %MsgSEQ)
         return
 
     if isqn not in self.ListOfCommands:
-        self.logging_receive( 'Log', "decode8011 - 0x8011 not for us eSqn: %s iSqn: %s" %(MsgSEQ, isqn))
+        self.logging_receive( 'Error', "decode8011 - 0x8011 not for us eSqn: %s iSqn: %s" %(MsgSEQ, isqn))
         return
     report_timing_8011( self , isqn )    
     print_listofcommands( self, isqn )

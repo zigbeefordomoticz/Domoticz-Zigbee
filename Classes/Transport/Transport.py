@@ -119,10 +119,10 @@ class ZigateTransport(object):
         try:
             self.writer_queue.put( message ) # Prio 5 to allow prio 1 if we have to retransmit 
         except queue.Full:
-            Domoticz.Error("sendData - writer_queue Full")
+            self.logging_send('Error',"sendData - writer_queue Full")
 
         except Exception as e:
-            Domoticz.Error("sendData - Error: %s" %e)
+            self.logging_send('Error',"sendData - Error: %s" %e)
         
         return InternalSqn
 

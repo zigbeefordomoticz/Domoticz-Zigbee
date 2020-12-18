@@ -12,8 +12,7 @@ from Modules.tools import retreive_cmd_payload_from_8002
 def decode8002_and_process(self, frame):
     
     SrcNwkId, SrcEndPoint, ClusterId , Payload = extract_nwk_infos_from_8002( frame )
-    self.logging_receive(
-        'Debug', "decode8002_and_process NwkId: %s Ep: %s Cluster: %s Payload: %s" %(SrcNwkId, SrcEndPoint, ClusterId , Payload))
+    self.logging_receive( 'Debug', "decode8002_and_process NwkId: %s Ep: %s Cluster: %s Payload: %s" %(SrcNwkId, SrcEndPoint, ClusterId , Payload))
 
     if SrcNwkId is None:
         return frame
@@ -26,8 +25,7 @@ def decode8002_and_process(self, frame):
         # This is not a Global Command (Read Attribute, Write Attribute and so on)
         return frame
 
-    self.logging_receive(
-        'Debug', "decode8002_and_process Sqn: %s/%s ManufCode: %s Command: %s Data: %s " %(int(Sqn,16), Sqn , ManufacturerCode, Command, Data))
+    self.logging_receive( 'Debug', "decode8002_and_process Sqn: %s/%s ManufCode: %s Command: %s Data: %s " %(int(Sqn,16), Sqn , ManufacturerCode, Command, Data))
     if Command == '00': # Read Attribute
         return buildframe_read_attribute_request( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Data  )
 
@@ -68,7 +66,6 @@ def extract_nwk_infos_from_8002( frame ):
     SrcAddrMode = MsgData[14:16]
 
     if ProfileId != '0104':
-        Domoticz.Log("extract_nwk_infos_from_8002 - Not an HA Profile, let's drop the packet %s" % MsgData)
         return ( None, None, None , None )
 
     if int(SrcAddrMode, 16) in [ADDRESS_MODE['short'], ADDRESS_MODE['group']]:
@@ -86,7 +83,6 @@ def extract_nwk_infos_from_8002( frame ):
             Payload = MsgData[38:len(MsgData)]
 
         else:
-            Domoticz.Log("Decode8002 - Unexpected Destination ADDR_MOD: %s, drop packet %s"% (TargetNwkId, MsgData))
             return ( None, None, None , None )
 
     elif int(SrcAddrMode, 16) == ADDRESS_MODE['ieee']:
@@ -102,12 +98,8 @@ def extract_nwk_infos_from_8002( frame ):
             TargetNwkId = MsgData[34:40]  # uint32_t
             Payload = MsgData[40:len(MsgData)]
         else:
-            Domoticz.Log("Decode8002 - Unexpected Destination ADDR_MOD: %s, drop packet %s"
-                         % (TargetNwkId, MsgData))
             return ( None, None, None , None )
     else:
-        Domoticz.Log("Decode8002 - Unexpected Source ADDR_MOD: %s, drop packet %s"
-                     % (SrcAddrMode, MsgData))
         return ( None, None, None , None )
 
     return ( SrcNwkId, SrcEndPoint, ClusterId , Payload )
@@ -135,10 +127,6 @@ def buildframe_read_attribute_request( frame, Sqn, SrcNwkId, SrcEndPoint, Cluste
         payloadOfAttributes += Attribute
 
     buildPayload += '%02x' %(nbAttribute) + payloadOfAttributes
-
-    Domoticz.Log("buildframe_read_attribute_request - NwkId: %s Ep: %s ClusterId: %s nbAttribute: %s Data: %s buildPayload: %s" 
-            %(SrcNwkId, SrcEndPoint, ClusterId, nbAttribute, Data, buildPayload))
-
     newFrame = '01' # 0:2
     newFrame += '0100' # 2:6   MsgType
     newFrame += '%4x' %len(buildPayload) # 6:10  Length
@@ -160,7 +148,6 @@ def buildframe_write_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clus
     newFrame += buildPayload
     newFrame += frame[len(frame) - 4: len(frame) - 2] # LQI
     newFrame += '03'
-
     return  newFrame
 
 
@@ -204,11 +191,6 @@ def buildframe_read_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clust
                 idx += 4
                 # Today found for attribute 0xff02 Xiaomi, just take all data
                 size = len(Data) - idx 
-                #Domoticz.Log("Data: %s" %Data)
-                #Domoticz.Log("Attribute: %s" %Attribute)
-                #Domoticz.Log("DType: %s" %DType)
-                #Domoticz.Log("size: %s" %size)
-                #Domoticz.Log("data: %s" %Data[ idx:idx + size])
 
             elif DType in ( '41', '42'): # ZigBee_OctedString = 0x41, ZigBee_CharacterString = 0x42
                 size = int(Data[idx:idx+2],16) * 2
@@ -225,8 +207,6 @@ def buildframe_read_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clust
             buildPayload += Attribute + Status + DType + lenData + value
         else:
             buildPayload += Attribute + Status 
-
-    #Domoticz.Log("buildframe_read_attribute_response for 0x8100 - NwkId: %s Ep: %s ClusterId: %s nbAttribute: %s Data: %s from frame: %s" %(SrcNwkId, SrcEndPoint, ClusterId, nbAttribute, buildPayl
     
     newFrame = '01' # 0:2
     newFrame += '8100' # 2:6   MsgType
@@ -235,7 +215,6 @@ def buildframe_read_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clust
     newFrame += buildPayload
     newFrame += frame[len(frame) - 4: len(frame) - 2] # LQI
     newFrame += '03'
-
     return  newFrame
 
 
@@ -257,11 +236,6 @@ def buildframe_report_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clu
                 nbElement =Data[ idx+2:idx+4] +  Data[ idx:idx+2 ]
                 idx += 4
                 size = len(Data) - idx 
-                #Domoticz.Log("Data: %s" %Data)
-                #Domoticz.Log("Attribute: %s" %Attribute)
-                #Domoticz.Log("DType: %s" %DType)
-                #Domoticz.Log("size: %s" %size)
-                #Domoticz.Log("data: %s" %Data[ idx:idx + size])
 
         elif DType in ( '41', '42'): # ZigBee_OctedString = 0x41, ZigBee_CharacterString = 0x42
             size = int(Data[idx:idx+2],16) * 2
@@ -282,10 +256,6 @@ def buildframe_report_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clu
         value = decode_endian_data( data, DType)
         lenData = '%04x' %(size // 2 )
         buildPayload += Attribute + '00' + DType + lenData + value
-        #Domoticz.Log("buildframe_report_attribute_response - Attribute: %s DType: %s Size: %s Value: %s"
-        #    %(Attribute, DType, lenData, value))
-
-    #Domoticz.Log("buildframe_report_attribute_response - NwkId: %s Ep: %s ClusterId: %s nbAttribute: %s Data: %s" %(SrcNwkId, SrcEndPoint, ClusterId, nbAttribute, buildPayload))
 
     newFrame = '01' # 0:2
     newFrame += '8102' # 2:6   MsgType
@@ -317,7 +287,6 @@ def buildframe_configure_reporting_response( frame, Sqn, SrcNwkId, SrcEndPoint, 
             buildPayload += Attribute + Status
         return  frame
 
-    #Domoticz.Log("buildframe_configure_reporting_response - NwkId: %s Ep: %s ClusterId: %s nbAttribute: %s Data: %s" %(SrcNwkId, SrcEndPoint, ClusterId, nbAttribute, buildPayload))
     newFrame = '01' # 0:2
     newFrame += '8120' # 2:6   MsgType
     newFrame += '%4x' %len(buildPayload) # 6:10  Length

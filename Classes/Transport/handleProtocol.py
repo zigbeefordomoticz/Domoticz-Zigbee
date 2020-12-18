@@ -14,15 +14,15 @@ from Classes.Transport.decode8012 import decode8012_8702
 from Classes.Transport.decode8011 import decode8011
 from Classes.Transport.tools import ( release_command, get_isqn_from_ListOfCommands, STANDALONE_MESSAGE, CMD_PDM_ON_HOST)
 from Classes.Transport.handleFirmware31c import check_and_process_others_31c
-from Classes.Transport.instrumentation import time_spent
+from Classes.Transport.instrumentation import time_spent_process_frame
 
 from Modules.zigateConsts import MAX_SIMULTANEOUS_ZIGATE_COMMANDS
 from Modules.errorCodes import ZCL_EXTENDED_ERROR_CODES
 
-@time_spent( True )
+@time_spent_process_frame( )
 def process_frame(self, decoded_frame):
 
-    self.logging_receive( 'Log', "process_frame - receive frame: %s" %decoded_frame)
+    self.logging_receive( 'Debug', "process_frame - receive frame: %s" %decoded_frame)
 
     # Sanity Check
     if decoded_frame == '' or decoded_frame is None or len(decoded_frame) < 12:
@@ -33,7 +33,7 @@ def process_frame(self, decoded_frame):
     MsgLength = decoded_frame[6:10]
     MsgCRC = decoded_frame[10:12]
 
-    self.logging_receive( 'Log', "process_frame - MsgType: %s MsgLenght: %s MsgCrc: %s" %( MsgType, MsgLength, MsgCRC))
+    self.logging_receive( 'Debug', "process_frame - MsgType: %s MsgLenght: %s MsgCrc: %s" %( MsgType, MsgLength, MsgCRC))
 
     # Payload
     MsgData = None
@@ -43,7 +43,7 @@ def process_frame(self, decoded_frame):
     MsgData = decoded_frame[12:len(decoded_frame) - 4]
 
     if MsgType == '0302': # PDM loaded, ZiGate ready (after an internal error, but also after an ErasePDM)
-        self.logging_receive( 'Log', "process_frame - PDM loaded, ZiGate ready: %s MsgData %s" % (MsgType, MsgData))
+        self.logging_receive( 'Debug', "process_frame - PDM loaded, ZiGate ready: %s MsgData %s" % (MsgType, MsgData))
         for x in list(self.ListOfCommands):
             if self.ListOfCommands[x]['cmd'] == '0012':
                 release_command( self, x)
@@ -54,53 +54,47 @@ def process_frame(self, decoded_frame):
 
     if MsgType in CMD_PDM_ON_HOST:
         # Manage PDM on Host commands
-        self.logging_receive( 'Log', "process_frame - CMD_PDM_ON_HOST MsgType: %s MsgData %s" % (MsgType, MsgData))  
+        self.logging_receive( 'Debug', "process_frame - CMD_PDM_ON_HOST MsgType: %s MsgData %s" % (MsgType, MsgData))  
         return
 
     if int(MsgType, 16) in STANDALONE_MESSAGE:
-        self.logging_receive( 'Log', "process_frame - STANDALONE_MESSAGE MsgType: %s MsgLength: %s MsgCRC: %s" % (MsgType, MsgLength, MsgCRC))    
+        self.logging_receive( 'Debug', "process_frame - STANDALONE_MESSAGE MsgType: %s MsgLength: %s MsgCRC: %s" % (MsgType, MsgLength, MsgCRC))    
         self.forwarder_queue.put( decoded_frame)
         return
 
 
     if MsgType == '8001':
         #Async message
-        self.logging_receive( 'Log', "process_frame - MsgType: %s " %( MsgType))
+        self.logging_receive( 'Debug', "process_frame - MsgType: %s " %( MsgType))
         NXP_log_message(self, decoded_frame)
         return
 
     if MsgType == '9999':
         # Async message
-        self.logging_receive( 'Log', "process_frame - MsgType: %s MsgData: %s" %( MsgType, MsgData))
+        self.logging_receive( 'Debug', "process_frame - MsgType: %s MsgData: %s" %( MsgType, MsgData))
         NXP_Extended_Error_Code( self, decoded_frame)
         return
 
     if MsgType == '8000': # Command Ack
-        self.logging_receive( 'Log', "process_frame - MsgType: %s MsgData: %s decode and forwarde" %( MsgType, MsgData))
+        self.logging_receive( 'Debug', "process_frame - MsgType: %s MsgData: %s decode and forwarde" %( MsgType, MsgData))
         decode8000( self, decoded_frame)
         self.forwarder_queue.put( decoded_frame)
         return
 
     if MsgType in ( '8012', '8702'): # Transmission Akc for no-ack commands
-        self.logging_receive( 'Log', "process_frame - MsgType: %s MsgData: %s decode" %( MsgType, MsgData))
+        self.logging_receive( 'Debug', "process_frame - MsgType: %s MsgData: %s decode" %( MsgType, MsgData))
         if self.firmware_with_8012:
             decode8012_8702( self, decoded_frame)
         return
 
     if MsgType == '8011': # Command Ack (from target device)
-        self.logging_receive( 'Log', "process_frame - MsgType: %s MsgData: %s decode and forward" %( MsgType, MsgData))
+        self.logging_receive( 'Debug', "process_frame - MsgType: %s MsgData: %s decode and forward" %( MsgType, MsgData))
         decode8011( self, decoded_frame)
         self.forwarder_queue.put( decoded_frame)
         return
 
-    #if MsgType in ( '8010', ):
-    #    self.logging_receive( 'Log', "process_frame - MsgType: %s Forward and release" %( MsgType))
-    #    self.forwarder_queue.put( decoded_frame)
-    #    release_command( self, get_isqn_from_ListOfCommands( self, MsgType))
-    #    return
-
     if MsgType == '8701':
-        self.logging_receive( 'Log', "process_frame - MsgType: %s No action" %( MsgType))
+        self.logging_receive( 'Debug', "process_frame - MsgType: %s No action" %( MsgType))
         # Async message
         # Route Discovery, we don't handle it
         return
@@ -129,7 +123,7 @@ def NXP_Extended_Error_Code( self, MsgData):
         StatusMsg = ZCL_EXTENDED_ERROR_CODES[MsgData]
 
     if self.pluginconf.pluginConf['trackError']:
-        self.logging_send( 'Log', "NXP_Extended_Error_Code - Last PDUs infos ( n: %s a: %s) Extended Error Code: [%s] %s" %(self.npdu, self.apdu, MsgData, StatusMsg))
+        self.logging_send( 'Error', "NXP_Extended_Error_Code - Last PDUs infos ( n: %s a: %s) Extended Error Code: [%s] %s" %(self.npdu, self.apdu, MsgData, StatusMsg))
 
 def NXP_log_message(self, MsgData):  # Reception log Level
 
@@ -143,6 +137,6 @@ def NXP_log_message(self, MsgData):  # Reception log Level
             try:
                 file.write( "%s %s %s" %(str(datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]), MsgLogLvl,log_message) + "\n")
             except IOError:
-                Domoticz.Error("Error while writing to ZiGate log file %s" %logfilename)
+                self.logging_send( 'Error',"Error while writing to ZiGate log file %s" %logfilename)
     except IOError:
-        Domoticz.Error("Error while Opening ZiGate log file %s" %logfilename)
+        self.logging_send( 'Error',"Error while Opening ZiGate log file %s" %logfilename)

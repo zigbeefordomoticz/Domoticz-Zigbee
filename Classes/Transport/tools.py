@@ -55,13 +55,13 @@ def waiting_for_end_thread( self ):
     self.semaphore_gate.release( )
 
     self.reader_thread.join()
-    self.logging_receive( 'Log', "waiting_for_end_thread - readThread done")
+    self.logging_receive( 'Debug', "waiting_for_end_thread - readThread done")
 
     self.forwarder_thread.join()
-    self.logging_receive( 'Log', "waiting_for_end_thread - forwardedThread done")
+    self.logging_receive( 'Debug', "waiting_for_end_thread - forwardedThread done")
 
     self.writer_thread.join()
-    self.logging_receive( 'Log', "waiting_for_end_thread - writerThread done")
+    self.logging_receive( 'Debug', "waiting_for_end_thread - writerThread done")
 
 
 def handle_thread_error( self, e, nb_in, nb_out, data):
@@ -103,15 +103,15 @@ def release_command( self, isqn):
     # Release Semaphore
     if isqn and isqn in self.ListOfCommands:
         del self.ListOfCommands[ isqn ]
-    self.logging_receive( 'Log', "============= - Release semaphore %s" %self.semaphore_gate._value)
+    self.logging_receive( 'Debug', "============= - Release semaphore %s (%s)" %(self.semaphore_gate._value, len(self.ListOfCommands)))
     if self.semaphore_gate._value < MAX_SIMULTANEOUS_ZIGATE_COMMANDS:
         self.semaphore_gate.release()
-    self.logging_receive( 'Log', "============= - Semaphore released !! %s" %self.semaphore_gate._value)
+    self.logging_receive( 'Debug', "============= - Semaphore released !! %s" %self.semaphore_gate._value)
 
 def get_isqn_from_ListOfCommands( self, PacketType):
     for x in  list(self.ListOfCommands):
         if self.ListOfCommands[ x ]['Status'] == 'SENT':
-            self.logging_receive( 'Log', "decode8000 - Found isqn: %s with Sem: %s" %(x, self.ListOfCommands[ x ]['Semaphore']))
+            self.logging_receive( 'Debug', "get_isqn_from_ListOfCommands - Found isqn: %s with Sem: %s" %(x, self.ListOfCommands[ x ]['Semaphore']))
             self.ListOfCommands[ x ]['Status'] = '8000'
             return x
 
@@ -133,6 +133,6 @@ def get_response_from_command( command ):
 
 def print_listofcommands( self, isqn ):
 
-    self.logging_receive( 'Log', 'ListOfCommands[%s]:' %isqn)
+    self.logging_receive( 'Debug', 'ListOfCommands[%s]:' %isqn)
     for attribute in self.ListOfCommands[ isqn ]:
-        self.logging_receive( 'Log', '--> %s: %s' %(attribute, self.ListOfCommands[ isqn ][ attribute]))
+        self.logging_receive( 'Debug', '--> %s: %s' %(attribute, self.ListOfCommands[ isqn ][ attribute]))

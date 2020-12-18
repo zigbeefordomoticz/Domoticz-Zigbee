@@ -28,7 +28,7 @@ def decode8012_8702( self, decoded_frame):
         nPDU = MsgData[14:16]
         aPDU = MsgData[16:18]
     else:
-        self.logging_receive( 'Log', "decode8012_8702 - wrong address mode %s" %MsgDataDestMode)
+        self.logging_receive( 'Error', "decode8012_8702 - wrong address mode %s" %MsgDataDestMode)
         return None
 
     update_xPDU( self, nPDU, aPDU)
@@ -36,11 +36,11 @@ def decode8012_8702( self, decoded_frame):
     isqn = sqn_get_internal_sqn_from_aps_sqn(self, MsgSQN)
     
     if isqn is None:
-        self.logging_receive( 'Log', "decode8012_8702 - 0x8012 not for us eSqn: %s" %(MsgSQN))
+        self.logging_receive( 'Debug', "decode8012_8702 - 0x8012 not for us eSqn: %s" %(MsgSQN))
         return
 
     if isqn not in self.ListOfCommands:
-        self.logging_receive( 'Log', "decode8012_8702 - 0x8012 not for us eSqn: %s " %(MsgSQN))
+        self.logging_receive( 'Error', "decode8012_8702 - 0x8012 not for us eSqn: %s " %(MsgSQN))
         return
 
     report_timing_8012( self , isqn )

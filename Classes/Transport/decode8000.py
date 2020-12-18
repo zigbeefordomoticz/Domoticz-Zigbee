@@ -27,14 +27,14 @@ def decode8000(self, decoded_frame):
     # Look for isqn
     isqn = get_isqn_from_ListOfCommands( self, PacketType)
     if isqn is None:
-        self.logging_receive( 'Log', "decode8000 - cannot get isqn for MsgType %s" %(PacketType))
+        self.logging_receive( 'Error', "decode8000 - cannot get isqn for MsgType %s" %(PacketType))
         return
 
     print_listofcommands( self, isqn )
 
     # Sanity Check
     if int(self.ListOfCommands[ isqn ]['cmd'],16) != int(PacketType,16):
-        self.logging_receive( 'Log', "decode8000 - command miss-match %s vs. %s" %(self.ListOfCommands[ isqn ]['cmd'] , PacketType))
+        self.logging_receive( 'Error', "decode8000 - command miss-match %s vs. %s" %(self.ListOfCommands[ isqn ]['cmd'] , PacketType))
         return
 
     self.logging_send('Debug', "--> decode8000 - Status: %s PacketType: %s sqn_app:%s sqn_aps: %s type_sqn: %s" 
@@ -99,11 +99,11 @@ def get_sqn_pdus( self, MsgData ):
             if not self.firmware_with_8012:
                 self.firmware_with_aps_sqn = True
                 self.firmware_with_8012 = True
-                self.logging_send('Status', "==> Transport Mode switch to: %s" % self.zmode)
+                self.logging_send('Status', "==> Transport Mode switch to: 31e")
 
         elif not self.firmware_with_aps_sqn:
             self.firmware_with_aps_sqn = True
-            self.logging_send('Status', "==> Transport Mode switch to: %s" % self.zmode)
+            self.logging_send('Status', "==> Transport Mode switch to: 31d")
         
         return ( sqn_aps, type_sqn , apdu, npdu )
 
