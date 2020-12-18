@@ -24,7 +24,10 @@ def is_final_step( self, isqn, step):
     if is_nowait_cmd( self, isqn, cmd):
         return True
 
-    if is_ackIsDisabled(self, isqn, cmd): 
+    if step == 0x8012:
+        return is_final_step_8012( self, isqn, cmd)
+        
+    if not self.firmware_with_8012 and is_ackIsDisabled(self, isqn, cmd): 
         # If we are in a firmware below 31d (included) there is no 0x8012.
         # If we have a command sent with no-ack (like address mode 0x07),
         # then we will assumed that once 0x8000 is received, we can move to next command.
@@ -33,8 +36,8 @@ def is_final_step( self, isqn, step):
     if not is_8012_expected_after_8000( self, isqn, cmd ) and not is_8011_expected_after_8000( self, isqn, cmd ):
         return True
 
-    if step == 0x8012:
-        return is_final_step_8012( self, isqn, cmd)
+
+
 
     self.logging_receive( 'Debug', "is_final_step - returning False by default Cmd: 0x%04d - %s %s %s %s" %
         (

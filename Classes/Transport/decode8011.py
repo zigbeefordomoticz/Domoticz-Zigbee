@@ -44,10 +44,11 @@ def decode8011( self, decoded_frame):
     if isqn not in self.ListOfCommands:
         self.logging_receive( 'Error', "decode8011 - 0x8011 not for us eSqn: %s iSqn: %s" %(MsgSEQ, isqn))
         return
+    
+    self.ListOfCommands[ isqn ]['Status'] = '8011'
     report_timing_8011( self , isqn )    
     print_listofcommands( self, isqn )
 
-    self.ListOfCommands[ isqn ]['Status'] = '8011'
     release_command( self, isqn)
 
 def report_timing_8011( self , isqn ):

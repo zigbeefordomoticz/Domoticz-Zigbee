@@ -43,6 +43,8 @@ def decode8012_8702( self, decoded_frame):
         self.logging_receive( 'Error', "decode8012_8702 - 0x8012 not for us eSqn: %s " %(MsgSQN))
         return
 
+    self.ListOfCommands[ isqn ]['Status'] = '8012'
+    
     report_timing_8012( self , isqn )
     print_listofcommands( self, isqn )
 
