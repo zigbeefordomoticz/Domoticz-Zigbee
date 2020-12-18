@@ -42,4 +42,3 @@ def check_and_process_others_31c(self, MsgType, MsgData):
         return 
 
     release_command( self, isqn)
-

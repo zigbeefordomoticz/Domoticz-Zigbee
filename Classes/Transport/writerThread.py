@@ -105,11 +105,10 @@ def encode_message( cmd, datas):
         strchecksum = '0' + checksumCmd if len(checksumCmd) == 1 else checksumCmd
         return ( "01" + zigate_encode(cmd) + zigate_encode(length) + zigate_encode(strchecksum) + "03" )
 
-    else:
-        length = '%04x' % (len(datas)//2)
-        checksumCmd = get_checksum(cmd, length, datas)
-        strchecksum = '0' + checksumCmd if len(checksumCmd) == 1 else checksumCmd
-        return ( "01" + zigate_encode(cmd) + zigate_encode(length) + zigate_encode(strchecksum) + zigate_encode(datas) + "03" )
+    length = '%04x' % (len(datas)//2)
+    checksumCmd = get_checksum(cmd, length, datas)
+    strchecksum = '0' + checksumCmd if len(checksumCmd) == 1 else checksumCmd
+    return ( "01" + zigate_encode(cmd) + zigate_encode(length) + zigate_encode(strchecksum) + zigate_encode(datas) + "03" )
 
 def zigate_encode(Data):
     # The encoding is the following:
