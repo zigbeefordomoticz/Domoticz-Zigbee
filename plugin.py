@@ -836,18 +836,21 @@ def zigateInit_Phase3( self ):
     self.pluginParameters['FirmwareVersion'] = self.FirmwareVersion
 
     # Check Firmware version
-    if self.FirmwareVersion.lower() < '030f':
+    if self.FirmwareVersion.lower() < '030f' or \
+        self.FirmwareVersion.lower() == '030f' and self.FirmwareMajorVersion == '0002' :
         self.log.logging( 'Plugin', 'Error', "Firmware level not supported, please update ZiGate firmware")
         return
 
-    if self.FirmwareVersion.lower() == '030f' and self.FirmwareMajorVersion == '0002':
-        Domoticz.Error("You are not running on the Official 3.0f version (it was a pre-3.0f)")
     elif self.FirmwareVersion.lower() == '2100':
         self.log.logging( 'Plugin', 'Status', "Firmware for Pluzzy devices")
         self.PluzzyFirmware = True
-    elif self.FirmwareVersion.lower() == '031b':
-        self.log.logging( 'Plugin', 'Status', "You are not on the latest firmware version, This version is known to have problem, please consider to upgrae")
 
+    elif self.FirmwareVersion.lower() == '031b':
+        self.log.logging( 'Plugin', 'Status', "You are not on the latest firmware version, This version is known to have problem, please consider to upgrade")
+        return
+
+    elif self.FirmwareVersion.lower() == '031d':
+        self.pluginconf.pluginConf['forceAckOnZCL'] = True
 
     elif int(self.FirmwareVersion,16) > 0x031e:
         Domoticz.Error("Firmware %s is not yet supported" %self.FirmwareVersion.lower())
