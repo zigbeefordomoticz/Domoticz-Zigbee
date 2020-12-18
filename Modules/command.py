@@ -342,15 +342,18 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             if 'Schneider Wiser' not in self.ListOfDevices[NWKID]:
                 self.ListOfDevices[NWKID]['Schneider Wiser'] ={}
 
+            if 'HACT Mode' not in self.ListOfDevices[NWKID]['Schneider Wiser']:
+                self.ListOfDevices[NWKID]['Schneider Wiser']['HACT Mode'] = ''
+
             if Level == 10: # Conventional
                 UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
-                self.ListOfDevices[NWKID]['Schneider Wiser']['HACT Mode'] = 'conventionel'
+                self.ListOfDevices[NWKID]['Schneider Wiser']['HACT Mode'] = 'conventional'
                 schneider_hact_heater_type( self, NWKID, 'conventional')
 
             elif Level == 20: # fip
                 UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
-                self.ListOfDevices[NWKID]['Schneider Wiser']['HACT Mode'] = 'fip'
-                schneider_hact_heater_type( self, NWKID, 'fip')
+                self.ListOfDevices[NWKID]['Schneider Wiser']['HACT Mode'] = 'FIP'
+                schneider_hact_heater_type( self, NWKID, 'FIP')
 
             else:
                 Domoticz.Error("Unknown mode %s for HACTMODE for device %s" %( Level, NWKID))

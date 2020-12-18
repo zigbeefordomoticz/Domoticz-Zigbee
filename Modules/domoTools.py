@@ -200,7 +200,7 @@ def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, 
         Domoticz.Error("Droping Update to Device due to Unit %s not found" %Unit )
         return
     if Devices[Unit].DeviceID not in self.IEEE2NWK:
-        Domoticz.Error("Droping Update to Device due to DeviceID %s not found in IEEE2NWK" %(Devices[Unit].DeviceID,self.IEEE2NWK ))
+        Domoticz.Error("Droping Update to Device due to DeviceID %s not found in IEEE2NWK %s" %(Devices[Unit].DeviceID,str(self.IEEE2NWK )))
         return
 
     loggingWidget( self, "Debug", "UpdateDevice_v2 %s:%s:%s   %3s:%3s:%5s (%15s)" 
