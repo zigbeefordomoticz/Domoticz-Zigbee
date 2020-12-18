@@ -14,10 +14,12 @@ from Classes.Transport.decode8012 import decode8012_8702
 from Classes.Transport.decode8011 import decode8011
 from Classes.Transport.tools import ( release_command, get_isqn_from_ListOfCommands, STANDALONE_MESSAGE, CMD_PDM_ON_HOST)
 from Classes.Transport.handleFirmware31c import check_and_process_others_31c
+from Classes.Transport.instrumentation import time_spent
 
 from Modules.zigateConsts import MAX_SIMULTANEOUS_ZIGATE_COMMANDS
 from Modules.errorCodes import ZCL_EXTENDED_ERROR_CODES
 
+@time_spent( True )
 def process_frame(self, decoded_frame):
 
     self.logging_receive( 'Log', "process_frame - receive frame: %s" %decoded_frame)
