@@ -17,6 +17,12 @@ Release Numbering
 - Odd numbers --> Stable
 - Even numbers  --> Beta
 
+## 18 Dec. 2020   - 4.11.12
+- [Hardware] - New eTRV Tuya 
+- [Hardware] - Better management of Battery level for SonOff devices ( NX-4911 Manufacturerd by Revolt )
+- [Hardware] - Fix some issues related to the FIP mode of Schneider Wiser HACT
+
+
 ## 27 Nov.  2020  - 4.11.11
 - [Hardware] - Handle the behaviour of the Legrand shutter when firmware above 0x1a
 
