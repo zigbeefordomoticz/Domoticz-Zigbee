@@ -849,7 +849,7 @@ def zigateInit_Phase3( self ):
         self.log.logging( 'Plugin', 'Status', "You are not on the latest firmware version, This version is known to have problem, please consider to upgrade")
         return
 
-    elif self.FirmwareVersion.lower() == '031d':
+    elif self.FirmwareVersion.lower() in ( '031a', '031c', '031d'):
         self.pluginconf.pluginConf['forceAckOnZCL'] = True
 
     elif int(self.FirmwareVersion,16) > 0x031e:

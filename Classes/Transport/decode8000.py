@@ -105,7 +105,7 @@ def get_sqn_pdus( self, MsgData ):
             self.firmware_with_aps_sqn = True
             self.logging_send('Status', "==> Transport Mode switch to: 31d")
         
-        return ( sqn_aps, type_sqn , apdu, npdu )
+    return ( sqn_aps, type_sqn , apdu, npdu )
 
 def report_timing_8000( self , isqn ):
     # Statistics on ZiGate reacting time to process the command

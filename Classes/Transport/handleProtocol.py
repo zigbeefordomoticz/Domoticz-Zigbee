@@ -13,7 +13,7 @@ from Classes.Transport.decode8000 import decode8000
 from Classes.Transport.decode8012 import decode8012_8702
 from Classes.Transport.decode8011 import decode8011
 from Classes.Transport.tools import ( release_command, get_isqn_from_ListOfCommands, STANDALONE_MESSAGE, CMD_PDM_ON_HOST)
-from Classes.Transport.handleFirmware31c import check_and_process_others_31c
+from Classes.Transport.handleFirmware31c import decode8011_31c
 from Classes.Transport.instrumentation import time_spent_process_frame
 
 from Modules.zigateConsts import MAX_SIMULTANEOUS_ZIGATE_COMMANDS
@@ -87,9 +87,14 @@ def process_frame(self, decoded_frame):
             decode8012_8702( self, decoded_frame)
         return
 
-    if MsgType == '8011': # Command Ack (from target device)
+    if self.firmware_with_aps_sqn and MsgType == '8011': # Command Ack (from target device)
         self.logging_receive( 'Debug', "process_frame - MsgType: %s MsgData: %s decode and forward" %( MsgType, MsgData))
         decode8011( self, decoded_frame)
+        self.forwarder_queue.put( decoded_frame)
+        return
+
+    if not self.firmware_with_aps_sqn and MsgType == '8011':
+        decode8011_31c( self, decoded_frame)
         self.forwarder_queue.put( decoded_frame)
         return
 
@@ -99,20 +104,23 @@ def process_frame(self, decoded_frame):
         # Route Discovery, we don't handle it
         return
 
-    if not self.firmware_with_aps_sqn and MsgType in ( '8100', '8110', '8102'):
-        # We are in a 31c and below firmware.
-        # we will release next command only when receiving expected response for a command
-        check_and_process_others_31c(self, MsgType, MsgData)
-        self.forwarder_queue.put( decoded_frame)
-        return
+    #if not self.firmware_with_aps_sqn and MsgType in ( '8100', '8110', '8102'):
+    #    # We are in a 31c and below firmware.
+    #    # we will release next command only when receiving expected response for a command
+    #    self.statistics._data += 1
+    #    check_and_process_others_31c(self, MsgType, MsgData)
+    #    self.forwarder_queue.put( decoded_frame)
+    #    return
 
     if MsgType == "8002" and MsgData:
         # Data indication
+        self.statistics._data += 1
         self.logging_receive( 'Log', "process_frame - 8002 MsgType: %s MsgLength: %s MsgCRC: %s" % (MsgType, MsgLength, MsgCRC))  
         self.forwarder_queue.put( decode8002_and_process( self, decoded_frame ) )
         return
 
     # Forward the message to plugin for further processing
+    self.statistics._data += 1
     self.forwarder_queue.put( decoded_frame)
 
 # Extended Error Code:

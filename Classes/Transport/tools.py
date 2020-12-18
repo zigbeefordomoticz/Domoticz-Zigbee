@@ -101,8 +101,10 @@ def update_xPDU( self, npdu, apdu):
 def release_command( self, isqn):
     # Remove the command from ListOfCommand
     # Release Semaphore
-    if isqn and isqn in self.ListOfCommands:
+    if not (isqn is None) and isqn in self.ListOfCommands:
+        self.logging_receive( 'Debug', "==== Removing isqn: %s from %s" %(isqn, self.ListOfCommands.keys()))
         del self.ListOfCommands[ isqn ]
+
     self.logging_receive( 'Debug', "============= - Release semaphore %s (%s)" %(self.semaphore_gate._value, len(self.ListOfCommands)))
     if self.semaphore_gate._value < MAX_SIMULTANEOUS_ZIGATE_COMMANDS:
         self.semaphore_gate.release()
@@ -136,3 +138,11 @@ def print_listofcommands( self, isqn ):
     self.logging_receive( 'Debug', 'ListOfCommands[%s]:' %isqn)
     for attribute in self.ListOfCommands[ isqn ]:
         self.logging_receive( 'Debug', '--> %s: %s' %(attribute, self.ListOfCommands[ isqn ][ attribute]))
+
+def get_nwkid_from_datas_for_zcl_command( self, isqn):
+    
+    return self.ListOfCommands[isqn]['datas'][2:6]
+
+def is_nwkid_available( self, cmd):
+
+    return ZIGATE_COMMANDS[ cmd ]['NwkId 2nd Bytes']

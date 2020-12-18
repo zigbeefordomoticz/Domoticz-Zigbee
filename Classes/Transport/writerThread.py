@@ -45,7 +45,8 @@ def writer_thread( self ):
                 # By using the Semaphore Timeout , we will make sure that the Semaphore is not acquired for ever.
                 # However, if the Sem is relaed due to Timeout, we will not be notified !
                 self.semaphore_gate.acquire( blocking = True, timeout = None) # Blocking until 8s Tiemout
-                self.logging_send( 'Debug', "============= semaphore %s given ============== Len: ListOfCmd %s" %(self.semaphore_gate._value, len(self.ListOfCommands)))
+                self.logging_send( 'Debug', "============= semaphore %s given ============== Len: ListOfCmd %s - %s" %(
+                    self.semaphore_gate._value, len(self.ListOfCommands), str(self.ListOfCommands.keys()) ))
         
                 thread_sendData( self, command['cmd'], command['datas'], command['ackIsDisabled'], command['waitForResponseIn'], command['InternalSqn'])
                 self.logging_send( 'Debug', "Command sent!!!! %s" %command)
