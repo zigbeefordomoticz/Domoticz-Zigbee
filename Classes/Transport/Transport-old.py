@@ -17,7 +17,7 @@ from Classes.LoggingManagement import LoggingManagement
 
 from Modules.tools import is_hex, retreive_cmd_payload_from_8002, is_manufspecific_8002_payload
 from Modules.zigateConsts import ZIGATE_RESPONSES, ZIGATE_COMMANDS, ADDRESS_MODE, SIZE_DATA_TYPE
-from Modules.sqnMgmt import sqn_init_stack, sqn_generate_new_internal_sqn, sqn_add_external_sqn, sqn_get_internal_sqn_from_aps_sqn, sqn_get_internal_sqn_from_app_sqn, TYPE_APP_ZCL, TYPE_APP_ZDP
+from Classes.Transport.sqnMgmt import sqn_init_stack, sqn_generate_new_internal_sqn, sqn_add_external_sqn, sqn_get_internal_sqn_from_aps_sqn, sqn_get_internal_sqn_from_app_sqn, TYPE_APP_ZCL, TYPE_APP_ZDP
 from Modules.errorCodes import ZCL_EXTENDED_ERROR_CODES
 
 import serial
@@ -219,7 +219,7 @@ class ZigateTransport(object):
 
         self.logging_send('Status',"ZigateTransport: thread_processing_and_sending Thread stop.")
 
-# Thread Transport Watchdog, Serial, Tcpip
+    # Thread Transport Watchdog, Serial, Tcpip
     def start_thread_transport_watchdog( self ):
         if self.WatchDogThread is None:
             Domoticz.Status("Starting Watch dog")

@@ -4,6 +4,7 @@
 # Author: pipiche38
 #
 
+import time
 from Classes.Transport.tools import release_command, update_xPDU, print_listofcommands
 from Classes.Transport.sqnMgmt import sqn_get_internal_sqn_from_aps_sqn
 from Classes.Transport.isFinal import is_final_step
@@ -42,6 +43,7 @@ def decode8012_8702( self, decoded_frame):
         self.logging_receive( 'Log', "decode8012_8702 - 0x8012 not for us eSqn: %s " %(MsgSQN))
         return
 
+    report_timing_8012( self , isqn )
     print_listofcommands( self, isqn )
 
     if MsgType == '8702':
@@ -51,3 +53,19 @@ def decode8012_8702( self, decoded_frame):
     self.ListOfCommands[ isqn ]['Status'] = '8012'
     if is_final_step( self, isqn, 0x8012):
         release_command( self, isqn)
+
+def report_timing_8012( self , isqn ):
+    # Statistics on ZiGate reacting time to process the command
+    if self.pluginconf.pluginConf['ZiGateReactTime']:
+        timing = 0
+        if ( isqn in self.ListOfCommands and 'TimeStamp' in self.ListOfCommands[isqn] ):
+            TimeStamp = self.ListOfCommands[ isqn ]['TimeStamp']
+            timing = int( ( time.time() - TimeStamp ) * 1000 )
+            self.statistics.add_timing8012( timing )
+        if self.statistics._averageTiming8012 != 0 and timing >= (3 * self.statistics._averageTiming8012):
+            self.logging_send('Log', "Zigate round trip 0x8012 time seems long. %s ms for %s %s SendingQueue: %s" 
+                %( timing , 
+                self.ListOfCommands[isqn]['cmd'], 
+                self.ListOfCommands[isqn]['datas'], 
+                self.loadTransmit(), 
+                ))

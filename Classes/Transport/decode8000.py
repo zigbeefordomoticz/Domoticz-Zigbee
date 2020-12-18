@@ -9,6 +9,8 @@ from Classes.Transport.tools import  CMD_PDM_ON_HOST, ZIGATE_COMMANDS, get_isqn_
 from Classes.Transport.sqnMgmt import sqn_add_external_sqn, TYPE_APP_ZCL, TYPE_APP_ZDP
 from Classes.Transport.isFinal import is_final_step
 
+import time
+
 def decode8000(self, decoded_frame):
 
     MsgData = decoded_frame[12:len(decoded_frame) - 4]
@@ -42,6 +44,8 @@ def decode8000(self, decoded_frame):
         release_command( self, isqn)
         return None
 
+    report_timing_8000( self , isqn )
+
     if Status != '00':
         self.statistics._ackKO += 1
         # Migh check here is retry can be done !
@@ -65,8 +69,6 @@ def decode8000(self, decoded_frame):
     self.ListOfCommands[ isqn ]['Status'] = '8000'
     
     print_listofcommands( self, isqn )
-
-
 
 
 def update_isqn( self, cmd, isqn, sqn_app, sqn_aps, type_sqn):
@@ -104,3 +106,19 @@ def get_sqn_pdus( self, MsgData ):
             self.logging_send('Status', "==> Transport Mode switch to: %s" % self.zmode)
         
         return ( sqn_aps, type_sqn , apdu, npdu )
+
+def report_timing_8000( self , isqn ):
+    # Statistics on ZiGate reacting time to process the command
+    timing = 0
+    if self.pluginconf.pluginConf['ZiGateReactTime']:
+        if ( isqn in self.ListOfCommands and 'TimeStamp' in self.ListOfCommands[isqn] ):
+            TimeStamp = self.ListOfCommands[ isqn ]['TimeStamp']
+            timing = int( ( time.time() - TimeStamp ) * 1000 )
+            self.statistics.add_timing8000( timing )
+        if self.statistics._averageTiming8000 != 0 and timing >= (3 * self.statistics._averageTiming8000):
+            self.logging_send('Log', "--> decode8000 - Zigate round trip 0x8000 time seems long. %s ms for %s %s SendingQueue: %s" 
+                %( timing , 
+                self.ListOfCommands[isqn]['cmd'], 
+                self.ListOfCommands[isqn]['datas'], 
+                self.loadTransmit()
+                ))

@@ -9,7 +9,7 @@ import serial
 
 from Classes.Transport.tools import stop_waiting_on_queues, handle_thread_error
 from Classes.Transport.readDecoder import decode_and_split_message
-
+from Classes.Transport.instrumentation import time_spent
 
 # Manage Serial Line
 def open_serial( self ):
