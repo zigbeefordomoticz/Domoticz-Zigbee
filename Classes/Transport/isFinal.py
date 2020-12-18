@@ -24,13 +24,26 @@ def is_final_step( self, isqn, step):
     if is_nowait_cmd( self, isqn, cmd):
         return True
 
-    if not is_8011_expected_after_8000( self, isqn, cmd ) and not is_8012_expected_after_8000( self, isqn, cmd ): 
+    if is_ackIsDisabled(self, isqn, cmd): 
+        # If we are in a firmware below 31d (included) there is no 0x8012.
+        # If we have a command sent with no-ack (like address mode 0x07),
+        # then we will assumed that once 0x8000 is received, we can move to next command.
+        return True
+
+    if not is_8012_expected_after_8000( self, isqn, cmd ) and not is_8011_expected_after_8000( self, isqn, cmd ):
         return True
 
     if step == 0x8012:
         return is_final_step_8012( self, isqn, cmd)
 
-    self.logging_receive( 'Debug', "is_final_step - returning False by default Cmd: 0x%04d" %cmd)
+    self.logging_receive( 'Debug', "is_final_step - returning False by default Cmd: 0x%04d - %s %s %s %s" %
+        (
+        cmd,
+        self.firmware_with_8012,
+        is_8012_expected_after_8000( self, isqn, cmd ),
+        is_8011_expected_after_8000( self, isqn, cmd ),
+        is_8011_expected_after_8012( self, isqn, cmd )
+        ))
     return False
 
 def is_final_step_8012(self, isqn, cmd):
@@ -38,13 +51,11 @@ def is_final_step_8012(self, isqn, cmd):
         return is_8011_expected_after_8012( self, isqn, cmd )
     self.logging_receive( 'Debug', "is_final_step_8012 - returning False by default Cmd: 0x%04d" %cmd)
 
-
 def is_8011_expected_after_8000( self, isqn, cmd ):
     if cmd in ZIGATE_COMMANDS:
         return ZIGATE_COMMANDS[ cmd ]['Ack']
     self.logging_receive( 'Debug', "is_8011_expected_after_8000 - returning False by default Cmd: 0x%04d" %cmd)
     return False
-
 
 def is_8012_expected_after_8000( self, isqn, cmd ):
     if cmd in ZIGATE_COMMANDS:
@@ -57,23 +68,36 @@ def is_8011_expected_after_8012( self, isqn, cmd ):
     ackIsDisabled =  self.ListOfCommands[ isqn ]['ackIsDisabled']
     return bool(ackIsDisabled or not expAck)
 
+def is_ackIsDisabled(self, isqn, cmd):
+
+    # In firmware 31c and below, 0x0110 is always with Ack
+    if not self.firmware_with_aps_sqn and cmd in ( 0x0110, ):
+        return False
+
+    # In firmware 31d and below 0x0530 is always without Ack
+    if not self.firmware_with_8012 and cmd in ( 0x0530, ):
+        return True
+
+    if self.ListOfCommands[ isqn ]['ackIsDisabled']:
+        return True
+
+    return False
+    
+
+
 def is_nowait_cmd( self, isqn, cmd):
     if cmd not in CMD_NWK_2NDBytes:
         if cmd == 0x004E and self.ListOfCommands[ isqn ]['datas'][0:4] == '0000':
             return True
-
         if cmd == 0x0049 and self.ListOfCommands[ isqn ]['datas'][0:4] == 'FFFC':
            return True
 
     if cmd in CMD_NWK_2NDBytes:
         if self.ListOfCommands[ isqn ]['datas'][0:2] == '%02x' % ADDRESS_MODE['group'] and self.ListOfCommands[ isqn ]['datas'][2:6] == '0000':
             return True
-            
         if self.ListOfCommands[ isqn ]['datas'][2:6] == '0000':
             return True
-
         if not self.firmware_with_aps_sqn and cmd == 0x0110:
             return True
-
     if not self.firmware_with_aps_sqn and cmd in CMD_NOACK_ZDP:
         return True
