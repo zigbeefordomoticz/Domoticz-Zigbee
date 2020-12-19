@@ -57,6 +57,11 @@ def process_frame(self, decoded_frame):
         self.logging_receive( 'Debug', "process_frame - CMD_PDM_ON_HOST MsgType: %s MsgData %s" % (MsgType, MsgData))  
         return
 
+    if MsgType in ( '8035', ):
+        # Internal ZiGate Message, just drop
+        self.logging_receive( 'Debug', "process_frame - ZiGate internal Message MsgType: %s MsgData %s" % (MsgType, MsgData))  
+        return        
+
     if int(MsgType, 16) in STANDALONE_MESSAGE:
         self.logging_receive( 'Debug', "process_frame - STANDALONE_MESSAGE MsgType: %s MsgLength: %s MsgCRC: %s" % (MsgType, MsgLength, MsgCRC))    
         self.forwarder_queue.put( decoded_frame)
