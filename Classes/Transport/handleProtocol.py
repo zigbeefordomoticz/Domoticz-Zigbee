@@ -77,7 +77,7 @@ def process_frame(self, decoded_frame):
     if MsgType == '9999':
         # Async message
         self.logging_receive( 'Debug', "process_frame - MsgType: %s MsgData: %s" %( MsgType, MsgData))
-        NXP_Extended_Error_Code( self, decoded_frame)
+        NXP_Extended_Error_Code( self, MsgData)
         return
 
     if MsgType == '8000': # Command Ack

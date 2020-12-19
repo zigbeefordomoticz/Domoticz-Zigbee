@@ -185,9 +185,9 @@ class ZigateTransport(object):
             context = {}
         context['Queues'] = {
             'ListOfCommands': dict.copy(self.ListOfCommands),
-            'writeQueue': self.writer_queue,
-            'forwardQueue': self.forwarder_queue,
-            'semaphoreValue': self.semaphore_gate
+            'writeQueue': str(self.writer_queue.queue),
+            'forwardQueue': str(self.forwarder_queue.queue),
+            'SemaphoreValue': self.semaphore_gate._value,
             }
         context['Firmware'] = {
             'with_aps_sqn': self.firmware_with_aps_sqn ,
