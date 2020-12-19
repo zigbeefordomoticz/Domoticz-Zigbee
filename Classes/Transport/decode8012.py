@@ -10,19 +10,20 @@ from Classes.Transport.sqnMgmt import sqn_get_internal_sqn_from_aps_sqn
 from Classes.Transport.isFinal import is_final_step
 
 def decode8012_8702( self, decoded_frame):
+
     MsgType = decoded_frame[2:6]
     MsgData = decoded_frame[12:len(decoded_frame) - 4]
     MsgStatus = MsgData[0:2]
-    unknown2 = MsgData[4:8]
+    unknown2 = MsgData[2:6]
     MsgDataDestMode = MsgData[6:8]
 
     MsgSQN = MsgAddr = None
-    if MsgDataDestMode == '01':  # IEEE
+    if MsgDataDestMode == '03':  # IEEE
         MsgAddr = MsgData[8:24]
         MsgSQN = MsgData[24:26]
         nPDU = MsgData[26:28]
         aPDU = MsgData[28:30]
-    elif MsgDataDestMode in  ('02', '03'):  # Short Address/Group
+    elif MsgDataDestMode in  ('02', '07', '01'):  # Short Address/Group
         MsgAddr = MsgData[8:12]
         MsgSQN = MsgData[12:14]
         nPDU = MsgData[14:16]

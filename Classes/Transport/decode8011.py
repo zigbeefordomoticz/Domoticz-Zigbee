@@ -12,6 +12,7 @@ import time
 def decode8011( self, decoded_frame):
 
     MsgData = decoded_frame[12:len(decoded_frame) - 4]
+    
     MsgStatus = MsgData[0:2]
     MsgSrcAddr = MsgData[2:6]
     MsgSrcEp = MsgData[6:8]

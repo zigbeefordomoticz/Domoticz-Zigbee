@@ -40,6 +40,10 @@ def is_final_step( self, isqn, step):
         # then we will assumed that once 0x8000 is received, we can move to next command.
         return True
 
+    if not self.firmware_with_8012 and is_group_cmd(self, isqn, cmd):
+        # This is a Group command. There is no Ack expected. 
+        return True
+
     if not is_8012_expected_after_8000( self, isqn, cmd ) and not is_8011_expected_after_8000( self, isqn, cmd ):
         return True
 
@@ -56,8 +60,11 @@ def is_final_step( self, isqn, step):
 
 def is_final_step_8012(self, isqn, cmd):
     if cmd in ZIGATE_COMMANDS:
+        if is_group_cmd( self, isqn, cmd):
+            return True
         return is_8011_expected_after_8012( self, isqn, cmd )
     self.logging_receive( 'Debug', "is_final_step_8012 - returning False by default Cmd: 0x%04d" %cmd)
+    return False
 
 def is_8011_expected_after_8000( self, isqn, cmd ):
     if cmd in ZIGATE_COMMANDS:
@@ -86,12 +93,13 @@ def is_ackIsDisabled(self, isqn, cmd):
     if not self.firmware_with_8012 and cmd in ( 0x0530, ):
         return True
 
-    if self.ListOfCommands[ isqn ]['ackIsDisabled']:
-        return True
-
-    return False
+    return bool(self.ListOfCommands[ isqn ]['ackIsDisabled'])
     
-
+def is_group_cmd( self, isqn, cmd):
+    return (
+        cmd in CMD_NWK_2NDBytes
+        and self.ListOfCommands[isqn]['datas'][0:2] == '01'
+    )
 
 def is_nowait_cmd( self, isqn, cmd):
     if cmd not in CMD_NWK_2NDBytes:

@@ -42,6 +42,10 @@ class ZigateTransport(object):
         self._wifiAddress = None  # ip address in case of Wifi
         self._wifiPort = None  # wifi port
 
+        # Monitoring ZiGate PDUs
+        self.apdu = None
+        self.npdu = None
+        
         # Semaphore to manage when to send a commande to ZiGate
         self.semaphore_gate = Semaphore( value = MAX_SIMULTANEOUS_ZIGATE_COMMANDS)
 
@@ -75,7 +79,6 @@ class ZigateTransport(object):
 
         # Initialise Command Protocol Parameters
         initialize_command_protocol_parameters( )
-
 
         if transport in ( "USB", "DIN", "V2", "PI"):
             self._transp = transport

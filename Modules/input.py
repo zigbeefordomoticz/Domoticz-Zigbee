@@ -772,6 +772,7 @@ def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
 
     # APP APS ACK
     self.log.logging( "Input", "Debug2", "Decode8011 - APS ACK: %s" % MsgData)
+    
     MsgLen = len(MsgData)
     MsgStatus = MsgData[0:2]
     MsgSrcAddr = MsgData[2:6]
@@ -790,8 +791,13 @@ def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
  
 
     if self.pluginconf.pluginConf["debugzigateCmd"]:
-        self.log.logging( 'Input', 'Log', "Decod8011 Received [%s] for Nwkid  : %s with status: %s e_sqn: 0x%02x/%s" 
-            % (i_sqn, MsgSrcAddr, MsgStatus, int(MsgSEQ,16), int(MsgSEQ,16)), MsgSrcAddr)
+        if MsgSEQ:
+            self.log.logging( 'Input', 'Log', "Decod8011 Received [%s] for Nwkid  : %s with status: %s e_sqn: 0x%02x/%s" 
+                % (i_sqn, MsgSrcAddr, MsgStatus, int(MsgSEQ,16), int(MsgSEQ,16)), MsgSrcAddr)
+        else:
+            self.log.logging( 'Input', 'Log', "Decod8011 Received [%s] for Nwkid  : %s with status: %s" 
+                % (i_sqn, MsgSrcAddr, MsgStatus), MsgSrcAddr)
+
 
     if MsgStatus == "00":
         timeStamped(self, MsgSrcAddr, 0x8011)
