@@ -25,10 +25,7 @@ def decode8011_31c(self, decoded_frame ):
     if self.semaphore_gate._value == MAX_SIMULTANEOUS_ZIGATE_COMMANDS:
         return
 
-    Domoticz.Log("Keys: %s" %str(self.ListOfCommands.keys()))
-
     for isqn in list(self.ListOfCommands.keys()):
-
         print_listofcommands( self, isqn )
         cmd = int(self.ListOfCommands[isqn]['cmd'],16)
         if not is_nwkid_available( self, cmd ):
