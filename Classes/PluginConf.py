@@ -154,17 +154,12 @@ SETTINGS = {
 
     # Plugin Transport
     'PluginTransport':     {'Order': 10, 'param': {
-        'Zmode':           {'type': 'str',  'default': 'Auto', 'current': None, 'restart': True,  'hidden': True,  'Advanced': True},
-
-        'TimeOut8000':     {'type': 'int',  'default': 2,      'current': None, 'restart': False, 'hidden': True,   'Advanced': True},
-        'TimeOut8012':     {'type': 'int',  'default': 12,      'current': None, 'restart': False, 'hidden': True,   'Advanced': True},
-        'TimeOut8011':     {'type': 'int',  'default': 14,      'current': None, 'restart': False, 'hidden': True,   'Advanced': True},
-        'TimeOutResponse': {'type': 'int',  'default': 9,      'current': None, 'restart': False, 'hidden': True,   'Advanced': True},
-        'forceAckOnZCL':   {'type': 'bool', 'default': 0,      'current': None, 'restart': False, 'hidden': False,  'Advanced': True},
-        'disableAckOnZCL': {'type': 'bool', 'default': 0,      'current': None, 'restart': False, 'hidden': False,  'Advanced': True},
-        'waitForResponse': {'type': 'bool', 'default': 0,      'current': None, 'restart': False, 'hidden': True,   'Advanced': True},
-        'MultiThreaded':   {'type': 'bool', 'default': 1,      'current': None, 'restart': True,  'hidden': False,   'Advanced': True},
-        'ieeeForRawAps':   {'type': 'bool', 'default': 0,      'current': None, 'restart': True,  'hidden': True,   'Advanced': True},
+        'forceAckOnZCL':   {'type': 'bool', 'default': 0,    'current': None, 'restart': False, 'hidden': False,'Advanced': True},
+        'disableAckOnZCL': {'type': 'bool', 'default': 0,    'current': None, 'restart': False, 'hidden': False,'Advanced': True},
+        'waitForResponse': {'type': 'bool', 'default': 0,    'current': None, 'restart': False, 'hidden': True, 'Advanced': True},
+        'byPassDzConnection': {'type': 'bool', 'default': 1, 'current': None, 'restart': True,  'hidden': True, 'Advanced': True},
+        'SerialReadV2':    {'type': 'bool', 'default': 0,    'current': None, 'restart': False, 'hidden': True, 'Advanced': True},
+        'ieeeForRawAps':   {'type': 'bool', 'default': 0,    'current': None, 'restart': True,  'hidden': True, 'Advanced': True},
         }
     },
 
@@ -225,6 +220,7 @@ SETTINGS = {
         'debugPhilips':         {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'debugPDM':             {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'debuginRawAPS':        {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
+        'debugTiming':          {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         }
     },
 
@@ -303,14 +299,12 @@ SETTINGS = {
         'AnnoucementV0':         {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True, 'Advanced': True},
         'AnnoucementV1':         {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True, 'Advanced': True},
         'AnnoucementV2':         {'type': 'bool', 'default': 1, 'current': None, 'restart': False, 'hidden': True, 'Advanced': True},
-        'SerialReadV2':          {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'expJsonDatabase':       {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'XiaomiLeave':           {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'rebindLivolo':          {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': False},
         'allowAutoPairing':      {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'forceAckOnZCL':         {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
-        'forceFullSeqMode':      {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
-        'MultiThreaded':         {'type': 'bool', 'default': 0, 'current': None, 'restart': True,  'hidden': False,  'Advanced': True},
+        'forceFullSeqMode':      {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True, 'Advanced': True},
         'trackError':            {'type': 'bool', 'default': 0, 'current': None, 'restart': True,  'hidden': False,  'Advanced': True},
         }
     }

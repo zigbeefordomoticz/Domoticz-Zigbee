@@ -64,7 +64,6 @@ class ZigateTransport(object):
         # Firmware Management
         self.FirmwareVersion = None
         self.FirmwareMajorVersion = None
-        self.zmode = pluginconf.pluginConf['Zmode'].lower()
 
         self.firmware_with_aps_sqn = False  # Available from 31d
         self.firmware_with_8012 = False     # Available from 31e
@@ -137,7 +136,7 @@ class ZigateTransport(object):
     def open_conn(self):
         if not self._connection:
             self.set_connection()
-        if not self.pluginconf.pluginConf['MultiThreaded'] and self._connection:
+        if not self.pluginconf.pluginConf['byPassDzConnection'] and self._connection:
             self._connection.Connect()
         Domoticz.Status("Connection open: %s" % self._connection)
 
@@ -146,7 +145,7 @@ class ZigateTransport(object):
 
         self.running = False # It will shutdown the Thread 
 
-        if self.pluginconf.pluginConf['MultiThreaded']:
+        if self.pluginconf.pluginConf['byPassDzConnection']:
             shutdown_reader_thread( self )
             waiting_for_end_thread( self )
 
@@ -157,7 +156,7 @@ class ZigateTransport(object):
 
     def re_conn(self):
         Domoticz.Status("Reconnection: %s" % self._connection)
-        if self.pluginconf.pluginConf['MultiThreaded']:
+        if self.pluginconf.pluginConf['byPassDzConnection']:
             if self._connection:
                 self._connection.close()
                 time.sleep(1.0)
@@ -206,7 +205,7 @@ def open_connection( self ):
     if self._transp in ["USB", "DIN", "PI", "V2"]:
         if self._serialPort.find('/dev/') != -1 or self._serialPort.find('COM') != -1:
             Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" % (self._serialPort))
-            if self.pluginconf.pluginConf['MultiThreaded']:
+            if self.pluginconf.pluginConf['byPassDzConnection']:
                 open_zigate_and_start_reader( self, 'serial' )
                 start_writer_thread( self )
                 start_forwarder_thread( self )
@@ -217,7 +216,7 @@ def open_connection( self ):
     elif self._transp == "Wifi":
         Domoticz.Status("Connection Name: Zigate, Transport: TCP/IP, Address: %s:%s" %
                         (self._serialPort, self._wifiPort))
-        if self.pluginconf.pluginConf['MultiThreaded']:
+        if self.pluginconf.pluginConf['byPassDzConnection']:
             open_zigate_and_start_reader( self, 'tcpip' )
             start_writer_thread( self )
             start_forwarder_thread( self)
