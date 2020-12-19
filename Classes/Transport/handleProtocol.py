@@ -109,18 +109,11 @@ def process_frame(self, decoded_frame):
         # Route Discovery, we don't handle it
         return
 
-    #if not self.firmware_with_aps_sqn and MsgType in ( '8100', '8110', '8102'):
-    #    # We are in a 31c and below firmware.
-    #    # we will release next command only when receiving expected response for a command
-    #    self.statistics._data += 1
-    #    check_and_process_others_31c(self, MsgType, MsgData)
-    #    self.forwarder_queue.put( decoded_frame)
-    #    return
 
     if MsgType == "8002" and MsgData:
         # Data indication
         self.statistics._data += 1
-        self.logging_receive( 'Log', "process_frame - 8002 MsgType: %s MsgLength: %s MsgCRC: %s" % (MsgType, MsgLength, MsgCRC))  
+        self.logging_receive( 'Debug', "process_frame - 8002 MsgType: %s MsgLength: %s MsgCRC: %s" % (MsgType, MsgLength, MsgCRC))  
         self.forwarder_queue.put( decode8002_and_process( self, decoded_frame ) )
         return
 
@@ -136,7 +129,14 @@ def NXP_Extended_Error_Code( self, MsgData):
         StatusMsg = ZCL_EXTENDED_ERROR_CODES[MsgData]
 
     if self.pluginconf.pluginConf['trackError']:
-        self.logging_send( 'Error', "NXP_Extended_Error_Code - Last PDUs infos ( n: %s a: %s) Extended Error Code: [%s] %s" %(self.npdu, self.apdu, MsgData, StatusMsg))
+        _context = {
+            'Error code': 'TRANS-PROTO-01',
+            'ExtendedErrorCode': MsgData,
+            'ExtendedError': StatusMsg,
+            'nPDU': self.npdu,
+            'aPDU': self.apdu
+        }
+        self.logging_receive_error( "NXP_Extended_Error_Code - Extended Error Code: [%s] %s" %( MsgData, StatusMsg), context=_context)
 
 def NXP_log_message(self, MsgData):  # Reception log Level
 

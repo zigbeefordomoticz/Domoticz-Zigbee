@@ -28,7 +28,13 @@ def decode8012_8702( self, decoded_frame):
         nPDU = MsgData[14:16]
         aPDU = MsgData[16:18]
     else:
-        self.logging_receive( 'Error', "decode8012_8702 - wrong address mode %s" %MsgDataDestMode)
+        _context = {
+            'Error code': 'TRANS-8012-01',
+            'DecodeFrame': str(decoded_frame),
+            'Status': MsgStatus,
+            'AddrMode': MsgDataDestMode
+        }
+        self.logging_receive_error( "decode8012_8702 - wrong address mode %s" %(MsgDataDestMode), context=_context)
         return None
 
     update_xPDU( self, nPDU, aPDU)

@@ -21,15 +21,13 @@ def forwarder_thread( self ):
     self.logging_receive('Status', "ZigateTransport: thread_processing_and_sending Thread start.")
 
     while self.running:
-        frame = None
+        message = None
         # Sending messages ( only 1 at a time )
         try:
             self.logging_receive( 'Debug', "Waiting for next message")
-            message = self.forwarder_queue.get( )
-        
+            message = self.forwarder_queue.get()
             if message == 'STOP':
                 break
-
             forward_message( self, message )
 
         except queue.Empty:
@@ -37,8 +35,14 @@ def forwarder_thread( self ):
             pass
 
         except Exception as e:
-            self.logging_receive('Error', "Error while receiving a ZiGate command: %s" %e)
-            handle_thread_error( self, e, 0, 0, frame)
+            _context = {
+                'Error code': 'TRANS-FWD-01',
+                'Error': e,
+                'Message': message,
+            }
+            self.logging_receive_error( "forwarder_thread - Error while receiving a ZiGate command", context=_context)
+
+            handle_thread_error( self, e, 0, 0, message)
 
     self.logging_receive('Status',"ZigateTransport: thread_processing_and_sending Thread stop.")
 

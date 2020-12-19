@@ -81,7 +81,7 @@ def check_frame_crc(self, BinMsg):
     if ComputedChecksum != ReceivedChecksum:
         self.statistics._crcErrors += 1
         _context = {
-            'Error code': 'TRANS-onMESS-04',
+            'Error code': 'TRANS-CHKCRC-01',
             'BinMsg': str(BinMsg),
             'len': len(BinMsg),
             'MsgType': MsgType,
@@ -89,7 +89,7 @@ def check_frame_crc(self, BinMsg):
             'ComputedChecksum': ComputedChecksum,
             'ReceivedChecksum': ReceivedChecksum,
         }
-        self.logging_send_error( "on_message", context=_context)
+        self.logging_receive_error( "check_frame_crc", context=_context)
         return False
     return True
 
@@ -101,7 +101,7 @@ def check_frame_lenght( self, BinMsg):
     if ComputedLength != ReceveidLength:
         self.statistics._frameErrors += 1
         _context = {
-            'Error code': 'TRANS-onMESS-03',
+            'Error code': 'TRANS-CHKLEN-01',
             'Zero1': Zero1,
             'BinMsg': str(BinMsg),
             'len': len(BinMsg),
@@ -111,6 +111,6 @@ def check_frame_lenght( self, BinMsg):
             'ComputedLength': ComputedLength,
             'ReceveidLength': ReceveidLength,
         }
-        self.logging_send_error( "on_message", context=_context)
+        self.logging_receive_error( "check_frame_lenght", context=_context)
         return False
     return True

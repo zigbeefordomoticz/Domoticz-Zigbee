@@ -27,14 +27,32 @@ def decode8000(self, decoded_frame):
     # Look for isqn
     isqn = get_isqn_from_ListOfCommands( self, PacketType)
     if isqn is None:
-        self.logging_receive( 'Error', "decode8000 - cannot get isqn for MsgType %s" %(PacketType))
+        _context = {
+            'Error code': 'TRANS-8000-01',
+            'EncodedData': str(MsgData),
+            'PacketType': PacketType,
+            'Status': Status,
+            'sqn_app': sqn_app,
+            'sqn_aps': sqn_aps,
+            'sqn_typ': type_sqn,
+        }
+        self.logging_receive_error( "decode8000 - cannot get isqn for MsgType %s" %(PacketType), context=_context)
         return
 
     print_listofcommands( self, isqn )
 
     # Sanity Check
     if int(self.ListOfCommands[ isqn ]['cmd'],16) != int(PacketType,16):
-        self.logging_receive( 'Error', "decode8000 - command miss-match %s vs. %s" %(self.ListOfCommands[ isqn ]['cmd'] , PacketType))
+        _context = {
+            'Error code': 'TRANS-8000-02',
+            'EncodedData': str(MsgData),
+            'PacketType': PacketType,
+            'Status': Status,
+            'sqn_app': sqn_app,
+            'sqn_aps': sqn_aps,
+            'sqn_typ': type_sqn,
+        }
+        self.logging_receive_error( "decode8000 - command miss-match %s vs. %s" %(self.ListOfCommands[ isqn ]['cmd'] , PacketType), context=_context)
         return
 
     self.logging_send('Debug', "--> decode8000 - Status: %s PacketType: %s sqn_app:%s sqn_aps: %s type_sqn: %s" 

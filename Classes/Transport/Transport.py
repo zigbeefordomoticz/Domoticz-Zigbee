@@ -4,6 +4,7 @@
 # Author: zaraki673 & pipiche38
 #
 
+import threading
 import Domoticz
 import socket
 import serial
@@ -113,7 +114,8 @@ class ZigateTransport(object):
             'datas': datas,
             'ackIsDisabled': ackIsDisabled,
             'waitForResponseIn': waitForResponseIn,
-            'InternalSqn': InternalSqn
+            'InternalSqn': InternalSqn,
+            'TimeStamp': time.time()
         }
         try:
             self.writer_queue.put( message ) # Prio 5 to allow prio 1 if we have to retransmit 
@@ -175,11 +177,14 @@ class ZigateTransport(object):
         # Log all activities received from ZiGate
         self.log.logging('TransportRx', logType, message, nwkid=nwkid, context = _context)
 
-    def logging_send_error( self, message, Nwkid=None, context=None):
+    def transport_context( self, context):
         if context is None:
             context = {}
         context['Queues'] = {
-            'ListOfCommands': dict(self.ListOfCommands),
+            'ListOfCommands': dict.copy(self.ListOfCommands),
+            'writeQueue': self.writer_queue,
+            'forwardQueue': self.forwarder_queue,
+            'semaphoreValue': self.semaphore_gate
             }
         context['Firmware'] = {
             'with_aps_sqn': self.firmware_with_aps_sqn ,
@@ -196,9 +201,17 @@ class ZigateTransport(object):
         context['inMessage'] = {
             'ReqRcv': str(self._ReqRcv),
         }
+        context['Thread'] = {
+            'ThreadName': threading.current_thread().name
+        }
+        return context
 
-        message += " Error Code: %s" %context['Error code']
-        self.logging_send('Error', message,  Nwkid, context)
+    def logging_receive_error( self, message, Nwkid=None, context=None):
+        self.logging_receive('Error', message,  Nwkid, self.transport_context( context))
+
+
+    def logging_send_error( self, message, Nwkid=None, context=None):
+        self.logging_send('Error', message,  Nwkid, self.transport_context( context))
 
 def open_connection( self ):
 
