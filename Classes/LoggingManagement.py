@@ -76,15 +76,23 @@ class LoggingManagement:
 
     def logToFile( self, message ):
 
-            Domoticz.Log( " [%15s] " %threading.current_thread().name + message )
-            message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) +  " [%15s] " %threading.current_thread().name + message + '\n'
+            
+            if self.pluginconf.pluginConf['logThreadName']:
+                Domoticz.Log( " [%15s] " %threading.current_thread().name + message )
+                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) +  " [%15s] " %threading.current_thread().name + message + '\n'
+            else:
+                Domoticz.Log( message )
+                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) +  message + '\n'
             self.loggingFileHandle.write( message )
             self.loggingFileHandle.flush()
 
     def _loggingStatus( self, message):
 
         if self.pluginconf.pluginConf['useDomoticzLog']:
-            Domoticz.Status(  " [%15s] " %threading.current_thread().name + message)
+            if self.pluginconf.pluginConf['logThreadName']:
+                Domoticz.Status(  " [%15s] " %threading.current_thread().name + message)
+            else:
+                Domoticz.Status( message )
         else:
             if self.loggingFileHandle is None:
                 self.openLogFile()
@@ -93,7 +101,10 @@ class LoggingManagement:
     def _loggingLog( self, message):
 
         if self.pluginconf.pluginConf['useDomoticzLog']:
-            Domoticz.Log(  " [%15s] " %threading.current_thread().name + message )
+            if self.pluginconf.pluginConf['logThreadName']:
+                Domoticz.Log(  " [%15s] " %threading.current_thread().name + message )
+            else:
+               Domoticz.Log( message ) 
         else: 
             if self.loggingFileHandle is None:
                 self.openLogFile()
@@ -102,7 +113,10 @@ class LoggingManagement:
     def _loggingDebug(self, message):
 
         if self.pluginconf.pluginConf['useDomoticzLog']:
-            Domoticz.Log(  " [%15s] " %threading.current_thread().name + message )
+            if self.pluginconf.pluginConf['logThreadName']:
+                Domoticz.Log(  " [%15s] " %threading.current_thread().name + message )
+            else:
+                Domoticz.Log( message )
         else: 
             if self.loggingFileHandle is None:
                 self.openLogFile()
