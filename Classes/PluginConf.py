@@ -180,11 +180,12 @@ SETTINGS = {
 
     # Verbose
     'VerboseLogging': {'Order': 12, 'param': {
-        'debugMatchId':         {'type': 'str',  'default': 'ffff', 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
+        'debugMatchId':        {'type': 'str',  'default': 'ffff', 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'useDomoticzLog':       {'type': 'bool', 'default': 1,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'logDeviceUpdate':      {'type': 'bool', 'default': 1,     'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
-        'logFORMAT':            {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': True, 'Advanced': True},
+        'logFORMAT':            {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'logThreadName':        {'type': 'bool', 'default': 1,     'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
+        'trackError':           {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'capturePairingInfos':  {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'debugLQI':             {'type': 'int',  'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'debugInput':           {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
@@ -297,16 +298,15 @@ SETTINGS = {
         'ZiGateReactTime':       {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'RawReadAttribute':      {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'RawWritAttribute':      {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
-        'AnnoucementV0':         {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True, 'Advanced': True},
-        'AnnoucementV1':         {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True, 'Advanced': True},
-        'AnnoucementV2':         {'type': 'bool', 'default': 1, 'current': None, 'restart': False, 'hidden': True, 'Advanced': True},
+        'AnnoucementV0':         {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
+        'AnnoucementV1':         {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
+        'AnnoucementV2':         {'type': 'bool', 'default': 1, 'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'expJsonDatabase':       {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'XiaomiLeave':           {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'rebindLivolo':          {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': False},
         'allowAutoPairing':      {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'forceAckOnZCL':         {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
-        'forceFullSeqMode':      {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True, 'Advanced': True},
-        'trackError':            {'type': 'bool', 'default': 0, 'current': None, 'restart': True,  'hidden': False,  'Advanced': True},
+        'forceFullSeqMode':      {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         }
     }
 }
