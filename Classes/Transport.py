@@ -105,14 +105,18 @@ class ZigateTransport(object):
         self.Thread_listen_and_read = None
         self.Thread_proc_zigate_frame = None
         self.Event_proc_zigate_frame = None
-        self.frame_queue = queue.SimpleQueue( )
-        self.start_thread_processing_messages( )
+        #self.frame_queue = queue.SimpleQueue( )
+        #self.start_thread_processing_messages( )
 
         self.reading_thread_timing = None
         self.watchdog_timing = None
 
         # Call back function to send back to plugin
         self.F_out = F_out  # Function to call to bring the decoded Frame at plugin
+
+        # Multi Threading disabled on Stable 4.11
+        self.pluginconf.pluginConf["MultiThreaded"] = 0
+
 
         initMatrix(self)
 
@@ -141,6 +145,7 @@ class ZigateTransport(object):
 
     def thread_transport_shutdown( self ):
         self.running = False
+        #self.frame_queue.put("STOP") # In order to unblock the Blocking get()
 
 
     # Thread to manage Message/Frame processing
@@ -494,7 +499,7 @@ class ZigateTransport(object):
             if ( x in self.ListOfCommands and 'Datas'  in self.ListOfCommands[x] and self.ListOfCommands[x]['Datas'] != datas ):
                 continue
 
-            self.logging_send( 'Log', "Cmd: %s Data: %s already in queue. drop that command" % (cmd, datas))
+            self.logging_send( 'Debug', "Cmd: %s Data: %s already in queue. drop that command" % (cmd, datas))
             alreadyInQueue = True
             return None
 
@@ -1307,7 +1312,7 @@ def process_frame(self, frame):
     # We receive an async message, just forward it to plugin
     if int(MsgType, 16) in STANDALONE_MESSAGE:
         self.logging_receive( 'Debug', "process_frame - STANDALONE_MESSAGE MsgType: %s MsgLength: %s MsgCRC: %s" % (MsgType, MsgLength, MsgCRC))    
-        self.frame_queue.put( frame )
+        self.F_out(frame, None)  
         ready_to_send_if_needed(self)
         return
 
@@ -1324,7 +1329,7 @@ def process_frame(self, frame):
     if MsgData and MsgType == "8002":
         # Data indication
         self.logging_receive( 'Debug', "process_frame - 8002 MsgType: %s MsgLength: %s MsgCRC: %s" % (MsgType, MsgLength, MsgCRC))  
-        self.frame_queue.put( process8002( self, frame ) )
+        self.F_out( process8002( self, frame ), None )
         ready_to_send_if_needed(self)
         return
 
@@ -1334,7 +1339,7 @@ def process_frame(self, frame):
             if self.pluginconf.pluginConf["debugzigateCmd"]:
                 Domoticz.Log("process_frame - Message not processed, no active queues. Msgtype: %s MsgData: %s" %(MsgType, MsgData))
         else:
-            self.frame_queue.put( frame )
+            self.F_out(frame, None)  
         ready_to_send_if_needed(self)
         return
 
@@ -1343,7 +1348,7 @@ def process_frame(self, frame):
         if MsgType == '8702':
             self.statistics._APSFailure += 1
         i_sqn = handle_8012_8702( self, MsgType, MsgData, frame)
-        # self.frame_queue.put( frame )
+        # self.F_out(frame, None)  
         ready_to_send_if_needed(self)
         return
 
@@ -1351,13 +1356,13 @@ def process_frame(self, frame):
         if MsgType in ( '8000', '8012', '8011'):
             Domoticz.Log("process_frame - Message not processed, no active queues. Msgtype: %s MsgData: %s" %(MsgType, MsgData))
         else:
-            self.frame_queue.put( frame )
+            self.F_out(frame, None)  
         ready_to_send_if_needed(self)
         return
 
     if MsgData and MsgType == "8000":
         handle_8000( self, MsgType, MsgData, frame)
-        self.frame_queue.put( frame )
+        self.F_out(frame, None)  
         ready_to_send_if_needed(self)
         return
 
@@ -1366,13 +1371,13 @@ def process_frame(self, frame):
             if self.pluginconf.pluginConf["debugzigateCmd"]:
                 Domoticz.Log("process_frame - Message not processed, no active queues. Msgtype: %s MsgData: %s" %(MsgType, MsgData))
         else:
-            self.frame_queue.put( frame )
+            self.F_out(frame, None)  
         ready_to_send_if_needed(self)
         return
 
     if MsgType == '8011':
         handle_8011( self, MsgType, MsgData, frame)
-        self.frame_queue.put( frame )
+        self.F_out(frame, None)  
         ready_to_send_if_needed(self)
         return
 
@@ -1381,7 +1386,7 @@ def process_frame(self, frame):
         if MsgType in ( '8000', '8012', '8011'):
             Domoticz.Log("process_frame - Message not processed, no active queues. Msgtype: %s MsgData: %s" %(MsgType, MsgData))
         else:
-            self.frame_queue.put( frame )
+            self.F_out(frame, None)  
         ready_to_send_if_needed(self)
         return
 
@@ -1416,7 +1421,7 @@ def process_frame(self, frame):
             cleanup_list_of_commands( self, _next_cmd_from_wait_cmdresponse_queue(self)[0])
 
     # Forward the message to plugin for further processing
-    self.frame_queue.put( frame )
+    self.F_out(frame, None)  
     ready_to_send_if_needed(self)
 
     # Let's take the opportunity to check TimeOut
@@ -1517,7 +1522,8 @@ def check_and_process_8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn,
             'aPDU': apdu,
             'nPDU': npdu,
         }
-        self.logging_send_error(  "check_and_process_8000", context=_context)
+        if self.pluginconf.pluginConf['trackError']:
+            self.logging_send_error(  "check_and_process_8000", context=_context)
 
         self.statistics._ackKO += 1
         # In that case we need to unblock data, as we will never get it !
@@ -1569,7 +1575,8 @@ def check_and_process_8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn,
             'SQN_APS': sqn_aps, 
             'TYP_SQN': type_sqn
         }
-        self.logging_send_error(  "check_and_process_8000", context=_context)
+        if self.pluginconf.pluginConf['trackError']:
+            self.logging_send_error(  "check_and_process_8000", context=_context)
         return None
 
     # Statistics on ZiGate reacting time to process the command
@@ -1613,7 +1620,8 @@ def check_and_process_8000(self, Status, PacketType, sqn_app, sqn_aps, type_sqn,
                 'SQN_APS': sqn_aps, 
                 'TYP_SQN': type_sqn
             }
-            self.logging_send_error(  "check_and_process_8000", context=_context)
+            if self.pluginconf.pluginConf['trackError']:
+                self.logging_send_error(  "check_and_process_8000", context=_context)
             return None
 
         if ZIGATE_COMMANDS[cmd]['Layer'] == 'ZCL':
@@ -1636,12 +1644,12 @@ def handle_8012_8702( self, MsgType, MsgData, frame):
     MsgDataDestMode = MsgData[6:8]
 
     MsgSQN = MsgAddr = None
-    if MsgDataDestMode == '01':  # IEEE
+    if MsgDataDestMode == '03':  # IEEE
         MsgAddr = MsgData[8:24]
         MsgSQN = MsgData[24:26]
         nPDU = MsgData[26:28]
         aPDU = MsgData[28:30]
-    elif MsgDataDestMode in  ('02', '03'):  # Short Address/Group
+    elif MsgDataDestMode in  ('02', '01'):  # Short Address/Group
         MsgAddr = MsgData[8:12]
         MsgSQN = MsgData[12:14]
         nPDU = MsgData[14:16]
@@ -1652,7 +1660,8 @@ def handle_8012_8702( self, MsgType, MsgData, frame):
             'MsgType': MsgType,
             'MsgData': MsgData,
         }
-        self.logging_send_error(  "handle_8012_8702", Nwkid=MsgAddr, context=_context)
+        if self.pluginconf.pluginConf['trackError']:
+            self.logging_send_error(  "handle_8012_8702", Nwkid=MsgAddr, context=_context)
         return None
 
     update_xPDU( self, nPDU, aPDU)
@@ -1771,7 +1780,8 @@ def check_and_process_8011_31c(self, Status, NwkId, Ep, MsgClusterId, ExternSqn)
                 'iSQN': InternSqn_from_ExternSqn,
                 'Status': Status,
             }
-            self.logging_send_error(  "check_and_process_8011_31c", Nwkid=NwkId, context=_context)
+            if self.pluginconf.pluginConf['trackError']:
+                self.logging_send_error(  "check_and_process_8011_31c", Nwkid=NwkId, context=_context)
 
     if Status == '00':
         if InternSqn in self.ListOfCommands:
