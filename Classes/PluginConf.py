@@ -160,6 +160,9 @@ SETTINGS = {
         'byPassDzConnection': {'type': 'bool', 'default': 1, 'current': None, 'restart': True,  'hidden': True, 'Advanced': True},
         'SerialReadV2':    {'type': 'bool', 'default': 0,    'current': None, 'restart': False, 'hidden': True, 'Advanced': True},
         'ieeeForRawAps':   {'type': 'bool', 'default': 0,    'current': None, 'restart': True,  'hidden': True, 'Advanced': True},
+        'forceFullSeqMode':      {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
+        'RawReadAttribute':      {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
+        'RawWritAttribute':      {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         }
     },
 
@@ -180,7 +183,8 @@ SETTINGS = {
 
     # Verbose
     'VerboseLogging': {'Order': 12, 'param': {
-        'debugMatchId':        {'type': 'str',  'default': 'ffff', 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
+        'ZiGateReactTime':      {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
+        'debugMatchId':         {'type': 'str',  'default': 'ffff','current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'useDomoticzLog':       {'type': 'bool', 'default': 1,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'logDeviceUpdate':      {'type': 'bool', 'default': 1,     'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'logFORMAT':            {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
@@ -294,10 +298,7 @@ SETTINGS = {
     },
 
     # Experimental
-    'Experimental': {'Order': 17, 'param': {
-        'ZiGateReactTime':       {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
-        'RawReadAttribute':      {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
-        'RawWritAttribute':      {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
+    'Experimental': {'Order': 17, 'param': {        
         'AnnoucementV0':         {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'AnnoucementV1':         {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'AnnoucementV2':         {'type': 'bool', 'default': 1, 'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
@@ -306,7 +307,6 @@ SETTINGS = {
         'rebindLivolo':          {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': False},
         'allowAutoPairing':      {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'forceAckOnZCL':         {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
-        'forceFullSeqMode':      {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'writerTimeOut':         {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         }
     }

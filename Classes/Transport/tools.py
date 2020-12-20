@@ -54,8 +54,9 @@ def waiting_for_end_thread( self ):
     # Release Semaphore
     self.semaphore_gate.release( )
 
-    self.reader_thread.join()
-    self.logging_receive( 'Debug', "waiting_for_end_thread - readThread done")
+    if self.pluginconf.pluginConf['byPassDzConnection']:
+        self.reader_thread.join()
+        self.logging_receive( 'Debug', "waiting_for_end_thread - readThread done")
 
     self.forwarder_thread.join()
     self.logging_receive( 'Debug', "waiting_for_end_thread - forwardedThread done")

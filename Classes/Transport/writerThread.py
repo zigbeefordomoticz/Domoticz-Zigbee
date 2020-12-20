@@ -156,6 +156,10 @@ def get_checksum(msgtype, length, datas):
 def write_to_zigate( self, serialConnection, encoded_data ):
     self.logging_send('Debug', "write_to_zigate")
 
+    if not self.pluginconf.pluginConf['byPassDzConnection']:
+        self._connection.Send(encoded_data, 0)
+        return
+
     if self._transp == "Wifi":
         tcpipConnection = self._connection
         tcpiConnectionList = [ tcpipConnection ]

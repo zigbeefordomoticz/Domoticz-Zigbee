@@ -18,7 +18,8 @@ from Classes.Transport.sqnMgmt import sqn_init_stack, sqn_generate_new_internal_
 from Classes.Transport.readerThread import open_zigate_and_start_reader, shutdown_reader_thread
 from Classes.Transport.writerThread import start_writer_thread
 from Classes.Transport.forwarderThread import start_forwarder_thread
-from Classes.Transport.tools import initialize_command_protocol_parameters, waiting_for_end_thread
+from Classes.Transport.tools import initialize_command_protocol_parameters, waiting_for_end_thread, stop_waiting_on_queues
+from Classes.Transport.readDecoder import decode_and_split_message
 
 from Modules.zigateConsts import MAX_SIMULTANEOUS_ZIGATE_COMMANDS
 class ZigateTransport(object):
@@ -132,6 +133,11 @@ class ZigateTransport(object):
         
         return InternalSqn
 
+    def on_message( self, data ):
+        # Message sent via Domoticz .
+        decode_and_split_message(self, data)
+
+
     # Transport / Opening / Closing Communication
     def set_connection(self):
         if self._connection is not None:
@@ -157,6 +163,8 @@ class ZigateTransport(object):
             waiting_for_end_thread( self )
 
         else:
+            stop_waiting_on_queues( self )
+            waiting_for_end_thread( self )
             self._connection.Disconnect()
 
         self._connection = None
@@ -226,10 +234,11 @@ def open_connection( self ):
             if self.pluginconf.pluginConf['byPassDzConnection']:
                 open_zigate_and_start_reader( self, 'serial' )
                 start_writer_thread( self )
-                start_forwarder_thread( self )
 
             else:
                 self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None", Address=self._serialPort, Baud=115200)
+            start_writer_thread( self )
+            start_forwarder_thread( self )
 
     elif self._transp == "Wifi":
         Domoticz.Status("Connection Name: Zigate, Transport: TCP/IP, Address: %s:%s" %
