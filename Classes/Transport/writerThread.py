@@ -14,7 +14,7 @@ from threading import Thread
 
 from Modules.tools import is_hex
 
-from Classes.Transport.tools import handle_thread_error
+from Classes.Transport.tools import handle_thread_error, release_command
 
 def start_writer_thread( self ):
 
@@ -33,21 +33,12 @@ def writer_thread( self ):
             command = self.writer_queue.get( )
 
             self.logging_send( 'Debug', "New command received:  %s" %(command))
-
             if isinstance( command, dict ) and 'cmd' in command and 'datas' in command and 'ackIsDisabled' in command and 'waitForResponseIn' in command and 'InternalSqn' in command:
                 if self.writer_queue.qsize() > self.statistics._MaxLoad:
                     self.statistics._MaxLoad = self.writer_queue.qsize()
                 self.statistics._Load = self.writer_queue.qsize()
 
-                self.logging_send( 'Debug', "Waiting for a write slot . Semaphore %s ATTENTION NO TIMEOUT FOR TEST PURPOSES" %(self.semaphore_gate._value))
-
-                # Now we will block on Semaphore to serialize and limit the number of concurent commands on ZiGate
-                # By using the Semaphore Timeout , we will make sure that the Semaphore is not acquired for ever.
-                # However, if the Sem is relaed due to Timeout, we will not be notified !
-                self.semaphore_gate.acquire( blocking = True, timeout = None) # Blocking until 8s Tiemout
-                self.logging_send( 'Debug', "============= semaphore %s given ============== Len: ListOfCmd %s - %s" %(
-                    self.semaphore_gate._value, len(self.ListOfCommands), str(self.ListOfCommands.keys()) ))
-        
+                wait_for_semaphore( self , command)
                 thread_sendData( self, command['cmd'], command['datas'], command['ackIsDisabled'], command['waitForResponseIn'], command['InternalSqn'])
                 self.logging_send( 'Debug', "Command sent!!!! %s" %command)
 
@@ -66,6 +57,23 @@ def writer_thread( self ):
             handle_thread_error( self, e, 0, 0, frame)
 
     self.logging_send('Status',"ZigateTransport: thread_processing_and_sending Thread stop.")
+
+def wait_for_semaphore( self , command ):
+        # Now we will block on Semaphore to serialize and limit the number of concurent commands on ZiGate
+        # By using the Semaphore Timeout , we will make sure that the Semaphore is not acquired for ever.
+        # However, if the Sem is relaed due to Timeout, we will not be notified !
+        if self.pluginconf.pluginConf['writerTimeOut']:
+            self.logging_send( 'Debug', "Waiting for a write slot . Semaphore %s TimeOut of 8s" %(self.semaphore_gate._value))
+            block_status = self.semaphore_gate.acquire( blocking = True, timeout = 8.0) # Blocking until 8s
+        else:
+            self.logging_send( 'Debug', "Waiting for a write slot . Semaphore %s ATTENTION NO TIMEOUT FOR TEST PURPOSES" %(self.semaphore_gate._value))
+            block_status = self.semaphore_gate.acquire( blocking = True, timeout = None) # Blocking  
+
+        self.logging_send( 'Debug', "============= semaphore %s given with status %s ============== Len: ListOfCmd %s - %s" %(
+            self.semaphore_gate._value, block_status, len(self.ListOfCommands), str(self.ListOfCommands.keys()) ))
+
+        if self.pluginconf.pluginConf['writerTimeOut'] and not block_status:
+            semaphore_timeout( self, command )
 
 
 def thread_sendData(self, cmd, datas, ackIsDisabled, waitForResponseIn, isqn ):
@@ -165,15 +173,61 @@ def write_to_zigate( self, serialConnection, encoded_data ):
 
     # Serial
     try:
-        nb_write = serialConnection.write( encoded_data )
-        if nb_write != len( encoded_data ):
+        if serialConnection.is_open:
+            nb_write = serialConnection.write( encoded_data )
+            if nb_write != len( encoded_data ):
+                _context = {
+                    'Error code': 'TRANS-WRTZGTE-01',
+                    'EncodedData': str(encoded_data),
+                    'NbWrite': nb_write,
+                }
+                self.logging_send_error(  "write_to_zigate", context=_context)
+        else:
             _context = {
-                'Error code': 'TRANS-WRTZGTE-01',
+                'Error code': 'TRANS-WRTZGTE-02',
                 'EncodedData': str(encoded_data),
-                'NbWrite': nb_write,
+                'serialConnection': str(serialConnection)
             }
-            self.logging_send_error(  "write_to_zigate", context=_context)
+            self.logging_send_error(  "write_to_zigate port is closed!", context=_context)            
 
     except TypeError as e:
         #Disconnect of USB->UART occured
-        self.logging_send( 'Error',"serial_read_from_zigate - error while writing %s" %(e))
+        self.logging_send( 'Error',"write_to_zigate - error while writing %s" %(e))
+
+
+def semaphore_timeout( self, current_command ):
+    # Semaphore has been Release due to Timeout
+    # In that case we should release the pending command in ListOfCommands
+    if len(self.ListOfCommands) == 2:
+        if list(self.ListOfCommands.keys())[0] == current_command['InternalSqn']:
+            # We remove element [1]
+            isqn_to_be_removed = list(self.ListOfCommands.keys())[1]
+        else:
+            # We remove element [0]
+            isqn_to_be_removed = list(self.ListOfCommands.keys())[0]
+
+        _context = {
+            'Error code': 'TRANS-SEMAPHORE-01',
+            'ListofCmds': dict.copy(self.ListOfCommands),
+            'IsqnCurrent': current_command['InternalSqn'],
+            'IsqnToRemove': isqn_to_be_removed
+        }
+        release_command( self, isqn_to_be_removed)
+        self.logging_send_error( "writerThread Timeout ", context=_context)
+        return
+
+    # We need to find which Command is in Timeout
+    _context = {
+        'Error code': 'TRANS-SEMAPHORE-02',
+        'ListofCmds': dict.copy(self.ListOfCommands),
+        'IsqnToRemove': [],
+    }
+    for x in list(self.ListOfCommands):
+        if x == current_command['InternalSqn']:
+            # On going command, this one is the one accepted via the Timeout
+            continue
+        if time.time() + 8 >= self.ListOfCommands[x]['TimeStamp']:
+            # This command has at least 8s life and can be removed
+            release_command( self, x)
+            _context['IsqnToRemove'].append( x )
+    self.logging_send_error( "writerThread Timeout ", context=_context)

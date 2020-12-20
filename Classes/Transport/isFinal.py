@@ -48,7 +48,7 @@ def is_final_step( self, isqn, step):
         return True
 
 
-    self.logging_receive( 'Debug', "is_final_step - returning False by default Cmd: 0x%04d - %s %s %s %s" %
+    self.logging_receive( 'Debug', "is_final_step - returning False by default Cmd: 0x%04x - %s %s %s %s" %
         (
         cmd,
         self.firmware_with_8012,

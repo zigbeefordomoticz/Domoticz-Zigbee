@@ -12,7 +12,7 @@ import queue
 import time
 
 from threading import Semaphore
-from queue import PriorityQueue, SimpleQueue
+from queue import PriorityQueue, SimpleQueue, Queue
 
 from Classes.Transport.sqnMgmt import sqn_init_stack, sqn_generate_new_internal_sqn
 from Classes.Transport.readerThread import open_zigate_and_start_reader, shutdown_reader_thread
@@ -56,14 +56,16 @@ class ZigateTransport(object):
         self.ListOfCommands = {}
 
         # Writer
-        self.writer_queue = SimpleQueue()
+        #self.writer_queue = SimpleQueue()
+        self.writer_queue = Queue()
         self.writer_thread = None
 
         # Reader
         self.reader_thread = None
 
         # Forwarder
-        self.forwarder_queue = SimpleQueue()
+        #self.forwarder_queue = SimpleQueue()
+        self.forwarder_queue = Queue()
         self.forwarder_thread = None
 
         # Firmware Management

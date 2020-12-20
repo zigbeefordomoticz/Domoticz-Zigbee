@@ -307,6 +307,7 @@ SETTINGS = {
         'allowAutoPairing':      {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'forceAckOnZCL':         {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'forceFullSeqMode':      {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
+        'writerTimeOut':         {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         }
     }
 }
@@ -335,10 +336,10 @@ class PluginConf:
         # Sanity Checks
         if self.pluginConf['TradfriKelvinStep'] < 0 or self.pluginConf['TradfriKelvinStep'] > 255:
             self.pluginConf['TradfriKelvinStep'] = 75
-        if ( self.pluginConf['Certification'] == 'CE' or self.pluginConf['Certification'] != 'FCC' ):
-            self.pluginConf['CertificationCode'] = 0x01
+        if ( self.pluginConf['Certification'] != 'FCC' ):
+            self.pluginConf['CertificationCode'] = 0x01 # CE
         else:
-            self.pluginConf['CertificationCode'] = 0x02
+            self.pluginConf['CertificationCode'] = 0x02 # FCC
         _path_check( self )
         _param_checking( self )
 

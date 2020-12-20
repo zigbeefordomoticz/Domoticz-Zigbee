@@ -50,16 +50,16 @@ def decode8012_8702( self, decoded_frame):
         self.logging_receive( 'Debug', "decode8012_8702 - 0x8012 not for us eSqn: %s " %(MsgSQN))
         return
 
-    self.ListOfCommands[ isqn ]['Status'] = '8012'
+    self.ListOfCommands[ isqn ]['Status'] = MsgType
 
     report_timing_8012( self , isqn )
     print_listofcommands( self, isqn )
 
-    if MsgType == '8702':
-        release_command( self, isqn)
-        return
+    #if MsgType == '8702':
+    #    release_command( self, isqn)
+    #    return
 
-    self.ListOfCommands[ isqn ]['Status'] = '8012'
+    self.ListOfCommands[ isqn ]['Status'] = MsgType
     if is_final_step( self, isqn, 0x8012):
         release_command( self, isqn)
 
