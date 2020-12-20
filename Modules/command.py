@@ -400,7 +400,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
 
             elif Level == 20: # fip
                 UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
-                self.ListOfDevices[NWKID]['Schneider Wiser']['HACT Mode'] = 'fip'
+                self.ListOfDevices[NWKID]['Schneider Wiser']['HACT Mode'] = 'FIP'
                 schneider_hact_heater_type( self, NWKID, 'fip')
 
             else:
