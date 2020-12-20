@@ -13,7 +13,8 @@
 import Domoticz
 from Modules.zigateConsts import ZIGATE_EP
 from Modules.basicOutputs import sendZigateCmd, raw_APS_request
-from Modules.logging import loggingProfalux
+
+from Classes.LoggingManagement import LoggingManagement
 
 def profalux_fake_deviceModel( self , nwkid):
 
@@ -64,18 +65,18 @@ def profalux_fake_deviceModel( self , nwkid):
             # We found a VR
             self.ListOfDevices[nwkid]['Model'] = 'Volet-Profalux'
 
-        loggingProfalux( self, 'Debug', "++++++ Model Name for %s forced to : %s due to location: %s" %(nwkid, self.ListOfDevices[nwkid]['Model'], location), nwkid)
+        self.log.logging( "Profalux", 'Debug', "++++++ Model Name for %s forced to : %s due to location: %s" %(nwkid, self.ListOfDevices[nwkid]['Model'], location), nwkid)
 
     elif self.ListOfDevices[nwkid]['MacCapa'] == '80':
 
         # Batterie Device => Remote command
         self.ListOfDevices[nwkid]['Model'] = 'Telecommande-Profalux'
 
-        loggingProfalux( self, 'Debug', "++++++ Model Name for %s forced to : %s" %(nwkid, self.ListOfDevices[nwkid]['Model']), nwkid)
+        self.log.logging( "Profalux", 'Debug', "++++++ Model Name for %s forced to : %s" %(nwkid, self.ListOfDevices[nwkid]['Model']), nwkid)
 
 def checkAndTriggerConfigReporting( self, NwkId):
 
-    loggingProfalux(self, 'Debug', "-- -- checkAndTriggerConfigReporting for %s" %NwkId)
+    self.log.logging( "Profalux", 'Debug', "-- -- checkAndTriggerConfigReporting for %s" %NwkId)
     if 'ConfigureReporting' not in self.ListOfDevices[NwkId]:
         configureReportingForprofalux( self, NwkId)
         return
@@ -91,14 +92,14 @@ def checkAndTriggerConfigReporting( self, NwkId):
 
 def configureReportingForprofalux( self, NwkId):
 
-    loggingProfalux(self, 'Debug', "-- -- -- configureReportingForprofalux for %s" %NwkId)
+    self.log.logging( "Profalux", 'Debug', "-- -- -- configureReportingForprofalux for %s" %NwkId)
     if NwkId not in self.ListOfDevices:
         return
 
     attrList = '00' + '20' + '0001' + '0000' + '0000' + '0000' + '00'
     datas =   '02' + NwkId + ZIGATE_EP + '01' + 'fc21' + '00' + '01' + '1110' + '01' + attrList
     sendZigateCmd( self, "0120", datas )
-    loggingProfalux(self, 'Debug', "-- -- -- configureReportingForprofalux for %s data: %s" %(NwkId, datas))
+    self.log.logging( "Profalux", 'Debug', "-- -- -- configureReportingForprofalux for %s data: %s" %(NwkId, datas))
 
     # Configure Reporting iin Raw Mode
     #ZCLFrameControl = '04'
@@ -112,7 +113,7 @@ def configureReportingForprofalux( self, NwkId):
     #cmd = '06' 
     #payload = ZCLFrameControl + ManfufacturerCode[2:4] + ManfufacturerCode[0:2] + sqn + cmd + '00' + Attribute[2:4] + Attribute[0:2] + '20' + '0000' + '0000' + '00'
 
-    #loggingProfalux( self, 'Log', "configureReportingForprofalux RAW APS %s %s" %(NwkId, payload))
+    #self.log.logging( "Profalux", 'Log', "configureReportingForprofalux RAW APS %s %s" %(NwkId, payload))
     #raw_APS_request( self, NwkId, '01', 'fc21', '0104', payload, zigate_ep=ZIGATE_EP)
 
 def profalux_stop( self, nwkid ):
@@ -132,7 +133,7 @@ def profalux_stop( self, nwkid ):
 
     payload = cluster_frame + sqn + cmd
     raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
-    loggingProfalux( self, 'Debug', "profalux_stop ++++ %s/%s payload: %s" %( nwkid, EPout, payload), nwkid)
+    self.log.logging( "Profalux", 'Debug', "profalux_stop ++++ %s/%s payload: %s" %( nwkid, EPout, payload), nwkid)
 
 def profalux_MoveToLevelWithOnOff( self, nwkid, level):
 
@@ -155,7 +156,7 @@ def profalux_MoveToLevelWithOnOff( self, nwkid, level):
 
     payload = cluster_frame + sqn + cmd + '%02x' %level
     raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
-    loggingProfalux( self, 'Debug', "profalux_MoveToLevelWithOnOff ++++ %s/%s Level: %s payload: %s" %( nwkid, EPout, level, payload), nwkid)
+    self.log.logging( "Profalux", 'Debug', "profalux_MoveToLevelWithOnOff ++++ %s/%s Level: %s payload: %s" %( nwkid, EPout, level, payload), nwkid)
     return
 
 def profalux_MoveWithOnOff( self, nwkid, OnOff):
@@ -183,7 +184,7 @@ def profalux_MoveWithOnOff( self, nwkid, OnOff):
 
     payload = cluster_frame + sqn + cmd + '%02x' %OnOff
     raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
-    loggingProfalux( self, 'Debug', "profalux_MoveWithOnOff ++++ %s/%s OnOff: %s payload: %s" %( nwkid, EPout, OnOff, payload), nwkid)
+    self.log.logging( "Profalux", 'Debug', "profalux_MoveWithOnOff ++++ %s/%s OnOff: %s payload: %s" %( nwkid, EPout, OnOff, payload), nwkid)
 
     return
 
@@ -224,7 +225,7 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
 
 
     # Begin
-    loggingProfalux( self, 'Debug', "profalux_MoveToLiftAndTilt Nwkid: %s Level: %s Tilt: %s" %( nwkid, level, tilt))
+    self.log.logging( "Profalux", 'Debug', "profalux_MoveToLiftAndTilt Nwkid: %s Level: %s Tilt: %s" %( nwkid, level, tilt))
     if level is None and tilt is None:
         return
 
@@ -236,7 +237,7 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
     if tilt is None:
         tilt = getTilt( self, nwkid)
 
-    loggingProfalux( self, 'Debug', "profalux_MoveToLiftAndTilt after update Nwkid: %s Level: %s Tilt: %s" %( nwkid, level, tilt))
+    self.log.logging( "Profalux", 'Debug', "profalux_MoveToLiftAndTilt after update Nwkid: %s Level: %s Tilt: %s" %( nwkid, level, tilt))
     
     # determine which Endpoint
     EPout = '01'
@@ -279,5 +280,5 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
     ManfufacturerCode = '1110'
 
     payload = cluster_frame + ManfufacturerCode[2:4] + ManfufacturerCode[0:2] + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'FFFF'
-    loggingProfalux( self, 'Debug', "profalux_MoveToLiftAndTilt %s ++++ %s %s/%s level: %s tilt: %s option: %s payload: %s" %( cluster_frame, sqn, nwkid, EPout, level, tilt, option, payload), nwkid)
+    self.log.logging( "Profalux", 'Debug', "profalux_MoveToLiftAndTilt %s ++++ %s %s/%s level: %s tilt: %s option: %s payload: %s" %( cluster_frame, sqn, nwkid, EPout, level, tilt, option, payload), nwkid)
     raw_APS_request( self, nwkid, '01', '0008', '0104', payload, zigate_ep=ZIGATE_EP)

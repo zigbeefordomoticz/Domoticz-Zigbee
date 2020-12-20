@@ -11,7 +11,7 @@
 """
 
 
-from Modules.logging import loggingPDM
+from Classes.LoggingManagement import LoggingManagement
 from Modules.basicOutputs import sendZigateCmd
 
 import Domoticz
@@ -105,7 +105,7 @@ def savePDM( self):
 def pdmHostAvailableRequest(self, MsgData ):
     #Decode0300
 
-    loggingPDM( self, 'Debug',  "pdmHostAvailableRequest - receiving 0x0300 with data: %s" %(MsgData))
+    self.log.logging( "PDM", 'Debug',  "pdmHostAvailableRequest - receiving 0x0300 with data: %s" %(MsgData))
     self.PDMready = False
 
     status = PDM_E_STATUS_OK
@@ -121,7 +121,7 @@ def pdmHostAvailableRequest(self, MsgData ):
 
 def pdmLoadConfirmed( self, MsgData):
 
-    loggingPDM( self, 'Debug',  "pdmLoadConfirmed - receiving 0x0302 with data: %s" %(MsgData))
+    self.log.logging( "PDM", 'Debug',  "pdmLoadConfirmed - receiving 0x0302 with data: %s" %(MsgData))
     # Decode0302
     savePDM( self )
 
@@ -139,7 +139,7 @@ def PDMSaveRequest( self, MsgData):
     #Decode0200
     """
 
-    loggingPDM( self, 'Debug',  "PDMSaveRequest - receiving 0x0200 with data: %s" %(MsgData))
+    self.log.logging( "PDM", 'Debug',  "PDMSaveRequest - receiving 0x0200 with data: %s" %(MsgData))
 
     if self.PDM is None:
         openPDM( self )
@@ -153,7 +153,7 @@ def PDMSaveRequest( self, MsgData):
     dataReceived = int(MsgData[16:20],16) # Send size of this particular block (number of bytes)
     sWriteData = MsgData[20:20+(2*dataReceived)] # bytes is coded into 2 chars 
 
-    loggingPDM( self, 'Debug',  "      --------- RecordId: %s, u16Size: %s, u16BlocksWritten: %s, u16NumberOfWrites: %s, dataReceived: %s " \
+    self.log.logging( "PDM", 'Debug',  "      --------- RecordId: %s, u16Size: %s, u16BlocksWritten: %s, u16NumberOfWrites: %s, dataReceived: %s " \
             %( RecordId, u16Size, u16BlocksWritten, u16NumberOfWrites, dataReceived))
 
     if RecordId not in self.PDM:
@@ -191,7 +191,7 @@ def PDMLoadRequest(self, MsgData):
     #  Send the Host PDM to Zigate
     #
 
-    loggingPDM( self, 'Debug',  "PDMLoadRequest - receiving 0x0200 with data: %s" %(MsgData))
+    self.log.logging( "PDM", 'Debug',  "PDMLoadRequest - receiving 0x0200 with data: %s" %(MsgData))
     RecordId = MsgData[0:4]
 
     if self.PDM is None:
@@ -213,7 +213,7 @@ def PDMLoadRequest(self, MsgData):
         datas += '%04x' %BlockId                # block number for this record
         datas += '%04x' %CurentBlockSize        # size of this block in bytes
 
-        loggingPDM( self, 'Debug', "PDMLoadRequest - Sending 0x8201 : RecordId: %s TotalRecordSize: %s TotalBlocks: %s BlockId: %s CurentBlockSize: %s" \
+        self.log.logging( "PDM", 'Debug', "PDMLoadRequest - Sending 0x8201 : RecordId: %s TotalRecordSize: %s TotalBlocks: %s BlockId: %s CurentBlockSize: %s" \
                 %(RecordId, TotalRecordSize, TotalBlocks, BlockId, CurentBlockSize))
 
         sendZigateCmd( self, "8201", datas)
@@ -257,7 +257,7 @@ def PDMLoadRequest(self, MsgData):
             upperBound +=  2 * u16CurrentBlockSize
             datas += persistedData[lowerBound:upperBound]
 
-            loggingPDM( self, 'Debug', "PDMLoadRequest - Sending 0x8201 : RecordId: %s TotalRecordSize: %s TotalBlocks: %s BlockId: %s CurentBlockSize: %s" \
+            self.log.logging( "PDM", 'Debug', "PDMLoadRequest - Sending 0x8201 : RecordId: %s TotalRecordSize: %s TotalBlocks: %s BlockId: %s CurentBlockSize: %s" \
                 %(RecordId, u16TotalRecordSize, TotalBlocksToSend, u16CurrentBlockId, u16CurrentBlockSize))
             sendZigateCmd( self, "8201", datas )
 
@@ -271,7 +271,7 @@ def PDMDeleteAllRecord( self , MsgData):
     "E_SL_MSG_DELETE_ALL_PDM_RECORDS_REQUEST"
     "Decode0202"
 
-    loggingPDM( self, 'Debug',  "PDMDeleteAllRecord - Remove ALL records with data: %s" %(MsgData))
+    self.log.logging( "PDM", 'Debug',  "PDMDeleteAllRecord - Remove ALL records with data: %s" %(MsgData))
     if self.PDM is None:
         openPDM( self )
     del self.PDM
@@ -284,7 +284,7 @@ def PDMDeleteRecord( self, MsgData):
     "E_SL_MSG_DELETE_PDM_RECORD_REQUEST"
     "Decode0203"
 
-    loggingPDM( self, 'Debug',  "PDMDeleteRecord - receiving 0x0202 with data: %s" %(MsgData))
+    self.log.logging( "PDM", 'Debug',  "PDMDeleteRecord - receiving 0x0202 with data: %s" %(MsgData))
 
     RecordId = MsgData[:4]                #record ID
     if self.PDM is None:
@@ -316,7 +316,7 @@ def PDMCreateBitmap( self, MsgData):
     RecordId = MsgData[0:4]
     BitMapValue = MsgData[4:12]
 
-    loggingPDM( self, 'Debug',  "PDMCreateBitmap - Create Bitmap counter RecordId: %s BitMapValue: %s" %(RecordId, BitMapValue))
+    self.log.logging( "PDM", 'Debug',  "PDMCreateBitmap - Create Bitmap counter RecordId: %s BitMapValue: %s" %(RecordId, BitMapValue))
     # Do what ever has to be done
     if self.PDM is None:
         openPDM( self )
@@ -346,7 +346,7 @@ def PDMDeleteBitmapRequest( self, MsgData):
 
     RecordId = MsgData[0:4]
 
-    loggingPDM( self, 'Debug',  "PDMDeleteBitmapRequest - Delete Bitmap counter RecordId: %s" %(RecordId))
+    self.log.logging( "PDM", 'Debug',  "PDMDeleteBitmapRequest - Delete Bitmap counter RecordId: %s" %(RecordId))
     # Do what ever has to be done
     
     if self.PDM is None:
@@ -379,7 +379,7 @@ def PDMGetBitmapRequest( self, MsgData):
     the function returns PDM_E_STATUS_INVLD_PARAM.
     """
     #Decode0206
-    loggingPDM( self, 'Debug',  "PDMGetBitmapRequest - Get BitMaprequest data: %s" %(MsgData))
+    self.log.logging( "PDM", 'Debug',  "PDMGetBitmapRequest - Get BitMaprequest data: %s" %(MsgData))
 
     RecordId = MsgData[0:4]
     if self.PDM is None:
@@ -398,7 +398,7 @@ def PDMGetBitmapRequest( self, MsgData):
     datas = status + RecordId + '%08x' %counter
 
     sendZigateCmd(self, "8206", datas )
-    loggingPDM( self, 'Debug',  "PDMGetBitmapRequest - Sending 0x8206 data: %s" %(datas))
+    self.log.logging( "PDM", 'Debug',  "PDMGetBitmapRequest - Sending 0x8206 data: %s" %(datas))
 
 
 def PDMIncBitmapRequest( self, MsgData):
@@ -418,7 +418,7 @@ def PDMIncBitmapRequest( self, MsgData):
     """
     #Decode0207
 
-    loggingPDM( self, 'Debug',  "PDMIncBitmapRequest - Inc BitMap request data: %s" %(MsgData))
+    self.log.logging( "PDM", 'Debug',  "PDMIncBitmapRequest - Inc BitMap request data: %s" %(MsgData))
 
     RecordId = MsgData[0:4]
     if self.PDM is None:
@@ -444,7 +444,7 @@ def PDMIncBitmapRequest( self, MsgData):
     datas = status + RecordId + '%08x' %Counter
     
     sendZigateCmd(self, "8207", datas )
-    loggingPDM( self, 'Debug',  "PDMIncBitmapRequest - Sending 0x8207 data: %s" %(datas))
+    self.log.logging( "PDM", 'Debug',  "PDMIncBitmapRequest - Sending 0x8207 data: %s" %(datas))
     savePDM(self)
 
 
@@ -452,7 +452,7 @@ def PDMExistanceRequest( self, MsgData):
     "E_SL_MSG_PDM_EXISTENCE_REQUEST"
     #Decode0208
 
-    loggingPDM( self, 'Debug',  "PDMExistanceRequest - receiving 0x0208 with data: %s" %(MsgData))
+    self.log.logging( "PDM", 'Debug',  "PDMExistanceRequest - receiving 0x0208 with data: %s" %(MsgData))
     RecordId = MsgData[0:4]
     if self.PDM is None:
         openPDM( self )
@@ -468,11 +468,11 @@ def PDMExistanceRequest( self, MsgData):
         size = '%04x' %0
         persistedData = None
 
-    loggingPDM( self, 'Debug', "      --------- RecordId: %s, u16Size: %s, recordExist: %s" % (RecordId, size, recordExist == 0x01))
+    self.log.logging( "PDM", 'Debug', "      --------- RecordId: %s, u16Size: %s, recordExist: %s" % (RecordId, size, recordExist == 0x01))
 
     datas = RecordId
     datas += '%02x' %recordExist    # 0x00 not exist, 0x01 exist
     datas += size
 
     sendZigateCmd( self, "8208", datas)
-    loggingPDM( self, 'Debug',  "PDMExistanceRequest - Sending 0x8208 data: %s" %(datas))
+    self.log.logging( "PDM", 'Debug',  "PDMExistanceRequest - Sending 0x8208 data: %s" %(datas))

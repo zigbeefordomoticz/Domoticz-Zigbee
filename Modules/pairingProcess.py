@@ -18,6 +18,8 @@ import struct
 import json
 
 
+from Classes.LoggingManagement import LoggingManagement
+
 from Modules.schneider_wiser import schneider_wiser_registration
 #
 from Modules.bindings import unbindDevice, bindDevice, rebind_Clusters
@@ -32,10 +34,10 @@ from Modules.livolo import livolo_bind
 from Modules.orvibo import OrviboRegistration
 from Modules.configureReporting import processConfigureReporting
 from Modules.profalux import profalux_fake_deviceModel
-from Modules.logging import loggingHeartbeat, loggingPairing
 from Modules.domoCreate import CreateDomoDevice
 from Modules.tools import reset_cluster_datastruct
 from Modules.zigateConsts import CLUSTERS_LIST
+from Modules.casaia import casaia_pairing
 
 def writeDiscoveryInfos( self ):
 
@@ -59,7 +61,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         return
     
     HB_ = int(self.ListOfDevices[NWKID]['Heartbeat'])
-    loggingPairing( self, 'Debug', "processNotinDBDevices - NWKID: %s, Status: %s, RIA: %s, HB_: %s " %(NWKID, status, RIA, HB_))
+    self.log.logging( "Pairing", 'Debug', "processNotinDBDevices - NWKID: %s, Status: %s, RIA: %s, HB_: %s " %(NWKID, status, RIA, HB_))
     if self.pluginconf.pluginConf['capturePairingInfos']:
         if NWKID not in self.DiscoveryDevices:
             self.DiscoveryDevices[NWKID] = {}
@@ -99,7 +101,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
 
         if not skipModel or 'Model' in self.ListOfDevices[NWKID]:
             if self.ListOfDevices[NWKID]['Model'] == {} or self.ListOfDevices[NWKID]['Model'] == '':
-                loggingPairing( self, 'Debug', "[%s] NEW OBJECT: %s Request Model Name" %(RIA, NWKID))
+                self.log.logging( "Pairing", 'Debug', "[%s] NEW OBJECT: %s Request Model Name" %(RIA, NWKID))
                 ReadAttributeRequest_0000(self, NWKID, fullScope=False )    # Reuest Model Name
                                                            # And wait 1 cycle
             else: 
@@ -115,7 +117,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                     self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( '0042' )
                 sendZigateCmd(self,"0042", str(NWKID))     # Request a Node Descriptor
             else:
-                loggingHeartbeat( self, 'Debug', "[%s] NEW OBJECT: %s Manufacturer: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Manufacturer']), NWKID)
+                self.log.logging( "Pairing", 'Debug', "[%s] NEW OBJECT: %s Manufacturer: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Manufacturer']), NWKID)
 
         for iterEp in self.ListOfDevices[NWKID]['Ep']:
             # ColorMode
@@ -152,7 +154,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         self.ListOfDevices[NWKID]['Status']="0045"
         if 'Model' in self.ListOfDevices[NWKID]:
             if self.ListOfDevices[NWKID]['Model'] == {}:
-                loggingPairing( self, 'Debug', "[%s] NEW OBJECT: %s Request Model Name" %(RIA, NWKID))
+                self.log.logging( "Pairing", 'Debug', "[%s] NEW OBJECT: %s Request Model Name" %(RIA, NWKID))
                 if self.pluginconf.pluginConf['capturePairingInfos']:
                     self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'RA_0000' )
                 ReadAttributeRequest_0000(self, NWKID , fullScope=False)    # Request Model Name
@@ -168,7 +170,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         self.ListOfDevices[NWKID]['Status'] = "0043"
         if 'Model' in self.ListOfDevices[NWKID]:
             if self.ListOfDevices[NWKID]['Model'] == {}:
-                loggingPairing( self, 'Debug', "[%s] NEW OBJECT: %s Request Model Name" %(RIA, NWKID))
+                self.log.logging( "Pairing", 'Debug', "[%s] NEW OBJECT: %s Request Model Name" %(RIA, NWKID))
                 if self.pluginconf.pluginConf['capturePairingInfos']:
                     self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'RA_0000' )
                 ReadAttributeRequest_0000(self, NWKID, fullScope=False )    # Reuest Model Name
@@ -181,7 +183,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
 
     if knownModel and RIA > 3 and status != 'UNKNOW' and status != 'inDB':
         # We have done several retry to get Ep ...
-        loggingPairing( self, 'Debug', "processNotinDB - Try several times to get all informations, let's use the Model now" +str(NWKID) )
+        self.log.logging( "Pairing", 'Debug', "processNotinDB - Try several times to get all informations, let's use the Model now" +str(NWKID) )
         status = 'createDB'
 
     elif int(self.ListOfDevices[NWKID]['RIA'],10) > 4 and status != 'UNKNOW' and status != 'inDB':  # We have done several retry
@@ -203,7 +205,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         #We will try to create the device(s) based on the Model , if we find it in DeviceConf or against the Cluster
         if 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['Model'] == {} or self.ListOfDevices[NWKID]['Model'] == '':
             if status == '8043' and int(self.ListOfDevices[NWKID]['RIA'],10) < 3:     # Let's take one more chance to get Model
-                loggingPairing( self, 'Debug', "Too early, let's try to get the Model")
+                self.log.logging( "Pairing", 'Debug', "Too early, let's try to get the Model")
                 return
 
         # Let's check if we have to disable the widget creation
@@ -237,7 +239,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                     self.ListOfDevices[NWKID]['ConfigSource'] = 'DeviceConf'
 
 
-        loggingPairing( self, 'Debug', "[%s] NEW OBJECT: %s Trying to create Domoticz device(s)" %(RIA, NWKID))
+        self.log.logging( "Pairing", 'Debug', "[%s] NEW OBJECT: %s Trying to create Domoticz device(s)" %(RIA, NWKID))
         IsCreated=False
         # Let's check if the IEEE is not known in Domoticz
         for x in Devices:
@@ -249,7 +251,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                     break
 
         if not IsCreated:
-            loggingPairing( self, 'Debug', "processNotinDBDevices - ready for creation: %s , Model: %s " %(self.ListOfDevices[NWKID], self.ListOfDevices[NWKID]['Model']))
+            self.log.logging( "Pairing", 'Debug', "processNotinDBDevices - ready for creation: %s , Model: %s " %(self.ListOfDevices[NWKID], self.ListOfDevices[NWKID]['Model']))
 
             # Purpose of this call is to patch Model and Manufacturer Name in case of Profalux
             # We do it just before calling CreateDomoDevice
@@ -275,7 +277,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             ###### Post processing : work done after Domoticz Widget creation
             ######    
             if 'ConfigSource' in self.ListOfDevices[NWKID]:
-                loggingPairing( self, 'Debug', "Device: %s - Config Source: %s Ep Details: %s" \
+                self.log.logging( "Pairing", 'Debug', "Device: %s - Config Source: %s Ep Details: %s" \
                         %(NWKID,self.ListOfDevices[NWKID]['ConfigSource'],str(self.ListOfDevices[NWKID]['Ep'])))
 
             # Bindings ....
@@ -294,7 +296,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                         # Check if we have specific clusters to Bind                     
                         if 'ClusterToBind' in self.DeviceConf[ _model ]:
                             cluster_to_bind = self.DeviceConf[ _model ]['ClusterToBind']             
-                            loggingPairing( self, 'Debug', '%s Binding cluster based on Conf: %s' %(NWKID,  str(cluster_to_bind)) )
+                            self.log.logging( "Pairing", 'Debug', '%s Binding cluster based on Conf: %s' %(NWKID,  str(cluster_to_bind)) )
 
             # Binding devices
             for iterEp in self.ListOfDevices[NWKID]['Ep']:
@@ -303,7 +305,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                         if self.pluginconf.pluginConf['capturePairingInfos']:
                             self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'BIND_' + iterEp + '_' + iterBindCluster )
 
-                        loggingPairing( self, 'Debug', 'Request a Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster) )
+                        self.log.logging( "Pairing", 'Debug', 'Request a Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster) )
                         # If option enabled, unbind
                         if self.pluginconf.pluginConf['doUnbindBind']:
                             unbindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
@@ -329,6 +331,9 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                     if iterReadAttrCluster not in self.ListOfDevices[NWKID]['Ep'][iterEp]:
                         continue
                     if iterReadAttrCluster not in READ_ATTRIBUTES_REQUEST:
+                        continue
+                    if iterReadAttrCluster == '0500':
+                        # Skip IAS as it is address by IAS Enrollment
                         continue
                     if self.pluginconf.pluginConf['capturePairingInfos']:
                         self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'RA_' + iterEp + '_' + iterReadAttrCluster )
@@ -373,7 +378,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             identifyEffect( self, NWKID, ep , effect='Blink' )
 
             for iterEp in self.ListOfDevices[NWKID]['Ep']:
-                loggingPairing( self, 'Debug', 'looking for List of Attributes ep: %s' %iterEp)
+                self.log.logging( "Pairing", 'Debug', 'looking for List of Attributes ep: %s' %iterEp)
                 for iterCluster in  self.ListOfDevices[NWKID]['Ep'][iterEp]:
                     if iterCluster in ( 'Type', 'ClusterType', 'ColorMode' ): 
                         continue
@@ -406,6 +411,9 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                             else:
                                 Domoticz.Error("Uncorrect GroupMembership definition %s" %str(self.DeviceConf[ self.ListOfDevices[NWKID]['Model'] ]['GroupMembership']))
 
+            if 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['Model'] in ( 'AC201A', 'AC211'):
+                casaia_pairing( self, NWKID)
+                
             # Reset HB in order to force Read Attribute Status
             self.ListOfDevices[NWKID]['Heartbeat'] = 0
 

@@ -12,6 +12,9 @@ from Modules.basicOutputs import set_poweron_afteroffon
 from Modules.readAttributes import ReadAttributeRequest_0006_0000, ReadAttributeRequest_0008_0000, ReadAttributeRequest_0006_400x
 from Modules.tools import retreive_cmd_payload_from_8002
 
+from Classes.LoggingManagement import LoggingManagement
+
+
 
 def enki_set_poweron_after_offon( self, mode):
     # call from WebServer

@@ -19,6 +19,9 @@ from Modules.lumi import lumiReadRawAPS
 from Modules.philips import philipsReadRawAPS
 from Modules.tuya import tuyaReadRawAPS
 
+from Modules.casaia import CASAIA_MANUF_CODE, casaiaReadRawAPS
+
+
 ## Requires Zigate firmware > 3.1d
 
 def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, ManufacturerCode, Command, Data, payload):
@@ -34,6 +37,7 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Man
         '115f' : lumiReadRawAPS,
         '100b' : philipsReadRawAPS,
         '1002' : tuyaReadRawAPS,
+        CASAIA_MANUF_CODE: casaiaReadRawAPS,
         }
 
     CALLBACK_TABLE2 = {
@@ -44,9 +48,12 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Man
         'Schneider': schneiderReadRawAPS,
         'LUMI': lumiReadRawAPS,
         'Philips' : philipsReadRawAPS,
-        '_TZE200_ckud7u2l': tuyaReadRawAPS ,
+        "_TYST11_jeaxp72v" : tuyaReadRawAPS ,
+        "_TYST11_kfvq6avy" : tuyaReadRawAPS ,
         '_TYST11_zivfvd7h': tuyaReadRawAPS,
-        '_TYST11_kfvq6avy': tuyaReadRawAPS,
+        '_TZE200_ckud7u2l' : tuyaReadRawAPS ,
+        "_TZE200_kfvq6avy" : tuyaReadRawAPS ,
+        'OWON': casaiaReadRawAPS,
     }
 
     if srcnwkid not in self.ListOfDevices:

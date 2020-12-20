@@ -18,14 +18,16 @@ import json
 from datetime import datetime
 from time import time
 
+from Classes.LoggingManagement import LoggingManagement
+
 from Modules.basicOutputs import  send_zigatecmd_zcl_noack, send_zigatecmd_zcl_ack
 from Modules.bindings import bindDevice
 
 from Modules.zigateConsts import MAX_LOAD_ZIGATE, CFG_RPT_ATTRIBUTESbyCLUSTERS , ZIGATE_EP
 from Modules.tools import getClusterListforEP, mainPoweredDevice, \
-    ackDisableOrEnable, \
+    is_ack_tobe_disabled, \
     check_datastruct, is_time_to_perform_work, set_isqn_datastruct, set_status_datastruct, set_timestamp_datastruct, is_attr_unvalid_datastruct, reset_attr_datastruct
-from Modules.logging import loggingConfigureReporting
+
 
 MAX_ATTR_PER_REQ = 3
 
@@ -43,7 +45,7 @@ def processConfigureReporting( self, NWKID=None ):
     now = int(time())
     if NWKID is None :
         if self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE:
-            loggingConfigureReporting( self, 'Debug2', "configureReporting - skip configureReporting for now ... system too busy (%s/%s) for %s"
+            self.log.logging( "ConfigureReporting", 'Debug2', "configureReporting - skip configureReporting for now ... system too busy (%s/%s) for %s"
                   %(self.busy, self.ZigateComm.loadTransmit(), NWKID), nwkid=NWKID)
             return # Will do at the next round
         target = list(self.ListOfDevices.keys())
@@ -87,9 +89,9 @@ def processConfigureReporting( self, NWKID=None ):
                     if 'ConfigureReporting' in self.DeviceConf[ self.ListOfDevices[key]['Model'] ]:
                         spec_cfgrpt = self.DeviceConf[ self.ListOfDevices[key]['Model'] ]['ConfigureReporting']
                         cluster_list = spec_cfgrpt
-                        loggingConfigureReporting( self, 'Debug2', "------> CFG_RPT_ATTRIBUTESbyCLUSTERS updated: %s --> %s" %(key, cluster_list), nwkid=key)
+                        self.log.logging( "ConfigureReporting", 'Debug2', "------> CFG_RPT_ATTRIBUTESbyCLUSTERS updated: %s --> %s" %(key, cluster_list), nwkid=key)
 
-        loggingConfigureReporting( self, 'Debug2', "----> configurereporting - processing %s" %key, nwkid=key)
+        self.log.logging( "ConfigureReporting", 'Debug2', "----> configurereporting - processing %s" %key, nwkid=key)
 
         manufacturer = "0000"
         manufacturer_spec = "00"
@@ -99,9 +101,9 @@ def processConfigureReporting( self, NWKID=None ):
 
 
         for Ep in self.ListOfDevices[key]['Ep']:
-            loggingConfigureReporting( self, 'Debug2', "------> Configurereporting - processing %s/%s" %(key,Ep), nwkid=key)
+            self.log.logging( "ConfigureReporting", 'Debug2', "------> Configurereporting - processing %s/%s" %(key,Ep), nwkid=key)
             clusterList = getClusterListforEP( self, key, Ep )
-            loggingConfigureReporting( self, 'Debug2', "------> Configurereporting - processing %s/%s ClusterList: %s" %(key,Ep, clusterList), nwkid=key)
+            self.log.logging( "ConfigureReporting", 'Debug2', "------> Configurereporting - processing %s/%s ClusterList: %s" %(key,Ep, clusterList), nwkid=key)
             for cluster in clusterList:
                 if cluster in ( 'Type', 'ColorMode', 'ClusterType' ):
                     continue
@@ -114,28 +116,28 @@ def processConfigureReporting( self, NWKID=None ):
                                 continue
                         if self.ListOfDevices[key]['Model'] == 'lumi.remote.b686opcn01' and Ep != '01':
                             # We bind only on EP 01
-                            loggingConfigureReporting( self, 'Debug',"Do not Configure Reporting lumi.remote.b686opcn01 to Zigate Ep %s Cluster %s" %(Ep, cluster), key)
+                            self.log.logging( "ConfigureReporting", 'Debug',"Do not Configure Reporting lumi.remote.b686opcn01 to Zigate Ep %s Cluster %s" %(Ep, cluster), key)
                             continue
                 
                 # Bad Hack for now. FOR PROFALUX
                 if self.ListOfDevices[key]['ProfileID'] == '0104':
                     if self.ListOfDevices[key]['ZDeviceID'] == '0201': # Remote
                         # Do not Configure Reports Remote Command
-                        loggingConfigureReporting( self, 'Debug',"----> Do not Configure Reports cluster %s for Profalux Remote command %s/%s" %(cluster, key, Ep), key)
+                        self.log.logging( "ConfigureReporting", 'Debug',"----> Do not Configure Reports cluster %s for Profalux Remote command %s/%s" %(cluster, key, Ep), key)
                         continue
 
-                loggingConfigureReporting( self, 'Debug2', "--------> Configurereporting - processing %s/%s - %s" %(key,Ep,cluster), nwkid=key)
+                self.log.logging( "ConfigureReporting", 'Debug2', "--------> Configurereporting - processing %s/%s - %s" %(key,Ep,cluster), nwkid=key)
 
                 if not is_time_to_perform_work(self, 'ConfigureReporting', key, Ep, cluster, now, (21 * 3600) ):
-                    loggingConfigureReporting( self, 'Debug', "--------> Not time to perform  %s/%s - %s" %(key,Ep,cluster), nwkid=key)
+                    self.log.logging( "ConfigureReporting", 'Debug', "--------> Not time to perform  %s/%s - %s" %(key,Ep,cluster), nwkid=key)
                     continue
 
                 if NWKID is None and (self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE):
-                    loggingConfigureReporting( self, 'Debug', "---> configureReporting - %s skip configureReporting for now ... system too busy (%s/%s) for %s"
+                    self.log.logging( "ConfigureReporting", 'Debug', "---> configureReporting - %s skip configureReporting for now ... system too busy (%s/%s) for %s"
                         %(key, self.busy, self.ZigateComm.loadTransmit(), key), nwkid=key)
                     return # Will do at the next round
 
-                loggingConfigureReporting( self, 'Debug', "---> configureReporting - requested for device: %s on Cluster: %s" %(key, cluster), nwkid=key)
+                self.log.logging( "ConfigureReporting", 'Debug', "---> configureReporting - requested for device: %s on Cluster: %s" %(key, cluster), nwkid=key)
 
                 # If NWKID is not None, it means that we are asking a ConfigureReporting for a specific device
                 # Which happens on the case of New pairing, or a re-join
@@ -146,7 +148,7 @@ def processConfigureReporting( self, NWKID=None ):
                             if cluster in self.ListOfDevices[key]['Bind'][ Ep ]:
                                 del self.ListOfDevices[key]['Bind'][ Ep ][ cluster ]
                     if 'IEEE' in self.ListOfDevices[key]:
-                        loggingConfigureReporting( self, 'Debug', "---> configureReporting - requested Bind for %s on Cluster: %s" %(key, cluster), nwkid=key)
+                        self.log.logging( "ConfigureReporting", 'Debug', "---> configureReporting - requested Bind for %s on Cluster: %s" %(key, cluster), nwkid=key)
                         bindDevice( self, self.ListOfDevices[key]['IEEE'], Ep, cluster )
                     else:
                         Domoticz.Error("configureReporting - inconsitency on %s no IEEE found : %s " %(key, str(self.ListOfDevices[key])))
@@ -169,7 +171,7 @@ def processConfigureReporting( self, NWKID=None ):
                         if 'ZDeviceID' in  cluster_list[cluster]['Attributes'][attr]:
                             if ZDeviceID not in cluster_list[cluster]['Attributes'][attr]['ZDeviceID'] and \
                                     len( cluster_list[cluster]['Attributes'][attr]['ZDeviceID'] ) != 0:
-                                loggingConfigureReporting( self, 'Debug',"configureReporting - %s/%s skip Attribute %s for Cluster %s due to ZDeviceID %s" %(key,Ep,attr, cluster, ZDeviceID), nwkid=key)
+                                self.log.logging( "ConfigureReporting", 'Debug',"configureReporting - %s/%s skip Attribute %s for Cluster %s due to ZDeviceID %s" %(key,Ep,attr, cluster, ZDeviceID), nwkid=key)
                                 continue
                    
                     # Check against Attribute List only if the Model is not defined in the Certified Conf.
@@ -181,7 +183,7 @@ def processConfigureReporting( self, NWKID=None ):
                             if Ep in self.ListOfDevices[key]['Attributes List']['Ep']:
                                 if cluster in self.ListOfDevices[key]['Attributes List']['Ep'][Ep]:
                                     if attr not in self.ListOfDevices[key]['Attributes List']['Ep'][Ep][cluster]:
-                                        loggingConfigureReporting( self, 'Debug', "configureReporting: drop attribute %s" %attr, nwkid=key)
+                                        self.log.logging( "ConfigureReporting", 'Debug', "configureReporting: drop attribute %s" %attr, nwkid=key)
                                         continue
 
                     if self.FirmwareVersion and int(self.FirmwareVersion,16) <= int('31c',16):
@@ -196,18 +198,23 @@ def processConfigureReporting( self, NWKID=None ):
 
                     # Check if we have a Manufacturer Specific Cluster/Attribute. If that is the case, we need to send what we have , 
                     # and then pile what we have until we switch back to non manufacturer specific
-                    if cluster == '0201' and attr in ( '4000', '4012') \
-                       and 'Model' in self.ListOfDevices[ key ] and self.ListOfDevices[ key ]['Model'] == 'eTRV0100':
+                    if (  attr in ( '4000', '4012', 'fd00') and  cluster == '0201' and 'Model' in self.ListOfDevices[ key ] and self.ListOfDevices[ key ]['Model'] in ( 'eTRV0100', 'AC221', 'AC211')) or \
+                        ( cluster == 'fc21' and 'Manufacturer' in self.ListOfDevices[ key ] and self.ListOfDevices[ key ]['Manufacturer'] == '1110') :
                        
                         # Send what we have 
                         if ListOfAttributesToConfigure:
                             prepare_and_send_configure_reporting( self, key, Ep, cluster_list, cluster, direction, manufacturer_spec, manufacturer, ListOfAttributesToConfigure)
                         
-                        loggingConfigureReporting( self, 'Debug', "    Configure Reporting: Manuf Specific Attribute %s" %attr, nwkid=key)
+                        self.log.logging( "ConfigureReporting", 'Debug', "    Configure Reporting: Manuf Specific Attribute %s" %attr, nwkid=key)
                         # Process the Attribute
                         ListOfAttributesToConfigure = []
                         manufacturer_spec = "01"
-                        manufacturer = "1246" # Danfoss
+                        if self.ListOfDevices[ key ]['Model'] == 'eTRV0100':
+                            manufacturer = "1246" # Danfoss
+                        elif self.ListOfDevices[ key ]['Model']  in ( 'AC221', 'AC211'):
+                            manufacturer = "113c"
+                        elif self.ListOfDevices[ key ]['Manufacturer'] == '1110':
+                            manufacturer = "1110"
                         
                         ListOfAttributesToConfigure.append(attr)
                         prepare_and_send_configure_reporting( self, key, Ep, cluster_list, cluster, direction, manufacturer_spec, manufacturer, ListOfAttributesToConfigure)
@@ -221,7 +228,7 @@ def processConfigureReporting( self, NWKID=None ):
                         continue # Next Attribute
 
                     ListOfAttributesToConfigure.append(attr)
-                    loggingConfigureReporting( self, 'Debug', "    Configure Reporting %s/%s Cluster %s Adding attr: %s " %(key, Ep, cluster, attr), nwkid=key)
+                    self.log.logging( "ConfigureReporting", 'Debug', "    Configure Reporting %s/%s Cluster %s Adding attr: %s " %(key, Ep, cluster, attr), nwkid=key)
                 # end of For attr
 
                 prepare_and_send_configure_reporting( self, key, Ep, cluster_list,cluster, direction, manufacturer_spec, manufacturer, ListOfAttributesToConfigure)
@@ -278,10 +285,10 @@ def send_configure_reporting_attributes_set( self, key, Ep, cluster, direction, 
     datas =   ZIGATE_EP + Ep + cluster + direction + manufacturer_spec + manufacturer 
     datas +=  "%02x" %(attrLen) + attrList
 
-    loggingConfigureReporting( self, 'Debug', "--> send_configure_reporting_attributes_set - 0120 - %s" %(datas))
-    loggingConfigureReporting( self, 'Debug', "--> send_configure_reporting_attributes_set Reporting %s/%s on cluster %s Len: %s Attribute List: %s" %(key, Ep, cluster, attrLen, attrList), nwkid=key)
+    self.log.logging( "ConfigureReporting", 'Debug', "--> send_configure_reporting_attributes_set - 0120 - %s" %(datas))
+    self.log.logging( "ConfigureReporting", 'Debug', "--> send_configure_reporting_attributes_set Reporting %s/%s on cluster %s Len: %s Attribute List: %s" %(key, Ep, cluster, attrLen, attrList), nwkid=key)
     
-    if ackDisableOrEnable( self, key ):
+    if is_ack_tobe_disabled( self, key ):
         i_sqn = send_zigatecmd_zcl_noack( self, key, '0120', datas )
     else:
         i_sqn = send_zigatecmd_zcl_ack( self, key, '0120', datas )

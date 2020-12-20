@@ -14,7 +14,7 @@ from datetime import datetime
 
 from Modules.zigateConsts import ADDRESS_MODE, ZIGATE_EP, ZONE_TYPE
 from Classes.PluginConf import PluginConf
-
+from Classes.LoggingManagement import LoggingManagement
 
 ENROLL_RESPONSE_CODE =  0x00
 
@@ -22,53 +22,21 @@ ZONE_ID = 0x00
 
 class IAS_Zone_Management:
 
-    def __init__( self , pluginconf, ZigateComm, ListOfDevices, loggingFileHandle, ZigateIEEE = None):
+    def __init__( self , pluginconf, ZigateComm, ListOfDevices, log, ZigateIEEE = None):
         self.devices = {}
         self.ListOfDevices = ListOfDevices
         self.tryHB = 0
-        self.wip = False
+        self.wip = []
         self.HB = 0
         self.ZigateComm = ZigateComm
         self.ZigateIEEE = None
         if ZigateIEEE:
             self.ZigateIEEE = ZigateIEEE
         self.pluginconf = pluginconf
-        self.loggingFileHandle = loggingFileHandle
-
-    def _loggingStatus( self, message):
-
-        Domoticz.Status( message )
-        if ( not self.pluginconf.pluginConf['useDomoticzLog'] and self.loggingFileHandle ):
-            message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
-            self.loggingFileHandle.write( message )
-            self.loggingFileHandle.flush()
-
-    def _loggingLog( self, message):
-
-        Domoticz.Log( message )
-        if ( not self.pluginconf.pluginConf['useDomoticzLog'] and self.loggingFileHandle ):
-            message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
-            self.loggingFileHandle.write( message )
-            self.loggingFileHandle.flush()
-
-    def _loggingDebug( self, message):
-
-        if ( not self.pluginconf.pluginConf['useDomoticzLog'] and self.loggingFileHandle ):
-            message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
-            self.loggingFileHandle.write( message )
-            self.loggingFileHandle.flush()
-        else:
-            Domoticz.Log( message )
+        self.log = log
 
     def logging( self, logType, message):
-
-        self.debugIAS = self.pluginconf.pluginConf['debugIAS']
-        if logType == 'Debug' and self.debugIAS:
-            self._loggingDebug( message)
-        elif logType == 'Log':
-            self._loggingLog( message )
-        elif logType == 'Status':
-            self._loggingStatus( message)
+        self.log.logging('IAS', logType, message)
 
 
     def __write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data):
@@ -134,7 +102,7 @@ class IAS_Zone_Management:
         if not self.ZigateIEEE:
             self.logging( 'Error', "readConfirmEnroll - Zigate IEEE not yet known")
             return
-        if key not in self.devices:
+        if key not in self.devices and Epout not in self.devices[key]:
             self.logging( 'Log', "readConfirmEnroll - while not yet started")
             return
 
@@ -148,7 +116,7 @@ class IAS_Zone_Management:
         if not self.ZigateIEEE:
             self.logging( 'Error', "readConfirmEnroll - Zigate IEEE not yet known")
             return
-        if key not in self.devices:
+        if key not in self.devices and Epout not in self.devices[key]:
             self.logging( 'Log', "readConfirmEnroll - while not yet started")
             return
 
@@ -162,7 +130,7 @@ class IAS_Zone_Management:
         if not self.ZigateIEEE:
             self.logging( 'Error', "IASZone_enroll_response_ - Zigate IEEE not yet known")
             return
-        if nwkid not in self.devices:
+        if nwkid not in self.devices and Epout not in self.devices[nwkid]:
             self.logging( 'Log', "IASZone_enroll_response - while not yet started")
             return
 
@@ -181,7 +149,7 @@ class IAS_Zone_Management:
         if not self.ZigateIEEE:
             self.logging( 'Error', "IASZone_enroll_response_zoneID - Zigate IEEE not yet known")
             return
-        if nwkid not in self.devices:
+        if nwkid not in self.devices and Epout not in self.devices[nwkid]:
             self.logging( 'Log', "IASZone_enroll_response_zoneID - while not yet started")
             return
 
@@ -209,7 +177,7 @@ class IAS_Zone_Management:
         if not self.ZigateIEEE:
             self.logging( 'Error', "IASZone_attributes - Zigate IEEE not yet known")
             return
-        if nwkid not in self.devices:
+        if nwkid not in self.devices and Epout not in self.devices[nwkid]:
             self.logging( 'Log', "IASZone_attributes - while not yet started")
             return
 
@@ -226,14 +194,17 @@ class IAS_Zone_Management:
         if nwkid not in self.devices:
             self.devices[nwkid] = {}
 
-        self.wip = True
+        if Epout not in self.devices[nwkid]:
+            self.devices[nwkid][ Epout ] = {}
+
+        self.wip.append ( ( nwkid, Epout)  )
         self.HB = 0
-        self.devices[nwkid]['Step'] = 2
-        self.devices[nwkid]['Ep'] = Epout
+        self.devices[nwkid][Epout]['Step'] = 2
+
         self.setIASzoneControlerIEEE( nwkid, Epout)
 
 
-    def receiveIASmessages(self, nwkid , step, value):
+    def receiveIASmessages(self, nwkid , SrcEp, step, value):
 
         self.logging( 'Debug', "receiveIASmessages - from: %s Step: %s Value: %s" %(nwkid, step, value))
 
@@ -244,33 +215,31 @@ class IAS_Zone_Management:
             self.logging( 'Debug', "receiveIASmessages - %s not in %s" %(nwkid, self.devices))
             return
 
-        iterEp = self.devices[nwkid]['Ep']
-
         if  step == 3:  # Receive Write Attribute Message
             self.logging( 'Debug', "receiveIASmessages - Write rAttribute Response: %s" %value)
             self.HB = 0
-            if self.devices[nwkid]['Step'] <= 4:
-                self.devices[nwkid]['Step'] = 4
-            self.readConfirmEnroll(nwkid, iterEp)
-            self.IASZone_enroll_response_zoneID( nwkid, iterEp )
+            if self.devices[nwkid][SrcEp]['Step'] <= 4:
+                self.devices[nwkid][SrcEp]['Step'] = 4
+            self.readConfirmEnroll(nwkid, SrcEp )
+            self.IASZone_enroll_response_zoneID( nwkid, SrcEp )
 
         elif step == 5: # Receive Attribute 0x0000 (Enrollment)
-
             if 'ticks_5' not in self.devices[nwkid]:
-                self.devices[nwkid]['ticks_5'] = 0
-            if self.devices[nwkid]['ticks_5'] > 3:
-                self.logging( 'Debug', "receiveIASmessages - Timeout %s/%s at step 5" %(nwkid, iterEp))
-                del self.devices[nwkid]
+                self.devices[nwkid][SrcEp]['ticks_5'] = 0
+
+            if self.devices[nwkid][SrcEp]['ticks_5'] > 3:
+                self.logging( 'Debug', "receiveIASmessages - Timeout %s/%s at step 5" %(nwkid, SrcEp))
+                del self.devices[nwkid][SrcEp]
                 return
 
             self.HB = 0
-            if self.devices[nwkid]['Step'] <= 7 and value == '01':
-                self.devices[nwkid]['Step'] = 7
-                self.readConfirmIEEE(nwkid, iterEp)
-            self.IASZone_enroll_response_zoneID( nwkid, iterEp )
-            self.readConfirmEnroll(nwkid, iterEp)
+            if self.devices[nwkid][SrcEp]['Step'] <= 7 and value == '01':
+                self.devices[nwkid][SrcEp]['Step'] = 7
+                self.readConfirmIEEE(nwkid, SrcEp)
+            self.IASZone_enroll_response_zoneID( nwkid, SrcEp )
+            self.readConfirmEnroll(nwkid, SrcEp)
 
-            self.devices[nwkid]['ticks_5'] += 1
+            self.devices[nwkid][SrcEp]['ticks_5'] += 1
 
         elif step == 7: # Receive Enrollement IEEEE
             self.logging( 'Debug', "IAS_heartbeat - Enrollment with IEEE:%s" %value)
@@ -312,55 +281,59 @@ class IAS_Zone_Management:
 
         self.HB += 1
 
-        if not self.wip:
+        if len(self.wip) == 0:
             return
         self.logging( 'Debug', "IAS_heartbeat ")
         if not self.ZigateIEEE:
             self.logging( 'Debug', "IAS_heartbeat - Zigate IEEE not yet known")
             return
-        remove_devices =[]
-        for iterKey in self.devices:
-            iterEp = self.devices[iterKey]['Ep']
-            self.logging( 'Debug', "IAS_heartbeat - processing %s step: %s" %(iterKey, self.devices[iterKey]['Step']))
-            if self.devices[iterKey]['Step'] == 0:
-                continue
 
-            if self.HB > 1 and self.devices[iterKey]['Step'] == 2:
-                self.HB = 0
-                self.devices[iterKey]['Ep'] = iterEp
-                self.logging( 'Debug', "IAS_heartbeat - TO restart self.IASZone_attributes")
-                self.IASZone_enroll_response_zoneID( iterKey, iterEp)
-                self.IASZone_attributes(iterKey, iterEp)
-		
-            elif self.HB > 1 and self.devices[iterKey]['Step'] == 4:
-                self.tryHB += self.tryHB
-                self.HB = 0
-                self.wip = True
-                iterEp = self.devices[iterKey]['Ep']
-                self.logging( 'Debug', "IAS_heartbeat - TO restart self.setIASzoneControlerIEEE")
-                if self.tryHB > 3:
-                    self.tryHB = 0
-                    self.devices[iterKey]['Step'] = 5
+        for iterKey in list(self.devices):
+            for iterEp in list(self.devices[iterKey]):
+                self.logging( 'Debug', "IAS_heartbeat - processing %s step: %s" %(iterKey, self.devices[iterKey][iterEp]['Step']))
+                if self.devices[iterKey][iterEp]['Step'] == 0:
+                    continue
 
-            elif self.HB > 1 and self.devices[iterKey]['Step'] == 6:
-                self.tryHB += self.tryHB
-                self.HB = 0
-                iterEp = self.devices[iterKey]['Ep']
-                self.readConfirmEnroll(iterKey, iterEp)
-                self.logging( 'Debug', "IAS_heartbeat - TO restart self.readConfirmEnroll")
-                if self.tryHB > 3:
-                    self.tryHB = 0
-                    self.devices[iterKey]['Step'] = 7
+                if self.HB > 1 and self.devices[iterKey][iterEp]['Step'] == 2:
+                    self.HB = 0
 
-            elif self.devices[iterKey]['Step'] == 7: # Receive Confirming Enrollement
-                self.logging( 'Debug', "IAS_heartbeat - Enrollment confirmed/completed")
-                self.HB = 0
-                self.wip = False
-                self.devices[iterKey]['Step'] = 0
-                remove_devices.append(iterKey)
+                    self.logging( 'Debug', "IAS_heartbeat - TO restart self.IASZone_attributes")
+                    self.IASZone_enroll_response_zoneID( iterKey, iterEp)
+                    self.IASZone_attributes(iterKey, iterEp)
+    
+                elif self.HB > 1 and self.devices[iterKey][iterEp]['Step'] == 4:
+                    self.tryHB += self.tryHB
+                    self.HB = 0
+                    if iterKey not in self.wip:
+                        self.wip.append( iterKey )
+
+                    self.logging( 'Debug', "IAS_heartbeat - TO restart self.setIASzoneControlerIEEE")
+                    if self.tryHB > 3:
+                        self.tryHB = 0
+                        self.devices[iterKey][iterEp]['Step'] = 5
+
+                elif self.HB > 1 and self.devices[iterKey][iterEp]['Step'] == 6:
+                    self.tryHB += self.tryHB
+                    self.HB = 0
+
+                    self.readConfirmEnroll(iterKey, iterEp)
+                    self.logging( 'Debug', "IAS_heartbeat - TO restart self.readConfirmEnroll")
+                    if self.tryHB > 3:
+                        self.tryHB = 0
+                        self.devices[iterKey][iterEp]['Step'] = 7
+
+                elif self.devices[iterKey][iterEp]['Step'] == 7: # Receive Confirming Enrollement
+                    self.logging( 'Debug', "IAS_heartbeat - Enrollment confirmed/completed")
+                    self.HB = 0
+                    if (iterKey, iterEp) in self.wip:
+                        self.wip.remove( (iterKey , iterEp) )
+
+                    self.devices[iterKey][iterEp]['Step'] = 0
+                    del self.devices[iterKey][iterEp]
+                    if len(self.devices[iterKey]) == 0:
+                        del self.devices[iterKey]
+
         
-        for iter in remove_devices:
-            del self.devices[iter]
 
 
     def write_IAS_WD_Squawk( self, nwkid, ep, SquawkMode):

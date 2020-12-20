@@ -1,6 +1,8 @@
 import Domoticz
 from time import time
 
+from Classes.LoggingManagement import LoggingManagement
+
 from Modules.tools import (
     loggingMessages,
     decodeMacCapa,
@@ -10,7 +12,6 @@ from Modules.tools import (
     DeviceExist,
     initDeviceInList,
 )
-from Modules.logging import loggingInput, loggingPairing
 from Modules.domoTools import lastSeenUpdate, timedOutDevice
 from Modules.readAttributes import ReadAttributeRequest_0000, ReadAttributeRequest_0001
 from Modules.bindings import rebind_Clusters, reWebBind_Clusters
@@ -20,6 +21,7 @@ from Modules.livolo import livolo_bind
 from Modules.configureReporting import processConfigureReporting
 from Modules.legrand_netatmo import legrand_refresh_battery_remote
 from Modules.lumi import enableOppleSwitch, setXiaomiVibrationSensitivity
+from Modules.casaia import casaia_AC201_pairing
 
 # Version 0
 def device_annoucementv0(self, Devices, MsgData, MsgLQI):
@@ -83,8 +85,8 @@ def device_annoucementv0(self, Devices, MsgData, MsgLQI):
             "8045",
             "8043",
         ):
-            loggingInput(
-                self,
+            self.log.logging( 
+                "Input",
                 "Debug",
                 "Decode004D - Already known device %s with status: %s"
                 % (MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]["Status"]),
@@ -105,8 +107,8 @@ def device_annoucementv0(self, Devices, MsgData, MsgLQI):
 
     if MsgSrcAddr in self.ListOfDevices:
         if "ZDeviceName" in self.ListOfDevices[MsgSrcAddr]:
-            loggingPairing(
-                self,
+            self.log.logging(
+                "Pairing",
                 "Status",
                 "Device Announcementv1: %s (%s, %s) Join Flag: %s LQI: %s ChangeShortID: %s "
                 % (
@@ -119,15 +121,15 @@ def device_annoucementv0(self, Devices, MsgData, MsgLQI):
                 ),
             )
         else:
-            loggingPairing(
-                self,
+            self.log.logging(
+                "Pairing",
                 "Status",
                 "Device Announcementv1 Addr: %s, IEEE: %s Join Flag: %s LQI: %s ChangeShortID: %s"
                 % (MsgSrcAddr, MsgIEEE, MsgRejoinFlag, int(MsgLQI, 16), newShortId),
             )
     else:
-        loggingPairing(
-            self,
+        self.log.logging(
+            "Pairing",
             "Status",
             "Device Announcementv1 Addr: %s, IEEE: %s Join Flag: %s LQI: %s ChangeShortID: %s"
             % (MsgSrcAddr, MsgIEEE, MsgRejoinFlag, int(MsgLQI, 16), newShortId),
@@ -146,8 +148,8 @@ def device_annoucementv0(self, Devices, MsgData, MsgLQI):
             decodeMacCapa(ReArrangeMacCapaBasedOnModel(self, MsgSrcAddr, MsgMacCapa))
         )
 
-        loggingInput(
-            self,
+        self.log.logging( 
+            "Input",
             "Debug",
             "Decode004D - Already known device %s infos: %s, Change ShortID: %s "
             % (MsgSrcAddr, self.ListOfDevices[MsgSrcAddr], newShortId),
@@ -164,15 +166,15 @@ def device_annoucementv0(self, Devices, MsgData, MsgLQI):
         # if self.pluginconf.pluginConf['ExpDeviceAnnoucement2'] and 'Main Powered' in deviceMacCapa:
         #    if 'Health' in self.ListOfDevices[MsgSrcAddr]:
         #        if self.ListOfDevices[MsgSrcAddr]['Health'] == 'Live':
-        #            loggingInput( self, 'Log', "        -> ExpDeviceAnnoucement 2: droping packet for %s due to Main Powered and Live LQI: %s" \
+        #            self.log.logging("Input", 'Log', "        -> ExpDeviceAnnoucement 2: droping packet for %s due to Main Powered and Live LQI: %s" \
         #                    %(MsgSrcAddr, int(MsgLQI,16)), MsgSrcAddr)
         #            timeStamped( self, MsgSrcAddr , 0x004d)
         #            lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
         #            return
 
         if MsgRejoinFlag in ("01", "02"):
-            loggingInput(
-                self,
+            self.log.logging( 
+                "Input",
                 "Log",
                 "        ->  drop packet for %s due to  Rejoining network as %s, LQI: %s"
                 % (MsgSrcAddr, MsgRejoinFlag, int(MsgLQI, 16)),
@@ -191,8 +193,8 @@ def device_annoucementv0(self, Devices, MsgData, MsgLQI):
             if "TimeStamp" in self.ListOfDevices[MsgSrcAddr]["Announced"]:
                 if now < self.ListOfDevices[MsgSrcAddr]["Announced"]["TimeStamp"] + 15:
                     # Looks like we have a duplicate Device Announced in less than 15s
-                    loggingInput(
-                        self,
+                    self.log.logging( 
+                        "Input",
                         "Debug",
                         "Decode004D - Duplicate Device Annoucement for %s -> Drop"
                         % (MsgSrcAddr),
@@ -205,8 +207,8 @@ def device_annoucementv0(self, Devices, MsgData, MsgLQI):
 
         # If this is a rejoin after a leave, let's update the Status
         if self.ListOfDevices[MsgSrcAddr]["Status"] == "Left":
-            loggingInput(
-                self,
+            self.log.logging( 
+                "Input",
                 "Debug",
                 "Decode004D -  %s Status from Left to inDB" % (MsgSrcAddr),
                 MsgSrcAddr,
@@ -229,16 +231,16 @@ def device_annoucementv0(self, Devices, MsgData, MsgLQI):
 
             if "0500" in self.ListOfDevices[MsgSrcAddr]["Ep"][tmpep]:
                 # We found a Cluster 0x0500 IAS. May be time to start the IAS Zone process
-                loggingInput(
-                    self,
+                self.log.logging( 
+                    "Input",
                     "Debug",
                     "Decode004D - IAS Zone controler setting %s" % (MsgSrcAddr),
                     MsgSrcAddr,
                 )
                 self.iaszonemgt.IASZone_triggerenrollement(MsgSrcAddr, tmpep)
                 if "0502" in self.ListOfDevices[MsgSrcAddr]["Ep"][tmpep]:
-                    loggingInput(
-                        self,
+                    self.log.logging( 
+                        "Input",
                         "Debug",
                         "Decode004D - IAS WD enrolment %s" % (MsgSrcAddr),
                         MsgSrcAddr,
@@ -247,8 +249,8 @@ def device_annoucementv0(self, Devices, MsgData, MsgLQI):
                 break
 
         if self.pluginconf.pluginConf["allowReBindingClusters"]:
-            loggingInput(
-                self,
+            self.log.logging( 
+                "Input",
                 "Debug",
                 "Decode004D - Request rebind clusters for %s" % (MsgSrcAddr),
                 MsgSrcAddr,
@@ -264,8 +266,8 @@ def device_annoucementv0(self, Devices, MsgData, MsgLQI):
             "lumi.remote.b486opcn01-bulb",
             "lumi.remote.b286opcn01-bulb",
         ):
-            loggingInput(
-                self,
+            self.log.logging( 
+                "Input",
                 "Log",
                 "---> Calling enableOppleSwitch %s" % MsgSrcAddr,
                 MsgSrcAddr,
@@ -279,8 +281,8 @@ def device_annoucementv0(self, Devices, MsgData, MsgLQI):
         processConfigureReporting(self, NWKID=MsgSrcAddr)
 
         # Let's take the opportunity to trigger some request/adjustement / NOT SURE IF THIS IS GOOD/IMPORTANT/NEEDED
-        loggingInput(
-            self,
+        self.log.logging( 
+            "Input",
             "Debug",
             "Decode004D - Request attribute 0x0000 %s" % (MsgSrcAddr),
             MsgSrcAddr,
@@ -304,8 +306,8 @@ def device_annoucementv0(self, Devices, MsgData, MsgLQI):
                 livolo_bind(self, MsgSrcAddr, "06")
 
         # New device comming. The IEEE is not known
-        loggingInput(
-            self,
+        self.log.logging( 
+            "Input",
             "Debug",
             "Decode004D - New Device %s %s" % (MsgSrcAddr, MsgIEEE),
             MsgSrcAddr,
@@ -317,8 +319,8 @@ def device_annoucementv0(self, Devices, MsgData, MsgLQI):
                 "Decode004d - New Device %s %s already exist in IEEE2NWK"
                 % (MsgSrcAddr, MsgIEEE)
             )
-            loggingPairing(
-                self,
+            self.log.logging(
+                "Pairing",
                 "Debug",
                 "Decode004d - self.IEEE2NWK[MsgIEEE] = %s with Status: %s"
                 % (
@@ -327,8 +329,8 @@ def device_annoucementv0(self, Devices, MsgData, MsgLQI):
                 ),
             )
             if self.ListOfDevices[self.IEEE2NWK[MsgIEEE]]["Status"] != "inDB":
-                loggingInput(
-                    self,
+                self.log.logging( 
+                    "Input",
                     "Debug",
                     "Decode004d - receiving a new Device Announced for a device in processing, drop it",
                     MsgSrcAddr,
@@ -342,8 +344,8 @@ def device_annoucementv0(self, Devices, MsgData, MsgLQI):
         if IEEEExist(self, MsgIEEE):
             # we are getting a dupplicate. Most-likely the Device is existing and we have to reconnect.
             if not DeviceExist(self, Devices, MsgSrcAddr, MsgIEEE):
-                loggingPairing(
-                    self,
+                self.log.logging(
+                    "Pairing",
                     "Error",
                     "Decode004d - Paranoia .... NwkID: %s, IEEE: %s -> %s "
                     % (MsgSrcAddr, MsgIEEE, str(self.ListOfDevices[MsgSrcAddr])),
@@ -352,8 +354,8 @@ def device_annoucementv0(self, Devices, MsgData, MsgLQI):
 
         # 2- Create the Data Structutre
         initDeviceInList(self, MsgSrcAddr)
-        loggingPairing(
-            self, "Debug", "Decode004d - Looks like it is a new device sent by Zigate"
+        self.log.logging(
+            "Pairing", "Debug", "Decode004d - Looks like it is a new device sent by Zigate"
         )
         self.CommiSSionning = True
         self.ListOfDevices[MsgSrcAddr]["MacCapa"] = MsgMacCapa
@@ -372,14 +374,14 @@ def device_annoucementv0(self, Devices, MsgData, MsgLQI):
             self.ListOfDevices[MsgSrcAddr]["LogicalType"] = "End Device"
             self.ListOfDevices[MsgSrcAddr]["DeviceType"] = "RFD"
 
-        loggingPairing(
-            self,
+        self.log.logging(
+            "Pairing",
             "Log",
             "--> Adding device %s in self.DevicesInPairingMode" % MsgSrcAddr,
         )
         if MsgSrcAddr not in self.DevicesInPairingMode:
             self.DevicesInPairingMode.append(MsgSrcAddr)
-        loggingPairing(self, "Log", "--> %s" % str(self.DevicesInPairingMode))
+        self.log.logging( "Pairing", "Log", "--> %s" % str(self.DevicesInPairingMode))
 
         # 3- Store the Pairing info if needed
         if self.pluginconf.pluginConf["capturePairingInfos"]:
@@ -403,13 +405,13 @@ def device_annoucementv0(self, Devices, MsgData, MsgLQI):
                 self, MsgSrcAddr, fullScope=False
             )  # In order to request Model Name
 
-        loggingPairing(self, "Debug", "Decode004d - Request End Point List ( 0x0045 )")
+        self.log.logging( "Pairing", "Debug", "Decode004d - Request End Point List ( 0x0045 )")
         self.ListOfDevices[MsgSrcAddr]["Heartbeat"] = "0"
         self.ListOfDevices[MsgSrcAddr]["Status"] = "0045"
 
         sendZigateCmd(self, "0045", str(MsgSrcAddr))  # Request list of EPs
-        loggingInput(
-            self,
+        self.log.logging( 
+            "Input",
             "Debug",
             "Decode004D - %s Infos: %s" % (MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]),
             MsgSrcAddr,
@@ -442,8 +444,8 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
 
     newDeviceForPlugin = not IEEEExist(self, Ieee)
 
-    loggingInput(
-        self,
+    self.log.logging( 
+        "Input",
         "Debug",
         "Decode004D V2 - Device Annoucement: NwkId: %s Ieee: %s MacCap: %s ReJoin: %s LQI: %s NewDevice: %s"
         % (NwkId, Ieee, MacCapa, RejoinFlag, MsgLQI, newDeviceForPlugin),
@@ -453,8 +455,8 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
     now = time()
     if newDeviceForPlugin:
         if RejoinFlag:
-            loggingInput(
-                self,
+            self.log.logging( 
+                "Input",
                 "Debug",
                 "------------ > Adding Device Droping rejoin flag! %s %s %s)"
                 % (NwkId, Ieee, RejoinFlag),
@@ -464,8 +466,8 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
         # Device do not exist, Rejoin Flag do not exist. This is the real Device Announcement, let's go
         if not DeviceExist(self, Devices, NwkId, Ieee):
             # We can create the device in Plugin Db, and start the Discovery process
-            loggingInput(
-                self,
+            self.log.logging( 
+                "Input",
                 "Debug",
                 "------------ > Adding a new device %s %s )" % (NwkId, Ieee),
                 NwkId,
@@ -478,8 +480,8 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
         return
 
     # Existing Device
-    loggingInput(
-        self,
+    self.log.logging( 
+        "Input",
         "Debug",
         "------------ > Existing device ShortId New: %s ShortId Old: %s"
         % (NwkId, self.IEEE2NWK[Ieee]),
@@ -490,8 +492,8 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
         # Just make sure to use the NwkId currently in the plugin DB and not the new one if exists
         # Looks like on 31c with Xiaomi, we got only that one , and not the True DeviceAnnoucement!
         store_annoucement(self, self.IEEE2NWK[Ieee], RejoinFlag, now)
-        loggingInput(
-            self,
+        self.log.logging( 
+            "Input",
             "Debug",
             "------------ > Store device Rejoin Flag: %s droping" % RejoinFlag,
             NwkId,
@@ -502,8 +504,8 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
     if not DeviceExist(self, Devices, NwkId, Ieee):
         # Something wrong happen , most-likely the ShortId changed during the provisioning and we cannot handle that.
         # All Data structutre have been cleaned during the DeviceExist call.
-        loggingInput(
-            self,
+        self.log.logging( 
+            "Input",
             "Error",
             "Something wrong on Device %s %s pairing process. (aborting)"
             % (NwkId, Ieee),
@@ -514,8 +516,8 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
     if "ZDeviceName" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId][
         "ZDeviceName"
     ] not in ("", {}):
-        loggingInput(
-            self,
+        self.log.logging( 
+            "Input",
             "Status",
             "Device Annoucement: %s NwkId: %s Ieee: %s MacCap: %s"
             % (self.ListOfDevices[NwkId]["ZDeviceName"], NwkId, Ieee, MacCapa),
@@ -524,8 +526,8 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
         self.adminWidgets.updateNotificationWidget( Devices, 'Device Annoucement: %s NwkId: %s Ieee: %s MacCap: %s' 
             %((self.ListOfDevices[NwkId]["ZDeviceName"], NwkId, Ieee, MacCapa)))
     else:
-        loggingInput(
-            self,
+        self.log.logging( 
+            "Input",
             "Status",
             "Device Annoucement: NwkId: %s Ieee: %s MacCap: %s"
             % (NwkId, Ieee, MacCapa),
@@ -540,8 +542,8 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
         # No Re Join flag. 
         # This is a known device
         # Do nothing, except for legrand we request battery level (as it is never repored)
-        loggingInput(
-            self, "Debug", "------------ > No Rejoin Flag seen, droping", NwkId
+        self.log.logging( 
+            "Input", "Debug", "------------ > No Rejoin Flag seen, droping", NwkId
         )
         timeStamped(self, NwkId, 0x004D)
         lastSeenUpdate(self, Devices, NwkId=NwkId)
@@ -562,8 +564,8 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
             and self.ListOfDevices[NwkId]["Announced"]["Rejoin"] in ("01", "02")
             and self.ListOfDevices[NwkId]["Status"] != "Left"
         ):
-            loggingInput(
-                self,
+            self.log.logging( 
+                "Input",
                 "Debug",
                 "------------ > Rejoin Flag was set to 0x01 or 0x02, droping",
                 NwkId,
@@ -575,16 +577,16 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
             return
     else:
         # Most likely we receive a Device Annoucement which has not relation with the JoinFlag we have .
-        loggingInput(
-            self,
+        self.log.logging( 
+            "Input",
             "Error",
             "Decode004D - Unexpected %s %s %s" % (NwkId, Ieee, RejoinFlag),
             NwkId,
         )
 
     # This should be the first one, let's take the information and drop it
-    loggingInput(
-        self,
+    self.log.logging( 
+        "Input",
         "Debug",
         "------------ > Finally do the existing device and rebind if needed",
     )
@@ -593,9 +595,7 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
         del self.ListOfDevices[NwkId]["Announced"]
 
 
-def decode004d_existing_devicev2(
-    self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgLQI, now
-):
+def decode004d_existing_devicev2( self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgLQI, now):
     # ############
     # Device exist, Reconnection has been done by DeviceExist()
     #
@@ -605,8 +605,8 @@ def decode004d_existing_devicev2(
         decodeMacCapa(ReArrangeMacCapaBasedOnModel(self, NwkId, MsgMacCapa))
     )
 
-    loggingInput(
-        self,
+    self.log.logging( 
+        "Input",
         "Debug",
         "Decode004D - Already known device %s infos: %s, "
         % (NwkId, self.ListOfDevices[NwkId]),
@@ -615,8 +615,8 @@ def decode004d_existing_devicev2(
 
     # if NwkId in self.ListOfDevices:
     #    if "ZDeviceName" in self.ListOfDevices[NwkId]:
-    #        loggingPairing(
-    #            self,
+    #        self.log.logging(
+    #            "Pairing",
     #            "Status",
     #            "Device Announcement: %s (%s, %s) LQI: %s "
     #            % (
@@ -627,8 +627,8 @@ def decode004d_existing_devicev2(
     #            ),
     #        )
     #    else:
-    #        loggingPairing(
-    #            self,
+    #        self.log.logging(
+    #            "Pairing",
     #            "Status",
     #            "Device Announcement Addr: %s, IEEE: %s LQI: %s "
     #            % (NwkId, MsgIEEE, int(MsgLQI, 16)),
@@ -637,8 +637,8 @@ def decode004d_existing_devicev2(
     # If this is a rejoin after a leave, let's update the Status
 
     if self.ListOfDevices[NwkId]["Status"] == "Left":
-        loggingInput(
-            self, "Debug", "Decode004D -  %s Status from Left to inDB" % (NwkId), NwkId
+        self.log.logging( 
+            "Input", "Debug", "Decode004D -  %s Status from Left to inDB" % (NwkId), NwkId
         )
         self.ListOfDevices[NwkId]["Status"] = "inDB"
 
@@ -653,23 +653,23 @@ def decode004d_existing_devicev2(
     for tmpep in self.ListOfDevices[NwkId]["Ep"]:
         if "0500" in self.ListOfDevices[NwkId]["Ep"][tmpep]:
             # We found a Cluster 0x0500 IAS. May be time to start the IAS Zone process
-            loggingInput(
-                self,
+            self.log.logging( 
+                "Input",
                 "Debug",
                 "Decode004D - IAS Zone controler setting %s" % (NwkId),
                 NwkId,
             )
             self.iaszonemgt.IASZone_triggerenrollement(NwkId, tmpep)
             if "0502" in self.ListOfDevices[NwkId]["Ep"][tmpep]:
-                loggingInput(
-                    self, "Debug", "Decode004D - IAS WD enrolment %s" % (NwkId), NwkId
+                self.log.logging( 
+                    "Input", "Debug", "Decode004D - IAS WD enrolment %s" % (NwkId), NwkId
                 )
                 self.iaszonemgt.IASWD_enroll(NwkId, tmpep)
             break
 
     if self.pluginconf.pluginConf["allowReBindingClusters"]:
-        loggingInput(
-            self,
+        self.log.logging( 
+            "Input",
             "Debug",
             "Decode004D - Request rebind clusters for %s" % (NwkId),
             NwkId,
@@ -685,18 +685,19 @@ def decode004d_existing_devicev2(
         "lumi.remote.b486opcn01-bulb",
         "lumi.remote.b286opcn01-bulb",
     ):
-        loggingInput(self, "Log", "---> Calling enableOppleSwitch %s" % NwkId, NwkId)
+        self.log.logging("Input", "Log", "---> Calling enableOppleSwitch %s" % NwkId, NwkId)
         enableOppleSwitch(self, NwkId)
 
     # As we are redo bind, we need to redo the Configure Reporting
     if "ConfigureReporting" in self.ListOfDevices[NwkId]:
         del self.ListOfDevices[NwkId]["ConfigureReporting"]
 
+
     processConfigureReporting(self, NWKID=NwkId)
 
     # Let's take the opportunity to trigger some request/adjustement / NOT SURE IF THIS IS GOOD/IMPORTANT/NEEDED
-    loggingInput(
-        self, "Debug", "Decode004D - Request attribute 0x0000 %s" % (NwkId), NwkId
+    self.log.logging( 
+        "Input", "Debug", "Decode004D - Request attribute 0x0000 %s" % (NwkId), NwkId
     )
     ReadAttributeRequest_0000(self, NwkId)
     sendZigateCmd(self, "0042", str(NwkId), ackIsDisabled=True)
@@ -705,6 +706,10 @@ def decode004d_existing_devicev2(
     if "Manufacturer" in self.ListOfDevices[NwkId]:
         if self.ListOfDevices[NwkId]["Manufacturer"] == "105e":
             schneider_wiser_registration(self, Devices, NwkId)
+
+    if 'Model' in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]['Model'] in ( 'AC201A', ):
+        casaia_AC201_pairing( self, NwkId)
+
 
     # Set the sensitivity for Xiaomi Vibration
     if self.ListOfDevices[NwkId]["Model"] == "lumi.vibration.aq1":
@@ -732,8 +737,8 @@ def decode004d_new_devicev2(    self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgDa
             livolo_bind(self, NwkId, "06")
 
     # New device comming. The IEEE is not known
-    loggingInput(
-        self, "Debug", "Decode004D - New Device %s %s" % (NwkId, MsgIEEE), NwkId
+    self.log.logging( 
+        "Input", "Debug", "Decode004D - New Device %s %s" % (NwkId, MsgIEEE), NwkId
     )
 
     # I wonder if this code makes sense ? ( PP 02/05/2020 ), This should not happen!
@@ -741,8 +746,8 @@ def decode004d_new_devicev2(    self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgDa
         Domoticz.Error(
             "Decode004d - New Device %s %s already exist in IEEE2NWK" % (NwkId, MsgIEEE)
         )
-        loggingPairing(
-            self,
+        self.log.logging(
+            "Pairing",
             "Debug",
             "Decode004d - self.IEEE2NWK[MsgIEEE] = %s with Status: %s"
             % (
@@ -751,8 +756,8 @@ def decode004d_new_devicev2(    self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgDa
             ),
         )
         if self.ListOfDevices[self.IEEE2NWK[MsgIEEE]]["Status"] != "inDB":
-            loggingInput(
-                self,
+            self.log.logging( 
+                "Input",
                 "Debug",
                 "Decode004d - receiving a new Device Announced for a device in processing, drop it",
                 NwkId,
@@ -766,8 +771,8 @@ def decode004d_new_devicev2(    self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgDa
     if IEEEExist(self, MsgIEEE):
         # we are getting a dupplicate. Most-likely the Device is existing and we have to reconnect.
         if not DeviceExist(self, Devices, NwkId, MsgIEEE):
-            loggingPairing(
-                self,
+            self.log.logging(
+                "Pairing",
                 "Error",
                 "Decode004d - Paranoia .... NwkID: %s, IEEE: %s -> %s "
                 % (NwkId, MsgIEEE, str(self.ListOfDevices[NwkId])),
@@ -776,8 +781,8 @@ def decode004d_new_devicev2(    self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgDa
 
     # 2- Create the Data Structutre
     initDeviceInList(self, NwkId)
-    loggingPairing(
-        self, "Debug", "Decode004d - Looks like it is a new device sent by Zigate"
+    self.log.logging(
+        "Pairing", "Debug", "Decode004d - Looks like it is a new device sent by Zigate"
     )
     self.CommiSSionning = True
     self.ListOfDevices[NwkId]["MacCapa"] = MsgMacCapa
@@ -796,12 +801,12 @@ def decode004d_new_devicev2(    self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgDa
         self.ListOfDevices[NwkId]["LogicalType"] = "End Device"
         self.ListOfDevices[NwkId]["DeviceType"] = "RFD"
 
-    loggingPairing(
-        self, "Log", "--> Adding device %s in self.DevicesInPairingMode" % NwkId
+    self.log.logging(
+        "Pairing", "Log", "--> Adding device %s in self.DevicesInPairingMode" % NwkId
     )
     if NwkId not in self.DevicesInPairingMode:
         self.DevicesInPairingMode.append(NwkId)
-    loggingPairing(self, "Log", "--> %s" % str(self.DevicesInPairingMode))
+    self.log.logging("Pairing", "Log", "--> %s" % str(self.DevicesInPairingMode))
 
     # 3- Store the Pairing info if needed
     if self.pluginconf.pluginConf["capturePairingInfos"]:
@@ -826,13 +831,13 @@ def decode004d_new_devicev2(    self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgDa
             self, NwkId, fullScope=False
         )  # In order to request Model Name
 
-    loggingPairing(self, "Debug", "Decode004d - Request End Point List ( 0x0045 )")
+    self.log.logging( "Pairing", "Debug", "Decode004d - Request End Point List ( 0x0045 )")
     self.ListOfDevices[NwkId]["Heartbeat"] = "0"
     self.ListOfDevices[NwkId]["Status"] = "0045"
 
     sendZigateCmd(self, "0045", str(NwkId))  # Request list of EPs
-    loggingInput(
-        self,
+    self.log.logging( 
+        "Input",
         "Debug",
         "Decode004D - %s Infos: %s" % (NwkId, self.ListOfDevices[NwkId]),
         NwkId,
@@ -854,8 +859,8 @@ def device_annoucementv1(self, Devices, MsgData, MsgLQI):
     if len(MsgData) > 22:  # Firmware 3.1b
         MsgRejoinFlag = MsgData[22:24]
 
-    loggingInput(
-        self,
+    self.log.logging( 
+        "Input",
         "Debug",
         "Decode004D - Device Annoucement: NwkId: %s Ieee: %s MacCap: %s ReJoin: %s LQI: %s"
         % (NwkId, MsgIEEE, MsgMacCapa, MsgRejoinFlag, MsgLQI),
@@ -865,8 +870,8 @@ def device_annoucementv1(self, Devices, MsgData, MsgLQI):
     if IEEEExist(self, MsgIEEE):
         # This device is known
         newShortId = self.IEEE2NWK[MsgIEEE] != NwkId
-        loggingInput(
-            self,
+        self.log.logging( 
+            "Input",
             "Debug",
             "------>  Known device: NwkId: %s Ieee: %s MacCap: %s ReJoin: %s LQI: %s newShortId: %s"
             % (NwkId, MsgIEEE, MsgMacCapa, MsgRejoinFlag, MsgLQI, newShortId),
@@ -879,8 +884,8 @@ def device_annoucementv1(self, Devices, MsgData, MsgLQI):
             and MsgRejoinFlag is None
         ):
             # Device does exist, we will rely on ZPS_EVENT_NWK_NEW_NODE_HAS_JOINED in order to have the JoinFlag
-            loggingInput(
-                self,
+            self.log.logging( 
+                "Input",
                 "Debug",
                 "------> Droping no rejoin flag! %s %s )" % (NwkId, MsgIEEE),
                 NwkId,
@@ -899,8 +904,8 @@ def device_annoucementv1(self, Devices, MsgData, MsgLQI):
             # In case we receive a Device Annoucement we are alreday doing the provisioning.
             # Same IEEE and same Short Address.
             # We will drop the message, as there is no reason to process it.
-            loggingInput(
-                self,
+            self.log.logging( 
+                "Input",
                 "Debug",
                 "------> Droping (provisioning in progress) Status: %s"
                 % self.ListOfDevices[NwkId]["Status"],
@@ -925,8 +930,8 @@ def device_annoucementv1(self, Devices, MsgData, MsgLQI):
             now,
         )
     else:
-        loggingPairing(
-            self,
+        self.log.logging(
+            "Pairing",
             "Status",
             "Device Announcement Addr: %s, IEEE: %s LQI: %s"
             % (NwkId, MsgIEEE, int(MsgLQI, 16)),
@@ -956,8 +961,8 @@ def decode004d_existing_devicev1(
         decodeMacCapa(ReArrangeMacCapaBasedOnModel(self, MsgSrcAddr, MsgMacCapa))
     )
 
-    loggingInput(
-        self,
+    self.log.logging( 
+        "Input",
         "Debug",
         "Decode004D - Already known device %s infos: %s, Change ShortID: %s "
         % (MsgSrcAddr, self.ListOfDevices[MsgSrcAddr], newShortId),
@@ -975,8 +980,8 @@ def decode004d_existing_devicev1(
         MsgRejoinFlag in ("01", "02")
         and self.ListOfDevices[MsgSrcAddr]["Status"] != "Left"
     ):
-        loggingInput(
-            self,
+        self.log.logging( 
+            "Input",
             "Debug",
             "--> drop packet for %s due to  Rejoining network as %s, LQI: %s"
             % (MsgSrcAddr, MsgRejoinFlag, int(MsgLQI, 16)),
@@ -999,8 +1004,8 @@ def decode004d_existing_devicev1(
         if "TimeStamp" in self.ListOfDevices[MsgSrcAddr]["Announced"]:
             if now < self.ListOfDevices[MsgSrcAddr]["Announced"]["TimeStamp"] + 15:
                 # Looks like we have a duplicate Device Announced in less than 15s
-                loggingInput(
-                    self,
+                self.log.logging( 
+                    "Input",
                     "Debug",
                     "Decode004D - Duplicate Device Annoucement for %s -> Drop"
                     % (MsgSrcAddr),
@@ -1010,8 +1015,8 @@ def decode004d_existing_devicev1(
 
     if MsgSrcAddr in self.ListOfDevices:
         if "ZDeviceName" in self.ListOfDevices[MsgSrcAddr]:
-            loggingPairing(
-                self,
+            self.log.logging(
+                "Pairing",
                 "Status",
                 "Device Announcement: %s(%s, %s) Join Flag: %s LQI: %s ChangeShortID: %s "
                 % (
@@ -1024,8 +1029,8 @@ def decode004d_existing_devicev1(
                 ),
             )
         else:
-            loggingPairing(
-                self,
+            self.log.logging(
+                "Pairing",
                 "Status",
                 "Device Announcement Addr: %s, IEEE: %s Join Flag: %s LQI: %s ChangeShortID: %s"
                 % (MsgSrcAddr, MsgIEEE, MsgRejoinFlag, int(MsgLQI, 16), newShortId),
@@ -1037,8 +1042,8 @@ def decode004d_existing_devicev1(
     # If this is a rejoin after a leave, let's update the Status
 
     if self.ListOfDevices[MsgSrcAddr]["Status"] == "Left":
-        loggingInput(
-            self,
+        self.log.logging( 
+            "Input",
             "Debug",
             "Decode004D -  %s Status from Left to inDB" % (MsgSrcAddr),
             MsgSrcAddr,
@@ -1056,16 +1061,16 @@ def decode004d_existing_devicev1(
     for tmpep in self.ListOfDevices[MsgSrcAddr]["Ep"]:
         if "0500" in self.ListOfDevices[MsgSrcAddr]["Ep"][tmpep]:
             # We found a Cluster 0x0500 IAS. May be time to start the IAS Zone process
-            loggingInput(
-                self,
+            self.log.logging( 
+                "Input",
                 "Debug",
                 "Decode004D - IAS Zone controler setting %s" % (MsgSrcAddr),
                 MsgSrcAddr,
             )
             self.iaszonemgt.IASZone_triggerenrollement(MsgSrcAddr, tmpep)
             if "0502" in self.ListOfDevices[MsgSrcAddr]["Ep"][tmpep]:
-                loggingInput(
-                    self,
+                self.log.logging( 
+                    "Input",
                     "Debug",
                     "Decode004D - IAS WD enrolment %s" % (MsgSrcAddr),
                     MsgSrcAddr,
@@ -1074,8 +1079,8 @@ def decode004d_existing_devicev1(
             break
 
     if self.pluginconf.pluginConf["allowReBindingClusters"]:
-        loggingInput(
-            self,
+        self.log.logging( 
+            "Input",
             "Debug",
             "Decode004D - Request rebind clusters for %s" % (MsgSrcAddr),
             MsgSrcAddr,
@@ -1091,8 +1096,8 @@ def decode004d_existing_devicev1(
         "lumi.remote.b486opcn01-bulb",
         "lumi.remote.b286opcn01-bulb",
     ):
-        loggingInput(
-            self, "Log", "---> Calling enableOppleSwitch %s" % MsgSrcAddr, MsgSrcAddr
+        self.log.logging( 
+            "Input", "Log", "---> Calling enableOppleSwitch %s" % MsgSrcAddr, MsgSrcAddr
         )
         enableOppleSwitch(self, MsgSrcAddr)
 
@@ -1103,8 +1108,8 @@ def decode004d_existing_devicev1(
     processConfigureReporting(self, NWKID=MsgSrcAddr)
 
     # Let's take the opportunity to trigger some request/adjustement / NOT SURE IF THIS IS GOOD/IMPORTANT/NEEDED
-    loggingInput(
-        self,
+    self.log.logging( 
+        "Input",
         "Debug",
         "Decode004D - Request attribute 0x0000 %s" % (MsgSrcAddr),
         MsgSrcAddr,
@@ -1132,8 +1137,8 @@ def decode004d_new_devicev1(
             livolo_bind(self, MsgSrcAddr, "06")
 
     # New device comming. The IEEE is not known
-    loggingInput(
-        self,
+    self.log.logging( 
+        "Input",
         "Debug",
         "Decode004D - New Device %s %s" % (MsgSrcAddr, MsgIEEE),
         MsgSrcAddr,
@@ -1145,8 +1150,8 @@ def decode004d_new_devicev1(
             "Decode004d - New Device %s %s already exist in IEEE2NWK"
             % (MsgSrcAddr, MsgIEEE)
         )
-        loggingPairing(
-            self,
+        self.log.logging(
+            "Pairing",
             "Debug",
             "Decode004d - self.IEEE2NWK[MsgIEEE] = %s with Status: %s"
             % (
@@ -1155,8 +1160,8 @@ def decode004d_new_devicev1(
             ),
         )
         if self.ListOfDevices[self.IEEE2NWK[MsgIEEE]]["Status"] != "inDB":
-            loggingInput(
-                self,
+            self.log.logging( 
+                "Input",
                 "Debug",
                 "Decode004d - receiving a new Device Announced for a device in processing, drop it",
                 MsgSrcAddr,
@@ -1170,8 +1175,8 @@ def decode004d_new_devicev1(
     if IEEEExist(self, MsgIEEE):
         # we are getting a dupplicate. Most-likely the Device is existing and we have to reconnect.
         if not DeviceExist(self, Devices, MsgSrcAddr, MsgIEEE):
-            loggingPairing(
-                self,
+            self.log.logging(
+                "Pairing",
                 "Error",
                 "Decode004d - Paranoia .... NwkID: %s, IEEE: %s -> %s "
                 % (MsgSrcAddr, MsgIEEE, str(self.ListOfDevices[MsgSrcAddr])),
@@ -1180,8 +1185,8 @@ def decode004d_new_devicev1(
 
     # 2- Create the Data Structutre
     initDeviceInList(self, MsgSrcAddr)
-    loggingPairing(
-        self, "Debug", "Decode004d - Looks like it is a new device sent by Zigate"
+    self.log.logging(
+        "Pairing", "Debug", "Decode004d - Looks like it is a new device sent by Zigate"
     )
     self.CommiSSionning = True
     self.ListOfDevices[MsgSrcAddr]["MacCapa"] = MsgMacCapa
@@ -1201,12 +1206,12 @@ def decode004d_new_devicev1(
         self.ListOfDevices[MsgSrcAddr]["LogicalType"] = "End Device"
         self.ListOfDevices[MsgSrcAddr]["DeviceType"] = "RFD"
 
-    loggingPairing(
-        self, "Log", "--> Adding device %s in self.DevicesInPairingMode" % MsgSrcAddr
+    self.log.logging(
+        "Pairing", "Log", "--> Adding device %s in self.DevicesInPairingMode" % MsgSrcAddr
     )
     if MsgSrcAddr not in self.DevicesInPairingMode:
         self.DevicesInPairingMode.append(MsgSrcAddr)
-    loggingPairing(self, "Log", "--> %s" % str(self.DevicesInPairingMode))
+    self.log.logging( "Pairing", "Log", "--> %s" % str(self.DevicesInPairingMode))
 
     # 3- Store the Pairing info if needed
     if self.pluginconf.pluginConf["capturePairingInfos"]:
@@ -1230,13 +1235,13 @@ def decode004d_new_devicev1(
             self, MsgSrcAddr, fullScope=False
         )  # In order to request Model Name
 
-    loggingPairing(self, "Debug", "Decode004d - Request End Point List ( 0x0045 )")
+    self.log.logging( "Pairing", "Debug", "Decode004d - Request End Point List ( 0x0045 )")
     self.ListOfDevices[MsgSrcAddr]["Heartbeat"] = "0"
     self.ListOfDevices[MsgSrcAddr]["Status"] = "0045"
 
     sendZigateCmd(self, "0045", str(MsgSrcAddr))  # Request list of EPs
-    loggingInput(
-        self,
+    self.log.logging( 
+        "Input",
         "Debug",
         "Decode004D - %s Infos: %s" % (MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]),
         MsgSrcAddr,
