@@ -871,14 +871,49 @@ def schneiderAlarmReceived (self, Devices, NWKID, srcEp, ClusterID, start, paylo
 
     if (AlertCode == 0x16): # max current of contract reached
         cluster_id = "%04x" %0x0009
+        value = '00'
         if (start):
-            value = '04'
+            schneider_bms_change_reporting(self,NWKID, srcEp, True)
+            current_consumption = 0
+            if 'Shedding' in self.ListOfDevices[ NWKID]:
+                if self.ListOfDevices[ NWKID]['Shedding']:
+                    loggingSchneider(self, 'Debug', "schneiderAlarmReceived already shedding - EXIT",NWKID)   
+                    return # we are already shedding
+
+            if srcEp in self.ListOfDevices[ NWKID]['Ep']:
+                if '0702' in  self.ListOfDevices[ NWKID ]['Ep'][srcEp]:
+                    current_consumption = float (self.ListOfDevices[ NWKID ]['Ep'][srcEp]['0702']['0400'])
+	
+
+            if ('Schneider' in self.ListOfDevices[NWKID]) and ('contractPowerLevel' in self.ListOfDevices[ NWKID ]['Schneider']): 
+                contractPowerLevel = self.ListOfDevices[ NWKID ] ['Schneider']['contractPowerLevel']
+            else :
+                contractPowerLevel = 65535
+
+            loggingSchneider(self, 'Debug', "schneiderAlarmReceived contract max: %s current: %s"
+                                            %(contractPowerLevel,current_consumption),NWKID)
+
+            if ((current_consumption * 110 / 100 ) > contractPowerLevel) :
+                loggingSchneider(self, 'Debug', "schneiderAlarmReceived shedding",NWKID)
+                value = '04'
+                self.ListOfDevices[ NWKID ]['Shedding'] = True
+            else:
+                loggingSchneider(self, 'Debug', "schneiderAlarmReceived current consumption is ok - EXIT",NWKID)
+                return
+
         else:
+            schneider_bms_change_reporting(self,NWKID, srcEp, False)
+            if 'Shedding' in self.ListOfDevices[ NWKID]:
+                if not self.ListOfDevices[ NWKID]['Shedding']:
+                    loggingSchneider(self, 'Debug', "schneiderAlarmReceived not shedding - EXIT",NWKID)
+                    return # we are already shedding
             value = '00'
+            self.ListOfDevices[ NWKID ]['Shedding'] = False
 
         self.log.logging( "Schneider", 'Debug', "Schneider update Alarm Domoticz device Attribute %s Endpoint:%s / cluster: %s to %s"
                 %(NWKID,srcEp,cluster_id,value), NWKID)
         MajDomoDevice(self, Devices, NWKID, srcEp, cluster_id, value)
+
     elif (AlertCode == 0x10): # battery low
         ReadAttributeRequest_0001(self, NWKID)
     #Modules.output.ReadAttributeRequest_0702(self, NWKID)
@@ -896,6 +931,12 @@ def schneider_set_contract( self, key, EPout, kva):
     max_real_milli_amps_before_tripping = round (max_real_amps_before_tripping * 1000)
     self.log.logging( "Schneider", 'Debug', "schneider_set_contract for device %s %s requesting max_real_milli_amps_before_tripping: %s milliamps"
         %(key,EPout, max_real_milli_amps_before_tripping))
+
+    if 'Schneider' not in self.ListOfDevices[key]:
+        self.ListOfDevices[key]['Schneider'] = {}
+
+    self.ListOfDevices[ key ]['Schneider'] ['contractPowerLevel'] = kva * 1000
+
 
     ClusterId = '0702' # Simple Metering
     ManufacturerID = '0000'
@@ -1143,7 +1184,22 @@ def schneider_find_attribute_and_set(self, NWKID, EP, ClusterID ,attr ,defaultVa
             self.ListOfDevices[NWKID]['Ep'][EP][ClusterID][attr] = newValue
     return found
 
-
+def schneider_bms_change_reporting (self, NWKID, srcEp, fast):
+    AttributesConfigFast = {
+                  "0000": { "Change": "0000ffffffffffff", "DataType": "25", "MaxInterval": "001E", "MinInterval": "001E", "TimeOut": "0000" },
+                  "0400": { "Change": "00000190", "DataType": "2a", "MaxInterval": "001E", "MinInterval": "001E", "TimeOut": "0000" },
+                  "0002": { "Change": "0000000000ffffff", "DataType": "25", "MaxInterval": "001E", "MinInterval": "001E", "TimeOut": "0000" }}
+				  
+				  
+    AttributesConfigNormal = {
+                  "0000": { "Change": "0000ffffffffffff", "DataType": "25", "MaxInterval": "0258", "MinInterval": "0258", "TimeOut": "0000" },
+                  "0400": { "Change": "00000190", "DataType": "2a", "MaxInterval": "0258", "MinInterval": "001E", "TimeOut": "0000" },
+                  "0002": { "Change": "0000000000ffffff", "DataType": "25", "MaxInterval": "0258", "MinInterval": "0258", "TimeOut": "0000" }}
+    if (fast):
+        schneider_UpdateConfigureReporting (self, NWKID, srcEp, '0702', AttributesConfigFast)
+    else:
+        schneider_UpdateConfigureReporting (self, NWKID, srcEp, '0702', AttributesConfigNormal)
+	
 
 def vact_config_reporting_normal(self, NwkId, EndPoint):
     
