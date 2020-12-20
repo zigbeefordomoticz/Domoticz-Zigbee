@@ -183,7 +183,7 @@ SETTINGS = {
 
     # Verbose
     'VerboseLogging': {'Order': 12, 'param': {
-        'ZiGateReactTime':      {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
+        'ZiGateReactTime':      {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'debugMatchId':         {'type': 'str',  'default': 'ffff','current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'useDomoticzLog':       {'type': 'bool', 'default': 1,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'logDeviceUpdate':      {'type': 'bool', 'default': 1,     'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
