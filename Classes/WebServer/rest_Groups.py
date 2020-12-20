@@ -9,7 +9,7 @@ import Domoticz
 import json
 
 
-from WebServer.headerResponse import setupHeadersResponse, prepResponseMessage
+from Classes.WebServer.headerResponse import setupHeadersResponse, prepResponseMessage
 import os
 from time import time
   

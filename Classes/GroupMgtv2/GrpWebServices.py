@@ -9,11 +9,11 @@ from time import time
 
 from Modules.tools import getListOfEpForCluster, mainPoweredDevice
 
-from GroupMgtv2.GrpServices import create_new_group_and_attach_devices, update_group_and_add_devices, update_group_and_remove_devices, \
+from Classes.GroupMgtv2.GrpServices import create_new_group_and_attach_devices, update_group_and_add_devices, update_group_and_remove_devices, \
                                    scan_all_devices_for_grp_membership, submitForGroupMemberShipScaner, SendGroupIdentifyEffect
     
 
-from GroupMgtv2.GrpIkeaRemote import Ikea5BToBeAddedToListIfExist
+from Classes.GroupMgtv2.GrpIkeaRemote import Ikea5BToBeAddedToListIfExist
 
 
 

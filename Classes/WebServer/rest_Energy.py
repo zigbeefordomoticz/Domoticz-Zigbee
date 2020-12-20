@@ -8,7 +8,7 @@ import Domoticz
 import json
 from time import time
 
-from WebServer.headerResponse import setupHeadersResponse, prepResponseMessage
+from Classes.WebServer.headerResponse import setupHeadersResponse, prepResponseMessage
 
 def rest_req_nwk_inter( self, verb, data, parameters):
 

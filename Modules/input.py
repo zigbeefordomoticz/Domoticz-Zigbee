@@ -99,23 +99,6 @@ from Classes.NetworkMap import NetworkMap
 
 def ZigateRead(self, Devices, Data):
 
-    if self.pluginconf.pluginConf['ZiGateReactTime']: 
-        start = 1000 * time.time()
-
-    instrumented_ZigateRead(self, Devices, Data)
-
-    if self.pluginconf.pluginConf['ZiGateReactTime']: 
-        stop = 1000 * time.time()
-             
-        self.ZigateRead_timing_cnt, self.ZigateRead_timing_cumul, \
-            self.ZigateRead_timing_avrg, self.ZigateRead_timing_max  = instrument_timing( 'ZigateRead', int( stop - start) , 
-                                                self.ZigateRead_timing_cnt, 
-                                                self.ZigateRead_timing_cumul, 
-                                                self.ZigateRead_timing_avrg, 
-                                                self.ZigateRead_timing_max)
-
-def instrumented_ZigateRead(self, Devices, Data):
-
     DECODERS = {
         "0100": Decode0100,
         "004d": Decode004D,
@@ -370,6 +353,16 @@ def Decode8000_v2(self, Devices, MsgData, MsgLQI):  # Status
         else:
             self.log.logging(  "Input", "Error", "Decode8000 - PacketType: %s TypeSqn: %s sqn_app: %s sqn_aps: %s Status: [%s] "
                 % (PacketType, type_sqn, sqn_app, sqn_aps, Status), )
+
+        # Hack to reboot Zigate 
+        if MsgData[0:2] not in ( '01', '02', '03', '04', '05'):
+            self.internalError += 1
+        if self.internalError > 4:
+            sendZigateCmd(self, "0011", "" ) # Software Reset
+            self.log.logging(  "Input", "Log", "TOO MUCH ERRORS - ZIGATE RESET")
+        else:
+            self.internalError = 0
+
 
 
 def Decode8001(self, Decode, MsgData, MsgLQI):  # Reception log Level

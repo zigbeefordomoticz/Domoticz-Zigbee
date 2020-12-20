@@ -122,24 +122,6 @@ def storeReadAttributeStatus( self, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgCl
 
 def ReadCluster(self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus, MsgAttType, MsgAttSize, MsgClusterData, Source=None):
 
-    if self.pluginconf.pluginConf['ZiGateReactTime']: 
-        start = 1000 * time()
-
-    instrumented_ReadCluster(self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus, MsgAttType, MsgAttSize, MsgClusterData, Source)
-    
-    if self.pluginconf.pluginConf['ZiGateReactTime']: 
-        stop = 1000 * time()
-        self.ReadCluster_timing_cnt, self.ReadCluster_timing_cumul, \
-            self.ReadCluster_timing_avrg, self.ReadCluster_timing_max = instrument_timing( 'ReadCluster', int( stop - start), 
-                                                                        self.ReadCluster_timing_cnt, 
-                                                                        self.ReadCluster_timing_cumul, 
-                                                                        self.ReadCluster_timing_avrg, 
-                                                                        self.ReadCluster_timing_max)
-
-
-
-def instrumented_ReadCluster(self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus, MsgAttType, MsgAttSize, MsgClusterData, Source):
-
     self.statistics._clusterOK += 1
 
     if MsgSrcAddr not in self.ListOfDevices:

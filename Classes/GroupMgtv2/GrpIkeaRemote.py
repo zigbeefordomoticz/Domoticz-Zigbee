@@ -2,8 +2,8 @@
 import Domoticz
 
 from Modules.zigateConsts import ADDRESS_MODE
-from GroupMgtv2.GrpDomoticz import update_domoticz_group_device_widget
-from GroupMgtv2.GrpCommands import set_kelvin_color, set_rgb_color
+from Classes.GroupMgtv2.GrpDomoticz import update_domoticz_group_device_widget
+from Classes.GroupMgtv2.GrpCommands import set_kelvin_color, set_rgb_color
  
 def checkIfIkeaRound5BToBeAdded( self, NwkId, ep, ieee, GrpId):
     self.logging( 'Debug', "checkIfIkeaRound5BToBeAdded - Checking if Ikea Round 5B NwkId: %s, Ep: %s, Ieee: %s, GrpIp: %s" %(NwkId, ep, ieee, GrpId))

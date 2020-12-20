@@ -7,7 +7,7 @@
 import Domoticz
 import json
 
-from GroupMgtv2.GrpCommands import set_kelvin_color, set_rgb_color, set_hue_saturation
+from Classes.GroupMgtv2.GrpCommands import set_kelvin_color, set_rgb_color, set_hue_saturation
 from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl
 from Modules.zigateConsts import ADDRESS_MODE, ZIGATE_EP
 
@@ -491,7 +491,7 @@ def processCommand( self, unit, GrpId, Command, Level, Color_ ) :
             self.Devices[unit].Update(nValue = int(nValue), sValue = str(sValue))
             datas = "%02d" %ADDRESS_MODE['group'] + GrpId + ZIGATE_EP + EPout + zigate_param
             self.logging( 'Debug', "Group Command: %s %s-%s" %(Command, zigate_cmd, datas))
-            self.ZigateComm.sendData( zigate_cmd, datas)
+            self.ZigateComm.sendData( zigate_cmd, datas, ackIsDisabled=True)
             resetDevicesHearttBeat( self, GrpId)
             return
 
@@ -507,7 +507,7 @@ def processCommand( self, unit, GrpId, Command, Level, Color_ ) :
 
         datas = "%02d" %ADDRESS_MODE['group'] + GrpId + ZIGATE_EP + EPout + zigate_param
         self.logging( 'Debug', "Command: %s %s" %(Command,datas))
-        self.ZigateComm.sendData( zigate_cmd, datas)
+        self.ZigateComm.sendData( zigate_cmd, datas, ackIsDisabled=True)
         #Update Device
         nValue = 0
         sValue = 'Off'
@@ -524,7 +524,7 @@ def processCommand( self, unit, GrpId, Command, Level, Color_ ) :
 
         datas = "%02d" %ADDRESS_MODE['group'] + GrpId + ZIGATE_EP + EPout + zigate_param
         self.logging( 'Debug', "Command: %s %s" %(Command,datas))
-        self.ZigateComm.sendData( zigate_cmd, datas)
+        self.ZigateComm.sendData( zigate_cmd, datas, ackIsDisabled=True)
         #Update Device
         nValue = 1
         sValue = 'On'
@@ -546,7 +546,7 @@ def processCommand( self, unit, GrpId, Command, Level, Color_ ) :
 
         datas = "%02d" %ADDRESS_MODE['group'] + GrpId + ZIGATE_EP + EPout + zigate_param
         self.logging( 'Debug', "Command: %s %s" %(Command,datas))
-        self.ZigateComm.sendData( zigate_cmd, datas)
+        self.ZigateComm.sendData( zigate_cmd, datas, ackIsDisabled=True)
         update_domoticz_group_device(self, GrpId)
         #Update Device
         nValue = 2
@@ -571,7 +571,7 @@ def processCommand( self, unit, GrpId, Command, Level, Color_ ) :
             datas = "%02d" %ADDRESS_MODE['group'] + GrpId + ZIGATE_EP + EPout + zigate_param
             self.logging( 'Debug', "Command: %s - data: %s" %(zigate_cmd, datas))
             update_device_list_attribute( self, GrpId, '0008', value)
-            self.ZigateComm.sendData( zigate_cmd, datas)
+            self.ZigateComm.sendData( zigate_cmd, datas, ackIsDisabled=True)
 
         if Hue_List['m'] == 1:
             ww = int(Hue_List['ww']) # Can be used as level for monochrome white
@@ -613,7 +613,7 @@ def processCommand( self, unit, GrpId, Command, Level, Color_ ) :
             value = int(level * 254//100)
             OnOff = '01'
             self.logging( 'Debug', "---------- Set Level: %s instead of Level: %s" %(value, Level))
-            self.ZigateComm.sendData( "0081","%02d" %ADDRESS_MODE['group'] + GrpId + ZIGATE_EP + EPout + OnOff + Hex_Format(2,value) + transitionMoveLevel)
+            self.ZigateComm.sendData( "0081","%02d" %ADDRESS_MODE['group'] + GrpId + ZIGATE_EP + EPout + OnOff + Hex_Format(2,value) + transitionMoveLevel, ackIsDisabled=True)
 
         #Update Device
         nValue = 1

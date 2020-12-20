@@ -56,10 +56,10 @@ import pickle
 
 import Domoticz
 
-from GroupMgtv2.GrpServices import scan_device_for_grp_membership
-from GroupMgtv2.GrpDatabase import build_group_list_from_list_of_devices
-from GroupMgtv2.GrpDomoticz import LookForGroupAndCreateIfNeeded
-from GroupMgtv2.GrpMigration import GrpMgtv2Migration
+from Classes.GroupMgtv2.GrpServices import scan_device_for_grp_membership
+from Classes.GroupMgtv2.GrpDatabase import build_group_list_from_list_of_devices
+from Classes.GroupMgtv2.GrpDomoticz import LookForGroupAndCreateIfNeeded
+from Classes.GroupMgtv2.GrpMigration import GrpMgtv2Migration
 from Modules.zigateConsts import MAX_LOAD_ZIGATE
 from Classes.LoggingManagement import LoggingManagement
 
@@ -67,14 +67,14 @@ from Classes.LoggingManagement import LoggingManagement
 
 class GroupsManagement( object):
 
-    from GroupMgtv2.GrpResponses import statusGroupRequest, remove_group_member_ship_response, look_for_group_member_ship_response, \
+    from Classes.GroupMgtv2.GrpResponses import statusGroupRequest, remove_group_member_ship_response, look_for_group_member_ship_response, \
     check_group_member_ship_response, add_group_member_ship_response
     
-    from GroupMgtv2.GrpDomoticz import update_domoticz_group_device, processCommand
-    from GroupMgtv2.GrpDatabase import  write_groups_list, load_groups_list_from_json, update_due_to_nwk_id_change
-    from GroupMgtv2.GrpServices import FullRemoveOfGroup, checkAndTriggerIfMajGroupNeeded, addGroupMemberShip, RemoveNwkIdFromAllGroups
-    from GroupMgtv2.GrpWebServices import process_web_request, ScanAllDevicesForGroupMemberShip, ScanDevicesForGroupMemberShip
-    from GroupMgtv2.GrpIkeaRemote import manageIkeaTradfriRemoteLeftRight
+    from Classes.GroupMgtv2.GrpDomoticz import update_domoticz_group_device, processCommand
+    from Classes.GroupMgtv2.GrpDatabase import  write_groups_list, load_groups_list_from_json, update_due_to_nwk_id_change
+    from Classes.GroupMgtv2.GrpServices import FullRemoveOfGroup, checkAndTriggerIfMajGroupNeeded, addGroupMemberShip, RemoveNwkIdFromAllGroups
+    from Classes.GroupMgtv2.GrpWebServices import process_web_request, ScanAllDevicesForGroupMemberShip, ScanDevicesForGroupMemberShip
+    from Classes.GroupMgtv2.GrpIkeaRemote import manageIkeaTradfriRemoteLeftRight
     
     def __init__(self, PluginConf, ZigateComm, adminWidgets, HomeDirectory, hardwareID, Devices, ListOfDevices, IEEE2NWK , log):
 
