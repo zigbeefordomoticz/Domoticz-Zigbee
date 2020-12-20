@@ -877,7 +877,7 @@ def schneiderAlarmReceived (self, Devices, NWKID, srcEp, ClusterID, start, paylo
             current_consumption = 0
             if 'Shedding' in self.ListOfDevices[ NWKID]:
                 if self.ListOfDevices[ NWKID]['Shedding']:
-                    loggingSchneider(self, 'Debug', "schneiderAlarmReceived already shedding - EXIT",NWKID)   
+                    self.log.logging( "Schneider", 'Debug', "schneiderAlarmReceived already shedding - EXIT",NWKID)   
                     return # we are already shedding
 
             if srcEp in self.ListOfDevices[ NWKID]['Ep']:
@@ -890,7 +890,7 @@ def schneiderAlarmReceived (self, Devices, NWKID, srcEp, ClusterID, start, paylo
             else :
                 contractPowerLevel = 65535
 
-            loggingSchneider(self, 'Debug', "schneiderAlarmReceived contract max: %s current: %s"
+            self.log.logging( "Schneider", 'Debug', "schneiderAlarmReceived contract max: %s current: %s"
                                             %(contractPowerLevel,current_consumption),NWKID)
 
             if ((current_consumption * 110 / 100 ) > contractPowerLevel) :
@@ -898,14 +898,14 @@ def schneiderAlarmReceived (self, Devices, NWKID, srcEp, ClusterID, start, paylo
                 value = '04'
                 self.ListOfDevices[ NWKID ]['Shedding'] = True
             else:
-                loggingSchneider(self, 'Debug', "schneiderAlarmReceived current consumption is ok - EXIT",NWKID)
+                self.log.logging( "Schneider", 'Debug', "schneiderAlarmReceived current consumption is ok - EXIT",NWKID)
                 return
 
         else:
             schneider_bms_change_reporting(self,NWKID, srcEp, False)
             if 'Shedding' in self.ListOfDevices[ NWKID]:
                 if not self.ListOfDevices[ NWKID]['Shedding']:
-                    loggingSchneider(self, 'Debug', "schneiderAlarmReceived not shedding - EXIT",NWKID)
+                    self.log.logging( "Schneider", 'Debug', "schneiderAlarmReceived not shedding - EXIT",NWKID)
                     return # we are already shedding
             value = '00'
             self.ListOfDevices[ NWKID ]['Shedding'] = False
