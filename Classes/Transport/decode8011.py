@@ -12,7 +12,9 @@ import time
 def decode8011( self, decoded_frame):
 
     MsgData = decoded_frame[12:len(decoded_frame) - 4]
-    
+    if MsgData is None:
+        return None
+
     MsgStatus = MsgData[0:2]
     MsgSrcAddr = MsgData[2:6]
     MsgSrcEp = MsgData[6:8]
@@ -24,8 +26,6 @@ def decode8011( self, decoded_frame):
 
     MsgSEQ = MsgData[12:14]
 
-    if MsgData is None:
-        return None
 
     if MsgStatus == '00':
         self.statistics._APSAck += 1
@@ -39,11 +39,11 @@ def decode8011( self, decoded_frame):
     isqn = sqn_get_internal_sqn_from_aps_sqn(self, MsgSEQ)
 
     if isqn is None:
-        self.logging_receive( 'Debug', "decode8011 - 0x8011 not for us eSqn: %s" %MsgSEQ)
+        self.logging_receive( 'Debug', "decode8011 - 0x8011 not for us NwkId: %s eSqn: %s" %(MsgSrcAddr, MsgSEQ))
         return
 
     if isqn not in self.ListOfCommands:
-        self.logging_receive( 'Debug', "decode8011 - 0x8011 not for us eSqn: %s iSqn: %s" %(MsgSEQ, isqn))
+        self.logging_receive( 'Debug', "decode8011 - 0x8011 not for us Nwkid: %s eSqn: %s iSqn: %s" %(MsgSrcAddr, MsgSEQ, isqn))
         return
     
     self.ListOfCommands[ isqn ]['Status'] = '8011'

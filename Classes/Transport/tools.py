@@ -102,7 +102,7 @@ def update_xPDU( self, npdu, apdu):
 def release_command( self, isqn):
     # Remove the command from ListOfCommand
     # Release Semaphore
-    if not (isqn is None) and isqn in self.ListOfCommands:
+    if isqn is not None and isqn in self.ListOfCommands:
         self.logging_receive( 'Debug', "==== Removing isqn: %s from %s" %(isqn, self.ListOfCommands.keys()))
         del self.ListOfCommands[ isqn ]
 

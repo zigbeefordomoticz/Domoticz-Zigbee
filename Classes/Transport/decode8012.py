@@ -43,11 +43,11 @@ def decode8012_8702( self, decoded_frame):
     isqn = sqn_get_internal_sqn_from_aps_sqn(self, MsgSQN)
     
     if isqn is None:
-        self.logging_receive( 'Debug', "decode8012_8702 - 0x8012 not for us eSqn: %s" %(MsgSQN))
+        self.logging_receive( 'Debug', "decode8012_8702 - 0x8012 not for us Nwkid: %s eSqn: %s" %(MsgAddr, MsgSQN))
         return
 
     if isqn not in self.ListOfCommands:
-        self.logging_receive( 'Debug', "decode8012_8702 - 0x8012 not for us eSqn: %s " %(MsgSQN))
+        self.logging_receive( 'Debug', "decode8012_8702 - 0x8012 not for us Nwkid: %s eSqn: %s " %(MsgAddr, MsgSQN))
         return
 
     self.ListOfCommands[ isqn ]['Status'] = MsgType

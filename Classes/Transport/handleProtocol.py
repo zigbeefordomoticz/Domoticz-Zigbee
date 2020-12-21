@@ -22,7 +22,7 @@ from Modules.errorCodes import ZCL_EXTENDED_ERROR_CODES
 @time_spent_process_frame( )
 def process_frame(self, decoded_frame):
 
-    self.logging_receive( 'Debug', "process_frame - receive frame: %s" %decoded_frame)
+    #self.logging_receive( 'Debug', "process_frame - receive frame: %s" %decoded_frame)
 
     # Sanity Check
     if decoded_frame == '' or decoded_frame is None or len(decoded_frame) < 12:
@@ -33,7 +33,7 @@ def process_frame(self, decoded_frame):
     MsgLength = decoded_frame[6:10]
     MsgCRC = decoded_frame[10:12]
 
-    self.logging_receive( 'Debug', "process_frame - MsgType: %s MsgLenght: %s MsgCrc: %s" %( MsgType, MsgLength, MsgCRC))
+    #self.logging_receive( 'Debug', "process_frame - MsgType: %s MsgLenght: %s MsgCrc: %s" %( MsgType, MsgLength, MsgCRC))
 
     # Payload
     MsgData = None
@@ -81,7 +81,7 @@ def process_frame(self, decoded_frame):
         return
 
     if MsgType == '8000': # Command Ack
-        self.logging_receive( 'Debug', "process_frame - MsgType: %s MsgData: %s decode and forwarde" %( MsgType, MsgData))
+        self.logging_receive( 'Debug', "process_frame - MsgType: %s MsgData: %s decode and forward" %( MsgType, MsgData))
         decode8000( self, decoded_frame)
         self.forwarder_queue.put( decoded_frame)
         return

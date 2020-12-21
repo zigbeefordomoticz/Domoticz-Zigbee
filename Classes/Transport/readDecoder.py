@@ -30,8 +30,8 @@ def decode_and_split_message(self, raw_message):
 
         AsciiMsg = binascii.hexlify(BinMsg).decode('utf-8')
 
-        if self.pluginconf.pluginConf["debugzigateCmd"]:
-            self.logging_send('Log', "on_message AsciiMsg: %s , Remaining buffer: %s" %(AsciiMsg,  self._ReqRcv ))
+        #if self.pluginconf.pluginConf["debugzigateCmd"]:
+        #    self.logging_send('Log', "on_message AsciiMsg: %s , Remaining buffer: %s" %(AsciiMsg,  self._ReqRcv ))
 
         self.statistics._received += 1
         process_frame(self, AsciiMsg)

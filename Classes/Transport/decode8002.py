@@ -12,7 +12,7 @@ from Modules.tools import retreive_cmd_payload_from_8002
 def decode8002_and_process(self, frame):
     
     SrcNwkId, SrcEndPoint, ClusterId , Payload = extract_nwk_infos_from_8002( frame )
-    self.logging_receive( 'Debug', "decode8002_and_process NwkId: %s Ep: %s Cluster: %s Payload: %s" %(SrcNwkId, SrcEndPoint, ClusterId , Payload))
+    #self.logging_receive( 'Debug', "decode8002_and_process NwkId: %s Ep: %s Cluster: %s Payload: %s" %(SrcNwkId, SrcEndPoint, ClusterId , Payload))
 
     if SrcNwkId is None:
         return frame

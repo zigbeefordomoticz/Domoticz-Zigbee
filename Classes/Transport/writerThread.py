@@ -29,10 +29,10 @@ def writer_thread( self ):
         frame = None
         # Sending messages ( only 1 at a time )
         try:
-            self.logging_send( 'Debug', "Waiting for next command Qsize: %s" %self.writer_queue.qsize())
+            #self.logging_send( 'Debug', "Waiting for next command Qsize: %s" %self.writer_queue.qsize())
             command = self.writer_queue.get( )
 
-            self.logging_send( 'Debug', "New command received:  %s" %(command))
+            #self.logging_send( 'Debug', "New command received:  %s" %(command))
             if isinstance( command, dict ) and 'cmd' in command and 'datas' in command and 'ackIsDisabled' in command and 'waitForResponseIn' in command and 'InternalSqn' in command:
                 if self.writer_queue.qsize() > self.statistics._MaxLoad:
                     self.statistics._MaxLoad = self.writer_queue.qsize()
@@ -216,14 +216,15 @@ def semaphore_timeout( self, current_command ):
             'IsqnCurrent': current_command['InternalSqn'],
             'IsqnToRemove': isqn_to_be_removed
         }
-        release_command( self, isqn_to_be_removed)
         self.logging_send_error( "writerThread Timeout ", context=_context)
+        release_command( self, isqn_to_be_removed) 
         return
 
     # We need to find which Command is in Timeout
     _context = {
         'Error code': 'TRANS-SEMAPHORE-02',
         'ListofCmds': dict.copy(self.ListOfCommands),
+        'IsqnCurrent': current_command['InternalSqn'],
         'IsqnToRemove': [],
     }
     for x in list(self.ListOfCommands):
