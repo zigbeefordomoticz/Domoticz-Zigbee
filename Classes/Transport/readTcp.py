@@ -9,6 +9,7 @@ import socket
 import time
 
 from Classes.Transport.tools import stop_waiting_on_queues, handle_thread_error
+from Classes.Transport.readDecoder import decode_and_split_message
 
 # Manage TCP connection
 def open_tcpip( self ):
@@ -45,7 +46,7 @@ def tcpip_read_from_zigate( self ):
             handle_thread_error( self, e, 0, 0, data)
 
         if data: 
-            self.decode_and_split_message(data)
+            decode_and_split_message(self, data)
 
 
     stop_waiting_on_queues( self )
