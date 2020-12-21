@@ -655,7 +655,6 @@ def rawaps_read_attribute_req( self, NwkId ,EpIn , EpOut ,Cluster ,direction , m
         idx += 4
         payload += '%04x' %struct.unpack('>H',struct.pack('H',int(attribute,16)))[0] 
 
-    Domoticz.Log("rawaps_read_attribute_req - %s/%s %s payload: %s" %(NwkId, EpOut, Cluster, payload,))
     raw_APS_request( self, NwkId, EpOut, Cluster, '0104', payload, zigate_ep=EpIn , ackIsDisabled=ackIsDisabled)
 
 
@@ -694,7 +693,6 @@ def rawaps_write_attribute_req( self, key, EPin, EPout, clusterID, manuf_id, man
     else:
         payload += data
         
-    Domoticz.Log("rawaps_write_attribute_req - %s/%s %s payload: %s" %(key, EPout, clusterID, payload,))
     raw_APS_request( self, key, EPout, clusterID, '0104', payload, zigate_ep=EPin, ackIsDisabled= ackIsDisabled )
 
 
