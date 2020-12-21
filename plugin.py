@@ -218,12 +218,12 @@ class BasePlugin:
         Domoticz.Log("%s" %(self.pluginParameters))
 
         # Open VERSION file in .hidden
-        Domoticz.Error("opening: %s " %( Parameters["HomeFolder"]+ VERSION_FILENAME))
         with open( Parameters["HomeFolder"] + VERSION_FILENAME, 'rt') as versionfile:
             try:
                 _pluginversion = json.load( versionfile, encoding=dict)
             except Exception as e:
-                Domoticz.Error("Error when opening: %s -- %e" %( Parameters["HomeFolder"] + VERSION_FILENAME, e))
+                Domoticz.Error("Error when opening: %s -- %s" %( Parameters["HomeFolder"] + VERSION_FILENAME, e))
+                return
 
         self.pluginParameters['PluginBranch'] = _pluginversion['branch']
         self.pluginParameters['PluginVersion'] = _pluginversion['version']
