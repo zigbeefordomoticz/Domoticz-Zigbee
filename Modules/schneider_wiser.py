@@ -1031,7 +1031,7 @@ def schneiderReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dst
 
 def wiser_read_attribute_request( self, NwkId, Ep, Sqn, ClusterId, Attribute):
 
-    if int(self.FirmwareVersion,16) <= 0x031c:
+    if self.FirmwareVersion and int(self.FirmwareVersion,16) <= 0x031c:
         # We shouldn't reach here, as the firmware itself will reject and respond.
         wiser_unsupported_attribute( self, NwkId, Ep, Sqn, ClusterId, Attribute )
     else:
