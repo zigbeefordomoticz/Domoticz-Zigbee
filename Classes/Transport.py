@@ -2109,8 +2109,8 @@ def buildframe_read_attribute_request( frame, Sqn, SrcNwkId, SrcEndPoint, Cluste
 
     buildPayload += '%02x' %(nbAttribute) + payloadOfAttributes
 
-    Domoticz.Log("buildframe_read_attribute_request - NwkId: %s Ep: %s ClusterId: %s nbAttribute: %s Data: %s buildPayload: %s" 
-            %(SrcNwkId, SrcEndPoint, ClusterId, nbAttribute, Data, buildPayload))
+    #Domoticz.Log("buildframe_read_attribute_request - NwkId: %s Ep: %s ClusterId: %s nbAttribute: %s Data: %s buildPayload: %s" 
+    #        %(SrcNwkId, SrcEndPoint, ClusterId, nbAttribute, Data, buildPayload))
 
     newFrame = '01' # 0:2
     newFrame += '0100' # 2:6   MsgType
