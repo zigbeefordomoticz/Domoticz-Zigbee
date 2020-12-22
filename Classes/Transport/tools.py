@@ -109,7 +109,7 @@ def release_command( self, isqn):
     self.logging_receive( 'Debug', "============= - Release semaphore %s (%s)" %(self.semaphore_gate._value, len(self.ListOfCommands)))
     if self.semaphore_gate._value < MAX_SIMULTANEOUS_ZIGATE_COMMANDS:
         self.semaphore_gate.release()
-    self.logging_receive( 'Debug', "============= - Semaphore released !! %s" %self.semaphore_gate._value)
+    self.logging_receive( 'Debug', "============= - Semaphore released !! %s writerQueueSize: %s" %(self.semaphore_gate._value, self.writer_queue.qsize( )))
 
 def get_isqn_from_ListOfCommands( self, PacketType):
     for x in  list(self.ListOfCommands):

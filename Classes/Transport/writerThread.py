@@ -69,8 +69,8 @@ def wait_for_semaphore( self , command ):
             self.logging_send( 'Debug', "Waiting for a write slot . Semaphore %s ATTENTION NO TIMEOUT FOR TEST PURPOSES" %(self.semaphore_gate._value))
             block_status = self.semaphore_gate.acquire( blocking = True, timeout = None) # Blocking  
 
-        self.logging_send( 'Debug', "============= semaphore %s given with status %s ============== Len: ListOfCmd %s - %s" %(
-            self.semaphore_gate._value, block_status, len(self.ListOfCommands), str(self.ListOfCommands.keys()) ))
+        self.logging_send( 'Debug', "============= semaphore %s given with status %s ============== Len: ListOfCmd %s - %s writerQueueSize: %s" %(
+            self.semaphore_gate._value, block_status, len(self.ListOfCommands), str(self.ListOfCommands.keys()), self.writer_queue.qsize( ) ))
 
         if self.pluginconf.pluginConf['writerTimeOut'] and not block_status:
             semaphore_timeout( self, command )
