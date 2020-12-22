@@ -13,6 +13,7 @@
 import Domoticz
 from Modules.zigateConsts import ZIGATE_EP
 from Modules.basicOutputs import sendZigateCmd, raw_APS_request
+from Modules.tools import get_and_inc_SQN
 
 from Classes.LoggingManagement import LoggingManagement
 
@@ -101,21 +102,6 @@ def configureReportingForprofalux( self, NwkId):
     sendZigateCmd( self, "0120", datas )
     self.log.logging( "Profalux", 'Debug', "-- -- -- configureReportingForprofalux for %s data: %s" %(NwkId, datas))
 
-    # Configure Reporting iin Raw Mode
-    #ZCLFrameControl = '04'
-    #ManfufacturerCode = '1110'
-    #Attribute = '0001'
-
-    #sqn = '01'
-    #if 'SQN' in self.ListOfDevices[NwkId]:
-    #    if self.ListOfDevices[NwkId]['SQN'] != {} and self.ListOfDevices[NwkId]['SQN'] != '':
-    #        sqn = '%02x' %(int(self.ListOfDevices[NwkId]['SQN'],16) + 1)
-    #cmd = '06' 
-    #payload = ZCLFrameControl + ManfufacturerCode[2:4] + ManfufacturerCode[0:2] + sqn + cmd + '00' + Attribute[2:4] + Attribute[0:2] + '20' + '0000' + '0000' + '00'
-
-    #self.log.logging( "Profalux", 'Log', "configureReportingForprofalux RAW APS %s %s" %(NwkId, payload))
-    #raw_APS_request( self, NwkId, '01', 'fc21', '0104', payload, zigate_ep=ZIGATE_EP)
-
 def profalux_stop( self, nwkid ):
 
     # determine which Endpoint
@@ -125,9 +111,7 @@ def profalux_stop( self, nwkid ):
             EPout= tmpEp
 
     cluster_frame = '01'
-    sqn = '00'
-    if ( 'SQN' in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]['SQN'] != {} and self.ListOfDevices[nwkid]['SQN'] != '' ):
-        sqn = '%02x' % (int(self.ListOfDevices[nwkid]['SQN'],16) + 1)
+    sqn = get_and_inc_SQN( self, nwkid)
 
     cmd = '03' # Ask the Tilt Blind to stop moving
 
@@ -144,13 +128,7 @@ def profalux_MoveToLevelWithOnOff( self, nwkid, level):
             EPout= tmpEp
 
     cluster_frame = '01'
-    sqn = '00'
-    if (
-        'SQN' in self.ListOfDevices[nwkid]
-        and self.ListOfDevices[nwkid]['SQN'] != {}
-        and self.ListOfDevices[nwkid]['SQN'] != ''
-    ):
-        sqn = '%02x' %(int(self.ListOfDevices[nwkid]['SQN'],16) + 1)
+    sqn = get_and_inc_SQN( self, nwkid)
 
     cmd = '04' # Ask the Tilt Blind to go to a certain Level
 
@@ -171,14 +149,7 @@ def profalux_MoveWithOnOff( self, nwkid, OnOff):
             EPout= tmpEp
 
     cluster_frame = '11'
-
-    sqn = '00'
-    if (
-        'SQN' in self.ListOfDevices[nwkid]
-        and self.ListOfDevices[nwkid]['SQN'] != {}
-        and self.ListOfDevices[nwkid]['SQN'] != ''
-    ):
-        sqn = '%02x' %(int(self.ListOfDevices[nwkid]['SQN'],16) + 1)
+    sqn = get_and_inc_SQN( self, nwkid)
 
     cmd = '05'  # Ask the Tilt Blind to open or Close
 
@@ -249,12 +220,7 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
     #  Disable default response: false
     #  Reserved : 0x00
     cluster_frame = '05'
-
-    sqn = '00'
-    if 'SQN' in self.ListOfDevices[nwkid]:
-        if self.ListOfDevices[nwkid]['SQN'] != {} and self.ListOfDevices[nwkid]['SQN'] != '':
-            sqn = '%02x' %(int(self.ListOfDevices[nwkid]['SQN'],16) + 1)
-
+    sqn = get_and_inc_SQN( self, nwkid)
 
     cmd = '10' # Propriatary Command: Ask the Tilt Blind to go to a Certain Position and Orientate to a certain angle
 

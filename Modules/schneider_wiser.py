@@ -29,7 +29,7 @@ from Modules.readAttributes import ReadAttributeRequest_0201, ReadAttributeReque
 from Modules.writeAttributes import write_attribute_when_awake
 
 from Modules.zigateConsts import ZIGATE_EP,MAX_LOAD_ZIGATE, HEARTBEAT
-from Modules.tools import getAttributeValue, retreive_cmd_payload_from_8002, is_ack_tobe_disabled
+from Modules.tools import getAttributeValue, retreive_cmd_payload_from_8002, is_ack_tobe_disabled, get_and_inc_SQN
 
 SCHNEIDER_BASE_EP = '0b'
 
@@ -438,13 +438,7 @@ def schneider_hact_fip_mode( self, key, mode):
     schneider_hact_heating_mode( self, key, 'FIP')
 
     cluster_frame = '11'
-    sqn = '00'
-    if (
-        'SQN' in self.ListOfDevices[key]
-        and self.ListOfDevices[key]['SQN'] != {}
-        and self.ListOfDevices[key]['SQN'] != ''
-    ):
-        sqn = '%02x' %(int(self.ListOfDevices[key]['SQN'],16) + 1)
+    sqn = get_and_inc_SQN( self, key)
     cmd = 'e1'
 
     zone_mode = '01' # Heating
@@ -602,13 +596,8 @@ def schneider_setpoint_actuator( self, key, setpoint):
     for tmpEp in self.ListOfDevices[key]['Ep']:
         if "0201" in self.ListOfDevices[key]['Ep'][tmpEp]:
             EPout= tmpEp
+    sqn = get_and_inc_SQN( self, key)
 
-    if (
-        'SQN' in self.ListOfDevices[key]
-        and self.ListOfDevices[key]['SQN'] != {}
-        and self.ListOfDevices[key]['SQN'] != ''
-    ):
-        sqn = '%02x' % (int(self.ListOfDevices[key]['SQN'],16) + 1)
     cmd = 'e0'
 
     setpoint = int(( setpoint * 2 ) / 2)   # Round to 0.5 degrees
@@ -669,12 +658,8 @@ def schneider_temp_Setcurrent( self, key, setpoint):
     attr = '0000'
     sqn = '00'
     dataType = '29'
-    if (
-        'SQN' in self.ListOfDevices[key]
-        and self.ListOfDevices[key]['SQN'] != {}
-        and self.ListOfDevices[key]['SQN'] != ''
-    ):
-        sqn = '%02x' % (int(self.ListOfDevices[key]['SQN'],16) + 1)
+    sqn = get_and_inc_SQN( self, key)
+
     cmd = '0a'
 
     setpoint = int(( setpoint * 2 ) / 2)   # Round to 0.5 degrees
