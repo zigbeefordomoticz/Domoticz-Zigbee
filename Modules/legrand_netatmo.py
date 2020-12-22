@@ -21,7 +21,7 @@ from time import time
 from Classes.LoggingManagement import LoggingManagement
 
 from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_EP, HEARTBEAT, LEGRAND_REMOTES
-from Modules.tools import retreive_cmd_payload_from_8002, is_ack_tobe_disabled
+from Modules.tools import retreive_cmd_payload_from_8002, is_ack_tobe_disabled, get_and_inc_SQN
 from Modules.readAttributes import ReadAttributeRequest_0001, ReadAttributeRequest_0006_0000, ReadAttributeRequest_0b04_050b, ReadAttributeRequest_fc01, ReadAttributeRequest_fc40
 
 from Modules.basicOutputs import raw_APS_request, write_attribute,  write_attributeNoResponse
@@ -320,9 +320,8 @@ def legrand_fc40( self, nwkid, Mode ):
     self.log.logging( "Legrand", 'Debug', "legrand %s Set Fil pilote mode - for %s with value %s / cluster: %s, attribute: %s type: %s"
             %( Mode, nwkid,Hdata,cluster_id,Hattribute,data_type), nwkid=nwkid)
 
-    sqn = '01'
-    if ( 'SQN' in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]['SQN'] != {} and self.ListOfDevices[nwkid]['SQN'] != '' ):
-        sqn = '%02x' %(int(self.ListOfDevices[nwkid]['SQN'],16) + 1)
+    sqn = get_and_inc_SQN( self, nwkid)
+
     fcf = '15'
     manufspec = '01'
     manufcode = '1021'
@@ -443,7 +442,7 @@ def legrandReenforcement( self, NWKID):
 
     if 'Health' in self.ListOfDevices[NWKID]['Health'] and  self.ListOfDevices[NWKID]['Health'] == 'Not Reachable':
         return False
-        
+
     if 'Manufacturer Name' not in self.ListOfDevices[NWKID]:
         return False
 

@@ -9,7 +9,7 @@ import Domoticz
 
 from Classes.LoggingManagement import LoggingManagement
 from Modules.basicOutputs import write_attribute, sendZigateCmd, raw_APS_request
-from Modules.tools import retreive_cmd_payload_from_8002, is_ack_tobe_disabled, checkAndStoreAttributeValue
+from Modules.tools import retreive_cmd_payload_from_8002, is_ack_tobe_disabled, checkAndStoreAttributeValue, get_and_inc_SQN
 from Modules.zigateConsts import ZIGATE_EP
 
 from Modules.domoMaj import MajDomoDevice
@@ -259,7 +259,7 @@ def AC211_ReadPairingCodeRequest( self, NwkId ):
     # Command  0x00
     # determine which Endpoint
     EPout = get_ffad_endpoint(self, NwkId)
-    sqn = get_sqn(self, NwkId)
+    sqn = get_and_inc_SQN(self, NwkId)
     cluster_frame = '01'
     device_type = DEVICE_TYPE # Device type
     cmd = '00' 
@@ -298,7 +298,7 @@ def AC201_read_multi_pairing_code_request( self, NwkId ):
     # Command  0x00
     # determine which Endpoint
     EPout = get_ffad_endpoint(self, NwkId)
-    sqn = get_sqn(self, NwkId)
+    sqn = get_and_inc_SQN(self, NwkId)
 
     cluster_frame = '01'
     device_type = DEVICE_TYPE # Device type
@@ -362,7 +362,7 @@ def write_AC201_status_request( self, NwkId, Action, setpoint = None):
 def AC201_read_learned_data_group_status_request( self, NwkId):
     # Command 0x11
     EPout = get_ffad_endpoint(self, NwkId)
-    sqn = get_sqn(self, NwkId)
+    sqn = get_and_inc_SQN(self, NwkId)
     device_type = '00' # Device type
     cluster_frame = '05'
     cmd = '11'
@@ -515,7 +515,7 @@ def check_hot_cold_setpoint(self, NwkId):
 def ffac_send_manuf_specific_cmd( self, NwkId, payload):
     
     cluster_frame = '05'
-    sqn = get_sqn(self, NwkId)    
+    sqn = get_and_inc_SQN(self, NwkId)    
     EPout = get_ffad_endpoint(self, NwkId)
 
     data = cluster_frame + CASAIA_MANUF_CODE_BE + sqn
@@ -525,7 +525,7 @@ def ffac_send_manuf_specific_cmd( self, NwkId, payload):
 def ffad_send_manuf_specific_cmd( self, NwkId, payload):
 
     cluster_frame = '05'
-    sqn = get_sqn(self, NwkId)    
+    sqn = get_and_inc_SQN(self, NwkId)    
     EPout = get_ffad_endpoint(self, NwkId)
 
     data = cluster_frame + CASAIA_MANUF_CODE_BE + sqn
@@ -539,11 +539,6 @@ def get_ffad_endpoint( self, NwkId):
             EPout= tmpEp
     return EPout
 
-def get_sqn(self, NwkId):
-    sqn = '00'
-    if ( 'SQN' in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]['SQN'] != {} and self.ListOfDevices[NwkId]['SQN'] != '' ):
-        sqn = '%02x' % (int(self.ListOfDevices[NwkId]['SQN'],16) + 1)
-    return sqn
 
 def store_casaia_attribute( self, NwkId, Attribute, Value , device_id = None):
     

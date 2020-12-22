@@ -18,7 +18,7 @@ from Classes.LoggingManagement import LoggingManagement
 
 from Modules.zigateConsts import ZIGATE_EP
 from Modules.basicOutputs import sendZigateCmd, raw_APS_request
-from Modules.tools import  checkAndStoreAttributeValue, is_ack_tobe_disabled
+from Modules.tools import  checkAndStoreAttributeValue, is_ack_tobe_disabled, get_and_inc_SQN
 
 from Modules.domoMaj import MajDomoDevice
 
@@ -185,9 +185,7 @@ def tuya_setpoint( self, nwkid, setpoint_value):
     # determine which Endpoint
     EPout = '01'
 
-    sqn = '00'
-    if ( 'SQN' in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]['SQN'] != {} and self.ListOfDevices[nwkid]['SQN'] != '' ):
-        sqn = '%02x' %(int(self.ListOfDevices[nwkid]['SQN'],16) + 1)
+    sqn = get_and_inc_SQN( self, nwkid )
 
     cluster_frame = '11'
     cmd = '00' # Command
@@ -205,9 +203,7 @@ def tuya_trv_mode( self, nwkid, mode):
     # determine which Endpoint
     EPout = '01'
 
-    sqn = '00'
-    if ( 'SQN' in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]['SQN'] != {} and self.ListOfDevices[nwkid]['SQN'] != '' ):
-        sqn = '%02x' %(int(self.ListOfDevices[nwkid]['SQN'],16) + 1)
+    sqn = get_and_inc_SQN( self, nwkid )
 
     cluster_frame = '11'
     cmd = '00' # Command
