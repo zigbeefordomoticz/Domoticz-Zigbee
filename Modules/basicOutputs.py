@@ -18,7 +18,7 @@ from datetime import datetime
 from time import time
 
 from Modules.zigateConsts import ZIGATE_EP, ADDRESS_MODE, ZLL_DEVICES, ZIGATE_COMMANDS
-from Modules.tools import mainPoweredDevice, getListOfEpForCluster, set_request_datastruct, set_isqn_datastruct, set_timestamp_datastruct
+from Modules.tools import mainPoweredDevice, getListOfEpForCluster, set_request_datastruct, set_isqn_datastruct, set_timestamp_datastruct, get_and_inc_SQN
 from Classes.LoggingManagement import LoggingManagement
 
 
@@ -640,9 +640,7 @@ def rawaps_read_attribute_req( self, NwkId ,EpIn , EpOut ,Cluster ,direction , m
         cluster_frame += 0b00000100
     fcf = '%02x' %cluster_frame
 
-    sqn = '00'
-    if ( 'SQN' in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]['SQN'] != {} and self.ListOfDevices[NwkId]['SQN'] != '' ):
-        sqn = '%02x' % (int(self.ListOfDevices[NwkId]['SQN'],16) + 1)
+    sqn = get_and_inc_SQN( self, NwkId )
 
     payload = fcf 
     if manufacturer_spec == '01':
@@ -668,9 +666,7 @@ def rawaps_write_attribute_req( self, key, EPin, EPout, clusterID, manuf_id, man
         cluster_frame += 0b00000100
     fcf = '%02x' %cluster_frame
 
-    sqn = '00'
-    if ( 'SQN' in self.ListOfDevices[key] and self.ListOfDevices[key]['SQN'] != {} and self.ListOfDevices[key]['SQN'] != '' ):
-        sqn = '%02x' % (int(self.ListOfDevices[key]['SQN'],16) + 1)
+    sqn = get_and_inc_SQN( self, NwkId )
 
     payload = fcf 
     if manuf_spec == '01':
