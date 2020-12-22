@@ -99,6 +99,7 @@ def process_frame(self, decoded_frame):
         return
 
     if not self.firmware_with_aps_sqn and MsgType == '8011':
+        self.logging_receive( 'Debug', "process_frame - MsgType: %s MsgData: %s decode and forward" %( MsgType, MsgData))
         decode8011_31c( self, decoded_frame)
         self.forwarder_queue.put( decoded_frame)
         return
@@ -119,6 +120,7 @@ def process_frame(self, decoded_frame):
 
     # Forward the message to plugin for further processing
     self.statistics._data += 1
+    self.logging_receive( 'Debug', "process_frame -  MsgType: %s MsgData %s" % (MsgType, MsgData)) 
     self.forwarder_queue.put( decoded_frame)
 
 # Extended Error Code:
