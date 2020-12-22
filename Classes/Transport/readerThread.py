@@ -33,13 +33,13 @@ def open_zigate_and_start_reader( self, zigate_mode ):
 def start_serial_reader_thread( self ):
     self.logging_receive( 'Debug', "start_serial_reader_thread")
     if self.reader_thread is None:
-        self.reader_thread = Thread( name="ZiGateSerial",  target=serial_read_from_zigate,  args=(self,))
+        self.reader_thread = Thread( name="ZiGateSerial_%s" %self.hardwareid,  target=serial_read_from_zigate,  args=(self,))
         self.reader_thread.start()
 
 def start_tcpip_reader_thread( self ):
     self.logging_receive( 'Debug', "start_tcpip_reader_thread")
     if self.reader_thread is None:
-        self.reader_thread = Thread( name="ZiGateTCPIP",  target=tcpip_read_from_zigate,  args=(self,))
+        self.reader_thread = Thread( name="ZiGateTCPIP_%s" %self.hardwareid,  target=tcpip_read_from_zigate,  args=(self,))
         self.reader_thread.start()
 
 def shutdown_reader_thread( self):

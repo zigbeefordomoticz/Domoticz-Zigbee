@@ -14,7 +14,7 @@ from Classes.Transport.instrumentation import time_spent_forwarder
 def start_forwarder_thread( self ):
     
     if self.forwarder_thread is None:
-        self.forwarder_thread = Thread( name="ZiGateForwarder",  target=forwarder_thread,  args=(self,))
+        self.forwarder_thread = Thread( name="ZiGateForwarder_%s" %self.hardwareid,  target=forwarder_thread,  args=(self,))
         self.forwarder_thread.start()
 
 def forwarder_thread( self ):

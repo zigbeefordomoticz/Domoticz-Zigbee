@@ -19,7 +19,7 @@ from Classes.Transport.tools import handle_thread_error, release_command
 def start_writer_thread( self ):
 
     if self.writer_thread is None:
-        self.writer_thread = Thread( name="ZiGateWriter",  target=writer_thread,  args=(self,))
+        self.writer_thread = Thread( name="ZiGateWriter_%s" %self.hardwareid,  target=writer_thread,  args=(self,))
         self.writer_thread.start()
 
 def writer_thread( self ):
@@ -39,6 +39,7 @@ def writer_thread( self ):
                 self.statistics._Load = self.writer_queue.qsize()
 
                 wait_for_semaphore( self , command)
+
                 thread_sendData( self, command['cmd'], command['datas'], command['ackIsDisabled'], command['waitForResponseIn'], command['InternalSqn'])
                 self.logging_send( 'Debug', "Command sent!!!! %s" %command)
 
@@ -62,7 +63,7 @@ def wait_for_semaphore( self , command ):
         # Now we will block on Semaphore to serialize and limit the number of concurent commands on ZiGate
         # By using the Semaphore Timeout , we will make sure that the Semaphore is not acquired for ever.
         # However, if the Sem is relaed due to Timeout, we will not be notified !
-        if self.pluginconf.pluginConf['writerTimeOut']:
+        if self.force_dz_communication or self.pluginconf.pluginConf['writerTimeOut']:
             self.logging_send( 'Debug', "Waiting for a write slot . Semaphore %s TimeOut of 8s" %(self.semaphore_gate._value))
             block_status = self.semaphore_gate.acquire( blocking = True, timeout = 8.0) # Blocking until 8s
         else:
@@ -156,14 +157,24 @@ def get_checksum(msgtype, length, datas):
 def write_to_zigate( self, serialConnection, encoded_data ):
     self.logging_send('Debug', "write_to_zigate")
 
-    if not self.pluginconf.pluginConf['byPassDzConnection']:
-        self._connection.Send(encoded_data, 0)
-        return
+    if self.pluginconf.pluginConf['byPassDzConnection'] and not self.force_dz_communication:
+        native_write_to_zigate( self, serialConnection, encoded_data)
+    else:
+        domoticz_write_to_zigate( self, encoded_data)
+
+
+def domoticz_write_to_zigate( self, encoded_data):
+    self._connection.Send(encoded_data, 0)
+
+def native_write_to_zigate( self, serialConnection, encoded_data):
 
     if self._transp == "Wifi":
+        
         tcpipConnection = self._connection
         tcpiConnectionList = [ tcpipConnection ]
         inputSocket  = outputSocket = [ tcpipConnection ]
+        if inputSocket == outputSocket == -1:
+            return
         readable, writable, exceptional = select.select(inputSocket, outputSocket, inputSocket)
         if writable:
             try:

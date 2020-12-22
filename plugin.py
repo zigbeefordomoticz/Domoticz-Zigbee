@@ -357,16 +357,17 @@ class BasePlugin:
         # Connect to Zigate only when all initialisation are properly done.
         self.log.logging( 'Plugin', 'Status', "Transport mode: %s" %self.transport)
         if self.transport in ("USB", "DIN", "V2"):
-            self.ZigateComm = ZigateTransport( self.transport, self.statistics, self.pluginconf, self.processFrame,\
+            
+            self.ZigateComm = ZigateTransport( self.HardwareID, self.DomoticzBuild, self.DomoticzMajor, self.DomoticzMinor, self.transport, self.statistics, self.pluginconf, self.processFrame,\
                     self.log, serialPort=Parameters["SerialPort"] )
 
         elif  self.transport == "PI":
             switchPiZigate_mode( self, 'run' )
-            self.ZigateComm = ZigateTransport( self.transport, self.statistics, self.pluginconf, self.processFrame,\
+            self.ZigateComm = ZigateTransport( self.HardwareID, self.DomoticzBuild, self.DomoticzMajor, self.DomoticzMinor, self.transport, self.statistics, self.pluginconf, self.processFrame,\
                     self.log, serialPort=Parameters["SerialPort"] )
 
         elif  self.transport == "Wifi":
-            self.ZigateComm = ZigateTransport( self.transport, self.statistics, self.pluginconf, self.processFrame,\
+            self.ZigateComm = ZigateTransport( self.HardwareID, self.DomoticzBuild, self.DomoticzMajor, self.DomoticzMinor, self.transport, self.statistics, self.pluginconf, self.processFrame,\
                     self.log, wifiAddress= Parameters["Address"], wifiPort=Parameters["Port"] )
 
         elif self.transport == "None":

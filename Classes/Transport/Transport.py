@@ -24,7 +24,7 @@ from Classes.Transport.readDecoder import decode_and_split_message
 from Modules.zigateConsts import MAX_SIMULTANEOUS_ZIGATE_COMMANDS
 class ZigateTransport(object):
 
-    def __init__(self, transport, statistics, pluginconf, F_out, log, serialPort=None, wifiAddress=None, wifiPort=None):
+    def __init__(self, hardwareid, DomoticzBuild, DomoticzMajor, DomoticzMinor, transport, statistics, pluginconf, F_out, log, serialPort=None, wifiAddress=None, wifiPort=None):
         # Call back function to send back to plugin
         self.F_out = F_out  # Function to call to bring the decoded Frame at plugin
 
@@ -36,6 +36,7 @@ class ZigateTransport(object):
         self.pluginconf = pluginconf
 
         # Communication/Transport link attributes
+        self.hardwareid = hardwareid
         self._connection = None  # connection handle
         self._ReqRcv = bytearray()  # on going receive buffer
         self._transp = None  # Transport mode USB or Wifi
@@ -76,6 +77,17 @@ class ZigateTransport(object):
         self.firmware_with_aps_sqn = False  # Available from 31d
         self.firmware_with_8012 = False     # Available from 31e
         self.PDMCommandOnly = False
+
+        #DomoticzVersion: 2020.2 (build 12741) is minimum Dz version where full multithread is possible
+
+        if ( DomoticzMajor < 2020 or (DomoticzMajor == 2020 and ( DomoticzMinor < 2 or ( DomoticzMinor == 2 and DomoticzBuild < 12741)))):
+            # we will force the Dz communication mecanism.
+            Domoticz.Status("ZiGate plugin start with limited capabilities due to Domoticz version below 2020.2 (Build 12741)")
+            self.force_dz_communication = True
+        else:
+            # All ok
+            self.force_dz_communication = False
+
 
         # Initialise SQN Management
         sqn_init_stack(self)
@@ -149,7 +161,7 @@ class ZigateTransport(object):
     def open_conn(self):
         if not self._connection:
             self.set_connection()
-        if not self.pluginconf.pluginConf['byPassDzConnection'] and self._connection:
+        if (not self.pluginconf.pluginConf['byPassDzConnection'] or self.force_dz_communication) and self._connection:
             self._connection.Connect()
         Domoticz.Status("Connection open: %s" % self._connection)
 
@@ -158,7 +170,7 @@ class ZigateTransport(object):
 
         self.running = False # It will shutdown the Thread 
 
-        if self.pluginconf.pluginConf['byPassDzConnection']:
+        if self.pluginconf.pluginConf['byPassDzConnection'] and not self.force_dz_communication:
             shutdown_reader_thread( self )
             waiting_for_end_thread( self )
 
@@ -171,7 +183,7 @@ class ZigateTransport(object):
 
     def re_conn(self):
         Domoticz.Status("Reconnection: %s" % self._connection)
-        if self.pluginconf.pluginConf['byPassDzConnection']:
+        if self.pluginconf.pluginConf['byPassDzConnection'] and not self.force_dz_communication:
             if self._connection:
                 self._connection.close()
                 time.sleep(1.0)
@@ -230,8 +242,9 @@ def open_connection( self ):
 
     if self._transp in ["USB", "DIN", "PI", "V2"]:
         if self._serialPort.find('/dev/') != -1 or self._serialPort.find('COM') != -1:
+
             Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" % (self._serialPort))
-            if self.pluginconf.pluginConf['byPassDzConnection']:
+            if self.pluginconf.pluginConf['byPassDzConnection'] and not self.force_dz_communication:
                 open_zigate_and_start_reader( self, 'serial' )
                 start_writer_thread( self )
 
@@ -243,12 +256,12 @@ def open_connection( self ):
     elif self._transp == "Wifi":
         Domoticz.Status("Connection Name: Zigate, Transport: TCP/IP, Address: %s:%s" %
                         (self._serialPort, self._wifiPort))
-        if self.pluginconf.pluginConf['byPassDzConnection']:
+        if self.pluginconf.pluginConf['byPassDzConnection'] and not self.force_dz_communication:
             open_zigate_and_start_reader( self, 'tcpip' )
-            start_writer_thread( self )
-            start_forwarder_thread( self)
         else:
             self._connection = Domoticz.Connection(Name="Zigate", Transport="TCP/IP", Protocol="None ", Address=self._wifiAddress, Port=self._wifiPort)
+        start_writer_thread( self )
+        start_forwarder_thread( self )
 
     else:
         Domoticz.Error("Unknown Transport Mode: %s" % self._transp)
