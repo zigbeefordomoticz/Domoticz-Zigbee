@@ -63,10 +63,16 @@ def wait_for_semaphore( self , command ):
         # Now we will block on Semaphore to serialize and limit the number of concurent commands on ZiGate
         # By using the Semaphore Timeout , we will make sure that the Semaphore is not acquired for ever.
         # However, if the Sem is relaed due to Timeout, we will not be notified !
+
+
         if self.force_dz_communication or self.pluginconf.pluginConf['writerTimeOut']:
             self.logging_send( 'Debug', "Waiting for a write slot . Semaphore %s TimeOut of 8s" %(self.semaphore_gate._value))
             block_status = self.semaphore_gate.acquire( blocking = True, timeout = 8.0) # Blocking until 8s
+
+
         else:
+
+
             self.logging_send( 'Debug', "Waiting for a write slot . Semaphore %s ATTENTION NO TIMEOUT FOR TEST PURPOSES" %(self.semaphore_gate._value))
             block_status = self.semaphore_gate.acquire( blocking = True, timeout = None) # Blocking  
 
@@ -227,7 +233,8 @@ def semaphore_timeout( self, current_command ):
             'IsqnCurrent': current_command['InternalSqn'],
             'IsqnToRemove': isqn_to_be_removed
         }
-        self.logging_send_error( "writerThread Timeout ", context=_context)
+        if not self.force_dz_communication:
+            self.logging_send_error( "writerThread Timeout ", context=_context)
         release_command( self, isqn_to_be_removed) 
         return
 
@@ -246,4 +253,6 @@ def semaphore_timeout( self, current_command ):
             # This command has at least 8s life and can be removed
             release_command( self, x)
             _context['IsqnToRemove'].append( x )
-    self.logging_send_error( "writerThread Timeout ", context=_context)
+
+    if not self.force_dz_communication:
+        self.logging_send_error( "writerThread Timeout ", context=_context)
