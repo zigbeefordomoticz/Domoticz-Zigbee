@@ -130,17 +130,16 @@ def NXP_Extended_Error_Code( self, MsgData):
     if  MsgData in ZCL_EXTENDED_ERROR_CODES:
         StatusMsg = ZCL_EXTENDED_ERROR_CODES[MsgData]
 
-    #if self.pluginconf.pluginConf['trackError']:
-    #    _context = {
-    #        'Error code': 'TRANS-PROTO-01',
-    #        'ExtendedErrorCode': MsgData,
-    #        'ExtendedError': StatusMsg,
-    #        'nPDU': self.npdu,
-    #        'aPDU': self.apdu
-    #    }
-    #    self.logging_receive_error( "NXP_Extended_Error_Code - Extended Error Code: [%s] %s" %( MsgData, StatusMsg), context=_context)
-    
-    self.logging_receive( 'Log',"NXP_Extended_Error_Code - Extended Error Code: [%s] %s" %( MsgData, StatusMsg))
+    if self.pluginconf.pluginConf['NXPExtendedErrorCode']:
+        _context = {
+            'Error code': 'TRANS-PROTO-01',
+            'ExtendedErrorCode': MsgData,
+            'ExtendedError': StatusMsg,
+            'nPDU': self.npdu,
+            'aPDU': self.apdu
+        }
+        self.logging_receive_error( "NXP_Extended_Error_Code - Extended Error Code: [%s] %s" %( MsgData, StatusMsg), context=_context)
+
 
 def NXP_log_message(self, MsgData):  # Reception log Level
 

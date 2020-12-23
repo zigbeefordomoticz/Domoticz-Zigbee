@@ -189,6 +189,7 @@ SETTINGS = {
         'logDeviceUpdate':      {'type': 'bool', 'default': 1,     'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'logFORMAT':            {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'logThreadName':        {'type': 'bool', 'default': 1,     'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
+        'NXPExtendedErrorCode': {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'trackError':           {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'capturePairingInfos':  {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'debugLQI':             {'type': 'int',  'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
