@@ -556,7 +556,7 @@ def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zig
     
     # APS RAW is always sent in NO-ACK below 31d (included)
     # APS RAW has ACK/NO-ACK option as of 31e
-    self.log.logging( "debuginRawAPS", 'Debug', "raw_APS_request - ackIsDisabled: %s Addr: %s Ep: %s Cluster: %s ProfileId: %s Payload: %s" %(ackIsDisabled , targetaddr, dest_ep, cluster, profileId, payload),dest_ep)
+    self.log.logging( "inRawAPS", 'Debug', "raw_APS_request - ackIsDisabled: %s Addr: %s Ep: %s Cluster: %s ProfileId: %s Payload: %s" %(ackIsDisabled , targetaddr, dest_ep, cluster, profileId, payload),dest_ep)
 
     # In case of Firmware < 31e 0x0530 is always on noack even if address mode 0x02 is used.
     overwrittenackIsDisabled = ackIsDisabled
@@ -644,7 +644,7 @@ def write_attributeNoResponse( self, key, EPin, EPout, clusterID, manuf_id, manu
 
 def rawaps_read_attribute_req( self, NwkId ,EpIn , EpOut ,Cluster ,direction , manufacturer_spec , manufacturer , Attr , ackIsDisabled = True):    
 
-    self.log.logging( "debuginRawAPS", "Log", "rawaps_read_attribute_req %s/%s Cluster: %s Attribute: %s" %(NwkId, EpOut, Cluster, Attr))
+    self.log.logging( "inRawAPS", "Log", "rawaps_read_attribute_req %s/%s Cluster: %s Attribute: %s" %(NwkId, EpOut, Cluster, Attr))
     cmd = "00" # Read Attribute Command Identifier
     
     # Cluster Frame:
@@ -676,13 +676,13 @@ def rawaps_read_attribute_req( self, NwkId ,EpIn , EpOut ,Cluster ,direction , m
         idx += 4
         payload += '%04x' %struct.unpack('>H',struct.pack('H',int(attribute,16)))[0] 
 
-    self.log.logging( "debuginRawAPS", "Log", "rawaps_read_attribute_req - %s/%s %s payload: %s" %(NwkId, EpOut, Cluster, payload))
+    self.log.logging( "inRawAPS", "Log", "rawaps_read_attribute_req - %s/%s %s payload: %s" %(NwkId, EpOut, Cluster, payload))
     raw_APS_request( self, NwkId, EpOut, Cluster, '0104', payload, zigate_ep=EpIn , ackIsDisabled=ackIsDisabled)
 
 
 def rawaps_write_attribute_req( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled = True):
 
-    self.log.logging( "debuginRawAPS", "Log", "rawaps_write_attribute_req %s/%s Cluster: %s Attribute: %s DataType: %s Value: %s" %(key, EPout, clusterID, attribute, data_type, data))
+    self.log.logging( "inRawAPS", "Log", "rawaps_write_attribute_req %s/%s Cluster: %s Attribute: %s DataType: %s Value: %s" %(key, EPout, clusterID, attribute, data_type, data))
     cmd = "02" # Read Attribute Command Identifier
     cluster_frame = 0b00010000
     if manuf_spec == '01':
@@ -715,7 +715,7 @@ def rawaps_write_attribute_req( self, key, EPin, EPout, clusterID, manuf_id, man
     else:
         payload += data
         
-    self.log.logging( "debuginRawAPS", "Log", "rawaps_write_attribute_req - %s/%s %s payload: %s" %(key, EPout, clusterID, payload,))
+    self.log.logging( "inRawAPS", "Log", "rawaps_write_attribute_req - %s/%s %s payload: %s" %(key, EPout, clusterID, payload,))
     raw_APS_request( self, key, EPout, clusterID, '0104', payload, zigate_ep=EPin, ackIsDisabled= ackIsDisabled )
 
 
