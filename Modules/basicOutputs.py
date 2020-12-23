@@ -644,7 +644,7 @@ def write_attributeNoResponse( self, key, EPin, EPout, clusterID, manuf_id, manu
 
 def rawaps_read_attribute_req( self, NwkId ,EpIn , EpOut ,Cluster ,direction , manufacturer_spec , manufacturer , Attr , ackIsDisabled = True):    
 
-    self.log.logging( "BasicOutput", "Log", "rawaps_read_attribute_req %s/%s Cluster: %s Attribute: %s" %(NwkId, EpOut, Cluster, Attr))
+    self.log.logging( "debuginRawAPS", "Log", "rawaps_read_attribute_req %s/%s Cluster: %s Attribute: %s" %(NwkId, EpOut, Cluster, Attr))
     cmd = "00" # Read Attribute Command Identifier
     
     # Cluster Frame:
@@ -676,13 +676,13 @@ def rawaps_read_attribute_req( self, NwkId ,EpIn , EpOut ,Cluster ,direction , m
         idx += 4
         payload += '%04x' %struct.unpack('>H',struct.pack('H',int(attribute,16)))[0] 
 
-    self.log.logging( "BasicOutput", "Log", "rawaps_read_attribute_req - %s/%s %s payload: %s" %(NwkId, EpOut, Cluster, payload))
+    self.log.logging( "debuginRawAPS", "Log", "rawaps_read_attribute_req - %s/%s %s payload: %s" %(NwkId, EpOut, Cluster, payload))
     raw_APS_request( self, NwkId, EpOut, Cluster, '0104', payload, zigate_ep=EpIn , ackIsDisabled=ackIsDisabled)
 
 
 def rawaps_write_attribute_req( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled = True):
 
-    self.log.logging( "BasicOutput", "Log", "rawaps_write_attribute_req %s/%s Cluster: %s Attribute: %s DataType: %s Value: %s" %(key, EPout, clusterID, attribute, data_type, data))
+    self.log.logging( "debuginRawAPS", "Log", "rawaps_write_attribute_req %s/%s Cluster: %s Attribute: %s DataType: %s Value: %s" %(key, EPout, clusterID, attribute, data_type, data))
     cmd = "02" # Read Attribute Command Identifier
     cluster_frame = 0b00010000
     if manuf_spec == '01':
@@ -715,7 +715,7 @@ def rawaps_write_attribute_req( self, key, EPin, EPout, clusterID, manuf_id, man
     else:
         payload += data
         
-    self.log.logging( "BasicOutput", "Log", "rawaps_write_attribute_req - %s/%s %s payload: %s" %(key, EPout, clusterID, payload,))
+    self.log.logging( "debuginRawAPS", "Log", "rawaps_write_attribute_req - %s/%s %s payload: %s" %(key, EPout, clusterID, payload,))
     raw_APS_request( self, key, EPout, clusterID, '0104', payload, zigate_ep=EPin, ackIsDisabled= ackIsDisabled )
 
 
