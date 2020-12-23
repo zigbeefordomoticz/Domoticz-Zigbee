@@ -17,6 +17,22 @@ Release Numbering
 - Odd numbers --> Stable
 - Even numbers  --> Beta
 
+## 27 Nov.  2020  - 4.11.11
+- [Hardware] - Handle the behaviour of the Legrand shutter when firmware above 0x1a
+
+##  5 Nov.  2020  - 4.11.9
+
+- [Hardware] - Add Heiman RC-EF-3.0 remote.
+
+## 24 Oct.  2020  - 4.11.8
+
+- [Hardware] - ENKI-LEXMAN Bulb ( Leroy Merlin)
+- [Hardware] - INNR SP 120 Plug ( Instant Power, Voltage, Current reporting)
+- [Hardware] - Schneider 1 Gang Shutter
+
+# 15 Oct.   2020  - 4.11.7
+- [Hardware] - Various fixed for Heiman remote device.
+
 ## 29 Sept. 2020  - 4.11.2
 
 - [Issue] - Spelling mistake for lumi.sensor_switch label in French

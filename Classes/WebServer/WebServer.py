@@ -872,6 +872,9 @@ class WebServer(object):
                             if self.ListOfDevices[item][attribut] == {}:
                                 device[attribut] = ''
                                 
+                            elif attribut == 'ConsistencyCheck' and self.ListOfDevices[item]['Status'] == 'notDB':
+                                self.ListOfDevices[item][attribut] = 'not in DZ'
+
                             elif self.ListOfDevices[item][attribut] == '' and self.ListOfDevices[item]['MacCapa'] == '8e':
                                 if attribut == 'DeviceType':
                                     device[attribut] = 'FFD'

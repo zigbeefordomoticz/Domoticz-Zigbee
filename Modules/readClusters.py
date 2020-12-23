@@ -22,7 +22,7 @@ from time import time
 
 from Modules.zigateConsts import LEGRAND_REMOTE_SHUTTER, LEGRAND_REMOTE_SWITCHS, LEGRAND_REMOTES, ZONE_TYPE, THERMOSTAT_MODE_2_LEVEL
 from Modules.domoMaj import MajDomoDevice
-from Modules.domoTools import lastSeenUpdate, timedOutDevice
+from Modules.domoTools import timedOutDevice
 from Modules.tools import DeviceExist, getEPforClusterType, is_hex, voltage2batteryP, checkAttribute, checkAndStoreAttributeValue, \
                         set_status_datastruct, set_timestamp_datastruct, get_isqn_datastruct, instrument_timing
 from Classes.Transport.sqnMgmt import sqn_get_internal_sqn_from_app_sqn, TYPE_APP_ZCL
@@ -283,7 +283,18 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         # Continue Cleanup and remove '/'
         modelName = AttrModelName.replace('/','')
 
-        if modelName  in ('lumi.remote.b686opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b286opcn01'):
+        if modelName == 'TS0207':
+            # Thanks to TUYA, we get the Model Name used for Water Leak and for Range Extender.
+            if 'ZDeviceID' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['ZDeviceID'] == '0402':
+                # Water Leak
+                modelName += '-waterleak'
+            elif 'ZDeviceID' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['ZDeviceID'] == '0008':
+                # Range extender
+                modelName += '-extender'
+            else:
+                modelName = ''
+
+        elif modelName  in ('lumi.remote.b686opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b286opcn01'):
             # Manage the Aqara Bulb mode or not
             if self.pluginconf.pluginConf['AqaraOppleBulbMode']:
                 # Overwrite the Confif file
@@ -639,8 +650,9 @@ def UpdateBatteryAttribute( self, MsgSrcAddr, MsgSrcEp ):
                                'lumi.remote.b286opcn01-bulb', 'lumi.remote.b486opcn01-bulb', 'lumi.remote.b686opcn01-bulb',
                                'lumi.sen_ill.mgl01')
 
-    BATTERY_200PERCENT = ( "Danalock V3", "V3-BTZB", "SML001" , "RWL021", "SPZB0001", "WarningDevice" , "SmokeSensor-N", "SmokeSensor-EM",
-                           "SMOK_V16", "RH3001" ,"TS0201", "COSensor-N", "COSensor-EM" , "TS0043", "TH01", "DS01", "WB01")
+    BATTERY_200PERCENT = ( "TS0207-waterleak", "Danalock V3", "V3-BTZB", "SML001" , "RWL021", "SPZB0001", "WarningDevice" , "SmokeSensor-N", "SmokeSensor-EM",
+                           "SMOK_V16", "RH3001" ,"TS0201", "COSensor-N", "COSensor-EM" , "TS0043", "TH01", "66666", "DS01", "DSO1", "WB01", "WB-01")
+                           
     BATTERY_3VOLTS = ( "lumi.sen_ill.mgl01", "3AFE130104020015", "3AFE140103020000", "3AFE14010402000D", "3AFE170100510001" ) + LEGRAND_REMOTES
 
     BATTERY_15_VOLTS = ( )
