@@ -119,7 +119,7 @@ def schneider_wiser_registration( self, Devices, key ):
     This method is called during the pairing/discovery process.
     Purpose is to do some initialisation (write) on the coming device.
     """
-    self.log.logging( "Schneider", 'Debug', "schneider_wiser_registration for device %s" %key)
+    self.log.logging( "Schneider", 'Debug', "schneider_wiser_registration for device %s" %key, nwkid=key)
 
     if 'Schneider' not in self.ListOfDevices[ key ]:
         self.ListOfDevices[ key ]['Schneider'] = {}
@@ -354,7 +354,7 @@ def schneider_hact_heating_mode( self, key, mode ):
 
     MODE = { 'setpoint' : 0x02, 'FIP': 0x03 }
 
-    self.log.logging("Schneider", 'Debug', "schneider_hact_heating_mode for device %s requesting mode: %s" %(key, mode))
+    self.log.logging("Schneider", 'Debug', "schneider_hact_heating_mode for device %s requesting mode: %s" %(key, mode), nwkid=key)
     if mode not in MODE:
         _context = {
             'Error code': 'SCHN0002',
@@ -423,7 +423,7 @@ def schneider_hact_fip_mode( self, key, mode):
             'Frost Protection': 0x04,
             'Off': 0x05 }
 
-    self.log.logging( "Schneider", 'Debug', "schneider_hact_fip_mode for device %s requesting mode: %s" %(key, mode))
+    self.log.logging( "Schneider", 'Debug', "schneider_hact_fip_mode for device %s requesting mode: %s" %(key, mode), key)
 
     if mode not in MODE:
         _context = {
@@ -448,7 +448,7 @@ def schneider_hact_fip_mode( self, key, mode):
     payload = cluster_frame + sqn + cmd + zone_mode + fipmode + prio + 'ff'
 
     self.log.logging( "Schneider", 'Debug', "schneider_hact_fip_mode for device %s sending command: %s , zone_monde: %s, fipmode: %s" 
-            %(key, cmd, zone_mode, fipmode))
+            %(key, cmd, zone_mode, fipmode), key)
 
     raw_APS_request( self, key, EPout, '0201', '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = is_ack_tobe_disabled(self, key))
     # Reset Heartbeat in order to force a ReadAttribute when possible
@@ -460,7 +460,7 @@ def schneider_thermostat_check_and_bind(self, key, forceRebind = False):
     Arguments:
         key {[type]} -- [description]
     """
-    self.log.logging( "Schneider", 'Debug', "schneider_thermostat_check_and_bind : %s " %key )
+    self.log.logging( "Schneider", 'Debug', "schneider_thermostat_check_and_bind : %s " %key, key )
 
     importSchneiderZoning (self)
     if self.SchneiderZone is None:
@@ -499,7 +499,7 @@ def schneider_actuator_check_and_bind(self, key, forceRebind = False):
     Arguments:
         key {[type]} -- [description]
     """
-    self.log.logging( "Schneider", 'Debug', "schneider_actuator_check_and_bind : %s " %key )
+    self.log.logging( "Schneider", 'Debug', "schneider_actuator_check_and_bind : %s " %key, key )
 
     importSchneiderZoning (self)
     if self.SchneiderZone is None:
@@ -555,11 +555,11 @@ def schneider_setpoint_thermostat( self, key, setpoint):
 
     if self.SchneiderZone is not None:
         for zone in self.SchneiderZone:
-            self.log.logging( "Schneider", 'Debug', "schneider_setpoint - Zone Information: %s " %zone )
+            self.log.logging( "Schneider", 'Debug', "schneider_setpoint - Zone Information: %s " %zone, NWKID )
             if self.SchneiderZone[ zone ]['Thermostat']['NWKID'] == NWKID :
-                self.log.logging( "Schneider", 'Debug', "schneider_setpoint - found %s " %zone )
+                self.log.logging( "Schneider", 'Debug', "schneider_setpoint - found %s " %zone, NWKID )
                 for hact in self.SchneiderZone[ zone ]['Thermostat']['HACT']:
-                    self.log.logging( "Schneider", 'Debug', "schneider_setpoint - found hact %s " %hact )
+                    self.log.logging( "Schneider", 'Debug', "schneider_setpoint - found hact %s " %hact, NWKID )
                     schneider_setpoint_actuator(self, hact, setpoint)
                     # Reset Heartbeat in order to force a ReadAttribute when possible
                     self.ListOfDevices[key]['Heartbeat'] = '0'
@@ -673,7 +673,7 @@ def schneider_temp_Setcurrent( self, key, setpoint):
             EPout= tmpEp
 
     self.log.logging( "Schneider", 'Debug', "schneider_temp_Setcurrent for device %s sending command: %s , setpoint: %s" 
-            %(key, cmd, setpoint))
+            %(key, cmd, setpoint),key)
 
     # In the case of VACT, the device is listening more a less every 30s to 50s, 
     # if raw_APS is not sent with ACK there is a risk to lost the command !
@@ -851,9 +851,9 @@ def schneider_update_ThermostatDevice (self, Devices, NWKID, srcEp, ClusterID, s
     if self.SchneiderZone is not None:
         for zone in self.SchneiderZone:
             if self.SchneiderZone[ zone ]['Thermostat']['NWKID'] == NWKID :
-                self.log.logging( "Schneider", 'Debug', "schneider_update_ThermostatDevice - found %s " %zone )
+                self.log.logging( "Schneider", 'Debug', "schneider_update_ThermostatDevice - found %s " %zone, NWKID)
                 for hact in self.SchneiderZone[ zone ]['Thermostat']['HACT']:
-                    self.log.logging( "Schneider", 'Debug', "schneider_update_ThermostatDevice - update hact setpoint mode hact nwwkid:%s " %hact )
+                    self.log.logging( "Schneider", 'Debug', "schneider_update_ThermostatDevice - update hact setpoint mode hact nwwkid:%s " %hact, NWKID)
                     schneider_hact_heating_mode(self, hact, "setpoint")
 
 
@@ -934,7 +934,7 @@ def schneider_set_contract( self, key, EPout, kva):
     max_real_amps_before_tripping = max_real_amps * 110 / 100
     max_real_milli_amps_before_tripping = round (max_real_amps_before_tripping * 1000)
     self.log.logging( "Schneider", 'Debug', "schneider_set_contract for device %s %s requesting max_real_milli_amps_before_tripping: %s milliamps"
-        %(key,EPout, max_real_milli_amps_before_tripping))
+        %(key,EPout, max_real_milli_amps_before_tripping),key)
 
     if 'Schneider' not in self.ListOfDevices[key]:
         self.ListOfDevices[key]['Schneider'] = {}
@@ -1029,7 +1029,7 @@ def wiser_unsupported_attribute( self, srcNWKID, srcEp, Sqn, ClusterID, attribut
     cmd = '01'
     payload = cluster_frame + Sqn + cmd + attribute[2:4] + attribute[0:2] + '86'  
     self.log.logging( "Schneider", 'Debug', "wiser_unsupported_attribute for device %s sending command: %s , attribute: %s" 
-            %(srcNWKID, cmd, attribute))
+            %(srcNWKID, cmd, attribute),srcNWKID)
     raw_APS_request( self, srcNWKID, '0b', ClusterID, '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = is_ack_tobe_disabled(self, srcNWKID))
 
 
@@ -1073,7 +1073,7 @@ def importSchneiderZoning( self ):
                 'zone': zone,
                 'SchneiderZoning': SchneiderZoning[zone]
             }
-            self.log.logging( "Schneider", 'Error', "importSchneiderZoning - Missing Thermostat entry in %s" %SchneiderZoning[zone], None, _context)
+            self.log.logging( "Schneider", 'Error', "importSchneiderZoning - Missing Thermostat entry in %s" %SchneiderZoning[zone], ieee_thermostat, _context)
             continue
 
         if SchneiderZoning[zone]['ieee_thermostat'] not in self.IEEE2NWK:
@@ -1084,7 +1084,7 @@ def importSchneiderZoning( self ):
                 'SchneiderZoning[zone]':SchneiderZoning[zone]['ieee_thermostat'],
                 'IEEE': self.IEEE2NWK
             }
-            self.log.logging( "Schneider",  'Error', "importSchneiderZoning - Thermostat IEEE %s do not exist" %SchneiderZoning[zone]['ieee_thermostat'], None, _context)
+            self.log.logging( "Schneider",  'Error', "importSchneiderZoning - Thermostat IEEE %s do not exist" %SchneiderZoning[zone]['ieee_thermostat'], ieee_thermostat, _context)
             continue
 
         self.SchneiderZone[zone] = {
@@ -1101,7 +1101,7 @@ def importSchneiderZoning( self ):
                 'zone': zone,
                 'SchneiderZoning': SchneiderZoning[zone]
             }
-            self.log.logging( "Schneider",  'Debug', "importSchneiderZoning - No actuators for this Zone: %s" %zone, None, _context)
+            self.log.logging( "Schneider",  'Debug', "importSchneiderZoning - No actuators for this Zone: %s" %zone, ieee_thermostat, _context)
             continue
 
         for hact in SchneiderZoning[zone]['actuator']:
