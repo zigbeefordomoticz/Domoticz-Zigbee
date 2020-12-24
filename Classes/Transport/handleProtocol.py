@@ -45,7 +45,7 @@ def process_frame(self, decoded_frame):
     if MsgType == '8001':
         #Async message
         self.logging_receive( 'Debug', "process_frame - MsgType: %s " %( MsgType))
-        NXP_log_message(self, decoded_frame[12:len(decoded_frame) - 2] )
+        NXP_log_message(self, decoded_frame )
         return
 
 
@@ -142,11 +142,12 @@ def NXP_Extended_Error_Code( self, MsgData):
         self.logging_receive_error( "NXP_Extended_Error_Code - Extended Error Code: [%s] %s" %( MsgData, StatusMsg), context=_context)
 
 
-def NXP_log_message(self, MsgData):  # Reception log Level
+def NXP_log_message(self, decoded_frame):  # Reception log Level
 
     LOG_FILE = "ZiGate"
 
-    self.logging_receive( 'Log' , "8001 - %s" %MsgData[2:] )
+    self.logging_receive( 'Log' , "8001 - %s" %decoded_frame )
+    MsgData = decoded_frame[12:len(decoded_frame) - 2]
     MsgLogLvl = MsgData[0:2]
     try:
         log_message = binascii.unhexlify(MsgData[2:]).decode('utf-8')
@@ -160,7 +161,9 @@ def NXP_log_message(self, MsgData):  # Reception log Level
         with open( logfilename , 'at', encoding='utf-8') as file:
             try:
                 #file.write( "%s %s %s" %(str(datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]), MsgLogLvl,log_message) + "\n")
-                file.write( "%s %s " %(str(datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]), MsgLogLvl) + log_message + "\n")
+                file.write( "%s %s " %(str(datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]), MsgLogLvl) + log_message)
+                if decoded_frame[len(decoded_frame) - 4: len(decoded_frame) - 2] == '20':
+                    file.write( "\n")
             except IOError:
                 self.logging_send( 'Error',"Error while writing to ZiGate log file %s" %logfilename)
     except IOError:
