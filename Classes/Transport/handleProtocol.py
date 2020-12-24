@@ -42,6 +42,13 @@ def process_frame(self, decoded_frame):
 
     MsgData = decoded_frame[12:len(decoded_frame) - 4]
 
+    if MsgType == '8001':
+        #Async message
+        self.logging_receive( 'Debug', "process_frame - MsgType: %s " %( MsgType))
+        NXP_log_message(self, decoded_frame)
+        return
+
+
     if MsgType == '0302': # PDM loaded, ZiGate ready (after an internal error, but also after an ErasePDM)
         self.logging_receive( 'Debug', "process_frame - PDM loaded, ZiGate ready: %s MsgData %s" % (MsgType, MsgData))
         for x in list(self.ListOfCommands):
@@ -67,12 +74,6 @@ def process_frame(self, decoded_frame):
         self.forwarder_queue.put( decoded_frame)
         return
 
-
-    if MsgType == '8001':
-        #Async message
-        self.logging_receive( 'Debug', "process_frame - MsgType: %s " %( MsgType))
-        NXP_log_message(self, decoded_frame)
-        return
 
     if MsgType == '9999':
         # Async message
