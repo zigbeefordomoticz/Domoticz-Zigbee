@@ -161,7 +161,9 @@ def NXP_log_message(self, decoded_frame):  # Reception log Level
         with open( logfilename , 'at', encoding='utf-8') as file:
             try:
                 #file.write( "%s %s %s" %(str(datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]), MsgLogLvl,log_message) + "\n")
-                file.write( "%s %s " %(str(datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]), MsgLogLvl) + log_message)
+                if decoded_frame[len(decoded_frame) - 4: len(decoded_frame) - 2] == '20':
+                    file.write( "%s %s " %(str(datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]), MsgLogLvl))
+                file.write( log_message)
                 if decoded_frame[len(decoded_frame) - 4: len(decoded_frame) - 2] == '20':
                     file.write( "\n")
             except IOError:
