@@ -162,10 +162,10 @@ def NXP_log_message(self, decoded_frame):  # Reception log Level
             try:
                 #file.write( "%s %s %s" %(str(datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]), MsgLogLvl,log_message) + "\n")
                 if decoded_frame[len(decoded_frame) - 4: len(decoded_frame) - 2] == '20':
-                    file.write( "%s %s " %(str(datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]), MsgLogLvl))
+                    file.write( "\n%s %s " %(str(datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]), MsgLogLvl))
+
                 file.write( log_message)
-                if decoded_frame[len(decoded_frame) - 4: len(decoded_frame) - 2] == '20':
-                    file.write( "\n")
+
             except IOError:
                 self.logging_send( 'Error',"Error while writing to ZiGate log file %s" %logfilename)
     except IOError:
