@@ -150,9 +150,11 @@ def NXP_log_message(self, MsgData):  # Reception log Level
     try:
         log_message = binascii.unhexlify(MsgData[2:]).decode('utf-8')
     except:
-        log_message = MsgData
-    
-    logfilename =  self.pluginconf.pluginConf['pluginLogs'] + "/" + LOG_FILE + '_' + '%02d' %self.HardwareID + "_" + ".log"
+        log_message = binascii.unhexlify(MsgData[2:]).decode('utf-8', errors = 'ignore')
+        log_message = log_message.replace('\x00', '')
+        log_message = log_message.strip()
+
+    logfilename =  self.pluginconf.pluginConf['pluginLogs'] + "/" + LOG_FILE + '_' + '%02d' %self.hardwareid + "_" + ".log"
     try:
         with open( logfilename , 'at', encoding='utf-8') as file:
             try:
