@@ -3206,7 +3206,7 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
             self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId][
                 "0000"
             ] = "Cmd: %s, %s" % (MsgCmd, unknown_)
-    elif _ModelName == "TRADFRI on/off switch":
+    elif _ModelName in ( "TRADFRI onoff switch", "TRADFRI on/off switch"):
         # Ikea Switch On/Off
 
         if MsgClusterId == "0008":
@@ -3637,12 +3637,10 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
             "0000"
         ] = "Cmd: %s, %s" % (MsgCmd, unknown_)
 
-    elif _ModelName == "TRADFRI on/off switch":
+    elif _ModelName in ( "TRADFRI onoff switch",  "TRADFRI on/off switch"):
         # Ikea Switch On/Off
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0006", MsgCmd)
-        self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId][
-            "0000"
-        ] = "Cmd: %s, %s" % (MsgCmd, unknown_)
+        self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId][ "0000" ] = "Cmd: %s, %s" % (MsgCmd, unknown_)
 
     elif _ModelName == "RC 110":
         # INNR RC 110 Remote command
