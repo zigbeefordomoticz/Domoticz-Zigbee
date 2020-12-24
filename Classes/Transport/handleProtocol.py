@@ -147,7 +147,11 @@ def NXP_log_message(self, MsgData):  # Reception log Level
     LOG_FILE = "ZiGate"
 
     MsgLogLvl = MsgData[0:2]
-    log_message = binascii.unhexlify(MsgData[2:]).decode('utf-8')
+    try:
+        log_message = binascii.unhexlify(MsgData[2:]).decode('utf-8')
+    except:
+        log_message = MsgData
+    
     logfilename =  self.pluginconf.pluginConf['pluginLogs'] + "/" + LOG_FILE + '_' + '%02d' %self.HardwareID + "_" + ".log"
     try:
         with open( logfilename , 'at', encoding='utf-8') as file:
