@@ -6,7 +6,7 @@
 
 import Domoticz
 import binascii
-import datetime
+from datetime import datetime
 
 from Classes.Transport.decode8002 import decode8002_and_process
 from Classes.Transport.decode8000 import decode8000
@@ -45,7 +45,7 @@ def process_frame(self, decoded_frame):
     if MsgType == '8001':
         #Async message
         self.logging_receive( 'Debug', "process_frame - MsgType: %s " %( MsgType))
-        NXP_log_message(self, decoded_frame)
+        NXP_log_message(self, decoded_frame[12:len(decoded_frame) - 2] )
         return
 
 
@@ -146,6 +146,7 @@ def NXP_log_message(self, MsgData):  # Reception log Level
 
     LOG_FILE = "ZiGate"
 
+    self.logging_receive( 'Log' , "8001 - %s" %MsgData[2:] )
     MsgLogLvl = MsgData[0:2]
     try:
         log_message = binascii.unhexlify(MsgData[2:]).decode('utf-8')
@@ -158,7 +159,8 @@ def NXP_log_message(self, MsgData):  # Reception log Level
     try:
         with open( logfilename , 'at', encoding='utf-8') as file:
             try:
-                file.write( "%s %s %s" %(str(datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]), MsgLogLvl,log_message) + "\n")
+                #file.write( "%s %s %s" %(str(datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]), MsgLogLvl,log_message) + "\n")
+                file.write( "%s %s " %(str(datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]), MsgLogLvl) + log_message + "\n")
             except IOError:
                 self.logging_send( 'Error',"Error while writing to ZiGate log file %s" %logfilename)
     except IOError:
