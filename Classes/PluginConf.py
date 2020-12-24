@@ -158,11 +158,12 @@ SETTINGS = {
         'disableAckOnZCL': {'type': 'bool', 'default': 0,    'current': None, 'restart': False, 'hidden': False,'Advanced': True},
         'waitForResponse': {'type': 'bool', 'default': 0,    'current': None, 'restart': False, 'hidden': True, 'Advanced': True},
         'byPassDzConnection': {'type': 'bool', 'default': 1, 'current': None, 'restart': True,  'hidden': True, 'Advanced': True},
-        'SerialReadV2':    {'type': 'bool', 'default': 0,    'current': None, 'restart': False, 'hidden': True, 'Advanced': True},
+        'SerialReadV2':    {'type': 'bool', 'default': 1,    'current': None, 'restart': False, 'hidden': True, 'Advanced': True},
         'ieeeForRawAps':   {'type': 'bool', 'default': 0,    'current': None, 'restart': True,  'hidden': True, 'Advanced': True},
         'forceFullSeqMode':      {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'RawReadAttribute':      {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'RawWritAttribute':      {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
+        'writerTimeOut':         {'type': 'bool', 'default': 1, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         }
     },
 
@@ -183,14 +184,14 @@ SETTINGS = {
 
     # Verbose
     'VerboseLogging': {'Order': 12, 'param': {
-        'ZiGateReactTime':      {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
+        'ZiGateReactTime':      {'type': 'bool', 'default': 1,     'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'debugMatchId':         {'type': 'str',  'default': 'ffff','current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'useDomoticzLog':       {'type': 'bool', 'default': 1,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'logDeviceUpdate':      {'type': 'bool', 'default': 1,     'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'logFORMAT':            {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'logThreadName':        {'type': 'bool', 'default': 1,     'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
-        'NXPExtendedErrorCode': {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
-        'trackError':           {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
+        'NXPExtendedErrorCode': {'type': 'bool', 'default': 1,     'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
+        'trackError':           {'type': 'bool', 'default': 1,     'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'capturePairingInfos':  {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'debugLQI':             {'type': 'int',  'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'debugInput':           {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
@@ -308,7 +309,7 @@ SETTINGS = {
         'rebindLivolo':          {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': False},
         'allowAutoPairing':      {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'forceAckOnZCL':         {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
-        'writerTimeOut':         {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
+        
         }
     }
 }
