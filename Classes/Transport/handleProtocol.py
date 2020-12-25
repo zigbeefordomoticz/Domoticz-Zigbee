@@ -48,7 +48,6 @@ def process_frame(self, decoded_frame):
         NXP_log_message(self, decoded_frame )
         return
 
-
     if MsgType == '0302': # PDM loaded, ZiGate ready (after an internal error, but also after an ErasePDM)
         self.logging_receive( 'Debug', "process_frame - PDM loaded, ZiGate ready: %s MsgData %s" % (MsgType, MsgData))
         for x in list(self.ListOfCommands):
@@ -74,33 +73,32 @@ def process_frame(self, decoded_frame):
         self.forwarder_queue.put( decoded_frame)
         return
 
-
     if MsgType == '9999':
         # Async message
-        self.logging_receive( 'Debug', "process_frame - MsgType: %s MsgData: %s" %( MsgType, MsgData))
+        self.logging_receive( 'Debug', "process_frame - MsgType: %s MsgData: %s Status: %s" %( MsgType, MsgData, MsgData[0:2]))
         NXP_Extended_Error_Code( self, MsgData)
         return
 
     if MsgType == '8000': # Command Ack
-        self.logging_receive( 'Debug', "process_frame - MsgType: %s MsgData: %s decode and forward" %( MsgType, MsgData))
+        self.logging_receive( 'Debug', "process_frame - MsgType: %s MsgData: %s Status: %s decode and forward" %( MsgType, MsgData, MsgData[0:2]))
         decode8000( self, decoded_frame)
         self.forwarder_queue.put( decoded_frame)
         return
 
     if MsgType in ( '8012', '8702'): # Transmission Akc for no-ack commands
-        self.logging_receive( 'Debug', "process_frame - MsgType: %s MsgData: %s decode" %( MsgType, MsgData))
+        self.logging_receive( 'Debug', "process_frame - MsgType: %s MsgData: %s Status: %s decode" %( MsgType, MsgData, MsgData[0:2]))
         if self.firmware_with_8012:
             decode8012_8702( self, decoded_frame)
         return
 
     if self.firmware_with_aps_sqn and MsgType == '8011': # Command Ack (from target device)
-        self.logging_receive( 'Debug', "process_frame - MsgType: %s MsgData: %s decode and forward" %( MsgType, MsgData))
+        self.logging_receive( 'Debug', "process_frame - MsgType: %s MsgData: %s Status: %s decode and forward" %( MsgType, MsgData, MsgData[0:2]))
         decode8011( self, decoded_frame)
         self.forwarder_queue.put( decoded_frame)
         return
 
     if not self.firmware_with_aps_sqn and MsgType == '8011':
-        self.logging_receive( 'Debug', "process_frame - MsgType: %s MsgData: %s decode and forward" %( MsgType, MsgData))
+        self.logging_receive( 'Debug', "process_frame - MsgType: %s MsgData: %s Status: %s decode and forward" %( MsgType, MsgData, MsgData[0:2]))
         decode8011_31c( self, decoded_frame)
         self.forwarder_queue.put( decoded_frame)
         return
@@ -110,7 +108,6 @@ def process_frame(self, decoded_frame):
         # Async message
         # Route Discovery, we don't handle it
         return
-
 
     if MsgType == "8002" and MsgData:
         # Data indication
