@@ -23,7 +23,7 @@ def start_writer_thread( self ):
         self.writer_thread.start()
 
 def writer_thread( self ):
-    self.logging_send('Status', "ZigateTransport: thread_processing_and_sending Thread start.")
+    self.logging_send('Status', "ZigateTransport: writer_thread Thread start.")
 
     while self.running:
         frame = None
@@ -60,7 +60,7 @@ def writer_thread( self ):
             self.logging_send( 'Error',"Error while receiving a ZiGate command: %s" %e)
             handle_thread_error( self, e, 0, 0, frame)
 
-    self.logging_send('Status',"ZigateTransport: thread_processing_and_sending Thread stop.")
+    self.logging_send('Status',"ZigateTransport: writer_thread Thread stop.")
 
 def wait_for_semaphore( self , command ):
         # Now we will block on Semaphore to serialize and limit the number of concurent commands on ZiGate
@@ -221,6 +221,7 @@ def native_write_to_zigate( self, serialConnection, encoded_data):
         self.logging_send( 'Error',"write_to_zigate - error while writing %s" %(e))
         return False
 
+    return True
 
 def semaphore_timeout( self, current_command ):
     # Semaphore has been Release due to Timeout
