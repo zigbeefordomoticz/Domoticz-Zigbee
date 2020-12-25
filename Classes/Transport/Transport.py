@@ -205,7 +205,7 @@ class ZigateTransport(object):
         # Log all activities received from ZiGate
         self.log.logging('TransportRx', logType, message, nwkid=nwkid, context = _context)
 
-    def transport_context( self, context):
+    def transport_error_context( self, context):
         if context is None:
             context = {}
         context['Queues'] = {
@@ -215,6 +215,7 @@ class ZigateTransport(object):
             'SemaphoreValue': self.semaphore_gate._value,
             }
         context['Firmware'] = {
+            'dzCommunication': self.force_dz_communication,
             'with_aps_sqn': self.firmware_with_aps_sqn ,
             'with_8012': self.firmware_with_8012,
             'nPDU': self.npdu,
@@ -230,16 +231,17 @@ class ZigateTransport(object):
             'ReqRcv': str(self._ReqRcv),
         }
         context['Thread'] = {
+            'byPassDzCommunication': self.pluginconf.pluginConf['byPassDzConnection'],
             'ThreadName': threading.current_thread().name
         }
         return context
 
     def logging_receive_error( self, message, Nwkid=None, context=None):
-        self.logging_receive('Error', message,  Nwkid, self.transport_context( context))
+        self.logging_receive('Error', message,  Nwkid, self.transport_error_context( context))
 
 
     def logging_send_error( self, message, Nwkid=None, context=None):
-        self.logging_send('Error', message,  Nwkid, self.transport_context( context))
+        self.logging_send('Error', message,  Nwkid, self.transport_error_context( context))
 
 def open_connection( self ):
 
