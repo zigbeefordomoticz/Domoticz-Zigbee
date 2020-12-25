@@ -200,7 +200,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     1:'10', # Manual
                     2:'20', # Schedule
                     3:'30', # Energy Saver
-                    4:'40', # Schedule Ebergy Saver
+                    4:'40', # Schedule Energy Saver
                     5:'50', # Holiday Off
                     6:'60'  # Holiday Frost Protection
                     }

@@ -1598,16 +1598,9 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     elif MsgAttrID in ( '4000', '4001', '4002', '4003', '4008' ):
 
         eurotronics = False
-        if (
-            'Manufacturer' in self.ListOfDevices[MsgSrcAddr]
-            and self.ListOfDevices[MsgSrcAddr]['Manufacturer'] == '1037'
-        ):
+        if ( 'Manufacturer' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Manufacturer'] == '1037' ):
             eurotronics = True
-        if (
-            'Manufacturer Name' in self.ListOfDevices[MsgSrcAddr]
-            and self.ListOfDevices[MsgSrcAddr]['Manufacturer Name']
-            == 'Eurotronic'
-        ):
+        if ( 'Manufacturer Name' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Manufacturer Name'] == 'Eurotronic' ):
             eurotronics = True
 
         if eurotronics:
@@ -1636,7 +1629,13 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                     checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, '0012',  ValueTemp )
 
             elif MsgAttrID == '4008': # Host Flags for EUROTRONICS
+
+                # 0x00000005 ==> Boost
+                # 0x00000001 ==> Normal
+                # 0x00000011 ==> Window Detection
+
                 HOST_FLAGS = {
+                        0x000001:'???',
                         0x000002:'Display Flipped',
                         0x000004:'Boost mode',
                         0x000010:'disable off mode',
@@ -1645,6 +1644,14 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                         }
                 self.log.logging( "Cluster", 'Debug', "ReadCluster - 0201 - %s/%s Host Flags: %s" %(MsgSrcAddr, MsgSrcEp,value), MsgSrcAddr)
                 checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  value )
+
+                if ( int(value,16) & 0x000010 ) == 0x00000010:
+                    # Window Detection
+                    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0500', '01')
+                if ( int(value,16) & 0x000010 ) == 0x0:
+                    # Window Detection
+                    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0500', '00')
+
 
     elif MsgAttrID in ( 'e010', 'e011', 'e012', 'e013', 'e014', 'e030', 'e031', 'e020'):
         if MsgAttrID == 'e010': # Schneider Thermostat Mode
