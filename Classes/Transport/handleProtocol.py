@@ -154,17 +154,19 @@ def NXP_log_message(self, decoded_frame):  # Reception log Level
     except:
         log_message = binascii.unhexlify(MsgData[2:]).decode('utf-8', errors = 'ignore')
         log_message = log_message.replace('\x00', '')
-        log_message = log_message.strip()
 
     logfilename =  self.pluginconf.pluginConf['pluginLogs'] + "/" + LOG_FILE + '_' + '%02d' %self.hardwareid + "_" + ".log"
     try:
         with open( logfilename , 'at', encoding='utf-8') as file:
             try:
-                #file.write( "%s %s %s" %(str(datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]), MsgLogLvl,log_message) + "\n")
-                if decoded_frame[len(decoded_frame) - 4: len(decoded_frame) - 2] == '20':
-                    file.write( "\n%s %s " %(str(datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]), MsgLogLvl))
+                if self.newline_required:
+                    file.write( "\n%s %s" %(str(datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]), MsgLogLvl))
+                self.newline_required = False
 
-                file.write( log_message)
+                file.write( " " + log_message)
+
+                if decoded_frame[len(decoded_frame) - 4: len(decoded_frame) - 2] == '20':
+                    self.newline_required = True
 
             except IOError:
                 self.logging_send( 'Error',"Error while writing to ZiGate log file %s" %logfilename)

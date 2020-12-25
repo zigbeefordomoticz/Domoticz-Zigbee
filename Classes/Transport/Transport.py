@@ -31,6 +31,9 @@ class ZigateTransport(object):
         # Logging
         self.log = log
 
+        # Line management for 0x8001 message
+        self.newline_required = True
+
         # Statistics
         self.statistics = statistics
         self.pluginconf = pluginconf
