@@ -40,8 +40,11 @@ def writer_thread( self ):
 
                 wait_for_semaphore( self , command)
 
-                thread_sendData( self, command['cmd'], command['datas'], command['ackIsDisabled'], command['waitForResponseIn'], command['InternalSqn'])
-                self.logging_send( 'Debug', "Command sent!!!! %s" %command)
+                is_error = thread_sendData( self, command['cmd'], command['datas'], command['ackIsDisabled'], command['waitForResponseIn'], command['InternalSqn'])
+                self.logging_send( 'Debug', "Command sent!!!! %s is_error: %s" %(command, is_error))
+                if is_error in ('PortClosed', 'SocketClosed'):
+                    # Exit
+                    break
 
             elif command == 'STOP':
                 break
@@ -68,11 +71,7 @@ def wait_for_semaphore( self , command ):
         if self.force_dz_communication or self.pluginconf.pluginConf['writerTimeOut']:
             self.logging_send( 'Debug', "Waiting for a write slot . Semaphore %s TimeOut of 8s" %(self.semaphore_gate._value))
             block_status = self.semaphore_gate.acquire( blocking = True, timeout = 8.0) # Blocking until 8s
-
-
         else:
-
-
             self.logging_send( 'Debug', "Waiting for a write slot . Semaphore %s ATTENTION NO TIMEOUT FOR TEST PURPOSES" %(self.semaphore_gate._value))
             block_status = self.semaphore_gate.acquire( blocking = True, timeout = None) # Blocking  
 
@@ -99,7 +98,7 @@ def thread_sendData(self, cmd, datas, ackIsDisabled, waitForResponseIn, isqn ):
             'InternalSqn': isqn
         }
         self.logging_send_error( "sendData", context=_context)
-        return None
+        return 'BadData'
 
     self.ListOfCommands[ isqn ] = {
         'cmd': cmd,
@@ -111,7 +110,7 @@ def thread_sendData(self, cmd, datas, ackIsDisabled, waitForResponseIn, isqn ):
         'Semaphore': self.semaphore_gate._value
     }
     self.statistics._sent += 1
-    write_to_zigate( self, self._connection, bytes.fromhex(  encode_message( cmd, datas)) )
+    return write_to_zigate( self, self._connection, bytes.fromhex(  encode_message( cmd, datas)) )
 
 def encode_message( cmd, datas):
 
@@ -164,13 +163,14 @@ def write_to_zigate( self, serialConnection, encoded_data ):
     self.logging_send('Debug', "write_to_zigate")
 
     if self.pluginconf.pluginConf['byPassDzConnection'] and not self.force_dz_communication:
-        native_write_to_zigate( self, serialConnection, encoded_data)
+        return native_write_to_zigate( self, serialConnection, encoded_data)
     else:
-        domoticz_write_to_zigate( self, encoded_data)
+        return domoticz_write_to_zigate( self, encoded_data)
 
 
 def domoticz_write_to_zigate( self, encoded_data):
     self._connection.Send(encoded_data, 0)
+    return True
 
 def native_write_to_zigate( self, serialConnection, encoded_data):
 
@@ -180,17 +180,21 @@ def native_write_to_zigate( self, serialConnection, encoded_data):
         tcpiConnectionList = [ tcpipConnection ]
         inputSocket  = outputSocket = [ tcpipConnection ]
         if inputSocket == outputSocket == -1:
-            return
+            return 'SocketClosed'
+
         readable, writable, exceptional = select.select(inputSocket, outputSocket, inputSocket)
         if writable:
             try:
                 tcpipConnection.send( encoded_data )
             except socket.OSError as e:
                 self.logging_send( 'Error',"Socket %s error %s" %(tcpipConnection, e))
+                return 'SocketError'
 
         elif exceptional:
             self.logging_send( 'Error',"We have detected an error .... on %s" %inputSocket)
-        return
+            return 'WifiError'
+
+        return True
 
     # Serial
     try:
@@ -209,11 +213,13 @@ def native_write_to_zigate( self, serialConnection, encoded_data):
                 'EncodedData': str(encoded_data),
                 'serialConnection': str(serialConnection)
             }
-            self.logging_send_error(  "write_to_zigate port is closed!", context=_context)            
+            self.logging_send_error(  "write_to_zigate port is closed!", context=_context)    
+            return 'PortClosed'        
 
     except TypeError as e:
         #Disconnect of USB->UART occured
         self.logging_send( 'Error',"write_to_zigate - error while writing %s" %(e))
+        return False
 
 
 def semaphore_timeout( self, current_command ):
