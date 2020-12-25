@@ -36,6 +36,7 @@ def serial_read_from_zigate( self ):
 
         try:
             nb_inwaiting = self._connection.in_waiting
+            self.logging_receive( 'Log', "serial_read_from_zigate - reading %s bytes" %nb_inwaiting)
             data = self._connection.read( nb_inwaiting or 1)  # Blocking Read
 
         except serial.SerialException as e:
