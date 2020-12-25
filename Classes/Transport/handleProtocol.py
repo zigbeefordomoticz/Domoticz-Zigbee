@@ -137,7 +137,7 @@ def NXP_Extended_Error_Code( self, MsgData):
             'aPDU': self.apdu
         }
         #self.logging_receive_error( "NXP_Extended_Error_Code - Extended Error Code: [%s] %s" %( MsgData, StatusMsg), context=_context)
-        self.logging_receive( 'Log', "NXP_Extended_Error_Code - Extended Error Code: [%s] %s" %( MsgData, StatusMsg), context=_context)
+        self.logging_receive( 'Log', "NXP_Extended_Error_Code - Extended Error Code: [%s] %s" %( MsgData, StatusMsg))
 
 
 def NXP_log_message(self, decoded_frame):  # Reception log Level
