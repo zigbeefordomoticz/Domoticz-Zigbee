@@ -40,9 +40,9 @@ def writer_thread( self ):
 
                 wait_for_semaphore( self , command)
 
-                is_error = thread_sendData( self, command['cmd'], command['datas'], command['ackIsDisabled'], command['waitForResponseIn'], command['InternalSqn'])
-                self.logging_send( 'Debug', "Command sent!!!! %s is_error: %s" %(command, is_error))
-                if is_error in ('PortClosed', 'SocketClosed'):
+                send_ok = thread_sendData( self, command['cmd'], command['datas'], command['ackIsDisabled'], command['waitForResponseIn'], command['InternalSqn'])
+                self.logging_send( 'Debug', "Command sent!!!! %s send_ok: %s" %(command, send_ok))
+                if send_ok in ('PortClosed', 'SocketClosed'):
                     # Exit
                     break
 
