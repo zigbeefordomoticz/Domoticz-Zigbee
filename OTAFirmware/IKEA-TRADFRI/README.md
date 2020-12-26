@@ -1,5 +1,5 @@
 The IKEA TRADFRI Firmware are publicly available at the followin URL
-https://fw.ota.homesmart.ikea.net/feed/version_info.json
+http://fw.ota.homesmart.ikea.net/feed/version_info.json
 
 You can eventually download manually the firmware you want, and store them in this folder.
 
