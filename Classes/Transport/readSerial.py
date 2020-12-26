@@ -22,12 +22,12 @@ def open_serial( self ):
         self.logging_receive('Error',"Cannot open Zigate port %s error: %s" %(self._serialPort, e))
         return False
 
-    self.logging_receive( 'Log', "ZigateTransport: Serial Connection open: %s" %self._connection)
+    self.logging_receive( 'Debug', "ZigateTransport: Serial Connection open: %s" %self._connection)
     return True
 
 def serial_read_from_zigate( self ):
 
-    self.logging_receive( 'Log', "serial_read_from_zigate - listening")
+    self.logging_receive( 'Debug', "serial_read_from_zigate - listening")
 
     while self.running:
         # We loop until self.running is set to False, 
@@ -36,7 +36,7 @@ def serial_read_from_zigate( self ):
 
         try:
             nb_inwaiting = self._connection.in_waiting
-            self.logging_receive( 'Log', "serial_read_from_zigate - reading %s bytes" %nb_inwaiting)
+            self.logging_receive( 'Debug', "serial_read_from_zigate - reading %s bytes" %nb_inwaiting)
             data = self._connection.read( nb_inwaiting or 1)  # Blocking Read
 
         except serial.SerialException as e:

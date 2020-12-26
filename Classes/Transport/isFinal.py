@@ -22,17 +22,18 @@ def is_final_step( self, isqn, step):
     if step == 0x8000 and self.ListOfCommands[ isqn ]['cmd'] in CMD_ONLY_STATUS:
         return True
 
-    #if step == 0x8000  and not self.firmware_with_aps_sqn:
-    #    if cmd in ( 0x0100, 0x0110):
-    #        # Will be waiting for 8102 or 8110
-    #        return False
-    #    return True
+    if self.firmware_compatibility_mode:
+        if step == 0x8000 and cmd in ( 0x0100, 0x0110):
+            # with firmware 31a we just sync on Response of 0100 -> 8102 and 0110 -> 8110
+            return False
+        return True
 
     if is_nowait_cmd( self, isqn, cmd):
         return True
 
-    if step == 0x8012:
+    if step == 0x8012 and not self.firmware_compatibility_mode:
         return is_final_step_8012( self, isqn, cmd)
+
         
     if not self.firmware_with_8012 and is_ackIsDisabled(self, isqn, cmd): 
         # If we are in a firmware below 31d (included) there is no 0x8012.

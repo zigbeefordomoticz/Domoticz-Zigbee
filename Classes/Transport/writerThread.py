@@ -66,11 +66,13 @@ def wait_for_semaphore( self , command ):
         # Now we will block on Semaphore to serialize and limit the number of concurent commands on ZiGate
         # By using the Semaphore Timeout , we will make sure that the Semaphore is not acquired for ever.
         # However, if the Sem is relaed due to Timeout, we will not be notified !
-
+        timeout_cmd = 8.0
+        if self.firmware_compatibility_mode:
+            timeout_cmd = 4.0
 
         if self.force_dz_communication or self.pluginconf.pluginConf['writerTimeOut']:
             self.logging_send( 'Debug', "Waiting for a write slot . Semaphore %s TimeOut of 8s" %(self.semaphore_gate._value))
-            block_status = self.semaphore_gate.acquire( blocking = True, timeout = 8.0) # Blocking until 8s
+            block_status = self.semaphore_gate.acquire( blocking = True, timeout = timeout_cmd) # Blocking until 8s
         else:
             self.logging_send( 'Debug', "Waiting for a write slot . Semaphore %s ATTENTION NO TIMEOUT FOR TEST PURPOSES" %(self.semaphore_gate._value))
             block_status = self.semaphore_gate.acquire( blocking = True, timeout = None) # Blocking  

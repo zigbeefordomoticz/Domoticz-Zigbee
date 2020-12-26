@@ -77,6 +77,7 @@ class ZigateTransport(object):
         self.FirmwareVersion = None
         self.FirmwareMajorVersion = None
 
+        self.firmware_compatibility_mode = False  # 31a and below
         self.firmware_with_aps_sqn = False  # Available from 31d
         self.firmware_with_8012 = False     # Available from 31e
         self.PDMCommandOnly = False

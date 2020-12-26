@@ -13,7 +13,7 @@ from Classes.Transport.decode8000 import decode8000
 from Classes.Transport.decode8012 import decode8012_8702
 from Classes.Transport.decode8011 import decode8011
 from Classes.Transport.tools import ( release_command, get_isqn_from_ListOfCommands, STANDALONE_MESSAGE, CMD_PDM_ON_HOST)
-from Classes.Transport.handleFirmware31c import decode8011_31c
+from Classes.Transport.compatibilityMode import decode8011_31c
 from Classes.Transport.instrumentation import time_spent_process_frame
 
 from Modules.zigateConsts import MAX_SIMULTANEOUS_ZIGATE_COMMANDS
@@ -41,15 +41,14 @@ def process_frame(self, decoded_frame):
         return
 
     MsgData = decoded_frame[12:len(decoded_frame) - 4]
+    self.logging_receive( 'Debug', "process_frame -  MsgType: %s MsgData %s" % (MsgType, MsgData)) 
 
     if MsgType == '8001':
         #Async message
-        self.logging_receive( 'Debug', "process_frame - MsgType: %s " %( MsgType))
         NXP_log_message(self, decoded_frame )
         return
 
     if MsgType == '0302': # PDM loaded, ZiGate ready (after an internal error, but also after an ErasePDM)
-        self.logging_receive( 'Debug', "process_frame - PDM loaded, ZiGate ready: %s MsgData %s" % (MsgType, MsgData))
         for x in list(self.ListOfCommands):
             if self.ListOfCommands[x]['cmd'] == '0012':
                 release_command( self, x)
@@ -60,51 +59,34 @@ def process_frame(self, decoded_frame):
 
     if MsgType in CMD_PDM_ON_HOST:
         # Manage PDM on Host commands
-        self.logging_receive( 'Debug', "process_frame - CMD_PDM_ON_HOST MsgType: %s MsgData %s" % (MsgType, MsgData))  
         return
 
     if MsgType in ( '8035', ):
         # Internal ZiGate Message, just drop
-        self.logging_receive( 'Debug', "process_frame - ZiGate internal Message MsgType: %s MsgData %s" % (MsgType, MsgData))  
         return        
-
-    if int(MsgType, 16) in STANDALONE_MESSAGE:
-        self.logging_receive( 'Debug', "process_frame - STANDALONE_MESSAGE MsgType: %s MsgLength: %s MsgCRC: %s" % (MsgType, MsgLength, MsgCRC))    
-        self.forwarder_queue.put( decoded_frame)
-        return
 
     if MsgType == '9999':
         # Async message
-        self.logging_receive( 'Debug', "process_frame - MsgType: %s MsgData: %s Status: %s" %( MsgType, MsgData, MsgData[0:2]))
         NXP_Extended_Error_Code( self, MsgData)
         return
 
     if MsgType == '8000': # Command Ack
-        self.logging_receive( 'Debug', "process_frame - MsgType: %s MsgData: %s Status: %s decode and forward" %( MsgType, MsgData, MsgData[0:2]))
         decode8000( self, decoded_frame)
         self.forwarder_queue.put( decoded_frame)
         return
 
     if MsgType in ( '8012', '8702'): # Transmission Akc for no-ack commands
-        self.logging_receive( 'Debug', "process_frame - MsgType: %s MsgData: %s Status: %s decode" %( MsgType, MsgData, MsgData[0:2]))
         if self.firmware_with_8012:
             decode8012_8702( self, decoded_frame)
         return
 
-    if self.firmware_with_aps_sqn and MsgType == '8011': # Command Ack (from target device)
-        self.logging_receive( 'Debug', "process_frame - MsgType: %s MsgData: %s Status: %s decode and forward" %( MsgType, MsgData, MsgData[0:2]))
-        decode8011( self, decoded_frame)
-        self.forwarder_queue.put( decoded_frame)
-        return
-
-    if not self.firmware_with_aps_sqn and MsgType == '8011':
-        self.logging_receive( 'Debug', "process_frame - MsgType: %s MsgData: %s Status: %s decode and forward" %( MsgType, MsgData, MsgData[0:2]))
-        decode8011_31c( self, decoded_frame)
+    if  MsgType == '8011': # Command Ack (from target device)
+        if self.firmware_with_aps_sqn:
+            decode8011( self, decoded_frame)
         self.forwarder_queue.put( decoded_frame)
         return
 
     if MsgType == '8701':
-        self.logging_receive( 'Debug', "process_frame - MsgType: %s No action" %( MsgType))
         # Async message
         # Route Discovery, we don't handle it
         return
@@ -112,14 +94,20 @@ def process_frame(self, decoded_frame):
     if MsgType == "8002" and MsgData:
         # Data indication
         self.statistics._data += 1
-        self.logging_receive( 'Debug', "process_frame - 8002 MsgType: %s MsgLength: %s MsgCRC: %s" % (MsgType, MsgLength, MsgCRC))  
         self.forwarder_queue.put( decode8002_and_process( self, decoded_frame ) )
+        return
+
+    if self.firmware_compatibility_mode and MsgType in ('8102', '8100', '8110'):
+        self.statistics._data += 1
+        decode8011_31c(self, MsgType, decoded_frame )
+        self.forwarder_queue.put( decoded_frame)
         return
 
     # Forward the message to plugin for further processing
     self.statistics._data += 1
-    self.logging_receive( 'Debug', "process_frame -  MsgType: %s MsgData %s" % (MsgType, MsgData)) 
     self.forwarder_queue.put( decoded_frame)
+
+
 
 # Extended Error Code:
 def NXP_Extended_Error_Code( self, MsgData):
@@ -144,7 +132,7 @@ def NXP_log_message(self, decoded_frame):  # Reception log Level
 
     LOG_FILE = "ZiGate"
 
-    self.logging_receive( 'Log' , "8001 - %s" %decoded_frame )
+    #self.logging_receive( 'Debug' , "8001 - %s" %decoded_frame )
     MsgData = decoded_frame[12:len(decoded_frame) - 2]
     MsgLogLvl = MsgData[0:2]
     try:

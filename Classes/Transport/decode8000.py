@@ -103,7 +103,13 @@ def get_sqn_pdus( self, MsgData ):
     type_sqn = None
     apdu = npdu = None
 
-    if len(MsgData) >= 12:
+    if len(MsgData) == 8:
+        # Firmware 31a
+        self.firmware_compatibility_mode = True
+        self.firmware_with_aps_sqn = False
+        self.firmware_with_8012 = False
+
+    elif len(MsgData) >= 12:
         # New Firmware 3.1d (get aps sqn)
         type_sqn = MsgData[8:10]
         sqn_aps = MsgData[10:12]
@@ -115,11 +121,13 @@ def get_sqn_pdus( self, MsgData ):
             update_xPDU( self, npdu, apdu)
 
             if not self.firmware_with_8012:
+                self.firmware_compatibility_mode = False
                 self.firmware_with_aps_sqn = True
                 self.firmware_with_8012 = True
                 self.logging_send('Status', "==> Transport Mode switch to: 31e")
 
         elif not self.firmware_with_aps_sqn:
+            self.firmware_compatibility_mode = False
             self.firmware_with_aps_sqn = True
             self.logging_send('Status', "==> Transport Mode switch to: 31d")
         
