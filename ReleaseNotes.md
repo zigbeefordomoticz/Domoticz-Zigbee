@@ -16,6 +16,8 @@ Release Numbering
 
 - Odd numbers --> Stable
 - Even numbers  --> Beta
+
+
 ##    Dec.  2020  - 4.11.13
 - [Hardware] - Support Tuya Water leak sensor
 - [Hardware] - Support of Legrand Teleruptor
