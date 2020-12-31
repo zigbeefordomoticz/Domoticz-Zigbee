@@ -49,7 +49,7 @@ def thermostat_Setpoint( self, NwkId, setpoint):
             self.log.logging( "Thermostats", 'Debug', "thermostat_Setpoint - calling Schneider for %s with value %s" %(NwkId,setpoint), nwkid=NwkId)
             schneider_setpoint(self, NwkId, setpoint)
             return
-        
+
         elif self.ListOfDevices[NwkId]['Model'] in ( 'TS0601', 'ivfvd7h', 'fvq6avy' , 'eaxp72v'):
             # Tuya
             self.log.logging( "Thermostats", 'Log', "thermostat_Setpoint - calling Tuya for %s with value %s" %(NwkId, setpoint), nwkid=NwkId)
@@ -127,7 +127,7 @@ def thermostat_Calibration( self, NwkId, calibration):
     manuf_spec = "00"
     cluster_id = "%04x" %0x0201
     attribute = "%04x" %0x0010
-    data_type = "20" # Int8
+    data_type = "28" # Int8
     data = "%02x" %calibration
     EPout = '01'
     for tmpEp in self.ListOfDevices[NwkId]['Ep']:

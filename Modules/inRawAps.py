@@ -53,6 +53,7 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Man
         '_TYST11_zivfvd7h': tuyaReadRawAPS,
         '_TZE200_ckud7u2l' : tuyaReadRawAPS ,
         "_TZE200_kfvq6avy" : tuyaReadRawAPS ,
+        "_TZE200_i48qyn9s" : tuyaReadRawAPS ,
         'OWON': casaiaReadRawAPS,
     }
 

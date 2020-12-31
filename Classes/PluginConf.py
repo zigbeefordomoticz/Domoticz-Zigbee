@@ -301,6 +301,7 @@ SETTINGS = {
 
     # Experimental
     'Experimental': {'Order': 17, 'param': {
+        'DropBadAnnoucement':    {'type': 'bool', 'default': 1, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'ZiGateReactTime':       {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'RawReadAttribute':      {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True, 'Advanced': True},
         'RawWritAttribute':      {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True, 'Advanced': True},
