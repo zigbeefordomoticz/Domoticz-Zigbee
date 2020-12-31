@@ -300,7 +300,8 @@ SETTINGS = {
     },
 
     # Experimental
-    'Experimental': {'Order': 17, 'param': {        
+    'Experimental': {'Order': 17, 'param': {    
+        'DropBadAnnoucement':    {'type': 'bool', 'default': 1, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},    
         'AnnoucementV0':         {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'AnnoucementV1':         {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'AnnoucementV2':         {'type': 'bool', 'default': 1, 'current': None, 'restart': False, 'hidden': True,  'Advanced': True},

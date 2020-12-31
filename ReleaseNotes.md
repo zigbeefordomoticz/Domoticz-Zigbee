@@ -16,6 +16,11 @@ Release Numbering
 
 - Odd numbers --> Stable
 - Even numbers  --> Beta
+##    Dec.  2020  - 4.11.13
+- [Hardware] - Support Tuya Water leak sensor
+- [Hardware] - Support of Legrand Teleruptor
+- [Hardware] - Support of Sonoff ZB Mini switch
+- [Hardware] - Support Idinio foor dimmer
 
 ## 27 Nov.  2020  - 4.11.11
 - [Hardware] - Handle the behaviour of the Legrand shutter when firmware above 0x1a
