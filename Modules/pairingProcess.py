@@ -38,6 +38,7 @@ from Modules.domoCreate import CreateDomoDevice
 from Modules.tools import reset_cluster_datastruct
 from Modules.zigateConsts import CLUSTERS_LIST
 from Modules.casaia import casaia_pairing
+from Modules.thermostats import thermostat_Calibration
 
 def writeDiscoveryInfos( self ):
 
@@ -368,7 +369,11 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
                 if self.ListOfDevices[NWKID][ 'Manufacturer Name'] == '欧瑞博':
                     OrviboRegistration( self, NWKID )
-                    
+
+            # Set Calibration for Thermostat
+            if 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['Model'] != {} and self.ListOfDevices[NWKID]['Model'] == 'SPZB0001':
+                thermostat_Calibration( self, NWKID, 0x00)
+
             # Identify for ZLL compatible devices
             # Search for EP to be used 
             ep = '01'

@@ -183,7 +183,7 @@ def LoadDeviceList( self ):
             #for iterEp in self.ListOfDevices[addr]['Ep']:
             #    self.ListOfDevices[addr]['ConfigureReporting']['Ep'][iterEp] = {}
 
-    self.log.logging( "Database", "Status", "Entries loaded from " +str(_DeviceListFileName)  )
+    self.log.logging( "Database", "Status", "%s Entries loaded from %s" %(len(self.ListOfDevices), _DeviceListFileName)  )
 
     return res
 

@@ -454,7 +454,7 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
 
     now = time()
     if newDeviceForPlugin:
-        if RejoinFlag:
+        if RejoinFlag and self.pluginconf.pluginConf['DropBadAnnoucement']:
             self.log.logging( 
                 "Input",
                 "Debug",
@@ -918,40 +918,13 @@ def device_annoucementv1(self, Devices, MsgData, MsgLQI):
 
     # Test if Device Exist, if Left then we can reconnect, otherwise initialize the ListOfDevice for this entry
     if DeviceExist(self, Devices, NwkId, MsgIEEE):
-        decode004d_existing_devicev1(
-            self,
-            Devices,
-            NwkId,
-            MsgIEEE,
-            MsgMacCapa,
-            MsgRejoinFlag,
-            newShortId,
-            MsgLQI,
-            now,
-        )
+        decode004d_existing_devicev1( self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgRejoinFlag, newShortId, MsgLQI, now, )
     else:
-        self.log.logging(
-            "Pairing",
-            "Status",
-            "Device Announcement Addr: %s, IEEE: %s LQI: %s"
-            % (NwkId, MsgIEEE, int(MsgLQI, 16)),
-        )
-        decode004d_new_devicev1(
-            self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgData, MsgLQI, now
-        )
+        self.log.logging( "Pairing", "Status", "Device Announcement Addr: %s, IEEE: %s LQI: %s" % (NwkId, MsgIEEE, int(MsgLQI, 16)), )
+        decode004d_new_devicev1( self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgRejoinFlag, MsgData, MsgLQI, now )
 
 
-def decode004d_existing_devicev1(
-    self,
-    Devices,
-    MsgSrcAddr,
-    MsgIEEE,
-    MsgMacCapa,
-    MsgRejoinFlag,
-    newShortId,
-    MsgLQI,
-    now,
-):
+def decode004d_existing_devicev1( self, Devices, MsgSrcAddr, MsgIEEE, MsgMacCapa, MsgRejoinFlag, newShortId, MsgLQI, now ):
     # ############
     # Device exist, Reconnection has been done by DeviceExist()
     #
@@ -1123,9 +1096,7 @@ def decode004d_existing_devicev1(
             schneider_wiser_registration(self, Devices, MsgSrcAddr)
 
 
-def decode004d_new_devicev1(
-    self, Devices, MsgSrcAddr, MsgIEEE, MsgMacCapa, MsgRejoinFlag, MsgData, MsgLQI, now
-):
+def decode004d_new_devicev1( self, Devices, MsgSrcAddr, MsgIEEE, MsgMacCapa, MsgRejoinFlag, MsgData, MsgLQI, now ):
     # New Device coming for provisioning
     # Decode Device Capabiities
     deviceMacCapa = list(decodeMacCapa(MsgMacCapa))
