@@ -286,7 +286,7 @@ class cSerialLink(threading.Thread):
         self.commslogger = logging.getLogger("Comms("+str(port)+")")
         
         # Turn this up to see traffic between node and host
-        self.commslogger.setLevel(logging.DEBUG)
+        self.commslogger.setLevel(logging.WARNING)
         
         self.oPort = serial.Serial(port, baudrate)
         
@@ -539,7 +539,6 @@ class cSerialLink(threading.Thread):
         except cSerialLinkError:
             raise cSerialLinkError("Module did not acknowledge command 0x%04x" % eMessageType)
 
-        self.logger.info(" status: %s %s %s %s" %(status, type(status), status[0], type(status[0])))
         status = status[0]
         message = "" if len(sData) == 0 else sData
 
@@ -721,8 +720,6 @@ class cControlBridge():
         """Get the version of the connected node"""
         self.oSL.SendMessage(E_SL_MSG_GET_VERSION)
         version = self.oSL.WaitMessage(E_SL_MSG_VERSION_LIST, 0.5)
-    
-        print("version: %s %s" %(version, bytes(version)))
         return struct.unpack(">I", bytes(version[0:4]))[0]
 
     def SetExtendedPANID(self,extPanid):
@@ -901,7 +898,7 @@ if __name__ == "__main__":
     (options, args) = parser.parse_args()
 
     logging.basicConfig(format="%(asctime)-15s %(levelname)s:%(name)s:%(message)s")
-    logging.getLogger().setLevel(logging.DEBUG)
+    logging.getLogger().setLevel(logging.INFO)
 
     if options.port is None:
         #print "Please specify serial port with --port"
