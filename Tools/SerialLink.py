@@ -469,7 +469,7 @@ class cSerialLink(threading.Thread):
                     E_SL_MSG_MANAGEMENT_LQI_RESPONSE,
                 ]:
                     if (eMessageType == E_SL_MSG_LOG):
-                        logLevel = struct.unpack("B", sData[0])[0]
+                        logLevel = sData[0]
                         logLevel = ["EMERG", "ALERT", "CRIT ", "ERROR", "WARN ", "NOT  ", "INFO ", "DEBUG"][logLevel]
                         logMessage = sData[1:]
                         self.logger.info("Module: %s: %s", logLevel, logMessage)
