@@ -471,9 +471,9 @@ class cSerialLink(threading.Thread):
                     if (eMessageType == E_SL_MSG_LOG):
                         logLevel = sData[0]
                         logLevel = ["EMERG", "ALERT", "CRIT ", "ERROR", "WARN ", "NOT  ", "INFO ", "DEBUG"][logLevel]
-                        logMessage = sData[1:]
+                        logMessage = sData[1:].decode('utf-8')
                         self.logger.info("Module: %s: %s", logLevel, logMessage)
-                        self.logger.info("Module: : %s",  logMessage)
+                        #self.logger.info("Module: : %s",  logMessage)
 
                     if(eMessageType == E_SL_MSG_NODE_CLUSTER_LIST):
                         self.logger.info("Node->Host: Cluster List Received")
