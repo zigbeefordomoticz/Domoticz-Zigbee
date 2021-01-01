@@ -31,6 +31,7 @@ import struct
 import threading
 import queue
 import sqlite3
+import binascii
 
 # Message types
 
@@ -383,17 +384,17 @@ class cSerialLink(threading.Thread):
                 self.commslogger.info("Node->Host: 0x%02x", ord(byte))
 
                 if (ord(byte) == 0x01):
-                    self.commslogger.debug("Start Message")
+                    self.commslogger.debug("========= Start Message")
                     u8Checksum = 0
                     eMessageType = 0
                     u16Length = 0
-                    sData = ""
+                    sData = bytearray()
                     state = 0
                 elif (ord(byte) == 0x02):
                     self.commslogger.debug("ESC")
                     bInEsc = True
                 elif (ord(byte) == 0x03):
-                    self.commslogger.debug("End Message")
+                    self.commslogger.debug("========== End Message")
                     
                     if not len(sData) == u16Length:
                         self.commslogger.warning("Length mismatch (Expected %d, got %d)", u16Length, len(sData))
@@ -401,8 +402,9 @@ class cSerialLink(threading.Thread):
                     
                     u8MyChecksum = ((eMessageType >> 8) & 0xFF) ^ ((eMessageType >> 0) & 0xFF)
                     u8MyChecksum = u8MyChecksum ^ ((u16Length >> 8) & 0xFF) ^ ((u16Length >> 0) & 0xFF)
+                    idx = 0
                     for byte in sData:
-                        u8MyChecksum = (u8MyChecksum ^ ord(byte)) & 0xFF
+                        u8MyChecksum = (u8MyChecksum ^ byte) & 0xFF
   
                     if not u8Checksum == u8MyChecksum:
                         self.commslogger.warning("Checkum mismatch (Expected 0x%02x, got 0x%02x)", u8Checksum, u8MyChecksum)
@@ -417,26 +419,28 @@ class cSerialLink(threading.Thread):
                     if state == 0:
                         # Type MSB
                         eMessageType = ord(byte) << 8
-                        state = state + 1
+                        state += 1
                     elif state == 1:
                         eMessageType = eMessageType + ord(byte)
                         self.commslogger.debug("Message Type: 0x%04x", eMessageType)
-                        state = state + 1
+                        state += 1
                     elif state == 2:
                         # Type MSB
                         u16Length = ord(byte) << 8
-                        state = state + 1
+                        state += 1
                     elif state == 3:
                         u16Length = u16Length + ord(byte)
                         self.commslogger.debug("Message Length: 0x%04x", u16Length)
-                        state = state + 1
+                        state += 1
                     elif state == 4:
                         u8Checksum = ord(byte)
                         self.commslogger.debug("Message Checksum: 0x%02x", u8Checksum)
-                        state = state + 1
+                        state += 1
                     else:
-                        self.commslogger.debug("Message Add Data: 0x%02x - %s" %(ord(byte), byte))
-                        sData = sData + '%02x' %ord(byte)
+                        self.commslogger.debug("Message Add Data: 0x%02x" %(ord(byte)))
+                        #sData += binascii.hexlify(byte).decode('utf-8')
+                        sData += byte
+
         return (0, "")
 
 
@@ -535,7 +539,8 @@ class cSerialLink(threading.Thread):
         except cSerialLinkError:
             raise cSerialLinkError("Module did not acknowledge command 0x%04x" % eMessageType)
 
-        status = struct.unpack("B", status[0])[0]
+        self.logger.info(" status: %s %s %s %s" %(status, type(status), status[0], type(status[0])))
+        status = status[0]
         message = "" if len(sData) == 0 else sData
 
         if status != 0:
@@ -716,7 +721,9 @@ class cControlBridge():
         """Get the version of the connected node"""
         self.oSL.SendMessage(E_SL_MSG_GET_VERSION)
         version = self.oSL.WaitMessage(E_SL_MSG_VERSION_LIST, 0.5)
-        return struct.unpack(">I", version)[0]
+    
+        print("version: %s %s" %(version, bytes(version)))
+        return struct.unpack(">I", bytes(version[0:4]))[0]
 
     def SetExtendedPANID(self,extPanid):
         """Set Extended PANID"""
@@ -921,9 +928,14 @@ if __name__ == "__main__":
 
     oCB.oSL._WriteMessage(E_SL_MSG_PDM_HOST_AVAILABLE_RESPONSE, "00")
     useString = str(options.port)+ ""
+
     while continueToRun:                
-        command = input(useString+'$ ')
-        continueToRun = True if (command == "") else oCB.parseCommand(command.strip())
+        command = input(useString+'$ ') 
+        if (command == ""):
+            continueToRun = True
+        else:
+            continueToRun = oCB.parseCommand(command.strip())
     print("Terminating current session....")
     bRunning = False
     sys.exit(1)
+
