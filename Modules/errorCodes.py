@@ -89,43 +89,46 @@ MAC_CODES = {
     "f4": "PIB Set/Get on unsupported attribute"
     }
 
-ZDP_CODES = {
-    "80": "The supplied request type was invalid.",
-    "81": "The requested device did not exist on a device following a child descriptor request to a parent.",
-    "82": "The supplied endpoint was equal to 0x00 or between 0xF1 and 0xFF",
-    "83": "The requested endpoint is not described by a Simple descriptor.",
-    "84": "The requested optional feature is not supported on the target device.",
-    "85": "A timeout has occurred with the requested operation.",
-    "86": "The End Device bind request was unsuccessful due to a failure to match any suitable clusters.",
-    "88": "The unbind request was unsuccessful due to the Coordinator or source device not having an entry in its binding table to unbind.",
-    "89": "A child descriptor was not available following a discovery request to a parent.",
-    "8a": "The device does not have storage space to support the requested operation.",
-    "8b": "The device is not in the proper state to support the requested operation.",
-    "8c": "The device does not have table space to support the operation.",
-    "8d": " The permissions configuration table on the target indicates that the request is not authorised from this device."
-    }
-    
+ZCL_EXTENDED_ERROR_CODES = {
+    '01': 'Fatal error - retrying will cause the error again',
+    '02': 'Endpoint is not valid for loopback (fatal error)',
+    '03': 'No output cluster in the Simple descriptor for this endpoint/cluster (fatal error)',
+    '04': 'Fragmented data requests must be sent with APS ack (fatal error)',
+    '05': 'Bad parameter has been passed to the command manager (fatal error)',
+    '06': 'Address parameter is out-of-range (fatal error), e.g. broadcast address when calling unicast function',
+    '07': 'TX ACK bit has been set when attempting to post to a local endpoint (fatal error)',
+    '08': 'Resource error/shortage - retrying may succeed',
+    '80': "No free NPDUs (resource error) - the number of NPDUs is set in the 'Number of NPDUs' property of the 'PDU Manager' section of the ZPS Configuration Editor ",
+    '81': "No free APDUs (resource error) - the number of APDUs is set in the 'Instances' property of the appropriate 'APDU' child of the 'PDU Manager' section of the ZPS Configuration Editor",
+    '82': "No free simultaneous data request handles (resource error) - the number of handles is set in the 'Maximum Number of Simultaneous Data Requests' field of the 'APS layer configuration' section of the ZPS Configuration Editor",
+    '83': "No free APS acknowledgement handles (resource error) - the number of handles is set in the 'Maximum Number of Simultaneous Data Requests with Acks' field of the 'APS layer configuration' section of the ZPS Configuration Editor",
+    '84': "No free fragment record handles (resource error) - the number of handles is set in the 'Maximum Number of Transmitted Simultaneous Fragmented Messages' field of the 'APS layer configuration' section of the ZPS Configuration Editor",
+    '85': 'No free MCPS request descriptors (resource error) - there are 8 MCPS request descriptors and these are only ever likely to be exhausted under a very heavy network load or when trying to transmit too many frames too close together',
+    '86': 'Loopback send is currently busy (resource error) - there can be only one loopback request at a time',
+    '87': 'No free entries in the extended address table (resource error) - this table is configured in the ZPS Configuration Editor',
+    '88': 'Simple descriptor does not exist for this endpoint/cluster',
+    '89': 'Bad parameter has been found while processing an APSDE request or response',
+    '8a': 'No routing table entries free',
+    '8b': 'No Broadcast transaction table entries free'
+}
 
-def DisplayStatusCode( StatusCode ) :
+def DisplayStatusCode( StatusCode ):
 
     StatusMsg=""
     if StatusCode in ZIGATE_CODES:
-        StatusMsg = "ZIGATE - [%s] %s" %(StatusCode,ZIGATE_CODES[StatusCode])
+        return "ZIGATE - [%s] %s" %(StatusCode,ZIGATE_CODES[StatusCode])
 
     elif StatusCode in APS_CODES:
-        StatusMsg = "APS - [%s] %s" %(StatusCode,APS_CODES[StatusCode])
+        return "APS - [%s] %s" %(StatusCode,APS_CODES[StatusCode])
 
     elif StatusCode in NWK_CODES:
-        StatusMsg = "NWK - [%s] %s" %(StatusCode,NWK_CODES[StatusCode])
+        return "NWK - [%s] %s" %(StatusCode,NWK_CODES[StatusCode])
 
     elif StatusCode in MAC_CODES:
-        StatusMsg = "MAC - [%s] %s" %(StatusCode,MAC_CODES[StatusCode])
-        
+        return "MAC - [%s] %s" %(StatusCode,MAC_CODES[StatusCode])
+
     else:
-        StatusMsg="Unknown code : %s" %StatusCode
-
-
-    return StatusMsg
+        return "Unknown code : %s" %StatusCode
 
 
 

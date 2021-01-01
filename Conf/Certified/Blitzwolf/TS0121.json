@@ -1,5 +1,5 @@
 {
-	"_comment": "blitzwolf zigbee plug",
+	"_comment": "blitzwolf zigbee plug. Attention TUYA has a similar plug with the same Model Name. Unfortunatly Power/Metering not supported by Tuya",
 	"_version": "1.0",
 	"Ep":{
 		"01":{ 
@@ -17,8 +17,8 @@
 	"bindEp": "01",
 	"ClusterToBind": [ "0006", "0702", "0b04", "0019" ],
 	"ConfigureReporting": {
-		"0006": {"Attributes": { "0000": {"DataType": "10", "MinInterval":"0001", "MaxInterval":"012C", "TimeOut":"0258","Change":"01"}}},
-		"0b04": {"Attributes": { "050b": {"DataType": "29", "MinInterval": "0005", "MaxInterval": "012C", "TimeOut": "0258","Change": "0001"}}},
+		"0006": {"Attributes": { "0000": {"DataType": "10", "MinInterval":"0001", "MaxInterval":"012C", "TimeOut":"0000","Change":"01"}}},
+		"0b04": {"Attributes": { "050b": {"DataType": "29", "MinInterval": "0005", "MaxInterval": "012C", "TimeOut": "0000","Change": "0001"}}},
 		"0702": { "Attributes": {
 			"0000": { "Change": "0000ffffffffffff", "DataType": "25", "MaxInterval": "001E", "MinInterval": "001E", "TimeOut": "0000" }}}},
 	"ReadAttributes": {

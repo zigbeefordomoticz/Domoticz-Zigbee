@@ -8,11 +8,7 @@
 			"0006":"",
 			"0008":"",
 			"0300":"",
-			"Type": "LvlControl"
-		},
-		"0d": {
-			"1000":"",
-			"Type": ""
+			"Type": "ColorControlRGBWW"
 		}
 	},
 	"Type":"",

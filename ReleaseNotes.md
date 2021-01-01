@@ -17,6 +17,14 @@ Release Numbering
 - Odd numbers --> Stable
 - Even numbers  --> Beta
 
+
+
+##    Dec.  2020  - 4.11.13
+- [Hardware] - Support Tuya Water leak sensor
+- [Hardware] - Support of Legrand Teleruptor
+- [Hardware] - Support of Sonoff ZB Mini switch
+- [Hardware] - Support Idinio foor dimmer
+
 ## 18 Dec. 2020   - 4.11.12
 - [Hardware] - New eTRV Tuya 
 - [Hardware] - Better management of Battery level for SonOff devices ( NX-4911 Manufacturerd by Revolt )

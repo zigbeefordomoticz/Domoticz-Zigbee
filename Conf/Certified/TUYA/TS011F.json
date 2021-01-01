@@ -1,0 +1,24 @@
+{
+	"_comment": "Tuya RR400ZB",
+	"_version": "1.0",
+	"Ep":{
+		"01":{ 
+			"0000":"", 
+			"0004":"", 
+			"0005":"", 
+			"0006":"",
+			"000a":"",
+			"0019":"", 
+			"Type":"Switch"}
+	},
+	"Type":"",
+	"bindEp": "01",
+	"ClusterToBind": [ "0006", "0019" ],
+	"ConfigureReporting": {
+		"0006": {"Attributes": { "0000": {"DataType": "10", "MinInterval":"0001", "MaxInterval":"012C", "TimeOut":"0258","Change":"01"}}}
+	},
+	"ReadAttributes": {
+		"0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0006", "0007", "ffde", "fffd", "fffe", "ffe0", "ffe1", "ffe2", "ffdf" ],
+		"0006": [ "0000", "4001", "4002", "4003", "8001", "8002", "fffd" ]
+	}
+}

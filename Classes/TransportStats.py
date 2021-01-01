@@ -29,8 +29,15 @@ class TransportStatistics:
         self._reTx = 0
         self._Load = 0
         self._MaxLoad = 0
+        self._MaxaPdu = 0
+        self._MaxnPdu = 0
+        self._serialInWaiting = 0
+        self._serialOutWaiting = 0
         self._maxTiming8000 = self._cumulTiming8000 = self._cntTiming8000 = self._averageTiming8000 = 0
+        self._maxTiming8011 = self._cumulTiming8011 = self._cntTiming8011 = self._averageTiming8011 = 0
+        self._maxTiming8012 = self._cumulTiming8012 = self._cntTiming8012 = self._averageTiming8012 = 0
         self._maxRxProcesses = self._cumulRxProcess = self._cntRxProcess = self._averageRxProcess = 0
+        self._max_reading_thread_timing = self._cumul_reading_thread_timing = self._cnt_reading_thread_timing = self._average_reading_thread_timing = 0
         self._start = int(time())
         self.TrendStats = []
         self.pluginconf = pluginconf
@@ -39,6 +46,15 @@ class TransportStatistics:
     def starttime(self):
         return self._start
 
+    def add_timing_thread( self, timing):
+        self._cumul_reading_thread_timing += timing
+        self._cnt_reading_thread_timing += 1
+        self._average_reading_thread_timing = int( (self._cumul_reading_thread_timing / self._cnt_reading_thread_timing))
+        if timing > self._max_reading_thread_timing:
+            self._max_reading_thread_timing = timing
+            Domoticz.Log("Zigate Thread Serial Read Max: %s ms with an of average: %s ms" 
+                %(self._max_reading_thread_timing, self._average_reading_thread_timing ))
+
     def add_timing8000( self, timing):
 
         self._cumulTiming8000 += timing
@@ -46,9 +62,29 @@ class TransportStatistics:
         self._averageTiming8000 = int( (self._cumulTiming8000 / self._cntTiming8000))
         if timing > self._maxTiming8000:
             self._maxTiming8000 = timing
-            Domoticz.Log("Zigate command round trip Max: %s ms with an of average: %s ms" 
+            Domoticz.Log("Zigate command round trip 0x8000 Max: %s ms with an of average: %s ms" 
                 %(self._maxTiming8000, self._averageTiming8000 ))
-        
+
+    def add_timing8011( self, timing):
+    
+        self._cumulTiming8011 += timing
+        self._cntTiming8011 += 1
+        self._averageTiming8011 = int( (self._cumulTiming8011 / self._cntTiming8011))
+        if timing > self._maxTiming8011:
+            self._maxTiming8011 = timing
+            Domoticz.Log("Zigate command round trip 0x8011 Max: %s ms with an of average: %s ms" 
+                %(self._maxTiming8011, self._averageTiming8011 ))
+
+    def add_timing8012( self, timing):
+    
+        self._cumulTiming8012 += timing
+        self._cntTiming8012 += 1
+        self._averageTiming8012 = int( (self._cumulTiming8012 / self._cntTiming8012))
+        if timing > self._maxTiming8012:
+            self._maxTiming8012 = timing
+            Domoticz.Log("Zigate command round trip 0x8012 Max: %s ms with an of average: %s ms" 
+                %(self._maxTiming8012, self._averageTiming8012 ))
+
     def add_rxTiming( self, timing ):
 
         self._cumulRxProcess += timing
@@ -134,6 +170,8 @@ class TransportStatistics:
         Domoticz.Status("Sent:")
         Domoticz.Status("   TX commands      : %s" % (self.sent()))
         Domoticz.Status("   Max Load (Queue) : %s " % (self._MaxLoad))
+        Domoticz.Status("   Max aPDU (Queue) : %s " % (self._MaxaPdu))
+        Domoticz.Status("   Max nPDU (Queue) : %s " % (self._MaxnPdu))
         Domoticz.Status("   TX failed        : %s (%s" % (self.ackKOReceived(), round((self.ackKOReceived()/self.sent())*10,2)) + '%)')
         Domoticz.Status("   TX timeout       : %s (%s" % (self.TOstatus(), round((self.TOstatus()/self.sent())*100,2)) + '%)')
         Domoticz.Status("   TX data timeout  : %s (%s" % (self.TOdata(), round((self.TOdata()/self.sent())*100,2)) + '%)')

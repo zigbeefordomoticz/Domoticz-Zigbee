@@ -13,7 +13,9 @@
 import Domoticz
 from Modules.zigateConsts import ZIGATE_EP
 from Modules.basicOutputs import sendZigateCmd, raw_APS_request
-from Modules.logging import loggingProfalux
+from Modules.tools import get_and_inc_SQN
+
+from Classes.LoggingManagement import LoggingManagement
 
 def profalux_fake_deviceModel( self , nwkid):
 
@@ -64,18 +66,18 @@ def profalux_fake_deviceModel( self , nwkid):
             # We found a VR
             self.ListOfDevices[nwkid]['Model'] = 'Volet-Profalux'
 
-        loggingProfalux( self, 'Debug', "++++++ Model Name for %s forced to : %s due to location: %s" %(nwkid, self.ListOfDevices[nwkid]['Model'], location), nwkid)
+        self.log.logging( "Profalux", 'Debug', "++++++ Model Name for %s forced to : %s due to location: %s" %(nwkid, self.ListOfDevices[nwkid]['Model'], location), nwkid)
 
     elif self.ListOfDevices[nwkid]['MacCapa'] == '80':
 
         # Batterie Device => Remote command
         self.ListOfDevices[nwkid]['Model'] = 'Telecommande-Profalux'
 
-        loggingProfalux( self, 'Debug', "++++++ Model Name for %s forced to : %s" %(nwkid, self.ListOfDevices[nwkid]['Model']), nwkid)
+        self.log.logging( "Profalux", 'Debug', "++++++ Model Name for %s forced to : %s" %(nwkid, self.ListOfDevices[nwkid]['Model']), nwkid)
 
 def checkAndTriggerConfigReporting( self, NwkId):
 
-    loggingProfalux(self, 'Debug', "-- -- checkAndTriggerConfigReporting for %s" %NwkId)
+    self.log.logging( "Profalux", 'Debug', "-- -- checkAndTriggerConfigReporting for %s" %NwkId)
     if 'ConfigureReporting' not in self.ListOfDevices[NwkId]:
         configureReportingForprofalux( self, NwkId)
         return
@@ -91,29 +93,14 @@ def checkAndTriggerConfigReporting( self, NwkId):
 
 def configureReportingForprofalux( self, NwkId):
 
-    loggingProfalux(self, 'Debug', "-- -- -- configureReportingForprofalux for %s" %NwkId)
+    self.log.logging( "Profalux", 'Debug', "-- -- -- configureReportingForprofalux for %s" %NwkId)
     if NwkId not in self.ListOfDevices:
         return
 
     attrList = '00' + '20' + '0001' + '0000' + '0000' + '0000' + '00'
     datas =   '02' + NwkId + ZIGATE_EP + '01' + 'fc21' + '00' + '01' + '1110' + '01' + attrList
     sendZigateCmd( self, "0120", datas )
-    loggingProfalux(self, 'Debug', "-- -- -- configureReportingForprofalux for %s data: %s" %(NwkId, datas))
-
-    # Configure Reporting iin Raw Mode
-    #ZCLFrameControl = '04'
-    #ManfufacturerCode = '1110'
-    #Attribute = '0001'
-
-    #sqn = '01'
-    #if 'SQN' in self.ListOfDevices[NwkId]:
-    #    if self.ListOfDevices[NwkId]['SQN'] != {} and self.ListOfDevices[NwkId]['SQN'] != '':
-    #        sqn = '%02x' %(int(self.ListOfDevices[NwkId]['SQN'],16) + 1)
-    #cmd = '06' 
-    #payload = ZCLFrameControl + ManfufacturerCode[2:4] + ManfufacturerCode[0:2] + sqn + cmd + '00' + Attribute[2:4] + Attribute[0:2] + '20' + '0000' + '0000' + '00'
-
-    #loggingProfalux( self, 'Log', "configureReportingForprofalux RAW APS %s %s" %(NwkId, payload))
-    #raw_APS_request( self, NwkId, '01', 'fc21', '0104', payload, zigate_ep=ZIGATE_EP)
+    self.log.logging( "Profalux", 'Debug', "-- -- -- configureReportingForprofalux for %s data: %s" %(NwkId, datas))
 
 def profalux_stop( self, nwkid ):
 
@@ -124,15 +111,13 @@ def profalux_stop( self, nwkid ):
             EPout= tmpEp
 
     cluster_frame = '01'
-    sqn = '00'
-    if ( 'SQN' in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]['SQN'] != {} and self.ListOfDevices[nwkid]['SQN'] != '' ):
-        sqn = '%02x' % (int(self.ListOfDevices[nwkid]['SQN'],16) + 1)
+    sqn = get_and_inc_SQN( self, nwkid)
 
     cmd = '03' # Ask the Tilt Blind to stop moving
 
     payload = cluster_frame + sqn + cmd
     raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
-    loggingProfalux( self, 'Debug', "profalux_stop ++++ %s/%s payload: %s" %( nwkid, EPout, payload), nwkid)
+    self.log.logging( "Profalux", 'Debug', "profalux_stop ++++ %s/%s payload: %s" %( nwkid, EPout, payload), nwkid)
 
 def profalux_MoveToLevelWithOnOff( self, nwkid, level):
 
@@ -143,19 +128,13 @@ def profalux_MoveToLevelWithOnOff( self, nwkid, level):
             EPout= tmpEp
 
     cluster_frame = '01'
-    sqn = '00'
-    if (
-        'SQN' in self.ListOfDevices[nwkid]
-        and self.ListOfDevices[nwkid]['SQN'] != {}
-        and self.ListOfDevices[nwkid]['SQN'] != ''
-    ):
-        sqn = '%02x' %(int(self.ListOfDevices[nwkid]['SQN'],16) + 1)
+    sqn = get_and_inc_SQN( self, nwkid)
 
     cmd = '04' # Ask the Tilt Blind to go to a certain Level
 
     payload = cluster_frame + sqn + cmd + '%02x' %level
     raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
-    loggingProfalux( self, 'Debug', "profalux_MoveToLevelWithOnOff ++++ %s/%s Level: %s payload: %s" %( nwkid, EPout, level, payload), nwkid)
+    self.log.logging( "Profalux", 'Debug', "profalux_MoveToLevelWithOnOff ++++ %s/%s Level: %s payload: %s" %( nwkid, EPout, level, payload), nwkid)
     return
 
 def profalux_MoveWithOnOff( self, nwkid, OnOff):
@@ -170,20 +149,13 @@ def profalux_MoveWithOnOff( self, nwkid, OnOff):
             EPout= tmpEp
 
     cluster_frame = '11'
-
-    sqn = '00'
-    if (
-        'SQN' in self.ListOfDevices[nwkid]
-        and self.ListOfDevices[nwkid]['SQN'] != {}
-        and self.ListOfDevices[nwkid]['SQN'] != ''
-    ):
-        sqn = '%02x' %(int(self.ListOfDevices[nwkid]['SQN'],16) + 1)
+    sqn = get_and_inc_SQN( self, nwkid)
 
     cmd = '05'  # Ask the Tilt Blind to open or Close
 
     payload = cluster_frame + sqn + cmd + '%02x' %OnOff
     raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
-    loggingProfalux( self, 'Debug', "profalux_MoveWithOnOff ++++ %s/%s OnOff: %s payload: %s" %( nwkid, EPout, OnOff, payload), nwkid)
+    self.log.logging( "Profalux", 'Debug', "profalux_MoveWithOnOff ++++ %s/%s OnOff: %s payload: %s" %( nwkid, EPout, OnOff, payload), nwkid)
 
     return
 
@@ -224,7 +196,7 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
 
 
     # Begin
-    loggingProfalux( self, 'Debug', "profalux_MoveToLiftAndTilt Nwkid: %s Level: %s Tilt: %s" %( nwkid, level, tilt))
+    self.log.logging( "Profalux", 'Debug', "profalux_MoveToLiftAndTilt Nwkid: %s Level: %s Tilt: %s" %( nwkid, level, tilt))
     if level is None and tilt is None:
         return
 
@@ -236,7 +208,7 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
     if tilt is None:
         tilt = getTilt( self, nwkid)
 
-    loggingProfalux( self, 'Debug', "profalux_MoveToLiftAndTilt after update Nwkid: %s Level: %s Tilt: %s" %( nwkid, level, tilt))
+    self.log.logging( "Profalux", 'Debug', "profalux_MoveToLiftAndTilt after update Nwkid: %s Level: %s Tilt: %s" %( nwkid, level, tilt))
     
     # determine which Endpoint
     EPout = '01'
@@ -248,12 +220,7 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
     #  Disable default response: false
     #  Reserved : 0x00
     cluster_frame = '05'
-
-    sqn = '00'
-    if 'SQN' in self.ListOfDevices[nwkid]:
-        if self.ListOfDevices[nwkid]['SQN'] != {} and self.ListOfDevices[nwkid]['SQN'] != '':
-            sqn = '%02x' %(int(self.ListOfDevices[nwkid]['SQN'],16) + 1)
-
+    sqn = get_and_inc_SQN( self, nwkid)
 
     cmd = '10' # Propriatary Command: Ask the Tilt Blind to go to a Certain Position and Orientate to a certain angle
 
@@ -279,5 +246,5 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
     ManfufacturerCode = '1110'
 
     payload = cluster_frame + ManfufacturerCode[2:4] + ManfufacturerCode[0:2] + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'FFFF'
-    loggingProfalux( self, 'Debug', "profalux_MoveToLiftAndTilt %s ++++ %s %s/%s level: %s tilt: %s option: %s payload: %s" %( cluster_frame, sqn, nwkid, EPout, level, tilt, option, payload), nwkid)
+    self.log.logging( "Profalux", 'Debug', "profalux_MoveToLiftAndTilt %s ++++ %s %s/%s level: %s tilt: %s option: %s payload: %s" %( cluster_frame, sqn, nwkid, EPout, level, tilt, option, payload), nwkid)
     raw_APS_request( self, nwkid, '01', '0008', '0104', payload, zigate_ep=ZIGATE_EP)
