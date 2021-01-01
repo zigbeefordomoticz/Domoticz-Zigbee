@@ -25,7 +25,7 @@ import serial
 import logging
 import struct
 import threading
-import Queue
+import queue
 import sqlite3
 
 # Message types
@@ -159,26 +159,25 @@ E_SL_MSG_DELETE_PDM_RECORD              =   0x0202
 E_SL_MSG_PDM_HOST_AVAILABLE             =   0x0300
 E_SL_MSG_PDM_HOST_AVAILABLE_RESPONSE    =   0x8300
 
-# Global flag to the threads
-bRunning = True
-oCB = None
+
+
 
 class cPDMFunctionality(threading.Thread):
     """Class implementing the binary serial protrocol to the control bridge node"""
-    def __init__(self,port):
-        threading.Thread.__init__(self, name="PDM")              
+    def __init__(self,port): 
+        self.pdm_thread = threading.Thread( name="PDM" ,  target=cPDMFunctionality.run,  args=(self,))
+        
         
         # Message queue used to pass messages between reader thread and WaitMessage()
         self.dMessageQueue = {}
         self.logger = logging.getLogger(str(port))
         # Start reader thread
-        self.daemon=True
-        self.start()
+        self.pdm_thread.start()   
         
     def run(self):
         """ dedicated thread for PDM
         """        
-        while(bRunning):
+        while (bRunning):
             try:
                 # Get the message from the receiver thread, and delete the queue entry
                 sData = oCB.oSL.dMessageQueue[E_SL_MSG_DELETE_PDM_RECORD].get(True, 0.1)
@@ -195,7 +194,7 @@ class cPDMFunctionality(threading.Thread):
                     sData = oCB.oSL.dMessageQueue[E_SL_MSG_LOAD_PDM_RECORD_REQUEST].get(True, 0.1)
                     del oCB.oSL.dMessageQueue[E_SL_MSG_LOAD_PDM_RECORD_REQUEST]
                     oCB.vPDMSendFunc(sData)
-                except KeyError:                
+                except KeyError:    
                     try:
                         # Get the message from the receiver thread, and delete the queue entry
                         sData = oCB.oSL.dMessageQueue[E_SL_MSG_SAVE_PDM_RECORD].get(True, 0.1)
@@ -216,17 +215,12 @@ class cPDMFunctionality(threading.Thread):
                         sWriteData=(''.join(x.encode('hex') for x in sData[18:(dataReceived+18)]))
                         #print sWriteData
                         c.execute("SELECT * FROM PdmData WHERE PdmRecId = ?", (RecordId,))
-                        data=c.fetchone()                        
-                        if data is None:
-                            c.execute("INSERT INTO  PdmData (PdmRecId,PdmRecSize,PersistedData) VALUES (?,?,?)",(RecordId,u32Size,sWriteData))
-                        else:
-                            if(int(u32NumberOfWrites)>1 ):
-                                sWriteData = data[2]+sWriteData                                
-                                c.execute("DELETE from PdmData WHERE PdmRecId = ? ",(RecordId,))
-                                c.execute("INSERT INTO  PdmData (PdmRecId,PdmRecSize,PersistedData) VALUES (?,?,?)",(RecordId,u32Size,sWriteData))
-                            else:
-                                c.execute("DELETE from PdmData WHERE PdmRecId = ? ",(RecordId,))
-                                c.execute("INSERT INTO  PdmData (PdmRecId,PdmRecSize,PersistedData) VALUES (?,?,?)",(RecordId,u32Size,sWriteData))
+                        data=c.fetchone()
+                        if data is not None:
+                            if (int(u32NumberOfWrites)>1 ):
+                                sWriteData = data[2]+sWriteData
+                            c.execute("DELETE from PdmData WHERE PdmRecId = ? ",(RecordId,))
+                        c.execute("INSERT INTO  PdmData (PdmRecId,PdmRecSize,PersistedData) VALUES (?,?,?)",(RecordId,u32Size,sWriteData))
                         #print "data written\n"
                         #print sWriteData
                         #print "length %x\n" %len(sWriteData)
@@ -241,13 +235,12 @@ class cPDMFunctionality(threading.Thread):
                             oCB.oSL._WriteMessage(E_SL_MSG_PDM_HOST_AVAILABLE_RESPONSE,"00")
 
                         except KeyError:                      
-                            self.logger.debug("nothing to do")
+                            pass
+                            #self.logger.debug("nothing to do")
         self.logger.debug("Read thread terminated")
-
+        #self.pdm_thread.join()
 class cSerialLinkError(Exception):
     pass
-
-
 
 class cModuleError(cSerialLinkError):
     """ Exception class for errors that the node may send back"""
@@ -277,16 +270,18 @@ class cModuleError(cSerialLinkError):
             r = ": ".join([r, self.statusMessage])
         return r
 
-       
 class cSerialLink(threading.Thread):
     """Class implementing the binary serial protrocol to the control bridge node"""
     def __init__(self, port, baudrate=115200):
-        threading.Thread.__init__(self, name="SL")
+        self.sl_thread = threading.Thread( name="SL",  target=cSerialLink.run,  args=(self,))
+          
+
+
         self.logger = logging.getLogger(str(port))
         self.commslogger = logging.getLogger("Comms("+str(port)+")")
         
         # Turn this up to see traffic between node and host
-        self.commslogger.setLevel(logging.WARNING)
+        self.commslogger.setLevel(logging.DEBUG)
         
         self.oPort = serial.Serial(port, baudrate)
         
@@ -294,8 +289,9 @@ class cSerialLink(threading.Thread):
         self.dMessageQueue = {}
         
         # Start reader thread
-        self.daemon=True
-        self.start()
+        self.sl_thread.start() 
+
+
 
 
             
@@ -311,14 +307,14 @@ class cSerialLink(threading.Thread):
             else:
                 oByte = struct.pack("B", oByte)
             self.commslogger.info("Ascii Host->Node: 0x%02x", ord(oByte))
-            self.oPort.write(oByte)    
         else:
             if not bSpecial and ord(oByte) < 0x10:
                 self.commslogger.info("non Ascii Host->Node: 0x02 ESC")
                 oByte = struct.pack("B", ord(oByte) ^ 0x10)
                 self.oPort.write(struct.pack("B", 0x02))
-            self.commslogger.info("non Ascii Host->Node: 0x%02x", ord(oByte))
-            self.oPort.write(oByte)    
+            self.commslogger.info("non Ascii Host->Node: 0x%02x", ord(oByte))    
+
+        self.oPort.write(oByte)    
 
 
     def _WriteMessage(self, eMessageType, sData):
@@ -330,7 +326,7 @@ class cSerialLink(threading.Thread):
         self.logger.info("Host->Node: Message Type 0x%04x, length %d %s", eMessageType, (len(sData)),sData)
 
         u8Checksum = ((eMessageType >> 8) & 0xFF) ^ ((eMessageType >> 0) & 0xFF)
-        u8Checksum = u8Checksum ^ (((len(sData)/2) >> 8) & 0xFF) ^ (((len(sData)/2) >> 0) & 0xFF)
+        u8Checksum = u8Checksum ^ (((len(sData)//2) >> 8) & 0xFF) ^ (((len(sData)//2) >> 0) & 0xFF)
         bIn=True
         for byte in sData:
             if bIn:
@@ -341,7 +337,7 @@ class cSerialLink(threading.Thread):
                 u8Checksum = u8Checksum ^ u8Byte
                 bIn=True
             
-        u16Length = len(sData)/2
+        u16Length = len(sData)//2
         
         self._WriteByte(struct.pack("B", 0x01), True)
         self._WriteByte(struct.pack("B", (eMessageType >> 8) & 0xFF))
@@ -435,8 +431,8 @@ class cSerialLink(threading.Thread):
                         self.commslogger.debug("Message Checksum: 0x%02x", u8Checksum)
                         state = state + 1
                     else:
-                        self.commslogger.debug("Message Add Data: 0x%02x", ord(byte))
-                        sData = sData + byte
+                        self.commslogger.debug("Message Add Data: 0x%02x - %s" %(ord(byte), byte))
+                        sData = sData + '%02x' %ord(byte)
         return (0, "")
 
 
@@ -448,27 +444,29 @@ class cSerialLink(threading.Thread):
         """
         self.logger.debug("Read thread starting")
         try:
-            while(bRunning):
+            while (bRunning):
                 (eMessageType, sData) = self._ReadMessage()
                 self.logger.info("Node->Host: Response 0x%04x, length %d", eMessageType, len(sData))
-                
-                if ((eMessageType == E_SL_MSG_LOG) or
-                (eMessageType == E_SL_MSG_NODE_CLUSTER_LIST) or
-                (eMessageType == E_SL_MSG_NODE_ATTRIBUTE_LIST) or
-                (eMessageType == E_SL_MSG_NODE_COMMAND_ID_LIST) or
-                    (eMessageType == E_SL_MSG_NETWORK_JOINED_FORMED) or
-                    (eMessageType == E_SL_MSG_MATCH_DESCRIPTOR_RESPONSE) or
-                    (eMessageType == E_SL_MSG_DEVICE_ANNOUNCE) or
-                    (eMessageType == E_SL_MSG_READ_ATTRIBUTE_RESPONSE)or
-                    (eMessageType == E_SL_MSG_GET_GROUP_MEMBERSHIP_RESPONSE) or 
-                    (eMessageType == E_SL_MSG_MANAGEMENT_LQI_RESPONSE)):
+
+                if eMessageType in [
+                    E_SL_MSG_LOG,
+                    E_SL_MSG_NODE_CLUSTER_LIST,
+                    E_SL_MSG_NODE_ATTRIBUTE_LIST,
+                    E_SL_MSG_NODE_COMMAND_ID_LIST,
+                    E_SL_MSG_NETWORK_JOINED_FORMED,
+                    E_SL_MSG_MATCH_DESCRIPTOR_RESPONSE,
+                    E_SL_MSG_DEVICE_ANNOUNCE,
+                    E_SL_MSG_READ_ATTRIBUTE_RESPONSE,
+                    E_SL_MSG_GET_GROUP_MEMBERSHIP_RESPONSE,
+                    E_SL_MSG_MANAGEMENT_LQI_RESPONSE,
+                ]:
                     if (eMessageType == E_SL_MSG_LOG):
                         logLevel = struct.unpack("B", sData[0])[0]
                         logLevel = ["EMERG", "ALERT", "CRIT ", "ERROR", "WARN ", "NOT  ", "INFO ", "DEBUG"][logLevel]
                         logMessage = sData[1:]
                         self.logger.info("Module: %s: %s", logLevel, logMessage)
                         self.logger.info("Module: : %s",  logMessage)
-                    
+
                     if(eMessageType == E_SL_MSG_NODE_CLUSTER_LIST):
                         self.logger.info("Node->Host: Cluster List Received")
                     if(eMessageType == E_SL_MSG_NODE_ATTRIBUTE_LIST):
@@ -505,11 +503,13 @@ class cSerialLink(threading.Thread):
                     try:
                         
                         # Yield control to other thread to allow it to set up the listener
-                        if ((eMessageType == E_SL_MSG_SAVE_PDM_RECORD)or
-                            (eMessageType == E_SL_MSG_LOAD_PDM_RECORD_REQUEST) or
-                            (eMessageType == E_SL_MSG_DELETE_PDM_RECORD) or
-                            (eMessageType == E_SL_MSG_PDM_HOST_AVAILABLE)):                            
-                                self.dMessageQueue[eMessageType] = Queue.Queue(30)
+                        if eMessageType in [
+                            E_SL_MSG_SAVE_PDM_RECORD,
+                            E_SL_MSG_LOAD_PDM_RECORD_REQUEST,
+                            E_SL_MSG_DELETE_PDM_RECORD,
+                            E_SL_MSG_PDM_HOST_AVAILABLE,
+                        ]:                            
+                            self.dMessageQueue[eMessageType] = queue.Queue(30)
                         time.sleep(0)
                         self.dMessageQueue[eMessageType].put(sData)
                     except KeyError:
@@ -517,6 +517,7 @@ class cSerialLink(threading.Thread):
 
         finally:
             self.logger.debug("Read thread terminated")
+            self.pdm_thread.join()
 
 
     def SendMessage(self, eMessageType, sData=""):
@@ -529,16 +530,16 @@ class cSerialLink(threading.Thread):
             status = self.WaitMessage(E_SL_MSG_STATUS, 1)
         except cSerialLinkError:
             raise cSerialLinkError("Module did not acknowledge command 0x%04x" % eMessageType)
-        
+
         status = struct.unpack("B", status[0])[0]
         message = "" if len(sData) == 0 else sData
-        
-        if status == 0:
-            stringme= (':'.join(x.encode('hex') for x in sData))
-            self.logger.info("Command success. %s " %message)
-        else:
+
+        if status != 0:
             # Error status code
             raise cModuleError(status, message)
+
+        stringme= (':'.join(x.encode('hex') for x in sData))
+        self.logger.info("Command success. %s " %message)
 
 
     def WaitMessage(self, eMessageType, fTimeout):
@@ -553,25 +554,24 @@ class cSerialLink(threading.Thread):
             sData = self.dMessageQueue[eMessageType].get(True, fTimeout)
             del self.dMessageQueue[eMessageType]
         except KeyError:
-            self.dMessageQueue[eMessageType] = Queue.Queue()
+            self.dMessageQueue[eMessageType] = queue.Queue()
             try:
                 # Get the message from the receiver thread, and delete the queue entry
                 sData = self.dMessageQueue[eMessageType].get(True, fTimeout)
                 del self.dMessageQueue[eMessageType]
-            except Queue.Empty:
+            except queue.Empty:
                 # Raise exception, no data received
                 raise cSerialLinkError("Message 0x%04x not received within %fs" % (eMessageType, fTimeout))
         
         self.logger.debug("Pulled message type 0x%04x from queue", eMessageType)
         return sData
 
-
-
 class cControlBridge():
     """Class implementing commands to the control bridge node"""
     def __init__(self, port, baudrate=115200):
-        self.oSL = cSerialLink(port, baudrate)
-        self.oPdm = cPDMFunctionality(port)
+        pass
+        #self.oSL = cSerialLink(port, baudrate)
+        #self.oPdm = cPDMFunctionality(port)
         #self.oSL._WriteMessage(E_SL_MSG_PDM_HOST_AVAILABLE_RESPONSE,"00")
 
     def parseCommand(self,IncCommand):
@@ -582,7 +582,7 @@ class cControlBridge():
         if command[0] == 'EXP':
             self.SetExtendedPANID(command[1])
         if command[0] == 'GTV':            
-            print "Node Version: 0x%08x" % self.GetVersion()
+            print("Node Version: 0x%08x" % self.GetVersion())
         if command[0] == 'RST':
             self.SendSwReset()
         if command[0] == 'LQI':
@@ -705,7 +705,7 @@ class cControlBridge():
             c = conn.cursor()
             conn.close()
             
-        print ''
+        print('')
         return True
     
     def GetVersion(self):
@@ -781,7 +781,7 @@ class cControlBridge():
 
     def SendLevelOnff(self,TargetAddress,srcEp,DstEp,bOnOff,level,time):
          """Send match descriptor command"""
-         self.oSL.SendMessage(E_SL_MSG_MOVE_TO_LEVEL_ONOFF,(str(addressmode)+str(TargetAddress)+str(srcEp)+str(DstEp)+str(bOnOff)+str(level)+str(time)))
+         self.oSL.SendMessage(E_SL_MSG_MOVE_TO_LEVEL_ONOFF,("02"+str(TargetAddress)+str(srcEp)+str(DstEp)+str(bOnOff)+str(level)+str(time)))
 
     def SendSimpleDescriptor(self,TargetAddress,endpoint):
          """Send match descriptor command"""
@@ -836,7 +836,7 @@ class cControlBridge():
         RecordId = (''.join(x.encode('hex') for x in sData))
         #print RecordId
         c.execute("SELECT * FROM PdmData WHERE PdmRecId = ?", (RecordId,))
-        data=c.fetchone()                        
+        data=c.fetchone()
         status='00'
         if data is None:
             #print "None"
@@ -849,11 +849,8 @@ class cControlBridge():
             #print "found entry"
             persistedData = data[2]
             size = data[1]
-            TotalBlocks = (long(size,16)/128)
-            if((long(size,16)%128)>0):
-                NumberOfWrites = TotalBlocks + 1
-            else:
-                NumberOfWrites = TotalBlocks
+            TotalBlocks = (int(size,16)/128)
+            NumberOfWrites = TotalBlocks + 1 if ((int(size,16)%128)>0) else TotalBlocks
             #print size
             #print persistedData
             #print TotalBlocks
@@ -863,43 +860,43 @@ class cControlBridge():
             count =0
             lowerbound = 0
             upperbound = 0
-            while(bMoreData):
-                u32Size = long(size,16) - (count*128)
+            while (bMoreData):
+                u32Size = int(size,16) - (count*128)
                 if(u32Size>128):
                     u32Size = 256
                 else:
                     bMoreData = False
                     u32Size = u32Size*2
-                 
-                upperbound =upperbound + u32Size
+
+                upperbound += u32Size
                 DataStrip = persistedData[lowerbound:upperbound]
-                count = count+1
-                self.oSL.SendMessage(E_SL_MSG_LOAD_PDM_RECORD_RESPONSE,(status+RecordId+size+(hex(NumberOfWrites).strip('0x')).strip('L').zfill(8)+(hex(count).strip('0x')).strip('L').zfill(8)+(hex(u32Size/2).strip('0x')).strip('L').zfill(8)+DataStrip))                
-                lowerbound = lowerbound+u32Size                
-                
+                count += 1
+                self.oSL.SendMessage(E_SL_MSG_LOAD_PDM_RECORD_RESPONSE,(status+RecordId+size+(hex(NumberOfWrites).strip('0x')).strip('L').zfill(8)+(hex(count).strip('0x')).strip('L').zfill(8)+(hex(u32Size/2).strip('0x')).strip('L').zfill(8)+DataStrip))
+                lowerbound += u32Size                
+
         conn.commit()
         conn.close()
         
 if __name__ == "__main__":
     from optparse import OptionParser
     parser = OptionParser()
-    
+
     parser.add_option("-p", "--port", dest="port",
                       help="Serial port device name to use", default=None)
-                      
+
     parser.add_option("-b", "--baudrate", dest="baudrate",
                       help="Baudrate", default=1000000)
 
     (options, args) = parser.parse_args()
-    
+
     logging.basicConfig(format="%(asctime)-15s %(levelname)s:%(name)s:%(message)s")
-    logging.getLogger().setLevel(logging.INFO)
-                    
+    logging.getLogger().setLevel(logging.DEBUG)
+
     if options.port is None:
         #print "Please specify serial port with --port"
         parser.print_help()
         sys.exit(1)
-        
+
     conn = sqlite3.connect('pdm.db')
     c = conn.cursor()
     conn.text_factory = str
@@ -909,20 +906,20 @@ if __name__ == "__main__":
 
     conn.commit()
     conn.close()
+    oCB = None
+    bRunning = True
 
     oCB = cControlBridge(options.port, options.baudrate)
+    oCB.oSL = cSerialLink(options.port, options.baudrate)
+    oCB.oPdm = cPDMFunctionality(options.port)
+
     continueToRun = True
-    #bRunning = True
-    oCB.oSL._WriteMessage(E_SL_MSG_PDM_HOST_AVAILABLE_RESPONSE,"00")
+
+    oCB.oSL._WriteMessage(E_SL_MSG_PDM_HOST_AVAILABLE_RESPONSE, "00")
     useString = str(options.port)+ ""
-    while continueToRun:                    
-        command = raw_input(useString+'$ ')
-        if(command == ""):
-            continueToRun = True
-        else:
-            continueToRun = oCB.parseCommand(command.strip())
-    print "Terminating current session...."
+    while continueToRun:                
+        command = input(useString+'$ ')
+        continueToRun = True if (command == "") else oCB.parseCommand(command.strip())
+    print("Terminating current session....")
+    bRunning = False
     sys.exit(1)
-
-
-    
