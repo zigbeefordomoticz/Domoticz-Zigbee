@@ -18,11 +18,18 @@ Release Numbering
 - Even numbers  --> Beta
 
 
+
 ##    Dec.  2020  - 4.11.13
 - [Hardware] - Support Tuya Water leak sensor
 - [Hardware] - Support of Legrand Teleruptor
 - [Hardware] - Support of Sonoff ZB Mini switch
 - [Hardware] - Support Idinio foor dimmer
+
+## 18 Dec. 2020   - 4.11.12
+- [Hardware] - New eTRV Tuya 
+- [Hardware] - Better management of Battery level for SonOff devices ( NX-4911 Manufacturerd by Revolt )
+- [Hardware] - Fix some issues related to the FIP mode of Schneider Wiser HACT
+
 
 ## 27 Nov.  2020  - 4.11.11
 - [Hardware] - Handle the behaviour of the Legrand shutter when firmware above 0x1a
