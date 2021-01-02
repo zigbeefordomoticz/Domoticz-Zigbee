@@ -127,10 +127,33 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
     self.log.logging( "Tuya", 'Debug', "tuyaReadRawAPS - Nwkid: %s/%s Cluster: %s, Command: %s Payload: %s" \
         %(NwkId,srcEp , ClusterID, cmd, data ))
 
-    self.log.logging( "Tuya", 'Debug', "tuyaReadRawAPS - Nwkid: %s/%s fcf: %s sqn: %s cmd: %s status: %s transid: %s dp: %s decodeDP: %s fn: %s data: %s"
+    self.log.logging( "Tuya", 'Debug', "tuyaReadRawAPS - Nwkid: %s/%s fcf: %s sqn: %s cmd: %s status: %s transid: %s dp: %s decodeDP: %04x fn: %s data: %s"
         %(NwkId, srcEp, fcf, sqn, cmd, status, transid, dp, decode_dp, fn, data))
 
-    if decode_dp == 0x0202:
+    if decode_dp == 0x0101:
+        # Switch 1
+        pass
+
+    elif decode_dp == 0x0102:
+        # Switch 2
+        pass
+    elif decode_dp == 0x0103:
+        # Switch 3
+        pass
+
+    elif decode_dp == 0x0114:
+        # Valve state
+        pass
+    
+    elif decode_dp == 0x0026d:
+        # Valve position
+        pass
+
+    elif decode_dp == 0x046a:
+        # Mode
+        pass
+
+    elif decode_dp == 0x0202:
         # Setpoint Change target temp
         # data is setpoint
         self.log.logging( "Tuya", 'Debug', "tuyaReadRawAPS - Nwkid: %s/%s Setpoint: %s" %(NwkId,srcEp ,int(data,16)))
@@ -139,6 +162,8 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
 
 
     elif decode_dp in (0x0203, 0x0303):
+        # 0x0202 Thermostat setpoint
+        # 0x0203 Thermostat temperature
         # Temperature notification
         # data is the temp
         self.log.logging( "Tuya", 'Debug', "tuyaReadRawAPS - Nwkid: %s/%s Temperature: %s" %(NwkId,srcEp , int(data,16)))
@@ -173,6 +198,18 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
             MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 2, Attribute_ = '001c' )
             checkAndStoreAttributeValue( self, NwkId , '01', '0201', '001c' , 'Manual' )
 
+    # TS0601 Siren, Teperature, Humidity, Alarm
+    elif decode_dp == 0x0269:
+        # Temperature
+        MajDomoDevice(self, Devices, NwkId, srcEp, '0402', ( int(data,16) / 10))
+
+    elif decode_dp == 0x026a:
+        # Humidity ?
+        MajDomoDevice(self, Devices, NwkId, srcEp, '0405', ( int(data,16) ) )        
+
+    else:
+        self.log.logging( "Tuya", 'Debug', "tuyaReadRawAPS - Unknown attribut Nwkid: %s/%s fcf: %s sqn: %s cmd: %s status: %s transid: %s dp: %s decodeDP: %s fn: %s data: %s"
+    %(NwkId, srcEp, fcf, sqn, cmd, status, transid, dp, decode_dp, fn, data))
 
 def tuya_setpoint( self, nwkid, setpoint_value):
 
