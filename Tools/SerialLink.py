@@ -280,8 +280,6 @@ class cSerialLink(threading.Thread):
     def __init__(self, port, baudrate=115200):
         self.sl_thread = threading.Thread( name="SL",  target=cSerialLink.run,  args=(self,))
           
-
-
         self.logger = logging.getLogger(str(port))
         self.commslogger = logging.getLogger("Comms("+str(port)+")")
         
@@ -484,28 +482,22 @@ class cSerialLink(threading.Thread):
                         self.logger.info("Node->Host: Commands List ")
 
                     if(eMessageType == E_SL_MSG_NETWORK_JOINED_FORMED):
-                        stringme= (':'.join(x.encode('hex') for x in sData))
-                        self.logger.info("Network joined/formed event received %s",stringme )
+                        self.logger.info("Network joined/formed event received %s",string_me( sData ) )
 
                     if((eMessageType == E_SL_MSG_MATCH_DESCRIPTOR_RESPONSE)):
-                        stringme= (':'.join(x.encode('hex') for x in sData))
-                        self.logger.info("Match Descriptor response %s", stringme)
+                        self.logger.info("Match Descriptor response %s", string_me( sData ))
 
                     if((eMessageType == E_SL_MSG_DEVICE_ANNOUNCE)):
-                        stringme= (':'.join(x.encode('hex') for x in sData))
-                        self.logger.info("Device Announce response %s", stringme)
+                        self.logger.info("Device Announce response %s", string_me( sData ))
 
                     if((eMessageType == E_SL_MSG_READ_ATTRIBUTE_RESPONSE)):
-                        stringme= (':'.join(x.encode('hex') for x in sData))
-                        self.logger.info("Read Attributes response %s", stringme)
+                        self.logger.info("Read Attributes response %s", string_me( sData ))
 
                     if((eMessageType == E_SL_MSG_GET_GROUP_MEMBERSHIP_RESPONSE)):
-                        stringme= (':'.join(x.encode('hex') for x in sData))
-                        self.logger.info("Get Group response %s", stringme)
+                        self.logger.info("Get Group response %s", string_me( sData ))
 
                     if((eMessageType == E_SL_MSG_MANAGEMENT_LQI_RESPONSE)):
-                        stringme= (':'.join(x.encode('hex') for x in sData))
-                        self.logger.info("LQI response %s", stringme)                        
+                        self.logger.info("LQI response %s", string_me( sData ))                        
 
                 else:
                     try:
@@ -525,7 +517,7 @@ class cSerialLink(threading.Thread):
 
         finally:
             self.logger.debug("Read thread terminated")
-            self.pdm_thread.join()
+            self.sl_thread.join()
 
 
     def SendMessage(self, eMessageType, sData=""):
@@ -536,6 +528,7 @@ class cSerialLink(threading.Thread):
         self._WriteMessage(eMessageType, sData)
         try:
             status = self.WaitMessage(E_SL_MSG_STATUS, 1)
+
         except cSerialLinkError:
             raise cSerialLinkError("Module did not acknowledge command 0x%04x" % eMessageType)
 
@@ -546,8 +539,7 @@ class cSerialLink(threading.Thread):
             # Error status code
             raise cModuleError(status, message)
 
-        stringme= (':'.join(x.encode('hex') for x in sData))
-        self.logger.info("Command success. %s " %message)
+        self.logger.info("Command success. %s" %(message))
 
 
     def WaitMessage(self, eMessageType, fTimeout):
@@ -557,11 +549,20 @@ class cSerialLink(threading.Thread):
             as they are waiting on different message types.
         """
         sData = None
-        try:
+        if eMessageType in self.dMessageQueue:
             # Get the message from the receiver thread, and delete the queue entry
-            sData = self.dMessageQueue[eMessageType].get(True, fTimeout)
-            del self.dMessageQueue[eMessageType]
-        except KeyError:
+            try:
+                # Get the message from the receiver thread, and delete the queue entry
+                sData = self.dMessageQueue[eMessageType].get(True, fTimeout)
+                del self.dMessageQueue[eMessageType]
+            except queue.Empty:
+                # Raise exception, no data received
+                raise cSerialLinkError("Message 0x%04x not received within %fs" % (eMessageType, fTimeout))
+            except Exception as e:
+                raise cSerialLinkError("Message 0x%04x not received within %fs Got error: %s" % (eMessageType, fTimeout, e))
+
+        else:
+            self.logger.debug("WaitMessage: KeyError mostlikely the queue doesn't exist", eMessageType)
             self.dMessageQueue[eMessageType] = queue.Queue()
             try:
                 # Get the message from the receiver thread, and delete the queue entry
@@ -570,10 +571,23 @@ class cSerialLink(threading.Thread):
             except queue.Empty:
                 # Raise exception, no data received
                 raise cSerialLinkError("Message 0x%04x not received within %fs" % (eMessageType, fTimeout))
+
+            except Exception as e:
+                raise cSerialLinkError("Message 0x%04x not received within %fs Got error: %s" % (eMessageType, fTimeout, e))
+
         
         self.logger.debug("Pulled message type 0x%04x from queue", eMessageType)
         return sData
 
+def string_me( sData ):
+    stringme = ''
+    for x in sData:
+        if stringme == '':
+            stringme += '%02x' %x
+        else:
+            stringme += ':%02x' %x
+
+    return stringme
 class cControlBridge():
     """Class implementing commands to the control bridge node"""
     def __init__(self, port, baudrate=115200):
@@ -619,7 +633,8 @@ class cControlBridge():
         if command[0] == 'CHL':
             self.SetChannelMask(command[1])
         if command[0] == 'DEFAULTC':
-            self.ErasePersistentData()            
+            self.ErasePersistentData()     
+            time.sleep(5)       
             self.SendSwReset()
             time.sleep(5)
             self.SetDeviceType('00')
@@ -632,6 +647,7 @@ class cControlBridge():
 
         if command[0] == 'DEFAULTRZLL1':
             self.ErasePersistentData()
+            time.sleep(5)
             self.SendSwReset()
             time.sleep(5)
             self.SetDeviceType('01')
@@ -644,6 +660,7 @@ class cControlBridge():
 
         if command[0] == 'DEFAULTRZLL2':
             self.ErasePersistentData()
+            time.sleep(5)
             self.SendSwReset()
             time.sleep(5)
             self.SetDeviceType('01')
@@ -660,6 +677,7 @@ class cControlBridge():
 
         if command[0] == 'DEFAULTRZLLHA':
             self.ErasePersistentData()
+            time.sleep(5)
             self.SendSwReset()
             time.sleep(5)
             self.SetDeviceType('02')
@@ -935,4 +953,3 @@ if __name__ == "__main__":
     print("Terminating current session....")
     bRunning = False
     sys.exit(1)
-
