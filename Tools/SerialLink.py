@@ -172,17 +172,17 @@ class cPDMFunctionality(threading.Thread):
     def __init__(self,port): 
         self.pdm_thread = threading.Thread( name="PDM" ,  target=cPDMFunctionality.run,  args=(self,))
         
-        
         # Message queue used to pass messages between reader thread and WaitMessage()
         self.dMessageQueue = {}
         self.logger = logging.getLogger(str(port))
+        self.bRunning = True
         # Start reader thread
         self.pdm_thread.start()   
         
     def run(self):
         """ dedicated thread for PDM
         """        
-        while (bRunning):
+        while (self.bRunning):
             try:
                 # Get the message from the receiver thread, and delete the queue entry
                 sData = oCB.oSL.dMessageQueue[E_SL_MSG_DELETE_PDM_RECORD].get(True, 0.1)
@@ -242,8 +242,9 @@ class cPDMFunctionality(threading.Thread):
                         except KeyError:                      
                             pass
                             #self.logger.debug("nothing to do")
+
         self.logger.debug("Read thread terminated")
-        #self.pdm_thread.join()
+
 class cSerialLinkError(Exception):
     pass
 
@@ -290,12 +291,9 @@ class cSerialLink(threading.Thread):
         
         # Message queue used to pass messages between reader thread and WaitMessage()
         self.dMessageQueue = {}
-        
+        self.bRunning = True        
         # Start reader thread
         self.sl_thread.start() 
-
-
-
 
             
     def _WriteByte(self, oByte, bSpecial=False, bAscii=False):
@@ -375,10 +373,10 @@ class cSerialLink(threading.Thread):
         u16Length = 0
         sData = ""
         state = 0
-        while(bRunning):
+        while(self.bRunning):
             byte = self.oPort.read(1)
             #sys.stdout.write(byte)
-            if True: #len(byte) > 0:
+            if len(byte) > 0:
                 self.commslogger.info("Node->Host: 0x%02x", ord(byte))
 
                 if (ord(byte) == 0x01):
@@ -438,7 +436,6 @@ class cSerialLink(threading.Thread):
                         self.commslogger.debug("Message Add Data: 0x%02x" %(ord(byte)))
                         #sData += binascii.hexlify(byte).decode('utf-8')
                         sData += byte
-
         return (0, "")
 
 
@@ -450,9 +447,12 @@ class cSerialLink(threading.Thread):
         """
         self.logger.debug("Read thread starting")
         try:
-            while (bRunning):
+            while (self.bRunning):
                 (eMessageType, sData) = self._ReadMessage()
                 self.logger.info("Node->Host: Response 0x%04x, length %d", eMessageType, len(sData))
+
+                if eMessageType == 0:
+                    break
 
                 if eMessageType in [
                     E_SL_MSG_LOG,
@@ -517,7 +517,7 @@ class cSerialLink(threading.Thread):
 
         finally:
             self.logger.debug("Read thread terminated")
-            self.sl_thread.join()
+
 
 
     def SendMessage(self, eMessageType, sData=""):
@@ -933,7 +933,6 @@ if __name__ == "__main__":
     conn.commit()
     conn.close()
     oCB = None
-    bRunning = True
 
     oCB = cControlBridge(options.port, options.baudrate)
     oCB.oSL = cSerialLink(options.port, options.baudrate)
@@ -951,5 +950,10 @@ if __name__ == "__main__":
         else:
             continueToRun = oCB.parseCommand(command.strip())
     print("Terminating current session....")
-    bRunning = False
+
+    oCB.oSL.bRunning = False
+    oCB.oPdm.bRunning = False
+    oCB.oSL.oPort.cancel_read()
+    oCB.oSL.sl_thread.join()
+    oCB.oPdm.pdm_thread.join()
     sys.exit(1)
