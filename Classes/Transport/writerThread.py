@@ -46,6 +46,9 @@ def writer_thread( self ):
                     # Exit
                     break
 
+                # ommand sent, if needed wait in order to reduce throughput and load on ZiGate
+                limit_throuput(self, command)
+
             elif command == 'STOP':
                 break
 
@@ -61,6 +64,35 @@ def writer_thread( self ):
             handle_thread_error( self, e, 0, 0, frame)
 
     self.logging_send('Status',"ZigateTransport: writer_thread Thread stop.")
+
+def limit_throuput(self, command):
+    # Purpose is to have a regulate the load on ZiGate.
+    # It is important for non 31e firmware, as we don't have all elements to regulate the flow
+    # 
+    # It takes on an USB ZiGate around 70ms for a full turn around time between the commande sent and the 0x8011 received
+
+    if self.firmware_compatibility_mode:
+        # We are in firmware 31a where we control the flow is only on 0x8000
+        self.logging_send('Debug',"Firmware 31a limit_throuput regulate to 250ms")
+        time.sleep(0.250)
+
+    elif not self.firmware_with_aps_sqn and not self.firmware_with_8012 and not command['ackIsDisabled']:
+        # Firmware 31c
+        self.logging_send('Debug',"Firmware 31c limit_throuput regulate to 250ms")
+        time.sleep(0.250)
+
+    elif self.firmware_with_aps_sqn and not self.firmware_with_8012 and command['ackIsDisabled']:
+        # We are in firmware 31d where we don't have 8012 flow control for ackIsDisabled commands
+        self.logging_send('Debug',"Firmware 31d limit_throuput regulate to 100ms")
+        time.sleep(0.100)
+
+    elif (
+        not self.firmware_with_aps_sqn
+        or not self.firmware_with_8012
+        or command['ackIsDisabled']
+    ):
+        self.logging_send('Log',"limit_throuput no regulation %s %s %s %s" %(
+            self.firmware_compatibility_mode, self.firmware_with_aps_sqn, self.firmware_with_8012, command['ackIsDisabled'] ))
 
 def wait_for_semaphore( self , command ):
         # Now we will block on Semaphore to serialize and limit the number of concurent commands on ZiGate
@@ -82,7 +114,6 @@ def wait_for_semaphore( self , command ):
 
         if self.pluginconf.pluginConf['writerTimeOut'] and not block_status:
             semaphore_timeout( self, command )
-
 
 def thread_sendData(self, cmd, datas, ackIsDisabled, waitForResponseIn, isqn ):
     self.logging_send('Debug', "thread_sendData")
