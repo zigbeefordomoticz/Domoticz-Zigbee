@@ -279,7 +279,7 @@ def timeout_widget( self, Devices, unit, timeout_value):
         if timeout_value == 1 and self.pluginconf.pluginConf['deviceOffWhenTimeOut'] and (
             ( _nValue == 1 and _sValue == 'On') or (
                 Devices[unit].Type == 244 and Devices[unit].SubType == 73 and Devices[unit].SwitchType == 7) or (
-                Devices[unit].Type == 241 and  Devices[unit].SwitchType_ == 7 )):
+                Devices[unit].Type == 241 and  Devices[unit].SwitchType == 7 )):
             # Then we will switch off as per User setting
             Devices[unit].Update(nValue=0, sValue='Off', TimedOut=timeout_value)
         else:
