@@ -13,7 +13,7 @@ from Classes.Transport.handleProtocol import process_frame
 def decode_and_split_message(self, raw_message):
     
     # Process/Decode raw_message
-    #self.logging_receive( 'Log', "onMessage - %s" %(raw_message))
+    #logging_reader( self, 'Log', "onMessage - %s" %(raw_message))
     if raw_message is not None:
         self._ReqRcv += raw_message  # Add the incoming data
         #Domoticz.Debug("onMessage incoming data : '" + str(binascii.hexlify(self._ReqRcv).decode('utf-8')) + "'")
@@ -25,13 +25,13 @@ def decode_and_split_message(self, raw_message):
         if BinMsg is None:
             return
         if not check_frame_lenght( self, BinMsg) or not check_frame_crc(self, BinMsg):
-            self.logging_receive('Error',"on_message Frame error Crc/len %s" %(BinMsg))
+            logging_reader( self,'Error',"on_message Frame error Crc/len %s" %(BinMsg))
             continue           
 
         AsciiMsg = binascii.hexlify(BinMsg).decode('utf-8')
 
         #if self.pluginconf.pluginConf["debugzigateCmd"]:
-        #    self.logging_send('Log', "on_message AsciiMsg: %s , Remaining buffer: %s" %(AsciiMsg,  self._ReqRcv ))
+        #    logging_reader(self,'Log', "on_message AsciiMsg: %s , Remaining buffer: %s" %(AsciiMsg,  self._ReqRcv ))
 
         self.statistics._received += 1
         process_frame(self, AsciiMsg)
@@ -50,7 +50,7 @@ def get_raw_frame_from_raw_message( self ):
         return None
     
     if frame_start > zero3_position:
-        self.logging_receive('Error',"Frame error we will drop the buffer!! start: %s zero3: %s buffer: %s" %( frame_start,  zero3_position, self._ReqRcv, )   ) 
+        logging_reader( self,'Error',"Frame error we will drop the buffer!! start: %s zero3: %s buffer: %s" %( frame_start,  zero3_position, self._ReqRcv, )   ) 
         return None
             
     # Remove the frame from the buffer (new buffer start at frame +1)
@@ -89,7 +89,7 @@ def check_frame_crc(self, BinMsg):
             'ComputedChecksum': ComputedChecksum,
             'ReceivedChecksum': ReceivedChecksum,
         }
-        self.logging_receive_error( "check_frame_crc", context=_context)
+        self.logging_error( "check_frame_crc", context=_context)
         return False
     return True
 
@@ -111,6 +111,10 @@ def check_frame_lenght( self, BinMsg):
             'ComputedLength': ComputedLength,
             'ReceveidLength': ReceveidLength,
         }
-        self.logging_receive_error( "check_frame_lenght", context=_context)
+        self.logging_error( "check_frame_lenght", context=_context)
         return False
     return True
+
+def logging_reader(self, logType, message, NwkId = None, _context=None):
+    # Log all activties towards ZiGate
+    self.log.logging('TransportRder', logType, message, context = _context)

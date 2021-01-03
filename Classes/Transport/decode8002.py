@@ -8,11 +8,12 @@ import Domoticz
 import struct
 from Modules.zigateConsts import ADDRESS_MODE, SIZE_DATA_TYPE
 from Modules.tools import retreive_cmd_payload_from_8002
+from Classes.Transport.tools import logging_flow_control
 
 def decode8002_and_process(self, frame):
     
     SrcNwkId, SrcEndPoint, ClusterId , Payload = extract_nwk_infos_from_8002( frame )
-    #self.logging_receive( 'Debug', "decode8002_and_process NwkId: %s Ep: %s Cluster: %s Payload: %s" %(SrcNwkId, SrcEndPoint, ClusterId , Payload))
+    #logging_flow_control(self, 'Debug', "decode8002_and_process NwkId: %s Ep: %s Cluster: %s Payload: %s" %(SrcNwkId, SrcEndPoint, ClusterId , Payload))
 
     if SrcNwkId is None:
         return frame
@@ -25,7 +26,7 @@ def decode8002_and_process(self, frame):
         # This is not a Global Command (Read Attribute, Write Attribute and so on)
         return frame
 
-    self.logging_receive( 'Debug', "decode8002_and_process Sqn: %s/%s ManufCode: %s Command: %s Data: %s " %(int(Sqn,16), Sqn , ManufacturerCode, Command, Data))
+    logging_flow_control(self,  'Debug', "decode8002_and_process Sqn: %s/%s ManufCode: %s Command: %s Data: %s " %(int(Sqn,16), Sqn , ManufacturerCode, Command, Data))
     if Command == '00': # Read Attribute
         return buildframe_read_attribute_request( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Data  )
 
@@ -41,7 +42,7 @@ def decode8002_and_process(self, frame):
     if Command == '0a':
         return buildframe_report_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
 
-    self.logging_receive( 'Log', "decode8002_and_process Unknown Command: %s NwkId: %s Ep: %s Cluster: %s Payload: %s" %(Command, SrcNwkId, SrcEndPoint, ClusterId , Data))
+    logging_flow_control(self, 'Log', "decode8002_and_process Unknown Command: %s NwkId: %s Ep: %s Cluster: %s Payload: %s" %(Command, SrcNwkId, SrcEndPoint, ClusterId , Data))
         
     return frame
 

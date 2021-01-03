@@ -18,13 +18,13 @@ def start_forwarder_thread( self ):
         self.forwarder_thread.start()
 
 def forwarder_thread( self ):
-    self.logging_receive('Status', "ZigateTransport: thread_processing_and_sending Thread start.")
+    logging_forwarder( self,'Status', "ZigateTransport: thread_processing_and_sending Thread start.")
 
     while self.running:
         message = None
         # Sending messages ( only 1 at a time )
         try:
-            self.logging_receive( 'Debug', "Waiting for next message")
+            logging_forwarder( self, 'Debug', "Waiting for next message")
             message = self.forwarder_queue.get()
             if message == 'STOP':
                 break
@@ -40,16 +40,20 @@ def forwarder_thread( self ):
                 'Error': e,
                 'Message': message,
             }
-            self.logging_receive_error( "forwarder_thread - Error while receiving a ZiGate command", context=_context)
+            self.logging_error( "forwarder_thread - Error while receiving a ZiGate command", context=_context)
 
             handle_thread_error( self, e, 0, 0, message)
 
-    self.logging_receive('Status',"ZigateTransport: thread_processing_and_sending Thread stop.")
+    logging_forwarder( self,'Status',"ZigateTransport: thread_processing_and_sending Thread stop.")
 
 @time_spent_forwarder( )
 def forward_message( self, message ):
 
-    self.logging_receive( 'Debug', "Receive a message to forward: %s" %(message))
+    logging_forwarder( self, 'Debug', "Receive a message to forward: %s" %(message))
     self.statistics._data += 1
     self.F_out(  message )
-    self.logging_receive( 'Debug', "message forwarded!!!!")    
+    logging_forwarder( self, 'Debug', "message forwarded!!!!")
+
+def logging_forwarder(self, logType, message, NwkId = None, _context=None):
+    # Log all activties towards ZiGate
+    self.log.logging('TransportFrwder', logType, message, context = _context)

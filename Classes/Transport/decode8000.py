@@ -5,7 +5,7 @@
 #
 
 from Classes.Transport.tools import  update_xPDU, print_listofcommands
-from Classes.Transport.tools import  CMD_PDM_ON_HOST, ZIGATE_COMMANDS, get_isqn_from_ListOfCommands, release_command
+from Classes.Transport.tools import  CMD_PDM_ON_HOST, ZIGATE_COMMANDS, get_isqn_from_ListOfCommands, release_command, logging_flow_control
 from Classes.Transport.sqnMgmt import sqn_add_external_sqn, TYPE_APP_ZCL, TYPE_APP_ZDP
 from Classes.Transport.isFinal import is_final_step
 
@@ -36,7 +36,7 @@ def decode8000(self, decoded_frame):
             'sqn_aps': sqn_aps,
             'sqn_typ': type_sqn,
         }
-        self.logging_receive_error( "decode8000 - cannot get isqn for MsgType %s" %(PacketType), context=_context)
+        self.logging_error( "decode8000 - cannot get isqn for MsgType %s" %(PacketType), context=_context)
         return
 
     print_listofcommands( self, isqn )
@@ -52,10 +52,10 @@ def decode8000(self, decoded_frame):
             'sqn_aps': sqn_aps,
             'sqn_typ': type_sqn,
         }
-        self.logging_receive_error( "decode8000 - command miss-match %s vs. %s" %(self.ListOfCommands[ isqn ]['cmd'] , PacketType), context=_context)
+        self.logging_error( "decode8000 - command miss-match %s vs. %s" %(self.ListOfCommands[ isqn ]['cmd'] , PacketType), context=_context)
         return
 
-    self.logging_send('Debug', "--> decode8000 - Status: %s PacketType: %s sqn_app:%s sqn_aps: %s type_sqn: %s" 
+    logging_flow_control(self, 'Debug', "--> decode8000 - Status: %s PacketType: %s sqn_app:%s sqn_aps: %s type_sqn: %s" 
         % (Status, PacketType, sqn_app, sqn_aps, type_sqn))
 
     if int(PacketType,16) in CMD_PDM_ON_HOST:
@@ -124,12 +124,12 @@ def get_sqn_pdus( self, MsgData ):
                 self.firmware_compatibility_mode = False
                 self.firmware_with_aps_sqn = True
                 self.firmware_with_8012 = True
-                self.logging_send('Status', "==> Transport Mode switch to: 31e")
+                logging_flow_control(self, 'Status', "==> Transport Mode switch to: 31e")
 
         elif not self.firmware_with_aps_sqn:
             self.firmware_compatibility_mode = False
             self.firmware_with_aps_sqn = True
-            self.logging_send('Status', "==> Transport Mode switch to: 31d")
+            logging_flow_control(self, 'Status', "==> Transport Mode switch to: 31d")
         
     return ( sqn_aps, type_sqn , apdu, npdu )
 
@@ -142,7 +142,7 @@ def report_timing_8000( self , isqn ):
             timing = int( ( time.time() - TimeStamp ) * 1000 )
             self.statistics.add_timing8000( timing )
         if self.statistics._averageTiming8000 != 0 and timing >= (3 * self.statistics._averageTiming8000):
-            self.logging_send('Log', "--> decode8000 - Zigate round trip 0x8000 time seems long. %s ms for %s %s SendingQueue: %s" 
+            logging_flow_control(self, 'Log', "--> decode8000 - Zigate round trip 0x8000 time seems long. %s ms for %s %s SendingQueue: %s" 
                 %( timing , 
                 self.ListOfCommands[isqn]['cmd'], 
                 self.ListOfCommands[isqn]['datas'], 

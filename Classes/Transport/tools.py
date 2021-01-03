@@ -56,13 +56,13 @@ def waiting_for_end_thread( self ):
 
     if self.pluginconf.pluginConf['byPassDzConnection'] and not self.force_dz_communication:
         self.reader_thread.join()
-        self.logging_receive( 'Debug', "waiting_for_end_thread - readThread done")
+        logging_flow_control(self, 'Debug', "waiting_for_end_thread - readThread done")
 
     self.forwarder_thread.join()
-    self.logging_receive( 'Debug', "waiting_for_end_thread - forwardedThread done")
+    logging_flow_control(self, 'Debug', "waiting_for_end_thread - forwardedThread done")
 
     self.writer_thread.join()
-    self.logging_receive( 'Debug', "waiting_for_end_thread - writerThread done")
+    logging_flow_control(self, 'Debug', "waiting_for_end_thread - writerThread done")
 
 
 def handle_thread_error( self, e, nb_in, nb_out, data):
@@ -88,7 +88,7 @@ def handle_thread_error( self, e, nb_in, nb_out, data):
         'nb_out': nb_out,
         'Data': str(data),
     }
-    self.logging_receive( 'Error', "handle_error_in_thread ", _context=context)
+    logging_flow_control(self, 'Error', "handle_error_in_thread ", _context=context)
 
 def update_xPDU( self, npdu, apdu):
     if npdu == '' or apdu == '':
@@ -98,23 +98,22 @@ def update_xPDU( self, npdu, apdu):
     self.statistics._MaxaPdu = max(self.statistics._MaxaPdu, int(apdu,16))
     self.statistics._MaxnPdu = max(self.statistics._MaxnPdu, int(npdu,16))
 
-
 def release_command( self, isqn):
     # Remove the command from ListOfCommand
     # Release Semaphore
     if isqn is not None and isqn in self.ListOfCommands:
-        self.logging_receive( 'Debug', "==== Removing isqn: %s from %s" %(isqn, self.ListOfCommands.keys()))
+        logging_flow_control(self,  'Debug', "==== Removing isqn: %s from %s" %(isqn, self.ListOfCommands.keys()))
         del self.ListOfCommands[ isqn ]
 
-    self.logging_receive( 'Debug', "============= - Release semaphore %s (%s)" %(self.semaphore_gate._value, len(self.ListOfCommands)))
+    logging_flow_control(self,  'Debug', "============= - Release semaphore %s (%s)" %(self.semaphore_gate._value, len(self.ListOfCommands)))
     if self.semaphore_gate._value < MAX_SIMULTANEOUS_ZIGATE_COMMANDS:
         self.semaphore_gate.release()
-    self.logging_receive( 'Debug', "============= - Semaphore released !! %s writerQueueSize: %s" %(self.semaphore_gate._value, self.writer_queue.qsize( )))
+    logging_flow_control(self,  'Debug', "============= - Semaphore released !! %s writerQueueSize: %s" %(self.semaphore_gate._value, self.writer_queue.qsize( )))
 
 def get_isqn_from_ListOfCommands( self, PacketType):
     for x in  list(self.ListOfCommands):
         if self.ListOfCommands[ x ]['Status'] == 'SENT':
-            self.logging_receive( 'Debug', "get_isqn_from_ListOfCommands - Found isqn: %s with Sem: %s" %(x, self.ListOfCommands[ x ]['Semaphore']))
+            logging_flow_control(self,  'Debug', "get_isqn_from_ListOfCommands - Found isqn: %s with Sem: %s" %(x, self.ListOfCommands[ x ]['Semaphore']))
             self.ListOfCommands[ x ]['Status'] = '8000'
             return x
 
@@ -136,9 +135,9 @@ def get_response_from_command( command ):
 
 def print_listofcommands( self, isqn ):
 
-    self.logging_receive( 'Debug', 'ListOfCommands[%s]:' %isqn)
+    logging_flow_control(self,  'Debug', 'ListOfCommands[%s]:' %isqn)
     for attribute in self.ListOfCommands[ isqn ]:
-        self.logging_receive( 'Debug', '--> %s: %s' %(attribute, self.ListOfCommands[ isqn ][ attribute]))
+        logging_flow_control(self,  'Debug', '--> %s: %s' %(attribute, self.ListOfCommands[ isqn ][ attribute]))
 
 def get_nwkid_from_datas_for_zcl_command( self, isqn):
     
@@ -147,3 +146,7 @@ def get_nwkid_from_datas_for_zcl_command( self, isqn):
 def is_nwkid_available( self, cmd):
 
     return ZIGATE_COMMANDS[ cmd ]['NwkId 2nd Bytes']
+
+def logging_flow_control(self, logType, message, NwkId = None, _context=None):
+    # Log all activties towards ZiGate
+    self.log.logging('TransportFlowCtrl', logType, message, context = _context)

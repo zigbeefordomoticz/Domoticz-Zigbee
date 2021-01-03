@@ -142,10 +142,10 @@ class ZigateTransport(object):
         try:
             self.writer_queue.put( message ) # Prio 5 to allow prio 1 if we have to retransmit 
         except queue.Full:
-            self.logging_send('Error',"sendData - writer_queue Full")
+            self.logging('Error',"sendData - writer_queue Full")
 
         except Exception as e:
-            self.logging_send('Error',"sendData - Error: %s" %e)
+            self.logging('Error',"sendData - Error: %s" %e)
         
         return InternalSqn
 
@@ -198,62 +198,53 @@ class ZigateTransport(object):
         self.open_conn()
 
     # Login mecanism
-    def logging_send(self, logType, message, NwkId = None, _context=None):
+    def logging(self, logType, message, NwkId = None, _context=None):
         # Log all activties towards ZiGate
-        self.log.logging('TransportTx', logType, message, context = _context)
+        self.log.logging('Transport', logType, message, context = _context)
 
-    def logging_receive(self, logType, message, nwkid=None, _context=None):
-        # Log all activities received from ZiGate
-        self.log.logging('TransportRx', logType, message, nwkid=nwkid, context = _context)
+    def logging_error( self, message, Nwkid=None, context=None):
+        self.logging( 'Error', message,  Nwkid, transport_error_context( self, context))
 
-    def transport_error_context( self, context):
-        if context is None:
-            context = {}
-        context['Queues'] = {
-            'ListOfCommands': dict.copy(self.ListOfCommands),
-            'writeQueue': str(self.writer_queue.queue),
-            'forwardQueue': str(self.forwarder_queue.queue),
-            'SemaphoreValue': self.semaphore_gate._value,
-            }
-        context['Firmware'] = {
-            'dzCommunication': self.force_dz_communication,
-            'with_aps_sqn': self.firmware_with_aps_sqn ,
-            'with_8012': self.firmware_with_8012,
-            'nPDU': self.npdu,
-            'aPDU': self.apdu,
-            }
-        context['Sqn Management'] = {
-            'sqn_ZCL': self.sqn_zcl,
-            'sqn_ZDP': self.sqn_zdp,
-            'sqn_APS': self.sqn_aps,
-            'current_SQN': self.current_sqn,
-            }
-        context['inMessage'] = {
-            'ReqRcv': str(self._ReqRcv),
+
+def transport_error_context( self, context):
+    if context is None:
+        context = {}
+    context['Queues'] = {
+        'ListOfCommands': dict.copy(self.ListOfCommands),
+        'writeQueue': str(self.writer_queue.queue),
+        'forwardQueue': str(self.forwarder_queue.queue),
+        'SemaphoreValue': self.semaphore_gate._value,
         }
-        context['Thread'] = {
-            'byPassDzCommunication': self.pluginconf.pluginConf['byPassDzConnection'],
-            'ThreadName': threading.current_thread().name
+    context['Firmware'] = {
+        'dzCommunication': self.force_dz_communication,
+        'with_aps_sqn': self.firmware_with_aps_sqn ,
+        'with_8012': self.firmware_with_8012,
+        'nPDU': self.npdu,
+        'aPDU': self.apdu,
         }
-        return context
-
-    def logging_receive_error( self, message, Nwkid=None, context=None):
-        self.logging_receive('Error', message,  Nwkid, self.transport_error_context( context))
-
-
-    def logging_send_error( self, message, Nwkid=None, context=None):
-        self.logging_send('Error', message,  Nwkid, self.transport_error_context( context))
+    context['Sqn Management'] = {
+        'sqn_ZCL': self.sqn_zcl,
+        'sqn_ZDP': self.sqn_zdp,
+        'sqn_APS': self.sqn_aps,
+        'current_SQN': self.current_sqn,
+        }
+    context['inMessage'] = {
+        'ReqRcv': str(self._ReqRcv),
+    }
+    context['Thread'] = {
+        'byPassDzCommunication': self.pluginconf.pluginConf['byPassDzConnection'],
+        'ThreadName': threading.current_thread().name
+    }
+    return context
 
 def open_connection( self ):
 
     if self._transp in ["USB", "DIN", "PI", "V2"]:
         if self._serialPort.find('/dev/') != -1 or self._serialPort.find('COM') != -1:
-
             Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" % (self._serialPort))
             if self.pluginconf.pluginConf['byPassDzConnection'] and not self.force_dz_communication:
                 open_zigate_and_start_reader( self, 'serial' )
                 start_writer_thread( self )
-
             else:
                 self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None", Address=self._serialPort, Baud=115200)
             start_writer_thread( self )

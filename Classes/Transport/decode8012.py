@@ -5,7 +5,7 @@
 #
 
 import time
-from Classes.Transport.tools import release_command, update_xPDU, print_listofcommands
+from Classes.Transport.tools import release_command, update_xPDU, print_listofcommands, logging_flow_control
 from Classes.Transport.sqnMgmt import sqn_get_internal_sqn_from_aps_sqn
 from Classes.Transport.isFinal import is_final_step
 
@@ -35,20 +35,20 @@ def decode8012_8702( self, decoded_frame):
             'Status': MsgStatus,
             'AddrMode': MsgDataDestMode
         }
-        self.logging_receive_error( "decode8012_8702 - wrong address mode %s" %(MsgDataDestMode), context=_context)
+        self.logging_error( "decode8012_8702 - wrong address mode %s" %(MsgDataDestMode), context=_context)
         return None
 
     update_xPDU( self, nPDU, aPDU)
 
     isqn = sqn_get_internal_sqn_from_aps_sqn(self, MsgSQN)
-    self.logging_receive( 'Debug', "decode8012_8702 - 0x8012 isqn: %s eSqn: %s" %(isqn, MsgSQN))
+    logging_flow_control(self,  'Debug', "decode8012_8702 - 0x8012 isqn: %s eSqn: %s" %(isqn, MsgSQN))
     
     if isqn is None:
-        self.logging_receive( 'Debug', "decode8012_8702 - 0x8012 not for us Nwkid: %s eSqn: %s" %(MsgAddr, MsgSQN))
+        logging_flow_control(self,  'Debug', "decode8012_8702 - 0x8012 not for us Nwkid: %s eSqn: %s" %(MsgAddr, MsgSQN))
         return
 
     if isqn not in self.ListOfCommands:
-        self.logging_receive( 'Debug', "decode8012_8702 - 0x8012 not for us Nwkid: %s eSqn: %s " %(MsgAddr, MsgSQN))
+        logging_flow_control(self,  'Debug', "decode8012_8702 - 0x8012 not for us Nwkid: %s eSqn: %s " %(MsgAddr, MsgSQN))
         return
 
     self.ListOfCommands[ isqn ]['Status'] = MsgType
