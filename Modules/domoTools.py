@@ -242,13 +242,12 @@ def timedOutDevice( self, Devices, Unit=None, NwkId=None, MarkTimedOut=True):
     _Unit = _nValue = _sValue = None
     
     if Unit:
-        _nValue = Devices[Unit].nValue
-        _sValue = Devices[Unit].sValue
-        _Unit = Unit
-        if MarkTimedOut and not Devices[_Unit].TimedOut:
-            Devices[_Unit].Update(nValue=_nValue, sValue=_sValue, TimedOut=1)
-        elif not MarkTimedOut and Devices[_Unit].TimedOut:
-            Devices[_Unit].Update(nValue=_nValue, sValue=_sValue, TimedOut=0)
+        if MarkTimedOut and not Devices[Unit].TimedOut:
+            timeout_widget( self, Devices, Unit, 1)
+
+        elif not MarkTimedOut and Devices[Unit].TimedOut:
+            timeout_widget( self, Devices, Unit, 0)
+
 
     elif NwkId:
         if NwkId not in self.ListOfDevices:
@@ -258,19 +257,33 @@ def timedOutDevice( self, Devices, Unit=None, NwkId=None, MarkTimedOut=True):
         _IEEE = self.ListOfDevices[NwkId]['IEEE']
         self.ListOfDevices[NwkId]['Health'] = 'TimedOut' if MarkTimedOut else 'Live'
         for x in Devices:
-            if Devices[x].DeviceID == _IEEE:
-                _nValue = Devices[x].nValue
-                _sValue = Devices[x].sValue
-                _Unit = x
-                if Devices[_Unit].TimedOut:
-                    if MarkTimedOut:
-                        continue
-                    self.log.logging( "Widget", 'Debug', 'reset timedOutDevice unit %s nwkid: %s ' % (Devices[_Unit].Name, NwkId), NwkId, )
-                    Devices[_Unit].Update(nValue=_nValue, sValue=_sValue, TimedOut=0)
-                else:
-                    if MarkTimedOut:
-                        self.log.logging( "Widget", 'Debug', 'timedOutDevice unit %s nwkid: %s ' % (Devices[_Unit].Name, NwkId), NwkId, )
-                        Devices[_Unit].Update(nValue=_nValue, sValue=_sValue, TimedOut=1)
+            if Devices[x].DeviceID != _IEEE:
+                continue
+            if Devices[x].TimedOut:
+                if MarkTimedOut:
+                    continue
+                self.log.logging( "Widget", 'Debug', 'reset timedOutDevice unit %s nwkid: %s ' % (Devices[x].Name, NwkId), NwkId, )
+                timeout_widget( self, Devices, x, 0)
+            else:
+                if MarkTimedOut:
+                    self.log.logging( "Widget", 'Debug', 'timedOutDevice unit %s nwkid: %s ' % (Devices[x].Name, NwkId), NwkId, )
+                    timeout_widget( self, Devices, x, 1)
+
+
+def timeout_widget( self, Devices, unit, timeout_value):
+    self.log.logging( "Widget", 'Log', 'timeout_widget unit %s -> %s ' % (Devices[unit].Name, bool(timeout_value)))
+    _nValue = Devices[unit].nValue
+    _sValue = Devices[unit].sValue
+    if Devices[unit].TimedOut != timeout_value:
+        # Update is required
+        if timeout_value == 1 and self.pluginconf.pluginConf['deviceOffWhenTimeOut'] and (
+            ( _nValue == 1 and _sValue == 'On') or (
+                Devices[unit].Type == 244 and Devices[unit].SubType == 73 and Devices[unit].SwitchType == 7) or (
+                Devices[unit].Type == 241 and  Devices[unit].SwitchType_ == 7 )):
+            # Then we will switch off as per User setting
+            Devices[unit].Update(nValue=0, sValue='Off', TimedOut=timeout_value)
+        else:
+            Devices[unit].Update(nValue=_nValue, sValue=_sValue, TimedOut=timeout_value)
 
 def lastSeenUpdate( self, Devices, Unit=None, NwkId=None):
 
