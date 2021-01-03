@@ -319,7 +319,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
             self.log.logging( "Widget", "Debug", "------> Adj Value : %s from: %s to %s " %(adjvalue, value, (value+adjvalue)), NWKID)
             CurrentnValue = Devices[DeviceUnit].nValue
             CurrentsValue = Devices[DeviceUnit].sValue
-            if CurrentsValue == '':
+            if len(CurrentsValue.split(';')) != 5:
                 # First time after device creation
                 CurrentsValue = "0;0;0;0;0"
             SplitData = CurrentsValue.split(";")
@@ -346,7 +346,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
             self.log.logging( "Widget", "Debug", "------>  Humi: %s, WidgetType: >%s<" %(value,WidgetType), NWKID)
             CurrentnValue = Devices[DeviceUnit].nValue
             CurrentsValue = Devices[DeviceUnit].sValue
-            if CurrentsValue == '':
+            if len(CurrentsValue.split(';')) != 5:
                 # First time after device creation
                 CurrentsValue = "0;0;0;0;0"
             SplitData = CurrentsValue.split(";")
@@ -388,7 +388,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
             CurrentnValue = Devices[DeviceUnit].nValue
             CurrentsValue = Devices[DeviceUnit].sValue
-            if CurrentsValue == '':
+            if len(CurrentsValue.split(';')) != 5:
                 # First time after device creation
                 CurrentsValue = "0;0;0;0;0"
             SplitData = CurrentsValue.split(";")
