@@ -86,13 +86,6 @@ def limit_throuput(self, command):
         logging_writer( self, 'Debug',"Firmware 31d limit_throuput regulate to 100ms")
         time.sleep(0.100)
 
-    elif (
-        not self.firmware_with_aps_sqn
-        or not self.firmware_with_8012
-        or command['ackIsDisabled']
-    ):
-        logging_writer( self, 'Log',"limit_throuput no regulation %s %s %s %s" %(
-            self.firmware_compatibility_mode, self.firmware_with_aps_sqn, self.firmware_with_8012, command['ackIsDisabled'] ))
 
 def wait_for_semaphore( self , command ):
         # Now we will block on Semaphore to serialize and limit the number of concurent commands on ZiGate
