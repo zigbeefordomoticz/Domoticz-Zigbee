@@ -298,5 +298,5 @@ def semaphore_timeout( self, current_command ):
         self.logging_error( "writerThread Timeout ", context=_context)
 
 def logging_writer(self, logType, message, NwkId = None, _context=None):
-    # Log all activties towards ZiGate
+    # Log all activities towards ZiGate
     self.log.logging('TransportWrter', logType, message, context = _context)

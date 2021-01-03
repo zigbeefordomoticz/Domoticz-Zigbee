@@ -203,7 +203,8 @@ class ZigateTransport(object):
         self.log.logging('Transport', logType, message, context = _context)
 
     def logging_error( self, message, Nwkid=None, context=None):
-        self.logging( 'Error', message,  Nwkid, transport_error_context( self, context))
+        if self.pluginconf.pluginConf['trackTransportError']:
+            self.logging( 'Error', message,  Nwkid, transport_error_context( self, context))
 
 
 def transport_error_context( self, context):
