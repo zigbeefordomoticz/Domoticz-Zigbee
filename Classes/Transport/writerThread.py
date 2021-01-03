@@ -34,9 +34,9 @@ def writer_thread( self ):
 
             #logging_writer( self,  'Debug', "New command received:  %s" %(command))
             if isinstance( command, dict ) and 'cmd' in command and 'datas' in command and 'ackIsDisabled' in command and 'waitForResponseIn' in command and 'InternalSqn' in command:
-                if self.writer_queue.qsize() > self.statistics._MaxLoad:
-                    self.statistics._MaxLoad = self.writer_queue.qsize()
                 self.statistics._Load = self.writer_queue.qsize()
+                if self.statistics._Load > self.statistics._MaxLoad:
+                    self.statistics._MaxLoad = self.statistics._Load
 
                 wait_for_semaphore( self , command)
 
