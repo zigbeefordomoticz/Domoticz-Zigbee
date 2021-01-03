@@ -8,7 +8,7 @@
 			"ef00":"", 
 			"000a":"", 
 			"0019":"", 
-			"Type":"Temp/Humi"}
+			"Type":"Temp/Humi/TuyaSiren"}
 	},
 	"Type":"",
 	"ClusterToBind": [ "0019", "ef00" ],

@@ -130,6 +130,7 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
     self.log.logging( "Tuya", 'Debug', "tuyaReadRawAPS - Nwkid: %s/%s fcf: %s sqn: %s cmd: %s status: %s transid: %s dp: %s decodeDP: %04x fn: %s data: %s"
         %(NwkId, srcEp, fcf, sqn, cmd, status, transid, dp, decode_dp, fn, data))
 
+
     if decode_dp == 0x0101:
         # Switch 1
         pass
@@ -152,6 +153,10 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
     elif decode_dp == 0x046a:
         # Mode
         pass
+
+    elif decode_dp == 0x0112:
+        # Open Window
+        MajDomoDevice(self, Devices, NwkId, srcEp, '0500', data )
 
     elif decode_dp == 0x0202:
         # Setpoint Change target temp
@@ -199,17 +204,51 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
             checkAndStoreAttributeValue( self, NwkId , '01', '0201', '001c' , 'Manual' )
 
     # TS0601 Siren, Teperature, Humidity, Alarm
+    elif decode_dp == 0x0168:
+        # Alarm
+        if data == '00':
+            MajDomoDevice(self, Devices, NwkId, srcEp, '0006', '01')
+        else:
+            MajDomoDevice(self, Devices, NwkId, srcEp, '0006', '02')
+
+    elif decode_dp == 0x0171:
+        # Alarm by Temperature
+        if data == '01':
+            MajDomoDevice(self, Devices, NwkId, srcEp, '0006', '03')
+
+    elif decode_dp == 0x0172:
+        # Alarm by humidity
+        if data == '01':
+            MajDomoDevice(self, Devices, NwkId, srcEp, '0006', '04')
+
+
+    elif decode_dp == 0x026b:
+        # Min Alarm Temperature
+        pass
+
+    elif decode_dp == 0x026c:
+        # Max Alarm Temperature
+        pass
+
+    elif decode_dp == 0x026d:
+        # AMin Alarm Humidity
+        pass
+
+    elif decode_dp == 0x026e:
+        # Max Alarm Humidity 
+        pass
+
     elif decode_dp == 0x0269:
         # Temperature
         MajDomoDevice(self, Devices, NwkId, srcEp, '0402', ( int(data,16) / 10))
 
     elif decode_dp == 0x026a:
-        # Humidity ?
+        # Humidity
         MajDomoDevice(self, Devices, NwkId, srcEp, '0405', ( int(data,16) ) )        
 
     else:
-        self.log.logging( "Tuya", 'Debug', "tuyaReadRawAPS - Unknown attribut Nwkid: %s/%s fcf: %s sqn: %s cmd: %s status: %s transid: %s dp: %s decodeDP: %s fn: %s data: %s"
-    %(NwkId, srcEp, fcf, sqn, cmd, status, transid, dp, decode_dp, fn, data))
+        self.log.logging( "Tuya", 'Debug', "tuyaReadRawAPS - Unknown attribut Nwkid: %s/%s fcf: %s sqn: %s cmd: %s status: %s transid: %s dp: %s decodeDP: %04x fn: %s data: %s"
+            %(NwkId, srcEp, fcf, sqn, cmd, status, transid, dp, decode_dp, fn, data))
 
 def tuya_setpoint( self, nwkid, setpoint_value):
 
@@ -247,6 +286,73 @@ def tuya_trv_mode( self, nwkid, mode):
     action = '0404' # Mode
     data = '%02x' %( mode // 10 )
     tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)   
+
+
+def tuya_siren_alarm( self, nwkid, onoff):
+ 
+    self.log.logging( "Tuya", 'Debug', "tuya_siren_alarm - %s onoff: %s" %(nwkid, onoff))
+
+    tuya_siren_alarm_duration( self, nwkid, 1)
+    tuya_siren_alarm_volume( self, nwkid, 2)
+    tuya_siren_alarm_melody( self, nwkid, 5)
+
+
+    # determine which Endpoint
+    EPout = '01'
+
+    sqn = get_and_inc_SQN( self, nwkid )
+
+    cluster_frame = '11'
+    cmd = '00' # Command
+    action = '0168'
+    data = '%02x' %onoff
+    tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
+
+def tuya_siren_alarm_duration( self, nwkid, duration):
+     
+    self.log.logging( "Tuya", 'Debug', "tuya_siren_alarm_duration - %s duration: %s" %(nwkid, duration))
+
+    # determine which Endpoint
+    EPout = '01'
+
+    sqn = get_and_inc_SQN( self, nwkid )
+
+    cluster_frame = '11'
+    cmd = '00' # Command
+    action = '0474'
+    data = '%02x' %duration
+    tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
+
+def tuya_siren_alarm_volume( self, nwkid, volume):
+     
+    self.log.logging( "Tuya", 'Debug', "tuya_siren_alarm_volume - %s volume: %s" %(nwkid, volume))
+
+    # determine which Endpoint
+    EPout = '01'
+
+    sqn = get_and_inc_SQN( self, nwkid )
+
+    cluster_frame = '11'
+    cmd = '00' # Command
+    action = '0474'
+    data = '%02x' %volume
+    tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
+
+def tuya_siren_alarm_melody( self, nwkid, melody):
+     
+    self.log.logging( "Tuya", 'Debug', "tuya_siren_alarm_melody - %s onoff: %s" %(nwkid, melody))
+
+    # determine which Endpoint
+    EPout = '01'
+
+    sqn = get_and_inc_SQN( self, nwkid )
+
+    cluster_frame = '11'
+    cmd = '00' # Command
+    action = '0466'
+    data = '%02x' %melody
+    tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
+
 
 def tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data ):
 

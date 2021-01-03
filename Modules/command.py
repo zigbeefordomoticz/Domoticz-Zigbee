@@ -23,7 +23,7 @@ from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl
 from Modules.basicOutputs import sendZigateCmd
 from Modules.thermostats import thermostat_Setpoint, thermostat_Mode
 from Modules.livolo import livolo_OnOff
-from Modules.tuya import tuya_trv_mode
+from Modules.tuya import tuya_trv_mode, tuya_siren_alarm
 from Modules.legrand_netatmo import  legrand_fc40, cable_connected_mode
 from Modules.schneider_wiser import schneider_EHZBRTS_thermoMode, schneider_hact_fip_mode, schneider_set_contract, schneider_temp_Setcurrent, schneider_hact_heater_type
 from Modules.profalux import profalux_stop, profalux_MoveToLiftAndTilt
@@ -72,7 +72,7 @@ ACTIONATORS = [ 'Switch', 'Plug', 'SwitchAQ2', 'Smoke', 'DSwitch', 'LivoloSWL', 
             'Venetian', 'VenetianInverted', 'WindowCovering', 'BSO', 'BSO-Orientation', 'BSO-Volet',
             'LvlControl', 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl',
             'ThermoSetpoint', 'ThermoMode', 'ACMode', 'ThermoMode_2', 'ThermoModeEHZBRTS', 'FanControl', 'PAC-SWITCH', 'ACMode_2', 'ACSwing','TempSetCurrent', 'AlarmWD',
-            'FIP', 'HACTMODE','LegranCableMode', 'ContractPower','HeatingSwitch', 'DoorLock' ]
+            'FIP', 'HACTMODE','LegranCableMode', 'ContractPower','HeatingSwitch', 'DoorLock' , 'TuyaSiren']
             
 def mgtCommand( self, Devices, Unit, Command, Level, Color ):
 
@@ -615,6 +615,12 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
                 self.iaszonemgt.write_IAS_WD_Squawk( NWKID, EPout, 'armed')
             elif Level == 50: # Disarmed
                 self.iaszonemgt.write_IAS_WD_Squawk( NWKID, EPout, 'disarmed')
+
+        elif DeviceType == "TuyaSiren":
+            if Level == 10:
+                tuya_siren_alarm( self, NWKID, 0x00)
+            elif Level == 20:
+                tuya_siren_alarm( self, NWKID, 0x01)
 
         elif DeviceType == 'Toggle':
             self.log.logging( "Command", 'Debug', "Toggle switch - value: %s" %Level)

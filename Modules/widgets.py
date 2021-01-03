@@ -394,6 +394,20 @@ SWITCH_LVL_MATRIX = {
         }
     },
 
+    "TuyaSiren": {
+        "00": ( 0, "00"),
+        "01": ( 1, "10"),
+        "02": ( 2, "20"),
+        "03": ( 4, "30"),
+        "04": ( 4, "40"),
+        "LevelNames": "Off|Stop|Alarm|Alarm by Temperature|Alarm by Humidity",
+        "Languages": {
+            "fr-FR": {
+               "LevelNames": "Off|Stop|Alarme|Temperature Alarme|Humidité Alarme" 
+            }
+        }
+    },
+
     "OrviboRemoteSquare": {
         0: (0, "Off"), 
         11: (1, "10"), 
