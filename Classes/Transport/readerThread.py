@@ -23,8 +23,9 @@ def open_zigate_and_start_reader( self, zigate_mode ):
     if zigate_mode == 'serial':
         if open_serial( self ):
             start_serial_reader_thread( self )
+
     elif zigate_mode == 'tcpip':
-        
+    
         if open_tcpip( self ):
             start_tcpip_reader_thread( self )
     else:
@@ -32,19 +33,21 @@ def open_zigate_and_start_reader( self, zigate_mode ):
 
 
 def start_serial_reader_thread( self ):
-    logging_reader( self, 'Debug', "start_serial_reader_thread")
+    
     if self.reader_thread is None:
+        logging_reader( self, 'Status', "start_serial_reader_thread")
         self.reader_thread = Thread( name="ZiGateSerial_%s" %self.hardwareid,  target=serial_read_from_zigate,  args=(self,))
         self.reader_thread.start()
 
 def start_tcpip_reader_thread( self ):
-    logging_reader( self, 'Debug', "start_tcpip_reader_thread")
+    
     if self.reader_thread is None:
+        logging_reader( self, 'Status', "start_tcpip_reader_thread")
         self.reader_thread = Thread( name="ZiGateTCPIP_%s" %self.hardwareid,  target=tcpip_read_from_zigate,  args=(self,))
         self.reader_thread.start()
 
 def shutdown_reader_thread( self):
-    logging_reader( self, 'Debug', "shutdown_reader_thread %s" %self.running)
+    logging_reader( self, 'Status', "shutdown_reader_thread %s" %self.running)
     
     if self._connection:
         if isinstance(self._connection, serial.serialposix.Serial):
