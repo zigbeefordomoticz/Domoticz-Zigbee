@@ -4,13 +4,11 @@ import threading
 # Login mecanism
 def Transport_logging(self, logType, message, NwkId = None, _context=None):
     # Log all activties towards ZiGate
-    self.log.logging('Transport', logType, message, context = _context)
+    _transport_logging(self,'Transport', logType, message, context = _context)
 
 def logging_error( self, message, Nwkid=None, context=None):
     if self.pluginconf.pluginConf['trackTransportError']:
         self.Transport_logging( 'Error', message,  Nwkid, transport_error_context( self, context))
-
-
 
 def transport_error_context( self, context):
     if context is None:
@@ -43,20 +41,22 @@ def transport_error_context( self, context):
     }
     return context
 
+def _transport_logging(self, module, logType, message, NwkId = None, context=None):
+    self.log.logging( self, module, logType, message, context = context)
 
 def logging_reader(self, logType, message, NwkId = None, _context=None):
     # Log all activties towards ZiGate
-    self.log.logging('TransportRder', logType, message, context = _context)
+    _transport_logging(self,'TransportRder', logType, message, context = _context)
 
 
 def logging_flow_control(self, logType, message, NwkId = None, _context=None):
     # Log all activties towards ZiGate
-    self.log.logging('TransportFlowCtrl', logType, message, context = _context)
+    _transport_logging(self,'TransportFlowCtrl', logType, message, context = _context)
 
 def logging_forwarder(self, logType, message, NwkId = None, _context=None):
     # Log all activties towards ZiGate
-    self.log.logging('TransportFrwder', logType, message, context = _context)
+    _transport_logging(self,'TransportFrwder', logType, message, context = _context)
 
 def logging_writer(self, logType, message, NwkId = None, _context=None):
     # Log all activities towards ZiGate
-    self.log.logging('TransportWrter', logType, message, context = _context)
+    _transport_logging(self,'TransportWrter', logType, message, context = _context)
