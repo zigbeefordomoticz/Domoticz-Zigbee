@@ -13,6 +13,21 @@ from Modules.zigateConsts import ADDRESS_MODE, ZIGATE_EP
 
 from Classes.AdminWidgets import AdminWidgets
 
+WIDGET_STYLE = {
+        'Plug': ( 244, 73, 0 ),
+        'Switch': ( 244, 73, 0 ),
+        'LvlControl' : ( 244, 73, 7 ),
+        'BlindPercentInverted': ( 244, 73, 16 ),
+        'WindowCovering': ( 244, 73, 16 ),
+        'Venetian': ( 244, 73, 15 ),
+        'VenetianInverted': ( 244, 73, 15 ),
+        'ColorControlWW': ( 241, 8, 7 ),
+        'ColorControlRGB': ( 241, 2, 7 ),
+        'ColorControlRGBWW': ( 241, 4, 7),
+        'ColorControlFull': ( 241, 7, 7 ),
+        }
+
+
 def unit_for_widget( self, GroupId):
     
     for x in self.Devices:
@@ -20,21 +35,21 @@ def unit_for_widget( self, GroupId):
             return x
     return None
 
+def free_unit( Devices):
+    for x in range(1, 255):
+        if x not in Devices:
+            return x
+
 def create_domoticz_group_device(self, GroupName, GroupId):
     ' Create Device for just created group in Domoticz. '
 
-    def free_unit( Devices):
-        for x in range(1, 255):
-            if x not in Devices:
-                return x
-
     if GroupName == '' or GroupId == '':
-        Domoticz.Error("createDomoticzGroupDevice - Invalid Group Name: %s or GroupdID: %s" %(GroupName, GroupId))
+        self.logging( 'Error',"createDomoticzGroupDevice - Invalid Group Name: %s or GroupdID: %s" %(GroupName, GroupId))
         return
 
     for x in self.Devices:
         if self.Devices[x].DeviceID == GroupId:
-            #Domoticz.Error("createDomoticzGroupDevice - existing group %s" %(self.Devices[x].Name))
+            #self.logging( 'Error',"createDomoticzGroupDevice - existing group %s" %(self.Devices[x].Name))
             return
 
     Type_, Subtype_, SwitchType_ = best_group_widget( self, GroupId)
@@ -45,7 +60,7 @@ def create_domoticz_group_device(self, GroupName, GroupId):
     myDev.Create()
     ID = myDev.ID
     if ID == -1:
-        Domoticz.Error('createDomoticzGroupDevice - failed to create Group device.')
+        self.logging( 'Error','createDomoticzGroupDevice - failed to create Group device.')
         return
     
     self.ListOfGroups[GroupId]['WidgetType'] = unit
@@ -70,11 +85,12 @@ def LookForGroupAndCreateIfNeeded( self, GroupId):
 def update_domoticz_group_device_widget_name( self, GroupName, GroupId ):
 
     if GroupName == '' or GroupId == '':
-        Domoticz.Error("update_domoticz_group_device_widget_name - Invalid Group Name: %s or GroupdID: %s" %(GroupName, GroupId))
+        self.logging( 'Error',"update_domoticz_group_device_widget_name - Invalid Group Name: %s or GroupdID: %s" %(GroupName, GroupId))
         return
 
     unit = unit_for_widget( self, GroupId )
     if unit is None:
+        self.logging( 'Debug', "update_domoticz_group_device_widget_name - no unit found for GroupId: %s" %self.ListOfGroups[GroupId])
         return
 
     nValue = self.Devices[unit].nValue
@@ -88,11 +104,12 @@ def update_domoticz_group_device_widget( self, GroupId ):
 
     self.logging( 'Debug', "update_domoticz_group_device_widget GroupId: %s" %GroupId)
     if GroupId == '':
-        Domoticz.Error("update_domoticz_group_device_widget - Invalid GroupdID: %s" %( GroupId))
+        self.logging( 'Error',"update_domoticz_group_device_widget - Invalid GroupdID: %s" %( GroupId))
 
     unit = unit_for_widget( self, GroupId )
     if unit is None:
-       return
+        self.logging( 'Debug', "update_domoticz_group_device_widget - no unit found for GroupId: %s" %self.ListOfGroups[GroupId])  
+        return
 
     Type_, Subtype_, SwitchType_ = best_group_widget( self, GroupId)
 
@@ -121,20 +138,6 @@ def best_group_widget( self, GroupId):
     #        'WindowCovering': 12,     # ( 244, 73, 16)  # Venetian Blind EU 
     #        'BlindPercentInverted': 12,     # ( 244, 73, 16)  # Venetian Blind EU 
     #        }
-
-    WIDGET_STYLE = {
-            'Plug': ( 244, 73, 0 ),
-            'Switch': ( 244, 73, 0 ),
-            'LvlControl' : ( 244, 73, 7 ),
-            'BlindPercentInverted': ( 244, 73, 16 ),
-            'WindowCovering': ( 244, 73, 16 ),
-            'Venetian': ( 244, 73, 15 ),
-            'VenetianInverted': ( 244, 73, 15 ),
-            'ColorControlWW': ( 241, 8, 7 ),
-            'ColorControlRGB': ( 241, 2, 7 ),
-            'ColorControlRGBWW': ( 241, 4, 7),
-            'ColorControlFull': ( 241, 7, 7 ),
-            }
 
     GroupWidgetType = None
 
@@ -227,47 +230,33 @@ def update_domoticz_group_device( self, GroupId):
     Update the Group status On/Off and Level , based on the attached devices
     """
 
-    def ValuesForVenetian( level ):
-
-        if level > 0 and level < 100:
-            nValue = 2
-        elif level == 0:
-            nValue = 0
-        elif level == 100:
-            nValue = 1
-        sValue = '%s' %level
-        return ( nValue, sValue )
-
-
     #####
     if GroupId not in self.ListOfGroups:
         Domoticz.Error("update_domoticz_group_device - unknown group: %s" %GroupId)
         return
 
     if 'Devices' not in self.ListOfGroups[GroupId]:
-        self.logging( 'Debug2', "update_domoticz_group_device - no Devices for that group: %s" %self.ListOfGroups[GroupId])
+        self.logging( 'Debug', "update_domoticz_group_device - no Devices for that group: %s" %self.ListOfGroups[GroupId])
         return
 
     unit = unit_for_widget(self, GroupId )
     if unit is None:
+        self.logging( 'Debug', "update_domoticz_group_device - no unit found for GroupId: %s" %self.ListOfGroups[GroupId])
         return
 
     Cluster = None
     if 'Cluster' in self.ListOfGroups[ GroupId]:
         Cluster = self.ListOfGroups[ GroupId]['Cluster']
 
-    countOn = 0
-    countOff = 0
+    countOn = countOff = 0
     if self.pluginconf.pluginConf['OnIfOneOn']:
         # If one device is on, then the group is on. If all devices are off, then the group is off
         nValue = 0
-        sValue = None
-        level = None     
+        sValue = level = None     
     else:
         # If ALL devices are on, then the group is On, otherwise it remains Off (Philips behaviour)
         nValue = 1
-        sValue = None
-        level = None
+        sValue = level = None
 
     for NwkId, Ep, IEEE in self.ListOfGroups[GroupId]['Devices']:
         if NwkId not in self.ListOfDevices:
@@ -363,11 +352,23 @@ def update_domoticz_group_device( self, GroupId):
         self.logging( 'Log', "UpdateGroup  - (%15s) %s:%s" %( self.Devices[unit].Name, nValue, sValue ))
         self.Devices[unit].Update( nValue, sValue)
 
+def ValuesForVenetian( level ):
+
+    if level > 0 and level < 100:
+        nValue = 2
+    elif level == 0:
+        nValue = 0
+    elif level == 100:
+        nValue = 1
+    sValue = '%s' %level
+    return ( nValue, sValue )
+
 def remove_domoticz_group_device(self, GroupId):
     ' User has removed the Domoticz Device corresponding to this group'
 
     unit = unit_for_widget(self, GroupId )
     if unit is None:
+        self.logging( 'Debug', "remove_domoticz_group_device - no unit found for GroupId: %s" %self.ListOfGroups[GroupId])
         return
         
     self.logging( 'Debug', "remove_domoticz_group_device - removing Domoticz Widget %s" %self.Devices[unit].Name)
@@ -433,29 +434,6 @@ def update_device_list_attribute( self, GroupId, cluster, value):
     return
 
 def processCommand( self, unit, GrpId, Command, Level, Color_ ) :
-
-    def resetDevicesHearttBeat( self, GrpId ):
-
-        if not self.pluginconf.pluginConf['forceGroupDeviceRefresh']:
-            return
-
-        for NwkId, Ep, Ieee in self.ListOfGroups[GrpId]['Devices']:
-            self.logging( 'Debug', 'processGroupCommand - reset heartbeat for device : %s' %NwkId)
-            if NwkId not in self.ListOfDevices:
-                if Ieee in self.IEEE2NWK:
-                    NwkId = self.IEEE2NWK[ Ieee ]
-                else:
-                    Domoticz.Error("resetDevicesHearttBeat - Hum Hum something wrong NwkId: %s Ieee %s" %(NwkId, Ieee))
-
-            if NwkId in self.ListOfDevices:
-                # Force Read Attribute consideration in the next hearbeat
-                if 'Heartbeat' in self.ListOfDevices[NwkId]:
-                    self.ListOfDevices[NwkId]['Heartbeat'] = '0'
-
-                # Reset Health status of corresponding device if any in Not Reachable
-                if ( 'Health' in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]['Health'] == 'Not Reachable' ):
-                    self.ListOfDevices[NwkId]['Health'] = ''
-
 
     # Begin
     self.logging( 'Debug', "processGroupCommand - unit: %s, NwkId: %s, cmd: %s, level: %s, color: %s" %(unit, GrpId, Command, Level, Color_))
@@ -622,3 +600,25 @@ def processCommand( self, unit, GrpId, Command, Level, Color_ ) :
 
     # Request to force ReadAttribute to each devices part of that group
     resetDevicesHearttBeat( self, GrpId)
+
+def resetDevicesHearttBeat( self, GrpId ):
+
+    if not self.pluginconf.pluginConf['forceGroupDeviceRefresh']:
+        return
+
+    for NwkId, Ep, Ieee in self.ListOfGroups[GrpId]['Devices']:
+        self.logging( 'Debug', 'processGroupCommand - reset heartbeat for device : %s' %NwkId)
+        if NwkId not in self.ListOfDevices:
+            if Ieee in self.IEEE2NWK:
+                NwkId = self.IEEE2NWK[ Ieee ]
+            else:
+                Domoticz.Error("resetDevicesHearttBeat - Hum Hum something wrong NwkId: %s Ieee %s" %(NwkId, Ieee))
+
+        if NwkId in self.ListOfDevices:
+            # Force Read Attribute consideration in the next hearbeat
+            if 'Heartbeat' in self.ListOfDevices[NwkId]:
+                self.ListOfDevices[NwkId]['Heartbeat'] = '0'
+
+            # Reset Health status of corresponding device if any in Not Reachable
+            if ( 'Health' in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]['Health'] == 'Not Reachable' ):
+                self.ListOfDevices[NwkId]['Health'] = ''

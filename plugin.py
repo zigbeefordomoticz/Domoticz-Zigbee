@@ -671,6 +671,10 @@ class BasePlugin:
         # Reset Motion sensors
         ResetDevice( self, Devices, "Motion",5)
 
+        # Group Management
+        if self.groupmgt:
+            self.groupmgt.hearbeat_group_mgt()
+
         # Write the ListOfDevice in HBcount % 200 ( 3' ) or immediatly if we have remove or added a Device
         if len(Devices) == prevLenDevices:
             WriteDeviceList(self, ( 90 * 5) )
@@ -686,10 +690,6 @@ class BasePlugin:
             self.statistics._Load = self.ZigateComm.loadTransmit()
             self.statistics.addPointforTrendStats( self.HeartbeatCount )
             return
-
-        # Group Management
-        if self.groupmgt:
-            self.groupmgt.hearbeat_group_mgt()
 
         # OTA upgrade
         if self.OTA:
@@ -710,11 +710,15 @@ class BasePlugin:
         if self.HeartbeatCount % ( 3600 // HEARTBEAT) == 0:
             self.log.loggingCleaningErrorHistory()
             sendZigateCmd(self,"0017", "")
-            
 
+        # Update MaxLoad if needed  
+        self.statistics._Load = 0
         if self.ZigateComm.loadTransmit() >= MAX_FOR_ZIGATE_BUZY:
             # This mean that 4 commands are on the Queue to be executed by Zigate.
             busy_ = True
+            self.statistics._Load = self.ZigateComm.loadTransmit()
+        # Maintain trend statistics
+        self.statistics.addPointforTrendStats( self.HeartbeatCount )
 
         if busy_:
             self.PluginHealth['Flag'] = 2
@@ -732,14 +736,6 @@ class BasePlugin:
             self.adminWidgets.updateStatusWidget( Devices, 'Ready')
 
         self.busy = busy_
-
-        # Maintain trend statistics
-        self.statistics._Load = 0
-        if self.ZigateComm.loadTransmit() >= MAX_FOR_ZIGATE_BUZY:
-            self.statistics._Load = self.ZigateComm.loadTransmit()
-
-        self.statistics.addPointforTrendStats( self.HeartbeatCount )
-
         return True
 
 def decodeConnection( connection ):
