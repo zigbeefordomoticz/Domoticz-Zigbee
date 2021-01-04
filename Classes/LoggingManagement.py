@@ -20,6 +20,7 @@ import time
 class LoggingManagement:
 
     def __init__(self, pluginconf, PluginHealth, HardwareID, ListOfDevices, permitTojoin):
+        self._newError = False
         self.LogErrorHistory = {}
         self.pluginconf = pluginconf
         self.loggingFileHandle = None
@@ -30,9 +31,14 @@ class LoggingManagement:
         self.FirmwareVersion = None
         self.FirmwareMajorVersion = None
         self._startTime = int(time.time())
-        
-        
-        
+          
+
+    def reset_new_error( self ):
+        self._newError  = False
+
+    def is_new_error( self ):
+        return bool(self._newError and bool(self.LogErrorHistory))
+
     def loggingUpdateFirmware(self, FirmwareVersion, FirmwareMajorVersion):
         if self.FirmwareVersion and self.FirmwareMajorVersion:
             return
@@ -61,6 +67,9 @@ class LoggingManagement:
             return
         try:
             self.LogErrorHistory = json.load( handle, encoding=dict)
+            if bool(self.LogErrorHistory):
+                self._newError  = True
+
         except json.decoder.JSONDecodeError as e:
             res = "Failed"
             Domoticz.Error("load Json LogErrorHistory poorly-formed %s, not JSON: %s" %(jsonLogHistory,e))
@@ -258,3 +267,4 @@ class LoggingManagement:
             
     def loggingClearErrorHistory( self ):
         self.LogErrorHistory.clear()
+        self._newError = False

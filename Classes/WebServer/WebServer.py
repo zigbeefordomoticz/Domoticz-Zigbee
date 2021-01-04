@@ -386,7 +386,7 @@ class WebServer(object):
         Statistics['Rxph'] = round(Statistics['Received'] / Statistics['Uptime'] * 3600, 2)
 
         # LogErrorHistory . Hardcode on the UI side
-        Statistics['Error'] = bool(self.log.LogErrorHistory)
+        Statistics['Error'] = self.log.is_new_error()
         _response = prepResponseMessage( self ,setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
@@ -1211,6 +1211,7 @@ class WebServer(object):
             if self.log.LogErrorHistory:
                 try:
                     _response["Data"] =  json.dumps( self.log.LogErrorHistory, sort_keys=False ) 
+                    self.log.reset_new_error()
                 except Exception as e:
                     Domoticz.Error("rest_logErrorHistory - Exception %s while saving: %s" %(e, str(self.log.LogErrorHistory)))
         return _response

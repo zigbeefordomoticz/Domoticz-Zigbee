@@ -6,6 +6,7 @@
 
 import Domoticz
 import serial
+import time
 
 from Classes.Transport.tools import stop_waiting_on_queues, handle_thread_error
 from Classes.Transport.readDecoder import decode_and_split_message
@@ -22,8 +23,16 @@ def open_serial( self ):
         self.logging_receive('Error',"Cannot open Zigate port %s error: %s" %(self._serialPort, e))
         return False
 
-    self.logging_receive( 'Debug', "ZigateTransport: Serial Connection open: %s" %self._connection)
+    self.logging_receive( 'Status', "ZigateTransport: Serial Connection open: %s" %self._connection)
     return True
+
+def close_serial( self):
+    self.logging_receive( 'Status', "ZigateTransport: Serial Connection closing: %s" %self._connection)
+    try:
+        self._connection.close()
+    except:
+        pass
+    time.sleep(1.0)
 
 def serial_read_from_zigate( self ):
 
@@ -46,6 +55,9 @@ def serial_read_from_zigate( self ):
         except Exception as e:
             self.logging_receive('Error',"Error while receiving a ZiGate command: %s" %e)
             handle_thread_error( self, e, 0, 0, data)
+            # Most likely the best would be to close the port and re-open it
+            close_serial(self)
+            open_serial( self )
 
         if data:
             decode_and_split_message(self, data)
