@@ -76,16 +76,20 @@ def limit_throuput(self, command):
     # 
     # It takes on an USB ZiGate around 70ms for a full turn around time between the commande sent and the 0x8011 received
 
-    if not self.firmware_compatibility_mode:
+    if self.firmware_compatibility_mode:
         # We are in firmware 31a where we control the flow is only on 0x8000
         logging_writer( self, 'Debug',"Firmware 31a limit_throuput regulate to 500ms")
-        time.sleep(0.500)
+        self.semephore_limiter.acquire( blocking = True, timeout = 0.5)
 
     elif not self.firmware_with_8012:
         # Firmware is not 31e
         logging_writer( self, 'Debug',"Firmware 31c, 31d limit_throuput regulate to 250ms")
-        time.sleep(0.250)
+        self.semephore_limiter.acquire( blocking = True, timeout = 0.25)
 
+    else:
+        logging_writer( self, 'Log',"Test purpose Lock for .25ms")
+        self.semephore_limiter.acquire( blocking = True, timeout = 0.25)   
+        logging_writer( self, 'Log',"Test purpose released")    
 
 
 def wait_for_semaphore( self , command ):

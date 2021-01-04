@@ -53,6 +53,7 @@ class ZigateTransport(object):
         
         # Semaphore to manage when to send a commande to ZiGate
         self.semaphore_gate = Semaphore( value = MAX_SIMULTANEOUS_ZIGATE_COMMANDS)
+        self.semephore_limiter = Semaphore( 0 )
 
         # Running flag for Thread. Switch to False to stop the Threads
         self.running = True
