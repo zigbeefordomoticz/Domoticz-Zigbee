@@ -34,6 +34,11 @@ def writer_thread( self ):
 
             #logging_writer( self,  'Debug', "New command received:  %s" %(command))
             if isinstance( command, dict ) and 'cmd' in command and 'datas' in command and 'ackIsDisabled' in command and 'waitForResponseIn' in command and 'InternalSqn' in command:
+
+                if ( command['cmd'], command['datas'] ) in self.writer_list_in_queue:
+                    logging_writer( self,  'Debug', "removing %s/%s from list_in_queue" %( command['cmd'], command['datas'] ))
+                    self.writer_list_in_queue.remove( ( command['cmd'], command['datas'] ) )
+
                 self.statistics._Load = self.writer_queue.qsize()
                 if self.statistics._Load > self.statistics._MaxLoad:
                     self.statistics._MaxLoad = self.statistics._Load
@@ -71,20 +76,16 @@ def limit_throuput(self, command):
     # 
     # It takes on an USB ZiGate around 70ms for a full turn around time between the commande sent and the 0x8011 received
 
-    if self.firmware_compatibility_mode:
+    if not self.firmware_compatibility_mode:
         # We are in firmware 31a where we control the flow is only on 0x8000
-        logging_writer( self, 'Debug',"Firmware 31a limit_throuput regulate to 250ms")
+        logging_writer( self, 'Debug',"Firmware 31a limit_throuput regulate to 500ms")
+        time.sleep(0.500)
+
+    elif not self.firmware_with_8012:
+        # Firmware is not 31e
+        logging_writer( self, 'Debug',"Firmware 31c, 31d limit_throuput regulate to 250ms")
         time.sleep(0.250)
 
-    elif not self.firmware_with_aps_sqn and not self.firmware_with_8012 and not command['ackIsDisabled']:
-        # Firmware 31c
-        logging_writer( self, 'Debug',"Firmware 31c limit_throuput regulate to 250ms")
-        time.sleep(0.250)
-
-    elif self.firmware_with_aps_sqn and not self.firmware_with_8012 and command['ackIsDisabled']:
-        # We are in firmware 31d where we don't have 8012 flow control for ackIsDisabled commands
-        logging_writer( self, 'Debug',"Firmware 31d limit_throuput regulate to 100ms")
-        time.sleep(0.100)
 
 
 def wait_for_semaphore( self , command ):

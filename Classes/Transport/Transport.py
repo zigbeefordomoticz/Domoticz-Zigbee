@@ -61,7 +61,7 @@ class ZigateTransport(object):
         self.ListOfCommands = {}
 
         # Writer
-        #self.writer_queue = SimpleQueue()
+        self.writer_list_in_queue = []
         self.writer_queue = Queue()
         self.writer_thread = None
 
@@ -128,8 +128,13 @@ class ZigateTransport(object):
 
     def sendData(self, cmd, datas, ackIsDisabled=False, waitForResponseIn=False):
         # We receive a send Message command from above ( plugin ), 
-        # send it to the sending queue
+        # Check that the command is not yet in the queue
+        if ( cmd, datas ) in self.writer_list_in_queue:
+            self.logging( 'Log',"sendData - Warning %s/%s already in queue this command is dropped" %(cmd, datas))
+            return None
 
+        # send it to the sending queue
+        self.writer_list_in_queue.append(  (cmd, datas) )
         InternalSqn = sqn_generate_new_internal_sqn(self)
         message = {
             'cmd': cmd,
@@ -140,7 +145,7 @@ class ZigateTransport(object):
             'TimeStamp': time.time()
         }
         try:
-            self.writer_queue.put( message ) # Prio 5 to allow prio 1 if we have to retransmit 
+            self.writer_queue.put( message )
         except queue.Full:
             self.logging('Error',"sendData - writer_queue Full")
 

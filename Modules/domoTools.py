@@ -271,7 +271,7 @@ def timedOutDevice( self, Devices, Unit=None, NwkId=None, MarkTimedOut=True):
 
 
 def timeout_widget( self, Devices, unit, timeout_value):
-    self.log.logging( "Widget", 'Log', 'timeout_widget unit %s -> %s ' % (Devices[unit].Name, bool(timeout_value)))
+    self.log.logging( "Widget", 'Debug', 'timeout_widget unit %s -> %s ' % (Devices[unit].Name, bool(timeout_value)))
     _nValue = Devices[unit].nValue
     _sValue = Devices[unit].sValue
     if Devices[unit].TimedOut != timeout_value:
