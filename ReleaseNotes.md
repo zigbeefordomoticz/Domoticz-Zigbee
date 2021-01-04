@@ -17,9 +17,10 @@ Release Numbering
 - Odd numbers --> Stable
 - Even numbers  --> Beta
 
+##  4 Jan. 2021   - 4.11.14
+- [Hardware] - Correct the right widget Color Control Widget fo CLA60 RW OSRAM
 
-
-##    Dec.  2020  - 4.11.13
+##  1 Jan.  2021  - 4.11.13
 - [Hardware] - Support Tuya Water leak sensor
 - [Hardware] - Support of Legrand Teleruptor
 - [Hardware] - Support of Sonoff ZB Mini switch

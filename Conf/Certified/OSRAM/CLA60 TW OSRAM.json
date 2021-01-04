@@ -11,7 +11,7 @@
 			"0019":"",
 			"0300":"",
 			"fc0f":"",
-			"Type":"ColorControlRGB"}},
+			"Type":"ColorControlWW"}},
 	"Type":"",
 	"ClusterToBind": [ "0006", "0008" ],
         "ConfigureReporting": {
