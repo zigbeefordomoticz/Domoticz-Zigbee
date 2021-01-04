@@ -15,7 +15,6 @@ from threading import Thread
 from Modules.tools import is_hex
 
 from Classes.Transport.tools import handle_thread_error, release_command
-from Classes.Transport.logging import (logging_writer)
 
 def start_writer_thread( self ):
 
@@ -24,49 +23,69 @@ def start_writer_thread( self ):
         self.writer_thread.start()
 
 def writer_thread( self ):
-    logging_writer( self, 'Status', "ZigateTransport: writer_thread Thread start.")
+    self.logging_send('Status', "ZigateTransport: writer_thread Thread start.")
 
     while self.running:
         frame = None
         # Sending messages ( only 1 at a time )
         try:
-            #logging_writer( self,  'Debug', "Waiting for next command Qsize: %s" %self.writer_queue.qsize())
+            #self.logging_send( 'Debug', "Waiting for next command Qsize: %s" %self.writer_queue.qsize())
             command = self.writer_queue.get( )
 
-            #logging_writer( self,  'Debug', "New command received:  %s" %(command))
+            #self.logging_send( 'Debug', "New command received:  %s" %(command))
             if isinstance( command, dict ) and 'cmd' in command and 'datas' in command and 'ackIsDisabled' in command and 'waitForResponseIn' in command and 'InternalSqn' in command:
-
                 if ( command['cmd'], command['datas'] ) in self.writer_list_in_queue:
-                    logging_writer( self,  'Debug', "removing %s/%s from list_in_queue" %( command['cmd'], command['datas'] ))
+                    self.logging_send( 'Debug', "removing %s/%s from list_in_queue" %( command['cmd'], command['datas'] ))
                     self.writer_list_in_queue.remove( ( command['cmd'], command['datas'] ) )
 
+                if self.writer_queue.qsize() > self.statistics._MaxLoad:
+                    self.statistics._MaxLoad = self.writer_queue.qsize()
                 self.statistics._Load = self.writer_queue.qsize()
-                if self.statistics._Load > self.statistics._MaxLoad:
-                    self.statistics._MaxLoad = self.statistics._Load
 
                 wait_for_semaphore( self , command)
 
                 send_ok = thread_sendData( self, command['cmd'], command['datas'], command['ackIsDisabled'], command['waitForResponseIn'], command['InternalSqn'])
-                logging_writer( self,  'Debug', "Command sent!!!! %s send_ok: %s" %(command, send_ok))
+                self.logging_send( 'Debug', "Command sent!!!! %s send_ok: %s" %(command, send_ok))
                 if send_ok in ('PortClosed', 'SocketClosed'):
                     # Exit
                     break
+
+                # ommand sent, if needed wait in order to reduce throughput and load on ZiGate
+                limit_throuput(self, command)
 
             elif command == 'STOP':
                 break
 
             else:
-                logging_writer( self,  'Error', "Hops ... Don't known what to do with that %s" %command)
+                self.logging_send( 'Error', "Hops ... Don't known what to do with that %s" %command)
 
         except queue.Empty:
             # Empty Queue, timeout.
             pass
 
         except Exception as e:
-            logging_writer( self,  'Error',"Error while receiving a ZiGate command: %s" %e)
+            self.logging_send( 'Error',"Error while receiving a ZiGate command: %s" %e)
             handle_thread_error( self, e, 0, 0, frame)
 
-    logging_writer( self, 'Status',"ZigateTransport: writer_thread Thread stop.")
+    self.logging_send('Status',"ZigateTransport: writer_thread Thread stop.")
+
+def limit_throuput(self, command):
+    # Purpose is to have a regulate the load on ZiGate.
+    # It is important for non 31e firmware, as we don't have all elements to regulate the flow
+    # 
+    # It takes on an USB ZiGate around 70ms for a full turn around time between the commande sent and the 0x8011 received
+
+    if self.firmware_compatibility_mode:
+        # We are in firmware 31a where we control the flow is only on 0x8000
+        self.logging_send('Debug',"Firmware 31a limit_throuput regulate to 250ms")
+        time.sleep(0.500)
+
+
+    elif not self.firmware_with_8012:
+        # Firmware is not 31e
+        self.logging_send('Debug',"Firmware 31d limit_throuput regulate to 100ms")
+        time.sleep(0.250)
+
 
 def wait_for_semaphore( self , command ):
         # Now we will block on Semaphore to serialize and limit the number of concurent commands on ZiGate
@@ -77,20 +96,20 @@ def wait_for_semaphore( self , command ):
             timeout_cmd = 4.0
 
         if self.force_dz_communication or self.pluginconf.pluginConf['writerTimeOut']:
-            logging_writer( self,  'Debug', "Waiting for a write slot . Semaphore %s TimeOut of 8s" %(self.semaphore_gate._value))
+            self.logging_send( 'Debug', "Waiting for a write slot . Semaphore %s TimeOut of 8s" %(self.semaphore_gate._value))
             block_status = self.semaphore_gate.acquire( blocking = True, timeout = timeout_cmd) # Blocking until 8s
         else:
-            logging_writer( self,  'Debug', "Waiting for a write slot . Semaphore %s ATTENTION NO TIMEOUT FOR TEST PURPOSES" %(self.semaphore_gate._value))
+            self.logging_send( 'Debug', "Waiting for a write slot . Semaphore %s ATTENTION NO TIMEOUT FOR TEST PURPOSES" %(self.semaphore_gate._value))
             block_status = self.semaphore_gate.acquire( blocking = True, timeout = None) # Blocking  
 
-        logging_writer( self,  'Debug', "============= semaphore %s given with status %s ============== Len: ListOfCmd %s - %s writerQueueSize: %s" %(
+        self.logging_send( 'Debug', "============= semaphore %s given with status %s ============== Len: ListOfCmd %s - %s writerQueueSize: %s" %(
             self.semaphore_gate._value, block_status, len(self.ListOfCommands), str(self.ListOfCommands.keys()), self.writer_queue.qsize( ) ))
 
         if self.pluginconf.pluginConf['writerTimeOut'] and not block_status:
             semaphore_timeout( self, command )
 
 def thread_sendData(self, cmd, datas, ackIsDisabled, waitForResponseIn, isqn ):
-    logging_writer( self, 'Debug', "thread_sendData")
+    self.logging_send('Debug', "thread_sendData")
     if datas is None:
         datas = ''
 
@@ -104,7 +123,7 @@ def thread_sendData(self, cmd, datas, ackIsDisabled, waitForResponseIn, isqn ):
             'waitForResponseIn': waitForResponseIn,
             'InternalSqn': isqn
         }
-        self.logging_error( "sendData", context=_context)
+        self.logging_send_error( "sendData", context=_context)
         return 'BadData'
 
     self.ListOfCommands[ isqn ] = {
@@ -167,7 +186,7 @@ def get_checksum(msgtype, length, datas):
     return chk[2:4]
 
 def write_to_zigate( self, serialConnection, encoded_data ):
-    logging_writer( self, 'Debug', "write_to_zigate")
+    self.logging_send('Debug', "write_to_zigate")
 
     if self.pluginconf.pluginConf['byPassDzConnection'] and not self.force_dz_communication:
         return native_write_to_zigate( self, serialConnection, encoded_data)
@@ -194,11 +213,11 @@ def native_write_to_zigate( self, serialConnection, encoded_data):
             try:
                 tcpipConnection.send( encoded_data )
             except socket.OSError as e:
-                logging_writer( self,  'Error',"Socket %s error %s" %(tcpipConnection, e))
+                self.logging_send( 'Error',"Socket %s error %s" %(tcpipConnection, e))
                 return 'SocketError'
 
         elif exceptional:
-            logging_writer( self,  'Error',"We have detected an error .... on %s" %inputSocket)
+            self.logging_send( 'Error',"We have detected an error .... on %s" %inputSocket)
             return 'WifiError'
 
         return True
@@ -213,19 +232,19 @@ def native_write_to_zigate( self, serialConnection, encoded_data):
                     'EncodedData': str(encoded_data),
                     'NbWrite': nb_write,
                 }
-                self.logging_error(  "write_to_zigate", context=_context)
+                self.logging_send_error(  "write_to_zigate", context=_context)
         else:
             _context = {
                 'Error code': 'TRANS-WRTZGTE-02',
                 'EncodedData': str(encoded_data),
                 'serialConnection': str(serialConnection)
             }
-            self.logging_error(  "write_to_zigate port is closed!", context=_context)    
+            self.logging_send_error(  "write_to_zigate port is closed!", context=_context)    
             return 'PortClosed'        
 
     except TypeError as e:
         #Disconnect of USB->UART occured
-        logging_writer( self,  'Error',"write_to_zigate - error while writing %s" %(e))
+        self.logging_send( 'Error',"write_to_zigate - error while writing %s" %(e))
         return False
 
     return True
@@ -248,7 +267,7 @@ def semaphore_timeout( self, current_command ):
             'IsqnToRemove': isqn_to_be_removed
         }
         if not self.force_dz_communication:
-            self.logging_error( "writerThread Timeout ", context=_context)
+            self.logging_send_error( "writerThread Timeout ", context=_context)
         release_command( self, isqn_to_be_removed) 
         return
 
@@ -269,7 +288,4 @@ def semaphore_timeout( self, current_command ):
             _context['IsqnToRemove'].append( x )
 
     if not self.force_dz_communication:
-        self.logging_error( "writerThread Timeout ", context=_context)
-
-
-
+        self.logging_send_error( "writerThread Timeout ", context=_context)

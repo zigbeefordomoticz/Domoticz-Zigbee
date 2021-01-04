@@ -10,7 +10,6 @@ import Domoticz
 
 from Modules.zigateConsts import ZIGATE_COMMANDS, ADDRESS_MODE
 from Classes.Transport.tools import CMD_ONLY_STATUS, CMD_NWK_2NDBytes
-from Classes.Transport.logging import (logging_flow_control)
 
 # These are ZiGate commands which doesn't have Ack/Nack with firmware up to 3.1c
 CMD_NOACK_ZDP = (0x0030, 0x0031, 0x0040, 0x0041, 0x0042, 0x0043, 0x0044, 0x0045,
@@ -50,7 +49,7 @@ def is_final_step( self, isqn, step):
         return True
 
 
-    logging_flow_control(self,  'Debug', "is_final_step - returning False by default Cmd: 0x%04x - %s %s %s %s" %
+    self.logging_receive( 'Debug', "is_final_step - returning False by default Cmd: 0x%04x - %s %s %s %s" %
         (
         cmd,
         self.firmware_with_8012,
@@ -65,19 +64,19 @@ def is_final_step_8012(self, isqn, cmd):
         if is_group_cmd( self, isqn, cmd):
             return True
         return is_8011_expected_after_8012( self, isqn, cmd )
-    logging_flow_control(self,  'Debug', "is_final_step_8012 - returning False by default Cmd: 0x%04d" %cmd)
+    self.logging_receive( 'Debug', "is_final_step_8012 - returning False by default Cmd: 0x%04d" %cmd)
     return False
 
 def is_8011_expected_after_8000( self, isqn, cmd ):
     if cmd in ZIGATE_COMMANDS:
         return ZIGATE_COMMANDS[ cmd ]['Ack']
-    logging_flow_control(self,  'Debug', "is_8011_expected_after_8000 - returning False by default Cmd: 0x%04d" %cmd)
+    self.logging_receive( 'Debug', "is_8011_expected_after_8000 - returning False by default Cmd: 0x%04d" %cmd)
     return False
 
 def is_8012_expected_after_8000( self, isqn, cmd ):
     if cmd in ZIGATE_COMMANDS:
         return ZIGATE_COMMANDS[ cmd ]['8012']
-    logging_flow_control(self,  'Debug', "is_8012_expected_after_8000 - returning False by default Cmd: 0x%04d" %cmd)
+    self.logging_receive( 'Debug', "is_8012_expected_after_8000 - returning False by default Cmd: 0x%04d" %cmd)
     return False
 
 def is_8011_expected_after_8012( self, isqn, cmd ):

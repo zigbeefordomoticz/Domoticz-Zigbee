@@ -13,7 +13,6 @@ from Classes.Transport.decode8000 import decode8000
 from Classes.Transport.decode8012 import decode8012_8702
 from Classes.Transport.decode8011 import decode8011
 from Classes.Transport.tools import ( release_command, get_isqn_from_ListOfCommands, STANDALONE_MESSAGE, CMD_PDM_ON_HOST)
-from Classes.Transport.logging import (logging_flow_control)
 from Classes.Transport.compatibilityMode import decode8011_31c
 from Classes.Transport.instrumentation import time_spent_process_frame
 
@@ -23,7 +22,7 @@ from Modules.errorCodes import ZCL_EXTENDED_ERROR_CODES
 @time_spent_process_frame( )
 def process_frame(self, decoded_frame):
 
-    #logging_flow_control(self,  'Debug', "process_frame - receive frame: %s" %decoded_frame)
+    #self.logging_receive( 'Debug', "process_frame - receive frame: %s" %decoded_frame)
 
     # Sanity Check
     if decoded_frame == '' or decoded_frame is None or len(decoded_frame) < 12:
@@ -34,7 +33,7 @@ def process_frame(self, decoded_frame):
     MsgLength = decoded_frame[6:10]
     MsgCRC = decoded_frame[10:12]
 
-    #logging_flow_control(self,  'Debug', "process_frame - MsgType: %s MsgLenght: %s MsgCrc: %s" %( MsgType, MsgLength, MsgCRC))
+    #self.logging_receive( 'Debug', "process_frame - MsgType: %s MsgLenght: %s MsgCrc: %s" %( MsgType, MsgLength, MsgCRC))
 
     # Payload
     MsgData = None
@@ -42,7 +41,7 @@ def process_frame(self, decoded_frame):
         return
 
     MsgData = decoded_frame[12:len(decoded_frame) - 4]
-    logging_flow_control(self,  'Debug', "process_frame -  MsgType: %s MsgData %s" % (MsgType, MsgData)) 
+    self.logging_receive( 'Debug', "process_frame -  MsgType: %s MsgData %s" % (MsgType, MsgData)) 
 
     if MsgType == '8001':
         #Async message
@@ -125,15 +124,15 @@ def NXP_Extended_Error_Code( self, MsgData):
             'nPDU': self.npdu,
             'aPDU': self.apdu
         }
-        #self.logging_error( "NXP_Extended_Error_Code - Extended Error Code: [%s] %s" %( MsgData, StatusMsg), context=_context)
-        logging_flow_control(self,  'Log', "NXP_Extended_Error_Code - Extended Error Code: [%s] %s" %( MsgData, StatusMsg))
+        #self.logging_receive_error( "NXP_Extended_Error_Code - Extended Error Code: [%s] %s" %( MsgData, StatusMsg), context=_context)
+        self.logging_receive( 'Log', "NXP_Extended_Error_Code - Extended Error Code: [%s] %s" %( MsgData, StatusMsg))
 
 
 def NXP_log_message(self, decoded_frame):  # Reception log Level
 
     LOG_FILE = "ZiGate"
 
-    #logging_flow_control(self,  'Debug' , "8001 - %s" %decoded_frame )
+    #self.logging_receive( 'Debug' , "8001 - %s" %decoded_frame )
     MsgData = decoded_frame[12:len(decoded_frame) - 2]
     MsgLogLvl = MsgData[0:2]
     try:

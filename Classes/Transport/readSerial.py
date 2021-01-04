@@ -9,7 +9,6 @@ import serial
 
 from Classes.Transport.tools import stop_waiting_on_queues, handle_thread_error
 from Classes.Transport.readDecoder import decode_and_split_message
-from Classes.Transport.logging import logging_reader
 
 # Manage Serial Line
 def open_serial( self ):
@@ -20,15 +19,16 @@ def open_serial( self ):
             self._connection.rtscts = True
 
     except serial.SerialException as e:
-        logging_reader( self,'Error',"Cannot open Zigate port %s error: %s" %(self._serialPort, e))
+        self.logging_receive('Error',"Cannot open Zigate port %s error: %s" %(self._serialPort, e))
         return False
 
-    logging_reader( self, 'Debug', "ZigateTransport: Serial Connection open: %s" %self._connection)
+    self.logging_receive( 'Debug', "ZigateTransport: Serial Connection open: %s" %self._connection)
     return True
 
 def serial_read_from_zigate( self ):
 
-    logging_reader( self, 'Debug', "serial_read_from_zigate - listening")
+    self.logging_receive( 'Debug', "serial_read_from_zigate - listening")
+
     while self.running:
         # We loop until self.running is set to False, 
         # which indicate plugin shutdown   
@@ -36,19 +36,19 @@ def serial_read_from_zigate( self ):
 
         try:
             nb_inwaiting = self._connection.in_waiting
-            logging_reader( self, 'Debug', "serial_read_from_zigate - reading %s bytes" %nb_inwaiting)
+            self.logging_receive( 'Debug', "serial_read_from_zigate - reading %s bytes" %nb_inwaiting)
             data = self._connection.read( nb_inwaiting or 1)  # Blocking Read
 
         except serial.SerialException as e:
-            logging_reader( self,'Error',"serial_read_from_zigate - error while reading %s" %(e))
+            self.logging_receive('Error',"serial_read_from_zigate - error while reading %s" %(e))
             data = None
 
         except Exception as e:
-            logging_reader( self,'Error',"Error while receiving a ZiGate command: %s" %e)
+            self.logging_receive('Error',"Error while receiving a ZiGate command: %s" %e)
             handle_thread_error( self, e, 0, 0, data)
 
         if data:
             decode_and_split_message(self, data)
 
     stop_waiting_on_queues( self )
-    logging_reader( self,'Status', "ZigateTransport: ZiGateSerialListen Thread stop.")
+    self.logging_receive('Status', "ZigateTransport: ZiGateSerialListen Thread stop.")

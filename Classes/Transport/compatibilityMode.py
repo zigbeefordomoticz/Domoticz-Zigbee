@@ -6,9 +6,7 @@
 import Domoticz
 
 from Modules.zigateConsts import ZIGATE_COMMANDS, MAX_SIMULTANEOUS_ZIGATE_COMMANDS
-from Classes.Transport.tools import ( get_response_from_command, CMD_WITH_RESPONSE, release_command, print_listofcommands, 
-                                    is_nwkid_available, get_nwkid_from_datas_for_zcl_command)
-from Classes.Transport.logging import (logging_flow_control)
+from Classes.Transport.tools import get_response_from_command, CMD_WITH_RESPONSE, release_command, print_listofcommands, is_nwkid_available, get_nwkid_from_datas_for_zcl_command
 from Classes.Transport.sqnMgmt import TYPE_APP_ZCL, TYPE_APP_ZDP, sqn_get_internal_sqn_from_app_sqn
 
 
@@ -28,11 +26,11 @@ def decode8011_31c(self, msgtype, decoded_frame ):
         return
 
     isqn = sqn_get_internal_sqn_from_app_sqn(self, MsgSQN, TYPE_APP_ZCL)
-    logging_flow_control(self,  'Debug', "decode8011_31c -  isqn: %s from esqn: %s" %(isqn, MsgSQN))  
+    self.logging_receive( 'Debug', "decode8011_31c -  isqn: %s from esqn: %s" %(isqn, MsgSQN))  
     if isqn in self.ListOfCommands:
         cmd = int(self.ListOfCommands[isqn]['cmd'],16)
         if ( is_nwkid_available(self, cmd) and get_nwkid_from_datas_for_zcl_command(self, isqn) != MsgSrcAddr ):
-            logging_flow_control(self,  'Debug', "decode8011_31c -  Command found ==> release %s" %(isqn))  
+            self.logging_receive( 'Debug', "decode8011_31c -  Command found ==> release %s" %(isqn))  
             self.ListOfCommands[ isqn ]['Status'] = msgtype
             print_listofcommands( self, isqn )
             release_command( self, isqn)

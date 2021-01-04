@@ -7,7 +7,6 @@
 import Domoticz
 
 from Modules.zigateConsts import ZIGATE_COMMANDS, ZIGATE_RESPONSES, MAX_SIMULTANEOUS_ZIGATE_COMMANDS
-from Classes.Transport.logging import (logging_flow_control, logging_writer)
 
 STANDALONE_MESSAGE = []
 PDM_COMMANDS = ('8300', '8200', '8201', '8204', '8205', '8206', '8207', '8208')
@@ -57,29 +56,13 @@ def waiting_for_end_thread( self ):
 
     if self.pluginconf.pluginConf['byPassDzConnection'] and not self.force_dz_communication:
         self.reader_thread.join()
-        logging_flow_control(self, 'Debug', "waiting_for_end_thread - readThread done")
+        self.logging_receive( 'Debug', "waiting_for_end_thread - readThread done")
 
     self.forwarder_thread.join()
-    logging_flow_control(self, 'Debug', "waiting_for_end_thread - forwardedThread done")
+    self.logging_receive( 'Debug', "waiting_for_end_thread - forwardedThread done")
 
     self.writer_thread.join()
-    logging_flow_control(self, 'Debug', "waiting_for_end_thread - writerThread done")
-
-def limit_throuput(self, command):
-    # Purpose is to have a regulate the load on ZiGate.
-    # It is important for non 31e firmware, as we don't have all elements to regulate the flow
-    # 
-    # It takes on an USB ZiGate around 70ms for a full turn around time between the commande sent and the 0x8011 received
-
-    if self.firmware_compatibility_mode:
-        # We are in firmware 31a where we control the flow is only on 0x8000
-        logging_writer( self, 'Debug',"Firmware 31a limit_throuput regulate to 500ms")
-        self.semephore_limiter.acquire( blocking = True, timeout = 0.5)
-
-    elif not self.firmware_with_8012:
-        # Firmware is not 31e
-        logging_writer( self, 'Debug',"Firmware 31c, 31d limit_throuput regulate to 250ms")
-        self.semephore_limiter.acquire( blocking = True, timeout = 0.25)
+    self.logging_receive( 'Debug', "waiting_for_end_thread - writerThread done")
 
 
 def handle_thread_error( self, e, nb_in, nb_out, data):
@@ -105,7 +88,7 @@ def handle_thread_error( self, e, nb_in, nb_out, data):
         'nb_out': nb_out,
         'Data': str(data),
     }
-    logging_flow_control(self, 'Error', "handle_error_in_thread ", _context=context)
+    self.logging_receive( 'Error', "handle_error_in_thread ", _context=context)
 
 def update_xPDU( self, npdu, apdu):
     if npdu == '' or apdu == '':
@@ -115,22 +98,23 @@ def update_xPDU( self, npdu, apdu):
     self.statistics._MaxaPdu = max(self.statistics._MaxaPdu, int(apdu,16))
     self.statistics._MaxnPdu = max(self.statistics._MaxnPdu, int(npdu,16))
 
+
 def release_command( self, isqn):
     # Remove the command from ListOfCommand
     # Release Semaphore
     if isqn is not None and isqn in self.ListOfCommands:
-        logging_flow_control(self,  'Debug', "==== Removing isqn: %s from %s" %(isqn, self.ListOfCommands.keys()))
+        self.logging_receive( 'Debug', "==== Removing isqn: %s from %s" %(isqn, self.ListOfCommands.keys()))
         del self.ListOfCommands[ isqn ]
 
-    logging_flow_control(self,  'Debug', "============= - Release semaphore %s (%s)" %(self.semaphore_gate._value, len(self.ListOfCommands)))
+    self.logging_receive( 'Debug', "============= - Release semaphore %s (%s)" %(self.semaphore_gate._value, len(self.ListOfCommands)))
     if self.semaphore_gate._value < MAX_SIMULTANEOUS_ZIGATE_COMMANDS:
         self.semaphore_gate.release()
-    logging_flow_control(self,  'Debug', "============= - Semaphore released !! %s writerQueueSize: %s" %(self.semaphore_gate._value, self.writer_queue.qsize( )))
+    self.logging_receive( 'Debug', "============= - Semaphore released !! %s writerQueueSize: %s" %(self.semaphore_gate._value, self.writer_queue.qsize( )))
 
 def get_isqn_from_ListOfCommands( self, PacketType):
     for x in  list(self.ListOfCommands):
         if self.ListOfCommands[ x ]['Status'] == 'SENT':
-            logging_flow_control(self,  'Debug', "get_isqn_from_ListOfCommands - Found isqn: %s with Sem: %s" %(x, self.ListOfCommands[ x ]['Semaphore']))
+            self.logging_receive( 'Debug', "get_isqn_from_ListOfCommands - Found isqn: %s with Sem: %s" %(x, self.ListOfCommands[ x ]['Semaphore']))
             self.ListOfCommands[ x ]['Status'] = '8000'
             return x
 
@@ -152,9 +136,9 @@ def get_response_from_command( command ):
 
 def print_listofcommands( self, isqn ):
 
-    logging_flow_control(self,  'Debug', 'ListOfCommands[%s]:' %isqn)
+    self.logging_receive( 'Debug', 'ListOfCommands[%s]:' %isqn)
     for attribute in self.ListOfCommands[ isqn ]:
-        logging_flow_control(self,  'Debug', '--> %s: %s' %(attribute, self.ListOfCommands[ isqn ][ attribute]))
+        self.logging_receive( 'Debug', '--> %s: %s' %(attribute, self.ListOfCommands[ isqn ][ attribute]))
 
 def get_nwkid_from_datas_for_zcl_command( self, isqn):
     

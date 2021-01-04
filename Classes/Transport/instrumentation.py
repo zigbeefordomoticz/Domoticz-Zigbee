@@ -1,8 +1,4 @@
-# !/usr/bin/env python3
-# coding: utf-8 -*-
-#
-# Author: pipiche38
-#
+
 import Domoticz
 import time
 
@@ -20,13 +16,12 @@ def time_spent_process_frame( ):
                 t_elapse = int( t_end - t_start )
                 self.statistics.add_timing_thread( t_elapse)
                 if t_elapse > 1000:
-                   self.log.logging('Timing', 'Log', "thread_process_messages (process_frame) spend more than 1s (%s ms) frame: %s" %( t_elapse, decoded_frame),)
+                   self.log.logging('debugTiming', 'Log', "thread_process_messages (process_frame) spend more than 1s (%s ms) frame: %s" %( t_elapse, decoded_frame),)
             else:
                 result = f_in(self, decoded_frame)
             return result
         return f_out
     return profiling
-
 
 
 # Decorator for profiling forwarder
@@ -41,7 +36,7 @@ def time_spent_forwarder( ):
                 t_elapse = int( t_end - t_start )
                 self.statistics.add_rxTiming( t_elapse )
                 if t_elapse > 1000:
-                    self.log.logging('Timing', 'Log', "forward_message (F_out) spend more than 1s (%s ms) frame: %s" %( t_elapse, message),)
+                    self.log.logging('debugTiming', 'Log', "forward_message (F_out) spend more than 1s (%s ms) frame: %s" %( t_elapse, message),)
             else:
                 result = f_in(self, message)
             return result

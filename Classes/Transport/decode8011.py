@@ -5,7 +5,6 @@
 #
 
 from Classes.Transport.tools import release_command, print_listofcommands
-from Classes.Transport.logging import (logging_flow_control)
 from Classes.Transport.sqnMgmt import sqn_get_internal_sqn_from_aps_sqn
 
 import time
@@ -40,11 +39,11 @@ def decode8011( self, decoded_frame):
     isqn = sqn_get_internal_sqn_from_aps_sqn(self, MsgSEQ)
 
     if isqn is None:
-        logging_flow_control(self,  'Debug', "decode8011 - 0x8011 not for us NwkId: %s eSqn: %s" %(MsgSrcAddr, MsgSEQ))
+        self.logging_receive( 'Debug', "decode8011 - 0x8011 not for us NwkId: %s eSqn: %s" %(MsgSrcAddr, MsgSEQ))
         return
 
     if isqn not in self.ListOfCommands:
-        logging_flow_control(self,  'Debug', "decode8011 - 0x8011 not for us Nwkid: %s eSqn: %s iSqn: %s" %(MsgSrcAddr, MsgSEQ, isqn))
+        self.logging_receive( 'Debug', "decode8011 - 0x8011 not for us Nwkid: %s eSqn: %s iSqn: %s" %(MsgSrcAddr, MsgSEQ, isqn))
         return
     
     self.ListOfCommands[ isqn ]['Status'] = '8011'

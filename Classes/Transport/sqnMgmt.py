@@ -16,8 +16,6 @@ import time
 import sys
 #from itertools import filterfalse
 
-from Classes.Transport.logging import logging_flow_control
-
 # list of [0:i_sqn, 1:e_sqn, 2:timestamp_query_in_seconds, 3:function_answer_status, 4:ack_status, 5:response_status]
 
 
@@ -40,7 +38,7 @@ def sqn_generate_new_internal_sqn (self): # to be called in zigatecmd
     if self.current_sqn == sys.maxsize:
         self.current_sqn = 0
 
-    logging_flow_control(self,   'Debug',"sqnMgmt generate_new_internal_sqn %s" %i_sqn)
+    self.logging_send(  'Debug',"sqnMgmt generate_new_internal_sqn %s" %i_sqn)
     
     return i_sqn
 
@@ -55,7 +53,7 @@ def sqn_add_external_sqn (self, i_sqn, e_sqnAPP, sqnAPP_type, e_sqnAPS): # to be
     elif sqnAPP_type == TYPE_APP_ZDP:
         self.sqn_zdp[e_sqnAPP] = i_sqn
     
-    logging_flow_control(self,   'Debug',"sqnMgmt add_external_sqn i_sqn:%s e_sqnAPP:%s sqnAPP_type:%s e_sqnAPS:%s" %(i_sqn, e_sqnAPP,sqnAPP_type ,e_sqnAPS))
+    self.logging_send(  'Debug',"sqnMgmt add_external_sqn i_sqn:%s e_sqnAPP:%s sqnAPP_type:%s e_sqnAPS:%s" %(i_sqn, e_sqnAPP,sqnAPP_type ,e_sqnAPS))
 
 def sqn_get_internal_sqn_from_aps_sqn (self, e_sqn):
     if (e_sqn in self.sqn_aps):

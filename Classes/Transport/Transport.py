@@ -21,12 +21,8 @@ from Classes.Transport.forwarderThread import start_forwarder_thread
 from Classes.Transport.tools import initialize_command_protocol_parameters, waiting_for_end_thread, stop_waiting_on_queues
 from Classes.Transport.readDecoder import decode_and_split_message
 
-from Classes.Transport.logging import transport_error_context
-
 from Modules.zigateConsts import MAX_SIMULTANEOUS_ZIGATE_COMMANDS
 class ZigateTransport(object):
-
-    from Classes.Transport.logging import Transport_logging, logging_error
 
     def __init__(self, hardwareid, DomoticzBuild, DomoticzMajor, DomoticzMinor, transport, statistics, pluginconf, F_out, log, serialPort=None, wifiAddress=None, wifiPort=None):
         # Call back function to send back to plugin
@@ -57,7 +53,6 @@ class ZigateTransport(object):
         
         # Semaphore to manage when to send a commande to ZiGate
         self.semaphore_gate = Semaphore( value = MAX_SIMULTANEOUS_ZIGATE_COMMANDS)
-        self.semephore_limiter = Semaphore( 0 )
 
         # Running flag for Thread. Switch to False to stop the Threads
         self.running = True
@@ -66,6 +61,7 @@ class ZigateTransport(object):
         self.ListOfCommands = {}
 
         # Writer
+        #self.writer_queue = SimpleQueue()
         self.writer_list_in_queue = []
         self.writer_queue = Queue()
         self.writer_thread = None
@@ -133,13 +129,13 @@ class ZigateTransport(object):
 
     def sendData(self, cmd, datas, ackIsDisabled=False, waitForResponseIn=False):
         # We receive a send Message command from above ( plugin ), 
-        # Check that the command is not yet in the queue
-        if ( cmd, datas ) in self.writer_list_in_queue:
-            self.Transport_logging( 'Log',"sendData - Warning %s/%s already in queue this command is dropped" %(cmd, datas))
-            return None
-
         # send it to the sending queue
+
+        if ( cmd, datas ) in self.writer_list_in_queue:
+            self.logging_send('Log',"sendData - Warning %s/%s already in queue this command is dropped" %(cmd, datas))
+            return None
         self.writer_list_in_queue.append(  (cmd, datas) )
+
         InternalSqn = sqn_generate_new_internal_sqn(self)
         message = {
             'cmd': cmd,
@@ -152,10 +148,10 @@ class ZigateTransport(object):
         try:
             self.writer_queue.put( message )
         except queue.Full:
-            self.Transport_logging('Error',"sendData - writer_queue Full")
+            self.logging_send('Error',"sendData - writer_queue Full")
 
         except Exception as e:
-            self.Transport_logging('Error',"sendData - Error: %s" %e)
+            self.logging_send('Error',"sendData - Error: %s" %e)
         
         return InternalSqn
 
@@ -207,19 +203,65 @@ class ZigateTransport(object):
 
         self.open_conn()
 
+    # Login mecanism
+    def logging_send(self, logType, message, NwkId = None, _context=None):
+        # Log all activties towards ZiGate
+        self.log.logging('TransportTx', logType, message, context = _context)
 
+    def logging_receive(self, logType, message, nwkid=None, _context=None):
+        # Log all activities received from ZiGate
+        self.log.logging('TransportRx', logType, message, nwkid=nwkid, context = _context)
+
+    def transport_error_context( self, context):
+        if context is None:
+            context = {}
+        context['Queues'] = {
+            'ListOfCommands': dict.copy(self.ListOfCommands),
+            'writeQueue': str(self.writer_queue.queue),
+            'forwardQueue': str(self.forwarder_queue.queue),
+            'SemaphoreValue': self.semaphore_gate._value,
+            }
+        context['Firmware'] = {
+            'dzCommunication': self.force_dz_communication,
+            'with_aps_sqn': self.firmware_with_aps_sqn ,
+            'with_8012': self.firmware_with_8012,
+            'nPDU': self.npdu,
+            'aPDU': self.apdu,
+            }
+        context['Sqn Management'] = {
+            'sqn_ZCL': self.sqn_zcl,
+            'sqn_ZDP': self.sqn_zdp,
+            'sqn_APS': self.sqn_aps,
+            'current_SQN': self.current_sqn,
+            }
+        context['inMessage'] = {
+            'ReqRcv': str(self._ReqRcv),
+        }
+        context['Thread'] = {
+            'byPassDzCommunication': self.pluginconf.pluginConf['byPassDzConnection'],
+            'ThreadName': threading.current_thread().name
+        }
+        return context
+
+    def logging_receive_error( self, message, Nwkid=None, context=None):
+        self.logging_receive('Error', message,  Nwkid, self.transport_error_context( context))
+
+
+    def logging_send_error( self, message, Nwkid=None, context=None):
+        self.logging_send('Error', message,  Nwkid, self.transport_error_context( context))
 
 def open_connection( self ):
 
     if self._transp in ["USB", "DIN", "PI", "V2"]:
-        if self._serialPort.find('/dev/') != -1 or self._serialPort.find('COM') != -1:
-            Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" % (self._serialPort))
-            if self.pluginconf.pluginConf['byPassDzConnection'] and not self.force_dz_communication:
-                open_zigate_and_start_reader( self, 'serial' )
-            else:
-                self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None", Address=self._serialPort, Baud=115200)
-            start_writer_thread( self )
-            start_forwarder_thread( self )
+        if self._serialPort.find('/dev/') == -1 and self._serialPort.find('COM') != -1:
+            return
+        Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" % (self._serialPort))
+        if self.pluginconf.pluginConf['byPassDzConnection'] and not self.force_dz_communication:
+            open_zigate_and_start_reader( self, 'serial' )
+        else:
+            self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None", Address=self._serialPort, Baud=115200)
+        start_writer_thread( self )
+        start_forwarder_thread( self )
 
     elif self._transp == "Wifi":
         Domoticz.Status("Connection Name: Zigate, Transport: TCP/IP, Address: %s:%s" %
