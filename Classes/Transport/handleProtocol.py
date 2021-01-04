@@ -12,7 +12,8 @@ from Classes.Transport.decode8002 import decode8002_and_process
 from Classes.Transport.decode8000 import decode8000
 from Classes.Transport.decode8012 import decode8012_8702
 from Classes.Transport.decode8011 import decode8011
-from Classes.Transport.tools import ( release_command, get_isqn_from_ListOfCommands, STANDALONE_MESSAGE, CMD_PDM_ON_HOST, logging_flow_control)
+from Classes.Transport.tools import ( release_command, get_isqn_from_ListOfCommands, STANDALONE_MESSAGE, CMD_PDM_ON_HOST)
+from Classes.Transport.logging import (logging_flow_control)
 from Classes.Transport.compatibilityMode import decode8011_31c
 from Classes.Transport.instrumentation import time_spent_process_frame
 

@@ -9,6 +9,7 @@ import struct
 import binascii
 
 from Classes.Transport.handleProtocol import process_frame
+from Classes.Transport.logging import logging_reader
 
 def decode_and_split_message(self, raw_message):
     
@@ -115,6 +116,5 @@ def check_frame_lenght( self, BinMsg):
         return False
     return True
 
-def logging_reader(self, logType, message, NwkId = None, _context=None):
-    # Log all activties towards ZiGate
-    self.log.logging('TransportRder', logType, message, context = _context)
+
+

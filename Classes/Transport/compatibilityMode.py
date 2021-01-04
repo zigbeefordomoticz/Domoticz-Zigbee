@@ -7,7 +7,8 @@ import Domoticz
 
 from Modules.zigateConsts import ZIGATE_COMMANDS, MAX_SIMULTANEOUS_ZIGATE_COMMANDS
 from Classes.Transport.tools import ( get_response_from_command, CMD_WITH_RESPONSE, release_command, print_listofcommands, 
-                                    is_nwkid_available, get_nwkid_from_datas_for_zcl_command, logging_flow_control)
+                                    is_nwkid_available, get_nwkid_from_datas_for_zcl_command)
+from Classes.Transport.logging import (logging_flow_control)
 from Classes.Transport.sqnMgmt import TYPE_APP_ZCL, TYPE_APP_ZDP, sqn_get_internal_sqn_from_app_sqn
 
 

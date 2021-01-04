@@ -10,6 +10,7 @@ import queue
 from threading import Thread
 from Classes.Transport.tools import handle_thread_error
 from Classes.Transport.instrumentation import time_spent_forwarder
+from Classes.Transport.logging import logging_forwarder
 
 def start_forwarder_thread( self ):
     
@@ -54,6 +55,5 @@ def forward_message( self, message ):
     self.F_out(  message )
     logging_forwarder( self, 'Debug', "message forwarded!!!!")
 
-def logging_forwarder(self, logType, message, NwkId = None, _context=None):
-    # Log all activties towards ZiGate
-    self.log.logging('TransportFrwder', logType, message, context = _context)
+
+

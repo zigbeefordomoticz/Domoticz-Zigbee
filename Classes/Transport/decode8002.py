@@ -8,7 +8,7 @@ import Domoticz
 import struct
 from Modules.zigateConsts import ADDRESS_MODE, SIZE_DATA_TYPE
 from Modules.tools import retreive_cmd_payload_from_8002
-from Classes.Transport.tools import logging_flow_control
+from Classes.Transport.logging import logging_flow_control
 
 def decode8002_and_process(self, frame):
     

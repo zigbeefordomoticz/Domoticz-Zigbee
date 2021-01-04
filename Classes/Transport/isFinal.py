@@ -9,7 +9,8 @@ import Domoticz
 
 
 from Modules.zigateConsts import ZIGATE_COMMANDS, ADDRESS_MODE
-from Classes.Transport.tools import CMD_ONLY_STATUS, CMD_NWK_2NDBytes, logging_flow_control
+from Classes.Transport.tools import CMD_ONLY_STATUS, CMD_NWK_2NDBytes
+from Classes.Transport.logging import (logging_flow_control)
 
 # These are ZiGate commands which doesn't have Ack/Nack with firmware up to 3.1c
 CMD_NOACK_ZDP = (0x0030, 0x0031, 0x0040, 0x0041, 0x0042, 0x0043, 0x0044, 0x0045,

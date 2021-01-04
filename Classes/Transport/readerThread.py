@@ -13,7 +13,7 @@ from threading import Thread
 
 from Classes.Transport.readSerial import open_serial, serial_read_from_zigate
 from Classes.Transport.readTcp import open_tcpip, tcpip_read_from_zigate
-from Classes.Transport.readDecoder import logging_reader
+from Classes.Transport.logging import logging_reader
 
 
 def open_zigate_and_start_reader( self, zigate_mode ):

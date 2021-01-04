@@ -16,7 +16,7 @@ import time
 import sys
 #from itertools import filterfalse
 
-from Classes.Transport.tools import logging_flow_control
+from Classes.Transport.logging import logging_flow_control
 
 # list of [0:i_sqn, 1:e_sqn, 2:timestamp_query_in_seconds, 3:function_answer_status, 4:ack_status, 5:response_status]
 

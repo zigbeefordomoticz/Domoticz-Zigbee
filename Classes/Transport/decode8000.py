@@ -4,8 +4,8 @@
 # Author: pipiche38
 #
 
-from Classes.Transport.tools import  update_xPDU, print_listofcommands
-from Classes.Transport.tools import  CMD_PDM_ON_HOST, ZIGATE_COMMANDS, get_isqn_from_ListOfCommands, release_command, logging_flow_control
+from Classes.Transport.tools import  CMD_PDM_ON_HOST, ZIGATE_COMMANDS, get_isqn_from_ListOfCommands, release_command, update_xPDU, print_listofcommands
+from Classes.Transport.logging import (logging_flow_control)
 from Classes.Transport.sqnMgmt import sqn_add_external_sqn, TYPE_APP_ZCL, TYPE_APP_ZDP
 from Classes.Transport.isFinal import is_final_step
 

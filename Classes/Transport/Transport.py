@@ -21,8 +21,12 @@ from Classes.Transport.forwarderThread import start_forwarder_thread
 from Classes.Transport.tools import initialize_command_protocol_parameters, waiting_for_end_thread, stop_waiting_on_queues
 from Classes.Transport.readDecoder import decode_and_split_message
 
+from Classes.Transport.logging import transport_error_context
+
 from Modules.zigateConsts import MAX_SIMULTANEOUS_ZIGATE_COMMANDS
 class ZigateTransport(object):
+
+    from Classes.Transport.logging import Transport_logging, logging_error
 
     def __init__(self, hardwareid, DomoticzBuild, DomoticzMajor, DomoticzMinor, transport, statistics, pluginconf, F_out, log, serialPort=None, wifiAddress=None, wifiPort=None):
         # Call back function to send back to plugin
@@ -131,7 +135,7 @@ class ZigateTransport(object):
         # We receive a send Message command from above ( plugin ), 
         # Check that the command is not yet in the queue
         if ( cmd, datas ) in self.writer_list_in_queue:
-            self.logging( 'Log',"sendData - Warning %s/%s already in queue this command is dropped" %(cmd, datas))
+            self.Transport_logging( 'Log',"sendData - Warning %s/%s already in queue this command is dropped" %(cmd, datas))
             return None
 
         # send it to the sending queue
@@ -148,10 +152,10 @@ class ZigateTransport(object):
         try:
             self.writer_queue.put( message )
         except queue.Full:
-            self.logging('Error',"sendData - writer_queue Full")
+            self.Transport_logging('Error',"sendData - writer_queue Full")
 
         except Exception as e:
-            self.logging('Error',"sendData - Error: %s" %e)
+            self.Transport_logging('Error',"sendData - Error: %s" %e)
         
         return InternalSqn
 
@@ -203,46 +207,7 @@ class ZigateTransport(object):
 
         self.open_conn()
 
-    # Login mecanism
-    def logging(self, logType, message, NwkId = None, _context=None):
-        # Log all activties towards ZiGate
-        self.log.logging('Transport', logType, message, context = _context)
 
-    def logging_error( self, message, Nwkid=None, context=None):
-        if self.pluginconf.pluginConf['trackTransportError']:
-            self.logging( 'Error', message,  Nwkid, transport_error_context( self, context))
-
-
-def transport_error_context( self, context):
-    if context is None:
-        context = {}
-    context['Queues'] = {
-        'ListOfCommands': dict.copy(self.ListOfCommands),
-        'writeQueue': str(self.writer_queue.queue),
-        'forwardQueue': str(self.forwarder_queue.queue),
-        'SemaphoreValue': self.semaphore_gate._value,
-        }
-    context['Firmware'] = {
-        'dzCommunication': self.force_dz_communication,
-        'with_aps_sqn': self.firmware_with_aps_sqn ,
-        'with_8012': self.firmware_with_8012,
-        'nPDU': self.npdu,
-        'aPDU': self.apdu,
-        }
-    context['Sqn Management'] = {
-        'sqn_ZCL': self.sqn_zcl,
-        'sqn_ZDP': self.sqn_zdp,
-        'sqn_APS': self.sqn_aps,
-        'current_SQN': self.current_sqn,
-        }
-    context['inMessage'] = {
-        'ReqRcv': str(self._ReqRcv),
-    }
-    context['Thread'] = {
-        'byPassDzCommunication': self.pluginconf.pluginConf['byPassDzConnection'],
-        'ThreadName': threading.current_thread().name
-    }
-    return context
 
 def open_connection( self ):
 

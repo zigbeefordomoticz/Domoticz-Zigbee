@@ -7,6 +7,7 @@
 import Domoticz
 
 from Modules.zigateConsts import ZIGATE_COMMANDS, ZIGATE_RESPONSES, MAX_SIMULTANEOUS_ZIGATE_COMMANDS
+from Classes.Transport.logging import (logging_flow_control, logging_writer)
 
 STANDALONE_MESSAGE = []
 PDM_COMMANDS = ('8300', '8200', '8201', '8204', '8205', '8206', '8207', '8208')
@@ -63,6 +64,22 @@ def waiting_for_end_thread( self ):
 
     self.writer_thread.join()
     logging_flow_control(self, 'Debug', "waiting_for_end_thread - writerThread done")
+
+def limit_throuput(self, command):
+    # Purpose is to have a regulate the load on ZiGate.
+    # It is important for non 31e firmware, as we don't have all elements to regulate the flow
+    # 
+    # It takes on an USB ZiGate around 70ms for a full turn around time between the commande sent and the 0x8011 received
+
+    if self.firmware_compatibility_mode:
+        # We are in firmware 31a where we control the flow is only on 0x8000
+        logging_writer( self, 'Debug',"Firmware 31a limit_throuput regulate to 500ms")
+        self.semephore_limiter.acquire( blocking = True, timeout = 0.5)
+
+    elif not self.firmware_with_8012:
+        # Firmware is not 31e
+        logging_writer( self, 'Debug',"Firmware 31c, 31d limit_throuput regulate to 250ms")
+        self.semephore_limiter.acquire( blocking = True, timeout = 0.25)
 
 
 def handle_thread_error( self, e, nb_in, nb_out, data):
@@ -146,7 +163,3 @@ def get_nwkid_from_datas_for_zcl_command( self, isqn):
 def is_nwkid_available( self, cmd):
 
     return ZIGATE_COMMANDS[ cmd ]['NwkId 2nd Bytes']
-
-def logging_flow_control(self, logType, message, NwkId = None, _context=None):
-    # Log all activties towards ZiGate
-    self.log.logging('TransportFlowCtrl', logType, message, context = _context)

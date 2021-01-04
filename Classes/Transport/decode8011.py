@@ -4,7 +4,8 @@
 # Author: pipiche38
 #
 
-from Classes.Transport.tools import release_command, print_listofcommands, logging_flow_control
+from Classes.Transport.tools import release_command, print_listofcommands
+from Classes.Transport.logging import (logging_flow_control)
 from Classes.Transport.sqnMgmt import sqn_get_internal_sqn_from_aps_sqn
 
 import time

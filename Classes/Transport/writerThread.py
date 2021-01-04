@@ -15,6 +15,7 @@ from threading import Thread
 from Modules.tools import is_hex
 
 from Classes.Transport.tools import handle_thread_error, release_command
+from Classes.Transport.logging import (logging_writer)
 
 def start_writer_thread( self ):
 
@@ -51,9 +52,6 @@ def writer_thread( self ):
                     # Exit
                     break
 
-                # ommand sent, if needed wait in order to reduce throughput and load on ZiGate
-                limit_throuput(self, command)
-
             elif command == 'STOP':
                 break
 
@@ -69,28 +67,6 @@ def writer_thread( self ):
             handle_thread_error( self, e, 0, 0, frame)
 
     logging_writer( self, 'Status',"ZigateTransport: writer_thread Thread stop.")
-
-def limit_throuput(self, command):
-    # Purpose is to have a regulate the load on ZiGate.
-    # It is important for non 31e firmware, as we don't have all elements to regulate the flow
-    # 
-    # It takes on an USB ZiGate around 70ms for a full turn around time between the commande sent and the 0x8011 received
-
-    if self.firmware_compatibility_mode:
-        # We are in firmware 31a where we control the flow is only on 0x8000
-        logging_writer( self, 'Debug',"Firmware 31a limit_throuput regulate to 500ms")
-        self.semephore_limiter.acquire( blocking = True, timeout = 0.5)
-
-    elif not self.firmware_with_8012:
-        # Firmware is not 31e
-        logging_writer( self, 'Debug',"Firmware 31c, 31d limit_throuput regulate to 250ms")
-        self.semephore_limiter.acquire( blocking = True, timeout = 0.25)
-
-    else:
-        logging_writer( self, 'Log',"Test purpose Lock for .25ms")
-        self.semephore_limiter.acquire( blocking = True, timeout = 0.25)   
-        logging_writer( self, 'Log',"Test purpose released")    
-
 
 def wait_for_semaphore( self , command ):
         # Now we will block on Semaphore to serialize and limit the number of concurent commands on ZiGate
@@ -295,6 +271,5 @@ def semaphore_timeout( self, current_command ):
     if not self.force_dz_communication:
         self.logging_error( "writerThread Timeout ", context=_context)
 
-def logging_writer(self, logType, message, NwkId = None, _context=None):
-    # Log all activities towards ZiGate
-    self.log.logging('TransportWrter', logType, message, context = _context)
+
+

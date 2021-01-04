@@ -5,7 +5,8 @@
 #
 
 import time
-from Classes.Transport.tools import release_command, update_xPDU, print_listofcommands, logging_flow_control
+from Classes.Transport.tools import release_command, update_xPDU, print_listofcommands
+from Classes.Transport.logging import (logging_flow_control)
 from Classes.Transport.sqnMgmt import sqn_get_internal_sqn_from_aps_sqn
 from Classes.Transport.isFinal import is_final_step
 

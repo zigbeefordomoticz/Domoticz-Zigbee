@@ -8,7 +8,8 @@ import Domoticz
 import serial
 
 from Classes.Transport.tools import stop_waiting_on_queues, handle_thread_error
-from Classes.Transport.readDecoder import decode_and_split_message, logging_reader
+from Classes.Transport.readDecoder import decode_and_split_message
+from Classes.Transport.logging import logging_reader
 
 # Manage Serial Line
 def open_serial( self ):
