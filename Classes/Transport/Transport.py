@@ -216,7 +216,6 @@ def open_connection( self ):
             Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" % (self._serialPort))
             if self.pluginconf.pluginConf['byPassDzConnection'] and not self.force_dz_communication:
                 open_zigate_and_start_reader( self, 'serial' )
-                start_writer_thread( self )
             else:
                 self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None", Address=self._serialPort, Baud=115200)
             start_writer_thread( self )
