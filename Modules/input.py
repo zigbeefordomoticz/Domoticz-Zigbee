@@ -782,7 +782,6 @@ def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
     updLQI(self, MsgSrcAddr, MsgLQI)
     _powered = mainPoweredDevice(self, MsgSrcAddr)
  
-
     if self.pluginconf.pluginConf["debugzigateCmd"]:
         if MsgSEQ:
             self.log.logging( 'Input', 'Log', "Decod8011 Received [%s] for Nwkid  : %s with status: %s e_sqn: 0x%02x/%s" 
@@ -818,6 +817,12 @@ def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
             else:
                 self.log.logging(  "Input", "Log", "Receive NACK from %s clusterId: %s Status: %s" 
                    % (MsgSrcAddr, MsgClusterId,  MsgStatus), MsgSrcAddr, )
+
+        if self.pluginconf.pluginConf['deviceOffWhenTimeOut']:
+            for x in self.ListOfDevices[MsgSrcAddr]['Ep']:
+                if '0006' in self.ListOfDevices[MsgSrcAddr]['Ep'][x]:
+                    if '0000' in self.ListOfDevices[MsgSrcAddr]['Ep'][x]['0000']:
+                        self.ListOfDevices[MsgSrcAddr]['Ep'][x]['0000'] = '00'
 
 
 def Decode8012(self, Devices, MsgData, MsgLQI):
