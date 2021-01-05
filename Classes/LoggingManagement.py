@@ -67,8 +67,9 @@ class LoggingManagement:
             return
         try:
             self.LogErrorHistory = json.load( handle, encoding=dict)
-            if bool(self.LogErrorHistory):
-                self._newError  = True
+            # By default we will leave No Error even if there are from the past
+            #if bool(self.LogErrorHistory):
+            #    self._newError  = True
 
         except json.decoder.JSONDecodeError as e:
             res = "Failed"
