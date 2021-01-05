@@ -821,9 +821,8 @@ def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
         if self.pluginconf.pluginConf['deviceOffWhenTimeOut']:
             for x in self.ListOfDevices[MsgSrcAddr]['Ep']:
                 if '0006' in self.ListOfDevices[MsgSrcAddr]['Ep'][x]:
-                    if '0000' in self.ListOfDevices[MsgSrcAddr]['Ep'][x]['0000']:
-                        self.ListOfDevices[MsgSrcAddr]['Ep'][x]['0000'] = '00'
-
+                    if '0000' in self.ListOfDevices[MsgSrcAddr]['Ep'][x]['0006']:
+                        self.ListOfDevices[MsgSrcAddr]['Ep'][x]['0006']['0000'] = '00'
 
 def Decode8012(self, Devices, MsgData, MsgLQI):
     """
