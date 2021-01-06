@@ -77,14 +77,19 @@ def limit_throuput(self, command):
 
     if self.firmware_compatibility_mode:
         # We are in firmware 31a where we control the flow is only on 0x8000
-        self.logging_send('Debug',"Firmware 31a limit_throuput regulate to 250ms")
+        # Throught put of 2 messages per seconds
+        self.logging_send('Debug',"Firmware 31a limit_throuput regulate to 500")
         time.sleep(0.500)
-
 
     elif not self.firmware_with_8012:
         # Firmware is not 31e
-        self.logging_send('Debug',"Firmware 31d limit_throuput regulate to 100ms")
-        time.sleep(0.250)
+        # Throught put of 4 messages per seconds
+        self.logging_send('Debug',"Firmware 31d limit_throuput regulate to 300")
+        time.sleep(0.300)
+
+    else:
+        self.logging_send('Debug',"Firmware 31e limit_throuput regulate to 200")
+        time.sleep(0.200)       
 
 
 def wait_for_semaphore( self , command ):
