@@ -23,7 +23,6 @@ SETTINGS = {
         'enablegroupmanagement':  {'type': 'bool', 'default': 0, 'current': None, 'restart': True, 'hidden': False, 'Advanced': False},
         'enableReadAttributes':   {'type': 'bool', 'default': 0, 'current': None, 'restart': True, 'hidden': False, 'Advanced': False},
         'internetAccess':         {'type': 'bool', 'default': 1, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
-        'enableWebServer':        {'type': 'bool', 'default': 1, 'current': None, 'restart': True, 'hidden': False, 'Advanced': False},
         'allowOTA':               {'type': 'bool', 'default': 1, 'current': None, 'restart': True, 'hidden': True, 'Advanced': False},
         'pingDevices':            {'type': 'bool', 'default': 1, 'current': None, 'restart': True, 'hidden': False, 'Advanced': False},
     }
@@ -93,6 +92,7 @@ SETTINGS = {
 
     # Device Management
     'DeviceManagement': {'Order': 6, 'param': {
+        'deviceOffWhenTimeOut':          {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'forcePollingAfterAction':       {'type': 'bool', 'default': 1, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'forcePassiveWidget':            {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'allowForceCreationDomoDevice':  {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True, 'Advanced': True},
@@ -155,19 +155,16 @@ SETTINGS = {
 
     # Plugin Transport
     'PluginTransport':     {'Order': 10, 'param': {
-        'Zmode':           {'type': 'str',  'default': 'Auto', 'current': None, 'restart': True,  'hidden': True,  'Advanced': True},
-        'TimeOut8000':     {'type': 'int',  'default': 2,      'current': None, 'restart': False, 'hidden': True,   'Advanced': True},
-        'TimeOut8012':     {'type': 'int',  'default': 12,      'current': None, 'restart': False, 'hidden': True,   'Advanced': True},
-        'TimeOut8011':     {'type': 'int',  'default': 14,      'current': None, 'restart': False, 'hidden': True,   'Advanced': True},
-        'TimeOutResponse': {'type': 'int',  'default': 9,      'current': None, 'restart': False, 'hidden': True,   'Advanced': True},
-        'forceAckOnZCL':   {'type': 'bool', 'default': 0,      'current': None, 'restart': False, 'hidden': False,  'Advanced': True},
-        'forceFullSeqMode':   {'type': 'bool', 'default': 0,      'current': None, 'restart': False, 'hidden': False,  'Advanced': True},
-        'disableAckOnZCL': {'type': 'bool', 'default': 0,      'current': None, 'restart': False, 'hidden': False,  'Advanced': True},
-        'waitForResponse': {'type': 'bool', 'default': 0,      'current': None, 'restart': False, 'hidden': True,   'Advanced': True},
-        'MultiThreaded':   {'type': 'bool', 'default': 0,      'current': None, 'restart': True,  'hidden': False,   'Advanced': True},
-        'ieeeForRawAps':   {'type': 'bool', 'default': 0,      'current': None, 'restart': True,  'hidden': True,   'Advanced': True},
-        'forceAckOnZCL':         {'type': 'bool', 'default': 1, 'current': None, 'restart': False, 'hidden': True, 'Advanced': True},
-        'SerialReadV2':          {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True, 'Advanced': True},
+        'forceAckOnZCL':   {'type': 'bool', 'default': 0,    'current': None, 'restart': False, 'hidden': False,'Advanced': True},
+        'disableAckOnZCL': {'type': 'bool', 'default': 0,    'current': None, 'restart': False, 'hidden': False,'Advanced': True},
+        'waitForResponse': {'type': 'bool', 'default': 0,    'current': None, 'restart': False, 'hidden': True, 'Advanced': True},
+        'byPassDzConnection': {'type': 'bool', 'default': 1, 'current': None, 'restart': True,  'hidden': True, 'Advanced': True},
+        'SerialReadV2':    {'type': 'bool', 'default': 1,    'current': None, 'restart': False, 'hidden': True, 'Advanced': True},
+        'ieeeForRawAps':   {'type': 'bool', 'default': 0,    'current': None, 'restart': True,  'hidden': True, 'Advanced': True},
+        'forceFullSeqMode':      {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
+        'RawReadAttribute':      {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
+        'RawWritAttribute':      {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
+        'writerTimeOut':         {'type': 'bool', 'default': 1, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         }
     },
 
@@ -188,22 +185,30 @@ SETTINGS = {
 
     # Verbose
     'VerboseLogging': {'Order': 12, 'param': {
-        'debugMatchId':         {'type': 'str',  'default': 'ffff', 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
-        'useDomoticzLog':       {'type': 'bool', 'default': 1,     'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
+        'ZiGateReactTime':      {'type': 'bool', 'default': 1,     'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
+        'debugMatchId':         {'type': 'str',  'default': 'ffff','current': None, 'restart': False, 'hidden': False, 'Advanced': True},
+        'useDomoticzLog':       {'type': 'bool', 'default': 1,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'logDeviceUpdate':      {'type': 'bool', 'default': 1,     'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
-        'trackError':            {'type': 'bool', 'default': 0, 'current': None, 'restart': False,  'hidden': False,  'Advanced': False},
-        'logFORMAT':            {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': True, 'Advanced': True},
+        'logFORMAT':            {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
+        'logThreadName':        {'type': 'bool', 'default': 1,     'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
+        'NXPExtendedErrorCode': {'type': 'bool', 'default': 1,     'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
+        'trackTransportError':  {'type': 'bool', 'default': 1,     'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'capturePairingInfos':  {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
-        'debugLQI':            {'type': 'int',  'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
+        'debugLQI':             {'type': 'int',  'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'debugInput':           {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'debugBasicOutput':     {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'debugBinding':         {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
-        'debugConfigureReporting':  {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
-        'debugWriteAttributes':     {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
+        'debugConfigureReporting':{'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
+        'debugWriteAttributes': {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'debugReadAttributes':  {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'debugThermostats':     {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
-        'debugTransportTx':     {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
-        'debugTransportRx':     {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
+        'debugTransportTx':       {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
+        'debugTransportRx':       {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
+        'debugTransport':       {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
+        'debugTransportWrter':  {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
+        'debugTransportFrwder': {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
+        'debugTransportRder':   {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
+        'debugTransportFlowCtrl': {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'debugCluster':         {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'debugHeartbeat':       {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'debugWidget':          {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
@@ -229,6 +234,7 @@ SETTINGS = {
         'debugPhilips':         {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'debugPDM':             {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'debuginRawAPS':        {'type': 'bool', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
+        'debugTiming':          {'type': 'bool', 'default': 1,     'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         }
     },
 
@@ -300,21 +306,16 @@ SETTINGS = {
     },
 
     # Experimental
-    'Experimental': {'Order': 17, 'param': {
-        'DropBadAnnoucement':    {'type': 'bool', 'default': 1, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
-        'ZiGateReactTime':       {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
-        'RawReadAttribute':      {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True, 'Advanced': True},
-        'RawWritAttribute':      {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True, 'Advanced': True},
-        'AnnoucementV0':         {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True, 'Advanced': True},
-        'AnnoucementV1':         {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True, 'Advanced': True},
-        'AnnoucementV2':         {'type': 'bool', 'default': 1, 'current': None, 'restart': False, 'hidden': True, 'Advanced': True},
+    'Experimental': {'Order': 17, 'param': {    
+        'DropBadAnnoucement':    {'type': 'bool', 'default': 1, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},    
+        'AnnoucementV0':         {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
+        'AnnoucementV1':         {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
+        'AnnoucementV2':         {'type': 'bool', 'default': 1, 'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'expJsonDatabase':       {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'XiaomiLeave':           {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
         'rebindLivolo':          {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': False},
         'allowAutoPairing':      {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
-        
-        'forceFullSeqMode':      {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': True, 'Advanced': True},
-        
+        'forceAckOnZCL':         {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         
         }
     }
@@ -344,10 +345,10 @@ class PluginConf:
         # Sanity Checks
         if self.pluginConf['TradfriKelvinStep'] < 0 or self.pluginConf['TradfriKelvinStep'] > 255:
             self.pluginConf['TradfriKelvinStep'] = 75
-        if ( self.pluginConf['Certification'] == 'CE' or self.pluginConf['Certification'] != 'FCC' ):
-            self.pluginConf['CertificationCode'] = 0x01
+        if ( self.pluginConf['Certification'] != 'FCC' ):
+            self.pluginConf['CertificationCode'] = 0x01 # CE
         else:
-            self.pluginConf['CertificationCode'] = 0x02
+            self.pluginConf['CertificationCode'] = 0x02 # FCC
         _path_check( self )
         _param_checking( self )
 

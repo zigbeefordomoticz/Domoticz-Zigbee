@@ -25,7 +25,7 @@ from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import timedOutDevice
 from Modules.tools import DeviceExist, getEPforClusterType, is_hex, voltage2batteryP, checkAttribute, checkAndStoreAttributeValue, \
                         set_status_datastruct, set_timestamp_datastruct, get_isqn_datastruct, instrument_timing
-from Modules.sqnMgmt import sqn_get_internal_sqn_from_app_sqn, TYPE_APP_ZCL
+from Classes.Transport.sqnMgmt import sqn_get_internal_sqn_from_app_sqn, TYPE_APP_ZCL
 
 from Modules.lumi import AqaraOppleDecoding0012, readXiaomiCluster, xiaomi_leave, cube_decode, decode_vibr, decode_vibrAngle, readLumiLock
 

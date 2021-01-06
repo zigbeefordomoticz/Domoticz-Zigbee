@@ -15,7 +15,6 @@ import binascii
 import time
 from datetime import datetime
 import struct
-import queue
 
 import json
 
@@ -80,21 +79,8 @@ from Modules.zigate import initLODZigate, receiveZigateEpList, receiveZigateEpDe
 
 from Modules.callback import callbackDeviceAwake
 from Modules.inRawAps import inRawAps
-from Modules.pdmHost import (
-    pdmHostAvailableRequest,
-    PDMSaveRequest,
-    PDMLoadRequest,
-    PDMGetBitmapRequest,
-    PDMIncBitmapRequest,
-    PDMExistanceRequest,
-    pdmLoadConfirmed,
-    PDMDeleteRecord,
-    PDMDeleteAllRecord,
-    PDMCreateBitmap,
-    PDMDeleteBitmapRequest,
-)
 
-from Modules.sqnMgmt import (
+from Classes.Transport.sqnMgmt import (
     sqn_get_internal_sqn_from_app_sqn,
     sqn_get_internal_sqn_from_aps_sqn,
     TYPE_APP_ZCL,
@@ -111,13 +97,12 @@ from Classes.OTA import OTAManagement
 from Classes.NetworkMap import NetworkMap
 
 
-def ZigateRead(self, Devices, Data, TransportInfos=None):
+def ZigateRead(self, Devices, Data):
 
     DECODERS = {
         "0100": Decode0100,
         "004d": Decode004D,
         "8000": Decode8000_v2,
-        #"8001": Decode8001,
         "8002": Decode8002,
         "8003": Decode8003,
         "8004": Decode8004,
@@ -127,7 +112,6 @@ def ZigateRead(self, Devices, Data, TransportInfos=None):
         "8009": Decode8009,
         "8010": Decode8010,
         #'8011': Decode8011,
-        "8012": Decode8012,
         "8014": Decode8014,
         "8015": Decode8015,
         "8017": Decode8017,
@@ -137,7 +121,6 @@ def ZigateRead(self, Devices, Data, TransportInfos=None):
         "802c": Decode802C,
         "8030": Decode8030,
         "8031": Decode8031,
-        "8035": Decode8035,
         "8034": Decode8034,
         "8040": Decode8040,
         "8041": Decode8041,
@@ -170,22 +153,8 @@ def ZigateRead(self, Devices, Data, TransportInfos=None):
         "8501": Decode8501,
         "8503": Decode8503,
         "8701": Decode8701,
-        "8702": Decode8702,
         "8806": Decode8806,
         "8807": Decode8807,
-        "0300": Decode0300,
-        "0301": Decode0301,
-        "0302": Decode0302,
-        "0200": Decode0200,
-        "0201": Decode0201,
-        "0202": Decode0202,
-        "0203": Decode0203,
-        "0204": Decode0204,
-        "0205": Decode0205,
-        "0206": Decode0206,
-        "0207": Decode0207,
-        "0208": Decode0208,
-        "9999": Decode9999,
     }
 
     NOT_IMPLEMENTED = ("00d1", "8029", "80a0", "80a1", "80a2", "80a3", "80a4")
@@ -228,10 +197,7 @@ def ZigateRead(self, Devices, Data, TransportInfos=None):
         return
 
     if MsgType == "8011":
-        Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos)
-        return
-    if MsgType == "8001": # No LQI provided for 0x8001
-        Decode8001( self,Devices, MsgData + MsgLQI, '00' )
+        Decode8011(self, Devices, MsgData, MsgLQI)
         return
 
     Domoticz.Error("ZigateRead - Decoder not found for %s" % (MsgType))
@@ -799,6 +765,7 @@ def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
 
     # APP APS ACK
     self.log.logging( "Input", "Debug2", "Decode8011 - APS ACK: %s" % MsgData)
+    
     MsgLen = len(MsgData)
     MsgStatus = MsgData[0:2]
     MsgSrcAddr = MsgData[2:6]
@@ -815,10 +782,14 @@ def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
     updLQI(self, MsgSrcAddr, MsgLQI)
     _powered = mainPoweredDevice(self, MsgSrcAddr)
  
-
     if self.pluginconf.pluginConf["debugzigateCmd"]:
-        self.log.logging( 'Input', 'Log', "Decod8011 Received [%s] for Nwkid  : %s with status: %s e_sqn: 0x%02x/%s" 
-            % (i_sqn, MsgSrcAddr, MsgStatus, int(MsgSEQ,16), int(MsgSEQ,16)), MsgSrcAddr)
+        if MsgSEQ:
+            self.log.logging( 'Input', 'Log', "Decod8011 Received [%s] for Nwkid  : %s with status: %s e_sqn: 0x%02x/%s" 
+                % (i_sqn, MsgSrcAddr, MsgStatus, int(MsgSEQ,16), int(MsgSEQ,16)), MsgSrcAddr)
+        else:
+            self.log.logging( 'Input', 'Log', "Decod8011 Received [%s] for Nwkid  : %s with status: %s" 
+                % (i_sqn, MsgSrcAddr, MsgStatus), MsgSrcAddr)
+
 
     if MsgStatus == "00":
         timeStamped(self, MsgSrcAddr, 0x8011)
@@ -838,22 +809,20 @@ def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
         if self.ListOfDevices[MsgSrcAddr]["Health"] != "Not Reachable":
             self.ListOfDevices[MsgSrcAddr]["Health"] = "Not Reachable"
 
-        cmd = ""
-        if TransportInfos:
-            if isinstance(TransportInfos, dict):
-                cmd = TransportInfos["Cmd"]
-            else:
-                Domoticz.Error("Transport Info not a dict ! %s" % TransportInfos)
-
         if "ZDeviceName" in self.ListOfDevices[MsgSrcAddr]:
             MsgClusterId = MsgData[8:12]
             if self.ListOfDevices[MsgSrcAddr]["ZDeviceName"] not in [ {}, "", ]:
-                self.log.logging(  "Input", "Log", "Receive NACK from %s (%s) clusterId: %s for Command: %s Status: %s"
-                    % ( self.ListOfDevices[MsgSrcAddr]["ZDeviceName"], MsgSrcAddr, MsgClusterId, cmd, MsgStatus, ), MsgSrcAddr, )
+                self.log.logging(  "Input", "Log", "Receive NACK from %s (%s) clusterId: %s Status: %s"
+                    % ( self.ListOfDevices[MsgSrcAddr]["ZDeviceName"], MsgSrcAddr, MsgClusterId, MsgStatus, ), MsgSrcAddr, )
             else:
-                self.log.logging(  "Input", "Log", "Receive NACK from %s clusterId: %s for Command: %s Status: %s" 
-                   % (MsgSrcAddr, MsgClusterId, cmd, MsgStatus), MsgSrcAddr, )
+                self.log.logging(  "Input", "Log", "Receive NACK from %s clusterId: %s Status: %s" 
+                   % (MsgSrcAddr, MsgClusterId,  MsgStatus), MsgSrcAddr, )
 
+        if self.pluginconf.pluginConf['deviceOffWhenTimeOut']:
+            for x in self.ListOfDevices[MsgSrcAddr]['Ep']:
+                if '0006' in self.ListOfDevices[MsgSrcAddr]['Ep'][x]:
+                    if '0000' in self.ListOfDevices[MsgSrcAddr]['Ep'][x]['0006']:
+                        self.ListOfDevices[MsgSrcAddr]['Ep'][x]['0006']['0000'] = '00'
 
 def Decode8012(self, Devices, MsgData, MsgLQI):
     """
@@ -3947,190 +3916,3 @@ def Decode8807(self, Devices, MsgData, MsgLQI):
         )
     else:
         self.log.logging( "Input", "Status", "Get TxPower : %s" % int(TxPower, 16))
-
-
-def Decode8035(self, Devices, MsgData, MsgLQI):
-
-    # Payload: 030000f104
-
-    PDU_EVENT = {
-        "00": "E_PDM_SYSTEM_EVENT_WEAR_COUNT_TRIGGER_VALUE_REACHED",
-        "01": "E_PDM_SYSTEM_EVENT_DESCRIPTOR_SAVE_FAILED",
-        "02": "E_PDM_SYSTEM_EVENT_PDM_NOT_ENOUGH_SPACE",
-        "03": "E_PDM_SYSTEM_EVENT_LARGEST_RECORD_FULL_SAVE_NO_LONGER_POSSIBLE",
-        "04": "E_PDM_SYSTEM_EVENT_SEGMENT_DATA_CHECKSUM_FAIL",
-        "05": "E_PDM_SYSTEM_EVENT_SEGMENT_SAVE_OK",
-        "06": "E_PDM_SYSTEM_EVENT_EEPROM_SEGMENT_HEADER_REPAIRED",
-        "07": "E_PDM_SYSTEM_EVENT_SYSTEM_INTERNAL_BUFFER_WEAR_COUNT_SWAP",
-        "08": "E_PDM_SYSTEM_EVENT_SYSTEM_DUPLICATE_FILE_SEGMENT_DETECTED",
-        "09": "E_PDM_SYSTEM_EVENT_SYSTEM_ERROR",
-        "0a": "E_PDM_SYSTEM_EVENT_SEGMENT_PREWRITE",
-        "0b": "E_PDM_SYSTEM_EVENT_SEGMENT_POSTWRITE",
-        "0c": "E_PDM_SYSTEM_EVENT_SEQUENCE_DUPLICATE_DETECTED",
-        "0d": "E_PDM_SYSTEM_EVENT_SEQUENCE_VERIFY_FAIL",
-        "0e": "E_PDM_SYSTEM_EVENT_PDM_SMART_SAVE",
-        "0f": "E_PDM_SYSTEM_EVENT_PDM_FULL_SAVE",
-    }
-
-    eventCode = MsgData[0:2]
-    u32eventNumber = MsgData[2:10]
-
-    if eventCode in PDU_EVENT:
-        self.log.logging(
-            "PDM",
-            "Debug",
-            "eventCode: %s (%s) eventNumber: %s"
-            % (eventCode, PDU_EVENT[eventCode], u32eventNumber),
-        )
-        if eventCode == "00":  # E_PDM_SYSTEM_EVENT_WEAR_COUNT_TRIGGER_VALUE_REACHED=0,
-            pass
-        elif eventCode == "01":  # E_PDM_SYSTEM_EVENT_DESCRIPTOR_SAVE_FAILED,
-            # Fatal Error
-            Domoticz.Error(
-                "Decode8035 - PDM Fata Error %s (%s) Record Failure: %s. Factory Reset might be needed!"
-                % (eventCode, PDU_EVENT[eventCode], u32eventNumber)
-            )
-
-        elif eventCode == "02":  # E_PDM_SYSTEM_EVENT_PDM_NOT_ENOUGH_SPACE,
-            # Fatal Error
-            Domoticz.Error(
-                "Decode8035 - PDM Fata Error %s (%s) Record Failure %s. Factory Reset might be needed!"
-                % (eventCode, PDU_EVENT[eventCode], u32eventNumber)
-            )
-
-        elif (
-            eventCode == "03"
-        ):  # E_PDM_SYSTEM_EVENT_LARGEST_RECORD_FULL_SAVE_NO_LONGER_POSSIBLE,
-            u16IdValue = u32eventNumber
-            pass
-        elif eventCode == "04":  # E_PDM_SYSTEM_EVENT_SEGMENT_DATA_CHECKSUM_FAIL,
-            pass
-        elif eventCode == "05":  # E_PDM_SYSTEM_EVENT_SEGMENT_SAVE_OK,
-            pass
-        elif eventCode == "06":  # E_PDM_SYSTEM_EVENT_EEPROM_SEGMENT_HEADER_REPAIRED,
-            # This code can be ignored by the application software and only needs to be logged
-            # if requested by NXP Tech-nical Support.
-            pass
-        elif (
-            eventCode == "07"
-        ):  # E_PDM_SYSTEM_EVENT_SYSTEM_INTERNAL_BUFFER_WEAR_COUNT_SWAP,
-            # This code can be ignored by the application software and only needs to be logged
-            # if requested by NXP Tech-nical Support.
-            pass
-        elif (
-            eventCode == "08"
-        ):  # E_PDM_SYSTEM_EVENT_SYSTEM_DUPLICATE_FILE_SEGMENT_DETECTED,
-            # This code can be ignored by the application software and only needs to be logged
-            # if requested by NXP Tech-nical Support.
-            pass
-        elif eventCode == "09":  # E_PDM_SYSTEM_EVENT_SYSTEM_ERROR,
-            # This code can be ignored by the application software and only needs to be logged
-            # if requested by NXP Tech-nical Support.
-            pass
-        else:
-            self.log.logging(
-                "PDM",
-                "Debug",
-                "Decode8035 - PDM event : eventCode: %s (%s) eventNumber"
-                % (eventCode, PDU_EVENT[eventCode], u32eventNumber),
-            )
-    else:
-        self.log.logging(
-            "PDM",
-            "Debug",
-            "Decode8035 - PDM event : eventCode: %s eventNumber"
-            % (eventCode, u32eventNumber),
-        )
-
-
-## PDM HOST
-def Decode0300(self, Devices, MsgData, MsgLQI):
-
-    self.log.logging( 
-        "Input", "Log", "Decode0300 - PDMHostAvailableRequest: %20.20s" % (MsgData)
-    )
-    pdmHostAvailableRequest(self, MsgData)
-
-
-def Decode0301(self, Devices, MsgData, MsgLQI):
-
-    self.log.logging( "Input", "Log", "Decode0301 - E_SL_MSG_ASC_LOG_MSG: %20.20s" % (MsgData))
-
-
-def Decode0302(self, Devices, MsgData, MsgLQI):
-
-    self.log.logging( "Input", "Log", "Decode0302 - PDMloadConfirmed: %20.20s" % (MsgData))
-    rejoin_legrand_reset(self)
-    pdmLoadConfirmed(self, MsgData)
-
-
-def Decode0200(self, Devices, MsgData, MsgLQI):
-
-    # self.log.logging( "Input", 'Debug',  "Decode0200 - PDMSaveRequest: %20.20s" %(MsgData))
-    PDMSaveRequest(self, MsgData)
-
-
-def Decode0201(self, Devices, MsgData, MsgLQI):
-
-    # self.log.logging( "Input", 'Debug',  "Decode0201 - PDMLoadRequest: %20.20s" %(MsgData))
-    PDMLoadRequest(self, MsgData)
-
-
-def Decode0202(self, Devices, MsgData, MsgLQI):
-
-    # self.log.logging( "Input", 'Debug',  "Decode0202 - PDMDeleteAllRecord: %20.20s" %(MsgData))
-    PDMDeleteAllRecord(self, MsgData)
-
-
-def Decode0203(self, Devices, MsgData, MsgLQI):
-
-    # self.log.logging( "Input", 'Debug',  "Decode0203 - PDMDeleteRecord: %20.20s" %(MsgData))
-    PDMDeleteRecord(self, MsgData)
-
-
-def Decode0204(self, Devices, MsgData, MsgLQI):
-
-    # self.log.logging( "Input", 'Debug',  "Decode0204 - E_SL_MSG_CREATE_BITMAP_RECORD_REQUEST: %20.20s" %(MsgData))
-    PDMCreateBitmap(self, MsgData)
-
-
-def Decode0205(self, Devices, MsgData, MsgLQI):
-
-    # self.log.logging( "Input", 'Debug',  "Decode0205 - E_SL_MSG_DELETE_BITMAP_RECORD_REQUEST: %20.20s" %(MsgData))
-    PDMDeleteBitmapRequest(self, MsgData)
-
-
-def Decode0206(self, Devices, MsgData, MsgLQI):
-
-    # self.log.logging( "Input", 'Debug',  "Decode0206 - PDMGetBitmapRequest: %20.20s" %(MsgData))
-    PDMGetBitmapRequest(self, MsgData)
-
-
-def Decode0207(self, Devices, MsgData, MsgLQI):
-
-    # self.log.logging( "Input", 'Debug',  "Decode0207 - PDMIncBitmapRequest: %20.20s" %(MsgData))
-    PDMIncBitmapRequest(self, MsgData)
-
-
-def Decode0208(self, Devices, MsgData, MsgLQI):
-
-    # self.log.logging( "Input", 'Debug',  "Decode0208 - PDMExistanceRequest: %20.20s" %(MsgData))
-    PDMExistanceRequest(self, MsgData)
-
-
-
-def Decode9999(self, Devices, MsgData, MsgLQI):
-
-    StatusMsg = ''
-    if  MsgData in ZCL_EXTENDED_ERROR_CODES:
-        StatusMsg = ZCL_EXTENDED_ERROR_CODES[MsgData]
-
-    _context = {
-        'Error code': 'ZIG9999',
-        'Device': None,
-        'ExtendedErrorCode': MsgData,
-        'ExtendedErrorDesc': StatusMsg
-    }
-
-    if self.pluginconf.pluginConf['trackError']:
-        self.log.logging( "PDM", "Log", "decode9999 - PDM event : Extended Error code: %s" % (MsgData), None, _context)
