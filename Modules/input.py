@@ -45,7 +45,6 @@ from Modules.tools import (
     instrument_timing
 )
 from Modules.deviceAnnoucement import (
-    device_annoucementv0,
     device_annoucementv1,
     device_annoucementv2,
 )
