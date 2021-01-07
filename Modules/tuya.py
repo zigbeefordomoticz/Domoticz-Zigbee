@@ -304,7 +304,7 @@ def tuya_siren_alarm( self, nwkid, onoff):
 
     cluster_frame = '11'
     cmd = '00' # Command
-    action = '0168'
+    action = '%04x' %struct.unpack('H',struct.pack('>H', 0x0168 ))[0]
     data = '%02x' %onoff
     tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 
@@ -319,7 +319,7 @@ def tuya_siren_alarm_duration( self, nwkid, duration):
 
     cluster_frame = '11'
     cmd = '00' # Command
-    action = '0474'
+    action = '%04x' %struct.unpack('H',struct.pack('>H', 0x0474 ))[0]
     data = '%02x' %duration
     tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 
