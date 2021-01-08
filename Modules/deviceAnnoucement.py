@@ -482,7 +482,7 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
 
     # When reaching that point Nwkid should have been created
     if NwkId not in self.ListOfDevices:
-        self.log.logging( "Input","Error","Device Annoucement: NwkId: %s Ieee: %s MacCap: %s - Error has %s seems not to be created !!!"
+        self.log.logging( "Input","Error","Device Annoucement: NwkId: %s Ieee: %s MacCap: %s - Error has device seems not to be created !!!"
             % ( NwkId, Ieee, MacCapa), NwkId)
         return
 
