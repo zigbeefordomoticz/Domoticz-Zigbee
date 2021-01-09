@@ -32,6 +32,7 @@ SETTINGS = {
         'OnIfOneOn':               {'type': 'bool', 'default': 1, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'forceGroupDeviceRefresh': {'type': 'bool', 'default': 1, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'reComputeGroupState':     {'type': 'bool', 'default': 1, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
+        'allowGroupMembership':          {'type': 'bool', 'default': 1, 'current': None, 'restart': True, 'hidden': False, 'Advanced': True},
     }
     },
 
@@ -103,7 +104,6 @@ SETTINGS = {
         'resetMotiondelay':              {'type': 'int',  'default': 30, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'resetSwitchSelectorPushButton': {'type': 'int',  'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'forceSwitchSelectorPushButton': {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
-        'allowGroupMembership':          {'type': 'bool', 'default': 1, 'current': None, 'restart': True, 'hidden': False, 'Advanced': True},
         'doUnbindBind':                  {'type': 'bool', 'default': 0, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'allowReBindingClusters':        {'type': 'bool', 'default': 1, 'current': None, 'restart': False, 'hidden': False, 'Advanced': True}
     }
@@ -112,7 +112,7 @@ SETTINGS = {
     # Zigate Configuration
     'ZigateConfiguration': {'Order': 7, 'param': {
         'zigatePartOfGroup0000':     {'type': 'bool', 'default': 0,  'current': None, 'restart': True,  'hidden': False, 'Advanced': True},
-        'allowRemoveZigateDevice':   {'type': 'bool', 'default': 0,  'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
+        'allowRemoveZigateDevice':   {'type': 'bool', 'default': 1,  'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'blueLedOnOff':              {'type': 'bool', 'default': 1,  'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'resetPermit2Join':          {'type': 'bool', 'default': 1,  'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'Ping':                      {'type': 'bool', 'default': 1,  'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
@@ -378,7 +378,7 @@ def _load_Settings(self):
     with open(self.pluginConf['filename'], 'rt') as handle:
         _pluginConf = {}
         try:
-            _pluginConf = json.load(handle, encoding=dict)
+            _pluginConf = json.load(handle)
 
         except json.decoder.JSONDecodeError as e:
             Domoticz.Error("poorly-formed %s, not JSON: %s" %

@@ -231,7 +231,7 @@ class WebServer(object):
                     if line[0] != '{' and line[-1] != '}':
                         continue
 
-                    entry = json.loads( line, encoding=dict )
+                    entry = json.loads( line )
                     for _ts in entry:
                         _timestamps_lst.append( _ts )
                         _scan[_ts] = entry[ _ts ]
@@ -254,7 +254,7 @@ class WebServer(object):
                                 handle.write( line )
                                 continue
 
-                            entry = json.loads( line, encoding=dict )
+                            entry = json.loads( line )
                             entry_ts = entry.keys()
                             if len( entry_ts ) == 1:
                                 if timestamp in entry_ts:

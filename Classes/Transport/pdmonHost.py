@@ -253,7 +253,7 @@ def openPDM( self ):
         with open( zigatePDMfilename, 'r') as zigatePDMfile:
             self.PDM = {}
             try:
-                self.PDM = json.load( zigatePDMfile, encoding=dict)
+                self.PDM = json.load( zigatePDMfile)
 
             except json.decoder.JSONDecodeError as e:
                 Domoticz.Error("error while reading Zigate PDM on Host %s, not JSON: %s" %( zigatePDMfilename,e))

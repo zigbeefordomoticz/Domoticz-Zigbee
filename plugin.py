@@ -220,7 +220,7 @@ class BasePlugin:
         # Open VERSION file in .hidden
         with open( Parameters["HomeFolder"] + VERSION_FILENAME, 'rt') as versionfile:
             try:
-                _pluginversion = json.load( versionfile, encoding=dict)
+                _pluginversion = json.load( versionfile)
             except Exception as e:
                 Domoticz.Error("Error when opening: %s -- %s" %( Parameters["HomeFolder"] + VERSION_FILENAME, e))
                 return

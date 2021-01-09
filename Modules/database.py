@@ -107,7 +107,7 @@ def LoadDeviceList( self ):
         with open( dbName , 'rt') as handle:
             _listOfDevices = {}
             try:
-                _listOfDevices = json.load( handle, encoding=dict)
+                _listOfDevices = json.load( handle)
             except json.decoder.JSONDecodeError as e:
                 res = "Failed"
                 Domoticz.Error("loadJsonDatabase poorly-formed %s, not JSON: %s" %(self.pluginConf['filename'],e))

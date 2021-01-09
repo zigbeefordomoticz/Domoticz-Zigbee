@@ -585,7 +585,7 @@ def open_casa_config( self ): # OK 6/11/2020
     if os.path.isfile( casaiafilename ):
         with open( casaiafilename , 'rt') as handle:
             try:
-                self.CasaiaPAC = json.load( handle, encoding=dict)
+                self.CasaiaPAC = json.load( handle)
             except json.decoder.JSONDecodeError as e:
                 res = "Failed"
                 self.log.logging( "CasaIA", "Error", "loadJsonDatabase poorly-formed %s, not JSON: %s" %(self.pluginConf['filename'],e))

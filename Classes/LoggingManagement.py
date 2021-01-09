@@ -66,7 +66,7 @@ class LoggingManagement:
             #Domoticz.Error(repr(e))
             return
         try:
-            self.LogErrorHistory = json.load( handle, encoding=dict)
+            self.LogErrorHistory = json.load( handle)
             # By default we will leave No Error even if there are from the past
             #if bool(self.LogErrorHistory):
             #    self._newError  = True
