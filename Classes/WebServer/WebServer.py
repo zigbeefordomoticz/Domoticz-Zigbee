@@ -751,7 +751,7 @@ class WebServer(object):
                     continue
 
                 device = {'_NwkId': x}
-                for item in ( 'ZDeviceName', 'IEEE', 'Model', 'MacCapa', 'Status', 'ConsistencyCheck', 'Health', 'LQI', 'Battery'):
+                for item in ( 'Param', 'ZDeviceName', 'IEEE', 'Model', 'MacCapa', 'Status', 'ConsistencyCheck', 'Health', 'LQI', 'Battery'):
                     if item in self.ListOfDevices[x]:
                         if item == 'MacCapa':
                             device['MacCapa'] = []
@@ -776,6 +776,8 @@ class WebServer(object):
                                 device[item] = ''
                             else:
                                 device[item] = self.ListOfDevices[x][item]
+                    elif item == 'Param':
+                        device[item] = {}
                     else:
                         device[item] = ''
 
@@ -813,11 +815,15 @@ class WebServer(object):
             for x in data:
                 if 'ZDeviceName' in x and 'IEEE' in x:
                     for dev in self.ListOfDevices:
-                        if self.ListOfDevices[dev]['IEEE'] == x['IEEE'] and \
-                                self.ListOfDevices[dev]['ZDeviceName'] != x['ZDeviceName']:
-                            self.ListOfDevices[dev]['ZDeviceName'] = x['ZDeviceName']
-                            self.logging( 'Debug', "Updating ZDeviceName to %s for IEEE: %s NWKID: %s" \
-                                    %(self.ListOfDevices[dev]['ZDeviceName'], self.ListOfDevices[dev]['IEEE'], dev))
+                        if self.ListOfDevices[dev]['IEEE'] == x['IEEE']:
+                            if self.ListOfDevices[dev]['ZDeviceName'] != x['ZDeviceName']:
+                                self.ListOfDevices[dev]['ZDeviceName'] = x['ZDeviceName']
+                                self.logging( 'Debug', "Updating ZDeviceName to %s for IEEE: %s NWKID: %s" \
+                                        %(self.ListOfDevices[dev]['ZDeviceName'], self.ListOfDevices[dev]['IEEE'], dev))
+                            if 'Param' not in self.ListOfDevices[dev] or self.ListOfDevices[dev]['Param'] != x['Param']:
+                                self.ListOfDevices[dev]['Param'] = x['Param']
+                                self.logging( 'Debug', "Updating Param to %s for IEEE: %s NWKID: %s" \
+                                %(self.ListOfDevices[dev]['Param'], self.ListOfDevices[dev]['IEEE'], dev))                            
                 else:
                     Domoticz.Error("wrong data received: %s" %data)
 
