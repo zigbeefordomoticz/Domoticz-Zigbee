@@ -20,6 +20,7 @@ import time
 class LoggingManagement:
 
     def __init__(self, pluginconf, PluginHealth, HardwareID, ListOfDevices, permitTojoin):
+        self._newError = False
         self.LogErrorHistory = {}
         self.pluginconf = pluginconf
         self.loggingFileHandle = None
@@ -30,9 +31,14 @@ class LoggingManagement:
         self.FirmwareVersion = None
         self.FirmwareMajorVersion = None
         self._startTime = int(time.time())
-        
-        
-        
+          
+
+    def reset_new_error( self ):
+        self._newError  = False
+
+    def is_new_error( self ):
+        return bool(self._newError and bool(self.LogErrorHistory))
+
     def loggingUpdateFirmware(self, FirmwareVersion, FirmwareMajorVersion):
         if self.FirmwareVersion and self.FirmwareMajorVersion:
             return
@@ -60,7 +66,11 @@ class LoggingManagement:
             #Domoticz.Error(repr(e))
             return
         try:
-            self.LogErrorHistory = json.load( handle, encoding=dict)
+            self.LogErrorHistory = json.load( handle)
+            # By default we will leave No Error even if there are from the past
+            #if bool(self.LogErrorHistory):
+            #    self._newError  = True
+
         except json.decoder.JSONDecodeError as e:
             res = "Failed"
             Domoticz.Error("load Json LogErrorHistory poorly-formed %s, not JSON: %s" %(jsonLogHistory,e))
@@ -76,15 +86,23 @@ class LoggingManagement:
 
     def logToFile( self, message ):
 
-            Domoticz.Status( message )
-            message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " [" + threading.current_thread().name + "] " + message + '\n'
+            
+            if self.pluginconf.pluginConf['logThreadName']:
+                Domoticz.Log( " [%15s] " %threading.current_thread().name + message )
+                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) +  " [%15s] " %threading.current_thread().name + message + '\n'
+            else:
+                Domoticz.Log( message )
+                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) +  message + '\n'
             self.loggingFileHandle.write( message )
             self.loggingFileHandle.flush()
 
     def _loggingStatus( self, message):
 
         if self.pluginconf.pluginConf['useDomoticzLog']:
-            Domoticz.Status( message )
+            if self.pluginconf.pluginConf['logThreadName']:
+                Domoticz.Status(  " [%15s] " %threading.current_thread().name + message)
+            else:
+                Domoticz.Status( message )
         else:
             if self.loggingFileHandle is None:
                 self.openLogFile()
@@ -93,7 +111,10 @@ class LoggingManagement:
     def _loggingLog( self, message):
 
         if self.pluginconf.pluginConf['useDomoticzLog']:
-            Domoticz.Log( message )
+            if self.pluginconf.pluginConf['logThreadName']:
+                Domoticz.Log(  " [%15s] " %threading.current_thread().name + message )
+            else:
+               Domoticz.Log( message ) 
         else: 
             if self.loggingFileHandle is None:
                 self.openLogFile()
@@ -102,7 +123,10 @@ class LoggingManagement:
     def _loggingDebug(self, message):
 
         if self.pluginconf.pluginConf['useDomoticzLog']:
-            Domoticz.Log( message )
+            if self.pluginconf.pluginConf['logThreadName']:
+                Domoticz.Log(  " [%15s] " %threading.current_thread().name + message )
+            else:
+                Domoticz.Log( message )
         else: 
             if self.loggingFileHandle is None:
                 self.openLogFile()
@@ -244,3 +268,4 @@ class LoggingManagement:
             
     def loggingClearErrorHistory( self ):
         self.LogErrorHistory.clear()
+        self._newError = False

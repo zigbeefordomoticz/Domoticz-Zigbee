@@ -231,7 +231,7 @@ class WebServer(object):
                     if line[0] != '{' and line[-1] != '}':
                         continue
 
-                    entry = json.loads( line, encoding=dict )
+                    entry = json.loads( line )
                     for _ts in entry:
                         _timestamps_lst.append( _ts )
                         _scan[_ts] = entry[ _ts ]
@@ -254,7 +254,7 @@ class WebServer(object):
                                 handle.write( line )
                                 continue
 
-                            entry = json.loads( line, encoding=dict )
+                            entry = json.loads( line )
                             entry_ts = entry.keys()
                             if len( entry_ts ) == 1:
                                 if timestamp in entry_ts:
@@ -329,15 +329,17 @@ class WebServer(object):
             Statistics['APSNck'] =  0
             Statistics['StartTime'] = int(time()) - 120
         else:
-            Statistics['ZiGateRound8000TimeMaxms'] = self.statistics._maxTiming8000
-            Statistics['ZiGateRound8000TimeAveragems'] = self.statistics._averageTiming8000
-            Statistics['ZiGateRound8011TimeMaxms'] = self.statistics._maxTiming8011
-            Statistics['ZiGateRound8011TimeAveragems'] = self.statistics._averageTiming8011
-            Statistics['ZiGateRound8012TimeMaxms'] = self.statistics._maxTiming8012
-            Statistics['ZiGateRound8012TimeAveragems'] = self.statistics._averageTiming8012
+            Statistics['MaxZiGateRoundTime8000 '] = self.statistics._maxTiming8000
+            Statistics['AvgZiGateRoundTime8000 '] = self.statistics._averageTiming8000
+            Statistics['MaxZiGateRoundTime8011 '] = self.statistics._maxTiming8011
+            Statistics['AvgZiGateRoundTime8011 '] = self.statistics._averageTiming8011
+            Statistics['MaxZiGateRoundTime8012 '] = self.statistics._maxTiming8012
+            Statistics['AvgZiGateRoundTime8012 '] = self.statistics._averageTiming8012
+            Statistics['MaxTimeSpentInProcFrame'] = self.statistics._max_reading_thread_timing
+            Statistics['AvgTimeSpentInProcFrame'] = self.statistics._average_reading_thread_timing
 
-            Statistics['ZiGateMessageProcessTimeOnRxMax'] = self.statistics._maxRxProcesses
-            Statistics['ZiGateMessageProcessTimeOnRxAverage'] = self.statistics._averageRxProcess
+            Statistics['MaxTimeSpentInForwarder'] = self.statistics._maxRxProcesses
+            Statistics['AvgTimeSpentInForwarder'] = self.statistics._averageRxProcess
 
             Statistics['CRC'] =self.statistics._crcErrors
             Statistics['FrameErrors'] =self.statistics._frameErrors
@@ -354,12 +356,6 @@ class WebServer(object):
 
             Statistics['MaxApdu'] = self.statistics._MaxaPdu
             Statistics['MaxNpdu'] = self.statistics._MaxnPdu 
-
-            Statistics['MaxSerialInWaiting'] = self.statistics._serialInWaiting
-            Statistics['MaxSerialOutWaiting'] = self.statistics._serialOutWaiting
-
-            Statistics['MaxReadingThreadTime'] = self.statistics._max_reading_thread_timing
-            Statistics['AvgReadingThreadTime'] = self.statistics._average_reading_thread_timing
 
             _nbitems = len(self.statistics.TrendStats)
 
@@ -390,7 +386,7 @@ class WebServer(object):
         Statistics['Rxph'] = round(Statistics['Received'] / Statistics['Uptime'] * 3600, 2)
 
         # LogErrorHistory . Hardcode on the UI side
-        Statistics['Error'] = bool(self.log.LogErrorHistory)
+        Statistics['Error'] = self.log.is_new_error()
         _response = prepResponseMessage( self ,setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
@@ -755,7 +751,7 @@ class WebServer(object):
                     continue
 
                 device = {'_NwkId': x}
-                for item in ( 'ZDeviceName', 'IEEE', 'Model', 'MacCapa', 'Status', 'ConsistencyCheck', 'Health', 'LQI', 'Battery'):
+                for item in ( 'Param', 'ZDeviceName', 'IEEE', 'Model', 'MacCapa', 'Status', 'ConsistencyCheck', 'Health', 'LQI', 'Battery'):
                     if item in self.ListOfDevices[x]:
                         if item == 'MacCapa':
                             device['MacCapa'] = []
@@ -780,6 +776,8 @@ class WebServer(object):
                                 device[item] = ''
                             else:
                                 device[item] = self.ListOfDevices[x][item]
+                    elif item == 'Param':
+                        device[item] = {}
                     else:
                         device[item] = ''
 
@@ -817,11 +815,15 @@ class WebServer(object):
             for x in data:
                 if 'ZDeviceName' in x and 'IEEE' in x:
                     for dev in self.ListOfDevices:
-                        if self.ListOfDevices[dev]['IEEE'] == x['IEEE'] and \
-                                self.ListOfDevices[dev]['ZDeviceName'] != x['ZDeviceName']:
-                            self.ListOfDevices[dev]['ZDeviceName'] = x['ZDeviceName']
-                            self.logging( 'Debug', "Updating ZDeviceName to %s for IEEE: %s NWKID: %s" \
-                                    %(self.ListOfDevices[dev]['ZDeviceName'], self.ListOfDevices[dev]['IEEE'], dev))
+                        if self.ListOfDevices[dev]['IEEE'] == x['IEEE']:
+                            if self.ListOfDevices[dev]['ZDeviceName'] != x['ZDeviceName']:
+                                self.ListOfDevices[dev]['ZDeviceName'] = x['ZDeviceName']
+                                self.logging( 'Debug', "Updating ZDeviceName to %s for IEEE: %s NWKID: %s" \
+                                        %(self.ListOfDevices[dev]['ZDeviceName'], self.ListOfDevices[dev]['IEEE'], dev))
+                            if 'Param' not in self.ListOfDevices[dev] or self.ListOfDevices[dev]['Param'] != x['Param']:
+                                self.ListOfDevices[dev]['Param'] = x['Param']
+                                self.logging( 'Debug', "Updating Param to %s for IEEE: %s NWKID: %s" \
+                                %(self.ListOfDevices[dev]['Param'], self.ListOfDevices[dev]['IEEE'], dev))                            
                 else:
                     Domoticz.Error("wrong data received: %s" %data)
 
@@ -1215,6 +1217,7 @@ class WebServer(object):
             if self.log.LogErrorHistory:
                 try:
                     _response["Data"] =  json.dumps( self.log.LogErrorHistory, sort_keys=False ) 
+                    self.log.reset_new_error()
                 except Exception as e:
                     Domoticz.Error("rest_logErrorHistory - Exception %s while saving: %s" %(e, str(self.log.LogErrorHistory)))
         return _response

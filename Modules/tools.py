@@ -154,7 +154,7 @@ def DeviceExist(self, Devices, lookupNwkId , lookupIEEE = ''):
         True if object found
         False if not found
     """
-
+    ieee_from_nwkid = None
     found = False
     #Validity check
     if lookupNwkId == '':
@@ -162,19 +162,23 @@ def DeviceExist(self, Devices, lookupNwkId , lookupIEEE = ''):
 
     #1- Check if found in ListOfDevices
     #   Verify that Status is not 'UNKNOWN' otherwise condider not found
-    if lookupNwkId in self.ListOfDevices:
-        if 'Status' in self.ListOfDevices[lookupNwkId] :
-            # Found, let's check the Status
-            if self.ListOfDevices[lookupNwkId]['Status'] != 'UNKNOWN':
-                found = True
+    if ( lookupNwkId in self.ListOfDevices and 'Status' in self.ListOfDevices[lookupNwkId] ):
+        if 'IEEE' in self.ListOfDevices[lookupNwkId]:
+            ieee_from_nwkid = self.ListOfDevices[lookupNwkId]['IEEE']
+
+        # Found, let's check the Status
+        if self.ListOfDevices[lookupNwkId]['Status'] != 'UNKNOWN':
+            found = True
 
     # 2- We might have found it with the lookupNwkId 
     # If we didnt find it, we should check if this is not a new ShortId  
     if lookupIEEE:
         if lookupIEEE not in self.IEEE2NWK:
-            # Not found
+            # Not found. Here there is a risk to return found == True ??? This doesn' sound good !
+            # As we have some inconsistency. A Device is known by it's NwkId , but unknown
+            Domoticz.Error("DeviceExist - Found some inconsistency Inputs: %s %s instead of %s" %( lookupNwkId , lookupIEEE, ieee_from_nwkid))
             return found
-        
+
         # We found IEEE, let's get the Short Address 
         exitsingNwkId = self.IEEE2NWK[ lookupIEEE ]
         if exitsingNwkId == lookupNwkId:
@@ -232,7 +236,7 @@ def DeviceExist(self, Devices, lookupNwkId , lookupIEEE = ''):
                 devName = Devices[x].Name
                 break
         self.adminWidgets.updateNotificationWidget( Devices, 'Reconnect %s with %s/%s' %( devName, lookupNwkId, lookupIEEE ))
- 
+
     return found
 
 

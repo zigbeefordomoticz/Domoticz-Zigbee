@@ -25,6 +25,9 @@ MAX_FOR_ZIGATE_BUZY = 6
 # If there is a need to read more than 4 Attributes at a time, then breakdown the request into several.
 MAX_READATTRIBUTES_REQ = 4   # Number of Attributes to be requested via 0x0100
 
+# Number of silmutaneous command sent to ZiGate. It must be 1 in case of firmware below 31c
+MAX_SIMULTANEOUS_ZIGATE_COMMANDS = 1  
+
 CERTIFICATION = {
     0x01: 'CE',
     0x02: 'FCC'}
@@ -313,9 +316,9 @@ ZIGATE_COMMANDS = {
     0x0002: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', '8012': False, 'Command': 'set rawmode', 'NwkId 2nd Bytes': False},
     0x0003: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', '8012': False, 'Command': 'set hybrid mode', 'NwkId 2nd Bytes': False},
     0x0009: {'Sequence': (0x8000, 0x8009), 'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', '8012': False, 'Command': 'Get Network State (Firm v3.0d)', 'NwkId 2nd Bytes': False},
-    0x0010: {'Sequence': (0x8010, ),       'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', '8012': False, 'Command': 'Get Version', 'NwkId 2nd Bytes': False},
+    0x0010: {'Sequence': (0x8000, 0x8010), 'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', '8012': False, 'Command': 'Get Version', 'NwkId 2nd Bytes': False},
     0x0011: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', '8012': False, 'Command': 'Reset', 'NwkId 2nd Bytes': False},
-    0x0012: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', '8012': False, 'Command': 'Erase Persistent Data', 'NwkId 2nd Bytes': False},
+    0x0012: {'Sequence': (0x0302, ),       'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', '8012': False, 'Command': 'Erase Persistent Data', 'NwkId 2nd Bytes': False},
     0x0013: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', '8012': False, 'Command': 'ZLO/ZLL “Factory New” Reset', 'NwkId 2nd Bytes': False},
     0x0014: {'Sequence': (0x8000, 0x8014), 'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', '8012': False, 'Command': 'Permit Join', 'NwkId 2nd Bytes': False},
     0x0015: {'Sequence': (0x8000, 0x8015), 'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', '8012': False, 'Command': 'Get devices list', 'NwkId 2nd Bytes': False},
@@ -534,6 +537,7 @@ ZIGBEE_COMMAND_IDENTIFIER = {
 
 ZIGATE_MSG_PROC_TANSPORT = {
     0x8000: 'Command Response',
+    0x8012: 'APS Data Confirm',
     0x8011: 'Ack/Nack Response',
     0x8701: 'Router Disocver',
     0x8702: 'APS Data Confirm Fail',

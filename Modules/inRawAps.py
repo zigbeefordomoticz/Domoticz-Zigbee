@@ -55,6 +55,7 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Man
         "_TZE200_kfvq6avy" : tuyaReadRawAPS ,
         "_TZE200_i48qyn9s" : tuyaReadRawAPS ,
         '_TZE200_d0yu2xgi' : tuyaReadRawAPS, # TS0601 Sirene
+        "_TZ3000_peszejy7" : tuyaReadRawAPS , # Seem for TS0041 ( 1 Gang Switch)
         'OWON': casaiaReadRawAPS,
     }
 
