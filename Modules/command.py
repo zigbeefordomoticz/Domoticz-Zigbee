@@ -223,6 +223,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             if profalux:
                 profalux_MoveToLiftAndTilt( self, NWKID, level=1 )
 
+        elif DeviceType == "TuyaSiren":
+            tuya_siren_alarm( self, NWKID, 0x00)
+
+
         elif DeviceType == "WindowCovering":
             sendZigateCmd(self, "00FA","02" + NWKID + ZIGATE_EP + EPout + "01") # Blind inverted (On, for Close)
 
@@ -618,9 +622,16 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
 
         elif DeviceType == "TuyaSiren":
             if Level == 10:
-                tuya_siren_alarm( self, NWKID, 0x00)
+                tuya_siren_alarm( self, NWKID, 0x01, 1)
             elif Level == 20:
-                tuya_siren_alarm( self, NWKID, 0x01)
+                tuya_siren_alarm( self, NWKID, 0x01, 2)
+            elif Level == 30:
+                tuya_siren_alarm( self, NWKID, 0x01, 3)
+            elif Level == 40:
+                tuya_siren_alarm( self, NWKID, 0x01, 4)
+            elif Level == 50:
+                tuya_siren_alarm( self, NWKID, 0x01, 5)
+
 
         elif DeviceType == 'Toggle':
             self.log.logging( "Command", 'Debug', "Toggle switch - value: %s" %Level)

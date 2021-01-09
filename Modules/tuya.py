@@ -207,20 +207,26 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
     elif decode_dp == 0x0168:
         # Alarm
         if data == '00':
-            MajDomoDevice(self, Devices, NwkId, srcEp, '0006', '01')
+            MajDomoDevice(self, Devices, NwkId, srcEp, '0006', '00')
         else:
-            MajDomoDevice(self, Devices, NwkId, srcEp, '0006', '02')
+            MajDomoDevice(self, Devices, NwkId, srcEp, '0006', '01')
 
     elif decode_dp == 0x0171:
         # Alarm by Temperature
-        if data == '01':
-            MajDomoDevice(self, Devices, NwkId, srcEp, '0006', '03')
+        pass
 
     elif decode_dp == 0x0172:
         # Alarm by humidity
-        if data == '01':
-            MajDomoDevice(self, Devices, NwkId, srcEp, '0006', '04')
+        pass
 
+
+    elif decode_dp == 0x0466:
+        # Current Melody
+        MajDomoDevice(self, Devices, NwkId, srcEp, '0006', (int(data,16)))
+
+    elif decode_dp == 0x0474:
+        # Current Sire Volume
+        pass
 
     elif decode_dp == 0x026b:
         # Min Alarm Temperature
@@ -287,15 +293,14 @@ def tuya_trv_mode( self, nwkid, mode):
     data = '%02x' %( mode // 10 )
     tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)   
 
-
-def tuya_siren_alarm( self, nwkid, onoff):
+def tuya_siren_alarm( self, nwkid, onoff, melody=1):
  
     self.log.logging( "Tuya", 'Debug', "tuya_siren_alarm - %s onoff: %s" %(nwkid, onoff))
 
-    tuya_siren_alarm_duration( self, nwkid, 1)
-    tuya_siren_alarm_volume( self, nwkid, 2)
-    tuya_siren_alarm_melody( self, nwkid, 5)
-
+    if onoff == 0x01:
+        tuya_siren_alarm_duration( self, nwkid, 60)
+        tuya_siren_alarm_melody( self, nwkid, melody)
+        tuya_siren_alarm_volume( self, nwkid, 1)
 
     # determine which Endpoint
     EPout = '01'
@@ -309,6 +314,7 @@ def tuya_siren_alarm( self, nwkid, onoff):
     tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 
 def tuya_siren_alarm_duration( self, nwkid, duration):
+    # duration in second
      
     self.log.logging( "Tuya", 'Debug', "tuya_siren_alarm_duration - %s duration: %s" %(nwkid, duration))
 
@@ -319,14 +325,17 @@ def tuya_siren_alarm_duration( self, nwkid, duration):
 
     cluster_frame = '11'
     cmd = '00' # Command
-    action = '%04x' %struct.unpack('H',struct.pack('>H', 0x0474 ))[0]
-    data = '%02x' %duration
+    action = '%04x' %struct.unpack('H',struct.pack('>H', 0x0267 ))[0]
+    data = '%08x' %duration
     tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 
 def tuya_siren_alarm_volume( self, nwkid, volume):
+    # 0-Max, 1-Medium, 2-Low
+    # 0- 95db
+    # 1- 80db
+    # 2- 70db
      
     self.log.logging( "Tuya", 'Debug', "tuya_siren_alarm_volume - %s volume: %s" %(nwkid, volume))
-
     # determine which Endpoint
     EPout = '01'
 
@@ -334,11 +343,12 @@ def tuya_siren_alarm_volume( self, nwkid, volume):
 
     cluster_frame = '11'
     cmd = '00' # Command
-    action = '0474'
+    action = '%04x' %struct.unpack('H',struct.pack('>H', 0x0474 ))[0]
     data = '%02x' %volume
     tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 
 def tuya_siren_alarm_melody( self, nwkid, melody):
+    # 5-Melody 1, 2, 3, 4
      
     self.log.logging( "Tuya", 'Debug', "tuya_siren_alarm_melody - %s onoff: %s" %(nwkid, melody))
 
@@ -349,7 +359,7 @@ def tuya_siren_alarm_melody( self, nwkid, melody):
 
     cluster_frame = '11'
     cmd = '00' # Command
-    action = '0466'
+    action = '%04x' %struct.unpack('H',struct.pack('>H', 0x0466 ))[0]
     data = '%02x' %melody
     tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 

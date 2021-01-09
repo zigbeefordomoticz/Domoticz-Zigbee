@@ -355,13 +355,13 @@ def CreateDomoDevice(self, Devices, NWKID):
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in ACMode" %(t), NWKID)
 
             # 5 Selectors, Style 1
-            if t in ('Generic_5_buttons', 'LegrandSelector', 'SwitchAQ3', 'SwitchIKEA', 'AqaraOppleMiddleBulb'): 
+            if t in ('Generic_5_buttons', 'LegrandSelector', 'SwitchAQ3', 'SwitchIKEA', 'AqaraOppleMiddleBulb', 'TuyaSiren'): 
                 Options = createSwitchSelector( self,  5,  DeviceType = t,SelectorStyle = 1 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Generic_5" %(t), NWKID)
 
             # 5 Selectors, Style 1, OffHidden
-            if t in ('IAS_ACE', 'TuyaSiren'): 
+            if t in ('IAS_ACE', ): 
                 Options = createSwitchSelector( self,  5,  DeviceType = t, OffHidden= True, SelectorStyle = 1 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Generic_5" %(t), NWKID)
@@ -373,7 +373,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in AlarmWD" %(t), NWKID)
 
             # 6 Buttons, Style 1, OffHidden
-            if t in ('GenericLvlControl', 'AqaraOppleMiddle'): 
+            if t in ('GenericLvlControl', 'AqaraOppleMiddle', ): 
 
                Options = createSwitchSelector( self,  6,  DeviceType = t,OffHidden= True, SelectorStyle = 1 )
                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)

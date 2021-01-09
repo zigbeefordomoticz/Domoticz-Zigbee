@@ -233,6 +233,7 @@ SWITCH_LVL_MATRIX = {
 
     "DSwitch": {
         "LevelNames": "Off|Left Click|Right Click|Both Click" ,
+        'ForceUpdate': True,
         "Language": {
             "fr-FR": {"LevelNames": "Off|Left Click|Right Click|Both Click" }
             }
@@ -364,6 +365,7 @@ SWITCH_LVL_MATRIX = {
     },
 
     'ContractPower': {
+        'ForceUpdate': False,
         "LevelNames": "Off|3KVA|6KVA|9KVA|12KVA|15KVA",
         "Language": {
             "fr-FR": {"LevelNames": "Off|3KVA|6KVA|9KVA|12KVA|15KVA"}
@@ -371,6 +373,7 @@ SWITCH_LVL_MATRIX = {
     },
 
     "FIP": { 
+        'ForceUpdate': True,
         "LevelNames": "Off|Confort|Confort -1|Confort -2|Eco|Frost Protection|Off",
         "Language": {
             "fr-FR": {"LevelNames": "Arrêt|Confort|Confort -1|Confort -2|Eco|Hors Gel|Arrêt"}
@@ -388,6 +391,7 @@ SWITCH_LVL_MATRIX = {
     },
 
     "AlarmWD": { 
+        'ForceUpdate': True,
         "LevelNames": "Stop|Alarm|Siren|Strobe|Armed|Disarmed",
         "Language": {
             "fr-FR": {"LevelNames": "Arrêter|Alarme|Sirène|Flash|Armer|Désarmer"}
@@ -395,15 +399,17 @@ SWITCH_LVL_MATRIX = {
     },
 
     "TuyaSiren": {
+        'ForceUpdate': True,
         "00": ( 0, "00"),
         "01": ( 1, "10"),
         "02": ( 2, "20"),
-        "03": ( 4, "30"),
+        "03": ( 3, "30"),
         "04": ( 4, "40"),
-        "LevelNames": "Off|Stop|Alarm|Alarm by Temperature|Alarm by Humidity",
+        "05": ( 5, "50"),
+        "LevelNames": "Off|Alarm 1|Alarm 2|Alarm 3|Alarm 4|Alarm 5",
         "Languages": {
             "fr-FR": {
-               "LevelNames": "Off|Stop|Alarme|Temperature Alarme|Humidité Alarme" 
+               "LevelNames": "Off|Alarm 1|Alarm 2|Alarm 3|Alarm 4|Alarm 5" 
             }
         }
     },
