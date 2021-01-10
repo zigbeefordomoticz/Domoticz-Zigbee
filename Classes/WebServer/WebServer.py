@@ -771,13 +771,16 @@ class WebServer(object):
                             else :
                                 device['MacCapa'].append("Battery")
                             self.logging( 'Debug', "decoded MacCapa from: %s to %s" %(self.ListOfDevices[x][item], str(device['MacCapa'])))
+                        elif item == 'Param':
+                            device[item] = str( self.ListOfDevices[x][item])
                         else:
                             if self.ListOfDevices[x][item] == {}:
                                 device[item] = ''
                             else:
                                 device[item] = self.ListOfDevices[x][item]
                     elif item == 'Param':
-                        device[item] = {}
+                        # Seems unknown, so let's create it
+                        device[item] = str ( {} )
                     else:
                         device[item] = ''
 
@@ -1240,13 +1243,13 @@ class WebServer(object):
 def check_device_param( self, nwkid, param ):
 
     try:
-        return eval(param['Param'])
+        return eval( param )
 
     except Exception as e:
         if 'ZDeviceName' in self.ListOfDevices[nwkid]:
-            self.logging( 'Error', "When updating Device Management, Device: %s/%s got a wrong Parameter syntax for %s error %s. make sure to use JSON syntax" %( 
+            self.logging( 'Error', "When updating Device Management, Device: %s/%s got a wrong Parameter syntax for '%s' - %s.\n Make sure to use JSON syntax" %( 
                 self.ListOfDevices[nwkid][ 'ZDeviceName'], nwkid, param, e) )
         else:
-            self.logging( 'Error', "When updating Device Management, Device: %s got a wrong Parameter syntax for %s error %s. make sure to use JSON syntax" %( 
+            self.logging( 'Error', "When updating Device Management, Device: %s got a wrong Parameter syntax for '%s' - %s.\n Make sure to use JSON syntax" %( 
                 nwkid, param, e) )
     return {} 
