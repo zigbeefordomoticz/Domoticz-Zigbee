@@ -147,8 +147,6 @@ def thermostat_Calibration ( self, NwkId, calibration = None):
         calibration = int(hex( -calibration - pow(2,32) )[9:],16)
         self.log.logging( "Thermostats", 'Debug', "thermostat_Calibration - 2 complement form of Calibration offset on %s off %s" %( NwkId, calibration))
 
-
-
     if 'Thermostat' not in self.ListOfDevices[NwkId]:
         self.ListOfDevices[NwkId]['Thermostat'] = {}
 
