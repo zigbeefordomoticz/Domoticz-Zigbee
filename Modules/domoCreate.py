@@ -302,7 +302,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options, Image = 7)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in FanControl" %(t), NWKID)        
 
-            if t in ( 'ACSwing', ): # 2
+            if t in ( 'ACSwing', 'TuyaSirenHumi', 'TuyaSirenTemp'): # 2
                 Options = createSwitchSelector( self, 2 , DeviceType = t, SelectorStyle = 1)
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in ACSwing" %(t), NWKID)        

@@ -461,6 +461,18 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                         sValue = '30'
                         UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
 
+            elif WidgetType == 'TuyaSirenHumi':
+                if Attribute_ == '0172':
+                    nValue = int(value)
+                    sValue = 10 * nValue
+                    UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
+
+            elif WidgetType == 'TuyaSirenTemp':
+                if Attribute_ == '0171':
+                    nValue = int(value)
+                    sValue = 10 * nValue
+                    UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
+
             elif WidgetType == "DButton":
                 # double bouttons avec EP different lumi.sensor_86sw2 
                 value = int(value)

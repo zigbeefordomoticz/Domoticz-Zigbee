@@ -366,6 +366,9 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                     self.log.logging( "Cluster", 'Debug', "Not redoing the DeviceConf enrollement", MsgSrcAddr)
                     return
 
+            if 'Param' in self.DeviceConf[modelName]:
+                self.ListOfDevices[MsgSrcAddr]['Param'] = dict(self.DeviceConf[modelName]['Param'])
+
             _BackupEp = None
             if 'Type' in self.DeviceConf[modelName]:                                   # If type exist at top level : copy it
                 if 'ConfigSource' not in self.ListOfDevices[MsgSrcAddr]:

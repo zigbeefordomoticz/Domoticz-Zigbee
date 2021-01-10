@@ -414,6 +414,29 @@ SWITCH_LVL_MATRIX = {
         }
     },
 
+    "TuyaSirenHumi": {
+        'ForceUpdate': True,
+        "00": ( 0, "00"),
+        "01": ( 1, "10"),
+        "LevelNames": "Off|Alarm Humidity",
+        "Languages": {
+            "fr-FR": {
+               "LevelNames": "Off|Alarm Humidité" 
+            }
+        }
+    },
+    "TuyaSirenTemp": {
+        'ForceUpdate': True,
+        "00": ( 0, "00"),
+        "01": ( 1, "10"),
+        "LevelNames": "Off|Alarm Temperature",
+        "Languages": {
+            "fr-FR": {
+               "LevelNames": "Off|Alarm Température" 
+            }
+        }
+    },
+
     "OrviboRemoteSquare": {
         0: (0, "Off"), 
         11: (1, "10"), 

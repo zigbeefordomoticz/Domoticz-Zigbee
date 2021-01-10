@@ -8,7 +8,7 @@
 			"ef00":"", 
 			"000a":"", 
 			"0019":"", 
-			"Type":"Temp/Humi/TuyaSiren"}
+			"Type":"Temp/Humi/TuyaSiren/TuyaSirenHumi/TuyaSirenTemp"}
 	},
 	"Type":"",
 	"ClusterToBind": [ "0001", "0019", "ef00" ],
@@ -17,6 +17,17 @@
 	},
 	"ReadAttributes": {
 		"0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0007" ]
+	},
+	"Param": {
+		"Alarm1": { "Duration": 5, "Volume": 2, "Melody": 1},
+		"Alarm2": { "Duration": 5, "Volume": 2, "Melody": 2},
+		"Alarm3": { "Duration": 5, "Volume": 2, "Melody": 3},
+		"Alarm4": { "Duration": 5, "Volume": 2, "Melody": 4},
+		"Alarm5": { "Duration": 5, "Volume": 2, "Melody": 5},
+		"HumidityMinAlarm": 25,
+		"HumidityMaxAlarm": 75,
+		"TemperatureMinAlarm": 3,
+		"TemperatureMaxAlarm": 27
 	}
 }
 

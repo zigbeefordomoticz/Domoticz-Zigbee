@@ -23,7 +23,8 @@ from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl
 from Modules.basicOutputs import sendZigateCmd
 from Modules.thermostats import thermostat_Setpoint, thermostat_Mode
 from Modules.livolo import livolo_OnOff
-from Modules.tuya import tuya_trv_mode, tuya_siren_alarm
+from Modules.tuya import ( tuya_trv_mode, tuya_siren_alarm, tuya_siren_humi_alarm, tuya_siren_temp_alarm )
+
 from Modules.legrand_netatmo import  legrand_fc40, cable_connected_mode
 from Modules.schneider_wiser import schneider_EHZBRTS_thermoMode, schneider_hact_fip_mode, schneider_set_contract, schneider_temp_Setcurrent, schneider_hact_heater_type
 from Modules.profalux import profalux_stop, profalux_MoveToLiftAndTilt
@@ -72,7 +73,7 @@ ACTIONATORS = [ 'Switch', 'Plug', 'SwitchAQ2', 'Smoke', 'DSwitch', 'LivoloSWL', 
             'Venetian', 'VenetianInverted', 'WindowCovering', 'BSO', 'BSO-Orientation', 'BSO-Volet',
             'LvlControl', 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl',
             'ThermoSetpoint', 'ThermoMode', 'ACMode', 'ThermoMode_2', 'ThermoModeEHZBRTS', 'FanControl', 'PAC-SWITCH', 'ACMode_2', 'ACSwing','TempSetCurrent', 'AlarmWD',
-            'FIP', 'HACTMODE','LegranCableMode', 'ContractPower','HeatingSwitch', 'DoorLock' , 'TuyaSiren']
+            'FIP', 'HACTMODE','LegranCableMode', 'ContractPower','HeatingSwitch', 'DoorLock' , 'TuyaSiren', 'TuyaSirenHumi', 'TuyaSirenTemp' ]
             
 def mgtCommand( self, Devices, Unit, Command, Level, Color ):
 
@@ -225,6 +226,12 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
 
         elif DeviceType == "TuyaSiren":
             tuya_siren_alarm( self, NWKID, 0x00)
+
+        elif DeviceType == "TuyaSirenHumi":
+            tuya_siren_humi_alarm( self, NWKID, 0x00 )
+        
+        elif DeviceType == "TuyaSirenTemp":
+            tuya_siren_temp_alarm( self, NWKID, 0x00 )
 
 
         elif DeviceType == "WindowCovering":
@@ -631,6 +638,14 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
                 tuya_siren_alarm( self, NWKID, 0x01, 4)
             elif Level == 50:
                 tuya_siren_alarm( self, NWKID, 0x01, 5)
+
+        elif DeviceType == "TuyaSirenHumi":
+            if Level == 10:
+                tuya_siren_humi_alarm( self, NWKID, 0x01 )
+        
+        elif DeviceType == "TuyaSirenTemp":
+            if Level == 10:
+                tuya_siren_temp_alarm( self, NWKID, 0x01 )
 
 
         elif DeviceType == 'Toggle':
