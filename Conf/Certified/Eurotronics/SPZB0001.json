@@ -26,6 +26,6 @@
 	},
 	"Param": {
 		"Calibration": 0
-	}
-
+	},
+	"PollingEnabled": 1
 }
