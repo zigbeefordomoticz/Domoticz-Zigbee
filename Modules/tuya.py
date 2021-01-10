@@ -166,13 +166,11 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
             self.log.logging( "Tuya", 'Debug', "tuyaReadRawAPS - Nwkid: %s/%s Mode to Offline" %(NwkId,srcEp ))
             MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 0, Attribute_ = '001c' )
             checkAndStoreAttributeValue( self, NwkId , '01', '0201', '001c' , 'OffLine' )
-
         elif data == '01':
             # Auto
             self.log.logging( "Tuya", 'Debug', "tuyaReadRawAPS - Nwkid: %s/%s Mode to Auto" %(NwkId,srcEp ))
             MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 1, Attribute_ = '001c' )
             checkAndStoreAttributeValue( self, NwkId , '01', '0201', '001c' , 'Auto' )
-
         elif data == '02':
             # Manual
             self.log.logging( "Tuya", 'Debug', "tuyaReadRawAPS - Nwkid: %s/%s Mode to Manual" %(NwkId,srcEp ))
@@ -185,50 +183,36 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
     elif decode_dp == 0x0168:
         # Alarm
         if data == '00':
-            MajDomoDevice(self, Devices, NwkId, srcEp, '0006', '00')
+            MajDomoDevice(self, Devices, NwkId, srcEp, '0006', '00', Attribute_= '0168')
         else:
-            MajDomoDevice(self, Devices, NwkId, srcEp, '0006', '01')
+            MajDomoDevice(self, Devices, NwkId, srcEp, '0006', '01', Attribute_= '0168')
 
-    elif decode_dp == 0x0171:
-        # Alarm by Temperature
+    elif decode_dp == 0x0171: # Alarm by Temperature
         MajDomoDevice(self, Devices, NwkId, srcEp, '0006', data, Attribute_= '0171')
 
-
-    elif decode_dp == 0x0172:
-        # Alarm by humidity
+    elif decode_dp == 0x0172: # Alarm by humidity
         MajDomoDevice(self, Devices, NwkId, srcEp, '0006', data, Attribute_= '0172')
 
-
-    elif decode_dp == 0x0466:
-        # Current Melody
+    elif decode_dp == 0x0466: # Current Melody
         MajDomoDevice(self, Devices, NwkId, srcEp, '0006', (int(data,16)))
 
-    elif decode_dp == 0x0474:
-        # Current Sire Volume
+    elif decode_dp == 0x0473: # ??
+        pass
+    elif decode_dp == 0x0474: # Current Siren Volume
+        pass
+    elif decode_dp == 0x026b: # Min Alarm Temperature
+        pass
+    elif decode_dp == 0x026c: # Max Alarm Temperature
+        pass
+    elif decode_dp == 0x026d: # AMin Alarm Humidity
+        pass
+    elif decode_dp == 0x026e: # Max Alarm Humidity 
         pass
 
-    elif decode_dp == 0x026b:
-        # Min Alarm Temperature
-        pass
-
-    elif decode_dp == 0x026c:
-        # Max Alarm Temperature
-        pass
-
-    elif decode_dp == 0x026d:
-        # AMin Alarm Humidity
-        pass
-
-    elif decode_dp == 0x026e:
-        # Max Alarm Humidity 
-        pass
-
-    elif decode_dp == 0x0269:
-        # Temperature
+    elif decode_dp == 0x0269: # Temperature
         MajDomoDevice(self, Devices, NwkId, srcEp, '0402', ( int(data,16) / 10))
 
-    elif decode_dp == 0x026a:
-        # Humidity
+    elif decode_dp == 0x026a: # Humidity
         MajDomoDevice(self, Devices, NwkId, srcEp, '0405', ( int(data,16) ) )        
 
     else:
@@ -342,18 +326,18 @@ def tuya_siren_temp_alarm( self, nwkid, onoff ):
     self.log.logging( "Tuya", 'Debug', "tuya_siren_temp_alarm - %s onoff: %s" %(nwkid, onoff))
     min_temp = 25
     max_temp = 75
-    if onoff == 0x01:
-        if ( 'Param' in self.ListOfDevices[ nwkid ] 
-                and 'Duration' in self.ListOfDevices[ nwkid ]['Param'] 
-                and isinstance( self.ListOfDevices[ nwkid ]['Param']['TemperatureMinAlarm'], int) ):
-            min_temp = self.ListOfDevices[ nwkid ]['Param']['TemperatureMinAlarm']
-            tuya_siren_alarm_min_humidity( self, nwkid, min_temp)
 
-        if ( 'Param' in self.ListOfDevices[ nwkid ] 
-                and 'Volume' in self.ListOfDevices[ nwkid ]['Param'] 
-                and isinstance( self.ListOfDevices[ nwkid ]['Param']['TemperatureMaxAlarm'], int) ):
-            max_temp =   self.ListOfDevices[ nwkid ]['Param']['TemperatureMaxAlarm']    
-            tuya_siren_alarm_max_humidity( self, nwkid, max_temp)        
+    if ( 'Param' in self.ListOfDevices[ nwkid ] 
+            and 'TemperatureMinAlarm' in self.ListOfDevices[ nwkid ]['Param'] 
+            and isinstance( self.ListOfDevices[ nwkid ]['Param']['TemperatureMinAlarm'], int) ):
+        min_temp = self.ListOfDevices[ nwkid ]['Param']['TemperatureMinAlarm']
+        tuya_siren_alarm_min_humidity( self, nwkid, min_temp)
+
+    if ( 'Param' in self.ListOfDevices[ nwkid ] 
+            and 'TemperatureMaxAlarm' in self.ListOfDevices[ nwkid ]['Param'] 
+            and isinstance( self.ListOfDevices[ nwkid ]['Param']['TemperatureMaxAlarm'], int) ):
+        max_temp =   self.ListOfDevices[ nwkid ]['Param']['TemperatureMaxAlarm']    
+        tuya_siren_alarm_max_humidity( self, nwkid, max_temp)        
 
     # determine which Endpoint
     EPout = '01'
@@ -369,18 +353,18 @@ def tuya_siren_humi_alarm( self, nwkid, onoff ):
     self.log.logging( "Tuya", 'Debug', "tuya_siren_humi_alarm - %s onoff: %s" %(nwkid, onoff))
     min_humi = 25
     max_humi = 75
-    if onoff == 0x01:
-        if ( 'Param' in self.ListOfDevices[ nwkid ] 
-                and 'Duration' in self.ListOfDevices[ nwkid ]['Param'] 
-                and isinstance( self.ListOfDevices[ nwkid ]['Param']['HumidityMinAlarm'], int) ):
-            min_humi = self.ListOfDevices[ nwkid ]['Param']['HumidityMinAlarm']
-            tuya_siren_alarm_min_humidity( self, nwkid, min_humi)
 
-        if ( 'Param' in self.ListOfDevices[ nwkid ] 
-                and 'Volume' in self.ListOfDevices[ nwkid ]['Param'] 
-                and isinstance( self.ListOfDevices[ nwkid ]['Param']['HumidityMaxAlarm'], int) ):
-            max_humi =   self.ListOfDevices[ nwkid ]['Param']['HumidityMaxAlarm']    
-            tuya_siren_alarm_max_humidity( self, nwkid, max_humi)        
+    if ( 'Param' in self.ListOfDevices[ nwkid ] 
+            and 'HumidityMinAlarm' in self.ListOfDevices[ nwkid ]['Param'] 
+            and isinstance( self.ListOfDevices[ nwkid ]['Param']['HumidityMinAlarm'], int) ):
+        min_humi = self.ListOfDevices[ nwkid ]['Param']['HumidityMinAlarm']
+        tuya_siren_alarm_min_humidity( self, nwkid, min_humi)
+
+    if ( 'Param' in self.ListOfDevices[ nwkid ] 
+            and 'HumidityMaxAlarm' in self.ListOfDevices[ nwkid ]['Param'] 
+            and isinstance( self.ListOfDevices[ nwkid ]['Param']['HumidityMaxAlarm'], int) ):
+        max_humi =   self.ListOfDevices[ nwkid ]['Param']['HumidityMaxAlarm']    
+        tuya_siren_alarm_max_humidity( self, nwkid, max_humi)        
 
     # determine which Endpoint
     EPout = '01'
@@ -433,7 +417,7 @@ def tuya_siren_alarm_melody( self, nwkid, melody):
     tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 
 def tuya_siren_alarm_min_humidity( self, nwkid, humi_alarm):
-    self.log.logging( "Tuya", 'Debug', "tuya_siren_alarm_min_humidity - %s onoff: %s" %(nwkid, humi_alarm))
+    self.log.logging( "Tuya", 'Debug', "tuya_siren_alarm_min_humidity - %s Min Humi: %s" %(nwkid, humi_alarm))
     # determine which Endpoint
     EPout = '01'
     sqn = get_and_inc_SQN( self, nwkid )
@@ -444,7 +428,7 @@ def tuya_siren_alarm_min_humidity( self, nwkid, humi_alarm):
     tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 
 def tuya_siren_alarm_max_humidity( self, nwkid, humi_alarm):
-    self.log.logging( "Tuya", 'Debug', "tuya_siren_alarm_max_humidity - %s onoff: %s" %(nwkid, humi_alarm))
+    self.log.logging( "Tuya", 'Debug', "tuya_siren_alarm_max_humidity - %s Max Humi: %s" %(nwkid, humi_alarm))
     # determine which Endpoint
     EPout = '01'
     sqn = get_and_inc_SQN( self, nwkid )
@@ -455,7 +439,7 @@ def tuya_siren_alarm_max_humidity( self, nwkid, humi_alarm):
     tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 
 def tuya_siren_alarm_min_temp( self, nwkid, temp_alarm):
-    self.log.logging( "Tuya", 'Debug', "tuya_siren_alarm_min_temp - %s onoff: %s" %(nwkid, temp_alarm))
+    self.log.logging( "Tuya", 'Debug', "tuya_siren_alarm_min_temp - %s Min Temp: %s" %(nwkid, temp_alarm))
     # determine which Endpoint
     EPout = '01'
     sqn = get_and_inc_SQN( self, nwkid )
@@ -466,7 +450,7 @@ def tuya_siren_alarm_min_temp( self, nwkid, temp_alarm):
     tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 
 def tuya_siren_alarm_max_temp( self, nwkid, temp_alarm):
-    self.log.logging( "Tuya", 'Debug', "tuya_siren_alarm_min_temp - %s onoff: %s" %(nwkid, temp_alarm))
+    self.log.logging( "Tuya", 'Debug', "tuya_siren_alarm_min_temp - %s Max Temp: %s" %(nwkid, temp_alarm))
     # determine which Endpoint
     EPout = '01'
     sqn = get_and_inc_SQN( self, nwkid )

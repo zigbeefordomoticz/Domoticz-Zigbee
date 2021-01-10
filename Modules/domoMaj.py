@@ -434,7 +434,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 ( ClusterType == 'FanControl' and WidgetType == 'FanControl') or \
                 ( 'ThermoMode' in ClusterType and WidgetType == 'ACMode_2' ) or \
                 ( 'ThermoMode' in ClusterType and WidgetType == 'ACSwing' and Attribute_ =='fd00') or \
-                ( WidgetType == 'KF204Switch' and ClusterType in ( 'Switch', 'Door'))):
+                ( WidgetType == 'KF204Switch' and ClusterType in ( 'Switch', 'Door') )
+                ):
 
             # Plug, Door, Switch, Button ...
             # We reach this point because ClusterType is Door or Switch. It means that Cluster 0x0006 or 0x0500
@@ -461,17 +462,11 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                         sValue = '30'
                         UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
 
-            elif WidgetType == 'TuyaSirenHumi':
-                if Attribute_ == '0172':
-                    nValue = int(value)
-                    sValue = 10 * nValue
-                    UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
+            elif ( WidgetType == 'TuyaSirenHumi' and Attribute_ != '0172') or \
+                ( WidgetType == 'TuyaSirenTemp' and Attribute_ != '0171') or \
+                ( WidgetType == 'TuyaSiren' and Attribute_ != '0168' ):
+                return
 
-            elif WidgetType == 'TuyaSirenTemp':
-                if Attribute_ == '0171':
-                    nValue = int(value)
-                    sValue = 10 * nValue
-                    UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
 
             elif WidgetType == "DButton":
                 # double bouttons avec EP different lumi.sensor_86sw2 
