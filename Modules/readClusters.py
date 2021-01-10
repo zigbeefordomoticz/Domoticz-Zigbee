@@ -301,6 +301,10 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             else:
                 # eTRV
                 modelName += '-eTRV'
+        elif modelName == 'TS0003':
+            if 'Manufacturer Name' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Manufacturer Name'] == '_TYZB01_ncutbjdi':
+                # QS-Zigbee-S05-LN
+                modelName += '-QS-Zigbee-S05-LN'
 
         elif modelName  in ('lumi.remote.b686opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b286opcn01'):
             # Manage the Aqara Bulb mode or not
