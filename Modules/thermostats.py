@@ -124,7 +124,8 @@ def thermostat_eurotronic_hostflag( self, NwkId, action):
             %(NwkId,data,cluster_id,attribute,data_type, action), nwkid=NwkId)
 
 def thermostat_Calibration ( self, NwkId, calibration = None):
-    # Calibration is an int8 representing a temperature offset (in the range -2.5°C to 2.5°C) 
+    # Calibration is an int8 representing a temperature offset (in the range -2.5°C to 2.5°C)
+    # from 0xE7 ( -2.5 ) to 0x19 ( +2.5 )
     # that can be added to or subtracted from the displayed temperature
 
     if ( 'Param' in self.ListOfDevices[NwkId]
@@ -132,10 +133,21 @@ def thermostat_Calibration ( self, NwkId, calibration = None):
         and isinstance(
             self.ListOfDevices[NwkId]['Param']['Calibration'], (float, int))
         ):
-        calibration = int(100 * self.ListOfDevices[ NwkId ]['Param']['Calibration'])
+        calibration = int(10 * self.ListOfDevices[ NwkId ]['Param']['Calibration'])
 
     if calibration is None:
         calibration = 0
+
+    if calibration < -25 or calibration > 25:
+        self.log.logging( "Thermostats", 'Error', "thermostat_Calibration - Wrong Calibration offset on %s off %s" %( NwkId, calibration))
+        calibration = 0
+
+    if calibration < 0:
+        #in two’s complement form
+        calibration = int(hex( -calibration - pow(2,32) )[9:],16)
+        self.log.logging( "Thermostats", 'Debug', "thermostat_Calibration - 2 complement form of Calibration offset on %s off %s" %( NwkId, calibration))
+
+
 
     if 'Thermostat' not in self.ListOfDevices[NwkId]:
         self.ListOfDevices[NwkId]['Thermostat'] = {}
