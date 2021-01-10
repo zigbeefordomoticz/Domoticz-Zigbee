@@ -467,7 +467,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 ( WidgetType == 'TuyaSiren' and Attribute_ != '0168' ):
                 return
 
-
             elif WidgetType == "DButton":
                 # double bouttons avec EP different lumi.sensor_86sw2 
                 value = int(value)
