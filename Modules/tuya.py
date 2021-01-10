@@ -64,31 +64,6 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
     #   0x02 Send by the ZED after receiving a 0x00 command. 
     #        Its data payload uses the same format as the 0x01 commands.
     # cmd, data
-
-    # 0x0107, 0x01 Child lock On
-    # 0x0107, 0x00 Child lock Off
-    # 0x0114, 0x01 Valve check enable
-    # 0x0112, 0x01 Window detection enabled
-    # 0x016c, 0x00 Manual 0x01 Auto
-    # 0x0165, 0x00 Off, 0x01 Manu
-    # 0x0114, Valve state On/off 
-
-    # 0x0202, Setpoint Change target temp after mode chg 
-    # 0x0203, Temperature Notif temp after mode chg
-    # 0x0215, Battery status 
-    # 0x0255, Min Temp
-    # 0x0267, Max Temp
-    # 0x026d, Valve position
-    # 0x022c, Temp Calibration
-
-    # 0x0303, Temp Room temperature
-
-    # 0x0404, 0x01 Change mode from Off -> Auto
-    # 0x0404, 0x02 Change mode from Auto -> Manual
-    # 0x0404, 0x00 Change mode from Manual -> Off
-    # 0x0411, 0x00 Valve problem ??
-    # 0x0413, 0x00 Valve problem ??
-    # 0x046a, Mode 0x00 Auto, 0x01 Heat, 0x02 Off
     
     if NwkId not in self.ListOfDevices:
         return
@@ -142,12 +117,16 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
         # Switch 3
         pass
 
+    # eTRV
+    elif decode_dp == 0x0107:
+        # Child Lock unlocked/locked
+        pass
     elif decode_dp == 0x0114:
         # Valve state
         pass
     
-    elif decode_dp == 0x0026d:
-        # Valve position
+    elif decode_dp == 0x026d:
+        # Valve position in %
         pass
 
     elif decode_dp == 0x046a:
@@ -165,7 +144,6 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
         MajDomoDevice(self, Devices, NwkId, srcEp, '0201', ( int(data,16) / 10 ), Attribute_ = '0012' )
         checkAndStoreAttributeValue( self, NwkId , '01', '0201', '0012' , int(data,16) )
 
-
     elif decode_dp in (0x0203, 0x0303):
         # 0x0202 Thermostat setpoint
         # 0x0203 Thermostat temperature
@@ -175,13 +153,11 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
         MajDomoDevice(self, Devices, NwkId, srcEp, '0402', (int(data,16) / 10 ))
         checkAndStoreAttributeValue( self, NwkId , '01', '0402', '0000' , int(data,16)  )
 
-
     elif decode_dp == 0x0215:
         # Battery status
         self.log.logging( "Tuya", 'Debug', "tuyaReadRawAPS - Nwkid: %s/%s Battery status %s" %(NwkId,srcEp ,int(data,16)))
         checkAndStoreAttributeValue( self, NwkId , '01', '0001', '0000' , int(data,16) )
         self.ListOfDevices[ NwkId ]['Battery'] = int(data,16)
-
 
     elif decode_dp == 0x0404:
         # Change mode
@@ -202,6 +178,8 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
             self.log.logging( "Tuya", 'Debug', "tuyaReadRawAPS - Nwkid: %s/%s Mode to Manual" %(NwkId,srcEp ))
             MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 2, Attribute_ = '001c' )
             checkAndStoreAttributeValue( self, NwkId , '01', '0201', '001c' , 'Manual' )
+
+
 
     # TS0601 Siren, Teperature, Humidity, Alarm
     elif decode_dp == 0x0168:
