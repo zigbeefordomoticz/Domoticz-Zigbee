@@ -1249,6 +1249,4 @@ def check_device_param( self, nwkid, param ):
         else:
             self.logging( 'Error', "When updating Device Management, Device: %s got a wrong Parameter syntax for %s error %s. make sure to use JSON syntax" %( 
                 nwkid, param, e) )
-            return {}        
-
-    return param
+    return {} 
