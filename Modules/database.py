@@ -424,6 +424,7 @@ def CheckDeviceList(self, key, val):
             'ZCL Version', 
             'ZDeviceID', 
             'ZDeviceName',
+            'Param'
             )
 
     # List of Attributes whcih are going to be loaded, ut in case of Reset (resetPluginDS) they will be re-initialized.
