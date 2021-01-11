@@ -295,14 +295,14 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 modelName = ''
 
         elif modelName == 'TS0601':
-            if 'Manufacturer Name' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Manufacturer Name'] == '_TZE200_d0yu2xgi':
+            if 'Manufacturer Name' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Manufacturer Name'] in ( '_TZE200_d0yu2xgi', ) :
                 # Sirene 
                 modelName += '-sirene'
             else:
                 # eTRV
                 modelName += '-eTRV'
         elif modelName == 'TS0003':
-            if 'Manufacturer Name' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Manufacturer Name'] == '_TYZB01_ncutbjdi':
+            if 'Manufacturer Name' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Manufacturer Name'] in ( '_TYZB01_ncutbjdi', ):
                 # QS-Zigbee-S05-LN
                 modelName += '-QS-Zigbee-S05-LN'
 
