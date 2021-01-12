@@ -449,6 +449,10 @@ def CreateDomoDevice(self, Devices, NWKID):
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 243, Subtype_ = 22, Switchtype_= 0) 
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Alarm" %(t), NWKID)
 
+            if t == 'Valve':
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 244, Subtype_ = 73, Switchtype_ = 7 )
+                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Valve" %(t), NWKID)
+                
             if t in ( "ThermoSetpoint", "TempSetCurrent"):
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 242, Subtype_ = 1)  
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in ThermoSetPoint" %(t), NWKID)
@@ -627,6 +631,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                     createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 244, Subtype_ = 73, Switchtype_ = 15 )
 
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in WindowCovering" %(t), NWKID)
+
 
             # ======= Level Control / Dimmer
             if t == 'LvlControl':

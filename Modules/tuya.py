@@ -88,7 +88,7 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
     cmd = MsgPayload[4:6] # uint8
 
     if cmd not in ('00', '01', '02'):
-        self.log.logging( "Tuya", 'Log', "tuyaReadRawAPS - Unknown command %s MsgPayload %s" %(cmd, MsgPayload))
+        self.log.logging( "Tuya", 'Log', "tuyaReadRawAPS - Unknown command %s MsgPayload %s/ Data: %s" %(cmd, MsgPayload, MsgPayload[6:]))
         return
 
     status = MsgPayload[6:8]   #uint8
@@ -120,23 +120,30 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
     # eTRV
     elif decode_dp == 0x0107:
         # Child Lock unlocked/locked
-        pass
+        self.log.logging( "Tuya", 'Debug', "tuyaReadRawAPS - Nwkid: %s/%s Child Lock/Unlock: %s" %(NwkId,srcEp ,data))
+
     elif decode_dp == 0x0114:
         # Valve state
         # Use Dimer to report On/Off
-        pass
+        self.log.logging( "Tuya", 'Debug', "tuyaReadRawAPS - Nwkid: %s/%s Valve state: %s" %(NwkId,srcEp ,data))
+        MajDomoDevice(self, Devices, NwkId, srcEp, '0006', data , Attribute_ = '0014')
+
     
     elif decode_dp == 0x026d:
         # Valve position in %
         # Use Dimer to report %
-        pass
+        self.log.logging( "Tuya", 'Debug', "tuyaReadRawAPS - Nwkid: %s/%s Valve position: %s" %(NwkId,srcEp ,int(data,16)))
+        MajDomoDevice(self, Devices, NwkId, srcEp, '0008', int(data,16) , Attribute_ = '026d')
+
 
     elif decode_dp == 0x046a:
         # Mode
+        self.log.logging( "Tuya", 'Debug', "tuyaReadRawAPS - Nwkid: %s/%s Mode: %s" %(NwkId,srcEp ,data))
         pass
 
     elif decode_dp == 0x0112:
         # Open Window
+        self.log.logging( "Tuya", 'Debug', "tuyaReadRawAPS - Nwkid: %s/%s Window Open: %s" %(NwkId,srcEp ,data))
         MajDomoDevice(self, Devices, NwkId, srcEp, '0500', data )
 
     elif decode_dp == 0x0202:

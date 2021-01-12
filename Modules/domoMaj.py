@@ -434,7 +434,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 ( ClusterType == 'FanControl' and WidgetType == 'FanControl') or \
                 ( 'ThermoMode' in ClusterType and WidgetType == 'ACMode_2' ) or \
                 ( 'ThermoMode' in ClusterType and WidgetType == 'ACSwing' and Attribute_ =='fd00') or \
-                ( WidgetType == 'KF204Switch' and ClusterType in ( 'Switch', 'Door') )
+                ( WidgetType == 'KF204Switch' and ClusterType in ( 'Switch', 'Door') ) or \
+                ( WidgetType == 'Valve' and Attribute_ == '0014') \
                 ):
 
             # Plug, Door, Switch, Button ...
@@ -535,7 +536,16 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                         data = "09"
 
                     UpdateDevice_v2(self, Devices, DeviceUnit, int(data), str(state), BatteryLevel, SignalLevel,ForceUpdate_=True)
-                                        
+
+            elif WidgetType == 'Valve' and Attribute_ == '0014':
+                # value int is the % of the valve opening
+                nValue = value
+                if value == 0:
+                    sValue = 'Off'
+                else:
+                    sValue = 'On'
+                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
+
             elif WidgetType == "LvlControl" or WidgetType in ( 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl'):
                 if Devices[DeviceUnit].SwitchType in (13,14,15,16):
                     # Required Numeric value
@@ -585,7 +595,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     self.log.logging( "Widget", "Debug", "------> Switch off as System Mode is Off")
                     UpdateDevice_v2(self, Devices, DeviceUnit, 0, '00', BatteryLevel, SignalLevel)
 
-
             elif WidgetType in SWITCH_LVL_MATRIX and value in SWITCH_LVL_MATRIX[ WidgetType ]:
                 self.log.logging( "Widget", "Debug", "------> Auto Update %s" %str(SWITCH_LVL_MATRIX[ WidgetType ][ value ])) 
                 if len(SWITCH_LVL_MATRIX[ WidgetType ][ value] ) == 2:
@@ -616,7 +625,13 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(value), BatteryLevel, SignalLevel)
 
         if 'LvlControl' in ClusterType: # LvlControl ( 0x0008)
-            if WidgetType == 'LvlControl' or WidgetType == 'BSO-Volet':
+            if WidgetType == 'Valve' and Attribute_ == '026d':
+                # value int is the % of the valve opening
+                nValue = Devices[DeviceUnit].nValue
+                sValue = str( value )
+                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
+
+            elif WidgetType == 'LvlControl' or WidgetType == 'BSO-Volet':
                 # We need to handle the case, where we get an update from a Read Attribute or a Reporting message
                 # We might get a Level, but the device is still Off and we shouldn't make it On .
                 nValue = None
