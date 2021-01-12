@@ -259,16 +259,17 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
         if self.ListOfDevices[key]['Manufacturer'] == '':
             self.log.logging( "ReadAttributes", 'Debug', "----> Adding: %s" %'0004', nwkid=key)
             listAttributes.append(0x0004)
-        else:
-            if self.ListOfDevices[key]['Manufacturer'] == 'Legrand':
+    
+        elif self.ListOfDevices[key]['Manufacturer'] == '1110': # Profalux.
+            listAttributes.append(0x0010)
+            skipModel = True
+
+        elif self.ListOfDevices[key]['Manufacturer'] == 'Legrand':
                 self.log.logging( "ReadAttributes", 'Debug', "----> Adding: %s" %'f000', nwkid=key)
                 if 0x4000 not in listAttributes:
                     listAttributes.append(0x4000)
                 if 0xf000 not in listAttributes:
                     listAttributes.append(0xf000)
-                skipModel = True
-            if self.ListOfDevices[key]['Manufacturer'] == '1110':
-                listAttributes.append(0x0010)
                 skipModel = True
 
         # Do We have Model Name
@@ -297,6 +298,7 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
             ReadAttributeReq( self, key, ZIGATE_EP, "03", "0000", listAttributes, ackIsDisabled = False , checkTime = False)
             ReadAttributeReq( self, key, ZIGATE_EP, "06", "0000", listAttributes, ackIsDisabled = False , checkTime = False) # Livolo
             ReadAttributeReq( self, key, ZIGATE_EP, "09", "0000", listAttributes, ackIsDisabled = False , checkTime = False)
+            
         else:
             for epout in self.ListOfDevices[key]['Ep']:
                 self.log.logging( "ReadAttributes", 'Log', "Request Basic  via Read Attribute request: " + key + " EPout = " + epout + " Attributes: " + str(listAttributes), nwkid=key)
