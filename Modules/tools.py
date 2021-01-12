@@ -375,7 +375,8 @@ def timeStamped( self, key, Type ):
     if key not in self.ListOfDevices:
         return
     if 'Stamp' not in self.ListOfDevices[key]:
-        self.ListOfDevices[key]['Stamp'] = {'Time': {}, 'MsgType': {}}
+        self.ListOfDevices[key]['Stamp'] = { 'LasteSeen': {}, 'Time': {}, 'MsgType': {}}
+    self.ListOfDevices[key]['Stamp']['time'] = time.time()
     self.ListOfDevices[key]['Stamp']['Time'] = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
     self.ListOfDevices[key]['Stamp']['MsgType'] = "%4x" %(Type)
 

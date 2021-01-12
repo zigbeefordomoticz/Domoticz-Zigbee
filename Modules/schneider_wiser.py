@@ -237,12 +237,27 @@ def wiser_set_location(self, key, EPout): # 0x0000/0x0010
 
 def wiser_set_calibration( self, key, EPout):  # 0x0201/0x0010
     #  This is used to set the Local Temperature Calibration ( specifies  the  offset  that  can  be  added/subtracted  to  the  actual displayed room temperature )
+    calibration = 0
+
+    if ('Param' in self.ListOfDevices[key] and 'Calibration' in self.ListOfDevices[key]['Param']
+           and isinstance( self.ListOfDevices[key]['Param']['Calibration'], (float, int) )):
+        calibration = int(100 * self.ListOfDevices[ key ]['Param']['Calibration'])
+
+    if 'Schneider' not in self.ListOfDevices[key]:
+        self.ListOfDevices[key]['Schneider'] = {}
+
+    if 'Calibration' in self.ListOfDevices[key]['Schneider'] and calibration == self.ListOfDevices[key]['Schneider']['Calibration']:
+        return
+
+    self.ListOfDevices[key]['Schneider']['Calibration'] = calibration
+
     manuf_id = "0000"
     manuf_spec = "00"
     cluster_id = "%04x" %0x0201
     Hattribute = "%04x" %0x0010
-    data_type = "28" 
-    data = '00'  
+    data_type = "28"
+    data = '%02x' %calibration
+
     self.log.logging( "Schneider", 'Debug', "wiser_set_calibration Schneider Write Attribute (no Calibration) %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
     write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data, ackIsDisabled = False)
@@ -480,7 +495,7 @@ def schneider_thermostat_check_and_bind(self, key, forceRebind = False):
             srcIeee = self.SchneiderZone[ zone ]['Thermostat']['IEEE']
             targetIeee = self.SchneiderZone[ zone ]['Thermostat']['HACT'][hact]['IEEE']
             statusBind1 = WebBindStatus (self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind1)
-            
+
             if (not (statusBind1 == 'requested')):
                 if (statusBind1 != 'binded') or forceRebind:
                     webBind(self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind1)
@@ -511,7 +526,7 @@ def schneider_actuator_check_and_bind(self, key, forceRebind = False):
         for hact in self.SchneiderZone[ zone ]['Thermostat']['HACT']:
             if hact != key :
                 continue
-            
+
             thermostat_key = self.SchneiderZone[ zone ]['Thermostat']['NWKID']
             if thermostat_key not in self.ListOfDevices:
                 continue
@@ -586,7 +601,7 @@ def schneider_setpoint_actuator( self, key, setpoint):
     #                                                   |--|-------------------------------------> Cluster Frame
 
     if key not in self.ListOfDevices:
-        loggingSchneider( self, 'Debug', "schneider_setpoint_actuator - unknown key: %s in ListOfDevices!" %(key))
+        self.log.logging( "Schneider", 'Debug', "schneider_setpoint_actuator - unknown key: %s in ListOfDevices!" %(key))
         return
 
     cluster_frame = '11'
@@ -628,8 +643,10 @@ def schneider_setpoint_actuator( self, key, setpoint):
 def schneider_setpoint( self, key, setpoint):
 
     if key not in self.ListOfDevices:
-        loggingSchneider( self, 'Debug', "schneider_setpoint - unknown key: %s in ListOfDevices!" %(key))
+        self.log.logging( "Schneider", 'Debug', "schneider_setpoint - unknown key: %s in ListOfDevices!" %(key))
         return
+
+    wiser_set_calibration( self, key, SCHNEIDER_BASE_EP)
 
     if 'Model' in self.ListOfDevices[key]:
         if self.ListOfDevices[key]['Model'] == 'EH-ZB-RTS':
@@ -651,7 +668,7 @@ def schneider_temp_Setcurrent( self, key, setpoint):
     #                                                   |--|-------------------------------------> Cluster Frame
 
     if key not in self.ListOfDevices:
-        loggingSchneider( self, 'Debug', "schneider_temp_Setcurrent - unknown key: %s in ListOfDevices!" %(key))
+        self.log.logging( "Schneider", 'Debug', "schneider_temp_Setcurrent - unknown key: %s in ListOfDevices!" %(key))
         return
 
     cluster_frame = '18'
@@ -703,7 +720,7 @@ def schneider_EHZBRTS_thermoMode( self, key, mode):
             }
 
     if key not in self.ListOfDevices:
-        loggingSchneider( self, 'Debug', "schneider_EHZBRTS_thermoMode - unknown key: %s in ListOfDevices!" %(key))
+        self.log.logging( "Schneider", 'Debug', "schneider_EHZBRTS_thermoMode - unknown key: %s in ListOfDevices!" %(key))
         return
 
     self.log.logging("Schneider", 'Debug', "schneider_EHZBRTS_thermoMode - %s Mode: %s" %(key, mode), key)
@@ -747,7 +764,7 @@ def schneider_EHZBRTS_thermoMode( self, key, mode):
 def schneiderRenforceent( self, NWKID):
 
     if NWKID not in self.ListOfDevices:
-        loggingSchneider( self, 'Debug', "schneiderRenforceent - unknown key: %s in ListOfDevices!" %(NWKID))
+        self.log.logging( "Schneider", 'Debug', "schneiderRenforceent - unknown key: %s in ListOfDevices!" %(NWKID))
         return
 
     rescheduleAction = False
@@ -898,7 +915,7 @@ def schneiderAlarmReceived (self, Devices, NWKID, srcEp, ClusterID, start, paylo
                                             %(contractPowerLevel,current_consumption),NWKID)
 
             if ((current_consumption * 110 / 100 ) > contractPowerLevel) :
-                loggingSchneider(self, 'Debug', "schneiderAlarmReceived shedding",NWKID)
+                self.log.logging( "Schneider", 'Debug', "schneiderAlarmReceived shedding",NWKID)
                 value = '04'
                 self.ListOfDevices[ NWKID ]['Shedding'] = True
             else:
@@ -1186,6 +1203,7 @@ def schneider_find_attribute_and_set(self, NWKID, EP, ClusterID ,attr ,defaultVa
     return found
 
 def schneider_bms_change_reporting (self, NWKID, srcEp, fast):
+    
     AttributesConfigFast = {
                   "0000": { "Change": "0000ffffffffffff", "DataType": "25", "MaxInterval": "001E", "MinInterval": "001E", "TimeOut": "0000" },
                   "0400": { "Change": "00000190", "DataType": "2a", "MaxInterval": "001E", "MinInterval": "001E", "TimeOut": "0000" },

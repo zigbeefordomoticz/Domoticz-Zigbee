@@ -33,5 +33,8 @@
 	"0204": [ "0000", "0001", "4000" ],
 	"0b05": [ "011c", "011d", "4000" ]
   },
-  "PollingEnabled": 1
+  "PollingEnabled": 1,
+  "Param": {
+	"Calibration": 0
+  }
 }

@@ -53,9 +53,8 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Man
         "_TZE200_c88teujp" : tuyaReadRawAPS,  # eTRV
         '_TZE200_ckud7u2l' : tuyaReadRawAPS , # eTRV
         "_TZE200_kfvq6avy" : tuyaReadRawAPS , # eTRV
-        "_TZE200_i48qyn9s" : tuyaReadRawAPS , 
-        '_TYST11_zivfvd7h': tuyaReadRawAPS,
         '_TZE200_d0yu2xgi' : tuyaReadRawAPS, # TS0601 Sirene
+        "_TZE200_i48qyn9s" : tuyaReadRawAPS ,
         "_TZ3000_peszejy7" : tuyaReadRawAPS , # Seem for TS0041 ( 1 Gang Switch)
         "_TZ3000_xkwalgne" : tuyaReadRawAPS, # TS0041
         "_TYST11_zivfvd7h" : tuyaReadRawAPS, # TS0003 / Switch Module

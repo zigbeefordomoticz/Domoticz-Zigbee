@@ -255,6 +255,15 @@ def pingDevices( self, NwkId, health, checkHealthFlag, mainPowerFlag):
     if not mainPowerFlag:
         return
 
+    now = int(time.time())
+
+    if ( 'time' in self.ListOfDevices[NwkId]['Stamp'] 
+            and now < self.ListOfDevices[NwkId]['Stamp']['time'] + self.pluginconf.pluginConf['pingDevicesFeq']):
+        # If we have received a message since less than 1 hours, then no ping to be done !
+        self.log.logging( "Heartbeat", 'Debug', "------> %s no need to ping as we received a message recently " 
+            %(NwkId,) , NwkId)
+        return
+
     if not health:
         pingRetryDueToBadHealth(self, NwkId)
         return
@@ -264,7 +273,7 @@ def pingDevices( self, NwkId, health, checkHealthFlag, mainPowerFlag):
     
     lastPing = self.ListOfDevices[NwkId]['Stamp']['LastPing']
     lastSeen = self.ListOfDevices[NwkId]['Stamp']['LastSeen']
-    now = int(time.time())
+
 
     if checkHealthFlag and now > (lastPing + 60) and self.ZigateComm.loadTransmit() == 0:
         submitPing( self, NwkId)

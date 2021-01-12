@@ -16,8 +16,8 @@ from Modules.casaia import casaia_setpoint, casaia_check_irPairing
  
 def thermostat_Setpoint_SPZB(  self, NwkId, setpoint):
 
-    manuf_id = "0000"
-    manuf_spec = "00"
+    manuf_id = "1037"
+    manuf_spec = "01"
     cluster_id = "%04x" %0x0201
     Hattribute = "%04x" %0x4003
     data_type = "29" # Int16
@@ -42,7 +42,9 @@ def thermostat_Setpoint( self, NwkId, setpoint):
         if self.ListOfDevices[NwkId]['Model'] == 'SPZB0001':
             # Eurotronic
             self.log.logging( "Thermostats", 'Debug', "thermostat_Setpoint - calling SPZB for %s with value %s" %(NwkId,setpoint), nwkid=NwkId)
+            thermostat_Calibration( self, NwkId )
             thermostat_Setpoint_SPZB( self, NwkId, setpoint)
+            return
 
         elif self.ListOfDevices[NwkId]['Model'] in ( 'EH-ZB-RTS', 'EH-ZB-HACT', 'EH-ZB-VACT' ):
             # Schneider
@@ -60,6 +62,8 @@ def thermostat_Setpoint( self, NwkId, setpoint):
             casaia_setpoint(self, NwkId, setpoint)
             return
 
+    thermostat_Calibration( self, NwkId )
+
     self.log.logging( "Thermostats", 'Debug', "thermostat_Setpoint - standard for %s with value %s" %(NwkId,setpoint), nwkid=NwkId)
 
     EPout = '01'
@@ -71,15 +75,13 @@ def thermostat_Setpoint( self, NwkId, setpoint):
     cluster_id = "%04x" %0x0201
     Hattribute = "%04x" %0x0012
 
-    if cluster_id in self.ListOfDevices[NwkId]['Ep'][EPout]:
-        if '001c' in self.ListOfDevices[NwkId]['Ep'][EPout][cluster_id]:
-            if self.ListOfDevices[NwkId]['Ep'][EPout][cluster_id]['001c'] == 0x03:
-                # Cool Setpoint
-                Hattribute = "%04x" %0x0011
+    if ( cluster_id in self.ListOfDevices[NwkId]['Ep'][EPout] and '001c' in self.ListOfDevices[NwkId]['Ep'][EPout][cluster_id] and self.ListOfDevices[NwkId]['Ep'][EPout][cluster_id]['001c'] == 0x03 ):
+        # Cool Setpoint
+        Hattribute = "%04x" %0x0011
 
     manuf_id = "0000"
     manuf_spec = "00"
-    
+
     data_type = "29" # Int16
     self.log.logging( "Thermostats", 'Debug', "setpoint: %s" %setpoint, nwkid=NwkId)
     setpoint = int(( setpoint * 2 ) / 2)   # Round to 0.5 degrees
@@ -118,10 +120,42 @@ def thermostat_eurotronic_hostflag( self, NwkId, action):
         if "0201" in self.ListOfDevices[NwkId]['Ep'][tmpEp]:
             EPout= tmpEp
     write_attribute( self, NwkId, "01", EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
-    self.log.logging( "Thermostats", 'Debug', "thermostat_eurotronic_hostflag - for %s with value %s / cluster: %s, attribute: %s type: %s action: %s"
+    self.log.logging( "Thermostats", 'Debug', "thermostat_eurotronic_hostflag - for %s with value %s / cluster: %s, attribute: %s type: %s action: %s" \
             %(NwkId,data,cluster_id,attribute,data_type, action), nwkid=NwkId)
 
-def thermostat_Calibration( self, NwkId, calibration):
+def thermostat_Calibration ( self, NwkId, calibration = None):
+    # Calibration is an int8 representing a temperature offset (in the range -2.5°C to 2.5°C)
+    # from 0xE7 ( -2.5 ) to 0x19 ( +2.5 )
+    # that can be added to or subtracted from the displayed temperature
+
+    if ( 'Param' in self.ListOfDevices[NwkId]
+        and 'Calibration' in self.ListOfDevices[NwkId]['Param']
+        and isinstance(
+            self.ListOfDevices[NwkId]['Param']['Calibration'], (float, int))
+        ):
+        calibration = int(10 * self.ListOfDevices[ NwkId ]['Param']['Calibration'])
+
+    if calibration is None:
+        calibration = 0
+
+    if calibration < -25 or calibration > 25:
+        self.log.logging( "Thermostats", 'Error', "thermostat_Calibration - Wrong Calibration offset on %s off %s" %( NwkId, calibration))
+        calibration = 0
+
+    if calibration < 0:
+        #in two’s complement form
+        calibration = int(hex( -calibration - pow(2,32) )[9:],16)
+        self.log.logging( "Thermostats", 'Debug', "thermostat_Calibration - 2 complement form of Calibration offset on %s off %s" %( NwkId, calibration))
+
+    if 'Thermostat' not in self.ListOfDevices[NwkId]:
+        self.ListOfDevices[NwkId]['Thermostat'] = {}
+
+    if 'Calibration' in self.ListOfDevices[NwkId]['Thermostat'] and calibration == self.ListOfDevices[NwkId]['Thermostat']['Calibration']:
+        return
+
+    self.log.logging( "Thermostats", 'Log', "thermostat_Calibration - Set Thermostat offset on %s off %s" %( NwkId, calibration))
+
+    self.ListOfDevices[NwkId]['Thermostat']['Calibration'] = calibration
 
     manuf_id = "0000"
     manuf_spec = "00"
