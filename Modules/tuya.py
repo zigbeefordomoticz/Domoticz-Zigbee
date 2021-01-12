@@ -123,10 +123,12 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
         pass
     elif decode_dp == 0x0114:
         # Valve state
+        # Use Dimer to report On/Off
         pass
     
     elif decode_dp == 0x026d:
         # Valve position in %
+        # Use Dimer to report %
         pass
 
     elif decode_dp == 0x046a:
