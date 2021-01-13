@@ -193,7 +193,7 @@ def ReadCluster(self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgCluster
             "fc01": Clusterfc01,
             "fc21": Clusterfc21,
             "fcc0": Clusterfcc0,
-            "fc40": Clusterfc40
+            "fc40": Clusterfc40,
             }
 
     if MsgClusterId in DECODE_CLUSTER:
@@ -539,7 +539,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
         readXiaomiCluster( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData )
 
-    elif MsgAttrID in ( 'ffe0', 'ffe1', 'ffe2'):
+    elif MsgAttrID in ( 'ffe0', 'ffe1', 'ffe2', 'ffe4', 'fffe', 'ffdf'):
         # Tuya, Zemismart
         self.log.logging( "Cluster", 'Debug', "ReadCluster - 0000 %s/%s attribute Tuya/Zemismat - %s: 0x%s %s" 
                 %(MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgClusterData, decodeAttribute( self, MsgAttType, MsgClusterData)), MsgSrcAddr)
@@ -551,10 +551,6 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
         #self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['Cluster Revision'] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
-    elif MsgAttrID == 'ffdf': # Tuya TS0041 1 Gang Switch 
-        self.log.logging( "Cluster", 'Debug', "ReadCluster - 0000 %s/%s attribute Tuya/Zemismat - %s: 0x%s %s" 
-                %(MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgClusterData, decodeAttribute( self, MsgAttType, MsgClusterData)), MsgSrcAddr)
-        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
     else:
         self.log.logging( "Cluster", 'Log', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " 

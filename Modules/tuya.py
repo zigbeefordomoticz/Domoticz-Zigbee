@@ -17,7 +17,7 @@ import struct
 from Classes.LoggingManagement import LoggingManagement
 
 from Modules.zigateConsts import ZIGATE_EP
-from Modules.basicOutputs import sendZigateCmd, raw_APS_request
+from Modules.basicOutputs import sendZigateCmd, raw_APS_request, write_attribute
 from Modules.tools import  checkAndStoreAttributeValue, is_ack_tobe_disabled, get_and_inc_SQN
 
 from Modules.domoMaj import MajDomoDevice
@@ -54,17 +54,39 @@ def callbackDeviceAwake_Tuya(self, NwkId, EndPoint, cluster):
 
     return
 
+def tuya_sirene_registration(self, nwkid):
+    
+    # (1) 3 x Write Attribute Cluster 0x0000 - Attribute 0xffde  - DT 0x20  - Value: 0x13
+    EPout = '01'
+    write_attribute( self, nwkid, ZIGATE_EP, EPout, '0000', '0000', '00', 'ffde', '20', '13', ackIsDisabled = False)
+
+    # (2) Cmd 0xf0 send on Cluster 0x0000 - no data
+
+
+    # (3) Cmd 0x03 on Cluster 0xef00  (Cluster Specific)
+
+    # Set the Siren to °C
+    tuya_siren_temp_unit( self, nwkid, unit='C' )
+
+
 def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
 
     # Zigbee Tuya Command on Cluster 0xef00:
     # https://medium.com/@dzegarra/zigbee2mqtt-how-to-add-support-for-a-new-tuya-based-device-part-2-5492707e882d
     # 
+    # Cluster 0xef00 (Command in Cluster Specific)
     #   0x00 Used by the ZC to send commands to the ZEDs.
     #   0x01 Used by the ZED to inform of changes in its state.
     #   0x02 Send by the ZED after receiving a 0x00 command. 
     #        Its data payload uses the same format as the 0x01 commands.
-    # cmd, data
-    
+    # Seen with Siren
+    #   0x03 send by the ZC without any data
+    #   0x10 send by ZC , with 2 bytes data 0x0018   
+    #   0x0b send by ZED , with 3 bytes data 0x000140   
+    #   0x24 send by ZED, with 2 bytes data 0x0027    => Response from ZC 0x24 with 10 bytes ( where the 2 first bytes are from the input command)
+
+
+
     if NwkId not in self.ListOfDevices:
         return
 
@@ -87,7 +109,7 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
     sqn = MsgPayload[2:4] # uint8
     cmd = MsgPayload[4:6] # uint8
 
-    if cmd not in ('00', '01', '02'):
+    if cmd not in ('00', '01', '02', '03'):
         self.log.logging( "Tuya", 'Log', "tuyaReadRawAPS - Unknown command %s MsgPayload %s/ Data: %s" %(cmd, MsgPayload, MsgPayload[6:]))
         return
 
@@ -117,7 +139,7 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
         # Switch 3
         pass
 
-    # eTRV
+    ######################### eTRV
     elif decode_dp == 0x0107:
         # Child Lock unlocked/locked
         self.log.logging( "Tuya", 'Debug', "tuyaReadRawAPS - Nwkid: %s/%s Child Lock/Unlock: %s" %(NwkId,srcEp ,data))
@@ -128,18 +150,15 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
         self.log.logging( "Tuya", 'Debug', "tuyaReadRawAPS - Nwkid: %s/%s Valve state: %s" %(NwkId,srcEp ,data))
         MajDomoDevice(self, Devices, NwkId, srcEp, '0006', data , Attribute_ = '0014')
 
-    
     elif decode_dp == 0x026d:
         # Valve position in %
         # Use Dimer to report %
         self.log.logging( "Tuya", 'Debug', "tuyaReadRawAPS - Nwkid: %s/%s Valve position: %s" %(NwkId,srcEp ,int(data,16)))
         MajDomoDevice(self, Devices, NwkId, srcEp, '0008', int(data,16) , Attribute_ = '026d')
 
-
     elif decode_dp == 0x046a:
         # Mode
         self.log.logging( "Tuya", 'Debug', "tuyaReadRawAPS - Nwkid: %s/%s Mode: %s" %(NwkId,srcEp ,data))
-        pass
 
     elif decode_dp == 0x0112:
         # Open Window
@@ -188,8 +207,10 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
 
 
 
-    # TS0601 Siren, Teperature, Humidity, Alarm
-    elif decode_dp == 0x0168:
+    ################### TS0601 Siren, Teperature, Humidity, Alarm
+    # ZED -> ZC 0x11 0x000740
+
+    elif decode_dp == 0x0168: #Alarm set 
         # Alarm
         if data == '00':
             MajDomoDevice(self, Devices, NwkId, srcEp, '0006', '00', Attribute_= '0168')
@@ -201,6 +222,14 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
 
     elif decode_dp == 0x0172: # Alarm by humidity
         MajDomoDevice(self, Devices, NwkId, srcEp, '0006', data, Attribute_= '0172')
+
+    elif decode_dp == 0x0465: # Power Mode ( 0x00 Battery, 0x04 USB )
+        # 00 02 6504 0001 00 -- Battery mode
+        # 00 02 6504 0001 04 -- Main power mode
+        if data == '04':
+           self.log.logging( "Tuya", 'Log', "tuyaReadRawAPS - Nwkid: %s/%s switch to USB power" %( NwkId, srcEp))
+        elif data == '00':
+            self.log.logging( "Tuya", 'Log', "tuyaReadRawAPS - Nwkid: %s/%s switch to Battery power" %( NwkId, srcEp))
 
     elif decode_dp == 0x0466: # Current Melody
         MajDomoDevice(self, Devices, NwkId, srcEp, '0006', (int(data,16)))
@@ -333,20 +362,20 @@ def get_alarm_attrbutes( self, nwkid, alarm_num):
 
 def tuya_siren_temp_alarm( self, nwkid, onoff ):
     self.log.logging( "Tuya", 'Debug', "tuya_siren_temp_alarm - %s onoff: %s" %(nwkid, onoff))
-    min_temp = 25
-    max_temp = 75
+    min_temp = 18
+    max_temp = 30
 
-    if ( 'Param' in self.ListOfDevices[ nwkid ] 
-            and 'TemperatureMinAlarm' in self.ListOfDevices[ nwkid ]['Param'] 
-            and isinstance( self.ListOfDevices[ nwkid ]['Param']['TemperatureMinAlarm'], int) ):
-        min_temp = self.ListOfDevices[ nwkid ]['Param']['TemperatureMinAlarm']
-        tuya_siren_alarm_min_humidity( self, nwkid, min_temp)
+    if onoff:
+        if ( 'Param' in self.ListOfDevices[ nwkid ] 
+                and 'TemperatureMinAlarm' in self.ListOfDevices[ nwkid ]['Param'] 
+                and isinstance( self.ListOfDevices[ nwkid ]['Param']['TemperatureMinAlarm'], int) ):
+            min_temp = self.ListOfDevices[ nwkid ]['Param']['TemperatureMinAlarm']
 
-    if ( 'Param' in self.ListOfDevices[ nwkid ] 
-            and 'TemperatureMaxAlarm' in self.ListOfDevices[ nwkid ]['Param'] 
-            and isinstance( self.ListOfDevices[ nwkid ]['Param']['TemperatureMaxAlarm'], int) ):
-        max_temp =   self.ListOfDevices[ nwkid ]['Param']['TemperatureMaxAlarm']    
-        tuya_siren_alarm_max_humidity( self, nwkid, max_temp)        
+        if ( 'Param' in self.ListOfDevices[ nwkid ] 
+                and 'TemperatureMaxAlarm' in self.ListOfDevices[ nwkid ]['Param'] 
+                and isinstance( self.ListOfDevices[ nwkid ]['Param']['TemperatureMaxAlarm'], int) ):
+            max_temp =   self.ListOfDevices[ nwkid ]['Param']['TemperatureMaxAlarm']    
+        tuya_siren_alarm_temp( self, nwkid, min_temp, max_temp)
 
     # determine which Endpoint
     EPout = '01'
@@ -357,23 +386,22 @@ def tuya_siren_temp_alarm( self, nwkid, onoff ):
     data = '%02x' %onoff
     tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 
-
-def tuya_siren_humi_alarm( self, nwkid, onoff ):
+def tuya_siren_humi_alarm( self, nwkid, onoff ):   
     self.log.logging( "Tuya", 'Debug', "tuya_siren_humi_alarm - %s onoff: %s" %(nwkid, onoff))
     min_humi = 25
     max_humi = 75
 
-    if ( 'Param' in self.ListOfDevices[ nwkid ] 
-            and 'HumidityMinAlarm' in self.ListOfDevices[ nwkid ]['Param'] 
-            and isinstance( self.ListOfDevices[ nwkid ]['Param']['HumidityMinAlarm'], int) ):
-        min_humi = self.ListOfDevices[ nwkid ]['Param']['HumidityMinAlarm']
-        tuya_siren_alarm_min_humidity( self, nwkid, min_humi)
-
-    if ( 'Param' in self.ListOfDevices[ nwkid ] 
-            and 'HumidityMaxAlarm' in self.ListOfDevices[ nwkid ]['Param'] 
-            and isinstance( self.ListOfDevices[ nwkid ]['Param']['HumidityMaxAlarm'], int) ):
-        max_humi =   self.ListOfDevices[ nwkid ]['Param']['HumidityMaxAlarm']    
-        tuya_siren_alarm_max_humidity( self, nwkid, max_humi)        
+    if onoff:
+        if ( 'Param' in self.ListOfDevices[ nwkid ] 
+                and 'HumidityMinAlarm' in self.ListOfDevices[ nwkid ]['Param'] 
+                and isinstance( self.ListOfDevices[ nwkid ]['Param']['HumidityMinAlarm'], int) ):
+            min_humi = self.ListOfDevices[ nwkid ]['Param']['HumidityMinAlarm']
+    
+        if ( 'Param' in self.ListOfDevices[ nwkid ] 
+                and 'HumidityMaxAlarm' in self.ListOfDevices[ nwkid ]['Param'] 
+                and isinstance( self.ListOfDevices[ nwkid ]['Param']['HumidityMaxAlarm'], int) ):
+            max_humi =   self.ListOfDevices[ nwkid ]['Param']['HumidityMaxAlarm']    
+        tuya_siren_alarm_humidity( self, nwkid, min_humi, max_humi)        
 
     # determine which Endpoint
     EPout = '01'
@@ -384,9 +412,12 @@ def tuya_siren_humi_alarm( self, nwkid, onoff ):
     data = '%02x' %onoff
     tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 
-
 def tuya_siren_alarm_duration( self, nwkid, duration):
     # duration in second
+    #     0s - 00 43 6702 0004 00000000
+    #    10s - 00 44 6702 0004 0000000a
+    #   250s - 00 45 6702 0004 000000fa
+    #   300s - 00 46 6702 0004 0000012c
      
     self.log.logging( "Tuya", 'Debug', "tuya_siren_alarm_duration - %s duration: %s" %(nwkid, duration))
     # determine which Endpoint
@@ -400,9 +431,9 @@ def tuya_siren_alarm_duration( self, nwkid, duration):
 
 def tuya_siren_alarm_volume( self, nwkid, volume):
     # 0-Max, 1-Medium, 2-Low
-    # 0- 95db
-    # 1- 80db
-    # 2- 70db
+    # 0- 95db  00 3e 7404 0001 00
+    # 1- 80db  00 3d 7404 0001 01
+    # 2- 70db  00 3f 7404 0001 02
     self.log.logging( "Tuya", 'Debug', "tuya_siren_alarm_volume - %s volume: %s" %(nwkid, volume))
     # determine which Endpoint
     EPout = '01'
@@ -414,7 +445,10 @@ def tuya_siren_alarm_volume( self, nwkid, volume):
     tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 
 def tuya_siren_alarm_melody( self, nwkid, melody):
-    # 5-Melody 1, 2, 3, 4
+    # 18-Melodies 1 -> 18 ==> 0x00 -- 0x11
+    # 1- 00 40 6604 0001 00
+    # 2- 00 41 6604 0001 01
+
     self.log.logging( "Tuya", 'Debug', "tuya_siren_alarm_melody - %s onoff: %s" %(nwkid, melody))
     # determine which Endpoint
     EPout = '01'
@@ -425,51 +459,62 @@ def tuya_siren_alarm_melody( self, nwkid, melody):
     data = '%02x' %melody
     tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 
-def tuya_siren_alarm_min_humidity( self, nwkid, humi_alarm):
-    self.log.logging( "Tuya", 'Debug', "tuya_siren_alarm_min_humidity - %s Min Humi: %s" %(nwkid, humi_alarm))
+def tuya_siren_temp_unit( self, nwkid, unit='C' ):
+    # From °c to °F: 00 39 7001 0001 00
+    #                00 3b 7001 0001 00
+
+    # From °F to °c: 00 3a 7001 0001 01
+    #                00 3c 7001 0001 01
+    unit = 0x01 if unit != 'F' else 0x00
+    self.log.logging( "Tuya", 'Debug', "tuya_siren_temp_unit - %s Unit Temp" %(nwkid, unit))
     # determine which Endpoint
     EPout = '01'
     sqn = get_and_inc_SQN( self, nwkid )
     cluster_frame = '11'
     cmd = '00' # Command
-    action = '%04x' %struct.unpack('H',struct.pack('>H', 0x026D ))[0]
-    data = '%08x' %humi_alarm
+    action = '%04x' %struct.unpack('H',struct.pack('>H', 0x0170 ))[0]
+    data = '%02x' %unit
+
     tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 
-def tuya_siren_alarm_max_humidity( self, nwkid, humi_alarm):
-    self.log.logging( "Tuya", 'Debug', "tuya_siren_alarm_max_humidity - %s Max Humi: %s" %(nwkid, humi_alarm))
+def tuya_siren_alarm_humidity( self, nwkid, min_humi_alarm, max_humi_alarm):
+    #                  Max humi            Min humi
+    # 00 34 6e02 00 04 00000058 6d02 00 04 0000000c
+    # 00 36 7201 00 01 01
+    self.log.logging( "Tuya", 'Debug', "tuya_siren_alarm_min_humidity - %s Min Humi: %s Max Humid" %(nwkid, min_humi_alarm, max_humi_alarm))
     # determine which Endpoint
     EPout = '01'
     sqn = get_and_inc_SQN( self, nwkid )
     cluster_frame = '11'
     cmd = '00' # Command
-    action = '%04x' %struct.unpack('H',struct.pack('>H', 0x026E ))[0]
-    data = '%08x' %humi_alarm
-    tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
+    action1 = '%04x' %struct.unpack('H',struct.pack('>H', 0x026E ))[0]
+    data1 = '%08x' %max_humi_alarm
 
-def tuya_siren_alarm_min_temp( self, nwkid, temp_alarm):
-    self.log.logging( "Tuya", 'Debug', "tuya_siren_alarm_min_temp - %s Min Temp: %s" %(nwkid, temp_alarm))
+    action2 = '%04x' %struct.unpack('H',struct.pack('>H', 0x026D ))[0]
+    data2 = '%08x' %min_humi_alarm
+    tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action1, data1, action2, data2)
+
+def tuya_siren_alarm_temp( self, nwkid, min_temp_alarm, max_temp):
+    # Enable Temp Alarm 18° <---> 33°c
+    #                  Max temp                Min temp
+    # 00 23 6c02 00 04 00000021     6b02 00 04 00000012
+    # 00 24 7101 00 01 01
+    #
+    self.log.logging( "Tuya", 'Debug', "tuya_siren_alarm_min_temp - %s Min Temp: %s Max Temp: %s" %(nwkid, min_temp_alarm, max_temp))
     # determine which Endpoint
     EPout = '01'
     sqn = get_and_inc_SQN( self, nwkid )
     cluster_frame = '11'
     cmd = '00' # Command
-    action = '%04x' %struct.unpack('H',struct.pack('>H', 0x026B ))[0]
-    data = '%08x' %temp_alarm
-    tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
+    action1 = '%04x' %struct.unpack('H',struct.pack('>H', 0x026C ))[0]
+    data1 = '%08x' %max_temp
 
-def tuya_siren_alarm_max_temp( self, nwkid, temp_alarm):
-    self.log.logging( "Tuya", 'Debug', "tuya_siren_alarm_min_temp - %s Max Temp: %s" %(nwkid, temp_alarm))
-    # determine which Endpoint
-    EPout = '01'
-    sqn = get_and_inc_SQN( self, nwkid )
-    cluster_frame = '11'
-    cmd = '00' # Command
-    action = '%04x' %struct.unpack('H',struct.pack('>H', 0x026C ))[0]
-    data = '%08x' %temp_alarm
-    tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
+    action2 = '%04x' %struct.unpack('H',struct.pack('>H', 0x026B ))[0]
+    data2 = '%08x' %min_temp_alarm
 
-def tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data ):
+    tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action1, data1, action2, data2)
+    
+def tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data , action2=None, data2 = None):
 
     if nwkid not in self.ListOfDevices:
         return
@@ -485,6 +530,9 @@ def tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data ):
         self.ListOfDevices[nwkid]['TuyaTransactionId'] = 0x00
     
     transid = '%02x' %self.ListOfDevices[nwkid]['TuyaTransactionId']
-    payload = cluster_frame + sqn + cmd + '00' + transid + action + '00' + '%02x' %len(data) + data
+    payload = cluster_frame + sqn + cmd + '00' + transid + action + '00' + '%02x' %len(data)//2 + data
+    if action2 and data2:
+        payload += action2 + '00' + '%02x' %len(data2)//2 + data2
+
     raw_APS_request( self, nwkid, EPout, 'ef00', '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = is_ack_tobe_disabled(self, nwkid))
     self.log.logging( "Tuya", 'Debug', "tuya_cmd - %s/%s cmd: %s payload: %s" %(nwkid, EPout , cmd, payload))
