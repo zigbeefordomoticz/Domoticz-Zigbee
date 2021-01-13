@@ -8,7 +8,7 @@ import Domoticz
 
 
 
-from Modules.readAttributes import ReadAttributeRequest_0b04_050b
+from Modules.readAttributes import ReadAttributeRequest_0b04_050b, ReadAttributeRequest_0b04_0505
 from Modules.zigateConsts import MAX_LOAD_ZIGATE
 
 
@@ -23,5 +23,6 @@ def pollingBlitzwolfPower( self, key ):
 
     if 'Model' in self.ListOfDevices [key] and self.ListOfDevices[key]['Model'] == 'TS0121':
         ReadAttributeRequest_0b04_050b( self, key)
+        ReadAttributeRequest_0b04_0505( self, key)
 
     return False

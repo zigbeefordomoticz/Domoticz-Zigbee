@@ -817,6 +817,16 @@ def ReadAttributeRequest_0b04(self, key):
             self.log.logging( "ReadAttributes", 'Debug', "Request Metering info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
             ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0b04", listAttributes, ackIsDisabled = is_ack_tobe_disabled(self, key))
 
+
+def ReadAttributeRequest_0b04_0505( self, key):
+    # Cluster 0x0b04 Metering / Specific 0x0505 Attribute ( Voltage)
+    ListOfEp = getListOfEpForCluster( self, key, '0b04' )
+    for EPout in ListOfEp:
+        listAttributes = [ 0x0505 ]
+    
+        self.log.logging( "ReadAttributes", 'Debug', "Request Metering Instant Power on 0x0b04 cluster: " + key + " EPout = " + EPout , nwkid=key)
+        ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0b04", listAttributes, ackIsDisabled = is_ack_tobe_disabled(self, key))
+
 def ReadAttributeRequest_0b04_050b( self, key):
     # Cluster 0x0b04 Metering / Specific 0x050B Attribute ( Instant Power)
     ListOfEp = getListOfEpForCluster( self, key, '0b04' )
