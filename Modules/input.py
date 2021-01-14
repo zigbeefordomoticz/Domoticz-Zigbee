@@ -2472,6 +2472,8 @@ def Decode8100( self, Devices, MsgData, MsgLQI ):  # Read Attribute Response (in
     MsgClusterId = MsgData[8:12]
     idx = 12
 
+    #0805 00 21 1801 0b05 00 29 2900 5802 86 5802 86 0000 86
+
     try:
         while idx < len(MsgData):
             MsgAttrID = MsgAttStatus = MsgAttType = MsgAttSize = MsgClusterData = ""
@@ -2488,14 +2490,15 @@ def Decode8100( self, Devices, MsgData, MsgLQI ):  # Read Attribute Response (in
                 MsgClusterData = MsgData[idx : idx + size]
                 idx += size
             else:
+                self.log.logging(  "Input", "Debug", "Decode8100 - idx: %s Read Attribute Response: [%s:%s] status: %s -> %s" %(
+                    idx, MsgSrcAddr, MsgSrcEp, MsgAttStatus, MsgData[ idx: ]))
+
                 # If the frame is coming from firmware we get only one attribute at a time, with some dumy datas
                 if len(MsgData[idx:]) == 6:
                     # crap, lets finish it
                     # Domoticz.Log("Crap Data: %s len: %s" %(MsgData[idx:], len(MsgData[idx:])))
                     idx += 6
-            self.log.logging( 
-                "Input",
-                "Debug",
+            self.log.logging(  "Input", "Debug",
                 "Decode8100 - idx: %s Read Attribute Response: [%s:%s] ClusterID: %s MsgSQN: %s, i_sqn: %s, AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<"
                 % ( idx, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgSQN, i_sqn, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, ), MsgSrcAddr, )
             NewMsgData = ( MsgSQN + MsgSrcAddr + MsgSrcEp + MsgClusterId + MsgAttrID + MsgAttStatus + MsgAttType + MsgAttSize + MsgClusterData )
