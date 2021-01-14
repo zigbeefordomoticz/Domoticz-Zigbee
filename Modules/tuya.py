@@ -56,6 +56,8 @@ def callbackDeviceAwake_Tuya(self, NwkId, EndPoint, cluster):
 
 def tuya_sirene_registration(self, nwkid):
     
+    self.log.logging( "Tuya", 'Debug', "tuya_sirene_registration - Nwkid: %s" %nwkid)
+    
     # (1) 3 x Write Attribute Cluster 0x0000 - Attribute 0xffde  - DT 0x20  - Value: 0x13
     EPout = '01'
     write_attribute( self, nwkid, ZIGATE_EP, EPout, '0000', '0000', '00', 'ffde', '20', '13', ackIsDisabled = False)
@@ -481,7 +483,7 @@ def tuya_siren_alarm_humidity( self, nwkid, min_humi_alarm, max_humi_alarm):
     #                  Max humi            Min humi
     # 00 34 6e02 00 04 00000058 6d02 00 04 0000000c
     # 00 36 7201 00 01 01
-    self.log.logging( "Tuya", 'Debug', "tuya_siren_alarm_min_humidity - %s Min Humi: %s Max Humid" %(nwkid, min_humi_alarm, max_humi_alarm))
+    self.log.logging( "Tuya", 'Debug', "tuya_siren_alarm_min_humidity - %s Min Humi: %s Max Humid: %s" %(nwkid, min_humi_alarm, max_humi_alarm))
     # determine which Endpoint
     EPout = '01'
     sqn = get_and_inc_SQN( self, nwkid )
@@ -530,9 +532,11 @@ def tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data , action
         self.ListOfDevices[nwkid]['TuyaTransactionId'] = 0x00
     
     transid = '%02x' %self.ListOfDevices[nwkid]['TuyaTransactionId']
-    payload = cluster_frame + sqn + cmd + '00' + transid + action + '00' + '%02x' %len(data)//2 + data
+    len_data = (len(data)) // 2
+    payload = cluster_frame + sqn + cmd + '00' + transid + action + '00' + '%02x' %len_data + data
     if action2 and data2:
-        payload += action2 + '00' + '%02x' %len(data2)//2 + data2
+        len_data2 = (len(data2)) // 2
+        payload += action2 + '00' + '%02x' %len_data2 + data2
 
     raw_APS_request( self, nwkid, EPout, 'ef00', '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = is_ack_tobe_disabled(self, nwkid))
     self.log.logging( "Tuya", 'Debug', "tuya_cmd - %s/%s cmd: %s payload: %s" %(nwkid, EPout , cmd, payload))
