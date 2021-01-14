@@ -229,12 +229,6 @@ def ping_device_with_read_attribute(self, key):
         # Let's ping only 1 EndPoint
         break
 
-
-
-
-
-
-
 def ReadAttributeRequest_0000(self, key, fullScope=True):
     # Basic Cluster
     # The Ep to be used can be challenging, as if we are in the discovery process, the list of Eps is not yet none and it could even be that the Device has only 1 Ep != 01
@@ -242,120 +236,126 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
     self.log.logging( "ReadAttributes", 'Debug', "ReadAttributeRequest_0000 - Key: %s , Scope: %s" %(key, fullScope), nwkid=key)
     EPout = '01'
 
-    disableAck = True
-    if 'PowerSource' in self.ListOfDevices[ key ] and self.ListOfDevices[ key ]['PowerSource'] == 'Battery':
-        disableAck = False
-
-    listAttributes = []
-
     # Checking if Ep list is empty, in that case we are in discovery mode and 
         # we don't really know what are the EPs we can talk to.
     if not fullScope or self.ListOfDevices[key]['Ep'] is None or self.ListOfDevices[key]['Ep'] == {}:
-        self.log.logging( "ReadAttributes", 'Debug', "--> Not full scope", nwkid=key)
-        self.log.logging( "ReadAttributes", 'Debug', "--> Build list of Attributes", nwkid=key)
-        skipModel = False
+        ReadAttributeRequest_0000_for_pairing( self, key )
+    else:
+        ReadAttributeRequest_0000_for_general( self, key )
 
-        # Do we Have Manufacturer
-        if self.ListOfDevices[key]['Manufacturer'] == '':
-            self.log.logging( "ReadAttributes", 'Debug', "----> Adding: %s" %'0004', nwkid=key)
-            listAttributes.append(0x0004)
-    
-        elif self.ListOfDevices[key]['Manufacturer'] == '1110': # Profalux.
-            listAttributes.append(0x0010)
-            skipModel = True
 
-        elif self.ListOfDevices[key]['Manufacturer'] == 'Legrand':
-                self.log.logging( "ReadAttributes", 'Debug', "----> Adding: %s" %'f000', nwkid=key)
-                if 0x4000 not in listAttributes:
-                    listAttributes.append(0x4000)
-                if 0xf000 not in listAttributes:
-                    listAttributes.append(0xf000)
-                skipModel = True
+def ReadAttributeRequest_0000_for_pairing( self, key ):
+    self.log.logging( "ReadAttributes", 'Debug', "--> Not full scope", nwkid=key)
+    self.log.logging( "ReadAttributes", 'Debug', "--> Build list of Attributes", nwkid=key)
+    skipModel = False
 
-        # Do We have Model Name
-        if not skipModel and self.ListOfDevices[key]['Model'] in [{}, '']:
-            self.log.logging( "ReadAttributes", 'Debug', "----> Adding: %s" %'0005', nwkid=key)
-            listAttributes.append(0x0005)        # Model Identifier
+    # Do we Have Manufacturer
+    if self.ListOfDevices[key]['Manufacturer'] == '' and self.ListOfDevices[key]['Ep'] and self.ListOfDevices[key]['Ep'] != {}:
+        self.log.logging( "ReadAttributes", 'Debug', "Request Basic  Manufacturer via Read Attribute request: %s" %'0004', nwkid=key)
+        manuf_name = [ 0x0004 ]
+        ReadAttributeReq( self, key, ZIGATE_EP, "01", "0000", manuf_name, ackIsDisabled = False , checkTime = False)
 
-        if ( 'Model' in self.ListOfDevices[key] and self.ListOfDevices[key]['Model'] != {} and self.ListOfDevices[key]['Model'] != '' ):
-            readAttr = False
-            if ( self.ListOfDevices[key]['Model'] in self.DeviceConf and \
-                    'ReadAttributes' in self.DeviceConf[self.ListOfDevices[key]['Model']] and \
-                    '0000' in self.DeviceConf[self.ListOfDevices[key]['Model']][ 'ReadAttributes' ] ):
-                readAttr = True
-                for attr in self.DeviceConf[ self.ListOfDevices[key]['Model'] ]['ReadAttributes']['0000']:
+    listAttributes = []
+
+    # Check if Model Name should be requested
+    if self.ListOfDevices[key]['Manufacturer'] == '1110': # Profalux.
+        listAttributes.append(0x0010)
+        skipModel = True
+
+    elif self.ListOfDevices[key]['Manufacturer'] == 'Legrand':
+        self.log.logging( "ReadAttributes", 'Debug', "----> Adding: %s" %'f000', nwkid=key)
+        listAttributes.append(0x4000)
+        listAttributes.append(0xf000)
+        skipModel = True
+
+    # Do We have Model Name
+    if not skipModel and self.ListOfDevices[key]['Model'] in [{}, ''] and self.ListOfDevices[key]['Ep'] and self.ListOfDevices[key]['Ep'] != {}:
+        self.log.logging( "ReadAttributes", 'Debug', "Request Basic  Model Name via Read Attribute request: %s" %'0004', nwkid=key)
+        model_name = [ 0x0005 ]
+        ReadAttributeReq( self, key, ZIGATE_EP, "01", "0000", model_name, ackIsDisabled = False , checkTime = False)
+    else:
+        listAttributes.append(0x0005)
+
+    if ( 'Model' in self.ListOfDevices[key] and self.ListOfDevices[key]['Model'] not in ( {},'' )):
+        model_name = self.ListOfDevices[key]['Model']
+        readAttr = False
+        if ( model_name in self.DeviceConf
+                and 'ReadAttributes' in self.DeviceConf[self.ListOfDevices[key]['Model']] 
+                and '0000' in self.DeviceConf[self.ListOfDevices[key]['Model']][ 'ReadAttributes' ] ):
+            readAttr = True
+            for attr in self.DeviceConf[ self.ListOfDevices[key]['Model'] ]['ReadAttributes']['0000']:
+                if int( attr , 16) not in listAttributes:
                     listAttributes.append( int( attr , 16))  
 
-                        #if not readAttr and self.ListOfDevices[key]['Model'] != 'TI0001':
-                        #    self.log.logging( "ReadAttributes", 'Debug', "----> Adding: %s" %'000A', nwkid=key)
-                        #    listAttributes.append(0x000A)        # Product Code
-
-        if self.ListOfDevices[key]['Ep'] is None or self.ListOfDevices[key]['Ep'] == {}:
-            self.log.logging( "ReadAttributes", 'Log', "Request Basic  via Read Attribute request: " + key + " EPout = " + "01, 02, 03, 06, 09" , nwkid=key)
-            ReadAttributeReq( self, key, ZIGATE_EP, "01", "0000", listAttributes, ackIsDisabled = False , checkTime = False)
-            ReadAttributeReq( self, key, ZIGATE_EP, "0b", "0000", listAttributes, ackIsDisabled = False , checkTime = False) # Schneider
-            ReadAttributeReq( self, key, ZIGATE_EP, "02", "0000", listAttributes, ackIsDisabled = False , checkTime = False)
-            ReadAttributeReq( self, key, ZIGATE_EP, "03", "0000", listAttributes, ackIsDisabled = False , checkTime = False)
-            ReadAttributeReq( self, key, ZIGATE_EP, "06", "0000", listAttributes, ackIsDisabled = False , checkTime = False) # Livolo
-            ReadAttributeReq( self, key, ZIGATE_EP, "09", "0000", listAttributes, ackIsDisabled = False , checkTime = False)
-            
-        else:
-            for epout in self.ListOfDevices[key]['Ep']:
-                self.log.logging( "ReadAttributes", 'Log', "Request Basic  via Read Attribute request: " + key + " EPout = " + epout + " Attributes: " + str(listAttributes), nwkid=key)
-                if self.ListOfDevices[ key ].get('Power', 'Battery') == 'Main':
-                    ReadAttributeReq( self, key, ZIGATE_EP, epout, "0000", listAttributes, ackIsDisabled = False , checkTime = False)
-                else:
-                    ReadAttributeReq( self, key, ZIGATE_EP, epout, "0000", listAttributes, ackIsDisabled = False , checkTime = False)
-
+    if self.ListOfDevices[key]['Ep'] is None or self.ListOfDevices[key]['Ep'] == {}:
+        self.log.logging( "ReadAttributes", 'Log', "Request Basic  via Read Attribute request: " + key + " EPout = " + "01, 02, 03, 06, 09" , nwkid=key)
+        ReadAttributeReq( self, key, ZIGATE_EP, "01", "0000", listAttributes, ackIsDisabled = False , checkTime = False)
+        ReadAttributeReq( self, key, ZIGATE_EP, "0b", "0000", listAttributes, ackIsDisabled = False , checkTime = False) # Schneider
+        ReadAttributeReq( self, key, ZIGATE_EP, "02", "0000", listAttributes, ackIsDisabled = False , checkTime = False)
+        ReadAttributeReq( self, key, ZIGATE_EP, "03", "0000", listAttributes, ackIsDisabled = False , checkTime = False)
+        ReadAttributeReq( self, key, ZIGATE_EP, "06", "0000", listAttributes, ackIsDisabled = False , checkTime = False) # Livolo
+        ReadAttributeReq( self, key, ZIGATE_EP, "09", "0000", listAttributes, ackIsDisabled = False , checkTime = False)
+        
     else:
-        self.log.logging( "ReadAttributes", 'Debug', "--> Full scope", nwkid=key)
-        ListOfEp = getListOfEpForCluster( self, key, '0000' ) 
-        for EPout in ListOfEp:
-            for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0000'):
-                listAttributes.append( iterAttr )
+        for epout in self.ListOfDevices[key]['Ep']:
+            self.log.logging( "ReadAttributes", 'Log', "Request Basic  via Read Attribute request: " + key + " EPout = " + epout + " Attributes: " + str(listAttributes), nwkid=key)
+            if self.ListOfDevices[ key ].get('Power', 'Battery') == 'Main':
+                ReadAttributeReq( self, key, ZIGATE_EP, epout, "0000", listAttributes, ackIsDisabled = False , checkTime = False)
+            else:
+                ReadAttributeReq( self, key, ZIGATE_EP, epout, "0000", listAttributes, ackIsDisabled = False , checkTime = False)
 
-            if ( 'Model' in self.ListOfDevices[key] and self.ListOfDevices[key]['Model'] != {} ):
-                if str(self.ListOfDevices[key]['Model']).find('lumi') != -1:
-                    listAttributes.append(0xff01)
-                    listAttributes.append(0xff02)
+def ReadAttributeRequest_0000_for_general( self, key ):
 
-                if str(self.ListOfDevices[key]['Model']).find('TS0302') != -1: # Inter Blind Zemismart
-                    listAttributes.append(0xfffd)
-                    listAttributes.append(0xfffe)
-                    listAttributes.append(0xffe1)
-                    listAttributes.append(0xffe2)
-                    listAttributes.append(0xffe3)
+    listAttributes = []
+    self.log.logging( "ReadAttributes", 'Debug', "--> Full scope", nwkid=key)
+    ListOfEp = getListOfEpForCluster( self, key, '0000' ) 
+    for EPout in ListOfEp:
+        for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0000'):
+            listAttributes.append( iterAttr )
 
-            # Adjustement before request
-            listAttrSpecific = []
-            listAttrGeneric = []
-            manufacturer_code = '0000'
+        if ( 'Model' in self.ListOfDevices[key] and self.ListOfDevices[key]['Model'] != {} ):
+            if str(self.ListOfDevices[key]['Model']).find('lumi') != -1:
+                listAttributes.append(0xff01)
+                listAttributes.append(0xff02)
 
-            if ( 'Manufacturer' in self.ListOfDevices[key] and self.ListOfDevices[key]['Manufacturer'] == '105e' ) or \
-                ( 'Manufacturer Name' in self.ListOfDevices[key] and self.ListOfDevices[key]['Manufacturer Name'] == 'Schneider Electric' ) or \
-                ( 'Model' in self.ListOfDevices[key] and self.ListOfDevices[key]['Model'] in ( 'EH-ZB-VAC') ):
-                # We need to break the Read Attribute between Manufacturer specifcs one and teh generic one
-                #Domoticz.Log("Specific Manufacturer !!!!")
-                manufacturer_code = '105e'
-                for _attr in list(listAttributes):
-                    if _attr in ( 0xe000, 0xe001, 0xe002 ):
-                        listAttrSpecific.append( _attr )
-                    else:
-                        listAttrGeneric.append( _attr )
-                del listAttributes
-                listAttributes = listAttrGeneric
-            #Domoticz.Log("List Attributes: " + " ".join("0x{:04x}".format(num) for num in listAttributes) )
-            
-            if listAttributes:
-                #self.log.logging( "ReadAttributes", 'Debug', "Request Basic  via Read Attribute request %s/%s %s" %(key, EPout, str(listAttributes)), nwkid=key)
-                self.log.logging( "ReadAttributes", 'Debug', "Request Basic  via Read Attribute request %s/%s " %(key, EPout) + " ".join("0x{:04x}".format(num) for num in listAttributes), nwkid=key)
-                ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0000", listAttributes, ackIsDisabled = is_ack_tobe_disabled(self, key), checkTime = False )
+            if str(self.ListOfDevices[key]['Model']).find('TS0302') != -1: # Inter Blind Zemismart
+                listAttributes.append(0xfffd)
+                listAttributes.append(0xfffe)
+                listAttributes.append(0xffe1)
+                listAttributes.append(0xffe2)
+                listAttributes.append(0xffe3)
 
-            #Domoticz.Log("List Attributes Manuf Spec: " + " ".join("0x{:04x}".format(num) for num in listAttrSpecific) )
-            if listAttrSpecific:
-                #self.log.logging( "ReadAttributes", 'Debug', "Request Basic  via Read Attribute request Manuf Specific %s/%s %s" %(key, EPout, str(listAttrSpecific)), nwkid=key)
-                self.log.logging( "ReadAttributes", 'Debug', "Request Basic  via Read Attribute request Manuf Specific %s/%s " %(key, EPout) + " ".join("0x{:04x}".format(num) for num in listAttrSpecific), nwkid=key)
-                ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0000", listAttrSpecific, manufacturer_spec = '01', manufacturer = manufacturer_code , ackIsDisabled = is_ack_tobe_disabled(self, key) , checkTime = False)
+        # Adjustement before request
+        listAttrSpecific = []
+        listAttrGeneric = []
+        manufacturer_code = '0000'
+
+        if ( 'Manufacturer' in self.ListOfDevices[key] and self.ListOfDevices[key]['Manufacturer'] == '105e' ) or \
+            ( 'Manufacturer Name' in self.ListOfDevices[key] and self.ListOfDevices[key]['Manufacturer Name'] == 'Schneider Electric' ) or \
+            ( 'Model' in self.ListOfDevices[key] and self.ListOfDevices[key]['Model'] in ( 'EH-ZB-VAC') ):
+            # We need to break the Read Attribute between Manufacturer specifcs one and teh generic one
+            #Domoticz.Log("Specific Manufacturer !!!!")
+            manufacturer_code = '105e'
+            for _attr in list(listAttributes):
+                if _attr in ( 0xe000, 0xe001, 0xe002 ):
+                    listAttrSpecific.append( _attr )
+                else:
+                    listAttrGeneric.append( _attr )
+            del listAttributes
+            listAttributes = listAttrGeneric
+        #Domoticz.Log("List Attributes: " + " ".join("0x{:04x}".format(num) for num in listAttributes) )
+        
+        if listAttributes:
+            #self.log.logging( "ReadAttributes", 'Debug', "Request Basic  via Read Attribute request %s/%s %s" %(key, EPout, str(listAttributes)), nwkid=key)
+            self.log.logging( "ReadAttributes", 'Debug', "Request Basic  via Read Attribute request %s/%s " %(key, EPout) + " ".join("0x{:04x}".format(num) for num in listAttributes), nwkid=key)
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0000", listAttributes, ackIsDisabled = is_ack_tobe_disabled(self, key), checkTime = False )
+
+        #Domoticz.Log("List Attributes Manuf Spec: " + " ".join("0x{:04x}".format(num) for num in listAttrSpecific) )
+        if listAttrSpecific:
+            #self.log.logging( "ReadAttributes", 'Debug', "Request Basic  via Read Attribute request Manuf Specific %s/%s %s" %(key, EPout, str(listAttrSpecific)), nwkid=key)
+            self.log.logging( "ReadAttributes", 'Debug', "Request Basic  via Read Attribute request Manuf Specific %s/%s " %(key, EPout) + " ".join("0x{:04x}".format(num) for num in listAttrSpecific), nwkid=key)
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0000", listAttrSpecific, manufacturer_spec = '01', manufacturer = manufacturer_code , ackIsDisabled = is_ack_tobe_disabled(self, key) , checkTime = False)
+
 
 def ReadAttributeRequest_0001(self, key):
 
