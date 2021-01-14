@@ -841,9 +841,12 @@ def ReadAttributeRequest_0b04_050b_0505_0508( self, key):
     # Use for Blitwolf Plug
     ListOfEp = getListOfEpForCluster( self, key, '0b04' )
     for EPout in ListOfEp:
-        listAttributes = [ 0x050b, 0x0505, 0x0508 ]
+        listAttributes = [ 0x050b, 0x0505 ]
         self.log.logging( "ReadAttributes", 'Debug', "Request Metering Instant Power on 0x0b04 cluster: " + key + " EPout = " + EPout , nwkid=key)
         ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0b04", listAttributes, ackIsDisabled = is_ack_tobe_disabled(self, key))
+        listAttributes = [  0x0508 ]
+        ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0b04", listAttributes, ackIsDisabled = is_ack_tobe_disabled(self, key))
+
 
 def ReadAttributeRequest_0b05(self, key):
     # Cluster Diagnostic
