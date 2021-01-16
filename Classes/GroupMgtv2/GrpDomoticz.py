@@ -367,7 +367,7 @@ def remove_domoticz_group_device(self, GroupId):
     ' User has removed the Domoticz Device corresponding to this group'
 
     unit = unit_for_widget(self, GroupId )
-    if unit is None:
+    if unit is None and GroupId in self.ListOfGroups:
         self.logging( 'Debug', "remove_domoticz_group_device - no unit found for GroupId: %s" %self.ListOfGroups[GroupId])
         return
         
