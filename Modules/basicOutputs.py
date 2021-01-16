@@ -448,6 +448,11 @@ def leaveMgtReJoin( self, saddr, ieee, rejoin=True):
         self.log.logging( "BasicOutput", "Status", "Request a rejoin of (%s/%s)" %(saddr, ieee),saddr)
         return send_zigatecmd_raw(self, "0047", datas )
 
+def reset_device( self, nwkid, epout):
+
+    self.log.logging( "BasicOutput", 'Debug', "reset_device - Send a Device Reset to %s/%s" %(nwkid, epout), nwkid)
+    return send_zigatecmd_raw(self, "0050", '02' + nwkid + '01' + '01' )
+    
 
 def leaveRequest( self, ShortAddr=None, IEEE= None, RemoveChild=0x00, Rejoin=0x00 ):
     """
@@ -469,11 +474,14 @@ def leaveRequest( self, ShortAddr=None, IEEE= None, RemoveChild=0x00, Rejoin=0x0
                 ShortAddr,  {'Error code': 'BOUTPUTS-LEAVE-01', 'ListOfDevices' : self.ListOfDevices})
             return None
 
+    if Rejoin == 0x00 and ShortAddr:
+        self.log.logging( "BasicOutput", 'Log', "reset_device - Send a Device Reset to %s/%s" %(ShortAddr, '01'), ShortAddr)
+        send_zigatecmd_raw(self, "0050", '02' + ShortAddr + '01' + '01' )
+
     _rmv_children = '%02X' %RemoveChild
     _rejoin = '%02X' %Rejoin
 
     datas = _ieee + _rmv_children + _rejoin
-    #self.log.logging( "BasicOutput", "Status", "Sending a leaveRequest - %s %s" %( '0047', datas))
     self.log.logging( "BasicOutput", 'Debug', "---------> Sending a leaveRequest - NwkId: %s, IEEE: %s, RemoveChild: %s, Rejoin: %s"\
         %( ShortAddr, IEEE, RemoveChild, Rejoin), ShortAddr)
     return send_zigatecmd_raw(self, "0047", datas )
