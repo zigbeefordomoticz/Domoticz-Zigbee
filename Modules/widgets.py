@@ -292,7 +292,10 @@ SWITCH_LVL_MATRIX = {
 
     "SwitchIKEA": { 
         "00": (0,"Off"), 
-        "01": (1,"On"), 
+        "01": (1,"10"), 
+        "02": (2,"20"),
+        "03": (3,"30"),
+        "04": (4,"40"),
         "ForceUpdate": True , 
         "LevelNames": "Off|On|Push Up|Push Down|Release",
         "Language": {
