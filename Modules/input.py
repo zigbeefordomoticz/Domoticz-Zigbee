@@ -492,10 +492,12 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
         return
 
     ( GlobalCommand, Sqn, ManufacturerCode, Command, Data, ) = retreive_cmd_payload_from_8002(MsgPayload)
-    if Sqn == self.ListOfDevices[ srcnwkid ]['SQN']:
-            Domoticz.Log("Decode8002 - Duplicate message drop NwkId: %s Ep: %s Cluster: %s GlobalCommand: %5s Command: %s Data: %s"
-                % ( srcnwkid, MsgSourcePoint, MsgClusterID, GlobalCommand, Command, Data, ))
-            return
+
+
+    if 'SQN' in self.ListOfDevices[ srcnwkid ] and Sqn == self.ListOfDevices[ srcnwkid ]['SQN']:
+        Domoticz.Log("Decode8002 - Duplicate message drop NwkId: %s Ep: %s Cluster: %s GlobalCommand: %5s Command: %s Data: %s"
+            % ( srcnwkid, MsgSourcePoint, MsgClusterID, GlobalCommand, Command, Data, ))
+        return
 
     updSQN(self, srcnwkid, Sqn)
 
