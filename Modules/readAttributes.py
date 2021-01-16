@@ -178,7 +178,6 @@ def retreive_attributes_based_on_configuration(self, key, cluster):
     #Domoticz.Log("-->Attributes based on Configuration")
     targetAttribute = []
     for attr in self.DeviceConf[ self.ListOfDevices[key]['Model'] ]['ReadAttributes'][cluster]:
-        #Domoticz.Log("----> Device: %s Adding Attribute %s for Cluster %s" %(key, attr, cluster))
         targetAttribute.append( int(attr,16) )
     return targetAttribute
 
@@ -206,7 +205,6 @@ def retreive_attributes_from_default_device_list( self, key, Ep, cluster ):
             for addattr in ATTRIBUTES[cluster]:
                 if addattr not in targetAttribute:
                     targetAttribute.append( addattr )
-    
     return targetAttribute
 
 def retreive_attributes_from_default_plugin_list( self, key, Ep, cluster):
