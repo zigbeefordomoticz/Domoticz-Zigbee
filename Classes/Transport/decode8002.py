@@ -206,8 +206,9 @@ def buildframe_read_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, Clust
             lenData = '%04x' %(size // 2 )
             buildPayload += Attribute + Status + DType + lenData + value
         else:
-            buildPayload += Attribute + Status 
-    
+            # Status != 0x00
+            buildPayload += Attribute + Status
+            
     newFrame = '01' # 0:2
     newFrame += '8100' # 2:6   MsgType
     newFrame += '%4x' %len(buildPayload) # 6:10  Length

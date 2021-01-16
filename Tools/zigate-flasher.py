@@ -1,4 +1,6 @@
 #!/usr/bin/python3
+
+
 # Modified script from https://github.com/tjikkun/zigate-flasher
 
 import argparse

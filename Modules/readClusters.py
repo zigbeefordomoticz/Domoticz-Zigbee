@@ -541,8 +541,8 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     elif MsgAttrID in ( 'ffe0', 'ffe1', 'ffe2', 'ffe4', 'fffe', 'ffdf'):
         # Tuya, Zemismart
-        self.log.logging( "Cluster", 'Debug', "ReadCluster - 0000 %s/%s attribute Tuya/Zemismat - %s: 0x%s %s" 
-                %(MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgClusterData, decodeAttribute( self, MsgAttType, MsgClusterData)), MsgSrcAddr)
+        self.log.logging( "Cluster", 'Log', "ReadCluster - 0000 %s/%s attribute Tuya/Zemismat - %s: 0x%s" 
+                %(MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgClusterData, ), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
 

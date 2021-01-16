@@ -420,7 +420,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             if 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['Model'] in ( 'AC201A', 'AC211'):
                 casaia_pairing( self, NWKID)
 
-            if 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( 'TS0601'):
+            if 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( 'TS0601-sirene'):
                 tuya_sirene_registration(self, NWKID)
 
             # Reset HB in order to force Read Attribute Status
