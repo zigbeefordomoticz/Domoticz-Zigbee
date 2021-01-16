@@ -151,26 +151,29 @@ def skipThisAttribute( self, addr, EpOut, Cluster, Attr):
 def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
     
     targetAttribute = retreive_attributes_based_on_configuration(self, key, cluster)
-    if targetAttribute:
+    if targetAttribute is not None:
         return targetAttribute
 
     targetAttribute =  retreive_attributes_from_default_device_list( self, key, Ep, cluster )
-    if targetAttribute:
+    if targetAttribute is not None:
         return targetAttribute
 
     # Attribute based on default
-    return retreive_attributes_from_default_plugin_list( self, key, Ep, cluster)
+    targetAttribute = retreive_attributes_from_default_plugin_list( self, key, Ep, cluster)
+    if targetAttribute is not None:
+        return targetAttribute
+    return []
 
 
 def retreive_attributes_based_on_configuration(self, key, cluster):
     if 'Model' not in self.ListOfDevices[key]:
-        return []
+        return None
     if self.ListOfDevices[key]['Model'] not in self.DeviceConf:
-        return []
+        return None
     if 'ReadAttributes' not in self.DeviceConf[ self.ListOfDevices[key]['Model'] ]:
-        return []
+        return None
     if cluster not in  self.DeviceConf[ self.ListOfDevices[key]['Model'] ]['ReadAttributes']:
-        return []
+        return None
 
     #Domoticz.Log("-->Attributes based on Configuration")
     targetAttribute = []
@@ -182,13 +185,13 @@ def retreive_attributes_based_on_configuration(self, key, cluster):
 def retreive_attributes_from_default_device_list( self, key, Ep, cluster ):
 
     if 'Attributes List' not in self.ListOfDevices[key]:
-        return []
+        return None
     if 'Ep' not in self.ListOfDevices[key]['Attributes List']:
-        return []
+        return None
     if Ep in self.ListOfDevices[key]['Attributes List']['Ep']:
-        return []
+        return None
     if cluster not in self.ListOfDevices[key]['Attributes List']['Ep'][Ep]:
-        return []
+        return None
 
     targetAttribute = []
     self.log.logging( "ReadAttributes", 'Debug', "retreive_ListOfAttributesByCluster: Attributes from Attributes List", nwkid=key)
@@ -207,6 +210,8 @@ def retreive_attributes_from_default_device_list( self, key, Ep, cluster ):
     return targetAttribute
 
 def retreive_attributes_from_default_plugin_list( self, key, Ep, cluster):
+
+    targetAttribute = None
     self.log.logging( "ReadAttributes", 'Debug2', 
             "retreive_ListOfAttributesByCluster: default attributes list for cluster: %s" %cluster, nwkid=key)
     if cluster in ATTRIBUTES:
@@ -217,6 +222,8 @@ def retreive_attributes_from_default_plugin_list( self, key, Ep, cluster):
     self.log.logging( "ReadAttributes", 'Debug', 
         "---- retreive_ListOfAttributesByCluster: List of Attributes for cluster %s : " %(cluster) + 
         " ".join("0x{:04x}".format(num) for num in targetAttribute), nwkid=key)
+
+    return targetAttribute
 
 def ping_device_with_read_attribute(self, key):
     # In order to ping a device, we simply send a Read Attribute on Cluster 0x0000 and looking for Attribute 0x0000
@@ -304,7 +311,11 @@ def ReadAttributeRequest_0000_for_pairing( self, key ):
 
 def add_attributes_from_device_certified_conf( self, key, cluster, listAttributes ):
 
-    for attr in retreive_attributes_based_on_configuration(self, key, cluster):
+    attributes = retreive_attributes_based_on_configuration(self, key, cluster)
+    if attributes is None:
+        return listAttributes
+
+    for attr in attributes:
         if int( attr , 16) not in listAttributes:
             listAttributes.append( int( attr , 16))  
     return listAttributes
