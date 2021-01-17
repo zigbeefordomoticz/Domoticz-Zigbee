@@ -375,6 +375,11 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             if 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['Model'] != {} and self.ListOfDevices[NWKID]['Model'] == 'SPZB0001':
                 thermostat_Calibration( self, NWKID, 0x00)
 
+            for ep in self.ListOfDevices[NWKID]['Ep']:
+                if '0004' in self.ListOfDevices[NWKID]['Ep'][ep] and self.groupmgt:
+                    self.groupmgt.ScanDevicesForGroupMemberShip( [ NWKID, ] )
+                    break
+
             # Identify for ZLL compatible devices
             # Search for EP to be used 
             ep = '01'

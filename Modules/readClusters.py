@@ -318,10 +318,13 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                     # Overwrite the Confif file
                     modelName += '-bulb'
 
-        if modelName == 'PIR323' and MsgSrcEp == '03':
+        elif modelName == 'PIR323' and MsgSrcEp == '03':
             # Very bad hack, but Owon use the same model name for 2 devices!
             modelName = 'THS317'
 
+        # Here the Device is not yet provisionned
+        if 'Model' not in self.ListOfDevices[MsgSrcAddr]:
+            self.ListOfDevices[MsgSrcAddr]['Model'] = {}
 
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = AttrModelName # We store the original one
         self.log.logging( "Cluster", 'Debug', "ReadCluster - %s / %s - Recepion Model: >%s<" %(MsgClusterId, MsgAttrID, modelName), MsgSrcAddr)
@@ -330,15 +333,16 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
         # Check if we have already provisionned this Device. If yes, then we drop this message
         if 'Ep' in self.ListOfDevices[MsgSrcAddr]:
-            for iterEp in self.ListOfDevices[MsgSrcAddr]['Ep']:
-                if 'ClusterType' in self.ListOfDevices[MsgSrcAddr]['Ep'][iterEp]:
+            for iterEp in list(self.ListOfDevices[MsgSrcAddr]['Ep']):
+                if 'ClusterType' in list(self.ListOfDevices[MsgSrcAddr]['Ep'][iterEp]):
                     self.log.logging( "Cluster", 'Debug', "ReadCluster - %s / %s - %s %s is already provisioned in Domoticz" \
                             %(MsgClusterId, MsgAttrID, MsgSrcAddr, modelName), MsgSrcAddr)
-                    return
 
-        # Here the Device is not yet provisionned
-        if 'Model' not in self.ListOfDevices[MsgSrcAddr]:
-            self.ListOfDevices[MsgSrcAddr]['Model'] = {}
+                    # However if Model is not correctly set, let's take the opportunity to correct
+                    if self.ListOfDevices[MsgSrcAddr]['Model'] == '' or self.ListOfDevices[MsgSrcAddr]['Model'] == {}:
+                        self.log.logging( "Cluster", 'Debug', "ReadCluster - %s / %s - Update Model Name %s" %(MsgClusterId, MsgAttrID,modelName ), MsgSrcAddr)
+                        self.ListOfDevices[MsgSrcAddr]['Model'] = modelName
+                    return
 
         if self.ListOfDevices[MsgSrcAddr]['Model'] == modelName and self.ListOfDevices[MsgSrcAddr]['Model'] in self.DeviceConf:
             # This looks like a Duplicate, just drop
@@ -2421,7 +2425,7 @@ def Cluster0b04( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value))
         if value == 0xffff:
             return
-        if 'Model' in self.ListOfDevices[ MsgSrcAddr ] and self.ListOfDevices[ MsgSrcAddr ]['Model'] == 'outletv4':
+        if ( 'Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Model'] == 'outletv4' ):
             value /= 10
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0001", str(value))
 
@@ -2430,8 +2434,9 @@ def Cluster0b04( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.log.logging( "Cluster", 'Debug', "ReadCluster %s - %s/%s Current %s" \
             %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value))
         value /= 100
+        if ( 'Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Model'] == 'TS0121' ):
+            value /= 20
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value), Attribute_=MsgAttrID)
-
 
     else:
         self.log.logging( "Cluster", 'Log', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" \

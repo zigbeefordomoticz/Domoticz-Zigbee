@@ -451,7 +451,7 @@ class BasePlugin:
                 if self.pluginconf.pluginConf['allowRemoveZigateDevice']:
                     IEEE = Devices[Unit].DeviceID
                     # sending a Leave Request to device, so the device will send a leave
-                    leaveRequest( self, IEEE= IEEE )
+                    leaveRequest( self, ShortAddr= NwkId, IEEE= IEEE )
 
                     # for a remove in case device didn't send the leave
                     if self.ZigateIEEE:

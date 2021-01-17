@@ -17,13 +17,13 @@ ZIGATE_EP = '01'
 HEARTBEAT = 5
 
 # Number of Max Command to be submitted to Zigate
-MAX_LOAD_ZIGATE = 4
+MAX_LOAD_ZIGATE = 5
 
 # Threshold before switching to Busy state. If we have or more than MAX_FOR_ZIGATE_BUZY in the FIFO queue
-MAX_FOR_ZIGATE_BUZY = 6
+MAX_FOR_ZIGATE_BUZY = 10
 
 # If there is a need to read more than 4 Attributes at a time, then breakdown the request into several.
-MAX_READATTRIBUTES_REQ = 4   # Number of Attributes to be requested via 0x0100
+MAX_READATTRIBUTES_REQ = 3   # Number of Attributes to be requested via 0x0100
 
 # Number of silmutaneous command sent to ZiGate. It must be 1 in case of firmware below 31c
 MAX_SIMULTANEOUS_ZIGATE_COMMANDS = 1  

@@ -530,6 +530,11 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
         # Most likely we receive a Device Annoucement which has not relation with the JoinFlag we have .
         self.log.logging(  "Input", "Error", "Decode004D - Unexpected %s %s %s" % (NwkId, Ieee, RejoinFlag), NwkId, )
 
+    for ep in self.ListOfDevices[NwkId]['Ep']:
+        if '0004' in self.ListOfDevices[NwkId]['Ep'][ep] and self.groupmgt:
+            self.groupmgt.ScanDevicesForGroupMemberShip( [ NwkId, ] )
+            break
+
     # This should be the first one, let's take the information and drop it
     self.log.logging(  "Input", "Debug", "------------ > Finally do the existing device and rebind if needed", )
     decode004d_existing_devicev2(self, Devices, NwkId, Ieee, MacCapa, MsgLQI, now)

@@ -246,6 +246,7 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
     self.log.logging(  "Input", "Debug", "Decode0100 - Mode: %s NwkId: %s SrcEP: %s DstEp: %s ClusterId: %s Direction: %s ManufSpec: %s ManufCode: %s nbAttribute: %s"
         % (MsgSqn,MsgSrcAddr,MsgSrcEp,MsgDstEp,MsgClusterId,MsgDirection,MsgManufSpec,MsgManufCode,nbAttribute,),)
 
+    updSQN(self, MsgSrcAddr, MsgSqn)
     manuf = manuf_name = model = ''
     if 'Model' in self.ListOfDevices[MsgSrcAddr ] and self.ListOfDevices[MsgSrcAddr ]['Model'] not in ( '', {} ):
         model = self.ListOfDevices[MsgSrcAddr ]['Model']
@@ -486,23 +487,25 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
     updLQI(self, srcnwkid, MsgLQI)
 
     if MsgProfilID != "0104":
-        self.log.logging(  "RawAPS", "Debug","Decode8002 - NwkId: %s Ep: %s Cluster: %s Payload: %s"
+        self.log.logging(  "debuginRawAPS", "Debug","Decode8002 - NwkId: %s Ep: %s Cluster: %s Payload: %s"
             % (srcnwkid, MsgSourcePoint, MsgClusterID, MsgPayload),)
         return
 
     ( GlobalCommand, Sqn, ManufacturerCode, Command, Data, ) = retreive_cmd_payload_from_8002(MsgPayload)
-    if Sqn == self.ListOfDevices[ srcnwkid ]['SQN']:
-            Domoticz.Log("Decode8002 - Duplicate message drop NwkId: %s Ep: %s Cluster: %s GlobalCommand: %5s Command: %s Data: %s"
-                % ( srcnwkid, MsgSourcePoint, MsgClusterID, GlobalCommand, Command, Data, ))
-            return
+
+
+    if 'SQN' in self.ListOfDevices[ srcnwkid ] and Sqn == self.ListOfDevices[ srcnwkid ]['SQN']:
+        Domoticz.Log("Decode8002 - Duplicate message drop NwkId: %s Ep: %s Cluster: %s GlobalCommand: %5s Command: %s Data: %s"
+            % ( srcnwkid, MsgSourcePoint, MsgClusterID, GlobalCommand, Command, Data, ))
+        return
 
     updSQN(self, srcnwkid, Sqn)
 
     if GlobalCommand and int(Command, 16) in ZIGBEE_COMMAND_IDENTIFIER:
-            self.log.logging(  "RawAPS", "Debug","Decode8002 - NwkId: %s Ep: %s Cluster: %s GlobalCommand: %5s Command: %s (%33s) Data: %s"
+            self.log.logging(  "inRawAPS", "Debug","Decode8002 - NwkId: %s Ep: %s Cluster: %s GlobalCommand: %5s Command: %s (%33s) Data: %s"
                 % ( srcnwkid, MsgSourcePoint, MsgClusterID, GlobalCommand, Command, ZIGBEE_COMMAND_IDENTIFIER[int(Command, 16)], Data,),)
     else:
-        self.log.logging(  "RawAPS",  "Debug", "Decode8002 - NwkId: %s Ep: %s Cluster: %s GlobalCommand: %5s Command: %s Data: %s"
+        self.log.logging(  "inRawAPS",  "Debug", "Decode8002 - NwkId: %s Ep: %s Cluster: %s GlobalCommand: %5s Command: %s Data: %s"
                 % ( srcnwkid, MsgSourcePoint, MsgClusterID, GlobalCommand, Command, Data,),)
 
     updLQI(self, srcnwkid, MsgLQI)
@@ -515,7 +518,7 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
 
         data = Sqn + MsgSourcePoint + MsgClusterID + cmd + direction + '000000' + srcnwkid
 
-        self.log.logging(  "RawAPS",  "Debug", "Decode8002 - Sqn: %s NwkId %s Ep %s Cluster %s Cmd %s Direction %s"
+        self.log.logging(  "inRawAPS",  "Debug", "Decode8002 - Sqn: %s NwkId %s Ep %s Cluster %s Cmd %s Direction %s"
                 % ( Sqn, srcnwkid, MsgClusterID, MsgClusterID, cmd, direction,),)
         Decode80A7( self, Devices, data, MsgLQI)
         return
@@ -2472,6 +2475,8 @@ def Decode8100( self, Devices, MsgData, MsgLQI ):  # Read Attribute Response (in
     MsgClusterId = MsgData[8:12]
     idx = 12
 
+    #0805 00 21 1801 0b05 00 29 2900 5802 86 5802 86 0000 86
+
     try:
         while idx < len(MsgData):
             MsgAttrID = MsgAttStatus = MsgAttType = MsgAttSize = MsgClusterData = ""
@@ -2488,14 +2493,15 @@ def Decode8100( self, Devices, MsgData, MsgLQI ):  # Read Attribute Response (in
                 MsgClusterData = MsgData[idx : idx + size]
                 idx += size
             else:
+                self.log.logging(  "Input", "Debug", "Decode8100 - idx: %s Read Attribute Response: [%s:%s] status: %s -> %s" %(
+                    idx, MsgSrcAddr, MsgSrcEp, MsgAttStatus, MsgData[ idx: ]))
+
                 # If the frame is coming from firmware we get only one attribute at a time, with some dumy datas
                 if len(MsgData[idx:]) == 6:
                     # crap, lets finish it
                     # Domoticz.Log("Crap Data: %s len: %s" %(MsgData[idx:], len(MsgData[idx:])))
                     idx += 6
-            self.log.logging( 
-                "Input",
-                "Debug",
+            self.log.logging(  "Input", "Debug",
                 "Decode8100 - idx: %s Read Attribute Response: [%s:%s] ClusterID: %s MsgSQN: %s, i_sqn: %s, AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<"
                 % ( idx, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgSQN, i_sqn, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, ), MsgSrcAddr, )
             NewMsgData = ( MsgSQN + MsgSrcAddr + MsgSrcEp + MsgClusterId + MsgAttrID + MsgAttStatus + MsgAttType + MsgAttSize + MsgClusterData )
