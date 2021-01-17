@@ -25,6 +25,7 @@ from Modules.thermostats import thermostat_Setpoint, thermostat_Mode
 from Modules.livolo import livolo_OnOff
 from Modules.tuyaTRV import ( tuya_trv_mode )
 from Modules.tuyaSiren import ( tuya_siren_alarm, tuya_siren_humi_alarm, tuya_siren_temp_alarm )
+from Modules.tuya import ( tuya_dimmer_onoff, tuya_dimmer_dimmer)
 
 from Modules.legrand_netatmo import  legrand_fc40, cable_connected_mode
 from Modules.schneider_wiser import schneider_EHZBRTS_thermoMode, schneider_hact_fip_mode, schneider_set_contract, schneider_temp_Setcurrent, schneider_hact_heater_type
@@ -136,6 +137,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
     if 'Manufacturer' in self.ListOfDevices[NWKID]:
         profalux = ( self.ListOfDevices[NWKID]['Manufacturer'] == '1110' and self.ListOfDevices[NWKID]['ZDeviceID'] in ('0200', '0202') )
 
+    _model_name = ''
+    if 'Model' in self.ListOfDevices[NWKID]:
+        _model_name = self.ListOfDevices[NWKID]['Model']
+
     if 'Health' in self.ListOfDevices[NWKID]:
         # If Health is Not Reachable, let's give it a chance to be updated
         if self.ListOfDevices[NWKID]['Health'] == 'Not Reachable':
@@ -148,7 +153,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             profalux_stop( self, NWKID)
 
         elif DeviceType in ( "WindowCovering", "VenetianInverted", "Venetian"):
-            if 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[ NWKID ]['Model'] == 'PR412':
+            if _model_name == 'PR412':
                 profalux_stop( self, NWKID)
             else:
                 # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
@@ -262,6 +267,8 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             UpdateDevice_v2(self, Devices, Unit, 0, "Closed",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             self.ListOfDevices[NWKID]['Heartbeat'] = '0' 
             return
+        elif _model_name == 'TS0601-dimmer':
+            tuya_dimmer_onoff( self, NWKID, EPout, '00' )
 
         else:
             # Remaining Slider widget
@@ -270,10 +277,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             else:
                 sendZigateCmd(self, "0092","02" + NWKID + ZIGATE_EP + EPout + "00")
         
-            if 'Model' in self.ListOfDevices[NWKID]: # Making a trick for the GLEDOPTO LED STRIP.
-                if self.ListOfDevices[NWKID]['Model'] == 'GLEDOPTO' and EPout == '0a':
-                    # When switching off the WW channel, make sure to switch Off the RGB channel
-                    sendZigateCmd(self, "0092","02" + NWKID + ZIGATE_EP + '0b' + "00")
+            # Making a trick for the GLEDOPTO LED STRIP.
+            if _model_name == 'GLEDOPTO' and EPout == '0a':
+                # When switching off the WW channel, make sure to switch Off the RGB channel
+                sendZigateCmd(self, "0092","02" + NWKID + ZIGATE_EP + '0b' + "00")
 
         # Update Devices
         if Devices[Unit].SwitchType in (13,14,15,16):
@@ -339,7 +346,9 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         elif DeviceType == "HeatingSwitch":
             thermostat_Mode( self, NWKID, 'Heat' )
 
-
+        elif _model_name == 'TS0601-dimmer':
+            tuya_dimmer_onoff( self, NWKID, EPout, '01' )
+            
         else:
             # Remaining Slider widget
             if profalux:
@@ -658,6 +667,9 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             elif Level == 30: # Toggle
                 actuators( self, NWKID, EPout, 'Toggle', 'Switch')
 
+        elif _model_name == 'TS0601-dimmer':
+            tuya_dimmer_dimmer( self, NWKID, EPout, Level )
+            
         else:
             # Remaining Slider widget
             OnOff = '01' # 00 = off, 01 = on

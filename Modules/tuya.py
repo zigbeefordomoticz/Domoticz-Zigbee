@@ -12,9 +12,9 @@
 
 import Domoticz
 from Classes.LoggingManagement import LoggingManagement
-from Modules.tools import updSQN
+from Modules.tools import updSQN, get_and_inc_SQN
 from Modules.domoMaj import MajDomoDevice
-
+from Modules.tuyaTools import tuya_cmd
 from Modules.tuyaSiren import tuya_siren_response
 from Modules.tuyaTRV import tuya_eTRV_response
 
@@ -126,11 +126,35 @@ def tuya_dimmer_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dst
         self.log.logging( "Tuya", 'Debug', "tuya_dimmer_response - Nwkid: %s/%s On/Off %s" %(NwkId, srcEp, data))
 
     elif dp == 0x02: #Dim Down/Up
-        # As MajDomoDevice expect a value between 0 and 255, we have to convert 0 - 1000.
+        # As MajDomoDevice expect a value between 0 and 255, and Tuya dimmer is on a scale from 0 - 1000.
         level = int((int(data,16)*255//1000))
         self.log.logging( "Tuya", 'Debug', "tuya_dimmer_response - Nwkid: %s/%s Dim up/dow %s %s" %(NwkId, srcEp, int(data,16), level))
         MajDomoDevice(self, Devices, NwkId, srcEp, '0008', '%02x' %level)
 
+def tuya_dimmer_onoff( self, NwkId, srcEp, OnOff ):
+
+    self.log.logging( "Tuya", 'Debug', "tuya_dimmer_onoff - %s setpoint: %s" %(NwkId, setpoint_value)) 
+    # determine which Endpoint
+    EPout = '01'
+    sqn = get_and_inc_SQN( self, NwkId )
+    cluster_frame = '11'
+    cmd = '00' # Command
+    action = '0101'
+    data = '%08x' %OnOff
+    tuya_cmd( self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)
+
+def tuya_dimmer_dimmer( self, NwkId, srcEp, percent ):
+    self.log.logging( "Tuya", 'Debug', "tuya_dimmer_dimmer - %s percent: %s" %(NwkId, percent))
+
+    level = percent * 10
+    # determine which Endpoint
+    EPout = '01'
+    sqn = get_and_inc_SQN( self, NwkId )
+    cluster_frame = '11'
+    cmd = '00' # Command
+    action = '0202'
+    data = '%08x' %level
+    tuya_cmd( self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)
 
 
 
