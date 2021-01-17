@@ -81,7 +81,7 @@ def handle_thread_error( self, e, nb_in, nb_out, data):
 
     context = {
         'Error Code': 'TRANS-THREADERROR-01',
-        'Type:': type(e).__name__,
+        'Type:': str( type(e).__name__ ),
         'Message code:': str(e),
         'Stack Trace': trace,
         'nb_in': nb_in,
