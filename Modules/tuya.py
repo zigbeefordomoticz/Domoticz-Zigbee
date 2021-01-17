@@ -122,10 +122,12 @@ def tuya_dimmer_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dst
 
     if dp == 0x02: #Dim Down/Up
         # As MajDomoDevice expect a value between 0 and 255, we have to convert 0 - 1000.
-        level = (int(data,16)*255/1000)
+        level = int((int(data,16)*255//1000))
+        self.log.logging( "Tuya", 'Debug', "tuya_dimmer_response - Nwkid: %s/%s Dim up/dow %s %s" %(int(data,16), level))
         MajDomoDevice(self, Devices, NwkId, srcEp, '0008', str(level))
 
     elif dp == 0x01 and data == '01': # Switch On/Off
         MajDomoDevice(self, Devices, NwkId, srcEp, '0006', data)
+        self.log.logging( "Tuya", 'Debug', "tuya_dimmer_response - Nwkid: %s/%s On/Off %s" %( data))
 
 
