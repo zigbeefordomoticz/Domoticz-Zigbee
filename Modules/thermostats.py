@@ -11,7 +11,7 @@ from Classes.LoggingManagement import LoggingManagement
 from Modules.readAttributes import ReadAttributeRequest_0201
 from Modules.basicOutputs import write_attribute
 from Modules.schneider_wiser import schneider_setpoint
-from Modules.tuya import tuya_setpoint
+from Modules.tuyaTRV import tuya_setpoint
 from Modules.casaia import casaia_setpoint, casaia_check_irPairing
  
 def thermostat_Setpoint_SPZB(  self, NwkId, setpoint):

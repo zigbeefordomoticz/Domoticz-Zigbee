@@ -11,7 +11,7 @@
 			"Type":"Temp/Humi/TuyaSiren/TuyaSirenHumi/TuyaSirenTemp"}
 	},
 	"Type":"",
-	"ClusterToBind": [  ],
+	"ClusterToBind": [ "0000" ],
 	"ConfigureReporting": {
 	
 	},

@@ -14,7 +14,6 @@
 
 SWITCH_LVL_MATRIX = {
     "Plug": { 
-
         "00": ( 0, "Off"), 
         "01": ( 1, "On") , 
         "ForceUpdate": False },
@@ -428,6 +427,7 @@ SWITCH_LVL_MATRIX = {
             }
         }
     },
+
     "TuyaSirenTemp": {
         'ForceUpdate': True,
         "00": ( 0, "00"),
@@ -538,6 +538,7 @@ SWITCH_LVL_MATRIX = {
             "fr-FR": {"LevelNames": "Arrêt|Auto|Froid|Chaud|Déshumidicateur|Ventilateur"}
         }
     },
+
     "ACMode": {
         '00': (0, "00"), # Off
         '03': (1, "10"),  # Cool

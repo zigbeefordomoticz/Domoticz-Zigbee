@@ -39,7 +39,7 @@ from Modules.tools import reset_cluster_datastruct
 from Modules.zigateConsts import CLUSTERS_LIST
 from Modules.casaia import casaia_pairing
 from Modules.thermostats import thermostat_Calibration
-from Modules.tuya import tuya_sirene_registration
+from Modules.tuyaSiren import tuya_sirene_registration
 
 def writeDiscoveryInfos( self ):
 

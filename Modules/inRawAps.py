@@ -58,6 +58,8 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Man
         "_TZ3000_peszejy7" : tuyaReadRawAPS , # Seem for TS0041 ( 1 Gang Switch)
         "_TZ3000_xkwalgne" : tuyaReadRawAPS, # TS0041
         "_TYST11_zivfvd7h" : tuyaReadRawAPS, # TS0003 / Switch Module
+        "_TZE200_dfxkcots" : tuyaReadRawAPS, # TS0601 / Smart Dimmer
+        "_TZE200_7tdtqgwv" : tuyaReadRawAPS, # TS0601 / Simple Switch
         'OWON': casaiaReadRawAPS,
     }
 
