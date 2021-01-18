@@ -674,6 +674,8 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
                 actuators( self, NWKID, EPout, 'Toggle', 'Switch')
 
         elif _model_name == 'TS0601-dimmer':
+            if Devices[Unit].nValue == 0:
+                tuya_dimmer_onoff( self, NWKID, EPout, '01' )
             if Level < 1:
                 # Never Switch off
                 Level = 1
