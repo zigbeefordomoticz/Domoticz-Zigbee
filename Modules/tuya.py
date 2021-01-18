@@ -140,7 +140,7 @@ def tuya_dimmer_onoff( self, NwkId, srcEp, OnOff ):
     cluster_frame = '11'
     cmd = '00' # Command
     action = '0101'
-    data = '%08x' %OnOff
+    data = '%02x' %OnOff
     tuya_cmd( self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)
 
 def tuya_dimmer_dimmer( self, NwkId, srcEp, percent ):
