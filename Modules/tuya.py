@@ -59,7 +59,7 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
     if 'Model' not in self.ListOfDevices[NwkId]:
         return
     if len(MsgPayload) < 6:
-        self.log.logging( "Tuya", 'Debug', "tuyaReadRawAPS - MsgPayload %s too short" %(MsgPayload))
+        self.log.logging( "Tuya", 'Debug', "tuyaReadRawAPS - MsgPayload %s too short" %(MsgPayload),NwkId )
         return
 
     fcf = MsgPayload[0:2] # uint8
@@ -68,7 +68,7 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
     updSQN( self, NwkId, sqn)
 
     if cmd not in ('00', '01', '02', '03'):
-        self.log.logging( "Tuya", 'Log', "tuyaReadRawAPS - Unknown command %s MsgPayload %s/ Data: %s" %(cmd, MsgPayload, MsgPayload[6:]))
+        self.log.logging( "Tuya", 'Log', "tuyaReadRawAPS - Unknown command %s MsgPayload %s/ Data: %s" %(cmd, MsgPayload, MsgPayload[6:]),NwkId )
         return
 
     status = MsgPayload[6:8]   #uint8
@@ -83,7 +83,7 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
 
     # [ZiGateForwarder_17] tuyaReadRawAPS - Nwkid: fc08/01 fcf: 09 sqn: 06 cmd: 02 status: 00 transid: 02 dp: 69 datatype: 02 fn: 00 data: 000000e3
     self.log.logging( "Tuya", 'Debug', "tuyaReadRawAPS - Nwkid: %s/%s fcf: %s sqn: %s cmd: %s status: %s transid: %s dp: %02x datatype: %s fn: %s data: %s"
-        %(NwkId, srcEp, fcf, sqn, cmd, status, transid, dp, datatype, fn, data))
+        %(NwkId, srcEp, fcf, sqn, cmd, status, transid, dp, datatype, fn, data),NwkId )
     if _ModelName == 'TS0601-switch' and dp in ( 0x01, 0x02, 0x03):
         tuya_switch_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data)
 
@@ -113,7 +113,7 @@ def tuya_switch_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dst
             %(NwkId, srcEp, dp, data), NwkId)
 
 
-#### T
+#### Tuya Smart Dimmer Switch
 def tuya_dimmer_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data):
     #             cmd | status | transId | dp | DataType | fn | len | Data
     #Dim Down:     01     00        01     02      02      00    04   00000334
@@ -123,28 +123,28 @@ def tuya_dimmer_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dst
 
     if dp == 0x01: # Switch On/Off
         MajDomoDevice(self, Devices, NwkId, srcEp, '0006', data)
-        self.log.logging( "Tuya", 'Debug', "tuya_dimmer_response - Nwkid: %s/%s On/Off %s" %(NwkId, srcEp, data))
+        self.log.logging( "Tuya", 'Debug', "tuya_dimmer_response - Nwkid: %s/%s On/Off %s" %(NwkId, srcEp, data),NwkId )
 
     elif dp == 0x02: #Dim Down/Up
         # As MajDomoDevice expect a value between 0 and 255, and Tuya dimmer is on a scale from 0 - 1000.
         level = int((int(data,16)*255//1000))
-        self.log.logging( "Tuya", 'Debug', "tuya_dimmer_response - Nwkid: %s/%s Dim up/dow %s %s" %(NwkId, srcEp, int(data,16), level))
+        self.log.logging( "Tuya", 'Debug', "tuya_dimmer_response - Nwkid: %s/%s Dim up/dow %s %s" %(NwkId, srcEp, int(data,16), level),NwkId )
         MajDomoDevice(self, Devices, NwkId, srcEp, '0008', '%02x' %level)
 
 def tuya_dimmer_onoff( self, NwkId, srcEp, OnOff ):
 
-    self.log.logging( "Tuya", 'Debug', "tuya_dimmer_onoff - %s setpoint: %s" %(NwkId, OnOff)) 
+    self.log.logging( "Tuya", 'Debug', "tuya_dimmer_onoff - %s OnOff: %s" %(NwkId, OnOff),NwkId ) 
     # determine which Endpoint
     EPout = '01'
     sqn = get_and_inc_SQN( self, NwkId )
     cluster_frame = '11'
     cmd = '00' # Command
     action = '0101'
-    data = '%02x' %OnOff
+    data = OnOff
     tuya_cmd( self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)
 
 def tuya_dimmer_dimmer( self, NwkId, srcEp, percent ):
-    self.log.logging( "Tuya", 'Debug', "tuya_dimmer_dimmer - %s percent: %s" %(NwkId, percent))
+    self.log.logging( "Tuya", 'Debug', "tuya_dimmer_dimmer - %s percent: %s" %(NwkId, percent),NwkId )
 
     level = percent * 10
     # determine which Endpoint
@@ -155,8 +155,3 @@ def tuya_dimmer_dimmer( self, NwkId, srcEp, percent ):
     action = '0202'
     data = '%08x' %level
     tuya_cmd( self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)
-
-
-
-
-

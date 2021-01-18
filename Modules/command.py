@@ -141,9 +141,8 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
     if 'Model' in self.ListOfDevices[NWKID]:
         _model_name = self.ListOfDevices[NWKID]['Model']
 
-    if 'Health' in self.ListOfDevices[NWKID]:
-        # If Health is Not Reachable, let's give it a chance to be updated
-        if self.ListOfDevices[NWKID]['Health'] == 'Not Reachable':
+    # If Health is Not Reachable, let's give it a chance to be updated
+    if 'Health' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['Health'] == 'Not Reachable':
             self.ListOfDevices[NWKID]['Health'] = ''
 
     if Command == 'Stop':  # Manage the Stop command. For known seen only on BSO and Windowcoering
@@ -271,6 +270,8 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
 
         elif DeviceType == 'LvlControl' and _model_name == 'TS0601-dimmer':
             tuya_dimmer_onoff( self, NWKID, EPout, '00' )
+            UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            return
 
         else:
             # Remaining Slider widget
@@ -293,7 +294,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         # Let's force a refresh of Attribute in the next Heartbeat 
         self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
 
-    if Command == "On" :
+    if Command == "On" :   # Manage the On command.
         # Let's force a refresh of Attribute in the next Heartbeat  
         self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
         self.log.logging( "Command", 'Debug', "mgtCommand : On for Device: %s EPout: %s Unit: %s DeviceType: %s ModelName: %s" %(
@@ -351,6 +352,8 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
 
         elif DeviceType == 'LvlControl' and _model_name == 'TS0601-dimmer':
             tuya_dimmer_onoff( self, NWKID, EPout, '01' )
+            UpdateDevice_v2(self, Devices, Unit, 1, "On",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            return
             
         else:
             # Remaining Slider widget
