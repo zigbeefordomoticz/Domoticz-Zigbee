@@ -11,7 +11,7 @@
 	    "0201": "", 
 	    "0204": "", 
 	    "fe02": "", 
-	    "Type": "Temp/ThermoSetpoint/Door" } 
+	    "Type": "Temp/ThermoSetpoint/Door/Valve" } 
   },
   "Type": "",
   "overwriteZigateEpBind": "0b",
