@@ -657,7 +657,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                             sValue = 100
                 self.log.logging( "Widget", "Debug", "------>  LvlControl sValue: -> %s" %sValue, NWKID)
                 # In case we reach 0% or 100% we shouldn't switch Off or On, except in the case of Shutter/Blind
-                if sValue == 0
+                if sValue == 0:
                     nValue = 0
                     if Devices[DeviceUnit].SwitchType in (13,14,15,16):
                         self.log.logging( "Widget", "Debug", "------>  LvlControl UpdateDevice: -> %s/%s SwitchType: %s" %(0,0, Devices[DeviceUnit].SwitchType), NWKID)
