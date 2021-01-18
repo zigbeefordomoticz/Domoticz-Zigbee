@@ -186,6 +186,13 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
             return
 
+        if DeviceType == 'DoorLock':
+            # Widget Doorlock seems to work in the oposit
+            cluster0101_unlock_door( self, NWKID)
+            UpdateDevice_v2(self, Devices, Unit, 0, "Closed",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            self.ListOfDevices[NWKID]['Heartbeat'] = '0' 
+            return
+
         if DeviceType in ( 'ThermoMode', 'ACMode'):
             self.log.logging( "Command", 'Debug', "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" 
                 %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
@@ -225,10 +232,15 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             if 'Model' in self.ListOfDevices[ NWKID ] and self.ListOfDevices[ NWKID ]['Model'] == 'AC201A':
                 casaia_swing_OnOff( self, NWKID, '00')
                 UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+                return
 
-        if DeviceType == 'BSO-Volet':
-            if profalux:
-                profalux_MoveToLiftAndTilt( self, NWKID, level=1 )
+        if DeviceType == 'LvlControl' and _model_name == 'TS0601-dimmer':
+            tuya_dimmer_onoff( self, NWKID, EPout, '00' )
+            UpdateDevice_v2(self, Devices, Unit, 0, Devices[Unit].sValue,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            return
+
+        if DeviceType == 'BSO-Volet' and profalux:
+            profalux_MoveToLiftAndTilt( self, NWKID, level=1 )
 
         elif DeviceType == "TuyaSiren":
             tuya_siren_alarm( self, NWKID, 0x00)
@@ -238,7 +250,6 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         
         elif DeviceType == "TuyaSirenTemp":
             tuya_siren_temp_alarm( self, NWKID, 0x00 )
-
 
         elif DeviceType == "WindowCovering":
             sendZigateCmd(self, "00FA","02" + NWKID + ZIGATE_EP + EPout + "01") # Blind inverted (On, for Close)
@@ -261,17 +272,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         elif DeviceType == "HeatingSwitch":
             thermostat_Mode( self, NWKID, 'Off' )
 
-        elif DeviceType == 'DoorLock':
-            # Widget Doorlock seems to work in the oposit
-            cluster0101_unlock_door( self, NWKID)
-            UpdateDevice_v2(self, Devices, Unit, 0, "Closed",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
-            self.ListOfDevices[NWKID]['Heartbeat'] = '0' 
-            return
 
-        elif DeviceType == 'LvlControl' and _model_name == 'TS0601-dimmer':
-            tuya_dimmer_onoff( self, NWKID, EPout, '00' )
-            UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
-            return
+
+
+
 
         else:
             # Remaining Slider widget
@@ -310,7 +314,6 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         if DeviceType == 'LivoloSWR':
             livolo_OnOff( self, NWKID , EPout, 'Right', 'On')
             UpdateDevice_v2(self, Devices, Unit, 1, "On",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
-
             # Let's force a refresh of Attribute in the next Heartbeat 
             self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
             return
@@ -326,10 +329,14 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             #self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
             return
 
-        if DeviceType == 'BSO-Volet':
-            if profalux:
-                # On translated into a Move to 254
-                profalux_MoveToLiftAndTilt( self, NWKID, level=255 )
+        if DeviceType == 'LvlControl' and _model_name == 'TS0601-dimmer':
+            tuya_dimmer_onoff( self, NWKID, EPout, '01' )
+            UpdateDevice_v2(self, Devices, Unit, 1, Devices[Unit].sValue,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            return
+
+        if DeviceType == 'BSO-Volet' and profalux:
+            # On translated into a Move to 254
+            profalux_MoveToLiftAndTilt( self, NWKID, level=255 )
 
         elif DeviceType == "WindowCovering":
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
@@ -349,11 +356,6 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
 
         elif DeviceType == "HeatingSwitch":
             thermostat_Mode( self, NWKID, 'Heat' )
-
-        elif DeviceType == 'LvlControl' and _model_name == 'TS0601-dimmer':
-            tuya_dimmer_onoff( self, NWKID, EPout, '01' )
-            UpdateDevice_v2(self, Devices, Unit, 1, "On",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
-            return
             
         else:
             # Remaining Slider widget
