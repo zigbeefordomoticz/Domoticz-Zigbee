@@ -127,7 +127,9 @@ def tuya_dimmer_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dst
 
     elif dp == 0x02: #Dim Down/Up
         # As MajDomoDevice expect a value between 0 and 255, and Tuya dimmer is on a scale from 0 - 1000.
-        level = int((int(data,16)*255//1000))
+        analogValue = int(data,16) / 10   # This give from 1 to 100
+        level = int( (analogValue * 255 ) / 100 )
+
         self.log.logging( "Tuya", 'Debug', "tuya_dimmer_response - Nwkid: %s/%s Dim up/dow %s %s" %(NwkId, srcEp, int(data,16), level),NwkId )
         MajDomoDevice(self, Devices, NwkId, srcEp, '0008', '%02x' %level)
 

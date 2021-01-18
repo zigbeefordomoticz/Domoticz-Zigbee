@@ -38,8 +38,12 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
         Domoticz.Error("MajDomoDevice - no IEEE for %s" %NWKID)
         return
 
-    self.log.logging( "Widget", "Debug", "MajDomoDevice NwkId: %s Ep: %s ClusterId: %s Value: %s ValueType: %s Attribute: %s Color: %s"
-        %( NWKID, Ep, clusterID, value, type(value),Attribute_, Color_ ), NWKID )
+    model_name = ''
+    if 'Model' in self.ListOfDevices[ NWKID ]:
+        model_name = self.ListOfDevices[ NWKID ]['Model']
+
+    self.log.logging( "Widget", "Debug", "MajDomoDevice NwkId: %s Ep: %s ClusterId: %s Value: %s ValueType: %s Attribute: %s Color: %s ModelName: %s"
+        %( NWKID, Ep, clusterID, value, type(value),Attribute_, Color_,model_name ), NWKID )
 
     # Get the CluserType ( Action type) from Cluster Id
     ClusterType = TypeFromCluster(self, clusterID)
@@ -591,7 +595,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
             elif (( ClusterType == 'FanControl' and WidgetType == 'FanControl') or \
                 ( 'ThermoMode' in ClusterType and WidgetType == 'ACSwing' and Attribute_ =='fd00'))  and \
-                'Model' in self.ListOfDevices[ NWKID ] and self.ListOfDevices[ NWKID ]['Model'] in ( 'AC211', 'AC221') and \
+                  model_name in ( 'AC211', 'AC221') and \
                  'Ep' in self.ListOfDevices[ NWKID ] and WidgetEp in self.ListOfDevices[ NWKID ]['Ep'] and \
                     '0201' in self.ListOfDevices[ NWKID ]['Ep'][ WidgetEp] and '001c' in self.ListOfDevices[ NWKID ]['Ep'][ WidgetEp]['0201'] \
                         and self.ListOfDevices[ NWKID ]['Ep'][ WidgetEp]['0201']['001c'] == 0x0:
@@ -629,38 +633,31 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(value), BatteryLevel, SignalLevel)
 
         if 'LvlControl' in ClusterType: # LvlControl ( 0x0008)
-
+                
             if WidgetType == 'LvlControl' or WidgetType == 'BSO-Volet':
                 # We need to handle the case, where we get an update from a Read Attribute or a Reporting message
                 # We might get a Level, but the device is still Off and we shouldn't make it On .
                 nValue = None
-
                 # Normalize sValue vs. analog value coomming from a ReadATtribute
                 analogValue = int(value, 16)
-
                 self.log.logging( "Widget", "Debug", "------>  LvlControl analogValue: -> %s" %analogValue, NWKID)
                 if analogValue >= 255:
                     sValue = 100
-
                 else:
                     sValue = round( ((int(value, 16) * 100) / 255))
                     if sValue > 100: 
                         sValue = 100
-
                     if sValue == 0 and analogValue > 0:
                         sValue = 1
-
                     # Looks like in the case of the Profalux shutter, we never get 0 or 100
                     if Devices[DeviceUnit].SwitchType in (13,14,15,16):
                         if sValue == 1 and analogValue == 1:
                             sValue = 0
                         if sValue == 99 and analogValue == 254:
                             sValue = 100
-
                 self.log.logging( "Widget", "Debug", "------>  LvlControl sValue: -> %s" %sValue, NWKID)
-
                 # In case we reach 0% or 100% we shouldn't switch Off or On, except in the case of Shutter/Blind
-                if sValue == 0:
+                if sValue == 0
                     nValue = 0
                     if Devices[DeviceUnit].SwitchType in (13,14,15,16):
                         self.log.logging( "Widget", "Debug", "------>  LvlControl UpdateDevice: -> %s/%s SwitchType: %s" %(0,0, Devices[DeviceUnit].SwitchType), NWKID)
@@ -668,12 +665,10 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     else:
                         if Devices[DeviceUnit].nValue == 0 and Devices[DeviceUnit].sValue == 'Off':
                             pass
-
                         else:
                             #UpdateDevice_v2(Devices, DeviceUnit, 0, 'Off', BatteryLevel, SignalLevel)
                             self.log.logging( "Widget", "Debug", "------>  LvlControl UpdateDevice: -> %s/%s" %(0,0), NWKID)
                             UpdateDevice_v2(self, Devices, DeviceUnit, 0, '0', BatteryLevel, SignalLevel)
-
                 elif sValue == 100:
                     nValue = 1
                     if Devices[DeviceUnit].SwitchType in (13,14,15,16):
