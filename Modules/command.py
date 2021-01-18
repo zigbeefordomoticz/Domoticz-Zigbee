@@ -108,7 +108,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         Domoticz.Error("mgtCommand - no ClusterType found !  "  +str(self.ListOfDevices[NWKID]) )
         return
 
-    self.log.logging( "Command", 'Debug', "--------->   ClusterType founds: %s for Unit: %s" %( ClusterTypeList, Unit), NWKID)
+    self.log.logging( "Command", 'Debug', "--------->1   ClusterType founds: %s for Unit: %s" %( ClusterTypeList, Unit), NWKID)
 
     actionable = False
     if len(ClusterTypeList) != 1:
@@ -121,29 +121,32 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
     # One element found, we have Endpoint and DevicetypeÒ
     EPout , DeviceTypeWidgetId, DeviceType = ClusterTypeList[0]
 
-    self.log.logging( "Command", "Debug", "--------->   EPOut: %s DeviceType: %s WidgetID: %s" %( EPout , DeviceType, DeviceTypeWidgetId ), NWKID)
+    self.log.logging( "Command", "Debug", "--------->2   EPOut: %s DeviceType: %s WidgetID: %s" %( EPout , DeviceType, DeviceTypeWidgetId ), NWKID)
     # Sanity Check
     forceUpdateDev = False
-    if DeviceType in SWITCH_LVL_MATRIX:
-        if 'ForceUpdate' in SWITCH_LVL_MATRIX[DeviceType ]:
-            forceUpdateDev = SWITCH_LVL_MATRIX[DeviceType ]['ForceUpdate']
+    if DeviceType in SWITCH_LVL_MATRIX and 'ForceUpdate' in SWITCH_LVL_MATRIX[DeviceType ]:
+        forceUpdateDev = SWITCH_LVL_MATRIX[DeviceType ]['ForceUpdate']
+    self.log.logging( "Command", "Debug", "--------->3   forceUpdateDev: %s" %forceUpdateDev, NWKID)
 
     if DeviceType not in ACTIONATORS and not self.pluginconf.pluginConf['forcePassiveWidget']:
         self.log.logging( "Command", "Log", "mgtCommand - You are trying to action not allowed for Device: %s Type: %s and DeviceType: %s Command: %s Level:%s" 
                 %( Devices[Unit].Name, ClusterTypeList, DeviceType , Command, Level), NWKID )
         return
-    
+    self.log.logging( "Command", "Debug", "--------->4   Ready to action", NWKID)
+
     profalux = False
     if 'Manufacturer' in self.ListOfDevices[NWKID]:
         profalux = ( self.ListOfDevices[NWKID]['Manufacturer'] == '1110' and self.ListOfDevices[NWKID]['ZDeviceID'] in ('0200', '0202') )
-
+    self.log.logging( "Command", "Debug", "--------->5   profalux: %s" %profalux, NWKID)
     _model_name = ''
     if 'Model' in self.ListOfDevices[NWKID]:
         _model_name = self.ListOfDevices[NWKID]['Model']
+    self.log.logging( "Command", "Debug", "--------->6   Model Name: %s" %_model_name, NWKID)
 
     # If Health is Not Reachable, let's give it a chance to be updated
     if 'Health' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['Health'] == 'Not Reachable':
             self.ListOfDevices[NWKID]['Health'] = ''
+    self.log.logging( "Command", "Debug", "--------->7   Health: %s" %self.ListOfDevices[NWKID]['Health'], NWKID)
 
     if Command == 'Stop':  # Manage the Stop command. For known seen only on BSO and Windowcoering
         self.log.logging( "Command", 'Debug', "mgtCommand : Stop for Device: %s EPout: %s Unit: %s DeviceType: %s" %(NWKID, EPout, Unit, DeviceType), NWKID)
@@ -164,11 +167,11 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         # Let's force a refresh of Attribute in the next Heartbeat 
         self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
 
-    if Command == "Off" :  # Manage the Off command. 
+    if Command == 'Off':  # Manage the Off command. 
         # Let's force a refresh of Attribute in the next Heartbeat  
         self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
 
-        self.log.logging( "Command", 'Debug', "mgtCommand : Off for Device: %s EPout: %s Unit: %s DeviceType: %s modelName: %" %(
+        self.log.logging( "Command", 'Debug', "mgtCommand : Off for Device: %s EPout: %s Unit: %s DeviceType: %s modelName: %s" %(
             NWKID, EPout, Unit, DeviceType, _model_name), NWKID)
         if DeviceType == 'LivoloSWL':
             livolo_OnOff( self, NWKID , EPout, 'Left', 'Off')
@@ -272,11 +275,6 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         elif DeviceType == "HeatingSwitch":
             thermostat_Mode( self, NWKID, 'Off' )
 
-
-
-
-
-
         else:
             # Remaining Slider widget
             if profalux: # Profalux are define as LvlControl but should be managed as Blind Inverted
@@ -298,7 +296,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         # Let's force a refresh of Attribute in the next Heartbeat 
         self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
 
-    if Command == "On" :   # Manage the On command.
+    if Command == 'On':   # Manage the On command.
         # Let's force a refresh of Attribute in the next Heartbeat  
         self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
         self.log.logging( "Command", 'Debug', "mgtCommand : On for Device: %s EPout: %s Unit: %s DeviceType: %s ModelName: %s" %(
@@ -372,7 +370,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         # Let's force a refresh of Attribute in the next Heartbeat  
         self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
 
-    if Command == "Set Level" :
+    if Command == 'Set Level':
         #Level is normally an integer but may be a floating point number if the Unit is linked to a thermostat device
         #There is too, move max level, mode = 00/01 for 0%/100%
         self.log.logging( "Command", 'Debug', "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" 
@@ -676,6 +674,9 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
                 actuators( self, NWKID, EPout, 'Toggle', 'Switch')
 
         elif _model_name == 'TS0601-dimmer':
+            if Level < 1:
+                # Never Switch off
+                Level = 1
             tuya_dimmer_dimmer( self, NWKID, EPout, Level )
             
         else:
@@ -716,7 +717,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         # Let's force a refresh of Attribute in the next Heartbeat  
         self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
 
-    if Command == "Set Color" :
+    if Command == 'Set Color':
         self.log.logging( "Command", 'Debug', "mgtCommand : Set Color for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s Color: %s" %(NWKID, EPout, Unit, DeviceType, Level, Color), NWKID)
         Hue_List = json.loads(Color)
         self.log.logging( "Command", 'Debug', "-----> Hue_List: %s" %str(Hue_List), NWKID)
