@@ -169,7 +169,8 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         # Let's force a refresh of Attribute in the next Heartbeat  
         self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
 
-        self.log.logging( "Command", 'Debug', "mgtCommand : Off for Device: %s EPout: %s Unit: %s DeviceType: %s" %(NWKID, EPout, Unit, DeviceType), NWKID)
+        self.log.logging( "Command", 'Debug', "mgtCommand : Off for Device: %s EPout: %s Unit: %s DeviceType: %s modelName: %" %(
+            NWKID, EPout, Unit, DeviceType, _model_name), NWKID)
         if DeviceType == 'LivoloSWL':
             livolo_OnOff( self, NWKID , EPout, 'Left', 'Off')
             UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
@@ -267,7 +268,8 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             UpdateDevice_v2(self, Devices, Unit, 0, "Closed",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             self.ListOfDevices[NWKID]['Heartbeat'] = '0' 
             return
-        elif _model_name == 'TS0601-dimmer':
+
+        elif DeviceType == 'LvlControl' and _model_name == 'TS0601-dimmer':
             tuya_dimmer_onoff( self, NWKID, EPout, '00' )
 
         else:
@@ -294,7 +296,8 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
     if Command == "On" :
         # Let's force a refresh of Attribute in the next Heartbeat  
         self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
-        self.log.logging( "Command", 'Debug', "mgtCommand : On for Device: %s EPout: %s Unit: %s DeviceType: %s" %(NWKID, EPout, Unit, DeviceType), NWKID)
+        self.log.logging( "Command", 'Debug', "mgtCommand : On for Device: %s EPout: %s Unit: %s DeviceType: %s ModelName: %s" %(
+            NWKID, EPout, Unit, DeviceType, _model_name), NWKID)
 
         if DeviceType == 'LivoloSWL':
             livolo_OnOff( self, NWKID , EPout, 'Left', 'On')
@@ -346,7 +349,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         elif DeviceType == "HeatingSwitch":
             thermostat_Mode( self, NWKID, 'Heat' )
 
-        elif _model_name == 'TS0601-dimmer':
+        elif DeviceType == 'LvlControl' and _model_name == 'TS0601-dimmer':
             tuya_dimmer_onoff( self, NWKID, EPout, '01' )
             
         else:

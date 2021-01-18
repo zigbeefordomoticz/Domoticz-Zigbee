@@ -133,7 +133,7 @@ def tuya_dimmer_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dst
 
 def tuya_dimmer_onoff( self, NwkId, srcEp, OnOff ):
 
-    self.log.logging( "Tuya", 'Debug', "tuya_dimmer_onoff - %s setpoint: %s" %(NwkId, setpoint_value)) 
+    self.log.logging( "Tuya", 'Debug', "tuya_dimmer_onoff - %s setpoint: %s" %(NwkId, OnOff)) 
     # determine which Endpoint
     EPout = '01'
     sqn = get_and_inc_SQN( self, NwkId )
