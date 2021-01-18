@@ -450,7 +450,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Alarm" %(t), NWKID)
 
             if t == 'Valve':
-                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 244, Subtype_ = 73, Switchtype_ = 7 )
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 243, Subtype_ = 6, Switchtype_ = 0 )
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Valve" %(t), NWKID)
                 
             if t in ( "ThermoSetpoint", "TempSetCurrent"):

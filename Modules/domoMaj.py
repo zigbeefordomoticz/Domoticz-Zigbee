@@ -190,7 +190,15 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 sValue = strRound( float(setpoint), 2 )
                 self.log.logging( "Widget", "Debug", "------>  Thermostat Setpoint: %s %s" %(0,setpoint), NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
-    
+
+        if 'Valve' in ClusterType: # Valve Position 
+            if WidgetType == 'Valve' and Attribute_ in ('026d', '4001', '0008'):
+                # value int is the % of the valve opening
+                # Percentage Widget
+                nValue = round( value, 1 )
+                sValue = str( nValue )
+                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
+
         if 'ThermoMode' in ClusterType: # Thermostat Mode
            
             if WidgetType == 'ThermoModeEHZBRTS' and Attribute_ == "e010": # Thermostat Wiser
@@ -537,15 +545,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
                     UpdateDevice_v2(self, Devices, DeviceUnit, int(data), str(state), BatteryLevel, SignalLevel,ForceUpdate_=True)
 
-            elif WidgetType == 'Valve' and Attribute_ == '0014':
-                # value int is the % of the valve opening
-                nValue = value
-                if value == 0:
-                    sValue = 'Off'
-                else:
-                    sValue = 'On'
-                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
-
             elif WidgetType == "LvlControl" or WidgetType in ( 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl'):
                 if Devices[DeviceUnit].SwitchType in (13,14,15,16):
                     # Required Numeric value
@@ -625,13 +624,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(value), BatteryLevel, SignalLevel)
 
         if 'LvlControl' in ClusterType: # LvlControl ( 0x0008)
-            if WidgetType == 'Valve' and Attribute_ == '026d':
-                # value int is the % of the valve opening
-                nValue = Devices[DeviceUnit].nValue
-                sValue = str( value )
-                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
 
-            elif WidgetType == 'LvlControl' or WidgetType == 'BSO-Volet':
+            if WidgetType == 'LvlControl' or WidgetType == 'BSO-Volet':
                 # We need to handle the case, where we get an update from a Read Attribute or a Reporting message
                 # We might get a Level, but the device is still Off and we shouldn't make it On .
                 nValue = None

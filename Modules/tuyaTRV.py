@@ -72,10 +72,9 @@ def tuya_eTRV_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNW
         store_tuya_attribute( self, NwkId, 'OpenWindow', data )
 
     elif dp == 0x14: # Valve detection state
-        # Use Dimer to report On/Off
-        self.log.logging( "Tuya", 'Debug', "tuyaReadRawAPS - Nwkid: %s/%s Valve Detection: %s" %(NwkId,srcEp ,data))
-        MajDomoDevice(self, Devices, NwkId, srcEp, '0006', data , Attribute_ = '0014')
-        store_tuya_attribute( self, NwkId, 'ValveDetection', data )
+        # Percentage Widget
+        self.log.logging( "Tuya", 'Debug', "tuyaReadRawAPS - Nwkid: %s/%s Valve Detection: %s %s" %(NwkId,srcEp ,data, int(data,16)))
+        store_tuya_attribute( self, NwkId, 'ValveDetection', data)
 
     elif dp == 0x15: # Battery status
         self.log.logging( "Tuya", 'Debug', "tuyaReadRawAPS - Nwkid: %s/%s Battery status %s" %(NwkId,srcEp ,int(data,16)))
@@ -90,8 +89,8 @@ def tuya_eTRV_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNW
     elif dp == 0x6d: # Valve position in %
         # Use Dimer to report %
         self.log.logging( "Tuya", 'Debug', "tuyaReadRawAPS - Nwkid: %s/%s Valve position: %s" %(NwkId,srcEp ,int(data,16)))
-        MajDomoDevice(self, Devices, NwkId, srcEp, '0008', int(data,16) , Attribute_ = '026d')
-        store_tuya_attribute( self, NwkId, 'ValvePsotion', data )
+        MajDomoDevice(self, Devices, NwkId, srcEp, '0201', int(data,16) , Attribute_ = '026d')
+        store_tuya_attribute( self, NwkId, 'ValvePosition', data )
 
 
 
