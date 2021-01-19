@@ -60,6 +60,16 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Man
         "_TYST11_zivfvd7h" : tuyaReadRawAPS, # TS0003 / Switch Module
         "_TZE200_dfxkcots" : tuyaReadRawAPS, # TS0601 / Smart Dimmer
         "_TZE200_7tdtqgwv" : tuyaReadRawAPS, # TS0601 / Simple Switch
+        "_TZE200_rddyvrci" : tuyaReadRawAPS, # TS0601 / Blind Shades motor
+        "_TZE200_5zbp6j0u" : tuyaReadRawAPS, # TS0601 / Blind Shades motor
+        "_TZE200_nkoabg8w" : tuyaReadRawAPS, # TS0601 / Blind Shades motor
+        "_TZE200_xuzcvlku" : tuyaReadRawAPS, # TS0601 / Blind Shades motor
+        "_TZE200_4vobcgd3" : tuyaReadRawAPS, # TS0601 / Blind Shades motor
+        "_TZE200_nogaemzt" : tuyaReadRawAPS, # TS0601 / Blind Shades motor
+        "_TZE200_pk0sfzvr" : tuyaReadRawAPS, # TS0601 / Blind Shades motor
+        "_TZE200_fdtjuw7u" : tuyaReadRawAPS, # TS0601 / Blind Shades motor
+        "_TZE200_zpzndjez" : tuyaReadRawAPS, # TS0601 / Blind Shades motor
+        "_TZE200_rddyvrci" : tuyaReadRawAPS, # TS0601 / Blind Shades motor
         'OWON': casaiaReadRawAPS,
     }
 

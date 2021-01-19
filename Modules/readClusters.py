@@ -302,6 +302,8 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 modelName += '-dimmer'
             elif 'Manufacturer Name' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Manufacturer Name'] in ( '_TZE200_7tdtqgwv', ):
                 modelName += '-switch'
+            elif 'Manufacturer Name' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Manufacturer Name'] in ( '_TZE200_rddyvrci', '_TZE200_5zbp6j0u' , '_TZE200_nkoabg8w', '_TZE200_xuzcvlku', '_TZE200_4vobcgd3', '_TZE200_nogaemzt', '_TZE200_pk0sfzvr', '_TZE200_fdtjuw7u', '_TZE200_zpzndjez',):
+                modelName += '-curtain'
             else:
                 # eTRV
                 modelName += '-eTRV'
