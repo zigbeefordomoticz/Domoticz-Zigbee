@@ -782,14 +782,20 @@ def set_poweron_afteroffon( self, key, OnOffMode = 0xff):
     # 0xfc0f --> Command 0x01
     # 0xfc01 --> Command 0x01
 
+    # Tuya Blitzworl
+    # 0x0006 / 0x8002  -> 0x00 Off ; 0x01 On ; 0x02 Previous state
+
+    model_name = ''
+    if 'Model' in self.ListOfDevices[ key ]:
+        model_name = self.ListOfDevices[ key ]['Model']
     manuf_spec = "00"
     manuf_id = "0000"
+
     ListOfEp = getListOfEpForCluster( self, key, '0006' )
     cluster_id = "0006"
-    attribute = "4003"
+    attribute = '8002' if model_name == 'TS0121' else "4003"
     data_type = "30" # 
     for EPout in ListOfEp:
-        data = "ff"
         data = "%02x" %OnOffMode
         self.log.logging( "BasicOutput", 'Debug', "set_PowerOn_OnOff for %s/%s - OnOff: %s" %(key, EPout, OnOffMode),key)
         del self.ListOfDevices[key]['Ep'][EPout]['0006']['4003']

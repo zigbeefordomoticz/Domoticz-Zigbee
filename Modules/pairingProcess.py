@@ -40,6 +40,7 @@ from Modules.zigateConsts import CLUSTERS_LIST
 from Modules.casaia import casaia_pairing
 from Modules.thermostats import thermostat_Calibration
 from Modules.tuyaSiren import tuya_sirene_registration
+from Modules.tuyaTools import tuya_TS0121_registration
 
 def writeDiscoveryInfos( self ):
 
@@ -425,8 +426,11 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             if 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['Model'] in ( 'AC201A', 'AC211'):
                 casaia_pairing( self, NWKID)
 
-            if 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( 'TS0601-sirene'):
+            elif 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( 'TS0601-sirene'):
                 tuya_sirene_registration(self, NWKID)
+
+            elif 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( 'TS0121'):
+                tuya_TS0121_registration( self, NWKID)
 
             # Reset HB in order to force Read Attribute Status
             self.ListOfDevices[NWKID]['Heartbeat'] = 0

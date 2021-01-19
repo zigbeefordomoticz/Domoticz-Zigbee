@@ -29,7 +29,7 @@ ATTRIBUTES = {
     '0003': [ 0x0000],
     '0004': [ 0x0000],
     '0005': [ 0x0001, 0x0002, 0x0003, 0x0004],
-    '0006': [ 0x0000],
+    '0006': [ 0x0000, 0x4001, 0x4002],
     '0008': [ 0x0000],
     '000a': [ 0x0000],
     '000c': [ 0x0051, 0x0055, 0x006f, 0xff05],
@@ -802,6 +802,14 @@ def ReadAttributeRequest_0702(self, key):
             self.log.logging( "ReadAttributes", 'Debug', "Request Metering info  via Read Attribute request Manuf Specific %s/%s %s" %(key, EPout, str(listAttributes)), nwkid=key)
             ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0702", listAttrSpecific, manufacturer_spec = '01', manufacturer = self.ListOfDevices[key]['Manufacturer'], ackIsDisabled = True , checkTime=False)
 
+def ReadAttributeRequest_0702_0000(self, key):
+    # Cluster 0x0702 Metering / Specific 0x0000 
+    ListOfEp = getListOfEpForCluster( self, key, '0702' )
+    for EPout in ListOfEp:
+        listAttributes = [ 0x0000 ]
+        self.log.logging( "ReadAttributes", 'Debug', "Request Summation on 0x0702 cluster: " + key + " EPout = " + EPout , nwkid=key)
+        ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0702", listAttributes, ackIsDisabled = is_ack_tobe_disabled(self, key))
+
 def ReadAttributeRequest_0b04(self, key):
     # Cluster 0x0b04 Metering
 
@@ -842,7 +850,7 @@ def ReadAttributeRequest_0b04_050b_0505_0508( self, key):
     # Use for Blitwolf Plug
     ListOfEp = getListOfEpForCluster( self, key, '0b04' )
     for EPout in ListOfEp:
-        listAttributes = [ 0x050b, 0x0505 , 0x0508]
+        listAttributes = [ 0x0505, 0x0508, 0x050b ]
         self.log.logging( "ReadAttributes", 'Debug', "Request Metering Instant Power on 0x0b04 cluster: " + key + " EPout = " + EPout , nwkid=key)
         ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0b04", listAttributes, ackIsDisabled = is_ack_tobe_disabled(self, key))
         #istAttributes = [  0x0508 ]

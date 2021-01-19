@@ -11,8 +11,15 @@
 """
 
 from Modules.zigateConsts import ZIGATE_EP
-from Modules.basicOutputs import raw_APS_request
+from Modules.basicOutputs import raw_APS_request, write_attribute
 from Modules.tools import  is_ack_tobe_disabled
+
+def tuya_TS0121_registration( self, NwkId):
+    self.log.logging( "Tuya", 'Debug', "tuya_TS0121_registration - Nwkid: %s" %NwkId)
+    # (1) 3 x Write Attribute Cluster 0x0000 - Attribute 0xffde  - DT 0x20  - Value: 0x13
+    EPout = '01'
+    write_attribute( self, NwkId, ZIGATE_EP, EPout, '0000', '0000', '00', 'ffde', '20', '13', ackIsDisabled = False)
+
 
 def tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data , action2=None, data2 = None):
     if nwkid not in self.ListOfDevices:

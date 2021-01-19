@@ -23,37 +23,6 @@ from Modules.tuyaTools import tuya_cmd, store_tuya_attribute
 
 from Modules.domoMaj import MajDomoDevice
 
-# Tuya TRV Commands
-# https://medium.com/@dzegarra/zigbee2mqtt-how-to-add-support-for-a-new-tuya-based-device-part-2-5492707e882d
-
-# Cluster 0xef00
-# Commands 
-#   Direction: Coordinator -> Device 0x00 SetPoint 
-#   Direction: Device -> Coordinator 0x01 
-#   Direction: Device -> Coordinator 0x02 Setpoint command response
-
-def pollingTuya( self, key ):
-    """
-    This fonction is call if enabled to perform any Manufacturer specific polling action
-    The frequency is defined in the pollingSchneider parameter (in number of seconds)
-    """
-
-    #if  ( self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE):
-    #    return True
-
-
-    return False
-
-def callbackDeviceAwake_Tuya(self, NwkId, EndPoint, cluster):
-    """
-    This is fonction is call when receiving a message from a Manufacturer battery based device.
-    The function is called after processing the readCluster part
-    """
-
-    Domoticz.Log("callbackDeviceAwake_Tuya - Nwkid: %s, EndPoint: %s cluster: %s" \
-            %(NwkId, EndPoint, cluster))
-
-    return
 
 def tuya_sirene_registration(self, nwkid):
     

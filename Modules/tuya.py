@@ -17,6 +17,8 @@ from Modules.domoMaj import MajDomoDevice
 from Modules.tuyaTools import tuya_cmd
 from Modules.tuyaSiren import tuya_siren_response
 from Modules.tuyaTRV import tuya_eTRV_response
+from Modules.zigateConsts import ZIGATE_EP
+from Modules.basicOutputs import write_attribute
 
 # Tuya TRV Commands
 # https://medium.com/@dzegarra/zigbee2mqtt-how-to-add-support-for-a-new-tuya-based-device-part-2-5492707e882d
@@ -157,3 +159,13 @@ def tuya_dimmer_dimmer( self, NwkId, srcEp, percent ):
     action = '0202'
     data = '%08x' %level
     tuya_cmd( self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)
+
+#### Tuya Blitzwolf Plug TS0121
+
+def tuya_plug_led_indicator_mode( self, nwkid, mode ):
+    # 0x0006 / 0x80001
+    # Indicator LED off: 0x00
+    # Indicator switch On/Off: 0x01
+    # Indicate swicth location: 0x02
+
+    write_attribute( self, nwkid, ZIGATE_EP, '01', '0006', '0000', '01', '8001', '30', mode, ackIsDisabled = True)
