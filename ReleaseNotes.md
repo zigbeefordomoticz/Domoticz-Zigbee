@@ -17,6 +17,10 @@ Release Numbering
 - Odd numbers --> Stable
 - Even numbers  --> Beta
 
+## 19 Jan. 2021   - 4.11.15
+- [Hardware] - Add Gledopto GL-C-007 as a RGB W 
+- [Issue] - Fix Gledopto GL-C-009 definition as a Level Control
+
 ##  4 Jan. 2021   - 4.11.14
 - [Hardware] - Correct the right widget Color Control Widget fo CLA60 RW OSRAM
 
