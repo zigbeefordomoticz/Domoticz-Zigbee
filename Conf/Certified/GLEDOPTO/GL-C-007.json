@@ -8,11 +8,15 @@
 			"0006":"",
 			"0008":"",
 			"0300":"",
-			"Type": "LvlControl"
+			"Type": "ColorControlRGBWW"
+		},
+		"0d": {
+			"1000":"",
+			"Type":""
 		}
 	},
 	"Type":"",
-	"ClusterToBind": [ "0006", "0008" ],
+	"ClusterToBind": [ "0006", "0008", "0300" ],
 	"ConfigureReporting": {
 	},
 	"ReadAttributes": {
