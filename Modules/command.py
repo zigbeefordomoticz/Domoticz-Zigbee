@@ -25,7 +25,7 @@ from Modules.thermostats import thermostat_Setpoint, thermostat_Mode
 from Modules.livolo import livolo_OnOff
 from Modules.tuyaTRV import ( tuya_trv_mode )
 from Modules.tuyaSiren import ( tuya_siren_alarm, tuya_siren_humi_alarm, tuya_siren_temp_alarm )
-from Modules.tuya import ( tuya_dimmer_onoff, tuya_dimmer_dimmer)
+from Modules.tuya import ( tuya_dimmer_onoff, tuya_dimmer_dimmer, tuya_curtain_lvl, tuya_curtain_openclose)
 
 from Modules.legrand_netatmo import  legrand_fc40, cable_connected_mode
 from Modules.schneider_wiser import schneider_EHZBRTS_thermoMode, schneider_hact_fip_mode, schneider_set_contract, schneider_temp_Setcurrent, schneider_hact_heater_type
@@ -150,7 +150,11 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
 
     if Command == 'Stop':  # Manage the Stop command. For known seen only on BSO and Windowcoering
         self.log.logging( "Command", 'Debug', "mgtCommand : Stop for Device: %s EPout: %s Unit: %s DeviceType: %s" %(NWKID, EPout, Unit, DeviceType), NWKID)
-        if profalux:
+
+        if DeviceType == 'LvlControl' and _model_name == 'TS0601-curtain':
+            tuya_curtain_openclose( self, NWKID, EPout, '01' )
+
+        elif profalux:
             # Profalux offer a Manufacturer command to make Stop on Cluster 0x0008
             profalux_stop( self, NWKID)
 
@@ -242,7 +246,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             UpdateDevice_v2(self, Devices, Unit, 0, Devices[Unit].sValue,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return
 
-        if DeviceType == 'BSO-Volet' and profalux:
+        if DeviceType == 'LvlControl' and _model_name == 'TS0601-curtain':
+            tuya_curtain_openclose( self, NWKID, EPout, '00' )
+
+        elif DeviceType == 'BSO-Volet' and profalux:
             profalux_MoveToLiftAndTilt( self, NWKID, level=1 )
 
         elif DeviceType == "TuyaSiren":
@@ -332,7 +339,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             UpdateDevice_v2(self, Devices, Unit, 1, Devices[Unit].sValue,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return
 
-        if DeviceType == 'BSO-Volet' and profalux:
+        if DeviceType == 'LvlControl' and _model_name == 'TS0601-curtain':
+            tuya_curtain_openclose( self, NWKID, EPout, '02' )
+
+        elif DeviceType == 'BSO-Volet' and profalux:
             # On translated into a Move to 254
             profalux_MoveToLiftAndTilt( self, NWKID, level=255 )
 
@@ -680,7 +690,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
                 # Never Switch off
                 Level = 1
             tuya_dimmer_dimmer( self, NWKID, EPout, Level )
-            
+
+        elif _model_name == 'TS0601-curtain':
+            tuya_curtain_lvl(self, NWKID, Level)
+
         else:
             # Remaining Slider widget
             OnOff = '01' # 00 = off, 01 = on

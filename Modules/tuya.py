@@ -152,16 +152,33 @@ def tuya_curtain_response( self, Devices, _ModelName, NwkId, srcEp, ClusterID, d
         self.log.logging( "Tuya", 'Debug', "tuya_curtain_response - ?????? Nwkid: %s/%s data %s --> %s" %(NwkId, srcEp, data, level),NwkId )
         MajDomoDevice(self, Devices, NwkId, srcEp, '0008', level)
 
-def tuya_curtain_open( self, NwkId ):
-    pass
-
-def tuya_curtain_close( self, NwkId ):
-    pass
+def tuya_curtain_openclose( self, NwkId , openclose):
+    self.log.logging( "Tuya", 'Debug', "tuya_curtain_openclose - %s OpenClose: %s" %(NwkId, openclose),NwkId )
+    # determine which Endpoint
+    EPout = '01'
+    sqn = get_and_inc_SQN( self, NwkId )
+    cluster_frame = '11'
+    cmd = '00' # Command
+    action = '0401'
+    data = openclose
+    tuya_cmd( self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)
 
 def tuya_curtain_stop( self, NwkId):
     pass
 
-def tuya_curtain_lvl(self, NwkId, Level):
+def tuya_curtain_lvl(self, NwkId, percent):
+    self.log.logging( "Tuya", 'Debug', "tuya_dimmer_dimmer - %s percent: %s" %(NwkId, percent),NwkId )
+
+    level = percent
+    # determine which Endpoint
+    EPout = '01'
+    sqn = get_and_inc_SQN( self, NwkId )
+    cluster_frame = '11'
+    cmd = '00' # Command
+    action = '0202'
+    data = '%08x' %level
+    tuya_cmd( self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)
+
     pass
 
 
