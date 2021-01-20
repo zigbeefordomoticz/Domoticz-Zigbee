@@ -134,6 +134,7 @@ def tuya_curtain_response( self, Devices, _ModelName, NwkId, srcEp, ClusterID, d
     # dp 0x05 and data - direction state
     # dp 0x07 and data 00, 01 - Opening, Closing
     # dp 0x69 and data '00000028'
+
     self.log.logging( "Tuya", 'Debug', "tuya_curtain_response - Nwkid: %s/%s dp: %s data: %s" %(NwkId, srcEp, dp, data),NwkId )
     if dp == 0x01: # Open / Closing / Stopped
         self.log.logging( "Tuya", 'Debug', "tuya_curtain_response - Open/Close/Stopped action Nwkid: %s/%s  %s" %(NwkId, srcEp, data),NwkId )
@@ -144,8 +145,9 @@ def tuya_curtain_response( self, Devices, _ModelName, NwkId, srcEp, ClusterID, d
         # We need to translate into Analog value between 0 - 255
         level = int( data, 16)  
         level = (level * 255) // 100
+        slevel = '%02x' %level
         self.log.logging( "Tuya", 'Debug', "tuya_curtain_response - Curtain Percentage Nwkid: %s/%s Level %s -> %s" %(NwkId, srcEp, data, level),NwkId )
-        MajDomoDevice(self, Devices, NwkId, srcEp, '0008', level)
+        MajDomoDevice(self, Devices, NwkId, srcEp, '0008', slevel)
 
     elif dp == 0x05:
         self.log.logging( "Tuya", 'Debug', "tuya_curtain_response - Direction state Nwkid: %s/%s Action %s" %(NwkId, srcEp, data),NwkId )
@@ -153,8 +155,9 @@ def tuya_curtain_response( self, Devices, _ModelName, NwkId, srcEp, ClusterID, d
     elif dp in (0x67, 0x69):
         level = int( data, 16)  
         level = (level * 255) // 100
+        slevel = '%02x' %level
         self.log.logging( "Tuya", 'Debug', "tuya_curtain_response - ?????? Nwkid: %s/%s data %s --> %s" %(NwkId, srcEp, data, level),NwkId )
-        MajDomoDevice(self, Devices, NwkId, srcEp, '0008', level)
+        MajDomoDevice(self, Devices, NwkId, srcEp, '0008', slevel)
 
 def tuya_curtain_openclose( self, NwkId , openclose):
     self.log.logging( "Tuya", 'Debug', "tuya_curtain_openclose - %s OpenClose: %s" %(NwkId, openclose),NwkId )
