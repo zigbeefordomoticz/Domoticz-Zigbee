@@ -89,14 +89,21 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
     if _ModelName == 'TS0601-switch' and dp in ( 0x01, 0x02, 0x03):
         tuya_switch_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data)
 
-    if _ModelName == 'TS0601-eTRV' and dp in (0x02, 0x03, 0x04, 0x07, 0x12, 0x14, 0x15, 0x6d, 0x6a):
+    elif _ModelName == 'TS0601-curtain ' and dp in ( 0x01, 0x02, 0x03, 0x05, 0x67, 0x69 ):
+        tuya_curtain_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data)
+
+    elif _ModelName == 'TS0601-eTRV' and dp in (0x02, 0x03, 0x04, 0x07, 0x12, 0x14, 0x15, 0x6d, 0x6a):
         tuya_eTRV_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data)
 
-    if _ModelName == 'TS0601-sirene' and dp in ( 0x65, 0x66 , 0x67, 0x68, 0x69,  0x6a , 0x6c, 0x6d,0x6e ,0x70, 0x71, 0x72, 0x73, 0x74):
+    elif _ModelName == 'TS0601-sirene' and dp in ( 0x65, 0x66 , 0x67, 0x68, 0x69,  0x6a , 0x6c, 0x6d,0x6e ,0x70, 0x71, 0x72, 0x73, 0x74):
         tuya_siren_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data)
 
-    if _ModelName == 'TS0601-dimmer' and dp in ( 0x01, 0x02 ):
+    elif _ModelName == 'TS0601-dimmer' and dp in ( 0x01, 0x02 ):
         tuya_dimmer_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data)
+
+    else:
+        self.log.logging( "Tuya", 'Log', "tuyaReadRawAPS - UNMANAGED Nwkid: %s/%s fcf: %s sqn: %s cmd: %s status: %s transid: %s dp: %02x datatype: %s fn: %s data: %s" %(
+            NwkId, srcEp, fcf, sqn, cmd, status, transid, dp, datatype, fn, data),NwkId )
 
 
 def tuya_switch_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data):
@@ -113,6 +120,49 @@ def tuya_switch_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dst
     else:
         self.log.logging( "Tuya", 'Debug', "tuyaReadRawAPS - Unknown attribut Nwkid: %s/%s decodeDP: %04x data: %s"
             %(NwkId, srcEp, dp, data), NwkId)
+
+
+# Tuya TS0601 - Curtain
+def tuya_curtain_response( self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data):
+    # dp 0x01 closing -- Data can be 00 , 01, 02 - Opening, Stopped, Closing
+    # dp 0x02 Percent control - Percent control 
+    # db 0x03 and data '00000000'  - Percent state when arrived at position
+    # dp 0x05 and data - direction state
+    # dp 0x07 and data 00, 01 - Opening, Closing
+    # dp 0x69 and data '00000028'
+    self.log.logging( "Tuya", 'Debug', "tuya_curtain_response - Nwkid: %s/%s dp: %s data: %s" %(NwkId, srcEp, dp, data),NwkId )
+    if dp == 0x01: # Open / Closing / Stopped
+        self.log.logging( "Tuya", 'Debug', "tuya_curtain_response - Open/Close/Stopped action Nwkid: %s/%s  %s" %(NwkId, srcEp, data),NwkId )
+        MajDomoDevice(self, Devices, NwkId, srcEp, '0006', data)
+
+    elif dp in ( 0x03, 0x07):
+        # Curtain Percentage
+        # We need to translate into Analog value between 0 - 255
+        level = int( data, 16)  
+        level = (level * 255) // 100
+        self.log.logging( "Tuya", 'Debug', "tuya_curtain_response - Curtain Percentage Nwkid: %s/%s Level %s -> %s" %(NwkId, srcEp, data, level),NwkId )
+        MajDomoDevice(self, Devices, NwkId, srcEp, '0008', level)
+
+    elif dp == 0x05:
+        self.log.logging( "Tuya", 'Debug', "tuya_curtain_response - Direction state Nwkid: %s/%s Action %s" %(NwkId, srcEp, data),NwkId )
+
+    elif dp in (0x67, 0x69):
+        level = int( data, 16)  
+        level = (level * 255) // 100
+        self.log.logging( "Tuya", 'Debug', "tuya_curtain_response - ?????? Nwkid: %s/%s data %s --> %s" %(NwkId, srcEp, data, level),NwkId )
+        MajDomoDevice(self, Devices, NwkId, srcEp, '0008', level)
+
+def tuya_curtain_open( self, NwkId ):
+    pass
+
+def tuya_curtain_close( self, NwkId ):
+    pass
+
+def tuya_curtain_stop( self, NwkId):
+    pass
+
+def tuya_curtain_lvl(self, NwkId, Level):
+    pass
 
 
 #### Tuya Smart Dimmer Switch
