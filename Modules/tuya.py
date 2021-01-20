@@ -84,8 +84,9 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
     _ModelName = self.ListOfDevices[NwkId]['Model']
 
     # [ZiGateForwarder_17] tuyaReadRawAPS - Nwkid: fc08/01 fcf: 09 sqn: 06 cmd: 02 status: 00 transid: 02 dp: 69 datatype: 02 fn: 00 data: 000000e3
-    self.log.logging( "Tuya", 'Debug', "tuyaReadRawAPS - Nwkid: %s/%s fcf: %s sqn: %s cmd: %s status: %s transid: %s dp: %02x datatype: %s fn: %s data: %s"
-        %(NwkId, srcEp, fcf, sqn, cmd, status, transid, dp, datatype, fn, data),NwkId )
+    self.log.logging( "Tuya", 'Debug', "tuyaReadRawAPS - Model: %s Nwkid: %s/%s fcf: %s sqn: %s cmd: %s status: %s transid: %s dp: %02x datatype: %s fn: %s data: %s"
+        %(_ModelName, NwkId, srcEp, fcf, sqn, cmd, status, transid, dp, datatype, fn, data),NwkId )
+
     if _ModelName == 'TS0601-switch' and dp in ( 0x01, 0x02, 0x03):
         tuya_switch_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data)
 
@@ -102,8 +103,8 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
         tuya_dimmer_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data)
 
     else:
-        self.log.logging( "Tuya", 'Log', "tuyaReadRawAPS - UNMANAGED Nwkid: %s/%s fcf: %s sqn: %s cmd: %s status: %s transid: %s dp: %02x datatype: %s fn: %s data: %s" %(
-            NwkId, srcEp, fcf, sqn, cmd, status, transid, dp, datatype, fn, data),NwkId )
+        self.log.logging( "Tuya", 'Log', "tuyaReadRawAPS - Model: %s UNMANAGED Nwkid: %s/%s fcf: %s sqn: %s cmd: %s status: %s transid: %s dp: %02x datatype: %s fn: %s data: %s" %(
+            _ModelName, NwkId, srcEp, fcf, sqn, cmd, status, transid, dp, datatype, fn, data),NwkId )
 
 
 def tuya_switch_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data):
