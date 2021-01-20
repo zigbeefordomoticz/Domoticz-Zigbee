@@ -158,7 +158,7 @@ def tuya_curtain_response( self, Devices, _ModelName, NwkId, srcEp, ClusterID, d
 
     elif dp in (0x67, 0x69):  
         level = ( ( 100 - int( data, 16)) * 255) // 100
-        slevel = '%02x' %100
+        slevel = '%02x' %level
         self.log.logging( "Tuya", 'Debug', "tuya_curtain_response - ?????? Nwkid: %s/%s data %s --> %s" %(NwkId, srcEp, data, level),NwkId )
         MajDomoDevice(self, Devices, NwkId, srcEp, '0008', slevel)
 
