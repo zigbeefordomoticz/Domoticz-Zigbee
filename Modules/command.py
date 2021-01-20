@@ -247,7 +247,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             return
 
         if DeviceType == 'LvlControl' and _model_name == 'TS0601-curtain':
-            tuya_curtain_openclose( self, NWKID, '00' )
+            tuya_curtain_openclose( self, NWKID, '02' )
 
         elif DeviceType == 'BSO-Volet' and profalux:
             profalux_MoveToLiftAndTilt( self, NWKID, level=1 )
@@ -340,7 +340,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             return
 
         if DeviceType == 'LvlControl' and _model_name == 'TS0601-curtain':
-            tuya_curtain_openclose( self, NWKID, '02' )
+            tuya_curtain_openclose( self, NWKID, '00' )
 
         elif DeviceType == 'BSO-Volet' and profalux:
             # On translated into a Move to 254
@@ -692,7 +692,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             tuya_dimmer_dimmer( self, NWKID, EPout, Level )
 
         elif _model_name == 'TS0601-curtain':
-            tuya_curtain_lvl(self, NWKID, Level)
+            tuya_curtain_lvl(self, NWKID, (100 - Level))
 
         else:
             # Remaining Slider widget

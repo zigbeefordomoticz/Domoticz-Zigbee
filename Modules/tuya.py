@@ -56,10 +56,14 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
 
     if NwkId not in self.ListOfDevices:
         return
+
     if ClusterID != 'ef00':
         return
+
     if 'Model' not in self.ListOfDevices[NwkId]:
         return
+    _ModelName = self.ListOfDevices[NwkId]['Model']
+
     if len(MsgPayload) < 6:
         self.log.logging( "Tuya", 'Debug', "tuyaReadRawAPS - MsgPayload %s too short" %(MsgPayload),NwkId )
         return
@@ -81,25 +85,24 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
     len_data = MsgPayload[16:18]
     data = MsgPayload[18:]
 
-    _ModelName = self.ListOfDevices[NwkId]['Model']
 
     # [ZiGateForwarder_17] tuyaReadRawAPS - Nwkid: fc08/01 fcf: 09 sqn: 06 cmd: 02 status: 00 transid: 02 dp: 69 datatype: 02 fn: 00 data: 000000e3
     self.log.logging( "Tuya", 'Debug', "tuyaReadRawAPS - Model: %s Nwkid: %s/%s fcf: %s sqn: %s cmd: %s status: %s transid: %s dp: %02x datatype: %s fn: %s data: %s"
         %(_ModelName, NwkId, srcEp, fcf, sqn, cmd, status, transid, dp, datatype, fn, data),NwkId )
 
-    if _ModelName == 'TS0601-switch' and dp in ( 0x01, 0x02, 0x03):
+    if ( _ModelName == 'TS0601-switch' and dp in ( 0x01, 0x02, 0x03)):
         tuya_switch_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data)
 
-    elif _ModelName == 'TS0601-curtain ' and dp in ( 0x01, 0x02, 0x03, 0x05, 0x67, 0x69 ):
+    elif ( _ModelName == 'TS0601-curtain ' and dp in ( 0x01, 0x02, 0x03, 0x05, 0x67, 0x69 )):
         tuya_curtain_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data)
 
-    elif _ModelName == 'TS0601-eTRV' and dp in (0x02, 0x03, 0x04, 0x07, 0x12, 0x14, 0x15, 0x6d, 0x6a):
+    elif ( _ModelName == 'TS0601-eTRV' and dp in (0x02, 0x03, 0x04, 0x07, 0x12, 0x14, 0x15, 0x6d, 0x6a)):
         tuya_eTRV_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data)
 
-    elif _ModelName == 'TS0601-sirene' and dp in ( 0x65, 0x66 , 0x67, 0x68, 0x69,  0x6a , 0x6c, 0x6d,0x6e ,0x70, 0x71, 0x72, 0x73, 0x74):
+    elif ( _ModelName == 'TS0601-sirene' and dp in ( 0x65, 0x66 , 0x67, 0x68, 0x69,  0x6a , 0x6c, 0x6d,0x6e ,0x70, 0x71, 0x72, 0x73, 0x74)):
         tuya_siren_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data)
 
-    elif _ModelName == 'TS0601-dimmer' and dp in ( 0x01, 0x02 ):
+    elif ( _ModelName == 'TS0601-dimmer' and dp in ( 0x01, 0x02 )):
         tuya_dimmer_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data)
 
     else:
@@ -160,7 +163,7 @@ def tuya_curtain_openclose( self, NwkId , openclose):
     sqn = get_and_inc_SQN( self, NwkId )
     cluster_frame = '11'
     cmd = '00' # Command
-    action = '0401'
+    action = '0101'
     data = openclose
     tuya_cmd( self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)
 
@@ -179,8 +182,6 @@ def tuya_curtain_lvl(self, NwkId, percent):
     action = '0202'
     data = '%08x' %level
     tuya_cmd( self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)
-
-    pass
 
 
 #### Tuya Smart Dimmer Switch
