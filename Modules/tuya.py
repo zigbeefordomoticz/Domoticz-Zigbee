@@ -93,7 +93,7 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
     if ( _ModelName == 'TS0601-switch' and dp in ( 0x01, 0x02, 0x03)):
         tuya_switch_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data)
 
-    elif ( _ModelName == 'TS0601-curtain ' and dp in ( 0x01, 0x02, 0x03, 0x05, 0x67, 0x69 )):
+    elif ( _ModelName == 'TS0601-curtain' and dp in ( 0x01, 0x02, 0x03, 0x05, 0x67, 0x69 )):
         tuya_curtain_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data)
 
     elif ( _ModelName == 'TS0601-eTRV' and dp in (0x02, 0x03, 0x04, 0x07, 0x12, 0x14, 0x15, 0x6d, 0x6a)):
