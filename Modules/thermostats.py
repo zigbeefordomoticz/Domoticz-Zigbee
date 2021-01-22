@@ -52,7 +52,7 @@ def thermostat_Setpoint( self, NwkId, setpoint):
             schneider_setpoint(self, NwkId, setpoint)
             return
 
-        elif self.ListOfDevices[NwkId]['Model'] in ( 'TS0601', 'ivfvd7h', 'fvq6avy' , 'eaxp72v'):
+        elif self.ListOfDevices[NwkId]['Model'] in ( 'TS0601', 'TS0601-eTRV', 'ivfvd7h', 'fvq6avy' , 'eaxp72v'):
             # Tuya
             self.log.logging( "Thermostats", 'Log', "thermostat_Setpoint - calling Tuya for %s with value %s" %(NwkId, setpoint), nwkid=NwkId)
             tuya_setpoint(self, NwkId, setpoint)

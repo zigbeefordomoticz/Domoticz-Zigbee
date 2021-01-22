@@ -12,7 +12,7 @@
 			"Type":"Temp/ThermoSetpoint/ThermoMode_2/Door/Valve"}
 	},
 	"Type":"",
-	"ClusterToBind": [ "0000", "0019", "ef00" ],
+	"ClusterToBind": [  ],
 	"ConfigureReporting": {
 	
 	},

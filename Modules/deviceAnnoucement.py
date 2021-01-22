@@ -525,8 +525,8 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
             legrand_refresh_battery_remote(self, NwkId)
             if self.ListOfDevices[NwkId]["Model"] in ( 'TS0601-sirene'):
                 tuya_sirene_registration(self, NwkId)
-            elif self.ListOfDevices[NwkId]["Model"] in ( 'TS0601-eTRV'):
-                    tuya_eTRV_registration( self, NwkId)
+            #elif self.ListOfDevices[NwkId]["Model"] in ( 'TS0601-eTRV'):
+            #        tuya_eTRV_registration( self, NwkId)
             del self.ListOfDevices[NwkId]["Announced"]
             return
     else:
@@ -632,8 +632,8 @@ def decode004d_existing_devicev2( self, Devices, NwkId, MsgIEEE, MsgMacCapa, Msg
 
     if self.ListOfDevices[NwkId]["Model"] in ( 'TS0601-sirene'):
         tuya_sirene_registration(self, NwkId)
-    elif self.ListOfDevices[NwkId]["Model"] in ( 'TS0601-eTRV'):
-        tuya_eTRV_registration( self, NwkId)
+    #elif self.ListOfDevices[NwkId]["Model"] in ( 'TS0601-eTRV'):
+    #    tuya_eTRV_registration( self, NwkId)
 
     # As we are redo bind, we need to redo the Configure Reporting
     if "ConfigureReporting" in self.ListOfDevices[NwkId]:
