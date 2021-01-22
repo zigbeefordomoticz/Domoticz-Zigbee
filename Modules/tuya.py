@@ -80,14 +80,14 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
     status = MsgPayload[6:8]   #uint8
     transid = MsgPayload[8:10] # uint8
     dp = int(MsgPayload[10:12],16)
-    datatype = MsgPayload[12:14]
+    datatype = int(MsgPayload[12:14],16)
     fn = MsgPayload[14:16]
     len_data = MsgPayload[16:18]
     data = MsgPayload[18:]
 
 
     # [ZiGateForwarder_17] tuyaReadRawAPS - Nwkid: fc08/01 fcf: 09 sqn: 06 cmd: 02 status: 00 transid: 02 dp: 69 datatype: 02 fn: 00 data: 000000e3
-    self.log.logging( "Tuya", 'Debug', "tuyaReadRawAPS - Model: %s Nwkid: %s/%s fcf: %s sqn: %s cmd: %s status: %s transid: %s dp: %02x datatype: %s fn: %s data: %s"
+    self.log.logging( "Tuya", 'Debug', "tuyaReadRawAPS - Model: %s Nwkid: %s/%s fcf: %s sqn: %s cmd: %s status: %s transid: %s dp: %02x datatype: %02x fn: %s data: %s"
         %(_ModelName, NwkId, srcEp, fcf, sqn, cmd, status, transid, dp, datatype, fn, data),NwkId )
 
     if ( _ModelName == 'TS0601-switch' and dp in ( 0x01, 0x02, 0x03)):
@@ -97,7 +97,7 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
         tuya_curtain_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data)
 
     elif ( _ModelName == 'TS0601-eTRV' and dp in (0x02, 0x03, 0x04, 0x07, 0x12, 0x14, 0x15, 0x6d, 0x6a)):
-        tuya_eTRV_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data)
+        tuya_eTRV_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
 
     elif ( _ModelName == 'TS0601-sirene' and dp in ( 0x65, 0x66 , 0x67, 0x68, 0x69,  0x6a , 0x6c, 0x6d,0x6e ,0x70, 0x71, 0x72, 0x73, 0x74)):
         tuya_siren_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data)
@@ -106,7 +106,7 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
         tuya_dimmer_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data)
 
     else:
-        self.log.logging( "Tuya", 'Log', "tuyaReadRawAPS - Model: %s UNMANAGED Nwkid: %s/%s fcf: %s sqn: %s cmd: %s status: %s transid: %s dp: %02x datatype: %s fn: %s data: %s" %(
+        self.log.logging( "Tuya", 'Log', "tuyaReadRawAPS - Model: %s UNMANAGED Nwkid: %s/%s fcf: %s sqn: %s cmd: %s status: %s transid: %s dp: %02x datatype: %02x fn: %s data: %s" %(
             _ModelName, NwkId, srcEp, fcf, sqn, cmd, status, transid, dp, datatype, fn, data),NwkId )
 
 
@@ -130,8 +130,8 @@ def tuya_switch_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dst
 def tuya_curtain_response( self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data):
     # dp 0x01 closing -- Data can be 00 , 01, 02 - Opening, Stopped, Closing
     # dp 0x02 Percent control - Percent control 
-    # db 0x03 and data '00000000'  - Percent state when arrived at position
-    # dp 0x05 and data - direction state
+    # db 0x03 and data '00000000'  - Percent state when arrived at position (report)
+    # dp 0x05 and data - direction state 
     # dp 0x07 and data 00, 01 - Opening, Closing
     # dp 0x69 and data '00000028'
 
