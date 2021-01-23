@@ -106,7 +106,7 @@ def receive_antifreeze( self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstN
 
 
 eTRV_MATRIX = {
-    '_TZE200_ckud7u2l': { 
+    '_TZE200_ckud7u2l': {  # @rosie
         'FromDevice': {
             0x67: receive_setpoint,
             0x03: receive_temperature,
@@ -116,13 +116,11 @@ eTRV_MATRIX = {
             0x14: receive_valvestate,
             0x15: receive_battery,
             0x6a: receive_mode,
-            0x6d: receive_valveposition
-        },
+            0x6d: receive_valveposition},
         'ToDevice': {
-            'SetPoint': 0x02,
-        }
-    },
-    '_TZE200_c88teujp': { 
+            'SetPoint': 0x02,}
+        },
+    '_TYST11_zivfvd7h': {  # @d2e2n2o
         'FromDevice': {
             0x67: receive_setpoint,
             0x03: receive_temperature,
@@ -135,12 +133,27 @@ eTRV_MATRIX = {
             0x6d: receive_valveposition,
             0x1b: receive_calibration,
             0x6c: receive_program_mode,
-            0x6a: receive_antifreeze
-        },
+            0x6a: receive_antifreeze },
         'ToDevice': {
-            'SetPoint': 0x67,
+            'SetPoint': 0x67,}
+        },
+    '_TZE200_c88teujp': {  # @pipiche
+        'FromDevice': {
+            0x67: receive_setpoint,
+            0x03: receive_temperature,
+            0x04: receive_preset,
+            0x28: receive_childlock,
+            0x08: receive_windowdetection,
+            0x14: receive_valvestate,
+            0x15: receive_battery,
+            0x6a: receive_mode,
+            0x6d: receive_valveposition,
+            0x1b: receive_calibration,
+            0x6c: receive_program_mode,
+            0x6a: receive_antifreeze },
+        'ToDevice': {
+            'SetPoint': 0x67,}
         }
-    }
 }
 
 
