@@ -38,7 +38,13 @@ def receive_temperature( self, Devices, _ModelName, NwkId, srcEp, ClusterID, dst
     self.log.logging( "Tuya", 'Debug', "receive_temperature - Nwkid: %s/%s Temperature: %s" %(NwkId,srcEp , int(data,16)))
     MajDomoDevice(self, Devices, NwkId, srcEp, '0402', (int(data,16) / 10 ))
     checkAndStoreAttributeValue( self, NwkId , '01', '0402', '0000' , int(data,16)  )
-    store_tuya_attribute( self, NwkId, 'Temperatyure', data )
+    store_tuya_attribute( self, NwkId, 'Temperature', data )
+
+def receive_onoff( self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data):
+    self.log.logging( "Tuya", 'Debug', "receive_onoff - Nwkid: %s/%s Mode to OffOn: %s" %(NwkId,srcEp, data ))
+    MajDomoDevice(self, Devices, NwkId, srcEp, '0201', data, Attribute_ = '6501')
+    checkAndStoreAttributeValue( self, NwkId , '01', '0006', '0000' , data )
+    store_tuya_attribute( self, NwkId, 'Switch', data )    
 
 def receive_preset( self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data):
     if data == '00':
@@ -106,78 +112,133 @@ def receive_antifreeze( self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstN
 
 
 eTRV_MATRIX = {
-    '_TYST11_zivfvd7h': {  # @d2e2n2à
-        'FromDevice': {
-            0x67: receive_setpoint,
-            0x03: receive_temperature,
-            0x04: receive_preset,
-            0x07: receive_childlock,
-            0x12: receive_windowdetection,
-            0x14: receive_valvestate,
-            0x15: receive_battery,
-            0x6a: receive_mode,
-            0x6d: receive_valveposition},
-        'ToDevice': {
-            'SetPoint': 0x02,}
-        },
-    '_TZE200_ckud7u2l': {  # @rosie
-        'FromDevice': {
-            0x67: receive_setpoint,
-            0x03: receive_temperature,
-            0x04: receive_preset,
-            0x07: receive_childlock,
-            0x12: receive_windowdetection,
-            0x14: receive_valvestate,
-            0x15: receive_battery,
-            0x6a: receive_mode,
-            0x6d: receive_valveposition},
-        'ToDevice': {
-            'SetPoint': 0x02,}
-        },
-    '_TZE200_c88teujp': {  # @pipiche
-        'FromDevice': {
-            0x67: receive_setpoint,
-            0x03: receive_temperature,
-            0x04: receive_preset,
-            0x28: receive_childlock,
-            0x08: receive_windowdetection,
-            0x14: receive_valvestate,
-            0x15: receive_battery,
-            0x6a: receive_mode,
-            0x6d: receive_valveposition,
-            0x1b: receive_calibration,
-            0x6c: receive_program_mode,
-            0x6a: receive_antifreeze },
-        'ToDevice': {
-            'SetPoint': 0x67,}
-        }
-}
+    'ivfvd7h': {  # @d2e2n2  / _TYST11_zivfvd7h / Model: ivfvd7h
+                'FromDevice': {
+                    0x02: receive_setpoint,
+                    0x03: receive_temperature,
+                    0x04: receive_preset,
+                    0x07: receive_childlock, 
+                    0x15: receive_battery,
+                    },
+                'ToDevice': {
+                    'SetPoint': 0x02,
+                    'TrvMode': 0x04}
+                },
+    'TS0601-eTRV': {  # @pipiche
+                'FromDevice': {
+                    0x08: receive_windowdetection,
+                    0x0a: receive_antifreeze ,
+                    0x1b: receive_calibration,
+                    0x28: receive_childlock,
+                    0x65: receive_onoff,
+                    0x66: receive_temperature,
+                    0x67: receive_setpoint,
+                    0x6c: receive_program_mode,
+                    0x6d: receive_valveposition,
 
+                    },
+                'ToDevice': {
+                    'Switch': 0x65,
+                    'SetPoint': 0x67,         # Ok
+                    'ChildLock': 0x28,
+                    'ValveDetection': 0x14,
+                    'WindowDetection': 0x08,
+                    'Calibration': 0x1b,
+                    }
+                }
+}
 
 def tuya_eTRV_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data):
     self.log.logging( "Tuya", 'Debug', "tuya_eTRV_response - Nwkid: %s dp: %02x data: %s" %(NwkId, dp, data))
     manuf_name = get_manuf_name( self, NwkId )
-    if manuf_name in eTRV_MATRIX:
-        if dp in eTRV_MATRIX[ manuf_name ]['FromDevice']:
-            eTRV_MATRIX[ manuf_name ]['FromDevice'][ dp](self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data)
+    if _ModelName in eTRV_MATRIX:
+        if dp in eTRV_MATRIX[ _ModelName ]['FromDevice']:
+            eTRV_MATRIX[ _ModelName ]['FromDevice'][ dp](self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data)
         else:
-           self.log.logging( "Tuya", 'Debug', "tuya_eTRV_response - Nwkid: %s dp: %02x data: %s UNKNOW dp" %(NwkId, dp, data))
+           self.log.logging( "Tuya", 'Debug', "tuya_eTRV_response - Nwkid: %s dp: %02x data: %s UNKNOW dp for Manuf: %s, Model: %" %(NwkId, dp, data, manuf_name, _ModelName))
     else:
-        self.log.logging( "Tuya", 'Debug', "tuya_eTRV_response - Nwkid: %s dp: %02x data: %s UNKNOW Model %s" %(NwkId, dp, data, _ModelName))
+        self.log.logging( "Tuya", 'Debug', "tuya_eTRV_response - Nwkid: %s dp: %02x data: %s UNKNOW Manuf %s, Model: %s" %(NwkId, dp, data, manuf_name, _ModelName))
 
 
 def tuya_trv_valve_detection( self, nwkid, onoff):
     self.log.logging( "Tuya", 'Debug', "tuya_trv_valve_detection - %s ValveDetection: %s" %(nwkid, onoff))
     if onoff not in ( 0x00, 0x01 ):
         return
-    # determine which Endpoint
-    EPout = '01'
     sqn = get_and_inc_SQN( self, nwkid )
-    cluster_frame = '11'
-    cmd = '00' # Command
-    action = '0114'
-    data = '%02x' %onoff
-    tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
+    dp = get_datapoint_command( self, nwkid, 'ValveDetection')
+    self.log.logging( "Tuya", 'Debug', "tuya_trv_valve_detection - %s dp for SetPoint: %s" %(nwkid, dp))
+    if dp:
+        action = '%02x01' %dp
+        # determine which Endpoint
+        EPout = '01'
+        cluster_frame = '11'
+        cmd = '00' # Command
+        data = '%02x' %onoff
+        tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
+
+def tuya_trv_window_detection( self, nwkid, onoff):
+    self.log.logging( "Tuya", 'Debug', "tuya_trv_window_detection - %s WindowDetection: %s" %(nwkid, onoff))
+    if onoff not in ( 0x00, 0x01 ):
+        return
+    sqn = get_and_inc_SQN( self, nwkid )
+    dp = get_datapoint_command( self, nwkid, 'WindowDetection')
+    self.log.logging( "Tuya", 'Debug', "tuya_trv_window_detection - %s dp for WindowDetection: %s" %(nwkid, dp))
+    if dp:
+        action = '%02x01' %dp
+        # determine which Endpoint
+        EPout = '01'
+        cluster_frame = '11'
+        cmd = '00' # Command
+        data = '%02x' %onoff
+        tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
+
+def tuya_trv_child_lock( self, nwkid, onoff):
+    self.log.logging( "Tuya", 'Debug', "tuya_trv_child_lock - %s ChildLock: %s" %(nwkid, onoff))
+    if onoff not in ( 0x00, 0x01 ):
+        return
+    sqn = get_and_inc_SQN( self, nwkid )
+    dp = get_datapoint_command( self, nwkid, 'ChildLock')
+    self.log.logging( "Tuya", 'Debug', "tuya_trv_child_lock - %s dp for ChildLock: %s" %(nwkid, dp))
+    if dp:
+        action = '%02x01' %dp
+        # determine which Endpoint
+        EPout = '01'
+        cluster_frame = '11'
+        cmd = '00' # Command
+        data = '%02x' %onoff
+        tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
+
+def tuya_trv_calibration( self, nwkid, onoff):
+    self.log.logging( "Tuya", 'Debug', "tuya_trv_calibration - %s Calibration: %s" %(nwkid, onoff))
+    if onoff not in ( 0x00, 0x01 ):
+        return
+    sqn = get_and_inc_SQN( self, nwkid )
+    dp = get_datapoint_command( self, nwkid, 'Calibration')
+    self.log.logging( "Tuya", 'Debug', "tuya_trv_calibration - %s dp for Calibration: %s" %(nwkid, dp))
+    if dp:
+        action = '%02x02' %dp
+        # determine which Endpoint
+        EPout = '01'
+        cluster_frame = '11'
+        cmd = '00' # Command
+        data = '%02x' %onoff
+        tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
+
+def tuya_trv_onoff( self, nwkid, onoff):
+    self.log.logging( "Tuya", 'Debug', "tuya_trv_preset - %s Switch: %s" %(nwkid, onoff))
+    if onoff not in ( 0x00, 0x01 ):
+        return
+    sqn = get_and_inc_SQN( self, nwkid )
+    dp = get_datapoint_command( self, nwkid, 'Switch')
+    self.log.logging( "Tuya", 'Debug', "tuya_trv_preset - %s dp for Switch: %s" %(nwkid, dp))
+    if dp:
+        action = '%02x01' %dp
+        # determine which Endpoint
+        EPout = '01'
+        cluster_frame = '11'
+        cmd = '00' # Command
+        data = '%02x' %onoff
+        tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 
 def tuya_check_valve_detection( self, NwkId ):
     if 'ValveDetection' not in self.ListOfDevices[ NwkId ]['Param']:
@@ -185,6 +246,21 @@ def tuya_check_valve_detection( self, NwkId ):
     current_valve_detection = get_tuya_attribute( self, NwkId, 'ValveDetection')
     if current_valve_detection != self.ListOfDevices[ NwkId ]['Param']['ValveDetection']:
         tuya_trv_valve_detection( self, NwkId, self.ListOfDevices[ NwkId ]['Param']['ValveDetection'])
+
+def tuya_check_window_detection( self, NwkId ):
+    if 'WindowDetection' not in self.ListOfDevices[ NwkId ]['Param']:
+        return
+    current_valve_detection = get_tuya_attribute( self, NwkId, 'WindowDetection')
+    if current_valve_detection != self.ListOfDevices[ NwkId ]['Param']['WindowDetection']:
+        tuya_trv_window_detection( self, NwkId, self.ListOfDevices[ NwkId ]['Param']['WindowDetection'])
+
+def tuya_check_childlock( self, NwkId ):
+    if 'ChildLock' not in self.ListOfDevices[ NwkId ]['Param']:
+        return
+    current_valve_detection = get_tuya_attribute( self, NwkId, 'ChildLock')
+    if current_valve_detection != self.ListOfDevices[ NwkId ]['Param']['ChildLock']:
+        tuya_trv_window_detection( self, NwkId, self.ListOfDevices[ NwkId ]['Param']['ChildLock'])
+
 
 def tuya_setpoint( self, nwkid, setpoint_value):
     self.log.logging( "Tuya", 'Debug', "tuya_setpoint - %s setpoint: %s" %(nwkid, setpoint_value))
@@ -205,26 +281,31 @@ def tuya_setpoint( self, nwkid, setpoint_value):
 
 def tuya_trv_mode( self, nwkid, mode):
     self.log.logging( "Tuya", 'Debug', "tuya_trv_mode - %s tuya_trv_mode: %s" %(nwkid, mode))
-    # In Domoticz Setpoint is in ° , In Modules/command.py we multiplied by 100 (as this is the Zigbee standard).
-    # Looks like in the Tuya 0xef00 cluster it is only expressed in 10th of degree
-    # determine which Endpoint
-    EPout = '01'
     sqn = get_and_inc_SQN( self, nwkid )
-    cluster_frame = '11'
-    cmd = '00' # Command
-    action = '0404' # Mode
-    data = '%02x' %( mode // 10 )
-    tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)   
+    dp = get_datapoint_command( self, nwkid, 'TrvMode')
+    self.log.logging( "Tuya", 'Debug', "tuya_trv_mode - %s dp for TrvMode: %s" %(nwkid, dp))
+    if dp:
+        EPout = '01'
+        cluster_frame = '11'
+        cmd = '00' # Command
+        action = '%02x04' %dp # Mode
+        data = '%02x' %( mode // 10 )
+        tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)   
 
 def get_manuf_name( self, nwkid ):
     if 'Manufacturer Name' not in self.ListOfDevices[ nwkid ]:
         return None
     return self.ListOfDevices[ nwkid ]['Manufacturer Name']
 
+def get_model_name( self, nwkid ):
+    if 'Model' not in self.ListOfDevices[ nwkid ]:
+        return None
+    return self.ListOfDevices[ nwkid ]['Model']
+
 def get_datapoint_command( self, nwkid, cmd):
-    Manuf_Name = self.ListOfDevices[ nwkid ]['Manufacturer Name']
-    if get_manuf_name( self, nwkid ) not in eTRV_MATRIX:
+    _model_name = get_model_name( self, nwkid )
+    if _model_name not in eTRV_MATRIX:
         return None
-    if cmd not in eTRV_MATRIX[ Manuf_Name ]['ToDevice']:
+    if cmd not in eTRV_MATRIX[ _model_name ]['ToDevice']:
         return None
-    return eTRV_MATRIX[ Manuf_Name ]['ToDevice'][ cmd ]
+    return eTRV_MATRIX[ _model_name ]['ToDevice'][ cmd ]

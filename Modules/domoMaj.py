@@ -447,13 +447,15 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 ( 'ThermoMode' in ClusterType and WidgetType == 'ACMode_2' ) or \
                 ( 'ThermoMode' in ClusterType and WidgetType == 'ACSwing' and Attribute_ =='fd00') or \
                 ( WidgetType == 'KF204Switch' and ClusterType in ( 'Switch', 'Door') ) or \
-                ( WidgetType == 'Valve' and Attribute_ == '0014') \
+                ( WidgetType == 'Valve' and Attribute_ == '0014') or \
+                ( 'ThermoMode' in ClusterType and WidgetType == 'ThermoOnOff' ) 
                 ):
 
             # Plug, Door, Switch, Button ...
             # We reach this point because ClusterType is Door or Switch. It means that Cluster 0x0006 or 0x0500
             # So we might also have to manage case where we receive a On or Off for a LvlControl WidgetType like a dimming Bulb.
-            self.log.logging( "Widget", "Debug", "------> Generic Widget for %s ClusterType: %s WidgetType: %s Value: %s" %(NWKID, ClusterType, WidgetType, value), NWKID)
+            self.log.logging( "Widget", "Debug", "------> Generic Widget for %s ClusterType: %s WidgetType: %s Value: %s" %(
+                NWKID, ClusterType, WidgetType, value), NWKID)
 
             if ClusterType == 'Switch' and WidgetType == 'LvlControl' :
                 # Called with ClusterID: 0x0006 but we have to update a Dimmer, so we need to keep the level
@@ -484,6 +486,14 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 ( WidgetType == 'TuyaSirenTemp' and Attribute_ != '0171') or \
                 ( WidgetType == 'TuyaSiren' and Attribute_ != '0168' ):
                 return
+
+            elif ( WidgetType == 'ThermoOnOff' and Attribute_ != '6501'):
+                nValue = int(value,16)
+                if nValue == 0:
+                    sValue = 'Off'
+                else:
+                    sValue = 'On'
+                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=False)
 
             elif WidgetType == "DButton":
                 # double bouttons avec EP different lumi.sensor_86sw2 

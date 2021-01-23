@@ -23,7 +23,7 @@ from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl
 from Modules.basicOutputs import sendZigateCmd
 from Modules.thermostats import thermostat_Setpoint, thermostat_Mode
 from Modules.livolo import livolo_OnOff
-from Modules.tuyaTRV import ( tuya_trv_mode )
+from Modules.tuyaTRV import ( tuya_trv_mode , tuya_trv_onoff)
 from Modules.tuyaSiren import ( tuya_siren_alarm, tuya_siren_humi_alarm, tuya_siren_temp_alarm )
 from Modules.tuya import ( tuya_dimmer_onoff, tuya_dimmer_dimmer, tuya_curtain_lvl, tuya_curtain_openclose)
 
@@ -75,7 +75,7 @@ ACTIONATORS = [ 'Switch', 'Plug', 'SwitchAQ2', 'Smoke', 'DSwitch', 'LivoloSWL', 
             'Venetian', 'VenetianInverted', 'WindowCovering', 'BSO', 'BSO-Orientation', 'BSO-Volet',
             'LvlControl', 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl',
             'ThermoSetpoint', 'ThermoMode', 'ACMode', 'ThermoMode_2', 'ThermoModeEHZBRTS', 'FanControl', 'PAC-SWITCH', 'ACMode_2', 'ACSwing','TempSetCurrent', 'AlarmWD',
-            'FIP', 'HACTMODE','LegranCableMode', 'ContractPower','HeatingSwitch', 'DoorLock' , 'TuyaSiren', 'TuyaSirenHumi', 'TuyaSirenTemp' ]
+            'FIP', 'HACTMODE','LegranCableMode', 'ContractPower','HeatingSwitch', 'DoorLock' , 'TuyaSiren', 'TuyaSirenHumi', 'TuyaSirenTemp', 'ThermoOnOff']
             
 def mgtCommand( self, Devices, Unit, Command, Level, Color ):
 
@@ -282,6 +282,9 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         elif DeviceType == "HeatingSwitch":
             thermostat_Mode( self, NWKID, 'Off' )
 
+        elif DeviceType == 'ThermoOnOff':
+            tuya_trv_onoff( self, NWKID, 0x00)
+
         else:
             # Remaining Slider widget
             if profalux: # Profalux are define as LvlControl but should be managed as Blind Inverted
@@ -364,7 +367,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
 
         elif DeviceType == "HeatingSwitch":
             thermostat_Mode( self, NWKID, 'Heat' )
-            
+
+        elif DeviceType == 'ThermoOnOff':
+            tuya_trv_onoff( self, NWKID, 0X01)
+
         else:
             # Remaining Slider widget
             if profalux:
