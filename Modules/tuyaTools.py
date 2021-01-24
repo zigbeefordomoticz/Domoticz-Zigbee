@@ -12,7 +12,7 @@
 
 from Modules.zigateConsts import ZIGATE_EP
 from Modules.basicOutputs import raw_APS_request, write_attribute
-from Modules.tools import  is_ack_tobe_disabled
+from Modules.tools import  is_ack_tobe_disabled, get_and_inc_SQN
 
 def tuya_TS0121_registration( self, NwkId):
     self.log.logging( "Tuya", 'Debug', "tuya_TS0121_registration - Nwkid: %s" %NwkId)
@@ -34,12 +34,12 @@ def tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data , action
     self.log.logging( "Tuya", 'Debug', "tuya_cmd - %s/%s cmd: %s payload: %s" %(nwkid, EPout , cmd, payload))
 
 def store_tuya_attribute( self, NwkId, Attribute, Value ):
-    if 'TUYA' not in self.ListOfDevices[ NwkId ]:
-        self.ListOfDevices[ NwkId ]['TUYA'] = {}
-    self.ListOfDevices[ NwkId ]['TUYA'][ Attribute ] = Value
+    if 'Tuya' not in self.ListOfDevices[ NwkId ]:
+        self.ListOfDevices[ NwkId ]['Tuya'] = {}
+    self.ListOfDevices[ NwkId ]['Tuya'][ Attribute ] = Value
 
 def get_tuya_attribute( self, Nwkid, Attribute):
-    if 'TUYA' not in self.ListOfDevices[ Nwkid ]:
+    if 'Tuya' not in self.ListOfDevices[ Nwkid ]:
         return None
     if Attribute not in  self.ListOfDevices[ Nwkid ]['Tuya']:
         return None
@@ -48,8 +48,10 @@ def get_tuya_attribute( self, Nwkid, Attribute):
 def get_next_tuya_transactionId( self, NwkId ):
     if 'Tuya' not in self.ListOfDevices[NwkId]:
         self.ListOfDevices[NwkId]['Tuya'] = {}
+
     if 'TuyaTransactionId' not in self.ListOfDevices[NwkId]['Tuya']:
         self.ListOfDevices[NwkId]['Tuya']['TuyaTransactionId'] = 0x00
+
     self.ListOfDevices[NwkId]['Tuya']['TuyaTransactionId'] += 1
     if self.ListOfDevices[NwkId]['Tuya']['TuyaTransactionId'] > 0xff:
         self.ListOfDevices[NwkId]['Tuya']['TuyaTransactionId'] = 0x00

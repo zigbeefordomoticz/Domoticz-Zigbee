@@ -218,6 +218,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
                 %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
             self.log.logging( "Command", 'Debug', "ThermoMode - requested Level: %s" %Level, NWKID)
             tuya_trv_mode( self, NWKID, 0 )
+            return
 
         if DeviceType == 'ThermoModeEHZBRTS':
             self.log.logging( "Command", 'Debug', "MajDomoDevice EHZBRTS Schneider Thermostat Mode Off", NWKID )
@@ -558,6 +559,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
                 %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
             self.log.logging( "Command", 'Debug', "ThermoMode_2 - requested Level: %s" %Level, NWKID)
             tuya_trv_mode( self, NWKID, Level )
+            return
 
         if DeviceType == 'FanControl':
 

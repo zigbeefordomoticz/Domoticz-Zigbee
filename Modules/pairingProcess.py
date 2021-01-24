@@ -430,8 +430,8 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             elif 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( 'TS0601-sirene'):
                 tuya_sirene_registration(self, NWKID)
 
-            #elif 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( 'TS0601-eTRV'):
-            #    tuya_eTRV_registration( self, NWKID)
+            elif 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( 'TS0601-eTRV'):
+                tuya_eTRV_registration( self, NWKID)
                 
             elif 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( 'TS0121'):
                 tuya_TS0121_registration( self, NWKID)

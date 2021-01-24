@@ -488,7 +488,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 return
 
             elif ( WidgetType == 'ThermoOnOff' and Attribute_ != '6501'):
-                nValue = int(value,16)
+                nValue = value
                 if nValue == 0:
                     sValue = 'Off'
                 else:

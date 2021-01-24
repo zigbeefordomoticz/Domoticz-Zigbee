@@ -11,14 +11,18 @@
 """
 
 import Domoticz
+
+from datetime import datetime
+
+
 from Classes.LoggingManagement import LoggingManagement
-from Modules.tools import updSQN, get_and_inc_SQN
+from Modules.tools import updSQN, get_and_inc_SQN, is_ack_tobe_disabled
 from Modules.domoMaj import MajDomoDevice
-from Modules.tuyaTools import tuya_cmd
+from Modules.tuyaTools import (tuya_cmd)
 from Modules.tuyaSiren import tuya_siren_response
 from Modules.tuyaTRV import tuya_eTRV_response
 from Modules.zigateConsts import ZIGATE_EP
-from Modules.basicOutputs import write_attribute
+from Modules.basicOutputs import write_attribute,raw_APS_request
 
 # Tuya TRV Commands
 # https://medium.com/@dzegarra/zigbee2mqtt-how-to-add-support-for-a-new-tuya-based-device-part-2-5492707e882d
@@ -56,10 +60,8 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
 
     if NwkId not in self.ListOfDevices:
         return
-
     if ClusterID != 'ef00':
         return
-
     if 'Model' not in self.ListOfDevices[NwkId]:
         return
     _ModelName = self.ListOfDevices[NwkId]['Model']
@@ -70,25 +72,37 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
 
     fcf = MsgPayload[0:2] # uint8
     sqn = MsgPayload[2:4] # uint8
+    send_default_response( self, NwkId, srcEp , sqn)
+
+    
     cmd = MsgPayload[4:6] # uint8
     updSQN( self, NwkId, sqn)
 
-    if cmd not in ('00', '01', '02', '03'):
+    if cmd == '24': # Time Synchronisation
+        send_timesynchronisation( self, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload[6:])
+
+    elif cmd in ('01', '02', '03'):
+        status = MsgPayload[6:8]   #uint8
+        transid = MsgPayload[8:10] # uint8
+        dp = int(MsgPayload[10:12],16)
+        datatype = int(MsgPayload[12:14],16)
+        fn = MsgPayload[14:16]
+        len_data = MsgPayload[16:18]
+        data = MsgPayload[18:]
+
+        
         self.log.logging( "Tuya", 'Log', "tuyaReadRawAPS - Unknown command %s MsgPayload %s/ Data: %s" %(cmd, MsgPayload, MsgPayload[6:]),NwkId )
-        return
+        tuya_response( self,Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data )
 
-    status = MsgPayload[6:8]   #uint8
-    transid = MsgPayload[8:10] # uint8
-    dp = int(MsgPayload[10:12],16)
-    datatype = int(MsgPayload[12:14],16)
-    fn = MsgPayload[14:16]
-    len_data = MsgPayload[16:18]
-    data = MsgPayload[18:]
+    else:
+        self.log.logging( "Tuya", 'Log', "tuyaReadRawAPS - Model: %s UNMANAGED Nwkid: %s/%s fcf: %s sqn: %s cmd: %s data: %s" %(
+            _ModelName, NwkId, srcEp, fcf, sqn, cmd, MsgPayload[6:]),NwkId )
 
 
-    # [ZiGateForwarder_17] tuyaReadRawAPS - Nwkid: fc08/01 fcf: 09 sqn: 06 cmd: 02 status: 00 transid: 02 dp: 69 datatype: 02 fn: 00 data: 000000e3
-    self.log.logging( "Tuya", 'Debug', "tuyaReadRawAPS - Model: %s Nwkid: %s/%s fcf: %s sqn: %s cmd: %s status: %s transid: %s dp: %02x datatype: %02x fn: %s data: %s"
-        %(_ModelName, NwkId, srcEp, fcf, sqn, cmd, status, transid, dp, datatype, fn, data),NwkId )
+def tuya_response( self,Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data ):
+
+    self.log.logging( "Tuya", 'Debug', "tuya_response - Model: %s Nwkid: %s/%s dp: %02x data: %s"
+        %(_ModelName, NwkId, srcEp, dp, data),NwkId )
 
     if ( _ModelName == 'TS0601-switch' and dp in ( 0x01, 0x02, 0x03)):
         tuya_switch_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data)
@@ -96,7 +110,7 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
     elif ( _ModelName == 'TS0601-curtain' and dp in ( 0x01, 0x02, 0x03, 0x05, 0x67, 0x69 )):
         tuya_curtain_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data)
 
-    elif ( _ModelName in ('TS0601-eTRV', 'ivfvd7h')):
+    elif ( _ModelName in ( 'TS0601-eTRV', 'ivfvd7h')):
         tuya_eTRV_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data)
 
     elif ( _ModelName == 'TS0601-sirene' and dp in ( 0x65, 0x66 , 0x67, 0x68, 0x69,  0x6a , 0x6c, 0x6d,0x6e ,0x70, 0x71, 0x72, 0x73, 0x74)):
@@ -106,8 +120,37 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
         tuya_dimmer_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data)
 
     else:
-        self.log.logging( "Tuya", 'Log', "tuyaReadRawAPS - Model: %s UNMANAGED Nwkid: %s/%s fcf: %s sqn: %s cmd: %s status: %s transid: %s dp: %02x datatype: %02x fn: %s data: %s" %(
-            _ModelName, NwkId, srcEp, fcf, sqn, cmd, status, transid, dp, datatype, fn, data),NwkId )
+        self.log.logging( "Tuya", 'Log', "tuya_response - Model: %s UNMANAGED Nwkid: %s/%s dp: %02x data: %s" %(
+            _ModelName, NwkId, srcEp,  dp, data),NwkId )
+
+
+def send_timesynchronisation( self, NwkId, srcEp, ClusterID, dstNWKID, dstEP, serial_number):
+    
+    #Request: cmd: 0x24  Data: 0x0008
+    #0008 60 0d 80 29600d8e39
+    if NwkId not in self.ListOfDevices:
+        return 
+    sqn = get_and_inc_SQN( self, NwkId )
+
+    field1 = '0d'
+    field2 = '80'
+    field3 = '29'
+
+    EPOCTime = datetime(1970,1,1)
+    UTCTime = int((datetime.now() - EPOCTime).total_seconds())
+    localtime = "%08x" %UTCTime
+
+    payload = '11' + sqn + '24' + serial_number + '60' + field1 + field2 + field3 + localtime
+    raw_APS_request( self, NwkId, srcEp, 'ef00', '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = is_ack_tobe_disabled(self, NwkId))
+    self.log.logging( "Tuya", 'Debug', "send_timesynchronisation - %s/%s " %(NwkId, srcEp ))
+
+   
+def send_default_response( self, Nwkid, srcEp , sqn):
+    if Nwkid not in self.ListOfDevices:
+        return 
+    payload = '00' + sqn + '0b' + '01' + '00'
+    raw_APS_request( self, Nwkid, srcEp, 'ef00', '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = is_ack_tobe_disabled(self, Nwkid))
+    self.log.logging( "Tuya", 'Debug', "send_default_response - %s/%s " %(Nwkid, srcEp ))
 
 
 def tuya_switch_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data):
@@ -177,7 +220,7 @@ def tuya_curtain_stop( self, NwkId):
     pass
 
 def tuya_curtain_lvl(self, NwkId, percent):
-    self.log.logging( "Tuya", 'Debug', "tuya_dimmer_dimmer - %s percent: %s" %(NwkId, percent),NwkId )
+    self.log.logging( "Tuya", 'Debug', "tuya_curtain_lvl - %s percent: %s" %(NwkId, percent),NwkId )
 
     level = percent
     # determine which Endpoint
