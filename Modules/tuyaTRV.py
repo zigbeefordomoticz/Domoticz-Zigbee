@@ -163,7 +163,31 @@ eTRV_MATRIX = {
                     'Calibration': 0x1b,
                     'TrvMode': 0x6c,
                     }
-                }
+                },
+    'TS0601-thermostat': {  # @d2e2n2o
+                'FromDevice': {
+                    0x02: receive_setpoint,
+                    0x03: receive_temperature,
+                    0x1b: receive_calibration,
+                    0x28: receive_childlock,
+                    0x65: receive_onoff,
+                    0x66: receive_temperature,
+                    0x67: receive_setpoint,
+                    0x6c: receive_preset,
+                    0x6d: receive_valveposition,
+                    },
+                'ToDevice': {
+                    'Switch': 0x65,
+                    'SetPoint': 0x67,
+                    'ChildLock': 0x28,
+                    'ValveDetection': 0x14,
+                    'WindowDetection': 0x08,
+                    'Calibration': 0x1b,
+                    'TrvMode': 0x6c,
+                    }
+                },
+
+
 }
 
 # 00 18 08 01 0001   01 Window Detection enabled
