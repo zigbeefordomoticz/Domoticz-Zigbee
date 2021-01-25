@@ -120,6 +120,8 @@ eTRV_MATRIX = {
                     0x04: receive_preset,
                     0x07: receive_childlock, 
                     0x15: receive_battery,
+                    0x14: receive_valvestate,
+                    0x6d: receive_valveposition,
                     },
                 'ToDevice': {
                     'SetPoint': 0x02,
@@ -133,6 +135,8 @@ eTRV_MATRIX = {
                     0x04: receive_preset,
                     0x07: receive_childlock, 
                     0x15: receive_battery,
+                    0x14: receive_valvestate,
+                    0x6d: receive_valveposition,
                     },
                 'ToDevice': {
                     'SetPoint': 0x02,

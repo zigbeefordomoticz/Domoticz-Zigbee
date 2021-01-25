@@ -8,7 +8,7 @@
 			"ef00":"", 
 			"000a":"", 
 			"0019":"", 
-			"Type":"Temp/ThermoSetpoint/ThermoMode_2"}
+			"Type":"Temp/ThermoSetpoint/ThermoMode_2/Valve"}
 	},
 	"Type":"",
 	"ClusterToBind": [ "0019", "ef00" ],
