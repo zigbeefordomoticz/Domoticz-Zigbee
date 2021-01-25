@@ -110,7 +110,7 @@ def tuya_response( self,Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, 
     elif ( _ModelName == 'TS0601-curtain' and dp in ( 0x01, 0x02, 0x03, 0x05, 0x67, 0x69 )):
         tuya_curtain_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data)
 
-    elif ( _ModelName in ( 'TS0601-eTRV', 'ivfvd7h', 'TS0601-thermostat')):
+    elif ( _ModelName in ( 'TS0601-eTRV', 'ivfvd7h', 'fvq6avy', 'TS0601-thermostat')):
         tuya_eTRV_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data)
 
     elif ( _ModelName == 'TS0601-sirene' and dp in ( 0x65, 0x66 , 0x67, 0x68, 0x69,  0x6a , 0x6c, 0x6d,0x6e ,0x70, 0x71, 0x72, 0x73, 0x74)):

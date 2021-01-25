@@ -59,7 +59,6 @@ def receive_preset( self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID
         self.log.logging( "Tuya", 'Debug', "receive_preset - Nwkid: %s/%s Mode to Auto" %(NwkId,srcEp ))
         MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 1, Attribute_ = '001c' )
         checkAndStoreAttributeValue( self, NwkId , '01', '0201', '001c' , 'Auto' )
-        
     elif data == '02':
         # Manual
         self.log.logging( "Tuya", 'Debug', "receive_preset - Nwkid: %s/%s Mode to Manual" %(NwkId,srcEp ))
@@ -81,6 +80,7 @@ def receive_valvestate( self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstN
     store_tuya_attribute( self, NwkId, 'ValveDetection', data)
 
 def receive_battery( self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data ):
+    # Works for ivfvd7h model , _TYST11_zivfvd7h Manufacturer
     self.log.logging( "Tuya", 'Debug', "receive_battery - Nwkid: %s/%s Battery status %s" %(NwkId,srcEp ,int(data,16)))
     checkAndStoreAttributeValue( self, NwkId , '01', '0001', '0000' , int(data,16) )
     self.ListOfDevices[ NwkId ]['Battery'] = int(data,16)
@@ -137,6 +137,7 @@ eTRV_MATRIX = {
                     0x15: receive_battery,
                     0x14: receive_valvestate,
                     0x6d: receive_valveposition,
+                    0x12: receive_windowdetection,
                     },
                 'ToDevice': {
                     'SetPoint': 0x02,
@@ -190,19 +191,11 @@ eTRV_MATRIX = {
 
 }
 
-# 00 18 08 01 0001   01 Window Detection enabled
-# 00 19 82 01 0001   01 ?????
-# 00 1a 1b 02 0004   00000000 Calibration
-# 00 16 28 01 0001   01 Child Lock On
-# 00 02 66 02 0004   000000f8 Temperature
-# 00 03 67 02 0004   000000c8 Setpoint
-# 00 04 69 05 0001   00 ??
-# 00 05 6a 01 0001   00 LH 
-# 00 07 6c 01 0001   00 Program Mode
+# 00056a01000100   - ON
 
 def tuya_eTRV_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data):
     self.log.logging( "Tuya", 'Debug', "tuya_eTRV_response - Nwkid: %s dp: %02x data: %s" %(NwkId, dp, data))
-    manuf_name = get_manuf_name( self, NwkId )
+    manuf_name = get_model_name( self, NwkId )
     if _ModelName in eTRV_MATRIX:
         if dp in eTRV_MATRIX[ _ModelName ]['FromDevice']:
             eTRV_MATRIX[ _ModelName ]['FromDevice'][ dp](self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data)
@@ -351,7 +344,7 @@ def tuya_trv_mode( self, nwkid, mode):
         if get_model_name( self, nwkid ) == 'TS0601-eTRV':
             if mode // 10 == 0x00: # Off
                 tuya_trv_onoff( self, nwkid, 0x00)
-            elif mode // 10 == 0x02:
+            else:
                 tuya_trv_onoff( self, nwkid, 0x01)
 
 
