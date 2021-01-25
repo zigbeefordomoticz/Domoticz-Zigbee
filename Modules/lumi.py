@@ -30,6 +30,7 @@ XIAOMI_POWERMETER_EP = {
     'lumi.ctrl_ln2': '03',
     'lumi.ctrl_ln2.aq1': '03',
     'lumi.plug.mmeu01': '15',
+    'lumi.plug.maeu01': '01',
     'lumi.relay.c2acn01': '01'
 }
 
