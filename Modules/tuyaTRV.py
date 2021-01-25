@@ -86,6 +86,10 @@ def receive_battery( self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKI
     self.ListOfDevices[ NwkId ]['Battery'] = int(data,16)
     store_tuya_attribute( self, NwkId, 'BatteryStatus', data )
 
+def receive_lowbattery(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data):
+    self.log.logging( "Tuya", 'Debug', "receice_lowbattery - Nwkid: %s/%s Battery status %s" %(NwkId,srcEp ,int(data,16)))
+    store_tuya_attribute( self, NwkId, 'LowBattery', data )
+
 def receive_mode( self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data ):
     self.log.logging( "Tuya", 'Debug', "receive_mode - Nwkid: %s/%s Mode: %s" %(NwkId,srcEp ,data))
     store_tuya_attribute( self, NwkId, 'Mode', data )
@@ -94,10 +98,6 @@ def receive_valveposition( self, Devices, _ModelName, NwkId, srcEp, ClusterID, d
     self.log.logging( "Tuya", 'Debug', "receive_valveposition - Nwkid: %s/%s Valve position: %s" %(NwkId,srcEp ,int(data,16)))
     MajDomoDevice(self, Devices, NwkId, srcEp, '0201', int(data,16) , Attribute_ = '026d')
     store_tuya_attribute( self, NwkId, 'ValvePosition', data )
-
-def receive_batteryalarm( self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data ):
-    self.log.logging( "Tuya", 'Debug', "receive_batteryalarm - Nwkid: %s/%s Low Battery: %s" %(NwkId,srcEp ,int(data,16)))
-    store_tuya_attribute( self, NwkId, 'LowBattery', data )
 
 def receive_calibration( self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data ):
     self.log.logging( "Tuya", 'Debug', "receive_calibration - Nwkid: %s/%s Low Battery: %s" %(NwkId,srcEp ,int(data,16)))
@@ -122,6 +122,7 @@ eTRV_MATRIX = {
                     0x15: receive_battery,
                     0x14: receive_valvestate,
                     0x6d: receive_valveposition,
+                    0x6e: receive_lowbattery,
                     },
                 'ToDevice': {
                     'SetPoint': 0x02,
@@ -138,6 +139,7 @@ eTRV_MATRIX = {
                     0x14: receive_valvestate,
                     0x6d: receive_valveposition,
                     0x12: receive_windowdetection,
+                    0x6e: receive_lowbattery,
                     },
                 'ToDevice': {
                     'SetPoint': 0x02,
@@ -154,6 +156,7 @@ eTRV_MATRIX = {
                     0x67: receive_setpoint,
                     0x6c: receive_preset,
                     0x6d: receive_valveposition,
+                    0x6e: receive_lowbattery,
                     },
                 'ToDevice': {
                     'Switch': 0x65,
@@ -168,6 +171,7 @@ eTRV_MATRIX = {
     'TS0601-thermostat': {  # @d2e2n2o
                 'FromDevice': {
                     0x02: receive_setpoint,
+                    0x10: receive_setpoint,
                     0x03: receive_temperature,
                     0x1b: receive_calibration,
                     0x28: receive_childlock,
@@ -176,6 +180,16 @@ eTRV_MATRIX = {
                     0x67: receive_setpoint,
                     0x6c: receive_preset,
                     0x6d: receive_valveposition,
+                    0x6e: receive_lowbattery,
+                    0x04: receive_preset,
+                    0x07: receive_childlock, 
+                    0x15: receive_battery,
+                    0x14: receive_valvestate,
+                    0x12: receive_windowdetection,
+                    0x6e: receive_lowbattery,
+                    0x18: receive_temperature,
+                    0x2c: receive_calibration
+                    
                     },
                 'ToDevice': {
                     'Switch': 0x65,
