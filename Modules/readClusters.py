@@ -306,6 +306,11 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 modelName += '-curtain'
             elif 'Manufacturer Name' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Manufacturer Name'] in ( '_TZE200_aoclfnxz'):
                 modelName += '-thermostat'
+            elif 'Manufacturer Name' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Manufacturer Name'] in ( '_TZE200_kfvq6avy', ):
+                # Revolt NX-4911-675
+                modelName += '-revolt'
+
+            
             else:
                 # eTRV
                 modelName += '-eTRV'
