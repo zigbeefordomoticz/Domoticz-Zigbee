@@ -15,6 +15,7 @@ import Domoticz
 from datetime import datetime
 
 
+
 from Classes.LoggingManagement import LoggingManagement
 from Modules.tools import updSQN, get_and_inc_SQN, is_ack_tobe_disabled
 from Modules.domoMaj import MajDomoDevice
@@ -137,14 +138,29 @@ def send_timesynchronisation( self, NwkId, srcEp, ClusterID, dstNWKID, dstEP, se
     field3 = '29'
 
     EPOCTime = datetime(1970,1,1)
-    UTCTime = int((datetime.now() - EPOCTime).total_seconds())
-    localtime = "%08x" %UTCTime
+    now = datetime.utcnow()
+    UTCTime = int((now  - EPOCTime).total_seconds())
 
-    payload = '11' + sqn + '24' + serial_number + '60' + field1 + field2 + field3 + localtime
+    utctime = "%08x" %UTCTime
+    localtime = "%08x" %utc_to_local( UTCTime )
+    self.log.logging( "Tuya", 'Debug', "send_timesynchronisation - %s/%s UTC: %s Local: %s" %(
+        NwkId, srcEp, UTCTime, localtime ))
+
+    payload = '11' + sqn + '24' + serial_number + utctime + localtime
     raw_APS_request( self, NwkId, srcEp, 'ef00', '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = is_ack_tobe_disabled(self, NwkId))
     self.log.logging( "Tuya", 'Debug', "send_timesynchronisation - %s/%s " %(NwkId, srcEp ))
 
-   
+def utc_to_local(dt):
+    # https://stackoverflow.com/questions/4563272/convert-a-python-utc-datetime-to-a-local-datetime-using-only-python-standard-lib
+
+    import time
+
+    if time.localtime().tm_isdst:
+        return dt - datetime.timedelta(seconds = time.altzone)
+    else:
+        return dt - datetime.timedelta(seconds = time.timezone)
+
+
 def send_default_response( self, Nwkid, srcEp , sqn):
     if Nwkid not in self.ListOfDevices:
         return 
