@@ -22,12 +22,15 @@
 		}
 	},
 	"Type":"",
-	"ClusterToBind": [],
-	"ConfigureReporting": {},
+	"ClusterToBind": [ "0b04", "0702"],
+	"ConfigureReporting": {
+		"0702": { "Attributes": { "0000": { "Change": "0000ffffffffffff", "DataType": "25", "MaxInterval": "0258", "MinInterval": "0258", "TimeOut": "0000" }}},
+		"0b04": { "Attributes": { "050b": {"DataType": "29", "MinInterval": "0005", "MaxInterval": "012C", "TimeOut": "0000","Change": "0001"}}}
+	},
 	"ReadAttributes": {
 		"0000": [ "0001", "0002", "0003", "0004", "0005", "0006", "0007"],
 		"0006": [ "0000" ],
-		"0702": [ "0000", "0200", "0301", "0302", "0303", "0306", "0400"],
-		"0b04": [ "0000", "0505", "0508", "050b"]
+		"0702": [ "0000", "0200", "0301", "0302", "0303", "0306"],
+		"0b04": [ "0000", "050b"]
 	}
 }
