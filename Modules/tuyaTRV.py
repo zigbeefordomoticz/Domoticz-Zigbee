@@ -94,6 +94,10 @@ def receive_mode( self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, 
     self.log.logging( "Tuya", 'Debug', "receive_mode - Nwkid: %s/%s Mode: %s" %(NwkId,srcEp ,data))
     store_tuya_attribute( self, NwkId, 'Mode', data )
 
+def receive_heating_state(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data):
+    self.log.logging( "Tuya", 'Debug', "receive_mode - Nwkid: %s/%s Mode: %s" %(NwkId,srcEp ,data))
+    store_tuya_attribute( self, NwkId, 'HeatingMode', data )
+
 def receive_valveposition( self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data ):
     self.log.logging( "Tuya", 'Debug', "receive_valveposition - Nwkid: %s/%s Valve position: %s" %(NwkId,srcEp ,int(data,16)))
     MajDomoDevice(self, Devices, NwkId, srcEp, '0201', int(data,16) , Attribute_ = '026d')
@@ -168,45 +172,23 @@ eTRV_MATRIX = {
                     'TrvMode': 0x6c,
                     }
                 },
-    'TS0601-thermostat': {  # @d2e2n2o
+    'TS0601-thermostat': {  # @d2e2n2o / Electric
                 'FromDevice': {
-                    0x02: receive_setpoint,
+                    0x02: receive_onoff,
                     0x10: receive_setpoint,
-                    0x03: receive_temperature,
-                    0x1b: receive_calibration,
-                    0x28: receive_childlock,
-                    0x65: receive_onoff,
-                    0x66: receive_temperature,
-                    0x67: receive_setpoint,
-                    0x6c: receive_preset,
-                    0x6d: receive_valveposition,
-                    0x6e: receive_lowbattery,
-                    0x04: receive_preset,
-                    0x07: receive_childlock, 
-                    0x15: receive_battery,
-                    0x14: receive_valvestate,
-                    0x12: receive_windowdetection,
-                    0x6e: receive_lowbattery,
                     0x18: receive_temperature,
-                    0x2c: receive_calibration
-                    
+                    0x24: receive_heating_state,
+                    0x28: receive_childlock,
                     },
                 'ToDevice': {
-                    'Switch': 0x65,
-                    'SetPoint': 0x67,
+                    'Switch': 0x01,
+                    'SetPoint': 0x10,
                     'ChildLock': 0x28,
-                    'ValveDetection': 0x14,
-                    'WindowDetection': 0x08,
-                    'Calibration': 0x1b,
-                    'TrvMode': 0x6c,
                     }
                 },
 
 
 }
-
-# 00056a01000100   - ON
-
 def tuya_eTRV_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data):
     self.log.logging( "Tuya", 'Debug', "tuya_eTRV_response - Nwkid: %s dp: %02x data: %s" %(NwkId, dp, data))
     manuf_name = get_model_name( self, NwkId )
@@ -297,7 +279,6 @@ def tuya_trv_onoff( self, nwkid, onoff):
         cmd = '00' # Command
         data = '%02x' %onoff
         tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
-
 
 def tuya_check_valve_detection( self, NwkId ):
     if 'ValveDetection' not in self.ListOfDevices[ NwkId ]['Param']:
