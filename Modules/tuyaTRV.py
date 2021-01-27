@@ -30,7 +30,7 @@ def tuya_eTRV_registration(self, nwkid):
     raw_APS_request( self, nwkid, EPout, 'ef00', '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = is_ack_tobe_disabled(self, nwkid))
 
 
-def receive_setpoint( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data ):
+def receive_setpoint( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data ):
     self.log.logging( "Tuya", 'Debug', "receive_setpoint - Nwkid: %s/%s Setpoint: %s" %(NwkId,srcEp ,int(data,16)))
     if model_target == 'TS0601-thermostat':
         setpoint = int(data,16)
@@ -40,14 +40,26 @@ def receive_setpoint( self, Devices, model_target, NwkId, srcEp, ClusterID, dstN
     checkAndStoreAttributeValue( self, NwkId , '01', '0201', '0012' , int(data,16) * 10 )
     store_tuya_attribute( self, NwkId, 'SetPoint', data )
 
-def receive_temperature( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data):
+def receive_temperature( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     self.log.logging( "Tuya", 'Debug', "receive_temperature - Nwkid: %s/%s Temperature: %s" %(NwkId,srcEp , int(data,16)))
     MajDomoDevice(self, Devices, NwkId, srcEp, '0402', (int(data,16) / 10 ))
     checkAndStoreAttributeValue( self, NwkId , '01', '0402', '0000' , int(data,16)  )
     store_tuya_attribute( self, NwkId, 'Temperature', data )
 
-def receive_onoff( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data):
+def receive_onoff( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     self.log.logging( "Tuya", 'Debug', "receive_onoff - Nwkid: %s/%s Mode to OffOn: %s" %(NwkId,srcEp, data ))
+    if model_target == 'TS0601-eTRV2':
+        if data == '00':
+            MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 0, Attribute_ = '001c' )
+            checkAndStoreAttributeValue( self, NwkId , '01', '0201', '001c' , 'OffLine' )
+        else:
+            
+            MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 2, Attribute_ = '001c')
+            checkAndStoreAttributeValue( self, NwkId , '01', '0201', '001c' , 'Manual' )
+        store_tuya_attribute( self, NwkId, 'Switch', data )
+        return
+
+
     if data == '00':
         MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 0, Attribute_ = '001c')
     else:
@@ -55,10 +67,7 @@ def receive_onoff( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKI
     checkAndStoreAttributeValue( self, NwkId , '01', '0006', '0000' , data )
     store_tuya_attribute( self, NwkId, 'Switch', data )    
 
-def receive_preset( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data):
-    if model_target == 'TS0601-eTRV2':
-        store_tuya_attribute( self, NwkId, 'ChangeMode', data )
-        return
+def receive_preset( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
 
     if data == '00':
         # Offline
@@ -77,61 +86,62 @@ def receive_preset( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWK
         checkAndStoreAttributeValue( self, NwkId , '01', '0201', '001c' , 'Manual' )
     store_tuya_attribute( self, NwkId, 'ChangeMode', data )
 
-def receive_childlock( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data):
+def receive_childlock( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     self.log.logging( "Tuya", 'Debug', "receive_childlock - Nwkid: %s/%s Child Lock/Unlock: %s" %(NwkId,srcEp ,data))
     store_tuya_attribute( self, NwkId, 'ChildLock', data )
 
-def receive_windowdetection( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data):
+def receive_windowdetection( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     self.log.logging( "Tuya", 'Debug', "receive_windowdetection - Nwkid: %s/%s Window Open: %s" %(NwkId,srcEp ,data))
     MajDomoDevice(self, Devices, NwkId, srcEp, '0500', data )
     store_tuya_attribute( self, NwkId, 'OpenWindow', data )
 
-def receive_windowdetection_status( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data):
+def receive_windowdetection_status( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     self.log.logging( "Tuya", 'Debug', "receive_windowdetection_status - Nwkid: %s/%s Window Open: %s" %(NwkId,srcEp ,data))
     store_tuya_attribute( self, NwkId, 'OpenWindowDetection', data )
 
-def receive_valvestate( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data ):
+def receive_valvestate( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data ):
     self.log.logging( "Tuya", 'Debug', "receive_valvestate - Nwkid: %s/%s Valve Detection: %s %s" %(NwkId,srcEp ,data, int(data,16)))
     store_tuya_attribute( self, NwkId, 'ValveDetection', data)
 
-def receive_battery( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data ):
+def receive_battery( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data ):
     # Works for ivfvd7h model , _TYST11_zivfvd7h Manufacturer
     self.log.logging( "Tuya", 'Debug', "receive_battery - Nwkid: %s/%s Battery status %s" %(NwkId,srcEp ,int(data,16)))
     checkAndStoreAttributeValue( self, NwkId , '01', '0001', '0000' , int(data,16) )
     self.ListOfDevices[ NwkId ]['Battery'] = int(data,16)
     store_tuya_attribute( self, NwkId, 'BatteryStatus', data )
 
-def receive_lowbattery(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data):
+def receive_lowbattery(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     self.log.logging( "Tuya", 'Debug', "receice_lowbattery - Nwkid: %s/%s Battery status %s" %(NwkId,srcEp ,int(data,16)))
     store_tuya_attribute( self, NwkId, 'LowBattery', data )
 
-def receive_mode( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data ):
+def receive_mode( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data ):
     self.log.logging( "Tuya", 'Debug', "receive_mode - Nwkid: %s/%s Mode: %s" %(NwkId,srcEp ,data))
     store_tuya_attribute( self, NwkId, 'Mode', data )
 
-def receive_heating_state(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data):
+def receive_heating_state(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     self.log.logging( "Tuya", 'Debug', "receive_mode - Nwkid: %s/%s Mode: %s" %(NwkId,srcEp ,data))
     MajDomoDevice(self, Devices, NwkId, srcEp, '0201', data , )
     store_tuya_attribute( self, NwkId, 'HeatingMode', data )
 
-def receive_valveposition( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data ):
+def receive_valveposition( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data ):
     self.log.logging( "Tuya", 'Debug', "receive_valveposition - Nwkid: %s/%s Valve position: %s" %(NwkId,srcEp ,int(data,16)))
     MajDomoDevice(self, Devices, NwkId, srcEp, '0201', int(data,16) , Attribute_ = '026d')
     store_tuya_attribute( self, NwkId, 'ValvePosition', data )
 
-def receive_calibration( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data ):
+def receive_calibration( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data ):
     self.log.logging( "Tuya", 'Debug', "receive_calibration - Nwkid: %s/%s Low Battery: %s" %(NwkId,srcEp ,int(data,16)))
     store_tuya_attribute( self, NwkId, 'Calibration', data )
 
-def receive_program_mode( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data):
+def receive_program_mode( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     self.log.logging( "Tuya", 'Debug', "receive_program_mode - Nwkid: %s/%s Program Mode: %s" %(NwkId,srcEp ,int(data,16)))
     store_tuya_attribute( self, NwkId, 'TrvMode', data )    
 
-def receive_antifreeze( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data):
+def receive_antifreeze( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     self.log.logging( "Tuya", 'Debug', "receive_antifreeze - Nwkid: %s/%s AntiFreeze: %s" %(NwkId,srcEp ,int(data,16)))
     store_tuya_attribute( self, NwkId, 'AntiFreeze', data )        
  
-def receive_dumy( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data ):
+def receive_dumy( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data ):
+    self.log.logging( "Tuya", 'Debug', "receive and unknown data point - Nwkid: %s/%s dp: %s datatype: %s data: 0x%s" %(NwkId,srcEp ,dp, datatype, data))
     pass
 
 eTRV_MODELS = {
@@ -143,6 +153,7 @@ eTRV_MODELS = {
     'TS0601-eTRV' : 'TS0601-eTRV1',
     'TS0601-thermostat': 'TS0601-thermostat',
 }
+
 eTRV_MATRIX = {
     'TS0601-eTRV1': {  # @d2e2n2  / _TYST11_zivfvd7h / Model: ivfvd7h
         'FromDevice': {
@@ -217,14 +228,14 @@ eTRV_MATRIX = {
             0x28: receive_childlock,
             },
         'ToDevice': {
-            'Switch': 0x01,
+            'Switch': 0x01,    # Ok
             'SetPoint': 0x10,
             'ChildLock': 0x28,
             }
         },
 }
-def tuya_eTRV_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data):
-    self.log.logging( "Tuya", 'Debug', "tuya_eTRV_response - Nwkid: %s dp: %02x data: %s" %(NwkId, dp, data))
+def tuya_eTRV_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
+    self.log.logging( "Tuya", 'Debug2', "tuya_eTRV_response - Nwkid: %s dp: %02x datatype: %s data: %s" %(NwkId, dp, datatype, data))
 
     model_target = 'TS0601-eTRV1'
     if _ModelName in eTRV_MODELS:
@@ -233,11 +244,11 @@ def tuya_eTRV_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNW
     manuf_name = get_manuf_name( self, NwkId )
     if model_target in eTRV_MATRIX:
         if dp in eTRV_MATRIX[ model_target ]['FromDevice']:
-            eTRV_MATRIX[ model_target ]['FromDevice'][ dp](self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data)
+            eTRV_MATRIX[ model_target ]['FromDevice'][ dp](self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
         else:
-           self.log.logging( "Tuya", 'Debug', "tuya_eTRV_response - Nwkid: %s dp: %02x data: %s UNKNOW dp for Manuf: %s, Model: %s" %(NwkId, dp, data, manuf_name, _ModelName))
+           self.log.logging( "Tuya", 'Debug', "tuya_eTRV_response - Nwkid: %s dp: %02x datatype: %s data: %s UNKNOW dp for Manuf: %s, Model: %s" %(NwkId, dp, datatype, data, manuf_name, _ModelName))
     else:
-        self.log.logging( "Tuya", 'Debug', "tuya_eTRV_response - Nwkid: %s dp: %02x data: %s UNKNOW Manuf %s, Model: %s" %(NwkId, dp, data, manuf_name, _ModelName))
+        self.log.logging( "Tuya", 'Debug', "tuya_eTRV_response - Nwkid: %s dp: %02x datatype: %s data: %s UNKNOW Manuf %s, Model: %s" %(NwkId, dp, datatype, data, manuf_name, _ModelName))
 
 
 

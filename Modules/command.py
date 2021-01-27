@@ -681,7 +681,6 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             if Level == 10:
                 tuya_siren_temp_alarm( self, NWKID, 0x01 )
 
-
         elif DeviceType == 'Toggle':
             self.log.logging( "Command", 'Debug', "Toggle switch - value: %s" %Level)
             if Level == 10: # Off

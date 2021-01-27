@@ -88,36 +88,36 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
         len_data = MsgPayload[16:18]
         data = MsgPayload[18:]
         self.log.logging( "Tuya", 'Debug2', "tuyaReadRawAPS - command %s MsgPayload %s/ Data: %s" %(cmd, MsgPayload, MsgPayload[6:]),NwkId )
-        tuya_response( self,Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data )
+        tuya_response( self,Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data )
 
     else:
         self.log.logging( "Tuya", 'Log', "tuyaReadRawAPS - Model: %s UNMANAGED Nwkid: %s/%s fcf: %s sqn: %s cmd: %s data: %s" %(
             _ModelName, NwkId, srcEp, fcf, sqn, cmd, MsgPayload[6:]),NwkId )
 
 
-def tuya_response( self,Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data ):
+def tuya_response( self,Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data ):
 
     self.log.logging( "Tuya", 'Debug', "tuya_response - Model: %s Nwkid: %s/%s dp: %02x data: %s"
         %(_ModelName, NwkId, srcEp, dp, data),NwkId )
 
-    if ( _ModelName == 'TS0601-switch' and dp in ( 0x01, 0x02, 0x03)):
-        tuya_switch_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data)
+    if _ModelName == 'TS0601-switch':
+        tuya_switch_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
 
-    elif ( _ModelName == 'TS0601-curtain' and dp in ( 0x01, 0x02, 0x03, 0x05, 0x67, 0x69 )):
-        tuya_curtain_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data)
+    elif _ModelName == 'TS0601-curtain':
+        tuya_curtain_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
 
-    elif ( _ModelName in ( 'TS0601-eTRV', 'TS0601-eTRV1', 'TS0601-eTRV2', 'TS0601-thermostat', 'ivfvd7h', 'fvq6avy', 'ivfvd7h', 'kud7u2l')):
-        tuya_eTRV_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data)
+    elif _ModelName in ( 'TS0601-eTRV', 'TS0601-eTRV1', 'TS0601-eTRV2', 'TS0601-thermostat', 'ivfvd7h', 'fvq6avy', 'ivfvd7h', 'kud7u2l'):
+        tuya_eTRV_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
 
-    elif ( _ModelName == 'TS0601-sirene' and dp in ( 0x65, 0x66 , 0x67, 0x68, 0x69,  0x6a , 0x6c, 0x6d,0x6e ,0x70, 0x71, 0x72, 0x73, 0x74)):
-        tuya_siren_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data)
+    elif _ModelName == 'TS0601-sirene':
+        tuya_siren_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
 
-    elif ( _ModelName == 'TS0601-dimmer' and dp in ( 0x01, 0x02 )):
-        tuya_dimmer_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data)
+    elif _ModelName == 'TS0601-dimmer':
+        tuya_dimmer_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
 
     else:
-        self.log.logging( "Tuya", 'Log', "tuya_response - Model: %s UNMANAGED Nwkid: %s/%s dp: %02x data: %s" %(
-            _ModelName, NwkId, srcEp,  dp, data),NwkId )
+        self.log.logging( "Tuya", 'Log', "tuya_response - Model: %s UNMANAGED Nwkid: %s/%s dp: %02x data type: %s data: %s" %(
+            _ModelName, NwkId, srcEp,  dp, datatype, data),NwkId )
 
 
 def send_timesynchronisation( self, NwkId, srcEp, ClusterID, dstNWKID, dstEP, serial_number):
@@ -160,7 +160,7 @@ def send_default_response( self, Nwkid, srcEp , sqn):
         return 
     payload = '00' + sqn + '0b' + '01' + '00'
     raw_APS_request( self, Nwkid, srcEp, 'ef00', '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = is_ack_tobe_disabled(self, Nwkid))
-    self.log.logging( "Tuya", 'Debug', "send_default_response - %s/%s " %(Nwkid, srcEp ))
+    self.log.logging( "Tuya", 'Debug2', "send_default_response - %s/%s " %(Nwkid, srcEp ))
 
 
 def tuya_switch_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data):
