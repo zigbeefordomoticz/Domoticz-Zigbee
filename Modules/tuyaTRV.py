@@ -150,6 +150,8 @@ eTRV_MATRIX = {
                     'TrvMode': 0x04}
                 },
 
+                # "_TZE200_ckud7u2l" @ waltervl
+
     'TS0601-eTRV': {  # @pipiche
                 'FromDevice': {
                     0x12: receive_windowdetection,

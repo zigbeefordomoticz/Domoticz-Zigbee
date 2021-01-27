@@ -295,6 +295,8 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 modelName = ''
 
         elif modelName == 'TS0601':
+            # https://github.com/dresden-elektronik/deconz-rest-plugin/wiki/Tuya-devices-List
+        
             if 'Manufacturer Name' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Manufacturer Name'] in ( '_TZE200_d0yu2xgi', ) :
                 # Sirene 
                 modelName += '-sirene'
@@ -308,9 +310,13 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 modelName += '-thermostat'
             elif 'Manufacturer Name' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Manufacturer Name'] in ( '_TZE200_kfvq6avy', ):
                 # Revolt NX-4911-675
-                modelName += '-revolt'
-
-            
+                modelName += '-eTRV1'
+            elif 'Manufacturer Name' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Manufacturer Name'] in ( '_TZE200_ckud7u2l', ):
+                # TRV HY369
+                modelName += '-eTRV2'
+        # Revolt NX-4911-675
+    modelName += '-revolt'
+            "_TZE200_ckud7u2l"
             else:
                 # eTRV
                 modelName += '-eTRV'
