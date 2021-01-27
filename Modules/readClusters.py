@@ -294,32 +294,47 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             else:
                 modelName = ''
 
-        elif modelName == 'TS0601':
+
+        elif modelName in ( 'TS0601', 'uhszj9s', 'GbxAXL2', '88teujp', 'kud7u2l', 'eaxp72v', 'fvq6avy', 'ivfvd7h') :
             # https://github.com/dresden-elektronik/deconz-rest-plugin/wiki/Tuya-devices-List
-        
-            if 'Manufacturer Name' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Manufacturer Name'] in ( '_TZE200_d0yu2xgi', ) :
-                # Sirene 
+
+            manufacturer_name = ''
+            if 'Manufacturer Name' in self.ListOfDevices[MsgSrcAddr]:
+                manufacturer_name = self.ListOfDevices[MsgSrcAddr]['Manufacturer Name']
+            modelName = 'TS0601'
+
+            self.log.logging( "Cluster", 'Log', "ReadCluster - %s / %s - Recepion Model: >%s< ManufName: %s" %(MsgClusterId, MsgAttrID, modelName, manufacturer_name), MsgSrcAddr)
+
+            if manufacturer_name in ( '_TZE200_d0yu2xgi', ) : # Sirene 
                 modelName += '-sirene'
-            elif 'Manufacturer Name' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Manufacturer Name'] in ( '_TZE200_dfxkcots', ):
+
+            elif manufacturer_name in ( '_TZE200_dfxkcots', ): # Dimmer
                 modelName += '-dimmer'
-            elif 'Manufacturer Name' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Manufacturer Name'] in ( '_TZE200_7tdtqgwv', ):
+
+            elif manufacturer_name in ( '_TZE200_7tdtqgwv', ): # Switch
                 modelName += '-switch'
-            elif 'Manufacturer Name' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Manufacturer Name'] in ( '_TZE200_rddyvrci', '_TZE200_5zbp6j0u' , '_TZE200_nkoabg8w', '_TZE200_xuzcvlku', '_TZE200_4vobcgd3', '_TZE200_nogaemzt', '_TZE200_pk0sfzvr', '_TZE200_fdtjuw7u', '_TZE200_zpzndjez',):
+
+            elif manufacturer_name in ( '_TZE200_rddyvrci', '_TZE200_5zbp6j0u' , '_TZE200_nkoabg8w', '_TZE200_xuzcvlku', '_TZE200_4vobcgd3', '_TZE200_nogaemzt',
+                                        '_TZE200_pk0sfzvr', '_TZE200_fdtjuw7u', '_TZE200_zpzndjez', '_TYST11_wmcdj3aq', '_TZE200_fzo2pocs', '_TYST11_xu1rkty3',
+                                        '_TZE200_zah67ekd', ):
                 modelName += '-curtain'
-            elif 'Manufacturer Name' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Manufacturer Name'] in ( '_TZE200_aoclfnxz'):
+
+            elif manufacturer_name in ( '_TZE200_aoclfnxz', '_TYST11_zuhszj9s', '_TYST11_jeaxp72v'): # Thermostat
+                # Thermostat BTH-002 (to be confirmed   ) and WZB-TRVL ( @d2n2e2o) and Thermostat Essentials Premium ( to be confirmed )
                 modelName += '-thermostat'
-            elif 'Manufacturer Name' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Manufacturer Name'] in ( '_TZE200_kfvq6avy', ):
+
+            elif manufacturer_name in ( '_TZE200_kfvq6avy', '_TYST11_KGbxAXL2', '_TYST11_ckud7u2l', ): # eTRV
                 # Revolt NX-4911-675
                 modelName += '-eTRV1'
-            elif 'Manufacturer Name' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Manufacturer Name'] in ( '_TZE200_ckud7u2l', ):
+
+            elif manufacturer_name in ( '_TZE200_c88teujp', ): # eTRV
                 # TRV HY369
                 modelName += '-eTRV2'
-        # Revolt NX-4911-675
-    modelName += '-revolt'
-            "_TZE200_ckud7u2l"
+
             else:
                 # eTRV
                 modelName += '-eTRV'
+
         elif modelName == 'TS0003':
             if 'Manufacturer Name' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Manufacturer Name'] in ( '_TYZB01_ncutbjdi', ):
                 # QS-Zigbee-S05-LN

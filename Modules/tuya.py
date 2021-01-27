@@ -12,7 +12,7 @@
 
 import Domoticz
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 
@@ -43,7 +43,6 @@ def pollingTuya( self, key ):
     #if  ( self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE):
     #    return True
 
-
     return False
 
 def callbackDeviceAwake_Tuya(self, NwkId, EndPoint, cluster):
@@ -51,7 +50,6 @@ def callbackDeviceAwake_Tuya(self, NwkId, EndPoint, cluster):
     This is fonction is call when receiving a message from a Manufacturer battery based device.
     The function is called after processing the readCluster part
     """
-
     Domoticz.Log("callbackDeviceAwake_Tuya - Nwkid: %s, EndPoint: %s cluster: %s" \
             %(NwkId, EndPoint, cluster))
 
@@ -68,21 +66,20 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
     _ModelName = self.ListOfDevices[NwkId]['Model']
 
     if len(MsgPayload) < 6:
-        self.log.logging( "Tuya", 'Debug', "tuyaReadRawAPS - MsgPayload %s too short" %(MsgPayload),NwkId )
+        self.log.logging( "Tuya", 'Debug2', "tuyaReadRawAPS - MsgPayload %s too short" %(MsgPayload),NwkId )
         return
 
     fcf = MsgPayload[0:2] # uint8
     sqn = MsgPayload[2:4] # uint8
     send_default_response( self, NwkId, srcEp , sqn)
 
-    
     cmd = MsgPayload[4:6] # uint8
     updSQN( self, NwkId, sqn)
 
     if cmd == '24': # Time Synchronisation
         send_timesynchronisation( self, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload[6:])
 
-    elif cmd in ('01', '02', '03'):
+    elif cmd in ('01', '02', ):
         status = MsgPayload[6:8]   #uint8
         transid = MsgPayload[8:10] # uint8
         dp = int(MsgPayload[10:12],16)
@@ -90,9 +87,7 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
         fn = MsgPayload[14:16]
         len_data = MsgPayload[16:18]
         data = MsgPayload[18:]
-
-        
-        self.log.logging( "Tuya", 'Log', "tuyaReadRawAPS - Unknown command %s MsgPayload %s/ Data: %s" %(cmd, MsgPayload, MsgPayload[6:]),NwkId )
+        self.log.logging( "Tuya", 'Debug2', "tuyaReadRawAPS - command %s MsgPayload %s/ Data: %s" %(cmd, MsgPayload, MsgPayload[6:]),NwkId )
         tuya_response( self,Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data )
 
     else:
@@ -111,7 +106,7 @@ def tuya_response( self,Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, 
     elif ( _ModelName == 'TS0601-curtain' and dp in ( 0x01, 0x02, 0x03, 0x05, 0x67, 0x69 )):
         tuya_curtain_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data)
 
-    elif ( _ModelName in ( 'TS0601-eTRV', 'ivfvd7h', 'fvq6avy', 'TS0601-thermostat')):
+    elif ( _ModelName in ( 'TS0601-eTRV', 'TS0601-eTRV1', 'TS0601-eTRV2', 'TS0601-thermostat', 'ivfvd7h', 'fvq6avy', 'ivfvd7h', 'kud7u2l')):
         tuya_eTRV_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data)
 
     elif ( _ModelName == 'TS0601-sirene' and dp in ( 0x65, 0x66 , 0x67, 0x68, 0x69,  0x6a , 0x6c, 0x6d,0x6e ,0x70, 0x71, 0x72, 0x73, 0x74)):
@@ -139,12 +134,13 @@ def send_timesynchronisation( self, NwkId, srcEp, ClusterID, dstNWKID, dstEP, se
 
     EPOCTime = datetime(1970,1,1)
     now = datetime.utcnow()
-    UTCTime = int((now  - EPOCTime).total_seconds())
+    UTCTime_in_sec = int((now  - EPOCTime).total_seconds())
+    LOCALtime_in_sec = int((utc_to_local( now )  - EPOCTime).total_seconds())
 
-    utctime = "%08x" %UTCTime
-    localtime = "%08x" %utc_to_local( UTCTime )
+    utctime = "%08x" %UTCTime_in_sec
+    localtime = "%08x" %LOCALtime_in_sec
     self.log.logging( "Tuya", 'Debug', "send_timesynchronisation - %s/%s UTC: %s Local: %s" %(
-        NwkId, srcEp, UTCTime, localtime ))
+        NwkId, srcEp, UTCTime_in_sec, LOCALtime_in_sec ))
 
     payload = '11' + sqn + '24' + serial_number + utctime + localtime
     raw_APS_request( self, NwkId, srcEp, 'ef00', '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = is_ack_tobe_disabled(self, NwkId))
@@ -152,13 +148,11 @@ def send_timesynchronisation( self, NwkId, srcEp, ClusterID, dstNWKID, dstEP, se
 
 def utc_to_local(dt):
     # https://stackoverflow.com/questions/4563272/convert-a-python-utc-datetime-to-a-local-datetime-using-only-python-standard-lib
-
     import time
-
     if time.localtime().tm_isdst:
-        return dt - datetime.timedelta(seconds = time.altzone)
+        return dt - timedelta(seconds = time.altzone)
     else:
-        return dt - datetime.timedelta(seconds = time.timezone)
+        return dt - timedelta(seconds = time.timezone)
 
 
 def send_default_response( self, Nwkid, srcEp , sqn):

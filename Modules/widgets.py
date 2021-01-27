@@ -361,6 +361,17 @@ SWITCH_LVL_MATRIX = {
        }
    },
 
+    "HeatingStatus": {
+       0: (0, "Off"), 
+       1: (1, "10"), 
+       2: (2, "20"),  
+       "ForceUpdate": True,
+       "LevelNames": "Off|Heating|Not Heating",
+       "Language": {
+           "fr-FR": {"LevelNames": "Arrêt|Allumer|Eteind"}
+       }
+   },
+   
     "HACTMODE": {
         "00": ( 1, "10"),
         "03": ( 2, "20"),
