@@ -32,7 +32,7 @@ from Modules.schneider_wiser import schneiderRenforceent, pollingSchneider
 from Modules.casaia import pollingCasaia
 from Modules.philips import pollingPhilips
 from Modules.gledopto import pollingGledopto
-from Modules.lumi import setXiaomiVibrationSensitivity
+from Modules.lumi import setXiaomiVibrationSensitivity, pollingLumiPower
 from Modules.tools import removeNwkInList, mainPoweredDevice, ReArrangeMacCapaBasedOnModel, is_time_to_perform_work, getListOfEpForCluster
 from Modules.domoTools import timedOutDevice
 from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE, CLUSTERS_LIST, LEGRAND_REMOTES, LEGRAND_REMOTE_SHUTTER, LEGRAND_REMOTE_SWITCHS, ZIGATE_EP
@@ -95,7 +95,9 @@ def pollingManufSpecificDevices( self, NwkId):
             'GLEDOPTO':         ( 'Gledopto',       'pollingGledopto',       pollingGledopto ),
             '105e':             ( 'Schneider',      'pollingSchneider',      pollingSchneider),
             'Schneider':        ( 'Schneider',      'pollingSchneider',      pollingSchneider),
-            '_TZ3000_g5xawfcq': ( 'BlitzwolfPower', 'pollingBlitzwolfPower', pollingBlitzwolfPower, ),
+            '_TZ3000_g5xawfcq': ( 'BlitzwolfPower', 'pollingBlitzwolfPower', pollingBlitzwolfPower ),
+            'LUMI':             ( 'pollingLumiPower','pollingLumiPower',     pollingLumiPower ),
+            '115f':             ( 'pollingLumiPower','pollingLumiPower',     pollingLumiPower ),
             'OWON':             ( 'CasaiaAC201',    'pollingCasaiaAC201',    pollingCasaia, )
         }
 
