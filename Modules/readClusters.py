@@ -323,8 +323,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 # Thermostat BTH-002 (to be confirmed   ) and WZB-TRVL ( @d2n2e2o) and Thermostat Essentials Premium ( to be confirmed )
                 modelName += '-thermostat'
 
-            elif manufacturer_name in ( '_TZE200_kfvq6avy', '_TYST11_KGbxAXL2', '_TYST11_ckud7u2l', ): # eTRV
-                # Revolt NX-4911-675
+            elif manufacturer_name in ( '_TZE200_kfvq6avy', '_TZE200_ckud7u2l', '_TYST11_KGbxAXL2', '_TYST11_ckud7u2l', ): # eTRV
                 modelName += '-eTRV1'
 
             elif manufacturer_name in ( '_TZE200_c88teujp', ): # eTRV
