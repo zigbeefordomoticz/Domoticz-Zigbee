@@ -70,7 +70,6 @@ def receive_onoff( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKI
 
 def receive_preset( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
 
-
     if data == '00':
         if model_target == 'TS0601-thermostat':
             # Manual
@@ -135,10 +134,7 @@ def receive_mode( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID
 def receive_heating_state(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     # Thermostat
     self.log.logging( "Tuya", 'Debug', "receive_mode - Nwkid: %s/%s Mode: %s" %(NwkId,srcEp ,data))
-    if data == '00': # Off
-        MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 2 , )
-    elif data == '01': # On
-        MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 1 , )
+    MajDomoDevice(self, Devices, NwkId, srcEp, '0201', data , Attribute_ = '0124')
 
     store_tuya_attribute( self, NwkId, 'HeatingMode', data )
 

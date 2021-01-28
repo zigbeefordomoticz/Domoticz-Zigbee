@@ -229,6 +229,13 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 elif value == 4:
                     UpdateDevice_v2(self, Devices, DeviceUnit, 1, 'On', BatteryLevel, SignalLevel)
 
+            elif WidgetType ==  'HeatingStatus' and Attribute_ == "0124":
+                self.log.logging( "Widget", "Debug", "------>  HeatingStatus %s" %value, NWKID)
+                if value == '00':
+                    UpdateDevice_v2(self, Devices, DeviceUnit, 2, '20', BatteryLevel, SignalLevel)
+                elif value == '01':
+                    UpdateDevice_v2(self, Devices, DeviceUnit, 1, '10', BatteryLevel, SignalLevel)
+
             elif WidgetType == 'HACTMODE' and Attribute_ == "e011":#  Wiser specific Fil Pilote
                  # value is str
                 self.log.logging( "Widget", "Debug", "------>  ThermoMode HACTMODE: %s" %(value), NWKID)
