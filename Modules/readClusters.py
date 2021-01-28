@@ -31,6 +31,10 @@ from Modules.lumi import AqaraOppleDecoding0012, readXiaomiCluster, xiaomi_leave
 
 from Classes.LoggingManagement import LoggingManagement
 
+from Modules.tuya import ( TUYA_TS0601_MODEL_NAME, TUYA_SIREN_MANUFACTURER, TUYA_DIMMER_MANUFACTURER, 
+                            TUYA_SWITCH_MANUFACTURER, TUYA_CURTAIN_MAUFACTURER, TUYA_THERMOSTAT_MANUFACTURER,
+                            TUYA_eTRV1_MANUFACTURER, TUYA_eTRV2_MANUFACTURER )
+
 def decodeAttribute(self, AttType, Attribute, handleErrors=False):
 
     if len(Attribute) == 0:
@@ -295,7 +299,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 modelName = ''
 
 
-        elif modelName in ( 'TS0601', 'uhszj9s', 'GbxAXL2', '88teujp', 'kud7u2l', 'eaxp72v', 'fvq6avy', 'ivfvd7h') :
+        elif modelName in ( TUYA_TS0601_MODEL_NAME ) :
             # https://github.com/dresden-elektronik/deconz-rest-plugin/wiki/Tuya-devices-List
 
             manufacturer_name = ''
@@ -305,28 +309,26 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
             self.log.logging( "Cluster", 'Log', "ReadCluster - %s / %s - Recepion Model: >%s< ManufName: %s" %(MsgClusterId, MsgAttrID, modelName, manufacturer_name), MsgSrcAddr)
 
-            if manufacturer_name in ( '_TZE200_d0yu2xgi', ) : # Sirene 
+            if manufacturer_name in ( TUYA_SIREN_MANUFACTURER ) : # Sirene 
                 modelName += '-sirene'
 
-            elif manufacturer_name in ( '_TZE200_dfxkcots', ): # Dimmer
+            elif manufacturer_name in ( TUYA_DIMMER_MANUFACTURER ): # Dimmer
                 modelName += '-dimmer'
 
-            elif manufacturer_name in ( '_TZE200_7tdtqgwv', ): # Switch
+            elif manufacturer_name in ( TUYA_SWITCH_MANUFACTURER ): # Switch
                 modelName += '-switch'
 
-            elif manufacturer_name in ( '_TZE200_rddyvrci', '_TZE200_5zbp6j0u' , '_TZE200_nkoabg8w', '_TZE200_xuzcvlku', '_TZE200_4vobcgd3', '_TZE200_nogaemzt',
-                                        '_TZE200_pk0sfzvr', '_TZE200_fdtjuw7u', '_TZE200_zpzndjez', '_TYST11_wmcdj3aq', '_TZE200_fzo2pocs', '_TYST11_xu1rkty3',
-                                        '_TZE200_zah67ekd', ):
+            elif manufacturer_name in ( TUYA_CURTAIN_MAUFACTURER ):
                 modelName += '-curtain'
 
-            elif manufacturer_name in ( '_TZE200_aoclfnxz', '_TYST11_zuhszj9s', '_TYST11_jeaxp72v'): # Thermostat
+            elif manufacturer_name in ( TUYA_THERMOSTAT_MANUFACTURER): # Thermostat
                 # Thermostat BTH-002 (to be confirmed   ) and WZB-TRVL ( @d2n2e2o) and Thermostat Essentials Premium ( to be confirmed )
                 modelName += '-thermostat'
 
-            elif manufacturer_name in ( '_TZE200_kfvq6avy', '_TZE200_ckud7u2l', '_TYST11_KGbxAXL2', '_TYST11_ckud7u2l', ): # eTRV
+            elif manufacturer_name in ( TUYA_eTRV1_MANUFACTURER ): # eTRV
                 modelName += '-eTRV1'
 
-            elif manufacturer_name in ( '_TZE200_c88teujp', ): # eTRV
+            elif manufacturer_name in ( TUYA_eTRV2_MANUFACTURER ): # eTRV
                 # TRV HY369
                 modelName += '-eTRV2'
 

@@ -34,6 +34,16 @@ from Modules.basicOutputs import write_attribute,raw_APS_request
 #   Direction: Device -> Coordinator 0x01 
 #   Direction: Device -> Coordinator 0x02 Setpoint command response
 
+TUYA_TS0601_MODEL_NAME = 'TS0601', 'uhszj9s', 'GbxAXL2', '88teujp', 'kud7u2l', 'eaxp72v', 'fvq6avy', 'ivfvd7h'
+TUYA_SIREN_MANUFACTURER = '_TZE200_d0yu2xgi'
+TUYA_DIMMER_MANUFACTURER = '_TZE200_dfxkcots'
+TUYA_SWITCH_MANUFACTURER = '_TZE200_7tdtqgwv'
+TUYA_CURTAIN_MAUFACTURER = '_TZE200_rddyvrci', '_TZE200_5zbp6j0u' , '_TZE200_nkoabg8w', '_TZE200_xuzcvlku', '_TZE200_4vobcgd3', '_TZE200_nogaemzt', '_TZE200_pk0sfzvr', '_TZE200_fdtjuw7u', '_TZE200_zpzndjez', '_TYST11_wmcdj3aq', '_TZE200_fzo2pocs', '_TYST11_xu1rkty3', '_TZE200_zah67ekd'
+TUYA_THERMOSTAT_MANUFACTURER = '_TZE200_aoclfnxz', '_TYST11_zuhszj9s', '_TYST11_jeaxp72v'
+TUYA_eTRV1_MANUFACTURER = '_TZE200_kfvq6avy', '_TZE200_ckud7u2l', '_TYST11_KGbxAXL2', '_TYST11_ckud7u2l'
+TUYA_eTRV2_MANUFACTURER = '_TZE200_c88teujp'
+
+
 def pollingTuya( self, key ):
     """
     This fonction is call if enabled to perform any Manufacturer specific polling action

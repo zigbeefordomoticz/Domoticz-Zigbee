@@ -171,6 +171,9 @@ eTRV_MODELS = {
 
 eTRV_MATRIX = {
     'TS0601-eTRV1': {  # @d2e2n2  / _TYST11_zivfvd7h / Model: ivfvd7h
+        # Confirmed working: 
+        # -@waltervl: _TZE200_ckud7u2l ( https://github.com/pipiche38/Domoticz-Zigate/issues/779 )
+        
         'FromDevice': {
             0x02: receive_setpoint,
             0x03: receive_temperature,
@@ -187,7 +190,6 @@ eTRV_MATRIX = {
             'TrvMode': 0x04}
         },
 
-        # "_TZE200_ckud7u2l" @ waltervl
 
     'TS0601-eTRV2': {  # @pipiche
         'FromDevice': {
@@ -204,24 +206,6 @@ eTRV_MATRIX = {
             0x6c: receive_preset,
             0x6d: receive_valveposition,
             0x6e: receive_lowbattery,
-            0x70: receive_dumy,
-            0x71: receive_dumy,
-            0x72: receive_dumy,
-            0x73: receive_dumy,
-            0x74: receive_dumy,
-            0x75: receive_dumy,
-            0x77: receive_dumy,
-            0x78: receive_dumy,
-            0x79: receive_dumy,
-            0x7a: receive_dumy,
-            0x7b: receive_dumy,
-            0x7c: receive_dumy,
-            0x7d: receive_dumy,
-            0x7e: receive_dumy,
-            0x7f: receive_dumy,
-            0x80: receive_dumy,
-            0x81: receive_dumy,
-
             },
         'ToDevice': {
             'Switch': 0x65,
@@ -424,12 +408,18 @@ def get_manuf_name( self, nwkid ):
 def get_model_name( self, nwkid ):
     if 'Model' not in self.ListOfDevices[ nwkid ]:
         return None
-    return self.ListOfDevices[ nwkid ]['Model']
+    _ModelName = self.ListOfDevices[ nwkid ]['Model']
+    model_target = 'TS0601-eTRV1'
+    if _ModelName in eTRV_MODELS:
+        model_target = eTRV_MODELS[ _ModelName ]
+    return model_target
 
 def get_datapoint_command( self, nwkid, cmd):
     _model_name = get_model_name( self, nwkid )
     if _model_name not in eTRV_MATRIX:
+        self.log.logging( "Tuya", 'Debug', "get_datapoint_command - %s %s not found in eTRV_MATRIX" %(nwkid, _model_name))
         return None
     if cmd not in eTRV_MATRIX[ _model_name ]['ToDevice']:
+        self.log.logging( "Tuya", 'Debug', "get_datapoint_command - %s %s not found in eTRV_MATRIX[ %s ]['ToDevice']" %(nwkid, cmd, _model_name))
         return None
     return eTRV_MATRIX[ _model_name ]['ToDevice'][ cmd ]
