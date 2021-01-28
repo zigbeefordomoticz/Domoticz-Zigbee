@@ -70,21 +70,34 @@ def receive_onoff( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKI
 
 def receive_preset( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
 
+
     if data == '00':
-        # Offline
-        self.log.logging( "Tuya", 'Debug', "receive_preset - Nwkid: %s/%s Mode to Offline" %(NwkId,srcEp ))
-        MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 0, Attribute_ = '001c' )
-        checkAndStoreAttributeValue( self, NwkId , '01', '0201', '001c' , 'OffLine' )
+        if model_target == 'TS0601-thermostat':
+            # Manual
+            self.log.logging( "Tuya", 'Debug', "receive_preset - Nwkid: %s/%s Mode to Manual" %(NwkId,srcEp ))
+            MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 2, Attribute_ = '001c' )
+            checkAndStoreAttributeValue( self, NwkId , '01', '0201', '001c' , 'Manual' )
+        else:
+            # Offline
+            self.log.logging( "Tuya", 'Debug', "receive_preset - Nwkid: %s/%s Mode to Offline" %(NwkId,srcEp ))
+            MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 0, Attribute_ = '001c' )
+            checkAndStoreAttributeValue( self, NwkId , '01', '0201', '001c' , 'OffLine' )
     elif data == '01':
         # Auto
         self.log.logging( "Tuya", 'Debug', "receive_preset - Nwkid: %s/%s Mode to Auto" %(NwkId,srcEp ))
         MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 1, Attribute_ = '001c' )
         checkAndStoreAttributeValue( self, NwkId , '01', '0201', '001c' , 'Auto' )
+
     elif data == '02':
-        # Manual
-        self.log.logging( "Tuya", 'Debug', "receive_preset - Nwkid: %s/%s Mode to Manual" %(NwkId,srcEp ))
-        MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 2, Attribute_ = '001c' )
-        checkAndStoreAttributeValue( self, NwkId , '01', '0201', '001c' , 'Manual' )
+        if model_target == 'TS0601-thermostat':
+            self.log.logging( "Tuya", 'Debug', "receive_preset - Nwkid: %s/%s Mode to Offline" %(NwkId,srcEp ))
+            MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 0, Attribute_ = '001c' )
+            checkAndStoreAttributeValue( self, NwkId , '01', '0201', '001c' , 'Offline' )
+        else:
+            # Manual
+            self.log.logging( "Tuya", 'Debug', "receive_preset - Nwkid: %s/%s Mode to Manual" %(NwkId,srcEp ))
+            MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 2, Attribute_ = '001c' )
+            checkAndStoreAttributeValue( self, NwkId , '01', '0201', '001c' , 'Manual' )
     store_tuya_attribute( self, NwkId, 'ChangeMode', data )
 
 def receive_childlock( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
@@ -120,8 +133,13 @@ def receive_mode( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID
     store_tuya_attribute( self, NwkId, 'Mode', data )
 
 def receive_heating_state(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
+    # Thermostat
     self.log.logging( "Tuya", 'Debug', "receive_mode - Nwkid: %s/%s Mode: %s" %(NwkId,srcEp ,data))
-    MajDomoDevice(self, Devices, NwkId, srcEp, '0201', data , )
+    if data == '00': # Off
+        MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 2 , )
+    elif data == '01': # On
+        MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 1 , )
+
     store_tuya_attribute( self, NwkId, 'HeatingMode', data )
 
 def receive_valveposition( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data ):
