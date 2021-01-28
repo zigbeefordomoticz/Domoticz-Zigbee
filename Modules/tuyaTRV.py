@@ -31,6 +31,7 @@ def tuya_eTRV_registration(self, nwkid):
 
 
 def receive_setpoint( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data ):
+
     self.log.logging( "Tuya", 'Debug', "receive_setpoint - Nwkid: %s/%s Setpoint: %s" %(NwkId,srcEp ,int(data,16)))
     if model_target == 'TS0601-thermostat':
         setpoint = int(data,16)
@@ -111,7 +112,7 @@ def receive_battery( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNW
     store_tuya_attribute( self, NwkId, 'BatteryStatus', data )
 
 def receive_lowbattery(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
-    self.log.logging( "Tuya", 'Debug', "receice_lowbattery - Nwkid: %s/%s Battery status %s" %(NwkId,srcEp ,int(data,16)))
+    self.log.logging( "Tuya", 'Debug', "receice_lowbattery - Nwkid: %s/%s DataType: %s Battery status %s" %(NwkId,srcEp ,datatype ,int(data,16)))
     store_tuya_attribute( self, NwkId, 'LowBattery', data )
 
 def receive_mode( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data ):
@@ -161,10 +162,10 @@ eTRV_MATRIX = {
             0x03: receive_temperature,
             0x04: receive_preset,
             0x07: receive_childlock, 
+            0x12: receive_windowdetection,
             0x15: receive_battery,
             0x14: receive_valvestate,
             0x6d: receive_valveposition,
-            0x12: receive_windowdetection,
             0x6e: receive_lowbattery,
             },
         'ToDevice': {
@@ -242,6 +243,11 @@ def tuya_eTRV_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNW
         model_target = eTRV_MODELS[ _ModelName ]
 
     manuf_name = get_manuf_name( self, NwkId )
+
+    if datatype == '00':
+        receive_dumy( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data )
+        return
+
     if model_target in eTRV_MATRIX:
         if dp in eTRV_MATRIX[ model_target ]['FromDevice']:
             eTRV_MATRIX[ model_target ]['FromDevice'][ dp](self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)

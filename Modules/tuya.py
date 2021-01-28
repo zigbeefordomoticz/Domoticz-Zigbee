@@ -71,11 +71,13 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
 
     fcf = MsgPayload[0:2] # uint8
     sqn = MsgPayload[2:4] # uint8
+    updSQN( self, NwkId, sqn)
+
+    # Send a Default Response ( why might check the FCF eventually )
     send_default_response( self, NwkId, srcEp , sqn)
 
     cmd = MsgPayload[4:6] # uint8
-    updSQN( self, NwkId, sqn)
-
+    
     if cmd == '24': # Time Synchronisation
         send_timesynchronisation( self, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload[6:])
 
@@ -93,7 +95,6 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
     else:
         self.log.logging( "Tuya", 'Log', "tuyaReadRawAPS - Model: %s UNMANAGED Nwkid: %s/%s fcf: %s sqn: %s cmd: %s data: %s" %(
             _ModelName, NwkId, srcEp, fcf, sqn, cmd, MsgPayload[6:]),NwkId )
-
 
 def tuya_response( self,Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data ):
 
@@ -118,7 +119,6 @@ def tuya_response( self,Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, 
     else:
         self.log.logging( "Tuya", 'Log', "tuya_response - Model: %s UNMANAGED Nwkid: %s/%s dp: %02x data type: %s data: %s" %(
             _ModelName, NwkId, srcEp,  dp, datatype, data),NwkId )
-
 
 def send_timesynchronisation( self, NwkId, srcEp, ClusterID, dstNWKID, dstEP, serial_number):
     
