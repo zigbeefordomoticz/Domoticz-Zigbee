@@ -41,7 +41,7 @@ from Modules.casaia import casaia_pairing
 from Modules.thermostats import thermostat_Calibration
 from Modules.tuyaSiren import tuya_sirene_registration
 from Modules.tuyaTools import tuya_TS0121_registration
-from Modules.tuyaTRV import tuya_eTRV_registration
+from Modules.tuyaTRV import tuya_eTRV_registration, TUYA_eTRV_MODEL
 
 def writeDiscoveryInfos( self ):
 
@@ -430,8 +430,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             elif 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( 'TS0601-sirene'):
                 tuya_sirene_registration(self, NWKID)
 
-            elif 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( 
-                      'TS0601-eTRV', 'TS0601-eTRV1', 'TS0601-eTRV2', 'TS0601', 'uhszj9s', 'GbxAXL2', '88teujp', 'kud7u2l', 'eaxp72v', 'fvq6avy', 'ivfvd7h'):
+            elif 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( TUYA_eTRV_MODEL ):
                 tuya_eTRV_registration( self, NWKID)
                 
             elif 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( 'TS0121'):

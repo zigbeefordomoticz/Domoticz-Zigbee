@@ -50,7 +50,7 @@ def receive_temperature( self, Devices, model_target, NwkId, srcEp, ClusterID, d
 
 def receive_onoff( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     self.log.logging( "Tuya", 'Debug', "receive_onoff - Nwkid: %s/%s Mode to OffOn: %s" %(NwkId,srcEp, data ))
-    if model_target == 'TS0601-eTRV2':
+    if model_target == 'TS0601-eTRV3':
         if data == '00':
             MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 0, Attribute_ = '001c' )
             checkAndStoreAttributeValue( self, NwkId , '01', '0201', '001c' , 'OffLine' )
@@ -165,39 +165,72 @@ def receive_dumy( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID
     self.log.logging( "Tuya", 'Debug', "receive and unknown data point - Nwkid: %s/%s dp: %s datatype: %s data: 0x%s" %(NwkId,srcEp ,dp, datatype, data))
     pass
 
+
 eTRV_MODELS = {
-    'fvq6avy': 'TS0601-eTRV1',
+    # Siterwell GS361A-H04
     'ivfvd7h': 'TS0601-eTRV1',
-    'kud7u2l': 'TS0601-eTRV1',
+    'fvq6avy': 'TS0601-eTRV1',
+    'eaxp72v': 'TS0601-eTRV1',
     'TS0601-eTRV1': 'TS0601-eTRV1',
+
+    # Moes HY368 / HY369
+    'kud7u2l': 'TS0601-eTRV2',
     'TS0601-eTRV2': 'TS0601-eTRV2',
-    'TS0601-eTRV' : 'TS0601-eTRV1',
-    'TS0601-thermostat': 'TS0601-thermostat',
+
+    # Saswell SEA802 / SEA801 Zigbee versions
+    '88teujp': 'TS0601-eTRV3',
+    'GbxAXL2': 'TS0601-eTRV3',
+    'uhszj9s': 'TS0601-eTRV3',
+    'TS0601-eTRV3': 'TS0601-eTRV3',
 }
 
+TUYA_eTRV_MODEL =  'ivfvd7h', 'fvq6avy', 'eaxp72v', 'kud7u2l', '88teujp', 'GbxAXL2', 'uhszj9s', 'TS0601-eTRV1', 'TS0601-eTRV2', 'TS0601-eTRV3', 'TS0601-eTRV'
+
 eTRV_MATRIX = {
-    'TS0601-eTRV1': {  # @d2e2n2  / _TYST11_zivfvd7h / Model: ivfvd7h
-        # Confirmed working: 
-        # -@waltervl: _TZE200_ckud7u2l ( https://github.com/pipiche38/Domoticz-Zigate/issues/779 )
-        
+    'TS0601-thermostat': {  # @d2e2n2o / Electric
+        'FromDevice': {
+            0x02: receive_preset,
+            0x10: receive_setpoint,
+            0x18: receive_temperature,   # Ok
+            0x24: receive_heating_state,
+            0x28: receive_childlock,
+            },
+        'ToDevice': {
+            'Switch': 0x01,    # Ok
+            'SetPoint': 0x10,
+            'ChildLock': 0x28,
+            }
+    },
+
+    'TS0601-eTRV1': {
         'FromDevice': {
             0x02: receive_setpoint,
-            0x03: receive_temperature,
+            0x03: receive_temperature, 
+            0x04: receive_preset,  
+            0x15: receive_battery,         
+        },
+        'ToDevice': {
+            'SetPoint': 0x02, 'TrvMode': 0x04} },
+
+    'TS0601-eTRV2': {
+        # https://github.com/pipiche38/Domoticz-Zigate/issues/779 ( @waltervl)
+        'FromDevice': {
+            0x02: receive_setpoint,
+            0x03: receive_temperature, 
             0x04: receive_preset,
             0x07: receive_childlock, 
-            0x12: receive_windowdetection,
-            0x15: receive_battery,
+            0x12: receive_windowdetection, 
+            0x15: receive_battery,  
             0x14: receive_valvestate,
-            0x6d: receive_valveposition,
+            0x6d: receive_valveposition,     
             0x6e: receive_lowbattery,
-            },
+        },
         'ToDevice': {
             'SetPoint': 0x02,
             'TrvMode': 0x04}
         },
 
-
-    'TS0601-eTRV2': {  # @pipiche
+    'TS0601-eTRV3': {  # @pipiche
         'FromDevice': {
             0x08: receive_windowdetection_status,
             0x82: receive_dumy,                     # Water Scale Prof ???
@@ -224,21 +257,33 @@ eTRV_MATRIX = {
             }
         },
 
-    'TS0601-thermostat': {  # @d2e2n2o / Electric
+    'TS0601-eTRV': {
         'FromDevice': {
-            0x02: receive_preset,
-            0x10: receive_setpoint,
-            0x18: receive_temperature,   # Ok
-            0x24: receive_heating_state,
+            0x02: receive_setpoint,
+            0x03: receive_temperature, 
+            0x04: receive_preset,  
+            0x08: receive_windowdetection_status,
+            0x15: receive_battery,         
+
+            0x12: receive_windowdetection,
+            0x1b: receive_calibration,
             0x28: receive_childlock,
-            },
-        'ToDevice': {
-            'Switch': 0x01,    # Ok
-            'SetPoint': 0x10,
-            'ChildLock': 0x28,
-            }
+            0x65: receive_onoff,
+            0x66: receive_temperature,
+            0x67: receive_setpoint,
+            0x69: receive_dumy,                     # ????
+            0x6a: receive_dumy,                     # LH
+            0x6c: receive_preset,
+            0x6d: receive_valveposition,
+            0x6e: receive_lowbattery,
+            0x82: receive_dumy,                     # Water Scale Prof ???
         },
+        'ToDevice': {
+            'SetPoint': 0x02,
+            'TrvMode': 0x04}            
+    }   
 }
+
 def tuya_eTRV_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     self.log.logging( "Tuya", 'Debug2', "tuya_eTRV_response - Nwkid: %s dp: %02x datatype: %s data: %s" %(NwkId, dp, datatype, data))
 
@@ -259,9 +304,6 @@ def tuya_eTRV_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNW
            self.log.logging( "Tuya", 'Debug', "tuya_eTRV_response - Nwkid: %s dp: %02x datatype: %s data: %s UNKNOW dp for Manuf: %s, Model: %s" %(NwkId, dp, datatype, data, manuf_name, _ModelName))
     else:
         self.log.logging( "Tuya", 'Debug', "tuya_eTRV_response - Nwkid: %s dp: %02x datatype: %s data: %s UNKNOW Manuf %s, Model: %s" %(NwkId, dp, datatype, data, manuf_name, _ModelName))
-
-
-
 
 def tuya_trv_valve_detection( self, nwkid, onoff):
     self.log.logging( "Tuya", 'Debug', "tuya_trv_valve_detection - %s ValveDetection: %s" %(nwkid, onoff))
@@ -392,14 +434,14 @@ def tuya_trv_mode( self, nwkid, mode):
         EPout = '01'
         cluster_frame = '11'
         cmd = '00' # Command
-        if get_model_name( self, nwkid ) == 'TS0601-eTRV2':
+        if get_model_name( self, nwkid ) == 'TS0601-eTRV3':
             action = '%02x01' %dp # Mode
         else:
             action = '%02x04' %dp # Mode
         data = '%02x' %( mode // 10 )
         tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)   
 
-        if get_model_name( self, nwkid ) == 'TS0601-eTRV2':
+        if get_model_name( self, nwkid ) == 'TS0601-eTRV3':
             if mode // 10 == 0x00: # Off
                 tuya_trv_onoff( self, nwkid, 0x00)
             else:

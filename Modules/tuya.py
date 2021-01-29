@@ -21,7 +21,7 @@ from Modules.tools import updSQN, get_and_inc_SQN, is_ack_tobe_disabled
 from Modules.domoMaj import MajDomoDevice
 from Modules.tuyaTools import (tuya_cmd)
 from Modules.tuyaSiren import tuya_siren_response
-from Modules.tuyaTRV import tuya_eTRV_response
+from Modules.tuyaTRV import tuya_eTRV_response, TUYA_eTRV_MODEL
 from Modules.zigateConsts import ZIGATE_EP
 from Modules.basicOutputs import write_attribute,raw_APS_request
 
@@ -40,8 +40,18 @@ TUYA_DIMMER_MANUFACTURER = '_TZE200_dfxkcots'
 TUYA_SWITCH_MANUFACTURER = '_TZE200_7tdtqgwv'
 TUYA_CURTAIN_MAUFACTURER = '_TZE200_rddyvrci', '_TZE200_5zbp6j0u' , '_TZE200_nkoabg8w', '_TZE200_xuzcvlku', '_TZE200_4vobcgd3', '_TZE200_nogaemzt', '_TZE200_pk0sfzvr', '_TZE200_fdtjuw7u', '_TZE200_zpzndjez', '_TYST11_wmcdj3aq', '_TZE200_fzo2pocs', '_TYST11_xu1rkty3', '_TZE200_zah67ekd'
 TUYA_THERMOSTAT_MANUFACTURER = '_TZE200_aoclfnxz', '_TYST11_zuhszj9s', '_TYST11_jeaxp72v'
+
 TUYA_eTRV1_MANUFACTURER = '_TZE200_kfvq6avy', '_TZE200_ckud7u2l', '_TYST11_KGbxAXL2', '_TYST11_ckud7u2l'
-TUYA_eTRV2_MANUFACTURER = '_TZE200_c88teujp'
+
+# https://github.com/zigpy/zigpy/discussions/653#discussioncomment-314395
+TUYA_eTRV1_MANUFACTURER = '_TYST11_zivfvd7h', '_TZE200_zivfvd7h', '_TYST11_kfvq6avy', '_TZE200_kfvq6avy', '_TYST11_jeaxp72v'
+TUYA_eTRV2_MANUFACTURER = '_TZE200_ckud7u2l', '_TYST11_ckud7u2l'
+TUYA_eTRV3_MANUFACTURER = '_TZE200_c88teujp', '_TYST11_KGbxAXL2', '_TYST11_zuhszj9s'
+TUYA_eTRV_MANUFACTURER = '_TYST11_2dpplnsn', '_TZE200_wlosfena', '_TZE200_fhn3negr', '_TZE200_qc4fpmcn'
+
+
+
+
 
 
 def pollingTuya( self, key ):
@@ -117,7 +127,7 @@ def tuya_response( self,Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, 
     elif _ModelName == 'TS0601-curtain':
         tuya_curtain_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
 
-    elif _ModelName in ( 'TS0601-eTRV', 'TS0601-eTRV1', 'TS0601-eTRV2', 'TS0601-thermostat', 'ivfvd7h', 'fvq6avy', 'ivfvd7h', 'kud7u2l'):
+    elif _ModelName in ( TUYA_eTRV_MODEL ):
         tuya_eTRV_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
 
     elif _ModelName == 'TS0601-sirene':
