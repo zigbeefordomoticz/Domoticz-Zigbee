@@ -51,9 +51,6 @@ TUYA_eTRV_MANUFACTURER = '_TYST11_2dpplnsn', '_TZE200_wlosfena', '_TZE200_fhn3ne
 
 
 
-
-
-
 def pollingTuya( self, key ):
     """
     This fonction is call if enabled to perform any Manufacturer specific polling action
