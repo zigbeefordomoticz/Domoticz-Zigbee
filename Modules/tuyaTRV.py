@@ -9,6 +9,7 @@
     Description: Tuya specific
 
 """
+# https://github.com/zigpy/zha-device-handlers/issues/357
 
 import Domoticz
 
@@ -134,7 +135,12 @@ def receive_mode( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID
 def receive_heating_state(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     # Thermostat
     self.log.logging( "Tuya", 'Debug', "receive_mode - Nwkid: %s/%s Mode: %s" %(NwkId,srcEp ,data))
-    MajDomoDevice(self, Devices, NwkId, srcEp, '0201', data , Attribute_ = '0124')
+    # Value inverted
+    if data == '00':
+        value = '01'
+    else:
+        value = '00:'
+    MajDomoDevice(self, Devices, NwkId, srcEp, '0201', value , Attribute_ = '0124')
 
     store_tuya_attribute( self, NwkId, 'HeatingMode', data )
 
