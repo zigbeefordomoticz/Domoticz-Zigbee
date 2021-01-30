@@ -54,7 +54,7 @@ TUYA_eTRV1_MANUFACTURER = ( '_TYST11_zivfvd7h', '_TZE200_zivfvd7h', '_TYST11_kfv
 TUYA_eTRV2_MANUFACTURER = ( '_TZE200_ckud7u2l', '_TYST11_ckud7u2l' )
 TUYA_eTRV3_MANUFACTURER = ( '_TZE200_c88teujp', '_TYST11_KGbxAXL2', '_TYST11_zuhszj9s')
 TUYA_eTRV_MANUFACTURER =  ( '_TYST11_2dpplnsn', '_TZE200_wlosfena', '_TZE200_fhn3negr', '_TZE200_qc4fpmcn')
-TUYA_eTRV_MODEL =         ( 'TS0601','uhszj9s', 'GbxAXL2', '88teujp', 'kud7u2l', 'eaxp72v', 'fvq6avy', 'ivfvd7h')
+TUYA_eTRV_MODEL =         ( 'TS0601', 'TS0601-eTRV', 'TS0601-eTRV1', 'TS0601-eTRV2', 'TS0601-eTRV3', 'TS0601-thermostat', 'uhszj9s', 'GbxAXL2', '88teujp', 'kud7u2l', 'eaxp72v', 'fvq6avy', 'ivfvd7h')
 
 TUYA_TS0601_MODEL_NAME = TUYA_eTRV_MODEL + TUYA_CURTAIN_MODEL
 

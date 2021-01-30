@@ -20,6 +20,15 @@ def tuya_TS0121_registration( self, NwkId):
     EPout = '01'
     write_attribute( self, NwkId, ZIGATE_EP, EPout, '0000', '0000', '00', 'ffde', '20', '13', ackIsDisabled = False)
 
+def tuya_read_attribute(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data):
+    if nwkid not in self.ListOfDevices:
+        return 
+    transid = '%02x' %get_next_tuya_transactionId( self, nwkid )
+    len_data = (len(data)) // 2
+    payload = cluster_frame + sqn + cmd + '02' + transid + action + '00' + '%02x' %len_data + data
+    
+    raw_APS_request( self, nwkid, EPout, 'ef00', '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = is_ack_tobe_disabled(self, nwkid))
+    self.log.logging( "Tuya", 'Debug', "tuya_read_attribute - %s/%s cmd: %s payload: %s" %(nwkid, EPout , cmd, payload))
 
 def tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data , action2=None, data2 = None):
     if nwkid not in self.ListOfDevices:

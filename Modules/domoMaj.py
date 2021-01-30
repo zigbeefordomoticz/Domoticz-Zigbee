@@ -236,6 +236,14 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 elif value == 1:
                     UpdateDevice_v2(self, Devices, DeviceUnit, 1, '10', BatteryLevel, SignalLevel)
 
+            elif WidgetType ==  'ThermoOnOff' and Attribute_ == "6501":
+                self.log.logging( "Widget", "Debug", "------>  Thermo On/Off %s" %value, NWKID)
+                if value == 0:
+                    UpdateDevice_v2(self, Devices, DeviceUnit, 0, 'Off', BatteryLevel, SignalLevel)
+                elif value == 1:
+                    UpdateDevice_v2(self, Devices, DeviceUnit, 1, 'On', BatteryLevel, SignalLevel)
+
+
             elif WidgetType == 'HACTMODE' and Attribute_ == "e011":#  Wiser specific Fil Pilote
                  # value is str
                 self.log.logging( "Widget", "Debug", "------>  ThermoMode HACTMODE: %s" %(value), NWKID)
@@ -445,7 +453,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
                 return
 
-        if WidgetType not in ( 'ThermoModeEHZBRTS', 'HeatingSwitch', 'HeatingStatus', 'ThermoMode_2' ) and \
+        if WidgetType not in ( 'ThermoModeEHZBRTS', 'HeatingSwitch', 'HeatingStatus', 'ThermoMode_2', 'ThermoSetpoint', 'ThermoOnOff' ) and \
             (   ( ClusterType in ( 'IAS_ACE', 'Alarm', 'Door', 'Switch', 'SwitchButton', 'AqaraOppleMiddle', 'Motion', 
                                  'Ikea_Round_5b', 'Ikea_Round_OnOff', 'Vibration', 'OrviboRemoteSquare', 'Button_3', 'LumiLock') ) or \
                 ( ClusterType == WidgetType == 'DoorLock') or \
@@ -455,8 +463,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 ( 'ThermoMode' in ClusterType and WidgetType == 'ACSwing' and Attribute_ =='fd00') or \
                 ( WidgetType == 'KF204Switch' and ClusterType in ( 'Switch', 'Door') ) or \
                 ( WidgetType == 'Valve' and Attribute_ == '0014') or \
-                ( 'ThermoMode' in ClusterType and WidgetType == 'ThermoOnOff' ) 
-                ):
+                ( 'ThermoMode' in ClusterType and WidgetType == 'ThermoOnOff' ) ):
 
             # Plug, Door, Switch, Button ...
             # We reach this point because ClusterType is Door or Switch. It means that Cluster 0x0006 or 0x0500
