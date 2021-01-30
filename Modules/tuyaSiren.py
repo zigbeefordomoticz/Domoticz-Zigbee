@@ -44,7 +44,7 @@ def tuya_sirene_registration(self, nwkid):
     tuya_siren_temp_unit( self, nwkid, unit='C' )
 
 
-def tuya_siren_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, data):
+def tuya_siren_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
 
     self.log.logging( "Tuya", 'Debug', "tuya_siren_response - Nwkid: %s dp: %02x data: %s" %(NwkId, dp, data))
 

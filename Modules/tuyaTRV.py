@@ -167,7 +167,6 @@ def receive_heating_state(self, Devices, model_target, NwkId, srcEp, ClusterID, 
     else:
         value = 0
     MajDomoDevice(self, Devices, NwkId, srcEp, '0201', value , Attribute_ = '0124')
-
     store_tuya_attribute( self, NwkId, 'HeatingMode', data )
 
 def receive_valveposition( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data ):
