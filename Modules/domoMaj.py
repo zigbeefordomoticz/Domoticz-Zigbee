@@ -231,9 +231,9 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
             elif WidgetType ==  'HeatingStatus' and Attribute_ == "0124":
                 self.log.logging( "Widget", "Debug", "------>  HeatingStatus %s" %value, NWKID)
-                if value == '00':
+                if value == 0:
                     UpdateDevice_v2(self, Devices, DeviceUnit, 2, '20', BatteryLevel, SignalLevel)
-                elif value == '01':
+                elif value == 1:
                     UpdateDevice_v2(self, Devices, DeviceUnit, 1, '10', BatteryLevel, SignalLevel)
 
             elif WidgetType == 'HACTMODE' and Attribute_ == "e011":#  Wiser specific Fil Pilote
@@ -445,7 +445,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
                 return
 
-        if WidgetType not in ( 'ThermoModeEHZBRTS', 'HeatingStatus', 'ThermoMode_2' ) and \
+        if WidgetType not in ( 'ThermoModeEHZBRTS', 'HeatingSwitch', 'HeatingStatus', 'ThermoMode_2' ) and \
             (   ( ClusterType in ( 'IAS_ACE', 'Alarm', 'Door', 'Switch', 'SwitchButton', 'AqaraOppleMiddle', 'Motion', 
                                  'Ikea_Round_5b', 'Ikea_Round_OnOff', 'Vibration', 'OrviboRemoteSquare', 'Button_3', 'LumiLock') ) or \
                 ( ClusterType == WidgetType == 'DoorLock') or \

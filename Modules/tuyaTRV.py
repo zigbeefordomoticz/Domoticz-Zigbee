@@ -147,20 +147,21 @@ def receive_lowbattery(self, Devices, model_target, NwkId, srcEp, ClusterID, dst
 
 
 def receive_schedule_mode(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
-    self.log.logging( "Tuya", 'Debug', "receive_schedule_mode - Nwkid: %s/%s Dp: %s DataType: %s Mode: %s" %(NwkId,srcEp ,dp, datatype, data))
+    self.log.logging( "Tuya", 'Debug', "receive_schedule_mode - Nwkid: %s/%s Dp: %s DataType: %s ScheduleMode: %s" %(NwkId,srcEp ,dp, datatype, data))
     store_tuya_attribute( self, NwkId, 'ScheduleMode', data )
     if model_target == 'TS0601-thermostat':
         if data == '01':
-            self.log.logging( "Tuya", 'Debug', "receive_preset - Nwkid: %s/%s Mode to Manual" %(NwkId,srcEp ))
+            self.log.logging( "Tuya", 'Debug', "receive_schedule_mode - Nwkid: %s/%s ScheduleMode to Manual" %(NwkId,srcEp ))
             MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 2, Attribute_ = '001c' )
             checkAndStoreAttributeValue( self, NwkId , '01', '0201', '001c' , 'Manual' )
+            return
 
         checkAndStoreAttributeValue( self, NwkId , '01', '0201', '001c' , 'Offline' )
 
 
 def receive_heating_state(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     # Thermostat
-    self.log.logging( "Tuya", 'Debug', "receive_mode - Nwkid: %s/%s Mode: %s" %(NwkId,srcEp ,data))
+    self.log.logging( "Tuya", 'Debug', "receive_heating_state - Nwkid: %s/%s HeatingMode: %s" %(NwkId,srcEp ,data))
     # Value inverted
     if data == '00':
         value = 1
