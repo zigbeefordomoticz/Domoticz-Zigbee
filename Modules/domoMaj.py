@@ -445,7 +445,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
                 return
 
-        if WidgetType not in ( 'ThermoModeEHZBRTS', ) and \
+        if WidgetType not in ( 'ThermoModeEHZBRTS', 'HeatingStatus', 'ThermoMode_2' ) and \
             (   ( ClusterType in ( 'IAS_ACE', 'Alarm', 'Door', 'Switch', 'SwitchButton', 'AqaraOppleMiddle', 'Motion', 
                                  'Ikea_Round_5b', 'Ikea_Round_OnOff', 'Vibration', 'OrviboRemoteSquare', 'Button_3', 'LumiLock') ) or \
                 ( ClusterType == WidgetType == 'DoorLock') or \
