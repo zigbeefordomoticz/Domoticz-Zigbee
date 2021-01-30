@@ -50,6 +50,9 @@ def receive_temperature( self, Devices, model_target, NwkId, srcEp, ClusterID, d
 
 def receive_onoff( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     self.log.logging( "Tuya", 'Debug', "receive_onoff - Nwkid: %s/%s Mode to OffOn: %s" %(NwkId,srcEp, data ))
+    if model_target == 'TS0601-thermostat':
+        store_tuya_attribute( self, NwkId, 'Switch', data )
+        return
     if model_target == 'TS0601-eTRV3':
         if data == '00':
             MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 0, Attribute_ = '001c' )
@@ -60,7 +63,6 @@ def receive_onoff( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKI
             checkAndStoreAttributeValue( self, NwkId , '01', '0201', '001c' , 'Manual' )
         store_tuya_attribute( self, NwkId, 'Switch', data )
         return
-
 
     if data == '00':
         MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 0, Attribute_ = '001c')
@@ -200,6 +202,7 @@ TUYA_eTRV_MODEL =  'ivfvd7h', 'fvq6avy', 'eaxp72v', 'kud7u2l', '88teujp', 'GbxAX
 
 eTRV_MATRIX = {
     'TS0601-thermostat': {  'FromDevice': {     # @d2e2n2o / Electric
+                            0x01: receive_onoff,
                             0x02: receive_preset,
                             0x03: receive_schedule_mode,
                             0x10: receive_setpoint,
