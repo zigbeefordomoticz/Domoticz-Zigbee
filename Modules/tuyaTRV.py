@@ -53,6 +53,7 @@ def receive_onoff( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKI
     if model_target == 'TS0601-thermostat':
         store_tuya_attribute( self, NwkId, 'Switch', data )
         return
+        
     if model_target == 'TS0601-eTRV3':
         if data == '00':
             MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 0, Attribute_ = '001c' )
@@ -151,9 +152,9 @@ def receive_heating_state(self, Devices, model_target, NwkId, srcEp, ClusterID, 
     self.log.logging( "Tuya", 'Debug', "receive_mode - Nwkid: %s/%s Mode: %s" %(NwkId,srcEp ,data))
     # Value inverted
     if data == '00':
-        value = '01'
+        value = 1
     else:
-        value = '00:'
+        value = 0
     MajDomoDevice(self, Devices, NwkId, srcEp, '0201', value , Attribute_ = '0124')
 
     store_tuya_attribute( self, NwkId, 'HeatingMode', data )
@@ -214,7 +215,7 @@ eTRV_MATRIX = {
                             0x28: receive_childlock,
                             },
                         'ToDevice': {
-                            'Switch': 0x01,    # Ok
+                            'Switch': 0x01,      # Ok
                             'SetPoint': 0x10,
                             'ChildLock': 0x28,
                             }
