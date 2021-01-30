@@ -124,6 +124,9 @@ def tuya_response( self,Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, 
     elif _ModelName == 'TS0601-curtain':
         tuya_curtain_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
 
+    elif _ModelName in ( 'TS0601-thermostat' ):
+        tuya_eTRV_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
+
     elif _ModelName in ( TUYA_eTRV_MODEL ):
         tuya_eTRV_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
 
