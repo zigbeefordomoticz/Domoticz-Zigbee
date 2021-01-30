@@ -132,6 +132,18 @@ def receive_mode( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID
     self.log.logging( "Tuya", 'Debug', "receive_mode - Nwkid: %s/%s Mode: %s" %(NwkId,srcEp ,data))
     store_tuya_attribute( self, NwkId, 'Mode', data )
 
+def receive_schedule_mode(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
+    if model_target == 'TS0601-thermostat':
+        # Manual
+        if data == '00':
+            self.log.logging( "Tuya", 'Debug', "receive_preset - Nwkid: %s/%s Mode to Auto" %(NwkId,srcEp ))
+            MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 1, Attribute_ = '001c' )
+            checkAndStoreAttributeValue( self, NwkId , '01', '0201', '001c' , 'Auto' )   
+        #elif data == '01':
+        #    self.log.logging( "Tuya", 'Debug', "receive_preset - Nwkid: %s/%s Mode to Manual" %(NwkId,srcEp ))
+        #    MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 0, Attribute_ = '001c' )
+        #    checkAndStoreAttributeValue( self, NwkId , '01', '0201', '001c' , 'Auto' )                    
+
 def receive_heating_state(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     # Thermostat
     self.log.logging( "Tuya", 'Debug', "receive_mode - Nwkid: %s/%s Mode: %s" %(NwkId,srcEp ,data))
@@ -167,7 +179,7 @@ def receive_dumy( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID
 
 
 eTRV_MODELS = {
-    # Siterwell GS361A-H04
+    # Siterwell GS361A-H04 
     'ivfvd7h': 'TS0601-eTRV1',
     'fvq6avy': 'TS0601-eTRV1',
     'eaxp72v': 'TS0601-eTRV1',
@@ -187,75 +199,73 @@ eTRV_MODELS = {
 TUYA_eTRV_MODEL =  'ivfvd7h', 'fvq6avy', 'eaxp72v', 'kud7u2l', '88teujp', 'GbxAXL2', 'uhszj9s', 'TS0601-eTRV1', 'TS0601-eTRV2', 'TS0601-eTRV3', 'TS0601-eTRV'
 
 eTRV_MATRIX = {
-    'TS0601-thermostat': {  # @d2e2n2o / Electric
-        'FromDevice': {
-            0x02: receive_preset,
-            0x10: receive_setpoint,
-            0x18: receive_temperature,   # Ok
-            0x24: receive_heating_state,
-            0x28: receive_childlock,
-            },
-        'ToDevice': {
-            'Switch': 0x01,    # Ok
-            'SetPoint': 0x10,
-            'ChildLock': 0x28,
-            }
-    },
+    'TS0601-thermostat': {  'FromDevice': {     # @d2e2n2o / Electric
+                            0x02: receive_preset,
+                            0x03: receive_schedule_mode,
+                            0x10: receive_setpoint,
+                            0x18: receive_temperature,   # Ok
+                            0x24: receive_heating_state,
+                            0x28: receive_childlock,
+                            },
+                        'ToDevice': {
+                            'Switch': 0x01,    # Ok
+                            'SetPoint': 0x10,
+                            'ChildLock': 0x28,
+                            }
+                        },
+    # eTRV
+    'TS0601-eTRV1': {   'FromDevice': {         # Confirmed with @d2e2n2o _TYST11_zivfvd7h
+                            0x02: receive_setpoint,
+                            0x03: receive_temperature, 
+                            0x04: receive_preset,  
+                            0x15: receive_battery,         
+                        },
+                        'ToDevice': {
+                            'SetPoint': 0x02, 'TrvMode': 0x04
+                            } 
+                        },
 
-    'TS0601-eTRV1': {
-        'FromDevice': {
-            0x02: receive_setpoint,
-            0x03: receive_temperature, 
-            0x04: receive_preset,  
-            0x15: receive_battery,         
-        },
-        'ToDevice': {
-            'SetPoint': 0x02, 'TrvMode': 0x04} },
+    'TS0601-eTRV2': {   'FromDevice': {        #     # https://github.com/pipiche38/Domoticz-Zigate/issues/779 ( @waltervl)
+                            0x02: receive_setpoint,
+                            0x03: receive_temperature, 
+                            0x04: receive_preset,
+                            0x07: receive_childlock, 
+                            0x12: receive_windowdetection, 
+                            0x15: receive_battery,  
+                            0x14: receive_valvestate,
+                            0x6d: receive_valveposition,     
+                            0x6e: receive_lowbattery,
+                        },
+                        'ToDevice': {
+                            'SetPoint': 0x02,
+                            'TrvMode': 0x04}
+                        },
 
-    'TS0601-eTRV2': {
-        # https://github.com/pipiche38/Domoticz-Zigate/issues/779 ( @waltervl)
-        'FromDevice': {
-            0x02: receive_setpoint,
-            0x03: receive_temperature, 
-            0x04: receive_preset,
-            0x07: receive_childlock, 
-            0x12: receive_windowdetection, 
-            0x15: receive_battery,  
-            0x14: receive_valvestate,
-            0x6d: receive_valveposition,     
-            0x6e: receive_lowbattery,
-        },
-        'ToDevice': {
-            'SetPoint': 0x02,
-            'TrvMode': 0x04}
-        },
-
-    'TS0601-eTRV3': {  # @pipiche
-        'FromDevice': {
-            0x08: receive_windowdetection_status,
-            0x82: receive_dumy,                     # Water Scale Prof ???
-            0x12: receive_windowdetection,
-            0x1b: receive_calibration,
-            0x28: receive_childlock,
-            0x65: receive_onoff,
-            0x66: receive_temperature,
-            0x67: receive_setpoint,
-            0x69: receive_dumy,                     # ????
-            0x6a: receive_dumy,                     # LH
-            0x6c: receive_preset,
-            0x6d: receive_valveposition,
-            0x6e: receive_lowbattery,
-            },
-        'ToDevice': {
-            'Switch': 0x65,
-            'SetPoint': 0x67,
-            'ChildLock': 0x28,
-            'ValveDetection': 0x14,
-            'WindowDetection': 0x08,
-            'Calibration': 0x1b,
-            'TrvMode': 0x6c,
-            }
-        },
+    'TS0601-eTRV3': {   'FromDevice': {         # Confirmed with @d2e2n2o et @pipiche
+                            0x08: receive_windowdetection_status,
+                            0x82: receive_dumy,                     # Water Scale Prof ???
+                            0x12: receive_windowdetection,
+                            0x1b: receive_calibration,
+                            0x28: receive_childlock,
+                            0x65: receive_onoff,
+                            0x66: receive_temperature,
+                            0x67: receive_setpoint,
+                            0x69: receive_dumy,                     # ????
+                            0x6a: receive_dumy,                     # LH
+                            0x6c: receive_preset,
+                            0x6d: receive_valveposition,
+                            0x6e: receive_lowbattery,
+                            },
+                        'ToDevice': {
+                            'Switch': 0x65,
+                            'SetPoint': 0x67,
+                            'ChildLock': 0x28,
+                            'ValveDetection': 0x14,
+                            'WindowDetection': 0x08,
+                            'Calibration': 0x1b,
+                            'TrvMode': 0x6c,
+                            }
+                        },
 
     'TS0601-eTRV': {
         'FromDevice': {
@@ -417,6 +427,9 @@ def tuya_setpoint( self, nwkid, setpoint_value):
         # In Domoticz Setpoint is in ° , In Modules/command.py we multiplied by 100 (as this is the Zigbee standard).
         # Looks like in the Tuya 0xef00 cluster it is only expressed in 10th of degree
         setpoint_value = setpoint_value // 10
+        if get_model_name( self, nwkid ) == 'TS0601-thermostat':
+            # Setpoiint is defined in ° and not centidegree
+            setpoint_value = setpoint_value // 10
         data = '%08x' %setpoint_value
         # determine which Endpoint
         EPout = '01'
