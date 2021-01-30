@@ -9,7 +9,7 @@
 			"ef00":"", 
 			"000a":"", 
 			"0019":"", 
-			"Type":"Temp/ThermoSetpoint/ThermoOnOff/HeatingStatus"}
+			"Type":"Temp/ThermoSetpoint/ThermoOnOff/ThermoMode_2/HeatingStatus"}
 	},
 	"Type":"",
 	"ClusterToBind": [ "0000", "ef00" ],

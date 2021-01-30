@@ -51,35 +51,48 @@ def receive_temperature( self, Devices, model_target, NwkId, srcEp, ClusterID, d
 def receive_onoff( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     self.log.logging( "Tuya", 'Debug', "receive_onoff - Nwkid: %s/%s Mode to OffOn: %s" %(NwkId,srcEp, data ))
     if model_target == 'TS0601-thermostat':
+        # Update ThermoOnOff widget
         store_tuya_attribute( self, NwkId, 'Switch', data )
+        if data == '01':
+            MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 0, Attribute_ = '6501' )
+            MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 0, Attribute_ = '001c' )
+            checkAndStoreAttributeValue( self, NwkId , '01', '0201', '6501' , 'Off' )
+        else:
+            MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 2, Attribute_ = '6501')
+            checkAndStoreAttributeValue( self, NwkId , '01', '0201', '6501' , 'On' )
         return
-        
+
     if model_target == 'TS0601-eTRV3':
+        # Update ThermoMode_2 widget
         if data == '00':
             MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 0, Attribute_ = '001c' )
             checkAndStoreAttributeValue( self, NwkId , '01', '0201', '001c' , 'OffLine' )
         else:
-            
             MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 2, Attribute_ = '001c')
             checkAndStoreAttributeValue( self, NwkId , '01', '0201', '001c' , 'Manual' )
         store_tuya_attribute( self, NwkId, 'Switch', data )
         return
 
     if data == '00':
+        # Update ThermoMode_2 widget
         MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 0, Attribute_ = '001c')
     else:
         MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 2, Attribute_ = '001c')
     checkAndStoreAttributeValue( self, NwkId , '01', '0006', '0000' , data )
     store_tuya_attribute( self, NwkId, 'Switch', data )    
 
-def receive_preset( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
+def receive_mode( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data ):
+    self.log.logging( "Tuya", 'Debug', "receive_mode - Nwkid: %s/%s Dp: %s DataType: %s Mode: %s" %(NwkId,srcEp ,dp, datatype, data))
+    store_tuya_attribute( self, NwkId, 'Mode', data )
 
+def receive_preset( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
+    # Update ThermoMode_2 widget
     if data == '00':
         if model_target == 'TS0601-thermostat':
-            # Manual
-            self.log.logging( "Tuya", 'Debug', "receive_preset - Nwkid: %s/%s Mode to Manual" %(NwkId,srcEp ))
-            MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 2, Attribute_ = '001c' )
-            checkAndStoreAttributeValue( self, NwkId , '01', '0201', '001c' , 'Manual' )
+            # Thermostat Mode Auto
+            self.log.logging( "Tuya", 'Debug', "receive_preset - Nwkid: %s/%s Mode to Auto" %(NwkId,srcEp ))
+            MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 1, Attribute_ = '001c' )
+            checkAndStoreAttributeValue( self, NwkId , '01', '0201', '001c' , 'Auto' )
         else:
             # Offline
             self.log.logging( "Tuya", 'Debug', "receive_preset - Nwkid: %s/%s Mode to Offline" %(NwkId,srcEp ))
@@ -102,6 +115,7 @@ def receive_preset( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWK
             MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 2, Attribute_ = '001c' )
             checkAndStoreAttributeValue( self, NwkId , '01', '0201', '001c' , 'Manual' )
     store_tuya_attribute( self, NwkId, 'ChangeMode', data )
+
 
 def receive_childlock( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     self.log.logging( "Tuya", 'Debug', "receive_childlock - Nwkid: %s/%s Child Lock/Unlock: %s" %(NwkId,srcEp ,data))
@@ -131,21 +145,11 @@ def receive_lowbattery(self, Devices, model_target, NwkId, srcEp, ClusterID, dst
     self.log.logging( "Tuya", 'Debug', "receice_lowbattery - Nwkid: %s/%s DataType: %s Battery status %s" %(NwkId,srcEp ,datatype ,int(data,16)))
     store_tuya_attribute( self, NwkId, 'LowBattery', data )
 
-def receive_mode( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data ):
-    self.log.logging( "Tuya", 'Debug', "receive_mode - Nwkid: %s/%s Mode: %s" %(NwkId,srcEp ,data))
-    store_tuya_attribute( self, NwkId, 'Mode', data )
 
 def receive_schedule_mode(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
-    if model_target == 'TS0601-thermostat':
-        # Manual
-        if data == '00':
-            self.log.logging( "Tuya", 'Debug', "receive_preset - Nwkid: %s/%s Mode to Auto" %(NwkId,srcEp ))
-            MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 1, Attribute_ = '001c' )
-            checkAndStoreAttributeValue( self, NwkId , '01', '0201', '001c' , 'Auto' )   
-        #elif data == '01':
-        #    self.log.logging( "Tuya", 'Debug', "receive_preset - Nwkid: %s/%s Mode to Manual" %(NwkId,srcEp ))
-        #    MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 0, Attribute_ = '001c' )
-        #    checkAndStoreAttributeValue( self, NwkId , '01', '0201', '001c' , 'Auto' )                    
+    self.log.logging( "Tuya", 'Debug', "receive_schedule_mode - Nwkid: %s/%s Dp: %s DataType: %s Mode: %s" %(NwkId,srcEp ,dp, datatype, data))
+    store_tuya_attribute( self, NwkId, 'ScheduleMode', data )
+
 
 def receive_heating_state(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     # Thermostat
@@ -209,14 +213,14 @@ eTRV_MATRIX = {
                             0x01: receive_onoff,
                             0x02: receive_preset,
                             0x03: receive_schedule_mode,
-                            0x10: receive_setpoint,
+                            0x10: receive_setpoint,      # Ok
                             0x18: receive_temperature,   # Ok
                             0x24: receive_heating_state,
                             0x28: receive_childlock,
                             },
                         'ToDevice': {
-                            'Switch': 0x01,      # Ok
-                            'SetPoint': 0x10,
+                            'Switch': 0x01,               # Ok
+                            'SetPoint': 0x10,             # Ok
                             'ChildLock': 0x28,
                             }
                         },
