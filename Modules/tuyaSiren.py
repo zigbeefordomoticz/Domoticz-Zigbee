@@ -179,16 +179,16 @@ def get_alarm_attrbutes( self, nwkid, alarm_num):
 
     alarm_attributes = self.ListOfDevices[ nwkid ]['Param'][alarm]
     if "Duration" not in alarm_attributes or "Volume" not in alarm_attributes or "Melody" not in alarm_attributes:
-        self.log.logging( "Tuya", 'Error', "get_alarm_attrbutes - default value to be used - Missing Duration, Volume or Melogy for alarm %s in Param %s" %(
+        self.log.logging( "Tuya", 'Error', "get_alarm_attrbutes - default value to be used - Missing Duration, Volume or Melogy for alarm %s in Param %s - %s" %(
             alarm, self.ListOfDevices[ nwkid ]['Param']))
         return default_alarm
 
     if alarm_attributes[ "Volume" ] > 2:
-        self.log.logging( "Tuya", 'Error', "get_alarm_attrbutes - default value to be used - Volume can only be 0, 1 or 2 instead of %s" %(
+        self.log.logging( "Tuya", 'Error', "get_alarm_attrbutes - default value to be used - Volume can only be 0, 1 or 2 instead of %s - %s" %(
             alarm, alarm_attributes[ "Volume" ]))
         return default_alarm
-    if alarm_attributes[ "Melody" ] not in ( 1,2,3,4,5):
-        self.log.logging( "Tuya", 'Error', "get_alarm_attrbutes - default value to be used - Melody can only be 1,2,3,4,5 instead of %s" %(
+    if alarm_attributes[ "Melody" ] not in range( 1, 15):
+        self.log.logging( "Tuya", 'Error', "get_alarm_attrbutes - default value to be used - Melody can only be 1,2,3,4,5 instead of %s - %s" %(
             alarm, self.ListOfDevices[ nwkid ]['Param']))
         return default_alarm
 
