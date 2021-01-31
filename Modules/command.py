@@ -218,6 +218,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
                 %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
             self.log.logging( "Command", 'Debug', "ThermoMode - requested Level: %s" %Level, NWKID)
             tuya_trv_mode( self, NWKID, 0 )
+            UpdateDevice_v2(self, Devices, Unit, 0, 'Off',BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return
 
         if DeviceType == 'ThermoModeEHZBRTS':
@@ -284,7 +285,9 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             thermostat_Mode( self, NWKID, 'Off' )
 
         elif DeviceType == 'ThermoOnOff':
+            self.log.logging( "Command", 'Debug', "ThermoOnOff - requested Off", NWKID)
             tuya_trv_onoff( self, NWKID, 0x00)
+            UpdateDevice_v2(self, Devices, Unit, 0, 'Off',BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
 
         else:
             # Remaining Slider widget
@@ -371,6 +374,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
 
         elif DeviceType == 'ThermoOnOff':
             tuya_trv_onoff( self, NWKID, 0X01)
+            UpdateDevice_v2(self, Devices, Unit, 1, 'On',BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
 
         else:
             # Remaining Slider widget
@@ -559,6 +563,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
                 %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
             self.log.logging( "Command", 'Debug', "ThermoMode_2 - requested Level: %s" %Level, NWKID)
             tuya_trv_mode( self, NWKID, Level )
+            UpdateDevice_v2(self, Devices, Unit, int(Level//10), Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return
 
         if DeviceType == 'FanControl':

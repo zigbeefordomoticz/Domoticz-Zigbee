@@ -19,7 +19,7 @@ from datetime import datetime, timedelta
 from Classes.LoggingManagement import LoggingManagement
 from Modules.tools import updSQN, get_and_inc_SQN, is_ack_tobe_disabled
 from Modules.domoMaj import MajDomoDevice
-from Modules.tuyaTools import (tuya_cmd)
+from Modules.tuyaTools import (tuya_cmd, store_tuya_attribute)
 from Modules.tuyaSiren import tuya_siren_response
 from Modules.tuyaTRV import tuya_eTRV_response, TUYA_eTRV_MODEL
 from Modules.zigateConsts import ZIGATE_EP
@@ -202,6 +202,8 @@ def tuya_switch_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dst
         # Switch 3
         pass
     else:
+        attribute_name = 'UnknowDp_0x%02x' %dp
+        store_tuya_attribute( self, NwkId, attribute_name, data ) 
         self.log.logging( "Tuya", 'Debug', "tuyaReadRawAPS - Unknown attribut Nwkid: %s/%s decodeDP: %04x data: %s"
             %(NwkId, srcEp, dp, data), NwkId)
 
@@ -241,6 +243,9 @@ def tuya_curtain_response( self, Devices, _ModelName, NwkId, srcEp, ClusterID, d
         slevel = '%02x' %level
         self.log.logging( "Tuya", 'Debug', "tuya_curtain_response - ?????? Nwkid: %s/%s data %s --> %s" %(NwkId, srcEp, data, level),NwkId )
         MajDomoDevice(self, Devices, NwkId, srcEp, '0008', slevel)
+    else:
+        attribute_name = 'UnknowDp_0x%02x' %dp
+        store_tuya_attribute( self, NwkId, attribute_name, data ) 
 
 def tuya_curtain_openclose( self, NwkId , openclose):
     self.log.logging( "Tuya", 'Debug', "tuya_curtain_openclose - %s OpenClose: %s" %(NwkId, openclose),NwkId )
@@ -289,6 +294,9 @@ def tuya_dimmer_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dst
 
         self.log.logging( "Tuya", 'Debug', "tuya_dimmer_response - Nwkid: %s/%s Dim up/dow %s %s" %(NwkId, srcEp, int(data,16), level),NwkId )
         MajDomoDevice(self, Devices, NwkId, srcEp, '0008', '%02x' %level)
+    else:
+        attribute_name = 'UnknowDp_0x%02x' %dp
+        store_tuya_attribute( self, NwkId, attribute_name, data ) 
 
 def tuya_dimmer_onoff( self, NwkId, srcEp, OnOff ):
 

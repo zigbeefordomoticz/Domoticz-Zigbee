@@ -125,7 +125,9 @@ def tuya_siren_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstN
     else:
         self.log.logging( "Tuya", 'Debug', "tuya_siren_response - Unknown attribut Nwkid: %s/%s decodeDP: %04x data: %s"
             %(NwkId, srcEp, dp, data), NwkId)
-        store_tuya_attribute( self, NwkId, '%4x' %dp, data )
+        attribute_name = 'UnknowDp_0x%02x' %dp
+        store_tuya_attribute( self, NwkId, attribute_name, data ) 
+
 
 
 def tuya_siren_alarm( self, nwkid, onoff, alarm_num=1):

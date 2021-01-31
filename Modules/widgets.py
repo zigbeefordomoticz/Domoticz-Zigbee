@@ -68,8 +68,8 @@ SWITCH_LVL_MATRIX = {
         "ForceUpdate": False},
 
     "ThermoOnOff": { 
-        "00": ( 0,"Off"), 
-        "01": ( 1,"On") , 
+        0: ( 0,"Off"), 
+        1: ( 1,"On") , 
         "ForceUpdate": False},    
 
     "SwitchButton": { 

@@ -31,6 +31,7 @@ def tuya_eTRV_registration(self, nwkid):
     raw_APS_request( self, nwkid, EPout, 'ef00', '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = is_ack_tobe_disabled(self, nwkid))
 
 
+
 def receive_setpoint( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data ):
 
     self.log.logging( "Tuya", 'Debug', "receive_setpoint - Nwkid: %s/%s Setpoint: %s" %(NwkId,srcEp ,int(data,16)))
@@ -50,44 +51,41 @@ def receive_temperature( self, Devices, model_target, NwkId, srcEp, ClusterID, d
 
 def receive_onoff( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     self.log.logging( "Tuya", 'Debug', "receive_onoff - Nwkid: %s/%s Mode to OffOn: %s" %(NwkId,srcEp, data ))
+    store_tuya_attribute( self, NwkId, 'Switch', data )
+
+    # Update ThermoOnOff widget ( 6501 )
     if model_target == 'TS0601-thermostat':
-        # Update ThermoOnOff widget
         store_tuya_attribute( self, NwkId, 'Switch', data )
         if data == '01':
-            MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 0, Attribute_ = '6501' )
-            MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 0, Attribute_ = '001c' )
             checkAndStoreAttributeValue( self, NwkId , '01', '0201', '6501' , 'Off' )
+            MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 0, Attribute_ = '6501' ) # ThermoOnOff to Off
+            MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 0, Attribute_ = '001c' ) # ThermoMode_2 to Off
         else:
-            MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 2, Attribute_ = '6501')
             checkAndStoreAttributeValue( self, NwkId , '01', '0201', '6501' , 'On' )
-        return
-
-    if model_target == 'TS0601-eTRV3':
-        # Update ThermoMode_2 widget
-        if data == '00':
-            MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 0, Attribute_ = '6501' )
-            MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 0, Attribute_ = '001c' )
-            checkAndStoreAttributeValue( self, NwkId , '01', '0201', '001c' , 'OffLine' )
+            MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 2, Attribute_ = '6501') # ThermoOnOff to On
+            
+    elif model_target == 'TS0601-eTRV3':
+        if data == '00': # Off
+            checkAndStoreAttributeValue( self, NwkId , '01', '0201', '6501' , 'Off' )
+            MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 0, Attribute_ = '6501' ) # ThermoOnOff to Off
+            MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 0, Attribute_ = '001c' ) # ThermoMode_2 to Off
         else:
-            MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 1, Attribute_ = '6501' )
-            checkAndStoreAttributeValue( self, NwkId , '01', '0201', '001c' , 'Manual' )
-        store_tuya_attribute( self, NwkId, 'Switch', data )
-        return
+            checkAndStoreAttributeValue( self, NwkId , '01', '0201', '6501' , 'On' )
+            MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 1, Attribute_ = '6501' ) # ThermoOnOff to On
 
-    if data == '00':
-        # Update ThermoMode_2 widget
-        MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 0, Attribute_ = '001c')
     else:
-        MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 2, Attribute_ = '001c')
-    checkAndStoreAttributeValue( self, NwkId , '01', '0006', '0000' , data )
-    store_tuya_attribute( self, NwkId, 'Switch', data )    
+        checkAndStoreAttributeValue( self, NwkId , '01', '0201', '6501' , data )
+        
 
 def receive_mode( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data ):
     self.log.logging( "Tuya", 'Debug', "receive_mode - Nwkid: %s/%s Dp: %s DataType: %s Mode: %s" %(NwkId,srcEp ,dp, datatype, data))
     store_tuya_attribute( self, NwkId, 'Mode', data )
 
 def receive_preset( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
-    # Update ThermoMode_2 widget
+    # Update ThermoMode_2 widget ( 001c)
+    self.log.logging( "Tuya", 'Debug', "receive_preset - Nwkid: %s/%s Dp: %s DataType: %s Mode: %s" %(NwkId,srcEp ,dp, datatype, data))
+    store_tuya_attribute( self, NwkId, 'ChangeMode', data )
+
     if data == '00':
         if model_target == 'TS0601-thermostat':
             # Thermostat Mode Auto
@@ -99,6 +97,7 @@ def receive_preset( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWK
             self.log.logging( "Tuya", 'Debug', "receive_preset - Nwkid: %s/%s Mode to Offline" %(NwkId,srcEp ))
             MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 0, Attribute_ = '001c' )
             checkAndStoreAttributeValue( self, NwkId , '01', '0201', '001c' , 'OffLine' )
+
     elif data == '01':
         # Auto
         self.log.logging( "Tuya", 'Debug', "receive_preset - Nwkid: %s/%s Mode to Auto" %(NwkId,srcEp ))
@@ -115,8 +114,6 @@ def receive_preset( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWK
             self.log.logging( "Tuya", 'Debug', "receive_preset - Nwkid: %s/%s Mode to Manual" %(NwkId,srcEp ))
             MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 2, Attribute_ = '001c' )
             checkAndStoreAttributeValue( self, NwkId , '01', '0201', '001c' , 'Manual' )
-    store_tuya_attribute( self, NwkId, 'ChangeMode', data )
-
 
 def receive_childlock( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     self.log.logging( "Tuya", 'Debug', "receive_childlock - Nwkid: %s/%s Child Lock/Unlock: %s" %(NwkId,srcEp ,data))
@@ -147,6 +144,14 @@ def receive_battery_state( self, Devices, model_target, NwkId, srcEp, ClusterID,
     #checkAndStoreAttributeValue( self, NwkId , '01', '0001', '0000' , int(data,16) )
     #self.ListOfDevices[ NwkId ]['Battery'] = int(data,16)
     store_tuya_attribute( self, NwkId, 'BatteryState', data )
+
+def receive_temporary_away(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
+    self.log.logging( "Tuya", 'Debug', "receive_temporary_away - Nwkid: %s/%s Status %s" %(NwkId,srcEp ,data))
+    store_tuya_attribute( self, NwkId, 'TemporaryAway', data )
+
+def receive_antiscale(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
+    self.log.logging( "Tuya", 'Debug', "receive_antiscale - Nwkid: %s/%s Status %s" %(NwkId,srcEp ,data))
+    store_tuya_attribute( self, NwkId, 'AntiScale', data )
 
 
 def receive_lowbattery(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
@@ -346,6 +351,7 @@ eTRV_MATRIX = {
                             'WindowDetection': 0x08,
                             'Calibration': 0x1b,
                             'TrvMode': 0x6c,
+                            'TrvSchedule': 0x6d,
                             }
                         },
 
@@ -364,11 +370,11 @@ eTRV_MATRIX = {
             0x66: receive_temperature,
             0x67: receive_setpoint,
             0x69: receive_unknown,                     # ????
-            0x6a: receive_unknown,                     # LH
+            0x6a: receive_temporary_away,                     # Temporary Away
             0x6c: receive_preset,
             0x6d: receive_valveposition,
             0x6e: receive_lowbattery,
-            0x82: receive_unknown,                     # Water Scale Prof ???
+            0x82: receive_antiscale,                     # Anti Scale (Heater protection)
         },
         'ToDevice': {
             'SetPoint': 0x02,
@@ -393,7 +399,10 @@ def tuya_eTRV_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNW
         if dp in eTRV_MATRIX[ model_target ]['FromDevice']:
             eTRV_MATRIX[ model_target ]['FromDevice'][ dp](self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
         else:
-           self.log.logging( "Tuya", 'Debug', "tuya_eTRV_response - Nwkid: %s dp: %02x datatype: %s data: %s UNKNOW dp for Manuf: %s, Model: %s" %(NwkId, dp, datatype, data, manuf_name, _ModelName))
+            attribute_name = 'UnknowDp_0x%02x' %dp
+            store_tuya_attribute( self, NwkId, attribute_name, data ) 
+            self.log.logging( "Tuya", 'Debug', "tuya_eTRV_response - Nwkid: %s dp: %02x datatype: %s data: %s UNKNOW dp for Manuf: %s, Model: %s" %(
+                NwkId, dp, datatype, data, manuf_name, _ModelName))
     else:
         self.log.logging( "Tuya", 'Debug', "tuya_eTRV_response - Nwkid: %s dp: %02x datatype: %s data: %s UNKNOW Manuf %s, Model: %s" %(NwkId, dp, datatype, data, manuf_name, _ModelName))
 
@@ -461,26 +470,6 @@ def tuya_trv_calibration( self, nwkid, onoff):
         data = '%02x' %onoff
         tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def tuya_check_valve_detection( self, NwkId ):
     if 'ValveDetection' not in self.ListOfDevices[ NwkId ]['Param']:
         return
@@ -504,6 +493,10 @@ def tuya_check_childlock( self, NwkId ):
 
 def tuya_setpoint( self, nwkid, setpoint_value):
     self.log.logging( "Tuya", 'Debug', "tuya_setpoint - %s setpoint: %s" %(nwkid, setpoint_value))
+    if get_model_name( self, nwkid ) == 'TS0601-eTRV3':
+        # Force Manual mode
+        self.log.logging( "Tuya", 'Debug', "tuya_setpoint - %s Force to be in Manual mode" %(nwkid))
+        tuya_trv_switch_mode( self, nwkid, 20)
 
     sqn = get_and_inc_SQN( self, nwkid )
     dp = get_datapoint_command( self, nwkid, 'SetPoint')
@@ -526,28 +519,20 @@ def tuya_setpoint( self, nwkid, setpoint_value):
 def tuya_trv_onoff( self, nwkid, onoff):
 
     tuya_trv_switch_onoff(self, nwkid, onoff)
+
     if onoff == 0x01 and get_model_name( self, nwkid ) == 'TS0601-eTRV3':
+        # We force the eTRV to switch to Manual mode
         tuya_trv_switch_mode( self, nwkid, 20)
-
-
-def tuya_trv_mode( self, nwkid, mode):
-
-    tuya_trv_switch_mode(self, nwkid, mode)
-    if get_model_name( self, nwkid ) == 'TS0601-eTRV3':
-        if mode // 10 == 0x00: # Off
-            tuya_trv_switch_onoff( self, nwkid, 0x00)
-        else:
-            tuya_trv_switch_onoff( self, nwkid, 0x01)
 
 
 def tuya_trv_switch_onoff(self, nwkid, onoff):
 
-    self.log.logging( "Tuya", 'Debug', "tuya_trv_preset - %s Switch: %s" %(nwkid, onoff))
+    self.log.logging( "Tuya", 'Debug', "tuya_trv_switch_onoff - %s Switch: %s" %(nwkid, onoff))
     if onoff not in ( 0x00, 0x01 ):
         return
     sqn = get_and_inc_SQN( self, nwkid )
     dp = get_datapoint_command( self, nwkid, 'Switch')
-    self.log.logging( "Tuya", 'Debug', "tuya_trv_preset - %s dp for Switch: %s" %(nwkid, dp))
+    self.log.logging( "Tuya", 'Debug', "tuya_trv_switch_onoff - %s dp for Switch: %s" %(nwkid, dp))
     if dp:
         action = '%02x01' %dp
         # determine which Endpoint
@@ -557,12 +542,20 @@ def tuya_trv_switch_onoff(self, nwkid, onoff):
         data = '%02x' %onoff
         tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 
+def tuya_trv_mode( self, nwkid, mode):
+    
+    tuya_trv_switch_mode(self, nwkid, mode)
+    if get_model_name( self, nwkid ) == 'TS0601-eTRV3':
+        if mode // 10 == 0x00: # Off
+            tuya_trv_switch_onoff( self, nwkid, 0x00)
+        else:
+            tuya_trv_switch_onoff( self, nwkid, 0x01)
 
 def tuya_trv_switch_mode( self, nwkid, mode):
-    self.log.logging( "Tuya", 'Debug', "tuya_trv_mode - %s tuya_trv_mode: %x" %(nwkid, mode))
+    self.log.logging( "Tuya", 'Debug', "tuya_trv_switch_mode - %s tuya_trv_mode: %x" %(nwkid, mode))
     sqn = get_and_inc_SQN( self, nwkid )
     dp = get_datapoint_command( self, nwkid, 'TrvMode')
-    self.log.logging( "Tuya", 'Debug', "tuya_trv_mode - %s dp for TrvMode: %x" %(nwkid, dp))
+    self.log.logging( "Tuya", 'Debug', "tuya_trv_switch_mode - %s dp for TrvMode: %x" %(nwkid, dp))
     if dp:
         EPout = '01'
         cluster_frame = '11'
@@ -574,8 +567,26 @@ def tuya_trv_switch_mode( self, nwkid, mode):
         data = '%02x' %( mode // 10 )
         tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)   
 
+def tuya_trv_reset_schedule(self, nwkid, schedule):
 
+    # All days: 00:00 set 20°: 00 11 6d00 0012 7f 07 000000c8 000000c8 000000c8 000000c8
+    # Monday                   00 12 6d00 0012 01 07 000000be 000000be 000000be 000000be
+    # Tuesday                  00 13 6d00 0012 02 07 000000be 000000be 000000be 000000be
+    # Wenesday                 00 14 6d00 0012 04 07 000000be 000000be 000000be 000000be
+    # Thursday                 00 15 6d00 0012 08 07 000000be 000000be 000000be 000000be
+    # Friday                   00 16 6d00 0012 10 07 000000be 000000be 000000be 000000be
+    # Saturdat                 00 17 6d00 0012 20 07 000000be 000000be 000000be 000000be
+    # Sunday                   00 18 6d00 0012 40 07 000000be 000000be 000000be 000000be
+    # Mon/Tue/Wed              00 19 6d00 0012 07 07 000000c3 000000c3 000000c3 000000c3
+    # Thu/Fri/Sat              00 1a 6d00 0012 38 07 000000b9 000000b9 000000b9 000000b9
 
+    sqn = get_and_inc_SQN( self, nwkid )
+    dp = get_datapoint_command( self, nwkid, 'TrvSchedule')
+    if dp:
+        EPout = '01'
+        cluster_frame = '11'
+        cmd = '00' # Command
+        action = '%02x00' %dp  # 0x6d for eTRV3
 
 
 
