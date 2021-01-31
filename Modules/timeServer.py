@@ -38,7 +38,11 @@ def timeserver_read_attribute_request( self, sqn, nwkid, ep, cluster, manuf_spec
 
     elif attribute == '0007': # LocalTime
         self.log.logging(  "Input", "Debug", "-->Local Time: %s" %datetime.now())
-        EPOCTime = datetime(2000,1,1)
+        if 'Model' in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]['Model'] == 'TS0601-thermostat':
+            self.log.logging(  "Input", "Log", "timeserver_read_attribute_request Response use EPOCH from 1970,1,1 instead of 2000,1,1" )
+            EPOCTime = datetime(1970,1,1)
+        else:
+            EPOCTime = datetime(2000,1,1)
         UTCTime = int((datetime.now() - EPOCTime).total_seconds())
         value = "%08x" %UTCTime
         data_type = '23' # uint32
