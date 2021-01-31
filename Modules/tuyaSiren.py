@@ -187,8 +187,8 @@ def get_alarm_attrbutes( self, nwkid, alarm_num):
         self.log.logging( "Tuya", 'Error', "get_alarm_attrbutes - default value to be used - Volume can only be 0, 1 or 2 instead of %s - %s" %(
             alarm, alarm_attributes[ "Volume" ]))
         return default_alarm
-    if alarm_attributes[ "Melody" ] not in range( 1, 15):
-        self.log.logging( "Tuya", 'Error', "get_alarm_attrbutes - default value to be used - Melody can only be 1,2,3,4,5 instead of %s - %s" %(
+    if alarm_attributes[ "Melody" ] not in range( 1, 16):
+        self.log.logging( "Tuya", 'Error', "get_alarm_attrbutes - default value to be used - Melody can only be between 1 to 15 instead of %s - %s" %(
             alarm, self.ListOfDevices[ nwkid ]['Param']))
         return default_alarm
 
