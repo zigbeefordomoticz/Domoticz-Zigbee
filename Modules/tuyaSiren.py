@@ -66,7 +66,7 @@ def tuya_siren_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstN
         self.log.logging( "Tuya", 'Debug', "tuya_siren_response - Current Siren Duration %s" %int(data,16), NwkId)
         store_tuya_attribute( self, NwkId, 'SirenDuration', data )
 
-    if dp == 0x68: #Alarm set 
+    elif dp == 0x68: #Alarm set 
         # Alarm
         store_tuya_attribute( self, NwkId, 'Alarm', data )
         if data == '00':
@@ -114,10 +114,6 @@ def tuya_siren_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstN
         MajDomoDevice(self, Devices, NwkId, srcEp, '0006', data, Attribute_= '0172')
         store_tuya_attribute( self, NwkId, 'AlarmByHumi', data )
 
-    elif dp == 0x73: # ??
-        self.log.logging( "Tuya", 'Debug', "tuya_siren_response - Unknown 0x0473 %s" %int(data,16), NwkId)
-        store_tuya_attribute( self, NwkId, '0473', data )
-
     elif dp == 0x74: # Current Siren Volume
         self.log.logging( "Tuya", 'Debug', "tuya_siren_response - Current Siren Volume %s" %int(data,16), NwkId)
         store_tuya_attribute( self, NwkId, 'SirenVolume', data )
@@ -125,7 +121,7 @@ def tuya_siren_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstN
     else:
         self.log.logging( "Tuya", 'Debug', "tuya_siren_response - Unknown attribut Nwkid: %s/%s decodeDP: %04x data: %s"
             %(NwkId, srcEp, dp, data), NwkId)
-        attribute_name = 'UnknowDp_0x%02x' %dp
+        attribute_name = 'UnknowDp_0x%02x_Dt_0x%02x' %(dp,datatype)
         store_tuya_attribute( self, NwkId, attribute_name, data ) 
 
 

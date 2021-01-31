@@ -204,9 +204,10 @@ def receive_schedule(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNW
     self.log.logging( "Tuya", 'Debug', "receive_schedule - Nwkid: %s/%s data: %s" %(NwkId,srcEp ,data))
 
     if dp == 0x70:     # Workday
-        pass
+        store_tuya_attribute( self, NwkId, 'Schedule_Workday', data )
+
     elif dp == 0x71:   # Holiday
-        pass
+        store_tuya_attribute( self, NwkId, 'Schedule_Holiday', data )
 
     elif dp == 0x7b: # Sunday
          store_tuya_attribute( self, NwkId, 'Schedule_Sunday', decode_schedule_day( dp, data ) )

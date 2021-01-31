@@ -144,6 +144,8 @@ def tuya_response( self,Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, 
         tuya_dimmer_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
 
     else:
+        attribute_name = 'UnknowDp_0x%02x_Dt_0x%02x' %(dp,datatype)
+        store_tuya_attribute( self, NwkId, attribute_name, data ) 
         self.log.logging( "Tuya", 'Log', "tuya_response - Model: %s UNMANAGED Nwkid: %s/%s dp: %02x data type: %s data: %s" %(
             _ModelName, NwkId, srcEp,  dp, datatype, data),NwkId )
 
@@ -202,7 +204,7 @@ def tuya_switch_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dst
         # Switch 3
         pass
     else:
-        attribute_name = 'UnknowDp_0x%02x' %dp
+        attribute_name = 'UnknowDp_0x%02x_Dt_0x%02x' %(dp,datatype)
         store_tuya_attribute( self, NwkId, attribute_name, data ) 
         self.log.logging( "Tuya", 'Debug', "tuyaReadRawAPS - Unknown attribut Nwkid: %s/%s decodeDP: %04x data: %s"
             %(NwkId, srcEp, dp, data), NwkId)
@@ -244,7 +246,7 @@ def tuya_curtain_response( self, Devices, _ModelName, NwkId, srcEp, ClusterID, d
         self.log.logging( "Tuya", 'Debug', "tuya_curtain_response - ?????? Nwkid: %s/%s data %s --> %s" %(NwkId, srcEp, data, level),NwkId )
         MajDomoDevice(self, Devices, NwkId, srcEp, '0008', slevel)
     else:
-        attribute_name = 'UnknowDp_0x%02x' %dp
+        attribute_name = 'UnknowDp_0x%02x_Dt_0x%02x' %(dp,datatype)
         store_tuya_attribute( self, NwkId, attribute_name, data ) 
 
 def tuya_curtain_openclose( self, NwkId , openclose):
@@ -295,7 +297,7 @@ def tuya_dimmer_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dst
         self.log.logging( "Tuya", 'Debug', "tuya_dimmer_response - Nwkid: %s/%s Dim up/dow %s %s" %(NwkId, srcEp, int(data,16), level),NwkId )
         MajDomoDevice(self, Devices, NwkId, srcEp, '0008', '%02x' %level)
     else:
-        attribute_name = 'UnknowDp_0x%02x' %dp
+        attribute_name = 'UnknowDp_0x%02x_Dt_0x%02x' %(dp,datatype)
         store_tuya_attribute( self, NwkId, attribute_name, data ) 
 
 def tuya_dimmer_onoff( self, NwkId, srcEp, OnOff ):
