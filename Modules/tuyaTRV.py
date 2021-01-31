@@ -247,11 +247,6 @@ def decode_schedule_day( dp, data ):
 
     return return_value
 
-def receive_unknown( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data ):
-    self.log.logging( "Tuya", 'Debug', "receive and unknown data point - Nwkid: %s/%s dp: %s datatype: %s data: 0x%s" %(NwkId,srcEp ,dp, datatype, data))
-    pass
-
-
 eTRV_MODELS = {
     # Thermostat
     'TS0601-thermostat': 'TS0601-thermostat',
@@ -320,19 +315,16 @@ eTRV_MATRIX = {
                         },
 
     'TS0601-eTRV3': {   'FromDevice': {         # Confirmed with @d2e2n2o et @pipiche
-                            0x08: receive_windowdetection_status,
-                            0x82: receive_unknown,                     # Water Scale Prof ???
+                            0x08: receive_windowdetection_status,                   
                             0x12: receive_windowdetection,
                             0x1b: receive_calibration,
                             0x28: receive_childlock,
                             0x65: receive_onoff,
                             0x66: receive_temperature,
-                            0x67: receive_setpoint,
-                            0x69: receive_battery_state,                     # Battery State
-                            0x6a: receive_unknown,                     # LH
+                            0x67: receive_setpoint,                 
+                            0x6a: receive_temporary_away,                   
                             0x6c: receive_preset,
                             0x6d: receive_valveposition,
-                            0x6e: receive_lowbattery,
                             0x70: receive_schedule,
                             0x71: receive_schedule,
                             0x7b: receive_schedule,
@@ -342,6 +334,7 @@ eTRV_MATRIX = {
                             0x7f: receive_schedule,
                             0x80: receive_schedule,
                             0x81: receive_schedule,
+                            0x82: receive_antiscale, 
                             },
                         'ToDevice': {
                             'Switch': 0x65,
@@ -362,14 +355,12 @@ eTRV_MATRIX = {
             0x04: receive_preset,  
             0x08: receive_windowdetection_status,
             0x15: receive_battery,         
-
             0x12: receive_windowdetection,
             0x1b: receive_calibration,
             0x28: receive_childlock,
             0x65: receive_onoff,
             0x66: receive_temperature,
-            0x67: receive_setpoint,
-            0x69: receive_unknown,                     # ????
+            0x67: receive_setpoint,                    # ????
             0x6a: receive_temporary_away,                     # Temporary Away
             0x6c: receive_preset,
             0x6d: receive_valveposition,
@@ -391,15 +382,11 @@ def tuya_eTRV_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNW
 
     manuf_name = get_manuf_name( self, NwkId )
 
-    if datatype == '00':
-        receive_unknown( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data )
-        return
-
     if model_target in eTRV_MATRIX:
         if dp in eTRV_MATRIX[ model_target ]['FromDevice']:
             eTRV_MATRIX[ model_target ]['FromDevice'][ dp](self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
         else:
-            attribute_name = 'UnknowDp_0x%02x' %dp
+            attribute_name = 'UnknowDp_0x%02x_Dt_0x%02x' %(dp,datatype)
             store_tuya_attribute( self, NwkId, attribute_name, data ) 
             self.log.logging( "Tuya", 'Debug', "tuya_eTRV_response - Nwkid: %s dp: %02x datatype: %s data: %s UNKNOW dp for Manuf: %s, Model: %s" %(
                 NwkId, dp, datatype, data, manuf_name, _ModelName))
