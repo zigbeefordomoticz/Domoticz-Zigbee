@@ -62,7 +62,7 @@ def receive_onoff( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKI
             MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 0, Attribute_ = '001c' ) # ThermoMode_2 to Off
         else:
             checkAndStoreAttributeValue( self, NwkId , '01', '0201', '6501' , 'On' )
-            MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 2, Attribute_ = '6501') # ThermoOnOff to On
+            MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 1, Attribute_ = '6501') # ThermoOnOff to On
             
     elif model_target == 'TS0601-eTRV3':
         if data == '00': # Off
