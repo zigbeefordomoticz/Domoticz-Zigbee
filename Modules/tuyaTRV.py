@@ -269,7 +269,7 @@ eTRV_MODELS = {
     'TS0601-eTRV3': 'TS0601-eTRV3',
 }
 
-TUYA_eTRV_MODEL =  'ivfvd7h', 'fvq6avy', 'eaxp72v', 'kud7u2l', '88teujp', 'GbxAXL2', 'uhszj9s', 'TS0601-eTRV1', 'TS0601-eTRV2', 'TS0601-eTRV3', 'TS0601-eTRV'
+TUYA_eTRV_MODEL =  'ivfvd7h', 'fvq6avy', 'eaxp72v', 'kud7u2l', '88teujp', 'GbxAXL2', 'uhszj9s', 'TS0601-eTRV1', 'TS0601-eTRV2', 'TS0601-eTRV3', 'TS0601-eTRV', 'TS0601-thermostat'
 
 eTRV_MATRIX = {
     'TS0601-thermostat': {  'FromDevice': {     # @d2e2n2o / Electric
