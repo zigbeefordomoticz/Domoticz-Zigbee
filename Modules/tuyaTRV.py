@@ -531,12 +531,15 @@ def tuya_trv_switch_onoff(self, nwkid, onoff):
 
 def tuya_trv_mode( self, nwkid, mode):
     self.log.logging( "Tuya", 'Debug', "tuya_trv_mode - %s tuya_trv_mode: %x" %(nwkid, mode), nwkid)
-    tuya_trv_switch_mode(self, nwkid, mode)
-    if get_model_name( self, nwkid ) == 'TS0601-eTRV3':
-        if mode // 10 == 0x00: # Off
+    
+    if get_model_name( self, nwkid ) in ( 'TS0601-eTRV3', 'TS0601-thermostat'):
+        if mode == 0x00: # Off
             tuya_trv_switch_onoff( self, nwkid, 0x00)
         else:
             tuya_trv_switch_onoff( self, nwkid, 0x01)
+
+    if get_model_name( self, nwkid ) in ('TS0601-thermostat') and mode != 0x00:
+        tuya_trv_switch_mode(self, nwkid, mode)
 
 def tuya_trv_switch_mode( self, nwkid, mode):
     self.log.logging( "Tuya", 'Debug', "tuya_trv_switch_mode - %s tuya_trv_mode: %x" %(nwkid, mode), nwkid)
@@ -552,7 +555,7 @@ def tuya_trv_switch_mode( self, nwkid, mode):
         else:
             action = '%02x04' %dp # Mode
         if get_model_name( self, nwkid ) == 'TS0601-thermostat' and mode == 20:
-            data = '02'
+            data = '01'
         else:
             data = '%02x' %( mode // 10 )
         tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)   
