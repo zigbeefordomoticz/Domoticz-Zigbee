@@ -283,9 +283,9 @@ eTRV_MATRIX = {
                             },
                         'ToDevice': {
                             'Switch': 0x01,               # Ok
+                            'TrvMode': 0x02,
                             'SetPoint': 0x10,             # Ok
                             'ChildLock': 0x28,
-                            'TrvMode': 0x03,
                             }
                         },
     # eTRV
@@ -551,7 +551,10 @@ def tuya_trv_switch_mode( self, nwkid, mode):
             action = '%02x01' %dp # Mode
         else:
             action = '%02x04' %dp # Mode
-        data = '%02x' %( mode // 10 )
+        if get_model_name( self, nwkid ) == 'TS0601-thermostat' and mode == 20:
+            data = '02'
+        else:
+            data = '%02x' %( mode // 10 )
         tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)   
 
 def tuya_trv_reset_schedule(self, nwkid, schedule):
