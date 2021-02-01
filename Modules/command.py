@@ -257,7 +257,8 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
                 sendZigateCmd(self, "0081","02" + NWKID + ZIGATE_EP + EPout + '01' + '%02X' %0 + "0000")
             else:
                 if self.pluginconf.pluginConf['fadingOff']:
-                    sendZigateCmd(self, "0092","02" + NWKID + ZIGATE_EP + EPout + "00" + "00" )
+                    # Increase brightness by 20% (if possible) in 0.5 seconds then fade to off in 1 second (default)
+                    sendZigateCmd(self, "0094","02" + NWKID + ZIGATE_EP + EPout + "01" + "00" )
                 else:
                     sendZigateCmd(self, "0092","02" + NWKID + ZIGATE_EP + EPout + "00")
         
