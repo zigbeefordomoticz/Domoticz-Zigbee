@@ -256,8 +256,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             if profalux: # Profalux are define as LvlControl but should be managed as Blind Inverted
                 sendZigateCmd(self, "0081","02" + NWKID + ZIGATE_EP + EPout + '01' + '%02X' %0 + "0000")
             else:
-                #sendZigateCmd(self, "0092","02" + NWKID + ZIGATE_EP + EPout + "00")
-                sendZigateCmd(self, "0092","02" + NWKID + ZIGATE_EP + EPout + "00" + "00" )
+                if self.pluginconf.pluginConf['fadingOff']:
+                    sendZigateCmd(self, "0092","02" + NWKID + ZIGATE_EP + EPout + "00" + "00" )
+                else:
+                    sendZigateCmd(self, "0092","02" + NWKID + ZIGATE_EP + EPout + "00")
         
             if 'Model' in self.ListOfDevices[NWKID]: # Making a trick for the GLEDOPTO LED STRIP.
                 if self.ListOfDevices[NWKID]['Model'] == 'GLEDOPTO' and EPout == '0a':
