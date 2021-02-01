@@ -56,7 +56,7 @@ def receive_onoff( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKI
     # Update ThermoOnOff widget ( 6501 )
     if model_target == 'TS0601-thermostat':
         store_tuya_attribute( self, NwkId, 'Switch', data )
-        if data == '01':
+        if data == '00':
             checkAndStoreAttributeValue( self, NwkId , '01', '0201', '6501' , 'Off' )
             MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 0, Attribute_ = '6501' ) # ThermoOnOff to Off
             MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 0, Attribute_ = '001c' ) # ThermoMode_2 to Off
