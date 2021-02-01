@@ -285,6 +285,7 @@ eTRV_MATRIX = {
                             'Switch': 0x01,               # Ok
                             'SetPoint': 0x10,             # Ok
                             'ChildLock': 0x28,
+                            'TrvMode': 0x03,
                             }
                         },
     # eTRV
@@ -295,7 +296,8 @@ eTRV_MATRIX = {
                             0x15: receive_battery,         
                         },
                         'ToDevice': {
-                            'SetPoint': 0x02, 'TrvMode': 0x04
+                            'SetPoint': 0x02, 
+                            'TrvMode': 0x04
                             } 
                         },
 
@@ -528,7 +530,7 @@ def tuya_trv_switch_onoff(self, nwkid, onoff):
         tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 
 def tuya_trv_mode( self, nwkid, mode):
-    self.log.logging( "Tuya", 'Debug', "tuya_trv_mode - %s tuya_trv_mode: %x" %(nwkid, mode))
+    self.log.logging( "Tuya", 'Debug', "tuya_trv_mode - %s tuya_trv_mode: %x" %(nwkid, mode), nwkid)
     tuya_trv_switch_mode(self, nwkid, mode)
     if get_model_name( self, nwkid ) == 'TS0601-eTRV3':
         if mode // 10 == 0x00: # Off
@@ -537,10 +539,10 @@ def tuya_trv_mode( self, nwkid, mode):
             tuya_trv_switch_onoff( self, nwkid, 0x01)
 
 def tuya_trv_switch_mode( self, nwkid, mode):
-    self.log.logging( "Tuya", 'Debug', "tuya_trv_switch_mode - %s tuya_trv_mode: %x" %(nwkid, mode))
+    self.log.logging( "Tuya", 'Debug', "tuya_trv_switch_mode - %s tuya_trv_mode: %x" %(nwkid, mode), nwkid)
     sqn = get_and_inc_SQN( self, nwkid )
     dp = get_datapoint_command( self, nwkid, 'TrvMode')
-    self.log.logging( "Tuya", 'Debug', "tuya_trv_switch_mode - %s dp for TrvMode: %x" %(nwkid, dp))
+    self.log.logging( "Tuya", 'Debug', "tuya_trv_switch_mode - %s dp for TrvMode: %x" %(nwkid, dp), nwkid)
     if dp:
         EPout = '01'
         cluster_frame = '11'
@@ -591,9 +593,9 @@ def get_model_name( self, nwkid ):
 def get_datapoint_command( self, nwkid, cmd):
     _model_name = get_model_name( self, nwkid )
     if _model_name not in eTRV_MATRIX:
-        self.log.logging( "Tuya", 'Debug', "get_datapoint_command - %s %s not found in eTRV_MATRIX" %(nwkid, _model_name))
+        self.log.logging( "Tuya", 'Debug', "get_datapoint_command - %s %s not found in eTRV_MATRIX" %(nwkid, _model_name), nwkid)
         return None
     if cmd not in eTRV_MATRIX[ _model_name ]['ToDevice']:
-        self.log.logging( "Tuya", 'Debug', "get_datapoint_command - %s %s not found in eTRV_MATRIX[ %s ]['ToDevice']" %(nwkid, cmd, _model_name))
+        self.log.logging( "Tuya", 'Debug', "get_datapoint_command - %s %s not found in eTRV_MATRIX[ %s ]['ToDevice']" %(nwkid, cmd, _model_name), nwkid)
         return None
     return eTRV_MATRIX[ _model_name ]['ToDevice'][ cmd ]
