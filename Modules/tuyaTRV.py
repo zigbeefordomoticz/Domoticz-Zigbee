@@ -555,9 +555,9 @@ def tuya_trv_switch_mode( self, nwkid, mode):
         else:
             action = '%02x04' %dp # Mode
         if get_model_name( self, nwkid ) == 'TS0601-thermostat':
-            if mode == 20:
+            if mode == 10: # Manual
                 data = '00'
-            else:
+            else:   # Auto
                 data = '01'
         else:
             data = '%02x' %( mode // 10 )
