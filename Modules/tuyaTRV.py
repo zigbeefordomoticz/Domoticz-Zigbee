@@ -505,16 +505,13 @@ def tuya_setpoint( self, nwkid, setpoint_value):
         tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 
 def tuya_trv_onoff( self, nwkid, onoff):
-
+    self.log.logging( "Tuya", 'Debug', "tuya_trv_onoff - %s Switch: %s" %(nwkid, onoff))
     tuya_trv_switch_onoff(self, nwkid, onoff)
-
     if onoff == 0x01 and get_model_name( self, nwkid ) == 'TS0601-eTRV3':
         # We force the eTRV to switch to Manual mode
         tuya_trv_switch_mode( self, nwkid, 20)
 
-
 def tuya_trv_switch_onoff(self, nwkid, onoff):
-
     self.log.logging( "Tuya", 'Debug', "tuya_trv_switch_onoff - %s Switch: %s" %(nwkid, onoff))
     if onoff not in ( 0x00, 0x01 ):
         return
@@ -531,7 +528,7 @@ def tuya_trv_switch_onoff(self, nwkid, onoff):
         tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 
 def tuya_trv_mode( self, nwkid, mode):
-    
+    self.log.logging( "Tuya", 'Debug', "tuya_trv_mode - %s tuya_trv_mode: %x" %(nwkid, mode))
     tuya_trv_switch_mode(self, nwkid, mode)
     if get_model_name( self, nwkid ) == 'TS0601-eTRV3':
         if mode // 10 == 0x00: # Off
@@ -575,8 +572,6 @@ def tuya_trv_reset_schedule(self, nwkid, schedule):
         cluster_frame = '11'
         cmd = '00' # Command
         action = '%02x00' %dp  # 0x6d for eTRV3
-
-
 
 
 def get_manuf_name( self, nwkid ):
