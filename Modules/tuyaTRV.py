@@ -273,6 +273,14 @@ eTRV_MODELS = {
 TUYA_eTRV_MODEL =  'ivfvd7h', 'fvq6avy', 'eaxp72v', 'kud7u2l', '88teujp', 'GbxAXL2', 'uhszj9s', 'TS0601-eTRV1', 'TS0601-eTRV2', 'TS0601-eTRV3', 'TS0601-eTRV', 'TS0601-thermostat'
 
 eTRV_MATRIX = {
+    # Thermostat Manual --> Auto
+    #       Dp: 0x02 / 0x01 -- Manual Off
+    #       Dp: 0x03 / 0x00 -- Schedule On
+    # Thermostat Auto ---> Manual
+    #       Dp: 0x02 / 0x00 -- Manual On
+    #       Dp: 0x03 / 0x01 -- Manual Off
+
+
     'TS0601-thermostat': {  'FromDevice': {     # @d2e2n2o / Electric
                             0x01: receive_onoff,         # Ok - On / Off
                             0x02: receive_manual_mode,
@@ -515,27 +523,14 @@ def tuya_trv_onoff( self, nwkid, onoff):
         # We force the eTRV to switch to Manual mode
         tuya_trv_switch_mode( self, nwkid, 20)
 
-def tuya_trv_switch_onoff(self, nwkid, onoff):
-    self.log.logging( "Tuya", 'Debug', "tuya_trv_switch_onoff - %s Switch: %s" %(nwkid, onoff))
-    if onoff not in ( 0x00, 0x01 ):
-        return
-    sqn = get_and_inc_SQN( self, nwkid )
-    dp = get_datapoint_command( self, nwkid, 'Switch')
-    self.log.logging( "Tuya", 'Debug', "tuya_trv_switch_onoff - %s dp for Switch: %s" %(nwkid, dp))
-    if dp:
-        action = '%02x01' %dp
-        # determine which Endpoint
-        EPout = '01'
-        cluster_frame = '11'
-        cmd = '00' # Command
-        data = '%02x' %onoff
-        tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
-
 def tuya_trv_mode( self, nwkid, mode):
-    self.log.logging( "Tuya", 'Debug', "tuya_trv_mode - %s tuya_trv_mode: %x" %(nwkid, mode), nwkid)
+    self.log.logging( "Tuya", 'Debug', "tuya_trv_mode - %s tuya_trv_mode: %s" %(nwkid, mode), nwkid)
+    # Mode = 0  => Off
+    # Mode = 10 => Auto
+    # Mode = 20 => Manual
     
     if get_model_name( self, nwkid ) in ( 'TS0601-eTRV3', 'TS0601-thermostat'):
-        if mode == 0x00: # Off
+        if mode == 0: # Off
             tuya_trv_switch_onoff( self, nwkid, 0x00)
         else:
             if get_tuya_attribute( self, nwkid, 'Switch') == 0x00:
@@ -543,19 +538,24 @@ def tuya_trv_mode( self, nwkid, mode):
 
     if get_model_name( self, nwkid ) in ('TS0601-thermostat'):
         if mode == 10:
-            # Switch Auto to On
-            #tuya_trv_switch_manual( self, nwkid, 0x01)
+            # Thermostat Manual --> Auto
+            #       Dp: 0x02 / 0x01 -- Manual Off
+            #       Dp: 0x03 / 0x00 -- Schedule On
+            tuya_trv_switch_manual( self, nwkid, 0x01)
             tuya_trv_switch_schedule( self, nwkid, 0x00)
         elif mode == 20:
-            # Switch Manual to On
+            # Thermostat Auto ---> Manual
+            #       Dp: 0x02 / 0x00 -- Manual On
+            #       Dp: 0x03 / 0x01 -- Manual Off
+            tuya_trv_switch_manual( self, nwkid, 0x00)
             tuya_trv_switch_schedule( self, nwkid, 0x01)
-            #tuya_trv_switch_manual( self, nwkid, 0x00)
+            
 
 def tuya_trv_switch_manual( self, nwkid, offon):
-    self.log.logging( "Tuya", 'Debug', "tuya_trv_switch_manual - %s tuya_trv_mode: %x" %(nwkid, offon), nwkid)
+    self.log.logging( "Tuya", 'Debug', "tuya_trv_switch_manual - %s Manual On/Off: %x" %(nwkid, offon), nwkid)
     sqn = get_and_inc_SQN( self, nwkid )
     dp = get_datapoint_command( self, nwkid, 'ManualMode')
-    self.log.logging( "Tuya", 'Debug', "tuya_trv_switch_manual - %s dp for TrvMode: %x" %(nwkid, dp), nwkid)
+    self.log.logging( "Tuya", 'Debug', "tuya_trv_switch_manual - %s dp for ManualMode: %x" %(nwkid, dp), nwkid)
     if dp:
         EPout = '01'
         cluster_frame = '11'
@@ -565,10 +565,10 @@ def tuya_trv_switch_manual( self, nwkid, offon):
         tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)   
 
 def tuya_trv_switch_schedule( self, nwkid, offon):
-    self.log.logging( "Tuya", 'Debug', "tuya_trv_switch_schedule - %s tuya_trv_mode: %x" %(nwkid, offon), nwkid)
+    self.log.logging( "Tuya", 'Debug', "tuya_trv_switch_schedule - %s Schedule On/Off: %x" %(nwkid, offon), nwkid)
     sqn = get_and_inc_SQN( self, nwkid )
     dp = get_datapoint_command( self, nwkid, 'ScheduleMode')
-    self.log.logging( "Tuya", 'Debug', "tuya_trv_switch_schedule - %s dp for TrvMode: %x" %(nwkid, dp), nwkid)
+    self.log.logging( "Tuya", 'Debug', "tuya_trv_switch_schedule - %s dp for ScheduleMode: %x" %(nwkid, dp), nwkid)
     if dp:
         EPout = '01'
         cluster_frame = '11'
@@ -579,7 +579,7 @@ def tuya_trv_switch_schedule( self, nwkid, offon):
 
 
 def tuya_trv_switch_mode( self, nwkid, mode):
-    self.log.logging( "Tuya", 'Debug', "tuya_trv_switch_mode - %s tuya_trv_mode: %x" %(nwkid, mode), nwkid)
+    self.log.logging( "Tuya", 'Debug', "tuya_trv_switch_mode - %s Switch Mode: %x" %(nwkid, mode), nwkid)
     sqn = get_and_inc_SQN( self, nwkid )
     dp = get_datapoint_command( self, nwkid, 'TrvMode')
     self.log.logging( "Tuya", 'Debug', "tuya_trv_switch_mode - %s dp for TrvMode: %x" %(nwkid, dp), nwkid)
@@ -599,6 +599,22 @@ def tuya_trv_switch_mode( self, nwkid, mode):
         else:
             data = '%02x' %( mode // 10 )
         tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)   
+
+def tuya_trv_switch_onoff(self, nwkid, onoff):
+    self.log.logging( "Tuya", 'Debug', "tuya_trv_switch_onoff - %s Switch: %s" %(nwkid, onoff))
+    if onoff not in ( 0x00, 0x01 ):
+        return
+    sqn = get_and_inc_SQN( self, nwkid )
+    dp = get_datapoint_command( self, nwkid, 'Switch')
+    self.log.logging( "Tuya", 'Debug', "tuya_trv_switch_onoff - %s dp for Switch: %s" %(nwkid, dp))
+    if dp:
+        action = '%02x01' %dp
+        # determine which Endpoint
+        EPout = '01'
+        cluster_frame = '11'
+        cmd = '00' # Command
+        data = '%02x' %onoff
+        tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 
 def tuya_trv_reset_schedule(self, nwkid, schedule):
 
