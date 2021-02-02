@@ -274,7 +274,7 @@ TUYA_eTRV_MODEL =  'ivfvd7h', 'fvq6avy', 'eaxp72v', 'kud7u2l', '88teujp', 'GbxAX
 
 eTRV_MATRIX = {
     'TS0601-thermostat': {  'FromDevice': {     # @d2e2n2o / Electric
-                            0x01: receive_onoff,         # Ok
+                            0x01: receive_onoff,         # Ok - On / Off
                             0x02: receive_manual_mode,
                             0x03: receive_schedule_mode,
                             0x10: receive_setpoint,      # Ok
@@ -283,9 +283,9 @@ eTRV_MATRIX = {
                             0x28: receive_childlock,
                             },
                         'ToDevice': {
-                            'Switch': 0x01,               # Ok
-                            'ManualMode': 0x02,
-                            'ScheduleMode': 0x03,
+                            'Switch': 0x01,               # Ok On / Off
+                            'ManualMode': 0x02,           # ????
+                            'ScheduleMode': 0x03,         # 01 Manual, 00 Schedule
                             'SetPoint': 0x10,             # Ok
                             'ChildLock': 0x28,
                             }
@@ -544,10 +544,12 @@ def tuya_trv_mode( self, nwkid, mode):
     if get_model_name( self, nwkid ) in ('TS0601-thermostat'):
         if mode == 10:
             # Switch Auto to On
+            #tuya_trv_switch_manual( self, nwkid, 0x01)
             tuya_trv_switch_schedule( self, nwkid, 0x00)
         elif mode == 20:
             # Switch Manual to On
-            tuya_trv_switch_manual( self, nwkid, 0x00)
+            tuya_trv_switch_schedule( self, nwkid, 0x01)
+            #tuya_trv_switch_manual( self, nwkid, 0x00)
 
 def tuya_trv_switch_manual( self, nwkid, offon):
     self.log.logging( "Tuya", 'Debug', "tuya_trv_switch_manual - %s tuya_trv_mode: %x" %(nwkid, offon), nwkid)
