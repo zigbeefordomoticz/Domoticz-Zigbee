@@ -21,7 +21,7 @@ from Modules.tools import is_hex
 SETTINGS = {
     'Services': {'Order': 1, 'param': {
         'enablegroupmanagement':  {'type': 'bool', 'default': 0, 'current': None, 'restart': True, 'hidden': False, 'Advanced': False},
-        'enableReadAttributes':   {'type': 'bool', 'default': 0, 'current': None, 'restart': True, 'hidden': False, 'Advanced': False},
+        'enableReadAttributes':   {'type': 'bool', 'default': 0, 'current': None, 'restart': True, 'hidden': False, 'Advanced': True},
         'internetAccess':         {'type': 'bool', 'default': 1, 'current': None, 'restart': False, 'hidden': False, 'Advanced': False},
         'enableWebServer':        {'type': 'bool', 'default': 1, 'current': None, 'restart': True, 'hidden': False, 'Advanced': False},
         'allowOTA':               {'type': 'bool', 'default': 1, 'current': None, 'restart': True, 'hidden': True, 'Advanced': False},
@@ -59,6 +59,7 @@ SETTINGS = {
         'pollingPhilips':   {'type': 'int', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'pollingGledopto':  {'type': 'int', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'pollingSchneider': {'type': 'int', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
+        'pollingLumiPower':  {'type': 'int', 'default': 0,     'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'pollingBlitzwolfPower': {'type': 'int', 'default': 0,'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'pollingCasaiaAC201':    {'type': 'int', 'default': 0,'current': None, 'restart': False, 'hidden': False, 'Advanced': True},
         'polling0000':      {'type': 'int', 'default': 86400, 'current': None, 'restart': False, 'hidden': True,  'Advanced': True},
