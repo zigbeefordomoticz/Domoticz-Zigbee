@@ -375,7 +375,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                             %(MsgClusterId, MsgAttrID, MsgSrcAddr, modelName), MsgSrcAddr)
 
                     # However if Model is not correctly set, let's take the opportunity to correct
-                    if self.ListOfDevices[MsgSrcAddr]['Model'] == '' or self.ListOfDevices[MsgSrcAddr]['Model'] == {}:
+                    if self.ListOfDevices[MsgSrcAddr]['Model'] != modelName:
                         self.log.logging( "Cluster", 'Debug', "ReadCluster - %s / %s - Update Model Name %s" %(MsgClusterId, MsgAttrID,modelName ), MsgSrcAddr)
                         self.ListOfDevices[MsgSrcAddr]['Model'] = modelName
                     return
