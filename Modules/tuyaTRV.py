@@ -19,7 +19,7 @@ from Modules.zigateConsts import ZIGATE_EP
 from Modules.tools import  checkAndStoreAttributeValue, is_ack_tobe_disabled, get_and_inc_SQN
 from Modules.domoMaj import MajDomoDevice
 
-def tuya_eTRV_registration(self, nwkid):
+def tuya_eTRV_registration(self, nwkid, device_reset=False):
     
     self.log.logging( "Tuya", 'Debug', "tuya_eTRV_registration - Nwkid: %s" %nwkid)
     # (1) 3 x Write Attribute Cluster 0x0000 - Attribute 0xffde  - DT 0x20  - Value: 0x13
@@ -27,10 +27,9 @@ def tuya_eTRV_registration(self, nwkid):
     write_attribute( self, nwkid, ZIGATE_EP, EPout, '0000', '0000', '00', 'ffde', '20', '13', ackIsDisabled = False)
 
     # (3) Cmd 0x03 on Cluster 0xef00  (Cluster Specific)
-    payload = '11' + get_and_inc_SQN( self, nwkid ) + '03'
-    raw_APS_request( self, nwkid, EPout, 'ef00', '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = is_ack_tobe_disabled(self, nwkid))
-
-
+    if device_reset:
+        payload = '11' + get_and_inc_SQN( self, nwkid ) + '03'
+        raw_APS_request( self, nwkid, EPout, 'ef00', '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = is_ack_tobe_disabled(self, nwkid))
 
 def receive_setpoint( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data ):
 
@@ -76,7 +75,6 @@ def receive_onoff( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKI
     else:
         checkAndStoreAttributeValue( self, NwkId , '01', '0201', '6501' , data )
         
-
 def receive_mode( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data ):
     self.log.logging( "Tuya", 'Debug', "receive_mode - Nwkid: %s/%s Dp: %s DataType: %s Mode: %s" %(NwkId,srcEp ,dp, datatype, data))
     store_tuya_attribute( self, NwkId, 'Mode', data )
@@ -530,9 +528,10 @@ def tuya_trv_mode( self, nwkid, mode):
     # Mode = 20 => Manual
     
     if get_model_name( self, nwkid ) in ( 'TS0601-eTRV3', 'TS0601-thermostat'):
-        if mode == 0: # Off
+        if mode == 0: # Switch Off
             tuya_trv_switch_onoff( self, nwkid, 0x00)
         else:
+            # Switch On if needed
             if get_tuya_attribute( self, nwkid, 'Switch') == 0x00:
                 tuya_trv_switch_onoff( self, nwkid, 0x01)
 
@@ -550,7 +549,6 @@ def tuya_trv_mode( self, nwkid, mode):
             tuya_trv_switch_manual( self, nwkid, 0x00)
             tuya_trv_switch_schedule( self, nwkid, 0x01)
             
-
 def tuya_trv_switch_manual( self, nwkid, offon):
     self.log.logging( "Tuya", 'Debug', "tuya_trv_switch_manual - %s Manual On/Off: %x" %(nwkid, offon), nwkid)
     sqn = get_and_inc_SQN( self, nwkid )
@@ -576,7 +574,6 @@ def tuya_trv_switch_schedule( self, nwkid, offon):
         action = '%02x04' %dp # Mode
         data = '%02x' %( offon )
         tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)   
-
 
 def tuya_trv_switch_mode( self, nwkid, mode):
     self.log.logging( "Tuya", 'Debug', "tuya_trv_switch_mode - %s Switch Mode: %x" %(nwkid, mode), nwkid)
@@ -636,7 +633,6 @@ def tuya_trv_reset_schedule(self, nwkid, schedule):
         cluster_frame = '11'
         cmd = '00' # Command
         action = '%02x00' %dp  # 0x6d for eTRV3
-
 
 def get_manuf_name( self, nwkid ):
     if 'Manufacturer Name' not in self.ListOfDevices[ nwkid ]:

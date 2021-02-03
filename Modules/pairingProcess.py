@@ -431,7 +431,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                 tuya_sirene_registration(self, NWKID)
 
             elif 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( TUYA_eTRV_MODEL ):
-                tuya_eTRV_registration( self, NWKID)
+                tuya_eTRV_registration( self, NWKID, True)
                 
             elif 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( 'TS0121'):
                 tuya_TS0121_registration( self, NWKID)
