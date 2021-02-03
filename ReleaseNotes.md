@@ -17,6 +17,10 @@ Release Numbering
 - Odd numbers --> Stable
 - Even numbers  --> Beta
 
+## 03 Feb. 2021   - 4.11.16
+- [Hardware] - Lumi Plug MAEU01
+- [Hardware] - Lidl led
+- [Hardware] - Update of Danalock configuration
 
 ## 19 Jan. 2021   - 4.11.15
 - [Hardware] - Add Gledopto GL-C-007 as a RGB W 
