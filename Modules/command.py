@@ -23,7 +23,10 @@ from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl
 from Modules.basicOutputs import sendZigateCmd
 from Modules.thermostats import thermostat_Setpoint, thermostat_Mode
 from Modules.livolo import livolo_OnOff
-from Modules.tuya import tuya_trv_mode
+from Modules.tuyaTRV import ( tuya_trv_mode , tuya_trv_onoff)
+from Modules.tuyaSiren import ( tuya_siren_alarm, tuya_siren_humi_alarm, tuya_siren_temp_alarm )
+from Modules.tuya import ( tuya_dimmer_onoff, tuya_dimmer_dimmer, tuya_curtain_lvl, tuya_curtain_openclose)
+
 from Modules.legrand_netatmo import  legrand_fc40, cable_connected_mode
 from Modules.schneider_wiser import schneider_EHZBRTS_thermoMode, schneider_hact_fip_mode, schneider_set_contract, schneider_temp_Setcurrent, schneider_hact_heater_type
 from Modules.profalux import profalux_stop, profalux_MoveToLiftAndTilt
@@ -72,7 +75,7 @@ ACTIONATORS = [ 'Switch', 'Plug', 'SwitchAQ2', 'Smoke', 'DSwitch', 'LivoloSWL', 
             'Venetian', 'VenetianInverted', 'WindowCovering', 'BSO', 'BSO-Orientation', 'BSO-Volet',
             'LvlControl', 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl',
             'ThermoSetpoint', 'ThermoMode', 'ACMode', 'ThermoMode_2', 'ThermoModeEHZBRTS', 'FanControl', 'PAC-SWITCH', 'ACMode_2', 'ACSwing','TempSetCurrent', 'AlarmWD',
-            'FIP', 'HACTMODE','LegranCableMode', 'ContractPower','HeatingSwitch', 'DoorLock' ]
+            'FIP', 'HACTMODE','LegranCableMode', 'ContractPower','HeatingSwitch', 'DoorLock' , 'TuyaSiren', 'TuyaSirenHumi', 'TuyaSirenTemp', 'ThermoOnOff']
             
 def mgtCommand( self, Devices, Unit, Command, Level, Color ):
 
@@ -105,7 +108,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         Domoticz.Error("mgtCommand - no ClusterType found !  "  +str(self.ListOfDevices[NWKID]) )
         return
 
-    self.log.logging( "Command", 'Debug', "--------->   ClusterType founds: %s for Unit: %s" %( ClusterTypeList, Unit), NWKID)
+    self.log.logging( "Command", 'Debug', "--------->1   ClusterType founds: %s for Unit: %s" %( ClusterTypeList, Unit), NWKID)
 
     actionable = False
     if len(ClusterTypeList) != 1:
@@ -118,35 +121,45 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
     # One element found, we have Endpoint and DevicetypeÒ
     EPout , DeviceTypeWidgetId, DeviceType = ClusterTypeList[0]
 
-    self.log.logging( "Command", "Debug", "--------->   EPOut: %s DeviceType: %s WidgetID: %s" %( EPout , DeviceType, DeviceTypeWidgetId ), NWKID)
+    self.log.logging( "Command", "Debug", "--------->2   EPOut: %s DeviceType: %s WidgetID: %s" %( EPout , DeviceType, DeviceTypeWidgetId ), NWKID)
     # Sanity Check
     forceUpdateDev = False
-    if DeviceType in SWITCH_LVL_MATRIX:
-        if 'ForceUpdate' in SWITCH_LVL_MATRIX[DeviceType ]:
-            forceUpdateDev = SWITCH_LVL_MATRIX[DeviceType ]['ForceUpdate']
+    if DeviceType in SWITCH_LVL_MATRIX and 'ForceUpdate' in SWITCH_LVL_MATRIX[DeviceType ]:
+        forceUpdateDev = SWITCH_LVL_MATRIX[DeviceType ]['ForceUpdate']
+    self.log.logging( "Command", "Debug", "--------->3   forceUpdateDev: %s" %forceUpdateDev, NWKID)
 
     if DeviceType not in ACTIONATORS and not self.pluginconf.pluginConf['forcePassiveWidget']:
         self.log.logging( "Command", "Log", "mgtCommand - You are trying to action not allowed for Device: %s Type: %s and DeviceType: %s Command: %s Level:%s" 
                 %( Devices[Unit].Name, ClusterTypeList, DeviceType , Command, Level), NWKID )
         return
-    
+    self.log.logging( "Command", "Debug", "--------->4   Ready to action", NWKID)
+
     profalux = False
     if 'Manufacturer' in self.ListOfDevices[NWKID]:
         profalux = ( self.ListOfDevices[NWKID]['Manufacturer'] == '1110' and self.ListOfDevices[NWKID]['ZDeviceID'] in ('0200', '0202') )
+    self.log.logging( "Command", "Debug", "--------->5   profalux: %s" %profalux, NWKID)
+    _model_name = ''
+    if 'Model' in self.ListOfDevices[NWKID]:
+        _model_name = self.ListOfDevices[NWKID]['Model']
+    self.log.logging( "Command", "Debug", "--------->6   Model Name: %s" %_model_name, NWKID)
 
-    if 'Health' in self.ListOfDevices[NWKID]:
-        # If Health is Not Reachable, let's give it a chance to be updated
-        if self.ListOfDevices[NWKID]['Health'] == 'Not Reachable':
+    # If Health is Not Reachable, let's give it a chance to be updated
+    if 'Health' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['Health'] == 'Not Reachable':
             self.ListOfDevices[NWKID]['Health'] = ''
+    self.log.logging( "Command", "Debug", "--------->7   Health: %s" %self.ListOfDevices[NWKID]['Health'], NWKID)
 
     if Command == 'Stop':  # Manage the Stop command. For known seen only on BSO and Windowcoering
         self.log.logging( "Command", 'Debug', "mgtCommand : Stop for Device: %s EPout: %s Unit: %s DeviceType: %s" %(NWKID, EPout, Unit, DeviceType), NWKID)
-        if profalux:
+
+        if DeviceType == 'LvlControl' and _model_name == 'TS0601-curtain':
+            tuya_curtain_openclose( self, NWKID, EPout, '01' )
+
+        elif profalux:
             # Profalux offer a Manufacturer command to make Stop on Cluster 0x0008
             profalux_stop( self, NWKID)
 
         elif DeviceType in ( "WindowCovering", "VenetianInverted", "Venetian"):
-            if 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[ NWKID ]['Model'] == 'PR412':
+            if _model_name == 'PR412':
                 profalux_stop( self, NWKID)
             else:
                 # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
@@ -158,11 +171,12 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         # Let's force a refresh of Attribute in the next Heartbeat 
         self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
 
-    if Command == "Off" :  # Manage the Off command. 
+    if Command == 'Off':  # Manage the Off command. 
         # Let's force a refresh of Attribute in the next Heartbeat  
         self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
 
-        self.log.logging( "Command", 'Debug', "mgtCommand : Off for Device: %s EPout: %s Unit: %s DeviceType: %s" %(NWKID, EPout, Unit, DeviceType), NWKID)
+        self.log.logging( "Command", 'Debug', "mgtCommand : Off for Device: %s EPout: %s Unit: %s DeviceType: %s modelName: %s" %(
+            NWKID, EPout, Unit, DeviceType, _model_name), NWKID)
         if DeviceType == 'LivoloSWL':
             livolo_OnOff( self, NWKID , EPout, 'Left', 'Off')
             UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
@@ -177,6 +191,13 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
                         
             # Let's force a refresh of Attribute in the next Heartbeat 
             self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
+            return
+
+        if DeviceType == 'DoorLock':
+            # Widget Doorlock seems to work in the oposit
+            cluster0101_unlock_door( self, NWKID)
+            UpdateDevice_v2(self, Devices, Unit, 0, "Closed",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            self.ListOfDevices[NWKID]['Heartbeat'] = '0' 
             return
 
         if DeviceType in ( 'ThermoMode', 'ACMode'):
@@ -197,6 +218,8 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
                 %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
             self.log.logging( "Command", 'Debug', "ThermoMode - requested Level: %s" %Level, NWKID)
             tuya_trv_mode( self, NWKID, 0 )
+            UpdateDevice_v2(self, Devices, Unit, 0, 'Off',BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            return
 
         if DeviceType == 'ThermoModeEHZBRTS':
             self.log.logging( "Command", 'Debug', "MajDomoDevice EHZBRTS Schneider Thermostat Mode Off", NWKID )
@@ -218,10 +241,27 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             if 'Model' in self.ListOfDevices[ NWKID ] and self.ListOfDevices[ NWKID ]['Model'] == 'AC201A':
                 casaia_swing_OnOff( self, NWKID, '00')
                 UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+                return
 
-        if DeviceType == 'BSO-Volet':
-            if profalux:
-                profalux_MoveToLiftAndTilt( self, NWKID, level=1 )
+        if DeviceType == 'LvlControl' and _model_name == 'TS0601-dimmer':
+            tuya_dimmer_onoff( self, NWKID, EPout, '00' )
+            UpdateDevice_v2(self, Devices, Unit, 0, Devices[Unit].sValue,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            return
+
+        if DeviceType == 'LvlControl' and _model_name == 'TS0601-curtain':
+            tuya_curtain_openclose( self, NWKID, '02' )
+
+        elif DeviceType == 'BSO-Volet' and profalux:
+            profalux_MoveToLiftAndTilt( self, NWKID, level=1 )
+
+        elif DeviceType == "TuyaSiren":
+            tuya_siren_alarm( self, NWKID, 0x00)
+
+        elif DeviceType == "TuyaSirenHumi":
+            tuya_siren_humi_alarm( self, NWKID, 0x00 )
+        
+        elif DeviceType == "TuyaSirenTemp":
+            tuya_siren_temp_alarm( self, NWKID, 0x00 )
 
         elif DeviceType == "WindowCovering":
             sendZigateCmd(self, "00FA","02" + NWKID + ZIGATE_EP + EPout + "01") # Blind inverted (On, for Close)
@@ -244,12 +284,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         elif DeviceType == "HeatingSwitch":
             thermostat_Mode( self, NWKID, 'Off' )
 
-        elif DeviceType == 'DoorLock':
-            # Widget Doorlock seems to work in the oposit
-            cluster0101_unlock_door( self, NWKID)
-            UpdateDevice_v2(self, Devices, Unit, 0, "Closed",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
-            self.ListOfDevices[NWKID]['Heartbeat'] = '0' 
-            return
+        elif DeviceType == 'ThermoOnOff':
+            self.log.logging( "Command", 'Debug', "ThermoOnOff - requested Off", NWKID)
+            tuya_trv_onoff( self, NWKID, 0x00)
+            UpdateDevice_v2(self, Devices, Unit, 0, 'Off',BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
 
         else:
             # Remaining Slider widget
@@ -262,10 +300,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
                 else:
                     sendZigateCmd(self, "0092","02" + NWKID + ZIGATE_EP + EPout + "00")
         
-            if 'Model' in self.ListOfDevices[NWKID]: # Making a trick for the GLEDOPTO LED STRIP.
-                if self.ListOfDevices[NWKID]['Model'] == 'GLEDOPTO' and EPout == '0a':
-                    # When switching off the WW channel, make sure to switch Off the RGB channel
-                    sendZigateCmd(self, "0092","02" + NWKID + ZIGATE_EP + '0b' + "00")
+            # Making a trick for the GLEDOPTO LED STRIP.
+            if _model_name == 'GLEDOPTO' and EPout == '0a':
+                # When switching off the WW channel, make sure to switch Off the RGB channel
+                sendZigateCmd(self, "0092","02" + NWKID + ZIGATE_EP + '0b' + "00")
 
         # Update Devices
         if Devices[Unit].SwitchType in (13,14,15,16):
@@ -276,10 +314,11 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         # Let's force a refresh of Attribute in the next Heartbeat 
         self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
 
-    if Command == "On" :
+    if Command == 'On':   # Manage the On command.
         # Let's force a refresh of Attribute in the next Heartbeat  
         self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
-        self.log.logging( "Command", 'Debug', "mgtCommand : On for Device: %s EPout: %s Unit: %s DeviceType: %s" %(NWKID, EPout, Unit, DeviceType), NWKID)
+        self.log.logging( "Command", 'Debug', "mgtCommand : On for Device: %s EPout: %s Unit: %s DeviceType: %s ModelName: %s" %(
+            NWKID, EPout, Unit, DeviceType, _model_name), NWKID)
 
         if DeviceType == 'LivoloSWL':
             livolo_OnOff( self, NWKID , EPout, 'Left', 'On')
@@ -291,7 +330,6 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         if DeviceType == 'LivoloSWR':
             livolo_OnOff( self, NWKID , EPout, 'Right', 'On')
             UpdateDevice_v2(self, Devices, Unit, 1, "On",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
-
             # Let's force a refresh of Attribute in the next Heartbeat 
             self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
             return
@@ -307,10 +345,17 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             #self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
             return
 
-        if DeviceType == 'BSO-Volet':
-            if profalux:
-                # On translated into a Move to 254
-                profalux_MoveToLiftAndTilt( self, NWKID, level=255 )
+        if DeviceType == 'LvlControl' and _model_name == 'TS0601-dimmer':
+            tuya_dimmer_onoff( self, NWKID, EPout, '01' )
+            UpdateDevice_v2(self, Devices, Unit, 1, Devices[Unit].sValue,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            return
+
+        if DeviceType == 'LvlControl' and _model_name == 'TS0601-curtain':
+            tuya_curtain_openclose( self, NWKID, '00' )
+
+        elif DeviceType == 'BSO-Volet' and profalux:
+            # On translated into a Move to 254
+            profalux_MoveToLiftAndTilt( self, NWKID, level=255 )
 
         elif DeviceType == "WindowCovering":
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
@@ -331,6 +376,9 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         elif DeviceType == "HeatingSwitch":
             thermostat_Mode( self, NWKID, 'Heat' )
 
+        elif DeviceType == 'ThermoOnOff':
+            tuya_trv_onoff( self, NWKID, 0X01)
+            UpdateDevice_v2(self, Devices, Unit, 1, 'On',BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
 
         else:
             # Remaining Slider widget
@@ -347,7 +395,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         # Let's force a refresh of Attribute in the next Heartbeat  
         self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
 
-    if Command == "Set Level" :
+    if Command == 'Set Level':
         #Level is normally an integer but may be a floating point number if the Unit is linked to a thermostat device
         #There is too, move max level, mode = 00/01 for 0%/100%
         self.log.logging( "Command", 'Debug', "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" 
@@ -519,6 +567,8 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
                 %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
             self.log.logging( "Command", 'Debug', "ThermoMode_2 - requested Level: %s" %Level, NWKID)
             tuya_trv_mode( self, NWKID, Level )
+            UpdateDevice_v2(self, Devices, Unit, int(Level//10), Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            return
 
         if DeviceType == 'FanControl':
 
@@ -620,6 +670,26 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             elif Level == 50: # Disarmed
                 self.iaszonemgt.write_IAS_WD_Squawk( NWKID, EPout, 'disarmed')
 
+        elif DeviceType == "TuyaSiren":
+            if Level == 10:
+                tuya_siren_alarm( self, NWKID, 0x01, 1)
+            elif Level == 20:
+                tuya_siren_alarm( self, NWKID, 0x01, 2)
+            elif Level == 30:
+                tuya_siren_alarm( self, NWKID, 0x01, 3)
+            elif Level == 40:
+                tuya_siren_alarm( self, NWKID, 0x01, 4)
+            elif Level == 50:
+                tuya_siren_alarm( self, NWKID, 0x01, 5)
+
+        elif DeviceType == "TuyaSirenHumi":
+            if Level == 10:
+                tuya_siren_humi_alarm( self, NWKID, 0x01 )
+        
+        elif DeviceType == "TuyaSirenTemp":
+            if Level == 10:
+                tuya_siren_temp_alarm( self, NWKID, 0x01 )
+
         elif DeviceType == 'Toggle':
             self.log.logging( "Command", 'Debug', "Toggle switch - value: %s" %Level)
             if Level == 10: # Off
@@ -628,6 +698,17 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
                 actuators( self, NWKID, EPout, 'On', 'Switch')
             elif Level == 30: # Toggle
                 actuators( self, NWKID, EPout, 'Toggle', 'Switch')
+
+        elif _model_name == 'TS0601-dimmer':
+            if Devices[Unit].nValue == 0:
+                tuya_dimmer_onoff( self, NWKID, EPout, '01' )
+            if Level < 1:
+                # Never Switch off
+                Level = 1
+            tuya_dimmer_dimmer( self, NWKID, EPout, Level )
+
+        elif _model_name == 'TS0601-curtain':
+            tuya_curtain_lvl(self, NWKID, (Level))
 
         else:
             # Remaining Slider widget
@@ -667,7 +748,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         # Let's force a refresh of Attribute in the next Heartbeat  
         self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
 
-    if Command == "Set Color" :
+    if Command == 'Set Color':
         self.log.logging( "Command", 'Debug', "mgtCommand : Set Color for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s Color: %s" %(NWKID, EPout, Unit, DeviceType, Level, Color), NWKID)
         Hue_List = json.loads(Color)
         self.log.logging( "Command", 'Debug', "-----> Hue_List: %s" %str(Hue_List), NWKID)

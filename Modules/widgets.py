@@ -14,7 +14,6 @@
 
 SWITCH_LVL_MATRIX = {
     "Plug": { 
-
         "00": ( 0, "Off"), 
         "01": ( 1, "On") , 
         "ForceUpdate": False },
@@ -67,6 +66,11 @@ SWITCH_LVL_MATRIX = {
         "00": ( 0,"Off"), 
         "01": ( 1,"On") , 
         "ForceUpdate": False},
+
+    "ThermoOnOff": { 
+        0: ( 0,"Off"), 
+        1: ( 1,"On") , 
+        "ForceUpdate": False},    
 
     "SwitchButton": { 
         "00": ( 0,"Off"), 
@@ -233,6 +237,7 @@ SWITCH_LVL_MATRIX = {
 
     "DSwitch": {
         "LevelNames": "Off|Left Click|Right Click|Both Click" ,
+        'ForceUpdate': True,
         "Language": {
             "fr-FR": {"LevelNames": "Off|Left Click|Right Click|Both Click" }
             }
@@ -356,6 +361,17 @@ SWITCH_LVL_MATRIX = {
        }
    },
 
+    "HeatingStatus": {
+       0: (0, "Off"), 
+       1: (1, "10"), 
+       2: (2, "20"),  
+       "ForceUpdate": True,
+       "LevelNames": "Off|Heating|Not Heating",
+       "Language": {
+           "fr-FR": {"LevelNames": "Arrêt|Allumer|Eteind"}
+       }
+   },
+   
     "HACTMODE": {
         "00": ( 1, "10"),
         "03": ( 2, "20"),
@@ -367,6 +383,7 @@ SWITCH_LVL_MATRIX = {
     },
 
     'ContractPower': {
+        'ForceUpdate': False,
         "LevelNames": "Off|3KVA|6KVA|9KVA|12KVA|15KVA",
         "Language": {
             "fr-FR": {"LevelNames": "Off|3KVA|6KVA|9KVA|12KVA|15KVA"}
@@ -374,6 +391,7 @@ SWITCH_LVL_MATRIX = {
     },
 
     "FIP": { 
+        'ForceUpdate': True,
         "LevelNames": "Off|Confort|Confort -1|Confort -2|Eco|Frost Protection|Off",
         "Language": {
             "fr-FR": {"LevelNames": "Arrêt|Confort|Confort -1|Confort -2|Eco|Hors Gel|Arrêt"}
@@ -391,9 +409,50 @@ SWITCH_LVL_MATRIX = {
     },
 
     "AlarmWD": { 
+        'ForceUpdate': True,
         "LevelNames": "Stop|Alarm|Siren|Strobe|Armed|Disarmed",
         "Language": {
             "fr-FR": {"LevelNames": "Arrêter|Alarme|Sirène|Flash|Armer|Désarmer"}
+        }
+    },
+
+    "TuyaSiren": {
+        'ForceUpdate': True,
+        "00": ( 0, "00"),
+        "01": ( 1, "10"),
+        "02": ( 2, "20"),
+        "03": ( 3, "30"),
+        "04": ( 4, "40"),
+        "05": ( 5, "50"),
+        "LevelNames": "Off|Alarm 1|Alarm 2|Alarm 3|Alarm 4|Alarm 5",
+        "Languages": {
+            "fr-FR": {
+               "LevelNames": "Off|Alarm 1|Alarm 2|Alarm 3|Alarm 4|Alarm 5" 
+            }
+        }
+    },
+
+    "TuyaSirenHumi": {
+        'ForceUpdate': True,
+        "00": ( 0, "00"),
+        "01": ( 1, "10"),
+        "LevelNames": "Off|Alarm Humidity",
+        "Languages": {
+            "fr-FR": {
+               "LevelNames": "Off|Alarm Humidité" 
+            }
+        }
+    },
+
+    "TuyaSirenTemp": {
+        'ForceUpdate': True,
+        "00": ( 0, "00"),
+        "01": ( 1, "10"),
+        "LevelNames": "Off|Alarm Temperature",
+        "Languages": {
+            "fr-FR": {
+               "LevelNames": "Off|Alarm Température" 
+            }
         }
     },
 
@@ -495,6 +554,7 @@ SWITCH_LVL_MATRIX = {
             "fr-FR": {"LevelNames": "Arrêt|Auto|Froid|Chaud|Déshumidicateur|Ventilateur"}
         }
     },
+
     "ACMode": {
         '00': (0, "00"), # Off
         '03': (1, "10"),  # Cool

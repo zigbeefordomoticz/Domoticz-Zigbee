@@ -1,5 +1,5 @@
 {
-	"_comment": "Tuya TRV",
+	"_comment": "Tuya TRV: Siterwell GS361A-H04",
 	"_version": "0.10",
 	"Ep":{
 		"01":{ 
@@ -17,5 +17,8 @@
 	},
 	"ReadAttributes": {
 		"0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0007" ]
+	},
+	"Param": {
 	}
 }
+

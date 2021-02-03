@@ -11,7 +11,7 @@ from Classes.LoggingManagement import LoggingManagement
 from Modules.readAttributes import ReadAttributeRequest_0201
 from Modules.basicOutputs import write_attribute
 from Modules.schneider_wiser import schneider_setpoint
-from Modules.tuya import tuya_setpoint
+from Modules.tuyaTRV import tuya_setpoint, TUYA_eTRV_MODEL
 from Modules.casaia import casaia_setpoint, casaia_check_irPairing
  
 def thermostat_Setpoint_SPZB(  self, NwkId, setpoint):
@@ -52,7 +52,7 @@ def thermostat_Setpoint( self, NwkId, setpoint):
             schneider_setpoint(self, NwkId, setpoint)
             return
 
-        elif self.ListOfDevices[NwkId]['Model'] in ( 'TS0601', 'ivfvd7h', 'fvq6avy' , 'eaxp72v'):
+        elif self.ListOfDevices[NwkId]['Model'] in ( TUYA_eTRV_MODEL ):
             # Tuya
             self.log.logging( "Thermostats", 'Log', "thermostat_Setpoint - calling Tuya for %s with value %s" %(NwkId, setpoint), nwkid=NwkId)
             tuya_setpoint(self, NwkId, setpoint)

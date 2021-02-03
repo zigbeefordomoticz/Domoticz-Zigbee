@@ -1,5 +1,5 @@
 {
-	"_comment": "Tuya TRV",
+	"_comment": "Tuya Smart Dimmer Switch",
 	"_version": "0.10",
 	"Ep":{
 		"01":{ 
@@ -8,15 +8,15 @@
 			"ef00":"", 
 			"000a":"", 
 			"0019":"", 
-			"Type":"Temp/ThermoSetpoint/ThermoMode_2"}
+			"Type":"Switch"}
 	},
 	"Type":"",
-	"ClusterToBind": [ "0019", "ef00" ],
+	"ClusterToBind": [ "0000", "ef00" ],
 	"ConfigureReporting": {
 	
 	},
 	"ReadAttributes": {
-		"0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0007" ]
+		"0000": [ "0004", "0000", "0001", "0005", "0007" ]
 	}
 }
 

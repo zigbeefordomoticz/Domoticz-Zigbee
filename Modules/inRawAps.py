@@ -48,14 +48,28 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Man
         'Schneider': schneiderReadRawAPS,
         'LUMI': lumiReadRawAPS,
         'Philips' : philipsReadRawAPS,
-        "_TYST11_jeaxp72v" : tuyaReadRawAPS ,
-        "_TYST11_kfvq6avy" : tuyaReadRawAPS ,
-        '_TYST11_zivfvd7h': tuyaReadRawAPS,
-        '_TZE200_ckud7u2l' : tuyaReadRawAPS ,
-        "_TZE200_kfvq6avy" : tuyaReadRawAPS ,
+        "_TYST11_jeaxp72v" : tuyaReadRawAPS , # eTRV
+        "_TYST11_kfvq6avy" : tuyaReadRawAPS , # eTRV
+        "_TZE200_c88teujp" : tuyaReadRawAPS,  # eTRV
+        '_TZE200_ckud7u2l' : tuyaReadRawAPS , # eTRV
+        "_TZE200_kfvq6avy" : tuyaReadRawAPS , # eTRV
+        '_TZE200_d0yu2xgi' : tuyaReadRawAPS, # TS0601 Sirene
         "_TZE200_i48qyn9s" : tuyaReadRawAPS ,
-        "_TZE200_c88teujp" : tuyaReadRawAPS ,
         "_TZ3000_peszejy7" : tuyaReadRawAPS , # Seem for TS0041 ( 1 Gang Switch)
+        "_TZ3000_xkwalgne" : tuyaReadRawAPS, # TS0041
+        "_TYST11_zivfvd7h" : tuyaReadRawAPS, # TS0003 / Switch Module
+        "_TZE200_dfxkcots" : tuyaReadRawAPS, # TS0601 / Smart Dimmer
+        "_TZE200_7tdtqgwv" : tuyaReadRawAPS, # TS0601 / Simple Switch
+        "_TZE200_rddyvrci" : tuyaReadRawAPS, # TS0601 / Blind Shades motor
+        "_TZE200_5zbp6j0u" : tuyaReadRawAPS, # TS0601 / Blind Shades motor
+        "_TZE200_nkoabg8w" : tuyaReadRawAPS, # TS0601 / Blind Shades motor
+        "_TZE200_xuzcvlku" : tuyaReadRawAPS, # TS0601 / Blind Shades motor
+        "_TZE200_4vobcgd3" : tuyaReadRawAPS, # TS0601 / Blind Shades motor
+        "_TZE200_nogaemzt" : tuyaReadRawAPS, # TS0601 / Blind Shades motor
+        "_TZE200_pk0sfzvr" : tuyaReadRawAPS, # TS0601 / Blind Shades motor
+        "_TZE200_fdtjuw7u" : tuyaReadRawAPS, # TS0601 / Blind Shades motor
+        "_TZE200_zpzndjez" : tuyaReadRawAPS, # TS0601 / Blind Shades motor
+        "_TZE200_rddyvrci" : tuyaReadRawAPS, # TS0601 / Blind Shades motor
         'OWON': casaiaReadRawAPS,
     }
 

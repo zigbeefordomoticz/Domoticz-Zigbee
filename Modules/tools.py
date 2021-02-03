@@ -393,6 +393,7 @@ def get_and_inc_SQN( self, key ):
         if _new_sqn > 0xff:
             _new_sqn = 0x00
 
+    self.ListOfDevices[key]['SQN']= '%2x' %_new_sqn
     return '%02x' %_new_sqn
 
 def updSQN( self, key, newSQN) :

@@ -495,7 +495,7 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
 
 
     if 'SQN' in self.ListOfDevices[ srcnwkid ] and Sqn == self.ListOfDevices[ srcnwkid ]['SQN']:
-        Domoticz.Log("Decode8002 - Duplicate message drop NwkId: %s Ep: %s Cluster: %s GlobalCommand: %5s Command: %s Data: %s"
+        Domoticz.Debug("Decode8002 - Duplicate message drop NwkId: %s Ep: %s Cluster: %s GlobalCommand: %5s Command: %s Data: %s"
             % ( srcnwkid, MsgSourcePoint, MsgClusterID, GlobalCommand, Command, Data, ))
         return
 

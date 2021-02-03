@@ -200,8 +200,13 @@ def write_to_zigate( self, serialConnection, encoded_data ):
 
 
 def domoticz_write_to_zigate( self, encoded_data):
-    self._connection.Send(encoded_data, 0)
-    return True
+    if self._connection:
+        self._connection.Send(encoded_data, 0)
+        return True
+
+    self.logging_send( 'Error', "domoticz_write_to_zigate - No connection available: %s" %self._connection)
+    return False
+    
 
 def native_write_to_zigate( self, serialConnection, encoded_data):
 

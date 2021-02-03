@@ -31,6 +31,10 @@ from Modules.lumi import AqaraOppleDecoding0012, readXiaomiCluster, xiaomi_leave
 
 from Classes.LoggingManagement import LoggingManagement
 
+from Modules.tuya import ( TUYA_TS0601_MODEL_NAME, TUYA_SIREN_MANUFACTURER, TUYA_DIMMER_MANUFACTURER, 
+                            TUYA_SWITCH_MANUFACTURER, TUYA_CURTAIN_MAUFACTURER, TUYA_THERMOSTAT_MANUFACTURER,
+                            TUYA_eTRV1_MANUFACTURER, TUYA_eTRV2_MANUFACTURER , TUYA_eTRV3_MANUFACTURER)
+
 def decodeAttribute(self, AttType, Attribute, handleErrors=False):
 
     if len(Attribute) == 0:
@@ -193,7 +197,7 @@ def ReadCluster(self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgCluster
             "fc01": Clusterfc01,
             "fc21": Clusterfc21,
             "fcc0": Clusterfcc0,
-            "fc40": Clusterfc40
+            "fc40": Clusterfc40,
             }
 
     if MsgClusterId in DECODE_CLUSTER:
@@ -294,6 +298,50 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             else:
                 modelName = ''
 
+
+        elif modelName in ( TUYA_TS0601_MODEL_NAME ) :
+            # https://github.com/dresden-elektronik/deconz-rest-plugin/wiki/Tuya-devices-List
+
+            manufacturer_name = ''
+            if 'Manufacturer Name' in self.ListOfDevices[MsgSrcAddr]:
+                manufacturer_name = self.ListOfDevices[MsgSrcAddr]['Manufacturer Name']
+            modelName = 'TS0601'
+
+            self.log.logging( "Cluster", 'Log', "ReadCluster - %s / %s - Recepion Model: >%s< ManufName: %s" %(MsgClusterId, MsgAttrID, modelName, manufacturer_name), MsgSrcAddr)
+
+            if manufacturer_name in ( TUYA_SIREN_MANUFACTURER ) : # Sirene 
+                modelName += '-sirene'
+
+            elif manufacturer_name in ( TUYA_DIMMER_MANUFACTURER ): # Dimmer
+                modelName += '-dimmer'
+
+            elif manufacturer_name in ( TUYA_SWITCH_MANUFACTURER ): # Switch
+                modelName += '-switch'
+
+            elif manufacturer_name in ( TUYA_CURTAIN_MAUFACTURER ):
+                modelName += '-curtain'
+
+            elif manufacturer_name in ( TUYA_THERMOSTAT_MANUFACTURER): # Thermostat
+                # Thermostat BTH-002 (to be confirmed   ) and WZB-TRVL ( @d2n2e2o) and Thermostat Essentials Premium ( to be confirmed )
+                modelName += '-thermostat'
+
+            elif manufacturer_name in ( TUYA_eTRV1_MANUFACTURER ): # eTRV
+                modelName += '-eTRV1'
+
+            elif manufacturer_name in ( TUYA_eTRV2_MANUFACTURER ): # eTRV
+                modelName += '-eTRV2'
+                
+            elif manufacturer_name in ( TUYA_eTRV3_MANUFACTURER ): # eTRV
+                modelName += '-eTRV3'
+            else:
+                # eTRV
+                modelName += '-eTRV'
+
+        elif modelName == 'TS0003':
+            if 'Manufacturer Name' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Manufacturer Name'] in ( '_TYZB01_ncutbjdi', ):
+                # QS-Zigbee-S05-LN
+                modelName += '-QS-Zigbee-S05-LN'
+
         elif modelName  in ('lumi.remote.b686opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b286opcn01'):
             # Manage the Aqara Bulb mode or not
             if self.pluginconf.pluginConf['AqaraOppleBulbMode']:
@@ -357,6 +405,9 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 if self.ListOfDevices[MsgSrcAddr]['ConfigSource'] == 'DeviceConf':
                     self.log.logging( "Cluster", 'Debug', "Not redoing the DeviceConf enrollement", MsgSrcAddr)
                     return
+
+            if 'Param' in self.DeviceConf[modelName]:
+                self.ListOfDevices[MsgSrcAddr]['Param'] = dict(self.DeviceConf[modelName]['Param'])
 
             _BackupEp = None
             if 'Type' in self.DeviceConf[modelName]:                                   # If type exist at top level : copy it
@@ -528,10 +579,10 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
         readXiaomiCluster( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData )
 
-    elif MsgAttrID in ( 'ffe0', 'ffe1', 'ffe2'):
+    elif MsgAttrID in ( 'ffe0', 'ffe1', 'ffe2', 'ffe4', 'fffe', 'ffdf'):
         # Tuya, Zemismart
-        self.log.logging( "Cluster", 'Debug', "ReadCluster - 0000 %s/%s attribute Tuya/Zemismat - %s: 0x%s %s" 
-                %(MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgClusterData, decodeAttribute( self, MsgAttType, MsgClusterData)), MsgSrcAddr)
+        self.log.logging( "Cluster", 'Log', "ReadCluster - 0000 %s/%s attribute Tuya/Zemismat - %s: 0x%s" 
+                %(MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgClusterData, ), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
 
@@ -540,10 +591,6 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
         #self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['Cluster Revision'] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
-    elif MsgAttrID == 'ffdf': # Tuya TS0041 1 Gang Switch 
-        self.log.logging( "Cluster", 'Debug', "ReadCluster - 0000 %s/%s attribute Tuya/Zemismat - %s: 0x%s %s" 
-                %(MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgClusterData, decodeAttribute( self, MsgAttType, MsgClusterData)), MsgSrcAddr)
-        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
     else:
         self.log.logging( "Cluster", 'Log', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " 
@@ -864,6 +911,10 @@ def Cluster0006( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, str(decodeAttribute( self, MsgAttType, MsgClusterData) ))
 
     elif MsgAttrID == "8002":
+        self.log.logging( "Cluster", 'Debug', "ReadCluster - ClusterId=0006 - Power On OnOff Attr: %s Value: %s" %(MsgAttrID, MsgClusterData), MsgSrcAddr)
+        checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, str(decodeAttribute( self, MsgAttType, MsgClusterData) ))
+
+    elif MsgAttrID == "8003":
         self.log.logging( "Cluster", 'Debug', "ReadCluster - ClusterId=0006 - Power On OnOff Attr: %s Value: %s" %(MsgAttrID, MsgClusterData), MsgSrcAddr)
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, str(decodeAttribute( self, MsgAttType, MsgClusterData) ))
 
@@ -1445,8 +1496,10 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  MsgClusterData )
 
     elif MsgAttrID == '0008':   #  Pi Heating Demand  (valve position %)
-        self.log.logging( "Cluster", 'Debug', "ReadCluster - %s - %s/%s Pi Heating Demand: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
+        self.log.logging( "Cluster", 'Log', "ReadCluster - %s - %s/%s Pi Heating Demand: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
+        value = ( value * 100 ) / 255
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  MsgClusterData )
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0201', value , Attribute_ = '0008')
 
     elif MsgAttrID == '0009':   #  HVAC System Type Config
         self.log.logging( "Cluster", 'Debug', "ReadCluster - %s - %s/%s HVAC System Type Config: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
@@ -1575,9 +1628,7 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0202', '%02x' %0x0)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, '%02x' %0x0, Attribute_='fd00')
             
-
     elif MsgAttrID == '001d':
-
         self.log.logging( "Cluster", 'Debug', "ReadCluster - 0201 - Alarm Mask: %s" %value, MsgSrcAddr)
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  value )
 
@@ -1618,8 +1669,9 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  value )
 
             elif MsgAttrID == '4001': # Valve position for EUROTRONICS
-                self.log.logging( "Cluster", 'Debug', "ReadCluster - 0201 - %s/%s Valve position: %s" %(MsgSrcAddr, MsgSrcEp,value), MsgSrcAddr)
+                self.log.logging( "Cluster", 'Log', "ReadCluster - 0201 - %s/%s Valve position: %s" %(MsgSrcAddr, MsgSrcEp,value), MsgSrcAddr)
                 checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  value )
+                MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0201', int(value,16) , Attribute_ = '4001')
 
             elif MsgAttrID == '4002': # Erreors for EUROTRONICS
                 self.log.logging( "Cluster", 'Debug', "ReadCluster - 0201 - %s/%s Status: %s" %(MsgSrcAddr, MsgSrcEp,value), MsgSrcAddr)
@@ -1660,6 +1712,9 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                     # Window Detection
                     MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0500', '00')
 
+        elif MsgAttrID == '4003' and 'Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Model'] == 'eTRV0100':
+            # Open Window Detection for Danfoss eTRV
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0500', value)
 
     elif MsgAttrID in ( 'e010', 'e011', 'e012', 'e013', 'e014', 'e030', 'e031', 'e020'):
         if MsgAttrID == 'e010': # Schneider Thermostat Mode
@@ -1701,6 +1756,10 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         elif MsgAttrID == 'e030': 
             self.log.logging( "Cluster", 'Debug', "readCluster - %s - %s/%s Schneider Valve Position  %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
             checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  MsgClusterData )
+            value = ( value * 100 ) / 255
+            checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  MsgClusterData )
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0201', value , Attribute_ = '0008')
+
         elif MsgAttrID == 'e031':
             self.log.logging( "Cluster", 'Debug', "readCluster - %s - %s/%s Schneider Valve Calibration Status %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
             checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  MsgClusterData )

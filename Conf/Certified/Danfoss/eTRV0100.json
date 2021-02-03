@@ -11,7 +11,7 @@
 		"0020": "",
 	    "0201": "", 
 	    "0b05": "", 
-	    "Type": "Temp/ThermoSetpoint" } 
+	    "Type": "Temp/ThermoSetpoint/Valve/Door" } 
   },
   "Type": "",
   "ClusterToBind": [ "0001", "0019", "0201" ],
