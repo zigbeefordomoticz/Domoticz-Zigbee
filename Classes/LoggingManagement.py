@@ -163,6 +163,7 @@ class LoggingManagement:
 
     def loggingError(self, module, message, nwkid, context):
         Domoticz.Error(message)
+        self._newError  = True
         
         #Log to file
         if not self.pluginconf.pluginConf['useDomoticzLog']:
