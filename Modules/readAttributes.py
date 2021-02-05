@@ -248,7 +248,7 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
     # Basic Cluster
     # The Ep to be used can be challenging, as if we are in the discovery process, the list of Eps is not yet none and it could even be that the Device has only 1 Ep != 01
 
-    self.log.logging( "ReadAttributes", 'Debug', "ReadAttributeRequest_0000 - Key: %s , Scope: %s" %(key, fullScope), nwkid=key)
+    self.log.logging( "ReadAttributes", 'Log', "ReadAttributeRequest_0000 - Key: %s , Scope: %s" %(key, fullScope), nwkid=key)
     EPout = '01'
 
     # Checking if Ep list is empty, in that case we are in discovery mode and 
@@ -263,13 +263,24 @@ def ReadAttributeRequest_0000_for_pairing( self, key ):
     self.log.logging( "ReadAttributes", 'Debug', "--> Build list of Attributes", nwkid=key)
     skipModel = False
 
+    listAttributes = []
+
+
+    # Do We have Model Name
+    if not skipModel and self.ListOfDevices[key]['Model'] in [{}, ''] and self.ListOfDevices[key]['Ep'] and self.ListOfDevices[key]['Ep'] != {}:
+        self.log.logging( "ReadAttributes", 'Debug', "Request Basic  Model Name via Read Attribute request: %s" %'0005', nwkid=key)
+        model_name = [ 0x0005 ]
+        for x in self.ListOfDevices[key]['Ep']:
+            ReadAttributeReq( self, key, ZIGATE_EP, x, "0000", model_name, ackIsDisabled = False , checkTime = False)
+    else:
+        listAttributes.append(0x0005)
+
     # Do we Have Manufacturer
     if self.ListOfDevices[key]['Manufacturer'] == '' and self.ListOfDevices[key]['Ep'] and self.ListOfDevices[key]['Ep'] != {}:
-        self.log.logging( "ReadAttributes", 'Debug', "Request Basic  Manufacturer via Read Attribute request: %s" %'0004', nwkid=key)
+        self.log.logging( "ReadAttributes", 'Log', "Request Basic  Manufacturer via Read Attribute request: %s" %'0004', nwkid=key)
         manuf_name = [ 0x0004 ]
-        ReadAttributeReq( self, key, ZIGATE_EP, "01", "0000", manuf_name, ackIsDisabled = False , checkTime = False)
-
-    listAttributes = []
+        for x in self.ListOfDevices[key]['Ep']:
+            ReadAttributeReq( self, key, ZIGATE_EP, x, "0000", manuf_name, ackIsDisabled = False , checkTime = False)
 
     # Check if Model Name should be requested
     if self.ListOfDevices[key]['Manufacturer'] == '1110': # Profalux.
@@ -281,20 +292,13 @@ def ReadAttributeRequest_0000_for_pairing( self, key ):
         listAttributes.append(0x4000)
         listAttributes.append(0xf000)
         skipModel = True
-
-    # Do We have Model Name
-    if not skipModel and self.ListOfDevices[key]['Model'] in [{}, ''] and self.ListOfDevices[key]['Ep'] and self.ListOfDevices[key]['Ep'] != {}:
-        self.log.logging( "ReadAttributes", 'Debug', "Request Basic  Model Name via Read Attribute request: %s" %'0004', nwkid=key)
-        model_name = [ 0x0005 ]
-        ReadAttributeReq( self, key, ZIGATE_EP, "01", "0000", model_name, ackIsDisabled = False , checkTime = False)
-    else:
-        listAttributes.append(0x0005)
     
     listAttributes = add_attributes_from_device_certified_conf( self, key, '0000' , listAttributes)
+    self.log.logging( "ReadAttributes", 'Log', "EP: %s" %self.ListOfDevices[key]['Ep'])
                       
     if self.ListOfDevices[key]['Ep'] is None or self.ListOfDevices[key]['Ep'] == {}:
         # We don't have yet any Endpoint information , we will then try several known Endpoint, and luckly we will get some answers 
-        self.log.logging( "ReadAttributes", 'Log', "Request Basic  via Read Attribute request: " + key + " EPout = " + "01, 02, 03, 06, 09" , nwkid=key)
+        self.log.logging( "ReadAttributes", 'Debug', "Request Basic  via Read Attribute request: " + key + " EPout = " + "01, 02, 03, 06, 09" , nwkid=key)
         ReadAttributeReq( self, key, ZIGATE_EP, "01", "0000", listAttributes, ackIsDisabled = False , checkTime = False)
         ReadAttributeReq( self, key, ZIGATE_EP, "0b", "0000", listAttributes, ackIsDisabled = False , checkTime = False) # Schneider
         ReadAttributeReq( self, key, ZIGATE_EP, "02", "0000", listAttributes, ackIsDisabled = False , checkTime = False)
@@ -304,7 +308,7 @@ def ReadAttributeRequest_0000_for_pairing( self, key ):
         
     else:
         for epout in self.ListOfDevices[key]['Ep']:
-            self.log.logging( "ReadAttributes", 'Log', "Request Basic  via Read Attribute request: " + key + " EPout = " + epout + " Attributes: " + str(listAttributes), nwkid=key)
+            self.log.logging( "ReadAttributes", 'Debug', "Request Basic  via Read Attribute request: " + key + " EPout = " + epout + " Attributes: " + str(listAttributes), nwkid=key)
             ReadAttributeReq( self, key, ZIGATE_EP, epout, "0000", listAttributes, ackIsDisabled = False , checkTime = False)
 
 def add_attributes_from_device_certified_conf( self, key, cluster, listAttributes ):
