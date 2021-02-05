@@ -21,17 +21,17 @@ from Modules.tools import is_hex
 SETTINGS = {
     'Services': {'Order': 1, 'param': {
         'enablegroupmanagement':  {'type': 'bool', 'default': 0, 'current': None, 'restart': 1, 'hidden': False, 'Advanced': False},
-        'enableReadAttributes':   {'type': 'bool', 'default': 0, 'current': None, 'restart': 1, 'hidden': False, 'Advanced': False},
+        'enableReadAttributes':   {'type': 'bool', 'default': 0, 'current': None, 'restart': 1, 'hidden': False, 'Advanced': True},
         'internetAccess':         {'type': 'bool', 'default': 1, 'current': None, 'restart': 1, 'hidden': False, 'Advanced': False},
         'allowOTA':               {'type': 'bool', 'default': 1, 'current': None, 'restart': 1, 'hidden': True, 'Advanced': False},
-        'pingDevices':            {'type': 'bool', 'default': 1, 'current': None, 'restart': 1, 'hidden': False, 'Advanced': False},
+        'pingDevices':            {'type': 'bool', 'default': 1, 'current': None, 'restart': 1, 'hidden': False, 'Advanced': True},
     }
     },
 
     'GroupManagement': {'Order': 2, 'param': {
         'OnIfOneOn':               {'type': 'bool', 'default': 1, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
-        'forceGroupDeviceRefresh': {'type': 'bool', 'default': 1, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
-        'reComputeGroupState':     {'type': 'bool', 'default': 1, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
+        'forceGroupDeviceRefresh': {'type': 'bool', 'default': 1, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'reComputeGroupState':     {'type': 'bool', 'default': 1, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
         'allowGroupMembership':          {'type': 'bool', 'default': 1, 'current': None, 'restart': True, 'hidden': False, 'Advanced': True},
     }
     },
@@ -53,13 +53,13 @@ SETTINGS = {
 
     # Polling
     'ManufSpecifiqDevicePolling': {'Order': 5, 'param': {
-
-        'pollingPhilips':   {'type': 'int', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'pollingGledopto':  {'type': 'int', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'pollingSchneider': {'type': 'int', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'pollingBlitzwolfPower': {'type': 'int', 'default': 0,'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'pollingCasaiaAC201':    {'type': 'int', 'default': 0,'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'pollingPhilips':   {'type': 'int', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
+        'pollingGledopto':  {'type': 'int', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
+        'pollingSchneider': {'type': 'int', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
+        'pollingBlitzwolfPower': {'type': 'int', 'default': 0,'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
+        'pollingCasaiaAC201':    {'type': 'int', 'default': 0,'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
     }},
+
     'DevicePolling': {'Order': 5, 'param': {        
         'polling0000':      {'type': 'int', 'default': 86400, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
         'polling0001':      {'type': 'int', 'default': 86400, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
@@ -113,12 +113,12 @@ SETTINGS = {
     'ZigateConfiguration': {'Order': 7, 'param': {
         'pingDevicesFeq':            {'type': 'int', 'default': 3600,  'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
         'zigatePartOfGroup0000':     {'type': 'bool', 'default': 0,  'current': None, 'restart': 1,  'hidden': False, 'Advanced': True},
-        'allowRemoveZigateDevice':   {'type': 'bool', 'default': 1,  'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'allowRemoveZigateDevice':   {'type': 'bool', 'default': 1,  'current': None, 'restart': 0, 'hidden': True, 'Advanced': True},
         'blueLedOnOff':              {'type': 'bool', 'default': 1,  'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
         'resetPermit2Join':          {'type': 'bool', 'default': 1,  'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
         'Ping':                      {'type': 'bool', 'default': 1,  'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
         'eraseZigatePDM':            {'type': 'bool', 'default': 0,  'current': None, 'restart': 0, 'hidden': True, 'Advanced': True},
-        'breakConfigureReporting':   {'type': 'bool', 'default': 0,  'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'breakConfigureReporting':   {'type': 'bool', 'default': 0,  'current': None, 'restart': 0, 'hidden': True, 'Advanced': True},
         'Certification':             {'type': 'list',
                                       'list': {'CE regulation': 'CE', 'FCC regulation': 'FCC'},
                                       'default': 'CE', 'current': None, 'restart': True, 'hidden': False, 'Advanced': False},
@@ -157,16 +157,15 @@ SETTINGS = {
 
     # Plugin Transport
     'PluginTransport':     {'Order': 10, 'param': {
-        'forceAckOnZCL':   {'type': 'bool', 'default': 0,       'current': None, 'restart': 0, 'hidden': False,'Advanced': True},
-        'disableAckOnZCL': {'type': 'bool', 'default': 0,       'current': None, 'restart': 0, 'hidden': False,'Advanced': True},
+        'disableAckOnZCL': {'type': 'bool', 'default': 0,       'current': None, 'restart': 0, 'hidden': True,'Advanced': True},
         'waitForResponse': {'type': 'bool', 'default': 0,       'current': None, 'restart': 0, 'hidden': True, 'Advanced': True},
         'byPassDzConnection': {'type': 'bool', 'default': 1,    'current': None, 'restart': 1,  'hidden': True, 'Advanced': True},
         'SerialReadV2':    {'type': 'bool', 'default': 1,       'current': None, 'restart': 0, 'hidden': True, 'Advanced': True},
         'ieeeForRawAps':   {'type': 'bool', 'default': 0,       'current': None, 'restart': 1,  'hidden': True, 'Advanced': True},
         'forceFullSeqMode':      {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
-        'RawReadAttribute':      {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'RawWritAttribute':      {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'writerTimeOut':         {'type': 'bool', 'default': 1, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'RawReadAttribute':      {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': True},
+        'RawWritAttribute':      {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': True},
+        'writerTimeOut':         {'type': 'bool', 'default': 1, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': True},
         }
     },
 
