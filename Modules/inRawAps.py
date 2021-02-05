@@ -48,6 +48,7 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Man
         'Schneider': schneiderReadRawAPS,
         'LUMI': lumiReadRawAPS,
         'Philips' : philipsReadRawAPS,
+        "_TZ3000_8kzqqzu4" : tuyaReadRawAPS,  # Lora Tap Smart Shutter Switch
         "_TYST11_jeaxp72v" : tuyaReadRawAPS , # eTRV
         "_TYST11_kfvq6avy" : tuyaReadRawAPS , # eTRV
         "_TZE200_c88teujp" : tuyaReadRawAPS,  # eTRV
