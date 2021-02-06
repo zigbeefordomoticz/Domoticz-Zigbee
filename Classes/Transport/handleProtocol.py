@@ -70,6 +70,16 @@ def process_frame(self, decoded_frame):
         NXP_Extended_Error_Code( self, MsgData)
         return
 
+    if MsgType in ('9998', '9997'):
+        # Async message
+        Akila_debuging( self, MsgType, MsgData)
+        return
+
+    if MsgType == '9997':
+        # Async message
+        Akila_Extended_frame_filtered( self, MsgData)
+        return
+
     if MsgType == '8000': # Command Ack
         decode8000( self, decoded_frame)
         self.forwarder_queue.put( decoded_frame)
@@ -158,3 +168,8 @@ def NXP_log_message(self, decoded_frame):  # Reception log Level
                 self.logging_send( 'Error',"Error while writing to ZiGate log file %s" %logfilename)
     except IOError:
         self.logging_send( 'Error',"Error while Opening ZiGate log file %s" %logfilename)
+
+
+def Akila_debuging(self, MsgType, MsgData):
+    self.logging_receive( 'Log', "Firmware debug ==> %s - Ep: %s Event: %s" %( 
+        MsgType, MsgData[0:2], MsgData[2:]) )
