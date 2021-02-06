@@ -187,7 +187,7 @@ def receive_valveposition( self, Devices, model_target, NwkId, srcEp, ClusterID,
     store_tuya_attribute( self, NwkId, 'ValvePosition', data )
 
 def receive_calibration( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data ):
-    self.log.logging( "Tuya", 'Debug', "receive_calibration - Nwkid: %s/%s Low Battery: %s" %(NwkId,srcEp ,int(data,16)))
+    self.log.logging( "Tuya", 'Debug', "receive_calibration - Nwkid: %s/%s Calibration: %s" %(NwkId,srcEp ,int(data,16)))
     store_tuya_attribute( self, NwkId, 'Calibration', data )
 
 def receive_program_mode( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
@@ -452,10 +452,43 @@ def tuya_trv_child_lock( self, nwkid, onoff):
         data = '%02x' %onoff
         tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 
-def tuya_trv_calibration( self, nwkid, onoff):
-    self.log.logging( "Tuya", 'Debug', "tuya_trv_calibration - %s Calibration: %s" %(nwkid, onoff))
-    if onoff not in ( 0x00, 0x01 ):
+def tuya_set_calibration_if_needed( self, NwkId ):
+    target_calibration = None
+    if ( 'Param' in self.ListOfDevices[NwkId]
+        and 'Calibration' in self.ListOfDevices[NwkId]['Param']
+        and isinstance(
+            self.ListOfDevices[NwkId]['Param']['Calibration'], (float, int))
+        ):
+        target_calibration = int(self.ListOfDevices[ NwkId ]['Param']['Calibration'])
+
+    if target_calibration is None:
+        target_calibration = 0
+
+    if target_calibration < -7 or target_calibration > 7:
+        self.log.logging( "Tuya", 'Error', "thermostat_Calibration - Wrong Calibration offset on %s off %s" %( NwkId, target_calibration))
+        target_calibration = 0
+
+    if target_calibration < 0:
+        #in two’s complement form
+        target_calibration = abs(int(hex( - target_calibration - pow(2,32) ),16))
+        self.log.logging( "Tuya", 'Debug', "thermostat_Calibration - 2 complement form of Calibration offset on %s off %s" %( NwkId, target_calibration))
+
+    if 'Tuya' not in self.ListOfDevices[NwkId]:
+        self.ListOfDevices[NwkId]['Tuya'] = {}
+
+    if 'Calibration' not in self.ListOfDevices[NwkId]['Tuya']:
+        # Not existing feature !
         return
+
+    if target_calibration == int(self.ListOfDevices[NwkId]['Tuya']['Calibration'],16):
+        return
+
+    self.log.logging( "Tuya", 'Debug', "thermostat_Calibration - Set Thermostat offset on %s off %s/%08x" %( NwkId, target_calibration, target_calibration))
+    tuya_trv_calibration( self, NwkId, target_calibration)
+
+
+def tuya_trv_calibration( self, nwkid, value):
+    self.log.logging( "Tuya", 'Debug', "tuya_trv_calibration - %s Calibration: %s" %(nwkid, value))
     sqn = get_and_inc_SQN( self, nwkid )
     dp = get_datapoint_command( self, nwkid, 'Calibration')
     self.log.logging( "Tuya", 'Debug', "tuya_trv_calibration - %s dp for Calibration: %s" %(nwkid, dp))
@@ -465,7 +498,7 @@ def tuya_trv_calibration( self, nwkid, onoff):
         EPout = '01'
         cluster_frame = '11'
         cmd = '00' # Command
-        data = '%02x' %onoff
+        data = '%08x' %value
         tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 
 def tuya_check_valve_detection( self, NwkId ):
@@ -490,6 +523,8 @@ def tuya_check_childlock( self, NwkId ):
         tuya_trv_window_detection( self, NwkId, self.ListOfDevices[ NwkId ]['Param']['ChildLock'])
 
 def tuya_setpoint( self, nwkid, setpoint_value):
+
+    tuya_set_calibration_if_needed( self, nwkid )
     self.log.logging( "Tuya", 'Debug', "tuya_setpoint - %s setpoint: %s" %(nwkid, setpoint_value))
     if get_model_name( self, nwkid ) == 'TS0601-eTRV3':
         # Force Manual mode

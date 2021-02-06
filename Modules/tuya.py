@@ -360,4 +360,3 @@ def tuya_window_cover_command( self, nwkid, mode ):
     # (0x0006) | Write Attributes (0x02) | 0x8001 | 8-Bit (0x30) | 2 (0x02) | Light Mode 3
 
     write_attribute( self, nwkid, ZIGATE_EP, '01', '0006', '0000', '00', '8001', '30', mode, ackIsDisabled = True)
-
