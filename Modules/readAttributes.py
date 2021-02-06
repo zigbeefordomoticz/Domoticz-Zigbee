@@ -264,7 +264,12 @@ def ReadAttributeRequest_0000_for_pairing( self, key ):
     skipModel = False
 
     listAttributes = []
-
+    # Do we Have Manufacturer
+    if self.ListOfDevices[key]['Manufacturer'] == '' and self.ListOfDevices[key]['Ep'] and self.ListOfDevices[key]['Ep'] != {}:
+        self.log.logging( "ReadAttributes", 'Log', "Request Basic  Manufacturer via Read Attribute request: %s" %'0004', nwkid=key)
+        manuf_name = [ 0x0004 ]
+        for x in self.ListOfDevices[key]['Ep']:
+            ReadAttributeReq( self, key, ZIGATE_EP, x, "0000", manuf_name, ackIsDisabled = False , checkTime = False)
 
     # Do We have Model Name
     if not skipModel and self.ListOfDevices[key]['Model'] in [{}, ''] and self.ListOfDevices[key]['Ep'] and self.ListOfDevices[key]['Ep'] != {}:
@@ -274,13 +279,6 @@ def ReadAttributeRequest_0000_for_pairing( self, key ):
             ReadAttributeReq( self, key, ZIGATE_EP, x, "0000", model_name, ackIsDisabled = False , checkTime = False)
     else:
         listAttributes.append(0x0005)
-
-    # Do we Have Manufacturer
-    if self.ListOfDevices[key]['Manufacturer'] == '' and self.ListOfDevices[key]['Ep'] and self.ListOfDevices[key]['Ep'] != {}:
-        self.log.logging( "ReadAttributes", 'Log', "Request Basic  Manufacturer via Read Attribute request: %s" %'0004', nwkid=key)
-        manuf_name = [ 0x0004 ]
-        for x in self.ListOfDevices[key]['Ep']:
-            ReadAttributeReq( self, key, ZIGATE_EP, x, "0000", manuf_name, ackIsDisabled = False , checkTime = False)
 
     # Check if Model Name should be requested
     if self.ListOfDevices[key]['Manufacturer'] == '1110': # Profalux.

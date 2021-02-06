@@ -35,26 +35,27 @@ from Modules.basicOutputs import write_attribute,raw_APS_request
 #   Direction: Device -> Coordinator 0x02 Setpoint command response
 
 
-TUYA_SIREN_MANUFACTURER = ('_TZE200_d0yu2xgi' )
-TUYA_DIMMER_MANUFACTURER =( '_TZE200_dfxkcots')
-TUYA_SWITCH_MANUFACTURER =( '_TZE200_7tdtqgwv')
-TUYA_CURTAIN_MAUFACTURER =(  "_TZE200_cowvfni3", "_TZE200_wmcdj3aq", "_TZE200_fzo2pocs", "_TZE200_nogaemzt", "_TZE200_5zbp6j0u", \
+TUYA_SIREN_MANUFACTURER =  ( '_TZE200_d0yu2xgi', )
+TUYA_DIMMER_MANUFACTURER = ( '_TZE200_dfxkcots', )
+TUYA_SWITCH_MANUFACTURER = ( '_TZE200_7tdtqgwv', )
+TUYA_CURTAIN_MAUFACTURER = ( "_TZE200_cowvfni3", "_TZE200_wmcdj3aq", "_TZE200_fzo2pocs", "_TZE200_nogaemzt", "_TZE200_5zbp6j0u", \
                             "_TZE200_fdtjuw7u", "_TZE200_bqcqqjpb", "_TZE200_zpzndjez", "_TYST11_cowvfni3", "_TYST11_wmcdj3aq", \
                             "_TYST11_fzo2pocs", "_TYST11_nogaemzt", "_TYST11_5zbp6j0u", "_TYST11_fdtjuw7u", "_TYST11_bqcqqjpb", "_TYST11_zpzndjez", \
-                            '_TZE200_rddyvrci', '_TZE200_nkoabg8w', '_TZE200_xuzcvlku', '_TZE200_4vobcgd3', '_TZE200_pk0sfzvr', '_TYST11_xu1rkty3', '_TZE200_zah67ekd')
+                            '_TZE200_rddyvrci', '_TZE200_nkoabg8w', '_TZE200_xuzcvlku', '_TZE200_4vobcgd3', '_TZE200_pk0sfzvr', '_TYST11_xu1rkty3', '_TZE200_zah67ekd' )
 
-TUYA_CURTAIN_MODEL =  ("owvfni3", "mcdj3aq", "zo2pocs", "ogaemzt", "zbp6j0u", "dtjuw7u", "qcqqjpb", "pzndjez")
+TUYA_CURTAIN_MODEL =  ("owvfni3", "mcdj3aq", "zo2pocs", "ogaemzt", "zbp6j0u", "dtjuw7u", "qcqqjpb", "pzndjez", )
 
-TUYA_THERMOSTAT_MANUFACTURER = ('_TZE200_aoclfnxz', '_TYST11_zuhszj9s', '_TYST11_jeaxp72v')
+TUYA_THERMOSTAT_MANUFACTURER = ('_TZE200_aoclfnxz', '_TYST11_zuhszj9s', '_TYST11_jeaxp72v', )
 
-TUYA_eTRV1_MANUFACTURER = ('_TZE200_kfvq6avy', '_TZE200_ckud7u2l', '_TYST11_KGbxAXL2', '_TYST11_ckud7u2l')
+TUYA_eTRV1_MANUFACTURER = ( '_TZE200_kfvq6avy', '_TZE200_ckud7u2l', '_TYST11_KGbxAXL2', '_TYST11_ckud7u2l', )
 
 # https://github.com/zigpy/zigpy/discussions/653#discussioncomment-314395
-TUYA_eTRV1_MANUFACTURER = ( '_TYST11_zivfvd7h', '_TZE200_zivfvd7h', '_TYST11_kfvq6avy', '_TZE200_kfvq6avy', '_TYST11_jeaxp72v')
-TUYA_eTRV2_MANUFACTURER = ( '_TZE200_ckud7u2l', '_TYST11_ckud7u2l' )
-TUYA_eTRV3_MANUFACTURER = ( '_TZE200_c88teujp', '_TYST11_KGbxAXL2', '_TYST11_zuhszj9s')
-TUYA_eTRV_MANUFACTURER =  ( '_TYST11_2dpplnsn', '_TZE200_wlosfena', '_TZE200_fhn3negr', '_TZE200_qc4fpmcn')
-TUYA_eTRV_MODEL =         ( 'TS0601', 'TS0601-eTRV', 'TS0601-eTRV1', 'TS0601-eTRV2', 'TS0601-eTRV3', 'TS0601-thermostat', 'uhszj9s', 'GbxAXL2', '88teujp', 'kud7u2l', 'eaxp72v', 'fvq6avy', 'ivfvd7h')
+TUYA_eTRV1_MANUFACTURER = ( '_TYST11_zivfvd7h', '_TZE200_zivfvd7h', '_TYST11_kfvq6avy', '_TZE200_kfvq6avy', '_TYST11_jeaxp72v',)
+TUYA_eTRV2_MANUFACTURER = ( '_TZE200_ckud7u2l', '_TYST11_ckud7u2l' ,)
+TUYA_eTRV3_MANUFACTURER = ( '_TZE200_c88teujp', '_TYST11_KGbxAXL2', '_TYST11_zuhszj9s', )
+TUYA_eTRV_MANUFACTURER =  ( '_TYST11_2dpplnsn', '_TZE200_wlosfena', '_TZE200_fhn3negr', '_TZE200_qc4fpmcn', )
+TUYA_eTRV_MODEL =         ( 'TS0601', 'TS0601-eTRV', 'TS0601-eTRV1', 'TS0601-eTRV2', 'TS0601-eTRV3', 'TS0601-thermostat', 'uhszj9s', 'GbxAXL2', '88teujp', \
+                             'kud7u2l', 'eaxp72v', 'fvq6avy', 'ivfvd7h',)
 
 TUYA_TS0601_MODEL_NAME = TUYA_eTRV_MODEL + TUYA_CURTAIN_MODEL
 

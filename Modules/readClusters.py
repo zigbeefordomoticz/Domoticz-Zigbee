@@ -298,8 +298,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             else:
                 modelName = ''
 
-
-        elif modelName in ( TUYA_TS0601_MODEL_NAME ) :
+        elif modelName in TUYA_TS0601_MODEL_NAME:
             # https://github.com/dresden-elektronik/deconz-rest-plugin/wiki/Tuya-devices-List
 
             manufacturer_name = ''
@@ -307,36 +306,38 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 manufacturer_name = self.ListOfDevices[MsgSrcAddr]['Manufacturer Name']
             modelName = 'TS0601'
 
-            self.log.logging( "Cluster", 'Log', "ReadCluster - %s / %s - Recepion Model: >%s< ManufName: %s" %(MsgClusterId, MsgAttrID, modelName, manufacturer_name), MsgSrcAddr)
+            self.log.logging( "Cluster", 'Log', "ReadCluster - %s / %s - Recepion Model: >%s< ManufName: >%s<" %(MsgClusterId, MsgAttrID, modelName, manufacturer_name), MsgSrcAddr)
 
-            if manufacturer_name in ( TUYA_SIREN_MANUFACTURER ) : # Sirene 
+            if manufacturer_name in TUYA_SIREN_MANUFACTURER: # Sirene 
                 modelName += '-sirene'
 
-            elif manufacturer_name in ( TUYA_DIMMER_MANUFACTURER ): # Dimmer
+            elif manufacturer_name in TUYA_DIMMER_MANUFACTURER: # Dimmer
                 modelName += '-dimmer'
 
-            elif manufacturer_name in ( TUYA_SWITCH_MANUFACTURER ): # Switch
+            elif manufacturer_name in TUYA_SWITCH_MANUFACTURER: # Switch
                 modelName += '-switch'
 
-            elif manufacturer_name in ( TUYA_CURTAIN_MAUFACTURER ):
+            elif manufacturer_name in TUYA_CURTAIN_MAUFACTURER:
                 modelName += '-curtain'
 
-            elif manufacturer_name in ( TUYA_THERMOSTAT_MANUFACTURER): # Thermostat
+            elif manufacturer_name in TUYA_THERMOSTAT_MANUFACTURER: # Thermostat
                 # Thermostat BTH-002 (to be confirmed   ) and WZB-TRVL ( @d2n2e2o) and Thermostat Essentials Premium ( to be confirmed )
                 modelName += '-thermostat'
 
-            elif manufacturer_name in ( TUYA_eTRV1_MANUFACTURER ): # eTRV
+            elif manufacturer_name in TUYA_eTRV1_MANUFACTURER: # eTRV
                 modelName += '-eTRV1'
 
-            elif manufacturer_name in ( TUYA_eTRV2_MANUFACTURER ): # eTRV
+            elif manufacturer_name in TUYA_eTRV2_MANUFACTURER: # eTRV
                 modelName += '-eTRV2'
                 
-            elif manufacturer_name in ( TUYA_eTRV3_MANUFACTURER ): # eTRV
+            elif manufacturer_name in TUYA_eTRV3_MANUFACTURER: # eTRV
                 modelName += '-eTRV3'
             else:
                 # eTRV
                 modelName += '-eTRV'
 
+            self.log.logging( "Cluster", 'Log', "ReadCluster - %s / %s - Updated Model: >%s<" %(MsgClusterId, MsgAttrID, modelName), MsgSrcAddr)
+ 
         elif modelName == 'TS0003':
             if 'Manufacturer Name' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Manufacturer Name'] in ( '_TYZB01_ncutbjdi', ):
                 # QS-Zigbee-S05-LN
