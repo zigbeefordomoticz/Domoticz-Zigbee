@@ -36,6 +36,7 @@ from Modules.basicOutputs import write_attribute,raw_APS_request
 
 
 TUYA_SIREN_MANUFACTURER =  ( '_TZE200_d0yu2xgi', )
+
 TUYA_DIMMER_MANUFACTURER = ( '_TZE200_dfxkcots', )
 TUYA_SWITCH_MANUFACTURER = ( '_TZE200_7tdtqgwv', )
 TUYA_CURTAIN_MAUFACTURER = ( "_TZE200_cowvfni3", "_TZE200_wmcdj3aq", "_TZE200_fzo2pocs", "_TZE200_nogaemzt", "_TZE200_5zbp6j0u", \
@@ -43,9 +44,9 @@ TUYA_CURTAIN_MAUFACTURER = ( "_TZE200_cowvfni3", "_TZE200_wmcdj3aq", "_TZE200_fz
                             "_TYST11_fzo2pocs", "_TYST11_nogaemzt", "_TYST11_5zbp6j0u", "_TYST11_fdtjuw7u", "_TYST11_bqcqqjpb", "_TYST11_zpzndjez", \
                             '_TZE200_rddyvrci', '_TZE200_nkoabg8w', '_TZE200_xuzcvlku', '_TZE200_4vobcgd3', '_TZE200_pk0sfzvr', '_TYST11_xu1rkty3', '_TZE200_zah67ekd' )
 
-TUYA_CURTAIN_MODEL =  ("owvfni3", "mcdj3aq", "zo2pocs", "ogaemzt", "zbp6j0u", "dtjuw7u", "qcqqjpb", "pzndjez", )
+TUYA_CURTAIN_MODEL =  ( "owvfni3", "mcdj3aq", "zo2pocs", "ogaemzt", "zbp6j0u", "dtjuw7u", "qcqqjpb", "pzndjez", )
 
-TUYA_THERMOSTAT_MANUFACTURER = ('_TZE200_aoclfnxz', '_TYST11_zuhszj9s', '_TYST11_jeaxp72v', )
+TUYA_THERMOSTAT_MANUFACTURER = ( '_TZE200_aoclfnxz', '_TYST11_zuhszj9s', '_TYST11_jeaxp72v', )
 
 TUYA_eTRV1_MANUFACTURER = ( '_TZE200_kfvq6avy', '_TZE200_ckud7u2l', '_TYST11_KGbxAXL2', '_TYST11_ckud7u2l', )
 
