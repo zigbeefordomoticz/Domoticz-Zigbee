@@ -523,7 +523,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 246, Subtype_ = 1, Switchtype_ = 0 )
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Lux" %(t), NWKID)
 
-            if t in ( "Switch", "SwitchButton", "HeatingSwitch", "PAC-SWITCH", "ThermoOnOff"):  
+            if t in ( "Switch", "SwitchButton", "HeatingSwitch", "PAC-SWITCH", "ThermoOnOff", "ShutterCalibration"):  
                 # inter sans fils 1 touche 86sw1 xiaomi
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 244, Subtype_ = 73, Switchtype_ = 0 )
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Switch" %(t), NWKID)

@@ -25,7 +25,7 @@ from Modules.thermostats import thermostat_Setpoint, thermostat_Mode
 from Modules.livolo import livolo_OnOff
 from Modules.tuyaTRV import ( tuya_trv_mode , tuya_trv_onoff)
 from Modules.tuyaSiren import ( tuya_siren_alarm, tuya_siren_humi_alarm, tuya_siren_temp_alarm )
-from Modules.tuya import ( tuya_dimmer_onoff, tuya_dimmer_dimmer, tuya_curtain_lvl, tuya_curtain_openclose)
+from Modules.tuya import ( tuya_dimmer_onoff, tuya_dimmer_dimmer, tuya_curtain_lvl, tuya_curtain_openclose, tuya_window_cover_calibration)
 
 from Modules.legrand_netatmo import  legrand_fc40, cable_connected_mode
 from Modules.schneider_wiser import schneider_EHZBRTS_thermoMode, schneider_hact_fip_mode, schneider_set_contract, schneider_temp_Setcurrent, schneider_hact_heater_type
@@ -75,7 +75,8 @@ ACTIONATORS = [ 'Switch', 'Plug', 'SwitchAQ2', 'Smoke', 'DSwitch', 'LivoloSWL', 
             'Venetian', 'VenetianInverted', 'WindowCovering', 'BSO', 'BSO-Orientation', 'BSO-Volet',
             'LvlControl', 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl',
             'ThermoSetpoint', 'ThermoMode', 'ACMode', 'ThermoMode_2', 'ThermoModeEHZBRTS', 'FanControl', 'PAC-SWITCH', 'ACMode_2', 'ACSwing','TempSetCurrent', 'AlarmWD',
-            'FIP', 'HACTMODE','LegranCableMode', 'ContractPower','HeatingSwitch', 'DoorLock' , 'TuyaSiren', 'TuyaSirenHumi', 'TuyaSirenTemp', 'ThermoOnOff']
+            'FIP', 'HACTMODE','LegranCableMode', 'ContractPower','HeatingSwitch', 'DoorLock' , 'TuyaSiren', 'TuyaSirenHumi', 'TuyaSirenTemp', 'ThermoOnOff',
+            'ShutterCalibration' ]
             
 def mgtCommand( self, Devices, Unit, Command, Level, Color ):
 
@@ -289,6 +290,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             tuya_trv_onoff( self, NWKID, 0x00)
             UpdateDevice_v2(self, Devices, Unit, 0, 'Off',BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
 
+        elif DeviceType == 'ShutterCalibration':
+            self.log.logging( "Command", 'Debug', "mgtCommand : Disable Window Cover Calibration" )
+            tuya_window_cover_calibration( self, NWKID, '00')
+
         else:
             # Remaining Slider widget
             if profalux: # Profalux are define as LvlControl but should be managed as Blind Inverted
@@ -379,6 +384,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         elif DeviceType == 'ThermoOnOff':
             tuya_trv_onoff( self, NWKID, 0X01)
             UpdateDevice_v2(self, Devices, Unit, 1, 'On',BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+
+        elif DeviceType == 'ShutterCalibration':
+            self.log.logging( "Command", 'Debug', "mgtCommand : Enable Window Cover Calibration" )
+            tuya_window_cover_calibration( self, NWKID, '01')
 
         else:
             # Remaining Slider widget
