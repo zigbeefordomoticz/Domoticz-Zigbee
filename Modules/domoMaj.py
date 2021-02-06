@@ -232,9 +232,9 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
             elif WidgetType ==  'HeatingStatus' and Attribute_ == "0124":
                 self.log.logging( "Widget", "Debug", "------>  HeatingStatus %s" %value, NWKID)
                 if value == 0:
-                    UpdateDevice_v2(self, Devices, DeviceUnit, 2, '20', BatteryLevel, SignalLevel)
+                    UpdateDevice_v2(self, Devices, DeviceUnit, 0, 'Not Heating', BatteryLevel, SignalLevel)
                 elif value == 1:
-                    UpdateDevice_v2(self, Devices, DeviceUnit, 1, '10', BatteryLevel, SignalLevel)
+                    UpdateDevice_v2(self, Devices, DeviceUnit, 1, 'Heating', BatteryLevel, SignalLevel)
 
             elif WidgetType ==  'ThermoOnOff' and Attribute_ == "6501":
                 self.log.logging( "Widget", "Debug", "------>  Thermo On/Off %s" %value, NWKID)

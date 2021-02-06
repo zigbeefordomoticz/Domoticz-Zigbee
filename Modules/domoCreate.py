@@ -319,12 +319,6 @@ def CreateDomoDevice(self, Devices, NWKID):
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in HACTMODE..." %(t), NWKID)
 
-            # 3 Selector , OffHidden, Style 1 (Status)
-            if t in ('HeatingStatus',  ):
-                Options = createSwitchSelector( self,  3, DeviceType = t, OffHidden = True, SelectorStyle = 1 )
-                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
-                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in HACTMODE..." %(t), NWKID)
-
             # 4 Selector , OffHidden, Style 0 (command)
             if t in ('DSwitch',):
                 Options = createSwitchSelector( self,  4, DeviceType = t, OffHidden = True, SelectorStyle = 0 )
@@ -523,7 +517,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 246, Subtype_ = 1, Switchtype_ = 0 )
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Lux" %(t), NWKID)
 
-            if t in ( "Switch", "SwitchButton", "HeatingSwitch", "PAC-SWITCH", "ThermoOnOff", "ShutterCalibration"):  
+            if t in ( "Switch", "SwitchButton", "HeatingSwitch", "PAC-SWITCH", "ThermoOnOff", "ShutterCalibration", "HeatingStatus"):  
                 # inter sans fils 1 touche 86sw1 xiaomi
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 244, Subtype_ = 73, Switchtype_ = 0 )
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Switch" %(t), NWKID)
