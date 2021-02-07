@@ -2575,8 +2575,8 @@ def Decode8102(self, Devices, MsgData, MsgLQI):  # Attribute Reports
         pluzzyDecode8102( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, MsgLQI, )
 
 
-    if 'Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr ]['Model'] in ('SML001', 'SML002'):
-        send_default_response( self, MsgSrcAddr, MsgSrcEp , MsgSQN, '0a', MsgClusterId )
+    #if 'Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr ]['Model'] in ('SML001', 'SML002'):
+    #    send_default_response( self, MsgSrcAddr, MsgSrcEp , MsgSQN, '0a', MsgClusterId )
 
     timeStamped(self, MsgSrcAddr, 0x8102)
     loggingMessages(self, "8102", MsgSrcAddr, None, MsgLQI, MsgSQN)
