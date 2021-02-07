@@ -54,6 +54,7 @@ from Modules.basicOutputs import (
     setTimeServer,
     ZigatePermitToJoin,
     unknown_device_nwkid,
+    send_default_response
 )
 from Modules.timeServer import timeserver_read_attribute_request
 from Modules.readAttributes import ReadAttributeRequest_0000, ReadAttributeRequest_0001
@@ -2573,6 +2574,9 @@ def Decode8102(self, Devices, MsgData, MsgLQI):  # Attribute Reports
         MsgData = ( MsgSQN + MsgSrcAddr + MsgSrcEp + MsgClusterId + MsgAttrID + MsgAttStatus + MsgAttType + MsgAttSize + MsgClusterData )
         pluzzyDecode8102( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, MsgLQI, )
 
+
+    if 'Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr ]['Model'] in ('SML001', 'SML002'):
+        send_default_response( self, MsgSrcAddr, MsgSrcEp , MsgSQN, '0a', MsgClusterId )
 
     timeStamped(self, MsgSrcAddr, 0x8102)
     loggingMessages(self, "8102", MsgSrcAddr, None, MsgLQI, MsgSQN)
