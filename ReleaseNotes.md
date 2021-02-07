@@ -17,9 +17,19 @@ Release Numbering
 - Odd numbers --> Stable
 - Even numbers  --> Beta
 
+## 03 Feb. 2021   - 4.11.16
+- [Hardware] - Lumi Plug MAEU01
+- [Hardware] - Lidl led
+- [Hardware] - Update of Danalock configuration
 
+## 19 Jan. 2021   - 4.11.15
+- [Hardware] - Add Gledopto GL-C-007 as a RGB W 
+- [Issue] - Fix Gledopto GL-C-009 definition as a Level Control
 
-##    Dec.  2020  - 4.11.13
+##  4 Jan. 2021   - 4.11.14
+- [Hardware] - Correct the right widget Color Control Widget fo CLA60 RW OSRAM
+
+##  1 Jan.  2021  - 4.11.13
 - [Hardware] - Support Tuya Water leak sensor
 - [Hardware] - Support of Legrand Teleruptor
 - [Hardware] - Support of Sonoff ZB Mini switch

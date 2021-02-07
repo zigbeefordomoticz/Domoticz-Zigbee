@@ -21,6 +21,8 @@ from Modules.domoMaj import MajDomoDevice
 from Modules.basicOutputs import ZigatePermitToJoin, leaveRequest, write_attribute
 from Modules.zigateConsts import ZIGATE_EP,  SIZE_DATA_TYPE
 from Modules.tools import voltage2batteryP, checkAndStoreAttributeValue, is_ack_tobe_disabled
+from Modules.readAttributes import ReadAttributeRequest_0b04_050b
+from Modules.zigateConsts import MAX_LOAD_ZIGATE
 
 from Classes.LoggingManagement import LoggingManagement
 
@@ -30,9 +32,22 @@ XIAOMI_POWERMETER_EP = {
     'lumi.ctrl_ln2': '03',
     'lumi.ctrl_ln2.aq1': '03',
     'lumi.plug.mmeu01': '15',
+    'lumi.plug.maeu01': '01',
     'lumi.relay.c2acn01': '01'
 }
 
+
+def pollingLumiPower( self, key ):
+    """
+    This fonction is call if enabled to perform any Manufacturer specific polling action
+    The frequency is defined in the pollingLumiPower parameter (in number of seconds)
+    """
+    if  ( self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE):
+        return True
+
+    if 'Model' in self.ListOfDevices [key] and self.ListOfDevices[key]['Model'] == 'lumi.plug.maeu01':
+        ReadAttributeRequest_0b04_050b( self, key)
+    return False
 
 def xiaomi_leave( self, NWKID):
     
