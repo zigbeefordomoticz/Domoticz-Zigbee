@@ -54,106 +54,6 @@ def process_web_request( self, webInput):
 
     """
 
-    def get_group_id():
-       for x in range( 0x0001, 0x0999):
-            GrpId = '%04X' %x
-            if GrpId not in self.ListOfGroups:
-                return GrpId
-
-    def diff(first, second):
-        """
-        Diff between first and second
-        returns what is in first and not in second
-        """
-
-        return [item for item in first if item not in second]
-            
-    def compare_exitsing_with_new_list( self, first, second):
-        """
-        Compare 2 lists of devices and will return a dict with toBeAdded and toBeRemoved
-        """
-        #self.logging( 'Debug', " --  --  --  --  --  > compareExitsingWithNewList ")
-        report = {'ToBeAdded': diff(second, first)}
-        report['ToBeRemoved'] = diff( first, second)
-        return report
-
-    def transform_web_to_group_devices_list( WebDeviceList ):
-        #self.logging( 'Debug', "TransformWebToGroupDevicesList ")
-        DeviceList = []
-        for item in WebDeviceList:
-            Nwkid = item['_NwkId']
-            if Nwkid in self.ListOfDevices:
-                IEEE = self.ListOfDevices[ Nwkid ]['IEEE']
-                Ep = item['Ep']
-                DeviceList.append( [Nwkid, Ep, IEEE ] )
-        return DeviceList
-
-    def newGroup( self, GrpName, item ):
-        
-        self.logging( 'Debug', " --  -- - > Creation of Group: %s " %GrpName)
-        # New Group to be added
-        GrpId = get_group_id()
-        self.logging( 'Debug', " --  --  -- - > GroupId: %s " %GrpId)
-        self.logging( 'Debug', " --  --  -- - > DevicesSelected: %s " %item['devicesSelected'])
-        DevicesList = []
-        for dev in item['devicesSelected']:
-            NwkId = dev['_NwkId']
-            Ep    = dev['Ep']
-            if 'IEEE' in dev:
-                IEEE  = dev['IEEE']
-            else:
-                if NwkId in self.ListOfDevices:
-                    IEEE = self.ListOfDevices[ NwkId ]['IEEE'] 
-
-            # Add Device ( NwkID, Ep, IEEE) to Group GrpId
-            if [ NwkId, Ep, IEEE]  not in DevicesList:
-                DevicesList.append( [ NwkId, Ep, IEEE] )
-            self.logging( 'Debug', " --  --  --  -- - > Tuple to add: %s " % str([NwkId, Ep, IEEE] ))
-        self.logging( 'Debug', " --  --  -- - > GroupCreation" )
-        create_new_group_and_attach_devices( self, GrpId, GrpName, DevicesList)
-        SendGroupIdentifyEffect( self, GrpId )
-
-    def updateGroup( self, GrpId, item):
-    
-        self.logging( 'Debug', " --  -- - > Update GrpId: %s " %GrpId)
-        self.logging( 'Debug', " --  -- - > DeviceList from Web: %s " %item[ 'devicesSelected' ])
-
-        TargetedDevices = transform_web_to_group_devices_list( item[ 'devicesSelected' ] )
-        self.logging( 'Debug', " --  -- - > Target DeviceList: %s " %TargetedDevices)
-
-        ExistingDevices = self.ListOfGroups[ GrpId ]['Devices']
-        #Let's check if we have also Tradfri Remote 5 to be added
-
-        ikea5b = Ikea5BToBeAddedToListIfExist( self, GrpId )
-        if ikea5b and ikea5b not in self.ListOfGroups[ GrpId ]['Devices'] :
-            self.ListOfGroups[ GrpId ]['Devices'].append ( ikea5b )
-        self.logging( 'Debug', " --  -- - > Existing DeviceList: %s " %ExistingDevices)
-
-        WhatToDo = compare_exitsing_with_new_list( self, ExistingDevices, TargetedDevices)
-        sendIdentify = len(WhatToDo['ToBeAdded']) + len(WhatToDo['ToBeRemoved'])
-        self.logging( 'Debug', " --  -- - > Devices to be added: %s " %WhatToDo['ToBeAdded'])
-        update_group_and_add_devices( self, GrpId, WhatToDo['ToBeAdded'])
-
-        self.logging( 'Debug', " --  -- - > Devices to be removed: %s " %WhatToDo['ToBeRemoved'])
-        update_group_and_remove_devices( self, GrpId, WhatToDo['ToBeRemoved'])
-        if sendIdentify > 0:
-            SendGroupIdentifyEffect( self, GrpId )
-
-
-    def delGroup( self, GrpId ):
-        if GrpId not in self.ListOfGroups:
-            return
-        TobeRemovedDevices = self.ListOfGroups[ GrpId]['Devices']
-        update_group_and_remove_devices( self, GrpId, TobeRemovedDevices)
-        SendGroupIdentifyEffect( self, GrpId )
-
-    def fullGroupRemove( self ):
-        # Everything has to be removed.
-        for GrpId in list( self.ListOfGroups.keys() ):
-            delGroup( self, GrpId )
-
-
-
     # Begining
     #self.logging( 'Debug', "processWebRequest %s" %webInput)
     if len(webInput) == 0:
@@ -197,3 +97,102 @@ def process_web_request( self, webInput):
     self.logging( 'Debug', " -- - > Groups to be removed: %s " %str(GroupToBeRemoved))  
     for GrpId in GroupToBeRemoved:
         delGroup( self, GrpId)
+
+
+def get_group_id():
+    for x in range( 0x0001, 0x0999):
+        GrpId = '%04X' %x
+        if GrpId not in self.ListOfGroups:
+            return GrpId
+
+def diff(first, second):
+    """
+    Diff between first and second
+    returns what is in first and not in second
+    """
+
+    return [item for item in first if item not in second]
+        
+def compare_exitsing_with_new_list( self, first, second):
+    """
+    Compare 2 lists of devices and will return a dict with toBeAdded and toBeRemoved
+    """
+    #self.logging( 'Debug', " --  --  --  --  --  > compareExitsingWithNewList ")
+    report = {'ToBeAdded': diff(second, first)}
+    report['ToBeRemoved'] = diff( first, second)
+    return report
+
+def transform_web_to_group_devices_list( WebDeviceList ):
+    #self.logging( 'Debug', "TransformWebToGroupDevicesList ")
+    DeviceList = []
+    for item in WebDeviceList:
+        Nwkid = item['_NwkId']
+        if Nwkid in self.ListOfDevices:
+            IEEE = self.ListOfDevices[ Nwkid ]['IEEE']
+            Ep = item['Ep']
+            DeviceList.append( [Nwkid, Ep, IEEE ] )
+    return DeviceList
+
+def newGroup( self, GrpName, item ):
+    
+    self.logging( 'Debug', " --  -- - > Creation of Group: %s " %GrpName)
+    # New Group to be added
+    GrpId = get_group_id()
+    self.logging( 'Debug', " --  --  -- - > GroupId: %s " %GrpId)
+    self.logging( 'Debug', " --  --  -- - > DevicesSelected: %s " %item['devicesSelected'])
+    DevicesList = []
+    for dev in item['devicesSelected']:
+        NwkId = dev['_NwkId']
+        Ep    = dev['Ep']
+        if 'IEEE' in dev:
+            IEEE  = dev['IEEE']
+        else:
+            if NwkId in self.ListOfDevices:
+                IEEE = self.ListOfDevices[ NwkId ]['IEEE'] 
+
+        # Add Device ( NwkID, Ep, IEEE) to Group GrpId
+        if [ NwkId, Ep, IEEE]  not in DevicesList:
+            DevicesList.append( [ NwkId, Ep, IEEE] )
+        self.logging( 'Debug', " --  --  --  -- - > Tuple to add: %s " % str([NwkId, Ep, IEEE] ))
+    self.logging( 'Debug', " --  --  -- - > GroupCreation" )
+    create_new_group_and_attach_devices( self, GrpId, GrpName, DevicesList)
+    SendGroupIdentifyEffect( self, GrpId )
+
+def updateGroup( self, GrpId, item):
+
+    self.logging( 'Debug', " --  -- - > Update GrpId: %s " %GrpId)
+    self.logging( 'Debug', " --  -- - > DeviceList from Web: %s " %item[ 'devicesSelected' ])
+
+    TargetedDevices = transform_web_to_group_devices_list( item[ 'devicesSelected' ] )
+    self.logging( 'Debug', " --  -- - > Target DeviceList: %s " %TargetedDevices)
+
+    ExistingDevices = self.ListOfGroups[ GrpId ]['Devices']
+    #Let's check if we have also Tradfri Remote 5 to be added
+
+    ikea5b = Ikea5BToBeAddedToListIfExist( self, GrpId )
+    if ikea5b and ikea5b not in self.ListOfGroups[ GrpId ]['Devices'] :
+        self.ListOfGroups[ GrpId ]['Devices'].append ( ikea5b )
+    self.logging( 'Debug', " --  -- - > Existing DeviceList: %s " %ExistingDevices)
+
+    WhatToDo = compare_exitsing_with_new_list( self, ExistingDevices, TargetedDevices)
+    sendIdentify = len(WhatToDo['ToBeAdded']) + len(WhatToDo['ToBeRemoved'])
+    self.logging( 'Debug', " --  -- - > Devices to be added: %s " %WhatToDo['ToBeAdded'])
+    update_group_and_add_devices( self, GrpId, WhatToDo['ToBeAdded'])
+
+    self.logging( 'Debug', " --  -- - > Devices to be removed: %s " %WhatToDo['ToBeRemoved'])
+    update_group_and_remove_devices( self, GrpId, WhatToDo['ToBeRemoved'])
+    if sendIdentify > 0:
+        SendGroupIdentifyEffect( self, GrpId )
+
+
+def delGroup( self, GrpId ):
+    if GrpId not in self.ListOfGroups:
+        return
+    TobeRemovedDevices = self.ListOfGroups[ GrpId]['Devices']
+    update_group_and_remove_devices( self, GrpId, TobeRemovedDevices)
+    SendGroupIdentifyEffect( self, GrpId )
+
+def fullGroupRemove( self ):
+    # Everything has to be removed.
+    for GrpId in list( self.ListOfGroups.keys() ):
+        delGroup( self, GrpId )
