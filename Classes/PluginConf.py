@@ -57,6 +57,7 @@ SETTINGS = {
         'pollingGledopto':  {'type': 'int', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
         'pollingSchneider': {'type': 'int', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
         'pollingBlitzwolfPower': {'type': 'int', 'default': 0,'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
+        'pollingLumiPower': {'type': 'int', 'default': 0,'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
         'pollingCasaiaAC201':    {'type': 'int', 'default': 0,'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
     }},
 
