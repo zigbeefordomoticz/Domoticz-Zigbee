@@ -352,8 +352,23 @@ def update_domoticz_group_device( self, GroupId):
         self.logging( 'Log', "UpdateGroup  - (%15s) %s:%s" %( self.Devices[unit].Name, nValue, sValue ))
         self.Devices[unit].Update( nValue, sValue)
 
-def ValuesForVenetian( level ):
+def update_domoticz_group_name( self, GrpId, NewGrpName ):
 
+    unit = unit_for_widget(self, GrpId )
+    if unit is None:
+        self.logging( 'Debug', "update_domoticz_group_name - no unit found for GroupId: %s" %self.ListOfGroups[GrpId])
+        return
+
+    nValue = self.Devices[ unit ].nValue
+    sValue = self.Devices[ unit ].sValue
+
+    self.logging( 'Debug', "update_domoticz_group_name Update GroupId: %s to Name: %s" %(GrpId,NewGrpName ))
+    self.Devices[unit].Update( nValue, sValue, Name= NewGrpName)
+    return
+
+
+def ValuesForVenetian( level ):
+    nValue = 2
     if level > 0 and level < 100:
         nValue = 2
     elif level == 0:

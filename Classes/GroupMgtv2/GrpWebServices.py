@@ -10,10 +10,11 @@ from time import time
 from Modules.tools import getListOfEpForCluster, mainPoweredDevice
 
 from Classes.GroupMgtv2.GrpServices import create_new_group_and_attach_devices, update_group_and_add_devices, update_group_and_remove_devices, \
-                                   scan_all_devices_for_grp_membership, submitForGroupMemberShipScaner, SendGroupIdentifyEffect
+                                   scan_all_devices_for_grp_membership, submitForGroupMemberShipScaner, SendGroupIdentifyEffect, updateGroupName
     
 
 from Classes.GroupMgtv2.GrpIkeaRemote import Ikea5BToBeAddedToListIfExist
+
 
 
 
@@ -87,8 +88,9 @@ def process_web_request( self, webInput):
             continue
 
         # Check if we have to update the Group Name
-        if GrpId in self.ListOfDevices and GrpName != self.ListOfDevices[ GrpId ].Name:
-            update_group_name( self, GrpId, self.ListOfDevices[ GrpId ].Name, GrpName)
+        if GrpId in self.ListOfGroups and GrpName != self.ListOfGroups[ GrpId ]['Name']:
+            self.logging( 'Debug', " -- - > Require Group Name update from %s to %s" %(self.ListOfGroups[ GrpId ]['Name'], GrpName ))
+            updateGroupName( self, GrpId, GrpName)
 
         NewListOfGroups.append( GrpId )
         updateGroup( self, GrpId, item)
@@ -145,6 +147,7 @@ def newGroup( self, GrpName, item ):
     self.logging( 'Debug', " --  --  -- - > GroupId: %s " %GrpId)
     self.logging( 'Debug', " --  --  -- - > DevicesSelected: %s " %item['devicesSelected'])
     DevicesList = []
+    IEEE = ''
     for dev in item['devicesSelected']:
         NwkId = dev['_NwkId']
         Ep    = dev['Ep']
@@ -187,10 +190,6 @@ def updateGroup( self, GrpId, item):
     update_group_and_remove_devices( self, GrpId, WhatToDo['ToBeRemoved'])
     if sendIdentify > 0:
         SendGroupIdentifyEffect( self, GrpId )
-
-def update_group_name( self, grpid, old_group_name, new_group_name):
-    return
-
 
 def delGroup( self, GrpId ):
     if GrpId not in self.ListOfGroups:

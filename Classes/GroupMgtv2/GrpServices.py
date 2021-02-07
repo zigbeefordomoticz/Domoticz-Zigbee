@@ -9,7 +9,7 @@ from time import time
 
 from Modules.tools import mainPoweredDevice
 
-from Classes.GroupMgtv2.GrpDomoticz import create_domoticz_group_device, remove_domoticz_group_device
+from Classes.GroupMgtv2.GrpDomoticz import create_domoticz_group_device, remove_domoticz_group_device, update_domoticz_group_name
 
 from Classes.GroupMgtv2.GrpIkeaRemote import checkIfIkeaRound5BToBeAdded, checkIfIkeaRound5BToBeRemoved
 
@@ -98,6 +98,13 @@ def scan_all_devices_for_grp_membership( self ):
             if '0004' not in self.ListOfDevices[ NwkId ]['Ep'][Ep]:
                 continue
             submitForGroupMemberShipScaner( self, NwkId, Ep)
+
+def updateGroupName( self, GrpId, NewGrpName):
+    # Update the GroupName
+    self.ListOfGroups[ GrpId ]['Name'] = NewGrpName
+
+    # Update in Dz
+    update_domoticz_group_name( self, GrpId, NewGrpName )
 
 def addGroupMemberShip( self, NwkId, Ep, GroupId):
     """
