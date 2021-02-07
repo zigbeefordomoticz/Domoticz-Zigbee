@@ -18,7 +18,7 @@ from datetime import datetime
 from time import time
 
 from Modules.zigateConsts import ZIGATE_EP, ADDRESS_MODE, ZLL_DEVICES, ZIGATE_COMMANDS
-from Modules.tools import mainPoweredDevice, getListOfEpForCluster, set_request_datastruct, set_isqn_datastruct, set_timestamp_datastruct, get_and_inc_SQN
+from Modules.tools import mainPoweredDevice, getListOfEpForCluster, set_request_datastruct, set_isqn_datastruct, set_timestamp_datastruct, get_and_inc_SQN, is_ack_tobe_disabled
 from Classes.LoggingManagement import LoggingManagement
 
 
@@ -816,3 +816,30 @@ def unknown_device_nwkid( self, nwkid ):
     u8RequestType = '00'
     u8StartIndex = '00'
     sendZigateCmd(self ,'0041', '02' + nwkid + u8RequestType + u8StartIndex )
+
+def send_default_response( self, Nwkid, srcEp , sqn, response_to_command, cluster ):
+
+    # Response_To_Command
+    # 0x01: Read Attributes Response
+    # 0x02: Write Attribute
+    # 0x03: Write Attributes Undivided
+    # 0x04: Write Attributes Response
+    # 0x05: Write Attributes No Response
+    # 0x06: Configure Reporting
+    # 0x07: Configure Reporting Response
+    # 0x08: Read reporting Configuration
+    # 0x09: Read Reporting Configuration Response
+    # 0x0a: Report Attribute
+    # 0x0b: Default response
+    # 0x0c: Discover Attributes
+    # 0x0d: Discober Attribute Response
+
+
+    if Nwkid not in self.ListOfDevices:
+        return 
+
+    cmd = '0b' # Default response
+    payload = '00' + sqn + cmd +  response_to_command + '00'
+    raw_APS_request( self, Nwkid, srcEp, cluster, '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = is_ack_tobe_disabled(self, Nwkid))
+    self.log.logging( "BasicOutput", 'Log', "send_default_response - %s/%s " %(Nwkid, srcEp ))
+
