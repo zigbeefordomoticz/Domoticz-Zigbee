@@ -88,7 +88,7 @@ def process_web_request( self, webInput):
 
         # Check if we have to update the Group Name
         if GrpId in self.ListOfDevices and GrpName != self.ListOfDevices[ GrpId ].Name:
-            update_group_name( self, grpid, self.ListOfDevices[ GrpId ].Name, GrpName)
+            update_group_name( self, GrpId, self.ListOfDevices[ GrpId ].Name, GrpName)
 
         NewListOfGroups.append( GrpId )
         updateGroup( self, GrpId, item)
