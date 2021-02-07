@@ -103,7 +103,7 @@ def process_web_request( self, webInput):
         delGroup( self, GrpId)
 
 
-def get_group_id():
+def get_group_id( self ):
     for x in range( 0x0001, 0x0999):
         GrpId = '%04X' %x
         if GrpId not in self.ListOfGroups:
@@ -141,7 +141,7 @@ def newGroup( self, GrpName, item ):
     
     self.logging( 'Debug', " --  -- - > Creation of Group: %s " %GrpName)
     # New Group to be added
-    GrpId = get_group_id()
+    GrpId = get_group_id( self )
     self.logging( 'Debug', " --  --  -- - > GroupId: %s " %GrpId)
     self.logging( 'Debug', " --  --  -- - > DevicesSelected: %s " %item['devicesSelected'])
     DevicesList = []
