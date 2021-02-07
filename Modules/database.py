@@ -546,6 +546,8 @@ def load_new_param_definition( self ):
         for param in self.DeviceConf[ model_name ]['Param']:
             if param in self.ListOfDevices[ key ]['Param']:
                 continue
+
+            # Initiatilize the parameter with the Configuration.
             self.ListOfDevices[ key ]['Param'][ param ] = self.DeviceConf[ model_name ]['Param'][ param ]
 
             # Overwrite the param by Existing Global parameter
@@ -557,7 +559,6 @@ def load_new_param_definition( self ):
             if param in ( 'PowerOnAfterOffOn' ):
                 if 'Manufacturer' not in self.ListOfDevices[ key ]:
                     return
-
                 if self.ListOfDevices[ key ]['Manufacturer'] == '100b': # Philips
                     self.ListOfDevices[ key ]['Param'][ param ] = self.pluginconf.pluginConf[ 'PhilipsPowerOnAfterOffOn' ]
  
