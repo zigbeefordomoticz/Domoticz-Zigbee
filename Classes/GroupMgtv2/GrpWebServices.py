@@ -86,6 +86,10 @@ def process_web_request( self, webInput):
             # It should be considered as a New group, but in that case, we should not have _GroupId
             continue
 
+        # Check if we have to update the Group Name
+        if GrpId in self.ListOfDevices and GrpName != self.ListOfDevices[ GrpId ].Name:
+            update_group_name( self, grpid, self.ListOfDevices[ GrpId ].Name, GrpName)
+
         NewListOfGroups.append( GrpId )
         updateGroup( self, GrpId, item)
 
@@ -122,7 +126,7 @@ def compare_exitsing_with_new_list( self, first, second):
     report['ToBeRemoved'] = diff( first, second)
     return report
 
-def transform_web_to_group_devices_list( WebDeviceList ):
+def transform_web_to_group_devices_list( self, WebDeviceList ):
     #self.logging( 'Debug', "TransformWebToGroupDevicesList ")
     DeviceList = []
     for item in WebDeviceList:
@@ -163,7 +167,7 @@ def updateGroup( self, GrpId, item):
     self.logging( 'Debug', " --  -- - > Update GrpId: %s " %GrpId)
     self.logging( 'Debug', " --  -- - > DeviceList from Web: %s " %item[ 'devicesSelected' ])
 
-    TargetedDevices = transform_web_to_group_devices_list( item[ 'devicesSelected' ] )
+    TargetedDevices = transform_web_to_group_devices_list( self, item[ 'devicesSelected' ] )
     self.logging( 'Debug', " --  -- - > Target DeviceList: %s " %TargetedDevices)
 
     ExistingDevices = self.ListOfGroups[ GrpId ]['Devices']
@@ -183,6 +187,9 @@ def updateGroup( self, GrpId, item):
     update_group_and_remove_devices( self, GrpId, WhatToDo['ToBeRemoved'])
     if sendIdentify > 0:
         SendGroupIdentifyEffect( self, GrpId )
+
+def update_group_name( self, grpid, old_group_name, new_group_name):
+    return
 
 
 def delGroup( self, GrpId ):
