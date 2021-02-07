@@ -839,7 +839,7 @@ def send_default_response( self, Nwkid, srcEp , sqn, response_to_command, cluste
         return 
 
     cmd = '0b' # Default response
-    payload = '00' + sqn + cmd +  response_to_command + '00'
+    payload = '10' + sqn + cmd +  response_to_command + '00'
     raw_APS_request( self, Nwkid, srcEp, cluster, '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = is_ack_tobe_disabled(self, Nwkid))
     self.log.logging( "BasicOutput", 'Log', "send_default_response - %s/%s " %(Nwkid, srcEp ))
 
