@@ -24,6 +24,12 @@
 		"0006": [ "0000" ],
 		"0008": [ "0000" ],
 		"0300": [ "0000", "0001", "0003", "004", "0007", "0008" ]
-	}
+	},
+	"Param": {
+		"fadingOff": 0,  
+		"moveToHueSatu": 0,
+		"moveToColourTemp": 0,
+		"moveToColourRGB": 0,
+		"moveToLevel": 0	}
 
 }

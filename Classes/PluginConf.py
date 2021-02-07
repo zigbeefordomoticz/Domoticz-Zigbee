@@ -251,31 +251,31 @@ SETTINGS = {
         'EnableReleaseButton':  {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
         'LegrandPowerOnAfterOffOn':    {'type': 'list',
                                  'list': {'Off': 0, 'On': 1, 'Previous': 255},
-                                 'default': 1, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
+                                 'default': 1, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
         }
     },
 
-    # Philips Hue Specific
+    #Philips Hue Specific
     'Philips': {'Order': 13, 'param': {
         'PhilipsPowerOnAfterOffOn':    {'type': 'list',
                                  'list': {'Off': 0, 'On': 1, 'Previous': 255},
-                                 'default': 1, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
+                                 'default': 1, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
         }
     },
 
-    # ENKI
+    #ENKI
     'Enki Lexman': {'Order': 13, 'param': {
         'EnkiPowerOnAfterOffOn':    {'type': 'list',
                                  'list': {'Off': 0, 'On': 1, 'Previous': 255},
-                                 'default': 1, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
+                                 'default': 1, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
         }
     },
 
-    #
-     'IkeaTradfri': {'Order': 13, 'param': {
+    
+    'IkeaTradfri': {'Order': 13, 'param': {
         'IkeaPowerOnAfterOffOn':    {'type': 'list',
                                  'list': {'Off': 0, 'On': 1, 'Previous': 255},
-                                 'default': 1, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
+                                 'default': 1, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
         }
     },
    

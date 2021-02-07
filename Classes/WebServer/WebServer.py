@@ -545,21 +545,21 @@ class WebServer(object):
                                 else:
                                     legrand_ledIfOnOnOff( self, 'Off')
 
-                        elif param == 'PhilipsPowerOnAfterOffOn':
-                            self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
-                            philips_set_poweron_after_offon( self, int(setting_lst[setting]['current']))
-
-                        elif param == 'EnkiPowerOnAfterOffOn':
-                            self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
-                            enki_set_poweron_after_offon( self, int(setting_lst[setting]['current']))
-
-                        elif param == 'LegrandPowerOnAfterOffOn':
-                            self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
-                            philips_set_poweron_after_offon( self, int(setting_lst[setting]['current']))
-
-                        elif param == 'IkeaPowerOnAfterOffOn':
-                            self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
-                            philips_set_poweron_after_offon( self, int(setting_lst[setting]['current']))
+                        # elif param == 'PhilipsPowerOnAfterOffOn':
+                        #     self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
+                        #     philips_set_poweron_after_offon( self, int(setting_lst[setting]['current']))
+# 
+                        # elif param == 'EnkiPowerOnAfterOffOn':
+                        #     self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
+                        #     enki_set_poweron_after_offon( self, int(setting_lst[setting]['current']))
+# 
+                        # elif param == 'LegrandPowerOnAfterOffOn':
+                        #     self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
+                        #     philips_set_poweron_after_offon( self, int(setting_lst[setting]['current']))
+# 
+                        # elif param == 'IkeaPowerOnAfterOffOn':
+                        #     self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
+                        #     philips_set_poweron_after_offon( self, int(setting_lst[setting]['current']))
 
                         elif param == 'debugMatchId':
                             if setting_lst[setting]['current'] == 'ffff':
@@ -826,7 +826,8 @@ class WebServer(object):
                             if 'Param' not in self.ListOfDevices[dev] or self.ListOfDevices[dev]['Param'] != x['Param']:
                                 self.ListOfDevices[dev]['Param'] = check_device_param( self, dev, x['Param'] )
                                 self.logging( 'Debug', "Updating Param to %s for IEEE: %s NWKID: %s" \
-                                    %(self.ListOfDevices[dev]['Param'], self.ListOfDevices[dev]['IEEE'], dev))                            
+                                    %(self.ListOfDevices[dev]['Param'], self.ListOfDevices[dev]['IEEE'], dev))      
+                                self.ListOfDevices[dev]['CheckParam'] = True                      
                 else:
                     Domoticz.Error("wrong data received: %s" %data)
 

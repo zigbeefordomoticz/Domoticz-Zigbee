@@ -775,7 +775,18 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         transitionMoveLevel = '%04x' %self.pluginconf.pluginConf['moveToLevel']
         transitionHue = '%04x' %self.pluginconf.pluginConf['moveToHueSatu']
         transitionTemp = '%04x' %self.pluginconf.pluginConf['moveToColourTemp']
-
+        if 'Param' in self.ListOfDevices[ NWKID ]:
+            if 'moveToColourTemp' in self.ListOfDevices[ NWKID ]:
+                transitionTemp = '%04x' %self.ListOfDevices[ NWKID ]['Param']['moveToColourTemp']
+            if 'moveToColourRGB' in self.ListOfDevices[ NWKID ]:
+                transitionRGB = '%04x' %self.ListOfDevices[ NWKID ]['Param']['moveToColourRGB']
+            if 'moveToLevel' in self.ListOfDevices[ NWKID ]:
+                transitionMoveLevel = '%04x' %self.ListOfDevices[ NWKID ]['Param']['moveToLevel']
+            if 'moveToHueSatu' in self.ListOfDevices[ NWKID ]:
+                transitionHue = '%04x' %self.ListOfDevices[ NWKID ]['Param']['moveToHueSatu']
+        self.log.logging( "Command", 'Debug', "-----> Transition Timers: %s %s %s %s" %( 
+            transitionRGB, transitionMoveLevel, transitionHue, transitionTemp))
+            
         #First manage level
         if Hue_List['m'] != 9998:
             # In case of m ==3, we will do the Setlevel
