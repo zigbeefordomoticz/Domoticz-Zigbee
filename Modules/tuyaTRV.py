@@ -64,6 +64,7 @@ def receive_onoff( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKI
             MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 1, Attribute_ = '6501') # ThermoOnOff to On
             
     elif model_target == 'TS0601-eTRV3':
+        store_tuya_attribute( self, NwkId, 'Switch', data )
         if data == '00': # Off
             checkAndStoreAttributeValue( self, NwkId , '01', '0201', '6501' , 'Off' )
             MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 0, Attribute_ = '6501' ) # ThermoOnOff to Off
@@ -85,10 +86,16 @@ def receive_preset( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWK
     store_tuya_attribute( self, NwkId, 'ChangeMode', data )
 
     if data == '00':
-        # Offline
-        self.log.logging( "Tuya", 'Debug', "receive_preset - Nwkid: %s/%s Mode to Offline" %(NwkId,srcEp ))
-        MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 0, Attribute_ = '001c' )
-        checkAndStoreAttributeValue( self, NwkId , '01', '0201', '001c' , 'OffLine' )
+        if get_model_name( self, NwkId ) == 'TS0601-eTRV3':
+            # Mode Manual
+            self.log.logging( "Tuya", 'Debug', "receive_preset - Nwkid: %s/%s Mode to Manual" %(NwkId,srcEp ))
+            MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 2, Attribute_ = '001c' )
+            checkAndStoreAttributeValue( self, NwkId , '01', '0201', '001c' , 'Manual' )
+        else:
+            # Offline
+            self.log.logging( "Tuya", 'Debug', "receive_preset - Nwkid: %s/%s Mode to Offline" %(NwkId,srcEp ))
+            MajDomoDevice(self, Devices, NwkId, srcEp, '0201', 0, Attribute_ = '001c' )
+            checkAndStoreAttributeValue( self, NwkId , '01', '0201', '001c' , 'OffLine' )
 
     elif data == '01':
         # Auto
@@ -486,7 +493,6 @@ def tuya_set_calibration_if_needed( self, NwkId ):
     self.log.logging( "Tuya", 'Debug', "thermostat_Calibration - Set Thermostat offset on %s off %s/%08x" %( NwkId, target_calibration, target_calibration))
     tuya_trv_calibration( self, NwkId, target_calibration)
 
-
 def tuya_trv_calibration( self, nwkid, value):
     self.log.logging( "Tuya", 'Debug', "tuya_trv_calibration - %s Calibration: %s" %(nwkid, value))
     sqn = get_and_inc_SQN( self, nwkid )
@@ -526,6 +532,7 @@ def tuya_setpoint( self, nwkid, setpoint_value):
 
     tuya_set_calibration_if_needed( self, nwkid )
     self.log.logging( "Tuya", 'Debug', "tuya_setpoint - %s setpoint: %s" %(nwkid, setpoint_value))
+
     if get_model_name( self, nwkid ) == 'TS0601-eTRV3':
         # Force Manual mode
         self.log.logging( "Tuya", 'Debug', "tuya_setpoint - %s Force to be in Manual mode" %(nwkid))
@@ -558,31 +565,43 @@ def tuya_trv_onoff( self, nwkid, onoff):
 
 def tuya_trv_mode( self, nwkid, mode):
     self.log.logging( "Tuya", 'Debug', "tuya_trv_mode - %s tuya_trv_mode: %s" %(nwkid, mode), nwkid)
+    Domoticz.Log( "type: %s" %type(mode))
     # Mode = 0  => Off
     # Mode = 10 => Auto
     # Mode = 20 => Manual
     
-    if get_model_name( self, nwkid ) in ( 'TS0601-eTRV3', 'TS0601-thermostat'):
+    if get_model_name( self, nwkid ) in ( 'TS0601-eTRV3', 'TS0601-thermostat', ):
+        self.log.logging( "Tuya", 'Debug', "1", nwkid)
         if mode == 0: # Switch Off
+            self.log.logging( "Tuya", 'Debug', "1.1", nwkid)
             tuya_trv_switch_onoff( self, nwkid, 0x00)
         else:
             # Switch On if needed
-            if get_tuya_attribute( self, nwkid, 'Switch') == 0x00:
+            self.log.logging( "Tuya", 'Debug', "1.2", nwkid)
+            if get_tuya_attribute( self, nwkid, 'Switch') == '00':
+                # If eTRV is Off, then let's switch it on
+                self.log.logging( "Tuya", 'Debug', "1.2.1", nwkid)
                 tuya_trv_switch_onoff( self, nwkid, 0x01)
 
-    if get_model_name( self, nwkid ) in ('TS0601-thermostat'):
+    if get_model_name( self, nwkid ) in ('TS0601-thermostat', ):
+        self.log.logging( "Tuya", 'Debug', "2", nwkid)
         if mode == 10:
+            self.log.logging( "Tuya", 'Debug', "2.1", nwkid)
             # Thermostat Manual --> Auto
             #       Dp: 0x02 / 0x01 -- Manual Off
             #       Dp: 0x03 / 0x00 -- Schedule On
             tuya_trv_switch_manual( self, nwkid, 0x01)
             tuya_trv_switch_schedule( self, nwkid, 0x00)
         elif mode == 20:
+            self.log.logging( "Tuya", 'Debug', "2.2", nwkid)
             # Thermostat Auto ---> Manual
             #       Dp: 0x02 / 0x00 -- Manual On
             #       Dp: 0x03 / 0x01 -- Manual Off
             tuya_trv_switch_manual( self, nwkid, 0x00)
             tuya_trv_switch_schedule( self, nwkid, 0x01)
+    else:
+        tuya_trv_switch_mode( self, nwkid, mode)
+
             
 def tuya_trv_switch_manual( self, nwkid, offon):
     self.log.logging( "Tuya", 'Debug', "tuya_trv_switch_manual - %s Manual On/Off: %x" %(nwkid, offon), nwkid)
@@ -619,17 +638,27 @@ def tuya_trv_switch_mode( self, nwkid, mode):
         EPout = '01'
         cluster_frame = '11'
         cmd = '00' # Command
+        # Set Action
         if get_model_name( self, nwkid ) == 'TS0601-eTRV3':
             action = '%02x01' %dp # Mode
         else:
             action = '%02x04' %dp # Mode
+
+        # Set data value
         if get_model_name( self, nwkid ) == 'TS0601-thermostat':
             if mode == 10: # Auto
                 data = '00'
             else:   # Manual ( 20 )
                 data = '01'
+        elif get_model_name( self, nwkid ) == 'TS0601-eTRV3':
+           if mode == 10: # Auto
+               data = '01'
+           else:   # Manual ( 20 )
+               data = '00'            
         else:
             data = '%02x' %( mode // 10 )
+
+        self.log.logging( "Tuya", 'Debug', "tuya_trv_switch_mode - %s Action: %s Data: %s " %(nwkid, action, data), nwkid)
         tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)   
 
 def tuya_trv_switch_onoff(self, nwkid, onoff):
