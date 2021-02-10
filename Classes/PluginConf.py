@@ -138,8 +138,8 @@ SETTINGS = {
 
     # Command Transitionin tenth of seconds
     'CommandTransition': {'Order': 8, 'param': {
-        'fadingOff':         {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
-        'moveToHueSatu':     {'type': 'int', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
+        'fadingOff':         {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
+        'moveToHueSatu':     {'type': 'int', 'default': 0, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
         'moveToColourTemp':  {'type': 'int', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
         'moveToColourRGB':   {'type': 'int', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
         'moveToLevel':       {'type': 'int', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
