@@ -11,9 +11,8 @@
 			"Type":"Temp/Humi/TuyaSiren/TuyaSirenHumi/TuyaSirenTemp"}
 	},
 	"Type":"",
-	"ClusterToBind": [ "0000" ],
+	"ClusterToBind": [ "0000", "ef00" ],
 	"ConfigureReporting": {
-	
 	},
 	"ReadAttributes": {
 		"0000": [ "0004", "0000", "0001", "0005", "0007", "fffe"  ]
