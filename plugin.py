@@ -215,7 +215,8 @@ class BasePlugin:
         Domoticz.Heartbeat( 1 )
         self.pluginParameters = dict(Parameters)
 
-        Domoticz.Log("%s" %(self.pluginParameters))
+        for x in self.pluginParameters:
+            Domoticz.Log("Parameters[%s] %s" %(x,self.pluginParameters[ x ]))
 
         # Open VERSION file in .hidden
         with open( Parameters["HomeFolder"] + VERSION_FILENAME, 'rt') as versionfile:
