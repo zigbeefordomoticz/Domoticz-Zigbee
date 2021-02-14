@@ -26,7 +26,7 @@ def restartPluginViaDomoticzJsonApi( self ):
 
     url += '/json.htm?type=command&param=updatehardware&htype=94'
     url += '&idx=%s'     %self.pluginParameters['HardwareID']
-    url += '&name=%s'    %self.pluginParameters['Name']
+    url += '&name=%s'    %self.pluginParameters['Name'].replace(" " ,"%20")
     url += '&address=%s' %self.pluginParameters['Address']
     url += '&port=%s'    %self.pluginParameters['Port']
     url += '&serialport=%s' %self.pluginParameters['SerialPort']
@@ -39,6 +39,9 @@ def restartPluginViaDomoticzJsonApi( self ):
     url += '&extra=%s'   %self.pluginParameters['Key']
     url += '&enabled=true'
     url += '&datatimeout=0'
+    if 'LogLevel' in self.pluginParameters:
+        url += '&LogLevel=%s' %self.pluginParameters[ 'LogLevel' ]
+
 
     Domoticz.Status( "Plugin Restart command : %s" %url)
  
