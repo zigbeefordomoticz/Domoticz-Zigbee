@@ -49,6 +49,7 @@ def process_frame(self, decoded_frame):
         return
 
     if MsgType == '0302': # PDM loaded, ZiGate ready (after an internal error, but also after an ErasePDM)
+        self.logging_receive( 'Status', "ZiGate PDM loaded")
         for x in list(self.ListOfCommands):
             if self.ListOfCommands[x]['cmd'] == '0012':
                 release_command( self, x)
@@ -73,11 +74,6 @@ def process_frame(self, decoded_frame):
     if MsgType in ('9998', '9997'):
         # Async message
         Akila_debuging( self, MsgType, MsgData)
-        return
-
-    if MsgType == '9997':
-        # Async message
-        Akila_Extended_frame_filtered( self, MsgData)
         return
 
     if MsgType == '8000': # Command Ack
