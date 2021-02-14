@@ -241,7 +241,7 @@ def wiser_set_calibration( self, key, EPout):  # 0x0201/0x0010
 
     if ('Param' in self.ListOfDevices[key] and 'Calibration' in self.ListOfDevices[key]['Param']
            and isinstance( self.ListOfDevices[key]['Param']['Calibration'], (float, int) )):
-        calibration = int(100 * self.ListOfDevices[ key ]['Param']['Calibration'])
+        calibration = int(10 * self.ListOfDevices[ key ]['Param']['Calibration'])
 
     if 'Schneider' not in self.ListOfDevices[key]:
         self.ListOfDevices[key]['Schneider'] = {}
@@ -249,7 +249,16 @@ def wiser_set_calibration( self, key, EPout):  # 0x0201/0x0010
     if 'Calibration' in self.ListOfDevices[key]['Schneider'] and calibration == self.ListOfDevices[key]['Schneider']['Calibration']:
         return
 
-    self.ListOfDevices[key]['Schneider']['Calibration'] = calibration
+    if calibration < -25:
+        calibration = -24
+    if calibration > 25:
+        calibration = 24
+
+    if calibration < 0:
+        #in two’s complement form
+        calibration = int(hex( -calibration - pow(2,32) )[9:],16)
+
+    Domoticz.Log("Calibration: 0x%02x" %calibration)
 
     manuf_id = "0000"
     manuf_spec = "00"
@@ -261,6 +270,7 @@ def wiser_set_calibration( self, key, EPout):  # 0x0201/0x0010
     self.log.logging( "Schneider", 'Debug', "wiser_set_calibration Schneider Write Attribute (no Calibration) %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
     write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data, ackIsDisabled = False)
+    read_attribute( self, key ,ZIGATE_EP , EPout ,cluster_id ,'00' , manuf_spec , manuf_id , 1, Hattribute, ackIsDisabled = False)
 
 
 def wiser_set_thermostat_window_detection(self, key, EPout, Mode): # 0x0201/0xe013
