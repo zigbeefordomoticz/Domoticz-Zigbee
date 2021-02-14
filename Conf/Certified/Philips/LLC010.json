@@ -29,6 +29,7 @@
 		"0300": [  ]
 	},
 	"Param": {
+		"OnOffPollingFreq": 300,
 		"fadingOff": 0,  
 		"moveToHueSatu": 0,
 		"moveToColourTemp": 0,

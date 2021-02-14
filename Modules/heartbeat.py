@@ -23,7 +23,7 @@ from Modules.readAttributes import READ_ATTRIBUTES_REQUEST, ping_device_with_rea
         ReadAttributeRequest_0000, ReadAttributeRequest_0001, ReadAttributeRequest_0006, ReadAttributeRequest_0008, ReadAttributeRequest_0006_0000, ReadAttributeRequest_0006_400x, ReadAttributeRequest_0008_0000,\
         ReadAttributeRequest_0100, ReadAttributeRequest_0101_0000,\
         ReadAttributeRequest_000C, ReadAttributeRequest_0102, ReadAttributeRequest_0102_0008, ReadAttributeRequest_0201, ReadAttributeRequest_0201_0012, ReadAttributeRequest_0204, ReadAttributeRequest_0300,  \
-        ReadAttributeRequest_0400, ReadAttributeRequest_0402, ReadAttributeRequest_0403, ReadAttributeRequest_0405, \
+        ReadAttributeRequest_0400, ReadAttributeRequest_0402, ReadAttributeRequest_0403, ReadAttributeRequest_0405, ReadAttributeRequest_0b04_050b_0505_0508, \
         ReadAttributeRequest_0406, ReadAttributeRequest_0500, ReadAttributeRequest_0502, ReadAttributeRequest_0702, ReadAttributeRequest_000f, ReadAttributeRequest_fc01, ReadAttributeRequest_fc21
 from Modules.configureReporting import processConfigureReporting
 from Modules.legrand_netatmo import  legrandReenforcement
@@ -94,44 +94,32 @@ def attributeDiscovery( self, NwkId ):
 
 def pollingManufSpecificDevices( self, NwkId):
 
-        POLLING_TABLE_SPECIFICS = {
-            '100b':             ( 'Philips',        'pollingPhilips',        pollingPhilips ),
-            'Philips':          ( 'Philips',        'pollingPhilips',        pollingPhilips),
-            'GLEDOPTO':         ( 'Gledopto',       'pollingGledopto',       pollingGledopto ),
-            '105e':             ( 'Schneider',      'pollingSchneider',      pollingSchneider),
-            'Schneider':        ( 'Schneider',      'pollingSchneider',      pollingSchneider),
-            '_TZ3000_g5xawfcq': ( 'BlitzwolfPower', 'pollingBlitzwolfPower', pollingBlitzwolfPower ),
-            'LUMI':             ( 'pollingLumiPower','pollingLumiPower',     pollingLumiPower ),
-            '115f':             ( 'pollingLumiPower','pollingLumiPower',     pollingLumiPower ),
-            'OWON':             ( 'CasaiaAC201',    'pollingCasaiaAC201',    pollingCasaia, )
-        }
+    _HB = int(self.ListOfDevices[NwkId]['Heartbeat'])
+    for param in self.ListOfDevices[ NwkId]['Param']:
 
-        rescheduleAction = False
+        if param == 'OnOffPollingFreq':
+            _FEQ = self.ListOfDevices[ NwkId]['Param'][ param ] // HEARTBEAT
+            if _FEQ and (( _HB % _FEQ ) == 0):
+                self.log.logging( "Heartbeat", 'Log', "++ pollingManufSpecificDevices -  %s Found: %s=%s" \
+                    %(NwkId,  param, self.ListOfDevices[ NwkId]['Param'][ param ]), NwkId)       
+                ReadAttributeRequest_0006_0000( self, NwkId)
+                ReadAttributeRequest_0008_0000( self, NwkId)
 
-        devManufCode = devManufName = ''
-        if 'Manufacturer' in self.ListOfDevices[NwkId]:
-            devManufCode = self.ListOfDevices[NwkId]['Manufacturer']
-        if 'Manufacturer Name' in self.ListOfDevices[NwkId]:
-            devManufName = self.ListOfDevices[NwkId]['Manufacturer Name']
+        elif param == 'PowerPollingFreq':
+            _FEQ = self.ListOfDevices[ NwkId]['Param'][ param ] // HEARTBEAT
+            if _FEQ and (( _HB % _FEQ ) == 0):
+                self.log.logging( "Heartbeat", 'Log', "++ pollingManufSpecificDevices -  %s Found: %s=%s" \
+                     %(NwkId,  param, self.ListOfDevices[ NwkId]['Param'][ param ]), NwkId)       
+                ReadAttributeRequest_0b04_050b_0505_0508( self, NwkId)
 
-        brand = func = param = None
-        if devManufCode in POLLING_TABLE_SPECIFICS:
-            brand, param , func =  POLLING_TABLE_SPECIFICS[ devManufCode ]
-        if brand is None and devManufName in POLLING_TABLE_SPECIFICS:
-            brand, param , func =  POLLING_TABLE_SPECIFICS[ devManufName ]        
+        elif param == 'AC201Polling':
+            if _FEQ and (( _HB % _FEQ ) == 0):
+                self.log.logging( "Heartbeat", 'Log', "++ pollingManufSpecificDevices -  %s Found: %s=%s" \
+                    %(NwkId,  param, self.ListOfDevices[ NwkId]['Param'][ param ]), NwkId)       
+                _FEQ = self.ListOfDevices[ NwkId]['Param'][ param ] // HEARTBEAT
+                pollingCasaia( self, NwkId )    
 
-        if brand is None:
-            return False
-
-        _HB = int(self.ListOfDevices[NwkId]['Heartbeat'])
-        _FEQ = self.pluginconf.pluginConf[ param ] // HEARTBEAT
-
-        if _FEQ and (( _HB % _FEQ ) == 0):
-            self.log.logging( "Heartbeat", 'Debug', "++ pollingManufSpecificDevices -  %s Found: %s - %s %s %s" \
-                %(NwkId, brand, devManufCode, devManufName, param), NwkId)       
-            rescheduleAction = ( rescheduleAction or func( self, NwkId) )
-
-        return rescheduleAction
+    return False
 
 def pollingDeviceStatus( self, NwkId):
         # """

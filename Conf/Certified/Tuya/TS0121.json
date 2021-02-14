@@ -29,6 +29,7 @@
 	},
 	"Param": {
 		"PowerONafterOffON": 2,
-		"IndicatorMode": 1
+		"IndicatorMode": 1,
+		"PowerPollingFreq": 120
 	}
 }
