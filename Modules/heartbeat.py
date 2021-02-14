@@ -94,6 +94,9 @@ def attributeDiscovery( self, NwkId ):
 
 def pollingManufSpecificDevices( self, NwkId):
 
+    if 'Param' not in self.ListOfDevices[ NwkId]:
+        return False
+        
     _HB = int(self.ListOfDevices[NwkId]['Heartbeat'])
     for param in self.ListOfDevices[ NwkId]['Param']:
 
