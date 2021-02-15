@@ -716,8 +716,9 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                         UpdateDevice_v2(self, Devices, DeviceUnit, 2, str(sValue), BatteryLevel, SignalLevel)
 
                     else:
+                        # Just update the Level if Needed
                         self.log.logging( "Widget", "Debug", "------>  LvlControl UpdateDevice: -> %s/%s SwitchType: %s" %(nValue,sValue, Devices[DeviceUnit].SwitchType), NWKID)
-                        UpdateDevice_v2(self, Devices, DeviceUnit, 1, str(sValue), BatteryLevel, SignalLevel)
+                        UpdateDevice_v2(self, Devices, DeviceUnit, Devices[DeviceUnit].nValue, str(sValue), BatteryLevel, SignalLevel)
 
             elif WidgetType  in ( 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl'):
                 if Devices[DeviceUnit].nValue != 0 or Devices[DeviceUnit].sValue != 'Off':
