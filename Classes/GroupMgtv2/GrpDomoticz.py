@@ -347,7 +347,7 @@ def update_domoticz_group_device( self, GroupId):
         else:
             sValue = 'On'
 
-    self.logging( 'Debug', "update_domoticz_group_device - Processing: Group: %s ==  > nValue: %s, sValue: %s" %(GroupId, nValue, sValue))
+    self.logging( 'Debug', "update_domoticz_group_device - Processing: Group: %s ==  > from %s:%s to %s:%s" %(GroupId, self.Devices[unit].nValue, self.Devices[unit].sValue, nValue, sValue))
     if nValue != self.Devices[unit].nValue or sValue != self.Devices[unit].sValue:
         self.logging( 'Log', "UpdateGroup  - (%15s) %s:%s" %( self.Devices[unit].Name, nValue, sValue ))
         self.Devices[unit].Update( nValue, sValue)
