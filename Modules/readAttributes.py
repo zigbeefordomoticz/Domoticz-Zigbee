@@ -939,8 +939,8 @@ READ_ATTRIBUTES_REQUEST = {
     # Cluster : ( ReadAttribute function, Frequency )
     '0000' : ( ReadAttributeRequest_0000, 'polling0000' ),
     '0001' : ( ReadAttributeRequest_0001, 'polling0001' ),
-    '0006' : ( ReadAttributeRequest_0006, 'pollingONOFF' ),
     '0008' : ( ReadAttributeRequest_0008, 'pollingLvlControl' ),
+    '0006' : ( ReadAttributeRequest_0006, 'pollingONOFF' ),
     '000C' : ( ReadAttributeRequest_000C, 'polling000C' ),
     '0020' : ( ReadAttributeRequest_000C, 'polling0020' ),
     '0100' : ( ReadAttributeRequest_0100, 'polling0100' ),
