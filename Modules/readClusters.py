@@ -1520,9 +1520,12 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             # We are in Negative value. 0xE7 = -25 0xff = -01 )
             value = -( 0xff + 1 - value )
         value = round ( value / 10, 2 )
+        self.log.logging( "Cluster", 'Debug', "ReadCluster - 0201 - Calibration: %s" %value, MsgSrcAddr)
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  value )
         if 'Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Model'] == 'EH-ZB-VACT':
             self.ListOfDevices[MsgSrcAddr]['Schneider']['Calibration'] = value
+        if 'Thermostat' not in self.ListOfDevices[MsgSrcAddr]:
+            self.ListOfDevices[MsgSrcAddr]['Thermostat'] = {}
         self.ListOfDevices[MsgSrcAddr]['Thermostat']['Calibration'] = value
 
     elif MsgAttrID == '0011':   # Cooling Setpoint (Zinte16)
