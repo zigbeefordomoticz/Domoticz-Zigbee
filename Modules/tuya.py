@@ -35,7 +35,8 @@ from Modules.basicOutputs import write_attribute,raw_APS_request
 #   Direction: Device -> Coordinator 0x02 Setpoint command response
 
 
-TUYA_SIREN_MANUFACTURER =  ( '_TZE200_d0yu2xgi', )
+TUYA_SIREN_MANUFACTURER =  ( '_TZE200_d0yu2xgi',  )
+TUYA_SIREN_MODEL = ( 'TS0601', '0yu2xgi')
 
 TUYA_DIMMER_MANUFACTURER = ( '_TZE200_dfxkcots', )
 TUYA_SWITCH_MANUFACTURER = ( '_TZE200_7tdtqgwv', )
@@ -58,7 +59,7 @@ TUYA_eTRV_MANUFACTURER =  ( '_TYST11_2dpplnsn', '_TZE200_wlosfena', '_TZE200_fhn
 TUYA_eTRV_MODEL =         ( 'TS0601', 'TS0601-eTRV', 'TS0601-eTRV1', 'TS0601-eTRV2', 'TS0601-eTRV3', 'TS0601-thermostat', 'uhszj9s', 'GbxAXL2', '88teujp', \
                              'kud7u2l', 'eaxp72v', 'fvq6avy', 'ivfvd7h',)
 
-TUYA_TS0601_MODEL_NAME = TUYA_eTRV_MODEL + TUYA_CURTAIN_MODEL
+TUYA_TS0601_MODEL_NAME = TUYA_eTRV_MODEL + TUYA_CURTAIN_MODEL + TUYA_SIREN_MODEL
 
 def pollingTuya( self, key ):
     """
