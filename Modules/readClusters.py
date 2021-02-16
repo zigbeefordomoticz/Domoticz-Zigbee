@@ -298,6 +298,9 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             else:
                 modelName = ''
 
+        elif modelName == '0yu2xgi': # Tuya Siren
+            modelName = 'TS0601-sirene'
+            
         elif modelName in TUYA_TS0601_MODEL_NAME:
             # https://github.com/dresden-elektronik/deconz-rest-plugin/wiki/Tuya-devices-List
 
