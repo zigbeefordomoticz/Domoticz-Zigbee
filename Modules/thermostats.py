@@ -150,7 +150,7 @@ def thermostat_Calibration ( self, NwkId, calibration = None):
     if 'Thermostat' not in self.ListOfDevices[NwkId]:
         self.ListOfDevices[NwkId]['Thermostat'] = {}
 
-    if 'Calibration' in self.ListOfDevices[NwkId]['Thermostat'] and calibration == self.ListOfDevices[NwkId]['Thermostat']['Calibration']:
+    if 'Calibration' in self.ListOfDevices[NwkId]['Thermostat'] and calibration == 10 * self.ListOfDevices[NwkId]['Thermostat']['Calibration']:
         return
 
     self.log.logging( "Thermostats", 'Log', "thermostat_Calibration - Set Thermostat offset on %s off %s" %( NwkId, calibration))

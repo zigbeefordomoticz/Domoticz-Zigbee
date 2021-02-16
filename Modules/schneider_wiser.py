@@ -246,7 +246,7 @@ def wiser_set_calibration( self, key, EPout):  # 0x0201/0x0010
     if 'Schneider' not in self.ListOfDevices[key]:
         self.ListOfDevices[key]['Schneider'] = {}
 
-    if 'Calibration' in self.ListOfDevices[key]['Schneider'] and calibration == self.ListOfDevices[key]['Schneider']['Calibration']:
+    if 'Calibration' in self.ListOfDevices[key]['Schneider'] and calibration == 10 * self.ListOfDevices[key]['Schneider']['Calibration']:
         return
 
     if calibration < -25:
