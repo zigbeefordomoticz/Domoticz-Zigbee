@@ -1164,7 +1164,6 @@ def decode004d_new_devicev1( self, Devices, MsgSrcAddr, MsgIEEE, MsgMacCapa, Msg
         "Decode004D - %s Infos: %s" % (MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]),
         MsgSrcAddr,
     )
-
     timeStamped(self, MsgSrcAddr, 0x004D)
     lastSeenUpdate(self, Devices, NwkId=MsgSrcAddr)
 
@@ -1174,6 +1173,10 @@ def store_annoucement(self, NwkId, MsgRejoinFlag, now):
     # ['Announced']['Rejoin'] = Rejoin Flag
 
     # ['Announced']['TimeStamp'] = When it has been provided
+    if NwkId not in self.ListOfDevices:
+        self.log.logging(  "Input", "Error", "store_annoucement - Unknown NwkId %s in Db: %s" %(
+            NwkId, self.ListOfDevices.keys() ))
+
     if "Announced" not in self.ListOfDevices[NwkId]:
         self.ListOfDevices[NwkId]["Announced"] = {}
     if not isinstance(self.ListOfDevices[NwkId]["Announced"], dict):
