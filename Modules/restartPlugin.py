@@ -40,7 +40,7 @@ def restartPluginViaDomoticzJsonApi( self ):
     url += '&enabled=true'
     url += '&datatimeout=0'
     if 'LogLevel' in self.pluginParameters:
-        url += '&LogLevel=%s' %self.pluginParameters[ 'LogLevel' ]
+        url += '&loglevel=%s' %self.pluginParameters[ 'LogLevel' ]
 
 
     Domoticz.Status( "Plugin Restart command : %s" %url)
