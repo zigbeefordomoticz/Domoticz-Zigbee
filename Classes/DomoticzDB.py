@@ -213,8 +213,11 @@ class DomoticzDB_Hardware:
 
         if  self.dbCursor is None:
             self._openDB( )
-            self.dbCursor.execute("SELECT LogLevel from Hardware Where ID = '%s' " %( self.HardwareID))
-            value = self.dbCursor.fetchone()
+            try:
+                self.dbCursor.execute("SELECT LogLevel from Hardware Where ID = '%s' " %( self.HardwareID))
+                value = self.dbCursor.fetchone()
+            except:
+                value = None
             Domoticz.Log("LogLevel value: %s" %value)
             if value is None:
                 self.logging(  "Log", "Dz LogLevel --> Unknown !!!" )
