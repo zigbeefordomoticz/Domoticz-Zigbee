@@ -312,6 +312,11 @@ class BasePlugin:
 
         self.log.logging( 'Plugin', 'Debug', "   - Hardware table")
         self.domoticzdb_Hardware = DomoticzDB_Hardware( Parameters["Database"], self.pluginconf, self.HardwareID, self.log )
+        if 'LogLevel' not in self.pluginParameters:
+            log_level = self.domoticzdb_Hardware.get_loglevel_value( )
+            if log_level:
+                self.pluginParameters['LogLevel'] = log_level
+                self.log.logging( 'Plugin', 'Debug', "LogLevel: %s" %self.pluginParameters['LogLevel'])
         self.log.logging( 'Plugin', 'Debug', "   - Preferences table")
         self.domoticzdb_Preferences = DomoticzDB_Preferences( Parameters["Database"], self.pluginconf, self.log )
         self.WebUsername, self.WebPassword = self.domoticzdb_Preferences.retreiveWebUserNamePassword()
@@ -669,9 +674,6 @@ class BasePlugin:
 
         self.iaszonemgt.IAS_heartbeat( )
 
-        # Reset Motion sensors
-        ResetDevice( self, Devices, "Motion",5)
-
         # Group Management
         if self.groupmgt:
             self.groupmgt.hearbeat_group_mgt()
@@ -679,10 +681,10 @@ class BasePlugin:
         # Write the ListOfDevice in HBcount % 200 ( 3' ) or immediatly if we have remove or added a Device
         if len(Devices) == prevLenDevices:
             WriteDeviceList(self, ( 90 * 5) )
-
         else:
             self.log.logging( 'Plugin', 'Debug', "Devices size has changed , let's write ListOfDevices on disk")
             WriteDeviceList(self, 0)       # write immediatly
+
         if self.CommiSSionning:
             self.PluginHealth['Flag'] = 2
             self.PluginHealth['Txt'] = 'Enrollment in Progress'
@@ -691,6 +693,9 @@ class BasePlugin:
             self.statistics._Load = self.ZigateComm.loadTransmit()
             self.statistics.addPointforTrendStats( self.HeartbeatCount )
             return
+
+        # Reset Motion sensors
+        ResetDevice( self, Devices, "Motion",5)
 
         # OTA upgrade
         if self.OTA:
