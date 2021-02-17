@@ -209,7 +209,24 @@ class DomoticzDB_Hardware:
             self.dbConn.commit()
             self.dbConn.close()
 
+    def get_loglevel_value( self ):
 
+        if  self.dbCursor is None:
+            self._openDB( )
+            self.dbCursor.execute("SELECT LogLevel from Hardware Where ID = '%s' " %( self.HardwareID))
+            value = self.dbCursor.fetchone()
+            Domoticz.Log("LogLevel value: %s" %value)
+            if value is None:
+                self.logging(  "Log", "Dz LogLevel --> Unknown !!!" )
+                return None
+            else:
+                self.logging(  "Log", "Dz LogLevel --> Value: %s" %value)
+            self.dbConn.commit()
+            self.dbConn.close()
+            return value
+
+        self.closeDB()
+        return None
 class DomoticzDB_DeviceStatus:
 
     def __init__(self, database, pluginconf, hardwareID , log):
