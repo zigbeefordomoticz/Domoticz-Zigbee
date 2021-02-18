@@ -14,6 +14,7 @@ import time
 import Domoticz
 
 from Classes.LoggingManagement import LoggingManagement
+from Modules.tools import lookupForIEEE
 
 from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
 from Modules.widgets import SWITCH_LVL_MATRIX
@@ -141,9 +142,12 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
         # Look for the corresponding Widget
         NWKID = self.IEEE2NWK[Ieee]
         if NWKID not in self.ListOfDevices:
-            self.log.logging( "Widget", "Error", "ResetDevice inconsistency %s/%s not in plugin db: %s, Ieee: %s" %(
-                NWKID, Ieee, self.ListOfDevices.keys(), self.IEEE2NWK.keys() ))
-            continue
+            # If the NwkId is not found, it may have switch, let's check
+            ieee_retreived_from_nwkid = lookupForIEEE(self, NWKID, True)
+            if Ieee != ieee_retreived_from_nwkid:
+                self.log.logging( "Widget", "Error", "ResetDevice inconsistency %s/%s not in plugin db: %s, Ieee: %s" %(
+                    NWKID, Ieee, self.ListOfDevices.keys(), str(self.IEEE2NWK) ), NWKID)
+                continue
 
         ID = Devices[unit].ID
         WidgetType = ''        
