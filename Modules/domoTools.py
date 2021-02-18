@@ -144,7 +144,7 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
         if NWKID not in self.ListOfDevices:
             # If the NwkId is not found, it may have switch, let's check
             ieee_retreived_from_nwkid = lookupForIEEE(self, NWKID, True)
-            if Ieee != ieee_retreived_from_nwkid:
+            if ieee_retreived_from_nwkid is None or Ieee != ieee_retreived_from_nwkid :
                 self.log.logging( "Widget", "Error", "ResetDevice inconsistency %s/%s not in plugin db: %s, Ieee: %s" %(
                     NWKID, Ieee, self.ListOfDevices.keys(), str(self.IEEE2NWK) ), NWKID)
                 continue
