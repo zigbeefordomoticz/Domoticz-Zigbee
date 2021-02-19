@@ -775,7 +775,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         #  transitionMoveLevel = '%04x' %self.pluginconf.pluginConf['moveToLevel']
         #  transitionHue = '%04x' %self.pluginconf.pluginConf['moveToHueSatu']
         #  transitionTemp = '%04x' %self.pluginconf.pluginConf['moveToColourTemp']
-        transitionRGB = transitionMoveLevel = transitionHue = transitionTemp = 0
+        transitionMoveLevel = transitionRGB = transitionMoveLevel = transitionHue = transitionTemp = 0
         if 'Param' in self.ListOfDevices[ NWKID ]:
             if 'moveToColourTemp' in self.ListOfDevices[ NWKID ]:
                 transitionTemp = '%04x' %self.ListOfDevices[ NWKID ]['Param']['moveToColourTemp']
