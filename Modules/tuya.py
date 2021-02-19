@@ -35,8 +35,8 @@ from Modules.basicOutputs import write_attribute,raw_APS_request
 #   Direction: Device -> Coordinator 0x02 Setpoint command response
 
 
-TUYA_SIREN_MANUFACTURER =  ( '_TZE200_d0yu2xgi',  )
-TUYA_SIREN_MODEL = ( 'TS0601', '0yu2xgi')
+TUYA_SIREN_MANUFACTURER =  ( '_TZE200_d0yu2xgi', '_TYST11_d0yu2xgi' )
+TUYA_SIREN_MODEL        =  ( 'TS0601', '0yu2xgi')
 
 TUYA_DIMMER_MANUFACTURER = ( '_TZE200_dfxkcots', )
 TUYA_SWITCH_MANUFACTURER = ( '_TZE200_7tdtqgwv', )
