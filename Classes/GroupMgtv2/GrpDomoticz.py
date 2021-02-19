@@ -8,6 +8,7 @@ import Domoticz
 import json
 
 from Classes.GroupMgtv2.GrpCommands import set_kelvin_color, set_rgb_color, set_hue_saturation
+from Classes.GroupMgtv2.GrpDatabase import update_due_to_nwk_id_change
 from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl
 from Modules.zigateConsts import ADDRESS_MODE, ZIGATE_EP
 
@@ -232,7 +233,7 @@ def update_domoticz_group_device( self, GroupId):
 
     #####
     if GroupId not in self.ListOfGroups:
-        Domoticz.Error("update_domoticz_group_device - unknown group: %s" %GroupId)
+        self.logging( 'Error',"update_domoticz_group_device - unknown group: %s" %GroupId)
         return
 
     if 'Devices' not in self.ListOfGroups[GroupId]:
@@ -407,7 +408,7 @@ def update_device_list_attribute( self, GroupId, cluster, value):
                 iterIEEE = self.ListOfDevices[iterDev]['IEEE']
 
             else:
-                Domoticz.Error("Unknown device %s, it is recommended to do a full rescan of Groups" %iterDev)
+                self.logging( 'Error',"Unknown device %s, it is recommended to do a full rescan of Groups" %iterDev)
                 continue
         else:
             continue
@@ -416,15 +417,17 @@ def update_device_list_attribute( self, GroupId, cluster, value):
             continue
 
         if iterDev not in self.ListOfDevices:
-            Domoticz.Error("update_device_list_attribute - Device: %s of Group: %s not in the list anymore" %(iterDev, GroupId))
-            continue
+            iterDev = check_and_fix_missing_device( self, GroupId, iterDev, iterIEEE)
+            if iterDev is None:
+                self.logging( 'Error',"update_device_list_attribute - Device: %s of Group: %s not in the list anymore" %(iterDev, GroupId))
+                continue
 
         if iterEp not in self.ListOfDevices[iterDev]['Ep']:
-            Domoticz.Error("update_device_list_attribute - Not existing Ep: %s for Device: %s in Group: %s" %(iterEp, iterDev, GroupId))
+            self.logging( 'Error',"update_device_list_attribute - Not existing Ep: %s for Device: %s in Group: %s" %(iterEp, iterDev, GroupId))
             continue
 
         if 'ClusterType' not in self.ListOfDevices[iterDev]['Ep'][iterEp] and 'ClusterType' not in self.ListOfDevices[iterDev]:
-            Domoticz.Error("update_device_list_attribute - No Widget attached to Device: %s/%s in Group: %s" %(iterDev, iterEp, GroupId))
+            self.logging( 'Error', "update_device_list_attribute - No Widget attached to Device: %s/%s in Group: %s" %(iterDev, iterEp, GroupId))
             continue
 
         if cluster not in self.ListOfDevices[iterDev]['Ep'][iterEp]:
@@ -448,6 +451,16 @@ def update_device_list_attribute( self, GroupId, cluster, value):
         self.logging( 'Debug', "update_device_list_attribute - Updating Device: %s/%s of Group: %s Cluster: %s to value: %s" %(iterDev, iterEp, GroupId, cluster, value))
 
     return
+
+def check_and_fix_missing_device( self, GroupId, NwkId, ieee ):
+
+    if ieee in self.IEEE2NWK:
+        # Need to update the NwkId
+        update_due_to_nwk_id_change( self, NwkId, self.IEEE2NWK[ ieee ])
+        if self.IEEE2NWK[ ieee ] in self.ListOfDevices:
+            return self.IEEE2NWK[ ieee ]
+    return None
+
 
 def processCommand( self, unit, GrpId, Command, Level, Color_ ) :
 
@@ -491,21 +504,28 @@ def processCommand( self, unit, GrpId, Command, Level, Color_ ) :
 
     # Old Fashon
     if Command == 'Off' :
-        zigate_cmd = "0092"
-        zigate_param = '00'
+        if self.pluginconf.pluginConf['GrpfadingOff']:
+            zigate_cmd = "0094"
+            datas = "%02d" %ADDRESS_MODE['group'] + GrpId + ZIGATE_EP + EPout + "01" + "00"
+        else:
+            zigate_cmd = "0092"
+            datas = "%02d" %ADDRESS_MODE['group'] + GrpId + ZIGATE_EP + EPout + "00"
+
         nValue = 0
         sValue = 'Off'
         self.Devices[unit].Update(nValue = int(nValue), sValue = str(sValue))
-        update_device_list_attribute( self, GrpId, '0006', '00')
-        update_domoticz_group_device(self, GrpId)
 
-        datas = "%02d" %ADDRESS_MODE['group'] + GrpId + ZIGATE_EP + EPout + zigate_param
         self.logging( 'Debug', "Command: %s %s" %(Command,datas))
         self.ZigateComm.sendData( zigate_cmd, datas, ackIsDisabled=True)
+
         #Update Device
         nValue = 0
         sValue = 'Off'
         self.Devices[unit].Update(nValue = int(nValue), sValue = str(sValue))
+
+        update_device_list_attribute( self, GrpId, '0006', '00')
+        update_domoticz_group_device(self, GrpId)
+
 
     elif Command == 'On' :
         zigate_cmd = "0092"
@@ -549,10 +569,10 @@ def processCommand( self, unit, GrpId, Command, Level, Color_ ) :
 
     elif Command == "Set Color" :
         Hue_List = json.loads(Color_)
-        transitionRGB = '%04x' %self.pluginconf.pluginConf['moveToColourRGB']
-        transitionMoveLevel = '%04x' %self.pluginconf.pluginConf['moveToLevel']
-        transitionHue = '%04x' %self.pluginconf.pluginConf['moveToHueSatu']
-        transitionTemp = '%04x' %self.pluginconf.pluginConf['moveToColourTemp']
+        transitionRGB = '%04x' %self.pluginconf.pluginConf['GrpmoveToColourRGB']
+        transitionMoveLevel = '%04x' %self.pluginconf.pluginConf['GrpmoveToLevel']
+        transitionHue = '%04x' %self.pluginconf.pluginConf['GrpmoveToHueSatu']
+        transitionTemp = '%04x' %self.pluginconf.pluginConf['GrpmoveToColourTemp']
 
         #First manage level
         if Hue_List['m'] != 9998:
@@ -628,7 +648,7 @@ def resetDevicesHearttBeat( self, GrpId ):
             if Ieee in self.IEEE2NWK:
                 NwkId = self.IEEE2NWK[ Ieee ]
             else:
-                Domoticz.Error("resetDevicesHearttBeat - Hum Hum something wrong NwkId: %s Ieee %s" %(NwkId, Ieee))
+                self.logging( 'Error',"resetDevicesHearttBeat - Hum Hum something wrong NwkId: %s Ieee %s" %(NwkId, Ieee))
 
         if NwkId in self.ListOfDevices:
             # Force Read Attribute consideration in the next hearbeat

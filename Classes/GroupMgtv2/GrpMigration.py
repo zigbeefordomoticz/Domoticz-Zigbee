@@ -20,20 +20,20 @@ def migrateIfTradfriRemote(self, GrpId):
             if NwkId in self.ListOfDevices:
                 self.ListOfGroups[ GrpId]['Tradfri Remote']['IEEE'] =    self.ListOfDevices[NwkId]['IEEE']     
             else:
-                Domoticz.Error("Cannot migrate Tradfri Remote . don't find Nwkid %s" %NwkId)
+                self.logging( 'Error',"Cannot migrate Tradfri Remote . don't find Nwkid %s" %NwkId)
                 del self.ListOfGroups[ GrpId]['Tradfri Remote']
 
 def migrateTupleToList( self, GrpId, tupleItem ):
 
     lenItem = len(tupleItem)
     if lenItem not in [2, 3]:
-        Domoticz.Error("For Group: %s unexpected Group Device %s droping" %( GrpId, str(tupleItem)))
+        self.logging( 'Error',"For Group: %s unexpected Group Device %s droping" %( GrpId, str(tupleItem)))
         return
     
     if lenItem == 2:
         NwkId, Ep = tupleItem
         if 'IEEE' not in self.ListOfDevices[ NwkId ]:
-            Domoticz.Error("For Group: %s unexpected Group Device %s droping" %( GrpId, str(tupleItem))) 
+            self.logging( 'Error',"For Group: %s unexpected Group Device %s droping" %( GrpId, str(tupleItem))) 
             return
         Ieee = self.ListOfDevices[ NwkId ]['IEEE']
         # Migrate from Tuple to List
@@ -48,7 +48,7 @@ def migrateTupleToList( self, GrpId, tupleItem ):
 
     Domoticz.Status( "--- --- NwkId: %s Ep: %s Ieee: %s" %( NwkId, Ep, Ieee ))
     if NwkId not in self.ListOfDevices:
-        Domoticz.Error("migrateTupleToList - NwkId: %s not found in current database" %NwkId)
+        self.logging( 'Error',"migrateTupleToList - NwkId: %s not found in current database" %NwkId)
         if Ieee not in self.IEEE2NWK:
             return
         NwkId = self.IEEE2NWK[ Ieee ]

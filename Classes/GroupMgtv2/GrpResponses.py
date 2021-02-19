@@ -42,7 +42,7 @@ def add_group_member_ship_response(self, MsgData):
     self.logging( 'Debug', "add_group_member_ship_response - MsgData: %s (%s)" %(MsgData, len(MsgData)))
     # search for the Group/dev
     if len(MsgData) not in [14, 18]:
-        Domoticz.Error("add_group_member_ship_response - uncomplete message %s" %MsgData)
+        self.logging( 'Error',"add_group_member_ship_response - uncomplete message %s" %MsgData)
         return
     if len(MsgData) == 14:  # Firmware < 030f
         MsgSrcAddr = None
@@ -63,7 +63,7 @@ def add_group_member_ship_response(self, MsgData):
         self.logging( 'Debug', "add_group_member_ship_response - [%s] GroupID: %s adding: %s with Status: %s " %(MsgSequenceNumber, MsgGroupID, MsgSrcAddr, MsgStatus ))
  
     if MsgSrcAddr not in self.ListOfDevices:
-        Domoticz.Error("add_group_member_ship_response Requesting to add group %s membership on non existing device %s" %(MsgGroupID, MsgSrcAddr))
+        self.logging( 'Error',"add_group_member_ship_response Requesting to add group %s membership on non existing device %s" %(MsgGroupID, MsgSrcAddr))
         return
 
     if MsgStatus == '00':
@@ -98,7 +98,7 @@ def check_group_member_ship_response( self, MsgData):
             %( MsgSequenceNumber, MsgSrcAddr, MsgEP, MsgClusterID, MsgGroupID, MsgStatus))
 
     if MsgSrcAddr not in self.ListOfDevices:
-        Domoticz.Error("check_group_member_ship_response Requesting to add group %s membership on non existing device %s" %(MsgGroupID, MsgSrcAddr))
+        self.logging( 'Error',"check_group_member_ship_response Requesting to add group %s membership on non existing device %s" %(MsgGroupID, MsgSrcAddr))
         return
 
     if MsgStatus == '00':
@@ -137,7 +137,7 @@ def look_for_group_member_ship_response( self, MsgData):
             %(MsgSequenceNumber, MsgEP, MsgClusterID, MsgSrcAddr, MsgCapacity, MsgGroupCount))
 
     if MsgSrcAddr not in self.ListOfDevices:
-        Domoticz.Error("look_for_group_member_ship_response %s membership on non existing device %s" %( MsgSrcAddr))
+        self.logging( 'Error',"look_for_group_member_ship_response %s membership on non existing device %s" %( MsgSrcAddr))
         return
 
     if 'GroupMemberShip' not in self.ListOfDevices[ MsgSrcAddr ]:
@@ -161,7 +161,7 @@ def remove_group_member_ship_response( self, MsgData):
     ' Decode 0x8063'
 
     if len(MsgData) not in [14, 18]:
-        Domoticz.Error("removeGroupMemberShipResponse - uncomplete message %s" %MsgData)
+        self.logging( 'Error',"removeGroupMemberShipResponse - uncomplete message %s" %MsgData)
         return
 
     if len(MsgData) == 14:  # Firmware < 030f
@@ -186,7 +186,7 @@ def remove_group_member_ship_response( self, MsgData):
             %( MsgSequenceNumber, MsgEP, MsgClusterID, MsgGroupID, MsgStatus))
 
     if MsgSrcAddr not in self.ListOfDevices:
-        Domoticz.Error("removeGroupMemberShipResponse %s membership on non existing device %s" %( MsgGroupID, MsgSrcAddr))
+        self.logging( 'Error',"removeGroupMemberShipResponse %s membership on non existing device %s" %( MsgGroupID, MsgSrcAddr))
         checkToRemoveGroup( self,MsgSrcAddr, MsgEP, MsgGroupID )
         return
 

@@ -7,8 +7,6 @@ from Classes.GroupMgtv2.GrpDomoticz import create_domoticz_group_device, remove_
 from Classes.GroupMgtv2.GrpDatabase import write_groups_list, create_group, add_device_to_group, remove_device_from_group
 
 
-
-
 def checkToCreateOrUpdateGroup( self, NwkId, Ep, GroupId):
     """ 
     Trigger from addGroupMemberShipResponse or checkGroupMemberShip

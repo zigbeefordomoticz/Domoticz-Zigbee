@@ -299,7 +299,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             if profalux: # Profalux are define as LvlControl but should be managed as Blind Inverted
                 sendZigateCmd(self, "0081","02" + NWKID + ZIGATE_EP + EPout + '01' + '%02X' %0 + "0000")
             else:
-                if self.pluginconf.pluginConf['fadingOff']:
+                if 'Param' in self.ListOfDevices[ NWKID ] and 'fadingOff' in self.ListOfDevices[ NWKID ]['Param']:
                     # Increase brightness by 20% (if possible) in 0.5 seconds then fade to off in 1 second (default)
                     sendZigateCmd(self, "0094","02" + NWKID + ZIGATE_EP + EPout + "01" + "00" )
                 else:
@@ -771,10 +771,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         #    uint8_t cw;    // Range:0..255, Cold white level
         #    uint8_t ww;    // Range:0..255, Warm white level (also used as level for monochrome white)
         #
-        transitionRGB = '%04x' %self.pluginconf.pluginConf['moveToColourRGB']
-        transitionMoveLevel = '%04x' %self.pluginconf.pluginConf['moveToLevel']
-        transitionHue = '%04x' %self.pluginconf.pluginConf['moveToHueSatu']
-        transitionTemp = '%04x' %self.pluginconf.pluginConf['moveToColourTemp']
+        #  transitionRGB = '%04x' %self.pluginconf.pluginConf['moveToColourRGB']
+        #  transitionMoveLevel = '%04x' %self.pluginconf.pluginConf['moveToLevel']
+        #  transitionHue = '%04x' %self.pluginconf.pluginConf['moveToHueSatu']
+        #  transitionTemp = '%04x' %self.pluginconf.pluginConf['moveToColourTemp']
         if 'Param' in self.ListOfDevices[ NWKID ]:
             if 'moveToColourTemp' in self.ListOfDevices[ NWKID ]:
                 transitionTemp = '%04x' %self.ListOfDevices[ NWKID ]['Param']['moveToColourTemp']
