@@ -778,13 +778,17 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         transitionMoveLevel = transitionRGB = transitionMoveLevel = transitionHue = transitionTemp = 0
         if 'Param' in self.ListOfDevices[ NWKID ]:
             if 'moveToColourTemp' in self.ListOfDevices[ NWKID ]:
-                transitionTemp = '%04x' %self.ListOfDevices[ NWKID ]['Param']['moveToColourTemp']
+                transitionTemp = '%04x' %int(self.ListOfDevices[ NWKID ]['Param']['moveToColourTemp'])
+
             if 'moveToColourRGB' in self.ListOfDevices[ NWKID ]:
-                transitionRGB = '%04x' %self.ListOfDevices[ NWKID ]['Param']['moveToColourRGB']
+                transitionRGB = '%04x' %int(self.ListOfDevices[ NWKID ]['Param']['moveToColourRGB'])
+
             if 'moveToLevel' in self.ListOfDevices[ NWKID ]:
-                transitionMoveLevel = '%04x' %self.ListOfDevices[ NWKID ]['Param']['moveToLevel']
+                transitionMoveLevel = '%04x' %int(self.ListOfDevices[ NWKID ]['Param']['moveToLevel'])
+
             if 'moveToHueSatu' in self.ListOfDevices[ NWKID ]:
-                transitionHue = '%04x' %self.ListOfDevices[ NWKID ]['Param']['moveToHueSatu']
+                transitionHue = '%04x' %int(self.ListOfDevices[ NWKID ]['Param']['moveToHueSatu'])
+                
         self.log.logging( "Command", 'Debug', "-----> Transition Timers: %s %s %s %s" %( 
             transitionRGB, transitionMoveLevel, transitionHue, transitionTemp))
             
