@@ -72,6 +72,8 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Man
         "_TZE200_fdtjuw7u" : tuyaReadRawAPS, # TS0601 / Blind Shades motor
         "_TZE200_zpzndjez" : tuyaReadRawAPS, # TS0601 / Blind Shades motor
         "_TZE200_rddyvrci" : tuyaReadRawAPS, # TS0601 / Blind Shades motor
+        "_TZ3000_wamqdr3f" : tuyaReadRawAPS, # TS011F
+
         'OWON': casaiaReadRawAPS,
     }
 
