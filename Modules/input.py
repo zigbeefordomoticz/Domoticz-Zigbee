@@ -3665,7 +3665,7 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
         if len(MsgData) >= 18:
             effect_variant = MsgData[18:20]
 
-        if ONOFF_TYPE[MsgCmd] in ("on", "off"):
+        if MsgCmd in ONOFF_TYPE and ONOFF_TYPE[MsgCmd] in ("on", "off"):
             self.log.logging( 
                 "Input",
                 "Log",
