@@ -2482,7 +2482,7 @@ def Cluster0b04( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             value = int(decodeAttribute( self, MsgAttType, MsgClusterData[0:4] ))
             self.log.logging( "Cluster",  'Debug', "ReadCluster %s - %s/%s Power %s" \
                 %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value))
-            if 'Model' in self.ListOfDevices[ MsgSrcAddr ] and self.ListOfDevices[ MsgSrcAddr ]['Model'] == 'outletv4':
+            if 'Model' in self.ListOfDevices[ MsgSrcAddr ] and self.ListOfDevices[ MsgSrcAddr ]['Model'] in  ('outletv4', 'lumi.plug.maeu01'):
                 value /= 10
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value))
         else:
