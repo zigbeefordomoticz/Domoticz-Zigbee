@@ -287,7 +287,10 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         # Continue Cleanup and remove '/'
         modelName = AttrModelName.replace('/','')
 
-        if modelName == 'TS0207':
+        if modelName == 'lumi.sensor_swit':
+            modelName = 'lumi.sensor_switch.aq3'
+
+        elif modelName == 'TS0207':
             # Thanks to TUYA, we get the Model Name used for Water Leak and for Range Extender.
             if 'ZDeviceID' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['ZDeviceID'] == '0402':
                 # Water Leak
