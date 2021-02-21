@@ -2478,40 +2478,40 @@ def Decode8100( self, Devices, MsgData, MsgLQI ):  # Read Attribute Response (in
 
     #0805 00 21 1801 0b05 00 29 2900 5802 86 5802 86 0000 86
 
-    try:
-        while idx < len(MsgData):
-            MsgAttrID = MsgAttStatus = MsgAttType = MsgAttSize = MsgClusterData = ""
-            MsgAttrID = MsgData[idx : idx + 4]
-            idx += 4
-            MsgAttStatus = MsgData[idx : idx + 2]
+#try:
+    while idx < len(MsgData):
+        MsgAttrID = MsgAttStatus = MsgAttType = MsgAttSize = MsgClusterData = ""
+        MsgAttrID = MsgData[idx : idx + 4]
+        idx += 4
+        MsgAttStatus = MsgData[idx : idx + 2]
+        idx += 2
+        if MsgAttStatus == "00":
+            MsgAttType = MsgData[idx : idx + 2]
             idx += 2
-            if MsgAttStatus == "00":
-                MsgAttType = MsgData[idx : idx + 2]
-                idx += 2
-                MsgAttSize = MsgData[idx : idx + 4]
-                idx += 4
-                size = int(MsgAttSize, 16) * 2
-                MsgClusterData = MsgData[idx : idx + size]
-                idx += size
-            else:
-                self.log.logging(  "Input", "Debug", "Decode8100 - idx: %s Read Attribute Response: [%s:%s] status: %s -> %s" %(
-                    idx, MsgSrcAddr, MsgSrcEp, MsgAttStatus, MsgData[ idx: ]))
+            MsgAttSize = MsgData[idx : idx + 4]
+            idx += 4
+            size = int(MsgAttSize, 16) * 2
+            MsgClusterData = MsgData[idx : idx + size]
+            idx += size
+        else:
+            self.log.logging(  "Input", "Debug", "Decode8100 - idx: %s Read Attribute Response: [%s:%s] status: %s -> %s" %(
+                idx, MsgSrcAddr, MsgSrcEp, MsgAttStatus, MsgData[ idx: ]))
 
-                # If the frame is coming from firmware we get only one attribute at a time, with some dumy datas
-                if len(MsgData[idx:]) == 6:
-                    # crap, lets finish it
-                    # Domoticz.Log("Crap Data: %s len: %s" %(MsgData[idx:], len(MsgData[idx:])))
-                    idx += 6
-            self.log.logging(  "Input", "Debug",
-                "Decode8100 - idx: %s Read Attribute Response: [%s:%s] ClusterID: %s MsgSQN: %s, i_sqn: %s, AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<"
-                % ( idx, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgSQN, i_sqn, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, ), MsgSrcAddr, )
-            NewMsgData = ( MsgSQN + MsgSrcAddr + MsgSrcEp + MsgClusterId + MsgAttrID + MsgAttStatus + MsgAttType + MsgAttSize + MsgClusterData )
-            read_report_attributes( self, Devices, "8100", MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, )
+            # If the frame is coming from firmware we get only one attribute at a time, with some dumy datas
+            if len(MsgData[idx:]) == 6:
+                # crap, lets finish it
+                # Domoticz.Log("Crap Data: %s len: %s" %(MsgData[idx:], len(MsgData[idx:])))
+                idx += 6
+        self.log.logging(  "Input", "Debug",
+            "Decode8100 - idx: %s Read Attribute Response: [%s:%s] ClusterID: %s MsgSQN: %s, i_sqn: %s, AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<"
+            % ( idx, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgSQN, i_sqn, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, ), MsgSrcAddr, )
+        NewMsgData = ( MsgSQN + MsgSrcAddr + MsgSrcEp + MsgClusterId + MsgAttrID + MsgAttStatus + MsgAttType + MsgAttSize + MsgClusterData )
+        read_report_attributes( self, Devices, "8100", MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, )
 
-    except Exception as e:
-        Domoticz.Error(
-            "Decode8100 - Catch error while decoding %s/%s cluster: %s MsgData: %s Error: %s"
-            % (MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgData, e))
+#except Exception as e:
+#    Domoticz.Error(
+#        "Decode8100 - Catch error while decoding %s/%s cluster: %s MsgData: %s Error: %s"
+#        % (MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgData, e))
 
     callbackDeviceAwake(self, MsgSrcAddr, MsgSrcEp, MsgClusterId)
 
