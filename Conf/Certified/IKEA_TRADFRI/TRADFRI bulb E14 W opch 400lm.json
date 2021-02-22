@@ -28,9 +28,6 @@
 	"Param": {
 		"PowerOnAfterOffOn": 255,
 		"fadingOff": 0,  
-		"moveToHueSatu": 0,
-		"moveToColourTemp": 0,
-		"moveToColourRGB": 0,
 		"moveToLevel": 0
 	}
 }
