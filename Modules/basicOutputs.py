@@ -785,6 +785,9 @@ def set_poweron_afteroffon( self, key, OnOffMode = 0xff):
     # Tuya Blitzworl
     # 0x0006 / 0x8002  -> 0x00 Off ; 0x01 On ; 0x02 Previous state
 
+    # Ikea / Philips/ Legrand
+    # 0x0006 / 0x4003 -> 0x00 Off, 0x01 On, 0xff Previous
+
     model_name = ''
     if 'Model' in self.ListOfDevices[ key ]:
         model_name = self.ListOfDevices[ key ]['Model']
@@ -793,12 +796,20 @@ def set_poweron_afteroffon( self, key, OnOffMode = 0xff):
 
     ListOfEp = getListOfEpForCluster( self, key, '0006' )
     cluster_id = "0006"
-    attribute = '8002' if model_name in ( 'TS0121', 'TS0115')  else "4003"
+    attribute = '4003'
+    
+    if model_name in ( 'TS0121', 'TS0115'):
+        attribute = '8002'
+        if OnOffMode == 0xff:
+            OnOffMode = 0x02
+    
     data_type = "30" # 
+    ListOfEp = getListOfEpForCluster( self, key, '0006' )
     for EPout in ListOfEp:
         data = "%02x" %OnOffMode
         self.log.logging( "BasicOutput", 'Log', "set_PowerOn_OnOff for %s/%s - OnOff: %s" %(key, EPout, OnOffMode),key)
-        del self.ListOfDevices[key]['Ep'][EPout]['0006'][ attribute ]
+        if attribute in self.ListOfDevices[key]['Ep'][EPout]['0006']:
+            del self.ListOfDevices[key]['Ep'][EPout]['0006'][ attribute ]
         return write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled = True)
 
 
