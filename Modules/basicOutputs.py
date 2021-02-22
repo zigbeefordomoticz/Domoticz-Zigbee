@@ -793,7 +793,7 @@ def set_poweron_afteroffon( self, key, OnOffMode = 0xff):
 
     ListOfEp = getListOfEpForCluster( self, key, '0006' )
     cluster_id = "0006"
-    attribute = '8002' if model_name == 'TS0121' else "4003"
+    attribute = '8002' if model_name in ( 'TS0121', 'TS0115')  else "4003"
     data_type = "30" # 
     for EPout in ListOfEp:
         data = "%02x" %OnOffMode

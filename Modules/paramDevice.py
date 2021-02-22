@@ -25,6 +25,7 @@ def param_PowerOnAfterOffOn(self, nwkid, mode):
 
     if 'Manufacturer' not in self.ListOfDevices[ nwkid ]:
         return
+
     if self.ListOfDevices[ nwkid ]['Manufacturer'] == '100b': # Philips
         if '0b' not in self.ListOfDevices[ nwkid ]['Ep']:
             return
@@ -52,8 +53,12 @@ def param_PowerOnAfterOffOn(self, nwkid, mode):
         for ep in self.ListOfDevices[ nwkid ]['Ep']:
             if '0006' not in self.ListOfDevices[ nwkid ]['Ep'][ ep ]:
                 continue
-            if '4003' not in self.ListOfDevices[ nwkid ]['Ep'][ ep ]['0006']:
-                continue
-            if self.ListOfDevices[ nwkid ]['Ep'][ ep ]['0006']['4003'] != str(mode):
-                set_poweron_afteroffon( self, nwkid, mode)
-                ReadAttributeRequest_0006_400x(self, nwkid)
+            
+            if '4003' in self.ListOfDevices[ nwkid ]['Ep'][ ep ]['0006'] and self.ListOfDevices[ nwkid ]['Ep'][ ep ]['0006']['4003'] == str(mode):
+                    continue
+                
+            elif '8002' in self.ListOfDevices[ nwkid ]['Ep'][ ep ]['0006'] and self.ListOfDevices[ nwkid ]['Ep'][ ep ]['0006']['8002'] == str(mode):
+                    continue
+   
+            set_poweron_afteroffon( self, nwkid, mode)
+            ReadAttributeRequest_0006_400x(self, nwkid)
