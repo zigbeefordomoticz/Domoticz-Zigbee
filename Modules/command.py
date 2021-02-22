@@ -735,7 +735,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             if profalux:
                 sendZigateCmd(self, "0081","02" + NWKID + ZIGATE_EP + EPout + OnOff + value + "0000")
             else:
-                sendZigateCmd(self, "0081","02" + NWKID + ZIGATE_EP + EPout + OnOff + value + "0010")
+                transitionMoveLevel = '0010' # Compatibility. It was 0010 before
+                if 'Param' in self.ListOfDevices[ NWKID ] and 'moveToLevel' in self.ListOfDevices[ NWKID ]['Param']:
+                    transitionMoveLevel = '%04x' %int(self.ListOfDevices[ NWKID ]['Param']['moveToLevel'])
+                sendZigateCmd(self, "0081","02" + NWKID + ZIGATE_EP + EPout + OnOff + value + transitionMoveLevel)
 
         if Devices[Unit].SwitchType in (13,16):
             UpdateDevice_v2(self, Devices, Unit, 2, str(Level) ,BatteryLevel, SignalLevel) 
@@ -777,16 +780,13 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         #  transitionTemp = '%04x' %self.pluginconf.pluginConf['moveToColourTemp']
         transitionMoveLevel = transitionRGB = transitionMoveLevel = transitionHue = transitionTemp = '0000'
         if 'Param' in self.ListOfDevices[ NWKID ]:
-            if 'moveToColourTemp' in self.ListOfDevices[ NWKID ]:
+            if 'moveToColourTemp' in self.ListOfDevices[ NWKID ]['Param']:
                 transitionTemp = '%04x' %int(self.ListOfDevices[ NWKID ]['Param']['moveToColourTemp'])
-
-            if 'moveToColourRGB' in self.ListOfDevices[ NWKID ]:
+            if 'moveToColourRGB' in self.ListOfDevices[ NWKID ]['Param']:
                 transitionRGB = '%04x' %int(self.ListOfDevices[ NWKID ]['Param']['moveToColourRGB'])
-
-            if 'moveToLevel' in self.ListOfDevices[ NWKID ]:
+            if 'moveToLevel' in self.ListOfDevices[ NWKID ]['Param']:
                 transitionMoveLevel = '%04x' %int(self.ListOfDevices[ NWKID ]['Param']['moveToLevel'])
-
-            if 'moveToHueSatu' in self.ListOfDevices[ NWKID ]:
+            if 'moveToHueSatu' in self.ListOfDevices[ NWKID ]['Param']:
                 transitionHue = '%04x' %int(self.ListOfDevices[ NWKID ]['Param']['moveToHueSatu'])
 
         self.log.logging( "Command", 'Debug', "-----> Transition Timers: %s %s %s %s" %( 
