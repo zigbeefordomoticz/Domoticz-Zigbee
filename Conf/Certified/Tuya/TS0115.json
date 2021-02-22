@@ -56,6 +56,6 @@
 		"0006": [ "0000" , "8002"]
 	},
 	"Param": {
-		"PowerOnAfterOffOn": 255
+		"PowerOnAfterOffOn": 2
 	}
 }

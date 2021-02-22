@@ -28,7 +28,7 @@
 		"0b04": [ "0508", "050b", "0505" ]
 	},
 	"Param": {
-		"PowerOnAfterOffOn": 255,
+		"PowerOnAfterOffOn": 2,
 		"IndicatorMode": 1,
 		"PowerPollingFreq": 300
 	}
