@@ -798,7 +798,7 @@ def set_poweron_afteroffon( self, key, OnOffMode = 0xff):
     for EPout in ListOfEp:
         data = "%02x" %OnOffMode
         self.log.logging( "BasicOutput", 'Log', "set_PowerOn_OnOff for %s/%s - OnOff: %s" %(key, EPout, OnOffMode),key)
-        del self.ListOfDevices[key]['Ep'][EPout]['0006']['4003']
+        del self.ListOfDevices[key]['Ep'][EPout]['0006'][ attribute ]
         return write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled = True)
 
 
