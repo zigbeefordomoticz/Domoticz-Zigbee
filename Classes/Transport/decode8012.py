@@ -45,10 +45,14 @@ def decode8012_8702( self, decoded_frame):
     
     if isqn is None:
         self.logging_receive( 'Debug', "decode8012_8702 - 0x8012 not for us Nwkid: %s eSqn: %s" %(MsgAddr, MsgSQN))
+        if self.pluginconf.pluginConf["debugzigateCmd"]:
+            self.logging_receive( 'Log', "Transport - [%s] - Async %s Sqn: %s Addr: %s nPdu: %s aPdu: %s" %(isqn, MsgType, MsgSQN, MsgAddr, nPDU, aPDU))
         return
 
     if isqn not in self.ListOfCommands:
         self.logging_receive( 'Debug', "decode8012_8702 - 0x8012 not for us Nwkid: %s eSqn: %s " %(MsgAddr, MsgSQN))
+        if self.pluginconf.pluginConf["debugzigateCmd"]:
+            self.logging_receive( 'Log', "Transport - [%s] - Async %s Sqn: %s Addr: %s nPdu: %s aPdu: %s" %(isqn, MsgType, MsgSQN, MsgAddr, nPDU, aPDU))
         return
 
     self.ListOfCommands[ isqn ]['Status'] = MsgType
