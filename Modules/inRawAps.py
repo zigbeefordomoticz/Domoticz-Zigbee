@@ -75,6 +75,7 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Man
         "_TZ3000_wamqdr3f" : tuyaReadRawAPS, # TS011F
 
         'OWON': casaiaReadRawAPS,
+        'CASAIA': casaiaReadRawAPS,
     }
 
     if srcnwkid not in self.ListOfDevices:

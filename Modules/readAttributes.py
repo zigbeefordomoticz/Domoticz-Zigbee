@@ -571,7 +571,7 @@ def ReadAttributeRequest_0201(self, key):
             # We need to break the Read Attribute between Manufacturer specifcs one and teh generic one
             if self.ListOfDevices[key]['Manufacturer Name'] == 'Schneider Electric':
                 manufacturer_code = '105e'
-            elif self.ListOfDevices[key]['Manufacturer Name'] == 'OWON':
+            elif self.ListOfDevices[key]['Manufacturer Name'] in ('OWON', 'CASAIA'):
                 manufacturer_code = '113c'
 
             for _attr in list(listAttributes):
