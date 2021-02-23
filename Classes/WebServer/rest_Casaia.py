@@ -123,7 +123,7 @@ def list_casaia_ac201( self ):
 
     _casaiaDeviceList = []
     for x in self.ListOfDevices:
-        if 'CASA.IA' in  self.ListOfDevices[x] and 'Model' in self.ListOfDevices[x] and self.ListOfDevices[x]['Model'] in ('AC201A', 'AC211'):
+        if 'CASA.IA' in  self.ListOfDevices[x] and 'Model' in self.ListOfDevices[x] and self.ListOfDevices[x]['Model'] in ('AC201A', 'AC211', 'AC221'):
             irCode = '0000'
             if 'IRCode' in self.ListOfDevices[x]['CASA.IA'][ DEVICE_ID ]:
                 irCode = self.ListOfDevices[x]['CASA.IA'][ DEVICE_ID ]['IRCode']
