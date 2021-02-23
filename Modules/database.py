@@ -626,6 +626,7 @@ def load_new_param_definition( self ):
         if param in ( 'AC201Polling',):
                 POLLING_TABLE_SPECIFICS = {
                     'OWON': 'pollingCasaiaAC201',   
+                    'CASAIA': 'pollingCasaiaAC201',   
                 }
 
                 devManufCode = devManufName = ''
