@@ -86,7 +86,7 @@ def casaiaReadRawAPS(self, Devices, NwkId, srcEp, ClusterId, dstNWKID, dstEP, Ms
 
     if NwkId not in self.ListOfDevices:
         self.log.logging( "CasaIA", "Error", "%s not found in Database" %NwkId, NwkId,
-            {'Error code': 'CASAIA-READRAW-01', 'ListOfDevices': selfListOfDevices})
+            {'Error code': 'CASAIA-READRAW-01', 'ListOfDevices': self.ListOfDevices})
         return
 
     if 'Model' not in self.ListOfDevices[ NwkId]:
