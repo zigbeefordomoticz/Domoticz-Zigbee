@@ -290,6 +290,9 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         if modelName == 'lumi.sensor_swit':
             modelName = 'lumi.sensor_switch.aq3'
 
+        elif modelName == 'AC211':
+            modelName = 'AC221'
+
         elif modelName == 'TS0207':
             # Thanks to TUYA, we get the Model Name used for Water Leak and for Range Extender.
             if 'ZDeviceID' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['ZDeviceID'] == '0402':

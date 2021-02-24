@@ -3187,7 +3187,7 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
         if "0000" not in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]:
             self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = {}
 
-    if ( "SQN" in self.ListOfDevices[MsgSrcAddr] and MsgSQN == self.ListOfDevices[MsgSrcAddr]["SQN"] ):
+    if ( MsgSQN != "00" and "SQN" in self.ListOfDevices[MsgSrcAddr] and MsgSQN == self.ListOfDevices[MsgSrcAddr]["SQN"] ):
         return
 
     updSQN(self, MsgSrcAddr, MsgSQN)
@@ -3524,6 +3524,30 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
             self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, _ModelName, MsgData
         )
 
+    elif _ModelName == 'tint-Remote-white':
+        #                           Command   Mode   Step   Transtition Time
+        # Dim- :      0001 0008 02 e471  02        01     2b     000a
+        # Dim+ :      0001 0008 02 e471  02        00     2b     000a
+        # Move down : 0001 0008 02 e471  01        0164
+        # Stop      : 0101 0008 02 e471  03
+        # Move Up   : 0001 0008 02 e471  05
+        # Stop      : 0101 0008 02 e471  03
+        if MsgCmd == '02': # Command
+            MsgMode = MsgData[16:18]
+            if MsgMode == "01": # Dim -
+                MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, "04")
+            elif MsgMode == "00": # Dim +
+                MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, "05")
+
+        if MsgCmd == '01': # Move Down
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, "06")
+
+        if MsgCmd == '05': # Move Up
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, "07")
+
+        if MsgCmd == '03': # Stop
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, "08")
+           
     elif "Manufacturer" in self.ListOfDevices[MsgSrcAddr]:
         if self.ListOfDevices[MsgSrcAddr]["Manufacturer"] == "1110":  # Profalux
             self.log.logging( "Input", "Log", "MsgData: %s" % MsgData)
@@ -3610,7 +3634,7 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
         if "0000" not in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]:
             self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = {}
 
-    if ( "SQN" in self.ListOfDevices[MsgSrcAddr] and MsgSQN == self.ListOfDevices[MsgSrcAddr]["SQN"] ):
+    if ( MsgSQN != "00" and "SQN" in self.ListOfDevices[MsgSrcAddr] and MsgSQN == self.ListOfDevices[MsgSrcAddr]["SQN"] ):
         return
 
     updSQN(self, MsgSrcAddr, MsgSQN)

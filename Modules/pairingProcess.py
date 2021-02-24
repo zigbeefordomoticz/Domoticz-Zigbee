@@ -424,6 +424,13 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                             else:
                                 Domoticz.Error("Uncorrect GroupMembership definition %s" %str(self.DeviceConf[ self.ListOfDevices[NWKID]['Model'] ]['GroupMembership']))
 
+            if self.groupmgt and 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['Model'] == 'tint-Remote-white':
+                # Tint Remote manage 4 groups and we will create with ZiGate attached.
+                self.groupmgt.addGroupMemberShip( '0000', '01', '4003')
+                self.groupmgt.addGroupMemberShip( '0000', '01', '4004')
+                self.groupmgt.addGroupMemberShip( '0000', '01', '4005')
+                self.groupmgt.addGroupMemberShip( '0000', '01', '4006')
+
             if 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['Model'] in ( 'AC201A', 'AC211', 'AC221'):
                 casaia_pairing( self, NWKID)
 

@@ -112,6 +112,24 @@ SWITCH_LVL_MATRIX = {
             }
         },
 
+    "TINT_REMOTE": {
+        "00": (0, "00"), # Off
+        "01": (1, "10"), # On
+        "02": (2, "20"), # Color -
+        "03": (3, "30"), # Color +
+        "04": (4, "40"), # Dim -
+        "05": (5, "50"), # Dim +
+        "06": (6, "60"), # Long Dim -
+        "07": (7, "70"), # Long Dim +
+        "08": (8, "80"), # Stop
+        "ForceUpdate": True, 
+        "LevelNames": "Off|On|Color -|Color +|Dim -| Dim+|Long Dim-|Long Dim+|Stop",
+        "Language": { 
+            "fr-FR": { "LevelNames": "Off|On|Color -|Color +|Dim -| Dim+",}
+            }
+
+    },
+
     "Button": { 
         "01": (1,"On") , 
         "ForceUpdate": True},

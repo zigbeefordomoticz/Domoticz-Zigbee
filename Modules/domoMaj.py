@@ -454,7 +454,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 return
 
         if WidgetType not in ( 'ThermoModeEHZBRTS', 'HeatingSwitch', 'HeatingStatus', 'ThermoMode_2', 'ThermoSetpoint', 'ThermoOnOff' ) and \
-            (   ( ClusterType in ( 'IAS_ACE', 'Alarm', 'Door', 'Switch', 'SwitchButton', 'AqaraOppleMiddle', 'Motion', 
+            (   ( ClusterType in (  'IAS_ACE', 'Alarm', 'Door', 'Switch', 'SwitchButton', 'AqaraOppleMiddle', 'Motion', 
                                  'Ikea_Round_5b', 'Ikea_Round_OnOff', 'Vibration', 'OrviboRemoteSquare', 'Button_3', 'LumiLock') ) or \
                 ( ClusterType == WidgetType == 'DoorLock') or \
                 ( ClusterType == 'DoorLock' and WidgetType == 'Vibration') or \
@@ -882,6 +882,12 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
                 sValue = "%s" %(10 * nValue)
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
+
+            elif WidgetType == 'TINT_REMOTE':
+                nValue = int(value)
+                sValue = "%s" %(10 * nValue)
+                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
+
 
         if ClusterType in ( 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl'):
             # We just manage the update of the Dimmer (Control Level)       
