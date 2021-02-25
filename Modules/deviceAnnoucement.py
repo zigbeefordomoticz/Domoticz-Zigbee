@@ -11,6 +11,7 @@ from Modules.tools import (
     IEEEExist,
     DeviceExist,
     initDeviceInList,
+    mainPoweredDevice
 )
 from Modules.domoTools import lastSeenUpdate, timedOutDevice
 from Modules.readAttributes import ReadAttributeRequest_0000, ReadAttributeRequest_0001
@@ -492,8 +493,10 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
         message = "Device Annoucement: %s NwkId: %s Ieee: %s MacCap: %s" % (self.ListOfDevices[NwkId]["ZDeviceName"], NwkId, Ieee, MacCapa)
     else:
         message = "Device Annoucement: NwkId: %s Ieee: %s MacCap: %s" % (NwkId, Ieee, MacCapa)
-    self.log.logging( "Input","Status", message, NwkId)
-    self.adminWidgets.updateNotificationWidget( Devices, message )
+
+    if mainPoweredDevice( self, NwkId) or self.ListOfDevices[ NwkId ]['Status'] != 'inDB':
+        self.log.logging( "Input","Status", message, NwkId)
+        self.adminWidgets.updateNotificationWidget( Devices, message )
 
     # We are receiving the Real Device Annoucement. what to do
     if "Announced" not in self.ListOfDevices[NwkId]:
