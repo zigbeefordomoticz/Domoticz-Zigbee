@@ -367,7 +367,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Generic_5" %(t), NWKID)
 
             # 6 Selectors, Style 1
-            if t in ('AlarmWD', 'TINT_REMOTE'):        
+            if t in ('AlarmWD', ):        
                 Options = createSwitchSelector( self,  6,  DeviceType = t,SelectorStyle = 1 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in AlarmWD" %(t), NWKID)
@@ -419,6 +419,11 @@ def CreateDomoDevice(self, Devices, NWKID):
                 Options = createSwitchSelector( self,  14,  DeviceType = t,SelectorStyle = 1 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Ikea Round" %(t), NWKID)
+
+            if t in ('TINT_REMOTE_WHITE', ):
+                Options = createSwitchSelector( self,  19,  DeviceType = t,SelectorStyle = 1 )
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
+                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Tint-Remote-White" %(t), NWKID)   
 
             if t in ( 'LumiLock'):
                 Options = createSwitchSelector( self,  16,  DeviceType = t,SelectorStyle = 1 )

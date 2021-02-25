@@ -113,6 +113,7 @@ SETTINGS = {
     # Zigate Configuration
     'ZigateConfiguration': {'Order': 7, 'param': {
         'pingDevicesFeq':            {'type': 'int', 'default': 3600,  'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'zigatePartOfGroupTint':     {'type': 'bool', 'default': 0,  'current': None, 'restart': 1,  'hidden': False, 'Advanced': True},
         'zigatePartOfGroup0000':     {'type': 'bool', 'default': 0,  'current': None, 'restart': 1,  'hidden': False, 'Advanced': True},
         'allowRemoveZigateDevice':   {'type': 'bool', 'default': 1,  'current': None, 'restart': 0, 'hidden': True, 'Advanced': True},
         'blueLedOnOff':              {'type': 'bool', 'default': 1,  'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},

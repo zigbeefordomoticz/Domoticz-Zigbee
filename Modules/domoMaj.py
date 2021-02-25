@@ -883,7 +883,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 sValue = "%s" %(10 * nValue)
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
 
-            elif WidgetType == 'TINT_REMOTE':
+            elif WidgetType == 'TINT_REMOTE_WHITE':
                 nValue = int(value)
                 sValue = "%s" %(10 * nValue)
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)

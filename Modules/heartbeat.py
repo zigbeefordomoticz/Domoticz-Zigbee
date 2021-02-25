@@ -103,7 +103,7 @@ def pollingManufSpecificDevices( self, NwkId):
         if param == 'OnOffPollingFreq':
             _FEQ = self.ListOfDevices[ NwkId]['Param'][ param ] // HEARTBEAT
             if _FEQ and (( _HB % _FEQ ) == 0):
-                self.log.logging( "Heartbeat", 'Log', "++ pollingManufSpecificDevices -  %s Found: %s=%s" \
+                self.log.logging( "Heartbeat", 'Debug', "++ pollingManufSpecificDevices -  %s Found: %s=%s" \
                     %(NwkId,  param, self.ListOfDevices[ NwkId]['Param'][ param ]), NwkId)       
                 ReadAttributeRequest_0006_0000( self, NwkId)
                 ReadAttributeRequest_0008_0000( self, NwkId)
@@ -111,14 +111,14 @@ def pollingManufSpecificDevices( self, NwkId):
         elif param == 'PowerPollingFreq':
             _FEQ = self.ListOfDevices[ NwkId]['Param'][ param ] // HEARTBEAT
             if _FEQ and (( _HB % _FEQ ) == 0):
-                self.log.logging( "Heartbeat", 'Log', "++ pollingManufSpecificDevices -  %s Found: %s=%s" \
+                self.log.logging( "Heartbeat", 'Debug', "++ pollingManufSpecificDevices -  %s Found: %s=%s" \
                      %(NwkId,  param, self.ListOfDevices[ NwkId]['Param'][ param ]), NwkId)       
                 ReadAttributeRequest_0b04_050b_0505_0508( self, NwkId)
 
         elif param == 'AC201Polling':
             _FEQ = self.ListOfDevices[ NwkId]['Param'][ param ] // HEARTBEAT
             if _FEQ and (( _HB % _FEQ ) == 0):
-                self.log.logging( "Heartbeat", 'Log', "++ pollingManufSpecificDevices -  %s Found: %s=%s" \
+                self.log.logging( "Heartbeat", 'Debug', "++ pollingManufSpecificDevices -  %s Found: %s=%s" \
                     %(NwkId,  param, self.ListOfDevices[ NwkId]['Param'][ param ]), NwkId)       
                 
                 pollingCasaia( self, NwkId )    

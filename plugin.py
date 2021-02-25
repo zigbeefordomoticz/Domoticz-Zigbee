@@ -860,6 +860,13 @@ def zigateInit_Phase3( self ):
                 # Add Zigate NwkId 0x0000 Ep 0x01 to GroupId 0x0000
                 self.groupmgt.addGroupMemberShip( '0000', '01', '0000')
 
+            if self.pluginconf.pluginConf['zigatePartOfGroupTint']:
+                # Tint Remote manage 4 groups and we will create with ZiGate attached.
+                self.groupmgt.addGroupMemberShip( '0000', '01', '4003')
+                self.groupmgt.addGroupMemberShip( '0000', '01', '4004')
+                self.groupmgt.addGroupMemberShip( '0000', '01', '4005')
+                self.groupmgt.addGroupMemberShip( '0000', '01', '4006')
+
         # Create Network Map object and trigger one scan
         if self.networkmap is None:
             self.networkmap = NetworkMap( self.pluginconf, self.ZigateComm, self.ListOfDevices, Devices, self.HardwareID, self.log)

@@ -112,7 +112,7 @@ SWITCH_LVL_MATRIX = {
             }
         },
 
-    "TINT_REMOTE": {
+    "TINT_REMOTE_WHITE": {
         "00": (0, "00"), # Off
         "01": (1, "10"), # On
         "02": (2, "20"), # Color -
@@ -122,10 +122,21 @@ SWITCH_LVL_MATRIX = {
         "06": (6, "60"), # Long Dim -
         "07": (7, "70"), # Long Dim +
         "08": (8, "80"), # Stop
+        "09": (9, "90"), # Scene1
+        "10": (10, "100"), #Scne2
+        "11": (11, "110"), #Scne3
+        "12": (12, "120"), #Scne4
+        "13": (13, "130"), #Scne5
+        "14": (14, "140"), #Scne6
+        "15": (15, "150"), #Scne7
+        "16": (16, "160"), #ColorMove down
+        "17": (17, "170"), #ColorMove Up
+        "18": (18, "180"), #COlorMove Sop
+
         "ForceUpdate": True, 
-        "LevelNames": "Off|On|Color -|Color +|Dim -| Dim+|Long Dim-|Long Dim+|Stop",
+        "LevelNames": "Off|On|Color -|Color +|Dim -| Dim+|Long Dim-|Long Dim+|Stop|Scene1|Scene2|Scene3|Scene4|Scene5|Scene6|Scene7|Color Up|Color Down|Color Stop",
         "Language": { 
-            "fr-FR": { "LevelNames": "Off|On|Color -|Color +|Dim -| Dim+",}
+            "fr-FR": { "LevelNames": "Off|On|Color -|Color +|Dim -| Dim+|Long Dim-|Long Dim+|Stop|Scene1|Scene2|Scene3|Scene4|Scene5|Scene6|Scene7|Color Up|Color Down|Color Stop",}
             }
 
     },
