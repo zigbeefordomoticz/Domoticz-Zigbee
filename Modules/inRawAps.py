@@ -137,7 +137,7 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Man
         if Command == '0a': # Move to Color Temperature
             color_temp_mired = payload[8:10] + payload[6:8]
             transition_time = payload[12:14] + payload[10:12]
-            Domoticz.Log("Move to Color Temp - Command: %s Temp_Mired: %s TransitionTime: %s" %(Command, color_temp_mired, transition_time))
+            #Domoticz.Log("Move to Color Temp - Command: %s Temp_Mired: %s TransitionTime: %s" %(Command, color_temp_mired, transition_time))
             if 'Model' in self.ListOfDevices[ srcnwkid ] and self.ListOfDevices[ srcnwkid ]['Model'] == 'tint-Remote-white':
                 COLOR_SCENE_WHITE = {
                     '022b': '09',
@@ -156,8 +156,8 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Man
             rate = payload[10:12] + payload[8:10]
             color_temp_min_mireds =payload[14:16] + payload[12:14]
             color_temp_max_mireds = payload[18:20] + payload[16:18]
-            Domoticz.Log("Move Color Temperature - Command: %s mode: %s rate: %s min_mired: %s max_mired: %s" %(
-                Command, move_mode, rate, color_temp_min_mireds, color_temp_max_mireds))
+            #Domoticz.Log("Move Color Temperature - Command: %s mode: %s rate: %s min_mired: %s max_mired: %s" %(
+            #    Command, move_mode, rate, color_temp_min_mireds, color_temp_max_mireds))
             if 'Model' in self.ListOfDevices[ srcnwkid ] and self.ListOfDevices[ srcnwkid ]['Model'] == 'tint-Remote-white':
                 if move_mode == '01': # Down
                     MajDomoDevice( self, Devices, srcnwkid, srcep, "0008", '16')
@@ -166,7 +166,7 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Man
                     MajDomoDevice( self, Devices, srcnwkid, srcep, "0008", '17')
 
         elif Command == '47': # Stop Move Step
-            Domoticz.Log("Stop Move Step - Command: %s" %Command)
+            #Domoticz.Log("Stop Move Step - Command: %s" %Command)
             if 'Model' in self.ListOfDevices[ srcnwkid ] and self.ListOfDevices[ srcnwkid ]['Model'] == 'tint-Remote-white':
                 MajDomoDevice( self, Devices, srcnwkid, srcep, "0008", '18')
 
