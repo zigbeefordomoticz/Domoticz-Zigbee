@@ -493,7 +493,7 @@ def AC201_read_AC_status_response( self, Devices, NwkId, Ep, payload):
 
     # Update System Mode
     self.log.logging( "CasaIA", "Debug" , "read_AC_status_response Status: %s request Update System Mode: %s" %( NwkId, system_mode),NwkId)
-    MajDomoDevice(self, Devices, NwkId, Ep, '0201', system_mode)    
+    MajDomoDevice(self, Devices, NwkId, Ep, '0201', system_mode, Attribute_ ='001c')    
 
 def AC201_read_learned_data_group_status_request_response(self, Devices, NwkId, srcEp, payload):
     # Command 0x11
