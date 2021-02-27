@@ -320,11 +320,19 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
             elif WidgetType in ( 'ThermoMode', 'ACMode') and Attribute_ == '001c':
                 # value seems to come as int or str. To be fixed
                 self.log.logging( "Widget", "Debug", "------>  Thermostat Mode %s type: %s" %(value, type(value)), NWKID)
+
                 if value in THERMOSTAT_MODE_2_LEVEL:
-                    sValue = THERMOSTAT_MODE_2_LEVEL[value]
-                    nValue = int(sValue) // 10
-                    UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
-                    self.log.logging( "Widget", "Debug", "------>  Thermostat Mode: %s %s" %(nValue,sValue), NWKID)
+                    if THERMOSTAT_MODE_2_LEVEL[ value ] == '00': # Off
+                        UpdateDevice_v2(self, Devices, DeviceUnit, 0, '00', BatteryLevel, SignalLevel)
+                    elif THERMOSTAT_MODE_2_LEVEL[ value ] == '20': # Cool
+                        UpdateDevice_v2(self, Devices, DeviceUnit, 1, '10', BatteryLevel, SignalLevel)
+                    elif THERMOSTAT_MODE_2_LEVEL[ value ] == '30': # Heat
+                        UpdateDevice_v2(self, Devices, DeviceUnit, 2, '20', BatteryLevel, SignalLevel)
+                    elif THERMOSTAT_MODE_2_LEVEL[ value ] == '40': # Dry
+                        UpdateDevice_v2(self, Devices, DeviceUnit, 3, '30', BatteryLevel, SignalLevel)
+                    elif THERMOSTAT_MODE_2_LEVEL[ value ] == '50': # Fan
+                        UpdateDevice_v2(self, Devices, DeviceUnit, 4, '40', BatteryLevel, SignalLevel)
+
 
         if ClusterType == 'Temp' and WidgetType == 'AirQuality' and Attribute_ == '0002':
             # eco2 for VOC_Sensor from Nexturn is provided via Temp cluster
