@@ -525,8 +525,13 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
         return
 
     # Send for processing to the Brand specifics
-    if "Manufacturer" not in self.ListOfDevices[srcnwkid]:
+    if "Manufacturer" not in self.ListOfDevices[srcnwkid] and 'Manufacturer Name' not in self.ListOfDevices[srcnwkid]:
         return
+
+    if 'Manufacturer' in self.ListOfDevices[srcnwkid] and self.ListOfDevices[srcnwkid]['Manufacturer'] in ( '', {} ) and \
+        'Manufacturer Name' in self.ListOfDevices[srcnwkid] and self.ListOfDevices[srcnwkid]['Manufacturer Name'] in ( '', {} ):
+        return
+
 
     inRawAps( self, Devices, srcnwkid, MsgSourcePoint, MsgClusterID, dstnwkid, MsgDestPoint, Sqn, ManufacturerCode, Command, Data, MsgPayload,)
     callbackDeviceAwake(self, srcnwkid, MsgSourcePoint, MsgClusterID)
