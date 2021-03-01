@@ -29,6 +29,7 @@
 		 "0300": [ "0000", "0002", "0003", "0004", "0007", "0008" ]
 	},
 	"Param": {
+		"PowerOnAfterOffOn": 255,
 		"OnOffPollingFreq": 300,
 		"fadingOff": 0,  
 		"moveToHueSatu": 0,

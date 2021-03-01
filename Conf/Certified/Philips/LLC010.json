@@ -29,10 +29,10 @@
 		"0300": [  ]
 	},
 	"Param": {
+		"PowerOnAfterOffOn": 255,
 		"OnOffPollingFreq": 300,
 		"fadingOff": 0,  
 		"moveToHueSatu": 0,
-		"moveToColourTemp": 0,
 		"moveToColourRGB": 0,
 		"moveToLevel": 0	}
 }
