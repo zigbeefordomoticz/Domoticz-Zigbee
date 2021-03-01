@@ -34,6 +34,7 @@ from Modules.livolo import livolo_bind
 from Modules.orvibo import OrviboRegistration
 from Modules.configureReporting import processConfigureReporting
 from Modules.profalux import profalux_fake_deviceModel
+from Modules.philips import philips_set_pir_occupancySensibility
 from Modules.domoCreate import CreateDomoDevice
 from Modules.tools import reset_cluster_datastruct
 from Modules.zigateConsts import CLUSTERS_LIST
@@ -42,6 +43,7 @@ from Modules.thermostats import thermostat_Calibration
 from Modules.tuyaSiren import tuya_sirene_registration
 from Modules.tuyaTools import tuya_TS0121_registration
 from Modules.tuyaTRV import tuya_eTRV_registration, TUYA_eTRV_MODEL
+from Modules.paramDevice import param_Occupancy_settings_PIROccupiedToUnoccupiedDelay
 
 def writeDiscoveryInfos( self ):
 
@@ -322,10 +324,11 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                 Domoticz.Log("---> Calling enableOppleSwitch %s" %NWKID)
                 enableOppleSwitch( self, NWKID)
     
-            # 2 Enable Configure Reporting for any applicable cluster/attributes
+            # Keeping Pairing infos
             if self.pluginconf.pluginConf['capturePairingInfos']:
                 self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'PR-CONFIG' )
 
+            # 2 Enable Configure Reporting for any applicable cluster/attributes
             processConfigureReporting( self, NWKID )  
 
             # 3 Read attributes
@@ -406,6 +409,11 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                  Domoticz.Status('processNotinDBDevices - set viration Aqara %s sensitivity to %s' \
                         %(NWKID, self.pluginconf.pluginConf['vibrationAqarasensitivity']))
                  setXiaomiVibrationSensitivity( self, NWKID, sensitivity = self.pluginconf.pluginConf['vibrationAqarasensitivity'])
+
+            # Custom device parameters set
+            if 'Param' in self.ListOfDevices[NWKID]:
+                Domoticz.Log("Custom device parameters setting")
+                self.ListOfDevices[NWKID]['CheckParam'] = True
 
             self.adminWidgets.updateNotificationWidget( Devices, 'Successful creation of Widget for :%s DeviceID: %s' \
                     %(self.ListOfDevices[NWKID]['Model'], NWKID))

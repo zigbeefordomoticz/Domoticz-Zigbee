@@ -45,7 +45,7 @@ ATTRIBUTES = {
     '0402': [ 0x0000],
     '0403': [ 0x0000],
     '0405': [ 0x0000],
-    '0406': [ 0x0000, 0x0001, 0x0010, 0x0011],
+    '0406': [ 0x0000, 0x0001, 0x0010, 0x0011, 0x0012],
     '0500': [ 0x0000, 0x0001, 0x0002],
     '0502': [ 0x0000],
     '0702': [ 0x0000, 0x0017, 0x0200, 0x0301, 0x0302, 0x0303, 0x0306, 0x0400],
@@ -727,11 +727,13 @@ def ReadAttributeRequest_0405(self, key):
 
 def ReadAttributeRequest_0406(self, key):
 
+    manufacturer='0000'
     self.log.logging( "ReadAttributes", 'Debug', "ReadAttributeRequest_0406 - Key: %s " %key, nwkid=key)
     _model = 'Model' in self.ListOfDevices[key]
     ListOfEp = getListOfEpForCluster( self, key, '0406' )
     for EPout in ListOfEp:
         listAttributes = []
+        listAttrSpecific = []
 
         for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0406'):
             if iterAttr not in listAttributes:
@@ -739,9 +741,44 @@ def ReadAttributeRequest_0406(self, key):
                     continue
                 listAttributes.append( iterAttr )
 
+        # Adjustement before request
+        listAttrSpecific = []
+        listAttrGeneric = []
+        if _model and self.ListOfDevices[key]['Model'] in ('SML001', 'SML002'):
+            manufacturer = '100b'
+            # We need to break the Read Attribute between Manufacturer specifcs one and teh generic one
+            for _attr in list(listAttributes):
+                if _attr in ( 0x0030 , ):
+                    listAttrSpecific.append( _attr )
+                else:
+                    listAttrGeneric.append( _attr )
+            del listAttributes
+            listAttributes = listAttrGeneric
+
+
         if listAttributes:
             self.log.logging( "ReadAttributes", 'Debug', "Occupancy info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
             ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0406", listAttributes, ackIsDisabled = is_ack_tobe_disabled(self, key))
+
+        if listAttrSpecific:
+            self.log.logging( "ReadAttributes", 'Debug', "Occupancy info  via Read Attribute request Manuf Specific %s/%s %s" %(key, EPout, str(listAttributes)), nwkid=key)
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0406", listAttrSpecific, manufacturer_spec = '01', manufacturer = manufacturer, ackIsDisabled = True , checkTime=False)
+
+def ReadAttributeRequest_0406_0010(self, key):
+
+    self.log.logging( "ReadAttributes", 'Debug', "ReadAttributeRequest_0406/0010- Key: %s " %key, nwkid=key)
+    ListOfEp = getListOfEpForCluster( self, key, '0406' )
+    listAttributes = [ 0x0010 ]
+    for EPout in ListOfEp:
+        ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0406", listAttributes, ackIsDisabled = is_ack_tobe_disabled(self, key))
+
+def ReadAttributeRequest_0406_philips_0030(self, key):
+    manufacturer = '100b'
+    self.log.logging( "ReadAttributes", 'Debug', "ReadAttributeRequest_0406/0010- Key: %s " %key, nwkid=key)
+    ListOfEp = getListOfEpForCluster( self, key, '0406' )
+    listAttrSpecific = [ 0x0030 ]
+    for EPout in ListOfEp:
+        ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0406", listAttrSpecific, manufacturer_spec = '01', manufacturer = manufacturer, ackIsDisabled = is_ack_tobe_disabled(self, key))
 
 def ReadAttributeRequest_0500(self, key):
 

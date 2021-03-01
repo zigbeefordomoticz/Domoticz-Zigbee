@@ -37,7 +37,7 @@ from Modules.tools import removeNwkInList, mainPoweredDevice, ReArrangeMacCapaBa
 from Modules.domoTools import timedOutDevice
 from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE, CLUSTERS_LIST, LEGRAND_REMOTES, LEGRAND_REMOTE_SHUTTER, LEGRAND_REMOTE_SWITCHS, ZIGATE_EP
 from Modules.pairingProcess import processNotinDBDevices
-from Modules.paramDevice import param_PowerOnAfterOffOn
+from Modules.paramDevice import sanity_check_of_param
 
 
 # Read Attribute trigger: Every 10"
@@ -53,16 +53,6 @@ LEGRAND_FEATURES =    300 // HEARTBEAT
 SCHNEIDER_FEATURES =  300 // HEARTBEAT
 NETWORK_TOPO_START =  900 // HEARTBEAT
 NETWORK_ENRG_START = 1800 // HEARTBEAT
-
-
-def sanity_check_of_param( self, NwkId):
-
-    if 'Param' not in self.ListOfDevices[ NwkId ]:
-        return
-
-    for param in self.ListOfDevices[ NwkId ]['Param']:
-        if param == 'PowerOnAfterOffOn':
-            param_PowerOnAfterOffOn(self, NwkId, self.ListOfDevices[ NwkId ]['Param'][ param ])
 
 
 def attributeDiscovery( self, NwkId ):
@@ -338,6 +328,10 @@ def processKnownDevices( self, Devices, NWKID ):
     enabledEndDevicePolling = False
     if model in self.DeviceConf and 'PollingEnabled' in self.DeviceConf[ model ] and self.DeviceConf[ model ]['PollingEnabled']:
         enabledEndDevicePolling = True
+        
+    if ( 'CheckParam' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['CheckParam'] ) or ( intHB % 60) == 0 :
+        sanity_check_of_param( self, NWKID)
+        self.ListOfDevices[NWKID]['CheckParam'] = False
 
     ## Starting this point, it is ony relevant for Main Powered Devices. 
     # Some battery based end device with ZigBee 30 use polling and can receive commands.
@@ -452,12 +446,9 @@ def processKnownDevices( self, Devices, NWKID ):
 
             sendZigateCmd(self,"0042", str(NWKID), ackIsDisabled = True )         # Request a Node Descriptor
 
-    if ( intHB % 60) == 0 or ( 'CheckParam' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['CheckParam']):
-        sanity_check_of_param( self, NWKID)
-        self.ListOfDevices[NWKID]['CheckParam'] = False
-
     if rescheduleAction and intHB != 0: # Reschedule is set because Zigate was busy or Queue was too long to process
         self.ListOfDevices[NWKID]['Heartbeat'] = str( intHB - 1 ) # So next round it trigger again
+
 
     return
 

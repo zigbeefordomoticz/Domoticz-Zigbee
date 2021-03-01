@@ -294,7 +294,7 @@ def identifySend( self, nwkid, ep, duration=0, withAck = False):
     return send_zigatecmd_zcl_noack(self, nwkid, "0070", datas )
 
 
-def maskChannel( channel ):
+def maskChannel( self, channel ):
 
     CHANNELS = { 0: 0x00000000, # Scan for all channels
             11: 0x00000800,
@@ -358,7 +358,7 @@ def setChannel( self, channel):
     corresponds to channel 12). Any combination of channels can be included.
     ZigBee supports channels 11-26.
     '''
-    mask = maskChannel( channel )
+    mask = maskChannel( self, channel )
     self.log.logging( "BasicOutput", "Status", "setChannel - Channel set to : %08.x " %(mask))
 
     send_zigatecmd_raw(self, "0021", "%08.x" %(mask))
@@ -694,7 +694,7 @@ def rawaps_write_attribute_req( self, key, EPin, EPout, clusterID, manuf_id, man
         cluster_frame += 0b00000100
     fcf = '%02x' %cluster_frame
 
-    sqn = get_and_inc_SQN( self, NwkId )
+    sqn = get_and_inc_SQN( self, key )
 
     payload = fcf 
     if manuf_spec == '01':
@@ -776,6 +776,20 @@ def identifyEffect( self, nwkid, ep, effect='Blink' ):
     datas = ZIGATE_EP + ep + "%02x"%(effect_command[effect])  + "%02x" %0
     return send_zigatecmd_zcl_noack(self, nwkid, "00E0", datas )
 
+def set_PIROccupiedToUnoccupiedDelay( self, key, delay):
+
+    cluster_id = "0406"
+    attribute = '0010'
+    data_type = '21'
+    manuf_id = '0000'
+    manuf_spec = '00'
+    ListOfEp = getListOfEpForCluster( self, key, cluster_id )
+    for EPout in ListOfEp:
+        data = "%04x" %delay
+        self.log.logging( "BasicOutput", 'Log', "set_PIROccupiedToUnoccupiedDelay for %s/%s - delay: %s" %(key, EPout, delay),key)
+        if attribute in self.ListOfDevices[key]['Ep'][EPout][cluster_id]:
+            del self.ListOfDevices[key]['Ep'][EPout][cluster_id][ attribute ]
+        return write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled = True)
 
 def set_poweron_afteroffon( self, key, OnOffMode = 0xff):
     # OSRAM/LEDVANCE

@@ -8,9 +8,10 @@ import Domoticz
 from datetime import datetime
 from time import time
 
-from Modules.basicOutputs import set_poweron_afteroffon
-from Modules.readAttributes import ReadAttributeRequest_0006_0000, ReadAttributeRequest_0008_0000, ReadAttributeRequest_0006_400x
+from Modules.basicOutputs import set_poweron_afteroffon, write_attribute
+from Modules.readAttributes import ReadAttributeRequest_0006_0000, ReadAttributeRequest_0008_0000, ReadAttributeRequest_0006_400x, ReadAttributeRequest_0406_philips_0030
 from Modules.tools import retreive_cmd_payload_from_8002
+from Modules.zigateConsts import ZIGATE_EP
 
 from Classes.LoggingManagement import LoggingManagement
 
@@ -84,7 +85,13 @@ def philipsReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP
         %(srcNWKID,srcEp , ClusterID, GlobalCommand, sqn, cmd, data ))
 
 
+def philips_set_pir_occupancySensibility(self, nwkid, level):
 
+    if level in (0,1,2):
+        write_attribute( self, nwkid, ZIGATE_EP, '02', '0406', '100b', '01', '0030', '20', '%02x' %level, ackIsDisabled = True)
+        ReadAttributeRequest_0406_philips_0030(self, nwkid)
+
+        
 def philips_set_poweron_after_offon( self, mode):
     # call from WebServer
 
