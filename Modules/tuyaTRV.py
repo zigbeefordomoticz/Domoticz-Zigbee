@@ -322,14 +322,16 @@ eTRV_MATRIX = {
                             0x04: receive_preset,
                             0x07: receive_childlock, 
                             0x12: receive_windowdetection, 
-                            0x15: receive_battery,  
                             0x14: receive_valvestate,
+                            0x15: receive_battery,  
+                            0x2c: receive_calibration,
                             0x6d: receive_valveposition,     
                             0x6e: receive_lowbattery,
                         },
                         'ToDevice': {
                             'SetPoint': 0x02,
                             'TrvMode': 0x04}
+                            'Calibration': 0x2c,
                         },
 
     'TS0601-eTRV3': {   'FromDevice': {         # Confirmed with @d2e2n2o et @pipiche
