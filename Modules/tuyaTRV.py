@@ -330,8 +330,8 @@ eTRV_MATRIX = {
                         },
                         'ToDevice': {
                             'SetPoint': 0x02,
-                            'TrvMode': 0x04}
-                            'Calibration': 0x2c,
+                            'TrvMode': 0x04,
+                            'Calibration': 0x2c}
                         },
 
     'TS0601-eTRV3': {   'FromDevice': {         # Confirmed with @d2e2n2o et @pipiche
