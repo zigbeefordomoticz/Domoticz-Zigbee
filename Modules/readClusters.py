@@ -287,8 +287,16 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         # Continue Cleanup and remove '/'
         modelName = AttrModelName.replace('/','')
 
+        manufacturer_name = ''
+        if 'Manufacturer Name' in self.ListOfDevices[MsgSrcAddr]:
+            manufacturer_name = self.ListOfDevices[MsgSrcAddr]['Manufacturer Name']
+
         if modelName == 'lumi.sensor_swit':
             modelName = 'lumi.sensor_switch.aq3'
+
+        if modelName == 'TS011F' and manufacturer_name == '_TZ3000_vzopcetz':
+            # Lidl multiprise
+            modelName = 'TS011F-multiprise'
 
         elif modelName == 'AC211':
             modelName = 'AC221'
@@ -309,10 +317,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             
         elif modelName in TUYA_TS0601_MODEL_NAME:
             # https://github.com/dresden-elektronik/deconz-rest-plugin/wiki/Tuya-devices-List
-
-            manufacturer_name = ''
-            if 'Manufacturer Name' in self.ListOfDevices[MsgSrcAddr]:
-                manufacturer_name = self.ListOfDevices[MsgSrcAddr]['Manufacturer Name']
+            
             modelName = 'TS0601'
 
             self.log.logging( "Cluster", 'Log', "ReadCluster - %s / %s - Recepion Model: >%s< ManufName: >%s<" %(MsgClusterId, MsgAttrID, modelName, manufacturer_name), MsgSrcAddr)
