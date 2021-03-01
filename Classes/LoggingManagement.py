@@ -156,7 +156,9 @@ class LoggingManagement:
             if pluginConfModule in self.pluginconf.pluginConf:
                 if self.pluginconf.pluginConf[pluginConfModule]:
                     self._logginfilter(message, nwkid)
+
             else:
+                Domoticz.Error("%s deug module unknown %s" %(pluginConfModule, module))
                 self._loggingDebug(message)
         else:
             self.loggingDirector(logType, message )
