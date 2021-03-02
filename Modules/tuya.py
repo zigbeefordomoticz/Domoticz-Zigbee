@@ -230,7 +230,7 @@ def tuya_curtain_response( self, Devices, _ModelName, NwkId, srcEp, ClusterID, d
         self.log.logging( "Tuya", 'Debug', "tuya_curtain_response - Open/Close/Stopped action Nwkid: %s/%s  %s" %(NwkId, srcEp, data),NwkId )
         store_tuya_attribute( self, NwkId, 'Action', data ) 
 
-    elif dp in ( 0x02 ):
+    elif dp == 0x02:
         # Percent Control
         self.log.logging( "Tuya", 'Debug', "tuya_curtain_response - Percentage Control action Nwkid: %s/%s  %s" %(NwkId, srcEp, data),NwkId )
         store_tuya_attribute( self, NwkId, 'PercentControl', data ) 
