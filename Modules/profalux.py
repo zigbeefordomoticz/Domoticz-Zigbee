@@ -174,9 +174,15 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
         return  level
 
     def getTilt( self, nwkid):
-        tilt = self.pluginconf.pluginConf['profaluxOrientBSO']
+        tilt = 45
+        if 'Param' in self.ListOfDevices[nwkid] and 'profaluxOrientBSO' in self.ListOfDevices[nwkid]['Param']:
+            tilt = self.ListOfDevices[nwkid]['Param']['profaluxOrientBSO']
+
         # Let's check if we can get the Tilt from Attribute
-        if ( '01' in self.ListOfDevices[nwkid]['Ep'] and 'fc21' in self.ListOfDevices[nwkid]['Ep']['01'] and '0001' in self.ListOfDevices[nwkid]['Ep']['01']['fc21'] ):
+        if ( '01' in self.ListOfDevices[nwkid]['Ep'] and 
+                'fc21' in self.ListOfDevices[nwkid]['Ep']['01'] and 
+                '0001' in self.ListOfDevices[nwkid]['Ep']['01']['fc21'] 
+            ):
             tilt = int(self.ListOfDevices[ nwkid ]['Ep']['01']['fc21']['0001'], 16)
         return tilt
 
