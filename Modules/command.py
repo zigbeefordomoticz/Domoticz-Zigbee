@@ -299,7 +299,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             if profalux: # Profalux are define as LvlControl but should be managed as Blind Inverted
                 sendZigateCmd(self, "0081","02" + NWKID + ZIGATE_EP + EPout + '01' + '%02X' %0 + "0000")
             else:
-                if 'Param' in self.ListOfDevices[ NWKID ] and 'fadingOff' in self.ListOfDevices[ NWKID ]['Param']:
+                if ( 'Param' in self.ListOfDevices[ NWKID ] and 
+                        'fadingOff' in self.ListOfDevices[ NWKID ]['Param'] and 
+                        self.ListOfDevices[ NWKID ]['Param']['fadingOff']
+                    ):
                     # Increase brightness by 20% (if possible) in 0.5 seconds then fade to off in 1 second (default)
                     sendZigateCmd(self, "0094","02" + NWKID + ZIGATE_EP + EPout + "01" + "00" )
                 else:
