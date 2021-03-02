@@ -551,10 +551,10 @@ def load_new_param_definition( self ):
             self.ListOfDevices[ key ]['Param'][ param ] = self.DeviceConf[ model_name ]['Param'][ param ]
 
             # Overwrite the param by Existing Global parameter
-            if param in ( 'fadingOff', 'moveToHueSatu'  ,'moveToColourTemp','moveToColourRGB','moveToLevel'):
-                # Use Global as default 
-                if self.DeviceConf[ model_name ]['Param'][ param ] != self.pluginconf.pluginConf[ param ]:
-                    self.ListOfDevices[ key ]['Param'][ param ] = self.pluginconf.pluginConf[ param ]
+            # if param in ( 'fadingOff', 'moveToHueSatu'  ,'moveToColourTemp','moveToColourRGB','moveToLevel'):
+            #     # Use Global as default 
+            #     if self.DeviceConf[ model_name ]['Param'][ param ] != self.pluginconf.pluginConf[ param ]:
+            #         self.ListOfDevices[ key ]['Param'][ param ] = self.pluginconf.pluginConf[ param ]
                 
             if param in ( 'PowerOnAfterOffOn' ):
                 if 'Manufacturer' not in self.ListOfDevices[ key ]:
