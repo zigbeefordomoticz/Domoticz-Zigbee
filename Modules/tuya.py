@@ -222,15 +222,18 @@ def tuya_curtain_response( self, Devices, _ModelName, NwkId, srcEp, ClusterID, d
     # dp 0x07 and data 00, 01 - Opening, Closing
     # dp 0x69 and data '00000028'
 
+    # 000104ef00010102 94fd 02 00000970020000 0202 0004 00000004
+
     self.log.logging( "Tuya", 'Debug', "tuya_curtain_response - Nwkid: %s/%s dp: %s data: %s" %(NwkId, srcEp, dp, data),NwkId )
+
     if dp == 0x01: # Open / Closing / Stopped
         self.log.logging( "Tuya", 'Debug', "tuya_curtain_response - Open/Close/Stopped action Nwkid: %s/%s  %s" %(NwkId, srcEp, data),NwkId )
-        #if data == '00':
-        #    MajDomoDevice(self, Devices, NwkId, srcEp, '0006', '01')
-        #    openclose = '01'
-        #elif data == '02':
-        #    MajDomoDevice(self, Devices, NwkId, srcEp, '0006', '00')
-        #    openclose = '00'
+        store_tuya_attribute( self, NwkId, 'Action', data ) 
+
+    elif dp in ( 0x02 ):
+        # Percent Control
+        self.log.logging( "Tuya", 'Debug', "tuya_curtain_response - Percentage Control action Nwkid: %s/%s  %s" %(NwkId, srcEp, data),NwkId )
+        store_tuya_attribute( self, NwkId, 'PercentControl', data ) 
 
     elif dp in ( 0x03, 0x07):
         # Curtain Percentage
@@ -238,16 +241,20 @@ def tuya_curtain_response( self, Devices, _ModelName, NwkId, srcEp, ClusterID, d
         level = ( ( int( data, 16)) * 255) // 100
         slevel = '%02x' %level
         self.log.logging( "Tuya", 'Debug', "tuya_curtain_response - Curtain Percentage Nwkid: %s/%s Level %s -> %s" %(NwkId, srcEp, data, level),NwkId )
+        store_tuya_attribute( self, NwkId, 'PercentState', data ) 
         MajDomoDevice(self, Devices, NwkId, srcEp, '0008', slevel)
 
     elif dp == 0x05:
         self.log.logging( "Tuya", 'Debug', "tuya_curtain_response - Direction state Nwkid: %s/%s Action %s" %(NwkId, srcEp, data),NwkId )
+        store_tuya_attribute( self, NwkId, 'DirectionState', data ) 
 
     elif dp in (0x67, 0x69):  
         level = ( (int( data, 16)) * 255) // 100
         slevel = '%02x' %level
         self.log.logging( "Tuya", 'Debug', "tuya_curtain_response - ?????? Nwkid: %s/%s data %s --> %s" %(NwkId, srcEp, data, level),NwkId )
         MajDomoDevice(self, Devices, NwkId, srcEp, '0008', slevel)
+        store_tuya_attribute( self, NwkId, 'dp_%s' %dp, data ) 
+
     else:
         attribute_name = 'UnknowDp_0x%02x_Dt_0x%02x' %(dp,datatype)
         store_tuya_attribute( self, NwkId, attribute_name, data ) 
