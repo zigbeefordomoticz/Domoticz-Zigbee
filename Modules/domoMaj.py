@@ -664,9 +664,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                         nValue = 2
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(value), BatteryLevel, SignalLevel)
 
-        if 'LvlControl' in ClusterType: # LvlControl ( 0x0008)
-                
-            if WidgetType == 'LvlControl' or WidgetType == 'BSO-Volet':
+        if 'LvlControl' in ClusterType: # LvlControl ( 0x0008)    
+            if WidgetType == 'LvlControl' or ( WidgetType in ('BSO-Volet', 'Blind',)) :
                 # We need to handle the case, where we get an update from a Read Attribute or a Reporting message
                 # We might get a Level, but the device is still Off and we shouldn't make it On .
                 nValue = None
