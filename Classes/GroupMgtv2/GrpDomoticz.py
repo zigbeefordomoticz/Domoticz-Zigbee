@@ -505,8 +505,15 @@ def processCommand( self, unit, GrpId, Command, Level, Color_ ) :
     # Old Fashon
     if Command == 'Off' :
         if self.pluginconf.pluginConf['GrpfadingOff']:
+            if self.pluginconf.pluginConf['GrpfadingOff'] == 1:
+                    effect = '0002' # 50% dim down in 0.8 seconds then fade to off in 12 seconds
+            elif self.pluginconf.pluginConf['GrpfadingOff'] == 2:
+                effect = '0100' # 20% dim up in 0.5s then fade to off in 1 second
+            elif self.pluginconf.pluginConf['GrpfadingOff'] == 255:
+                effect = '0001' # No fade
+
             zigate_cmd = "0094"
-            datas = "%02d" %ADDRESS_MODE['group'] + GrpId + ZIGATE_EP + EPout + "01" + "00"
+            datas = "%02d" %ADDRESS_MODE['group'] + GrpId + ZIGATE_EP + EPout + effect
         else:
             zigate_cmd = "0092"
             datas = "%02d" %ADDRESS_MODE['group'] + GrpId + ZIGATE_EP + EPout + "00"

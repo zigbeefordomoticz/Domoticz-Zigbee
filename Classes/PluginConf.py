@@ -52,14 +52,6 @@ SETTINGS = {
     },
 
     # Polling
-    'ManufSpecifiqDevicePolling': {'Order': 5, 'param': {
-        'pollingPhilips':   {'type': 'int', 'default': 0,     'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
-        'pollingGledopto':  {'type': 'int', 'default': 0,     'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
-        'pollingSchneider': {'type': 'int', 'default': 0,     'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
-        'pollingBlitzwolfPower': {'type': 'int', 'default': 0,'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
-        'pollingLumiPower': {'type': 'int', 'default': 0,'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
-        'pollingCasaiaAC201':    {'type': 'int', 'default': 0,'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
-    }},
 
     'DevicePolling': {'Order': 5, 'param': {        
         'polling0000':      {'type': 'int', 'default': 86400, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
@@ -139,7 +131,8 @@ SETTINGS = {
 
     # Command Transitionin tenth of seconds
     'CommandTransition': {'Order': 8, 'param': {
-        'GrpfadingOff':         {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
+        'GrpfadingOff': {'type': 'list', 'list': { 'default': 0, '50% fade, 12s to off': 1, '20% dim up, 1s off': 2, 'No fade': 255},
+                          'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
         'GrpmoveToHueSatu':     {'type': 'int', 'default': 0, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
         'GrpmoveToColourTemp':  {'type': 'int', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
         'GrpmoveToColourRGB':   {'type': 'int', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
@@ -255,32 +248,7 @@ SETTINGS = {
                                  'default': 1, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
         }
     },
-
-    #Philips Hue Specific
-    'Philips': {'Order': 13, 'param': {
-        'PhilipsPowerOnAfterOffOn':    {'type': 'list',
-                                 'list': {'Off': 0, 'On': 1, 'Previous': 255},
-                                 'default': 1, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
-        }
-    },
-
-    #ENKI
-    'Enki Lexman': {'Order': 13, 'param': {
-        'EnkiPowerOnAfterOffOn':    {'type': 'list',
-                                 'list': {'Off': 0, 'On': 1, 'Previous': 255},
-                                 'default': 1, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
-        }
-    },
-
     
-    'IkeaTradfri': {'Order': 13, 'param': {
-        'IkeaPowerOnAfterOffOn':    {'type': 'list',
-                                 'list': {'Off': 0, 'On': 1, 'Previous': 255},
-                                 'default': 1, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
-        }
-    },
-   
-
     # Schneider Wiser configuration
     'Schneider Wiser':          {'Order': 14, 'param': {
         'enableSchneiderWiser': {'type': 'bool', 'default': 0,   'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
@@ -318,7 +286,17 @@ SETTINGS = {
         'rebindLivolo':          {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': False},
         'allowAutoPairing':      {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
         'forceAckOnZCL':         {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        
+
+        # Just for compatibility keep it but hidden ( move to Custom device 'Param' section)
+        'pollingPhilips':   {'type': 'int', 'default': 0,     'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
+        'pollingGledopto':  {'type': 'int', 'default': 0,     'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
+        'pollingSchneider': {'type': 'int', 'default': 0,     'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
+        'pollingBlitzwolfPower': {'type': 'int', 'default': 0,'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
+        'pollingLumiPower': {'type': 'int', 'default': 0,'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
+        'pollingCasaiaAC201':    {'type': 'int', 'default': 0,'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
+        'PhilipsPowerOnAfterOffOn': {'type': 'list', 'list': {'Off': 0, 'On': 1, 'Previous': 255}, 'default': 1, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
+        'EnkiPowerOnAfterOffOn':    {'type': 'list', 'list': {'Off': 0, 'On': 1, 'Previous': 255}, 'default': 1, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
+        'IkeaPowerOnAfterOffOn':    {'type': 'list', 'list': {'Off': 0, 'On': 1, 'Previous': 255}, 'default': 1, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},        
         }
     }
 }
