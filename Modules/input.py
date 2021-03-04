@@ -3798,7 +3798,7 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
         elif MsgCmd == '01':
             MajDomoDevice(self, Devices, MsgSrcAddr, "01", "0006", '01')
 
-    elif _ModelName == "TS0043": # Tuya remote
+    elif _ModelName in ( "TS0041", "TS0043", "TS0044"): # Tuya remote
         if MsgCmd[0:2] == 'fd' and MsgPayload:
             if MsgPayload == '00':
                 MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0006", '01') # Click
@@ -3808,20 +3808,11 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
                 checkAndStoreAttributeValue( self, MsgSrcAddr, MsgEP,MsgClusterId, '0000', MsgPayload )
             elif MsgPayload == '02':
                 MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0006", '03') # Long Click
+                checkAndStoreAttributeValue( self, MsgSrcAddr, MsgEP,MsgClusterId, '0000', MsgPayload )
+            elif MsgPayload == '03':
+                MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0006", '04') # Long Click
                 checkAndStoreAttributeValue( self, MsgSrcAddr, MsgEP,MsgClusterId, '0000', MsgPayload )
     
-    elif _ModelName == "TS0041": # Tuya remote
-        if MsgCmd[0:2] == 'fd' and MsgPayload:
-            if MsgPayload == '00':
-                MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0006", '01') # Click
-                checkAndStoreAttributeValue( self, MsgSrcAddr, MsgEP,MsgClusterId, '0000', MsgPayload )
-            elif MsgPayload == '01':
-                MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0006", '02') # Double Click
-                checkAndStoreAttributeValue( self, MsgSrcAddr, MsgEP,MsgClusterId, '0000', MsgPayload )
-            elif MsgPayload == '02':
-                MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0006", '03') # Long Click
-                checkAndStoreAttributeValue( self, MsgSrcAddr, MsgEP,MsgClusterId, '0000', MsgPayload )
-
     else:
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0006", MsgCmd)
         self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId][ "0000" ] = "Cmd: %s, %s" % (MsgCmd, unknown_)
