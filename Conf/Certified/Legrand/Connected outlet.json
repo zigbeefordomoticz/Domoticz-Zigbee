@@ -27,7 +27,9 @@
 		"fc01": [ "0002"]
 	},
 	"Param": {
-		"PowerOnAfterOffOn": 255
+		"PowerOnAfterOffOn": 255,
+		"netatmoLedIfOn": 0,
+		"netatmoLedInDark": 0	
 	},
 	"GroupMembership": [ [ "01", "fff7" ] , [ "01", "fff5"] ]
 }

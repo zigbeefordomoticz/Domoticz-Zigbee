@@ -3447,7 +3447,9 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
             "Input", "Debug", "Decode8085 - Legrand selector: %s" % selector, MsgSrcAddr
         )
         if selector:
-            if self.pluginconf.pluginConf["EnableReleaseButton"]:
+            if ( 'Param' in self.ListOfDevices[ MsgSrcAddr ] and  \
+                     'netatmoReleaseButton' in self.ListOfDevices[ MsgSrcAddr ]['Param'] and \
+                    self.ListOfDevices[ MsgSrcAddr ]['Param']['netatmoReleaseButton']):
                 # self.log.logging( "Input", 'Log',"Receive: %s/%s %s" %(MsgSrcAddr,MsgEP,selector))
                 MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, selector)
                 self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId][

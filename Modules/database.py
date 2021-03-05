@@ -571,7 +571,7 @@ def load_new_param_definition( self ):
                 elif self.ListOfDevices[ key ]['Manufacturer'] == '117c': # Ikea Tradfri
                     self.ListOfDevices[ key ]['Param'][ param ] = self.pluginconf.pluginConf[ 'IkeaPowerOnAfterOffOn' ]
 
-            if param in ( 'PowerPollingFreq', ):
+            elif param in ( 'PowerPollingFreq', ):
                 POLLING_TABLE_SPECIFICS = {
                     '_TZ3000_g5xawfcq': 'pollingBlitzwolfPower',
                     'LUMI': 'pollingLumiPower',     
@@ -597,54 +597,66 @@ def load_new_param_definition( self ):
                 Domoticz.Log("--->PluginConf %s <-- %s" %(param, plugin_generic_param))
                 self.ListOfDevices[ key ]['Param'][ param ] = self.pluginconf.pluginConf[ plugin_generic_param ]
 
-        if param in ( 'OnOffPollingFreq', ):
-                POLLING_TABLE_SPECIFICS = {
-                    '100b': 'pollingPhilips',       
-                    'Philips': 'pollingPhilips',       
-                    'GLEDOPTO': 'pollingGledopto',      
-                }
+            elif param in ( 'OnOffPollingFreq', ):
+                    POLLING_TABLE_SPECIFICS = {
+                        '100b': 'pollingPhilips',       
+                        'Philips': 'pollingPhilips',       
+                        'GLEDOPTO': 'pollingGledopto',      
+                    }
 
-                devManufCode = devManufName = ''
-                if 'Manufacturer' in self.ListOfDevices[key]:
-                    devManufCode = self.ListOfDevices[key]['Manufacturer']
-                if 'Manufacturer Name' in self.ListOfDevices[key]:
-                    devManufName = self.ListOfDevices[key]['Manufacturer Name']
-                if devManufCode == devManufName == '':
-                    return
+                    devManufCode = devManufName = ''
+                    if 'Manufacturer' in self.ListOfDevices[key]:
+                        devManufCode = self.ListOfDevices[key]['Manufacturer']
+                    if 'Manufacturer Name' in self.ListOfDevices[key]:
+                        devManufName = self.ListOfDevices[key]['Manufacturer Name']
+                    if devManufCode == devManufName == '':
+                        return
 
-                plugin_generic_param = None
-                if devManufCode in POLLING_TABLE_SPECIFICS:
-                    plugin_generic_param  =  POLLING_TABLE_SPECIFICS[ devManufCode ]
-                if plugin_generic_param is None and devManufName in POLLING_TABLE_SPECIFICS:
-                    plugin_generic_param =  POLLING_TABLE_SPECIFICS[ devManufName ]        
+                    plugin_generic_param = None
+                    if devManufCode in POLLING_TABLE_SPECIFICS:
+                        plugin_generic_param  =  POLLING_TABLE_SPECIFICS[ devManufCode ]
+                    if plugin_generic_param is None and devManufName in POLLING_TABLE_SPECIFICS:
+                        plugin_generic_param =  POLLING_TABLE_SPECIFICS[ devManufName ]        
 
-                if plugin_generic_param is None:
-                    return False
-                Domoticz.Log("--->PluginConf %s <-- %s" %(param, plugin_generic_param))
-                self.ListOfDevices[ key ]['Param'][ param ] = self.pluginconf.pluginConf[ plugin_generic_param ]            
+                    if plugin_generic_param is None:
+                        return False
+                    Domoticz.Log("--->PluginConf %s <-- %s" %(param, plugin_generic_param))
+                    self.ListOfDevices[ key ]['Param'][ param ] = self.pluginconf.pluginConf[ plugin_generic_param ]            
 
-        if param in ( 'AC201Polling',):
-                POLLING_TABLE_SPECIFICS = {
-                    'OWON': 'pollingCasaiaAC201',   
-                    'CASAIA': 'pollingCasaiaAC201',   
-                }
+            elif param in ( 'AC201Polling',):
+                    POLLING_TABLE_SPECIFICS = {
+                        'OWON': 'pollingCasaiaAC201',   
+                        'CASAIA': 'pollingCasaiaAC201',   
+                    }
 
-                devManufCode = devManufName = ''
-                if 'Manufacturer' in self.ListOfDevices[key]:
-                    devManufCode = self.ListOfDevices[key]['Manufacturer']
-                if 'Manufacturer Name' in self.ListOfDevices[key]:
-                    devManufName = self.ListOfDevices[key]['Manufacturer Name']
-                if devManufCode == devManufName == '':
-                    return
+                    devManufCode = devManufName = ''
+                    if 'Manufacturer' in self.ListOfDevices[key]:
+                        devManufCode = self.ListOfDevices[key]['Manufacturer']
+                    if 'Manufacturer Name' in self.ListOfDevices[key]:
+                        devManufName = self.ListOfDevices[key]['Manufacturer Name']
+                    if devManufCode == devManufName == '':
+                        return
 
-                plugin_generic_param = None
-                if devManufCode in POLLING_TABLE_SPECIFICS:
-                    plugin_generic_param  =  POLLING_TABLE_SPECIFICS[ devManufCode ]
-                if plugin_generic_param is None and devManufName in POLLING_TABLE_SPECIFICS:
-                    plugin_generic_param =  POLLING_TABLE_SPECIFICS[ devManufName ]        
+                    plugin_generic_param = None
+                    if devManufCode in POLLING_TABLE_SPECIFICS:
+                        plugin_generic_param  =  POLLING_TABLE_SPECIFICS[ devManufCode ]
+                    if plugin_generic_param is None and devManufName in POLLING_TABLE_SPECIFICS:
+                        plugin_generic_param =  POLLING_TABLE_SPECIFICS[ devManufName ]        
 
-                if plugin_generic_param is None:
-                    return False
-                Domoticz.Log("--->PluginConf %s <-- %s" %(param, plugin_generic_param))
-                self.ListOfDevices[ key ]['Param'][ param ] = self.pluginconf.pluginConf[ plugin_generic_param ]           
+                    if plugin_generic_param is None:
+                        return False
+                    Domoticz.Log("--->PluginConf %s <-- %s" %(param, plugin_generic_param))
+                    self.ListOfDevices[ key ]['Param'][ param ] = self.pluginconf.pluginConf[ plugin_generic_param ]           
 
+            elif param == 'netatmoLedIfOn': 
+                self.ListOfDevices[ key ]['Param'][ param ] = self.pluginconf.pluginConf['EnableLedIfOn']
+            elif param == 'netatmoLedInDark': 
+                self.ListOfDevices[ key ]['Param'][ param ] = self.pluginconf.pluginConf['EnableLedInDark']
+            elif param == 'netatmoLedShutter': 
+                self.ListOfDevices[ key ]['Param'][ param ] = self.pluginconf.pluginConf['EnableLedShutter']
+            elif param == 'netatmoEnableDimmer': 
+                self.ListOfDevices[ key ]['Param'][ param ] = self.pluginconf.pluginConf['EnableDimmer']
+            elif param == 'netatmoInvertShutter':
+                self.ListOfDevices[ key ]['Param'][ param ] = self.pluginconf.pluginConf['InvertShutter']
+            elif param == 'netatmoReleaseButton':
+                self.ListOfDevices[ key ]['Param'][ param ] = self.pluginconf.pluginConf['EnableReleaseButton']

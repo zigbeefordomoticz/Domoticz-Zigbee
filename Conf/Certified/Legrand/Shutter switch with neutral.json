@@ -16,5 +16,9 @@
 		"0102": [ "0008" ],
 		"000f": [ "0051", "0055", "006f" ],
 		"fc01": [ "0001" ]
+	},
+	"Param": {
+		"netatmoInvertShutter": 0,
+		"netatmoLedShutter": 0
 	}
 }

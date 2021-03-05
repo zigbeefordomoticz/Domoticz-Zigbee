@@ -14,24 +14,9 @@ import Domoticz
 
 from Modules.philips import philips_set_poweron_after_offon_device, philips_set_pir_occupancySensibility
 from Modules.enki import enki_set_poweron_after_offon_device
+from Modules.legrand_netatmo import legrand_enable_Led_Shutter_by_nwkid, legrand_enable_Led_IfOn_by_nwkid, legrand_enable_Led_InDark_by_nwkid, legrand_Dimmer_by_nwkid
 from Modules.basicOutputs import set_poweron_afteroffon, set_PIROccupiedToUnoccupiedDelay
 from Modules.readAttributes import ReadAttributeRequest_0006_400x, ReadAttributeRequest_0406_0010
-
-def sanity_check_of_param( self, NwkId):
-    # Domoticz.Log("sanity_check_of_param for %s" %NwkId)
-    
-    if 'Param' not in self.ListOfDevices[ NwkId ]:
-        return
-
-    for param in self.ListOfDevices[ NwkId ]['Param']:
-        if param == 'PowerOnAfterOffOn':
-            param_PowerOnAfterOffOn(self, NwkId, self.ListOfDevices[ NwkId ]['Param'][ param ])
-
-        if param == 'PIROccupiedToUnoccupiedDelay':
-            param_Occupancy_settings_PIROccupiedToUnoccupiedDelay( self, NwkId, self.ListOfDevices[ NwkId ]['Param'][ param ])
-
-        if param == 'occupancySensibility':
-            philips_set_pir_occupancySensibility(self, NwkId, self.ListOfDevices[ NwkId ]['Param'][ param ])
 
 
 def param_Occupancy_settings_PIROccupiedToUnoccupiedDelay( self, nwkid, delay):
@@ -57,7 +42,6 @@ def param_Occupancy_settings_PIROccupiedToUnoccupiedDelay( self, nwkid, delay):
                 ReadAttributeRequest_0406_0010(self, nwkid)
     else:
         Domoticz.Log("=====> Unknown Manufacturer/Name")
-
 
 def param_PowerOnAfterOffOn(self, nwkid, mode):
     # 0 - stay Off after a Off/On
@@ -106,3 +90,26 @@ def param_PowerOnAfterOffOn(self, nwkid, mode):
    
             set_poweron_afteroffon( self, nwkid, mode)
             ReadAttributeRequest_0006_400x(self, nwkid)
+
+
+DEVICE_PARAMETERS = {
+    'PowerOnAfterOffOn': param_PowerOnAfterOffOn,
+    'PIROccupiedToUnoccupiedDelay': param_Occupancy_settings_PIROccupiedToUnoccupiedDelay,
+    'occupancySensibility': philips_set_pir_occupancySensibility,
+    'netatmoLedIfOn': legrand_enable_Led_IfOn_by_nwkid,
+    'netatmoLedInDark': legrand_enable_Led_InDark_by_nwkid,
+    'netatmoLedShutter': legrand_enable_Led_Shutter_by_nwkid,
+    'netatmoEnableDimmer': legrand_Dimmer_by_nwkid,
+}
+def sanity_check_of_param( self, NwkId):
+    # Domoticz.Log("sanity_check_of_param for %s" %NwkId)
+    
+    if 'Param' not in self.ListOfDevices[ NwkId ]:
+        return
+
+    for param in self.ListOfDevices[ NwkId ]['Param']:
+        value = self.ListOfDevices[ NwkId ]['Param'][ param ]
+        if param in DEVICE_PARAMETERS:
+            Domoticz.Log("sanity_check_of_param - calling %s" %param)
+            func = DEVICE_PARAMETERS[ param ]
+            func( self, NwkId, value )

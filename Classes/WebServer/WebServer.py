@@ -15,7 +15,6 @@ from time import time
 from Modules.zigateConsts import  ZCL_CLUSTERS_LIST , CERTIFICATION_CODE,  ZIGATE_COMMANDS
 
 from Modules.basicOutputs import ZigatePermitToJoin, sendZigateCmd, start_Zigate, setExtendedPANID, zigateBlueLed, send_zigate_mode
-from Modules.legrand_netatmo import legrand_ledInDark, legrand_ledIfOnOnOff, legrand_dimOnOff, legrand_ledShutter
 from Modules.actuators import actuators
 from Modules.philips import philips_set_poweron_after_offon
 from Modules.enki import enki_set_poweron_after_offon
@@ -514,52 +513,6 @@ class WebServer(object):
                                     zigateBlueLed( self, True)
                                 else:
                                     zigateBlueLed( self, False)
-
-                        elif param == 'EnableLedShutter':
-                            if self.pluginconf.pluginConf[param] != setting_lst[setting]['current']:
-                                self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
-                                if setting_lst[setting]['current']:
-                                    legrand_ledShutter( self, 'On')
-                                else:
-                                    legrand_ledShutter( self, 'Off')
-
-                        elif param == 'EnableLedInDark':
-                            if self.pluginconf.pluginConf[param] != setting_lst[setting]['current']:
-                                self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
-                                if setting_lst[setting]['current']:
-                                    legrand_ledInDark( self, 'On')
-                                else:
-                                    legrand_ledInDark( self, 'Off')
-
-                        elif param == 'EnableDimmer':
-                                self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
-                                if setting_lst[setting]['current']:
-                                    legrand_dimOnOff( self, 'On')
-                                else:
-                                    legrand_dimOnOff( self, 'Off')
-
-                        elif param == 'EnableLedIfOn':
-                                self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
-                                if setting_lst[setting]['current']:
-                                    legrand_ledIfOnOnOff( self, 'On')
-                                else:
-                                    legrand_ledIfOnOnOff( self, 'Off')
-
-                        # elif param == 'PhilipsPowerOnAfterOffOn':
-                        #     self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
-                        #     philips_set_poweron_after_offon( self, int(setting_lst[setting]['current']))
-# 
-                        # elif param == 'EnkiPowerOnAfterOffOn':
-                        #     self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
-                        #     enki_set_poweron_after_offon( self, int(setting_lst[setting]['current']))
-# 
-                        # elif param == 'LegrandPowerOnAfterOffOn':
-                        #     self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
-                        #     philips_set_poweron_after_offon( self, int(setting_lst[setting]['current']))
-# 
-                        # elif param == 'IkeaPowerOnAfterOffOn':
-                        #     self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
-                        #     philips_set_poweron_after_offon( self, int(setting_lst[setting]['current']))
 
                         elif param == 'debugMatchId':
                             if setting_lst[setting]['current'] == 'ffff':

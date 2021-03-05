@@ -1434,7 +1434,9 @@ def Cluster0102( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 # Value: 100 -> Closed
                 # Value: 0   -> Open
                 # Value: 50  -> Stopped
-                if self.pluginconf.pluginConf['InvertShutter']:
+                if ( 'Param' in self.ListOfDevices[ MsgSrcAddr ] and  \
+                     'netatmoInvertShutter' in self.ListOfDevices[ MsgSrcAddr ]['Param'] and \
+                    self.ListOfDevices[ MsgSrcAddr ]['Param']['netatmoInvertShutter']):
                     Domoticz.Log("==>INVERSE===")
                     value = 100 - value
 
@@ -2630,11 +2632,11 @@ def Clusterfc00( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
 def Clusterfc01( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData , Source):
 
-    self.log.logging( "Cluster", 'Debug', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" \
+    self.log.logging( "Cluster", 'Log', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" \
         %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)   
         
     checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  MsgClusterData )
-    self.log.logging( "Cluster", 'Debug', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" \
+    self.log.logging( "Cluster", 'Log', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" \
             %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
     if 'Model' not in self.ListOfDevices[MsgSrcAddr]:

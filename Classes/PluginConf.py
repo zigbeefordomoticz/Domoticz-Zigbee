@@ -237,15 +237,15 @@ SETTINGS = {
 
     # Legrand Specific
     'Legrand': {'Order': 13, 'param': {
-        'EnableLedIfOn':        {'type': 'bool', 'default': 1, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
-        'EnableLedInDark':      {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
-        'EnableLedShutter':     {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
-        'EnableDimmer':         {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
-        'InvertShutter':        {'type': 'bool', 'default': 1, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
-        'EnableReleaseButton':  {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
-        'LegrandPowerOnAfterOffOn':    {'type': 'list',
-                                 'list': {'Off': 0, 'On': 1, 'Previous': 255},
-                                 'default': 1, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
+
+
+
+
+
+
+
+
+
         }
     },
     
@@ -297,6 +297,16 @@ SETTINGS = {
         'PhilipsPowerOnAfterOffOn': {'type': 'list', 'list': {'Off': 0, 'On': 1, 'Previous': 255}, 'default': 1, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
         'EnkiPowerOnAfterOffOn':    {'type': 'list', 'list': {'Off': 0, 'On': 1, 'Previous': 255}, 'default': 1, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
         'IkeaPowerOnAfterOffOn':    {'type': 'list', 'list': {'Off': 0, 'On': 1, 'Previous': 255}, 'default': 1, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},        
+
+        'EnableLedIfOn':        {'type': 'bool', 'default': 1, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
+        'EnableLedInDark':      {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
+        'EnableLedShutter':     {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
+        'EnableDimmer':         {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
+        'InvertShutter':        {'type': 'bool', 'default': 1, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
+        'EnableReleaseButton':  {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
+        'LegrandPowerOnAfterOffOn':    {'type': 'list',
+                                 'list': {'Off': 0, 'On': 1, 'Previous': 255},
+                                 'default': 1, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
         }
     }
 }
