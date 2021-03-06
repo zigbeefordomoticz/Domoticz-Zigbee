@@ -18,16 +18,20 @@ from Classes.Transport.readTcp import open_tcpip, tcpip_read_from_zigate
 def open_zigate_and_start_reader( self, zigate_mode ):
 
     self.logging_receive( 'Debug', "open_zigate_and_start_reader")
-
     if zigate_mode == 'serial':
         if open_serial( self ):
             start_serial_reader_thread( self )
+            return True
+
     elif zigate_mode == 'tcpip':
-        
         if open_tcpip( self ):
             start_tcpip_reader_thread( self )
+            return True
     else:
         self.logging_receive('Error',"open_zigate_channel - Unknown mode: %s" %zigate_mode)
+    
+    self.logging_receive('Error',"open_zigate_and_start_reader - failed. Unable to open connection with ZiGate")
+    return False
 
 
 def start_serial_reader_thread( self ):
@@ -48,10 +52,12 @@ def shutdown_reader_thread( self):
     if self._connection:
         if isinstance(self._connection, serial.serialposix.Serial):
             self.logging_receive( 'Log', "cancel_read")
-            self._connection.cancel_read()
+            if self._connection:
+                self._connection.cancel_read()
 
         elif isinstance(self._connection, socket.socket):
             self.logging_receive( 'Log', "shutdown socket")
-            self._connection.shutdown( socket.SHUT_RDWR )
+            if self._connection:
+                self._connection.shutdown( socket.SHUT_RDWR )
         self.logging_receive( 'Log', "close connection")
         self._connection.close()

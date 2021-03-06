@@ -46,6 +46,7 @@ class ZigateTransport(object):
         self._serialPort = None  # serial port in case of USB
         self._wifiAddress = None  # ip address in case of Wifi
         self._wifiPort = None  # wifi port
+        self._connection_break = False
 
         # Monitoring ZiGate PDUs
         self.apdu = None
@@ -162,10 +163,9 @@ class ZigateTransport(object):
 
     # Transport / Opening / Closing Communication
     def set_connection(self):
-        if self._connection is not None:
+        if self._connection:
             del self._connection
             self._connection = None
-
         open_connection( self )
 
     def open_conn(self):
@@ -192,14 +192,16 @@ class ZigateTransport(object):
         self._connection = None
 
     def re_conn(self):
-        Domoticz.Status("Reconnection: %s" % self._connection)
+        Domoticz.Status("Reconnection: Old: %s" % self._connection)
         if self.pluginconf.pluginConf['byPassDzConnection'] and not self.force_dz_communication:
             if self._connection:
                 self._connection.close()
+                self._connection = None
                 time.sleep(1.0)
         else:
             if self._connection.Connected():
                 self.close_conn()
+                self._connection = None
 
         self.open_conn()
 
@@ -257,21 +259,23 @@ def open_connection( self ):
             return
         Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" % (self._serialPort))
         if self.pluginconf.pluginConf['byPassDzConnection'] and not self.force_dz_communication:
-            open_zigate_and_start_reader( self, 'serial' )
+            result = open_zigate_and_start_reader( self, 'serial' )
         else:
             self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None", Address=self._serialPort, Baud=115200)
-        start_writer_thread( self )
-        start_forwarder_thread( self )
+        if result:
+            start_writer_thread( self )
+            start_forwarder_thread( self )
 
     elif self._transp == "Wifi":
         Domoticz.Status("Connection Name: Zigate, Transport: TCP/IP, Address: %s:%s" %
                         (self._serialPort, self._wifiPort))
         if self.pluginconf.pluginConf['byPassDzConnection'] and not self.force_dz_communication:
-            open_zigate_and_start_reader( self, 'tcpip' )
+            result =  open_zigate_and_start_reader( self, 'tcpip' )
         else:
             self._connection = Domoticz.Connection(Name="Zigate", Transport="TCP/IP", Protocol="None ", Address=self._wifiAddress, Port=self._wifiPort)
-        start_writer_thread( self )
-        start_forwarder_thread( self )
+        if result:
+            start_writer_thread( self )
+            start_forwarder_thread( self )
 
     else:
         Domoticz.Error("Unknown Transport Mode: %s" % self._transp)

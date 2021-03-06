@@ -211,7 +211,10 @@ def domoticz_write_to_zigate( self, encoded_data):
 def native_write_to_zigate( self, serialConnection, encoded_data):
 
     if self._transp == "Wifi":
-        
+        if self._connection is None:
+            # No connexion for now
+            return
+            
         tcpipConnection = self._connection
         tcpiConnectionList = [ tcpipConnection ]
         inputSocket  = outputSocket = [ tcpipConnection ]
@@ -222,7 +225,7 @@ def native_write_to_zigate( self, serialConnection, encoded_data):
         if writable:
             try:
                 tcpipConnection.send( encoded_data )
-            except socket.OSError as e:
+            except OSError as e:
                 self.logging_send( 'Error',"Socket %s error %s" %(tcpipConnection, e))
                 return 'SocketError'
 
