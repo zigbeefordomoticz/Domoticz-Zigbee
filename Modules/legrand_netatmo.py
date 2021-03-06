@@ -332,13 +332,13 @@ def legrand_Dimmer_by_nwkid(self, NwkId, OnOff):
         return
     if self.ListOfDevices[NwkId]['Model'] not in ( 'Dimmer switch wo neutral',):
         return
+    if 'Legrand' not in self.ListOfDevices[NwkId]:
+        self.ListOfDevices[NwkId]['Legrand'] = {}
 
     if int(self.FirmwareVersion,16) >= 0x31d:
         if 'EnableDimmer' in self.ListOfDevices[NwkId]['Legrand'] and self.ListOfDevices[NwkId]['Legrand']['EnableDimmer'] == OnOff:
             self.log.logging( "Legrand", 'Debug',"legrand_Dimmer_by_nwkid - %s nothing to do" %NwkId, NwkId)
             return
-        self.log.logging( "Legrand", 'Debug',"legrand_Dimmer_by_nwkid - %s  %s versus %s --> Update" %(
-            NwkId,self.ListOfDevices[NwkId]['Legrand']['EnableDimmer'], OnOff), NwkId)
         legrand_fc01( self, NwkId, 'EnableDimmer', OnOff)
         del self.ListOfDevices[NwkId]['Legrand']['EnableDimmer'] 
         
@@ -359,6 +359,10 @@ def legrand_enable_Led_IfOn_by_nwkid( self, NwkId, OnOff):
         return
     if 'Model' not in  self.ListOfDevices[NwkId]:
         return
+
+    if 'Legrand' not in self.ListOfDevices[NwkId]:
+        self.ListOfDevices[NwkId]['Legrand'] = {}
+
     if self.ListOfDevices[NwkId]['Model'] not in ( 
         'Connected outlet', 'Mobile outlet', 'Dimmer switch wo neutral', 'Shutter switch with neutral', 'Micromodule switch', 
         ):
@@ -368,8 +372,6 @@ def legrand_enable_Led_IfOn_by_nwkid( self, NwkId, OnOff):
         if 'EnableLedIfOn' in self.ListOfDevices[NwkId]['Legrand'] and self.ListOfDevices[NwkId]['Legrand']['EnableLedIfOn'] == OnOff:
             self.log.logging( "Legrand", 'Debug',"legrand_enable_Led_IfOn_by_nwkid - %s nothing to do" %NwkId, NwkId)
             return
-        self.log.logging( "Legrand", 'Debug',"legrand_enable_Led_IfOn_by_nwkid - %s  %s versus %s --> Update" %(
-            NwkId,self.ListOfDevices[NwkId]['Legrand']['EnableLedIfOn'], OnOff), NwkId)
         legrand_fc01( self, NwkId, 'EnableLedIfOn', OnOff)
         del self.ListOfDevices[NwkId]['Legrand']['EnableLedIfOn'] 
         
@@ -387,6 +389,10 @@ def legrand_enable_Led_Shutter_by_nwkid( self, NwkId, OnOff):
         return
     if 'Model' not in  self.ListOfDevices[NwkId]:
         return
+
+    if 'Legrand' not in self.ListOfDevices[NwkId]:
+        self.ListOfDevices[NwkId]['Legrand'] = {}
+
     if self.ListOfDevices[NwkId]['Model'] not in ('Shutter switch with neutral'):
         return
 
@@ -394,8 +400,6 @@ def legrand_enable_Led_Shutter_by_nwkid( self, NwkId, OnOff):
         if 'EnableLedShutter' in self.ListOfDevices[NwkId]['Legrand'] and self.ListOfDevices[NwkId]['Legrand']['EnableLedShutter'] == OnOff:
             self.log.logging( "Legrand", 'Debug',"legrand_enable_Led_Shutter_by_nwkid - %s nothing to do" %NwkId, NwkId)
             return
-        self.log.logging( "Legrand", 'Debug',"legrand_enable_Led_Shutter_by_nwkid - %s  %s versus %s --> Update" %(
-            NwkId,self.ListOfDevices[NwkId]['Legrand']['EnableLedShutter'], OnOff), NwkId)
         legrand_fc01( self, NwkId, 'EnableLedShutter', OnOff)
         del self.ListOfDevices[NwkId]['Legrand']['EnableLedShutter']
         
@@ -414,6 +418,8 @@ def legrand_enable_Led_InDark_by_nwkid( self, NwkId, OnOff):
         return
     if 'Model' not in  self.ListOfDevices[NwkId]:
         return
+    if 'Legrand' not in self.ListOfDevices[NwkId]:
+        self.ListOfDevices[NwkId]['Legrand'] = {}
 
     if self.ListOfDevices[NwkId]['Model'] not in ( 
         'Connected outlet', 'Mobile outlet', 'Dimmer switch wo neutral', 'Shutter switch with neutral', 'Micromodule switch', 
@@ -424,8 +430,6 @@ def legrand_enable_Led_InDark_by_nwkid( self, NwkId, OnOff):
         if 'EnableLedInDark' in self.ListOfDevices[NwkId]['Legrand'] and self.ListOfDevices[NwkId]['Legrand']['EnableLedInDark'] == OnOff:
             self.log.logging( "Legrand", 'Debug',"legrand_enable_Led_InDark_by_nwkid - %s nothing to do" %NwkId, NwkId)
             return
-        self.log.logging( "Legrand", 'Debug',"legrand_enable_Led_InDark_by_nwkid - %s  %s versus %s --> Update" %(
-            NwkId,self.ListOfDevices[NwkId]['Legrand']['EnableLedInDark'], OnOff), NwkId)
         legrand_fc01( self, NwkId, 'EnableLedInDark', OnOff)
         del self.ListOfDevices[NwkId]['Legrand']['EnableLedInDark']
                         
