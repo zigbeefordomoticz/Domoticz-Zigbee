@@ -212,15 +212,15 @@ def DeviceExist(self, Devices, lookupNwkId , lookupIEEE = ''):
             # we need to restart from the begiging and remove all existing datastructutre.
             # In case we receive asynchronously messages (which should be possible), they must be
             # droped in the corresponding Decodexxx function
-            Domoticz.Status("DeviceExist - Device %s changed its ShortId: from %s to %s during provisioning. Restarting !"
-                %( lookupIEEE, exitsingNwkId , lookupNwkId ))
-
+            
             # Delete the entry in IEEE2NWK as it will be recreated in Decode004d
             del self.IEEE2NWK[ lookupIEEE ]
 
             # Delete the all Data Structure
             del self.ListOfDevices[ exitsingNwkId ]
 
+            Domoticz.Status("DeviceExist - Device %s changed its ShortId: from %s to %s during provisioning. Restarting !"
+                %( lookupIEEE, exitsingNwkId , lookupNwkId ))
             return False
 
         # At that stage, we have found an entry for the IEEE, but doesn't match
@@ -252,9 +252,18 @@ def reconnectNWkDevice( self, new_NwkId, IEEE, old_NwkId):
     if 'ZDeviceName' in self.ListOfDevices[ new_NwkId ]:
         devName = self.ListOfDevices[ new_NwkId ]['ZDeviceName']
 
+    # MostLikely exitsingKey(the old NetworkID)  is not needed any more
+    removeNwkInList( self, old_NwkId )    
+
     if self.groupmgt:
         # We should check if this belongs to a group
         self.groupmgt.update_due_to_nwk_id_change( old_NwkId, new_NwkId)
+
+    if self.ListOfDevices[new_NwkId]['Status'] in ( 'Left', 'Leave') :
+        Domoticz.Log("DeviceExist - Update Status from %s to 'inDB' for NetworkID : %s" %(
+            self.ListOfDevices[new_NwkId]['Status'], new_NwkId) )
+        self.ListOfDevices[new_NwkId]['Status'] = 'inDB'
+        self.ListOfDevices[new_NwkId]['Heartbeat'] = '0'
 
     # We will also reset ReadAttributes
     if self.pluginconf.pluginConf['enableReadAttributes']:
@@ -262,15 +271,6 @@ def reconnectNWkDevice( self, new_NwkId, IEEE, old_NwkId):
             del self.ListOfDevices[new_NwkId]['ReadAttributes']
         if 'ConfigureReporting' in self.ListOfDevices[new_NwkId]:
             del self.ListOfDevices[new_NwkId]['ConfigureReporting']
-        self.ListOfDevices[new_NwkId]['Heartbeat'] = '0'
-
-    # MostLikely exitsingKey(the old NetworkID)  is not needed any more
-    removeNwkInList( self, old_NwkId )    
-
-    if self.ListOfDevices[new_NwkId]['Status'] in ( 'Left', 'Leave') :
-        Domoticz.Log("DeviceExist - Update Status from %s to 'inDB' for NetworkID : %s" %(
-            self.ListOfDevices[new_NwkId]['Status'], new_NwkId) )
-        self.ListOfDevices[new_NwkId]['Status'] = 'inDB'
         self.ListOfDevices[new_NwkId]['Heartbeat'] = '0'
 
     WriteDeviceList(self, 0)
