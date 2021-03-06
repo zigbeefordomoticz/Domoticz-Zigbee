@@ -384,7 +384,8 @@ def checkListOfDevice2Devices( self, Devices ):
             continue
         NWKID = self.IEEE2NWK[ID]
         if str(NWKID) in self.ListOfDevices :
-            self.log.logging( "Database", 'Debug', "checkListOfDevice2Devices - we found a matching entry for ID " +str(x) + " as DeviceID = " +str(ID) +" NWK_ID = " + str(NWKID) , NWKID)
+            self.log.logging( "Database", 'Debug', "checkListOfDevice2Devices - we found a matching entry for ID %2s as DeviceID = %s NWK_ID = %s" %(
+                x, ID, NWKID) , NWKID)
         else :
             Domoticz.Error("loadListOfDevices -  : " +Devices[x].Name +" with IEEE = " +str(ID) +" not found in Zigate plugin Database!" )
 
@@ -417,6 +418,11 @@ def CheckDeviceList(self, key, val):
         self.log.logging( "Database", 'Error', "Not Loading %s as no existing IEEE: %s" %( key, str(val)))
         return
 
+    if key in self.ListOfDevices:
+        # Suspect
+        self.log.logging( "Database", 'Error', "CheckDeviceList - Object %s already in the plugin Db !!!")
+        return
+
     if key == '0000':
         self.ListOfDevices[ key ] = {}
         self.ListOfDevices[ key ]['Status'] = ''
@@ -443,7 +449,7 @@ def CheckDeviceList(self, key, val):
     self.log.logging( "Database", 'Debug', "--> Attributes loaded: %s" %IMPORT_ATTRIBUTES)
     for attribute in IMPORT_ATTRIBUTES:
         if attribute not in DeviceListVal:
-            self.log.logging( "Database", 'Debug', "--> Attributes not existing: %s" %attribute)
+            #self.log.logging( "Database", 'Debug', "--> Attributes not existing: %s" %attribute)
             continue
 
         self.ListOfDevices[key][ attribute ] = DeviceListVal[ attribute]
