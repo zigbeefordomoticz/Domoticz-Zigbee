@@ -2117,6 +2117,13 @@ def Decode8047(self, Devices, MsgData, MsgLQI):  # Management Leave response
         % (int(MsgLQI, 16), MsgDataStatus, DisplayStatusCode(MsgDataStatus)),
     )
 
+def device_leave_annoucement( self, Devices, MsgExtAddress ):
+    devName = ""
+    for x in Devices:
+        if Devices[x].DeviceID == MsgExtAddress:
+            devName = Devices[x].Name
+            break
+    self.adminWidgets.updateNotificationWidget( Devices, "Leave indication from %s for %s " % (MsgExtAddress, devName) )
 
 def Decode8048(self, Devices, MsgData, MsgLQI):  # Leave indication
     MsgLen = len(MsgData)
@@ -2124,83 +2131,49 @@ def Decode8048(self, Devices, MsgData, MsgLQI):  # Leave indication
     MsgExtAddress = MsgData[0:16]
     MsgDataStatus = MsgData[16:18]
 
-    devName = ""
-    for x in Devices:
-        if Devices[x].DeviceID == MsgExtAddress:
-            devName = Devices[x].Name
-            break
-    self.adminWidgets.updateNotificationWidget(
-        Devices, "Leave indication from %s for %s " % (MsgExtAddress, devName)
-    )
-
     loggingMessages(self, "8048", None, MsgExtAddress, int(MsgLQI, 16), None)
 
-    if (
-        MsgExtAddress not in self.IEEE2NWK
-    ):  # Most likely this object has been removed and we are receiving the confirmation.
+    if ( MsgExtAddress not in self.IEEE2NWK ):  # Most likely this object has been removed and we are receiving the confirmation.
+        device_leave_annoucement( self, Devices, MsgExtAddress )
         return
+
     sAddr = getSaddrfromIEEE(self, MsgExtAddress)
+    
+    if sAddr not in self.ListOfDevices:
+        return
 
-    self.log.logging( 
-        "Input",
-        "Debug",
-        "Leave indication from IEEE: %s , Status: %s " % (MsgExtAddress, MsgDataStatus),
-        sAddr,
-    )
-    if sAddr == "":
-        self.log.logging( 
-            "Input",
-            "Log",
-            "Decode8048 - device not found with IEEE = " + str(MsgExtAddress),
-        )
-    else:
-        timeStamped(self, sAddr, 0x8048)
-        zdevname = ""
-        if "ZDeviceName" in self.ListOfDevices[sAddr]:
-            zdevname = self.ListOfDevices[sAddr]["ZDeviceName"]
-        self.log.logging( 
-            "Input",
-            "Status",
-            "%s (%s/%s) send a Leave indication and will be outside of the network. LQI: %s"
-            % (zdevname, sAddr, MsgExtAddress, int(MsgLQI, 16)),
-        )
-        if self.ListOfDevices[sAddr]["Status"] == "inDB":
-            self.ListOfDevices[sAddr]["Status"] = "Left"
-            self.ListOfDevices[sAddr]["Heartbeat"] = 0
-            # Domoticz.Status("Calling leaveMgt to request a rejoin of %s/%s " %( sAddr, MsgExtAddress))
-            # leaveMgtReJoin( self, sAddr, MsgExtAddress )
-        elif self.ListOfDevices[sAddr]["Status"] in (
-            "004d",
-            "0043",
-            "8043",
-            "0045",
-            "8045",
-        ):
-            self.log.logging( 
-                "Input",
-                "Log",
-                "Removing this not completly provisionned device due to a leave ( %s , %s )"
-                % (sAddr, MsgExtAddress),
-            )
-            if MsgExtAddress in self.IEEE2NWK:
-                del self.IEEE2NWK[MsgExtAddress]
-            del self.ListOfDevices[sAddr]
+    timeStamped(self, sAddr, 0x8048)
 
-        elif self.ListOfDevices[sAddr]["Status"] == "Left":
-            Domoticz.Error(
-                "Receiving a leave from %s/%s while device is %s status"
-                % (sAddr, MsgExtAddress, self.ListOfDevices[sAddr]["Status"])
-            )
+    if self.ListOfDevices[sAddr]["Status"] == "inDB":
+        self.ListOfDevices[sAddr]["Status"] = "Left"
+        self.ListOfDevices[sAddr]["Heartbeat"] = 0
+        # Domoticz.Status("Calling leaveMgt to request a rejoin of %s/%s " %( sAddr, MsgExtAddress))
+        # leaveMgtReJoin( self, sAddr, MsgExtAddress )
 
-            # This is bugy, as I should then remove the device in Domoticz
-            # self.log.logging( "Input", 'Log',"--> Removing: %s" %str(self.ListOfDevices[sAddr]))
-            # del self.ListOfDevices[sAddr]
-            # del self.IEEE2NWK[MsgExtAddress]
+    elif self.ListOfDevices[sAddr]["Status"] in ( "004d", "0043", "8043", "0045", "8045", ):
+        if MsgExtAddress in self.IEEE2NWK:
+            del self.IEEE2NWK[MsgExtAddress]
+        del self.ListOfDevices[sAddr]
+        self.log.logging(  "Input", "Log", "Removing this not completly provisionned device due to a leave ( %s , %s )" % (sAddr, MsgExtAddress), )
 
-            # Will set to Leave in order to protect Domoticz Widget, Just need to make sure that we can reconnect at a point of time
-            self.ListOfDevices[sAddr]["Status"] = "Leave"
-            self.ListOfDevices[sAddr]["Heartbeat"] = 0
+    elif self.ListOfDevices[sAddr]["Status"] == "Left": 
+        # This is bugy, as I should then remove the device in Domoticz
+        # self.log.logging( "Input", 'Log',"--> Removing: %s" %str(self.ListOfDevices[sAddr]))
+        # del self.ListOfDevices[sAddr]
+        # del self.IEEE2NWK[MsgExtAddress]
 
+        # Will set to Leave in order to protect Domoticz Widget, Just need to make sure that we can reconnect at a point of time
+        self.ListOfDevices[sAddr]["Status"] = "Leave"
+        self.ListOfDevices[sAddr]["Heartbeat"] = 0
+        Domoticz.Error( "Receiving a leave from %s/%s while device is %s status" % (sAddr, MsgExtAddress, self.ListOfDevices[sAddr]["Status"]) )
+
+    zdevname = ""
+    if "ZDeviceName" in self.ListOfDevices[sAddr]:
+        zdevname = self.ListOfDevices[sAddr]["ZDeviceName"]
+    self.log.logging(  "Input", "Status", "%s (%s/%s) send a Leave indication and will be outside of the network. LQI: %s"
+        % (zdevname, sAddr, MsgExtAddress, int(MsgLQI, 16)), )
+
+    self.log.logging(  "Input", "Debug", "Leave indication from IEEE: %s , Status: %s " % (MsgExtAddress, MsgDataStatus), sAddr, )
     updLQI(self, sAddr, MsgLQI)
 
 
