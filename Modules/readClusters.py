@@ -2632,11 +2632,11 @@ def Clusterfc00( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
 def Clusterfc01( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData , Source):
 
-    self.log.logging( "Cluster", 'Log', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" \
+    self.log.logging( "Cluster", 'Debug', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" \
         %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)   
         
     checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  MsgClusterData )
-    self.log.logging( "Cluster", 'Log', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" \
+    self.log.logging( "Cluster", 'Debug', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" \
             %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
     if 'Model' not in self.ListOfDevices[MsgSrcAddr]:
