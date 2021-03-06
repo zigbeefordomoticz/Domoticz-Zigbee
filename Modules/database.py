@@ -20,6 +20,74 @@ from Classes.LoggingManagement import LoggingManagement
 
 import Modules.tools
 
+ZIGATE_ATTRIBUTES = {
+        'Version',
+        'ZDeviceName',
+        'Ep',
+        'IEEE',
+        'LogicalType',
+        'PowerSource',
+        'Neighbours',
+        'GroupMemberShip',
+        }
+
+MANDATORY_ATTRIBUTES = ( 'App Version', 
+        'Attributes List', 
+        'Bind', 
+        'WebBind',
+        'Capability',
+        'ColorInfos', 
+        'ClusterType', 
+        'ConfigSource',
+        'DeviceType', 
+        'Ep', 
+        'Epv2',
+        'ForceAckCommands',
+        'HW Version', 
+        'Heartbeat', 
+        'IAS',
+        'Location', 
+        'LogicalType', 
+        'MacCapa', 
+        'Manufacturer', 
+        'Manufacturer Name', 
+        'Model', 
+        'NbEp',
+        'OTA',
+        'PowerSource', 
+        'ProfileID', 
+        'ReceiveOnIdle', 
+        'Stack Version', 
+        'RIA', 
+        'SWBUILD_1', 
+        'SWBUILD_2', 
+        'SWBUILD_3', 
+        'Stack Version', 
+        'Status', 
+        'Type',
+        'Version', 
+        'ZCL Version', 
+        'ZDeviceID', 
+        'ZDeviceName',
+        'Param'
+        )
+
+# List of Attributes whcih are going to be loaded, ut in case of Reset (resetPluginDS) they will be re-initialized.
+BUILD_ATTRIBUTES = (
+        'Battery', 
+        'GroupMemberShip',
+        'Neighbours',
+        'ConfigureReporting',
+        'ReadAttributes',
+        'WriteAttributes', 
+        'LQI',
+        'SQN', 
+        'Stamp', 
+        'Health',
+        )
+
+MANUFACTURER_ATTRIBUTES = ( 'Legrand', 'Schneider', 'Lumi', 'CASA.IA' , 'Tuya')
+
 
 def _copyfile( source, dest, move=True ):
 
@@ -142,7 +210,7 @@ def loadTxtDatabase( self , dbName ):
             except (SyntaxError, NameError, TypeError, ZeroDivisionError):
                 Domoticz.Error("LoadDeviceList failed on %s" %val)
                 continue
-            self.log.logging( "Database", 'Debug', "LoadDeviceList - " +str(key) + " => dlVal " +str(dlVal) , key)
+            self.log.logging( "Database", 'Debug2', "LoadDeviceList - " +str(key) + " => dlVal " +str(dlVal) , key)
             if not dlVal.get('Version') :
                 if key == '0000': # Bug fixed in later version
                     continue
@@ -336,19 +404,17 @@ def CheckDeviceList(self, key, val):
     '''
 
     self.log.logging( "Database", 'Debug', "CheckDeviceList - Address search : " + str(key), key)
-    self.log.logging( "Database", 'Debug', "CheckDeviceList - with value : " + str(val), key)
+    self.log.logging( "Database", 'Debug2', "CheckDeviceList - with value : " + str(val), key)
 
     DeviceListVal=eval(val)
     # Do not load Devices in State == 'unknown' or 'left' 
-    if 'Status' in DeviceListVal and DeviceListVal['Status'] in (
-        'UNKNOW',
-        'failDB',
-        'DUP',
-    ):
-        self.log.logging( "Database", 'Status', "Not Loading %s as Status: %s" %( key, DeviceListVal['Status']))
+    if 'Status' in DeviceListVal and DeviceListVal['Status'] in ( 'UNKNOW', 'failDB', 'DUP', ):
+        self.log.logging( "Database", 'Error', "Not Loading %s as Status: %s" %( key, DeviceListVal['Status']))
         return
 
     if Modules.tools.DeviceExist(self, key, DeviceListVal.get('IEEE','')):
+        # Do not load Devices
+        self.log.logging( "Database", 'Error', "Not Loading %s as no existing IEEE: %s" %( key, str(val)))
         return
 
     if key == '0000':
@@ -360,74 +426,6 @@ def CheckDeviceList(self, key, val):
     self.ListOfDevices[key]['RIA']="10"
 
     # List of Attribnutes that will be Loaded from the deviceList-xx.txt database
-    ZIGATE_ATTRIBUTES = {
-            'Version',
-            'ZDeviceName',
-            'Ep',
-            'IEEE',
-            'LogicalType',
-            'PowerSource',
-            'Neighbours',
-            'GroupMemberShip',
-            }
-
-    MANDATORY_ATTRIBUTES = ( 'App Version', 
-            'Attributes List', 
-            'Bind', 
-            'WebBind',
-            'Capability',
-            'ColorInfos', 
-            'ClusterType', 
-            'ConfigSource',
-            'DeviceType', 
-            'Ep', 
-            'Epv2',
-            'ForceAckCommands',
-            'HW Version', 
-            'Heartbeat', 
-            'IAS',
-            'Location', 
-            'LogicalType', 
-            'MacCapa', 
-            'Manufacturer', 
-            'Manufacturer Name', 
-            'Model', 
-            'NbEp',
-            'OTA',
-            'PowerSource', 
-            'ProfileID', 
-            'ReceiveOnIdle', 
-            'Stack Version', 
-            'RIA', 
-            'SWBUILD_1', 
-            'SWBUILD_2', 
-            'SWBUILD_3', 
-            'Stack Version', 
-            'Status', 
-            'Type',
-            'Version', 
-            'ZCL Version', 
-            'ZDeviceID', 
-            'ZDeviceName',
-            'Param'
-            )
-
-    # List of Attributes whcih are going to be loaded, ut in case of Reset (resetPluginDS) they will be re-initialized.
-    BUILD_ATTRIBUTES = (
-            'Battery', 
-            'GroupMemberShip',
-            'Neighbours',
-            'ConfigureReporting',
-            'ReadAttributes',
-            'WriteAttributes', 
-            'LQI',
-            'SQN', 
-            'Stamp', 
-            'Health',
-            )
-
-    MANUFACTURER_ATTRIBUTES = (
-            'Legrand', 'Schneider', 'Lumi', 'CASA.IA' , 'Tuya')
 
     if self.pluginconf.pluginConf['resetPluginDS']:
         self.log.logging( "Database", 'Status', "Reset Build Attributes for %s" %DeviceListVal['IEEE'])
@@ -470,7 +468,7 @@ def CheckDeviceList(self, key, val):
             IEEE = DeviceListVal['IEEE']
             self.IEEE2NWK[IEEE] = key
         else :
-            self.log.logging( "Database", 'Debug', "CheckDeviceList - IEEE = " + str(DeviceListVal['IEEE']) + " for NWKID = " +str(key) , key )
+            self.log.logging( "Database", 'Log', "CheckDeviceList - IEEE = " + str(DeviceListVal['IEEE']) + " for NWKID = " +str(key) , key )
 
     check_and_update_ForceAckCommands( self)
 
