@@ -918,88 +918,47 @@ def Decode8017(self, Devices, MsgData, MsgLQI):  # Get Time
     EPOCTime = datetime(2000, 1, 1)
     UTCTime = int((datetime.now() - EPOCTime).total_seconds())
     ZigateTime = struct.unpack("I", struct.pack("I", int(ZigateTime, 16)))[0]
-    self.log.logging( 
-        "Input",
-        "Debug",
-        "UTC time is: %s, Zigate Time is: %s with deviation of :%s "
-        % (UTCTime, ZigateTime, UTCTime - ZigateTime),
-    )
+    self.log.logging(  "Input", "Debug", "UTC time is: %s, Zigate Time is: %s with deviation of :%s " % (
+        UTCTime, ZigateTime, UTCTime - ZigateTime), )
     if abs(UTCTime - ZigateTime) > 5:  # If Deviation is more than 5 sec then reset Time
         setTimeServer(self)
 
 
-def Decode8015(
-    self, Devices, MsgData, MsgLQI
-):  # Get device list ( following request device list 0x0015 )
+def Decode8015( self, Devices, MsgData, MsgLQI ):  # Get device list ( following request device list 0x0015 )
     # id: 2bytes
     # addr: 4bytes
     # ieee: 8bytes
     # power_type: 2bytes - 0 Battery, 1 AC Power
     # rssi : 2 bytes - Signal Strength between 1 - 255
     numberofdev = len(MsgData)
-    self.log.logging( 
-        "Input",
-        "Status",
-        "Number of devices recently active in Zigate = " + str(round(numberofdev / 26)),
-    )
+    self.log.logging(  "Input", "Status", "Number of devices recently active in Zigate = %s" %(str(round(numberofdev / 26))), )
     for idx in range(0, len(MsgData), 26):
         saddr = MsgData[idx + 2 : idx + 6]
         ieee = MsgData[idx + 6 : idx + 22]
-        if int(ieee, 16) != 0x0:
-            DevID = MsgData[idx : idx + 2]
-            power = MsgData[idx + 22 : idx + 24]
-            rssi = MsgData[idx + 24 : idx + 26]
+        
+        if int(ieee,16) == 0:
+            continue
 
-            if DeviceExist(self, Devices, saddr, ieee):
-                nickName = modelName = ''
-                if 'ZDeviceName' in self.ListOfDevices[ saddr  ] and self.ListOfDevices[ saddr ]['ZDeviceName'] != {}:
-                    nickName = '( ' + self.ListOfDevices[ saddr ]['ZDeviceName'] + ' ) '
-                if 'Model' in self.ListOfDevices[ saddr  ] and self.ListOfDevices[ saddr ]['Model'] != {}:
-                    modelName = self.ListOfDevices[ saddr ]['Model']
-                self.log.logging( 
-                    "Input",
-                    "Status",
-                    "[{:02n}".format((round(idx / 26)))
-                    + "] DevID = "
-                    + DevID
-                    + " Network addr = "
-                    + saddr
-                    + " IEEE = "
-                    + ieee
-                    + " LQI = {:03n}".format((int(rssi, 16)))
-                    + " Power = "
-                    + power
-                    + " Model = "
-                    + modelName 
-                    + " " + nickName,
-                )
-                self.ListOfDevices[saddr]["LQI"] = int(rssi, 16) if rssi != "00" else 0
-                self.log.logging( 
-                    "Input",
-                    "Debug",
-                    "Decode8015 : LQI set to "
-                    + str(self.ListOfDevices[saddr]["LQI"])
-                    + "/"
-                    + str(int(rssi, 16))
-                    + " for "
-                    + str(saddr),
-                )
-            else:
-                self.log.logging( 
-                    "Input",
-                    "Status",
-                    "[{:02n}".format((round(idx / 26)))
-                    + "] DevID = "
-                    + DevID
-                    + " Network addr = "
-                    + saddr
-                    + " IEEE = "
-                    + ieee
-                    + " LQI = {:03n}".format(int(rssi, 16))
-                    + " Power = "
-                    + power
-                    + " not found in ListOfDevices",
-                )
+        DevID = MsgData[idx : idx + 2]
+        power = MsgData[idx + 22 : idx + 24]
+        rssi = MsgData[idx + 24 : idx + 26]
+
+        if DeviceExist(self, Devices, saddr, ieee):
+            nickName = modelName = ''
+            if 'ZDeviceName' in self.ListOfDevices[ saddr  ] and self.ListOfDevices[ saddr ]['ZDeviceName'] != {}:
+                nickName = '( ' + self.ListOfDevices[ saddr ]['ZDeviceName'] + ' ) '
+            if 'Model' in self.ListOfDevices[ saddr  ] and self.ListOfDevices[ saddr ]['Model'] != {}:
+                modelName = self.ListOfDevices[ saddr ]['Model']
+            self.log.logging( "Input","Status","[%02d] DevID: %s Network addr: %s IEEE: %s LQI: %03d power: %s Model: %s %s" %(
+                round(idx / 26), DevID, saddr, ieee, int(rssi, 16), power, modelName, nickName))
+            
+            self.ListOfDevices[saddr]["LQI"] = int(rssi, 16) if rssi != "00" else 0
+            self.log.logging(  "Input", "Debug", "Decode8015 : LQI set to %s / %s for %s" %(
+                self.ListOfDevices[saddr]["LQI"], str(int(rssi, 16)), saddr ))
+        else:
+            self.log.logging( "Input","Status","[%02d] DevID: %s Network addr: %s IEEE: %s LQI: %03d power: %s not found in plugin database!" %(
+                round(idx / 26), DevID, saddr, ieee, int(rssi, 16), power, ))
+
     self.log.logging( "Input", "Debug", "Decode8015 - IEEE2NWK      : " + str(self.IEEE2NWK))
 
 
