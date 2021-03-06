@@ -62,7 +62,7 @@ def update_due_to_nwk_id_change( self, OldNwkId, NewNwkId):
     Short Id of the device has changed, we need to update ListOfGroups accordingly
     """
 
-    self.logging( 'Debug', "------> update_due_to_nwk_id_change From: %s to %s" %(OldNwkId, NewNwkId))
+    #self.logging( 'Debug', "------> update_due_to_nwk_id_change From: %s to %s" %(OldNwkId, NewNwkId))
     for GrpId in list(self.ListOfGroups.keys()):
         for device in list(self.ListOfGroups[ GrpId ]['Devices']):
             if device[0] != OldNwkId:
