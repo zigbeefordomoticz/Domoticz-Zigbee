@@ -63,14 +63,14 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
         # Device do not exist, Rejoin Flag do not exist. This is the real Device Announcement, let's go
         if not DeviceExist(self, Devices, NwkId, Ieee):
             # We can create the device in Plugin Db, and start the Discovery process
-            self.log.logging(  "Input", "Debug", "------------ > Adding a new device %s %s )" % (NwkId, Ieee), NwkId, )
             decode004d_new_devicev2( self, Devices, NwkId, Ieee, MacCapa, MsgData, MsgLQI, now )
             if "Announced" in self.ListOfDevices[NwkId]:
                 del self.ListOfDevices[NwkId]["Announced"]
+            self.log.logging(  "Input", "Debug", "------------ > Adding a new device %s %s )" % (NwkId, Ieee), NwkId, )
         return
 
     # Existing Device
-    self.log.logging(  "Input", "Debug", "------------ > Existing device ShortId New: %s ShortId Old: %s" % (NwkId, self.IEEE2NWK[Ieee]), NwkId, )
+    # self.log.logging(  "Input", "Debug", "------------ > Existing device ShortId New: %s ShortId Old: %s" % (NwkId, self.IEEE2NWK[Ieee]), NwkId, )
 
     if RejoinFlag:
         # Just make sure to use the NwkId currently in the plugin DB and not the new one if exists
