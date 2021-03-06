@@ -155,11 +155,12 @@ def DeviceExist(self, Devices, lookupNwkId , lookupIEEE = ''):
         False if not found
     """
     ieee_from_nwkid = None
-    found = False
+   
     #Validity check
-    if lookupNwkId == '':
+    if lookupNwkId == '' :
         return False
 
+    found = False
     #1- Check if found in ListOfDevices
     #   Verify that Status is not 'UNKNOWN' otherwise condider not found
     if ( lookupNwkId in self.ListOfDevices and 'Status' in self.ListOfDevices[lookupNwkId] ):
@@ -174,9 +175,13 @@ def DeviceExist(self, Devices, lookupNwkId , lookupIEEE = ''):
     # If we didnt find it, we should check if this is not a new ShortId  
     if lookupIEEE:
         if lookupIEEE not in self.IEEE2NWK:
-            # Not found. Here there is a risk to return found == True ??? This doesn' sound good !
-            # As we have some inconsistency. A Device is known by it's NwkId , but unknown
-            Domoticz.Error("DeviceExist - Found some inconsistency Inputs: %s %s instead of %s" %( lookupNwkId , lookupIEEE, ieee_from_nwkid))
+            if not found:
+                return found
+
+            # We are in situation where we found the device in ListOfDevices but not in IEEE2NWK.
+            # this is not expected
+            
+            Domoticz.Error("DeviceExist - Found %s some inconsistency Inputs: %s %s instead of %s" %( found , lookupNwkId , lookupIEEE, ieee_from_nwkid))
             return found
 
         # We found IEEE, let's get the Short Address 
