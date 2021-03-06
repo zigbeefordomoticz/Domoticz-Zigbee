@@ -931,7 +931,7 @@ def ReadAttributeRequest_fc00(self, key):
 
 def ReadAttributeRequest_fc01(self, key):
     # Cluster Legrand
-    self.log.logging( "ReadAttributes", 'Log', "ReadAttributeRequest_fc01 - Key: %s " %key, nwkid=key)
+    self.log.logging( "ReadAttributes", 'Debug', "ReadAttributeRequest_fc01 - Key: %s " %key, nwkid=key)
     EPout = '01'
 
     listAttributes = []
@@ -940,7 +940,7 @@ def ReadAttributeRequest_fc01(self, key):
             listAttributes.append( iterAttr )
     
     if listAttributes:
-        self.log.logging( "ReadAttributes", 'Log', "Request Legrand attributes info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
+        self.log.logging( "ReadAttributes", 'Debug', "Request Legrand attributes info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
         #ReadAttributeReq( self, key, ZIGATE_EP, EPout, "fc01", listAttributes, manufacturer_spec = '01', manufacturer = '1021', ackIsDisabled = is_ack_tobe_disabled(self, key))
         ReadAttributeReq( self, key, ZIGATE_EP, EPout, "fc01", listAttributes, ackIsDisabled = is_ack_tobe_disabled(self, key))
 
@@ -954,7 +954,7 @@ def ReadAttributeRequest_fc21(self, key):
         profalux = ( self.ListOfDevices[key]['Manufacturer'] == '1110' and self.ListOfDevices[key]['ZDeviceID'] in ('0200', '0202') )
 
     if profalux:
-        self.log.logging( "ReadAttributes", 'Log', "Request Profalux BSO via Read Attribute request: %s" %key, nwkid=key)
+        self.log.logging( "ReadAttributes", 'Debug', "Request Profalux BSO via Read Attribute request: %s" %key, nwkid=key)
         read_attribute( self, '02', key ,ZIGATE_EP , '01' ,'fc21' , '00' , '01' , '1110' , 0x01, '0001', aackIsDisabled = is_ack_tobe_disabled(self, key))
 
         # datas = "02" + key + ZIGATE_EP + '01' + 'fc21' + '00' + '01' + '1110' + '01' + '0001'
