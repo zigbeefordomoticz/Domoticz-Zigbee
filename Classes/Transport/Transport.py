@@ -262,6 +262,7 @@ def open_connection( self ):
             result = open_zigate_and_start_reader( self, 'serial' )
         else:
             self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None", Address=self._serialPort, Baud=115200)
+            result = self._connection
         if result:
             start_writer_thread( self )
             start_forwarder_thread( self )
@@ -273,6 +274,7 @@ def open_connection( self ):
             result =  open_zigate_and_start_reader( self, 'tcpip' )
         else:
             self._connection = Domoticz.Connection(Name="Zigate", Transport="TCP/IP", Protocol="None ", Address=self._wifiAddress, Port=self._wifiPort)
+            result = self._connection
         if result:
             start_writer_thread( self )
             start_forwarder_thread( self )
