@@ -403,7 +403,6 @@ class BasePlugin:
     def onStop(self):
         self.log.logging( 'Plugin', 'Status', "onStop called")
 
-        
         if self.domoticzdb_DeviceStatus:
             self.domoticzdb_DeviceStatus.closeDB()
 
@@ -417,16 +416,24 @@ class BasePlugin:
         if self.webserver:
             self.webserver.onStop()
 
-        if ( self.DomoticzMajor > 4 or self.DomoticzMajor == 4 and self.DomoticzMinor >= 10355 or self.VersionNewFashion ):
-            for thread in threading.enumerate():
-                if (thread.name != threading.current_thread().name):
-                    Domoticz.Log("'"+thread.name+"' is running, it must be shutdown otherwise Domoticz will abort on plugin exit.")
-
         #self.ZigateComm.close_conn()
         WriteDeviceList(self, 0)
 
         self.statistics.printSummary()
         self.statistics.writeReport()
+
+        self.log.closeLogFile()
+        
+        if ( self.DomoticzMajor > 4 or self.DomoticzMajor == 4 and self.DomoticzMinor >= 10355 or self.VersionNewFashion ):
+            for thread in threading.enumerate():
+                if (thread.name != threading.current_thread().name):
+                    Domoticz.Log("'"+thread.name+"' is running, it must be shutdown otherwise Domoticz will abort on plugin exit.")
+
+    
+    
+
+
+
         self.PluginHealth['Flag'] = 3
         self.PluginHealth['Txt'] = 'No Communication'
         self.adminWidgets.updateStatusWidget( Devices, 'No Communication')
