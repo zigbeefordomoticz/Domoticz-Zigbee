@@ -65,6 +65,7 @@ def rest_netTopologie( self, verb, data, parameters):
 
                     if item not in _nwkid_list:
                         _nwkid_list.append( item )
+
                     for x in  reportLQI[item]['Neighbours']:
                         self.logging( 'Debug', "---> %s" %x)
                         # Report only Child relationship
@@ -96,8 +97,9 @@ def rest_netTopologie( self, verb, data, parameters):
                             _child = item
 
                         elif reportLQI[item]['Neighbours'][x]['_relationshp'] == 'Sibling':
-                            _father = item
-                            _child  = x
+                            continue
+                            #_father = item
+                            #_child  = x
 
                         elif reportLQI[item]['Neighbours'][x]['_relationshp'] == 'Former Child':
                             # Not a Parent, not a Child, not a Sibbling
