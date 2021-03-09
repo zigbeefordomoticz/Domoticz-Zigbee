@@ -121,9 +121,10 @@ class NetworkMap():
             return
         if nwkid == '0000':
             tobescanned = True
-        elif 'LogicalType' in self.ListOfDevices[nwkid]:
-            if self.ListOfDevices[nwkid]['LogicalType'] in ( 'Router' ):
-                tobescanned = True
+        else:
+            if 'LogicalType' in self.ListOfDevices[nwkid]:
+                if self.ListOfDevices[nwkid]['LogicalType'] in ( 'Router' ):
+                    tobescanned = True
             if 'DeviceType' in self.ListOfDevices[nwkid]:
                 if self.ListOfDevices[nwkid]['DeviceType'] in ( 'FFD' ):
                     tobescanned = True
