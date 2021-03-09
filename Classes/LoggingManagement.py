@@ -32,7 +32,7 @@ class LoggingManagement:
         self.FirmwareVersion = None
         self.FirmwareMajorVersion = None
         self.running = True
-        self.logging_queue = Queue()
+        self.logging_queue = None
         self.logging_thread = None
         self._startTime = int(time.time())
         start_logging_thread( self )
@@ -91,7 +91,10 @@ class LoggingManagement:
             self.running = False
             self.logging_queue.put( 'QUIT' )
             self.logging_thread.join()
+            del self.logging_thread
             self.logging_thread = None
+            del self.logging_queue
+            self.logging_queue = None
             Domoticz.Log("Logging Thread shutdown")
 
     def loggingCleaningErrorHistory( self ):
@@ -115,7 +118,7 @@ class LoggingManagement:
 
     def logging( self, module, logType, message, nwkid=None, context=None):
 
-        if self.logging_thread:
+        if self.logging_thread and self.logging_queue:
             logging_tupple = [ threading.current_thread().name, module, logType, message, nwkid, context ]
             self.logging_queue.put( logging_tupple )
         else:
@@ -277,18 +280,15 @@ def loggingWriteErrorHistory( self ):
             json_file.write('\n')
         except Exception as e:
             Domoticz.Error("Hops ! Unable to write LogErrorHistory error: %s log: %s" %(e,self.LogErrorHistory ))
-            
-        
-
-
-
-
+                    
 
 def start_logging_thread( self ):
     Domoticz.Log( "start_serstart_logging_threadial_reader_thread")
     if self.logging_thread is None:
+        self.logging_queue = Queue()
         self.logging_thread = threading.Thread( name="ZiGateLogging_%s" %self.HardwareID,  target=logging_thread,  args=(self,))
         self.logging_thread.start()
+        
 
 def logging_thread( self ):
     
