@@ -429,7 +429,6 @@ class NetworkMap():
                 _relationshp = 'Child'
             elif _relationshp == 0x02: 
                 _relationshp = 'Sibling'
-            #else: _relationshp = 'Child'
             elif _relationshp == 0x03: 
                 _relationshp = 'None'
             elif _relationshp == 0x04: 
@@ -461,8 +460,14 @@ class NetworkMap():
             self.logging( 'Debug', "---> _relationshp: %s" %_relationshp)
             self.logging( 'Debug', "---> _rxonwhenidl: %s" %_rxonwhenidl)
         
-            if _nwkid in self.Neighbours[ NwkIdSource ]['Neighbours']:
+            if _nwkid in self.Neighbours[ NwkIdSource ]['Neighbours'] and _relationshp not in ( 'Parent', 'Child'):
                 Domoticz.Log("LQI:LQIresp - %s already in Neighbours Table for %s" %(_nwkid, NwkIdSource))
+                # Let's check the infos
+                Domoticz.Log("      - _extPANID:    %s  versus %s" %( _extPANID, self.Neighbours[NwkIdSource]['Neighbours'][_nwkid]['_extPANID']))
+                Domoticz.Log("      - _ieee:        %s  versus %s" %( _ieee, self.Neighbours[NwkIdSource]['Neighbours'][_nwkid]['_ieee']))
+                Domoticz.Log("      - _depth:       %s  versus %s" %( _depth, self.Neighbours[NwkIdSource]['Neighbours'][_nwkid]['_depth']))
+                Domoticz.Log("      - _lnkqty:      %s  versus %s" %( _lnkqty, self.Neighbours[NwkIdSource]['Neighbours'][_nwkid]['_lnkqty']))
+                Domoticz.Log("      - _relationshp: %s  versus %s" %( _relationshp, self.Neighbours[NwkIdSource]['Neighbours'][_nwkid]['_relationshp']))
                 return
 
             self.Neighbours[NwkIdSource]['Neighbours'][_nwkid] = {}
