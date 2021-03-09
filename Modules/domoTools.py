@@ -63,10 +63,10 @@ def RetreiveWidgetTypeList( self, Devices, NwkId, DeviceUnit = None):
 
 def RetreiveSignalLvlBattery( self, NwkID):
     
-    
     # Takes the opportunity to update LQI and Battery
     if NwkID not in self.ListOfDevices:
-        return
+        return( '', '')
+
     SignalLevel = '' 
     if 'LQI' in self.ListOfDevices[NwkID]:
         SignalLevel = self.ListOfDevices[NwkID]['LQI']
@@ -95,7 +95,6 @@ def RetreiveSignalLvlBattery( self, NwkID):
           
     #Domoticz.Log("RetreiveSignalLvlBattery - convert ZiGate LQI: %s to Domoticz LQI: %s" %(SignalLevel, DomoticzRSSI ))
     SignalLevel = DomoticzRSSI
-
 
     BatteryLevel = ''
     if 'Battery' in self.ListOfDevices[NwkID] and self.ListOfDevices[NwkID]['Battery'] != {} and isinstance(self.ListOfDevices[NwkID]['Battery'], int):
