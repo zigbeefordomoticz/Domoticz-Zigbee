@@ -81,6 +81,9 @@ class LoggingManagement:
 
     def closeLogFile( self ):
 
+        if self.logging_thread is None:
+            return
+            
         if self.loggingFileHandle:
             self.loggingFileHandle.close()
             self.loggingFileHandle = None
