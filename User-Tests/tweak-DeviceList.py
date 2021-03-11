@@ -1,4 +1,4 @@
-
+import Domoticz
 
 FILENAME = 'DeviceList-13.txt'
 
@@ -42,8 +42,3 @@ with open( FILENAME + '-updated' , 'wt') as file:
             file.write(key + " : " + str(ListOfDevices[key]) + "\n")
         except IOError:
             Domoticz.Error("Error while writing to plugin Database %s" %_DeviceListFileName)
-
-
-
-
-
