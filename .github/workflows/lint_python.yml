@@ -11,7 +11,7 @@ jobs:
       - run: black --check . || true
       - run: codespell --quiet-level=2 --skip="./www" || true  # --ignore-words-list=""
       # `--builtins=Devices,Parameters` should be removed once domoticz/domoticz#4720 or simlar has been released
-      - run: flake8 . --builtins=Devices,Parameters,Connections --count --select=E9,F63,F7,F82 --show-source --statistics
+      - run: flake8 . --builtins=Devices,Parameters,Connection --count --select=E9,F63,F7,F82 --show-source --statistics
       - run: isort --check-only --profile black . || true
       - run: pip install -r requirements.txt || true
       - run: mypy --ignore-missing-imports . || true
