@@ -68,6 +68,7 @@
 """
 
 import Domoticz
+#from Domoticz import Devices, Parameters
 from datetime import datetime
 import time
 import json
@@ -211,7 +212,6 @@ class BasePlugin:
 
 
     def onStart(self):
-
         Domoticz.Heartbeat( 1 )
         self.pluginParameters = dict(Parameters)
 
@@ -228,7 +228,6 @@ class BasePlugin:
 
         self.pluginParameters['PluginBranch'] = _pluginversion['branch']
         self.pluginParameters['PluginVersion'] = _pluginversion['version']
-
         self.pluginParameters['TimeStamp'] = 0
         self.pluginParameters['available'] =  None
         self.pluginParameters['available-firmMajor'] =  None
@@ -238,7 +237,6 @@ class BasePlugin:
         self.pluginParameters['PluginUpdate'] = None
 
         Domoticz.Status("Zigate plugin %s-%s started" %(self.pluginParameters['PluginBranch'], self.pluginParameters['PluginVersion']))
-
         Domoticz.Status( "Debug: %s" %int(Parameters["Mode6"]))
         if Parameters["Mode6"] != "0":
             Domoticz.Log("Debug Mode: %s, We do recommend to leave Verbors to None" %int(Parameters["Mode6"]))
@@ -268,12 +266,10 @@ class BasePlugin:
                 Domoticz.Error("Domoticz version %s %s %s not supported, please upgrade to a more recent" %(Parameters["DomoticzVersion"], major, minor))
                 self.VersionNewFashion = False
                 return
-
         elif len(lst_version) != 3:
             Domoticz.Error("Domoticz version %s unknown not supported, please upgrade to a more recent" %(Parameters["DomoticzVersion"]))
             self.VersionNewFashion = False
             return
-
         else:
             major, minor = lst_version[0].split('.')
             build = lst_version[2].strip(')')
@@ -403,21 +399,27 @@ class BasePlugin:
     def onStop(self):
         self.log.logging( 'Plugin', 'Status', "onStop called")
 
+
         if self.domoticzdb_DeviceStatus:
             self.domoticzdb_DeviceStatus.closeDB()
+        self.log.logging( 'Plugin', 'Status', "onStop called domoticzDb DeviceStatus closed")
 
         if self.domoticzdb_Hardware:
             self.domoticzdb_Hardware.closeDB()
+        self.log.logging( 'Plugin', 'Status', "onStop called domoticzDb Hardware closed")
 
         if self.ZigateComm:
             self.ZigateComm.thread_transport_shutdown()
             self.ZigateComm.close_conn()
+        self.log.logging( 'Plugin', 'Status', "onStop called Transport off")
 
         if self.webserver:
             self.webserver.onStop()
+        self.log.logging( 'Plugin', 'Status', "onStop called WebServer off")
 
         #self.ZigateComm.close_conn()
         WriteDeviceList(self, 0)
+        self.log.logging( 'Plugin', 'Status', "onStop called Plugin Database saved")
 
         self.statistics.printSummary()
         self.statistics.writeReport()
@@ -429,20 +431,11 @@ class BasePlugin:
                 if (thread.name != threading.current_thread().name):
                     Domoticz.Log("'"+thread.name+"' is running, it must be shutdown otherwise Domoticz will abort on plugin exit.")
 
-    
-    
-
-
-
         self.PluginHealth['Flag'] = 3
         self.PluginHealth['Txt'] = 'No Communication'
         self.adminWidgets.updateStatusWidget( Devices, 'No Communication')
 
-        self.log.closeLogFile()
-
     def onDeviceRemoved( self, Unit ) :
-
-
         self.log.logging( 'Plugin', 'Debug', "onDeviceRemoved called" )
 
         # Let's check if this is End Node, or Group related.
@@ -522,9 +515,6 @@ class BasePlugin:
         self.Ping['Permit'] = None
         self.Ping['Nb Ticks'] = 1
 
-
-
-
         return True
 
     def onMessage(self, Connection, Data):
@@ -590,15 +580,15 @@ class BasePlugin:
 
     def onHeartbeat(self):
 
-        if not self.VersionNewFashion:
-            return
-
-        if self.pluginconf is None:
+        if not self.VersionNewFashion or self.pluginconf is None:
+            # Not yet ready
             return
 
         self.internalHB += 1
+
         if self.PDMready and (self.internalHB % HEARTBEAT) != 0:
             return
+
         busy_ = False
         self.HeartbeatCount += 1 
 
