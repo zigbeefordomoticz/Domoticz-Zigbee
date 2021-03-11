@@ -33,6 +33,13 @@ import queue
 import sqlite3
 import binascii
 
+try:  # Python 2
+    long
+    raw_input
+except NameError:  # Python 3
+    long = int
+    raw_input = input
+
 # Message types
 
 # /* Common Commands */
