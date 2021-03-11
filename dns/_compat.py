@@ -1,3 +1,5 @@
+# flake8: noqa
+
 import sys
 import decimal
 from decimal import Context
