@@ -208,13 +208,13 @@ class cPDMFunctionality(threading.Thread):
                         u32NumberOfWrites = (''.join(x.encode('hex') for x in sData[6:10]))
                         u32Size = (''.join(x.encode('hex') for x in sData[2:6]))
                         dataReceived = int((''.join(x.encode('hex') for x in sData[14:18])),16)
-                        #print RecordId
-                        #print CurrentCount
-                        #print u32NumberOfWrites
-                        #print u32Size
-                        #print dataReceived                           
+                        #print(RecordId)
+                        #print(CurrentCount)
+                        #print(u32NumberOfWrites)
+                        #print(u32Size)
+                        #print(dataReceived)
                         sWriteData=(''.join(x.encode('hex') for x in sData[18:(dataReceived+18)]))
-                        #print sWriteData
+                        #print(sWriteData)
                         c.execute("SELECT * FROM PdmData WHERE PdmRecId = ?", (RecordId,))
                         data=c.fetchone()                        
                         if data is None:
@@ -227,9 +227,9 @@ class cPDMFunctionality(threading.Thread):
                             else:
                                 c.execute("DELETE from PdmData WHERE PdmRecId = ? ",(RecordId,))
                                 c.execute("INSERT INTO  PdmData (PdmRecId,PdmRecSize,PersistedData) VALUES (?,?,?)",(RecordId,u32Size,sWriteData))
-                        #print "data written\n"
-                        #print sWriteData
-                        #print "length %x\n" %len(sWriteData)
+                        #print("data written\n")
+                        #print(sWriteData)
+                        #print("length %x\n" %len(sWriteData))
                         oCB.oSL._WriteMessage(E_SL_MSG_SAVE_PDM_RECORD_RESPONSE,"00")
                         conn.commit()
                         conn.close()
@@ -582,7 +582,7 @@ class cControlBridge():
         if command[0] == 'EXP':
             self.SetExtendedPANID(command[1])
         if command[0] == 'GTV':            
-            print "Node Version: 0x%08x" % self.GetVersion()
+            print("Node Version: 0x%08x" % self.GetVersion())
         if command[0] == 'RST':
             self.SendSwReset()
         if command[0] == 'LQI':
@@ -705,7 +705,7 @@ class cControlBridge():
             c = conn.cursor()
             conn.close()
             
-        print ''
+        print('')
         return True
     
     def GetVersion(self):
@@ -829,24 +829,24 @@ class cControlBridge():
     def vPDMSendFunc(self,sData):
         """ Internal function
         """
-        #print "PDMSend"
+        #print("PDMSend")
         conn = sqlite3.connect('pdm.db')
         c = conn.cursor()
         conn.text_factory = str
         RecordId = (''.join(x.encode('hex') for x in sData))
-        #print RecordId
+        #print(RecordId)
         c.execute("SELECT * FROM PdmData WHERE PdmRecId = ?", (RecordId,))
         data=c.fetchone()                        
         status='00'
         if data is None:
-            #print "None"
+            #print("None")
             TotalBlocks = 0
             BlockId = 0
             size =0
             self.oSL.SendMessage(E_SL_MSG_LOAD_PDM_RECORD_RESPONSE, (status+RecordId+str(size).zfill(8)+str(TotalBlocks).zfill(8)+str(BlockId).zfill(8))+str(size).zfill(8))
         else:
             status='02'
-            #print "found entry"
+            #print("found entry")
             persistedData = data[2]
             size = data[1]
             TotalBlocks = (long(size,16)/128)
@@ -854,11 +854,11 @@ class cControlBridge():
                 NumberOfWrites = TotalBlocks + 1
             else:
                 NumberOfWrites = TotalBlocks
-            #print size
-            #print persistedData
-            #print TotalBlocks
-            #print NumberOfWrites
-            #print long(size,16)
+            #print(size)
+            #print(persistedData)
+            #print(TotalBlocks)
+            #print(NumberOfWrites)
+            #print(long(size,16))
             bMoreData=True
             count =0
             lowerbound = 0
@@ -896,7 +896,7 @@ if __name__ == "__main__":
     logging.getLogger().setLevel(logging.INFO)
                     
     if options.port is None:
-        #print "Please specify serial port with --port"
+        #print("Please specify serial port with --port")
         parser.print_help()
         sys.exit(1)
         
@@ -921,8 +921,5 @@ if __name__ == "__main__":
             continueToRun = True
         else:
             continueToRun = oCB.parseCommand(command.strip())
-    print "Terminating current session...."
+    print("Terminating current session....")
     sys.exit(1)
-
-
-    
