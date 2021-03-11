@@ -11,7 +11,7 @@
 [Zigate](https://zigate.fr "Python Plugin for Domoticz home automation.")
 
 For information around the Zigate Plugin, please refer to :
-* https://github.com/pipiche38/Domoticz-Zigate-Wiki/blob/master/en-eng/Home.md for informations 
+* https://github.com/pipiche38/Domoticz-Zigate-Wiki/blob/master/en-eng/Home.md for information 
 
 ## Support
 
@@ -21,7 +21,7 @@ Your first place to get support is via the Forums.
 
 ## About release channels
 
-In order to provide stability and also provide more recent developement, Zigate plugin has the following channels
+In order to provide stability and also provide more recent development, Zigate plugin has the following channels
 
 ### stable
 This is considered as a solid , reliable version.
@@ -32,7 +32,7 @@ We can open the beta channel to provide early version and to stabilize the versi
 
 ### dev
 
-This is where developement are under go. This is not a reliable version and could be buggy and even not working depending on the stage of integration we are.
+This is where development are under go. This is not a reliable version and could be buggy and even not working depending on the stage of integration we are.
 This branch is only for users whom known exactly what they are doing.
 
 ### master ( deprecated )
