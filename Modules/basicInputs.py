@@ -28,7 +28,7 @@ def encode_endian_data( data, datatype):
 
     else:
         value = data
-        self.log.logging( None, 'Log', "-------> Data not decoded Type: %s Value: %s " % (datatype, value))
+        Domoticz.Log( "-------> Data not decoded Type: %s Value: %s " % (datatype, value))
     
     #self.log.logging( None, 'Log', "encode_endian %s -> %s" %(data, value))
     return value
