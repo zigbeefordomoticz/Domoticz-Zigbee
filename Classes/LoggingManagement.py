@@ -133,7 +133,7 @@ def logToFile( self, thread_name, message ):
     
         
         if self.pluginconf.pluginConf['logThreadName']:
-            Domoticz.Log( " [%15s] " %tthread_name + message )
+            Domoticz.Log( " [%15s] " %thread_name + message )
             message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) +  " [%15s] " %thread_name + message + '\n'
         else:
             Domoticz.Log( message )
