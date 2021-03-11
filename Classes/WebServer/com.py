@@ -63,7 +63,7 @@ def onDisconnect ( self, Connection ):
         # Most likely it is about closing the Server
         self.logging( "Log", "onDisconnect - Closing %s" %Connection)
 
-def onStop( self, Connection ):
+def onStop( self ):
 
     # Make sure that all remaining open connections are closed
     self.logging( 'Debug', "onStop()")
