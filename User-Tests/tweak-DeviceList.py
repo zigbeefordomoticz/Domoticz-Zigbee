@@ -41,4 +41,4 @@ with open( FILENAME + '-updated' , 'wt') as file:
         try:
             file.write(key + " : " + str(ListOfDevices[key]) + "\n")
         except IOError:
-            Domoticz.Error("Error while writing to plugin Database %s" %_DeviceListFileName)
+            Domoticz.Error("Error while writing to plugin Database %s" %( FILENAME + '-updated' ))
