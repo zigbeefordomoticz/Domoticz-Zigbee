@@ -25,5 +25,8 @@
 		"0b04": [ "050b" ],
 		"fc01": [ "0000", "0002"]
 	},
+	"Param": {
+		"PowerOnAfterOffOn": 255
+	},
     "GroupMembership": [ [ "01", "fff7" ] , [ "01", "fff5"] ]
 }

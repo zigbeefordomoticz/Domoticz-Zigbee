@@ -86,7 +86,7 @@ def casaiaReadRawAPS(self, Devices, NwkId, srcEp, ClusterId, dstNWKID, dstEP, Ms
 
     if NwkId not in self.ListOfDevices:
         self.log.logging( "CasaIA", "Error", "%s not found in Database" %NwkId, NwkId,
-            {'Error code': 'CASAIA-READRAW-01', 'ListOfDevices': selfListOfDevices})
+            {'Error code': 'CASAIA-READRAW-01', 'ListOfDevices': self.ListOfDevices})
         return
 
     if 'Model' not in self.ListOfDevices[ NwkId]:
@@ -144,7 +144,7 @@ def casaia_pairing( self, NwkId):
         if self.ListOfDevices[NwkId]['Model'] == 'AC201A':
             casaia_AC201_pairing( self, NwkId)
 
-        elif self.ListOfDevices[NwkId]['Model'] == 'AC211':
+        elif self.ListOfDevices[NwkId]['Model'] in ('AC211', 'AC221'):
             casaia_AC211_pairing(self, NwkId)
 
 def casaia_check_irPairing( self, NwkId):
@@ -186,7 +186,7 @@ def casaia_check_irPairing( self, NwkId):
             casaia_ac201_ir_pairing( self, NwkId)
             AC201_read_AC_status_request( self, NwkId)
 
-        elif self.ListOfDevices[NwkId]['Model'] == 'AC211':
+        elif self.ListOfDevices[NwkId]['Model'] in ('AC211', 'AC221'):
             casaia_ac211_ir_pairing( self, NwkId)
             AC201_read_AC_status_request( self, NwkId)
 
@@ -493,7 +493,7 @@ def AC201_read_AC_status_response( self, Devices, NwkId, Ep, payload):
 
     # Update System Mode
     self.log.logging( "CasaIA", "Debug" , "read_AC_status_response Status: %s request Update System Mode: %s" %( NwkId, system_mode),NwkId)
-    MajDomoDevice(self, Devices, NwkId, Ep, '0201', system_mode)    
+    MajDomoDevice(self, Devices, NwkId, Ep, '0201', system_mode, Attribute_ ='001c')    
 
 def AC201_read_learned_data_group_status_request_response(self, Devices, NwkId, srcEp, payload):
     # Command 0x11
@@ -585,7 +585,7 @@ def open_casa_config( self ): # OK 6/11/2020
     if os.path.isfile( casaiafilename ):
         with open( casaiafilename , 'rt') as handle:
             try:
-                self.CasaiaPAC = json.load( handle, encoding=dict)
+                self.CasaiaPAC = json.load( handle)
             except json.decoder.JSONDecodeError as e:
                 res = "Failed"
                 self.log.logging( "CasaIA", "Error", "loadJsonDatabase poorly-formed %s, not JSON: %s" %(self.pluginConf['filename'],e))

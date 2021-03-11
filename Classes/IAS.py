@@ -473,7 +473,10 @@ class IAS_Zone_Management:
                 warning_mode = WARNING_MODE['Stop'] + STROBE_MODE['Use Strobe']
                 strobe_duty = 0x1E  # % duty cycle in 10% steps
                 strobe_level = STROBE_LEVEL['Low']
-        warning_duration = self.pluginconf.pluginConf['alarmDuration']
+                
+        warning_duration = 1
+        if 'Param' in self.ListOfDevices[ nwkid ] and 'alarmDuration' in self.ListOfDevices[ nwkid ]['Param']:
+            warning_duration = self.ListOfDevices[ nwkid ]['Param']['alarmDuration']
 
         self.logging( 'Debug', "warningMode - Mode: %s, Duration: %s, Duty: %s, Level: %s" \
                 %(bin(warning_mode), warning_duration, strobe_duty, strobe_level))

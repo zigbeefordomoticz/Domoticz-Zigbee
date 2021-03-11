@@ -4,7 +4,7 @@ import Domoticz
 from Modules.zigateConsts import ADDRESS_MODE
 from Classes.GroupMgtv2.GrpDomoticz import update_domoticz_group_device_widget
 from Classes.GroupMgtv2.GrpCommands import set_kelvin_color, set_rgb_color
- 
+
 def checkIfIkeaRound5BToBeAdded( self, NwkId, ep, ieee, GrpId):
     self.logging( 'Debug', "checkIfIkeaRound5BToBeAdded - Checking if Ikea Round 5B NwkId: %s, Ep: %s, Ieee: %s, GrpIp: %s" %(NwkId, ep, ieee, GrpId))
     if ( 'Ep' in self.ListOfDevices[NwkId] and '01' in self.ListOfDevices[NwkId]['Ep'] and 'ClusterType' in self.ListOfDevices[NwkId]['Ep']['01'] ):
@@ -52,11 +52,10 @@ def Ikea5BToBeAddedToListIfExist( self, GrpId ):
     
     return ikea5b
 
-def Ikea_update_due_to_nwk_id_change( self, GrpId, OldNwkId, NewNwkId):
 
-    if ( 'Tradfri Remote' in self.ListOfGroups[GrpId] and self.ListOfGroups[GrpId]['Tradfri Remote']['Device Addr'] == OldNwkId ):
-        self.ListOfGroups[ GrpId]['Tradfri Remote']['Device Addr'] = NewNwkId
- 
+
+
+
 
 def manageIkeaTradfriRemoteLeftRight( self, RemoteNwkId, type_dir):
 
@@ -70,7 +69,7 @@ def manageIkeaTradfriRemoteLeftRight( self, RemoteNwkId, type_dir):
         Ieee = self.ListOfGroups[ x ]['Tradfri Remote']['IEEE']
         if Ieee not in self.IEEE2NWK:
             # Inconsistency. Most-like the remote has been removed but remains in Group
-            Domoticz.Error("manageIkeaTradfriRemoteLeftRight - Group %s refer to a Remote %s/%s which do not exist anymore"
+            self.logging( 'Error',"manageIkeaTradfriRemoteLeftRight - Group %s refer to a Remote %s/%s which do not exist anymore"
                 %(x, self.ListOfGroups[ x ]['Tradfri Remote']['Device Addr'], Ieee))
             break
 
@@ -82,22 +81,22 @@ def manageIkeaTradfriRemoteLeftRight( self, RemoteNwkId, type_dir):
             break
 
     if Ikea5ButtonGroupId is None:
-        Domoticz.Error("manageIkeaTradfriRemoteLeftRight - Remote %s not associated to any group" %RemoteNwkId)
+        self.logging( 'Error',"manageIkeaTradfriRemoteLeftRight - Remote %s not associated to any group" %RemoteNwkId)
         return
 
     if 'Tradfri Remote' not in self.ListOfGroups[Ikea5ButtonGroupId]:
-        Domoticz.Error("manageIkeaTradfriRemoteLeftRight - Remote %s badly associated in GroupId: %s with %s" 
+        self.logging( 'Error',"manageIkeaTradfriRemoteLeftRight - Remote %s badly associated in GroupId: %s with %s" 
             %( RemoteNwkId, Ikea5ButtonGroupId, self.ListOfGroups[Ikea5ButtonGroupId]))
         return
 
     if 'Color Mode' not in self.ListOfGroups[Ikea5ButtonGroupId]['Tradfri Remote']:
-        Domoticz.Error("manageIkeaTradfriRemoteLeftRight - Remote %s badly associated in GroupId: %s with %s" 
+        self.logging( 'Error',"manageIkeaTradfriRemoteLeftRight - Remote %s badly associated in GroupId: %s with %s" 
             %( RemoteNwkId, Ikea5ButtonGroupId, self.ListOfGroups[Ikea5ButtonGroupId]))
         return       
     DomoWidgetColorType = self.ListOfGroups[Ikea5ButtonGroupId]['Tradfri Remote']['Color Mode']
 
     if DomoWidgetColorType is None:
-        Domoticz.Error("manageIkeaTradfriRemoteLeftRight - undefined Color Mode for %s" %DomoWidgetColorType)
+        self.logging( 'Error',"manageIkeaTradfriRemoteLeftRight - undefined Color Mode for %s" %DomoWidgetColorType)
         return
 
     self.logging( 'Debug', "manageIkeaTradfriRemoteLeftRight - Color model : %s" %DomoWidgetColorType)

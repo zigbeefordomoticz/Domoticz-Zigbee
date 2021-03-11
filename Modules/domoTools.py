@@ -14,6 +14,7 @@ import time
 import Domoticz
 
 from Classes.LoggingManagement import LoggingManagement
+from Modules.tools import lookupForIEEE
 
 from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
 from Modules.widgets import SWITCH_LVL_MATRIX
@@ -62,8 +63,10 @@ def RetreiveWidgetTypeList( self, Devices, NwkId, DeviceUnit = None):
 
 def RetreiveSignalLvlBattery( self, NwkID):
     
-    
     # Takes the opportunity to update LQI and Battery
+    if NwkID not in self.ListOfDevices:
+        return( '', '')
+
     SignalLevel = '' 
     if 'LQI' in self.ListOfDevices[NwkID]:
         SignalLevel = self.ListOfDevices[NwkID]['LQI']
@@ -93,7 +96,6 @@ def RetreiveSignalLvlBattery( self, NwkID):
     #Domoticz.Log("RetreiveSignalLvlBattery - convert ZiGate LQI: %s to Domoticz LQI: %s" %(SignalLevel, DomoticzRSSI ))
     SignalLevel = DomoticzRSSI
 
-
     BatteryLevel = ''
     if 'Battery' in self.ListOfDevices[NwkID] and self.ListOfDevices[NwkID]['Battery'] != {} and isinstance(self.ListOfDevices[NwkID]['Battery'], int):
         #Domoticz.Log("RetreiveSignalLvlBattery NwkId: %s Battery: %s" %(NwkID,self.ListOfDevices[NwkID]['Battery'] ))
@@ -117,49 +119,14 @@ def WidgetForDeviceId( self, NwkId, DeviceId):
     return WidgetType
 
 def ResetDevice(self, Devices, ClusterType, HbCount):
-    '''
-        Reset all Devices from the ClusterType Motion after 30s
-    '''
-    def resetMotion( self, Devices, NwkId, WidgetType, unit, SignalLevel, BatteryLvl, now, lastupdate, TimedOut ):
-        if Devices[unit].nValue == 0 and Devices[unit].sValue == "Off":
-            # Nothing to Reset
-            return
-        if self.domoticzdb_DeviceStatus:
-            from Classes.DomoticzDB import DomoticzDB_DeviceStatus
-            # Let's check if we have a Device TimeOut specified by end user
-            if self.domoticzdb_DeviceStatus.retreiveTimeOut_Motion( Devices[unit].ID) > 0:
-                return
-        if (now - lastupdate) >= TimedOut:
-            self.log.logging( "Widget", "Debug", "Last update of the devices %s %s was %s ago" %( unit, WidgetType, (now - lastupdate)), NwkId)
-            #UpdateDevice_v2(self, Devices, unit, 0, "Off", BatteryLvl, SignalLevel)
-            Devices[unit].Update(nValue=0, sValue='Off')
+    #
+    # Reset all Devices from the ClusterType Motion after 30s
+    #
 
-    def resetSwitchSelectorPushButton( self, Devices, NwkId, WidgetType, unit, SignalLevel, BatteryLvl, now, lastupdate, TimedOut ):
-        if Devices[unit].nValue == 0:
-            return
-
-        if (now - lastupdate) < TimedOut: 
-            return
-
-        #Domoticz.Log("Options: %s" %Devices[unit].Options)
-        LevelOffHidden = Devices[unit].Options['LevelOffHidden']
-
-        nValue = 0
-        sValue = '0'
-        if LevelOffHidden == 'false':
-            sValue = '00'
-
-        self.log.logging( "Widget", "Debug", "Last update of the devices %s WidgetType: %s was %s ago" %( unit, WidgetType, (now - lastupdate)), NwkId) 
-        #Domoticz.Log(" Update nValue: %s sValue: %s" %(nValue, sValue))
-        Devices[unit].Update(nValue=nValue, sValue=sValue)
-
-
-    #Begining
     now = time.time()
     TimedOutMotion = self.pluginconf.pluginConf['resetMotiondelay']
     TimedOutSwitchButton = self.pluginconf.pluginConf['resetSwitchSelectorPushButton']
     for unit in Devices:
-
         Ieee = Devices[unit].DeviceID
         if Ieee not in self.IEEE2NWK:
             # Unknown !
@@ -169,15 +136,19 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
         try:
             LUpdate = time.mktime(time.strptime(LUpdate, "%Y-%m-%d %H:%M:%S"))
         except:
-            Domoticz.Error("Something wrong to decode Domoticz LastUpdate %s" %LUpdate)
-            break
+            self.log.logging( "Widget", "Error", "Something wrong to decode Domoticz LastUpdate %s for Unit: %s Ieee: %s" %(
+                LUpdate, unit, Ieee))
+            continue
 
         # Look for the corresponding Widget
         NWKID = self.IEEE2NWK[Ieee]
-
         if NWKID not in self.ListOfDevices:
-            Domoticz.Error("ResetDevice " + str(NWKID) + " not found in " + str(self.ListOfDevices))
-            continue
+            # If the NwkId is not found, it may have switch, let's check
+            ieee_retreived_from_nwkid = lookupForIEEE(self, NWKID, True)
+            if ieee_retreived_from_nwkid is None or Ieee != ieee_retreived_from_nwkid :
+                # self.log.logging( "Widget", "Error", "ResetDevice inconsistency %s/%s not in plugin db: %s, Ieee: %s" %(
+                #     NWKID, Ieee, self.ListOfDevices.keys(), str(self.IEEE2NWK) ), NWKID)
+                continue
 
         ID = Devices[unit].ID
         WidgetType = ''        
@@ -194,6 +165,42 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
             if 'ForceUpdate' in SWITCH_LVL_MATRIX[ WidgetType ]:
                 if SWITCH_LVL_MATRIX[ WidgetType ]['ForceUpdate']:
                     resetSwitchSelectorPushButton( self, Devices, NWKID, WidgetType, unit, SignalLevel, BatteryLvl, now, LUpdate , TimedOutSwitchButton)
+
+def resetMotion( self, Devices, NwkId, WidgetType, unit, SignalLevel, BatteryLvl, now, lastupdate, TimedOut ):
+    if Devices[unit].nValue == 0 and Devices[unit].sValue == "Off":
+        # Nothing to Reset
+        return
+    if self.domoticzdb_DeviceStatus:
+        from Classes.DomoticzDB import DomoticzDB_DeviceStatus
+        # Let's check if we have a Device TimeOut specified by end user
+        if self.domoticzdb_DeviceStatus.retreiveTimeOut_Motion( Devices[unit].ID) > 0:
+            return
+
+    if (now - lastupdate) >= TimedOut:
+        Devices[unit].Update(nValue=0, sValue='Off')
+        self.log.logging( "Widget", "Debug", "Last update of the devices %s %s was %s ago" %( unit, WidgetType, (now - lastupdate)), NwkId)
+        #UpdateDevice_v2(self, Devices, unit, 0, "Off", BatteryLvl, SignalLevel)
+        
+
+
+def resetSwitchSelectorPushButton( self, Devices, NwkId, WidgetType, unit, SignalLevel, BatteryLvl, now, lastupdate, TimedOut ):
+    if Devices[unit].nValue == 0:
+        return
+    if (now - lastupdate) < TimedOut: 
+        return
+    #Domoticz.Log("Options: %s" %Devices[unit].Options)
+    LevelOffHidden = Devices[unit].Options['LevelOffHidden']
+    nValue = 0
+    sValue = '0'
+    if LevelOffHidden == 'false':
+        sValue = '00'
+    Devices[unit].Update(nValue=nValue, sValue=sValue)
+
+    self.log.logging( "Widget", "Debug", "Last update of the devices %s WidgetType: %s was %s ago" %( unit, WidgetType, (now - lastupdate)), NwkId) 
+    #Domoticz.Log(" Update nValue: %s sValue: %s" %(nValue, sValue))
+    
+
+
 
 def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, Color_='', ForceUpdate_=False):
 
@@ -229,26 +236,30 @@ def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, 
                     sReset = '00'
             Devices[Unit].Update(nValue=nReset, sValue=sReset)
 
-        if self.pluginconf.pluginConf['logDeviceUpdate']:
-            Domoticz.Log("UpdateDevice - (%15s) %s:%s" %( Devices[Unit].Name, nValue, sValue ))
-        self.log.logging( "Widget", "Debug", "--->  [Unit: %s] %s:%s:%s %s:%s %s (%15s)" %( Unit, nValue, sValue, Color_, BatteryLvl, SignalLvl, ForceUpdate_, Devices[Unit].Name), self.IEEE2NWK[Devices[Unit].DeviceID])
         if Color_:
             Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Color=Color_, SignalLevel=int(SignalLvl), BatteryLevel=int(BatteryLvl), TimedOut=0)
         else:
             Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue),               SignalLevel=int(SignalLvl), BatteryLevel=int(BatteryLvl), TimedOut=0)
+
+        if self.pluginconf.pluginConf['logDeviceUpdate']:
+            Domoticz.Log("UpdateDevice - (%15s) %s:%s" %( Devices[Unit].Name, nValue, sValue ))
+        self.log.logging( "Widget", "Debug", "--->  [Unit: %s] %s:%s:%s %s:%s %s (%15s)" %( Unit, nValue, sValue, Color_, BatteryLvl, SignalLvl, ForceUpdate_, Devices[Unit].Name), self.IEEE2NWK[Devices[Unit].DeviceID])
+
+
+
+
 
 def timedOutDevice( self, Devices, Unit=None, NwkId=None, MarkTimedOut=True):
  
     _Unit = _nValue = _sValue = None
     
     if Unit:
-        _nValue = Devices[Unit].nValue
-        _sValue = Devices[Unit].sValue
-        _Unit = Unit
-        if MarkTimedOut and not Devices[_Unit].TimedOut:
-            Devices[_Unit].Update(nValue=_nValue, sValue=_sValue, TimedOut=1)
-        elif not MarkTimedOut and Devices[_Unit].TimedOut:
-            Devices[_Unit].Update(nValue=_nValue, sValue=_sValue, TimedOut=0)
+        if MarkTimedOut and not Devices[Unit].TimedOut:
+            timeout_widget( self, Devices, Unit, 1)
+
+        elif not MarkTimedOut and Devices[Unit].TimedOut:
+            timeout_widget( self, Devices, Unit, 0)
+
 
     elif NwkId:
         if NwkId not in self.ListOfDevices:
@@ -258,19 +269,35 @@ def timedOutDevice( self, Devices, Unit=None, NwkId=None, MarkTimedOut=True):
         _IEEE = self.ListOfDevices[NwkId]['IEEE']
         self.ListOfDevices[NwkId]['Health'] = 'TimedOut' if MarkTimedOut else 'Live'
         for x in Devices:
-            if Devices[x].DeviceID == _IEEE:
-                _nValue = Devices[x].nValue
-                _sValue = Devices[x].sValue
-                _Unit = x
-                if Devices[_Unit].TimedOut:
-                    if MarkTimedOut:
-                        continue
-                    self.log.logging( "Widget", 'Debug', 'reset timedOutDevice unit %s nwkid: %s ' % (Devices[_Unit].Name, NwkId), NwkId, )
-                    Devices[_Unit].Update(nValue=_nValue, sValue=_sValue, TimedOut=0)
-                else:
-                    if MarkTimedOut:
-                        self.log.logging( "Widget", 'Debug', 'timedOutDevice unit %s nwkid: %s ' % (Devices[_Unit].Name, NwkId), NwkId, )
-                        Devices[_Unit].Update(nValue=_nValue, sValue=_sValue, TimedOut=1)
+            if Devices[x].DeviceID != _IEEE:
+                continue
+            if Devices[x].TimedOut:
+                if MarkTimedOut:
+                    continue
+                timeout_widget( self, Devices, x, 0)
+                self.log.logging( "Widget", 'Debug', 'reset timedOutDevice unit %s nwkid: %s ' % (Devices[x].Name, NwkId), NwkId, )
+                
+            else:
+                if MarkTimedOut:
+                    timeout_widget( self, Devices, x, 1)
+                    self.log.logging( "Widget", 'Debug', 'timedOutDevice unit %s nwkid: %s ' % (Devices[x].Name, NwkId), NwkId, )
+                    
+
+
+def timeout_widget( self, Devices, unit, timeout_value):
+    _nValue = Devices[unit].nValue
+    _sValue = Devices[unit].sValue
+    if Devices[unit].TimedOut != timeout_value:
+        # Update is required
+        if timeout_value == 1 and self.pluginconf.pluginConf['deviceOffWhenTimeOut'] and (
+            ( _nValue == 1 and _sValue == 'On') or (
+                Devices[unit].Type == 244 and Devices[unit].SubType == 73 and Devices[unit].SwitchType == 7) or (
+                Devices[unit].Type == 241 and  Devices[unit].SwitchType == 7 )):
+            # Then we will switch off as per User setting
+            Devices[unit].Update(nValue=0, sValue='Off', TimedOut=timeout_value)
+        else:
+            Devices[unit].Update(nValue=_nValue, sValue=_sValue, TimedOut=timeout_value)
+    self.log.logging( "Widget", 'Debug', 'timeout_widget unit %s -> %s ' % (Devices[unit].Name, bool(timeout_value)))
 
 def lastSeenUpdate( self, Devices, Unit=None, NwkId=None):
 
@@ -278,7 +305,7 @@ def lastSeenUpdate( self, Devices, Unit=None, NwkId=None):
     # It might required to call Touch everytime we receive a message from the device and not only when update is requested.
 
     if Unit:
-        self.log.logging( "Widget", "Debug2", "Touch unit %s" %( Devices[Unit].Name ))
+        #self.log.logging( "Widget", "Debug2", "Touch unit %s" %( Devices[Unit].Name ))
         if (not self.VersionNewFashion and (self.DomoticzMajor < 4 or ( self.DomoticzMajor == 4 and self.DomoticzMinor < 10547))):
             self.log.logging( "Widget", "Debug2", "Not the good Domoticz level for lastSeenUpdate %s %s %s" 
                 %(self.VersionNewFashion, self.DomoticzMajor, self.DomoticzMinor ), NwkId)
@@ -322,7 +349,7 @@ def lastSeenUpdate( self, Devices, Unit=None, NwkId=None):
             return
         for x in Devices:
             if Devices[x].DeviceID == _IEEE:
-                self.log.logging( "Widget", "Debug2",  "Touch unit %s nwkid: %s " %( Devices[x].Name, NwkId ), NwkId)
+                #self.log.logging( "Widget", "Debug2",  "Touch unit %s nwkid: %s " %( Devices[x].Name, NwkId ), NwkId)
                 if Devices[x].TimedOut:
                     timedOutDevice( self, Devices, Unit=x, MarkTimedOut=0)
                 else:
@@ -440,7 +467,7 @@ def TypeFromCluster( self, cluster, create_=False, ProfileID_='', ZDeviceID_='')
         TypeFromCluster = "WindowCovering"
 
     elif cluster == "0201": 
-        TypeFromCluster = "Temp/ThermoSetpoint/ThermoMode"
+        TypeFromCluster = "Temp/ThermoSetpoint/ThermoMode/Valve"
 
     elif cluster == '0202':
         TypeFromCluster = "FanControl"

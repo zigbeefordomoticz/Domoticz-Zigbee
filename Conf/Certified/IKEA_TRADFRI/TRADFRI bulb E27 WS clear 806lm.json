@@ -26,5 +26,13 @@
 		"0006": [ "0000", "4003" ],
 		"0008": [ "0000" ],
 		"0300": [ "0003", "0004", "0007", "0008", "4010" ]
+	},
+	"Param": {
+		"PowerOnAfterOffOn": 255,
+		"fadingOff": 0,  
+		"moveToHueSatu": 0,
+		"moveToColourTemp": 0,
+		"moveToColourRGB": 0,
+		"moveToLevel": 0
 	}
 }

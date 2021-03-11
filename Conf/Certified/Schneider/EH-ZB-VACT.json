@@ -11,7 +11,7 @@
 	    "0201": "", 
 	    "0204": "", 
 	    "fe02": "", 
-	    "Type": "Temp/ThermoSetpoint/Door" } 
+	    "Type": "Temp/ThermoSetpoint/Door/Valve" } 
   },
   "Type": "",
   "overwriteZigateEpBind": "0b",
@@ -36,5 +36,8 @@
 	"0201": [ "0000", "0010", "0012", "0015", "0016",  "e010", "e012", "e013", "e014", "e030", "e031" ],
 	"0204": [ "0001" ]
   },
-  "PollingEnabled": 1
+  "PollingEnabled": 1,
+  "Param": {
+	"Calibration": 0
+  }
 }

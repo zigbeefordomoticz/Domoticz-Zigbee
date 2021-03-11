@@ -18,7 +18,7 @@ from datetime import datetime
 from time import time
 
 from Modules.zigateConsts import ZIGATE_EP, ADDRESS_MODE, ZLL_DEVICES, ZIGATE_COMMANDS
-from Modules.tools import mainPoweredDevice, getListOfEpForCluster, set_request_datastruct, set_isqn_datastruct, set_timestamp_datastruct, get_and_inc_SQN
+from Modules.tools import mainPoweredDevice, getListOfEpForCluster, set_request_datastruct, set_isqn_datastruct, set_timestamp_datastruct, get_and_inc_SQN, is_ack_tobe_disabled
 from Classes.LoggingManagement import LoggingManagement
 
 
@@ -85,11 +85,11 @@ def send_zigatecmd_raw( self, cmd, datas, ackIsDisabled = False ):
 
    i_sqn = self.ZigateComm.sendData( cmd, datas , ackIsDisabled )
    if self.pluginconf.pluginConf['debugzigateCmd']:
-       self.log.logging( "BasicOutput", 'Log', "send_zigatecmd_raw       - [%s] %s %s Queue Length: %s / %s" %(i_sqn, cmd, datas, self.ZigateComm.loadTransmit(), len(self.ZigateComm.ListOfCommands)))
+       self.log.logging( "BasicOutput", 'Log', "send_zigatecmd_raw       - [%s] %s %s Queue Length: %s" %(i_sqn, cmd, datas, self.ZigateComm.loadTransmit()  ))
    else:
-       self.log.logging( "BasicOutput", 'Debug', "====> send_zigatecmd_raw - [%s] %s %s Queue Length: %s / %s" %(i_sqn,cmd, datas, self.ZigateComm.loadTransmit(), len(self.ZigateComm.ListOfCommands)))
+       self.log.logging( "BasicOutput", 'Debug', "====> send_zigatecmd_raw - [%s] %s %s Queue Length: %s" %(i_sqn,cmd, datas, self.ZigateComm.loadTransmit()   ))
    if self.ZigateComm.loadTransmit() > 15:
-       self.log.logging( "BasicOutput", 'Log', "WARNING - send_zigatecmd : [%s] %s %18s ZigateQueue: %s / %s" %(i_sqn,cmd, datas, self.ZigateComm.loadTransmit(), len(self.ZigateComm.ListOfCommands)))
+       self.log.logging( "BasicOutput", 'Log', "WARNING - send_zigatecmd : [%s] %s %18s ZigateQueue: %s" %(i_sqn,cmd, datas, self.ZigateComm.loadTransmit()  ))
 
    return i_sqn
 
@@ -294,7 +294,7 @@ def identifySend( self, nwkid, ep, duration=0, withAck = False):
     return send_zigatecmd_zcl_noack(self, nwkid, "0070", datas )
 
 
-def maskChannel( channel ):
+def maskChannel( self, channel ):
 
     CHANNELS = { 0: 0x00000000, # Scan for all channels
             11: 0x00000800,
@@ -358,7 +358,7 @@ def setChannel( self, channel):
     corresponds to channel 12). Any combination of channels can be included.
     ZigBee supports channels 11-26.
     '''
-    mask = maskChannel( channel )
+    mask = maskChannel( self, channel )
     self.log.logging( "BasicOutput", "Status", "setChannel - Channel set to : %08.x " %(mask))
 
     send_zigatecmd_raw(self, "0021", "%08.x" %(mask))
@@ -448,6 +448,11 @@ def leaveMgtReJoin( self, saddr, ieee, rejoin=True):
         self.log.logging( "BasicOutput", "Status", "Request a rejoin of (%s/%s)" %(saddr, ieee),saddr)
         return send_zigatecmd_raw(self, "0047", datas )
 
+def reset_device( self, nwkid, epout):
+
+    self.log.logging( "BasicOutput", 'Debug', "reset_device - Send a Device Reset to %s/%s" %(nwkid, epout), nwkid)
+    return send_zigatecmd_raw(self, "0050", '02' + nwkid + '01' + '01' )
+    
 
 def leaveRequest( self, ShortAddr=None, IEEE= None, RemoveChild=0x00, Rejoin=0x00 ):
     """
@@ -469,11 +474,14 @@ def leaveRequest( self, ShortAddr=None, IEEE= None, RemoveChild=0x00, Rejoin=0x0
                 ShortAddr,  {'Error code': 'BOUTPUTS-LEAVE-01', 'ListOfDevices' : self.ListOfDevices})
             return None
 
+    if Rejoin == 0x00 and ShortAddr:
+        self.log.logging( "BasicOutput", 'Log', "reset_device - Send a Device Reset to %s/%s" %(ShortAddr, '01'), ShortAddr)
+        send_zigatecmd_raw(self, "0050", '02' + ShortAddr + '01' + '01' )
+
     _rmv_children = '%02X' %RemoveChild
     _rejoin = '%02X' %Rejoin
 
     datas = _ieee + _rmv_children + _rejoin
-    #self.log.logging( "BasicOutput", "Status", "Sending a leaveRequest - %s %s" %( '0047', datas))
     self.log.logging( "BasicOutput", 'Debug', "---------> Sending a leaveRequest - NwkId: %s, IEEE: %s, RemoveChild: %s, Rejoin: %s"\
         %( ShortAddr, IEEE, RemoveChild, Rejoin), ShortAddr)
     return send_zigatecmd_raw(self, "0047", datas )
@@ -674,7 +682,6 @@ def rawaps_read_attribute_req( self, NwkId ,EpIn , EpOut ,Cluster ,direction , m
         idx += 4
         payload += '%04x' %struct.unpack('>H',struct.pack('H',int(attribute,16)))[0] 
 
-    self.log.logging( "inRawAPS", "Log", "rawaps_read_attribute_req - %s/%s %s payload: %s" %(NwkId, EpOut, Cluster, payload))
     raw_APS_request( self, NwkId, EpOut, Cluster, '0104', payload, zigate_ep=EpIn , ackIsDisabled=ackIsDisabled)
 
 
@@ -687,7 +694,7 @@ def rawaps_write_attribute_req( self, key, EPin, EPout, clusterID, manuf_id, man
         cluster_frame += 0b00000100
     fcf = '%02x' %cluster_frame
 
-    sqn = get_and_inc_SQN( self, NwkId )
+    sqn = get_and_inc_SQN( self, key )
 
     payload = fcf 
     if manuf_spec == '01':
@@ -711,7 +718,6 @@ def rawaps_write_attribute_req( self, key, EPin, EPout, clusterID, manuf_id, man
     else:
         payload += data
         
-    self.log.logging( "inRawAPS", "Log", "rawaps_write_attribute_req - %s/%s %s payload: %s" %(key, EPout, clusterID, payload,))
     raw_APS_request( self, key, EPout, clusterID, '0104', payload, zigate_ep=EPin, ackIsDisabled= ackIsDisabled )
 
 
@@ -770,23 +776,54 @@ def identifyEffect( self, nwkid, ep, effect='Blink' ):
     datas = ZIGATE_EP + ep + "%02x"%(effect_command[effect])  + "%02x" %0
     return send_zigatecmd_zcl_noack(self, nwkid, "00E0", datas )
 
+def set_PIROccupiedToUnoccupiedDelay( self, key, delay):
+
+    cluster_id = "0406"
+    attribute = '0010'
+    data_type = '21'
+    manuf_id = '0000'
+    manuf_spec = '00'
+    ListOfEp = getListOfEpForCluster( self, key, cluster_id )
+    for EPout in ListOfEp:
+        data = "%04x" %delay
+        self.log.logging( "BasicOutput", 'Log', "set_PIROccupiedToUnoccupiedDelay for %s/%s - delay: %s" %(key, EPout, delay),key)
+        if attribute in self.ListOfDevices[key]['Ep'][EPout][cluster_id]:
+            del self.ListOfDevices[key]['Ep'][EPout][cluster_id][ attribute ]
+        return write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled = True)
 
 def set_poweron_afteroffon( self, key, OnOffMode = 0xff):
     # OSRAM/LEDVANCE
     # 0xfc0f --> Command 0x01
     # 0xfc01 --> Command 0x01
 
+    # Tuya Blitzworl
+    # 0x0006 / 0x8002  -> 0x00 Off ; 0x01 On ; 0x02 Previous state
+
+    # Ikea / Philips/ Legrand
+    # 0x0006 / 0x4003 -> 0x00 Off, 0x01 On, 0xff Previous
+
+    model_name = ''
+    if 'Model' in self.ListOfDevices[ key ]:
+        model_name = self.ListOfDevices[ key ]['Model']
     manuf_spec = "00"
     manuf_id = "0000"
+
     ListOfEp = getListOfEpForCluster( self, key, '0006' )
     cluster_id = "0006"
-    attribute = "4003"
+    attribute = '4003'
+    
+    if model_name in ( 'TS0121', 'TS0115'):
+        attribute = '8002'
+        if OnOffMode == 0xff:
+            OnOffMode = 0x02
+    
     data_type = "30" # 
+    ListOfEp = getListOfEpForCluster( self, key, '0006' )
     for EPout in ListOfEp:
-        data = "ff"
         data = "%02x" %OnOffMode
-        self.log.logging( "BasicOutput", 'Debug', "set_PowerOn_OnOff for %s/%s - OnOff: %s" %(key, EPout, OnOffMode),key)
-        del self.ListOfDevices[key]['Ep'][EPout]['0006']['4003']
+        self.log.logging( "BasicOutput", 'Log', "set_PowerOn_OnOff for %s/%s - OnOff: %s" %(key, EPout, OnOffMode),key)
+        if attribute in self.ListOfDevices[key]['Ep'][EPout]['0006']:
+            del self.ListOfDevices[key]['Ep'][EPout]['0006'][ attribute ]
         return write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled = True)
 
 
@@ -804,3 +841,30 @@ def unknown_device_nwkid( self, nwkid ):
     u8RequestType = '00'
     u8StartIndex = '00'
     sendZigateCmd(self ,'0041', '02' + nwkid + u8RequestType + u8StartIndex )
+
+def send_default_response( self, Nwkid, srcEp , sqn, response_to_command, cluster ):
+
+    # Response_To_Command
+    # 0x01: Read Attributes Response
+    # 0x02: Write Attribute
+    # 0x03: Write Attributes Undivided
+    # 0x04: Write Attributes Response
+    # 0x05: Write Attributes No Response
+    # 0x06: Configure Reporting
+    # 0x07: Configure Reporting Response
+    # 0x08: Read reporting Configuration
+    # 0x09: Read Reporting Configuration Response
+    # 0x0a: Report Attribute
+    # 0x0b: Default response
+    # 0x0c: Discover Attributes
+    # 0x0d: Discober Attribute Response
+
+
+    if Nwkid not in self.ListOfDevices:
+        return 
+
+    cmd = '0b' # Default response
+    payload = '10' + sqn + cmd +  response_to_command + '00'
+    raw_APS_request( self, Nwkid, srcEp, cluster, '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = is_ack_tobe_disabled(self, Nwkid))
+    self.log.logging( "BasicOutput", 'Log', "send_default_response - %s/%s " %(Nwkid, srcEp ))
+

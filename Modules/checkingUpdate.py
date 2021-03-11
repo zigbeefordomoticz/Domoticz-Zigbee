@@ -25,9 +25,9 @@ def checkPluginVersion( branch ):
     
     stableVersion = betaVersion = firmwareMajorVersion = firmwareMinorVersion = 0 
     try:
-        zigateVersions = (dns.resolver.query( TXT_RECORD,"TXT", tcp=True, lifetime=0.5).response.answer[0][-1].strings[0]).decode('utf8')
+        zigateVersions = (dns.resolver.query( TXT_RECORD,"TXT", tcp=True, lifetime=1).response.answer[0][-1].strings[0]).decode('utf8')
     except Exception as e:
-        Domoticz.Error("DNS error while checking Plugin and Firmware version: %s" %e)
+        Domoticz.Log("DNS error while checking Plugin and Firmware version: %s" %e)
         return ( 0, 0, 0)
 
     Domoticz.Log("checkPluginVersion - Version record: %s Type: %s" %(str(zigateVersions), type(zigateVersions)))

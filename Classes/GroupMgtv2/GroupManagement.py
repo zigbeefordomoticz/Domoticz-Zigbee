@@ -57,8 +57,6 @@ import pickle
 import Domoticz
 
 from Classes.GroupMgtv2.GrpServices import scan_device_for_grp_membership
-from Classes.GroupMgtv2.GrpDatabase import build_group_list_from_list_of_devices
-from Classes.GroupMgtv2.GrpDomoticz import LookForGroupAndCreateIfNeeded
 from Classes.GroupMgtv2.GrpMigration import GrpMgtv2Migration
 from Modules.zigateConsts import MAX_LOAD_ZIGATE
 from Classes.LoggingManagement import LoggingManagement

@@ -154,27 +154,36 @@ def DeviceExist(self, Devices, lookupNwkId , lookupIEEE = ''):
         True if object found
         False if not found
     """
-
-    found = False
+    ieee_from_nwkid = None
+   
     #Validity check
-    if lookupNwkId == '':
+    if lookupNwkId == '' :
         return False
 
+    found = False
     #1- Check if found in ListOfDevices
     #   Verify that Status is not 'UNKNOWN' otherwise condider not found
-    if lookupNwkId in self.ListOfDevices:
-        if 'Status' in self.ListOfDevices[lookupNwkId] :
-            # Found, let's check the Status
-            if self.ListOfDevices[lookupNwkId]['Status'] != 'UNKNOWN':
-                found = True
+    if ( lookupNwkId in self.ListOfDevices and 'Status' in self.ListOfDevices[lookupNwkId] ):
+        if 'IEEE' in self.ListOfDevices[lookupNwkId]:
+            ieee_from_nwkid = self.ListOfDevices[lookupNwkId]['IEEE']
+
+        # Found, let's check the Status
+        if self.ListOfDevices[lookupNwkId]['Status'] != 'UNKNOWN':
+            found = True
 
     # 2- We might have found it with the lookupNwkId 
     # If we didnt find it, we should check if this is not a new ShortId  
     if lookupIEEE:
         if lookupIEEE not in self.IEEE2NWK:
-            # Not found
+            if not found:
+                return found
+
+            # We are in situation where we found the device in ListOfDevices but not in IEEE2NWK.
+            # this is not expected
+            
+            Domoticz.Error("DeviceExist - Found %s some inconsistency Inputs: %s %s instead of %s" %( found , lookupNwkId , lookupIEEE, ieee_from_nwkid))
             return found
-        
+
         # We found IEEE, let's get the Short Address 
         exitsingNwkId = self.IEEE2NWK[ lookupIEEE ]
         if exitsingNwkId == lookupNwkId:
@@ -190,17 +199,16 @@ def DeviceExist(self, Devices, lookupNwkId , lookupIEEE = ''):
             del self.IEEE2NWK[ lookupIEEE ]
             return False
 
-        if 'Status' not in self.ListOfDevices[ exitsingNwkId ]:
-            # Should not happen
-            # That seems not correct
-            # We might have to do some cleanup here !
-            # Cleanup
-            # Delete the entry in IEEE2NWK as it will be recreated in Decode004d
-            del self.IEEE2NWK[ lookupIEEE ]
-
-            # Delete the all Data Structure
-            del self.ListOfDevices[ exitsingNwkId ]
-            return False
+        #   if 'Status' not in self.ListOfDevices[ exitsingNwkId ]:
+        #       # Should not happen
+        #       # That seems not correct
+        #       # We might have to do some cleanup here !
+        #       # Cleanup
+        #       # Delete the entry in IEEE2NWK as it will be recreated in Decode004d
+        #       del self.IEEE2NWK[ lookupIEEE ]
+        #       # Delete the all Data Structure
+        #       del self.ListOfDevices[ exitsingNwkId ]
+        #       return False
 
         if self.ListOfDevices[ exitsingNwkId ]['Status'] in ( '004d', '0045', '0043', '8045', '8043', 'UNKNOW'):
             # We are in the discovery/provisioning process,
@@ -208,15 +216,12 @@ def DeviceExist(self, Devices, lookupNwkId , lookupIEEE = ''):
             # we need to restart from the begiging and remove all existing datastructutre.
             # In case we receive asynchronously messages (which should be possible), they must be
             # droped in the corresponding Decodexxx function
-            Domoticz.Status("DeviceExist - Device %s changed its ShortId: from %s to %s during provisioning. Restarting !"
-                %( lookupIEEE, exitsingNwkId , lookupNwkId ))
-
             # Delete the entry in IEEE2NWK as it will be recreated in Decode004d
             del self.IEEE2NWK[ lookupIEEE ]
-
             # Delete the all Data Structure
             del self.ListOfDevices[ exitsingNwkId ]
-
+            Domoticz.Status("DeviceExist - Device %s changed its ShortId: from %s to %s during provisioning. Restarting !"
+                %( lookupIEEE, exitsingNwkId , lookupNwkId ))
             return False
 
         # At that stage, we have found an entry for the IEEE, but doesn't match
@@ -232,52 +237,68 @@ def DeviceExist(self, Devices, lookupNwkId , lookupIEEE = ''):
                 devName = Devices[x].Name
                 break
         self.adminWidgets.updateNotificationWidget( Devices, 'Reconnect %s with %s/%s' %( devName, lookupNwkId, lookupIEEE ))
- 
+
     return found
 
-
-def reconnectNWkDevice( self, newNWKID, IEEE, oldNWKID):
-
+def reconnectNWkDevice( self, new_NwkId, IEEE, old_NwkId):
     # We got a new Network ID for an existing IEEE. So just re-connect.
-    # - mapping the information to the new newNWKID
-    if oldNWKID not in self.ListOfDevices:
+    # - mapping the information to the new new_NwkId
+    if old_NwkId not in self.ListOfDevices:
         return
 
-    self.ListOfDevices[newNWKID] = dict(self.ListOfDevices[oldNWKID])
-    self.IEEE2NWK[IEEE] = newNWKID
+    self.ListOfDevices[new_NwkId] = dict(self.ListOfDevices[old_NwkId])
+    self.IEEE2NWK[IEEE] = new_NwkId
 
-    Domoticz.Status("NetworkID : " +str(newNWKID) + " is replacing " +str(oldNWKID) + " and is attached to IEEE : " +str(IEEE) )
+    if 'ZDeviceName' in self.ListOfDevices[ new_NwkId ]:
+        devName = self.ListOfDevices[ new_NwkId ]['ZDeviceName']
 
-    if 'ZDeviceName' in self.ListOfDevices[ newNWKID ]:
-        devName = self.ListOfDevices[ newNWKID ]['ZDeviceName']
+    # MostLikely exitsingKey(the old NetworkID)  is not needed any more
+    if removeNwkInList( self, old_NwkId ) is None:
+        Domoticz.Error("reconnectNWkDevice - something went wrong in the reconnect New NwkId: %s Old NwkId: %s IEEE: %s" %(
+            new_NwkId, old_NwkId, IEEE))
 
     if self.groupmgt:
         # We should check if this belongs to a group
-        self.groupmgt.update_due_to_nwk_id_change( oldNWKID, newNWKID)
+        self.groupmgt.update_due_to_nwk_id_change( old_NwkId, new_NwkId)
+
+    if self.ListOfDevices[new_NwkId]['Status'] in ( 'Left', 'Leave') :
+        Domoticz.Log("DeviceExist - Update Status from %s to 'inDB' for NetworkID : %s" %(
+            self.ListOfDevices[new_NwkId]['Status'], new_NwkId) )
+        self.ListOfDevices[new_NwkId]['Status'] = 'inDB'
+        self.ListOfDevices[new_NwkId]['Heartbeat'] = '0'
 
     # We will also reset ReadAttributes
-    if 'ReadAttributes' in self.ListOfDevices[newNWKID]:
-        del self.ListOfDevices[newNWKID]['ReadAttributes']
+    if self.pluginconf.pluginConf['enableReadAttributes']:
+        if 'ReadAttributes' in self.ListOfDevices[new_NwkId]:
+            del self.ListOfDevices[new_NwkId]['ReadAttributes']
+        if 'ConfigureReporting' in self.ListOfDevices[new_NwkId]:
+            del self.ListOfDevices[new_NwkId]['ConfigureReporting']
+        self.ListOfDevices[new_NwkId]['Heartbeat'] = '0'
 
-    if 'ConfigureReporting' in self.ListOfDevices[newNWKID]:
-        del self.ListOfDevices[newNWKID]['ConfigureReporting']
-
-    self.ListOfDevices[newNWKID]['Heartbeat'] = '0'
-
-    # MostLikely exitsingKey(the old NetworkID)  is not needed any more
-    removeNwkInList( self, oldNWKID )    
-
-    if self.ListOfDevices[newNWKID]['Status'] in ( 'Left', 'Leave') :
-        Domoticz.Log("DeviceExist - Update Status from %s to 'inDB' for NetworkID : %s" %(self.ListOfDevices[newNWKID]['Status'], newNWKID) )
-        self.ListOfDevices[newNWKID]['Status'] = 'inDB'
-        self.ListOfDevices[newNWKID]['Heartbeat'] = '0'
-        WriteDeviceList(self, 0)
-
+    WriteDeviceList(self, 0)
+    Domoticz.Status("NetworkID: %s is replacing %s for object: %s" %(
+       new_NwkId,  old_NwkId, IEEE) )
     return
 
 
-def removeNwkInList( self, NWKID) :
-    del self.ListOfDevices[NWKID]
+def removeNwkInList( self, NWKID):
+    # Sanity check
+    safe = None
+    if 'IEEE' in self.ListOfDevices[NWKID]:
+        for x in self.ListOfDevices:
+            if x == NWKID:
+                continue
+            if 'IEEE' in self.ListOfDevices[ x ] and self.ListOfDevices[ x ]['IEEE'] == self.ListOfDevices[NWKID]['IEEE']:
+                safe = x
+                break
+
+    if safe:
+        del self.ListOfDevices[NWKID]
+        Domoticz.Status("self.ListOfDevices[%s] removed! substitued by self.ListOfDevices[%s]" %(NWKID, safe))
+    else:
+        Domoticz.Error("self.ListOfDevices[%s] removed! but no substitution !!!" %(NWKID, safe))
+
+    return safe
 
 
 def removeDeviceInList( self, Devices, IEEE, Unit ):
@@ -371,7 +392,8 @@ def timeStamped( self, key, Type ):
     if key not in self.ListOfDevices:
         return
     if 'Stamp' not in self.ListOfDevices[key]:
-        self.ListOfDevices[key]['Stamp'] = {'Time': {}, 'MsgType': {}}
+        self.ListOfDevices[key]['Stamp'] = { 'LasteSeen': {}, 'Time': {}, 'MsgType': {}}
+    self.ListOfDevices[key]['Stamp']['time'] = time.time()
     self.ListOfDevices[key]['Stamp']['Time'] = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
     self.ListOfDevices[key]['Stamp']['MsgType'] = "%4x" %(Type)
 
@@ -388,6 +410,7 @@ def get_and_inc_SQN( self, key ):
         if _new_sqn > 0xff:
             _new_sqn = 0x00
 
+    self.ListOfDevices[key]['SQN']= '%2x' %_new_sqn
     return '%02x' %_new_sqn
 
 def updSQN( self, key, newSQN) :
@@ -753,31 +776,32 @@ def lookupForIEEE( self, nwkid , reconnect=False):
     for key in self.ListOfDevices:
         if 'Neighbours' not in self.ListOfDevices[key]:
             continue
-
         if len(self.ListOfDevices[key]['Neighbours']) == 0:
             continue
-
         # We are interested only on the last one
         lastScan = self.ListOfDevices[key]['Neighbours'][-1]
         for item in lastScan[ 'Devices' ]:            
             if nwkid not in item:
                 continue
-            # Found !
-            if '_IEEE' in item[ nwkid ]:
-                ieee = item[ nwkid ]['_IEEE']
-                oldNWKID = 'none'
-                if ieee in self.IEEE2NWK:
-                    oldNWKID = self.IEEE2NWK[ ieee ]
-                    if oldNWKID not in self.ListOfDevices:
-                        Domoticz.Log("lookupForIEEE found an inconsitency %s nt existing but pointed by %s"
-                            %( oldNWKID, ieee ))
-                        del self.IEEE2NWK[ ieee ]
-                        continue
-                    
-                    if reconnect:
-                        reconnectNWkDevice( self, nwkid, ieee, oldNWKID)
-                    Domoticz.Log("lookupForIEEE found IEEE %s for %s in %s known as %s  Neighbourg table" %(ieee, nwkid, oldNWKID, key))
-                    return ieee
+            if '_IEEE' not in item[ nwkid ]:
+                continue
+            ieee = item[ nwkid ]['_IEEE']
+            old_NwkId = 'none'
+            if ieee not in self.IEEE2NWK:
+                continue
+
+            old_NwkId = self.IEEE2NWK[ ieee ]
+            if old_NwkId not in self.ListOfDevices:
+                Domoticz.Log("lookupForIEEE found an inconsitency %s nt existing but pointed by %s, cleanup"%(
+                    old_NwkId, ieee ))
+                del self.IEEE2NWK[ ieee ]
+                continue
+            
+            if reconnect:
+                reconnectNWkDevice( self, nwkid, ieee, old_NwkId)
+            Domoticz.Log("lookupForIEEE found IEEE %s for %s in %s known as %s  Neighbourg table" %(
+                ieee, nwkid, old_NwkId, key))
+            return ieee
     return None
 
 

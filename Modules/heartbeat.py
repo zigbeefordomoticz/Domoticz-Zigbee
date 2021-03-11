@@ -23,7 +23,7 @@ from Modules.readAttributes import READ_ATTRIBUTES_REQUEST, ping_device_with_rea
         ReadAttributeRequest_0000, ReadAttributeRequest_0001, ReadAttributeRequest_0006, ReadAttributeRequest_0008, ReadAttributeRequest_0006_0000, ReadAttributeRequest_0006_400x, ReadAttributeRequest_0008_0000,\
         ReadAttributeRequest_0100, ReadAttributeRequest_0101_0000,\
         ReadAttributeRequest_000C, ReadAttributeRequest_0102, ReadAttributeRequest_0102_0008, ReadAttributeRequest_0201, ReadAttributeRequest_0201_0012, ReadAttributeRequest_0204, ReadAttributeRequest_0300,  \
-        ReadAttributeRequest_0400, ReadAttributeRequest_0402, ReadAttributeRequest_0403, ReadAttributeRequest_0405, \
+        ReadAttributeRequest_0400, ReadAttributeRequest_0402, ReadAttributeRequest_0403, ReadAttributeRequest_0405, ReadAttributeRequest_0b04_050b_0505_0508, \
         ReadAttributeRequest_0406, ReadAttributeRequest_0500, ReadAttributeRequest_0502, ReadAttributeRequest_0702, ReadAttributeRequest_000f, ReadAttributeRequest_fc01, ReadAttributeRequest_fc21
 from Modules.configureReporting import processConfigureReporting
 from Modules.legrand_netatmo import  legrandReenforcement
@@ -37,11 +37,8 @@ from Modules.tools import removeNwkInList, mainPoweredDevice, ReArrangeMacCapaBa
 from Modules.domoTools import timedOutDevice
 from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE, CLUSTERS_LIST, LEGRAND_REMOTES, LEGRAND_REMOTE_SHUTTER, LEGRAND_REMOTE_SWITCHS, ZIGATE_EP
 from Modules.pairingProcess import processNotinDBDevices
-from Classes.IAS import IAS_Zone_Management
-from Classes.Transport import ZigateTransport
-from Classes.AdminWidgets import AdminWidgets
-from Classes.NetworkMap import NetworkMap
-from Classes.LoggingManagement import LoggingManagement
+from Modules.paramDevice import sanity_check_of_param
+
 
 # Read Attribute trigger: Every 10"
 # Configure Reporting trigger: Every 15
@@ -56,8 +53,6 @@ LEGRAND_FEATURES =    300 // HEARTBEAT
 SCHNEIDER_FEATURES =  300 // HEARTBEAT
 NETWORK_TOPO_START =  900 // HEARTBEAT
 NETWORK_ENRG_START = 1800 // HEARTBEAT
-
-
 
 
 def attributeDiscovery( self, NwkId ):
@@ -89,44 +84,36 @@ def attributeDiscovery( self, NwkId ):
 
 def pollingManufSpecificDevices( self, NwkId):
 
-        POLLING_TABLE_SPECIFICS = {
-            '100b':             ( 'Philips',        'pollingPhilips',        pollingPhilips ),
-            'Philips':          ( 'Philips',        'pollingPhilips',        pollingPhilips),
-            'GLEDOPTO':         ( 'Gledopto',       'pollingGledopto',       pollingGledopto ),
-            '105e':             ( 'Schneider',      'pollingSchneider',      pollingSchneider),
-            'Schneider':        ( 'Schneider',      'pollingSchneider',      pollingSchneider),
-            '_TZ3000_g5xawfcq': ( 'BlitzwolfPower', 'pollingBlitzwolfPower', pollingBlitzwolfPower ),
-            'LUMI':             ( 'pollingLumiPower','pollingLumiPower',     pollingLumiPower ),
-            '115f':             ( 'pollingLumiPower','pollingLumiPower',     pollingLumiPower ),
-            'OWON':             ( 'CasaiaAC201',    'pollingCasaiaAC201',    pollingCasaia, )
-        }
+    if 'Param' not in self.ListOfDevices[ NwkId]:
+        return False
+        
+    _HB = int(self.ListOfDevices[NwkId]['Heartbeat'])
+    for param in self.ListOfDevices[ NwkId]['Param']:
 
-        rescheduleAction = False
+        if param == 'OnOffPollingFreq':
+            _FEQ = self.ListOfDevices[ NwkId]['Param'][ param ] // HEARTBEAT
+            if _FEQ and (( _HB % _FEQ ) == 0):
+                self.log.logging( "Heartbeat", 'Debug', "++ pollingManufSpecificDevices -  %s Found: %s=%s" \
+                    %(NwkId,  param, self.ListOfDevices[ NwkId]['Param'][ param ]), NwkId)       
+                ReadAttributeRequest_0006_0000( self, NwkId)
+                ReadAttributeRequest_0008_0000( self, NwkId)
 
-        devManufCode = devManufName = ''
-        if 'Manufacturer' in self.ListOfDevices[NwkId]:
-            devManufCode = self.ListOfDevices[NwkId]['Manufacturer']
-        if 'Manufacturer Name' in self.ListOfDevices[NwkId]:
-            devManufName = self.ListOfDevices[NwkId]['Manufacturer Name']
+        elif param == 'PowerPollingFreq':
+            _FEQ = self.ListOfDevices[ NwkId]['Param'][ param ] // HEARTBEAT
+            if _FEQ and (( _HB % _FEQ ) == 0):
+                self.log.logging( "Heartbeat", 'Debug', "++ pollingManufSpecificDevices -  %s Found: %s=%s" \
+                     %(NwkId,  param, self.ListOfDevices[ NwkId]['Param'][ param ]), NwkId)       
+                ReadAttributeRequest_0b04_050b_0505_0508( self, NwkId)
 
-        brand = func = param = None
-        if devManufCode in POLLING_TABLE_SPECIFICS:
-            brand, param , func =  POLLING_TABLE_SPECIFICS[ devManufCode ]
-        if brand is None and devManufName in POLLING_TABLE_SPECIFICS:
-            brand, param , func =  POLLING_TABLE_SPECIFICS[ devManufName ]        
+        elif param == 'AC201Polling':
+            _FEQ = self.ListOfDevices[ NwkId]['Param'][ param ] // HEARTBEAT
+            if _FEQ and (( _HB % _FEQ ) == 0):
+                self.log.logging( "Heartbeat", 'Debug', "++ pollingManufSpecificDevices -  %s Found: %s=%s" \
+                    %(NwkId,  param, self.ListOfDevices[ NwkId]['Param'][ param ]), NwkId)       
+                
+                pollingCasaia( self, NwkId )    
 
-        if brand is None:
-            return False
-
-        _HB = int(self.ListOfDevices[NwkId]['Heartbeat'])
-        _FEQ = self.pluginconf.pluginConf[ param ] // HEARTBEAT
-
-        if _FEQ and (( _HB % _FEQ ) == 0):
-            self.log.logging( "Heartbeat", 'Debug', "++ pollingManufSpecificDevices -  %s Found: %s - %s %s %s" \
-                %(NwkId, brand, devManufCode, devManufName, param), NwkId)       
-            rescheduleAction = ( rescheduleAction or func( self, NwkId) )
-
-        return rescheduleAction
+    return False
 
 def pollingDeviceStatus( self, NwkId):
         # """
@@ -197,56 +184,53 @@ def checkHealth( self, NwkId):
 
 def pingRetryDueToBadHealth( self, NwkId):
 
-    now = int(time.time())
-    # device is on Non Reachable state
-    self.log.logging( "Heartbeat", 'Debug', "--------> ping Retry Check %s" %NwkId, NwkId)
-    if 'pingDeviceRetry' not in self.ListOfDevices[NwkId]:
-        self.ListOfDevices[NwkId]['pingDeviceRetry'] = {}
-        self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] = 0
-        self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = now
-
-    if self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] == 3:
-        return
-    
-    if 'Retry' in self.ListOfDevices[NwkId]['pingDeviceRetry'] and 'TimeStamp' not in self.ListOfDevices[NwkId]['pingDeviceRetry']:
-        # This could be due to a previous version without TimeStamp
-        self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] = 0
-        self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = now
-
-    lastTimeStamp = self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp']
-    retry = self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry']
-
-    self.log.logging( "Heartbeat", 'Debug', "--------> ping Retry Check %s Retry: %s Gap: %s" %(NwkId, retry, now - lastTimeStamp), NwkId)
-    # Retry #1
-    if retry == 0:
-        # First retry in the next cycle if possible
-        if self.ZigateComm.loadTransmit() == 0 and now > ( lastTimeStamp + 30 ): # 30s
-            self.log.logging( "Heartbeat", 'Debug', "--------> ping Retry 1 Check %s" %NwkId, NwkId)
-            self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] += 1
-            self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = now
-            submitPing( self, NwkId)
+        now = int(time.time())
+        # device is on Non Reachable state
+        self.log.logging( "Heartbeat", 'Debug', "--------> ping Retry Check %s" %NwkId, NwkId)
+        if 'pingDeviceRetry' not in self.ListOfDevices[NwkId]:
+                self.ListOfDevices[NwkId]['pingDeviceRetry'] = {'Retry': 0, 'TimeStamp': now}
+        if self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] == 0:
             return
 
-    # Retry #2
-    if retry == 1:
-        # Second retry in the next 30"
-        if self.ZigateComm.loadTransmit() == 0 and now > ( lastTimeStamp + 120 ): # 30 + 120s
-            # Let's retry
-            self.log.logging( "Heartbeat", 'Debug', "--------> ping Retry 2 Check %s" %NwkId, NwkId)
-            self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] += 1
+        if 'Retry' in self.ListOfDevices[NwkId]['pingDeviceRetry'] and 'TimeStamp' not in self.ListOfDevices[NwkId]['pingDeviceRetry']:
+            # This could be due to a previous version without TimeStamp
+            self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] = 0
             self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = now
-            submitPing( self, NwkId)
-            return
 
-    # Retry #3
-    if retry == 2:
-        # Last retry after 5 minutes
-        if self.ZigateComm.loadTransmit() == 0 and now > ( lastTimeStamp + 300): # 30 + 120 + 300
-            # Let's retry
-            self.log.logging( "Heartbeat", 'Debug', "--------> ping Retry 3 (last) Check %s" %NwkId, NwkId)
-            self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] += 1
-            self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = now
-            submitPing( self, NwkId)
+        lastTimeStamp = self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp']
+        retry = self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry']
+
+        self.log.logging( "Heartbeat", 'Debug', "--------> ping Retry Check %s Retry: %s Gap: %s" %(NwkId, retry, now - lastTimeStamp), NwkId)
+        # Retry #1
+        if retry == 0:
+            # First retry in the next cycle if possible
+            if self.ZigateComm.loadTransmit() == 0 and now > ( lastTimeStamp + 30 ): # 30s
+                self.log.logging( "Heartbeat", 'Debug', "--------> ping Retry 1 Check %s" %NwkId, NwkId)
+                self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] += 1
+                self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = now
+                submitPing( self, NwkId)
+                return
+
+        # Retry #2
+        if retry == 1:
+            # Second retry in the next 30"
+            if self.ZigateComm.loadTransmit() == 0 and now > ( lastTimeStamp + 120 ): # 30 + 120s
+                # Let's retry
+                self.log.logging( "Heartbeat", 'Debug', "--------> ping Retry 2 Check %s" %NwkId, NwkId)
+                self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] += 1
+                self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = now
+                submitPing( self, NwkId)
+                return
+
+        # Retry #3
+        if retry == 2:
+            # Last retry after 5 minutes
+            if self.ZigateComm.loadTransmit() == 0 and now > ( lastTimeStamp + 300): # 30 + 120 + 300
+                # Let's retry
+                self.log.logging( "Heartbeat", 'Debug', "--------> ping Retry 3 (last) Check %s" %NwkId, NwkId)
+                self.ListOfDevices[NwkId]['pingDeviceRetry']['Retry'] += 1
+                self.ListOfDevices[NwkId]['pingDeviceRetry']['TimeStamp'] = now
+                submitPing( self, NwkId)
 
 def pingDevices( self, NwkId, health, checkHealthFlag, mainPowerFlag):
 
@@ -260,6 +244,15 @@ def pingDevices( self, NwkId, health, checkHealthFlag, mainPowerFlag):
     if not mainPowerFlag:
         return
 
+    now = int(time.time())
+
+    if ( 'time' in self.ListOfDevices[NwkId]['Stamp'] 
+            and now < self.ListOfDevices[NwkId]['Stamp']['time'] + self.pluginconf.pluginConf['pingDevicesFeq']):
+        # If we have received a message since less than 1 hours, then no ping to be done !
+        self.log.logging( "Heartbeat", 'Debug', "------> %s no need to ping as we received a message recently " 
+            %(NwkId,) , NwkId)
+        return
+
     if not health:
         pingRetryDueToBadHealth(self, NwkId)
         return
@@ -269,7 +262,7 @@ def pingDevices( self, NwkId, health, checkHealthFlag, mainPowerFlag):
     
     lastPing = self.ListOfDevices[NwkId]['Stamp']['LastPing']
     lastSeen = self.ListOfDevices[NwkId]['Stamp']['LastSeen']
-    now = int(time.time())
+
 
     if checkHealthFlag and now > (lastPing + 60) and self.ZigateComm.loadTransmit() == 0:
         submitPing( self, NwkId)
@@ -335,6 +328,10 @@ def processKnownDevices( self, Devices, NWKID ):
     enabledEndDevicePolling = False
     if model in self.DeviceConf and 'PollingEnabled' in self.DeviceConf[ model ] and self.DeviceConf[ model ]['PollingEnabled']:
         enabledEndDevicePolling = True
+        
+    if ( 'CheckParam' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['CheckParam'] ) or ( intHB % 60) == 0 :
+        sanity_check_of_param( self, NWKID)
+        self.ListOfDevices[NWKID]['CheckParam'] = False
 
     ## Starting this point, it is ony relevant for Main Powered Devices. 
     # Some battery based end device with ZigBee 30 use polling and can receive commands.
@@ -452,6 +449,7 @@ def processKnownDevices( self, Devices, NWKID ):
     if rescheduleAction and intHB != 0: # Reschedule is set because Zigate was busy or Queue was too long to process
         self.ListOfDevices[NWKID]['Heartbeat'] = str( intHB - 1 ) # So next round it trigger again
 
+
     return
 
 def processListOfDevices( self , Devices ):
@@ -560,7 +558,7 @@ def processListOfDevices( self , Devices ):
             self.networkmap.start_scan( )
         elif phase == 2:
             self.log.logging( "Heartbeat", 'Debug', "processListOfDevices Topology scan is possible %s" %self.ZigateComm.loadTransmit())
-            if self.ZigateComm.loadTransmit() <= MAX_LOAD_ZIGATE:
+            if self.ZigateComm.loadTransmit() < 2 and ((self.HeartbeatCount % 4) == 0):
                     self.networkmap.continue_scan( )
 
     #if (self.HeartbeatCount > QUIET_AFTER_START) and (self.HeartbeatCount > NETWORK_ENRG_START):

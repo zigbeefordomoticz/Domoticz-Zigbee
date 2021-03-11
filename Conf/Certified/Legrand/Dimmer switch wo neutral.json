@@ -27,5 +27,11 @@
 		"0008": [ "0000" ],
 		"fc01": [ "0000", "0001", "0002"]
 	},
-        "GroupMembership": [ [ "01", "fff6"], [ "01", "fff4"] ]
+	"Param": {
+		"PowerOnAfterOffOn": 255,
+		"netatmoEnableDimmer": 0,
+		"netatmoLedIfOn": 0,
+		"netatmoLedInDark": 0
+	},
+	"GroupMembership": [ [ "01", "fff6"], [ "01", "fff4"] ]
 }

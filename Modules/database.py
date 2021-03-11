@@ -20,6 +20,74 @@ from Classes.LoggingManagement import LoggingManagement
 
 import Modules.tools
 
+ZIGATE_ATTRIBUTES = {
+        'Version',
+        'ZDeviceName',
+        'Ep',
+        'IEEE',
+        'LogicalType',
+        'PowerSource',
+        'Neighbours',
+        'GroupMemberShip',
+        }
+
+MANDATORY_ATTRIBUTES = ( 'App Version', 
+        'Attributes List', 
+        'Bind', 
+        'WebBind',
+        'Capability',
+        'ColorInfos', 
+        'ClusterType', 
+        'ConfigSource',
+        'DeviceType', 
+        'Ep', 
+        'Epv2',
+        'ForceAckCommands',
+        'HW Version', 
+        'Heartbeat', 
+        'IAS',
+        'Location', 
+        'LogicalType', 
+        'MacCapa', 
+        'Manufacturer', 
+        'Manufacturer Name', 
+        'Model', 
+        'NbEp',
+        'OTA',
+        'PowerSource', 
+        'ProfileID', 
+        'ReceiveOnIdle', 
+        'Stack Version', 
+        'RIA', 
+        'SWBUILD_1', 
+        'SWBUILD_2', 
+        'SWBUILD_3', 
+        'Stack Version', 
+        'Status', 
+        'Type',
+        'Version', 
+        'ZCL Version', 
+        'ZDeviceID', 
+        'ZDeviceName',
+        'Param'
+        )
+
+# List of Attributes whcih are going to be loaded, ut in case of Reset (resetPluginDS) they will be re-initialized.
+BUILD_ATTRIBUTES = (
+        'Battery', 
+        'GroupMemberShip',
+        'Neighbours',
+        'ConfigureReporting',
+        'ReadAttributes',
+        'WriteAttributes', 
+        'LQI',
+        'SQN', 
+        'Stamp', 
+        'Health',
+        )
+
+MANUFACTURER_ATTRIBUTES = ( 'Legrand', 'Schneider', 'Lumi', 'CASA.IA' , 'Tuya')
+
 
 def _copyfile( source, dest, move=True ):
 
@@ -57,67 +125,6 @@ def LoadDeviceList( self ):
     # Load DeviceList.txt into ListOfDevices
     #
 
-        # File exists, let's go one
-    def loadTxtDatabase( self , dbName ):
-
-        res = "Success"
-        with open( dbName , 'r') as myfile2:
-            self.log.logging( "Database", 'Debug',  "Open : " + dbName )
-            nb = 0
-            for line in myfile2:
-                if not line.strip() :
-                    #Empty line
-                    continue
-                (key, val) = line.split(":",1)
-                key = key.replace(" ","")
-                key = key.replace("'","")
-
-                #if key in  ( 'ffff', '0000'): continue
-                if key in  ( 'ffff'): continue
-
-                try:
-                    dlVal=eval(val)
-                except (SyntaxError, NameError, TypeError, ZeroDivisionError):
-                    Domoticz.Error("LoadDeviceList failed on %s" %val)
-                    continue
-
-                self.log.logging( "Database", 'Debug', "LoadDeviceList - " +str(key) + " => dlVal " +str(dlVal) , key)
-
-                if not dlVal.get('Version') :
-                    if key == '0000': # Bug fixed in later version
-                        continue
-                    Domoticz.Error("LoadDeviceList - entry " +key +" not loaded - not Version 3 - " +str(dlVal) )
-                    res = "Failed"
-                    continue
-
-                if dlVal['Version'] != '3':
-                    Domoticz.Error("LoadDeviceList - entry " +key +" not loaded - not Version 3 - " +str(dlVal) )
-                    res = "Failed"
-                    continue
-                else:
-                    nb += 1
-                    CheckDeviceList( self, key, val )
-
-        return res
-
-    def loadJsonDatabase( self , dbName ):
-        
-        res = "Success"
-
-        with open( dbName , 'rt') as handle:
-            _listOfDevices = {}
-            try:
-                _listOfDevices = json.load( handle, encoding=dict)
-            except json.decoder.JSONDecodeError as e:
-                res = "Failed"
-                Domoticz.Error("loadJsonDatabase poorly-formed %s, not JSON: %s" %(self.pluginConf['filename'],e))
-        
-        for key in _listOfDevices:
-            CheckDeviceList( self, key, str(_listOfDevices[key]))
-
-        return res
-
-
     # Let's check if we have a .json version. If so, we will be using it, otherwise
     # we fall back to the old fashion .txt
     jsonFormatDB = True
@@ -147,16 +154,13 @@ def LoadDeviceList( self ):
             self.ListOfDevices = {}
             return True 
       
-
     self.log.logging( "Database", 'Debug', "LoadDeviceList - DeviceList filename : " + _DeviceListFileName )
-
     _versionFile( _DeviceListFileName , self.pluginconf.pluginConf['numDeviceListVersion'])
 
     # Keep the Size of the DeviceList in order to check changes
     self.DeviceListSize = os.path.getsize( _DeviceListFileName )
 
     for addr in self.ListOfDevices:
-
         # Fixing mistake done in the code.
         fixing_consumption_lumi(self, addr)
 
@@ -174,7 +178,6 @@ def LoadDeviceList( self ):
             #for iterEp in self.ListOfDevices[addr]['Ep']:
             #    self.ListOfDevices[addr]['ReadAttributes']['Ep'][iterEp] = {}
 
-
         if self.pluginconf.pluginConf['resetConfigureReporting']:
             self.log.logging( "Database", "Log", "Reset ConfigureReporting data %s" %addr)
             Modules.tools.reset_datastruct( self,'ConfigureReporting', addr )
@@ -183,9 +186,59 @@ def LoadDeviceList( self ):
             #for iterEp in self.ListOfDevices[addr]['Ep']:
             #    self.ListOfDevices[addr]['ConfigureReporting']['Ep'][iterEp] = {}
 
+    load_new_param_definition( self )
     self.log.logging( "Database", "Status", "%s Entries loaded from %s" %(len(self.ListOfDevices), _DeviceListFileName)  )
 
     return res
+
+def loadTxtDatabase( self , dbName ):
+    res = "Success"
+    with open( dbName , 'r') as myfile2:
+        self.log.logging( "Database", 'Debug',  "Open : " + dbName )
+        nb = 0
+        for line in myfile2:
+            if not line.strip() :
+                #Empty line
+                continue
+            (key, val) = line.split(":",1)
+            key = key.replace(" ","")
+            key = key.replace("'","")
+            #if key in  ( 'ffff', '0000'): continue
+            if key in  ( 'ffff'): continue
+            try:
+                dlVal=eval(val)
+            except (SyntaxError, NameError, TypeError, ZeroDivisionError):
+                Domoticz.Error("LoadDeviceList failed on %s" %val)
+                continue
+            self.log.logging( "Database", 'Debug2', "LoadDeviceList - " +str(key) + " => dlVal " +str(dlVal) , key)
+            if not dlVal.get('Version') :
+                if key == '0000': # Bug fixed in later version
+                    continue
+                Domoticz.Error("LoadDeviceList - entry " +key +" not loaded - not Version 3 - " +str(dlVal) )
+                res = "Failed"
+                continue
+            if dlVal['Version'] != '3':
+                Domoticz.Error("LoadDeviceList - entry " +key +" not loaded - not Version 3 - " +str(dlVal) )
+                res = "Failed"
+                continue
+            else:
+                nb += 1
+                CheckDeviceList( self, key, val )
+    return res
+
+def loadJsonDatabase( self , dbName ):
+    res = "Success"
+    with open( dbName , 'rt') as handle:
+        _listOfDevices = {}
+        try:
+            _listOfDevices = json.load( handle)
+        except json.decoder.JSONDecodeError as e:
+            res = "Failed"
+            Domoticz.Error("loadJsonDatabase poorly-formed %s, not JSON: %s" %(self.pluginConf['filename'],e))
+    for key in _listOfDevices:
+        CheckDeviceList( self, key, str(_listOfDevices[key]))
+    return res
+
 
 def WriteDeviceList(self, count):
 
@@ -331,7 +384,8 @@ def checkListOfDevice2Devices( self, Devices ):
             continue
         NWKID = self.IEEE2NWK[ID]
         if str(NWKID) in self.ListOfDevices :
-            self.log.logging( "Database", 'Debug', "checkListOfDevice2Devices - we found a matching entry for ID " +str(x) + " as DeviceID = " +str(ID) +" NWK_ID = " + str(NWKID) , NWKID)
+            self.log.logging( "Database", 'Debug', "checkListOfDevice2Devices - we found a matching entry for ID %2s as DeviceID = %s NWK_ID = %s" %(
+                x, ID, NWKID) , NWKID)
         else :
             Domoticz.Error("loadListOfDevices -  : " +Devices[x].Name +" with IEEE = " +str(ID) +" not found in Zigate plugin Database!" )
 
@@ -351,19 +405,22 @@ def CheckDeviceList(self, key, val):
     '''
 
     self.log.logging( "Database", 'Debug', "CheckDeviceList - Address search : " + str(key), key)
-    self.log.logging( "Database", 'Debug', "CheckDeviceList - with value : " + str(val), key)
+    self.log.logging( "Database", 'Debug2', "CheckDeviceList - with value : " + str(val), key)
 
     DeviceListVal=eval(val)
     # Do not load Devices in State == 'unknown' or 'left' 
-    if 'Status' in DeviceListVal and DeviceListVal['Status'] in (
-        'UNKNOW',
-        'failDB',
-        'DUP',
-    ):
-        self.log.logging( "Database", 'Status', "Not Loading %s as Status: %s" %( key, DeviceListVal['Status']))
+    if 'Status' in DeviceListVal and DeviceListVal['Status'] in ( 'UNKNOW', 'failDB', 'DUP', ):
+        self.log.logging( "Database", 'Error', "Not Loading %s as Status: %s" %( key, DeviceListVal['Status']))
         return
 
     if Modules.tools.DeviceExist(self, key, DeviceListVal.get('IEEE','')):
+        # Do not load Devices
+        self.log.logging( "Database", 'Error', "Not Loading %s as no existing IEEE: %s" %( key, str(val)))
+        return
+
+    if key in self.ListOfDevices:
+        # Suspect
+        self.log.logging( "Database", 'Error', "CheckDeviceList - Object %s already in the plugin Db !!!")
         return
 
     if key == '0000':
@@ -375,73 +432,6 @@ def CheckDeviceList(self, key, val):
     self.ListOfDevices[key]['RIA']="10"
 
     # List of Attribnutes that will be Loaded from the deviceList-xx.txt database
-    ZIGATE_ATTRIBUTES = {
-            'Version',
-            'ZDeviceName',
-            'Ep',
-            'IEEE',
-            'LogicalType',
-            'PowerSource',
-            'Neighbours',
-            'GroupMemberShip',
-            }
-
-    MANDATORY_ATTRIBUTES = ( 'App Version', 
-            'Attributes List', 
-            'Bind', 
-            'WebBind',
-            'Capability',
-            'ColorInfos', 
-            'ClusterType', 
-            'ConfigSource',
-            'DeviceType', 
-            'Ep', 
-            'Epv2',
-            'ForceAckCommands',
-            'HW Version', 
-            'Heartbeat', 
-            'IAS',
-            'Location', 
-            'LogicalType', 
-            'MacCapa', 
-            'Manufacturer', 
-            'Manufacturer Name', 
-            'Model', 
-            'NbEp',
-            'OTA',
-            'PowerSource', 
-            'ProfileID', 
-            'ReceiveOnIdle', 
-            'Stack Version', 
-            'RIA', 
-            'SWBUILD_1', 
-            'SWBUILD_2', 
-            'SWBUILD_3', 
-            'Stack Version', 
-            'Status', 
-            'Type',
-            'Version', 
-            'ZCL Version', 
-            'ZDeviceID', 
-            'ZDeviceName',
-            )
-
-    # List of Attributes whcih are going to be loaded, ut in case of Reset (resetPluginDS) they will be re-initialized.
-    BUILD_ATTRIBUTES = (
-            'Battery', 
-            'GroupMemberShip',
-            'Neighbours',
-            'ConfigureReporting',
-            'ReadAttributes',
-            'WriteAttributes', 
-            'LQI',
-            'SQN', 
-            'Stamp', 
-            'Health',
-            )
-
-    MANUFACTURER_ATTRIBUTES = (
-            'Legrand', 'Schneider', 'Lumi', 'CASA.IA' )
 
     if self.pluginconf.pluginConf['resetPluginDS']:
         self.log.logging( "Database", 'Status', "Reset Build Attributes for %s" %DeviceListVal['IEEE'])
@@ -459,7 +449,7 @@ def CheckDeviceList(self, key, val):
     self.log.logging( "Database", 'Debug', "--> Attributes loaded: %s" %IMPORT_ATTRIBUTES)
     for attribute in IMPORT_ATTRIBUTES:
         if attribute not in DeviceListVal:
-            self.log.logging( "Database", 'Debug', "--> Attributes not existing: %s" %attribute)
+            #self.log.logging( "Database", 'Debug', "--> Attributes not existing: %s" %attribute)
             continue
 
         self.ListOfDevices[key][ attribute ] = DeviceListVal[ attribute]
@@ -484,15 +474,13 @@ def CheckDeviceList(self, key, val):
             IEEE = DeviceListVal['IEEE']
             self.IEEE2NWK[IEEE] = key
         else :
-            self.log.logging( "Database", 'Debug', "CheckDeviceList - IEEE = " + str(DeviceListVal['IEEE']) + " for NWKID = " +str(key) , key )
+            self.log.logging( "Database", 'Log', "CheckDeviceList - IEEE = " + str(DeviceListVal['IEEE']) + " for NWKID = " +str(key) , key )
 
     check_and_update_ForceAckCommands( self)
-
 
 def check_and_update_ForceAckCommands( self ):
 
     for x in self.ListOfDevices:
-
         if 'Model' not in self.ListOfDevices[ x ]:
             continue
         if self.ListOfDevices[ x ]['Model'] in ( '', {} ):
@@ -507,7 +495,6 @@ def check_and_update_ForceAckCommands( self ):
             continue
         Domoticz.Log(" Set: %s for device %s " %(self.DeviceConf[ model ]['ForceAckCommands'], x ))
         self.ListOfDevices[ x ]['ForceAckCommands'] = list(self.DeviceConf[ model ]['ForceAckCommands'] )
-
 
 def fixing_consumption_lumi( self , key ):
 
@@ -546,3 +533,134 @@ def fixing_Issue566( self, key ):
         self.ListOfDevices[key]['Ep']['02']['ClusterType'] = {}
         res = True
     return True
+
+def load_new_param_definition( self ):
+
+    for key in self.ListOfDevices:
+        if 'Model' not in self.ListOfDevices[ key ]:
+            continue
+        if self.ListOfDevices[ key ]['Model'] not in self.DeviceConf:
+            continue
+        model_name = self.ListOfDevices[ key ]['Model']
+        if 'Param' not in self.DeviceConf[ model_name ]:
+            continue
+        if 'Param' not in self.ListOfDevices[ key ]:
+            self.ListOfDevices[ key ]['Param'] = {}
+
+        for param in self.DeviceConf[ model_name ]['Param']:
+            if param in self.ListOfDevices[ key ]['Param']:
+                continue
+
+            # Initiatilize the parameter with the Configuration.
+            self.ListOfDevices[ key ]['Param'][ param ] = self.DeviceConf[ model_name ]['Param'][ param ]
+
+            # Overwrite the param by Existing Global parameter
+            # if param in ( 'fadingOff', 'moveToHueSatu'  ,'moveToColourTemp','moveToColourRGB','moveToLevel'):
+            #     # Use Global as default 
+            #     if self.DeviceConf[ model_name ]['Param'][ param ] != self.pluginconf.pluginConf[ param ]:
+            #         self.ListOfDevices[ key ]['Param'][ param ] = self.pluginconf.pluginConf[ param ]
+                
+            if param in ( 'PowerOnAfterOffOn' ):
+                if 'Manufacturer' not in self.ListOfDevices[ key ]:
+                    return
+                if self.ListOfDevices[ key ]['Manufacturer'] == '100b': # Philips
+                    self.ListOfDevices[ key ]['Param'][ param ] = self.pluginconf.pluginConf[ 'PhilipsPowerOnAfterOffOn' ]
+ 
+                elif self.ListOfDevices[ key ]['Manufacturer'] == '1277': # Enki Leroy Merlin
+                    self.ListOfDevices[ key ]['Param'][ param ] = self.pluginconf.pluginConf[ 'EnkiPowerOnAfterOffOn' ]
+
+                elif self.ListOfDevices[ key ]['Manufacturer'] == '1021': # Legrand Netatmo
+                    self.ListOfDevices[ key ]['Param'][ param ] = self.pluginconf.pluginConf[ 'LegrandPowerOnAfterOffOn' ]
+
+                elif self.ListOfDevices[ key ]['Manufacturer'] == '117c': # Ikea Tradfri
+                    self.ListOfDevices[ key ]['Param'][ param ] = self.pluginconf.pluginConf[ 'IkeaPowerOnAfterOffOn' ]
+
+            elif param in ( 'PowerPollingFreq', ):
+                POLLING_TABLE_SPECIFICS = {
+                    '_TZ3000_g5xawfcq': 'pollingBlitzwolfPower',
+                    'LUMI': 'pollingLumiPower',     
+                    '115f': 'pollingLumiPower',     
+                }
+
+                devManufCode = devManufName = ''
+                if 'Manufacturer' in self.ListOfDevices[key]:
+                    devManufCode = self.ListOfDevices[key]['Manufacturer']
+                if 'Manufacturer Name' in self.ListOfDevices[key]:
+                    devManufName = self.ListOfDevices[key]['Manufacturer Name']
+                if devManufCode == devManufName == '':
+                    return
+
+                plugin_generic_param = None
+                if devManufCode in POLLING_TABLE_SPECIFICS:
+                    plugin_generic_param  =  POLLING_TABLE_SPECIFICS[ devManufCode ]
+                if plugin_generic_param is None and devManufName in POLLING_TABLE_SPECIFICS:
+                    plugin_generic_param =  POLLING_TABLE_SPECIFICS[ devManufName ]        
+
+                if plugin_generic_param is None:
+                    return False
+                Domoticz.Log("--->PluginConf %s <-- %s" %(param, plugin_generic_param))
+                self.ListOfDevices[ key ]['Param'][ param ] = self.pluginconf.pluginConf[ plugin_generic_param ]
+
+            elif param in ( 'OnOffPollingFreq', ):
+                    POLLING_TABLE_SPECIFICS = {
+                        '100b': 'pollingPhilips',       
+                        'Philips': 'pollingPhilips',       
+                        'GLEDOPTO': 'pollingGledopto',      
+                    }
+
+                    devManufCode = devManufName = ''
+                    if 'Manufacturer' in self.ListOfDevices[key]:
+                        devManufCode = self.ListOfDevices[key]['Manufacturer']
+                    if 'Manufacturer Name' in self.ListOfDevices[key]:
+                        devManufName = self.ListOfDevices[key]['Manufacturer Name']
+                    if devManufCode == devManufName == '':
+                        return
+
+                    plugin_generic_param = None
+                    if devManufCode in POLLING_TABLE_SPECIFICS:
+                        plugin_generic_param  =  POLLING_TABLE_SPECIFICS[ devManufCode ]
+                    if plugin_generic_param is None and devManufName in POLLING_TABLE_SPECIFICS:
+                        plugin_generic_param =  POLLING_TABLE_SPECIFICS[ devManufName ]        
+
+                    if plugin_generic_param is None:
+                        return False
+                    Domoticz.Log("--->PluginConf %s <-- %s" %(param, plugin_generic_param))
+                    self.ListOfDevices[ key ]['Param'][ param ] = self.pluginconf.pluginConf[ plugin_generic_param ]            
+
+            elif param in ( 'AC201Polling',):
+                    POLLING_TABLE_SPECIFICS = {
+                        'OWON': 'pollingCasaiaAC201',   
+                        'CASAIA': 'pollingCasaiaAC201',   
+                    }
+
+                    devManufCode = devManufName = ''
+                    if 'Manufacturer' in self.ListOfDevices[key]:
+                        devManufCode = self.ListOfDevices[key]['Manufacturer']
+                    if 'Manufacturer Name' in self.ListOfDevices[key]:
+                        devManufName = self.ListOfDevices[key]['Manufacturer Name']
+                    if devManufCode == devManufName == '':
+                        return
+
+                    plugin_generic_param = None
+                    if devManufCode in POLLING_TABLE_SPECIFICS:
+                        plugin_generic_param  =  POLLING_TABLE_SPECIFICS[ devManufCode ]
+                    if plugin_generic_param is None and devManufName in POLLING_TABLE_SPECIFICS:
+                        plugin_generic_param =  POLLING_TABLE_SPECIFICS[ devManufName ]        
+
+                    if plugin_generic_param is None:
+                        return False
+                    Domoticz.Log("--->PluginConf %s <-- %s" %(param, plugin_generic_param))
+                    self.ListOfDevices[ key ]['Param'][ param ] = self.pluginconf.pluginConf[ plugin_generic_param ]           
+
+            elif param == 'netatmoLedIfOn': 
+                self.ListOfDevices[ key ]['Param'][ param ] = self.pluginconf.pluginConf['EnableLedIfOn']
+            elif param == 'netatmoLedInDark': 
+                self.ListOfDevices[ key ]['Param'][ param ] = self.pluginconf.pluginConf['EnableLedInDark']
+            elif param == 'netatmoLedShutter': 
+                self.ListOfDevices[ key ]['Param'][ param ] = self.pluginconf.pluginConf['EnableLedShutter']
+            elif param == 'netatmoEnableDimmer': 
+                self.ListOfDevices[ key ]['Param'][ param ] = self.pluginconf.pluginConf['EnableDimmer']
+            elif param == 'netatmoInvertShutter':
+                self.ListOfDevices[ key ]['Param'][ param ] = self.pluginconf.pluginConf['InvertShutter']
+            elif param == 'netatmoReleaseButton':
+                self.ListOfDevices[ key ]['Param'][ param ] = self.pluginconf.pluginConf['EnableReleaseButton']

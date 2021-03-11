@@ -81,16 +81,16 @@ def poll_checkin_command( self, Sqn, snwkid, ep ):
 
     Domoticz.Log("poll_checkin_command %s %s" %(snwkid, ep))
     cmd = '00'
-    if nwkid not in self.ListOfDevices:
-        Domoticz.Error(" - nwkid: %s do not exist" %nwkid)
+    if snwkid not in self.ListOfDevices:
+        Domoticz.Error(" - nwkid: %s do not exist" %snwkid)
         return
     cluster_id = '0020' # Poll Control Cluster
     
     cluster_frame = '11'
 
     payload = cluster_frame + Sqn + cmd
-    raw_APS_request( self, nwkid, ep, '0020', '0104', payload)
-    Domoticz.Log("Accept Fast Poll command 0x%s for %s/%s with payload: %s" %(cmd, nwkid, ep, payload))
+    raw_APS_request( self, snwkid, ep, '0020', '0104', payload)
+    Domoticz.Log("Accept Fast Poll command 0x%s for %s/%s with payload: %s" %(cmd, snwkid, ep, payload))
     return
 
 def poll_checkin_response_command( self, Sqn, nwkid, ep, ContinueFastPoll = True, DurationFastPoll = 0xFC0):

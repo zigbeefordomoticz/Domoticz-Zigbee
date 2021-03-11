@@ -34,11 +34,16 @@ from Modules.livolo import livolo_bind
 from Modules.orvibo import OrviboRegistration
 from Modules.configureReporting import processConfigureReporting
 from Modules.profalux import profalux_fake_deviceModel
+from Modules.philips import philips_set_pir_occupancySensibility
 from Modules.domoCreate import CreateDomoDevice
 from Modules.tools import reset_cluster_datastruct
 from Modules.zigateConsts import CLUSTERS_LIST
 from Modules.casaia import casaia_pairing
 from Modules.thermostats import thermostat_Calibration
+from Modules.tuyaSiren import tuya_sirene_registration
+from Modules.tuyaTools import tuya_TS0121_registration
+from Modules.tuyaTRV import tuya_eTRV_registration, TUYA_eTRV_MODEL
+from Modules.paramDevice import param_Occupancy_settings_PIROccupiedToUnoccupiedDelay
 
 def writeDiscoveryInfos( self ):
 
@@ -319,10 +324,11 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                 Domoticz.Log("---> Calling enableOppleSwitch %s" %NWKID)
                 enableOppleSwitch( self, NWKID)
     
-            # 2 Enable Configure Reporting for any applicable cluster/attributes
+            # Keeping Pairing infos
             if self.pluginconf.pluginConf['capturePairingInfos']:
                 self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'PR-CONFIG' )
 
+            # 2 Enable Configure Reporting for any applicable cluster/attributes
             processConfigureReporting( self, NWKID )  
 
             # 3 Read attributes
@@ -374,6 +380,11 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             if 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['Model'] != {} and self.ListOfDevices[NWKID]['Model'] == 'SPZB0001':
                 thermostat_Calibration( self, NWKID, 0x00)
 
+            for ep in self.ListOfDevices[NWKID]['Ep']:
+                if '0004' in self.ListOfDevices[NWKID]['Ep'][ep] and self.groupmgt:
+                    self.groupmgt.ScanDevicesForGroupMemberShip( [ NWKID, ] )
+                    break
+
             # Identify for ZLL compatible devices
             # Search for EP to be used 
             ep = '01'
@@ -399,6 +410,11 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                         %(NWKID, self.pluginconf.pluginConf['vibrationAqarasensitivity']))
                  setXiaomiVibrationSensitivity( self, NWKID, sensitivity = self.pluginconf.pluginConf['vibrationAqarasensitivity'])
 
+            # Custom device parameters set
+            if 'Param' in self.ListOfDevices[NWKID]:
+                Domoticz.Log("Custom device parameters setting")
+                self.ListOfDevices[NWKID]['CheckParam'] = True
+
             self.adminWidgets.updateNotificationWidget( Devices, 'Successful creation of Widget for :%s DeviceID: %s' \
                     %(self.ListOfDevices[NWKID]['Model'], NWKID))
             self.CommiSSionning = False
@@ -416,9 +432,25 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                             else:
                                 Domoticz.Error("Uncorrect GroupMembership definition %s" %str(self.DeviceConf[ self.ListOfDevices[NWKID]['Model'] ]['GroupMembership']))
 
-            if 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['Model'] in ( 'AC201A', 'AC211'):
+            if self.groupmgt and 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['Model'] == 'tint-Remote-white':
+                # Tint Remote manage 4 groups and we will create with ZiGate attached.
+                self.groupmgt.addGroupMemberShip( '0000', '01', '4003')
+                self.groupmgt.addGroupMemberShip( '0000', '01', '4004')
+                self.groupmgt.addGroupMemberShip( '0000', '01', '4005')
+                self.groupmgt.addGroupMemberShip( '0000', '01', '4006')
+
+            if 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['Model'] in ( 'AC201A', 'AC211', 'AC221'):
                 casaia_pairing( self, NWKID)
+
+            elif 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( 'TS0601-sirene'):
+                tuya_sirene_registration(self, NWKID)
+
+            elif 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( TUYA_eTRV_MODEL ):
+                tuya_eTRV_registration( self, NWKID, True)
                 
+            elif 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( 'TS0121'):
+                tuya_TS0121_registration( self, NWKID)
+
             # Reset HB in order to force Read Attribute Status
             self.ListOfDevices[NWKID]['Heartbeat'] = 0
 

@@ -14,7 +14,6 @@
 
 SWITCH_LVL_MATRIX = {
     "Plug": { 
-
         "00": ( 0, "Off"), 
         "01": ( 1, "On") , 
         "ForceUpdate": False },
@@ -68,6 +67,11 @@ SWITCH_LVL_MATRIX = {
         "01": ( 1,"On") , 
         "ForceUpdate": False},
 
+    "ThermoOnOff": { 
+        0: ( 0,"Off"), 
+        1: ( 1,"On") , 
+        "ForceUpdate": False},    
+
     "SwitchButton": { 
         "00": ( 0,"Off"), 
         "01": ( 1,"On") , 
@@ -107,6 +111,35 @@ SWITCH_LVL_MATRIX = {
             "fr-FR": { "LevelNames": "Arrêt|Marche|+|-|Long +|Long -|Rel."}
             }
         },
+
+    "TINT_REMOTE_WHITE": {
+        "00": (0, "00"), # Off
+        "01": (1, "10"), # On
+        "02": (2, "20"), # Color -
+        "03": (3, "30"), # Color +
+        "04": (4, "40"), # Dim -
+        "05": (5, "50"), # Dim +
+        "06": (6, "60"), # Long Dim -
+        "07": (7, "70"), # Long Dim +
+        "08": (8, "80"), # Stop
+        "09": (9, "90"), # Scene1
+        "10": (10, "100"), #Scne2
+        "11": (11, "110"), #Scne3
+        "12": (12, "120"), #Scne4
+        "13": (13, "130"), #Scne5
+        "14": (14, "140"), #Scne6
+        "15": (15, "150"), #Scne7
+        "16": (16, "160"), #ColorMove down
+        "17": (17, "170"), #ColorMove Up
+        "18": (18, "180"), #COlorMove Sop
+
+        "ForceUpdate": True, 
+        "LevelNames": "Off|On|Color -|Color +|Dim -| Dim+|Long Dim-|Long Dim+|Stop|Scene1|Scene2|Scene3|Scene4|Scene5|Scene6|Scene7|Color Up|Color Down|Color Stop",
+        "Language": { 
+            "fr-FR": { "LevelNames": "Off|On|Color -|Color +|Dim -| Dim+|Long Dim-|Long Dim+|Stop|Scene1|Scene2|Scene3|Scene4|Scene5|Scene6|Scene7|Color Up|Color Down|Color Stop",}
+            }
+
+    },
 
     "Button": { 
         "01": (1,"On") , 
@@ -233,6 +266,7 @@ SWITCH_LVL_MATRIX = {
 
     "DSwitch": {
         "LevelNames": "Off|Left Click|Right Click|Both Click" ,
+        'ForceUpdate': True,
         "Language": {
             "fr-FR": {"LevelNames": "Off|Left Click|Right Click|Both Click" }
             }
@@ -356,6 +390,17 @@ SWITCH_LVL_MATRIX = {
        }
    },
 
+    "HeatingStatus": {
+       0: (0, "Off"), 
+       1: (1, "10"), 
+       2: (2, "20"),  
+       "ForceUpdate": True,
+       "LevelNames": "Off|Heating|Not Heating",
+       "Language": {
+           "fr-FR": {"LevelNames": "Arrêt|Allumer|Eteind"}
+       }
+   },
+   
     "HACTMODE": {
         "00": ( 1, "10"),
         "03": ( 2, "20"),
@@ -367,6 +412,7 @@ SWITCH_LVL_MATRIX = {
     },
 
     'ContractPower': {
+        'ForceUpdate': False,
         "LevelNames": "Off|3KVA|6KVA|9KVA|12KVA|15KVA",
         "Language": {
             "fr-FR": {"LevelNames": "Off|3KVA|6KVA|9KVA|12KVA|15KVA"}
@@ -374,6 +420,7 @@ SWITCH_LVL_MATRIX = {
     },
 
     "FIP": { 
+        'ForceUpdate': True,
         "LevelNames": "Off|Confort|Confort -1|Confort -2|Eco|Frost Protection|Off",
         "Language": {
             "fr-FR": {"LevelNames": "Arrêt|Confort|Confort -1|Confort -2|Eco|Hors Gel|Arrêt"}
@@ -391,9 +438,50 @@ SWITCH_LVL_MATRIX = {
     },
 
     "AlarmWD": { 
+        'ForceUpdate': True,
         "LevelNames": "Stop|Alarm|Siren|Strobe|Armed|Disarmed",
         "Language": {
             "fr-FR": {"LevelNames": "Arrêter|Alarme|Sirène|Flash|Armer|Désarmer"}
+        }
+    },
+
+    "TuyaSiren": {
+        'ForceUpdate': True,
+        "00": ( 0, "00"),
+        "01": ( 1, "10"),
+        "02": ( 2, "20"),
+        "03": ( 3, "30"),
+        "04": ( 4, "40"),
+        "05": ( 5, "50"),
+        "LevelNames": "Off|Alarm 1|Alarm 2|Alarm 3|Alarm 4|Alarm 5",
+        "Languages": {
+            "fr-FR": {
+               "LevelNames": "Off|Alarm 1|Alarm 2|Alarm 3|Alarm 4|Alarm 5" 
+            }
+        }
+    },
+
+    "TuyaSirenHumi": {
+        'ForceUpdate': True,
+        "00": ( 0, "00"),
+        "01": ( 1, "10"),
+        "LevelNames": "Off|Alarm Humidity",
+        "Languages": {
+            "fr-FR": {
+               "LevelNames": "Off|Alarm Humidité" 
+            }
+        }
+    },
+
+    "TuyaSirenTemp": {
+        'ForceUpdate': True,
+        "00": ( 0, "00"),
+        "01": ( 1, "10"),
+        "LevelNames": "Off|Alarm Temperature",
+        "Languages": {
+            "fr-FR": {
+               "LevelNames": "Off|Alarm Température" 
+            }
         }
     },
 
@@ -495,6 +583,7 @@ SWITCH_LVL_MATRIX = {
             "fr-FR": {"LevelNames": "Arrêt|Auto|Froid|Chaud|Déshumidicateur|Ventilateur"}
         }
     },
+
     "ACMode": {
         '00': (0, "00"), # Off
         '03': (1, "10"),  # Cool

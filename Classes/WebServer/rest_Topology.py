@@ -50,7 +50,7 @@ def rest_netTopologie( self, verb, data, parameters):
             if line[0] != '{' and line[-1] != '}': 
                 continue
             
-            entry = json.loads( line, encoding=dict )
+            entry = json.loads( line )
             for _ts in entry:
                 _timestamps_lst.append( int(_ts) )
                 _topo[_ts] = [] # List of Father -> Child relation for one TimeStamp
@@ -65,6 +65,7 @@ def rest_netTopologie( self, verb, data, parameters):
 
                     if item not in _nwkid_list:
                         _nwkid_list.append( item )
+
                     for x in  reportLQI[item]['Neighbours']:
                         self.logging( 'Debug', "---> %s" %x)
                         # Report only Child relationship
@@ -96,8 +97,9 @@ def rest_netTopologie( self, verb, data, parameters):
                             _child = item
 
                         elif reportLQI[item]['Neighbours'][x]['_relationshp'] == 'Sibling':
-                            _father = item
-                            _child  = x
+                            continue
+                            #_father = item
+                            #_child  = x
 
                         elif reportLQI[item]['Neighbours'][x]['_relationshp'] == 'Former Child':
                             # Not a Parent, not a Child, not a Sibbling
@@ -182,7 +184,7 @@ def rest_netTopologie( self, verb, data, parameters):
                         if line[0] != '{' and line[-1] != '}':
                             handle.write( line )
                             continue
-                        entry = json.loads( line, encoding=dict )
+                        entry = json.loads( line )
                         entry_ts = entry.keys()
                         if len( entry_ts ) == 1:
                             if timestamp in entry_ts:
