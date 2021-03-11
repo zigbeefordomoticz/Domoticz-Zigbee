@@ -1100,7 +1100,7 @@ def importSchneiderZoning( self ):
                 'zone': zone,
                 'SchneiderZoning': SchneiderZoning[zone]
             }
-            self.log.logging( "Schneider", 'Error', "importSchneiderZoning - Missing Thermostat entry in %s" %SchneiderZoning[zone], ieee_thermostat, _context)
+            self.log.logging( "Schneider", 'Error', "importSchneiderZoning - Missing Thermostat entry in %s" %SchneiderZoning[zone], context= _context)
             continue
 
         if SchneiderZoning[zone]['ieee_thermostat'] not in self.IEEE2NWK:
@@ -1111,7 +1111,7 @@ def importSchneiderZoning( self ):
                 'SchneiderZoning[zone]':SchneiderZoning[zone]['ieee_thermostat'],
                 'IEEE': self.IEEE2NWK
             }
-            self.log.logging( "Schneider",  'Error', "importSchneiderZoning - Thermostat IEEE %s do not exist" %SchneiderZoning[zone]['ieee_thermostat'], ieee_thermostat, _context)
+            self.log.logging( "Schneider",  'Error', "importSchneiderZoning - Thermostat IEEE %s do not exist" %SchneiderZoning[zone]['ieee_thermostat'], context= _context)
             continue
 
         self.SchneiderZone[zone] = {
@@ -1128,7 +1128,7 @@ def importSchneiderZoning( self ):
                 'zone': zone,
                 'SchneiderZoning': SchneiderZoning[zone]
             }
-            self.log.logging( "Schneider",  'Debug', "importSchneiderZoning - No actuators for this Zone: %s" %zone, ieee_thermostat, _context)
+            self.log.logging( "Schneider",  'Debug', "importSchneiderZoning - No actuators for this Zone: %s" %zone, context= _context)
             continue
 
         for hact in SchneiderZoning[zone]['actuator']:
