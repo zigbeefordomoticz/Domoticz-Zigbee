@@ -57,7 +57,6 @@ class LoggingManagement:
     def openLogFile( self ):
 
         if not self.pluginconf.pluginConf['useDomoticzLog']:
-            #logfilename =  self.pluginconf.pluginConf['pluginLogs'] + "/" + "Zigate" + '_' + '%02d' %self.HardwareID + "_" + str(datetime.now().strftime('%Y-%m-%d_%H-%M-%S')) + ".log"
             logfilename =  self.pluginconf.pluginConf['pluginLogs'] + "/" + "Zigate" + '_' + '%02d' %self.HardwareID + "_" + str(datetime.now().strftime('%Y-%m-%d')) + ".log"
             self.loggingFileHandle = open( logfilename, "a+", encoding='utf-8')
         
@@ -128,18 +127,15 @@ class LoggingManagement:
             Domoticz.Log("%s" %message)
 
 
-
 def logToFile( self, thread_name, message ):
-    
-        
-        if self.pluginconf.pluginConf['logThreadName']:
-            Domoticz.Log( " [%15s] " %thread_name + message )
-            message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) +  " [%15s] " %thread_name + message + '\n'
-        else:
-            Domoticz.Log( message )
-            message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) +  message + '\n'
-        self.loggingFileHandle.write( message )
-        self.loggingFileHandle.flush()
+    if self.pluginconf.pluginConf['logThreadName']:
+        Domoticz.Log( " [%15s] " %thread_name + message )
+        message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) +  " [%15s] " %thread_name + message + '\n'
+    else:
+        Domoticz.Log( message )
+        message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) +  message + '\n'
+    self.loggingFileHandle.write( message )
+    self.loggingFileHandle.flush()
 
 
 def _loggingStatus( self, thread_name, message):
@@ -181,7 +177,7 @@ def _loggingDebug(self, thread_name, message):
 def _logginfilter( self, thread_name, message, nwkid):
 
     if nwkid is None:
-        self._loggingDebug( thread_name, message )
+        _loggingDebug( self, thread_name, message )
     elif nwkid:
         nwkid = nwkid.lower()
         _debugMatchId =  self.pluginconf.pluginConf['debugMatchId'].lower().split(',')
