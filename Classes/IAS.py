@@ -224,7 +224,7 @@ class IAS_Zone_Management:
             self.IASZone_enroll_response_zoneID( nwkid, SrcEp )
 
         elif step == 5: # Receive Attribute 0x0000 (Enrollment)
-            if 'ticks_5' not in self.devices[nwkid]:
+            if 'ticks_5' not in self.devices[nwkid][SrcEp]:
                 self.devices[nwkid][SrcEp]['ticks_5'] = 0
 
             if self.devices[nwkid][SrcEp]['ticks_5'] > 3:
