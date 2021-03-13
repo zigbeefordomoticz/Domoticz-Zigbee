@@ -182,16 +182,19 @@ SETTINGS = {
     # Verbose
     'VerboseLogging': {'Order': 12, 'param': {
         'ZiGateReactTime':      {'type': 'bool', 'default': 1,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
-        'debugMatchId':         {'type': 'str',  'default': 'ffff','current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'useDomoticzLog':       {'type': 'bool', 'default': 1,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'showTimeOutMsg':       {'type': 'bool', 'default': 0,   'current': None, 'restart': 0, 'hidden': False,  'Advanced': True},
+        'debugMatchId':         {'type': 'str',  'default': 'ffff','current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
+        'useDomoticzLog':       {'type': 'bool', 'default': 1,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
         'logDeviceUpdate':      {'type': 'bool', 'default': 1,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
-        'logFORMAT':            {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
-        'logThreadName':        {'type': 'bool', 'default': 1,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
-        'NXPExtendedErrorCode': {'type': 'bool', 'default': 1,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
+        
         'trackTransportError':  {'type': 'bool', 'default': 1,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
         'capturePairingInfos':  {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
         'debugLQI':             {'type': 'int',  'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
+        'logThreadName':        {'type': 'bool', 'default': 1,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
+        'debugzigateCmd':       {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
+
+        'showTimeOutMsg':       {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'NXPExtendedErrorCode': {'type': 'bool', 'default': 1,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+
         'debugInput':           {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
         'debugBasicOutput':     {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
         'debugBinding':         {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
@@ -232,22 +235,11 @@ SETTINGS = {
         'debugPDM':             {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
         'debuginRawAPS':        {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
         'debugTiming':          {'type': 'bool', 'default': 1,     'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
+
+        'logFORMAT':            {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
         }
     },
 
-    # Legrand Specific
-    'Legrand': {'Order': 13, 'param': {
-
-
-
-
-
-
-
-
-
-        }
-    },
     
     # Schneider Wiser configuration
     'Schneider Wiser':          {'Order': 14, 'param': {
