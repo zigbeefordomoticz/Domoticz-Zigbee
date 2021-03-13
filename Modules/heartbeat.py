@@ -558,7 +558,7 @@ def processListOfDevices( self , Devices ):
             self.networkmap.start_scan( )
         elif phase == 2:
             self.log.logging( "Heartbeat", 'Debug', "processListOfDevices Topology scan is possible %s" %self.ZigateComm.loadTransmit())
-            if self.ZigateComm.loadTransmit() < 2 and ((self.HeartbeatCount % 4) == 0):
+            if self.ZigateComm.loadTransmit() < MAX_LOAD_ZIGATE and ((self.HeartbeatCount % 4) == 0):
                     self.networkmap.continue_scan( )
 
     #if (self.HeartbeatCount > QUIET_AFTER_START) and (self.HeartbeatCount > NETWORK_ENRG_START):
