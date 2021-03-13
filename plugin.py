@@ -53,14 +53,7 @@
 
         <param field="Mode6" label="Verbors and Debuging" width="150px" required="true" default="None">
             <options>
-                        <option label="None" value="0"  default="true"/>
-                        <option label="Plugin Verbose" value="2"/>
-                        <option label="Domoticz Plugin" value="4"/>
-                        <option label="Domoticz Devices" value="8"/>
-                        <option label="Domoticz Connections" value="16"/>
-                        <option label="Verbose+Plugin+Devices" value="14"/>
-                        <option label="Verbose+Plugin+Devices+Connections" value="30"/>
-                        <option label="Domoticz Framework - All (useless but in case)" value="-1"/>
+                        <option label="None" value="2"  default="true"/>
             </options>
         </param>
     </params>
@@ -240,7 +233,7 @@ class BasePlugin:
         Domoticz.Status( "Debug: %s" %int(Parameters["Mode6"]))
         if Parameters["Mode6"] != "0":
             Domoticz.Log("Debug Mode: %s, We do recommend to leave Verbors to None" %int(Parameters["Mode6"]))
-            DumpConfigToLog()
+            #DumpConfigToLog()
 
         self.busy = True
         
@@ -750,16 +743,6 @@ def decodeConnection( connection ):
         value = value.strip().strip("'")
         decoded[label] = value
     return decoded
-
-#def decodeConnection( connection ):
-#    decoded = {}
-#    for i in connection.strip().split(','):
-#        label, value = i.split(': ')
-#        label = label.strip().strip("'")
-#        value = value.strip().strip("'")
-#        decoded[label] = value
-#    return decoded
-
 
 def zigateInit_Phase1(self ):
     """
