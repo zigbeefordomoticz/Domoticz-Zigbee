@@ -107,7 +107,16 @@ TIMEDOUT_FIRMWARE = 5 # HB before request Firmware again
 TEMPO_START_ZIGATE = 1 # Nb HB before requesting a Start_Zigate
 
 
+import inspect
+import Domoticz
 
+#def inspect_Domoticz():
+#    Domoticz.Log("Domoticz.__name__: >%s< , Domoticz.__package__: >%s<" %(Domoticz.__name__, Domoticz.__package__))
+#    for name, value in inspect.getmembers(Domoticz):
+#        if not name.startswith("_"):
+#            if callable(value):
+#                value = "callable"
+#            Domoticz.Log("({}) {} = {}".format(type(value), name, value))
 
 class BasePlugin:
     enabled = False
@@ -205,6 +214,10 @@ class BasePlugin:
 
 
     def onStart(self):
+
+        
+        #inspect_Domoticz()
+
         Domoticz.Heartbeat( 1 )
         self.pluginParameters = dict(Parameters)
 
@@ -230,10 +243,7 @@ class BasePlugin:
         self.pluginParameters['PluginUpdate'] = None
 
         Domoticz.Status("Zigate plugin %s-%s started" %(self.pluginParameters['PluginBranch'], self.pluginParameters['PluginVersion']))
-        Domoticz.Status( "Debug: %s" %int(Parameters["Mode6"]))
-        if Parameters["Mode6"] != "0":
-            Domoticz.Log("Debug Mode: %s, We do recommend to leave Verbors to None" %int(Parameters["Mode6"]))
-            #DumpConfigToLog()
+        Domoticz.Status( "Debug: %s" %Parameters["Mode6"])
 
         self.busy = True
         
@@ -572,19 +582,19 @@ class BasePlugin:
         self.log.logging( 'Plugin', 'Status', "onDisconnect called")
 
     def onHeartbeat(self):
-
         if not self.VersionNewFashion or self.pluginconf is None:
             # Not yet ready
             return
-
         self.internalHB += 1
 
-        if self.PDMready and (self.internalHB % HEARTBEAT) != 0:
-            return
+        if self.PDMready:
+            if (self.internalHB % HEARTBEAT) != 0:
+                return
+            else:
+                self.HeartbeatCount += 1 
 
         busy_ = False
-        self.HeartbeatCount += 1 
-
+        
         # Quiet a bad hack. In order to get the needs for ZigateRestart
         # from WebServer
         if ( 'startZigateNeeded' in self.zigatedata and self.zigatedata['startZigateNeeded'] ):
@@ -593,13 +603,14 @@ class BasePlugin:
 
         # Starting PDM on Host firmware version, we have to wait that Zigate is fully initialized ( PDM loaded into memory from Host).
         # We wait for self.zigateReady which is set to True in th pdmZigate module
-        if ( self.transport != 'None' and not self.PDMready and self.HeartbeatCount > (60 // HEARTBEAT) ):
-            self.log.logging( 'Plugin', 'Error', "[%3s] I have hard time to get ZiGate Version. Mostlikly ZiGate communication doesn't work" %( self.HeartbeatCount))
-            self.log.logging( 'Plugin', 'Error', "[   ] Stop the plugin and check ZiGate.")
-
         if self.transport != 'None' and not self.PDMready:
-            self.log.logging( 'Plugin','Debug', "PDMready: %s requesting Get version" %( self.PDMready))
-            sendZigateCmd(self, "0010", "")
+            if self.internalHB > 60:
+                self.log.logging( 'Plugin', 'Error', "[%3s] I have hard time to get ZiGate Version. Mostlikly ZiGate communication doesn't work" %( self.internalHB))
+                self.log.logging( 'Plugin', 'Error', "[   ] Stop the plugin and check ZiGate.")
+
+            if (self.internalHB % 5) == 0:
+                self.log.logging( 'Plugin','Debug', "[%s] PDMready: %s requesting Get version" %( self.internalHB, self.PDMready))
+                sendZigateCmd(self, "0010", "")
             return
 
         if self.transport != 'None':
