@@ -126,7 +126,7 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
     now = time.time()
     TimedOutMotion = self.pluginconf.pluginConf['resetMotiondelay']
     TimedOutSwitchButton = self.pluginconf.pluginConf['resetSwitchSelectorPushButton']
-    for unit in Devices:
+    for unit in list(Devices):
         Ieee = Devices[unit].DeviceID
         if Ieee not in self.IEEE2NWK:
             # Unknown !
@@ -268,7 +268,7 @@ def timedOutDevice( self, Devices, Unit=None, NwkId=None, MarkTimedOut=True):
             return
         _IEEE = self.ListOfDevices[NwkId]['IEEE']
         self.ListOfDevices[NwkId]['Health'] = 'TimedOut' if MarkTimedOut else 'Live'
-        for x in Devices:
+        for x in list(Devices):
             if Devices[x].DeviceID != _IEEE:
                 continue
             if Devices[x].TimedOut:
@@ -347,7 +347,7 @@ def lastSeenUpdate( self, Devices, Unit=None, NwkId=None):
         if (not self.VersionNewFashion and (self.DomoticzMajor < 4 or ( self.DomoticzMajor == 4 and self.DomoticzMinor < 10547))):
             self.log.logging( "Widget", "Debug", "Not the good Domoticz level for Touch %s %s %s" %(self.VersionNewFashion, self.DomoticzMajor, self.DomoticzMinor ), NwkId)
             return
-        for x in Devices:
+        for x in list(Devices):
             if Devices[x].DeviceID == _IEEE:
                 #self.log.logging( "Widget", "Debug2",  "Touch unit %s nwkid: %s " %( Devices[x].Name, NwkId ), NwkId)
                 if Devices[x].TimedOut:
