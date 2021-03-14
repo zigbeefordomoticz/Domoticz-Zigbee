@@ -43,6 +43,7 @@ SETTINGS = {
 
     'WebInterface': {'Order': 4, 'param': {
         'Lang':            {'type': 'str',  'default': 'en-US', 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
+        'siblingReported': {'type': 'bool', 'default': 0,       'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
         'enableGzip':      {'type': 'bool', 'default': 1,       'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
         'enableDeflate':   {'type': 'bool', 'default': 1,       'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
         'enableChunk':     {'type': 'bool', 'default': 1,       'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
