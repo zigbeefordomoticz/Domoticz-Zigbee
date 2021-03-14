@@ -133,7 +133,8 @@ class ZigateTransport(object):
         # send it to the sending queue
 
         if ( cmd, datas ) in self.writer_list_in_queue:
-            self.logging_send('Log',"sendData - Warning %s/%s already in queue this command is dropped" %(cmd, datas))
+            if self.pluginconf.pluginConf["debugzigateCmd"]:
+                self.logging_send('Log',"sendData - Warning %s/%s already in queue this command is dropped" %(cmd, datas))
             return None
         self.writer_list_in_queue.append(  (cmd, datas) )
 
