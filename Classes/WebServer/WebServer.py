@@ -407,7 +407,7 @@ class WebServer(object):
                 return
 
             setting_lst = []
-            for _theme in SETTINGS:
+            for _theme in sorted(SETTINGS.keys()):
                 if _theme in ( 'PluginTransport'): 
                     continue
                 if sendDebug and _theme != 'VerboseLogging':
@@ -420,45 +420,36 @@ class WebServer(object):
                     'ListOfSettings': [],
                 }
 
-                for param in self.pluginconf.pluginConf:
-
+                for param in sorted(self.pluginconf.pluginConf.keys()):
                     if param not in SETTINGS[_theme]['param']: 
                         continue
+                    if SETTINGS[_theme]['param'][param]['hidden']:
+                        continue
+                    
+                    setting = {
+                        'Name': param,
+                        'default_value': SETTINGS[_theme]['param'][param]['default'],
+                        'DataType': SETTINGS[_theme]['param'][param]['type'],
+                        'restart_need': SETTINGS[_theme]['param'][param]['restart'],
+                        'Advanced': SETTINGS[_theme]['param'][param]['Advanced'],
+                    }
 
-                    if not SETTINGS[_theme]['param'][param]['hidden']:
-                        setting = {
-                            'Name': param,
-                            'default_value': SETTINGS[_theme]['param'][param][
-                                'default'
-                            ],
-                            'DataType': SETTINGS[_theme]['param'][param][
-                                'type'
-                            ],
-                            'restart_need': SETTINGS[_theme]['param'][param][
-                                'restart'
-                            ],
-                            'Advanced': SETTINGS[_theme]['param'][param][
-                                'Advanced'
-                            ],
-                        }
-
-                        if SETTINGS[_theme]['param'][param]['type'] == 'hex':
-                            Domoticz.Debug("--> %s: %s - %s" %(param, self.pluginconf.pluginConf[param], type(self.pluginconf.pluginConf[param])))
-                            if isinstance( self.pluginconf.pluginConf[param], int):
-                                setting['current_value'] = '%x' %self.pluginconf.pluginConf[param] 
-                            else:
-                                setting['current_value'] = '%x' %int(self.pluginconf.pluginConf[param] ,16)
-                        elif SETTINGS[_theme]['param'][param]['type'] == 'list': 
-                            setting['list'] = []
-                            setting['current_value'] = self.pluginconf.pluginConf[param]
-
-                            for x in SETTINGS[_theme]['param'][param]['list']:
-                                ListItem = {x: SETTINGS[_theme]['param'][param]['list'][x]}
-                                setting['list'].append( ListItem )
-
+                    if SETTINGS[_theme]['param'][param]['type'] == 'hex':
+                        Domoticz.Debug("--> %s: %s - %s" %(param, self.pluginconf.pluginConf[param], type(self.pluginconf.pluginConf[param])))
+                        if isinstance( self.pluginconf.pluginConf[param], int):
+                            setting['current_value'] = '%x' %self.pluginconf.pluginConf[param] 
                         else:
-                            setting['current_value'] = self.pluginconf.pluginConf[param]
-                        theme['ListOfSettings'].append ( setting )
+                            setting['current_value'] = '%x' %int(self.pluginconf.pluginConf[param] ,16)
+                    elif SETTINGS[_theme]['param'][param]['type'] == 'list': 
+                        setting['list'] = []
+                        setting['current_value'] = self.pluginconf.pluginConf[param]
+                        for x in sorted(SETTINGS[_theme]['param'][param]['list'].keys()):
+                            ListItem = {x: SETTINGS[_theme]['param'][param]['list'][x]}
+                            setting['list'].append( ListItem )
+
+                    else:
+                        setting['current_value'] = self.pluginconf.pluginConf[param]
+                    theme['ListOfSettings'].append ( setting )
                 setting_lst.append( theme )
             _response["Data"] = json.dumps( setting_lst, sort_keys=True )
 
