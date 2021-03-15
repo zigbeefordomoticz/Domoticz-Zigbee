@@ -413,14 +413,14 @@ def CheckDeviceList(self, key, val):
         self.log.logging( "Database", 'Error', "Not Loading %s as Status: %s" %( key, DeviceListVal['Status']))
         return
 
-    if Modules.tools.DeviceExist(self, key, DeviceListVal.get('IEEE','')):
-        # Do not load Devices
-        self.log.logging( "Database", 'Error', "Not Loading %s as no existing IEEE: %s" %( key, str(val)))
-        return
-
     if key in self.ListOfDevices:
         # Suspect
         self.log.logging( "Database", 'Error', "CheckDeviceList - Object %s already in the plugin Db !!!")
+        return
+
+    if Modules.tools.DeviceExist(self, key, DeviceListVal.get('IEEE','')):
+        # Do not load Devices
+        self.log.logging( "Database", 'Error', "Not Loading %s as no existing IEEE: %s" %( key, str(val)))
         return
 
     if key == '0000':
