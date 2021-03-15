@@ -138,7 +138,8 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
             return
     else:
         # Most likely we receive a Device Annoucement which has not relation with the JoinFlag we have .
-        self.log.logging(  "Input", "Error", "Decode004D - Unexpected %s %s %s" % (NwkId, Ieee, RejoinFlag), NwkId, )
+        if RejoinFlag:
+            self.log.logging(  "Input", "Error", "Decode004D - Unexpected %s %s %s" % (NwkId, Ieee, RejoinFlag), NwkId, )
 
     for ep in self.ListOfDevices[NwkId]['Ep']:
         if '0004' in self.ListOfDevices[NwkId]['Ep'][ep] and self.groupmgt:
