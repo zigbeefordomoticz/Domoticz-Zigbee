@@ -25,20 +25,20 @@ SETTINGS = {
         'internetAccess':         {'type': 'bool', 'default': 1, 'current': None, 'restart': 1, 'hidden': False, 'Advanced': False},
         'allowOTA':               {'type': 'bool', 'default': 1, 'current': None, 'restart': 1, 'hidden': True, 'Advanced': False},
         'pingDevices':            {'type': 'bool', 'default': 1, 'current': None, 'restart': 1, 'hidden': False, 'Advanced': True},
-    }
+        }
     },
 
     'GroupManagement': {'Order': 2, 'param': {
         'OnIfOneOn':               {'type': 'bool', 'default': 1, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
         'forceGroupDeviceRefresh': {'type': 'bool', 'default': 1, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
         'reComputeGroupState':     {'type': 'bool', 'default': 1, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'allowGroupMembership':          {'type': 'bool', 'default': 1, 'current': None, 'restart': True, 'hidden': False, 'Advanced': True},
-    }
+        'allowGroupMembership':    {'type': 'bool', 'default': 1, 'current': None, 'restart': True, 'hidden': False, 'Advanced': True},
+        }
     },
 
     'DomoticzEnvironment': {'Order': 3, 'param': {
         'port':   {'type': 'str', 'default': '8080',      'current': None, 'restart': 0, 'hidden': False, 'Advanced': False}
-    }
+        }
     },
 
     'WebInterface': {'Order': 4, 'param': {
@@ -49,41 +49,9 @@ SETTINGS = {
         'enableChunk':     {'type': 'bool', 'default': 1,       'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
         'enableKeepalive': {'type': 'bool', 'default': 1,       'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
         'enableCache':     {'type': 'bool', 'default': 1,       'current': None, 'restart': 0, 'hidden': False, 'Advanced': True}
-    }
-    },
-
-    # Polling
-
-    'DevicePolling': {'Order': 5, 'param': {        
-        'polling0000':      {'type': 'int', 'default': 86400, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
-        'polling0001':      {'type': 'int', 'default': 86400, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
-        'pollingONOFF':     {'type': 'int', 'default': 900,   'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'pollingLvlControl': {'type': 'int', 'default': 900,  'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'polling000C':      {'type': 'int', 'default': 3600,  'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
-        'polling0100':      {'type': 'int', 'default': 3600,  'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
-        'polling0020':      {'type': 'int', 'default': 3600,  'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
-        'polling0101':      {'type': 'int', 'default': 3600,  'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
-        'polling0102':      {'type': 'int', 'default': 900,   'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'polling0201':      {'type': 'int', 'default': 900,   'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'polling0202':      {'type': 'int', 'default': 900,   'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'polling0204':      {'type': 'int', 'default': 86400, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
-        'polling0300':      {'type': 'int', 'default': 900,   'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
-        'polling0400':      {'type': 'int', 'default': 900,   'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
-        'polling0402':      {'type': 'int', 'default': 900,   'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
-        'polling0403':      {'type': 'int', 'default': 900,   'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
-        'polling0405':      {'type': 'int', 'default': 900,   'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
-        'polling0406':      {'type': 'int', 'default': 900,   'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
-        'polling0500':      {'type': 'int', 'default': 86400, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
-        'polling0502':      {'type': 'int', 'default': 86400, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
-        'polling0702':      {'type': 'int', 'default': 900,   'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'polling0b04':      {'type': 'int', 'default': 900,   'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'polling0b05':      {'type': 'int', 'default': 86400, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'polling000f':      {'type': 'int', 'default': 900,   'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
-        'pollingfc01':      {'type': 'int', 'default': 900,   'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
-        'pollingfc21':      {'type': 'int', 'default': 900,   'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
-        'pollingfc40':      {'type': 'int', 'default': 900,   'current': None, 'restart': 0, 'hidden': True,  'Advanced': True}
         }
     },
+
 
     # Device Management
     'DeviceManagement': {'Order': 6, 'param': {
@@ -100,20 +68,21 @@ SETTINGS = {
         'forceSwitchSelectorPushButton': {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
         'doUnbindBind':                  {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
         'allowReBindingClusters':        {'type': 'bool', 'default': 1, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True}
-    }
+        }
     },
 
     # Zigate Configuration
     'ZigateConfiguration': {'Order': 7, 'param': {
+        'blueLedOnOff':              {'type': 'bool', 'default': 1,    'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
         'pingDevicesFeq':            {'type': 'int', 'default': 3600,  'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'zigatePartOfGroupTint':     {'type': 'bool', 'default': 0,  'current': None, 'restart': 1,  'hidden': False, 'Advanced': True},
-        'zigatePartOfGroup0000':     {'type': 'bool', 'default': 0,  'current': None, 'restart': 1,  'hidden': False, 'Advanced': True},
-        'allowRemoveZigateDevice':   {'type': 'bool', 'default': 1,  'current': None, 'restart': 0, 'hidden': True, 'Advanced': True},
-        'blueLedOnOff':              {'type': 'bool', 'default': 1,  'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
-        'resetPermit2Join':          {'type': 'bool', 'default': 1,  'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'Ping':                      {'type': 'bool', 'default': 1,  'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'eraseZigatePDM':            {'type': 'bool', 'default': 0,  'current': None, 'restart': 0, 'hidden': True, 'Advanced': True},
-        'breakConfigureReporting':   {'type': 'bool', 'default': 0,  'current': None, 'restart': 0, 'hidden': True, 'Advanced': True},
+        'zigatePartOfGroupTint':     {'type': 'bool', 'default': 0,    'current': None, 'restart': 1, 'hidden': False, 'Advanced': True},
+        'zigatePartOfGroup0000':     {'type': 'bool', 'default': 0,    'current': None, 'restart': 1, 'hidden': False, 'Advanced': True},
+        'resetPermit2Join':          {'type': 'bool', 'default': 1,    'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'Ping':                      {'type': 'bool', 'default': 1,    'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+
+        'allowRemoveZigateDevice':   {'type': 'bool', 'default': 1,    'current': None, 'restart': 0, 'hidden': True, 'Advanced': True},
+        'eraseZigatePDM':            {'type': 'bool', 'default': 0,    'current': None, 'restart': 0, 'hidden': True, 'Advanced': True},
+        'breakConfigureReporting':   {'type': 'bool', 'default': 0,    'current': None, 'restart': 0, 'hidden': True, 'Advanced': True},
         'Certification':             {'type': 'list',
                                       'list': {'CE regulation': 'CE', 'FCC regulation': 'FCC'},
                                       'default': 'CE', 'current': None, 'restart': True, 'hidden': False, 'Advanced': False},
@@ -138,35 +107,25 @@ SETTINGS = {
         'GrpmoveToColourTemp':  {'type': 'int', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
         'GrpmoveToColourRGB':   {'type': 'int', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
         'GrpmoveToLevel':       {'type': 'int', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
-    }
+        }
     },
 
-    # Over The Air Upgrade
-    # 'OverTheAirUpgrade': {'Order': 9, 'param': {
-    #     'forceOTAUpgrade':   {'type': 'bool', 'default': 0,    'current': None, 'restart': True, 'hidden': False, 'Advanced': True},
-    #     'forceOTAMask':      {'type': 'hex',  'default': 0,    'current': None, 'restart': True, 'hidden': False, 'Advanced': True},
-    #     'batteryOTA':        {'type': 'bool', 'default': 0,    'current': None, 'restart': True, 'hidden': False, 'Advanced': False},
-    #     'waitingOTA':        {'type': 'int',  'default': 3600, 'current': None, 'restart': True, 'hidden': False, 'Advanced': False},
-    #     'OTAwait4nextImage': {'type': 'int',  'default': 60,   'current': None, 'restart': False, 'hidden': False, 'Advanced': True}
-    # }
-    # },
-
     # Plugin Transport
-    'PluginTransport':     {'Order': 10, 'param': {
-        'disableAckOnZCL': {'type': 'bool', 'default': 0,       'current': None, 'restart': 0, 'hidden': True,'Advanced': True},
-        'waitForResponse': {'type': 'bool', 'default': 0,       'current': None, 'restart': 0, 'hidden': True, 'Advanced': True},
-        'byPassDzConnection': {'type': 'bool', 'default': 1,    'current': None, 'restart': 1,  'hidden': True, 'Advanced': True},
-        'SerialReadV2':    {'type': 'bool', 'default': 1,       'current': None, 'restart': 0, 'hidden': True, 'Advanced': True},
-        'ieeeForRawAps':   {'type': 'bool', 'default': 0,       'current': None, 'restart': 1,  'hidden': True, 'Advanced': True},
-        'forceFullSeqMode':      {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
-        'RawReadAttribute':      {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': True},
-        'RawWritAttribute':      {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': True},
-        'writerTimeOut':         {'type': 'bool', 'default': 1, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': True},
+    'PluginTransport':     {'Order': 9, 'param': {
+        'disableAckOnZCL':    {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': True},
+        'waitForResponse':    {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': True},
+        'byPassDzConnection': {'type': 'bool', 'default': 1, 'current': None, 'restart': 1, 'hidden': True, 'Advanced': True},
+        'SerialReadV2':       {'type': 'bool', 'default': 1, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': True},
+        'ieeeForRawAps':      {'type': 'bool', 'default': 0, 'current': None, 'restart': 1, 'hidden': True, 'Advanced': True},
+        'forceFullSeqMode':   {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': True},
+        'RawReadAttribute':   {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': True},
+        'RawWritAttribute':   {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': True},
+        'writerTimeOut':      {'type': 'bool', 'default': 1, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': True},
         }
     },
 
     # Plugin Directories
-    'PluginConfiguration': {'Order': 11, 'param': {
+    'PluginConfiguration': {'Order': 10, 'param': {
         'numDeviceListVersion': {'type': 'int', 'default': 12, 'current': None,  'restart': 0, 'hidden': False, 'Advanced': False},
         'filename':             {'type': 'path', 'default': '', 'current': None, 'restart': 1,  'hidden': True,   'Advanced': True},
         'pluginHome':           {'type': 'path', 'default': '', 'current': None, 'restart': 1,  'hidden': True,   'Advanced': True},
@@ -177,73 +136,72 @@ SETTINGS = {
         'pluginReports':        {'type': 'path', 'default': '', 'current': None, 'restart': 1,  'hidden': False,  'Advanced': True},
         'pluginWWW':            {'type': 'path', 'default': '', 'current': None, 'restart': 1,  'hidden': False,  'Advanced': True},
         'pluginLogs':           {'type': 'path', 'default': '', 'current': None, 'restart': 1,  'hidden': False,  'Advanced': True}
-    }
+     }
     },
 
     # Verbose
-    'VerboseLogging': {'Order': 12, 'param': {
-        'ZiGateReactTime':      {'type': 'bool', 'default': 1,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
-        'debugMatchId':         {'type': 'str',  'default': 'ffff','current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
-        'useDomoticzLog':       {'type': 'bool', 'default': 1,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
-        'logDeviceUpdate':      {'type': 'bool', 'default': 1,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
-        
-        'trackTransportError':  {'type': 'bool', 'default': 1,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
-        'capturePairingInfos':  {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
-        'debugLQI':             {'type': 'int',  'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
-        'logThreadName':        {'type': 'bool', 'default': 1,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
-        'debugzigateCmd':       {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
+    'VerboseLogging': {'Order': 11, 'param': {
+        'debugMatchId':           {'type': 'str',  'default': 'ffff','current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
+        'debugLQI':               {'type': 'int',  'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},    
+        'logDeviceUpdate':        {'type': 'bool', 'default': 1,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
 
-        'showTimeOutMsg':       {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'NXPExtendedErrorCode': {'type': 'bool', 'default': 1,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'logThreadName':          {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'debugzigateCmd':         {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'trackTransportError':    {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'capturePairingInfos':    {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'useDomoticzLog':         {'type': 'bool', 'default': 1,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'ZiGateReactTime':        {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'showTimeOutMsg':         {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'NXPExtendedErrorCode':   {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+  
+        'debugInput':             {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'debugBasicOutput':       {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'debugBinding':           {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'debugConfigureReporting':{'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'debugWriteAttributes':   {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'debugReadAttributes':    {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'debugThermostats':       {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'debugTransportTx':       {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'debugTransportRx':       {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'debugTransport':         {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'debugTransportWrter':    {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'debugTransportFrwder':   {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'debugTransportRder':     {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'debugTransportFlowCtrl': {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'debugCluster':           {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'debugHeartbeat':         {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'debugWidget':            {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'debugPlugin':            {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'debugDatabase':          {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'debugCommand':           {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'debugPairing':           {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'debugNetworkMap':        {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'debugNetworkEnergy':     {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'debugGroups':            {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'debugOTA':               {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'debugIAS':               {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'debugDZDB':              {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'debugWebServer':         {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'debugzigateCmd':         {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'debugLegrand':           {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'debugLumi':              {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'debugLivolo':            {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'debugTuya':              {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'debugProfalux':          {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'debugSchneider':         {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'debugCasaIA':            {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'debugPhilips':           {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'debugPDM':               {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'debuginRawAPS':          {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'debugTiming':            {'type': 'bool', 'default': 1,     'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
 
-        'debugInput':           {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'debugBasicOutput':     {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'debugBinding':         {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'debugConfigureReporting':{'type': 'bool', 'default': 0,   'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'debugWriteAttributes': {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'debugReadAttributes':  {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'debugThermostats':     {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'debugTransportTx':       {'type': 'bool', 'default': 0,   'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'debugTransportRx':       {'type': 'bool', 'default': 0,   'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'debugTransport':       {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'debugTransportWrter':  {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'debugTransportFrwder': {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'debugTransportRder':   {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'debugTransportFlowCtrl': {'type': 'bool', 'default': 0,   'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'debugCluster':         {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'debugHeartbeat':       {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'debugWidget':          {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'debugPlugin':          {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'debugDatabase':        {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'debugCommand':         {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'debugPairing':         {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'debugNetworkMap':      {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'debugNetworkEnergy':   {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'debugGroups':          {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'debugOTA':             {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'debugIAS':             {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'debugDZDB':            {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'debugWebServer':       {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'debugzigateCmd':       {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'debugLegrand':         {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'debugLumi':            {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'debugLivolo':          {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'debugTuya':            {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'debugProfalux':        {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'debugSchneider':       {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'debugCasaIA':          {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'debugPhilips':         {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'debugPDM':             {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'debuginRawAPS':        {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'debugTiming':          {'type': 'bool', 'default': 1,     'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
-
-        'logFORMAT':            {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
+        'logFORMAT':              {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
         }
     },
 
     
     # Schneider Wiser configuration
-    'Schneider Wiser':          {'Order': 14, 'param': {
+    'Schneider Wiser':          {'Order': 12, 'param': {
         'enableSchneiderWiser': {'type': 'bool', 'default': 0,   'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
         'reenforcementWiser':   {'type': 'int',  'default': 300, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
         'forceWiserRegistration': {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
@@ -251,7 +209,7 @@ SETTINGS = {
     },
 
     # Others
-    'Others': {'Order': 15, 'param': {
+    'Others': {'Order': 13, 'param': {
         'Livolo':                    {'type': 'bool', 'default': 0,   'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
         'numTopologyReports':        {'type': 'int',  'default': 4,   'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
         'numEnergyReports':          {'type': 'int',  'default': 4,   'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
@@ -260,16 +218,16 @@ SETTINGS = {
         'vibrationAqarasensitivity': {'type': 'list',
                                       'list': {'high': 'high', 'medium': 'medium', 'low': 'low'},
                                       'default': 'medium', 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
-     }
+        }
     },
 
-    'Patching': {'Order': 16, 'param': {
-        'Bug566':                {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-     }
+    'Patching': {'Order': 14, 'param': {
+        'Bug566':                {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True}
+        }
     },
 
     # Experimental
-    'Experimental': {'Order': 17, 'param': {    
+    'Experimental': {'Order': 15, 'param': {    
         'DropBadAnnoucement':    {'type': 'bool', 'default': 1, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},    
         'AnnoucementV0':         {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
         'AnnoucementV1':         {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
@@ -290,6 +248,35 @@ SETTINGS = {
         'PhilipsPowerOnAfterOffOn': {'type': 'list', 'list': {'Off': 0, 'On': 1, 'Previous': 255}, 'default': 1, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
         'EnkiPowerOnAfterOffOn':    {'type': 'list', 'list': {'Off': 0, 'On': 1, 'Previous': 255}, 'default': 1, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
         'IkeaPowerOnAfterOffOn':    {'type': 'list', 'list': {'Off': 0, 'On': 1, 'Previous': 255}, 'default': 1, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},        
+
+        # Polling
+        'polling0000':      {'type': 'int', 'default': 86400, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
+        'polling0001':      {'type': 'int', 'default': 86400, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
+        'pollingONOFF':     {'type': 'int', 'default': 900,   'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
+        'pollingLvlControl': {'type': 'int', 'default': 900,  'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
+        'polling000C':      {'type': 'int', 'default': 3600,  'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
+        'polling0100':      {'type': 'int', 'default': 3600,  'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
+        'polling0020':      {'type': 'int', 'default': 3600,  'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
+        'polling0101':      {'type': 'int', 'default': 3600,  'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
+        'polling0102':      {'type': 'int', 'default': 900,   'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
+        'polling0201':      {'type': 'int', 'default': 900,   'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
+        'polling0202':      {'type': 'int', 'default': 900,   'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
+        'polling0204':      {'type': 'int', 'default': 86400, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
+        'polling0300':      {'type': 'int', 'default': 900,   'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
+        'polling0400':      {'type': 'int', 'default': 900,   'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
+        'polling0402':      {'type': 'int', 'default': 900,   'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
+        'polling0403':      {'type': 'int', 'default': 900,   'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
+        'polling0405':      {'type': 'int', 'default': 900,   'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
+        'polling0406':      {'type': 'int', 'default': 900,   'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
+        'polling0500':      {'type': 'int', 'default': 86400, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
+        'polling0502':      {'type': 'int', 'default': 86400, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
+        'polling0702':      {'type': 'int', 'default': 900,   'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
+        'polling0b04':      {'type': 'int', 'default': 900,   'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
+        'polling0b05':      {'type': 'int', 'default': 86400, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
+        'polling000f':      {'type': 'int', 'default': 900,   'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
+        'pollingfc01':      {'type': 'int', 'default': 900,   'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
+        'pollingfc21':      {'type': 'int', 'default': 900,   'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
+        'pollingfc40':      {'type': 'int', 'default': 900,   'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
 
         'EnableLedIfOn':        {'type': 'bool', 'default': 1, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
         'EnableLedInDark':      {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
