@@ -66,7 +66,7 @@ def getSaddrfromIEEE(self, IEEE) :
     # Return Short Address if IEEE found.
 
     if IEEE != '' :
-        for sAddr in self.ListOfDevices :
+        for sAddr in list(self.ListOfDevices.keys()) :
             if self.ListOfDevices[sAddr]['IEEE'] == IEEE :
                 return sAddr
     return ''
@@ -84,7 +84,7 @@ def getListOfEpForCluster( self, NwkId, SearchCluster):
 
     EpList = []
     oldFashion = 'ClusterType' in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]['ClusterType'] != {} and self.ListOfDevices[NwkId]['ClusterType'] != ''
-    for Ep in self.ListOfDevices[NwkId]['Ep']:
+    for Ep in list(self.ListOfDevices[NwkId]['Ep'].keys()):
         if SearchCluster not in self.ListOfDevices[NwkId]['Ep'][ Ep ]:
             #Domoticz.Log("---- Cluster %s on %s" %( SearchCluster, str(self.ListOfDevices[NwkId]['Ep'][Ep] ) ))
             continue
@@ -106,7 +106,7 @@ def getListOfEpForCluster( self, NwkId, SearchCluster):
 def getEPforClusterType( self, NWKID, ClusterType ) :
 
     EPlist = []
-    for EPout in self.ListOfDevices[NWKID]['Ep'] :
+    for EPout in list(self.ListOfDevices[NWKID]['Ep'].keys()) :
         if 'ClusterType' in self.ListOfDevices[NWKID]['Ep'][EPout]:
             for key in self.ListOfDevices[NWKID]['Ep'][EPout]['ClusterType'] :
                 if self.ListOfDevices[NWKID]['Ep'][EPout]['ClusterType'][key].find(ClusterType) >= 0 :
@@ -120,7 +120,7 @@ def getClusterListforEP( self, NWKID, Ep ):
     ClusterList = [ cluster for cluster in ['fc00', '0500', '0502', '0406', '0400', '0402', '0001'] if cluster in self.ListOfDevices[NWKID]['Ep'][Ep] ]
 
     if self.ListOfDevices[NWKID]['Ep'][Ep] :
-        for cluster in self.ListOfDevices[NWKID]['Ep'][Ep] :
+        for cluster in list(self.ListOfDevices[NWKID]['Ep'][Ep].keys()) :
             if cluster not in  ('ClusterType', 'Type', 'ColorMode') and \
                     cluster not in ClusterList:
                 ClusterList.append(cluster)
@@ -133,7 +133,7 @@ def getEpForCluster( self, nwkid, ClusterId):
     If not found return Ep: 01
     """
 
-    EPout = [ tmpEp for tmpEp in self.ListOfDevices[nwkid]['Ep'] if ClusterId in self.ListOfDevices[nwkid]['Ep'][tmpEp] ]
+    EPout = [ tmpEp for tmpEp in list(self.ListOfDevices[nwkid]['Ep'].keys()) if ClusterId in self.ListOfDevices[nwkid]['Ep'][tmpEp] ]
 
     if not EPout:
         return EPout
@@ -232,7 +232,7 @@ def DeviceExist(self, Devices, lookupNwkId , lookupIEEE = ''):
 
         # Let's send a Notfification
         devName = ''
-        for x in Devices:
+        for x in list(Devices.keys()):
             if Devices[x].DeviceID == lookupIEEE:
                 devName = Devices[x].Name
                 break
@@ -262,7 +262,7 @@ def reconnectNWkDevice( self, new_NwkId, IEEE, old_NwkId):
         self.groupmgt.update_due_to_nwk_id_change( old_NwkId, new_NwkId)
 
     if self.ListOfDevices[new_NwkId]['Status'] in ( 'Left', 'Leave') :
-        Domoticz.Log("DeviceExist - Update Status from %s to 'inDB' for NetworkID : %s" %(
+        Domoticz.Log("reconnectNWkDevice - Update Status from %s to 'inDB' for NetworkID : %s" %(
             self.ListOfDevices[new_NwkId]['Status'], new_NwkId) )
         self.ListOfDevices[new_NwkId]['Status'] = 'inDB'
         self.ListOfDevices[new_NwkId]['Heartbeat'] = '0'
@@ -285,7 +285,7 @@ def removeNwkInList( self, NWKID):
     # Sanity check
     safe = None
     if 'IEEE' in self.ListOfDevices[NWKID]:
-        for x in self.ListOfDevices:
+        for x in list(self.ListOfDevices.keys()):
             if x == NWKID:
                 continue
             if 'IEEE' in self.ListOfDevices[ x ] and self.ListOfDevices[ x ]['IEEE'] == self.ListOfDevices[NWKID]['IEEE']:
@@ -320,7 +320,7 @@ def removeDeviceInList( self, Devices, IEEE, Unit ):
             Domoticz.Log("removeDeviceInList - removing : %s in %s" %(ID,str(self.ListOfDevices[key]['ClusterType']) ))
             del self.ListOfDevices[key]['ClusterType'][ID] # Let's remove that entry
     else:
-        for tmpEp in self.ListOfDevices[key]['Ep']: 
+        for tmpEp in list(self.ListOfDevices[key]['Ep'].keys()): 
                 # Search this DeviceID in ClusterType
             if ( 'ClusterType' in self.ListOfDevices[key]['Ep'][tmpEp] and str(ID) in self.ListOfDevices[key]['Ep'][tmpEp]['ClusterType'] ):
                 Domoticz.Log("removeDeviceInList - removing : %s with Ep: %s in - %s" %(ID, tmpEp,str(self.ListOfDevices[key]['Ep'][tmpEp]['ClusterType']) ))
@@ -332,7 +332,7 @@ def removeDeviceInList( self, Devices, IEEE, Unit ):
         Domoticz.Log("removeDeviceInList - exitsing Global 'ClusterTpe'")
         if self.ListOfDevices[key]['ClusterType'] != {}:
             emptyCT = False
-    for tmpEp in self.ListOfDevices[key]['Ep'] : 
+    for tmpEp in list(self.ListOfDevices[key]['Ep'].keys()) : 
         if 'ClusterType' in self.ListOfDevices[key]['Ep'][tmpEp]:
             Domoticz.Log("removeDeviceInList - exitsing Ep 'ClusterTpe'")
             if self.ListOfDevices[key]['Ep'][tmpEp]['ClusterType'] != {}:
@@ -488,7 +488,7 @@ def getListofClusterbyModel( self, Model , InOut ):
         return ''
 
     if Model in self.DeviceConf and InOut in self.DeviceConf[Model]:
-        for ep in self.DeviceConf[Model][InOut] :
+        for ep in list(self.DeviceConf[Model][InOut].keys()) :
             seen = ''
             for cluster in sorted(self.DeviceConf[Model][InOut][ep]) :
                 if cluster in ( 'ClusterType', 'Type', 'ColorMode') or  cluster == seen :
@@ -513,7 +513,7 @@ def getListofTypebyModel( self, Model ):
     """
     EpType = []
     if Model in self.DeviceConf :
-        for ep in self.DeviceConf[Model]['Epin'] :
+        for ep in list(self.DeviceConf[Model]['Epin'].keys()) :
             if 'Type' in self.DeviceConf[Model]['Epin'][ep]:
                 EpinType = ( ep, getListofType( self.DeviceConf[Model]['Epin'][ep]['Type']) )
                 EpType.append(EpinType)
@@ -524,7 +524,7 @@ def getModelbyZDeviceIDProfileID( self, ZDeviceID, ProfileID):
     """
     Provide a Model for a given ZdeviceID, ProfileID
     """
-    for model in self.DeviceConf :
+    for model in list(self.DeviceConf.keys()) :
         if self.DeviceConf[model]['ProfileID'] == ProfileID and self.DeviceConf[model]['ZDeviceID'] == ZDeviceID :
             return model
     return ''
@@ -773,7 +773,7 @@ def lookupForIEEE( self, nwkid , reconnect=False):
     # """
 
     # Domoticz.Log("lookupForIEEE - looking for %s in Neighbourgs table" %nwkid)
-    for key in self.ListOfDevices:
+    for key in list(self.ListOfDevices.keys()):
         if 'Neighbours' not in self.ListOfDevices[key]:
             continue
         if len(self.ListOfDevices[key]['Neighbours']) == 0:
@@ -831,7 +831,7 @@ def lookupForParentDevice( self, nwkid= None, ieee=None):
     if mainPoweredDevice( self, nwkid):
         return ieee
 
-    for PotentialRouter in self.ListOfDevices:
+    for PotentialRouter in list(self.ListOfDevices.keys()):
         if 'Neighbours' not in self.ListOfDevices[PotentialRouter]:
             continue
         if len(self.ListOfDevices[PotentialRouter]['Neighbours']) == 0:
@@ -970,7 +970,7 @@ def get_list_isqn_attr_datastruct(self, DeviceAttribute, key, endpoint, clusterI
         return []
     if check_datastruct( self, DeviceAttribute, key, endpoint, clusterId ) is None:
         return []
-    return [ x for x in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['iSQN'] ]
+    return [ x for x in list(self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['iSQN'].keys()) ]
 
 
 def set_request_datastruct( self, DeviceAttribute, key, endpoint, clusterId, AttributeId, 
@@ -1028,7 +1028,7 @@ def get_list_waiting_request_datastruct( self, DeviceAttribute, key, endpoint, c
         return []
     return [
         x
-        for x in self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][ clusterId ]['ZigateRequest']
+        for x in list(self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][ clusterId ]['ZigateRequest'].keys())
         if self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId][ 'ZigateRequest' ][x]['Status'] == 'waiting'
     ]
 
