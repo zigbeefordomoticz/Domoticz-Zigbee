@@ -127,7 +127,7 @@ class NetworkMap():
             # We have been through all list of devices and not action triggered
             if not waitResponse:
                 self.logging( 'Debug', "continue_scan - scan completed, all Neighbour tables received.")
-                check_sibbling(self)
+                #check_sibbling(self)
                 finish_scan( self )
                 self._NetworkMapPhase = 0
         return
