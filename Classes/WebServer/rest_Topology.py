@@ -97,10 +97,7 @@ def rest_netTopologie( self, verb, data, parameters):
                             _child = item
 
                         elif reportLQI[item]['Neighbours'][x]['_relationshp'] == 'Sibling':
-                            if not self.pluginconf.pluginConf['siblingReported']:
-                                continue
-                            _father = item
-                            _child  = x
+                            continue
 
                         elif reportLQI[item]['Neighbours'][x]['_relationshp'] == 'Former Child':
                             continue
