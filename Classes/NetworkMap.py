@@ -541,15 +541,32 @@ def add_relationship(self, node1, node2, relation_node, relation_ship):
             node1, relation_node,self.Neighbours[node1]['Neighbours'][relation_node]['_relationshp'] ))
 
     _ieee = None
+    if relation_node == '0000':
+        # ZiGate
+        _extPANID = '0000000000000000'
+        _depth = 'ff'
+        _linkqty = '0'
+        _devicetype = 'Coordinator'
+        _permitjnt = '??'
+        _rxonwhenidl = 'On'
+    else:
+        _extPANID = self.Neighbours[node1]['Neighbours'][node2]['_extPANID']
+        _depth = self.Neighbours[node1]['Neighbours'][node2]['_depth']
+        _linkqty = self.Neighbours[node1]['Neighbours'][node2]['_lnkqty']
+        _devicetype = self.Neighbours[node1]['Neighbours'][node2]['_devicetype']
+        _permitjnt = self.Neighbours[node1]['Neighbours'][node2]['_permitjnt']
+        _rxonwhenidl = self.Neighbours[node1]['Neighbours'][node2]['_rxonwhenidl']
+
+
     if relation_node in self.ListOfDevices and 'IEEE' in self.ListOfDevices[ relation_node ]:
         _ieee = self.ListOfDevices[ relation_node ]['IEEE']
 
     self.Neighbours[node1]['Neighbours'][relation_node] = {}
     self.Neighbours[node1]['Neighbours'][relation_node]['_relationshp'] = relation_ship
-    self.Neighbours[node1]['Neighbours'][relation_node]['_extPANID'] = self.Neighbours[node1]['Neighbours'][node2]['_extPANID']
+    self.Neighbours[node1]['Neighbours'][relation_node]['_extPANID'] = _extPANID
     self.Neighbours[node1]['Neighbours'][relation_node]['_ieee'] = _ieee
-    self.Neighbours[node1]['Neighbours'][relation_node]['_depth'] = self.Neighbours[node1]['Neighbours'][node2]['_depth']
-    self.Neighbours[node1]['Neighbours'][relation_node]['_lnkqty'] = self.Neighbours[node1]['Neighbours'][node2]['_lnkqty']
-    self.Neighbours[node1]['Neighbours'][relation_node]['_devicetype'] = self.Neighbours[node1]['Neighbours'][node2]['_devicetype']
-    self.Neighbours[node1]['Neighbours'][relation_node]['_permitjnt'] = self.Neighbours[node1]['Neighbours'][node2]['_permitjnt']
-    self.Neighbours[node1]['Neighbours'][relation_node]['_rxonwhenidl'] = self.Neighbours[node1]['Neighbours'][node2]['_rxonwhenidl']
+    self.Neighbours[node1]['Neighbours'][relation_node]['_depth'] = _depth
+    self.Neighbours[node1]['Neighbours'][relation_node]['_lnkqty'] = _linkqty
+    self.Neighbours[node1]['Neighbours'][relation_node]['_devicetype'] = _devicetype
+    self.Neighbours[node1]['Neighbours'][relation_node]['_permitjnt'] = _permitjnt
+    self.Neighbours[node1]['Neighbours'][relation_node]['_rxonwhenidl'] = _rxonwhenidl
