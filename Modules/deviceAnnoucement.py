@@ -141,7 +141,7 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
         if RejoinFlag:
             self.log.logging(  "Input", "Error", "Decode004D - Unexpected %s %s %s" % (NwkId, Ieee, RejoinFlag), NwkId, )
 
-    for ep in self.ListOfDevices[NwkId]['Ep']:
+    for ep in list(self.ListOfDevices[NwkId]['Ep'].keys()):
         if '0004' in self.ListOfDevices[NwkId]['Ep'][ep] and self.groupmgt:
             self.groupmgt.ScanDevicesForGroupMemberShip( [ NwkId, ] )
             break
@@ -161,28 +161,7 @@ def decode004d_existing_devicev2( self, Devices, NwkId, MsgIEEE, MsgMacCapa, Msg
     # If needed fix MacCapa
     deviceMacCapa = list( decodeMacCapa(ReArrangeMacCapaBasedOnModel(self, NwkId, MsgMacCapa)) )
 
-    self.log.logging(  "Input", "Log", "Decode004D - Already known device %s infos: %s, " % (NwkId, self.ListOfDevices[NwkId]), NwkId, )
-
-    # if NwkId in self.ListOfDevices:
-    #    if "ZDeviceName" in self.ListOfDevices[NwkId]:
-    #        self.log.logging(
-    #            "Pairing",
-    #            "Status",
-    #            "Device Announcement: %s (%s, %s) LQI: %s "
-    #            % (
-    #                self.ListOfDevices[NwkId]["ZDeviceName"],
-    #                NwkId,
-    #                MsgIEEE,
-    #                int(MsgLQI, 16),
-    #            ),
-    #        )
-    #    else:
-    #        self.log.logging(
-    #            "Pairing",
-    #            "Status",
-    #            "Device Announcement Addr: %s, IEEE: %s LQI: %s "
-    #            % (NwkId, MsgIEEE, int(MsgLQI, 16)),
-    #        )
+    self.log.logging(  "Input", "Debug", "Decode004D - Already known device %s infos: %s, " % (NwkId, self.ListOfDevices[NwkId]), NwkId, )
 
     # If this is a rejoin after a leave, let's update the Status
 
@@ -200,7 +179,7 @@ def decode004d_existing_devicev2( self, Devices, NwkId, MsgIEEE, MsgMacCapa, Msg
     # Reset the device Hearbeat, This should allow to trigger Read Request
     self.ListOfDevices[NwkId]["Heartbeat"] = 0
 
-    for tmpep in self.ListOfDevices[NwkId]["Ep"]:
+    for tmpep in list(self.ListOfDevices[NwkId]["Ep"].keys()):
         if "0500" in self.ListOfDevices[NwkId]["Ep"][tmpep]:
             # We found a Cluster 0x0500 IAS. May be time to start the IAS Zone process
             self.log.logging( 
@@ -586,7 +565,7 @@ def decode004d_existing_devicev1( self, Devices, MsgSrcAddr, MsgIEEE, MsgMacCapa
     # Reset the device Hearbeat, This should allow to trigger Read Request
     self.ListOfDevices[MsgSrcAddr]["Heartbeat"] = 0
 
-    for tmpep in self.ListOfDevices[MsgSrcAddr]["Ep"]:
+    for tmpep in list(self.ListOfDevices[MsgSrcAddr]["Ep"].keys()):
         if "0500" in self.ListOfDevices[MsgSrcAddr]["Ep"][tmpep]:
             # We found a Cluster 0x0500 IAS. May be time to start the IAS Zone process
             self.log.logging( 
