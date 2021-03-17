@@ -127,6 +127,7 @@ class NetworkMap():
             # We have been through all list of devices and not action triggered
             if not waitResponse:
                 self.logging( 'Debug', "continue_scan - scan completed, all Neighbour tables received.")
+                check_sibbling(self)
                 finish_scan( self )
                 self._NetworkMapPhase = 0
         return
@@ -489,3 +490,63 @@ def LQIresp_decoding(self, MsgData):
         self.Neighbours[NwkIdSource]['Neighbours'][_nwkid]['_rxonwhenidl'] = _rxonwhenidl
 
     return
+
+def check_sibbling(self):
+
+    for node1 in list(self.Neighbours):
+        for node2 in list(self.Neighbours[node1]['Neighbours']):
+            if self.Neighbours[node1]['Neighbours'][node2]['_relationshp'] != 'Sibling':
+                continue
+
+            parent = find_parent_for_node( self, node2)
+            if parent is None:
+                parent = find_parent_for_node( self, node1)
+            if parent is None:
+                continue
+
+            Domoticz.Log("check_sibbling - Sibling: %s-%s get parent %s" %(node1, node2, parent))
+            add_relationship(self, node1, node2, parent, 'Parent')
+            add_relationship(self, node2, node1, parent, 'Parent')   
+                                                                                   
+            
+
+def find_parent_for_node( self, node):
+    # Return the parent of that node, or None if no parent found
+    for y in list(self.Neighbours[node]['Neighbours']):
+        if self.Neighbours[node]['Neighbours'][y]['_relationshp'] == 'Parent':
+            return y
+
+    for x in list(self.Neighbours):
+        if node in self.Neighbours[x]['Neighbours']:
+            if self.Neighbours[x]['Neighbours'][node]['_relationshp'] == 'Child':
+                return x
+
+    return None
+
+def add_relationship(self, node1, node2, relation_node, relation_ship):
+
+    Domoticz.Log("add_relationship - Adding %s relation between %s and %s" %(relation_ship, node1, relation_node))
+    if node1 not in self.Neighbours:
+        self.Neighbours[node1] = {}
+        self.Neighbours[node1]['Neighbours'] = {}
+
+    if relation_node in self.Neighbours[node1]['Neighbours'] and self.Neighbours[node1]['Neighbours'][relation_node]['_relationshp'] == relation_ship:
+        return
+
+    if relation_node in self.Neighbours[node1]['Neighbours']:
+        Domoticz.Log("add_relationship - existing will be overwriten %s - %s > %s" %( 
+            node1, relation_node,self.Neighbours[node1]['Neighbours'][relation_node]['_relationshp'] ))
+
+    _ieee = None
+    if relation_node in self.ListOfDevices and 'IEEE' in self.ListOfDevices[ relation_node ]:
+        _ieee = self.ListOfDevices[ relation_node ]['IEEE']
+
+    self.Neighbours[node1]['Neighbours'][relation_node] = {}
+    self.Neighbours[node1]['Neighbours'][relation_node]['_relationshp'] = relation_ship
+    self.Neighbours[node1]['Neighbours'][relation_node]['_extPANID'] = self.Neighbours[node1]['Neighbours'][node2]['_extPANID']
+    self.Neighbours[node1]['Neighbours'][relation_node]['_ieee'] = _ieee
+    self.Neighbours[node1]['Neighbours'][relation_node]['_depth'] = self.Neighbours[node1]['Neighbours'][node2]['_depth']
+    self.Neighbours[node1]['Neighbours'][relation_node]['_lnkqty'] = self.Neighbours[node1]['Neighbours'][node2]['_lnkqty']
+    self.Neighbours[node1]['Neighbours'][relation_node]['_devicetype'] = self.Neighbours[node1]['Neighbours'][node2]['_devicetype']
+    self.Neighbours[node1]['Neighbours'][relation_node]['_permitjnt'] = self.Neighbours[node1]['Neighbours'][node2]['_permitjnt']
+    self.Neighbours[node1]['Neighbours'][relation_node]['_rxonwhenidl'] = self.Neighbours[node1]['Neighbours'][node2]['_rxonwhenidl']
