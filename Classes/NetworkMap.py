@@ -526,6 +526,9 @@ def find_parent_for_node( self, node):
 def add_relationship(self, node1, node2, relation_node, relation_ship):
 
     Domoticz.Log("add_relationship - Adding %s relation between %s and %s" %(relation_ship, node1, relation_node))
+    if node1 == relation_node:
+        return
+        
     if node1 not in self.Neighbours:
         self.Neighbours[node1] = {}
         self.Neighbours[node1]['Neighbours'] = {}
