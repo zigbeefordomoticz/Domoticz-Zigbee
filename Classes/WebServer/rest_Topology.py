@@ -49,113 +49,12 @@ def rest_netTopologie( self, verb, data, parameters):
         for line in handle:
             if line[0] != '{' and line[-1] != '}': 
                 continue
-            
             entry = json.loads( line )
             for _ts in entry:
                 _timestamps_lst.append( int(_ts) )
                 _topo[_ts] = [] # List of Father -> Child relation for one TimeStamp
-                _check_duplicate = []
-                _nwkid_list = []
                 reportLQI = entry[_ts]
-
-                for item in reportLQI:
-                    self.logging( 'Debug', "Node: %s" %item)
-                    if item != '0000' and item not in self.ListOfDevices:
-                        continue
-
-                    if item not in _nwkid_list:
-                        _nwkid_list.append( item )
-
-                    for x in  reportLQI[item]['Neighbours']:
-                        self.logging( 'Debug', "---> %s" %x)
-                        # Report only Child relationship
-                        if x != '0000' and x not in self.ListOfDevices: 
-                            continue
-
-                        if item == x: 
-                            continue
-
-                        if 'Neighbours' not in reportLQI[item]:
-                            Domoticz.Error("Missing attribute :%s for (%s,%s)" %('Neighbours', item, x))
-                            continue
-
-                        for attribute in ( '_relationshp', '_lnkqty', '_devicetype', '_depth' ):
-                            if attribute not in reportLQI[item]['Neighbours'][x]:
-                                Domoticz.Error("Missing attribute :%s for (%s,%s)" %(attribute, item, x))
-                                continue
-
-                        if x not in _nwkid_list:
-                            _nwkid_list.append( x )
-                        
-                        # We need to reorganise in Father/Child relationship.
-                        if reportLQI[item]['Neighbours'][x]['_relationshp'] == 'Parent':
-                            _father = item
-                            _child  = x
-
-                        elif reportLQI[item]['Neighbours'][x]['_relationshp'] == 'Child':
-                            _father = x
-                            _child = item
-
-                        elif reportLQI[item]['Neighbours'][x]['_relationshp'] == 'Sibling':
-                            continue
-
-                        elif reportLQI[item]['Neighbours'][x]['_relationshp'] == 'Former Child':
-                            continue
-
-                        elif reportLQI[item]['Neighbours'][x]['_relationshp'] == 'None':
-                            continue
-                    
-                        _relation = {}
-                        _relation['Father'] = _father
-                        _relation['Child'] = _child
-                        _relation["_lnkqty"] = int(reportLQI[item]['Neighbours'][x]['_lnkqty'], 16)
-                        _relation["DeviceType"] = reportLQI[item]['Neighbours'][x]['_devicetype']
-
-                        if _father != "0000":
-                            if 'ZDeviceName' in self.ListOfDevices[_father]:
-                                if self.ListOfDevices[_father]['ZDeviceName'] != "" and self.ListOfDevices[_father]['ZDeviceName'] != {}:
-                                    #_relation[master] = self.ListOfDevices[_father]['ZDeviceName']
-                                    _relation['Father'] = self.ListOfDevices[_father]['ZDeviceName']
-                        else:
-                            _relation['Father'] = "Zigate"
-
-                        if _child != "0000":
-                            if 'ZDeviceName' in self.ListOfDevices[_child]:
-                                if self.ListOfDevices[_child]['ZDeviceName'] != "" and self.ListOfDevices[_child]['ZDeviceName'] != {}:
-                                    #_relation[slave] = self.ListOfDevices[_child]['ZDeviceName']
-                                    _relation['Child'] = self.ListOfDevices[_child]['ZDeviceName']
-                        else:
-                            _relation['Child'] = "Zigate"
-
-                        # Sanity check, remove the direct loop
-                        if ( _relation['Child'], _relation['Father'] ) in _check_duplicate:
-                            self.logging( 'Debug', "Skip (%s,%s) as there is already ( %s, %s)" %(_relation['Father'], _relation['Child'], _relation['Child'], _relation['Father']))
-                            continue
-
-                        _check_duplicate.append( ( _relation['Father'], _relation['Child']))
-                        self.logging( 'Debug', "%10s Relationship - %15.15s - %15.15s %3s %2s" \
-                            %( _ts, _relation['Father'], _relation['Child'], _relation["_lnkqty"],
-                                    reportLQI[item]['Neighbours'][x]['_depth']))
-                        _topo[_ts].append( _relation )
-                    #end for x
-                #end for item
-
-                # Sanity check, to see if all devices are part of the report.
-                # for iterDev in self.ListOfDevices:
-                #     if iterDev in _nwkid_list: continue
-                #     if 'Status' not in self.ListOfDevices[iterDev]: continue
-                #     if self.ListOfDevices[iterDev]['Status'] != 'inDB': continue
-                #    self.logging( 'Debug', "Nwkid %s has not been reported by this scan" %iterDev)
-                #    _relation = {}
-                #    _relation['Father'] = _relation['Child'] = iterDev
-                #    _relation['_lnkqty'] = 0
-                #    _relation['DeviceType'] = ''
-                #    if 'ZDeviceName' in self.ListOfDevices[iterDev]:
-                #        if self.ListOfDevices[iterDev]['ZDeviceName'] != "" and self.ListOfDevices[iterDev]['ZDeviceName'] != {}:
-                #            _relation['Father'] = _relation['Child'] = self.ListOfDevices[iterDev]['ZDeviceName']
-                #    _topo[_ts].append( _relation )
-
-            #end for _st
+                _topo[_ts] = extract_report( self, reportLQI)
 
     if verb == 'DELETE':
         if len(parameters) == 0:
@@ -209,3 +108,146 @@ def rest_netTopologie( self, verb, data, parameters):
                 _response['Data'] = json.dumps( [] , sort_keys=True)
 
     return _response
+
+
+def extract_report( self, reportLQI):
+    _check_duplicate = []
+    _nwkid_list = []
+    _topo = []
+
+    reportLQI = check_sibbling(reportLQI)
+    for item in reportLQI:
+        self.logging( 'Debug', "Node: %s" %item)
+        if item != '0000' and item not in self.ListOfDevices:
+            continue
+
+        if item not in _nwkid_list:
+            _nwkid_list.append( item )
+
+        for x in  reportLQI[item]['Neighbours']:
+            self.logging( 'Debug', "---> %s" %x)
+            # Report only Child relationship
+            if x != '0000' and x not in self.ListOfDevices: 
+                continue
+            if item == x: 
+                continue
+            if 'Neighbours' not in reportLQI[item]:
+                Domoticz.Error("Missing attribute :%s for (%s,%s)" %('Neighbours', item, x))
+                continue
+
+            for attribute in ( '_relationshp', '_lnkqty', '_devicetype', ):
+                if attribute not in reportLQI[item]['Neighbours'][x]:
+                    Domoticz.Error("Missing attribute :%s for (%s,%s)" %(attribute, item, x))
+                    continue
+
+            if x not in _nwkid_list:
+                _nwkid_list.append( x )
+            
+            # We need to reorganise in Father/Child relationship.
+            if reportLQI[item]['Neighbours'][x]['_relationshp'] in ( 'Former Child', 'None', 'Sibling'):
+                continue
+
+            if reportLQI[item]['Neighbours'][x]['_relationshp'] == 'Parent':
+                _father = item
+                _child  = x
+
+            elif reportLQI[item]['Neighbours'][x]['_relationshp'] == 'Child':
+                _father = x
+                _child = item
+        
+            _relation = {}
+            _relation['Father'] = _father
+            _relation['Child'] = _child
+            _relation["_lnkqty"] = int(reportLQI[item]['Neighbours'][x]['_lnkqty'], 16)
+            _relation["DeviceType"] = reportLQI[item]['Neighbours'][x]['_devicetype']
+
+            if _father != "0000":
+                if 'ZDeviceName' in self.ListOfDevices[_father]:
+                    if self.ListOfDevices[_father]['ZDeviceName'] != "" and self.ListOfDevices[_father]['ZDeviceName'] != {}:
+                        #_relation[master] = self.ListOfDevices[_father]['ZDeviceName']
+                        _relation['Father'] = self.ListOfDevices[_father]['ZDeviceName']
+            else:
+                _relation['Father'] = "Zigate"
+
+            if _child != "0000":
+                if 'ZDeviceName' in self.ListOfDevices[_child]:
+                    if self.ListOfDevices[_child]['ZDeviceName'] != "" and self.ListOfDevices[_child]['ZDeviceName'] != {}:
+                        #_relation[slave] = self.ListOfDevices[_child]['ZDeviceName']
+                        _relation['Child'] = self.ListOfDevices[_child]['ZDeviceName']
+            else:
+                _relation['Child'] = "Zigate"
+
+            # Sanity check, remove the direct loop
+            if ( _relation['Child'], _relation['Father'] ) in _check_duplicate:
+                self.logging( 'Debug', "Skip (%s,%s) as there is already ( %s, %s)" %(_relation['Father'], _relation['Child'], _relation['Child'], _relation['Father']))
+                continue
+
+            _check_duplicate.append( ( _relation['Father'], _relation['Child']))
+            self.logging( 'Debug', "Relationship - %15.15s - %15.15s %3s" %(
+                _relation['Father'], _relation['Child'], _relation["_lnkqty"]))
+            _topo.append( _relation )
+    return _topo
+
+def check_sibbling(reportLQI):
+    for node1 in list(reportLQI):
+        for node2 in list(reportLQI[node1]['Neighbours']):
+            if reportLQI[node1]['Neighbours'][node2]['_relationshp'] != 'Sibling':
+                continue
+
+            parent = find_parent_for_node( reportLQI, node2)
+            if parent is None:
+                parent = find_parent_for_node( reportLQI, node1)
+            if parent is None:
+                continue
+
+            Domoticz.Log("check_sibbling - Sibling: %s-%s get parent %s" %(node1, node2, parent))
+            reportLQI = add_relationship(reportLQI, node1, node2, parent, 'Parent')
+            reportLQI = add_relationship(reportLQI, node2, node1, parent, 'Parent') 
+
+    return reportLQI
+                                                                                   
+def find_parent_for_node( reportLQI, node):
+    # Return the parent of that node, or None if no parent found
+    for y in list(reportLQI[node]['Neighbours']):
+        if reportLQI[node]['Neighbours'][y]['_relationshp'] == 'Parent':
+            return y
+
+    for x in list(reportLQI):
+        if node in reportLQI[x]['Neighbours']:
+            if reportLQI[x]['Neighbours'][node]['_relationshp'] == 'Child':
+                return x
+
+    return None
+
+def add_relationship(reportLQI, node1, node2, relation_node, relation_ship):
+
+    Domoticz.Log("add_relationship - Adding %s relation between %s and %s" %(relation_ship, node1, relation_node))
+    if node1 == relation_node:
+        return reportLQI
+        
+    if node1 not in reportLQI:
+        reportLQI[node1] = {}
+        reportLQI[node1]['Neighbours'] = {}
+
+    if relation_node in reportLQI[node1]['Neighbours'] and reportLQI[node1]['Neighbours'][relation_node]['_relationshp'] == relation_ship:
+        return reportLQI
+
+    if relation_node in reportLQI[node1]['Neighbours']:
+        Domoticz.Log("add_relationship - existing will be overwriten %s - %s > %s" %( 
+            node1, relation_node,reportLQI[node1]['Neighbours'][relation_node]['_relationshp'] ))
+
+    if relation_node == '0000':
+        # ZiGate
+        _linkqty = '0'
+        _devicetype = 'Coordinator'
+    else:
+        _linkqty = reportLQI[node1]['Neighbours'][node2]['_lnkqty']
+        _devicetype = reportLQI[node1]['Neighbours'][node2]['_devicetype']
+
+    reportLQI[node1]['Neighbours'][relation_node] = {}
+    reportLQI[node1]['Neighbours'][relation_node]['_relationshp'] = relation_ship
+    reportLQI[node1]['Neighbours'][relation_node]['_lnkqty'] = _linkqty
+    reportLQI[node1]['Neighbours'][relation_node]['_devicetype'] = _devicetype
+
+    return reportLQI
+

@@ -127,7 +127,6 @@ class NetworkMap():
             # We have been through all list of devices and not action triggered
             if not waitResponse:
                 self.logging( 'Debug', "continue_scan - scan completed, all Neighbour tables received.")
-                #check_sibbling(self)
                 finish_scan( self )
                 self._NetworkMapPhase = 0
         return
@@ -508,8 +507,6 @@ def check_sibbling(self):
             add_relationship(self, node1, node2, parent, 'Parent')
             add_relationship(self, node2, node1, parent, 'Parent')   
                                                                                    
-            
-
 def find_parent_for_node( self, node):
     # Return the parent of that node, or None if no parent found
     for y in list(self.Neighbours[node]['Neighbours']):
