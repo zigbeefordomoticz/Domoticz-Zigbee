@@ -335,12 +335,12 @@ def Decode8000_v2(self, Devices, MsgData, MsgLQI):  # Status
     if PacketType in SPECIFIC_PACKET_TYPE:
         self.log.logging( "Input", "Log", SPECIFIC_PACKET_TYPE[ PacketType ] + Status )
 
-    if PacketType == "0012":
-        # Let's trigget a zigate_Start
-        # self.startZigateNeeded = self.HeartbeatCount
-        # if self.HeartbeatCount == 0:
-        #    self.startZigateNeeded = 1
-        pass
+    #if PacketType == "0012":
+    #    # Let's trigget a zigate_Start
+    #    # self.startZigateNeeded = self.HeartbeatCount
+    #    # if self.HeartbeatCount == 0:
+    #    #    self.startZigateNeeded = 1
+    #    pass
 
     # Group Management
     if PacketType in ("0060", "0061", "0062", "0063", "0064", "0065"):
@@ -359,10 +359,11 @@ def Decode8000_v2(self, Devices, MsgData, MsgLQI):  # Status
         if MsgData[0:2] not in ( '01', '02', '03', '04', '05'):
             self.internalError += 1
         if self.internalError > 4:
+            self.internalError = 0
             sendZigateCmd(self, "0011", "" ) # Software Reset
             self.log.logging(  "Input", "Log", "TOO MUCH ERRORS - ZIGATE RESET")
-        else:
-            self.internalError = 0
+    else:
+        self.internalError = 0
 
 
 
