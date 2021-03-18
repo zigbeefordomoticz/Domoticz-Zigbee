@@ -282,7 +282,7 @@ def loggingWriteErrorHistory( self ):
                     
 
 def start_logging_thread( self ):
-    Domoticz.Log( "start_serstart_logging_threadial_reader_thread")
+    Domoticz.Log( "start_logging_thread")
     if self.logging_thread is None:
         self.logging_queue = Queue()
         self.logging_thread = threading.Thread( name="ZiGateLogging_%s" %self.HardwareID,  target=logging_thread,  args=(self,))
