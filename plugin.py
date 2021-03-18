@@ -61,7 +61,11 @@
 """
 
 import Domoticz
-#from Domoticz import Devices, Parameters
+try:
+    from Domoticz import Devices, Images, Parameters, Settings
+except ImportError:
+    pass
+
 from datetime import datetime
 import time
 import json
@@ -105,18 +109,6 @@ TEMPO_NETWORK = 2    # Start HB totrigget Network Status
 TIMEDOUT_START = 10  # Timeoud for the all startup
 TIMEDOUT_FIRMWARE = 5 # HB before request Firmware again
 TEMPO_START_ZIGATE = 1 # Nb HB before requesting a Start_Zigate
-
-
-import inspect
-import Domoticz
-
-#def inspect_Domoticz():
-#    Domoticz.Log("Domoticz.__name__: >%s< , Domoticz.__package__: >%s<" %(Domoticz.__name__, Domoticz.__package__))
-#    for name, value in inspect.getmembers(Domoticz):
-#        if not name.startswith("_"):
-#            if callable(value):
-#                value = "callable"
-#            Domoticz.Log("({}) {} = {}".format(type(value), name, value))
 
 class BasePlugin:
     enabled = False
@@ -214,10 +206,6 @@ class BasePlugin:
 
 
     def onStart(self):
-
-        
-        #inspect_Domoticz()
-
         Domoticz.Heartbeat( 1 )
         self.pluginParameters = dict(Parameters)
 
@@ -290,6 +278,7 @@ class BasePlugin:
         self.PluginHealth['Txt'] = 'Startup'
 
         if self.log is None:
+            Domoticz.Status( "Starting LoggingManagement thread" )
             self.log = LoggingManagement(self.pluginconf, self.PluginHealth, self.HardwareID, self.ListOfDevices, self.permitTojoin )
             self.log.openLogFile()
 
@@ -818,6 +807,7 @@ def zigateInit_Phase2( self):
 
 def zigateInit_Phase3( self ):
 
+
     # We can now do what must be done when we known the Firmware version
     if self.FirmwareVersion is None:
         return
@@ -827,6 +817,7 @@ def zigateInit_Phase3( self ):
     self.pluginParameters['FirmwareVersion'] = self.FirmwareVersion
 
     if not check_firmware_level( self ):
+        self.log.logging( 'Plugin', 'Debug', "Firmware not ready")
         return 
 
     if self.transport != 'None' and int(self.FirmwareVersion,16) >= 0x030f and int(self.FirmwareMajorVersion,16) >= 0x0003:
@@ -861,7 +852,6 @@ def zigateInit_Phase3( self ):
         # Create Network Map object and trigger one scan
         if self.networkmap is None:
             self.networkmap = NetworkMap( self.pluginconf, self.ZigateComm, self.ListOfDevices, Devices, self.HardwareID, self.log)
-     
         # Create Network Energy object and trigger one scan
         if self.networkenergy is None:
             self.networkenergy = NetworkEnergy( self.pluginconf, self.ZigateComm, self.ListOfDevices, Devices, self.HardwareID, self.log)        #    if len(self.ListOfDevices) > 1:        #        self.log.logging( 'Plugin', 'Status', "Trigger a Energy Level Scan")        #        self.networkenergy.start_scan()
@@ -890,7 +880,6 @@ def zigateInit_Phase3( self ):
         and self.transport != 'None'
         ):
         sendZigateCmd(self, "0009","")
-
 
 def check_firmware_level( self ):
         # Check Firmware version
