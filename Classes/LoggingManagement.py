@@ -67,6 +67,7 @@ class LoggingManagement:
             Domoticz.Status("Log history not found, no error logged")
             #Domoticz.Error(repr(e))
             return
+            
         try:
             self.LogErrorHistory = json.load( handle)
             # By default we will leave No Error even if there are from the past
@@ -119,7 +120,6 @@ class LoggingManagement:
         self._newError = False
 
     def logging( self, module, logType, message, nwkid=None, context=None):
-
         if self.logging_thread and self.logging_queue:
             logging_tupple = [ threading.current_thread().name, module, logType, message, nwkid, context ]
             self.logging_queue.put( logging_tupple )
@@ -296,30 +296,25 @@ def logging_thread( self ):
         # We loop until self.running is set to False, 
         # which indicate plugin shutdown   
         data = None
-
         logging_tupple = self.logging_queue.get()
         if logging_tupple == 'QUIT':
+            Domoticz.Error("logging_thread Exist requested")
             break
-
         elif len(logging_tupple) == 6:
-
             thread_name, module, logType, message, nwkid, context = logging_tupple
-            
             if logType == 'Error':
                 loggingError( self, thread_name, module, message, nwkid, context)
-
             elif logType == 'Debug':
                 pluginConfModule = "debug"+str(module)
-
                 if pluginConfModule in self.pluginconf.pluginConf:
                     if self.pluginconf.pluginConf[pluginConfModule]:
                         _logginfilter(self, thread_name, message, nwkid)
-
                 else:
                     Domoticz.Error("%s debug module unknown %s" %(pluginConfModule, module))
                     _loggingDebug(self, thread_name, message)
             else:
                 loggingDirector(self, thread_name, logType, message )
-                
+        else:
+            Domoticz.Error("logging_thread unexpected tupple %s" %(str(logging_tupple)))
     Domoticz.Log( "logging_thread - ended")
     
