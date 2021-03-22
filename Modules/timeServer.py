@@ -16,6 +16,12 @@ def timeserver_read_attribute_request( self, sqn, nwkid, ep, cluster, manuf_spec
     data_type = value = None
     status = '86'
 
+    if 'SQN_000a' in self.ListOfDevices[ nwkid ] and sqn == self.ListOfDevices[ nwkid ]['SQN_000a']:
+        # Duplicate
+        self.log.logging(  "Input", "Debug", "timeserver_read_attribute_request [%s] %s/%s Cluster: %s Attribute: %s already processed" %(sqn, nwkid, ep, cluster,attribute))
+        return
+    self.ListOfDevices[ nwkid ]['SQN_000a'] = sqn
+
     if attribute == '0000': # Time (should be probded by ZiGate)
         self.log.logging(  "Input", "Debug", "-->Local Time: %s" %datetime.now())
         EPOCTime = datetime(2000,1,1)
