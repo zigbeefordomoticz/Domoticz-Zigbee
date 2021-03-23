@@ -4,28 +4,46 @@
 # Author: zaraki673 & pipiche38
 #
 """
-
 <plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="4.12" wikilink="https://www.domoticz.com/wiki/Zigate" externallink="https://github.com/pipiche38/Domoticz-Zigate/wiki">
     <description>
-        <h2> Plugin Zigate for Domoticz </h2><br/>
-    <h3> Short description </h3>
-           This plugin allow Domoticz to access to the Zigate (Zigbee) worlds of devices.<br/>
-    <h3> Configuration </h3>
-          You can use the following parameter to interact with the Zigate:<br/>
-    <ul style="list-style-type:square">
-            <li> Model: Wifi</li>
-            <ul style="list-style-type:square">
-                <li> IP : For Wifi Zigate, the IP address. </li>
-                <li> Port: For Wifi Zigate,  port number. </li>
+        <h2> Plugin ZiGate for Domoticz </h2><br/>
+            The aim of the plugin is to bridge a ZiGate to the DomoticZ software. <br/>
+            This will allow you to manage all your devices through widgets created on the Domoticz side.<br/>
+            On top we have build a specific User Interface which is accessible over your browser to help you 
+            in the configuration of the plugin and to customize some behaviour of the Zigate Hardware.<br/>
+
+            <br/><h3> Sources of information </h3><br/>
+                Please use first the Domoticz forums in order to qualify your issue. Select the ZigBee or Zigate topic.
+                <ul style="list-style-type:square">
+                    <li>&<a href="https://zigbee.blakadder.com/zigate.html">List of Supported Devices (zigbee.blakadder.com)</a></li>
+                    <li>&<a href="https://github.com/pipiche38/Domoticz-Zigate-Wiki">Plugin Wiki</a></li>
+                    <li>&<a href="https://www.domoticz.com/forum/viewforum.php?f=68">English Forum</a></li>
+                    <li>&<a href="https://easydomoticz.com/forum/viewforum.php?f=28">Forum en Français</a></li>
+
+                </ul><br/>
+
+            <h3> Configuration </h3><br/>
+                You can use the following parameter to interact with the Zigate:<br/>
+                <ul style="list-style-type:square">
+                    <li> Model: Wifi</li>
+                        <ul style="list-style-type:square">
+                            <li> IP : For Wifi Zigate, the IP address. </li>
+                            <li> Port: For Wifi Zigate,  port number. </li>
+                        </ul>
+                    <li> Model USB ,  PI or DIN:</li>
+                        <ul style="list-style-type:square">
+                            <li> Serial Port: this is the serial port where your USB or DIN Zigate is connected. <br/>
+                            (The plugin will provide you the list of possible ports)</li>
+                        </ul>
+                    <br/>
+                    <h4>IMPORTANT</h4>
+                    Initialize ZiGate with plugin: This is a required step, with a new ZiGate or if you have done an Erase EEPROM. <br/>
+                    This will for instance create a new ZigBee Network. <br/>
+                    Be aware this will erase the Zigate memory and you will delete all pairing information. <br/>
+                    After that you'll have to re-pair each devices. This is not removing any data from Domoticz nor the plugin database.
                 </ul>
-                <li> Model USB ,  PI or DIN:</li>
-            <ul style="list-style-type:square">
-                <li> Serial Port: this is the serial port where your USB or DIN Zigate is connected. (The plugin will provide you the list of possible ports)</li>
-                </ul>
-            <li> Initialize ZiGate with plugin: This is a required step, with a new ZiGate or if you have done an Erase EEPROM. This will for instance create a new ZigBee Network. Be aware this will erase the Zigate memory and you will delete all pairing information. After that you'll have to re-pair each devices. This is not removing any data from Domoticz nor the plugin database.</li>
-    </ul>
-    <h3> Support </h3>
-    Please use first the Domoticz forums in order to qualify your issue. Select the ZigBee or Zigate topic.
+
+
     </description>
     <params>
         <param field="Mode1" label="Zigate Model" width="75px" required="true" default="None">
