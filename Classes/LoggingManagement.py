@@ -120,7 +120,7 @@ class LoggingManagement:
         self._newError = False
 
     def logging( self, module, logType, message, nwkid=None, context=None):
-        if self.logging_thread and self.logging_queue:
+        if self.logging_thread and self.logging_queue and self.loggingFileHandle:
             logging_tupple = [ threading.current_thread().name, module, logType, message, nwkid, context ]
             self.logging_queue.put( logging_tupple )
         else:
