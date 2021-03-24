@@ -200,10 +200,8 @@ def check_sibbling(reportLQI):
 
             #Domoticz.Log("Search parent for sibling %s and %s" %(node1, node2))
             parent1 = find_parent_for_node( reportLQI, node2)
-            #Domoticz.Log("--parent1 found: %s" %parent1)
-
             parent2 = find_parent_for_node( reportLQI, node1)
-            #Domoticz.Log("--parent2 found: %s" %parent2)
+            #Domoticz.Log("--parents found: %s + %s" %(parent1,parent2))
 
             if len(parent1) and len(parent2) == 0:
                 continue
@@ -255,8 +253,13 @@ def add_relationship(reportLQI, node1, node2, relation_node, relation_ship):
         _linkqty = '0'
         _devicetype = 'Coordinator'
     else:
-        _linkqty = reportLQI[node1]['Neighbours'][node2]['_lnkqty']
-        _devicetype = reportLQI[node1]['Neighbours'][node2]['_devicetype']
+        _linkqty = '0'
+        _devicetype = '???'
+        if node2 in reportLQI[node1]['Neighbours']:
+            if '_lnkqty' in reportLQI[node1]['Neighbours'][node2]:
+                _linkqty = reportLQI[node1]['Neighbours'][node2]['_lnkqty']
+            if '_devicetype' in reportLQI[node1]['Neighbours'][node2]:
+                _devicetype = reportLQI[node1]['Neighbours'][node2]['_devicetype']
 
     reportLQI[node1]['Neighbours'][relation_node] = {}
     reportLQI[node1]['Neighbours'][relation_node]['_relationshp'] = relation_ship
