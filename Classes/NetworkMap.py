@@ -176,7 +176,7 @@ def finish_scan( self ):
     for nwkid in self.Neighbours:
         # We will keep 3 versions of Neighbours
         if nwkid not in self.ListOfDevices:
-            Domoticz.Error("finish_scan - %s not found in list Of Devices." %nwkid)
+            self.logging( 'Error', "finish_scan - %s not found in list Of Devices." %nwkid)
             continue
 
         if 'Neighbours' not in self.ListOfDevices[nwkid]:
@@ -228,7 +228,7 @@ def finish_scan( self ):
 
         self.ListOfDevices[nwkid]['Neighbours'].append ( LOD_Neighbours )
 
-    Domoticz.Status("--")
+    self.logging( 'Status',"--")
 
     prettyPrintNeighbours( self )
 
@@ -259,7 +259,7 @@ def finish_scan( self ):
             json.dump( storeLQI, fout)
         #self.adminWidgets.updateNotificationWidget( Devices, 'A new LQI report is available')
     else:
-        Domoticz.Error("LQI:Unable to get access to directory %s, please check PluginConf.txt" %(self.pluginconf.pluginConf['pluginReports']))
+        self.logging( 'Error', "LQI:Unable to get access to directory %s, please check PluginConf.txt" %(self.pluginconf.pluginConf['pluginReports']))
 
 def prettyPrintNeighbours( self ):
 
@@ -368,7 +368,7 @@ def LQIresp_decoding(self, MsgData):
         return
 
     if len(ListOfEntries) // 42 != NeighbourTableListCount:
-        Domoticz.Error("LQI:LQIresp - missmatch. Expecting %s entries and found %s" \
+        self.logging( 'Error',"LQI:LQIresp - missmatch. Expecting %s entries and found %s" \
                 %(NeighbourTableListCount, len(ListOfEntries)//42))
 
     self.logging( 'Debug', "self.LQIreqInProgress = %s" %len(self.LQIreqInProgress))
@@ -469,13 +469,13 @@ def LQIresp_decoding(self, MsgData):
         self.logging( 'Debug', "--- -----> _rxonwhenidl: %s" %_rxonwhenidl)
     
         if _nwkid in self.Neighbours[ NwkIdSource ]['Neighbours'] and _relationshp not in ( 'Parent', 'Child'):
-            Domoticz.Log("LQI:LQIresp - %s already in Neighbours Table for %s" %(_nwkid, NwkIdSource))
+            self.logging( 'Debug', "LQI:LQIresp - %s already in Neighbours Table for %s" %(_nwkid, NwkIdSource))
             # Let's check the infos
-            Domoticz.Log("      - _extPANID:    %s  versus %s" %( _extPANID, self.Neighbours[NwkIdSource]['Neighbours'][_nwkid]['_extPANID']))
-            Domoticz.Log("      - _ieee:        %s  versus %s" %( _ieee, self.Neighbours[NwkIdSource]['Neighbours'][_nwkid]['_ieee']))
-            Domoticz.Log("      - _depth:       %s  versus %s" %( _depth, self.Neighbours[NwkIdSource]['Neighbours'][_nwkid]['_depth']))
-            Domoticz.Log("      - _lnkqty:      %s  versus %s" %( _lnkqty, self.Neighbours[NwkIdSource]['Neighbours'][_nwkid]['_lnkqty']))
-            Domoticz.Log("      - _relationshp: %s  versus %s" %( _relationshp, self.Neighbours[NwkIdSource]['Neighbours'][_nwkid]['_relationshp']))
+            self.logging( 'Debug', "      - _extPANID:    %s  versus %s" %( _extPANID, self.Neighbours[NwkIdSource]['Neighbours'][_nwkid]['_extPANID']))
+            self.logging( 'Debug', "      - _ieee:        %s  versus %s" %( _ieee, self.Neighbours[NwkIdSource]['Neighbours'][_nwkid]['_ieee']))
+            self.logging( 'Debug', "      - _depth:       %s  versus %s" %( _depth, self.Neighbours[NwkIdSource]['Neighbours'][_nwkid]['_depth']))
+            self.logging( 'Debug', "      - _lnkqty:      %s  versus %s" %( _lnkqty, self.Neighbours[NwkIdSource]['Neighbours'][_nwkid]['_lnkqty']))
+            self.logging( 'Debug', "      - _relationshp: %s  versus %s" %( _relationshp, self.Neighbours[NwkIdSource]['Neighbours'][_nwkid]['_relationshp']))
             return
 
         self.Neighbours[NwkIdSource]['Neighbours'][_nwkid] = {}
@@ -503,7 +503,7 @@ def check_sibbling(self):
             if parent is None:
                 continue
 
-            Domoticz.Log("check_sibbling - Sibling: %s-%s get parent %s" %(node1, node2, parent))
+            self.logging( 'Debug', "check_sibbling - Sibling: %s-%s get parent %s" %(node1, node2, parent))
             add_relationship(self, node1, node2, parent, 'Parent')
             add_relationship(self, node2, node1, parent, 'Parent')   
                                                                                    
@@ -522,7 +522,7 @@ def find_parent_for_node( self, node):
 
 def add_relationship(self, node1, node2, relation_node, relation_ship):
 
-    Domoticz.Log("add_relationship - Adding %s relation between %s and %s" %(relation_ship, node1, relation_node))
+    self.logging( 'Debug', "add_relationship - Adding %s relation between %s and %s" %(relation_ship, node1, relation_node))
     if node1 == relation_node:
         return
         
@@ -534,7 +534,7 @@ def add_relationship(self, node1, node2, relation_node, relation_ship):
         return
 
     if relation_node in self.Neighbours[node1]['Neighbours']:
-        Domoticz.Log("add_relationship - existing will be overwriten %s - %s > %s" %( 
+        self.logging( 'Debug', "add_relationship - existing will be overwriten %s - %s > %s" %( 
             node1, relation_node,self.Neighbours[node1]['Neighbours'][relation_node]['_relationshp'] ))
 
     _ieee = None
