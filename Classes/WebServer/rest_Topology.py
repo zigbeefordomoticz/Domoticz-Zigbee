@@ -189,39 +189,57 @@ def extract_report( self, reportLQI):
     return _topo
 
 def check_sibbling(reportLQI):
+    #for node1 in sorted(reportLQI):
+    #    for node2 in list(reportLQI[node1]['Neighbours']):
+    #        Domoticz.Log("%s %s %s" %(node1, node2,reportLQI[node1]['Neighbours'][node2]['_relationshp'] ))
+
     for node1 in list(reportLQI):
         for node2 in list(reportLQI[node1]['Neighbours']):
             if reportLQI[node1]['Neighbours'][node2]['_relationshp'] != 'Sibling':
                 continue
 
-            parent = find_parent_for_node( reportLQI, node2)
-            if parent is None:
-                parent = find_parent_for_node( reportLQI, node1)
-            if parent is None:
+            #Domoticz.Log("Search parent for sibling %s and %s" %(node1, node2))
+            parent1 = find_parent_for_node( reportLQI, node2)
+            #Domoticz.Log("--parent1 found: %s" %parent1)
+
+            parent2 = find_parent_for_node( reportLQI, node1)
+            #Domoticz.Log("--parent2 found: %s" %parent2)
+
+            if len(parent1) and len(parent2) == 0:
                 continue
 
-            Domoticz.Log("check_sibbling - Sibling: %s-%s get parent %s" %(node1, node2, parent))
-            reportLQI = add_relationship(reportLQI, node1, node2, parent, 'Parent')
-            reportLQI = add_relationship(reportLQI, node2, node1, parent, 'Parent') 
+            for x in parent1 + parent2:
+                reportLQI = add_relationship(reportLQI, node1, node2, x, 'Parent')
+                reportLQI = add_relationship(reportLQI, node2, node1, x, 'Parent') 
+
+    #for node1 in sorted(reportLQI):
+    #    for node2 in list(reportLQI[node1]['Neighbours']):
+    #        Domoticz.Log("%s %s %s" %(node1, node2,reportLQI[node1]['Neighbours'][node2]['_relationshp'] ))
 
     return reportLQI
                                                                                    
 def find_parent_for_node( reportLQI, node):
-    # Return the parent of that node, or None if no parent found
+
+    parent = []
     for y in list(reportLQI[node]['Neighbours']):
         if reportLQI[node]['Neighbours'][y]['_relationshp'] == 'Parent':
-            return y
+            #Domoticz.Log("-- -- find %s Parent for %s" %(y, node))
+            if y not in parent:
+                parent.append( y )
+
 
     for x in list(reportLQI):
         if node in reportLQI[x]['Neighbours']:
             if reportLQI[x]['Neighbours'][node]['_relationshp'] == 'Child':
-                return x
+                #Domoticz.Log("-- -- find %s Child for %s" %(y, node))
+                if x not in parent:
+                    parent.append( x )
 
-    return None
+
+    return parent
 
 def add_relationship(reportLQI, node1, node2, relation_node, relation_ship):
 
-    Domoticz.Log("add_relationship - Adding %s relation between %s and %s" %(relation_ship, node1, relation_node))
     if node1 == relation_node:
         return reportLQI
         
@@ -231,10 +249,6 @@ def add_relationship(reportLQI, node1, node2, relation_node, relation_ship):
 
     if relation_node in reportLQI[node1]['Neighbours'] and reportLQI[node1]['Neighbours'][relation_node]['_relationshp'] == relation_ship:
         return reportLQI
-
-    if relation_node in reportLQI[node1]['Neighbours']:
-        Domoticz.Log("add_relationship - existing will be overwriten %s - %s > %s" %( 
-            node1, relation_node,reportLQI[node1]['Neighbours'][relation_node]['_relationshp'] ))
 
     if relation_node == '0000':
         # ZiGate
@@ -250,4 +264,3 @@ def add_relationship(reportLQI, node1, node2, relation_node, relation_ship):
     reportLQI[node1]['Neighbours'][relation_node]['_devicetype'] = _devicetype
 
     return reportLQI
-
