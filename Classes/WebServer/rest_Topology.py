@@ -115,7 +115,7 @@ def extract_report( self, reportLQI):
     _nwkid_list = []
     _topo = []
 
-    reportLQI = check_sibbling(reportLQI)
+    reportLQI = check_sibbling(self, reportLQI)
     for item in reportLQI:
         self.logging( 'Debug', "Node: %s" %item)
         if item != '0000' and item not in self.ListOfDevices:
@@ -188,7 +188,7 @@ def extract_report( self, reportLQI):
             _topo.append( _relation )
     return _topo
 
-def check_sibbling(reportLQI):
+def check_sibbling(self, reportLQI):
     #for node1 in sorted(reportLQI):
     #    for node2 in list(reportLQI[node1]['Neighbours']):
     #        Domoticz.Log("%s %s %s" %(node1, node2,reportLQI[node1]['Neighbours'][node2]['_relationshp'] ))
@@ -206,9 +206,12 @@ def check_sibbling(reportLQI):
             if len(parent1) and len(parent2) == 0:
                 continue
 
-            for x in parent1 + parent2:
-                reportLQI = add_relationship(reportLQI, node1, node2, x, 'Parent')
-                reportLQI = add_relationship(reportLQI, node2, node1, x, 'Parent') 
+            for x in parent1:
+                reportLQI = add_relationship(self, reportLQI, node1, node2, x, 'Parent', reportLQI[node1]['Neighbours'][node2]['_lnkqty'])
+                reportLQI = add_relationship(self, reportLQI, node2, node1, x, 'Parent', reportLQI[node1]['Neighbours'][node2]['_lnkqty']) 
+            for x in parent2:
+                reportLQI = add_relationship(self, reportLQI, node1, node2, x, 'Parent', reportLQI[node1]['Neighbours'][node2]['_lnkqty'])
+                reportLQI = add_relationship(self, reportLQI, node2, node1, x, 'Parent', reportLQI[node1]['Neighbours'][node2]['_lnkqty']) 
 
     #for node1 in sorted(reportLQI):
     #    for node2 in list(reportLQI[node1]['Neighbours']):
@@ -236,7 +239,7 @@ def find_parent_for_node( reportLQI, node):
 
     return parent
 
-def add_relationship(reportLQI, node1, node2, relation_node, relation_ship):
+def add_relationship(self, reportLQI, node1, node2, relation_node, relation_ship, _linkqty):
 
     if node1 == relation_node:
         return reportLQI
@@ -250,16 +253,16 @@ def add_relationship(reportLQI, node1, node2, relation_node, relation_ship):
 
     if relation_node == '0000':
         # ZiGate
-        _linkqty = '0'
         _devicetype = 'Coordinator'
+        
     else:
-        _linkqty = '0'
-        _devicetype = '???'
         if node2 in reportLQI[node1]['Neighbours']:
-            if '_lnkqty' in reportLQI[node1]['Neighbours'][node2]:
-                _linkqty = reportLQI[node1]['Neighbours'][node2]['_lnkqty']
             if '_devicetype' in reportLQI[node1]['Neighbours'][node2]:
                 _devicetype = reportLQI[node1]['Neighbours'][node2]['_devicetype']
+            else:
+                _devicetype = find_device_type( self, node2 )
+        else:
+            _devicetype = find_device_type( self, node2 )
 
     reportLQI[node1]['Neighbours'][relation_node] = {}
     reportLQI[node1]['Neighbours'][relation_node]['_relationshp'] = relation_ship
@@ -267,3 +270,16 @@ def add_relationship(reportLQI, node1, node2, relation_node, relation_ship):
     reportLQI[node1]['Neighbours'][relation_node]['_devicetype'] = _devicetype
 
     return reportLQI
+
+def find_device_type( self, node ):
+
+    if node not in self.ListOfDevices:
+        return None
+    if 'LogicalType' in self.ListOfDevices[ node ]:
+        return self.ListOfDevices[ node ]['LogicalType']
+    if 'DeviceType' in self.ListOfDevices[ node ]:
+        if self.ListOfDevices[ node ]['DeviceType'] == 'FFD':
+            return 'Router'
+        if self.ListOfDevices[ node ]['DeviceType'] == 'RFD':
+            return 'End Device'
+    return None
