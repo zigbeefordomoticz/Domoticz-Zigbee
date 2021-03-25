@@ -37,7 +37,7 @@ def forwarder_thread( self ):
         except Exception as e:
             _context = {
                 'Error code': 'TRANS-FWD-01',
-                'Error': e,
+                'Error': str(e),
                 'Message': message,
             }
             self.logging_receive_error( "forwarder_thread - Error while receiving a ZiGate command", context=_context)

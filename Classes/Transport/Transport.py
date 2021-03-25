@@ -231,15 +231,16 @@ class ZigateTransport(object):
             'nPDU': self.npdu,
             'aPDU': self.apdu,
             }
-        context['Sqn Management'] = {
-            'sqn_ZCL': self.sqn_zcl,
-            'sqn_ZDP': self.sqn_zdp,
-            'sqn_APS': self.sqn_aps,
-            'current_SQN': self.current_sqn,
+        if 'TransportErrorLevel' in self.pluginconf.pluginConf and self.pluginconf.pluginConf['TransportErrorLevel']:
+            context['Sqn Management'] = {
+                'sqn_ZCL': self.sqn_zcl,
+                'sqn_ZDP': self.sqn_zdp,
+                'sqn_APS': self.sqn_aps,
+                'current_SQN': self.current_sqn,
+                }
+            context['inMessage'] = {
+                'ReqRcv': str(self._ReqRcv),
             }
-        context['inMessage'] = {
-            'ReqRcv': str(self._ReqRcv),
-        }
         context['Thread'] = {
             'byPassDzCommunication': self.pluginconf.pluginConf['byPassDzConnection'],
             'ThreadName': threading.current_thread().name
