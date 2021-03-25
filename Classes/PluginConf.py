@@ -21,7 +21,7 @@ from Modules.tools import is_hex
 SETTINGS = {
     'Services': {'Order': 1, 'param': {
         'enablegroupmanagement':  {'type': 'bool', 'default': 0, 'current': None, 'restart': 1, 'hidden': False, 'Advanced': False},
-        'enableReadAttributes':   {'type': 'bool', 'default': 0, 'current': None, 'restart': 1, 'hidden': False, 'Advanced': True},
+        'enableReadAttributes':   {'type': 'bool', 'default': 0, 'current': None, 'restart': 1, 'hidden': True, 'Advanced': True},
         'internetAccess':         {'type': 'bool', 'default': 1, 'current': None, 'restart': 1, 'hidden': False, 'Advanced': False},
         'allowOTA':               {'type': 'bool', 'default': 1, 'current': None, 'restart': 1, 'hidden': True, 'Advanced': False},
         'pingDevices':            {'type': 'bool', 'default': 1, 'current': None, 'restart': 1, 'hidden': False, 'Advanced': True},
