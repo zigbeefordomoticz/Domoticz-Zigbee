@@ -35,6 +35,7 @@ class LoggingManagement:
         self.logging_queue = None
         self.logging_thread = None
         self._startTime = int(time.time())
+
         start_logging_thread( self )
           
     def reset_new_error( self ):
@@ -120,7 +121,7 @@ class LoggingManagement:
         self._newError = False
 
     def logging( self, module, logType, message, nwkid=None, context=None):
-        if self.logging_thread and self.logging_queue and self.loggingFileHandle:
+        if self.logging_thread and self.logging_queue:
             logging_tupple = [ threading.current_thread().name, module, logType, message, nwkid, context ]
             self.logging_queue.put( logging_tupple )
         else:
@@ -198,7 +199,7 @@ def loggingError(self, thread_name, module, message, nwkid, context):
     if not self.pluginconf.pluginConf['useDomoticzLog']:
         if self.loggingFileHandle is None:
             self.openLogFile()
-        self.logToFile( thread_name, message )
+        logToFile( self, thread_name, message )
 
     #Log empty
     if not self.LogErrorHistory or 'LastLog' not in self.LogErrorHistory:
