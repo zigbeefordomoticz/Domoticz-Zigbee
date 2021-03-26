@@ -1139,3 +1139,35 @@ def instrument_timing( module, timing, cnt_timing, cumul_timing, aver_timing, ma
         max_timing = timing
 
     return cnt_timing, cumul_timing, aver_timing, max_timing
+
+# Configuration Helpers
+def setConfigItem(Key=None, Value=None):
+    Config = {}
+    if type(Value) not in (str, int, float, bool, bytes, bytearray, list, dict):
+        Domoticz.Error("setConfigItem - A value is specified of a not allowed type: '" + str(type(Value)) + "'")
+        return Config
+    try:
+       Config = Domoticz.Configuration()
+       if (Key != None):
+           Config[Key] = Value
+       else:
+           Config = Value  # set whole configuration if no key specified
+       Config = Domoticz.Configuration(Config)
+    except Exception as inst:
+       Domoticz.Error("setConfigItem - Domoticz.Configuration operation failed: '"+str(inst)+"'")
+    return Config
+
+
+def getConfigItem(Key=None, Default={}):
+    Value = Default
+    try:
+        Config = Domoticz.Configuration()
+        if (Key != None):
+            Value = Config[Key] # only return requested key if there was one
+        else:
+            Value = Config      # return the whole configuration if no key
+    except KeyError:
+        Value = Default
+    except Exception as inst:
+        Domoticz.Error("getConfigItem - Domoticz.Configuration read failed: '"+str(inst)+"'")
+    return Value
