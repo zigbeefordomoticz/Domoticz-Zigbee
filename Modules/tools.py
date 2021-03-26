@@ -1038,8 +1038,8 @@ def set_isqn_datastruct(self, DeviceAttribute, key, endpoint, clusterId, Attribu
         return
     if check_datastruct( self, DeviceAttribute, key, endpoint, clusterId ) is None:
         return
-    self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['iSQN'][ AttributeId ] = isqn
-
+    if isqn != None:
+        self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['iSQN'][ AttributeId ] = isqn
 
 def get_isqn_datastruct(self, DeviceAttribute, key, endpoint, clusterId, AttributeId ):
     if key not in self.ListOfDevices:
