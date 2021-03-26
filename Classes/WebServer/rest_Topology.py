@@ -222,6 +222,12 @@ def check_sibbling(self, reportLQI):
 def find_parent_for_node( reportLQI, node):
 
     parent = []
+    if node not in reportLQI:
+        return parent
+
+    if 'Neighbours' not in reportLQI[node]:
+        return parent
+
     for y in list(reportLQI[node]['Neighbours']):
         if reportLQI[node]['Neighbours'][y]['_relationshp'] == 'Parent':
             #Domoticz.Log("-- -- find %s Parent for %s" %(y, node))
