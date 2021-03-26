@@ -15,7 +15,7 @@ import Domoticz
 import os.path
 import json
 
-from Modules.tools import is_hex
+from Modules.tools import is_hex, setConfigItem
 
 
 SETTINGS = {
@@ -232,6 +232,8 @@ SETTINGS = {
         'AnnoucementV1':         {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
         'AnnoucementV2':         {'type': 'bool', 'default': 1, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
         'expJsonDatabase':       {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
+        'useDomoticzDatabase':   {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
+        
         'XiaomiLeave':           {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
         'rebindLivolo':          {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': False},
         'allowAutoPairing':      {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
@@ -339,6 +341,12 @@ class PluginConf:
 
         with open(pluginConfFile, 'wt') as handle:
             json.dump(write_pluginConf, handle, sort_keys=True, indent=2)
+
+        if self.pluginConf['useDomoticzDatabase']:
+            Domoticz.Log("Save Plugin Conf to Domoticz")
+            setConfigItem( Key='PluginConf', Value=write_pluginConf)
+
+
 
 def _load_Settings(self):
     # deserialize json format of pluginConf'
