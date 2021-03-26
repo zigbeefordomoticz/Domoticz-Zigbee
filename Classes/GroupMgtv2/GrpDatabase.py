@@ -19,6 +19,8 @@ Methodes which manipulate the Groups Data Structure
 import os
 import json
 
+from Modules.tools import setConfigItem
+
 
 def write_groups_list( self):
     """
@@ -28,6 +30,11 @@ def write_groups_list( self):
 
     with open( self.GroupListFileName , 'wt') as handle:
         json.dump( self.ListOfGroups, handle, sort_keys = True, indent = 2)
+
+    if self.pluginconf.pluginConf['useDomoticzDatabase']:
+        self.log.logging( "Database", 'Log', "Save Plugin Group Db to Domoticz")
+        setConfigItem( Key='ListOfGroups', Value=self.ListOfGroups)
+
 
 def load_groups_list_from_json( self ):
     """

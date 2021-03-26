@@ -536,9 +536,9 @@ class WebServer(object):
                     Domoticz.Error("Unexpected parameter: %s" %setting)
                     _response["Data"] = { 'unexpected parameters %s' %setting }
 
-                if upd:
-                    # We need to write done the new version of PluginConf
-                    self.pluginconf.write_Settings()
+            if upd:
+                # We need to write done the new version of PluginConf
+                self.pluginconf.write_Settings()
 
         return _response
 

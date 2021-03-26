@@ -270,9 +270,9 @@ def WriteDeviceList(self, count):
             with open( _DeviceListFileName , 'wt') as file:
                 json.dump( self.ListOfDevices, file, sort_keys=True, indent=2)
 
-        #if self.pluginconf.pluginConf['useDomoticzDatabase']:
-        #    self.log.logging( "Database", 'Log', "Save Plugin Db to Domoticz")
-        #    setConfigItem( Value=self.ListOfDevices)
+        if self.pluginconf.pluginConf['useDomoticzDatabase']:
+            self.log.logging( "Database", 'Log', "Save Plugin Db to Domoticz")
+            Modules.tools.setConfigItem( Key='ListOfDevices', Value=self.ListOfDevices)
 
         self.HBcount=0
         self.log.logging( "Database", 'Debug', "WriteDeviceList - flush Plugin db to %s" %_DeviceListFileName)
@@ -686,34 +686,32 @@ def load_new_param_definition( self ):
             elif param == 'netatmoReleaseButton':
                 self.ListOfDevices[ key ]['Param'][ param ] = self.pluginconf.pluginConf['EnableReleaseButton']
 
-# Configuration Helpers
-def setConfigItem(Key=None, Value=None):
-    Config = {}
-    if type(Value) not in (str, int, float, bool, bytes, bytearray, list, dict):
-        Domoticz.Error("setConfigItem - A value is specified of a not allowed type: '" + str(type(Value)) + "'")
-        return Config
-    try:
-       Config = Domoticz.Configuration()
-       if (Key != None):
-           Config[Key] = Value
-       else:
-           Config = Value  # set whole configuration if no key specified
-       Config = Domoticz.Configuration(Config)
-    except Exception as inst:
-       Domoticz.Error("setConfigItem - Domoticz.Configuration operation failed: '"+str(inst)+"'")
-    return Config
 
 
-def getConfigItem(Key=None, Default={}):
-    Value = Default
-    try:
-        Config = Domoticz.Configuration()
-        if (Key != None):
-            Value = Config[Key] # only return requested key if there was one
-        else:
-            Value = Config      # return the whole configuration if no key
-    except KeyError:
-        Value = Default
-    except Exception as inst:
-        Domoticz.Error("getConfigItem - Domoticz.Configuration read failed: '"+str(inst)+"'")
-    return Value
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
