@@ -74,7 +74,7 @@ class NetworkMap():
 
     def continue_scan(self):
 
-        self.logging( 'Debug', "continue_scan - %s" %( len(self.LQIreqInProgress) ))
+        self.logging( 'Debug', "len(self.LQIreqInProgress) - %s" %( len(self.LQIreqInProgress) ))
 
         prettyPrintNeighbours( self )
         if len(self.LQIreqInProgress) > 0 and self.LQIticks < 2:
@@ -100,6 +100,19 @@ class NetworkMap():
         # self.LQIreqInProgress  0 and LQItick >= 2
 
         waitResponse = False
+        current_process = max_process = avg_size = 0
+        for entry in list(self.Neighbours):
+            if self.Neighbours[ entry ]['TableMaxSize'] > 0:
+                avg_size = (avg_size + self.Neighbours[ entry ]['TableMaxSize']) /2 
+                current_process += self.Neighbours[ entry ]['TableCurSize']
+                max_process += self.Neighbours[ entry ]['TableMaxSize']
+            else:
+                # If Max size is 0 (not yet started), then we take the Average size of known table
+                max_process += avg_size
+            self.logging( 'Debug', "== Entry: %s Current: %s Max: %s" %( entry, self.Neighbours[ entry ]['TableCurSize'], self.Neighbours[ entry ]['TableMaxSize']))
+        progress = int( (current_process/max_process) * 100)
+        self.logging( 'Log', "Network Topology progress: %s %%" %progress)
+
         for entry in list(self.Neighbours):
             if entry not in self.ListOfDevices:
                 self.logging( 'Log', "LQIreq - device %s not found removing from the device to be scaned" %entry)
@@ -122,37 +135,40 @@ class NetworkMap():
 
             elif self.Neighbours[entry]['Status'] in ( 'ScanRequired', 'ScanRequired2') :
                 LQIreq( self, entry )
+                
                 return
         else:
             # We have been through all list of devices and not action triggered
             if not waitResponse:
                 self.logging( 'Debug', "continue_scan - scan completed, all Neighbour tables received.")
                 finish_scan( self )
-                self._NetworkMapPhase = 0
-        return
+                self._NetworkMapPhase = 0              
+    
 
 
 def _initNeighbours( self):
     # Will popoulate the Neghours dict with all Main Powered Devices
     self.logging( 'Debug', "_initNeighbours")
 
-    for nwkid in self.ListOfDevices:
-        tobescanned = False
-        if nwkid == '0000':
-            tobescanned = True
-        elif 'LogicalType' in self.ListOfDevices[nwkid]:
-            if self.ListOfDevices[nwkid]['LogicalType'] == 'Router':
-                tobescanned = True
-            if 'DeviceType' in self.ListOfDevices[nwkid]:
-                if self.ListOfDevices[nwkid]['DeviceType'] == 'FFD':
-                    tobescanned = True
-            if 'MacCapa' in self.ListOfDevices[nwkid]:
-                if self.ListOfDevices[nwkid]['MacCapa'] == '8e':
-                    tobescanned = True
-
-        if not tobescanned:
-            continue
-        _initNeighboursTableEntry( self, nwkid )
+    #for nwkid in self.ListOfDevices:
+    #    tobescanned = False
+    #    if nwkid == '0000':
+    #        tobescanned = True
+    #    elif 'LogicalType' in self.ListOfDevices[nwkid]:
+    #        if self.ListOfDevices[nwkid]['LogicalType'] == 'Router':
+    #            tobescanned = True
+    #        if 'DeviceType' in self.ListOfDevices[nwkid]:
+    #            if self.ListOfDevices[nwkid]['DeviceType'] == 'FFD':
+    #                tobescanned = True
+    #        if 'MacCapa' in self.ListOfDevices[nwkid]:
+    #            if self.ListOfDevices[nwkid]['MacCapa'] == '8e':
+    #                tobescanned = True
+#
+    #    if not tobescanned:
+    #        continue
+    #    _initNeighboursTableEntry( self, nwkid )
+    tobescanned = True
+    _initNeighboursTableEntry( self, '0000' )
 
     return
 
@@ -377,6 +393,8 @@ def LQIresp_decoding(self, MsgData):
 
     if not self.Neighbours[ NwkIdSource ]['TableMaxSize']  and NeighbourTableEntries:
         self.Neighbours[ NwkIdSource ]['TableMaxSize'] = NeighbourTableEntries
+        if 'NeighbourTableSize' not in self.ListOfDevices[ NwkIdSource ]:
+            self.ListOfDevices[ NwkIdSource ]['NeighbourTableSize'] = self.Neighbours[ NwkIdSource ]['TableMaxSize']
 
     if not NeighbourTableListCount and not NeighbourTableEntries:
         # No element in that list
@@ -468,6 +486,10 @@ def LQIresp_decoding(self, MsgData):
         self.logging( 'Debug', "--- -----> _relationshp: %s" %_relationshp)
         self.logging( 'Debug', "--- -----> _rxonwhenidl: %s" %_rxonwhenidl)
     
+        if _nwkid not in self.Neighbours and _devicetype in ( 'Router', ) and _relationshp in ( 'Parent', 'Child', 'Sibling'):
+            self.logging( 'Debug','===========> Adding %s in scanner queue' %_nwkid)
+            _initNeighboursTableEntry( self, _nwkid )
+
         if _nwkid in self.Neighbours[ NwkIdSource ]['Neighbours'] and _relationshp not in ( 'Parent', 'Child'):
             self.logging( 'Debug', "LQI:LQIresp - %s already in Neighbours Table for %s" %(_nwkid, NwkIdSource))
             # Let's check the infos
@@ -489,81 +511,3 @@ def LQIresp_decoding(self, MsgData):
         self.Neighbours[NwkIdSource]['Neighbours'][_nwkid]['_rxonwhenidl'] = _rxonwhenidl
 
     return
-
-def check_sibbling(self):
-
-    for node1 in list(self.Neighbours):
-        for node2 in list(self.Neighbours[node1]['Neighbours']):
-            if self.Neighbours[node1]['Neighbours'][node2]['_relationshp'] != 'Sibling':
-                continue
-
-            parent = find_parent_for_node( self, node2)
-            if parent is None:
-                parent = find_parent_for_node( self, node1)
-            if parent is None:
-                continue
-
-            self.logging( 'Debug', "check_sibbling - Sibling: %s-%s get parent %s" %(node1, node2, parent))
-            add_relationship(self, node1, node2, parent, 'Parent')
-            add_relationship(self, node2, node1, parent, 'Parent')   
-                                                                                   
-def find_parent_for_node( self, node):
-    # Return the parent of that node, or None if no parent found
-    for y in list(self.Neighbours[node]['Neighbours']):
-        if self.Neighbours[node]['Neighbours'][y]['_relationshp'] == 'Parent':
-            return y
-
-    for x in list(self.Neighbours):
-        if node in self.Neighbours[x]['Neighbours']:
-            if self.Neighbours[x]['Neighbours'][node]['_relationshp'] == 'Child':
-                return x
-
-    return None
-
-def add_relationship(self, node1, node2, relation_node, relation_ship):
-
-    self.logging( 'Debug', "add_relationship - Adding %s relation between %s and %s" %(relation_ship, node1, relation_node))
-    if node1 == relation_node:
-        return
-        
-    if node1 not in self.Neighbours:
-        self.Neighbours[node1] = {}
-        self.Neighbours[node1]['Neighbours'] = {}
-
-    if relation_node in self.Neighbours[node1]['Neighbours'] and self.Neighbours[node1]['Neighbours'][relation_node]['_relationshp'] == relation_ship:
-        return
-
-    if relation_node in self.Neighbours[node1]['Neighbours']:
-        self.logging( 'Debug', "add_relationship - existing will be overwriten %s - %s > %s" %( 
-            node1, relation_node,self.Neighbours[node1]['Neighbours'][relation_node]['_relationshp'] ))
-
-    _ieee = None
-    if relation_node == '0000':
-        # ZiGate
-        _extPANID = '0000000000000000'
-        _depth = 'ff'
-        _linkqty = '0'
-        _devicetype = 'Coordinator'
-        _permitjnt = '??'
-        _rxonwhenidl = 'On'
-    else:
-        _extPANID = self.Neighbours[node1]['Neighbours'][node2]['_extPANID']
-        _depth = self.Neighbours[node1]['Neighbours'][node2]['_depth']
-        _linkqty = self.Neighbours[node1]['Neighbours'][node2]['_lnkqty']
-        _devicetype = self.Neighbours[node1]['Neighbours'][node2]['_devicetype']
-        _permitjnt = self.Neighbours[node1]['Neighbours'][node2]['_permitjnt']
-        _rxonwhenidl = self.Neighbours[node1]['Neighbours'][node2]['_rxonwhenidl']
-
-
-    if relation_node in self.ListOfDevices and 'IEEE' in self.ListOfDevices[ relation_node ]:
-        _ieee = self.ListOfDevices[ relation_node ]['IEEE']
-
-    self.Neighbours[node1]['Neighbours'][relation_node] = {}
-    self.Neighbours[node1]['Neighbours'][relation_node]['_relationshp'] = relation_ship
-    self.Neighbours[node1]['Neighbours'][relation_node]['_extPANID'] = _extPANID
-    self.Neighbours[node1]['Neighbours'][relation_node]['_ieee'] = _ieee
-    self.Neighbours[node1]['Neighbours'][relation_node]['_depth'] = _depth
-    self.Neighbours[node1]['Neighbours'][relation_node]['_lnkqty'] = _linkqty
-    self.Neighbours[node1]['Neighbours'][relation_node]['_devicetype'] = _devicetype
-    self.Neighbours[node1]['Neighbours'][relation_node]['_permitjnt'] = _permitjnt
-    self.Neighbours[node1]['Neighbours'][relation_node]['_rxonwhenidl'] = _rxonwhenidl
