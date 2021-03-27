@@ -115,7 +115,8 @@ def extract_report( self, reportLQI):
     _nwkid_list = []
     _topo = []
 
-    reportLQI = check_sibbling(self, reportLQI)
+    if self.pluginconf.pluginConf['displaySibling']:
+        reportLQI = check_sibbling(self, reportLQI)
     for item in reportLQI:
         self.logging( 'Debug', "Node: %s" %item)
         if item != '0000' and item not in self.ListOfDevices:
