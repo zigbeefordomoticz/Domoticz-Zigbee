@@ -407,34 +407,40 @@ class BasePlugin:
         self.busy = False
 
     def onStop(self):
-        self.log.logging( 'Plugin', 'Status', "onStop called")
+        Domoticz.Status("onStop called")
 
-
+        Domoticz.Status("onStop calling (1) domoticzDb DeviceStatus closed")
         if self.domoticzdb_DeviceStatus:
             self.domoticzdb_DeviceStatus.closeDB()
-        self.log.logging( 'Plugin', 'Status', "onStop called domoticzDb DeviceStatus closed")
+        Domoticz.Status("onStop called (1) domoticzDb DeviceStatus closed")
 
+        Domoticz.Status("onStop calling (2) domoticzDb Hardware closed")
         if self.domoticzdb_Hardware:
             self.domoticzdb_Hardware.closeDB()
-        self.log.logging( 'Plugin', 'Status', "onStop called domoticzDb Hardware closed")
+        Domoticz.Status("onStop called (2) domoticzDb Hardware closed")
 
+        Domoticz.Status("onStop calling (3) Transport off")
         if self.ZigateComm:
             self.ZigateComm.thread_transport_shutdown()
             self.ZigateComm.close_conn()
-        self.log.logging( 'Plugin', 'Status', "onStop called Transport off")
+        Domoticz.Status("onStop called (3) Transport off")
 
+        Domoticz.Status("onStop calling (4) WebServer off")
         if self.webserver:
             self.webserver.onStop()
-        self.log.logging( 'Plugin', 'Status', "onStop called WebServer off")
+        Domoticz.Status("onStop called (4) WebServer off")
 
         #self.ZigateComm.close_conn()
+        Domoticz.Status("onStop calling (5) Plugin Database saved")
         WriteDeviceList(self, 0)
-        self.log.logging( 'Plugin', 'Status', "onStop called Plugin Database saved")
+        Domoticz.Status("onStop called (5) Plugin Database saved")
 
         self.statistics.printSummary()
         self.statistics.writeReport()
 
+        Domoticz.Status("onStop calling (6) Close Logging Management")
         self.log.closeLogFile()
+        Domoticz.Status("onStop called (6) Close Logging Management")
         
         if ( self.DomoticzMajor > 4 or self.DomoticzMajor == 4 and self.DomoticzMinor >= 10355 or self.VersionNewFashion ):
             for thread in threading.enumerate():
