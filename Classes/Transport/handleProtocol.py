@@ -71,7 +71,7 @@ def process_frame(self, decoded_frame):
         NXP_Extended_Error_Code( self, MsgData)
         return
 
-    if MsgType in ('9998', '9997'):
+    if MsgType in ('9998', '9997', '9996'):
         # Async message
         Akila_debuging( self, MsgType, MsgData)
         return
@@ -131,7 +131,7 @@ def NXP_Extended_Error_Code( self, MsgData):
             'aPDU': self.apdu
         }
         #self.logging_receive_error( "NXP_Extended_Error_Code - Extended Error Code: [%s] %s" %( MsgData, StatusMsg), context=_context)
-        self.logging_receive( 'Log', "NXP_Extended_Error_Code - Extended Error Code: [%s] %s" %( MsgData, StatusMsg))
+        self.logging_receive( 'Log', "NXP_Extended_Error_Code - Extended Error Code: [%s] %s nPDU:%s aPDU: %s" %( MsgData, StatusMsg, self.npdu, self.apdu))
 
 
 def NXP_log_message(self, decoded_frame):  # Reception log Level
