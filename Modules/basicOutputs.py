@@ -109,15 +109,9 @@ def add_Last_Cmds( self, isqn, address_mode, nwkid, cmd, datas):
         # Remove the First element in the list.
         self.ListOfDevices[nwkid]['Last Cmds'].pop(0)
 
-    self.ListOfDevices[nwkid]['Last Cmds'].append( 
-        (
-            isqn,
-            address_mode,
-            nwkid,
-            cmd,
-            datas
-        )
-     )
+    if isqn is None:
+        isqn = 'None'
+    self.ListOfDevices[nwkid]['Last Cmds'].append(  ( isqn, address_mode, nwkid, cmd, datas ))
 
 
 def sendZigateCmd(self, cmd, datas , ackIsDisabled = False):
