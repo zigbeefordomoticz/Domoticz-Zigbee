@@ -51,13 +51,17 @@ def shutdown_reader_thread( self):
     
     if self._connection:
         if isinstance(self._connection, serial.serialposix.Serial):
-            self.logging_receive( 'Log', "cancel_read")
             if self._connection:
+                self.logging_receive( 'Log', "Flush and cancel_read")
+                self._connection.reset_input_buffer()
+                self._connection.reset_output_buffer()
                 self._connection.cancel_read()
 
         elif isinstance(self._connection, socket.socket):
             self.logging_receive( 'Log', "shutdown socket")
             if self._connection:
                 self._connection.shutdown( socket.SHUT_RDWR )
+
         self.logging_receive( 'Log', "close connection")
         self._connection.close()
+        Domoticz.Log("Connection closed")
