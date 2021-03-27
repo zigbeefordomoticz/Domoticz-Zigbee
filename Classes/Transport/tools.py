@@ -56,15 +56,15 @@ def waiting_for_end_thread( self ):
 
     if self.reader_thread and self.pluginconf.pluginConf['byPassDzConnection'] and not self.force_dz_communication:
         self.reader_thread.join()
-        self.logging_receive( 'Debug', "waiting_for_end_thread - readThread done")
+        self.logging_receive( 'Log', "waiting_for_end_thread - readThread done")
 
     if self.forwarder_thread:
         self.forwarder_thread.join()
-        self.logging_receive( 'Debug', "waiting_for_end_thread - forwardedThread done")
+        self.logging_receive( 'Log', "waiting_for_end_thread - forwardedThread done")
 
     if self.writer_thread:
         self.writer_thread.join()
-        self.logging_receive( 'Debug', "waiting_for_end_thread - writerThread done")
+        self.logging_receive( 'Log', "waiting_for_end_thread - writerThread done")
 
 
 def handle_thread_error( self, e, nb_in, nb_out, data):
