@@ -30,34 +30,35 @@ def writer_thread( self ):
         # Sending messages ( only 1 at a time )
         try:
             #self.logging_send( 'Debug', "Waiting for next command Qsize: %s" %self.writer_queue.qsize())
-            command = self.writer_queue.get( )
+            if self.writer_queue:
+                command = self.writer_queue.get( )
 
-            #self.logging_send( 'Debug', "New command received:  %s" %(command))
-            if isinstance( command, dict ) and 'cmd' in command and 'datas' in command and 'ackIsDisabled' in command and 'waitForResponseIn' in command and 'InternalSqn' in command:
-                if ( command['cmd'], command['datas'] ) in self.writer_list_in_queue:
-                    self.logging_send( 'Debug', "removing %s/%s from list_in_queue" %( command['cmd'], command['datas'] ))
-                    self.writer_list_in_queue.remove( ( command['cmd'], command['datas'] ) )
-
-                if self.writer_queue.qsize() > self.statistics._MaxLoad:
-                    self.statistics._MaxLoad = self.writer_queue.qsize()
-                self.statistics._Load = self.writer_queue.qsize()
-
-                wait_for_semaphore( self , command)
-
-                send_ok = thread_sendData( self, command['cmd'], command['datas'], command['ackIsDisabled'], command['waitForResponseIn'], command['InternalSqn'])
-                self.logging_send( 'Debug', "Command sent!!!! %s send_ok: %s" %(command, send_ok))
-                if send_ok in ('PortClosed', 'SocketClosed'):
-                    # Exit
+                #self.logging_send( 'Debug', "New command received:  %s" %(command))
+                if isinstance( command, dict ) and 'cmd' in command and 'datas' in command and 'ackIsDisabled' in command and 'waitForResponseIn' in command and 'InternalSqn' in command:
+                    if ( command['cmd'], command['datas'] ) in self.writer_list_in_queue:
+                        self.logging_send( 'Debug', "removing %s/%s from list_in_queue" %( command['cmd'], command['datas'] ))
+                        self.writer_list_in_queue.remove( ( command['cmd'], command['datas'] ) )
+    
+                    if self.writer_queue.qsize() > self.statistics._MaxLoad:
+                        self.statistics._MaxLoad = self.writer_queue.qsize()
+                    self.statistics._Load = self.writer_queue.qsize()
+    
+                    wait_for_semaphore( self , command)
+    
+                    send_ok = thread_sendData( self, command['cmd'], command['datas'], command['ackIsDisabled'], command['waitForResponseIn'], command['InternalSqn'])
+                    self.logging_send( 'Debug', "Command sent!!!! %s send_ok: %s" %(command, send_ok))
+                    if send_ok in ('PortClosed', 'SocketClosed'):
+                        # Exit
+                        break
+                    
+                    # ommand sent, if needed wait in order to reduce throughput and load on ZiGate
+                    limit_throuput(self, command)
+    
+                elif command == 'STOP':
                     break
-
-                # ommand sent, if needed wait in order to reduce throughput and load on ZiGate
-                limit_throuput(self, command)
-
-            elif command == 'STOP':
-                break
-
-            else:
-                self.logging_send( 'Error', "Hops ... Don't known what to do with that %s" %command)
+                
+                else:
+                    self.logging_send( 'Error', "Hops ... Don't known what to do with that %s" %command)
 
         except queue.Empty:
             # Empty Queue, timeout.
