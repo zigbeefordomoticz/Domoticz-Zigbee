@@ -182,8 +182,11 @@ class ZigateTransport(object):
         self.running = False # It will shutdown the Thread 
 
         if self.pluginconf.pluginConf['byPassDzConnection'] and not self.force_dz_communication:
+            Domoticz.Log("-- shutdown reader thread")
             shutdown_reader_thread( self )
+            Domoticz.Log("-- waiting for end of thread")
             waiting_for_end_thread( self )
+            Domoticz.Log("-- thread endeed")
 
         else:
             stop_waiting_on_queues( self )
