@@ -23,7 +23,7 @@
 				"0030": {"DataType": "20", "MinInterval":"0005", "MaxInterval":"1C20", "TimeOut":"0FFF","Change":"01"}}
 			},
 			"0400": {"Attributes": { 
-				"0000": {"DataType": "21", "MinInterval":"0005", "MaxInterval":"012C", "TimeOut":"0FFF","Change":"7D0"}}},
+				"0000": {"DataType": "21", "MinInterval":"0005", "MaxInterval":"012C", "TimeOut":"0FFF","Change":"07D0"}}},
 			"0402": {"Attributes": { 
 				"0000": {"DataType": "29", "MinInterval":"000A", "MaxInterval":"012C", "TimeOut":"0FFF","Change":"0014"}}},
 			"0001": {"Attributes": { 
