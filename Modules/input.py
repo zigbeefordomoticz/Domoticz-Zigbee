@@ -2513,7 +2513,7 @@ def Decode8102(self, Devices, MsgData, MsgLQI):  # Attribute Reports
         MsgData = ( MsgSQN + MsgSrcAddr + MsgSrcEp + MsgClusterId + MsgAttrID + MsgAttStatus + MsgAttType + MsgAttSize + MsgClusterData )
         pluzzyDecode8102( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, MsgLQI, )
 
-    if 'Model' in self.ListOfDevices[ MsgSrcAddr] and self.ListOfDevices[ MsgSrcAddr]['Model'] in ('SML001', 'SML002'):
+    if self.pluginconf.pluginConf['disabledDefaultResponseFirmware'] and 'Model' in self.ListOfDevices[ MsgSrcAddr] and self.ListOfDevices[ MsgSrcAddr]['Model'] in ('SML001', 'SML002'):
         # We need to send a default response 
         default_response_for_philips_hue_reporting_attribute(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgSQN)
 
