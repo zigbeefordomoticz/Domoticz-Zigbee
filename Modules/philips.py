@@ -53,7 +53,7 @@ def default_response_for_philips_hue_reporting_attribute(self, Nwkid, srcEp, clu
     cmd_reporting_attribute = '0a'
     status = '00'
     payload = fcf + sqn + cmd + cmd_reporting_attribute + '00'
-    raw_APS_request( self, Nwkid, srcEp, cluster, '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = True)
+    raw_APS_request( self, Nwkid, srcEp, cluster, '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = False)
     self.log.logging( "Philips", 'Log', "default_response_for_philips_hue_reporting_attribute - %s/%s " %(Nwkid, srcEp ))
 
 
