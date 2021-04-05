@@ -8,9 +8,9 @@ import Domoticz
 from datetime import datetime
 from time import time
 
-from Modules.basicOutputs import set_poweron_afteroffon, write_attribute
+from Modules.basicOutputs import set_poweron_afteroffon, write_attribute, raw_APS_request
 from Modules.readAttributes import ReadAttributeRequest_0006_0000, ReadAttributeRequest_0008_0000, ReadAttributeRequest_0006_400x, ReadAttributeRequest_0406_philips_0030
-from Modules.tools import retreive_cmd_payload_from_8002
+from Modules.tools import retreive_cmd_payload_from_8002, is_ack_tobe_disabled
 from Modules.zigateConsts import ZIGATE_EP
 
 from Classes.LoggingManagement import LoggingManagement
@@ -45,6 +45,17 @@ def callbackDeviceAwake_Philips(self, NwkId, EndPoint, cluster):
             %(NwkId, EndPoint, cluster))
 
     return
+
+def default_response_for_philips_hue_reporting_attribute(self, Nwkid, srcEp, cluster, sqn):
+
+    fcf = '10'
+    cmd = '0b'
+    cmd_reporting_attribute = '0a'
+    status = '00'
+    payload = fcf + sqn + cmd + cmd_reporting_attribute + '00'
+    raw_APS_request( self, Nwkid, srcEp, cluster, '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = True)
+    self.log.logging( "Philips", 'Log', "default_response_for_philips_hue_reporting_attribute - %s/%s " %(Nwkid, srcEp ))
+
 
 def philipsReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
 

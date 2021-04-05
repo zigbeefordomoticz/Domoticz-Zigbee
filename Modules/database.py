@@ -10,6 +10,7 @@
 
 """
 
+from typing import Dict
 import Domoticz
 import os.path
 import datetime
@@ -273,8 +274,10 @@ def WriteDeviceList(self, count):
                 json.dump( self.ListOfDevices, file, sort_keys=True, indent=2)
 
         if self.pluginconf.pluginConf['useDomoticzDatabase']:
+            # We need to patch None as 'None'
+            ListOfDevices_for_save = self.ListOfDevices.copy()
             self.log.logging( "Database", 'Log', "Save Plugin Db to Domoticz")
-            Modules.tools.setConfigItem( Key='ListOfDevices', Value=self.ListOfDevices)
+            #Modules.tools.setConfigItem( Key='ListOfDevices', Value=ListOfDevices_for_save)
 
         self.HBcount=0
         self.log.logging( "Database", 'Debug', "WriteDeviceList - flush Plugin db to %s" %_DeviceListFileName)

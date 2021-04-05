@@ -60,6 +60,7 @@ from Modules.timeServer import timeserver_read_attribute_request
 from Modules.readAttributes import ReadAttributeRequest_0000, ReadAttributeRequest_0001
 from Modules.bindings import rebind_Clusters, reWebBind_Clusters
 from Modules.livolo import livolo_bind, livolo_read_attribute_request
+from Modules.philips import default_response_for_philips_hue_reporting_attribute
 from Modules.lumi import AqaraOppleDecoding, enableOppleSwitch
 from Modules.configureReporting import processConfigureReporting
 from Modules.schneider_wiser import schneider_wiser_registration, wiser_read_attribute_request
@@ -2512,6 +2513,9 @@ def Decode8102(self, Devices, MsgData, MsgLQI):  # Attribute Reports
         MsgData = ( MsgSQN + MsgSrcAddr + MsgSrcEp + MsgClusterId + MsgAttrID + MsgAttStatus + MsgAttType + MsgAttSize + MsgClusterData )
         pluzzyDecode8102( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, MsgLQI, )
 
+    if 'Model' in self.ListOfDevices[ MsgSrcAddr] and self.ListOfDevices[ MsgSrcAddr]['Model'] in ('SML001', 'SML002'):
+        # We need to send a default response 
+        default_response_for_philips_hue_reporting_attribute(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgSQN)
 
     #if 'Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr ]['Model'] in ('SML001', 'SML002'):
     #    send_default_response( self, MsgSrcAddr, MsgSrcEp , MsgSQN, '0a', MsgClusterId )

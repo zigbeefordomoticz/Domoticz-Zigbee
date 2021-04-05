@@ -227,6 +227,7 @@ SETTINGS = {
 
     # Experimental
     'Experimental': {'Order': 15, 'param': {    
+        'disabledDefaultResponseFirmware':       {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},  
         'displaySibling':       {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},  
         'DropBadAnnoucement':    {'type': 'bool', 'default': 1, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},    
         'AnnoucementV0':         {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},

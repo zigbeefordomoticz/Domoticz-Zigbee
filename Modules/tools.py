@@ -1142,6 +1142,7 @@ def instrument_timing( module, timing, cnt_timing, cumul_timing, aver_timing, ma
 
 # Configuration Helpers
 def setConfigItem(Key=None, Value=None):
+    return
     Config = {}
     if type(Value) not in (str, int, float, bool, bytes, bytearray, list, dict):
         Domoticz.Error("setConfigItem - A value is specified of a not allowed type: '" + str(type(Value)) + "'")
