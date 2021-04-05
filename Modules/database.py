@@ -277,7 +277,7 @@ def WriteDeviceList(self, count):
             # We need to patch None as 'None'
             ListOfDevices_for_save = self.ListOfDevices.copy()
             self.log.logging( "Database", 'Log', "Save Plugin Db to Domoticz")
-            #Modules.tools.setConfigItem( Key='ListOfDevices', Value=ListOfDevices_for_save)
+            Modules.tools.setConfigItem( Key='ListOfDevices', Value=ListOfDevices_for_save)
 
         self.HBcount=0
         self.log.logging( "Database", 'Debug', "WriteDeviceList - flush Plugin db to %s" %_DeviceListFileName)
