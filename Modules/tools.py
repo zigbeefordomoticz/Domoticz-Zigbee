@@ -1142,20 +1142,28 @@ def instrument_timing( module, timing, cnt_timing, cumul_timing, aver_timing, ma
 
 # Configuration Helpers
 def setConfigItem(Key=None, Value=None):
-    return
+   
     Config = {}
-    if type(Value) not in (str, int, float, bool, bytes, bytearray, list, dict):
+    if not isinstance(Value, (str, int, float, bool, bytes, bytearray, list, dict)):
         Domoticz.Error("setConfigItem - A value is specified of a not allowed type: '" + str(type(Value)) + "'")
         return Config
+
+    if isinstance( Value, dict ):
+        # There is an issue that Configuration doesn't allow None value in dictionary !
+        # Replace none value to 'null'
+        Value = prepare_dict_for_storage( Value)
+
     try:
-       Config = Domoticz.Configuration()
-       if (Key != None):
-           Config[Key] = Value
-       else:
-           Config = Value  # set whole configuration if no key specified
-       Config = Domoticz.Configuration(Config)
+        Domoticz.Log("Try Get Configuration")
+        Config = Domoticz.Configuration()
+        if (Key != None):
+            Config[Key] = Value
+        else:
+            Config = Value  # set whole configuration if no key specified
+        Domoticz.Log("Try Save Configuration")
+        Config = Domoticz.Configuration(Config)
     except Exception as inst:
-       Domoticz.Error("setConfigItem - Domoticz.Configuration operation failed: '"+str(inst)+"'")
+        Domoticz.Error("setConfigItem - Domoticz.Configuration operation failed: '"+str(inst)+"'")
     return Config
 
 
@@ -1172,3 +1180,30 @@ def getConfigItem(Key=None, Default={}):
     except Exception as inst:
         Domoticz.Error("getConfigItem - Domoticz.Configuration read failed: '"+str(inst)+"'")
     return Value
+
+
+def prepare_dict_for_storage( dict_items):
+    Domoticz.Log("prepare_dict_for_storage")
+    dict_str = json.dumps( dict_items )
+    return json.loads( dict_str, object_pairs_hook=dict_None_to_Null )
+    
+def repair_dict_after_load( dict_items):
+    dict_str = json.dumps( dict_items )
+    return  json.loads( dict_str, object_pairs_hook=dict_Null_to_None)
+
+def dict_None_to_Null( items ):
+    result = {}
+    for key, value in items:
+        if value is None:
+            Domoticz.Log("Updating %s: %s to %s:'Null'" %(key,value, key))
+            value = "Null"
+        result[key] = value
+    return result
+
+def dict_Null_to_None( items ):
+    result = {}
+    for key, value in items:
+        if value == "Null":
+            value = None
+        result[key] = value
+    return result   
