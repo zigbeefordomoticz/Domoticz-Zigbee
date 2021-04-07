@@ -299,7 +299,7 @@ def logging_thread( self ):
         data = None
         logging_tupple = self.logging_queue.get()
         if logging_tupple == 'QUIT':
-            Domoticz.Error("logging_thread Exist requested")
+            Domoticz.Log("logging_thread Exit requested")
             break
         elif len(logging_tupple) == 6:
             thread_name, module, logType, message, nwkid, context = logging_tupple
