@@ -18,7 +18,8 @@ from datetime import datetime
 from time import time
 
 from Modules.zigateConsts import ZIGATE_EP, ADDRESS_MODE, ZLL_DEVICES, ZIGATE_COMMANDS
-from Modules.tools import mainPoweredDevice, getListOfEpForCluster, set_request_datastruct, set_isqn_datastruct, set_timestamp_datastruct, get_and_inc_SQN, is_ack_tobe_disabled
+from Modules.tools import ( mainPoweredDevice, getListOfEpForCluster, set_request_datastruct, set_isqn_datastruct, 
+                            set_timestamp_datastruct, get_and_inc_SQN, is_ack_tobe_disabled, build_fcf)
 from Classes.LoggingManagement import LoggingManagement
 
 
@@ -836,7 +837,8 @@ def unknown_device_nwkid( self, nwkid ):
     u8StartIndex = '00'
     sendZigateCmd(self ,'0041', '02' + nwkid + u8RequestType + u8StartIndex )
 
-def send_default_response( self, Nwkid, srcEp , sqn, response_to_command, cluster ):
+
+def send_default_response( self, Nwkid, srcEp, cluster, Direction, bDisableDefaultResponse, ManufacturerSpecific, FrameType, response_to_command, sqn):
 
     # Response_To_Command
     # 0x01: Read Attributes Response
@@ -853,12 +855,23 @@ def send_default_response( self, Nwkid, srcEp , sqn, response_to_command, cluste
     # 0x0c: Discover Attributes
     # 0x0d: Discober Attribute Response
 
-
     if Nwkid not in self.ListOfDevices:
         return 
 
-    cmd = '0b' # Default response
-    payload = '10' + sqn + cmd +  response_to_command + '00'
-    raw_APS_request( self, Nwkid, srcEp, cluster, '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = is_ack_tobe_disabled(self, Nwkid))
-    self.log.logging( "BasicOutput", 'Log', "send_default_response - %s/%s " %(Nwkid, srcEp ))
+    # Take the reverse direction
+    Direction = '%02x' %(not ( int(Direction,16)))
 
+    fcf = build_fcf( '00', ManufacturerSpecific, Direction, bDisableDefaultResponse )
+    cmd = '0b' # Default response command
+    status = '00'
+    payload = fcf + sqn + cmd +  response_to_command + status
+    raw_APS_request( self, Nwkid, srcEp, cluster, '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = is_ack_tobe_disabled(self, Nwkid))
+    self.log.logging( "BasicOutput", 'Log', "send_default_response - [%s] %s/%s on cluster: %s with command: %s" %(sqn, Nwkid, srcEp , cluster, response_to_command))
+
+def disable_firmware_default_response( self , mode='00'):
+    # Available as of Firmware 31e, it's allow to disable the disable the Default Response, and leave it to the plugin to send if needed.
+
+    if mode not in ( '00', '01'):
+        self.log.logging( "BasicOutput", 'Error', "disable_firmware_default_response unknown mode: %s",mode)
+        return
+    sendZigateCmd(self ,'0003', mode )
