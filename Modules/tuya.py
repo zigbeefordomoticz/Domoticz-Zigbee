@@ -17,7 +17,7 @@ from datetime import datetime, timedelta
 
 
 from Classes.LoggingManagement import LoggingManagement
-from Modules.tools import updSQN, get_and_inc_SQN, is_ack_tobe_disabled
+from Modules.tools import updSQN, get_and_inc_SQN, is_ack_tobe_disabled, build_fcf
 from Modules.domoMaj import MajDomoDevice
 from Modules.tuyaTools import (tuya_cmd, store_tuya_attribute)
 from Modules.tuyaSiren import tuya_siren_response
@@ -35,11 +35,19 @@ from Modules.basicOutputs import write_attribute,raw_APS_request
 #   Direction: Device -> Coordinator 0x02 Setpoint command response
 
 
+
+#   "_TZE200_i48qyn9s" : tuyaReadRawAPS ,
+
+TS011F_MANUF_NAME = ("_TZ3000_wamqdr3f", )
+TS0041_MANUF_NAME = ("_TZ3000_xkwalgne", "_TZ3000_peszejy7", "_TZ3000_8kzqqzu4",  "_TZ3000_tk3s5tyg")
+
+
+# TS0601 
 TUYA_SIREN_MANUFACTURER =  ( '_TZE200_d0yu2xgi', '_TYST11_d0yu2xgi' )
-TUYA_SIREN_MODEL        =  ( 'TS0601', '0yu2xgi')
+TUYA_SIREN_MODEL        =  ( 'TS0601', '0yu2xgi', )
 
 TUYA_DIMMER_MANUFACTURER = ( '_TZE200_dfxkcots', )
-TUYA_SWITCH_MANUFACTURER = ( '_TZE200_7tdtqgwv', )
+TUYA_SWITCH_MANUFACTURER = ( '_TZE200_7tdtqgwv', "_TYST11_zivfvd7h")
 TUYA_CURTAIN_MAUFACTURER = ( "_TZE200_cowvfni3", "_TZE200_wmcdj3aq", "_TZE200_fzo2pocs", "_TZE200_nogaemzt", "_TZE200_5zbp6j0u", \
                             "_TZE200_fdtjuw7u", "_TZE200_bqcqqjpb", "_TZE200_zpzndjez", "_TYST11_cowvfni3", "_TYST11_wmcdj3aq", \
                             "_TYST11_fzo2pocs", "_TYST11_nogaemzt", "_TYST11_5zbp6j0u", "_TYST11_fdtjuw7u", "_TYST11_bqcqqjpb", "_TYST11_zpzndjez", \
@@ -60,6 +68,13 @@ TUYA_eTRV_MODEL =         ( 'TS0601', 'TS0601-eTRV', 'TS0601-eTRV1', 'TS0601-eTR
                              'kud7u2l', 'eaxp72v', 'fvq6avy', 'ivfvd7h',)
 
 TUYA_TS0601_MODEL_NAME = TUYA_eTRV_MODEL + TUYA_CURTAIN_MODEL + TUYA_SIREN_MODEL
+TUYA_MANUFACTURER_NAME = ( TS011F_MANUF_NAME + TS0041_MANUF_NAME + 
+                            TUYA_SIREN_MANUFACTURER +  
+                            TUYA_DIMMER_MANUFACTURER + TUYA_SWITCH_MANUFACTURER + 
+                            TUYA_CURTAIN_MAUFACTURER +  
+                            TUYA_THERMOSTAT_MANUFACTURER + 
+                            TUYA_eTRV1_MANUFACTURER + TUYA_eTRV2_MANUFACTURER + TUYA_eTRV3_MANUFACTURER + TUYA_eTRV_MANUFACTURER)
+
 
 def pollingTuya( self, key ):
     """
@@ -100,10 +115,11 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
     sqn = MsgPayload[2:4] # uint8
     updSQN( self, NwkId, sqn)
 
-    # Send a Default Response ( why might check the FCF eventually )
-    send_default_response( self, NwkId, srcEp , sqn)
-
     cmd = MsgPayload[4:6] # uint8
+
+    # Send a Default Response ( why might check the FCF eventually )
+    tuya_send_default_response( self, NwkId, srcEp , sqn, cmd, fcf)
+
     
     if cmd == '24': # Time Synchronisation
         send_timesynchronisation( self, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload[6:])
@@ -187,12 +203,20 @@ def utc_to_local(dt):
         return dt - timedelta(seconds = time.timezone)
 
 
-def send_default_response( self, Nwkid, srcEp , sqn):
+def tuya_send_default_response( self, Nwkid, srcEp , sqn, cmd, orig_fcf):
     if Nwkid not in self.ListOfDevices:
         return 
-    payload = '00' + sqn + '0b' + '01' + '00'
+    
+    orig_fcf = int(orig_fcf,16)
+    frame_type = '%02x' %(0b00000011 & orig_fcf)
+    manuf_spec = '%02x' %(( 0b00000100 & orig_fcf ) >> 2)
+    direction =  '%02x' %(not (( 0b00001000 & orig_fcf ) >> 3))
+    disabled_default =  '%02x' %(( 0b00010000 & orig_fcf ) >> 4)
+    fcf = build_fcf( '00', manuf_spec, direction, disabled_default )
+
+    payload = fcf + sqn + '0b' + cmd + '00'
     raw_APS_request( self, Nwkid, srcEp, 'ef00', '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = is_ack_tobe_disabled(self, Nwkid))
-    self.log.logging( "Tuya", 'Debug2', "send_default_response - %s/%s " %(Nwkid, srcEp ))
+    self.log.logging( "Tuya", 'Log', "tuya_send_default_response - %s/%s " %(Nwkid, srcEp ))
 
 
 def tuya_switch_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):

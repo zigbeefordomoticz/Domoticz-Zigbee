@@ -17,7 +17,8 @@ from Modules.livolo import livoloReadRawAPS
 from Modules.orvibo import orviboReadRawAPS
 from Modules.lumi import lumiReadRawAPS
 from Modules.philips import philipsReadRawAPS
-from Modules.tuya import tuyaReadRawAPS
+from Modules.tuya import ( tuyaReadRawAPS,
+                            TUYA_MANUFACTURER_NAME )
 
 from Modules.casaia import CASAIA_MANUF_CODE, casaiaReadRawAPS
 
@@ -25,11 +26,11 @@ from Modules.casaia import CASAIA_MANUF_CODE, casaiaReadRawAPS
 ## Requires Zigate firmware > 3.1d
 CALLBACK_TABLE = {
     # Manuf : ( callbackDeviceAwake_xxxxx function )
-    '105e' : schneiderReadRawAPS ,
-    '1021' : legrandReadRawAPS ,
-    '115f' : lumiReadRawAPS,
-    '100b' : philipsReadRawAPS,
-    '1002' : tuyaReadRawAPS,
+    '105e': schneiderReadRawAPS ,
+    '1021': legrandReadRawAPS ,
+    '115f': lumiReadRawAPS,
+    '100b': philipsReadRawAPS,
+    '1002': tuyaReadRawAPS,
     CASAIA_MANUF_CODE: casaiaReadRawAPS,
     }
 
@@ -40,33 +41,7 @@ CALLBACK_TABLE2 = {
     'Legrand': legrandReadRawAPS,
     'Schneider': schneiderReadRawAPS,
     'LUMI': lumiReadRawAPS,
-    'Philips' : philipsReadRawAPS,
-    "_TZ3000_8kzqqzu4" : tuyaReadRawAPS,  # TS0041 Lora Tap Smart Shutter Switch
-    "_TZ3000_tk3s5tyg" : tuyaReadRawAPS,  # TS0041 EJLINK 1 bouton
-    "_TYST11_jeaxp72v" : tuyaReadRawAPS , # eTRV
-    "_TYST11_kfvq6avy" : tuyaReadRawAPS , # eTRV
-    "_TZE200_c88teujp" : tuyaReadRawAPS,  # eTRV
-    '_TZE200_ckud7u2l' : tuyaReadRawAPS , # eTRV
-    "_TZE200_kfvq6avy" : tuyaReadRawAPS , # eTRV
-    '_TZE200_d0yu2xgi' : tuyaReadRawAPS,  # TS0601 Sirene
-    "_TZE200_i48qyn9s" : tuyaReadRawAPS ,
-    "_TZ3000_peszejy7" : tuyaReadRawAPS , # Seem for TS0041 ( 1 Gang Switch)
-    "_TZ3000_xkwalgne" : tuyaReadRawAPS, # TS0041
-    "_TYST11_zivfvd7h" : tuyaReadRawAPS, # TS0003 / Switch Module
-    "_TZE200_dfxkcots" : tuyaReadRawAPS, # TS0601 / Smart Dimmer
-    "_TZE200_7tdtqgwv" : tuyaReadRawAPS, # TS0601 / Simple Switch
-    "_TZE200_rddyvrci" : tuyaReadRawAPS, # TS0601 / Blind Shades motor
-    "_TZE200_5zbp6j0u" : tuyaReadRawAPS, # TS0601 / Blind Shades motor
-    "_TZE200_nkoabg8w" : tuyaReadRawAPS, # TS0601 / Blind Shades motor
-    "_TZE200_xuzcvlku" : tuyaReadRawAPS, # TS0601 / Blind Shades motor
-    "_TZE200_4vobcgd3" : tuyaReadRawAPS, # TS0601 / Blind Shades motor
-    "_TZE200_nogaemzt" : tuyaReadRawAPS, # TS0601 / Blind Shades motor
-    "_TZE200_pk0sfzvr" : tuyaReadRawAPS, # TS0601 / Blind Shades motor
-    "_TZE200_fdtjuw7u" : tuyaReadRawAPS, # TS0601 / Blind Shades motor
-    "_TZE200_zpzndjez" : tuyaReadRawAPS, # TS0601 / Blind Shades motor
-    "_TZE200_rddyvrci" : tuyaReadRawAPS, # TS0601 / Blind Shades motor
-    "_TZ3000_wamqdr3f" : tuyaReadRawAPS, # TS011F
-
+    'Philips' : philipsReadRawAPS,                          
     'OWON': casaiaReadRawAPS,
     'CASAIA': casaiaReadRawAPS,
 }
@@ -195,6 +170,9 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Man
         #Domoticz.Log("Found in CALLBACK_TABLE2")
         func = CALLBACK_TABLE2[manuf_name]
         func( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, payload)
+
+    elif manuf_name in TUYA_MANUFACTURER_NAME:
+        tuyaReadRawAPS(self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, payload )
 
     else:
         Domoticz.Log("inRawAps %s/%s Cluster %s Manuf: %s Command: %s Data: %s Payload: %s"
