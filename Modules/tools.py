@@ -920,6 +920,19 @@ def is_manufspecific_8002_payload( fcf ):
     return (( int(fcf, 16) & 0b00000100) >> 2) == 1
 
 
+def build_fcf( frame_type, manuf_spec, direction, disabled_default ):
+    fcf = 0b00000000 | int(frame_type, 16)
+    if int(manuf_spec,16):
+        fcf |= 0b100
+    if int(direction,16):
+        fcf |= 0b1000
+    if int(disabled_default,16):
+        fcf |= 0b10000
+    #Domoticz.Log("build_fcf FrameType: %s Manuf: %s Direction: %s DisabledDefault: %s ==> 0x%02x/%s" %(
+    #    frame_type, manuf_spec, direction, disabled_default, fcf, bin(fcf)))
+    return '%02x' %fcf
+
+
 # Functions to manage Device Attributes infos ( ConfigureReporting)
 def check_datastruct( self, DeviceAttribute, key, endpoint, clusterId ):
     # Make sure all tree exists
