@@ -314,7 +314,7 @@ ZCL_CLUSTERS_LIST = {
 ZIGATE_COMMANDS = {
     0x0001: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', '8012': False, 'Command': 'set logmode', 'NwkId 2nd Bytes': False},
     0x0002: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', '8012': False, 'Command': 'set rawmode', 'NwkId 2nd Bytes': False},
-    0x0003: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', '8012': False, 'Command': 'set hybrid mode', 'NwkId 2nd Bytes': False},
+    0x0003: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', '8012': False, 'Command': 'set Default Response mode', 'NwkId 2nd Bytes': False},
     0x0009: {'Sequence': (0x8000, 0x8009), 'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', '8012': False, 'Command': 'Get Network State (Firm v3.0d)', 'NwkId 2nd Bytes': False},
     0x0010: {'Sequence': (0x8000, 0x8010), 'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', '8012': False, 'Command': 'Get Version', 'NwkId 2nd Bytes': False},
     0x0011: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZIGATE', '8012': False, 'Command': 'Reset', 'NwkId 2nd Bytes': False},
@@ -505,7 +505,8 @@ ZIGATE_RESPONSES = {
     0x8085: 'Level Update',
     0x8095: 'ON/OFF Update',
     0x8101: 'Default response',
-    0x004D: 'Device Annouce'
+    0x004D: 'Device Annouce',
+    0x7000: 'Default Response Notification'
 }
 
 ZIGBEE_COMMAND_IDENTIFIER = {
