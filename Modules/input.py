@@ -156,6 +156,7 @@ def ZigateRead(self, Devices, Data):
         "8701": Decode8701,
         "8806": Decode8806,
         "8807": Decode8807,
+        "7000": Decode7000,
     }
 
     NOT_IMPLEMENTED = ("00d1", "8029", "80a0", "80a1", "80a2", "80a3", "80a4")
@@ -2415,7 +2416,6 @@ def Decode8100( self, Devices, MsgData, MsgLQI ):  # Read Attribute Response (in
     MsgClusterId = MsgData[8:12]
     idx = 12
 
-    #0805 00 21 1801 0b05 00 29 2900 5802 86 5802 86 0000 86
 
 #try:
     while idx < len(MsgData):
@@ -2513,13 +2513,7 @@ def Decode8102(self, Devices, MsgData, MsgLQI):  # Attribute Reports
         MsgData = ( MsgSQN + MsgSrcAddr + MsgSrcEp + MsgClusterId + MsgAttrID + MsgAttStatus + MsgAttType + MsgAttSize + MsgClusterData )
         pluzzyDecode8102( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, MsgLQI, )
 
-    if self.pluginconf.pluginConf['disabledDefaultResponseFirmware'] and 'Model' in self.ListOfDevices[ MsgSrcAddr] and self.ListOfDevices[ MsgSrcAddr]['Model'] in ('SML001', 'SML002'):
-        # We need to send a default response 
-        default_response_for_philips_hue_reporting_attribute(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgSQN)
-
-    #if 'Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr ]['Model'] in ('SML001', 'SML002'):
-    #    send_default_response( self, MsgSrcAddr, MsgSrcEp , MsgSQN, '0a', MsgClusterId )
-
+    
     timeStamped(self, MsgSrcAddr, 0x8102)
     loggingMessages(self, "8102", MsgSrcAddr, None, MsgLQI, MsgSQN)
     updLQI(self, MsgSrcAddr, MsgLQI)
@@ -3898,3 +3892,36 @@ def Decode8807(self, Devices, MsgData, MsgLQI):
         )
     else:
         self.log.logging( "Input", "Status", "Get TxPower : %s" % int(TxPower, 16))
+
+def Decode7000(self, Devices, MsgData, MsgLQI):
+    #  ZNC_BUF_U16_UPD ( &au8LinkTxBuffer [0],          pZPSevent->uEvent.sApsDataIndEvent.uSrcAddress.u16Addr,     u16Length );
+    #  ZNC_BUF_U8_UPD  ( &au8LinkTxBuffer [u16Length],  pZPSevent->uEvent.sApsDataIndEvent.u8SrcEndpoint,     u16Length );
+    #  ZNC_BUF_U16_UPD ( &au8LinkTxBuffer [u16Length],  pZPSevent->uEvent.sApsDataIndEvent.u16ClusterId,     u16Length );
+    #  ZNC_BUF_U8_UPD  ( &au8LinkTxBuffer [u16Length],  sZCL_HeaderParams.bDirection,          u16Length );
+    #  ZNC_BUF_U8_UPD  ( &au8LinkTxBuffer [u16Length],  sZCL_HeaderParams.bDisableDefaultResponse,     u16Length );
+    #  ZNC_BUF_U8_UPD  ( &au8LinkTxBuffer [u16Length],  sZCL_HeaderParams.bManufacturerSpecific,     u16Length );
+    #  ZNC_BUF_U8_UPD  ( &au8LinkTxBuffer [u16Length],  sZCL_HeaderParams.eFrameType,     u16Length );
+    #  ZNC_BUF_U16_UPD ( &au8LinkTxBuffer [u16Length],  sZCL_HeaderParams.u16ManufacturerCode,     u16Length );
+    #  ZNC_BUF_U8_UPD  ( &au8LinkTxBuffer [u16Length],  sZCL_HeaderParams.u8CommandIdentifier,     u16Length );
+    #  ZNC_BUF_U8_UPD  ( &au8LinkTxBuffer [u16Length],  sZCL_HeaderParams.u8TransactionSequenceNumber,     u16Length );
+
+    uSrcAddress = MsgData[0:4]
+    u8SrcEndpoint = MsgData[4:6]
+    u16ClusterId = MsgData[6:10]
+    bDirection = MsgData[10:12]
+    bDisableDefaultResponse = MsgData[12:14]
+    bManufacturerSpecific = MsgData[14:16]
+    eFrameType = MsgData[16:18]
+    u16ManufacturerCode = MsgData[18:22]
+    u8CommandIdentifier = MsgData[22:24]
+    u8TransactionSequenceNumber = MsgData[24:26]
+
+    if uSrcAddress not in self.ListOfDevices:
+        return
+
+    self.log.logging( "Input", "Log", "Decode7000 - Default Response Notification [%s] %s/%s Cluster: %s DefaultReponse: %s ManufSpec: %s ManufCode: %s Command: %s Direction: %s FrameType: %s" %(
+        u8TransactionSequenceNumber, uSrcAddress, u8SrcEndpoint, u16ClusterId, bDisableDefaultResponse, bManufacturerSpecific, u16ManufacturerCode, u8CommandIdentifier, bDirection, eFrameType))
+
+    if bDisableDefaultResponse == '00': # If Default Response required
+        send_default_response( self, uSrcAddress, u8SrcEndpoint, u16ClusterId, bDirection, bDisableDefaultResponse, bManufacturerSpecific, eFrameType, u8CommandIdentifier, u8TransactionSequenceNumber)
+    
