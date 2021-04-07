@@ -92,7 +92,9 @@ import threading
 
 from Modules.piZigate import switchPiZigate_mode
 from Modules.tools import removeDeviceInList
-from Modules.basicOutputs import sendZigateCmd, removeZigateDevice, start_Zigate, setExtendedPANID, setTimeServer, leaveRequest, zigateBlueLed, ZigatePermitToJoin
+from Modules.basicOutputs import ( sendZigateCmd, removeZigateDevice, start_Zigate, setExtendedPANID, 
+                                    setTimeServer, leaveRequest, zigateBlueLed, ZigatePermitToJoin,
+                                    disable_firmware_default_response )
 from Modules.input import ZigateRead
 from Modules.heartbeat import processListOfDevices
 from Modules.database import importDeviceConf, importDeviceConfV2, LoadDeviceList, checkListOfDevice2Devices, checkDevices2LOD, WriteDeviceList
@@ -822,6 +824,8 @@ def zigateInit_Phase2( self):
     else:
         sendZigateCmd( self, "0014", "" ) # Request Permit to Join status
 
+
+
     # Request List of Active Devices
     sendZigateCmd(self, "0015", "") 
 
@@ -857,6 +861,11 @@ def zigateInit_Phase3( self ):
         if self.pluginconf.pluginConf['CertificationCode'] in CERTIFICATION:
             self.log.logging( 'Plugin', 'Status', "Zigate set to Certification : %s" %CERTIFICATION[self.pluginconf.pluginConf['CertificationCode']])
             sendZigateCmd(self, '0019', '%02x' %self.pluginconf.pluginConf['CertificationCode'])
+
+        if int(self.FirmwareVersion,16) >= 0x031e:
+            # Disable Default Response and make it managed by the plugin
+            self.log.logging( 'Plugin', 'Status', "Disable Default Response in firmware")
+            disable_firmware_default_response( self , mode='01')
 
         # Enable Group Management
         if self.groupmgt is None and self.pluginconf.pluginConf['enablegroupmanagement']:
