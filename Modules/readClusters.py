@@ -1538,6 +1538,8 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         value = round ( value / 10, 2 )
         self.log.logging( "Cluster", 'Debug', "ReadCluster - 0201 - Calibration: %s" %value, MsgSrcAddr)
         if 'Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Model'] == 'EH-ZB-VACT':
+            if 'Schneider' not in self.ListOfDevices[MsgSrcAddr]:
+                self.ListOfDevices[MsgSrcAddr]['Schneider'] = {}
             self.ListOfDevices[MsgSrcAddr]['Schneider']['Calibration'] = value
         if 'Thermostat' not in self.ListOfDevices[MsgSrcAddr]:
             self.ListOfDevices[MsgSrcAddr]['Thermostat'] = {}
