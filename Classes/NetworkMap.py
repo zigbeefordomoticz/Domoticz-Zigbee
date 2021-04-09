@@ -391,10 +391,9 @@ def LQIresp_decoding(self, MsgData):
     self.logging( 'Debug', "LQIresp - %s Status: %s, NeighbourTableEntries: %s, StartIndex: %s, NeighbourTableListCount: %s" \
             %(NwkIdSource, Status, NeighbourTableEntries, StartIndex, NeighbourTableListCount))
 
-    if not self.Neighbours[ NwkIdSource ]['TableMaxSize']  and NeighbourTableEntries:
+    if not self.Neighbours[ NwkIdSource ]['TableMaxSize']  and  NeighbourTableEntries:
         self.Neighbours[ NwkIdSource ]['TableMaxSize'] = NeighbourTableEntries
-        if 'NeighbourTableSize' not in self.ListOfDevices[ NwkIdSource ]:
-            self.ListOfDevices[ NwkIdSource ]['NeighbourTableSize'] = self.Neighbours[ NwkIdSource ]['TableMaxSize']
+        self.ListOfDevices[ NwkIdSource ]['NeighbourTableSize'] = self.Neighbours[ NwkIdSource ]['TableMaxSize']
 
     if not NeighbourTableListCount and not NeighbourTableEntries:
         # No element in that list
