@@ -861,11 +861,11 @@ def send_default_response( self, Nwkid, srcEp, cluster, Direction, bDisableDefau
     # Take the reverse direction
     Direction = '%02x' %(not ( int(Direction,16)))
 
-    fcf = build_fcf( '00', ManufacturerSpecific, Direction, bDisableDefaultResponse )
+    fcf = build_fcf( '00', ManufacturerSpecific, Direction, '01' )
     cmd = '0b' # Default response command
     status = '00'
     payload = fcf + sqn + cmd +  response_to_command + status
-    raw_APS_request( self, Nwkid, srcEp, cluster, '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = is_ack_tobe_disabled(self, Nwkid))
+    raw_APS_request( self, Nwkid, srcEp, cluster, '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = True)
     self.log.logging( "BasicOutput", 'Log', "send_default_response - [%s] %s/%s on cluster: %s with command: %s" %(sqn, Nwkid, srcEp , cluster, response_to_command))
 
 def disable_firmware_default_response( self , mode='00'):
