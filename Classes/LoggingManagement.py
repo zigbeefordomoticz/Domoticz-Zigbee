@@ -81,25 +81,28 @@ class LoggingManagement:
         handle.close()
 
     def closeLogFile( self ):
-
         if self.logging_thread is None:
-            return
+            Domoticz.Error("closeLogFile - logging_thread is None")
+            return       
             
         if self.loggingFileHandle:
             self.loggingFileHandle.close()
             self.loggingFileHandle = None
+                
+        self.running = False
+        if self.logging_queue is None:
+            Domoticz.Error("closeLogFile - logging_queue is None")
+            return
+        self.logging_queue.put( 'QUIT' )
+        self.logging_thread.join()
+        del self.logging_thread
+        self.logging_thread = None
+        del self.logging_queue
+        self.logging_queue = None
 
+        # Write to file
         loggingWriteErrorHistory(self)
-
-        if self.logging_thread:
-            self.running = False
-            self.logging_queue.put( 'QUIT' )
-            self.logging_thread.join()
-            del self.logging_thread
-            self.logging_thread = None
-            del self.logging_queue
-            self.logging_queue = None
-            Domoticz.Log("Logging Thread shutdown")
+        Domoticz.Log("Logging Thread shutdown")
 
     def loggingCleaningErrorHistory( self ):
         if len(self.LogErrorHistory) > 1:
@@ -284,10 +287,13 @@ def loggingWriteErrorHistory( self ):
 
 def start_logging_thread( self ):
     Domoticz.Log( "start_logging_thread")
-    if self.logging_thread is None:
-        self.logging_queue = Queue()
-        self.logging_thread = threading.Thread( name="ZiGateLogging_%s" %self.HardwareID,  target=logging_thread,  args=(self,))
-        self.logging_thread.start()
+    if self.logging_thread:
+        Domoticz.Error("start_logging_thread - Looks like logging_thread already started !!!")
+        return
+
+    self.logging_queue = Queue()
+    self.logging_thread = threading.Thread( name="ZiGateLogging_%s" %self.HardwareID,  target=logging_thread,  args=(self,))
+    self.logging_thread.start()
         
 
 def logging_thread( self ):
