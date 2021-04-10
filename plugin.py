@@ -441,13 +441,13 @@ class BasePlugin:
         self.statistics.writeReport()
 
         Domoticz.Status("onStop calling (6) Close Logging Management")
-        self.log.closeLogFile()
+        if self.log:
+            self.log.closeLogFile()
         Domoticz.Status("onStop called (6) Close Logging Management")
         
-        if ( self.DomoticzMajor > 4 or self.DomoticzMajor == 4 and self.DomoticzMinor >= 10355 or self.VersionNewFashion ):
-            for thread in threading.enumerate():
-                if (thread.name != threading.current_thread().name):
-                    Domoticz.Log("'"+thread.name+"' is running, it must be shutdown otherwise Domoticz will abort on plugin exit.")
+        for thread in threading.enumerate():
+            if (thread.name != threading.current_thread().name):
+                Domoticz.Log("'"+thread.name+"' is running, it must be shutdown otherwise Domoticz will abort on plugin exit.")
 
         self.PluginHealth['Flag'] = 3
         self.PluginHealth['Txt'] = 'No Communication'
