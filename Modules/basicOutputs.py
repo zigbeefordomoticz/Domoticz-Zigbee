@@ -838,7 +838,7 @@ def unknown_device_nwkid( self, nwkid ):
     sendZigateCmd(self ,'0041', '02' + nwkid + u8RequestType + u8StartIndex )
 
 
-def send_default_response( self, Nwkid, srcEp, cluster, Direction, bDisableDefaultResponse, ManufacturerSpecific, FrameType, response_to_command, sqn):
+def send_default_response( self, Nwkid, srcEp, cluster, Direction, bDisableDefaultResponse, ManufacturerSpecific, u16ManufacturerCode, FrameType, response_to_command, sqn):
 
     # Response_To_Command
     # 0x01: Read Attributes Response
@@ -864,7 +864,10 @@ def send_default_response( self, Nwkid, srcEp, cluster, Direction, bDisableDefau
     fcf = build_fcf( '00', ManufacturerSpecific, Direction, '01' )
     cmd = '0b' # Default response command
     status = '00'
-    payload = fcf + sqn + cmd +  response_to_command + status
+    payload = fcf + sqn
+    if ManufacturerSpecific == '01':
+        payload += u16ManufacturerCode[2:4] + u16ManufacturerCode[0:2]
+    payload += cmd +  response_to_command + status
     raw_APS_request( self, Nwkid, srcEp, cluster, '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = True)
     self.log.logging( "BasicOutput", 'Log', "send_default_response - [%s] %s/%s on cluster: %s with command: %s" %(sqn, Nwkid, srcEp , cluster, response_to_command))
 

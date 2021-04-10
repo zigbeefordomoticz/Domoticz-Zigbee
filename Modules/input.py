@@ -3923,5 +3923,5 @@ def Decode7000(self, Devices, MsgData, MsgLQI):
         u8TransactionSequenceNumber, uSrcAddress, u8SrcEndpoint, u16ClusterId, bDisableDefaultResponse, bManufacturerSpecific, u16ManufacturerCode, u8CommandIdentifier, bDirection, eFrameType))
 
     if bDisableDefaultResponse == '00': # If Default Response required
-        send_default_response( self, uSrcAddress, u8SrcEndpoint, u16ClusterId, bDirection, bDisableDefaultResponse, bManufacturerSpecific, eFrameType, u8CommandIdentifier, u8TransactionSequenceNumber)
+        send_default_response( self, uSrcAddress, u8SrcEndpoint, u16ClusterId, bDirection, bDisableDefaultResponse, bManufacturerSpecific, u16ManufacturerCode, eFrameType, u8CommandIdentifier, u8TransactionSequenceNumber)
     
