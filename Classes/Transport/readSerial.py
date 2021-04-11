@@ -16,6 +16,8 @@ def open_serial( self ):
 
     try:
         self._connection = serial.Serial(self._serialPort, baudrate = 115200, rtscts = False, dsrdtr = False, timeout = None)
+        self._connection.reset_input_buffer()
+        self._connection.reset_output_buffer()
         if self._transp in ('DIN', 'V2' ):
             self._connection.rtscts = True
 
