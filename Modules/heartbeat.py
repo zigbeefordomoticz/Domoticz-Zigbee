@@ -540,7 +540,7 @@ def processListOfDevices( self , Devices ):
         self.log.logging( "Heartbeat", 'Debug', "Skip LQI, ConfigureReporting and Networkscan du to Busy state: Busy: %s, Enroll: %s" %(self.busy, self.CommiSSionning))
         return  # We don't go further as we are Commissioning a new object and give the prioirty to it
 
-    if self.pluginconf.pluginConf['reenforceConfigureReporting'] and (self.HeartbeatCount > QUIET_AFTER_START) and (( self.HeartbeatCount % CONFIGURERPRT_FEQ ) )== 0:
+    if (self.HeartbeatCount > QUIET_AFTER_START) and (( self.HeartbeatCount % CONFIGURERPRT_FEQ ) )== 0:
         # Trigger Configure Reporting to eligeable devices
         processConfigureReporting( self )
 

@@ -97,9 +97,6 @@ def processConfigureReporting( self, NWKID=None ):
         manufacturer_spec = "00"
         direction = "00"
 
-
-
-
         for Ep in self.ListOfDevices[key]['Ep']:
             self.log.logging( "ConfigureReporting", 'Debug2', "------> Configurereporting - processing %s/%s" %(key,Ep), nwkid=key)
             clusterList = getClusterListforEP( self, key, Ep )
@@ -128,9 +125,15 @@ def processConfigureReporting( self, NWKID=None ):
 
                 self.log.logging( "ConfigureReporting", 'Debug2', "--------> Configurereporting - processing %s/%s - %s" %(key,Ep,cluster), nwkid=key)
 
-                if not is_time_to_perform_work(self, 'ConfigureReporting', key, Ep, cluster, now, (21 * 3600) ):
-                    self.log.logging( "ConfigureReporting", 'Debug', "--------> Not time to perform  %s/%s - %s" %(key,Ep,cluster), nwkid=key)
-                    continue
+                # Configure Reporting must be done because:
+                # (1) 'ConfigureReporting' do not exist
+                # (2) 'ConfigureReporting' is empty
+                # (3) if reenforceConfigureReporting is enabled and it is time to do the work
+                if 'ConfigureReporting' in  self.ListOfDevices[key] and len(self.ListOfDevices[key]['ConfigureReporting']) !=0:
+                    if self.pluginconf.pluginConf['reenforceConfigureReporting']:
+                        if not is_time_to_perform_work(self, 'ConfigureReporting', key, Ep, cluster, now, (21 * 3600) ):
+                            self.log.logging( "ConfigureReporting", 'Debug', "--------> Not time to perform  %s/%s - %s" %(key,Ep,cluster), nwkid=key)
+                            continue
 
                 if NWKID is None and (self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE):
                     self.log.logging( "ConfigureReporting", 'Debug', "---> configureReporting - %s skip configureReporting for now ... system too busy (%s/%s) for %s"
