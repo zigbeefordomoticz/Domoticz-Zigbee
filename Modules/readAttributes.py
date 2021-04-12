@@ -748,7 +748,7 @@ def ReadAttributeRequest_0406(self, key):
             manufacturer = '100b'
             # We need to break the Read Attribute between Manufacturer specifcs one and teh generic one
             for _attr in list(listAttributes):
-                if _attr in ( 0x0030 , ):
+                if _attr in ( 0x0030 , 0x0031):
                     listAttrSpecific.append( _attr )
                 else:
                     listAttrGeneric.append( _attr )
