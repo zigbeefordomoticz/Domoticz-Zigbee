@@ -100,7 +100,7 @@ class NetworkMap():
         # self.LQIreqInProgress  0 and LQItick >= 2
 
         waitResponse = False
-        current_process = max_process = avg_size = 0
+        progress = current_process = max_process = avg_size = 0
         for entry in list(self.Neighbours):
             if self.Neighbours[ entry ]['TableMaxSize'] > 0:
                 avg_size = (avg_size + self.Neighbours[ entry ]['TableMaxSize']) /2 
@@ -110,7 +110,8 @@ class NetworkMap():
                 # If Max size is 0 (not yet started), then we take the Average size of known table
                 max_process += avg_size
             self.logging( 'Debug', "== Entry: %s Current: %s Max: %s" %( entry, self.Neighbours[ entry ]['TableCurSize'], self.Neighbours[ entry ]['TableMaxSize']))
-        progress = int( (current_process/max_process) * 100)
+        if max_process > 0:
+            progress = int( (current_process/max_process) * 100)
         self.logging( 'Log', "Network Topology progress: %s %%" %progress)
 
         for entry in list(self.Neighbours):
