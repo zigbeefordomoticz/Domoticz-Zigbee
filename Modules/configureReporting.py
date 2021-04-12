@@ -204,8 +204,9 @@ def processConfigureReporting( self, NWKID=None ):
 
                     # Check if we have a Manufacturer Specific Cluster/Attribute. If that is the case, we need to send what we have , 
                     # and then pile what we have until we switch back to non manufacturer specific
-                    if (  attr in ( '4000', '4012', 'fd00') and  cluster == '0201' and 'Model' in self.ListOfDevices[ key ] and self.ListOfDevices[ key ]['Model'] in ( 'eTRV0100', 'AC221', 'AC211')) or \
-                        ( cluster == 'fc21' and 'Manufacturer' in self.ListOfDevices[ key ] and self.ListOfDevices[ key ]['Manufacturer'] == '1110') :
+                    if (  attr in ( '4000', '4012', 'fd00',) and  cluster == '0201' and 'Model' in self.ListOfDevices[ key ] and self.ListOfDevices[ key ]['Model'] in ( 'eTRV0100', 'AC221', 'AC211')) or \
+                        ( cluster == 'fc21' and 'Manufacturer' in self.ListOfDevices[ key ] and self.ListOfDevices[ key ]['Manufacturer'] == '1110') or \
+                            ( attr in ( '0030', '0031', ) and cluster == '0406' and 'Manufacturer' in self.ListOfDevices[ key ] and self.ListOfDevices[ key ]['Manufacturer'] == '100b') :
                        
                         # Send what we have 
                         if ListOfAttributesToConfigure:
@@ -221,6 +222,8 @@ def processConfigureReporting( self, NWKID=None ):
                             manufacturer = "113c"
                         elif self.ListOfDevices[ key ]['Manufacturer'] == '1110':
                             manufacturer = "1110"
+                        elif self.ListOfDevices[ key ]['Manufacturer'] == '100b':
+                            manufacturer = "100b"
                         
                         ListOfAttributesToConfigure.append(attr)
                         prepare_and_send_configure_reporting( self, key, Ep, cluster_list, cluster, direction, manufacturer_spec, manufacturer, ListOfAttributesToConfigure)
@@ -262,7 +265,7 @@ def prepare_and_send_configure_reporting( self, key, Ep, cluster_list, cluster, 
         timeOut =  cluster_list[cluster]['Attributes'][attr]['TimeOut']
         chgFlag =  cluster_list[cluster]['Attributes'][attr]['Change']
         attributeList.append( attr )
-        if int(attrType, 16) < 0x30:
+        if int(attrType, 16) < 0x30 and int(attrType, 16) not in ( 0x18, 0x16 ):
             attrList += attrdirection + attrType + attr + minInter + maxInter + timeOut + chgFlag
         else:
             # Data Type above 0x30 (included) are considered as discret/analog values and the change flag is not considered.
