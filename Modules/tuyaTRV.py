@@ -27,7 +27,7 @@ def tuya_eTRV_registration(self, nwkid, device_reset=False):
     write_attribute( self, nwkid, ZIGATE_EP, EPout, '0000', '0000', '00', 'ffde', '20', '13', ackIsDisabled = False)
 
     # (3) Cmd 0x03 on Cluster 0xef00  (Cluster Specific)
-    if device_reset:
+    if device_reset and get_model_name( self, nwkid ) not in ( 'TS0601-thermostat',):
         payload = '11' + get_and_inc_SQN( self, nwkid ) + '03'
         raw_APS_request( self, nwkid, EPout, 'ef00', '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = is_ack_tobe_disabled(self, nwkid))
 
@@ -171,11 +171,9 @@ def receive_antiscale(self, Devices, model_target, NwkId, srcEp, ClusterID, dstN
     self.log.logging( "Tuya", 'Debug', "receive_antiscale - Nwkid: %s/%s Status %s" %(NwkId,srcEp ,data))
     store_tuya_attribute( self, NwkId, 'AntiScale', data )
 
-
 def receive_lowbattery(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     self.log.logging( "Tuya", 'Debug', "receice_lowbattery - Nwkid: %s/%s DataType: %s Battery status %s" %(NwkId,srcEp ,datatype ,int(data,16)))
     store_tuya_attribute( self, NwkId, 'LowBattery', data )
-
 
 def receive_heating_state(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     # Thermostat
@@ -204,6 +202,10 @@ def receive_program_mode( self, Devices, model_target, NwkId, srcEp, ClusterID, 
 def receive_antifreeze( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     self.log.logging( "Tuya", 'Debug', "receive_antifreeze - Nwkid: %s/%s AntiFreeze: %s" %(NwkId,srcEp ,int(data,16)))
     store_tuya_attribute( self, NwkId, 'AntiFreeze', data )        
+
+def receive_sensor_mode( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
+    self.log.logging( "Tuya", 'Debug', "receive_sensor_mode - Nwkid: %s/%s AntiFreeze: %s" %(NwkId,srcEp ,int(data,16)))
+    store_tuya_attribute( self, NwkId, 'SensorMode', data )        
 
 def receive_schedule(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     # Thanks to smanar for the decoding
@@ -294,6 +296,7 @@ eTRV_MATRIX = {
                             0x18: receive_temperature,   # Ok
                             0x24: receive_heating_state,
                             0x28: receive_childlock,
+                            0x2b: receive_sensor_mode,
                             },
                         'ToDevice': {
                             'Switch': 0x01,               # Ok On / Off
@@ -301,6 +304,7 @@ eTRV_MATRIX = {
                             'ScheduleMode': 0x03,         # 01 Manual, 00 Schedule
                             'SetPoint': 0x10,             # Ok
                             'ChildLock': 0x28,
+                            'SensorMode': 0x2b
                             }
                         },
     # eTRV
@@ -461,6 +465,26 @@ def tuya_trv_child_lock( self, nwkid, onoff):
         data = '%02x' %onoff
         tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 
+def tuya_trv_thermostat_sensor_mode( self, nwkid, mode):
+    # Mode 0x00 - IN
+    #      0x01 -- ALL
+    #      0x02 - OUT
+    self.log.logging( "Tuya", 'Debug', "tuya_trv_thermostat_sensor_mode - %s SensorMode: %s" %(nwkid, onoff))
+    if mode not in ( 0x00, 0x01, 0x02 ):
+        return
+    sqn = get_and_inc_SQN( self, nwkid )
+    dp = get_datapoint_command( self, nwkid, 'SensorMode')
+    self.log.logging( "Tuya", 'Debug', "tuya_trv_thermostat_sensor_mode - %s dp for SensorMode: %s" %(nwkid, dp))
+    if dp:
+        action = '%02x04' %dp
+        # determine which Endpoint
+        EPout = '01'
+        cluster_frame = '11'
+        cmd = '00' # Command
+        data = '%02x' %mode
+        tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
+
+
 def tuya_set_calibration_if_needed( self, NwkId ):
     target_calibration = None
     if ( 'Param' in self.ListOfDevices[NwkId]
@@ -604,7 +628,6 @@ def tuya_trv_mode( self, nwkid, mode):
     else:
         tuya_trv_switch_mode( self, nwkid, mode)
 
-            
 def tuya_trv_switch_manual( self, nwkid, offon):
     self.log.logging( "Tuya", 'Debug', "tuya_trv_switch_manual - %s Manual On/Off: %x" %(nwkid, offon), nwkid)
     sqn = get_and_inc_SQN( self, nwkid )

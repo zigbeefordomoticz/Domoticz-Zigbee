@@ -17,6 +17,7 @@ from Modules.enki import enki_set_poweron_after_offon_device
 from Modules.legrand_netatmo import legrand_enable_Led_Shutter_by_nwkid, legrand_enable_Led_IfOn_by_nwkid, legrand_enable_Led_InDark_by_nwkid, legrand_Dimmer_by_nwkid
 from Modules.basicOutputs import set_poweron_afteroffon, set_PIROccupiedToUnoccupiedDelay
 from Modules.readAttributes import ReadAttributeRequest_0006_400x, ReadAttributeRequest_0406_0010
+from Modules.tuyaTRV import tuya_trv_thermostat_sensor_mode
 
 
 def param_Occupancy_settings_PIROccupiedToUnoccupiedDelay( self, nwkid, delay):
@@ -100,6 +101,7 @@ DEVICE_PARAMETERS = {
     'netatmoLedInDark': legrand_enable_Led_InDark_by_nwkid,
     'netatmoLedShutter': legrand_enable_Led_Shutter_by_nwkid,
     'netatmoEnableDimmer': legrand_Dimmer_by_nwkid,
+    'SensorMode': tuya_trv_thermostat_sensor_mode
 }
 def sanity_check_of_param( self, NwkId):
     # Domoticz.Log("sanity_check_of_param for %s" %NwkId)

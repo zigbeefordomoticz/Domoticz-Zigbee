@@ -34,7 +34,7 @@ from Modules.basicOutputs import write_attribute,raw_APS_request
 #   Direction: Device -> Coordinator 0x01 
 #   Direction: Device -> Coordinator 0x02 Setpoint command response
 
-
+TUYA_MANUF_CODE = '1002'
 
 #   "_TZE200_i48qyn9s" : tuyaReadRawAPS ,
 
@@ -214,9 +214,14 @@ def tuya_send_default_response( self, Nwkid, srcEp , sqn, cmd, orig_fcf):
     disabled_default =  '%02x' %(( 0b00010000 & orig_fcf ) >> 4)
     fcf = build_fcf( '00', manuf_spec, direction, disabled_default )
 
-    payload = fcf + sqn + '0b' + cmd + '00'
+
+    payload = fcf + sqn + '0b' 
+    if manuf_spec == '01':
+        payload += TUYA_MANUF_CODE[2:4] + TUYA_MANUF_CODE[0:2]
+    payload += cmd + '00'
     raw_APS_request( self, Nwkid, srcEp, 'ef00', '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = is_ack_tobe_disabled(self, Nwkid))
-    self.log.logging( "Tuya", 'Log', "tuya_send_default_response - %s/%s " %(Nwkid, srcEp ))
+    self.log.logging( "Tuya", 'Log', "tuya_send_default_response - %s/%s fcf: 0x%s ManufSpec: 0x%s Direction: 0x%s DisableDefault: 0x%s" %(
+        Nwkid, srcEp, fcf, manuf_spec, direction, disabled_default ))
 
 
 def tuya_switch_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
