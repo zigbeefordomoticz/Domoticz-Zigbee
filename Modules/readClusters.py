@@ -2530,8 +2530,7 @@ def Cluster0b04( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 # Cluster Manufacturer specifics
 def Clusterfc00( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData , Source):
 
-    DIMMER_STEP = 1
-
+   
     self.log.logging( "Cluster", 'Debug', "ReadCluster - %s - %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, : %s" \
             %( MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
@@ -2547,9 +2546,26 @@ def Clusterfc00( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.log.logging( "Cluster", 'Error', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr,_context)
         return
 
+
+    if 'Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Model'] == 'ROM001':
+        if MsgAttrID == '0001': #On button
+            self.log.logging( "Cluster", 'Debug', "ReadCluster - %s - %s/%s - ON Button detected" %(MsgClusterId, MsgSrcAddr, MsgSrcEp), MsgSrcAddr)
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0008', 'on')
+        elif MsgAttrID == '0004': # Off  Button
+            self.log.logging( "Cluster", 'Debug', "ReadCluster - %s - %s/%s - Off Button detected" %(MsgClusterId, MsgSrcAddr, MsgSrcEp), MsgSrcAddr)
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0008', 'off')
+        elif MsgAttrID  =='0002': # Dim+
+            self.log.logging( "Cluster", 'Debug', "ReadCluster - %s - %s/%s - Dim+ Button detected" %(MsgClusterId, MsgSrcAddr, MsgSrcEp), MsgSrcAddr)
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0008', 'moveup')
+        elif MsgAttrID == '0003': # Dim-
+            self.log.logging( "Cluster", 'Debug', "ReadCluster - %s - %s/%s - Dim- Button detected" %(MsgClusterId, MsgSrcAddr, MsgSrcEp), MsgSrcAddr)
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0008', 'movedown')
+        return
+
     self.log.logging( "Cluster", 'Debug', "ReadCluster %s - %s/%s - reading self.ListOfDevices[%s]['Ep'][%s][%s][%s] = %s" \
             %( MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgSrcAddr, MsgSrcEp, MsgClusterId , MsgAttrID,  self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]), MsgSrcAddr)
 
+    DIMMER_STEP = 1
     if '0000' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]:
         prev_Value = str(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]['0000']).split(";")
         if len(prev_Value) == 3:
@@ -2557,13 +2573,10 @@ def Clusterfc00( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 if not is_hex( val ):
                     prev_Value = '0;80;0'.split(';')
                     break
-
         else:
             prev_Value = '0;80;0'.split(';')
-            
     else:
        prev_Value = '0;80;0'.split(';')
-
 
     move = None
     prev_onoffvalue = onoffValue = int(prev_Value[0],16)
