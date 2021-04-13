@@ -20,7 +20,8 @@
 		"0000": [ "0004", "0000", "0001", "0005", "0007", "fffe" ]
 	},
 	"Param": {
-		"ValveDetection": 1
+		"ValveDetection": 1,
+		"SensorMode": 0
 	}
 }
 
