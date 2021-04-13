@@ -212,8 +212,11 @@ def tuya_send_default_response( self, Nwkid, srcEp , sqn, cmd, orig_fcf):
     manuf_spec = '%02x' %(( 0b00000100 & orig_fcf ) >> 2)
     direction =  '%02x' %(not (( 0b00001000 & orig_fcf ) >> 3))
     disabled_default =  '%02x' %(( 0b00010000 & orig_fcf ) >> 4)
-    fcf = build_fcf( '00', manuf_spec, direction, disabled_default )
 
+    if disabled_default == '01':
+        return
+
+    fcf = build_fcf( '00', manuf_spec, direction, disabled_default )
 
     payload = fcf + sqn + '0b' 
     if manuf_spec == '01':

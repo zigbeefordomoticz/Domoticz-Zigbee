@@ -469,7 +469,7 @@ def tuya_trv_thermostat_sensor_mode( self, nwkid, mode):
     # Mode 0x00 - IN
     #      0x01 -- ALL
     #      0x02 - OUT
-    self.log.logging( "Tuya", 'Debug', "tuya_trv_thermostat_sensor_mode - %s SensorMode: %s" %(nwkid, onoff))
+    self.log.logging( "Tuya", 'Debug', "tuya_trv_thermostat_sensor_mode - %s SensorMode: %s" %(nwkid, mode))
     if mode not in ( 0x00, 0x01, 0x02 ):
         return
     sqn = get_and_inc_SQN( self, nwkid )
