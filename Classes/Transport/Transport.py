@@ -11,6 +11,8 @@ import serial
 import queue
 import time
 
+import json
+
 from threading import Semaphore
 from queue import PriorityQueue, SimpleQueue, Queue
 
@@ -64,8 +66,9 @@ class ZigateTransport(object):
         # Writer
         #self.writer_queue = SimpleQueue()
         self.writer_list_in_queue = []
-        self.writer_queue = Queue()
+        self.writer_queue = PriorityQueue()
         self.writer_thread = None
+        self.prioriy_sqn = 0
 
         # Reader
         self.reader_thread = None
@@ -128,7 +131,7 @@ class ZigateTransport(object):
         # Provide the Load of the Sending Queue
         return self.writer_queue.qsize()
 
-    def sendData(self, cmd, datas, ackIsDisabled=False, waitForResponseIn=False):
+    def sendData(self, cmd, datas, highpriority=False, ackIsDisabled=False, waitForResponseIn=False, ):
         # We receive a send Message command from above ( plugin ), 
         # send it to the sending queue
 
@@ -148,7 +151,18 @@ class ZigateTransport(object):
             'TimeStamp': time.time()
         }
         try:
-            self.writer_queue.put( message )
+            if self.writer_queue.qsize() == 0:
+                 # Queue is empty, we reset the priority_sqn number to 0
+                self.prioriy_sqn = 0
+            if highpriority:
+                self.logging_send( 'Debug', "Hih Priority command Hsqn: %s Cmd: %s Data: %s i_sqn: %s" %(
+                    self.prioriy_sqn,
+                    message['cmd'], message['datas'],   message['InternalSqn']))
+                self.writer_queue.put( (self.prioriy_sqn, str( json.dumps(message))) )
+                self.prioriy_sqn += 1
+            else:
+                self.writer_queue.put( (InternalSqn, str( json.dumps(message))) )
+            
         except queue.Full:
             self.logging_send('Error',"sendData - writer_queue Full")
 

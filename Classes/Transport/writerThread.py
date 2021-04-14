@@ -10,6 +10,7 @@ import queue
 import socket
 import select
 import time
+import json
 from threading import Thread
 
 from Modules.tools import is_hex
@@ -31,7 +32,13 @@ def writer_thread( self ):
         try:
             #self.logging_send( 'Debug', "Waiting for next command Qsize: %s" %self.writer_queue.qsize())
             if self.writer_queue:
-                command = self.writer_queue.get( )
+                 
+                entry = self.writer_queue.get( )
+                _isqn, command_str = entry
+                command = json.loads(command_str)
+                if _isqn != command['InternalSqn']:
+                    self.logging_send( 'Debug', "Hih Priority command HIsqn: %s Cmd: %s Data: %s i_sqn: %s" %(
+                        _isqn, command['cmd'], command['datas'],   command['InternalSqn']))
 
                 #self.logging_send( 'Debug', "New command received:  %s" %(command))
                 if isinstance( command, dict ) and 'cmd' in command and 'datas' in command and 'ackIsDisabled' in command and 'waitForResponseIn' in command and 'InternalSqn' in command:
@@ -199,7 +206,6 @@ def write_to_zigate( self, serialConnection, encoded_data ):
     else:
         return domoticz_write_to_zigate( self, encoded_data)
 
-
 def domoticz_write_to_zigate( self, encoded_data):
     if self._connection:
         self._connection.Send(encoded_data, 0)
@@ -208,7 +214,6 @@ def domoticz_write_to_zigate( self, encoded_data):
     self.logging_send( 'Error', "domoticz_write_to_zigate - No connection available: %s" %self._connection)
     return False
     
-
 def native_write_to_zigate( self, serialConnection, encoded_data):
 
     if self._transp == "Wifi":

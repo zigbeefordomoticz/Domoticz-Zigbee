@@ -43,10 +43,10 @@ def initialize_command_protocol_parameters():
 
 def stop_waiting_on_queues( self ):
     if self.writer_queue:
-        self.writer_queue.put( 'STOP' ) # Stop Writer
+        self.writer_queue.put( (0, 'STOP') ) # Stop Writer
 
     if self.forwarder_queue:
-        self.forwarder_queue.put( 'STOP' ) # Stop Forwarded
+        self.forwarder_queue.put( (0, 'STOP') ) # Stop Forwarded
 
 
 def waiting_for_end_thread( self ):
