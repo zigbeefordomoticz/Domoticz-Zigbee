@@ -75,7 +75,7 @@ def send_zigatecmd_zcl_noack( self, address, cmd, datas):
     return isqn
 
 
-def send_zigatecmd_raw( self, cmd, datas, ackIsDisabled = False ):
+def send_zigatecmd_raw( self, cmd, datas, highpriority=False, ackIsDisabled = False,  ):
     #
     # Send the cmd directly to ZiGate
 
@@ -84,7 +84,7 @@ def send_zigatecmd_raw( self, cmd, datas, ackIsDisabled = False ):
             {'Error code': 'BOUTPUTS-CMDRAW-01'})
        return
 
-   i_sqn = self.ZigateComm.sendData( cmd, datas , ackIsDisabled )
+   i_sqn = self.ZigateComm.sendData( cmd, datas , highpriority, ackIsDisabled )
    if self.pluginconf.pluginConf['debugzigateCmd']:
        self.log.logging( "BasicOutput", 'Log', "send_zigatecmd_raw       - [%s] %s %s Queue Length: %s" %(i_sqn, cmd, datas, self.ZigateComm.loadTransmit()  ))
    else:
@@ -519,8 +519,7 @@ def removeZigateDevice( self, IEEE ):
     ChildAddr = IEEE
     return send_zigatecmd_raw(self, "0026", ParentAddr + ChildAddr )
 
-
-def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep=ZIGATE_EP, ackIsDisabled = False ):
+def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep=ZIGATE_EP, highpriority=False, ackIsDisabled = False , ):
     # This function submits a request to send data to a remote node, with no restrictions
     # on the type of transmission, destination address, destination application profile,
     # destination cluster and destination endpoint number - these destination parameters
@@ -572,12 +571,12 @@ def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zig
     if self.pluginconf.pluginConf['ieeeForRawAps']:
         ieee = self.ListOfDevices[ targetaddr]['IEEE']
         if ackIsDisabled:
-            return send_zigatecmd_raw(self, "0530", '08' + ieee + zigate_ep + dest_ep + cluster + profileId + security + radius + len_payload + payload, ackIsDisabled = overwrittenackIsDisabled )
-        return send_zigatecmd_raw(self, "0530", '03' + ieee + zigate_ep + dest_ep + cluster + profileId + security + radius + len_payload + payload, ackIsDisabled = overwrittenackIsDisabled )
+            return send_zigatecmd_raw(self, "0530", '08' + ieee + zigate_ep + dest_ep + cluster + profileId + security + radius + len_payload + payload, highpriority, ackIsDisabled = overwrittenackIsDisabled )
+        return send_zigatecmd_raw(self, "0530", '03' + ieee + zigate_ep + dest_ep + cluster + profileId + security + radius + len_payload + payload, highpriority, ackIsDisabled = overwrittenackIsDisabled )
 
     if ackIsDisabled:
-        return send_zigatecmd_raw(self, "0530", '07' + targetaddr + zigate_ep + dest_ep + cluster + profileId + security + radius + len_payload + payload, ackIsDisabled = ackIsDisabled)
-    return send_zigatecmd_raw(self, "0530", '02' + targetaddr + zigate_ep + dest_ep + cluster + profileId + security + radius + len_payload + payload, ackIsDisabled = overwrittenackIsDisabled)
+        return send_zigatecmd_raw(self, "0530", '07' + targetaddr + zigate_ep + dest_ep + cluster + profileId + security + radius + len_payload + payload, highpriority, ackIsDisabled = ackIsDisabled)
+    return send_zigatecmd_raw(self, "0530", '02' + targetaddr + zigate_ep + dest_ep + cluster + profileId + security + radius + len_payload + payload, highpriority, ackIsDisabled = overwrittenackIsDisabled)
 
 
 def read_attribute( self, addr ,EpIn , EpOut ,Cluster ,direction , manufacturer_spec , manufacturer , lenAttr, Attr, ackIsDisabled = True):
@@ -797,6 +796,10 @@ def set_poweron_afteroffon( self, key, OnOffMode = 0xff):
     # Ikea / Philips/ Legrand
     # 0x0006 / 0x4003 -> 0x00 Off, 0x01 On, 0xff Previous
 
+    self.log.logging( "BasicOutput", 'Log', "set_PowerOn_OnOff for %s - OnOff: %s" %(key, OnOffMode),key)
+    if key not in self.ListOfDevices:
+        self.log.logging( "BasicOutput", 'Error', "set_PowerOn_OnOff for %s not found" %(key),key)
+        return
     model_name = ''
     if 'Model' in self.ListOfDevices[ key ]:
         model_name = self.ListOfDevices[ key ]['Model']
@@ -816,7 +819,7 @@ def set_poweron_afteroffon( self, key, OnOffMode = 0xff):
     ListOfEp = getListOfEpForCluster( self, key, '0006' )
     for EPout in ListOfEp:
         data = "%02x" %OnOffMode
-        self.log.logging( "BasicOutput", 'Log', "set_PowerOn_OnOff for %s/%s - OnOff: %s" %(key, EPout, OnOffMode),key)
+        self.log.logging( "BasicOutput", 'Debug', "set_PowerOn_OnOff for %s/%s - OnOff: %s" %(key, EPout, OnOffMode),key)
         if attribute in self.ListOfDevices[key]['Ep'][EPout]['0006']:
             del self.ListOfDevices[key]['Ep'][EPout]['0006'][ attribute ]
         return write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled = True)
@@ -868,8 +871,8 @@ def send_default_response( self, Nwkid, srcEp, cluster, Direction, bDisableDefau
     if ManufacturerSpecific == '01':
         payload += u16ManufacturerCode[2:4] + u16ManufacturerCode[0:2]
     payload += cmd +  response_to_command + status
-    raw_APS_request( self, Nwkid, srcEp, cluster, '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = True)
-    self.log.logging( "BasicOutput", 'Log', "send_default_response - [%s] %s/%s on cluster: %s with command: %s" %(sqn, Nwkid, srcEp , cluster, response_to_command))
+    raw_APS_request( self, Nwkid, srcEp, cluster, '0104', payload, zigate_ep=ZIGATE_EP, highpriority=True, ackIsDisabled = True)
+    self.log.logging( "BasicOutput", 'Debug', "send_default_response - [%s] %s/%s on cluster: %s with command: %s" %(sqn, Nwkid, srcEp , cluster, response_to_command))
 
 def disable_firmware_default_response( self , mode='00'):
     # Available as of Firmware 31e, it's allow to disable the disable the Default Response, and leave it to the plugin to send if needed.
