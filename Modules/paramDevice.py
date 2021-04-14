@@ -47,9 +47,10 @@ def param_Occupancy_settings_PIROccupiedToUnoccupiedDelay( self, nwkid, delay):
 def param_PowerOnAfterOffOn(self, nwkid, mode):
     # 0 - stay Off after a Off/On
     # 1 - stay On after a Off/On
-    # 255 - stay to previous state after a Off/On
+    # 255 - stay to previous state after a Off/On ( or 2 for BlitzWolf)
 
-    if mode not in ( 0, 1, 255 ):
+    self.log.logging( "Heartbeat", 'Log',"param_PowerOnAfterOffOn for %s mode: %s" %(nwkid, mode), nwkid)
+    if mode not in ( 0, 1, 2, 255 ):
         return
 
     if 'Manufacturer' not in self.ListOfDevices[ nwkid ]:
@@ -66,6 +67,21 @@ def param_PowerOnAfterOffOn(self, nwkid, mode):
             philips_set_poweron_after_offon_device( self, mode, nwkid)
             ReadAttributeRequest_0006_400x(self, nwkid)
 
+    elif 'Model' in self.ListOfDevices[ nwkid ] and self.ListOfDevices[ nwkid ]['Model'] in ( 'TS0121', 'TS0115'):
+        #Tuya ( 'TS0121' BlitzWolf )
+        if '01' not in self.ListOfDevices[ nwkid ]['Ep']:
+            return
+        if '0006' not in self.ListOfDevices[ nwkid ]['Ep']['01']:
+            return
+        if '8002' not in self.ListOfDevices[ nwkid ]['Ep']['01']['0006']:
+            return
+
+        if self.ListOfDevices[ nwkid ]['Ep']['01']['0006']['8002'] == '2' and str(mode) == '255':
+            return
+        if self.ListOfDevices[ nwkid ]['Ep']['01']['0006']['8002'] != str(mode):
+            set_poweron_afteroffon( self, nwkid, mode)
+            ReadAttributeRequest_0006_400x(self, nwkid)
+
     elif self.ListOfDevices[ nwkid ]['Manufacturer'] == '1277': # Enki Leroy Merlin
         if '01' not in self.ListOfDevices[ nwkid ]['Ep']:
             return
@@ -78,17 +94,15 @@ def param_PowerOnAfterOffOn(self, nwkid, mode):
             ReadAttributeRequest_0006_400x(self, nwkid)
 
     else:
-        # Ikea, Legrand, Tuya ( 'TS0121' BlitzWolf )
+        # Ikea, Legrand, 
         for ep in self.ListOfDevices[ nwkid ]['Ep']:
             if '0006' not in self.ListOfDevices[ nwkid ]['Ep'][ ep ]:
                 continue
-            
             if '4003' in self.ListOfDevices[ nwkid ]['Ep'][ ep ]['0006'] and self.ListOfDevices[ nwkid ]['Ep'][ ep ]['0006']['4003'] == str(mode):
-                    continue
-                
+                continue
             elif '8002' in self.ListOfDevices[ nwkid ]['Ep'][ ep ]['0006'] and self.ListOfDevices[ nwkid ]['Ep'][ ep ]['0006']['8002'] == str(mode):
-                    continue
-   
+                continue
+
             set_poweron_afteroffon( self, nwkid, mode)
             ReadAttributeRequest_0006_400x(self, nwkid)
 
