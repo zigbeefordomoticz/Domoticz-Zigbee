@@ -570,10 +570,12 @@ def load_new_param_definition( self ):
         model_name = self.ListOfDevices[ key ]['Model']
         if 'Param' not in self.DeviceConf[ model_name ]:
             continue
+        self.ListOfDevices[key]['CheckParam'] = True
         if 'Param' not in self.ListOfDevices[ key ]:
             self.ListOfDevices[ key ]['Param'] = {}
 
         for param in self.DeviceConf[ model_name ]['Param']:
+            
             if param in self.ListOfDevices[ key ]['Param']:
                 continue
 
