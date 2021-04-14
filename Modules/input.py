@@ -3168,6 +3168,14 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
 
         self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = MsgCmd
 
+    elif _ModelName == "ROM001":
+        if MsgClusterId == "0008":
+            if MsgCmd == "05":  # Push Up
+                MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0006", "moveup")
+            elif MsgCmd == "01":  # Push Down
+                MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0006", "movedown")
+            elif MsgCmd == "07":  # Release Up & Down
+                MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0006", "stop")        
     elif _ModelName == "RC 110":
         if MsgClusterId != "0008":
             self.log.logging( 
@@ -3919,7 +3927,7 @@ def Decode7000(self, Devices, MsgData, MsgLQI):
     if uSrcAddress not in self.ListOfDevices:
         return
 
-    self.log.logging( "Input", "Log", "Decode7000 - Default Response Notification [%s] %s/%s Cluster: %s DefaultReponse: %s ManufSpec: %s ManufCode: %s Command: %s Direction: %s FrameType: %s" %(
+    self.log.logging( "Input", "Debug", "Decode7000 - Default Response Notification [%s] %s/%s Cluster: %s DefaultReponse: %s ManufSpec: %s ManufCode: %s Command: %s Direction: %s FrameType: %s" %(
         u8TransactionSequenceNumber, uSrcAddress, u8SrcEndpoint, u16ClusterId, bDisableDefaultResponse, bManufacturerSpecific, u16ManufacturerCode, u8CommandIdentifier, bDirection, eFrameType))
 
     if bDisableDefaultResponse == '00': # If Default Response required
