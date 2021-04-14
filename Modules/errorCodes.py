@@ -29,7 +29,7 @@ APS_CODES = {
     "a3": "A parameter value was out of range",
     "a4": "An APSME-UNBIND.request failed due to the requested binding link not existing in the binding table",
     "a5": "An APSME-REMOVE-GROUP.request has been issued with a group identified that does not appear in the group table",
-    "a6": "A parameter value was invaid or out of range",
+    "a6": "A parameter value was invalid or out of range",
     "a7": "An APSDE-DATA.request requesting ack transmission failed due to no ack being received",
     "a8": "An APSDE-DATA.request with a destination addressing mode set to 0x00 failed due to there being no devices bound to this device",
     "a9": "An APSDE-DATA.request with a destination addressing mode set to 0x03 failed due to no corresponding short address found in the address map table",
