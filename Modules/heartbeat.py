@@ -329,7 +329,7 @@ def processKnownDevices( self, Devices, NWKID ):
     if model in self.DeviceConf and 'PollingEnabled' in self.DeviceConf[ model ] and self.DeviceConf[ model ]['PollingEnabled']:
         enabledEndDevicePolling = True
         
-    if ( 'CheckParam' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['CheckParam'] ) or ( intHB % 60) == 0 :
+    if ( 'CheckParam' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['CheckParam'] and intHB > ( 120 // HEARTBEAT) ):
         sanity_check_of_param( self, NWKID)
         self.ListOfDevices[NWKID]['CheckParam'] = False
 
@@ -405,13 +405,13 @@ def processKnownDevices( self, Devices, NWKID ):
 
                 func(self, NWKID )
 
-    if ( intHB % 900) == 0:
-        # Checking PowerOn after OnOff setting ( 0x4003 )
-        if 'Manufacturer Name' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['Manufacturer Name'] in ( 'Philips', 'IKEA of Sweden', 'Legrand'):
-            for ep in self.ListOfDevices[NWKID]['Ep']:
-                if '0006' in self.ListOfDevices[NWKID]['Ep'][ep]:
-                    if '4003' not in self.ListOfDevices[NWKID]['Ep'][ep]['0006']:
-                        ReadAttributeRequest_0006_400x( self, NWKID )
+    #if ( intHB % 900) == 0:
+    #    # Checking PowerOn after OnOff setting ( 0x4003 )
+    #    if 'Manufacturer Name' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['Manufacturer Name'] in ( 'Philips', 'IKEA of Sweden', 'Legrand'):
+    #        for ep in self.ListOfDevices[NWKID]['Ep']:
+    #            if '0006' in self.ListOfDevices[NWKID]['Ep'][ep]:
+    #                if '4003' not in self.ListOfDevices[NWKID]['Ep'][ep]['0006']:
+    #                    ReadAttributeRequest_0006_400x( self, NWKID )
 
     # Reenforcement of Legrand devices options if required
     if ( self.HeartbeatCount % LEGRAND_FEATURES ) == 0 :
