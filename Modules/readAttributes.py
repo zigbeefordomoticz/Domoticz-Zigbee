@@ -399,16 +399,20 @@ def ReadAttributeRequest_0006_0000(self, key):
         ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0006", listAttributes, ackIsDisabled = is_ack_tobe_disabled(self, key))
 
 def ReadAttributeRequest_0006_400x(self, key):
-    self.log.logging( "ReadAttributes", 'Debug', "ReadAttributeRequest_0006 focus on 0x4000x attributes- Key: %s " %key, nwkid=key)
+    self.log.logging( "ReadAttributes", 'Debug', "ReadAttributeRequest_0006 focus on 0x400x attributes- Key: %s " %key, nwkid=key)
 
     ListOfEp = getListOfEpForCluster( self, key, '0006' )
     for EPout in ListOfEp:
         listAttributes = []
-        self.log.logging( "ReadAttributes", 'Log',"-----requesting Attribute 0x0006/0x4003 for PowerOn state for device : %s" %key, nwkid=key)
-        listAttributes.append ( 0x4003 )
+        if  ( 'Model' in self.ListOfDevices[key] and self.ListOfDevices[key]['Model'] in ( 'TS0121', 'TS0115') ):
+            listAttributes.append ( 0x8002 )
+            self.log.logging( "ReadAttributes", 'Debug',"-----requesting Attribute 0x0006/0x8002 for PowerOn state for device : %s" %key, nwkid=key)
+        else:
+            listAttributes.append ( 0x4003 )
+            self.log.logging( "ReadAttributes", 'Debug',"-----requesting Attribute 0x0006/0x4003 for PowerOn state for device : %s" %key, nwkid=key)
 
         if listAttributes:
-            self.log.logging( "ReadAttributes", 'Log', "Request OnOff 0x4000x attributes via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
+            self.log.logging( "ReadAttributes", 'Debug', "Request OnOff 0x4000x attributes via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
             ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0006", listAttributes, ackIsDisabled = is_ack_tobe_disabled(self, key))
 
 def ReadAttributeRequest_0006(self, key):
