@@ -222,8 +222,8 @@ def tuya_send_default_response( self, Nwkid, srcEp , sqn, cmd, orig_fcf):
     if manuf_spec == '01':
         payload += TUYA_MANUF_CODE[2:4] + TUYA_MANUF_CODE[0:2]
     payload += cmd + '00'
-    raw_APS_request( self, Nwkid, srcEp, 'ef00', '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = is_ack_tobe_disabled(self, Nwkid))
-    self.log.logging( "Tuya", 'Log', "tuya_send_default_response - %s/%s fcf: 0x%s ManufSpec: 0x%s Direction: 0x%s DisableDefault: 0x%s" %(
+    raw_APS_request( self, Nwkid, srcEp, 'ef00', '0104', payload, zigate_ep=ZIGATE_EP, highpriority=True, ackIsDisabled = is_ack_tobe_disabled(self, Nwkid))
+    self.log.logging( "Tuya", 'Debug', "tuya_send_default_response - %s/%s fcf: 0x%s ManufSpec: 0x%s Direction: 0x%s DisableDefault: 0x%s" %(
         Nwkid, srcEp, fcf, manuf_spec, direction, disabled_default ))
 
 
