@@ -963,20 +963,18 @@ class WebServer(object):
                     Domoticz.Error("Unexpected request: %s" %data)
                     _response["Data"] = json.dumps( "Executing %s on %s" %(data['Command'], data['payload']) )
                     return _response
-                msgtype = int( data['Command'] , 16 )
-                if msgtype not in ZIGATE_COMMANDS:
-                    Domoticz.Error("raw_command - Unknown MessageType received %s" %msgtype)
-                    _response["Data"] = json.dumps( "Unknown MessageType received %s" %msgtype)
+
+                if not is_hex(data['Command']) or ( is_hex(data['Command']) and int( data['Command'] , 16 ) not in ZIGATE_COMMANDS):
+                    Domoticz.Error("raw_command - Unknown MessageType received %s" %data['Command'])
+                    _response["Data"] = json.dumps( "Unknown MessageType received %s" %data['Command'])
                     return _response
                 
-                cmd = data['Command']
                 payload = data['payload']
                 if payload is None:
                     payload = ""
                 sendZigateCmd( self, data['Command'], data['payload'])
                 self.logging( 'Log', "rest_dev_command - Command: %s payload %s" %(data['Command'], data['payload']))
                 _response["Data"] = json.dumps( "Executing %s on %s" %(data['Command'], data['payload']) ) 
-
         return _response
 
     def rest_dev_command( self, verb, data, parameters):
