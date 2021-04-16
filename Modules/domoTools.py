@@ -408,7 +408,7 @@ def GetType(self, Addr, Ep):
             if Type != "" and Type[:1] != "/":
                 Type += "/"
 
-            Type += TypeFromCluster(self, cluster, create_=True)
+            Type += TypeFromCluster(self, cluster, create_=True, ModelName=_Model)
             self.log.logging( "Widget", "Debug", "GetType - Type will be set to : " + str(Type))
 
         # Type+=Type
@@ -431,7 +431,7 @@ def GetType(self, Addr, Ep):
 
     return Type
 
-def TypeFromCluster( self, cluster, create_=False, ProfileID_='', ZDeviceID_=''):
+def TypeFromCluster( self, cluster, create_=False, ProfileID_='', ZDeviceID_='', ModelName=''):
 
     self.log.logging( "Widget", "Debug", "---> ClusterSearch - Cluster: %s, ProfileID: %s, ZDeviceID: %s, create: %s" %(cluster, ProfileID_, ZDeviceID_, create_))
 
@@ -454,8 +454,12 @@ def TypeFromCluster( self, cluster, create_=False, ProfileID_='', ZDeviceID_='')
     elif cluster == "0009": 
         TypeFromCluster = "Alarm"
 
-    elif cluster == "000c" and not create_: 
-        TypeFromCluster = "XCube"
+    elif cluster == "000c":
+        if ModelName in ( 'lumi.sensor_cube.aqgl01', 'lumi.sensor_cube', ):
+            if not create_: 
+                TypeFromCluster = "XCube"
+        else:
+            TypeFromCluster = "Analog"
 
     elif cluster == "0012" and not create_: 
         TypeFromCluster = "XCube"

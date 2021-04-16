@@ -195,6 +195,9 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 self.log.logging( "Widget", "Debug", "------>  Thermostat Setpoint: %s %s" %(0,setpoint), NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
 
+        if 'Analog' in ClusterType: # Analog Value from Analog Input cluster
+            UpdateDevice_v2(self, Devices, DeviceUnit, 0, value, BatteryLevel, SignalLevel)
+
         if 'Valve' in ClusterType: # Valve Position 
             if WidgetType == 'Valve' and Attribute_ in ('026d', '4001', '0008'):
                 # value int is the % of the valve opening
@@ -242,7 +245,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     UpdateDevice_v2(self, Devices, DeviceUnit, 0, 'Off', BatteryLevel, SignalLevel)
                 elif value == 1:
                     UpdateDevice_v2(self, Devices, DeviceUnit, 1, 'On', BatteryLevel, SignalLevel)
-
 
             elif WidgetType == 'HACTMODE' and Attribute_ == "e011":#  Wiser specific Fil Pilote
                  # value is str
@@ -332,7 +334,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                         UpdateDevice_v2(self, Devices, DeviceUnit, 3, '30', BatteryLevel, SignalLevel)
                     elif THERMOSTAT_MODE_2_LEVEL[ value ] == '50': # Fan
                         UpdateDevice_v2(self, Devices, DeviceUnit, 4, '40', BatteryLevel, SignalLevel)
-
 
         if ClusterType == 'Temp' and WidgetType == 'AirQuality' and Attribute_ == '0002':
             # eco2 for VOC_Sensor from Nexturn is provided via Temp cluster

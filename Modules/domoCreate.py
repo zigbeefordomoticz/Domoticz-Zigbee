@@ -450,6 +450,12 @@ def CreateDomoDevice(self, Devices, NWKID):
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 0xF3, Subtype_ = 31, Switchtype_= 0, widgetOptions = Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Carbon Monoxyde" %(t), NWKID)
 
+            if t in ('Analog', ):
+                Options = '1;tbd'
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 0xF3, Subtype_ = 31, Switchtype_= 0, widgetOptions = Options)
+                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Analog Device" %(t), NWKID)
+
+
             if t in ( 'Alarm', ):
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 243, Subtype_ = 22, Switchtype_= 0) 
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Alarm" %(t), NWKID)
