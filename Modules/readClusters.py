@@ -1025,23 +1025,33 @@ def Cluster0009( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 def Cluster000c( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData , Source):
     # Analog Binary
     # Magic Cube Xiaomi rotation and Power Meter
-
     self.log.logging( "Cluster", 'Debug', "ReadCluster - ClusterID=000C - MsgSrcEp: %s MsgAttrID: %s MsgAttType: %s MsgClusterData: %s " %(MsgSrcEp, MsgAttrID, MsgAttType, MsgClusterData), MsgSrcAddr)
-
     checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, str(decodeAttribute( self, MsgAttType, MsgClusterData) ) )
 
-    if MsgAttrID == '0051': #
-        self.log.logging( "Cluster", 'Debug', "%s/%s Out of service: %s" %(MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
-        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
+    if MsgAttrID == '001c': # Description
+        self.log.logging( "Cluster", 'Debug', "%s/%s Description: %s" %(MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
 
-    elif MsgAttrID=="0055":
-        # Are we receiving Power
+
+    elif MsgAttrID == '0051': #
+        self.log.logging( "Cluster", 'Debug', "%s/%s Out of service: %s" %(MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
+
+
+    elif MsgAttrID=="0055": # The PresentValueattribute  indicates the current value  of the  input,  output or value
+        # Are we receiving Power or is that XCube or something else
+        if getEPforClusterType( self, MsgSrcAddr, "Analog" ) and MsgAttType == '39':
+            # We have an Analog Widget created, so we can consider it is not a Xiaomi Plug nor an Aqara/XCube
+            self.log.logging( "Cluster", 'Log', "readCluster - %s - %s/%s Xiaomi attribute: %s:  %s " %(
+                MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, decodeAttribute( self, MsgAttType, MsgClusterData)), MsgSrcAddr)
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(decodeAttribute( self, MsgAttType, MsgClusterData) ), )
+            return
+
         EPforPower = getEPforClusterType( self, MsgSrcAddr, "Power" ) 
         EPforMeter = getEPforClusterType( self, MsgSrcAddr, "Meter" ) 
         EPforPowerMeter = getEPforClusterType( self, MsgSrcAddr, "PowerMeter" ) 
         self.log.logging( "Cluster", 'Debug', "EPforPower: %s, EPforMeter: %s, EPforPowerMeter: %s" %(EPforPower, EPforMeter, EPforPowerMeter), MsgSrcAddr)
        
         if len(EPforPower) == len(EPforMeter) == len(EPforPowerMeter) == 0:
+            # Magic Cub
             rotation_angle = struct.unpack('f',struct.pack('I',int(MsgClusterData,16)))[0]
             self.log.logging( "Cluster", 'Debug', "ReadCluster - ClusterId=000c - Magic Cube angle: %s" %rotation_angle, MsgSrcAddr)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(int(rotation_angle)), Attribute_ = '0055' )
@@ -1075,17 +1085,23 @@ def Cluster000c( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         else:
             self.log.logging( "Cluster", 'Log', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
-    elif MsgAttrID=="006f": # Status flag
-        self.log.logging( "Cluster", 'Debug', "ReadCluster - %s/%s ClusterId=000c - Status flag: %s" %(MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
-        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
+    elif MsgAttrID=="006f": # Status flag ( Bit 0 = IN ALARM, Bit 1 = FAULT, Bit 2 = OVERRIDDEN, Bit 3 = OUT OF SERVICE )
+        status = int(MsgClusterData, 16)
+        if status & 0b00000001:
+            self.log.logging( "Cluster", 'Log', "Device %s/%s IN ALARM" %(MsgSrcAddr, MsgSrcEp,), MsgSrcAddr)
+        elif status & 0b00000010:
+            self.log.logging( "Cluster", 'Log', "Device %s/%s FAULT" %(MsgSrcAddr, MsgSrcEp,), MsgSrcAddr)
+        elif status & 0b00000100:
+            self.log.logging( "Cluster", 'Log', "Device %s/%s OVERRIDDEN" %(MsgSrcAddr, MsgSrcEp,), MsgSrcAddr)
+        elif status & 0b00001000:
+            self.log.logging( "Cluster", 'Log', "Device %s/%s OUT OF SERVICE" %(MsgSrcAddr, MsgSrcEp,), MsgSrcAddr)
+
 
     elif MsgAttrID=="ff05": # Rotation - horinzontal
         self.log.logging( "Cluster", 'Debug', "ReadCluster - ClusterId=000c - Magic Cube Rotation: " + str(MsgClusterData) , MsgSrcAddr)
-        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
+
 
     else:
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(decodeAttribute( self, MsgAttType, MsgClusterData) ), )
-        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
         self.log.logging( "Cluster", 'Log', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
 def Cluster000f( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData , Source):
