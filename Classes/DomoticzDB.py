@@ -160,7 +160,6 @@ class DomoticzDB_Preferences:
 class DomoticzDB_Hardware:
 
     def __init__(self, database, pluginconf, hardwareID , log):
-        self.Devices = {}
         self.dbConn = None
         self.dbCursor = None
         self.HardwareID = hardwareID
@@ -178,39 +177,33 @@ class DomoticzDB_Hardware:
         self.log.logging('DZDB', logType, message)
 
     def _openDB( self ):
-
         self.logging(  "Debug", "DB_Hardware - Opening %s" %self.database)
         self.dbConn = sqlite3.connect(self.database)
         self.dbCursor = self.dbConn.cursor()
 
     def closeDB( self ):
-
-        if self.dbConn is not None:
+        if self.dbConn:
             self.logging(  "Debug", "DB_Hardware Closing %s" %self.database)
             self.dbConn.close()
-        self.dbConn = None
-        self.dbCursor = None
+            self.dbConn = None
+            self.dbCursor = None
 
     def disableErasePDM( self):
-
         if  self.dbCursor is None:
             self._openDB( )
             # Permit to Join is stored in Mode3
             self.dbCursor.execute("UPDATE Hardware Set Mode3 = 'False' Where ID = '%s' " %self.HardwareID)
             self.dbConn.commit()
-            self.dbConn.close()
+            self.closeDB()
 
     def updateMode4( self, newValue):
-
         if  self.dbCursor is None:
             self._openDB( )
-
             self.dbCursor.execute("UPDATE Hardware Set Mode4 = %s Where ID = '%s' " %( newValue, self.HardwareID))
             self.dbConn.commit()
-            self.dbConn.close()
+            self.closeDB()
 
     def get_loglevel_value( self ):
-
         if  self.dbCursor is None:
             self._openDB( )
             try:
@@ -221,11 +214,13 @@ class DomoticzDB_Hardware:
             Domoticz.Log("LogLevel value: %s" %value)
             if value is None:
                 self.logging(  "Log", "Dz LogLevel --> Unknown !!!" )
+                self.dbConn.commit()
+                self.closeDB()
                 return None
             else:
                 self.logging(  "Log", "Dz LogLevel --> Value: %s" %value)
             self.dbConn.commit()
-            self.dbConn.close()
+            self.closeDB()
             return value
 
         self.closeDB()
@@ -234,7 +229,6 @@ class DomoticzDB_DeviceStatus:
 
     def __init__(self, database, pluginconf, hardwareID , log):
         self.database = database
-        self.Devices = {}
         self.dbConn = None
         self.dbCursor = None
         self.HardwareID = hardwareID
