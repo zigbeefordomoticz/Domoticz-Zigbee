@@ -46,7 +46,7 @@ def stop_waiting_on_queues( self ):
         self.writer_queue.put( (0, 'STOP') ) # Stop Writer
 
     if self.forwarder_queue:
-        self.forwarder_queue.put( (0, 'STOP') ) # Stop Forwarded
+        self.forwarder_queue.put( ('STOP') ) # Stop Forwarded
 
 
 def waiting_for_end_thread( self ):
