@@ -130,6 +130,6 @@ def philips_set_poweron_after_offon_device( self, mode, nwkid):
         return
 
     # At that stage, we have a Philips device with Cluster 0006 and the right attribute
-    Domoticz.Log("philips_set_poweron_after_offon - Set PowerOn after OffOn of %s to %s" %(nwkid,PHILIPS_POWERON_MODE[ mode]))
+    self.log.logging( "Philips", 'Debug',"philips_set_poweron_after_offon - Set PowerOn after OffOn of %s to %s" %(nwkid,PHILIPS_POWERON_MODE[ mode]))
     set_poweron_afteroffon( self, nwkid, OnOffMode = mode)
     ReadAttributeRequest_0006_400x(self, nwkid)
