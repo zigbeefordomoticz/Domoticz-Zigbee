@@ -130,8 +130,11 @@ def NXP_Extended_Error_Code( self, MsgData):
             'nPDU': self.npdu,
             'aPDU': self.apdu
         }
-        #self.logging_receive_error( "NXP_Extended_Error_Code - Extended Error Code: [%s] %s" %( MsgData, StatusMsg), context=_context)
-        self.logging_receive( 'Log', "NXP_Extended_Error_Code - Extended Error Code: [%s] %s nPDU:%s aPDU: %s" %( MsgData, StatusMsg, self.npdu, self.apdu))
+        if self.firmware_with_8012:
+            # We have a 31e firmware or above. We are not expecting extensive Extended Error code, so they will be logged
+            self.logging_receive_error( "NXP_Extended_Error_Code - Extended Error Code: [%s] %s" %( MsgData, StatusMsg), context=_context)
+        else:
+            self.logging_receive( 'Log', "NXP_Extended_Error_Code - Extended Error Code: [%s] %s nPDU:%s aPDU: %s" %( MsgData, StatusMsg, self.npdu, self.apdu))
 
 
 def NXP_log_message(self, decoded_frame):  # Reception log Level
