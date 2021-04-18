@@ -388,9 +388,8 @@ def remove_domoticz_group_device(self, GroupId):
         return
         
     if unit in self.Devices:
-        self.logging( 'Debug', "remove_domoticz_group_device - removing Domoticz Widget %s" %self.Devices[unit].Name)
-        self.adminWidgets.updateNotificationWidget( self.Devices, 'Groups %s deleted' %self.Devices[unit].Name)
         self.Devices[unit].Delete()
+        
 
 def update_device_list_attribute( self, GroupId, cluster, value):
 
