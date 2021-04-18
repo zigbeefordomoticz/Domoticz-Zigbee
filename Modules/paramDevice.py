@@ -49,7 +49,7 @@ def param_PowerOnAfterOffOn(self, nwkid, mode):
     # 1 - stay On after a Off/On
     # 255 - stay to previous state after a Off/On ( or 2 for BlitzWolf)
 
-    self.log.logging( "Heartbeat", 'Log',"param_PowerOnAfterOffOn for %s mode: %s" %(nwkid, mode), nwkid)
+    self.log.logging( "Heartbeat", 'Debug',"param_PowerOnAfterOffOn for %s mode: %s" %(nwkid, mode), nwkid)
     if mode not in ( 0, 1, 2, 255 ):
         return
 
@@ -64,6 +64,7 @@ def param_PowerOnAfterOffOn(self, nwkid, mode):
         if '4003' not in self.ListOfDevices[ nwkid ]['Ep']['0b']['0006']:
             return
         if self.ListOfDevices[ nwkid ]['Ep']['0b']['0006']['4003'] != str(mode):
+            self.log.logging( "Heartbeat", 'Debug',"param_PowerOnAfterOffOn for Philips for %s mode: %s" %(nwkid, mode), nwkid)
             philips_set_poweron_after_offon_device( self, mode, nwkid)
             ReadAttributeRequest_0006_400x(self, nwkid)
 
@@ -79,6 +80,7 @@ def param_PowerOnAfterOffOn(self, nwkid, mode):
         if self.ListOfDevices[ nwkid ]['Ep']['01']['0006']['8002'] == '2' and str(mode) == '255':
             return
         if self.ListOfDevices[ nwkid ]['Ep']['01']['0006']['8002'] != str(mode):
+            self.log.logging( "Heartbeat", 'Debug',"param_PowerOnAfterOffOn for Tuya for %s mode: %s" %(nwkid, mode), nwkid)
             set_poweron_afteroffon( self, nwkid, mode)
             ReadAttributeRequest_0006_400x(self, nwkid)
 
@@ -90,6 +92,7 @@ def param_PowerOnAfterOffOn(self, nwkid, mode):
         if '4003' not in self.ListOfDevices[ nwkid ]['Ep']['01']['0006']:
             return
         if self.ListOfDevices[ nwkid ]['Ep']['01']['0006']['4003'] != str(mode):
+            self.log.logging( "Heartbeat", 'Debug',"param_PowerOnAfterOffOn for Enki for %s mode: %s" %(nwkid, mode), nwkid)
             enki_set_poweron_after_offon_device( self, mode, nwkid)
             ReadAttributeRequest_0006_400x(self, nwkid)
 
@@ -102,7 +105,7 @@ def param_PowerOnAfterOffOn(self, nwkid, mode):
                 continue
             elif '8002' in self.ListOfDevices[ nwkid ]['Ep'][ ep ]['0006'] and self.ListOfDevices[ nwkid ]['Ep'][ ep ]['0006']['8002'] == str(mode):
                 continue
-
+            self.log.logging( "Heartbeat", 'Debug',"param_PowerOnAfterOffOn for %s mode: %s" %(nwkid, mode), nwkid)
             set_poweron_afteroffon( self, nwkid, mode)
             ReadAttributeRequest_0006_400x(self, nwkid)
 
