@@ -342,14 +342,12 @@ def lastSeenUpdate( self, Devices, Unit=None, NwkId=None):
         #self.log.logging( "Widget", "Debug", "Update LastSeen for device %s" %NwkId, NwkId)
 
         self.ListOfDevices[NwkId]['Stamp']['LastSeen'] = int(time.time())
-
         _IEEE = self.ListOfDevices[NwkId]['IEEE']
         if (not self.VersionNewFashion and (self.DomoticzMajor < 4 or ( self.DomoticzMajor == 4 and self.DomoticzMinor < 10547))):
             self.log.logging( "Widget", "Debug", "Not the good Domoticz level for Touch %s %s %s" %(self.VersionNewFashion, self.DomoticzMajor, self.DomoticzMinor ), NwkId)
             return
         for x in list(Devices):
-            if Devices[x].DeviceID == _IEEE:
-                #self.log.logging( "Widget", "Debug2",  "Touch unit %s nwkid: %s " %( Devices[x].Name, NwkId ), NwkId)
+            if x in Devices and Devices[x].DeviceID == _IEEE:
                 if Devices[x].TimedOut:
                     timedOutDevice( self, Devices, Unit=x, MarkTimedOut=0)
                 else:
