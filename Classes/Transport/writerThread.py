@@ -35,6 +35,9 @@ def writer_thread( self ):
                  
                 entry = self.writer_queue.get( )
                 _isqn, command_str = entry
+                if command_str == 'STOP':
+                    break
+
                 command = json.loads(command_str)
                 if _isqn != command['InternalSqn']:
                     self.logging_send( 'Debug', "Hih Priority command HIsqn: %s Cmd: %s Data: %s i_sqn: %s" %(
@@ -50,6 +53,16 @@ def writer_thread( self ):
                         self.statistics._MaxLoad = self.writer_queue.qsize()
                     self.statistics._Load = self.writer_queue.qsize()
     
+                    #if 'NwkId' in command:
+                    #    Domoticz.Log("Command on %s" %command['NwkId'])
+
+                    if self.last_nwkid_failure and 'NwkId' in command and command['NwkId'] == self.last_nwkid_failure:
+                        self.logging_send( 'Log', "removing %s/%s from list_in_queue as it failed previously" %( command['cmd'], command['datas'] ))
+                        # Looks like the command is still for the Nwkid which has failed. Drop
+                        continue
+
+                    self.last_nwkid_failure = None
+
                     wait_for_semaphore( self , command)
     
                     send_ok = thread_sendData( self, command['cmd'], command['datas'], command['ackIsDisabled'], command['waitForResponseIn'], command['InternalSqn'])
@@ -60,9 +73,6 @@ def writer_thread( self ):
                     
                     # ommand sent, if needed wait in order to reduce throughput and load on ZiGate
                     limit_throuput(self, command)
-    
-                elif command == 'STOP':
-                    break
                 
                 else:
                     self.logging_send( 'Error', "Hops ... Don't known what to do with that %s" %command)
@@ -149,6 +159,11 @@ def thread_sendData(self, cmd, datas, ackIsDisabled, waitForResponseIn, isqn ):
         'Semaphore': self.semaphore_gate._value
     }
     self.statistics._sent += 1
+    if self.pluginconf.pluginConf['debugzigateCmd']:
+        self.logging_send( 'Log', "_sendData to ZiGate NOW  - [%s] %s %s" %(
+            isqn, cmd, datas ))
+
+
     return write_to_zigate( self, self._connection, bytes.fromhex(  encode_message( cmd, datas)) )
 
 def encode_message( cmd, datas):
@@ -215,6 +230,7 @@ def domoticz_write_to_zigate( self, encoded_data):
     return False
     
 def native_write_to_zigate( self, serialConnection, encoded_data):
+
 
     if self._transp == "Wifi":
         if self._connection is None:

@@ -29,8 +29,10 @@ def decode8011( self, decoded_frame):
 
     if MsgStatus == '00':
         self.statistics._APSAck += 1
+
     else:
         self.statistics._APSNck += 1
+        self.last_nwkid_failure = MsgSrcAddr
 
     if not self.firmware_with_aps_sqn:  # Firmware < 31d
         # We do not use 8011 for sync and will rely only on receiving message

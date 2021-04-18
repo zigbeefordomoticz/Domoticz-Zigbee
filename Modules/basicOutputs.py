@@ -42,7 +42,7 @@ def send_zigatecmd_zcl_ack( self, address, cmd, datas ):
             ackIsDisabled = True
         if address in self.IEEE2NWK:
             _nwkid = self.IEEE2NWK[address]
-    isqn = send_zigatecmd_raw( self, cmd, address_mode + address + datas, ackIsDisabled = ackIsDisabled )
+    isqn = send_zigatecmd_raw( self, cmd, address_mode + address + datas, ackIsDisabled = ackIsDisabled, NwkId=_nwkid )
     add_Last_Cmds( self, isqn, address_mode, address, cmd, datas)
     self.log.logging( "BasicOutput", 'Debug', "send_zigatecmd_zcl_ack - [%s] %s %s %s" %(isqn, cmd, address_mode, datas),_nwkid)
     return isqn
@@ -69,13 +69,13 @@ def send_zigatecmd_zcl_noack( self, address, cmd, datas):
             ackIsDisabled = False
         if address in self.IEEE2NWK:
             _nwkid = self.IEEE2NWK[address]
-    isqn = send_zigatecmd_raw( self, cmd, address_mode + address + datas, ackIsDisabled = ackIsDisabled )
+    isqn = send_zigatecmd_raw( self, cmd, address_mode + address + datas, ackIsDisabled = ackIsDisabled , NwkId=_nwkid)
     add_Last_Cmds( self, isqn, address_mode, address, cmd, datas)
     self.log.logging( "BasicOutput", 'Debug', "send_zigatecmd_zcl_noack - [%s] %s %s %s" %(isqn, cmd, address_mode, datas),_nwkid)
     return isqn
 
 
-def send_zigatecmd_raw( self, cmd, datas, highpriority=False, ackIsDisabled = False,  ):
+def send_zigatecmd_raw( self, cmd, datas, highpriority=False, ackIsDisabled = False, NwkId=None ):
     #
     # Send the cmd directly to ZiGate
 
@@ -84,13 +84,13 @@ def send_zigatecmd_raw( self, cmd, datas, highpriority=False, ackIsDisabled = Fa
             {'Error code': 'BOUTPUTS-CMDRAW-01'})
        return
 
-   i_sqn = self.ZigateComm.sendData( cmd, datas , highpriority, ackIsDisabled )
+   i_sqn = self.ZigateComm.sendData( cmd, datas , highpriority, ackIsDisabled, NwkId=NwkId )
    if self.pluginconf.pluginConf['debugzigateCmd']:
-       self.log.logging( "BasicOutput", 'Log', "send_zigatecmd_raw       - [%s] %s %s Queue Length: %s" %(i_sqn, cmd, datas, self.ZigateComm.loadTransmit()  ))
+       self.log.logging( "BasicOutput", 'Log', "send_zigatecmd_raw       - [%s] %s %s %s Queue Length: %s" %(i_sqn, cmd, datas, NwkId, self.ZigateComm.loadTransmit()  ))
    else:
-       self.log.logging( "BasicOutput", 'Debug', "====> send_zigatecmd_raw - [%s] %s %s Queue Length: %s" %(i_sqn,cmd, datas, self.ZigateComm.loadTransmit()   ))
+       self.log.logging( "BasicOutput", 'Debug', "====> send_zigatecmd_raw - [%s] %s %s %s Queue Length: %s" %(i_sqn,cmd, datas, NwkId, self.ZigateComm.loadTransmit()   ))
    if self.ZigateComm.loadTransmit() > 15:
-       self.log.logging( "BasicOutput", 'Log', "WARNING - send_zigatecmd : [%s] %s %18s ZigateQueue: %s" %(i_sqn,cmd, datas, self.ZigateComm.loadTransmit()  ))
+       self.log.logging( "BasicOutput", 'Log', "WARNING - send_zigatecmd : [%s] %s %18s %s ZigateQueue: %s" %(i_sqn,cmd, datas, NwkId, self.ZigateComm.loadTransmit()  ))
 
    return i_sqn
 
@@ -140,15 +140,15 @@ def sendZigateCmd(self, cmd, datas , ackIsDisabled = False):
             return None
         if AddrMod == '01':
             # Group With Ack
-            return send_zigatecmd_raw( self, cmd, datas ) 
+            return send_zigatecmd_raw( self, cmd, datas,  ) 
 
         if AddrMod == '02':
             # Short with Ack
-            return send_zigatecmd_zcl_ack( self,NwkId, cmd, datas[6:] )   
+            return send_zigatecmd_zcl_ack( self,NwkId, cmd, datas[6:],  )   
 
         if AddrMod == '07':
             # Short No Ack
-            return send_zigatecmd_zcl_noack( self,NwkId, cmd, datas[6:] )
+            return send_zigatecmd_zcl_noack( self,NwkId, cmd, datas[6:],  )
 
     return send_zigatecmd_raw( self, cmd, datas, ackIsDisabled )
 
@@ -796,7 +796,7 @@ def set_poweron_afteroffon( self, key, OnOffMode = 0xff):
     # Ikea / Philips/ Legrand
     # 0x0006 / 0x4003 -> 0x00 Off, 0x01 On, 0xff Previous
 
-    self.log.logging( "BasicOutput", 'Log', "set_PowerOn_OnOff for %s - OnOff: %s" %(key, OnOffMode),key)
+    self.log.logging( "BasicOutput", 'Debug', "set_PowerOn_OnOff for %s - OnOff: %s" %(key, OnOffMode),key)
     if key not in self.ListOfDevices:
         self.log.logging( "BasicOutput", 'Error', "set_PowerOn_OnOff for %s not found" %(key),key)
         return

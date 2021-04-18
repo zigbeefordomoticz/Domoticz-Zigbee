@@ -63,6 +63,9 @@ class ZigateTransport(object):
         # Management of Commands sent to ZiGate
         self.ListOfCommands = {}
 
+        # Last NwkId with a ACk failure
+        self.last_nwkid_failure = None
+
         # Writer
         #self.writer_queue = SimpleQueue()
         self.writer_list_in_queue = []
@@ -131,7 +134,7 @@ class ZigateTransport(object):
         # Provide the Load of the Sending Queue
         return self.writer_queue.qsize()
 
-    def sendData(self, cmd, datas, highpriority=False, ackIsDisabled=False, waitForResponseIn=False, ):
+    def sendData(self, cmd, datas, highpriority=False, ackIsDisabled=False, waitForResponseIn=False, NwkId=None ):
         # We receive a send Message command from above ( plugin ), 
         # send it to the sending queue
 
@@ -148,6 +151,7 @@ class ZigateTransport(object):
             'ackIsDisabled': ackIsDisabled,
             'waitForResponseIn': waitForResponseIn,
             'InternalSqn': InternalSqn,
+            'NwkId': NwkId,
             'TimeStamp': time.time()
         }
         try:
