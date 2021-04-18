@@ -12,28 +12,38 @@ from time import time
 from Modules.zigateConsts import ADDRESS_MODE, ZIGATE_EP
 from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl
 
+GRP_CMD_WITHOUT_ACK = False
 # Group Management Command
 def add_group_member_ship( self, NwkId, DeviceEp, GrpId):
     """
     Add Group Membership GrpId to NwkId
     """
     self.logging( 'Debug', "add_group_member_ship GrpId: %s, NwkId: %s, Ep: %s" %(GrpId, NwkId, DeviceEp ))
-    datas = "02" + NwkId + ZIGATE_EP + DeviceEp + GrpId
-    self.ZigateComm.sendData( "0060", datas)
+    if not GRP_CMD_WITHOUT_ACK:
+        datas = "02" + NwkId + ZIGATE_EP + DeviceEp + GrpId
+    else:
+        datas = "07" + NwkId + ZIGATE_EP + DeviceEp + GrpId
+    self.ZigateComm.sendData( "0060", datas, ackIsDisabled=GRP_CMD_WITHOUT_ACK)
 
 def check_group_member_ship( self, NwkId, DeviceEp, goup_addr ):
     """
     Check group Membership
     """
-    self.logging( 'Debug', "check_group_member_ship - addr: %s ep: %s group: %s" %(NwkId, DeviceEp, goup_addr))  
-    datas = "02" + NwkId + ZIGATE_EP + DeviceEp + goup_addr
-    self.ZigateComm.sendData( "0061", datas)
+    self.logging( 'Debug', "check_group_member_ship - addr: %s ep: %s group: %s" %(NwkId, DeviceEp, goup_addr)) 
+    if not GRP_CMD_WITHOUT_ACK: 
+        datas = "02" + NwkId + ZIGATE_EP + DeviceEp + goup_addr
+    else:
+        datas = "07" + NwkId + ZIGATE_EP + DeviceEp + goup_addr
+    self.ZigateComm.sendData( "0061", datas, ackIsDisabled=GRP_CMD_WITHOUT_ACK)
   
 def look_for_group_member_ship(self, NwkId, DeviceEp, group_list = None):
     """
     Request to a device what are its group membership
     """
-    datas = "02" + NwkId + ZIGATE_EP + DeviceEp
+    if not GRP_CMD_WITHOUT_ACK: 
+        datas = "02" + NwkId + ZIGATE_EP + DeviceEp
+    else:
+        datas = "07" + NwkId + ZIGATE_EP + DeviceEp
     if group_list is None:
         lenGrpLst = 0
         datas += "00"
@@ -50,19 +60,25 @@ def look_for_group_member_ship(self, NwkId, DeviceEp, group_list = None):
         datas += "%02.x" %(lenGrpLst) + group_list_
  
     self.logging( 'Debug', "look_for_group_member_ship - %s/%s from %s" %(NwkId, DeviceEp, group_list))
-    self.ZigateComm.sendData( "0062", datas)
+    self.ZigateComm.sendData( "0062", datas, ackIsDisabled=GRP_CMD_WITHOUT_ACK)
 
 def remove_group_member_ship(self,  NwkId, DeviceEp, GrpId ):
 
     self.logging( 'Debug', "remove_group_member_ship GrpId: %s NwkId: %s Ep: %s" %(GrpId, NwkId, DeviceEp))
-    datas = "02" + NwkId + ZIGATE_EP + DeviceEp + GrpId
-    self.ZigateComm.sendData( "0063", datas)
+    if not GRP_CMD_WITHOUT_ACK: 
+        datas = "02" + NwkId + ZIGATE_EP + DeviceEp + GrpId
+    else:
+        datas = "07" + NwkId + ZIGATE_EP + DeviceEp + GrpId
+    self.ZigateComm.sendData( "0063", datas, ackIsDisabled=GRP_CMD_WITHOUT_ACK)
 
 # Operating commands on groups
 def send_group_member_ship_identify(self, NwkId, DeviceEp, goup_addr = "0000"):
 
-    datas = "02" + NwkId + ZIGATE_EP + DeviceEp + goup_addr
-    self.ZigateComm.sendData( "0065", datas)
+    if not GRP_CMD_WITHOUT_ACK: 
+        datas = "02" + NwkId + ZIGATE_EP + DeviceEp + goup_addr
+    else:
+        datas = "07" + NwkId + ZIGATE_EP + DeviceEp + goup_addr
+    self.ZigateComm.sendData( "0065", datas, ackIsDisabled=GRP_CMD_WITHOUT_ACK)
 
 def send_group_member_ship_identify_effect( self, GrpId, Ep='01', effect = 'Okay' ):
     '''
