@@ -52,17 +52,21 @@ def stop_waiting_on_queues( self ):
 def waiting_for_end_thread( self ):
 
     # Release Semaphore
+    self.logging_receive( 'Log', "waiting_for_end_thread - release semaphore")
     self.semaphore_gate.release( )
 
     if self.reader_thread and self.pluginconf.pluginConf['byPassDzConnection'] and not self.force_dz_communication:
+        self.logging_receive( 'Log', "waiting_for_end_thread - wait for readThread")
         self.reader_thread.join()
         self.logging_receive( 'Log', "waiting_for_end_thread - readThread done")
 
     if self.forwarder_thread:
+        self.logging_receive( 'Log', "waiting_for_end_thread - wait for forwardedThread")
         self.forwarder_thread.join()
         self.logging_receive( 'Log', "waiting_for_end_thread - forwardedThread done")
 
     if self.writer_thread:
+        self.logging_receive( 'Log', "waiting_for_end_thread - wait for writerThread")
         self.writer_thread.join()
         self.logging_receive( 'Log', "waiting_for_end_thread - writerThread done")
 
