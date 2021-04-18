@@ -49,7 +49,7 @@ def forwarder_thread( self ):
 @time_spent_forwarder( )
 def forward_message( self, message ):
 
-    self.logging_receive( 'Debug', "Receive a message to forward: %s" %(message))
+    self.logging_receive( 'Debug', "Receive a message to forward: %s" %(str(message)))
     self.statistics._data += 1
     self.F_out(  message )
     self.logging_receive( 'Debug', "message forwarded!!!!")    
