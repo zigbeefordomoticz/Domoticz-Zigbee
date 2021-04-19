@@ -337,6 +337,11 @@ def CreateDomoDevice(self, Devices, NWKID):
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in DButton" %(t), NWKID)
 
+            if t in ('HueSmartButton', ):
+                Options = createSwitchSelector( self,  3,  DeviceType = t,SelectorStyle = 1 )
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
+                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in HueSmartButton" %(t), NWKID)
+
             # 4 Selectors, Style 1  
             if t in ('Vibration', 'Button_3' , 'SwitchAQ2',):  
                 Options = createSwitchSelector( self,  4, DeviceType = t, SelectorStyle = 1 )

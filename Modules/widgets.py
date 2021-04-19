@@ -215,6 +215,13 @@ SWITCH_LVL_MATRIX = {
             "fr-FR": {"LevelNames": "Arrêt|Eteindre|Marche|Monter|Descendre|Arrêt"}
             }
         },
+    "HueSmartButton": { 
+        "toggle": (1, "10"), 
+        "move": (3, "30"),
+        "LevelNames": "Off|toggle|move",
+        "Language": {
+            }
+        },
 
     "LegrandSelector": { 
         "00": (0, "00"), 

@@ -12,11 +12,11 @@
 			"0008":"",
 			"0019":"",
 			"fc00":"",
-			"Type":"GenericLvlControl"
+			"Type":"HueSmartButton"
 		}
 	},
 	"Type":"",
-	"ClusterToBind": [ "fc00", "0001", "0006", "0008" ],
+	"ClusterToBind": [ "0001", "0006", "0008" ],
         "ConfigureReporting": {
         },
   	"ReadAttributes": {

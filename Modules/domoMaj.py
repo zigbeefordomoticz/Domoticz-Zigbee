@@ -817,6 +817,18 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
                 UpdateDevice_v2(self, Devices, DeviceUnit, nvalue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
 
+            elif WidgetType == 'HueSmartButton':
+                self.log.logging( "Widget", "Debug", "------> HueSmartButton : Value -> %s" %value, NWKID)
+                if value == 'toggle': 
+                    nvalue = 1
+                    sValue = '10' #toggle
+                elif value == 'move': 
+                    nvalue = 2
+                    sValue = "20" # Move
+                else:
+                    return
+                UpdateDevice_v2(self, Devices, DeviceUnit, nvalue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)  
+
             elif WidgetType == "INNR_RC110_SCENE":
                 self.log.logging( "Widget", "Debug", "------>  Updating INNR_RC110_SCENE (LvlControl) Value: %s" %value, NWKID)
                 if value == "Off": 

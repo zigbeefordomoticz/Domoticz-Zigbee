@@ -3156,6 +3156,13 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
             self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId][
                 "0000"
             ] = "Cmd: %s, %s" % (MsgCmd, unknown_)
+
+    elif _ModelName in ( 'ROM001',):
+        # ZigateRead - MsgType: 8095, MsgLength: 000b, MsgCRC: 19, Data: 00010006029b6e400000, LQI: 183
+        # Apr 19 14:19:59 rasp domoticz[31994]: 2021-04-19 14:19:59.194  DIN3-Zigate: (DIN3-Zigate) Decode8095 - SQN: 00, Addr: 9b6e, Ep: 01, Cluster: 0006, Cmd: 40, Unknown: 02
+        self.log.logging( "Input", "Debug", "Decode8085 - Philips Hue ROM001  MsgCmd: %s" % MsgCmd, MsgSrcAddr )
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, '0008', 'move')
+
     elif _ModelName in ( "TRADFRI onoff switch", "TRADFRI on/off switch"):
         # Ikea Switch On/Off
 
@@ -3169,14 +3176,6 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
 
         self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = MsgCmd
 
-    elif _ModelName == "ROM001":
-        if MsgClusterId == "0008":
-            if MsgCmd == "05":  # Push Up
-                MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0006", "moveup")
-            elif MsgCmd == "01":  # Push Down
-                MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0006", "movedown")
-            elif MsgCmd == "07":  # Release Up & Down
-                MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0006", "stop")        
     elif _ModelName == "RC 110":
         if MsgClusterId != "0008":
             self.log.logging( 
@@ -3605,6 +3604,14 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
             self.log.logging(  "Input", "Log", "Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " 
                 % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), )
         self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId][ "0000" ] = "Cmd: %s, %s" % (MsgCmd, unknown_)
+
+    elif _ModelName in ( 'ROM001',):
+        # ZigateRead - MsgType: 8085, MsgLength: 000d, MsgCRC: 43, Data: 0a010008029b6e02011e0009, LQI: 171
+        # Decode8085 - SQN: 0a, Addr: 9b6e, Ep: 01, Cluster: 0008, Cmd: 02, Unknown: 02
+        # ZigateRead - MsgType: 8085, MsgLength: 000d, MsgCRC: 64, Data: 0b010008029b6e0201380009, LQI: 171
+        # Decode8085 - SQN: 0b, Addr: 9b6e, Ep: 01, Cluster: 0008, Cmd: 02, Unknown: 02
+        self.log.logging( "Input", "Debug", "Decode8095 - Philips Hue ROM001  MsgCmd: %s" % MsgCmd, MsgSrcAddr )
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, '0008', 'toggle')
 
     elif _ModelName == "TRADFRI motion sensor":
         # Ikea Motion Sensor
