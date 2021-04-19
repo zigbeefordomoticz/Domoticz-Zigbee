@@ -46,12 +46,13 @@ def serial_read_from_zigate( self ):
         data = None
 
         try:
-            nb_inwaiting = self._connection.in_waiting
-            self.logging_receive( 'Debug', "serial_read_from_zigate - reading %s bytes" %nb_inwaiting)
-            if nb_inwaiting:
-                data = self._connection.read( nb_inwaiting)  # Blocking Read
-            else:
-                data = self._connection.read( 1)  # Blocking Read
+            if self._connection:
+                nb_inwaiting = self._connection.in_waiting
+                self.logging_receive( 'Debug', "serial_read_from_zigate - reading %s bytes" %nb_inwaiting)
+                if nb_inwaiting:
+                    data = self._connection.read( nb_inwaiting)  # Blocking Read
+                else:
+                    data = self._connection.read( 1)  # Blocking Read
 
         except serial.SerialException as e:
             self.logging_receive('Error',"serial_read_from_zigate - error while reading %s" %(e))
