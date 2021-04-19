@@ -95,7 +95,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
         self.log.logging( "Widget", 'Debug', "------> ClusterType: %s WidgetEp: %s WidgetId: %s WidgetType: %s Attribute_: %s" %( ClusterType, WidgetEp , WidgetId, WidgetType, Attribute_), NWKID)
 
         SignalLevel,BatteryLevel = RetreiveSignalLvlBattery( self, NWKID)
-
+        self.log.logging( "Widget", 'Debug', "------> SignalLevel: %s , BatteryLevel: %s" %(SignalLevel,BatteryLevel), NWKID)
         if 'Ampere' in ClusterType:
             if WidgetType == 'Ampere' and Attribute_ == '0508':
                 nValue = 0
