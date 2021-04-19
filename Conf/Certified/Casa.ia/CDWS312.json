@@ -11,6 +11,7 @@
 	"Type":"",
 	"ClusterToBind": [ "0001"],
 	"ConfigureReporting":{
+	},
 	"ReadAttributes": {
 		"0000": [ "0004", "0005", "0006", "0007"],
 		"0001": [ "0020", "0021"],
