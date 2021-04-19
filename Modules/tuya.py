@@ -118,7 +118,8 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
     cmd = MsgPayload[4:6] # uint8
 
     # Send a Default Response ( why might check the FCF eventually )
-    tuya_send_default_response( self, NwkId, srcEp , sqn, cmd, fcf)
+    if self.FirmwareVersion and int(self.FirmwareVersion,16) < 0x031e:
+        tuya_send_default_response( self, NwkId, srcEp , sqn, cmd, fcf)
 
     
     if cmd == '24': # Time Synchronisation
