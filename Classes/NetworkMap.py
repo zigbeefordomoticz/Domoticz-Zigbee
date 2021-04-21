@@ -175,12 +175,33 @@ def _initNeighbours( self):
 
 def _initNeighboursTableEntry( self, nwkid):
 
+    # Makes sure nwkid is known as a Router.
+    if not is_a_router( self, nwkid ):
+        self.logging( 'Error', "Found %s in a Neighbour table tag as a router, but is not %s" %nwkid)
+        return
+
     self.logging( 'Debug', "_initNeighboursTableEntry - %s" %nwkid)
     self.Neighbours[ nwkid ] = {}
     self.Neighbours[ nwkid ]['Status'] = 'ScanRequired'
     self.Neighbours[ nwkid ]['TableMaxSize'] = 0
     self.Neighbours[ nwkid ]['TableCurSize'] = 0
     self.Neighbours[ nwkid ]['Neighbours'] = {}
+
+def is_a_router( self, nwkid):
+    if nwkid == '0000':
+        return True
+    if nwkid not in self.ListOfDevices:
+        return False
+    if 'LogicalType' in self.ListOfDevices[nwkid]:
+        if self.ListOfDevices[nwkid]['LogicalType'] == 'Router':
+            return True
+        if 'DeviceType' in self.ListOfDevices[nwkid]:
+            if self.ListOfDevices[nwkid]['DeviceType'] == 'FFD':
+                return True
+        if 'MacCapa' in self.ListOfDevices[nwkid]:
+            if self.ListOfDevices[nwkid]['MacCapa'] == '8e':
+                return True
+    return False
 
 def finish_scan( self ):                                                
 
@@ -313,24 +334,10 @@ def LQIreq(self, nwkid='0000'):
     if nwkid != '0000' and nwkid not in self.ListOfDevices:
         return
 
-    if nwkid == '0000':
-        tobescanned = True
-    else:
-        if 'LogicalType' in self.ListOfDevices[nwkid]:
-            if self.ListOfDevices[nwkid]['LogicalType'] in ( 'Router' ):
-                tobescanned = True
-        if not tobescanned and 'DeviceType' in self.ListOfDevices[nwkid]:
-            if self.ListOfDevices[nwkid]['DeviceType'] in ( 'FFD' ):
-                tobescanned = True
-        if not tobescanned and 'MacCapa' in self.ListOfDevices[nwkid]:
-            if self.ListOfDevices[nwkid]['MacCapa'] in ( '8e' ):
-                tobescanned = True
-        if not tobescanned and 'PowerSource' in self.ListOfDevices[nwkid]:
-            if self.ListOfDevices[nwkid]['PowerSource'] in ( 'Main'):
-                tobescanned = True
-
-    if not tobescanned:
-        self.logging( 'Debug', "Skiping %s as it's not a Router nor Coordinator" %nwkid)
+    if not is_a_router( self, nwkid):
+        self.logging( 'Debug', "Skiping %s as it's not a Router nor Coordinator, removing the entry" %nwkid)
+        if nwkid in self.Neighbours:
+            del self.Neighbours[ nwkid ]
         return
 
     # u8StartIndex is the Neighbour table index of the first entry to be included in the response to this request
