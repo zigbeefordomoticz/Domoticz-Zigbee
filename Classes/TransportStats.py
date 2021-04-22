@@ -12,6 +12,7 @@ from time import time
 class TransportStatistics:
 
     def __init__(self, pluginconf):
+        self._pdmLoads = 0 # count the number of PDM Loads ( should be 1 max)
         self._crcErrors = 0  # count of crc errors
         self._frameErrors = 0  # count of frames error
         self._APSFailure = 0 # Count APS Failure
@@ -45,6 +46,12 @@ class TransportStatistics:
     # Statistics methods 
     def starttime(self):
         return self._start
+
+    def pdm_loaded(self):
+        self._pdmLoads += 1
+
+    def get_pdm_loaded(self):
+        return self._pdmLoads
 
     def add_timing_thread( self, timing):
         self._cumul_reading_thread_timing += timing
@@ -161,6 +168,7 @@ class TransportStatistics:
         if self.received() == 0:
             return
         Domoticz.Status("Statistics on message")
+        Domoticz.Status("   PDM load(s)      : %s" %self._pdmLoads)
         Domoticz.Status("ZiGate reacting time")
         Domoticz.Status("   Max              : %s sec" % (self._maxTiming8000))
         Domoticz.Status("   Average          : %s sec" % (self._averageTiming8000))

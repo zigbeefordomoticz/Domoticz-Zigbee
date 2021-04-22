@@ -328,6 +328,7 @@ class WebServer(object):
             Statistics['APSNck'] =  0
             Statistics['StartTime'] = int(time()) - 120
         else:
+            Statistics['PDMLoads'] = self.statistics._pdmLoads
             Statistics['MaxZiGateRoundTime8000 '] = self.statistics._maxTiming8000
             Statistics['AvgZiGateRoundTime8000 '] = self.statistics._averageTiming8000
             Statistics['MaxZiGateRoundTime8011 '] = self.statistics._maxTiming8011
