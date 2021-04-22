@@ -441,12 +441,12 @@ ZIGATE_COMMANDS = {
 
     0x0400: {'Sequence': (0x8000, ),       'Ack': True, 'SQN': False, 'Layer': 'ZCL',  '8012': True, 'Command': 'E_SL_MSG_SEND_IAS_ZONE_ENROLL_RSP', 'NwkId 2nd Bytes': True},
 
-    # OTA
+    # OTA - For now 8011/8012 are set to False, because the firmware do not provide SQNs as part of x8000
     0x0500: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZDP', '8012': False, 'Command': 'E_SL_MSG_LOAD_NEW_IMAGE', 'NwkId 2nd Bytes': False},
     0x0502: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZDP', '8012': False, 'Command': 'E_SL_MSG_BLOCK_SEND', 'NwkId 2nd Bytes': False},
-    0x0504: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZDP', '8012': True, 'Command': 'E_SL_MSG_UPGRADE_END_RESPONSE', 'NwkId 2nd Bytes': False},
-    0x0505: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZDP', '8012': True, 'Command': 'E_SL_MSG_IMAGE_NOTIFY', 'NwkId 2nd Bytes': False},
-    0x0506: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZDP', '8012': True, 'Command': 'E_SL_MSG_SEND_WAIT_FOR_DATA_PARAMS', 'NwkId 2nd Bytes': False},
+    0x0504: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZDP', '8012': False, 'Command': 'E_SL_MSG_UPGRADE_END_RESPONSE', 'NwkId 2nd Bytes': False},
+    0x0505: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZDP', '8012': False, 'Command': 'E_SL_MSG_IMAGE_NOTIFY', 'NwkId 2nd Bytes': False},
+    0x0506: {'Sequence': (0x8000, ),       'Ack': False, 'SQN': False, 'Layer': 'ZDP', '8012': False, 'Command': 'E_SL_MSG_SEND_WAIT_FOR_DATA_PARAMS', 'NwkId 2nd Bytes': False},
     # Miscaleneous
 
     0x0530: {'Sequence': (0x8000, ),       'Ack': True, 'SQN': True,  'Layer': 'ZDP',  '8012': True, 'Command': 'Raw APS Data Request', 'NwkId 2nd Bytes': False},
