@@ -422,7 +422,7 @@ def ota_send_block( self , dest_addr, dest_ep, image_type, msg_image_version, bl
     _raw_ota_data     = self.ListInUpdate['OtaImage'][_offset:_offset+_lenght]
 
     # Build the message and send
-    datas = '07' + dest_addr + ZIGATE_EP + dest_ep 
+    datas = '02' + dest_addr + ZIGATE_EP + dest_ep 
     datas += "%02x" %sequence + "%02x" %_status 
     datas += "%08x" %_offset 
     datas += image_version + image_type + manufacturer_code
@@ -438,7 +438,7 @@ def ota_send_block( self , dest_addr, dest_ep, image_type, msg_image_version, bl
     logging( self,  'Debug2', "ota_send_block - Block sent to %s/%s Received yet: %s Sent now: %s" 
             %( dest_addr, dest_ep, _offset, _lenght))
 
-    self.ZigateComm.sendData( "0502", datas, ackIsDisabled=True,  NwkId=dest_addr)
+    self.ZigateComm.sendData( "0502", datas, ackIsDisabled=False,  NwkId=dest_addr)
 
 
 def ota_image_advertize(self, dest_addr, dest_ep, image_version , image_type = 0xFFFF, manufacturer_code = 0xFFFF ): # OK 24/10
