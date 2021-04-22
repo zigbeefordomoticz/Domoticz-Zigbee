@@ -383,7 +383,7 @@ def ota_load_image_to_zigate( self, image_type, force_version=None): # OK 13/10
     datas += security_cred_version + upgrade_file_dest + min_hw_version + max_hw_version
 
     logging( self,  'Debug', "ota_load_image_to_zigate: - len:%s datas: %s" %(len(datas),datas))
-    self.ZigateComm.sendData( "0500", datas)
+    self.ZigateComm.sendData( "0500", datas, ackIsDisabled=True)
 
     self.ImageLoaded['ImageVersion'] = image_version
     self.ImageLoaded['image_type'] = image_type
@@ -438,7 +438,7 @@ def ota_send_block( self , dest_addr, dest_ep, image_type, msg_image_version, bl
     logging( self,  'Debug2', "ota_send_block - Block sent to %s/%s Received yet: %s Sent now: %s" 
             %( dest_addr, dest_ep, _offset, _lenght))
 
-    self.ZigateComm.sendData( "0502", datas)
+    self.ZigateComm.sendData( "0502", datas, ackIsDisabled=True,  NwkId=dest_addr)
 
 
 def ota_image_advertize(self, dest_addr, dest_ep, image_version , image_type = 0xFFFF, manufacturer_code = 0xFFFF ): # OK 24/10
@@ -483,7 +483,7 @@ def ota_image_advertize(self, dest_addr, dest_ep, image_version , image_type = 0
     datas += "%02x" %JITTER_OPTION
     logging( self,  'Debug', "ota_image_advertize - Type: 0x%04x, Version: 0x%08x => datas: %s" %(image_type, image_version, datas))
 
-    self.ZigateComm.sendData( "0505", datas)
+    self.ZigateComm.sendData( "0505", datas, ackIsDisabled=False,  NwkId=dest_addr)
 
 
 def ota_upgrade_end_response( self, dest_addr, dest_ep, intMsgImageVersion, image_type, intMsgManufCode ): # OK 24/10 with Firmware Ok
@@ -510,7 +510,7 @@ def ota_upgrade_end_response( self, dest_addr, dest_ep, intMsgImageVersion, imag
     datas += "%08x" % _FileVersion
     datas += "%04x" % _ImageType
     datas += "%04x" % _ManufacturerCode
-    self.ZigateComm.sendData( "0504", datas)
+    self.ZigateComm.sendData( "0504", datas, ackIsDisabled=False,  NwkId=dest_addr)
 
     logging( self,  'Log', "ota_management - sending Upgrade End Response, for %s Version: 0x%08X Type: 0x%04x, Manuf: 0x%04X" % ( dest_addr, _FileVersion, _ImageType, _ManufacturerCode))
 
@@ -559,7 +559,7 @@ def ota_management( self, MsgSrcAddr, MsgEP , delay = 500):
     datas += "%04X" %_BlockRequestDelayMs
 
     logging( self,  'Debug', "ota_management - Reduce Block request to a rate of %s ms" %_BlockRequestDelayMs)
-    self.ZigateComm.sendData( "0506", datas)
+    self.ZigateComm.sendData( "0506", datas, ackIsDisabled=False,  NwkId=MsgSrcAddr)
 
 ################
 # Local routines
