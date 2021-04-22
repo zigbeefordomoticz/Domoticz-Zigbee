@@ -149,7 +149,12 @@ def look_for_group_member_ship_response( self, MsgData):
     for idx in range(int(MsgGroupCount, 16)):
         # Let scan eachgroup and update Device data structure
         GrpId = MsgData[12+(idx*4):12+(4+(idx*4))]
-
+        if MsgSrcAddr not in self.ListOfDevices:
+            continue
+        if 'GroupMemberShip' not in self.ListOfDevices[ MsgSrcAddr ]:
+            self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'] = {}
+        if MsgEP not in self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip']:
+            self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP] = {}
         if GrpId not in self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][ MsgEP ]:
             self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP][ GrpId ] = {}
 
