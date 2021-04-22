@@ -16,10 +16,9 @@ def open_serial( self ):
 
     try:
         self._connection = serial.Serial(self._serialPort, baudrate = 115200, rtscts = False, dsrdtr = False, timeout = None)
-        self._connection.reset_input_buffer()
-        self._connection.reset_output_buffer()
         if self._transp in ('DIN', 'V2' ):
             self._connection.rtscts = True
+        time.sleep(0.1)     # wait fro 100 ms for pyserial port to actually be ready
 
     except serial.SerialException as e:
         self.logging_receive('Error',"Cannot open Zigate port %s error: %s" %(self._serialPort, e))
@@ -27,6 +26,11 @@ def open_serial( self ):
 
     self.logging_receive( 'Status', "ZigateTransport: Serial Connection open: %s" %self._connection)
     return True
+
+def serial_reset_line_in(self):
+    self.logging_receive('Status',"Reset Serial Line IN")
+    self._connection.reset_input_buffer()
+    
 
 def close_serial( self):
     self.logging_receive( 'Status', "ZigateTransport: Serial Connection closing: %s" %self._connection)
@@ -39,12 +43,11 @@ def close_serial( self):
 def serial_read_from_zigate( self ):
 
     self.logging_receive( 'Debug', "serial_read_from_zigate - listening")
-
+    serial_reset_line_in(self)
     while self.running:
         # We loop until self.running is set to False, 
         # which indicate plugin shutdown   
         data = None
-
         try:
             if self._connection:
                 nb_inwaiting = self._connection.in_waiting

@@ -25,7 +25,7 @@ def start_writer_thread( self ):
 
 def writer_thread( self ):
     self.logging_send('Status', "ZigateTransport: writer_thread Thread start.")
-
+    reset_line_out( self )
     while self.running:
         frame = None
         # Sending messages ( only 1 at a time )
@@ -228,9 +228,13 @@ def domoticz_write_to_zigate( self, encoded_data):
 
     self.logging_send( 'Error', "domoticz_write_to_zigate - No connection available: %s" %self._connection)
     return False
-    
-def native_write_to_zigate( self, serialConnection, encoded_data):
 
+def reset_line_out( self ):
+    if self._transp != "Wifi":
+        self.logging_send('Status',"Reset Serial Line OUT")
+        self._connection.reset_output_buffer()
+
+def native_write_to_zigate( self, serialConnection, encoded_data):
 
     if self._transp == "Wifi":
         if self._connection is None:
