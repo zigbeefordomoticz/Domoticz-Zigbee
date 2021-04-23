@@ -193,6 +193,7 @@ def ReadCluster(self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgCluster
             "0702": Cluster0702,
             "0b04": Cluster0b04, 
             "0b05": Cluster0b05,
+            "fe03": Clusterfe03,
             "fc00": Clusterfc00,
             "000f": Cluster000f,
             "fc01": Clusterfc01,
@@ -2553,6 +2554,12 @@ def Cluster0b05(  self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, Msg
 
 
 # Cluster Manufacturer specifics
+def Clusterfe03(  self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData , Source):
+    # Schneider Wiser (new)
+    self.log.logging( "Cluster", 'Debug', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" \
+        %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)   
+    checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID,  MsgClusterData )
+
 def Clusterfc00( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData , Source):
 
    
