@@ -1,33 +1,32 @@
 {
-  "_comment":"Schneider Wiser Thermostat (CCTFR6400)",
-  "_version":"0.1",
-  "Ep": {
-	"01": {
-		"0402": "",
-		"0405": "",
-		"0b05": "",
-		"fe03": "",
-		"0000": "",
-		"0019": "",
-		"0204": "",
-		"0001": "",
-		"Type": "Humi/Temp/ThermoSetpoint/ThermoMode" }
-  },
-  "Type": "",
-  "bindEp": [ "01" ],
-  "ClusterToBind":[  "0001", "0003", "0201", "0402", "0405" ],
-  "ConfigureReporting": {
-	"0001": {"Attributes": { 
-		"0020": { "DataType": "20", "MinInterval": "0E10", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "01"}}},
-	"0201": {"Attributes": {
-		"0012": { "DataType": "29", "MinInterval": "0258", "MaxInterval": "0258", "TimeOut": "0000", "Change": "7FFF"},
-		"0000": { "DataType": "29", "MinInterval": "001E", "MaxInterval": "001E", "TimeOut": "0000", "Change": "0001"}}},
-    "0402": { "Attributes": { 
-		"0000": { "DataType": "29", "MaxInterval": "0258", "MinInterval": "001E", "TimeOut": "0000", "Change": "0001" }}},
-	"0405": { "Attributes": { 
-		"0000": { "DataType": "21", "MinInterval": "003C", "MaxInterval": "0384", "TimeOut": "0000", "Change": "0001"}}}
-  },
-  "ReadAttributes": {
+	"_comment":"Schneider Wiser Thermostat (CCTFR6400)",
+	"_version":"0.1",
+	"Ep": {
+		"01": {
+			"0402": "",
+			"0405": "",
+			"0b05": "",
+			"fe03": "",
+			"0000": "",
+			"0019": "",
+			"0204": "",
+			"0001": "",
+			"Type": "Humi/Temp/ThermoSetpoint/ThermoMode" }
+  	},
+	"Type": "",
+	"ClusterToBind":[  "0001", "0003", "0201", "0402", "0405" ],
+	"ConfigureReporting": {
+		"0001": {"Attributes": { 
+			"0020": { "DataType": "20", "MinInterval": "0E10", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "01"}}},
+		"0201": {"Attributes": {
+			"0012": { "DataType": "29", "MinInterval": "0258", "MaxInterval": "0258", "TimeOut": "0000", "Change": "7FFF"},
+			"0000": { "DataType": "29", "MinInterval": "001E", "MaxInterval": "001E", "TimeOut": "0000", "Change": "0001"}}},
+    	"0402": { "Attributes": { 
+			"0000": { "DataType": "29", "MaxInterval": "0258", "MinInterval": "001E", "TimeOut": "0000", "Change": "0001" }}},
+		"0405": { "Attributes": { 
+			"0000": { "DataType": "21", "MinInterval": "003C", "MaxInterval": "0384", "TimeOut": "0000", "Change": "0001"}}}
+  	},
+  	"ReadAttributes": {
 		"0000": [ "0004", "0005", "e001", "e002", "e004" ] ,
 		"0001": [ "0020" ] ,
 		"0201": [ ],
@@ -35,5 +34,5 @@
 		"0402": [ "0000"],
 		"0405": [ "0000"],
 		"fe03": [ "0020"]
-  }
+  	}
 }
