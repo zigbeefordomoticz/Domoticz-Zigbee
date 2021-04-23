@@ -293,6 +293,9 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         if 'Manufacturer Name' in self.ListOfDevices[MsgSrcAddr]:
             manufacturer_name = self.ListOfDevices[MsgSrcAddr]['Manufacturer Name']
 
+        if modelName == 'Thermostat' and manufacturer_name == 'Schneider Electric':
+            modelName = 'Wiser2-Thermostat'
+            
         if modelName == 'lumi.sensor_swit':
             modelName = 'lumi.sensor_switch.aq3'
 
