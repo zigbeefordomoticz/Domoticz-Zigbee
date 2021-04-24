@@ -2785,11 +2785,7 @@ def Decode8140(self, Devices, MsgData, MsgLQI):  # Attribute Discovery response
 # IAS Zone
 def Decode8401( self, Devices, MsgData, MsgLQI ):  # Reception Zone status change notification
 
-    self.log.logging( 
-        "Input",
-        "Debug",
-        "Decode8401 - Reception Zone status change notification : " + MsgData,
-    )
+    self.log.logging(  "Input", "Debug", "Decode8401 - Reception Zone status change notification : " + MsgData, )
     MsgSQN = MsgData[0:2]  # sequence number: uint8_t
     MsgEp = MsgData[2:4]  # endpoint : uint8_t
     MsgClusterId = MsgData[4:8]  # cluster id: uint16_t
@@ -2836,35 +2832,15 @@ def Decode8401( self, Devices, MsgData, MsgLQI ):  # Reception Zone status chang
     updLQI(self, MsgSrcAddr, MsgLQI)
 
     if MsgSrcAddr not in self.ListOfDevices:
-        self.log.logging( 
-            "Input",
-            "Log",
-            "Decode8401 - receive a message for an unknown device %s : %s"
-            % (MsgSrcAddr, MsgData),
-            MsgSrcAddr,
-        )
+        self.log.logging(  "Input", "Log", "Decode8401 - receive a message for an unknown device %s : %s" % (MsgSrcAddr, MsgData), MsgSrcAddr, )
         return
 
     Model = ""
     if "Model" in self.ListOfDevices[MsgSrcAddr]:
         Model = self.ListOfDevices[MsgSrcAddr]["Model"]
 
-    self.log.logging( 
-        "Input",
-        "Debug",
-        "Decode8401 - MsgSQN: %s MsgSrcAddr: %s MsgEp:%s MsgClusterId: %s MsgZoneStatus: %s MsgExtStatus: %s MsgZoneID: %s MsgDelay: %s"
-        % (
-            MsgSQN,
-            MsgSrcAddr,
-            MsgEp,
-            MsgClusterId,
-            MsgZoneStatus,
-            MsgExtStatus,
-            MsgZoneID,
-            MsgDelay,
-        ),
-        MsgSrcAddr,
-    )
+    self.log.logging(  "Input", "Debug", "Decode8401 - MsgSQN: %s MsgSrcAddr: %s MsgEp:%s MsgClusterId: %s MsgZoneStatus: %s MsgExtStatus: %s MsgZoneID: %s MsgDelay: %s"
+        % ( MsgSQN, MsgSrcAddr, MsgEp, MsgClusterId, MsgZoneStatus, MsgExtStatus, MsgZoneID, MsgDelay, ), MsgSrcAddr, )
 
     if Model == "PST03A-v2.2.5":
         ## CLD CLD
@@ -2918,88 +2894,79 @@ def Decode8401( self, Devices, MsgData, MsgLQI ):  # Reception Zone status chang
                 "Decode8401 - PST03A-v2.2.5, unknow EndPoint : " + MsgEp,
                 MsgSrcAddr,
             )
-    else:  ## default
+        return
+    ## default
 
-        if MsgSrcAddr not in self.ListOfDevices:
-            return
-            
-        alarm1 = int(MsgZoneStatus, 16) & 1
-        alarm2 = (int(MsgZoneStatus, 16) >> 1) & 1
-        tamper = (int(MsgZoneStatus, 16) >> 2) & 1
-        battery = (int(MsgZoneStatus, 16) >> 3) & 1
-        suprrprt = (int(MsgZoneStatus, 16) >> 4) & 1
-        restrprt = (int(MsgZoneStatus, 16) >> 5) & 1
-        trouble = (int(MsgZoneStatus, 16) >> 6) & 1
-        acmain = (int(MsgZoneStatus, 16) >> 7) & 1
-        test = (int(MsgZoneStatus, 16) >> 8) & 1
-        battdef = (int(MsgZoneStatus, 16) >> 9) & 1
+    if MsgSrcAddr not in self.ListOfDevices:
+        return
+        
+    alarm1 = int(MsgZoneStatus, 16) & 1
+    alarm2 = (int(MsgZoneStatus, 16) >> 1) & 1
+    tamper = (int(MsgZoneStatus, 16) >> 2) & 1
+    battery = (int(MsgZoneStatus, 16) >> 3) & 1
+    suprrprt = (int(MsgZoneStatus, 16) >> 4) & 1
+    restrprt = (int(MsgZoneStatus, 16) >> 5) & 1
+    trouble = (int(MsgZoneStatus, 16) >> 6) & 1
+    acmain = (int(MsgZoneStatus, 16) >> 7) & 1
+    test = (int(MsgZoneStatus, 16) >> 8) & 1
+    battdef = (int(MsgZoneStatus, 16) >> 9) & 1
 
+    if 'Ep' not in self.ListOfDevices[MsgSrcAddr]:
+        return
+    if MsgEp not in self.ListOfDevices[MsgSrcAddr]['Ep']:
+        return
 
-        if 'Ep' not in self.ListOfDevices[MsgSrcAddr]:
-            return
-        if MsgEp not in self.ListOfDevices[MsgSrcAddr]['Ep']:
-            return
+    if "0500" not in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEp]:
+        self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEp]["0500"] = {}
+    if not isinstance(self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEp]["0500"], dict):
+        self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEp][MsgClusterId]["0500"] = {}
+    if "0002" not in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEp]["0500"]:
+        self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEp]["0500"]["0002"] = {}
 
-        if "0500" not in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEp]:
-            self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEp]["0500"] = {}
-        if not isinstance(self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEp]["0500"], dict):
-            self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEp][MsgClusterId]["0500"] = {}
-        if "0002" not in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEp]["0500"]:
-            self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEp]["0500"]["0002"] = {}
+    self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEp]["0500"]["0002"] = (
+        "alarm1: %s, alaram2: %s, tamper: %s, battery: %s, Support Reporting: %s, restore Reporting: %s, trouble: %s, acmain: %s, test: %s, battdef: %s"
+        % ( alarm1, alarm2, tamper, battery, suprrprt, restrprt, trouble, acmain, test, battdef, ) )
 
-        self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEp]["0500"]["0002"] = (
-            "alarm1: %s, alaram2: %s, tamper: %s, battery: %s, Support Reporting: %s, restore Reporting: %s, trouble: %s, acmain: %s, test: %s, battdef: %s"
-            % ( alarm1, alarm2, tamper, battery, suprrprt, restrprt, trouble, acmain, test, battdef, ) )
+    self.log.logging( "Input","Debug","IAS Zone for device:%s  - alarm1: %s, alaram2: %s, tamper: %s, battery: %s, Support Reporting: %s, restore Reporting: %s, trouble: %s, acmain: %s, test: %s, battdef: %s"
+        % ( MsgSrcAddr, alarm1, alarm2, tamper, battery, suprrprt, restrprt, trouble, acmain, test, battdef, ), MsgSrcAddr, )
 
-        self.log.logging( 
-            "Input",
-            "Debug",
-            "IAS Zone for device:%s  - alarm1: %s, alaram2: %s, tamper: %s, battery: %s, Support Reporting: %s, restore Reporting: %s, trouble: %s, acmain: %s, test: %s, battdef: %s"
-            % ( MsgSrcAddr, alarm1, alarm2, tamper, battery, suprrprt, restrprt, trouble, acmain, test, battdef, ), MsgSrcAddr, )
+    self.log.logging(  "Input", "Debug", "Decode8401 MsgZoneStatus: %s " % MsgZoneStatus[2:4], MsgSrcAddr, )
+    value = MsgZoneStatus[2:4]
 
-        self.log.logging( 
-            "Input",
-            "Debug",
-            "Decode8401 MsgZoneStatus: %s " % MsgZoneStatus[2:4],
-            MsgSrcAddr,
-        )
-        value = MsgZoneStatus[2:4]
+    if self.ListOfDevices[MsgSrcAddr]["Model"] in ( "3AFE14010402000D", "3AFE28010402000D", ):  # Konke Motion Sensor
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0406", "%02d" % alarm1)
+    elif self.ListOfDevices[MsgSrcAddr]["Model"] in ( "lumi.sensor_magnet", "lumi.sensor_magnet.aq2", ):  # Xiaomi Door sensor
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0006", "%02d" % alarm1)
+    else:
+        MajDomoDevice( self, Devices, MsgSrcAddr, MsgEp, MsgClusterId, "%02d" % (alarm1 or alarm2), )
 
-        if self.ListOfDevices[MsgSrcAddr]["Model"] in (
-            "3AFE14010402000D",
-            "3AFE28010402000D",
-        ):  # Konke Motion Sensor
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0406", "%02d" % alarm1)
-        elif self.ListOfDevices[MsgSrcAddr]["Model"] in (
-            "lumi.sensor_magnet",
-            "lumi.sensor_magnet.aq2",
-        ):  # Xiaomi Door sensor
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0006", "%02d" % alarm1)
-        else:
-            MajDomoDevice( self, Devices, MsgSrcAddr, MsgEp, MsgClusterId, "%02d" % (alarm1 or alarm2), )
+    if tamper:
+        MajDomoDevice( self, Devices, MsgSrcAddr, MsgEp, '0009', '01')
+    else:
+        MajDomoDevice( self, Devices, MsgSrcAddr, MsgEp, '0009', '00')
+        
+    # if battdef or battery:
+    #     self.ListOfDevices[MsgSrcAddr]["Battery"] = 1
 
-        # if battdef or battery:
-        #     self.ListOfDevices[MsgSrcAddr]["Battery"] = 1
+    if "IAS" in self.ListOfDevices[MsgSrcAddr]:
+        if "ZoneStatus" in self.ListOfDevices[MsgSrcAddr]["IAS"]: 
+            if not isinstance(  self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"], dict  ):
+                self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"] = {}
 
-        if "IAS" in self.ListOfDevices[MsgSrcAddr]:
-            if "ZoneStatus" in self.ListOfDevices[MsgSrcAddr]["IAS"]: 
-                if not isinstance(  self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"], dict  ):
-                    self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"] = {}
-
-                self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["alarm1"] = alarm1
-                self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["alarm2"] = alarm2
-                self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["tamper"] = tamper
-                self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["battery"] = battery
-                self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"][ "Support Reporting" ] = suprrprt
-                self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"][ "Restore Reporting" ] = restrprt
-                self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["trouble"] = trouble
-                self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["acmain"] = acmain
-                self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["test"] = test
-                self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["battdef"] = battdef
-                self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["GlobalInfos"] = (
-                    "%s;%s;%s;%s;%s;%s;%s;%s;%s;%s"
-                    % ( alarm1, alarm2, tamper, battery, suprrprt, restrprt, trouble, acmain, test, battdef, ) )
-                self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["TimeStamp"] = int( time.time() )
+            self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["alarm1"] = alarm1
+            self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["alarm2"] = alarm2
+            self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["tamper"] = tamper
+            self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["battery"] = battery
+            self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"][ "Support Reporting" ] = suprrprt
+            self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"][ "Restore Reporting" ] = restrprt
+            self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["trouble"] = trouble
+            self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["acmain"] = acmain
+            self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["test"] = test
+            self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["battdef"] = battdef
+            self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["GlobalInfos"] = (
+                "%s;%s;%s;%s;%s;%s;%s;%s;%s;%s"
+                % ( alarm1, alarm2, tamper, battery, suprrprt, restrprt, trouble, acmain, test, battdef, ) )
+            self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["TimeStamp"] = int( time.time() )
 
 
 # OTA and Remote decoding kindly authorized by https://github.com/ISO-B
