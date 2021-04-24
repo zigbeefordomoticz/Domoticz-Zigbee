@@ -74,7 +74,18 @@ def decode_frame( frame ):
           
 def check_frame_crc(self, BinMsg):
     ComputedChecksum = 0
+    if len(BinMsg) < 6:
+        self.statistics._crcErrors += 1
+        _context = {
+            'Error code': 'TRANS-CHKCRC-02',
+            'BinMsg': str(BinMsg),
+            'AsciiMsg': str(binascii.hexlify(BinMsg).decode('utf-8')),
+            'len': len(BinMsg),
+        }
+        self.logging_receive_error( "check_frame_crc", context=_context)
+        return False
     Zero1, MsgType, Length, ReceivedChecksum = struct.unpack('>BHHB', BinMsg[0:6])
+    
     for idx, val in enumerate(BinMsg[1:-1]):
         if idx != 4:  # Jump the checksum itself
             ComputedChecksum ^= val
