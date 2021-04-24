@@ -83,6 +83,7 @@ def check_frame_crc(self, BinMsg):
         _context = {
             'Error code': 'TRANS-CHKCRC-01',
             'BinMsg': str(BinMsg),
+            'AsciiMsg': str(binascii.hexlify(BinMsg).decode('utf-8')),
             'len': len(BinMsg),
             'MsgType': MsgType,
             'Length': Length,
@@ -104,6 +105,7 @@ def check_frame_lenght( self, BinMsg):
             'Error code': 'TRANS-CHKLEN-01',
             'Zero1': Zero1,
             'BinMsg': str(BinMsg),
+            'AsciiMsg': str(binascii.hexlify(BinMsg).decode('utf-8')),
             'len': len(BinMsg),
             'MsgType': MsgType,
             'Length': Length,

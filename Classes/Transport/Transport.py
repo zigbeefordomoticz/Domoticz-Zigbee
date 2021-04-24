@@ -103,7 +103,7 @@ class ZigateTransport(object):
 
         # Initialise SQN Management
         sqn_init_stack(self)
-
+                             
         # Initialise Command Protocol Parameters
         initialize_command_protocol_parameters( )
 
@@ -118,6 +118,11 @@ class ZigateTransport(object):
             Domoticz.Error("Unknown Transport Mode: %s" % transport)
             self._transp = 'None'
 
+    # for Statistics usage
+    def get_forwarder_queue( self ):
+        return self.forwarder_queue.qsize()
+    def get_writer_queue(self ):
+        return self.forwarder_queue.qsize()
 
     def update_ZiGate_Version ( self, FirmwareVersion, FirmwareMajorVersion):
         self.FirmwareVersion = FirmwareVersion
@@ -244,6 +249,8 @@ class ZigateTransport(object):
             'writeQueue': str(self.writer_queue.queue),
             'forwardQueue': str(self.forwarder_queue.queue),
             'SemaphoreValue': self.semaphore_gate._value,
+            'ForwardedQueueCurrentSize': self.get_forwarder_queue(),
+            'WriterQueueCurrentSize': self.get_writer_queue()
             }
         context['Firmware'] = {
             'dzCommunication': self.force_dz_communication,

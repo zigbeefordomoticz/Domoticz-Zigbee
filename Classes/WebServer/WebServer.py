@@ -357,6 +357,8 @@ class WebServer(object):
             Statistics['MaxApdu'] = self.statistics._MaxaPdu
             Statistics['MaxNpdu'] = self.statistics._MaxnPdu 
 
+            Statistics['ForwardedQueueCurrentSize'] = self.ZigateComm.get_forwarder_queue()
+            Statistics['WriterQueueCurrentSize'] = self.ZigateComm.get_writer_queue()
             _nbitems = len(self.statistics.TrendStats)
 
             minTS = 0
