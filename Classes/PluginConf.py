@@ -41,6 +41,14 @@ SETTINGS = {
         }
     },
 
+    'Provisioning': {'Order': 3, 'param': {
+        'Livolo':                    {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
+        'enableSchneiderWiser':      {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
+        'fullDeviceInterview':       {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
+        'breakConfigureReporting':   {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
+        }
+    },
+
     'WebInterface': {'Order': 4, 'param': {
         'Lang':            {'type': 'str',  'default': 'en-US', 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
         'enableGzip':      {'type': 'bool', 'default': 1,       'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
@@ -78,10 +86,8 @@ SETTINGS = {
         'zigatePartOfGroup0000':     {'type': 'bool', 'default': 0,    'current': None, 'restart': 1, 'hidden': False, 'Advanced': True},
         'resetPermit2Join':          {'type': 'bool', 'default': 1,    'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
         'Ping':                      {'type': 'bool', 'default': 1,    'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-
         'allowRemoveZigateDevice':   {'type': 'bool', 'default': 1,    'current': None, 'restart': 0, 'hidden': True, 'Advanced': True},
         'eraseZigatePDM':            {'type': 'bool', 'default': 0,    'current': None, 'restart': 0, 'hidden': True, 'Advanced': True},
-        'breakConfigureReporting':   {'type': 'bool', 'default': 0,    'current': None, 'restart': 0, 'hidden': True, 'Advanced': True},
         'Certification':             {'type': 'list',
                                       'list': {'CE regulation': 'CE', 'FCC regulation': 'FCC'},
                                       'default': 'CE', 'current': None, 'restart': True, 'hidden': False, 'Advanced': False},
@@ -92,7 +98,6 @@ SETTINGS = {
         'TXpower_set':               {'type': 'list',
                                       'list': {'0dbM': 0, '-9 dbM': 1, '-20dbM': 2, '-32dbM': 3},
                                       'default': 0,   'current': None, 'restart': 1, 'hidden': False, 'Advanced': True},
-
         'extendedPANID':             {'type': 'hex',  'default': 0,   'current': None, 'restart': 3, 'hidden': False, 'Advanced': True},
 
         }
@@ -198,25 +203,17 @@ SETTINGS = {
         }
     },
 
-    
-    # Schneider Wiser configuration
-    'Schneider Wiser':          {'Order': 12, 'param': {
-        'enableSchneiderWiser': {'type': 'bool', 'default': 0,   'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
-        'reenforcementWiser':   {'type': 'int',  'default': 300, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'forceWiserRegistration': {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        }
-    },
-
     # Others
     'Others': {'Order': 13, 'param': {
-        'Livolo':                    {'type': 'bool', 'default': 0,   'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
         'numTopologyReports':        {'type': 'int',  'default': 4,   'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
+        'displaySibling':       {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True}, 
         'numEnergyReports':          {'type': 'int',  'default': 4,   'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
         'TradfriKelvinStep':         {'type': 'int',  'default': 51,  'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
         'AqaraOppleBulbMode':        {'type': 'bool', 'default': 0,   'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
         'vibrationAqarasensitivity': {'type': 'list',
                                       'list': {'high': 'high', 'medium': 'medium', 'low': 'low'},
                                       'default': 'medium', 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
+        'reenforcementWiser':   {'type': 'int',  'default': 300, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
         }
     },
 
@@ -227,9 +224,8 @@ SETTINGS = {
 
     # Experimental
     'Experimental': {'Order': 15, 'param': {    
-        'disabledDefaultResponseFirmware':       {'type': 'bool', 'default': 0, 'current': None, 'restart': 1, 'hidden': False, 'Advanced': True},  
-        'displaySibling':       {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},  
-        'DropBadAnnoucement':    {'type': 'bool', 'default': 1, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},    
+        'disabledDefaultResponseFirmware':       {'type': 'bool', 'default': 0, 'current': None, 'restart': 1, 'hidden': True, 'Advanced': True},   
+        'DropBadAnnoucement':    {'type': 'bool', 'default': 1, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': True},    
         'AnnoucementV0':         {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
         'AnnoucementV1':         {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
         'AnnoucementV2':         {'type': 'bool', 'default': 1, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
