@@ -112,10 +112,9 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
         timeStamped(self, NwkId, 0x004D)
         lastSeenUpdate(self, Devices, NwkId=NwkId)
         legrand_refresh_battery_remote(self, NwkId)
-        if self.pluginconf.pluginConf['forceWiserRegistration'] and \
-                'Model' in self.ListOfDevices[NwkId] and \
-                self.ListOfDevices[NwkId]['Model'] in ( 'EH-ZB-VACT', 'EH-ZB-BMS', 'EH-ZB-HACT', 'EH-ZB-LMACT', 'EH-ZB-RTS', 'EH-ZB-SPD', 'EH-ZB-SPD-V2'):
+        if self.pluginconf.pluginConf['fullDeviceInterview']:
             decode004d_existing_devicev2(self, Devices, NwkId, Ieee, MacCapa, MsgLQI, now)
+            self.pluginconf.pluginConf['fullDeviceInterview'] = False
         return
 
     # Annouced is in the ListOfDevices[NwkId]
