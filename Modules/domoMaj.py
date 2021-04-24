@@ -463,9 +463,11 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 return
 
         if WidgetType not in ( 'ThermoModeEHZBRTS', 'HeatingSwitch', 'HeatingStatus', 'ThermoMode_2', 'ThermoSetpoint', 'ThermoOnOff' ) and \
-            (   ( ClusterType in (  'IAS_ACE', 'Alarm', 'Door', 'Switch', 'SwitchButton', 'AqaraOppleMiddle', 'Motion', 
+            (   ( ClusterType in ( 'IAS_ACE', 'Door', 'Switch', 'SwitchButton', 'AqaraOppleMiddle', 'Motion', 
                                  'Ikea_Round_5b', 'Ikea_Round_OnOff', 'Vibration', 'OrviboRemoteSquare', 'Button_3', 'LumiLock') ) or \
                 ( ClusterType == WidgetType == 'DoorLock') or \
+                ( ClusterType == WidgetType == 'Alarm') or \
+                ( ClusterType == 'Alarm' and WidgetType == 'Tamper') or \
                 ( ClusterType == 'DoorLock' and WidgetType == 'Vibration') or \
                 ( ClusterType == 'FanControl' and WidgetType == 'FanControl') or \
                 ( 'ThermoMode' in ClusterType and WidgetType == 'ACMode_2' ) or \
