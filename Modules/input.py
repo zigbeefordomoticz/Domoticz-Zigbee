@@ -3638,28 +3638,21 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
         # Legrand remote switch
 
         if MsgCmd == "01":  # On
-            self.log.logging( 
-                "Input",
-                "Debug",
-                "Decode8095 - Legrand: %s/%s, Cmd: %s, Unknown: %s "
-                % (MsgSrcAddr, MsgEP, MsgCmd, unknown_),
-                MsgSrcAddr,
-            )
+            self.log.logging(  "Input", "Debug", "Decode8095 - Legrand: %s/%s, Cmd: %s, Unknown: %s "
+                % (MsgSrcAddr, MsgEP, MsgCmd, unknown_), MsgSrcAddr, )
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd)
-            self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId][
-                "0000"
-            ] = "Cmd: %s, %s" % (MsgCmd, unknown_)
+            self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId][ "0000" ] = "Cmd: %s, %s" % (MsgCmd, unknown_)
 
         elif MsgCmd == "00":  # Off
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd)
             self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId] = {}
-            self.log.logging( 
-                "Input",
-                "Debug",
-                "Decode8095 - Legrand: %s/%s, Cmd: %s, Unknown: %s "
-                % (MsgSrcAddr, MsgEP, MsgCmd, unknown_),
-                MsgSrcAddr,
-            )
+            self.log.logging(  "Input", "Debug", "Decode8095 - Legrand: %s/%s, Cmd: %s, Unknown: %s " % (
+                MsgSrcAddr, MsgEP, MsgCmd, unknown_), MsgSrcAddr, )
+
+        elif MsgCmd == '02': # Toggle
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, '02')
+            self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId][ "0000" ] = "Cmd: %s, %s" % (MsgCmd, unknown_)
+
 
     elif _ModelName == "Lightify Switch Mini":
         #        OSRAM Lightify Switch Mini
