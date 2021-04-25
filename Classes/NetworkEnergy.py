@@ -144,7 +144,7 @@ class NetworkEnergy():
         scanDuration = DURATION
         scanCount = 1
 
-        mask = maskChannel( channels )
+        mask = maskChannel( self, channels )
         datas = target + "%08.x" %(mask) + "%02.x" %(scanDuration) + "%02.x" %(scanCount)  + "00" + root
     
         if len(self.nwkidInQueue) == 0:
