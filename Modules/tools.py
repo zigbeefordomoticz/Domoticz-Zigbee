@@ -1167,13 +1167,12 @@ def setConfigItem(Key=None, Value=None):
         Value = prepare_dict_for_storage( Value)
 
     try:
-        Domoticz.Log("Try Get Configuration")
         Config = Domoticz.Configuration()
         if (Key != None):
             Config[Key] = Value
         else:
             Config = Value  # set whole configuration if no key specified
-        Domoticz.Log("Try Save Configuration")
+
         Config = Domoticz.Configuration(Config)
     except Exception as inst:
         Domoticz.Error("setConfigItem - Domoticz.Configuration operation failed: '"+str(inst)+"'")
@@ -1196,7 +1195,6 @@ def getConfigItem(Key=None, Default={}):
 
 
 def prepare_dict_for_storage( dict_items):
-    Domoticz.Log("prepare_dict_for_storage")
     dict_str = json.dumps( dict_items )
     return json.loads( dict_str, object_pairs_hook=dict_None_to_Null )
     
