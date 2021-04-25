@@ -229,10 +229,11 @@ SWITCH_LVL_MATRIX = {
         "moveup": (2, "20"), 
         "movedown": (3, "30"), 
         "stop": (4,"40"), 
+        "02": (5,"50"),
         "ForceUpdate": True, 
-        "LevelNames": "Off|On|Dim +|Dim -|Stop",
+        "LevelNames": "Off|On|Dim +|Dim -|Stop|Toggle",
         "Language": {
-            "fr-FR": {"LevelNames": "Eteindre|Allumer|Monter|Descendre|Arrêt"}
+            "fr-FR": {"LevelNames": "Eteindre|Allumer|Monter|Descendre|Arrêt|Toggle"}
 
             }
         },
