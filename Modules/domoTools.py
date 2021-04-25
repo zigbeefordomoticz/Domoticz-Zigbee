@@ -127,6 +127,8 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
     TimedOutMotion = self.pluginconf.pluginConf['resetMotiondelay']
     TimedOutSwitchButton = self.pluginconf.pluginConf['resetSwitchSelectorPushButton']
     for unit in list(Devices):
+        if unit not in Devices:
+            continue
         Ieee = Devices[unit].DeviceID
         if Ieee not in self.IEEE2NWK:
             # Unknown !
