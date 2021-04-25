@@ -343,7 +343,6 @@ class PluginConf:
             json.dump(write_pluginConf, handle, sort_keys=True, indent=2)
 
         if self.pluginConf['useDomoticzDatabase']:
-            Domoticz.Log("Save Plugin Conf to Domoticz")
             setConfigItem( Key='PluginConf', Value=write_pluginConf)
 
 
