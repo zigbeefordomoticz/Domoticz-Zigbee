@@ -78,6 +78,10 @@ class LoggingManagement:
         except json.decoder.JSONDecodeError as e:
             self.loggingWriteErrorHistory() #flush the file to avoid the error next startup
             Domoticz.Error("load Json LogErrorHistory poorly-formed %s, not JSON: %s" %(jsonLogHistory,e))
+
+        except Exception as e:
+            self.loggingWriteErrorHistory() #flush the file to avoid the error next startup
+            Domoticz.Error("load Json LogErrorHistory Error %s, not JSON: %s" %(jsonLogHistory,e))            
         handle.close()
 
     def closeLogFile( self ):
