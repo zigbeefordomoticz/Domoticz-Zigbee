@@ -70,7 +70,7 @@ class GroupsManagement( object):
     
     from Classes.GroupMgtv2.GrpDomoticz import update_domoticz_group_device, processCommand
     from Classes.GroupMgtv2.GrpDatabase import  write_groups_list, load_groups_list_from_json, update_due_to_nwk_id_change
-    from Classes.GroupMgtv2.GrpServices import FullRemoveOfGroup, checkAndTriggerIfMajGroupNeeded, addGroupMemberShip, RemoveNwkIdFromAllGroups
+    from Classes.GroupMgtv2.GrpServices import FullRemoveOfGroup, checkAndTriggerIfMajGroupNeeded, addGroupMemberShip, RemoveNwkIdFromAllGroups, get_available_grp_id, add_group_member_ship_from_remote
     from Classes.GroupMgtv2.GrpWebServices import process_web_request, ScanAllDevicesForGroupMemberShip, ScanDevicesForGroupMemberShip
     from Classes.GroupMgtv2.GrpIkeaRemote import manageIkeaTradfriRemoteLeftRight
     

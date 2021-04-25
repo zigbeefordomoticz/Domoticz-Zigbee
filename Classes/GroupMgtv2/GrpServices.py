@@ -8,6 +8,7 @@ import Domoticz
 from time import time
 
 from Modules.tools import mainPoweredDevice
+from Modules.zigateConsts import LEGRAND_REMOTES
 
 from Classes.GroupMgtv2.GrpDomoticz import create_domoticz_group_device, remove_domoticz_group_device, update_domoticz_group_name
 
@@ -113,6 +114,26 @@ def addGroupMemberShip( self, NwkId, Ep, GroupId):
     add_group_member_ship( self, NwkId, Ep, GroupId)
     self.write_groups_list()
 
+def add_group_member_ship_from_remote(self, NwkId, Ep, GroupId):
+    # This is clall from plugin, when setting a group membership of a Legrand Remote
+    from Classes.GroupMgtv2.GrpCallBackResponses import checkToCreateOrUpdateGroup
+
+    if 'GroupMemberShip' not in self.ListOfDevices[ NwkId ]:
+        self.ListOfDevices[ NwkId ]['GroupMemberShip'] = {}
+    if Ep not in self.ListOfDevices[ NwkId ]['GroupMemberShip']:
+        self.ListOfDevices[ NwkId ]['GroupMemberShip'][Ep] = {}
+    if GroupId not in self.ListOfDevices[ NwkId ]['GroupMemberShip'][Ep]:
+        self.ListOfDevices[ NwkId ]['GroupMemberShip'][Ep][ GroupId ] = {}
+    self.ListOfDevices[ NwkId ]['GroupMemberShip'][Ep][ GroupId ]['Status'] = 'OK'  
+    checkToCreateOrUpdateGroup(self, NwkId, Ep, GroupId  )
+
+def get_available_grp_id( self, start_range, stop_range):
+    for x in range(start_range, stop_range, -1):
+        GrpId = '%04x' %x
+        if GrpId not in self.ListOfGroups:
+            return GrpId
+    return None
+
 def create_new_group_and_attach_devices( self, GrpId, GrpName, DevicesList ):
     self.logging( 'Debug', " --  --  --  --  --  > CreateNewGroupAndAttachDevices ")
     create_group( self, GrpId, GrpName )
@@ -139,4 +160,10 @@ def update_group_and_remove_devices( self, GrpId, ToBeRemoveDevices):
         if NwkId and not checkIfIkeaRound5BToBeRemoved( self, NwkId, ep, ieee, GrpId):
             self.logging( 'Debug', "-- --  --  --  --  --  -- > Calling Remove_group_membership [%s %s %s]" %(NwkId, ep, ieee ))
             remove_group_member_ship(self,  NwkId, ep, GrpId )
+        #if 'Model' in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]['Model'] in LEGRAND_REMOTES:
+        #    from Classes.GroupMgtv2.GrpCallBackResponses import  checkToRemoveGroup
+        #    if [NwkId, NwkId, ieee] in self.ListOfGroups[ GrpId]['Devices']:
+        #        self.ListOfGroups[ GrpId]['Devices'].remove( [NwkId, NwkId, ieee]  )
+        #    checkToRemoveGroup( self,NwkId, NwkId, GrpId )
+
     self.write_groups_list()

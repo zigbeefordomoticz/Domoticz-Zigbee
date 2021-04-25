@@ -32,7 +32,7 @@ def write_groups_list( self):
         json.dump( self.ListOfGroups, handle, sort_keys = True, indent = 2)
 
     if self.pluginconf.pluginConf['useDomoticzDatabase']:
-        self.log.logging( "Database", 'Log', "Save Plugin Group Db to Domoticz")
+        self.log.logging( "Database", 'Debug', "Save Plugin Group Db to Domoticz")
         setConfigItem( Key='ListOfGroups', Value=self.ListOfGroups)
 
 

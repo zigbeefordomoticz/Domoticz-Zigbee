@@ -10,7 +10,8 @@ import json
 from Classes.GroupMgtv2.GrpCommands import set_kelvin_color, set_rgb_color, set_hue_saturation
 from Classes.GroupMgtv2.GrpDatabase import update_due_to_nwk_id_change
 from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl
-from Modules.zigateConsts import ADDRESS_MODE, ZIGATE_EP
+from Modules.zigateConsts import ADDRESS_MODE, ZIGATE_EP, LEGRAND_REMOTES
+
 
 from Classes.AdminWidgets import AdminWidgets
 
@@ -266,6 +267,8 @@ def update_domoticz_group_device( self, GroupId):
             return
         if 'Model' in self.ListOfDevices[NwkId]:
             if 'TRADFRI remote control' in self.ListOfDevices[NwkId]['Model']:
+                continue
+            if self.ListOfDevices[NwkId]['Model'] in LEGRAND_REMOTES:
                 continue
 
         # Cluster ON/OFF

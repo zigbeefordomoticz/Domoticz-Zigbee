@@ -107,7 +107,7 @@ def process_web_request( self, webInput):
 
 def get_group_id( self ):
     for x in range( 0x0001, 0x0999):
-        GrpId = '%04X' %x
+        GrpId = '%04x' %x
         if GrpId not in self.ListOfGroups:
             return GrpId
 

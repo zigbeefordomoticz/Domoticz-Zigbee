@@ -55,39 +55,31 @@ def callbackDeviceAwake_Legrand(self, NwkId, EndPoint, cluster):
 
 
 def legrandReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
-    
     self.log.logging( "Legrand", 'Debug',"legrandReadRawAPS - Nwkid: %s Ep: %s, Cluster: %s, dstNwkid: %s, dstEp: %s, Payload: %s" \
             %(srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload))
-
     # At Device Annoucement 0x00 and 0x05 are sent by device
     GlobalCommand, Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002( MsgPayload )
     self.log.logging( "Legrand", 'Debug'," NwkId: %s/%s Cluster: %s Command: %s Data: %s" %( srcNWKID, srcEp, ClusterID, Command, Data))
 
     if ClusterID == '0102' and Command == '00': # No data (Cluster 0x0102)
         pass
-
     elif ClusterID == '0102' and Command == '01': # No data (Cluster 0x0102)
         pass
-
     elif ClusterID == 'fc01' and Command == '04': # Write Attribute Responsee
         pass
-
-
     elif ClusterID == 'fc01' and Command == '05':
         # Get _Ieee of Shutter Device
-        _ieee = '%08x' %struct.unpack('q',struct.pack('>Q',int(Data[0:16],16)))[0] 
+        _ieee = '%08x' %struct.unpack('q',struct.pack('>Q',int(Data[0:16],16)))[0]
+        assign_group_membership_to_legrand_remote(self, srcNWKID, srcEp,)
 
     elif ClusterID == 'fc01' and Command == '09':
-        # IEEE of End Device (remote  )
-        _ieee = '%08x' %struct.unpack('q',struct.pack('>Q',int(Data[0:16],16)))[0] 
-
-        _count = Data[16:18] 
-        self.log.logging( "Legrand", 'Debug',"---> Decoding cmd 0x09 Ieee: %s Count: %s" %(_ieee, _count))
-        if _count == '01':
-            LegrandGroupMemberShip = 'fefe'
-        elif _count == '02':
-            LegrandGroupMemberShip = 'fdfe'
-        sendFC01Command( self, Sqn, srcNWKID, srcEp, ClusterID, '0c', LegrandGroupMemberShip + _count)
+        # IEEE of End Device (remote  ) 
+        _ieee = '%08x' %struct.unpack('q',struct.pack('>Q',int(Data[0:16],16)))[0]
+        leftright = None
+        if len(Data) == 18:
+            leftright = Data[16:18]
+        self.log.logging( "Legrand", 'Debug',"---> Decoding cmd 0x09 Ieee: %s leftright: %s" %(_ieee, leftright))
+        assign_group_membership_to_legrand_remote(self, srcNWKID, srcEp, leftright)
 
     elif ClusterID == 'fc01' and Command == '0a': 
         LegrandGroupMemberShip = Data[0:4]
@@ -99,45 +91,87 @@ def legrandReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP
         _ieee = '4fa5820000740400' # IEEE du Dimmer
         sendFC01Command( self, Sqn, srcNWKID, srcEp, ClusterID, '10', status + _code + _ieee )
 
+def assign_group_membership_to_legrand_remote(self, NwkId, Ep, leftright=None):
+    sqn = get_and_inc_SQN( self, NwkId)
+    cmd = '08'
+    if leftright:
+        cmd = '0c'
+        self.log.logging( "Legrand", 'Debug',"assign_group_membership_to_legrand_remote %s lefright: %s" %(NwkId, leftright))
+
+    groupid = get_groupid_for_remote(self, NwkId, Ep, leftright)
+    if groupid:
+        LegrandGroupMemberShip = '%04x' %struct.unpack('H',struct.pack('>H',int(groupid,16)))[0]
+        if leftright:
+            sendFC01Command( self, sqn, NwkId, Ep, 'fc01', cmd, LegrandGroupMemberShip + leftright)
+        else:
+            sendFC01Command( self, sqn, NwkId, Ep, 'fc01', cmd, LegrandGroupMemberShip)
+
+
+def get_groupid_for_remote( self, NwkId, Ep, leftright ):
+    GroupId = None
+    if 'Legrand' not in self.ListOfDevices[ NwkId ]:
+        self.ListOfDevices[ NwkId ]['Legrand'] = {}
+    if 'RemoteGroup' not in self.ListOfDevices[ NwkId ]['Legrand']:
+        self.ListOfDevices[ NwkId ]['Legrand']['RemoteGroup'] = {}
+    if leftright:
+        if leftright not in self.ListOfDevices[ NwkId ]['Legrand']['RemoteGroup']:
+            self.ListOfDevices[ NwkId ]['Legrand']['RemoteGroup'][leftright] = None     
+        if self.ListOfDevices[ NwkId ]['Legrand']['RemoteGroup'][leftright]:
+            return self.ListOfDevices[ NwkId ]['Legrand']['RemoteGroup'][leftright]
+    else:
+        if 'Single' not in self.ListOfDevices[ NwkId ]['Legrand']['RemoteGroup']:
+            self.ListOfDevices[ NwkId ]['Legrand']['RemoteGroup']['Single'] = None
+        if self.ListOfDevices[ NwkId ]['Legrand']['RemoteGroup']['Single']:
+            return self.ListOfDevices[ NwkId ]['Legrand']['RemoteGroup']['Single']
+
+    # We need to create a groupId
+    if self.groupmgt:
+        GroupId = self.groupmgt.get_available_grp_id( 0xfefe, 0xfe00 )
+        if leftright:
+            self.ListOfDevices[ NwkId ]['Legrand']['RemoteGroup'][leftright] = GroupId
+        else:
+            self.ListOfDevices[ NwkId ]['Legrand']['RemoteGroup']['Single'] = GroupId
+        if GroupId:
+            self.groupmgt.add_group_member_ship_from_remote( NwkId, Ep, GroupId)
+    return GroupId
 
 def sendFC01Command( self, sqn, nwkid, ep, ClusterID, cmd, data):
-
     self.log.logging( "Legrand", 'Debug',"sendFC01Command Cmd: %s Data: %s" %(cmd, data))
-
     if cmd == '00':
         # Read Attribute received
         attribute = data[2:4] + data[0:2]
-
         if ClusterID == '0000' and attribute == 'f000':
             # Respond to Time Of Operation
-            cmd = "01"
-            
+            cmd = "01"  
             status = "00"
             cluster_frame = "1c"           
             dataType = '23' #Uint32
             PluginTimeOfOperation = '%08X' %(self.HeartbeatCount * HEARTBEAT) # Time since the plugin started
-
             payload = cluster_frame + sqn + cmd + attribute + status + dataType + PluginTimeOfOperation[6:8] + PluginTimeOfOperation[4:6] + PluginTimeOfOperation[0:2] + PluginTimeOfOperation[2:4]
-            raw_APS_request( self, nwkid, ep, ClusterID, '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = is_ack_tobe_disabled(self, nwkid))
-
+            raw_APS_request( self, nwkid, ep, ClusterID, '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = is_ack_tobe_disabled(self, nwkid), highpriority=True)
             self.log.logging( "Legrand", 'Log', "loggingLegrand - Nwkid: %s/%s Cluster: %s, Command: %s Payload: %s" \
                 %(nwkid,ep , ClusterID, cmd, data ))
-            return
+        return
+
+    if cmd == '08':
+        # Assign GroupId to a single remote
+        manufspec = '2110' # Legrand Manuf Specific : 0x1021
+        cluster_frame = "1d" # Cliuster Specifi, Manuf Specifi
+        payload = cluster_frame + manufspec + sqn + cmd + data
+        raw_APS_request( self, nwkid, ep, ClusterID, '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = is_ack_tobe_disabled(self, nwkid), highpriority=True)
+        self.log.logging( "Legrand", 'Log', "loggingLegrand - Nwkid: %s/%s Cluster: %s, Command: %s Payload: %s" \
+            %(nwkid,ep , ClusterID, cmd, data ))
+        return
 
     if cmd == '0c':
-            
-            manufspec = '2110' # Legrand Manuf Specific : 0x1021
-            status = "00"
-            cluster_frame = "1d"           
-            dataType = '23' #Uint32
-
-            payload = cluster_frame + manufspec + sqn + cmd + data
-            raw_APS_request( self, nwkid, ep, ClusterID, '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = is_ack_tobe_disabled(self, nwkid))
-
-            self.log.logging( "Legrand", 'Log', "loggingLegrand - Nwkid: %s/%s Cluster: %s, Command: %s Payload: %s" \
-                %(nwkid,ep , ClusterID, cmd, data ))
-
-            return
+        # Assign GroupId to a double remote
+        manufspec = '2110' # Legrand Manuf Specific : 0x1021
+        cluster_frame = "1d" # Cliuster Specifi, Manuf Specifi
+        payload = cluster_frame + manufspec + sqn + cmd + data
+        raw_APS_request( self, nwkid, ep, ClusterID, '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = is_ack_tobe_disabled(self, nwkid), highpriority=True)
+        self.log.logging( "Legrand", 'Log', "loggingLegrand - Nwkid: %s/%s Cluster: %s, Command: %s Payload: %s" \
+            %(nwkid,ep , ClusterID, cmd, data ))
+        return
 
 
 def rejoin_legrand_reset( self ):  
@@ -493,3 +527,8 @@ def legrand_refresh_battery_remote( self, nwkid):
     if ( 'BatteryUpdateTime' in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]['BatteryUpdateTime'] + 3600 > time() ):
         return
     ReadAttributeRequest_0001( self,  nwkid) 
+
+def store_netatmo_attribute( self, NwkId, Attribute, Value ):
+    if 'Legrand' not in self.ListOfDevices[ NwkId ]:
+        self.ListOfDevices[ NwkId ]['Legrand'] = {}
+    self.ListOfDevices[ NwkId ]['Legrand'][ Attribute ] = Value
