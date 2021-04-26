@@ -2676,7 +2676,7 @@ def Decode8120_attribute( self, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     if ( self.FirmwareVersion and int(self.FirmwareVersion, 16) >= int("31d", 16) and MsgAttributeId ):
         set_status_datastruct( self, "ConfigureReporting", MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus, )
         if MsgStatus != "00":
-            self.log.logging(  "Input", "Log", "Decode8120 - Configure Reporting response - ClusterID: %s/%s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s"
+            self.log.logging(  "Input", "Debug", "Decode8120 - Configure Reporting response - ClusterID: %s/%s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s"
                 % (MsgClusterId, MsgAttributeId, MsgSrcAddr, MsgSrcEp, MsgStatus),
                 MsgSrcAddr,
             )
@@ -2694,7 +2694,7 @@ def Decode8120_attribute( self, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.log.logging(  "Input", "Debug", "------- - Sqn matches for Attribute: %s" % matchAttributeId )
         set_status_datastruct( self, "ConfigureReporting", MsgSrcAddr, MsgSrcEp, MsgClusterId, matchAttributeId, MsgStatus, )
         if MsgStatus != "00":
-            self.log.logging( "Input", "Log", "Decode8120 - Configure Reporting response - ClusterID: %s/%s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s"
+            self.log.logging( "Input", "Debug", "Decode8120 - Configure Reporting response - ClusterID: %s/%s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s"
                 % (MsgClusterId, matchAttributeId, MsgSrcAddr, MsgSrcEp, MsgStatus),
                 MsgSrcAddr,
             )
