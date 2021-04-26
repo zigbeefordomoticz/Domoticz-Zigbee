@@ -32,13 +32,19 @@ def decode8002_and_process(self, frame):
     if Command == '01': # Read Attribute response
         return buildframe_read_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
 
+    if Command == '02': # Write Attributes
+        pass
+
     if Command == '04': # Write Attribute response
         return buildframe_write_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
 
-    if Command == '07':
+    if Command == '06': # Configure Reporting
+        pass
+
+    if Command == '07': # Configure Reporting Response
         return buildframe_configure_reporting_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
 
-    if Command == '0a':
+    if Command == '0a': # Report attributes
         return buildframe_report_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
 
     self.logging_receive( 'Log', "decode8002_and_process Unknown Command: %s NwkId: %s Ep: %s Cluster: %s Payload: %s" %(Command, SrcNwkId, SrcEndPoint, ClusterId , Data))
