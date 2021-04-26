@@ -439,6 +439,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                 self.groupmgt.addGroupMemberShip( '0000', '01', '4005')
                 self.groupmgt.addGroupMemberShip( '0000', '01', '4006')
 
+
             if 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['Model'] in ( 'AC201A', 'AC211', 'AC221'):
                 casaia_pairing( self, NWKID)
 
