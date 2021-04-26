@@ -3707,7 +3707,7 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
         elif MsgCmd == '01':
             MajDomoDevice(self, Devices, MsgSrcAddr, "01", "0006", '01')
 
-    elif _ModelName in ( "TS0041", "TS0043", "TS0044"): # Tuya remote
+    elif _ModelName in ( "TS0041", "TS0043", "TS0044", "TS0042"): # Tuya remote
         self.log.logging( "Input","Log","Decode8095 - Tuya %s  Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, MsgPayload: %s "
                 % (_ModelName, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgPayload), MsgSrcAddr, )
         if MsgCmd[0:2] == 'fd' and MsgPayload:
