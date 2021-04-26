@@ -353,7 +353,7 @@ def ota_load_image_to_zigate( self, image_type, force_version=None): # OK 13/10
     image_entry = retreive_image_in_a_brand( self, image_type, brand)
 
     if image_entry is None:
-        logging( self,  'Debug', "ota_load_image_to_zigate - Image %s inot found in %s" %(image_type, str(self.ListOfImages['Brands'][ brand ]).keys() ))
+        logging( self,  'Debug', "ota_load_image_to_zigate - Image %s not found in %s" %(image_type, str(self.ListOfImages['Brands'][ brand ]).keys() ))
     image_entry = self.ListOfImages['Brands'][ brand ][ image_entry ]
 
     file_id = '%08X' %image_entry['Decoded Header']['file_id']
@@ -699,7 +699,7 @@ def check_image_valid_version( self, brand, image_type , ota_image_file, headers
     if existing_image['originalVersion'] >= headers['image_version']:
         # The up coming Image is older than the one already scaned
         #drop it
-        logging( self, 'Error', "ota_scan_folder - trying to load an older version of Image Type %s - Do remove file %s" %( image_type, ota_image_file ))
+        logging( self, 'Log', "ota_scan_folder - trying to load an older version of Image Type %s - Do remove file %s" %( image_type, ota_image_file ))
         return False
     # Existing Image is an older version comparing to what we load.
     # Overwrite with the new one.
