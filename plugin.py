@@ -862,14 +862,13 @@ def zigateInit_Phase3( self ):
             self.log.logging( 'Plugin', 'Status', "Zigate set to Certification : %s" %CERTIFICATION[self.pluginconf.pluginConf['CertificationCode']])
             sendZigateCmd(self, '0019', '%02x' %self.pluginconf.pluginConf['CertificationCode'])
 
-        if int(self.FirmwareVersion,16) >= 0x031e :
-            if self.pluginconf.pluginConf['disabledDefaultResponseFirmware'] :
-                self.log.logging( 'Plugin', 'Status', "Disable Default Response in firmware")
-                disable_firmware_default_response( self , mode='01')
-
-            else:
-                self.log.logging( 'Plugin', 'Status', "Enable Default Response in firmware")
-                disable_firmware_default_response( self , mode='00')
+        #if int(self.FirmwareVersion,16) >= 0x031e :
+        #    if self.pluginconf.pluginConf['disabledDefaultResponseFirmware'] :
+        #        self.log.logging( 'Plugin', 'Status', "Disable Default Response in firmware")
+        #        disable_firmware_default_response( self , mode='01')
+        #    else:
+        #        self.log.logging( 'Plugin', 'Status', "Enable Default Response in firmware")
+        #        disable_firmware_default_response( self , mode='00')
 
         # Enable Group Management
         if self.groupmgt is None and self.pluginconf.pluginConf['enablegroupmanagement']:

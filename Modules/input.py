@@ -748,9 +748,11 @@ def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
     try:
         self.log.logging( "Input", "Debug", "Decode8010 - Reception Version list : " + MsgData)
         if MajorVersNum == '0003':
-          self.log.logging( "Input", "Status", "ZiGate Classic")
+          self.log.logging( "Input", "Status", "ZiGate Classic PDM (legacy)")
         elif MajorVersNum == '0004':
-            self.log.logging( "Input", "Status", "ZiGate V2")
+            self.log.logging( "Input", "Status", "ZiGate Classic PDM (April 2021)")
+        elif MajorVersNum == '0005':
+            self.log.logging( "Input", "Status", "ZiGate V2")    
         self.log.logging( "Input", "Status", "Installer Version Number: " + InstaVersNum)
     except:
         Domoticz.Error("Decode8010 - Reception Version list : " + MsgData)
