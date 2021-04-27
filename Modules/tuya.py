@@ -235,19 +235,19 @@ def tuya_switch_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dst
         # Switch 1
         self.log.logging( "Tuya", 'Log', "tuya_switch_response - Dp 0x01 Nwkid: %s/%s decodeDP: %04x data: %s"
             %(NwkId, srcEp, dp, data), NwkId)
-        MajDomoDevice(self, Devices, NwkId, srcEp, '0006', data)
+        MajDomoDevice(self, Devices, NwkId, '01', '0006', data)
 
     elif dp == 0x02:
         # Switch 2
         self.log.logging( "Tuya", 'Log', "tuya_switch_response - Dp 0x02 Nwkid: %s/%s decodeDP: %04x data: %s"
             %(NwkId, srcEp, dp, data), NwkId)
-        MajDomoDevice(self, Devices, NwkId, srcEp, '0006', data)
+        MajDomoDevice(self, Devices, NwkId, '02', '0006', data)
 
     elif dp == 0x03:
         # Switch 3
         self.log.logging( "Tuya", 'Log', "tuya_switch_response - Dp 0x03 Nwkid: %s/%s decodeDP: %04x data: %s"
             %(NwkId, srcEp, dp, data), NwkId)
-        MajDomoDevice(self, Devices, NwkId, srcEp, '0006', data)
+        MajDomoDevice(self, Devices, NwkId, '03', '0006', data)
 
     else:
         attribute_name = 'UnknowDp_0x%02x_Dt_0x%02x' %(dp,datatype)
