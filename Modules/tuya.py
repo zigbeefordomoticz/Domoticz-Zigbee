@@ -147,7 +147,7 @@ def tuya_response( self,Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, 
     self.log.logging( "Tuya", 'Debug', "tuya_response - Model: %s Nwkid: %s/%s dp: %02x data: %s"
         %(_ModelName, NwkId, srcEp, dp, data),NwkId )
 
-    if _ModelName == ('TS0601-switch', 'TS0601-2Gangs-switch'):
+    if _ModelName in ('TS0601-switch', 'TS0601-2Gangs-switch', 'TS0601-2Gangs-switch'):
         tuya_switch_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
 
     elif _ModelName == 'TS0601-curtain':
@@ -249,6 +249,13 @@ def tuya_switch_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dst
             %(NwkId, srcEp, dp, data), NwkId)
         MajDomoDevice(self, Devices, NwkId, '03', '0006', data)
 
+    elif dp == 0x0d:
+        # All switches
+        self.log.logging( "Tuya", 'Log', "tuya_switch_response - Dp 0x03 Nwkid: %s/%s decodeDP: %04x data: %s"
+            %(NwkId, srcEp, dp, data), NwkId)
+        MajDomoDevice(self, Devices, NwkId, '01', '0006', data) 
+        MajDomoDevice(self, Devices, NwkId, '02', '0006', data) 
+        MajDomoDevice(self, Devices, NwkId, '03', '0006', data)        
     else:
         attribute_name = 'UnknowDp_0x%02x_Dt_0x%02x' %(dp,datatype)
         store_tuya_attribute( self, NwkId, attribute_name, data ) 
