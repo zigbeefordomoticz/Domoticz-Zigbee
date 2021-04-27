@@ -32,7 +32,7 @@ from Modules.lumi import AqaraOppleDecoding0012, readXiaomiCluster, xiaomi_leave
 from Classes.LoggingManagement import LoggingManagement
 
 from Modules.tuya import ( TUYA_TS0601_MODEL_NAME, TUYA_SIREN_MANUFACTURER, TUYA_DIMMER_MANUFACTURER, 
-                            TUYA_SWITCH_MANUFACTURER, TUYA_CURTAIN_MAUFACTURER, TUYA_THERMOSTAT_MANUFACTURER,
+                            TUYA_SWITCH_MANUFACTURER, TUYA_2GANGS_SWITCH_MANUFACTURER, TUYA_CURTAIN_MAUFACTURER, TUYA_THERMOSTAT_MANUFACTURER,
                             TUYA_eTRV1_MANUFACTURER, TUYA_eTRV2_MANUFACTURER , TUYA_eTRV3_MANUFACTURER)
 
 def decodeAttribute(self, AttType, Attribute, handleErrors=False):
@@ -335,6 +335,9 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
             elif manufacturer_name in TUYA_SWITCH_MANUFACTURER: # Switch
                 modelName += '-switch'
+
+            elif manufacturer_name in TUYA_2GANGS_SWITCH_MANUFACTURER: # 2 Gangs Switch
+               modelName += '-2Gangs-switch'
 
             elif manufacturer_name in TUYA_CURTAIN_MAUFACTURER:
                 modelName += '-curtain'

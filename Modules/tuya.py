@@ -47,7 +47,10 @@ TUYA_SIREN_MANUFACTURER =  ( '_TZE200_d0yu2xgi', '_TYST11_d0yu2xgi' )
 TUYA_SIREN_MODEL        =  ( 'TS0601', '0yu2xgi', )
 
 TUYA_DIMMER_MANUFACTURER = ( '_TZE200_dfxkcots', )
-TUYA_SWITCH_MANUFACTURER = ( '_TZE200_7tdtqgwv', "_TYST11_zivfvd7h")
+TUYA_SWITCH_MANUFACTURER = ( '_TZE200_7tdtqgwv', "_TYST11_zivfvd7h", '_TZE200_oisqyl4o')
+TUYA_2GANGS_SWITCH_MANUFACTURER = ('_TZE200_g1ib5ldv',)
+TUYA_3GANGS_SWITCH_MANUFACTURER = ( )
+
 TUYA_CURTAIN_MAUFACTURER = ( "_TZE200_cowvfni3", "_TZE200_wmcdj3aq", "_TZE200_fzo2pocs", "_TZE200_nogaemzt", "_TZE200_5zbp6j0u", \
                             "_TZE200_fdtjuw7u", "_TZE200_bqcqqjpb", "_TZE200_zpzndjez", "_TYST11_cowvfni3", "_TYST11_wmcdj3aq", \
                             "_TYST11_fzo2pocs", "_TYST11_nogaemzt", "_TYST11_5zbp6j0u", "_TYST11_fdtjuw7u", "_TYST11_bqcqqjpb", "_TYST11_zpzndjez", \
@@ -56,7 +59,6 @@ TUYA_CURTAIN_MAUFACTURER = ( "_TZE200_cowvfni3", "_TZE200_wmcdj3aq", "_TZE200_fz
 TUYA_CURTAIN_MODEL =  ( "owvfni3", "mcdj3aq", "zo2pocs", "ogaemzt", "zbp6j0u", "dtjuw7u", "qcqqjpb", "pzndjez", )
 
 TUYA_THERMOSTAT_MANUFACTURER = ( '_TZE200_aoclfnxz', '_TYST11_zuhszj9s', '_TYST11_jeaxp72v', )
-
 TUYA_eTRV1_MANUFACTURER = ( '_TZE200_kfvq6avy', '_TZE200_ckud7u2l', '_TYST11_KGbxAXL2', '_TYST11_ckud7u2l', )
 
 # https://github.com/zigpy/zigpy/discussions/653#discussioncomment-314395
@@ -70,7 +72,7 @@ TUYA_eTRV_MODEL =         ( 'TS0601', 'TS0601-eTRV', 'TS0601-eTRV1', 'TS0601-eTR
 TUYA_TS0601_MODEL_NAME = TUYA_eTRV_MODEL + TUYA_CURTAIN_MODEL + TUYA_SIREN_MODEL
 TUYA_MANUFACTURER_NAME = ( TS011F_MANUF_NAME + TS0041_MANUF_NAME + 
                             TUYA_SIREN_MANUFACTURER +  
-                            TUYA_DIMMER_MANUFACTURER + TUYA_SWITCH_MANUFACTURER + 
+                            TUYA_DIMMER_MANUFACTURER + TUYA_SWITCH_MANUFACTURER + TUYA_2GANGS_SWITCH_MANUFACTURER + TUYA_3GANGS_SWITCH_MANUFACTURER +
                             TUYA_CURTAIN_MAUFACTURER +  
                             TUYA_THERMOSTAT_MANUFACTURER + 
                             TUYA_eTRV1_MANUFACTURER + TUYA_eTRV2_MANUFACTURER + TUYA_eTRV3_MANUFACTURER + TUYA_eTRV_MANUFACTURER)
@@ -145,7 +147,7 @@ def tuya_response( self,Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, 
     self.log.logging( "Tuya", 'Debug', "tuya_response - Model: %s Nwkid: %s/%s dp: %02x data: %s"
         %(_ModelName, NwkId, srcEp, dp, data),NwkId )
 
-    if _ModelName == 'TS0601-switch':
+    if _ModelName == ('TS0601-switch', 'TS0601-2Gangs-switch'):
         tuya_switch_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
 
     elif _ModelName == 'TS0601-curtain':
@@ -231,20 +233,38 @@ def tuya_send_default_response( self, Nwkid, srcEp , sqn, cmd, orig_fcf):
 def tuya_switch_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     if dp == 0x01:
         # Switch 1
-        pass
+        self.log.logging( "Tuya", 'Log', "tuya_switch_response - Dp 0x01 Nwkid: %s/%s decodeDP: %04x data: %s"
+            %(NwkId, srcEp, dp, data), NwkId)
+        MajDomoDevice(self, Devices, NwkId, srcEp, '0006', data)
 
     elif dp == 0x02:
         # Switch 2
-        pass
+        self.log.logging( "Tuya", 'Log', "tuya_switch_response - Dp 0x02 Nwkid: %s/%s decodeDP: %04x data: %s"
+            %(NwkId, srcEp, dp, data), NwkId)
+        MajDomoDevice(self, Devices, NwkId, srcEp, '0006', data)
+
     elif dp == 0x03:
         # Switch 3
-        pass
+        self.log.logging( "Tuya", 'Log', "tuya_switch_response - Dp 0x03 Nwkid: %s/%s decodeDP: %04x data: %s"
+            %(NwkId, srcEp, dp, data), NwkId)
+        MajDomoDevice(self, Devices, NwkId, srcEp, '0006', data)
+
     else:
         attribute_name = 'UnknowDp_0x%02x_Dt_0x%02x' %(dp,datatype)
         store_tuya_attribute( self, NwkId, attribute_name, data ) 
-        self.log.logging( "Tuya", 'Debug', "tuyaReadRawAPS - Unknown attribut Nwkid: %s/%s decodeDP: %04x data: %s"
+        self.log.logging( "Tuya", 'Log', "tuya_switch_response - Unknown attribut Nwkid: %s/%s decodeDP: %04x data: %s"
             %(NwkId, srcEp, dp, data), NwkId)
 
+def tuya_switch_command( self, NwkId, onoff, gang=None):
+    self.log.logging( "Tuya", 'Log', "tuya_switch_command - %s OpenClose: %s on gang: %s" %(NwkId, onoff, gang),NwkId )
+    # determine which Endpoint
+    EPout = '01'
+    sqn = get_and_inc_SQN( self, NwkId )
+    cluster_frame = '11'
+    cmd = '00' # Command
+    action = '0101'
+    data = onoff
+    tuya_cmd( self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)   
 
 # Tuya TS0601 - Curtain
 def tuya_curtain_response( self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
