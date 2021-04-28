@@ -25,7 +25,7 @@ from Modules.thermostats import thermostat_Setpoint, thermostat_Mode
 from Modules.livolo import livolo_OnOff
 from Modules.tuyaTRV import ( tuya_trv_mode , tuya_trv_onoff)
 from Modules.tuyaSiren import ( tuya_siren_alarm, tuya_siren_humi_alarm, tuya_siren_temp_alarm )
-from Modules.tuya import ( tuya_dimmer_onoff, tuya_dimmer_dimmer, tuya_curtain_lvl, tuya_curtain_openclose, tuya_window_cover_calibration)
+from Modules.tuya import ( tuya_dimmer_onoff, tuya_dimmer_dimmer, tuya_curtain_lvl, tuya_curtain_openclose, tuya_window_cover_calibration, tuya_switch_command)
 
 from Modules.legrand_netatmo import  legrand_fc40, cable_connected_mode
 from Modules.schneider_wiser import schneider_EHZBRTS_thermoMode, schneider_hact_fip_mode, schneider_set_contract, schneider_temp_Setcurrent, schneider_hact_heater_type
@@ -178,6 +178,13 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
 
         self.log.logging( "Command", 'Debug', "mgtCommand : Off for Device: %s EPout: %s Unit: %s DeviceType: %s modelName: %s" %(
             NWKID, EPout, Unit, DeviceType, _model_name), NWKID)
+
+        if _model_name in ('TS0601-switch', 'TS0601-2Gangs-switch', 'TS0601-2Gangs-switch'):
+            self.log.logging( "Command", 'Debug', "mgtCommand : Off for Tuya Switches Gang/EPout: %s" %EPout)
+            tuya_switch_command( self, NWKID, '00', gang=int(EPout,16))
+            UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            return
+
         if DeviceType == 'LivoloSWL':
             livolo_OnOff( self, NWKID , EPout, 'Left', 'Off')
             UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
@@ -294,6 +301,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             self.log.logging( "Command", 'Debug', "mgtCommand : Disable Window Cover Calibration" )
             tuya_window_cover_calibration( self, NWKID, '00')
 
+
         else:
             # Remaining Slider widget
             if profalux: # Profalux are define as LvlControl but should be managed as Blind Inverted
@@ -336,6 +344,12 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
         self.log.logging( "Command", 'Debug', "mgtCommand : On for Device: %s EPout: %s Unit: %s DeviceType: %s ModelName: %s" %(
             NWKID, EPout, Unit, DeviceType, _model_name), NWKID)
+
+        if _model_name in ('TS0601-switch', 'TS0601-2Gangs-switch', 'TS0601-2Gangs-switch'):
+            self.log.logging( "Command", 'Debug', "mgtCommand : On for Tuya Switches Gang/EPout: %s" %EPout)
+            tuya_switch_command( self, NWKID, '01', gang=int(EPout,16))
+            UpdateDevice_v2(self, Devices, Unit, 0, "On",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            return
 
         if DeviceType == 'LivoloSWL':
             livolo_OnOff( self, NWKID , EPout, 'Left', 'On')

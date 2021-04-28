@@ -144,8 +144,8 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
 
 def tuya_response( self,Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data ):
 
-    self.log.logging( "Tuya", 'Debug', "tuya_response - Model: %s Nwkid: %s/%s dp: %02x data: %s"
-        %(_ModelName, NwkId, srcEp, dp, data),NwkId )
+    self.log.logging( "Tuya", 'Debug', "tuya_response - Model: %s Nwkid: %s/%s dp: %02x dt: %02x data: %s"
+        %(_ModelName, NwkId, srcEp, dp, datatype, data),NwkId )
 
     if _ModelName in ('TS0601-switch', 'TS0601-2Gangs-switch', 'TS0601-2Gangs-switch'):
         tuya_switch_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
@@ -232,13 +232,13 @@ def tuya_send_default_response( self, Nwkid, srcEp , sqn, cmd, orig_fcf):
 
 def tuya_switch_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     if dp == 0x01:
-        # Switch 1
+        # Switch 1 ( Right in case of 2gangs)
         self.log.logging( "Tuya", 'Log', "tuya_switch_response - Dp 0x01 Nwkid: %s/%s decodeDP: %04x data: %s"
             %(NwkId, srcEp, dp, data), NwkId)
         MajDomoDevice(self, Devices, NwkId, '01', '0006', data)
 
     elif dp == 0x02:
-        # Switch 2
+        # Switch 2  (Left in case of 2 Gangs)
         self.log.logging( "Tuya", 'Log', "tuya_switch_response - Dp 0x02 Nwkid: %s/%s decodeDP: %04x data: %s"
             %(NwkId, srcEp, dp, data), NwkId)
         MajDomoDevice(self, Devices, NwkId, '02', '0006', data)
@@ -269,15 +269,35 @@ def tuya_switch_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dst
         self.log.logging( "Tuya", 'Log', "tuya_switch_response - Unknown attribut Nwkid: %s/%s decodeDP: %04x data: %s"
             %(NwkId, srcEp, dp, data), NwkId)
 
-def tuya_switch_command( self, NwkId, onoff, gang=None):
+    #  Decode8002 - NwkId: b1ed Ep: 01 Cluster: ef00 GlobalCommand: False Command: 01 Data: 004c 0101 0001 00
+    #  raw_APS_request - ackIsDisabled: False Addr: b1ed Ep: 01 Cluster: ef00 ProfileId: 0104 Payload: 006b0b0100
+    #  tuya_send_default_response - b1ed/01 fcf: 0x00 ManufSpec: 0x00 Direction: 0x00 DisableDefault: 0x00
+    #  tuya_response - Model: TS0601-2Gangs-switch Nwkid: b1ed/01 dp: 01 data: 00
+    #  tuya_switch_response - Dp 0x01 Nwkid: b1ed/01 decodeDP: 0001 data: 00
+
+    #  Decode8002 - NwkId: b1ed Ep: 01 Cluster: ef00 GlobalCommand: False Command: 01 Data: 004d 0201 0001 00
+    #  raw_APS_request - ackIsDisabled: False Addr: b1ed Ep: 01 Cluster: ef00 ProfileId: 0104 Payload: 006c0b0100
+    #  tuya_send_default_response - b1ed/01 fcf: 0x00 ManufSpec: 0x00 Direction: 0x00 DisableDefault: 0x00
+    #  tuya_response - Model: TS0601-2Gangs-switch Nwkid: b1ed/01 dp: 02 data: 00
+    #  tuya_switch_response - Dp 0x02 Nwkid: b1ed/01 decodeDP: 0002 data: 00
+
+def tuya_switch_command( self, NwkId, onoff, gang=0x01):
     self.log.logging( "Tuya", 'Log', "tuya_switch_command - %s OpenClose: %s on gang: %s" %(NwkId, onoff, gang),NwkId )
     # determine which Endpoint
+    if gang  not in  (0x01, 0x02, 0x03):
+        self.log.logging( "Tuya", 'Error', "tuya_switch_command - Unexpected Gang: %s" %gang)
+        return
+    if onoff  not in ( '00', '00'):
+        self.log.logging( "Tuya", 'Error', "tuya_switch_command - Unexpected OnOff: %s" %onoff)
+        return
+
     EPout = '01'
     sqn = get_and_inc_SQN( self, NwkId )
     cluster_frame = '11'
-    cmd = '00' # Command
-    action = '0101'
+    cmd = '00' # Command 
+    action = action = '%02x01' %gang # Data Type 0x01 - Bool
     data = onoff
+    self.log.logging( "Tuya", 'Log', "tuya_switch_command - action: %s data: %s" %(action, data))
     tuya_cmd( self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)   
 
 # Tuya TS0601 - Curtain

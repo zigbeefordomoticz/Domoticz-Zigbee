@@ -54,7 +54,8 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Man
 
     if srcnwkid not in self.ListOfDevices:
         return
-
+    self.log.logging( "inRawAPS", 'Debug', "inRawAps Nwkid: %s Ep: %s Cluster: %s ManufCode: %s Cmd: %s Data: %s" %(
+        srcnwkid, srcep, cluster, ManufacturerCode, Command, Data)  )
     if cluster == '0020': # Poll Control ( Not implemented in firmware )
         #Domoticz.Log("Cluster 0020 -- POLL CLUSTER")
         receive_poll_cluster( self, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, ManufacturerCode, Command, Data )
@@ -161,19 +162,27 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Man
 
     manuf = self.ListOfDevices[srcnwkid]['Manufacturer']
 
+    self.log.logging( "inRawAPS", 'Debug', "inRawAps Nwkid: %s Ep: %s Cluster: %s ManufCode: %s manuf: %s manuf_name: %s Cmd: %s Data: %s" %(
+        srcnwkid, srcep, cluster, ManufacturerCode, manuf, manuf_name, Command, Data)  )
+
+    func = None
     if manuf in CALLBACK_TABLE:
-        #Domoticz.Log("Found in CALLBACK_TABLE")
+        #self.log.logging( "inRawAPS", 'Debug',"Found in CALLBACK_TABLE")
         func = CALLBACK_TABLE[ manuf ]
-        func( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, payload)
-
+        #func( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, payload)
     elif manuf_name in CALLBACK_TABLE2:
-        #Domoticz.Log("Found in CALLBACK_TABLE2")
+        #self.log.logging( "inRawAPS", 'Debug',"Found in CALLBACK_TABLE2")
         func = CALLBACK_TABLE2[manuf_name]
-        func( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, payload)
-
+        #func( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, payload)
     elif manuf_name in TUYA_MANUFACTURER_NAME:
-        tuyaReadRawAPS(self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, payload )
-
+        func = tuyaReadRawAPS
     else:
         Domoticz.Log("inRawAps %s/%s Cluster %s Manuf: %s Command: %s Data: %s Payload: %s"
-            %(srcnwkid, srcep, cluster,  ManufacturerCode, Command, Data, payload))
+            %(srcnwkid, srcep, cluster,  ManufacturerCode, Command, Data, payload))  
+
+    if func:
+        func(self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, payload )
+
+
+
+
