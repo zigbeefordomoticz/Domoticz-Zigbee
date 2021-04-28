@@ -287,7 +287,7 @@ def tuya_switch_command( self, NwkId, onoff, gang=0x01):
     if gang  not in  (0x01, 0x02, 0x03):
         self.log.logging( "Tuya", 'Error', "tuya_switch_command - Unexpected Gang: %s" %gang)
         return
-    if onoff  not in ( '00', '00'):
+    if onoff  not in ( '00', '01'):
         self.log.logging( "Tuya", 'Error', "tuya_switch_command - Unexpected OnOff: %s" %onoff)
         return
 
