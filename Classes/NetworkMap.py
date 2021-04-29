@@ -192,6 +192,11 @@ def is_a_router( self, nwkid):
         return True
     if nwkid not in self.ListOfDevices:
         return False
+        
+    if 'Model' in self.ListOfDevices[nwkid] and \
+                self.ListOfDevices[nwkid]['Model'] in ( 'TI0001', 'TS0011', 'TS0013', 'TS0601-switch', 'TS0601-2Gangs-switch'):
+        return False
+
     if 'LogicalType' in self.ListOfDevices[nwkid]:
         if self.ListOfDevices[nwkid]['LogicalType'] == 'Router':
             return True

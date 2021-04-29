@@ -672,8 +672,8 @@ def ReArrangeMacCapaBasedOnModel( self, nwkid, inMacCapa):
     if 'Model' not in self.ListOfDevices[nwkid]:
         return inMacCapa
 
-    # Convert battery annouced devices to main powered
-    if self.ListOfDevices[nwkid]['Model'] in ( 'TI0001', 'TS0011', 'TS0013'):
+    # Convert battery annouced devices to main powered / Make sure that you do the reverse n NetworkMap
+    if self.ListOfDevices[nwkid]['Model'] in ( 'TI0001', 'TS0011', 'TS0013', 'TS0601-switch', 'TS0601-2Gangs-switch'):
         # Livol Switch, must be converted to Main Powered
         # Patch some status as Device Annouced doesn't provide much info
         self.ListOfDevices[nwkid]['LogicalType'] = 'Router'
@@ -732,7 +732,7 @@ def mainPoweredDevice( self, nwkid):
                                                   'lumi.remote.b686opcn01-bulb', 'lumi.remote.b486opcn01-bulb', 'lumi.remote.b286opcn01-bulb'):
             mainPower = False
 
-        if self.ListOfDevices[nwkid]['Model'] in ( 'TI0001', 'TS0011'):
+        if self.ListOfDevices[nwkid]['Model'] in ( 'TI0001', 'TS0011', 'TS0601-switch', 'TS0601-2Gangs-switch'):
             mainPower = True
 
     return mainPower
@@ -1134,6 +1134,9 @@ def clean_old_datastruct(self,DeviceAttribute, key , endpoint, clusterId, Attrib
 
 def is_ack_tobe_disabled( self, key ):
     #ackDisableOrEnable
+    # If Pairing in progress keep Ack
+    # If Battery device keep Ack
+
 
     return (
         ( 'PairingInProgress' not in self.ListOfDevices[key] or not self.ListOfDevices[key]['PairingInProgress'] )
