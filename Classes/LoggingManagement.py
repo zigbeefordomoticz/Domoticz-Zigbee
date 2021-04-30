@@ -16,7 +16,7 @@ import json
 from datetime import datetime
 import threading
 import time
-from queue import Queue
+from queue import Queue, PriorityQueue
 
 class LoggingManagement:
 
@@ -97,7 +97,7 @@ class LoggingManagement:
         if self.logging_queue is None:
             Domoticz.Error("closeLogFile - logging_queue is None")
             return
-        self.logging_queue.put( 'QUIT' )
+        self.logging_queue.put( [ time.time(), 'QUIT'] )
         self.logging_thread.join()
         del self.logging_thread
         self.logging_thread = None
@@ -129,7 +129,7 @@ class LoggingManagement:
 
     def logging( self, module, logType, message, nwkid=None, context=None):
         if self.logging_thread and self.logging_queue:
-            logging_tupple = [ threading.current_thread().name, module, logType, message, nwkid, context ]
+            logging_tupple = [ time.time(), threading.current_thread().name, module, logType, message, nwkid, context ]
             self.logging_queue.put( logging_tupple )
         else:
             Domoticz.Log("%s" %message)
@@ -295,7 +295,7 @@ def start_logging_thread( self ):
         Domoticz.Error("start_logging_thread - Looks like logging_thread already started !!!")
         return
 
-    self.logging_queue = Queue()
+    self.logging_queue = PriorityQueue()
     self.logging_thread = threading.Thread( name="ZiGateLogging_%s" %self.HardwareID,  target=logging_thread,  args=(self,))
     self.logging_thread.start()
         
@@ -308,11 +308,13 @@ def logging_thread( self ):
         # which indicate plugin shutdown   
         data = None
         logging_tupple = self.logging_queue.get()
-        if logging_tupple == 'QUIT':
-            Domoticz.Log("logging_thread Exit requested")
-            break
-        elif len(logging_tupple) == 6:
-            thread_name, module, logType, message, nwkid, context = logging_tupple
+        if len(logging_tupple) == 2:
+            timing, command = logging_tupple
+            if command == 'QUIT':
+                Domoticz.Log("logging_thread Exit requested")
+                break
+        elif len(logging_tupple) == 7:
+            timing, thread_name, module, logType, message, nwkid, context = logging_tupple
             if logType == 'Error':
                 loggingError( self, thread_name, module, message, nwkid, context)
             elif logType == 'Debug':
