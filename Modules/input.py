@@ -859,27 +859,17 @@ def Decode8014(self, Devices, MsgData, MsgLQI):  # "Permit Join" status response
 
     prev = self.Ping["Permit"]
 
-    if Status == "00":
-        #if self.permitTojoin["Starttime"] == 0 and self.pluginconf.pluginConf['resetPermit2Join']:
-        #    # First Status after plugin start
-        #    # Let's force a Permit Join of Duration 0
-        #    ZigatePermitToJoin(self, 0)
-        self.permitTojoin["Starttime"] = timestamp
+    _to_notify = ((self.Ping["Permit"] is None) or (self.permitTojoin["Starttime"] >= timestamp - 240 ))
 
-        if (self.Ping["Permit"] is None) or (
-            self.permitTojoin["Starttime"] >= timestamp - 240
-        ):
-            self.log.logging( "Input", "Status", "Accepting new Hardware: Disable")
+    if Status == "00":
+        if ( prev != "Off"):
+            self.log.logging( "Input", "Status", "Accepting new Hardware: Disable (Off)")
         self.permitTojoin["Duration"] = 0
         self.Ping["Permit"] = "Off"
+        self.permitTojoin["Starttime"] = timestamp
 
     elif Status == "01":
-        if (self.Ping["Permit"] is None) or (
-            self.permitTojoin["Starttime"] >= timestamp - 240
-        ):
-            self.log.logging( "Input", "Status", "Accepting new Hardware: On")
         self.Ping["Permit"] = "On"
-
         if self.permitTojoin["Duration"] == 0:
             # In case 'Duration' is unknown or set to 0 and then, we have a Permit to Join, we are most-likely in the case of
             # a restart of the plugin.
@@ -887,29 +877,17 @@ def Decode8014(self, Devices, MsgData, MsgLQI):  # "Permit Join" status response
             # we will receive a permit Off
             self.permitTojoin["Duration"] = 254
             self.permitTojoin["Starttime"] = timestamp
+        if ( prev != "On"):
+            self.log.logging( "Input", "Status", "Accepting new Hardware: Enable (On)")
     else:
         Domoticz.Error("Decode8014 - Unexpected value " + str(MsgData))
 
-    self.log.logging( 
-        "Input",
-        "Debug",
-        "---> self.permitTojoin['Starttime']: %s" % self.permitTojoin["Starttime"],
-        "ffff",
-    )
-    self.log.logging( 
-        "Input",
-        "Debug",
-        "---> self.permitTojoin['Duration'] : %s" % self.permitTojoin["Duration"],
-        "ffff",
-    )
+    self.log.logging( "Input", "Debug", "---> self.permitTojoin['Starttime']: %s" % self.permitTojoin["Starttime"], "ffff", )
+    self.log.logging( "Input", "Debug", "---> self.permitTojoin['Duration'] : %s" % self.permitTojoin["Duration"], "ffff", )
     self.log.logging( "Input", "Debug", "---> Current time                  : %s" % timestamp, "ffff")
     self.log.logging( "Input", "Debug", "---> self.Ping['Permit']  (prev)   : %s" % prev, "ffff")
-    self.log.logging( 
-        "Input",
-        "Debug",
-        "---> self.Ping['Permit']  (new )   : %s" % self.Ping["Permit"],
-        "ffff",
-    )
+    self.log.logging( "Input", "Debug", "---> self.Ping['Permit']  (new )   : %s" % self.Ping["Permit"], "ffff", )
+    self.log.logging( "Input", "Debug", "---> _to_notify                    : %s" % _to_notify, "ffff", )
 
     self.Ping["TimeStamp"] = int(time.time())
     self.Ping["Status"] = "Receive"
