@@ -364,9 +364,9 @@ def GetType(self, Addr, Ep):
     if _Model != {} and _Model in list(self.DeviceConf.keys()):
         # verifie si le model a ete detecte et est connu dans le fichier DeviceConf.txt
         if Ep in self.DeviceConf[ _Model ]['Ep']:
-            Domoticz.Log( "Ep: %s found in DeviceConf" %Ep)
+            self.log.logging( "Widget", "Debug",  "Ep: %s found in DeviceConf" %Ep)
             if 'Type' in self.DeviceConf[ _Model ]['Ep'][Ep]:
-                Domoticz.Log(" 'Type' entry found inf DeviceConf")
+                self.log.logging( "Widget", "Debug", " 'Type' entry found inf DeviceConf")
                 if self.DeviceConf[ _Model ]['Ep'][Ep]['Type'] != "":
                     self.log.logging( "Widget", "Debug", "GetType - Found Type in DeviceConf : %s" %self.DeviceConf[ _Model ]['Ep'][Ep]['Type'], Addr)
                     Type = self.DeviceConf[ _Model ]['Ep'][Ep]['Type']
