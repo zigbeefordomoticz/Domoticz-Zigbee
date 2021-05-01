@@ -195,7 +195,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 self.log.logging( "Widget", "Debug", "------>  Thermostat Setpoint: %s %s" %(0,setpoint), NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
 
-        if 'Analog' in ClusterType: # Analog Value from Analog Input cluster
+        if 'Analog' in ClusterType and model_name not in ( 'lumi.sensor_cube.aqgl01', 'lumi.sensor_cube'): # Analog Value from Analog Input cluster
             UpdateDevice_v2(self, Devices, DeviceUnit, 0, value, BatteryLevel, SignalLevel)
 
         if 'Valve' in ClusterType: # Valve Position 
@@ -917,7 +917,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 nValue, sValue = getDimmerLevelOfColor( self, value)
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(sValue), BatteryLevel, SignalLevel, Color_)
 
-        if 'XCube' in ClusterType: # XCube Aqara or Xcube
+        if ('XCube' in ClusterType) or ('Analog' in ClusterType and model_name in ( 'lumi.sensor_cube.aqgl01', 'lumi.sensor_cube' )): # XCube Aqara or Xcube
             if WidgetType == "Aqara":
                 self.log.logging( "Widget", "Debug", "-------->  XCube Aqara Ep: %s Attribute_: %s Value: %s = " 
                     %( Ep, Attribute_, value ), NWKID)
