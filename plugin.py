@@ -260,7 +260,7 @@ class BasePlugin:
         self.HardwareID = (Parameters["HardwareID"])
         self.Key = (Parameters["Key"])
         self.transport = Parameters["Mode1"]
-        Domoticz.Log("DomoticzVersion: %s" %Parameters["DomoticzVersion"])      
+        Domoticz.Status("DomoticzVersion: %s" %Parameters["DomoticzVersion"])      
         lst_version = Parameters["DomoticzVersion"].split(' ')
 
         if len(lst_version) == 1:
@@ -269,7 +269,7 @@ class BasePlugin:
             self.DomoticzBuild = 0
             self.DomoticzMajor = int(major)
             self.DomoticzMinor = int(minor)
-            Domoticz.Log("Major: %s Minor: %s" %(int(major), int(minor)))
+            #Domoticz.Log("Major: %s Minor: %s" %(int(major), int(minor)))
             self.VersionNewFashion = True
 
             if self.DomoticzMajor < 2020:

@@ -78,7 +78,7 @@ class IAS_Zone_Management:
 
     def setZigateIEEE(self, ZigateIEEE):
 
-        self.logging( 'Log', "setZigateIEEE - Set Zigate IEEE: %s" %ZigateIEEE)
+        self.logging( 'Debug', "setZigateIEEE - Set Zigate IEEE: %s" %ZigateIEEE)
         self.ZigateIEEE = ZigateIEEE
 
 

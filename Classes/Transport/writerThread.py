@@ -231,7 +231,7 @@ def domoticz_write_to_zigate( self, encoded_data):
 
 def reset_line_out( self ):
     if self._transp != "Wifi":
-        self.logging_send('Status',"Reset Serial Line OUT")
+        self.logging_send('Debug',"Reset Serial Line OUT")
         if self._connection:
             self._connection.reset_output_buffer()
 

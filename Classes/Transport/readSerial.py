@@ -32,7 +32,7 @@ def open_serial( self ):
     return True
 
 def serial_reset_line_in(self):
-    self.logging_receive('Status',"Reset Serial Line IN")
+    self.logging_receive('Debug',"Reset Serial Line IN")
     self._connection.reset_input_buffer()
     
 

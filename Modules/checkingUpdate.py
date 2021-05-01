@@ -18,11 +18,8 @@ import time
 import Domoticz
 
 def checkPluginVersion( branch ):
-
     import dns.resolver
-
-    Domoticz.Log("checkPluginVersion - Start request version")
-    
+    #Domoticz.Log("checkPluginVersion - Start request version")
     stableVersion = betaVersion = firmwareMajorVersion = firmwareMinorVersion = 0 
     try:
         zigateVersions = (dns.resolver.query( TXT_RECORD,"TXT", tcp=True, lifetime=1).response.answer[0][-1].strings[0]).decode('utf8')
@@ -30,7 +27,7 @@ def checkPluginVersion( branch ):
         Domoticz.Log("DNS error while checking Plugin and Firmware version: %s" %e)
         return ( 0, 0, 0)
 
-    Domoticz.Log("checkPluginVersion - Version record: %s Type: %s" %(str(zigateVersions), type(zigateVersions)))
+    #self.log.logging( 'Plugin', 'Debug', "checkPluginVersion - Version record: %s Type: %s" %(str(zigateVersions), type(zigateVersions)))
     if zigateVersions and str(zigateVersions) != '':
 
         stable, beta , firmwareMajor, firmwareMinor = zigateVersions.split(";")
@@ -39,8 +36,8 @@ def checkPluginVersion( branch ):
         label, firmwareMajorVersion = firmwareMajor.split("=")
         label, firmwareMinorVersion = firmwareMinor.split("=")
 
-    Domoticz.Debug("checkPluginVersion - Available Plugin Versions are, stable: %s , beta: %s" %(stableVersion, betaVersion))
-    Domoticz.Debug("checkPluginVersion - Available Firmware Version is, Major: %s , Minor: %s" %(firmwareMajorVersion, firmwareMinorVersion))
+    #Domoticz.Debug("checkPluginVersion - Available Plugin Versions are, stable: %s , beta: %s" %(stableVersion, betaVersion))
+    #Domoticz.Debug("checkPluginVersion - Available Firmware Version is, Major: %s , Minor: %s" %(firmwareMajorVersion, firmwareMinorVersion))
 
     if branch == 'stable':
         return ( stableVersion, firmwareMajorVersion, firmwareMinorVersion )
@@ -50,29 +47,27 @@ def checkPluginVersion( branch ):
         Domoticz.Error("checkPluginVersion - Unknown branch: %s" %branch)
 
 def checkPluginUpdate( currentVersion, availVersion):
-
     if availVersion == 0:
         return False
 
-    Domoticz.Debug("checkPluginUpdate - %s %s" %(currentVersion, availVersion))
+    #Domoticz.Debug("checkPluginUpdate - %s %s" %(currentVersion, availVersion))
     currentMaj, currentMin, currentUpd = currentVersion.split('.')
     availMaj, availMin, availUpd = availVersion.split('.')
 
     if availMaj > currentMaj:
-        Domoticz.Debug("checkPluginVersion - Upgrade available: %s" %availVersion)
+        #Domoticz.Debug("checkPluginVersion - Upgrade available: %s" %availVersion)
         return True
     elif availMaj == currentMaj:
         if ( availMin == currentMin and availUpd > currentUpd or availMin > currentMin ):
-            Domoticz.Debug("checkPluginVersion - Upgrade available: %s" %availVersion)
+            #Domoticz.Debug("checkPluginVersion - Upgrade available: %s" %availVersion)
             return True
     return False
 
 
 def checkFirmwareUpdate( currentMajorVersion, currentFirmwareVersion, availfirmMajor, availfirmMinor):
-
     if not (availfirmMinor and currentFirmwareVersion):
         return False
     if int(availfirmMinor,16) > int(currentFirmwareVersion,16):
-        Domoticz.Debug("checkFirmwareUpdate - Firmware update available")
+        #Domoticz.Debug("checkFirmwareUpdate - Firmware update available")
         return True
     return False

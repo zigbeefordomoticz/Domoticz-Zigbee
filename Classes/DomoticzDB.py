@@ -211,14 +211,13 @@ class DomoticzDB_Hardware:
                 value = self.dbCursor.fetchone()
             except:
                 value = None
-            Domoticz.Log("LogLevel value: %s" %value)
             if value is None:
                 self.logging(  "Log", "Dz LogLevel --> Unknown !!!" )
                 self.dbConn.commit()
                 self.closeDB()
                 return None
-            else:
-                self.logging(  "Log", "Dz LogLevel --> Value: %s" %value)
+            #else:
+            #    self.logging(  "Log", "Dz LogLevel --> Value: %s" %value)
             self.dbConn.commit()
             self.closeDB()
             return value
