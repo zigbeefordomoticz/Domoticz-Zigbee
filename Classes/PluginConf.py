@@ -52,7 +52,10 @@ SETTINGS = {
     },
 
     'WebInterface': {'Order': 4, 'param': {
+        'displaySibling':  {'type': 'bool', 'default': 0,       'current': None, 'restart': 0, 'hidden': False, 'Advanced': False}, 
         'Lang':            {'type': 'str',  'default': 'en-US', 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
+        'numTopologyReports': {'type': 'int',  'default': 4,   'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
+        'numEnergyReports':   {'type': 'int',  'default': 4,   'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
         'enableGzip':      {'type': 'bool', 'default': 1,       'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
         'enableDeflate':   {'type': 'bool', 'default': 1,       'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
         'enableChunk':     {'type': 'bool', 'default': 1,       'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
@@ -84,8 +87,6 @@ SETTINGS = {
     'ZigateConfiguration': {'Order': 7, 'param': {
         'blueLedOnOff':              {'type': 'bool', 'default': 1,    'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
         'pingDevicesFeq':            {'type': 'int', 'default': 3600,  'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        
-        
         'resetPermit2Join':          {'type': 'bool', 'default': 1,    'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
         'Ping':                      {'type': 'bool', 'default': 1,    'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
         'allowRemoveZigateDevice':   {'type': 'bool', 'default': 1,    'current': None, 'restart': 0, 'hidden': True, 'Advanced': True},
@@ -207,9 +208,6 @@ SETTINGS = {
 
     # Others
     'Others': {'Order': 13, 'param': {
-        'numTopologyReports':        {'type': 'int',  'default': 4,   'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
-        'displaySibling':       {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True}, 
-        'numEnergyReports':          {'type': 'int',  'default': 4,   'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
         'TradfriKelvinStep':         {'type': 'int',  'default': 51,  'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
         'AqaraOppleBulbMode':        {'type': 'bool', 'default': 0,   'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
         'vibrationAqarasensitivity': {'type': 'list',
@@ -226,8 +224,9 @@ SETTINGS = {
 
     # Experimental
     'Experimental': {'Order': 15, 'param': {    
-        'disabledDefaultResponseFirmware':       {'type': 'bool', 'default': 0, 'current': None, 'restart': 1, 'hidden': True, 'Advanced': True},   
-        'DropBadAnnoucement':    {'type': 'bool', 'default': 1, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': True},    
+         
+        'forceAckOnZCL':         {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'DropBadAnnoucement':    {'type': 'bool', 'default': 1, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},    
         'AnnoucementV0':         {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
         'AnnoucementV1':         {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
         'AnnoucementV2':         {'type': 'bool', 'default': 1, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
@@ -237,7 +236,8 @@ SETTINGS = {
         'XiaomiLeave':           {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
         'rebindLivolo':          {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': False},
         'allowAutoPairing':      {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
-        'forceAckOnZCL':         {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'disabledDefaultResponseFirmware':       {'type': 'bool', 'default': 0, 'current': None, 'restart': 1, 'hidden': True, 'Advanced': True},  
+        
 
         # Just for compatibility keep it but hidden ( move to Custom device 'Param' section)
         'pollingPhilips':   {'type': 'int', 'default': 0,     'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
