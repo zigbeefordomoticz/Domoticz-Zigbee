@@ -457,6 +457,9 @@ def readXiaomiCluster( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId
     if sPower != '':
         # Instant Power
         power = (struct.unpack('f',struct.pack('>I',int(sPower,16)))[0])
+        if power > 0x7FFFFFFFFFFFFFFF:
+            self.log.logging( "Lumi", 'Eror',"ReadCluster - %s/%s Saddr: %s sPower %s Power %s (Overflow)" %(MsgClusterId, MsgAttrID, MsgSrcAddr, sPower, power))
+            return
         self.log.logging( "Lumi", 'Debug',"ReadCluster - %s/%s Saddr: %s sPower %s Power %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, sPower, power))
         store_lumi_attribute( self, MsgSrcAddr, 'Power', power )
         if model in XIAOMI_POWERMETER_EP:
