@@ -29,17 +29,18 @@ def main():
         sys.exit(2)
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hs:b:f:", ["help", "serial=","baud=","firmware="])
+        opts, args = getopt.getopt(sys.argv[1:], "hs:b:f:e", ["help", "serial=","baud=","firmware=","erase EEPROM"])
     except getopt.GetoptError as err:
         # print help information and exit:
         usage() # will print something like "option -a not recognized"
         sys.exit(2)
 
-    if len(sys.argv) != 7:
+    if len(sys.argv) not in (7,8):
         usage()
         sys.exit(2)
 	
 	
+    erase_eeprom = False
     for o, a in opts:
         if o == "-b":
             speed = a
@@ -50,6 +51,8 @@ def main():
             serial = a
         elif o in ("-f", "--firmware"):
             firmware = a
+        elif o in ("-e", "--erase-eeprom"):
+            erase_eeprom = True
         else:
             assert False, "unhandled option"
     
@@ -62,6 +65,8 @@ def main():
 
 
     command = JENNIC_MODULE_PROGRAMMER + " -V 6 -P " + speed + " -f " + firmware + " -s " + serial
+    if erase_eeprom:
+        command += " -e"
     print(command)
     os.system(command)
     
