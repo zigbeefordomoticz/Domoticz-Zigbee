@@ -72,7 +72,7 @@ int iVerbosity = 1;
 #ifndef VERSION
 #error Version is not defined!
 #else
-const char *Version = "0.6 (r" VERSION ")";
+const char *Version = "0.7(r" VERSION ")";
 #endif
 
 
@@ -97,6 +97,7 @@ void print_usage_exit(char *argv[])
     fprintf(stderr, "    -V --verbosity     <verbosity>     Verbosity level. Increses amount of debug information. Default 0.\n");
     fprintf(stderr, "    -I --initialbaud   <rate>          Set initial baud rate\n");
     fprintf(stderr, "    -P --programbaud   <rate>          Set programming baud rate\n");
+	fprintf(stderr, "    -e --erase                         Erase EEProm.\n");
     fprintf(stderr, "    -f --firmware      <firmware>      Load module flash with the given firmware file.\n");
     fprintf(stderr, "    -v --verify                        Verify image. If specified, verify the image programmedwas loaded correctly.\n");
     fprintf(stderr, "    -m --mac           <MAC Address>   Set MAC address of device. If this is not specified, the address is read from flash.\n");
@@ -112,7 +113,7 @@ int main(int argc, char *argv[])
     
     tsFW_Info sFW_Info;
     int iVerify = 0;
-
+	int iErase = 0;
     printf("JennicModuleProgrammer Version: %s\n", Version);
     
     {
@@ -123,6 +124,7 @@ int main(int argc, char *argv[])
             {"initialbaud",             required_argument,  NULL,       'I'},
             {"programbaud",             required_argument,  NULL,       'P'},
             {"serial",                  required_argument,  NULL,       's'},
+			{"erase",                   no_argument,        NULL,       'e'},
             {"firmware",                required_argument,  NULL,       'f'},
             {"verify",                  no_argument,        NULL,       'v'},
             {"mac",                     required_argument,  NULL,       'm'},
@@ -131,7 +133,7 @@ int main(int argc, char *argv[])
         signed char opt;
         int option_index;
         
-        while ((opt = getopt_long(argc, argv, "hs:V:f:vI:P:m:", long_options, &option_index)) != -1) 
+        while ((opt = getopt_long(argc, argv, "hs:V:f:vI:P:m:e", long_options, &option_index)) != -1) 
         {
             switch (opt) 
             {
@@ -145,6 +147,9 @@ int main(int argc, char *argv[])
                     break;
                 case 'v':
                     iVerify = 1;
+                    break;
+				case 'e':
+                    iErase = 1;
                     break;
                 case 'I':
                 {
@@ -297,6 +302,19 @@ int main(int argc, char *argv[])
             return -1;
         }
     }
+	
+	if (iErase)
+	{
+		
+		/*if (iFW_Open(&sFW_Info, (char *)"FlashProgrammerExtension_JN5168.bin"))
+        {
+            printf("Error opening FlashProgrammerExtension_JN5168.bin  \n");
+            return -1;
+        }*/
+		BL_DownloadExtensionToRamBeforeErase(iUartFd,&sFW_Info);
+		
+		printf("Erase EEPROM \n");
+	}
     
     printf("Success\n");
     return 0;

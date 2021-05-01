@@ -61,6 +61,7 @@
 
 #include "uart.h"
 #include "JN51xx_BootLoader.h"
+#include "FlashProgrammerExtension_JN5168.bin.h"
 #include "ChipID.h"
 #include "dbg.h"
 
@@ -137,6 +138,15 @@ typedef enum
     
     E_BL_MSG_TYPE_GET_CHIPID_REQUEST                    = 0x32,
     E_BL_MSG_TYPE_GET_CHIPID_RESPONSE                   = 0x33,
+	 /* Flash programmer extension commands */
+    E_BL_MSG_TYPE_PDM_ERASE_REQUEST                     = 0x36,
+    E_BL_MSG_TYPE_PDM_ERASE_RESPONSE                    = 0x37,
+    E_BL_MSG_TYPE_PROGRAM_INDEX_SECTOR_REQUEST          = 0x38,
+    E_BL_MSG_TYPE_PROGRAM_INDEX_SECTOR_RESPONSE         = 0x39,
+    E_BL_MSG_TYPE_EEPROM_READ_REQUEST                   = 0x3A,
+    E_BL_MSG_TYPE_EEPROM_READ_RESPONSE                  = 0x3B,
+    E_BL_MSG_TYPE_EEPROM_WRITE_REQUEST                  = 0x3C,
+    E_BL_MSG_TYPE_EEPROM_WRITE_RESPONSE                 = 0x3D,
 } __attribute ((packed)) teBL_MessageType;
 
 
@@ -185,6 +195,7 @@ static teBL_Response eBL_Request(int iUartFd, int iTimeoutMicroseconds, teBL_Mes
 
 static int iBL_WriteMessage(int iUartFd, teBL_MessageType eType, uint8_t u8HeaderLength, uint8_t *pu8Header, uint8_t u8Length, uint8_t *pu8Data);
 static teBL_Response eBL_ReadMessage(int iUartFd, int iTimeoutMicroseconds, teBL_MessageType *peType, uint8_t *pu8Length, uint8_t *pu8Data);
+
 
 /****************************************************************************/
 /***        Exported Variables                                            ***/
@@ -767,7 +778,25 @@ teStatus BL_eSetBaudrate(int iUartFd, uint32_t u32Baudrate)
     return E_STATUS_OK;
 }
 
+teStatus BL_EEPROMErase(int iUartFd, uint32_t iEraseAll)
+{
+    
+    teBL_Response eResponse = 0;
+    teBL_MessageType eRxType = 0;
+	uint8_t au8CmdBuffer[1];
+	uint8_t u8RxDataLen = 0;
+    uint8_t au8Buffer[6];
 
+    au8CmdBuffer[0] = (uint8_t)(iEraseAll) & 0xff;
+    eResponse = eBL_Request(iUartFd, BL_TIMEOUT_1S, E_BL_MSG_TYPE_PDM_ERASE_REQUEST, 1, au8CmdBuffer, 0, NULL, &eRxType, &u8RxDataLen, au8Buffer);
+    if(eResponse != E_BL_RESPONSE_OK)
+    {
+        DBG_vPrintf(TRACE_BOOTLOADER, "%s: Response %02x\n", __FUNCTION__, eResponse);
+        return E_STATUS_ERROR;
+    }
+
+	return E_STATUS_OK;
+}
 
 #if 0
 /****************************************************************************
@@ -912,6 +941,14 @@ int iBL_DownloadFirmwareToRam(tsFW_Info *psFW_Info, uint64_t *pu64MAC_Address)
 	return(0);
 }
 #endif
+
+
+
+
+
+
+
+
 
 /****************************************************************************
  *
@@ -1108,10 +1145,10 @@ static int iBL_RunRAM(int iUartFd, uint32_t u32Address)
 	teBL_Response eResponse = 0;
 	teBL_MessageType eRxType = 0;
 
-	au8CmdBuffer[0] = (uint8_t)(u32Address >> 0) & 0xff;
-	au8CmdBuffer[1] = (uint8_t)(u32Address >> 8) & 0xff;
-	au8CmdBuffer[2] = (uint8_t)(u32Address >> 16) & 0xff;
-	au8CmdBuffer[3] = (uint8_t)(u32Address >> 24) & 0xff;
+	au8CmdBuffer[3] = (uint8_t)(u32Address >> 0) & 0xff;
+	au8CmdBuffer[2] = (uint8_t)(u32Address >> 8) & 0xff;
+	au8CmdBuffer[1] = (uint8_t)(u32Address >> 16) & 0xff;
+	au8CmdBuffer[0] = (uint8_t)(u32Address >> 24) & 0xff;
 
 	eResponse = eBL_Request(iUartFd, BL_TIMEOUT_1S, E_BL_MSG_TYPE_RAM_RUN_REQUEST, 4, au8CmdBuffer, 0, NULL, &eRxType, &u8RxDataLen, NULL);
 	if(eResponse != E_BL_RESPONSE_OK || eRxType != E_BL_MSG_TYPE_RAM_RUN_RESPONSE)
@@ -1357,7 +1394,6 @@ static teBL_Response eBL_Request(int iUartFd, int iTimeoutMicroseconds, teBL_Mes
 	{
 		return(E_BL_RESPONSE_ERROR);
 	}
-
 	/* Get the response to the request */
 	return(eBL_ReadMessage(iUartFd, iTimeoutMicroseconds, peRxType, pu8RxLength, pu8RxData));
 }
@@ -1402,11 +1438,13 @@ static int iBL_WriteMessage(int iUartFd, teBL_MessageType eType, uint8_t u8Heade
 	/* Message payload */
 	memcpy(&au8Msg[2 + u8HeaderLength], pu8Data, u8Length);
 
+	DBG_vPrintf(TRACE_BOOTLOADER, "\nSend Data :");
 	for(n = 0; n < u8HeaderLength + u8Length + 2; n++)
 	{
 		u8CheckSum ^= au8Msg[n];
+		DBG_vPrintf(TRACE_BOOTLOADER, "%02x ", au8Msg[n]);
 	}
-
+    DBG_vPrintf(TRACE_BOOTLOADER, "%02x \r\n",u8CheckSum);
 	/* Message checksum */
 	au8Msg[u8HeaderLength + u8Length + 2] = u8CheckSum;
 
@@ -1449,7 +1487,7 @@ static teBL_Response eBL_ReadMessage(int iUartFd, int iTimeoutMicroseconds, teBL
 		return(E_BL_RESPONSE_NO_RESPONSE);
 	}
 
-//	DBG_vPrintf(TRACE_BOOTLOADER, "Got length %d\n", u8Length);
+	DBG_vPrintf(TRACE_BOOTLOADER, "Got length %d\n", u8Length);
 
 	/* Add length to checksum */
 	u8CalculatedCheckSum ^= u8Length;
@@ -1482,20 +1520,20 @@ static teBL_Response eBL_ReadMessage(int iUartFd, int iTimeoutMicroseconds, teBL
 	}
 
 	/* Add rest of message to checksum */
-//	DBG_vPrintf(TRACE_BOOTLOADER, "Got Data ");
+	DBG_vPrintf(TRACE_BOOTLOADER, "Got Data ");
 	for(n = 0; n < u8Length; n++)
 	{
-//		DBG_vPrintf(TRACE_BOOTLOADER, "%02x ", au8Msg[n]);
+		DBG_vPrintf(TRACE_BOOTLOADER, "%02x ", au8Msg[n]);
 		u8CalculatedCheckSum ^= au8Msg[n];
 	}
-//	DBG_vPrintf(TRACE_BOOTLOADER, "\n");
+	DBG_vPrintf(TRACE_BOOTLOADER, "\n");
 
 	if(u8CalculatedCheckSum != 0x00)
 	{
 		DBG_vPrintf(TRACE_BOOTLOADER, "Checksum bad, got %02x expected %02x\n", u8CalculatedCheckSum, 0);
 		return(E_BL_RESPONSE_CRC_ERROR);
 	}
-
+	
 	*peType = au8Msg[0];
 	*pu8Length = u8Length - 3;
 	eResponse = au8Msg[1];
@@ -1530,6 +1568,87 @@ static const char *pcGetName (tsIDNameLookup *psIDNameLookup, int iID)
     return "Unknown";
 }
 #endif
+
+
+/****************************************************************************
+ *
+ * NAME: BL_DownloadExtensionToRamBeforeErase
+ *
+ * DESCRIPTION:
+ *	
+ *	
+ *
+ * PARAMETERS: 	Name        	RW  Usage
+ * 				pu8Firmware		R	Pointer to firmware image to download
+ * 				pu64Address     R   Pointer to MAC Address. If NULL, read from flash.
+ *
+ * RETURNS:
+ * int			0 if success
+ * 				-1 if an error occurred
+ *
+ ****************************************************************************/
+int BL_DownloadExtensionToRamBeforeErase(int iUartFd, tsFW_Info *psFW_Info)
+{
+	int n;
+	uint8_t u8ChunkSize;
+
+
+	DBG_vPrintf(TRACE_BOOTLOADER, "\nText Start 0x%08x - Len %d bytes", psFW_Info->u32TextSectionLoadAddress, psFW_Info->u32TextSectionLength);
+	DBG_vPrintf(TRACE_BOOTLOADER, "\nBSS  Start 0x%08x - Len %d bytes", psFW_Info->u32BssSectionLoadAddress, psFW_Info->u32BssSectionLength);
+	DBG_vPrintf(TRACE_BOOTLOADER, "\nReset entry point 0x%08x", ntohl(psFW_Info->u32ResetEntryPoint));
+    DBG_vPrintf(TRACE_BOOTLOADER, "\nWake entry point 0x%08x",  ntohl(psFW_Info->u32WakeUpEntryPoint));
+        
+	for(n = 0; n < 0x0000097c;)
+    {
+        if((0x0000097c - n) > 128)
+        {
+            u8ChunkSize = 128;
+        }
+        else
+        {
+            u8ChunkSize = 0x0000097c - n;
+        }
+        
+        if(iBL_WriteRAM(iUartFd,0x04000400 + n, u8ChunkSize, FlashProgrammerExtension_JN5168_bin + n) == -1)
+        {
+            DBG_vPrintf(TRACE_BOOTLOADER, "\nProblem writing chunk");
+            return(-1);
+        }
+
+        DBG_vPrintf(TRACE_BOOTLOADER,"Wrote chunk length %d at address 0x%08x: 0x%08x\n", u8ChunkSize, 0x04000400 + n, ntohl(*((uint32_t*)(FlashProgrammerExtension_JN5168_bin + n))));
+        
+        if (1)
+        {
+            uint8_t au8Buffer[128 + 1];
+            if (iBL_ReadRAM(iUartFd,0x04000400 + n, u8ChunkSize, au8Buffer) == -1)
+            {
+                printf("Error reading at address 0x%08x\n", 0x04000400 + n);
+                return -1;
+            }
+            else
+            {
+                if (memcmp(FlashProgrammerExtension_JN5168_bin + n, au8Buffer, u8ChunkSize))
+                {
+                    printf("Data read at address 0x%08x is incorrect\n", 0x04000400 + n);
+                    return -1;
+                }
+            }
+        }
+        
+        n += u8ChunkSize;
+        
+        DBG_vPrintf(TRACE_BOOTLOADER, "Loading: %3d%%\n", (n * 100) / 0x0000097c);
+    }
+	DBG_vPrintf(TRACE_BOOTLOADER, "\nStarting module application");
+	iBL_RunRAM(iUartFd, 0x24050004);
+	BL_eSetBaudrate(iUartFd, 38400);
+	BL_EEPROMErase(iUartFd,1);
+	DBG_vPrintf(TRACE_BOOTLOADER, "\nErase OK");
+	iBL_RunRAM(iUartFd, 0x66000000);
+	
+	return(0);
+}
+
 
 /****************************************************************************/
 /***        END OF FILE                                                   ***/

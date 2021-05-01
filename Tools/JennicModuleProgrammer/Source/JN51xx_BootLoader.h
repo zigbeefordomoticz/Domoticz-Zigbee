@@ -105,6 +105,9 @@ typedef struct
 teStatus BL_eGetChipDetails(int iUartFd, tsChipDetails *psChipDetails);
 teStatus BL_eReprogram(int iUartFd, tsChipDetails *psChipDetails, tsFW_Info *psFWImage);
 teStatus BL_eSetBaudrate(int iUartFd, uint32_t u32Baudrate);
+teStatus BL_EEPROMErase(int iUartFd, uint32_t iEraseAll);
+
+int BL_DownloadExtensionToRamBeforeErase(int iUartFd,tsFW_Info *psFW_Info);
 
 /****************************************************************************/
 /***        Local Functions                                               ***/

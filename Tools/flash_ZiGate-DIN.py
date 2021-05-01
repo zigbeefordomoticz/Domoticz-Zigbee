@@ -34,7 +34,7 @@ def usage():
 	print("\033[1;31;40m")
 	print("**** Error ****")
 	print("\033[0;37;40m")
-	print("Usage : sudo python3 flash_ZiGate-DIN -s[SerialPort] -b[bauds] -f[firmware.bin]\n")
+	print("Usage : sudo python3 flash_ZiGate-DIN -s[SerialPort] -b[bauds] -f[firmware.bin] -e\n")
 	
 	
 def main():
@@ -48,19 +48,22 @@ def main():
     serial="/dev/ttyUSB0"
     firmware=""
 	
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], "hs:b:f:", ["help", "serial=","baud=","firmware="])
-    except getopt.GetoptError as err:
-        # print help information and exit:
-        usage() # will print something like "option -a not recognized"
-        sys.exit(2)
+    #try:
+    opts, args = getopt.getopt(sys.argv[1:], "hs:b:f:e", ["help", "serial=","baud=","firmware=","erase EEPROM"])
 
-    if len(sys.argv) != 7:
+    #except getopt.GetoptError as err:
+    #    # print help information and exit:
+    #    usage() # will print something like "option -a not recognized"
+
+    print("Options: %s" %opts)	
+
+    if len(sys.argv) not in ( 7, 8):
         usage()
         sys.exit(2)
 	
-	
+    erase_eeprom = False
     for o, a in opts:
+        print("o: %s, a: %s" %(o,a))
         if o == "-b":
             speed = a
         elif o in ("-h", "--help"):
@@ -70,6 +73,8 @@ def main():
             serial = a
         elif o in ("-f", "--firmware"):
             firmware = a
+        elif o in ("-e", "--erase-eeprom"):
+            erase_eeprom = True
         else:
             assert False, "unhandled option"
     
@@ -96,6 +101,8 @@ def main():
     ftdi_set_bitmode(dev, 0xCC)
 
     command = "./JennicModuleProgrammer/Build/JennicModuleProgrammer -V 6 -P "+speed+" -f "+firmware+" -s "+serial
+    if erase_eeprom:
+        command += " -e"
     os.system(command)
     
     print("\033[1;33;40m")
