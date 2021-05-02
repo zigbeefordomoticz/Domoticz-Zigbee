@@ -246,7 +246,7 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
     MsgManufCode = MsgData[18:22]
     nbAttribute = MsgData[22:24]
 
-    self.log.logging(  "Input", "Debug", "Decode0100 - Mode: %s NwkId: %s SrcEP: %s DstEp: %s ClusterId: %s Direction: %s ManufSpec: %s ManufCode: %s nbAttribute: %s"
+    self.log.logging(  "Input", "Log", "Decode0100 - Mode: %s NwkId: %s SrcEP: %s DstEp: %s ClusterId: %s Direction: %s ManufSpec: %s ManufCode: %s nbAttribute: %s"
         % (MsgSqn,MsgSrcAddr,MsgSrcEp,MsgDstEp,MsgClusterId,MsgDirection,MsgManufSpec,MsgManufCode,nbAttribute,),)
 
     updSQN(self, MsgSrcAddr, MsgSqn)
@@ -268,6 +268,9 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
 
         elif MsgClusterId == '0201' and ( manuf == '105e' or manuf_name == 'Schneider'):
             # Cluster Thermostat for Wiser
+            wiser_read_attribute_request( self, MsgSrcAddr, MsgSrcEp, MsgSqn, MsgClusterId, Attribute)
+
+        elif MsgClusterId == '0201' and ( manuf == '105e' or manuf_name == 'Schneider Electric'):
             wiser_read_attribute_request( self, MsgSrcAddr, MsgSrcEp, MsgSqn, MsgClusterId, Attribute)
 
         else:
@@ -492,7 +495,7 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
     updLQI(self, srcnwkid, MsgLQI)
 
     if MsgProfilID != "0104":
-        self.log.logging(  "debuginRawAPS", "Debug","Decode8002 - NwkId: %s Ep: %s Cluster: %s Payload: %s"
+        self.log.logging(  "inRawAPS", "Debug","Decode8002 - NwkId: %s Ep: %s Cluster: %s Payload: %s"
             % (srcnwkid, MsgSourcePoint, MsgClusterID, MsgPayload),)
         return
 
