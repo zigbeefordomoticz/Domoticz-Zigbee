@@ -97,10 +97,12 @@ def RetreiveSignalLvlBattery( self, NwkID):
     SignalLevel = DomoticzRSSI
 
     BatteryLevel = ''
-    if 'Battery' in self.ListOfDevices[NwkID] and self.ListOfDevices[NwkID]['Battery'] != {} and isinstance(self.ListOfDevices[NwkID]['Battery'], (int, float)):
-        self.log.logging( "Widget", 'Debug', "------>  NwkId: %s Battery: %s" %(NwkID,self.ListOfDevices[NwkID]['Battery'] ), NwkID)
-        BatteryLevel = int(round((self.ListOfDevices[NwkID]['Battery'])))
-
+    if 'Battery' in self.ListOfDevices[NwkID] and self.ListOfDevices[NwkID]['Battery'] != {}:
+        self.log.logging( "Widget", 'Debug', "------>  NwkId: %s Battery: %s Type: %s" %(NwkID,self.ListOfDevices[NwkID]['Battery'], type(self.ListOfDevices[NwkID]['Battery']) ), NwkID)
+        if isinstance(self.ListOfDevices[NwkID]['Battery'], (float)):
+            BatteryLevel = int(round((self.ListOfDevices[NwkID]['Battery'])))
+        if isinstance(self.ListOfDevices[NwkID]['Battery'], (int)):
+            BatteryLevel = self.ListOfDevices[NwkID]['Battery']
     if BatteryLevel == '' or (not isinstance(BatteryLevel, (int, float))):
         BatteryLevel = 255
 
