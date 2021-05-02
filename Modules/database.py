@@ -89,7 +89,7 @@ BUILD_ATTRIBUTES = (
     'Health',
     )
 
-MANUFACTURER_ATTRIBUTES = ( 'Legrand', 'Schneider', 'Lumi', 'CASA.IA' , 'Tuya')
+MANUFACTURER_ATTRIBUTES = ( 'Legrand', 'Schneider', 'Lumi', 'LUMI', 'CASA.IA' , 'Tuya')
 
 
 def _copyfile( source, dest, move=True ):
