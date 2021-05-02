@@ -103,6 +103,9 @@ def RetreiveSignalLvlBattery( self, NwkID):
             BatteryLevel = int(round((self.ListOfDevices[NwkID]['Battery'])))
         if isinstance(self.ListOfDevices[NwkID]['Battery'], (int)):
             BatteryLevel = self.ListOfDevices[NwkID]['Battery']
+    if BatteryLevel == '' and 'IASBattery' in self.ListOfDevices[NwkID] and isinstance(self.ListOfDevices[NwkID]['IASBattery'], int):
+        BatteryLevel = self.ListOfDevices[NwkID]['IASBattery']
+        
     if BatteryLevel == '' or (not isinstance(BatteryLevel, (int, float))):
         BatteryLevel = 255
 

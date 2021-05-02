@@ -87,6 +87,7 @@ BUILD_ATTRIBUTES = (
     'SQN', 
     'Stamp', 
     'Health',
+    'IASBattery'
     )
 
 MANUFACTURER_ATTRIBUTES = ( 'Legrand', 'Schneider', 'Lumi', 'LUMI', 'CASA.IA' , 'Tuya')

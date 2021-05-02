@@ -2830,9 +2830,9 @@ def Decode8401( self, Devices, MsgData, MsgLQI ):  # Reception Zone status chang
         # bit 3, battery status (0=Ok 1=to replace)
         iData = int(MsgZoneStatus, 16) & 8 >> 3  # Set batery level
         if iData == 0:
-            self.ListOfDevices[MsgSrcAddr]["Battery"] = "100"  # set to 100%
+            self.ListOfDevices[MsgSrcAddr]["IASBattery"] = "100"  # set to 100%
         else:
-            self.ListOfDevices[MsgSrcAddr]["Battery"] = "0"
+            self.ListOfDevices[MsgSrcAddr]["IASBattery"] = "0"
         if MsgEp == "02":
             iData = (
                 int(MsgZoneStatus, 16) & 1
@@ -2871,28 +2871,23 @@ def Decode8401( self, Devices, MsgData, MsgLQI ):  # Reception Zone status chang
                 )
                 MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0006", value)
         else:
-            self.log.logging( 
-                "Input",
-                "Debug",
-                "Decode8401 - PST03A-v2.2.5, unknow EndPoint : " + MsgEp,
-                MsgSrcAddr,
-            )
+            self.log.logging(  "Input", "Debug", "Decode8401 - PST03A-v2.2.5, unknow EndPoint : " + MsgEp, MsgSrcAddr, )
         return
     ## default
 
     if MsgSrcAddr not in self.ListOfDevices:
         return
         
-    alarm1 = int(MsgZoneStatus, 16) & 1
-    alarm2 = (int(MsgZoneStatus, 16) >> 1) & 1
-    tamper = (int(MsgZoneStatus, 16) >> 2) & 1
-    battery = (int(MsgZoneStatus, 16) >> 3) & 1
+    alarm1 =   int(MsgZoneStatus, 16) & 1
+    alarm2 =   (int(MsgZoneStatus, 16) >> 1) & 1
+    tamper =   (int(MsgZoneStatus, 16) >> 2) & 1
+    battery =  (int(MsgZoneStatus, 16) >> 3) & 1
     suprrprt = (int(MsgZoneStatus, 16) >> 4) & 1
     restrprt = (int(MsgZoneStatus, 16) >> 5) & 1
-    trouble = (int(MsgZoneStatus, 16) >> 6) & 1
-    acmain = (int(MsgZoneStatus, 16) >> 7) & 1
-    test = (int(MsgZoneStatus, 16) >> 8) & 1
-    battdef = (int(MsgZoneStatus, 16) >> 9) & 1
+    trouble =  (int(MsgZoneStatus, 16) >> 6) & 1
+    acmain =   (int(MsgZoneStatus, 16) >> 7) & 1
+    test =     (int(MsgZoneStatus, 16) >> 8) & 1
+    battdef =  (int(MsgZoneStatus, 16) >> 9) & 1
 
     if 'Ep' not in self.ListOfDevices[MsgSrcAddr]:
         return
@@ -2928,8 +2923,12 @@ def Decode8401( self, Devices, MsgData, MsgLQI ):  # Reception Zone status chang
     else:
         MajDomoDevice( self, Devices, MsgSrcAddr, MsgEp, '0009', '00')
         
-    # if battdef or battery:
-    #     self.ListOfDevices[MsgSrcAddr]["Battery"] = 1
+    if battdef:
+        self.log.logging(  "Input", "Log", "Decode8401 Low Battery or defective battery: Device: %s %s/%s" %( MsgSrcAddr,battdef , battery ), MsgSrcAddr)
+        self.ListOfDevices[MsgSrcAddr]["IASBattery"] = 1
+    else:
+        self.ListOfDevices[MsgSrcAddr]["IASBattery"] = 100  # set to 100%
+
 
     if "IAS" in self.ListOfDevices[MsgSrcAddr]:
         if "ZoneStatus" in self.ListOfDevices[MsgSrcAddr]["IAS"]: 
