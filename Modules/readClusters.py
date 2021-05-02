@@ -174,7 +174,8 @@ def ReadCluster(self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgCluster
             "0006": Cluster0006,
             "0008": Cluster0008,
             "0009": Cluster0009,
-            "0012": Cluster0012, 
+            "0012": Cluster0012,
+            "0019": Cluster0019, 
             "000c": Cluster000c,
             "0100": Cluster0100,
             "0101": Cluster0101, 
@@ -1268,11 +1269,50 @@ def Cluster0012( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, _modelName), MsgSrcAddr)
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  MsgClusterData )
 
-        
+def Cluster0019( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData , Source):
+
+    self.log.logging( "Cluster", 'Log', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" \
+        %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
+
+    checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,MsgClusterData)
+    if MsgAttrID == "0000": #UpgradeServerID
+        pass
+
+    elif MsgAttrID == "0001": # FileOffset
+        pass
+
+    elif MsgAttrID == "0002": # CurrentFileVersion
+        pass
+
+    elif MsgAttrID == "0003": # CurrentZigBeeStackVersion
+        pass
+  
+    elif MsgAttrID == "0004": # DownloadedFileVersion
+        pass
+
+    elif MsgAttrID == "0005": # DownloadedZigBeeStackversion
+        pass
+
+    elif MsgAttrID == "0006": # ImageUpgradeStatus
+        pass
+
+    elif MsgAttrID == "0007": # Manufacturer ID
+        pass
+
+    elif MsgAttrID == "0008": # Image type ID
+        pass
+
+    elif MsgAttrID == "0009": # MinimumBlockPeriod
+        pass
+
+    elif MsgAttrID == "000a": #Image Stamp
+        pass
+
+
 def Cluster0100( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData , Source):
 
     checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,MsgClusterData)
-    
+
     if MsgAttrID == "0000":
         self.log.logging( "Cluster", 'Debug', "ReadCluster 0100 - Shade Config: PhysicalClosedLimit: %s" %MsgClusterData, MsgSrcAddr)
     elif MsgAttrID == "0001":
@@ -2562,15 +2602,25 @@ def Cluster0b04( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 def Cluster0b05(  self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData , Source):
     self.log.logging( "Cluster", 'Debug', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" \
         %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)   
-    checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID,  MsgClusterData )
+    checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID,  decodeAttribute(self, MsgAttType, MsgClusterData, ) )
 
 
 # Cluster Manufacturer specifics
 def Clusterfe03(  self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData , Source):
     # Schneider Wiser (new)
+    # Cluster 0xfe03
+    # Manuf Id: 0x105e
+    # Attribut: 0x20
+    #  - UI,ButtonPressPlusDown
+    #  - UI,ScreenWake
+    #  - UI,ButtonPressMinusDown
+    #  - UI,ScreenSleep
+    #  - UI,ButtonPressCenterDown
+    #  - UI,ButtonPressPlusDown
+    #  - ENV,-32768,2637,4777
     self.log.logging( "Cluster", 'Debug', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" \
-        %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)   
-    checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID,  MsgClusterData )
+        %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, decodeAttribute(self, MsgAttType, MsgClusterData, )), MsgSrcAddr)   
+    checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID,  decodeAttribute(self, MsgAttType, MsgClusterData, ) )
 
 def Clusterfc00( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData , Source):
 
