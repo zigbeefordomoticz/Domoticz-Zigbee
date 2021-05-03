@@ -129,17 +129,15 @@ def processConfigureReporting( self, NWKID=None ):
                 # (1) 'ConfigureReporting' do not exist
                 # (2) 'ConfigureReporting' is empty
                 # (3) if reenforceConfigureReporting is enabled and it is time to do the work
-                if 'ConfigureReporting' in  self.ListOfDevices[key] and len(self.ListOfDevices[key]['ConfigureReporting']) !=0:
-                    if NWKID is None:
-                        if self.pluginconf.pluginConf['reenforceConfigureReporting']:
-                            if not is_time_to_perform_work(self, 'ConfigureReporting', key, Ep, cluster, now, (21 * 3600) ):
-                                self.log.logging( "ConfigureReporting", 'Debug', "--------> Not time to perform  %s/%s - %s" %(key,Ep,cluster), nwkid=key)
-                                continue
-                        else:
-                            self.log.logging( "ConfigureReporting", 'Debug', "-------> ['reenforceConfigureReporting']: %s then skip" %self.pluginconf.pluginConf['reenforceConfigureReporting'])
+                if NWKID is None and 'ConfigureReporting' in  self.ListOfDevices[key] and len(self.ListOfDevices[key]['ConfigureReporting']) !=0:
+                    if self.pluginconf.pluginConf['reenforceConfigureReporting']:
+                        if not is_time_to_perform_work(self, 'ConfigureReporting', key, Ep, cluster, now, (21 * 3600) ):
+                            self.log.logging( "ConfigureReporting", 'Debug', "--------> Not time to perform  %s/%s - %s" %(key,Ep,cluster), nwkid=key)
                             continue
+                    else:
+                        self.log.logging( "ConfigureReporting", 'Debug', "-------> ['reenforceConfigureReporting']: %s then skip" %self.pluginconf.pluginConf['reenforceConfigureReporting'])
+                        continue
                         
-
                 if NWKID is None and (self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE):
                     self.log.logging( "ConfigureReporting", 'Debug', "---> configureReporting - %s skip configureReporting for now ... system too busy (%s/%s) for %s"
                         %(key, self.busy, self.ZigateComm.loadTransmit(), key), nwkid=key)
@@ -149,7 +147,7 @@ def processConfigureReporting( self, NWKID=None ):
 
                 # If NWKID is not None, it means that we are asking a ConfigureReporting for a specific device
                 # Which happens on the case of New pairing, or a re-join
-                if self.pluginconf.pluginConf['allowReBindingClusters'] and NWKID is None:
+                if NWKID is None and self.pluginconf.pluginConf['allowReBindingClusters']:
                     # Correctif 22 Novembre. Delete only for the specific cluster and not the all Set
                     if 'Bind' in self.ListOfDevices[key]:
                         if Ep in self.ListOfDevices[key]['Bind']:
