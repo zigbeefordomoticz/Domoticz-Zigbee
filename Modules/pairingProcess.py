@@ -321,7 +321,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             # Just after Binding Enable Opple with Magic Word
             if  self.ListOfDevices[NWKID]['Model'] in ('lumi.remote.b686opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b286opcn01',
                                                 'lumi.remote.b686opcn01-bulb', 'lumi.remote.b486opcn01-bulb', 'lumi.remote.b286opcn01-bulb'):
-                Domoticz.Log("---> Calling enableOppleSwitch %s" %NWKID)
+                self.log.logging( "Pairing", 'Debug', "---> Calling enableOppleSwitch %s" %NWKID)
                 enableOppleSwitch( self, NWKID)
     
             # Keeping Pairing infos
@@ -329,6 +329,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                 self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'PR-CONFIG' )
 
             # 2 Enable Configure Reporting for any applicable cluster/attributes
+            self.log.logging( "Pairing", 'Debug', "Request Configure Reporting for %s" %NWKID)
             processConfigureReporting( self, NWKID )  
 
             # 3 Read attributes
