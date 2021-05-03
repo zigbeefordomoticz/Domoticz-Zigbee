@@ -2923,7 +2923,7 @@ def Decode8401( self, Devices, MsgData, MsgLQI ):  # Reception Zone status chang
     else:
         MajDomoDevice( self, Devices, MsgSrcAddr, MsgEp, '0009', '00')
         
-    if battdef:
+    if battery:
         self.log.logging(  "Input", "Log", "Decode8401 Low Battery or defective battery: Device: %s %s/%s" %( MsgSrcAddr,battdef , battery ), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]["IASBattery"] = 1
     else:
