@@ -526,7 +526,8 @@ def legrand_refresh_battery_remote( self, nwkid):
         return
     if ( 'BatteryUpdateTime' in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]['BatteryUpdateTime'] + 3600 > time() ):
         return
-    ReadAttributeRequest_0001( self,  nwkid) 
+    ReadAttributeRequest_0001( self,  nwkid, force_disable_ack=True) 
+
 
 def store_netatmo_attribute( self, NwkId, Attribute, Value ):
     if 'Legrand' not in self.ListOfDevices[ NwkId ]:
