@@ -167,6 +167,8 @@ class TransportStatistics:
     def printSummary(self):
         if self.received() == 0:
             return
+        if self.sent() == 0 or self.received() == 0:
+            return
         Domoticz.Status("Statistics on message")
         Domoticz.Status("   PDM load(s)      : %s" %self._pdmLoads)
         Domoticz.Status("ZiGate reacting time")
