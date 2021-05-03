@@ -45,7 +45,7 @@ def processConfigureReporting( self, NWKID=None ):
     now = int(time())
     if NWKID is None :
         if self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE:
-            self.log.logging( "ConfigureReporting", 'Log', "configureReporting - skip configureReporting for now ... system too busy (%s/%s) for %s"
+            self.log.logging( "ConfigureReporting", 'Debug', "configureReporting - skip configureReporting for now ... system too busy (%s/%s) for %s"
                   %(self.busy, self.ZigateComm.loadTransmit(), NWKID), nwkid=NWKID)
             return # Will do at the next round
         target = list(self.ListOfDevices.keys())
@@ -89,18 +89,18 @@ def processConfigureReporting( self, NWKID=None ):
                     if 'ConfigureReporting' in self.DeviceConf[ self.ListOfDevices[key]['Model'] ]:
                         spec_cfgrpt = self.DeviceConf[ self.ListOfDevices[key]['Model'] ]['ConfigureReporting']
                         cluster_list = spec_cfgrpt
-                        self.log.logging( "ConfigureReporting", 'Log', "------> CFG_RPT_ATTRIBUTESbyCLUSTERS updated: %s --> %s" %(key, cluster_list), nwkid=key)
+                        self.log.logging( "ConfigureReporting", 'Debug', "------> CFG_RPT_ATTRIBUTESbyCLUSTERS updated: %s --> %s" %(key, cluster_list), nwkid=key)
 
-        self.log.logging( "ConfigureReporting", 'Log', "----> configurereporting - processing %s" %key, nwkid=key)
+        self.log.logging( "ConfigureReporting", 'Debug', "----> configurereporting - processing %s" %key, nwkid=key)
 
         manufacturer = "0000"
         manufacturer_spec = "00"
         direction = "00"
 
         for Ep in self.ListOfDevices[key]['Ep']:
-            self.log.logging( "ConfigureReporting", 'Log', "------> Configurereporting - processing %s/%s" %(key,Ep), nwkid=key)
+            self.log.logging( "ConfigureReporting", 'Debug', "------> Configurereporting - processing %s/%s" %(key,Ep), nwkid=key)
             clusterList = getClusterListforEP( self, key, Ep )
-            self.log.logging( "ConfigureReporting", 'Log', "------> Configurereporting - processing %s/%s ClusterList: %s" %(key,Ep, clusterList), nwkid=key)
+            self.log.logging( "ConfigureReporting", 'Debug', "------> Configurereporting - processing %s/%s ClusterList: %s" %(key,Ep, clusterList), nwkid=key)
             for cluster in clusterList:
                 if cluster in ( 'Type', 'ColorMode', 'ClusterType' ):
                     continue
@@ -144,7 +144,7 @@ def processConfigureReporting( self, NWKID=None ):
                         %(key, self.busy, self.ZigateComm.loadTransmit(), key), nwkid=key)
                     return # Will do at the next round
 
-                self.log.logging( "ConfigureReporting", 'Log', "---> configureReporting - requested for device: %s on Cluster: %s" %(key, cluster), nwkid=key)
+                self.log.logging( "ConfigureReporting", 'Debug', "---> configureReporting - requested for device: %s on Cluster: %s" %(key, cluster), nwkid=key)
 
                 # If NWKID is not None, it means that we are asking a ConfigureReporting for a specific device
                 # Which happens on the case of New pairing, or a re-join
