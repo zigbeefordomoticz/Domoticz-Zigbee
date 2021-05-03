@@ -121,6 +121,9 @@ def schneider_wiser_registration( self, Devices, key ):
     """
     self.log.logging( "Schneider", 'Debug', "schneider_wiser_registration for device %s" %key, nwkid=key)
 
+    if 'Manufacturer Name' in self.ListOfDevices[ key ] and self.ListOfDevices[ key ]['Manufacturer Name'] == 'Schneider Electric':
+        return
+
     if 'Schneider' not in self.ListOfDevices[ key ]:
         self.ListOfDevices[ key ]['Schneider'] = {}
     self.ListOfDevices[ key ]['Schneider']['Registration'] = int(time())
@@ -995,7 +998,6 @@ def schneiderReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dst
         dstEP {[type]} -- Endpoint of the device that should receive the request
         MsgPayload {[type]} -- [description]
     """
-
     self.log.logging( "Schneider", 'Debug', "Schneider read raw APS nwkid: %s ep: %s , clusterId: %s, dstnwkid: %s, dstep: %s, payload: %s" \
             %(srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload), srcNWKID)
 
@@ -1343,3 +1345,46 @@ def schneider_UpdateConfigureReporting( self, NwkId, Ep, ClusterId = None, Attri
         #datas +=  "%02x" %(attrLen) + attrList
         #sendZigateCmd( self, "0120", datas )
         send_configure_reporting_attributes_set( self, NwkId, Ep, ClusterId, direction, manufacturer_spec, manufacturer, attrLen, attrList , attributeList)
+
+
+#### Wiser New Version
+
+# Cluster 0x0201
+#                    Temp Duration
+# Command 0x80: 0301 2e09 7800
+#               0301 d007 1e00   ( 20° for 30 minutes)
+#               0301 7206 1e00   ( 16.5° for 30 minutes)
+#               0300 ff0f 0000   ( cancel last bost )
+
+
+
+# The Thermostat is also sending Read Attribute to the ZiGate
+# Cluster 0x0201 - 0x0012, 0x001c, 0x001b 0x0008
+
+
+def schneiderReadRawAPS_v2(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
+
+    GlobalCommand, Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002( MsgPayload )
+    self.log.logging( "Schneider", 'Debug', "schneiderReadRawAPS_v2 -- SQN: %s, CMD: %s, Data: %s" \
+            %(  Sqn, Command, Data), srcNWKID) 
+    if ClusterID == '0201' : # Thermostat cluster
+        if Command == '00': #read attributes
+            ManufSpec = '00'
+            ManufCode = '0000'
+            if ManufacturerCode:
+                ManufSpec = '01'
+                ManufCode = ManufacturerCode
+
+            buildPayload = Sqn + srcNWKID + srcEp + '01' + ClusterID + '01' + ManufSpec + ManufCode + '%02x' %(len(Data) // 4)
+            idx = nbAttribute = 0
+            while idx < len(Data):
+                nbAttribute += 1
+                Attribute = '%04x' %struct.unpack('H',struct.pack('>H',int(Data[idx:idx+4],16)))[0]
+                idx += 4
+
+                if self.FirmwareVersion and int(self.FirmwareVersion,16) <= 0x031c:
+                    wiser_unsupported_attribute( self, srcNWKID, srcEp, Sqn, ClusterID, dstNWKID, dstEP, Attribute )
+
+                else:
+                    self.log.logging( "Schneider", 'Debug','schneiderReadRawAPS_v2 cmd 0x00 [%s] Read Attribute Request on %s/%s' %(Sqn, ClusterID,Attribute ),srcNWKID)
+                    schneider_thermostat_answer_attribute_request(self, srcNWKID, srcEp, ClusterID, Sqn, Attribute)
