@@ -374,7 +374,7 @@ def ReadAttributeRequest_0000_for_general( self, key ):
             ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0000", listAttrSpecific, manufacturer_spec = '01', manufacturer = manufacturer_code , ackIsDisabled = is_ack_tobe_disabled(self, key) , checkTime = False)
 
 
-def ReadAttributeRequest_0001(self, key):
+def ReadAttributeRequest_0001(self, key, force_disable_ack=None):
 
     self.log.logging( "ReadAttributes", 'Debug', "ReadAttributeRequest_0001 - Key: %s " %key, nwkid=key)
 
@@ -388,7 +388,10 @@ def ReadAttributeRequest_0001(self, key):
 
         if listAttributes:
             self.log.logging( "ReadAttributes", 'Debug', "Request Power Config via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
-            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0001", listAttributes , ackIsDisabled = is_ack_tobe_disabled(self, key))
+            if force_disable_ack:
+                ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0001", listAttributes , ackIsDisabled = True)
+            else:
+                ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0001", listAttributes , ackIsDisabled = is_ack_tobe_disabled(self, key))
 
 def ReadAttributeRequest_0006_0000(self, key):
     self.log.logging( "ReadAttributes", 'Debug', "ReadAttributeRequest_0006 focus on 0x0000 Key: %s " %key, nwkid=key)
