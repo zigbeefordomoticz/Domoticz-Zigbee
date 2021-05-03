@@ -45,7 +45,7 @@ def processConfigureReporting( self, NWKID=None ):
     now = int(time())
     if NWKID is None :
         if self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE:
-            self.log.logging( "ConfigureReporting", 'Debug2', "configureReporting - skip configureReporting for now ... system too busy (%s/%s) for %s"
+            self.log.logging( "ConfigureReporting", 'Log', "configureReporting - skip configureReporting for now ... system too busy (%s/%s) for %s"
                   %(self.busy, self.ZigateComm.loadTransmit(), NWKID), nwkid=NWKID)
             return # Will do at the next round
         target = list(self.ListOfDevices.keys())
@@ -89,18 +89,18 @@ def processConfigureReporting( self, NWKID=None ):
                     if 'ConfigureReporting' in self.DeviceConf[ self.ListOfDevices[key]['Model'] ]:
                         spec_cfgrpt = self.DeviceConf[ self.ListOfDevices[key]['Model'] ]['ConfigureReporting']
                         cluster_list = spec_cfgrpt
-                        self.log.logging( "ConfigureReporting", 'Debug2', "------> CFG_RPT_ATTRIBUTESbyCLUSTERS updated: %s --> %s" %(key, cluster_list), nwkid=key)
+                        self.log.logging( "ConfigureReporting", 'Log', "------> CFG_RPT_ATTRIBUTESbyCLUSTERS updated: %s --> %s" %(key, cluster_list), nwkid=key)
 
-        self.log.logging( "ConfigureReporting", 'Debug2', "----> configurereporting - processing %s" %key, nwkid=key)
+        self.log.logging( "ConfigureReporting", 'Log', "----> configurereporting - processing %s" %key, nwkid=key)
 
         manufacturer = "0000"
         manufacturer_spec = "00"
         direction = "00"
 
         for Ep in self.ListOfDevices[key]['Ep']:
-            self.log.logging( "ConfigureReporting", 'Debug2', "------> Configurereporting - processing %s/%s" %(key,Ep), nwkid=key)
+            self.log.logging( "ConfigureReporting", 'Log', "------> Configurereporting - processing %s/%s" %(key,Ep), nwkid=key)
             clusterList = getClusterListforEP( self, key, Ep )
-            self.log.logging( "ConfigureReporting", 'Debug2', "------> Configurereporting - processing %s/%s ClusterList: %s" %(key,Ep, clusterList), nwkid=key)
+            self.log.logging( "ConfigureReporting", 'Log', "------> Configurereporting - processing %s/%s ClusterList: %s" %(key,Ep, clusterList), nwkid=key)
             for cluster in clusterList:
                 if cluster in ( 'Type', 'ColorMode', 'ClusterType' ):
                     continue
@@ -130,20 +130,21 @@ def processConfigureReporting( self, NWKID=None ):
                 # (2) 'ConfigureReporting' is empty
                 # (3) if reenforceConfigureReporting is enabled and it is time to do the work
                 if 'ConfigureReporting' in  self.ListOfDevices[key] and len(self.ListOfDevices[key]['ConfigureReporting']) !=0:
-                    if self.pluginconf.pluginConf['reenforceConfigureReporting']:
-                        if not is_time_to_perform_work(self, 'ConfigureReporting', key, Ep, cluster, now, (21 * 3600) ):
-                            self.log.logging( "ConfigureReporting", 'Debug', "--------> Not time to perform  %s/%s - %s" %(key,Ep,cluster), nwkid=key)
-                            continue
-                    else:
-                        self.log.logging( "ConfigureReporting", 'Debug', "-------> ['reenforceConfigureReporting']: %s then skip" %self.pluginconf.pluginConf['reenforceConfigureReporting'])
-                        continue
+                    if NWKID is None:
+                        if self.pluginconf.pluginConf['reenforceConfigureReporting']:
+                            if not is_time_to_perform_work(self, 'ConfigureReporting', key, Ep, cluster, now, (21 * 3600) ):
+                                self.log.logging( "ConfigureReporting", 'Debug', "--------> Not time to perform  %s/%s - %s" %(key,Ep,cluster), nwkid=key)
+                                continue
+                            else:
+                                self.log.logging( "ConfigureReporting", 'Debug', "-------> ['reenforceConfigureReporting']: %s then skip" %self.pluginconf.pluginConf['reenforceConfigureReporting'])
+                                continue
 
                 if NWKID is None and (self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE):
                     self.log.logging( "ConfigureReporting", 'Debug', "---> configureReporting - %s skip configureReporting for now ... system too busy (%s/%s) for %s"
                         %(key, self.busy, self.ZigateComm.loadTransmit(), key), nwkid=key)
                     return # Will do at the next round
 
-                self.log.logging( "ConfigureReporting", 'Debug', "---> configureReporting - requested for device: %s on Cluster: %s" %(key, cluster), nwkid=key)
+                self.log.logging( "ConfigureReporting", 'Log', "---> configureReporting - requested for device: %s on Cluster: %s" %(key, cluster), nwkid=key)
 
                 # If NWKID is not None, it means that we are asking a ConfigureReporting for a specific device
                 # Which happens on the case of New pairing, or a re-join
