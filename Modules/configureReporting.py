@@ -135,9 +135,10 @@ def processConfigureReporting( self, NWKID=None ):
                             if not is_time_to_perform_work(self, 'ConfigureReporting', key, Ep, cluster, now, (21 * 3600) ):
                                 self.log.logging( "ConfigureReporting", 'Debug', "--------> Not time to perform  %s/%s - %s" %(key,Ep,cluster), nwkid=key)
                                 continue
-                            else:
-                                self.log.logging( "ConfigureReporting", 'Debug', "-------> ['reenforceConfigureReporting']: %s then skip" %self.pluginconf.pluginConf['reenforceConfigureReporting'])
-                                continue
+                        else:
+                            self.log.logging( "ConfigureReporting", 'Debug', "-------> ['reenforceConfigureReporting']: %s then skip" %self.pluginconf.pluginConf['reenforceConfigureReporting'])
+                            continue
+                        
 
                 if NWKID is None and (self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE):
                     self.log.logging( "ConfigureReporting", 'Debug', "---> configureReporting - %s skip configureReporting for now ... system too busy (%s/%s) for %s"
