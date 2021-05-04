@@ -2130,7 +2130,7 @@ def Decode8049(self, Devices, MsgData, MsgLQI):  # E_SL_MSG_PERMIT_JOINING_RESPO
     Status = MsgData[2:4]
 
     if Status == "00":
-        self.log.logging( "Input", "Status", "Pairing Mode enabled")
+        self.log.logging( "Input", "Status", "Pairing Command correctly exectued")
 
 
 def Decode804A(self, Devices, MsgData, MsgLQI):  # Management Network Update response

@@ -192,11 +192,23 @@ def ZigatePermitToJoin( self, permit ):
     self.log.logging( "BasicOutput", 'Debug', "---> self.permitTojoin['Starttime']: %s" %self.permitTojoin['Starttime'] )
     self.log.logging( "BasicOutput", 'Debug', "---> self.permitTojoin['Duration'] : %s" %self.permitTojoin['Duration'] )
 
+def get_TC_significance( nwkid ):
+    if nwkid == '0000':
+        return '01'
+    else:
+        return '00'
+
 
 def PermitToJoin( self, Interval, TargetAddress='FFFC'):
     
-    send_zigatecmd_raw(self, "0049", TargetAddress + Interval + '00' )
-    if TargetAddress == 'FFFC':
+    if Interval == '00' and self.pluginconf.pluginConf['forceClosingAllNodes']:
+        for x in self.ListOfDevices:
+            if mainPoweredDevice( self, x):
+                self.log.logging( "BasicOutput", 'Log', "Request router: %s to close the network" %x)
+                send_zigatecmd_raw(self, "0049", x + Interval + get_TC_significance(x) )
+    else:
+        send_zigatecmd_raw(self, "0049", TargetAddress + Interval + get_TC_significance(TargetAddress) )
+    if TargetAddress in ( 'FFFC', '0000'):
         # Request a Status to update the various permitTojoin structure
         send_zigatecmd_raw( self, "0014", "" ) # Request status
 

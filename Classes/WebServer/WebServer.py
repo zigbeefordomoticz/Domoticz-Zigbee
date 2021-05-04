@@ -584,8 +584,13 @@ class WebServer(object):
                         if  duration == 0:
                             self.logging( 'Log', "Requesting router: %s to disable Permit to join" %router)  
                         else:
-                            self.logging( 'Log', "Requesting router: %s to enable Permit to join" %router)             
-                        sendZigateCmd( self, "0049", router + '%02x' %duration + '00') 
+                            self.logging( 'Log', "Requesting router: %s to enable Permit to join" %router)   
+                        if router == '0000':
+                            TcSignificance = '01'
+                        else:
+                            TcSignificance = '00'
+                        #TcSignificance determines whether the remote device is a ‘Trust Centre’: TRUE: A Trust Centre FALSE: Not a Trust Centre          
+                        sendZigateCmd( self, "0049", router + '%02x' %duration + TcSignificance) 
 
                 else:                   
                     if self.pluginParameters['Mode1'] != 'None':

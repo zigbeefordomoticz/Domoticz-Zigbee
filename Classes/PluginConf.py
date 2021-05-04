@@ -102,6 +102,7 @@ SETTINGS = {
                                       'list': {'0dbM': 0, '-9 dbM': 1, '-20dbM': 2, '-32dbM': 3},
                                       'default': 0,   'current': None, 'restart': 1, 'hidden': False, 'Advanced': True},
         'extendedPANID':             {'type': 'hex',  'default': 0,   'current': None, 'restart': 3, 'hidden': False, 'Advanced': True},
+        'forceClosingAllNodes':      {'type': 'bool',  'default': 0,   'current': None, 'restart': 1, 'hidden': False, 'Advanced': True},
 
         }
     },
