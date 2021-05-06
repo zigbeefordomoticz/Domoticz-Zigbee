@@ -89,12 +89,13 @@ import time
 import json
 import sys
 import threading
+import gc
 
 from Modules.piZigate import switchPiZigate_mode
 from Modules.tools import removeDeviceInList
 from Modules.basicOutputs import ( sendZigateCmd, removeZigateDevice, start_Zigate, setExtendedPANID, 
                                     setTimeServer, leaveRequest, zigateBlueLed, ZigatePermitToJoin,
-                                    disable_firmware_default_response )
+                                    disable_firmware_default_response , do_Many_To_One_RouteRequest )
 from Modules.input import ZigateRead
 from Modules.heartbeat import processListOfDevices
 from Modules.database import importDeviceConf, importDeviceConfV2, LoadDeviceList, checkListOfDevice2Devices, checkDevices2LOD, WriteDeviceList
@@ -227,6 +228,8 @@ class BasePlugin:
 
     def onStart(self):
         Domoticz.Heartbeat( 1 )
+        Domoticz.Log("Is GC enabled: %s" % gc.isenabled())
+        
         self.pluginParameters = dict(Parameters)
 
         for x in self.pluginParameters:
@@ -684,6 +687,11 @@ class BasePlugin:
 
         # Memorize the size of Devices. This is will allow to trigger a backup of live data to file, if the size change.
         prevLenDevices = len(Devices)
+
+        # Garbage collector ( experimental for now)
+        if self.internalHB % (  3600 // HEARTBEAT) == 0:
+            self.log.logging( 'Plugin', 'Log', "Garbage Collection status: %s" %str(gc.get_count()) )
+            self.log.logging( 'Plugin', 'Log', "Garbage Collection triggered: %s" %str(gc.collect()) )
 
         # Manage all entries in  ListOfDevices (existing and up-coming devices)
         processListOfDevices( self , Devices )
