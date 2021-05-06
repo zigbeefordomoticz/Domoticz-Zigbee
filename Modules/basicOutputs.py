@@ -893,3 +893,11 @@ def disable_firmware_default_response( self , mode='00'):
         self.log.logging( "BasicOutput", 'Error', "disable_firmware_default_response unknown mode: %s",mode)
         return
     sendZigateCmd(self ,'0003', mode )
+
+def do_Many_To_One_RouteRequest(self):
+
+    bCacheRoute = '00' # FALSE do not store routes
+    u8Radius = '00'    # Maximum number of hops of route discovery message
+
+    sendZigateCmd(self ,'004F', bCacheRoute + u8Radius )
+    Domoticz.Log("do_Many_To_One_RouteRequest call !")
