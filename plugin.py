@@ -945,8 +945,12 @@ def check_firmware_level( self ):
     elif self.FirmwareVersion.lower() in ( '031a', '031c', '031d'):
         self.pluginconf.pluginConf['forceAckOnZCL'] = True
 
+    elif self.FirmwareVersion.lower() =='031e':
+        self.pluginconf.pluginConf['forceAckOnZCL'] = False
+
     elif int(self.FirmwareVersion,16) > 0x031e:
         Domoticz.Error("Firmware %s is not yet supported" %self.FirmwareVersion.lower())
+
     return True
 
 def start_GrpManagement( self, homefolder):
