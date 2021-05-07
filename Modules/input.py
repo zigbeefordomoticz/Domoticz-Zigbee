@@ -746,34 +746,27 @@ def Decode8009(self, Devices, MsgData, MsgLQI):  # Network State response (Firm 
 def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
     MsgLen = len(MsgData)
 
-    MajorVersNum = MsgData[0:4]
-    InstaVersNum = MsgData[4:8]
-    try:
-        self.log.logging( "Input", "Debug", "Decode8010 - Reception Version list : " + MsgData)
-        if MajorVersNum == '0003':
-          self.log.logging( "Input", "Status", "ZiGate Classic PDM (legacy)")
-        elif MajorVersNum == '0004':
-            self.log.logging( "Input", "Status", "ZiGate Classic PDM (April 2021)")
-        elif MajorVersNum == '0005':
-            self.log.logging( "Input", "Status", "ZiGate V2")    
-        self.log.logging( "Input", "Status", "Installer Version Number: " + InstaVersNum)
-    except:
-        Domoticz.Error("Decode8010 - Reception Version list : " + MsgData)
-    else:
-        self.FirmwareVersion = str(InstaVersNum)
-        self.FirmwareMajorVersion = str(MajorVersNum)
-        self.zigatedata["Firmware Version"] = (
-            str(MajorVersNum) + " - " + str(InstaVersNum)
-        )
+    self.FirmwareBranch = MsgData[0:2]
+    self.FirmwareMajorVersion = MsgData[2:4]
+    self.FirmwareVersion = MsgData[4:8]
 
-        if self.webserver:
-            self.webserver.update_firmware(self.FirmwareVersion)
+    self.log.logging( "Input", "Debug", "Decode8010 - Reception Version list :%s" %MsgData)
+    if self.FirmwareMajorVersion == '03':
+        self.log.logging( "Input", "Status", "ZiGate Classic PDM (legacy)")
+    elif self.FirmwareMajorVersion == '04':
+        self.log.logging( "Input", "Status", "ZiGate Classic PDM (OptiPDM)")
+    elif self.FirmwareMajorVersion == '05':
+        self.log.logging( "Input", "Status", "ZiGate V2")    
+    self.log.logging( "Input", "Status", "Installer Version Number: %s" %self.FirmwareVersion)
+    self.zigatedata["Firmware Version"] = "Branch: %s Major: %s Version: %s" %(self.FirmwareBranch,self.FirmwareMajorVersion, self.FirmwareVersion )
+    if self.webserver:
+        self.webserver.update_firmware(self.FirmwareVersion)
 
-        if self.ZigateComm:
-            self.ZigateComm.update_ZiGate_Version ( self.FirmwareVersion, self.FirmwareMajorVersion)
-        
-        if self.log:
-            self.log.loggingUpdateFirmware( self.FirmwareVersion, self.FirmwareMajorVersion)    
+    if self.ZigateComm:
+        self.ZigateComm.update_ZiGate_Version ( self.FirmwareVersion, self.FirmwareMajorVersion)
+    
+    if self.log:
+        self.log.loggingUpdateFirmware( self.FirmwareVersion, self.FirmwareMajorVersion)    
             
     self.PDMready = True
 
