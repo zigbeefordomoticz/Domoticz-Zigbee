@@ -253,12 +253,15 @@ class ZigateTransport(object):
             'WriterQueueCurrentSize': self.get_writer_queue()
             }
         context['Firmware'] = {
+            'writerTimeOut': self.pluginconf.pluginConf['writerTimeOut'],
+            'compatibility_mode': self.firmware_compatibility_mode,
             'dzCommunication': self.force_dz_communication,
             'with_aps_sqn': self.firmware_with_aps_sqn ,
             'with_8012': self.firmware_with_8012,
             'nPDU': self.npdu,
             'aPDU': self.apdu,
             }
+            
         if 'TransportErrorLevel' in self.pluginconf.pluginConf and self.pluginconf.pluginConf['TransportErrorLevel']:
             context['Sqn Management'] = {
                 'sqn_ZCL': self.sqn_zcl,
