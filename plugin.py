@@ -302,7 +302,8 @@ class BasePlugin:
 
         if self.log is None:
             Domoticz.Status( "Starting LoggingManagement thread" )
-            self.log = LoggingManagement(self.pluginconf, self.PluginHealth, self.HardwareID, self.ListOfDevices, self.permitTojoin )
+            self.log = LoggingManagement(self.pluginconf, self.PluginHealth, self.HardwareID, self.ListOfDevices, self.permitTojoin , )
+            self.log.loggingUpdatePluginVersion( str( self.pluginParameters['PluginBranch'] + '-' + self.pluginParameters['PluginVersion']) )
             self.log.openLogFile()
 
         self.log.logging( 'Plugin', 'Status',  "Python Version - %s" %sys.version)

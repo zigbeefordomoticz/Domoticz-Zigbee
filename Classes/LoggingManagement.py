@@ -31,6 +31,7 @@ class LoggingManagement:
         self.permitTojoin = permitTojoin
         self.FirmwareVersion = None
         self.FirmwareMajorVersion = None
+        self.PluginVersion = None
         self.running = True
         self.logging_queue = None
         self.logging_thread = None
@@ -44,6 +45,15 @@ class LoggingManagement:
     def is_new_error( self ):
         return bool(self._newError and bool(self.LogErrorHistory))
 
+    def loggingUpdatePluginVersion( self, Version ):
+        self.PluginVersion = Version
+        if ( self.LogErrorHistory and self.LogErrorHistory['LastLog'] 
+                and 'StartTime' in self.LogErrorHistory[str(self.LogErrorHistory['LastLog'])] 
+                and self.LogErrorHistory[str(self.LogErrorHistory['LastLog'])][ 'StartTime' ] == self._startTime 
+            ):
+            self.LogErrorHistory[str(self.LogErrorHistory['LastLog'])]['PluginVersion'] = Version
+
+
     def loggingUpdateFirmware(self, FirmwareVersion, FirmwareMajorVersion):
         if self.FirmwareVersion and self.FirmwareMajorVersion:
             return
@@ -54,6 +64,7 @@ class LoggingManagement:
                 self.LogErrorHistory[str(self.LogErrorHistory['LastLog'])][ 'StartTime' ] == self._startTime ):
             self.LogErrorHistory[str(self.LogErrorHistory['LastLog'])]['FirmwareVersion'] = FirmwareVersion
             self.LogErrorHistory[str(self.LogErrorHistory['LastLog'])]['FirmwareMajorVersion'] = FirmwareMajorVersion
+            
  
     def openLogFile( self ):
 
@@ -216,6 +227,7 @@ def loggingError(self, thread_name, module, message, nwkid, context):
             'StartTime': self._startTime,
             'FirmwareVersion': self.FirmwareVersion,
             'FirmwareMajorVersion': self.FirmwareMajorVersion,
+            'PluginVersion': self.PluginVersion,
         }
 
         self.LogErrorHistory['0']['0'] = loggingBuildContext(self, thread_name, module, message, nwkid, context)
@@ -238,6 +250,7 @@ def loggingError(self, thread_name, module, message, nwkid, context):
         self.LogErrorHistory[str(index)]['StartTime'] = self._startTime
         self.LogErrorHistory[str(index)]['FirmwareVersion'] = self.FirmwareVersion
         self.LogErrorHistory[str(index)]['FirmwareMajorVersion'] = self.FirmwareMajorVersion
+        self.LogErrorHistory[str(index)]['PluginVersion'] = self.PluginVersion,
         self.LogErrorHistory[str(index)]['0'] = loggingBuildContext(self, thread_name, module, message, nwkid, context)
     else:
         self.LogErrorHistory[str(index)]['LastLog'] += 1
