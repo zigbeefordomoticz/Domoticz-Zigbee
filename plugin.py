@@ -191,6 +191,7 @@ class BasePlugin:
         self.ZigateNWKID = None       # Zigate NWKID. Set in CDecode8009/Decode8024
         self.FirmwareVersion = None
         self.FirmwareMajorVersion = None
+        self.FirmwareBranch = None
         self.mainpowerSQN = None    # Tracking main Powered SQN
         #self.ForceCreationDevice = None   # 
 
@@ -857,7 +858,7 @@ def zigateInit_Phase3( self ):
         self.log.logging( 'Plugin', 'Debug', "Firmware not ready")
         return 
 
-    if self.transport != 'None' and int(self.FirmwareVersion,16) >= 0x030f and int(self.FirmwareMajorVersion,16) >= 0x0003:
+    if self.transport != 'None' and int(self.FirmwareVersion,16) >= 0x030f and int(self.FirmwareMajorVersion,16) >= 0x03:
         if self.pluginconf.pluginConf['blueLedOnOff']:
             zigateBlueLed( self, True)
         else:
@@ -916,7 +917,16 @@ def zigateInit_Phase3( self ):
         else:
             Domoticz.Error("WebServer disabled du to Parameter Mode4 set to %s" %Parameters['Mode4'])
 
-    self.log.logging( 'Plugin', 'Status', "Plugin with Zigate firmware %s correctly initialized" %self.FirmwareVersion)
+    if self.FirmwareMajorVersion == '03':
+        self.log.logging( 'Plugin', 'Status', "Plugin with Zigate Classic, firmware %s correctly initialized" %self.FirmwareVersion)
+        self.log.logging( "Input", "Status", "ZiGate Classic PDM (legacy)")
+    elif self.FirmwareMajorVersion == '04':
+        self.log.logging( 'Plugin', 'Status', "Plugin with Zigate OptiPDM, firmware %s correctly initialized" %self.FirmwareVersion)
+
+    elif self.FirmwareMajorVersion == '05':
+        self.log.logging( 'Plugin', 'Status', "Plugin with Zigate V2, firmware %s correctly initialized" %self.FirmwareVersion)
+
+
 
     # If firmware above 3.0d, Get Network State 
     if (
@@ -929,7 +939,7 @@ def zigateInit_Phase3( self ):
 def check_firmware_level( self ):
         # Check Firmware version
     if self.FirmwareVersion.lower() < '030f' or \
-        self.FirmwareVersion.lower() == '030f' and self.FirmwareMajorVersion == '0002' :
+        self.FirmwareVersion.lower() == '030f' and self.FirmwareMajorVersion == '02' :
         self.log.logging( 'Plugin', 'Error', "Firmware level not supported, please update ZiGate firmware")
         return False
 
