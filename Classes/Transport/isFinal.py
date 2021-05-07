@@ -19,8 +19,9 @@ def is_final_step( self, isqn, step):
 
     cmd = int(self.ListOfCommands[ isqn ]['cmd'], 16)
     # Step is 0x8000
-    if step == 0x8000 and self.ListOfCommands[ isqn ]['cmd'] in CMD_ONLY_STATUS:
+    if step == 0x8000 and ( self.ListOfCommands[ isqn ]['cmd'] in CMD_ONLY_STATUS or self.firmware_nosqn):
         return True
+
 
     if self.firmware_compatibility_mode:
         if step == 0x8000 and cmd in ( 0x0100, 0x0110):
