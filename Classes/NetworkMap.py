@@ -404,6 +404,10 @@ def LQIresp_decoding(self, MsgData):
     self.logging( 'Debug', "LQIresp - %s Status: %s, NeighbourTableEntries: %s, StartIndex: %s, NeighbourTableListCount: %s" \
             %(NwkIdSource, Status, NeighbourTableEntries, StartIndex, NeighbourTableListCount))
 
+    if NwkIdSource not in self.Neighbours:
+        # Un expected request. May be due to an async request
+        return
+        
     if not self.Neighbours[ NwkIdSource ]['TableMaxSize']  and  NeighbourTableEntries:
         self.Neighbours[ NwkIdSource ]['TableMaxSize'] = NeighbourTableEntries
         self.ListOfDevices[ NwkIdSource ]['NeighbourTableSize'] = self.Neighbours[ NwkIdSource ]['TableMaxSize']
