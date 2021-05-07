@@ -103,11 +103,11 @@ def limit_throuput(self, command):
         # Firmware is not 31e
         # Throught put of 4 messages per seconds
         self.logging_send('Debug',"Firmware 31d limit_throuput regulate to 300")
-        time.sleep(0.300)
+        time.sleep(0.350)
 
     else:
         self.logging_send('Debug',"Firmware 31e limit_throuput regulate to 200")
-        time.sleep(0.200)       
+        time.sleep(0.250)       
 
 
 def wait_for_semaphore( self , command ):
@@ -121,9 +121,9 @@ def wait_for_semaphore( self , command ):
         if self.force_dz_communication or self.pluginconf.pluginConf['writerTimeOut']:
             self.logging_send( 'Debug', "Waiting for a write slot . Semaphore %s TimeOut of 8s" %(self.semaphore_gate._value))
             block_status = self.semaphore_gate.acquire( blocking = True, timeout = timeout_cmd) # Blocking until 8s
-        else:
-            self.logging_send( 'Debug', "Waiting for a write slot . Semaphore %s ATTENTION NO TIMEOUT FOR TEST PURPOSES" %(self.semaphore_gate._value))
-            block_status = self.semaphore_gate.acquire( blocking = True, timeout = None) # Blocking  
+        #else:
+        #    self.logging_send( 'Debug', "Waiting for a write slot . Semaphore %s ATTENTION NO TIMEOUT FOR TEST PURPOSES" %(self.semaphore_gate._value))
+        #    block_status = self.semaphore_gate.acquire( blocking = True, timeout = None) # Blocking  
 
         self.logging_send( 'Debug', "============= semaphore %s given with status %s ============== Len: ListOfCmd %s - %s writerQueueSize: %s" %(
             self.semaphore_gate._value, block_status, len(self.ListOfCommands), str(self.ListOfCommands.keys()), self.writer_queue.qsize( ) ))
@@ -306,7 +306,7 @@ def semaphore_timeout( self, current_command ):
             'IsqnCurrent': current_command['InternalSqn'],
             'IsqnToRemove': isqn_to_be_removed
         }
-        if not self.force_dz_communication:
+        if not self.force_dz_communication and self.pluginconf.pluginConf['showTimeOutMsg']:
             self.logging_send_error( "writerThread Timeout ", context=_context)
         release_command( self, isqn_to_be_removed) 
         return
@@ -327,5 +327,5 @@ def semaphore_timeout( self, current_command ):
             release_command( self, x)
             _context['IsqnToRemove'].append( x )
 
-    if not self.force_dz_communication:
+    if not self.force_dz_communication and self.pluginconf.pluginConf['showTimeOutMsg']:
         self.logging_send_error( "writerThread Timeout ", context=_context)
