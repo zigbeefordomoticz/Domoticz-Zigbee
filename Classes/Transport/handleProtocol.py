@@ -6,6 +6,8 @@
 
 import Domoticz
 import binascii
+import time
+
 from datetime import datetime
 
 from Classes.Transport.decode8002 import decode8002_and_process
@@ -122,23 +124,31 @@ def process_frame(self, decoded_frame):
 # Extended Error Code:
 def NXP_Extended_Error_Code( self, MsgData):
 
+    if not self.pluginconf.pluginConf['NXPExtendedErrorCode']:
+        return
+
+    if MsgData == self.previousExtendedErrorCode and self.previousEEC_time + 60 > time.time():
+        # Avoid to log multiple time the same extended erro
+        return
+    self.previousExtendedErrorCode = MsgData
+    self.previousEEC_time = time.time()
+
     StatusMsg = ''
     if  MsgData in ZCL_EXTENDED_ERROR_CODES:
         StatusMsg = ZCL_EXTENDED_ERROR_CODES[MsgData]
-
-    if self.pluginconf.pluginConf['NXPExtendedErrorCode']:
-        _context = {
-            'Error code': 'TRANS-PROTO-01',
-            'ExtendedErrorCode': MsgData,
-            'ExtendedError': StatusMsg,
-            'nPDU': self.npdu,
-            'aPDU': self.apdu
-        }
-        if self.firmware_with_8012:
-            # We have a 31e firmware or above. We are not expecting extensive Extended Error code, so they will be logged
-            self.logging_receive_error( "NXP_Extended_Error_Code - Extended Error Code: [%s] %s" %( MsgData, StatusMsg), context=_context)
-        else:
-            self.logging_receive( 'Log', "NXP_Extended_Error_Code - Extended Error Code: [%s] %s nPDU:%s aPDU: %s" %( MsgData, StatusMsg, self.npdu, self.apdu))
+  
+    _context = {
+        'Error code': 'TRANS-PROTO-01',
+        'ExtendedErrorCode': MsgData,
+        'ExtendedError': StatusMsg,
+        'nPDU': self.npdu,
+        'aPDU': self.apdu
+    }
+    if self.firmware_with_8012:
+        # We have a 31e firmware or above. We are not expecting extensive Extended Error code, so they will be logged
+        self.logging_receive_error( "NXP_Extended_Error_Code - Extended Error Code: [%s] %s" %( MsgData, StatusMsg), context=_context)
+    else:
+        self.logging_receive( 'Log', "NXP_Extended_Error_Code - Extended Error Code: [%s] %s nPDU:%s aPDU: %s" %( MsgData, StatusMsg, self.npdu, self.apdu))
 
 
 def NXP_log_message(self, decoded_frame):  # Reception log Level

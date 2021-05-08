@@ -32,6 +32,8 @@ class ZigateTransport(object):
 
         # Logging
         self.log = log
+        self.previousExtendedErrorCode = ''
+        self.previousEEC_time = 0
 
         # Line management for 0x8001 message
         self.newline_required = True

@@ -106,7 +106,7 @@ def limit_throuput(self, command):
         time.sleep(0.350)
 
     elif self.firmware_nosqn:
-        time.sleep(.500)
+        time.sleep(.750)
 
     else:
         self.logging_send('Debug',"Firmware 31e limit_throuput regulate to 200")
