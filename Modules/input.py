@@ -364,10 +364,10 @@ def Decode8000_v2(self, Devices, MsgData, MsgLQI):  # Status
         # Hack to reboot Zigate 
         if MsgData[0:2] not in ( '01', '02', '03', '04', '05'):
             self.internalError += 1
-        if self.internalError > 4:
-            self.internalError = 0
-            sendZigateCmd(self, "0011", "" ) # Software Reset
-            self.log.logging(  "Input", "Error", "TOO MUCH ERRORS - ZIGATE RESET requested")
+        #if self.internalError > 4:
+        #    self.internalError = 0
+        #    sendZigateCmd(self, "0011", "" ) # Software Reset
+        #    self.log.logging(  "Input", "Error", "TOO MUCH ERRORS - ZIGATE RESET requested")
     else:
         self.internalError = 0
 
