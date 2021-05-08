@@ -105,9 +105,12 @@ def limit_throuput(self, command):
         self.logging_send('Debug',"Firmware 31d limit_throuput regulate to 300")
         time.sleep(0.350)
 
+    elif self.firmware_nosqn:
+        time.sleep(.500)
+
     else:
         self.logging_send('Debug',"Firmware 31e limit_throuput regulate to 200")
-        time.sleep(0.250)       
+        time.sleep(0.250)   
 
 
 def wait_for_semaphore( self , command ):

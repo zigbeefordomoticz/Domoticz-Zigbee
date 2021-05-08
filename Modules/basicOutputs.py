@@ -458,7 +458,7 @@ def leaveMgtReJoin( self, saddr, ieee, rejoin=True):
 def reset_device( self, nwkid, epout):
 
     self.log.logging( "BasicOutput", 'Debug', "reset_device - Send a Device Reset to %s/%s" %(nwkid, epout), nwkid)
-    return send_zigatecmd_raw(self, "0050", '02' + nwkid + '01' + '01' )
+    return send_zigatecmd_raw(self, "0050", '02' + nwkid + ZIGATE_EP + epout )
     
 
 def leaveRequest( self, ShortAddr=None, IEEE= None, RemoveChild=0x00, Rejoin=0x00 ):
@@ -482,8 +482,10 @@ def leaveRequest( self, ShortAddr=None, IEEE= None, RemoveChild=0x00, Rejoin=0x0
             return None
 
     if Rejoin == 0x00 and ShortAddr:
-        self.log.logging( "BasicOutput", 'Log', "reset_device - Send a Device Reset to %s/%s" %(ShortAddr, '01'), ShortAddr)
-        send_zigatecmd_raw(self, "0050", '02' + ShortAddr + '01' + '01' )
+        ep_list = getListOfEpForCluster( self, ShortAddr, '0000' )
+        if ep_list:
+            self.log.logging( "BasicOutput", 'Log', "reset_device - Send a Device Reset to %s/%s" %(ShortAddr, ep_list[0]), ShortAddr)
+            reset_device( self, ShortAddr, ep_list[0])
 
     _rmv_children = '%02X' %RemoveChild
     _rejoin = '%02X' %Rejoin

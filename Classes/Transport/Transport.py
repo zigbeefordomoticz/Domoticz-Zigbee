@@ -88,6 +88,7 @@ class ZigateTransport(object):
         self.firmware_compatibility_mode = False  # 31a and below
         self.firmware_with_aps_sqn = False  # Available from 31d
         self.firmware_with_8012 = False     # Available from 31e
+        self.firmware_nosqn = False
         self.PDMCommandOnly = False
 
         #DomoticzVersion: 2020.2 (build 12741) is minimum Dz version where full multithread is possible
@@ -124,9 +125,13 @@ class ZigateTransport(object):
     def get_writer_queue(self ):
         return self.forwarder_queue.qsize()
 
+    
     def update_ZiGate_Version ( self, FirmwareVersion, FirmwareMajorVersion):
         self.FirmwareVersion = FirmwareVersion
         self.FirmwareMajorVersion = FirmwareMajorVersion
+        if self.FirmwareMajorVersion == '05':
+            Domoticz.Status("*** ZiGate V2 in noSQN mode ***")
+            self.firmware_nosqn = True
 
     def thread_transport_shutdown( self ):
         self.running = False
@@ -258,6 +263,7 @@ class ZigateTransport(object):
             'dzCommunication': self.force_dz_communication,
             'with_aps_sqn': self.firmware_with_aps_sqn ,
             'with_8012': self.firmware_with_8012,
+            'FirmwareWithNoSQN': self.firmware_nosqn,
             'nPDU': self.npdu,
             'aPDU': self.apdu,
             }

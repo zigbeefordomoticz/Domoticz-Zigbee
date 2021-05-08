@@ -140,7 +140,7 @@ class LoggingManagement:
 
     def logging( self, module, logType, message, nwkid=None, context=None):
         if self.logging_thread and self.logging_queue:
-            logging_tupple = [ time.time(), threading.current_thread().name, module, logType, message, nwkid, context ]
+            logging_tupple = [ str(time.time()), str(threading.current_thread().name), str(module), str(logType), str(message), str(nwkid), str(context) ]
             self.logging_queue.put( logging_tupple )
         else:
             Domoticz.Log("%s" %message)
@@ -328,6 +328,7 @@ def logging_thread( self ):
                 break
         elif len(logging_tupple) == 7:
             timing, thread_name, module, logType, message, nwkid, context = logging_tupple
+            context = eval(context)
             if logType == 'Error':
                 loggingError( self, thread_name, module, message, nwkid, context)
             elif logType == 'Debug':
