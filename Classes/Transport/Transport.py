@@ -132,8 +132,10 @@ class ZigateTransport(object):
         self.FirmwareVersion = FirmwareVersion
         self.FirmwareMajorVersion = FirmwareMajorVersion
         if self.FirmwareMajorVersion == '05':
-            Domoticz.Status("*** ZiGate V2 in noSQN mode ***")
-            self.firmware_nosqn = True
+            #Domoticz.Status("*** ZiGate V2 in noSQN mode ***")
+            #self.firmware_nosqn = True
+            Domoticz.Status("*** ZiGate V2 in compatibility mode ***")
+            self.firmware_compatibility_mode = True
 
     def thread_transport_shutdown( self ):
         self.running = False
