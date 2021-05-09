@@ -692,8 +692,8 @@ class BasePlugin:
 
         # Garbage collector ( experimental for now)
         if self.internalHB % (  3600 // HEARTBEAT) == 0:
-            self.log.logging( 'Plugin', 'Log', "Garbage Collection status: %s" %str(gc.get_count()) )
-            self.log.logging( 'Plugin', 'Log', "Garbage Collection triggered: %s" %str(gc.collect()) )
+            self.log.logging( 'Plugin', 'Debug', "Garbage Collection status: %s" %str(gc.get_count()) )
+            self.log.logging( 'Plugin', 'Debug', "Garbage Collection triggered: %s" %str(gc.collect()) )
 
         # Manage all entries in  ListOfDevices (existing and up-coming devices)
         processListOfDevices( self , Devices )
@@ -722,6 +722,10 @@ class BasePlugin:
 
         # Reset Motion sensors
         ResetDevice( self, Devices, "Motion",5)
+
+        # Send a Many-to-One-Route-request
+        if self.HeartbeatCount % ( ( 50 * 60 ) // HEARTBEAT) == 0:
+            do_Many_To_One_RouteRequest(self)
 
         # OTA upgrade
         if self.OTA:
@@ -925,7 +929,6 @@ def zigateInit_Phase3( self ):
 
     elif self.FirmwareMajorVersion == '05':
         self.log.logging( 'Plugin', 'Status', "Plugin with Zigate V2, firmware %s correctly initialized" %self.FirmwareVersion)
-
 
 
     # If firmware above 3.0d, Get Network State 
