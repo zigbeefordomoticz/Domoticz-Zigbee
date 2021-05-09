@@ -902,4 +902,4 @@ def do_Many_To_One_RouteRequest(self):
     u8Radius = '00'    # Maximum number of hops of route discovery message
 
     sendZigateCmd(self ,'004F', bCacheRoute + u8Radius )
-    Domoticz.Log("do_Many_To_One_RouteRequest call !")
+    self.log.logging( "BasicOutput", 'Debug',"do_Many_To_One_RouteRequest call !")
