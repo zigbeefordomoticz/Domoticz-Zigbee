@@ -97,7 +97,7 @@ def limit_throuput(self, command):
         # We are in firmware 31a where we control the flow is only on 0x8000
         # Throught put of 2 messages per seconds
         self.logging_send('Debug',"Firmware 31a limit_throuput regulate to 500")
-        time.sleep(0.500)
+        time.sleep(1.0)
 
     elif not self.firmware_with_8012:
         # Firmware is not 31e
@@ -106,7 +106,7 @@ def limit_throuput(self, command):
         time.sleep(0.350)
 
     elif self.firmware_nosqn:
-        time.sleep(.750)
+        time.sleep(1.0)
 
     else:
         self.logging_send('Debug',"Firmware 31e limit_throuput regulate to 200")
