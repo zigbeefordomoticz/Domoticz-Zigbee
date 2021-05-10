@@ -23,8 +23,13 @@ def onConnect(self, Connection, Status, Description):
 
     self.logging( 'Debug', "Connection: %s, description: %s" %(Connection, Description))
     if Status != 0:
-        Domoticz.Error("Failed to connect ("+str(Status)+") to: "+Connection.Address+":"+Connection.Port+" with error: "+Description)
+        Domoticz.Error("onConnect - Failed to connect ("+str(Status)+") to: "+Connection.Address+":"+Connection.Port+" with error: "+Description)
         return
+
+    if Connection is None:
+        Domoticz.Error("onConnect - Uninitialized Connection !!! %s %s %s" %( Connection, Status, Description))
+        return
+
 
     # Search for Protocol
     for item in str(Connection).split(','):
