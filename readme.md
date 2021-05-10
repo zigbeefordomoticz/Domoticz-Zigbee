@@ -6,12 +6,15 @@
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://paypal.me/pipiche "Donate via PayPal")
 
 
-
-
 [Zigate](https://zigate.fr "Python Plugin for Domoticz home automation.")
 
 For information around the Zigate Plugin, please refer to :
 * https://github.com/pipiche38/Domoticz-Zigate-Wiki/blob/master/en-eng/Home.md for informations 
+
+## WARNING
+
+The current plugin support only the ZiGate V1 models DIN, USB, Wifi and RPI. The up coming ZiGate V2 is not supported by the plugin.
+
 
 ## Support
 
