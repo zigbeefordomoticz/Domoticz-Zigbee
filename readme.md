@@ -16,6 +16,8 @@ For information around the Zigate Plugin, please refer to :
 
 Starting plugin version 4.12.008, a Domoticz 2020.2 is required. The plugin won't be supported with Domoticz 4.xxxx
 
+The current plugin support only the ZiGate V1 models DIN, USB, Wifi and RPI. __The up coming ZiGate V2 is not supported by the plugin.__
+
 ## Documentation
 
 Documentation are available on the GitHub [Wiki](https://github.com/pipiche38/Domoticz-Zigate-Wiki "Wiki")
