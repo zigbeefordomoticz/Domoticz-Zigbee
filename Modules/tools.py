@@ -245,6 +245,8 @@ def reconnectNWkDevice( self, new_NwkId, IEEE, old_NwkId):
     # - mapping the information to the new new_NwkId
     if old_NwkId not in self.ListOfDevices:
         return
+    if old_NwkId == new_NwkId:
+        return
 
     self.ListOfDevices[new_NwkId] = dict(self.ListOfDevices[old_NwkId])
     self.IEEE2NWK[IEEE] = new_NwkId
@@ -252,7 +254,7 @@ def reconnectNWkDevice( self, new_NwkId, IEEE, old_NwkId):
     if 'ZDeviceName' in self.ListOfDevices[ new_NwkId ]:
         devName = self.ListOfDevices[ new_NwkId ]['ZDeviceName']
 
-    # MostLikely exitsingKey(the old NetworkID)  is not needed any more
+    # MostLikely exitsingKey(the old NetworkID) is not needed any more
     if removeNwkInList( self, old_NwkId ) is None:
         Domoticz.Error("reconnectNWkDevice - something went wrong in the reconnect New NwkId: %s Old NwkId: %s IEEE: %s" %(
             new_NwkId, old_NwkId, IEEE))
