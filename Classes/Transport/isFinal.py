@@ -24,6 +24,8 @@ def is_final_step( self, isqn, step):
 
 
     if self.firmware_compatibility_mode:
+        if self.ListOfCommands[ isqn ]['ackIsDisabled']:
+            return True
         if step == 0x8000 and cmd in ( 0x0100, 0x0110):
             # with firmware 31a we just sync on Response of 0100 -> 8102 and 0110 -> 8110
             return False
