@@ -83,6 +83,9 @@ def getListOfEpForCluster( self, NwkId, SearchCluster):
     """
 
     EpList = []
+    if NwkId not in self.ListOfDevices:
+        return EpList
+
     oldFashion = 'ClusterType' in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]['ClusterType'] != {} and self.ListOfDevices[NwkId]['ClusterType'] != ''
     for Ep in list(self.ListOfDevices[NwkId]['Ep'].keys()):
         if SearchCluster not in self.ListOfDevices[NwkId]['Ep'][ Ep ]:
@@ -915,6 +918,8 @@ def retreive_cmd_payload_from_8002( Payload ):
 
 
 def is_golbalcommand( fcf ):
+    if not is_hex( fcf ) or len(fcf) != 2:
+        return None
     return ( int(fcf, 16) & 0b00000011) == 0
 
 
