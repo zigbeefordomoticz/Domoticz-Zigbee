@@ -681,7 +681,7 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     elif MsgAttrID == "0020": # Battery Voltage
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
         self.log.logging( "Cluster", 'Debug', "readCluster 0001 - %s Battery: %s V" %(MsgSrcAddr, value) , MsgSrcAddr)
-        if 'Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Model'] in ('EH-ZB-BMS', 'CMS323', 'PIR323-A' ):
+        if 'Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Model'] in ('EH-ZB-BMS', 'DWS312-E', 'CDWS312', 'CTHS317ET', 'CMS323', 'PIR323-A' ):
             value = round( value/10, 1)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(value))
 
@@ -1815,7 +1815,7 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                     # Window Detection
                     MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0500', '00')
 
-        elif MsgAttrID == '4003' and 'Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Model'] == 'eTRV0100':
+        elif MsgAttrID == '4003' and 'Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'eTRV0100', 'eT093WRO'):
             # Open Window Detection for Danfoss eTRV
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0500', value)
 

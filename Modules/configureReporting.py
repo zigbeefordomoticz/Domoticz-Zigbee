@@ -204,7 +204,7 @@ def processConfigureReporting( self, NWKID=None ):
 
                     # Check if we have a Manufacturer Specific Cluster/Attribute. If that is the case, we need to send what we have , 
                     # and then pile what we have until we switch back to non manufacturer specific
-                    if (  attr in ( '4000', '4012', 'fd00',) and  cluster == '0201' and 'Model' in self.ListOfDevices[ key ] and self.ListOfDevices[ key ]['Model'] in ( 'eTRV0100', 'AC221', 'AC211')) or \
+                    if (  attr in ( '4000', '4012', 'fd00',) and  cluster == '0201' and 'Model' in self.ListOfDevices[ key ] and self.ListOfDevices[ key ]['Model'] in ( 'eT093WRO', 'eTRV0100', 'AC221', 'AC211')) or \
                         ( cluster == 'fc21' and 'Manufacturer' in self.ListOfDevices[ key ] and self.ListOfDevices[ key ]['Manufacturer'] == '1110') or \
                             ( attr in ( '0030', '0031', ) and cluster == '0406' and 'Manufacturer' in self.ListOfDevices[ key ] and self.ListOfDevices[ key ]['Manufacturer'] == '100b') :
                        
@@ -216,7 +216,7 @@ def processConfigureReporting( self, NWKID=None ):
                         # Process the Attribute
                         ListOfAttributesToConfigure = []
                         manufacturer_spec = "01"
-                        if self.ListOfDevices[ key ]['Model'] == 'eTRV0100':
+                        if self.ListOfDevices[ key ]['Model'] in ( 'eT093WRO', 'eTRV0100'):
                             manufacturer = "1246" # Danfoss
                         elif self.ListOfDevices[ key ]['Model']  in ( 'AC221', 'AC211'):
                             manufacturer = "113c"
