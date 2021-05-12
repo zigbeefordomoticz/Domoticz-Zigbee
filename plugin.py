@@ -724,7 +724,7 @@ class BasePlugin:
         ResetDevice( self, Devices, "Motion",5)
 
         # Send a Many-to-One-Route-request
-        if self.HeartbeatCount % ( ( 50 * 60 ) // HEARTBEAT) == 0:
+        if self.pluginconf.pluginConf['doManyToOneRoute'] and self.HeartbeatCount % ( ( 50 * 60 ) // HEARTBEAT) == 0:
             do_Many_To_One_RouteRequest(self)
 
         # OTA upgrade
