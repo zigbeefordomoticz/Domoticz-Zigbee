@@ -36,7 +36,7 @@ from Modules.configureReporting import processConfigureReporting
 from Modules.profalux import profalux_fake_deviceModel
 from Modules.philips import philips_set_pir_occupancySensibility
 from Modules.domoCreate import CreateDomoDevice
-from Modules.tools import reset_cluster_datastruct
+from Modules.tools import reset_cluster_datastruct, get_and_inc_SQN
 from Modules.zigateConsts import CLUSTERS_LIST
 from Modules.casaia import casaia_pairing
 from Modules.thermostats import thermostat_Calibration
@@ -44,6 +44,7 @@ from Modules.tuyaSiren import tuya_sirene_registration
 from Modules.tuyaTools import tuya_TS0121_registration
 from Modules.tuyaTRV import tuya_eTRV_registration, TUYA_eTRV_MODEL
 from Modules.paramDevice import param_Occupancy_settings_PIROccupiedToUnoccupiedDelay
+from Modules.pollControl import poll_set_long_poll_interval
 
 def writeDiscoveryInfos( self ):
 
@@ -388,6 +389,11 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                 if '0004' in self.ListOfDevices[NWKID]['Ep'][ep] and self.groupmgt:
                     self.groupmgt.ScanDevicesForGroupMemberShip( [ NWKID, ] )
                     break
+
+            if 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['Model'] != {} and self.ListOfDevices[NWKID]['Model'] == 'V3-BTZB':
+                Domoticz.Log("*** TEST PURPOSES ... LET SEE IF Polling is working ... could be what is missing")
+                poll_set_long_poll_interval( self, get_and_inc_SQN( self, NWKID), NWKID, '01', NewLongPollInterval=0x14)
+                identifyEffect( self, NWKID, '01' )
 
             # Identify for ZLL compatible devices
             # Search for EP to be used 
