@@ -98,7 +98,7 @@ def param_PowerOnAfterOffOn(self, nwkid, mode):
             ReadAttributeRequest_0006_400x(self, nwkid)
 
     elif 'Model' in self.ListOfDevices[ nwkid ] and self.ListOfDevices[ nwkid ]['Model'] in ( 'TS0601-switch', 'TS0601-2Gangs-switch'):
-        if get_tuya_attribute( self, Nwkid, 'RelayStatus') != mode
+        if get_tuya_attribute( self, nwkid, 'RelayStatus') != mode:
             tuya_switch_relay_status( self, nwkid, mode)
 
     else:
