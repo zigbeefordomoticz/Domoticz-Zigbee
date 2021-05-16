@@ -18,6 +18,7 @@ from Modules.legrand_netatmo import legrand_enable_Led_Shutter_by_nwkid, legrand
 from Modules.basicOutputs import set_poweron_afteroffon, set_PIROccupiedToUnoccupiedDelay
 from Modules.readAttributes import ReadAttributeRequest_0006_400x, ReadAttributeRequest_0406_0010
 from Modules.tuyaTRV import tuya_trv_thermostat_sensor_mode
+from Modules.tuya import tuya_switch_relay_status, tuya_switch_indicate_light, get_tuya_attribute
 
 
 def param_Occupancy_settings_PIROccupiedToUnoccupiedDelay( self, nwkid, delay):
@@ -49,7 +50,7 @@ def param_PowerOnAfterOffOn(self, nwkid, mode):
     # 1 - stay On after a Off/On
     # 255 - stay to previous state after a Off/On ( or 2 for BlitzWolf)
 
-    self.log.logging( "Heartbeat", 'Debug',"param_PowerOnAfterOffOn for %s mode: %s" %(nwkid, mode), nwkid)
+    self.log.logging( "Heartbeat", 'Log',"param_PowerOnAfterOffOn for %s mode: %s" %(nwkid, mode), nwkid)
     if mode not in ( 0, 1, 2, 255 ):
         return
 
@@ -96,6 +97,10 @@ def param_PowerOnAfterOffOn(self, nwkid, mode):
             enki_set_poweron_after_offon_device( self, mode, nwkid)
             ReadAttributeRequest_0006_400x(self, nwkid)
 
+    elif 'Model' in self.ListOfDevices[ nwkid ] and self.ListOfDevices[ nwkid ]['Model'] in ( 'TS0601-switch', 'TS0601-2Gangs-switch'):
+        if get_tuya_attribute( self, Nwkid, 'RelayStatus') != mode
+            tuya_switch_relay_status( self, nwkid, mode)
+
     else:
         # Ikea, Legrand, 
         for ep in self.ListOfDevices[ nwkid ]['Ep']:
@@ -118,7 +123,8 @@ DEVICE_PARAMETERS = {
     'netatmoLedInDark': legrand_enable_Led_InDark_by_nwkid,
     'netatmoLedShutter': legrand_enable_Led_Shutter_by_nwkid,
     'netatmoEnableDimmer': legrand_Dimmer_by_nwkid,
-    'SensorMode': tuya_trv_thermostat_sensor_mode
+    'SensorMode': tuya_trv_thermostat_sensor_mode,
+    'LightIndicator': tuya_switch_indicate_light
 }
 def sanity_check_of_param( self, NwkId):
     # Domoticz.Log("sanity_check_of_param for %s" %NwkId)

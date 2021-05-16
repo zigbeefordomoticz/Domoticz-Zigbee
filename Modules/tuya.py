@@ -19,7 +19,7 @@ from datetime import datetime, timedelta
 from Classes.LoggingManagement import LoggingManagement
 from Modules.tools import updSQN, get_and_inc_SQN, is_ack_tobe_disabled, build_fcf
 from Modules.domoMaj import MajDomoDevice
-from Modules.tuyaTools import (tuya_cmd, store_tuya_attribute)
+from Modules.tuyaTools import (tuya_cmd, store_tuya_attribute, get_tuya_attribute)
 from Modules.tuyaSiren import tuya_siren_response
 from Modules.tuyaTRV import tuya_eTRV_response, TUYA_eTRV_MODEL
 from Modules.zigateConsts import ZIGATE_EP
@@ -49,7 +49,7 @@ TUYA_SIREN_MODEL        =  ( 'TS0601', '0yu2xgi', )
 TUYA_DIMMER_MANUFACTURER = ( '_TZE200_dfxkcots', )
 TUYA_SWITCH_MANUFACTURER = ( '_TZE200_7tdtqgwv', "_TYST11_zivfvd7h", '_TZE200_oisqyl4o', '_TZE200_amp6tsvy')
 TUYA_2GANGS_SWITCH_MANUFACTURER = ('_TZE200_g1ib5ldv',)
-TUYA_3GANGS_SWITCH_MANUFACTURER = ( )
+TUYA_3GANGS_SWITCH_MANUFACTURER = ( 'TZE200_oisqyl4o', )
 
 TUYA_CURTAIN_MAUFACTURER = ( "_TZE200_cowvfni3", "_TZE200_wmcdj3aq", "_TZE200_fzo2pocs", "_TZE200_nogaemzt", "_TZE200_5zbp6j0u", \
                             "_TZE200_fdtjuw7u", "_TZE200_bqcqqjpb", "_TZE200_zpzndjez", "_TYST11_cowvfni3", "_TYST11_wmcdj3aq", \
@@ -260,7 +260,6 @@ def tuya_switch_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dst
             %(NwkId, srcEp, dp, data), NwkId)
         MajDomoDevice(self, Devices, NwkId, '03', '0006', data)
 
-
     elif dp == 0x0d:
         # All switches
         self.log.logging( "Tuya", 'Log', "tuya_switch_response - Dp 0x03 Nwkid: %s/%s decodeDP: %04x data: %s"
@@ -269,10 +268,16 @@ def tuya_switch_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dst
         MajDomoDevice(self, Devices, NwkId, '02', '0006', data)
         MajDomoDevice(self, Devices, NwkId, '03', '0006', data)
 
-    elif dp == 0x0e:
-        pass
-    elif dp == 0x0f:
-        pass
+    elif dp == 0x0e: # Relay Status
+        self.log.logging( "Tuya", 'Log', "tuya_switch_response - Dp 0x0e Nwkid: %s/%s decodeDP: %04x data: %s"
+             %(NwkId, srcEp, dp, data), NwkId)
+        store_tuya_attribute( self, NwkId, 'RelayStatus', int(data,16) ) 
+
+    elif dp == 0x0f: # Light Indicator
+        self.log.logging( "Tuya", 'Log', "tuya_switch_response - Dp 0x0f Nwkid: %s/%s decodeDP: %04x data: %s"
+            %(NwkId, srcEp, dp, data), NwkId)
+        store_tuya_attribute( self, NwkId, 'LightIndicator', int(data,16) ) 
+        
 
     else:
         attribute_name = 'UnknowDp_0x%02x_Dt_0x%02x' %(dp,datatype)
@@ -307,10 +312,52 @@ def tuya_switch_command( self, NwkId, onoff, gang=0x01):
     sqn = get_and_inc_SQN( self, NwkId )
     cluster_frame = '11'
     cmd = '00' # Command 
-    action = action = '%02x01' %gang # Data Type 0x01 - Bool
+    action = '%02x01' %gang # Data Type 0x01 - Bool
     data = onoff
     self.log.logging( "Tuya", 'Log', "tuya_switch_command - action: %s data: %s" %(action, data))
     tuya_cmd( self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)   
+
+
+def tuya_switch_indicate_light(self, NwkId, light=0x01):
+    # 0004 0f 04 0001 01 -- Indicate Switch ( On when On)
+    # 0005 0f 04 0001 00 -- Indicate Off
+    # 0006 0f 04 0001 02 -- Indicate Position (on when Off )
+    self.log.logging( "Tuya", 'Debug', "tuya_switch_indicate_light - %s Light: %s" %(NwkId, light),NwkId )
+    # determine which Endpoint
+    if light  not in ( 0x00, 0x01, 0x02):
+        self.log.logging( "Tuya", 'Error', "tuya_switch_indicate_light - Unexpected light: %s" %light)
+        return
+
+    EPout = '01'
+    sqn = get_and_inc_SQN( self, NwkId )
+    cluster_frame = '11'
+    cmd = '00' # Command 
+    action = '0f04'
+    data = '%02x' %light
+    self.log.logging( "Tuya", 'Debug', "tuya_switch_indicate_light - action: %s data: %s" %(action, data))
+    tuya_cmd( self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)  
+
+
+def tuya_switch_relay_status( self, NwkId, gang=0x01, status=0xff):
+    # 00070 e04 0001 02  -- Remember last status
+    # 00080 e04 0001 01  -- On
+    # 00090 e04 0001 00  -- Off
+    self.log.logging( "Tuya", 'Debug', "tuya_switch_relay_status - %s Light: %s" %(NwkId, status),NwkId )
+    # determine which Endpoint
+    if status  not in ( 0x00, 0x01, 0x02, 0xff):
+        self.log.logging( "Tuya", 'Error', "tuya_switch_relay_status - Unexpected light: %s" %status)
+        return
+
+    EPout = '01'
+    sqn = get_and_inc_SQN( self, NwkId )
+    cluster_frame = '11'
+    cmd = '00' # Command 
+    action = '0e04'
+    data = '%02x' %status
+    self.log.logging( "Tuya", 'Debug', "tuya_switch_relay_status - action: %s data: %s" %(action, data))
+    tuya_cmd( self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)   
+
+
 
 # Tuya TS0601 - Curtain
 def tuya_curtain_response( self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):

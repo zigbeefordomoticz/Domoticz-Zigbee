@@ -22,6 +22,10 @@
 	},
 	"ReadAttributes": {
 		"0000": [ "0004", "0005" ]
+	},
+	"Param": {
+		"PowerOnAfterOffOn": 255,
+		"LightIndicator": 1
 	}
 }
 
