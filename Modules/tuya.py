@@ -244,37 +244,37 @@ def tuya_send_default_response( self, Nwkid, srcEp , sqn, cmd, orig_fcf):
 def tuya_switch_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     if dp == 0x01:
         # Switch 1 ( Right in case of 2gangs)
-        self.log.logging( "Tuya", 'Log', "tuya_switch_response - Dp 0x01 Nwkid: %s/%s decodeDP: %04x data: %s"
+        self.log.logging( "Tuya", 'Debug', "tuya_switch_response - Dp 0x01 Nwkid: %s/%s decodeDP: %04x data: %s"
             %(NwkId, srcEp, dp, data), NwkId)
         MajDomoDevice(self, Devices, NwkId, '01', '0006', data)
 
     elif dp == 0x02:
         # Switch 2  (Left in case of 2 Gangs)
-        self.log.logging( "Tuya", 'Log', "tuya_switch_response - Dp 0x02 Nwkid: %s/%s decodeDP: %04x data: %s"
+        self.log.logging( "Tuya", 'Debug', "tuya_switch_response - Dp 0x02 Nwkid: %s/%s decodeDP: %04x data: %s"
             %(NwkId, srcEp, dp, data), NwkId)
         MajDomoDevice(self, Devices, NwkId, '02', '0006', data)
 
     elif dp == 0x03:
         # Switch 3
-        self.log.logging( "Tuya", 'Log', "tuya_switch_response - Dp 0x03 Nwkid: %s/%s decodeDP: %04x data: %s"
+        self.log.logging( "Tuya", 'Debug', "tuya_switch_response - Dp 0x03 Nwkid: %s/%s decodeDP: %04x data: %s"
             %(NwkId, srcEp, dp, data), NwkId)
         MajDomoDevice(self, Devices, NwkId, '03', '0006', data)
 
     elif dp == 0x0d:
         # All switches
-        self.log.logging( "Tuya", 'Log', "tuya_switch_response - Dp 0x03 Nwkid: %s/%s decodeDP: %04x data: %s"
+        self.log.logging( "Tuya", 'Debug', "tuya_switch_response - Dp 0x03 Nwkid: %s/%s decodeDP: %04x data: %s"
             %(NwkId, srcEp, dp, data), NwkId)
         MajDomoDevice(self, Devices, NwkId, '01', '0006', data)
         MajDomoDevice(self, Devices, NwkId, '02', '0006', data)
         MajDomoDevice(self, Devices, NwkId, '03', '0006', data)
 
     elif dp == 0x0e: # Relay Status
-        self.log.logging( "Tuya", 'Log', "tuya_switch_response - Dp 0x0e Nwkid: %s/%s decodeDP: %04x data: %s"
+        self.log.logging( "Tuya", 'Debug', "tuya_switch_response - Dp 0x0e Nwkid: %s/%s decodeDP: %04x data: %s"
              %(NwkId, srcEp, dp, data), NwkId)
         store_tuya_attribute( self, NwkId, 'RelayStatus', int(data,16) ) 
 
     elif dp == 0x0f: # Light Indicator
-        self.log.logging( "Tuya", 'Log', "tuya_switch_response - Dp 0x0f Nwkid: %s/%s decodeDP: %04x data: %s"
+        self.log.logging( "Tuya", 'Debug', "tuya_switch_response - Dp 0x0f Nwkid: %s/%s decodeDP: %04x data: %s"
             %(NwkId, srcEp, dp, data), NwkId)
         store_tuya_attribute( self, NwkId, 'LightIndicator', int(data,16) ) 
         
@@ -282,7 +282,7 @@ def tuya_switch_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dst
     else:
         attribute_name = 'UnknowDp_0x%02x_Dt_0x%02x' %(dp,datatype)
         store_tuya_attribute( self, NwkId, attribute_name, data ) 
-        self.log.logging( "Tuya", 'Log', "tuya_switch_response - Unknown attribut Nwkid: %s/%s decodeDP: %04x data: %s"
+        self.log.logging( "Tuya", 'Debug', "tuya_switch_response - Unknown attribut Nwkid: %s/%s decodeDP: %04x data: %s"
             %(NwkId, srcEp, dp, data), NwkId)
 
     #  Decode8002 - NwkId: b1ed Ep: 01 Cluster: ef00 GlobalCommand: False Command: 01 Data: 004c 0101 0001 00
