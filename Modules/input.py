@@ -453,19 +453,11 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
         )
         return
 
-    self.log.logging( 
-        "Input",
-        "Debug",
-        "Reception Data indication, Source Address : "
-        + MsgSourceAddress
-        + " Destination Address : "
-        + MsgDestinationAddress
-        + " ProfilID : "
-        + MsgProfilID
-        + " ClusterID : "
-        + MsgClusterID
-        + " Message Payload : "
-        + MsgPayload,)
+    self.log.logging(  "Input", "Debug", "Reception Data indication, Source Address : " + MsgSourceAddress
+        + " Destination Address : " + MsgDestinationAddress
+        + " ProfilID : "  + MsgProfilID
+        + " ClusterID : "  + MsgClusterID
+        + " Message Payload : " + MsgPayload,)
 
     # Let's check if this is an Schneider related APS. In that case let's process
     srcnwkid = dstnwkid = None
@@ -503,7 +495,7 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
 
 
     if 'SQN' in self.ListOfDevices[ srcnwkid ] and Sqn == self.ListOfDevices[ srcnwkid ]['SQN']:
-        Domoticz.Debug("Decode8002 - Duplicate message drop NwkId: %s Ep: %s Cluster: %s GlobalCommand: %5s Command: %s Data: %s"
+        self.log.logging(  "inRawAPS", "Debug","Decode8002 - Duplicate message drop NwkId: %s Ep: %s Cluster: %s GlobalCommand: %5s Command: %s Data: %s"
             % ( srcnwkid, MsgSourcePoint, MsgClusterID, GlobalCommand, Command, Data, ))
         return
 
