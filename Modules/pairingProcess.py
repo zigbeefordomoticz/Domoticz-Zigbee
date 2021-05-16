@@ -40,6 +40,7 @@ from Modules.tools import reset_cluster_datastruct, get_and_inc_SQN
 from Modules.zigateConsts import CLUSTERS_LIST
 from Modules.casaia import casaia_pairing
 from Modules.thermostats import thermostat_Calibration
+from Modules.tuya import tuya_registration
 from Modules.tuyaSiren import tuya_sirene_registration
 from Modules.tuyaTools import tuya_TS0121_registration
 from Modules.tuyaTRV import tuya_eTRV_registration, TUYA_eTRV_MODEL
@@ -461,6 +462,9 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                 
             elif 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( 'TS0121'):
                 tuya_TS0121_registration( self, NWKID)
+
+            elif 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( 'TS0601-switch', 'TS0601-2Gangs-switch'):
+                tuya_registration(self, NWKID)
 
             # Reset HB in order to force Read Attribute Status
             self.ListOfDevices[NWKID]['Heartbeat'] = 0
