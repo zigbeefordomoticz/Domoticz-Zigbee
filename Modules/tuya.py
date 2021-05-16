@@ -47,7 +47,7 @@ TUYA_SIREN_MANUFACTURER =  ( '_TZE200_d0yu2xgi', '_TYST11_d0yu2xgi' )
 TUYA_SIREN_MODEL        =  ( 'TS0601', '0yu2xgi', )
 
 TUYA_DIMMER_MANUFACTURER = ( '_TZE200_dfxkcots', )
-TUYA_SWITCH_MANUFACTURER = ( '_TZE200_7tdtqgwv', "_TYST11_zivfvd7h", '_TZE200_oisqyl4o')
+TUYA_SWITCH_MANUFACTURER = ( '_TZE200_7tdtqgwv', "_TYST11_zivfvd7h", '_TZE200_oisqyl4o', '_TZE200_amp6tsvy')
 TUYA_2GANGS_SWITCH_MANUFACTURER = ('_TZE200_g1ib5ldv',)
 TUYA_3GANGS_SWITCH_MANUFACTURER = ( )
 
@@ -77,6 +77,17 @@ TUYA_MANUFACTURER_NAME = ( TS011F_MANUF_NAME + TS0041_MANUF_NAME +
                             TUYA_THERMOSTAT_MANUFACTURER + 
                             TUYA_eTRV1_MANUFACTURER + TUYA_eTRV2_MANUFACTURER + TUYA_eTRV3_MANUFACTURER + TUYA_eTRV_MANUFACTURER)
 
+def tuya_registration(self, nwkid, device_reset=False):
+    
+    self.log.logging( "Tuya", 'Debug', "tuya_registration - Nwkid: %s" %nwkid)
+    # (1) 3 x Write Attribute Cluster 0x0000 - Attribute 0xffde  - DT 0x20  - Value: 0x13
+    EPout = '01'
+    write_attribute( self, nwkid, ZIGATE_EP, EPout, '0000', '0000', '00', 'ffde', '20', '13', ackIsDisabled = False)
+
+    # (3) Cmd 0x03 on Cluster 0xef00  (Cluster Specific)
+    if device_reset:
+        payload = '11' + get_and_inc_SQN( self, nwkid ) + '03'
+        raw_APS_request( self, nwkid, EPout, 'ef00', '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = is_ack_tobe_disabled(self, nwkid))
 
 def pollingTuya( self, key ):
     """
@@ -229,7 +240,7 @@ def tuya_send_default_response( self, Nwkid, srcEp , sqn, cmd, orig_fcf):
     self.log.logging( "Tuya", 'Debug', "tuya_send_default_response - %s/%s fcf: 0x%s ManufSpec: 0x%s Direction: 0x%s DisableDefault: 0x%s" %(
         Nwkid, srcEp, fcf, manuf_spec, direction, disabled_default ))
 
-
+# Tuya TS0601 - Switch 1, 2, 3 Gangs
 def tuya_switch_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     if dp == 0x01:
         # Switch 1 ( Right in case of 2gangs)
@@ -282,6 +293,7 @@ def tuya_switch_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dst
     #  tuya_switch_response - Dp 0x02 Nwkid: b1ed/01 decodeDP: 0002 data: 00
 
 def tuya_switch_command( self, NwkId, onoff, gang=0x01):
+     
     self.log.logging( "Tuya", 'Log', "tuya_switch_command - %s OpenClose: %s on gang: %s" %(NwkId, onoff, gang),NwkId )
     # determine which Endpoint
     if gang  not in  (0x01, 0x02, 0x03):
