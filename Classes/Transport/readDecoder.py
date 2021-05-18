@@ -18,6 +18,8 @@ def decode_and_split_message(self, raw_message):
         self._ReqRcv += raw_message  # Add the incoming data
         #Domoticz.Debug("onMessage incoming data : '" + str(binascii.hexlify(self._ReqRcv).decode('utf-8')) + "'")
 
+    self._last_raw_message = raw_message
+    
     while 1:  # Loop, detect frame and process, until there is no more frame.
         if len(self._ReqRcv) == 0:
             return
@@ -58,20 +60,41 @@ def get_raw_frame_from_raw_message( self ):
     self._ReqRcv = self._ReqRcv[zero3_position + 1:]
     return frame
 
+#def decode_frame( frame ):
+#    if frame is None or frame == b'':
+#        return None
+#    BinMsg = bytearray()
+#    iterReqRcv = iter(frame)
+#    for iByte in iterReqRcv:  # for each received byte
+#        if iByte == 0x02:  # Coded flag ?
+#            # then uncode the next value
+#            iByte = next(iterReqRcv) ^ 0x10
+#        BinMsg.append(iByte)  # copy
+#    if len(BinMsg) <= 6:
+#        return None
+#    return BinMsg
+
 def decode_frame( frame ):
     if frame is None or frame == b'':
         return None
     BinMsg = bytearray()
     iterReqRcv = iter(frame)
-    for iByte in iterReqRcv:  # for each received byte
-        if iByte == 0x02:  # Coded flag ?
-            # then uncode the next value
-            iByte = next(iterReqRcv) ^ 0x10
+    bInEsc = False
+    for iByte in iterReqRcv:  # for each received byte 
+        if iByte == 0x02:
+            # Take the next byte and OR with 0x10
+            bInEsc = True
+            continue
+        if bInEsc:
+            bInEsc = False
+            iByte = iByte ^ 0x10
         BinMsg.append(iByte)  # copy
     if len(BinMsg) <= 6:
         return None
     return BinMsg
-          
+
+
+
 def check_frame_crc(self, BinMsg):
     ComputedChecksum = 0
     if len(BinMsg) < 6:
@@ -80,6 +103,7 @@ def check_frame_crc(self, BinMsg):
             'Error code': 'TRANS-CHKCRC-02',
             'BinMsg': str(BinMsg),
             'AsciiMsg': str(binascii.hexlify(BinMsg).decode('utf-8')),
+            'LastRawMsg': str(binascii.hexlify(self._last_raw_message).decode('utf-8')),
             'len': len(BinMsg),
         }
         self.logging_receive_error( "check_frame_crc", context=_context)
@@ -95,6 +119,7 @@ def check_frame_crc(self, BinMsg):
             'Error code': 'TRANS-CHKCRC-01',
             'BinMsg': str(BinMsg),
             'AsciiMsg': str(binascii.hexlify(BinMsg).decode('utf-8')),
+            'LastRawMsg': str(binascii.hexlify(self._last_raw_message).decode('utf-8')),
             'len': len(BinMsg),
             'MsgType': MsgType,
             'Length': Length,
