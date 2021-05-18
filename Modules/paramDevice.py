@@ -50,7 +50,7 @@ def param_PowerOnAfterOffOn(self, nwkid, mode):
     # 1 - stay On after a Off/On
     # 255 - stay to previous state after a Off/On ( or 2 for BlitzWolf)
 
-    self.log.logging( "Heartbeat", 'Log',"param_PowerOnAfterOffOn for %s mode: %s" %(nwkid, mode), nwkid)
+    self.log.logging( "Heartbeat", 'Debug',"param_PowerOnAfterOffOn for %s mode: %s" %(nwkid, mode), nwkid)
     if mode not in ( 0, 1, 2, 255 ):
         return
 
