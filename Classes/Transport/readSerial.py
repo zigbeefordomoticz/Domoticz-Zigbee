@@ -39,10 +39,14 @@ def serial_reset_line_in(self):
 def close_serial( self):
     self.logging_receive( 'Status', "ZigateTransport: Serial Connection closing: %s" %self._connection)
     try:
+        self._connection.reset_input_buffer()
+        self._connection.reset_output_buffer()
         self._connection.close()
         del self._connection
         self._connection = None
-    except:
+        self.logging_receive( 'Status', "ZigateTransport: Serial Connection closed: %s" %self._connection)
+    except Exception as e:
+        self.logging_receive( 'Log', "ZigateTransport: Error while Serial Connection closing: %s - %s" %(self._connection, e))
         pass
     time.sleep(0.5)
 
@@ -60,7 +64,7 @@ def serial_read_from_zigate( self ):
         data = None
         try:
             if self._connection:
-                data = self._connection.read( 1)  # Blocking Read
+                data = self._connection.read(1)  # Blocking Read
 
         except serial.SerialException as e:
             self.logging_receive('Error',"serial_read_from_zigate - error while reading %s" %(e))
