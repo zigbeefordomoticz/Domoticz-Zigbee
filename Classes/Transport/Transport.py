@@ -46,6 +46,7 @@ class ZigateTransport(object):
         self.hardwareid = hardwareid
         self._connection = None  # connection handle
         self._ReqRcv = bytearray()  # on going receive buffer
+        self._last_raw_message = bytearray()
         self._transp = None  # Transport mode USB or Wifi
         self._serialPort = None  # serial port in case of USB
         self._wifiAddress = None  # ip address in case of Wifi
