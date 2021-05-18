@@ -1503,7 +1503,8 @@ def Cluster0102( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 if ( 'Param' in self.ListOfDevices[ MsgSrcAddr ] and  \
                      'netatmoInvertShutter' in self.ListOfDevices[ MsgSrcAddr ]['Param'] and \
                     self.ListOfDevices[ MsgSrcAddr ]['Param']['netatmoInvertShutter']):
-                    Domoticz.Log("==>INVERSE===")
+                    self.log.logging( "Cluster",  'Debug', "ReadCluster - %s - %s/%s - Model: %s ==>INVERSE===" %(
+                        MsgAttrID, MsgSrcAddr, MsgSrcEp, self.ListOfDevices[MsgSrcAddr]['Model']), MsgSrcAddr)
                     value = 100 - value
 
         self.log.logging( "Cluster", 'Debug', "ReadCluster - %s - %s/%s - Shutter switch with neutral After correction value: %s" 
