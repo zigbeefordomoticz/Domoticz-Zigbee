@@ -183,13 +183,10 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                     self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'RA_0000' )
                 ReadAttributeRequest_0000(self, NWKID, fullScope=False )    # Reuest Model Name
         for iterEp in self.ListOfDevices[NWKID]['Ep']:
-            if len(self.ListOfDevices[NWKID]['Ep'][iterEp]) > 0: 
-                Domoticz.Status("[%s] NEW OBJECT: %s Request Simple Descriptor for Ep: %s" %( '-', NWKID, iterEp))
-                if self.pluginconf.pluginConf['capturePairingInfos']:
-                    self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( '0043' )
-                sendZigateCmd(self,"0043", str(NWKID)+str(iterEp))
-            else:
-                Domoticz.Log("Already some infos for the Ep: %s" %str(self.ListOfDevices[NWKID]['Ep'][iterEp]))
+            Domoticz.Status("[%s] NEW OBJECT: %s Request Simple Descriptor for Ep: %s" %( '-', NWKID, iterEp))
+            if self.pluginconf.pluginConf['capturePairingInfos']:
+                self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( '0043' )
+            sendZigateCmd(self,"0043", str(NWKID)+str(iterEp))
         return
 
     if knownModel and RIA > 3 and status != 'UNKNOW' and status != 'inDB':
