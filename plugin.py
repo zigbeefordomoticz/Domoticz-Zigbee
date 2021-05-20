@@ -52,7 +52,7 @@
                 <option label="ZiGate DIN" value="DIN" />
                 <option label="ZiGate PI" value="PI" />
                 <option label="ZiGate Wifi" value="Wifi"/>
-                <option label="ZiGate V2" value="V2"/>
+                <option label="ZiGate+ (V2)" value="V2"/>
                 <option label="None" value="None"/>
             </options>
         </param>
@@ -922,13 +922,11 @@ def zigateInit_Phase3( self ):
             Domoticz.Error("WebServer disabled du to Parameter Mode4 set to %s" %Parameters['Mode4'])
 
     if self.FirmwareMajorVersion == '03':
-        self.log.logging( 'Plugin', 'Status', "Plugin with Zigate Classic, firmware %s correctly initialized" %self.FirmwareVersion)
-        self.log.logging( "Input", "Status", "ZiGate Classic PDM (legacy)")
+        self.log.logging( 'Plugin', 'Status', "Plugin with Zigate, firmware %s correctly initialized" %self.FirmwareVersion)
     elif self.FirmwareMajorVersion == '04':
-        self.log.logging( 'Plugin', 'Status', "Plugin with Zigate OptiPDM, firmware %s correctly initialized" %self.FirmwareVersion)
-
+        self.log.logging( 'Plugin', 'Status', "Plugin with Zigate (OptiPDM), firmware %s correctly initialized" %self.FirmwareVersion)
     elif self.FirmwareMajorVersion == '05':
-        self.log.logging( 'Plugin', 'Status', "Plugin with Zigate V2, firmware %s correctly initialized" %self.FirmwareVersion)
+        self.log.logging( 'Plugin', 'Status', "Plugin with Zigate+, firmware %s correctly initialized" %self.FirmwareVersion)
 
 
     # If firmware above 3.0d, Get Network State 
