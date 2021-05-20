@@ -48,12 +48,17 @@
     <params>
         <param field="Mode1" label="Zigate Model" width="75px" required="true" default="None">
             <options>
-                <option label="ZiGate USB" value="USB" default="true" />
-                <option label="ZiGate DIN" value="DIN" />
-                <option label="ZiGate PI" value="PI" />
-                <option label="ZiGate Wifi" value="Wifi"/>
-                <option label="ZiGate+ (V2)" value="V2"/>
-                <option label="None" value="None"/>
+                <option label="ZiGate"  value="V1"/>
+                <option label="ZiGate+" value="V2"/>
+            </options>
+        </param>
+        <param field="Mode2" label="Zigate Communication" width="75px" required="true" default="None">
+            <options>
+                <option label="USB"   value="USB" />
+                <option label="DIN"   value="DIN" />
+                <option label="PI"    value="PI" />
+                <option label="TCPIP" value="Wifi"/>
+                <option label="None"  value="None"/>
             </options>
         </param>
         <param field="Address" label="IP" width="150px" required="true" default="0.0.0.0"/>
@@ -228,13 +233,23 @@ class BasePlugin:
 
 
     def onStart(self):
-        Domoticz.Heartbeat( 1 )
-        Domoticz.Log("Is GC enabled: %s" % gc.isenabled())
-        
-        self.pluginParameters = dict(Parameters)
+        Domoticz.Log( "ZiGate plugin started!" )
+        assert sys.version_info >= (3, 4)
 
-        for x in self.pluginParameters:
-            Domoticz.Log("Parameters[%s] %s" %(x,self.pluginParameters[ x ]))
+        if Parameters["Mode1"] == "V1" and Parameters["Mode2"] in ( "USB","DIN","PI" ,"Wifi","None",):
+            self.transport = Parameters["Mode2"]
+        elif Parameters["Mode1"] == "V2" and Parameters["Mode2"] in ( "USB","DIN","PI" ,"Wifi","None",) :
+            self.transport = Parameters["Mode2"]
+        else:
+            Domoticz.Error("Please cross-check the plugin starting parameters Mode1: %s Mode2: %s and make sure you have restarted Domoticz after updating the plugin" %( 
+                Parameters["Mode1"] == "V1" , Parameters["Mode2"]))
+            return
+
+        # Set plugin heartbeat to 1s
+        Domoticz.Heartbeat( 1 )
+        
+        # Copy the Domoticz.Parameters to a variable accessible in the all objetc
+        self.pluginParameters = dict(Parameters)
 
         # Open VERSION file in .hidden
         with open( Parameters["HomeFolder"] + VERSION_FILENAME, 'rt') as versionfile:
@@ -254,17 +269,12 @@ class BasePlugin:
         self.pluginParameters['FirmwareUpdate'] = None
         self.pluginParameters['PluginUpdate'] = None
 
-        Domoticz.Status("Zigate plugin %s-%s started" %(self.pluginParameters['PluginBranch'], self.pluginParameters['PluginVersion']))
-        Domoticz.Status( "Debug: %s" %Parameters["Mode6"])
-
         self.busy = True
         
         self.DomoticzVersion = Parameters["DomoticzVersion"]
         self.homedirectory = Parameters["HomeFolder"]
         self.HardwareID = (Parameters["HardwareID"])
         self.Key = (Parameters["Key"])
-        self.transport = Parameters["Mode1"]
-        Domoticz.Status("DomoticzVersion: %s" %Parameters["DomoticzVersion"])      
         lst_version = Parameters["DomoticzVersion"].split(' ')
 
         if len(lst_version) == 1:
@@ -294,7 +304,7 @@ class BasePlugin:
             self.VersionNewFashion = True
 
         # Import PluginConf.txt
-        Domoticz.Status( "load PluginConf" )
+        Domoticz.Log( "load PluginConf" )
         self.pluginconf = PluginConf(Parameters["HomeFolder"], self.HardwareID)
 
         # Create the adminStatusWidget if needed
@@ -302,22 +312,30 @@ class BasePlugin:
         self.PluginHealth['Txt'] = 'Startup'
 
         if self.log is None:
-            Domoticz.Status( "Starting LoggingManagement thread" )
+            Domoticz.Log( "Starting LoggingManagement thread" )
             self.log = LoggingManagement(self.pluginconf, self.PluginHealth, self.HardwareID, self.ListOfDevices, self.permitTojoin , )
             self.log.loggingUpdatePluginVersion( str( self.pluginParameters['PluginBranch'] + '-' + self.pluginParameters['PluginVersion']) )
             self.log.openLogFile()
 
-        self.log.logging( 'Plugin', 'Status',  "Python Version - %s" %sys.version)
-        assert sys.version_info >= (3, 4)
-        self.log.logging( 'Plugin', 'Status',  "DomoticzVersion: %s" %Parameters["DomoticzVersion"])
-        self.log.logging( 'Plugin', 'Status',  "DomoticzHash: %s" %Parameters["DomoticzHash"])
-        self.log.logging( 'Plugin', 'Status',  "DomoticzBuildTime: %s" %Parameters["DomoticzBuildTime"])
+        self.log.logging( 'Plugin', 'Status',"Zigate plugin %s-%s started" %(self.pluginParameters['PluginBranch'], self.pluginParameters['PluginVersion']))
+  
+        # Debuging information
+        self.log.logging( 'Plugin', 'Debug', "Is GC enabled: %s" % gc.isenabled())
+        self.log.logging( 'Plugin', 'Debug',"DomoticzVersion: %s" %Parameters["DomoticzVersion"])    
+        for x in self.pluginParameters:
+            self.log.logging( 'Plugin', 'Debug', "Parameters[%s] %s" %(x,self.pluginParameters[ x ]))
+
+        self.log.logging( 'Plugin', 'Debug', "Debug: %s" %Parameters["Mode6"])
+        self.log.logging( 'Plugin', 'Debug',  "Python Version - %s" %sys.version)
+        self.log.logging( 'Plugin', 'Debug',  "DomoticzVersion: %s" %Parameters["DomoticzVersion"])
+        self.log.logging( 'Plugin', 'Debug',  "DomoticzHash: %s" %Parameters["DomoticzHash"])
+        self.log.logging( 'Plugin', 'Debug',  "DomoticzBuildTime: %s" %Parameters["DomoticzBuildTime"])
         self.log.logging( 'Plugin', 'Debug', "Startup Folder: %s" %Parameters["StartupFolder"])
         self.log.logging( 'Plugin', 'Debug', "Home Folder: %s" %Parameters["HomeFolder"])
         self.log.logging( 'Plugin', 'Debug', "User Data Folder: %s" %Parameters["UserDataFolder"])
         self.log.logging( 'Plugin', 'Debug', "Web Root Folder: %s" %Parameters["WebRoot"])
         self.log.logging( 'Plugin', 'Debug', "Database: %s" %Parameters["Database"])
-        self.log.logging( 'Plugin', 'Status', "Opening DomoticzDB in raw")
+        self.log.logging( 'Plugin', 'Debug', "Opening DomoticzDB in raw")
         self.log.logging( 'Plugin', 'Debug', "   - DeviceStatus table")
         self.StartupFolder = Parameters["StartupFolder"]
 
@@ -339,7 +357,7 @@ class BasePlugin:
         self.adminWidgets.updateStatusWidget( Devices, 'Startup')
 
         self.DeviceListName = "DeviceList-" + str(Parameters['HardwareID']) + ".txt"
-        self.log.logging( 'Plugin', 'Status', "Plugin Database: %s" %self.DeviceListName)
+        self.log.logging( 'Plugin', 'Log', "Plugin Database: %s" %self.DeviceListName)
 
         if  self.pluginconf.pluginConf['capturePairingInfos'] == 1 :
             self.DiscoveryDevices = {}
@@ -349,14 +367,14 @@ class BasePlugin:
 
         #if type(self.DeviceConf) is not dict:
         if not isinstance(self.DeviceConf, dict):
-            Domoticz.Error("DeviceConf initialisation failure!!! %s" %type(self.DeviceConf))
+            self.log.logging( 'Plugin', 'Error',"DeviceConf initialisation failure!!! %s" %type(self.DeviceConf))
             return
 
         #Import DeviceList.txt Filename is : DeviceListName
         self.log.logging( 'Plugin', 'Status', "load ListOfDevice" )
         if LoadDeviceList( self ) == 'Failed' :
-            Domoticz.Error("Something wennt wrong during the import of Load of Devices ...")
-            Domoticz.Error("Please cross-check your log ... You must be on V3 of the DeviceList and all DeviceID in Domoticz converted to IEEE")
+            self.log.logging( 'Plugin', 'Error',"Something wennt wrong during the import of Load of Devices ...")
+            self.log.logging( 'Plugin', 'Error',"Please cross-check your log ... You must be on V3 of the DeviceList and all DeviceID in Domoticz converted to IEEE")
             return            
 
         self.log.logging( 'Plugin', 'Debug', "ListOfDevices : " )
@@ -399,7 +417,7 @@ class BasePlugin:
             self.PluginHealth['Firmware Update'] = {'Progress': '75 %', 'Device': '1234'}
             return
         else:
-            Domoticz.Error("Unknown Transport comunication protocol : "+str(self.transport) )
+            self.log.logging( 'Plugin', 'Error', "Unknown Transport comunication protocol : "+str(self.transport) )
             return
 
         self.log.logging( 'Plugin', 'Debug', "Establish Zigate connection" )
@@ -414,45 +432,45 @@ class BasePlugin:
         self.busy = False
 
     def onStop(self):
-        Domoticz.Status("onStop called")
+        self.log.logging( 'Plugin', 'Log',"onStop called")
 
-        Domoticz.Status("onStop calling (1) domoticzDb DeviceStatus closed")
+        self.log.logging( 'Plugin', 'Log',"onStop calling (1) domoticzDb DeviceStatus closed")
         if self.domoticzdb_DeviceStatus:
             self.domoticzdb_DeviceStatus.closeDB()
-        Domoticz.Status("onStop called (1) domoticzDb DeviceStatus closed")
+        self.log.logging( 'Plugin', 'Log',"onStop called (1) domoticzDb DeviceStatus closed")
 
-        Domoticz.Status("onStop calling (2) domoticzDb Hardware closed")
+        self.log.logging( 'Plugin', 'Log',"onStop calling (2) domoticzDb Hardware closed")
         if self.domoticzdb_Hardware:
             self.domoticzdb_Hardware.closeDB()
-        Domoticz.Status("onStop called (2) domoticzDb Hardware closed")
+        self.log.logging( 'Plugin', 'Log',"onStop called (2) domoticzDb Hardware closed")
 
-        Domoticz.Status("onStop calling (3) Transport off")
+        self.log.logging( 'Plugin', 'Log',"onStop calling (3) Transport off")
         if self.ZigateComm:
             self.ZigateComm.thread_transport_shutdown()
             self.ZigateComm.close_conn()
-        Domoticz.Status("onStop called (3) Transport off")
+        self.log.logging( 'Plugin', 'Log',"onStop called (3) Transport off")
 
-        Domoticz.Status("onStop calling (4) WebServer off")
+        self.log.logging( 'Plugin', 'Log',"onStop calling (4) WebServer off")
         if self.webserver:
             self.webserver.onStop()
-        Domoticz.Status("onStop called (4) WebServer off")
+        self.log.logging( 'Plugin', 'Log',"onStop called (4) WebServer off")
 
         #self.ZigateComm.close_conn()
-        Domoticz.Status("onStop calling (5) Plugin Database saved")
+        self.log.logging( 'Plugin', 'Log',"onStop calling (5) Plugin Database saved")
         WriteDeviceList(self, 0)
-        Domoticz.Status("onStop called (5) Plugin Database saved")
+        self.log.logging( 'Plugin', 'Log',"onStop called (5) Plugin Database saved")
 
         self.statistics.printSummary()
         self.statistics.writeReport()
 
-        Domoticz.Status("onStop calling (6) Close Logging Management")
+        self.log.logging( 'Plugin', 'Log',"onStop calling (6) Close Logging Management")
         if self.log:
             self.log.closeLogFile()
-        Domoticz.Status("onStop called (6) Close Logging Management")
+        self.log.logging( 'Plugin', 'Log',"onStop called (6) Close Logging Management")
         
         for thread in threading.enumerate():
             if (thread.name != threading.current_thread().name):
-                Domoticz.Log("'"+thread.name+"' is running, it must be shutdown otherwise Domoticz will abort on plugin exit.")
+                self.log.logging( 'Plugin', 'Log', "'"+thread.name+"' is running, it must be shutdown otherwise Domoticz will abort on plugin exit.")
 
         self.PluginHealth['Flag'] = 3
         self.PluginHealth['Txt'] = 'No Communication'

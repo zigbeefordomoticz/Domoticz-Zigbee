@@ -95,14 +95,7 @@ class ZigateTransport(object):
         self.PDMCommandOnly = False
 
         #DomoticzVersion: 2020.2 (build 12741) is minimum Dz version where full multithread is possible
-
-        if ( DomoticzMajor < 2020 or (DomoticzMajor == 2020 and ( DomoticzMinor < 2 or ( DomoticzMinor == 2 and DomoticzBuild < 12741)))):
-            # we will force the Dz communication mecanism.
-            Domoticz.Status("ZiGate plugin start with limited capabilities due to Domoticz version below 2020.2 (Build 12741)")
-            self.force_dz_communication = True
-        else:
-            # All ok
-            self.force_dz_communication = False
+        self.force_dz_communication = False
 
 
         # Initialise SQN Management
@@ -202,10 +195,10 @@ class ZigateTransport(object):
             self.set_connection()
         if (not self.pluginconf.pluginConf['byPassDzConnection'] or self.force_dz_communication) and self._connection:
             self._connection.Connect()
-        Domoticz.Status("Connection open: %s" % self._connection)
+        Domoticz.Log("Connection open: %s" % self._connection)
 
     def close_conn(self):
-        Domoticz.Status("Connection close: %s" % self._connection)
+        Domoticz.Log("Connection close: %s" % self._connection)
 
         self.running = False # It will shutdown the Thread 
 
@@ -224,7 +217,7 @@ class ZigateTransport(object):
         self._connection = None
 
     def re_conn(self):
-        Domoticz.Status("Reconnection: Old: %s" % self._connection)
+        Domoticz.Log("Reconnection: Old: %s" % self._connection)
         if self.pluginconf.pluginConf['byPassDzConnection'] and not self.force_dz_communication:
             if self._connection:
                 self._connection.close()

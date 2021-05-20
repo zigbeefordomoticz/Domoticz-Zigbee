@@ -480,11 +480,9 @@ class WebServer(object):
                         if str(setting_lst[setting]['current']) == str(self.pluginconf.pluginConf[param]):
                             #Nothing to do
                             continue
-                        if (
-                            SETTINGS[_theme]['param'][param]['type'] == 'hex'
-                            and int(setting_lst[setting]['current'], 16)
-                            == self.pluginconf.pluginConf[param]
-                        ):
+                        if ( SETTINGS[_theme]['param'][param]['type'] == 'hex'
+                            and int(str(setting_lst[setting]['current']), 16) == self.pluginconf.pluginConf[param]
+                            ):
                             continue
 
                         self.logging( 'Debug', "Updating %s from %s to %s on theme: %s" %( param, self.pluginconf.pluginConf[param], setting_lst[setting]['current'], _theme))
@@ -530,7 +528,7 @@ class WebServer(object):
                         else:
                             if SETTINGS[_theme]['param'][param]['type'] == 'hex':
                                 #Domoticz.Log("--> %s: %s - %s" %(param, self.pluginconf.pluginConf[param], type(self.pluginconf.pluginConf[param])))
-                                self.pluginconf.pluginConf[param] = int(setting_lst[setting]['current'],16)
+                                self.pluginconf.pluginConf[param] = int(str(setting_lst[setting]['current']),16)
                             else:
                                 self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
 
