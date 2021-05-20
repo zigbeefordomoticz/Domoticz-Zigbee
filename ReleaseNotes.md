@@ -12,10 +12,44 @@ If you want to contribue , please let us know , we are looking for help in vario
 - improving the plugin
 - increasing the level of documentation for end user
 
+## Attention: 
+stable will remain on 4.11.17 and no further update will be done. This is the latest version supported with DomoticZ below 2020 ( 4.xxxx like )
+stable-2020 is the new stable branche dedicated for DomoticZ equal and above 2020.1
+
 Release Numbering
 
 - Odd numbers --> Stable
 - Even numbers  --> Beta
+
+##               - 2020-stable/4.13.1 (best performance with Domoticz 2021.1 and above)
+
+- [Hardware] - Update of Danalock configuration
+- [Technical] - handling (but not full support) ZiGate+ (V2)
+- [Technical] - handling the new OptiPDM firmware for ZiGate 
+- [Technical] - Handling Extended Error code from NXP stack
+- [Hardware] - Partialy support Wiser Thermostat (new generation). Temp and Humi reported. Thermostat setpoint not supported yet.
+- [Tool] - Update JennicModuleProgrammer to support Erase EEPROM feature.
+- [Hardware] - Support of Tuya SMart Touch 1,2 Gang support
+- [Hardware] - Support of Tuya/Moes ZTZ-EU Switch
+- [Hardware] - Support TS0042 remote
+- [Technical] - Update pyserial embedded module
+- [Hardware] - Handle the new Netatmo-Legrand Remote switch with Toggle mode instead of Off/On
+- [Hardware] - Manage native Netatmo-Legrand Group Management with Remote Switch
+- [Technical] - refactor Network Topology (simply version by default), required siblingDisplay to get full network
+- [Hardware] - Integrate Hue Smart Button ( ROM001 )
+- [Hardware] - Integrate DYI sensor ( Binary analog cluster)
+- [Technical] - Refactor device parameter and make then device specific (instead of global).
+- [Hardware] - Integrate Tuya TS0601 Thermostat
+- [Technical] - Enable saving plugin databases into Domoticz Database
+- [WebAdmin] - Enhancements of the Web User Interface.
+- [Hardware] - Add Lora Tap Switch
+- [Hardware] - Add Tuya eTRV
+
+
+# en of Domoticz 4.xxxx support. For above version it is required to have a minimum of 2020.1
+
+## 23 Feb. 2021   - 4.11.17
+- [Hardware] - Module AIr Co CAC221
 
 ## 03 Feb. 2021   - 4.11.16
 - [Hardware] - Lumi Plug MAEU01
