@@ -108,8 +108,11 @@ class LoggingManagement:
         if self.logging_queue is None:
             Domoticz.Error("closeLogFile - logging_queue is None")
             return
-        self.logging_queue.put( [ time.time(), 'QUIT'] )
-        self.logging_thread.join()
+
+        if self.logging_queue:
+            self.logging_queue.put( [ str(time.time()), 'QUIT'] )
+        if self.logging_thread:
+            self.logging_thread.join()
         del self.logging_thread
         self.logging_thread = None
         del self.logging_queue
