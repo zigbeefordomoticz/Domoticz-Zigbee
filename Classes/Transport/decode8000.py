@@ -124,12 +124,12 @@ def get_sqn_pdus( self, MsgData ):
                 self.firmware_compatibility_mode = False
                 self.firmware_with_aps_sqn = True
                 self.firmware_with_8012 = True
-                self.logging_send('Status', "==> Transport Mode switch to: 31e")
+                self.logging_send('Status', "==> Transport Mode switch to full mode")
 
         elif not self.firmware_with_aps_sqn:
             self.firmware_compatibility_mode = False
             self.firmware_with_aps_sqn = True
-            self.logging_send('Status', "==> Transport Mode switch to: 31d")
+            self.logging_send('Status', "==> Transport Mode switch to: half mode ( no 8012)")
         
     return ( sqn_aps, type_sqn , apdu, npdu )
 
