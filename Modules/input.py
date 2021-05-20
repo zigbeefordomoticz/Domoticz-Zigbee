@@ -149,6 +149,7 @@ def ZigateRead(self, Devices, Data):
         "8102": Decode8102,
         "8110": Decode8110,
         "8120": Decode8120,
+        "8139": Decode8139,
         "8140": Decode8140,
         "8401": Decode8401,
         "8501": Decode8501,
@@ -748,7 +749,7 @@ def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
     elif self.FirmwareMajorVersion == '04':
         self.log.logging( "Input", "Status", "ZiGate Classic PDM (OptiPDM)")
     elif self.FirmwareMajorVersion == '05':
-        self.log.logging( "Input", "Status", "ZiGate V2")    
+        self.log.logging( "Input", "Status", "ZiGate+ (V2)")    
     self.log.logging( "Input", "Status", "Installer Version Number: %s" %self.FirmwareVersion)
     self.zigatedata["Firmware Version"] = "Branch: %s Major: %s Version: %s" %(self.FirmwareBranch,self.FirmwareMajorVersion, self.FirmwareVersion )
     if self.webserver:
@@ -2528,6 +2529,24 @@ def Decode8120_attribute( self, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 % (MsgClusterId, matchAttributeId, MsgSrcAddr, MsgSrcEp, MsgStatus),
                 MsgSrcAddr,
             )
+
+def Decode8139(self, Devices, MsgData, MsgLQI):
+    # E_SL_MSG_ATTRIBUTE_DISCOVERY_INDIVIDUAL_RESPONSE
+    #   ZNC_BUF_U8_UPD   ( &au8LinkTxBuffer [0],         psEvent->uMessage.sAttributeDiscoveryResponse.bDiscoveryComplete,    u16Length );
+    #   ZNC_BUF_U8_UPD   ( &au8LinkTxBuffer [u16Length], psEvent->uMessage.sAttributeDiscoveryResponse.eAttributeDataType,    u16Length );
+    #   ZNC_BUF_U16_UPD  ( &au8LinkTxBuffer [u16Length], psEvent->uMessage.sAttributeDiscoveryResponse.u16AttributeEnum,      u16Length );
+    #   ZNC_BUF_U16_UPD  ( &au8LinkTxBuffer [u16Length],  psEvent->pZPSevent->uEvent.sApsDataIndEvent.uSrcAddress.u16Addr,    u16Length );
+    #   ZNC_BUF_U8_UPD   ( &au8LinkTxBuffer [u16Length],  psEvent->pZPSevent->uEvent.sApsDataIndEvent.u8SrcEndpoint,          u16Length );
+    #   ZNC_BUF_U16_UPD  ( &au8LinkTxBuffer [u16Length],  psEvent->psClusterInstance->psClusterDefinition->u16ClusterEnum,    u16Length );
+    bDiscoveryComplete = MsgData[0:2]
+    eAttributeDataType = MsgData[2:4]
+    u16AttributeEnum = MsgData[4:8]
+    uSrcAddress = MsgData[8:12]
+    u8SrcEndpoint = MsgData[12:14]
+    u16ClusterEnum = MsgData[14:18]
+    self.log.logging(  "Input", "Log", "Decode8139 - %s/%s Complete: %s Cluster: %s Attribute Type: %s Attribute: %s" %(
+        uSrcAddress, u8SrcEndpoint, bDiscoveryComplete, u16ClusterEnum, eAttributeDataType, u16AttributeEnum))
+
 
 
 def Decode8140(self, Devices, MsgData, MsgLQI):  # Attribute Discovery response
