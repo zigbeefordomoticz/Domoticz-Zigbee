@@ -1588,7 +1588,7 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  MsgClusterData )
 
     elif MsgAttrID == '0008':   #  Pi Heating Demand  (valve position %)
-        self.log.logging( "Cluster", 'Log', "ReadCluster - %s - %s/%s Pi Heating Demand: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
+        self.log.logging( "Cluster", 'Debug', "ReadCluster - %s - %s/%s Pi Heating Demand: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
         value = ( value * 100 ) / 255
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  MsgClusterData )
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0201', value , Attribute_ = '0008')
