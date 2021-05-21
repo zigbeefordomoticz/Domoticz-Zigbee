@@ -33,7 +33,7 @@ from Modules.casaia import pollingCasaia
 from Modules.philips import pollingPhilips
 from Modules.gledopto import pollingGledopto
 from Modules.lumi import setXiaomiVibrationSensitivity, pollingLumiPower
-from Modules.tools import removeNwkInList, mainPoweredDevice, ReArrangeMacCapaBasedOnModel, is_time_to_perform_work, getListOfEpForCluster
+from Modules.tools import removeNwkInList, mainPoweredDevice, ReArrangeMacCapaBasedOnModel, is_time_to_perform_work, getListOfEpForCluster, is_hex
 from Modules.domoTools import timedOutDevice
 from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE, CLUSTERS_LIST, LEGRAND_REMOTES, LEGRAND_REMOTE_SHUTTER, LEGRAND_REMOTE_SWITCHS, ZIGATE_EP
 from Modules.pairingProcess import processNotinDBDevices
@@ -60,23 +60,32 @@ def attributeDiscovery( self, NwkId ):
         rescheduleAction = False
         # If Attributes not yet discovered, let's do it
 
-        if 'ConfigSource' not in self.ListOfDevices[NwkId]:
-            return False
+        #if 'ConfigSource' not in self.ListOfDevices[NwkId]:
+        #    return False
 
         if self.ListOfDevices[NwkId]['ConfigSource'] == 'DeviceConf':
             return False
 
-        if 'Attributes List' in self.ListOfDevices[NwkId]:
+        if 'Attributes List' in self.ListOfDevices[NwkId] and len(self.ListOfDevices[NwkId]['Attributes List']) > 0:
             return False
 
-        for iterEp in self.ListOfDevices[NwkId]['Ep']:
+        for iterEp in list(self.ListOfDevices[NwkId]['Ep']):
             if iterEp == 'ClusterType': 
                 continue
-            for iterCluster in self.ListOfDevices[NwkId]['Ep'][iterEp]:
+            for iterCluster in list(self.ListOfDevices[NwkId]['Ep'][iterEp]):
                 if iterCluster in ( 'Type', 'ClusterType', 'ColorMode' ): 
                     continue
                 if not self.busy and self.ZigateComm.loadTransmit() <= MAX_LOAD_ZIGATE:
-                    getListofAttribute( self, NwkId, iterEp, iterCluster)
+                    if int(iterCluster,16) < 0x0fff:
+                        getListofAttribute( self, NwkId, iterEp, iterCluster)
+                        #getListofAttributeExtendedInfos(self, nwkid, EpOut, cluster, start_attribute=None, manuf_specific=None, manuf_code=None)
+                    elif ( 
+                        'Manufacturer' in self.ListOfDevices[NwkId] 
+                        and len(self.ListOfDevices[NwkId]['Manufacturer']) == 4 
+                        and is_hex(self.ListOfDevices[NwkId]['Manufacturer'])
+                        ):
+                        getListofAttribute( self, NwkId, iterEp, iterCluster, manuf_specific='01', manuf_code=self.ListOfDevices[NwkId]['Manufacturer'])
+                        #getListofAttributeExtendedInfos(self, nwkid, EpOut, cluster, start_attribute=None, manuf_specific=None, manuf_code=None)
                 else:
                     rescheduleAction = True
 
@@ -405,13 +414,11 @@ def processKnownDevices( self, Devices, NWKID ):
 
                 func(self, NWKID )
 
-    #if ( intHB % 900) == 0:
-    #    # Checking PowerOn after OnOff setting ( 0x4003 )
-    #    if 'Manufacturer Name' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['Manufacturer Name'] in ( 'Philips', 'IKEA of Sweden', 'Legrand'):
-    #        for ep in self.ListOfDevices[NWKID]['Ep']:
-    #            if '0006' in self.ListOfDevices[NWKID]['Ep'][ep]:
-    #                if '4003' not in self.ListOfDevices[NWKID]['Ep'][ep]['0006']:
-    #                    ReadAttributeRequest_0006_400x( self, NWKID )
+
+    #if intHB == 3:
+    #    if 'Attributes List' in self.ListOfDevices[NWKID]['Attributes List']:
+    #        del self.ListOfDevices[NWKID]['Attributes List']
+    #    attributeDiscovery( self, NWKID )
 
     # Reenforcement of Legrand devices options if required
     if ( self.HeartbeatCount % LEGRAND_FEATURES ) == 0 :
