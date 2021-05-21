@@ -32,8 +32,9 @@ def open_serial( self ):
     return True
 
 def serial_reset_line_in(self):
-    self.logging_receive('Debug',"Reset Serial Line IN")
-    self._connection.reset_input_buffer()
+    if not self.force_dz_communication:
+        self.logging_receive('Debug',"Reset Serial Line IN")
+        self._connection.reset_input_buffer()
     
 
 def close_serial( self):
