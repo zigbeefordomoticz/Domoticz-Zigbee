@@ -33,7 +33,6 @@ def open_zigate_and_start_reader( self, zigate_mode ):
     self.logging_receive('Error',"open_zigate_and_start_reader - failed. Unable to open connection with ZiGate")
     return False
 
-
 def start_serial_reader_thread( self ):
     self.logging_receive( 'Debug', "start_serial_reader_thread")
     if self.reader_thread is None:
@@ -61,6 +60,9 @@ def shutdown_reader_thread( self):
             self.logging_receive( 'Log', "shutdown socket")
             if self._connection:
                 self._connection.shutdown( socket.SHUT_RDWR )
+
+        else:
+            self.logging_receive( 'Log', "unknown connection: %s" %str(self._connection))
 
         self.logging_receive( 'Log', "close connection")
         self._connection.close()
