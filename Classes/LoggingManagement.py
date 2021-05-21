@@ -331,7 +331,12 @@ def logging_thread( self ):
                 break
         elif len(logging_tupple) == 7:
             timing, thread_name, module, logType, message, nwkid, context = logging_tupple
-            context = eval(context)
+            try:
+                context = eval(context)
+            except:
+                Domoticz.Error("Something went wrong and catch: context: %s" %str(context))
+                Domoticz.Error("logging_thread unexpected tupple %s" %(str(logging_tupple)))
+                return
             if logType == 'Error':
                 loggingError( self, thread_name, module, message, nwkid, context)
             elif logType == 'Debug':
