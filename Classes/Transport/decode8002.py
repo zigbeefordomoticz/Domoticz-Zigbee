@@ -47,6 +47,9 @@ def decode8002_and_process(self, frame):
     if Command == '0a': # Report attributes
         return buildframe_report_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
 
+    if Command == '0d': # Discover Attributes Response
+        return buildframe_discover_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
+
     self.logging_receive( 'Log', "decode8002_and_process Unknown Command: %s NwkId: %s Ep: %s Cluster: %s Payload: %s" %(Command, SrcNwkId, SrcEndPoint, ClusterId , Data))
         
     return frame
@@ -109,6 +112,33 @@ def extract_nwk_infos_from_8002( frame ):
         return ( None, None, None , None )
 
     return ( SrcNwkId, SrcEndPoint, ClusterId , Payload )
+
+def buildframe_discover_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data ):
+
+    #Domoticz.Log("buildframe_discover_attribute_response - Data: %s" %Data)
+    discovery_complete = Data[0:2]
+    if discovery_complete == '01':
+        Attribute_type = '00'
+        Attribute = '0000'
+    else:
+        # It is assumed that only one attribute at a time is requested (this is not the standard)
+        idx = 2
+        Attribute_type = Data[idx:idx+2]
+        idx += 2
+        Attribute = '%04x' %struct.unpack('H',struct.pack('>H',int(Data[idx:idx+4],16)))[0]
+        idx += 4
+        
+    buildPayload = discovery_complete + Attribute_type + Attribute + SrcNwkId + SrcEndPoint + ClusterId
+    #Domoticz.Log("buildframe_discover_attribute_response - %s   %s %s %s %s %s" %(
+    #    discovery_complete , Attribute_type , Attribute ,SrcNwkId , SrcEndPoint , ClusterId))
+    newFrame = '01' # 0:2
+    newFrame += '8140' # 2:6   MsgType
+    newFrame += '%4x' %len(buildPayload) # 6:10  Length
+    newFrame += 'ff' # 10:12 CRC
+    newFrame += buildPayload
+    newFrame += frame[len(frame) - 4: len(frame) - 2] # LQI
+    newFrame += '03'
+    return newFrame
 
 
 def buildframe_read_attribute_request( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Data  ):
