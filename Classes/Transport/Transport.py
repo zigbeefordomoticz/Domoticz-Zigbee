@@ -198,13 +198,14 @@ class ZigateTransport(object):
         Domoticz.Log("Connection open: %s" % self._connection)
 
     def close_conn(self):
-        Domoticz.Log("Connection close: %s" % self._connection)
+        Domoticz.Log("Request closing connection: %s" % self._connection)
 
         self.running = False # It will shutdown the Thread 
 
         if self.pluginconf.pluginConf['byPassDzConnection'] and not self.force_dz_communication:
             Domoticz.Log("-- shutdown reader thread")
             shutdown_reader_thread( self )
+            time.sleep(1.0)
             Domoticz.Log("-- waiting for end of thread")
             waiting_for_end_thread( self )
             Domoticz.Log("-- thread endeed")
