@@ -100,7 +100,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
             if WidgetType == 'Ampere' and Attribute_ == '0508':
                 nValue = 0
                 sValue = "%s" %(round(float(value),2))
-                self.log.logging( "Widget", 'Debug', "Debug", "------>  Ampere : " + sValue, NWKID)
+                self.log.logging( "Widget", 'Debug', "------>  Ampere : %s" %sValue, NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, str(sValue), BatteryLevel, SignalLevel)
 
         if 'Power' in ClusterType: # Instant Power/Watts
