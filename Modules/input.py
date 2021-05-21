@@ -54,7 +54,8 @@ from Modules.basicOutputs import (
     setTimeServer,
     ZigatePermitToJoin,
     unknown_device_nwkid,
-    send_default_response
+    send_default_response,
+    getListofAttribute
 )
 from Modules.timeServer import timeserver_read_attribute_request
 from Modules.readAttributes import ReadAttributeRequest_0000, ReadAttributeRequest_0001
@@ -149,7 +150,7 @@ def ZigateRead(self, Devices, Data):
         "8102": Decode8102,
         "8110": Decode8110,
         "8120": Decode8120,
-        "8139": Decode8139,
+        "8139": Decode8140,
         "8140": Decode8140,
         "8401": Decode8401,
         "8501": Decode8501,
@@ -2547,25 +2548,21 @@ def Decode8139(self, Devices, MsgData, MsgLQI):
     self.log.logging(  "Input", "Log", "Decode8139 - %s/%s Complete: %s Cluster: %s Attribute Type: %s Attribute: %s" %(
         uSrcAddress, u8SrcEndpoint, bDiscoveryComplete, u16ClusterEnum, eAttributeDataType, u16AttributeEnum))
 
-
-
 def Decode8140(self, Devices, MsgData, MsgLQI):  # Attribute Discovery response
     MsgComplete = MsgData[0:2]
     MsgAttType = MsgData[2:4]
     MsgAttID = MsgData[4:8]
+
+    if MsgComplete == '01' and MsgAttType == '00' and MsgAttID == '0000':
+        return
 
     if len(MsgData) > 8:
         MsgSrcAddr = MsgData[8:12]
         MsgSrcEp = MsgData[12:14]
         MsgClusterID = MsgData[14:18]
 
-        self.log.logging( 
-            "Input",
-            "Debug",
-            "Decode8140 - Attribute Discovery Response - %s/%s - Cluster: %s - Attribute: %s - Attribute Type: %s Complete: %s"
-            % (MsgSrcAddr, MsgSrcEp, MsgClusterID, MsgAttID, MsgAttType, MsgComplete),
-            MsgSrcAddr,
-        )
+        self.log.logging(  "Input", "Debug", "Decode8140 - Attribute Discovery Response - %s/%s - Cluster: %s - Attribute: %s - Attribute Type: %s Complete: %s" % (
+            MsgSrcAddr, MsgSrcEp, MsgClusterID, MsgAttID, MsgAttType, MsgComplete), MsgSrcAddr, )
 
         if MsgSrcAddr not in self.ListOfDevices:
             return
@@ -2577,22 +2574,64 @@ def Decode8140(self, Devices, MsgData, MsgLQI):  # Attribute Discovery response
             self.ListOfDevices[MsgSrcAddr]["Attributes List"]["Ep"] = {}
         if MsgSrcEp not in self.ListOfDevices[MsgSrcAddr]["Attributes List"]["Ep"]:
             self.ListOfDevices[MsgSrcAddr]["Attributes List"]["Ep"][MsgSrcEp] = {}
-        if (
-            MsgClusterID
-            not in self.ListOfDevices[MsgSrcAddr]["Attributes List"]["Ep"][MsgSrcEp]
-        ):
-            self.ListOfDevices[MsgSrcAddr]["Attributes List"]["Ep"][MsgSrcEp][
-                MsgClusterID
-            ] = {}
-        if (
-            MsgAttID
-            not in self.ListOfDevices[MsgSrcAddr]["Attributes List"]["Ep"][MsgSrcEp][
-                MsgClusterID
-            ]
-        ):
-            self.ListOfDevices[MsgSrcAddr]["Attributes List"]["Ep"][MsgSrcEp][
-                MsgClusterID
-            ][MsgAttID] = MsgAttType
+        if ( MsgClusterID not in self.ListOfDevices[MsgSrcAddr]["Attributes List"]["Ep"][MsgSrcEp] ):
+            self.ListOfDevices[MsgSrcAddr]["Attributes List"]["Ep"][MsgSrcEp][MsgClusterID] = {}
+
+        if ( MsgAttID in self.ListOfDevices[MsgSrcAddr]["Attributes List"]["Ep"][MsgSrcEp][ MsgClusterID ] and 
+            self.ListOfDevices[MsgSrcAddr]["Attributes List"]["Ep"][MsgSrcEp][ MsgClusterID ][MsgAttID] == MsgAttType):
+            return
+
+        self.ListOfDevices[MsgSrcAddr]["Attributes List"]["Ep"][MsgSrcEp][ MsgClusterID ][MsgAttID] = MsgAttType
+
+        if MsgComplete != '01':
+            next_start = '%04x' %(int(MsgAttID,16) + 1)
+            getListofAttribute(self, MsgSrcAddr, MsgSrcEp, MsgClusterID, start_attribute=next_start, )
+
+def Decode8141(self, Devices, MsgData, MsgLQI):  # Attribute Discovery Extended response
+    MsgComplete = MsgData[0:2]
+    MsgAttType = MsgData[2:4]
+    MsgAttID = MsgData[4:8]
+    MsgAttFlag = MsgData[8:10]
+
+    self.log.logging(  "Input", "Log", "Decode8141 - Attribute Discovery Extended Response - MsgComplete: %s AttType: %s Attribute: %s Flag: %s" %(
+        MsgComplete, MsgAttType, MsgAttID, MsgAttFlag)
+    )
+
+    if len(MsgData) > 10:
+        MsgSrcAddr = MsgData[10:14]
+        MsgSrcEp = MsgData[14:16]
+        MsgClusterID = MsgData[16:20]
+
+        self.log.logging(  "Input", "Log", "Decode8141 - Attribute Discovery Extended Response - %s/%s - Cluster: %s - Attribute: %s - Attribute Type: %s Flag: %s Complete: %s" % (
+            MsgSrcAddr, MsgSrcEp, MsgClusterID, MsgAttID, MsgAttType, MsgAttFlag, MsgComplete), MsgSrcAddr, )
+
+        if MsgSrcAddr not in self.ListOfDevices:
+            return
+
+        if "Attributes List" not in self.ListOfDevices[MsgSrcAddr]:
+            self.ListOfDevices[MsgSrcAddr]["Attributes List Extended"] = {}
+            self.ListOfDevices[MsgSrcAddr]["Attributes List Extended"]["Ep"] = {}
+        if "Ep" not in self.ListOfDevices[MsgSrcAddr]["Attributes List Extended"]:
+            self.ListOfDevices[MsgSrcAddr]["Attributes List Extended"]["Ep"] = {}
+        if MsgSrcEp not in self.ListOfDevices[MsgSrcAddr]["Attributes List Extended"]["Ep"]:
+            self.ListOfDevices[MsgSrcAddr]["Attributes List Extended"]["Ep"][MsgSrcEp] = {}
+        if ( MsgClusterID not in self.ListOfDevices[MsgSrcAddr]["Attributes List Extended"]["Ep"][MsgSrcEp] ):
+            self.ListOfDevices[MsgSrcAddr]["Attributes List Extended"]["Ep"][MsgSrcEp][ MsgClusterID ] = {}
+        if ( MsgAttID not in self.ListOfDevices[MsgSrcAddr]["Attributes List Extended"]["Ep"][MsgSrcEp][ MsgClusterID ] ):
+            self.ListOfDevices[MsgSrcAddr]["Attributes List Extended"]["Ep"][MsgSrcEp][ MsgClusterID ][MsgAttID] = {}
+            
+          
+        self.ListOfDevices[MsgSrcAddr]["Attributes List Extended"]["Ep"][MsgSrcEp][ MsgClusterID ][MsgAttID]['Type'] = MsgAttType
+        self.ListOfDevices[MsgSrcAddr]["Attributes List Extended"]["Ep"][MsgSrcEp][ MsgClusterID ][MsgAttID]['Read'] = ( int(MsgAttFlag,16) & 0b00000001)
+        self.ListOfDevices[MsgSrcAddr]["Attributes List Extended"]["Ep"][MsgSrcEp][ MsgClusterID ][MsgAttID]['Write'] = ( int(MsgAttFlag,16) & 0b00000010) >> 1
+        self.ListOfDevices[MsgSrcAddr]["Attributes List Extended"]["Ep"][MsgSrcEp][ MsgClusterID ][MsgAttID]['Reportable'] = ( int(MsgAttFlag,16) & 0b00000100) >> 2
+        self.ListOfDevices[MsgSrcAddr]["Attributes List Extended"]["Ep"][MsgSrcEp][ MsgClusterID ][MsgAttID]['Scene'] = ( int(MsgAttFlag,16) & 0b00001000) >> 3
+        self.ListOfDevices[MsgSrcAddr]["Attributes List Extended"]["Ep"][MsgSrcEp][ MsgClusterID ][MsgAttID]['Global'] = ( int(MsgAttFlag,16) & 0b00010000) >> 4
+
+        
+
+
+
 
 
 
