@@ -18,6 +18,7 @@ import json
 import pickle
 
 from Classes.LoggingManagement import LoggingManagement
+from Modules.manufacturer_code import check_and_update_manufcode
 
 import Modules.tools
 
@@ -488,6 +489,7 @@ def CheckDeviceList(self, key, val):
         else :
             self.log.logging( "Database", 'Log', "CheckDeviceList - IEEE = " + str(DeviceListVal['IEEE']) + " for NWKID = " +str(key) , key )
 
+    check_and_update_manufcode( self)
     check_and_update_ForceAckCommands( self)
 
 def check_and_update_ForceAckCommands( self ):
