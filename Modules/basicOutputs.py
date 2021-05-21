@@ -19,7 +19,7 @@ from time import time
 
 from Modules.zigateConsts import ZIGATE_EP, ADDRESS_MODE, ZLL_DEVICES, ZIGATE_COMMANDS
 from Modules.tools import ( mainPoweredDevice, getListOfEpForCluster, set_request_datastruct, set_isqn_datastruct, 
-                            set_timestamp_datastruct, get_and_inc_SQN, is_ack_tobe_disabled, build_fcf)
+                            set_timestamp_datastruct, get_and_inc_SQN, is_ack_tobe_disabled, build_fcf, is_hex)
 from Classes.LoggingManagement import LoggingManagement
 
 
@@ -270,13 +270,32 @@ def zigateBlueLed( self, OnOff):
         send_zigatecmd_raw(self, "0018","00")
 
 
-def getListofAttribute(self, nwkid, EpOut, cluster):
+def getListofAttribute(self, nwkid, EpOut, cluster, start_attribute=None, manuf_specific=None, manuf_code=None):
     
-    #datas = "{:02n}".format(2) + nwkid + ZIGATE_EP + EpOut + cluster + "0000" + "00" + "00" + "0000" + "FF"
-    datas = ZIGATE_EP + EpOut + cluster + "0000" + "00" + "00" + "0000" + "FF"
+    if start_attribute is None:
+        start_attribute = '0000'
+
+    if (manuf_specific is None) or (manuf_code is None):
+        manuf_specific = '00'
+        manuf_code = '0000'
+
+    datas = ZIGATE_EP + EpOut + cluster + start_attribute + "00" + manuf_specific + manuf_code + "01"
     self.log.logging( "BasicOutput", 'Debug', "attribute_discovery_request - " +str(datas), nwkid )
     send_zigatecmd_zcl_noack(self, nwkid, "0140", datas )
 
+
+def getListofAttributeExtendedInfos(self, nwkid, EpOut, cluster, start_attribute=None, manuf_specific=None, manuf_code=None):
+    
+    if start_attribute is None:
+        start_attribute = '0000'
+        
+    if manuf_specific is None or manuf_code is None:
+        manuf_specific = '00'
+        manuf_code = '0000'
+
+    datas = ZIGATE_EP + EpOut + cluster + start_attribute + "00" + manuf_specific + manuf_code + "01"
+    self.log.logging( "BasicOutput", 'Debug', "attribute_discovery_request - " +str(datas), nwkid )
+    send_zigatecmd_zcl_noack(self, nwkid, "0141", datas )
 
 def initiateTouchLink( self):
 
