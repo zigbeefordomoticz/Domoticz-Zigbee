@@ -316,7 +316,7 @@ def add_attributes_from_device_certified_conf( self, key, cluster, listAttribute
         return listAttributes
 
     for attr in attributes:
-        if int( attr , 16) not in listAttributes:
+        if int( str(attr) , 16) not in listAttributes:
             listAttributes.append( int( attr , 16))  
     return listAttributes
 
