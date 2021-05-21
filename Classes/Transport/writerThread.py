@@ -56,10 +56,10 @@ def writer_thread( self ):
                     #if 'NwkId' in command:
                     #    Domoticz.Log("Command on %s" %command['NwkId'])
 
-                    if self.last_nwkid_failure and 'NwkId' in command and command['NwkId'] == self.last_nwkid_failure:
-                        self.logging_send( 'Log', "removing %s/%s from list_in_queue as it failed previously" %( command['cmd'], command['datas'] ))
-                        # Looks like the command is still for the Nwkid which has failed. Drop
-                        continue
+                    #if self.last_nwkid_failure and 'NwkId' in command and command['NwkId'] == self.last_nwkid_failure:
+                    #    self.logging_send( 'Log', "removing %s/%s from list_in_queue as it failed previously" %( command['cmd'], command['datas'] ))
+                    #    # Looks like the command is still for the Nwkid which has failed. Drop
+                    #    continue
 
                     self.last_nwkid_failure = None
 
@@ -97,7 +97,7 @@ def limit_throuput(self, command):
         # We are in firmware 31a where we control the flow is only on 0x8000
         # Throught put of 2 messages per seconds
         self.logging_send('Debug',"Firmware 31a limit_throuput regulate to 500")
-        time.sleep(1.0)
+        time.sleep(0.500)
 
     elif not self.firmware_with_8012:
         # Firmware is not 31e
@@ -110,7 +110,7 @@ def limit_throuput(self, command):
 
     else:
         self.logging_send('Debug',"Firmware 31e limit_throuput regulate to 200")
-        time.sleep(0.250)   
+        time.sleep(0.200)   
 
 
 def wait_for_semaphore( self , command ):
