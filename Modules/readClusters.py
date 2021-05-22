@@ -2596,6 +2596,11 @@ def Cluster0b04( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             value /= 20
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value), Attribute_=MsgAttrID)
 
+    elif MsgAttrID == "050f": #ApparentPower (Represents  the  single  phase  or  Phase  A,  current  demand  of  apparent  (Square  root  of  active  and  reactive power) power, in VA.)
+        value = int(decodeAttribute( self, MsgAttType, MsgClusterData ))
+        self.log.logging( "Cluster", 'Debug', "ReadCluster %s - %s/%s Apparent Power %s" \
+            %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value))
+            
     else:
         self.log.logging( "Cluster", 'Log', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" \
             %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
