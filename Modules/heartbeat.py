@@ -63,7 +63,7 @@ def attributeDiscovery( self, NwkId ):
         #if 'ConfigSource' not in self.ListOfDevices[NwkId]:
         #    return False
 
-        if self.ListOfDevices[NwkId]['ConfigSource'] == 'DeviceConf':
+        if 'ConfigSource' in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]['ConfigSource'] == 'DeviceConf':
             return False
 
         if 'Attributes List' in self.ListOfDevices[NwkId] and len(self.ListOfDevices[NwkId]['Attributes List']) > 0:
