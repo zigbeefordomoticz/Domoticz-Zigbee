@@ -288,7 +288,6 @@ def prepare_and_send_configure_reporting( self, key, Ep, cluster_list, cluster, 
     if attrLen != 0 :
         send_configure_reporting_attributes_set( self, key, Ep, cluster, direction, manufacturer_spec, manufacturer, attrLen, attrList , attributeList)
 
-
 def send_configure_reporting_attributes_set( self, key, Ep, cluster, direction, manufacturer_spec, manufacturer, attrLen, attrList , attributeList):
     # Prepare the payload
     datas =   ZIGATE_EP + Ep + cluster + direction + manufacturer_spec + manufacturer 
@@ -304,3 +303,18 @@ def send_configure_reporting_attributes_set( self, key, Ep, cluster, direction, 
 
     for x in attributeList:
         set_isqn_datastruct(self, 'ConfigureReporting', key, Ep, cluster, x, i_sqn )
+
+def read_report_cpnfigure_request( self, nwkid, epout, cluster_id, attribute_list, manuf_specific='00', manuf_code='0000'):
+
+    nb_attribute = '%02x' %len(attribute_list)
+    str_attribute_list = ''
+    for x in attribute_list:
+        str_attribute_list += '%04x' %x
+        
+    direction = "00"
+    datas = nwkid + ZIGATE_EP + epout + cluster_id + direction + nb_attribute + manuf_specific + manuf_code + str_attribute_list 
+
+    if is_ack_tobe_disabled( self, key ):
+            i_sqn = send_zigatecmd_zcl_noack( self, key, '0122', datas )
+    else:
+        i_sqn = send_zigatecmd_zcl_ack( self, key, '0122', datas )

@@ -150,6 +150,7 @@ def ZigateRead(self, Devices, Data):
         "8102": Decode8102,
         "8110": Decode8110,
         "8120": Decode8120,
+        "8122": Decode8122,
         "8139": Decode8140,
         "8140": Decode8140,
         "8401": Decode8401,
@@ -2530,6 +2531,26 @@ def Decode8120_attribute( self, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 % (MsgClusterId, matchAttributeId, MsgSrcAddr, MsgSrcEp, MsgStatus),
                 MsgSrcAddr,
             )
+
+def Decode8122(self, Devices, MsgData, MsgLQI):  # Read Configure Report response
+    MsgSQN = MsgData[0:2]
+    MsgNwkId = MsgData[2:6]
+    MsgEp = MsgData[6:8]
+    MsgClusterId = MsgData[8:12]
+    MsgStatus = MsgData[12:14]
+
+    if MsgStatus != '00':
+
+        return
+
+    MsgAttributeDataType = MsgData[14:16]
+    MsgAttribute = MsgData[16:20]
+    MsgMaximumReportingInterval = MsgData[20:24]
+    MsgMinimumReportingInterval = MsgData[24:28]
+
+    Domoticz.Log("Decode8122 - NwkId: %s Ep: %s Cluster: %s Attribute: %s DataType: %s Max: %s Min: %s" %(
+        MsgNwkId, MsgEp, MsgClusterId, MsgAttribute, MsgAttributeDataType, MsgMaximumReportingInterval, MsgMinimumReportingInterval))
+
 
 def Decode8139(self, Devices, MsgData, MsgLQI):
     # E_SL_MSG_ATTRIBUTE_DISCOVERY_INDIVIDUAL_RESPONSE
