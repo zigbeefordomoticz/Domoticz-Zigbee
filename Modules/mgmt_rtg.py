@@ -39,7 +39,7 @@ def mgmt_rtg(self, nwkid):
     if 'Status' in self.ListOfDevices[ nwkid ]['RoutingTable'] and self.ListOfDevices[ nwkid ]['RoutingTable']['Status'] != STATUS_CODE['00']:
         return
 
-    if (time.time() > self.ListOfDevices[ nwkid ]['RoutingTable']['TimeStamp'] + 300):
+    if (time.time() > self.ListOfDevices[ nwkid ]['RoutingTable']['TimeStamp'] + 3600):
         mgt_routing_req( self, nwkid, '00')
         return
 
@@ -109,4 +109,6 @@ def mgmt_rtg_rsp( self, srcnwkid, MsgSourcePoint, MsgClusterID, dstnwkid, MsgDes
             srcnwkid, MsgSourcePoint, target_nwkid, device_status, device_memory_constraint, many_to_one, route_record_required, next_hop ))
 
     if int(RoutingTableIndex,16) + int(RoutingTableListCount,16) < int(RoutingTableSize,16):
+        Domoticz.Log("mgmt_rtg_rsp - Next Index for %s RoutingTableIndex: %s RoutingTableListCount: %s RoutingTableSize: %s" %(
+            (srcnwkid, RoutingTableIndex,RoutingTableListCount, RoutingTableSize )))
         mgt_routing_req( self, srcnwkid, '%02x' %(int(RoutingTableIndex,16) + int(RoutingTableListCount,16)) )
