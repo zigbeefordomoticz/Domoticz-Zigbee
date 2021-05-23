@@ -456,7 +456,7 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
         )
         return
 
-    self.log.logging(  "Input", "Log", "Reception Data indication, Source Address : " + MsgSourceAddress
+    self.log.logging(  "Input", "Debug", "Reception Data indication, Source Address : " + MsgSourceAddress
         + " Destination Address : " + MsgDestinationAddress
         + " ProfilID : "  + MsgProfilID
         + " ClusterID : "  + MsgClusterID
