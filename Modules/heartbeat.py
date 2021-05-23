@@ -38,7 +38,7 @@ from Modules.domoTools import timedOutDevice
 from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE, CLUSTERS_LIST, LEGRAND_REMOTES, LEGRAND_REMOTE_SHUTTER, LEGRAND_REMOTE_SWITCHS, ZIGATE_EP
 from Modules.pairingProcess import processNotinDBDevices
 from Modules.paramDevice import sanity_check_of_param
-
+from Modules.mgmt_rtg import mgmt_rtg
 
 # Read Attribute trigger: Every 10"
 # Configure Reporting trigger: Every 15
@@ -419,6 +419,10 @@ def processKnownDevices( self, Devices, NWKID ):
     #    if 'Attributes List' in self.ListOfDevices[NWKID]['Attributes List']:
     #        del self.ListOfDevices[NWKID]['Attributes List']
     #    attributeDiscovery( self, NWKID )
+
+    if not self.busy and self.ZigateComm.loadTransmit() == 0:
+        mgmt_rtg( self, NWKID)
+
 
     # Reenforcement of Legrand devices options if required
     if ( self.HeartbeatCount % LEGRAND_FEATURES ) == 0 :

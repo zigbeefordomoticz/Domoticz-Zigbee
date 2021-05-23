@@ -55,6 +55,7 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Man
 
     if srcnwkid not in self.ListOfDevices:
         return
+        x
     self.log.logging( "inRawAPS", 'Debug', "inRawAps Nwkid: %s Ep: %s Cluster: %s ManufCode: %s Cmd: %s Data: %s" %(
         srcnwkid, srcep, cluster, ManufacturerCode, Command, Data)  )
     if cluster == '0020': # Poll Control ( Not implemented in firmware )
@@ -72,7 +73,6 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Man
             manufcode = '%04x' %struct.unpack('H',struct.pack('>H',int(Data[2:6],16)))[0] 
             imagetype = '%04x' %struct.unpack('H',struct.pack('>H',int(Data[6:10],16)))[0] 
             currentVersion = '%08x' %struct.unpack('I',struct.pack('>I',int(Data[10:18],16)))[0]
-    
             Domoticz.Log("Cluster 0019 -- OTA CLUSTER Command 01Device %s Request OTA with current ManufCode: %s ImageType: %s Version: %s"
                 %(srcnwkid ,manufcode, imagetype, currentVersion  ))
 
@@ -81,7 +81,6 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Man
             self.ListOfDevices[ srcnwkid ]['OTA']['ManufacturerCode'] = manufcode
             self.ListOfDevices[ srcnwkid ]['OTA']['ImageType'] = imagetype
             self.ListOfDevices[ srcnwkid ]['OTA']['CurrentImageVersion'] = currentVersion
-
         return
 
     if cluster == '0501': # IAS ACE

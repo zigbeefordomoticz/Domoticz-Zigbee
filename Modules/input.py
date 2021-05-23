@@ -81,6 +81,7 @@ from Modules.zigate import initLODZigate, receiveZigateEpList, receiveZigateEpDe
 
 from Modules.callback import callbackDeviceAwake
 from Modules.inRawAps import inRawAps
+from Modules.mgmt_rtg import mgmt_rtg_rsp
 
 from Classes.Transport.sqnMgmt import (
     sqn_get_internal_sqn_from_app_sqn,
@@ -455,7 +456,7 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
         )
         return
 
-    self.log.logging(  "Input", "Debug", "Reception Data indication, Source Address : " + MsgSourceAddress
+    self.log.logging(  "Input", "Log", "Reception Data indication, Source Address : " + MsgSourceAddress
         + " Destination Address : " + MsgDestinationAddress
         + " ProfilID : "  + MsgProfilID
         + " ClusterID : "  + MsgClusterID
@@ -488,13 +489,26 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
     timeStamped(self, srcnwkid, 0x8002)
     updLQI(self, srcnwkid, MsgLQI)
 
-    if MsgProfilID != "0104":
+    if MsgClusterID == "8032":
+        # Routing table : Mgmt_Rtg_rsp
+        mgmt_rtg_rsp( self, srcnwkid, MsgSourcePoint, MsgClusterID, dstnwkid, MsgDestPoint, MsgPayload, )
+        return
+
+    elif MsgClusterID == "0032": 
+        # Mgmt_Rtg_req
+        self.log.logging(  "Input", "Log", "Reception Data indication, Source Address : " + MsgSourceAddress
+            + " Destination Address : " + MsgDestinationAddress
+            + " ProfilID : "  + MsgProfilID
+            + " ClusterID : "  + MsgClusterID)
+        return
+
+    elif MsgProfilID != "0104":
+        # Not handle
         self.log.logging(  "inRawAPS", "Debug","Decode8002 - NwkId: %s Ep: %s Cluster: %s Payload: %s"
             % (srcnwkid, MsgSourcePoint, MsgClusterID, MsgPayload),)
         return
 
     ( GlobalCommand, Sqn, ManufacturerCode, Command, Data, ) = retreive_cmd_payload_from_8002(MsgPayload)
-
 
     if 'SQN' in self.ListOfDevices[ srcnwkid ] and Sqn == self.ListOfDevices[ srcnwkid ]['SQN']:
         self.log.logging(  "inRawAPS", "Debug","Decode8002 - Duplicate message drop NwkId: %s Ep: %s Cluster: %s GlobalCommand: %5s Command: %s Data: %s"
