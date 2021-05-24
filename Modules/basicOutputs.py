@@ -922,3 +922,17 @@ def do_Many_To_One_RouteRequest(self):
 
     sendZigateCmd(self ,'004F', bCacheRoute + u8Radius )
     self.log.logging( "BasicOutput", 'Debug',"do_Many_To_One_RouteRequest call !")
+
+
+def mgt_routing_req( self, nwkid, start_index):
+
+    if 'RoutingTable' not in self.ListOfDevices[ nwkid ]:
+        self.ListOfDevices[ nwkid ]['RoutingTable'] = {}
+        self.ListOfDevices[ nwkid ]['RoutingTable']['Devices'] = []
+        self.ListOfDevices[ nwkid ]['RoutingTable']['SQN'] = 0
+    else:
+        self.ListOfDevices[ nwkid ]['RoutingTable']['SQN'] += 1
+
+
+    payload = '%02x' %self.ListOfDevices[ nwkid ]['RoutingTable']['SQN'] + start_index
+    raw_APS_request( self, nwkid, '00', '0032', '0000', payload, zigate_ep='00', highpriority=False, ackIsDisabled = False , )

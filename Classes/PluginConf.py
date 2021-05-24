@@ -225,23 +225,26 @@ SETTINGS = {
 
     # Experimental
     'Experimental': {'Order': 15, 'param': {    
-         
         'forceAckOnZCL':         {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'doManyToOneRoute':      {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'RoutingTableRequestFeq':{'type': 'int',  'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+
+        'doManyToOneRoute':      {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': True},
         'DropBadAnnoucement':    {'type': 'bool', 'default': 1, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},    
-        'AnnoucementV0':         {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
-        'AnnoucementV1':         {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
-        'AnnoucementV2':         {'type': 'bool', 'default': 1, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
         'expJsonDatabase':       {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
         'useDomoticzDatabase':   {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
-        
         'XiaomiLeave':           {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
         'rebindLivolo':          {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': False},
         'allowAutoPairing':      {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
-        'disabledDefaultResponseFirmware':       {'type': 'bool', 'default': 0, 'current': None, 'restart': 1, 'hidden': True, 'Advanced': True},  
+        'disabledDefaultResponseFirmware':       {'type': 'bool', 'default': 0, 'current': None, 'restart': 1, 'hidden': True, 'Advanced': True},
+        }
+    },
         
 
+    'Reserved': {'Order': 99, 'param': { 
         # Just for compatibility keep it but hidden ( move to Custom device 'Param' section)
+        'AnnoucementV0':    {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
+        'AnnoucementV1':    {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
+        'AnnoucementV2':    {'type': 'bool', 'default': 1, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
         'pollingPhilips':   {'type': 'int', 'default': 0,     'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
         'pollingGledopto':  {'type': 'int', 'default': 0,     'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
         'pollingSchneider': {'type': 'int', 'default': 0,     'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
@@ -251,7 +254,6 @@ SETTINGS = {
         'PhilipsPowerOnAfterOffOn': {'type': 'list', 'list': {'Off': 0, 'On': 1, 'Previous': 255}, 'default': 1, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
         'EnkiPowerOnAfterOffOn':    {'type': 'list', 'list': {'Off': 0, 'On': 1, 'Previous': 255}, 'default': 1, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
         'IkeaPowerOnAfterOffOn':    {'type': 'list', 'list': {'Off': 0, 'On': 1, 'Previous': 255}, 'default': 1, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},        
-
         # Polling
         'polling0000':      {'type': 'int', 'default': 86400, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
         'polling0001':      {'type': 'int', 'default': 86400, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
@@ -280,7 +282,6 @@ SETTINGS = {
         'pollingfc01':      {'type': 'int', 'default': 900,   'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
         'pollingfc21':      {'type': 'int', 'default': 900,   'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
         'pollingfc40':      {'type': 'int', 'default': 900,   'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
-
         'EnableLedIfOn':        {'type': 'bool', 'default': 1, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
         'EnableLedInDark':      {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
         'EnableLedShutter':     {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},

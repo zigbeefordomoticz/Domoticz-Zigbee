@@ -81,6 +81,7 @@ from Modules.zigate import initLODZigate, receiveZigateEpList, receiveZigateEpDe
 
 from Modules.callback import callbackDeviceAwake
 from Modules.inRawAps import inRawAps
+from Modules.mgmt_rtg import mgmt_rtg_rsp
 
 from Classes.Transport.sqnMgmt import (
     sqn_get_internal_sqn_from_app_sqn,
@@ -396,14 +397,9 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
     # Domoticz.Log("Decode8002 - MsgLogLvl: %s , MsgProfilID: %s, MsgClusterID: %s MsgSourcePoint: %s, MsgDestPoint: %s, MsgSourceAddressMode: %s" \
     #        %(MsgLogLvl, MsgProfilID, MsgClusterID, MsgSourcePoint, MsgDestPoint, MsgSourceAddressMode))
 
-    # if MsgProfilID != '0104':
-    #    Domoticz.Log("Decode8002 - Not an HA Profile, let's drop the packet %s" %MsgData)
-    #    return
-
     if int(MsgSourceAddressMode, 16) in [ ADDRESS_MODE["short"], ADDRESS_MODE["group"], ]:
         MsgSourceAddress = MsgData[16:20]  # uint16_t
         MsgDestinationAddressMode = MsgData[20:22]
-
         if int(MsgDestinationAddressMode, 16) in [ ADDRESS_MODE["short"], ADDRESS_MODE["group"], ]:
             # Short Address
             MsgDestinationAddress = MsgData[22:26]  # uint16_t
@@ -415,7 +411,7 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
             MsgPayload = MsgData[38 : len(MsgData)]
 
         else:
-            Domoticz.Log(
+            self.log.logging(  "Input", "Log",
                 "Decode8002 - Unexpected Destination ADDR_MOD: %s, drop packet %s"
                 % (MsgDestinationAddressMode, MsgData))
             return
@@ -423,7 +419,6 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
     elif int(MsgSourceAddressMode, 16) == ADDRESS_MODE["ieee"]:
         MsgSourceAddress = MsgData[16:32]  # uint32_t
         MsgDestinationAddressMode = MsgData[32:34]
-
         if int(MsgDestinationAddressMode, 16) in [ ADDRESS_MODE["short"], ADDRESS_MODE["group"], ]:
             MsgDestinationAddress = MsgData[34:38]  # uint16_t
             MsgPayload = MsgData[38 : len(MsgData)]
@@ -433,13 +428,13 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
             MsgDestinationAddress = MsgData[34:40]  # uint32_t
             MsgPayload = MsgData[40 : len(MsgData)]
         else:
-            Domoticz.Log(
+            self.log.logging(  "Input", "Log",
                 "Decode8002 - Unexpected Destination ADDR_MOD: %s, drop packet %s"
                 % (MsgDestinationAddressMode, MsgData))
             return
 
     else:
-        Domoticz.Log(
+        self.log.logging(  "Input", "Log",
             "Decode8002 - Unexpected Source ADDR_MOD: %s, drop packet %s"
             % (MsgSourceAddressMode, MsgData)
         )
@@ -461,15 +456,7 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
         Domoticz.Error("not handling IEEE address")
         return
 
-    # Short address
-    # if MsgSourceAddress == "0000":
-    #     return
     srcnwkid = MsgSourceAddress
-
-    # Short address
-    # if MsgDestinationAddress == "0000":
-    #     return
-
     dstnwkid = MsgDestinationAddress
 
     if srcnwkid not in self.ListOfDevices:
@@ -478,13 +465,26 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
     timeStamped(self, srcnwkid, 0x8002)
     updLQI(self, srcnwkid, MsgLQI)
 
-    if MsgProfilID != "0104":
+    if MsgClusterID == "8032":
+        # Routing table : Mgmt_Rtg_rsp
+        mgmt_rtg_rsp( self, srcnwkid, MsgSourcePoint, MsgClusterID, dstnwkid, MsgDestPoint, MsgPayload, )
+        return
+
+    elif MsgClusterID == "0032": 
+        # Mgmt_Rtg_req
+        self.log.logging(  "Input", "Log", "Reception Data indication, Source Address : " + MsgSourceAddress
+            + " Destination Address : " + MsgDestinationAddress
+            + " ProfilID : "  + MsgProfilID
+            + " ClusterID : "  + MsgClusterID)
+        return
+
+    elif MsgProfilID != "0104":
+        # Not handle
         self.log.logging(  "inRawAPS", "Debug","Decode8002 - NwkId: %s Ep: %s Cluster: %s Payload: %s"
             % (srcnwkid, MsgSourcePoint, MsgClusterID, MsgPayload),)
         return
 
     ( GlobalCommand, Sqn, ManufacturerCode, Command, Data, ) = retreive_cmd_payload_from_8002(MsgPayload)
-
 
     if 'SQN' in self.ListOfDevices[ srcnwkid ] and Sqn == self.ListOfDevices[ srcnwkid ]['SQN']:
         self.log.logging(  "inRawAPS", "Debug","Decode8002 - Duplicate message drop NwkId: %s Ep: %s Cluster: %s GlobalCommand: %5s Command: %s Data: %s"
