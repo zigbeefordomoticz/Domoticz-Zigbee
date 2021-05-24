@@ -409,6 +409,11 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             self.log.logging( "Cluster", 'Debug', "ReadCluster - %s / %s - no action" %(MsgClusterId, MsgAttrID), MsgSrcAddr)
             return
 
+        if self.ListOfDevices[MsgSrcAddr]['Model'] != modelName and self.ListOfDevices[MsgSrcAddr]['Model'] in self.DeviceConf:
+            # We ae getting a different Model Name, let's log an drop
+            self.log.logging( "Cluster", 'Error', "ReadCluster - %s / %s - no action as it is a different Model Name than registered %s" %(MsgClusterId, MsgAttrID,modelName ), MsgSrcAddr)
+            return
+
         if self.ListOfDevices[MsgSrcAddr]['Model'] == '' or self.ListOfDevices[MsgSrcAddr]['Model'] == {}:
             self.ListOfDevices[MsgSrcAddr]['Model'] = modelName
         else:
