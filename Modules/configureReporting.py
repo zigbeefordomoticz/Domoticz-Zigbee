@@ -314,7 +314,7 @@ def read_report_cpnfigure_request( self, nwkid, epout, cluster_id, attribute_lis
     direction = "00"
     datas = nwkid + ZIGATE_EP + epout + cluster_id + direction + nb_attribute + manuf_specific + manuf_code + str_attribute_list 
 
-    if is_ack_tobe_disabled( self, key ):
-            i_sqn = send_zigatecmd_zcl_noack( self, key, '0122', datas )
+    if is_ack_tobe_disabled( self, nwkid ):
+            i_sqn = send_zigatecmd_zcl_noack( self, nwkid, '0122', datas )
     else:
-        i_sqn = send_zigatecmd_zcl_ack( self, key, '0122', datas )
+        i_sqn = send_zigatecmd_zcl_ack( self, nwkid, '0122', datas )
