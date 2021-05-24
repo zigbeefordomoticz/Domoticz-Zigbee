@@ -55,7 +55,7 @@ Moving from this channel to the other will required either ar restart from scrat
 
 `git pull`
 
-`git checkout stable  // will move you to the stable channel`
+`git checkout stable5  // will move you to the stable5 channel`
 
 `git checkout beta    // will move you to the beta channel`
 
