@@ -420,9 +420,8 @@ def processKnownDevices( self, Devices, NWKID ):
     #        del self.ListOfDevices[NWKID]['Attributes List']
     #    attributeDiscovery( self, NWKID )
 
-    if not self.busy and self.ZigateComm.loadTransmit() == 0:
+    if self.pluginconf.pluginConf['RoutingTableRequestFeq'] and not self.busy and self.ZigateComm.loadTransmit() == 0 and (intHB % 10 ) == 0:
         mgmt_rtg( self, NWKID)
-
 
     # Reenforcement of Legrand devices options if required
     if ( self.HeartbeatCount % LEGRAND_FEATURES ) == 0 :
