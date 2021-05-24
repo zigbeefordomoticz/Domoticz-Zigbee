@@ -12,11 +12,12 @@ For information around the Zigate Plugin, please refer to :
 
 * <https://github.com/pipiche38/Domoticz-Zigate-Wiki/blob/master/en-eng/Home.md> for information
 
-## IMPORTANT
+## COMPATIBILITY WARNING: REQUIRES Domoticz 2020 or above
 
-Starting plugin version 4.12.008, a Domoticz 2020.2 is required. The plugin won't be supported with Domoticz 4.xxxx
+The current plugin version 5.1 supports ZiGate V1 and ZiGate V2. 
+We strongly recommend to use Domoticz 2021.1 or above
 
-The current plugin support only the ZiGate V1 models DIN, USB, Wifi and RPI. __The up coming ZiGate V2 is not supported by the plugin.__
+If you cannot be on Domoticz 2020.x or above, please use the 'stable' branch which is the only one compatible with the oldest Domoticz version
 
 ## Documentation
 
@@ -33,18 +34,18 @@ Your first place to get support is via the Forums.
 
 In order to provide stability and also provide more recent development, Zigate plugin has the following channels
 
-### stable
+### stable (will be deprecated)
 
+Support only ZiGate V1. and supported on best effort
+
+### stable5
+
+Support ALL ZiGate models known today and requires Domoticz 2020.x at minima
 This is considered as a solid , reliable version.
 
 ### beta
 
 We can open the beta channel to provide early version and to stabilize the version priori to be move to the stable channel
-
-### dev
-
-This is where development are under go. This is not a reliable version and could be buggy and even not working depending on the stage of integration we are.
-This branch is only for users whom known exactly what they are doing.
 
 ### master ( deprecated )
 
@@ -55,7 +56,7 @@ Moving from this channel to the other will required either ar restart from scrat
 
 `git pull`
 
-`git checkout stable  // will move you to the stable channel`
+`git checkout stable5  // will move you to the stable5 channel`
 
 `git checkout beta    // will move you to the beta channel`
 

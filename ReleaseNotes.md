@@ -18,10 +18,10 @@ stable-2020 is the new stable branche dedicated for DomoticZ equal and above 202
 
 Release Numbering
 
-- Odd numbers --> Stable
+- Odd numbers --> Stable5
 - Even numbers  --> Beta
 
-##               - 2020-stable/4.13.1 (best performance with Domoticz 2021.1 and above)
+## 24th May 2021  -  5.1.01  (NOT COMPATIBLE with Domoticz 4.xxxx)
 
 - [Hardware] - Update of Danalock configuration
 - [Technical] - handling (but not full support) ZiGate+ (V2)
@@ -46,7 +46,7 @@ Release Numbering
 - [Hardware] - Add Tuya eTRV
 
 
-# en of Domoticz 4.xxxx support. For above version it is required to have a minimum of 2020.1
+#### end of Domoticz 4.xxxx support. For above version it is required to have a minimum of 2020.1
 
 ## 23 Feb. 2021   - 4.11.17
 - [Hardware] - Module AIr Co CAC221
