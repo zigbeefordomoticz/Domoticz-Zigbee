@@ -33,18 +33,18 @@ Your first place to get support is via the Forums.
 
 In order to provide stability and also provide more recent development, Zigate plugin has the following channels
 
-### stable
+### stable (will be deprecated)
 
+Support only ZiGate V1. and supported on best effort
+
+### stable5
+
+Support ALL ZiGate models known today and requires Domoticz 2020.x at minima
 This is considered as a solid , reliable version.
 
 ### beta
 
 We can open the beta channel to provide early version and to stabilize the version priori to be move to the stable channel
-
-### dev
-
-This is where development are under go. This is not a reliable version and could be buggy and even not working depending on the stage of integration we are.
-This branch is only for users whom known exactly what they are doing.
 
 ### master ( deprecated )
 
