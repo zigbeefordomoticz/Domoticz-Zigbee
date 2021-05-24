@@ -12,9 +12,10 @@ For information around the Zigate Plugin, please refer to :
 
 * <https://github.com/pipiche38/Domoticz-Zigate-Wiki/blob/master/en-eng/Home.md> for information
 
-## IMPORTANT
+## COMPATIBILITY WARNING: REQUIRES Domoticz 2020 or above
 
-The current plugin version 5.1 and above support ZiGate V1 and ZiGate V2. We strongly recommend to use Domoticz 2021.1 or above
+The current plugin version 5.1 supports ZiGate V1 and ZiGate V2. 
+We strongly recommend to use Domoticz 2021.1 or above
 
 If you cannot be on Domoticz 2020.x or above, please use the 'stable' branch which is the only one compatible with the oldest Domoticz version
 
