@@ -223,22 +223,11 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
         return
 
     # Livolo case, where livolo provide Switch status update via a Malformed read Attribute request
-    if (
-        "Model" in self.ListOfDevices[MsgSrcAddr]
-        and self.ListOfDevices[MsgSrcAddr]["Model"] == "TI0001"
-    ) or (
-        "Manufacturer Name" in self.ListOfDevices[MsgSrcAddr]
-        and self.ListOfDevices[MsgSrcAddr]["Manufacturer Name"] == "LIVOLO"
-    ):
-        self.log.logging( 
-            "Input",
-            "Debug",
-            "Decode0100 - (Livolo) Read Attribute Request %s/%s Data %s"
-            % (MsgSrcAddr, MsgSrcEp, MsgData),
-        )
-        livolo_read_attribute_request(
-            self, Devices, MsgSrcAddr, MsgSrcEp, MsgData[30:32]
-        )
+    if ( "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == "TI0001" ) or (
+        "Manufacturer Name" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Manufacturer Name"] == "LIVOLO" ):
+        self.log.logging(  "Input", "Debug", "Decode0100 - (Livolo) Read Attribute Request %s/%s Data %s" % (
+            MsgSrcAddr, MsgSrcEp, MsgData),)
+        livolo_read_attribute_request(self, Devices, MsgSrcAddr, MsgSrcEp, MsgData[30:32])
         return
 
     # Handling the Standard Read Attribute Request
@@ -248,7 +237,7 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
     MsgManufCode = MsgData[18:22]
     nbAttribute = MsgData[22:24]
 
-    self.log.logging(  "Input", "Log", "Decode0100 - Mode: %s NwkId: %s SrcEP: %s DstEp: %s ClusterId: %s Direction: %s ManufSpec: %s ManufCode: %s nbAttribute: %s"
+    self.log.logging(  "Input", "Debug", "Decode0100 - Mode: %s NwkId: %s SrcEP: %s DstEp: %s ClusterId: %s Direction: %s ManufSpec: %s ManufCode: %s nbAttribute: %s"
         % (MsgSqn,MsgSrcAddr,MsgSrcEp,MsgDstEp,MsgClusterId,MsgDirection,MsgManufSpec,MsgManufCode,nbAttribute,),)
 
     updSQN(self, MsgSrcAddr, MsgSqn)
@@ -2456,7 +2445,7 @@ def Decode8110_raw( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, M
         set_status_datastruct(self,"WriteAttributes",MsgSrcAddr,MsgSrcEp,MsgClusterId,matchAttributeId,MsgAttrStatus,)
         set_request_phase_datastruct( self, "WriteAttributes", MsgSrcAddr, MsgSrcEp, MsgClusterId, matchAttributeId, "fullfilled", )
         if MsgAttrStatus != "00":
-            self.log.logging(  "Input", "Log", "Decode8110 - Write Attribute Response response - ClusterID: %s/%s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s"
+            self.log.logging(  "Input", "Debug", "Decode8110 - Write Attribute Response response - ClusterID: %s/%s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s"
                 % (MsgClusterId, matchAttributeId, MsgSrcAddr, MsgSrcEp, MsgAttrStatus), MsgSrcAddr, )
 
     if MsgClusterId == "0500":

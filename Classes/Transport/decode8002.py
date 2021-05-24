@@ -50,10 +50,9 @@ def decode8002_and_process(self, frame):
     if Command == '0d': # Discover Attributes Response
         return buildframe_discover_attribute_response( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
 
-    self.logging_receive( 'Log', "decode8002_and_process Unknown Command: %s NwkId: %s Ep: %s Cluster: %s Payload: %s" %(Command, SrcNwkId, SrcEndPoint, ClusterId , Data))
+    self.logging_receive( 'Log', "decode8002_and_process Unknown Command: %s NwkId: %s Ep: %s Cluster: %s Payload: %s - GlobalCommand: %s, Sqn: %s, ManufacturerCode: %s" %(Command, SrcNwkId, SrcEndPoint, ClusterId , Data, GlobalCommand, Sqn, ManufacturerCode, ))
         
     return frame
-
 
 def extract_nwk_infos_from_8002( frame ):
 
