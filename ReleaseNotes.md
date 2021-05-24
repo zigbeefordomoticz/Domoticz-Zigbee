@@ -46,7 +46,7 @@ Release Numbering
 - [Hardware] - Add Tuya eTRV
 
 
-# en of Domoticz 4.xxxx support. For above version it is required to have a minimum of 2020.1
+#### end of Domoticz 4.xxxx support. For above version it is required to have a minimum of 2020.1
 
 ## 23 Feb. 2021   - 4.11.17
 - [Hardware] - Module AIr Co CAC221
