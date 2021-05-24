@@ -46,6 +46,7 @@ def mgmt_rtg(self, nwkid):
 
 def mgmt_rtg_rsp( self, srcnwkid, MsgSourcePoint, MsgClusterID, dstnwkid, MsgDestPoint, MsgPayload, ):
 
+    Domoticz.Log("mgmt_rtg_rsp - len: %s Data: %s" %(len(MsgPayload), MsgPayload))
     Sqn = MsgPayload[0:2]
     Status =  MsgPayload[2:4]
     RoutingTableSize = MsgPayload[4:6]
@@ -56,6 +57,9 @@ def mgmt_rtg_rsp( self, srcnwkid, MsgSourcePoint, MsgClusterID, dstnwkid, MsgDes
         self.ListOfDevices[ srcnwkid ]['RoutingTable'] = {}
         self.ListOfDevices[ srcnwkid ]['RoutingTable']['Devices'] = []
         self.ListOfDevices[ srcnwkid ]['RoutingTable']['SQN'] = 0
+
+    if RoutingTableIndex == '00':
+        self.ListOfDevices[ srcnwkid ]['RoutingTable']['Devices'] = []
 
     self.ListOfDevices[ srcnwkid ]['RoutingTable']['TimeStamp'] = time.time()
     self.ListOfDevices[ srcnwkid ]['RoutingTable']['RoutingTableSize'] = int(RoutingTableSize,16)
