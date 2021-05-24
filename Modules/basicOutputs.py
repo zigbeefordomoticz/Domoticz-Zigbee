@@ -928,7 +928,7 @@ def mgt_routing_req( self, nwkid, start_index):
 
     if 'RoutingTable' not in self.ListOfDevices[ nwkid ]:
         self.ListOfDevices[ nwkid ]['RoutingTable'] = {}
-        self.ListOfDevices[ nwkid ]['RoutingTable']['Devices'] = {}
+        self.ListOfDevices[ nwkid ]['RoutingTable']['Devices'] = []
         self.ListOfDevices[ nwkid ]['RoutingTable']['SQN'] = 0
     else:
         self.ListOfDevices[ nwkid ]['RoutingTable']['SQN'] += 1
