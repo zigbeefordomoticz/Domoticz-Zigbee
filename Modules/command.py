@@ -59,6 +59,8 @@ DEVICE_SWITCH_MATRIX = {
     ( 241,  4,  7): ('ColorControlRGBWW',),
     ( 241,  7,  7): ('ColorControlFull',),
     ( 241,  8,  7): ('ColorControlWW',),
+    ( 241,  6,  7): ('ColorControlRGBWZ',),
+    ( 241,  1,  7): ('ColorControlRGBW', ),
 
     ( 244, 62, 18): ('Switch Selector',), 
     ( 244, 73,  0): ('Switch', '' 'LivoloSWL', 'LivoloSWR' , 'SwitchButton', 'Water', 'Plug'),
@@ -73,7 +75,7 @@ DEVICE_SWITCH_MATRIX = {
 
 ACTIONATORS = [ 'Switch', 'Plug', 'SwitchAQ2', 'Smoke', 'DSwitch', 'LivoloSWL', 'LivoloSWR', 'Toggle',
             'Venetian', 'VenetianInverted', 'WindowCovering', 'BSO', 'BSO-Orientation', 'BSO-Volet',
-            'LvlControl', 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl',
+            'LvlControl', 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl', 'ColorControlRGBWZ', 'ColorControlRGBW',
             'ThermoSetpoint', 'ThermoMode', 'ACMode', 'ThermoMode_2', 'ThermoModeEHZBRTS', 'FanControl', 'PAC-SWITCH', 'ACMode_2', 'ACSwing','TempSetCurrent', 'AlarmWD',
             'FIP', 'HACTMODE','LegranCableMode', 'ContractPower','HeatingSwitch', 'DoorLock' , 'TuyaSiren', 'TuyaSirenHumi', 'TuyaSirenTemp', 'ThermoOnOff',
             'ShutterCalibration' ]

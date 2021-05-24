@@ -679,7 +679,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                         createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 244, Subtype_ = 73, Switchtype_ = 7 )
 
             # ======= Color Control: RGB, WW, Z or combinaisons
-            if t in ( 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl'):
+            if t in ( 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl', 'ColorControlRGBW', 'ColorControlRGBWZ'):
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Colorxxxx" %(t), NWKID)
                 # variateur de couleur/luminosite/on-off
 
@@ -691,6 +691,10 @@ def CreateDomoDevice(self, Devices, NWKID):
                     Subtype_ = 0x07  # 3 Color palettes widget
                 elif t == 'ColorControlWW':    
                     Subtype_ = 0x08  # White color palette / Dimable
+                elif t == 'ColorControlRGBW':
+                    Subtype_ = 0x01  # RGBW 
+                elif t == 'ColorControlRGBWZ':
+                    Subtype_ = 0x06
                 else:
                     # Generic ColorControl, let's try to find a better one.
                     if 'ColorInfos' in self.ListOfDevices[NWKID]:

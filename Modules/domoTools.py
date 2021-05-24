@@ -553,6 +553,8 @@ def subtypeRGB_FromProfile_Device_IDs( EndPoints, Model, ProfileID, ZDeviceID, C
     ColorControlRGBWW = 0x04  # RGB + WW
     ColorControlFull  = 0x07  # 3 Color palettes widget
     ColorControlWW    = 0x08  # WW
+    ColorControlRGBWZ = 0x06  # RGB W Z
+    ColorControlRGBW  = 0x01  # RGB W
 
     Subtype = None
     ZLL_Commissioning = False
