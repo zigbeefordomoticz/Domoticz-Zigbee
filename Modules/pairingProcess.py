@@ -193,7 +193,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
 
     if knownModel and RIA > 3 and status != 'UNKNOW' and status != 'inDB':
         # We have done several retry to get Ep ...
-        self.log.logging( "Pairing", 'Debug', "processNotinDB - Try several times to get all informations, let's use the Model now" +str(NWKID) )
+        self.log.logging( "Pairing", 'Debug', "processNotinDB - Try several times to get all informations, let's use the Model now " +str(NWKID) )
         status = 'createDB'
 
     elif int(self.ListOfDevices[NWKID]['RIA'],10) > 4 and status != 'UNKNOW' and status != 'inDB':  # We have done several retry
@@ -271,7 +271,14 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
 
             if self.pluginconf.pluginConf['capturePairingInfos']:
                 self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'CR-DOMO' )
+
             CreateDomoDevice(self, Devices, NWKID)
+            if self.ListOfDevices[NWKID]['Status'] not in ('inDB', 'failDB'):
+                #Something went wrong in the Widget creation
+                Domoticz.Error("processNotinDBDevices - Creat Domo Device Failed !!! for %s status: %s" %(NWKID,self.ListOfDevices[NWKID]['Status'] ))
+                self.ListOfDevices[NWKID]['Status'] = 'UNKNOW'
+                self.CommiSSionning = False
+                return
 
             #Don't know why we need as this seems very weird
             if NWKID not in self.ListOfDevices:

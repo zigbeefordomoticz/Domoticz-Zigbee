@@ -430,10 +430,9 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             modelName = self.ListOfDevices[MsgSrcAddr]['Model']
             self.log.logging( "Cluster", 'Debug', "Extract all info from Model : %s" %self.DeviceConf[modelName], MsgSrcAddr)
 
-            if 'ConfigSource' in self.ListOfDevices[MsgSrcAddr]:
-                if self.ListOfDevices[MsgSrcAddr]['ConfigSource'] == 'DeviceConf':
-                    self.log.logging( "Cluster", 'Debug', "Not redoing the DeviceConf enrollement", MsgSrcAddr)
-                    return
+            if 'ConfigSource' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['ConfigSource'] == 'DeviceConf':
+                self.log.logging( "Cluster", 'Debug', "Not redoing the DeviceConf enrollement", MsgSrcAddr)
+                return
 
             if 'Param' in self.DeviceConf[modelName]:
                 self.ListOfDevices[MsgSrcAddr]['Param'] = dict(self.DeviceConf[modelName]['Param'])
@@ -444,6 +443,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                     self.ListOfDevices[MsgSrcAddr]['ConfigSource'] = 'DeviceConf'
 
                 self.ListOfDevices[MsgSrcAddr]['Type'] = self.DeviceConf[modelName]['Type']
+
                 if 'Ep' in self.ListOfDevices[MsgSrcAddr]:
                     self.log.logging( "Cluster", 'Debug', "Removing existing received Ep", MsgSrcAddr)
                     _BackupEp = dict(self.ListOfDevices[MsgSrcAddr]['Ep'])
@@ -457,19 +457,24 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                     self.log.logging( "Cluster", 'Debug', "-- Create Endpoint %s in record %s" %(Ep, self.ListOfDevices[MsgSrcAddr]['Ep']), MsgSrcAddr)
 
                 for cluster in self.DeviceConf[modelName]['Ep'][Ep]:                   # For each cluster discribe in DeviceConf.txt
-                    if cluster not in self.ListOfDevices[MsgSrcAddr]['Ep'][Ep]:        # If this cluster doesn't exist in database
-                        self.log.logging( "Cluster", 'Debug', "----> Cluster: %s" %cluster, MsgSrcAddr)
-                        self.ListOfDevices[MsgSrcAddr]['Ep'][Ep][cluster]={}           # create it.
-                        if _BackupEp and Ep in _BackupEp:                              # In case we had data, let's retreive it
-                            if cluster in _BackupEp[Ep]:
-                                for attr in _BackupEp[Ep][cluster]:
-                                    if attr in self.ListOfDevices[MsgSrcAddr]['Ep'][Ep][cluster]:
-                                        if self.ListOfDevices[MsgSrcAddr]['Ep'][Ep][cluster][attr] == '' or self.ListOfDevices[MsgSrcAddr]['Ep'][Ep][cluster][attr] == {}:
-                                            self.ListOfDevices[MsgSrcAddr]['Ep'][Ep][cluster][attr] = _BackupEp[Ep][cluster][attr]
-                                    else:
-                                        self.ListOfDevices[MsgSrcAddr]['Ep'][Ep][cluster][attr] = _BackupEp[Ep][cluster][attr]
+                    if cluster in self.ListOfDevices[MsgSrcAddr]['Ep'][Ep]:        
+                        # If this cluster doesn't exist in database
+                        continue
+                    
+                    self.log.logging( "Cluster", 'Debug', "----> Cluster: %s" %cluster, MsgSrcAddr)
+                    self.ListOfDevices[MsgSrcAddr]['Ep'][Ep][cluster]={}           # create it.
+                    if _BackupEp and Ep in _BackupEp:                              
+                        # In case we had data, let's retreive it
+                        if cluster not in _BackupEp[Ep]:
+                            continue
+                        for attr in _BackupEp[Ep][cluster]:
+                            if attr in self.ListOfDevices[MsgSrcAddr]['Ep'][Ep][cluster]:
+                                if self.ListOfDevices[MsgSrcAddr]['Ep'][Ep][cluster][attr] == '' or self.ListOfDevices[MsgSrcAddr]['Ep'][Ep][cluster][attr] == {}:
+                                    self.ListOfDevices[MsgSrcAddr]['Ep'][Ep][cluster][attr] = _BackupEp[Ep][cluster][attr]
+                            else:
+                                self.ListOfDevices[MsgSrcAddr]['Ep'][Ep][cluster][attr] = _BackupEp[Ep][cluster][attr]
 
-                                    self.log.logging( "Cluster", 'Debug', "------> Cluster %s set with Attribute %s" %(cluster, attr), MsgSrcAddr)
+                            self.log.logging( "Cluster", 'Debug', "------> Cluster %s set with Attribute %s" %(cluster, attr), MsgSrcAddr)
 
                 if 'Type' in self.DeviceConf[modelName]['Ep'][Ep]:                     # If type exist at EP level : copy it
                     self.ListOfDevices[MsgSrcAddr]['Ep'][Ep]['Type']=self.DeviceConf[modelName]['Ep'][Ep]['Type']
