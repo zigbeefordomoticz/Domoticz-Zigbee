@@ -55,7 +55,7 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Man
 
     if srcnwkid not in self.ListOfDevices:
         return
-        x
+
     self.log.logging( "inRawAPS", 'Debug', "inRawAps Nwkid: %s Ep: %s Cluster: %s ManufCode: %s Cmd: %s Data: %s" %(
         srcnwkid, srcep, cluster, ManufacturerCode, Command, Data)  )
     if cluster == '0020': # Poll Control ( Not implemented in firmware )
