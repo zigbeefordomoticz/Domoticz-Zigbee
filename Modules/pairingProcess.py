@@ -127,9 +127,11 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             else:
                 self.log.logging( "Pairing", 'Debug', "[%s] NEW OBJECT: %s Manufacturer: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Manufacturer']), NWKID)
 
-        for iterEp in self.ListOfDevices[NWKID]['Ep']:
-            # ColorMode
-            if '0300' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+        if not knownModel: # No need to get Color Mode as we have a Config File
+            for iterEp in self.ListOfDevices[NWKID]['Ep']:
+                # ColorMode
+                if '0300' not in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                    continue
                 if 'ColorInfos' in self.ListOfDevices[NWKID]:
                     if 'ColorMode' in self.ListOfDevices[NWKID]['ColorInfos']:
                         waitForDomoDeviceCreation = False
