@@ -18,10 +18,10 @@ stable-2020 is the new stable branche dedicated for DomoticZ equal and above 202
 
 Release Numbering
 
-- Odd numbers --> Stable
+- Odd numbers --> Stable5
 - Even numbers  --> Beta
 
-##               - 2020-stable/4.13.1 (best performance with Domoticz 2021.1 and above)
+## May 24th 2021  - 5.1.01  (NOT COMPATIBLE with Domoticz 4.xxxx and best performances with Domoticz 2021.1 and above)
 
 - [Hardware] - Update of Danalock configuration
 - [Technical] - handling (but not full support) ZiGate+ (V2)
