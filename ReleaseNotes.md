@@ -21,7 +21,7 @@ Release Numbering
 - Odd numbers --> Stable5
 - Even numbers  --> Beta
 
-## May 24th 2021  - 5.1.01  (NOT COMPATIBLE with Domoticz 4.xxxx and best performances with Domoticz 2021.1 and above)
+## 24th May 2021  -  5.1.01  (NOT COMPATIBLE with Domoticz 4.xxxx)
 
 - [Hardware] - Update of Danalock configuration
 - [Technical] - handling (but not full support) ZiGate+ (V2)
