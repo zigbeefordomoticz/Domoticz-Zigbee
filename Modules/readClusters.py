@@ -378,6 +378,10 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                     # Overwrite the Confif file
                     modelName += '-bulb'
 
+        elif modelName == 'GL-C-009' and 'Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Model'] == 'GL-C-007':
+            modelName = 'GL-C-007-1ID'
+            self.ListOfDevices[MsgSrcAddr]['Model'] = {}
+
         elif modelName == 'PIR323' and MsgSrcEp == '03':
             # Very bad hack, but Owon use the same model name for 2 devices!
             modelName = 'THS317'
