@@ -933,6 +933,19 @@ def mgt_routing_req( self, nwkid, start_index):
     else:
         self.ListOfDevices[ nwkid ]['RoutingTable']['SQN'] += 1
 
-
     payload = '%02x' %self.ListOfDevices[ nwkid ]['RoutingTable']['SQN'] + start_index
     raw_APS_request( self, nwkid, '00', '0032', '0000', payload, zigate_ep='00', highpriority=False, ackIsDisabled = False , )
+
+
+def initiate_change_channel( self, new_channel):
+
+    self.log.logging( "BasicOutput", 'Log',"initiate_change_channel - channel: %s" %new_channel)
+    scanDuration = 'fe' # Initiate a change
+
+    channel_mask = '%08x' %maskChannel( self, new_channel )
+    target_address = 'ffff' # Broadcast to all devices
+
+    datas = target_address + channel_mask + scanDuration + '00'  + "0000"
+    self.log.logging( "BasicOutput", 'Log',"initiate_change_channel - 004A %s" %datas)
+    send_zigatecmd_raw( self, "004A", datas )
+    send_zigatecmd_raw( self, "0009", "" ) # Request status
