@@ -26,6 +26,7 @@ def do_rest( self, Connection, verb, data, version, command, parameters):
         'dev-cap':       {'Name':'dev-cap',            'Verbs':{'GET'},          'function':self.rest_dev_capabilities},
         'dev-command':   {'Name':'dev-command',        'Verbs':{'PUT'},          'function':self.rest_dev_command},
         'raw-command':   {'Name':'raw-command',        'Verbs':{'PUT'},          'function':self.rest_raw_command},
+        'change-channel':{'Name':'change-channel',     'Verbs':{'PUT'},          'function':self. rest_change_channel,
         'domoticz-env':  {'Name':'domoticz-env',       'Verbs':{'GET'},          'function':self.rest_domoticz_env},
         'plugin-health': {'Name':'plugin-health',      'Verbs':{'GET'},          'function':self.rest_plugin_health},
         'nwk-stat':      {'Name':'nwk_stat',           'Verbs':{'GET','DELETE'}, 'function':self.rest_nwk_stat},
