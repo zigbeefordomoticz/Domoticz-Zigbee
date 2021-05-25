@@ -674,20 +674,12 @@ def Decode8009(self, Devices, MsgData, MsgLQI):  # Network State response (Firm 
         initLODZigate(self, addr, extaddr)
 
     if self.currentChannel != int(Channel, 16):
-        self.adminWidgets.updateNotificationWidget(
-            Devices, "Zigate Channel: %s" % str(int(Channel, 16))
-        )
+        self.adminWidgets.updateNotificationWidget( Devices, "Zigate Channel: %s" % str(int(Channel, 16)) )
 
     # Let's check if this is a first initialisation, and then we need to update the Channel setting
-    if (
-        "startZigateNeeded" not in self.zigatedata
-        and not self.startZigateNeeded
-        and str(int(Channel, 16)) != self.pluginconf.pluginConf["channel"]
-    ):
-        Domoticz.Status(
-            "Updating Channel in Plugin Configuration from: %s to: %s"
-            % (self.pluginconf.pluginConf["channel"], int(Channel, 16))
-        )
+    if ( "startZigateNeeded" not in self.zigatedata and not self.startZigateNeeded and str(int(Channel, 16)) != self.pluginconf.pluginConf["channel"] ):
+        Domoticz.Status( "Updating Channel in Plugin Configuration from: %s to: %s" % (
+            self.pluginconf.pluginConf["channel"], int(Channel, 16)) )
         self.pluginconf.pluginConf["channel"] = str(int(Channel, 16))
         self.pluginconf.write_Settings()
 
@@ -700,12 +692,7 @@ def Decode8009(self, Devices, MsgData, MsgLQI):  # Network State response (Firm 
     if self.groupmgt:
         self.groupmgt.updateZigateIEEE(extaddr)
 
-    self.log.logging( 
-        "Input",
-        "Status",
-        "Zigate addresses ieee: %s , short addr: %s"
-        % (self.ZigateIEEE, self.ZigateNWKID),
-    )
+    self.log.logging(  "Input", "Status", "Zigate addresses ieee: %s , short addr: %s" % (self.ZigateIEEE, self.ZigateNWKID), )
 
     # from https://github.com/fairecasoimeme/ZiGate/issues/15 , if PanID == 0 -> Network is done
     if str(PanID) == "0":
@@ -713,12 +700,7 @@ def Decode8009(self, Devices, MsgData, MsgLQI):  # Network State response (Firm 
         self.adminWidgets.updateNotificationWidget(Devices, "Network down PanID = 0")
         self.adminWidgets.updateStatusWidget(Devices, "No Connection")
     else:
-        self.log.logging( 
-            "Input",
-            "Status",
-            "Network state UP, PANID: %s extPANID: 0x%s Channel: %s"
-            % (PanID, extPanID, int(Channel, 16)),
-        )
+        self.log.logging(  "Input", "Status", "Network state UP, PANID: %s extPANID: 0x%s Channel: %s" % (PanID, extPanID, int(Channel, 16)), )
 
     self.zigatedata["IEEE"] = extaddr
     self.zigatedata["Short Address"] = addr
