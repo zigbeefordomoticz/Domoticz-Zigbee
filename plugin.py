@@ -236,10 +236,12 @@ class BasePlugin:
         Domoticz.Log( "ZiGate plugin started!" )
         assert sys.version_info >= (3, 4)
 
-        if Parameters["Mode1"] == "V1" and Parameters["Mode2"] in ( "USB","DIN","PI" ,"Wifi","None",):
+        if Parameters["Mode1"] == "V1" and Parameters["Mode2"] in ( "USB", "DIN","PI" ,"Wifi",):
             self.transport = Parameters["Mode2"]
-        elif Parameters["Mode1"] == "V2" and Parameters["Mode2"] in ( "USB","DIN","PI" ,"Wifi","None",) :
-            self.transport = Parameters["Mode2"]
+        elif Parameters["Mode1"] == "V2" and Parameters["Mode2"] in ( "USB", "DIN","PI" ,"Wifi",) :
+            self.transport = "V2-" + Parameters["Mode2"]
+        elif Parameters["Mode2"] == "None":
+            self.transport = "None"
         else:
             Domoticz.Error("Please cross-check the plugin starting parameters Mode1: %s Mode2: %s and make sure you have restarted Domoticz after updating the plugin" %( 
                 Parameters["Mode1"] == "V1" , Parameters["Mode2"]))
@@ -397,17 +399,16 @@ class BasePlugin:
 
         # Connect to Zigate only when all initialisation are properly done.
         self.log.logging( 'Plugin', 'Status', "Transport mode: %s" %self.transport)
-        if self.transport in ("USB", "DIN", "V2"):
-            
+        if self.transport in ("USB", "DIN", "V2-DIN", "V2-USB"):
             self.ZigateComm = ZigateTransport( self.HardwareID, self.DomoticzBuild, self.DomoticzMajor, self.DomoticzMinor, self.transport, self.statistics, self.pluginconf, self.processFrame,\
                     self.log, serialPort=Parameters["SerialPort"] )
 
-        elif  self.transport == "PI":
+        elif  self.transport in ("PI", "V2-PI"):
             switchPiZigate_mode( self, 'run' )
             self.ZigateComm = ZigateTransport( self.HardwareID, self.DomoticzBuild, self.DomoticzMajor, self.DomoticzMinor, self.transport, self.statistics, self.pluginconf, self.processFrame,\
                     self.log, serialPort=Parameters["SerialPort"] )
 
-        elif  self.transport == "Wifi":
+        elif  self.transport in ("Wifi", "V2-Wifi"):
             self.ZigateComm = ZigateTransport( self.HardwareID, self.DomoticzBuild, self.DomoticzMajor, self.DomoticzMinor, self.transport, self.statistics, self.pluginconf, self.processFrame,\
                     self.log, wifiAddress= Parameters["Address"], wifiPort=Parameters["Port"] )
 
@@ -417,7 +418,7 @@ class BasePlugin:
             self.PluginHealth['Firmware Update'] = {'Progress': '75 %', 'Device': '1234'}
             return
         else:
-            self.log.logging( 'Plugin', 'Error', "Unknown Transport comunication protocol : "+str(self.transport) )
+            self.log.logging( 'Plugin', 'Error', "Unknown Transport comunication protocol : %s" %str(self.transport) )
             return
 
         self.log.logging( 'Plugin', 'Debug', "Establish Zigate connection" )
