@@ -823,14 +823,15 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         self.log.logging( "Command", 'Debug', "-----> Transition Timers: %s %s %s %s" %( 
             transitionRGB, transitionMoveLevel, transitionHue, transitionTemp))
         
-        manage_level = False
-        if 'Model' in self.ListOfDevices[ NWKID ] and self.ListOfDevices[ NWKID ]['Model'] == 'GL-C-007-2ID':
-            # We have to manage Level independtly of RGB and force EpOut to 0f
-            EPout = '0f'
-            manage_level = True
+        #manage_level = False
+        #if 'Model' in self.ListOfDevices[ NWKID ] and self.ListOfDevices[ NWKID ]['Model'] == 'GL-C-007-2ID':
+        #    # We have to manage Level independtly of RGB and force EpOut to 0f
+        #    EPout = '0f'
+        #    manage_level = True
 
         #First manage level
-        if Hue_List['m'] or Hue_List['m'] != 9998 or manage_level:
+        #if Hue_List['m'] or Hue_List['m'] != 9998 or manage_level:
+        if Hue_List['m'] or Hue_List['m'] != 9998:
             OnOff = '01' # 00 = off, 01 = on
             value=Hex_Format(2,round(1+Level*254/100)) #To prevent off state
             self.log.logging( "Command", 'Debug', "---------- Set Level: %s" %(value), NWKID)
