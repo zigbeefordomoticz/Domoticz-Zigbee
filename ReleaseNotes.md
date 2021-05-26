@@ -21,6 +21,9 @@ Release Numbering
 - Odd numbers --> Stable5
 - Even numbers  --> Beta
 
+## 26th May 2021  -  5.1.02 
+- [Technical] - Update the plugin version number
+
 ## 24th May 2021  -  5.1.01  (NOT COMPATIBLE with Domoticz 4.xxxx)
 
 - [Hardware] - Update of Danalock configuration
