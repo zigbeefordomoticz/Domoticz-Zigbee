@@ -23,6 +23,7 @@ Release Numbering
 
 ## 26th May 2021  -  5.1.02 
 - [Technical] - Update the plugin version number
+- [Technical] - Enable hw flow control for ZiGate+ ( USB, DIN)
 
 ## 24th May 2021  -  5.1.01  (NOT COMPATIBLE with Domoticz 4.xxxx)
 
