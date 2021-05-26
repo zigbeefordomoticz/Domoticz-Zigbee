@@ -379,7 +379,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                     modelName += '-bulb'
 
         elif modelName == 'GL-C-009' and 'Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Model'] == 'GL-C-007':
-            modelName = 'GL-C-007-1ID'
+            modelName = 'GL-C-007-2ID'
             self.ListOfDevices[MsgSrcAddr]['Model'] = {}
 
         elif modelName == 'PIR323' and MsgSrcEp == '03':
