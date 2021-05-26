@@ -789,6 +789,9 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
 
     if Command == 'Set Color':
+        # RGBW --> Action on W Level (bri) setcolbrightnessvalue: ID: d9, bri: 96, color: '{m: 3, RGB: ffffff, CWWW: 0000, CT: 0}'
+        #      --> Action on RGB (RGB)     setcolbrightnessvalue: ID: d9, bri: 59, color: '{m: 3, RGB: 53ff42, CWWW: 0000, CT: 0}'
+
         self.log.logging( "Command", 'Debug', "mgtCommand : Set Color for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s Color: %s" %(NWKID, EPout, Unit, DeviceType, Level, Color), NWKID)
         Hue_List = json.loads(Color)
         self.log.logging( "Command", 'Debug', "-----> Hue_List: %s" %str(Hue_List), NWKID)
@@ -819,10 +822,15 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
 
         self.log.logging( "Command", 'Debug', "-----> Transition Timers: %s %s %s %s" %( 
             transitionRGB, transitionMoveLevel, transitionHue, transitionTemp))
-            
+        
+        manage_level = False
+        if 'Model' in self.ListOfDevices[ NWKID ] and self.ListOfDevices[ NWKID ]['Model'] == 'GL-C-007-2ID':
+            # We have to manage Level independtly of RGB and force EpOut to 0f
+            EPout = '0f'
+            manage_level = True
+
         #First manage level
-        if Hue_List['m'] != 9998:
-            # In case of m ==3, we will do the Setlevel
+        if Hue_List['m'] or Hue_List['m'] != 9998 or manage_level:
             OnOff = '01' # 00 = off, 01 = on
             value=Hex_Format(2,round(1+Level*254/100)) #To prevent off state
             self.log.logging( "Command", 'Debug', "---------- Set Level: %s" %(value), NWKID)
@@ -837,10 +845,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         #ColorModeNone = 0   // Illegal
         #ColorModeNone = 1   // White. Valid fields: none
 
-        if Hue_List['m'] == 1:
-            ww = int(Hue_List['ww']) # Can be used as level for monochrome white
-            #TODO : Jamais vu un device avec ca encore
-            self.log.logging( "Command", 'Log', "Not implemented device color 1", NWKID)
+        #if Hue_List['m'] == 1:
+        #    ww = int(Hue_List['ww']) # Can be used as level for monochrome white
+        #    #TODO : Jamais vu un device avec ca encore
+        #    self.log.logging( "Command", 'Log', "Not implemented device color 1", NWKID)
 
         #ColorModeTemp = 2   // White with color temperature. Valid fields: t
         if Hue_List['m'] == 2:
