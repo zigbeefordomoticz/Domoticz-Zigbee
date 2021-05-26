@@ -18,9 +18,9 @@ def open_serial( self ):
             self._connection.close()
             del self._connection
             self._connection = None
-
+        Domoticz.Log("-----_transp: %s" %self._transp)
         self._connection = serial.Serial(self._serialPort, baudrate = 115200, rtscts = False, dsrdtr = False, timeout = None)
-        if self._transp in ('DIN', 'V2' ):
+        if self._transp in ('DIN', 'V2-USB', 'V2-DIN' ):
             self._connection.rtscts = True
         time.sleep(0.5)     # wait fro 100 ms for pyserial port to actually be ready
 
