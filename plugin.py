@@ -716,6 +716,8 @@ class BasePlugin:
             self.log.logging( 'Plugin', 'Debug', "Garbage Collection status: %s" %str(gc.get_count()) )
             self.log.logging( 'Plugin', 'Debug', "Garbage Collection triggered: %s" %str(gc.collect()) )
 
+        if '0000' in self.ListOfDevices and 'CheckChannel' in self.ListOfDevices['0000'] and  self.ListOfDevices['0000']['CheckChannel'] != 0:
+            sendZigateCmd( self, "0009", "" ) # Request Network Status with Channel
         # Manage all entries in  ListOfDevices (existing and up-coming devices)
         processListOfDevices( self , Devices )
 

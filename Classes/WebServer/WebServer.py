@@ -972,15 +972,12 @@ class WebServer(object):
                 _response["Data"] = {'Error': 'Unknow verb'}
                 return _response
             channel = data['Channel']
-            if channel  not in ( '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26'):
+            if channel  not in range(11,27):
                 _response["Data"] = {'Error': 'incorrect channel: %s' %channel}
                 return _response
             initiate_change_channel( self, int(channel))
 
             _response["Data"] = { "Request channel: %s" %channel} 
-            self.logging( 'Log', "rest_dev_command - Command: %s payload %s" %(data['Command'], data['payload']))
-
-
         return _response
 
     def rest_raw_command( self, verb, data, parameters):

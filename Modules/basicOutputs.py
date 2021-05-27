@@ -948,4 +948,5 @@ def initiate_change_channel( self, new_channel):
     datas = target_address + channel_mask + scanDuration + '00'  + "0000"
     self.log.logging( "BasicOutput", 'Log',"initiate_change_channel - 004A %s" %datas)
     send_zigatecmd_raw( self, "004A", datas )
-    send_zigatecmd_raw( self, "0009", "" ) # Request status
+    if '0000' in self.ListOfDevices:
+        self.ListOfDevices['0000']['CheckChannel'] = new_channel

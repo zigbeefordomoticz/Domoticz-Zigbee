@@ -658,6 +658,12 @@ def Decode8009(self, Devices, MsgData, MsgLQI):  # Network State response (Firm 
         + str(int(Channel, 16)),
     )
 
+    if ( '0000' in self.ListOfDevices['0000'] 
+            and 'CheckChannel' in self.ListOfDevices['0000'] 
+            and self.ListOfDevices['0000']['CheckChannel']  != 0 
+            and self.ListOfDevices['0000']['CheckChannel']  == int(Channel,16)):
+        self.ListOfDevices['0000']['CheckChannel']  = 0
+
     if self.ZigateIEEE != extaddr:
         # In order to update the first time
         self.adminWidgets.updateNotificationWidget(Devices, "Zigate IEEE: %s" % extaddr)
