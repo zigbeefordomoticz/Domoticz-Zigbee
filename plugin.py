@@ -570,11 +570,13 @@ class BasePlugin:
             Domoticz.Error("onMessage - empty message received on %s" %Connection)
 
         self.Ping['Nb Ticks'] = 0
+        self.connectionState  = 1
         self.ZigateComm.on_message(Data)
 
     def processFrame( self, Data ):
         if not self.VersionNewFashion:
             return
+        self.connectionState  = 1
         #start_time = int(time.time() *1000)
         ZigateRead( self, Devices, Data)
         #stop_time = int(time.time() *1000)
