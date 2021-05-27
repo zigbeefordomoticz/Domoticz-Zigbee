@@ -695,7 +695,7 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     elif MsgAttrID == "0020": # Battery Voltage
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
         self.log.logging( "Cluster", 'Debug', "readCluster 0001 - %s Battery: %s V" %(MsgSrcAddr, value) , MsgSrcAddr)
-        if 'Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Model'] in ('EH-ZB-BMS', 'DWS312-E', 'CDWS312', 'CTHS317ET', 'CMS323', 'PIR323-A' ):
+        if 'Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Model'] in ('MOSZB-140', 'EH-ZB-BMS', 'DWS312-E', 'CDWS312', 'CTHS317ET', 'CMS323', 'PIR323-A' ):
             value = round( value/10, 1)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(value))
 
@@ -750,7 +750,7 @@ def UpdateBatteryAttribute( self, MsgSrcAddr, MsgSrcEp ):
     BATTERY_3VOLTS = ( "lumi.sen_ill.mgl01", "3AFE130104020015", "3AFE140103020000", "3AFE14010402000D", "3AFE170100510001" ) + LEGRAND_REMOTES
 
     BATTERY_15_VOLTS = ( )
-    BATTERY_30_VOLTS = ( "3AFE130104020015", "3AFE140103020000", "3AFE14010402000D", "3AFE170100510001" , "SmokeSensor-EM", "COSensor-EM" ) + LEGRAND_REMOTES
+    BATTERY_30_VOLTS = ( "MOSZB-140", "3AFE130104020015", "3AFE140103020000", "3AFE14010402000D", "3AFE170100510001" , "SmokeSensor-EM", "COSensor-EM" ) + LEGRAND_REMOTES
     BATTERY_45_VOLTS = ( 'EH-ZB-RTS' ,)
 
     BATTERY_BASED_DEVICES = BATTERY_200PERCENT + BATTERY_3VOLTS + BATTERY_15_VOLTS + BATTERY_30_VOLTS + BATTERY_45_VOLTS + XIAOMI_BATTERY_DEVICES
@@ -1166,7 +1166,7 @@ def Cluster000f( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                     value = '%02x' %0
                 MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0102', value)
 
-            elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'Shutter switch with neutral' ):
+            elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'Shutter switch with neutral', ):
                 # The Shutter should have the Led on its right
                 # Present Value: 0x01 -> Open
                 # Present Value: 0x00 -> Closed
@@ -1185,11 +1185,18 @@ def Cluster000f( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
                 MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0102', value)
 
-            elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'Dimmer switch wo neutral' ):
+            elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'Dimmer switch wo neutral', ):
                 MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', MsgClusterData)
 
-            elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'Micromodule switch'):
+            elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'Micromodule switch',):
                 # Useless information. It is given the state of the micromodule button. 01 when click, 00 when release
+                pass
+
+            elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'MOSZB-140', ):
+                # Frient Motion device
+                # Potential values are:
+                # - 00006f0018000100
+                # - 01006f001800010
                 pass
 
             else:
