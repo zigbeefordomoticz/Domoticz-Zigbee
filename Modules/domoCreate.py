@@ -445,6 +445,11 @@ def CreateDomoDevice(self, Devices, NWKID):
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetType ="Custom")
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in VOC" %(t), NWKID)
 
+            if t in ( 'CH2O', ):
+                Options = '1;ppm'
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetType ="Custom")
+                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in VOC" %(t), NWKID)
+
             if t in ( 'CarbonDioxyde', ):
                 Options = '1;ppm'
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 0xF3, Subtype_ = 31, Switchtype_= 0, widgetOptions = Options)

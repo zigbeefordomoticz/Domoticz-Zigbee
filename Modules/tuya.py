@@ -13,8 +13,7 @@
 import Domoticz
 
 from datetime import datetime, timedelta
-
-
+import time
 
 from Classes.LoggingManagement import LoggingManagement
 from Modules.tools import updSQN, get_and_inc_SQN, is_ack_tobe_disabled, build_fcf
@@ -43,6 +42,8 @@ TS0041_MANUF_NAME = ("_TZ3000_xkwalgne", "_TZ3000_peszejy7", "_TZ3000_8kzqqzu4",
 
 
 # TS0601 
+TUYA_SMARTAIR_MANUFACTURER = ( '_TZE200_8ygsuhe1', )
+
 TUYA_SIREN_MANUFACTURER =  ( '_TZE200_d0yu2xgi', '_TYST11_d0yu2xgi' )
 TUYA_SIREN_MODEL        =  ( 'TS0601', '0yu2xgi', )
 
@@ -75,7 +76,8 @@ TUYA_MANUFACTURER_NAME = ( TS011F_MANUF_NAME + TS0041_MANUF_NAME +
                             TUYA_DIMMER_MANUFACTURER + TUYA_SWITCH_MANUFACTURER + TUYA_2GANGS_SWITCH_MANUFACTURER + TUYA_3GANGS_SWITCH_MANUFACTURER +
                             TUYA_CURTAIN_MAUFACTURER +  
                             TUYA_THERMOSTAT_MANUFACTURER + 
-                            TUYA_eTRV1_MANUFACTURER + TUYA_eTRV2_MANUFACTURER + TUYA_eTRV3_MANUFACTURER + TUYA_eTRV_MANUFACTURER)
+                            TUYA_eTRV1_MANUFACTURER + TUYA_eTRV2_MANUFACTURER + TUYA_eTRV3_MANUFACTURER + TUYA_eTRV_MANUFACTURER +
+                            TUYA_SMARTAIR_MANUFACTURER )
 
 def tuya_registration(self, nwkid, device_reset=False):
     
@@ -134,11 +136,11 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
     if self.FirmwareVersion and int(self.FirmwareVersion,16) < 0x031e:
         tuya_send_default_response( self, NwkId, srcEp , sqn, cmd, fcf)
 
+    # https://developer.tuya.com/en/docs/iot/tuuya-zigbee-door-lock-docking-access-standard?id=K9ik5898uzqrk    
     
-    if cmd == '24': # Time Synchronisation
-        send_timesynchronisation( self, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload[6:])
+    
 
-    elif cmd in ('01', '02', ):
+    if cmd == '01': # TY_DATA_RESPONE
         status = MsgPayload[6:8]   #uint8
         transid = MsgPayload[8:10] # uint8
         dp = int(MsgPayload[10:12],16)
@@ -148,6 +150,26 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
         data = MsgPayload[18:]
         self.log.logging( "Tuya", 'Debug2', "tuyaReadRawAPS - command %s MsgPayload %s/ Data: %s" %(cmd, MsgPayload, MsgPayload[6:]),NwkId )
         tuya_response( self,Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data )
+
+    elif cmd == '02': # TY_DATA_REPORT
+        status = MsgPayload[6:8]   #uint8
+        transid = MsgPayload[8:10] # uint8
+        dp = int(MsgPayload[10:12],16)
+        datatype = int(MsgPayload[12:14],16)
+        fn = MsgPayload[14:16]
+        len_data = MsgPayload[16:18]
+        data = MsgPayload[18:]
+        self.log.logging( "Tuya", 'Debug2', "tuyaReadRawAPS - command %s MsgPayload %s/ Data: %s" %(cmd, MsgPayload, MsgPayload[6:]),NwkId )
+        tuya_response( self,Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data )
+
+    elif cmd == '11': # MCU_VERSION_RSP ( Return version or actively report version )
+        pass
+
+    elif cmd == '23': # TUYA_REPORT_LOG
+        pass
+
+    elif cmd == '24': # Time Synchronisation
+        send_timesynchronisation( self, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload[6:])
 
     else:
         self.log.logging( "Tuya", 'Log', "tuyaReadRawAPS - Model: %s UNMANAGED Nwkid: %s/%s fcf: %s sqn: %s cmd: %s data: %s" %(
@@ -161,9 +183,12 @@ def tuya_response( self,Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, 
     if _ModelName in ('TS0601-switch', 'TS0601-2Gangs-switch', 'TS0601-2Gangs-switch'):
         tuya_switch_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
 
-    elif _ModelName == 'TS0601-curtain':
-        tuya_curtain_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
+    elif _ModelName == 'TS0601-SmartAir':
+        tuya_smartair_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
 
+    elif _ModelName == 'TS0601-curtain':
+        tuya_smartair_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
+        
     elif _ModelName in ( 'TS0601-thermostat' ):
         tuya_eTRV_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
 
@@ -514,3 +539,48 @@ def tuya_window_cover_command( self, nwkid, mode ):
     # (0x0006) | Write Attributes (0x02) | 0x8001 | 8-Bit (0x30) | 2 (0x02) | Light Mode 3
 
     write_attribute( self, nwkid, ZIGATE_EP, '01', '0006', '0000', '00', '8001', '30', mode, ackIsDisabled = True)
+
+def tuya_smartair_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
+
+    #             cmd | status | transId | dp | DataType | fn | len | Data
+    #              01     00        00     12     02        00   04    00000101   257   --- Temperature
+    #              01     00        00     13     02        00   04    0000018d   397   --- Humidity  Confirmed
+    #              01     00        01     16     02        00   04    00000002     2   --- 0.002 ppm Formaldéhyde détécté
+    #              01     00        01     15     02        00   04    00000001     1   --- VOC 0.1 ppm - Confirmed
+    #              01     00        01     02     02        00   04    00000172   370   --- CO2 - Confirmed
+
+    # The device is flooding data every seconds. This could have the impact to flow the Domoticz database/
+    if 'AcquisitionFrequency' in self.ListOfDevices[NwkId]['Param'] and self.ListOfDevices[NwkId]['Param']['AcquisitionFrequency'] > 0:
+        previous_ts = get_tuya_attribute( self, NwkId, 'TimeStamp_%s' %dp)
+        if  previous_ts and ( previous_ts + self.ListOfDevices[NwkId]['Param']['AcquisitionFrequency']) > time.time():
+            return
+        store_tuya_attribute( self, NwkId, 'TimeStamp_%s' %dp, time.time() ) 
+
+    #Temp/Humi/CarbonDioxyde/CH20/Voc
+    if dp == 0x02: # CO2 ppm
+        co2_Attribute = '0005'
+        co2_ppm = int(data,16)
+        store_tuya_attribute( self, NwkId, 'CO2 ppm', co2_ppm, ) 
+        MajDomoDevice(self, Devices, NwkId, srcEp, '0402', co2_ppm ,Attribute_ = co2_Attribute)
+
+    elif dp == 0x12: # Temperature
+        temp = int(data,16) / 10
+        store_tuya_attribute( self, NwkId, 'Temp', temp ) 
+        MajDomoDevice(self, Devices, NwkId, srcEp, '0402', temp)
+
+    elif dp == 0x13: # Humidity %
+        humi = int(data,16) // 10
+        store_tuya_attribute( self, NwkId, 'Humi', humi ) 
+        MajDomoDevice(self, Devices, NwkId, srcEp, '0405', humi)
+
+    elif dp == 0x15: # VOC ppm
+        voc_Attribute = '0003'
+        voc_ppm = int(data,16) / 10
+        store_tuya_attribute( self, NwkId, 'VOC ppm', voc_ppm ) 
+        MajDomoDevice(self, Devices, NwkId, srcEp, '0402', voc_ppm, Attribute_ = voc_Attribute)
+
+    elif dp == 0x16: # Formaldéhyde ppm ( Méthanal / CH2O_ppm)
+        ch2O_Attribute = '0004'
+        CH2O_ppm = int(data,16) / 100
+        store_tuya_attribute( self, NwkId, 'CH2O ppm', CH2O_ppm ) 
+        MajDomoDevice(self, Devices, NwkId, srcEp, '0402', CH2O_ppm, Attribute_ = ch2O_Attribute)

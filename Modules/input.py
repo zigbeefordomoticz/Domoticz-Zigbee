@@ -773,6 +773,8 @@ def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
             self.log.logging( 'Input', 'Log', "Decod8011 Received [%s] for Nwkid  : %s with status: %s" 
                 % (i_sqn, MsgSrcAddr, MsgStatus), MsgSrcAddr)
 
+    if MsgSrcAddr not in self.ListOfDevices:
+        return
 
     if MsgStatus == "00":
         timeStamped(self, MsgSrcAddr, 0x8011)
@@ -783,6 +785,9 @@ def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
             self.ListOfDevices[MsgSrcAddr]["Health"] = "Live"
         return
 
+    if MsgSrcAddr not in self.ListOfDevices:
+        return
+        
     if not _powered:
         return
 

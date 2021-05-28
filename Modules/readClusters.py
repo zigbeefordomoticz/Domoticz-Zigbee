@@ -33,7 +33,7 @@ from Classes.LoggingManagement import LoggingManagement
 
 from Modules.tuya import ( TUYA_TS0601_MODEL_NAME, TUYA_SIREN_MANUFACTURER, TUYA_DIMMER_MANUFACTURER, 
                             TUYA_SWITCH_MANUFACTURER, TUYA_2GANGS_SWITCH_MANUFACTURER, TUYA_CURTAIN_MAUFACTURER, TUYA_THERMOSTAT_MANUFACTURER,
-                            TUYA_eTRV1_MANUFACTURER, TUYA_eTRV2_MANUFACTURER , TUYA_eTRV3_MANUFACTURER)
+                            TUYA_eTRV1_MANUFACTURER, TUYA_eTRV2_MANUFACTURER , TUYA_eTRV3_MANUFACTURER, TUYA_SMARTAIR_MANUFACTURER)
 
 def decodeAttribute(self, AttType, Attribute, handleErrors=False):
 
@@ -355,6 +355,9 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 
             elif manufacturer_name in TUYA_eTRV3_MANUFACTURER: # eTRV
                 modelName += '-eTRV3'
+
+            elif manufacturer_name in TUYA_SMARTAIR_MANUFACTURER: # Smart Air Box
+                modelName += '-SmartAir'
             else:
                 # eTRV
                 modelName += '-eTRV'
