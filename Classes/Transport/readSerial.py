@@ -68,9 +68,8 @@ def serial_read_from_zigate( self ):
                 data = self._connection.read(1)  # Blocking Read
 
         except serial.SerialException as e:
-            self.logging_receive('Error',"serial_read_from_zigate - error while reading %s" %(e))
+            self.logging_receive('Error',"serial_read_from_zigate - error while reading: %s" %(e))
             data = None
-            self._connection= None
             break
 
         except Exception as e:
@@ -78,7 +77,6 @@ def serial_read_from_zigate( self ):
             # adapters -> exit
             self.logging_receive('Error',"Error while receiving a ZiGate command: %s" %e)
             handle_thread_error( self, e, 0, 0, data)
-            self._connection = None
             break
 
         if data:
