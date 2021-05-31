@@ -104,15 +104,17 @@ class ZigateTransport(object):
         # Initialise Command Protocol Parameters
         initialize_command_protocol_parameters( )
 
-        if transport in ( "USB", "DIN", "V2", "PI"):
+        if transport in ( "USB", "DIN", "V2-USB", "V2-DIN", "PI", "V2-PI"):
             self._transp = transport
             self._serialPort = serialPort
-        elif str(transport) == "Wifi":
+
+        elif str(transport) in ("Wifi", "V2-Wifi"):
             self._transp = transport
             self._wifiAddress = wifiAddress
             self._wifiPort = wifiPort
+
         else:
-            Domoticz.Error("Unknown Transport Mode: %s" % transport)
+            Domoticz.Error("Unknown Transport Mode: >%s<" % transport)
             self._transp = 'None'
 
     # for Statistics usage
@@ -287,7 +289,7 @@ class ZigateTransport(object):
 
 def open_connection( self ):
 
-    if self._transp in ["USB", "DIN", "PI", "V2"]:
+    if self._transp in ["USB", "DIN", "PI", "V2-USB", "V2-DIN", "V2-PI"]:
         if self._serialPort.find('/dev/') == -1 and self._serialPort.find('COM') != -1:
             return
         Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" % (self._serialPort))
@@ -300,7 +302,7 @@ def open_connection( self ):
             start_writer_thread( self )
             start_forwarder_thread( self )
 
-    elif self._transp == "Wifi":
+    elif self._transp in ("Wifi", "V2-Wifi"):
         Domoticz.Status("Connection Name: Zigate, Transport: TCP/IP, Address: %s:%s" %
                         (self._serialPort, self._wifiPort))
         if self.pluginconf.pluginConf['byPassDzConnection'] and not self.force_dz_communication:

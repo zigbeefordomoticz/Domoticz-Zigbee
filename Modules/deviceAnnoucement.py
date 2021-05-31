@@ -354,7 +354,9 @@ def decode004d_new_devicev2(    self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgDa
 
     # 4- We will request immediatly the List of EndPoints
     PREFIX_IEEE_XIAOMI = "00158d000"
-    if MsgIEEE[0 : len(PREFIX_IEEE_XIAOMI)] == PREFIX_IEEE_XIAOMI:
+    PREFIX_IEEE_OPPLE  = "04cf8cdf3"
+    if ( MsgIEEE[0 : len(PREFIX_IEEE_XIAOMI)] == PREFIX_IEEE_XIAOMI or 
+          MsgIEEE[0 : len(PREFIX_IEEE_OPPLE)] == PREFIX_IEEE_OPPLE  ):
         ReadAttributeRequest_0000(
             self, NwkId, fullScope=False
         )  # In order to request Model Name

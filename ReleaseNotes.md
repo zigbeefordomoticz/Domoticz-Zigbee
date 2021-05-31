@@ -21,8 +21,14 @@ Release Numbering
 - Odd numbers --> Stable5
 - Even numbers  --> Beta
 
+## 31st May 2021  -  5.1.03
+- [Technical] - Better management of ZiGate V1 and V2
+- [Technical] - Revert Config.Reporting of End Device to a proprer rate
+
+
 ## 26th May 2021  -  5.1.02 
 - [Technical] - Update the plugin version number
+- [Technical] - Enable hw flow control for ZiGate+ ( USB, DIN)
 
 ## 24th May 2021  -  5.1.01  (NOT COMPATIBLE with Domoticz 4.xxxx)
 
