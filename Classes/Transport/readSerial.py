@@ -18,7 +18,6 @@ def open_serial( self ):
             self._connection.close()
             del self._connection
             self._connection = None
-        Domoticz.Log("-----_transp: %s" %self._transp)
         self._connection = serial.Serial(self._serialPort, baudrate = 115200, rtscts = False, dsrdtr = False, timeout = None)
         if self._transp in ('DIN', 'V2-USB', 'V2-DIN' ):
             self._connection.rtscts = True
@@ -68,8 +67,9 @@ def serial_read_from_zigate( self ):
                 data = self._connection.read(1)  # Blocking Read
 
         except serial.SerialException as e:
-            self.logging_receive('Error',"serial_read_from_zigate - error while reading: %s" %(e))
+            self.logging_receive('Error',"serial_read_from_zigate - error while reading %s" %(e))
             data = None
+            self._connection= None
             break
 
         except Exception as e:
@@ -77,6 +77,7 @@ def serial_read_from_zigate( self ):
             # adapters -> exit
             self.logging_receive('Error',"Error while receiving a ZiGate command: %s" %e)
             handle_thread_error( self, e, 0, 0, data)
+            self._connection = None
             break
 
         if data:

@@ -4,7 +4,7 @@
 # Author: zaraki673 & pipiche38
 #
 """
-<plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="5.2" wikilink="https://www.domoticz.com/wiki/Zigate" externallink="https://github.com/pipiche38/Domoticz-Zigate/wiki">
+<plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="5.1" wikilink="https://www.domoticz.com/wiki/Zigate" externallink="https://github.com/pipiche38/Domoticz-Zigate/wiki">
     <description>
         <h2> Plugin ZiGate for Domoticz </h2><br/>
             The aim of the plugin is to bridge a ZiGate to the DomoticZ software. <br/>
@@ -716,8 +716,6 @@ class BasePlugin:
             self.log.logging( 'Plugin', 'Debug', "Garbage Collection status: %s" %str(gc.get_count()) )
             self.log.logging( 'Plugin', 'Debug', "Garbage Collection triggered: %s" %str(gc.collect()) )
 
-        if '0000' in self.ListOfDevices and 'CheckChannel' in self.ListOfDevices['0000'] and  self.ListOfDevices['0000']['CheckChannel'] != 0:
-            sendZigateCmd( self, "0009", "" ) # Request Network Status with Channel
         # Manage all entries in  ListOfDevices (existing and up-coming devices)
         processListOfDevices( self , Devices )
 
