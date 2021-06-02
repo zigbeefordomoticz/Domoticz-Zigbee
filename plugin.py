@@ -980,7 +980,7 @@ def check_firmware_level( self ):
     elif self.FirmwareVersion.lower() =='031e':
         self.pluginconf.pluginConf['forceAckOnZCL'] = False
 
-    elif int(self.FirmwareVersion,16) > 0x031e:
+    elif int(self.FirmwareVersion,16) > 0x031f:
         Domoticz.Error("Firmware %s is not yet supported" %self.FirmwareVersion.lower())
 
     return True
