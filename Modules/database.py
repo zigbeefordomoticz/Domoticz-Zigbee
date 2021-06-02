@@ -47,8 +47,9 @@ MANDATORY_ATTRIBUTES = (
     'Epv2',
     'ForceAckCommands',
     'HW Version', 
-    'Heartbeat', 
+    'Heartbeat',
     'IAS',
+    'IEEE',
     'Location', 
     'LogicalType', 
     'MacCapa', 
@@ -133,7 +134,20 @@ def LoadDeviceList( self ):
     # Let's check if we have a .json version. If so, we will be using it, otherwise
     # we fall back to the old fashion .txt
     jsonFormatDB = True
-    
+
+    if self.pluginconf.pluginConf['useDomoticzDatabase']:
+        ListOfDevices_from_Domoticz = Modules.tools.getConfigItem(Key='ListOfDevices' )
+        Domoticz.Log("Load from Dz: %s %s" %(len(ListOfDevices_from_Domoticz), ListOfDevices_from_Domoticz))
+        if not isinstance(ListOfDevices_from_Domoticz, dict):
+            ListOfDevices_from_Domoticz={}
+        else:
+            for x in list(ListOfDevices_from_Domoticz):
+                for attribute in list(ListOfDevices_from_Domoticz[ x ]):
+                    if attribute not in ( MANDATORY_ATTRIBUTES + MANUFACTURER_ATTRIBUTES + BUILD_ATTRIBUTES):
+                        Domoticz.Log("xxx Removing attribute: %s for %s" %(attribute,x))
+                        del ListOfDevices_from_Domoticz[x][ attribute ]
+
+
     if self.pluginconf.pluginConf['expJsonDatabase']:
         if os.path.isfile( self.pluginconf.pluginConf['pluginData'] + self.DeviceListName[:-3] + 'json' ):
             # JSON Format
@@ -196,6 +210,21 @@ def LoadDeviceList( self ):
     load_new_param_definition( self )
     self.log.logging( "Database", "Status", "%s Entries loaded from %s" %(len(self.ListOfDevices), _DeviceListFileName)  )
 
+    if self.pluginconf.pluginConf['useDomoticzDatabase']:
+        Domoticz.Log("Plugin Database loaded. From Dz: %s from DeviceList: %s, equal: %s" %(
+            len(ListOfDevices_from_Domoticz), len(self.ListOfDevices),ListOfDevices_from_Domoticz == self.ListOfDevices))
+        try:
+            import sys
+            sys.path.append('/usr/lib/python3.8/site-packages')
+            import deepdiff
+            import json
+
+            diff = deepdiff.DeepDiff( self.ListOfDevices, ListOfDevices_from_Domoticz)
+            Domoticz.Error(json.dumps(json.loads(diff.to_json()), indent=4)) 
+        except:
+            Domoticz.Log("Python Module deepdiff not found")
+            pass
+
     return res
 
 def loadTxtDatabase( self , dbName ):
@@ -245,7 +274,6 @@ def loadJsonDatabase( self , dbName ):
     for key in _listOfDevices:
         CheckDeviceList( self, key, str(_listOfDevices[key]))
     return res
-
 
 def WriteDeviceList(self, count):
 

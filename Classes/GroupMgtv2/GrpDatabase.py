@@ -19,7 +19,9 @@ Methodes which manipulate the Groups Data Structure
 import os
 import json
 
-from Modules.tools import setConfigItem
+import Domoticz
+
+from Modules.tools import setConfigItem, getConfigItem
 
 
 def write_groups_list( self):
@@ -49,6 +51,16 @@ def load_groups_list_from_json( self ):
 
     with open( self.GroupListFileName, 'rt') as handle:
         self.ListOfGroups = json.load( handle)
+
+    if self.pluginconf.pluginConf['useDomoticzDatabase']:
+        _domoticz_grouplist= getConfigItem(Key='ListOfGroups' )
+        if not isinstance(_domoticz_grouplist, dict):
+           _domoticz_grouplist = {}
+
+        Domoticz.Log("GroupList Loaded from Dz: %s from Json: %s" %(len(_domoticz_grouplist), len(self.ListOfGroups)))
+
+    
+
 
 def build_group_list_from_list_of_devices( self ):
     """"

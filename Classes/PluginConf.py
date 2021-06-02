@@ -15,7 +15,7 @@ import Domoticz
 import os.path
 import json
 
-from Modules.tools import is_hex, setConfigItem
+from Modules.tools import is_hex, setConfigItem, getConfigItem
 
 
 SETTINGS = {
@@ -349,10 +349,13 @@ class PluginConf:
             setConfigItem( Key='PluginConf', Value=write_pluginConf)
 
 
-
 def _load_Settings(self):
     # deserialize json format of pluginConf'
     # load parameters '
+
+    _domoticz_pluginConf = getConfigItem(Key='PluginConf' )
+    if not isinstance(_domoticz_pluginConf, dict):
+        _domoticz_pluginConf = {}
 
     with open(self.pluginConf['filename'], 'rt') as handle:
         _pluginConf = {}
@@ -366,6 +369,17 @@ def _load_Settings(self):
 
         for param in _pluginConf:
             self.pluginConf[param] = _pluginConf[param]
+
+    # Check Load
+    Domoticz.Log("PluginConf Loaded from Dz: %s from Json: %s" %(len(_domoticz_pluginConf), len(_pluginConf)))
+    if _domoticz_pluginConf:
+        for x in _pluginConf:
+            if x not in _domoticz_pluginConf:
+                Domoticz.Error("-- %s is missing in Dz" %x)
+            else:
+                if _pluginConf[ x ] != _domoticz_pluginConf[ x ]:
+                    Domoticz.Error("++ %s is different in Dz: %s from Json: %s" %( x, _domoticz_pluginConf[ x ], _pluginConf[ x ]))
+
 
 def _load_oldfashon(self, homedir, hardwareid):
     # Import PluginConf.txt
