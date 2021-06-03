@@ -38,6 +38,8 @@ def decode_and_split_message(self, raw_message):
         self.statistics._received += 1
         process_frame(self, AsciiMsg)
 
+        #self._last_raw_message = bytearray()
+
 def get_raw_frame_from_raw_message( self ):
 
     frame = bytearray()
