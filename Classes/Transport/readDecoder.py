@@ -142,6 +142,7 @@ def check_frame_lenght( self, BinMsg):
             'Zero1': Zero1,
             'BinMsg': str(BinMsg),
             'AsciiMsg': str(binascii.hexlify(BinMsg).decode('utf-8')),
+            'LastRawMsg': str(binascii.hexlify(self._last_raw_message).decode('utf-8')),
             'len': len(BinMsg),
             'MsgType': MsgType,
             'Length': Length,
