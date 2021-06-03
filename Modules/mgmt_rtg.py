@@ -68,14 +68,14 @@ def mgmt_rtg_rsp( self, srcnwkid, MsgSourcePoint, MsgClusterID, dstnwkid, MsgDes
     else:
         self.ListOfDevices[ srcnwkid ]['RoutingTable']['Status'] = Status
 
-    Domoticz.Log("mgmt_rtg_rsp %s/%s Status: %s RoutingTableSize: %s RoutingTableIndex: %s RoutingTableIndex: %s RoutingTableListCount: %s" %(
-        srcnwkid, MsgSourcePoint, Status, RoutingTableSize, RoutingTableIndex, RoutingTableIndex, RoutingTableListCount ))
+    #Domoticz.Log("mgmt_rtg_rsp %s/%s Status: %s RoutingTableSize: %s RoutingTableIndex: %s RoutingTableIndex: %s RoutingTableListCount: %s" %(
+    #    srcnwkid, MsgSourcePoint, Status, RoutingTableSize, RoutingTableIndex, RoutingTableIndex, RoutingTableListCount ))
 
     if Status != '00':
         return
     idx = 0
     if len(RoutingTableListRecord) % 10 != 0:
-        Domoticz.Log("Incorrect lenght RoutingListRecord: %s" %RoutingTableListRecord)
+        #Domoticz.Log("Incorrect lenght RoutingListRecord: %s" %RoutingTableListRecord)
         return
     while idx < len(RoutingTableListRecord):
 
@@ -103,10 +103,10 @@ def mgmt_rtg_rsp( self, srcnwkid, MsgSourcePoint, MsgClusterID, dstnwkid, MsgDes
 
         self.ListOfDevices[ srcnwkid ]['RoutingTable']['Devices'].append (routing_record )
 
-        Domoticz.Log("------------ Destination Address: %s Status: %s Memory Constrained: %s Many-to-one: %s Route record required: %s Next-hop address: %s" %(
-            target_nwkid, device_status, device_memory_constraint, many_to_one, route_record_required, next_hop ))
+        #Domoticz.Log("------------ Destination Address: %s Status: %s Memory Constrained: %s Many-to-one: %s Route record required: %s Next-hop address: %s" %(
+        #    target_nwkid, device_status, device_memory_constraint, many_to_one, route_record_required, next_hop ))
 
     if int(RoutingTableIndex,16) + int(RoutingTableListCount,16) < int(RoutingTableSize,16):
-        Domoticz.Log("------------  - Next Index for %s RoutingTableIndex: %s RoutingTableListCount: %s RoutingTableSize: %s" %(
-            (srcnwkid, RoutingTableIndex,RoutingTableListCount, RoutingTableSize )))
+        #Domoticz.Log("------------  - Next Index for %s RoutingTableIndex: %s RoutingTableListCount: %s RoutingTableSize: %s" %(
+        #    (srcnwkid, RoutingTableIndex,RoutingTableListCount, RoutingTableSize )))
         mgt_routing_req( self, srcnwkid, '%02x' %(int(RoutingTableIndex,16) + int(RoutingTableListCount,16)) )
