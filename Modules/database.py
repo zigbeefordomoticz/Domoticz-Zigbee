@@ -14,6 +14,7 @@ from typing import Dict
 import Domoticz
 import os.path
 import datetime
+import time
 import json
 import pickle
 
@@ -130,23 +131,12 @@ def _versionFile( source , nbversion ):
 def LoadDeviceList( self ):
     # Load DeviceList.txt into ListOfDevices
     #
-
     # Let's check if we have a .json version. If so, we will be using it, otherwise
     # we fall back to the old fashion .txt
     jsonFormatDB = True
 
     if self.pluginconf.pluginConf['useDomoticzDatabase']:
-        ListOfDevices_from_Domoticz = Modules.tools.getConfigItem(Key='ListOfDevices' )
-        Domoticz.Log("Load from Dz: %s %s" %(len(ListOfDevices_from_Domoticz), ListOfDevices_from_Domoticz))
-        if not isinstance(ListOfDevices_from_Domoticz, dict):
-            ListOfDevices_from_Domoticz={}
-        else:
-            for x in list(ListOfDevices_from_Domoticz):
-                for attribute in list(ListOfDevices_from_Domoticz[ x ]):
-                    if attribute not in ( MANDATORY_ATTRIBUTES + MANUFACTURER_ATTRIBUTES + BUILD_ATTRIBUTES):
-                        Domoticz.Log("xxx Removing attribute: %s for %s" %(attribute,x))
-                        del ListOfDevices_from_Domoticz[x][ attribute ]
-
+        ListOfDevices_from_Domoticz, saving_time = _read_DeviceList_Domoticz( self )
 
     if self.pluginconf.pluginConf['expJsonDatabase']:
         if os.path.isfile( self.pluginconf.pluginConf['pluginData'] + self.DeviceListName[:-3] + 'json' ):
@@ -211,8 +201,8 @@ def LoadDeviceList( self ):
     self.log.logging( "Database", "Status", "%s Entries loaded from %s" %(len(self.ListOfDevices), _DeviceListFileName)  )
 
     if self.pluginconf.pluginConf['useDomoticzDatabase']:
-        Domoticz.Log("Plugin Database loaded. From Dz: %s from DeviceList: %s, equal: %s" %(
-            len(ListOfDevices_from_Domoticz), len(self.ListOfDevices),ListOfDevices_from_Domoticz == self.ListOfDevices))
+        self.log.logging( "Database", 'Log',"Plugin Database loaded. From Dz: %s from DeviceList: %s, " %(
+            len(ListOfDevices_from_Domoticz), len(self.ListOfDevices),))
         try:
             import sys
             sys.path.append('/usr/lib/python3.8/site-packages')
@@ -220,12 +210,14 @@ def LoadDeviceList( self ):
             import json
 
             diff = deepdiff.DeepDiff( self.ListOfDevices, ListOfDevices_from_Domoticz)
-            Domoticz.Error(json.dumps(json.loads(diff.to_json()), indent=4)) 
+            self.log.logging( "Database", 'Log',json.dumps(json.loads(diff.to_json()), indent=4)) 
         except:
-            Domoticz.Log("Python Module deepdiff not found")
+            self.log.logging( "Database", 'Log',"Python Module deepdiff not found")
             pass
 
     return res
+
+
 
 def loadTxtDatabase( self , dbName ):
     res = "Success"
@@ -275,44 +267,82 @@ def loadJsonDatabase( self , dbName ):
         CheckDeviceList( self, key, str(_listOfDevices[key]))
     return res
 
+def _read_DeviceList_Domoticz( self ):
+    
+    ListOfDevices_from_Domoticz = Modules.tools.getConfigItem(Key='ListOfDevices' )
+    time_stamp = 0
+    if 'TimeStamp' in ListOfDevices_from_Domoticz:
+        time_stamp = ListOfDevices_from_Domoticz[ 'TimeStamp' ]
+        ListOfDevices_from_Domoticz = ListOfDevices_from_Domoticz[ 'ListOfDevices']
+        self.log.logging( "Database", 'Log',"Plugin data loaded where saved on %s" %( time.strftime('%A, %Y-%m-%d %H:%M:%S', time.localtime(time_stamp))) )
+
+    self.log.logging( "Database", 'Debug',"Load from Dz: %s %s" %(len(ListOfDevices_from_Domoticz), ListOfDevices_from_Domoticz))
+    if not isinstance(ListOfDevices_from_Domoticz, dict):
+        ListOfDevices_from_Domoticz={}
+    else:
+        for x in list(ListOfDevices_from_Domoticz):
+            for attribute in list(ListOfDevices_from_Domoticz[ x ]):
+                if attribute not in ( MANDATORY_ATTRIBUTES + MANUFACTURER_ATTRIBUTES + BUILD_ATTRIBUTES):
+                    self.log.logging( "Database", 'Log',"xxx Removing attribute: %s for %s" %(attribute,x))
+                    del ListOfDevices_from_Domoticz[x][ attribute ]
+
+    return (ListOfDevices_from_Domoticz, time_stamp)
+
+
+
+
 def WriteDeviceList(self, count):
-
-    if self.HBcount >= count :
-
-        if self.pluginconf.pluginConf['pluginData'] is None or self.DeviceListName is None:
-            Domoticz.Error("WriteDeviceList - self.pluginconf.pluginConf['pluginData']: %s , self.DeviceListName: %s" \
-                %(self.pluginconf.pluginConf['pluginData'], self.DeviceListName))
-
-        # Write in classic format ( .txt )
-        try:
-            _DeviceListFileName = self.pluginconf.pluginConf['pluginData'] + self.DeviceListName
-            self.log.logging( "Database", 'Debug', "Write " + _DeviceListFileName + " = " + str(self.ListOfDevices))
-            with open( _DeviceListFileName , 'wt') as file:
-                for key in self.ListOfDevices :
-                    try:
-                        file.write(key + " : " + str(self.ListOfDevices[key]) + "\n")
-                    except IOError:
-                        Domoticz.Error("Error while writing to plugin Database %s" %_DeviceListFileName)
-        except IOError:
-            Domoticz.Error("Error while Opening plugin Database %s" %_DeviceListFileName)
-
-        # If enabled, write in JSON
-        if self.pluginconf.pluginConf['expJsonDatabase']:
-            _DeviceListFileName = self.pluginconf.pluginConf['pluginData'] + self.DeviceListName[:-3] + 'json'
-            self.log.logging( "Database", 'Debug', "Write " + _DeviceListFileName + " = " + str(self.ListOfDevices))
-            with open( _DeviceListFileName , 'wt') as file:
-                json.dump( self.ListOfDevices, file, sort_keys=True, indent=2)
-
-        if self.pluginconf.pluginConf['useDomoticzDatabase']:
-            # We need to patch None as 'None'
-            ListOfDevices_for_save = self.ListOfDevices.copy()
-            self.log.logging( "Database", 'Debug', "Save Plugin Db to Domoticz")
-            Modules.tools.setConfigItem( Key='ListOfDevices', Value=ListOfDevices_for_save)
-
-        self.HBcount=0
-        self.log.logging( "Database", 'Debug', "WriteDeviceList - flush Plugin db to %s" %_DeviceListFileName)
-    else :
+    if self.HBcount < count :
         self.HBcount=self.HBcount+1
+        return
+    if self.pluginconf.pluginConf['useDomoticzDatabase']:
+        # We need to patch None as 'None'
+        if _write_DeviceList_Domoticz( self ):
+            # Success
+            self.HBcount = 0
+        else:
+            # An error occured. Probably Dz.Configuration() is not available.
+            pass
+    if self.pluginconf.pluginConf['pluginData'] is None or self.DeviceListName is None:
+        Domoticz.Error("WriteDeviceList - self.pluginconf.pluginConf['pluginData']: %s , self.DeviceListName: %s" \
+            %(self.pluginconf.pluginConf['pluginData'], self.DeviceListName))
+        return
+    if self.pluginconf.pluginConf['expJsonDatabase']:
+        _write_DeviceList_json( self )
+
+    _write_DeviceList_txt(self)
+    self.HBcount=0
+    
+def _write_DeviceList_txt(self):
+    # Write in classic format ( .txt )
+    try:
+        _DeviceListFileName = self.pluginconf.pluginConf['pluginData'] + self.DeviceListName
+        self.log.logging( "Database", 'Debug', "Write " + _DeviceListFileName + " = " + str(self.ListOfDevices))
+        with open( _DeviceListFileName , 'wt') as file:
+            for key in self.ListOfDevices :
+                try:
+                    file.write(key + " : " + str(self.ListOfDevices[key]) + "\n")
+                except IOError:
+                    Domoticz.Error("Error while writing to plugin Database %s" %_DeviceListFileName)
+        self.log.logging( "Database", 'Debug', "WriteDeviceList - flush Plugin db to %s" %_DeviceListFileName)
+    except IOError:
+        Domoticz.Error("Error while Writing plugin Database %s" %_DeviceListFileName)
+
+def _write_DeviceList_json( self ):
+    _DeviceListFileName = self.pluginconf.pluginConf['pluginData'] + self.DeviceListName[:-3] + 'json'
+    self.log.logging( "Database", 'Debug', "Write " + _DeviceListFileName + " = " + str(self.ListOfDevices))
+    with open( _DeviceListFileName , 'wt') as file:
+        json.dump( self.ListOfDevices, file, sort_keys=True, indent=2)
+    self.log.logging( "Database", 'Debug', "WriteDeviceList - flush Plugin db to %s" %_DeviceListFileName)
+
+def _write_DeviceList_Domoticz( self ):
+    ListOfDevices_for_save = self.ListOfDevices.copy()
+    self.log.logging( "Database", 'Log', "WriteDeviceList - flush Plugin db to %s" %'Domoticz')
+
+    return Modules.tools.setConfigItem( Key='ListOfDevices', Value={ 'TimeStamp': time.time(), 'ListOfDevices': ListOfDevices_for_save} )
+
+
+        
 
 def importDeviceConf( self ) :
     #Import DeviceConf.txt

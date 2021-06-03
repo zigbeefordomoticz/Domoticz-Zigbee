@@ -1186,6 +1186,7 @@ def setConfigItem(Key=None, Value=None):
         Config = Domoticz.Configuration(Config)
     except Exception as inst:
         Domoticz.Error("setConfigItem - Domoticz.Configuration operation failed: '"+str(inst)+"'")
+        return None
     return Config
 
 
