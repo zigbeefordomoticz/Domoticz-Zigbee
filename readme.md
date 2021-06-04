@@ -60,6 +60,10 @@ Moving from this channel to the other will required either ar restart from scrat
 
 `git checkout beta    // will move you to the beta channel`
 
+In case you need to be on stable instead of stable5
+
+`git checkout stable  // will move you to the stable5 channel`
+
 ## Donations
 
 Donations are more than welcome and will be used to buy new hard, devices, sensors and in such testing and making them working with the Zigate plugin. Please feel free to use the current link :
