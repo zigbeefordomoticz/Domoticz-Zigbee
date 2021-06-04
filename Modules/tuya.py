@@ -161,14 +161,15 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
         tuya_response( self,Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data )
 
     elif cmd == '11': # MCU_VERSION_RSP ( Return version or actively report version )
-        status = MsgPayload[6:8]   #uint8
-        transid = MsgPayload[8:10] # uint8
-        dp = int(MsgPayload[10:12],16)
-        datatype = int(MsgPayload[12:14],16)
-        fn = MsgPayload[14:16]
-        len_data = MsgPayload[16:18]
-        data = MsgPayload[18:]
-        store_tuya_attribute( self, NwkId, 'TUYA_MCU_VERSION_RSP', data )
+        #status = MsgPayload[6:8]   #uint8
+        #transid = MsgPayload[8:10] # uint8
+        #dp = int(MsgPayload[10:12],16)
+        #datatype = int(MsgPayload[12:14],16)
+        #fn = MsgPayload[14:16]
+        #len_data = MsgPayload[16:18]
+        #data = MsgPayload[18:]
+        #store_tuya_attribute( self, NwkId, 'TUYA_MCU_VERSION_RSP', data )
+        pass
 
 
     elif cmd == '23': # TUYA_REPORT_LOG
