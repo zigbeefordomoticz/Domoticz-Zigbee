@@ -60,7 +60,7 @@ def main():
     print("**** Mode Flash ****")
     print("\033[0;37;40m")	
 
-    command = "gpio mode 0 out; gpio mode 2 out; gpio write 2 0 ; gpio write 0 0 gpio write 0 1"
+    command = "gpio mode 0 out; gpio mode 2 out; gpio write 2 0 ; gpio write 0 0 ; gpio write 0 1"
     os.system(command)
 
 

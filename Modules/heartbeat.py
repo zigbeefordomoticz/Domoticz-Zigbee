@@ -69,12 +69,29 @@ def attributeDiscovery( self, NwkId ):
         if 'Attributes List' in self.ListOfDevices[NwkId] and len(self.ListOfDevices[NwkId]['Attributes List']) > 0:
             return False
 
+        if "Attributes List" not in self.ListOfDevices[NwkId]:
+            self.ListOfDevices[ NwkId ]["Attributes List"] = {}
+            self.ListOfDevices[ NwkId ]["Attributes List"]["Ep"] = {}
+
+        if 'Request' not in self.ListOfDevices[ NwkId ]["Attributes List"]:
+            self.ListOfDevices[ NwkId ]["Attributes List"]['Request'] = {}
+
         for iterEp in list(self.ListOfDevices[NwkId]['Ep']):
             if iterEp == 'ClusterType': 
                 continue
+            if iterEp not in self.ListOfDevices[ NwkId ]["Attributes List"]['Request']:
+                self.ListOfDevices[ NwkId ]["Attributes List"]['Request'][ iterEp ] = {}
+
             for iterCluster in list(self.ListOfDevices[NwkId]['Ep'][iterEp]):
                 if iterCluster in ( 'Type', 'ClusterType', 'ColorMode' ): 
                     continue
+                if iterCluster not in self.ListOfDevices[ NwkId ]["Attributes List"]['Request'][ iterEp ]:
+                    self.ListOfDevices[ NwkId ]["Attributes List"]['Request'][ iterEp ][ iterCluster ] = 0
+
+                if self.ListOfDevices[ NwkId ]["Attributes List"]['Request'][ iterEp ][ iterCluster ] != 0:
+                    continue
+                self.ListOfDevices[ NwkId ]["Attributes List"]['Request'][ iterEp ][ iterCluster ] = time.time()
+
                 if not self.busy and self.ZigateComm.loadTransmit() <= MAX_LOAD_ZIGATE:
                     if int(iterCluster,16) < 0x0fff:
                         getListofAttribute( self, NwkId, iterEp, iterCluster)
@@ -414,11 +431,6 @@ def processKnownDevices( self, Devices, NWKID ):
 
                 func(self, NWKID )
 
-
-    #if intHB == 3:
-    #    if 'Attributes List' in self.ListOfDevices[NWKID]['Attributes List']:
-    #        del self.ListOfDevices[NWKID]['Attributes List']
-    #    attributeDiscovery( self, NWKID )
 
     if self.pluginconf.pluginConf['RoutingTableRequestFeq'] and not self.busy and self.ZigateComm.loadTransmit() == 0 and (intHB % 10 ) == 0:
         mgmt_rtg( self, NWKID)

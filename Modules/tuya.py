@@ -161,16 +161,14 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
         tuya_response( self,Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data )
 
     elif cmd == '11': # MCU_VERSION_RSP ( Return version or actively report version )
-        status = MsgPayload[6:8]   #uint8
-        transid = MsgPayload[8:10] # uint8
-        dp = int(MsgPayload[10:12],16)
-        datatype = int(MsgPayload[12:14],16)
-        fn = MsgPayload[14:16]
-        len_data = MsgPayload[16:18]
-        data = MsgPayload[18:]
-        store_tuya_attribute( self, NwkId, 'TUYA_MCU_VERSION_RSP', data )
-
-
+        #Model: TS0601-switch UNMANAGED Nwkid: 92d9/01 fcf: 09 sqn: 6c cmd: 11 data: 02f840
+        try:
+            transid = MsgPayload[6:10]  # uint16
+            version = MsgPayload[10:12] # int8
+            store_tuya_attribute( self, NwkId, 'TUYA_MCU_VERSION_RSP', version )
+        except:
+            Domoticz.Error("tuyaReadRawAPS - MCU_VERSION_RSP error on Payload: %s" %MsgPayload)
+        
     elif cmd == '23': # TUYA_REPORT_LOG
         pass
 
