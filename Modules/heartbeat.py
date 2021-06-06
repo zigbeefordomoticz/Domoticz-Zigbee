@@ -60,8 +60,8 @@ def attributeDiscovery( self, NwkId ):
         rescheduleAction = False
         # If Attributes not yet discovered, let's do it
 
-        #if 'ConfigSource' not in self.ListOfDevices[NwkId]:
-        #    return False
+        if 'ConfigSource' not in self.ListOfDevices[NwkId]:
+            return False
 
         if 'ConfigSource' in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]['ConfigSource'] == 'DeviceConf':
             return False
