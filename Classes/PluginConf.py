@@ -14,6 +14,7 @@ Parameters not define in the PluginConf.txt file will be set to their default va
 import Domoticz
 import os.path
 import json
+import time
 
 from Modules.tools import is_hex, setConfigItem, getConfigItem
 
@@ -346,7 +347,7 @@ class PluginConf:
             json.dump(write_pluginConf, handle, sort_keys=True, indent=2)
 
         if self.pluginConf['useDomoticzDatabase']:
-            setConfigItem( Key='PluginConf', Value=write_pluginConf)
+            setConfigItem( Key='PluginConf',  Value={ 'TimeStamp': time.time(), 'Settings': write_pluginConf})
 
 
 def _load_Settings(self):
@@ -354,8 +355,22 @@ def _load_Settings(self):
     # load parameters '
 
     _domoticz_pluginConf = getConfigItem(Key='PluginConf' )
+    dz_timestamp = 0
+    if 'TimeStamp' in _domoticz_pluginConf:
+        dz_timestamp = _domoticz_pluginConf[ 'TimeStamp' ]
+        _domoticz_pluginConf = _domoticz_pluginConf[ 'Settings']
+        Domoticz.Log("Plugin data loaded where saved on %s" %( time.strftime('%A, %Y-%m-%d %H:%M:%S', time.localtime(dz_timestamp))) )
+
+    txt_timestamp = 0
+    if os.path.isfile( self.pluginConf['filename'] ):
+        txt_timestamp = os.path.getmtime( self.pluginConf['filename'] )
+    Domoticz.Log("%s timestamp is %s" %(self.pluginConf['filename'], txt_timestamp))
+    if dz_timestamp < txt_timestamp:
+        Domoticz.Log( "Dz PluginConf is older than Json Dz: %s Json: %s" %(dz_timestamp, txt_timestamp))
+        # We should load the json file
+
     if not isinstance(_domoticz_pluginConf, dict):
-        _domoticz_pluginConf = {}
+      _domoticz_pluginConf = {}
 
     with open(self.pluginConf['filename'], 'rt') as handle:
         _pluginConf = {}

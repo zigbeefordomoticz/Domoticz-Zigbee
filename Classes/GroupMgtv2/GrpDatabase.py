@@ -18,6 +18,7 @@ Methodes which manipulate the Groups Data Structure
 """
 import os
 import json
+import time
 
 import Domoticz
 
@@ -35,7 +36,7 @@ def write_groups_list( self):
 
     if self.pluginconf.pluginConf['useDomoticzDatabase']:
         self.log.logging( "Database", 'Debug', "Save Plugin Group Db to Domoticz")
-        setConfigItem( Key='ListOfGroups', Value=self.ListOfGroups)
+        setConfigItem( Key='ListOfGroups', Value={ 'TimeStamp': time.time(), 'Groups': self.ListOfGroups})
 
 
 def load_groups_list_from_json( self ):
@@ -45,6 +46,27 @@ def load_groups_list_from_json( self ):
     if self.GroupListFileName is None:
         return
 
+    if self.pluginconf.pluginConf['useDomoticzDatabase']:
+        _domoticz_grouplist= getConfigItem(Key='ListOfGroups' )
+
+        dz_timestamp = 0
+        if 'TimeStamp' in _domoticz_grouplist:
+            dz_timestamp = _domoticz_grouplist[ 'TimeStamp' ]
+            _domoticz_grouplist = _domoticz_grouplist[ 'Groups']
+            self.logging( 'Debug' ,"Groups data loaded where saved on %s" %( time.strftime('%A, %Y-%m-%d %H:%M:%S', time.localtime(dz_timestamp))) )
+
+        txt_timestamp = 0
+        if os.path.isfile( self.GroupListFileName ):
+            txt_timestamp = os.path.getmtime( self.GroupListFileName )
+        Domoticz.Log("%s timestamp is %s" %(self.GroupListFileName, txt_timestamp))
+        if dz_timestamp < txt_timestamp:
+            Domoticz.Log( "Dz Group is older than Json Dz: %s Json: %s" %(dz_timestamp, txt_timestamp))
+            # We should load the json file
+
+        if not isinstance(_domoticz_grouplist, dict):
+           _domoticz_grouplist = {}
+
+
     if not os.path.isfile( self.GroupListFileName ) :
         self.logging( 'Debug', "GroupMgt - Nothing to import from %s" %self.GroupListFileName)
         return
@@ -52,10 +74,10 @@ def load_groups_list_from_json( self ):
     with open( self.GroupListFileName, 'rt') as handle:
         self.ListOfGroups = json.load( handle)
 
-    if self.pluginconf.pluginConf['useDomoticzDatabase']:
-        _domoticz_grouplist= getConfigItem(Key='ListOfGroups' )
-        if not isinstance(_domoticz_grouplist, dict):
-           _domoticz_grouplist = {}
+
+
+
+
 
         Domoticz.Log("GroupList Loaded from Dz: %s from Json: %s" %(len(_domoticz_grouplist), len(self.ListOfGroups)))
 

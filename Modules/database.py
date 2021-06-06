@@ -137,6 +137,7 @@ def LoadDeviceList( self ):
 
     if self.pluginconf.pluginConf['useDomoticzDatabase']:
         ListOfDevices_from_Domoticz, saving_time = _read_DeviceList_Domoticz( self )
+        Domoticz.Log("Database from Dz is recent: %s" %is_domoticz_recent( self, saving_time, self.pluginconf.pluginConf['pluginData'] + self.DeviceListName ))
 
     if self.pluginconf.pluginConf['expJsonDatabase']:
         if os.path.isfile( self.pluginconf.pluginConf['pluginData'] + self.DeviceListName[:-3] + 'json' ):
@@ -288,29 +289,40 @@ def _read_DeviceList_Domoticz( self ):
 
     return (ListOfDevices_from_Domoticz, time_stamp)
 
+def is_domoticz_recent( self, dz_timestamp, device_list_txt_filename ):
+    
+    txt_timestamp = 0
+    if os.path.isfile( device_list_txt_filename ):
+        txt_timestamp = os.path.getmtime( device_list_txt_filename )
 
+    self.log.logging( "Database", 'Log',"%s timestamp is %s" %(device_list_txt_filename, txt_timestamp))
+    if dz_timestamp > txt_timestamp:
+        self.log.logging( "Database", 'Log',"Dz is more recent than Txt Dz: %s Txt: %s" %(dz_timestamp, txt_timestamp))
+        return True
+    return False
 
 
 def WriteDeviceList(self, count):
     if self.HBcount < count :
         self.HBcount=self.HBcount+1
         return
-    if self.pluginconf.pluginConf['useDomoticzDatabase']:
-        # We need to patch None as 'None'
-        if _write_DeviceList_Domoticz( self ):
-            # Success
-            self.HBcount = 0
-        else:
-            # An error occured. Probably Dz.Configuration() is not available.
-            pass
+
     if self.pluginconf.pluginConf['pluginData'] is None or self.DeviceListName is None:
         Domoticz.Error("WriteDeviceList - self.pluginconf.pluginConf['pluginData']: %s , self.DeviceListName: %s" \
             %(self.pluginconf.pluginConf['pluginData'], self.DeviceListName))
         return
+
     if self.pluginconf.pluginConf['expJsonDatabase']:
         _write_DeviceList_json( self )
 
     _write_DeviceList_txt(self)
+
+    if self.pluginconf.pluginConf['useDomoticzDatabase']:
+        # We need to patch None as 'None'
+        if _write_DeviceList_Domoticz( self ) is None:
+            # An error occured. Probably Dz.Configuration() is not available.
+            _write_DeviceList_txt(self)
+
     self.HBcount=0
     
 def _write_DeviceList_txt(self):
@@ -338,11 +350,8 @@ def _write_DeviceList_json( self ):
 def _write_DeviceList_Domoticz( self ):
     ListOfDevices_for_save = self.ListOfDevices.copy()
     self.log.logging( "Database", 'Log', "WriteDeviceList - flush Plugin db to %s" %'Domoticz')
-
     return Modules.tools.setConfigItem( Key='ListOfDevices', Value={ 'TimeStamp': time.time(), 'ListOfDevices': ListOfDevices_for_save} )
-
-
-        
+ 
 
 def importDeviceConf( self ) :
     #Import DeviceConf.txt
