@@ -75,10 +75,7 @@ def load_groups_list_from_json( self ):
         self.ListOfGroups = json.load( handle)
 
 
-
-
-
-
+    if self.pluginconf.pluginConf['useDomoticzDatabase']:
         Domoticz.Log("GroupList Loaded from Dz: %s from Json: %s" %(len(_domoticz_grouplist), len(self.ListOfGroups)))
 
     
