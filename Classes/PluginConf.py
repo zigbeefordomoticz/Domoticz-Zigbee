@@ -347,7 +347,7 @@ class PluginConf:
             json.dump(write_pluginConf, handle, sort_keys=True, indent=2)
 
         if self.pluginConf['useDomoticzDatabase']:
-            setConfigItem( Key='PluginConf',  Value={ 'TimeStamp': time.time(), 'Settings': write_pluginConf})
+            setConfigItem( Key='PluginConf',  Value={ 'TimeStamp': time.time(), 'b64Settings': write_pluginConf})
 
 
 def _load_Settings(self):
@@ -358,7 +358,7 @@ def _load_Settings(self):
     dz_timestamp = 0
     if 'TimeStamp' in _domoticz_pluginConf:
         dz_timestamp = _domoticz_pluginConf[ 'TimeStamp' ]
-        _domoticz_pluginConf = _domoticz_pluginConf[ 'Settings']
+        _domoticz_pluginConf = _domoticz_pluginConf[ 'b64Settings']
         Domoticz.Log("Plugin data loaded where saved on %s" %( time.strftime('%A, %Y-%m-%d %H:%M:%S', time.localtime(dz_timestamp))) )
 
     txt_timestamp = 0

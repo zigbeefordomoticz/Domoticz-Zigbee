@@ -1206,26 +1206,13 @@ def getConfigItem(Key=None, Default={}):
 
 
 def prepare_dict_for_storage( dict_items):
-    dict_str = json.dumps( dict_items )
-    return json.loads( dict_str, object_pairs_hook=dict_None_to_Null )
-    
-def repair_dict_after_load( dict_items):
-    dict_str = json.dumps( dict_items )
-    return  json.loads( dict_str, object_pairs_hook=dict_Null_to_None)
 
-def dict_None_to_Null( items ):
-    result = {}
-    for key, value in items:
-        if value is None:
-            Domoticz.Log("Updating %s: %s to %s:'Null'" %(key,value, key))
-            value = "Null"
-        result[key] = value
-    return result
+    from base64 import b64encode
+    return b64encode( str(dict_items).encode('utf-8') )
 
-def dict_Null_to_None( items ):
-    result = {}
-    for key, value in items:
-        if value == "Null":
-            value = None
-        result[key] = value
-    return result   
+def repair_dict_after_load( b64_dict ):
+    if b64_dict in ( '', {} ):
+        return {}
+    from base64 import b64decode
+    return eval( b64decode( b64_dict ) )
+
