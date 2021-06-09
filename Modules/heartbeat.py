@@ -60,8 +60,8 @@ def attributeDiscovery( self, NwkId ):
         rescheduleAction = False
         # If Attributes not yet discovered, let's do it
 
-        #if 'ConfigSource' not in self.ListOfDevices[NwkId]:
-        #    return False
+        if 'ConfigSource' not in self.ListOfDevices[NwkId]:
+            return False
 
         if 'ConfigSource' in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]['ConfigSource'] == 'DeviceConf':
             return False
@@ -90,7 +90,6 @@ def attributeDiscovery( self, NwkId ):
 
                 if self.ListOfDevices[ NwkId ]["Attributes List"]['Request'][ iterEp ][ iterCluster ] != 0:
                     continue
-                self.ListOfDevices[ NwkId ]["Attributes List"]['Request'][ iterEp ][ iterCluster ] = time.time()
 
                 if not self.busy and self.ZigateComm.loadTransmit() <= MAX_LOAD_ZIGATE:
                     if int(iterCluster,16) < 0x0fff:
@@ -103,6 +102,9 @@ def attributeDiscovery( self, NwkId ):
                         ):
                         getListofAttribute( self, NwkId, iterEp, iterCluster, manuf_specific='01', manuf_code=self.ListOfDevices[NwkId]['Manufacturer'])
                         #getListofAttributeExtendedInfos(self, nwkid, EpOut, cluster, start_attribute=None, manuf_specific=None, manuf_code=None)
+
+                    self.ListOfDevices[ NwkId ]["Attributes List"]['Request'][ iterEp ][ iterCluster ] = time.time()
+
                 else:
                     rescheduleAction = True
 

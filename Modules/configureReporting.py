@@ -20,7 +20,7 @@ from time import time
 
 from Classes.LoggingManagement import LoggingManagement
 
-from Modules.basicOutputs import  send_zigatecmd_zcl_noack, send_zigatecmd_zcl_ack
+from Modules.basicOutputs import  send_zigatecmd_zcl_noack, send_zigatecmd_zcl_ack, ieee_addr_request
 from Modules.bindings import bindDevice
 
 from Modules.zigateConsts import MAX_LOAD_ZIGATE, CFG_RPT_ATTRIBUTESbyCLUSTERS , ZIGATE_EP
@@ -148,6 +148,7 @@ def processConfigureReporting( self, NWKID=None ):
                 # If NWKID is not None, it means that we are asking a ConfigureReporting for a specific device
                 # Which happens on the case of New pairing, or a re-join
                 if NWKID is None and self.pluginconf.pluginConf['allowReBindingClusters']:
+                    ieee_addr_request( self, key)
                     # Correctif 22 Novembre. Delete only for the specific cluster and not the all Set
                     if 'Bind' in self.ListOfDevices[key]:
                         if Ep in self.ListOfDevices[key]['Bind']:

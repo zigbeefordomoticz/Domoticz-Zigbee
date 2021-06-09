@@ -858,6 +858,11 @@ def set_poweron_afteroffon( self, key, OnOffMode = 0xff):
         return write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled = True)
 
 
+def ieee_addr_request( self, nwkid):
+    u8RequestType = '00'
+    u8StartIndex = '00'
+    sendZigateCmd(self ,'0041', '02' + nwkid + u8RequestType + u8StartIndex )
+    
 def unknown_device_nwkid( self, nwkid ):
     
     if nwkid in self.UnknownDevices:
@@ -869,9 +874,9 @@ def unknown_device_nwkid( self, nwkid ):
     # If we didn't find it, let's trigger a NetworkMap scan if not one in progress
     if self.networkmap and not self.networkmap.NetworkMapPhase():
         self.networkmap.start_scan()
-    u8RequestType = '00'
-    u8StartIndex = '00'
-    sendZigateCmd(self ,'0041', '02' + nwkid + u8RequestType + u8StartIndex )
+    ieee_addr_request( self, nwkid)
+
+
 
 
 def send_default_response( self, Nwkid, srcEp, cluster, Direction, bDisableDefaultResponse, ManufacturerSpecific, u16ManufacturerCode, FrameType, response_to_command, sqn):
