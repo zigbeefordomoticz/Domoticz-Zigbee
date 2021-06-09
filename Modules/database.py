@@ -270,11 +270,11 @@ def loadJsonDatabase( self , dbName ):
 
 def _read_DeviceList_Domoticz( self ):
     
-    ListOfDevices_from_Domoticz = Modules.tools.getConfigItem(Key='ListOfDevices' )
+    ListOfDevices_from_Domoticz = Modules.tools.getConfigItem(Key='ListOfDevices', Attribute='Devices' )
     time_stamp = 0
     if 'TimeStamp' in ListOfDevices_from_Domoticz:
         time_stamp = ListOfDevices_from_Domoticz[ 'TimeStamp' ]
-        ListOfDevices_from_Domoticz = ListOfDevices_from_Domoticz[ 'b64Devices']
+        ListOfDevices_from_Domoticz = ListOfDevices_from_Domoticz[ 'Devices']
         self.log.logging( "Database", 'Log',"Plugin data loaded where saved on %s" %( time.strftime('%A, %Y-%m-%d %H:%M:%S', time.localtime(time_stamp))) )
 
     self.log.logging( "Database", 'Debug',"Load from Dz: %s %s" %(len(ListOfDevices_from_Domoticz), ListOfDevices_from_Domoticz))
@@ -350,7 +350,7 @@ def _write_DeviceList_json( self ):
 def _write_DeviceList_Domoticz( self ):
     ListOfDevices_for_save = self.ListOfDevices.copy()
     self.log.logging( "Database", 'Log', "WriteDeviceList - flush Plugin db to %s" %'Domoticz')
-    return Modules.tools.setConfigItem( Key='ListOfDevices', Value={ 'TimeStamp': time.time(), 'b64Devices': ListOfDevices_for_save} )
+    return Modules.tools.setConfigItem( Key='ListOfDevices', Attribute='Devices', Value={ 'TimeStamp': time.time(), 'Devices': ListOfDevices_for_save} )
  
 
 def importDeviceConf( self ) :
