@@ -762,33 +762,3 @@ def load_new_param_definition( self ):
                 self.ListOfDevices[ key ]['Param'][ param ] = self.pluginconf.pluginConf['InvertShutter']
             elif param == 'netatmoReleaseButton':
                 self.ListOfDevices[ key ]['Param'][ param ] = self.pluginconf.pluginConf['EnableReleaseButton']
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
