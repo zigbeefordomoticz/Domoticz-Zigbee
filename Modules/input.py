@@ -1844,6 +1844,11 @@ def Decode8045(self, Devices, MsgData, MsgLQI):  # Reception Active endpoint res
                 "-", MsgDataShAddr, tmpEp, self.ListOfDevices[MsgDataShAddr]["Status"]), )
     self.ListOfDevices[MsgDataShAddr]["NbEp"] = str(int(MsgDataEpCount, 16))  # Store the number of EPs
 
+    # Request the Basic ReadAttribute before requesting the Node Descriptor
+    if "Model" not in self.ListOfDevices[MsgDataShAddr] or self.ListOfDevices[MsgDataShAddr]["Model"] in ("", {}):
+        self.log.logging(  "Input", "Log", "[%s] NEW OBJECT: %s Request Model Name" % ("-", MsgDataShAddr) )
+        ReadAttributeRequest_0000( self, MsgDataShAddr, fullScope=False )  # In order to request Model Name
+
     for iterEp in self.ListOfDevices[MsgDataShAddr]["Ep"]:
         self.log.logging(  "Input", "Status", "[%s] NEW OBJECT: %s Request Simple Descriptor for Ep: %s" % (
             "-", MsgDataShAddr, iterEp), )
@@ -1852,10 +1857,6 @@ def Decode8045(self, Devices, MsgData, MsgLQI):  # Reception Active endpoint res
 
     self.ListOfDevices[MsgDataShAddr]["Heartbeat"] = "0"
     self.ListOfDevices[MsgDataShAddr]["Status"] = "0043"
-
-    if "Model" not in self.ListOfDevices[MsgDataShAddr] or self.ListOfDevices[MsgDataShAddr]["Model"] in ("", {}):
-        self.log.logging(  "Input", "Log", "[%s] NEW OBJECT: %s Request Model Name" % ("-", MsgDataShAddr) )
-        ReadAttributeRequest_0000( self, MsgDataShAddr, fullScope=False )  # In order to request Model Name
 
     self.log.logging( "Pairing", "Debug", "Decode8045 - Device : " + str(MsgDataShAddr) +
      " updated ListofDevices with " + str(self.ListOfDevices[MsgDataShAddr]["Ep"]), )
