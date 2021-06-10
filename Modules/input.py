@@ -1782,19 +1782,11 @@ def Decode8045(self, Devices, MsgData, MsgLQI):  # Reception Active endpoint res
 
     MsgDataEPlist = MsgData[10 : len(MsgData)]
 
-    self.log.logging(
-        "Pairing",
-        "Debug",
-        "Decode8045 - Reception Active endpoint response : SQN : "
-        + MsgDataSQN
-        + ", Status "
-        + DisplayStatusCode(MsgDataStatus)
-        + ", short Addr "
-        + MsgDataShAddr
-        + ", List "
-        + MsgDataEpCount
-        + ", Ep list "
-        + MsgDataEPlist,
+    self.log.logging( "Pairing", "Debug", "Decode8045 - Reception Active endpoint response : SQN : " + MsgDataSQN
+        + ", Status " + DisplayStatusCode(MsgDataStatus)
+        + ", short Addr " + MsgDataShAddr
+        + ", List " + MsgDataEpCount
+        + ", Ep list " + MsgDataEPlist,
     )
 
 
@@ -1819,6 +1811,9 @@ def Decode8045(self, Devices, MsgData, MsgLQI):  # Reception Active endpoint res
     updSQN(self, MsgDataShAddr, MsgDataSQN)
     updLQI(self, MsgDataShAddr, MsgLQI)
 
+
+
+
     for i in range(0, 2 * int(MsgDataEpCount, 16), 2):
         tmpEp = MsgDataEPlist[i : i + 2]
         if not self.ListOfDevices[MsgDataShAddr]["Ep"].get(tmpEp):
@@ -1839,18 +1834,18 @@ def Decode8045(self, Devices, MsgData, MsgLQI):  # Reception Active endpoint res
                 "-", MsgDataShAddr, tmpEp, self.ListOfDevices[MsgDataShAddr]["Status"]), )
     self.ListOfDevices[MsgDataShAddr]["NbEp"] = str(int(MsgDataEpCount, 16))  # Store the number of EPs
 
+    if "Model" not in self.ListOfDevices[MsgDataShAddr] or self.ListOfDevices[MsgDataShAddr]["Model"] in ("", {}):
+        self.log.logging(  "Input", "Log", "[%s] NEW OBJECT: %s Request Model Name" % ("-", MsgDataShAddr) )
+        ReadAttributeRequest_0000( self, MsgDataShAddr, fullScope=False )  # In order to request Model Name
+
+
     for iterEp in self.ListOfDevices[MsgDataShAddr]["Ep"]:
         self.log.logging(  "Input", "Status", "[%s] NEW OBJECT: %s Request Simple Descriptor for Ep: %s" % (
             "-", MsgDataShAddr, iterEp), )
-
         sendZigateCmd(self, "0043", str(MsgDataShAddr) + str(iterEp))
 
     self.ListOfDevices[MsgDataShAddr]["Heartbeat"] = "0"
     self.ListOfDevices[MsgDataShAddr]["Status"] = "0043"
-
-    if "Model" not in self.ListOfDevices[MsgDataShAddr] or self.ListOfDevices[MsgDataShAddr]["Model"] in ("", {}):
-        self.log.logging(  "Input", "Log", "[%s] NEW OBJECT: %s Request Model Name" % ("-", MsgDataShAddr) )
-        ReadAttributeRequest_0000( self, MsgDataShAddr, fullScope=False )  # In order to request Model Name
 
     self.log.logging( "Pairing", "Debug", "Decode8045 - Device : " + str(MsgDataShAddr) +
      " updated ListofDevices with " + str(self.ListOfDevices[MsgDataShAddr]["Ep"]), )
@@ -2779,18 +2774,22 @@ def Decode8401( self, Devices, MsgData, MsgLQI ):  # Reception Zone status chang
         "alarm1: %s, alaram2: %s, tamper: %s, battery: %s, Support Reporting: %s, restore Reporting: %s, trouble: %s, acmain: %s, test: %s, battdef: %s"
         % ( alarm1, alarm2, tamper, battery, suprrprt, restrprt, trouble, acmain, test, battdef, ) )
 
-    self.log.logging( "Input","Debug","IAS Zone for device:%s  - alarm1: %s, alaram2: %s, tamper: %s, battery: %s, Support Reporting: %s, restore Reporting: %s, trouble: %s, acmain: %s, test: %s, battdef: %s"
+    self.log.logging( "Input","Debug","IAS Zone for device:%s  - alarm1: %s, alarm2: %s, tamper: %s, battery: %s, Support Reporting: %s, restore Reporting: %s, trouble: %s, acmain: %s, test: %s, battdef: %s"
         % ( MsgSrcAddr, alarm1, alarm2, tamper, battery, suprrprt, restrprt, trouble, acmain, test, battdef, ), MsgSrcAddr, )
 
     self.log.logging(  "Input", "Debug", "Decode8401 MsgZoneStatus: %s " % MsgZoneStatus[2:4], MsgSrcAddr, )
     value = MsgZoneStatus[2:4]
 
-    if self.ListOfDevices[MsgSrcAddr]["Model"] in ( "3AFE14010402000D", "3AFE28010402000D", ):  # Konke Motion Sensor
+    if self.ListOfDevices[MsgSrcAddr]["Model"] in ( "3AFE14010402000D", "3AFE28010402000D", 'MOSZB-140'):  # Konke Motion Sensor, Devlco/Frient Motion
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0406", "%02d" % alarm1)
     elif self.ListOfDevices[MsgSrcAddr]["Model"] in ( "lumi.sensor_magnet", "lumi.sensor_magnet.aq2", ):  # Xiaomi Door sensor
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0006", "%02d" % alarm1)
     else:
         MajDomoDevice( self, Devices, MsgSrcAddr, MsgEp, MsgClusterId, "%02d" % (alarm1 or alarm2), )
+
+    #if self.ListOfDevices[MsgSrcAddr]["Model"] in (  'MOSZB-140',):
+    #    # Tamper is inverse
+    #    tamper = not tamper
 
     if tamper:
         MajDomoDevice( self, Devices, MsgSrcAddr, MsgEp, '0009', '01')

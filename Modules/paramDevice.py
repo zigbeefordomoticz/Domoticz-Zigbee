@@ -44,17 +44,21 @@ def param_Occupancy_settings_PIROccupiedToUnoccupiedDelay( self, nwkid, delay):
                 ReadAttributeRequest_0406_0010(self, nwkid)
                 
     elif self.ListOfDevices[ nwkid ]['Manufacturer'] == '1015' or self.ListOfDevices[ nwkid ]['Manufacturer Name'] == 'frient A/S': # Frientd
-        delay = 10 * delay # Tenth of seconds
+        #delay = 10 * delay # Tenth of seconds
         for ep in [ '22', '28', '29']:
+            if ep == '28'  and 'PIROccupiedToUnoccupiedDelay_28' in self.ListOfDevices[ nwkid ]['Param']:
+                delay = int(self.ListOfDevices[ nwkid ]['Param']['PIROccupiedToUnoccupiedDelay_28'])
+            elif ep == '29' and 'PIROccupiedToUnoccupiedDelay_29' in self.ListOfDevices[ nwkid ]['Param']:
+                delay = int(self.ListOfDevices[ nwkid ]['Param']['PIROccupiedToUnoccupiedDelay_29'])
             if ep not in self.ListOfDevices[ nwkid ]['Ep']:
                 continue
             if '0406' not in self.ListOfDevices[ nwkid ]['Ep'][ ep ]:
                 continue
             if '0010' not in self.ListOfDevices[ nwkid ]['Ep'][ ep ]['0406']:
-                set_PIROccupiedToUnoccupiedDelay( self, nwkid, delay)
+                set_PIROccupiedToUnoccupiedDelay( self, nwkid, delay, ListOfEp= [ ep ])
             else:
                 if int(self.ListOfDevices[ nwkid ]['Ep'][ ep ]['0406']['0010'],16) != delay:
-                    set_PIROccupiedToUnoccupiedDelay( self, nwkid, delay)
+                    set_PIROccupiedToUnoccupiedDelay( self, nwkid, delay, ListOfEp= [ ep ])
         ReadAttributeRequest_0406_0010(self, nwkid)
     else:
         Domoticz.Log("=====> Unknown Manufacturer/Name")

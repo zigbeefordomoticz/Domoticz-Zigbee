@@ -447,7 +447,7 @@ def processKnownDevices( self, Devices, NWKID ):
         rescheduleAction = ( rescheduleAction or schneiderRenforceent(self, NWKID))
 
     # Do Attribute Disocvery if needed
-    if not enabledEndDevicePolling and (( intHB % 1800) == 0):
+    if _mainPowered and not enabledEndDevicePolling and (( intHB % 1800) == 0):
         rescheduleAction = ( rescheduleAction or attributeDiscovery( self, NWKID ) )
 
     # If corresponding Attributes not present, let's do a Request Node Description

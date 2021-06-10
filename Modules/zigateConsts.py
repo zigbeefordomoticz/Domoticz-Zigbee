@@ -355,7 +355,7 @@ ZIGATE_COMMANDS = {
     0x0046: {'Sequence': (0x8000, 0x8046), 'Ack': True,  'SQN': True,  'Layer': 'ZDP',    '8012': True, 'Command': 'Match Descriptor request', 'NwkId 2nd Bytes': False},
     0x0047: {'Sequence': (0x8000, 0x8047), 'Ack': True,  'SQN': True,  'Layer': 'ZDP',    '8012': True, 'Command': 'Management Leave request', 'NwkId 2nd Bytes': False},
     0x0049: {'Sequence': (0x8000, 0x8049), 'Ack': False, 'SQN': True,  'Layer': 'ZDP',    '8012': True, 'Command': 'Permit Joining request', 'NwkId 2nd Bytes': False},
-    0x004A: {'Sequence': (0x8000, 0x804A), 'Ack': False, 'SQN': True,  'Layer': 'ZDP',    '8012': True, 'Command': 'Management Network Update request', 'NwkId 2nd Bytes': False},
+    0x004A: {'Sequence': (0x8000, 0x804A), 'Ack': False, 'SQN': True,  'Layer': 'ZDP',    '8012': False, 'Command': 'Management Network Update request', 'NwkId 2nd Bytes': False},
     0x004B: {'Sequence': (0x8000, 0x804B), 'Ack': True,  'SQN': True,  'Layer': 'ZDP',    '8012': True, 'Command': 'System Server Discovery request', 'NwkId 2nd Bytes': False},
     0x004C: {'Sequence': (0x8000, 0x804C), 'Ack': False, 'SQN': True,  'Layer': 'ZDP',    '8012': True, 'Command': 'E_SL_MSG_LEAVE_REQUEST', 'NwkId 2nd Bytes': False},
     0x004D: {'Sequence': (0x8000, 0x804D), 'Ack': False, 'SQN': True,  'Layer': 'ZDP',    '8012': True, 'Command': 'E_SL_MSG_DEVICE_ANNOUNCE', 'NwkId 2nd Bytes': False},

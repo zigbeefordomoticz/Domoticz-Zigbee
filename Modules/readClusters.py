@@ -707,7 +707,7 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             return
         if value == 0xff:
             # Invalid measure 
-            self.log.logging( "Cluster", 'Log', "readCluster 0001 - %s invalid Battery Percentage: %s " %(MsgSrcAddr, value) , MsgSrcAddr)
+            self.log.logging( "Cluster", 'Debug', "readCluster 0001 - %s invalid Battery Percentage: %s " %(MsgSrcAddr, value) , MsgSrcAddr)
             value = 0
 
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
@@ -730,13 +730,16 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
         self.log.logging( "Cluster", 'Debug', "readCluster 0001 - %s Minimum Threshold: %s " %(MsgSrcAddr, value) , MsgSrcAddr)
 
+    elif MsgAttrID == "003e": # BatteryAlarmState
+        checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
+
     elif MsgAttrID == 'fffd': # Cluster Version
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
         self.log.logging( "Cluster", 'Debug', "readCluster 0001 - %s Cluster Version: %s " %(MsgSrcAddr, value) , MsgSrcAddr)
 
     else:
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
-        self.log.logging( "Cluster", 'Log', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
+        self.log.logging( "Cluster", 'Debug', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
     UpdateBatteryAttribute( self, MsgSrcAddr, MsgSrcEp )
     ### End of Cluster0001
@@ -1198,8 +1201,10 @@ def Cluster000f( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'MOSZB-140', ):
                 # Frient Motion device
                 # Potential values are:
-                # - 00006f0018000100
-                # - 01006f001800010
+                # - 00 00 6f 0018000100
+                # - 01 00 6f 0018000100
+                # - 01 00 6f 0018000100
+                MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0406', MsgClusterData[0:2])
                 pass
 
             else:

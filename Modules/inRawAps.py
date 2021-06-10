@@ -56,7 +56,7 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Man
     if srcnwkid not in self.ListOfDevices:
         return
 
-    self.log.logging( "inRawAPS", 'Debug', "inRawAps Nwkid: %s Ep: %s Cluster: %s ManufCode: %s Cmd: %s Data: %s" %(
+    self.log.logging( "inRawAPS", 'Log', "inRawAps Nwkid: %s Ep: %s Cluster: %s ManufCode: %s Cmd: %s Data: %s" %(
         srcnwkid, srcep, cluster, ManufacturerCode, Command, Data)  )
     if cluster == '0020': # Poll Control ( Not implemented in firmware )
         #Domoticz.Log("Cluster 0020 -- POLL CLUSTER")
@@ -82,6 +82,25 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Man
             self.ListOfDevices[ srcnwkid ]['OTA']['ImageType'] = imagetype
             self.ListOfDevices[ srcnwkid ]['OTA']['CurrentImageVersion'] = currentVersion
         return
+
+    if cluster == '0500': # IAS Cluster
+        # "00":
+        # "01" # inRawAps 56ba/23 Cluster 0500 Manuf: None Command: 01 Data: 0d001510 Payload: 1922010d001510
+        # 0x00  Zone Enroll Response
+        # 0x01  Initiate Normal Operation Mode
+        # 0x02  Initiate Test Mode
+
+        enroll_response_code = Data[0:2]
+        zone_id = Data[2:4]
+
+        if Command == '00':
+            pass
+
+        elif Command == '01':
+            pass
+
+        elif Command == '02':
+            pass
 
     if cluster == '0501': # IAS ACE
         # "00"
