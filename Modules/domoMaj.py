@@ -473,8 +473,16 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
                 return
 
+        if ClusterType == WidgetType == 'Motion':
+            nValue = int(value,16)
+            if nValue == 1:
+                sValue = 'On'
+            else:
+                sValue = 'Off'
+            UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_= True) 
+
         if WidgetType not in ( 'ThermoModeEHZBRTS', 'HeatingSwitch', 'HeatingStatus', 'ThermoMode_2', 'ThermoSetpoint', 'ThermoOnOff' ) and \
-            (   ( ClusterType in ( 'IAS_ACE', 'Door', 'Switch', 'SwitchButton', 'AqaraOppleMiddle', 'Motion', 
+            (   ( ClusterType in ( 'IAS_ACE', 'Door', 'Switch', 'SwitchButton', 'AqaraOppleMiddle', 
                                  'Ikea_Round_5b', 'Ikea_Round_OnOff', 'Vibration', 'OrviboRemoteSquare', 'Button_3', 'LumiLock') ) or \
                 ( ClusterType == WidgetType == 'DoorLock') or \
                 ( ClusterType == WidgetType == 'Alarm') or \
