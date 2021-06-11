@@ -817,7 +817,7 @@ def set_PIROccupiedToUnoccupiedDelay( self, key, delay, ListOfEp=None):
         self.log.logging( "BasicOutput", 'Log', "set_PIROccupiedToUnoccupiedDelay for %s/%s - delay: %s" %(key, EPout, delay),key)
         if attribute in self.ListOfDevices[key]['Ep'][EPout][cluster_id]:
             del self.ListOfDevices[key]['Ep'][EPout][cluster_id][ attribute ]
-        return write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled = True)
+        return write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled = False)
 
 def set_poweron_afteroffon( self, key, OnOffMode = 0xff):
     # OSRAM/LEDVANCE
