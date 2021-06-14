@@ -2001,6 +2001,19 @@ def Cluster0300( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         if self.pluginconf.pluginConf['capturePairingInfos'] == 1 and MsgSrcAddr in self.DiscoveryDevices:
             self.DiscoveryDevices[MsgSrcAddr]['ColorInfos-ColorMode']=str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
+    elif MsgAttrID == "400a": # ColorCapabilities
+        if value == 0: # Hue/Saturation supported
+            self.log.logging( "Cluster", 'Debug', "ReadCluster0300 - Hue/Saturation supported: %s" %value, MsgSrcAddr)
+        elif value == 1: # Enhanced hue supported
+            self.log.logging( "Cluster", 'Debug', "ReadCluster0300 - Enhanced hue supported: %s" %value, MsgSrcAddr)
+        elif value == 2: # Color loop supported
+            self.log.logging( "Cluster", 'Debug', "ReadCluster0300 - Color loop supported: %s" %value, MsgSrcAddr)
+        elif value == 3: # XY attributes supported
+            self.log.logging( "Cluster", 'Debug', "ReadCluster0300 - XY attributes supported: %s" %value, MsgSrcAddr)
+        elif value == 4: # Color temp supported
+            self.log.logging( "Cluster", 'Debug', "ReadCluster0300 - Color temp supported: %s" %value, MsgSrcAddr)
+        self.ListOfDevices[MsgSrcAddr]['ColorInfos']['ColorCapabilities'] = value
+
     elif MsgAttrID == '000f':
         self.log.logging( "Cluster", 'Debug', "readCluster - %s - %s/%s Attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr) 
 
