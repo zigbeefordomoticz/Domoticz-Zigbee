@@ -1741,7 +1741,6 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
         SEQ_OPERATION = { '00': 'Cooling',
                 '01': 'Cooling with reheat',
-                
                 '02': 'Heating',
                 '03': 'Heating with reheat',
                 '04': 'Cooling and heating',
@@ -2044,17 +2043,18 @@ def Cluster0300( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
 def Cluster0400( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData , Source):
     # (Measurement: LUX)
-    # Input on Lux calculation is coming from PhilipsHue / Domoticz integration.
+    #  Lux=10^((y-1)/10000)
 
+    self.log.logging( "Cluster", 'Log', "readCluster - %s - %s/%s  Attr: %s Type: %s Size: %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
     value = int(decodeAttribute( self, MsgAttType, MsgClusterData))
-    lux = int(pow( 10, ((value -1) / 10000.00)))
-    if 'Model' in self.ListOfDevices[MsgSrcAddr]:
-        if str(self.ListOfDevices[MsgSrcAddr]['Model']).find('lumi.sensor') != -1:
-            # In case of Xiaomi, we got direct value
-            lux = value
-        else:
-            lux = int(pow( 10, ((value -1) / 10000.00)))
-    self.log.logging( "Cluster", 'Debug', "ReadCluster - %s - %s/%s - LUX Sensor: %s/%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData, lux), MsgSrcAddr)
+    if value < 0 or value > 0xffff:
+        return
+    if 'Model' in self.ListOfDevices[MsgSrcAddr] and str(self.ListOfDevices[MsgSrcAddr]['Model']).find('lumi.sensor') != -1:
+        # In case of Xiaomi, we got direct value
+        lux = value
+    else:
+        lux = int( 10 ** ((value - 1 ) / 10000))
+    self.log.logging( "Cluster", 'Log', "ReadCluster - %s - %s/%s - LUX Sensor: %s/%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value, lux), MsgSrcAddr)
 
     MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(lux))
     checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, lux)
