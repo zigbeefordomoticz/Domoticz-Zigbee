@@ -21,7 +21,9 @@ MANUFACTURER_NAME_TO_CODE = {
     'HEIMAN': '120b',
     'DANFOSS': '1246',
     'KONKE': '1268',
-    'OSRAM': 'bbaa'
+    'OSRAM': 'bbaa',
+    "Develco": "1015",
+    "frient A/S": "1015",
 }
 
 TUYA_PREFIX = ('_TZ', '_TY', )
