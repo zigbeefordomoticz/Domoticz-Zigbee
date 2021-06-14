@@ -20,7 +20,7 @@ import json
 
 from Classes.LoggingManagement import LoggingManagement
 
-from Modules.schneider_wiser import schneider_wiser_registration
+from Modules.schneider_wiser import schneider_wiser_registration, schneider_wiser2_registration
 #
 from Modules.bindings import unbindDevice, bindDevice, rebind_Clusters
 from Modules.basicOutputs import  sendZigateCmd, identifyEffect, getListofAttribute
@@ -36,7 +36,7 @@ from Modules.configureReporting import processConfigureReporting
 from Modules.profalux import profalux_fake_deviceModel
 from Modules.philips import philips_set_pir_occupancySensibility
 from Modules.domoCreate import CreateDomoDevice
-from Modules.tools import reset_cluster_datastruct, get_and_inc_SQN
+from Modules.tools import reset_cluster_datastruct, get_and_inc_SQN, getListOfEpForCluster
 from Modules.zigateConsts import CLUSTERS_LIST
 from Modules.casaia import casaia_pairing
 from Modules.thermostats import thermostat_Calibration
@@ -362,7 +362,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                     func( self, NWKID)
 
             #4. IAS Enrollment
-            if ( int(self.FirmwareVersion,16) < 0x0320 ):
+            if ( int(self.FirmwareVersion,16) < 0x0320 ) :
                 for iterEp in self.ListOfDevices[NWKID]['Ep']:
                     #IAS Zone
                     if '0500' in self.ListOfDevices[NWKID]['Ep'][iterEp] or \
@@ -382,7 +382,10 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
 
             # In case of Schneider Wiser, let's do the Registration Process
             if 'Manufacturer' in self.ListOfDevices[NWKID]:
-                if self.ListOfDevices[NWKID]['Manufacturer'] == '105e':
+                if 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['Model'] == 'Wiser2-Thermostat':
+                    schneider_wiser2_registration(self, Devices, NWKID)
+
+                elif self.ListOfDevices[NWKID]['Manufacturer'] == '105e':
                     schneider_wiser_registration( self, Devices, NWKID )
 
             # In case of Orvibo Scene controller let's Registration
@@ -406,11 +409,10 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
 
             # Identify for ZLL compatible devices
             # Search for EP to be used 
-            ep = '01'
-            for ep in self.ListOfDevices[NWKID]['Ep']:
-                if ep in ( '01', '03', '06', '09' ):
-                    break
-            identifyEffect( self, NWKID, ep , effect='Blink' )
+            for ep in getListOfEpForCluster( self, NWKID, '0003' ):
+                identifyEffect( self, NWKID, ep , effect='Blink' )
+                # We just do once
+                break
 
             for iterEp in self.ListOfDevices[NWKID]['Ep']:
                 self.log.logging( "Pairing", 'Debug', 'looking for List of Attributes ep: %s' %iterEp)
