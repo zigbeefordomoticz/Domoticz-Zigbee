@@ -11,7 +11,7 @@ from Modules.pollControl import receive_poll_cluster
 
 from Modules.domoMaj import MajDomoDevice
 
-from Modules.schneider_wiser import schneiderReadRawAPS, schneiderReadRawAPS_v2
+from Modules.schneider_wiser import schneiderReadRawAPS
 from Modules.legrand_netatmo import legrandReadRawAPS
 from Modules.livolo import livoloReadRawAPS
 from Modules.orvibo import orviboReadRawAPS
@@ -40,7 +40,7 @@ CALLBACK_TABLE2 = {
     '欧瑞博': orviboReadRawAPS,
     'Legrand': legrandReadRawAPS,
     'Schneider': schneiderReadRawAPS,
-    'Schneider Electric': schneiderReadRawAPS_v2,
+    'Schneider Electric': schneiderReadRawAPS,
     'LUMI': lumiReadRawAPS,
     'Philips' : philipsReadRawAPS,                          
     'OWON': casaiaReadRawAPS,
