@@ -362,9 +362,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                     func( self, NWKID)
 
             #4. IAS Enrollment
-            if ( 'Param' not in self.ListOfDevices[NWKID] or ( 'Param' in self.ListOfDevices[NWKID] 
-                    and 'ForceIASEnrollement' in self.ListOfDevices[NWKID]['Param'] 
-                    and self.ListOfDevices[NWKID]['Param']['ForceIASEnrollement'])):
+            if ( int(self.FirmwareVersion,16) < 0x0320 ):
                 for iterEp in self.ListOfDevices[NWKID]['Ep']:
                     #IAS Zone
                     if '0500' in self.ListOfDevices[NWKID]['Ep'][iterEp] or \
