@@ -537,6 +537,33 @@ def TypeFromCluster( self, cluster, create_=False, ProfileID_='', ZDeviceID_='',
 
     return TypeFromCluster
 
+def subtypeRGB_FromProfile_Device_IDs_onEp2( EndPoints_V2 ):
+    ColorControlRGB   = 0x02 # RGB color palette / Dimable
+    ColorControlRGBWW = 0x04  # RGB + WW
+    ColorControlFull  = 0x07  # 3 Color palettes widget
+    ColorControlWW    = 0x08  # WW
+    ColorControlRGBWZ = 0x06  # RGB W Z
+    ColorControlRGBW  = 0x01  # RGB W
+    Subtype = None
+    for ep in EndPoints_V2:
+        if EndPoints_V2[ep]['ZDeviceID'] == '0101': # Dimable light
+            continue
+
+        elif EndPoints_V2[ep][ 'ZDeviceID'] == '0102': # Color dimable light
+            Subtype = ColorControlFull
+            break
+
+        elif EndPoints_V2[ep][ 'ZDeviceID'] == '010c': # White color temperature light
+            Subtype = ColorControlWW
+            break
+
+        elif EndPoints_V2[ep][ 'ZDeviceID'] == '010d': # Extended color light
+            # ZBT-ExtendedColor /  Müller-Licht 44062 "tint white + color" (LED E27 9,5W 806lm 1.800-6.500K RGB)
+            Subtype = ColorControlRGBWW
+    return Subtype
+    
+
+
 def subtypeRGB_FromProfile_Device_IDs( EndPoints, Model, ProfileID, ZDeviceID, ColorInfos=None):
 
     # Type 0xF1    pTypeColorSwitch
