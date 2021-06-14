@@ -194,6 +194,7 @@ class BasePlugin:
         self.currentChannel = None  # Curent Channel. Set in Decode8009/Decode8024
         self.ZigateIEEE = None       # Zigate IEEE. Set in CDecode8009/Decode8024
         self.ZigateNWKID = None       # Zigate NWKID. Set in CDecode8009/Decode8024
+        self.ZiGateModel = None      # V1 or V2
         self.FirmwareVersion = None
         self.FirmwareMajorVersion = None
         self.FirmwareBranch = None
