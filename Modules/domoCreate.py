@@ -17,7 +17,7 @@ from Classes.LoggingManagement import LoggingManagement
 
 from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
 from Modules.widgets import SWITCH_LVL_MATRIX
-from Modules.domoTools import GetType, subtypeRGB_FromProfile_Device_IDs
+from Modules.domoTools import GetType, subtypeRGB_FromProfile_Device_IDs, subtypeRGB_FromProfile_Device_IDs_onEp2
 
 
 def cleanup_widget_Type( widget_type_list ):
@@ -702,12 +702,16 @@ def CreateDomoDevice(self, Devices, NWKID):
                     Subtype_ = 0x06
                 else:
                     # Generic ColorControl, let's try to find a better one.
-                    if 'ColorInfos' in self.ListOfDevices[NWKID]:
-                        Subtype_ = subtypeRGB_FromProfile_Device_IDs( self.ListOfDevices[NWKID]['Ep'], self.ListOfDevices[NWKID]['Model'],
-                            self.ListOfDevices[NWKID]['ProfileID'], self.ListOfDevices[NWKID]['ZDeviceID'], self.ListOfDevices[NWKID]['ColorInfos'])
-                    else:
-                        Subtype_ = subtypeRGB_FromProfile_Device_IDs( self.ListOfDevices[NWKID]['Ep'], self.ListOfDevices[NWKID]['Model'],
-                            self.ListOfDevices[NWKID]['ProfileID'], self.ListOfDevices[NWKID]['ZDeviceID'], None)
+                    if 'Epv2' in self.ListOfDevices[NWKID]:
+                        Subtype_ = subtypeRGB_FromProfile_Device_IDs_onEp2( self.ListOfDevices[NWKID]['Epv2'])
+                        
+                    if Subtype_ is None:
+                        if 'ColorInfos' in self.ListOfDevices[NWKID]:
+                            Subtype_ = subtypeRGB_FromProfile_Device_IDs( self.ListOfDevices[NWKID]['Ep'], self.ListOfDevices[NWKID]['Model'],
+                                self.ListOfDevices[NWKID]['ProfileID'], self.ListOfDevices[NWKID]['ZDeviceID'], self.ListOfDevices[NWKID]['ColorInfos'])
+                        else:
+                            Subtype_ = subtypeRGB_FromProfile_Device_IDs( self.ListOfDevices[NWKID]['Ep'], self.ListOfDevices[NWKID]['Model'],
+                                self.ListOfDevices[NWKID]['ProfileID'], self.ListOfDevices[NWKID]['ZDeviceID'], None)
 
                     if Subtype_ == 0x02:   
                         t = 'ColorControlRGB'
@@ -719,7 +723,6 @@ def CreateDomoDevice(self, Devices, NWKID):
                         t = 'ColorControlWW'
                     else:                  
                         t = 'ColorControlFull'
-
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 241, Subtype_ = Subtype_, Switchtype_ = 7 )
 
 
