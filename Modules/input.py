@@ -726,10 +726,13 @@ def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
     self.log.logging( "Input", "Debug", "Decode8010 - Reception Version list :%s" %MsgData)
     if self.FirmwareMajorVersion == '03':
         self.log.logging( "Input", "Status", "ZiGate Classic PDM (legacy)")
+        self.ZiGateModel = 1
     elif self.FirmwareMajorVersion == '04':
         self.log.logging( "Input", "Status", "ZiGate Classic PDM (OptiPDM)")
+        self.ZiGateModel = 1
     elif self.FirmwareMajorVersion == '05':
-        self.log.logging( "Input", "Status", "ZiGate+ (V2)")    
+        self.log.logging( "Input", "Status", "ZiGate+ (V2)")  
+        self.ZiGateModel = 2  
     self.log.logging( "Input", "Status", "Installer Version Number: %s" %self.FirmwareVersion)
     self.zigatedata["Firmware Version"] = "Branch: %s Major: %s Version: %s" %(self.FirmwareBranch,self.FirmwareMajorVersion, self.FirmwareVersion )
     if self.webserver:
