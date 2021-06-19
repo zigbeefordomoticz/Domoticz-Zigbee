@@ -60,8 +60,8 @@ def attributeDiscovery( self, NwkId ):
         rescheduleAction = False
         # If Attributes not yet discovered, let's do it
 
-        #if 'ConfigSource' not in self.ListOfDevices[NwkId]:
-        #    return False
+        if 'ConfigSource' not in self.ListOfDevices[NwkId]:
+            return False
 
         if 'ConfigSource' in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]['ConfigSource'] == 'DeviceConf':
             return False
@@ -430,7 +430,7 @@ def processKnownDevices( self, Devices, NWKID ):
         rescheduleAction = ( rescheduleAction or schneiderRenforceent(self, NWKID))
 
     # Do Attribute Disocvery if needed
-    if not enabledEndDevicePolling and (( intHB % 1800) == 0):
+    if _mainPowered and not enabledEndDevicePolling and (( intHB % 1800) == 0):
         rescheduleAction = ( rescheduleAction or attributeDiscovery( self, NWKID ) )
 
     # If corresponding Attributes not present, let's do a Request Node Description
