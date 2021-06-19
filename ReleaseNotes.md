@@ -21,6 +21,10 @@ Release Numbering
 - Odd numbers --> Stable5
 - Even numbers  --> Beta
 
+## 19 June 2021   - 5.1.04
+- [Hardware] - Philips Hue Hue White Ambiance GU10
+- [Technical] - various fixes
+
 ## 31st May 2021  -  5.1.03
 - [Technical] - Better management of ZiGate V1 and V2
 - [Technical] - Revert Config.Reporting of End Device to a proprer rate
