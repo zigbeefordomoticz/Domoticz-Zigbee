@@ -8,7 +8,7 @@
 			"ef00":"", 
 			"000a":"", 
 			"0019":"", 
-			"Type":"Meter/Power/Voltage/Ampere"}
+			"Type":"Switch/Meter/Power/Voltage/Ampere"}
 	},
 	"Type":"",
 	"ClusterToBind": [ "0019", "ef00" ],
