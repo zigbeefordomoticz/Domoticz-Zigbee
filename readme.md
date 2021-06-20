@@ -28,7 +28,7 @@ Documentation are available on the GitHub [Wiki](https://github.com/pipiche38/Do
 Your first place to get support is via the Forums.
 
 * English channel : <https://www.domoticz.com/forum/viewforum.php?f=68>
-* French Channel : <https://easydomoticz.com/forum/viewforum.php?f=28&sid=a8633a9d8cb2acccb32872543b50fd47>
+* French Channel : <https://easydomoticz.com/forum/viewforum.php?f=28>
 
 ## About release channels
 
@@ -62,7 +62,7 @@ Moving from this channel to the other will required either ar restart from scrat
 
 In case you need to be on stable instead of stable5
 
-`git checkout stable  // will move you to the stable5 channel`
+`git checkout stable  // will move you to the stable channel`
 
 ## Donations
 
