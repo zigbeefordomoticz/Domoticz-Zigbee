@@ -16,7 +16,7 @@ from datetime import datetime, timedelta
 import time
 
 from Classes.LoggingManagement import LoggingManagement
-from Modules.tools import updSQN, get_and_inc_SQN, is_ack_tobe_disabled, build_fcf
+from Modules.tools import updSQN, get_and_inc_SQN, is_ack_tobe_disabled, build_fcf, checkAndStoreAttributeValue
 from Modules.domoMaj import MajDomoDevice
 from Modules.tuyaTools import (tuya_cmd, store_tuya_attribute, get_tuya_attribute)
 from Modules.tuyaSiren import tuya_siren_response
@@ -595,35 +595,59 @@ def tuya_smartair_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, d
 # Tuya Smart Energy DIN Rail
 def tuya_energy_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
 
-    if dp == 0x11: # Total Energy / 1000
+    if dp == 0x01: # State ???
+        self.log.logging( "Tuya", 'Log', "tuya_energy_response - Model: %s State Nwkid: %s/%s dp: %02x data type: %s data: %s" %(
+            _ModelName, NwkId, srcEp,  dp, datatype, data),NwkId )
+        store_tuya_attribute( self, NwkId, 'State', data ) 
+        if data == '00':
+            data = '01'
+        else:
+            data = '00'
+        MajDomoDevice(self, Devices, NwkId, '01', '0006', data)
+        
+    elif dp == 0x11: # Total Energy / 1000
         analogValue = int(data,16) / 1000 
         self.log.logging( "Tuya", 'Log', "tuya_energy_response - Model: %s Energy Nwkid: %s/%s dp: %02x data type: %s data: %s" %(
             _ModelName, NwkId, srcEp,  dp, datatype, data),NwkId )
         MajDomoDevice(self, Devices, NwkId, '01', '0702', str(analogValue), Attribute_= '0000')
+        checkAndStoreAttributeValue( self, NwkId, '01', '0702', '0000', analogValue )  # Store int
+        store_tuya_attribute( self, NwkId, 'Energy', str(analogValue) ) 
 
     elif dp == 0x12: # Current (Ampere) / 1000
         analogValue = int(data,16) / 1000 
         self.log.logging( "Tuya", 'Log', "tuya_energy_response - Model: %s Current Nwkid: %s/%s dp: %02x data type: %s data: %s" %(
             _ModelName, NwkId, srcEp,  dp, datatype, data),NwkId )
         MajDomoDevice(self, Devices, NwkId, '01', '0b04', str(analogValue), Attribute_ = '0508')
-
+        store_tuya_attribute( self, NwkId, 'Current', str(analogValue) ) 
 
     elif dp == 0x13: #Power / 10
         analogValue = int(data,16) / 10 
         self.log.logging( "Tuya", 'Log', "tuya_energy_response - Model: %s Power Nwkid: %s/%s dp: %02x data type: %s data: %s" %(
             _ModelName, NwkId, srcEp,  dp, datatype, data),NwkId )
+        checkAndStoreAttributeValue( self, NwkId, '01', '0702', '0400', str(analogValue) )
         MajDomoDevice(self, Devices, NwkId, '01', '0702', str(analogValue))
-
+        store_tuya_attribute( self, NwkId, 'InstantPower', str(analogValue) )  # Store str
 
     elif dp == 0x14: # Voltage / 10
         analogValue = int(data,16) / 10 
         self.log.logging( "Tuya", 'Log', "tuya_energy_response - Model: %s Voltage Nwkid: %s/%s dp: %02x data type: %s data: %s" %(
             _ModelName, NwkId, srcEp,  dp, datatype, data),NwkId )
         MajDomoDevice(self, Devices, NwkId, '01', '0001', str(analogValue))
+        store_tuya_attribute( self, NwkId, 'Voltage', str(analogValue) ) 
 
     else:
-
         self.log.logging( "Tuya", 'Log', "tuya_energy_response - Model: %s Unknow Nwkid: %s/%s dp: %02x data type: %s data: %s" %(
             _ModelName, NwkId, srcEp,  dp, datatype, data),NwkId )
 
 
+def tuya_energy_onoff( self, NwkId, OnOff ):
+    
+    self.log.logging( "Tuya", 'Debug', "tuya_energy_onoff - %s OnOff: %s" %(NwkId, OnOff),NwkId ) 
+    # determine which Endpoint
+    EPout = '01'
+    sqn = get_and_inc_SQN( self, NwkId )
+    cluster_frame = '11'
+    cmd = '00' # Command
+    action = '0101'
+    data = OnOff
+    tuya_cmd( self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)

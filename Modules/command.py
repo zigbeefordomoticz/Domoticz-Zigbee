@@ -25,7 +25,7 @@ from Modules.thermostats import thermostat_Setpoint, thermostat_Mode
 from Modules.livolo import livolo_OnOff
 from Modules.tuyaTRV import ( tuya_trv_mode , tuya_trv_onoff)
 from Modules.tuyaSiren import ( tuya_siren_alarm, tuya_siren_humi_alarm, tuya_siren_temp_alarm )
-from Modules.tuya import ( tuya_dimmer_onoff, tuya_dimmer_dimmer, tuya_curtain_lvl, tuya_curtain_openclose, tuya_window_cover_calibration, tuya_switch_command)
+from Modules.tuya import ( tuya_energy_onoff, tuya_dimmer_onoff, tuya_dimmer_dimmer, tuya_curtain_lvl, tuya_curtain_openclose, tuya_window_cover_calibration, tuya_switch_command)
 
 from Modules.legrand_netatmo import  legrand_fc40, cable_connected_mode
 from Modules.schneider_wiser import schneider_EHZBRTS_thermoMode, schneider_hact_fip_mode, schneider_set_contract, schneider_temp_Setcurrent, schneider_hact_heater_type
@@ -186,6 +186,9 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             tuya_switch_command( self, NWKID, '00', gang=int(EPout,16))
             UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return
+
+        if _model_name in ('TS0601-Energy', ):
+            tuya_energy_onoff( self, NWKID, '01' )
 
         if DeviceType == 'LivoloSWL':
             livolo_OnOff( self, NWKID , EPout, 'Left', 'Off')
@@ -352,6 +355,9 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             tuya_switch_command( self, NWKID, '01', gang=int(EPout,16))
             UpdateDevice_v2(self, Devices, Unit, 0, "On",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return
+
+        if _model_name in ('TS0601-Energy', ):
+            tuya_energy_onoff( self, NWKID, '00' )
 
         if DeviceType == 'LivoloSWL':
             livolo_OnOff( self, NWKID , EPout, 'Left', 'On')
