@@ -189,6 +189,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
 
         if _model_name in ('TS0601-Energy', ):
             tuya_energy_onoff( self, NWKID, '01' )
+            return
 
         if DeviceType == 'LivoloSWL':
             livolo_OnOff( self, NWKID , EPout, 'Left', 'Off')
@@ -306,7 +307,6 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             self.log.logging( "Command", 'Debug', "mgtCommand : Disable Window Cover Calibration" )
             tuya_window_cover_calibration( self, NWKID, '00')
 
-
         else:
             # Remaining Slider widget
             if profalux: # Profalux are define as LvlControl but should be managed as Blind Inverted
@@ -358,6 +358,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
 
         if _model_name in ('TS0601-Energy', ):
             tuya_energy_onoff( self, NWKID, '00' )
+            return
 
         if DeviceType == 'LivoloSWL':
             livolo_OnOff( self, NWKID , EPout, 'Left', 'On')
