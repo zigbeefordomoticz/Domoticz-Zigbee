@@ -599,31 +599,31 @@ def tuya_energy_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dst
         analogValue = int(data,16) / 1000 
         self.log.logging( "Tuya", 'Log', "tuya_energy_response - Model: %s Energy Nwkid: %s/%s dp: %02x data type: %s data: %s" %(
             _ModelName, NwkId, srcEp,  dp, datatype, data),NwkId )
-        MajDomoDevice(self, Devices, NwkId, '01', '0702', analogValue, Attribute_='0000')
+        MajDomoDevice(self, Devices, NwkId, '01', '0702', str(analogValue), Attribute_= '0000')
 
     elif dp == 0x12: # Current (Ampere) / 1000
         analogValue = int(data,16) / 1000 
         self.log.logging( "Tuya", 'Log', "tuya_energy_response - Model: %s Current Nwkid: %s/%s dp: %02x data type: %s data: %s" %(
             _ModelName, NwkId, srcEp,  dp, datatype, data),NwkId )
-        MajDomoDevice(self, Devices, NwkId, '01', '050b', analogValue, Attribute_ = '0508')
+        MajDomoDevice(self, Devices, NwkId, '01', '0b04', str(analogValue), Attribute_ = '0508')
 
 
     elif dp == 0x13: #Power / 10
         analogValue = int(data,16) / 10 
         self.log.logging( "Tuya", 'Log', "tuya_energy_response - Model: %s Power Nwkid: %s/%s dp: %02x data type: %s data: %s" %(
             _ModelName, NwkId, srcEp,  dp, datatype, data),NwkId )
-        MajDomoDevice(self, Devices, NwkId, '01', '0702', analogValue)
+        MajDomoDevice(self, Devices, NwkId, '01', '0702', str(analogValue))
 
 
     elif dp == 0x14: # Voltage / 10
         analogValue = int(data,16) / 10 
         self.log.logging( "Tuya", 'Log', "tuya_energy_response - Model: %s Voltage Nwkid: %s/%s dp: %02x data type: %s data: %s" %(
             _ModelName, NwkId, srcEp,  dp, datatype, data),NwkId )
-        MajDomoDevice(self, Devices, NwkId, '01', '0001', analogValue)
+        MajDomoDevice(self, Devices, NwkId, '01', '0001', str(analogValue))
 
     else:
 
         self.log.logging( "Tuya", 'Log', "tuya_energy_response - Model: %s Unknow Nwkid: %s/%s dp: %02x data type: %s data: %s" %(
             _ModelName, NwkId, srcEp,  dp, datatype, data),NwkId )
-        MajDomoDevice(self, Devices, NwkId, '01', '0006', data)
+
 
