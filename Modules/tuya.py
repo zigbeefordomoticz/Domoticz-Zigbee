@@ -42,6 +42,7 @@ TS0041_MANUF_NAME = ("_TZ3000_xkwalgne", "_TZ3000_peszejy7", "_TZ3000_8kzqqzu4",
 
 
 # TS0601 
+TUYA_ENERGY_MANUFACTURER = ( '_TZE200_fsb6zw01', ' _TZE200_byzdayie')
 TUYA_SMARTAIR_MANUFACTURER = ( '_TZE200_8ygsuhe1', )
 
 TUYA_SIREN_MANUFACTURER =  ( '_TZE200_d0yu2xgi', '_TYST11_d0yu2xgi' )
@@ -71,7 +72,7 @@ TUYA_eTRV_MODEL =         ( 'TS0601', 'TS0601-eTRV', 'TS0601-eTRV1', 'TS0601-eTR
                              'kud7u2l', 'eaxp72v', 'fvq6avy', 'ivfvd7h',)
 
 TUYA_TS0601_MODEL_NAME = TUYA_eTRV_MODEL + TUYA_CURTAIN_MODEL + TUYA_SIREN_MODEL
-TUYA_MANUFACTURER_NAME = ( TS011F_MANUF_NAME + TS0041_MANUF_NAME + 
+TUYA_MANUFACTURER_NAME = ( TUYA_ENERGY_MANUFACTURER, TS011F_MANUF_NAME + TS0041_MANUF_NAME + 
                             TUYA_SIREN_MANUFACTURER +  
                             TUYA_DIMMER_MANUFACTURER + TUYA_SWITCH_MANUFACTURER + TUYA_2GANGS_SWITCH_MANUFACTURER + TUYA_3GANGS_SWITCH_MANUFACTURER +
                             TUYA_CURTAIN_MAUFACTURER +  
@@ -205,6 +206,9 @@ def tuya_response( self,Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, 
     elif _ModelName == 'TS0601-dimmer':
         tuya_dimmer_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
 
+    elif _ModelName == 'TS0601-Energy':
+        tuya_energy_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
+
     else:
         attribute_name = 'UnknowDp_0x%02x_Dt_0x%02x' %(dp,datatype)
         store_tuya_attribute( self, NwkId, attribute_name, data ) 
@@ -244,7 +248,6 @@ def utc_to_local(dt):
         return dt - timedelta(seconds = time.altzone)
     else:
         return dt - timedelta(seconds = time.timezone)
-
 
 def tuya_send_default_response( self, Nwkid, srcEp , sqn, cmd, orig_fcf):
     if Nwkid not in self.ListOfDevices:
@@ -588,3 +591,30 @@ def tuya_smartair_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, d
         CH2O_ppm = int(data,16) / 100
         store_tuya_attribute( self, NwkId, 'CH2O ppm', CH2O_ppm ) 
         MajDomoDevice(self, Devices, NwkId, srcEp, '0402', CH2O_ppm, Attribute_ = ch2O_Attribute)
+
+# Tuya Smart Energy DIN Rail
+def tuya_energy_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
+
+    if dp == 0x11: # Total Energy
+        self.log.logging( "Tuya", 'Log', "tuya_energy_response - Model: %s Energy Nwkid: %s/%s dp: %02x data type: %s data: %s" %(
+            _ModelName, NwkId, srcEp,  dp, datatype, data),NwkId )
+
+    elif dp == 0x12: # Current (Ampere)
+        self.log.logging( "Tuya", 'Log', "tuya_energy_response - Model: %s Current Nwkid: %s/%s dp: %02x data type: %s data: %s" %(
+            _ModelName, NwkId, srcEp,  dp, datatype, data),NwkId )
+
+
+    elif dp == 0x13: #Power
+        self.log.logging( "Tuya", 'Log', "tuya_energy_response - Model: %s Power Nwkid: %s/%s dp: %02x data type: %s data: %s" %(
+            _ModelName, NwkId, srcEp,  dp, datatype, data),NwkId )
+
+
+    elif dp == 0x14: # Voltage
+        self.log.logging( "Tuya", 'Log', "tuya_energy_response - Model: %s Voltage Nwkid: %s/%s dp: %02x data type: %s data: %s" %(
+            _ModelName, NwkId, srcEp,  dp, datatype, data),NwkId )
+
+    else:
+
+        self.log.logging( "Tuya", 'Log', "tuya_energy_response - Model: %s Unknow Nwkid: %s/%s dp: %02x data type: %s data: %s" %(
+            _ModelName, NwkId, srcEp,  dp, datatype, data),NwkId )
+

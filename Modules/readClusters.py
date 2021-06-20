@@ -32,7 +32,7 @@ from Modules.lumi import AqaraOppleDecoding0012, readXiaomiCluster, xiaomi_leave
 from Classes.LoggingManagement import LoggingManagement
 
 from Modules.tuya import ( TUYA_TS0601_MODEL_NAME, TUYA_SIREN_MANUFACTURER, TUYA_DIMMER_MANUFACTURER, 
-                            TUYA_SWITCH_MANUFACTURER, TUYA_2GANGS_SWITCH_MANUFACTURER, TUYA_CURTAIN_MAUFACTURER, TUYA_THERMOSTAT_MANUFACTURER,
+                            TUYA_ENERGY_MANUFACTURER, TUYA_SWITCH_MANUFACTURER, TUYA_2GANGS_SWITCH_MANUFACTURER, TUYA_CURTAIN_MAUFACTURER, TUYA_THERMOSTAT_MANUFACTURER,
                             TUYA_eTRV1_MANUFACTURER, TUYA_eTRV2_MANUFACTURER , TUYA_eTRV3_MANUFACTURER, TUYA_SMARTAIR_MANUFACTURER)
 
 def decodeAttribute(self, AttType, Attribute, handleErrors=False):
@@ -320,6 +320,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
         elif modelName == '0yu2xgi': # Tuya Siren
             modelName = 'TS0601-sirene'
+
             
         elif modelName in TUYA_TS0601_MODEL_NAME:
             # https://github.com/dresden-elektronik/deconz-rest-plugin/wiki/Tuya-devices-List
@@ -358,6 +359,10 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
             elif manufacturer_name in TUYA_SMARTAIR_MANUFACTURER: # Smart Air Box
                 modelName += '-SmartAir'
+        
+            elif modelName in TUYA_ENERGY_MANUFACTURER:
+               modelName += '-Energy'
+
             else:
                 # eTRV
                 modelName += '-eTRV'
