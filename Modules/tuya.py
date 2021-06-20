@@ -42,21 +42,21 @@ TS0041_MANUF_NAME = ("_TZ3000_xkwalgne", "_TZ3000_peszejy7", "_TZ3000_8kzqqzu4",
 
 
 # TS0601 
-TUYA_ENERGY_MANUFACTURER = ( '_TZE200_fsb6zw01', ' _TZE200_byzdayie')
+TUYA_ENERGY_MANUFACTURER = ( '_TZE200_fsb6zw01', ' _TZE200_byzdayie', )
 TUYA_SMARTAIR_MANUFACTURER = ( '_TZE200_8ygsuhe1', )
 
-TUYA_SIREN_MANUFACTURER =  ( '_TZE200_d0yu2xgi', '_TYST11_d0yu2xgi' )
+TUYA_SIREN_MANUFACTURER =  ( '_TZE200_d0yu2xgi', '_TYST11_d0yu2xgi' ,)
 TUYA_SIREN_MODEL        =  ( 'TS0601', '0yu2xgi', )
 
 TUYA_DIMMER_MANUFACTURER = ( '_TZE200_dfxkcots', )
-TUYA_SWITCH_MANUFACTURER = ( '_TZE200_7tdtqgwv', "_TYST11_zivfvd7h", '_TZE200_oisqyl4o', '_TZE200_amp6tsvy')
+TUYA_SWITCH_MANUFACTURER = ( '_TZE200_7tdtqgwv', "_TYST11_zivfvd7h", '_TZE200_oisqyl4o', '_TZE200_amp6tsvy',)
 TUYA_2GANGS_SWITCH_MANUFACTURER = ('_TZE200_g1ib5ldv',)
 TUYA_3GANGS_SWITCH_MANUFACTURER = ( 'TZE200_oisqyl4o', )
 
 TUYA_CURTAIN_MAUFACTURER = ( "_TZE200_cowvfni3", "_TZE200_wmcdj3aq", "_TZE200_fzo2pocs", "_TZE200_nogaemzt", "_TZE200_5zbp6j0u", \
                             "_TZE200_fdtjuw7u", "_TZE200_bqcqqjpb", "_TZE200_zpzndjez", "_TYST11_cowvfni3", "_TYST11_wmcdj3aq", \
                             "_TYST11_fzo2pocs", "_TYST11_nogaemzt", "_TYST11_5zbp6j0u", "_TYST11_fdtjuw7u", "_TYST11_bqcqqjpb", "_TYST11_zpzndjez", \
-                            '_TZE200_rddyvrci', '_TZE200_nkoabg8w', '_TZE200_xuzcvlku', '_TZE200_4vobcgd3', '_TZE200_pk0sfzvr', '_TYST11_xu1rkty3', '_TZE200_zah67ekd' )
+                            '_TZE200_rddyvrci', '_TZE200_nkoabg8w', '_TZE200_xuzcvlku', '_TZE200_4vobcgd3', '_TZE200_pk0sfzvr', '_TYST11_xu1rkty3', '_TZE200_zah67ekd', )
 
 TUYA_CURTAIN_MODEL =  ( "owvfni3", "mcdj3aq", "zo2pocs", "ogaemzt", "zbp6j0u", "dtjuw7u", "qcqqjpb", "pzndjez", )
 

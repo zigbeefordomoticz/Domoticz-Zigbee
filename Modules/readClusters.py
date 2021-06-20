@@ -330,42 +330,49 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             self.log.logging( "Cluster", 'Log', "ReadCluster - %s / %s - Recepion Model: >%s< ManufName: >%s<" %(MsgClusterId, MsgAttrID, modelName, manufacturer_name), MsgSrcAddr)
 
             if manufacturer_name in TUYA_SIREN_MANUFACTURER: # Sirene 
+                self.log.logging( "Cluster", 'Log', "ReadCluster - %s / %s force to Sirene" %( MsgSrcAddr, MsgSrcEp))
                 modelName += '-sirene'
 
             elif manufacturer_name in TUYA_DIMMER_MANUFACTURER: # Dimmer
+                self.log.logging( "Cluster", 'Log', "ReadCluster - %s / %s force to Dimmer" %( MsgSrcAddr, MsgSrcEp))
                 modelName += '-dimmer'
 
             elif manufacturer_name in TUYA_SWITCH_MANUFACTURER: # Switch
+                self.log.logging( "Cluster", 'Log', "ReadCluster - %s / %s force to Switch" %( MsgSrcAddr, MsgSrcEp))
                 modelName += '-switch'
 
             elif manufacturer_name in TUYA_2GANGS_SWITCH_MANUFACTURER: # 2 Gangs Switch
-               modelName += '-2Gangs-switch'
+                self.log.logging( "Cluster", 'Log', "ReadCluster - %s / %s force to 2 Gangs Switch" %( MsgSrcAddr, MsgSrcEp))
+                modelName += '-2Gangs-switch'
 
             elif manufacturer_name in TUYA_CURTAIN_MAUFACTURER:
+                self.log.logging( "Cluster", 'Log', "ReadCluster - %s / %s force to Curtain" %( MsgSrcAddr, MsgSrcEp))
                 modelName += '-curtain'
 
             elif manufacturer_name in TUYA_THERMOSTAT_MANUFACTURER: # Thermostat
                 # Thermostat BTH-002 (to be confirmed   ) and WZB-TRVL ( @d2n2e2o) and Thermostat Essentials Premium ( to be confirmed )
+                self.log.logging( "Cluster", 'Log', "ReadCluster - %s / %s force to Thermostat" %( MsgSrcAddr, MsgSrcEp))
                 modelName += '-thermostat'
 
             elif manufacturer_name in TUYA_eTRV1_MANUFACTURER: # eTRV
+                self.log.logging( "Cluster", 'Log', "ReadCluster - %s / %s force to eTRV1" %( MsgSrcAddr, MsgSrcEp))
                 modelName += '-eTRV1'
 
             elif manufacturer_name in TUYA_eTRV2_MANUFACTURER: # eTRV
+                self.log.logging( "Cluster", 'Log', "ReadCluster - %s / %s force to eTRV2" %( MsgSrcAddr, MsgSrcEp))
                 modelName += '-eTRV2'
                 
             elif manufacturer_name in TUYA_eTRV3_MANUFACTURER: # eTRV
+                self.log.logging( "Cluster", 'Log', "ReadCluster - %s / %s force to eTRV3" %( MsgSrcAddr, MsgSrcEp))
                 modelName += '-eTRV3'
 
             elif manufacturer_name in TUYA_SMARTAIR_MANUFACTURER: # Smart Air Box
+                self.log.logging( "Cluster", 'Log', "ReadCluster - %s / %s force to Smart Air" %( MsgSrcAddr, MsgSrcEp))
                 modelName += '-SmartAir'
         
-            elif manufacturer_name in TUYA_ENERGY_MANUFACTURER:
-               modelName += '-Energy'
-
-            else:
-                # eTRV
-                modelName += '-eTRV'
+            elif manufacturer_name in TUYA_ENERGY_MANUFACTURER: # Energy
+                self.log.logging( "Cluster", 'Log', "ReadCluster - %s / %s force to Energy" %( MsgSrcAddr, MsgSrcEp))
+                modelName += '-Energy'
 
             self.log.logging( "Cluster", 'Log', "ReadCluster - %s / %s - Updated Model: >%s<" %(MsgClusterId, MsgAttrID, modelName), MsgSrcAddr)
  
