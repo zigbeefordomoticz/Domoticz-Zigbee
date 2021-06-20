@@ -360,7 +360,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             elif manufacturer_name in TUYA_SMARTAIR_MANUFACTURER: # Smart Air Box
                 modelName += '-SmartAir'
         
-            elif modelName in TUYA_ENERGY_MANUFACTURER:
+            elif manufacturer_name in TUYA_ENERGY_MANUFACTURER:
                modelName += '-Energy'
 
             else:
