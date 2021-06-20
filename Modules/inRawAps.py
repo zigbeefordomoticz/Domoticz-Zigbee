@@ -101,6 +101,8 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Man
 
         elif Command == '02':
             pass
+        
+        return
 
     if cluster == '0501': # IAS ACE
         # "00"
@@ -170,12 +172,10 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Man
 
         return
 
-
     if 'Manufacturer' not in self.ListOfDevices[srcnwkid]:
         return
     
     manuf = manuf_name = ''
-
     if 'Manufacturer Name' in self.ListOfDevices[srcnwkid]:
         manuf_name = self.ListOfDevices[srcnwkid][ 'Manufacturer Name']
 
