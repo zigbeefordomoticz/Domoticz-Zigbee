@@ -42,7 +42,7 @@ TS0041_MANUF_NAME = ("_TZ3000_xkwalgne", "_TZ3000_peszejy7", "_TZ3000_8kzqqzu4",
 
 
 # TS0601 
-TUYA_ENERGY_MANUFACTURER = ( '_TZE200_fsb6zw01', ' _TZE200_byzdayie', )
+TUYA_ENERGY_MANUFACTURER = ( '_TZE200_fsb6zw01', '_TZE200_byzdayie', )
 TUYA_SMARTAIR_MANUFACTURER = ( '_TZE200_8ygsuhe1', )
 
 TUYA_SIREN_MANUFACTURER =  ( '_TZE200_d0yu2xgi', '_TYST11_d0yu2xgi' ,)
