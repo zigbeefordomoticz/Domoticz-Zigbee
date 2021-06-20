@@ -599,10 +599,6 @@ def tuya_energy_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dst
         self.log.logging( "Tuya", 'Log', "tuya_energy_response - Model: %s State Nwkid: %s/%s dp: %02x data type: %s data: %s" %(
             _ModelName, NwkId, srcEp,  dp, datatype, data),NwkId )
         store_tuya_attribute( self, NwkId, 'State', data ) 
-        if data == '00':
-            data = '01'
-        else:
-            data = '00'
         MajDomoDevice(self, Devices, NwkId, '01', '0006', data)
         
     elif dp == 0x11: # Total Energy / 1000

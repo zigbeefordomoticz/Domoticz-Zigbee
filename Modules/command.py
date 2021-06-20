@@ -188,7 +188,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             return
 
         if _model_name in ('TS0601-Energy', ):
-            tuya_energy_onoff( self, NWKID, '01' )
+            tuya_energy_onoff( self, NWKID, '00' )
             return
 
         if DeviceType == 'LivoloSWL':
@@ -357,7 +357,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             return
 
         if _model_name in ('TS0601-Energy', ):
-            tuya_energy_onoff( self, NWKID, '00' )
+            tuya_energy_onoff( self, NWKID, '01' )
             return
 
         if DeviceType == 'LivoloSWL':
