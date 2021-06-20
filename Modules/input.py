@@ -3361,16 +3361,23 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
             if selector:
                 MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, selector)
 
+    elif _ModelName == 'TS1001':
+        step_mod = MsgData[14:16]
+        up_down = step_size = transition = None
+        if len(MsgData) >= 18:
+            up_down = MsgData[16:18]
+        if len(MsgData) >= 20:
+            step_size = MsgData[18:20]
+        if len(MsgData) >= 22:
+            transition = MsgData[20:22]
+        self.log.logging(  "Input", "Log", "Decode8085 - Lidl Remote SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s step_mod: %s step_size: %s up_down: %s" % (
+            MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_, step_mod, step_size, up_down))
+
+        
     else:
-        self.log.logging( 
-            "Input",
-            "Log",
-            "Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s "
-            % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
-        )
-        self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId][
-            "0000"
-        ] = "Cmd: %s, %s" % (MsgCmd, unknown_)
+        self.log.logging(  "Input", "Log", "Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " % (
+            MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),)
+        self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId][ "0000" ] = "Cmd: %s, %s" % (MsgCmd, unknown_)
 
 
 def Decode8095(self, Devices, MsgData, MsgLQI):
@@ -3581,6 +3588,10 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
             elif MsgPayload == '03':
                 MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0006", '04') # Long Click
                 checkAndStoreAttributeValue( self, MsgSrcAddr, MsgEP,MsgClusterId, '0000', MsgPayload )
+
+    elif _ModelName == 'TS1001': # Tuya Lidl
+        self.log.logging(  "Input", "Log", "Decode8095 - Lidl Remote SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s" % (
+            MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_, ))
     
     else:
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0006", str(int(MsgCmd,16)))
