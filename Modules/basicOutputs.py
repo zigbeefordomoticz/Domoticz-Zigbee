@@ -235,6 +235,9 @@ def start_Zigate(self, Mode='Controller'):
         # self.log.logging( "BasicOutput", "Status", "Set Zigate as a Coordinator" )
         # send_zigatecmd_raw(self, "0023","00")
 
+        self.log.logging( "BasicOutput", 'Status', "Force ZiGate to Normal mode" )
+        send_zigate_mode( self, 0x00 )
+
         self.log.logging( "BasicOutput", "Status", "Start network" )
         send_zigatecmd_raw(self, "0024", "" )   # Start Network
     
