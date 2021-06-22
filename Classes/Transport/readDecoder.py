@@ -18,7 +18,7 @@ def decode_and_split_message(self, raw_message):
         self._ReqRcv += raw_message  # Add the incoming data
         #Domoticz.Debug("onMessage incoming data : '" + str(binascii.hexlify(self._ReqRcv).decode('utf-8')) + "'")
 
-    self._last_raw_message = raw_message
+    self._last_raw_message += raw_message
     
     while 1:  # Loop, detect frame and process, until there is no more frame.
         if len(self._ReqRcv) == 0:
@@ -38,7 +38,7 @@ def decode_and_split_message(self, raw_message):
         self.statistics._received += 1
         process_frame(self, AsciiMsg)
 
-        #self._last_raw_message = bytearray()
+        self._last_raw_message = bytearray()
 
 def get_raw_frame_from_raw_message( self ):
 
@@ -123,7 +123,7 @@ def check_frame_crc(self, BinMsg):
             'AsciiMsg': str(binascii.hexlify(BinMsg).decode('utf-8')),
             'LastRawMsg': str(binascii.hexlify(self._last_raw_message).decode('utf-8')),
             'len': len(BinMsg),
-            'MsgType': MsgType,
+            'MsgType': '%04x' %MsgType,
             'Length': Length,
             'ComputedChecksum': ComputedChecksum,
             'ReceivedChecksum': ReceivedChecksum,
@@ -146,7 +146,7 @@ def check_frame_lenght( self, BinMsg):
             'AsciiMsg': str(binascii.hexlify(BinMsg).decode('utf-8')),
             'LastRawMsg': str(binascii.hexlify(self._last_raw_message).decode('utf-8')),
             'len': len(BinMsg),
-            'MsgType': MsgType,
+            'MsgType': '%04x' %MsgType,
             'Length': Length,
             'ReceivedChecksum': ReceivedChecksum,
             'ComputedLength': ComputedLength,
