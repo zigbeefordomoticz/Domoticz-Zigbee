@@ -316,18 +316,31 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                             self.log.logging( "Pairing", 'Debug', '%s Binding cluster based on Conf: %s' %(NWKID,  str(cluster_to_bind)) )
 
             # Binding devices
-            for iterEp in self.ListOfDevices[NWKID]['Ep']:
-                for iterBindCluster in cluster_to_bind:      # Binding order is important
-                    if iterBindCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                        if self.pluginconf.pluginConf['capturePairingInfos']:
-                            self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'BIND_' + iterEp + '_' + iterBindCluster )
+            # Version 1
+            #for iterEp in self.ListOfDevices[NWKID]['Ep']:
+            #    for iterBindCluster in cluster_to_bind:      # Binding order is important
+            #        if iterBindCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+            #            if self.pluginconf.pluginConf['capturePairingInfos']:
+            #                self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'BIND_' + iterEp + '_' + iterBindCluster )
+#
+            #            self.log.logging( "Pairing", 'Debug', 'Request a Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster) )
+            #            # If option enabled, unbind
+            #            if self.pluginconf.pluginConf['doUnbindBind']:
+            #                unbindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
+            #            # Finaly binding
+            #            bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
+            # Version 2
+            if 'Epv2' in self.ListOfDevices[NWKID]:
+                for ep in self.ListOfDevices[NWKID]['Epv2']:
+                    if 'ClusterIn' in self.ListOfDevices[NWKID]['Epv2'][ ep ]:
+                        for iterBindCluster in self.ListOfDevices[NWKID]['Epv2'][ ep ]['ClusterIn']:
+                            self.log.logging( "Pairing", 'Debug', 'Request a Bind for %s/%s on ClusterIn %s' %(NWKID, iterEp, iterBindCluster) )
+                            if self.pluginconf.pluginConf['doUnbindBind']:
+                                unbindDevice( self, self.ListOfDevices[NWKID]['IEEE'], ep, iterBindCluster)
+                            # Finaly binding
+                            bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], ep, iterBindCluster)
 
-                        self.log.logging( "Pairing", 'Debug', 'Request a Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster) )
-                        # If option enabled, unbind
-                        if self.pluginconf.pluginConf['doUnbindBind']:
-                            unbindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
-                        # Finaly binding
-                        bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
+
 
             # Just after Binding Enable Opple with Magic Word
             if  self.ListOfDevices[NWKID]['Model'] in ('lumi.remote.b686opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b286opcn01',
