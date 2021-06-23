@@ -3567,7 +3567,7 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
                 checkAndStoreAttributeValue( self, MsgSrcAddr, MsgEP,MsgClusterId, '0000', MsgPayload )
     
     else:
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0006", MsgCmd)
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0006", str(int(MsgCmd,16)))
         self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId][ "0000" ] = "Cmd: %s, %s" % (MsgCmd, unknown_)
         self.log.logging( "Input","Log","Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s "
             % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr, )

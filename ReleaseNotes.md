@@ -21,6 +21,10 @@ Release Numbering
 - Odd numbers --> Stable5
 - Even numbers  --> Beta
 
+##    June 2021   - 5.1.05
+- [Technical] - Update of Readme.md to better indicate the way to move from one branch to an other
+- [Issue] - ZiGate+ Wifi not starting
+
 ## 19 June 2021   - 5.1.04
 - [Hardware] - Philips Hue Hue White Ambiance GU10
 - [Technical] - various fixes

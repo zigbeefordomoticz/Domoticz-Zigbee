@@ -165,6 +165,7 @@ class WebServer(object):
             if self.pluginParameters['Mode1'] != 'None':
                 self.zigatedata['startZigateNeeded'] = True
                 #start_Zigate( self )
+                sendZigateCmd(self, "0002", "00")# Force Zigate to Normal mode
                 sendZigateCmd(self, "0011", "" ) # Software Reset
             action = {'Name': 'Software reboot of ZiGate', 'TimeStamp': int(time())}
         _response["Data"] = json.dumps( action , sort_keys=True )

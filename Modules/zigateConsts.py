@@ -663,10 +663,10 @@ CFG_RPT_ATTRIBUTESbyCLUSTERS = {
     '0405': {'Attributes': {'0000': {'DataType': '21', 'MinInterval': '003C', 'MaxInterval': '0384', 'TimeOut': '0000', 'Change': '0001'}}},
 
     # Occupancy Sensing
-    '0406': {'Attributes': {'0000': {'DataType': '18', 'MinInterval': '0001', 'MaxInterval': '012C', 'TimeOut': '0000', 'Change': '01'},
+    '0406': {'Attributes': {'0000': {'DataType': '18', 'MinInterval': '0001', 'MaxInterval': '012C', 'TimeOut': '0000', 'Change': '01'}}},
 
                             # Sensitivy for HUE Motion
-                            '0030': {'DataType': '20', 'MinInterval': '0005', 'MaxInterval': '1C20', 'TimeOut': '0000', 'Change': '01'}}},
+                            #'0030': {'DataType': '20', 'MinInterval': '0005', 'MaxInterval': '1C20', 'TimeOut': '0000', 'Change': '01'}}},
 
     # IAS ZOne
     '0500': {'Attributes': {'0000': {'DataType': '30', 'MinInterval': '003C', 'MaxInterval': '0384', 'TimeOut': '0000', 'Change': '01'},
