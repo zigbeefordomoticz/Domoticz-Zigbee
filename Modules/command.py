@@ -189,6 +189,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
 
         if _model_name in ('TS0601-Energy', ):
             tuya_energy_onoff( self, NWKID, '00' )
+            UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return
 
         if DeviceType == 'LivoloSWL':
@@ -358,6 +359,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
 
         if _model_name in ('TS0601-Energy', ):
             tuya_energy_onoff( self, NWKID, '01' )
+            UpdateDevice_v2(self, Devices, Unit, 0, "On",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return
 
         if DeviceType == 'LivoloSWL':
