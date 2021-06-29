@@ -354,12 +354,12 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         if _model_name in ('TS0601-switch', 'TS0601-2Gangs-switch', 'TS0601-2Gangs-switch'):
             self.log.logging( "Command", 'Debug', "mgtCommand : On for Tuya Switches Gang/EPout: %s" %EPout)
             tuya_switch_command( self, NWKID, '01', gang=int(EPout,16))
-            UpdateDevice_v2(self, Devices, Unit, 0, "On",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            UpdateDevice_v2(self, Devices, Unit, 1, "On",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return
 
         if _model_name in ('TS0601-Energy', ):
             tuya_energy_onoff( self, NWKID, '01' )
-            UpdateDevice_v2(self, Devices, Unit, 0, "On",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            UpdateDevice_v2(self, Devices, Unit, 1, "On",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return
 
         if DeviceType == 'LivoloSWL':
