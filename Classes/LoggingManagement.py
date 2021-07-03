@@ -18,7 +18,7 @@ import threading
 import time
 from queue import Queue, PriorityQueue
 import logging
-from logging.handlers import TimedRotatingFileHandler
+from logging.handlers import TimedRotatingFileHandler, RotatingFileHandler
 
 
 class LoggingManagement:
@@ -84,22 +84,42 @@ class LoggingManagement:
 
     def openLogFile(self):
 
-        if not self.pluginconf.pluginConf["useDomoticzLog"]:
+        if self.pluginconf.pluginConf["enablePluginLogging"]:
             logfilename = (
                 self.pluginconf.pluginConf["pluginLogs"]
-                + "/Zigate_"
+                + "/PluginZigate_"
                 + "%02d" % self.HardwareID
                 + ".log"
             )
-            logging.basicConfig(
+            _backupCount = 7 # Keep 7 days of Logging
+            _maxBytes = 0
+            if 'loggingBackupCount' in self.pluginconf.pluginConf:
+                _backupCount = int(self.pluginconf.pluginConf['loggingBackupCount'])
+            if 'loggingMaxMegaBytes' in self.pluginconf.pluginConf:
+                _maxBytes = int(self.pluginconf.pluginConf['loggingBackupCount']) * 1024 * 1024
+
+            if _maxBytes == 0:
+                # Enable TimedRotating
+                logging.basicConfig(
+                    level=logging.DEBUG,
+                    format="%(asctime)s %(levelname)-8s:%(message)s",
+                    handlers=[
+                        TimedRotatingFileHandler(
+                            logfilename, when="midnight", interval=1, backupCount=_backupCount
+                        )
+                    ],
+                )
+            else:
+                # Enable RotatingFileHandler
+                logging.basicConfig(
                 level=logging.DEBUG,
                 format="%(asctime)s %(levelname)-8s:%(message)s",
                 handlers=[
-                    TimedRotatingFileHandler(
-                        logfilename, when="midnight", interval=1, backupCount=7
+                    RotatingFileHandler(
+                        logfilename,  maxBytes=_maxBytes, backupCount=_backupCount
                     )
                 ],
-            )
+                )           
 
         jsonLogHistory = (
             self.pluginconf.pluginConf["pluginLogs"]
@@ -198,7 +218,7 @@ class LoggingManagement:
 
 def _loggingStatus(self, thread_name, message):
 
-    if self.pluginconf.pluginConf["useDomoticzLog"]:
+    if not self.pluginconf.pluginConf["enablePluginLogging"]:
         if self.pluginconf.pluginConf["logThreadName"]:
             Domoticz.Status(" [%17s] " % thread_name + message)
         else:
@@ -209,7 +229,7 @@ def _loggingStatus(self, thread_name, message):
 
 def _loggingLog(self, thread_name, message):
 
-    if self.pluginconf.pluginConf["useDomoticzLog"]:
+    if not self.pluginconf.pluginConf["enablePluginLogging"]:
         if self.pluginconf.pluginConf["logThreadName"]:
             Domoticz.Log(" [%17s] " % thread_name + message)
         else:
@@ -219,7 +239,7 @@ def _loggingLog(self, thread_name, message):
 
 
 def _loggingDebug(self, thread_name, message):
-    if self.pluginconf.pluginConf["useDomoticzLog"]:
+    if not self.pluginconf.pluginConf["enablePluginLogging"]:
         if self.pluginconf.pluginConf["logThreadName"]:
             Domoticz.Log(" [%17s] " % thread_name + message)
         else:
@@ -251,7 +271,7 @@ def loggingError(self, thread_name, module, message, nwkid, context):
     self._newError = True
 
     # Log to file
-    if not self.pluginconf.pluginConf["useDomoticzLog"]:
+    if self.pluginconf.pluginConf["enablePluginLogging"]:
         logging.error(" [%17s] " % thread_name + message)
 
     # Log empty
