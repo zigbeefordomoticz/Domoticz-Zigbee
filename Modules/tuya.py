@@ -596,12 +596,12 @@ def tuya_smartair_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, d
 # Tuya Smart Energy DIN Rail
 def tuya_energy_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
 
-    if dp == 0x01: # State ???
+    if dp == 0x01: # State On/Off
         self.log.logging( "Tuya", 'Log', "tuya_energy_response - Model: %s State Nwkid: %s/%s dp: %02x data type: %s data: %s" %(
             _ModelName, NwkId, srcEp,  dp, datatype, data),NwkId )
         store_tuya_attribute( self, NwkId, 'State', data ) 
         MajDomoDevice(self, Devices, NwkId, '01', '0006', data)
-        
+
     elif dp == 0x11: # Total Energy * 10
         analogValue = int(data,16) * 10
         self.log.logging( "Tuya", 'Log', "tuya_energy_response - Model: %s Energy Nwkid: %s/%s dp: %02x data type: %s data: %s" %(
