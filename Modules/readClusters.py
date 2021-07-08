@@ -33,7 +33,7 @@ from Classes.LoggingManagement import LoggingManagement
 
 from Modules.tuya import ( TUYA_TS0601_MODEL_NAME, TUYA_SIREN_MANUFACTURER, TUYA_DIMMER_MANUFACTURER, 
                             TUYA_ENERGY_MANUFACTURER, TUYA_SWITCH_MANUFACTURER, TUYA_2GANGS_SWITCH_MANUFACTURER, TUYA_CURTAIN_MAUFACTURER, TUYA_THERMOSTAT_MANUFACTURER,
-                            TUYA_eTRV1_MANUFACTURER, TUYA_eTRV2_MANUFACTURER , TUYA_eTRV3_MANUFACTURER, TUYA_SMARTAIR_MANUFACTURER)
+                            TUYA_eTRV1_MANUFACTURER, TUYA_eTRV2_MANUFACTURER , TUYA_eTRV3_MANUFACTURER, TUYA_SMARTAIR_MANUFACTURER, TUYA_WATER_TIMER)
 
 def decodeAttribute(self, AttType, Attribute, handleErrors=False):
 
@@ -326,7 +326,6 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             # https://github.com/dresden-elektronik/deconz-rest-plugin/wiki/Tuya-devices-List
             
             modelName = 'TS0601'
-
             self.log.logging( "Cluster", 'Log', "ReadCluster - %s / %s - Recepion Model: >%s< ManufName: >%s<" %(MsgClusterId, MsgAttrID, modelName, manufacturer_name), MsgSrcAddr)
 
             if manufacturer_name in TUYA_SIREN_MANUFACTURER: # Sirene 
@@ -373,6 +372,10 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             elif manufacturer_name in TUYA_ENERGY_MANUFACTURER: # Energy
                 self.log.logging( "Cluster", 'Log', "ReadCluster - %s / %s force to Energy" %( MsgSrcAddr, MsgSrcEp))
                 modelName += '-Energy'
+
+            elif manufacturer_name in TUYA_WATER_TIMER: # Parkside Water timer
+                self.log.logging( "Cluster", 'Log', "ReadCluster - %s / %s force to Watering Timer" %( MsgSrcAddr, MsgSrcEp))
+                modelName += '-Parkside-Watering-Timer'
 
             self.log.logging( "Cluster", 'Log', "ReadCluster - %s / %s - Updated Model: >%s<" %(MsgClusterId, MsgAttrID, modelName), MsgSrcAddr)
  
@@ -934,6 +937,17 @@ def Cluster0006( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             self.log.logging( "Cluster", 'Debug', "ReadCluster - ClusterId=0006 - Konke Multi Purpose Switch reception General: On/Off: %s" %value , MsgSrcAddr)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value)
             checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, MsgClusterData )
+            return
+
+        if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TS0601-Parkside-Watering-Timer':
+            self.log.logging( "Cluster", 'Log', "ReadCluster - ClusterId=0006 - %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, : %s" \
+                 %(MsgSrcAddr, MsgSrcEp,MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
+            if MsgClusterData == '00':
+                MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, '01')
+                checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, '01' )
+            elif MsgClusterData == '01':
+                MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, '00')
+                checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, '00' )
             return
 
         if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TI0001':

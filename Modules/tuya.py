@@ -42,6 +42,7 @@ TS0041_MANUF_NAME = ("_TZ3000_xkwalgne", "_TZ3000_peszejy7", "_TZ3000_8kzqqzu4",
 
 
 # TS0601 
+TUYA_WATER_TIMER = ( '_TZE200_htnnfasr', )
 TUYA_ENERGY_MANUFACTURER = ( '_TZE200_fsb6zw01', '_TZE200_byzdayie', )
 TUYA_SMARTAIR_MANUFACTURER = ( '_TZE200_8ygsuhe1', )
 
@@ -78,7 +79,8 @@ TUYA_MANUFACTURER_NAME = ( TUYA_ENERGY_MANUFACTURER + TS011F_MANUF_NAME + TS0041
                             TUYA_CURTAIN_MAUFACTURER +  
                             TUYA_THERMOSTAT_MANUFACTURER + 
                             TUYA_eTRV1_MANUFACTURER + TUYA_eTRV2_MANUFACTURER + TUYA_eTRV3_MANUFACTURER + TUYA_eTRV_MANUFACTURER +
-                            TUYA_SMARTAIR_MANUFACTURER )
+                            TUYA_SMARTAIR_MANUFACTURER +
+                            TUYA_WATER_TIMER )
 
 def tuya_registration(self, nwkid, device_reset=False):
     
