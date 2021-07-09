@@ -395,21 +395,66 @@ def tuya_switch_relay_status( self, NwkId, gang=0x01, status=0xff):
     self.log.logging( "Tuya", 'Debug', "tuya_switch_relay_status - action: %s data: %s" %(action, data))
     tuya_cmd( self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)   
 
+def tuya_watertimer_command( self, NwkId, onoff, gang=0x01):
+     
+    self.log.logging( "Tuya", 'Log', "tuya_switch_command - %s OpenClose: %s on gang: %s" %(NwkId, onoff, gang),NwkId )
+    # determine which Endpoint
+    if gang  not in  (0x01, 0x02, 0x03):
+        self.log.logging( "Tuya", 'Error', "tuya_switch_command - Unexpected Gang: %s" %gang)
+        return
+    if onoff  not in ( '00', '01'):
+        self.log.logging( "Tuya", 'Error', "tuya_switch_command - Unexpected OnOff: %s" %onoff)
+        return
+
+    EPout = '01'
+    cluster_frame = '11'
+    cmd = '00' # Command 
+
+    if onoff == '01':
+        sqn = get_and_inc_SQN( self, NwkId )
+        action = '0b02' 
+        data = '0000012c'
+        tuya_cmd( self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)  
+
+    sqn = get_and_inc_SQN( self, NwkId )
+    action = '%02x01' %gang # Data Type 0x01 - Bool
+    data = onoff
+    self.log.logging( "Tuya", 'Log', "tuya_switch_command - action: %s data: %s" %(action, data))
+    tuya_cmd( self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)  
+
+
+
+
 def tuya_watertimer_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
 
-    self.log.logging( "Tuya", 'Log', "tuya_response - Model: %s Nwkid: %s/%s dp: %02x data type: %s data: %s" %(
+    self.log.logging( "Tuya", 'Log', "tuya_response - Model: %s Nwkid: %s/%s dp: %02x data type: %02x data: %s" %(
         _ModelName, NwkId, srcEp,  dp, datatype, data),NwkId )
 
     if dp == 0x01:
+        # Openned
+        # tuya_response - Model: TS0601-Parkside-Watering-Timer Nwkid: a82e/01 dp: 06 data type: 2 data: 00000001
+        # tuya_response - Model: TS0601-Parkside-Watering-Timer Nwkid: a82e/01 dp: 01 data type: 1 data: 010502000400000001
+
+        # tuya_response - Model: TS0601-Parkside-Watering-Timer Nwkid: a82e/01 dp: 06 data type: 2 data: 00000001
+        # tuya_response - Model: TS0601-Parkside-Watering-Timer Nwkid: a82e/01 dp: 01 data type: 1 data: 010502000400000001
+
+        # Closing via Button
+        # tuya_response - Model: TS0601-Parkside-Watering-Timer Nwkid: a82e/01 dp: 01 data type: 1 data: 000502000400000001
+
+        # tuya_response - Model: TS0601-Parkside-Watering-Timer Nwkid: a82e/01 dp: 06 data type: 2 data: 00000000
+        # tuya_response - Model: TS0601-Parkside-Watering-Timer Nwkid: a82e/01 dp: 01 data type: 1 data: 000502000400000001
+
         store_tuya_attribute( self, NwkId, 'Valve 0x01', data ) 
 
+
     elif dp == 0x05: # 
-        state = str(int(data))
-        store_tuya_attribute( self, NwkId, 'Valve 0x05', state ) 
+        store_tuya_attribute( self, NwkId, 'Valve 0x05', data ) 
    
     elif dp == 0x06 and datatype == 0x02: # Valve State
         state = '%02d' %int(data)
         store_tuya_attribute( self, NwkId, 'Valve state', state ) 
+        self.log.logging( "Tuya", 'Log', "tuya_response - ------ Request  MajDomoDevice(self, Devices, %s, %s, '0006', %s)" %(
+            NwkId, srcEp,  state))
         MajDomoDevice(self, Devices, NwkId, srcEp, '0006', state)
     
     elif dp == 0x0b:
