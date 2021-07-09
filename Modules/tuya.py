@@ -407,7 +407,7 @@ def tuya_watertimer_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID,
         state = str(int(data))
         store_tuya_attribute( self, NwkId, 'Valve 0x05', state ) 
    
-    elif dp == 0x06: # Valve State
+    elif dp == 0x06 and datatype == 0x02: # Valve State
         state = str(int(data))
         store_tuya_attribute( self, NwkId, 'Valve state', state ) 
         MajDomoDevice(self, Devices, NwkId, srcEp, '0006', state)
