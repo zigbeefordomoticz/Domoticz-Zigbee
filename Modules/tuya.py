@@ -191,6 +191,9 @@ def tuya_response( self,Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, 
     if _ModelName in ('TS0601-switch', 'TS0601-2Gangs-switch', 'TS0601-2Gangs-switch', 'TS0601-Parkside-Watering-Timer'):
         tuya_switch_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
 
+    elif  _ModelName in ( 'TS0601-Parkside-Watering-Timer'):
+        tuya_watertimer_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
+
     elif _ModelName == 'TS0601-SmartAir':
         tuya_smartair_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
 
@@ -392,6 +395,40 @@ def tuya_switch_relay_status( self, NwkId, gang=0x01, status=0xff):
     self.log.logging( "Tuya", 'Debug', "tuya_switch_relay_status - action: %s data: %s" %(action, data))
     tuya_cmd( self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)   
 
+def tuya_watertimer_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
+
+    self.log.logging( "Tuya", 'Log', "tuya_response - Model: %s Nwkid: %s/%s dp: %02x data type: %s data: %s" %(
+        _ModelName, NwkId, srcEp,  dp, datatype, data),NwkId )
+
+    if dp == 0x01:
+        store_tuya_attribute( self, NwkId, 'Valve 0x01', data ) 
+
+    elif dp == 0x05: # 
+        state = str(int(data))
+        store_tuya_attribute( self, NwkId, 'Valve 0x05', state ) 
+   
+    elif dp == 0x06: # Valve State
+        state = str(int(data))
+        store_tuya_attribute( self, NwkId, 'Valve state', state ) 
+        MajDomoDevice(self, Devices, NwkId, srcEp, '0006', state)
+    
+    elif dp == 0x0b:
+        store_tuya_attribute( self, NwkId, 'Valve 0x0b', data )
+
+    elif dp == 0x65:
+        store_tuya_attribute( self, NwkId, 'Valve 0x65', data )
+    elif dp == 0x66:
+        store_tuya_attribute( self, NwkId, 'Valve 0x66', data )
+    elif dp == 0x67:
+        store_tuya_attribute( self, NwkId, 'Valve 0x67', data )        
+    elif dp == 0x68:
+        store_tuya_attribute( self, NwkId, 'Valve 0x68', data )
+    elif dp == 0x69:
+        store_tuya_attribute( self, NwkId, 'Valve 0x69', data )
+    elif dp == 0x6a:
+        store_tuya_attribute( self, NwkId, 'Valve 0x6a', data )
+    elif dp == 0x6b:
+        store_tuya_attribute( self, NwkId, 'Valve 0x6b', data )
 
 
 # Tuya TS0601 - Curtain

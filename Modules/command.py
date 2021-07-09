@@ -187,6 +187,18 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return
 
+        if _model_name == 'TS0601-Parkside-Watering-Timer':
+            self.log.logging( "Command", 'Log', "mgtCommand : On for Tuya ParkSide Water Time" )
+            if ( 'Param' in self.ListOfDevices[ NWKID ] 
+                and 'TimerMode' in self.ListOfDevices[ NWKID ]['Param'] 
+                and self.ListOfDevices[ NWKID ]['Param']['TimerMode']
+            ):
+                self.log.logging( "Command", 'Log', "mgtCommand : On for Tuya ParkSide Water Time - Timer Mode" )
+                tuya_switch_command( self, NWKID, '00', gang=int(EPout,16))
+            else:
+                self.log.logging( "Command", 'Log', "mgtCommand : On for Tuya ParkSide Water Time - OnOff Mode" )
+                sendZigateCmd(self, "0092","02" + NWKID + ZIGATE_EP + EPout + "00")
+
         if _model_name in ('TS0601-Energy', ):
             tuya_energy_onoff( self, NWKID, '00' )
             UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
@@ -351,11 +363,24 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         self.log.logging( "Command", 'Debug', "mgtCommand : On for Device: %s EPout: %s Unit: %s DeviceType: %s ModelName: %s" %(
             NWKID, EPout, Unit, DeviceType, _model_name), NWKID)
 
-        if _model_name in ('TS0601-switch', 'TS0601-2Gangs-switch', 'TS0601-2Gangs-switch', 'TS0601-Parkside-Watering-Timer'):
+        if _model_name in ('TS0601-switch', 'TS0601-2Gangs-switch', 'TS0601-2Gangs-switch',):
             self.log.logging( "Command", 'Debug', "mgtCommand : On for Tuya Switches Gang/EPout: %s" %EPout)
+                
             tuya_switch_command( self, NWKID, '01', gang=int(EPout,16))
             UpdateDevice_v2(self, Devices, Unit, 1, "On",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return
+
+        if _model_name == 'TS0601-Parkside-Watering-Timer':
+            self.log.logging( "Command", 'Debug', "mgtCommand : On for Tuya ParkSide Water Time" )
+            if ( 'Param' in self.ListOfDevices[ NWKID ] 
+                and 'TimerMode' in self.ListOfDevices[ NWKID ]['Param'] 
+                and self.ListOfDevices[ NWKID ]['Param']['TimerMode']
+            ):
+                self.log.logging( "Command", 'Log', "mgtCommand : On for Tuya ParkSide Water Time - Timer Mode" )
+                tuya_switch_command( self, NWKID, '01', gang=int(EPout,16))
+            else:
+                self.log.logging( "Command", 'Log', "mgtCommand : On for Tuya ParkSide Water Time - OnOff Mode" )
+                sendZigateCmd(self, "0092","02" + NWKID + ZIGATE_EP + EPout + "01")
 
         if _model_name in ('TS0601-Energy', ):
             tuya_energy_onoff( self, NWKID, '01' )
