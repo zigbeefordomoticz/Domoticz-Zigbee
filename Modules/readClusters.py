@@ -942,12 +942,8 @@ def Cluster0006( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TS0601-Parkside-Watering-Timer':
             self.log.logging( "Cluster", 'Log', "ReadCluster - ClusterId=0006 - %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, : %s" \
                  %(MsgSrcAddr, MsgSrcEp,MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
-            if MsgClusterData == '00':
-                MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, '01')
-                checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, '01' )
-            elif MsgClusterData == '01':
-                MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, '00')
-                checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, '00' )
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgClusterData)
+            checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData )
             return
 
         if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TI0001':
