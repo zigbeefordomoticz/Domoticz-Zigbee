@@ -351,7 +351,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         self.log.logging( "Command", 'Debug', "mgtCommand : On for Device: %s EPout: %s Unit: %s DeviceType: %s ModelName: %s" %(
             NWKID, EPout, Unit, DeviceType, _model_name), NWKID)
 
-        if _model_name in ('TS0601-switch', 'TS0601-2Gangs-switch', 'TS0601-2Gangs-switch'):
+        if _model_name in ('TS0601-switch', 'TS0601-2Gangs-switch', 'TS0601-2Gangs-switch', 'TS0601-Parkside-Watering-Timer'):
             self.log.logging( "Command", 'Debug', "mgtCommand : On for Tuya Switches Gang/EPout: %s" %EPout)
             tuya_switch_command( self, NWKID, '01', gang=int(EPout,16))
             UpdateDevice_v2(self, Devices, Unit, 1, "On",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)

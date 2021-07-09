@@ -188,7 +188,7 @@ def tuya_response( self,Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, 
     self.log.logging( "Tuya", 'Debug', "tuya_response - Model: %s Nwkid: %s/%s dp: %02x dt: %02x data: %s"
         %(_ModelName, NwkId, srcEp, dp, datatype, data),NwkId )
 
-    if _ModelName in ('TS0601-switch', 'TS0601-2Gangs-switch', 'TS0601-2Gangs-switch'):
+    if _ModelName in ('TS0601-switch', 'TS0601-2Gangs-switch', 'TS0601-2Gangs-switch', 'TS0601-Parkside-Watering-Timer'):
         tuya_switch_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
 
     elif _ModelName == 'TS0601-SmartAir':

@@ -489,8 +489,8 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             elif 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( 'TS0601-Energy', 'TS0601-switch', 'TS0601-2Gangs-switch', 'TS0601-SmartAir'):
                 tuya_registration(self, NWKID)
 
-            #elif 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( 'TS0601-Parkside-Watering-Timer',):
-            #    tuya_registration(self, NWKID)
+            elif 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( 'TS0601-Parkside-Watering-Timer',):
+                tuya_registration(self, NWKID)
 
             # Reset HB in order to force Read Attribute Status
             self.ListOfDevices[NWKID]['Heartbeat'] = 0
