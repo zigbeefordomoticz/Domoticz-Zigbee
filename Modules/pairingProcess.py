@@ -317,28 +317,28 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
 
             # Binding devices
             # Version 1
-            #for iterEp in self.ListOfDevices[NWKID]['Ep']:
-            #    for iterBindCluster in cluster_to_bind:      # Binding order is important
-            #        if iterBindCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-            #            if self.pluginconf.pluginConf['capturePairingInfos']:
-            #                self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'BIND_' + iterEp + '_' + iterBindCluster )
-#
-            #            self.log.logging( "Pairing", 'Debug', 'Request a Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster) )
-            #            # If option enabled, unbind
-            #            if self.pluginconf.pluginConf['doUnbindBind']:
-            #                unbindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
-            #            # Finaly binding
-            #            bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
+            for iterEp in self.ListOfDevices[NWKID]['Ep']:
+                for iterBindCluster in cluster_to_bind:      # Binding order is important
+                    if iterBindCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                        if self.pluginconf.pluginConf['capturePairingInfos']:
+                            self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'BIND_' + iterEp + '_' + iterBindCluster )
+
+                        self.log.logging( "Pairing", 'Debug', 'Request a Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster) )
+                        # If option enabled, unbind
+                        if self.pluginconf.pluginConf['doUnbindBind']:
+                            unbindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
+                        # Finaly binding
+                        bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
             # Version 2
-            if 'Epv2' in self.ListOfDevices[NWKID]:
-                for ep in self.ListOfDevices[NWKID]['Epv2']:
-                    if 'ClusterIn' in self.ListOfDevices[NWKID]['Epv2'][ ep ]:
-                        for iterBindCluster in self.ListOfDevices[NWKID]['Epv2'][ ep ]['ClusterIn']:
-                            self.log.logging( "Pairing", 'Debug', 'Request a Bind for %s/%s on ClusterIn %s' %(NWKID, iterEp, iterBindCluster) )
-                            if self.pluginconf.pluginConf['doUnbindBind']:
-                                unbindDevice( self, self.ListOfDevices[NWKID]['IEEE'], ep, iterBindCluster)
-                            # Finaly binding
-                            bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], ep, iterBindCluster)
+            #if 'Epv2' in self.ListOfDevices[NWKID]:
+            #    for ep in self.ListOfDevices[NWKID]['Epv2']:
+            #        if 'ClusterIn' in self.ListOfDevices[NWKID]['Epv2'][ ep ]:
+            #            for iterBindCluster in self.ListOfDevices[NWKID]['Epv2'][ ep ]['ClusterIn']:
+            #                self.log.logging( "Pairing", 'Debug', 'Request a Bind for %s/%s on ClusterIn %s' %(NWKID, iterEp, iterBindCluster) )
+            #                if self.pluginconf.pluginConf['doUnbindBind']:
+            #                    unbindDevice( self, self.ListOfDevices[NWKID]['IEEE'], ep, iterBindCluster)
+            #                # Finaly binding
+            #                bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], ep, iterBindCluster)
 
 
 
@@ -478,7 +478,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                 casaia_pairing( self, NWKID)
 
             elif 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( 'TS0601-sirene'):
-                tuya_sirene_registration(self, NWKID)
+                tuya_sirene_registration(self, NWKID, device_reset=True)
 
             elif 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( TUYA_eTRV_MODEL ):
                 tuya_eTRV_registration( self, NWKID, True)
@@ -487,7 +487,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                 tuya_TS0121_registration( self, NWKID)
 
             elif 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( 'TS0601-Energy', 'TS0601-switch', 'TS0601-2Gangs-switch', 'TS0601-SmartAir'):
-                tuya_registration(self, NWKID)
+                tuya_registration(self, NWKID, device_reset=True)
 
             elif 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( 'TS0601-Parkside-Watering-Timer',):
                 tuya_registration(self, NWKID)
