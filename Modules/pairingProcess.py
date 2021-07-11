@@ -301,46 +301,48 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             cluster_to_bind = CLUSTERS_LIST
 
             # Checking if anything must be done before Bindings, and if we have to take some specific bindings
-            if 'Model' in self.ListOfDevices[NWKID]:
-                if self.ListOfDevices[NWKID]['Model'] != {}:
-                    _model = self.ListOfDevices[NWKID]['Model']
-                    if _model in self.DeviceConf:
-                        # Check if we have to unbind clusters
-                        if 'ClusterToUnbind' in self.DeviceConf[ _model ]:
-                            for iterEp, iterUnBindCluster in self.DeviceConf[ _model ]['ClusterToUnbind']:
-                                unbindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterUnBindCluster)
-    
-                        # Check if we have specific clusters to Bind                     
-                        if 'ClusterToBind' in self.DeviceConf[ _model ]:
-                            cluster_to_bind = self.DeviceConf[ _model ]['ClusterToBind']             
-                            self.log.logging( "Pairing", 'Debug', '%s Binding cluster based on Conf: %s' %(NWKID,  str(cluster_to_bind)) )
+            if 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['Model'] != {} and self.ListOfDevices[NWKID]['Model'] in self.DeviceConf:
+                _model = self.ListOfDevices[NWKID]['Model']
+                # Check if we have to unbind clusters
+                if 'ClusterToUnbind' in self.DeviceConf[ _model ]:
+                    for iterEp, iterUnBindCluster in self.DeviceConf[ _model ]['ClusterToUnbind']:
+                        unbindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterUnBindCluster)
 
-            # Binding devices
-            # Version 1
-            for iterEp in self.ListOfDevices[NWKID]['Ep']:
-                for iterBindCluster in cluster_to_bind:      # Binding order is important
-                    if iterBindCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                        if self.pluginconf.pluginConf['capturePairingInfos']:
-                            self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'BIND_' + iterEp + '_' + iterBindCluster )
-
-                        self.log.logging( "Pairing", 'Debug', 'Request a Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster) )
-                        # If option enabled, unbind
-                        if self.pluginconf.pluginConf['doUnbindBind']:
-                            unbindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
-                        # Finaly binding
-                        bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
-            # Version 2
-            #if 'Epv2' in self.ListOfDevices[NWKID]:
-            #    for ep in self.ListOfDevices[NWKID]['Epv2']:
-            #        if 'ClusterIn' in self.ListOfDevices[NWKID]['Epv2'][ ep ]:
-            #            for iterBindCluster in self.ListOfDevices[NWKID]['Epv2'][ ep ]['ClusterIn']:
-            #                self.log.logging( "Pairing", 'Debug', 'Request a Bind for %s/%s on ClusterIn %s' %(NWKID, iterEp, iterBindCluster) )
-            #                if self.pluginconf.pluginConf['doUnbindBind']:
-            #                    unbindDevice( self, self.ListOfDevices[NWKID]['IEEE'], ep, iterBindCluster)
-            #                # Finaly binding
-            #                bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], ep, iterBindCluster)
-
-
+                # Check if we have specific clusters to Bind                     
+                if 'ClusterToBind' in self.DeviceConf[ _model ]:
+                    cluster_to_bind = self.DeviceConf[ _model ]['ClusterToBind']             
+                    self.log.logging( "Pairing", 'Debug', '%s Binding cluster based on Conf: %s' %(NWKID,  str(cluster_to_bind)) )
+                    for x in self.DeviceConf[ _model ][ 'Ep' ]:
+                        for y in cluster_to_bind:
+                            self.log.logging( "Pairing", 'Debug', 'Request a Bind for %s/%s on Cluster %s' %(NWKID, x, y) )
+                            # If option enabled, unbind
+                            if self.pluginconf.pluginConf['doUnbindBind']:
+                                unbindDevice( self, self.ListOfDevices[NWKID]['IEEE'], x, y)
+                            # Finaly binding
+                            bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], x, y)
+            else:
+                # Version 1
+                # for iterEp in self.ListOfDevices[NWKID]['Ep']:
+                #     for iterBindCluster in cluster_to_bind:      # Binding order is important
+                #         if iterBindCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                #             if self.pluginconf.pluginConf['capturePairingInfos']:
+                #                 self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'BIND_' + iterEp + '_' + iterBindCluster )
+                #             self.log.logging( "Pairing", 'Debug', 'Request a Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster) )
+                #             # If option enabled, unbind
+                #             if self.pluginconf.pluginConf['doUnbindBind']:
+                #                 unbindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
+                #             # Finaly binding
+                #             bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
+                # Version 2
+                if 'Epv2' in self.ListOfDevices[NWKID]:
+                    for ep in self.ListOfDevices[NWKID]['Epv2']:
+                        if 'ClusterIn' in self.ListOfDevices[NWKID]['Epv2'][ ep ]:
+                            for iterBindCluster in self.ListOfDevices[NWKID]['Epv2'][ ep ]['ClusterIn']:
+                                self.log.logging( "Pairing", 'Debug', 'Request a Bind for %s/%s on ClusterIn %s' %(NWKID, iterEp, iterBindCluster) )
+                                if self.pluginconf.pluginConf['doUnbindBind']:
+                                    unbindDevice( self, self.ListOfDevices[NWKID]['IEEE'], ep, iterBindCluster)
+                                # Finaly binding
+                                bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], ep, iterBindCluster)
 
             # Just after Binding Enable Opple with Magic Word
             if  self.ListOfDevices[NWKID]['Model'] in ('lumi.remote.b686opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b286opcn01',

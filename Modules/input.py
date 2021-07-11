@@ -1618,16 +1618,16 @@ def Decode8043(self, Devices, MsgData, MsgLQI):  # Reception Simple descriptor r
                     self.ListOfDevices[MsgDataShAddr]["Ep"][MsgDataEp] = {}
                 if MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]["Ep"][MsgDataEp]:
                     self.ListOfDevices[MsgDataShAddr]["Ep"][MsgDataEp][ MsgDataCluster ] = {}
-
-                # Endpoint V2
-                if MsgDataEp not in self.ListOfDevices[MsgDataShAddr]["Epv2"]:
-                    self.ListOfDevices[MsgDataShAddr]["Epv2"][MsgDataEp] = {}
-                if "ClusterIn" not in self.ListOfDevices[MsgDataShAddr]["Epv2"][MsgDataEp]:
-                    self.ListOfDevices[MsgDataShAddr]["Epv2"][MsgDataEp][ "ClusterIn" ] = {}
-                if MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]["Epv2"][MsgDataEp][ "ClusterIn" ]:
-                    self.ListOfDevices[MsgDataShAddr]["Epv2"][MsgDataEp]["ClusterIn"][ MsgDataCluster ] = {}
             else:
                 self.log.logging( "Pairing", "Debug", "[%s]    NEW OBJECT: %s we keep DeviceConf info" % ("-", MsgDataShAddr), )
+
+            # Endpoint V2
+            if MsgDataEp not in self.ListOfDevices[MsgDataShAddr]["Epv2"]:
+                self.ListOfDevices[MsgDataShAddr]["Epv2"][MsgDataEp] = {}
+            if "ClusterIn" not in self.ListOfDevices[MsgDataShAddr]["Epv2"][MsgDataEp]:
+                self.ListOfDevices[MsgDataShAddr]["Epv2"][MsgDataEp][ "ClusterIn" ] = {}
+            if MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]["Epv2"][MsgDataEp][ "ClusterIn" ]:
+                self.ListOfDevices[MsgDataShAddr]["Epv2"][MsgDataEp]["ClusterIn"][ MsgDataCluster ] = {}
 
             if MsgDataCluster in ZCL_CLUSTERS_LIST:
                 self.log.logging("Input","Status","[%s]       NEW OBJECT: %s Cluster In %s: %s (%s)"% (
@@ -1654,17 +1654,17 @@ def Decode8043(self, Devices, MsgData, MsgLQI):  # Reception Simple descriptor r
                     self.ListOfDevices[MsgDataShAddr]["Ep"][MsgDataEp] = {}
                 if ( MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]["Ep"][MsgDataEp] ):
                     self.ListOfDevices[MsgDataShAddr]["Ep"][MsgDataEp][ MsgDataCluster ] = {}
+            else:
+                self.log.logging( "Input", "Debug", "[%s]    NEW OBJECT: %s we keep DeviceConf info" % ("-", MsgDataShAddr), MsgDataShAddr, )
 
-                # Endpoint V2
-                if MsgDataEp not in self.ListOfDevices[MsgDataShAddr]["Epv2"]:
-                    self.ListOfDevices[MsgDataShAddr]["Epv2"][MsgDataEp] = {}
-                if "ClusterOut" not in self.ListOfDevices[MsgDataShAddr]["Epv2"][MsgDataEp]:
-                    self.ListOfDevices[MsgDataShAddr]["Epv2"][MsgDataEp][ "ClusterOut" ] = {}
-                if MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]["Epv2"][MsgDataEp][ "ClusterOut" ]:
-                    self.ListOfDevices[MsgDataShAddr]["Epv2"][MsgDataEp]["ClusterOut"][ MsgDataCluster ] = {}
-                else:
-                    self.log.logging( "Input", "Debug", "[%s]    NEW OBJECT: %s we keep DeviceConf info" % ("-", MsgDataShAddr), MsgDataShAddr, )
-
+            # Endpoint V2
+            if MsgDataEp not in self.ListOfDevices[MsgDataShAddr]["Epv2"]:
+                self.ListOfDevices[MsgDataShAddr]["Epv2"][MsgDataEp] = {}
+            if "ClusterOut" not in self.ListOfDevices[MsgDataShAddr]["Epv2"][MsgDataEp]:
+                self.ListOfDevices[MsgDataShAddr]["Epv2"][MsgDataEp][ "ClusterOut" ] = {}
+            if MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]["Epv2"][MsgDataEp][ "ClusterOut" ]:
+                self.ListOfDevices[MsgDataShAddr]["Epv2"][MsgDataEp]["ClusterOut"][ MsgDataCluster ] = {}
+            
             if MsgDataCluster in ZCL_CLUSTERS_LIST:
                 self.log.logging(  "Input", "Status", "[%s]       NEW OBJECT: %s Cluster Out %s: %s (%s)" % ( 
                     "-", MsgDataShAddr, i, MsgDataCluster, ZCL_CLUSTERS_LIST[MsgDataCluster], ), )
@@ -1783,7 +1783,6 @@ def Decode8045(self, Devices, MsgData, MsgLQI):  # Reception Active endpoint res
     if "Model" not in self.ListOfDevices[MsgDataShAddr] or self.ListOfDevices[MsgDataShAddr]["Model"] in ("", {}):
         self.log.logging(  "Input", "Log", "[%s] NEW OBJECT: %s Request Model Name" % ("-", MsgDataShAddr) )
         ReadAttributeRequest_0000( self, MsgDataShAddr, fullScope=False )  # In order to request Model Name
-
 
     for iterEp in self.ListOfDevices[MsgDataShAddr]["Ep"]:
         self.log.logging(  "Input", "Status", "[%s] NEW OBJECT: %s Request Simple Descriptor for Ep: %s" % (

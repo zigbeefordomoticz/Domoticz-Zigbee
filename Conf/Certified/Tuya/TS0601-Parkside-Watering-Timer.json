@@ -23,7 +23,8 @@
 	},
 	"Param": {
 		"TimerMode": 1,
-		"OnOffPollingFreq": 120
+		"OnOffPollingFreq": 120,
+		"TuyaPing": 1
 	}
 }
 

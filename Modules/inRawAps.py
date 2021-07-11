@@ -56,7 +56,7 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Man
     if srcnwkid not in self.ListOfDevices:
         return
 
-    self.log.logging( "inRawAPS", 'Log', "inRawAps Nwkid: %s Ep: %s Cluster: %s ManufCode: %s Cmd: %s Data: %s" %(
+    self.log.logging( "inRawAPS", 'Debug', "inRawAps Nwkid: %s Ep: %s Cluster: %s ManufCode: %s Cmd: %s Data: %s" %(
         srcnwkid, srcep, cluster, ManufacturerCode, Command, Data)  )
     if cluster == '0020': # Poll Control ( Not implemented in firmware )
         #Domoticz.Log("Cluster 0020 -- POLL CLUSTER")

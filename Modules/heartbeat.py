@@ -24,7 +24,7 @@ from Modules.readAttributes import READ_ATTRIBUTES_REQUEST, ping_device_with_rea
         ReadAttributeRequest_0100, ReadAttributeRequest_0101_0000,\
         ReadAttributeRequest_000C, ReadAttributeRequest_0102, ReadAttributeRequest_0102_0008, ReadAttributeRequest_0201, ReadAttributeRequest_0201_0012, ReadAttributeRequest_0204, ReadAttributeRequest_0300,  \
         ReadAttributeRequest_0400, ReadAttributeRequest_0402, ReadAttributeRequest_0403, ReadAttributeRequest_0405, ReadAttributeRequest_0b04_050b_0505_0508, \
-        ReadAttributeRequest_0406, ReadAttributeRequest_0500, ReadAttributeRequest_0502, ReadAttributeRequest_0702, ReadAttributeRequest_000f, ReadAttributeRequest_fc01, ReadAttributeRequest_fc21
+        ReadAttributeRequest_0406, ReadAttributeRequest_0500, ReadAttributeRequest_0502, ReadAttributeRequest_0702, ReadAttributeRequest_000f, ReadAttributeRequest_fc01, ReadAttributeRequest_fc21, ping_tuya_device
 from Modules.configureReporting import processConfigureReporting
 from Modules.legrand_netatmo import  legrandReenforcement
 from Modules.blitzwolf import pollingBlitzwolfPower
@@ -140,6 +140,13 @@ def pollingManufSpecificDevices( self, NwkId):
                     %(NwkId,  param, self.ListOfDevices[ NwkId]['Param'][ param ]), NwkId)       
                 
                 pollingCasaia( self, NwkId )    
+
+        elif param == 'TuyaPing' and self.ListOfDevices[ NwkId]['Param'][ param ]:
+            _FEQ = 5 // HEARTBEAT
+            if _FEQ and (( _HB % _FEQ ) == 0):
+                self.log.logging( "Heartbeat", 'Debug', "++ pollingManufSpecificDevices -  %s Found: %s=%s" \
+                    %(NwkId,  param, self.ListOfDevices[ NwkId]['Param'][ param ]), NwkId)  
+                ping_tuya_device( self, NwkId)     
 
     return False
 
