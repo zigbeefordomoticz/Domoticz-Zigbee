@@ -11,7 +11,7 @@ from Modules.pollControl import receive_poll_cluster
 
 from Modules.domoMaj import MajDomoDevice
 
-from Modules.schneider_wiser import schneiderReadRawAPS, schneiderReadRawAPS_v2
+from Modules.schneider_wiser import schneiderReadRawAPS
 from Modules.legrand_netatmo import legrandReadRawAPS
 from Modules.livolo import livoloReadRawAPS
 from Modules.orvibo import orviboReadRawAPS
@@ -40,7 +40,7 @@ CALLBACK_TABLE2 = {
     '欧瑞博': orviboReadRawAPS,
     'Legrand': legrandReadRawAPS,
     'Schneider': schneiderReadRawAPS,
-    'Schneider Electric': schneiderReadRawAPS_v2,
+    'Schneider Electric': schneiderReadRawAPS,
     'LUMI': lumiReadRawAPS,
     'Philips' : philipsReadRawAPS,                          
     'OWON': casaiaReadRawAPS,
@@ -55,6 +55,7 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Man
 
     if srcnwkid not in self.ListOfDevices:
         return
+
     self.log.logging( "inRawAPS", 'Debug', "inRawAps Nwkid: %s Ep: %s Cluster: %s ManufCode: %s Cmd: %s Data: %s" %(
         srcnwkid, srcep, cluster, ManufacturerCode, Command, Data)  )
     if cluster == '0020': # Poll Control ( Not implemented in firmware )
@@ -72,7 +73,6 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Man
             manufcode = '%04x' %struct.unpack('H',struct.pack('>H',int(Data[2:6],16)))[0] 
             imagetype = '%04x' %struct.unpack('H',struct.pack('>H',int(Data[6:10],16)))[0] 
             currentVersion = '%08x' %struct.unpack('I',struct.pack('>I',int(Data[10:18],16)))[0]
-    
             Domoticz.Log("Cluster 0019 -- OTA CLUSTER Command 01Device %s Request OTA with current ManufCode: %s ImageType: %s Version: %s"
                 %(srcnwkid ,manufcode, imagetype, currentVersion  ))
 
@@ -81,7 +81,27 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Man
             self.ListOfDevices[ srcnwkid ]['OTA']['ManufacturerCode'] = manufcode
             self.ListOfDevices[ srcnwkid ]['OTA']['ImageType'] = imagetype
             self.ListOfDevices[ srcnwkid ]['OTA']['CurrentImageVersion'] = currentVersion
+        return
 
+    if cluster == '0500': # IAS Cluster
+        # "00":
+        # "01" # inRawAps 56ba/23 Cluster 0500 Manuf: None Command: 01 Data: 0d001510 Payload: 1922010d001510
+        # 0x00  Zone Enroll Response
+        # 0x01  Initiate Normal Operation Mode
+        # 0x02  Initiate Test Mode
+
+        enroll_response_code = Data[0:2]
+        zone_id = Data[2:4]
+
+        if Command == '00':
+            pass
+
+        elif Command == '01':
+            pass
+
+        elif Command == '02':
+            pass
+        
         return
 
     if cluster == '0501': # IAS ACE
@@ -152,12 +172,10 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Man
 
         return
 
-
     if 'Manufacturer' not in self.ListOfDevices[srcnwkid]:
         return
     
     manuf = manuf_name = ''
-
     if 'Manufacturer Name' in self.ListOfDevices[srcnwkid]:
         manuf_name = self.ListOfDevices[srcnwkid][ 'Manufacturer Name']
 

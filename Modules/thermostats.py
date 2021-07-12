@@ -46,7 +46,7 @@ def thermostat_Setpoint( self, NwkId, setpoint):
             thermostat_Setpoint_SPZB( self, NwkId, setpoint)
             return
 
-        elif self.ListOfDevices[NwkId]['Model'] in ( 'EH-ZB-RTS', 'EH-ZB-HACT', 'EH-ZB-VACT' ):
+        elif self.ListOfDevices[NwkId]['Model'] in ( 'EH-ZB-RTS', 'EH-ZB-HACT', 'EH-ZB-VACT', 'Wiser2-Thermostat' ):
             # Schneider
             self.log.logging( "Thermostats", 'Debug', "thermostat_Setpoint - calling Schneider for %s with value %s" %(NwkId,setpoint), nwkid=NwkId)
             schneider_setpoint(self, NwkId, setpoint)

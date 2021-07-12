@@ -25,7 +25,7 @@ from Modules.thermostats import thermostat_Setpoint, thermostat_Mode
 from Modules.livolo import livolo_OnOff
 from Modules.tuyaTRV import ( tuya_trv_mode , tuya_trv_onoff)
 from Modules.tuyaSiren import ( tuya_siren_alarm, tuya_siren_humi_alarm, tuya_siren_temp_alarm )
-from Modules.tuya import ( tuya_dimmer_onoff, tuya_dimmer_dimmer, tuya_curtain_lvl, tuya_curtain_openclose, tuya_window_cover_calibration, tuya_switch_command)
+from Modules.tuya import ( tuya_energy_onoff, tuya_dimmer_onoff, tuya_dimmer_dimmer, tuya_curtain_lvl, tuya_curtain_openclose, tuya_window_cover_calibration, tuya_switch_command, tuya_watertimer_command)
 
 from Modules.legrand_netatmo import  legrand_fc40, cable_connected_mode
 from Modules.schneider_wiser import schneider_EHZBRTS_thermoMode, schneider_hact_fip_mode, schneider_set_contract, schneider_temp_Setcurrent, schneider_hact_heater_type
@@ -59,6 +59,8 @@ DEVICE_SWITCH_MATRIX = {
     ( 241,  4,  7): ('ColorControlRGBWW',),
     ( 241,  7,  7): ('ColorControlFull',),
     ( 241,  8,  7): ('ColorControlWW',),
+    ( 241,  6,  7): ('ColorControlRGBWZ',),
+    ( 241,  1,  7): ('ColorControlRGBW', ),
 
     ( 244, 62, 18): ('Switch Selector',), 
     ( 244, 73,  0): ('Switch', '' 'LivoloSWL', 'LivoloSWR' , 'SwitchButton', 'Water', 'Plug'),
@@ -73,7 +75,7 @@ DEVICE_SWITCH_MATRIX = {
 
 ACTIONATORS = [ 'Switch', 'Plug', 'SwitchAQ2', 'Smoke', 'DSwitch', 'LivoloSWL', 'LivoloSWR', 'Toggle',
             'Venetian', 'VenetianInverted', 'WindowCovering', 'BSO', 'BSO-Orientation', 'BSO-Volet',
-            'LvlControl', 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl',
+            'LvlControl', 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl', 'ColorControlRGBWZ', 'ColorControlRGBW',
             'ThermoSetpoint', 'ThermoMode', 'ACMode', 'ThermoMode_2', 'ThermoModeEHZBRTS', 'FanControl', 'PAC-SWITCH', 'ACMode_2', 'ACSwing','TempSetCurrent', 'AlarmWD',
             'FIP', 'HACTMODE','LegranCableMode', 'ContractPower','HeatingSwitch', 'DoorLock' , 'TuyaSiren', 'TuyaSirenHumi', 'TuyaSirenTemp', 'ThermoOnOff',
             'ShutterCalibration' ]
@@ -183,6 +185,23 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             self.log.logging( "Command", 'Debug', "mgtCommand : Off for Tuya Switches Gang/EPout: %s" %EPout)
             tuya_switch_command( self, NWKID, '00', gang=int(EPout,16))
             UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            return
+
+        if _model_name == 'TS0601-Parkside-Watering-Timer':
+            self.log.logging( "Command", 'Log', "mgtCommand : On for Tuya ParkSide Water Time" )
+            if ( 'Param' in self.ListOfDevices[ NWKID ] 
+                and 'TimerMode' in self.ListOfDevices[ NWKID ]['Param'] 
+                and self.ListOfDevices[ NWKID ]['Param']['TimerMode']
+            ):
+                self.log.logging( "Command", 'Log', "mgtCommand : Off for Tuya ParkSide Water Time - Timer Mode" )
+                tuya_watertimer_command( self, NWKID, '00', gang=int(EPout,16))
+            else:
+                self.log.logging( "Command", 'Log', "mgtCommand : Off for Tuya ParkSide Water Time - OnOff Mode" )
+                sendZigateCmd(self, "0092","02" + NWKID + ZIGATE_EP + EPout + "00")
+
+        if _model_name in ('TS0601-Energy', ):
+            tuya_energy_onoff( self, NWKID, '00' )
+            #UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return
 
         if DeviceType == 'LivoloSWL':
@@ -301,7 +320,6 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             self.log.logging( "Command", 'Debug', "mgtCommand : Disable Window Cover Calibration" )
             tuya_window_cover_calibration( self, NWKID, '00')
 
-
         else:
             # Remaining Slider widget
             if profalux: # Profalux are define as LvlControl but should be managed as Blind Inverted
@@ -345,10 +363,28 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         self.log.logging( "Command", 'Debug', "mgtCommand : On for Device: %s EPout: %s Unit: %s DeviceType: %s ModelName: %s" %(
             NWKID, EPout, Unit, DeviceType, _model_name), NWKID)
 
-        if _model_name in ('TS0601-switch', 'TS0601-2Gangs-switch', 'TS0601-2Gangs-switch'):
+        if _model_name in ('TS0601-switch', 'TS0601-2Gangs-switch', 'TS0601-2Gangs-switch',):
             self.log.logging( "Command", 'Debug', "mgtCommand : On for Tuya Switches Gang/EPout: %s" %EPout)
+                
             tuya_switch_command( self, NWKID, '01', gang=int(EPout,16))
-            UpdateDevice_v2(self, Devices, Unit, 0, "On",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            UpdateDevice_v2(self, Devices, Unit, 1, "On",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            return
+
+        if _model_name == 'TS0601-Parkside-Watering-Timer':
+            self.log.logging( "Command", 'Debug', "mgtCommand : On for Tuya ParkSide Water Time" )
+            if ( 'Param' in self.ListOfDevices[ NWKID ] 
+                and 'TimerMode' in self.ListOfDevices[ NWKID ]['Param'] 
+                and self.ListOfDevices[ NWKID ]['Param']['TimerMode']
+            ):
+                self.log.logging( "Command", 'Log', "mgtCommand : On for Tuya ParkSide Water Time - Timer Mode" )
+                tuya_watertimer_command( self, NWKID, '01', gang=int(EPout,16))
+            else:
+                self.log.logging( "Command", 'Log', "mgtCommand : On for Tuya ParkSide Water Time - OnOff Mode" )
+                sendZigateCmd(self, "0092","02" + NWKID + ZIGATE_EP + EPout + "01")
+
+        if _model_name in ('TS0601-Energy', ):
+            tuya_energy_onoff( self, NWKID, '01' )
+            #UpdateDevice_v2(self, Devices, Unit, 1, "On",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return
 
         if DeviceType == 'LivoloSWL':
@@ -787,6 +823,9 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
 
     if Command == 'Set Color':
+        # RGBW --> Action on W Level (bri) setcolbrightnessvalue: ID: d9, bri: 96, color: '{m: 3, RGB: ffffff, CWWW: 0000, CT: 0}'
+        #      --> Action on RGB (RGB)     setcolbrightnessvalue: ID: d9, bri: 59, color: '{m: 3, RGB: 53ff42, CWWW: 0000, CT: 0}'
+
         self.log.logging( "Command", 'Debug', "mgtCommand : Set Color for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s Color: %s" %(NWKID, EPout, Unit, DeviceType, Level, Color), NWKID)
         Hue_List = json.loads(Color)
         self.log.logging( "Command", 'Debug', "-----> Hue_List: %s" %str(Hue_List), NWKID)
@@ -817,10 +856,16 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
 
         self.log.logging( "Command", 'Debug', "-----> Transition Timers: %s %s %s %s" %( 
             transitionRGB, transitionMoveLevel, transitionHue, transitionTemp))
-            
+        
+        #manage_level = False
+        #if 'Model' in self.ListOfDevices[ NWKID ] and self.ListOfDevices[ NWKID ]['Model'] == 'GL-C-007-2ID':
+        #    # We have to manage Level independtly of RGB and force EpOut to 0f
+        #    EPout = '0f'
+        #    manage_level = True
+
         #First manage level
-        if Hue_List['m'] != 9998:
-            # In case of m ==3, we will do the Setlevel
+        #if Hue_List['m'] or Hue_List['m'] != 9998 or manage_level:
+        if Hue_List['m'] or Hue_List['m'] != 9998:
             OnOff = '01' # 00 = off, 01 = on
             value=Hex_Format(2,round(1+Level*254/100)) #To prevent off state
             self.log.logging( "Command", 'Debug', "---------- Set Level: %s" %(value), NWKID)
@@ -835,10 +880,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
         #ColorModeNone = 0   // Illegal
         #ColorModeNone = 1   // White. Valid fields: none
 
-        if Hue_List['m'] == 1:
-            ww = int(Hue_List['ww']) # Can be used as level for monochrome white
-            #TODO : Jamais vu un device avec ca encore
-            self.log.logging( "Command", 'Log', "Not implemented device color 1", NWKID)
+        #if Hue_List['m'] == 1:
+        #    ww = int(Hue_List['ww']) # Can be used as level for monochrome white
+        #    #TODO : Jamais vu un device avec ca encore
+        #    self.log.logging( "Command", 'Log', "Not implemented device color 1", NWKID)
 
         #ColorModeTemp = 2   // White with color temperature. Valid fields: t
         if Hue_List['m'] == 2:

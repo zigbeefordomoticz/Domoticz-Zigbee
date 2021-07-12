@@ -14,7 +14,7 @@ from time import time
 
 from Modules.zigateConsts import  ZCL_CLUSTERS_LIST , CERTIFICATION_CODE,  ZIGATE_COMMANDS
 
-from Modules.basicOutputs import ZigatePermitToJoin, sendZigateCmd, start_Zigate, setExtendedPANID, zigateBlueLed, send_zigate_mode
+from Modules.basicOutputs import ZigatePermitToJoin, sendZigateCmd, start_Zigate, setExtendedPANID, zigateBlueLed, send_zigate_mode, initiate_change_channel
 from Modules.actuators import actuators
 from Modules.philips import philips_set_poweron_after_offon
 from Modules.enki import enki_set_poweron_after_offon
@@ -144,16 +144,16 @@ class WebServer(object):
             self.logging( 'Status', "Erase ZiGate PDM")
             Domoticz.Error("Erase ZiGate PDM non implémenté pour l'instant")
             if self.pluginconf.pluginConf['eraseZigatePDM']:
-                if self.pluginParameters['Mode1'] != 'None':
+                if self.pluginParameters['Mode2'] != 'None':
                     sendZigateCmd(self, "0012", "")
                 self.pluginconf.pluginConf['eraseZigatePDM'] = 0
 
             if self.pluginconf.pluginConf['extendedPANID'] is not None:
                 self.logging( 'Status', "ZigateConf - Setting extPANID : 0x%016x" %( self.pluginconf.pluginConf['extendedPANID'] ))
-                if self.pluginParameters['Mode1'] != 'None':
+                if self.pluginParameters['Mode2'] != 'None':
                     setExtendedPANID(self, self.pluginconf.pluginConf['extendedPANID'])
             action = {'Description': 'Erase ZiGate PDM - Non Implemente'}
-                #if self.pluginParameters['Mode1'] != 'None':
+                #if self.pluginParameters['Mode2'] != 'None':
                 #    start_Zigate( self )
         return _response
 
@@ -162,7 +162,7 @@ class WebServer(object):
         _response = prepResponseMessage( self ,setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
-            if self.pluginParameters['Mode1'] != 'None':
+            if self.pluginParameters['Mode2'] != 'None':
                 self.zigatedata['startZigateNeeded'] = True
                 #start_Zigate( self )
                 sendZigateCmd(self, "0002", "00")# Force Zigate to Normal mode
@@ -316,7 +316,7 @@ class WebServer(object):
         self.logging( 'Debug', " --> Type: %s" %type(self.statistics))
 
         Statistics['Trend'] = [ ]
-        if self.pluginParameters['Mode1'] == 'None':
+        if self.pluginParameters['Mode2'] == 'None':
             Statistics['CRC'] = 1
             Statistics['FrameErrors'] = 1
             Statistics['Sent'] = 5
@@ -412,7 +412,7 @@ class WebServer(object):
 
             setting_lst = []
             for _theme in sorted(SETTINGS.keys()):
-                if _theme in ( 'PluginTransport'): 
+                if _theme in ( 'Reserved', 'PluginTransport'): 
                     continue
                 if sendDebug and _theme != 'VerboseLogging':
                     continue
@@ -592,7 +592,7 @@ class WebServer(object):
                         sendZigateCmd( self, "0049", router + '%02x' %duration + TcSignificance) 
 
                 else:                   
-                    if self.pluginParameters['Mode1'] != 'None':
+                    if self.pluginParameters['Mode2'] != 'None':
                         ZigatePermitToJoin(self, int( data['PermitToJoin']))
         return _response
 
@@ -954,6 +954,33 @@ class WebServer(object):
 
         return _response
 
+    def rest_change_channel( self, verb, data, parameters):
+        Domoticz.Log("rest_change_channel - %s %s" %(verb, data))
+        _response = prepResponseMessage( self ,setupHeadersResponse())
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+
+        if verb != 'PUT':
+            _response["Data"] = {'Error': 'Unknow verb'}
+            return _response
+
+        _response["Data"] = None
+        if len(parameters) == 0:
+            data = data.decode('utf8')
+            data = json.loads(data)
+            Domoticz.Log("---> Data: %s" %str(data))
+            if 'Channel' not in data :
+                Domoticz.Error("Unexpected request: %s" %data)
+                _response["Data"] = {'Error': 'Unknow verb'}
+                return _response
+            channel = data['Channel']
+            if channel  not in range(11,27):
+                _response["Data"] = {'Error': 'incorrect channel: %s' %channel}
+                return _response
+            initiate_change_channel( self, int(channel))
+
+            _response["Data"] = { "Request channel: %s" %channel} 
+        return _response
+
     def rest_raw_command( self, verb, data, parameters):
 
         Domoticz.Log("raw_command - %s %s" %(verb, data))
@@ -1184,7 +1211,6 @@ class WebServer(object):
             self.logging( 'Status', "Erase Log History")
             self.log.loggingClearErrorHistory()
         return _response
-
 
     def logging( self, logType, message):
         self.log.logging('WebServer', logType, message)

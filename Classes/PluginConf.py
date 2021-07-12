@@ -14,8 +14,9 @@ Parameters not define in the PluginConf.txt file will be set to their default va
 import Domoticz
 import os.path
 import json
+import time
 
-from Modules.tools import is_hex, setConfigItem
+from Modules.tools import is_hex, setConfigItem, getConfigItem
 
 
 SETTINGS = {
@@ -225,23 +226,26 @@ SETTINGS = {
 
     # Experimental
     'Experimental': {'Order': 15, 'param': {    
-         
         'forceAckOnZCL':         {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'RoutingTableRequestFeq':{'type': 'int',  'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+
         'doManyToOneRoute':      {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
         'DropBadAnnoucement':    {'type': 'bool', 'default': 1, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},    
-        'AnnoucementV0':         {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
-        'AnnoucementV1':         {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
-        'AnnoucementV2':         {'type': 'bool', 'default': 1, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
         'expJsonDatabase':       {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
-        'useDomoticzDatabase':   {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
-        
+        'useDomoticzDatabase':   {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False,  'Advanced': True},
         'XiaomiLeave':           {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
         'rebindLivolo':          {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': False},
         'allowAutoPairing':      {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
-        'disabledDefaultResponseFirmware':       {'type': 'bool', 'default': 0, 'current': None, 'restart': 1, 'hidden': True, 'Advanced': True},  
+        'disabledDefaultResponseFirmware':       {'type': 'bool', 'default': 0, 'current': None, 'restart': 1, 'hidden': True, 'Advanced': True},
+        }
+    },
         
 
+    'Reserved': {'Order': 99, 'param': { 
         # Just for compatibility keep it but hidden ( move to Custom device 'Param' section)
+        'AnnoucementV0':    {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
+        'AnnoucementV1':    {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
+        'AnnoucementV2':    {'type': 'bool', 'default': 1, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
         'pollingPhilips':   {'type': 'int', 'default': 0,     'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
         'pollingGledopto':  {'type': 'int', 'default': 0,     'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
         'pollingSchneider': {'type': 'int', 'default': 0,     'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
@@ -251,7 +255,6 @@ SETTINGS = {
         'PhilipsPowerOnAfterOffOn': {'type': 'list', 'list': {'Off': 0, 'On': 1, 'Previous': 255}, 'default': 1, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
         'EnkiPowerOnAfterOffOn':    {'type': 'list', 'list': {'Off': 0, 'On': 1, 'Previous': 255}, 'default': 1, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
         'IkeaPowerOnAfterOffOn':    {'type': 'list', 'list': {'Off': 0, 'On': 1, 'Previous': 255}, 'default': 1, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},        
-
         # Polling
         'polling0000':      {'type': 'int', 'default': 86400, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
         'polling0001':      {'type': 'int', 'default': 86400, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
@@ -280,7 +283,6 @@ SETTINGS = {
         'pollingfc01':      {'type': 'int', 'default': 900,   'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
         'pollingfc21':      {'type': 'int', 'default': 900,   'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
         'pollingfc40':      {'type': 'int', 'default': 900,   'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
-
         'EnableLedIfOn':        {'type': 'bool', 'default': 1, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
         'EnableLedInDark':      {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
         'EnableLedShutter':     {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': False},
@@ -345,13 +347,30 @@ class PluginConf:
             json.dump(write_pluginConf, handle, sort_keys=True, indent=2)
 
         if self.pluginConf['useDomoticzDatabase']:
-            setConfigItem( Key='PluginConf', Value=write_pluginConf)
-
+            setConfigItem( Key='PluginConf',  Value={ 'TimeStamp': time.time(), 'b64Settings': write_pluginConf})
 
 
 def _load_Settings(self):
     # deserialize json format of pluginConf'
     # load parameters '
+
+    _domoticz_pluginConf = getConfigItem(Key='PluginConf' )
+    dz_timestamp = 0
+    if 'TimeStamp' in _domoticz_pluginConf:
+        dz_timestamp = _domoticz_pluginConf[ 'TimeStamp' ]
+        _domoticz_pluginConf = _domoticz_pluginConf[ 'b64Settings']
+        Domoticz.Log("Plugin data loaded where saved on %s" %( time.strftime('%A, %Y-%m-%d %H:%M:%S', time.localtime(dz_timestamp))) )
+
+    txt_timestamp = 0
+    if os.path.isfile( self.pluginConf['filename'] ):
+        txt_timestamp = os.path.getmtime( self.pluginConf['filename'] )
+    Domoticz.Log("%s timestamp is %s" %(self.pluginConf['filename'], txt_timestamp))
+    if dz_timestamp < txt_timestamp:
+        Domoticz.Log( "Dz PluginConf is older than Json Dz: %s Json: %s" %(dz_timestamp, txt_timestamp))
+        # We should load the json file
+
+    if not isinstance(_domoticz_pluginConf, dict):
+      _domoticz_pluginConf = {}
 
     with open(self.pluginConf['filename'], 'rt') as handle:
         _pluginConf = {}
@@ -365,6 +384,17 @@ def _load_Settings(self):
 
         for param in _pluginConf:
             self.pluginConf[param] = _pluginConf[param]
+
+    # Check Load
+    Domoticz.Log("PluginConf Loaded from Dz: %s from Json: %s" %(len(_domoticz_pluginConf), len(_pluginConf)))
+    if _domoticz_pluginConf:
+        for x in _pluginConf:
+            if x not in _domoticz_pluginConf:
+                Domoticz.Error("-- %s is missing in Dz" %x)
+            else:
+                if _pluginConf[ x ] != _domoticz_pluginConf[ x ]:
+                    Domoticz.Error("++ %s is different in Dz: %s from Json: %s" %( x, _domoticz_pluginConf[ x ], _pluginConf[ x ]))
+
 
 def _load_oldfashon(self, homedir, hardwareid):
     # Import PluginConf.txt

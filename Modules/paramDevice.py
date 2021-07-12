@@ -18,7 +18,7 @@ from Modules.legrand_netatmo import legrand_enable_Led_Shutter_by_nwkid, legrand
 from Modules.basicOutputs import set_poweron_afteroffon, set_PIROccupiedToUnoccupiedDelay
 from Modules.readAttributes import ReadAttributeRequest_0006_400x, ReadAttributeRequest_0406_0010
 from Modules.tuyaTRV import tuya_trv_thermostat_sensor_mode
-from Modules.tuya import tuya_switch_relay_status, tuya_switch_indicate_light, get_tuya_attribute
+from Modules.tuya import tuya_switch_relay_status, tuya_switch_indicate_light, get_tuya_attribute, tuya_energy_childLock
 
 
 def param_Occupancy_settings_PIROccupiedToUnoccupiedDelay( self, nwkid, delay):
@@ -42,6 +42,24 @@ def param_Occupancy_settings_PIROccupiedToUnoccupiedDelay( self, nwkid, delay):
             if int(self.ListOfDevices[ nwkid ]['Ep']['02']['0406']['0010'],16) != delay:
                 set_PIROccupiedToUnoccupiedDelay( self, nwkid, delay)
                 ReadAttributeRequest_0406_0010(self, nwkid)
+                
+    elif self.ListOfDevices[ nwkid ]['Manufacturer'] == '1015' or self.ListOfDevices[ nwkid ]['Manufacturer Name'] == 'frient A/S': # Frientd
+        #delay = 10 * delay # Tenth of seconds
+        for ep in [ '22', '28', '29']:
+            if ep == '28'  and 'PIROccupiedToUnoccupiedDelay_28' in self.ListOfDevices[ nwkid ]['Param']:
+                delay = int(self.ListOfDevices[ nwkid ]['Param']['PIROccupiedToUnoccupiedDelay_28'])
+            elif ep == '29' and 'PIROccupiedToUnoccupiedDelay_29' in self.ListOfDevices[ nwkid ]['Param']:
+                delay = int(self.ListOfDevices[ nwkid ]['Param']['PIROccupiedToUnoccupiedDelay_29'])
+            if ep not in self.ListOfDevices[ nwkid ]['Ep']:
+                continue
+            if '0406' not in self.ListOfDevices[ nwkid ]['Ep'][ ep ]:
+                continue
+            if '0010' not in self.ListOfDevices[ nwkid ]['Ep'][ ep ]['0406']:
+                set_PIROccupiedToUnoccupiedDelay( self, nwkid, delay, ListOfEp= [ ep ])
+            else:
+                if int(self.ListOfDevices[ nwkid ]['Ep'][ ep ]['0406']['0010'],16) != delay:
+                    set_PIROccupiedToUnoccupiedDelay( self, nwkid, delay, ListOfEp= [ ep ])
+        ReadAttributeRequest_0406_0010(self, nwkid)
     else:
         Domoticz.Log("=====> Unknown Manufacturer/Name")
 
@@ -97,7 +115,7 @@ def param_PowerOnAfterOffOn(self, nwkid, mode):
             enki_set_poweron_after_offon_device( self, mode, nwkid)
             ReadAttributeRequest_0006_400x(self, nwkid)
 
-    elif 'Model' in self.ListOfDevices[ nwkid ] and self.ListOfDevices[ nwkid ]['Model'] in ( 'TS0601-switch', 'TS0601-2Gangs-switch'):
+    elif 'Model' in self.ListOfDevices[ nwkid ] and self.ListOfDevices[ nwkid ]['Model'] in ( 'TS0601-switch', 'TS0601-2Gangs-switch', 'TS0601-Energy'):
         if get_tuya_attribute( self, nwkid, 'RelayStatus') != mode:
             tuya_switch_relay_status( self, nwkid, mode)
 
@@ -124,7 +142,8 @@ DEVICE_PARAMETERS = {
     'netatmoLedShutter': legrand_enable_Led_Shutter_by_nwkid,
     'netatmoEnableDimmer': legrand_Dimmer_by_nwkid,
     'SensorMode': tuya_trv_thermostat_sensor_mode,
-    'LightIndicator': tuya_switch_indicate_light
+    'LightIndicator': tuya_switch_indicate_light,
+    'TuyaEnergyChildLock': tuya_energy_childLock,
 }
 def sanity_check_of_param( self, NwkId):
     # Domoticz.Log("sanity_check_of_param for %s" %NwkId)

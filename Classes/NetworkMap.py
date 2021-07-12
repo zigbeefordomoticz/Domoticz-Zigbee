@@ -164,7 +164,7 @@ def _initNeighbours( self):
     #        if 'MacCapa' in self.ListOfDevices[nwkid]:
     #            if self.ListOfDevices[nwkid]['MacCapa'] == '8e':
     #                tobescanned = True
-#
+
     #    if not tobescanned:
     #        continue
     #    _initNeighboursTableEntry( self, nwkid )

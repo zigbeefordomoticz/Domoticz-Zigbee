@@ -4,6 +4,7 @@
 MANUFACTURER_NAME_TO_CODE = {
     'EMBER': '1002',
     'PHILIPS': '100b',
+    'frient A/S': '1015',
     'LEGRAND': '1021',
     'VANTAGE': '1021',
     'LUMI':  '1037',
@@ -20,12 +21,13 @@ MANUFACTURER_NAME_TO_CODE = {
     'HEIMAN': '120b',
     'DANFOSS': '1246',
     'KONKE': '1268',
-    'OSRAM': 'bbaa'
+    'OSRAM': 'bbaa',
+    "Develco": "1015",
+    "frient A/S": "1015",
 }
 
 TUYA_PREFIX = ('_TZ', '_TY', )
 TUYA_MANUF_CODE = 1002
-
 
 
 def check_and_update_manufcode( self):

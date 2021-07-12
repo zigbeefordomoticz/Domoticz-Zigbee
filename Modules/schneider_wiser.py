@@ -113,6 +113,11 @@ def callbackDeviceAwake_Schneider_SetPoints( self, NwkId, EndPoint, cluster):
                     if now > self.ListOfDevices[NwkId]['Schneider']['TimeStamp Mode'] + 15:
                         schneider_EHZBRTS_thermoMode( self, NwkId, self.ListOfDevices[NwkId]['Schneider']['Target Mode'] )
 
+def schneider_wiser2_registration(self, Devices, key):
+
+    # Unlock 
+    # 0x0204 , 0x0001 , 0x00, eNum8 (0x30)
+    write_attribute( self, key, ZIGATE_EP, '01', '0204', '0000', '00', '0001', '30', '00', ackIsDisabled = False)
 
 def schneider_wiser_registration( self, Devices, key ):
     """
@@ -659,16 +664,16 @@ def schneider_setpoint( self, key, setpoint):
         self.log.logging( "Schneider", 'Debug', "schneider_setpoint - unknown key: %s in ListOfDevices!" %(key))
         return
 
-    wiser_set_calibration( self, key, SCHNEIDER_BASE_EP)
-
     if 'Model' in self.ListOfDevices[key]:
-        if self.ListOfDevices[key]['Model'] == 'EH-ZB-RTS':
+        if self.ListOfDevices[key]['Model'] in ('EH-ZB-RTS', 'Wiser2-Thermostat'):
             schneider_setpoint_thermostat(self, key, setpoint)
 
         elif self.ListOfDevices[key]['Model'] == 'EH-ZB-VACT':
+            wiser_set_calibration( self, key, SCHNEIDER_BASE_EP)
             schneider_setpoint_thermostat(self, key, setpoint)
             schneider_setpoint_actuator( self,key, setpoint)
         else:
+            wiser_set_calibration( self, key, SCHNEIDER_BASE_EP)
             schneider_setpoint_actuator( self,key, setpoint)
 
 
@@ -813,7 +818,9 @@ def schneider_thermostat_answer_attribute_request(self, NWKID, EPout, ClusterID,
     self.log.logging( "Schneider", 'Debug', "Schneider receive attribute request: nwkid %s ep: %s , clusterId: %s, sqn: %s,rawAttr: %s" \
             %(NWKID, EPout, ClusterID, sqn, attr ), NWKID)
 
-    
+    zigate_ep = ZIGATE_EP
+    if 'Model' in self.ListOfDevices[ NWKID ] and self.ListOfDevices[ NWKID ]['Model'] == 'Wiser2-Thermostat':
+        zigate_ep = '03'
     data = ''
     dataType = ''
     payload = ''
@@ -832,10 +839,36 @@ def schneider_thermostat_answer_attribute_request(self, NWKID, EPout, ClusterID,
             data = '0bb8' #30.00 degree
         else:
             data = '0dac' #35.00 degree
+
     elif attr == '0012': #occupied setpoint temp
         dataType = '29'
         value = schneider_find_attribute_and_set(self,NWKID, EPout, ClusterID,attr, 2000)
         data = '%04X' %value
+
+    elif attr == '001c': # System Mode
+        dataType = '30'   # enum8
+        data =  '01'  # 0x00 Off, 0x01 Auto, 0x04 Heat
+ 
+
+    elif attr == '001b': # ControlSequenceOfOperation
+        dataType = '30'   # enum8
+        data = '02'   # Heating only
+
+
+    elif attr == '0008': # Pi Heating Demand  (valve position %)
+        dataType = '20'  # uint8
+        data = '02'  # This value is 0 when the thermostat is in “off” or “cooling” mode.
+
+
+    elif attr == 'e110':
+        dataType = '30'   # enum8
+        data = '02'   # 0x02 then 0x030, 0x11
+  
+
+    if data == dataType == '':
+        # Unable to find a match
+        wiser_unsupported_attribute( self, NWKID, EPout, sqn, ClusterID, attr )
+        return
 
     cmd = "01"
     status = "00"
@@ -849,7 +882,7 @@ def schneider_thermostat_answer_attribute_request(self, NWKID, EPout, ClusterID,
     elif dataType == '30':
         payload = cluster_frame + sqn + cmd + attr[2:4] + attr[0:2] + status + dataType + data
 
-    raw_APS_request( self, NWKID, EPout, ClusterID, '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = is_ack_tobe_disabled(self, NWKID))
+    raw_APS_request( self, NWKID, EPout, ClusterID, '0104', payload, zigate_ep=zigate_ep, ackIsDisabled = is_ack_tobe_disabled(self, NWKID))
 
 
 def schneider_update_ThermostatDevice (self, Devices, NWKID, srcEp, ClusterID, setpoint):
@@ -988,7 +1021,6 @@ def schneider_set_contract( self, key, EPout, kva):
 
 def schneiderReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
     """    Function called when raw APS indication are received for a schneider device - it then decide how to handle it
-
     Arguments:
         Devices {[type]} -- list of devices
         srcNWKID {[type]} -- id of the device that generated the request
@@ -1000,12 +1032,10 @@ def schneiderReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dst
     """
     self.log.logging( "Schneider", 'Debug', "Schneider read raw APS nwkid: %s ep: %s , clusterId: %s, dstnwkid: %s, dstep: %s, payload: %s" \
             %(srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload), srcNWKID)
-
     
     GlobalCommand, Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002( MsgPayload )
     self.log.logging( "Schneider", 'Debug', "         -- SQN: %s, CMD: %s, Data: %s" \
             %(  Sqn, Command, Data), srcNWKID) 
-
  
     if ClusterID == '0201' : # Thermostat cluster
         if Command == '00': #read attributes
@@ -1014,26 +1044,25 @@ def schneiderReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dst
             if ManufacturerCode:
                 ManufSpec = '01'
                 ManufCode = ManufacturerCode
-
             buildPayload = Sqn + srcNWKID + srcEp + '01' + ClusterID + '01' + ManufSpec + ManufCode + '%02x' %(len(Data) // 4)
             idx = nbAttribute = 0
             while idx < len(Data):
                 nbAttribute += 1
                 Attribute = '%04x' %struct.unpack('H',struct.pack('>H',int(Data[idx:idx+4],16)))[0]
                 idx += 4
-
                 if self.FirmwareVersion and int(self.FirmwareVersion,16) <= 0x031c:
                     wiser_unsupported_attribute( self, srcNWKID, srcEp, Sqn, ClusterID, dstNWKID, dstEP, Attribute )
-
                 else:
                     self.log.logging( "Schneider", 'Debug','Schneider cmd 0x00 [%s] Read Attribute Request on %s/%s' %(Sqn, ClusterID,Attribute ),srcNWKID)
                     schneider_thermostat_answer_attribute_request(self, srcNWKID, srcEp, ClusterID, Sqn, Attribute)
 
-
-        if Command == 'e0': # command to change setpoint from thermostat
+        elif Command == 'e0': # command to change setpoint from thermostat
             sTemp = Data [4:8]
             setpoint = struct.unpack('h',struct.pack('>H',int(sTemp,16)))[0]
             schneider_update_ThermostatDevice(self, Devices, srcNWKID, srcEp, ClusterID, setpoint)
+
+        elif Command == '80': # command to change setpoint with a time
+            change_setpoint_for_time(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, Data)
 
     elif ClusterID == '0009': # Alarm cluster
         if Command == '00': #start of alarm
@@ -1185,6 +1214,7 @@ def schneider_find_attribute_and_set(self, NWKID, EP, ClusterID ,attr ,defaultVa
     """
     self.log.logging( "Schneider", 'Debug', "schneider_find_attribute_or_set NWKID:%s, EP:%s, ClusterID:%s, attr:%s ,defaultValue:%s, newValue:%s" 
                 %(NWKID,EP,ClusterID,attr,defaultValue,newValue),NWKID)
+    found = newValue
     if EP not in self.ListOfDevices[NWKID]['Ep']:
         self.ListOfDevices[NWKID]['Ep'][EP] = {}
     if ClusterID not in self.ListOfDevices[NWKID]['Ep'][EP]:
@@ -1349,42 +1379,24 @@ def schneider_UpdateConfigureReporting( self, NwkId, Ep, ClusterId = None, Attri
 
 #### Wiser New Version
 
-# Cluster 0x0201
-#                    Temp Duration
-# Command 0x80: 0301 2e09 7800
-#               0301 d007 1e00   ( 20° for 30 minutes)
-#               0301 7206 1e00   ( 16.5° for 30 minutes)
-#               0300 ff0f 0000   ( cancel last bost )
+def change_setpoint_for_time( self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, data):
+    # Command 0x80: 0301 2e09 7800
+    #               0301 d007 1e00   ( 20° for 30 minutes)
+    #               0301 7206 1e00   ( 16.5° for 30 minutes)
+    #               0300 ff0f 0000   ( cancel last bost )
 
+    action = data[2:4] + data[0:2]
+    setpoint = data[6:8] + data[4:6]
+    duration = data[10:12] + data[8:10]
 
+    if action == '0103':
+        # Set setpoint On
+        self.log.logging( "Schneider", 'Log', "change_setpoint_for_time -- Setpoint to %s for %s min" %( setpoint, duration))
+        schneider_update_ThermostatDevice (self, Devices, srcNWKID, srcEp, ClusterID, setpoint)
 
-# The Thermostat is also sending Read Attribute to the ZiGate
-# Cluster 0x0201 - 0x0012, 0x001c, 0x001b 0x0008
+    elif action == '0300': 
+        # Disable setpoint
+        self.log.logging( "Schneider", 'Log', "change_setpoint_for_time -- Cancel setpoint" )
 
-
-def schneiderReadRawAPS_v2(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
-
-    GlobalCommand, Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002( MsgPayload )
-    self.log.logging( "Schneider", 'Debug', "schneiderReadRawAPS_v2 -- SQN: %s, CMD: %s, Data: %s" \
-            %(  Sqn, Command, Data), srcNWKID) 
-    if ClusterID == '0201' : # Thermostat cluster
-        if Command == '00': #read attributes
-            ManufSpec = '00'
-            ManufCode = '0000'
-            if ManufacturerCode:
-                ManufSpec = '01'
-                ManufCode = ManufacturerCode
-
-            buildPayload = Sqn + srcNWKID + srcEp + '01' + ClusterID + '01' + ManufSpec + ManufCode + '%02x' %(len(Data) // 4)
-            idx = nbAttribute = 0
-            while idx < len(Data):
-                nbAttribute += 1
-                Attribute = '%04x' %struct.unpack('H',struct.pack('>H',int(Data[idx:idx+4],16)))[0]
-                idx += 4
-
-                if self.FirmwareVersion and int(self.FirmwareVersion,16) <= 0x031c:
-                    wiser_unsupported_attribute( self, srcNWKID, srcEp, Sqn, ClusterID, dstNWKID, dstEP, Attribute )
-
-                else:
-                    self.log.logging( "Schneider", 'Debug','schneiderReadRawAPS_v2 cmd 0x00 [%s] Read Attribute Request on %s/%s' %(Sqn, ClusterID,Attribute ),srcNWKID)
-                    schneider_thermostat_answer_attribute_request(self, srcNWKID, srcEp, ClusterID, Sqn, Attribute)
+    else:
+        self.log.logging( "Schneider", 'Error', "change_setpoint_for_time -- Unknown action: %s setpoint: %s duration: %s" %( action, setpoint, duration) )

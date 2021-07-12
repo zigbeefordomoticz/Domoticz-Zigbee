@@ -338,13 +338,24 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
         if ClusterType == 'Temp' and WidgetType == 'AirQuality' and Attribute_ == '0002':
             # eco2 for VOC_Sensor from Nexturn is provided via Temp cluster
             nvalue = round(value,0)
-            svalue = '%d' %(nvalue)
+            svalue = '%s' %(nvalue)
             UpdateDevice_v2(self, Devices, DeviceUnit, nvalue, svalue, BatteryLevel, SignalLevel)
 
         if ClusterType == 'Temp' and WidgetType == 'Voc' and Attribute_ == '0003':
             # voc for VOC_Sensor from Nexturn is provided via Temp cluster
-            value = '%d' %(round(value,0))
+            value = '%s' %(round(value,1))
             UpdateDevice_v2(self, Devices, DeviceUnit, 0, value, BatteryLevel, SignalLevel)
+
+        if ClusterType == 'Temp' and WidgetType == 'CH2O' and Attribute_ == '0004':
+            # ch2o for Tuya Smart Air fis provided via Temp cluster
+            value = '%s' %(round(value,2))
+            UpdateDevice_v2(self, Devices, DeviceUnit, 0, value, BatteryLevel, SignalLevel)
+
+        if ClusterType == 'Temp' and WidgetType == 'CarbonDioxyde' and Attribute_ == '0005':
+            # CarbonDioxyde for Tuya Smart Air provided via Temp cluster
+            value = '%s' %(round(value,1))
+            UpdateDevice_v2(self, Devices, DeviceUnit, 0, value, BatteryLevel, SignalLevel)
+
 
         if ClusterType == 'Temp' and WidgetType in ( 'Temp', 'Temp+Hum', 'Temp+Hum+Baro') and  Attribute_ == '':  # temperature
             self.log.logging( "Widget", "Debug", "------>  Temp: %s, WidgetType: >%s<" %(value,WidgetType), NWKID)
@@ -462,8 +473,16 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
                 return
 
+        if ClusterType == WidgetType == 'Motion':
+            nValue = int(value,16)
+            if nValue == 1:
+                sValue = 'On'
+            else:
+                sValue = 'Off'
+            UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_= True) 
+
         if WidgetType not in ( 'ThermoModeEHZBRTS', 'HeatingSwitch', 'HeatingStatus', 'ThermoMode_2', 'ThermoSetpoint', 'ThermoOnOff' ) and \
-            (   ( ClusterType in ( 'IAS_ACE', 'Door', 'Switch', 'SwitchButton', 'AqaraOppleMiddle', 'Motion', 
+            (   ( ClusterType in ( 'IAS_ACE', 'Door', 'Switch', 'SwitchButton', 'AqaraOppleMiddle', 
                                  'Ikea_Round_5b', 'Ikea_Round_OnOff', 'Vibration', 'OrviboRemoteSquare', 'Button_3', 'LumiLock') ) or \
                 ( ClusterType == WidgetType == 'DoorLock') or \
                 ( ClusterType == WidgetType == 'Alarm') or \

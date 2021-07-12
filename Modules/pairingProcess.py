@@ -20,7 +20,7 @@ import json
 
 from Classes.LoggingManagement import LoggingManagement
 
-from Modules.schneider_wiser import schneider_wiser_registration
+from Modules.schneider_wiser import schneider_wiser_registration, schneider_wiser2_registration
 #
 from Modules.bindings import unbindDevice, bindDevice, rebind_Clusters
 from Modules.basicOutputs import  sendZigateCmd, identifyEffect, getListofAttribute
@@ -36,7 +36,7 @@ from Modules.configureReporting import processConfigureReporting
 from Modules.profalux import profalux_fake_deviceModel
 from Modules.philips import philips_set_pir_occupancySensibility
 from Modules.domoCreate import CreateDomoDevice
-from Modules.tools import reset_cluster_datastruct, get_and_inc_SQN
+from Modules.tools import reset_cluster_datastruct, get_and_inc_SQN, getListOfEpForCluster
 from Modules.zigateConsts import CLUSTERS_LIST
 from Modules.casaia import casaia_pairing
 from Modules.thermostats import thermostat_Calibration
@@ -127,9 +127,11 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             else:
                 self.log.logging( "Pairing", 'Debug', "[%s] NEW OBJECT: %s Manufacturer: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Manufacturer']), NWKID)
 
-        for iterEp in self.ListOfDevices[NWKID]['Ep']:
-            # ColorMode
-            if '0300' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+        if not knownModel: # No need to get Color Mode as we have a Config File
+            for iterEp in self.ListOfDevices[NWKID]['Ep']:
+                # ColorMode
+                if '0300' not in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                    continue
                 if 'ColorInfos' in self.ListOfDevices[NWKID]:
                     if 'ColorMode' in self.ListOfDevices[NWKID]['ColorInfos']:
                         waitForDomoDeviceCreation = False
@@ -191,7 +193,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
 
     if knownModel and RIA > 3 and status != 'UNKNOW' and status != 'inDB':
         # We have done several retry to get Ep ...
-        self.log.logging( "Pairing", 'Debug', "processNotinDB - Try several times to get all informations, let's use the Model now" +str(NWKID) )
+        self.log.logging( "Pairing", 'Debug', "processNotinDB - Try several times to get all informations, let's use the Model now " +str(NWKID) )
         status = 'createDB'
 
     elif int(self.ListOfDevices[NWKID]['RIA'],10) > 4 and status != 'UNKNOW' and status != 'inDB':  # We have done several retry
@@ -269,7 +271,14 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
 
             if self.pluginconf.pluginConf['capturePairingInfos']:
                 self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'CR-DOMO' )
+
             CreateDomoDevice(self, Devices, NWKID)
+            if self.ListOfDevices[NWKID]['Status'] not in ('inDB', 'failDB'):
+                #Something went wrong in the Widget creation
+                Domoticz.Error("processNotinDBDevices - Creat Domo Device Failed !!! for %s status: %s" %(NWKID,self.ListOfDevices[NWKID]['Status'] ))
+                self.ListOfDevices[NWKID]['Status'] = 'UNKNOW'
+                self.CommiSSionning = False
+                return
 
             #Don't know why we need as this seems very weird
             if NWKID not in self.ListOfDevices:
@@ -292,33 +301,48 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             cluster_to_bind = CLUSTERS_LIST
 
             # Checking if anything must be done before Bindings, and if we have to take some specific bindings
-            if 'Model' in self.ListOfDevices[NWKID]:
-                if self.ListOfDevices[NWKID]['Model'] != {}:
-                    _model = self.ListOfDevices[NWKID]['Model']
-                    if _model in self.DeviceConf:
-                        # Check if we have to unbind clusters
-                        if 'ClusterToUnbind' in self.DeviceConf[ _model ]:
-                            for iterEp, iterUnBindCluster in self.DeviceConf[ _model ]['ClusterToUnbind']:
-                                unbindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterUnBindCluster)
-    
-                        # Check if we have specific clusters to Bind                     
-                        if 'ClusterToBind' in self.DeviceConf[ _model ]:
-                            cluster_to_bind = self.DeviceConf[ _model ]['ClusterToBind']             
-                            self.log.logging( "Pairing", 'Debug', '%s Binding cluster based on Conf: %s' %(NWKID,  str(cluster_to_bind)) )
+            if 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['Model'] != {} and self.ListOfDevices[NWKID]['Model'] in self.DeviceConf:
+                _model = self.ListOfDevices[NWKID]['Model']
+                # Check if we have to unbind clusters
+                if 'ClusterToUnbind' in self.DeviceConf[ _model ]:
+                    for iterEp, iterUnBindCluster in self.DeviceConf[ _model ]['ClusterToUnbind']:
+                        unbindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterUnBindCluster)
 
-            # Binding devices
-            for iterEp in self.ListOfDevices[NWKID]['Ep']:
-                for iterBindCluster in cluster_to_bind:      # Binding order is important
-                    if iterBindCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                        if self.pluginconf.pluginConf['capturePairingInfos']:
-                            self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'BIND_' + iterEp + '_' + iterBindCluster )
-
-                        self.log.logging( "Pairing", 'Debug', 'Request a Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster) )
-                        # If option enabled, unbind
-                        if self.pluginconf.pluginConf['doUnbindBind']:
-                            unbindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
-                        # Finaly binding
-                        bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
+                # Check if we have specific clusters to Bind                     
+                if 'ClusterToBind' in self.DeviceConf[ _model ]:
+                    cluster_to_bind = self.DeviceConf[ _model ]['ClusterToBind']             
+                    self.log.logging( "Pairing", 'Debug', '%s Binding cluster based on Conf: %s' %(NWKID,  str(cluster_to_bind)) )
+                    for x in self.DeviceConf[ _model ][ 'Ep' ]:
+                        for y in cluster_to_bind:
+                            self.log.logging( "Pairing", 'Debug', 'Request a Bind for %s/%s on Cluster %s' %(NWKID, x, y) )
+                            # If option enabled, unbind
+                            if self.pluginconf.pluginConf['doUnbindBind']:
+                                unbindDevice( self, self.ListOfDevices[NWKID]['IEEE'], x, y)
+                            # Finaly binding
+                            bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], x, y)
+            else:
+                # Version 1
+                # for iterEp in self.ListOfDevices[NWKID]['Ep']:
+                #     for iterBindCluster in cluster_to_bind:      # Binding order is important
+                #         if iterBindCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                #             if self.pluginconf.pluginConf['capturePairingInfos']:
+                #                 self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'BIND_' + iterEp + '_' + iterBindCluster )
+                #             self.log.logging( "Pairing", 'Debug', 'Request a Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster) )
+                #             # If option enabled, unbind
+                #             if self.pluginconf.pluginConf['doUnbindBind']:
+                #                 unbindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
+                #             # Finaly binding
+                #             bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
+                # Version 2
+                if 'Epv2' in self.ListOfDevices[NWKID]:
+                    for ep in self.ListOfDevices[NWKID]['Epv2']:
+                        if 'ClusterIn' in self.ListOfDevices[NWKID]['Epv2'][ ep ]:
+                            for iterBindCluster in self.ListOfDevices[NWKID]['Epv2'][ ep ]['ClusterIn']:
+                                self.log.logging( "Pairing", 'Debug', 'Request a Bind for %s/%s on ClusterIn %s' %(NWKID, iterEp, iterBindCluster) )
+                                if self.pluginconf.pluginConf['doUnbindBind']:
+                                    unbindDevice( self, self.ListOfDevices[NWKID]['IEEE'], ep, iterBindCluster)
+                                # Finaly binding
+                                bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], ep, iterBindCluster)
 
             # Just after Binding Enable Opple with Magic Word
             if  self.ListOfDevices[NWKID]['Model'] in ('lumi.remote.b686opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b286opcn01',
@@ -353,26 +377,31 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                     func( self, NWKID)
 
             #4. IAS Enrollment
-            for iterEp in self.ListOfDevices[NWKID]['Ep']:
-                #IAS Zone
-                if '0500' in self.ListOfDevices[NWKID]['Ep'][iterEp] or \
-                        '0502'  in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                    # We found a Cluster 0x0500 IAS. May be time to start the IAS Zone process
-                    Domoticz.Status("[%s] NEW OBJECT: %s 0x%04s - IAS Zone controler setting" \
-                            %( RIA, NWKID, status))
-                    if self.pluginconf.pluginConf['capturePairingInfos']:
-                        self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'IAS-ENROLL' )
-                    self.iaszonemgt.IASZone_triggerenrollement( NWKID, iterEp)
-                    if '0502'  in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                        Domoticz.Status("[%s] NEW OBJECT: %s 0x%04s - IAS WD enrolment" \
-                            %( RIA, NWKID, status))
+            if ( int(self.FirmwareVersion,16) < 0x0320 ) :
+                for iterEp in self.ListOfDevices[NWKID]['Ep']:
+                    #IAS Zone
+                    if '0500' in self.ListOfDevices[NWKID]['Ep'][iterEp] or \
+                            '0502'  in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                        # We found a Cluster 0x0500 IAS. May be time to start the IAS Zone process
+                        Domoticz.Status("[%s] NEW OBJECT: %s 0x%04s - IAS Zone controler setting" \
+                                %( RIA, NWKID, status))
                         if self.pluginconf.pluginConf['capturePairingInfos']:
-                            self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'IASWD-ENROLL' )
-                        self.iaszonemgt.IASWD_enroll( NWKID, iterEp)
-                # In case of Schneider Wiser, let's do the Registration Process
-                if 'Manufacturer' in self.ListOfDevices[NWKID]:
-                    if self.ListOfDevices[NWKID]['Manufacturer'] == '105e':
-                        schneider_wiser_registration( self, Devices, NWKID )
+                            self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'IAS-ENROLL' )
+                        self.iaszonemgt.IASZone_triggerenrollement( NWKID, iterEp)
+                        if '0502'  in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                            Domoticz.Status("[%s] NEW OBJECT: %s 0x%04s - IAS WD enrolment" \
+                                %( RIA, NWKID, status))
+                            if self.pluginconf.pluginConf['capturePairingInfos']:
+                                self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'IASWD-ENROLL' )
+                            self.iaszonemgt.IASWD_enroll( NWKID, iterEp)
+
+            # In case of Schneider Wiser, let's do the Registration Process
+            if 'Manufacturer' in self.ListOfDevices[NWKID]:
+                if 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['Model'] == 'Wiser2-Thermostat':
+                    schneider_wiser2_registration(self, Devices, NWKID)
+
+                elif self.ListOfDevices[NWKID]['Manufacturer'] == '105e':
+                    schneider_wiser_registration( self, Devices, NWKID )
 
             # In case of Orvibo Scene controller let's Registration
             if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
@@ -395,11 +424,10 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
 
             # Identify for ZLL compatible devices
             # Search for EP to be used 
-            ep = '01'
-            for ep in self.ListOfDevices[NWKID]['Ep']:
-                if ep in ( '01', '03', '06', '09' ):
-                    break
-            identifyEffect( self, NWKID, ep , effect='Blink' )
+            for ep in getListOfEpForCluster( self, NWKID, '0003' ):
+                identifyEffect( self, NWKID, ep , effect='Blink' )
+                # We just do once
+                break
 
             for iterEp in self.ListOfDevices[NWKID]['Ep']:
                 self.log.logging( "Pairing", 'Debug', 'looking for List of Attributes ep: %s' %iterEp)
@@ -452,7 +480,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                 casaia_pairing( self, NWKID)
 
             elif 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( 'TS0601-sirene'):
-                tuya_sirene_registration(self, NWKID)
+                tuya_sirene_registration(self, NWKID, device_reset=True)
 
             elif 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( TUYA_eTRV_MODEL ):
                 tuya_eTRV_registration( self, NWKID, True)
@@ -460,7 +488,10 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             elif 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( 'TS0121'):
                 tuya_TS0121_registration( self, NWKID)
 
-            elif 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( 'TS0601-switch', 'TS0601-2Gangs-switch'):
+            elif 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( 'TS0601-Energy', 'TS0601-switch', 'TS0601-2Gangs-switch', 'TS0601-SmartAir'):
+                tuya_registration(self, NWKID, device_reset=True)
+
+            elif 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( 'TS0601-Parkside-Watering-Timer',):
                 tuya_registration(self, NWKID)
 
             # Reset HB in order to force Read Attribute Status

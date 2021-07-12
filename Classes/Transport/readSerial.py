@@ -65,6 +65,9 @@ def serial_read_from_zigate( self ):
         try:
             if self._connection:
                 data = self._connection.read(1)  # Blocking Read
+                if len(data) > 1:
+                    # We did a blocking read for 1 and we received more !!!
+                    self.logging_receive('Error',"serial_read_from_zigate - while serial read for 1 we got more !!! %s %s" %(data, len(data)))
 
         except serial.SerialException as e:
             self.logging_receive('Error',"serial_read_from_zigate - error while reading %s" %(e))

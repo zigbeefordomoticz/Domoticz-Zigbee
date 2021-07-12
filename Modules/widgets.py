@@ -526,7 +526,7 @@ SWITCH_LVL_MATRIX = {
     "Tamper": {
         '00': ( 0, "No Alert"),
         '01': ( 1, "Tamper "),
-        "ForceUpdate": True,
+        "ForceUpdate": False,
     },
 
     "BSO-Orientation": {
