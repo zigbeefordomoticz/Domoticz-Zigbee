@@ -157,6 +157,12 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
                 #     NWKID, Ieee, self.ListOfDevices.keys(), str(self.IEEE2NWK) ), NWKID)
                 continue
 
+        if 'Param' in self.ListOfDevices[ NWKID ]:
+            if 'resetMotiondelay' in self.ListOfDevices[ NWKID ]['Param']:
+                TimedOutMotion = self.ListOfDevices[ NWKID ]['Param']['resetMotiondelay']
+            if 'resetSwitchSelectorPushButton' in self.ListOfDevices[ NWKID ]['Param']:
+                TimedOutSwitchButton = self.ListOfDevices[ NWKID ]['Param']['resetSwitchSelectorPushButton']
+
         ID = Devices[unit].ID
         WidgetType = ''        
         WidgetType = WidgetForDeviceId( self, NWKID, ID)
@@ -165,7 +171,7 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
 
         SignalLevel, BatteryLvl = RetreiveSignalLvlBattery( self, NWKID)
 
-        if WidgetType in ('Motion', 'Vibration'):
+        if TimedOutMotion and WidgetType in ('Motion', 'Vibration'):
             resetMotion( self, Devices, NWKID, WidgetType, unit, SignalLevel, BatteryLvl, now, LUpdate, TimedOutMotion)
 
         elif TimedOutSwitchButton and WidgetType in SWITCH_LVL_MATRIX:
@@ -185,7 +191,7 @@ def resetMotion( self, Devices, NwkId, WidgetType, unit, SignalLevel, BatteryLvl
 
     if (now - lastupdate) >= TimedOut:
         Devices[unit].Update(nValue=0, sValue='Off')
-        self.log.logging( "Widget", "Debug", "Last update of the devices %s %s was %s ago" %( unit, WidgetType, (now - lastupdate)), NwkId)
+        self.log.logging( "Widget", "Log", "Last update of the devices %s %s was %s ago" %( unit, WidgetType, (now - lastupdate)), NwkId)
         #UpdateDevice_v2(self, Devices, unit, 0, "Off", BatteryLvl, SignalLevel)
         
 
