@@ -477,21 +477,27 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
 
 
             if 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['Model'] in ( 'AC201A', 'AC211', 'AC221'):
+                self.log.logging( "Pairing", 'Log', "CasaIA registration needed")
                 casaia_pairing( self, NWKID)
 
             elif 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( 'TS0601-sirene'):
-                tuya_sirene_registration(self, NWKID, device_reset=True)
+                self.log.logging( "Pairing", 'Log', "Tuya Sirene registration needed")
+                tuya_sirene_registration(self, NWKID)
 
             elif 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( TUYA_eTRV_MODEL ):
-                tuya_eTRV_registration( self, NWKID, True)
+                self.log.logging( "Pairing", 'Log', "Tuya eTRV registration needed")
+                tuya_eTRV_registration( self, NWKID, device_reset=True)
                 
             elif 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( 'TS0121'):
+                self.log.logging( "Pairing", 'Log', "Tuya TS0121 registration needed")
                 tuya_TS0121_registration( self, NWKID)
 
             elif 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( 'TS0601-Energy', 'TS0601-switch', 'TS0601-2Gangs-switch', 'TS0601-SmartAir'):
+                self.log.logging( "Pairing", 'Log', "Tuya general registration needed")
                 tuya_registration(self, NWKID, device_reset=True)
 
             elif 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( 'TS0601-Parkside-Watering-Timer',):
+                self.log.logging( "Pairing", 'Log', "Tuya Water Sensor Parkside registration needed")
                 tuya_registration(self, NWKID)
 
             # Reset HB in order to force Read Attribute Status
