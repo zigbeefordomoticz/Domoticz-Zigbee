@@ -277,6 +277,8 @@ def native_write_to_zigate( self, serialConnection, encoded_data):
                     'NbWrite': nb_write,
                 }
                 self.logging_send_error(  "write_to_zigate", context=_context)
+            else:
+                serialConnection.flush()
         else:
             _context = {
                 'Error code': 'TRANS-WRTZGTE-02',
