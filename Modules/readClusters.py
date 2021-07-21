@@ -2283,7 +2283,7 @@ def Cluster0500( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     elif MsgAttrID == "0002": # Zone Status
         #self.iaszonemgt.receiveIASmessages( MsgSrcAddr, MsgSrcEp,  5, MsgClusterData)     #Not needed for enrollment procedure
-        if MsgClusterData != '' and MsgAttType == '19':
+        if MsgClusterData != '' and MsgAttType in ('19','21'):
             alarm1 = int(MsgClusterData,16) & 0b0000000000000001
             alarm2 = (int(MsgClusterData,16) & 0b0000000000000010 ) >> 1
             tamper = (int(MsgClusterData,16) & 0b0000000000000100 ) >> 2
