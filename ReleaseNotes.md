@@ -21,7 +21,7 @@ Release Numbering
 - Odd numbers --> Stable5
 - Even numbers  --> Beta
 
-##    June 2021   - 5.1.05
+## 23 June 2021   - 5.1.06
 - [Technical] - Update of Readme.md to better indicate the way to move from one branch to an other
 - [Issue] - ZiGate+ Wifi not starting
 - [Hardware] - Tuya DIN Energy counter certfied
