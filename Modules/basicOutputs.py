@@ -806,20 +806,21 @@ def identifyEffect( self, nwkid, ep, effect='Blink' ):
     datas = ZIGATE_EP + ep + "%02x"%(effect_command[effect])  + "%02x" %0
     return send_zigatecmd_zcl_noack(self, nwkid, "00E0", datas )
 
-def set_PIROccupiedToUnoccupiedDelay( self, key, delay):
+def set_PIROccupiedToUnoccupiedDelay( self, key, delay, ListOfEp=None):
 
     cluster_id = "0406"
     attribute = '0010'
     data_type = '21'
     manuf_id = '0000'
     manuf_spec = '00'
-    ListOfEp = getListOfEpForCluster( self, key, cluster_id )
+    if ListOfEp is None:
+        ListOfEp = getListOfEpForCluster( self, key, cluster_id )
     for EPout in ListOfEp:
         data = "%04x" %delay
         self.log.logging( "BasicOutput", 'Log', "set_PIROccupiedToUnoccupiedDelay for %s/%s - delay: %s" %(key, EPout, delay),key)
         if attribute in self.ListOfDevices[key]['Ep'][EPout][cluster_id]:
             del self.ListOfDevices[key]['Ep'][EPout][cluster_id][ attribute ]
-        return write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled = True)
+        return write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled = False)
 
 def set_poweron_afteroffon( self, key, OnOffMode = 0xff):
     # OSRAM/LEDVANCE
@@ -861,6 +862,11 @@ def set_poweron_afteroffon( self, key, OnOffMode = 0xff):
         return write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled = True)
 
 
+def ieee_addr_request( self, nwkid):
+    u8RequestType = '00'
+    u8StartIndex = '00'
+    sendZigateCmd(self ,'0041', '02' + nwkid + u8RequestType + u8StartIndex )
+    
 def unknown_device_nwkid( self, nwkid ):
     
     if nwkid in self.UnknownDevices:
@@ -872,9 +878,9 @@ def unknown_device_nwkid( self, nwkid ):
     # If we didn't find it, let's trigger a NetworkMap scan if not one in progress
     if self.networkmap and not self.networkmap.NetworkMapPhase():
         self.networkmap.start_scan()
-    u8RequestType = '00'
-    u8StartIndex = '00'
-    sendZigateCmd(self ,'0041', '02' + nwkid + u8RequestType + u8StartIndex )
+    ieee_addr_request( self, nwkid)
+
+
 
 
 def send_default_response( self, Nwkid, srcEp, cluster, Direction, bDisableDefaultResponse, ManufacturerSpecific, u16ManufacturerCode, FrameType, response_to_command, sqn):
@@ -925,3 +931,31 @@ def do_Many_To_One_RouteRequest(self):
 
     sendZigateCmd(self ,'004F', bCacheRoute + u8Radius )
     self.log.logging( "BasicOutput", 'Debug',"do_Many_To_One_RouteRequest call !")
+
+
+def mgt_routing_req( self, nwkid, start_index):
+
+    if 'RoutingTable' not in self.ListOfDevices[ nwkid ]:
+        self.ListOfDevices[ nwkid ]['RoutingTable'] = {}
+        self.ListOfDevices[ nwkid ]['RoutingTable']['Devices'] = []
+        self.ListOfDevices[ nwkid ]['RoutingTable']['SQN'] = 0
+    else:
+        self.ListOfDevices[ nwkid ]['RoutingTable']['SQN'] += 1
+
+    payload = '%02x' %self.ListOfDevices[ nwkid ]['RoutingTable']['SQN'] + start_index
+    raw_APS_request( self, nwkid, '00', '0032', '0000', payload, zigate_ep='00', highpriority=False, ackIsDisabled = False , )
+
+
+def initiate_change_channel( self, new_channel):
+
+    self.log.logging( "BasicOutput", 'Log',"initiate_change_channel - channel: %s" %new_channel)
+    scanDuration = 'fe' # Initiate a change
+
+    channel_mask = '%08x' %maskChannel( self, new_channel )
+    target_address = 'ffff' # Broadcast to all devices
+
+    datas = target_address + channel_mask + scanDuration + '00'  + "0000"
+    self.log.logging( "BasicOutput", 'Log',"initiate_change_channel - 004A %s" %datas)
+    send_zigatecmd_raw( self, "004A", datas )
+    if '0000' in self.ListOfDevices:
+        self.ListOfDevices['0000']['CheckChannel'] = new_channel

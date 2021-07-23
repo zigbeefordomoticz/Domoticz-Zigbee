@@ -49,12 +49,21 @@ def tuya_siren_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstN
     self.log.logging( "Tuya", 'Debug', "tuya_siren_response - Nwkid: %s dp: %02x data: %s" %(NwkId, dp, data))
 
     if dp == 0x65: # Power Mode ( 0x00 Battery, 0x04 USB )
-        # 00 02 6504 0001 00 -- Battery mode
-        # 00 02 6504 0001 04 -- Main power mode
-        if data == '04':
-           self.log.logging( "Tuya", 'Log', "tuya_siren_response - Nwkid: %s/%s switch to USB power" %( NwkId, srcEp), NwkId)
-        elif data == '00':
+        if data == '00':
             self.log.logging( "Tuya", 'Log', "tuya_siren_response - Nwkid: %s/%s switch to Battery power" %( NwkId, srcEp), NwkId)
+
+        elif data == '01': # High
+            self.ListOfDebices[ NwkId]['Battery'] = 90
+
+        elif data == '02': # Medium
+            self.ListOfDebices[ NwkId]['Battery'] = 50
+
+        elif data == '03': # Low
+            self.ListOfDebices[ NwkId]['Battery'] = 25
+
+        elif data == '04':
+            self.log.logging( "Tuya", 'Log', "tuya_siren_response - Nwkid: %s/%s switch to USB power" %( NwkId, srcEp), NwkId)
+
         store_tuya_attribute( self, NwkId, 'PowerMode', data )
 
     elif dp == 0x66:

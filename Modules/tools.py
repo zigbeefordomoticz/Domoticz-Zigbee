@@ -1164,7 +1164,7 @@ def instrument_timing( module, timing, cnt_timing, cumul_timing, aver_timing, ma
     return cnt_timing, cumul_timing, aver_timing, max_timing
 
 # Configuration Helpers
-def setConfigItem(Key=None, Value=None):
+def setConfigItem(Key=None, Attribute='', Value=None):
    
     Config = {}
     if not isinstance(Value, (str, int, float, bool, bytes, bytearray, list, dict)):
@@ -1174,7 +1174,7 @@ def setConfigItem(Key=None, Value=None):
     if isinstance( Value, dict ):
         # There is an issue that Configuration doesn't allow None value in dictionary !
         # Replace none value to 'null'
-        Value = prepare_dict_for_storage( Value)
+        Value = prepare_dict_for_storage( Value, Attribute)
 
     try:
         Config = Domoticz.Configuration()
@@ -1186,10 +1186,11 @@ def setConfigItem(Key=None, Value=None):
         Config = Domoticz.Configuration(Config)
     except Exception as inst:
         Domoticz.Error("setConfigItem - Domoticz.Configuration operation failed: '"+str(inst)+"'")
+        return None
     return Config
 
 
-def getConfigItem(Key=None, Default={}):
+def getConfigItem(Key=None, Attribute='', Default={}):
     Value = Default
     try:
         Config = Domoticz.Configuration()
@@ -1201,30 +1202,29 @@ def getConfigItem(Key=None, Default={}):
         Value = Default
     except Exception as inst:
         Domoticz.Error("getConfigItem - Domoticz.Configuration read failed: '"+str(inst)+"'")
-    return Value
+
+    return repair_dict_after_load( Value, Attribute)
 
 
-def prepare_dict_for_storage( dict_items):
-    dict_str = json.dumps( dict_items )
-    return json.loads( dict_str, object_pairs_hook=dict_None_to_Null )
+def prepare_dict_for_storage( dict_items, Attribute):
+
+    from base64 import b64encode
+    if Attribute in dict_items:
+        dict_items[ Attribute ] = b64encode( str(dict_items[ Attribute ]).encode('utf-8') )
+    dict_items['Version'] = 1
+    return dict_items
+
+def repair_dict_after_load( b64_dict, Attribute ):
+    if b64_dict in ( '', {} ):
+        return {}
+    if 'Version' not in b64_dict:
+        Domoticz.Log("repair_dict_after_load - Not supported storage")
+        return {}
+    if Attribute in b64_dict:
+        from base64 import b64decode
+        b64_dict[ Attribute ] = eval( b64decode( b64_dict[ Attribute ] ) )
+    return b64_dict
+          
     
-def repair_dict_after_load( dict_items):
-    dict_str = json.dumps( dict_items )
-    return  json.loads( dict_str, object_pairs_hook=dict_Null_to_None)
+    
 
-def dict_None_to_Null( items ):
-    result = {}
-    for key, value in items:
-        if value is None:
-            Domoticz.Log("Updating %s: %s to %s:'Null'" %(key,value, key))
-            value = "Null"
-        result[key] = value
-    return result
-
-def dict_Null_to_None( items ):
-    result = {}
-    for key, value in items:
-        if value == "Null":
-            value = None
-        result[key] = value
-    return result   

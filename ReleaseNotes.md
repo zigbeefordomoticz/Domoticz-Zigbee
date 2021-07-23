@@ -24,6 +24,10 @@ Release Numbering
 ##    June 2021   - 5.1.05
 - [Technical] - Update of Readme.md to better indicate the way to move from one branch to an other
 - [Issue] - ZiGate+ Wifi not starting
+- [Hardware] - Tuya DIN Energy counter certfied
+- [Hardware] - Tuya/Parkside Smart Water Timer (Lidl), first phase.
+- [Hardware] - Gledopto GL-C-007-1ID
+- [Hardware] - Tuya Door Sensor TS0203
 
 ## 19 June 2021   - 5.1.04
 - [Hardware] - Philips Hue Hue White Ambiance GU10

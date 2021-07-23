@@ -24,7 +24,7 @@ from Modules.readAttributes import READ_ATTRIBUTES_REQUEST, ping_device_with_rea
         ReadAttributeRequest_0100, ReadAttributeRequest_0101_0000,\
         ReadAttributeRequest_000C, ReadAttributeRequest_0102, ReadAttributeRequest_0102_0008, ReadAttributeRequest_0201, ReadAttributeRequest_0201_0012, ReadAttributeRequest_0204, ReadAttributeRequest_0300,  \
         ReadAttributeRequest_0400, ReadAttributeRequest_0402, ReadAttributeRequest_0403, ReadAttributeRequest_0405, ReadAttributeRequest_0b04_050b_0505_0508, \
-        ReadAttributeRequest_0406, ReadAttributeRequest_0500, ReadAttributeRequest_0502, ReadAttributeRequest_0702, ReadAttributeRequest_000f, ReadAttributeRequest_fc01, ReadAttributeRequest_fc21
+        ReadAttributeRequest_0406, ReadAttributeRequest_0500, ReadAttributeRequest_0502, ReadAttributeRequest_0702, ReadAttributeRequest_000f, ReadAttributeRequest_fc01, ReadAttributeRequest_fc21, ping_tuya_device
 from Modules.configureReporting import processConfigureReporting
 from Modules.legrand_netatmo import  legrandReenforcement
 from Modules.blitzwolf import pollingBlitzwolfPower
@@ -38,7 +38,7 @@ from Modules.domoTools import timedOutDevice
 from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE, CLUSTERS_LIST, LEGRAND_REMOTES, LEGRAND_REMOTE_SHUTTER, LEGRAND_REMOTE_SWITCHS, ZIGATE_EP
 from Modules.pairingProcess import processNotinDBDevices
 from Modules.paramDevice import sanity_check_of_param
-
+from Modules.mgmt_rtg import mgmt_rtg
 
 # Read Attribute trigger: Every 10"
 # Configure Reporting trigger: Every 15
@@ -69,12 +69,28 @@ def attributeDiscovery( self, NwkId ):
         if 'Attributes List' in self.ListOfDevices[NwkId] and len(self.ListOfDevices[NwkId]['Attributes List']) > 0:
             return False
 
+        if "Attributes List" not in self.ListOfDevices[NwkId]:
+            self.ListOfDevices[ NwkId ]["Attributes List"] = {}
+            self.ListOfDevices[ NwkId ]["Attributes List"]["Ep"] = {}
+
+        if 'Request' not in self.ListOfDevices[ NwkId ]["Attributes List"]:
+            self.ListOfDevices[ NwkId ]["Attributes List"]['Request'] = {}
+
         for iterEp in list(self.ListOfDevices[NwkId]['Ep']):
             if iterEp == 'ClusterType': 
                 continue
+            if iterEp not in self.ListOfDevices[ NwkId ]["Attributes List"]['Request']:
+                self.ListOfDevices[ NwkId ]["Attributes List"]['Request'][ iterEp ] = {}
+
             for iterCluster in list(self.ListOfDevices[NwkId]['Ep'][iterEp]):
                 if iterCluster in ( 'Type', 'ClusterType', 'ColorMode' ): 
                     continue
+                if iterCluster not in self.ListOfDevices[ NwkId ]["Attributes List"]['Request'][ iterEp ]:
+                    self.ListOfDevices[ NwkId ]["Attributes List"]['Request'][ iterEp ][ iterCluster ] = 0
+
+                if self.ListOfDevices[ NwkId ]["Attributes List"]['Request'][ iterEp ][ iterCluster ] != 0:
+                    continue
+
                 if not self.busy and self.ZigateComm.loadTransmit() <= MAX_LOAD_ZIGATE:
                     if int(iterCluster,16) < 0x0fff:
                         getListofAttribute( self, NwkId, iterEp, iterCluster)
@@ -86,6 +102,9 @@ def attributeDiscovery( self, NwkId ):
                         ):
                         getListofAttribute( self, NwkId, iterEp, iterCluster, manuf_specific='01', manuf_code=self.ListOfDevices[NwkId]['Manufacturer'])
                         #getListofAttributeExtendedInfos(self, nwkid, EpOut, cluster, start_attribute=None, manuf_specific=None, manuf_code=None)
+
+                    self.ListOfDevices[ NwkId ]["Attributes List"]['Request'][ iterEp ][ iterCluster ] = time.time()
+
                 else:
                     rescheduleAction = True
 
@@ -121,6 +140,13 @@ def pollingManufSpecificDevices( self, NwkId):
                     %(NwkId,  param, self.ListOfDevices[ NwkId]['Param'][ param ]), NwkId)       
                 
                 pollingCasaia( self, NwkId )    
+
+        elif param == 'TuyaPing' and self.ListOfDevices[ NwkId]['Param'][ param ]:
+            _FEQ = 5 // HEARTBEAT
+            if _FEQ and (( _HB % _FEQ ) == 0):
+                self.log.logging( "Heartbeat", 'Debug', "++ pollingManufSpecificDevices -  %s Found: %s=%s" \
+                    %(NwkId,  param, self.ListOfDevices[ NwkId]['Param'][ param ]), NwkId)  
+                ping_tuya_device( self, NwkId)     
 
     return False
 
@@ -415,10 +441,8 @@ def processKnownDevices( self, Devices, NWKID ):
                 func(self, NWKID )
 
 
-    #if intHB == 3:
-    #    if 'Attributes List' in self.ListOfDevices[NWKID]['Attributes List']:
-    #        del self.ListOfDevices[NWKID]['Attributes List']
-    #    attributeDiscovery( self, NWKID )
+    if self.pluginconf.pluginConf['RoutingTableRequestFeq'] and not self.busy and self.ZigateComm.loadTransmit() == 0 and (intHB % 10 ) == 0:
+        mgmt_rtg( self, NWKID)
 
     # Reenforcement of Legrand devices options if required
     if ( self.HeartbeatCount % LEGRAND_FEATURES ) == 0 :

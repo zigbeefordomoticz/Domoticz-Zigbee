@@ -40,7 +40,7 @@ ATTRIBUTES = {
     '0201': [ 0x0000, 0x0008, 0x0010, 0x0011, 0x0012,  0x0014, 0x0015, 0x0016, 0x001B, 0x001C, 0x001F, 0xfd00],
     '0202': [ 0x0000, 0x0001 ],
     '0204': [ 0x0000, 0x0001, 0x0002 ],
-    '0300': [ 0x0000, 0x0001, 0x0003, 0x0004, 0x0007, 0x0008, 0x4010],
+    '0300': [ 0x0000, 0x0001, 0x0003, 0x0004, 0x0007, 0x0008, 0x400a ],
     '0400': [ 0x0000],
     '0402': [ 0x0000],
     '0403': [ 0x0000],
@@ -222,6 +222,13 @@ def retreive_attributes_from_default_plugin_list( self, key, Ep, cluster):
         " ".join("0x{:04x}".format(num) for num in targetAttribute), nwkid=key)
 
     return targetAttribute
+
+def ping_tuya_device( self, key ):
+
+    PING_CLUSTER = '0000'
+    PING_ATTRIBUTE = '0001'
+    self.log.logging( "ReadAttributes", 'Log', "Ping Tuya Devices - Key: %s" %(key), nwkid=key)
+    send_zigatecmd_zcl_ack( self, key, '0100', ZIGATE_EP + '01' + PING_CLUSTER + '00' + '00' + '0000' + "%02x" %(0x01) + PING_ATTRIBUTE )
 
 def ping_device_with_read_attribute(self, key):
     # In order to ping a device, we simply send a Read Attribute on Cluster 0x0000 and looking for Attribute 0x0000

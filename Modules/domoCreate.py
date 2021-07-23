@@ -17,7 +17,7 @@ from Classes.LoggingManagement import LoggingManagement
 
 from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
 from Modules.widgets import SWITCH_LVL_MATRIX
-from Modules.domoTools import GetType, subtypeRGB_FromProfile_Device_IDs
+from Modules.domoTools import GetType, subtypeRGB_FromProfile_Device_IDs, subtypeRGB_FromProfile_Device_IDs_onEp2
 
 
 def cleanup_widget_Type( widget_type_list ):
@@ -445,6 +445,11 @@ def CreateDomoDevice(self, Devices, NWKID):
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetType ="Custom")
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in VOC" %(t), NWKID)
 
+            if t in ( 'CH2O', ):
+                Options = '1;ppm'
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetType ="Custom")
+                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in VOC" %(t), NWKID)
+
             if t in ( 'CarbonDioxyde', ):
                 Options = '1;ppm'
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 0xF3, Subtype_ = 31, Switchtype_= 0, widgetOptions = Options)
@@ -679,7 +684,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                         createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 244, Subtype_ = 73, Switchtype_ = 7 )
 
             # ======= Color Control: RGB, WW, Z or combinaisons
-            if t in ( 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl'):
+            if t in ( 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl', 'ColorControlRGBW', 'ColorControlRGBWZ'):
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Colorxxxx" %(t), NWKID)
                 # variateur de couleur/luminosite/on-off
 
@@ -691,14 +696,22 @@ def CreateDomoDevice(self, Devices, NWKID):
                     Subtype_ = 0x07  # 3 Color palettes widget
                 elif t == 'ColorControlWW':    
                     Subtype_ = 0x08  # White color palette / Dimable
+                elif t == 'ColorControlRGBW':
+                    Subtype_ = 0x01  # RGBW 
+                elif t == 'ColorControlRGBWZ':
+                    Subtype_ = 0x06
                 else:
                     # Generic ColorControl, let's try to find a better one.
-                    if 'ColorInfos' in self.ListOfDevices[NWKID]:
-                        Subtype_ = subtypeRGB_FromProfile_Device_IDs( self.ListOfDevices[NWKID]['Ep'], self.ListOfDevices[NWKID]['Model'],
-                            self.ListOfDevices[NWKID]['ProfileID'], self.ListOfDevices[NWKID]['ZDeviceID'], self.ListOfDevices[NWKID]['ColorInfos'])
-                    else:
-                        Subtype_ = subtypeRGB_FromProfile_Device_IDs( self.ListOfDevices[NWKID]['Ep'], self.ListOfDevices[NWKID]['Model'],
-                            self.ListOfDevices[NWKID]['ProfileID'], self.ListOfDevices[NWKID]['ZDeviceID'], None)
+                    if 'Epv2' in self.ListOfDevices[NWKID]:
+                        Subtype_ = subtypeRGB_FromProfile_Device_IDs_onEp2( self.ListOfDevices[NWKID]['Epv2'])
+                        
+                    if Subtype_ is None:
+                        if 'ColorInfos' in self.ListOfDevices[NWKID]:
+                            Subtype_ = subtypeRGB_FromProfile_Device_IDs( self.ListOfDevices[NWKID]['Ep'], self.ListOfDevices[NWKID]['Model'],
+                                self.ListOfDevices[NWKID]['ProfileID'], self.ListOfDevices[NWKID]['ZDeviceID'], self.ListOfDevices[NWKID]['ColorInfos'])
+                        else:
+                            Subtype_ = subtypeRGB_FromProfile_Device_IDs( self.ListOfDevices[NWKID]['Ep'], self.ListOfDevices[NWKID]['Model'],
+                                self.ListOfDevices[NWKID]['ProfileID'], self.ListOfDevices[NWKID]['ZDeviceID'], None)
 
                     if Subtype_ == 0x02:   
                         t = 'ColorControlRGB'
@@ -710,7 +723,6 @@ def CreateDomoDevice(self, Devices, NWKID):
                         t = 'ColorControlWW'
                     else:                  
                         t = 'ColorControlFull'
-
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 241, Subtype_ = Subtype_, Switchtype_ = 7 )
 
 
