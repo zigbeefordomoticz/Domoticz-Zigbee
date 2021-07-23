@@ -27,6 +27,7 @@ Release Numbering
 - [Hardware] - Tuya DIN Energy counter certfied
 - [Hardware] - Tuya/Parkside Smart Water Timer (Lidl), first phase.
 - [Hardware] - Gledopto GL-C-007-1ID
+- [Hardware] - Tuya Door Sensor TS0203
 
 ## 19 June 2021   - 5.1.04
 - [Hardware] - Philips Hue Hue White Ambiance GU10
