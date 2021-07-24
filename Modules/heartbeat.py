@@ -279,10 +279,17 @@ def pingDevices( self, NwkId, health, checkHealthFlag, mainPowerFlag):
     if not mainPowerFlag:
         return
 
+    if 'Param' in self.ListOfDevices[NwkId] and 'TuyaPing' in self.ListOfDevices[NwkId]['Param'] and int(self.ListOfDevices[NwkId]['Param']['TuyaPing']) == 1:
+        self.log.logging( "Heartbeat", 'Debug', "------> pingDevice disabled for %s as TuyaPing enabled %s" 
+            %(NwkId,self.ListOfDevices[NwkId]['Param']['TuyaPing'], ) , NwkId)
+        return
+
     if 'Param' in self.ListOfDevices[NwkId] and 'pingBlackListed' in self.ListOfDevices[NwkId]['Param'] and int(self.ListOfDevices[NwkId]['Param']['pingBlackListed']) == 1:
         self.log.logging( "Heartbeat", 'Debug', "------> pingDevice disabled for %s as pingBlackListed enabled %s" 
         %(NwkId,self.ListOfDevices[NwkId]['Param']['pingBlackListed'], ) , NwkId)
         return
+
+
 
     now = int(time.time())
 
