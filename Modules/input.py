@@ -105,6 +105,7 @@ def ZigateRead(self, Devices, Data):
     DECODERS = {
         "0100": Decode0100,
         "004d": Decode004D,
+        "0400": Decode0400,
         "8000": Decode8000_v2,
         "8002": Decode8002,
         "8003": Decode8003,
@@ -269,6 +270,29 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
         else:
             self.log.logging(  "Input", "Log", "Decode0100 - Read Attribute Request %s/%s Cluster %s Attribute %s"
                 % (MsgSrcAddr, MsgSrcEp, MsgClusterId, Attribute),)
+
+
+def Decode0400(self, Devices, MsgData, MsgLQI): # Enrolment Request Response
+
+    self.log.logging( "Input", "Log", "Decode0400 - message : %s" % MsgData)
+    # 02 0000 01 01 00 00
+    # 02 0000 04 01 00 00
+    # 02 426b 04 01 00 5c
+    if len(MsgData) != 14:
+        return
+
+    # Enrolment Request Response
+    SrcAddress = MsgData[2:6]
+    SrcEndPoint = MsgData[6:8]
+    EnrollResponseCode = MsgData[10:12]
+    ZoneId = MsgData[12:14]
+
+    self.log.logging( "Input", "Log", "Decode0400 - Source Address: %s Source Ep: %s EnrollmentResponseCode: %s ZoneId: %s" % (
+        SrcAddress, SrcEndPoint, EnrollResponseCode, ZoneId))
+
+    if self.iaszonemgt:    
+        self.iaszonemgt.receiveIASenrollmentRequestResponse( SrcAddress , SrcEndPoint, EnrollResponseCode, ZoneId)
+
 
 # Responses
 def Decode8000_v2(self, Devices, MsgData, MsgLQI):  # Status
