@@ -2080,7 +2080,7 @@ def Cluster0400( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     # (Measurement: LUX)
     #  Lux=10^((y-1)/10000)
 
-    self.log.logging( "Cluster", 'Log', "readCluster - %s - %s/%s  Attr: %s Type: %s Size: %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
+    self.log.logging( "Cluster", 'Debug', "readCluster - %s - %s/%s  Attr: %s Type: %s Size: %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
     value = int(decodeAttribute( self, MsgAttType, MsgClusterData))
     if value < 0 or value > 0xffff:
         return
@@ -2089,7 +2089,7 @@ def Cluster0400( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         lux = value
     else:
         lux = int( 10 ** ((value - 1 ) / 10000))
-    self.log.logging( "Cluster", 'Log', "ReadCluster - %s - %s/%s - LUX Sensor: %s/%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value, lux), MsgSrcAddr)
+    self.log.logging( "Cluster", 'Debug', "ReadCluster - %s - %s/%s - LUX Sensor: %s/%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value, lux), MsgSrcAddr)
 
     MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(lux))
     checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, lux)
@@ -2227,6 +2227,11 @@ def Cluster0406( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.log.logging( "Cluster", 'Debug', "ReadCluster - %s - NwkId: %s Ep: %s AttrId: %s AttyType: %s Attsize: %s AttrValue: %s" \
             %( MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),MsgSrcAddr)
         self.log.logging( "Cluster", 'Debug', "ReadCluster - ClusterId=0406 - UnOccupied to Occupied delay: " + str(MsgClusterData) , MsgSrcAddr)
+
+    elif MsgAttrID == '0012':
+        self.log.logging( "Cluster", 'Debug', "ReadCluster - %s - NwkId: %s Ep: %s AttrId: %s AttyType: %s Attsize: %s AttrValue: %s" \
+            %( MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),MsgSrcAddr)
+        self.log.logging( "Cluster", 'Debug', "ReadCluster - ClusterId=0406 - UnoccupiedTo OccupiedThreshold: " + str(MsgClusterData) , MsgSrcAddr)
 
     elif MsgAttrID == '0030':
         self.log.logging( "Cluster", 'Debug', "ReadCluster - ClusterId=0406 - Attribut 0030: " + str(MsgClusterData) , MsgSrcAddr)
