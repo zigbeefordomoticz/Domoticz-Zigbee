@@ -204,6 +204,29 @@ class IAS_Zone_Management:
         self.setIASzoneControlerIEEE( nwkid, Epout)
 
 
+    def receiveIASenrollmentRequestResponse( self, nwkid , SrcEp, EnrolmentCode, zoneid):
+
+        if 'IAS' not in  self.ListOfDevices[nwkid]:
+            self.ListOfDevices[nwkid]['IAS'] = {}
+
+        if SrcEp not in self.ListOfDevices[nwkid]['IAS']:
+            self.ListOfDevices[nwkid]['IAS'][SrcEp] = {}
+            self.ListOfDevices[nwkid]['IAS'][SrcEp]['EnrolledStatus'] = {}
+            self.ListOfDevices[nwkid]['IAS'][SrcEp]['ZoneType'] = {}
+            self.ListOfDevices[nwkid]['IAS'][SrcEp]['ZoneTypeName'] = {}
+            self.ListOfDevices[nwkid]['IAS'][SrcEp]['ZoneStatus'] = {}
+
+        if not isinstance(self.ListOfDevices[nwkid]['IAS'][SrcEp]['ZoneStatus'], dict):
+            self.ListOfDevices[nwkid]['IAS'][SrcEp]['ZoneStatus'] = {}
+
+        if EnrolmentCode == '00':
+            self.ListOfDevices[nwkid]['IAS'][SrcEp]['EnrolledStatus'] = 1
+        self.ListOfDevices[nwkid]['IAS'][SrcEp]['ZoneId'] = zoneid
+
+        if nwkid in self.devices and SrcEp in self.devices[ nwkid ] and 'Step' in self.devices[nwkid][SrcEp]:
+            self.devices[nwkid][SrcEp]['Step'] == 7
+
+
     def receiveIASmessages(self, nwkid , SrcEp, step, value):
 
         self.logging( 'Debug', "receiveIASmessages - from: %s Step: %s Value: %s" %(nwkid, step, value))
@@ -245,8 +268,6 @@ class IAS_Zone_Management:
 
         elif step == 7: # Receive Enrollement IEEEE
             self.logging( 'Debug', "IAS_heartbeat - Enrollment with IEEE:%s" %value)
-
-
 
     def decode8401(self, MsgSQN, MsgEp, MsgClusterId, MsgSrcAddrMode, MsgSrcAddr, MsgZoneStatus, MsgExtStatus, MsgZoneID, MsgDelay):
 
