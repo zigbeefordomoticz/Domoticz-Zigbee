@@ -230,6 +230,7 @@ SETTINGS = {
 
     # Experimental
     'Experimental': {'Order': 15, 'param': {    
+        'nPDUaPDUThreshold':     {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
         'forceAckOnZCL':         {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
         'RoutingTableRequestFeq':{'type': 'int',  'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
 
