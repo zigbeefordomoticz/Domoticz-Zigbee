@@ -23,8 +23,7 @@ from logging.handlers import TimedRotatingFileHandler, RotatingFileHandler
 
 class LoggingManagement:
     def __init__(
-        self, pluginconf, PluginHealth, HardwareID, ListOfDevices, permitTojoin
-    ):
+        self, pluginconf, PluginHealth, HardwareID, ListOfDevices, permitTojoin):
         self._newError = False
         self.LogErrorHistory = {}
         self.pluginconf = pluginconf
@@ -225,6 +224,7 @@ def _loggingStatus(self, thread_name, message):
             Domoticz.Status(message)
     else:
         logging.info(" [%17s] " % thread_name + message)
+        Domoticz.Status(message)
 
 
 def _loggingLog(self, thread_name, message):
