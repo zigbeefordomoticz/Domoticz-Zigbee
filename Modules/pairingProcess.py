@@ -378,19 +378,14 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
 
             #4. IAS Enrollment
             for iterEp in self.ListOfDevices[NWKID]['Ep']:
-                if ( 
-                    'Model' in self.ListOfDevices[NWKID] 
-                    and self.ListOfDevices[NWKID]['Model'] == 'MOSZB-140' 
-                    ):
+                if (  'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['Model'] == 'MOSZB-140'  ):
                     # Frient trigger itself the Device Enrollment
                     break
                 # If not IAS cluster skip
-                if (
-                    '0500' not in self.ListOfDevices[NWKID]['Ep'][iterEp] 
-                    and '0502'  in self.ListOfDevices[NWKID]['Ep'][iterEp]
-                    ):
+                if ( '0500' not in self.ListOfDevices[NWKID]['Ep'][iterEp]  and '0502' not in self.ListOfDevices[NWKID]['Ep'][iterEp] ):
                     continue
 
+                Domoticz.Log("We have found 0500 or 0502 in %s" %self.ListOfDevices[NWKID]['Ep'][iterEp])
                 # Let's check we didn't have an automatic enrolment. In that case juste skip
                 if (
                     'IAS' in self.ListOfDevices[NWKID] 
