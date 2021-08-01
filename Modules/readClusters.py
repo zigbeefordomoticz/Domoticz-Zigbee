@@ -184,6 +184,7 @@ def ReadCluster(self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgCluster
             "0202": Cluster0202, 
             "0204": Cluster0204,
             "0300": Cluster0300,
+            "0301": Cluster0301,
             "0400": Cluster0400, 
             "0402": Cluster0402, 
             "0403": Cluster0403, 
@@ -2075,6 +2076,22 @@ def Cluster0300( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     else:
         self.log.logging( "Cluster", 'Log', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
+
+def Cluster0301( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData , Source):
+
+    checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, str(decodeAttribute( self, MsgAttType, MsgClusterData) ) )
+
+    if MsgAttrID == '0010': #Min
+        self.log.logging( "Cluster", 'Debug', "readCluster - %s - %s/%s  Ballast Configuration Min Level %s " %(
+            MsgClusterId, MsgSrcAddr, MsgSrcEp,  MsgClusterData), MsgSrcAddr)
+
+    elif MsgAttrID == '0011': #Max
+        self.log.logging( "Cluster", 'Debug', "readCluster - %s - %s/%s  Ballast Configuration Max Level %s " %(
+            MsgClusterId, MsgSrcAddr, MsgSrcEp,  MsgClusterData), MsgSrcAddr)
+
+    else:
+        self.log.logging( "Cluster", 'Log', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
+
 
 def Cluster0400( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData , Source):
     # (Measurement: LUX)

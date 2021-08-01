@@ -21,7 +21,7 @@ from Modules.tuyaTRV import tuya_trv_thermostat_sensor_mode
 from Modules.tuya import tuya_switch_relay_status, tuya_switch_indicate_light, get_tuya_attribute, tuya_energy_childLock
 
 def Ballast_max_level( self, nwkid, max_level ):
-    ballast_Configuration_max_level( self, nwkid,max_level)
+    ballast_Configuration_max_level( self, nwkid, max_level)
 
 def Ballast_min_level( self, nwkid, min_level):
     ballast_Configuration_min_level( self, nwkid, min_level)

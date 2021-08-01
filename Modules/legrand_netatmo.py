@@ -22,7 +22,9 @@ from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_EP, HEARTBEAT, LEGRAND_
 from Modules.tools import retreive_cmd_payload_from_8002, is_ack_tobe_disabled, get_and_inc_SQN
 from Modules.readAttributes import ReadAttributeRequest_0001, ReadAttributeRequest_0006_0000, ReadAttributeRequest_0b04_050b, ReadAttributeRequest_fc01, ReadAttributeRequest_fc40
 
-from Modules.basicOutputs import raw_APS_request, write_attribute,  write_attributeNoResponse
+from Modules.basicOutputs import raw_APS_request, write_attribute,  write_attributeNoResponse, read_attribute
+from Modules.bindings import bindDevice, unbindDevice
+from Modules.configureReporting import send_configure_reporting_attributes_set
 
 LEGRAND_CLUSTER_FC01 = {
         'Dimmer switch wo neutral':  { 'EnableLedInDark': '0001'  , 'EnableDimmer': '0000'   , 'EnableLedIfOn': '0002' },
@@ -374,7 +376,11 @@ def legrand_Dimmer_by_nwkid(self, NwkId, OnOff):
             self.log.logging( "Legrand", 'Debug',"legrand_Dimmer_by_nwkid - %s nothing to do" %NwkId, NwkId)
             return
         legrand_fc01( self, NwkId, 'EnableDimmer', OnOff)
-        del self.ListOfDevices[NwkId]['Legrand']['EnableDimmer'] 
+        del self.ListOfDevices[NwkId]['Legrand']['EnableDimmer']
+        if OnOff:
+            legrand_dimmer_enable( self, NwkId)
+        else:
+            legrand_dimmer_disable( self, NwkId)
         
     else:
         if 'Legrand' in self.ListOfDevices[NwkId]:
@@ -533,3 +539,37 @@ def store_netatmo_attribute( self, NwkId, Attribute, Value ):
     if 'Legrand' not in self.ListOfDevices[ NwkId ]:
         self.ListOfDevices[ NwkId ]['Legrand'] = {}
     self.ListOfDevices[ NwkId ]['Legrand'][ Attribute ] = Value
+
+
+def legrand_dimmer_enable( self, NwkId):
+
+    self.log.logging( "Legrand", 'Log',"legrand_dimmer_enable - %s " %NwkId, NwkId)
+
+    # Bind
+    if 'IEEE' not in self.ListOfDevices[ NwkId ]:
+        return
+    ieee = self.ListOfDevices[ NwkId ]['IEEE']
+    if ieee not in self.IEEE2NWK:
+        return
+    bindDevice( self, ieee, '01', '0008', destaddr=None, destep="01")
+
+    # Configure Reporting
+    # 0x0008 / 0x0000  Change 0x01, Min: 0x01, Max: 600
+    send_configure_reporting_attributes_set( self, NwkId, '01', '0008', '00', '00', '0000', 1, '0020000000010258000001' , [ 0x0000 ])
+    # 0x0008 / 0x00011 Change 0x01 Min: 0x00, Max 600
+    send_configure_reporting_attributes_set( self, NwkId, '01', '0008', '00', '00', '0000', 1, '0020001100000258000001' , [ 0x0011 ])
+    
+    
+    # Read Attribute 0x0008 / 0x0000 , 0x0011
+    read_attribute( self, NwkId ,ZIGATE_EP , '01' ,'0008' ,'00' , '00' , '0000' , 1, '0000', ackIsDisabled = True)
+    read_attribute( self, NwkId ,ZIGATE_EP , '01' ,'0008' ,'00' , '00' , '0011' , 1, '0000', ackIsDisabled = True)
+    # Read Attribute 0x0006 / 0x0000
+    read_attribute( self, NwkId ,ZIGATE_EP , '01' ,'0006' ,'00' , '00' , '0000' , 1, '0000', ackIsDisabled = True)
+
+
+
+def legrand_dimmer_disable( self, NwkId):
+
+    self.log.logging( "Legrand", 'Log',"legrand_dimmer_disable - %s " %NwkId, NwkId)
+    # Unbind
+    unbindDevice( self, self.ListOfDevices[NwkId]['IEEE'], '01', '0008')
