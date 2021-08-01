@@ -86,16 +86,17 @@ TUYA_MANUFACTURER_NAME = ( TUYA_ENERGY_MANUFACTURER + TS011F_MANUF_NAME + TS0041
 # Tuya Doc: https://developer.tuya.com/en/docs/iot/access-standard-zigbee?id=Kaiuyf28lqebl
 
 
-def tuya_registration(self, nwkid, device_reset=False):
+def tuya_registration(self, nwkid, device_reset=False, parkside= False):
     
     self.log.logging( "Tuya", 'Debug', "tuya_registration - Nwkid: %s" %nwkid)
     # (1) 3 x Write Attribute Cluster 0x0000 - Attribute 0xffde  - DT 0x20  - Value: 0x13 ( 19 Decimal)
     #  It looks like for Lidl Watering switch the Value is 0x0d ( 13 in decimal )
     EPout = '01'
     self.log.logging( "Tuya", 'Debug', "tuya_registration - Nwkid: %s ----- 0x13 in 0x0000/0xffde" %nwkid)
-    write_attribute( self, nwkid, ZIGATE_EP, EPout, '0000', '0000', '00', 'ffde', '20', '13', ackIsDisabled = True)
-    write_attribute( self, nwkid, ZIGATE_EP, EPout, '0000', '0000', '00', 'ffde', '20', '13', ackIsDisabled = True)
-    write_attribute( self, nwkid, ZIGATE_EP, EPout, '0000', '0000', '00', 'ffde', '20', '13', ackIsDisabled = True)
+    if parkside:
+        write_attribute( self, nwkid, ZIGATE_EP, EPout, '0000', '0000', '00', 'ffde', '20', '0d', ackIsDisabled = True)
+    else:    
+        write_attribute( self, nwkid, ZIGATE_EP, EPout, '0000', '0000', '00', 'ffde', '20', '13', ackIsDisabled = True)
 
     # (3) Cmd 0x03 on Cluster 0xef00  (Cluster Specific) / Zigbee Device Reset
     if device_reset:
