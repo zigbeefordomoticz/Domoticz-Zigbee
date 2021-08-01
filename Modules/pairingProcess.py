@@ -516,7 +516,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
 
             elif 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( 'TS0601-Parkside-Watering-Timer',):
                 self.log.logging( "Pairing", 'Log', "Tuya Water Sensor Parkside registration needed")
-                tuya_registration(self, NWKID)
+                tuya_registration(self, NWKID, device_reset=True, parkside= True)
 
             # Reset HB in order to force Read Attribute Status
             self.ListOfDevices[NWKID]['Heartbeat'] = 0
