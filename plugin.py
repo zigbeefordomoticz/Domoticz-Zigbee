@@ -435,45 +435,52 @@ class BasePlugin:
         self.busy = False
 
     def onStop(self):
-        self.log.logging( 'Plugin', 'Log',"onStop called")
-
-        self.log.logging( 'Plugin', 'Log',"onStop calling (1) domoticzDb DeviceStatus closed")
+        if self.log:
+            self.log.logging( 'Plugin', 'Log',"onStop called")
+            self.log.logging( 'Plugin', 'Log',"onStop calling (1) domoticzDb DeviceStatus closed")
         if self.domoticzdb_DeviceStatus:
             self.domoticzdb_DeviceStatus.closeDB()
-        self.log.logging( 'Plugin', 'Log',"onStop called (1) domoticzDb DeviceStatus closed")
+        if self.log:
+            self.log.logging( 'Plugin', 'Log',"onStop called (1) domoticzDb DeviceStatus closed")
 
-        self.log.logging( 'Plugin', 'Log',"onStop calling (2) domoticzDb Hardware closed")
+            self.log.logging( 'Plugin', 'Log',"onStop calling (2) domoticzDb Hardware closed")
         if self.domoticzdb_Hardware:
             self.domoticzdb_Hardware.closeDB()
-        self.log.logging( 'Plugin', 'Log',"onStop called (2) domoticzDb Hardware closed")
+        if self.log:
+            self.log.logging( 'Plugin', 'Log',"onStop called (2) domoticzDb Hardware closed")
 
-        self.log.logging( 'Plugin', 'Log',"onStop calling (3) Transport off")
+            self.log.logging( 'Plugin', 'Log',"onStop calling (3) Transport off")
         if self.ZigateComm:
             self.ZigateComm.thread_transport_shutdown()
             self.ZigateComm.close_conn()
-        self.log.logging( 'Plugin', 'Log',"onStop called (3) Transport off")
+        if self.log:
+            self.log.logging( 'Plugin', 'Log',"onStop called (3) Transport off")
 
-        self.log.logging( 'Plugin', 'Log',"onStop calling (4) WebServer off")
+            self.log.logging( 'Plugin', 'Log',"onStop calling (4) WebServer off")
         if self.webserver:
             self.webserver.onStop()
-        self.log.logging( 'Plugin', 'Log',"onStop called (4) WebServer off")
+        if self.log:
+            self.log.logging( 'Plugin', 'Log',"onStop called (4) WebServer off")
 
         #self.ZigateComm.close_conn()
-        self.log.logging( 'Plugin', 'Log',"onStop calling (5) Plugin Database saved")
+        if self.log:
+            self.log.logging( 'Plugin', 'Log',"onStop calling (5) Plugin Database saved")
         WriteDeviceList(self, 0)
-        self.log.logging( 'Plugin', 'Log',"onStop called (5) Plugin Database saved")
+        if self.log:
+            self.log.logging( 'Plugin', 'Log',"onStop called (5) Plugin Database saved")
 
         self.statistics.printSummary()
         self.statistics.writeReport()
 
-        self.log.logging( 'Plugin', 'Log',"onStop calling (6) Close Logging Management")
+        if self.log:
+            self.log.logging( 'Plugin', 'Log',"onStop calling (6) Close Logging Management")
         if self.log:
             self.log.closeLogFile()
         self.log.logging( 'Plugin', 'Log',"onStop called (6) Close Logging Management")
         
         for thread in threading.enumerate():
             if (thread.name != threading.current_thread().name):
-                self.log.logging( 'Plugin', 'Log', "'"+thread.name+"' is running, it must be shutdown otherwise Domoticz will abort on plugin exit.")
+                Domoticz.Log("'"+thread.name+"' is running, it must be shutdown otherwise Domoticz will abort on plugin exit.")
 
         self.PluginHealth['Flag'] = 3
         self.PluginHealth['Txt'] = 'No Communication'
