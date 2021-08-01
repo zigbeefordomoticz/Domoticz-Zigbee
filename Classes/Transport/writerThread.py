@@ -34,16 +34,16 @@ def writer_thread( self ):
             if self.writer_queue is None:
                 break
 
-            if self.pluginconf.pluginConf['nPDUaPDUThreshold']:
+            if  self.pluginconf.pluginConf['nPDUaPDUThreshold'] and self.firmware_with_8012 :
                 self.logging_send('Debug', "ZigateTransport: writer_thread Thread checking #nPDU: %s and #aPDU: %s." %(self.npdu,self.apdu))
 
-                if self.firmware_with_8012 and self.apdu > 2:
+                if self.apdu > 3:
                     self.logging_send('Log', "ZigateTransport: writer_thread Thread aPDU: %s retry later." %self.apdu)
-                    time.sleep( 0.5 )
+                    time.sleep( 0.25 )
                     continue
-                if self.firmware_with_8012 and self.npdu > 7:
+                if self.npdu > 9:
                     self.logging_send('Log', "ZigateTransport: writer_thread Thread nPDU: %s retry later." %self.npdu)
-                    time.sleep( 0.5 )
+                    time.sleep( 0.25 )
                     continue
    
             entry = self.writer_queue.get( )
@@ -84,7 +84,7 @@ def writer_thread( self ):
                     # Exit
                     break
                 
-                # ommand sent, if needed wait in order to reduce throughput and load on ZiGate
+                # Command sent, if needed wait in order to reduce throughput and load on ZiGate
                 limit_throuput(self, command)
             
             else:
