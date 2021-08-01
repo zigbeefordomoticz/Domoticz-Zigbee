@@ -1,5 +1,5 @@
 {
-	"_comment": "Dimmer switch w/o neutral",
+	"_comment": "Legrand Netamo Dimmer Switch",
 	"_version": "1.0",
 	"Ep":{
 		"01":{
@@ -10,9 +10,11 @@
 			"0006":"",
 			"0008":"",
 			"000f":"",
+			"0301":"",
 			"fc01":"",
 			"0019":"",
-			"Type":"LvlControl"}
+			"Type":"LvlControl"
+		}
 	},
 	"Type":"",
 	"ClusterToBind": [ "0006", "0008", "000f", "0003" ],
@@ -24,14 +26,17 @@
 		"0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0007", "000a", "4000", "f000" ],
 		"0001": [],
 		"0006": [ "0000", "4000", "4001", "4002", "4003" ],
-		"0008": [ "0000" ],
+		"0008": [ "0000"],
+		"0301": [ "0010", "0011"],
 		"fc01": [ "0000", "0001", "0002"]
+
 	},
 	"Param": {
+		"netatmoEnableDimmer": 1,
 		"PowerOnAfterOffOn": 255,
-		"netatmoEnableDimmer": 0,
-		"netatmoLedIfOn": 0,
-		"netatmoLedInDark": 0
+		"BallastMaxLevel": 254,
+		"BallastMinLevel": 1
 	},
-	"GroupMembership": [ [ "01", "fff6"], [ "01", "fff4"] ]
+	"GroupMembership": [ [ "01", "fff6" ], [ "01", "fff4"] ]
 }
+
