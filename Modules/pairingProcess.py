@@ -20,7 +20,7 @@ import json
 
 from Classes.LoggingManagement import LoggingManagement
 
-from Modules.schneider_wiser import schneider_wiser_registration, schneider_wiser2_registration
+from Modules.schneider_wiser import schneider_wiser_registration, wiser_home_lockout_thermostat
 #
 from Modules.bindings import unbindDevice, bindDevice, rebind_Clusters
 from Modules.basicOutputs import  sendZigateCmd, identifyEffect, getListofAttribute, write_attribute, read_attribute
@@ -411,11 +411,12 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
 
             # In case of Schneider Wiser, let's do the Registration Process
             if 'Manufacturer' in self.ListOfDevices[NWKID]:
-                if 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['Model'] == 'Wiser2-Thermostat':
-                    schneider_wiser2_registration(self, Devices, NWKID)
+                if 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['Model'] in ('Wiser2-Thermostat',):
+                    wiser_home_lockout_thermostat( self, NwkId, 0)
 
                 elif self.ListOfDevices[NWKID]['Manufacturer'] == '105e':
                     schneider_wiser_registration( self, Devices, NWKID )
+
 
             # In case of Orvibo Scene controller let's Registration
             if 'Manufacturer Name' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID][ 'Manufacturer Name'] == '欧瑞博':
