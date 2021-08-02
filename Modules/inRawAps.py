@@ -47,7 +47,7 @@ CALLBACK_TABLE2 = {
     'CASAIA': casaiaReadRawAPS,
 }
 
-def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, ManufacturerCode, Command, Data, payload):
+def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, GlobalCommand, ManufacturerCode, Command, Data, payload):
 
     """
     This function is called by Decode8002

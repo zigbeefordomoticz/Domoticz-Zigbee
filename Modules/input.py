@@ -548,7 +548,7 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
         return
 
 
-    inRawAps( self, Devices, srcnwkid, MsgSourcePoint, MsgClusterID, dstnwkid, MsgDestPoint, Sqn, ManufacturerCode, Command, Data, MsgPayload,)
+    inRawAps( self, Devices, srcnwkid, MsgSourcePoint, MsgClusterID, dstnwkid, MsgDestPoint, Sqn, GlobalCommand, ManufacturerCode, Command, Data, MsgPayload,)
     callbackDeviceAwake(self, srcnwkid, MsgSourcePoint, MsgClusterID)
 
 
