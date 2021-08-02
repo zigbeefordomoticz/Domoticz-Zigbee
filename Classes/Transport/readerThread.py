@@ -65,5 +65,6 @@ def shutdown_reader_thread( self):
             self.logging_receive( 'Log', "unknown connection: %s" %str(self._connection))
 
         self.logging_receive( 'Log', "close connection")
-        self._connection.close()
+        if self._connection:
+            self._connection.close()
         Domoticz.Log("Connection closed")
