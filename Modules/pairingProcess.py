@@ -412,7 +412,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             # In case of Schneider Wiser, let's do the Registration Process
             if 'Manufacturer' in self.ListOfDevices[NWKID]:
                 if 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['Model'] in ('Wiser2-Thermostat',):
-                    wiser_home_lockout_thermostat( self, NwkId, 0)
+                    wiser_home_lockout_thermostat( self, NWKID, 0)
 
                 elif self.ListOfDevices[NWKID]['Manufacturer'] == '105e':
                     schneider_wiser_registration( self, Devices, NWKID )
