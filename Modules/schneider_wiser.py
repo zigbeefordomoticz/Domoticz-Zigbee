@@ -50,7 +50,7 @@ def pollingSchneider( self, key ):
     return rescheduleAction
 
 
-def callbackDeviceAwake_Schneider(self, NwkId, EndPoint, cluster):
+def callbackDeviceAwake_Schneider(self, Devices, NwkId, EndPoint, cluster):
 
     """
     This is fonction is call when receiving a message from a Manufacturer battery based device.
@@ -71,6 +71,9 @@ def callbackDeviceAwake_Schneider(self, NwkId, EndPoint, cluster):
 
         Domoticz.Log("%s/%s Switching Reporting to NORMAL mode" %(NwkId, EndPoint))
         vact_config_reporting_normal(self, NwkId, EndPoint)
+        
+    if 'Model' in self.ListOfDevices[ NwkId ] and self.ListOfDevices[ NwkId ]['Model'] in ('Wiser2-Thermostat', ):
+        check_end_of_override_setpoint( self, Devices, NwkId, EndPoint)
 
 
 def callbackDeviceAwake_Schneider_SetPoints( self, NwkId, EndPoint, cluster):
@@ -1088,8 +1091,6 @@ def wiser2_setpoint_raiserlower( self, Devices, NwkId, mode, amount):
         self.log.logging( "Schneider", 'Debug',"wiser2_setpoint_raiserlower cmd Mode [Heat+Cool] amount: %s" %amount) 
 
 
-
-
 def wiserhome_ZCLVersion_response( self, Devices, srcNWKID, srcEp, Sqn):
     cmd = "01"
     status = "00"
@@ -1221,6 +1222,18 @@ def importSchneiderZoning( self ):
     # At that stage we have imported all informations
     self.log.logging( "Schneider", 'Debug', "importSchneiderZoning - Zone Information: %s " %self.SchneiderZone )
 
+def schneider_find_attribute(self, NWKID, EP, ClusterID ,attr ):
+
+    if EP not in self.ListOfDevices[NWKID]['Ep']:
+        self.ListOfDevices[NWKID]['Ep'][EP] = {}
+    if ClusterID not in self.ListOfDevices[NWKID]['Ep'][EP]:
+        self.ListOfDevices[NWKID]['Ep'][EP][ClusterID] = {}
+    if not isinstance( self.ListOfDevices[NWKID]['Ep'][EP][ClusterID] , dict):
+        self.ListOfDevices[NWKID]['Ep'][EP][ClusterID] = {}
+    if attr not in self.ListOfDevices[NWKID]['Ep'][EP][ClusterID]:
+        self.ListOfDevices[NWKID]['Ep'][EP][ClusterID][attr] = {}
+
+    return self.ListOfDevices[NWKID]['Ep'][EP][ClusterID][attr]
 
 def schneider_find_attribute_and_set(self, NWKID, EP, ClusterID ,attr ,defaultValue , newValue = None):
     """[summary]
@@ -1425,16 +1438,48 @@ def change_setpoint_for_time( self, Devices, srcNWKID, srcEp, ClusterID, dstNWKI
 
     action = data[2:4] + data[0:2]
     setpoint = int(data[6:8] + data[4:6], 16)
-    duration = data[10:12] + data[8:10]
+    duration = int( data[10:12] + data[8:10], 16 ) 
 
     if action == '0103':
         # Set setpoint On
         self.log.logging( "Schneider", 'Log', "change_setpoint_for_time -- Setpoint to %s for %s min" %( setpoint, duration))
+        override_setpoint( self, srcNWKID, srcEp, setpoint, duration)
         schneider_update_ThermostatDevice (self, Devices, srcNWKID, srcEp, ClusterID, setpoint) 
 
     elif action == '0300': 
         # Disable setpoint
         self.log.logging( "Schneider", 'Log', "change_setpoint_for_time -- Cancel setpoint" )
+        if 'Schneider' in self.ListOfDevices[ srcNWKID ] and 'ThermostatOverride'  in self.ListOfDevices[ srcNWKID ]['Schneider']:
+            del self.ListOfDevices[ srcNWKID ]['Schneider']['ThermostatOverride']     
 
     else:
         self.log.logging( "Schneider", 'Error', "change_setpoint_for_time -- Unknown action: %s setpoint: %s duration: %s" %( action, setpoint, duration) )
+
+def check_end_of_override_setpoint( self, Devices, NwkId, Ep):
+
+    if ( 'Schneider' in self.ListOfDevices[ NwkId ] 
+        and 'ThermostatOverride' in self.ListOfDevices[ NwkId ]['Schneider']
+        and 'OverrideStartTime' in self.ListOfDevices[ NwkId ]['Schneider']['ThermostatOverride']
+        and 'OverrideDuration' in self.ListOfDevices[ NwkId ]['Schneider']['ThermostatOverride']
+        and 'CurrentSetpoint' in self.ListOfDevices[ NwkId ]['Schneider']['ThermostatOverride']
+        ):
+        if time() > self.ListOfDevices[ NwkId ]['Schneider']['ThermostatOverride']['OverrideStartTime'] +  self.ListOfDevices[ NwkId ]['Schneider']['ThermostatOverride']['OverrideDuration']:
+            schneider_update_ThermostatDevice (self, Devices, NwkId, Ep, '0201', self.ListOfDevices[ NwkId ]['Schneider']['ThermostatOverride']['CurrentSetpoint'] )
+            del self.ListOfDevices[ NwkId ]['Schneider']['ThermostatOverride']
+
+def override_setpoint( self, NwkId, Ep, override, duration):
+
+    if 'Schneider' not in self.ListOfDevices[ NwkId ]:
+        self.ListOfDevices[ NwkId ]['Schneider']  = {}
+    if 'ThermostatOverride' not in self.ListOfDevices[ NwkId ]['Schneider']:
+        self.ListOfDevices[ NwkId ]['Schneider']['ThermostatOverride'] = {}
+
+    # Get current Setpoint
+    current_setpoint = schneider_find_attribute(self, NwkId, Ep, '0201' ,'0012' )
+    if current_setpoint == {}:
+        current_setpoint  = 2000
+    
+    self.ListOfDevices[ NwkId ]['Schneider']['ThermostatOverride']['CurrentSetpoint'] = current_setpoint
+    self.ListOfDevices[ NwkId ]['Schneider']['ThermostatOverride']['OverrideSetpoint'] = override
+    self.ListOfDevices[ NwkId ]['Schneider']['ThermostatOverride']['OverrideDuration'] = duration * 60
+    self.ListOfDevices[ NwkId ]['Schneider']['ThermostatOverride']['OverrideStartTime'] = time()

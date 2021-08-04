@@ -549,7 +549,7 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
 
 
     inRawAps( self, Devices, srcnwkid, MsgSourcePoint, MsgClusterID, dstnwkid, MsgDestPoint, Sqn, GlobalCommand, ManufacturerCode, Command, Data, MsgPayload,)
-    callbackDeviceAwake(self, srcnwkid, MsgSourcePoint, MsgClusterID)
+    callbackDeviceAwake(self, Devices, srcnwkid, MsgSourcePoint, MsgClusterID)
 
 
 
@@ -2233,7 +2233,7 @@ def Decode8100( self, Devices, MsgData, MsgLQI ):  # Read Attribute Response (in
 #        "Decode8100 - Catch error while decoding %s/%s cluster: %s MsgData: %s Error: %s"
 #        % (MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgData, e))
 
-    callbackDeviceAwake(self, MsgSrcAddr, MsgSrcEp, MsgClusterId)
+    callbackDeviceAwake(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId)
 
 
 def Decode8101(self, Devices, MsgData, MsgLQI):  # Default Response
@@ -2299,7 +2299,7 @@ def Decode8102(self, Devices, MsgData, MsgLQI):  # Attribute Reports
     loggingMessages(self, "8102", MsgSrcAddr, None, MsgLQI, MsgSQN)
     updLQI(self, MsgSrcAddr, MsgLQI)
     read_report_attributes( self, Devices, "8102", MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, )
-    callbackDeviceAwake(self, MsgSrcAddr, MsgSrcEp, MsgClusterId)
+    callbackDeviceAwake(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId)
 
 
 def read_report_attributes( self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, ):

@@ -110,8 +110,6 @@ def tuya_registration(self, nwkid, device_reset=False, parkside= False):
     raw_APS_request( self, nwkid, EPout, 'ef00', '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = is_ack_tobe_disabled(self, nwkid))
 
 
-
-
 def pollingTuya( self, key ):
     """
     This fonction is call if enabled to perform any Manufacturer specific polling action
@@ -123,7 +121,7 @@ def pollingTuya( self, key ):
 
     return False
 
-def callbackDeviceAwake_Tuya(self, NwkId, EndPoint, cluster):
+def callbackDeviceAwake_Tuya(self, Devices, NwkId, EndPoint, cluster):
     """
     This is fonction is call when receiving a message from a Manufacturer battery based device.
     The function is called after processing the readCluster part
