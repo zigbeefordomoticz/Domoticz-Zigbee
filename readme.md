@@ -19,6 +19,10 @@ We strongly recommend to use Domoticz 2021.1 or above
 
 If you cannot be on Domoticz 2020.x or above, please use the 'stable' branch which is the only one compatible with the oldest Domoticz version
 
+## LIMITATIONS
+
+* Please do consider that the current plugin is limited to create a maximum of 255 "Widgets" (Domoticz devices).  This will still give you the possibility to integrate a large number of Zigbee devices , but not an unlimited number.
+* 
 ## Documentation
 
 Documentation are available on the GitHub [Wiki](https://github.com/pipiche38/Domoticz-Zigate-Wiki "Wiki")
