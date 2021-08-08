@@ -46,7 +46,7 @@ def thermostat_Setpoint( self, NwkId, setpoint):
             thermostat_Setpoint_SPZB( self, NwkId, setpoint)
             return
 
-        elif self.ListOfDevices[NwkId]['Model'] in ( 'EH-ZB-RTS', 'EH-ZB-HACT', 'EH-ZB-VACT', 'Wiser2-Thermostat' ):
+        elif self.ListOfDevices[NwkId]['Model'] in ( 'EH-ZB-RTS', 'EH-ZB-HACT', 'EH-ZB-VACT', 'Wiser2-Thermostat', 'iTRV' ):
             # Schneider
             self.log.logging( "Thermostats", 'Debug', "thermostat_Setpoint - calling Schneider for %s with value %s" %(NwkId,setpoint), nwkid=NwkId)
             schneider_setpoint(self, NwkId, setpoint)
@@ -89,7 +89,7 @@ def thermostat_Setpoint( self, NwkId, setpoint):
     Hdata = "%04x" %setpoint
     EPout = '01'
 
-    self.log.logging( "Thermostats", 'Debug', "thermostat_Setpoint - for %s with value %s / cluster: %s, attribute: %s type: %s"
+    self.log.logging( "Thermostats", 'Debug', "thermostat_Setpoint - for %s with value 0x%s / cluster: %s, attribute: %s type: %s"
             %(NwkId,Hdata,cluster_id,Hattribute,data_type), nwkid=NwkId)
     write_attribute( self, NwkId, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
 
