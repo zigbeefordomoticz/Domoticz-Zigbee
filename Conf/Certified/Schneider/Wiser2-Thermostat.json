@@ -13,7 +13,7 @@
 			"fe03": "",
 			"0019": "",
 			"0201": "",
-			"Type": "Humi/Temp/ThermoSetpoint/ThermoMode" }
+			"Type": "Humi/Temp/ThermoSetpoint" }
   	},
 	"Type": "",
 	"ClusterToBind":[  ],
