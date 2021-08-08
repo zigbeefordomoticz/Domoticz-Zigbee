@@ -19,7 +19,7 @@ from Modules.basicOutputs import set_poweron_afteroffon, set_PIROccupiedToUnoccu
 from Modules.readAttributes import ReadAttributeRequest_0006_400x, ReadAttributeRequest_0406_0010
 from Modules.tuyaTRV import tuya_trv_thermostat_sensor_mode
 from Modules.tuya import tuya_switch_relay_status, tuya_switch_indicate_light, get_tuya_attribute, tuya_energy_childLock
-from Modules.schneider_wiser import wiser_home_lockout_thermostat
+from Modules.schneider_wiser import wiser_home_lockout_thermostat, iTRV_open_window_detection
 
 def Ballast_max_level( self, nwkid, max_level ):
     ballast_Configuration_max_level( self, nwkid, max_level)
@@ -153,6 +153,7 @@ DEVICE_PARAMETERS = {
     'BallastMaxLevel': Ballast_max_level,
     'BallastMinLevel': Ballast_min_level,
     'WiserLockThermostat': wiser_home_lockout_thermostat,
+    'WiseriTrvWindowOpen': iTRV_open_window_detection
 }
 
 def sanity_check_of_param( self, NwkId):
