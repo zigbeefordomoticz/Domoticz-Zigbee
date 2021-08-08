@@ -378,32 +378,36 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
 
             #4. IAS Enrollment
             for iterEp in self.ListOfDevices[NWKID]['Ep']:
-                if (  'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['Model'] == 'MOSZB-140'  ):
+                if 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['Model'] == 'MOSZB-140':
                     # Frient trigger itself the Device Enrollment
                     break
+
                 # If not IAS cluster skip
                 if ( '0500' not in self.ListOfDevices[NWKID]['Ep'][iterEp]  and '0502' not in self.ListOfDevices[NWKID]['Ep'][iterEp] ):
                     continue
 
-                Domoticz.Log("We have found 0500 or 0502 in %s" %self.ListOfDevices[NWKID]['Ep'][iterEp])
+                self.log.logging( "Pairing", 'Log', "We have found 0500 or 0502 on Ep: %s of %s" %(
+                    iterEp, NWKID))
+
                 # Let's check we didn't have an automatic enrolment. In that case juste skip
-                if (
-                    'IAS' in self.ListOfDevices[NWKID] 
-                    and iterEp in self.ListOfDevices[NWKID]['IAS'] 
-                    and 'EnrolledStatus' in self.ListOfDevices[NWKID]['IAS'][iterEp] 
-                    and self.ListOfDevices[NWKID]['IAS'][iterEp]['EnrolledStatus']
-                    ):
-                    continue
+                #if (
+                #    'IAS' in self.ListOfDevices[NWKID] 
+                #    and iterEp in self.ListOfDevices[NWKID]['IAS'] 
+                #    and 'EnrolledStatus' in self.ListOfDevices[NWKID]['IAS'][iterEp] 
+                #    and self.ListOfDevices[NWKID]['IAS'][iterEp]['EnrolledStatus']
+                #    ):
+                #    continue
 
                 #IAS Zone
                 # We found a Cluster 0x0500 IAS. May be time to start the IAS Zone process
-                Domoticz.Status("[%s] NEW OBJECT: %s 0x%04s - IAS Zone controler setting" \
+                self.log.logging( "Pairing", 'Status', "[%s] NEW OBJECT: %s 0x%04s - IAS Zone controler setting" \
                         %( RIA, NWKID, status))
                 if self.pluginconf.pluginConf['capturePairingInfos']:
                     self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'IAS-ENROLL' )
                 self.iaszonemgt.IASZone_triggerenrollement( NWKID, iterEp)
+
                 if '0502'  in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                    Domoticz.Status("[%s] NEW OBJECT: %s 0x%04s - IAS WD enrolment" \
+                    self.log.logging( "Pairing", 'Status',"[%s] NEW OBJECT: %s 0x%04s - IAS WD enrolment" \
                         %( RIA, NWKID, status))
                     if self.pluginconf.pluginConf['capturePairingInfos']:
                         self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'IASWD-ENROLL' )
