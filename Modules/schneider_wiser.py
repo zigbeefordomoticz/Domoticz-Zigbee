@@ -119,6 +119,13 @@ def schneider_wiser_registration( self, Devices, key ):
     if 'Manufacturer Name' in self.ListOfDevices[ key ] and self.ListOfDevices[ key ]['Manufacturer Name'] == 'Schneider Electric':
         return
 
+    if 'Model' in self.ListOfDevices[ key ] and self.ListOfDevices[ key ]['Model'] in ( 'iTRV', ):
+        iTRV_registration(self, key)
+        wiser_home_lockout_thermostat( self, key, 0)
+
+    if 'Model' in self.ListOfDevices[ key ] and self.ListOfDevices[ key ]['Model'] in ( 'Wiser2-Thermostat', ):
+        wiser_home_lockout_thermostat( self, key, 0)
+
     if 'Schneider' not in self.ListOfDevices[ key ]:
         self.ListOfDevices[ key ]['Schneider'] = {}
     self.ListOfDevices[ key ]['Schneider']['Registration'] = int(time())
@@ -309,6 +316,17 @@ def wiser_set_lang(self, key, EPout, lang='eng'): # 0x0000/0x5011
     self.log.logging( "Schneider", 'Debug', "wiser_set_lang Schneider Write Attribute (Lang) %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
     write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data, ackIsDisabled = False)
+
+
+def iTRV_registration(self, NwkId):
+    manuf_id = "105e"
+    manuf_spec = "01"
+    cluster_id = "%04x" %0x0201
+    Hattribute = "%04x" %0xe103
+    data_type = "10" # Bool
+    data = '01'
+    self.log.logging( "Schneider", 'Debug', "iTRV_registration Schneider Write Attribute" %(NwkId,), nwkid=NwkId)
+    write_attribute( self, NwkId, ZIGATE_EP, '01', cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data, ackIsDisabled = False)
 
 
 def wiser_set_thermostat_default_temp(self, Devices, key, EPout): # 0x0201/0x0012
@@ -567,7 +585,7 @@ def schneider_setpoint_thermostat( self, key, setpoint):
     # SetPoint is in centidegrees
 
     EPout = WISER_LEGACY_BASE_EP
-    if 'Model' in self.ListOfDevices[ key ] and self.ListOfDevices[ key ]['Model'] in ('Wiser2-Thermostat', ):
+    if 'Model' in self.ListOfDevices[ key ] and self.ListOfDevices[ key ]['Model'] in ('Wiser2-Thermostat', 'iTRV' ):
         EPout = '01'
 
     ClusterID = '0201'
@@ -658,7 +676,7 @@ def schneider_setpoint( self, key, setpoint):
         return
 
     if 'Model' in self.ListOfDevices[key]:
-        if self.ListOfDevices[key]['Model'] in ('EH-ZB-RTS', 'Wiser2-Thermostat'):
+        if self.ListOfDevices[key]['Model'] in ('EH-ZB-RTS', 'Wiser2-Thermostat', 'iTRV'):
             schneider_setpoint_thermostat(self, key, setpoint)
 
         elif self.ListOfDevices[key]['Model'] == 'EH-ZB-VACT':
@@ -812,15 +830,30 @@ def schneider_thermostat_answer_attribute_request(self, NWKID, EPout, ClusterID,
             %(NWKID, EPout, ClusterID, sqn, attr ), NWKID)
 
     data = dataType = payload = ''
-    if attr == 'e010': # mode of operation
+
+    zigate_ep = ZIGATE_EP
+    if 'Model' in self.ListOfDevices[ NWKID ] and self.ListOfDevices[ NWKID ]['Model'] in ('Wiser2-Thermostat', 'iTRV' ):
+        EPout = '01'
+        zigate_ep = '01'
+        cluster_frame = "08"
+    else:
+        cluster_frame = "18"
+
+    if attr == '0000': # Local Temperature
+        dataType = '29'
+        data = '%04x' %int( 100 * schneider_find_attribute(self, NWKID, '01', '0201' , '0000' ))
+
+    elif attr == 'e010': # mode of operation
         dataType = '30'
         data = '01' # Manual
+
     elif attr == '0015': #min setpoint temp
         dataType = '29'
         if self.ListOfDevices[NWKID]['Model'] in ( 'EH-ZB-VACT'):
             data = '02bc' # 7 degree
         else:
             data = '0032' #0.5 degree
+
     elif attr == '0016': #max setpoint temp
         dataType = '29'
         if self.ListOfDevices[NWKID]['Model'] in ( 'EH-ZB-VACT'):
@@ -855,12 +888,6 @@ def schneider_thermostat_answer_attribute_request(self, NWKID, EPout, ClusterID,
     cmd = "01"
     status = "00"
 
-    zigate_ep = ZIGATE_EP
-    if 'Model' in self.ListOfDevices[ NWKID ] and self.ListOfDevices[ NWKID ]['Model'] in ('Wiser2-Thermostat', ):
-        zigate_ep = '01'
-        cluster_frame = "08"
-    else:
-        cluster_frame = "18"
 
     self.log.logging( "Schneider", 'Debug', "schneider_thermostat_answer_attribute_request: nwkid %s ep: %s , clusterId: %s, sqn: %s, attr: %s, dataType: %s, data: %s" \
             %(NWKID, EPout, ClusterID, sqn, attr, dataType, data ), NWKID)
@@ -1077,7 +1104,7 @@ def wiser2_setpoint_raiserlower( self, Devices, NwkId, mode, amount):
     amount = int((struct.unpack('b',struct.pack('>B',int( amount, 16) ))[0])) * 10
 
     if mode == '00':  # Heat adjust Heat Setpoint
-        self.log.logging( "Schneider", 'Log',"wiser2_setpoint_raiserlower cmd Mode [Heat] amount: %s" %amount) 
+        self.log.logging( "Schneider", 'Debug',"wiser2_setpoint_raiserlower cmd Mode [Heat] amount: %s" %amount) 
         value = schneider_find_attribute_and_set(self, NwkId, '01', '0201', '0012', 2000)
         setpoint = int(( (value + amount ) * 20 ) / 20)  # Round to °.5
         schneider_update_ThermostatDevice (self, Devices, NwkId, '01', '0201', setpoint)
@@ -1100,7 +1127,7 @@ def wiserhome_ZCLVersion_response( self, Devices, srcNWKID, srcEp, Sqn):
     ZCLVersion = '03'
     payload = cluster_frame + Sqn + cmd + '0000' + status + dataType + ZCLVersion
     raw_APS_request( self, srcNWKID, srcEp, '0000', '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = is_ack_tobe_disabled(self, srcNWKID))
-    self.log.logging( "Schneider", 'Log','Schneider Wiser Home Response ZCLVersion %s to device %s' %(ZCLVersion,srcNWKID ),srcNWKID)
+    self.log.logging( "Schneider", 'Debug','Schneider Wiser Home Response ZCLVersion %s to device %s' %(ZCLVersion,srcNWKID ),srcNWKID)
 
 def wiser_read_attribute_request( self, NwkId, Ep, Sqn, ClusterId, Attribute):
 
@@ -1422,7 +1449,7 @@ def schneider_UpdateConfigureReporting( self, NwkId, Ep, ClusterId = None, Attri
 #### Wiser New Version
 def wiser_home_lockout_thermostat( self, NwkId, mode):
 
-    self.log.logging( "Schneider", 'Log', "wiser_home_lockout_thermostat -- mode: %s" %( mode))
+    self.log.logging( "Schneider", 'Debug', "wiser_home_lockout_thermostat -- mode: %s" %( mode))
     mode = int( mode )
     if mode not in ( 0, 1 ):
         return
@@ -1433,24 +1460,44 @@ def change_setpoint_for_time( self, Devices, srcNWKID, srcEp, ClusterID, dstNWKI
     # Command 0x80: 0301 2e09 7800
     #               0301 d007 1e00   ( 20° for 30 minutes)
     #               0301 7206 1e00   ( 16.5° for 30 minutes)
-    #               0300 ff0f 0000   ( cancel last bost )
+    #               0300 ff0f 0000   ( cancel last boost )
     #               0300 ff0f 0000
+                 
+    #               0201 5a0a 3c00   ( 26.5 for 60' )
+    #               0202 ca08 3c00   ( 22.5 for 60 )
+    #               0202 ca08 3c00
 
     action = data[2:4] + data[0:2]
     setpoint = int(data[6:8] + data[4:6], 16)
     duration = int( data[10:12] + data[8:10], 16 ) 
 
-    if action == '0103':
+    EPout = srcEp
+    if 'Model' in self.ListOfDevices[ srcNWKID ] and self.ListOfDevices[ srcNWKID ]['Model'] in ('iTRV' ):
+        EPout = '01'
+
+    if action == '0201': # Increase temp for CCTFR6100
+        self.log.logging( "Schneider", 'Debug', "change_setpoint_for_time -- Setpoint to %s for %s min" %( setpoint, duration))
+        override_setpoint( self, srcNWKID, EPout, setpoint, duration)
+        schneider_update_ThermostatDevice (self, Devices, srcNWKID, EPout, ClusterID, setpoint)
+
+    elif action == '0202': # Decrease temp for CCTFR6100
+        self.log.logging( "Schneider", 'Debug', "change_setpoint_for_time -- Setpoint to %s for %s min" %( setpoint, duration))
+        override_setpoint( self, srcNWKID, EPout, setpoint, duration)
+        schneider_update_ThermostatDevice (self, Devices, srcNWKID, EPout, ClusterID, setpoint)
+
+    elif action == '0103':
         # Set setpoint On
-        self.log.logging( "Schneider", 'Log', "change_setpoint_for_time -- Setpoint to %s for %s min" %( setpoint, duration))
-        override_setpoint( self, srcNWKID, srcEp, setpoint, duration)
-        schneider_update_ThermostatDevice (self, Devices, srcNWKID, srcEp, ClusterID, setpoint) 
+        self.log.logging( "Schneider", 'Debug', "change_setpoint_for_time -- Setpoint to %s for %s min" %( setpoint, duration))
+        override_setpoint( self, srcNWKID, EPout, setpoint, duration)
+        schneider_update_ThermostatDevice (self, Devices, srcNWKID, EPout, ClusterID, setpoint) 
 
     elif action == '0300': 
         # Disable setpoint
-        self.log.logging( "Schneider", 'Log', "change_setpoint_for_time -- Cancel setpoint" )
-        if 'Schneider' in self.ListOfDevices[ srcNWKID ] and 'ThermostatOverride'  in self.ListOfDevices[ srcNWKID ]['Schneider']:
-            del self.ListOfDevices[ srcNWKID ]['Schneider']['ThermostatOverride']     
+        self.log.logging( "Schneider", 'Debug', "change_setpoint_for_time -- Cancel setpoint" )
+        if 'Schneider' in self.ListOfDevices[ srcNWKID ] and 'ThermostatOverride' in self.ListOfDevices[ srcNWKID ]['Schneider']:
+            previous_setpoint = self.ListOfDevices[ srcNWKID ]['Schneider']['ThermostatOverride']['CurrentSetpoint']
+            schneider_update_ThermostatDevice (self, Devices, srcNWKID, EPout, '0201', setpoint) 
+            del self.ListOfDevices[ srcNWKID ]['Schneider']['ThermostatOverride']
 
     else:
         self.log.logging( "Schneider", 'Error', "change_setpoint_for_time -- Unknown action: %s setpoint: %s duration: %s" %( action, setpoint, duration) )
@@ -1483,3 +1530,39 @@ def override_setpoint( self, NwkId, Ep, override, duration):
     self.ListOfDevices[ NwkId ]['Schneider']['ThermostatOverride']['OverrideSetpoint'] = override
     self.ListOfDevices[ NwkId ]['Schneider']['ThermostatOverride']['OverrideDuration'] = duration * 60
     self.ListOfDevices[ NwkId ]['Schneider']['ThermostatOverride']['OverrideStartTime'] = time()
+
+
+def iTRV_open_window_detection( self, NwkId, enable=False):
+
+    self.log.logging( "Schneider", 'Debug', "iTRV_open_window_detection enable: %s" %enable)
+
+    manuf_id = "105e"
+    manuf_spec = "01"
+    cluster_id = "%04x" %0x0201
+
+    Hattribute = "%04x" %0xe013
+    data_type = "20" # Bool
+    if enable:
+        data = '04'
+    else:
+        data = '00'
+    self.log.logging( "Schneider", 'Debug', "iTRV_open_window_detection Schneider %s Write Attribute: 0xe013" %(NwkId,), nwkid=NwkId)
+    write_attribute( self, NwkId, ZIGATE_EP, '01', cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data, ackIsDisabled = False)
+
+    Hattribute = "%04x" %0xe014
+    data_type = "21" # 16Uint
+    if enable:
+        data = '%04x' %600
+    else:
+        data = '00'
+    self.log.logging( "Schneider", 'Debug', "iTRV_open_window_detection Schneider %s Write Attribute: 0xe013" %(NwkId,), nwkid=NwkId)
+    write_attribute( self, NwkId, ZIGATE_EP, '01', cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data, ackIsDisabled = False)
+
+    Hattribute = "%04x" %0xe015
+    data_type = "21" # 16Uint
+    if enable:
+        data = '%04x' %120
+    else:
+        data = '00'
+    self.log.logging( "Schneider", 'Debug', "iTRV_open_window_detection Schneider %s Write Attribute: 0xe013" %(NwkId,), nwkid=NwkId)
+    write_attribute( self, NwkId, ZIGATE_EP, '01', cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data, ackIsDisabled = False)
