@@ -219,12 +219,14 @@ class IAS_Zone_Management:
         if not isinstance(self.ListOfDevices[nwkid]['IAS'][SrcEp]['ZoneStatus'], dict):
             self.ListOfDevices[nwkid]['IAS'][SrcEp]['ZoneStatus'] = {}
 
-        if EnrolmentCode == '00':
-            self.ListOfDevices[nwkid]['IAS'][SrcEp]['EnrolledStatus'] = 1
-        self.ListOfDevices[nwkid]['IAS'][SrcEp]['ZoneId'] = zoneid
+        if 'Model' in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]['Model'] == 'MOSZB-140':
 
-        if nwkid in self.devices and SrcEp in self.devices[ nwkid ] and 'Step' in self.devices[nwkid][SrcEp]:
-            self.devices[nwkid][SrcEp]['Step'] == 7
+            if EnrolmentCode == '00':
+                self.ListOfDevices[nwkid]['IAS'][SrcEp]['EnrolledStatus'] = 1
+            self.ListOfDevices[nwkid]['IAS'][SrcEp]['ZoneId'] = zoneid
+    
+            if nwkid in self.devices and SrcEp in self.devices[ nwkid ] and 'Step' in self.devices[nwkid][SrcEp]:
+                self.devices[nwkid][SrcEp]['Step'] == 7
 
 
     def receiveIASmessages(self, nwkid , SrcEp, step, value):
