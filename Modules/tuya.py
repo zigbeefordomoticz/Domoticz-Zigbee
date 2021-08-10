@@ -218,7 +218,7 @@ def tuya_response( self,Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, 
         tuya_smartair_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
 
     elif _ModelName == 'TS0601-curtain':
-        tuya_smartair_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
+        tuya_curtain_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
         
     elif _ModelName in ( 'TS0601-thermostat' ):
         tuya_eTRV_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
@@ -701,9 +701,9 @@ def tuya_smartair_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, d
         store_tuya_attribute( self, NwkId, 'VOC ppm', voc_ppm ) 
         MajDomoDevice(self, Devices, NwkId, srcEp, '0402', voc_ppm, Attribute_ = voc_Attribute)
 
-    elif dp == 0x16: # Formaldéhyde ppm ( Méthanal / CH2O_ppm)
+    elif dp == 0x16: # Formaldéhyde µg/m3 ( Méthanal / CH2O_ppm)
         ch2O_Attribute = '0004'
-        CH2O_ppm = int(data,16) / 100
+        CH2O_ppm = int(data,16)
         store_tuya_attribute( self, NwkId, 'CH2O ppm', CH2O_ppm ) 
         MajDomoDevice(self, Devices, NwkId, srcEp, '0402', CH2O_ppm, Attribute_ = ch2O_Attribute)
 
