@@ -110,6 +110,7 @@ from Modules.zigateConsts import HEARTBEAT, CERTIFICATION, MAX_LOAD_ZIGATE, MAX_
 from Modules.txPower import set_TxPower, get_TxPower
 from Modules.checkingUpdate import checkPluginVersion, checkPluginUpdate, checkFirmwareUpdate
 from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
+from Modules.schneider_wiser import wiser_thermostat_monitoring_heating_demand
 
 #from Classes.APS import APSManagement
 from Classes.IAS import IAS_Zone_Management
@@ -128,6 +129,8 @@ from Classes.NetworkMap import NetworkMap
 from Classes.NetworkEnergy import NetworkEnergy
 
 from Classes.DomoticzDB import DomoticzDB_DeviceStatus, DomoticzDB_Hardware, DomoticzDB_Preferences
+
+
 
 VERSION_FILENAME = '.hidden/VERSION'
 
@@ -730,6 +733,8 @@ class BasePlugin:
 
         self.iaszonemgt.IAS_heartbeat( )
 
+        # Check and Update Heating demand for Wiser if applicable (this will be check in the call)
+        wiser_thermostat_monitoring_heating_demand( self, Devices)
         # Group Management
         if self.groupmgt:
             self.groupmgt.hearbeat_group_mgt()

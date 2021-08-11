@@ -75,39 +75,69 @@ def callbackDeviceAwake_Schneider(self, Devices, NwkId, EndPoint, cluster):
     if 'Model' in self.ListOfDevices[ NwkId ] and self.ListOfDevices[ NwkId ]['Model'] in ('Wiser2-Thermostat', ):
         check_end_of_override_setpoint( self, Devices, NwkId, EndPoint)
 
-        # Let check what is the Heating Demand 
+def wiser_thermostat_monitoring_heating_demand( self, Devices):
+    # Let check what is the Heating Demand
+    updated_pi_demand = None
+
+    for NwkId in list(self.ListOfDevices):
+        if 'Model' not in self.ListOfDevices[ NwkId ]:
+            continue
+        if self.ListOfDevices[ NwkId ]['Model'] != 'Wiser2-Thermostat':
+            continue
         if 'Param' not in self.ListOfDevices[ NwkId ]:
-            return
+            continue
         if 'WiserRoomNumber' not in  self.ListOfDevices[ NwkId ]['Param']:
-            return
+            continue
         if '0201' not in self.ListOfDevices[ NwkId ]['Ep']['01']:
-            return
+            continue
         if '0008' not in self.ListOfDevices[ NwkId ]['Ep']['01']['0201']:
             self.ListOfDevices[ NwkId ]['Ep']['01']['0201']['0008'] = 0
+        if 'Model' not in self.ListOfDevices[ NwkId ]:
+            continue
 
+        # We have found a Wiser Thermostat
         thermostat_room_number = int(self.ListOfDevices[ NwkId ]['Param']['WiserRoomNumber'])
+        updated_pi_demand = 0
+        cnt_actioners = 0
+
         # We need to find if there is any devices where this parameter is set and with the same value
-        for x in self.ListOfDevices:
+        for x in list(self.ListOfDevices):
+            if x == NwkId:
+                continue
             if 'Param' not in self.ListOfDevices[ x ]:
                 continue
             if 'WiserRoomNumber' not in  self.ListOfDevices[ x ]['Param']:
                 continue
             if int(self.ListOfDevices[ x ]['Param']['WiserRoomNumber']) != thermostat_room_number:
                 continue
+
             # We have a device which belongs to the same room
-            for y in self.ListOfDevices[ x ]['Ep']:
+            for y in list(self.ListOfDevices[ x ]['Ep']):
                 if '0201' in self.ListOfDevices[ x ]['Ep'][ y ]:
                     if '0008' in self.ListOfDevices[ x ]['Ep'][ y ]['0201']:
-                        # Pi Demand
-                        self.ListOfDevices[ NwkId ]['Ep']['01']['0201']['0008'] = ( self.ListOfDevices[ NwkId ]['Ep']['01']['0201']['0008'] + int(self.ListOfDevices[ x ]['Ep'][ y ]['0201']['0008'])) //2
+                        # Pi Demand based on 0201 Cluster
+                        updated_pi_demand += int(self.ListOfDevices[ x ]['Ep'][ y ]['0201']['0008'])
+                        cnt_actioners += 1
 
+                    elif '0702' in self.ListOfDevices[ x ]['Ep'][ y ] and '0400' in self.ListOfDevices[ x ]['Ep'][ y ]['0702']:
+                        # Mostlikely a FIP, then we check if there is some instant power or not
+                        cnt_actioners += 1
+                        if int(self.ListOfDevices[ x ]['Ep'][ y ]['0702']['0400']) > 0:
+                            updated_pi_demand += 100
+                                                     
                 elif '0006' in self.ListOfDevices[ x ]['Ep'][ y ]:
+                    # It is a simple ON/Off
                     if '0000' in self.ListOfDevices[ x ]['Ep'][ y ]['0006']:
+                        cnt_actioners += 1
                         if int(self.ListOfDevices[ x ]['Ep'][y]['0006']['0000']):
-                            self.ListOfDevices[ NwkId ]['Ep']['01']['0201']['0008'] = (self.ListOfDevices[ NwkId ]['Ep']['01']['0201']['0008'] + 100 ) // 2
-                        else:
-                            self.ListOfDevices[ NwkId ]['Ep']['01']['0201']['0008'] = (self.ListOfDevices[ NwkId ]['Ep']['01']['0201']['0008'] + 0 ) // 2
+                            updated_pi_demand += 100
 
+        if cnt_actioners:
+            #Domoticz.Log("---- Actioners: %s  Pi Demand: %s" %(cnt_actioners,updated_pi_demand ))
+            self.ListOfDevices[ NwkId ]['Ep']['01']['0201']['0008'] = int(round(updated_pi_demand / cnt_actioners))
+            MajDomoDevice(self, Devices, NwkId, '01', '0201', self.ListOfDevices[ NwkId ]['Ep']['01']['0201']['0008'] , Attribute_ = '0008')
+
+    
 
 def callbackDeviceAwake_Schneider_SetPoints( self, NwkId, EndPoint, cluster):
 
