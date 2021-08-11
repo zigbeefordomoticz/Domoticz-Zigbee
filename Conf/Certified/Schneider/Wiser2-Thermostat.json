@@ -30,6 +30,7 @@
 		"0405": [ "0000"]
   	},
 	"Param": {
-		"WiserLockThermostat": 0
+		"WiserLockThermostat": 0,
+		"WiserRoomNumber": 1
 	}
 }

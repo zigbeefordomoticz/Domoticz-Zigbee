@@ -75,6 +75,39 @@ def callbackDeviceAwake_Schneider(self, Devices, NwkId, EndPoint, cluster):
     if 'Model' in self.ListOfDevices[ NwkId ] and self.ListOfDevices[ NwkId ]['Model'] in ('Wiser2-Thermostat', ):
         check_end_of_override_setpoint( self, Devices, NwkId, EndPoint)
 
+        # Let check what is the Heating Demand 
+        if 'Param' not in self.ListOfDevices[ NwkId ]:
+            return
+        if 'WiserRoomNumber' not in  self.ListOfDevices[ NwkId ]['Param']:
+            return
+        if '0201' not in self.ListOfDevices[ NwkId ]['Ep']['01']:
+            return
+        if '0008' not in self.ListOfDevices[ NwkId ]['Ep']['01']['0201']:
+            self.ListOfDevices[ NwkId ]['Ep']['01']['0201']['0008'] = 0
+
+        thermostat_room_number = int(self.ListOfDevices[ NwkId ]['Param']['WiserRoomNumber'])
+        # We need to find if there is any devices where this parameter is set and with the same value
+        for x in self.ListOfDevices:
+            if 'Param' not in self.ListOfDevices[ x ]:
+                continue
+            if 'WiserRoomNumber' not in  self.ListOfDevices[ x ]['Param']:
+                continue
+            if int(self.ListOfDevices[ x ]['Param']['WiserRoomNumber']) != thermostat_room_number:
+                continue
+            # We have a device which belongs to the same room
+            for y in self.ListOfDevices[ x ]['Ep']:
+                if '0201' in self.ListOfDevices[ x ]['Ep'][ y ]:
+                    if '0008' in self.ListOfDevices[ x ]['Ep'][ y ]['0201']:
+                        # Pi Demand
+                        self.ListOfDevices[ NwkId ]['Ep']['01']['0201']['0008'] = ( self.ListOfDevices[ NwkId ]['Ep']['01']['0201']['0008'] + int(self.ListOfDevices[ x ]['Ep'][ y ]['0201']['0008'])) //2
+
+                elif '0006' in self.ListOfDevices[ x ]['Ep'][ y ]:
+                    if '0000' in self.ListOfDevices[ x ]['Ep'][ y ]['0006']:
+                        if int(self.ListOfDevices[ x ]['Ep'][y]['0006']['0000']):
+                            self.ListOfDevices[ NwkId ]['Ep']['01']['0201']['0008'] = (self.ListOfDevices[ NwkId ]['Ep']['01']['0201']['0008'] + 100 ) // 2
+                        else:
+                            self.ListOfDevices[ NwkId ]['Ep']['01']['0201']['0008'] = (self.ListOfDevices[ NwkId ]['Ep']['01']['0201']['0008'] + 0 ) // 2
+
 
 def callbackDeviceAwake_Schneider_SetPoints( self, NwkId, EndPoint, cluster):
 
@@ -874,8 +907,12 @@ def schneider_thermostat_answer_attribute_request(self, NWKID, EPout, ClusterID,
         dataType = '30'   # enum8
         data = '02'       # Heating only
     elif attr == '0008': # Pi Heating Demand  (valve position %) for Wiser Home
+        if '0201' not in self.ListOfDevices[ NWKID ]['Ep']['01']:
+            self.ListOfDevices[ NWKID ]['Ep']['01']['0201'] = {}
+        if '0008' not in self.ListOfDevices[ NWKID ]['Ep']['01']['0201']:
+            self.ListOfDevices[ NWKID ]['Ep']['01']['0201']['0008'] = 0
         dataType = '20'    # uint8
-        data = '00'        # This value is 0 when the thermostat is in “off” or “cooling” mode.
+        data = '%02x' %int(self.ListOfDevices[ NWKID ]['Ep']['01']['0201']['0008'])
     elif attr == 'e110': # ?? for Wiser Home
         dataType = '30'   # enum8
         data = '01'       # 0x02 then 0x030, 0x11
