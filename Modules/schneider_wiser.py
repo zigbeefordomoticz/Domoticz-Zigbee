@@ -903,9 +903,11 @@ def schneider_thermostat_answer_attribute_request(self, NWKID, EPout, ClusterID,
     elif attr == '001c': # System Mode for Wiser Home
         dataType = '30'   # enum8
         data =  '04'      # 0x00 Off, 0x01 Auto, 0x04 Heat
+
     elif attr == '001b': # ControlSequenceOfOperation for Wiser Home
         dataType = '30'   # enum8
         data = '02'       # Heating only
+
     elif attr == '0008': # Pi Heating Demand  (valve position %) for Wiser Home
         if '0201' not in self.ListOfDevices[ NWKID ]['Ep']['01']:
             self.ListOfDevices[ NWKID ]['Ep']['01']['0201'] = {}
@@ -913,6 +915,7 @@ def schneider_thermostat_answer_attribute_request(self, NWKID, EPout, ClusterID,
             self.ListOfDevices[ NWKID ]['Ep']['01']['0201']['0008'] = 0
         dataType = '20'    # uint8
         data = '%02x' %int(self.ListOfDevices[ NWKID ]['Ep']['01']['0201']['0008'])
+
     elif attr == 'e110': # ?? for Wiser Home
         dataType = '30'   # enum8
         data = '01'       # 0x02 then 0x030, 0x11
@@ -925,7 +928,6 @@ def schneider_thermostat_answer_attribute_request(self, NWKID, EPout, ClusterID,
     cmd = "01"
     status = "00"
 
-
     self.log.logging( "Schneider", 'Debug', "schneider_thermostat_answer_attribute_request: nwkid %s ep: %s , clusterId: %s, sqn: %s, attr: %s, dataType: %s, data: %s" \
             %(NWKID, EPout, ClusterID, sqn, attr, dataType, data ), NWKID)
 
@@ -933,6 +935,9 @@ def schneider_thermostat_answer_attribute_request(self, NWKID, EPout, ClusterID,
         payload = cluster_frame + sqn + cmd + attr[2:4] + attr[0:2] + status + dataType + data[2:4] + data[0:2]
     elif dataType == '30':
         payload = cluster_frame + sqn + cmd + attr[2:4] + attr[0:2] + status + dataType + data
+    else:
+        payload = cluster_frame + sqn + cmd + attr[2:4] + attr[0:2] + status + dataType + data
+
 
 
     raw_APS_request( self, NWKID, EPout, ClusterID, '0104', payload, zigate_ep=zigate_ep, ackIsDisabled = is_ack_tobe_disabled(self, NWKID))
