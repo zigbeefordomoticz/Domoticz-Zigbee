@@ -359,7 +359,7 @@ def tuya_switch_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dst
 
 def tuya_switch_command( self, NwkId, onoff, gang=0x01):
      
-    self.log.logging( "Tuya", 'Log', "tuya_switch_command - %s OpenClose: %s on gang: %s" %(NwkId, onoff, gang),NwkId )
+    self.log.logging( "Tuya", 'Debug', "tuya_switch_command - %s OpenClose: %s on gang: %s" %(NwkId, onoff, gang),NwkId )
     # determine which Endpoint
     if gang  not in  (0x01, 0x02, 0x03):
         self.log.logging( "Tuya", 'Error', "tuya_switch_command - Unexpected Gang: %s" %gang)
@@ -374,7 +374,7 @@ def tuya_switch_command( self, NwkId, onoff, gang=0x01):
     cmd = '00' # Command 
     action = '%02x01' %gang # Data Type 0x01 - Bool
     data = onoff
-    self.log.logging( "Tuya", 'Log', "tuya_switch_command - action: %s data: %s" %(action, data))
+    self.log.logging( "Tuya", 'Debug', "tuya_switch_command - action: %s data: %s" %(action, data))
     tuya_cmd( self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)   
 
 def tuya_energy_childLock( self, NwkId, lock=0x01):
@@ -430,7 +430,7 @@ def tuya_switch_relay_status( self, NwkId, gang=0x01, status=0xff):
 
 def tuya_watertimer_command( self, NwkId, onoff, gang=0x01):
      
-    self.log.logging( "Tuya", 'Log', "tuya_switch_command - %s OpenClose: %s on gang: %s" %(NwkId, onoff, gang),NwkId )
+    self.log.logging( "Tuya", 'Debug', "tuya_switch_command - %s OpenClose: %s on gang: %s" %(NwkId, onoff, gang),NwkId )
     # determine which Endpoint
     if gang  not in  (0x01, 0x02, 0x03):
         self.log.logging( "Tuya", 'Error', "tuya_switch_command - Unexpected Gang: %s" %gang)
@@ -452,13 +452,13 @@ def tuya_watertimer_command( self, NwkId, onoff, gang=0x01):
     sqn = get_and_inc_SQN( self, NwkId )
     action = '%02x01' %gang # Data Type 0x01 - Bool
     data = onoff
-    self.log.logging( "Tuya", 'Log', "tuya_switch_command - action: %s data: %s" %(action, data))
+    self.log.logging( "Tuya", 'Debug', "tuya_switch_command - action: %s data: %s" %(action, data))
     tuya_cmd( self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)  
 
 
 def tuya_watertimer_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
 
-    self.log.logging( "Tuya", 'Log', "tuya_response - Model: %s Nwkid: %s/%s dp: %02x data type: %02x data: %s" %(
+    self.log.logging( "Tuya", 'Debug', "tuya_response - Model: %s Nwkid: %s/%s dp: %02x data type: %02x data: %s" %(
         _ModelName, NwkId, srcEp,  dp, datatype, data),NwkId )
 
     if dp == 0x01:
@@ -484,7 +484,7 @@ def tuya_watertimer_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID,
     elif dp == 0x06 and datatype == 0x02: # Valve State
         state = '%02d' %int(data)
         store_tuya_attribute( self, NwkId, 'Valve state', state ) 
-        self.log.logging( "Tuya", 'Log', "tuya_response - ------ Request  MajDomoDevice(self, Devices, %s, %s, '0006', %s)" %(
+        self.log.logging( "Tuya", 'Debug', "tuya_response - ------ Request  MajDomoDevice(self, Devices, %s, %s, '0006', %s)" %(
             NwkId, srcEp,  state))
         MajDomoDevice(self, Devices, NwkId, srcEp, '0006', state)
     
@@ -761,7 +761,7 @@ def tuya_energy_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dst
         store_tuya_attribute( self, NwkId, 'ChildLock', data )
 
     else:
-        self.log.logging( "Tuya", 'Log', "tuya_energy_response - Model: %s Unknow Nwkid: %s/%s dp: %02x data type: %s data: %s" %(
+        self.log.logging( "Tuya", 'Debug', "tuya_energy_response - Model: %s Unknow Nwkid: %s/%s dp: %02x data type: %s data: %s" %(
             _ModelName, NwkId, srcEp,  dp, datatype, data),NwkId )
 
 def tuya_energy_toggle( self, NwkId):
