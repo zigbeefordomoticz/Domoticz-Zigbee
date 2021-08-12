@@ -767,7 +767,7 @@ def UpdateBatteryAttribute( self, Devices, MsgSrcAddr, MsgSrcEp ):
                                'lumi.sen_ill.mgl01')
 
     BATTERY_200PERCENT = ( 'CTHS317ET', 'CDWS312', 'CMS323', 'PIR323-A', 'PIR323', 'DWS312-E', 'DWS312', "TS0207-waterleak", "Danalock V3", "V3-BTZB", "SML001" , "RWL021", "SPZB0001", "WarningDevice" , "SmokeSensor-N", "SmokeSensor-EM",
-                           "SMOK_V16", "RH3001" ,"TS0201", "COSensor-N", "COSensor-EM" , "TS0043", "TS0044", "TH01", "66666", "DS01", "DSO1", "WB01", "WB-01", "TS0041")
+                           "SMOK_V16", "RH3001" ,"TS0201", "COSensor-N", "COSensor-EF-3.0", "COSensor-EM" , "TS0043", "TS0044", "TH01", "66666", "DS01", "DSO1", "WB01", "WB-01", "TS0041")
                            
     BATTERY_3VOLTS = ( "lumi.sen_ill.mgl01", "3AFE130104020015", "3AFE140103020000", "3AFE14010402000D", "3AFE170100510001" ) + LEGRAND_REMOTES
 
