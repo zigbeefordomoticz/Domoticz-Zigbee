@@ -260,6 +260,16 @@ def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, 
 
 
 def Update_Battery_Device( self, Devices, NwkId, BatteryLvl, ):
+
+    if not self.VersionNewFashion:
+        return
+    if self.DomoticzMajor < 2021:
+        return
+    if self.DomoticzMajor < 1:
+        return
+    if self.DomoticzMajor == 2021 and self.DomoticzMinor == 1 and self.DomoticzBuild < 13374:
+        return
+
     if NwkId not in self.ListOfDevices:
         return
     if 'IEEE' not in self.ListOfDevices[NwkId]:
@@ -270,7 +280,7 @@ def Update_Battery_Device( self, Devices, NwkId, BatteryLvl, ):
         if Devices[device_unit].DeviceID != ieee:
             continue
         self.log.logging( "Widget", "Log", "Update_Battery_Device Battery: now: %s prev: %s (%15s)" %(
-    BatteryLvl, Devices[device_unit].BatteryLevel, Devices[device_unit].Name))
+                BatteryLvl, Devices[device_unit].BatteryLevel, Devices[device_unit].Name))
 
         if Devices[device_unit].BatteryLevel == int(BatteryLvl):
             continue
