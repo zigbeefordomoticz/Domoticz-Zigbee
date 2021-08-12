@@ -45,19 +45,16 @@ def thermostat_Setpoint( self, NwkId, setpoint):
             thermostat_Calibration( self, NwkId )
             thermostat_Setpoint_SPZB( self, NwkId, setpoint)
             return
-
         elif self.ListOfDevices[NwkId]['Model'] in ( 'EH-ZB-RTS', 'EH-ZB-HACT', 'EH-ZB-VACT', 'Wiser2-Thermostat', 'iTRV' ):
             # Schneider
             self.log.logging( "Thermostats", 'Debug', "thermostat_Setpoint - calling Schneider for %s with value %s" %(NwkId,setpoint), nwkid=NwkId)
             schneider_setpoint(self, NwkId, setpoint)
             return
-
         elif self.ListOfDevices[NwkId]['Model'] in ( TUYA_eTRV_MODEL ):
             # Tuya
             self.log.logging( "Thermostats", 'Log', "thermostat_Setpoint - calling Tuya for %s with value %s" %(NwkId, setpoint), nwkid=NwkId)
             tuya_setpoint(self, NwkId, setpoint)
             return
-
         elif self.ListOfDevices[NwkId]['Model'] in ( 'AC201A', ):
             casaia_setpoint(self, NwkId, setpoint)
             return
@@ -86,10 +83,17 @@ def thermostat_Setpoint( self, NwkId, setpoint):
     self.log.logging( "Thermostats", 'Debug', "setpoint: %s" %setpoint, nwkid=NwkId)
     setpoint = int(( setpoint * 2 ) / 2)   # Round to 0.5 degrees
     self.log.logging( "Thermostats", 'Debug', "setpoint: %s" %setpoint, nwkid=NwkId)
-    Hdata = "%04x" %setpoint
-    EPout = '01'
 
-    self.log.logging( "Thermostats", 'Debug', "thermostat_Setpoint - for %s with value 0x%s / cluster: %s, attribute: %s type: %s"
+    Hdata = "%04x" %setpoint
+
+    if self.ZiGateModel == 2 and int(self.FirmwareVersion,16) < 0x0320:
+        # Bug on ZiGate V2 - firmware 0x320 fix it
+        Domoticz.Log("---Zigate Model: %s  Version: %s" %(self.ZiGateModel , self.FirmwareVersion ))
+        Hdata = Hdata[2:4] + Hdata[0:2]
+        Domoticz.Log("Patch Hdata  %s" %Hdata)
+
+    EPout = '01'
+    self.log.logging( "Thermostats", 'Deug', "thermostat_Setpoint - for %s with value 0x%s / cluster: %s, attribute: %s type: %s"
             %(NwkId,Hdata,cluster_id,Hattribute,data_type), nwkid=NwkId)
     write_attribute( self, NwkId, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
 
