@@ -426,12 +426,6 @@ class BasePlugin:
             self.log.logging( 'Plugin', 'Error', "Unknown Transport comunication protocol : %s" %str(self.transport) )
             return
 
-        if Parameters["Mode1"] == "V1":
-            self.ZigateComm.update_ZiGate_HW_Version( 1 )
-
-        elif Parameters["Mode1"] == "V2":
-            self.ZigateComm.update_ZiGate_HW_Version( 2 )
-
         self.log.logging( 'Plugin', 'Debug', "Establish Zigate connection" )
         self.ZigateComm.open_conn()
 
