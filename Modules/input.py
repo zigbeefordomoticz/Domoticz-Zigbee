@@ -743,6 +743,10 @@ def Decode8009(self, Devices, MsgData, MsgLQI):  # Network State response (Firm 
 def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
     MsgLen = len(MsgData)
 
+    FIRMWARE_BRANCH = {
+        '00': 'Production',
+        '01': 'Beta',
+    }
     self.FirmwareBranch = MsgData[0:2]
     self.FirmwareMajorVersion = MsgData[2:4]
     self.FirmwareVersion = MsgData[4:8]
@@ -758,6 +762,7 @@ def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
         self.log.logging( "Input", "Status", "ZiGate+ (V2)")  
         self.ZiGateModel = 2  
     self.log.logging( "Input", "Status", "Installer Version Number: %s" %self.FirmwareVersion)
+    self.log.logging( "Input", "Status", "Branch Version : ==> %s <==" %FIRMWARE_BRANCH[ self.FirmwareBranch ])
     self.zigatedata["Firmware Version"] = "Branch: %s Major: %s Version: %s" %(self.FirmwareBranch,self.FirmwareMajorVersion, self.FirmwareVersion )
     if self.webserver:
         self.webserver.update_firmware(self.FirmwareVersion)
