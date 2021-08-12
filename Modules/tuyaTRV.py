@@ -18,6 +18,7 @@ from Modules.basicOutputs import write_attribute, raw_APS_request
 from Modules.zigateConsts import ZIGATE_EP
 from Modules.tools import  checkAndStoreAttributeValue, is_ack_tobe_disabled, get_and_inc_SQN
 from Modules.domoMaj import MajDomoDevice
+from Modules.domoTools import Update_Battery_Device
 
 def tuya_eTRV_registration(self, nwkid, device_reset=False):
     
@@ -155,6 +156,7 @@ def receive_battery( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNW
     self.log.logging( "Tuya", 'Debug', "receive_battery - Nwkid: %s/%s Battery status %s" %(NwkId,srcEp ,int(data,16)))
     checkAndStoreAttributeValue( self, NwkId , '01', '0001', '0000' , int(data,16) )
     self.ListOfDevices[ NwkId ]['Battery'] = int(data,16)
+    Update_Battery_Device( self, Devices, NwkId, int(data,16))
     store_tuya_attribute( self, NwkId, 'BatteryStatus', data )
 
 def receive_battery_state( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data ):

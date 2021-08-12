@@ -259,7 +259,29 @@ def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, 
         self.log.logging( "Widget", "Debug", "--->  [Unit: %s] %s:%s:%s %s:%s %s (%15s)" %( Unit, nValue, sValue, Color_, BatteryLvl, SignalLvl, ForceUpdate_, Devices[Unit].Name), self.IEEE2NWK[Devices[Unit].DeviceID])
 
 
+def Update_Battery_Device( self, Devices, NwkId, BatteryLvl, ):
+    if NwkId not in self.ListOfDevices:
+        return
+    if 'IEEE' not in self.ListOfDevices[NwkId]:
+        return
+    ieee = self.ListOfDevices[NwkId]['IEEE']
 
+    for device_unit in Devices:
+        if Devices[device_unit].DeviceID != ieee:
+            continue
+        self.log.logging( "Widget", "Log", "Update_Battery_Device Battery: now: %s prev: %s (%15s)" %(
+    BatteryLvl, Devices[device_unit].BatteryLevel, Devices[device_unit].Name))
+
+        if Devices[device_unit].BatteryLevel == int(BatteryLvl):
+            continue
+
+        self.log.logging( "Widget", "Log", "Update_Battery_Device Battery: %s  (%15s)" %(
+            BatteryLvl, Devices[device_unit].Name))
+        Devices[device_unit].Update( 
+            nValue=Devices[device_unit].nValue , 
+            sValue=Devices[device_unit].sValue ,
+            BatteryLevel=int(BatteryLvl), 
+            SuppressTriggers=True)
 
 
 def timedOutDevice( self, Devices, Unit=None, NwkId=None, MarkTimedOut=True):

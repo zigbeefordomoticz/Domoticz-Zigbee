@@ -22,7 +22,7 @@ from time import time
 
 from Modules.zigateConsts import LEGRAND_REMOTE_SHUTTER, LEGRAND_REMOTE_SWITCHS, LEGRAND_REMOTES, ZONE_TYPE, THERMOSTAT_MODE_2_LEVEL
 from Modules.domoMaj import MajDomoDevice
-from Modules.domoTools import timedOutDevice
+from Modules.domoTools import timedOutDevice, Update_Battery_Device
 from Modules.tools import DeviceExist, getEPforClusterType, is_hex, voltage2batteryP, checkAttribute, checkAndStoreAttributeValue, \
                         set_status_datastruct, set_timestamp_datastruct, get_isqn_datastruct, instrument_timing
 from Classes.Transport.sqnMgmt import sqn_get_internal_sqn_from_app_sqn, TYPE_APP_ZCL
@@ -757,10 +757,10 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
         self.log.logging( "Cluster", 'Debug', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
-    UpdateBatteryAttribute( self, MsgSrcAddr, MsgSrcEp )
+    UpdateBatteryAttribute( self, Devices, MsgSrcAddr, MsgSrcEp )
     ### End of Cluster0001
     
-def UpdateBatteryAttribute( self, MsgSrcAddr, MsgSrcEp ):
+def UpdateBatteryAttribute( self, Devices, MsgSrcAddr, MsgSrcEp ):
 
     XIAOMI_BATTERY_DEVICES = ( 'lumi.remote.b286opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b686opcn01', 
                                'lumi.remote.b286opcn01-bulb', 'lumi.remote.b486opcn01-bulb', 'lumi.remote.b686opcn01-bulb',
@@ -851,6 +851,7 @@ def UpdateBatteryAttribute( self, MsgSrcAddr, MsgSrcEp ):
             %(MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Model'], self.ListOfDevices[MsgSrcAddr]['Battery'], value) , MsgSrcAddr)
        if value != self.ListOfDevices[MsgSrcAddr]['Battery']:
            self.ListOfDevices[MsgSrcAddr]['Battery'] = value
+           Update_Battery_Device( self, Devices, MsgSrcAddr, value)
            self.ListOfDevices[MsgSrcAddr]['BatteryUpdateTime'] = int(time())
            self.log.logging( "Cluster", 'Debug', "readCluster 0001 - Device: %s Model: %s Updating battery to %s" %(MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Model'], value) , MsgSrcAddr)
 
@@ -1323,7 +1324,7 @@ def Cluster0012( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
 def Cluster0019( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData , Source):
 
-    self.log.logging( "Cluster", 'Log', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" \
+    self.log.logging( "Cluster", 'Debug', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" \
         %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
     checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,MsgClusterData)
