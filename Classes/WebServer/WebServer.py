@@ -93,13 +93,13 @@ class WebServer(object):
         self.ZigateComm = ZigateComm
         self.statistics = Statistics
         self.pluginParameters = PluginParameters
-        self.networkmap = networkmap
-        self.networkenergy = networkenergy
+        self.networkmap = None
+        self.networkenergy = None
 
         self.permitTojoin = permitTojoin
 
-        self.groupmgt = groupManagement if groupManagement else None
-        self.OTA = OTA if OTA else None
+        self.groupmgt =  None
+        self.OTA =  None
         self.ListOfDevices = ListOfDevices
         self.DevicesInPairingMode = DevicesInPairingMode
         self.fakeDevicesInPairingMode = 0
