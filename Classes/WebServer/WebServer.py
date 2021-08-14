@@ -69,7 +69,9 @@ class WebServer(object):
 
     hearbeats = 0 
 
-    def __init__( self, networkenergy, networkmap, ZigateData, PluginParameters, PluginConf, Statistics, adminWidgets, ZigateComm, HomeDirectory, hardwareID, DevicesInPairingMode, groupManagement, OTA, Devices, ListOfDevices, IEEE2NWK , permitTojoin, WebUserName, WebPassword, PluginHealth, httpPort, log):
+    def __init__( self, ZigateData, PluginParameters, PluginConf, Statistics, adminWidgets, ZigateComm, HomeDirectory, hardwareID, 
+                        DevicesInPairingMode, Devices, ListOfDevices, IEEE2NWK , permitTojoin, WebUserName, 
+                        WebPassword, PluginHealth, httpPort, log):
 
         self.httpServerConn = None
         self.httpClientConn = None
@@ -115,7 +117,19 @@ class WebServer(object):
 
     def update_firmware( self, firmwareversion):
         self.FirmwareVersion = firmwareversion
+
+    def update_networkenergy( self, networkenergy):
+        self.networkenergy = networkenergy
+
+    def update_networkmap(self, networkmap):
+        self.networkmap = networkmap 
+
+    def update_groupManagement( self, groupmanagement):
+        self.groupmgt = groupmanagement if groupmanagement else None
         
+    def update_OTA(self, OTA):
+        self.OTA = OTA if OTA else None       
+
     def rest_plugin_health( self, verb, data, parameters):
 
         _response = prepResponseMessage( self ,setupHeadersResponse())
