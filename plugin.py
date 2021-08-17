@@ -435,6 +435,14 @@ class BasePlugin:
             #Domoticz.Log("Init IAS_Zone_management ZigateComm: %s" %self.ZigateComm)
             self.iaszonemgt = IAS_Zone_Management( self.pluginconf, self.ZigateComm , self.ListOfDevices, self.log)
 
+            # Starting WebServer
+        if self.webserver is None:
+            if Parameters['Mode4'].isdigit():
+                start_web_server( self, Parameters['Mode4'], Parameters["HomeFolder"] )
+            else:
+                self.log.logging( 'Plugin', 'Error',"WebServer disabled du to Parameter Mode4 set to %s" %Parameters['Mode4'])
+
+
         self.busy = False
 
     def onStop(self):
@@ -937,10 +945,15 @@ def zigateInit_Phase3( self ):
         # Create Network Map object and trigger one scan
         if self.networkmap is None:
             self.networkmap = NetworkMap( self.pluginconf, self.ZigateComm, self.ListOfDevices, Devices, self.HardwareID, self.log)
+        if self.networkmap:
+            self.webserver.update_networkmap(self.networkmap)
+
         # Create Network Energy object and trigger one scan
         if self.networkenergy is None:
             self.networkenergy = NetworkEnergy( self.pluginconf, self.ZigateComm, self.ListOfDevices, Devices, self.HardwareID, self.log)        #    if len(self.ListOfDevices) > 1:        #        self.log.logging( 'Plugin', 'Status', "Trigger a Energy Level Scan")        #        self.networkenergy.start_scan()
-
+        if self.networkenergy:
+            self.webserver.update_networkmap(self.networkenergy )
+            
     # In case we have Transport = None , let's check if we have to active Group management or not. (For Test and Web UI Dev purposes
     if self.transport == 'None' and self.groupmgt is None and self.pluginconf.pluginConf['enablegroupmanagement']:
         start_GrpManagement( self, Parameters["HomeFolder"])
@@ -948,13 +961,6 @@ def zigateInit_Phase3( self ):
     # Enable Over The Air Upgrade if applicable
     if self.OTA is None and self.pluginconf.pluginConf['allowOTA']:
         start_OTAManagement( self,Parameters["HomeFolder"] )
-
-    # Starting WebServer
-    if self.webserver is None:
-        if Parameters['Mode4'].isdigit():
-            start_web_server( self, Parameters['Mode4'], Parameters["HomeFolder"] )
-        else:
-            self.log.logging( 'Plugin', 'Error',"WebServer disabled du to Parameter Mode4 set to %s" %Parameters['Mode4'])
 
     if self.FirmwareMajorVersion == '03':
         self.log.logging( 'Plugin', 'Status', "Plugin with Zigate, firmware %s correctly initialized" %self.FirmwareVersion)
@@ -1004,16 +1010,20 @@ def start_GrpManagement( self, homefolder):
             self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK, self.log )
     if self.groupmgt and self.ZigateIEEE:
         self.groupmgt.updateZigateIEEE( self.ZigateIEEE) 
+    if self.groupmgt:
+        self.webserver.update_groupManagement( self.groupmgt)
 
 def start_OTAManagement( self,homefolder ):
-        self.OTA = OTAManagement( self.pluginconf, self.adminWidgets, self.ZigateComm, homefolder,
-                    self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK, self.log, self.PluginHealth)
+    self.OTA = OTAManagement( self.pluginconf, self.adminWidgets, self.ZigateComm, homefolder,
+                self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK, self.log, self.PluginHealth)
+    if self.OTA:
+        self.webserver.update_OTA( self.OTA)
 
 def start_web_server( self, webserver_port, webserver_homefolder ):
 
     self.log.logging( 'Plugin', 'Status', "Start Web Server connection")
-    self.webserver = WebServer( self.networkenergy, self.networkmap, self.zigatedata, self.pluginParameters, self.pluginconf, self.statistics, 
-        self.adminWidgets, self.ZigateComm, webserver_homefolder, self.HardwareID, self.DevicesInPairingMode, self.groupmgt,self.OTA, Devices, 
+    self.webserver = WebServer( self.zigatedata, self.pluginParameters, self.pluginconf, self.statistics, 
+        self.adminWidgets, self.ZigateComm, webserver_homefolder, self.HardwareID, self.DevicesInPairingMode, Devices, 
         self.ListOfDevices, self.IEEE2NWK , self.permitTojoin , self.WebUsername, self.WebPassword, self.PluginHealth, webserver_port, 
         self.log)
     if self.FirmwareVersion:
