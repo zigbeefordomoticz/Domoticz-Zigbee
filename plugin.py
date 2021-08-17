@@ -1011,7 +1011,7 @@ def start_GrpManagement( self, homefolder):
     if self.groupmgt and self.ZigateIEEE:
         self.groupmgt.updateZigateIEEE( self.ZigateIEEE) 
     if self.groupmgt:
-        self.groupmgt.update_groupManagement( self, self.groupmgt)
+        self.webserver.update_groupManagement( self, self.groupmgt)
 
 def start_OTAManagement( self,homefolder ):
     self.OTA = OTAManagement( self.pluginconf, self.adminWidgets, self.ZigateComm, homefolder,
