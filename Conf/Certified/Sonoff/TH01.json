@@ -12,15 +12,15 @@
         }
     },
     "Type":"",
-    "ClusterToBind": [ "0001", "0402", "0405"],
+    "ClusterToBind": [ "0000","0402", "0405", "0001"],
         "ConfigureReporting": {
-            "0402": { "Attributes": { "0000": {"DataType": "29", "MinInterval": "000A", "MaxInterval": "0384", "TimeOut": "0000", "Change": "0014"}}},
-            "0405": { "Attributes": { "0000": {"DataType": "21", "MinInterval": "003C", "MaxInterval": "0384", "TimeOut": "0000", "Change": "0032"}}}
+            "0402": { "Attributes": { "0000": {"DataType": "29", "MinInterval": "0005", "MaxInterval": "0e10", "TimeOut": "0000", "Change": "003c"}}},
+            "0405": { "Attributes": { "0000": {"DataType": "21", "MinInterval": "0005", "MaxInterval": "0e10", "TimeOut": "0000", "Change": "0258"}}}
     },
       "ReadAttributes": {
-        "0000": [ "0000", "0001", "0002", "0003", "0004", "0005" ] ,
+        "0000": [ "0004", "0000", "0001", "0005", "0007", "fffe" ] ,
         "0001": [ "0020", "0021" ] ,
-        "0402": [  ],
-        "0405": [  ]
+        "0402": [ "0000" ],
+        "0405": [ "0000" ]
     }
 }
