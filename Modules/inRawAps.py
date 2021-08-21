@@ -179,7 +179,7 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Glo
     if 'Manufacturer Name' in self.ListOfDevices[srcnwkid]:
         manuf_name = self.ListOfDevices[srcnwkid][ 'Manufacturer Name']
 
-    manuf = self.ListOfDevices[srcnwkid]['Manufacturer']
+    manuf = str(self.ListOfDevices[srcnwkid]['Manufacturer'])
 
     self.log.logging( "inRawAPS", 'Debug', "inRawAps Nwkid: %s Ep: %s Cluster: %s ManufCode: %s manuf: %s manuf_name: %s Cmd: %s Data: %s" %(
         srcnwkid, srcep, cluster, ManufacturerCode, manuf, manuf_name, Command, Data)  )
@@ -196,8 +196,8 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Glo
     elif manuf_name in TUYA_MANUFACTURER_NAME:
         func = tuyaReadRawAPS
     else:
-        Domoticz.Log("inRawAps %s/%s Cluster %s Manuf: %s Command: %s Data: %s Payload: %s"
-            %(srcnwkid, srcep, cluster,  ManufacturerCode, Command, Data, payload))  
+        Domoticz.Log("inRawAps %s/%s Cluster %s Manuf: %s/%s Command: %s Data: %s Payload: %s not processed !!!"
+            %(srcnwkid, srcep, cluster,  manuf, manuf_name, Command, Data, payload))  
 
     if func:
         func(self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, payload )
