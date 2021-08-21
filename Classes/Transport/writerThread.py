@@ -31,51 +31,67 @@ def writer_thread( self ):
         # Sending messages ( only 1 at a time )
         try:
             #self.logging_send( 'Debug', "Waiting for next command Qsize: %s" %self.writer_queue.qsize())
-            if self.writer_queue:
-                 
-                entry = self.writer_queue.get( )
-                _isqn, command_str = entry
-                if command_str == 'STOP':
+            if self.writer_queue is None:
+                break
+
+            if  ( self.ZiGateHWVersion and self.ZiGateHWVersion == 1 
+                    and self.pluginconf.pluginConf['nPDUaPDUThreshold'] 
+                    and self.firmware_with_8012 
+                ):
+                self.logging_send('Debug', "ZigateTransport: writer_thread Thread checking #nPDU: %s and #aPDU: %s." %(self.npdu,self.apdu))
+
+                if self.apdu > 2:
+                    self.logging_send('Log', "ZigateTransport: writer_thread Thread aPDU: %s retry later." %self.apdu)
+                    time.sleep( 0.25 )
+                    continue
+                if self.npdu > 7:
+                    self.logging_send('Log', "ZigateTransport: writer_thread Thread nPDU: %s retry later." %self.npdu)
+                    time.sleep( 0.25 )
+                    continue
+   
+            entry = self.writer_queue.get( )
+            _isqn, command_str = entry
+            if command_str == 'STOP':
+                break
+
+            command = json.loads(command_str)
+            if _isqn != command['InternalSqn']:
+                self.logging_send( 'Debug', "Hih Priority command HIsqn: %s Cmd: %s Data: %s i_sqn: %s" %(
+                    _isqn, command['cmd'], command['datas'],   command['InternalSqn']))
+
+            #self.logging_send( 'Debug', "New command received:  %s" %(command))
+            if isinstance( command, dict ) and 'cmd' in command and 'datas' in command and 'ackIsDisabled' in command and 'waitForResponseIn' in command and 'InternalSqn' in command:
+                if ( command['cmd'], command['datas'] ) in self.writer_list_in_queue:
+                    self.logging_send( 'Debug', "removing %s/%s from list_in_queue" %( command['cmd'], command['datas'] ))
+                    self.writer_list_in_queue.remove( ( command['cmd'], command['datas'] ) )
+
+                if self.writer_queue.qsize() > self.statistics._MaxLoad:
+                    self.statistics._MaxLoad = self.writer_queue.qsize()
+                self.statistics._Load = self.writer_queue.qsize()
+
+                #if 'NwkId' in command:
+                #    Domoticz.Log("Command on %s" %command['NwkId'])
+
+                #if self.last_nwkid_failure and 'NwkId' in command and command['NwkId'] == self.last_nwkid_failure:
+                #    self.logging_send( 'Log', "removing %s/%s from list_in_queue as it failed previously" %( command['cmd'], command['datas'] ))
+                #    # Looks like the command is still for the Nwkid which has failed. Drop
+                #    continue
+
+                self.last_nwkid_failure = None
+
+                wait_for_semaphore( self , command)
+
+                send_ok = thread_sendData( self, command['cmd'], command['datas'], command['ackIsDisabled'], command['waitForResponseIn'], command['InternalSqn'])
+                self.logging_send( 'Debug', "Command sent!!!! %s send_ok: %s" %(command, send_ok))
+                if send_ok in ('PortClosed', 'SocketClosed'):
+                    # Exit
                     break
-
-                command = json.loads(command_str)
-                if _isqn != command['InternalSqn']:
-                    self.logging_send( 'Debug', "Hih Priority command HIsqn: %s Cmd: %s Data: %s i_sqn: %s" %(
-                        _isqn, command['cmd'], command['datas'],   command['InternalSqn']))
-
-                #self.logging_send( 'Debug', "New command received:  %s" %(command))
-                if isinstance( command, dict ) and 'cmd' in command and 'datas' in command and 'ackIsDisabled' in command and 'waitForResponseIn' in command and 'InternalSqn' in command:
-                    if ( command['cmd'], command['datas'] ) in self.writer_list_in_queue:
-                        self.logging_send( 'Debug', "removing %s/%s from list_in_queue" %( command['cmd'], command['datas'] ))
-                        self.writer_list_in_queue.remove( ( command['cmd'], command['datas'] ) )
-    
-                    if self.writer_queue.qsize() > self.statistics._MaxLoad:
-                        self.statistics._MaxLoad = self.writer_queue.qsize()
-                    self.statistics._Load = self.writer_queue.qsize()
-    
-                    #if 'NwkId' in command:
-                    #    Domoticz.Log("Command on %s" %command['NwkId'])
-
-                    #if self.last_nwkid_failure and 'NwkId' in command and command['NwkId'] == self.last_nwkid_failure:
-                    #    self.logging_send( 'Log', "removing %s/%s from list_in_queue as it failed previously" %( command['cmd'], command['datas'] ))
-                    #    # Looks like the command is still for the Nwkid which has failed. Drop
-                    #    continue
-
-                    self.last_nwkid_failure = None
-
-                    wait_for_semaphore( self , command)
-    
-                    send_ok = thread_sendData( self, command['cmd'], command['datas'], command['ackIsDisabled'], command['waitForResponseIn'], command['InternalSqn'])
-                    self.logging_send( 'Debug', "Command sent!!!! %s send_ok: %s" %(command, send_ok))
-                    if send_ok in ('PortClosed', 'SocketClosed'):
-                        # Exit
-                        break
-                    
-                    # ommand sent, if needed wait in order to reduce throughput and load on ZiGate
-                    limit_throuput(self, command)
                 
-                else:
-                    self.logging_send( 'Error', "Hops ... Don't known what to do with that %s" %command)
+                # Command sent, if needed wait in order to reduce throughput and load on ZiGate
+                limit_throuput(self, command)
+            
+            else:
+                self.logging_send( 'Error', "Hops ... Don't known what to do with that %s" %command)
 
         except queue.Empty:
             # Empty Queue, timeout.
@@ -277,6 +293,8 @@ def native_write_to_zigate( self, serialConnection, encoded_data):
                     'NbWrite': nb_write,
                 }
                 self.logging_send_error(  "write_to_zigate", context=_context)
+            else:
+                serialConnection.flush()
         else:
             _context = {
                 'Error code': 'TRANS-WRTZGTE-02',

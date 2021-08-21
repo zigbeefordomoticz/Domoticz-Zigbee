@@ -104,16 +104,16 @@ if os.name == 'nt':  # noqa
 
     class Console(ConsoleBase):
         fncodes = {
-            ';': '\1bOP',  # F1
-            '<': '\1bOQ',  # F2
-            '=': '\1bOR',  # F3
-            '>': '\1bOS',  # F4
-            '?': '\1b[15~',  # F5
-            '@': '\1b[17~',  # F6
-            'A': '\1b[18~',  # F7
-            'B': '\1b[19~',  # F8
-            'C': '\1b[20~',  # F9
-            'D': '\1b[21~',  # F10
+            ';': '\x1bOP',  # F1
+            '<': '\x1bOQ',  # F2
+            '=': '\x1bOR',  # F3
+            '>': '\x1bOS',  # F4
+            '?': '\x1b[15~',  # F5
+            '@': '\x1b[17~',  # F6
+            'A': '\x1b[18~',  # F7
+            'B': '\x1b[19~',  # F8
+            'C': '\x1b[20~',  # F9
+            'D': '\x1b[21~',  # F10
         }
         navcodes = {
             'H': '\x1b[A',  # UP
@@ -635,7 +635,7 @@ class Miniterm(object):
             sys.stderr.write('--- unknown menu character {} --\n'.format(key_description(c)))
 
     def upload_file(self):
-        """Ask user for filenname and send its contents"""
+        """Ask user for filename and send its contents"""
         sys.stderr.write('\n--- File to upload: ')
         sys.stderr.flush()
         with self.console:
@@ -810,7 +810,7 @@ class Miniterm(object):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # default args can be used to override when calling main() from an other script
 # e.g to create a miniterm-my-device.py
-def main(default_port=None, default_baudrate=9600, default_rts=None, default_dtr=None):
+def main(default_port=None, default_baudrate=9600, default_rts=None, default_dtr=None, serial_instance=None):
     """Command line tool, entry point"""
 
     import argparse
@@ -959,7 +959,7 @@ def main(default_port=None, default_baudrate=9600, default_rts=None, default_dtr
     else:
         filters = ['default']
 
-    while True:
+    while serial_instance is None:
         # no port given on command line -> ask user now
         if args.port is None or args.port == '-':
             try:

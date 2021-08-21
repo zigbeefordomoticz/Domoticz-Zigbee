@@ -24,7 +24,7 @@
 	"Param": {
 		"TimerMode": 1,
 		"OnOffPollingFreq": 120,
-		"TuyaPing": 1
+		"TuyaPing": 0
 	}
 }
 

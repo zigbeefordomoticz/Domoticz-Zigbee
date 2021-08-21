@@ -44,7 +44,8 @@ TS0041_MANUF_NAME = ("_TZ3000_xkwalgne", "_TZ3000_peszejy7", "_TZ3000_8kzqqzu4",
 # TS0601 
 TUYA_WATER_TIMER = ( '_TZE200_htnnfasr', )
 TUYA_ENERGY_MANUFACTURER = ( '_TZE200_fsb6zw01', '_TZE200_byzdayie', )
-TUYA_SMARTAIR_MANUFACTURER = ( '_TZE200_8ygsuhe1', '_TZE200_yvx5lh6',)
+
+TUYA_SMARTAIR_MANUFACTURER = ( '_TZE200_8ygsuhe1', '_TZE200_yvx5lh6k', )
 
 TUYA_SIREN_MANUFACTURER =  ( '_TZE200_d0yu2xgi', '_TYST11_d0yu2xgi' ,)
 TUYA_SIREN_MODEL        =  ( 'TS0601', '0yu2xgi', )
@@ -86,16 +87,17 @@ TUYA_MANUFACTURER_NAME = ( TUYA_ENERGY_MANUFACTURER + TS011F_MANUF_NAME + TS0041
 # Tuya Doc: https://developer.tuya.com/en/docs/iot/access-standard-zigbee?id=Kaiuyf28lqebl
 
 
-def tuya_registration(self, nwkid, device_reset=False):
+def tuya_registration(self, nwkid, device_reset=False, parkside= False):
     
     self.log.logging( "Tuya", 'Debug', "tuya_registration - Nwkid: %s" %nwkid)
     # (1) 3 x Write Attribute Cluster 0x0000 - Attribute 0xffde  - DT 0x20  - Value: 0x13 ( 19 Decimal)
     #  It looks like for Lidl Watering switch the Value is 0x0d ( 13 in decimal )
     EPout = '01'
     self.log.logging( "Tuya", 'Debug', "tuya_registration - Nwkid: %s ----- 0x13 in 0x0000/0xffde" %nwkid)
-    write_attribute( self, nwkid, ZIGATE_EP, EPout, '0000', '0000', '00', 'ffde', '20', '13', ackIsDisabled = True)
-    write_attribute( self, nwkid, ZIGATE_EP, EPout, '0000', '0000', '00', 'ffde', '20', '13', ackIsDisabled = True)
-    write_attribute( self, nwkid, ZIGATE_EP, EPout, '0000', '0000', '00', 'ffde', '20', '13', ackIsDisabled = True)
+    if parkside:
+        write_attribute( self, nwkid, ZIGATE_EP, EPout, '0000', '0000', '00', 'ffde', '20', '0d', ackIsDisabled = True)
+    else:    
+        write_attribute( self, nwkid, ZIGATE_EP, EPout, '0000', '0000', '00', 'ffde', '20', '13', ackIsDisabled = True)
 
     # (3) Cmd 0x03 on Cluster 0xef00  (Cluster Specific) / Zigbee Device Reset
     if device_reset:
@@ -109,8 +111,6 @@ def tuya_registration(self, nwkid, device_reset=False):
     raw_APS_request( self, nwkid, EPout, 'ef00', '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = is_ack_tobe_disabled(self, nwkid))
 
 
-
-
 def pollingTuya( self, key ):
     """
     This fonction is call if enabled to perform any Manufacturer specific polling action
@@ -122,7 +122,7 @@ def pollingTuya( self, key ):
 
     return False
 
-def callbackDeviceAwake_Tuya(self, NwkId, EndPoint, cluster):
+def callbackDeviceAwake_Tuya(self, Devices, NwkId, EndPoint, cluster):
     """
     This is fonction is call when receiving a message from a Manufacturer battery based device.
     The function is called after processing the readCluster part
@@ -130,7 +130,6 @@ def callbackDeviceAwake_Tuya(self, NwkId, EndPoint, cluster):
     Domoticz.Log("callbackDeviceAwake_Tuya - Nwkid: %s, EndPoint: %s cluster: %s" \
             %(NwkId, EndPoint, cluster))
 
-    return
 
 def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
 
@@ -219,7 +218,7 @@ def tuya_response( self,Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, 
         tuya_smartair_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
 
     elif _ModelName == 'TS0601-curtain':
-        tuya_smartair_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
+        tuya_curtain_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
         
     elif _ModelName in ( 'TS0601-thermostat' ):
         tuya_eTRV_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
@@ -360,7 +359,7 @@ def tuya_switch_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dst
 
 def tuya_switch_command( self, NwkId, onoff, gang=0x01):
      
-    self.log.logging( "Tuya", 'Log', "tuya_switch_command - %s OpenClose: %s on gang: %s" %(NwkId, onoff, gang),NwkId )
+    self.log.logging( "Tuya", 'Debug', "tuya_switch_command - %s OpenClose: %s on gang: %s" %(NwkId, onoff, gang),NwkId )
     # determine which Endpoint
     if gang  not in  (0x01, 0x02, 0x03):
         self.log.logging( "Tuya", 'Error', "tuya_switch_command - Unexpected Gang: %s" %gang)
@@ -375,7 +374,7 @@ def tuya_switch_command( self, NwkId, onoff, gang=0x01):
     cmd = '00' # Command 
     action = '%02x01' %gang # Data Type 0x01 - Bool
     data = onoff
-    self.log.logging( "Tuya", 'Log', "tuya_switch_command - action: %s data: %s" %(action, data))
+    self.log.logging( "Tuya", 'Debug', "tuya_switch_command - action: %s data: %s" %(action, data))
     tuya_cmd( self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)   
 
 def tuya_energy_childLock( self, NwkId, lock=0x01):
@@ -431,7 +430,7 @@ def tuya_switch_relay_status( self, NwkId, gang=0x01, status=0xff):
 
 def tuya_watertimer_command( self, NwkId, onoff, gang=0x01):
      
-    self.log.logging( "Tuya", 'Log', "tuya_switch_command - %s OpenClose: %s on gang: %s" %(NwkId, onoff, gang),NwkId )
+    self.log.logging( "Tuya", 'Debug', "tuya_switch_command - %s OpenClose: %s on gang: %s" %(NwkId, onoff, gang),NwkId )
     # determine which Endpoint
     if gang  not in  (0x01, 0x02, 0x03):
         self.log.logging( "Tuya", 'Error', "tuya_switch_command - Unexpected Gang: %s" %gang)
@@ -453,13 +452,13 @@ def tuya_watertimer_command( self, NwkId, onoff, gang=0x01):
     sqn = get_and_inc_SQN( self, NwkId )
     action = '%02x01' %gang # Data Type 0x01 - Bool
     data = onoff
-    self.log.logging( "Tuya", 'Log', "tuya_switch_command - action: %s data: %s" %(action, data))
+    self.log.logging( "Tuya", 'Debug', "tuya_switch_command - action: %s data: %s" %(action, data))
     tuya_cmd( self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)  
 
 
 def tuya_watertimer_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
 
-    self.log.logging( "Tuya", 'Log', "tuya_response - Model: %s Nwkid: %s/%s dp: %02x data type: %02x data: %s" %(
+    self.log.logging( "Tuya", 'Debug', "tuya_response - Model: %s Nwkid: %s/%s dp: %02x data type: %02x data: %s" %(
         _ModelName, NwkId, srcEp,  dp, datatype, data),NwkId )
 
     if dp == 0x01:
@@ -485,7 +484,7 @@ def tuya_watertimer_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID,
     elif dp == 0x06 and datatype == 0x02: # Valve State
         state = '%02d' %int(data)
         store_tuya_attribute( self, NwkId, 'Valve state', state ) 
-        self.log.logging( "Tuya", 'Log', "tuya_response - ------ Request  MajDomoDevice(self, Devices, %s, %s, '0006', %s)" %(
+        self.log.logging( "Tuya", 'Debug', "tuya_response - ------ Request  MajDomoDevice(self, Devices, %s, %s, '0006', %s)" %(
             NwkId, srcEp,  state))
         MajDomoDevice(self, Devices, NwkId, srcEp, '0006', state)
     
@@ -702,9 +701,9 @@ def tuya_smartair_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, d
         store_tuya_attribute( self, NwkId, 'VOC ppm', voc_ppm ) 
         MajDomoDevice(self, Devices, NwkId, srcEp, '0402', voc_ppm, Attribute_ = voc_Attribute)
 
-    elif dp == 0x16: # Formaldéhyde ppm ( Méthanal / CH2O_ppm)
+    elif dp == 0x16: # Formaldéhyde µg/m3 ( Méthanal / CH2O_ppm)
         ch2O_Attribute = '0004'
-        CH2O_ppm = int(data,16) / 100
+        CH2O_ppm = int(data,16)
         store_tuya_attribute( self, NwkId, 'CH2O ppm', CH2O_ppm ) 
         MajDomoDevice(self, Devices, NwkId, srcEp, '0402', CH2O_ppm, Attribute_ = ch2O_Attribute)
 
@@ -762,7 +761,7 @@ def tuya_energy_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dst
         store_tuya_attribute( self, NwkId, 'ChildLock', data )
 
     else:
-        self.log.logging( "Tuya", 'Log', "tuya_energy_response - Model: %s Unknow Nwkid: %s/%s dp: %02x data type: %s data: %s" %(
+        self.log.logging( "Tuya", 'Debug', "tuya_energy_response - Model: %s Unknow Nwkid: %s/%s dp: %02x data type: %s data: %s" %(
             _ModelName, NwkId, srcEp,  dp, datatype, data),NwkId )
 
 def tuya_energy_toggle( self, NwkId):

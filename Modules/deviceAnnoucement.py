@@ -16,7 +16,7 @@ from Modules.tools import (
 from Modules.domoTools import lastSeenUpdate, timedOutDevice
 from Modules.readAttributes import ReadAttributeRequest_0000, ReadAttributeRequest_0001
 from Modules.bindings import rebind_Clusters, reWebBind_Clusters
-from Modules.schneider_wiser import schneider_wiser_registration, schneiderReadRawAPS
+from Modules.schneider_wiser import schneider_wiser_registration, schneiderReadRawAPS, PREFIX_MACADDR_WIZER_LEGACY
 from Modules.basicOutputs import sendZigateCmd
 from Modules.livolo import livolo_bind
 from Modules.configureReporting import processConfigureReporting
@@ -236,8 +236,8 @@ def decode004d_existing_devicev2( self, Devices, NwkId, MsgIEEE, MsgMacCapa, Msg
     sendZigateCmd(self, "0042", str(NwkId), ackIsDisabled=True)
 
     # Let's check if this is a Schneider Wiser
-    if "Manufacturer" in self.ListOfDevices[NwkId]:
-        if self.ListOfDevices[NwkId]["Manufacturer"] == "105e":
+    if MsgIEEE[0 : len(PREFIX_MACADDR_WIZER_LEGACY)] == PREFIX_MACADDR_WIZER_LEGACY:
+        if "Manufacturer" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Manufacturer"] == "105e":
             schneider_wiser_registration(self, Devices, NwkId)
 
     if 'Model' in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]['Model'] in ( 'AC201A', ):
@@ -626,8 +626,8 @@ def decode004d_existing_devicev1( self, Devices, MsgSrcAddr, MsgIEEE, MsgMacCapa
     sendZigateCmd(self, "0042", str(MsgSrcAddr), ackIsDisabled=True)
 
     # Let's check if this is a Schneider Wiser
-    if "Manufacturer" in self.ListOfDevices[MsgSrcAddr]:
-        if self.ListOfDevices[MsgSrcAddr]["Manufacturer"] == "105e":
+    if MsgIEEE[0 : len(PREFIX_MACADDR_WIZER_LEGACY)] == PREFIX_MACADDR_WIZER_LEGACY:
+        if "Manufacturer" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Manufacturer"] == "105e":
             schneider_wiser_registration(self, Devices, MsgSrcAddr)
 
 

@@ -22,7 +22,7 @@ from time import time
 
 from Modules.zigateConsts import LEGRAND_REMOTE_SHUTTER, LEGRAND_REMOTE_SWITCHS, LEGRAND_REMOTES, ZONE_TYPE, THERMOSTAT_MODE_2_LEVEL
 from Modules.domoMaj import MajDomoDevice
-from Modules.domoTools import timedOutDevice
+from Modules.domoTools import timedOutDevice, Update_Battery_Device
 from Modules.tools import DeviceExist, getEPforClusterType, is_hex, voltage2batteryP, checkAttribute, checkAndStoreAttributeValue, \
                         set_status_datastruct, set_timestamp_datastruct, get_isqn_datastruct, instrument_timing
 from Classes.Transport.sqnMgmt import sqn_get_internal_sqn_from_app_sqn, TYPE_APP_ZCL
@@ -184,6 +184,7 @@ def ReadCluster(self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgCluster
             "0202": Cluster0202, 
             "0204": Cluster0204,
             "0300": Cluster0300,
+            "0301": Cluster0301,
             "0400": Cluster0400, 
             "0402": Cluster0402, 
             "0403": Cluster0403, 
@@ -756,17 +757,17 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
         self.log.logging( "Cluster", 'Debug', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
-    UpdateBatteryAttribute( self, MsgSrcAddr, MsgSrcEp )
+    UpdateBatteryAttribute( self, Devices, MsgSrcAddr, MsgSrcEp )
     ### End of Cluster0001
     
-def UpdateBatteryAttribute( self, MsgSrcAddr, MsgSrcEp ):
+def UpdateBatteryAttribute( self, Devices, MsgSrcAddr, MsgSrcEp ):
 
     XIAOMI_BATTERY_DEVICES = ( 'lumi.remote.b286opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b686opcn01', 
                                'lumi.remote.b286opcn01-bulb', 'lumi.remote.b486opcn01-bulb', 'lumi.remote.b686opcn01-bulb',
                                'lumi.sen_ill.mgl01')
 
     BATTERY_200PERCENT = ( 'CTHS317ET', 'CDWS312', 'CMS323', 'PIR323-A', 'PIR323', 'DWS312-E', 'DWS312', "TS0207-waterleak", "Danalock V3", "V3-BTZB", "SML001" , "RWL021", "SPZB0001", "WarningDevice" , "SmokeSensor-N", "SmokeSensor-EM",
-                           "SMOK_V16", "RH3001" ,"TS0201", "COSensor-N", "COSensor-EM" , "TS0043", "TS0044", "TH01", "66666", "DS01", "DSO1", "WB01", "WB-01", "TS0041")
+                           "SMOK_V16", "RH3001" ,"TS0201", "COSensor-N", "COSensor-EF-3.0", "COSensor-EM" , "TS0043", "TS0044", "TH01", "66666", "DS01", "DSO1", "WB01", "WB-01", "TS0041")
                            
     BATTERY_3VOLTS = ( "lumi.sen_ill.mgl01", "3AFE130104020015", "3AFE140103020000", "3AFE14010402000D", "3AFE170100510001" ) + LEGRAND_REMOTES
 
@@ -850,6 +851,7 @@ def UpdateBatteryAttribute( self, MsgSrcAddr, MsgSrcEp ):
             %(MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Model'], self.ListOfDevices[MsgSrcAddr]['Battery'], value) , MsgSrcAddr)
        if value != self.ListOfDevices[MsgSrcAddr]['Battery']:
            self.ListOfDevices[MsgSrcAddr]['Battery'] = value
+           Update_Battery_Device( self, Devices, MsgSrcAddr, value)
            self.ListOfDevices[MsgSrcAddr]['BatteryUpdateTime'] = int(time())
            self.log.logging( "Cluster", 'Debug', "readCluster 0001 - Device: %s Model: %s Updating battery to %s" %(MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Model'], value) , MsgSrcAddr)
 
@@ -1322,7 +1324,7 @@ def Cluster0012( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
 def Cluster0019( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData , Source):
 
-    self.log.logging( "Cluster", 'Log', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" \
+    self.log.logging( "Cluster", 'Debug', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" \
         %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
     checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,MsgClusterData)
@@ -1640,7 +1642,7 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     elif MsgAttrID == '0008':   #  Pi Heating Demand  (valve position %)
         self.log.logging( "Cluster", 'Debug', "ReadCluster - %s - %s/%s Pi Heating Demand: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
-        value = ( value * 100 ) / 255
+        # Per standard the demand is expressed in % between 0x00 to 0x64
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  MsgClusterData )
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0201', value , Attribute_ = '0008')
 
@@ -1898,6 +1900,7 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         elif MsgAttrID == 'e013': # 57363, ATTRIBUTE_THERMOSTAT_OPEN_WINDOW_DETECTION_THRESHOLD
             self.log.logging( "Cluster", 'Debug', "readCluster - %s - %s/%s Schneider ATTRIBUTE_THERMOSTAT_OPEN_WINDOW_DETECTION_THRESHOLD  %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
             checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  MsgClusterData )
+            
         elif MsgAttrID == 'e014': # 57364, ATTRIBUTE_THERMOSTAT_OPEN_WINDOW_DETECTION_INTERVAL
             self.log.logging( "Cluster", 'Debug', "readCluster - %s - %s/%s Schneider ATTRIBUTE_THERMOSTAT_OPEN_WINDOW_DETECTION_INTERVAL  %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
             checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  MsgClusterData )
@@ -2076,11 +2079,27 @@ def Cluster0300( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     else:
         self.log.logging( "Cluster", 'Log', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
+def Cluster0301( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData , Source):
+
+    checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, str(decodeAttribute( self, MsgAttType, MsgClusterData) ) )
+
+    if MsgAttrID == '0010': #Min
+        self.log.logging( "Cluster", 'Debug', "readCluster - %s - %s/%s  Ballast Configuration Min Level %s " %(
+            MsgClusterId, MsgSrcAddr, MsgSrcEp,  MsgClusterData), MsgSrcAddr)
+
+    elif MsgAttrID == '0011': #Max
+        self.log.logging( "Cluster", 'Debug', "readCluster - %s - %s/%s  Ballast Configuration Max Level %s " %(
+            MsgClusterId, MsgSrcAddr, MsgSrcEp,  MsgClusterData), MsgSrcAddr)
+
+    else:
+        self.log.logging( "Cluster", 'Log', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
+
+
 def Cluster0400( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData , Source):
     # (Measurement: LUX)
     #  Lux=10^((y-1)/10000)
 
-    self.log.logging( "Cluster", 'Log', "readCluster - %s - %s/%s  Attr: %s Type: %s Size: %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
+    self.log.logging( "Cluster", 'Debug', "readCluster - %s - %s/%s  Attr: %s Type: %s Size: %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
     value = int(decodeAttribute( self, MsgAttType, MsgClusterData))
     if value < 0 or value > 0xffff:
         return
@@ -2089,7 +2108,7 @@ def Cluster0400( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         lux = value
     else:
         lux = int( 10 ** ((value - 1 ) / 10000))
-    self.log.logging( "Cluster", 'Log', "ReadCluster - %s - %s/%s - LUX Sensor: %s/%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value, lux), MsgSrcAddr)
+    self.log.logging( "Cluster", 'Debug', "ReadCluster - %s - %s/%s - LUX Sensor: %s/%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value, lux), MsgSrcAddr)
 
     MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(lux))
     checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, lux)
@@ -2228,6 +2247,11 @@ def Cluster0406( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             %( MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),MsgSrcAddr)
         self.log.logging( "Cluster", 'Debug', "ReadCluster - ClusterId=0406 - UnOccupied to Occupied delay: " + str(MsgClusterData) , MsgSrcAddr)
 
+    elif MsgAttrID == '0012':
+        self.log.logging( "Cluster", 'Debug', "ReadCluster - %s - NwkId: %s Ep: %s AttrId: %s AttyType: %s Attsize: %s AttrValue: %s" \
+            %( MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),MsgSrcAddr)
+        self.log.logging( "Cluster", 'Debug', "ReadCluster - ClusterId=0406 - UnoccupiedTo OccupiedThreshold: " + str(MsgClusterData) , MsgSrcAddr)
+
     elif MsgAttrID == '0030':
         self.log.logging( "Cluster", 'Debug', "ReadCluster - ClusterId=0406 - Attribut 0030: " + str(MsgClusterData) , MsgSrcAddr)
 
@@ -2283,7 +2307,7 @@ def Cluster0500( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     elif MsgAttrID == "0002": # Zone Status
         #self.iaszonemgt.receiveIASmessages( MsgSrcAddr, MsgSrcEp,  5, MsgClusterData)     #Not needed for enrollment procedure
-        if MsgClusterData != '' and MsgAttType == '19':
+        if MsgClusterData != '' and MsgAttType in ('19','21'):
             alarm1 = int(MsgClusterData,16) & 0b0000000000000001
             alarm2 = (int(MsgClusterData,16) & 0b0000000000000010 ) >> 1
             tamper = (int(MsgClusterData,16) & 0b0000000000000100 ) >> 2

@@ -708,7 +708,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                             sValue = 0
                         if sValue == 99 and analogValue == 254:
                             sValue = 100
-                self.log.logging( "Widget", "Debug", "------>  LvlControl sValue: -> %s" %sValue, NWKID)
+                self.log.logging( "Widget", "Debug", "------>  LvlControl new sValue: -> %s old nValue/sValue %s:%s" %(sValue,Devices[DeviceUnit].nValue,Devices[DeviceUnit].sValue) , NWKID)
                 # In case we reach 0% or 100% we shouldn't switch Off or On, except in the case of Shutter/Blind
                 if sValue == 0:
                     nValue = 0
@@ -716,10 +716,10 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                         self.log.logging( "Widget", "Debug", "------>  LvlControl UpdateDevice: -> %s/%s SwitchType: %s" %(0,0, Devices[DeviceUnit].SwitchType), NWKID)
                         UpdateDevice_v2(self, Devices, DeviceUnit, 0, '0', BatteryLevel, SignalLevel)
                     else:
-                        if Devices[DeviceUnit].nValue == 0 and Devices[DeviceUnit].sValue == 'Off':
+                        #if Devices[DeviceUnit].nValue == 0 and Devices[DeviceUnit].sValue == 'Off':
+                        if Devices[DeviceUnit].nValue == 0 and ( Devices[DeviceUnit].sValue == 'Off' or Devices[DeviceUnit].sValue == str(sValue)):
                             pass
                         else:
-                            #UpdateDevice_v2(Devices, DeviceUnit, 0, 'Off', BatteryLevel, SignalLevel)
                             self.log.logging( "Widget", "Debug", "------>  LvlControl UpdateDevice: -> %s/%s" %(0,0), NWKID)
                             UpdateDevice_v2(self, Devices, DeviceUnit, 0, '0', BatteryLevel, SignalLevel)
                 elif sValue == 100:
@@ -729,15 +729,16 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                         UpdateDevice_v2(self, Devices, DeviceUnit, 1, '100', BatteryLevel, SignalLevel)
 
                     else:
-                        if Devices[DeviceUnit].nValue == 0 and Devices[DeviceUnit].sValue == 'Off':
+                        if Devices[DeviceUnit].nValue == 0 and ( Devices[DeviceUnit].sValue == 'Off' or Devices[DeviceUnit].sValue == str(sValue)):
                             pass
                         else:
-                            #UpdateDevice_v2(Devices, DeviceUnit, 1, 'On', BatteryLevel, SignalLevel)
                             self.log.logging( "Widget", "Debug", "------>  LvlControl UpdateDevice: -> %s/%s" %(1,100), NWKID)
                             UpdateDevice_v2(self, Devices, DeviceUnit, 1, '100', BatteryLevel, SignalLevel)
 
                 else: # sValue != 0 and sValue != 100
-                    if Devices[DeviceUnit].nValue == 0 and Devices[DeviceUnit].sValue == 'Off':
+                    
+                    #if Devices[DeviceUnit].nValue == 0 and Devices[DeviceUnit].sValue == 'Off':
+                    if Devices[DeviceUnit].nValue == 0 and ( Devices[DeviceUnit].sValue == 'Off' or Devices[DeviceUnit].sValue == str(sValue)):
                         # Do nothing. We receive a ReadAttribute  giving the position of a Off device.
                         pass
                     elif Devices[DeviceUnit].SwitchType in (13,14,15,16):

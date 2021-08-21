@@ -87,6 +87,7 @@ class ZigateTransport(object):
         # Firmware Management
         self.FirmwareVersion = None
         self.FirmwareMajorVersion = None
+        self.ZiGateHWVersion = None
 
         self.firmware_compatibility_mode = False  # 31a and below
         self.firmware_with_aps_sqn = False  # Available from 31d
@@ -123,7 +124,9 @@ class ZigateTransport(object):
     def get_writer_queue(self ):
         return self.forwarder_queue.qsize()
 
-    
+    def update_ZiGate_HW_Version( self, version):
+        self.ZiGateHWVersion = version
+
     def update_ZiGate_Version ( self, FirmwareVersion, FirmwareMajorVersion):
         self.FirmwareVersion = FirmwareVersion
         self.FirmwareMajorVersion = FirmwareMajorVersion

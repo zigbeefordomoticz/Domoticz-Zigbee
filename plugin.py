@@ -4,7 +4,7 @@
 # Author: zaraki673 & pipiche38
 #
 """
-<plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="5.1" wikilink="https://www.domoticz.com/wiki/Zigate" externallink="https://github.com/pipiche38/Domoticz-Zigate/wiki">
+<plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="5.2" wikilink="https://www.domoticz.com/wiki/Zigate" externallink="https://github.com/pipiche38/Domoticz-Zigate/wiki">
     <description>
         <h2> Plugin ZiGate for Domoticz </h2><br/>
             The aim of the plugin is to bridge a ZiGate to the DomoticZ software. <br/>
@@ -110,6 +110,7 @@ from Modules.zigateConsts import HEARTBEAT, CERTIFICATION, MAX_LOAD_ZIGATE, MAX_
 from Modules.txPower import set_TxPower, get_TxPower
 from Modules.checkingUpdate import checkPluginVersion, checkPluginUpdate, checkFirmwareUpdate
 from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
+from Modules.schneider_wiser import wiser_thermostat_monitoring_heating_demand
 
 #from Classes.APS import APSManagement
 from Classes.IAS import IAS_Zone_Management
@@ -128,6 +129,8 @@ from Classes.NetworkMap import NetworkMap
 from Classes.NetworkEnergy import NetworkEnergy
 
 from Classes.DomoticzDB import DomoticzDB_DeviceStatus, DomoticzDB_Hardware, DomoticzDB_Preferences
+
+
 
 VERSION_FILENAME = '.hidden/VERSION'
 
@@ -320,6 +323,7 @@ class BasePlugin:
             self.log.loggingUpdatePluginVersion( str( self.pluginParameters['PluginBranch'] + '-' + self.pluginParameters['PluginVersion']) )
             self.log.openLogFile()
 
+        # We can use from now the self.log.logging()
         self.log.logging( 'Plugin', 'Status',"Zigate plugin %s-%s started" %(self.pluginParameters['PluginBranch'], self.pluginParameters['PluginVersion']))
   
         # Debuging information
@@ -431,48 +435,63 @@ class BasePlugin:
             #Domoticz.Log("Init IAS_Zone_management ZigateComm: %s" %self.ZigateComm)
             self.iaszonemgt = IAS_Zone_Management( self.pluginconf, self.ZigateComm , self.ListOfDevices, self.log)
 
+            # Starting WebServer
+        if self.webserver is None:
+            if Parameters['Mode4'].isdigit():
+                start_web_server( self, Parameters['Mode4'], Parameters["HomeFolder"] )
+            else:
+                self.log.logging( 'Plugin', 'Error',"WebServer disabled du to Parameter Mode4 set to %s" %Parameters['Mode4'])
+
+
         self.busy = False
 
     def onStop(self):
-        self.log.logging( 'Plugin', 'Log',"onStop called")
-
-        self.log.logging( 'Plugin', 'Log',"onStop calling (1) domoticzDb DeviceStatus closed")
+        if self.log:
+            self.log.logging( 'Plugin', 'Log',"onStop called")
+            self.log.logging( 'Plugin', 'Log',"onStop calling (1) domoticzDb DeviceStatus closed")
         if self.domoticzdb_DeviceStatus:
             self.domoticzdb_DeviceStatus.closeDB()
-        self.log.logging( 'Plugin', 'Log',"onStop called (1) domoticzDb DeviceStatus closed")
+        if self.log:
+            self.log.logging( 'Plugin', 'Log',"onStop called (1) domoticzDb DeviceStatus closed")
 
-        self.log.logging( 'Plugin', 'Log',"onStop calling (2) domoticzDb Hardware closed")
+            self.log.logging( 'Plugin', 'Log',"onStop calling (2) domoticzDb Hardware closed")
         if self.domoticzdb_Hardware:
             self.domoticzdb_Hardware.closeDB()
-        self.log.logging( 'Plugin', 'Log',"onStop called (2) domoticzDb Hardware closed")
+        if self.log:
+            self.log.logging( 'Plugin', 'Log',"onStop called (2) domoticzDb Hardware closed")
 
-        self.log.logging( 'Plugin', 'Log',"onStop calling (3) Transport off")
+            self.log.logging( 'Plugin', 'Log',"onStop calling (3) Transport off")
         if self.ZigateComm:
             self.ZigateComm.thread_transport_shutdown()
             self.ZigateComm.close_conn()
-        self.log.logging( 'Plugin', 'Log',"onStop called (3) Transport off")
+        if self.log:
+            self.log.logging( 'Plugin', 'Log',"onStop called (3) Transport off")
 
-        self.log.logging( 'Plugin', 'Log',"onStop calling (4) WebServer off")
+            self.log.logging( 'Plugin', 'Log',"onStop calling (4) WebServer off")
         if self.webserver:
             self.webserver.onStop()
-        self.log.logging( 'Plugin', 'Log',"onStop called (4) WebServer off")
+        if self.log:
+            self.log.logging( 'Plugin', 'Log',"onStop called (4) WebServer off")
 
         #self.ZigateComm.close_conn()
-        self.log.logging( 'Plugin', 'Log',"onStop calling (5) Plugin Database saved")
+        if self.log:
+            self.log.logging( 'Plugin', 'Log',"onStop calling (5) Plugin Database saved")
         WriteDeviceList(self, 0)
-        self.log.logging( 'Plugin', 'Log',"onStop called (5) Plugin Database saved")
+        if self.log:
+            self.log.logging( 'Plugin', 'Log',"onStop called (5) Plugin Database saved")
 
         self.statistics.printSummary()
         self.statistics.writeReport()
 
-        self.log.logging( 'Plugin', 'Log',"onStop calling (6) Close Logging Management")
+        if self.log:
+            self.log.logging( 'Plugin', 'Log',"onStop calling (6) Close Logging Management")
         if self.log:
             self.log.closeLogFile()
         self.log.logging( 'Plugin', 'Log',"onStop called (6) Close Logging Management")
         
         for thread in threading.enumerate():
             if (thread.name != threading.current_thread().name):
-                self.log.logging( 'Plugin', 'Log', "'"+thread.name+"' is running, it must be shutdown otherwise Domoticz will abort on plugin exit.")
+                Domoticz.Log("'"+thread.name+"' is running, it must be shutdown otherwise Domoticz will abort on plugin exit.")
 
         self.PluginHealth['Flag'] = 3
         self.PluginHealth['Txt'] = 'No Communication'
@@ -507,7 +526,7 @@ class BasePlugin:
                         sendZigateCmd(self, "0026", self.ZigateIEEE + IEEE )
                         self.log.logging( 'Plugin', 'Status', "onDeviceRemoved - removing Device %s -> %s in Zigate" %(Devices[Unit].Name, IEEE))
                     else:
-                        Domoticz.Error("onDeviceRemoved - too early, Zigate and plugin initialisation not completed")
+                        self.log.logging( 'Plugin', 'Error',"onDeviceRemoved - too early, Zigate and plugin initialisation not completed")
                 else:
                     self.log.logging( 'Plugin', 'Status', "onDeviceRemoved - device entry %s from Zigate not removed. You need to enable 'allowRemoveZigateDevice' parameter. Do consider that it works only for main powered devices." %Devices[Unit].DeviceID)
 
@@ -533,7 +552,7 @@ class BasePlugin:
         self.busy = True
 
         if Status != 0:
-            Domoticz.Error("Failed to connect ("+str(Status)+")")
+            self.log.logging( 'Plugin', 'Error',"Failed to connect ("+str(Status)+")")
             self.log.logging( 'Plugin', 'Debug', "Failed to connect ("+str(Status)+") with error: "+Description)
             self.connectionState = 0
             self.ZigateComm.re_conn()
@@ -568,7 +587,7 @@ class BasePlugin:
             return
 
         if len(Data) == 0:
-            Domoticz.Error("onMessage - empty message received on %s" %Connection)
+            self.log.logging( 'Plugin', 'Error',"onMessage - empty message received on %s" %Connection)
 
         self.Ping['Nb Ticks'] = 0
         self.connectionState  = 1
@@ -604,7 +623,7 @@ class BasePlugin:
             self.adminWidgets.handleCommand( self, Command)
 
         else:
-            Domoticz.Error("onCommand - Unknown device or GrpMgr not enabled %s, unit %s , id %s" \
+            self.log.logging( 'Plugin', 'Error',"onCommand - Unknown device or GrpMgr not enabled %s, unit %s , id %s" \
                     %(Devices[Unit].Name, Unit, Devices[Unit].DeviceID))
 
     def onDisconnect(self, Connection):
@@ -714,14 +733,16 @@ class BasePlugin:
 
         # Garbage collector ( experimental for now)
         if self.internalHB % (  3600 // HEARTBEAT) == 0:
-            self.log.logging( 'Plugin', 'Debug', "Garbage Collection status: %s" %str(gc.get_count()) )
-            self.log.logging( 'Plugin', 'Debug', "Garbage Collection triggered: %s" %str(gc.collect()) )
+            self.log.logging( 'Plugin', 'Log', "Garbage Collection status: %s" %str(gc.get_count()) )
+            self.log.logging( 'Plugin', 'Log', "Garbage Collection triggered: %s" %str(gc.collect()) )
 
         # Manage all entries in  ListOfDevices (existing and up-coming devices)
         processListOfDevices( self , Devices )
 
         self.iaszonemgt.IAS_heartbeat( )
 
+        # Check and Update Heating demand for Wiser if applicable (this will be check in the call)
+        wiser_thermostat_monitoring_heating_demand( self, Devices)
         # Group Management
         if self.groupmgt:
             self.groupmgt.hearbeat_group_mgt()
@@ -845,8 +866,8 @@ def zigateInit_Phase2( self):
             sendZigateCmd(self, "0009", "") 
 
         if self.HeartbeatCount > TIMEDOUT_FIRMWARE:
-            Domoticz.Error("We are having difficulties to start Zigate. Basically we are not receiving what we expect from Zigate")
-            Domoticz.Error("Plugin is not started ...")
+            self.log.logging( 'Plugin', 'Error',"We are having difficulties to start Zigate. Basically we are not receiving what we expect from Zigate")
+            self.log.logging( 'Plugin', 'Error',"Plugin is not started ...")
         return
 
 
@@ -924,10 +945,15 @@ def zigateInit_Phase3( self ):
         # Create Network Map object and trigger one scan
         if self.networkmap is None:
             self.networkmap = NetworkMap( self.pluginconf, self.ZigateComm, self.ListOfDevices, Devices, self.HardwareID, self.log)
+        if self.networkmap:
+            self.webserver.update_networkmap(self.networkmap)
+
         # Create Network Energy object and trigger one scan
         if self.networkenergy is None:
             self.networkenergy = NetworkEnergy( self.pluginconf, self.ZigateComm, self.ListOfDevices, Devices, self.HardwareID, self.log)        #    if len(self.ListOfDevices) > 1:        #        self.log.logging( 'Plugin', 'Status', "Trigger a Energy Level Scan")        #        self.networkenergy.start_scan()
-
+        if self.networkenergy:
+            self.webserver.update_networkenergy(self.networkenergy )
+            
     # In case we have Transport = None , let's check if we have to active Group management or not. (For Test and Web UI Dev purposes
     if self.transport == 'None' and self.groupmgt is None and self.pluginconf.pluginConf['enablegroupmanagement']:
         start_GrpManagement( self, Parameters["HomeFolder"])
@@ -935,13 +961,6 @@ def zigateInit_Phase3( self ):
     # Enable Over The Air Upgrade if applicable
     if self.OTA is None and self.pluginconf.pluginConf['allowOTA']:
         start_OTAManagement( self,Parameters["HomeFolder"] )
-
-    # Starting WebServer
-    if self.webserver is None:
-        if Parameters['Mode4'].isdigit():
-            start_web_server( self, Parameters['Mode4'], Parameters["HomeFolder"] )
-        else:
-            Domoticz.Error("WebServer disabled du to Parameter Mode4 set to %s" %Parameters['Mode4'])
 
     if self.FirmwareMajorVersion == '03':
         self.log.logging( 'Plugin', 'Status', "Plugin with Zigate, firmware %s correctly initialized" %self.FirmwareVersion)
@@ -981,8 +1000,8 @@ def check_firmware_level( self ):
     elif self.FirmwareVersion.lower() =='031e':
         self.pluginconf.pluginConf['forceAckOnZCL'] = False
 
-    elif int(self.FirmwareVersion,16) > 0x031f:
-        Domoticz.Error("Firmware %s is not yet supported" %self.FirmwareVersion.lower())
+    elif int(self.FirmwareVersion,16) > 0x0320:
+        self.log.logging( 'Plugin', 'Error',"Firmware %s is not yet supported" %self.FirmwareVersion.lower())
 
     return True
 
@@ -991,16 +1010,20 @@ def start_GrpManagement( self, homefolder):
             self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK, self.log )
     if self.groupmgt and self.ZigateIEEE:
         self.groupmgt.updateZigateIEEE( self.ZigateIEEE) 
+    if self.groupmgt:
+        self.webserver.update_groupManagement( self.groupmgt)
 
 def start_OTAManagement( self,homefolder ):
-        self.OTA = OTAManagement( self.pluginconf, self.adminWidgets, self.ZigateComm, homefolder,
-                    self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK, self.log, self.PluginHealth)
+    self.OTA = OTAManagement( self.pluginconf, self.adminWidgets, self.ZigateComm, homefolder,
+                self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK, self.log, self.PluginHealth)
+    if self.OTA:
+        self.webserver.update_OTA( self.OTA)
 
 def start_web_server( self, webserver_port, webserver_homefolder ):
 
     self.log.logging( 'Plugin', 'Status', "Start Web Server connection")
-    self.webserver = WebServer( self.networkenergy, self.networkmap, self.zigatedata, self.pluginParameters, self.pluginconf, self.statistics, 
-        self.adminWidgets, self.ZigateComm, webserver_homefolder, self.HardwareID, self.DevicesInPairingMode, self.groupmgt,self.OTA, Devices, 
+    self.webserver = WebServer( self.zigatedata, self.pluginParameters, self.pluginconf, self.statistics, 
+        self.adminWidgets, self.ZigateComm, webserver_homefolder, self.HardwareID, self.DevicesInPairingMode, Devices, 
         self.ListOfDevices, self.IEEE2NWK , self.permitTojoin , self.WebUsername, self.WebPassword, self.PluginHealth, webserver_port, 
         self.log)
     if self.FirmwareVersion:
@@ -1034,7 +1057,7 @@ def pingZigate( self ):
         self.log.logging( 'Plugin', 'Log', "pingZigate - WARNING: Ping sent but no response yet from Zigate. Status: %s  - Ping: %s sec" %(self.Ping['Status'], delta))
         if delta > 56: # Seems that we have lost the Zigate communication
 
-            Domoticz.Error("pingZigate - no Heartbeat with Zigate, try to reConnect")
+            self.log.logging( 'Plugin', 'Error',"pingZigate - no Heartbeat with Zigate, try to reConnect")
             self.adminWidgets.updateNotificationWidget( Devices, 'Ping: Connection with Zigate Lost')
             #self.connectionState = 0
             #self.Ping['TimeStamp'] = int(time.time())
@@ -1069,7 +1092,7 @@ def pingZigate( self ):
         self.Ping['Status'] = 'Sent'
         self.Ping['TimeStamp'] = int(time.time())
     else:
-        Domoticz.Error("pingZigate - unknown status : %s" %self.Ping['Status'])
+        self.log.logging( 'Plugin', 'Error',"pingZigate - unknown status : %s" %self.Ping['Status'])
 
 global _plugin
 _plugin = BasePlugin()

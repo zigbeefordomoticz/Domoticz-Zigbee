@@ -21,7 +21,7 @@ CALLBACK_TABLE = {
     '1021' : callbackDeviceAwake_Legrand ,
     }
 
-def callbackDeviceAwake(self, NwkId, endpoint, cluster):
+def callbackDeviceAwake(self, Devices, NwkId, endpoint, cluster):
 
     # This is fonction is call when receiving a message from a Manufacturer battery based device.
     # The function is called after processing the readCluster part
@@ -51,4 +51,4 @@ def callbackDeviceAwake(self, NwkId, endpoint, cluster):
     if self.ListOfDevices[NwkId]['Manufacturer'] in CALLBACK_TABLE:
         manuf = self.ListOfDevices[NwkId]['Manufacturer']
         func = CALLBACK_TABLE[ manuf ]
-        func( self, NwkId , endpoint, cluster)
+        func( self, Devices, NwkId , endpoint, cluster)
