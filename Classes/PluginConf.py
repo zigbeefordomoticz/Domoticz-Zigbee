@@ -230,14 +230,14 @@ SETTINGS = {
 
     # Experimental
     'Experimental': {'Order': 15, 'param': {    
-        'nPDUaPDUThreshold':     {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'nPDUaPDUThreshold':     {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': True},
         'forceAckOnZCL':         {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'RoutingTableRequestFeq':{'type': 'int',  'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'RoutingTableRequestFeq':{'type': 'int',  'default': 0, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': True},
 
-        'doManyToOneRoute':      {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'doManyToOneRoute':      {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': True},
         'DropBadAnnoucement':    {'type': 'bool', 'default': 1, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},    
         'expJsonDatabase':       {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
-        'useDomoticzDatabase':   {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False,  'Advanced': True},
+        'useDomoticzDatabase':   {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
         'XiaomiLeave':           {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
         'rebindLivolo':          {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': False},
         'allowAutoPairing':      {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
