@@ -263,8 +263,6 @@ def AqaraOppleDecoding0012(self, Devices, nwkid, Ep, ClusterId, AttributeId, Val
     if Value in OPPLE_MAPPING:
         MajDomoDevice( self, Devices, nwkid, Ep, "0006", OPPLE_MAPPING[ Value ])  
 
-    return
-
 def retreive4Tag(tag,chain):
     c = str.find(chain,tag) + 4
     if c == 3: 

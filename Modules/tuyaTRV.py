@@ -248,10 +248,10 @@ def decode_schedule_day( dp, data ):
             idx += 4
             setpoint = (int(data[idx:idx+4],16)) / 10
             idx += 4
-            hour = minutes // 60
-            min = ( minutes - ( 60 * hour )) 
+            plug_hour = minutes // 60
+            plug_min = ( minutes - ( 60 * plug_hour )) 
             cnt = "T%s" %len(schedule)
-            schedule[ cnt ] = "%s:%s %s" %(hour, min, setpoint)
+            schedule[ cnt ] = "%s:%s %s" %(plug_hour, plug_min, setpoint)
         return_value['Schedule'] = schedule
 
     return return_value
