@@ -21,6 +21,18 @@ Release Numbering
 - Odd numbers --> Stable5
 - Even numbers  --> Beta
 
+##    June 2021   - 5.1.05
+- [Technical] - Update of Readme.md to better indicate the way to move from one branch to an other
+- [Issue] - ZiGate+ Wifi not starting
+- [Hardware] - Tuya DIN Energy counter certfied
+- [Hardware] - Tuya/Parkside Smart Water Timer (Lidl), first phase.
+- [Hardware] - Gledopto GL-C-007-1ID
+- [Hardware] - Tuya Door Sensor TS0203
+
+## 19 June 2021   - 5.1.04
+- [Hardware] - Philips Hue Hue White Ambiance GU10
+- [Technical] - various fixes
+
 ## 31st May 2021  -  5.1.03
 - [Technical] - Better management of ZiGate V1 and V2
 - [Technical] - Revert Config.Reporting of End Device to a proprer rate
