@@ -39,6 +39,3 @@ def callbackDeviceAwake_Gledopto(self, Devices, NwkId, EndPoint, cluster):
 
     Domoticz.Log("callbackDeviceAwake_Legrand - Nwkid: %s, EndPoint: %s cluster: %s" \
             %(NwkId, EndPoint, cluster))
-
-    return
-
