@@ -952,7 +952,7 @@ def zigateInit_Phase3( self ):
         if self.networkenergy is None:
             self.networkenergy = NetworkEnergy( self.pluginconf, self.ZigateComm, self.ListOfDevices, Devices, self.HardwareID, self.log)        #    if len(self.ListOfDevices) > 1:        #        self.log.logging( 'Plugin', 'Status', "Trigger a Energy Level Scan")        #        self.networkenergy.start_scan()
         if self.networkenergy:
-            self.webserver.update_networkmap(self.networkenergy )
+            self.webserver.update_networkenergy(self.networkenergy )
             
     # In case we have Transport = None , let's check if we have to active Group management or not. (For Test and Web UI Dev purposes
     if self.transport == 'None' and self.groupmgt is None and self.pluginconf.pluginConf['enablegroupmanagement']:
