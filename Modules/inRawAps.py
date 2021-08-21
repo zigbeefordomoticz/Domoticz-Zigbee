@@ -181,6 +181,7 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Glo
 
     manuf = str(self.ListOfDevices[srcnwkid]['Manufacturer'])
 
+
     self.log.logging( "inRawAPS", 'Debug', "inRawAps Nwkid: %s Ep: %s Cluster: %s ManufCode: %s manuf: %s manuf_name: %s Cmd: %s Data: %s" %(
         srcnwkid, srcep, cluster, ManufacturerCode, manuf, manuf_name, Command, Data)  )
 
@@ -201,7 +202,3 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Glo
 
     if func:
         func(self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, payload )
-
-
-
-

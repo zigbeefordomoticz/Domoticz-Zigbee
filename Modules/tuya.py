@@ -45,7 +45,7 @@ TS0041_MANUF_NAME = ("_TZ3000_xkwalgne", "_TZ3000_peszejy7", "_TZ3000_8kzqqzu4",
 TUYA_WATER_TIMER = ( '_TZE200_htnnfasr', )
 TUYA_ENERGY_MANUFACTURER = ( '_TZE200_fsb6zw01', '_TZE200_byzdayie', )
 
-TUYA_SMARTAIR_MANUFACTURER = ( '_TZE200_8ygsuhe1', '_TZE200_yvx5lh6k', ),
+TUYA_SMARTAIR_MANUFACTURER = ( '_TZE200_8ygsuhe1', '_TZE200_yvx5lh6k', )
 
 TUYA_SIREN_MANUFACTURER =  ( '_TZE200_d0yu2xgi', '_TYST11_d0yu2xgi' ,)
 TUYA_SIREN_MODEL        =  ( 'TS0601', '0yu2xgi', )
@@ -130,7 +130,6 @@ def callbackDeviceAwake_Tuya(self, Devices, NwkId, EndPoint, cluster):
     Domoticz.Log("callbackDeviceAwake_Tuya - Nwkid: %s, EndPoint: %s cluster: %s" \
             %(NwkId, EndPoint, cluster))
 
-    return
 
 def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
 

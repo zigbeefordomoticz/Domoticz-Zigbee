@@ -226,7 +226,7 @@ class IAS_Zone_Management:
             self.ListOfDevices[nwkid]['IAS'][SrcEp]['ZoneId'] = zoneid
     
             if nwkid in self.devices and SrcEp in self.devices[ nwkid ] and 'Step' in self.devices[nwkid][SrcEp]:
-                self.devices[nwkid][SrcEp]['Step'] == 7
+                self.devices[nwkid][SrcEp]['Step'] = 7
 
 
     def receiveIASmessages(self, nwkid , SrcEp, step, value):
@@ -453,16 +453,16 @@ class IAS_Zone_Management:
 
     def warningMode( self , nwkid, ep, mode='both'):
 
-
         STROBE_LEVEL = { 'Low':0x00, 'Medium': 0x01 }
 
-        WARNING_MODE = { 'Stop': 0b00000000,
-                    'Burglar': 0b00000001,
-                    'Fire': 0b00000010,
-                    'Emergency': 0b00000011,
+        WARNING_MODE = { 'Stop':    0b00000000,
+                    'Burglar':      0b00000001,
+                    'Fire':         0b00000010,
+                    'Emergency':    0b00000011,
                     'Police Panic': 0b00000100,
-                    'Fire Panic': 0b00000101,
-                    'Emergency': 0b00000110 }
+                    'Fire Panic':   0b00000101,
+                    'Emergency panic':    0b00000110 }
+
         STROBE_MODE = { 'No Strobe':0b00000000,
                 'Use Strobe':0b00010000 }
 
