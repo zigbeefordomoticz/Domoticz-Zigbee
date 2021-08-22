@@ -18,7 +18,7 @@ from Modules.legrand_netatmo import legrand_enable_Led_Shutter_by_nwkid, legrand
 from Modules.basicOutputs import set_poweron_afteroffon, set_PIROccupiedToUnoccupiedDelay, ballast_Configuration_max_level, ballast_Configuration_min_level
 from Modules.readAttributes import ReadAttributeRequest_0006_400x, ReadAttributeRequest_0406_0010
 from Modules.tuyaTRV import tuya_trv_thermostat_sensor_mode
-from Modules.tuya import tuya_switch_relay_status, tuya_switch_indicate_light, get_tuya_attribute, tuya_energy_childLock
+from Modules.tuya import tuya_switch_relay_status, tuya_switch_indicate_light, get_tuya_attribute, tuya_energy_childLock, tuya_window_cover_motor_reversal, tuya_backlight_command
 from Modules.schneider_wiser import wiser_home_lockout_thermostat, iTRV_open_window_detection
 
 def Ballast_max_level( self, nwkid, max_level ):
@@ -153,7 +153,9 @@ DEVICE_PARAMETERS = {
     'BallastMaxLevel': Ballast_max_level,
     'BallastMinLevel': Ballast_min_level,
     'WiserLockThermostat': wiser_home_lockout_thermostat,
-    'WiseriTrvWindowOpen': iTRV_open_window_detection
+    'WiseriTrvWindowOpen': iTRV_open_window_detection,
+    'TuyaMotoReversal': tuya_window_cover_motor_reversal,
+    'TuyaBackLight': tuya_backlight_command,
 }
 
 def sanity_check_of_param( self, NwkId):
