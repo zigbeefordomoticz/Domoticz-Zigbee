@@ -104,7 +104,6 @@ def tcpip_read_from_zigate( self ):
                 len_data_sent = self._connection.send( encode_data )
                 if len_data_sent != len(encode_data):
                     self.logging_send( 'Error', "tcpip_read_from_zigate - Not all data have been sent !!! Please report !!!!%s ")
-                Domoticz.Log(" ---- sent: %s out of %s" %(len_data_sent, len(encode_data)))
                 continue
 
             except Exception as e:
