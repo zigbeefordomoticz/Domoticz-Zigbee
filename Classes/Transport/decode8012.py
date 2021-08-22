@@ -41,16 +41,16 @@ def decode8012_8702( self, decoded_frame):
     update_xPDU( self, nPDU, aPDU)
 
     isqn = sqn_get_internal_sqn_from_aps_sqn(self, MsgSQN)
-    self.logging_receive( 'Debug', "decode8012_8702 - 0x8012 isqn: %s eSqn: %s" %(isqn, MsgSQN))
+    #self.logging_receive( 'Debug', "decode8012_8702 - 0x8012 isqn: %s eSqn: %s" %(isqn, MsgSQN))
     
     if isqn is None:
-        self.logging_receive( 'Debug', "decode8012_8702 - 0x8012 not for us Nwkid: %s eSqn: %s" %(MsgAddr, MsgSQN))
+        #self.logging_receive( 'Debug', "decode8012_8702 - 0x8012 not for us Nwkid: %s eSqn: %s" %(MsgAddr, MsgSQN))
         if self.pluginconf.pluginConf["debugzigateCmd"]:
             self.logging_receive( 'Log', "Transport - [%s] - Async %s Sqn: %s Addr: %s nPdu: %s aPdu: %s" %(isqn, MsgType, MsgSQN, MsgAddr, nPDU, aPDU))
         return
 
     if isqn not in self.ListOfCommands:
-        self.logging_receive( 'Debug', "decode8012_8702 - 0x8012 not for us Nwkid: %s eSqn: %s " %(MsgAddr, MsgSQN))
+        #self.logging_receive( 'Debug', "decode8012_8702 - 0x8012 not for us Nwkid: %s eSqn: %s " %(MsgAddr, MsgSQN))
         if self.pluginconf.pluginConf["debugzigateCmd"]:
             self.logging_receive( 'Log', "Transport - [%s] - Async %s Sqn: %s Addr: %s nPdu: %s aPdu: %s" %(isqn, MsgType, MsgSQN, MsgAddr, nPDU, aPDU))
         return

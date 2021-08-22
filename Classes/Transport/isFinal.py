@@ -52,14 +52,14 @@ def is_final_step( self, isqn, step):
         return True
 
 
-    self.logging_receive( 'Debug', "is_final_step - returning False by default Cmd: 0x%04x - %s %s %s %s" %
-        (
-        cmd,
-        self.firmware_with_8012,
-        is_8012_expected_after_8000( self, isqn, cmd ),
-        is_8011_expected_after_8000( self, isqn, cmd ),
-        is_8011_expected_after_8012( self, isqn, cmd )
-        ))
+    #self.logging_receive( 'Debug', "is_final_step - returning False by default Cmd: 0x%04x - %s %s %s %s" %
+    #    (
+    #    cmd,
+    #    self.firmware_with_8012,
+    #    is_8012_expected_after_8000( self, isqn, cmd ),
+    #    is_8011_expected_after_8000( self, isqn, cmd ),
+    #    is_8011_expected_after_8012( self, isqn, cmd )
+    #    ))
     return False
 
 def is_final_step_8012(self, isqn, cmd):
@@ -67,19 +67,19 @@ def is_final_step_8012(self, isqn, cmd):
         if is_group_cmd( self, isqn, cmd):
             return True
         return is_8011_expected_after_8012( self, isqn, cmd )
-    self.logging_receive( 'Debug', "is_final_step_8012 - returning False by default Cmd: 0x%04d" %cmd)
+    #self.logging_receive( 'Debug', "is_final_step_8012 - returning False by default Cmd: 0x%04d" %cmd)
     return False
 
 def is_8011_expected_after_8000( self, isqn, cmd ):
     if cmd in ZIGATE_COMMANDS:
         return ZIGATE_COMMANDS[ cmd ]['Ack']
-    self.logging_receive( 'Debug', "is_8011_expected_after_8000 - returning False by default Cmd: 0x%04d" %cmd)
+    #self.logging_receive( 'Debug', "is_8011_expected_after_8000 - returning False by default Cmd: 0x%04d" %cmd)
     return False
 
 def is_8012_expected_after_8000( self, isqn, cmd ):
     if cmd in ZIGATE_COMMANDS:
         return ZIGATE_COMMANDS[ cmd ]['8012']
-    self.logging_receive( 'Debug', "is_8012_expected_after_8000 - returning False by default Cmd: 0x%04d" %cmd)
+    #self.logging_receive( 'Debug', "is_8012_expected_after_8000 - returning False by default Cmd: 0x%04d" %cmd)
     return False
 
 def is_8011_expected_after_8012( self, isqn, cmd ):

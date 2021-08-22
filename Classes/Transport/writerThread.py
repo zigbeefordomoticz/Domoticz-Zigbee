@@ -233,7 +233,7 @@ def get_checksum(msgtype, length, datas):
     return chk[2:4]
 
 def write_to_zigate( self, serialConnection, encoded_data ):
-    self.logging_send('Debug', "write_to_zigate")
+    self.logging_send('Log', "write_to_zigate")
 
     if self.pluginconf.pluginConf['byPassDzConnection'] and not self.force_dz_communication:
         return native_write_to_zigate( self, serialConnection, encoded_data)
@@ -257,28 +257,7 @@ def reset_line_out( self ):
 def native_write_to_zigate( self, serialConnection, encoded_data):
 
     if self._transp in ( "Wifi", "V2-Wifi", ):
-        if self._connection is None:
-            # No connexion for now
-            return
-            
-        tcpipConnection = self._connection
-        tcpiConnectionList = [ tcpipConnection ]
-        inputSocket  = outputSocket = [ tcpipConnection ]
-        if inputSocket == outputSocket == -1:
-            return 'SocketClosed'
-
-        readable, writable, exceptional = select.select(inputSocket, outputSocket, inputSocket)
-        if writable:
-            try:
-                tcpipConnection.send( encoded_data )
-            except OSError as e:
-                self.logging_send( 'Error',"Socket %s error %s" %(tcpipConnection, e))
-                return 'SocketError'
-
-        elif exceptional:
-            self.logging_send( 'Error',"We have detected an error .... on %s" %inputSocket)
-            return 'WifiError'
-
+        self.tcp_send_queue.put( encoded_data )
         return True
 
     # Serial
@@ -308,7 +287,7 @@ def native_write_to_zigate( self, serialConnection, encoded_data):
         #Disconnect of USB->UART occured
         self.logging_send( 'Error',"write_to_zigate - error while writing %s" %(e))
         return False
-
+        
     return True
 
 def semaphore_timeout( self, current_command ):

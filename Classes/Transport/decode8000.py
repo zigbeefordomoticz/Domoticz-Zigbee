@@ -55,8 +55,8 @@ def decode8000(self, decoded_frame):
         self.logging_receive_error( "decode8000 - command miss-match %s vs. %s" %(self.ListOfCommands[ isqn ]['cmd'] , PacketType), context=_context)
         return
 
-    self.logging_send('Debug', "--> decode8000 - Status: %s PacketType: %s sqn_app:%s sqn_aps: %s type_sqn: %s" 
-        % (Status, PacketType, sqn_app, sqn_aps, type_sqn))
+    #self.logging_send('Debug', "--> decode8000 - Status: %s PacketType: %s sqn_app:%s sqn_aps: %s type_sqn: %s" 
+    #    % (Status, PacketType, sqn_app, sqn_aps, type_sqn))
 
     if int(PacketType,16) in CMD_PDM_ON_HOST:
         release_command( self, isqn)
