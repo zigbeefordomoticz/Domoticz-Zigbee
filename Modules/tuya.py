@@ -629,38 +629,28 @@ def tuya_dimmer_dimmer( self, NwkId, srcEp, percent ):
     data = '%08x' %level
     tuya_cmd( self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)
 
-#### Tuya Blitzwolf Plug TS0121
-
-def tuya_plug_led_indicator_mode( self, nwkid, mode ):
-    # 0x0006 / 0x80001
-    # Indicator LED off: 0x00
-    # Indicator switch On/Off: 0x01
-    # Indicate swicth location: 0x02
-
-    write_attribute( self, nwkid, ZIGATE_EP, '01', '0006', '0000', '01', '8001', '30', mode, ackIsDisabled = True)
-
-
 # Tuya Smart Cover Switch
-
 def tuya_window_cover_calibration( self, nwkid, start_stop):
-
     # (0x0102) | Write Attributes (0x02) | 0xf001 | 8-Bit (0x30) | 0 (0x00) | Start Calibration
     # (0x0102) | Write Attributes (0x02) | 0xf001 | 8-Bit (0x30) | 1 (0x01) | End Calibration
     write_attribute( self, nwkid, ZIGATE_EP, '01', '0102', '0000', '00', 'f001', '30', start_stop, ackIsDisabled = True)
 
 def tuya_window_cover_motor_reversal( self, nwkid, mode):
-
     # (0x0102) | Write Attributes (0x02) | 0xf002 | 8-Bit (0x30) | 0 (0x00) | Off
     # (0x0102) | Write Attributes (0x02) | 0xf002 | 8-Bit (0x30) | 1 (0x01) | On
-    write_attribute( self, nwkid, ZIGATE_EP, '01', '0102', '0000', '00', 'f002', '30', mode, ackIsDisabled = True)
+    if int(mode) in ( 0, 1):
+        write_attribute( self, nwkid, ZIGATE_EP, '01', '0102', '0000', '00', 'f002', '30', '%02x' %int(mode), ackIsDisabled = True)
 
-def tuya_window_cover_command( self, nwkid, mode ):
-
+def tuya_backlight_command( self, nwkid, mode ):
+    # 0x0006 / 0x80001
+    # Indicator LED off: 0x00
+    # Indicator switch On/Off: 0x01
+    # Indicate swicth location: 0x02
     # (0x0006) | Write Attributes (0x02) | 0x8001 | 8-Bit (0x30) | 0 (0x00) | Light Mode 1
     # (0x0006) | Write Attributes (0x02) | 0x8001 | 8-Bit (0x30) | 1 (0x01) | Light Mode 2
     # (0x0006) | Write Attributes (0x02) | 0x8001 | 8-Bit (0x30) | 2 (0x02) | Light Mode 3
-
-    write_attribute( self, nwkid, ZIGATE_EP, '01', '0006', '0000', '00', '8001', '30', mode, ackIsDisabled = True)
+    if int(mode) in ( 0, 1, 2):
+        write_attribute( self, nwkid, ZIGATE_EP, '01', '0006', '0000', '00', '8001', '30', '%02x' %int(mode), ackIsDisabled = True)
 
 def tuya_smartair_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
 
