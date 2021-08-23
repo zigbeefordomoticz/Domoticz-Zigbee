@@ -59,7 +59,7 @@ def tcp_re_connect( self ):
 
     if not open_tcpip( self ):
         return False
-    self.logging_send('Debug',"tcp_re_connect - TCP connection successfuly re-established :-) %s" %self._connection)
+    self.logging_send('Log',"tcp_re_connect - TCP connection successfuly re-established :-) %s" %self._connection)
     return True
 
 def tcpip_read_from_zigate( self ):
@@ -92,7 +92,7 @@ def tcpip_read_from_zigate( self ):
                     decode_and_split_message(self, data)
 
             except Exception as e:
-                self.logging_receive( 'Error', "tcpip_read_from_zigate: Connection error %s on %s" %(e,self._connection))
+                self.logging_receive( 'Error', "tcpip_read_from_zigate: Connection error while receiving data %s on %s" %(e,self._connection))
                 if tcp_re_connect(self):
                     continue
                 return 'WifiError'
@@ -107,7 +107,7 @@ def tcpip_read_from_zigate( self ):
                 continue
 
             except Exception as e:
-                self.logging_receive( 'Error', "tcpip_read_from_zigate: Connection error %s on %s" %(e,self._connection))
+                self.logging_receive( 'Error', "tcpip_read_from_zigate: Connection error while sending data %s on %s" %(e,self._connection))
                 if tcp_re_connect(self):
                     continue
                 return 'WifiError'
