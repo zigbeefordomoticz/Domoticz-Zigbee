@@ -43,7 +43,7 @@ def process_frame(self, decoded_frame):
         return
 
     MsgData = decoded_frame[12:len(decoded_frame) - 4]
-    self.logging_receive( 'Debug', "process_frame -  MsgType: %s MsgData %s" % (MsgType, MsgData)) 
+    #self.logging_receive( 'Debug', "process_frame -  MsgType: %s MsgData %s" % (MsgType, MsgData)) 
 
     if MsgType == '8001':
         #Async message

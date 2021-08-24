@@ -427,7 +427,7 @@ class BasePlugin:
             return
 
         self.log.logging( 'Plugin', 'Debug', "Establish Zigate connection" )
-        self.ZigateComm.open_conn()
+        self.ZigateComm.open_zigate_connection()
 
         # IAS Zone Management
         if self.iaszonemgt is None:
@@ -463,7 +463,7 @@ class BasePlugin:
             self.log.logging( 'Plugin', 'Log',"onStop calling (3) Transport off")
         if self.ZigateComm:
             self.ZigateComm.thread_transport_shutdown()
-            self.ZigateComm.close_conn()
+            self.ZigateComm.close_zigate_connection()
         if self.log:
             self.log.logging( 'Plugin', 'Log',"onStop called (3) Transport off")
 
@@ -473,7 +473,6 @@ class BasePlugin:
         if self.log:
             self.log.logging( 'Plugin', 'Log',"onStop called (4) WebServer off")
 
-        #self.ZigateComm.close_conn()
         if self.log:
             self.log.logging( 'Plugin', 'Log',"onStop calling (5) Plugin Database saved")
         WriteDeviceList(self, 0)

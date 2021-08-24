@@ -25,7 +25,7 @@ def decode8002_and_process(self, frame):
         # This is not a Global Command (Read Attribute, Write Attribute and so on)
         return frame
 
-    self.logging_receive( 'Debug', "decode8002_and_process Sqn: %s/%s ManufCode: %s Command: %s Data: %s " %(int(Sqn,16), Sqn , ManufacturerCode, Command, Data))
+    #self.logging_receive( 'Debug', "decode8002_and_process Sqn: %s/%s ManufCode: %s Command: %s Data: %s " %(int(Sqn,16), Sqn , ManufacturerCode, Command, Data))
     if Command == '00': # Read Attribute
         return buildframe_read_attribute_request( frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Data  )
 
