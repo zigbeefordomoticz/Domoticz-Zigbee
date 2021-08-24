@@ -233,7 +233,7 @@ def get_checksum(msgtype, length, datas):
     return chk[2:4]
 
 def write_to_zigate( self, serialConnection, encoded_data ):
-    self.logging_send('Log', "write_to_zigate")
+    #self.logging_send('Log', "write_to_zigate")
 
     if self.pluginconf.pluginConf['byPassDzConnection'] and not self.force_dz_communication:
         return native_write_to_zigate( self, serialConnection, encoded_data)
