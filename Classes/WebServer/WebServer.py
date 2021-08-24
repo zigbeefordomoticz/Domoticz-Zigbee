@@ -395,12 +395,14 @@ class WebServer(object):
                 Statistics['Trend'].append( {"_TS":_TS, "Rxps": item['Rxps'],"Txps": item['Txps'], "Load": item['Load']} )
 
         Statistics['Uptime'] = int(time() - Statistics['StartTime'])
-        Statistics['Txps'] = round(Statistics['Sent'] / Statistics['Uptime'], 2)
-        Statistics['Txpm'] = round(Statistics['Sent'] / Statistics['Uptime'] * 60, 2)
-        Statistics['Txph'] = round(Statistics['Sent'] / Statistics['Uptime'] * 3600, 2)
-        Statistics['Rxps'] = round(Statistics['Received'] / Statistics['Uptime'], 2)
-        Statistics['Rxpm'] = round(Statistics['Received'] / Statistics['Uptime'] * 60, 2)
-        Statistics['Rxph'] = round(Statistics['Received'] / Statistics['Uptime'] * 3600, 2)
+        if Statistics['Uptime'] > 0:
+            
+            Statistics['Txps'] = round(Statistics['Sent'] / Statistics['Uptime'], 2)
+            Statistics['Txpm'] = round(Statistics['Sent'] / Statistics['Uptime'] * 60, 2)
+            Statistics['Txph'] = round(Statistics['Sent'] / Statistics['Uptime'] * 3600, 2)
+            Statistics['Rxps'] = round(Statistics['Received'] / Statistics['Uptime'], 2)
+            Statistics['Rxpm'] = round(Statistics['Received'] / Statistics['Uptime'] * 60, 2)
+            Statistics['Rxph'] = round(Statistics['Received'] / Statistics['Uptime'] * 3600, 2)
 
         # LogErrorHistory . Hardcode on the UI side
         Statistics['Error'] = self.log.is_new_error()

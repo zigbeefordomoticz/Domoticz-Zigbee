@@ -18,13 +18,13 @@ def start_forwarder_thread( self ):
         self.forwarder_thread.start()
 
 def forwarder_thread( self ):
-    self.logging_receive('Status', "ZigateTransport: thread_processing_and_sending Thread start.")
+    self.logging_forwarded('Status', "ZigateTransport: thread_processing_and_sending Thread start.")
 
     while self.running:
         message = None
         # Sending messages ( only 1 at a time )
         try:
-            self.logging_receive( 'Debug', "Waiting for next message")
+            self.logging_forwarded( 'Debug', "Waiting for next message")
             message = self.forwarder_queue.get()
             if message == 'STOP':
                 break
@@ -45,12 +45,12 @@ def forwarder_thread( self ):
 
             handle_thread_error( self, e, 0, 0, message)
 
-    self.logging_receive('Status',"ZigateTransport: thread_processing_and_sending Thread stop.")
+    self.logging_forwarded('Status',"ZigateTransport: thread_processing_and_sending Thread stop.")
 
 @time_spent_forwarder( )
 def forward_message( self, message ):
 
-    self.logging_receive( 'Debug', "Receive a message to forward: %s" %(str(message)))
+    self.logging_forwarded( 'Debug', "Receive a message to forward: %s" %(str(message)))
     self.statistics._data += 1
     self.F_out(  message )
-    self.logging_receive( 'Debug', "message forwarded!!!!")    
+    self.logging_forwarded( 'Debug', "message forwarded!!!!")    

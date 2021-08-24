@@ -128,28 +128,24 @@ def get_isqn_from_ListOfCommands( self, PacketType):
 
 def get_command_from_msgtype( command ):
     # Return the MsgType expected for a given command
-
     for x in CMD_WITH_RESPONSE:
         if CMD_WITH_RESPONSE[ x ] == int(command,16):
             return x
     return None
 
 def get_response_from_command( command ):
-
     if int(command,16) in CMD_WITH_RESPONSE:
         return CMD_WITH_RESPONSE[ int(command,16) ]
     return None
 
 def print_listofcommands( self, isqn ):
-
-    self.logging_receive( 'Debug', 'ListOfCommands[%s]:' %isqn)
-    for attribute in self.ListOfCommands[ isqn ]:
-        self.logging_receive( 'Debug', '--> %s: %s' %(attribute, self.ListOfCommands[ isqn ][ attribute]))
+    return
+    #self.logging_receive( 'Debug', 'ListOfCommands[%s]:' %isqn)
+    #for attribute in self.ListOfCommands[ isqn ]:
+    #    self.logging_receive( 'Debug', '--> %s: %s' %(attribute, self.ListOfCommands[ isqn ][ attribute]))
 
 def get_nwkid_from_datas_for_zcl_command( self, isqn):
-    
     return self.ListOfCommands[isqn]['datas'][2:6]
 
 def is_nwkid_available( self, cmd):
-
     return ZIGATE_COMMANDS[ cmd ]['NwkId 2nd Bytes']

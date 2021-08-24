@@ -75,6 +75,7 @@ class ZigateTransport(object):
         self.writer_queue = PriorityQueue()
         self.writer_thread = None
         self.prioriy_sqn = 0
+        self.tcp_send_queue = Queue() # We use a Queue as socket is not thread-safe in python
 
         # Reader
         self.reader_thread = None
@@ -195,25 +196,45 @@ class ZigateTransport(object):
             self._connection = None
         open_connection( self )
 
-    def open_conn(self):
+    def open_zigate_connection(self):
         if not self._connection:
             self.set_connection()
         if (not self.pluginconf.pluginConf['byPassDzConnection'] or self.force_dz_communication) and self._connection:
             self._connection.Connect()
-        Domoticz.Log("Connection open: %s" % self._connection)
+        self.logging_send('Log',"Connection open: %s" % self._connection)
 
-    def close_conn(self):
-        Domoticz.Log("Request closing connection: %s" % self._connection)
+    def re_connect_zigate(self):
+    
+        self.logging_send('Error',"Reconnection: Old: %s" % self._connection)
+        if self.pluginconf.pluginConf['byPassDzConnection'] and not self.force_dz_communication:
+            if self._connection:
+                self._connection.close()
+                self._connection = None
+                time.sleep(1.0)
+        else:
+            self.logging_send('Error',"---> Connection state: %s" %self._connection.Connected())
+            if self._connection.Connected():
+                self.logging_send('Error',"--->Connection still exist !!! Need to shutdown")
+                self.close_zigate_connection()
+                self._connection = None
+
+        self.logging_send('Error',"--->Connection still exist !!! Need to shutdown")
+        self.open_zigate_connection()
+
+
+    def close_zigate_connection(self):
+        self.logging_send('Log',"Request closing connection: %s" % self._connection)
 
         self.running = False # It will shutdown the Thread 
 
         if self.pluginconf.pluginConf['byPassDzConnection'] and not self.force_dz_communication:
-            Domoticz.Log("-- shutdown reader thread")
+            self.logging_send('Log',"-- shutdown reader thread")
             shutdown_reader_thread( self )
+
             time.sleep(1.0)
-            Domoticz.Log("-- waiting for end of thread")
+            self.logging_send('Log',"-- waiting for end of thread")
             waiting_for_end_thread( self )
-            Domoticz.Log("-- thread endeed")
+            self.logging_send('Log',"-- thread endeed")
 
         else:
             stop_waiting_on_queues( self )
@@ -222,24 +243,14 @@ class ZigateTransport(object):
 
         self._connection = None
 
-    def re_conn(self):
-        Domoticz.Log("Reconnection: Old: %s" % self._connection)
-        if self.pluginconf.pluginConf['byPassDzConnection'] and not self.force_dz_communication:
-            if self._connection:
-                self._connection.close()
-                self._connection = None
-                time.sleep(1.0)
-        else:
-            if self._connection.Connected():
-                self.close_conn()
-                self._connection = None
-
-        self.open_conn()
 
     # Login mecanism
     def logging_send(self, logType, message, NwkId = None, _context=None):
         # Log all activties towards ZiGate
         self.log.logging('TransportTx', logType, message, context = _context)
+
+    def logging_forwarded(self, logType, message, NwkId = None, _context=None):
+        self.log.logging('TransportFrwder', logType, message, context = _context)
 
     def logging_receive(self, logType, message, nwkid=None, _context=None):
         # Log all activities received from ZiGate
@@ -285,7 +296,6 @@ class ZigateTransport(object):
 
     def logging_receive_error( self, message, Nwkid=None, context=None):
         self.logging_receive('Error', message,  Nwkid, self.transport_error_context( context))
-
 
     def logging_send_error( self, message, Nwkid=None, context=None):
         self.logging_send('Error', message,  Nwkid, self.transport_error_context( context))

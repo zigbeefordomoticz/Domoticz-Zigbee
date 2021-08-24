@@ -279,13 +279,13 @@ def Update_Battery_Device( self, Devices, NwkId, BatteryLvl, ):
     for device_unit in Devices:
         if Devices[device_unit].DeviceID != ieee:
             continue
-        self.log.logging( "Widget", "Log", "Update_Battery_Device Battery: now: %s prev: %s (%15s)" %(
+        self.log.logging( "Widget", "Debug", "Update_Battery_Device Battery: now: %s prev: %s (%15s)" %(
                 BatteryLvl, Devices[device_unit].BatteryLevel, Devices[device_unit].Name))
 
         if Devices[device_unit].BatteryLevel == int(BatteryLvl):
             continue
 
-        self.log.logging( "Widget", "Log", "Update_Battery_Device Battery: %s  (%15s)" %(
+        self.log.logging( "Widget", "Debug", "Update_Battery_Device Battery: %s  (%15s)" %(
             BatteryLvl, Devices[device_unit].Name))
         Devices[device_unit].Update( 
             nValue=Devices[device_unit].nValue , 

@@ -12,7 +12,7 @@ import time
 from threading import Thread
 
 from Classes.Transport.readSerial import open_serial, serial_read_from_zigate
-from Classes.Transport.readTcp import open_tcpip, tcpip_read_from_zigate
+from Classes.Transport.readwriteTcp import open_tcpip, tcpip_read_from_zigate
 
 
 def open_zigate_and_start_reader( self, zigate_mode ):
@@ -59,7 +59,10 @@ def shutdown_reader_thread( self):
         elif isinstance(self._connection, socket.socket):
             self.logging_receive( 'Log', "shutdown socket")
             if self._connection:
-                self._connection.shutdown( socket.SHUT_RDWR )
+                try:
+                    self._connection.shutdown( socket.SHUT_RDWR )
+                except Exception:
+                    pass
 
         else:
             self.logging_receive( 'Log', "unknown connection: %s" %str(self._connection))
