@@ -59,8 +59,11 @@ def serial_read_from_zigate( self ):
         self.logging_receive( 'Debug',"RTSCTS: %s ZiGateHWVersion: %s Transp: %s" %(
             self._connection.rtscts, self.ZiGateHWVersion, self._transp
         ))
-        if not self._connection.rtscts and (( self.ZiGateHWVersion == 2 and self._transp in ('V2-USB', 'V2-DIN' )) or
-                                           ( self.ZiGateHWVersion == 1 and self._transp in ( 'DIN' ))):
+        if ( self._serialPort.find('COM') == -1 
+             and not self._connection.rtscts 
+             and (( self.ZiGateHWVersion == 2 
+             and self._transp in ('V2-USB', 'V2-DIN' )) or ( self.ZiGateHWVersion == 1 and self._transp in ( 'DIN' )))
+            ):
             self.logging_receive( 'Status', "Upgrade Serial line to RTS/CTS HW flow control") 
             self._connection.rtscts = True
 
