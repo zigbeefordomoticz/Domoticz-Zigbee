@@ -842,6 +842,7 @@ def zigateInit_Phase1(self ):
             self.PDMready = False
             self.startZigateNeeded = 1
             self.HeartbeatCount = 1
+            update_DB_device_status_to_reinit( self )
             return
 
         # After an Erase PDM we have to do a full start of Zigate
@@ -1093,6 +1094,15 @@ def pingZigate( self ):
     else:
         self.log.logging( 'Plugin', 'Error',"pingZigate - unknown status : %s" %self.Ping['Status'])
 
+def update_DB_device_status_to_reinit( self ):
+
+    # This function is called because the ZiGate will be reset, and so it is expected that all devices will be reseted and repaired
+
+    for x in self.ListOfDevices:
+        if 'Status' in self.ListOfDevices[ x ] and self.ListOfDevices[ x ]['Status'] == 'inDB':
+            self.ListOfDevices[ x ]['Status'] == 'erasePDM'
+
+            
 global _plugin
 _plugin = BasePlugin()
 
