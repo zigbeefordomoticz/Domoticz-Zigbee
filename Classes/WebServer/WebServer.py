@@ -69,7 +69,9 @@ class WebServer(object):
 
     hearbeats = 0 
 
-    def __init__( self, networkenergy, networkmap, ZigateData, PluginParameters, PluginConf, Statistics, adminWidgets, ZigateComm, HomeDirectory, hardwareID, DevicesInPairingMode, groupManagement, OTA, Devices, ListOfDevices, IEEE2NWK , permitTojoin, WebUserName, WebPassword, PluginHealth, httpPort, log):
+    def __init__( self, ZigateData, PluginParameters, PluginConf, Statistics, adminWidgets, ZigateComm, HomeDirectory, hardwareID, 
+                        DevicesInPairingMode, Devices, ListOfDevices, IEEE2NWK , permitTojoin, WebUserName, 
+                        WebPassword, PluginHealth, httpPort, log):
 
         self.httpServerConn = None
         self.httpClientConn = None
@@ -91,13 +93,13 @@ class WebServer(object):
         self.ZigateComm = ZigateComm
         self.statistics = Statistics
         self.pluginParameters = PluginParameters
-        self.networkmap = networkmap
-        self.networkenergy = networkenergy
+        self.networkmap = None
+        self.networkenergy = None
 
         self.permitTojoin = permitTojoin
 
-        self.groupmgt = groupManagement if groupManagement else None
-        self.OTA = OTA if OTA else None
+        self.groupmgt =  None
+        self.OTA =  None
         self.ListOfDevices = ListOfDevices
         self.DevicesInPairingMode = DevicesInPairingMode
         self.fakeDevicesInPairingMode = 0
@@ -115,7 +117,19 @@ class WebServer(object):
 
     def update_firmware( self, firmwareversion):
         self.FirmwareVersion = firmwareversion
+
+    def update_networkenergy( self, networkenergy):
+        self.networkenergy = networkenergy
+
+    def update_networkmap(self, networkmap):
+        self.networkmap = networkmap 
+
+    def update_groupManagement( self, groupmanagement):
+        self.groupmgt = groupmanagement if groupmanagement else None
         
+    def update_OTA(self, OTA):
+        self.OTA = OTA if OTA else None       
+
     def rest_plugin_health( self, verb, data, parameters):
 
         _response = prepResponseMessage( self ,setupHeadersResponse())
@@ -381,12 +395,14 @@ class WebServer(object):
                 Statistics['Trend'].append( {"_TS":_TS, "Rxps": item['Rxps'],"Txps": item['Txps'], "Load": item['Load']} )
 
         Statistics['Uptime'] = int(time() - Statistics['StartTime'])
-        Statistics['Txps'] = round(Statistics['Sent'] / Statistics['Uptime'], 2)
-        Statistics['Txpm'] = round(Statistics['Sent'] / Statistics['Uptime'] * 60, 2)
-        Statistics['Txph'] = round(Statistics['Sent'] / Statistics['Uptime'] * 3600, 2)
-        Statistics['Rxps'] = round(Statistics['Received'] / Statistics['Uptime'], 2)
-        Statistics['Rxpm'] = round(Statistics['Received'] / Statistics['Uptime'] * 60, 2)
-        Statistics['Rxph'] = round(Statistics['Received'] / Statistics['Uptime'] * 3600, 2)
+        if Statistics['Uptime'] > 0:
+            
+            Statistics['Txps'] = round(Statistics['Sent'] / Statistics['Uptime'], 2)
+            Statistics['Txpm'] = round(Statistics['Sent'] / Statistics['Uptime'] * 60, 2)
+            Statistics['Txph'] = round(Statistics['Sent'] / Statistics['Uptime'] * 3600, 2)
+            Statistics['Rxps'] = round(Statistics['Received'] / Statistics['Uptime'], 2)
+            Statistics['Rxpm'] = round(Statistics['Received'] / Statistics['Uptime'] * 60, 2)
+            Statistics['Rxph'] = round(Statistics['Received'] / Statistics['Uptime'] * 3600, 2)
 
         # LogErrorHistory . Hardcode on the UI side
         Statistics['Error'] = self.log.is_new_error()

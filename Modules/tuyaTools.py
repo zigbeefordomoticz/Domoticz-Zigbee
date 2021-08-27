@@ -39,7 +39,7 @@ def tuya_cmd( self, nwkid, EPout, cluster_frame, sqn, cmd, action, data , action
     if action2 and data2:
         len_data2 = (len(data2)) // 2
         payload += action2 + '00' + '%02x' %len_data2 + data2
-    raw_APS_request( self, nwkid, EPout, 'ef00', '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = False)
+    raw_APS_request( self, nwkid, EPout, 'ef00', '0104', payload, zigate_ep=ZIGATE_EP, ackIsDisabled = is_ack_tobe_disabled(self, nwkid))
     self.log.logging( "Tuya", 'Debug', "tuya_cmd - %s/%s cmd: %s payload: %s" %(nwkid, EPout , cmd, payload))
 
 def store_tuya_attribute( self, NwkId, Attribute, Value ):

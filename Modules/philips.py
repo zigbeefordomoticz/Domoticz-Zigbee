@@ -35,7 +35,7 @@ def pollingPhilips( self, key ):
 
     return False
 
-def callbackDeviceAwake_Philips(self, NwkId, EndPoint, cluster):
+def callbackDeviceAwake_Philips(self, Devices, NwkId, EndPoint, cluster):
     """
     This is fonction is call when receiving a message from a Manufacturer battery based device.
     The function is called after processing the readCluster part
@@ -44,7 +44,6 @@ def callbackDeviceAwake_Philips(self, NwkId, EndPoint, cluster):
     Domoticz.Log("callbackDeviceAwake_Legrand - Nwkid: %s, EndPoint: %s cluster: %s" \
             %(NwkId, EndPoint, cluster))
 
-    return
 
 def default_response_for_philips_hue_reporting_attribute(self, Nwkid, srcEp, cluster, sqn):
 

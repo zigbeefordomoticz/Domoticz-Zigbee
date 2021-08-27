@@ -33,6 +33,7 @@ ATTRIBUTES = {
     '0008': [ 0x0000],
     '000a': [ 0x0000],
     '000c': [ 0x0051, 0x0055, 0x006f, 0xff05],
+    '0019': [ 0x0002 ],
     '0020': [ 0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006 ],
     '0100': [ 0x0000, 0x0001, 0x0002, 0x0010, 0x0011],
     '0101': [ 0x0000, 0x0001, 0x0002, 0x0010, 0x0011, 0x0012, 0x0013, 0x0014, 0x0015, 0x0016, 0x0017, 0x0018, 0x0019, 0x0020, 0x0023, 0x0025, 0x0026, 0x0027, 0x0028, 0x0030, 0x0032, 0x0034, 0x0040, 0x0042, 0x0043, 0xfffd],
@@ -255,7 +256,7 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
     # Basic Cluster
     # The Ep to be used can be challenging, as if we are in the discovery process, the list of Eps is not yet none and it could even be that the Device has only 1 Ep != 01
 
-    self.log.logging( "ReadAttributes", 'Log', "ReadAttributeRequest_0000 - Key: %s , Scope: %s" %(key, fullScope), nwkid=key)
+    self.log.logging( "ReadAttributes", 'Debug', "ReadAttributeRequest_0000 - Key: %s , Scope: %s" %(key, fullScope), nwkid=key)
     EPout = '01'
 
     # Checking if Ep list is empty, in that case we are in discovery mode and 
@@ -487,6 +488,18 @@ def ReadAttributeRequest_000C(self, key):
         if listAttributes:
             self.log.logging( "ReadAttributes", 'Debug', "Request 0x000c info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
             ReadAttributeReq( self, key, ZIGATE_EP, EPout, "000C", listAttributes, ackIsDisabled = is_ack_tobe_disabled(self, key))
+
+def ReadAttributeRequest_0019(self, key):
+    # Cluster 0x000C with attribute 0x0055 / Xiaomi Power and Metering
+    self.log.logging( "ReadAttributes", 'Debug', "ReadAttributeRequest_0019 - Key: %s " %key, nwkid=key)
+
+    ListOfEp = getListOfEpForCluster( self, key, '0019' )
+    for EPout in ListOfEp:
+        listAttributes = retreive_ListOfAttributesByCluster( self, key, EPout,  '0019')
+        if listAttributes:
+            self.log.logging( "ReadAttributes", 'Debug', "Request 0x0019 info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0019", listAttributes, ackIsDisabled = is_ack_tobe_disabled(self, key))
+
 
 def ReadAttributeRequest_0100(self, key):
 
@@ -996,6 +1009,7 @@ READ_ATTRIBUTES_REQUEST = {
     '0008' : ( ReadAttributeRequest_0008, 'pollingLvlControl' ),
     '0006' : ( ReadAttributeRequest_0006, 'pollingONOFF' ),
     '000C' : ( ReadAttributeRequest_000C, 'polling000C' ),
+    '0019' : ( ReadAttributeRequest_0019, 'polling0019' ),
     '0020' : ( ReadAttributeRequest_000C, 'polling0020' ),
     '0100' : ( ReadAttributeRequest_0100, 'polling0100' ),
     '0101' : ( ReadAttributeRequest_0101, 'polling0101' ),

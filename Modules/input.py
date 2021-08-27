@@ -105,6 +105,7 @@ def ZigateRead(self, Devices, Data):
     DECODERS = {
         "0100": Decode0100,
         "004d": Decode004D,
+        "0400": Decode0400,
         "8000": Decode8000_v2,
         "8002": Decode8002,
         "8003": Decode8003,
@@ -269,6 +270,29 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
         else:
             self.log.logging(  "Input", "Log", "Decode0100 - Read Attribute Request %s/%s Cluster %s Attribute %s"
                 % (MsgSrcAddr, MsgSrcEp, MsgClusterId, Attribute),)
+
+
+def Decode0400(self, Devices, MsgData, MsgLQI): # Enrolment Request Response
+
+    self.log.logging( "Input", "Log", "Decode0400 - message : %s" % MsgData)
+    # 02 0000 01 01 00 00
+    # 02 0000 04 01 00 00
+    # 02 426b 04 01 00 5c
+    if len(MsgData) != 14:
+        return
+
+    # Enrolment Request Response
+    SrcAddress = MsgData[2:6]
+    SrcEndPoint = MsgData[6:8]
+    EnrollResponseCode = MsgData[10:12]
+    ZoneId = MsgData[12:14]
+
+    self.log.logging( "Input", "Log", "Decode0400 - Source Address: %s Source Ep: %s EnrollmentResponseCode: %s ZoneId: %s" % (
+        SrcAddress, SrcEndPoint, EnrollResponseCode, ZoneId))
+
+    if self.iaszonemgt:    
+        self.iaszonemgt.receiveIASenrollmentRequestResponse( SrcAddress , SrcEndPoint, EnrollResponseCode, ZoneId)
+
 
 # Responses
 def Decode8000_v2(self, Devices, MsgData, MsgLQI):  # Status
@@ -524,8 +548,8 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
         return
 
 
-    inRawAps( self, Devices, srcnwkid, MsgSourcePoint, MsgClusterID, dstnwkid, MsgDestPoint, Sqn, ManufacturerCode, Command, Data, MsgPayload,)
-    callbackDeviceAwake(self, srcnwkid, MsgSourcePoint, MsgClusterID)
+    inRawAps( self, Devices, srcnwkid, MsgSourcePoint, MsgClusterID, dstnwkid, MsgDestPoint, Sqn, GlobalCommand, ManufacturerCode, Command, Data, MsgPayload,)
+    callbackDeviceAwake(self, Devices, srcnwkid, MsgSourcePoint, MsgClusterID)
 
 
 
@@ -719,6 +743,10 @@ def Decode8009(self, Devices, MsgData, MsgLQI):  # Network State response (Firm 
 def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
     MsgLen = len(MsgData)
 
+    FIRMWARE_BRANCH = {
+        '00': 'Production',
+        '01': 'Beta',
+    }
     self.FirmwareBranch = MsgData[0:2]
     self.FirmwareMajorVersion = MsgData[2:4]
     self.FirmwareVersion = MsgData[4:8]
@@ -734,9 +762,11 @@ def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
         self.log.logging( "Input", "Status", "ZiGate+ (V2)")  
         self.ZiGateModel = 2  
     self.log.logging( "Input", "Status", "Installer Version Number: %s" %self.FirmwareVersion)
+    self.log.logging( "Input", "Status", "Branch Version : ==> %s <==" %FIRMWARE_BRANCH[ self.FirmwareBranch ])
     self.zigatedata["Firmware Version"] = "Branch: %s Major: %s Version: %s" %(self.FirmwareBranch,self.FirmwareMajorVersion, self.FirmwareVersion )
     if self.webserver:
         self.webserver.update_firmware(self.FirmwareVersion)
+        self.ZigateComm.update_ZiGate_HW_Version( self.ZiGateModel )
 
     if self.ZigateComm:
         self.ZigateComm.update_ZiGate_Version ( self.FirmwareVersion, self.FirmwareMajorVersion)
@@ -2209,7 +2239,7 @@ def Decode8100( self, Devices, MsgData, MsgLQI ):  # Read Attribute Response (in
 #        "Decode8100 - Catch error while decoding %s/%s cluster: %s MsgData: %s Error: %s"
 #        % (MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgData, e))
 
-    callbackDeviceAwake(self, MsgSrcAddr, MsgSrcEp, MsgClusterId)
+    callbackDeviceAwake(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId)
 
 
 def Decode8101(self, Devices, MsgData, MsgLQI):  # Default Response
@@ -2275,7 +2305,7 @@ def Decode8102(self, Devices, MsgData, MsgLQI):  # Attribute Reports
     loggingMessages(self, "8102", MsgSrcAddr, None, MsgLQI, MsgSQN)
     updLQI(self, MsgSrcAddr, MsgLQI)
     read_report_attributes( self, Devices, "8102", MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, )
-    callbackDeviceAwake(self, MsgSrcAddr, MsgSrcEp, MsgClusterId)
+    callbackDeviceAwake(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId)
 
 
 def read_report_attributes( self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, ):

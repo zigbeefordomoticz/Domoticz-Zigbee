@@ -72,7 +72,7 @@ def pollingCasaia( self, NwkId ):
     return False
 
 
-def callbackDeviceAwake_Casaia(self, NwkId, EndPoint, cluster):
+def callbackDeviceAwake_Casaia(self, Devices, NwkId, EndPoint, cluster):
     #This is fonction is call when receiving a message from a Manufacturer battery based device.
     #The function is called after processing the readCluster part
 

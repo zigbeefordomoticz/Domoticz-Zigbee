@@ -22,7 +22,7 @@ def pollingOrvibo( self, key ):
     return False
 
 
-def callbackDeviceAwake_Orvibo(self, NwkId, EndPoint, cluster):
+def callbackDeviceAwake_Orvibo(self, Devices, NwkId, EndPoint, cluster):
 
     """
     This is fonction is call when receiving a message from a Manufacturer battery based device.

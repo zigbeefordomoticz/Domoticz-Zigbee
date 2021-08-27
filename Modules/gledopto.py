@@ -30,7 +30,7 @@ def pollingGledopto( self, key ):
     return rescheduleAction
 
 
-def callbackDeviceAwake_Gledopto(self, NwkId, EndPoint, cluster):
+def callbackDeviceAwake_Gledopto(self, Devices, NwkId, EndPoint, cluster):
 
     """
     This is fonction is call when receiving a message from a Manufacturer battery based device.
@@ -39,6 +39,3 @@ def callbackDeviceAwake_Gledopto(self, NwkId, EndPoint, cluster):
 
     Domoticz.Log("callbackDeviceAwake_Legrand - Nwkid: %s, EndPoint: %s cluster: %s" \
             %(NwkId, EndPoint, cluster))
-
-    return
-

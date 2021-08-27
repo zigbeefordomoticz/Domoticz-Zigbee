@@ -20,10 +20,10 @@ import json
 
 from Classes.LoggingManagement import LoggingManagement
 
-from Modules.schneider_wiser import schneider_wiser_registration, schneider_wiser2_registration
+from Modules.schneider_wiser import schneider_wiser_registration, wiser_home_lockout_thermostat
 #
 from Modules.bindings import unbindDevice, bindDevice, rebind_Clusters
-from Modules.basicOutputs import  sendZigateCmd, identifyEffect, getListofAttribute
+from Modules.basicOutputs import  sendZigateCmd, identifyEffect, getListofAttribute, write_attribute, read_attribute
 
         
 from Modules.readAttributes import READ_ATTRIBUTES_REQUEST, \
@@ -377,36 +377,54 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                     func( self, NWKID)
 
             #4. IAS Enrollment
-            if ( int(self.FirmwareVersion,16) < 0x0320 ) :
-                for iterEp in self.ListOfDevices[NWKID]['Ep']:
-                    #IAS Zone
-                    if '0500' in self.ListOfDevices[NWKID]['Ep'][iterEp] or \
-                            '0502'  in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                        # We found a Cluster 0x0500 IAS. May be time to start the IAS Zone process
-                        Domoticz.Status("[%s] NEW OBJECT: %s 0x%04s - IAS Zone controler setting" \
-                                %( RIA, NWKID, status))
-                        if self.pluginconf.pluginConf['capturePairingInfos']:
-                            self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'IAS-ENROLL' )
-                        self.iaszonemgt.IASZone_triggerenrollement( NWKID, iterEp)
-                        if '0502'  in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                            Domoticz.Status("[%s] NEW OBJECT: %s 0x%04s - IAS WD enrolment" \
-                                %( RIA, NWKID, status))
-                            if self.pluginconf.pluginConf['capturePairingInfos']:
-                                self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'IASWD-ENROLL' )
-                            self.iaszonemgt.IASWD_enroll( NWKID, iterEp)
+            for iterEp in self.ListOfDevices[NWKID]['Ep']:
+                if 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['Model'] == 'MOSZB-140':
+                    # Frient trigger itself the Device Enrollment
+                    break
+
+                # If not IAS cluster skip
+                if ( '0500' not in self.ListOfDevices[NWKID]['Ep'][iterEp]  and '0502' not in self.ListOfDevices[NWKID]['Ep'][iterEp] ):
+                    continue
+
+                self.log.logging( "Pairing", 'Log', "We have found 0500 or 0502 on Ep: %s of %s" %(
+                    iterEp, NWKID))
+
+                # Let's check we didn't have an automatic enrolment. In that case juste skip
+                #if (
+                #    'IAS' in self.ListOfDevices[NWKID] 
+                #    and iterEp in self.ListOfDevices[NWKID]['IAS'] 
+                #    and 'EnrolledStatus' in self.ListOfDevices[NWKID]['IAS'][iterEp] 
+                #    and self.ListOfDevices[NWKID]['IAS'][iterEp]['EnrolledStatus']
+                #    ):
+                #    continue
+
+                #IAS Zone
+                # We found a Cluster 0x0500 IAS. May be time to start the IAS Zone process
+                self.log.logging( "Pairing", 'Status', "[%s] NEW OBJECT: %s 0x%04s - IAS Zone controler setting" \
+                        %( RIA, NWKID, status))
+                if self.pluginconf.pluginConf['capturePairingInfos']:
+                    self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'IAS-ENROLL' )
+                self.iaszonemgt.IASZone_triggerenrollement( NWKID, iterEp)
+
+                if '0502'  in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                    self.log.logging( "Pairing", 'Status',"[%s] NEW OBJECT: %s 0x%04s - IAS WD enrolment" \
+                        %( RIA, NWKID, status))
+                    if self.pluginconf.pluginConf['capturePairingInfos']:
+                        self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'IASWD-ENROLL' )
+                    self.iaszonemgt.IASWD_enroll( NWKID, iterEp)
 
             # In case of Schneider Wiser, let's do the Registration Process
             if 'Manufacturer' in self.ListOfDevices[NWKID]:
-                if 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['Model'] == 'Wiser2-Thermostat':
-                    schneider_wiser2_registration(self, Devices, NWKID)
+                if 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['Model'] in ('Wiser2-Thermostat',):
+                    wiser_home_lockout_thermostat( self, NWKID, 0)
 
                 elif self.ListOfDevices[NWKID]['Manufacturer'] == '105e':
                     schneider_wiser_registration( self, Devices, NWKID )
 
+
             # In case of Orvibo Scene controller let's Registration
-            if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
-                if self.ListOfDevices[NWKID][ 'Manufacturer Name'] == '欧瑞博':
-                    OrviboRegistration( self, NWKID )
+            if 'Manufacturer Name' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID][ 'Manufacturer Name'] == '欧瑞博':
+                OrviboRegistration( self, NWKID )
 
             # Set Calibration for Thermostat
             if 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['Model'] != {} and self.ListOfDevices[NWKID]['Model'] == 'SPZB0001':
@@ -448,7 +466,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
 
             # Custom device parameters set
             if 'Param' in self.ListOfDevices[NWKID]:
-                Domoticz.Log("Custom device parameters setting")
+                self.log.logging( "Pairing", 'Log',"Custom device parameters setting")
                 self.ListOfDevices[NWKID]['CheckParam'] = True
 
             self.adminWidgets.updateNotificationWidget( Devices, 'Successful creation of Widget for :%s DeviceID: %s' \
@@ -459,7 +477,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
 
             # 4- Create groups if required
             if self.groupmgt and self.pluginconf.pluginConf['allowGroupMembership'] and 'Model' in self.ListOfDevices[NWKID]:
-                Domoticz.Log("Creation Group")
+                self.log.logging( "Pairing", 'Log',"Creation Group")
                 if self.ListOfDevices[NWKID]['Model'] in self.DeviceConf:
                     if 'GroupMembership' in self.DeviceConf[ self.ListOfDevices[NWKID]['Model'] ]:
                         for groupToAdd in self.DeviceConf[ self.ListOfDevices[NWKID]['Model'] ]['GroupMembership']:
@@ -476,23 +494,29 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                 self.groupmgt.addGroupMemberShip( '0000', '01', '4006')
 
 
-            if 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['Model'] in ( 'AC201A', 'AC211', 'AC221'):
+            if 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]['Model'] in ( 'AC201A', 'AC211', 'AC221', ):
+                self.log.logging( "Pairing", 'Log', "CasaIA registration needed")
                 casaia_pairing( self, NWKID)
 
-            elif 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( 'TS0601-sirene'):
-                tuya_sirene_registration(self, NWKID, device_reset=True)
+            elif 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( 'TS0601-sirene', ):
+                self.log.logging( "Pairing", 'Log', "Tuya Sirene registration needed")
+                tuya_sirene_registration(self, NWKID)
 
             elif 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( TUYA_eTRV_MODEL ):
-                tuya_eTRV_registration( self, NWKID, True)
+                self.log.logging( "Pairing", 'Log', "Tuya eTRV registration needed")
+                tuya_eTRV_registration( self, NWKID, device_reset=True)
                 
-            elif 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( 'TS0121'):
+            elif 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( 'TS0121', ):
+                self.log.logging( "Pairing", 'Log', "Tuya TS0121 registration needed")
                 tuya_TS0121_registration( self, NWKID)
 
-            elif 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( 'TS0601-Energy', 'TS0601-switch', 'TS0601-2Gangs-switch', 'TS0601-SmartAir'):
+            elif 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( 'TS0601-Energy', 'TS0601-switch', 'TS0601-2Gangs-switch', 'TS0601-SmartAir', ):
+                self.log.logging( "Pairing", 'Log', "Tuya general registration needed")
                 tuya_registration(self, NWKID, device_reset=True)
 
             elif 'Model' in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( 'TS0601-Parkside-Watering-Timer',):
-                tuya_registration(self, NWKID)
+                self.log.logging( "Pairing", 'Log', "Tuya Water Sensor Parkside registration needed")
+                tuya_registration(self, NWKID, device_reset=True, parkside= True)
 
             # Reset HB in order to force Read Attribute Status
             self.ListOfDevices[NWKID]['Heartbeat'] = 0

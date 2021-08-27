@@ -555,6 +555,22 @@ def removeZigateDevice( self, IEEE ):
     ChildAddr = IEEE
     return send_zigatecmd_raw(self, "0026", ParentAddr + ChildAddr )
 
+def ballast_Configuration_max_level( self, nwkid, value):
+    ListOfEp = getListOfEpForCluster( self, nwkid, '0301' ) 
+    if ListOfEp:
+        for EPout in ListOfEp:
+            write_attribute( self, nwkid, ZIGATE_EP, EPout, '0301', '0000', '00', '0011', '20', '%02x' %value, ackIsDisabled = True)
+            read_attribute( self, nwkid, ZIGATE_EP, EPout, '0301' ,'00' , '00' , '0000' , 1, '0011', ackIsDisabled = True)
+    
+
+def ballast_Configuration_min_level( self, nwkid, value):
+    ListOfEp = getListOfEpForCluster( self, nwkid, '0301' ) 
+    if ListOfEp:
+        for EPout in ListOfEp:
+            write_attribute( self, nwkid, ZIGATE_EP, EPout, '0301', '0000', '00', '0010', '20', '%02x' %value, ackIsDisabled = True)
+            read_attribute( self, nwkid, ZIGATE_EP, EPout, '0301' ,'00' , '00' , '0000' , 1, '0010', ackIsDisabled = True)
+
+
 def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep=ZIGATE_EP, highpriority=False, ackIsDisabled = False , ):
     # This function submits a request to send data to a remote node, with no restrictions
     # on the type of transmission, destination address, destination application profile,

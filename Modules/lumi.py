@@ -18,6 +18,7 @@ import Domoticz
 from math import atan, sqrt, pi
 
 from Modules.domoMaj import MajDomoDevice
+from Modules.domoTools import Update_Battery_Device
 from Modules.basicOutputs import ZigatePermitToJoin, leaveRequest, write_attribute
 from Modules.zigateConsts import ZIGATE_EP,  SIZE_DATA_TYPE
 from Modules.tools import voltage2batteryP, checkAndStoreAttributeValue, is_ack_tobe_disabled
@@ -263,8 +264,6 @@ def AqaraOppleDecoding0012(self, Devices, nwkid, Ep, ClusterId, AttributeId, Val
     if Value in OPPLE_MAPPING:
         MajDomoDevice( self, Devices, nwkid, Ep, "0006", OPPLE_MAPPING[ Value ])  
 
-    return
-
 def retreive4Tag(tag,chain):
     c = str.find(chain,tag) + 4
     if c == 3: 
@@ -500,6 +499,7 @@ def readXiaomiCluster( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId
         self.log.logging( "Lumi", 'Debug', "ReadCluster - %s/%s Saddr: %s Battery: %s Voltage: %s MacCapa: %s PowerSource: %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, ValueBattery, voltage,  self.ListOfDevices[MsgSrcAddr]['MacCapa'], self.ListOfDevices[MsgSrcAddr]['PowerSource']), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Battery'] = ValueBattery
         self.ListOfDevices[MsgSrcAddr]['BatteryUpdateTime'] = int(time.time())
+        Update_Battery_Device( self, Devices, MsgSrcAddr, ValueBattery)
         checkAndStoreAttributeValue( self, MsgSrcAddr , MsgSrcEp, '0001', '0000' , voltage)
         store_lumi_attribute( self, MsgSrcAddr, 'BatteryVoltage', voltage)
 

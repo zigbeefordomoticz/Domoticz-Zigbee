@@ -154,11 +154,15 @@ SETTINGS = {
         'debugLQI':               {'type': 'int',  'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},    
         'logDeviceUpdate':        {'type': 'bool', 'default': 1,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': False},
 
+        'enablePluginLogging':    {'type': 'bool', 'default': 0,     'current': None, 'restart': 1, 'hidden': False, 'Advanced': False},
+        'loggingBackupCount':     {'type': 'int', 'default': 7,      'current': None, 'restart': 1, 'hidden': False, 'Advanced': False},
+        'loggingMaxMegaBytes':    {'type': 'int', 'default': 0,      'current': None, 'restart': 1, 'hidden': False, 'Advanced': False},
+
         'logThreadName':          {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
         'debugzigateCmd':         {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
         'trackTransportError':    {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
         'capturePairingInfos':    {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'useDomoticzLog':         {'type': 'bool', 'default': 1,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        
         'ZiGateReactTime':        {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
         'showTimeOutMsg':         {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
         'NXPExtendedErrorCode':   {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
@@ -226,13 +230,14 @@ SETTINGS = {
 
     # Experimental
     'Experimental': {'Order': 15, 'param': {    
+        'nPDUaPDUThreshold':     {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': True},
         'forceAckOnZCL':         {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'RoutingTableRequestFeq':{'type': 'int',  'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'RoutingTableRequestFeq':{'type': 'int',  'default': 0, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': True},
 
-        'doManyToOneRoute':      {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
+        'doManyToOneRoute':      {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': True},
         'DropBadAnnoucement':    {'type': 'bool', 'default': 1, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},    
         'expJsonDatabase':       {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
-        'useDomoticzDatabase':   {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False,  'Advanced': True},
+        'useDomoticzDatabase':   {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
         'XiaomiLeave':           {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
         'rebindLivolo':          {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': False},
         'allowAutoPairing':      {'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
@@ -261,6 +266,7 @@ SETTINGS = {
         'pollingONOFF':     {'type': 'int', 'default': 900,   'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
         'pollingLvlControl': {'type': 'int', 'default': 900,  'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
         'polling000C':      {'type': 'int', 'default': 3600,  'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
+        'polling0019':      {'type': 'int', 'default': 86400, 'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
         'polling0100':      {'type': 'int', 'default': 3600,  'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
         'polling0020':      {'type': 'int', 'default': 3600,  'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
         'polling0101':      {'type': 'int', 'default': 3600,  'current': None, 'restart': 0, 'hidden': True,  'Advanced': True},
