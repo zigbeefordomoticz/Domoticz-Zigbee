@@ -22,6 +22,8 @@ Release Numbering
 - Even numbers  --> Beta
 
 ##    August 2021 - 5.1.07
+- [Hardware] - Compatible with ZiGate-Ethernet
+- [Hardware] - Fix potential issue with ZiGateWifi
 - [Technical] - Speed up the launch of plugin WebUI
 - [Hardware] - Certified SonOff TH01 Temp+Humi sensor
 - [Technical] - Support up coming Firmware 320
