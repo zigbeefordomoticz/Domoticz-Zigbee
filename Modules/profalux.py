@@ -135,7 +135,6 @@ def profalux_MoveToLevelWithOnOff( self, nwkid, level):
     payload = cluster_frame + sqn + cmd + '%02x' %level
     raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
     self.log.logging( "Profalux", 'Debug', "profalux_MoveToLevelWithOnOff ++++ %s/%s Level: %s payload: %s" %( nwkid, EPout, level, payload), nwkid)
-    return
 
 def profalux_MoveWithOnOff( self, nwkid, OnOff):
 
@@ -156,8 +155,6 @@ def profalux_MoveWithOnOff( self, nwkid, OnOff):
     payload = cluster_frame + sqn + cmd + '%02x' %OnOff
     raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
     self.log.logging( "Profalux", 'Debug', "profalux_MoveWithOnOff ++++ %s/%s OnOff: %s payload: %s" %( nwkid, EPout, OnOff, payload), nwkid)
-
-    return
 
 def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
 

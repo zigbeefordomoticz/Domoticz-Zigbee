@@ -61,7 +61,6 @@ def actuator_toggle( self, nwkid, EPout, DeviceType):
 
     # To be implemented
     sendZigateCmd(self, "0092","02" + nwkid + ZIGATE_EP + EPout + "02")
-    return
 
 def actuator_stop( self, nwkid, EPout, DeviceType):
 
@@ -148,7 +147,6 @@ def actuator_setthermostat( self, nwkid, ep, value ):
     #'Pre-cooling' : 0x06,
     #'Fan only' : 0x07 
 
-    return
 
 
 def actuator_setpoint(  self, nwkid, ep, value ):
