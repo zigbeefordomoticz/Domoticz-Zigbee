@@ -1402,6 +1402,9 @@ def Decode8041(self, Devices, MsgData, MsgLQI):  # IEEE Address response
         + MsgSequenceNumber + " Status : " + DisplayStatusCode(MsgDataStatus) + " IEEE : " + MsgIEEE + " Short Address : " + MsgShortAddress + " number of associated devices : " + MsgNumAssocDevices + " Start Index : " + MsgStartIndex + " Device List : " + MsgDeviceList,
     )
 
+    if MsgShortAddress not in self.ListOfDevices:
+        return
+
     timeStamped(self, MsgShortAddress, 0x8041)
     loggingMessages(self, "8041", MsgShortAddress, MsgIEEE, MsgLQI, MsgSequenceNumber)
     lastSeenUpdate(self, Devices, NwkId=MsgShortAddress)
