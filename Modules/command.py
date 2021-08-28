@@ -407,11 +407,6 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
             self.ListOfDevices[NWKID]['Heartbeat'] = 0 
             return
             
-            ## Let's force a refresh of Attribute in the next Heartbeat  
-            #UpdateDevice_v2(self, Devices, Unit, 1, "On",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
-            #self.ListOfDevices[NWKID]['Heartbeat'] = '0'  
-            return
-
         if DeviceType == 'LvlControl' and _model_name == 'TS0601-dimmer':
             tuya_dimmer_onoff( self, NWKID, EPout, '01' )
             UpdateDevice_v2(self, Devices, Unit, 1, Devices[Unit].sValue,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
