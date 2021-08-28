@@ -237,8 +237,8 @@ def write_to_zigate( self, serialConnection, encoded_data ):
 
     if self.pluginconf.pluginConf['byPassDzConnection'] and not self.force_dz_communication:
         return native_write_to_zigate( self, serialConnection, encoded_data)
-    else:
-        return domoticz_write_to_zigate( self, encoded_data)
+
+    return domoticz_write_to_zigate( self, encoded_data)
 
 def domoticz_write_to_zigate( self, encoded_data):
     if self._connection:

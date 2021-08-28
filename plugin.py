@@ -650,8 +650,7 @@ class BasePlugin:
         if self.PDMready:
             if (self.internalHB % HEARTBEAT) != 0:
                 return
-            else:
-                self.HeartbeatCount += 1 
+            self.HeartbeatCount += 1 
 
         busy_ = False
         
@@ -984,16 +983,16 @@ def check_firmware_level( self ):
         self.log.logging( 'Plugin', 'Error', "Firmware level not supported, please update ZiGate firmware")
         return False
 
-    elif self.FirmwareVersion.lower() == '2100':
+    if self.FirmwareVersion.lower() == '2100':
         self.log.logging( 'Plugin', 'Status', "Firmware for Pluzzy devices")
         self.PluzzyFirmware = True
         return True
 
-    elif self.FirmwareVersion.lower() == '031b':
+    if self.FirmwareVersion.lower() == '031b':
         self.log.logging( 'Plugin', 'Status', "You are not on the latest firmware version, This version is known to have problem, please consider to upgrade")
         return False
 
-    elif self.FirmwareVersion.lower() in ( '031a', '031c', '031d'):
+    if self.FirmwareVersion.lower() in ( '031a', '031c', '031d'):
         self.pluginconf.pluginConf['forceAckOnZCL'] = True
 
     elif self.FirmwareVersion.lower() =='031e':

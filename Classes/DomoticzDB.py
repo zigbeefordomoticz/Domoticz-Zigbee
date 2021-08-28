@@ -74,10 +74,9 @@ class DomoticzDB_Preferences:
                 if value is None:
                     self.closeDB()
                     return 0
-                else:
-                    self.preferences = value[0]
-                    self.closeDB()
-                    return value[0]
+                self.preferences = value[0]
+                self.closeDB()
+                return value[0]
             except sqlite3.Error as e:
                 Domoticz.Error("retreiveAcceptNewHardware - Database error: %s" %e)
                 self.closeDB()
@@ -295,11 +294,10 @@ class DomoticzDB_DeviceStatus:
                     self.AdjValue['Baro'][ID]['Stamp'] = int(time())
                     self.closeDB()
                     return 0
-                else:
-                    self.AdjValue['Baro'][ID]['Value'] = value[0]
-                    self.AdjValue['Baro'][ID]['Stamp'] = int(time())
-                    self.closeDB()
-                    return value[0]
+                self.AdjValue['Baro'][ID]['Value'] = value[0]
+                self.AdjValue['Baro'][ID]['Stamp'] = int(time())
+                self.closeDB()
+                return value[0]
             except sqlite3.Error as e:
                 Domoticz.Error("retreiveAddjValue_baro - Database error: %s" %e)
                 self.closeDB()

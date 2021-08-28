@@ -680,7 +680,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ):
                 #UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return
 
-        elif DeviceType == 'BSO-Volet':
+        if DeviceType == 'BSO-Volet':
             if profalux:
                 # Transform slider % into analog value
                 lift = ( 255 * Level ) // 100

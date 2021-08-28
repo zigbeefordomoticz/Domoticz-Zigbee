@@ -494,7 +494,7 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
         mgmt_rtg_rsp( self, srcnwkid, MsgSourcePoint, MsgClusterID, dstnwkid, MsgDestPoint, MsgPayload, )
         return
 
-    elif MsgClusterID == "0032": 
+    if MsgClusterID == "0032": 
         # Mgmt_Rtg_req
         self.log.logging(  "Input", "Log", "Reception Data indication, Source Address : " + MsgSourceAddress
             + " Destination Address : " + MsgDestinationAddress
@@ -502,7 +502,7 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
             + " ClusterID : "  + MsgClusterID)
         return
 
-    elif MsgProfilID != "0104":
+    if MsgProfilID != "0104":
         # Not handle
         self.log.logging(  "inRawAPS", "Debug","Decode8002 - NwkId: %s Ep: %s Cluster: %s Payload: %s"
             % (srcnwkid, MsgSourcePoint, MsgClusterID, MsgPayload),)
