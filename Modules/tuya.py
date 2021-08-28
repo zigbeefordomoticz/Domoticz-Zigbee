@@ -271,7 +271,6 @@ def send_timesynchronisation( self, NwkId, srcEp, ClusterID, dstNWKID, dstEP, se
 
 def utc_to_local(dt):
     # https://stackoverflow.com/questions/4563272/convert-a-python-utc-datetime-to-a-local-datetime-using-only-python-standard-lib
-    import time
     if time.localtime().tm_isdst:
         return dt - timedelta(seconds = time.altzone)
 
