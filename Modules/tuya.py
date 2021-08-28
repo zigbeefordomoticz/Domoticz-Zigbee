@@ -274,8 +274,8 @@ def utc_to_local(dt):
     import time
     if time.localtime().tm_isdst:
         return dt - timedelta(seconds = time.altzone)
-    else:
-        return dt - timedelta(seconds = time.timezone)
+
+    return dt - timedelta(seconds = time.timezone)
 
 def tuya_send_default_response( self, Nwkid, srcEp , sqn, cmd, orig_fcf):
     if Nwkid not in self.ListOfDevices:

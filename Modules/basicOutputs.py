@@ -195,8 +195,8 @@ def ZigatePermitToJoin( self, permit ):
 def get_TC_significance( nwkid ):
     if nwkid == '0000':
         return '01'
-    else:
-        return '00'
+
+    return '00'
 
 
 def PermitToJoin( self, Interval, TargetAddress='FFFC'):
