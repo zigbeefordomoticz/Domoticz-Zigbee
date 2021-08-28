@@ -222,7 +222,7 @@ def Thermostat_LockMode( self, NwkId, lockmode):
     LOCK_MODE = { 'unlocked':0x00,
             'templock':0x02,
             'off':0x04,
-            'off':0x05
+            'off-2':0x05
             }
 
     if lockmode not in LOCK_MODE:

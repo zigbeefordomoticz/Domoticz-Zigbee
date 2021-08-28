@@ -209,7 +209,7 @@ def actuator_setcolor( self, nwkid, EPout, value, Color ):
         #Value is in mireds (not kelvin)
         #Correct values are from 153 (6500K) up to 588 (1700K)
         # t is 0 > 255
-        TempKelvin = int(((255 - int(Hue_List['t']))*(6500-1700)/255)+1700);
+        TempKelvin = int(((255 - int(Hue_List['t']))*(6500-1700)/255)+1700)
         TempMired = 1000000 // TempKelvin
         sendZigateCmd(self, "00C0","02" + nwkid + ZIGATE_EP + EPout + Hex_Format(4,TempMired) + "0000")
     #ColorModeRGB = 3    // Color. Valid fields: r, g, b.

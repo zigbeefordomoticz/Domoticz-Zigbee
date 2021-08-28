@@ -1058,7 +1058,7 @@ def set_isqn_datastruct(self, DeviceAttribute, key, endpoint, clusterId, Attribu
         return
     if check_datastruct( self, DeviceAttribute, key, endpoint, clusterId ) is None:
         return
-    if isqn != None:
+    if isqn is not None:
         self.ListOfDevices[key][DeviceAttribute]['Ep'][endpoint][clusterId]['iSQN'][ AttributeId ] = isqn
 
 def get_isqn_datastruct(self, DeviceAttribute, key, endpoint, clusterId, AttributeId ):
@@ -1178,10 +1178,10 @@ def setConfigItem(Key=None, Attribute='', Value=None):
 
     try:
         Config = Domoticz.Configuration()
-        if (Key != None):
-            Config[Key] = Value
-        else:
+        if (Key is None):
             Config = Value  # set whole configuration if no key specified
+        else:
+            Config[Key] = Value
 
         Config = Domoticz.Configuration(Config)
     except Exception as inst:
@@ -1194,10 +1194,10 @@ def getConfigItem(Key=None, Attribute='', Default={}):
     Value = Default
     try:
         Config = Domoticz.Configuration()
-        if (Key != None):
-            Value = Config[Key] # only return requested key if there was one
-        else:
+        if Key is None:
             Value = Config      # return the whole configuration if no key
+        else:
+            Value = Config[Key] # only return requested key if there was one
     except KeyError:
         Value = Default
     except Exception as inst:

@@ -195,7 +195,6 @@ SETTINGS = {
         'debugIAS':               {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
         'debugDZDB':              {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
         'debugWebServer':         {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
-        'debugzigateCmd':         {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
         'debugLegrand':           {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
         'debugLumi':              {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
         'debugLivolo':            {'type': 'bool', 'default': 0,     'current': None, 'restart': 0, 'hidden': False, 'Advanced': True},
