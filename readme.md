@@ -6,6 +6,8 @@
 [![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/pipiche38/Domoticz-Zigate.svg)](http://isitmaintained.com/project/pipiche38/Domoticz-Zigate "Average time to resolve an issue")
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://paypal.me/pipiche "Donate via PayPal")
 
+[![CodeFactor](https://www.codefactor.io/repository/github/pipiche38/domoticz-zigate/badge/beta)](https://www.codefactor.io/repository/github/pipiche38/domoticz-zigate/overview/beta)
+
 [Zigate](https://zigate.fr "Python Plugin for Domoticz home automation.")
 
 For information around the Zigate Plugin, please refer to :
