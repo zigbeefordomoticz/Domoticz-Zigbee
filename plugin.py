@@ -1100,7 +1100,7 @@ def update_DB_device_status_to_reinit( self ):
 
     for x in self.ListOfDevices:
         if 'Status' in self.ListOfDevices[ x ] and self.ListOfDevices[ x ]['Status'] == 'inDB':
-            self.ListOfDevices[ x ]['Status'] == 'erasePDM'
+            self.ListOfDevices[ x ]['Status'] = 'erasePDM'
 
             
 global _plugin
