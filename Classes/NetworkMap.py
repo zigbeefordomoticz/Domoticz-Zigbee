@@ -137,7 +137,6 @@ class NetworkMap():
             elif self.Neighbours[entry]['Status'] in ( 'ScanRequired', 'ScanRequired2') :
                 LQIreq( self, entry )
                 
-                return
         else:
             # We have been through all list of devices and not action triggered
             if not waitResponse:
@@ -171,7 +170,6 @@ def _initNeighbours( self):
     tobescanned = True
     _initNeighboursTableEntry( self, '0000' )
 
-    return
 
 def _initNeighboursTableEntry( self, nwkid):
 
@@ -525,5 +523,3 @@ def LQIresp_decoding(self, MsgData):
         self.Neighbours[NwkIdSource]['Neighbours'][_nwkid]['_permitjnt'] = _permitjnt
         self.Neighbours[NwkIdSource]['Neighbours'][_nwkid]['_relationshp'] = _relationshp
         self.Neighbours[NwkIdSource]['Neighbours'][_nwkid]['_rxonwhenidl'] = _rxonwhenidl
-
-    return

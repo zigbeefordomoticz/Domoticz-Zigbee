@@ -63,7 +63,4 @@ def get_TxPower( self ):
     then response is going to be only status(0x8000) with status 1.
     """
 
-
     sendZigateCmd(self, "0807", "")
-
-    return

@@ -110,7 +110,6 @@ class NetworkEnergy():
             if target in self.ListOfDevices:
                 if isRouter( target ):
                     self._initNwkEnrgyRecord( root, target, channels )
-        return
 
 
     def _initNwkEnrgyRecord( self, root, nwkid, channels):
@@ -310,7 +309,6 @@ class NetworkEnergy():
         else:
             Domoticz.Error("Unable to get access to directory %s, please check PluginConf.txt" %(self.pluginconf.pluginConf['pluginReports']))
 
-        return
 
 
     def NwkScanResponse(self, MsgData):
@@ -387,4 +385,3 @@ class NetworkEnergy():
                 self.logging( 'Debug', "     %s <- %s Channel: %s Interference: : %s " %(root, entry, chan, int(inter,16)))
 
         self.EnergyLevel[ root ][ entry ]['Status'] = 'Completed'
-        return

@@ -18,8 +18,6 @@ def pluzzyDecode004D( self, MsgSrcAddr, MsgIEEE, MsgMacCapa, decodedMacCapa, LQI
 
     self.log.logging( "Input", 'Debug',  "Pluzzy-Decode004D - Device Annoucement %s %s %s" %(MsgSrcAddr, MsgIEEE, decodedMacCapa))
 
-    return
-
 def pluzzyDecode8102( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, MsgLQI):
 
     """
