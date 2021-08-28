@@ -787,4 +787,3 @@ def tuya_energy_countdown(self, NwkId, timing):
     action = '0902'
     data = '%08x' %timing
     tuya_cmd( self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)
-

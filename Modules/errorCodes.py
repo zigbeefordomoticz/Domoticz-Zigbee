@@ -129,6 +129,3 @@ def DisplayStatusCode( StatusCode ):
 
     else:
         return "Unknown code : %s" %StatusCode
-
-
-

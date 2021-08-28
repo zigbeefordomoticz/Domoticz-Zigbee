@@ -1224,7 +1224,3 @@ def repair_dict_after_load( b64_dict, Attribute ):
         from base64 import b64decode
         b64_dict[ Attribute ] = eval( b64decode( b64_dict[ Attribute ] ) )
     return b64_dict
-          
-    
-    
-
