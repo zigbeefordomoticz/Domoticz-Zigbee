@@ -79,4 +79,3 @@ def receiveZigateEpDescriptor( self, MsgData):
                 self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp][MsgDataCluster]={}
             MsgDataCluster=""
             i += 1
-

@@ -1033,4 +1033,3 @@ READ_ATTRIBUTES_REQUEST = {
     'fc21' : ( ReadAttributeRequest_000f, 'pollingfc21' ),
     'fc40': ( ReadAttributeRequest_fc40, 'pollingfc40' ),
     }
-

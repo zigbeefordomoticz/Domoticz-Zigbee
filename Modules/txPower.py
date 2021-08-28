@@ -67,6 +67,3 @@ def get_TxPower( self ):
     sendZigateCmd(self, "0807", "")
 
     return
-
-
-

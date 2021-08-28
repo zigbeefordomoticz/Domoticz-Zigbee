@@ -105,6 +105,3 @@ def sendResponse( self, Connection, Response, AcceptEncoding=None ):
         Connection.Send( Response )
         if not self.pluginconf.pluginConf['enableKeepalive']:
             Connection.Disconnect()
-
-
-

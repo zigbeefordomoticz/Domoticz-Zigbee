@@ -736,4 +736,3 @@ def CreateDomoDevice(self, Devices, NWKID):
             else:
                 self.ListOfDevices[NWKID]['Type'] = self.ListOfDevices[NWKID]['Type'] + '/' + iterType
         self.log.logging("Widget", "Debug", "CreatDomoDevice - Set Type to : %s" %self.ListOfDevices[NWKID]['Type'], NWKID)
-

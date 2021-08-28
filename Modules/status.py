@@ -216,6 +216,3 @@ def DisplayStatusCode( StatusCode ) :
 
 
     return ''
-
-
-
