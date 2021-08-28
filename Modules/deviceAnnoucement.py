@@ -14,7 +14,7 @@ from Modules.tools import (
     mainPoweredDevice
 )
 from Modules.domoTools import lastSeenUpdate, timedOutDevice
-from Modules.readAttributes import ReadAttributeRequest_0000, ReadAttributeRequest_0001
+from Modules.readAttributes import ReadAttributeRequest_0000, ReadAttributeRequest_0001, READ_ATTRIBUTES_REQUEST
 from Modules.bindings import rebind_Clusters, reWebBind_Clusters
 from Modules.schneider_wiser import schneider_wiser_registration, schneiderReadRawAPS, PREFIX_MACADDR_WIZER_LEGACY
 from Modules.basicOutputs import sendZigateCmd
@@ -25,6 +25,7 @@ from Modules.lumi import enableOppleSwitch, setXiaomiVibrationSensitivity
 from Modules.casaia import casaia_AC201_pairing
 from Modules.tuyaSiren import tuya_sirene_registration
 from Modules.tuyaTRV import tuya_eTRV_registration, TUYA_eTRV_MODEL
+from Modules.zigateConsts import CLUSTERS_LIST
 
 
 
@@ -233,7 +234,24 @@ def decode004d_existing_devicev2( self, Devices, NwkId, MsgIEEE, MsgMacCapa, Msg
         "Input", "Debug", "Decode004D - Request attribute 0x0000 %s" % (NwkId), NwkId
     )
     ReadAttributeRequest_0000(self, NwkId)
+
+    # 3 Read attributes
+    for iterEp in self.ListOfDevices[NwkId]['Ep']:
+        # Let's scan each Endpoint cluster and check if there is anything to read
+        for iterReadAttrCluster in CLUSTERS_LIST:
+            if iterReadAttrCluster not in self.ListOfDevices[NwkId]['Ep'][iterEp]:
+                continue
+            if iterReadAttrCluster not in READ_ATTRIBUTES_REQUEST:
+                continue
+            if iterReadAttrCluster == '0500':
+                # Skip IAS as it is address by IAS Enrollment
+                continue
+            func = READ_ATTRIBUTES_REQUEST[iterReadAttrCluster][0]
+            func( self, NwkId)
+
+
     sendZigateCmd(self, "0042", str(NwkId), ackIsDisabled=True)
+
 
     # Let's check if this is a Schneider Wiser
     if MsgIEEE[0 : len(PREFIX_MACADDR_WIZER_LEGACY)] == PREFIX_MACADDR_WIZER_LEGACY:
