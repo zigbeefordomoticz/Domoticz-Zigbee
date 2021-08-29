@@ -21,6 +21,8 @@ Release Numbering
 - Odd numbers --> Stable5
 - Even numbers  --> Beta
 
+## 29 August 2021 - 5.1.08
+- [Hardware] - Tuya TS0202 PIR Motion Sensor
 
 ## 27 August 2021 - 5.1.07
 - [Hardware] - Compatible with ZiGate-Ethernet
