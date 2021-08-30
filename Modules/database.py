@@ -193,6 +193,7 @@ def LoadDeviceList( self ):
         if self.pluginconf.pluginConf['resetConfigureReporting']:
             self.log.logging( "Database", "Log", "Reset ConfigureReporting data %s" %addr)
             Modules.tools.reset_datastruct( self,'ConfigureReporting', addr )
+            self.pluginconf.pluginConf['resetConfigureReporting'] = False
             #self.ListOfDevices[addr]['ConfigureReporting'] = {}
             #self.ListOfDevices[addr]['ConfigureReporting']['Ep'] = {}
             #for iterEp in self.ListOfDevices[addr]['Ep']:
