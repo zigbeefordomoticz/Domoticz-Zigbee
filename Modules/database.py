@@ -185,6 +185,7 @@ def LoadDeviceList( self ):
         if self.pluginconf.pluginConf['resetReadAttributes']:
             self.log.logging( "Database", "Log", "ReadAttributeReq - Reset ReadAttributes data %s" %addr)
             Modules.tools.reset_datastruct( self,'ReadAttributes', addr )
+            self.pluginconf.pluginConf['resetReadAttributes'] = False
             #self.ListOfDevices[addr]['ReadAttributes'] = {}
             #self.ListOfDevices[addr]['ReadAttributes']['Ep'] = {}
             #for iterEp in self.ListOfDevices[addr]['Ep']:
@@ -209,7 +210,6 @@ def LoadDeviceList( self ):
             import sys
             sys.path.append('/usr/lib/python3.8/site-packages')
             import deepdiff
-            import json
 
             diff = deepdiff.DeepDiff( self.ListOfDevices, ListOfDevices_from_Domoticz)
             self.log.logging( "Database", 'Log',json.dumps(json.loads(diff.to_json()), indent=4)) 
@@ -234,7 +234,8 @@ def loadTxtDatabase( self , dbName ):
             key = key.replace(" ","")
             key = key.replace("'","")
             #if key in  ( 'ffff', '0000'): continue
-            if key in  ( 'ffff'): continue
+            if key in  ('ffff'): 
+                continue
             try:
                 dlVal=eval(val)
             except (SyntaxError, NameError, TypeError, ZeroDivisionError):
