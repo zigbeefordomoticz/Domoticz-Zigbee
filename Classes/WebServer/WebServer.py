@@ -106,7 +106,7 @@ class WebServer(object):
         self.IEEE2NWK = IEEE2NWK
         self.Devices = Devices
 
-        self.restart_needed = {'RestartNeeded': False}
+        self.restart_needed = {'RestartNeeded': 0}
         self.homedirectory = HomeDirectory
         self.hardwareID = hardwareID
         mimetypes.init()
@@ -504,8 +504,7 @@ class WebServer(object):
 
                         self.logging( 'Debug', "Updating %s from %s to %s on theme: %s" %( param, self.pluginconf.pluginConf[param], setting_lst[setting]['current'], _theme))
 
-                        if SETTINGS[_theme]['param'][param]['restart']:
-                            self.restart_needed['RestartNeeded'] = True
+                        self.restart_needed['RestartNeeded'] = max(SETTINGS[_theme]['param'][param]['restart'], self.restart_needed['RestartNeeded'])
 
                         if param == 'Certification':
                             if setting_lst[setting]['current'] in CERTIFICATION_CODE:
