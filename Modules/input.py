@@ -2763,7 +2763,8 @@ def Decode8401( self, Devices, MsgData, MsgLQI ):  # Reception Zone status chang
     elif self.ListOfDevices[MsgSrcAddr]["Model"] in ( "lumi.sensor_magnet", "lumi.sensor_magnet.aq2", ):  # Xiaomi Door sensor
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0006", "%02d" % alarm1)
     else:
-        MajDomoDevice( self, Devices, MsgSrcAddr, MsgEp, MsgClusterId, "%02d" % (alarm1 or alarm2), )
+        if Model not in ( 'RC-EF-3.0', ):
+            MajDomoDevice( self, Devices, MsgSrcAddr, MsgEp, MsgClusterId, "%02d" % (alarm1 or alarm2), )
 
     #if self.ListOfDevices[MsgSrcAddr]["Model"] in (  'MOSZB-140',):
     #    # Tamper is inverse
