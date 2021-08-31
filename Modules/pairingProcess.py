@@ -67,25 +67,36 @@ def processNotinDBDevices(self, Devices, NWKID, status, RIA):
     if status not in ("004d", "0043", "0045", "8045", "8043") and "Model" in self.ListOfDevices[NWKID]:
         return
 
-    self.ListOfDevices[NWKID]["PairingInProgress"] = True
+    if "PairingInProgress" not in self.ListOfDevices[NWKID] or not self.ListOfDevices[NWKID]["PairingInProgress"]:
+        self.ListOfDevices[NWKID]["PairingInProgress"] = True
+
     knownModel = False
     if self.ListOfDevices[NWKID]["Model"] not in ({}, ""):
-        Domoticz.Status("[%s] NEW OBJECT: %s Model Name: %s" % (RIA, NWKID, self.ListOfDevices[NWKID]["Model"]))
+        self.log.logging(
+            "Pairing", "Status", "[%s] NEW OBJECT: %s Model Name: %s" % (RIA, NWKID, self.ListOfDevices[NWKID]["Model"])
+        )
         # Let's check if this Model is known
         if self.ListOfDevices[NWKID]["Model"] in self.DeviceConf:
             knownModel = True
             status = "createDB"  # Fast track
 
+    if knownModel and self.ListOfDevices[NWKID]["Model"] == "TI0001":
         # https://zigate.fr/forum/topic/livolo-compatible-zigbee/#postid-596
-        if self.ListOfDevices[NWKID]["Model"] == "TI0001":
-            livolo_bind(self, NWKID, "06")
+        livolo_bind(self, NWKID, "06")
+
+    if (
+        knownModel
+        and "NoDeviceInterview" in self.DeviceConf[self.ListOfDevices[NWKID]["Model"]]
+        and self.DeviceConf[self.ListOfDevices[NWKID]["Model"]]["NoDeviceInterview"]
+    ):
+        status == "CreateDB"
 
     if status == "8043":  # We have at least receive 1 EndPoint
         status = interview_state_8043(self, NWKID, RIA, knownModel, status)
-        if status != "CreateDB" and int(self.ListOfDevices[NWKID]["RIA"], 10) < 2:
+        if status != "CreateDB" and RIA < 2:
             return
 
-    if knownModel and RIA > 3 and status != "UNKNOW" and status != "inDB":
+    if knownModel and RIA > 3 and status not in ("UNKNOW", "inDB"):
         # We have done several retry to get Ep ... but we known the Model
         self.log.logging(
             "Pairing",
@@ -94,31 +105,32 @@ def processNotinDBDevices(self, Devices, NWKID, status, RIA):
         )
         status = "createDB"
 
+    if status in ("createDB", "8043"):
+        interview_state_createDB(self, Devices, NWKID, RIA, status)
+
     if status != "createDB":
         if HB_ > 2 and not knownModel and (status == "004d" or status == "0045"):
             # We will re-request EndPoint List ( 0x0045)
             interview_state_004d(self, NWKID, RIA, status)
-            return
 
-        # if HB_ > 1 and (status == "8045" or status == "0043"):
-        #    interview_state_8045( self, NWKID, RIA, status)
-        #    return
-
-    elif (
-        int(self.ListOfDevices[NWKID]["RIA"], 10) > 4 and status != "UNKNOW" and status != "inDB"
-    ):  # We have done several retry
-        interview_timeout(self, Devices, NWKID, RIA, status)
-        return
-
-    if status in ("createDB", "8043"):
-        interview_state_createDB(self, Devices, NWKID, RIA, status)
-
-        # end if ( self.ListOfDevices[NWKID]['Status']=="8043" or self.ListOfDevices[NWKID]['Model']!= {} )
-    # end ( self.pluginconf.storeDiscoveryFrames == 0 and status != "UNKNOW" and status != "DUP")  or (  self.pluginconf.storeDiscoveryFrames == 1 and status == "8043" )
+        elif RIA > 4 and status not in ("UNKNOW", "inDB"):  # We have done several retry
+            status = interview_timeout(self, Devices, NWKID, RIA, status)
 
 
 def interview_state_004d(self, NWKID, RIA, status):
-    Domoticz.Status("[%s] NEW OBJECT: %s TimeOut in %s restarting at 0x004d" % (RIA, NWKID, status))
+    self.log.logging(
+        "Pairing",
+        "Debug",
+        "interview_state_004d - NWKID: %s, Status: %s, RIA: %s,"
+        % (
+            NWKID,
+            status,
+            RIA,
+        ),
+    )
+    self.log.logging(
+        "Pairing", "Status", "[%s] NEW OBJECT: %s TimeOut in %s restarting at 0x004d" % (RIA, NWKID, status)
+    )
     self.ListOfDevices[NWKID]["RIA"] = str(RIA + 1)
     self.ListOfDevices[NWKID]["Heartbeat"] = "0"
     self.ListOfDevices[NWKID]["Status"] = "0045"
@@ -127,21 +139,34 @@ def interview_state_004d(self, NWKID, RIA, status):
             self.log.logging("Pairing", "Debug", "[%s] NEW OBJECT: %s Request Model Name" % (RIA, NWKID))
             ReadAttributeRequest_0000(self, NWKID, fullScope=False)  # Request Model Name
     sendZigateCmd(self, "0045", str(NWKID))
+    return "0045"
 
 
 def interview_state_8043(self, NWKID, RIA, knownModel, status):
+    self.log.logging(
+        "Pairing",
+        "Debug",
+        "interview_state_8043 - NWKID: %s, Status: %s, RIA: %s,"
+        % (
+            NWKID,
+            status,
+            RIA,
+        ),
+    )
 
     self.ListOfDevices[NWKID]["RIA"] = str(RIA + 1)
 
     if knownModel:
-        Domoticz.Status("[%s] NEW OBJECT: %s Model Name: %s" % (RIA, NWKID, self.ListOfDevices[NWKID]["Model"]))
+        self.log.logging(
+            "Pairing", "Status", "[%s] NEW OBJECT: %s Model Name: %s" % (RIA, NWKID, self.ListOfDevices[NWKID]["Model"])
+        )
         return "createDB"  # Fast track
 
     self.log.logging("Pairing", "Debug", "[%s] NEW OBJECT: %s Request Model Name" % (RIA, NWKID))
     ReadAttributeRequest_0000(self, NWKID, fullScope=False)  # Reuest Model Name
 
     if "Manufacturer" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Manufacturer"] in ({}, ""):
-        Domoticz.Status("[%s] NEW OBJECT: %s Request Node Descriptor" % (RIA, NWKID))
+        self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s Request Node Descriptor" % (RIA, NWKID))
         sendZigateCmd(self, "0042", str(NWKID))  # Request a Node Descriptor
     else:
         self.log.logging(
@@ -158,7 +183,11 @@ def interview_state_8043(self, NWKID, RIA, knownModel, status):
 
         if "ColorInfos" not in self.ListOfDevices[NWKID] or "ColorMode" not in self.ListOfDevices[NWKID]["ColorInfos"]:
             self.ListOfDevices[NWKID]["RIA"] = str(RIA + 1)
-            Domoticz.Status("[%s] NEW OBJECT: %s Request Attribute for Cluster 0x0300 to get ColorMode" % (RIA, NWKID))
+            self.log.logging(
+                "Pairing",
+                "Status",
+                "[%s] NEW OBJECT: %s Request Attribute for Cluster 0x0300 to get ColorMode" % (RIA, NWKID),
+            )
             ReadAttributeRequest_0300(self, NWKID)
             break
 
@@ -166,6 +195,16 @@ def interview_state_8043(self, NWKID, RIA, knownModel, status):
 
 
 def interview_state_8045(self, NWKID, RIA, status):
+    self.log.logging(
+        "Pairing",
+        "Debug",
+        "interview_state_8045 - NWKID: %s, Status: %s, RIA: %s,"
+        % (
+            NWKID,
+            status,
+            RIA,
+        ),
+    )
     self.ListOfDevices[NWKID]["RIA"] = str(RIA + 1)
     self.ListOfDevices[NWKID]["Heartbeat"] = "0"
     self.ListOfDevices[NWKID]["Status"] = "0043"
@@ -174,11 +213,26 @@ def interview_state_8045(self, NWKID, RIA, status):
         ReadAttributeRequest_0000(self, NWKID, fullScope=False)  # Reuest Model Name
 
     for iterEp in self.ListOfDevices[NWKID]["Ep"]:
-        Domoticz.Status("[%s] NEW OBJECT: %s Request Simple Descriptor for Ep: %s" % ("-", NWKID, iterEp))
+        self.log.logging(
+            "Pairing", "Status", "[%s] NEW OBJECT: %s Request Simple Descriptor for Ep: %s" % ("-", NWKID, iterEp)
+        )
         sendZigateCmd(self, "0043", str(NWKID) + str(iterEp))
+
+    return "0043"
 
 
 def interview_timeout(self, Devices, NWKID, RIA, status):
+    self.log.logging(
+        "Pairing",
+        "Debug",
+        "interview_timeout - NWKID: %s, Status: %s, RIA: %s,"
+        % (
+            NWKID,
+            status,
+            RIA,
+        ),
+    )
+
     Domoticz.Error("[%s] NEW OBJECT: %s Not able to get all needed attributes on time" % (RIA, NWKID))
     self.ListOfDevices[NWKID]["Status"] = "UNKNOW"
     self.ListOfDevices[NWKID]["ConsistencyCheck"] = "Bad Pairing"
@@ -188,9 +242,20 @@ def interview_timeout(self, Devices, NWKID, RIA, status):
         Devices, "Unable to collect all informations for enrollment of this devices. See Logs"
     )
     self.CommiSSionning = False
+    return "UNKNOW"
 
 
 def interview_state_createDB(self, Devices, NWKID, RIA, status):
+    self.log.logging(
+        "Pairing",
+        "Debug",
+        "interview_state_createDB - NWKID: %s, Status: %s, RIA: %s,"
+        % (
+            NWKID,
+            status,
+            RIA,
+        ),
+    )
     # We will try to create the device(s) based on the Model , if we find it in DeviceConf or against the Cluster
     if (
         "Model" in self.ListOfDevices[NWKID]
@@ -260,6 +325,7 @@ def interview_state_createDB(self, Devices, NWKID, RIA, status):
 
 
 def full_provision_device(self, Devices, NWKID, RIA, status):
+
     self.log.logging(
         "Pairing",
         "Debug",
@@ -347,7 +413,7 @@ def zigbee_provision_device(self, Devices, NWKID, RIA, status):
 
     # Custom device parameters set
     if "Param" in self.ListOfDevices[NWKID]:
-        self.log.logging("Pairing", "Log", "Custom device parameters setting")
+        self.log.logging("Pairing", "Debug", "Custom device parameters setting")
         self.ListOfDevices[NWKID]["CheckParam"] = True
 
     # 4- Create groups if required
@@ -360,12 +426,24 @@ def zigbee_provision_device(self, Devices, NWKID, RIA, status):
 def binding_needed_clusters_with_zigate(self, NWKID):
     cluster_to_bind = CLUSTERS_LIST
 
+    # if (
+    #    "BindingTimeStamps" in self.ListOfDevices[NWKID]
+    #    and self.ListOfDevices[NWKID]["BindingTimeStamps"] < time.time() + 60
+    # ):
+    #    # skip it . alreday in progress
+    #    return
+    # self.ListOfDevices[NWKID]["BindingTimeStamps"] = time.time()
+
     # Do we have to follow Certified Conf file, or look for standard mecanishm ?
     if (
         "Model" in self.ListOfDevices[NWKID]
         and self.ListOfDevices[NWKID]["Model"] != {}
         and self.ListOfDevices[NWKID]["Model"] in self.DeviceConf
     ):
+        self.log.logging(
+            "Pairing", "Log", "binding_needed_clusters_with_zigate %s based on Device Configuration" % (NWKID)
+        )
+
         _model = self.ListOfDevices[NWKID]["Model"]
         # Check if we have to unbind clusters
         if "ClusterToUnbind" in self.DeviceConf[_model]:
@@ -375,9 +453,11 @@ def binding_needed_clusters_with_zigate(self, NWKID):
         # Check if we have specific clusters to Bind
         if "ClusterToBind" in self.DeviceConf[_model]:
             cluster_to_bind = self.DeviceConf[_model]["ClusterToBind"]
-            self.log.logging("Pairing", "Debug", "%s Binding cluster based on Conf: %s" % (NWKID, str(cluster_to_bind)))
+            self.log.logging("Pairing", "Log", "%s Binding cluster based on Conf: %s" % (NWKID, str(cluster_to_bind)))
             for x in self.DeviceConf[_model]["Ep"]:
                 for y in cluster_to_bind:
+                    if y not in self.DeviceConf[_model]["Ep"][x]:
+                        continue
                     self.log.logging("Pairing", "Debug", "Request a Bind for %s/%s on Cluster %s" % (NWKID, x, y))
                     # If option enabled, unbind
                     if self.pluginconf.pluginConf["doUnbindBind"]:
@@ -415,7 +495,7 @@ def handle_IAS_enrollmment_if_needed(self, NWKID, RIA, status):
         ):
             continue
 
-        self.log.logging("Pairing", "Log", "We have found 0500 or 0502 on Ep: %s of %s" % (iterEp, NWKID))
+        self.log.logging("Pairing", "Debug", "We have found 0500 or 0502 on Ep: %s of %s" % (iterEp, NWKID))
 
         # IAS Zone
         # We found a Cluster 0x0500 IAS. May be time to start the IAS Zone process
@@ -459,7 +539,7 @@ def send_identify_effect(self, NWKID):
 
 def create_group_if_required(self, NWKID):
     if self.groupmgt and self.pluginconf.pluginConf["allowGroupMembership"] and "Model" in self.ListOfDevices[NWKID]:
-        self.log.logging("Pairing", "Log", "Creation Group")
+        self.log.logging("Pairing", "Debug", "Creation Group")
         if self.ListOfDevices[NWKID]["Model"] in self.DeviceConf:
             if "GroupMembership" in self.DeviceConf[self.ListOfDevices[NWKID]["Model"]]:
                 for groupToAdd in self.DeviceConf[self.ListOfDevices[NWKID]["Model"]]["GroupMembership"]:
@@ -491,19 +571,19 @@ def handle_device_specific_needs(self, Devices, NWKID):
             "AC211",
             "AC221",
         ):
-            self.log.logging("Pairing", "Log", "CasaIA registration needed")
+            self.log.logging("Pairing", "Debug", "CasaIA registration needed")
             casaia_pairing(self, NWKID)
 
         elif self.ListOfDevices[NWKID]["Model"] in ("TS0601-sirene",):
-            self.log.logging("Pairing", "Log", "Tuya Sirene registration needed")
+            self.log.logging("Pairing", "Debug", "Tuya Sirene registration needed")
             tuya_sirene_registration(self, NWKID)
 
         elif self.ListOfDevices[NWKID]["Model"] in (TUYA_eTRV_MODEL):
-            self.log.logging("Pairing", "Log", "Tuya eTRV registration needed")
+            self.log.logging("Pairing", "Debug", "Tuya eTRV registration needed")
             tuya_eTRV_registration(self, NWKID, device_reset=True)
 
         elif self.ListOfDevices[NWKID]["Model"] in ("TS0121",):
-            self.log.logging("Pairing", "Log", "Tuya TS0121 registration needed")
+            self.log.logging("Pairing", "Debug", "Tuya TS0121 registration needed")
             tuya_TS0121_registration(self, NWKID)
 
         elif self.ListOfDevices[NWKID]["Model"] in (
@@ -512,18 +592,20 @@ def handle_device_specific_needs(self, Devices, NWKID):
             "TS0601-2Gangs-switch",
             "TS0601-SmartAir",
         ):
-            self.log.logging("Pairing", "Log", "Tuya general registration needed")
+            self.log.logging("Pairing", "Debug", "Tuya general registration needed")
             tuya_registration(self, NWKID, device_reset=True)
 
         elif self.ListOfDevices[NWKID]["Model"] in ("TS0601-Parkside-Watering-Timer",):
-            self.log.logging("Pairing", "Log", "Tuya Water Sensor Parkside registration needed")
+            self.log.logging("Pairing", "Debug", "Tuya Water Sensor Parkside registration needed")
             tuya_registration(self, NWKID, device_reset=True, parkside=True)
 
         # Set the sensitivity for Xiaomi Vibration
         elif self.ListOfDevices[NWKID]["Model"] == "lumi.vibration.aq1":
-            Domoticz.Status(
+            self.log.logging(
+                "Pairing",
+                "Status",
                 "processNotinDBDevices - set viration Aqara %s sensitivity to %s"
-                % (NWKID, self.pluginconf.pluginConf["vibrationAqarasensitivity"])
+                % (NWKID, self.pluginconf.pluginConf["vibrationAqarasensitivity"]),
             )
             setXiaomiVibrationSensitivity(
                 self, NWKID, sensitivity=self.pluginconf.pluginConf["vibrationAqarasensitivity"]
