@@ -363,30 +363,30 @@ class IAS_Zone_Management:
 
     def write_IAS_WD_Squawk( self, nwkid, ep, SquawkMode):
 
-        """
-        <address mode: uint8_t>
-        <target short address: uint16_t>
-        <source endpoint: uint8_t>
-        <destination endpoint: uint8_t>
-        <direction: uint8_t>
-        <manufacturer specific: uint8_t>
-        <manufacturer id: uint16_t>
-        <SquawkModeStrobeAndLevel: uint8_t>
-        Bits 	Description
-        0-3 	Squawk Mode - indicates the meaning of the required ‘squawk’:
-            0 - System is armed
-            1 - System is disarmed
-            All other values are reserved
-        4 	Strobe - indicates whether a visual strobe indication of the ‘squawk’ is required:
-            0 - No strobe
-            1 - Use strobe
-            5 	Reserved
-        6-7 	Squawk Level - indicates the requested level of the audible squawk sound:
-            0 - Low level
-            1 - Medium level
-            2 - High level
-            3 - Very high level
-        """
+       #
+       # <address mode: uint8_t>
+       # <target short address: uint16_t>
+       # <source endpoint: uint8_t>
+       # <destination endpoint: uint8_t>
+       # <direction: uint8_t>
+       # <manufacturer specific: uint8_t>
+       # <manufacturer id: uint16_t>
+       # <SquawkModeStrobeAndLevel: uint8_t>
+       # Bits 	Description
+       # 0-3 	Squawk Mode - indicates the meaning of the required ‘squawk’:
+       #    0 - System is armed
+       #    1 - System is disarmed
+       #    All other values are reserved
+       # 4 	Strobe - indicates whether a visual strobe indication of the ‘squawk’ is required:
+       #    0 - No strobe
+       #    1 - Use strobe
+       #    5 	Reserved
+       # 6-7 	Squawk Level - indicates the requested level of the audible squawk sound:
+       #    0 - Low level
+       #    1 - Medium level
+       #    2 - High level
+       #    3 - Very high level
+       #
         SQUAWKMODE = { 'disarmed': 0b00000000,
                        'armed':    0b00000001
                        }
@@ -417,20 +417,20 @@ class IAS_Zone_Management:
 
     def _write_IASWD( self, nwkid, ep, warning_mode, warning_duration, strobe_duty, strobe_level):
 
-        """
-        Zigate -> Obj	0x0111 	Write Attribute request IAS_WD (from v3.1a)
-                        <address mode: uint8_t>
-			<target short address: uint16_t>
-			<source endpoint: uint8_t>
-			<destination endpoint: uint8_t>
-			<direction: uint8_t>
-			<manufacturer specific: uint8_t>
-			<manufacturer id: uint16_t>
-			<Warning Mode: uint8_t>
-			<Warning Duration: uint16_t>
-			<Strobe duty cycle : uint8_t>
-			<Strobe level : uint8_t>
-        """
+        
+        # Zigate -> Obj	0x0111 	Write Attribute request IAS_WD (from v3.1a)
+        #                 <address mode: uint8_t>
+		# 	<target short address: uint16_t>
+		# 	<source endpoint: uint8_t>
+		# 	<destination endpoint: uint8_t>
+		# 	<direction: uint8_t>
+		# 	<manufacturer specific: uint8_t>
+		# 	<manufacturer id: uint16_t>
+		# 	<Warning Mode: uint8_t>
+		# 	<Warning Duration: uint16_t>
+		# 	<Strobe duty cycle : uint8_t>
+		# 	<Strobe level : uint8_t>
+        
 
         direction = 0x00
         manuf = 0x00

@@ -1402,6 +1402,9 @@ def Decode8041(self, Devices, MsgData, MsgLQI):  # IEEE Address response
         + MsgSequenceNumber + " Status : " + DisplayStatusCode(MsgDataStatus) + " IEEE : " + MsgIEEE + " Short Address : " + MsgShortAddress + " number of associated devices : " + MsgNumAssocDevices + " Start Index : " + MsgStartIndex + " Device List : " + MsgDeviceList,
     )
 
+    if MsgShortAddress not in self.ListOfDevices:
+        return
+
     timeStamped(self, MsgShortAddress, 0x8041)
     loggingMessages(self, "8041", MsgShortAddress, MsgIEEE, MsgLQI, MsgSequenceNumber)
     lastSeenUpdate(self, Devices, NwkId=MsgShortAddress)
@@ -2755,12 +2758,13 @@ def Decode8401( self, Devices, MsgData, MsgLQI ):  # Reception Zone status chang
     self.log.logging(  "Input", "Debug", "Decode8401 MsgZoneStatus: %s " % MsgZoneStatus[2:4], MsgSrcAddr, )
     value = MsgZoneStatus[2:4]
 
-    if self.ListOfDevices[MsgSrcAddr]["Model"] in ( "3AFE14010402000D", "3AFE28010402000D", 'MOSZB-140'):  # Konke Motion Sensor, Devlco/Frient Motion
+    if self.ListOfDevices[MsgSrcAddr]["Model"] in ( "3AFE14010402000D", "3AFE28010402000D", 'MOSZB-140', 'TS0202'):  # Konke Motion Sensor, Devlco/Frient Motion
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0406", "%02d" % alarm1)
     elif self.ListOfDevices[MsgSrcAddr]["Model"] in ( "lumi.sensor_magnet", "lumi.sensor_magnet.aq2", ):  # Xiaomi Door sensor
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0006", "%02d" % alarm1)
     else:
-        MajDomoDevice( self, Devices, MsgSrcAddr, MsgEp, MsgClusterId, "%02d" % (alarm1 or alarm2), )
+        if Model not in ( 'RC-EF-3.0', ):
+            MajDomoDevice( self, Devices, MsgSrcAddr, MsgEp, MsgClusterId, "%02d" % (alarm1 or alarm2), )
 
     #if self.ListOfDevices[MsgSrcAddr]["Model"] in (  'MOSZB-140',):
     #    # Tamper is inverse
