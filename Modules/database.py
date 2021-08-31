@@ -183,23 +183,30 @@ def LoadDeviceList( self ):
                    fixing_Issue566( self, addr )
 
         if self.pluginconf.pluginConf['resetReadAttributes']:
-            self.log.logging( "Database", "Log", "ReadAttributeReq - Reset ReadAttributes data %s" %addr)
+            self.log.logging( "Database", 'Log', "ReadAttributeReq - Reset ReadAttributes data %s" %addr)
             Modules.tools.reset_datastruct( self,'ReadAttributes', addr )
-            self.pluginconf.pluginConf['resetReadAttributes'] = False
             #self.ListOfDevices[addr]['ReadAttributes'] = {}
             #self.ListOfDevices[addr]['ReadAttributes']['Ep'] = {}
             #for iterEp in self.ListOfDevices[addr]['Ep']:
             #    self.ListOfDevices[addr]['ReadAttributes']['Ep'][iterEp] = {}
 
         if self.pluginconf.pluginConf['resetConfigureReporting']:
-            self.log.logging( "Database", "Log", "Reset ConfigureReporting data %s" %addr)
+            self.log.logging( "Database", 'Log', "Reset ConfigureReporting data %s" %addr)
             Modules.tools.reset_datastruct( self,'ConfigureReporting', addr )
-            self.pluginconf.pluginConf['resetConfigureReporting'] = False
             #self.ListOfDevices[addr]['ConfigureReporting'] = {}
             #self.ListOfDevices[addr]['ConfigureReporting']['Ep'] = {}
             #for iterEp in self.ListOfDevices[addr]['Ep']:
             #    self.ListOfDevices[addr]['ConfigureReporting']['Ep'][iterEp] = {}
 
+    if self.pluginconf.pluginConf['resetReadAttributes']:
+        self.pluginconf.pluginConf['resetReadAttributes'] = False
+        self.pluginconf.write_Settings()
+        
+    if self.pluginconf.pluginConf['resetConfigureReporting']:
+        self.pluginconf.pluginConf['resetConfigureReporting'] = False
+        self.pluginconf.write_Settings()
+
+            
     load_new_param_definition( self )
     self.log.logging( "Database", "Status", "%s Entries loaded from %s" %(len(self.ListOfDevices), _DeviceListFileName)  )
 
