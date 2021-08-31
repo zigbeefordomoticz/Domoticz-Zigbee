@@ -9,9 +9,10 @@ from Classes.Transport.sqnMgmt import sqn_get_internal_sqn_from_aps_sqn
 
 import time
 
-def decode8011( self, decoded_frame):
 
-    MsgData = decoded_frame[12:len(decoded_frame) - 4]
+def decode8011(self, decoded_frame):
+
+    MsgData = decoded_frame[12 : len(decoded_frame) - 4]
     if MsgData is None:
         return None
 
@@ -20,14 +21,13 @@ def decode8011( self, decoded_frame):
     MsgSrcEp = MsgData[6:8]
     MsgClusterId = MsgData[8:12]
 
-    MsgSEQ = '00'
+    MsgSEQ = "00"
     if len(MsgData) <= 12:
         return
 
     MsgSEQ = MsgData[12:14]
 
-
-    if MsgStatus == '00':
+    if MsgStatus == "00":
         self.statistics._APSAck += 1
 
     else:
@@ -41,31 +41,36 @@ def decode8011( self, decoded_frame):
     isqn = sqn_get_internal_sqn_from_aps_sqn(self, MsgSEQ)
 
     if isqn is None:
-        #self.logging_receive( 'Debug', "decode8011 - 0x8011 not for us NwkId: %s eSqn: %s" %(MsgSrcAddr, MsgSEQ))
+        # self.logging_receive( 'Debug', "decode8011 - 0x8011 not for us NwkId: %s eSqn: %s" %(MsgSrcAddr, MsgSEQ))
         return
 
     if isqn not in self.ListOfCommands:
-        #self.logging_receive( 'Debug', "decode8011 - 0x8011 not for us Nwkid: %s eSqn: %s iSqn: %s" %(MsgSrcAddr, MsgSEQ, isqn))
+        # self.logging_receive( 'Debug', "decode8011 - 0x8011 not for us Nwkid: %s eSqn: %s iSqn: %s" %(MsgSrcAddr, MsgSEQ, isqn))
         return
-    
-    self.ListOfCommands[ isqn ]['Status'] = '8011'
-    report_timing_8011( self , isqn )    
-    print_listofcommands( self, isqn )
 
-    release_command( self, isqn)
+    self.ListOfCommands[isqn]["Status"] = "8011"
+    report_timing_8011(self, isqn)
+    print_listofcommands(self, isqn)
 
-def report_timing_8011( self , isqn ):
+    release_command(self, isqn)
+
+
+def report_timing_8011(self, isqn):
     # Statistics on ZiGate reacting time to process the command
-    if self.pluginconf.pluginConf['ZiGateReactTime']:
+    if self.pluginconf.pluginConf["ZiGateReactTime"]:
         timing = 0
-        if ( isqn in self.ListOfCommands and 'TimeStamp' in self.ListOfCommands[isqn] ):
-            TimeStamp = self.ListOfCommands[ isqn ]['TimeStamp']
-            timing = int( ( time.time() - TimeStamp ) * 1000 )
-            self.statistics.add_timing8011( timing )
+        if isqn in self.ListOfCommands and "TimeStamp" in self.ListOfCommands[isqn]:
+            TimeStamp = self.ListOfCommands[isqn]["TimeStamp"]
+            timing = int((time.time() - TimeStamp) * 1000)
+            self.statistics.add_timing8011(timing)
         if self.statistics._averageTiming8011 != 0 and timing >= (3 * self.statistics._averageTiming8011):
-            self.logging_send('Log', "Zigate round trip 0x8011 time seems long. %s ms for %s %s SendingQueue: %s" 
-                %( timing , 
-                self.ListOfCommands[isqn]['cmd'], 
-                self.ListOfCommands[isqn]['datas'], 
-                self.loadTransmit(), 
-                ))
+            self.logging_send(
+                "Log",
+                "Zigate round trip 0x8011 time seems long. %s ms for %s %s SendingQueue: %s"
+                % (
+                    timing,
+                    self.ListOfCommands[isqn]["cmd"],
+                    self.ListOfCommands[isqn]["datas"],
+                    self.loadTransmit(),
+                ),
+            )

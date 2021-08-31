@@ -36,30 +36,27 @@ set/Get tx value  |  Mapped value (dBM)
 
 """
 
-POWER_LEVEL = { 0:00, # Max (Default)
-                1:52, # 
-                2:40, #
-                3:32# Min
-              }
+POWER_LEVEL = {0: 00, 1: 52, 2: 40, 3: 32}  # Max (Default)  #  #  # Min
 
-def set_TxPower( self, powerlevel):
+
+def set_TxPower(self, powerlevel):
 
     if powerlevel not in POWER_LEVEL:
         powerlevel = 0
 
     setValue = POWER_LEVEL[powerlevel]
 
-    attr_tx_power = '%02x' %setValue
+    attr_tx_power = "%02x" % setValue
     sendZigateCmd(self, "0806", attr_tx_power)
 
 
-def get_TxPower( self ):
+def get_TxPower(self):
 
     """
-    Command 0x0807 Get Tx Power doesn't need any parameters. 
+    Command 0x0807 Get Tx Power doesn't need any parameters.
     If command is handled successfully response will be first status(0x8000)
-    with success status and after that Get Tx Power Response(0x8807). 
-    0x8807 has only single parameter which is uint8 power. If 0x0807 fails 
+    with success status and after that Get Tx Power Response(0x8807).
+    0x8807 has only single parameter which is uint8 power. If 0x0807 fails
     then response is going to be only status(0x8000) with status 1.
     """
 
