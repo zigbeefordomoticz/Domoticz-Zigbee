@@ -14,159 +14,201 @@ import Domoticz
 
 from Modules.philips import philips_set_poweron_after_offon_device, philips_set_pir_occupancySensibility
 from Modules.enki import enki_set_poweron_after_offon_device
-from Modules.legrand_netatmo import legrand_enable_Led_Shutter_by_nwkid, legrand_enable_Led_IfOn_by_nwkid, legrand_enable_Led_InDark_by_nwkid, legrand_Dimmer_by_nwkid
-from Modules.basicOutputs import set_poweron_afteroffon, set_PIROccupiedToUnoccupiedDelay, ballast_Configuration_max_level, ballast_Configuration_min_level
+from Modules.legrand_netatmo import (
+    legrand_enable_Led_Shutter_by_nwkid,
+    legrand_enable_Led_IfOn_by_nwkid,
+    legrand_enable_Led_InDark_by_nwkid,
+    legrand_Dimmer_by_nwkid,
+)
+from Modules.basicOutputs import (
+    set_poweron_afteroffon,
+    set_PIROccupiedToUnoccupiedDelay,
+    ballast_Configuration_max_level,
+    ballast_Configuration_min_level,
+)
 from Modules.readAttributes import ReadAttributeRequest_0006_400x, ReadAttributeRequest_0406_0010
 from Modules.tuyaTRV import tuya_trv_thermostat_sensor_mode
-from Modules.tuya import tuya_switch_relay_status, tuya_switch_indicate_light, get_tuya_attribute, tuya_energy_childLock, tuya_window_cover_motor_reversal, tuya_backlight_command
+from Modules.tuya import (
+    tuya_switch_relay_status,
+    tuya_switch_indicate_light,
+    get_tuya_attribute,
+    tuya_energy_childLock,
+    tuya_window_cover_motor_reversal,
+    tuya_backlight_command,
+)
 from Modules.schneider_wiser import wiser_home_lockout_thermostat, iTRV_open_window_detection
 
-def Ballast_max_level( self, nwkid, max_level ):
-    ballast_Configuration_max_level( self, nwkid, max_level)
 
-def Ballast_min_level( self, nwkid, min_level):
-    ballast_Configuration_min_level( self, nwkid, min_level)
+def Ballast_max_level(self, nwkid, max_level):
+    ballast_Configuration_max_level(self, nwkid, max_level)
 
-def param_Occupancy_settings_PIROccupiedToUnoccupiedDelay( self, nwkid, delay):
+
+def Ballast_min_level(self, nwkid, min_level):
+    ballast_Configuration_min_level(self, nwkid, min_level)
+
+
+def param_Occupancy_settings_PIROccupiedToUnoccupiedDelay(self, nwkid, delay):
     # Based on Philips HUE
     # 0x00 default
-    # The PIROccupiedToUnoccupiedDelay attribute is 16 bits in length and 
-    # specifies the time delay, in seconds,before the PIR sensor changes to 
+    # The PIROccupiedToUnoccupiedDelay attribute is 16 bits in length and
+    # specifies the time delay, in seconds,before the PIR sensor changes to
     # its unoccupied state after the last detection of movement in the sensed area.
 
-    #Domoticz.Log("param_Occupancy_settings_PIROccupiedToUnoccupiedDelay %s -> delay: %s" %(nwkid, delay))
+    # Domoticz.Log("param_Occupancy_settings_PIROccupiedToUnoccupiedDelay %s -> delay: %s" %(nwkid, delay))
 
-    if self.ListOfDevices[ nwkid ]['Manufacturer'] == '100b' or self.ListOfDevices[ nwkid ]['Manufacturer Name'] == 'Philips': # Philips
-        if '02' not in self.ListOfDevices[ nwkid ]['Ep']:
+    if (
+        self.ListOfDevices[nwkid]["Manufacturer"] == "100b"
+        or self.ListOfDevices[nwkid]["Manufacturer Name"] == "Philips"
+    ):  # Philips
+        if "02" not in self.ListOfDevices[nwkid]["Ep"]:
             return
-        if '0406' not in self.ListOfDevices[ nwkid ]['Ep']['02']:
+        if "0406" not in self.ListOfDevices[nwkid]["Ep"]["02"]:
             return
-        if '0010' not in self.ListOfDevices[ nwkid ]['Ep']['02']['0406']:
-            set_PIROccupiedToUnoccupiedDelay( self, nwkid, delay)
+        if "0010" not in self.ListOfDevices[nwkid]["Ep"]["02"]["0406"]:
+            set_PIROccupiedToUnoccupiedDelay(self, nwkid, delay)
             ReadAttributeRequest_0406_0010(self, nwkid)
         else:
-            if int(self.ListOfDevices[ nwkid ]['Ep']['02']['0406']['0010'],16) != delay:
-                set_PIROccupiedToUnoccupiedDelay( self, nwkid, delay)
+            if int(self.ListOfDevices[nwkid]["Ep"]["02"]["0406"]["0010"], 16) != delay:
+                set_PIROccupiedToUnoccupiedDelay(self, nwkid, delay)
                 ReadAttributeRequest_0406_0010(self, nwkid)
-                
-    elif self.ListOfDevices[ nwkid ]['Manufacturer'] == '1015' or self.ListOfDevices[ nwkid ]['Manufacturer Name'] == 'frient A/S': # Frientd
-        #delay = 10 * delay # Tenth of seconds
-        for ep in [ '22', '28', '29']:
-            if ep == '28'  and 'PIROccupiedToUnoccupiedDelay_28' in self.ListOfDevices[ nwkid ]['Param']:
-                delay = int(self.ListOfDevices[ nwkid ]['Param']['PIROccupiedToUnoccupiedDelay_28'])
-            elif ep == '29' and 'PIROccupiedToUnoccupiedDelay_29' in self.ListOfDevices[ nwkid ]['Param']:
-                delay = int(self.ListOfDevices[ nwkid ]['Param']['PIROccupiedToUnoccupiedDelay_29'])
-            if ep not in self.ListOfDevices[ nwkid ]['Ep']:
+
+    elif (
+        self.ListOfDevices[nwkid]["Manufacturer"] == "1015"
+        or self.ListOfDevices[nwkid]["Manufacturer Name"] == "frient A/S"
+    ):  # Frientd
+        # delay = 10 * delay # Tenth of seconds
+        for ep in ["22", "28", "29"]:
+            if ep == "28" and "PIROccupiedToUnoccupiedDelay_28" in self.ListOfDevices[nwkid]["Param"]:
+                delay = int(self.ListOfDevices[nwkid]["Param"]["PIROccupiedToUnoccupiedDelay_28"])
+            elif ep == "29" and "PIROccupiedToUnoccupiedDelay_29" in self.ListOfDevices[nwkid]["Param"]:
+                delay = int(self.ListOfDevices[nwkid]["Param"]["PIROccupiedToUnoccupiedDelay_29"])
+            if ep not in self.ListOfDevices[nwkid]["Ep"]:
                 continue
-            if '0406' not in self.ListOfDevices[ nwkid ]['Ep'][ ep ]:
+            if "0406" not in self.ListOfDevices[nwkid]["Ep"][ep]:
                 continue
-            if '0010' not in self.ListOfDevices[ nwkid ]['Ep'][ ep ]['0406']:
-                set_PIROccupiedToUnoccupiedDelay( self, nwkid, delay, ListOfEp= [ ep ])
+            if "0010" not in self.ListOfDevices[nwkid]["Ep"][ep]["0406"]:
+                set_PIROccupiedToUnoccupiedDelay(self, nwkid, delay, ListOfEp=[ep])
             else:
-                if int(self.ListOfDevices[ nwkid ]['Ep'][ ep ]['0406']['0010'],16) != delay:
-                    set_PIROccupiedToUnoccupiedDelay( self, nwkid, delay, ListOfEp= [ ep ])
+                if int(self.ListOfDevices[nwkid]["Ep"][ep]["0406"]["0010"], 16) != delay:
+                    set_PIROccupiedToUnoccupiedDelay(self, nwkid, delay, ListOfEp=[ep])
         ReadAttributeRequest_0406_0010(self, nwkid)
     else:
         Domoticz.Log("=====> Unknown Manufacturer/Name")
+
 
 def param_PowerOnAfterOffOn(self, nwkid, mode):
     # 0 - stay Off after a Off/On
     # 1 - stay On after a Off/On
     # 255 - stay to previous state after a Off/On ( or 2 for BlitzWolf)
 
-    self.log.logging( "Heartbeat", 'Debug',"param_PowerOnAfterOffOn for %s mode: %s" %(nwkid, mode), nwkid)
-    if mode not in ( 0, 1, 2, 255 ):
+    self.log.logging("Heartbeat", "Debug", "param_PowerOnAfterOffOn for %s mode: %s" % (nwkid, mode), nwkid)
+    if mode not in (0, 1, 2, 255):
         return
 
-    if 'Manufacturer' not in self.ListOfDevices[ nwkid ]:
+    if "Manufacturer" not in self.ListOfDevices[nwkid]:
         return
 
-    if self.ListOfDevices[ nwkid ]['Manufacturer'] == '100b': # Philips
-        if '0b' not in self.ListOfDevices[ nwkid ]['Ep']:
+    if self.ListOfDevices[nwkid]["Manufacturer"] == "100b":  # Philips
+        if "0b" not in self.ListOfDevices[nwkid]["Ep"]:
             return
-        if '0006' not in self.ListOfDevices[ nwkid ]['Ep']['0b']:
+        if "0006" not in self.ListOfDevices[nwkid]["Ep"]["0b"]:
             return
-        if '4003' not in self.ListOfDevices[ nwkid ]['Ep']['0b']['0006']:
+        if "4003" not in self.ListOfDevices[nwkid]["Ep"]["0b"]["0006"]:
             return
-        if self.ListOfDevices[ nwkid ]['Ep']['0b']['0006']['4003'] != str(mode):
-            self.log.logging( "Heartbeat", 'Debug',"param_PowerOnAfterOffOn for Philips for %s mode: %s" %(nwkid, mode), nwkid)
-            philips_set_poweron_after_offon_device( self, mode, nwkid)
+        if self.ListOfDevices[nwkid]["Ep"]["0b"]["0006"]["4003"] != str(mode):
+            self.log.logging(
+                "Heartbeat", "Debug", "param_PowerOnAfterOffOn for Philips for %s mode: %s" % (nwkid, mode), nwkid
+            )
+            philips_set_poweron_after_offon_device(self, mode, nwkid)
             ReadAttributeRequest_0006_400x(self, nwkid)
 
-    elif 'Model' in self.ListOfDevices[ nwkid ] and self.ListOfDevices[ nwkid ]['Model'] in ( 'TS0121', 'TS0115'):
-        #Tuya ( 'TS0121' BlitzWolf )
-        if '01' not in self.ListOfDevices[ nwkid ]['Ep']:
+    elif "Model" in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]["Model"] in ("TS0121", "TS0115"):
+        # Tuya ( 'TS0121' BlitzWolf )
+        if "01" not in self.ListOfDevices[nwkid]["Ep"]:
             return
-        if '0006' not in self.ListOfDevices[ nwkid ]['Ep']['01']:
+        if "0006" not in self.ListOfDevices[nwkid]["Ep"]["01"]:
             return
-        if '8002' not in self.ListOfDevices[ nwkid ]['Ep']['01']['0006']:
+        if "8002" not in self.ListOfDevices[nwkid]["Ep"]["01"]["0006"]:
             return
 
-        if self.ListOfDevices[ nwkid ]['Ep']['01']['0006']['8002'] == '2' and str(mode) == '255':
+        if self.ListOfDevices[nwkid]["Ep"]["01"]["0006"]["8002"] == "2" and str(mode) == "255":
             return
-        if self.ListOfDevices[ nwkid ]['Ep']['01']['0006']['8002'] != str(mode):
-            self.log.logging( "Heartbeat", 'Debug',"param_PowerOnAfterOffOn for Tuya for %s mode: %s" %(nwkid, mode), nwkid)
-            set_poweron_afteroffon( self, nwkid, mode)
+        if self.ListOfDevices[nwkid]["Ep"]["01"]["0006"]["8002"] != str(mode):
+            self.log.logging(
+                "Heartbeat", "Debug", "param_PowerOnAfterOffOn for Tuya for %s mode: %s" % (nwkid, mode), nwkid
+            )
+            set_poweron_afteroffon(self, nwkid, mode)
             ReadAttributeRequest_0006_400x(self, nwkid)
 
-    elif self.ListOfDevices[ nwkid ]['Manufacturer'] == '1277': # Enki Leroy Merlin
-        if '01' not in self.ListOfDevices[ nwkid ]['Ep']:
+    elif self.ListOfDevices[nwkid]["Manufacturer"] == "1277":  # Enki Leroy Merlin
+        if "01" not in self.ListOfDevices[nwkid]["Ep"]:
             return
-        if '0006' not in self.ListOfDevices[ nwkid ]['Ep']['01']:
+        if "0006" not in self.ListOfDevices[nwkid]["Ep"]["01"]:
             return
-        if '4003' not in self.ListOfDevices[ nwkid ]['Ep']['01']['0006']:
+        if "4003" not in self.ListOfDevices[nwkid]["Ep"]["01"]["0006"]:
             return
-        if self.ListOfDevices[ nwkid ]['Ep']['01']['0006']['4003'] != str(mode):
-            self.log.logging( "Heartbeat", 'Debug',"param_PowerOnAfterOffOn for Enki for %s mode: %s" %(nwkid, mode), nwkid)
-            enki_set_poweron_after_offon_device( self, mode, nwkid)
+        if self.ListOfDevices[nwkid]["Ep"]["01"]["0006"]["4003"] != str(mode):
+            self.log.logging(
+                "Heartbeat", "Debug", "param_PowerOnAfterOffOn for Enki for %s mode: %s" % (nwkid, mode), nwkid
+            )
+            enki_set_poweron_after_offon_device(self, mode, nwkid)
             ReadAttributeRequest_0006_400x(self, nwkid)
 
-    elif 'Model' in self.ListOfDevices[ nwkid ] and self.ListOfDevices[ nwkid ]['Model'] in ( 'TS0601-switch', 'TS0601-2Gangs-switch', 'TS0601-Energy'):
-        if get_tuya_attribute( self, nwkid, 'RelayStatus') != mode:
-            tuya_switch_relay_status( self, nwkid, mode)
+    elif "Model" in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]["Model"] in (
+        "TS0601-switch",
+        "TS0601-2Gangs-switch",
+        "TS0601-Energy",
+    ):
+        if get_tuya_attribute(self, nwkid, "RelayStatus") != mode:
+            tuya_switch_relay_status(self, nwkid, mode)
 
     else:
-        # Ikea, Legrand, 
-        for ep in self.ListOfDevices[ nwkid ]['Ep']:
-            if '0006' not in self.ListOfDevices[ nwkid ]['Ep'][ ep ]:
+        # Ikea, Legrand,
+        for ep in self.ListOfDevices[nwkid]["Ep"]:
+            if "0006" not in self.ListOfDevices[nwkid]["Ep"][ep]:
                 continue
-            if '4003' in self.ListOfDevices[ nwkid ]['Ep'][ ep ]['0006'] and self.ListOfDevices[ nwkid ]['Ep'][ ep ]['0006']['4003'] == str(mode):
+            if "4003" in self.ListOfDevices[nwkid]["Ep"][ep]["0006"] and self.ListOfDevices[nwkid]["Ep"][ep]["0006"][
+                "4003"
+            ] == str(mode):
                 continue
-            elif '8002' in self.ListOfDevices[ nwkid ]['Ep'][ ep ]['0006'] and self.ListOfDevices[ nwkid ]['Ep'][ ep ]['0006']['8002'] == str(mode):
+            elif "8002" in self.ListOfDevices[nwkid]["Ep"][ep]["0006"] and self.ListOfDevices[nwkid]["Ep"][ep]["0006"][
+                "8002"
+            ] == str(mode):
                 continue
-            self.log.logging( "Heartbeat", 'Debug',"param_PowerOnAfterOffOn for %s mode: %s" %(nwkid, mode), nwkid)
-            set_poweron_afteroffon( self, nwkid, mode)
+            self.log.logging("Heartbeat", "Debug", "param_PowerOnAfterOffOn for %s mode: %s" % (nwkid, mode), nwkid)
+            set_poweron_afteroffon(self, nwkid, mode)
             ReadAttributeRequest_0006_400x(self, nwkid)
 
 
 DEVICE_PARAMETERS = {
-    'PowerOnAfterOffOn': param_PowerOnAfterOffOn,
-    'PIROccupiedToUnoccupiedDelay': param_Occupancy_settings_PIROccupiedToUnoccupiedDelay,
-    'occupancySensibility': philips_set_pir_occupancySensibility,
-    'netatmoLedIfOn': legrand_enable_Led_IfOn_by_nwkid,
-    'netatmoLedInDark': legrand_enable_Led_InDark_by_nwkid,
-    'netatmoLedShutter': legrand_enable_Led_Shutter_by_nwkid,
-    'netatmoEnableDimmer': legrand_Dimmer_by_nwkid,
-    'SensorMode': tuya_trv_thermostat_sensor_mode,
-    'LightIndicator': tuya_switch_indicate_light,
-    'TuyaEnergyChildLock': tuya_energy_childLock,
-    'BallastMaxLevel': Ballast_max_level,
-    'BallastMinLevel': Ballast_min_level,
-    'WiserLockThermostat': wiser_home_lockout_thermostat,
-    'WiseriTrvWindowOpen': iTRV_open_window_detection,
-    'TuyaMotoReversal': tuya_window_cover_motor_reversal,
-    'TuyaBackLight': tuya_backlight_command,
+    "PowerOnAfterOffOn": param_PowerOnAfterOffOn,
+    "PIROccupiedToUnoccupiedDelay": param_Occupancy_settings_PIROccupiedToUnoccupiedDelay,
+    "occupancySensibility": philips_set_pir_occupancySensibility,
+    "netatmoLedIfOn": legrand_enable_Led_IfOn_by_nwkid,
+    "netatmoLedInDark": legrand_enable_Led_InDark_by_nwkid,
+    "netatmoLedShutter": legrand_enable_Led_Shutter_by_nwkid,
+    "netatmoEnableDimmer": legrand_Dimmer_by_nwkid,
+    "SensorMode": tuya_trv_thermostat_sensor_mode,
+    "LightIndicator": tuya_switch_indicate_light,
+    "TuyaEnergyChildLock": tuya_energy_childLock,
+    "BallastMaxLevel": Ballast_max_level,
+    "BallastMinLevel": Ballast_min_level,
+    "WiserLockThermostat": wiser_home_lockout_thermostat,
+    "WiseriTrvWindowOpen": iTRV_open_window_detection,
+    "TuyaMotoReversal": tuya_window_cover_motor_reversal,
+    "TuyaBackLight": tuya_backlight_command,
 }
 
-def sanity_check_of_param( self, NwkId):
+
+def sanity_check_of_param(self, NwkId):
     # Domoticz.Log("sanity_check_of_param for %s" %NwkId)
-    
-    if 'Param' not in self.ListOfDevices[ NwkId ]:
+
+    if "Param" not in self.ListOfDevices[NwkId]:
         return
 
-    for param in self.ListOfDevices[ NwkId ]['Param']:
-        value = self.ListOfDevices[ NwkId ]['Param'][ param ]
+    for param in self.ListOfDevices[NwkId]["Param"]:
+        value = self.ListOfDevices[NwkId]["Param"][param]
         if param in DEVICE_PARAMETERS:
-            #Domoticz.Log("sanity_check_of_param - calling %s" %param)
-            func = DEVICE_PARAMETERS[ param ]
-            func( self, NwkId, value )
+            # Domoticz.Log("sanity_check_of_param - calling %s" %param)
+            func = DEVICE_PARAMETERS[param]
+            func(self, NwkId, value)

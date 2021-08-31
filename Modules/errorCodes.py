@@ -12,15 +12,15 @@
 
 
 ZIGATE_CODES = {
-    "00" : "Success",
-    "01" : "Incorrect Parameters",
-    "02" : "Unhandled Command",
-    "03" : "Command Failed",
-    "04" : "Busy",
-    "05" : "Stack Already Started",
-    "14" : "E_ZCL_ERR_ZBUFFER_FAIL",
-    "15" : "E_ZCL_ERR_ZTRANSMIT_FAIL"
-    } 
+    "00": "Success",
+    "01": "Incorrect Parameters",
+    "02": "Unhandled Command",
+    "03": "Command Failed",
+    "04": "Busy",
+    "05": "Stack Already Started",
+    "14": "E_ZCL_ERR_ZBUFFER_FAIL",
+    "15": "E_ZCL_ERR_ZTRANSMIT_FAIL",
+}
 
 APS_CODES = {
     "a0": "A transmit request failed since the ASDU is too large and fragmentation is not supported",
@@ -39,31 +39,31 @@ APS_CODES = {
     "ad": "An APSDE-DATA.request requesting security has resulted in an error during the corresponding security processing",
     "ae": "An APSME-BIND.request or APSME.ADDGROUP.request issued when the binding or group tables, respectively, were full.",
     "af": "An ASDU was received without any security.",
-    "b0": "An APSME-GET.request or APSMESET. request has been issued with an unknown attribute identifier."
-    }
+    "b0": "An APSME-GET.request or APSMESET. request has been issued with an unknown attribute identifier.",
+}
 
 NWK_CODES = {
-    "c1" : "An invalid or out-of-range parameter has been passed",
-    "c2" : "Request cannot be processed",
-    "c3" : "NLME-JOIN.request not permitted",
-    "c4" : "NLME-NETWORK-FORMATION.request failed",
-    "c5" : "NLME-DIRECT-JOIN.request failure - device already present",
-    "c6" : "NLME-SYNC.request has failed",
-    "c7" : "NLME-DIRECT-JOIN.request failure - no space in Router table",
-    "c8" : "NLME-LEAVE.request failure - device not in Neighbour table",
-    "c9" : "NLME-GET/SET.request unknown attribute identified",
-    "ca" : "NLME-JOIN.request detected no networks",
-    "cb" : "Reserved",
-    "cc" : "Security processing has failed on outgoing frame due to maximum frame counter",
-    "cd" : "Security processing has failed on outgoing frame due to no key",
-    "ce" : "Security processing has failed on outgoing frame due CCM",
-    "cf" : "Attempt at route discovery has failed due to lack of table space",
-    "d0" : "Attempt at route discovery has failed due to any reason except lack of table space",
-    "d1" : "NLDE-DATA.request has failed due to routing failure on sending device",
-    "d2" : "Broadcast or broadcast-mode multicast has failed as there is no room in BTT",
-    "d3" : "Unicast mode multi-cast frame was discarded pending route discovery",
-    "d4" : "Unicast frame does not have a route available but it is buffered for automatic resend"
-    }
+    "c1": "An invalid or out-of-range parameter has been passed",
+    "c2": "Request cannot be processed",
+    "c3": "NLME-JOIN.request not permitted",
+    "c4": "NLME-NETWORK-FORMATION.request failed",
+    "c5": "NLME-DIRECT-JOIN.request failure - device already present",
+    "c6": "NLME-SYNC.request has failed",
+    "c7": "NLME-DIRECT-JOIN.request failure - no space in Router table",
+    "c8": "NLME-LEAVE.request failure - device not in Neighbour table",
+    "c9": "NLME-GET/SET.request unknown attribute identified",
+    "ca": "NLME-JOIN.request detected no networks",
+    "cb": "Reserved",
+    "cc": "Security processing has failed on outgoing frame due to maximum frame counter",
+    "cd": "Security processing has failed on outgoing frame due to no key",
+    "ce": "Security processing has failed on outgoing frame due CCM",
+    "cf": "Attempt at route discovery has failed due to lack of table space",
+    "d0": "Attempt at route discovery has failed due to any reason except lack of table space",
+    "d1": "NLDE-DATA.request has failed due to routing failure on sending device",
+    "d2": "Broadcast or broadcast-mode multicast has failed as there is no room in BTT",
+    "d3": "Unicast mode multi-cast frame was discarded pending route discovery",
+    "d4": "Unicast frame does not have a route available but it is buffered for automatic resend",
+}
 
 MAC_CODES = {
     "e0": "Beacon loss after synchronisation request.",
@@ -86,8 +86,8 @@ MAC_CODES = {
     "f1": "No capacity to store transaction",
     "f2": "Receiver-enable request could not be executed, as in transmit state",
     "f3": "Appropriate key is not available in ACL",
-    "f4": "PIB Set/Get on unsupported attribute"
-    }
+    "f4": "PIB Set/Get on unsupported attribute",
+}
 
 ZCL_EXTENDED_ERROR_CODES = {
     "01": "Fatal error - retrying will cause the error again",
@@ -109,23 +109,24 @@ ZCL_EXTENDED_ERROR_CODES = {
     "88": "Simple descriptor does not exist for this endpoint/cluster",
     "89": "Bad parameter has been found while processing an APSDE request or response",
     "8a": "No routing table entries free",
-    "8b": "No Broadcast transaction table entries free"
+    "8b": "No Broadcast transaction table entries free",
 }
 
-def DisplayStatusCode( StatusCode ):
 
-    StatusMsg=""
+def DisplayStatusCode(StatusCode):
+
+    StatusMsg = ""
     if StatusCode in ZIGATE_CODES:
-        return "ZIGATE - [%s] %s" %(StatusCode,ZIGATE_CODES[StatusCode])
+        return "ZIGATE - [%s] %s" % (StatusCode, ZIGATE_CODES[StatusCode])
 
     elif StatusCode in APS_CODES:
-        return "APS - [%s] %s" %(StatusCode,APS_CODES[StatusCode])
+        return "APS - [%s] %s" % (StatusCode, APS_CODES[StatusCode])
 
     elif StatusCode in NWK_CODES:
-        return "NWK - [%s] %s" %(StatusCode,NWK_CODES[StatusCode])
+        return "NWK - [%s] %s" % (StatusCode, NWK_CODES[StatusCode])
 
     elif StatusCode in MAC_CODES:
-        return "MAC - [%s] %s" %(StatusCode,MAC_CODES[StatusCode])
+        return "MAC - [%s] %s" % (StatusCode, MAC_CODES[StatusCode])
 
     else:
-        return "Unknown code : %s" %StatusCode
+        return "Unknown code : %s" % StatusCode

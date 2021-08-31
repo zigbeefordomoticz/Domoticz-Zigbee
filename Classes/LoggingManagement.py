@@ -22,8 +22,7 @@ from logging.handlers import TimedRotatingFileHandler, RotatingFileHandler
 
 
 class LoggingManagement:
-    def __init__(
-        self, pluginconf, PluginHealth, HardwareID, ListOfDevices, permitTojoin):
+    def __init__(self, pluginconf, PluginHealth, HardwareID, ListOfDevices, permitTojoin):
         self._newError = False
         self.LogErrorHistory = {}
         self.pluginconf = pluginconf
@@ -52,14 +51,10 @@ class LoggingManagement:
         if (
             self.LogErrorHistory
             and self.LogErrorHistory["LastLog"]
-            and "StartTime"
-            in self.LogErrorHistory[str(self.LogErrorHistory["LastLog"])]
-            and self.LogErrorHistory[str(self.LogErrorHistory["LastLog"])]["StartTime"]
-            == self._startTime
+            and "StartTime" in self.LogErrorHistory[str(self.LogErrorHistory["LastLog"])]
+            and self.LogErrorHistory[str(self.LogErrorHistory["LastLog"])]["StartTime"] == self._startTime
         ):
-            self.LogErrorHistory[str(self.LogErrorHistory["LastLog"])][
-                "PluginVersion"
-            ] = Version
+            self.LogErrorHistory[str(self.LogErrorHistory["LastLog"])]["PluginVersion"] = Version
 
     def loggingUpdateFirmware(self, FirmwareVersion, FirmwareMajorVersion):
         if self.FirmwareVersion and self.FirmwareMajorVersion:
@@ -69,33 +64,24 @@ class LoggingManagement:
         if (
             self.LogErrorHistory
             and self.LogErrorHistory["LastLog"]
-            and "StartTime"
-            in self.LogErrorHistory[str(self.LogErrorHistory["LastLog"])]
-            and self.LogErrorHistory[str(self.LogErrorHistory["LastLog"])]["StartTime"]
-            == self._startTime
+            and "StartTime" in self.LogErrorHistory[str(self.LogErrorHistory["LastLog"])]
+            and self.LogErrorHistory[str(self.LogErrorHistory["LastLog"])]["StartTime"] == self._startTime
         ):
-            self.LogErrorHistory[str(self.LogErrorHistory["LastLog"])][
-                "FirmwareVersion"
-            ] = FirmwareVersion
-            self.LogErrorHistory[str(self.LogErrorHistory["LastLog"])][
-                "FirmwareMajorVersion"
-            ] = FirmwareMajorVersion
+            self.LogErrorHistory[str(self.LogErrorHistory["LastLog"])]["FirmwareVersion"] = FirmwareVersion
+            self.LogErrorHistory[str(self.LogErrorHistory["LastLog"])]["FirmwareMajorVersion"] = FirmwareMajorVersion
 
     def openLogFile(self):
 
         if self.pluginconf.pluginConf["enablePluginLogging"]:
             logfilename = (
-                self.pluginconf.pluginConf["pluginLogs"]
-                + "/PluginZigate_"
-                + "%02d" % self.HardwareID
-                + ".log"
+                self.pluginconf.pluginConf["pluginLogs"] + "/PluginZigate_" + "%02d" % self.HardwareID + ".log"
             )
-            _backupCount = 7 # Keep 7 days of Logging
+            _backupCount = 7  # Keep 7 days of Logging
             _maxBytes = 0
-            if 'loggingBackupCount' in self.pluginconf.pluginConf:
-                _backupCount = int(self.pluginconf.pluginConf['loggingBackupCount'])
-            if 'loggingMaxMegaBytes' in self.pluginconf.pluginConf:
-                _maxBytes = int(self.pluginconf.pluginConf['loggingBackupCount']) * 1024 * 1024
+            if "loggingBackupCount" in self.pluginconf.pluginConf:
+                _backupCount = int(self.pluginconf.pluginConf["loggingBackupCount"])
+            if "loggingMaxMegaBytes" in self.pluginconf.pluginConf:
+                _maxBytes = int(self.pluginconf.pluginConf["loggingBackupCount"]) * 1024 * 1024
 
             if _maxBytes == 0:
                 # Enable TimedRotating
@@ -103,28 +89,18 @@ class LoggingManagement:
                     level=logging.DEBUG,
                     format="%(asctime)s %(levelname)-8s:%(message)s",
                     handlers=[
-                        TimedRotatingFileHandler(
-                            logfilename, when="midnight", interval=1, backupCount=_backupCount
-                        )
+                        TimedRotatingFileHandler(logfilename, when="midnight", interval=1, backupCount=_backupCount)
                     ],
                 )
             else:
                 # Enable RotatingFileHandler
                 logging.basicConfig(
-                level=logging.DEBUG,
-                format="%(asctime)s %(levelname)-8s:%(message)s",
-                handlers=[
-                    RotatingFileHandler(
-                        logfilename,  maxBytes=_maxBytes, backupCount=_backupCount
-                    )
-                ],
-                )           
+                    level=logging.DEBUG,
+                    format="%(asctime)s %(levelname)-8s:%(message)s",
+                    handlers=[RotatingFileHandler(logfilename, maxBytes=_maxBytes, backupCount=_backupCount)],
+                )
 
-        jsonLogHistory = (
-            self.pluginconf.pluginConf["pluginLogs"]
-            + "/"
-            + "Zigate_log_error_history.json"
-        )
+        jsonLogHistory = self.pluginconf.pluginConf["pluginLogs"] + "/" + "Zigate_log_error_history.json"
         try:
             handle = open(jsonLogHistory, "r", encoding="utf-8")
         except Exception as e:
@@ -140,16 +116,11 @@ class LoggingManagement:
 
         except json.decoder.JSONDecodeError as e:
             self.loggingWriteErrorHistory()  # flush the file to avoid the error next startup
-            Domoticz.Error(
-                "load Json LogErrorHistory poorly-formed %s, not JSON: %s"
-                % (jsonLogHistory, e)
-            )
+            Domoticz.Error("load Json LogErrorHistory poorly-formed %s, not JSON: %s" % (jsonLogHistory, e))
 
         except Exception as e:
             self.loggingWriteErrorHistory()  # flush the file to avoid the error next startup
-            Domoticz.Error(
-                "load Json LogErrorHistory Error %s, not JSON: %s" % (jsonLogHistory, e)
-            )
+            Domoticz.Error("load Json LogErrorHistory Error %s, not JSON: %s" % (jsonLogHistory, e))
         handle.close()
 
     def closeLogFile(self):
@@ -179,15 +150,12 @@ class LoggingManagement:
         if len(self.LogErrorHistory) > 1:
             idx = list(self.LogErrorHistory.keys())[1]
             if "Time" in self.LogErrorHistory[str(idx)]:
-                if (
-                    time.time() - self.LogErrorHistory[str(idx)]["Time"] > 1360800
-                ):  # 7 days for old structure
+                if time.time() - self.LogErrorHistory[str(idx)]["Time"] > 1360800:  # 7 days for old structure
                     self.LogErrorHistory.pop(idx)
             elif len(self.LogErrorHistory[str(idx)]) > 4:
                 idx2 = list(self.LogErrorHistory[str(idx)].keys())[4]
                 if "Time" in self.LogErrorHistory[str(idx)][str(idx2)] and (
-                    time.time() - self.LogErrorHistory[str(idx)][str(idx2)]["Time"]
-                    > 1360800
+                    time.time() - self.LogErrorHistory[str(idx)][str(idx2)]["Time"] > 1360800
                 ):  # 7 days
                     self.LogErrorHistory[idx].pop(idx2)
             else:
@@ -285,9 +253,7 @@ def loggingError(self, thread_name, module, message, nwkid, context):
             "PluginVersion": self.PluginVersion,
         }
 
-        self.LogErrorHistory["0"]["0"] = loggingBuildContext(
-            self, thread_name, module, message, nwkid, context
-        )
+        self.LogErrorHistory["0"]["0"] = loggingBuildContext(self, thread_name, module, message, nwkid, context)
         loggingWriteErrorHistory(self)
         return  # log created, leaving
 
@@ -308,18 +274,14 @@ def loggingError(self, thread_name, module, message, nwkid, context):
         self.LogErrorHistory[str(index)]["FirmwareVersion"] = self.FirmwareVersion
         self.LogErrorHistory[str(index)]["FirmwareMajorVersion"] = self.FirmwareMajorVersion
         self.LogErrorHistory[str(index)]["PluginVersion"] = (self.PluginVersion,)
-        self.LogErrorHistory[str(index)]["0"] = loggingBuildContext(
-            self, thread_name, module, message, nwkid, context
-        )
+        self.LogErrorHistory[str(index)]["0"] = loggingBuildContext(self, thread_name, module, message, nwkid, context)
     else:
         self.LogErrorHistory[str(index)]["LastLog"] += 1
-        self.LogErrorHistory[str(index)][
-            str(self.LogErrorHistory[str(index)]["LastLog"])
-        ] = loggingBuildContext(self, thread_name, module, message, nwkid, context)
+        self.LogErrorHistory[str(index)][str(self.LogErrorHistory[str(index)]["LastLog"])] = loggingBuildContext(
+            self, thread_name, module, message, nwkid, context
+        )
 
-        if (
-            len(self.LogErrorHistory[str(index)]) > 20 + 4
-        ):  # log full for this launch time, remove oldest
+        if len(self.LogErrorHistory[str(index)]) > 20 + 4:  # log full for this launch time, remove oldest
             idx = list(self.LogErrorHistory[str(index)].keys())[4]
             self.LogErrorHistory[str(index)].pop(idx)
 
@@ -358,26 +320,19 @@ def loggingBuildContext(self, thread_name, module, message, nwkid, context):
 
 
 def loggingWriteErrorHistory(self):
-    jsonLogHistory = (
-        self.pluginconf.pluginConf["pluginLogs"] + "/" + "Zigate_log_error_history.json"
-    )
+    jsonLogHistory = self.pluginconf.pluginConf["pluginLogs"] + "/" + "Zigate_log_error_history.json"
     with open(jsonLogHistory, "w", encoding="utf-8") as json_file:
         try:
             json.dump(dict(self.LogErrorHistory), json_file)
             json_file.write("\n")
         except Exception as e:
-            Domoticz.Error(
-                "Hops ! Unable to write LogErrorHistory error: %s log: %s"
-                % (e, self.LogErrorHistory)
-            )
+            Domoticz.Error("Hops ! Unable to write LogErrorHistory error: %s log: %s" % (e, self.LogErrorHistory))
 
 
 def start_logging_thread(self):
     Domoticz.Log("start_logging_thread")
     if self.logging_thread:
-        Domoticz.Error(
-            "start_logging_thread - Looks like logging_thread already started !!!"
-        )
+        Domoticz.Error("start_logging_thread - Looks like logging_thread already started !!!")
         return
 
     self.logging_queue = PriorityQueue()
@@ -413,12 +368,8 @@ def logging_thread(self):
             try:
                 context = eval(context)
             except:
-                Domoticz.Error(
-                    "Something went wrong and catch: context: %s" % str(context)
-                )
-                Domoticz.Error(
-                    "logging_thread unexpected tupple %s" % (str(logging_tupple))
-                )
+                Domoticz.Error("Something went wrong and catch: context: %s" % str(context))
+                Domoticz.Error("logging_thread unexpected tupple %s" % (str(logging_tupple)))
                 return
             if logType == "Error":
                 loggingError(self, thread_name, module, message, nwkid, context)
@@ -428,14 +379,10 @@ def logging_thread(self):
                     if self.pluginconf.pluginConf[pluginConfModule]:
                         _logginfilter(self, thread_name, message, nwkid)
                 else:
-                    Domoticz.Error(
-                        "%s debug module unknown %s" % (pluginConfModule, module)
-                    )
+                    Domoticz.Error("%s debug module unknown %s" % (pluginConfModule, module))
                     _loggingDebug(self, thread_name, message)
             else:
                 loggingDirector(self, thread_name, logType, message)
         else:
-            Domoticz.Error(
-                "logging_thread unexpected tupple %s" % (str(logging_tupple))
-            )
+            Domoticz.Error("logging_thread unexpected tupple %s" % (str(logging_tupple)))
     Domoticz.Log("logging_thread - ended")
