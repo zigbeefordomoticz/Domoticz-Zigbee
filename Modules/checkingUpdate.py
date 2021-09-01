@@ -76,7 +76,7 @@ def checkPluginUpdate(currentVersion, availVersion):
     if availMaj > currentMaj:
         # Domoticz.Debug("checkPluginVersion - Upgrade available: %s" %availVersion)
         return True
-    elif availMaj == currentMaj:
+    if availMaj == currentMaj:
         if availMin == currentMin and availUpd > currentUpd or availMin > currentMin:
             # Domoticz.Debug("checkPluginVersion - Upgrade available: %s" %availVersion)
             return True

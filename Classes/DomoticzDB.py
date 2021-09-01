@@ -347,11 +347,10 @@ class DomoticzDB_DeviceStatus:
                 if value is None:
                     self.closeDB()
                     return 0
-                else:
-                    self.AdjValue["TimeOutMotion"][ID]["Value"] = value[0]
-                    self.AdjValue["TimeOutMotion"][ID]["Stamp"] = int(time())
-                    self.closeDB()
-                    return value[0]
+                self.AdjValue["TimeOutMotion"][ID]["Value"] = value[0]
+                self.AdjValue["TimeOutMotion"][ID]["Stamp"] = int(time())
+                self.closeDB()
+                return value[0]
 
             except sqlite3.Error as e:
                 Domoticz.Error("retreiveTimeOut_Motion - Database error: %s" % e)
