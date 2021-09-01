@@ -330,8 +330,6 @@ def Cluster0000(
             decodeAttribute(self, MsgAttType, MsgClusterData)
         )
         self.ListOfDevices[MsgSrcAddr]["ZCL Version"] = str(decodeAttribute(self, MsgAttType, MsgClusterData))
-        if self.pluginconf.pluginConf["capturePairingInfos"] and MsgSrcAddr in self.DiscoveryDevices:
-            self.DiscoveryDevices[MsgSrcAddr]["ZCL_Version"] = str(decodeAttribute(self, MsgAttType, MsgClusterData))
 
     elif MsgAttrID == "0001":  # Application Version
         self.log.logging(
@@ -344,8 +342,6 @@ def Cluster0000(
             decodeAttribute(self, MsgAttType, MsgClusterData)
         )
         self.ListOfDevices[MsgSrcAddr]["App Version"] = str(decodeAttribute(self, MsgAttType, MsgClusterData))
-        if self.pluginconf.pluginConf["capturePairingInfos"] and MsgSrcAddr in self.DiscoveryDevices:
-            self.DiscoveryDevices[MsgSrcAddr]["App_Version"] = str(decodeAttribute(self, MsgAttType, MsgClusterData))
 
     elif MsgAttrID == "0002":  # Stack Version
         self.log.logging(
@@ -358,8 +354,6 @@ def Cluster0000(
             decodeAttribute(self, MsgAttType, MsgClusterData)
         )
         self.ListOfDevices[MsgSrcAddr]["Stack Version"] = str(decodeAttribute(self, MsgAttType, MsgClusterData))
-        if self.pluginconf.pluginConf["capturePairingInfos"] and MsgSrcAddr in self.DiscoveryDevices:
-            self.DiscoveryDevices[MsgSrcAddr]["Stack_Version"] = str(decodeAttribute(self, MsgAttType, MsgClusterData))
 
     elif MsgAttrID == "0003":  # Hardware version
         self.log.logging(
@@ -372,8 +366,6 @@ def Cluster0000(
             decodeAttribute(self, MsgAttType, MsgClusterData)
         )
         self.ListOfDevices[MsgSrcAddr]["HW Version"] = str(decodeAttribute(self, MsgAttType, MsgClusterData))
-        if self.pluginconf.pluginConf["capturePairingInfos"] and MsgSrcAddr in self.DiscoveryDevices:
-            self.DiscoveryDevices[MsgSrcAddr]["HW_Version"] = str(decodeAttribute(self, MsgAttType, MsgClusterData))
 
     elif MsgAttrID == "0004":  # Manufacturer
         # Check if we have a Null caracter
@@ -395,8 +387,6 @@ def Cluster0000(
             if _manufcode == "Schneider Electric":
                 self.ListOfDevices[MsgSrcAddr]["Manufacturer"] = "105e"
 
-        if self.pluginconf.pluginConf["capturePairingInfos"] and MsgSrcAddr in self.DiscoveryDevices:
-            self.DiscoveryDevices[MsgSrcAddr]["Manufacturer"] = str(decodeAttribute(self, MsgAttType, MsgClusterData))
 
     elif MsgAttrID == "0005" and MsgClusterData != "":  # We receive a Model Name
         # Remove Null Char
@@ -714,10 +704,6 @@ def Cluster0000(
                 MsgSrcAddr,
             )
 
-        if self.pluginconf.pluginConf["capturePairingInfos"]:
-            if MsgSrcAddr not in self.DiscoveryDevices:
-                self.DiscoveryDevices[MsgSrcAddr] = {}
-            self.DiscoveryDevices[MsgSrcAddr]["Model"] = modelName
 
     elif MsgAttrID == "0006":  # CLD_BAS_ATTR_DATE_CODE
         # 20151006091b090
@@ -737,8 +723,6 @@ def Cluster0000(
             decodeAttribute(self, MsgAttType, MsgClusterData)
         )
         # 0x03 stand for Battery
-        if self.pluginconf.pluginConf["capturePairingInfos"] and MsgSrcAddr in self.DiscoveryDevices:
-            self.DiscoveryDevices[MsgSrcAddr]["PowerSource"] = str(decodeAttribute(self, MsgAttType, MsgClusterData))
 
     elif MsgAttrID == "0008":  #
         self.log.logging(
@@ -849,8 +833,6 @@ def Cluster0000(
             "ReadCluster - 0x0000 - Attribut 0016 : %s" % str(decodeAttribute(self, MsgAttType, MsgClusterData)),
             MsgSrcAddr,
         )
-        if self.pluginconf.pluginConf["capturePairingInfos"] and MsgSrcAddr in self.DiscoveryDevices:
-            self.DiscoveryDevices[MsgSrcAddr]["Battery"] = str(decodeAttribute(self, MsgAttType, MsgClusterData))
         self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId][MsgAttrID] = str(
             decodeAttribute(self, MsgAttType, MsgClusterData)
         )
@@ -3417,16 +3399,10 @@ def Cluster0300(
     if MsgAttrID == "0000":  # CurrentHue
         self.ListOfDevices[MsgSrcAddr]["ColorInfos"]["Hue"] = value
         self.log.logging("Cluster", "Debug", "ReadCluster0300 - CurrentHue: %s" % value, MsgSrcAddr)
-        if self.pluginconf.pluginConf["capturePairingInfos"] == 1 and MsgSrcAddr in self.DiscoveryDevices:
-            self.DiscoveryDevices[MsgSrcAddr]["ColorInfos-Hue"] = str(decodeAttribute(self, MsgAttType, MsgClusterData))
 
     elif MsgAttrID == "0001":  # CurrentSaturation
         self.ListOfDevices[MsgSrcAddr]["ColorInfos"]["Saturation"] = value
         self.log.logging("Cluster", "Debug", "ReadCluster0300 - CurrentSaturation: %s" % value, MsgSrcAddr)
-        if self.pluginconf.pluginConf["capturePairingInfos"] == 1 and MsgSrcAddr in self.DiscoveryDevices:
-            self.DiscoveryDevices[MsgSrcAddr]["ColorInfos-Saturation"] = str(
-                decodeAttribute(self, MsgAttType, MsgClusterData)
-            )
 
     elif MsgAttrID == "0002":
         self.log.logging(
@@ -3436,22 +3412,14 @@ def Cluster0300(
     elif MsgAttrID == "0003":  # CurrentX
         self.ListOfDevices[MsgSrcAddr]["ColorInfos"]["X"] = value
         self.log.logging("Cluster", "Debug", "ReadCluster0300 - CurrentX: %s" % value, MsgSrcAddr)
-        if self.pluginconf.pluginConf["capturePairingInfos"] == 1 and MsgSrcAddr in self.DiscoveryDevices:
-            self.DiscoveryDevices[MsgSrcAddr]["ColorInfos-X"] = str(decodeAttribute(self, MsgAttType, MsgClusterData))
 
     elif MsgAttrID == "0004":  # CurrentY
         self.ListOfDevices[MsgSrcAddr]["ColorInfos"]["Y"] = value
         self.log.logging("Cluster", "Debug", "ReadCluster0300 - CurrentY: %s" % value, MsgSrcAddr)
-        if self.pluginconf.pluginConf["capturePairingInfos"] == 1 and MsgSrcAddr in self.DiscoveryDevices:
-            self.DiscoveryDevices[MsgSrcAddr]["ColorInfos-Y"] = str(decodeAttribute(self, MsgAttType, MsgClusterData))
 
     elif MsgAttrID == "0007":  # ColorTemperatureMireds
         self.ListOfDevices[MsgSrcAddr]["ColorInfos"]["ColorTemperatureMireds"] = value
         self.log.logging("Cluster", "Debug", "ReadCluster0300 - ColorTemperatureMireds: %s" % value, MsgSrcAddr)
-        if self.pluginconf.pluginConf["capturePairingInfos"] == 1 and MsgSrcAddr in self.DiscoveryDevices:
-            self.DiscoveryDevices[MsgSrcAddr]["ColorInfos-ColorTemperatureMireds"] = str(
-                decodeAttribute(self, MsgAttType, MsgClusterData)
-            )
 
     elif MsgAttrID == "0008":  # Color Mode
         COLOR_MODE = {
@@ -3468,10 +3436,6 @@ def Cluster0300(
             MsgSrcAddr,
         )
         self.ListOfDevices[MsgSrcAddr]["ColorInfos"]["ColorMode"] = value
-        if self.pluginconf.pluginConf["capturePairingInfos"] == 1 and MsgSrcAddr in self.DiscoveryDevices:
-            self.DiscoveryDevices[MsgSrcAddr]["ColorInfos-ColorMode"] = str(
-                decodeAttribute(self, MsgAttType, MsgClusterData)
-            )
 
     elif MsgAttrID == "400a":  # ColorCapabilities
         if value == 0:  # Hue/Saturation supported

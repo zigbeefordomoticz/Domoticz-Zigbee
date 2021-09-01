@@ -426,8 +426,6 @@ class BasePlugin:
         self.DeviceListName = "DeviceList-" + str(Parameters["HardwareID"]) + ".txt"
         self.log.logging("Plugin", "Log", "Plugin Database: %s" % self.DeviceListName)
 
-        if self.pluginconf.pluginConf["capturePairingInfos"] == 1:
-            self.DiscoveryDevices = {}
 
         # Import Certified Device Configuration
         importDeviceConfV2(self)
