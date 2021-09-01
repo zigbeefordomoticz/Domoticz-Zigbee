@@ -16,6 +16,7 @@ from Modules.tools import (
 from Modules.domoTools import lastSeenUpdate, timedOutDevice
 from Modules.readAttributes import ReadAttributeRequest_0000, ReadAttributeRequest_0001, READ_ATTRIBUTES_REQUEST
 from Modules.bindings import rebind_Clusters, reWebBind_Clusters
+from Modules.pairingProcess import zigbee_provision_device
 from Modules.schneider_wiser import schneider_wiser_registration, schneiderReadRawAPS, PREFIX_MACADDR_WIZER_LEGACY
 from Modules.basicOutputs import sendZigateCmd
 from Modules.livolo import livolo_bind
@@ -228,7 +229,7 @@ def decode004d_existing_devicev2(self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgL
 
     reseted_device = False
     if NwkId in self.ListOfDevices and 'Status' in self.ListOfDevices[ NwkId ] and self.ListOfDevices[ NwkId ][ "Status" ] == "erasePDM":
-        self.ListOfDevices[ NwkId ][ "Status" ] = "inDB"
+
         if 'Bind' in self.ListOfDevices[ NwkId ]:
             del self.ListOfDevices[ NwkId ]["Bind"]
         if 'ConfigureReporting' in self.ListOfDevices[ NwkId ]:
@@ -241,7 +242,8 @@ def decode004d_existing_devicev2(self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgL
             del self.ListOfDevices[ NwkId ]["IAS"]
         if 'WriteAttributes' in self.ListOfDevices[ NwkId ]:
             del self.ListOfDevices[ NwkId ]["WriteAttributes"]
-        reseted_device = True
+
+        self.ListOfDevices[ NwkId ][ "Status" ] = "inDB"
 
     timeStamped(self, NwkId, 0x004D)
     lastSeenUpdate(self, Devices, NwkId=NwkId)
@@ -251,94 +253,12 @@ def decode004d_existing_devicev2(self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgL
     # Reset the device Hearbeat, This should allow to trigger Read Request
     self.ListOfDevices[NwkId]["Heartbeat"] = 0
 
-    for tmpep in list(self.ListOfDevices[NwkId]["Ep"].keys()):
-        if "0500" in self.ListOfDevices[NwkId]["Ep"][tmpep]:
-            # We found a Cluster 0x0500 IAS. May be time to start the IAS Zone process
-            self.log.logging(
-                "Input",
-                "Debug",
-                "Decode004D - IAS Zone controler setting %s" % (NwkId),
-                NwkId,
-            )
-            self.iaszonemgt.IASZone_triggerenrollement(NwkId, tmpep)
-            if "0502" in self.ListOfDevices[NwkId]["Ep"][tmpep]:
-                self.log.logging("Input", "Debug", "Decode004D - IAS WD enrolment %s" % (NwkId), NwkId)
-                self.iaszonemgt.IASWD_enroll(NwkId, tmpep)
-            break
+    zigbee_provision_device(self, Devices, NwkId, 0, 'inDB')
 
-    if reseted_device or self.pluginconf.pluginConf["allowReBindingClusters"]:
-        self.log.logging(
-            "Input",
-            "Debug",
-            "Decode004D - Request rebind clusters for %s" % (NwkId),
-            NwkId,
-        )
-        rebind_Clusters(self, NwkId)
-        reWebBind_Clusters(self, NwkId)
-
-    if self.ListOfDevices[NwkId]["Model"] in (
-        "lumi.remote.b686opcn01",
-        "lumi.remote.b486opcn01",
-        "lumi.remote.b286opcn01",
-        "lumi.remote.b686opcn01-bulb",
-        "lumi.remote.b486opcn01-bulb",
-        "lumi.remote.b286opcn01-bulb",
-    ):
-        self.log.logging("Input", "Log", "---> Calling enableOppleSwitch %s" % NwkId, NwkId)
-        enableOppleSwitch(self, NwkId)
-
-    if self.ListOfDevices[NwkId]["Model"] in ("TS0601-sirene"):
-        tuya_sirene_registration(self, NwkId)
-    # elif self.ListOfDevices[NwkId]["Model"] in ( 'TS0601-eTRV'):
-    #    tuya_eTRV_registration( self, NwkId)
-
-    # As we are redo bind, we need to redo the Configure Reporting
-    if "ConfigureReporting" in self.ListOfDevices[NwkId]:
-        del self.ListOfDevices[NwkId]["ConfigureReporting"]
-
-    processConfigureReporting(self, NWKID=NwkId)
-
-    # Let's take the opportunity to trigger some request/adjustement / NOT SURE IF THIS IS GOOD/IMPORTANT/NEEDED
-    self.log.logging("Input", "Debug", "Decode004D - Request attribute 0x0000 %s" % (NwkId), NwkId)
-    ReadAttributeRequest_0000(self, NwkId)
-
-    # 3 Read attributes
-    for iterEp in self.ListOfDevices[NwkId]["Ep"]:
-        # Let's scan each Endpoint cluster and check if there is anything to read
-        for iterReadAttrCluster in CLUSTERS_LIST:
-            if iterReadAttrCluster not in self.ListOfDevices[NwkId]["Ep"][iterEp]:
-                continue
-            if iterReadAttrCluster not in READ_ATTRIBUTES_REQUEST:
-                continue
-            if iterReadAttrCluster == "0500":
-                # Skip IAS as it is address by IAS Enrollment
-                continue
-            func = READ_ATTRIBUTES_REQUEST[iterReadAttrCluster][0]
-            func(self, NwkId)
-
-    sendZigateCmd(self, "0042", str(NwkId), ackIsDisabled=True)
-
-    # Let's check if this is a Schneider Wiser
-    if MsgIEEE[0 : len(PREFIX_MACADDR_WIZER_LEGACY)] == PREFIX_MACADDR_WIZER_LEGACY:
-        if "Manufacturer" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Manufacturer"] == "105e":
-            schneider_wiser_registration(self, Devices, NwkId)
-
-    if "Model" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Model"] in ("AC201A",):
-        casaia_AC201_pairing(self, NwkId)
-
-    # Set the sensitivity for Xiaomi Vibration
-    if self.ListOfDevices[NwkId]["Model"] == "lumi.vibration.aq1":
-        Domoticz.Status(
-            "decode004d_existing_devicev2 - set viration Aqara %s sensitivity to %s"
-            % (NwkId, self.pluginconf.pluginConf["vibrationAqarasensitivity"])
-        )
-        setXiaomiVibrationSensitivity(
-            self,
-            NwkId,
-            sensitivity=self.pluginconf.pluginConf["vibrationAqarasensitivity"],
-        )
     self.ListOfDevices[NwkId]["PairingInProgress"] = False
 
+
+    # Let's check if this is a Schneider Wiser
 
 def decode004d_new_devicev2(self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgData, MsgLQI, now):
     # New Device coming for provisioning

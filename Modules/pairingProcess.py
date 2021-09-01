@@ -20,9 +20,9 @@ import json
 
 from Classes.LoggingManagement import LoggingManagement
 
-from Modules.schneider_wiser import schneider_wiser_registration, wiser_home_lockout_thermostat
+from Modules.schneider_wiser import schneider_wiser_registration, wiser_home_lockout_thermostat, PREFIX_MACADDR_WIZER_LEGACY
 
-from Modules.bindings import unbindDevice, bindDevice, rebind_Clusters
+from Modules.bindings import unbindDevice, bindDevice, rebind_Clusters, reWebBind_Clusters
 from Modules.basicOutputs import sendZigateCmd, identifyEffect, getListofAttribute, write_attribute, read_attribute
 
 from Modules.readAttributes import READ_ATTRIBUTES_REQUEST, ReadAttributeRequest_0000, ReadAttributeRequest_0300
@@ -386,6 +386,8 @@ def zigbee_provision_device(self, Devices, NWKID, RIA, status):
     # Bindings ....
     binding_needed_clusters_with_zigate(self, NWKID)
 
+    reWebBind_Clusters(self, NWKID)
+
     # Just after Binding Enable Opple with Magic Word
     if self.ListOfDevices[NWKID]["Model"] in (
         "lumi.remote.b686opcn01",
@@ -623,10 +625,11 @@ def handle_device_specific_needs(self, Devices, NWKID):
 
     # In case of Schneider Wiser, let's do the Registration Process
     if "Manufacturer" in self.ListOfDevices[NWKID]:
+        MsgIEEE = self.ListOfDevices[ NWKID]['IEEE']
         if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ("Wiser2-Thermostat",):
             wiser_home_lockout_thermostat(self, NWKID, 0)
 
-        elif self.ListOfDevices[NWKID]["Manufacturer"] == "105e":
+        elif MsgIEEE[0 : len(PREFIX_MACADDR_WIZER_LEGACY)] == PREFIX_MACADDR_WIZER_LEGACY and self.ListOfDevices[NWKID]["Manufacturer"] == "105e":
             schneider_wiser_registration(self, Devices, NWKID)
 
 
