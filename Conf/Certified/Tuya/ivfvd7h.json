@@ -1,21 +1,31 @@
 {
 	"_comment": "Tuya TRV: _TYST11_zivfvd7h / ivfvd7h / Siterwell / GS361A-H04 ",
 	"_version": "0.10",
-	"Ep":{
-		"01":{ 
-			"0000":"", 
-			"0004":"", 
-			"ef00":"", 
-			"000a":"", 
-			"0019":"", 
-			"Type":"Temp/ThermoSetpoint/ThermoMode_2/Valve"}
+	"Ep": {
+		"01": {
+			"0000": "",
+			"0004": "",
+			"ef00": "",
+			"000a": "",
+			"0019": "",
+			"Type": "Temp/ThermoSetpoint/ThermoMode_2/Valve"
+		}
 	},
-	"Type":"",
-	"ClusterToBind": [ "0019", "ef00" ],
-	"ConfigureReporting": {
-	
-	},
+	"Type": "",
+	"ClusterToBind": [
+		"0019",
+		"ef00"
+	],
+	"ConfigureReporting": {},
 	"ReadAttributes": {
-		"0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0007" ]
+		"0000": [
+			"0000",
+			"0001",
+			"0002",
+			"0003",
+			"0004",
+			"0005",
+			"0007"
+		]
 	}
 }

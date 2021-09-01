@@ -1,26 +1,34 @@
 {
 	"_comment": "Tuya Smart Air Box X1",
 	"_version": "0.10",
-	"Ep":{
-		"01":{ 
-			"0000":"", 
-			"0004":"", 
-			"0005":"",
-			"ef00":"", 
-			"000a":"", 
-			"0019":"", 
-			"Type":"Temp/Humi/CarbonDioxyde/CH2O/Voc"}
+	"Ep": {
+		"01": {
+			"0000": "",
+			"0004": "",
+			"0005": "",
+			"ef00": "",
+			"000a": "",
+			"0019": "",
+			"Type": "Temp/Humi/CarbonDioxyde/CH2O/Voc"
+		}
 	},
-	"Type":"",
-	"ClusterToBind": [ "0000", "ef00" ],
-	"ConfigureReporting": {
-	
-	},
+	"Type": "",
+	"ClusterToBind": [
+		"0000",
+		"ef00"
+	],
+	"ConfigureReporting": {},
 	"ReadAttributes": {
-		"0000": [ "0004", "0000", "0001", "0005", "0007", "fffe" ]
+		"0000": [
+			"0004",
+			"0000",
+			"0001",
+			"0005",
+			"0007",
+			"fffe"
+		]
 	},
 	"Param": {
 		"AcquisitionFrequency": 60
 	}
 }
-

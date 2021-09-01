@@ -1,17 +1,20 @@
 {
-	"Ep":{
-		"01":{
-			"0400":"",
-			"0406":"",
-			"Type":"Motion/Lux"
+	"Ep": {
+		"01": {
+			"0400": "",
+			"0406": "",
+			"Type": "Motion/Lux"
 		}
 	},
-	"Type":"",
-        "ClusterToBind": [],
-        "ConfigureReporting":{},
-        "ReadAttributes": {
-                "0000": [ "0004", "0005"],
+	"Type": "",
+	"ClusterToBind": [],
+	"ConfigureReporting": {},
+	"ReadAttributes": {
+		"0000": [
+			"0004",
+			"0005"
+		],
 		"0400": [],
 		"0406": []
-        }
+	}
 }

@@ -1,31 +1,33 @@
 {
 	"_comment": "Tuya 2 Gangs Switch",
 	"_version": "0.10",
-	"Ep":{
-		"01":{ 
-			"0000":"", 
-			"0004":"", 
-			"0005":"",
-			"ef00":"", 
-			"000a":"", 
-			"0019":"", 
-			"Type":"Switch"},
-		"02":{ 
-			"0004":"", 
-			"0005":"",
-			"Type":"Switch"}
+	"Ep": {
+		"01": {
+			"0000": "",
+			"0004": "",
+			"0005": "",
+			"ef00": "",
+			"000a": "",
+			"0019": "",
+			"Type": "Switch"
+		},
+		"02": {
+			"0004": "",
+			"0005": "",
+			"Type": "Switch"
+		}
 	},
-	"Type":"",
-	"ClusterToBind": [ ],
-	"ConfigureReporting": {
-	
-	},
+	"Type": "",
+	"ClusterToBind": [],
+	"ConfigureReporting": {},
 	"ReadAttributes": {
-		"0000": [ "0004", "0005" ]
+		"0000": [
+			"0004",
+			"0005"
+		]
 	},
 	"Param": {
 		"PowerOnAfterOffOn": 255,
 		"LightIndicator": 1
 	}
 }
-
