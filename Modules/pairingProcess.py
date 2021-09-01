@@ -89,7 +89,7 @@ def processNotinDBDevices(self, Devices, NWKID, status, RIA):
         and "NoDeviceInterview" in self.DeviceConf[self.ListOfDevices[NWKID]["Model"]]
         and self.DeviceConf[self.ListOfDevices[NWKID]["Model"]]["NoDeviceInterview"]
     ):
-        status == "CreateDB"
+        status = "CreateDB"
 
     if status == "8043":  # We have at least receive 1 EndPoint
         status = interview_state_8043(self, NWKID, RIA, knownModel, status)
