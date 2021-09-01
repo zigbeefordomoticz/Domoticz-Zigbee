@@ -362,6 +362,15 @@ ZIGATE_COMMANDS = {
         "Command": "set Default Response mode",
         "NwkId 2nd Bytes": False,
     },
+    0x0008: {
+        "Sequence": (0x8000,),
+        "Ack": False,
+        "SQN": False,
+        "Layer": "ZIGATE",
+        "8012": False,
+        "Command": "enble ZiGate HeartBeat",
+        "NwkId 2nd Bytes": False,
+    },
     0x0009: {
         "Sequence": (0x8000, 0x8009),
         "Ack": False,
@@ -1559,6 +1568,7 @@ ZIGATE_RESPONSES = {
     0x8005: "",
     0x8006: "Non Factory new Restart",
     0x8007: "Factory New Restart",
+    0x8008: "ZiGate hearteab",
     0x8035: "PDM event",
     0x8048: "Leave Indication",
     0x8085: "Level Update",

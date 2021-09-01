@@ -113,6 +113,7 @@ def ZigateRead(self, Devices, Data):
         "8005": Decode8005,
         "8006": Decode8006,
         "8007": Decode8007,
+        "8008": Decode8008,
         "8009": Decode8009,
         "8010": Decode8010,
         #'8011': Decode8011,
@@ -831,6 +832,11 @@ def Decode8007(self, Devices, MsgData, MsgLQI):  # “Factory new” Restart
     # if self.HeartbeatCount == 0:
     #    self.startZigateNeeded = 1
     self.log.logging("Input", "Status", "'Factory new' Restart status: %s" % (Status))
+
+
+def Decode8008(self, Devices, MsgData, MsgLQI):  # ZiGate Heartbeat ( ZiGate V2 firmware 320)
+
+    self.log.logging("Input", "Log", "Decode8008: heartbeat :" + MsgData)
 
 
 def Decode8009(self, Devices, MsgData, MsgLQI):  # Network State response (Firm v3.0d)
