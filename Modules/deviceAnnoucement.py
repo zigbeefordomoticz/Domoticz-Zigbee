@@ -122,6 +122,28 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
         )
         return
 
+    reseted_device = False
+
+    if (
+        NwkId in self.ListOfDevices
+        and "Status" in self.ListOfDevices[NwkId]
+        and self.ListOfDevices[NwkId]["Status"] == "erasePDM"
+    ):
+        reseted_device = True
+        if "Bind" in self.ListOfDevices[NwkId]:
+            del self.ListOfDevices[NwkId]["Bind"]
+        if "ConfigureReporting" in self.ListOfDevices[NwkId]:
+            del self.ListOfDevices[NwkId]["ConfigureReporting"]
+        if "ReadAttributes" in self.ListOfDevices[NwkId]:
+            del self.ListOfDevices[NwkId]["ReadAttributes"]
+        if "Neighbours" in self.ListOfDevices[NwkId]:
+            del self.ListOfDevices[NwkId]["Neighbours"]
+        if "IAS" in self.ListOfDevices[NwkId]:
+            del self.ListOfDevices[NwkId]["IAS"]
+        if "WriteAttributes" in self.ListOfDevices[NwkId]:
+            del self.ListOfDevices[NwkId]["WriteAttributes"]
+        self.ListOfDevices[NwkId]["Status"] = "inDB"
+
     if "ZDeviceName" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["ZDeviceName"] not in ("", {}):
         message = "Device Annoucement: %s NwkId: %s Ieee: %s MacCap: %s" % (
             self.ListOfDevices[NwkId]["ZDeviceName"],
@@ -145,10 +167,15 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
         self.log.logging("Input", "Debug", "------------ > No Rejoin Flag seen, droping", NwkId)
         timeStamped(self, NwkId, 0x004D)
         lastSeenUpdate(self, Devices, NwkId=NwkId)
+
         legrand_refresh_battery_remote(self, NwkId)
-        if self.pluginconf.pluginConf["fullDeviceInterview"]:
-            decode004d_existing_devicev2(self, Devices, NwkId, Ieee, MacCapa, MsgLQI, now)
-            self.pluginconf.pluginConf["fullDeviceInterview"] = False
+
+        if reseted_device:
+            zigbee_provision_device(self, Devices, NwkId, 0, "inDB")
+
+        # if self.pluginconf.pluginConf["fullDeviceInterview"]:
+        #    decode004d_existing_devicev2(self, Devices, NwkId, Ieee, MacCapa, MsgLQI, now)
+        #    self.pluginconf.pluginConf["fullDeviceInterview"] = False
         return
 
     # Annouced is in the ListOfDevices[NwkId]
@@ -169,7 +196,12 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
             )
             timeStamped(self, NwkId, 0x004D)
             lastSeenUpdate(self, Devices, NwkId=NwkId)
+
             legrand_refresh_battery_remote(self, NwkId)
+
+            if reseted_device:
+                zigbee_provision_device(self, Devices, NwkId, 0, "inDB")
+
             if self.ListOfDevices[NwkId]["Model"] in ("TS0601-sirene"):
                 tuya_sirene_registration(self, NwkId)
             elif self.ListOfDevices[NwkId]["Model"] in (TUYA_eTRV_MODEL):
@@ -202,6 +234,7 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
         "------------ > Finally do the existing device and rebind if needed",
     )
     decode004d_existing_devicev2(self, Devices, NwkId, Ieee, MacCapa, MsgLQI, now)
+
     if "Announced" in self.ListOfDevices[NwkId]:
         del self.ListOfDevices[NwkId]["Announced"]
 
@@ -227,38 +260,20 @@ def decode004d_existing_devicev2(self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgL
         self.log.logging("Input", "Debug", "Decode004D -  %s Status from Left to inDB" % (NwkId), NwkId)
         self.ListOfDevices[NwkId]["Status"] = "inDB"
 
-    reseted_device = False
-    if NwkId in self.ListOfDevices and 'Status' in self.ListOfDevices[ NwkId ] and self.ListOfDevices[ NwkId ][ "Status" ] == "erasePDM":
-
-        if 'Bind' in self.ListOfDevices[ NwkId ]:
-            del self.ListOfDevices[ NwkId ]["Bind"]
-        if 'ConfigureReporting' in self.ListOfDevices[ NwkId ]:
-            del self.ListOfDevices[ NwkId ]["ConfigureReporting"]
-        if 'ReadAttributes' in self.ListOfDevices[ NwkId ]:
-            del self.ListOfDevices[ NwkId ]["ReadAttributes"]
-        if 'Neighbours' in self.ListOfDevices[ NwkId ]:
-            del self.ListOfDevices[ NwkId ]["Neighbours"]
-        if 'IAS' in self.ListOfDevices[ NwkId ]:
-            del self.ListOfDevices[ NwkId ]["IAS"]
-        if 'WriteAttributes' in self.ListOfDevices[ NwkId ]:
-            del self.ListOfDevices[ NwkId ]["WriteAttributes"]
-
-        self.ListOfDevices[ NwkId ][ "Status" ] = "inDB"
-
     timeStamped(self, NwkId, 0x004D)
     lastSeenUpdate(self, Devices, NwkId=NwkId)
     self.ListOfDevices[NwkId]["PairingInProgress"] = True
     # If we reach this stage we are in a case of a Device Reset, or
     # we have no evidence and so will do the same
     # Reset the device Hearbeat, This should allow to trigger Read Request
-    self.ListOfDevices[NwkId]["Heartbeat"] = 0
+    zigbee_provision_device(self, Devices, NwkId, 0, "inDB")
 
-    zigbee_provision_device(self, Devices, NwkId, 0, 'inDB')
+    self.ListOfDevices[NwkId]["Heartbeat"] = 0
 
     self.ListOfDevices[NwkId]["PairingInProgress"] = False
 
-
     # Let's check if this is a Schneider Wiser
+
 
 def decode004d_new_devicev2(self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgData, MsgLQI, now):
     # New Device coming for provisioning
