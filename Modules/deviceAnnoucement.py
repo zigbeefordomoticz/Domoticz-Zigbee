@@ -226,6 +226,23 @@ def decode004d_existing_devicev2(self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgL
         self.log.logging("Input", "Debug", "Decode004D -  %s Status from Left to inDB" % (NwkId), NwkId)
         self.ListOfDevices[NwkId]["Status"] = "inDB"
 
+    reseted_device = False
+    if NwkId in self.ListOfDevices and 'Status' in self.ListOfDevices[ NwkId ] and self.ListOfDevices[ NwkId ][ "Status" ] == "erasePDM":
+        self.ListOfDevices[ NwkId ][ "Status" ] = "inDB"
+        if 'Bind' in self.ListOfDevices[ NwkId ]:
+            del self.ListOfDevices[ NwkId ]["Bind"]
+        if 'ConfigureReporting' in self.ListOfDevices[ NwkId ]:
+            del self.ListOfDevices[ NwkId ]["ConfigureReporting"]
+        if 'ReadAttributes' in self.ListOfDevices[ NwkId ]:
+            del self.ListOfDevices[ NwkId ]["ReadAttributes"]
+        if 'Neighbours' in self.ListOfDevices[ NwkId ]:
+            del self.ListOfDevices[ NwkId ]["Neighbours"]
+        if 'IAS' in self.ListOfDevices[ NwkId ]:
+            del self.ListOfDevices[ NwkId ]["IAS"]
+        if 'WriteAttributes' in self.ListOfDevices[ NwkId ]:
+            del self.ListOfDevices[ NwkId ]["WriteAttributes"]
+        reseted_device = True
+
     timeStamped(self, NwkId, 0x004D)
     lastSeenUpdate(self, Devices, NwkId=NwkId)
     self.ListOfDevices[NwkId]["PairingInProgress"] = True
@@ -249,7 +266,7 @@ def decode004d_existing_devicev2(self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgL
                 self.iaszonemgt.IASWD_enroll(NwkId, tmpep)
             break
 
-    if self.pluginconf.pluginConf["allowReBindingClusters"]:
+    if reseted_device or self.pluginconf.pluginConf["allowReBindingClusters"]:
         self.log.logging(
             "Input",
             "Debug",
@@ -312,7 +329,7 @@ def decode004d_existing_devicev2(self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgL
     # Set the sensitivity for Xiaomi Vibration
     if self.ListOfDevices[NwkId]["Model"] == "lumi.vibration.aq1":
         Domoticz.Status(
-            "processNotinDBDevices - set viration Aqara %s sensitivity to %s"
+            "decode004d_existing_devicev2 - set viration Aqara %s sensitivity to %s"
             % (NwkId, self.pluginconf.pluginConf["vibrationAqarasensitivity"])
         )
         setXiaomiVibrationSensitivity(
@@ -397,17 +414,6 @@ def decode004d_new_devicev2(self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgData, 
     if NwkId not in self.DevicesInPairingMode:
         self.DevicesInPairingMode.append(NwkId)
     self.log.logging("Pairing", "Log", "--> %s" % str(self.DevicesInPairingMode))
-
-    # 3- Store the Pairing info if needed
-    if self.pluginconf.pluginConf["capturePairingInfos"]:
-        if NwkId not in self.DiscoveryDevices:
-            self.DiscoveryDevices[NwkId] = {}
-            self.DiscoveryDevices[NwkId]["Ep"] = {}
-        self.DiscoveryDevices[NwkId]["004D"] = MsgData
-        self.DiscoveryDevices[NwkId]["NWKID"] = NwkId
-        self.DiscoveryDevices[NwkId]["IEEE"] = MsgIEEE
-        self.DiscoveryDevices[NwkId]["MacCapa"] = MsgMacCapa
-        self.DiscoveryDevices[NwkId]["Decode-MacCapa"] = deviceMacCapa
 
     # 4- We will request immediatly the List of EndPoints
     PREFIX_IEEE_XIAOMI = "00158d000"
@@ -769,17 +775,6 @@ def decode004d_new_devicev1(self, Devices, MsgSrcAddr, MsgIEEE, MsgMacCapa, MsgR
     if MsgSrcAddr not in self.DevicesInPairingMode:
         self.DevicesInPairingMode.append(MsgSrcAddr)
     self.log.logging("Pairing", "Log", "--> %s" % str(self.DevicesInPairingMode))
-
-    # 3- Store the Pairing info if needed
-    if self.pluginconf.pluginConf["capturePairingInfos"]:
-        if MsgSrcAddr not in self.DiscoveryDevices:
-            self.DiscoveryDevices[MsgSrcAddr] = {}
-            self.DiscoveryDevices[MsgSrcAddr]["Ep"] = {}
-        self.DiscoveryDevices[MsgSrcAddr]["004D"] = MsgData
-        self.DiscoveryDevices[MsgSrcAddr]["NWKID"] = MsgSrcAddr
-        self.DiscoveryDevices[MsgSrcAddr]["IEEE"] = MsgIEEE
-        self.DiscoveryDevices[MsgSrcAddr]["MacCapa"] = MsgMacCapa
-        self.DiscoveryDevices[MsgSrcAddr]["Decode-MacCapa"] = deviceMacCapa
 
     # 4- We will request immediatly the List of EndPoints
     PREFIX_IEEE_XIAOMI = "00158d000"

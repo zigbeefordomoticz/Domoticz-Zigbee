@@ -772,7 +772,7 @@ def processListOfDevices(self, Devices):
                     Domoticz.Status("processListOfDevices - Removing the entry %s from ListOfDevice" % (NWKID))
                     removeNwkInList(self, NWKID)
 
-        elif status != "inDB" and status != "UNKNOW":
+        elif status not in ( "inDB" , "UNKNOW", "erasePDM"):
             # Discovery process 0x004d -> 0x0042 -> 0x8042 -> 0w0045 -> 0x8045 -> 0x0043 -> 0x8043
             processNotinDBDevices(self, Devices, NWKID, status, RIA)
     # end for key in ListOfDevices
