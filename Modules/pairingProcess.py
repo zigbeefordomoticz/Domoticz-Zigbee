@@ -22,10 +22,8 @@ from Classes.LoggingManagement import LoggingManagement
 
 from Modules.schneider_wiser import schneider_wiser_registration, wiser_home_lockout_thermostat
 
-#
 from Modules.bindings import unbindDevice, bindDevice, rebind_Clusters
 from Modules.basicOutputs import sendZigateCmd, identifyEffect, getListofAttribute, write_attribute, read_attribute
-
 
 from Modules.readAttributes import READ_ATTRIBUTES_REQUEST, ReadAttributeRequest_0000, ReadAttributeRequest_0300
 
@@ -109,9 +107,13 @@ def processNotinDBDevices(self, Devices, NWKID, status, RIA):
         interview_state_createDB(self, Devices, NWKID, RIA, status)
 
     if status != "createDB":
-        if HB_ > 2 and not knownModel and (status == "004d" or status == "0045"):
+        if HB_ > 2 and not knownModel and status in ( "004d" ,"0045"):
             # We will re-request EndPoint List ( 0x0045)
             interview_state_004d(self, NWKID, RIA, status)
+
+        elif HB_ > 1 and not knownModel and status in ( "0043", ):
+            # We will re-request EndPoint List ( 0x0043)
+            interview_state_8045(self, NWKID, RIA, status)
 
         elif RIA > 4 and status not in ("UNKNOW", "inDB"):  # We have done several retry
             status = interview_timeout(self, Devices, NWKID, RIA, status)
