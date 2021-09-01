@@ -1,19 +1,27 @@
 {
 	"_comment": "Tuya repeater",
 	"_version": "1.0",
-	"Ep":{
-        "01":{ 
-            "0000":"",
-            "000a":"",
-            "0019":"",
-            "Type":""}
-        },
-    "Type":"",
-    "CreateWidgetDomoticz": false,
-	"ClusterToBind": [],
-	"ConfigureReporting": {
+	"Ep": {
+		"01": {
+			"0000": "",
+			"000a": "",
+			"0019": "",
+			"Type": ""
+		}
 	},
+	"Type": "",
+	"CreateWidgetDomoticz": false,
+	"ClusterToBind": [],
+	"ConfigureReporting": {},
 	"ReadAttributes": {
-		"0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0007" ]
+		"0000": [
+			"0000",
+			"0001",
+			"0002",
+			"0003",
+			"0004",
+			"0005",
+			"0007"
+		]
 	}
 }

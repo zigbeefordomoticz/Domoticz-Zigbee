@@ -1,40 +1,91 @@
 {
-	"Ep":{
-		"01":{
-			"0000":"",
-			"0001":"",
-			"0003":"",
-			"0500":"",
-			"Type":"Motion/Voltage"
+	"Ep": {
+		"01": {
+			"0000": "",
+			"0001": "",
+			"0003": "",
+			"0500": "",
+			"Type": "Motion/Voltage"
 		},
-		"02":{
-			"0001":"",
-			"0402":"",
-			"0405":"",
-			"Type":"Temp/Humi"
+		"02": {
+			"0001": "",
+			"0402": "",
+			"0405": "",
+			"Type": "Temp/Humi"
 		},
-		"04":{
-			"0001":"",
-			"0500":"",
-			"Type":"Switch"
+		"04": {
+			"0001": "",
+			"0500": "",
+			"Type": "Switch"
 		}
 	},
-	"Type":"",
-	"ClusterToBind": [ "0001", "0402", "0405" ],
-	"ConfigureReporting":{
-		"0001": {"Attributes": { "0021": {"DataType": "20", "MinInterval": "0E10", "MaxInterval": "A8C0", "TimeOut": "0000", "Change": "01"}}},
-		"0402": {"Attributes": { "0000": {"DataType": "29", "MinInterval": "003C", "MaxInterval": "0384", "TimeOut": "0000", "Change": "0032"}}},
-		"0405": {"Attributes": { "0000": {"DataType": "21", "MinInterval": "003C", "MaxInterval": "0384", "TimeOut": "0000", "Change": "0032"}}}
+	"Type": "",
+	"ClusterToBind": [
+		"0001",
+		"0402",
+		"0405"
+	],
+	"ConfigureReporting": {
+		"0001": {
+			"Attributes": {
+				"0021": {
+					"DataType": "20",
+					"MinInterval": "0E10",
+					"MaxInterval": "A8C0",
+					"TimeOut": "0000",
+					"Change": "01"
+				}
+			}
+		},
+		"0402": {
+			"Attributes": {
+				"0000": {
+					"DataType": "29",
+					"MinInterval": "003C",
+					"MaxInterval": "0384",
+					"TimeOut": "0000",
+					"Change": "0032"
+				}
+			}
+		},
+		"0405": {
+			"Attributes": {
+				"0000": {
+					"DataType": "21",
+					"MinInterval": "003C",
+					"MaxInterval": "0384",
+					"TimeOut": "0000",
+					"Change": "0032"
+				}
+			}
+		}
 	},
 	"ReadAttributes": {
-		"0000": [ "0004", "0005", "0006", "0007"],
-		"0001": [ "0020"],
+		"0000": [
+			"0004",
+			"0005",
+			"0006",
+			"0007"
+		],
+		"0001": [
+			"0020"
+		],
 		"0003": [],
-		"0402": [ "0000" ],
-		"0405": [ "0000" ],
-		"0500": [ "0000", "0001", "0002", "0010", "0011" ]
-        },
+		"0402": [
+			"0000"
+		],
+		"0405": [
+			"0000"
+		],
+		"0500": [
+			"0000",
+			"0001",
+			"0002",
+			"0010",
+			"0011"
+		]
+	},
 	"Param": {
-			"resetMotiondelay": 0
-		}
+		"resetMotiondelay": 0
+	}
 }

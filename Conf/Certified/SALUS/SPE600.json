@@ -1,34 +1,91 @@
 {
-	"Ep":{
-		"09":{
-			"0000":"",
-			"0001":"",
-			"0003":"",
-			"0004":"",
-			"0005":"",
-			"0006":"",
-			"0402":"",
-			"0702":"",
-			"fc01":"",
-			"Type":"Plug/Power/Meter/Voltage/Temp"
+	"Ep": {
+		"09": {
+			"0000": "",
+			"0001": "",
+			"0003": "",
+			"0004": "",
+			"0005": "",
+			"0006": "",
+			"0402": "",
+			"0702": "",
+			"fc01": "",
+			"Type": "Plug/Power/Meter/Voltage/Temp"
 		}
 	},
-	"Type":"",
-	"ClusterToBind": [ "0001", "0006", "0402", "0702"  ],
+	"Type": "",
+	"ClusterToBind": [
+		"0001",
+		"0006",
+		"0402",
+		"0702"
+	],
 	"ConfigureReporting": {
-		"0006": { "Attributes": { "0000": {"DataType": "10", "MinInterval":"0001", "MaxInterval":"012C", "TimeOut":"0FFF","Change":"01"}}},
-		"0402": { "Attributes": { "0000": {"DataType": "29", "MinInterval":"000A", "MaxInterval":"012C", "TimeOut":"0FFF","Change":"0001"}}}, 
-		"0702": { "Attributes": { 
-			"0000": {"DataType": "25", "MinInterval":"0005", "MaxInterval":"012C", "TimeOut":"0FFF","Change":"000000000000000a"},
-			"0400": {"DataType": "2a", "MinInterval":"0005", "MaxInterval":"012C", "TimeOut":"0FFF","Change":"0000000a"}}}
+		"0006": {
+			"Attributes": {
+				"0000": {
+					"DataType": "10",
+					"MinInterval": "0001",
+					"MaxInterval": "012C",
+					"TimeOut": "0FFF",
+					"Change": "01"
+				}
+			}
+		},
+		"0402": {
+			"Attributes": {
+				"0000": {
+					"DataType": "29",
+					"MinInterval": "000A",
+					"MaxInterval": "012C",
+					"TimeOut": "0FFF",
+					"Change": "0001"
+				}
+			}
+		},
+		"0702": {
+			"Attributes": {
+				"0000": {
+					"DataType": "25",
+					"MinInterval": "0005",
+					"MaxInterval": "012C",
+					"TimeOut": "0FFF",
+					"Change": "000000000000000a"
+				},
+				"0400": {
+					"DataType": "2a",
+					"MinInterval": "0005",
+					"MaxInterval": "012C",
+					"TimeOut": "0FFF",
+					"Change": "0000000a"
+				}
+			}
+		}
 	},
 	"ReadAttributes": {
-		"0000": [ "0000", "0001", "0002", "0003", "0004", "0005" ],
-		"0001": [ "0000" ],
-		"0006": [ "0000" ],
-		"0402": [ "0000", "0001", "0002" ],
-		"0702": [ "0000",  "0400" ],
+		"0000": [
+			"0000",
+			"0001",
+			"0002",
+			"0003",
+			"0004",
+			"0005"
+		],
+		"0001": [
+			"0000"
+		],
+		"0006": [
+			"0000"
+		],
+		"0402": [
+			"0000",
+			"0001",
+			"0002"
+		],
+		"0702": [
+			"0000",
+			"0400"
+		],
 		"fc01": []
 	}
-
 }

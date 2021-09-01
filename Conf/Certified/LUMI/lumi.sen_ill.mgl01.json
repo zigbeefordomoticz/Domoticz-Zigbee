@@ -1,22 +1,48 @@
 {
-	"Ep":{
-		"01":{
-			"0000":"",
-			"0001":"",
-			"0003":"",
-			"0400":"",
-			"Type":"Lux"
+	"Ep": {
+		"01": {
+			"0000": "",
+			"0001": "",
+			"0003": "",
+			"0400": "",
+			"Type": "Lux"
 		}
 	},
-	"Type":"",
-        "ClusterToBind": [ "0001", "0400" ],
-        "ConfigureReporting":{
-		"0001": {"Attributes": { "0020": {"DataType": "29", "MinInterval":"0E10", "MaxInterval":"0E10", "TimeOut":"0000","Change":"0001"}}},
-		"0400": {"Attributes": { "0000": {"DataType": "21", "MinInterval":"0005", "MaxInterval":"012C", "TimeOut":"0000","Change":"0001"}}}
+	"Type": "",
+	"ClusterToBind": [
+		"0001",
+		"0400"
+	],
+	"ConfigureReporting": {
+		"0001": {
+			"Attributes": {
+				"0020": {
+					"DataType": "29",
+					"MinInterval": "0E10",
+					"MaxInterval": "0E10",
+					"TimeOut": "0000",
+					"Change": "0001"
+				}
+			}
+		},
+		"0400": {
+			"Attributes": {
+				"0000": {
+					"DataType": "21",
+					"MinInterval": "0005",
+					"MaxInterval": "012C",
+					"TimeOut": "0000",
+					"Change": "0001"
+				}
+			}
+		}
 	},
-        "ReadAttributes": {
-                "0000": [ "0004", "0005"],
+	"ReadAttributes": {
+		"0000": [
+			"0004",
+			"0005"
+		],
 		"0001": [],
 		"0400": []
-        }
+	}
 }
