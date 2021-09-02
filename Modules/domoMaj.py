@@ -390,6 +390,11 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
         if (
             ClusterType == "Temp" and WidgetType in ("Temp", "Temp+Hum", "Temp+Hum+Baro") and Attribute_ == ""
         ):  # temperature
+            
+            if value < -50 or value > 100:
+                self.log.logging("Widget", "Error", "Aberrant Temp: %s (below -50° or above 100°) for device: %s" % (value, NWKID), NWKID)
+                continue
+                
             self.log.logging("Widget", "Debug", "------>  Temp: %s, WidgetType: >%s<" % (value, WidgetType), NWKID)
             adjvalue = 0
             if self.domoticzdb_DeviceStatus:
