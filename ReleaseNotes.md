@@ -21,6 +21,9 @@ Release Numbering
 - Odd numbers --> Stable5
 - Even numbers  --> Beta
 
+## 02 September 2021 - 5.1.08
+- [Hardware] - Tuya TS0202 PIR Motion Sensor
+- [Technical] - Revert changes for reverse-proxy of WebUI on /zigate
 
 ## 27 August 2021 - 5.1.07
 - [Hardware] - Compatible with ZiGate-Ethernet
