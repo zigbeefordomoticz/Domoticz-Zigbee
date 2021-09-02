@@ -21,13 +21,32 @@ Release Numbering
 - Odd numbers --> Stable5
 - Even numbers  --> Beta
 
-##    June 2021   - 5.1.05
+
+## 27 August 2021 - 5.1.07
+- [Hardware] - Compatible with ZiGate-Ethernet
+- [Hardware] - Fix potential issue with ZiGateWifi
+- [Technical] - Speed up the launch of plugin WebUI
+- [Hardware] - Certified SonOff TH01 Temp+Humi sensor
+- [Technical] - Support up coming Firmware 320
+- [Hardware] - Support a new model of CO Heiman Sensor
+- [Technical] - get update from pyseria module
+- [Technical] - depending on Domoticz version, update immediatly the battery level of all widgets
+- [Hardware] - support the Schneider Wiser Thermostat and Thermostat Valve
+- [Hardware] - Support Frient Motion sensor
+- [Technical] - All setup of Reverse Proxy for the Plugin WebUI
+- [Hardware] - Manage Ballast configuration for Legrand Dimmer
+- [Technical] Use of logging python module for plugin logs and debug
+- [Hardware] New Tuya devices ( Door Sensor, Parkside water timer)
+- [Technical] - Move a number of global settings to device specific by using the 'Paramater'
+
+## 23 June 2021   - 5.1.06
 - [Technical] - Update of Readme.md to better indicate the way to move from one branch to an other
 - [Issue] - ZiGate+ Wifi not starting
 - [Hardware] - Tuya DIN Energy counter certfied
 - [Hardware] - Tuya/Parkside Smart Water Timer (Lidl), first phase.
 - [Hardware] - Gledopto GL-C-007-1ID
 - [Hardware] - Tuya Door Sensor TS0203
+
 
 ## 19 June 2021   - 5.1.04
 - [Hardware] - Philips Hue Hue White Ambiance GU10
