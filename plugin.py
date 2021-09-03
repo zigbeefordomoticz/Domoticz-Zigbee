@@ -893,8 +893,8 @@ class BasePlugin:
 
         # Garbage collector ( experimental for now)
         if self.internalHB % (3600 // HEARTBEAT) == 0:
-            self.log.logging("Plugin", "Log", "Garbage Collection status: %s" % str(gc.get_count()))
-            self.log.logging("Plugin", "Log", "Garbage Collection triggered: %s" % str(gc.collect()))
+            self.log.logging("Plugin", "Debug", "Garbage Collection status: %s" % str(gc.get_count()))
+            self.log.logging("Plugin", "Debug", "Garbage Collection triggered: %s" % str(gc.collect()))
 
         # Manage all entries in  ListOfDevices (existing and up-coming devices)
         processListOfDevices(self, Devices)
