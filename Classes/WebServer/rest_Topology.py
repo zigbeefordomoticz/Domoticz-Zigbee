@@ -111,13 +111,24 @@ def rest_netTopologie(self, verb, data, parameters):
     return _response
 
 
+def is_sibling_required(reportLQI):
+    # Do We have a relationship between 2 nodes, but it is not a Parent/Child,
+    # let's enable Sibling check to get it.
+    for x in reportLQI:
+        for y in reportLQI[x]["Neighbours"]:
+            if reportLQI[x]["Neighbours"][y]["_relationshp"] == "None":
+                return True
+    return False
+
+
 def extract_report(self, reportLQI):
     _check_duplicate = []
     _nwkid_list = []
     _topo = []
 
-    if self.pluginconf.pluginConf["displaySibling"]:
+    if is_sibling_required(reportLQI) or self.pluginconf.pluginConf["displaySibling"]:
         reportLQI = check_sibbling(self, reportLQI)
+
     for item in reportLQI:
         self.logging("Debug", "Node: %s" % item)
         if item != "0000" and item not in self.ListOfDevices:
@@ -205,6 +216,7 @@ def extract_report(self, reportLQI):
                 % (_relation["Father"], _relation["Child"], _relation["_lnkqty"]),
             )
             _topo.append(_relation)
+
     return _topo
 
 
