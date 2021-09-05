@@ -21,6 +21,9 @@ Release Numbering
 - Odd numbers --> Stable5
 - Even numbers  --> Beta
 
+## 05 September 2021 - 5.1.09
+- [WebAdmin] - Update of WebAdmin
+
 ## 02 September 2021 - 5.1.08
 - [Hardware] - Tuya TS0202 PIR Motion Sensor
 - [Technical] - Revert changes for reverse-proxy of WebUI on /zigate
