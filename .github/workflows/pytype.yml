@@ -1,15 +1,16 @@
 name: pytype check
 on: [push]
-paths-ignore:
-  - 'dns/**'
-  - 'serial/**'
-  - 'OTAFirmware/**'
-  - 'images/**'
-  - 'Data/**'
-  - 'Conf/**'
-  - 'Reports/**'
-  - 'www/**'
-  - 'www_for_reverse_proxy/**'
+  push:
+    paths-ignore:
+      - 'dns/**'
+      - 'serial/**'
+      - 'OTAFirmware/**'
+      - 'images/**'
+      - 'Data/**'
+      - 'Conf/**'
+      - 'Reports/**'
+      - 'www/**'
+      - 'www_for_reverse_proxy/**'
 jobs:
   check:
     runs-on: ubuntu-latest
