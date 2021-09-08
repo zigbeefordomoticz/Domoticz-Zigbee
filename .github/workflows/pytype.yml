@@ -9,5 +9,3 @@ jobs:
       uses: theahura/pytypes-action@main
       with:
         args: -d import-error
-        path: '!dns/**'
-        path: '!serial/**'
