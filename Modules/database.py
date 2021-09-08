@@ -361,8 +361,8 @@ def WriteDeviceList(self, count):
 
 def _write_DeviceList_txt(self):
     # Write in classic format ( .txt )
+    _DeviceListFileName = self.pluginconf.pluginConf["pluginData"] + self.DeviceListName
     try:
-        _DeviceListFileName = self.pluginconf.pluginConf["pluginData"] + self.DeviceListName
         self.log.logging("Database", "Debug", "Write " + _DeviceListFileName + " = " + str(self.ListOfDevices))
         with open(_DeviceListFileName, "wt") as file:
             for key in self.ListOfDevices:
