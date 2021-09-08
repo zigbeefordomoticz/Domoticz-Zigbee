@@ -1,3 +1,5 @@
+name: black check
+on: push
 uses: RojerGS/python-black-check@master
 with:
   line-length: '120'
