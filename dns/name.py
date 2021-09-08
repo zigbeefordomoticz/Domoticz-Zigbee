@@ -17,6 +17,8 @@
 
 """DNS Names.
 """
+# pytype: disable=attribute-error
+# pytype: disable=module-attr
 
 from io import BytesIO
 import struct
@@ -35,7 +37,7 @@ import dns.wiredata
 from ._compat import long, binary_type, text_type, unichr, maybe_decode
 
 try:
-    maxint = sys.maxint  # pylint: disable=sys-max-int pytype: disable=module-attr
+    maxint = sys.maxint  # pylint: disable=sys-max-int 
 except AttributeError:
     maxint = (1 << (8 * struct.calcsize("P"))) // 2 - 1
 
