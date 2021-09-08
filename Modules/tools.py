@@ -566,7 +566,7 @@ def getListofTypebyModel(self, Model):
     if Model in self.DeviceConf:
         for ep in list(self.DeviceConf[Model]["Epin"].keys()):
             if "Type" in self.DeviceConf[Model]["Epin"][ep]:
-                EpinType = (ep, getListofType(self.DeviceConf[Model]["Epin"][ep]["Type"]))
+                EpinType = (ep, getListofType(self, self.DeviceConf[Model]["Epin"][ep]["Type"]))
                 EpType.append(EpinType)
     return EpType
 
