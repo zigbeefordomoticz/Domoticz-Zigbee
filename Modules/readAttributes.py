@@ -505,7 +505,7 @@ def add_attributes_from_device_certified_conf(self, key, cluster, listAttributes
 
     for attr in attributes:
         if int(str(attr), 16) not in listAttributes:
-            listAttributes.append(int(attr, 16))
+            listAttributes.append(int(attr, 16)) # pytype disable=wrong-arg-types
     return listAttributes
 
 
@@ -1551,7 +1551,7 @@ def ReadAttributeRequest_fc21(self, key):
             "1110",
             0x01,
             "0001",
-            aackIsDisabled=is_ack_tobe_disabled(self, key),
+            ackIsDisabled=is_ack_tobe_disabled(self, key),
         )
 
         # datas = "02" + key + ZIGATE_EP + '01' + 'fc21' + '00' + '01' + '1110' + '01' + '0001'
