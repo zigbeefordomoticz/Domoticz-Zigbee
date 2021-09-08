@@ -1,8 +1,10 @@
 name: black check
 on: push
-uses: RojerGS/python-black-check@master
-with:
-  line-length: '120'
-  path: '.'
-  include: 'apps'
-  exclude: '(/*.html|/*.mo|/*.po|/*.png|/*.rst)'
+jobs:
+    - uses: RojerGS/python-black-check@master
+    - name: black checker
+    with:
+      line-length: '120'
+      path: '.'
+      include: 'apps'
+      exclude: '(/*.html|/*.mo|/*.po|/*.png|/*.rst)'
