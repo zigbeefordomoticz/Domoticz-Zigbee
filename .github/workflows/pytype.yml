@@ -8,6 +8,11 @@ on:
       - 'Classes/**'
 jobs:
   check:
+      paths:
+        - '.github/**'
+        - 'plugin.py'
+        - 'Modules/**'
+        - 'Classes/**'
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
