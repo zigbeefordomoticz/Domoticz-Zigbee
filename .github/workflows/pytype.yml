@@ -7,7 +7,7 @@ jobs:
     - uses: actions/checkout@v2
     - name: pytypes checker
       uses: theahura/pytypes-action@main
-      continue-on-error: true
       with:
         args: -d import-error
-        path: 'Classes/**'
+        path: '!dns/**'
+        path: '!serial/**'
