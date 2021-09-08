@@ -16,6 +16,8 @@
 # OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 """DNS rdata."""
+# pytype: disable=attribute-error
+# pytype: disable=module-attr
 
 from io import BytesIO
 import base64
