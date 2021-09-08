@@ -1,7 +1,7 @@
 name: black check
 on: push
 jobs:
-    runs-on: ubuunto-latest
+    runs-on: ubuuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: psf/black@stable
