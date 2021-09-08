@@ -8,4 +8,4 @@ jobs:
     - name: pytypes checker
       uses: theahura/pytypes-action@main
       with:
-        args: -i plugin.py Classes Modules -d import-error
+        args: -d import-error plugin.py Classes Modules
