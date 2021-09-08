@@ -505,7 +505,7 @@ def add_attributes_from_device_certified_conf(self, key, cluster, listAttributes
 
     for attr in attributes:
         if int(str(attr), 16) not in listAttributes:
-            listAttributes.append(int(attr, 16)) # pytype disable=wrong-arg-types
+            listAttributes.append(int(attr, 16)) # pytype: disable=wrong-arg-types
     return listAttributes
 
 
@@ -1541,7 +1541,6 @@ def ReadAttributeRequest_fc21(self, key):
         )
         read_attribute(
             self,
-            "02",
             key,
             ZIGATE_EP,
             "01",
