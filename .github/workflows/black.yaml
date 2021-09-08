@@ -1,8 +1,8 @@
 name: black check
 on: push
 jobs:
-    - uses: RojerGS/python-black-check@master
-    - name: black checker
+    uses: RojerGS/python-black-check@master
+    name: black checker
     with:
       line-length: '120'
       path: '.'
