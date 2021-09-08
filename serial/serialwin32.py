@@ -9,6 +9,8 @@
 #
 # Initial patch to use ctypes by Giovanni Bajo <rasky@develer.com>
 
+# pytype: disable=attribute-error
+
 from __future__ import absolute_import
 
 # pylint: disable=invalid-name,too-few-public-methods

@@ -25,6 +25,8 @@
 # - sunos (Solaris/SunOS)   /dev/tty%c (letters, 'a'..'z') (confirmed)
 # - aix (AIX)               /dev/tty%d
 
+# pytype: disable=attribute-error
+
 
 from __future__ import absolute_import
 

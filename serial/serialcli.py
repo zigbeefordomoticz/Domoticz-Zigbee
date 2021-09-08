@@ -7,6 +7,8 @@
 #
 # SPDX-License-Identifier:    BSD-3-Clause
 
+# pytype: disable=attribute-error
+
 from __future__ import absolute_import
 
 import System
