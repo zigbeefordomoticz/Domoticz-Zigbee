@@ -1,10 +1,12 @@
 name: black check
 on: push
 jobs:
-    uses: RojerGS/python-black-check@master
-    name: black checker
-    with:
-      line-length: '120'
-      path: '.'
-      include: 'apps'
-      exclude: '(/*.html|/*.mo|/*.po|/*.png|/*.rst)'
+    runs-on: ubuunto-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: psf/black@stable
+      with:
+        line-length: '120'
+        path: '.'
+        include: 'apps'
+        exclude: '(/*.html|/*.mo|/*.po|/*.png|/*.rst)'
