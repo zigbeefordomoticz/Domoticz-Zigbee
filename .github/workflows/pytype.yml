@@ -1,18 +1,8 @@
 name: pytype check
-on: 
-  push:
-    paths:
-      - '.github/**'
-      - 'plugin.py'
-      - 'Modules/**'
-      - 'Classes/**'
+on:  push
+continue-on-error: true
 jobs:
   check:
-      paths:
-        - '.github/**'
-        - 'plugin.py'
-        - 'Modules/**'
-        - 'Classes/**'
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
