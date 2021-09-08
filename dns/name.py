@@ -702,9 +702,9 @@ class Name(object):
 
         l = len(self.labels)
         if depth == 0:
-            return (self, dns.name.empty) # pytype: module-attr
+            return (self, dns.name.empty) 
         elif depth == l:
-            return (dns.name.empty, self) # pytype: module-attr
+            return (dns.name.empty, self)
         elif depth < 0 or depth > l:
             raise ValueError(
                 'depth must be >= 0 and <= the length of the name')
