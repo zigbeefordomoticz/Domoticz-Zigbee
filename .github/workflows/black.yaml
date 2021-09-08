@@ -1,0 +1,6 @@
+uses: RojerGS/python-black-check@master
+with:
+  line-length: '120'
+  path: '.'
+  include: 'apps'
+  exclude: '(/*.html|/*.mo|/*.po|/*.png|/*.rst)'
