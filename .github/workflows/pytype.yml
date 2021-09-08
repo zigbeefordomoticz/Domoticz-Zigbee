@@ -2,6 +2,8 @@ name: pytype check
 on: 
   push:
     paths:
+      - '.github/**'
+      - 'plugin.py'
       - 'Modules/**'
       - 'Classes/**'
       - '!dns/**'
