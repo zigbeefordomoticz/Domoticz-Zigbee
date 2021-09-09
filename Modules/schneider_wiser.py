@@ -1341,7 +1341,7 @@ def schneiderReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dst
                 Attribute = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[idx : idx + 4], 16)))[0]
                 idx += 4
                 if self.FirmwareVersion and int(self.FirmwareVersion, 16) <= 0x031C:
-                    wiser_unsupported_attribute(self, srcNWKID, srcEp, Sqn, ClusterID, dstNWKID, dstEP, Attribute)
+                    wiser_unsupported_attribute(self, srcNWKID, srcEp, Sqn, ClusterID, Attribute)
                 else:
                     self.log.logging(
                         "Schneider",
