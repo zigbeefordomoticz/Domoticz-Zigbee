@@ -26,6 +26,7 @@
 # - aix (AIX)               /dev/tty%d
 
 # pytype: disable=attribute-error
+# pytype: disable=unsupported-operands
 
 
 from __future__ import absolute_import
