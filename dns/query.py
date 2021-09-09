@@ -16,7 +16,7 @@
 # OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 
-# pytype: disable=wrong-arg-types,BaseException
+# pytype: disable=wrong-arg-types,unsupported-operands,invalid-directive
 
 """Talk to a DNS server."""
 
