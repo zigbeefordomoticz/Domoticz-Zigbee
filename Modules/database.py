@@ -138,6 +138,8 @@ def LoadDeviceList(self):
     # we fall back to the old fashion .txt
     jsonFormatDB = True
 
+    # This can be enabled only with Domoticz version 2021.1 build 1395 and above, otherwise big memory leak
+
     if self.pluginconf.pluginConf["useDomoticzDatabase"]:
         ListOfDevices_from_Domoticz, saving_time = _read_DeviceList_Domoticz(self)
         Domoticz.Log(
