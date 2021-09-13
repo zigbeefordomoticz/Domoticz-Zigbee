@@ -970,6 +970,12 @@ def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
     if self.log:
         self.log.loggingUpdateFirmware(self.FirmwareVersion, self.FirmwareMajorVersion)
 
+    if self.pluginconf.pluginConf["doManyToOneRoute"] and self.ZiGateModel != 2:
+        self.pluginconf.pluginConf["doManyToOneRoute"] = 0
+
+    if self.pluginconf.pluginConf["RoutingTableRequestFeq"] and self.ZiGateModel != 2:
+        self.pluginconf.pluginConf["RoutingTableRequestFeq"] = 0
+
     self.PDMready = True
 
 

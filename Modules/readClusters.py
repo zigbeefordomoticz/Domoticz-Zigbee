@@ -2306,7 +2306,7 @@ def Cluster0019(
 
     self.log.logging(
         "Cluster",
-        "Debug",
+        "Log",
         "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s"
         % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
         MsgSrcAddr,
