@@ -22,7 +22,7 @@ import time
 
 import Domoticz
 
-from Modules.tools import setConfigItem, getConfigItem
+from Modules.tools import setConfigItem, getConfigItem, is_domoticz_db_available
 
 
 def write_groups_list(self):
@@ -34,7 +34,7 @@ def write_groups_list(self):
     with open(self.GroupListFileName, "wt") as handle:
         json.dump(self.ListOfGroups, handle, sort_keys=True, indent=2)
 
-    if self.pluginconf.pluginConf["useDomoticzDatabase"]:
+    if is_domoticz_db_available(self) and self.pluginconf.pluginConf["useDomoticzDatabase"]:
         self.log.logging("Database", "Debug", "Save Plugin Group Db to Domoticz")
         setConfigItem(Key="ListOfGroups", Value={"TimeStamp": time.time(), "b64Groups": self.ListOfGroups})
 
@@ -46,7 +46,7 @@ def load_groups_list_from_json(self):
     if self.GroupListFileName is None:
         return
 
-    if self.pluginconf.pluginConf["useDomoticzDatabase"]:
+    if is_domoticz_db_available(self) and self.pluginconf.pluginConf["useDomoticzDatabase"]:
         _domoticz_grouplist = getConfigItem(Key="ListOfGroups")
 
         dz_timestamp = 0
@@ -77,7 +77,7 @@ def load_groups_list_from_json(self):
     with open(self.GroupListFileName, "rt") as handle:
         self.ListOfGroups = json.load(handle)
 
-    if self.pluginconf.pluginConf["useDomoticzDatabase"]:
+    if is_domoticz_db_available(self) and self.pluginconf.pluginConf["useDomoticzDatabase"]:
         Domoticz.Log("GroupList Loaded from Dz: %s from Json: %s" % (len(_domoticz_grouplist), len(self.ListOfGroups)))
 
 

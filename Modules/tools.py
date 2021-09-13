@@ -1318,3 +1318,27 @@ def repair_dict_after_load(b64_dict, Attribute):
 
         b64_dict[Attribute] = eval(b64decode(b64_dict[Attribute]))
     return b64_dict
+
+
+def is_domoticz_db_available(self):
+    #  Domoticz 2021.1 build 13495
+
+    Domoticz.Log(
+        "is_domoticz_db_available: Fashion: %s , Major: %s, Minor: %s"
+        % (self.VersionNewFashion, self.DomoticzMajor, self.DomoticzMinor)
+    )
+
+    if not self.VersionNewFashion:
+        Domoticz.Log("is_domoticz_db_available: %s due to Fashion" % False)
+        return False
+
+    if self.DomoticzMajor < 2021:
+        Domoticz.Log("is_domoticz_db_available: %s due to Major" % False)
+        return False
+
+    if self.DomoticzMajor == 2021 and self.DomoticzMinor < 1:
+        Domoticz.Log("is_domoticz_db_available: %s due to Minor" % False)
+        return False
+
+    Domoticz.Log("is_domoticz_db_available: %s" % True)
+    return True

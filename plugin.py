@@ -354,7 +354,9 @@ class BasePlugin:
 
         # Import PluginConf.txt
         Domoticz.Log("load PluginConf")
-        self.pluginconf = PluginConf(Parameters["HomeFolder"], self.HardwareID)
+        self.pluginconf = PluginConf(
+            self.VersionNewFashion, self.DomoticzMajor, self.DomoticzMinor, Parameters["HomeFolder"], self.HardwareID
+        )
 
         # Create the adminStatusWidget if needed
         self.PluginHealth["Flag"] = 1
@@ -1195,6 +1197,9 @@ def check_firmware_level(self):
 
 def start_GrpManagement(self, homefolder):
     self.groupmgt = GroupsManagement(
+        self.VersionNewFashion,
+        self.DomoticzMajor,
+        self.DomoticzMinor,
         self.pluginconf,
         self.ZigateComm,
         self.adminWidgets,
