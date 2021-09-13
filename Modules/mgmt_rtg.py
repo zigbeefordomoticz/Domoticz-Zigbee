@@ -53,7 +53,7 @@ def mgmt_rtg_rsp(
     MsgPayload,
 ):
 
-    Domoticz.Log("mgmt_rtg_rsp - len: %s Data: %s" % (len(MsgPayload), MsgPayload))
+    # Domoticz.Log("mgmt_rtg_rsp - len: %s Data: %s" % (len(MsgPayload), MsgPayload))
     Sqn = MsgPayload[0:2]
     Status = MsgPayload[2:4]
     RoutingTableSize = MsgPayload[4:6]

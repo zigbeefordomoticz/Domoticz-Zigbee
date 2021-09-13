@@ -1222,11 +1222,17 @@ def do_Many_To_One_RouteRequest(self):
     bCacheRoute = "00"  # FALSE do not store routes
     u8Radius = "00"  # Maximum number of hops of route discovery message
 
-    sendZigateCmd(self, "004F", bCacheRoute + u8Radius)
-    self.log.logging("BasicOutput", "Debug", "do_Many_To_One_RouteRequest call !")
+    if self.ZiGateModel == 2 and int(self.FirmwareMajorVersion, 16) >= 5 and int(self.FirmwareVersion, 16) >= 0x0320:
+        sendZigateCmd(self, "004F", bCacheRoute + u8Radius)
+        self.log.logging("BasicOutput", "Log", "do_Many_To_One_RouteRequest call !")
 
 
 def mgt_routing_req(self, nwkid, start_index):
+
+    if not (
+        self.ZiGateModel == 2 and int(self.FirmwareMajorVersion, 16) >= 5 and int(self.FirmwareVersion, 16) >= 0x0320
+    ):
+        return
 
     if "RoutingTable" not in self.ListOfDevices[nwkid]:
         self.ListOfDevices[nwkid]["RoutingTable"] = {}
