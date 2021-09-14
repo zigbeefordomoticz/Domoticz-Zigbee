@@ -122,7 +122,12 @@ def param_PowerOnAfterOffOn(self, nwkid, mode):
             philips_set_poweron_after_offon_device(self, mode, nwkid)
             ReadAttributeRequest_0006_400x(self, nwkid)
 
-    elif "Model" in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]["Model"] in ("TS0121", "TS0115"):
+    elif "Model" in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]["Model"] in (
+        "TS0121",
+        "TS0115",
+        "TS011F-multiprise",
+        "TS011F-2Gang-switches"
+    ):
         # Tuya ( 'TS0121' BlitzWolf )
         if "01" not in self.ListOfDevices[nwkid]["Ep"]:
             return
