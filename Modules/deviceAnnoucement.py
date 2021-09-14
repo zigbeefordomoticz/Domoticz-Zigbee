@@ -812,6 +812,7 @@ def store_annoucement(self, NwkId, MsgRejoinFlag, now):
         self.log.logging(
             "Input", "Error", "store_annoucement - Unknown NwkId %s in Db: %s" % (NwkId, self.ListOfDevices.keys())
         )
+        return
 
     if "Announced" not in self.ListOfDevices[NwkId]:
         self.ListOfDevices[NwkId]["Announced"] = {}
