@@ -4,9 +4,9 @@
 # Author: zaraki673 & pipiche38
 #
 """
-    Module: z_output.py
+    Module: ConfigureReporting.py
 
-    Description: All communications towards Zigate
+    Description: Configure Reporting of all connected object, based on their corresponding cluster
 
 """
 
@@ -42,7 +42,19 @@ MAX_ATTR_PER_REQ = 3
 
 
 class ConfigureReporting:
-    def __init__(self, PluginConf, DeviceConf, ZigateComm, ListOfDevices, Devices, log, busy, FirmwareVersion, IEEE2NWK, ZigateIEEE):
+    def __init__(
+        self,
+        PluginConf,
+        DeviceConf,
+        ZigateComm,
+        ListOfDevices,
+        Devices,
+        log,
+        busy,
+        FirmwareVersion,
+        IEEE2NWK,
+        ZigateIEEE,
+    ):
 
         self.pluginconf = PluginConf
         self.DeviceConf = DeviceConf
@@ -53,10 +65,12 @@ class ConfigureReporting:
         self.busy = busy
         self.FirmwareVersion = FirmwareVersion
 
-        #Needed for bind
+        # Needed for bind
         self.IEEE2NWK = IEEE2NWK
         self.ZigateIEEE = ZigateIEEE
 
+        # Local
+        self.target = []
 
     def logging(self, logType, message, nwkid=None, context=None):
         self.log.logging("ConfigureReporting", logType, message, nwkid, context)
@@ -82,34 +96,41 @@ class ConfigureReporting:
                     nwkid=NWKID,
                 )
                 return  # Will do at the next round
-            target = list(self.ListOfDevices.keys())
+            if not self.target:
+                self.target = list(self.ListOfDevices.keys())
             clusterlist = None
         else:
-            target = []
-            target.append(NWKID)
+            self.target.clear()
+            self.target.append(NWKID)
 
-        for key in target:
+        for key in self.target:
             # Let's check that we can do a Configure Reporting. Only during the pairing process (NWKID is provided) or we are on the Main Power
             if key == "0000":
+                self.target.remove(key)
                 continue
 
             if key not in self.ListOfDevices:
+                self.target.remove(key)
                 Domoticz.Error("processConfigureReporting - Unknown key: %s" % key)
                 continue
 
             if "Status" not in self.ListOfDevices[key]:
+                self.target.remove(key)
                 Domoticz.Error("processConfigureReporting - no 'Status' flag for device %s !!!" % key)
                 continue
 
             if self.ListOfDevices[key]["Status"] != "inDB":
+                self.target.remove(key)
                 continue
 
             if NWKID is None:
                 if not mainPoweredDevice(self, key):
+                    self.target.remove(key)
                     continue  #  Not Main Powered!
 
                 if "Health" in self.ListOfDevices[key]:
                     if self.ListOfDevices[key]["Health"] == "Not Reachable":
+                        self.target.remove(key)
                         continue
 
                 # if self.ListOfDevices[key]['Model'] != {}:
@@ -403,6 +424,8 @@ class ConfigureReporting:
 
                 # End for Cluster
             # End for Ep
+            self.target.remove(key)
+            return  # Only one device at a time
         # End for key
 
     def prepare_and_send_configure_reporting(
