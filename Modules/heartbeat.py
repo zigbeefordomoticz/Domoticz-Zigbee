@@ -52,7 +52,6 @@ from Modules.readAttributes import (
     ReadAttributeRequest_fc21,
     ping_tuya_device,
 )
-from Modules.configureReporting import processConfigureReporting
 from Modules.legrand_netatmo import legrandReenforcement
 from Modules.blitzwolf import pollingBlitzwolfPower
 from Modules.schneider_wiser import schneiderRenforceent, pollingSchneider
@@ -794,7 +793,8 @@ def processListOfDevices(self, Devices):
 
     if (self.HeartbeatCount > QUIET_AFTER_START) and ((self.HeartbeatCount % CONFIGURERPRT_FEQ)) == 0:
         # Trigger Configure Reporting to eligeable devices
-        processConfigureReporting(self)
+        if self.configureReporting:
+            self.configureReporting.processConfigureReporting()
 
     # Network Topology management
     # if (self.HeartbeatCount > QUIET_AFTER_START) and (self.HeartbeatCount > NETWORK_TOPO_START):

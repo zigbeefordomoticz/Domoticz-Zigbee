@@ -30,7 +30,6 @@ from Modules.readAttributes import (
 
 from Modules.basicOutputs import raw_APS_request, write_attribute, write_attributeNoResponse, read_attribute
 from Modules.bindings import bindDevice, unbindDevice
-from Modules.configureReporting import send_configure_reporting_attributes_set
 
 LEGRAND_CLUSTER_FC01 = {
     "Dimmer switch wo neutral": {"EnableLedInDark": "0001", "EnableDimmer": "0000", "EnableLedIfOn": "0002"},
@@ -750,12 +749,12 @@ def legrand_dimmer_enable(self, NwkId):
 
     # Configure Reporting
     # 0x0008 / 0x0000  Change 0x01, Min: 0x01, Max: 600
-    send_configure_reporting_attributes_set(
-        self, NwkId, "01", "0008", "00", "00", "0000", 1, "0020000000010258000001", [0x0000]
+    self.configureReporting.send_configure_reporting_attributes_set(
+        NwkId, "01", "0008", "00", "00", "0000", 1, "0020000000010258000001", [0x0000]
     )
     # 0x0008 / 0x00011 Change 0x01 Min: 0x00, Max 600
-    send_configure_reporting_attributes_set(
-        self, NwkId, "01", "0008", "00", "00", "0000", 1, "0020001100000258000001", [0x0011]
+    self.configureReporting.send_configure_reporting_attributes_set(
+        NwkId, "01", "0008", "00", "00", "0000", 1, "0020001100000258000001", [0x0011]
     )
 
     # Read Attribute 0x0008 / 0x0000 , 0x0011

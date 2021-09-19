@@ -19,7 +19,6 @@ from Modules.bindings import rebind_Clusters, reWebBind_Clusters
 from Modules.schneider_wiser import schneider_wiser_registration, schneiderReadRawAPS, PREFIX_MACADDR_WIZER_LEGACY
 from Modules.basicOutputs import sendZigateCmd
 from Modules.livolo import livolo_bind
-from Modules.configureReporting import processConfigureReporting
 from Modules.legrand_netatmo import legrand_refresh_battery_remote
 from Modules.lumi import enableOppleSwitch, setXiaomiVibrationSensitivity
 from Modules.casaia import casaia_AC201_pairing
@@ -279,7 +278,7 @@ def decode004d_existing_devicev2(self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgL
     if "ConfigureReporting" in self.ListOfDevices[NwkId]:
         del self.ListOfDevices[NwkId]["ConfigureReporting"]
 
-    processConfigureReporting(self, NWKID=NwkId)
+    self.configureReporting.processConfigureReporting(NWKID=NwkId)
 
     # Let's take the opportunity to trigger some request/adjustement / NOT SURE IF THIS IS GOOD/IMPORTANT/NEEDED
     self.log.logging("Input", "Debug", "Decode004D - Request attribute 0x0000 %s" % (NwkId), NwkId)
@@ -668,7 +667,7 @@ def decode004d_existing_devicev1(
     if "ConfigureReporting" in self.ListOfDevices[MsgSrcAddr]:
         del self.ListOfDevices[MsgSrcAddr]["ConfigureReporting"]
 
-    processConfigureReporting(self, NWKID=MsgSrcAddr)
+    self.configureReporting.processConfigureReporting(NWKID=MsgSrcAddr)
 
     # Let's take the opportunity to trigger some request/adjustement / NOT SURE IF THIS IS GOOD/IMPORTANT/NEEDED
     self.log.logging(

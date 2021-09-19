@@ -130,6 +130,7 @@ from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
 from Modules.schneider_wiser import wiser_thermostat_monitoring_heating_demand
 
 # from Classes.APS import APSManagement
+from Classes.ConfigureReporting import ConfigureReporting
 from Classes.IAS import IAS_Zone_Management
 from Classes.PluginConf import PluginConf
 from Classes.Transport.Transport import ZigateTransport
@@ -171,6 +172,7 @@ class BasePlugin:
         self.DeviceConf = {}  # Store DeviceConf.txt, all known devices configuration
 
         # Objects from Classe
+        self.configureReporting = None
         self.ZigateComm = None
         self.groupmgt = None
         self.networkmap = None
@@ -1102,6 +1104,21 @@ def zigateInit_Phase3(self):
         #    else:
         #        self.log.logging( 'Plugin', 'Status', "Enable Default Response in firmware")
         #        disable_firmware_default_response( self , mode='00')
+
+        # Create Configure Reporting object
+        if self.configureReporting is None:
+            self.configureReporting = ConfigureReporting(
+                self.pluginconf,
+                self.DeviceConf,
+                self.ZigateComm,
+                self.ListOfDevices,
+                Devices,
+                self.log,
+                self.busy,
+                self.FirmwareVersion,
+                self.IEEE2NWK,
+                self.ZigateIEEE
+            )
 
         # Enable Group Management
         if self.groupmgt is None and self.pluginconf.pluginConf["enablegroupmanagement"]:

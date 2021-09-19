@@ -63,7 +63,6 @@ from Modules.bindings import rebind_Clusters, reWebBind_Clusters
 from Modules.livolo import livolo_bind, livolo_read_attribute_request
 from Modules.philips import default_response_for_philips_hue_reporting_attribute
 from Modules.lumi import AqaraOppleDecoding, enableOppleSwitch
-from Modules.configureReporting import processConfigureReporting
 from Modules.schneider_wiser import schneider_wiser_registration, wiser_read_attribute_request
 from Modules.legrand_netatmo import rejoin_legrand_reset
 from Modules.errorCodes import DisplayStatusCode, ZCL_EXTENDED_ERROR_CODES

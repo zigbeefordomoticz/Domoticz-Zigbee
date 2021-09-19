@@ -21,7 +21,6 @@ from Classes.LoggingManagement import LoggingManagement
 
 from Modules.domoMaj import MajDomoDevice
 from Modules.basicOutputs import sendZigateCmd, raw_APS_request, write_attribute, read_attribute, ZigatePermitToJoin
-from Modules.configureReporting import prepare_and_send_configure_reporting, send_configure_reporting_attributes_set
 
 from Modules.bindings import webBind, WebBindStatus
 
@@ -1187,11 +1186,6 @@ def schneiderAlarmReceived(self, Devices, NWKID, srcEp, ClusterID, start, payloa
     Function called when a command is received from the schneider device to alert about over consumption
     """
 
-    # if (start): # force fast reporting
-    #    Modules.configureReporting.processConfigureReporting (self, key)
-    # else: # do normal reporting
-    #    Modules.configureReporting.processConfigureReporting (self, key)
-
     AlertCode = int(payload[0:2], 16)  # uint8  0x10: low voltage, 0x11 high voltage, 0x16 high current
 
     AlertClusterId = payload[4:6] + payload[2:4]  # uint16
@@ -1817,8 +1811,8 @@ def schneider_UpdateConfigureReporting(self, NwkId, Ep, ClusterId=None, Attribut
             # datas =   addr_mode + NwkId + ZIGATE_EP + Ep + ClusterId + direction + manufacturer_spec + manufacturer
             # datas +=  "%02x" %(attrLen) + attrList
             # sendZigateCmd( self, "0120", datas )
-            send_configure_reporting_attributes_set(
-                self, NwkId, Ep, ClusterId, direction, manufacturer_spec, manufacturer, attrLen, attrList, attributeList
+            self.configureReporting.send_configure_reporting_attributes_set(
+                NwkId, Ep, ClusterId, direction, manufacturer_spec, manufacturer, attrLen, attrList, attributeList
             )
 
             # Reset the Lenght to 0
@@ -1833,8 +1827,8 @@ def schneider_UpdateConfigureReporting(self, NwkId, Ep, ClusterId=None, Attribut
         # datas =   addr_mode + NwkId + WISER_LEGACY_BASE_EP + Ep + ClusterId + direction + manufacturer_spec + manufacturer
         # datas +=  "%02x" %(attrLen) + attrList
         # sendZigateCmd( self, "0120", datas )
-        send_configure_reporting_attributes_set(
-            self, NwkId, Ep, ClusterId, direction, manufacturer_spec, manufacturer, attrLen, attrList, attributeList
+        self.configureReporting.send_configure_reporting_attributes_set(
+            NwkId, Ep, ClusterId, direction, manufacturer_spec, manufacturer, attrLen, attrList, attributeList
         )
 
 

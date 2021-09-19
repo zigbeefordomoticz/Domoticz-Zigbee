@@ -32,7 +32,6 @@ from Modules.readAttributes import READ_ATTRIBUTES_REQUEST, ReadAttributeRequest
 from Modules.lumi import enableOppleSwitch, setXiaomiVibrationSensitivity
 from Modules.livolo import livolo_bind
 from Modules.orvibo import OrviboRegistration
-from Modules.configureReporting import processConfigureReporting
 from Modules.profalux import profalux_fake_deviceModel
 from Modules.philips import philips_set_pir_occupancySensibility
 from Modules.domoCreate import CreateDomoDevice
@@ -441,7 +440,7 @@ def processNotinDBDevices(self, Devices, NWKID, status, RIA):
 
             # 2 Enable Configure Reporting for any applicable cluster/attributes
             self.log.logging("Pairing", "Debug", "Request Configure Reporting for %s" % NWKID)
-            processConfigureReporting(self, NWKID)
+            self.configureReporting.processConfigureReporting(NWKID)
 
             # 3 Read attributes
             for iterEp in self.ListOfDevices[NWKID]["Ep"]:
