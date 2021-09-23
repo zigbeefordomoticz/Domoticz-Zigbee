@@ -11,21 +11,12 @@
 """
 
 import Domoticz
-import binascii
-import time
-import datetime
-import struct
 import json
-
-
-from Classes.LoggingManagement import LoggingManagement
 
 from Modules.schneider_wiser import schneider_wiser_registration, wiser_home_lockout_thermostat
 
-#
-from Modules.bindings import unbindDevice, bindDevice, rebind_Clusters
-from Modules.basicOutputs import sendZigateCmd, identifyEffect, getListofAttribute, write_attribute, read_attribute
-
+from Modules.bindings import unbindDevice, bindDevice
+from Modules.basicOutputs import sendZigateCmd, identifyEffect, getListofAttribute
 
 from Modules.readAttributes import READ_ATTRIBUTES_REQUEST, ReadAttributeRequest_0000, ReadAttributeRequest_0300
 
@@ -33,9 +24,8 @@ from Modules.lumi import enableOppleSwitch, setXiaomiVibrationSensitivity
 from Modules.livolo import livolo_bind
 from Modules.orvibo import OrviboRegistration
 from Modules.profalux import profalux_fake_deviceModel
-from Modules.philips import philips_set_pir_occupancySensibility
 from Modules.domoCreate import CreateDomoDevice
-from Modules.tools import reset_cluster_datastruct, get_and_inc_SQN, getListOfEpForCluster
+from Modules.tools import get_and_inc_SQN, getListOfEpForCluster
 from Modules.zigateConsts import CLUSTERS_LIST
 from Modules.casaia import casaia_pairing
 from Modules.thermostats import thermostat_Calibration
@@ -43,7 +33,6 @@ from Modules.tuya import tuya_registration
 from Modules.tuyaSiren import tuya_sirene_registration
 from Modules.tuyaTools import tuya_TS0121_registration
 from Modules.tuyaTRV import tuya_eTRV_registration, TUYA_eTRV_MODEL
-from Modules.paramDevice import param_Occupancy_settings_PIROccupiedToUnoccupiedDelay
 from Modules.pollControl import poll_set_long_poll_interval
 
 
@@ -352,9 +341,9 @@ def processNotinDBDevices(self, Devices, NWKID, status, RIA):
                 self.CommiSSionning = False
                 return
 
-            ######
-            ###### Post processing : work done after Domoticz Widget creation
-            ######
+            # ----
+            # ---- Post processing : work done after Domoticz Widget creation
+            # ----
             if "ConfigSource" in self.ListOfDevices[NWKID]:
                 self.log.logging(
                     "Pairing",

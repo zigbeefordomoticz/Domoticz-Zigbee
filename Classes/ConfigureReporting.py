@@ -11,14 +11,8 @@
 """
 
 import Domoticz
-import binascii
-import struct
-import json
 
-from datetime import datetime
 from time import time
-
-from Classes.LoggingManagement import LoggingManagement
 
 from Modules.basicOutputs import send_zigatecmd_zcl_noack, send_zigatecmd_zcl_ack, ieee_addr_request
 from Modules.bindings import bindDevice
@@ -28,13 +22,19 @@ from Modules.tools import (
     getClusterListforEP,
     mainPoweredDevice,
     is_ack_tobe_disabled,
-    check_datastruct,
     is_time_to_perform_work,
     set_isqn_datastruct,
     set_status_datastruct,
     set_timestamp_datastruct,
     is_attr_unvalid_datastruct,
     reset_attr_datastruct,
+    get_list_isqn_attr_datastruct,
+    get_isqn_datastruct
+)
+
+from Classes.Transport.sqnMgmt import (
+    sqn_get_internal_sqn_from_app_sqn,
+    TYPE_APP_ZCL
 )
 
 
@@ -98,7 +98,6 @@ class ConfigureReporting:
                 return  # Will do at the next round
             if not self.target:
                 self.target = list(self.ListOfDevices.keys())
-            clusterlist = None
         else:
             self.target.clear()
             self.target.append(NWKID)
@@ -126,7 +125,7 @@ class ConfigureReporting:
             if NWKID is None:
                 if not mainPoweredDevice(self, key):
                     self.target.remove(key)
-                    continue  #  Not Main Powered!
+                    continue  # Not Main Powered!
 
                 if "Health" in self.ListOfDevices[key]:
                     if self.ListOfDevices[key]["Health"] == "Not Reachable":
@@ -213,7 +212,7 @@ class ConfigureReporting:
                     ):
                         if self.pluginconf.pluginConf["reenforceConfigureReporting"]:
                             if not is_time_to_perform_work(
-                                self, "ConfigureReporting", key, Ep, cluster, now, (21 * 3600)
+                                self, "ConfigureReporting", key, Ep, cluster, now, (2 * 3600)
                             ):
                                 self.logging(
                                     "Debug",
@@ -499,6 +498,66 @@ class ConfigureReporting:
         for x in attributeList:
             set_isqn_datastruct(self, "ConfigureReporting", key, Ep, cluster, x, i_sqn)
 
+    # Decode 0x8120
+    def read_configure_reporting_response(self, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus):
+        if self.FirmwareVersion and int(self.FirmwareVersion, 16) >= int("31d", 16) and MsgAttributeId:
+            set_status_datastruct(
+                self,
+                "ConfigureReporting",
+                MsgSrcAddr,
+                MsgSrcEp,
+                MsgClusterId,
+                MsgAttributeId,
+                MsgStatus,
+            )
+            if MsgStatus != "00":
+                self.logging(
+                    "Debug",
+                    "Configure Reporting response - ClusterID: %s/%s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s"
+                    % (MsgClusterId, MsgAttributeId, MsgSrcAddr, MsgSrcEp, MsgStatus),
+                    MsgSrcAddr,
+                )
+            return
+
+        # We got a global status for all attributes requested in this command
+        # We need to find the Attributes related to the i_sqn
+        i_sqn = sqn_get_internal_sqn_from_app_sqn(self.ZigateComm, MsgSQN, TYPE_APP_ZCL)
+        self.logging("Debug", "------- - i_sqn: %0s e_sqn: %s" % (i_sqn, MsgSQN))
+
+        for matchAttributeId in list(
+            get_list_isqn_attr_datastruct(self, "ConfigureReporting", MsgSrcAddr, MsgSrcEp, MsgClusterId)
+        ):
+            if (
+                get_isqn_datastruct(
+                    self,
+                    "ConfigureReporting",
+                    MsgSrcAddr,
+                    MsgSrcEp,
+                    MsgClusterId,
+                    matchAttributeId,
+                )
+                != i_sqn
+            ):
+                continue
+
+            self.logging("Debug", "------- - Sqn matches for Attribute: %s" % matchAttributeId)
+            set_status_datastruct(
+                self,
+                "ConfigureReporting",
+                MsgSrcAddr,
+                MsgSrcEp,
+                MsgClusterId,
+                matchAttributeId,
+                MsgStatus,
+            )
+            if MsgStatus != "00":
+                self.logging(
+                    "Debug",
+                    "Configure Reporting response - ClusterID: %s/%s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s"
+                    % (MsgClusterId, matchAttributeId, MsgSrcAddr, MsgSrcEp, MsgStatus),
+                    MsgSrcAddr,
+                )
+
     def read_report_configure_request(
         self, nwkid, epout, cluster_id, attribute_list, manuf_specific="00", manuf_code="0000"
     ):
@@ -522,6 +581,38 @@ class ConfigureReporting:
         )
 
         if is_ack_tobe_disabled(self, nwkid):
-            i_sqn = send_zigatecmd_zcl_noack(self, nwkid, "0122", datas)
+            send_zigatecmd_zcl_noack(self, nwkid, "0122", datas)
         else:
-            i_sqn = send_zigatecmd_zcl_ack(self, nwkid, "0122", datas)
+            send_zigatecmd_zcl_ack(self, nwkid, "0122", datas)
+
+    # decode 0x8122
+    def read_report_configure_response(self, MsgData, MsgLQI):  # Read Configure Report response
+        MsgSQN = MsgData[0:2]
+        MsgNwkId = MsgData[2:6]
+        MsgEp = MsgData[6:8]
+        MsgClusterId = MsgData[8:12]
+        MsgStatus = MsgData[12:14]
+
+        if MsgStatus != "00":
+
+            return
+
+        MsgAttributeDataType = MsgData[14:16]
+        MsgAttribute = MsgData[16:20]
+        MsgMaximumReportingInterval = MsgData[20:24]
+        MsgMinimumReportingInterval = MsgData[24:28]
+
+        self.logging(
+            "Log",
+            "Read Configure Reporting response - NwkId: %s Ep: %s Cluster: %s Attribute: %s DataType: %s Max: %s Min: %s"
+            % (
+                MsgNwkId,
+                MsgEp,
+                MsgClusterId,
+                MsgAttribute,
+                MsgAttributeDataType,
+                MsgMaximumReportingInterval,
+                MsgMinimumReportingInterval,
+            ),
+            MsgNwkId,
+        )

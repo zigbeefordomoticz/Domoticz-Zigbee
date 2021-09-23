@@ -6,7 +6,7 @@
 """
     Module: schneider_wiser.py
 
-    Description: 
+    Description:
 
 """
 
@@ -17,22 +17,15 @@ import struct
 
 import Domoticz
 
-from Classes.LoggingManagement import LoggingManagement
-
 from Modules.domoMaj import MajDomoDevice
-from Modules.basicOutputs import sendZigateCmd, raw_APS_request, write_attribute, read_attribute, ZigatePermitToJoin
+from Modules.basicOutputs import sendZigateCmd, raw_APS_request, write_attribute, read_attribute
 
 from Modules.bindings import webBind, WebBindStatus
 
-from Modules.readAttributes import (
-    ReadAttributeRequest_0201,
-    ReadAttributeRequest_0001,
-    ReadAttributeRequest_0702,
-    ReadAttributeRequest_0000,
-)
+from Modules.readAttributes import ReadAttributeRequest_0001
 from Modules.writeAttributes import write_attribute_when_awake
 
-from Modules.zigateConsts import ZIGATE_EP, MAX_LOAD_ZIGATE, HEARTBEAT
+from Modules.zigateConsts import ZIGATE_EP, MAX_LOAD_ZIGATE
 from Modules.tools import getAttributeValue, retreive_cmd_payload_from_8002, is_ack_tobe_disabled, get_and_inc_SQN
 
 PREFIX_MACADDR_WIZER_LEGACY = "00124b00"
@@ -473,7 +466,7 @@ def iTRV_registration(self, NwkId):
     Hattribute = "%04x" % 0xE103
     data_type = "10"  # Bool
     data = "01"
-    self.log.logging("Schneider", "Debug", "iTRV_registration Schneider Write Attribute" % (NwkId,), nwkid=NwkId)
+    self.log.logging("Schneider", "Debug", "iTRV_registration Schneider Write Attribute %s" % (NwkId), nwkid=NwkId)
     write_attribute(
         self, NwkId, ZIGATE_EP, "01", cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data, ackIsDisabled=False
     )
@@ -1321,18 +1314,18 @@ def schneiderReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dst
 
     if ClusterID == "0201":  # Thermostat cluster
         if GlobalCommand and Command == "00":  # read attributes
-            ManufSpec = "00"
-            ManufCode = "0000"
-            if ManufacturerCode:
-                ManufSpec = "01"
-                ManufCode = ManufacturerCode
-            buildPayload = (
-                Sqn + srcNWKID + srcEp + "01" + ClusterID + "01" + ManufSpec + ManufCode + "%02x" % (len(Data) // 4)
-            )
+            # ManufSpec = "00"
+            # ManufCode = "0000"
+            # if ManufacturerCode:
+            #     ManufSpec = "01"
+            #     ManufCode = ManufacturerCode
+            # buildPayload = (
+            #     Sqn + srcNWKID + srcEp + "01" + ClusterID + "01" + ManufSpec + ManufCode + "%02x" % (len(Data) // 4)
+            # )
             idx = nbAttribute = 0
             while idx < len(Data):
                 nbAttribute += 1
-                Attribute = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[idx : idx + 4], 16)))[0]
+                Attribute = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[idx: idx + 4], 16)))[0]
                 idx += 4
                 if self.FirmwareVersion and int(self.FirmwareVersion, 16) <= 0x031C:
                     wiser_unsupported_attribute(self, srcNWKID, srcEp, Sqn, ClusterID, Attribute)
@@ -1715,7 +1708,7 @@ def vact_config_reporting_normal(self, NwkId, EndPoint):
     }
     schneider_UpdateConfigureReporting(self, NwkId, EndPoint, "0001", AttributesConfig)
 
-    ## Set the Window Detection to 0x04
+    # Set the Window Detection to 0x04
     wiser_set_thermostat_window_detection(self, NwkId, EndPoint, 0x04)
 
     AttributesConfig = {
@@ -1783,8 +1776,7 @@ def schneider_UpdateConfigureReporting(self, NwkId, Ep, ClusterId=None, Attribut
     manufacturer = "0000"
     manufacturer_spec = "00"
     direction = "00"
-
-    addr_mode = "02"
+    # addr_mode = "02"
 
     attrList = ""
     attrLen = 0
@@ -1832,7 +1824,7 @@ def schneider_UpdateConfigureReporting(self, NwkId, Ep, ClusterId=None, Attribut
         )
 
 
-#### Wiser New Version
+# Wiser New Version
 def wiser_home_lockout_thermostat(self, NwkId, mode):
 
     self.log.logging("Schneider", "Debug", "wiser_home_lockout_thermostat -- mode: %s" % (mode))
@@ -1892,7 +1884,7 @@ def change_setpoint_for_time(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID
             "Schneider" in self.ListOfDevices[srcNWKID]
             and "ThermostatOverride" in self.ListOfDevices[srcNWKID]["Schneider"]
         ):
-            previous_setpoint = self.ListOfDevices[srcNWKID]["Schneider"]["ThermostatOverride"]["CurrentSetpoint"]
+            # previous_setpoint = self.ListOfDevices[srcNWKID]["Schneider"]["ThermostatOverride"]["CurrentSetpoint"]
             schneider_update_ThermostatDevice(self, Devices, srcNWKID, EPout, "0201", setpoint)
             del self.ListOfDevices[srcNWKID]["Schneider"]["ThermostatOverride"]
 

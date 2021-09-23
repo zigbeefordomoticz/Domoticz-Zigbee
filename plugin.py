@@ -9,7 +9,7 @@
         <h2> Plugin ZiGate for Domoticz </h2><br/>
             The aim of the plugin is to bridge a ZiGate to the DomoticZ software. <br/>
             This will allow you to manage all your devices through widgets created on the Domoticz side.<br/>
-            On top we have build a specific User Interface which is accessible over your browser to help you 
+            On top we have build a specific User Interface which is accessible over your browser to help you
             in the configuration of the plugin and to customize some behaviour of the Zigate Hardware.<br/>
 
             <br/><h3> Sources of information </h3><br/>
@@ -90,7 +90,6 @@ try:
 except ImportError:
     pass
 
-from datetime import datetime
 import time
 import json
 import sys
@@ -101,20 +100,17 @@ from Modules.piZigate import switchPiZigate_mode
 from Modules.tools import removeDeviceInList
 from Modules.basicOutputs import (
     sendZigateCmd,
-    removeZigateDevice,
     start_Zigate,
     setExtendedPANID,
     setTimeServer,
     leaveRequest,
     zigateBlueLed,
     ZigatePermitToJoin,
-    disable_firmware_default_response,
     do_Many_To_One_RouteRequest,
 )
 from Modules.input import ZigateRead
 from Modules.heartbeat import processListOfDevices
 from Modules.database import (
-    importDeviceConf,
     importDeviceConfV2,
     LoadDeviceList,
     checkListOfDevice2Devices,
@@ -123,8 +119,8 @@ from Modules.database import (
 )
 from Modules.domoTools import ResetDevice
 from Modules.command import mgtCommand
-from Modules.zigateConsts import HEARTBEAT, CERTIFICATION, MAX_LOAD_ZIGATE, MAX_FOR_ZIGATE_BUZY
-from Modules.txPower import set_TxPower, get_TxPower
+from Modules.zigateConsts import HEARTBEAT, CERTIFICATION, MAX_FOR_ZIGATE_BUZY
+from Modules.txPower import set_TxPower
 from Modules.checkingUpdate import checkPluginVersion, checkPluginUpdate, checkFirmwareUpdate
 from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
 from Modules.schneider_wiser import wiser_thermostat_monitoring_heating_demand
@@ -1147,7 +1143,10 @@ def zigateInit_Phase3(self):
         if self.networkenergy is None:
             self.networkenergy = NetworkEnergy(
                 self.pluginconf, self.ZigateComm, self.ListOfDevices, Devices, self.HardwareID, self.log
-            )  #    if len(self.ListOfDevices) > 1:        #        self.log.logging( 'Plugin', 'Status', "Trigger a Energy Level Scan")        #        self.networkenergy.start_scan()
+            )
+            # if len(self.ListOfDevices) > 1:
+            #   self.log.logging( 'Plugin', 'Status', "Trigger a Energy Level Scan")
+            #   self.networkenergy.start_scan()
         if self.networkenergy:
             self.webserver.update_networkenergy(self.networkenergy)
 
