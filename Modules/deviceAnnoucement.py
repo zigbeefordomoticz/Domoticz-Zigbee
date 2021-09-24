@@ -1,25 +1,22 @@
 import Domoticz
 from time import time
 
-from Classes.LoggingManagement import LoggingManagement
-
 from Modules.tools import (
     loggingMessages,
     decodeMacCapa,
-    ReArrangeMacCapaBasedOnModel,
+    # ReArrangeMacCapaBasedOnModel,
     timeStamped,
     IEEEExist,
     DeviceExist,
     initDeviceInList,
     mainPoweredDevice,
 )
-from Modules.domoTools import lastSeenUpdate, timedOutDevice
-from Modules.readAttributes import ReadAttributeRequest_0000, ReadAttributeRequest_0001, READ_ATTRIBUTES_REQUEST
+from Modules.domoTools import lastSeenUpdate
+from Modules.readAttributes import ReadAttributeRequest_0000, READ_ATTRIBUTES_REQUEST
 from Modules.bindings import rebind_Clusters, reWebBind_Clusters
-from Modules.schneider_wiser import schneider_wiser_registration, schneiderReadRawAPS, PREFIX_MACADDR_WIZER_LEGACY
+from Modules.schneider_wiser import schneider_wiser_registration, PREFIX_MACADDR_WIZER_LEGACY
 from Modules.basicOutputs import sendZigateCmd
 from Modules.livolo import livolo_bind
-from Modules.configureReporting import processConfigureReporting
 from Modules.legrand_netatmo import legrand_refresh_battery_remote
 from Modules.lumi import enableOppleSwitch, setXiaomiVibrationSensitivity
 from Modules.casaia import casaia_AC201_pairing
@@ -211,7 +208,7 @@ def decode004d_existing_devicev2(self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgL
     #
 
     # If needed fix MacCapa
-    deviceMacCapa = list(decodeMacCapa(ReArrangeMacCapaBasedOnModel(self, NwkId, MsgMacCapa)))
+    # deviceMacCapa = list(decodeMacCapa(ReArrangeMacCapaBasedOnModel(self, NwkId, MsgMacCapa)))
 
     self.log.logging(
         "Input",
@@ -279,7 +276,7 @@ def decode004d_existing_devicev2(self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgL
     if "ConfigureReporting" in self.ListOfDevices[NwkId]:
         del self.ListOfDevices[NwkId]["ConfigureReporting"]
 
-    processConfigureReporting(self, NWKID=NwkId)
+    self.configureReporting.processConfigureReporting(NWKID=NwkId)
 
     # Let's take the opportunity to trigger some request/adjustement / NOT SURE IF THIS IS GOOD/IMPORTANT/NEEDED
     self.log.logging("Input", "Debug", "Decode004D - Request attribute 0x0000 %s" % (NwkId), NwkId)
@@ -302,7 +299,7 @@ def decode004d_existing_devicev2(self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgL
     sendZigateCmd(self, "0042", str(NwkId), ackIsDisabled=True)
 
     # Let's check if this is a Schneider Wiser
-    if MsgIEEE[0 : len(PREFIX_MACADDR_WIZER_LEGACY)] == PREFIX_MACADDR_WIZER_LEGACY:
+    if MsgIEEE[0: len(PREFIX_MACADDR_WIZER_LEGACY)] == PREFIX_MACADDR_WIZER_LEGACY:
         if "Manufacturer" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Manufacturer"] == "105e":
             schneider_wiser_registration(self, Devices, NwkId)
 
@@ -331,7 +328,7 @@ def decode004d_new_devicev2(self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgData, 
     # There is a dilem here as Livolo and Schneider Wiser share the same IEEE prefix.
     if self.pluginconf.pluginConf["Livolo"]:
         PREFIX_MACADDR_LIVOLO = "00124b00"
-        if MsgIEEE[0 : len(PREFIX_MACADDR_LIVOLO)] == PREFIX_MACADDR_LIVOLO:
+        if MsgIEEE[0: len(PREFIX_MACADDR_LIVOLO)] == PREFIX_MACADDR_LIVOLO:
             livolo_bind(self, NwkId, "06")
 
     # New device comming. The IEEE is not known
@@ -413,12 +410,12 @@ def decode004d_new_devicev2(self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgData, 
     PREFIX_IEEE_XIAOMI = "00158d000"
     PREFIX_IEEE_OPPLE = "04cf8cdf3"
     if (
-        MsgIEEE[0 : len(PREFIX_IEEE_XIAOMI)] == PREFIX_IEEE_XIAOMI
-        or MsgIEEE[0 : len(PREFIX_IEEE_OPPLE)] == PREFIX_IEEE_OPPLE
+        MsgIEEE[0: len(PREFIX_IEEE_XIAOMI)] == PREFIX_IEEE_XIAOMI
+        or MsgIEEE[0: len(PREFIX_IEEE_OPPLE)] == PREFIX_IEEE_OPPLE
     ):
         ReadAttributeRequest_0000(self, NwkId, fullScope=False)  # In order to request Model Name
     PREFIX_IEEE_WISER = "00124b000"
-    if self.pluginconf.pluginConf["enableSchneiderWiser"] and MsgIEEE[0 : len(PREFIX_IEEE_WISER)] == PREFIX_IEEE_WISER:
+    if self.pluginconf.pluginConf["enableSchneiderWiser"] and MsgIEEE[0: len(PREFIX_IEEE_WISER)] == PREFIX_IEEE_WISER:
         ReadAttributeRequest_0000(self, NwkId, fullScope=False)  # In order to request Model Name
 
     self.log.logging("Pairing", "Debug", "Decode004d - Request End Point List ( 0x0045 )")
@@ -437,7 +434,7 @@ def decode004d_new_devicev2(self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgData, 
     lastSeenUpdate(self, Devices, NwkId=NwkId)
 
 
-######################################################## V1
+# ------------------- V1 -------------------
 def device_annoucementv1(self, Devices, MsgData, MsgLQI):
 
     NwkId = MsgData[0:4]
@@ -531,7 +528,7 @@ def decode004d_existing_devicev1(
     #
 
     # If needed fix MacCapa
-    deviceMacCapa = list(decodeMacCapa(ReArrangeMacCapaBasedOnModel(self, MsgSrcAddr, MsgMacCapa)))
+    # deviceMacCapa = list(decodeMacCapa(ReArrangeMacCapaBasedOnModel(self, MsgSrcAddr, MsgMacCapa)))
 
     self.log.logging(
         "Input",
@@ -668,7 +665,7 @@ def decode004d_existing_devicev1(
     if "ConfigureReporting" in self.ListOfDevices[MsgSrcAddr]:
         del self.ListOfDevices[MsgSrcAddr]["ConfigureReporting"]
 
-    processConfigureReporting(self, NWKID=MsgSrcAddr)
+    self.configureReporting.processConfigureReporting(NWKID=MsgSrcAddr)
 
     # Let's take the opportunity to trigger some request/adjustement / NOT SURE IF THIS IS GOOD/IMPORTANT/NEEDED
     self.log.logging(
@@ -681,7 +678,7 @@ def decode004d_existing_devicev1(
     sendZigateCmd(self, "0042", str(MsgSrcAddr), ackIsDisabled=True)
 
     # Let's check if this is a Schneider Wiser
-    if MsgIEEE[0 : len(PREFIX_MACADDR_WIZER_LEGACY)] == PREFIX_MACADDR_WIZER_LEGACY:
+    if MsgIEEE[0: len(PREFIX_MACADDR_WIZER_LEGACY)] == PREFIX_MACADDR_WIZER_LEGACY:
         if (
             "Manufacturer" in self.ListOfDevices[MsgSrcAddr]
             and self.ListOfDevices[MsgSrcAddr]["Manufacturer"] == "105e"
@@ -697,7 +694,7 @@ def decode004d_new_devicev1(self, Devices, MsgSrcAddr, MsgIEEE, MsgMacCapa, MsgR
     # There is a dilem here as Livolo and Schneider Wiser share the same IEEE prefix.
     if self.pluginconf.pluginConf["Livolo"]:
         PREFIX_MACADDR_LIVOLO = "00124b00"
-        if MsgIEEE[0 : len(PREFIX_MACADDR_LIVOLO)] == PREFIX_MACADDR_LIVOLO:
+        if MsgIEEE[0: len(PREFIX_MACADDR_LIVOLO)] == PREFIX_MACADDR_LIVOLO:
             livolo_bind(self, MsgSrcAddr, "06")
 
     # New device comming. The IEEE is not known
@@ -783,7 +780,7 @@ def decode004d_new_devicev1(self, Devices, MsgSrcAddr, MsgIEEE, MsgMacCapa, MsgR
 
     # 4- We will request immediatly the List of EndPoints
     PREFIX_IEEE_XIAOMI = "00158d000"
-    if MsgIEEE[0 : len(PREFIX_IEEE_XIAOMI)] == PREFIX_IEEE_XIAOMI:
+    if MsgIEEE[0: len(PREFIX_IEEE_XIAOMI)] == PREFIX_IEEE_XIAOMI:
         ReadAttributeRequest_0000(self, MsgSrcAddr, fullScope=False)  # In order to request Model Name
     if self.pluginconf.pluginConf["enableSchneiderWiser"]:
         ReadAttributeRequest_0000(self, MsgSrcAddr, fullScope=False)  # In order to request Model Name
