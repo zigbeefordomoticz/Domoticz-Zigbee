@@ -29,16 +29,14 @@ from Modules.tools import (
     is_attr_unvalid_datastruct,
     reset_attr_datastruct,
     get_list_isqn_attr_datastruct,
-    get_isqn_datastruct
+    get_isqn_datastruct,
 )
 
-from Classes.Transport.sqnMgmt import (
-    sqn_get_internal_sqn_from_app_sqn,
-    TYPE_APP_ZCL
-)
+from Classes.Transport.sqnMgmt import sqn_get_internal_sqn_from_app_sqn, TYPE_APP_ZCL
 
 
 MAX_ATTR_PER_REQ = 3
+CONFIGURE_REPORT_PERFORM_TIME = 21  # Reenforce will be done each xx hours
 
 
 class ConfigureReporting:
@@ -212,7 +210,13 @@ class ConfigureReporting:
                     ):
                         if self.pluginconf.pluginConf["reenforceConfigureReporting"]:
                             if not is_time_to_perform_work(
-                                self, "ConfigureReporting", key, Ep, cluster, now, (2 * 3600)
+                                self,
+                                "ConfigureReporting",
+                                key,
+                                Ep,
+                                cluster,
+                                now,
+                                (CONFIGURE_REPORT_PERFORM_TIME * 3600),
                             ):
                                 self.logging(
                                     "Debug",
