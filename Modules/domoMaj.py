@@ -30,11 +30,20 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
 
     # Sanity Checks
     if NWKID not in self.ListOfDevices:
-        Domoticz.Error("MajDomoDevice - %s not known" % NWKID)
+        self.log.logging("Widget", "Error", "MajDomoDevice - %s not known" % NWKID, NWKID)
+        return
+
+    if "Status" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Status"] != "inDB":
+        self.log.logging(
+            "Widget",
+            "Error",
+            "MajDomoDevice NwkId: %s status: %s not inDB" % (NWKID, self.ListOfDevices[NWKID]["Status"]),
+            NWKID,
+        )
         return
 
     if "IEEE" not in self.ListOfDevices[NWKID]:
-        Domoticz.Error("MajDomoDevice - no IEEE for %s" % NWKID)
+        self.log.logging("Widget", "Error", "MajDomoDevice - no IEEE for %s" % NWKID, NWKID)
         return
 
     model_name = ""
@@ -1335,7 +1344,14 @@ def check_erratic_value(self, NwkId, value_type, value, expected_min, expected_m
             "Widget",
             "Log",
             "Aberrant %s: %s (below % or above %s) for device: %s [%s]"
-            % (value_type, value, expected_min, expected_max, NwkId, self.ListOfDevices[NwkId][_attribute]["ConsecutiveErraticValue"]),
+            % (
+                value_type,
+                value,
+                expected_min,
+                expected_max,
+                NwkId,
+                self.ListOfDevices[NwkId][_attribute]["ConsecutiveErraticValue"],
+            ),
             NwkId,
         )
     return True

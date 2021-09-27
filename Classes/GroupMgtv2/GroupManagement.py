@@ -94,7 +94,19 @@ class GroupsManagement(object):
     from Classes.GroupMgtv2.GrpIkeaRemote import manageIkeaTradfriRemoteLeftRight
 
     def __init__(
-        self, PluginConf, ZigateComm, adminWidgets, HomeDirectory, hardwareID, Devices, ListOfDevices, IEEE2NWK, log
+        self,
+        VersionNewFashion,
+        DomoticzMajor,
+        DomoticzMinor,
+        PluginConf,
+        ZigateComm,
+        adminWidgets,
+        HomeDirectory,
+        hardwareID,
+        Devices,
+        ListOfDevices,
+        IEEE2NWK,
+        log,
     ):
 
         self.HB = 0
@@ -112,6 +124,9 @@ class GroupsManagement(object):
         self.ScanDevicesToBeDone = []  # List of Devices for which a GrpMemberShip request as to be performed
         self.GroupStatus = "Starting"  # Used by WebServer to display Status of Group!
 
+        self.VersionNewFashion = VersionNewFashion
+        self.DomoticzMajor = DomoticzMajor
+        self.DomoticzMinor = DomoticzMinor
         # Check if we have to open the old format
         if os.path.isfile(self.pluginconf.pluginConf["pluginData"] + "/GroupsList-%02d.pck" % hardwareID):
             # We are in the Migration from Old Group Managemet to new.

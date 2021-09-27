@@ -56,7 +56,7 @@ ATTRIBUTES = {
     "0008": [0x0000],
     "000a": [0x0000],
     "000c": [0x0051, 0x0055, 0x006F, 0xFF05],
-    "0019": [0x0002],
+    "0019": [0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007, 0x0008, 0x0009, 0x000A],
     "0020": [0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006],
     "0100": [0x0000, 0x0001, 0x0002, 0x0010, 0x0011],
     "0101": [
@@ -505,7 +505,7 @@ def add_attributes_from_device_certified_conf(self, key, cluster, listAttributes
 
     for attr in attributes:
         if int(str(attr), 16) not in listAttributes:
-            listAttributes.append(int(attr, 16))
+            listAttributes.append(int(attr, 16))  # pytype: disable=wrong-arg-types
     return listAttributes
 
 
@@ -772,7 +772,7 @@ def ReadAttributeRequest_000C(self, key):
 
 def ReadAttributeRequest_0019(self, key):
     # Cluster 0x000C with attribute 0x0055 / Xiaomi Power and Metering
-    self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_0019 - Key: %s " % key, nwkid=key)
+    self.log.logging("ReadAttributes", "Log", "ReadAttributeRequest_0019 - Key: %s " % key, nwkid=key)
 
     ListOfEp = getListOfEpForCluster(self, key, "0019")
     for EPout in ListOfEp:
@@ -780,7 +780,7 @@ def ReadAttributeRequest_0019(self, key):
         if listAttributes:
             self.log.logging(
                 "ReadAttributes",
-                "Debug",
+                "Log",
                 "Request 0x0019 info via Read Attribute request: " + key + " EPout = " + EPout,
                 nwkid=key,
             )
@@ -1541,7 +1541,6 @@ def ReadAttributeRequest_fc21(self, key):
         )
         read_attribute(
             self,
-            "02",
             key,
             ZIGATE_EP,
             "01",
@@ -1551,7 +1550,7 @@ def ReadAttributeRequest_fc21(self, key):
             "1110",
             0x01,
             "0001",
-            aackIsDisabled=is_ack_tobe_disabled(self, key),
+            ackIsDisabled=is_ack_tobe_disabled(self, key),
         )
 
         # datas = "02" + key + ZIGATE_EP + '01' + 'fc21' + '00' + '01' + '1110' + '01' + '0001'

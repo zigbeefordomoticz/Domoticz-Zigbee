@@ -11,10 +11,6 @@
 """
 
 import Domoticz
-import binascii
-import time
-import datetime
-import struct
 import json
 
 
@@ -30,11 +26,9 @@ from Modules.readAttributes import READ_ATTRIBUTES_REQUEST, ReadAttributeRequest
 from Modules.lumi import enableOppleSwitch, setXiaomiVibrationSensitivity
 from Modules.livolo import livolo_bind
 from Modules.orvibo import OrviboRegistration
-from Modules.configureReporting import processConfigureReporting
 from Modules.profalux import profalux_fake_deviceModel
-from Modules.philips import philips_set_pir_occupancySensibility
 from Modules.domoCreate import CreateDomoDevice
-from Modules.tools import reset_cluster_datastruct, get_and_inc_SQN, getListOfEpForCluster
+from Modules.tools import get_and_inc_SQN, getListOfEpForCluster
 from Modules.zigateConsts import CLUSTERS_LIST
 from Modules.casaia import casaia_pairing
 from Modules.thermostats import thermostat_Calibration
@@ -42,7 +36,6 @@ from Modules.tuya import tuya_registration
 from Modules.tuyaSiren import tuya_sirene_registration
 from Modules.tuyaTools import tuya_TS0121_registration
 from Modules.tuyaTRV import tuya_eTRV_registration, TUYA_eTRV_MODEL
-from Modules.paramDevice import param_Occupancy_settings_PIROccupiedToUnoccupiedDelay
 from Modules.pollControl import poll_set_long_poll_interval
 
 
@@ -402,7 +395,7 @@ def zigbee_provision_device(self, Devices, NWKID, RIA, status):
 
     # 2 Enable Configure Reporting for any applicable cluster/attributes
     self.log.logging("Pairing", "Debug", "Request Configure Reporting for %s" % NWKID)
-    processConfigureReporting(self, NWKID)
+    self.configureReporting.processConfigureReporting(NWKID)
 
     # 3 Read attributes
     device_interview(self, NWKID)

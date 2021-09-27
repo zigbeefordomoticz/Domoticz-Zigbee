@@ -128,10 +128,10 @@ class NetworkMap:
             if self.Neighbours[entry]["Status"] == "Completed":
                 continue
 
-            elif self.Neighbours[entry]["Status"] in ("TimedOut", "NotReachable"):
+            if self.Neighbours[entry]["Status"] in ("TimedOut", "NotReachable"):
                 continue
 
-            elif self.Neighbours[entry]["Status"] in ("WaitResponse", "WaitResponse2"):
+            if self.Neighbours[entry]["Status"] in ("WaitResponse", "WaitResponse2"):
                 if len(self.LQIreqInProgress) > 0:
                     waitResponse = True
                 else:
@@ -140,9 +140,10 @@ class NetworkMap:
 
             elif self.Neighbours[entry]["Status"] in ("ScanRequired", "ScanRequired2"):
                 LQIreq(self, entry)
+                return
 
+        # We have been through all list of devices and not action triggered
         else:
-            # We have been through all list of devices and not action triggered
             if not waitResponse:
                 self.logging("Debug", "continue_scan - scan completed, all Neighbour tables received.")
                 finish_scan(self)

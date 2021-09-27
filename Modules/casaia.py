@@ -121,7 +121,7 @@ def casaiaReadRawAPS(self, Devices, NwkId, srcEp, ClusterId, dstNWKID, dstEP, Ms
             AC201_read_AC_status_response(self, Devices, NwkId, srcEp, Data)
 
         elif Command in ["11", "12"]:
-            AC201_read_learned_data_group_status_request(self, Devices, NwkId, srcEp, Data)
+            AC201_read_learned_data_group_status_request(self, NwkId)
 
     elif ClusterId == CASAIA_AC211_CLUSTER:
         # AC211

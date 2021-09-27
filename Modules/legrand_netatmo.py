@@ -11,11 +11,8 @@
 """
 
 import Domoticz
-import binascii
 import struct
-import json
 
-from datetime import datetime
 from time import time
 
 from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_EP, HEARTBEAT, LEGRAND_REMOTES
@@ -30,7 +27,6 @@ from Modules.readAttributes import (
 
 from Modules.basicOutputs import raw_APS_request, write_attribute, write_attributeNoResponse, read_attribute
 from Modules.bindings import bindDevice, unbindDevice
-from Modules.configureReporting import send_configure_reporting_attributes_set
 
 LEGRAND_CLUSTER_FC01 = {
     "Dimmer switch wo neutral": {"EnableLedInDark": "0001", "EnableDimmer": "0000", "EnableLedIfOn": "0002"},
@@ -421,7 +417,7 @@ def legrand_fc01(self, nwkid, command, OnOff):
 
 def cable_connected_mode(self, nwkid, Mode):
 
-    data_type = "09"  #  16-bit Data
+    data_type = "09"  # 16-bit Data
     Hattribute = "0000"
     Hdata = "0000"
 
@@ -482,8 +478,8 @@ def legrand_fc40(self, nwkid, Mode):
     Hattribute = "0000"
     data_type = "30"  # 8bit Enum
     Hdata = CABLE_OUTLET_MODE[Mode]
-    manuf_id = "1021"  # Legrand Code
-    manuf_spec = "01"  # Manuf specific flag
+    # manuf_id = "1021"  # Legrand Code
+    # manuf_spec = "01"  # Manuf specific flag
     cluster_id = "%04x" % 0xFC40
 
     EPout = "01"
@@ -502,7 +498,7 @@ def legrand_fc40(self, nwkid, Mode):
     sqn = get_and_inc_SQN(self, nwkid)
 
     fcf = "15"
-    manufspec = "01"
+    # manufspec = "01"
     manufcode = "1021"
     cmd = "00"
     data = "%02x" % CABLE_OUTLET_MODE[Mode]
@@ -750,12 +746,12 @@ def legrand_dimmer_enable(self, NwkId):
 
     # Configure Reporting
     # 0x0008 / 0x0000  Change 0x01, Min: 0x01, Max: 600
-    send_configure_reporting_attributes_set(
-        self, NwkId, "01", "0008", "00", "00", "0000", 1, "0020000000010258000001", [0x0000]
+    self.configureReporting.send_configure_reporting_attributes_set(
+        NwkId, "01", "0008", "00", "00", "0000", 1, "0020000000010258000001", [0x0000]
     )
     # 0x0008 / 0x00011 Change 0x01 Min: 0x00, Max 600
-    send_configure_reporting_attributes_set(
-        self, NwkId, "01", "0008", "00", "00", "0000", 1, "0020001100000258000001", [0x0011]
+    self.configureReporting.send_configure_reporting_attributes_set(
+        NwkId, "01", "0008", "00", "00", "0000", 1, "0020001100000258000001", [0x0011]
     )
 
     # Read Attribute 0x0008 / 0x0000 , 0x0011

@@ -11,55 +11,23 @@
 """
 
 import Domoticz
-import binascii
 import time
-import datetime
-import struct
-import json
 
-from Modules.actuators import actuators
-from Modules.basicOutputs import sendZigateCmd, identifyEffect, getListofAttribute
+from Modules.basicOutputs import sendZigateCmd, getListofAttribute
 from Modules.readAttributes import (
     READ_ATTRIBUTES_REQUEST,
     ping_device_with_read_attribute,
-    ReadAttributeRequest_0000,
-    ReadAttributeRequest_0001,
-    ReadAttributeRequest_0006,
-    ReadAttributeRequest_0008,
     ReadAttributeRequest_0006_0000,
-    ReadAttributeRequest_0006_400x,
     ReadAttributeRequest_0008_0000,
-    ReadAttributeRequest_0100,
     ReadAttributeRequest_0101_0000,
-    ReadAttributeRequest_000C,
-    ReadAttributeRequest_0102,
     ReadAttributeRequest_0102_0008,
-    ReadAttributeRequest_0201,
     ReadAttributeRequest_0201_0012,
-    ReadAttributeRequest_0204,
-    ReadAttributeRequest_0300,
-    ReadAttributeRequest_0400,
-    ReadAttributeRequest_0402,
-    ReadAttributeRequest_0403,
-    ReadAttributeRequest_0405,
     ReadAttributeRequest_0b04_050b_0505_0508,
-    ReadAttributeRequest_0406,
-    ReadAttributeRequest_0500,
-    ReadAttributeRequest_0502,
-    ReadAttributeRequest_0702,
-    ReadAttributeRequest_000f,
-    ReadAttributeRequest_fc01,
-    ReadAttributeRequest_fc21,
     ping_tuya_device,
 )
-from Modules.configureReporting import processConfigureReporting
 from Modules.legrand_netatmo import legrandReenforcement
-from Modules.blitzwolf import pollingBlitzwolfPower
-from Modules.schneider_wiser import schneiderRenforceent, pollingSchneider
+from Modules.schneider_wiser import schneiderRenforceent
 from Modules.casaia import pollingCasaia
-from Modules.philips import pollingPhilips
-from Modules.gledopto import pollingGledopto
-from Modules.lumi import setXiaomiVibrationSensitivity, pollingLumiPower
 from Modules.tools import (
     removeNwkInList,
     mainPoweredDevice,
@@ -72,11 +40,6 @@ from Modules.domoTools import timedOutDevice
 from Modules.zigateConsts import (
     HEARTBEAT,
     MAX_LOAD_ZIGATE,
-    CLUSTERS_LIST,
-    LEGRAND_REMOTES,
-    LEGRAND_REMOTE_SHUTTER,
-    LEGRAND_REMOTE_SWITCHS,
-    ZIGATE_EP,
 )
 from Modules.pairingProcess import processNotinDBDevices
 from Modules.paramDevice import sanity_check_of_param
@@ -526,7 +489,7 @@ def processKnownDevices(self, Devices, NWKID):
         sanity_check_of_param(self, NWKID)
         self.ListOfDevices[NWKID]["CheckParam"] = False
 
-    ## Starting this point, it is ony relevant for Main Powered Devices.
+    # Starting this point, it is ony relevant for Main Powered Devices.
     # Some battery based end device with ZigBee 30 use polling and can receive commands.
     # We should authporized them for Polling After Action, in order to get confirmation.
     if not _mainPowered and not enabledEndDevicePolling:
@@ -705,7 +668,7 @@ def processListOfDevices(self, Devices):
             entriesToBeRemoved.append(NWKID)
             continue
 
-        ########## Known Devices
+        # Known Devices
         if status == "inDB":
             processKnownDevices(self, Devices, NWKID)
 
@@ -779,8 +742,7 @@ def processListOfDevices(self, Devices):
 
     for iterDevToBeRemoved in entriesToBeRemoved:
         if "IEEE" in self.ListOfDevices[iterDevToBeRemoved]:
-            _ieee = self.ListOfDevices[iterDevToBeRemoved]["IEEE"]
-            del _ieee
+            del self.ListOfDevices[iterDevToBeRemoved]["IEEE"]
         del self.ListOfDevices[iterDevToBeRemoved]
 
     if self.CommiSSionning or self.busy:
@@ -794,7 +756,8 @@ def processListOfDevices(self, Devices):
 
     if (self.HeartbeatCount > QUIET_AFTER_START) and ((self.HeartbeatCount % CONFIGURERPRT_FEQ)) == 0:
         # Trigger Configure Reporting to eligeable devices
-        processConfigureReporting(self)
+        if self.configureReporting:
+            self.configureReporting.processConfigureReporting()
 
     # Network Topology management
     # if (self.HeartbeatCount > QUIET_AFTER_START) and (self.HeartbeatCount > NETWORK_TOPO_START):

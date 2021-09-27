@@ -138,10 +138,12 @@ def LoadDeviceList(self):
     # we fall back to the old fashion .txt
     jsonFormatDB = True
 
-    if self.pluginconf.pluginConf["useDomoticzDatabase"]:
+    # This can be enabled only with Domoticz version 2021.1 build 1395 and above, otherwise big memory leak
+
+    if Modules.tools.is_domoticz_db_available(self) and self.pluginconf.pluginConf["useDomoticzDatabase"]:
         ListOfDevices_from_Domoticz, saving_time = _read_DeviceList_Domoticz(self)
         Domoticz.Log(
-            "Database from Dz is recent: %s"
+            "Database from Dz is recent: %s Loading from Domoticz Db"
             % is_domoticz_recent(self, saving_time, self.pluginconf.pluginConf["pluginData"] + self.DeviceListName)
         )
 
@@ -215,11 +217,11 @@ def LoadDeviceList(self):
     load_new_param_definition(self)
     self.log.logging("Database", "Status", "%s Entries loaded from %s" % (len(self.ListOfDevices), _DeviceListFileName))
 
-    if self.pluginconf.pluginConf["useDomoticzDatabase"]:
+    if Modules.tools.is_domoticz_db_available(self) and self.pluginconf.pluginConf["useDomoticzDatabase"]:
         self.log.logging(
             "Database",
             "Log",
-            "Plugin Database loaded. From Dz: %s from DeviceList: %s, "
+            "Plugin Database loaded - BUT NOT USE - from Dz: %s from DeviceList: %s, checking deltas "
             % (
                 len(ListOfDevices_from_Domoticz),
                 len(self.ListOfDevices),
@@ -234,7 +236,7 @@ def LoadDeviceList(self):
             diff = deepdiff.DeepDiff(self.ListOfDevices, ListOfDevices_from_Domoticz)
             self.log.logging("Database", "Log", json.dumps(json.loads(diff.to_json()), indent=4))
         except:
-            self.log.logging("Database", "Log", "Python Module deepdiff not found")
+            # self.log.logging("Database", "Log", "Python Module deepdiff not found")
             pass
 
     return res
@@ -350,7 +352,7 @@ def WriteDeviceList(self, count):
 
     _write_DeviceList_txt(self)
 
-    if self.pluginconf.pluginConf["useDomoticzDatabase"]:
+    if Modules.tools.is_domoticz_db_available(self) and self.pluginconf.pluginConf["useDomoticzDatabase"]:
         # We need to patch None as 'None'
         if _write_DeviceList_Domoticz(self) is None:
             # An error occured. Probably Dz.Configuration() is not available.
@@ -361,8 +363,8 @@ def WriteDeviceList(self, count):
 
 def _write_DeviceList_txt(self):
     # Write in classic format ( .txt )
+    _DeviceListFileName = self.pluginconf.pluginConf["pluginData"] + self.DeviceListName
     try:
-        _DeviceListFileName = self.pluginconf.pluginConf["pluginData"] + self.DeviceListName
         self.log.logging("Database", "Debug", "Write " + _DeviceListFileName + " = " + str(self.ListOfDevices))
         with open(_DeviceListFileName, "wt") as file:
             for key in self.ListOfDevices:

@@ -17,6 +17,8 @@
 
 """DNS Names.
 """
+# pytype: disable=attribute-error
+# pytype: disable=module-attr
 
 from io import BytesIO
 import struct
@@ -35,7 +37,7 @@ import dns.wiredata
 from ._compat import long, binary_type, text_type, unichr, maybe_decode
 
 try:
-    maxint = sys.maxint  # pylint: disable=sys-max-int
+    maxint = sys.maxint  # pylint: disable=sys-max-int 
 except AttributeError:
     maxint = (1 << (8 * struct.calcsize("P"))) // 2 - 1
 
@@ -332,7 +334,7 @@ class Name(object):
 
         labels = [_maybe_convert_to_binary(x) for x in labels]
         super(Name, self).__setattr__('labels', tuple(labels))
-        _validate_labels(self.labels)
+        _validate_labels(self.labels) # pytype: disable=attribute-error
 
     def __setattr__(self, name, value):
         # Names are immutable
@@ -700,7 +702,7 @@ class Name(object):
 
         l = len(self.labels)
         if depth == 0:
-            return (self, dns.name.empty)
+            return (self, dns.name.empty) 
         elif depth == l:
             return (dns.name.empty, self)
         elif depth < 0 or depth > l:

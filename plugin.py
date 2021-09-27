@@ -9,7 +9,7 @@
         <h2> Plugin ZiGate for Domoticz </h2><br/>
             The aim of the plugin is to bridge a ZiGate to the DomoticZ software. <br/>
             This will allow you to manage all your devices through widgets created on the Domoticz side.<br/>
-            On top we have build a specific User Interface which is accessible over your browser to help you 
+            On top we have build a specific User Interface which is accessible over your browser to help you
             in the configuration of the plugin and to customize some behaviour of the Zigate Hardware.<br/>
 
             <br/><h3> Sources of information </h3><br/>
@@ -90,7 +90,6 @@ try:
 except ImportError:
     pass
 
-from datetime import datetime
 import time
 import json
 import sys
@@ -101,20 +100,17 @@ from Modules.piZigate import switchPiZigate_mode
 from Modules.tools import removeDeviceInList
 from Modules.basicOutputs import (
     sendZigateCmd,
-    removeZigateDevice,
     start_Zigate,
     setExtendedPANID,
     setTimeServer,
     leaveRequest,
     zigateBlueLed,
     ZigatePermitToJoin,
-    disable_firmware_default_response,
     do_Many_To_One_RouteRequest,
 )
 from Modules.input import ZigateRead
 from Modules.heartbeat import processListOfDevices
 from Modules.database import (
-    importDeviceConf,
     importDeviceConfV2,
     LoadDeviceList,
     checkListOfDevice2Devices,
@@ -123,13 +119,14 @@ from Modules.database import (
 )
 from Modules.domoTools import ResetDevice
 from Modules.command import mgtCommand
-from Modules.zigateConsts import HEARTBEAT, CERTIFICATION, MAX_LOAD_ZIGATE, MAX_FOR_ZIGATE_BUZY
-from Modules.txPower import set_TxPower, get_TxPower
+from Modules.zigateConsts import HEARTBEAT, CERTIFICATION, MAX_FOR_ZIGATE_BUZY
+from Modules.txPower import set_TxPower
 from Modules.checkingUpdate import checkPluginVersion, checkPluginUpdate, checkFirmwareUpdate
 from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
 from Modules.schneider_wiser import wiser_thermostat_monitoring_heating_demand
 
 # from Classes.APS import APSManagement
+from Classes.ConfigureReporting import ConfigureReporting
 from Classes.IAS import IAS_Zone_Management
 from Classes.PluginConf import PluginConf
 from Classes.Transport.Transport import ZigateTransport
@@ -171,6 +168,7 @@ class BasePlugin:
         self.DeviceConf = {}  # Store DeviceConf.txt, all known devices configuration
 
         # Objects from Classe
+        self.configureReporting = None
         self.ZigateComm = None
         self.groupmgt = None
         self.networkmap = None
@@ -354,7 +352,9 @@ class BasePlugin:
 
         # Import PluginConf.txt
         Domoticz.Log("load PluginConf")
-        self.pluginconf = PluginConf(Parameters["HomeFolder"], self.HardwareID)
+        self.pluginconf = PluginConf(
+            self.VersionNewFashion, self.DomoticzMajor, self.DomoticzMinor, Parameters["HomeFolder"], self.HardwareID
+        )
 
         # Create the adminStatusWidget if needed
         self.PluginHealth["Flag"] = 1
@@ -1100,6 +1100,21 @@ def zigateInit_Phase3(self):
         #        self.log.logging( 'Plugin', 'Status', "Enable Default Response in firmware")
         #        disable_firmware_default_response( self , mode='00')
 
+        # Create Configure Reporting object
+        if self.configureReporting is None:
+            self.configureReporting = ConfigureReporting(
+                self.pluginconf,
+                self.DeviceConf,
+                self.ZigateComm,
+                self.ListOfDevices,
+                Devices,
+                self.log,
+                self.busy,
+                self.FirmwareVersion,
+                self.IEEE2NWK,
+                self.ZigateIEEE
+            )
+
         # Enable Group Management
         if self.groupmgt is None and self.pluginconf.pluginConf["enablegroupmanagement"]:
             self.log.logging("Plugin", "Status", "Start Group Management")
@@ -1127,7 +1142,10 @@ def zigateInit_Phase3(self):
         if self.networkenergy is None:
             self.networkenergy = NetworkEnergy(
                 self.pluginconf, self.ZigateComm, self.ListOfDevices, Devices, self.HardwareID, self.log
-            )  #    if len(self.ListOfDevices) > 1:        #        self.log.logging( 'Plugin', 'Status', "Trigger a Energy Level Scan")        #        self.networkenergy.start_scan()
+            )
+            # if len(self.ListOfDevices) > 1:
+            #   self.log.logging( 'Plugin', 'Status', "Trigger a Energy Level Scan")
+            #   self.networkenergy.start_scan()
         if self.networkenergy:
             self.webserver.update_networkenergy(self.networkenergy)
 
@@ -1194,6 +1212,9 @@ def check_firmware_level(self):
 
 def start_GrpManagement(self, homefolder):
     self.groupmgt = GroupsManagement(
+        self.VersionNewFashion,
+        self.DomoticzMajor,
+        self.DomoticzMinor,
         self.pluginconf,
         self.ZigateComm,
         self.adminWidgets,

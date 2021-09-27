@@ -16,6 +16,7 @@
 # OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 """Help for building DNS wire format messages"""
+# pytype: disable=module-attr
 
 from io import BytesIO
 import struct

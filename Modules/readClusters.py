@@ -414,9 +414,13 @@ def Cluster0000(
         if modelName == "lumi.sensor_swit":
             modelName = "lumi.sensor_switch.aq3"
 
-        if modelName == "TS011F" and manufacturer_name == "_TZ3000_vzopcetz":
-            # Lidl multiprise
-            modelName = "TS011F-multiprise"
+        if modelName == "TS011F":
+            if manufacturer_name == "_TZ3000_vzopcetz":
+                # Lidl multiprise
+                modelName = "TS011F-multiprise"
+            elif manufacturer_name == "_TZ3000_pmz6mjyu":
+                # MOES MS-104BZ-1
+                modelName = "TS011F-2Gang-switches"
 
         elif modelName == "AC211":
             modelName = "AC221"
@@ -2288,7 +2292,7 @@ def Cluster0019(
 
     self.log.logging(
         "Cluster",
-        "Debug",
+        "Log",
         "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s"
         % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
         MsgSrcAddr,
