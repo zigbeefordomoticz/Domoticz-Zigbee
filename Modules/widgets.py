@@ -301,6 +301,16 @@ SWITCH_LVL_MATRIX = {
         "LevelNames": "Off|Auto|Manual",
         "Language": {"fr-FR": {"LevelNames": "Arrêt|Auto|Manuel"}},
     },
+    "ThermoMode_3": {
+        0: (0, "Off"),
+        1: (1, "10"),
+        2: (2, "20"),
+        3: (3, "30"),
+        4: (4, "40"),
+        "ForceUpdate": True,
+        "LevelNames": "Off|Confort|Eco|Frost Protection|Auto",
+        "Language": {"fr-FR": {"LevelNames": "Arrêt|Confort|Eco|Hors Gel|Auto"}},
+    },    
     "HeatingStatus": {
         0: (0, "Off"),
         1: (1, "10"),

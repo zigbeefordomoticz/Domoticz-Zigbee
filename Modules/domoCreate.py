@@ -392,7 +392,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Vibration" % (t), NWKID)
 
             # 5 Selectors, Style 0 ( mode command)
-            if t in ("ThermoMode",):
+            if t in ("ThermoMode", "ThermoMode_3"):
                 Options = createSwitchSelector(self, 6, DeviceType=t, SelectorStyle=1)
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in ThermoMode" % (t), NWKID)

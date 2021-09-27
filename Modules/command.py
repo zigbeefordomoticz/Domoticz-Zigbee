@@ -47,7 +47,7 @@ from Modules.schneider_wiser import (
 from Modules.profalux import profalux_stop, profalux_MoveToLiftAndTilt
 from Modules.domoTools import UpdateDevice_v2, RetreiveSignalLvlBattery, RetreiveWidgetTypeList
 from Classes.IAS import IAS_Zone_Management
-from Modules.zigateConsts import THERMOSTAT_LEVEL_2_MODE, ZIGATE_EP
+from Modules.zigateConsts import THERMOSTAT_LEVEL_2_MODE, ZIGATE_EP, THERMOSTAT_MODE_3_LEVEL
 from Modules.widgets import SWITCH_LVL_MATRIX
 from Modules.cmdsDoorLock import cluster0101_lock_door, cluster0101_unlock_door
 from Modules.fanControl import change_fan_mode
@@ -319,7 +319,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             self.ListOfDevices[NWKID]["Heartbeat"] = "0"
             return
 
-        if DeviceType in ("ThermoMode", "ACMode"):
+        if DeviceType in ("ThermoMode", "ACMode", "ThermoMode_3"):
             self.log.logging(
                 "Command",
                 "Debug",
@@ -812,7 +812,32 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             self.ListOfDevices[NWKID]["Heartbeat"] = "0"
             return
 
-        if DeviceType in ("ThermoMode",):
+        if DeviceType in ("ThermoMode_3", ):
+            self.log.logging(
+                "Command",
+                "Debug",
+                "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s"
+                % (NWKID, EPout, Unit, DeviceType, Level),
+                NWKID,
+            )
+            self.log.logging("Command", "Debug", "ThermoMode_3 (Acova) - requested Level: %s" % Level, NWKID)
+            if Level in THERMOSTAT_LEVEL_3_MODE:
+                self.log.logging(
+                    "Command",
+                    "Debug",
+                    " - Set Thermostat Mode to : %s / %s" % (Level, THERMOSTAT_LEVEL_3_MODE[Level]),
+                    NWKID,
+                )
+                thermostat_Mode(self, NWKID, THERMOSTAT_LEVEL_3_MODE[Level])
+                UpdateDevice_v2(
+                    self, Devices, Unit, int(Level) // 10, Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev
+                )
+            # Let's force a refresh of Attribute in the next Heartbeat
+            self.ListOfDevices[NWKID]["Heartbeat"] = "0"
+            return
+
+
+        if DeviceType in ("ThermoMode", "ThermoMode_3"):
             self.log.logging(
                 "Command",
                 "Debug",
