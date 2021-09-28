@@ -1510,6 +1510,16 @@ def Cluster0006(
                 MsgSrcAddr,
             )
             return
+        if self.ListOfDevices[MsgSrcAddr]["Model"] == "CPR412-E":
+            if MsgClusterData not in ("01", "00"):
+                self.log.logging(
+                    "Cluster",
+                    "Log",
+                    "ReadCluster - ClusterId=%s - not processed %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, Value: %s"
+                    % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+                    MsgSrcAddr,
+                )
+                return
 
         if self.ListOfDevices[MsgSrcAddr]["Model"] == "3AFE170100510001":
             # Konke Multi Purpose Switch
