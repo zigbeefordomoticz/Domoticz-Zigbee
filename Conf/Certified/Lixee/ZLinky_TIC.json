@@ -11,7 +11,7 @@
 			"0b01": "",
 			"0b04": "",
 			"ff66": "",
-			"Type": "P1Meter/Alarm"
+			"Type": "P1Meter/Ampere/Alarm"
 		}
 	},
 	"Type": "",
