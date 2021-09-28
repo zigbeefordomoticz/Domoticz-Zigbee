@@ -143,9 +143,11 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 # P1Meter report Instant and Cummulative Power.
                 # We need to retreive the Cummulative Power.
                 conso = 0
-                if "0702" in self.ListOfDevices[NWKID]["Ep"][Ep]:
-                    if "0400" in self.ListOfDevices[NWKID]["Ep"][Ep]["0702"]:
+                if "0702" in self.ListOfDevices[NWKID]["Ep"][Ep] and "0400" in self.ListOfDevices[NWKID]["Ep"][Ep]["0702"]:
                         conso = round(float(self.ListOfDevices[NWKID]["Ep"][Ep]["0702"]["0400"]), 2)
+                elif "0b04" in self.ListOfDevices[NWKID]["Ep"][Ep] and "050f" in self.ListOfDevices[NWKID]["Ep"][Ep]["050f"]:
+                        conso = round(float(self.ListOfDevices[NWKID]["Ep"][Ep]["0b04"]["050f"]), 2)
+                        
                 summation = round(float(value), 2)
                 nValue = 0
                 sValue = "%s;%s;%s;%s;%s;%s" % (summation, 0, 0, 0, conso, 0)
@@ -343,6 +345,20 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 elif clusterID == "fc40":  # Legrand FIP
                     UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
 
+            elif WidgetType == "ThermoMode_3" and Attribute_ == "001c":
+                #   0x00 | 0x01   | 0x02 | 0x03            | 0x04
+                #  "Off  | Confort|Eco   | Frost Protection|Auto",
+                if "ThermoMode_3" not in SWITCH_LVL_MATRIX:
+                    continue
+                if value not in SWITCH_LVL_MATRIX["ThermoMode_3"]:
+                    Domoticz.Error("Unknown TermoMode2 value: %s" % value)
+                    continue
+                nValue = SWITCH_LVL_MATRIX["ThermoMode_3"][value][0]
+                sValue = SWITCH_LVL_MATRIX["ThermoMode_3"][value][1]
+                self.log.logging(
+                    "Widget", "Log", "------>  Thermostat Mode 3 %s %s:%s" % (value, nValue, sValue), NWKID)
+                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
+                
             elif WidgetType == "ThermoMode_2" and Attribute_ == "001c":
                 # Use by Tuya TRV
                 if "ThermoMode_2" not in SWITCH_LVL_MATRIX:
