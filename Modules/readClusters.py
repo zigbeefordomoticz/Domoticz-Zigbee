@@ -273,6 +273,7 @@ def ReadCluster(
         "fc21": Clusterfc21,
         "fcc0": Clusterfcc0,
         "fc40": Clusterfc40,
+        "ff66": Clusterff66,
     }
 
     if MsgClusterId in DECODE_CLUSTER:
@@ -4602,7 +4603,7 @@ def Cluster0b04(
         MsgSrcAddr,
     )
 
-    if MsgAttrID == "050b":  # Active Power
+    if MsgAttrID in "050b":  # Active Power
         if -32768 <= int(MsgClusterData[0:4], 16) <= 32767:
             value = int(decodeAttribute(self, MsgAttType, MsgClusterData[0:4]))
             self.log.logging(
@@ -4649,8 +4650,10 @@ def Cluster0b04(
     ):  # ApparentPower (Represents  the  single  phase  or  Phase  A,  current  demand  of  apparent  (Square  root  of  active  and  reactive power) power, in VA.)
         value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
         self.log.logging(
-            "Cluster", "Debug", "ReadCluster %s - %s/%s Apparent Power %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, value)
+            "Cluster", "Log", "ReadCluster %s - %s/%s Apparent Power %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, value)
         )
+        if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ("ZLinky_TIC",):
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value))
 
     else:
         self.log.logging(
@@ -4661,6 +4664,9 @@ def Cluster0b04(
             MsgSrcAddr,
         )
 
+def Cluster0b01(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
+    self.log.logging( "Cluster", "Debug", "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr, )
+    checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, decodeAttribute( self, MsgAttType, MsgClusterData, ),)
 
 def Cluster0b05(
     self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source
@@ -5109,3 +5115,18 @@ def Clusterfcc0(
         readXiaomiCluster(
             self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData
         )
+
+
+def Clusterff66(
+    self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source
+):
+    # ZLinky
+
+    self.log.logging(
+        "Cluster",
+        "Log",
+        "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s"
+        % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, decodeAttribute(self, MsgAttType, MsgClusterData)),
+        MsgSrcAddr,
+    )
+    checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, decodeAttribute(self, MsgAttType, MsgClusterData))

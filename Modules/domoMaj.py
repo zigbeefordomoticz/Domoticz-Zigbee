@@ -143,9 +143,11 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 # P1Meter report Instant and Cummulative Power.
                 # We need to retreive the Cummulative Power.
                 conso = 0
-                if "0702" in self.ListOfDevices[NWKID]["Ep"][Ep]:
-                    if "0400" in self.ListOfDevices[NWKID]["Ep"][Ep]["0702"]:
+                if "0702" in self.ListOfDevices[NWKID]["Ep"][Ep] and "0400" in self.ListOfDevices[NWKID]["Ep"][Ep]["0702"]:
                         conso = round(float(self.ListOfDevices[NWKID]["Ep"][Ep]["0702"]["0400"]), 2)
+                elif "0b04" in self.ListOfDevices[NWKID]["Ep"][Ep] and "050f" in self.ListOfDevices[NWKID]["Ep"][Ep]["050f"]:
+                        conso = round(float(self.ListOfDevices[NWKID]["Ep"][Ep]["0b04"]["050f"]), 2)
+                        
                 summation = round(float(value), 2)
                 nValue = 0
                 sValue = "%s;%s;%s;%s;%s;%s" % (summation, 0, 0, 0, conso, 0)
