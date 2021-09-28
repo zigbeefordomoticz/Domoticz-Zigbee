@@ -139,18 +139,27 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             # it is assumed that if there is also summation provided by the device, that
             # such information is stored on the data structuture and here we will retreive it.
             # value is expected as String
-            if WidgetType == "P1Meter" and Attribute_ == "0000":
+            if WidgetType == "P1Meter" and Attribute_ in  ("0000", "0100", "0102", "0104", "0106", "0108", "010a"):
                 # P1Meter report Instant and Cummulative Power.
                 # We need to retreive the Cummulative Power.
-                conso = 0
-                if "0702" in self.ListOfDevices[NWKID]["Ep"][Ep] and "0400" in self.ListOfDevices[NWKID]["Ep"][Ep]["0702"]:
-                        conso = round(float(self.ListOfDevices[NWKID]["Ep"][Ep]["0702"]["0400"]), 2)
-                elif "0b04" in self.ListOfDevices[NWKID]["Ep"][Ep] and "050f" in self.ListOfDevices[NWKID]["Ep"][Ep]["050f"]:
-                        conso = round(float(self.ListOfDevices[NWKID]["Ep"][Ep]["0b04"]["050f"]), 2)
-                        
-                summation = round(float(value), 2)
-                nValue = 0
-                sValue = "%s;%s;%s;%s;%s;%s" % (summation, 0, 0, 0, conso, 0)
+
+                usage1 = usage2 = return1 = return2 = cons = prod = 0
+                if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] == 'ZLinky_TIC':
+                    # We use Puissance Apparente
+                    if "0b04" in self.ListOfDevices[NWKID]["Ep"][Ep] and "050f" in self.ListOfDevices[NWKID]["Ep"][Ep]["050f"]:
+                        cons = round(float(self.ListOfDevices[NWKID]["Ep"][Ep]["0b04"]["050f"]), 2)
+                    if Attribute_ in ( "0000", "0100", "0104", "0108"):
+                        usage1 = int(value)
+                    if Attribute_ in ( "0102", "0106", "010a"):
+                        usage2 = int(value)
+
+                else:
+                    if "0702" in self.ListOfDevices[NWKID]["Ep"][Ep] and "0400" in self.ListOfDevices[NWKID]["Ep"][Ep]["0702"]:
+                            cons = round(float(self.ListOfDevices[NWKID]["Ep"][Ep]["0702"]["0400"]), 2)
+                    usage1 = round(float(value), 2)
+
+                sValue = "%s;%s;%s;%s;%s;%s" % (usage1, usage2, return1, return2, cons, prod)
+
                 self.log.logging("Widget", "Debug", "------>  P1Meter : " + sValue, NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, str(sValue), BatteryLevel, SignalLevel)
 

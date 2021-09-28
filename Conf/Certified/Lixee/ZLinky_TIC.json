@@ -12,9 +12,18 @@
 			"0b04": "",
 			"ff66": "",
 			"Type": "P1Meter/Ampere/Alarm"
+		},
+		"f1": {
+			"Type": "Ampere"
+		},
+		"f2": {
+			"Type": "Ampere"
 		}
 	},
 	"Type": "",
+	"bindEp": [
+		"01"
+	],
 	"ClusterToBind": [
 		"0b04",
 		"ff66"
