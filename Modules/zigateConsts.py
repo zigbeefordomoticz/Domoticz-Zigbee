@@ -1645,7 +1645,13 @@ THERMOSTAT_MODE_2_LEVEL = {
     0x08: "40",  # Dry
     0x09: "00",  # Sleep
 }
-
+THERMOSTAT_LEVEL_3_MODE = {
+    0x00: "Off", # Off
+    0x01: "Auto", # Auto
+    0x02: "Confor", # Confort
+    0x03: "Eco", # Eco
+    0x04: "FreezeProtection", # Frost Protection   
+}
 THERMOSTAT_MODE_3_LEVEL = {
     0x00: "00", # Off
     0x01: "40", # Auto

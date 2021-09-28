@@ -47,7 +47,7 @@ from Modules.schneider_wiser import (
 from Modules.profalux import profalux_stop, profalux_MoveToLiftAndTilt
 from Modules.domoTools import UpdateDevice_v2, RetreiveSignalLvlBattery, RetreiveWidgetTypeList
 from Classes.IAS import IAS_Zone_Management
-from Modules.zigateConsts import THERMOSTAT_LEVEL_2_MODE, ZIGATE_EP, THERMOSTAT_MODE_3_LEVEL
+from Modules.zigateConsts import THERMOSTAT_LEVEL_2_MODE, ZIGATE_EP, THERMOSTAT_LEVEL_3_MODE
 from Modules.widgets import SWITCH_LVL_MATRIX
 from Modules.cmdsDoorLock import cluster0101_lock_door, cluster0101_unlock_door
 from Modules.fanControl import change_fan_mode
