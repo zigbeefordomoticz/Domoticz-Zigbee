@@ -16,7 +16,8 @@
 	},
 	"Type": "",
 	"ClusterToBind": [
-		"0b04"
+		"0b04",
+		"ff66"
 	],
 	"ConfigureReporting": {
 		"0b04": {
@@ -29,6 +30,17 @@
 					"Change": "0001"
 				},
 				"050f": {
+					"DataType": "21",
+					"MinInterval": "0005",
+					"MaxInterval": "012C",
+					"TimeOut": "0000",
+					"Change": "0001"
+				}
+			}
+		},
+		"ff66": {
+			"Attributes": {
+				"0005": {
 					"DataType": "21",
 					"MinInterval": "0005",
 					"MaxInterval": "012C",

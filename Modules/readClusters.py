@@ -5130,3 +5130,11 @@ def Clusterff66(
         MsgSrcAddr,
     )
     checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, decodeAttribute(self, MsgAttType, MsgClusterData))
+
+    if MsgAttrID == '0005':
+        # Alarm 
+        value = decodeAttribute(self, MsgAttType, MsgClusterData)
+        if value == 0:
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0009", "00")
+        else:
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0009", "04")
