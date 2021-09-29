@@ -4238,29 +4238,10 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     checkAttribute(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID)
 
-    # Convert to int
     value = decodeAttribute(self, MsgAttType, MsgClusterData)
-    #try:
-    #    value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
-#
-    #except:
-    #    _context = {
-    #        "MsgClusterId": str(MsgClusterId),
-    #        "MsgSrcEp": str(MsgSrcEp),
-    #        "MsgAttrID": str(MsgAttrID),
-    #        "MsgAttType": str(MsgAttType),
-    #        "MsgAttSize": str(MsgAttSize),
-    #        "MsgClusterData": str(MsgClusterData),
-    #    }
-    #    self.log.logging(
-    #        "Cluster",
-    #        "Error",
-    #        "Cluster0702 - %s/%s unable to decode %s, MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, MsgClusterData: %s"
-    #        % (MsgSrcAddr, MsgSrcEp, value, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
-    #        MsgSrcAddr,
-    #        _context,
-    #    )
-    #    value = 0
+    if MsgAttType not in ( "41", "42"):
+        # Convert to int
+        value = int(value)
 
     self.log.logging(
         "Cluster",
