@@ -1377,6 +1377,12 @@ def ReadAttributeRequest_0702_0000(self, key):
             self, key, ZIGATE_EP, EPout, "0702", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key)
         )
 
+def ReadAttributeRequest_0702_ZLinky_TIC(self, key):
+    # The list of Attributes could be based on the Contract
+    EPout = '01'
+    listAttributes = [0x0000, 0x0100, 0x0102, 0x0104, 0x0106, 0x0108, 0x10A]
+    self.log.logging( "ReadAttributes", "Debug", "Request ZLinky infos on 0x0702 cluster: " + key + " EPout = " + EPout, nwkid=key )
+    ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0702", listAttributes, ackIsDisabled=False)
 
 def ReadAttributeRequest_0b04(self, key):
     # Cluster 0x0b04 Metering

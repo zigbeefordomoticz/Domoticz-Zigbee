@@ -32,6 +32,10 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
     if NWKID not in self.ListOfDevices:
         self.log.logging("Widget", "Error", "MajDomoDevice - %s not known" % NWKID, NWKID)
         return
+    
+    if Ep not in self.ListOfDevices[ NWKID ]['Ep']:
+        self.log.logging("Widget", "Error", "MajDomoDevice - %s/%s not known Endpoint" % (NWKID, Ep), NWKID)
+        return
 
     if "Status" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Status"] != "inDB":
         self.log.logging(
@@ -127,31 +131,77 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
         self.log.logging(
             "Widget", "Debug", "------> SignalLevel: %s , BatteryLevel: %s" % (SignalLevel, BatteryLevel), NWKID
         )
-        if "Ampere" in ClusterType:
-            if WidgetType == "Ampere" and Attribute_ == "0508":
-                nValue = 0
-                sValue = "%s" % (round(float(value), 2))
-                self.log.logging("Widget", "Debug", "------>  Ampere : %s" % sValue, NWKID)
-                UpdateDevice_v2(self, Devices, DeviceUnit, 0, str(sValue), BatteryLevel, SignalLevel)
+        if "Ampere" in ClusterType and WidgetType == "Ampere" and Attribute_ == "0508":
+            sValue = "%s" % (round(float(value), 2))
+            self.log.logging("Widget", "Debug", "------>  Ampere : %s" % sValue, NWKID)
+            UpdateDevice_v2(self, Devices, DeviceUnit, 0, str(sValue), BatteryLevel, SignalLevel)
+
+        if "Ampere" in ClusterType and WidgetType == "Ampere3" and Attribute_ in ( "0508", "0908", "0a08"):
+            # nvalue=0&svalue=Ampere_1;=Ampere_2;=Ampere_3;
+            ampere_1 = ampere_2 = ampere_3 = 0
+            CurrentsValue = Devices[DeviceUnit].sValue
+            if len(CurrentsValue.split(";")) != 3:
+                # First time after device creation
+                CurrentsValue = "0;0;0"
+            currentValue = CurrentsValue.split(";")
+            ampere_1 = float( currentValue[0] )
+            ampere_2 = float( currentValue[1] )
+            ampere_3 = float( currentValue[2] )
+            if Attribute_ == "0508":
+                ampere_1 = (round(float(value), 2))
+            elif Attribute_ == "0908":
+                ampere_2 = (round(float(value), 2))
+            elif Attribute_ == "0a08":
+                ampere_3 = (round(float(value), 2))
+            sValue = "%s;%s;%s" %( ampere_1, ampere_2, ampere_3)
+            self.log.logging("Widget", "Log", "------>  Ampere3 : %s" % sValue, NWKID)
+            UpdateDevice_v2(self, Devices, DeviceUnit, 0, str(sValue), BatteryLevel, SignalLevel)                                    
 
         if "Power" in ClusterType:  # Instant Power/Watts
             # Power and Meter usage are triggered only with the Instant Power usage.
             # it is assumed that if there is also summation provided by the device, that
             # such information is stored on the data structuture and here we will retreive it.
             # value is expected as String
-            if WidgetType == "P1Meter" and Attribute_ == "0000":
+            if WidgetType == "P1Meter" and Attribute_ in  ("0000", "0100", "0102", "0104", "0106", "0108", "010a"):
+                self.log.logging("Widget", "Log", "------>  P1Meter : %s (%s)" % (value, type(value)), NWKID)
                 # P1Meter report Instant and Cummulative Power.
                 # We need to retreive the Cummulative Power.
-                conso = 0
-                if "0702" in self.ListOfDevices[NWKID]["Ep"][Ep] and "0400" in self.ListOfDevices[NWKID]["Ep"][Ep]["0702"]:
-                        conso = round(float(self.ListOfDevices[NWKID]["Ep"][Ep]["0702"]["0400"]), 2)
-                elif "0b04" in self.ListOfDevices[NWKID]["Ep"][Ep] and "050f" in self.ListOfDevices[NWKID]["Ep"][Ep]["050f"]:
-                        conso = round(float(self.ListOfDevices[NWKID]["Ep"][Ep]["0b04"]["050f"]), 2)
-                        
-                summation = round(float(value), 2)
-                nValue = 0
-                sValue = "%s;%s;%s;%s;%s;%s" % (summation, 0, 0, 0, conso, 0)
-                self.log.logging("Widget", "Debug", "------>  P1Meter : " + sValue, NWKID)
+                CurrentsValue = Devices[DeviceUnit].sValue
+                if len(CurrentsValue.split(";")) != 6:
+                    # First time after device creation
+                    CurrentsValue = "0;0;0;0;0;0"
+                SplitData = CurrentsValue.split(";")
+                cur_usage1 = SplitData[0]
+                cur_usage2 = SplitData[1]
+                cur_return1 = SplitData[2]
+                cur_return2 = SplitData[3]
+                usage1 = usage2 = return1 = return2 = cons = prod = 0
+                if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] == 'ZLinky_TIC':
+                    try:
+                        # We use Puissance Apparente
+                        if "0b04" in self.ListOfDevices[NWKID]["Ep"][Ep] and "050f" in self.ListOfDevices[NWKID]["Ep"][Ep]["0b04"]:
+                            cons = round(float(self.ListOfDevices[NWKID]["Ep"][Ep]["0b04"]["050f"]), 2)
+                        if Attribute_ in ( "0000", "0100", "0104", "0108"):
+                            usage1 = int(round(float(value), 0))
+                            usage2 = cur_usage2
+                            return1 = cur_return1
+                            return2 = cur_return2
+                        if Attribute_ in ( "0102", "0106", "010a"):
+                            usage1 = cur_usage1
+                            usage2 = int(round(float(value), 0))
+                            return1 = cur_return1
+                            return2 = cur_return2
+                    except:
+                        self.log.logging("Widget", "Error", "------>  P1Meter Error processing: value: %s usage1: %s usage2: %s cons: %s" %(value, usage1, usage2, cons), NWKID)
+                        return
+
+                else:
+                    if "0702" in self.ListOfDevices[NWKID]["Ep"][Ep] and "0400" in self.ListOfDevices[NWKID]["Ep"][Ep]["0702"]:
+                            cons = round(float(self.ListOfDevices[NWKID]["Ep"][Ep]["0702"]["0400"]), 2)
+                    usage1 = round(float(value), 2)
+
+                sValue = "%s;%s;%s;%s;%s;%s" % (usage1, usage2, return1, return2, cons, prod)
+                self.log.logging("Widget", "Log", "------>  P1Meter : " + sValue, NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, str(sValue), BatteryLevel, SignalLevel)
 
             elif WidgetType == "Power" and (Attribute_ == "" or clusterID == "000c"):  # kWh

@@ -117,6 +117,7 @@ ACTIONATORS = [
     "ThermoMode",
     "ACMode",
     "ThermoMode_2",
+    "ThermoMode_3",
     "ThermoModeEHZBRTS",
     "FanControl",
     "PAC-SWITCH",
