@@ -4333,20 +4333,20 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     elif MsgAttrID == "0100" and "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == 'ZLinky_TIC':
         # HP or Base
-        conso = compute_conso(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
-        if value > 999:
-            self.log.logging( "Cluster", "Error", "Cluster0702 - 0x0100 ZLinky_TIC Value: %s Conso: %s (Overflow)!" % (value, conso), MsgSrcAddr, )
-            return
+        conso = int( value, 16)
+        #if value > 999:
+        #    self.log.logging( "Cluster", "Error", "Cluster0702 - 0x0100 ZLinky_TIC Value: %s Conso: %s (Overflow)!" % (value, conso), MsgSrcAddr, )
+        #    return
         self.log.logging( "Cluster", "Debug", "Cluster0702 - 0x0100 ZLinky_TIC Value: %s Conso: %s " % (value, conso), MsgSrcAddr, )
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, conso)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(conso), Attribute_=MsgAttrID)
     
     elif MsgAttrID == "0102" and "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == 'ZLinky_TIC':
         # HC
-        conso = compute_conso(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
-        if value > 999:
-            self.log.logging( "Cluster", "Error", "Cluster0702 - 0x0100 ZLinky_TIC Value: %s Conso: %s (Overflow)!" % (value, conso), MsgSrcAddr, )
-            return
+        conso = int( value, 16)
+        #if value > 999:
+        #    self.log.logging( "Cluster", "Error", "Cluster0702 - 0x0100 ZLinky_TIC Value: %s Conso: %s (Overflow)!" % (value, conso), MsgSrcAddr, )
+        #    return
         self.log.logging( "Cluster", "Debug", "Cluster0702 - 0x0100 ZLinky_TIC Value: %s Conso: %s " % (value, conso), MsgSrcAddr, )
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, conso)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(conso), Attribute_=MsgAttrID)
