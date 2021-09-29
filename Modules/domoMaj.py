@@ -131,12 +131,31 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
         self.log.logging(
             "Widget", "Debug", "------> SignalLevel: %s , BatteryLevel: %s" % (SignalLevel, BatteryLevel), NWKID
         )
-        if "Ampere" in ClusterType:
-            if WidgetType == "Ampere" and Attribute_ == "0508":
-                nValue = 0
-                sValue = "%s" % (round(float(value), 2))
-                self.log.logging("Widget", "Debug", "------>  Ampere : %s" % sValue, NWKID)
-                UpdateDevice_v2(self, Devices, DeviceUnit, 0, str(sValue), BatteryLevel, SignalLevel)
+        if "Ampere" in ClusterType and WidgetType == "Ampere" and Attribute_ == "0508":
+            sValue = "%s" % (round(float(value), 2))
+            self.log.logging("Widget", "Debug", "------>  Ampere : %s" % sValue, NWKID)
+            UpdateDevice_v2(self, Devices, DeviceUnit, 0, str(sValue), BatteryLevel, SignalLevel)
+
+        if "Ampere" in ClusterType and WidgetType == "Ampere3" and Attribute_ in ( "0508", "0908", "0a08"):
+            # nvalue=0&svalue=Ampere_1;=Ampere_2;=Ampere_3;
+            ampere_1 = ampere_2 = ampere_3 = 0
+            CurrentsValue = Devices[DeviceUnit].sValue
+            if len(CurrentsValue.split(";")) != 3:
+                # First time after device creation
+                CurrentsValue = "0;0;0"
+            currentValue = CurrentsValue.split(";")
+            ampere_1 = int( currentValue[0] )
+            ampere_2 = int( currentValue[1] )
+            ampere_3 = int( currentValue[2] )
+            if Attribute_ == "0508":
+                ampere_1 = (round(float(value), 2))
+            elif Attribute_ == "0908":
+                ampere_2 = (round(float(value), 2))
+            elif Attribute_ == "0a08":
+                ampere_3 = (round(float(value), 2))
+            sValue = "%s;%s;%s" %( ampere_1, ampere_2, ampere_3)
+            self.log.logging("Widget", "Log", "------>  Ampere3 : %s" % sValue, NWKID)
+            UpdateDevice_v2(self, Devices, DeviceUnit, 0, str(sValue), BatteryLevel, SignalLevel)                                    
 
         if "Power" in ClusterType:  # Instant Power/Watts
             # Power and Meter usage are triggered only with the Instant Power usage.
