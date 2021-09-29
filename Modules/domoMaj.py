@@ -144,9 +144,9 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 # First time after device creation
                 CurrentsValue = "0;0;0"
             currentValue = CurrentsValue.split(";")
-            ampere_1 = int( currentValue[0] )
-            ampere_2 = int( currentValue[1] )
-            ampere_3 = int( currentValue[2] )
+            ampere_1 = float( currentValue[0] )
+            ampere_2 = float( currentValue[1] )
+            ampere_3 = float( currentValue[2] )
             if Attribute_ == "0508":
                 ampere_1 = (round(float(value), 2))
             elif Attribute_ == "0908":
