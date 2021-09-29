@@ -158,19 +158,23 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 cur_return2 = SplitData[3]
                 usage1 = usage2 = return1 = return2 = cons = prod = 0
                 if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] == 'ZLinky_TIC':
-                    # We use Puissance Apparente
-                    if "0b04" in self.ListOfDevices[NWKID]["Ep"][Ep] and "050f" in self.ListOfDevices[NWKID]["Ep"][Ep]["0b04"]:
-                        cons = round(float(self.ListOfDevices[NWKID]["Ep"][Ep]["0b04"]["050f"]), 2)
-                    if Attribute_ in ( "0000", "0100", "0104", "0108"):
-                        usage1 = int(round(float(value), 0))
-                        usage2 = cur_usage2
-                        return1 = cur_return1
-                        return2 = cur_return2
-                    if Attribute_ in ( "0102", "0106", "010a"):
-                        usage1 = cur_usage1
-                        usage2 = int(round(float(value), 0))
-                        return1 = cur_return1
-                        return2 = cur_return2
+                    try:
+                        # We use Puissance Apparente
+                        if "0b04" in self.ListOfDevices[NWKID]["Ep"][Ep] and "050f" in self.ListOfDevices[NWKID]["Ep"][Ep]["0b04"]:
+                            cons = round(float(self.ListOfDevices[NWKID]["Ep"][Ep]["0b04"]["050f"]), 2)
+                        if Attribute_ in ( "0000", "0100", "0104", "0108"):
+                            usage1 = int(round(float(value), 0))
+                            usage2 = cur_usage2
+                            return1 = cur_return1
+                            return2 = cur_return2
+                        if Attribute_ in ( "0102", "0106", "010a"):
+                            usage1 = cur_usage1
+                            usage2 = int(round(float(value), 0))
+                            return1 = cur_return1
+                            return2 = cur_return2
+                    except:
+                        self.log.logging("Widget", "Error", "------>  P1Meter Error processing: value: %s usage1: %s usage2: %s cons: %s" %(value, usage1, usage2, cons), NWKID)
+                        return
 
                 else:
                     if "0702" in self.ListOfDevices[NWKID]["Ep"][Ep] and "0400" in self.ListOfDevices[NWKID]["Ep"][Ep]["0702"]:
