@@ -143,6 +143,15 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 # P1Meter report Instant and Cummulative Power.
                 # We need to retreive the Cummulative Power.
 
+                CurrentsValue = Devices[DeviceUnit].sValue
+                if len(CurrentsValue.split(";")) != 6:
+                    # First time after device creation
+                    CurrentsValue = "0;0;0;0;0;0"
+                SplitData = CurrentsValue.split(";")
+                cur_usage1 = SplitData[0]
+                cur_usage2 = SplitData[1]
+                cur_return1 = SplitData[2]
+                cur_return2 = SplitData[3]
                 usage1 = usage2 = return1 = return2 = cons = prod = 0
                 if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] == 'ZLinky_TIC':
                     # We use Puissance Apparente
@@ -150,8 +159,14 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                         cons = round(float(self.ListOfDevices[NWKID]["Ep"][Ep]["0b04"]["050f"]), 2)
                     if Attribute_ in ( "0000", "0100", "0104", "0108"):
                         usage1 = int(value)
+                        usage2 = cur_usage2
+                        return1 = cur_return1
+                        return2 = cur_return2
                     if Attribute_ in ( "0102", "0106", "010a"):
+                        usage1 = cur_usage1
                         usage2 = int(value)
+                        return1 = cur_return1
+                        return2 = cur_return2
 
                 else:
                     if "0702" in self.ListOfDevices[NWKID]["Ep"][Ep] and "0400" in self.ListOfDevices[NWKID]["Ep"][Ep]["0702"]:
