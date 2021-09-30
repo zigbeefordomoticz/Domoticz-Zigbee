@@ -2729,6 +2729,56 @@ def Decode8102(self, Devices, MsgData, MsgLQI):  # Attribute Reports
     timeStamped(self, MsgSrcAddr, 0x8102)
     loggingMessages(self, "8102", MsgSrcAddr, None, MsgLQI, MsgSQN)
     updLQI(self, MsgSrcAddr, MsgLQI)
+    i_sqn = sqn_get_internal_sqn_from_app_sqn(self.ZigateComm, MsgSQN, TYPE_APP_ZCL)
+
+    idx = 12
+    while idx < len(MsgData):
+        MsgAttrID = MsgAttStatus = MsgAttType = MsgAttSize = MsgClusterData = ""
+        MsgAttrID = MsgData[idx: idx + 4]
+        idx += 4
+        MsgAttStatus = MsgData[idx: idx + 2]
+        idx += 2
+        if MsgAttStatus == "00":
+            MsgAttType = MsgData[idx: idx + 2]
+            idx += 2
+            MsgAttSize = MsgData[idx: idx + 4]
+            idx += 4
+            size = int(MsgAttSize, 16) * 2
+            MsgClusterData = MsgData[idx: idx + size]
+            idx += size
+        else:
+            self.log.logging(
+                "Input",
+                "Debug",
+                "Decode8102 - idx: %s Read Attribute Response: [%s:%s] status: %s -> %s"
+                % (idx, MsgSrcAddr, MsgSrcEp, MsgAttStatus, MsgData[idx:]),
+            )
+
+            # If the frame is coming from firmware we get only one attribute at a time, with some dumy datas
+            if len(MsgData[idx:]) == 6:
+                # crap, lets finish it
+                # Domoticz.Log("Crap Data: %s len: %s" %(MsgData[idx:], len(MsgData[idx:])))
+                idx += 6
+        self.log.logging(
+            "Input",
+            "Debug",
+            "Decode8102 - idx: %s Read Attribute Response: [%s:%s] ClusterID: %s MsgSQN: %s, i_sqn: %s, AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<"
+            % (
+                idx,
+                MsgSrcAddr,
+                MsgSrcEp,
+                MsgClusterId,
+                MsgSQN,
+                i_sqn,
+                MsgAttrID,
+                MsgAttStatus,
+                MsgAttType,
+                MsgAttSize,
+                MsgClusterData,
+            ),
+            MsgSrcAddr,
+        )
+
     read_report_attributes(
         self,
         Devices,
