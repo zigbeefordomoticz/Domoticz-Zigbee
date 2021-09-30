@@ -156,7 +156,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             sValue = "%s;%s;%s" %( ampere_1, ampere_2, ampere_3)
             self.log.logging("Widget", "Log", "------>  Ampere3 : %s" % sValue, NWKID)
             UpdateDevice_v2(self, Devices, DeviceUnit, 0, str(sValue), BatteryLevel, SignalLevel)                                    
-
+                
         if "Power" in ClusterType:  # Instant Power/Watts
             # Power and Meter usage are triggered only with the Instant Power usage.
             # it is assumed that if there is also summation provided by the device, that
@@ -1421,3 +1421,15 @@ def check_erratic_value(self, NwkId, value_type, value, expected_min, expected_m
             NwkId,
         )
     return True
+
+def retreive_data_from_current( self, Devices, Unit, format):
+    
+    nb_parameters = len( format.split(";"))
+    currentsValue = Devices[Unit].sValue
+    if len(currentsValue.split(";")) != nb_parameters:
+        for x in range(0, nb_parameters):
+            if x != nb_parameters - 1:
+                currentsValue += "0;"
+            else:
+                currentsValue += "0;"
+    return currentsValue.split(";")
