@@ -718,7 +718,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 )
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Plug" % (t), NWKID)
 
-            if t == "P1Meter":
+            if t in ("P1Meter", "P1Meter3"):
                 # P1 Smart Meter Energy Type 250, Subtype = 250
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=250, Subtype_=1, Switchtype_=1)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in P1Meter" % (t), NWKID)
