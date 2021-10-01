@@ -2593,17 +2593,6 @@ def Decode8100(
             ),
             MsgSrcAddr,
         )
-        # NewMsgData = (
-        #     MsgSQN
-        #     + MsgSrcAddr
-        #     + MsgSrcEp
-        #     + MsgClusterId
-        #     + MsgAttrID
-        #     + MsgAttStatus
-        #     + MsgAttType
-        #     + MsgAttSize
-        #     + MsgClusterData
-        # )
         read_report_attributes(
             self,
             Devices,
@@ -2750,7 +2739,7 @@ def Decode8102(self, Devices, MsgData, MsgLQI):  # Attribute Reports
             self.log.logging(
                 "Input",
                 "Debug",
-                "Decode8102 - idx: %s Read Attribute Response: [%s:%s] status: %s -> %s"
+                "Decode8102 - idx: %s Attribute Reports: [%s:%s] status: %s -> %s"
                 % (idx, MsgSrcAddr, MsgSrcEp, MsgAttStatus, MsgData[idx:]),
             )
 
@@ -2759,11 +2748,8 @@ def Decode8102(self, Devices, MsgData, MsgLQI):  # Attribute Reports
                 # crap, lets finish it
                 # Domoticz.Log("Crap Data: %s len: %s" %(MsgData[idx:], len(MsgData[idx:])))
                 idx += 6
-        self.log.logging(
-            "Input",
-            "Debug",
-            "Decode8102 - idx: %s Read Attribute Response: [%s:%s] ClusterID: %s MsgSQN: %s, i_sqn: %s, AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<"
-            % (
+
+        self.log.logging( "Input", "Debug", "Decode8102 - idx: %s Read Attribute Response: [%s:%s] ClusterID: %s MsgSQN: %s, i_sqn: %s, AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<" % (
                 idx,
                 MsgSrcAddr,
                 MsgSrcEp,
@@ -2774,25 +2760,23 @@ def Decode8102(self, Devices, MsgData, MsgLQI):  # Attribute Reports
                 MsgAttStatus,
                 MsgAttType,
                 MsgAttSize,
-                MsgClusterData,
-            ),
-            MsgSrcAddr,
-        )
+                MsgClusterData, ), MsgSrcAddr, )
 
-    read_report_attributes(
-        self,
-        Devices,
-        "8102",
-        MsgSQN,
-        MsgSrcAddr,
-        MsgSrcEp,
-        MsgClusterId,
-        MsgAttrID,
-        MsgAttStatus,
-        MsgAttType,
-        MsgAttSize,
-        MsgClusterData,
-    )
+        read_report_attributes(
+            self,
+            Devices,
+            "8102",
+            MsgSQN,
+            MsgSrcAddr,
+            MsgSrcEp,
+            MsgClusterId,
+            MsgAttrID,
+            MsgAttStatus,
+            MsgAttType,
+            MsgAttSize,
+            MsgClusterData,
+            )
+
     callbackDeviceAwake(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId)
 
 
