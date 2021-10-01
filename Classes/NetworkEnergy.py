@@ -3,21 +3,21 @@
 #
 # Author: zaraki673 & pipiche38
 #
-"""
-    Module: NetworkEnergy.py
-
-    Description: Network Energy/Interferences 
-
-"""
-"""
-    self.EnergyLevel[ nwkid ]
-                            ['Status'] ( 'Completed' /* table is completd (all entries collected */
-                                         'WaitResponse' /* Waiting for response */
-                                         'WaitResponse2' /* Waiting for response */
-                                         'ScanRequired' /* A scan is required to get more entries */
-                                         'ScanRequired2' /* A scan is required to get more entries */
-                            ['Channels'][ Num ] /* Energy Level by Channel for corresponding nwkid
-"""
+# 
+#     Module: NetworkEnergy.py
+# 
+#     Description: Network Energy/Interferences 
+# 
+# 
+# 
+#     self.EnergyLevel[ nwkid ]
+#                             ['Status'] ( 'Completed' /* table is completd (all entries collected */
+#                                          'WaitResponse' /* Waiting for response */
+#                                          'WaitResponse2' /* Waiting for response */
+#                                          'ScanRequired' /* A scan is required to get more entries */
+#                                          'ScanRequired2' /* A scan is required to get more entries */
+#                             ['Channels'][ Num ] /* Energy Level by Channel for corresponding nwkid
+# 
 
 
 from datetime import datetime

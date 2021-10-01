@@ -21,20 +21,20 @@ from time import time
 
 from Modules.basicOutputs import sendZigateCmd
 
-"""
-(Zigate) JN5168 standard-power module has a transmission power range of -32 to 0 dBm
-
-Standard power modules of JN516X(Except JN5169) modules have only 4 possible power levels 
-(Table 5 JN-UG-3024 v2.6). These levels are based on some kind of hardware registry so 
-there is no way to change them in firmware. In ZiGate's case this means:
-
-set/Get tx value  |  Mapped value (dBM)
-    0 to 31       |         0
-   52 to 63       |        -9
-   40 to 51       |       -20
-   32 to 39       |       -32
-
-"""
+# 
+# (Zigate) JN5168 standard-power module has a transmission power range of -32 to 0 dBm
+# 
+# Standard power modules of JN516X(Except JN5169) modules have only 4 possible power levels 
+# (Table 5 JN-UG-3024 v2.6). These levels are based on some kind of hardware registry so 
+# there is no way to change them in firmware. In ZiGate's case this means:
+# 
+# set/Get tx value  |  Mapped value (dBM)
+#     0 to 31       |         0
+#    52 to 63       |        -9
+#    40 to 51       |       -20
+#    32 to 39       |       -32
+# 
+# 
 
 POWER_LEVEL = {0: 00, 1: 52, 2: 40, 3: 32}  # Max (Default)  #  #  # Min
 

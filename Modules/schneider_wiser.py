@@ -31,6 +31,7 @@ from Modules.tools import getAttributeValue, retreive_cmd_payload_from_8002, is_
 PREFIX_MACADDR_WIZER_LEGACY = "00124b00"
 PREFIX_MACADDR_WIZER_HOME = "588E81ff"
 
+WISER_LEGACY_MODEL_NAME_PREFIX = "EH-ZB"
 WISER_LEGACY_BASE_EP = "0b"
 
 
