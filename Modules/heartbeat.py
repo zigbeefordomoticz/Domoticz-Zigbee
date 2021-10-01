@@ -24,6 +24,7 @@ from Modules.readAttributes import (
     ReadAttributeRequest_0201_0012,
     ReadAttributeRequest_0b04_050b_0505_0508,
     ReadAttributeRequest_0702_ZLinky_TIC,
+    ReadAttributeRequest_ff66,
     ping_tuya_device,
 )
 from Modules.legrand_netatmo import legrandReenforcement
@@ -131,7 +132,7 @@ def pollingManufSpecificDevices(self, NwkId):
 
     _HB = int(self.ListOfDevices[NwkId]["Heartbeat"])
     for param in self.ListOfDevices[NwkId]["Param"]:
-
+        
         if param == "ZLinkyPolling":
             _FEQ = self.ListOfDevices[NwkId]["Param"][param] // HEARTBEAT
             if _FEQ and ((_HB % _FEQ) == 0):
@@ -143,6 +144,18 @@ def pollingManufSpecificDevices(self, NwkId):
                     NwkId,
                 )
             ReadAttributeRequest_0702_ZLinky_TIC( self, NwkId)
+
+        elif param == 'PollingCusterff66':
+            _FEQ = self.ListOfDevices[NwkId]["Param"][param] // HEARTBEAT
+            if _FEQ and ((_HB % _FEQ) == 0):
+                self.log.logging(
+                    "Heartbeat",
+                    "Debug",
+                    "++ pollingManufSpecificDevices -  %s Found: %s=%s"
+                    % (NwkId, param, self.ListOfDevices[NwkId]["Param"][param]),
+                    NwkId,
+                )
+            ReadAttributeRequest_ff66( self, NwkId)
 
         elif param == "OnOffPollingFreq":
             _FEQ = self.ListOfDevices[NwkId]["Param"][param] // HEARTBEAT
