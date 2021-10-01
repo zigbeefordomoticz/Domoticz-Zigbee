@@ -154,7 +154,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             self.log.logging("Widget", "Debug", "------>  Ampere : %s" % sValue, NWKID)
             UpdateDevice_v2(self, Devices, DeviceUnit, 0, str(sValue), BatteryLevel, SignalLevel)
 
-        if "Ampere" in ClusterType and WidgetType == "Ampere3" and Attribute_ in ( "0508", "0908", "0a08"):
+        if "Ampere" in ClusterType and WidgetType == "Ampere_ZL" and Attribute_ in ( "0508", "0908", "0a08"):
             if Ep == '01' and Attribute_ not in ( "0508",):
                 # Ep = 01, Mono-Phase or Line1
                 return
@@ -166,7 +166,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 return
             ampere = (round(float(value), 2))
             sValue = "%s" %( ampere)
-            self.log.logging("Widget", "Log", "------>  Ampere3 : %s line: %s" % (sValue, Ep), NWKID)
+            self.log.logging("Widget", "Log", "------>  Ampere_ZL : %s line: %s" % (sValue, Ep), NWKID)
             UpdateDevice_v2(self, Devices, DeviceUnit, 0, str(sValue), BatteryLevel, SignalLevel)                                    
                 
         if "Power" in ClusterType:  # Instant Power/Watts
@@ -196,7 +196,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 self.log.logging("Widget", "Log", "------>  P1Meter : " + sValue, NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, str(sValue), BatteryLevel, SignalLevel)
 
-            elif ( WidgetType == "P1Meter3" and 
+            elif ( WidgetType == "P1Meter_ZL" and 
                    "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] == 'ZLinky_TIC' and 
                    Attribute_ in  ( "0100", "0102", "0104", "0106", "0108", "010a", "050f")
             ):
@@ -210,7 +210,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     # Ep == f3, so we store BBRHCJR, BBRHPJR
                     return
 
-                self.log.logging("Widget", "Log", "------>  P1Meter : %s (%s)" % (value, type(value)), NWKID)
+                self.log.logging("Widget", "Log", "------>  P1Meter_ZL : %s (%s)" % (value, type(value)), NWKID)
                 # P1Meter report Instant and Cummulative Power.
                 # We need to retreive the Cummulative Power.
                 CurrentsValue = Devices[DeviceUnit].sValue
@@ -249,7 +249,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                         return2 = cur_return2
 
                 sValue = "%s;%s;%s;%s;%s;%s" % (usage1, usage2, return1, return2, cons, prod)
-                self.log.logging("Widget", "Log", "------>  P1Meter : " + sValue, NWKID)
+                self.log.logging("Widget", "Log", "------>  P1Meter_ZL : " + sValue, NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, str(sValue), BatteryLevel, SignalLevel)
 
             elif WidgetType == "Power" and (Attribute_ == "" or clusterID == "000c"):  # kWh

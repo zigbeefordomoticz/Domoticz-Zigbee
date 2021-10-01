@@ -551,7 +551,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 )
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Analog Device" % (t), NWKID)
 
-            if t in ("Alarm", "Tamper", "Alarm3"):
+            if t in ("Alarm", "Tamper", "Alarm_ZL"):
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=243, Subtype_=22, Switchtype_=0)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Alarm" % (t), NWKID)
 
@@ -578,7 +578,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, "Barometer")
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Barometer" % (t), NWKID)
 
-            if t in ( "Ampere", "Ampere3"):
+            if t in ( "Ampere", "Ampere_ZL"):
                 # Will display Current real time
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=243, Subtype_=23)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Ampere" % (t), NWKID)
@@ -718,7 +718,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 )
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Plug" % (t), NWKID)
 
-            if t in ("P1Meter", "P1Meter3"):
+            if t in ("P1Meter", "P1Meter_ZL"):
                 # P1 Smart Meter Energy Type 250, Subtype = 250
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=250, Subtype_=1, Switchtype_=1)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in P1Meter" % (t), NWKID)

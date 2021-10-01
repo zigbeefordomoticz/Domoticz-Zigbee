@@ -11,13 +11,13 @@
 			"0b01": "",
 			"0b04": "",
 			"ff66": "",
-			"Type": "P1Meter3/Ampere3/Alarm3/DEMAIN"
+			"Type": "P1Meter_ZL/Ampere_ZL/Alarm_ZL/DEMAIN"
 		},
 		"f2": {
-			"Type": "P1Meter3/Ampere3/Alarm3"
+			"Type": "P1Meter_ZL/Ampere_ZL/Alarm_ZL"
 		},
 		"f3": {
-			"Type": "P1Meter3/Ampere3/Alarm3"
+			"Type": "P1Meter_ZL/Ampere_ZL/Alarm_ZL"
 		}
 	},
 	"Type": "",

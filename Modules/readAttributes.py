@@ -1652,7 +1652,7 @@ READ_ATTRIBUTES_REQUEST = {
     "0500": (ReadAttributeRequest_0500, "polling0500"),
     "0502": (ReadAttributeRequest_0502, "polling0502"),
     "0702": (ReadAttributeRequest_0702, "polling0702"),
-    "0b01": (ReadAttributeRequest_0b04, "polling0b04"),
+    "0b01": (ReadAttributeRequest_0b01, "polling0b04"),
     "0b04": (ReadAttributeRequest_0b04, "polling0b04"),
     "0b05": (ReadAttributeRequest_0702, "polling0b05"),
 
