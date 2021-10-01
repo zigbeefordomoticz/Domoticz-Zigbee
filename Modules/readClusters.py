@@ -264,6 +264,7 @@ def ReadCluster(
         "0500": Cluster0500,
         "0502": Cluster0502,
         "0702": Cluster0702,
+        "0b01": Cluster0b01,
         "0b04": Cluster0b04,
         "0b05": Cluster0b05,
         "fe03": Clusterfe03,
