@@ -4582,7 +4582,13 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
 def Cluster0b01(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
     self.log.logging( "Cluster", "Debug", "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr, )
-    checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, decodeAttribute( self, MsgAttType, MsgClusterData, ),)
+    value = decodeAttribute( self, MsgAttType, MsgClusterData,  )
+
+    if MsgAttrID == '000d':
+        if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == 'ZLinky_TIC':
+            # Current Subscribed
+            value = int(value)
+    checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value,)
 
 
 def Cluster0b04( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
@@ -4644,7 +4650,7 @@ def Cluster0b04( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value), Attribute_=MsgAttrID)
 
             # Check if Intensity is below subscription level
-            if '0b01' in self.ListOfDevices[ MsgSrcAddr ]['Ep'][ MsgSrcEp ] and '000d' in self.ListOfDevices[ MsgSrcAddr ]['Ep'][ MsgSrcEp ][ '0b01']:
+            if '0b01' in self.ListOfDevices[ MsgSrcAddr ]['Ep'][ MsgSrcEp ] and '000d' in self.ListOfDevices[ MsgSrcAddr ]['Ep'][ MsgSrcEp ][ '0b01'] and isinstance( self.ListOfDevices[ MsgSrcAddr ]['Ep'][ MsgSrcEp ][ '0b01']['000d'], int):
                 Isousc = int( self.ListOfDevices[ MsgSrcAddr ]['Ep'][ MsgSrcEp ][ '0b01']['000d'])
                 flevel = (  value / Isousc )
                 if flevel > 80:
@@ -4677,7 +4683,7 @@ def Cluster0b04( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 MajDomoDevice(self, Devices, MsgSrcAddr, 'f3', MsgClusterId, str(value), Attribute_=MsgAttrID)
 
             # Check if Intensity is below subscription level
-            if '0b01' in self.ListOfDevices[ MsgSrcAddr ]['Ep'][ MsgSrcEp ] and '000d' in self.ListOfDevices[ MsgSrcAddr ]['Ep'][ MsgSrcEp ][ '0b01']:
+            if '0b01' in self.ListOfDevices[ MsgSrcAddr ]['Ep'][ MsgSrcEp ] and '000d' in self.ListOfDevices[ MsgSrcAddr ]['Ep'][ MsgSrcEp ][ '0b01'] and isinstance( self.ListOfDevices[ MsgSrcAddr ]['Ep'][ MsgSrcEp ][ '0b01']['000d'], int):
                 Isousc = int( self.ListOfDevices[ MsgSrcAddr ]['Ep'][ MsgSrcEp ][ '0b01']['000d'])
                 flevel = (  value / Isousc )
                 if flevel > 80:

@@ -143,7 +143,7 @@
 	},
 	"Param": {
 		"PollingEnabled": 1,
-		"PollingCusterff66": 300,
+		"PollingCusterff66": 43200,
 		"ZLinkyPolling": 70
 	}
 }
