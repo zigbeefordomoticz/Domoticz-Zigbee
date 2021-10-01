@@ -162,7 +162,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             # it is assumed that if there is also summation provided by the device, that
             # such information is stored on the data structuture and here we will retreive it.
             # value is expected as String
-            if WidgetType == "P1Meter" and Attribute_ in  ("0000", "0100", "0102", "0104", "0106", "0108", "010a"):
+            if WidgetType == "P1Meter" and Attribute_ == "0000":
                 self.log.logging("Widget", "Log", "------>  P1Meter : %s (%s)" % (value, type(value)), NWKID)
                 # P1Meter report Instant and Cummulative Power.
                 # We need to retreive the Cummulative Power.
@@ -176,29 +176,65 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 cur_return1 = SplitData[2]
                 cur_return2 = SplitData[3]
                 usage1 = usage2 = return1 = return2 = cons = prod = 0
-                if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] == 'ZLinky_TIC':
-                    try:
-                        # We use Puissance Apparente
-                        if "0b04" in self.ListOfDevices[NWKID]["Ep"][Ep] and "050f" in self.ListOfDevices[NWKID]["Ep"][Ep]["0b04"]:
-                            cons = round(float(self.ListOfDevices[NWKID]["Ep"][Ep]["0b04"]["050f"]), 2)
-                        if Attribute_ in ( "0000", "0100", "0104", "0108"):
-                            usage1 = int(round(float(value), 0))
-                            usage2 = cur_usage2
-                            return1 = cur_return1
-                            return2 = cur_return2
-                        if Attribute_ in ( "0102", "0106", "010a"):
-                            usage1 = cur_usage1
-                            usage2 = int(round(float(value), 0))
-                            return1 = cur_return1
-                            return2 = cur_return2
-                    except:
-                        self.log.logging("Widget", "Error", "------>  P1Meter Error processing: value: %s usage1: %s usage2: %s cons: %s" %(value, usage1, usage2, cons), NWKID)
-                        return
+                if "0702" in self.ListOfDevices[NWKID]["Ep"][Ep] and "0400" in self.ListOfDevices[NWKID]["Ep"][Ep]["0702"]:
+                        cons = round(float(self.ListOfDevices[NWKID]["Ep"][Ep]["0702"]["0400"]), 2)
+                usage1 = round(float(value), 2)
 
+                sValue = "%s;%s;%s;%s;%s;%s" % (usage1, usage2, return1, return2, cons, prod)
+                self.log.logging("Widget", "Log", "------>  P1Meter : " + sValue, NWKID)
+                UpdateDevice_v2(self, Devices, DeviceUnit, 0, str(sValue), BatteryLevel, SignalLevel)
+
+            elif ( WidgetType == "P1Meter3" and 
+                   "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] == 'ZLinky_TIC' and 
+                   Attribute_ in  ( "0100", "0102", "0104", "0106", "0108", "010a", "050f")
+            ):
+                if Ep == '01' and Attribute_ not in ( "0100", "0102"):
+                    # Ep = 01, so we store Base, or HP,HC, or BBRHCJB, BBRHPJB
+                    return
+                elif Ep == "f2" and Attribute_ not in ( "0104", "0106"):
+                    # Ep = f2, so we store BBRHCJW, BBRHPJW
+                    return
+                elif Ep == "f3" and Attribute_ not in ( "0108", "010a"):
+                    # Ep == f3, so we store BBRHCJR, BBRHPJR
+                    return
+
+                self.log.logging("Widget", "Log", "------>  P1Meter : %s (%s)" % (value, type(value)), NWKID)
+                # P1Meter report Instant and Cummulative Power.
+                # We need to retreive the Cummulative Power.
+                CurrentsValue = Devices[DeviceUnit].sValue
+                if len(CurrentsValue.split(";")) != 6:
+                    # First time after device creation
+                    CurrentsValue = "0;0;0;0;0;0"
+                SplitData = CurrentsValue.split(";")
+                cur_usage1 = SplitData[0]
+                cur_usage2 = SplitData[1]
+                cur_return1 = SplitData[2]
+                cur_return2 = SplitData[3]
+                usage1 = usage2 = return1 = return2 = cons = prod = 0
+
+                if Attribute_ == "050f":
+                    # This is Power Apparent 
+                    # let's simply update 
+                    cons = value
+                    usage1 = cur_usage1
+                    usage2 = cur_usage2
+                    return1 = cur_return1
+                    return2 = cur_return2
+            
                 else:
-                    if "0702" in self.ListOfDevices[NWKID]["Ep"][Ep] and "0400" in self.ListOfDevices[NWKID]["Ep"][Ep]["0702"]:
-                            cons = round(float(self.ListOfDevices[NWKID]["Ep"][Ep]["0702"]["0400"]), 2)
-                    usage1 = round(float(value), 2)
+                    # We are so receiving a usage update
+                    if "0b04" in self.ListOfDevices[NWKID]["Ep"][Ep] and "050f" in self.ListOfDevices[NWKID]["Ep"][Ep]["0b04"]:
+                        cons = round(float(self.ListOfDevices[NWKID]["Ep"][Ep]["0b04"]["050f"]), 2)
+                    if Attribute_ in ( "0000", "0100", "0104", "0108"):
+                        usage1 = int(round(float(value), 0))
+                        usage2 = cur_usage2
+                        return1 = cur_return1
+                        return2 = cur_return2
+                    if Attribute_ in ( "0102", "0106", "010a"):
+                        usage1 = cur_usage1
+                        usage2 = int(round(float(value), 0))
+                        return1 = cur_return1
+                        return2 = cur_return2
 
                 sValue = "%s;%s;%s;%s;%s;%s" % (usage1, usage2, return1, return2, cons, prod)
                 self.log.logging("Widget", "Log", "------>  P1Meter : " + sValue, NWKID)

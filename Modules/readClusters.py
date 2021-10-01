@@ -4619,10 +4619,6 @@ def Cluster0b04( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
         if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == 'ZLinky_TIC':
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value), Attribute_=MsgAttrID)
-            if MsgAttrID == "0908":
-                MajDomoDevice(self, Devices, MsgSrcAddr, 'f1', MsgClusterId, str(value), Attribute_="0508")
-            elif MsgAttrID == "0a08":
-                MajDomoDevice(self, Devices, MsgSrcAddr, 'f2', MsgClusterId, str(value), Attribute_="0508")
 
     elif MsgAttrID == "050f":
         value = int(decodeAttribute(self, MsgAttType, MsgClusterData))

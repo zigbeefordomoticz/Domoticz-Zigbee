@@ -11,13 +11,13 @@
 			"0b01": "",
 			"0b04": "",
 			"ff66": "",
-			"Type": "P1Meter/Ampere/Alarm/Ampere3"
-		},
-		"f1": {
-			"Type": "Ampere"
+			"Type": "P1Meter3/Ampere3/Alarm"
 		},
 		"f2": {
-			"Type": "Ampere"
+			"Type": "P1Meter3"
+		},
+		"f3": {
+			"Type": "P1Meter3"
 		}
 	},
 	"Type": "",
