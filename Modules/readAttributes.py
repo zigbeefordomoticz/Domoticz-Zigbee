@@ -126,6 +126,7 @@ ATTRIBUTES = {
     "fc01": [0x0000, 0x0001, 0x0002],  # Legrand Cluster
     "fc21": [0x0001],
     "fc40": [0x0000],  # Legrand
+    "ff66": [0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0005], # Zlinky
 }
 
 
