@@ -1685,6 +1685,7 @@ CLUSTERS_LIST = [
     "0204",  # Thermostat UI
     "0300",  # Colour Control
     "0000",  # Basic
+    "0b01",  #
     "0b04",  # Electrical Measurement
     "ff02",  # Used by Xiaomi devices for battery informations.
     "fc01",  # Legrand

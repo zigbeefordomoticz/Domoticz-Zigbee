@@ -740,6 +740,9 @@ def TypeFromCluster(self, cluster, create_=False, ProfileID_="", ZDeviceID_="", 
     elif cluster == "fc40":  # FIP Legrand
         TypeFromCluster = "ThermoMode"
 
+    elif cluster == "ff66":
+        TypeFromCluster = "DEMAIN"
+
     return TypeFromCluster
 
 

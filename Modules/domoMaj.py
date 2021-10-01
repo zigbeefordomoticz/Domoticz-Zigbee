@@ -131,30 +131,42 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
         self.log.logging(
             "Widget", "Debug", "------> SignalLevel: %s , BatteryLevel: %s" % (SignalLevel, BatteryLevel), NWKID
         )
+
+        if ClusterType == "Alarm" and WidgetType == "Alarm3":
+            # This is Alarm3 for ZLinky
+            if Ep == '01' and Attribute_ not in ( "0005",):
+                    # Ep = 01, Mono-Phase or Line1
+                return
+
+            if value == '00':
+                UpdateDevice_v2(self, Devices, DeviceUnit, 0, "No Alert", BatteryLevel, SignalLevel)
+            elif value == '01':
+                UpdateDevice_v2(self, Devices, DeviceUnit, 1, "> 80%% Isousc", BatteryLevel, SignalLevel)
+            elif value == '02':
+                UpdateDevice_v2(self, Devices, DeviceUnit, 2, "> 90%% Isousc", BatteryLevel, SignalLevel)
+            elif value == '03':
+                UpdateDevice_v2(self, Devices, DeviceUnit, 3, "> 98%% Isousc", BatteryLevel, SignalLevel)
+            elif value == '04':
+                UpdateDevice_v2(self, Devices, DeviceUnit, 4, "Critical", BatteryLevel, SignalLevel)
+
         if "Ampere" in ClusterType and WidgetType == "Ampere" and Attribute_ == "0508":
             sValue = "%s" % (round(float(value), 2))
             self.log.logging("Widget", "Debug", "------>  Ampere : %s" % sValue, NWKID)
             UpdateDevice_v2(self, Devices, DeviceUnit, 0, str(sValue), BatteryLevel, SignalLevel)
 
         if "Ampere" in ClusterType and WidgetType == "Ampere3" and Attribute_ in ( "0508", "0908", "0a08"):
-            # nvalue=0&svalue=Ampere_1;=Ampere_2;=Ampere_3;
-            ampere_1 = ampere_2 = ampere_3 = 0
-            CurrentsValue = Devices[DeviceUnit].sValue
-            if len(CurrentsValue.split(";")) != 3:
-                # First time after device creation
-                CurrentsValue = "0;0;0"
-            currentValue = CurrentsValue.split(";")
-            ampere_1 = float( currentValue[0] )
-            ampere_2 = float( currentValue[1] )
-            ampere_3 = float( currentValue[2] )
-            if Attribute_ == "0508":
-                ampere_1 = (round(float(value), 2))
-            elif Attribute_ == "0908":
-                ampere_2 = (round(float(value), 2))
-            elif Attribute_ == "0a08":
-                ampere_3 = (round(float(value), 2))
-            sValue = "%s;%s;%s" %( ampere_1, ampere_2, ampere_3)
-            self.log.logging("Widget", "Log", "------>  Ampere3 : %s" % sValue, NWKID)
+            if Ep == '01' and Attribute_ not in ( "0508",):
+                # Ep = 01, Mono-Phase or Line1
+                return
+            elif Ep == "f2" and Attribute_ not in ( "0908",):
+                # Ep = f2, Line2
+                return
+            elif Ep == "f3" and Attribute_ not in ( "0a08",):
+                # Ep == f3, Line3
+                return
+            ampere = (round(float(value), 2))
+            sValue = "%s" %( ampere)
+            self.log.logging("Widget", "Log", "------>  Ampere3 : %s line: %s" % (sValue, Ep), NWKID)
             UpdateDevice_v2(self, Devices, DeviceUnit, 0, str(sValue), BatteryLevel, SignalLevel)                                    
                 
         if "Power" in ClusterType:  # Instant Power/Watts

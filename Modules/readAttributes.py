@@ -117,11 +117,8 @@ ATTRIBUTES = {
     "0502": [0x0000],
     "0702": [0x0000, 0x0017, 0x0200, 0x0301, 0x0302, 0x0303, 0x0306, 0x0400],
     "000f": [0x0000, 0x0051, 0x0055, 0x006F, 0xFFFD],
-    "0b04": [
-        0x050B,
-        0x0505,
-        0x0508,
-    ],
+    "0b01": [0x000d],
+    "0b04": [0x050B, 0x0505, 0x0508, ],
     "0b05": [0x0000],
     "fc01": [0x0000, 0x0001, 0x0002],  # Legrand Cluster
     "fc21": [0x0001],
@@ -1385,6 +1382,29 @@ def ReadAttributeRequest_0702_ZLinky_TIC(self, key):
     self.log.logging( "ReadAttributes", "Debug", "Request ZLinky infos on 0x0702 cluster: " + key + " EPout = " + EPout, nwkid=key )
     ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0702", listAttributes, ackIsDisabled=False)
 
+def ReadAttributeRequest_0b01(self, key):
+    # Cluster 0x0b04 Metering
+
+    self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_0b04 - Key: %s " % key, nwkid=key)
+    _manuf = "Manufacturer" in self.ListOfDevices[key]
+    ListOfEp = getListOfEpForCluster(self, key, "0b01")
+    for EPout in ListOfEp:
+        listAttributes = []
+        for iterAttr in retreive_ListOfAttributesByCluster(self, key, EPout, "0b01"):
+            if iterAttr not in listAttributes:
+                listAttributes.append(iterAttr)
+
+        if listAttributes:
+            self.log.logging(
+                "ReadAttributes",
+                "Debug",
+                "Request Metering info via Read Attribute request: " + key + " EPout = " + EPout,
+                nwkid=key,
+            )
+            ReadAttributeReq(
+                self, key, ZIGATE_EP, EPout, "0b01", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key)
+            )
+
 def ReadAttributeRequest_0b04(self, key):
     # Cluster 0x0b04 Metering
 
@@ -1632,6 +1652,7 @@ READ_ATTRIBUTES_REQUEST = {
     "0500": (ReadAttributeRequest_0500, "polling0500"),
     "0502": (ReadAttributeRequest_0502, "polling0502"),
     "0702": (ReadAttributeRequest_0702, "polling0702"),
+    "0b01": (ReadAttributeRequest_0b04, "polling0b04"),
     "0b04": (ReadAttributeRequest_0b04, "polling0b04"),
     "0b05": (ReadAttributeRequest_0702, "polling0b05"),
 

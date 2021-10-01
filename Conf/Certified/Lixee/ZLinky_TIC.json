@@ -11,13 +11,13 @@
 			"0b01": "",
 			"0b04": "",
 			"ff66": "",
-			"Type": "P1Meter3/Ampere3/Alarm"
+			"Type": "P1Meter3/Ampere3/Alarm3/DEMAIN"
 		},
 		"f2": {
-			"Type": "P1Meter3"
+			"Type": "P1Meter3/Ampere3/Alarm3"
 		},
 		"f3": {
-			"Type": "P1Meter3"
+			"Type": "P1Meter3/Ampere3/Alarm3"
 		}
 	},
 	"Type": "",
@@ -105,7 +105,7 @@
 	},
 	"Param": {
 		"PollingEnabled": 1,
-		"PollingCusterff66": 43200,
+		"PollingCusterff66": 300,
 		"ZLinkyPolling": 70
 	}
 }
