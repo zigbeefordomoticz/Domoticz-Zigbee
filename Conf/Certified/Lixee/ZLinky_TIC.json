@@ -33,14 +33,14 @@
 			"Attributes": {
 				"0508": {
 					"DataType": "21",
-					"MinInterval": "0005",
+					"MinInterval": "001E",
 					"MaxInterval": "012C",
 					"TimeOut": "0000",
 					"Change": "0001"
 				},
 				"050f": {
 					"DataType": "21",
-					"MinInterval": "0005",
+					"MinInterval": "001E",
 					"MaxInterval": "012C",
 					"TimeOut": "0000",
 					"Change": "0001"
@@ -51,7 +51,7 @@
 			"Attributes": {
 				"0005": {
 					"DataType": "21",
-					"MinInterval": "0005",
+					"MinInterval": "0001",
 					"MaxInterval": "012C",
 					"TimeOut": "0000",
 					"Change": "0001"
