@@ -81,7 +81,7 @@ class LoggingManagement:
             if "loggingBackupCount" in self.pluginconf.pluginConf:
                 _backupCount = int(self.pluginconf.pluginConf["loggingBackupCount"])
             if "loggingMaxMegaBytes" in self.pluginconf.pluginConf:
-                _maxBytes = int(self.pluginconf.pluginConf["loggingBackupCount"]) * 1024 * 1024
+                _maxBytes = int(self.pluginconf.pluginConf["loggingMaxMegaBytes"]) * 1024 * 1024
 
             if _maxBytes == 0:
                 # Enable TimedRotating
