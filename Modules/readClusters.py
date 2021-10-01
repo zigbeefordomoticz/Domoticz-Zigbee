@@ -4275,24 +4275,43 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     elif MsgAttrID == "0100" and "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == 'ZLinky_TIC':
         # HP or Base
+        if value == 0:
+            return
         self.log.logging( "Cluster", "Debug", "Cluster0702 - 0x0100 ZLinky_TIC Value: %s Conso: %s " % (MsgClusterData, value), MsgSrcAddr, )
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value), Attribute_=MsgAttrID)
     
     elif MsgAttrID == "0102" and "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == 'ZLinky_TIC':
         # HC
+        if value == 0:
+            return
         self.log.logging( "Cluster", "Debug", "Cluster0702 - 0x0100 ZLinky_TIC Value: %s Conso: %s " % (MsgClusterData, value), MsgSrcAddr, )
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value), Attribute_=MsgAttrID)
 
     elif MsgAttrID == "0104" and "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == 'ZLinky_TIC':
-        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
+        if value == 0:
+            return
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcAddr, MsgClusterId, MsgAttrID, value)
+        MajDomoDevice(self, Devices, MsgSrcAddr, 'f2', MsgClusterId, str(value), Attribute_=MsgAttrID)
 
     elif MsgAttrID == "0106" and "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == 'ZLinky_TIC':
-        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
+        if value == 0:
+            return
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcAddr, MsgClusterId, MsgAttrID, value)
+        MajDomoDevice(self, Devices, MsgSrcAddr, 'f2', MsgClusterId, str(value), Attribute_=MsgAttrID)
 
     elif MsgAttrID == "0108" and "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == 'ZLinky_TIC':
-        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
+        if value == 0:
+            return
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcAddr, MsgClusterId, MsgAttrID, value)
+        MajDomoDevice(self, Devices, MsgSrcAddr, 'f3', MsgClusterId, str(value), Attribute_=MsgAttrID)
+
+    elif MsgAttrID == "010a" and "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == 'ZLinky_TIC':
+        if value == 0:
+            return
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcAddr, MsgClusterId, MsgAttrID, value)
+        MajDomoDevice(self, Devices, MsgSrcAddr, 'f3', MsgClusterId, str(value), Attribute_=MsgAttrID)
 
     elif MsgAttrID == "0300":  # Unit of Measure
         MEASURE_UNITS = {0: "kW", 1: "m³", 2: "ft³", 3: "ccf"}
@@ -4567,7 +4586,6 @@ def Cluster0b01(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
 def Cluster0b04( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
 
-    checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
     self.log.logging(
         "Cluster",
         "Debug",
@@ -4610,13 +4628,21 @@ def Cluster0b04( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         
         self.log.logging( "Cluster", "Debug", "ReadCluster %s - %s/%s Current %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, value) )
         value /= 100
+
         if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == "TS0121":
             value /= 20
+            checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value), Attribute_=MsgAttrID)
+        
         elif "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == 'ZLinky_TIC':
-            value *= 100
-        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value), Attribute_=MsgAttrID)
-        if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == 'ZLinky_TIC' and MsgSrcEp == '01':
+            value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
+            if value == 0xffff:
+                return
+
+            checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value), Attribute_=MsgAttrID)
+
+            # Check if Intensity is below subscription level
             if '0b01' in self.ListOfDevices[ MsgSrcAddr ]['Ep'][ MsgSrcEp ] and '000d' in self.ListOfDevices[ MsgSrcAddr ]['Ep'][ MsgSrcEp ][ '0b01']:
                 Isousc = int( self.ListOfDevices[ MsgSrcAddr ]['Ep'][ MsgSrcEp ][ '0b01']['000d'])
                 flevel = (  value / Isousc )
@@ -4628,20 +4654,44 @@ def Cluster0b04( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                     MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0009", "03")
 
             # Fake to produce Intensite on Line2 and Line3
+            self.log.logging( "Cluster", "Log", "ReadCluster %s - %s/%s SIMULATE 3 PHASES - TO BE REMOVED" % (MsgClusterId, MsgSrcAddr, MsgSrcEp) )
             value = value / 3
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value + 2 ), Attribute_='0908')
-
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value + 3 ), Attribute_='0a08')
-
-    elif MsgAttrID in ("0908", "0a08"):
-        #  Current Phase 2 and Current Phase 3
-        value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
-        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
-        if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == 'ZLinky_TIC':
+           
+        else:
+            # Other type of devices
+            checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value), Attribute_=MsgAttrID)
+                   
+    elif MsgAttrID in ( '0908', '0a08'):
+        #  Current Phase 2 and Current Phase 3
+        value = int(decodeAttribute(self, MsgAttType, MsgClusterData))  
+        if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == 'ZLinky_TIC':
+            if value == 0xffff:
+                return
+            if MsgAttrID == '0908':
+                MajDomoDevice(self, Devices, MsgSrcAddr, 'f2', MsgClusterId, str(value), Attribute_=MsgAttrID)
+            elif MsgAttrID == '0a08':
+                MajDomoDevice(self, Devices, MsgSrcAddr, 'f3', MsgClusterId, str(value), Attribute_=MsgAttrID)
+
+            # Check if Intensity is below subscription level
+            if '0b01' in self.ListOfDevices[ MsgSrcAddr ]['Ep'][ MsgSrcEp ] and '000d' in self.ListOfDevices[ MsgSrcAddr ]['Ep'][ MsgSrcEp ][ '0b01']:
+                Isousc = int( self.ListOfDevices[ MsgSrcAddr ]['Ep'][ MsgSrcEp ][ '0b01']['000d'])
+                flevel = (  value / Isousc )
+                if flevel > 80:
+                    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0009", "01")
+                elif flevel > 90:
+                    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0009", "02")
+                elif flevel > 98:
+                    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0009", "03")
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
+
 
     elif MsgAttrID == "050f":
         value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
+        if value == 0xffff:
+            return
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
         self.log.logging( "Cluster", "Log", "ReadCluster %s - %s/%s Apparent Power %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, value) )
         # ApparentPower (Represents  the  single  phase  or  Phase  A,  current  demand  of  apparent  (Square  root  of  active  and  reactive power) power, in VA.)
@@ -4649,7 +4699,23 @@ def Cluster0b04( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value))
         self.log.logging( "Cluster", "Log", "ReadCluster %s - %s/%s Apparent Power %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, value) )
 
+    elif MsgAttrID in ( "050a", "090a", "0a0a"): # Max Current
+        value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
+        if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == 'ZLinky_TIC':
+            if value == 0xffff:
+                return
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
+
+    elif MsgAttrID == "050d":
+        # Max Tri Power reached
+        value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
+        if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == 'ZLinky_TIC':
+            if value == 0x8000:
+                return
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)        
+    
     else:
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
         self.log.logging(
             "Cluster",
             "Log",
@@ -5150,14 +5216,30 @@ def Clusterff66(
         # PEJP
         pass
 
-    elif MsgAttrID == '0005':
+    elif MsgAttrID in ('0005', '0006', '0007', '0008'):
         # It is understood that the Attribute represent also the Instant Current, so we will update accordingly the P1Meter
         value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
         # Alarm 
+        if MsgAttrID == '0005':
+            _tmpep = '01'
+            _tmpattr = '0508'
+        elif MsgAttrID == '0006':
+            _tmpep = '01'
+            _tmpattr = '0508'
+        elif MsgAttrID == '0007':
+            _tmpep = 'f2'
+            _tmpattr = '0908'
+        elif MsgAttrID == '0008':
+            _tmpep = 'f3'
+            _tmpattr = '0a08'
+
         if value == 0:
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0009", "00")
+            MajDomoDevice(self, Devices, MsgSrcAddr, _tmpep, "0009", "00")
             return
 
         # value is equal to the Amper over the souscription
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0009", "04")
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0b04', str(value), Attribute_='0508')
+        # Issue critical alarm
+        MajDomoDevice(self, Devices, MsgSrcAddr, _tmpep, "0009", "04")
+
+        # Isse Current on the corresponding Ampere
+        MajDomoDevice(self, Devices, MsgSrcAddr, _tmpep, '0b04', str(value), Attribute_=_tmpattr)
