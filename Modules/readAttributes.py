@@ -1589,24 +1589,22 @@ def ReadAttributeRequest_ff66(self, key):
     # Cluster 0x0b04 Metering
 
     self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_ff66 - Key: %s " % key, nwkid=key)
-    _manuf = "Manufacturer" in self.ListOfDevices[key]
-    ListOfEp = getListOfEpForCluster(self, key, "ff66")
-    for EPout in ListOfEp:
-        listAttributes = []
-        for iterAttr in retreive_ListOfAttributesByCluster(self, key, EPout, "ff66"):
-            if iterAttr not in listAttributes:
-                listAttributes.append(iterAttr)
+    EPout = '01'
+    listAttributes = []
+    for iterAttr in retreive_ListOfAttributesByCluster(self, key, EPout, "ff66"):
+        if iterAttr not in listAttributes:
+            listAttributes.append(iterAttr)
 
-        if listAttributes:
-            self.log.logging(
-                "ReadAttributes",
-                "Log",
-                "Request ZLinky info via Read Attribute request: " + key + " EPout = " + EPout,
-                nwkid=key,
-            )
-            ReadAttributeReq(
-                self, key, ZIGATE_EP, EPout, "ff66", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key)
-            )
+    if listAttributes:
+        self.log.logging(
+            "ReadAttributes",
+            "Log",
+            "Request ZLinky info via Read Attribute request: " + key + " EPout = " + EPout,
+            nwkid=key,
+        )
+        ReadAttributeReq(
+            self, key, ZIGATE_EP, EPout, "ff66", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key)
+        )
 
             
 READ_ATTRIBUTES_REQUEST = {
@@ -1616,6 +1614,7 @@ READ_ATTRIBUTES_REQUEST = {
     "0008": (ReadAttributeRequest_0008, "pollingLvlControl"),
     "0006": (ReadAttributeRequest_0006, "pollingONOFF"),
     "000C": (ReadAttributeRequest_000C, "polling000C"),
+    #'000f' : ( ReadAttributeRequest_000f, 'polling000f' ),
     "0019": (ReadAttributeRequest_0019, "polling0019"),
     "0020": (ReadAttributeRequest_000C, "polling0020"),
     "0100": (ReadAttributeRequest_0100, "polling0100"),
@@ -1633,9 +1632,9 @@ READ_ATTRIBUTES_REQUEST = {
     "0500": (ReadAttributeRequest_0500, "polling0500"),
     "0502": (ReadAttributeRequest_0502, "polling0502"),
     "0702": (ReadAttributeRequest_0702, "polling0702"),
-    "0b05": (ReadAttributeRequest_0702, "polling0b05"),
     "0b04": (ReadAttributeRequest_0b04, "polling0b04"),
-    #'000f' : ( ReadAttributeRequest_000f, 'polling000f' ),
+    "0b05": (ReadAttributeRequest_0702, "polling0b05"),
+
     "fc01": (ReadAttributeRequest_fc01, "pollingfc01"),
     "fc21": (ReadAttributeRequest_000f, "pollingfc21"),
     "fc40": (ReadAttributeRequest_fc40, "pollingfc40"),

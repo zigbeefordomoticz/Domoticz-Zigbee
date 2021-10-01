@@ -1690,6 +1690,7 @@ CLUSTERS_LIST = [
     "fc01",  # Legrand
     "fc21",  # Cluster Profalux PFX
     "ef00",  # Tuya TRV
+    "ff66", # Private Cluster for ZLinky_TIC
 ]
 
 LEGRAND_REMOTES = ("Remote switch", "Double gangs remote switch", "Shutters central remote switch")
