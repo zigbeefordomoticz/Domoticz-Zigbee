@@ -5135,19 +5135,20 @@ def Clusterff66(
     self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source
 ):
     # ZLinky
-
+    value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
     self.log.logging(
         "Cluster",
         "Log",
-        "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s"
-        % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, decodeAttribute(self, MsgAttType, MsgClusterData)),
+        "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s / Value: %s"
+        % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
         MsgSrcAddr,
     )
     checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, decodeAttribute(self, MsgAttType, MsgClusterData))
 
     if MsgAttrID == '0005':
+
         # Alarm 
-        value = decodeAttribute(self, MsgAttType, MsgClusterData)
+        
         if value == 0:
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0009", "00")
         else:
