@@ -127,6 +127,14 @@ def attributeDiscovery(self, NwkId):
 
 def pollingManufSpecificDevices(self, NwkId):
 
+    self.log.logging(
+        "Heartbeat",
+        "Log",
+        "++ pollingManufSpecificDevices -  %s "
+        % (NwkId,),
+        NwkId,
+    )
+
     if "Param" not in self.ListOfDevices[NwkId]:
         return False
 
@@ -138,7 +146,7 @@ def pollingManufSpecificDevices(self, NwkId):
             if _FEQ and ((_HB % _FEQ) == 0):
                 self.log.logging(
                     "Heartbeat",
-                    "Debug",
+                    "Log",
                     "++ pollingManufSpecificDevices -  %s Found: %s=%s"
                     % (NwkId, param, self.ListOfDevices[NwkId]["Param"][param]),
                     NwkId,
@@ -150,7 +158,7 @@ def pollingManufSpecificDevices(self, NwkId):
             if _FEQ and ((_HB % _FEQ) == 0):
                 self.log.logging(
                     "Heartbeat",
-                    "Debug",
+                    "Log",
                     "++ pollingManufSpecificDevices -  %s Found: %s=%s"
                     % (NwkId, param, self.ListOfDevices[NwkId]["Param"][param]),
                     NwkId,

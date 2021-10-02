@@ -4276,6 +4276,8 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     elif MsgAttrID == "0100" and "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == 'ZLinky_TIC':
         # HP or Base
+        #value = fake_index_zlinky( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID)
+        
         if value == 0:
             return
         self.log.logging( "Cluster", "Debug", "Cluster0702 - 0x0100 ZLinky_TIC Value: %s Conso: %s " % (MsgClusterData, value), MsgSrcAddr, )
@@ -4284,6 +4286,7 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     
     elif MsgAttrID == "0102" and "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == 'ZLinky_TIC':
         # HC
+        #value = fake_index_zlinky( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID)
         if value == 0:
             return
         self.log.logging( "Cluster", "Debug", "Cluster0702 - 0x0100 ZLinky_TIC Value: %s Conso: %s " % (MsgClusterData, value), MsgSrcAddr, )
@@ -4291,27 +4294,31 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value), Attribute_=MsgAttrID)
 
     elif MsgAttrID == "0104" and "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == 'ZLinky_TIC':
+        #value = fake_index_zlinky( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID)
         if value == 0:
             return
-        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcAddr, MsgClusterId, MsgAttrID, value)
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
         MajDomoDevice(self, Devices, MsgSrcAddr, 'f2', MsgClusterId, str(value), Attribute_=MsgAttrID)
 
     elif MsgAttrID == "0106" and "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == 'ZLinky_TIC':
+        #value = fake_index_zlinky( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID)
         if value == 0:
             return
-        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcAddr, MsgClusterId, MsgAttrID, value)
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
         MajDomoDevice(self, Devices, MsgSrcAddr, 'f2', MsgClusterId, str(value), Attribute_=MsgAttrID)
 
     elif MsgAttrID == "0108" and "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == 'ZLinky_TIC':
+        #value = fake_index_zlinky( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID)
         if value == 0:
             return
-        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcAddr, MsgClusterId, MsgAttrID, value)
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
         MajDomoDevice(self, Devices, MsgSrcAddr, 'f3', MsgClusterId, str(value), Attribute_=MsgAttrID)
 
     elif MsgAttrID == "010a" and "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == 'ZLinky_TIC':
+        #value = fake_index_zlinky( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID)
         if value == 0:
             return
-        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcAddr, MsgClusterId, MsgAttrID, value)
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
         MajDomoDevice(self, Devices, MsgSrcAddr, 'f3', MsgClusterId, str(value), Attribute_=MsgAttrID)
 
     elif MsgAttrID == "0300":  # Unit of Measure
@@ -4587,8 +4594,30 @@ def Cluster0b01(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     if MsgAttrID == '000d':
         if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == 'ZLinky_TIC':
             # Current Subscribed
+            self.log.logging( "Cluster", "Debug", "Cluster0b01 - Simulate 45A Subscription" , MsgSrcAddr)
+            value = 45  
             value = int(value)
     checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value,)
+
+def fake_index_zlinky( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID):
+    self.log.logging( "Cluster", "Log", "ReadCluster %s - %s/%s SIMULATE INDEX - TO BE REMOVED" % (MsgClusterId, MsgSrcAddr, MsgSrcEp) )
+    from random import randrange
+    new_value = old_value + randrange( 0, 100)
+    if MsgSrcAddr not in self.ListOfDevices:
+        return 0
+    if MsgSrcEp not in self.ListOfDevices[ MsgSrcAddr ]['Ep']:
+        return 0
+    if MsgClusterId not in self.ListOfDevices[ MsgSrcAddr ]['Ep'][ MsgSrcEp ]:
+        return 0
+    if MsgAttrID not in self.ListOfDevices[ MsgSrcAddr ]['Ep'][ MsgSrcEp ][ MsgClusterId ]:
+        return 0
+    if self.ListOfDevices[ MsgSrcAddr ]['Ep'][ MsgSrcEp ][ MsgClusterId ][MsgAttrID] in  ( {}, ''):
+        return 1
+
+    old_value = self.ListOfDevices[ MsgSrcAddr ]['Ep'][ MsgSrcEp ][ MsgClusterId ][ MsgAttrID ]
+
+    self.log.logging( "Cluster", "Log", "ReadCluster %s - %s/%s ---------- return %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, old_value, new_value) )
+    return new_value
 
 
 def Cluster0b04( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
@@ -4633,7 +4662,7 @@ def Cluster0b04( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     elif MsgAttrID == "0508":  # RMSCurrent
         value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
         
-        self.log.logging( "Cluster", "Debug", "ReadCluster %s - %s/%s Current %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, value) )
+        self.log.logging( "Cluster", "Debug", "ReadCluster %s - %s/%s Current %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr )
         value /= 100
 
         if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == "TS0121":
@@ -4643,28 +4672,22 @@ def Cluster0b04( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         
         elif "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == 'ZLinky_TIC':
             value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
+            #from random import randrange
+            #value = randrange( 0x0, 0x3c)
             if value == 0xffff:
                 return
-
+                
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value), Attribute_=MsgAttrID)
 
             # Check if Intensity is below subscription level
-            if '0b01' in self.ListOfDevices[ MsgSrcAddr ]['Ep'][ MsgSrcEp ] and '000d' in self.ListOfDevices[ MsgSrcAddr ]['Ep'][ MsgSrcEp ][ '0b01'] and isinstance( self.ListOfDevices[ MsgSrcAddr ]['Ep'][ MsgSrcEp ][ '0b01']['000d'], int):
-                Isousc = int( self.ListOfDevices[ MsgSrcAddr ]['Ep'][ MsgSrcEp ][ '0b01']['000d'])
-                flevel = (  value / Isousc )
-                if flevel > 80:
-                    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0009", "01")
-                elif flevel > 90:
-                    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0009", "02")
-                elif flevel > 98:
-                    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0009", "03")
+            zlinky_check_alarm( self, Devices, MsgSrcAddr, MsgSrcEp, value)
 
             # Fake to produce Intensite on Line2 and Line3
-            self.log.logging( "Cluster", "Log", "ReadCluster %s - %s/%s SIMULATE 3 PHASES - TO BE REMOVED" % (MsgClusterId, MsgSrcAddr, MsgSrcEp) )
-            value = value / 3
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value + 2 ), Attribute_='0908')
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value + 3 ), Attribute_='0a08')
+            self.log.logging( "Cluster", "Log", "ReadCluster %s - %s/%s SIMULATE 3 PHASES - TO BE REMOVED" % (MsgClusterId, MsgSrcAddr, MsgSrcEp), MsgSrcAddr )
+
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(randrange( 0x0, 0x3c) ), Attribute_='0908')
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(randrange( 0x0, 0x3c) ), Attribute_='0a08')
            
         else:
             # Other type of devices
@@ -4677,34 +4700,29 @@ def Cluster0b04( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == 'ZLinky_TIC':
             if value == 0xffff:
                 return
-            if MsgAttrID == '0908':
-                MajDomoDevice(self, Devices, MsgSrcAddr, 'f2', MsgClusterId, str(value), Attribute_=MsgAttrID)
-            elif MsgAttrID == '0a08':
-                MajDomoDevice(self, Devices, MsgSrcAddr, 'f3', MsgClusterId, str(value), Attribute_=MsgAttrID)
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value), Attribute_=MsgAttrID)
 
             # Check if Intensity is below subscription level
-            if '0b01' in self.ListOfDevices[ MsgSrcAddr ]['Ep'][ MsgSrcEp ] and '000d' in self.ListOfDevices[ MsgSrcAddr ]['Ep'][ MsgSrcEp ][ '0b01'] and isinstance( self.ListOfDevices[ MsgSrcAddr ]['Ep'][ MsgSrcEp ][ '0b01']['000d'], int):
-                Isousc = int( self.ListOfDevices[ MsgSrcAddr ]['Ep'][ MsgSrcEp ][ '0b01']['000d'])
-                flevel = (  value / Isousc )
-                if flevel > 80:
-                    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0009", "01")
-                elif flevel > 90:
-                    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0009", "02")
-                elif flevel > 98:
-                    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0009", "03")
+            if MsgAttrID == '0908':
+                zlinky_check_alarm( self, Devices, MsgSrcAddr, 'f2', value)
+            elif MsgAttrID == '0a08':
+                zlinky_check_alarm( self, Devices, MsgSrcAddr, 'f3', value)
+
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
 
 
     elif MsgAttrID == "050f":
         value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
+        #from random import randrange
+        #value = randrange( 0x0, 7500)
         if value == 0xffff:
             return
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
-        self.log.logging( "Cluster", "Log", "ReadCluster %s - %s/%s Apparent Power %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, value) )
+        self.log.logging( "Cluster", "Log", "ReadCluster %s - %s/%s Apparent Power %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr )
         # ApparentPower (Represents  the  single  phase  or  Phase  A,  current  demand  of  apparent  (Square  root  of  active  and  reactive power) power, in VA.)
         if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == 'ZLinky_TIC':
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value))
-        self.log.logging( "Cluster", "Log", "ReadCluster %s - %s/%s Apparent Power %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, value) )
+        self.log.logging( "Cluster", "Log", "ReadCluster %s - %s/%s Apparent Power %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr )
 
     elif MsgAttrID in ( "050a", "090a", "0a0a"): # Max Current
         value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
@@ -4728,6 +4746,48 @@ def Cluster0b04( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             "Log",
             "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s"
             % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            MsgSrcAddr,
+        )
+
+
+def zlinky_check_alarm( self, Devices, MsgSrcAddr, MsgSrcEp, value):
+
+    if value == 0:
+        return     
+    if ( '0b01' in self.ListOfDevices[ MsgSrcAddr ]['Ep'][ '01' ] 
+            and '000d' in self.ListOfDevices[ MsgSrcAddr ]['Ep'][ '01' ][ '0b01'] 
+            and isinstance( self.ListOfDevices[ MsgSrcAddr ]['Ep'][ '01' ][ '0b01']['000d'], int)
+    ):
+        Isousc = int( self.ListOfDevices[ MsgSrcAddr ]['Ep'][ '01' ][ '0b01']['000d'])
+        
+        self.log.logging(
+            "Cluster",
+            "Log",
+            "zlinky_check_alarm - %s/%s For TEST ONLY ISousc is set to 45 !!!! TO BE REMOVED"
+            % ( MsgSrcAddr, MsgSrcEp),
+            MsgSrcAddr,
+            )
+        if Isousc == 0:
+            return   
+
+        flevel = (  value * 100 ) / Isousc
+        self.log.logging( "Cluster", "Log", "zlinky_check_alarm - %s/%s flevel- %s %s %s" % ( MsgSrcAddr, MsgSrcEp, value, Isousc, flevel ), MsgSrcAddr, )
+
+        if flevel > 80:
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0009", "01", Attribute_="0005")
+            self.log.logging( "Cluster", "Log", "zlinky_check_alarm - %s/%s Alarm-01" % ( MsgSrcAddr, MsgSrcEp ), MsgSrcAddr, )
+        elif flevel > 90:
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0009", "02", Attribute_="0005")
+            self.log.logging( "Cluster", "Log", "zlinky_check_alarm - %s/%s Alarm-02" % ( MsgSrcAddr, MsgSrcEp ), MsgSrcAddr, )
+        elif flevel > 98:
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0009", "03", Attribute_="0005")
+            self.log.logging( "Cluster", "Log", "zlinky_check_alarm - %s/%s Alarm-03" % ( MsgSrcAddr, MsgSrcEp ), MsgSrcAddr, )
+    else:
+        self.log.logging(
+            "Cluster",
+            "Log",
+            "zlinky_check_alarm - %s/%s no Subscription found !!!!"
+            % ( MsgSrcAddr, MsgSrcEp),
             MsgSrcAddr,
         )
 
@@ -5201,31 +5261,36 @@ def Clusterff66(
         % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
         MsgSrcAddr,
     )
-    checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, decodeAttribute(self, MsgAttType, MsgClusterData))
 
     if MsgAttrID == '0000':
         # Option tarifaire
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, decodeAttribute(self, MsgAttType, MsgClusterData))
         pass
 
     if MsgAttrID == '0001':
         # Couleur du Lendemain DEMAIN
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value)
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, decodeAttribute(self, MsgAttType, MsgClusterData))
 
     elif MsgAttrID == '0002':
         # HHPHC
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, decodeAttribute(self, MsgAttType, MsgClusterData))
         pass
 
     elif MsgAttrID == '0003':
         # PPOT
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, decodeAttribute(self, MsgAttType, MsgClusterData))
         pass
 
     elif MsgAttrID == '0004':
         # PEJP
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, decodeAttribute(self, MsgAttType, MsgClusterData))
         pass
 
     elif MsgAttrID in ('0005', '0006', '0007', '0008'):
         # It is understood that the Attribute represent also the Instant Current, so we will update accordingly the P1Meter
         value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, decodeAttribute(self, MsgAttType, MsgClusterData))
         # Alarm 
         if MsgAttrID == '0005':
             _tmpep = '01'
@@ -5249,4 +5314,4 @@ def Clusterff66(
         MajDomoDevice(self, Devices, MsgSrcAddr, _tmpep, "0009", "04")
 
         # Isse Current on the corresponding Ampere
-        MajDomoDevice(self, Devices, MsgSrcAddr, _tmpep, '0b04', str(value), Attribute_=_tmpattr)
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0b04', str(value), Attribute_=_tmpattr)

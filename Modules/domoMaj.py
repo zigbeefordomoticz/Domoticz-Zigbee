@@ -132,11 +132,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             "Widget", "Debug", "------> SignalLevel: %s , BatteryLevel: %s" % (SignalLevel, BatteryLevel), NWKID
         )
 
-        if ClusterType == "Alarm" and WidgetType == "Alarm3":
+        if ClusterType == "Alarm" and WidgetType == "Alarm_ZL":
             # This is Alarm3 for ZLinky
-            if Ep == '01' and Attribute_ not in ( "0005",):
-                    # Ep = 01, Mono-Phase or Line1
-                return
 
             if value == '00':
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, "No Alert", BatteryLevel, SignalLevel)
@@ -154,19 +151,21 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             self.log.logging("Widget", "Debug", "------>  Ampere : %s" % sValue, NWKID)
             UpdateDevice_v2(self, Devices, DeviceUnit, 0, str(sValue), BatteryLevel, SignalLevel)
 
-        if "Ampere" in ClusterType and WidgetType == "Ampere_ZL" and Attribute_ in ( "0508", "0908", "0a08"):
-            if Ep == '01' and Attribute_ not in ( "0508",):
-                # Ep = 01, Mono-Phase or Line1
-                return
-            elif Ep == "f2" and Attribute_ not in ( "0908",):
-                # Ep = f2, Line2
-                return
-            elif Ep == "f3" and Attribute_ not in ( "0a08",):
-                # Ep == f3, Line3
-                return
+        if "Ampere" in ClusterType and WidgetType == "Ampere3" and Attribute_ in ( "0508", "0908", "0a08"):
+            # Retreive the previous values
+            ampere1 , ampere2, ampere3 = retreive_data_from_current( self, Devices, DeviceUnit, "%s;%s;%s")
             ampere = (round(float(value), 2))
-            sValue = "%s" %( ampere)
-            self.log.logging("Widget", "Log", "------>  Ampere_ZL : %s line: %s" % (sValue, Ep), NWKID)
+            if Attribute_ == "0508": 
+                # Line 1
+                sValue = "%s;%s;%s" % ( ampere,ampere2, ampere3 )
+            elif Attribute_ == "0908": 
+                # Line 2
+                sValue = "%s;%s;%s" % ( ampere1,ampere, ampere3 )
+            elif Attribute_ == "0a08": 
+                # Line 3
+                sValue = "%s;%s;%s" % ( ampere1,ampere2, ampere )
+
+            self.log.logging("Widget", "Log", "------>  Ampere3 : %s" % (sValue), NWKID)
             UpdateDevice_v2(self, Devices, DeviceUnit, 0, str(sValue), BatteryLevel, SignalLevel)                                    
                 
         if "Power" in ClusterType:  # Instant Power/Watts
@@ -210,39 +209,32 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     # Ep == f3, so we store BBRHCJR, BBRHPJR
                     return
 
-                self.log.logging("Widget", "Log", "------>  P1Meter_ZL : %s (%s)" % (value, type(value)), NWKID)
+                self.log.logging("Widget", "Debug", "------>  P1Meter_ZL : %s (%s)" % (value, type(value)), NWKID)
                 # P1Meter report Instant and Cummulative Power.
                 # We need to retreive the Cummulative Power.
-                CurrentsValue = Devices[DeviceUnit].sValue
-                if len(CurrentsValue.split(";")) != 6:
-                    # First time after device creation
-                    CurrentsValue = "0;0;0;0;0;0"
-                SplitData = CurrentsValue.split(";")
-                cur_usage1 = SplitData[0]
-                cur_usage2 = SplitData[1]
-                cur_return1 = SplitData[2]
-                cur_return2 = SplitData[3]
+                cur_usage1 , cur_usage2, cur_return1,cur_return2, cons, prod = retreive_data_from_current( self, Devices, DeviceUnit, "0;0;0;0;0;0")
                 usage1 = usage2 = return1 = return2 = cons = prod = 0
 
                 if Attribute_ == "050f":
+                    self.log.logging("Widget", "Debug", "------>  P1Meter_ZL : Trigger by Puissance Apparente" , NWKID)
                     # This is Power Apparent 
                     # let's simply update 
-                    cons = value
+                    cons = round(float(value), 2)
                     usage1 = cur_usage1
                     usage2 = cur_usage2
                     return1 = cur_return1
                     return2 = cur_return2
-            
                 else:
                     # We are so receiving a usage update
-                    if "0b04" in self.ListOfDevices[NWKID]["Ep"][Ep] and "050f" in self.ListOfDevices[NWKID]["Ep"][Ep]["0b04"]:
-                        cons = round(float(self.ListOfDevices[NWKID]["Ep"][Ep]["0b04"]["050f"]), 2)
+                    self.log.logging("Widget", "Debug", "------>  P1Meter_ZL : Trigger by Index Update %s Ep: %s"  % (Attribute_, Ep), NWKID)
+                    if "0b04" in self.ListOfDevices[NWKID]["Ep"]['01'] and "050f" in self.ListOfDevices[NWKID]["Ep"]['01']["0b04"]:
+                        cons = round(float(self.ListOfDevices[NWKID]["Ep"]['01']["0b04"]["050f"]), 2)
                     if Attribute_ in ( "0000", "0100", "0104", "0108"):
                         usage1 = int(round(float(value), 0))
                         usage2 = cur_usage2
                         return1 = cur_return1
                         return2 = cur_return2
-                    if Attribute_ in ( "0102", "0106", "010a"):
+                    elif Attribute_ in ( "0102", "0106", "010a"):
                         usage1 = cur_usage1
                         usage2 = int(round(float(value), 0))
                         return1 = cur_return1
@@ -1479,5 +1471,8 @@ def retreive_data_from_current( self, Devices, Unit, format):
             if x != nb_parameters - 1:
                 currentsValue += "0;"
             else:
-                currentsValue += "0;"
+                currentsValue += "0"
+
+    self.log.logging( "Widget", "Debug", "retreive_data_from_current - Nb Param: %s returning %s" % (nb_parameters, currentsValue))
+
     return currentsValue.split(";")

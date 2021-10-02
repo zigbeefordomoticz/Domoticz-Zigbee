@@ -11,13 +11,13 @@
 			"0b01": "",
 			"0b04": "",
 			"ff66": "",
-			"Type": "P1Meter_ZL/Ampere_ZL/Alarm_ZL/DEMAIN"
+			"Type": "P1Meter_ZL/Ampere3/Alarm_ZL/DEMAIN"
 		},
 		"f2": {
-			"Type": "P1Meter_ZL/Ampere_ZL/Alarm_ZL"
+			"Type": "P1Meter_ZL/Alarm_ZL"
 		},
 		"f3": {
-			"Type": "P1Meter_ZL/Ampere_ZL/Alarm_ZL"
+			"Type": "P1Meter_ZL/Alarm_ZL"
 		}
 	},
 	"Type": "",
@@ -33,31 +33,31 @@
 			"Attributes": {
 				"0508": {
 					"DataType": "21",
-					"MinInterval": "001E",
+					"MinInterval": "000A",
 					"MaxInterval": "012C",
 					"TimeOut": "0000",
-					"Change": "0005"
+					"Change": "0001"
 				},
 				"0908": {
 					"DataType": "21",
-					"MinInterval": "001E",
+					"MinInterval": "000A",
 					"MaxInterval": "012C",
 					"TimeOut": "0000",
-					"Change": "0005"
+					"Change": "0001"
 				},
 				"0a08": {
 					"DataType": "21",
-					"MinInterval": "001E",
+					"MinInterval": "000A",
 					"MaxInterval": "012C",
 					"TimeOut": "0000",
-					"Change": "0005"
+					"Change": "0001"
 				},
 				"050f": {
 					"DataType": "21",
-					"MinInterval": "001E",
+					"MinInterval": "000A",
 					"MaxInterval": "012C",
 					"TimeOut": "0000",
-					"Change": "000F"
+					"Change": "000A"
 				}
 			}
 		},
@@ -141,9 +141,9 @@
 		],
 		"0019": []
 	},
+	"PollingEnabled": 1,
 	"Param": {
-		"PollingEnabled": 1,
 		"PollingCusterff66": 43200,
-		"ZLinkyPolling": 120
+		"ZLinkyPolling": 300
 	}
 }

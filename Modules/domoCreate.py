@@ -551,7 +551,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 )
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Analog Device" % (t), NWKID)
 
-            if t in ("Alarm", "Tamper", "Alarm_ZL"):
+            if t in ("Alarm", "Tamper", "Alarm_ZL", "DEMAIN"):
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=243, Subtype_=22, Switchtype_=0)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Alarm" % (t), NWKID)
 
@@ -578,10 +578,15 @@ def CreateDomoDevice(self, Devices, NWKID):
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, "Barometer")
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Barometer" % (t), NWKID)
 
-            if t in ( "Ampere", "Ampere_ZL"):
+            if t in ( "Ampere", ):
                 # Will display Current real time
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=243, Subtype_=23)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Ampere" % (t), NWKID)
+
+            if t in ( "Ampere3",):
+                # Widget Ampere for Tri-Phase installation
+                createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=89, Subtype_=1)
+                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Ampere Tri" % (t), NWKID)
 
             if t == "Power":
                 # Will display Watt real time
@@ -699,7 +704,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=243, Subtype_=31)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Strenght" % (t), NWKID)
 
-            if t in ( "Orientation", "DEMAIN"):
+            if t in ( "Orientation", ):
                 # Vibration Orientation (text)
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=243, Subtype_=19)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Orientation" % (t), NWKID)
