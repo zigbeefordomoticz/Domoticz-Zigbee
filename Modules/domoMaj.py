@@ -616,6 +616,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             "HeatingSwitch",
             "HeatingStatus",
             "ThermoMode_2",
+            "ThermoMode_3",
             "ThermoSetpoint",
             "ThermoOnOff",
         ) and (

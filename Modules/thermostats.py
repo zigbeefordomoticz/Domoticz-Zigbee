@@ -283,6 +283,14 @@ def thermostat_Mode(self, NwkId, mode):
         % (NwkId, data, cluster_id, attribute, data_type),
         nwkid=NwkId,
     )
+    if "Model" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Model"] in ("TAFFETAS2 D1.00P1.01Z1.00"):
+        self.log.logging(
+        "Thermostats",
+        "Log",
+        "thermostat_Mode - for %s Mode: %s with value %s / cluster: %s, attribute: %s type: %s"
+        % (NwkId, data, cluster_id, attribute, data_type),
+        nwkid=NwkId,
+    )
 
 
 def Thermostat_LockMode(self, NwkId, lockmode):
