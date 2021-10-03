@@ -816,7 +816,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
         if DeviceType in ("ThermoMode_3", ):
             self.log.logging(
                 "Command",
-                "Debug",
+                "Log",
                 "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s"
                 % (NWKID, EPout, Unit, DeviceType, Level),
                 NWKID,
@@ -825,7 +825,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             if Level in THERMOSTAT_LEVEL_3_MODE:
                 self.log.logging(
                     "Command",
-                    "Debug",
+                    "Log",
                     " - Set Thermostat Mode to : %s / %s" % (Level, THERMOSTAT_LEVEL_3_MODE[Level]),
                     NWKID,
                 )
@@ -838,7 +838,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             return
 
 
-        if DeviceType in ("ThermoMode", "ThermoMode_3"):
+        if DeviceType in ("ThermoMode", ):
             self.log.logging(
                 "Command",
                 "Debug",
