@@ -129,9 +129,8 @@ def pollingManufSpecificDevices(self, NwkId):
 
     self.log.logging(
         "Heartbeat",
-        "Log",
-        "++ pollingManufSpecificDevices -  %s "
-        % (NwkId,),
+        "Debug",
+        "++ pollingManufSpecificDevices -  %s " % (NwkId,),
         NwkId,
     )
 
@@ -140,20 +139,20 @@ def pollingManufSpecificDevices(self, NwkId):
 
     _HB = int(self.ListOfDevices[NwkId]["Heartbeat"])
     for param in self.ListOfDevices[NwkId]["Param"]:
-        
+
         if param == "ZLinkyPolling":
             _FEQ = self.ListOfDevices[NwkId]["Param"][param] // HEARTBEAT
             if _FEQ and ((_HB % _FEQ) == 0):
                 self.log.logging(
                     "Heartbeat",
-                    "Log",
+                    "Debug",
                     "++ pollingManufSpecificDevices -  %s Found: %s=%s"
                     % (NwkId, param, self.ListOfDevices[NwkId]["Param"][param]),
                     NwkId,
                 )
-            ReadAttributeRequest_0702_ZLinky_TIC( self, NwkId)
+            ReadAttributeRequest_0702_ZLinky_TIC(self, NwkId)
 
-        elif param == 'PollingCusterff66':
+        elif param == "PollingCusterff66":
             _FEQ = self.ListOfDevices[NwkId]["Param"][param] // HEARTBEAT
             if _FEQ and ((_HB % _FEQ) == 0):
                 self.log.logging(
@@ -163,7 +162,7 @@ def pollingManufSpecificDevices(self, NwkId):
                     % (NwkId, param, self.ListOfDevices[NwkId]["Param"][param]),
                     NwkId,
                 )
-            ReadAttributeRequest_ff66( self, NwkId)
+            ReadAttributeRequest_ff66(self, NwkId)
 
         elif param == "OnOffPollingFreq":
             _FEQ = self.ListOfDevices[NwkId]["Param"][param] // HEARTBEAT
@@ -769,7 +768,7 @@ def processListOfDevices(self, Devices):
                     Domoticz.Status("processListOfDevices - Removing the entry %s from ListOfDevice" % (NWKID))
                     removeNwkInList(self, NWKID)
 
-        elif status not in ( "inDB" , "UNKNOW", "erasePDM"):
+        elif status not in ("inDB", "UNKNOW", "erasePDM"):
             # Discovery process 0x004d -> 0x0042 -> 0x8042 -> 0w0045 -> 0x8045 -> 0x0043 -> 0x8043
             processNotinDBDevices(self, Devices, NWKID, status, RIA)
     # end for key in ListOfDevices

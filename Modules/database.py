@@ -93,7 +93,7 @@ BUILD_ATTRIBUTES = (
     "IASBattery",
 )
 
-MANUFACTURER_ATTRIBUTES = ("Legrand", "Schneider", "Lumi", "LUMI", "CASA.IA", "Tuya")
+MANUFACTURER_ATTRIBUTES = ("Legrand", "Schneider", "Lumi", "LUMI", "CASA.IA", "Tuya", "ZLinky")
 
 
 def _copyfile(source, dest, move=True):

@@ -117,13 +117,17 @@ ATTRIBUTES = {
     "0502": [0x0000],
     "0702": [0x0000, 0x0017, 0x0200, 0x0301, 0x0302, 0x0303, 0x0306, 0x0400],
     "000f": [0x0000, 0x0051, 0x0055, 0x006F, 0xFFFD],
-    "0b01": [0x000d],
-    "0b04": [0x050B, 0x0505, 0x0508, ],
+    "0b01": [0x000D],
+    "0b04": [
+        0x050B,
+        0x0505,
+        0x0508,
+    ],
     "0b05": [0x0000],
     "fc01": [0x0000, 0x0001, 0x0002],  # Legrand Cluster
     "fc21": [0x0001],
     "fc40": [0x0000],  # Legrand
-    "ff66": [0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007, 0x0008], # Zlinky
+    "ff66": [0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007, 0x0008],  # Zlinky
 }
 
 
@@ -1375,12 +1379,16 @@ def ReadAttributeRequest_0702_0000(self, key):
             self, key, ZIGATE_EP, EPout, "0702", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key)
         )
 
+
 def ReadAttributeRequest_0702_ZLinky_TIC(self, key):
     # The list of Attributes could be based on the Contract
-    EPout = '01'
-    listAttributes = [0x0000, 0x0100, 0x0102, 0x0104, 0x0106, 0x0108, 0x10A]
-    self.log.logging( "ReadAttributes", "Debug", "Request ZLinky infos on 0x0702 cluster: " + key + " EPout = " + EPout, nwkid=key )
-    ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0702", listAttributes, ackIsDisabled=False)
+    EPout = "01"
+    listAttributes = [0x0020, 0x0100, 0x0102, 0x0104, 0x0106, 0x0108, 0x10A]
+    self.log.logging(
+        "ReadAttributes", "Debug", "Request ZLinky infos on 0x0702 cluster: " + key + " EPout = " + EPout, nwkid=key
+    )
+    ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0702", listAttributes, ackIsDisabled=False)
+
 
 def ReadAttributeRequest_0b01(self, key):
     # Cluster 0x0b04 Metering
@@ -1404,6 +1412,7 @@ def ReadAttributeRequest_0b01(self, key):
             ReadAttributeReq(
                 self, key, ZIGATE_EP, EPout, "0b01", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key)
             )
+
 
 def ReadAttributeRequest_0b04(self, key):
     # Cluster 0x0b04 Metering
@@ -1605,11 +1614,12 @@ def ReadAttributeRequest_fc40(self, key):
             self, key, ZIGATE_EP, EPout, "fc40", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key)
         )
 
+
 def ReadAttributeRequest_ff66(self, key):
     # Cluster 0x0b04 Metering
 
     self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_ff66 - Key: %s " % key, nwkid=key)
-    EPout = '01'
+    EPout = "01"
     listAttributes = []
     for iterAttr in retreive_ListOfAttributesByCluster(self, key, EPout, "ff66"):
         if iterAttr not in listAttributes:
@@ -1618,7 +1628,7 @@ def ReadAttributeRequest_ff66(self, key):
     if listAttributes:
         self.log.logging(
             "ReadAttributes",
-            "Log",
+            "Debug",
             "Request ZLinky info via Read Attribute request: " + key + " EPout = " + EPout,
             nwkid=key,
         )
@@ -1626,7 +1636,7 @@ def ReadAttributeRequest_ff66(self, key):
             self, key, ZIGATE_EP, EPout, "ff66", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key)
         )
 
-            
+
 READ_ATTRIBUTES_REQUEST = {
     # Cluster : ( ReadAttribute function, Frequency )
     "0000": (ReadAttributeRequest_0000, "polling0000"),
@@ -1655,7 +1665,6 @@ READ_ATTRIBUTES_REQUEST = {
     "0b01": (ReadAttributeRequest_0b01, "polling0b04"),
     "0b04": (ReadAttributeRequest_0b04, "polling0b04"),
     "0b05": (ReadAttributeRequest_0b05, "polling0b05"),
-
     "fc01": (ReadAttributeRequest_fc01, "pollingfc01"),
     "fc21": (ReadAttributeRequest_fc21, "pollingfc21"),
     "fc40": (ReadAttributeRequest_fc40, "pollingfc40"),
