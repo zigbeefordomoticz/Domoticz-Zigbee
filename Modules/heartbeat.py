@@ -138,7 +138,10 @@ def pollingManufSpecificDevices(self, NwkId):
         return False
 
     _HB = int(self.ListOfDevices[NwkId]["Heartbeat"])
+    
     for param in self.ListOfDevices[NwkId]["Param"]:
+        if self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE:
+            return True
 
         if param == "ZLinkyPolling":
             _FEQ = self.ListOfDevices[NwkId]["Param"][param] // HEARTBEAT
