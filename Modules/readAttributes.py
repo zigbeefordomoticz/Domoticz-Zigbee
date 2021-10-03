@@ -1383,7 +1383,25 @@ def ReadAttributeRequest_0702_0000(self, key):
 def ReadAttributeRequest_0702_ZLinky_TIC(self, key):
     # The list of Attributes could be based on the Contract
     EPout = "01"
+
+    tarif = None
     listAttributes = [0x0020, 0x0100, 0x0102, 0x0104, 0x0106, 0x0108, 0x10A]
+    if (
+        "ff66" in self.ListOfDevices[key]["Ep"]['01']
+        and "0000" in self.ListOfDevices[key]["Ep"]['01']["ff66"]
+    ):
+        if self.ListOfDevices[key]["Ep"]['01']["ff66"]["0000"] not in ("", {}):
+            tarif = self.ListOfDevices[key]["Ep"]['01']["ff66"]["0000"]
+
+        if 'BASE' in tarif:
+            listAttributes = [0x0020, 0x0100]
+        elif 'HC' in tarif:
+            listAttributes = [0x0020, 0x0100, 0x0102]
+        elif 'EJP' in tarif:
+            listAttributes = [0x0020, 0x0100, 0x0102]
+        else:
+            listAttributes = [0x0020, 0x0100, 0x0102, 0x0104, 0x0106, 0x0108, 0x10A]
+
     self.log.logging(
         "ReadAttributes", "Debug", "Request ZLinky infos on 0x0702 cluster: " + key + " EPout = " + EPout, nwkid=key
     )
