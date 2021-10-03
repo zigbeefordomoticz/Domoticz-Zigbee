@@ -2167,7 +2167,7 @@ def Cluster000f(
                     "Frient Present value Model %s Value: %s" % (self.ListOfDevices[MsgSrcAddr]["Model"], MsgClusterData),
                     MsgSrcAddr,
                     )
-                MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0406", MsgClusterData[0:2])
+                MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0500", MsgClusterData[0:2])
 
             else:
                 _context = {
