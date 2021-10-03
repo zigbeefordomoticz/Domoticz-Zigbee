@@ -124,8 +124,27 @@ def attributeDiscovery(self, NwkId):
 
     return rescheduleAction
 
+def ManufSpecOnOffPolling(self, NwkId):
+    ReadAttributeRequest_0006_0000(self, NwkId)
+    ReadAttributeRequest_0008_0000(self, NwkId)
 
-def pollingManufSpecificDevices(self, NwkId):
+def pollingManufSpecificDevices(self, NwkId, HB):
+
+    FUNC_MANUF = {
+        'ZLinkyPolling': ReadAttributeRequest_0702_ZLinky_TIC,
+        "PollingCusterff66": ReadAttributeRequest_ff66,
+        "OnOffPollingFreq": ManufSpecOnOffPolling,
+        "PowerPollingFreq": ReadAttributeRequest_0b04_050b_0505_0508,
+        "AC201Polling": pollingCasaia,
+        "TuyaPing": ping_tuya_device
+    }
+
+
+    if "Param" not in self.ListOfDevices[NwkId]:
+        return False
+
+    if self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE:
+        return True
 
     self.log.logging(
         "Heartbeat",
@@ -134,91 +153,30 @@ def pollingManufSpecificDevices(self, NwkId):
         NwkId,
     )
 
-    if "Param" not in self.ListOfDevices[NwkId]:
-        return False
-
-    _HB = int(self.ListOfDevices[NwkId]["Heartbeat"])
-    
     for param in self.ListOfDevices[NwkId]["Param"]:
-        if self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE:
-            return True
-
-        if param == "ZLinkyPolling":
+        if param in FUNC_MANUF:
             _FEQ = self.ListOfDevices[NwkId]["Param"][param] // HEARTBEAT
-            if _FEQ and ((_HB % _FEQ) == 0):
-                self.log.logging(
-                    "Heartbeat",
-                    "Debug",
-                    "++ pollingManufSpecificDevices -  %s Found: %s=%s"
-                    % (NwkId, param, self.ListOfDevices[NwkId]["Param"][param]),
-                    NwkId,
-                )
-            ReadAttributeRequest_0702_ZLinky_TIC(self, NwkId)
+            self.log.logging(
+                "Heartbeat",
+                "Debug",
+                "++ pollingManufSpecificDevices -  %s Found: %s=%s HB: %s FEQ: %s Cycle: %s"
+                % (NwkId, param, self.ListOfDevices[NwkId]["Param"][param], HB, _FEQ, (HB % _FEQ)),
+                NwkId,
+            )
+            if _FEQ and ((HB % _FEQ) != 0):
+                continue
+            self.log.logging(
+                "Heartbeat",
+                "Debug",
+                "++ pollingManufSpecificDevices -  %s Found: %s=%s"
+                % (NwkId, param, self.ListOfDevices[NwkId]["Param"][param]),
+                NwkId,
+            )
 
-        elif param == "PollingCusterff66":
-            _FEQ = self.ListOfDevices[NwkId]["Param"][param] // HEARTBEAT
-            if _FEQ and ((_HB % _FEQ) == 0):
-                self.log.logging(
-                    "Heartbeat",
-                    "Log",
-                    "++ pollingManufSpecificDevices -  %s Found: %s=%s"
-                    % (NwkId, param, self.ListOfDevices[NwkId]["Param"][param]),
-                    NwkId,
-                )
-            ReadAttributeRequest_ff66(self, NwkId)
-
-        elif param == "OnOffPollingFreq":
-            _FEQ = self.ListOfDevices[NwkId]["Param"][param] // HEARTBEAT
-            if _FEQ and ((_HB % _FEQ) == 0):
-                self.log.logging(
-                    "Heartbeat",
-                    "Debug",
-                    "++ pollingManufSpecificDevices -  %s Found: %s=%s"
-                    % (NwkId, param, self.ListOfDevices[NwkId]["Param"][param]),
-                    NwkId,
-                )
-                ReadAttributeRequest_0006_0000(self, NwkId)
-                ReadAttributeRequest_0008_0000(self, NwkId)
-
-        elif param == "PowerPollingFreq":
-            _FEQ = self.ListOfDevices[NwkId]["Param"][param] // HEARTBEAT
-            if _FEQ and ((_HB % _FEQ) == 0):
-                self.log.logging(
-                    "Heartbeat",
-                    "Debug",
-                    "++ pollingManufSpecificDevices -  %s Found: %s=%s"
-                    % (NwkId, param, self.ListOfDevices[NwkId]["Param"][param]),
-                    NwkId,
-                )
-                ReadAttributeRequest_0b04_050b_0505_0508(self, NwkId)
-
-        elif param == "AC201Polling":
-            _FEQ = self.ListOfDevices[NwkId]["Param"][param] // HEARTBEAT
-            if _FEQ and ((_HB % _FEQ) == 0):
-                self.log.logging(
-                    "Heartbeat",
-                    "Debug",
-                    "++ pollingManufSpecificDevices -  %s Found: %s=%s"
-                    % (NwkId, param, self.ListOfDevices[NwkId]["Param"][param]),
-                    NwkId,
-                )
-
-                pollingCasaia(self, NwkId)
-
-        elif param == "TuyaPing" and self.ListOfDevices[NwkId]["Param"][param]:
-            _FEQ = 5 // HEARTBEAT
-            if _FEQ and ((_HB % _FEQ) == 0):
-                self.log.logging(
-                    "Heartbeat",
-                    "Debug",
-                    "++ pollingManufSpecificDevices -  %s Found: %s=%s"
-                    % (NwkId, param, self.ListOfDevices[NwkId]["Param"][param]),
-                    NwkId,
-                )
-                ping_tuya_device(self, NwkId)
+            func = FUNC_MANUF[ param ]
+            func( self, NwkId)
 
     return False
-
 
 def pollingDeviceStatus(self, NwkId):
     # """
@@ -544,7 +502,7 @@ def processKnownDevices(self, Devices, NWKID):
         return
 
     # Polling Manufacturer Specific devices ( Philips, Gledopto  ) if applicable
-    rescheduleAction = rescheduleAction or pollingManufSpecificDevices(self, NWKID)
+    rescheduleAction = rescheduleAction or pollingManufSpecificDevices(self, NWKID, intHB)
 
     _doReadAttribute = False
     if self.pluginconf.pluginConf["enableReadAttributes"] or self.pluginconf.pluginConf["resetReadAttributes"]:
