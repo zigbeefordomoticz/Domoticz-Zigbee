@@ -287,7 +287,7 @@ def thermostat_Mode(self, NwkId, mode):
         self.log.logging(
         "Thermostats",
         "Log",
-        "thermostat_Mode - for %s Mode: %s with value %s / cluster: %s, attribute: %s type: %s"
+        "thermostat_Mode - for %s with value %s / cluster: %s, attribute: %s type: %s"
         % (NwkId, data, cluster_id, attribute, data_type),
         nwkid=NwkId,
     )
