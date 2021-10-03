@@ -453,7 +453,7 @@ def processNotinDBDevices(self, Devices, NWKID, status, RIA):
 
             # 4. IAS Enrollment
             for iterEp in self.ListOfDevices[NWKID]["Ep"]:
-                if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] == "MOSZB-140":
+                if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ("MOSZB-140", "SMSZB-120"):
                     # Frient trigger itself the Device Enrollment
                     break
 

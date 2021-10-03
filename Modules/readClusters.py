@@ -2075,7 +2075,7 @@ def Cluster000f(
         elif MsgClusterData == "01":
             self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]["Active State"] = True
 
-        if "Model" not in self.ListOfDevices[MsgSrcAddr]:
+        elif "Model" not in self.ListOfDevices[MsgSrcAddr]:
             self.log.logging(
                 "Cluster",
                 "Log",
@@ -2154,7 +2154,20 @@ def Cluster000f(
                 # - 01 00 6f 0018000100
                 # - 01 00 6f 0018000100
                 MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0406", MsgClusterData[0:2])
-                pass
+
+            elif self.ListOfDevices[MsgSrcAddr]["Model"] in ("SMSZB-120",):
+                # Smoke  device
+                # Potential values are:
+                # - 00 00 6f 0018000100
+                # - 01 00 6f 0018000100
+                # - 01 00 6f 0018000100
+                self.log.logging(
+                    "Cluster",
+                    "Log",
+                    "Frient Present value Model %s Value: %s" % (self.ListOfDevices[MsgSrcAddr]["Model"], MsgClusterData),
+                    MsgSrcAddr,
+                    )
+                MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0406", MsgClusterData[0:2])
 
             else:
                 _context = {
