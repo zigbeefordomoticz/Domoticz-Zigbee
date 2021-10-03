@@ -4836,13 +4836,7 @@ def Cluster0b04(
             tarif_color = None
             if "ZLinky" in self.ListOfDevices[MsgSrcAddr] and "Color" in self.ListOfDevices[MsgSrcAddr]["ZLinky"]:
                 tarif_color = self.ListOfDevices[MsgSrcAddr]["ZLinky"]["Color"]
-                if tarif_color is None or tarif_color == "Blue":
-
-                    MajDomoDevice(self, Devices, MsgSrcAddr, "01", MsgClusterId, str(value), Attribute_=MsgAttrID)
-                    MajDomoDevice(self, Devices, MsgSrcAddr, "f2", MsgClusterId, str(0), Attribute_=MsgAttrID)
-                    MajDomoDevice(self, Devices, MsgSrcAddr, "f3", MsgClusterId, str(0), Attribute_=MsgAttrID)
-
-                elif tarif_color == "White":
+                if tarif_color == "White":
 
                     MajDomoDevice(self, Devices, MsgSrcAddr, "01", MsgClusterId, str(0), Attribute_=MsgAttrID)
                     MajDomoDevice(self, Devices, MsgSrcAddr, "f2", MsgClusterId, str(value), Attribute_=MsgAttrID)
@@ -4853,6 +4847,14 @@ def Cluster0b04(
                     MajDomoDevice(self, Devices, MsgSrcAddr, "01", MsgClusterId, str(0), Attribute_=MsgAttrID)
                     MajDomoDevice(self, Devices, MsgSrcAddr, "f2", MsgClusterId, str(0), Attribute_=MsgAttrID)
                     MajDomoDevice(self, Devices, MsgSrcAddr, "f3", MsgClusterId, str(value), Attribute_=MsgAttrID)
+
+                else:
+                    # All others
+                    MajDomoDevice(self, Devices, MsgSrcAddr, "01", MsgClusterId, str(value), Attribute_=MsgAttrID)
+                    MajDomoDevice(self, Devices, MsgSrcAddr, "f2", MsgClusterId, str(0), Attribute_=MsgAttrID)
+                    MajDomoDevice(self, Devices, MsgSrcAddr, "f3", MsgClusterId, str(0), Attribute_=MsgAttrID)
+
+
 
         self.log.logging(
             "Cluster",
