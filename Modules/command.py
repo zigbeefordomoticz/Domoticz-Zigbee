@@ -822,11 +822,11 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 NWKID,
             )
             self.log.logging("Command", "Debug", "ThermoMode_3 (Acova) - requested Level: %s" % Level, NWKID)
-            if Level in THERMOSTAT_LEVEL_3_MODE:
+            if Level in THERMOSTAT_LEVEL_2_MODE:
                 self.log.logging(
                     "Command",
                     "Log",
-                    " - Set Thermostat Mode to : %s / T3:%s - T2:%s " % (Level, THERMOSTAT_LEVEL_3_MODE[Level], THERMOSTAT_LEVEL_2_MODE[Level]),
+                    " - Set Thermostat Mode to : %s / T2:%s " % (Level, THERMOSTAT_LEVEL_2_MODE[Level]),
                     NWKID,
                 )
 
