@@ -4436,6 +4436,15 @@ def Cluster0702(
         self.log.logging("Cluster", "Debug", "Cluster0702 - Divisor: %s" % (value), MsgSrcAddr)
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
 
+    elif MsgAttrID == "0308":  # Serial Number
+        self.log.logging(
+            "Cluster",
+            "Debug",
+            "Cluster0702 - 0x0308 - Serial Number %s" % (value),
+            MsgSrcAddr,
+        )
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
+
     elif MsgAttrID == "0400":
         # InstantDemand will be transfer to Domoticz in Watts
         if value < 0:

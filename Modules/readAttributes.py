@@ -127,7 +127,7 @@ ATTRIBUTES = {
     "fc01": [0x0000, 0x0001, 0x0002],  # Legrand Cluster
     "fc21": [0x0001],
     "fc40": [0x0000],  # Legrand
-    "ff66": [0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007, 0x0008],  # Zlinky
+    "ff66": [0x0000, 0x0002, 0x0003 ],  # Zlinky
 }
 
 
@@ -1634,25 +1634,14 @@ def ReadAttributeRequest_fc40(self, key):
 
 
 def ReadAttributeRequest_ff66(self, key):
-    # Cluster 0x0b04 Metering
+    # Cluster ZLinky
 
     self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_ff66 - Key: %s " % key, nwkid=key)
     EPout = "01"
-    listAttributes = []
-    for iterAttr in retreive_ListOfAttributesByCluster(self, key, EPout, "ff66"):
-        if iterAttr not in listAttributes:
-            listAttributes.append(iterAttr)
-
-    if listAttributes:
-        self.log.logging(
-            "ReadAttributes",
-            "Debug",
-            "Request ZLinky info via Read Attribute request: " + key + " EPout = " + EPout,
-            nwkid=key,
-        )
-        ReadAttributeReq(
-            self, key, ZIGATE_EP, EPout, "ff66", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key)
-        )
+    listAttributes = [ 0x0000, 0x0002, 0x0003 ]
+    ReadAttributeReq(
+        self, key, ZIGATE_EP, EPout, "ff66", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key)
+    )
 
 
 READ_ATTRIBUTES_REQUEST = {
