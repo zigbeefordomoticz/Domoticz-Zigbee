@@ -2155,7 +2155,7 @@ def Cluster000f(
                 # - 01 00 6f 0018000100
                 MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0406", MsgClusterData[0:2])
 
-            elif self.ListOfDevices[MsgSrcAddr]["Model"] in ("SMSZB-120",):
+            elif self.ListOfDevices[MsgSrcAddr]["Model"] in ("SMSZB-120", "HESZB120"):
                 # Smoke  device
                 # Potential values are:
                 # - 00 00 6f 0018000100
