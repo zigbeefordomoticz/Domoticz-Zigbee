@@ -132,14 +132,14 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             "Widget", "Debug", "------> SignalLevel: %s , BatteryLevel: %s" % (SignalLevel, BatteryLevel), NWKID
         )
 
-        if ClusterType == "Alarm" and WidgetType == "Alarm ZL" and Attribute_ == "0005":
+        if ClusterType == "Alarm" and WidgetType == "Alarm_ZL" and Attribute_ == "0005":
             # This is Alarm3 for ZLinky Intensity alert
             value, text = value.split("|")
             nValue = int(value)
             UpdateDevice_v2(self, Devices, DeviceUnit, nValue, text, BatteryLevel, SignalLevel)
 
         if ClusterType == "Alarm" and WidgetType == "Alarm_ZL2" and Attribute_ == "0001":
-            # Notification Day Color and Peak
+            # Notification Next Day Color and Peak
             value, text = value.split("|")
             nValue = int(value)
             UpdateDevice_v2(self, Devices, DeviceUnit, nValue, text, BatteryLevel, SignalLevel)

@@ -4846,8 +4846,6 @@ def Cluster0b04(
                     MajDomoDevice(self, Devices, MsgSrcAddr, "f2", MsgClusterId, str(0), Attribute_=MsgAttrID)
                     MajDomoDevice(self, Devices, MsgSrcAddr, "f3", MsgClusterId, str(0), Attribute_=MsgAttrID)
 
-
-
         self.log.logging(
             "Cluster",
             "Debug",
@@ -4888,6 +4886,7 @@ def zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value):
 
     if value == 0:
         return
+        
     Isousc = 0
     if (
         "0b01" in self.ListOfDevices[MsgSrcAddr]["Ep"]["01"]
