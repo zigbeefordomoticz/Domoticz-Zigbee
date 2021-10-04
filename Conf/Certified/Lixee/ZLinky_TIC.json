@@ -117,6 +117,13 @@
 		},
 		"ff66": {
 			"Attributes": {
+				"0000": {
+					"DataType": "41",
+					"MinInterval": "0001",
+					"MaxInterval": "0E10",
+					"TimeOut": "0000",
+					"Change": ""
+				},
 				"0001": {
 					"DataType": "41",
 					"MinInterval": "0001",
