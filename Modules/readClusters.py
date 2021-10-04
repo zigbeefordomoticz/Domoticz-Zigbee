@@ -4790,14 +4790,6 @@ def Cluster0b04(
             # Check if Intensity is below subscription level
             zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value)
 
-            # Fake to produce Intensite on Line2 and Line3
-            self.log.logging(
-                "Cluster",
-                "Log",
-                "ReadCluster %s - %s/%s SIMULATE 3 PHASES - TO BE REMOVED" % (MsgClusterId, MsgSrcAddr, MsgSrcEp),
-                MsgSrcAddr,
-            )
-
         else:
             # Other type of devices
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)

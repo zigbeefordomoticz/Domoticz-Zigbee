@@ -146,27 +146,27 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
 
         if ClusterType == "Alarm" and WidgetType == "Alarm_ZL3" and Attribute_ == "0020":
             # Notification Day Color and Peak
-            if value == "TH":
+            if value == "TH..":
                 # Toutes Heures
                 nValue = 0
                 sValue = "All Hours"
 
-            elif value == "HC":
+            elif value == "HC..":
                 # Heures Creuses
                 nValue = 1
                 sValue = "Off-peak Hours"
 
-            elif value == "HP":
+            elif value == "HP..":
                 # Heures Pleines
                 nValue = 2
                 sValue = "Peak Hours"
 
-            elif value == "HN":
+            elif value == "HN..":
                 # Heures Normales
                 nValue = 1
                 sValue = "Normal Hours"
 
-            elif value == "PM":
+            elif value == "PM..":
                 # Pointe Mobile
                 nValue = 4
                 sValue = "Mobile peak Hours"
