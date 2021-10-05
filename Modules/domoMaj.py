@@ -373,8 +373,12 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     # No, let's set to compute
                     Options["EnergyMeterMode"] = "0"  # By default from device
 
+                nValue = round(float(value), 2)
                 # Did we get Summation from Data Structure
                 if summation != 0:
+                    summation = round(float(summation), 2)
+                    sValue = "%s;%s" % (nValue, summation)
+
                     # We got summation from Device, let's check that EnergyMeterMode is
                     # correctly set to 0, if not adjust
                     if Options["EnergyMeterMode"] != "0":
@@ -383,7 +387,9 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                         Options = {}
                         Options["EnergyMeterMode"] = "0"
                         Devices[DeviceUnit].Update(oldnValue, oldsValue, Options=Options)
+                    
                 else:
+                    sValue = "%s;" % (nValue)
                     # No summation retreive, so we make sure that EnergyMeterMode is
                     # correctly set to 1 (compute), if not adjust
                     if Options["EnergyMeterMode"] != "1":
@@ -393,9 +399,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                         Options["EnergyMeterMode"] = "1"
                         Devices[DeviceUnit].Update(oldnValue, oldsValue, Options=Options)
 
-                nValue = round(float(value), 2)
-                summation = round(float(summation), 2)
-                sValue = "%s;%s" % (nValue, summation)
                 self.log.logging("Widget", "Debug", "------>  : " + sValue)
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
 
