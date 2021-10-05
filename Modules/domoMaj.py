@@ -344,10 +344,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     Options["EnergyMeterMode"] = "1"
                     Devices[DeviceUnit].Update(oldnValue, oldsValue, Options=Options)
 
-                summation = 0
-                nValue = round(float(value), 2)
-                summation = round(float(summation), 2)
-                sValue = "%s;%s" % (nValue, summation)
+                sValue = "%s;" % round(float(value), 2)
                 self.log.logging("Widget", "Debug", "------>  : " + sValue)
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
 
