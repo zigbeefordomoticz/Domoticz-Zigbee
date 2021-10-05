@@ -2,6 +2,7 @@ import Domoticz
 import time
 
 from Modules.basicOutputs import mgt_routing_req
+from Modules.tools import is_hex
 
 STATUS_CODE = {"00": "Success", "84": "Not Supported (132)"}
 
@@ -53,13 +54,26 @@ def mgmt_rtg_rsp(
     MsgPayload,
 ):
 
+    if len(MsgPayload) < 10:
+        Domoticz.Log("mgmt_rtg_rsp - Short message receive - NwkId: %s Ep: %s Cluster: %s Target: %s Ep: %s Payload: %s" %(
+        srcnwkid,
+        MsgSourcePoint,
+        MsgClusterID,
+        dstnwkid,
+        MsgDestPoint,
+        MsgPayload,   
+        ))
+        return
+
+
     # Domoticz.Log("mgmt_rtg_rsp - len: %s Data: %s" % (len(MsgPayload), MsgPayload))
     Sqn = MsgPayload[0:2]
     Status = MsgPayload[2:4]
     RoutingTableSize = MsgPayload[4:6]
     RoutingTableIndex = MsgPayload[6:8]
     RoutingTableListCount = MsgPayload[8:10]
-    RoutingTableListRecord = MsgPayload[10:]
+    RoutingTableListRecord = MsgPayload[10:]            
+
     if "RoutingTable" not in self.ListOfDevices[srcnwkid]:
         self.ListOfDevices[srcnwkid]["RoutingTable"] = {}
         self.ListOfDevices[srcnwkid]["RoutingTable"]["Devices"] = []
