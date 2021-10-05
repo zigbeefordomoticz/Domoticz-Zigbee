@@ -733,6 +733,12 @@ def ReArrangeMacCapaBasedOnModel(self, nwkid, inMacCapa):
         self.ListOfDevices[nwkid]["PowerSource"] = "Main"
         return "8e"
 
+    # Positionned PowerSource to Main for ZLinky_TIC
+    if self.ListOfDevices[ nwkid ]['Model'] in ( 'ZLinky_TIC', ):
+        self.ListOfDevices[nwkid]["PowerSource"] = "Main"
+        return inMacCapa
+
+
     # Convert Main Powered device to Battery
     if self.ListOfDevices[nwkid]["Model"] in (
         "lumi.remote.b686opcn01",
