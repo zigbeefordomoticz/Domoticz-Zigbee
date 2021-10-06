@@ -209,7 +209,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 # Line 3
                 sValue = "%s;%s;%s" % (ampere1, ampere2, ampere)
 
-            self.log.logging("Widget", "Log", "------>  Ampere3 : %s" % (sValue), NWKID)
+            self.log.logging("Widget", "Debug", "------>  Ampere3 : %s" % (sValue), NWKID)
             UpdateDevice_v2(self, Devices, DeviceUnit, 0, str(sValue), BatteryLevel, SignalLevel)
 
         if "Power" in ClusterType:  # Instant Power/Watts
@@ -218,7 +218,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             # such information is stored on the data structuture and here we will retreive it.
             # value is expected as String
             if WidgetType == "P1Meter" and Attribute_ == "0000":
-                self.log.logging("Widget", "Log", "------>  P1Meter : %s (%s)" % (value, type(value)), NWKID)
+                self.log.logging("Widget", "Debug", "------>  P1Meter : %s (%s)" % (value, type(value)), NWKID)
                 # P1Meter report Instant and Cummulative Power.
                 # We need to retreive the Cummulative Power.
                 CurrentsValue = Devices[DeviceUnit].sValue
@@ -239,7 +239,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 usage1 = round(float(value), 2)
 
                 sValue = "%s;%s;%s;%s;%s;%s" % (usage1, usage2, return1, return2, cons, prod)
-                self.log.logging("Widget", "Log", "------>  P1Meter : " + sValue, NWKID)
+                self.log.logging("Widget", "Debug", "------>  P1Meter : " + sValue, NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, str(sValue), BatteryLevel, SignalLevel)
 
             if (
@@ -346,7 +346,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     Devices[DeviceUnit].Update(oldnValue, oldsValue, Options=Options)
 
                 sValue = "%s;" % round(float(value), 2)
-                self.log.logging("Widget", "Log", "------>  : " + sValue)
+                self.log.logging("Widget", "Debug", "------>  : " + sValue)
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
 
             elif (WidgetType == "Meter" and Attribute_ == "") or (WidgetType == "Power" and clusterID == "000c"):  # kWh
