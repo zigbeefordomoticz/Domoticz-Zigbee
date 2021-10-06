@@ -774,29 +774,50 @@ def mainPoweredDevice(self, nwkid):
     if nwkid not in self.ListOfDevices:
         Domoticz.Log("mainPoweredDevice - Unknown Device: %s" % nwkid)
         return False
+    
+        model_name = ""
+    if "Model" in self.ListOfDevices[nwkid]:
+        model_name = self.ListOfDevices[nwkid]["Model"]
 
     mainPower = False
     if "MacCapa" in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]["MacCapa"] != {}:
         mainPower = ("8e" == self.ListOfDevices[nwkid]["MacCapa"]) or ("84" == self.ListOfDevices[nwkid]["MacCapa"])
+
+    # These are Main Powered but limited RFD and Not Receive on Idle
+    if model_name in ( 'ZLinky_TIC', ):
+        return False
+
+    # These are Model annouced as Main Power and are not
+    if model_name in (
+        "lumi.remote.b686opcn01",
+        "lumi.remote.b486opcn01",
+        "lumi.remote.b286opcn01",
+        "lumi.remote.b686opcn01-bulb",
+        "lumi.remote.b486opcn01-bulb",
+        "lumi.remote.b286opcn01-bulb",
+    ):
+        mainPower = False
+
+    # These are device annouced as Battery, but are Main Powered ( some time without neutral)
+    if model_name in ("TI0001", "TS0011", "TS0601-switch", "TS0601-2Gangs-switch"):
+        mainPower = True
+
 
     if not mainPower and "PowerSource" in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]["PowerSource"] != {}:
         mainPower = "Main" == self.ListOfDevices[nwkid]["PowerSource"]
 
     # We need to take in consideration that Livolo is reporting a MacCapa of 0x80
     # That Aqara Opple are reporting MacCap 0x84 while they are Battery devices
-    if "Model" in self.ListOfDevices[nwkid]:
-        if self.ListOfDevices[nwkid]["Model"] in (
-            "lumi.remote.b686opcn01",
-            "lumi.remote.b486opcn01",
-            "lumi.remote.b286opcn01",
-            "lumi.remote.b686opcn01-bulb",
-            "lumi.remote.b486opcn01-bulb",
-            "lumi.remote.b286opcn01-bulb",
-        ):
-            mainPower = False
 
-        if self.ListOfDevices[nwkid]["Model"] in ("TI0001", "TS0011", "TS0601-switch", "TS0601-2Gangs-switch"):
-            mainPower = True
+
+
+
+
+
+
+
+
+
 
     return mainPower
 
