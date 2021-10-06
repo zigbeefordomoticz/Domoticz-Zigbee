@@ -315,12 +315,10 @@ SWITCH_LVL_MATRIX = {
     "ThermoMode_3": {
         0: (0, "Off"),  # Off Ok Acova
         1: (1, "10"),   # Confort Ok Acova
-        2: (2, "20"),   # ????
-        3: (3, "30"),   # Eco Ok Acova
-        4: (4, "40"),   # ??
+        2: (2, "20"),   # Eco Ok Acova
         "ForceUpdate": True,
-        "LevelNames": "Off|Confort|Unknow20|Eco|Unknow30",
-        "Language": {"fr-FR": {"LevelNames": "Arrêt|Confort|Unknow20|Eco|Unknow30"}},
+        "LevelNames": "Off|Confort|No-Freeze",
+        "Language": {"fr-FR": {"LevelNames": "Arrêt|Confort|hors-gel"}},
     },    
     "HeatingStatus": {
         0: (0, "Off"),
