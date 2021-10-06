@@ -132,7 +132,7 @@ def interview_state_004d(self, NWKID, RIA=None, status=None):
     self.ListOfDevices[NWKID]["Status"] = "0045"
 
     MsgIEEE = None
-    if 'IEEE' is self.ListOfDevices[NWKID]:
+    if 'IEEE' in self.ListOfDevices[NWKID]:
         MsgIEEE = self.ListOfDevices[NWKID]['IEEE']
     # 4- We will request immediatly the List of EndPoints
     PREFIX_IEEE_XIAOMI = "00158d000"
