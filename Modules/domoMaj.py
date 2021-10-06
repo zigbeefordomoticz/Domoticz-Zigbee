@@ -196,7 +196,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
 
         if "Ampere" in ClusterType and WidgetType == "Ampere3" and Attribute_ in ("0508", "0908", "0a08"):
             # Retreive the previous values
-            sValue = "%s;%s;%s" ( 0,0,0)
+            sValue = "%s;%s;%s" %( 0,0,0)
             ampere1, ampere2, ampere3 = retreive_data_from_current(self, Devices, DeviceUnit, "%s;%s;%s")
             ampere = round(float(value), 2)
             if Attribute_ == "0508":
