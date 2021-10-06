@@ -347,29 +347,13 @@ def decode004d_new_devicev2(self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgData, 
         self.DevicesInPairingMode.append(NwkId)
     self.log.logging("Pairing", "Log", "--> %s" % str(self.DevicesInPairingMode))
 
-    # 4- We will request immediatly the List of EndPoints
-    PREFIX_IEEE_XIAOMI = "00158d000"
-    PREFIX_IEEE_OPPLE = "04cf8cdf3"
-    if (
-        MsgIEEE[0: len(PREFIX_IEEE_XIAOMI)] == PREFIX_IEEE_XIAOMI
-        or MsgIEEE[0: len(PREFIX_IEEE_OPPLE)] == PREFIX_IEEE_OPPLE
-    ):
-        ReadAttributeRequest_0000(self, NwkId, fullScope=False)  # In order to request Model Name
-    PREFIX_IEEE_WISER = "00124b000"
-    if self.pluginconf.pluginConf["enableSchneiderWiser"] and MsgIEEE[0: len(PREFIX_IEEE_WISER)] == PREFIX_IEEE_WISER:
-        ReadAttributeRequest_0000(self, NwkId, fullScope=False)  # In order to request Model Name
-
-    self.log.logging("Pairing", "Debug", "Decode004d - Request End Point List ( 0x0045 )")
-    self.ListOfDevices[NwkId]["Heartbeat"] = "0"
-    self.ListOfDevices[NwkId]["Status"] = "0045"
-
-    sendZigateCmd(self, "0045", str(NwkId))  # Request list of EPs
     self.log.logging(
         "Input",
         "Debug",
         "Decode004D - %s Infos: %s" % (NwkId, self.ListOfDevices[NwkId]),
         NwkId,
     )
+    interview_state_004d(self, NwkId, RIA=None, status=None)
 
     timeStamped(self, NwkId, 0x004D)
     lastSeenUpdate(self, Devices, NwkId=NwkId)

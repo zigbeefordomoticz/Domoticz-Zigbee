@@ -134,13 +134,18 @@ def interview_state_004d(self, NWKID, RIA=None, status=None):
     MsgIEEE = None
     if 'IEEE' in self.ListOfDevices[NWKID]:
         MsgIEEE = self.ListOfDevices[NWKID]['IEEE']
-    # 4- We will request immediatly the List of EndPoints
+
     PREFIX_IEEE_XIAOMI = "00158d000"
-    if MsgIEEE and MsgIEEE[0: len(PREFIX_IEEE_XIAOMI)] == PREFIX_IEEE_XIAOMI:
-        self.log.logging("Pairing", "Debug", "[%s] NEW OBJECT: %s Request Model Name" % (RIA, NWKID))
+    PREFIX_IEEE_OPPLE = "04cf8cdf3"
+    if (
+        MsgIEEE and
+        MsgIEEE[0: len(PREFIX_IEEE_XIAOMI)] == PREFIX_IEEE_XIAOMI
+        or MsgIEEE[0: len(PREFIX_IEEE_OPPLE)] == PREFIX_IEEE_OPPLE
+    ):
         ReadAttributeRequest_0000(self, NWKID, fullScope=False)  # In order to request Model Name
-    if self.pluginconf.pluginConf["enableSchneiderWiser"]:
-        self.log.logging("Pairing", "Debug", "[%s] NEW OBJECT: %s Request Model Name" % (RIA, NWKID))
+        
+    PREFIX_IEEE_WISER = "00124b000"
+    if self.pluginconf.pluginConf["enableSchneiderWiser"] and MsgIEEE[0: len(PREFIX_IEEE_WISER)] == PREFIX_IEEE_WISER:
         ReadAttributeRequest_0000(self, NWKID, fullScope=False)  # In order to request Model Name
 
     sendZigateCmd(self, "0045", str(NWKID))
