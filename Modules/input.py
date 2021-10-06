@@ -36,7 +36,9 @@ from Modules.tools import (
     set_request_phase_datastruct,
     checkAndStoreAttributeValue,
     retreive_cmd_payload_from_8002,
+    is_fake_ep
 )
+from Modules.pairingProcess import interview_state_8045
 from Modules.deviceAnnoucement import (
     device_annoucementv1,
     device_annoucementv2,
@@ -2119,20 +2121,7 @@ def Decode8045(self, Devices, MsgData, MsgLQI):  # Reception Active endpoint res
             )
     self.ListOfDevices[MsgDataShAddr]["NbEp"] = str(int(MsgDataEpCount, 16))  # Store the number of EPs
 
-    if "Model" not in self.ListOfDevices[MsgDataShAddr] or self.ListOfDevices[MsgDataShAddr]["Model"] in ("", {}):
-        self.log.logging("Input", "Log", "[%s] NEW OBJECT: %s Request Model Name" % ("-", MsgDataShAddr))
-        ReadAttributeRequest_0000(self, MsgDataShAddr, fullScope=False)  # In order to request Model Name
-
-    for iterEp in self.ListOfDevices[MsgDataShAddr]["Ep"]:
-        self.log.logging(
-            "Input",
-            "Status",
-            "[%s] NEW OBJECT: %s Request Simple Descriptor for Ep: %s" % ("-", MsgDataShAddr, iterEp),
-        )
-        sendZigateCmd(self, "0043", str(MsgDataShAddr) + str(iterEp))
-
-    self.ListOfDevices[MsgDataShAddr]["Heartbeat"] = "0"
-    self.ListOfDevices[MsgDataShAddr]["Status"] = "0043"
+    interview_state_8045(self, MsgDataShAddr, RIA=None, status=None)
 
     self.log.logging(
         "Pairing",

@@ -503,6 +503,18 @@ def updLQI(self, key, LQI):
 
 
 #### Those functions will be use with the new DeviceConf structutre
+
+def is_fake_ep( self, nwkid, ep):
+    
+    if ( "Model" in self.ListOfDevices[nwkid]
+            and self.ListOfDevices[nwkid]["Model"] in self.DeviceConf
+            and "FakeEp" in self.DeviceConf[ self.ListOfDevices[nwkid]["Model"] ]
+            and ep in self.DeviceConf[ self.ListOfDevices[nwkid]["Model"] ]["FakeEp"]
+    ):
+        return True
+    return False
+
+
 def getTypebyCluster(self, Cluster):
     clustersType = {
         "0405": "Humi",

@@ -28,7 +28,7 @@ from Modules.livolo import livolo_bind
 from Modules.orvibo import OrviboRegistration
 from Modules.profalux import profalux_fake_deviceModel
 from Modules.domoCreate import CreateDomoDevice
-from Modules.tools import get_and_inc_SQN, getListOfEpForCluster
+from Modules.tools import get_and_inc_SQN, getListOfEpForCluster, is_fake_ep
 from Modules.zigateConsts import CLUSTERS_LIST
 from Modules.casaia import casaia_pairing
 from Modules.thermostats import thermostat_Calibration
@@ -112,7 +112,7 @@ def processNotinDBDevices(self, Devices, NWKID, status, RIA):
             status = interview_timeout(self, Devices, NWKID, RIA, status)
 
 
-def interview_state_004d(self, NWKID, RIA, status):
+def interview_state_004d(self, NWKID, RIA=None, status=None):
     self.log.logging(
         "Pairing",
         "Debug",
@@ -124,15 +124,25 @@ def interview_state_004d(self, NWKID, RIA, status):
         ),
     )
     self.log.logging(
-        "Pairing", "Status", "[%s] NEW OBJECT: %s TimeOut in %s restarting at 0x004d" % (RIA, NWKID, status)
+        "Pairing", "Status", "[%s] NEW OBJECT: %s %s" % (RIA, NWKID, status)
     )
-    self.ListOfDevices[NWKID]["RIA"] = str(RIA + 1)
+    if RIA:
+        self.ListOfDevices[NWKID]["RIA"] = str(RIA + 1)
     self.ListOfDevices[NWKID]["Heartbeat"] = "0"
     self.ListOfDevices[NWKID]["Status"] = "0045"
-    if "Model" in self.ListOfDevices[NWKID]:
-        if self.ListOfDevices[NWKID]["Model"] == {}:
-            self.log.logging("Pairing", "Debug", "[%s] NEW OBJECT: %s Request Model Name" % (RIA, NWKID))
-            ReadAttributeRequest_0000(self, NWKID, fullScope=False)  # Request Model Name
+
+    MsgIEEE = None
+    if 'IEEE' is self.ListOfDevices[NWKID]:
+        MsgIEEE = self.ListOfDevices[NWKID]['IEEE']
+    # 4- We will request immediatly the List of EndPoints
+    PREFIX_IEEE_XIAOMI = "00158d000"
+    if MsgIEEE and MsgIEEE[0: len(PREFIX_IEEE_XIAOMI)] == PREFIX_IEEE_XIAOMI:
+        self.log.logging("Pairing", "Debug", "[%s] NEW OBJECT: %s Request Model Name" % (RIA, NWKID))
+        ReadAttributeRequest_0000(self, NWKID, fullScope=False)  # In order to request Model Name
+    if self.pluginconf.pluginConf["enableSchneiderWiser"]:
+        self.log.logging("Pairing", "Debug", "[%s] NEW OBJECT: %s Request Model Name" % (RIA, NWKID))
+        ReadAttributeRequest_0000(self, NWKID, fullScope=False)  # In order to request Model Name
+
     sendZigateCmd(self, "0045", str(NWKID))
     return "0045"
 
@@ -189,7 +199,7 @@ def interview_state_8043(self, NWKID, RIA, knownModel, status):
     return status
 
 
-def interview_state_8045(self, NWKID, RIA, status):
+def interview_state_8045(self, NWKID, RIA=None, status=None):
     self.log.logging(
         "Pairing",
         "Debug",
@@ -200,14 +210,19 @@ def interview_state_8045(self, NWKID, RIA, status):
             RIA,
         ),
     )
-    self.ListOfDevices[NWKID]["RIA"] = str(RIA + 1)
+    if RIA:
+        self.ListOfDevices[NWKID]["RIA"] = str(RIA + 1)
     self.ListOfDevices[NWKID]["Heartbeat"] = "0"
     self.ListOfDevices[NWKID]["Status"] = "0043"
+
     if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] == {}:
         self.log.logging("Pairing", "Debug", "[%s] NEW OBJECT: %s Request Model Name" % (RIA, NWKID))
         ReadAttributeRequest_0000(self, NWKID, fullScope=False)  # Reuest Model Name
 
     for iterEp in self.ListOfDevices[NWKID]["Ep"]:
+        if is_fake_ep( self, NWKID, iterEp):
+            continue
+
         self.log.logging(
             "Pairing", "Status", "[%s] NEW OBJECT: %s Request Simple Descriptor for Ep: %s" % ("-", NWKID, iterEp)
         )

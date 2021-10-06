@@ -14,7 +14,7 @@ from Modules.tools import (
 from Modules.domoTools import lastSeenUpdate
 from Modules.readAttributes import ReadAttributeRequest_0000, READ_ATTRIBUTES_REQUEST
 from Modules.bindings import rebind_Clusters, reWebBind_Clusters
-from Modules.pairingProcess import zigbee_provision_device
+from Modules.pairingProcess import zigbee_provision_device, interview_state_004d
 from Modules.schneider_wiser import schneider_wiser_registration, PREFIX_MACADDR_WIZER_LEGACY
 from Modules.basicOutputs import sendZigateCmd
 from Modules.livolo import livolo_bind
@@ -708,18 +708,20 @@ def decode004d_new_devicev1(self, Devices, MsgSrcAddr, MsgIEEE, MsgMacCapa, MsgR
         self.DevicesInPairingMode.append(MsgSrcAddr)
     self.log.logging("Pairing", "Log", "--> %s" % str(self.DevicesInPairingMode))
 
-    # 4- We will request immediatly the List of EndPoints
-    PREFIX_IEEE_XIAOMI = "00158d000"
-    if MsgIEEE[0: len(PREFIX_IEEE_XIAOMI)] == PREFIX_IEEE_XIAOMI:
-        ReadAttributeRequest_0000(self, MsgSrcAddr, fullScope=False)  # In order to request Model Name
-    if self.pluginconf.pluginConf["enableSchneiderWiser"]:
-        ReadAttributeRequest_0000(self, MsgSrcAddr, fullScope=False)  # In order to request Model Name
+    interview_state_004d(self, MsgSrcAddr, RIA=None, status=None)
+    
+    #PREFIX_IEEE_XIAOMI = "00158d000"
+    #if MsgIEEE[0: len(PREFIX_IEEE_XIAOMI)] == PREFIX_IEEE_XIAOMI:
+    #    ReadAttributeRequest_0000(self, MsgSrcAddr, fullScope=False)  # In order to request Model Name
+#
+    #if self.pluginconf.pluginConf["enableSchneiderWiser"]:
+    #    ReadAttributeRequest_0000(self, MsgSrcAddr, fullScope=False)  # In order to request Model Name
+#
+    #self.log.logging("Pairing", "Debug", "Decode004d - Request End Point List ( 0x0045 )")
+    #self.ListOfDevices[MsgSrcAddr]["Heartbeat"] = "0"
+    #self.ListOfDevices[MsgSrcAddr]["Status"] = "0045"
 
-    self.log.logging("Pairing", "Debug", "Decode004d - Request End Point List ( 0x0045 )")
-    self.ListOfDevices[MsgSrcAddr]["Heartbeat"] = "0"
-    self.ListOfDevices[MsgSrcAddr]["Status"] = "0045"
-
-    sendZigateCmd(self, "0045", str(MsgSrcAddr))  # Request list of EPs
+    #sendZigateCmd(self, "0045", str(MsgSrcAddr))  # Request list of EPs
     self.log.logging(
         "Input",
         "Debug",

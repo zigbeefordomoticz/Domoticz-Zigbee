@@ -20,6 +20,10 @@
 			"Type": "P1Meter_ZL/Alarm_ZL"
 		}
 	},
+	"FakeEp": [
+		"f2",
+		"f3"
+	],
 	"Type": "",
 	"bindEp": [
 		"01"
