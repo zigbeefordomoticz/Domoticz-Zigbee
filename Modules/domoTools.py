@@ -452,6 +452,10 @@ def timedOutDevice(self, Devices, Unit=None, NwkId=None, MarkTimedOut=True):
 
 
 def timeout_widget(self, Devices, unit, timeout_value):
+
+    if is_meter_widget( self, Devices, unit):
+        return
+        
     _nValue = Devices[unit].nValue
     _sValue = Devices[unit].sValue
     if Devices[unit].TimedOut != timeout_value:
@@ -495,7 +499,7 @@ def lastSeenUpdate(self, Devices, Unit=None, NwkId=None):
         if Devices[Unit].TimedOut:
             timedOutDevice(self, Devices, Unit=Unit, MarkTimedOut=0)
         else:
-            Devices[Unit].Touch()
+            device_touch( self, Devices, Unit)
         if NwkId is None and "IEEE" in self.IEEE2NWK:
             NwkId = self.IEEE2NWK[IEEE]
 
@@ -539,8 +543,28 @@ def lastSeenUpdate(self, Devices, Unit=None, NwkId=None):
                 if Devices[x].TimedOut:
                     timedOutDevice(self, Devices, Unit=x, MarkTimedOut=0)
                 else:
-                    Devices[x].Touch()
+                    device_touch( self, Devices, x)
 
+
+def is_meter_widget( self, Devices, unit):
+    _Type = Devices[unit].Type 
+    _Switchtype = Devices[unit].SwitchType
+    _Subtype = Devices[unit].SubType
+
+    if _Switchtype == 0 and _Subtype == 29 and _Type == 243:
+        return True
+    return False
+    
+def device_touch( self, Devices, unit):
+
+    # In case of Meter Device ( kWh ), we must not touch it, otherwise it will destroy the metering
+    # Type, Subtype, SwitchType 
+    # 243|29|0
+
+    if is_meter_widget( self, Devices, unit):
+        return
+
+    Devices[unit].Touch()
 
 def GetType(self, Addr, Ep):
     Type = ""
