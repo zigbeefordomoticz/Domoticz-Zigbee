@@ -26,7 +26,6 @@ from Modules.zigateConsts import (
     LEGRAND_REMOTE_SWITCHS,
     LEGRAND_REMOTES,
     ZONE_TYPE,
-    THERMOSTAT_MODE_2_LEVEL,
 )
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import timedOutDevice, Update_Battery_Device
