@@ -15,9 +15,6 @@ import binascii
 
 # import time
 import struct
-import json
-import queue
-import string
 
 from time import time
 
@@ -38,22 +35,18 @@ from Modules.tools import (
     checkAndStoreAttributeValue,
     set_status_datastruct,
     set_timestamp_datastruct,
-    get_isqn_datastruct,
-    instrument_timing,
+    # get_isqn_datastruct,
 )
-from Classes.Transport.sqnMgmt import sqn_get_internal_sqn_from_app_sqn, TYPE_APP_ZCL
+# from Classes.Transport.sqnMgmt import sqn_get_internal_sqn_from_app_sqn, TYPE_APP_ZCL
 
 from Modules.lumi import (
     AqaraOppleDecoding0012,
     readXiaomiCluster,
-    xiaomi_leave,
     cube_decode,
     decode_vibr,
     decode_vibrAngle,
     readLumiLock,
 )
-
-from Classes.LoggingManagement import LoggingManagement
 
 from Modules.tuya import (
     TUYA_TS0601_MODEL_NAME,
@@ -158,8 +151,8 @@ def decodeAttribute(self, AttType, Attribute, handleErrors=False):
 
 def storeReadAttributeStatus(self, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus):
 
-    i_sqnFromMessage = sqn_get_internal_sqn_from_app_sqn(self.ZigateComm, MsgSQN, TYPE_APP_ZCL)
-    i_sqn_expected = get_isqn_datastruct(self, "ReadAttributes", MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID)
+    # i_sqnFromMessage = sqn_get_internal_sqn_from_app_sqn(self.ZigateComm, MsgSQN, TYPE_APP_ZCL)
+    # i_sqn_expected = get_isqn_datastruct(self, "ReadAttributes", MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID)
 
     # if MsgType == '8100' and i_sqn_expected and i_sqnFromMessage and i_sqn_expected != i_sqnFromMessage:
     #     Domoticz.Log("+++ SQN Missmatch in ReadCluster %s/%s %s %s i_sqn: %s e_sqn: %s i_esqn: %s "
@@ -379,7 +372,7 @@ def Cluster0000(
         # Check if we have a Null caracter
         idx = 0
         for byt in MsgClusterData:
-            if MsgClusterData[idx : idx + 2] == "00":
+            if MsgClusterData[idx: idx + 2] == "00":
                 break
             idx += 2
 
@@ -402,7 +395,7 @@ def Cluster0000(
         # Remove Null Char
         idx = 0
         for byt in MsgClusterData:
-            if MsgClusterData[idx : idx + 2] == "00":
+            if MsgClusterData[idx: idx + 2] == "00":
                 break
             idx += 2
 
@@ -1184,7 +1177,7 @@ def Cluster0001(
         )
 
     UpdateBatteryAttribute(self, Devices, MsgSrcAddr, MsgSrcEp)
-    ### End of Cluster0001
+    # End of Cluster0001
 
 
 def UpdateBatteryAttribute(self, Devices, MsgSrcAddr, MsgSrcEp):
@@ -1317,15 +1310,17 @@ def UpdateBatteryAttribute(self, Devices, MsgSrcAddr, MsgSrcEp):
     elif battRemainingVolt:
         max_voltage = 30
         min_voltage = 25
-        if "0001" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]:
-            if "0036" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["0001"]:
-                if (
-                    self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["0001"]["0036"] != {}
-                    and self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["0001"]["0036"] != ""
-                ):
-                    battery_voltage_threshold = round(
-                        int(str(self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["0001"]["0036"])) / 10
-                    )
+
+        # NOT USED
+        # if "0001" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]:
+        #     if "0036" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["0001"]:
+        #         if (
+        #             self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["0001"]["0036"] != {}
+        #             and self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["0001"]["0036"] != ""
+        #         ):
+        #             battery_voltage_threshold = round(
+        #                 int(str(self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["0001"]["0036"])) / 10
+        #             )
 
         if "Model" in self.ListOfDevices[MsgSrcAddr]:
             # if self.ListOfDevices[MsgSrcAddr]['Model'] in LEGRAND_REMOTES:
@@ -1333,7 +1328,7 @@ def UpdateBatteryAttribute(self, Devices, MsgSrcAddr, MsgSrcEp):
             #    min_voltage = 25
 
             if self.ListOfDevices[MsgSrcAddr]["Model"] == "EH-ZB-RTS":
-                max_voltage = 3 * 1.5 * 10  #  3 * 1.5v batteries in RTS - value are stored in volts * 10
+                max_voltage = 3 * 1.5 * 10  # 3 * 1.5v batteries in RTS - value are stored in volts * 10
                 min_voltage = 3 * 1 * 10
 
             elif self.ListOfDevices[MsgSrcAddr]["Model"] == "EH-ZB-BMS":
@@ -1427,7 +1422,7 @@ def Cluster0005(
         self.log.logging(
             "Cluster",
             "Debug",
-            "readCluster - %s - %s/% Scene Current Group: %s %s %s %s "
+            "readCluster - %s - %s/%s Scene Current Group: %s %s %s %s "
             % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
@@ -1668,7 +1663,7 @@ def Cluster0006(
             MsgSrcAddr,
         )
         _Xiaomi_code = MsgClusterData[0:2]
-        _Xiaomi_sAddr = MsgClusterData[2:6]
+        # _Xiaomi_sAddr = MsgClusterData[2:6]
         _Xiaomi_Value = MsgClusterData[6:8]
 
         XIAOMI_CODE = {
@@ -2594,18 +2589,20 @@ def Cluster0102(
             % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
             MsgSrcAddr,
         )
-        WINDOW_COVERING = {
-            "00": "Rollershade",
-            "01": "Rollershade - 2 Motor",
-            "02": "Rollershade – Exterior",
-            "03": "Rollershade - Exterior - 2 Motor",
-            "04": "Drapery",
-            "05": "Awning",
-            "06": "Shutter",
-            "07": "Tilt Blind - Tilt Only",
-            "08": "Tilt Blind - Lift and Tilt",
-            "09": "Projector Screen",
-        }
+
+        # NOT USED
+        # WINDOW_COVERING = {
+        #     "00": "Rollershade",
+        #     "01": "Rollershade - 2 Motor",
+        #     "02": "Rollershade – Exterior",
+        #     "03": "Rollershade - Exterior - 2 Motor",
+        #     "04": "Drapery",
+        #     "05": "Awning",
+        #     "06": "Shutter",
+        #     "07": "Tilt Blind - Tilt Only",
+        #     "08": "Tilt Blind - Lift and Tilt",
+        #     "09": "Projector Screen",
+        # }
 
     elif MsgAttrID == "0001":
         self.log.logging(
@@ -2895,7 +2892,7 @@ def Cluster0201(
         )
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
 
-    elif MsgAttrID == "0007":  #  Pi Cooling Demand  (valve position %)
+    elif MsgAttrID == "0007":  # Pi Cooling Demand  (valve position %)
         self.log.logging(
             "Cluster",
             "Debug",
@@ -2904,7 +2901,7 @@ def Cluster0201(
         )
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
 
-    elif MsgAttrID == "0008":  #  Pi Heating Demand  (valve position %)
+    elif MsgAttrID == "0008":  # Pi Heating Demand  (valve position %)
         self.log.logging(
             "Cluster",
             "Debug",
@@ -2915,7 +2912,7 @@ def Cluster0201(
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0201", value, Attribute_="0008")
 
-    elif MsgAttrID == "0009":  #  HVAC System Type Config
+    elif MsgAttrID == "0009":  # HVAC System Type Config
         self.log.logging(
             "Cluster",
             "Debug",
@@ -3064,14 +3061,15 @@ def Cluster0201(
 
     elif MsgAttrID == "001b":  # Control Sequence Operation
 
-        SEQ_OPERATION = {
-            "00": "Cooling",
-            "01": "Cooling with reheat",
-            "02": "Heating",
-            "03": "Heating with reheat",
-            "04": "Cooling and heating",
-            "05": "Cooling and heating with reheat",
-        }
+        # NOT USED
+        # SEQ_OPERATION = {
+        #     "00": "Cooling",
+        #     "01": "Cooling with reheat",
+        #     "02": "Heating",
+        #     "03": "Heating with reheat",
+        #     "04": "Cooling and heating",
+        #     "05": "Cooling and heating with reheat",
+        # }
         self.log.logging(
             "Cluster",
             "Debug",
@@ -3199,14 +3197,16 @@ def Cluster0201(
                 # 0x00000001 ==> Normal
                 # 0x00000011 ==> Window Detection
 
-                HOST_FLAGS = {
-                    0x000001: "???",
-                    0x000002: "Display Flipped",
-                    0x000004: "Boost mode",
-                    0x000010: "disable off mode",
-                    0x000020: "enable off mode",
-                    0x000080: "child lock",
-                }
+                # NOT USED
+                # HOST_FLAGS = {
+                #     0x000001: "???",
+                #     0x000002: "Display Flipped",
+                #     0x000004: "Boost mode",
+                #     0x000010: "disable off mode",
+                #     0x000020: "enable off mode",
+                #     0x000080: "child lock",
+                # }
+
                 self.log.logging(
                     "Cluster",
                     "Debug",
@@ -3419,7 +3419,7 @@ def Cluster0204(
 
     elif MsgAttrID == "0001":
         # Keypad Lock Mode
-        KEYPAD_LOCK = {"00": "no lockout"}
+        # KEYPAD_LOCK = {"00": "no lockout"}
         value = decodeAttribute(self, MsgAttType, MsgClusterData)
         self.log.logging("Cluster", "Debug", "ReadCluster 0204 - Lock Mode: %s" % value, MsgSrcAddr)
     else:
@@ -3485,11 +3485,12 @@ def Cluster0300(
             )
 
     elif MsgAttrID == "0008":  # Color Mode
-        COLOR_MODE = {
-            "00": "Current hue and current saturation",
-            "01": "Current x and current y",
-            "02": "Color temperature",
-        }
+        # NOT USED
+        # COLOR_MODE = {
+        #     "00": "Current hue and current saturation",
+        #     "01": "Current x and current y",
+        #     "02": "Color temperature",
+        # }
 
         self.log.logging(
             "Cluster",
@@ -4947,7 +4948,6 @@ def Clusterfc00(
     else:
         prev_Value = "0;80;0".split(";")
 
-    move = None
     prev_onoffvalue = onoffValue = int(prev_Value[0], 16)
     prev_lvlValue = lvlValue = int(prev_Value[1], 16)
     prev_duration = duration = int(prev_Value[2], 16)
@@ -5111,10 +5111,10 @@ def Clusterfc01(
         if model == "Dimmer switch wo neutral":
             # Enable Dimmer  ( 16bitData)
             if MsgClusterData == "0101":
-                #'0101' # Enable Dimmer
+                # '0101' # Enable Dimmer
                 self.ListOfDevices[MsgSrcAddr]["Legrand"]["EnableDimmer"] = 1
             else:
-                #'0100' # Disable Dimmer
+                # '0100' # Disable Dimmer
                 self.ListOfDevices[MsgSrcAddr]["Legrand"]["EnableDimmer"] = 0
 
         elif model == "Cable outlet":
@@ -5166,7 +5166,7 @@ def Clusterfc40(
 
     if "Model" not in self.ListOfDevices[MsgSrcAddr]:
         return
-    model = self.ListOfDevices[MsgSrcAddr]["Model"]
+    # model = self.ListOfDevices[MsgSrcAddr]["Model"]
 
     if "Legrand" not in self.ListOfDevices[MsgSrcAddr]:
         self.ListOfDevices[MsgSrcAddr]["Legrand"] = {}
