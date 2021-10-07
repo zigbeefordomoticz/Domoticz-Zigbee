@@ -45,7 +45,7 @@ def processNotinDBDevices(self, Devices, NWKID, status, RIA):
     # 0x0043 / List of EndPoints is requested at the time we receive the End Device Annocement
     # 0x0045 / EndPoint Description is requested at the time we recice the List of EPs.
     # In case Model is defined and is in DeviceConf, we will short cut the all process and go to the Widget creation
-    if status in ("UNKNOW", "erasePDM"):
+    if status in ("UNKNOW", "erasePDM", "provREQ"):
         return
 
     HB_ = int(self.ListOfDevices[NWKID]["Heartbeat"])
@@ -63,9 +63,7 @@ def processNotinDBDevices(self, Devices, NWKID, status, RIA):
 
     knownModel = False
     if self.ListOfDevices[NWKID]["Model"] not in ({}, ""):
-        self.log.logging(
-            "Pairing", "Status", "[%s] NEW OBJECT: %s Model Name: %s" % (RIA, NWKID, self.ListOfDevices[NWKID]["Model"])
-        )
+        self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s Model Name: %s" % (RIA, NWKID, self.ListOfDevices[NWKID]["Model"]))
         # Let's check if this Model is known
         if self.ListOfDevices[NWKID]["Model"] in self.DeviceConf:
             knownModel = True
@@ -75,11 +73,7 @@ def processNotinDBDevices(self, Devices, NWKID, status, RIA):
         # https://zigate.fr/forum/topic/livolo-compatible-zigbee/#postid-596
         livolo_bind(self, NWKID, "06")
 
-    if (
-        knownModel
-        and "NoDeviceInterview" in self.DeviceConf[self.ListOfDevices[NWKID]["Model"]]
-        and self.DeviceConf[self.ListOfDevices[NWKID]["Model"]]["NoDeviceInterview"]
-    ):
+    if knownModel and "NoDeviceInterview" in self.DeviceConf[self.ListOfDevices[NWKID]["Model"]] and self.DeviceConf[self.ListOfDevices[NWKID]["Model"]]["NoDeviceInterview"]:
         status = "CreateDB"
 
     if status == "8043":  # We have at least receive 1 EndPoint
@@ -100,11 +94,11 @@ def processNotinDBDevices(self, Devices, NWKID, status, RIA):
         interview_state_createDB(self, Devices, NWKID, RIA, status)
 
     if status != "createDB":
-        if HB_ > 2 and not knownModel and status in ( "004d" ,"0045"):
+        if HB_ > 2 and not knownModel and status in ("004d", "0045"):
             # We will re-request EndPoint List ( 0x0045)
             interview_state_004d(self, NWKID, RIA, status)
 
-        elif HB_ > 1 and not knownModel and status in ( "0043", ):
+        elif HB_ > 1 and not knownModel and status in ("0043",):
             # We will re-request EndPoint List ( 0x0043)
             interview_state_8045(self, NWKID, RIA, status)
 
@@ -123,29 +117,23 @@ def interview_state_004d(self, NWKID, RIA=None, status=None):
             RIA,
         ),
     )
-    self.log.logging(
-        "Pairing", "Status", "[%s] NEW OBJECT: %s %s" % (RIA, NWKID, status)
-    )
+    self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s %s" % (RIA, NWKID, status))
     if RIA:
         self.ListOfDevices[NWKID]["RIA"] = str(RIA + 1)
     self.ListOfDevices[NWKID]["Heartbeat"] = "0"
     self.ListOfDevices[NWKID]["Status"] = "0045"
 
     MsgIEEE = None
-    if 'IEEE' in self.ListOfDevices[NWKID]:
-        MsgIEEE = self.ListOfDevices[NWKID]['IEEE']
+    if "IEEE" in self.ListOfDevices[NWKID]:
+        MsgIEEE = self.ListOfDevices[NWKID]["IEEE"]
 
     PREFIX_IEEE_XIAOMI = "00158d000"
     PREFIX_IEEE_OPPLE = "04cf8cdf3"
-    if (
-        MsgIEEE and
-        MsgIEEE[0: len(PREFIX_IEEE_XIAOMI)] == PREFIX_IEEE_XIAOMI
-        or MsgIEEE[0: len(PREFIX_IEEE_OPPLE)] == PREFIX_IEEE_OPPLE
-    ):
+    if MsgIEEE and MsgIEEE[0 : len(PREFIX_IEEE_XIAOMI)] == PREFIX_IEEE_XIAOMI or MsgIEEE[0 : len(PREFIX_IEEE_OPPLE)] == PREFIX_IEEE_OPPLE:
         ReadAttributeRequest_0000(self, NWKID, fullScope=False)  # In order to request Model Name
-        
+
     PREFIX_IEEE_WISER = "00124b000"
-    if self.pluginconf.pluginConf["enableSchneiderWiser"] and MsgIEEE[0: len(PREFIX_IEEE_WISER)] == PREFIX_IEEE_WISER:
+    if self.pluginconf.pluginConf["enableSchneiderWiser"] and MsgIEEE[0 : len(PREFIX_IEEE_WISER)] == PREFIX_IEEE_WISER:
         ReadAttributeRequest_0000(self, NWKID, fullScope=False)  # In order to request Model Name
 
     sendZigateCmd(self, "0045", str(NWKID))
@@ -167,9 +155,7 @@ def interview_state_8043(self, NWKID, RIA, knownModel, status):
     self.ListOfDevices[NWKID]["RIA"] = str(RIA + 1)
 
     if knownModel:
-        self.log.logging(
-            "Pairing", "Status", "[%s] NEW OBJECT: %s Model Name: %s" % (RIA, NWKID, self.ListOfDevices[NWKID]["Model"])
-        )
+        self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s Model Name: %s" % (RIA, NWKID, self.ListOfDevices[NWKID]["Model"]))
         return "createDB"  # Fast track
 
     self.log.logging("Pairing", "Debug", "[%s] NEW OBJECT: %s Request Model Name" % (RIA, NWKID))
@@ -225,12 +211,10 @@ def interview_state_8045(self, NWKID, RIA=None, status=None):
         ReadAttributeRequest_0000(self, NWKID, fullScope=False)  # Reuest Model Name
 
     for iterEp in self.ListOfDevices[NWKID]["Ep"]:
-        if is_fake_ep( self, NWKID, iterEp):
+        if is_fake_ep(self, NWKID, iterEp):
             continue
 
-        self.log.logging(
-            "Pairing", "Status", "[%s] NEW OBJECT: %s Request Simple Descriptor for Ep: %s" % ("-", NWKID, iterEp)
-        )
+        self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s Request Simple Descriptor for Ep: %s" % ("-", NWKID, iterEp))
         sendZigateCmd(self, "0043", str(NWKID) + str(iterEp))
 
     return "0043"
@@ -253,9 +237,7 @@ def interview_timeout(self, Devices, NWKID, RIA, status):
     self.ListOfDevices[NWKID]["ConsistencyCheck"] = "Bad Pairing"
     Domoticz.Error("processNotinDB - not able to find response from " + str(NWKID) + " stop process at " + str(status))
     Domoticz.Error("processNotinDB - Collected Infos are : %s" % (str(self.ListOfDevices[NWKID])))
-    self.adminWidgets.updateNotificationWidget(
-        Devices, "Unable to collect all informations for enrollment of this devices. See Logs"
-    )
+    self.adminWidgets.updateNotificationWidget(Devices, "Unable to collect all informations for enrollment of this devices. See Logs")
     self.CommiSSionning = False
     return "UNKNOW"
 
@@ -272,24 +254,13 @@ def interview_state_createDB(self, Devices, NWKID, RIA, status):
         ),
     )
     # We will try to create the device(s) based on the Model , if we find it in DeviceConf or against the Cluster
-    if (
-        "Model" in self.ListOfDevices[NWKID]
-        and self.ListOfDevices[NWKID]["Model"] == {}
-        or self.ListOfDevices[NWKID]["Model"] == ""
-    ):
-        if (
-            status == "8043" and int(self.ListOfDevices[NWKID]["RIA"], 10) < 3
-        ):  # Let's take one more chance to get Model
+    if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] == {} or self.ListOfDevices[NWKID]["Model"] == "":
+        if status == "8043" and int(self.ListOfDevices[NWKID]["RIA"], 10) < 3:  # Let's take one more chance to get Model
             self.log.logging("Pairing", "Debug", "Too early, let's try to get the Model")
             return
 
     # Let's check if we have to disable the widget creation
-    if (
-        "Model" in self.ListOfDevices[NWKID]
-        and self.ListOfDevices[NWKID]["Model"] != {}
-        and self.ListOfDevices[NWKID]["Model"] in self.DeviceConf
-        and "CreateWidgetDomoticz" in self.DeviceConf[self.ListOfDevices[NWKID]["Model"]]
-    ):
+    if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] != {} and self.ListOfDevices[NWKID]["Model"] in self.DeviceConf and "CreateWidgetDomoticz" in self.DeviceConf[self.ListOfDevices[NWKID]["Model"]]:
         if not self.DeviceConf[self.ListOfDevices[NWKID]["Model"]]["CreateWidgetDomoticz"]:
             self.ListOfDevices[NWKID]["Status"] = "notDB"
             self.ListOfDevices[NWKID]["PairingInProgress"] = False
@@ -323,15 +294,8 @@ def interview_state_createDB(self, Devices, NWKID, RIA, status):
         if self.ListOfDevices[NWKID].get("IEEE"):
             if Devices[x].DeviceID == str(self.ListOfDevices[NWKID]["IEEE"]):
                 IsCreated = True
-                Domoticz.Error(
-                    "processNotinDBDevices - Devices already exist. "
-                    + Devices[x].Name
-                    + " with "
-                    + str(self.ListOfDevices[NWKID])
-                )
-                Domoticz.Error(
-                    "processNotinDBDevices - Please cross check the consistency of the Domoticz and Plugin database."
-                )
+                Domoticz.Error("processNotinDBDevices - Devices already exist. " + Devices[x].Name + " with " + str(self.ListOfDevices[NWKID]))
+                Domoticz.Error("processNotinDBDevices - Please cross check the consistency of the Domoticz and Plugin database.")
                 break
 
     if not IsCreated:
@@ -344,8 +308,7 @@ def full_provision_device(self, Devices, NWKID, RIA, status):
     self.log.logging(
         "Pairing",
         "Debug",
-        "processNotinDBDevices - ready for creation: %s , Model: %s "
-        % (self.ListOfDevices[NWKID], self.ListOfDevices[NWKID]["Model"]),
+        "processNotinDBDevices - ready for creation: %s , Model: %s " % (self.ListOfDevices[NWKID], self.ListOfDevices[NWKID]["Model"]),
     )
 
     # Purpose of this call is to patch Model and Manufacturer Name in case of Profalux
@@ -357,10 +320,7 @@ def full_provision_device(self, Devices, NWKID, RIA, status):
     CreateDomoDevice(self, Devices, NWKID)
     if self.ListOfDevices[NWKID]["Status"] not in ("inDB", "failDB"):
         # Something went wrong in the Widget creation
-        Domoticz.Error(
-            "processNotinDBDevices - Creat Domo Device Failed !!! for %s status: %s"
-            % (NWKID, self.ListOfDevices[NWKID]["Status"])
-        )
+        Domoticz.Error("processNotinDBDevices - Creat Domo Device Failed !!! for %s status: %s" % (NWKID, self.ListOfDevices[NWKID]["Status"]))
         self.ListOfDevices[NWKID]["Status"] = "UNKNOW"
         self.CommiSSionning = False
         return
@@ -379,17 +339,14 @@ def full_provision_device(self, Devices, NWKID, RIA, status):
         self.log.logging(
             "Pairing",
             "Debug",
-            "Device: %s - Config Source: %s Ep Details: %s"
-            % (NWKID, self.ListOfDevices[NWKID]["ConfigSource"], str(self.ListOfDevices[NWKID]["Ep"])),
+            "Device: %s - Config Source: %s Ep Details: %s" % (NWKID, self.ListOfDevices[NWKID]["ConfigSource"], str(self.ListOfDevices[NWKID]["Ep"])),
         )
 
     zigbee_provision_device(self, Devices, NWKID, RIA, status)
 
     # Reset HB in order to force Read Attribute Status
     self.ListOfDevices[NWKID]["Heartbeat"] = 0
-    self.adminWidgets.updateNotificationWidget(
-        Devices, "Successful creation of Widget for :%s DeviceID: %s" % (self.ListOfDevices[NWKID]["Model"], NWKID)
-    )
+    self.adminWidgets.updateNotificationWidget(Devices, "Successful creation of Widget for :%s DeviceID: %s" % (self.ListOfDevices[NWKID]["Model"], NWKID))
     self.CommiSSionning = False
 
     self.ListOfDevices[NWKID]["PairingInProgress"] = False
@@ -452,14 +409,8 @@ def binding_needed_clusters_with_zigate(self, NWKID):
     # self.ListOfDevices[NWKID]["BindingTimeStamps"] = time.time()
 
     # Do we have to follow Certified Conf file, or look for standard mecanishm ?
-    if (
-        "Model" in self.ListOfDevices[NWKID]
-        and self.ListOfDevices[NWKID]["Model"] != {}
-        and self.ListOfDevices[NWKID]["Model"] in self.DeviceConf
-    ):
-        self.log.logging(
-            "Pairing", "Log", "binding_needed_clusters_with_zigate %s based on Device Configuration" % (NWKID)
-        )
+    if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] != {} and self.ListOfDevices[NWKID]["Model"] in self.DeviceConf:
+        self.log.logging("Pairing", "Log", "binding_needed_clusters_with_zigate %s based on Device Configuration" % (NWKID))
 
         _model = self.ListOfDevices[NWKID]["Model"]
         # Check if we have to unbind clusters
@@ -488,9 +439,7 @@ def binding_needed_clusters_with_zigate(self, NWKID):
         for ep in self.ListOfDevices[NWKID]["Epv2"]:
             if "ClusterIn" in self.ListOfDevices[NWKID]["Epv2"][ep]:
                 for iterBindCluster in self.ListOfDevices[NWKID]["Epv2"][ep]["ClusterIn"]:
-                    self.log.logging(
-                        "Pairing", "Debug", "Request a Bind for %s/%s on ClusterIn %s" % (NWKID, ep, iterBindCluster)
-                    )
+                    self.log.logging("Pairing", "Debug", "Request a Bind for %s/%s on ClusterIn %s" % (NWKID, ep, iterBindCluster))
                     if self.pluginconf.pluginConf["doUnbindBind"]:
                         unbindDevice(self, self.ListOfDevices[NWKID]["IEEE"], ep, iterBindCluster)
                     # Finaly binding
@@ -506,25 +455,18 @@ def handle_IAS_enrollmment_if_needed(self, NWKID, RIA, status):
     for iterEp in self.ListOfDevices[NWKID]["Ep"]:
 
         # If not IAS cluster skip
-        if (
-            "0500" not in self.ListOfDevices[NWKID]["Ep"][iterEp]
-            and "0502" not in self.ListOfDevices[NWKID]["Ep"][iterEp]
-        ):
+        if "0500" not in self.ListOfDevices[NWKID]["Ep"][iterEp] and "0502" not in self.ListOfDevices[NWKID]["Ep"][iterEp]:
             continue
 
         self.log.logging("Pairing", "Debug", "We have found 0500 or 0502 on Ep: %s of %s" % (iterEp, NWKID))
 
         # IAS Zone
         # We found a Cluster 0x0500 IAS. May be time to start the IAS Zone process
-        self.log.logging(
-            "Pairing", "Status", "[%s] NEW OBJECT: %s 0x%04s - IAS Zone controler setting" % (RIA, NWKID, status)
-        )
+        self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s 0x%04s - IAS Zone controler setting" % (RIA, NWKID, status))
         self.iaszonemgt.IASZone_triggerenrollement(NWKID, iterEp)
 
         if "0502" in self.ListOfDevices[NWKID]["Ep"][iterEp]:
-            self.log.logging(
-                "Pairing", "Status", "[%s] NEW OBJECT: %s 0x%04s - IAS WD enrolment" % (RIA, NWKID, status)
-            )
+            self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s 0x%04s - IAS WD enrolment" % (RIA, NWKID, status))
             self.iaszonemgt.IASWD_enroll(NWKID, iterEp)
 
 
@@ -563,16 +505,9 @@ def create_group_if_required(self, NWKID):
                     if len(groupToAdd) == 2:
                         self.groupmgt.addGroupMemberShip(NWKID, groupToAdd[0], groupToAdd[1])
                     else:
-                        Domoticz.Error(
-                            "Uncorrect GroupMembership definition %s"
-                            % str(self.DeviceConf[self.ListOfDevices[NWKID]["Model"]]["GroupMembership"])
-                        )
+                        Domoticz.Error("Uncorrect GroupMembership definition %s" % str(self.DeviceConf[self.ListOfDevices[NWKID]["Model"]]["GroupMembership"]))
 
-    if (
-        self.groupmgt
-        and "Model" in self.ListOfDevices[NWKID]
-        and self.ListOfDevices[NWKID]["Model"] == "tint-Remote-white"
-    ):
+    if self.groupmgt and "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] == "tint-Remote-white":
         # Tint Remote manage 4 groups and we will create with ZiGate attached.
         self.groupmgt.addGroupMemberShip("0000", "01", "4003")
         self.groupmgt.addGroupMemberShip("0000", "01", "4004")
@@ -590,13 +525,11 @@ def handle_device_specific_needs(self, Devices, NWKID):
         return
 
     # In case of Schneider Wiser, let's do the Registration Process
-    MsgIEEE = self.ListOfDevices[ NWKID]['IEEE']
+    MsgIEEE = self.ListOfDevices[NWKID]["IEEE"]
     if self.ListOfDevices[NWKID]["Model"] in ("Wiser2-Thermostat",):
         wiser_home_lockout_thermostat(self, NWKID, 0)
 
-    elif ( MsgIEEE[0 : len(PREFIX_MACADDR_WIZER_LEGACY)] == PREFIX_MACADDR_WIZER_LEGACY and 
-            WISER_LEGACY_MODEL_NAME_PREFIX in self.ListOfDevices[NWKID]["Model"]
-    ):
+    elif MsgIEEE[0 : len(PREFIX_MACADDR_WIZER_LEGACY)] == PREFIX_MACADDR_WIZER_LEGACY and WISER_LEGACY_MODEL_NAME_PREFIX in self.ListOfDevices[NWKID]["Model"]:
         schneider_wiser_registration(self, Devices, NWKID)
 
     elif self.ListOfDevices[NWKID]["Model"] in (
@@ -637,11 +570,9 @@ def handle_device_specific_needs(self, Devices, NWKID):
         self.log.logging(
             "Pairing",
             "Status",
-            "processNotinDBDevices - set viration Aqara %s sensitivity to %s"
-            % (NWKID, self.pluginconf.pluginConf["vibrationAqarasensitivity"]),
+            "processNotinDBDevices - set viration Aqara %s sensitivity to %s" % (NWKID, self.pluginconf.pluginConf["vibrationAqarasensitivity"]),
         )
-        setXiaomiVibrationSensitivity(
-            self, NWKID, sensitivity=self.pluginconf.pluginConf["vibrationAqarasensitivity"])
+        setXiaomiVibrationSensitivity(self, NWKID, sensitivity=self.pluginconf.pluginConf["vibrationAqarasensitivity"])
 
     # Set Calibration for Thermostat
     elif self.ListOfDevices[NWKID]["Model"] == "SPZB0001":

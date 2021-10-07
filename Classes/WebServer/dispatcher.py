@@ -7,16 +7,18 @@
 import Domoticz
 
 from Classes.WebServer.headerResponse import setupHeadersResponse, prepResponseMessage
-from Classes.WebServer.rest_Bindings import rest_bindLSTcluster, rest_bindLSTdevice, rest_binding, rest_unbinding
-from Classes.WebServer.rest_Topology import rest_netTopologie, rest_req_topologie
-from Classes.WebServer.rest_Energy import rest_req_nwk_full, rest_req_nwk_inter
-from Classes.WebServer.rest_Groups import (
-    rest_zGroup,
-    rest_rescan_group,
-    rest_zGroup_lst_avlble_dev,
-    rest_scan_devices_for_group,
-)
-from Classes.WebServer.rest_Provisioning import rest_new_hrdwr, rest_rcv_nw_hrdwr
+
+# from Classes.WebServer.rest_Bindings import rest_bindLSTcluster, rest_bindLSTdevice, rest_binding, rest_unbinding
+# from Classes.WebServer.rest_Topology import rest_netTopologie, rest_req_topologie
+# from Classes.WebServer.rest_Energy import rest_req_nwk_full, rest_req_nwk_inter
+# from Classes.WebServer.rest_Groups import (
+#    rest_zGroup,
+#    rest_rescan_group,
+#    rest_zGroup_lst_avlble_dev,
+#    rest_scan_devices_for_group,
+#
+# )
+# from Classes.WebServer.rest_Provisioning import rest_new_hrdwr, rest_rcv_nw_hrdwr, rest_full_reprovisionning
 
 
 def do_rest(self, Connection, verb, data, version, command, parameters):
@@ -67,6 +69,7 @@ def do_rest(self, Connection, verb, data, version, command, parameters):
         "zigate-erase-PDM": {"Name": "zigate-erase-PDM", "Verbs": {"GET"}, "function": self.rest_zigate_erase_PDM},
         "zigate-mode": {"Name": "zigate-mode", "Verbs": {"GET"}, "function": self.rest_zigate_mode},
         "rescan-groups": {"Name": "rescan-groups", "Verbs": {"GET"}, "function": self.rest_rescan_group},
+        "full-reprovisionning": {"Name": "full-reprovisionning", "Verbs": {"PUT"}, "function": self.rest_full_reprovisionning},
         "scan-device-for-grp": {
             "Name": "ScanDevscan-device-for-grpiceForGrp",
             "Verbs": {"PUT"},

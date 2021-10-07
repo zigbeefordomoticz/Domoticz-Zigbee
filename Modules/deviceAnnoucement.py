@@ -52,8 +52,7 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
     self.log.logging(
         "Input",
         "Debug",
-        "Decode004D V2 - Device Annoucement: NwkId: %s Ieee: %s MacCap: %s ReJoin: %s LQI: %s NewDevice: %s"
-        % (NwkId, Ieee, MacCapa, RejoinFlag, MsgLQI, newDeviceForPlugin),
+        "Decode004D V2 - Device Annoucement: NwkId: %s Ieee: %s MacCap: %s ReJoin: %s LQI: %s NewDevice: %s" % (NwkId, Ieee, MacCapa, RejoinFlag, MsgLQI, newDeviceForPlugin),
         NwkId,
     )
 
@@ -113,19 +112,14 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
         self.log.logging(
             "Input",
             "Error",
-            "Device Annoucement: NwkId: %s Ieee: %s MacCap: %s - Error has device seems not to be created !!!"
-            % (NwkId, Ieee, MacCapa),
+            "Device Annoucement: NwkId: %s Ieee: %s MacCap: %s - Error has device seems not to be created !!!" % (NwkId, Ieee, MacCapa),
             NwkId,
         )
         return
 
     reseted_device = False
 
-    if (
-        NwkId in self.ListOfDevices
-        and "Status" in self.ListOfDevices[NwkId]
-        and self.ListOfDevices[NwkId]["Status"] == "erasePDM"
-    ):
+    if NwkId in self.ListOfDevices and "Status" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Status"] in ("erasePDM", "provREQ"):
         reseted_device = True
         if "Bind" in self.ListOfDevices[NwkId]:
             del self.ListOfDevices[NwkId]["Bind"]
@@ -173,15 +167,9 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
         return
 
     # Annouced is in the ListOfDevices[NwkId]
-    if "TimeStamp" in self.ListOfDevices[NwkId]["Announced"] and (
-        now < (self.ListOfDevices[NwkId]["Announced"]["TimeStamp"] + 15)
-    ):
+    if "TimeStamp" in self.ListOfDevices[NwkId]["Announced"] and (now < (self.ListOfDevices[NwkId]["Announced"]["TimeStamp"] + 15)):
         # If the TimeStamp is > 15, the Data are invalid and we will do process this.
-        if (
-            "Rejoin" in self.ListOfDevices[NwkId]["Announced"]
-            and self.ListOfDevices[NwkId]["Announced"]["Rejoin"] in ("01", "02")
-            and self.ListOfDevices[NwkId]["Status"] != "Left"
-        ):
+        if "Rejoin" in self.ListOfDevices[NwkId]["Announced"] and self.ListOfDevices[NwkId]["Announced"]["Rejoin"] in ("01", "02") and self.ListOfDevices[NwkId]["Status"] != "Left":
             self.log.logging(
                 "Input",
                 "Debug",
@@ -277,7 +265,7 @@ def decode004d_new_devicev2(self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgData, 
     # There is a dilem here as Livolo and Schneider Wiser share the same IEEE prefix.
     if self.pluginconf.pluginConf["Livolo"]:
         PREFIX_MACADDR_LIVOLO = "00124b00"
-        if MsgIEEE[0: len(PREFIX_MACADDR_LIVOLO)] == PREFIX_MACADDR_LIVOLO:
+        if MsgIEEE[0 : len(PREFIX_MACADDR_LIVOLO)] == PREFIX_MACADDR_LIVOLO:
             livolo_bind(self, NwkId, "06")
 
     # New device comming. The IEEE is not known
@@ -314,8 +302,7 @@ def decode004d_new_devicev2(self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgData, 
             self.log.logging(
                 "Pairing",
                 "Error",
-                "Decode004d - Paranoia .... NwkID: %s, IEEE: %s -> %s "
-                % (NwkId, MsgIEEE, str(self.ListOfDevices[NwkId])),
+                "Decode004d - Paranoia .... NwkID: %s, IEEE: %s -> %s " % (NwkId, MsgIEEE, str(self.ListOfDevices[NwkId])),
             )
             return
 
@@ -371,8 +358,7 @@ def device_annoucementv1(self, Devices, MsgData, MsgLQI):
     self.log.logging(
         "Input",
         "Debug",
-        "Decode004D - Device Annoucement: NwkId: %s Ieee: %s MacCap: %s ReJoin: %s LQI: %s"
-        % (NwkId, MsgIEEE, MsgMacCapa, MsgRejoinFlag, MsgLQI),
+        "Decode004D - Device Annoucement: NwkId: %s Ieee: %s MacCap: %s ReJoin: %s LQI: %s" % (NwkId, MsgIEEE, MsgMacCapa, MsgRejoinFlag, MsgLQI),
         NwkId,
     )
 
@@ -382,8 +368,7 @@ def device_annoucementv1(self, Devices, MsgData, MsgLQI):
         self.log.logging(
             "Input",
             "Debug",
-            "------>  Known device: NwkId: %s Ieee: %s MacCap: %s ReJoin: %s LQI: %s newShortId: %s"
-            % (NwkId, MsgIEEE, MsgMacCapa, MsgRejoinFlag, MsgLQI, newShortId),
+            "------>  Known device: NwkId: %s Ieee: %s MacCap: %s ReJoin: %s LQI: %s newShortId: %s" % (NwkId, MsgIEEE, MsgMacCapa, MsgRejoinFlag, MsgLQI, newShortId),
             NwkId,
         )
 
@@ -442,9 +427,7 @@ def device_annoucementv1(self, Devices, MsgData, MsgLQI):
         decode004d_new_devicev1(self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgRejoinFlag, MsgData, MsgLQI, now)
 
 
-def decode004d_existing_devicev1(
-    self, Devices, MsgSrcAddr, MsgIEEE, MsgMacCapa, MsgRejoinFlag, newShortId, MsgLQI, now
-):
+def decode004d_existing_devicev1(self, Devices, MsgSrcAddr, MsgIEEE, MsgMacCapa, MsgRejoinFlag, newShortId, MsgLQI, now):
     # ############
     # Device exist, Reconnection has been done by DeviceExist()
     #
@@ -455,8 +438,7 @@ def decode004d_existing_devicev1(
     self.log.logging(
         "Input",
         "Debug",
-        "Decode004D - Already known device %s infos: %s, Change ShortID: %s "
-        % (MsgSrcAddr, self.ListOfDevices[MsgSrcAddr], newShortId),
+        "Decode004D - Already known device %s infos: %s, Change ShortID: %s " % (MsgSrcAddr, self.ListOfDevices[MsgSrcAddr], newShortId),
         MsgSrcAddr,
     )
     if "Announced" not in self.ListOfDevices[MsgSrcAddr]:
@@ -471,8 +453,7 @@ def decode004d_existing_devicev1(
         self.log.logging(
             "Input",
             "Debug",
-            "--> drop packet for %s due to  Rejoining network as %s, LQI: %s"
-            % (MsgSrcAddr, MsgRejoinFlag, int(MsgLQI, 16)),
+            "--> drop packet for %s due to  Rejoining network as %s, LQI: %s" % (MsgSrcAddr, MsgRejoinFlag, int(MsgLQI, 16)),
             MsgSrcAddr,
         )
         if "Announced" not in self.ListOfDevices[MsgSrcAddr]:
@@ -516,8 +497,7 @@ def decode004d_existing_devicev1(
             self.log.logging(
                 "Pairing",
                 "Status",
-                "Device Announcement Addr: %s, IEEE: %s Join Flag: %s LQI: %s ChangeShortID: %s"
-                % (MsgSrcAddr, MsgIEEE, MsgRejoinFlag, int(MsgLQI, 16), newShortId),
+                "Device Announcement Addr: %s, IEEE: %s Join Flag: %s LQI: %s ChangeShortID: %s" % (MsgSrcAddr, MsgIEEE, MsgRejoinFlag, int(MsgLQI, 16), newShortId),
             )
 
     if "Announced" not in self.ListOfDevices[MsgSrcAddr]:
@@ -600,11 +580,8 @@ def decode004d_existing_devicev1(
     sendZigateCmd(self, "0042", str(MsgSrcAddr), ackIsDisabled=True)
 
     # Let's check if this is a Schneider Wiser
-    if MsgIEEE[0: len(PREFIX_MACADDR_WIZER_LEGACY)] == PREFIX_MACADDR_WIZER_LEGACY:
-        if (
-            "Manufacturer" in self.ListOfDevices[MsgSrcAddr]
-            and self.ListOfDevices[MsgSrcAddr]["Manufacturer"] == "105e"
-        ):
+    if MsgIEEE[0 : len(PREFIX_MACADDR_WIZER_LEGACY)] == PREFIX_MACADDR_WIZER_LEGACY:
+        if "Manufacturer" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Manufacturer"] == "105e":
             schneider_wiser_registration(self, Devices, MsgSrcAddr)
 
 
@@ -616,7 +593,7 @@ def decode004d_new_devicev1(self, Devices, MsgSrcAddr, MsgIEEE, MsgMacCapa, MsgR
     # There is a dilem here as Livolo and Schneider Wiser share the same IEEE prefix.
     if self.pluginconf.pluginConf["Livolo"]:
         PREFIX_MACADDR_LIVOLO = "00124b00"
-        if MsgIEEE[0: len(PREFIX_MACADDR_LIVOLO)] == PREFIX_MACADDR_LIVOLO:
+        if MsgIEEE[0 : len(PREFIX_MACADDR_LIVOLO)] == PREFIX_MACADDR_LIVOLO:
             livolo_bind(self, MsgSrcAddr, "06")
 
     # New device comming. The IEEE is not known
@@ -658,8 +635,7 @@ def decode004d_new_devicev1(self, Devices, MsgSrcAddr, MsgIEEE, MsgMacCapa, MsgR
             self.log.logging(
                 "Pairing",
                 "Error",
-                "Decode004d - Paranoia .... NwkID: %s, IEEE: %s -> %s "
-                % (MsgSrcAddr, MsgIEEE, str(self.ListOfDevices[MsgSrcAddr])),
+                "Decode004d - Paranoia .... NwkID: %s, IEEE: %s -> %s " % (MsgSrcAddr, MsgIEEE, str(self.ListOfDevices[MsgSrcAddr])),
             )
             return
 
@@ -690,19 +666,19 @@ def decode004d_new_devicev1(self, Devices, MsgSrcAddr, MsgIEEE, MsgMacCapa, MsgR
     self.log.logging("Pairing", "Log", "--> %s" % str(self.DevicesInPairingMode))
 
     interview_state_004d(self, MsgSrcAddr, RIA=None, status=None)
-    
-    #PREFIX_IEEE_XIAOMI = "00158d000"
-    #if MsgIEEE[0: len(PREFIX_IEEE_XIAOMI)] == PREFIX_IEEE_XIAOMI:
-    #    ReadAttributeRequest_0000(self, MsgSrcAddr, fullScope=False)  # In order to request Model Name
-#
-    #if self.pluginconf.pluginConf["enableSchneiderWiser"]:
-    #    ReadAttributeRequest_0000(self, MsgSrcAddr, fullScope=False)  # In order to request Model Name
-#
-    #self.log.logging("Pairing", "Debug", "Decode004d - Request End Point List ( 0x0045 )")
-    #self.ListOfDevices[MsgSrcAddr]["Heartbeat"] = "0"
-    #self.ListOfDevices[MsgSrcAddr]["Status"] = "0045"
 
-    #sendZigateCmd(self, "0045", str(MsgSrcAddr))  # Request list of EPs
+    # PREFIX_IEEE_XIAOMI = "00158d000"
+    # if MsgIEEE[0: len(PREFIX_IEEE_XIAOMI)] == PREFIX_IEEE_XIAOMI:
+    #    ReadAttributeRequest_0000(self, MsgSrcAddr, fullScope=False)  # In order to request Model Name
+    #
+    # if self.pluginconf.pluginConf["enableSchneiderWiser"]:
+    #    ReadAttributeRequest_0000(self, MsgSrcAddr, fullScope=False)  # In order to request Model Name
+    #
+    # self.log.logging("Pairing", "Debug", "Decode004d - Request End Point List ( 0x0045 )")
+    # self.ListOfDevices[MsgSrcAddr]["Heartbeat"] = "0"
+    # self.ListOfDevices[MsgSrcAddr]["Status"] = "0045"
+
+    # sendZigateCmd(self, "0045", str(MsgSrcAddr))  # Request list of EPs
     self.log.logging(
         "Input",
         "Debug",
@@ -719,9 +695,7 @@ def store_annoucement(self, NwkId, MsgRejoinFlag, now):
 
     # ['Announced']['TimeStamp'] = When it has been provided
     if NwkId not in self.ListOfDevices:
-        self.log.logging(
-            "Input", "Error", "store_annoucement - Unknown NwkId %s in Db: %s" % (NwkId, self.ListOfDevices.keys())
-        )
+        self.log.logging("Input", "Error", "store_annoucement - Unknown NwkId %s in Db: %s" % (NwkId, self.ListOfDevices.keys()))
         return
 
     if "Announced" not in self.ListOfDevices[NwkId]:
