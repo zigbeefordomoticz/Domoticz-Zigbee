@@ -236,7 +236,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     and "0400" in self.ListOfDevices[NWKID]["Ep"][Ep]["0702"]
                 ):
                     cons = round(float(self.ListOfDevices[NWKID]["Ep"][Ep]["0702"]["0400"]), 2)
-                usage1 = int(float(value), 2)
+                usage1 = int(float(value))
 
                 sValue = "%s;%s;%s;%s;%s;%s" % (usage1, usage2, return1, return2, cons, prod)
                 self.log.logging("Widget", "Debug", "------>  P1Meter : " + sValue, NWKID)
@@ -374,7 +374,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 nValue = round(float(value), 2)
                 # Did we get Summation from Data Structure
                 if summation != 0:
-                    summation = int(float(summation), 2)
+                    summation = int(float(summation))
                     sValue = "%s;%s" % (nValue, summation)
 
                     # We got summation from Device, let's check that EnergyMeterMode is
