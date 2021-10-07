@@ -2828,9 +2828,14 @@ def Cluster0201(
         if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == "VOC_Sensor":
             return
         ValueTemp = round(int(value) / 100, 2)
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0402", ValueTemp)
-        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, ValueTemp)
-        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, "0402", "0000", ValueTemp)
+        if "Model" in self.ListOfDevices[ MsgSrcAddr ] and self.ListOfDevices[ MsgSrcAddr ]["Model"] == "TAFFETAS2 D1.00P1.01Z1.00":
+            # This is use to communicate the SetPoint, so let's update the SetPoint on Cluster Thermostat
+            checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, '0201', '0012', value)
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0201', value, Attribute_='0012')
+        else:
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0402", ValueTemp)
+            checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, ValueTemp)
+            checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, "0402", "0000", ValueTemp)
         self.log.logging("Cluster", "Debug", "ReadCluster - 0201 - Local Temp: %s" % ValueTemp, MsgSrcAddr)
 
     elif MsgAttrID == "0001":  # Outdoor Temperature
@@ -3743,15 +3748,16 @@ def Cluster0402(
                 % (MsgClusterId, MsgSrcAddr, MsgSrcEp, value),
                 MsgSrcAddr,
             )
-        else:
-            value = round(value / 100, 1)
-            self.log.logging(
-                "Cluster",
-                "Debug",
-                "readCluster - %s - %s/%s Temperature Measurement: %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, value),
-                MsgSrcAddr,
-            )
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value)
+            return
+
+        value = round(value / 100, 1)
+        self.log.logging(
+            "Cluster",
+            "Debug",
+            "readCluster - %s - %s/%s Temperature Measurement: %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, value),
+            MsgSrcAddr,
+        )
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value)
 
     elif MsgAttrID == "0001":
         value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
