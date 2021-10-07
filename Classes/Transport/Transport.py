@@ -14,7 +14,7 @@ import time
 import json
 
 from threading import Semaphore
-from queue import PriorityQueue, SimpleQueue, Queue
+from queue import PriorityQueue, Queue
 
 from Classes.Transport.sqnMgmt import sqn_init_stack, sqn_generate_new_internal_sqn
 from Classes.Transport.readerThread import open_zigate_and_start_reader, shutdown_reader_thread
@@ -89,7 +89,7 @@ class ZigateTransport(object):
         self.last_nwkid_failure = None
 
         # Writer
-        # self.writer_queue = SimpleQueue()
+
         self.writer_list_in_queue = []
         self.writer_queue = PriorityQueue()
         self.writer_thread = None
@@ -100,7 +100,7 @@ class ZigateTransport(object):
         self.reader_thread = None
 
         # Forwarder
-        # self.forwarder_queue = SimpleQueue()
+
         self.forwarder_queue = Queue()
         self.forwarder_thread = None
 
