@@ -487,7 +487,7 @@ def lastSeenUpdate(self, Devices, Unit=None, NwkId=None):
         if Devices[Unit].TimedOut:
             timedOutDevice(self, Devices, Unit=Unit, MarkTimedOut=0)
         else:
-            device_touch( self, Devices, x)
+            device_touch( self, Devices, Unit)
         if NwkId is None and "IEEE" in self.IEEE2NWK:
             NwkId = self.IEEE2NWK[IEEE]
 
