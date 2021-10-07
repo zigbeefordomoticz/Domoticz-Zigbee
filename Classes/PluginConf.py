@@ -143,14 +143,6 @@ SETTINGS = {
                 "hidden": False,
                 "Advanced": False,
             },
-            "fullDeviceInterview": {
-                "type": "bool",
-                "default": 0,
-                "current": None,
-                "restart": 0,
-                "hidden": False,
-                "Advanced": False,
-            },
             "breakConfigureReporting": {
                 "type": "bool",
                 "default": 0,

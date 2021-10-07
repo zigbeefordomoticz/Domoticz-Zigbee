@@ -170,9 +170,6 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
         if reseted_device:
             zigbee_provision_device(self, Devices, NwkId, 0, "inDB")
 
-        # if self.pluginconf.pluginConf["fullDeviceInterview"]:
-        #    decode004d_existing_devicev2(self, Devices, NwkId, Ieee, MacCapa, MsgLQI, now)
-        #    self.pluginconf.pluginConf["fullDeviceInterview"] = False
         return
 
     # Annouced is in the ListOfDevices[NwkId]
