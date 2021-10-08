@@ -4823,12 +4823,18 @@ def Cluster0b04(
         value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
         # from random import randrange
         # value = randrange( 0x0, 7500)
-        if value == 0xFFFF:
+        if value >= 0xFFFF:
+            self.log.logging(
+                "Cluster",
+                "Error",
+                "=====> ReadCluster %s - %s/%s Apparent Power %s out of range !!!" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, value),
+                MsgSrcAddr,
+            )
             return
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
         self.log.logging(
             "Cluster",
-            "Log",
+            "Debug",
             "=====> ReadCluster %s - %s/%s Apparent Power %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, value),
             MsgSrcAddr,
         )
