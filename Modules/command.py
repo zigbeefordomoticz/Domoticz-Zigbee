@@ -816,20 +816,21 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
         if DeviceType in ("ThermoMode_3", ):
             self.log.logging(
                 "Command",
-                "Debug",
+                "Log",
                 "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s"
                 % (NWKID, EPout, Unit, DeviceType, Level),
                 NWKID,
             )
             self.log.logging("Command", "Debug", "ThermoMode_3 (Acova) - requested Level: %s" % Level, NWKID)
-            if Level in THERMOSTAT_LEVEL_3_MODE:
+            if Level in THERMOSTAT_LEVEL_2_MODE:
                 self.log.logging(
                     "Command",
-                    "Debug",
-                    " - Set Thermostat Mode to : %s / %s" % (Level, THERMOSTAT_LEVEL_3_MODE[Level]),
+                    "Log",
+                    " - Set Thermostat Mode to : %s / T2:%s " % (Level, THERMOSTAT_LEVEL_2_MODE[Level]),
                     NWKID,
                 )
-                thermostat_Mode(self, NWKID, THERMOSTAT_LEVEL_3_MODE[Level])
+
+                thermostat_Mode(self, NWKID, THERMOSTAT_LEVEL_2_MODE[Level])
                 UpdateDevice_v2(
                     self, Devices, Unit, int(Level) // 10, Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev
                 )
@@ -838,7 +839,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             return
 
 
-        if DeviceType in ("ThermoMode", "ThermoMode_3"):
+        if DeviceType in ("ThermoMode", ):
             self.log.logging(
                 "Command",
                 "Debug",

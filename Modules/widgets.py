@@ -293,6 +293,17 @@ SWITCH_LVL_MATRIX = {
             "fr-FR": {"LevelNames": "Arrêt| Manuel| Programmé| Mode Eco. manuel| Mode Eco. Programmé| Congés| Hors Gel"}
         },
     },
+    "ThermoMode": {
+        "00": (0, "00"),  # Off
+        "01": (1, "10"),  # Auto
+        "03": (2, "20"),  # Cool
+        "04": (3, "30"),  # Heat
+        "08": (4, "40"),  # Dry
+        "07": (5, "50"),  # Fan
+        "ForceUpdate": False,
+        "LevelNames": "Off|Auto|Cool|Heat|Dry|Fan",
+        "Language": {"fr-FR": {"LevelNames": "Arrêt|Auto|Froid|Chaud|Déshumidicateur|Ventilateur"}},
+    },
     "ThermoMode_2": {
         0: (0, "Off"),
         1: (1, "10"),
@@ -302,14 +313,12 @@ SWITCH_LVL_MATRIX = {
         "Language": {"fr-FR": {"LevelNames": "Arrêt|Auto|Manuel"}},
     },
     "ThermoMode_3": {
-        0: (0, "Off"),
-        1: (1, "10"),
-        2: (2, "20"),
-        3: (3, "30"),
-        4: (4, "40"),
+        0: (0, "Off"),  # Off Ok Acova
+        1: (1, "10"),   # Confort Ok Acova
+        2: (2, "20"),   # Eco Ok Acova
         "ForceUpdate": True,
-        "LevelNames": "Off|Confort|Eco|Frost Protection|Auto",
-        "Language": {"fr-FR": {"LevelNames": "Arrêt|Confort|Eco|Hors Gel|Auto"}},
+        "LevelNames": "Off|Confort|No-Freeze",
+        "Language": {"fr-FR": {"LevelNames": "Arrêt|Confort|hors-gel"}},
     },    
     "HeatingStatus": {
         0: (0, "Off"),
@@ -452,17 +461,6 @@ SWITCH_LVL_MATRIX = {
         "ForceUpdate": True,
         "LevelNames": "Off|Cool|Heat|Dry|Fan",
         "Language": {"fr-FR": {"LevelNames": "Arrêt|Froid|Chaud|Déshumidicateur|Ventilateur"}},
-    },
-    "ThermoMode": {
-        "00": (0, "00"),  # Off
-        "01": (1, "10"),  # Auto
-        "03": (2, "20"),  # Cool
-        "04": (3, "30"),  # Heat
-        "08": (4, "40"),  # Dry
-        "07": (5, "50"),  # Fan
-        "ForceUpdate": False,
-        "LevelNames": "Off|Auto|Cool|Heat|Dry|Fan",
-        "Language": {"fr-FR": {"LevelNames": "Arrêt|Auto|Froid|Chaud|Déshumidicateur|Ventilateur"}},
     },
     "ACMode": {
         "00": (0, "00"),  # Off

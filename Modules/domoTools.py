@@ -86,11 +86,23 @@ def RetreiveSignalLvlBattery(self, NwkID):
 
     DomoticzRSSI = 12  # Unknown
 
-    if isinstance(SignalLevel, int):
-        # rssi = round((SignalLevel * 11) / 255)
-        SEUIL1 = 20
+    # La ZiGate+ USB n'a pas d'amplificateur contrairement à la V1. 
+    # Le LQI max de la ZiGate+ (V2) est de 170. Cependant, 
+    # la ZiGate+ est moins sensible aux perturbations.
+    # D'après les tests, la portée entre la v1 et la v2 est sensiblement identique même si le LQI n'est pas gérer de la même manière.
+    # La ZiGate v1 par exemple a des pertes de paquets à partir de 50-60 en LQI alors que sur la v2 elle commence à perdre des paquets à 25 LQI.
+    if self.ZiGateModel and self.ZiGateModel == 2:
+        SEUIL1 = 15
+        SEUIL2 = 35
+        SEUIL3 = 120
+    else:
+        SEUIL1 = 30
         SEUIL2 = 75
         SEUIL3 = 180
+
+    if isinstance(SignalLevel, int):
+        # rssi = round((SignalLevel * 11) / 255)
+
         DomoticzRSSI = 0
         if SignalLevel >= SEUIL3:
             #  SEUIL3 < ZiGate LQI < 255 -> 11
