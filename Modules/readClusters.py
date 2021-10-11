@@ -178,8 +178,6 @@ def ReadCluster(
     Source=None,
 ):
 
-    self.statistics._clusterOK += 1
-
     if MsgSrcAddr not in self.ListOfDevices:
         _context = {
             "MsgClusterId": str(MsgClusterId),

@@ -2858,6 +2858,7 @@ def read_report_attributes(
 
         updSQN(self, MsgSrcAddr, str(MsgSQN))
         lastSeenUpdate(self, Devices, NwkId=MsgSrcAddr)
+        self.statistics._clusterOK += 1
         ReadCluster(
             self,
             Devices,
