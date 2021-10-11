@@ -1087,6 +1087,14 @@ SETTINGS = {
                 "hidden": True,
                 "Advanced": True,
             },
+            "debugDanfoss": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": True,
+            },
         },
     },
     # Others

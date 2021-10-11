@@ -24,6 +24,7 @@ from Modules.zigateConsts import (
     LEGRAND_REMOTES,
     ZONE_TYPE,
 )
+from Modules.danfoss import danfoss_external_sensor
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import timedOutDevice, Update_Battery_Device
 from Modules.tools import (
@@ -2802,6 +2803,19 @@ def Cluster0201(
         MsgSrcAddr,
     )
 
+    eurotronics = danfoss = False
+    if "Manufacturer" in self.ListOfDevices[MsgSrcAddr]:
+        if self.ListOfDevices[MsgSrcAddr]["Manufacturer"] == "1037":
+            eurotronics = True
+        elif self.ListOfDevices[MsgSrcAddr]["Manufacturer"] == "1246":
+            danfoss = True
+
+    if "Manufacturer Name" in self.ListOfDevices[MsgSrcAddr]:
+        if self.ListOfDevices[MsgSrcAddr]["Manufacturer Name"] == "Eurotronic":
+            eurotronics = True
+        elif self.ListOfDevices[MsgSrcAddr]["Manufacturer Name"] == "Danfoss":
+            danfoss = True
+
     value = decodeAttribute(self, MsgAttType, MsgClusterData)
 
     if MsgAttrID == "0000":  # Local Temperature (Zint16)
@@ -3114,103 +3128,89 @@ def Cluster0201(
         self.log.logging("Cluster", "Debug", "ReadCluster - 0201 - Attribute 409: %s" % value, MsgSrcAddr)
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
 
-    elif MsgAttrID in ("4000", "4001", "4002", "4003", "4008"):
+    elif MsgAttrID in ("4000", "4001", "4002", "4003", "4008") and eurotronics:
 
-        eurotronics = False
-        if (
-            "Manufacturer" in self.ListOfDevices[MsgSrcAddr]
-            and self.ListOfDevices[MsgSrcAddr]["Manufacturer"] == "1037"
-        ):
-            eurotronics = True
-        if (
-            "Manufacturer Name" in self.ListOfDevices[MsgSrcAddr]
-            and self.ListOfDevices[MsgSrcAddr]["Manufacturer Name"] == "Eurotronic"
-        ):
-            eurotronics = True
+        # Eurotronic SPZB Specifics
+        if MsgAttrID == "4000":  # TRV Mode for EUROTRONICS
+            self.log.logging(
+                "Cluster",
+                "Debug",
+                "ReadCluster - 0201 - %s/%s TRV Mode: %s" % (MsgSrcAddr, MsgSrcEp, value),
+                MsgSrcAddr,
+            )
+            checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
 
-        if eurotronics:
-            # Eurotronic SPZB Specifics
-            if MsgAttrID == "4000":  # TRV Mode for EUROTRONICS
-                self.log.logging(
-                    "Cluster",
-                    "Debug",
-                    "ReadCluster - 0201 - %s/%s TRV Mode: %s" % (MsgSrcAddr, MsgSrcEp, value),
-                    MsgSrcAddr,
-                )
-                checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
+        elif MsgAttrID == "4001":  # Valve position for EUROTRONICS
+            self.log.logging(
+                "Cluster",
+                "Log",
+                "ReadCluster - 0201 - %s/%s Valve position: %s" % (MsgSrcAddr, MsgSrcEp, value),
+                MsgSrcAddr,
+            )
+            checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0201", int(value, 16), Attribute_="4001")
 
-            elif MsgAttrID == "4001":  # Valve position for EUROTRONICS
-                self.log.logging(
-                    "Cluster",
-                    "Log",
-                    "ReadCluster - 0201 - %s/%s Valve position: %s" % (MsgSrcAddr, MsgSrcEp, value),
-                    MsgSrcAddr,
-                )
-                checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
-                MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0201", int(value, 16), Attribute_="4001")
+        elif MsgAttrID == "4002":  # Erreors for EUROTRONICS
+            self.log.logging(
+                "Cluster",
+                "Debug",
+                "ReadCluster - 0201 - %s/%s Status: %s" % (MsgSrcAddr, MsgSrcEp, value),
+                MsgSrcAddr,
+            )
+            checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
 
-            elif MsgAttrID == "4002":  # Erreors for EUROTRONICS
-                self.log.logging(
-                    "Cluster",
-                    "Debug",
-                    "ReadCluster - 0201 - %s/%s Status: %s" % (MsgSrcAddr, MsgSrcEp, value),
-                    MsgSrcAddr,
-                )
-                checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
+        elif MsgAttrID == "4003":  # Current Temperature Set point for EUROTRONICS
+            setPoint = ValueTemp = round(int(value) / 100, 2)
+            if "0012" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]:
+                setPoint = self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]["0012"]
+            self.log.logging(
+                "Cluster",
+                "Debug",
+                "ReadCluster - 0201 - %s/%s Current Temp Set point: %s versus %s "
+                % (MsgSrcAddr, MsgSrcEp, ValueTemp, setPoint),
+                MsgSrcAddr,
+            )
+            if ValueTemp != float(setPoint):
+                # Seems that there is a local setpoint
+                MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0201", ValueTemp, Attribute_=MsgAttrID)
+                checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, ValueTemp)
+                checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, "0012", ValueTemp)
 
-            elif MsgAttrID == "4003":  # Current Temperature Set point for EUROTRONICS
-                setPoint = ValueTemp = round(int(value) / 100, 2)
-                if "0012" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]:
-                    setPoint = self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]["0012"]
-                self.log.logging(
-                    "Cluster",
-                    "Debug",
-                    "ReadCluster - 0201 - %s/%s Current Temp Set point: %s versus %s "
-                    % (MsgSrcAddr, MsgSrcEp, ValueTemp, setPoint),
-                    MsgSrcAddr,
-                )
-                if ValueTemp != float(setPoint):
-                    # Seems that there is a local setpoint
-                    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0201", ValueTemp, Attribute_=MsgAttrID)
-                    checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, ValueTemp)
-                    checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, "0012", ValueTemp)
+        elif MsgAttrID == "4008":  # Host Flags for EUROTRONICS
 
-            elif MsgAttrID == "4008":  # Host Flags for EUROTRONICS
+            # 0x00000005 ==> Boost
+            # 0x00000001 ==> Normal
+            # 0x00000011 ==> Window Detection
 
-                # 0x00000005 ==> Boost
-                # 0x00000001 ==> Normal
-                # 0x00000011 ==> Window Detection
+            # NOT USED
+            # HOST_FLAGS = {
+            #     0x000001: "???",
+            #     0x000002: "Display Flipped",
+            #     0x000004: "Boost mode",
+            #     0x000010: "disable off mode",
+            #     0x000020: "enable off mode",
+            #     0x000080: "child lock",
+            # }
 
-                # NOT USED
-                # HOST_FLAGS = {
-                #     0x000001: "???",
-                #     0x000002: "Display Flipped",
-                #     0x000004: "Boost mode",
-                #     0x000010: "disable off mode",
-                #     0x000020: "enable off mode",
-                #     0x000080: "child lock",
-                # }
+            self.log.logging(
+                "Cluster",
+                "Debug",
+                "ReadCluster - 0201 - %s/%s Host Flags: %s" % (MsgSrcAddr, MsgSrcEp, value),
+                MsgSrcAddr,
+            )
+            checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
 
-                self.log.logging(
-                    "Cluster",
-                    "Debug",
-                    "ReadCluster - 0201 - %s/%s Host Flags: %s" % (MsgSrcAddr, MsgSrcEp, value),
-                    MsgSrcAddr,
-                )
-                checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
+            if (int(value, 16) & 0x000010) == 0x00000010:
+                # Window Detection
+                MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0500", "01")
+            if (int(value, 16) & 0x000010) == 0x0:
+                # Window Detection
+                MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0500", "00")
 
-                if (int(value, 16) & 0x000010) == 0x00000010:
-                    # Window Detection
-                    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0500", "01")
-                if (int(value, 16) & 0x000010) == 0x0:
-                    # Window Detection
-                    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0500", "00")
+    elif MsgAttrID in ( "4000", "4003", "4010", "4011", "4012", "4013", "4014", "4015", "4020", "4030", "4031") and danfoss:
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
 
-        elif (
-            MsgAttrID == "4003"
-            and "Model" in self.ListOfDevices[MsgSrcAddr]
-            and self.ListOfDevices[MsgSrcAddr]["Model"] in ("eTRV0100", "eT093WRO")
-        ):
+        if MsgAttrID == "4003" and self.ListOfDevices[MsgSrcAddr]["Model"] in ("eTRV0100", "eT093WRO"):
             # Open Window Detection for Danfoss eTRV
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0500", value)
 
@@ -3724,6 +3724,9 @@ def Cluster0402(
             MsgSrcAddr,
         )
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value)
+
+        if "Param" in self.ListOfDevices[ MsgSrcAddr] and "DanfossRoom" in self.ListOfDevices[ MsgSrcAddr]["Param"]:
+            danfoss_external_sensor( self, MsgSrcAddr, self.ListOfDevices[ MsgSrcAddr]["Param"]["DanfossRoom"], value * 100)
 
     elif MsgAttrID == "0001":
         value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
@@ -4850,7 +4853,7 @@ def Cluster0b04(
                 return
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
 
-    elif MsgAttrID == "050f":
+    elif MsgAttrID == "050f": # Apparent Power
         value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
         # from random import randrange
         # value = randrange( 0x0, 7500)
@@ -4899,8 +4902,7 @@ def Cluster0b04(
             MsgSrcAddr,
         )
 
-    elif MsgAttrID in ("0908", "0a08"):
-        #  Current Phase 2 and Current Phase 3
+    elif MsgAttrID in ("0908", "0a08"):  #  Current Phase 2 and Current Phase 3
         value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
 
         if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == "ZLinky_TIC":
@@ -4913,7 +4915,6 @@ def Cluster0b04(
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value), Attribute_=MsgAttrID)
             # Check if Intensity is below subscription level
             if MsgAttrID == "0908":
-
                 zlinky_check_alarm(self, Devices, MsgSrcAddr, "f2", value)
             elif MsgAttrID == "0a08":
                 zlinky_check_alarm(self, Devices, MsgSrcAddr, "f3", value)
@@ -4921,14 +4922,10 @@ def Cluster0b04(
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
 
         self.log.logging(
-            "Cluster", "Log", "ReadCluster %s - %s/%s Apparent Power %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, value)
+            "Cluster", "Log", "ReadCluster %s - %s/%s Current %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, value)
         )
-        # ApparentPower (Represents  the  single  phase  or  Phase  A,  current  demand  of  apparent  (Square  root  of  active  and  reactive power) power, in VA.)
         if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == "ZLinky_TIC":
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value))
-        self.log.logging(
-            "Cluster", "Log", "ReadCluster %s - %s/%s Apparent Power %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, value)
-        )
 
 
     else:

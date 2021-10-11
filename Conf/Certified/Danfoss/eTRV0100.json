@@ -99,7 +99,11 @@
 			"0016",
 			"001b",
 			"001c",
-			"4000"
+			"4000",
+			"4010",
+			"4011",
+			"4015",
+			"4020"
 		],
 		"0204": [
 			"0000",
@@ -114,6 +118,9 @@
 	},
 	"PollingEnabled": 1,
 	"Param": {
-		"Calibration": 0
+		"Calibration": 0,
+		"eTRVExerciseDay": 0,
+		"eTRVExerciseTime": 0,
+		"DanfossRoom": 0
 	}
 }

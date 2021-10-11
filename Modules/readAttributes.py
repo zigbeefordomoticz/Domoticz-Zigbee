@@ -917,7 +917,7 @@ def ReadAttributeRequest_0201(self, key):
         listAttrSpecific = []
         listAttrGeneric = []
         manufacturer_code = "0000"
-
+            
         if ("Manufacturer" in self.ListOfDevices[key] and self.ListOfDevices[key]["Manufacturer"] == "105e") or (
             "Manufacturer Name" in self.ListOfDevices[key]
             and self.ListOfDevices[key]["Manufacturer Name"] == "Schneider Electric"
@@ -930,6 +930,20 @@ def ReadAttributeRequest_0201(self, key):
 
             for _attr in list(listAttributes):
                 if _attr in (0xE011, 0x0E20, 0xFD00):
+                    listAttrSpecific.append(_attr)
+                else:
+                    listAttrGeneric.append(_attr)
+            del listAttributes
+            listAttributes = listAttrGeneric
+
+
+        if ("Manufacturer" in self.ListOfDevices[key] and self.ListOfDevices[key]["Manufacturer"] == "1246") or (
+            "Manufacturer Name" in self.ListOfDevices[key]
+            and self.ListOfDevices[key]["Manufacturer Name"] == "Danfoss"
+        ):
+            manufacturer_code = "1246"
+            for _attr in list(listAttributes):
+                if _attr in (0x4000, 0x4010, 0x4011, 0x4015, 0x4020):
                     listAttrSpecific.append(_attr)
                 else:
                     listAttrGeneric.append(_attr)
