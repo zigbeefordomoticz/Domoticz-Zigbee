@@ -61,9 +61,8 @@ def checkPluginVersion(branch, zigate_model):
 
     if branch in pluginVersion and "firmMajor" in firmwareVersion and "firmMinor" in firmwareVersion:
         return (pluginVersion[branch], firmwareVersion["firmMajor"], firmwareVersion["firmMinor"])
-    else:
-        Domoticz.Error("checkPluginVersion - Unknown branch: %s" % branch)
-        return (0, 0, 0)
+    Domoticz.Error("checkPluginVersion - Unknown branch: %s" % branch)
+    return (0, 0, 0)
 
 
 def checkPluginUpdate(currentVersion, availVersion):
@@ -77,7 +76,7 @@ def checkPluginUpdate(currentVersion, availVersion):
     if availMaj > currentMaj:
         # Domoticz.Debug("checkPluginVersion - Upgrade available: %s" %availVersion)
         return True
-    elif availMaj == currentMaj:
+    if availMaj == currentMaj:
         if availMin == currentMin and availUpd > currentUpd or availMin > currentMin:
             # Domoticz.Debug("checkPluginVersion - Upgrade available: %s" %availVersion)
             return True

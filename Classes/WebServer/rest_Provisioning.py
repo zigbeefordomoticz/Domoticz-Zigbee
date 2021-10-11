@@ -222,3 +222,40 @@ def rest_rcv_nw_hrdwr(self, verb, data, parameters):
 
     _response["Data"] = json.dumps(data)
     return _response
+
+
+def rest_full_reprovisionning(self, verb, data, parameters):
+
+    _response = prepResponseMessage(self, setupHeadersResponse())
+
+    Domoticz.Log("rest_full_reprovisionning -->Verb: %s Data: %s Parameters: %s" % (verb, data, parameters))
+
+    if verb != "PUT":
+        return _response
+
+    data = data.decode("utf8")
+    data = eval(data)
+    self.logging("Log", "Data: %s" % data)
+
+    if "IEEE" not in data and "NWKID" not in data:
+        Domoticz.Error("rest_full_reprovisionning - unexpected parameter %s " % parameters)
+        _response["Data"] = {"unexpected parameter %s " % parameters}
+        return _response
+
+    if "IEEE" in data:
+        key = data["IEEE"]
+        if key not in self.IEEE2NWK:
+            Domoticz.Error("rest_full_reprovisionning - Unknown device %s " % key)
+            return _response
+        nwkid = self.IEEE2NWK[key]
+        _response["Data"] = {"IEEE %s set to Provisioning Requested at %s" % (key, int(time()))}
+    else:
+        nwkid = data["NWKID"]
+        if nwkid not in self.ListOfDevices:
+            Domoticz.Error("rest_full_reprovisionning - Unknown device %s " % nwkid)
+            return _response
+        _response["Data"] = {"NwkId %s set to Provisioning Requested at %s" % (nwkid, int(time()))}
+
+    self.ListOfDevices[nwkid]["Status"] = "provREQ"
+
+    return _response

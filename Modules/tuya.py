@@ -914,7 +914,8 @@ def tuya_smartair_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, d
 
     # The device is flooding data every seconds. This could have the impact to flow the Domoticz database/
     if (
-        "AcquisitionFrequency" in self.ListOfDevices[NwkId]["Param"]
+        "Param" in self.ListOfDevices[NwkId]
+        and "AcquisitionFrequency" in self.ListOfDevices[NwkId]["Param"]
         and self.ListOfDevices[NwkId]["Param"]["AcquisitionFrequency"] > 0
     ):
         previous_ts = get_tuya_attribute(self, NwkId, "TimeStamp_%s" % dp)

@@ -3,25 +3,25 @@
 #
 # Author: zaraki673 & pipiche38
 #
-"""
-    Module: NetworkMap.py
-
-    Description: Network Mapping based on LQI
-
-"""
-"""
-    Table Neighbours
-        self.Neighbours[ nwkdi ]
-                                ['Status'] ( 'Completed' /* table is completd (all entries collected */
-                                             'WaitResponse' /* Waiting for response */
-                                             'WaitResponse2' /* Waiting for response */
-                                             'ScanRequired' /* A scan is required to get more entries */
-                                             'ScanRequired2' /* A scan is required to get more entries */
-                                ['TableMaxSize'] Number of Expected entries
-                                ['TableCurSize'] Number of actual entries
-                                ['Neighbours'][ nwkid ]
-                                                       [attributes]
-"""
+#
+#    Module: NetworkMap.py
+#
+#    Description: Network Mapping based on LQI
+#
+#
+#
+#    Table Neighbours
+#        self.Neighbours[ nwkdi ]
+#                                ['Status'] ( 'Completed' /* table is completd (all entries collected */
+#                                             'WaitResponse' /* Waiting for response */
+#                                             'WaitResponse2' /* Waiting for response */
+#                                             'ScanRequired' /* A scan is required to get more entries */
+#                                             'ScanRequired2' /* A scan is required to get more entries */
+#                                ['TableMaxSize'] Number of Expected entries
+#                                ['TableCurSize'] Number of actual entries
+#                                ['Neighbours'][ nwkid ]
+#                                                       [attributes]
+#
 
 
 from datetime import datetime
@@ -202,6 +202,7 @@ def is_a_router(self, nwkid):
         "TS0013",
         "TS0601-switch",
         "TS0601-2Gangs-switch",
+        "ZLinky_TIC",
     ):
         return False
 

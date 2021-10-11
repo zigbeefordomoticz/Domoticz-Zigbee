@@ -73,7 +73,7 @@ class WebServer(object):
         rest_rescan_group,
         rest_scan_devices_for_group,
     )
-    from Classes.WebServer.rest_Provisioning import rest_new_hrdwr, rest_rcv_nw_hrdwr
+    from Classes.WebServer.rest_Provisioning import rest_new_hrdwr, rest_rcv_nw_hrdwr, rest_full_reprovisionning
     from Classes.WebServer.rest_Topology import rest_netTopologie, rest_req_topologie
     from Classes.WebServer.sendresponse import sendResponse
     from Classes.WebServer.tools import keepConnectionAlive, DumpHTTPResponseToLog
@@ -199,9 +199,7 @@ class WebServer(object):
                 self.pluginconf.pluginConf["eraseZigatePDM"] = 0
 
             if self.pluginconf.pluginConf["extendedPANID"] is not None:
-                self.logging(
-                    "Status", "ZigateConf - Setting extPANID : 0x%016x" % (self.pluginconf.pluginConf["extendedPANID"])
-                )
+                self.logging("Status", "ZigateConf - Setting extPANID : 0x%016x" % (self.pluginconf.pluginConf["extendedPANID"]))
                 if self.pluginParameters["Mode2"] != "None":
                     setExtendedPANID(self, self.pluginconf.pluginConf["extendedPANID"])
             action = {"Description": "Erase ZiGate PDM - Non Implemente"}
@@ -272,9 +270,7 @@ class WebServer(object):
 
         _response = prepResponseMessage(self, setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
-        _filename = (
-            self.pluginconf.pluginConf["pluginReports"] + "NetworkEnergy-v3-" + "%02d" % self.hardwareID + ".json"
-        )
+        _filename = self.pluginconf.pluginConf["pluginReports"] + "NetworkEnergy-v3-" + "%02d" % self.hardwareID + ".json"
 
         _timestamps_lst = []  # Just the list of Timestamps
         _scan = {}
@@ -432,9 +428,7 @@ class WebServer(object):
                     # Rolling window in progress
                     _TS -= minTS
 
-                Statistics["Trend"].append(
-                    {"_TS": _TS, "Rxps": item["Rxps"], "Txps": item["Txps"], "Load": item["Load"]}
-                )
+                Statistics["Trend"].append({"_TS": _TS, "Rxps": item["Rxps"], "Txps": item["Txps"], "Load": item["Load"]})
 
         Statistics["Uptime"] = int(time() - Statistics["StartTime"])
         if Statistics["Uptime"] > 0:
@@ -497,10 +491,7 @@ class WebServer(object):
                     }
 
                     if SETTINGS[_theme]["param"][param]["type"] == "hex":
-                        Domoticz.Debug(
-                            "--> %s: %s - %s"
-                            % (param, self.pluginconf.pluginConf[param], type(self.pluginconf.pluginConf[param]))
-                        )
+                        Domoticz.Debug("--> %s: %s - %s" % (param, self.pluginconf.pluginConf[param], type(self.pluginconf.pluginConf[param])))
                         if isinstance(self.pluginconf.pluginConf[param], int):
                             setting["current_value"] = "%x" % self.pluginconf.pluginConf[param]
                         else:
@@ -542,33 +533,22 @@ class WebServer(object):
                         if str(setting_lst[setting]["current"]) == str(self.pluginconf.pluginConf[param]):
                             # Nothing to do
                             continue
-                        if (
-                            SETTINGS[_theme]["param"][param]["type"] == "hex"
-                            and int(str(setting_lst[setting]["current"]), 16) == self.pluginconf.pluginConf[param]
-                        ):
+                        if SETTINGS[_theme]["param"][param]["type"] == "hex" and int(str(setting_lst[setting]["current"]), 16) == self.pluginconf.pluginConf[param]:
                             continue
 
                         self.logging(
                             "Debug",
-                            "Updating %s from %s to %s on theme: %s"
-                            % (param, self.pluginconf.pluginConf[param], setting_lst[setting]["current"], _theme),
+                            "Updating %s from %s to %s on theme: %s" % (param, self.pluginconf.pluginConf[param], setting_lst[setting]["current"], _theme),
                         )
 
-                        self.restart_needed["RestartNeeded"] = max(
-                            SETTINGS[_theme]["param"][param]["restart"], self.restart_needed["RestartNeeded"]
-                        )
+                        self.restart_needed["RestartNeeded"] = max(SETTINGS[_theme]["param"][param]["restart"], self.restart_needed["RestartNeeded"])
 
                         if param == "Certification":
                             if setting_lst[setting]["current"] in CERTIFICATION_CODE:
                                 self.pluginconf.pluginConf["Certification"] = setting_lst[setting]["current"]
-                                self.pluginconf.pluginConf["CertificationCode"] = CERTIFICATION_CODE[
-                                    setting_lst[setting]["current"]
-                                ]
+                                self.pluginconf.pluginConf["CertificationCode"] = CERTIFICATION_CODE[setting_lst[setting]["current"]]
                             else:
-                                Domoticz.Error(
-                                    "Unknown Certification code %s (allow are CE and FCC)"
-                                    % (setting_lst[setting]["current"])
-                                )
+                                Domoticz.Error("Unknown Certification code %s (allow are CE and FCC)" % (setting_lst[setting]["current"]))
                                 continue
 
                         elif param == "blueLedOnOff":
@@ -597,9 +577,7 @@ class WebServer(object):
                                             continue
 
                                         self.pluginconf.pluginConf["debugMatchId"] += self.IEEE2NWK[key] + ","
-                                self.pluginconf.pluginConf["debugMatchId"] = self.pluginconf.pluginConf["debugMatchId"][
-                                    :-1
-                                ]  # Remove the last ,
+                                self.pluginconf.pluginConf["debugMatchId"] = self.pluginconf.pluginConf["debugMatchId"][:-1]  # Remove the last ,
                         else:
                             if SETTINGS[_theme]["param"][param]["type"] == "hex":
                                 # Domoticz.Log("--> %s: %s - %s" %(param, self.pluginconf.pluginConf[param], type(self.pluginconf.pluginConf[param])))
@@ -801,8 +779,7 @@ class WebServer(object):
                                 device["MacCapa"].append("Battery")
                             self.logging(
                                 "Debug",
-                                "decoded MacCapa from: %s to %s"
-                                % (self.ListOfDevices[x][item], str(device["MacCapa"])),
+                                "decoded MacCapa from: %s to %s" % (self.ListOfDevices[x][item], str(device["MacCapa"])),
                             )
                         elif item == "Param":
                             device[item] = str(self.ListOfDevices[x][item])
@@ -856,15 +833,13 @@ class WebServer(object):
                                 self.ListOfDevices[dev]["ZDeviceName"] = x["ZDeviceName"]
                                 self.logging(
                                     "Debug",
-                                    "Updating ZDeviceName to %s for IEEE: %s NWKID: %s"
-                                    % (self.ListOfDevices[dev]["ZDeviceName"], self.ListOfDevices[dev]["IEEE"], dev),
+                                    "Updating ZDeviceName to %s for IEEE: %s NWKID: %s" % (self.ListOfDevices[dev]["ZDeviceName"], self.ListOfDevices[dev]["IEEE"], dev),
                                 )
                             if "Param" not in self.ListOfDevices[dev] or self.ListOfDevices[dev]["Param"] != x["Param"]:
                                 self.ListOfDevices[dev]["Param"] = check_device_param(self, dev, x["Param"])
                                 self.logging(
                                     "Debug",
-                                    "Updating Param to %s for IEEE: %s NWKID: %s"
-                                    % (self.ListOfDevices[dev]["Param"], self.ListOfDevices[dev]["IEEE"], dev),
+                                    "Updating Param to %s for IEEE: %s NWKID: %s" % (self.ListOfDevices[dev]["Param"], self.ListOfDevices[dev]["IEEE"], dev),
                                 )
                                 self.ListOfDevices[dev]["CheckParam"] = True
                 else:
@@ -944,9 +919,7 @@ class WebServer(object):
                             elif attribut == "ConsistencyCheck" and self.ListOfDevices[item]["Status"] == "notDB":
                                 self.ListOfDevices[item][attribut] = "not in DZ"
 
-                            elif (
-                                self.ListOfDevices[item][attribut] == "" and self.ListOfDevices[item]["MacCapa"] == "8e"
-                            ):
+                            elif self.ListOfDevices[item][attribut] == "" and self.ListOfDevices[item]["MacCapa"] == "8e":
                                 if attribut == "DeviceType":
                                     device[attribut] = "FFD"
                                 elif attribut == "LogicalType":
@@ -1004,9 +977,7 @@ class WebServer(object):
                                                 widget["WidgetName"] = self.Devices[x].Name
                                                 break
 
-                                        widget["WidgetType"] = self.ListOfDevices[item]["Ep"][epId]["ClusterType"][
-                                            widgetId
-                                        ]
+                                        widget["WidgetType"] = self.ListOfDevices[item]["Ep"][epId]["ClusterType"][widgetId]
                                         _widget_lst.append(widget)
                                     continue
 
@@ -1110,9 +1081,7 @@ class WebServer(object):
                     _response["Data"] = json.dumps("Executing %s on %s" % (data["Command"], data["payload"]))
                     return _response
 
-                if not is_hex(data["Command"]) or (
-                    is_hex(data["Command"]) and int(data["Command"], 16) not in ZIGATE_COMMANDS
-                ):
+                if not is_hex(data["Command"]) or (is_hex(data["Command"]) and int(data["Command"], 16) not in ZIGATE_COMMANDS):
                     Domoticz.Error("raw_command - Unknown MessageType received %s" % data["Command"])
                     _response["Data"] = json.dumps("Unknown MessageType received %s" % data["Command"])
                     return _response
@@ -1138,8 +1107,7 @@ class WebServer(object):
                 Domoticz.Log("---> Data: %s" % str(data))
                 self.logging(
                     "Log",
-                    "rest_dev_command - Command: %s on object: %s with extra %s %s"
-                    % (data["Command"], data["NwkId"], data["Value"], data["Color"]),
+                    "rest_dev_command - Command: %s on object: %s with extra %s %s" % (data["Command"], data["NwkId"], data["Value"], data["Color"]),
                 )
                 _response["Data"] = json.dumps("Executing %s on %s" % (data["Command"], data["NwkId"]))
                 if "Command" not in data:
@@ -1167,8 +1135,7 @@ class WebServer(object):
                         Hue_List["r"], Hue_List["g"], Hue_List["b"] = ColorValue.split(",")
                     self.logging(
                         "Log",
-                        "rest_dev_command -        Color decoding m: %s r:%s g: %s b: %s"
-                        % (Hue_List["m"], Hue_List["r"], Hue_List["g"], Hue_List["b"]),
+                        "rest_dev_command -        Color decoding m: %s r:%s g: %s b: %s" % (Hue_List["m"], Hue_List["r"], Hue_List["g"], Hue_List["b"]),
                     )
                 Color = json.dumps(Hue_List)
                 epout = "01"
@@ -1280,11 +1247,7 @@ class WebServer(object):
                             dev_capabilities["Types"].append(cap)
 
                     # Adding non generic Capabilities
-                    if (
-                        "Model" in self.ListOfDevices[_nwkid]
-                        and self.ListOfDevices[_nwkid]["Model"] != {}
-                        and self.ListOfDevices[_nwkid]["Model"] == "TI0001"
-                    ):
+                    if "Model" in self.ListOfDevices[_nwkid] and self.ListOfDevices[_nwkid]["Model"] != {} and self.ListOfDevices[_nwkid]["Model"] == "TI0001":
                         if "LivoloSWL" not in dev_capabilities["Types"]:
                             dev_capabilities["Types"].append("LivoloSWL")
                         if "LivoloSWR" not in dev_capabilities["Types"]:
@@ -1322,9 +1285,7 @@ class WebServer(object):
                     _response["Data"] = json.dumps(self.log.LogErrorHistory, sort_keys=False)
                     self.log.reset_new_error()
                 except Exception as e:
-                    Domoticz.Error(
-                        "rest_logErrorHistory - Exception %s while saving: %s" % (e, str(self.log.LogErrorHistory))
-                    )
+                    Domoticz.Error("rest_logErrorHistory - Exception %s while saving: %s" % (e, str(self.log.LogErrorHistory)))
         return _response
 
     def rest_logErrorHistoryClear(self, verb, data, parameters):
@@ -1349,13 +1310,11 @@ def check_device_param(self, nwkid, param):
         if "ZDeviceName" in self.ListOfDevices[nwkid]:
             self.logging(
                 "Error",
-                "When updating Device Management, Device: %s/%s got a wrong Parameter syntax for '%s' - %s.\n Make sure to use JSON syntax"
-                % (self.ListOfDevices[nwkid]["ZDeviceName"], nwkid, param, e),
+                "When updating Device Management, Device: %s/%s got a wrong Parameter syntax for '%s' - %s.\n Make sure to use JSON syntax" % (self.ListOfDevices[nwkid]["ZDeviceName"], nwkid, param, e),
             )
         else:
             self.logging(
                 "Error",
-                "When updating Device Management, Device: %s got a wrong Parameter syntax for '%s' - %s.\n Make sure to use JSON syntax"
-                % (nwkid, param, e),
+                "When updating Device Management, Device: %s got a wrong Parameter syntax for '%s' - %s.\n Make sure to use JSON syntax" % (nwkid, param, e),
             )
     return {}

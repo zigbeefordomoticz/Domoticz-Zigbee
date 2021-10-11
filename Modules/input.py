@@ -36,7 +36,9 @@ from Modules.tools import (
     set_request_phase_datastruct,
     checkAndStoreAttributeValue,
     retreive_cmd_payload_from_8002,
+    is_fake_ep
 )
+from Modules.pairingProcess import interview_state_8045
 from Modules.deviceAnnoucement import (
     device_annoucementv1,
     device_annoucementv2,
@@ -2119,20 +2121,7 @@ def Decode8045(self, Devices, MsgData, MsgLQI):  # Reception Active endpoint res
             )
     self.ListOfDevices[MsgDataShAddr]["NbEp"] = str(int(MsgDataEpCount, 16))  # Store the number of EPs
 
-    if "Model" not in self.ListOfDevices[MsgDataShAddr] or self.ListOfDevices[MsgDataShAddr]["Model"] in ("", {}):
-        self.log.logging("Input", "Log", "[%s] NEW OBJECT: %s Request Model Name" % ("-", MsgDataShAddr))
-        ReadAttributeRequest_0000(self, MsgDataShAddr, fullScope=False)  # In order to request Model Name
-
-    for iterEp in self.ListOfDevices[MsgDataShAddr]["Ep"]:
-        self.log.logging(
-            "Input",
-            "Status",
-            "[%s] NEW OBJECT: %s Request Simple Descriptor for Ep: %s" % ("-", MsgDataShAddr, iterEp),
-        )
-        sendZigateCmd(self, "0043", str(MsgDataShAddr) + str(iterEp))
-
-    self.ListOfDevices[MsgDataShAddr]["Heartbeat"] = "0"
-    self.ListOfDevices[MsgDataShAddr]["Status"] = "0043"
+    interview_state_8045(self, MsgDataShAddr, RIA=None, status=None)
 
     self.log.logging(
         "Pairing",
@@ -2593,17 +2582,6 @@ def Decode8100(
             ),
             MsgSrcAddr,
         )
-        # NewMsgData = (
-        #     MsgSQN
-        #     + MsgSrcAddr
-        #     + MsgSrcEp
-        #     + MsgClusterId
-        #     + MsgAttrID
-        #     + MsgAttStatus
-        #     + MsgAttType
-        #     + MsgAttSize
-        #     + MsgClusterData
-        # )
         read_report_attributes(
             self,
             Devices,
@@ -2729,20 +2707,65 @@ def Decode8102(self, Devices, MsgData, MsgLQI):  # Attribute Reports
     timeStamped(self, MsgSrcAddr, 0x8102)
     loggingMessages(self, "8102", MsgSrcAddr, None, MsgLQI, MsgSQN)
     updLQI(self, MsgSrcAddr, MsgLQI)
-    read_report_attributes(
-        self,
-        Devices,
-        "8102",
-        MsgSQN,
-        MsgSrcAddr,
-        MsgSrcEp,
-        MsgClusterId,
-        MsgAttrID,
-        MsgAttStatus,
-        MsgAttType,
-        MsgAttSize,
-        MsgClusterData,
-    )
+    i_sqn = sqn_get_internal_sqn_from_app_sqn(self.ZigateComm, MsgSQN, TYPE_APP_ZCL)
+
+    idx = 12
+    while idx < len(MsgData):
+        MsgAttrID = MsgAttStatus = MsgAttType = MsgAttSize = MsgClusterData = ""
+        MsgAttrID = MsgData[idx: idx + 4]
+        idx += 4
+        MsgAttStatus = MsgData[idx: idx + 2]
+        idx += 2
+        if MsgAttStatus == "00":
+            MsgAttType = MsgData[idx: idx + 2]
+            idx += 2
+            MsgAttSize = MsgData[idx: idx + 4]
+            idx += 4
+            size = int(MsgAttSize, 16) * 2
+            MsgClusterData = MsgData[idx: idx + size]
+            idx += size
+        else:
+            self.log.logging(
+                "Input",
+                "Debug",
+                "Decode8102 - idx: %s Attribute Reports: [%s:%s] status: %s -> %s"
+                % (idx, MsgSrcAddr, MsgSrcEp, MsgAttStatus, MsgData[idx:]),
+            )
+
+            # If the frame is coming from firmware we get only one attribute at a time, with some dumy datas
+            if len(MsgData[idx:]) == 6:
+                # crap, lets finish it
+                # Domoticz.Log("Crap Data: %s len: %s" %(MsgData[idx:], len(MsgData[idx:])))
+                idx += 6
+
+        self.log.logging( "Input", "Debug", "Decode8102 - idx: %s Read Attribute Response: [%s:%s] ClusterID: %s MsgSQN: %s, i_sqn: %s, AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<" % (
+                idx,
+                MsgSrcAddr,
+                MsgSrcEp,
+                MsgClusterId,
+                MsgSQN,
+                i_sqn,
+                MsgAttrID,
+                MsgAttStatus,
+                MsgAttType,
+                MsgAttSize,
+                MsgClusterData, ), MsgSrcAddr, )
+
+        read_report_attributes(
+            self,
+            Devices,
+            "8102",
+            MsgSQN,
+            MsgSrcAddr,
+            MsgSrcEp,
+            MsgClusterId,
+            MsgAttrID,
+            MsgAttStatus,
+            MsgAttType,
+            MsgAttSize,
+            MsgClusterData,
+            )
+
     callbackDeviceAwake(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId)
 
 
@@ -2835,6 +2858,7 @@ def read_report_attributes(
 
         updSQN(self, MsgSrcAddr, str(MsgSQN))
         lastSeenUpdate(self, Devices, NwkId=MsgSrcAddr)
+        self.statistics._clusterOK += 1
         ReadCluster(
             self,
             Devices,

@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkzigate_plugin=self.webpackChunkzigate_plugin||[]).push([[592],{2554:(c,s,a)=>{a.d(s,{ZA:()=>l,zL:()=>u});class l{}class u{}}}]);

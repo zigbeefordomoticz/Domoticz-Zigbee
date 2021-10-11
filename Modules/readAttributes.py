@@ -117,6 +117,7 @@ ATTRIBUTES = {
     "0502": [0x0000],
     "0702": [0x0000, 0x0017, 0x0200, 0x0301, 0x0302, 0x0303, 0x0306, 0x0400],
     "000f": [0x0000, 0x0051, 0x0055, 0x006F, 0xFFFD],
+    "0b01": [0x000D],
     "0b04": [
         0x050B,
         0x0505,
@@ -126,6 +127,7 @@ ATTRIBUTES = {
     "fc01": [0x0000, 0x0001, 0x0002],  # Legrand Cluster
     "fc21": [0x0001],
     "fc40": [0x0000],  # Legrand
+    "ff66": [0x0000, 0x0002, 0x0003 ],  # Zlinky
 }
 
 
@@ -1377,12 +1379,58 @@ def ReadAttributeRequest_0702_0000(self, key):
             self, key, ZIGATE_EP, EPout, "0702", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key)
         )
 
+
 def ReadAttributeRequest_0702_ZLinky_TIC(self, key):
     # The list of Attributes could be based on the Contract
-    EPout = '01'
-    listAttributes = [0x0000, 0x0100, 0x0102, 0x0104, 0x0106, 0x0108, 0x10A]
-    self.log.logging( "ReadAttributes", "Debug", "Request ZLinky infos on 0x0702 cluster: " + key + " EPout = " + EPout, nwkid=key )
-    ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0702", listAttributes, ackIsDisabled=False)
+    EPout = "01"
+
+    tarif = None
+    listAttributes = [0x0020, 0x0100, 0x0102, 0x0104, 0x0106, 0x0108, 0x10A]
+    if (
+        "ff66" in self.ListOfDevices[key]["Ep"]['01']
+        and "0000" in self.ListOfDevices[key]["Ep"]['01']["ff66"]
+    ):
+        if self.ListOfDevices[key]["Ep"]['01']["ff66"]["0000"] not in ("", {}):
+            tarif = self.ListOfDevices[key]["Ep"]['01']["ff66"]["0000"]
+
+        if 'BASE' in tarif:
+            listAttributes = [0x0020, 0x0100]
+        elif 'HC' in tarif:
+            listAttributes = [0x0020, 0x0100, 0x0102]
+        elif 'EJP' in tarif:
+            listAttributes = [0x0020, 0x0100, 0x0102]
+        else:
+            listAttributes = [0x0020, 0x0100, 0x0102, 0x0104, 0x0106, 0x0108, 0x10A]
+
+    self.log.logging(
+        "ReadAttributes", "Debug", "Request ZLinky infos on 0x0702 cluster: " + key + " EPout = " + EPout, nwkid=key
+    )
+    ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0702", listAttributes, ackIsDisabled=False)
+
+
+def ReadAttributeRequest_0b01(self, key):
+    # Cluster 0x0b04 Metering
+
+    self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_0b04 - Key: %s " % key, nwkid=key)
+    _manuf = "Manufacturer" in self.ListOfDevices[key]
+    ListOfEp = getListOfEpForCluster(self, key, "0b01")
+    for EPout in ListOfEp:
+        listAttributes = []
+        for iterAttr in retreive_ListOfAttributesByCluster(self, key, EPout, "0b01"):
+            if iterAttr not in listAttributes:
+                listAttributes.append(iterAttr)
+
+        if listAttributes:
+            self.log.logging(
+                "ReadAttributes",
+                "Debug",
+                "Request Metering info via Read Attribute request: " + key + " EPout = " + EPout,
+                nwkid=key,
+            )
+            ReadAttributeReq(
+                self, key, ZIGATE_EP, EPout, "0b01", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key)
+            )
+
 
 def ReadAttributeRequest_0b04(self, key):
     # Cluster 0x0b04 Metering
@@ -1584,30 +1632,18 @@ def ReadAttributeRequest_fc40(self, key):
             self, key, ZIGATE_EP, EPout, "fc40", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key)
         )
 
+
 def ReadAttributeRequest_ff66(self, key):
-    # Cluster 0x0b04 Metering
+    # Cluster ZLinky
 
     self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_ff66 - Key: %s " % key, nwkid=key)
-    _manuf = "Manufacturer" in self.ListOfDevices[key]
-    ListOfEp = getListOfEpForCluster(self, key, "ff66")
-    for EPout in ListOfEp:
-        listAttributes = []
-        for iterAttr in retreive_ListOfAttributesByCluster(self, key, EPout, "ff66"):
-            if iterAttr not in listAttributes:
-                listAttributes.append(iterAttr)
+    EPout = "01"
+    listAttributes = [ 0x0000, 0x0002, 0x0003 ]
+    ReadAttributeReq(
+        self, key, ZIGATE_EP, EPout, "ff66", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key)
+    )
 
-        if listAttributes:
-            self.log.logging(
-                "ReadAttributes",
-                "Log",
-                "Request ZLinky info via Read Attribute request: " + key + " EPout = " + EPout,
-                nwkid=key,
-            )
-            ReadAttributeReq(
-                self, key, ZIGATE_EP, EPout, "ff66", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key)
-            )
 
-            
 READ_ATTRIBUTES_REQUEST = {
     # Cluster : ( ReadAttribute function, Frequency )
     "0000": (ReadAttributeRequest_0000, "polling0000"),
@@ -1615,8 +1651,9 @@ READ_ATTRIBUTES_REQUEST = {
     "0008": (ReadAttributeRequest_0008, "pollingLvlControl"),
     "0006": (ReadAttributeRequest_0006, "pollingONOFF"),
     "000C": (ReadAttributeRequest_000C, "polling000C"),
+    #'000f' : ( ReadAttributeRequest_000f, 'polling000f' ),
     "0019": (ReadAttributeRequest_0019, "polling0019"),
-    "0020": (ReadAttributeRequest_000C, "polling0020"),
+    "0020": (ReadAttributeRequest_0020, "polling0020"),
     "0100": (ReadAttributeRequest_0100, "polling0100"),
     "0101": (ReadAttributeRequest_0101, "polling0101"),
     "0102": (ReadAttributeRequest_0102, "polling0102"),
@@ -1632,11 +1669,11 @@ READ_ATTRIBUTES_REQUEST = {
     "0500": (ReadAttributeRequest_0500, "polling0500"),
     "0502": (ReadAttributeRequest_0502, "polling0502"),
     "0702": (ReadAttributeRequest_0702, "polling0702"),
-    "0b05": (ReadAttributeRequest_0702, "polling0b05"),
+    "0b01": (ReadAttributeRequest_0b01, "polling0b04"),
     "0b04": (ReadAttributeRequest_0b04, "polling0b04"),
-    #'000f' : ( ReadAttributeRequest_000f, 'polling000f' ),
+    "0b05": (ReadAttributeRequest_0b05, "polling0b05"),
     "fc01": (ReadAttributeRequest_fc01, "pollingfc01"),
-    "fc21": (ReadAttributeRequest_000f, "pollingfc21"),
+    "fc21": (ReadAttributeRequest_fc21, "pollingfc21"),
     "fc40": (ReadAttributeRequest_fc40, "pollingfc40"),
     "ff66": (ReadAttributeRequest_ff66, "polling0b04"),
 }
