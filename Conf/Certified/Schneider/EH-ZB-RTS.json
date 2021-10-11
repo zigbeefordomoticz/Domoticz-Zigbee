@@ -63,5 +63,9 @@
     "0402": [
       "0000"
     ]
+  },
+  "PollingEnabled": 1,
+  "Param": {
+    "BatteryPollingFreq": 43200
   }
 }

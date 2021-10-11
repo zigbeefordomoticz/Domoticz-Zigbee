@@ -17,6 +17,7 @@ from Modules.basicOutputs import sendZigateCmd, getListofAttribute
 from Modules.readAttributes import (
     READ_ATTRIBUTES_REQUEST,
     ping_device_with_read_attribute,
+    ReadAttributeRequest_0001,
     ReadAttributeRequest_0006_0000,
     ReadAttributeRequest_0008_0000,
     ReadAttributeRequest_0101_0000,
@@ -136,7 +137,8 @@ def pollingManufSpecificDevices(self, NwkId, HB):
         "OnOffPollingFreq": ManufSpecOnOffPolling,
         "PowerPollingFreq": ReadAttributeRequest_0b04_050b_0505_0508,
         "AC201Polling": pollingCasaia,
-        "TuyaPing": ping_tuya_device
+        "TuyaPing": ping_tuya_device,
+        "BatteryPollingFreq": ReadAttributeRequest_0001
     }
 
 
