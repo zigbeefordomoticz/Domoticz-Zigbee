@@ -24,7 +24,7 @@ from Modules.zigateConsts import (
     LEGRAND_REMOTES,
     ZONE_TYPE,
 )
-from Modules.danfoss import danfoss_external_sensor
+
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import timedOutDevice, Update_Battery_Device
 from Modules.tools import (
@@ -3724,9 +3724,6 @@ def Cluster0402(
             MsgSrcAddr,
         )
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value)
-
-        if "Param" in self.ListOfDevices[ MsgSrcAddr] and "DanfossRoom" in self.ListOfDevices[ MsgSrcAddr]["Param"]:
-            danfoss_external_sensor( self, MsgSrcAddr, self.ListOfDevices[ MsgSrcAddr]["Param"]["DanfossRoom"], value * 100)
 
     elif MsgAttrID == "0001":
         value = int(decodeAttribute(self, MsgAttType, MsgClusterData))

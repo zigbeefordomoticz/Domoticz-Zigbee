@@ -121,6 +121,7 @@
 		"Calibration": 0,
 		"eTRVExerciseDay": 0,
 		"eTRVExerciseTime": 0,
-		"DanfossRoom": 0
+		"DanfossRoom": 0,
+		"DanfossRoomFreq": 0
 	}
 }

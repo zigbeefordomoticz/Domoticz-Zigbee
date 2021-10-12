@@ -14,6 +14,7 @@ import Domoticz
 import time
 
 from Modules.basicOutputs import sendZigateCmd, getListofAttribute
+from Modules.danfoss import danfoss_room_sensor_polling
 from Modules.readAttributes import (
     READ_ATTRIBUTES_REQUEST,
     ping_device_with_read_attribute,
@@ -138,9 +139,9 @@ def pollingManufSpecificDevices(self, NwkId, HB):
         "PowerPollingFreq": ReadAttributeRequest_0b04_050b_0505_0508,
         "AC201Polling": pollingCasaia,
         "TuyaPing": ping_tuya_device,
-        "BatteryPollingFreq": ReadAttributeRequest_0001
+        "BatteryPollingFreq": ReadAttributeRequest_0001,
+        "DanfossRoomFreq": danfoss_room_sensor_polling
     }
-
 
     if "Param" not in self.ListOfDevices[NwkId]:
         return False
