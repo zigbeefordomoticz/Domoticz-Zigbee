@@ -159,6 +159,8 @@ def pollingManufSpecificDevices(self, NwkId, HB):
     for param in self.ListOfDevices[NwkId]["Param"]:
         if param in FUNC_MANUF:
             _FEQ = self.ListOfDevices[NwkId]["Param"][param] // HEARTBEAT
+            if _FEQ == 0: # Disable
+                continue
             self.log.logging(
                 "Heartbeat",
                 "Debug",
