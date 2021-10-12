@@ -1180,6 +1180,8 @@ def UpdateBatteryAttribute(self, Devices, MsgSrcAddr, MsgSrcEp):
         "DWS312-E",
         "DWS312",
         "TS0207-waterleak",
+        "FYRTUR block-out roller blind",
+        "TRADFRI openclose remote",
         "Danalock V3",
         "V3-BTZB",
         "SML001",
