@@ -38,6 +38,8 @@ from Modules.tuya import (
 )
 from Modules.schneider_wiser import wiser_home_lockout_thermostat, iTRV_open_window_detection
 
+from Modules.danfoss import danfoss_exercise_trigger_time, danfoss_exercise_day_of_week
+
 
 def Ballast_max_level(self, nwkid, max_level):
     ballast_Configuration_max_level(self, nwkid, max_level)
@@ -56,10 +58,7 @@ def param_Occupancy_settings_PIROccupiedToUnoccupiedDelay(self, nwkid, delay):
 
     # Domoticz.Log("param_Occupancy_settings_PIROccupiedToUnoccupiedDelay %s -> delay: %s" %(nwkid, delay))
 
-    if (
-        self.ListOfDevices[nwkid]["Manufacturer"] == "100b"
-        or self.ListOfDevices[nwkid]["Manufacturer Name"] == "Philips"
-    ):  # Philips
+    if self.ListOfDevices[nwkid]["Manufacturer"] == "100b" or self.ListOfDevices[nwkid]["Manufacturer Name"] == "Philips":  # Philips
         if "02" not in self.ListOfDevices[nwkid]["Ep"]:
             return
         if "0406" not in self.ListOfDevices[nwkid]["Ep"]["02"]:
@@ -72,10 +71,7 @@ def param_Occupancy_settings_PIROccupiedToUnoccupiedDelay(self, nwkid, delay):
                 set_PIROccupiedToUnoccupiedDelay(self, nwkid, delay)
                 ReadAttributeRequest_0406_0010(self, nwkid)
 
-    elif (
-        self.ListOfDevices[nwkid]["Manufacturer"] == "1015"
-        or self.ListOfDevices[nwkid]["Manufacturer Name"] == "frient A/S"
-    ):  # Frientd
+    elif self.ListOfDevices[nwkid]["Manufacturer"] == "1015" or self.ListOfDevices[nwkid]["Manufacturer Name"] == "frient A/S":  # Frientd
         # delay = 10 * delay # Tenth of seconds
         for ep in ["22", "28", "29"]:
             if ep == "28" and "PIROccupiedToUnoccupiedDelay_28" in self.ListOfDevices[nwkid]["Param"]:
@@ -116,9 +112,7 @@ def param_PowerOnAfterOffOn(self, nwkid, mode):
         if "4003" not in self.ListOfDevices[nwkid]["Ep"]["0b"]["0006"]:
             return
         if self.ListOfDevices[nwkid]["Ep"]["0b"]["0006"]["4003"] != str(mode):
-            self.log.logging(
-                "Heartbeat", "Debug", "param_PowerOnAfterOffOn for Philips for %s mode: %s" % (nwkid, mode), nwkid
-            )
+            self.log.logging("Heartbeat", "Debug", "param_PowerOnAfterOffOn for Philips for %s mode: %s" % (nwkid, mode), nwkid)
             philips_set_poweron_after_offon_device(self, mode, nwkid)
             ReadAttributeRequest_0006_400x(self, nwkid)
 
@@ -126,7 +120,7 @@ def param_PowerOnAfterOffOn(self, nwkid, mode):
         "TS0121",
         "TS0115",
         "TS011F-multiprise",
-        "TS011F-2Gang-switches"
+        "TS011F-2Gang-switches",
     ):
         # Tuya ( 'TS0121' BlitzWolf )
         if "01" not in self.ListOfDevices[nwkid]["Ep"]:
@@ -139,9 +133,7 @@ def param_PowerOnAfterOffOn(self, nwkid, mode):
         if self.ListOfDevices[nwkid]["Ep"]["01"]["0006"]["8002"] == "2" and str(mode) == "255":
             return
         if self.ListOfDevices[nwkid]["Ep"]["01"]["0006"]["8002"] != str(mode):
-            self.log.logging(
-                "Heartbeat", "Debug", "param_PowerOnAfterOffOn for Tuya for %s mode: %s" % (nwkid, mode), nwkid
-            )
+            self.log.logging("Heartbeat", "Debug", "param_PowerOnAfterOffOn for Tuya for %s mode: %s" % (nwkid, mode), nwkid)
             set_poweron_afteroffon(self, nwkid, mode)
             ReadAttributeRequest_0006_400x(self, nwkid)
 
@@ -153,9 +145,7 @@ def param_PowerOnAfterOffOn(self, nwkid, mode):
         if "4003" not in self.ListOfDevices[nwkid]["Ep"]["01"]["0006"]:
             return
         if self.ListOfDevices[nwkid]["Ep"]["01"]["0006"]["4003"] != str(mode):
-            self.log.logging(
-                "Heartbeat", "Debug", "param_PowerOnAfterOffOn for Enki for %s mode: %s" % (nwkid, mode), nwkid
-            )
+            self.log.logging("Heartbeat", "Debug", "param_PowerOnAfterOffOn for Enki for %s mode: %s" % (nwkid, mode), nwkid)
             enki_set_poweron_after_offon_device(self, mode, nwkid)
             ReadAttributeRequest_0006_400x(self, nwkid)
 
@@ -172,13 +162,9 @@ def param_PowerOnAfterOffOn(self, nwkid, mode):
         for ep in self.ListOfDevices[nwkid]["Ep"]:
             if "0006" not in self.ListOfDevices[nwkid]["Ep"][ep]:
                 continue
-            if "4003" in self.ListOfDevices[nwkid]["Ep"][ep]["0006"] and self.ListOfDevices[nwkid]["Ep"][ep]["0006"][
-                "4003"
-            ] == str(mode):
+            if "4003" in self.ListOfDevices[nwkid]["Ep"][ep]["0006"] and self.ListOfDevices[nwkid]["Ep"][ep]["0006"]["4003"] == str(mode):
                 continue
-            elif "8002" in self.ListOfDevices[nwkid]["Ep"][ep]["0006"] and self.ListOfDevices[nwkid]["Ep"][ep]["0006"][
-                "8002"
-            ] == str(mode):
+            elif "8002" in self.ListOfDevices[nwkid]["Ep"][ep]["0006"] and self.ListOfDevices[nwkid]["Ep"][ep]["0006"]["8002"] == str(mode):
                 continue
             self.log.logging("Heartbeat", "Debug", "param_PowerOnAfterOffOn for %s mode: %s" % (nwkid, mode), nwkid)
             set_poweron_afteroffon(self, nwkid, mode)
@@ -202,6 +188,8 @@ DEVICE_PARAMETERS = {
     "WiseriTrvWindowOpen": iTRV_open_window_detection,
     "TuyaMotoReversal": tuya_window_cover_motor_reversal,
     "TuyaBackLight": tuya_backlight_command,
+    "eTRVExerciseDay": danfoss_exercise_day_of_week,
+    "eTRVExerciseTime": danfoss_exercise_trigger_time,
 }
 
 

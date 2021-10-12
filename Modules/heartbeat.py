@@ -14,6 +14,7 @@ import Domoticz
 import time
 
 from Modules.basicOutputs import sendZigateCmd, getListofAttribute
+from Modules.danfoss import danfoss_room_sensor_polling
 from Modules.readAttributes import (
     READ_ATTRIBUTES_REQUEST,
     ping_device_with_read_attribute,
@@ -125,22 +126,24 @@ def attributeDiscovery(self, NwkId):
 
     return rescheduleAction
 
+
 def ManufSpecOnOffPolling(self, NwkId):
     ReadAttributeRequest_0006_0000(self, NwkId)
     ReadAttributeRequest_0008_0000(self, NwkId)
 
+
 def pollingManufSpecificDevices(self, NwkId, HB):
 
     FUNC_MANUF = {
-        'ZLinkyPolling': ReadAttributeRequest_0702_ZLinky_TIC,
+        "ZLinkyPolling": ReadAttributeRequest_0702_ZLinky_TIC,
         "PollingCusterff66": ReadAttributeRequest_ff66,
         "OnOffPollingFreq": ManufSpecOnOffPolling,
         "PowerPollingFreq": ReadAttributeRequest_0b04_050b_0505_0508,
         "AC201Polling": pollingCasaia,
         "TuyaPing": ping_tuya_device,
-        "BatteryPollingFreq": ReadAttributeRequest_0001
+        "BatteryPollingFreq": ReadAttributeRequest_0001,
+        "DanfossRoomFreq": danfoss_room_sensor_polling,
     }
-
 
     if "Param" not in self.ListOfDevices[NwkId]:
         return False
@@ -158,6 +161,8 @@ def pollingManufSpecificDevices(self, NwkId, HB):
     for param in self.ListOfDevices[NwkId]["Param"]:
         if param in FUNC_MANUF:
             _FEQ = self.ListOfDevices[NwkId]["Param"][param] // HEARTBEAT
+            if _FEQ == 0:  # Disable
+                continue
             self.log.logging(
                 "Heartbeat",
                 "Debug",
@@ -170,15 +175,15 @@ def pollingManufSpecificDevices(self, NwkId, HB):
             self.log.logging(
                 "Heartbeat",
                 "Debug",
-                "++ pollingManufSpecificDevices -  %s Found: %s=%s"
-                % (NwkId, param, self.ListOfDevices[NwkId]["Param"][param]),
+                "++ pollingManufSpecificDevices -  %s Found: %s=%s" % (NwkId, param, self.ListOfDevices[NwkId]["Param"][param]),
                 NwkId,
             )
 
-            func = FUNC_MANUF[ param ]
-            func( self, NwkId)
+            func = FUNC_MANUF[param]
+            func(self, NwkId)
 
     return False
+
 
 def pollingDeviceStatus(self, NwkId):
     # """
@@ -263,10 +268,7 @@ def pingRetryDueToBadHealth(self, NwkId):
     if self.ListOfDevices[NwkId]["pingDeviceRetry"]["Retry"] == 0:
         return
 
-    if (
-        "Retry" in self.ListOfDevices[NwkId]["pingDeviceRetry"]
-        and "TimeStamp" not in self.ListOfDevices[NwkId]["pingDeviceRetry"]
-    ):
+    if "Retry" in self.ListOfDevices[NwkId]["pingDeviceRetry"] and "TimeStamp" not in self.ListOfDevices[NwkId]["pingDeviceRetry"]:
         # This could be due to a previous version without TimeStamp
         self.ListOfDevices[NwkId]["pingDeviceRetry"]["Retry"] = 0
         self.ListOfDevices[NwkId]["pingDeviceRetry"]["TimeStamp"] = now
@@ -326,8 +328,7 @@ def pingDevices(self, NwkId, health, checkHealthFlag, mainPowerFlag):
         self.log.logging(
             "Heartbeat",
             "Debug",
-            "------> pinDevices %s health: %s, checkHealth: %s, mainPower: %s"
-            % (NwkId, health, checkHealthFlag, mainPowerFlag),
+            "------> pinDevices %s health: %s, checkHealth: %s, mainPower: %s" % (NwkId, health, checkHealthFlag, mainPowerFlag),
             NwkId,
         )
 
@@ -375,9 +376,7 @@ def pingDevices(self, NwkId, health, checkHealthFlag, mainPowerFlag):
         and now < self.ListOfDevices[NwkId]["Stamp"]["time"] + self.pluginconf.pluginConf["pingDevicesFeq"]
     ):
         # If we have received a message since less than 1 hours, then no ping to be done !
-        self.log.logging(
-            "Heartbeat", "Debug", "------> %s no need to ping as we received a message recently " % (NwkId,), NwkId
-        )
+        self.log.logging("Heartbeat", "Debug", "------> %s no need to ping as we received a message recently " % (NwkId,), NwkId)
         return
 
     if not health:
@@ -470,18 +469,10 @@ def processKnownDevices(self, Devices, NWKID):
         model = self.ListOfDevices[NWKID]["Model"]
 
     enabledEndDevicePolling = False
-    if (
-        model in self.DeviceConf
-        and "PollingEnabled" in self.DeviceConf[model]
-        and self.DeviceConf[model]["PollingEnabled"]
-    ):
+    if model in self.DeviceConf and "PollingEnabled" in self.DeviceConf[model] and self.DeviceConf[model]["PollingEnabled"]:
         enabledEndDevicePolling = True
 
-    if (
-        "CheckParam" in self.ListOfDevices[NWKID]
-        and self.ListOfDevices[NWKID]["CheckParam"]
-        and intHB > (120 // HEARTBEAT)
-    ):
+    if "CheckParam" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["CheckParam"] and intHB > (120 // HEARTBEAT):
         sanity_check_of_param(self, NWKID)
         self.ListOfDevices[NWKID]["CheckParam"] = False
 
@@ -494,9 +485,7 @@ def processKnownDevices(self, Devices, NWKID):
     # Action not taken, must be reschedule to next cycle
     rescheduleAction = False
 
-    if self.pluginconf.pluginConf["forcePollingAfterAction"] and (
-        intHB == 1
-    ):  # HB has been reset to 0 as for a Group command
+    if self.pluginconf.pluginConf["forcePollingAfterAction"] and (intHB == 1):  # HB has been reset to 0 as for a Group command
         # intHB is 1 as if it has been reset, we get +1 in ProcessListOfDevices
         self.log.logging("Heartbeat", "Debug", "processKnownDevices -  %s due to intHB %s" % (NWKID, intHB), NWKID)
         rescheduleAction = rescheduleAction or pollingDeviceStatus(self, NWKID)
@@ -517,8 +506,7 @@ def processKnownDevices(self, Devices, NWKID):
         self.log.logging(
             "Heartbeat",
             "Debug",
-            "processKnownDevices -  %s intHB: %s _mainPowered: %s doReadAttr: %s"
-            % (NWKID, intHB, _mainPowered, _doReadAttribute),
+            "processKnownDevices -  %s intHB: %s _mainPowered: %s doReadAttr: %s" % (NWKID, intHB, _mainPowered, _doReadAttribute),
             NWKID,
         )
 
@@ -577,12 +565,7 @@ def processKnownDevices(self, Devices, NWKID):
 
                 func(self, NWKID)
 
-    if (
-        self.pluginconf.pluginConf["RoutingTableRequestFeq"]
-        and not self.busy
-        and self.ZigateComm.loadTransmit() == 0
-        and (intHB % 10) == 0
-    ):
+    if self.pluginconf.pluginConf["RoutingTableRequestFeq"] and not self.busy and self.ZigateComm.loadTransmit() == 0 and (intHB % 10) == 0:
         mgmt_rtg(self, NWKID)
 
     # Reenforcement of Legrand devices options if required
@@ -590,10 +573,7 @@ def processKnownDevices(self, Devices, NWKID):
         rescheduleAction = rescheduleAction or legrandReenforcement(self, NWKID)
 
     # Call Schneider Reenforcement if needed
-    if (
-        self.pluginconf.pluginConf["reenforcementWiser"]
-        and (self.HeartbeatCount % self.pluginconf.pluginConf["reenforcementWiser"]) == 0
-    ):
+    if self.pluginconf.pluginConf["reenforcementWiser"] and (self.HeartbeatCount % self.pluginconf.pluginConf["reenforcementWiser"]) == 0:
         rescheduleAction = rescheduleAction or schneiderRenforceent(self, NWKID)
 
     # Do Attribute Disocvery if needed
@@ -619,8 +599,7 @@ def processKnownDevices(self, Devices, NWKID):
             self.log.logging(
                 "Heartbeat",
                 "Debug",
-                "-- - skip ReadAttribute for now ... system too busy (%s/%s) for %s"
-                % (self.busy, self.ZigateComm.loadTransmit(), NWKID),
+                "-- - skip ReadAttribute for now ... system too busy (%s/%s) for %s" % (self.busy, self.ZigateComm.loadTransmit(), NWKID),
                 NWKID,
             )
             Domoticz.Status("Requesting Node Descriptor for %s" % NWKID)
@@ -645,9 +624,7 @@ def processListOfDevices(self, Devices):
 
         # If this entry is empty, then let's remove it .
         if len(self.ListOfDevices[NWKID]) == 0:
-            self.log.logging(
-                "Heartbeat", "Debug", "Bad devices detected (empty one), remove it, adr:" + str(NWKID), NWKID
-            )
+            self.log.logging("Heartbeat", "Debug", "Bad devices detected (empty one), remove it, adr:" + str(NWKID), NWKID)
             entriesToBeRemoved.append(NWKID)
             continue
 
@@ -679,9 +656,7 @@ def processListOfDevices(self, Devices):
             # Most likely we should receive a 0x004d, where the device come back with a new short address
             # For now we will display a message in the log every 1'
             # We might have to remove this entry if the device get not reconnected.
-            if (
-                (int(self.ListOfDevices[NWKID]["Heartbeat"]) % 36) and int(self.ListOfDevices[NWKID]["Heartbeat"]) != 0
-            ) == 0:
+            if ((int(self.ListOfDevices[NWKID]["Heartbeat"]) % 36) and int(self.ListOfDevices[NWKID]["Heartbeat"]) != 0) == 0:
                 if "ZDeviceName" in self.ListOfDevices[NWKID]:
                     self.log.logging(
                         "Heartbeat",
@@ -724,8 +699,7 @@ def processListOfDevices(self, Devices):
                     # Not devices found in Domoticz, so we are safe to remove it from Plugin
                     if self.ListOfDevices[NWKID]["IEEE"] in self.IEEE2NWK:
                         Domoticz.Status(
-                            "processListOfDevices - Removing %s / %s from IEEE2NWK."
-                            % (self.ListOfDevices[NWKID]["IEEE"], NWKID)
+                            "processListOfDevices - Removing %s / %s from IEEE2NWK." % (self.ListOfDevices[NWKID]["IEEE"], NWKID)
                         )
                         del self.IEEE2NWK[self.ListOfDevices[NWKID]["IEEE"]]
                     Domoticz.Status("processListOfDevices - Removing the entry %s from ListOfDevice" % (NWKID))
@@ -745,8 +719,7 @@ def processListOfDevices(self, Devices):
         self.log.logging(
             "Heartbeat",
             "Debug",
-            "Skip LQI, ConfigureReporting and Networkscan du to Busy state: Busy: %s, Enroll: %s"
-            % (self.busy, self.CommiSSionning),
+            "Skip LQI, ConfigureReporting and Networkscan du to Busy state: Busy: %s, Enroll: %s" % (self.busy, self.CommiSSionning),
         )
         return  # We don't go further as we are Commissioning a new object and give the prioirty to it
 

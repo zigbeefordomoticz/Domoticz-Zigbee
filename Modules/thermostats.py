@@ -43,9 +43,7 @@ def thermostat_Setpoint_SPZB(self, NwkId, setpoint):
 
 def thermostat_Setpoint(self, NwkId, setpoint):
 
-    self.log.logging(
-        "Thermostats", "Debug", "thermostat_Setpoint - for %s with value %s" % (NwkId, setpoint), nwkid=NwkId
-    )
+    self.log.logging("Thermostats", "Debug", "thermostat_Setpoint - for %s with value %s" % (NwkId, setpoint), nwkid=NwkId)
 
     if "Model" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Model"] != {}:
         if self.ListOfDevices[NwkId]["Model"] == "SPZB0001":
@@ -85,9 +83,7 @@ def thermostat_Setpoint(self, NwkId, setpoint):
 
     thermostat_Calibration(self, NwkId)
 
-    self.log.logging(
-        "Thermostats", "Debug", "thermostat_Setpoint - standard for %s with value %s" % (NwkId, setpoint), nwkid=NwkId
-    )
+    self.log.logging("Thermostats", "Debug", "thermostat_Setpoint - standard for %s with value %s" % (NwkId, setpoint), nwkid=NwkId)
 
     EPout = "01"
     for tmpEp in self.ListOfDevices[NwkId]["Ep"]:
@@ -210,9 +206,7 @@ def thermostat_Calibration(self, NwkId, calibration=None):
     ):
         return
 
-    self.log.logging(
-        "Thermostats", "Log", "thermostat_Calibration - Set Thermostat offset on %s off %s" % (NwkId, calibration)
-    )
+    self.log.logging("Thermostats", "Log", "thermostat_Calibration - Set Thermostat offset on %s off %s" % (NwkId, calibration))
 
     self.ListOfDevices[NwkId]["Thermostat"]["Calibration"] = calibration
 
@@ -279,18 +273,17 @@ def thermostat_Mode(self, NwkId, mode):
     self.log.logging(
         "Thermostats",
         "Debug",
-        "thermostat_Mode - for %s with value %s / cluster: %s, attribute: %s type: %s"
-        % (NwkId, data, cluster_id, attribute, data_type),
+        "thermostat_Mode - for %s with value %s / cluster: %s, attribute: %s type: %s" % (NwkId, data, cluster_id, attribute, data_type),
         nwkid=NwkId,
     )
     if "Model" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Model"] in ("TAFFETAS2 D1.00P1.01Z1.00"):
         self.log.logging(
-        "Thermostats",
-        "Log",
-        "thermostat_Mode - for %s with value %s / cluster: %s, attribute: %s type: %s"
-        % (NwkId, data, cluster_id, attribute, data_type),
-        nwkid=NwkId,
-    )
+            "Thermostats",
+            "Log",
+            "thermostat_Mode - for %s with value %s / cluster: %s, attribute: %s type: %s"
+            % (NwkId, data, cluster_id, attribute, data_type),
+            nwkid=NwkId,
+        )
 
 
 def Thermostat_LockMode(self, NwkId, lockmode):
@@ -317,6 +310,31 @@ def Thermostat_LockMode(self, NwkId, lockmode):
         "Thermostats",
         "Debug",
         "Thermostat_LockMode - for %s with value %s / cluster: %s, attribute: %s type: %s"
+        % (NwkId, Hdata, cluster_id, Hattribute, data_type),
+        nwkid=NwkId,
+    )
+    write_attribute(self, NwkId, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
+
+
+def danfoss_control_algo(self, NwkId, mode):
+
+    # Scale factor of setpoint filter timeconstant ("aggressiveness" of control algorithm) 1= Quick ...  5=Moderate ... 10=Slow
+    manuf_id = "1246"
+    manuf_spec = "01"
+    cluster_id = "%04x" % 0x0201
+    Hattribute = "%04x" % 0x4020
+    data_type = "20"  # Uint8
+    self.log.logging("Thermostats", "Debug", "Danfoss Aly Control_Algo: %s" % mode, nwkid=NwkId)
+
+    Hdata = "%02x" % mode
+    EPout = "01"
+    for tmpEp in self.ListOfDevices[NwkId]["Ep"]:
+        if "0201" in self.ListOfDevices[NwkId]["Ep"][tmpEp]:
+            EPout = tmpEp
+    self.log.logging(
+        "Thermostats",
+        "Debug",
+        "danfoss_control_algo - for %s with value %s / cluster: %s, attribute: %s type: %s"
         % (NwkId, Hdata, cluster_id, Hattribute, data_type),
         nwkid=NwkId,
     )
