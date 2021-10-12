@@ -9,7 +9,7 @@ from Modules.tools import getListOfEpForCluster
 from Modules.zigateConsts import ZIGATE_EP
 
 
-def danfoss_exercise_trigger_time( self, NwkId, week_num):
+def danfoss_exercise_trigger_time(self, NwkId, week_num):
     # 0 = Sunday, 1 = Monday, … 6 = Saturday, 7 = undefined
     # Minutes since midnight, 0xFFFF = undefined
 
@@ -29,7 +29,7 @@ def danfoss_exercise_trigger_time( self, NwkId, week_num):
     self.log.logging("Danfoss", "Debug", "Danfoss Aly Trigger_Week Num: %s" % week_num, nwkid=NwkId)
 
     Hdata = "%02x" % week_num
- 
+
     self.log.logging(
         "Danfoss",
         "Debug",
@@ -40,7 +40,8 @@ def danfoss_exercise_trigger_time( self, NwkId, week_num):
     write_attribute(self, NwkId, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, ackIsDisabled=False)
     read_attribute(self, NwkId, ZIGATE_EP, EPout, cluster_id, "00", manuf_spec, manuf_id, 1, Hattribute, ackIsDisabled=False)
 
-def danfoss_exercise_day_of_week( self, NwkId, min_from_midnight):
+
+def danfoss_exercise_day_of_week(self, NwkId, min_from_midnight):
     manuf_id = "1246"
     manuf_spec = "01"
     cluster_id = "%04x" % 0x0201
@@ -49,7 +50,6 @@ def danfoss_exercise_day_of_week( self, NwkId, min_from_midnight):
     for tmpEp in self.ListOfDevices[NwkId]["Ep"]:
         if "0201" in self.ListOfDevices[NwkId]["Ep"][tmpEp]:
             EPout = tmpEp
-
 
     Hattribute = "%04x" % 0x4011
     data_type = "21"  # Int16
@@ -72,14 +72,14 @@ def danfoss_exercise_day_of_week( self, NwkId, min_from_midnight):
     write_attribute(self, NwkId, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, ackIsDisabled=False)
     read_attribute(self, NwkId, ZIGATE_EP, EPout, cluster_id, "00", manuf_spec, manuf_id, 1, Hattribute, ackIsDisabled=False)
 
-def danfoss_write_external_sensor_temp( self, NwkId, temp):
+
+def danfoss_write_external_sensor_temp(self, NwkId, temp):
 
     # 0110 02 955e 01 01 0201 00 01 1246 01 4015 29 02bc
 
-
     # Convert value to a 0.5 multiple
 
-    temp = 50 *  (temp // 50 )
+    temp = 50 * (temp // 50)
 
     manuf_id = "1246"
     manuf_spec = "01"
@@ -108,31 +108,31 @@ def danfoss_write_external_sensor_temp( self, NwkId, temp):
     read_attribute(self, NwkId, ZIGATE_EP, EPout, cluster_id, "00", manuf_spec, manuf_id, 1, Hattribute, ackIsDisabled=False)
 
 
-def danfoss_external_sensor( self, NwkId, room, temp):
+def danfoss_external_sensor(self, NwkId, room, temp):
     # We received a Temperature measures
 
     # search in all device if any Danfoss Aly belongs to this room
     for x in self.ListOfDevices:
         if x == NwkId:
             continue
-        if "Param" not in self.ListOfDevices[ x ]:
+        if "Param" not in self.ListOfDevices[x]:
             continue
-        if "DanfossRoom" not in self.ListOfDevices[ x ]["Param"]:
+        if "DanfossRoom" not in self.ListOfDevices[x]["Param"]:
             continue
-        if self.ListOfDevices[ x ]["Param"]["DanfossRoom"] != room:
+        if self.ListOfDevices[x]["Param"]["DanfossRoom"] != room:
             continue
         self.log.logging(
             "Danfoss",
             "Debug",
-            "danfoss_external_sensor - Found device %s part of the same room %s"
-            % (NwkId, room),
+            "danfoss_external_sensor - Found device %s part of the same room %s" % (NwkId, room),
             nwkid=NwkId,
         )
-        if '01' not in self.ListOfDevices[ x ]['Ep']:
+        if "01" not in self.ListOfDevices[x]["Ep"]:
             continue
-        if '0201' not in self.ListOfDevices[ x ]['Ep']['01']:
+        if "0201" not in self.ListOfDevices[x]["Ep"]["01"]:
             continue
-        danfoss_write_external_sensor_temp( self, NwkId, temp)
+        danfoss_write_external_sensor_temp(self, NwkId, temp)
+
 
 def danfoss_room_sensor_polling(self, NwkId):
 
@@ -143,22 +143,20 @@ def danfoss_room_sensor_polling(self, NwkId):
     self.log.logging(
         "Danfoss",
         "Debug",
-        "danfoss_room_sensor_polling - Triggered for Nwkid: %s"
-        % (NwkId,),
+        "danfoss_room_sensor_polling - Triggered for Nwkid: %s" % (NwkId,),
         nwkid=NwkId,
     )
 
-    if "Param" not in self.ListOfDevices[ NwkId ]:
+    if "Param" not in self.ListOfDevices[NwkId]:
         return
-    if "DanfossRoom" not in self.ListOfDevices[ NwkId ]["Param"]:
+    if "DanfossRoom" not in self.ListOfDevices[NwkId]["Param"]:
         return
-    room = self.ListOfDevices[ NwkId ]["Param"]["DanfossRoom"]
+    room = self.ListOfDevices[NwkId]["Param"]["DanfossRoom"]
 
     self.log.logging(
         "Danfoss",
         "Debug",
-        "danfoss_room_sensor_polling - Triggered for Nwkid: %s - room: %s"
-        % (NwkId, room),
+        "danfoss_room_sensor_polling - Triggered for Nwkid: %s - room: %s" % (NwkId, room),
         nwkid=NwkId,
     )
 
@@ -166,11 +164,11 @@ def danfoss_room_sensor_polling(self, NwkId):
     for x in self.ListOfDevices:
         if x == NwkId:
             continue
-        if "Param" not in self.ListOfDevices[ x ]:
+        if "Param" not in self.ListOfDevices[x]:
             continue
-        if "DanfossRoom" not in self.ListOfDevices[ x ]["Param"]:
+        if "DanfossRoom" not in self.ListOfDevices[x]["Param"]:
             continue
-        if self.ListOfDevices[ x ]["Param"]["DanfossRoom"] != room:
+        if self.ListOfDevices[x]["Param"]["DanfossRoom"] != room:
             continue
 
         ep_list = ListOfEp = getListOfEpForCluster(self, x, "0402")
@@ -179,10 +177,10 @@ def danfoss_room_sensor_polling(self, NwkId):
 
         ep = ep_list[0]
 
-        if "0000" not in self.ListOfDevices[ x ]['Ep'][ep]['0402']:
+        if "0000" not in self.ListOfDevices[x]["Ep"][ep]["0402"]:
             continue
 
         # At that stage we have found a Device which is in the same room and as the 0402 Cluster
         # Temp value is store in 0x0402/0x0000 is degrees
-        temp_room = self.ListOfDevices[ x ]['Ep'][ep]['0402']['0000']
-        danfoss_write_external_sensor_temp( self, NwkId, temp_room)
+        temp_room = self.ListOfDevices[x]["Ep"][ep]["0402"]["0000"]
+        danfoss_write_external_sensor_temp(self, NwkId, temp_room)
