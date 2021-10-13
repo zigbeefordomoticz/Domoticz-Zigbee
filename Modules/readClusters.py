@@ -4439,7 +4439,7 @@ def Cluster0b04(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
     self.log.logging(
         "Cluster",
-        "Log",
+        "Debug",
         "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s"
         % (
             MsgClusterId,
