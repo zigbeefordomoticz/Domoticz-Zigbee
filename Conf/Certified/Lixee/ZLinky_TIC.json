@@ -112,10 +112,10 @@
 				},
 				"050f": {
 					"DataType": "21",
-					"MinInterval": "000A",
+					"MinInterval": "0001",
 					"MaxInterval": "012C",
 					"TimeOut": "0000",
-					"Change": "000A"
+					"Change": "0001"
 				}
 			}
 		},
