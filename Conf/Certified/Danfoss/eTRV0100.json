@@ -120,7 +120,7 @@
 	"Param": {
 		"Calibration": 0,
 		"eTRVExerciseDay": 0,
-		"eTRVExerciseTime": 0,
+		"eTRVExerciseTime": 720,
 		"DanfossRoom": 0,
 		"DanfossRoomFreq": 0
 	}

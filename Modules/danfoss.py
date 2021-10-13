@@ -9,9 +9,9 @@ from Modules.tools import getListOfEpForCluster
 from Modules.zigateConsts import ZIGATE_EP
 
 
-def danfoss_exercise_trigger_time(self, NwkId, week_num):
+def danfoss_exercise_day_of_week(self, NwkId, week_num):
     # 0 = Sunday, 1 = Monday, … 6 = Saturday, 7 = undefined
-    # Minutes since midnight, 0xFFFF = undefined
+    
 
     if week_num > 6:
         return
@@ -41,7 +41,12 @@ def danfoss_exercise_trigger_time(self, NwkId, week_num):
     read_attribute(self, NwkId, ZIGATE_EP, EPout, cluster_id, "00", manuf_spec, manuf_id, 1, Hattribute, ackIsDisabled=False)
 
 
-def danfoss_exercise_day_of_week(self, NwkId, min_from_midnight):
+def danfoss_exercise_trigger_time(self, NwkId, min_from_midnight):
+
+    # Minutes since midnight, 0xFFFF = undefined
+    if min_from_midnight > 1439:
+        return
+
     manuf_id = "1246"
     manuf_spec = "01"
     cluster_id = "%04x" % 0x0201
@@ -52,14 +57,11 @@ def danfoss_exercise_day_of_week(self, NwkId, min_from_midnight):
             EPout = tmpEp
 
     Hattribute = "%04x" % 0x4011
-    data_type = "21"  # Int16
+    data_type = "21"  # uint16
     self.log.logging("Danfoss", "Debug", "Danfoss Aly Trigger_time Min from Midnigh: %s" % min_from_midnight, nwkid=NwkId)
 
     Hdata = "%04x" % min_from_midnight
     EPout = "01"
-    for tmpEp in self.ListOfDevices[NwkId]["Ep"]:
-        if "0201" in self.ListOfDevices[NwkId]["Ep"][tmpEp]:
-            EPout = tmpEp
 
     self.log.logging(
         "Danfoss",

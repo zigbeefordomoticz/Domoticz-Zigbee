@@ -114,6 +114,10 @@
 	},
 	"PollingEnabled": 1,
 	"Param": {
-		"Calibration": 0
+		"Calibration": 0,
+		"eTRVExerciseDay": 0,
+		"eTRVExerciseTime": 720,
+		"DanfossRoom": 0,
+		"DanfossRoomFreq": 0
 	}
 }
