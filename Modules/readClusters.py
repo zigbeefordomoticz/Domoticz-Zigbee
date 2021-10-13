@@ -4485,16 +4485,15 @@ def Cluster0b04(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
     elif MsgAttrID == "0508":  # RMSCurrent
         value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
-
         self.log.logging(
             "Cluster",
             "Debug",
-            "ReadCluster %s - %s/%s Current %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, value),
+            "ReadCluster %s - %s/%s Current L1 %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, value),
             MsgSrcAddr,
         )
-        value /= 100
 
         if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == "TS0121":
+            value /= 100
             value /= 20
 
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
@@ -4515,6 +4514,7 @@ def Cluster0b04(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
         else:
             # Other type of devices
+            value /= 100
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value), Attribute_=MsgAttrID)
 
@@ -4588,22 +4588,21 @@ def Cluster0b04(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == "ZLinky_TIC":
             # from random import randrange
             # value = randrange( 0x0, 0x3c)
-
             if value == 0xFFFF:
                 return
 
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value), Attribute_=MsgAttrID)
             # Check if Intensity is below subscription level
             if MsgAttrID == "0908":
+                self.log.logging("Cluster", "Debug", "ReadCluster %s - %s/%s Current L2 %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, value))
                 zlinky_check_alarm(self, Devices, MsgSrcAddr, "f2", value)
             elif MsgAttrID == "0a08":
+                self.log.logging("Cluster", "Debug", "ReadCluster %s - %s/%s Current L3 %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, value))
                 zlinky_check_alarm(self, Devices, MsgSrcAddr, "f3", value)
 
-        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
-
-        self.log.logging("Cluster", "Log", "ReadCluster %s - %s/%s Current %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, value))
-        if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == "ZLinky_TIC":
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value))
+
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)            
 
     else:
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
@@ -4631,7 +4630,7 @@ def zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value):
     else:
         self.log.logging(
             "Cluster",
-            "Log",
+            "Error",
             "zlinky_check_alarm - %s/%s no Subscription found !!!!" % (MsgSrcAddr, MsgSrcEp),
             MsgSrcAddr,
         )
