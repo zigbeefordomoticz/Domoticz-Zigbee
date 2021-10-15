@@ -4392,10 +4392,12 @@ def Cluster0b01(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
         MsgSrcAddr,
     )
-    value = decodeAttribute(
-        self,
-        MsgAttType,
-        MsgClusterData,
+    value = int(
+        decodeAttribute(
+            self,
+            MsgAttType,
+            MsgClusterData,
+        )
     )
 
     checkAndStoreAttributeValue(
@@ -4596,7 +4598,7 @@ def Cluster0b04(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value))
 
-        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)            
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
 
     else:
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
