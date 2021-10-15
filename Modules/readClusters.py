@@ -4398,12 +4398,6 @@ def Cluster0b01(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         MsgClusterData,
     )
 
-    if MsgAttrID == "000d":
-        if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == "ZLinky_TIC":
-            # Current Subscribed
-            self.log.logging("Cluster", "Debug", "Cluster0b01 - Simulate 45A Subscription", MsgSrcAddr)
-            value = 45
-            value = int(value)
     checkAndStoreAttributeValue(
         self,
         MsgSrcAddr,
@@ -5159,7 +5153,7 @@ def Clusterff66(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         if "ff66" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp] and "0000" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["ff66"]:
             if self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["ff66"]["0000"] not in ("", {}):
                 tarif = self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["ff66"]["0000"]
-        if "BBR" not in tarif:
+        if tarif and "BBR" not in tarif:
             return
 
         # Couleur du Lendemain DEMAIN Trigger Alarm
@@ -5172,7 +5166,7 @@ def Clusterff66(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         else:
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0009", "00|No information", Attribute_="0001")
 
-        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, decodeAttribute(self, MsgAttType, MsgClusterData))
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
 
     elif MsgAttrID == "0002":
         # HHPHC
