@@ -10,14 +10,10 @@
 
 
 import Domoticz
-from datetime import datetime
 
-from Modules.zigateConsts import ADDRESS_MODE, ZIGATE_EP, ZONE_TYPE
-from Classes.PluginConf import PluginConf
-from Classes.LoggingManagement import LoggingManagement
+from Modules.zigateConsts import ADDRESS_MODE, ZIGATE_EP
 
 ENROLL_RESPONSE_CODE = 0x00
-
 ZONE_ID = 0x00
 
 
@@ -62,7 +58,6 @@ class IAS_Zone_Management:
             # We received only 1 attribute
             Attr = "%04x" % (ListOfAttributes)
             lenAttr = 1
-            weight = 1
         else:
             lenAttr = len(ListOfAttributes)
             Attr = ""
@@ -390,7 +385,7 @@ class IAS_Zone_Management:
         SQUAWKMODE = {"disarmed": 0b00000000, "armed": 0b00000001}
 
         if SquawkMode not in SQUAWKMODE:
-            Domoticz.Error("_write_IAS_WD_Squawk - %s/%s Unknown Squawk Mode: %" % (nwkid, ep, SquawkMode))
+            Domoticz.Error("_write_IAS_WD_Squawk - %s/%s Unknown Squawk Mode: %s" % (nwkid, ep, SquawkMode))
 
         self.logging(
             "Debug",
@@ -493,15 +488,23 @@ class IAS_Zone_Management:
                 warning_mode = WARNING_MODE["Fire"] + STROBE_MODE["No Strobe"]
             elif mode == "stop":
                 warning_mode = WARNING_MODE["Stop"]
-
             elif mode == "strobe":
                 warning_mode = WARNING_MODE["Stop"] + STROBE_MODE["Use Strobe"]
                 strobe_duty = 0x1E  # % duty cycle in 10% steps
                 strobe_level = STROBE_LEVEL["Low"]
 
         warning_duration = 1
-        if "Param" in self.ListOfDevices[nwkid] and "alarmDuration" in self.ListOfDevices[nwkid]["Param"]:
-            warning_duration = self.ListOfDevices[nwkid]["Param"]["alarmDuration"]
+        if "Param" in self.ListOfDevices[nwkid]:
+            if "alarmDuration" in self.ListOfDevices[nwkid]["Param"]:
+                warning_duration = self.ListOfDevices[nwkid]["Param"]["alarmDuration"]
+            if mode == "strobe" and "alarmStrobeCode" in self.ListOfDevices[nwkid]["Param"]:
+                warning_mode = self.ListOfDevices[nwkid]["Param"]["alarmStrobeCode"]
+            if mode == "siren" and "alarmSirenCode" in self.ListOfDevices[nwkid]["Param"]:
+                warning_mode = self.ListOfDevices[nwkid]["Param"]["alarmSirenCode"]
+            if mode == "both" and "alarmBothCode" in self.ListOfDevices[nwkid]["Param"]:
+                warning_mode = self.ListOfDevices[nwkid]["Param"]["alarmBothCode"]
+            if mode == "stop" and "alarmStopCode" in self.ListOfDevices[nwkid]["Param"]:
+                warning_mode = self.ListOfDevices[nwkid]["Param"]["alarmStopCode"]
 
         self.logging(
             "Debug",
