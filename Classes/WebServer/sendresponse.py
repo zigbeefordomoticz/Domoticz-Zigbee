@@ -6,7 +6,6 @@
 
 import Domoticz
 
-
 try:
     import zlib
 except Exception as Err:
@@ -17,7 +16,7 @@ except Exception as Err:
     Domoticz.Error("gzip import error: '" + str(Err) + "'")
 
 
-from Classes.WebServer.tools import DumpHTTPResponseToLog, MAX_KB_TO_SEND
+from Classes.WebServer.tools import MAX_KB_TO_SEND, DumpHTTPResponseToLog
 
 
 def sendResponse(self, Connection, Response, AcceptEncoding=None):

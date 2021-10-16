@@ -3,13 +3,13 @@
 #
 # Author: pipiche38
 #
-import Domoticz
 import json
-
-
-from Modules.casaia import DEVICE_ID
-from Classes.WebServer.headerResponse import setupHeadersResponse, prepResponseMessage
 from time import time
+
+import Domoticz
+from Classes.WebServer.headerResponse import (prepResponseMessage,
+                                              setupHeadersResponse)
+from Modules.casaia import DEVICE_ID
 
 
 def rest_casa_device_list(self, verb, data, parameters):  # Ok 10/11/2020

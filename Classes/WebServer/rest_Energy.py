@@ -4,11 +4,12 @@
 # Author: zaraki673 & pipiche38
 #
 
-import Domoticz
 import json
 from time import time
 
-from Classes.WebServer.headerResponse import setupHeadersResponse, prepResponseMessage
+import Domoticz
+from Classes.WebServer.headerResponse import (prepResponseMessage,
+                                              setupHeadersResponse)
 
 
 def rest_req_nwk_inter(self, verb, data, parameters):

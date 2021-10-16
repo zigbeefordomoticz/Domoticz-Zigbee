@@ -5,13 +5,13 @@
 #
 
 
-import Domoticz
 import json
-
-
-from Classes.WebServer.headerResponse import setupHeadersResponse, prepResponseMessage
 import os
 from time import time
+
+import Domoticz
+from Classes.WebServer.headerResponse import (prepResponseMessage,
+                                              setupHeadersResponse)
 
 
 def rest_zGroup_lst_avlble_dev(self, verb, data, parameters):

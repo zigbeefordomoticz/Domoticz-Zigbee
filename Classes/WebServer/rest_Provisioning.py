@@ -3,13 +3,17 @@
 #
 # Author: zaraki673 & pipiche38
 #
-import Domoticz
-from time import time
 import json
+from time import time
 
-from Modules.zigateConsts import ZCL_CLUSTERS_LIST, PROFILE_ID, ZHA_DEVICES, ZLL_DEVICES
-from Modules.basicOutputs import ZigatePermitToJoin, sendZigateCmd, start_Zigate, setExtendedPANID, zigateBlueLed
-from Classes.WebServer.headerResponse import setupHeadersResponse, prepResponseMessage
+import Domoticz
+from Classes.WebServer.headerResponse import (prepResponseMessage,
+                                              setupHeadersResponse)
+from Modules.basicOutputs import (ZigatePermitToJoin,
+                                  sendZigateCmd, setExtendedPANID,
+                                  start_Zigate, zigateBlueLed)
+from Modules.zigateConsts import (PROFILE_ID, ZCL_CLUSTERS_LIST,
+                                  ZHA_DEVICES, ZLL_DEVICES)
 
 
 def rest_new_hrdwr(self, verb, data, parameters):

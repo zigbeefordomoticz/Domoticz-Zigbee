@@ -3,12 +3,13 @@
 #
 # Author: zaraki673 & pipiche38
 #
-import Domoticz
 import json
 
-from Modules.zigateConsts import ZCL_CLUSTERS_ACT
+import Domoticz
+from Classes.WebServer.headerResponse import (prepResponseMessage,
+                                              setupHeadersResponse)
 from Modules.bindings import webBind, webUnBind
-from Classes.WebServer.headerResponse import setupHeadersResponse, prepResponseMessage
+from Modules.zigateConsts import ZCL_CLUSTERS_ACT
 
 
 def rest_bindLSTcluster(self, verb, data, parameters):

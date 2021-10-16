@@ -3,17 +3,17 @@
 #
 # Author: zaraki673 & pipiche38
 #
-import Domoticz
-
-from urllib.parse import urlparse
-from time import gmtime, strftime
+import mimetypes
 import os
 import os.path
-import mimetypes
 from datetime import datetime
+from time import gmtime, strftime
+from urllib.parse import urlparse
 
-from Classes.WebServer.headerResponse import setupHeadersResponse, prepResponseMessage
-from Classes.WebServer.tools import DumpHTTPResponseToLog, MAX_KB_TO_SEND
+import Domoticz
+from Classes.WebServer.headerResponse import (prepResponseMessage,
+                                              setupHeadersResponse)
+from Classes.WebServer.tools import MAX_KB_TO_SEND, DumpHTTPResponseToLog
 
 
 def onMessage(self, Connection, Data):

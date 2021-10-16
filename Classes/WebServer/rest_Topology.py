@@ -4,14 +4,15 @@
 # Author: zaraki673 & pipiche38
 #
 
-import Domoticz
 import json
 import os
 import os.path
-from time import time
 from datetime import datetime
+from time import time
 
-from Classes.WebServer.headerResponse import setupHeadersResponse, prepResponseMessage
+import Domoticz
+from Classes.WebServer.headerResponse import (prepResponseMessage,
+                                              setupHeadersResponse)
 
 
 def rest_req_topologie(self, verb, data, parameters):

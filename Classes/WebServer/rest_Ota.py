@@ -3,13 +3,14 @@
 #
 # Author: zaraki673 & pipiche38
 #
-import Domoticz
 import json
-
-from Modules.zigateConsts import ZCL_CLUSTERS_ACT
-from Modules.bindings import webBind, webUnBind
-from Classes.WebServer.headerResponse import setupHeadersResponse, prepResponseMessage
 from time import time
+
+import Domoticz
+from Classes.WebServer.headerResponse import (prepResponseMessage,
+                                              setupHeadersResponse)
+from Modules.bindings import webBind, webUnBind
+from Modules.zigateConsts import ZCL_CLUSTERS_ACT
 
 MATRIX_MANUFACTURER_NAME = {
     "117c": "IKEA of Sweden",

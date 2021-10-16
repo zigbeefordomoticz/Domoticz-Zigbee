@@ -4,10 +4,11 @@
 # Author: zaraki673 & pipiche38
 #
 
-import Domoticz
 import json
 
-from Classes.WebServer.headerResponse import setupHeadersResponse, prepResponseMessage
+import Domoticz
+from Classes.WebServer.headerResponse import (prepResponseMessage,
+                                              setupHeadersResponse)
 
 # from Classes.WebServer.rest_Bindings import rest_bindLSTcluster, rest_bindLSTdevice, rest_binding, rest_unbinding
 # from Classes.WebServer.rest_Topology import rest_netTopologie, rest_req_topologie
@@ -52,7 +53,7 @@ def do_rest(self, Connection, verb, data, version, command, parameters):
         "plugin": {"Name": "plugin", "Verbs": {"GET"}, "function": self.rest_PluginEnv},
         "raw-command": {"Name": "raw-command", "Verbs": {"PUT"}, "function": self.rest_raw_command},
         "rcv-nw-hrdwr": {"Name": "rcv-nw-hrdwr", "Verbs": {"GET"}, "function": self.rest_rcv_nw_hrdwr},
-        #"recreate-widgets": {"Name": "recreate-widgets", "Verbs": {"GET"}, "function": self.rest_recreate_widgets},
+        "recreate-widgets": {"Name": "recreate-widgets", "Verbs": {"PUT"}, "function": self.rest_recreate_widgets},
         "req-nwk-full": {"Name": "req-nwk-full", "Verbs": {"GET"}, "function": self.rest_req_nwk_full},
         "req-nwk-inter": {"Name": "req-nwk-inter", "Verbs": {"GET"}, "function": self.rest_req_nwk_inter},
         "req-topologie": {"Name": "req-topologie", "Verbs": {"GET"}, "function": self.rest_req_topologie},

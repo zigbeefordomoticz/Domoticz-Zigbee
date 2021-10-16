@@ -4,34 +4,28 @@
 # Author: zaraki673 & pipiche38
 #
 
-import Domoticz
 import json
+import mimetypes
 import os
 import os.path
-import mimetypes
-
 from time import time
 
-from Modules.zigateConsts import ZCL_CLUSTERS_LIST, CERTIFICATION_CODE, ZIGATE_COMMANDS
-
-from Modules.basicOutputs import (
-    ZigatePermitToJoin,
-    sendZigateCmd,
-    start_Zigate,
-    setExtendedPANID,
-    zigateBlueLed,
-    send_zigate_mode,
-    initiate_change_channel,
-)
-from Modules.actuators import actuators
-from Modules.philips import philips_set_poweron_after_offon
-from Modules.enki import enki_set_poweron_after_offon
-from Modules.tools import is_hex
-from Classes.PluginConf import PluginConf, SETTINGS
-from Classes.LoggingManagement import LoggingManagement
+import Domoticz
 from Classes.DomoticzDB import DomoticzDB_Preferences
-
-from Classes.WebServer.headerResponse import setupHeadersResponse, prepResponseMessage
+from Classes.LoggingManagement import LoggingManagement
+from Classes.PluginConf import SETTINGS, PluginConf
+from Classes.WebServer.headerResponse import (prepResponseMessage,
+                                              setupHeadersResponse)
+from Modules.actuators import actuators
+from Modules.basicOutputs import (ZigatePermitToJoin,
+                                  initiate_change_channel, send_zigate_mode,
+                                  sendZigateCmd, setExtendedPANID,
+                                  start_Zigate, zigateBlueLed)
+from Modules.enki import enki_set_poweron_after_offon
+from Modules.philips import philips_set_poweron_after_offon
+from Modules.tools import is_hex
+from Modules.zigateConsts import (CERTIFICATION_CODE,
+                                  ZCL_CLUSTERS_LIST, ZIGATE_COMMANDS)
 
 MIMETYPES = {
     "gif": "image/gif",
@@ -62,27 +56,34 @@ MIMETYPES = {
 
 class WebServer(object):
 
-    from Classes.WebServer.com import startWebServer, onStop, onConnect, onDisconnect
+    from Classes.WebServer.com import (onConnect, onDisconnect,
+                                       onStop, startWebServer)
     from Classes.WebServer.dispatcher import do_rest
     from Classes.WebServer.onMessage import onMessage
-    from Classes.WebServer.rest_Bindings import rest_bindLSTcluster, rest_bindLSTdevice, rest_binding, rest_unbinding
-    from Classes.WebServer.rest_Energy import rest_req_nwk_full, rest_req_nwk_inter
-    from Classes.WebServer.rest_Groups import (
-        rest_zGroup,
-        rest_zGroup_lst_avlble_dev,
-        rest_rescan_group,
-        rest_scan_devices_for_group,
-    )
-    from Classes.WebServer.rest_Provisioning import rest_new_hrdwr, rest_rcv_nw_hrdwr, rest_full_reprovisionning
-    from Classes.WebServer.rest_Topology import rest_netTopologie, rest_req_topologie
+    from Classes.WebServer.rest_Bindings import (rest_binding,
+                                                 rest_bindLSTcluster,
+                                                 rest_bindLSTdevice,
+                                                 rest_unbinding)
+    from Classes.WebServer.rest_Casaia import (rest_casa_device_ircode_update,
+                                               rest_casa_device_list)
+    from Classes.WebServer.rest_Energy import (rest_req_nwk_full,
+                                               rest_req_nwk_inter)
+    from Classes.WebServer.rest_Groups import (rest_rescan_group,
+                                               rest_scan_devices_for_group,
+                                               rest_zGroup,
+                                               rest_zGroup_lst_avlble_dev)
+    from Classes.WebServer.rest_Ota import (rest_ota_devices_for_manufcode,
+                                            rest_ota_firmware_list,
+                                            rest_ota_firmware_update)
+    from Classes.WebServer.rest_Provisioning import (rest_full_reprovisionning,
+                                                     rest_new_hrdwr,
+                                                     rest_rcv_nw_hrdwr)
+    from Classes.WebServer.rest_recreateWidget import rest_recreate_widgets
+    from Classes.WebServer.rest_Topology import (rest_netTopologie,
+                                                 rest_req_topologie)
     from Classes.WebServer.sendresponse import sendResponse
-    from Classes.WebServer.tools import keepConnectionAlive, DumpHTTPResponseToLog
-    from Classes.WebServer.rest_Ota import (
-        rest_ota_firmware_update,
-        rest_ota_firmware_list,
-        rest_ota_devices_for_manufcode,
-    )
-    from Classes.WebServer.rest_Casaia import rest_casa_device_list, rest_casa_device_ircode_update
+    from Classes.WebServer.tools import (DumpHTTPResponseToLog,
+                                         keepConnectionAlive)
 
     hearbeats = 0
 
@@ -100,6 +101,7 @@ class WebServer(object):
         Devices,
         ListOfDevices,
         IEEE2NWK,
+        DeviceConf,
         permitTojoin,
         WebUserName,
         WebPassword,
@@ -139,6 +141,7 @@ class WebServer(object):
         self.DevicesInPairingMode = DevicesInPairingMode
         self.fakeDevicesInPairingMode = 0
         self.IEEE2NWK = IEEE2NWK
+        self.DeviceConf = DeviceConf
         self.Devices = Devices
 
         self.restart_needed = {"RestartNeeded": 0}

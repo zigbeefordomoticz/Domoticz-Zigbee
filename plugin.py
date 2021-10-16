@@ -1264,6 +1264,7 @@ def start_web_server(self, webserver_port, webserver_homefolder):
         Devices,
         self.ListOfDevices,
         self.IEEE2NWK,
+        self.DeviceConf,
         self.permitTojoin,
         self.WebUsername,
         self.WebPassword,
