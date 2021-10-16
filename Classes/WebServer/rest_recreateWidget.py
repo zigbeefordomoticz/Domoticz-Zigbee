@@ -8,7 +8,8 @@ from time import time
 import Domoticz
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
-from Modules.domoCreate import CreateDomoDevice
+from Modules.domoCreate import (CreateDomoDevice,
+                                over_write_type_from_deviceconf)
 
 
 def rest_recreate_widgets(self, verb, data, parameters):
@@ -45,6 +46,7 @@ def rest_recreate_widgets(self, verb, data, parameters):
             return _response
         _response["Data"] = {"NwkId %s set to Provisioning Requested at %s" % (nwkid, int(time()))}
 
+    over_write_type_from_deviceconf( self, self.Devices, nwkid)
     self.ListOfDevices[nwkid]["Status"] = "CreateDB"
     CreateDomoDevice(self, self.Devices, nwkid)
 

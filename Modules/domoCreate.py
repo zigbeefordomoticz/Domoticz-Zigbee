@@ -12,12 +12,11 @@ import json
 import time
 
 import Domoticz
-
 from Classes.LoggingManagement import LoggingManagement
-
-from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
+from Modules.domoTools import (GetType, subtypeRGB_FromProfile_Device_IDs,
+                               subtypeRGB_FromProfile_Device_IDs_onEp2)
 from Modules.widgets import SWITCH_LVL_MATRIX
-from Modules.domoTools import GetType, subtypeRGB_FromProfile_Device_IDs, subtypeRGB_FromProfile_Device_IDs_onEp2
+from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
 
 
 def cleanup_widget_Type(widget_type_list):
@@ -229,6 +228,44 @@ def createDomoticzWidget(
             self.ListOfDevices[nwkid]["Ep"][ep]["ClusterType"][str(ID)] = ForceClusterType
         else:
             self.ListOfDevices[nwkid]["Ep"][ep]["ClusterType"][str(ID)] = cType
+
+def over_write_type_from_deviceconf( self, Devices, NwkId):
+
+    self.log.logging( "Widget", "Debug", "over_write_type_from_deviceconf - NwkId to be processed : %s " % NwkId, NwkId )
+    if NwkId not in self.ListOfDevices:
+        self.log.logging( "Widget", "Log", "over_write_type_from_deviceconf - NwkId : %s not found " % NwkId, NwkId )
+        return
+    if 'Ep' not in self.ListOfDevices[ NwkId ]:
+        self.log.logging( "Widget", "Log", "over_write_type_from_deviceconf - NwkId : %s 'Ep' not found" % NwkId, NwkId )
+        return
+
+    if "Model" not in self.ListOfDevices[ NwkId ]:
+        self.log.logging( "Widget", "Log", "over_write_type_from_deviceconf - NwkId : %s 'Model' not found" % NwkId, NwkId )
+        return
+    _model = self.ListOfDevices[ NwkId ]["Model"]
+    if _model not in self.DeviceConf:
+        self.log.logging( "Widget", "Log", "over_write_type_from_deviceconf - NwkId : %s Model: %s not found in DeviceConf" % (NwkId, _model), NwkId )
+        return
+    _deviceConf = self.DeviceConf[ _model ]
+
+    for _ep in self.ListOfDevices[ NwkId ]['Ep']:
+        if _ep not in _deviceConf['Ep']:
+            self.log.logging( "Widget", "Log", "over_write_type_from_deviceconf - NwkId : %s 'ep: %s' not found in DeviceConf" % (NwkId, _ep), NwkId )
+            continue
+        if "Type" not in _deviceConf['Ep'][ _ep ]:
+            self.log.logging( "Widget", "Log", "over_write_type_from_deviceconf - NwkId : %s 'Type' not found in DevieConf" % (NwkId,), NwkId )
+            continue
+        if "Type" in self.ListOfDevices[ NwkId ]['Ep'][ _ep ] and self.ListOfDevices[ NwkId ]['Ep'][ _ep ]["Type"] == _deviceConf['Ep'][ _ep ]["Type"]:
+            self.log.logging( "Widget", "Debug", "over_write_type_from_deviceconf - NwkId : %s Device Type: %s == Device Conf Type: %s" % (
+                NwkId,self.ListOfDevices[ NwkId ]['Ep'][ _ep ]["Type"] , _deviceConf['Ep'][ _ep ]["Type"]), NwkId )
+            continue
+
+        self.log.logging(
+            "Widget", "Debug", "over_write_type_from_deviceconf - Ep Overwrite Type with a new one %s on ep: %s" % (
+                _deviceConf['Ep'][ _ep ]["Type"], _ep), NwkId )
+
+        self.ListOfDevices[ NwkId ]['Ep'][ _ep ]["Type"] = _deviceConf['Ep'][ _ep ]["Type"]
+
 
 
 def CreateDomoDevice(self, Devices, NWKID):
