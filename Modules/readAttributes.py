@@ -305,7 +305,7 @@ def retreive_attributes_from_default_device_list(self, key, Ep, cluster):
         return None
     if "Ep" not in self.ListOfDevices[key]["Attributes List"]:
         return None
-    if Ep in self.ListOfDevices[key]["Attributes List"]["Ep"]:
+    if Ep not in self.ListOfDevices[key]["Attributes List"]["Ep"]:
         return None
     if cluster not in self.ListOfDevices[key]["Attributes List"]["Ep"][Ep]:
         return None
@@ -1448,22 +1448,23 @@ def ReadAttributeRequest_fc00(self, key):
 def ReadAttributeRequest_fc01(self, key):
     # Cluster Legrand
     self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_fc01 - Key: %s " % key, nwkid=key)
-    EPout = "01"
+    ListOfEp = getListOfEpForCluster(self, key, "fc01")
 
-    listAttributes = []
-    for iterAttr in retreive_ListOfAttributesByCluster(self, key, EPout, "fc01"):
-        if iterAttr not in listAttributes:
-            listAttributes.append(iterAttr)
+    for EPout in ListOfEp:
+        listAttributes = []
+        for iterAttr in retreive_ListOfAttributesByCluster(self, key, EPout, "fc01"):
+            if iterAttr not in listAttributes:
+                listAttributes.append(iterAttr)
 
-    if listAttributes:
-        self.log.logging(
-            "ReadAttributes",
-            "Debug",
-            "Request Legrand attributes info via Read Attribute request: " + key + " EPout = " + EPout,
-            nwkid=key,
-        )
-        # ReadAttributeReq( self, key, ZIGATE_EP, EPout, "fc01", listAttributes, manufacturer_spec = '01', manufacturer = '1021', ackIsDisabled = is_ack_tobe_disabled(self, key))
-        ReadAttributeReq(self, key, ZIGATE_EP, EPout, "fc01", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
+        if listAttributes:
+            self.log.logging(
+                "ReadAttributes",
+                "Debug",
+                "Request Legrand attributes info via Read Attribute request: " + key + " EPout = " + EPout,
+                nwkid=key,
+            )
+            # ReadAttributeReq( self, key, ZIGATE_EP, EPout, "fc01", listAttributes, manufacturer_spec = '01', manufacturer = '1021', ackIsDisabled = is_ack_tobe_disabled(self, key))
+            ReadAttributeReq(self, key, ZIGATE_EP, EPout, "fc01", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
 
 
 def ReadAttributeRequest_fc21(self, key):
