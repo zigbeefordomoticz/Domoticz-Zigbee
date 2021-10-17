@@ -4482,7 +4482,7 @@ def Cluster0b04(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Debug",
-            "ReadCluster %s - %s/%s Current L1 %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, value),
+            "ReadCluster %s - %s/%s %s Current L1 %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, value),
             MsgSrcAddr,
         )
 
@@ -4588,10 +4588,10 @@ def Cluster0b04(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value), Attribute_=MsgAttrID)
             # Check if Intensity is below subscription level
             if MsgAttrID == "0908":
-                self.log.logging("Cluster", "Debug", "ReadCluster %s - %s/%s Current L2 %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, value))
+                self.log.logging("Cluster", "Log", "ReadCluster %s - %s/%s %s Current L2 %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, value), MsgSrcAddr)
                 zlinky_check_alarm(self, Devices, MsgSrcAddr, "f2", value)
             elif MsgAttrID == "0a08":
-                self.log.logging("Cluster", "Debug", "ReadCluster %s - %s/%s Current L3 %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, value))
+                self.log.logging("Cluster", "Log", "ReadCluster %s - %s/%s %s Current L3 %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, value), MsgSrcAddr)
                 zlinky_check_alarm(self, Devices, MsgSrcAddr, "f3", value)
 
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value))
