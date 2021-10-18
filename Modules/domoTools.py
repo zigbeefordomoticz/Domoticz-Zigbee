@@ -253,7 +253,7 @@ def resetMotion(self, Devices, NwkId, WidgetType, unit, SignalLevel, BatteryLvl,
         Devices[unit].Update(nValue=0, sValue="Off")
         self.log.logging(
             "Widget",
-            "Log",
+            "Debug",
             "Last update of the devices %s %s was %s ago" % (unit, WidgetType, (now - lastupdate)),
             NwkId,
         )
