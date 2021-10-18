@@ -467,7 +467,7 @@ def legrand_fc40(self, nwkid, Mode):
         "Confort -1": 0x01,
         "Confort -2": 0x02,
         "Eco": 0x03,
-        "Hors-gel": 0x04,
+        "Frost Protection": 0x04,
         "Off": 0x05,
     }
 
