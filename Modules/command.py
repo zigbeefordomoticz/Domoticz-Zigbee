@@ -813,7 +813,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             self.ListOfDevices[NWKID]["Heartbeat"] = "0"
             return
 
-        if DeviceType in ("ThermoMode_3", ):
+        if DeviceType in ("ThermoMode_3", ): 
             self.log.logging(
                 "Command",
                 "Log",
@@ -822,15 +822,15 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 NWKID,
             )
             self.log.logging("Command", "Debug", "ThermoMode_3 (Acova) - requested Level: %s" % Level, NWKID)
-            if Level in THERMOSTAT_LEVEL_2_MODE:
+            if Level in THERMOSTAT_LEVEL_3_MODE:
                 self.log.logging(
                     "Command",
                     "Log",
-                    " - Set Thermostat Mode to : %s / T2:%s " % (Level, THERMOSTAT_LEVEL_2_MODE[Level]),
+                    " - Set Thermostat Mode to : %s / T2:%s " % (Level, THERMOSTAT_LEVEL_3_MODE[Level]),
                     NWKID,
                 )
 
-                thermostat_Mode(self, NWKID, THERMOSTAT_LEVEL_2_MODE[Level])
+                thermostat_Mode(self, NWKID, THERMOSTAT_LEVEL_3_MODE[Level])
                 UpdateDevice_v2(
                     self, Devices, Unit, int(Level) // 10, Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev
                 )
