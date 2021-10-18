@@ -1635,9 +1635,9 @@ THERMOSTAT_LEVEL_2_MODE = {
 }
 
 THERMOSTAT_LEVEL_3_MODE = {
-    0x00: "Off", # Off
-    0x01: "Auto", # Confort
-    0x02: "Heat", # Eco
+    0: "Off", # Off
+    10: "Auto", # Confort
+    20: "Heat", # Eco
 }
 
 THERMOSTAT_MODE_2_LEVEL = {
