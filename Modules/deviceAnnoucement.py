@@ -37,6 +37,11 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
     #     - Real Device Annoucement on which the plugin should trigger a discovery (if unknown )
     #     - Real Device Annoucement for Devices which do not send a Rejoin Request
 
+    # The RejoinNetwork parameter indicating the method used to join the network. 
+    # The parameter is 0x00 if the device joined through association.
+    # The parameter is 0x01 if the device joined directly or rejoined using orphaning. 
+    # The parameter is 0x02 if the device used NWK rejoin.
+
     # Decoding what we receive
 
     RejoinFlag = None
