@@ -814,11 +814,7 @@ def Cluster0000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute(self, MsgAttType, MsgClusterData))
 
     elif MsgAttrID == "f000":
-        legrand = False
-        if "Manufacturer" in self.ListOfDevices[MsgSrcAddr]:
-            if self.ListOfDevices[MsgSrcAddr]["Manufacturer"] == "1021":
-                legrand = True
-        if legrand:
+        if "Manufacturer" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Manufacturer"] == "1021":
             op_time = int(str(decodeAttribute(self, MsgAttType, MsgClusterData)))
             dd = op_time // 62400
             op_time = op_time - (dd * 62400)
@@ -831,7 +827,7 @@ def Cluster0000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             self.ListOfDevices[MsgSrcAddr]["Operating Time"] = "%sd %sh %sm %ss" % (dd, hh, mm, ss)
             self.log.logging(
                 "Cluster",
-                "Debug",
+                "Log",
                 "%s/%s ReadCluster - 0x0000 - Operating Time: %sdays %shours %smin %ssec" % (MsgSrcAddr, MsgSrcEp, dd, hh, mm, ss),
                 MsgSrcAddr,
             )

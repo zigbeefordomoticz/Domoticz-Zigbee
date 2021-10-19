@@ -63,8 +63,8 @@ def process_frame(self, decoded_frame):
             if self.ListOfCommands[x]["cmd"] == "0012":
                 release_command(self, x)
         # This could be also linked to a Reboot of the ZiGate firmware. In such case, it might be important to release Semaphore
-        # Must be sent above in order to issue a rejoin_legrand_reset() if needed
-        # rejoin_legrand_reset(self)
+        
+        self.forwarder_queue.put(decoded_frame)
         return
 
     if MsgType in CMD_PDM_ON_HOST:

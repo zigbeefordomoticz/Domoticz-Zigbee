@@ -54,6 +54,7 @@ from Modules.basicOutputs import (
 from Modules.timeServer import timeserver_read_attribute_request
 from Modules.readAttributes import ReadAttributeRequest_0000
 from Modules.livolo import livolo_read_attribute_request
+from Modules.legrand_netatmo import rejoin_legrand_reset
 from Modules.lumi import AqaraOppleDecoding
 from Modules.schneider_wiser import wiser_read_attribute_request
 from Modules.errorCodes import DisplayStatusCode
@@ -82,8 +83,9 @@ from Classes.Transport.sqnMgmt import (
 def ZigateRead(self, Devices, Data):
 
     DECODERS = {
-        "0100": Decode0100,
         "004d": Decode004D,
+        "0100": Decode0100,
+        "0302": Decode0302,
         "0400": Decode0400,
         "8000": Decode8000_v2,
         "8002": Decode8002,
@@ -290,6 +292,15 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
                 "Decode0100 - Read Attribute Request %s/%s Cluster %s Attribute %s"
                 % (MsgSrcAddr, MsgSrcEp, MsgClusterId, Attribute),
             )
+
+def Decode0302(self, Devices, MsgData, MsgLQI):  # PDM Load
+
+    # Must be sent above in order to issue a rejoin_legrand_reset() if needed
+    self.log.logging(
+        "Input",
+        "Debug",
+        "Decode0302 - PDM Load")
+    rejoin_legrand_reset(self)
 
 
 def Decode0400(self, Devices, MsgData, MsgLQI):  # Enrolment Request Response
