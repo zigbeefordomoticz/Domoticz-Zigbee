@@ -25,6 +25,7 @@ from Modules.tuyaSiren import tuya_sirene_registration
 from Modules.tuyaTRV import tuya_eTRV_registration, TUYA_eTRV_MODEL
 from Modules.zigateConsts import CLUSTERS_LIST
 
+DELAY_BETWEEN_2_DEVICEANNOUCEMENT = 20
 
 # V2
 def device_annoucementv2(self, Devices, MsgData, MsgLQI):
@@ -172,8 +173,8 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
         return
 
     # Annouced is in the ListOfDevices[NwkId]
-    if "TimeStamp" in self.ListOfDevices[NwkId]["Announced"] and (now < (self.ListOfDevices[NwkId]["Announced"]["TimeStamp"] + 15)):
-        # If the TimeStamp is > 15, the Data are invalid and we will do process this.
+    if "TimeStamp" in self.ListOfDevices[NwkId]["Announced"] and (now < (self.ListOfDevices[NwkId]["Announced"]["TimeStamp"] + DELAY_BETWEEN_2_DEVICEANNOUCEMENT )):
+        # If the TimeStamp is > DELAY_BETWEEN_2_DEVICEANNOUCEMENT, the Data are invalid and we will do process this.
         if "Rejoin" in self.ListOfDevices[NwkId]["Announced"] and self.ListOfDevices[NwkId]["Announced"]["Rejoin"] in ("01", "02") and self.ListOfDevices[NwkId]["Status"] != "Left":
             self.log.logging(
                 "Input",
@@ -470,11 +471,11 @@ def decode004d_existing_devicev1(self, Devices, MsgSrcAddr, MsgIEEE, MsgMacCapa,
         legrand_refresh_battery_remote(self, MsgSrcAddr)
         return
 
-    # If we got a recent Annoucement in the last 15 secondes, then we drop the new one
+    # If we got a recent Annoucement in the last DELAY_BETWEEN_2_DEVICEANNOUCEMENT secondes, then we drop the new one
     if "Announced" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Status"] != "Left":
         if "TimeStamp" in self.ListOfDevices[MsgSrcAddr]["Announced"]:
-            if now < self.ListOfDevices[MsgSrcAddr]["Announced"]["TimeStamp"] + 15:
-                # Looks like we have a duplicate Device Announced in less than 15s
+            if now < self.ListOfDevices[MsgSrcAddr]["Announced"]["TimeStamp"] + DELAY_BETWEEN_2_DEVICEANNOUCEMENT:
+                # Looks like we have a duplicate Device Announced in less than DELAY_BETWEEN_2_DEVICEANNOUCEMENT
                 self.log.logging(
                     "Input",
                     "Debug",
