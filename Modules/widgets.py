@@ -315,7 +315,7 @@ SWITCH_LVL_MATRIX = {
     "ThermoMode_3": {
         0: (0, "Off"),  # Off Ok Acova
         1: (1, "10"),   # Confort Ok Acova
-        2: (2, "20"),   # 
+        2: (2, "20"),   # No-Freez
         "ForceUpdate": True,
         "LevelNames": "Off|Confort|No-Freeze",
         "Language": {"fr-FR": {"LevelNames": "Arrêt|Confort|hors-gel"}},
