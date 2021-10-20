@@ -21,6 +21,7 @@ MATRIX_MANUFACTURER_NAME = {
     "100b": "Philips",
     "105e": "Schneider Electric",
     "1078": "Computime",
+    "1037": "LiXee"
 }
 
 

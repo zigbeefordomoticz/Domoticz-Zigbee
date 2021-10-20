@@ -53,7 +53,7 @@ OTA_CODES = {
     "Philips": {"Folder": "PHILIPS", "ManufCode": 0x100B, "ManufName": "Philips", "Enabled": True},
     "Schneider": {"Folder": "SCHNEIDER-WISER", "ManufCode": 0x105E, "ManufName": "Schneider Electric", "Enabled": True},
     "Salus": {"Folder": "SALUS", "ManufCode": 0x1078, "ManufName": "Computime", "Enabled": True},
-    "Lixe": {"Folder": "LIXEE", "ManufCode": 0x1037, "ManufName": "LiXee", "Enabled": True},
+    "Lixee": {"Folder": "LIXEE", "ManufCode": 0x1037, "ManufName": "LiXee", "Enabled": True},
 }
 
 
