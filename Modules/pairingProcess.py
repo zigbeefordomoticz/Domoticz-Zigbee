@@ -90,7 +90,13 @@ def processNotinDBDevices(self, Devices, NWKID, status, RIA):
         )
         status = "createDB"
 
+    #if status == "8043" and request_node_descriptor( self, NWKID, RIA=None, status=None):
+    #    # We have to request the node_descriptor
+    #    return
+
     if status in ("createDB", "8043"):
+        # We do a request_node_description in case of unknown.
+        request_node_descriptor( self, NWKID, RIA=None, status=None)
         interview_state_createDB(self, Devices, NWKID, RIA, status)
 
     if status != "createDB":
@@ -161,16 +167,7 @@ def interview_state_8043(self, NWKID, RIA, knownModel, status):
     self.log.logging("Pairing", "Debug", "[%s] NEW OBJECT: %s Request Model Name" % (RIA, NWKID))
     ReadAttributeRequest_0000(self, NWKID, fullScope=False)  # Reuest Model Name
 
-    if "Manufacturer" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Manufacturer"] in ({}, ""):
-        self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s Request Node Descriptor" % (RIA, NWKID))
-        sendZigateCmd(self, "0042", str(NWKID))  # Request a Node Descriptor
-    else:
-        self.log.logging(
-            "Pairing",
-            "Debug",
-            "[%s] NEW OBJECT: %s Manufacturer: %s" % (RIA, NWKID, self.ListOfDevices[NWKID]["Manufacturer"]),
-            NWKID,
-        )
+    request_node_descriptor( self, NWKID, RIA=None, status=None)
 
     for iterEp in self.ListOfDevices[NWKID]["Ep"]:
         # ColorMode
@@ -189,6 +186,25 @@ def interview_state_8043(self, NWKID, RIA, knownModel, status):
 
     return status
 
+def request_node_descriptor( self, NWKID, RIA=None, status=None):
+
+    if "Manufacturer" in self.ListOfDevices[NWKID]:
+        if self.ListOfDevices[NWKID]["Manufacturer"] in ({}, ""):
+            self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s Request Node Descriptor" % (RIA, NWKID))
+            sendZigateCmd(self, "0042", str(NWKID))  # Request a Node Descriptor
+            return True
+        else:
+            self.log.logging(
+                "Pairing",
+                "Debug",
+                "[%s] NEW OBJECT: %s Manufacturer: %s" % (RIA, NWKID, self.ListOfDevices[NWKID]["Manufacturer"]),
+                NWKID,
+            )
+            return False
+    else:
+        self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s Request Node Descriptor" % (RIA, NWKID))
+        sendZigateCmd(self, "0042", str(NWKID))  # Request a Node Descriptor
+        return True
 
 def interview_state_8045(self, NWKID, RIA=None, status=None):
     self.log.logging(

@@ -1792,6 +1792,9 @@ def Decode8042(self, Devices, MsgData, MsgLQI):  # Node Descriptor response
     )
     self.log.logging("Input", "Debug", "Decode8042 - Logical Type = " + str(LogicalType), addr)
 
+    if "Manufacturer" not in self.ListOfDevices[addr] or self.ListOfDevices[addr]["Manufacturer"] in ( '', {} ):
+        self.ListOfDevices[addr]["Manufacturer"] = manufacturer
+
     if self.ListOfDevices[addr]["Status"] != "inDB":
         self.ListOfDevices[addr]["Manufacturer"] = manufacturer
         self.ListOfDevices[addr]["DeviceType"] = str(DeviceType)
