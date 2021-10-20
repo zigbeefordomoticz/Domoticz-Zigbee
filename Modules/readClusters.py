@@ -2632,7 +2632,7 @@ def Cluster0201(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         else:
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0402", ValueTemp)
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, ValueTemp)
-            checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, "0402", "0000", ValueTemp)
+            checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, "0402", "0000", int( value) )
         self.log.logging("Cluster", "Debug", "ReadCluster - 0201 - Local Temp: %s" % ValueTemp, MsgSrcAddr)
 
     elif MsgAttrID == "0001":  # Outdoor Temperature
@@ -3452,6 +3452,7 @@ def Cluster0402(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
     if MsgAttrID == "0000" and MsgClusterData != "":
         value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
+        # Store value in int centi-degre
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
 
         if value > 0x7FFF and value < 0x954D:

@@ -652,7 +652,7 @@ def readXiaomiCluster(
                 MsgSrcAddr,
             )
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0402", ValueTemp)
-            checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, "0402", "0000", ValueTemp)
+            checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, "0402", "0000", Temp)
 
     if sHumid != "":
         ValueHumid = struct.unpack("H", struct.pack(">H", int(sHumid, 16)))[0]
