@@ -745,12 +745,6 @@ def ReArrangeMacCapaBasedOnModel(self, nwkid, inMacCapa):
         self.ListOfDevices[nwkid]["PowerSource"] = "Main"
         return "8e"
 
-    # Positionned PowerSource to Main for ZLinky_TIC
-    if self.ListOfDevices[ nwkid ]['Model'] in ( 'ZLinky_TIC', ):
-        self.ListOfDevices[nwkid]["PowerSource"] = "Main"
-        return inMacCapa
-
-
     # Convert Main Powered device to Battery
     if self.ListOfDevices[nwkid]["Model"] in (
         "lumi.remote.b686opcn01",
@@ -794,10 +788,6 @@ def mainPoweredDevice(self, nwkid):
     mainPower = False
     if "MacCapa" in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]["MacCapa"] != {}:
         mainPower = ("8e" == self.ListOfDevices[nwkid]["MacCapa"]) or ("84" == self.ListOfDevices[nwkid]["MacCapa"])
-
-    # These are Main Powered but limited RFD and Not Receive on Idle
-    if model_name in ( 'ZLinky_TIC', ):
-        return False
 
     # These are Model annouced as Main Power and are not
     if model_name in (

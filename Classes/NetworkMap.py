@@ -202,7 +202,6 @@ def is_a_router(self, nwkid):
         "TS0013",
         "TS0601-switch",
         "TS0601-2Gangs-switch",
-        "ZLinky_TIC",
     ):
         return False
 
