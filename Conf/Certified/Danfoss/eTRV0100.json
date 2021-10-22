@@ -122,6 +122,7 @@
 		"eTRVExerciseDay": 0,
 		"eTRVExerciseTime": 720,
 		"DanfossRoom": 0,
-		"DanfossRoomFreq": 0
+		"DanfossRoomFreq": 0,
+		"DanfossSetPointType": 0
 	}
 }

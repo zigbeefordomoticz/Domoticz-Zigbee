@@ -9,10 +9,11 @@ import Domoticz
 from Classes.LoggingManagement import LoggingManagement
 
 from Modules.readAttributes import ReadAttributeRequest_0201
-from Modules.basicOutputs import write_attribute
+from Modules.basicOutputs import write_attribute, raw_APS_request
 from Modules.schneider_wiser import schneider_setpoint
 from Modules.tuyaTRV import tuya_setpoint, TUYA_eTRV_MODEL
 from Modules.casaia import casaia_setpoint, casaia_check_irPairing
+from Modules.danfoss import thermostat_Setpoint_Danfoss
 
 
 def thermostat_Setpoint_SPZB(self, NwkId, setpoint):
@@ -80,8 +81,14 @@ def thermostat_Setpoint(self, NwkId, setpoint):
         if self.ListOfDevices[NwkId]["Model"] in ("AC201A",):
             casaia_setpoint(self, NwkId, setpoint)
             return
+        if self.ListOfDevices[NwkId]["Model"] in ("eTRV0100", "eT093WRO"):
+            if "Param" in self.ListOfDevices[NwkId] and "DanfossSetPointType" in self.ListOfDevices[NwkId]["Param"] and int(self.ListOfDevices[NwkId]["Param"]["DanfossSetPointType"]):
+                thermostat_Calibration(self, NwkId)
+                thermostat_Setpoint_Danfoss(self, NwkId, setpoint)
+                ReadAttributeRequest_0201(self, NwkId)
+                return
 
-    thermostat_Calibration(self, NwkId)
+    
 
     self.log.logging("Thermostats", "Debug", "thermostat_Setpoint - standard for %s with value %s" % (NwkId, setpoint), nwkid=NwkId)
 
@@ -316,26 +323,4 @@ def Thermostat_LockMode(self, NwkId, lockmode):
     write_attribute(self, NwkId, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
 
 
-def danfoss_control_algo(self, NwkId, mode):
-
-    # Scale factor of setpoint filter timeconstant ("aggressiveness" of control algorithm) 1= Quick ...  5=Moderate ... 10=Slow
-    manuf_id = "1246"
-    manuf_spec = "01"
-    cluster_id = "%04x" % 0x0201
-    Hattribute = "%04x" % 0x4020
-    data_type = "20"  # Uint8
-    self.log.logging("Thermostats", "Debug", "Danfoss Aly Control_Algo: %s" % mode, nwkid=NwkId)
-
-    Hdata = "%02x" % mode
-    EPout = "01"
-    for tmpEp in self.ListOfDevices[NwkId]["Ep"]:
-        if "0201" in self.ListOfDevices[NwkId]["Ep"][tmpEp]:
-            EPout = tmpEp
-    self.log.logging(
-        "Thermostats",
-        "Debug",
-        "danfoss_control_algo - for %s with value %s / cluster: %s, attribute: %s type: %s"
-        % (NwkId, Hdata, cluster_id, Hattribute, data_type),
-        nwkid=NwkId,
-    )
     write_attribute(self, NwkId, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
