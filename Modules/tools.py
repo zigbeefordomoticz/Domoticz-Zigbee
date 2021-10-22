@@ -781,7 +781,7 @@ def mainPoweredDevice(self, nwkid):
         Domoticz.Log("mainPoweredDevice - Unknown Device: %s" % nwkid)
         return False
     
-        model_name = ""
+    model_name = ""
     if "Model" in self.ListOfDevices[nwkid]:
         model_name = self.ListOfDevices[nwkid]["Model"]
 
@@ -810,16 +810,6 @@ def mainPoweredDevice(self, nwkid):
 
     # We need to take in consideration that Livolo is reporting a MacCapa of 0x80
     # That Aqara Opple are reporting MacCap 0x84 while they are Battery devices
-
-
-
-
-
-
-
-
-
-
 
     return mainPower
 
