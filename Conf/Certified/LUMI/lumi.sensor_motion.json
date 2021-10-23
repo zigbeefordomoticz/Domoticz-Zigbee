@@ -1,15 +1,18 @@
 {
-	"Ep":{
-		"01":{
-			"0006":"",
-			"Type":"Motion"
+	"Ep": {
+		"01": {
+			"0006": "",
+			"Type": "Motion"
 		}
 	},
-	"Type":"",
-        "ClusterToBind": [],
-        "ConfigureReporting":{},
-        "ReadAttributes": {
-                "0000": [ "0004", "0005"],
+	"Type": "",
+	"ClusterToBind": [],
+	"ConfigureReporting": {},
+	"ReadAttributes": {
+		"0000": [
+			"0004",
+			"0005"
+		],
 		"0006": []
-        }
+	}
 }

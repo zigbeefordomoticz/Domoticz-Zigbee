@@ -15,6 +15,9 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
 # OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
+
+# pytype: disable=wrong-arg-types,unsupported-operands,invalid-directive
+
 """Talk to a DNS server."""
 
 from __future__ import generators

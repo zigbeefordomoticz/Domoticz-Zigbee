@@ -16,6 +16,7 @@
 # OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 """DNS Messages"""
+# pytype: disable=module-attr
 
 from __future__ import absolute_import
 

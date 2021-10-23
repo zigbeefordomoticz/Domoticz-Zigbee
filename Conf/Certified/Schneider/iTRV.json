@@ -1,6 +1,6 @@
 {
-	"_comment":"Schneider Wiser Radiator Thermostat (CCTFR6100)",
-	"_version":"0.1",
+	"_comment": "Schneider Wiser Radiator Thermostat (CCTFR6100)",
+	"_version": "0.1",
 	"Ep": {
 		"01": {
 			"0000": "",
@@ -11,24 +11,52 @@
 			"0204": "",
 			"0b05": "",
 			"0019": "",
-			"Type": "Temp/ThermoSetpoint/Door/Valve" },
+			"Type": "Temp/ThermoSetpoint/Door/Valve"
+		},
 		"02": {
 			"0201": "",
 			"Type": ""
 		}
-  	},
+	},
 	"Type": "",
-	"ClusterToBind":[  ],
-	"ConfigureReporting": {
-  	},
-  	"ReadAttributes": {
-		"0000": [ "0000", "0001", "0003", "0004", "0005", "0007", "e001", "e002", "e004", "e007", "e009", "4000"],
+	"ClusterToBind": [],
+	"ConfigureReporting": {},
+	"ReadAttributes": {
+		"0000": [
+			"0000",
+			"0001",
+			"0003",
+			"0004",
+			"0005",
+			"0007",
+			"e001",
+			"e002",
+			"e004",
+			"e007",
+			"e009",
+			"4000"
+		],
 		"0003": [],
-		"0001": [ "0020", "0021" ] ,
-		"0019": [ "0002" ],
-		"0201": [ "0012", "0000", "0008","e103", "e014", "e015" ],
-		"0204": [ "0000", "0001"]
-  	},
+		"0001": [
+			"0020",
+			"0021"
+		],
+		"0019": [
+			"0002"
+		],
+		"0201": [
+			"0012",
+			"0000",
+			"0008",
+			"e103",
+			"e014",
+			"e015"
+		],
+		"0204": [
+			"0000",
+			"0001"
+		]
+	},
 	"Param": {
 		"WiserLockThermostat": 0,
 		"WiseriTrvWindowOpen": 1

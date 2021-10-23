@@ -1,22 +1,29 @@
 {
 	"_comment": "Tuya Siren Alarm",
 	"_version": "0.10",
-	"Ep":{
-		"01":{ 
-			"0000":"", 
-			"0004":"", 
-			"ef00":"", 
-			"000a":"", 
-			"0019":"", 
-			"Type":"Blind"}
+	"Ep": {
+		"01": {
+			"0000": "",
+			"0004": "",
+			"ef00": "",
+			"000a": "",
+			"0019": "",
+			"Type": "Blind"
+		}
 	},
-	"Type":"",
-	"ClusterToBind": [ "0000" ],
-	"ConfigureReporting": {
-	
-	},
+	"Type": "",
+	"ClusterToBind": [
+		"0000"
+	],
+	"ConfigureReporting": {},
 	"ReadAttributes": {
-		"0000": [ "0004", "0000", "0001", "0005", "0007", "fffe"  ]
+		"0000": [
+			"0004",
+			"0000",
+			"0001",
+			"0005",
+			"0007",
+			"fffe"
+		]
 	}
 }
-

@@ -9,22 +9,22 @@
     Description: Implement the Poll Control commands
 
 """
-#  An End Device cannot receive data packets directly, as it may be asleep when a packet arrives. 
-#  The data packets for an End Device are therefore buffered by the device’s parent and 
+#  An End Device cannot receive data packets directly, as it may be asleep when a packet arrives.
+#  The data packets for an End Device are therefore buffered by the device’s parent and
 #  the End Device polls its parent for data while awake. An individual data packet will only be held
 #  on the parent node for a maximum of 7.68 seconds and if many packets for the End Device are expected
 #  over a short period of time, the End Device should retrieve these packets as quickly as possible.
-#  An End Device can implement two polling modes, which are dependent on 
+#  An End Device can implement two polling modes, which are dependent on
 #  the poll interval (time-period between consecutive polls):
 #      Normal poll mode: A long poll interval is used - this mode is appropriate when the End Device is not expecting data packets
-#      Fast poll mode: A short poll interval is used - this mode is appropriate when the End Device is expecting data packets 
+#      Fast poll mode: A short poll interval is used - this mode is appropriate when the End Device is expecting data packets
 #
 # https://zigbeealliance.org/wp-content/uploads/2019/12/07-5123-06-zigbee-cluster-library-specification.pdf
 # Page 239
 #
 # Check-in Interval >= Long Poll Interval >= Short Poll IntervalThe default values chosen for this cluster are:
-# 0x0020/0x0000: Check-in Interval =1 hour = 0x3840 quartersecondsLong 
-# 0x0020/0x0001: Poll Interval = 5 seconds = 0x14 quarterseconds 
+# 0x0020/0x0000: Check-in Interval =1 hour = 0x3840 quartersecondsLong
+# 0x0020/0x0001: Poll Interval = 5 seconds = 0x14 quarterseconds
 # 0x0020/0x0002: Short Poll Interval = 2 quarterseconds = 0x02 quarterseconds
 # 0x0020/0x0003: Fast Poll Timeout = 10 seconds = 0x28 quarterseconds
 # Notethat for the Check-in Interval, 0 is a special value and does not apply to this equation.
@@ -35,131 +35,134 @@ import struct
 from Modules.basicOutputs import raw_APS_request
 
 # For reference the Danfoss eTRV polling is set as followed
-# the default configuration is 
+# the default configuration is
 # - Long poll every 7 seconds, = 0x1c quarter
-# - 2 short polls every 0,5 seconds, 
+# - 2 short polls every 0,5 seconds,
 # - moreover we check-in every 5 minutes.
 
-from Modules.zigateConsts import  LEGRAND_REMOTES
+from Modules.zigateConsts import LEGRAND_REMOTES
 
-def receive_poll_cluster( self, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, ManufacturerCode, Command, Data ):
+
+def receive_poll_cluster(self, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, ManufacturerCode, Command, Data):
     # Call from inRawAPS ( 0x8002)
     # Poll Control: Check-in Response
 
     manuf = model = None
-    if 'Manufacturer' in self.ListOfDevices[ srcnwkid] and self.ListOfDevices[ srcnwkid]['Manufacturer']:
-        manuf = self.ListOfDevices[ srcnwkid]['Manufacturer']
-    if 'Model' in self.ListOfDevices[ srcnwkid] and self.ListOfDevices[ srcnwkid]['Model']:
-        model = self.ListOfDevices[ srcnwkid]['Model']    
+    if "Manufacturer" in self.ListOfDevices[srcnwkid] and self.ListOfDevices[srcnwkid]["Manufacturer"]:
+        manuf = self.ListOfDevices[srcnwkid]["Manufacturer"]
+    if "Model" in self.ListOfDevices[srcnwkid] and self.ListOfDevices[srcnwkid]["Model"]:
+        model = self.ListOfDevices[srcnwkid]["Model"]
 
-    Domoticz.Log("receive_poll_cluster %s/%s %s %s %s" %(srcnwkid, srcep, cluster,Command, Data ))
-    if Command == '00': # We receive a Poll Checking Command
+    Domoticz.Log("receive_poll_cluster %s/%s %s %s %s" % (srcnwkid, srcep, cluster, Command, Data))
+    if Command == "00":  # We receive a Poll Checking Command
 
-        poll_checkin_response_command( self, Sqn, srcnwkid, srcep, ContinueFastPoll = True, DurationFastPoll = 0xFC0 )
-        
+        poll_checkin_response_command(self, Sqn, srcnwkid, srcep, ContinueFastPoll=True, DurationFastPoll=0xFC0)
+
         if model in LEGRAND_REMOTES:
-            Sqn = '%02x' %(int(Sqn,16) + 1)
-            poll_fast_poll_stop( self, Sqn, srcnwkid, srcep)   # Stop Fast poll
+            Sqn = "%02x" % (int(Sqn, 16) + 1)
+            poll_fast_poll_stop(self, Sqn, srcnwkid, srcep)  # Stop Fast poll
 
-    
-    
         # Sqn = '%02x' %(int(Sqn,16) + 1)
         # poll_set_long_poll_interval( self, Sqn, srcnwkid, srcep, NewLongPollInterval = 0x14)
         # Sqn = '%02x' %(int(Sqn,16) + 1)
         # poll_set_short_poll_interval( self, Sqn, srcnwkid, srcep, NewShortPollInterval = 0x2)
 
 
-def poll_checkin_command( self, Sqn, snwkid, ep ):
+def poll_checkin_command(self, Sqn, snwkid, ep):
     # Server -> End Device
     # The Poll Control Cluster server sends out a Check-in command to the devices to which it is paired based on the server’s Check-inIntervalattribute.
-    # It does this to find out if any of the Poll Control Cluster Clients with which it is paired are interested in having it enter fastpoll mode 
-    # so that it can be managed. This request is sent out based on either the Check-inInterval, 
+    # It does this to find out if any of the Poll Control Cluster Clients with which it is paired are interested in having it enter fastpoll mode
+    # so that it can be managed. This request is sent out based on either the Check-inInterval,
     # or the next Check-in value in the Fast Poll Stop Request generated by the Poll Control Cluster Client.
-    # The Check-in command expects a Check-in Response command to be sent back from the Poll Control Client. 
-    # If the Poll Control Server does not receive a Check-in response back from the Poll Control Client up to7.68 seconds 
+    # The Check-in command expects a Check-in Response command to be sent back from the Poll Control Client.
+    # If the Poll Control Server does not receive a Check-in response back from the Poll Control Client up to7.68 seconds
     # it is free to return to polling according to the LongPollInterval.
 
-    Domoticz.Log("poll_checkin_command %s %s" %(snwkid, ep))
-    cmd = '00'
+    Domoticz.Log("poll_checkin_command %s %s" % (snwkid, ep))
+    cmd = "00"
     if snwkid not in self.ListOfDevices:
-        Domoticz.Error(" - nwkid: %s do not exist" %snwkid)
+        Domoticz.Error(" - nwkid: %s do not exist" % snwkid)
         return
-    cluster_id = '0020' # Poll Control Cluster
-    
-    cluster_frame = '11'
+    cluster_id = "0020"  # Poll Control Cluster
+
+    cluster_frame = "11"
 
     payload = cluster_frame + Sqn + cmd
-    raw_APS_request( self, snwkid, ep, '0020', '0104', payload)
-    Domoticz.Log("Accept Fast Poll command 0x%s for %s/%s with payload: %s" %(cmd, snwkid, ep, payload))
+    raw_APS_request(self, snwkid, ep, "0020", "0104", payload)
+    Domoticz.Log("Accept Fast Poll command 0x%s for %s/%s with payload: %s" % (cmd, snwkid, ep, payload))
     return
 
-def poll_checkin_response_command( self, Sqn, nwkid, ep, ContinueFastPoll = True, DurationFastPoll = 0xFC0):
-    
+
+def poll_checkin_response_command(self, Sqn, nwkid, ep, ContinueFastPoll=True, DurationFastPoll=0xFC0):
+
     # Poll Control: Check-in Response
     # 0 quarterseconds ( 0xFC0 => 1 minute of Fast Polling)
 
-    Domoticz.Log("poll_checkin_response_command %s/%s %s %s" %(nwkid, ep,ContinueFastPoll,  DurationFastPoll))
+    Domoticz.Log("poll_checkin_response_command %s/%s %s %s" % (nwkid, ep, ContinueFastPoll, DurationFastPoll))
 
-    cmd = '00' # Check-in Response
+    cmd = "00"  # Check-in Response
     if nwkid not in self.ListOfDevices:
-        Domoticz.Error(" - nwkid: %s do not exist" %nwkid)
+        Domoticz.Error(" - nwkid: %s do not exist" % nwkid)
         return
-    cluster_id = '0020' # Poll Control Cluster
-    ContinueFastPoll = '%02x' %ContinueFastPoll
-    DurationFastPoll = '%04x' %(struct.unpack('>H',struct.pack('H',int('%04x' %DurationFastPoll,16)))[0])
+    cluster_id = "0020"  # Poll Control Cluster
+    ContinueFastPoll = "%02x" % ContinueFastPoll
+    DurationFastPoll = "%04x" % (struct.unpack(">H", struct.pack("H", int("%04x" % DurationFastPoll, 16)))[0])
 
-    cluster_frame = '11'
+    cluster_frame = "11"
     payload = cluster_frame + Sqn + cmd + ContinueFastPoll + DurationFastPoll
-    raw_APS_request( self, nwkid, ep, '0020', '0104', payload)
-    Domoticz.Log("Accept Fast Poll command 0x%s for %s/%s with payload: %s" %(cmd, nwkid, ep, payload))
+    raw_APS_request(self, nwkid, ep, "0020", "0104", payload)
+    Domoticz.Log("Accept Fast Poll command 0x%s for %s/%s with payload: %s" % (cmd, nwkid, ep, payload))
 
-def poll_fast_poll_stop( self, Sqn, nwkid, ep):
+
+def poll_fast_poll_stop(self, Sqn, nwkid, ep):
 
     # Fast Poll Stop to be called for Remote Devices
-    Domoticz.Log("poll_fast_poll_stop %s/%s" %(nwkid, ep))
-    cmd = '01' # Fast Poll Stop ( no data)
+    Domoticz.Log("poll_fast_poll_stop %s/%s" % (nwkid, ep))
+    cmd = "01"  # Fast Poll Stop ( no data)
 
     if nwkid not in self.ListOfDevices:
-        Domoticz.Error("Fast Poll Stop - nwkid: %s do not exist" %nwkid)
+        Domoticz.Error("Fast Poll Stop - nwkid: %s do not exist" % nwkid)
         return
 
-    cluster_id = '0020' # Poll Control Cluster
-    cluster_frame = '11'
+    cluster_id = "0020"  # Poll Control Cluster
+    cluster_frame = "11"
     payload = cluster_frame + Sqn + cmd
-    raw_APS_request( self, nwkid, ep, '0020', '0104', payload)
-    Domoticz.Log("send Fast Poll Stop command 0x%s for %s/%s with payload: %s" %(cmd, nwkid, ep, payload))
+    raw_APS_request(self, nwkid, ep, "0020", "0104", payload)
+    Domoticz.Log("send Fast Poll Stop command 0x%s for %s/%s with payload: %s" % (cmd, nwkid, ep, payload))
 
-def poll_set_long_poll_interval( self, Sqn, nwkid, ep, NewLongPollInterval=0x14):
 
-    Domoticz.Log("poll_set_long_poll_interval %s/%s %s" %(nwkid, ep, NewLongPollInterval))
-    cmd = '02'
+def poll_set_long_poll_interval(self, Sqn, nwkid, ep, NewLongPollInterval=0x14):
 
-    NewLongPollInterval = '%08x' %(struct.unpack('>L',struct.pack('L',int('%08x' %NewLongPollInterval,16)))[0])
+    Domoticz.Log("poll_set_long_poll_interval %s/%s %s" % (nwkid, ep, NewLongPollInterval))
+    cmd = "02"
+
+    NewLongPollInterval = "%08x" % (struct.unpack(">L", struct.pack("L", int("%08x" % NewLongPollInterval, 16)))[0])
 
     if nwkid not in self.ListOfDevices:
-        Domoticz.Error(" - nwkid: %s do not exist" %nwkid)
+        Domoticz.Error(" - nwkid: %s do not exist" % nwkid)
         return
-    cluster_id = '0020' # Poll Control Cluster
-    cluster_frame = '11'
-   
+    cluster_id = "0020"  # Poll Control Cluster
+    cluster_frame = "11"
+
     payload = cluster_frame + Sqn + cmd + NewLongPollInterval
-    raw_APS_request( self, nwkid, ep, '0020', '0104', payload)
-    Domoticz.Log("Accept Fast Poll command 0x%s for %s/%s with payload: %s" %(cmd, nwkid, ep, payload))
+    raw_APS_request(self, nwkid, ep, "0020", "0104", payload)
+    Domoticz.Log("Accept Fast Poll command 0x%s for %s/%s with payload: %s" % (cmd, nwkid, ep, payload))
     return
 
-def poll_set_short_poll_interval( self, Sqn, nwkid, ep, NewShortPollInterval = 0x2):
 
-    Domoticz.Log("poll_set_short_poll_interval %s/%s %s" %(nwkid, ep, NewShortPollInterval))
-    cmd = '03'
+def poll_set_short_poll_interval(self, Sqn, nwkid, ep, NewShortPollInterval=0x2):
 
-    NewShortPollInterval = '%04x' %(struct.unpack('>H',struct.pack('H',int('%04x' %NewShortPollInterval,16)))[0])
+    Domoticz.Log("poll_set_short_poll_interval %s/%s %s" % (nwkid, ep, NewShortPollInterval))
+    cmd = "03"
+
+    NewShortPollInterval = "%04x" % (struct.unpack(">H", struct.pack("H", int("%04x" % NewShortPollInterval, 16)))[0])
 
     if nwkid not in self.ListOfDevices:
-        Domoticz.Error(" - nwkid: %s do not exist" %nwkid)
+        Domoticz.Error(" - nwkid: %s do not exist" % nwkid)
         return
-    cluster_id = '0020' # Poll Control Cluster
-    cluster_frame = '11'
-   
+    cluster_id = "0020"  # Poll Control Cluster
+    cluster_frame = "11"
+
     payload = cluster_frame + Sqn + cmd + NewShortPollInterval
-    raw_APS_request( self, nwkid, ep, '0020', '0104', payload)
-    Domoticz.Log("Accept Fast Poll command 0x%s for %s/%s with payload: %s" %(cmd, nwkid, ep, payload))
+    raw_APS_request(self, nwkid, ep, "0020", "0104", payload)
+    Domoticz.Log("Accept Fast Poll command 0x%s for %s/%s with payload: %s" % (cmd, nwkid, ep, payload))

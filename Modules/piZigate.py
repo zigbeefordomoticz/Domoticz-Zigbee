@@ -44,10 +44,7 @@ def switchPiZigate_mode(self, mode="run"):
         )
 
     except Exception as e:
-        Domoticz.Error(
-            "switchPiZigate_mode - unable to find distribution: Assuming debian, Error: %s"
-            % e
-        )
+        Domoticz.Error("switchPiZigate_mode - unable to find distribution: Assuming debian, Error: %s" % e)
         runmode_with_gpiomodule()
         return
 
@@ -64,9 +61,7 @@ def runmode_with_gpiomodule():
         import RPi.GPIO as GPIO
 
     except RuntimeError:
-        Domoticz.Error(
-            "Error importing python3 module RPi.GPIO!, trying to recover with GPIO commands from wiringPi"
-        )
+        Domoticz.Error("Error importing python3 module RPi.GPIO!, trying to recover with GPIO commands from wiringPi")
         runmode_with_gpiocommand()
         return
     except:
@@ -113,9 +108,7 @@ def runmode_with_gpiocommand():
     try:
         from subprocess import run
     except:
-        Domoticz.Error(
-            "Error while importing run from python module subprocess, fall back to os module"
-        )
+        Domoticz.Error("Error while importing run from python module subprocess, fall back to os module")
         runmode_with_osgpiocommand()
         return
 
@@ -136,9 +129,7 @@ def runmode_with_gpiocommand():
         run(GPIO_CMD + " read 0", shell=True, check=True)  # nose
         run(GPIO_CMD + " read 2", shell=True, check=True)  # nose
     else:
-        Domoticz.Error(
-            "%s command missing. Make sure to install wiringPi package" % GPIO_CMD
-        )
+        Domoticz.Error("%s command missing. Make sure to install wiringPi package" % GPIO_CMD)
 
 
 def runmode_with_osgpiocommand():
@@ -160,6 +151,4 @@ def runmode_with_osgpiocommand():
         os.system(GPIO_CMD + " read 0")  # nosec
         os.system(GPIO_CMD + " read 2")  # nosec
     else:
-        Domoticz.Error(
-            "%s command missing. Make sure to install wiringPi package" % GPIO_CMD
-        )
+        Domoticz.Error("%s command missing. Make sure to install wiringPi package" % GPIO_CMD)

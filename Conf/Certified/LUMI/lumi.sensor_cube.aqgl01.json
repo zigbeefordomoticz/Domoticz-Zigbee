@@ -1,17 +1,20 @@
 {
-	"Ep":{
-		"01":{
-			"0012":"",
-			"000c":"",
-			"Type":"Aqara"
+	"Ep": {
+		"01": {
+			"0012": "",
+			"000c": "",
+			"Type": "Aqara"
 		}
 	},
-	"Type":"",
-        "ClusterToBind": [],
-        "ConfigureReporting":{},
-        "ReadAttributes": {
-                "0000": [ "0004", "0005"] ,
-                "0012": [],
-                "000c": []
-        }
+	"Type": "",
+	"ClusterToBind": [],
+	"ConfigureReporting": {},
+	"ReadAttributes": {
+		"0000": [
+			"0004",
+			"0005"
+		],
+		"0012": [],
+		"000c": []
+	}
 }

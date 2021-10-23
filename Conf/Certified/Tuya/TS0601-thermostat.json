@@ -1,27 +1,35 @@
 {
 	"_comment": "Tuya TRV: _TZE200_aoclfnxz /TS0601 /Moes /Thermostat BTH-002",
 	"_version": "0.10",
-	"Ep":{
-		"01":{ 
-			"0000":"", 
-			"0004":"", 
-			"0005":"",
-			"ef00":"", 
-			"000a":"", 
-			"0019":"", 
-			"Type":"Temp/ThermoSetpoint/ThermoOnOff/ThermoMode_2/HeatingStatus"}
+	"Ep": {
+		"01": {
+			"0000": "",
+			"0004": "",
+			"0005": "",
+			"ef00": "",
+			"000a": "",
+			"0019": "",
+			"Type": "Temp/ThermoSetpoint/ThermoOnOff/ThermoMode_2/HeatingStatus"
+		}
 	},
-	"Type":"",
-	"ClusterToBind": [ "0000", "ef00" ],
-	"ConfigureReporting": {
-	
-	},
+	"Type": "",
+	"ClusterToBind": [
+		"0000",
+		"ef00"
+	],
+	"ConfigureReporting": {},
 	"ReadAttributes": {
-		"0000": [ "0004", "0000", "0001", "0005", "0007", "fffe" ]
+		"0000": [
+			"0004",
+			"0000",
+			"0001",
+			"0005",
+			"0007",
+			"fffe"
+		]
 	},
 	"Param": {
 		"ValveDetection": 1,
 		"SensorMode": 0
 	}
 }
-
