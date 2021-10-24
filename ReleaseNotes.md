@@ -21,6 +21,9 @@ Release Numbering
 - Odd numbers --> Stable5
 - Even numbers  --> Beta
 
+## 24 October 2021 - 5.1.11
+- [Technical] - After a Power Off/On make sure to retreive the current status of Switches, Plug, Led and Level Control
+
 ## 24 October 2021 - 5.1.10
 - [Hardware] - Supporting Ikea Tradfri SHORTCUT and Remote N2
 - [Hardware] - Danfoss heating TRV. ( Zone and danfoss setpoint)
