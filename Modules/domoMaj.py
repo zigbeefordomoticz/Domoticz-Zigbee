@@ -252,10 +252,10 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 if Attribute_ != "050f" and Ep == "01" and Attribute_ not in ("0100", "0102"):
                     # Ep = 01, so we store Base, or HP,HC, or BBRHCJB, BBRHPJB
                     return
-                elif Attribute_ != "050f" and Ep == "f2" and Attribute_ not in ("0104", "0106"):
+                if Attribute_ != "050f" and Ep == "f2" and Attribute_ not in ("0104", "0106"):
                     # Ep = f2, so we store BBRHCJW, BBRHPJW
                     return
-                elif Attribute_ != "050f" and Ep == "f3" and Attribute_ not in ("0108", "010a"):
+                if Attribute_ != "050f" and Ep == "f3" and Attribute_ not in ("0108", "010a"):
                     # Ep == f3, so we store BBRHCJR, BBRHPJR
                     return
                 tarif_color = None
@@ -1577,9 +1577,9 @@ def check_erratic_value(self, NwkId, value_type, value, expected_min, expected_m
     return True
 
 
-def retreive_data_from_current(self, Devices, Unit, format):
+def retreive_data_from_current(self, Devices, Unit, _format):
 
-    nb_parameters = len(format.split(";"))
+    nb_parameters = len(_format.split(";"))
     currentsValue = Devices[Unit].sValue
     if len(currentsValue.split(";")) != nb_parameters:
         for x in range(0, nb_parameters):
