@@ -3672,7 +3672,7 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
 
     _ModelName = self.ListOfDevices[MsgSrcAddr]["Model"]
 
-    if _ModelName == "TRADFRI remote control":
+    if _ModelName in ("TRADFRI remote control",  "Remote Control N2"):
         if MsgClusterId == "0008" and MsgCmd in TYPE_ACTIONS:
             selector = TYPE_ACTIONS[MsgCmd]
             self.log.logging("Input", "Debug", "Decode8085 - Selector: %s" % selector, MsgSrcAddr)
@@ -3693,7 +3693,7 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
         self.log.logging("Input", "Debug", "Decode8085 - Philips Hue ROM001  MsgCmd: %s" % MsgCmd, MsgSrcAddr)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0008", "move")
 
-    elif _ModelName in ("TRADFRI onoff switch", "TRADFRI on/off switch"):
+    elif _ModelName in ("TRADFRI onoff switch", "TRADFRI on/off switch", "TRADFRI SHORTCUT Button", "TRADFRI openclose remote", "TRADFRI open/close remote"):
         # Ikea Switch On/Off
 
         if MsgClusterId == "0008":
@@ -4054,8 +4054,8 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
         self.log.logging(
             "Input",
             "Log",
-            "Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s "
-            % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
+            "Decode8085 - Model: %s SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s "
+            % (_ModelName, MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
         )
         self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, %s" % (MsgCmd, unknown_)
 
@@ -4110,13 +4110,17 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
 
     _ModelName = self.ListOfDevices[MsgSrcAddr]["Model"]
 
-    if _ModelName == "TRADFRI remote control":
+    if _ModelName in ( "TRADFRI remote control", "Remote Control N2"):
         # Ikea Remote 5 buttons round.
         # ( cmd, directioni, cluster )
         # ( 0x02, 0x0006) - click middle button - Action Toggle On/Off Off/on
 
         if MsgClusterId == "0006" and MsgCmd == "02":
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", "toggle")
+        elif MsgClusterId == "0006" and MsgCmd == "00":
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", "click_down")
+        elif MsgClusterId == "0006" and MsgCmd == "01":
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", "click_up")
         else:
             self.log.logging(
                 "Input",
@@ -4147,7 +4151,7 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
             )
         self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, %s" % (MsgCmd, unknown_)
 
-    elif _ModelName in ("TRADFRI onoff switch", "TRADFRI on/off switch"):
+    elif _ModelName in ("TRADFRI onoff switch", "TRADFRI on/off switch", "TRADFRI SHORTCUT Button", "TRADFRI openclose remote", "TRADFRI open/close remote"):
         # Ikea Switch On/Off
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0006", MsgCmd)
         self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, %s" % (MsgCmd, unknown_)
@@ -4301,8 +4305,8 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
         self.log.logging(
             "Input",
             "Log",
-            "Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s "
-            % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
+            "Decode8095 - Model: %s SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s "
+            % (_ModelName, MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
             MsgSrcAddr,
         )
 

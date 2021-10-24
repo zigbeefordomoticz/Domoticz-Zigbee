@@ -5,13 +5,12 @@
 			"0001": "",
 			"0003": "",
 			"0009": "",
-			"0b05": "",
 			"1000": "",
 			"0004": "",
-			"0005": "",
 			"0006": "",
 			"0008": "",
 			"0019": "",
+			"fc57": "",
 			"Type": "Ikea_Round_5b"
 		}
 	},
@@ -24,7 +23,19 @@
 		"0008",
 		"0019"
 	],
-	"ConfigureReporting": {},
+	"ConfigureReporting": {
+		"0001": {
+			"Attributes": {
+				"0021": {
+					"DataType": "20",
+					"MinInterval": "0E10",
+					"MaxInterval": "A8C0",
+					"TimeOut": "0000",
+					"Change": "02"
+				}
+			}
+		}
+	},
 	"ReadAttributes": {
 		"0000": [
 			"0000",

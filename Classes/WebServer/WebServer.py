@@ -63,6 +63,7 @@ class WebServer(object):
     from Classes.WebServer.rest_Bindings import (rest_binding,
                                                  rest_bindLSTcluster,
                                                  rest_bindLSTdevice,
+                                                 rest_group_binding,
                                                  rest_unbinding)
     from Classes.WebServer.rest_Casaia import (rest_casa_device_ircode_update,
                                                rest_casa_device_list)
