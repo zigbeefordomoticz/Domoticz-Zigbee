@@ -4117,6 +4117,10 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
 
         if MsgClusterId == "0006" and MsgCmd == "02":
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", "toggle")
+        elif MsgClusterId == "0006" and MsgCmd == "00":
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", "click_down")
+        elif MsgClusterId == "0006" and MsgCmd == "01":
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", "click_up")
         else:
             self.log.logging(
                 "Input",

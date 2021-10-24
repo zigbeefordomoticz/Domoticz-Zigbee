@@ -321,7 +321,7 @@ def update_domoticz_group_device(self, GroupId):
         if Ep not in self.ListOfDevices[NwkId]["Ep"]:
             return
         if "Model" in self.ListOfDevices[NwkId]:
-            if "TRADFRI remote control" in self.ListOfDevices[NwkId]["Model"]:
+            if self.ListOfDevices[NwkId]["Model"] in ("TRADFRI remote control", "Remote Control N2"):
                 continue
             if self.ListOfDevices[NwkId]["Model"] in LEGRAND_REMOTES:
                 continue
