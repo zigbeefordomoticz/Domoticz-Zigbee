@@ -12,7 +12,7 @@ from Modules.tools import (
     mainPoweredDevice,
 )
 from Modules.domoTools import lastSeenUpdate
-from Modules.readAttributes import ReadAttributeRequest_0000, READ_ATTRIBUTES_REQUEST
+from Modules.readAttributes import ReadAttributeRequest_0000, ReadAttributeRequest_0006_0000, ReadAttributeRequest_0008_0000
 from Modules.bindings import rebind_Clusters, reWebBind_Clusters
 from Modules.pairingProcess import zigbee_provision_device, interview_state_004d
 from Modules.schneider_wiser import schneider_wiser_registration, PREFIX_MACADDR_WIZER_LEGACY
@@ -166,6 +166,7 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
         lastSeenUpdate(self, Devices, NwkId=NwkId)
 
         legrand_refresh_battery_remote(self, NwkId)
+        
 
         if reseted_device:
             zigbee_provision_device(self, Devices, NwkId, 0, "inDB")
@@ -713,3 +714,13 @@ def store_annoucement(self, NwkId, MsgRejoinFlag, now):
         self.ListOfDevices[NwkId]["Announced"]["Rejoin"] = MsgRejoinFlag
 
     self.ListOfDevices[NwkId]["Announced"]["TimeStamp"] = now
+
+
+def read_attributes_if_needed( self, NwkId):
+    # We receive a Device Annoucement
+    # Let's check the status for a Switch or LvlControl
+    for ep in self.ListOfDevices[ NwkId ]['Ep']:
+        if "0006" in self.ListOfDevices[ NwkId ]['Ep'][ ep ]:
+            ReadAttributeRequest_0006_0000(self, NwkId)
+        if "0008" in self.ListOfDevices[ NwkId ]['Ep'][ ep ]:
+            ReadAttributeRequest_0008_0000(self, NwkId)
