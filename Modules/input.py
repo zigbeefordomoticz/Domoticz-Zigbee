@@ -3672,7 +3672,7 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
 
     _ModelName = self.ListOfDevices[MsgSrcAddr]["Model"]
 
-    if _ModelName == "TRADFRI remote control":
+    if _ModelName in ("TRADFRI remote control",  "Remote Control N2"):
         if MsgClusterId == "0008" and MsgCmd in TYPE_ACTIONS:
             selector = TYPE_ACTIONS[MsgCmd]
             self.log.logging("Input", "Debug", "Decode8085 - Selector: %s" % selector, MsgSrcAddr)
@@ -4054,8 +4054,8 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
         self.log.logging(
             "Input",
             "Log",
-            "Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s "
-            % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
+            "Decode8085 - Model: %s SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s "
+            % (_ModelName, MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
         )
         self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, %s" % (MsgCmd, unknown_)
 
@@ -4110,7 +4110,7 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
 
     _ModelName = self.ListOfDevices[MsgSrcAddr]["Model"]
 
-    if _ModelName == "TRADFRI remote control":
+    if _ModelName in ( "TRADFRI remote control", "Remote Control N2"):
         # Ikea Remote 5 buttons round.
         # ( cmd, directioni, cluster )
         # ( 0x02, 0x0006) - click middle button - Action Toggle On/Off Off/on
@@ -4301,8 +4301,8 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
         self.log.logging(
             "Input",
             "Log",
-            "Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s "
-            % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
+            "Decode8095 - Model: %s SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s "
+            % (_ModelName, MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
             MsgSrcAddr,
         )
 
