@@ -201,10 +201,10 @@ def request_node_descriptor( self, NWKID, RIA=None, status=None):
             NWKID,
             )
         return False
-    else:
-        self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s Request Node Descriptor" % (RIA, NWKID))
-        sendZigateCmd(self, "0042", str(NWKID))  # Request a Node Descriptor
-        return True
+
+    self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s Request Node Descriptor" % (RIA, NWKID))
+    sendZigateCmd(self, "0042", str(NWKID))  # Request a Node Descriptor
+    return True
 
 def interview_state_8045(self, NWKID, RIA=None, status=None):
     self.log.logging(
