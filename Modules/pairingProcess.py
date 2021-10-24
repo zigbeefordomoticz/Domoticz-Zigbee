@@ -193,14 +193,14 @@ def request_node_descriptor( self, NWKID, RIA=None, status=None):
             self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s Request Node Descriptor" % (RIA, NWKID))
             sendZigateCmd(self, "0042", str(NWKID))  # Request a Node Descriptor
             return True
-        else:
-            self.log.logging(
-                "Pairing",
-                "Debug",
-                "[%s] NEW OBJECT: %s Manufacturer: %s" % (RIA, NWKID, self.ListOfDevices[NWKID]["Manufacturer"]),
-                NWKID,
+
+        self.log.logging(
+            "Pairing",
+            "Debug",
+            "[%s] NEW OBJECT: %s Manufacturer: %s" % (RIA, NWKID, self.ListOfDevices[NWKID]["Manufacturer"]),
+            NWKID,
             )
-            return False
+        return False
     else:
         self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s Request Node Descriptor" % (RIA, NWKID))
         sendZigateCmd(self, "0042", str(NWKID))  # Request a Node Descriptor
