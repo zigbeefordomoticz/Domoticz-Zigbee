@@ -12,7 +12,8 @@ If you want to contribue , please let us know , we are looking for help in vario
 - improving the plugin
 - increasing the level of documentation for end user
 
-## Attention: 
+## Attention
+
 stable will remain on 4.11.17 and no further update will be done. This is the latest version supported with DomoticZ below 2020 ( 4.xxxx like )
 stable-2020 is the new stable branche dedicated for DomoticZ equal and above 2020.1
 
@@ -21,7 +22,8 @@ Release Numbering
 - Odd numbers --> Stable5
 - Even numbers  --> Beta
 
-## 24 October 2021 - 5.1.10
+## October 2021 - 5.1.10
+
 - [Hardware] - Supporting Ikea Tradfri SHORTCUT and Remote N2
 - [Hardware] - Danfoss heating TRV. ( Zone and danfoss setpoint)
 - [Hardware] - Enabling Legrand emulation mode
@@ -33,15 +35,17 @@ Release Numbering
 - [Hardware] - First support of Accova Taffetas2
 - [Technical] - Pairing enhacements
 
-
 ## 05 September 2021 - 5.1.09
+
 - [WebAdmin] - Update of WebAdmin
 
 ## 02 September 2021 - 5.1.08
+
 - [Hardware] - Tuya TS0202 PIR Motion Sensor
 - [Technical] - Revert changes for reverse-proxy of WebUI on /zigate
 
 ## 27 August 2021 - 5.1.07
+
 - [Hardware] - Compatible with ZiGate-Ethernet
 - [Hardware] - Fix potential issue with ZiGateWifi
 - [Technical] - Speed up the launch of plugin WebUI
@@ -59,6 +63,7 @@ Release Numbering
 - [Technical] - Move a number of global settings to device specific by using the 'Paramater'
 
 ## 23 June 2021   - 5.1.06
+
 - [Technical] - Update of Readme.md to better indicate the way to move from one branch to an other
 - [Issue] - ZiGate+ Wifi not starting
 - [Hardware] - Tuya DIN Energy counter certfied
@@ -66,17 +71,18 @@ Release Numbering
 - [Hardware] - Gledopto GL-C-007-1ID
 - [Hardware] - Tuya Door Sensor TS0203
 
-
 ## 19 June 2021   - 5.1.04
+
 - [Hardware] - Philips Hue Hue White Ambiance GU10
 - [Technical] - various fixes
 
 ## 31st May 2021  -  5.1.03
+
 - [Technical] - Better management of ZiGate V1 and V2
 - [Technical] - Revert Config.Reporting of End Device to a proprer rate
 
+## 26th May 2021  -  5.1.02
 
-## 26th May 2021  -  5.1.02 
 - [Technical] - Update the plugin version number
 - [Technical] - Enable hw flow control for ZiGate+ ( USB, DIN)
 
@@ -84,7 +90,7 @@ Release Numbering
 
 - [Hardware] - Update of Danalock configuration
 - [Technical] - handling (but not full support) ZiGate+ (V2)
-- [Technical] - handling the new OptiPDM firmware for ZiGate 
+- [Technical] - handling the new OptiPDM firmware for ZiGate
 - [Technical] - Handling Extended Error code from NXP stack
 - [Hardware] - Partialy support Wiser Thermostat (new generation). Temp and Humi reported. Thermostat setpoint not supported yet.
 - [Tool] - Update JennicModuleProgrammer to support Erase EEPROM feature.
@@ -104,40 +110,45 @@ Release Numbering
 - [Hardware] - Add Lora Tap Switch
 - [Hardware] - Add Tuya eTRV
 
-
 #### end of Domoticz 4.xxxx support. For above version it is required to have a minimum of 2020.1
 
 ## 23 Feb. 2021   - 4.11.17
+
 - [Hardware] - Module AIr Co CAC221
 
 ## 03 Feb. 2021   - 4.11.16
+
 - [Hardware] - Lumi Plug MAEU01
 - [Hardware] - Lidl led
 - [Hardware] - Update of Danalock configuration
 
 ## 19 Jan. 2021   - 4.11.15
-- [Hardware] - Add Gledopto GL-C-007 as a RGB W 
+
+- [Hardware] - Add Gledopto GL-C-007 as a RGB W
 - [Issue] - Fix Gledopto GL-C-009 definition as a Level Control
 
-##  4 Jan. 2021   - 4.11.14
+## 4 Jan. 2021   - 4.11.14
+
 - [Hardware] - Correct the right widget Color Control Widget fo CLA60 RW OSRAM
 
-##  1 Jan.  2021  - 4.11.13
+## 1 Jan.  2021  - 4.11.13
+
 - [Hardware] - Support Tuya Water leak sensor
 - [Hardware] - Support of Legrand Teleruptor
 - [Hardware] - Support of Sonoff ZB Mini switch
 - [Hardware] - Support Idinio foor dimmer
 
 ## 18 Dec. 2020   - 4.11.12
-- [Hardware] - New eTRV Tuya 
+
+- [Hardware] - New eTRV Tuya
 - [Hardware] - Better management of Battery level for SonOff devices ( NX-4911 Manufacturerd by Revolt )
 - [Hardware] - Fix some issues related to the FIP mode of Schneider Wiser HACT
 
-
 ## 27 Nov.  2020  - 4.11.11
+
 - [Hardware] - Handle the behaviour of the Legrand shutter when firmware above 0x1a
 
-##  5 Nov.  2020  - 4.11.9
+## 5 Nov.  2020  - 4.11.9
 
 - [Hardware] - Add Heiman RC-EF-3.0 remote.
 
@@ -148,6 +159,7 @@ Release Numbering
 - [Hardware] - Schneider 1 Gang Shutter
 
 # 15 Oct.   2020  - 4.11.7
+
 - [Hardware] - Various fixed for Heiman remote device.
 
 ## 29 Sept. 2020  - 4.11.2
