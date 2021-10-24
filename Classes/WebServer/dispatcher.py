@@ -30,6 +30,7 @@ def do_rest(self, Connection, verb, data, version, command, parameters):
         "bind-lst-cluster": {"Name": "bind-lst-cluster", "Verbs": {"GET"}, "function": self.rest_bindLSTcluster},
         "bind-lst-device": {"Name": "bind-lst-device", "Verbs": {"GET"}, "function": self.rest_bindLSTdevice},
         "binding": {"Name": "binding", "Verbs": {"PUT"}, "function": self.rest_binding},
+        "binding-group": {"Name": "binding-group", "Verbs": {"PUT"}, "function": self.rest_group_binding},
         "casaia-list-devices": {"Name": "casaia-list-devices","Verbs": {"GET"},"function": self.rest_casa_device_list,},
         "casaia-update-ircode": {"Name": "casaia-list-devices","Verbs": {"PUT"},"function": self.rest_casa_device_ircode_update,},
         "change-channel": {"Name": "change-channel", "Verbs": {"PUT"}, "function": self.rest_change_channel},
