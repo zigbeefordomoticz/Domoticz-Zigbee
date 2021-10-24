@@ -1,32 +1,61 @@
 {
 	"_comment": "Tuya Siren Alarm",
 	"_version": "0.10",
-	"Ep":{
-		"01":{ 
-			"0000":"", 
-			"0004":"", 
-			"ef00":"", 
-			"000a":"", 
-			"0019":"", 
-			"Type":"Temp/Humi/TuyaSiren/TuyaSirenHumi/TuyaSirenTemp"}
+	"Ep": {
+		"01": {
+			"0000": "",
+			"0004": "",
+			"ef00": "",
+			"000a": "",
+			"0019": "",
+			"Type": "Temp/Humi/TuyaSiren/TuyaSirenHumi/TuyaSirenTemp"
+		}
 	},
-	"Type":"",
-	"ClusterToBind": [ "0000", "ef00" ],
-	"ConfigureReporting": {
-	},
+	"Type": "",
+	"ClusterToBind": [
+		"0000",
+		"ef00"
+	],
+	"ConfigureReporting": {},
 	"ReadAttributes": {
-		"0000": [ "0004", "0000", "0001", "0005", "0007", "fffe"  ]
+		"0000": [
+			"0004",
+			"0000",
+			"0001",
+			"0005",
+			"0007",
+			"fffe"
+		]
 	},
 	"Param": {
-		"Alarm1": { "Duration": 5, "Volume": 2, "Melody": 1},
-		"Alarm2": { "Duration": 5, "Volume": 2, "Melody": 2},
-		"Alarm3": { "Duration": 5, "Volume": 2, "Melody": 3},
-		"Alarm4": { "Duration": 5, "Volume": 2, "Melody": 4},
-		"Alarm5": { "Duration": 5, "Volume": 2, "Melody": 5},
+		"Alarm1": {
+			"Duration": 5,
+			"Volume": 2,
+			"Melody": 1
+		},
+		"Alarm2": {
+			"Duration": 5,
+			"Volume": 2,
+			"Melody": 2
+		},
+		"Alarm3": {
+			"Duration": 5,
+			"Volume": 2,
+			"Melody": 3
+		},
+		"Alarm4": {
+			"Duration": 5,
+			"Volume": 2,
+			"Melody": 4
+		},
+		"Alarm5": {
+			"Duration": 5,
+			"Volume": 2,
+			"Melody": 5
+		},
 		"HumidityMinAlarm": 25,
 		"HumidityMaxAlarm": 75,
 		"TemperatureMinAlarm": 3,
 		"TemperatureMaxAlarm": 27
 	}
 }
-

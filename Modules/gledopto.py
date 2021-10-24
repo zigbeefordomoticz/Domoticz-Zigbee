@@ -12,7 +12,7 @@ from Modules.basicOutputs import raw_APS_request, write_attribute
 from Modules.readAttributes import ReadAttributeRequest_0006_0000, ReadAttributeRequest_0008_0000
 
 
-def pollingGledopto( self, key ):
+def pollingGledopto(self, key):
 
     """
     This fonction is call if enabled to perform any Manufacturer specific polling action
@@ -21,11 +21,11 @@ def pollingGledopto( self, key ):
 
     rescheduleAction = False
 
-    #if  ( self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE):
+    # if  ( self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE):
     #    return True
 
-    ReadAttributeRequest_0006_0000( self, key)
-    ReadAttributeRequest_0008_0000( self, key)
+    ReadAttributeRequest_0006_0000(self, key)
+    ReadAttributeRequest_0008_0000(self, key)
 
     return rescheduleAction
 
@@ -37,5 +37,4 @@ def callbackDeviceAwake_Gledopto(self, Devices, NwkId, EndPoint, cluster):
     The function is called after processing the readCluster part
     """
 
-    Domoticz.Log("callbackDeviceAwake_Legrand - Nwkid: %s, EndPoint: %s cluster: %s" \
-            %(NwkId, EndPoint, cluster))
+    Domoticz.Log("callbackDeviceAwake_Legrand - Nwkid: %s, EndPoint: %s cluster: %s" % (NwkId, EndPoint, cluster))

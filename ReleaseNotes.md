@@ -21,6 +21,19 @@ Release Numbering
 - Odd numbers --> Stable5
 - Even numbers  --> Beta
 
+## 24 October 2021 - 5.1.10
+- [Hardware] - Supporting Ikea Tradfri SHORTCUT and Remote N2
+- [Hardware] - Danfoss heating TRV. ( Zone and danfoss setpoint)
+- [Hardware] - Enabling Legrand emulation mode
+- [Hardware] - Supporting ZLinky device
+- [Hardware] - Correct calculation of Wiser eTRV valve %
+- [WebUI] - New functionalities: Re-creation of Widgets, Reset Mode setting
+- [Hardware] - SMaBiT av2019/29Q support ( Siren )
+- [Technical] - Fix Metering calculation for Meter widget
+- [Hardware] - First support of Accova Taffetas2
+- [Technical] - Pairing enhacements
+
+
 ## 05 September 2021 - 5.1.09
 - [WebAdmin] - Update of WebAdmin
 

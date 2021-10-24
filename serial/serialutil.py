@@ -7,6 +7,11 @@
 #
 # SPDX-License-Identifier:    BSD-3-Clause
 
+# pytype: disable=attribute-error
+# pytype: disable=name-error
+# pytype: disable=unsupported-operands
+
+
 from __future__ import absolute_import
 
 import io

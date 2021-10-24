@@ -1,44 +1,114 @@
 {
-	"Ep":{
-		"01":{
-			"0000":"",
-			"0003":"",
-			"0004":"",
-			"0005":"",
-			"0006":"",
-			"0201":"",
-			"0202":"",
-			"0405":"",
-			"0702":"",
-			"0b04":"",
-			"000a":"",
-			"0019":"",
-			"ffac":"",
-			"Type":"Temp/ThermoSetpoint/FanControl/ACMode"
+	"Ep": {
+		"01": {
+			"0000": "",
+			"0003": "",
+			"0004": "",
+			"0005": "",
+			"0006": "",
+			"0201": "",
+			"0202": "",
+			"0405": "",
+			"0702": "",
+			"0b04": "",
+			"000a": "",
+			"0019": "",
+			"ffac": "",
+			"Type": "Temp/ThermoSetpoint/FanControl/ACMode"
 		}
 	},
-	"Type":"",
-        "ClusterToBind": [ "0201", "0202"],
-        "ConfigureReporting":{
-		"0201": {"Attributes": {
-			"0000": {"DataType": "29", "MinInterval":"000a", "MaxInterval":"003c", "TimeOut":"0000","Change":"0001"},
-			"0011": {"DataType": "29", "MinInterval":"0003", "MaxInterval":"005a", "TimeOut":"0000","Change":"0001"},
-			"0012": {"DataType": "29", "MinInterval":"0003", "MaxInterval":"005a", "TimeOut":"0000","Change":"0001"},
-			"001c": {"DataType": "30", "MinInterval":"0003", "MaxInterval":"005a", "TimeOut":"0000","Change":"01"},
-			"fd00": {"DataType": "10", "MinInterval":"0003", "MaxInterval":"005a", "TimeOut":"0000","Change":"01"}
-		}},
-		"0202": {"Attributes": {
-			"0000": {"DataType": "30", "MinInterval": "0003", "MaxInterval": "005a", "TimeOut": "0000","Change":"00"}
-			}}
+	"Type": "",
+	"ClusterToBind": [
+		"0201",
+		"0202"
+	],
+	"ConfigureReporting": {
+		"0201": {
+			"Attributes": {
+				"0000": {
+					"DataType": "29",
+					"MinInterval": "000a",
+					"MaxInterval": "003c",
+					"TimeOut": "0000",
+					"Change": "0001"
+				},
+				"0011": {
+					"DataType": "29",
+					"MinInterval": "0003",
+					"MaxInterval": "005a",
+					"TimeOut": "0000",
+					"Change": "0001"
+				},
+				"0012": {
+					"DataType": "29",
+					"MinInterval": "0003",
+					"MaxInterval": "005a",
+					"TimeOut": "0000",
+					"Change": "0001"
+				},
+				"001c": {
+					"DataType": "30",
+					"MinInterval": "0003",
+					"MaxInterval": "005a",
+					"TimeOut": "0000",
+					"Change": "01"
+				},
+				"fd00": {
+					"DataType": "10",
+					"MinInterval": "0003",
+					"MaxInterval": "005a",
+					"TimeOut": "0000",
+					"Change": "01"
+				}
+			}
 		},
-
+		"0202": {
+			"Attributes": {
+				"0000": {
+					"DataType": "30",
+					"MinInterval": "0003",
+					"MaxInterval": "005a",
+					"TimeOut": "0000",
+					"Change": "00"
+				}
+			}
+		}
+	},
 	"ReadAttributes": {
-		"0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0006", "0007"],
-		"0003": [ ],
-		"0702": [ "0000", "0200", "0300", "0301", "0302", "0303", "0304", "0400"],
-		"0405": [ "0000"],
-		"0201": [ "0000", "0011", "0012","001c", "0045"],
-		"0202": [ "0000"],
+		"0000": [
+			"0000",
+			"0001",
+			"0002",
+			"0003",
+			"0004",
+			"0005",
+			"0006",
+			"0007"
+		],
+		"0003": [],
+		"0702": [
+			"0000",
+			"0200",
+			"0300",
+			"0301",
+			"0302",
+			"0303",
+			"0304",
+			"0400"
+		],
+		"0405": [
+			"0000"
+		],
+		"0201": [
+			"0000",
+			"0011",
+			"0012",
+			"001c",
+			"0045"
+		],
+		"0202": [
+			"0000"
+		],
 		"0b04": []
 	}
 }

@@ -1,15 +1,18 @@
 {
-	"Ep":{
-		"01":{
-			"0006":"",
-			"Type":"Smoke"
+	"Ep": {
+		"01": {
+			"0006": "",
+			"Type": "Smoke"
 		}
 	},
-	"Type":"",
+	"Type": "",
 	"ClusterToBind": [],
-        "ConfigureReporting":{},
+	"ConfigureReporting": {},
 	"ReadAttributes": {
-		"0000": [ "0004", "0005"] ,
+		"0000": [
+			"0004",
+			"0005"
+		],
 		"0006": []
 	}
 }

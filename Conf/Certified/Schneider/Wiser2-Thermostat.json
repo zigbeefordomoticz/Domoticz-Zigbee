@@ -1,6 +1,6 @@
 {
-	"_comment":"Schneider Wiser Thermostat (CCTFR6400)",
-	"_version":"0.1",
+	"_comment": "Schneider Wiser Thermostat (CCTFR6400)",
+	"_version": "0.1",
 	"Ep": {
 		"01": {
 			"0000": "",
@@ -13,22 +13,44 @@
 			"fe03": "",
 			"0019": "",
 			"0201": "",
-			"Type": "Humi/Temp/ThermoSetpoint/Valve" }
-  	},
+			"Type": "Humi/Temp/ThermoSetpoint/Valve"
+		}
+	},
 	"Type": "",
-	"ClusterToBind":[  ],
-	"ConfigureReporting": {
-  	},
-  	"ReadAttributes": {
-		"0000": [ "0000", "0001", "0003", "0004", "0005", "0007", "e007", "e009",  "4000"],
+	"ClusterToBind": [],
+	"ConfigureReporting": {},
+	"ReadAttributes": {
+		"0000": [
+			"0000",
+			"0001",
+			"0003",
+			"0004",
+			"0005",
+			"0007",
+			"e007",
+			"e009",
+			"4000"
+		],
 		"0003": [],
-		"0001": [ "0020", "0021" ] ,
-		"0019": [ "0002" ],
-		"0201": [ ],
-		"0204": [ "0000", "0001"],
-		"0402": [ "0000"],
-		"0405": [ "0000"]
-  	},
+		"0001": [
+			"0020",
+			"0021"
+		],
+		"0019": [
+			"0002"
+		],
+		"0201": [],
+		"0204": [
+			"0000",
+			"0001"
+		],
+		"0402": [
+			"0000"
+		],
+		"0405": [
+			"0000"
+		]
+	},
 	"Param": {
 		"WiserLockThermostat": 0,
 		"WiserRoomNumber": 1

@@ -1,6 +1,6 @@
 {
-  "_comment":"Schneider Wiser Smart Plug eer4000",
-  "_version":"0.1",
+  "_comment": "Schneider Wiser Smart Plug eer4000",
+  "_version": "0.1",
   "Ep": {
     "0b": {
       "0000": "",
@@ -13,18 +13,71 @@
       "Type": "Plug/Meter/P1Meter"
     }
   },
-  "NickName":"Wiser_Plug",
+  "NickName": "Wiser_Plug",
   "Type": "",
-  "ClusterToBind":[ "0019", "0000", "0009", "0003", "0006", "0702" ],
+  "ClusterToBind": [
+    "0019",
+    "0000",
+    "0009",
+    "0003",
+    "0006",
+    "0702"
+  ],
   "ConfigureReporting": {
-     "0006": { "Attributes": { "0000": { "DataType": "10", "MinInterval": "0001", "MaxInterval": "0258", "TimeOut": "0000", "Change": "01" }}},
-     "0702": { "Attributes": { 
-		  "0000": { "Change": "0000ffffffffffff", "DataType": "25", "MaxInterval": "001E", "MinInterval": "001E", "TimeOut": "0000" },
-		  "0400": { "Change": "00000190", "DataType": "2a", "MaxInterval": "001E", "MinInterval": "001E", "TimeOut": "0000" }}}
+    "0006": {
+      "Attributes": {
+        "0000": {
+          "DataType": "10",
+          "MinInterval": "0001",
+          "MaxInterval": "0258",
+          "TimeOut": "0000",
+          "Change": "01"
+        }
+      }
+    },
+    "0702": {
+      "Attributes": {
+        "0000": {
+          "Change": "0000ffffffffffff",
+          "DataType": "25",
+          "MaxInterval": "001E",
+          "MinInterval": "001E",
+          "TimeOut": "0000"
+        },
+        "0400": {
+          "Change": "00000190",
+          "DataType": "2a",
+          "MaxInterval": "001E",
+          "MinInterval": "001E",
+          "TimeOut": "0000"
+        }
+      }
+    }
   },
   "ReadAttributes": {
-         "0000": [ "0000", "0002", "0004", "0005", "0006", "0007", "0010", "0013", "e000", "e001", "e002" ],
-	 "0006": [ "0000" ],
-         "0702": [ "0000", "0400", "0300", "0301", "0302", "5a20" ]  
+    "0000": [
+      "0000",
+      "0002",
+      "0004",
+      "0005",
+      "0006",
+      "0007",
+      "0010",
+      "0013",
+      "e000",
+      "e001",
+      "e002"
+    ],
+    "0006": [
+      "0000"
+    ],
+    "0702": [
+      "0000",
+      "0400",
+      "0300",
+      "0301",
+      "0302",
+      "5a20"
+    ]
   }
 }

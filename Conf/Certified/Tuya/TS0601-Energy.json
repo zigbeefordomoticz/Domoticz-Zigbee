@@ -1,22 +1,32 @@
 {
 	"_comment": "Tuya Zigbee Tuya smart energy meter",
 	"_version": "0.10",
-	"Ep":{
-		"01":{ 
-			"0000":"", 
-			"0004":"", 
-			"ef00":"", 
-			"000a":"", 
-			"0019":"", 
-			"Type":"Switch/Meter/Power/Voltage/Ampere"}
+	"Ep": {
+		"01": {
+			"0000": "",
+			"0004": "",
+			"ef00": "",
+			"000a": "",
+			"0019": "",
+			"Type": "Switch/Meter/Power/Voltage/Ampere"
+		}
 	},
-	"Type":"",
-	"ClusterToBind": [ "0019", "ef00" ],
-	"ConfigureReporting": {
-	
-	},
+	"Type": "",
+	"ClusterToBind": [
+		"0019",
+		"ef00"
+	],
+	"ConfigureReporting": {},
 	"ReadAttributes": {
-		"0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0007" ]
+		"0000": [
+			"0000",
+			"0001",
+			"0002",
+			"0003",
+			"0004",
+			"0005",
+			"0007"
+		]
 	},
 	"Param": {
 		"TuyaPing": 0,
@@ -26,4 +36,3 @@
 		"Countdown": 1
 	}
 }
-

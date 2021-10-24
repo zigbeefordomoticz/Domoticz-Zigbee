@@ -11,6 +11,8 @@
 from __future__ import absolute_import
 
 # pylint: disable=invalid-name,too-few-public-methods
+# pytype: disable=module-attr
+
 import re
 import ctypes
 from ctypes.wintypes import BOOL

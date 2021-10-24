@@ -1,22 +1,25 @@
 {
-	"Ep":{
-		"01":{
-			"0000":"",
-			"0003":"",
-			"0402":"",
-			"0403":"",
-			"0405":"",
-			"ffff":"",
-			"Type":"Temp/Humi/Baro"
+	"Ep": {
+		"01": {
+			"0000": "",
+			"0003": "",
+			"0402": "",
+			"0403": "",
+			"0405": "",
+			"ffff": "",
+			"Type": "Temp/Humi/Baro"
 		}
 	},
-	"Type":"",
-        "ClusterToBind": [],
-        "ConfigureReporting":{},
-	        "ReadAttributes": {
-                "0000": [ "0004", "0005"],
+	"Type": "",
+	"ClusterToBind": [],
+	"ConfigureReporting": {},
+	"ReadAttributes": {
+		"0000": [
+			"0004",
+			"0005"
+		],
 		"0402": [],
 		"0403": [],
 		"0405": []
-        }
+	}
 }
