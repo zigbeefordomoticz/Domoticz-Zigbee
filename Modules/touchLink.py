@@ -5,7 +5,7 @@ from Modules.zigateConsts import ZIGATE_EP, MAX_LOAD_ZIGATE
 from Modules.tools import getListOfEpForCluster, is_ack_tobe_disabled, get_and_inc_SQN
 
 def get_group_identifiers_request( self, nwkid ):
-    cluster_frame = "11"
+    cluster_frame = "19"
     sqn = get_and_inc_SQN(self, nwkid)
     command = "41"
     start_index = "00"
@@ -13,7 +13,7 @@ def get_group_identifiers_request( self, nwkid ):
     ListOfEp = getListOfEpForCluster(self, nwkid, cluster)
     if len(ListOfEp) != 1:
         return
-    payload = cluster_frame + sqn +command + start_index 
+    payload = cluster_frame + sqn + command + start_index 
     ep = ListOfEp[0]
     raw_APS_request(
                 self,
