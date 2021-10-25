@@ -167,6 +167,7 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
 
         legrand_refresh_battery_remote(self, NwkId)
         
+        read_attributes_if_needed( self, NwkId)
 
         if reseted_device:
             zigbee_provision_device(self, Devices, NwkId, 0, "inDB")
@@ -188,6 +189,8 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
 
             legrand_refresh_battery_remote(self, NwkId)
 
+            read_attributes_if_needed( self, NwkId)
+            
             if reseted_device:
                 zigbee_provision_device(self, Devices, NwkId, 0, "inDB")
 
