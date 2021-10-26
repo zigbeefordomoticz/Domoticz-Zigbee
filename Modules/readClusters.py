@@ -1068,6 +1068,7 @@ def UpdateBatteryAttribute(self, Devices, MsgSrcAddr, MsgSrcEp):
         "DWS312",
         "TS0207-waterleak",
         "FYRTUR block-out roller blind",
+        "KADRILJ roller blind",
         "TRADFRI openclose remote",
         "Danalock V3",
         "V3-BTZB",
@@ -3936,7 +3937,7 @@ def compute_conso(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, raw_value
             elif self.ListOfDevices[MsgSrcAddr]["Model"] == "TS0121":
                 value = round(conso * 10, 3)
 
-            elif self.ListOfDevices[MsgSrcAddr]["Model"] == "PC321":
+            elif self.ListOfDevices[MsgSrcAddr]["Model"] in ("PC321", "CPC321"):
                 value = round(conso, 3)
 
     return value
