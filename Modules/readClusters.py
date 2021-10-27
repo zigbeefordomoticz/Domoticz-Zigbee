@@ -259,6 +259,8 @@ def ReadCluster(
         "fe03": Clusterfe03,
         "fc00": Clusterfc00,
         "000f": Cluster000f,
+        "e000": Clustere000,
+        "e001": Clustere001,
         "fc01": Clusterfc01,
         "fc21": Clusterfc21,
         "fcc0": Clusterfcc0,
@@ -401,6 +403,8 @@ def Cluster0000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             elif manufacturer_name == "_TZ3000_pmz6mjyu":
                 # MOES MS-104BZ-1
                 modelName = "TS011F-2Gang-switches"
+            elif manufacturer_name in ("_TZ3000_cphmq0q7", "_TZ3000_ew3ldmgx", "_TZ3000_dpo1ysak") :
+                modelName = "TS011F-plug"
 
         elif modelName == "AC211":
             modelName = "AC221"
@@ -1068,6 +1072,7 @@ def UpdateBatteryAttribute(self, Devices, MsgSrcAddr, MsgSrcEp):
         "DWS312",
         "TS0207-waterleak",
         "FYRTUR block-out roller blind",
+        "KADRILJ roller blind",
         "TRADFRI openclose remote",
         "Danalock V3",
         "V3-BTZB",
@@ -3936,7 +3941,7 @@ def compute_conso(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, raw_value
             elif self.ListOfDevices[MsgSrcAddr]["Model"] == "TS0121":
                 value = round(conso * 10, 3)
 
-            elif self.ListOfDevices[MsgSrcAddr]["Model"] == "PC321":
+            elif self.ListOfDevices[MsgSrcAddr]["Model"] in ("PC321", "CPC321"):
                 value = round(conso, 3)
 
     return value
@@ -4718,6 +4723,26 @@ def Cluster0b05(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
 
 # Cluster Manufacturer specifics
+def Clustere000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
+    self.log.logging(
+        "Cluster",
+        "Log",
+        "ReadCluster - %s - %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, : %s"
+        % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+        MsgSrcAddr,
+    )
+    checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, decodeAttribute( self, MsgAttType, MsgClusterData, ), )
+
+def Clustere001(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
+    self.log.logging(
+        "Cluster",
+        "Log",
+        "ReadCluster - %s - %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, : %s"
+        % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+        MsgSrcAddr,
+    )
+    checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, decodeAttribute( self, MsgAttType, MsgClusterData, ), )
+
 def Clusterfe03(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
     # Schneider Wiser (new)
     # Cluster 0xfe03
@@ -4761,7 +4786,6 @@ def Clusterfe03(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             MsgClusterData,
         ),
     )
-
 
 def Clusterfc00(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
 
@@ -4982,7 +5006,6 @@ def Clusterfc00(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     if prev_lvlValue != lvlValue:
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, slvlValue)
 
-
 def Clusterfc01(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
 
     self.log.logging(
@@ -5044,7 +5067,6 @@ def Clusterfc01(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             # Enable Led if On
             self.ListOfDevices[MsgSrcAddr]["Legrand"]["EnableLedIfOn"] = int(MsgClusterData, 16)
 
-
 def Clusterfc40(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
 
     self.log.logging(
@@ -5080,7 +5102,6 @@ def Clusterfc40(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         # Off': 0x05
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgClusterData)
 
-
 def Clusterfc21(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
 
     # FC21 : PFX Cluster Profalux
@@ -5106,7 +5127,6 @@ def Clusterfc21(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         )
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgClusterData)
 
-
 def Clusterfcc0(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
 
     self.log.logging(
@@ -5120,7 +5140,6 @@ def Clusterfcc0(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
     if MsgAttrID == "00f7":
         readXiaomiCluster(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData)
-
 
 def Clusterff66(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
 

@@ -1751,16 +1751,16 @@ def _load_oldfashon(self, homedir, hardwareid):
         tmpPluginConf += myPluginConfFile.read().replace("\n", "")
 
     PluginConf = {}
-    _import_oldfashon_param(self, tmpPluginConf)
+    _import_oldfashon_param(self, tmpPluginConf, self.pluginConf["filename"])
 
 
-def _import_oldfashon_param(self, tmpPluginConf):
+def _import_oldfashon_param(self, tmpPluginConf, filename):
     try:
         PluginConf = eval(tmpPluginConf)
     except SyntaxError:
-        Domoticz.Error("Syntax Error in %s, all plugin parameters set to default" % self.filename)
+        Domoticz.Error("Syntax Error in %s, all plugin parameters set to default" % filename)
     except (NameError, TypeError, ZeroDivisionError):
-        Domoticz.Error("Error while importing %s, all plugin parameters set to default" % self.filename)
+        Domoticz.Error("Error while importing %s, all plugin parameters set to default" % filename)
     else:
         for theme in SETTINGS:
             for param in SETTINGS[theme]["param"]:

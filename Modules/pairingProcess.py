@@ -67,7 +67,10 @@ def processNotinDBDevices(self, Devices, NWKID, status, RIA):
         # Let's check if this Model is known
         if self.ListOfDevices[NWKID]["Model"] in self.DeviceConf:
             knownModel = True
-            status = "createDB"  # Fast track
+            status = "CreateDB"  # Fast track
+
+    self.log.logging("Pairing", "Debug", "[%s] NEW OBJECT: %s Model Name: %s knownModel: %s status: %s" % (
+        RIA, NWKID, self.ListOfDevices[NWKID]["Model"], knownModel, status))
 
     if knownModel and self.ListOfDevices[NWKID]["Model"] == "TI0001":
         # https://zigate.fr/forum/topic/livolo-compatible-zigbee/#postid-596
@@ -88,18 +91,18 @@ def processNotinDBDevices(self, Devices, NWKID, status, RIA):
             "Debug",
             "processNotinDB - Try several times to get all informations, let's use the Model now " + str(NWKID),
         )
-        status = "createDB"
+        status = "CreateDB"
 
     #if status == "8043" and request_node_descriptor( self, NWKID, RIA=None, status=None):
     #    # We have to request the node_descriptor
     #    return
 
-    if status in ("createDB", "8043"):
+    if status in ("CreateDB", "8043"):
         # We do a request_node_description in case of unknown.
         request_node_descriptor( self, NWKID, RIA=None, status=None)
         interview_state_createDB(self, Devices, NWKID, RIA, status)
 
-    if status != "createDB":
+    if status != "CreateDB":
         if HB_ > 2 and not knownModel and status in ("004d", "0045"):
             # We will re-request EndPoint List ( 0x0045)
             interview_state_004d(self, NWKID, RIA, status)
@@ -110,6 +113,8 @@ def processNotinDBDevices(self, Devices, NWKID, status, RIA):
 
         elif RIA > 4 and status not in ("UNKNOW", "inDB"):  # We have done several retry
             status = interview_timeout(self, Devices, NWKID, RIA, status)
+   
+    #self.ListOfDevices[NWKID]["RIA"] = str(RIA + 1)
 
 
 def interview_state_004d(self, NWKID, RIA=None, status=None):
@@ -162,7 +167,7 @@ def interview_state_8043(self, NWKID, RIA, knownModel, status):
 
     if knownModel:
         self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s Model Name: %s" % (RIA, NWKID, self.ListOfDevices[NWKID]["Model"]))
-        return "createDB"  # Fast track
+        return "CreateDB"  # Fast track
 
     self.log.logging("Pairing", "Debug", "[%s] NEW OBJECT: %s Request Model Name" % (RIA, NWKID))
     ReadAttributeRequest_0000(self, NWKID, fullScope=False)  # Reuest Model Name
