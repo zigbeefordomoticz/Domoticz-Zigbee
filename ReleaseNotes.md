@@ -30,6 +30,10 @@ Release Numbering
 ## 25 October 2021 - 5.1.12
 - [Technical] - After a Power Off/On make sure to retreive the current status of Switches, Plug, Led and Level Control
 
+## 25 October 2021 - 5.1.12
+- [Technical] - After a Power Off/On make sure to retreive the current status of Switches, Plug, Led and Level Control
+
+
 ## 24 October 2021 - 5.1.11
 - [Technical] - After a Power Off/On make sure to retreive the current status of Switches, Plug, Led and Level Control
 
