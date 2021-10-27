@@ -1440,6 +1440,39 @@ def ReadAttributeRequest_000f(self, key):
             self.log.logging("ReadAttributes", "Debug", " Read Attribute request: " + key + " EPout = " + EPout, nwkid=key)
             ReadAttributeReq(self, key, ZIGATE_EP, EPout, "000f", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
 
+def ReadAttributeRequest_e000(self, key):
+    self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_e000 - Key: %s " % key, nwkid=key)
+    ListOfEp = getListOfEpForCluster(self, key, "e000")
+    for EPout in ListOfEp:
+        listAttributes = []
+        for iterAttr in retreive_ListOfAttributesByCluster(self, key, EPout, "e000"):
+            if iterAttr not in listAttributes:
+                listAttributes.append(iterAttr)
+        if listAttributes:
+            self.log.logging(
+                "ReadAttributes",
+                "Debug",
+                "Request Legrand attributes info via Read Attribute request: " + key + " EPout = " + EPout,
+                nwkid=key,
+            )
+            ReadAttributeReq(self, key, ZIGATE_EP, EPout, "e000", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
+
+def ReadAttributeRequest_e001(self, key):
+    self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_e001 - Key: %s " % key, nwkid=key)
+    ListOfEp = getListOfEpForCluster(self, key, "e001")
+    for EPout in ListOfEp:
+        listAttributes = []
+        for iterAttr in retreive_ListOfAttributesByCluster(self, key, EPout, "e001"):
+            if iterAttr not in listAttributes:
+                listAttributes.append(iterAttr)
+        if listAttributes:
+            self.log.logging(
+                "ReadAttributes",
+                "Debug",
+                "Request Legrand attributes info via Read Attribute request: " + key + " EPout = " + EPout,
+                nwkid=key,
+            )
+            ReadAttributeReq(self, key, ZIGATE_EP, EPout, "e001", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
 
 def ReadAttributeRequest_fc00(self, key):
     pass
@@ -1554,6 +1587,8 @@ READ_ATTRIBUTES_REQUEST = {
     "0b01": (ReadAttributeRequest_0b01, "polling0b04"),
     "0b04": (ReadAttributeRequest_0b04, "polling0b04"),
     "0b05": (ReadAttributeRequest_0b05, "polling0b05"),
+    "e000": (ReadAttributeRequest_e000, "polling0b05"),
+    "e001": (ReadAttributeRequest_e001, "polling0b05"),
     "fc01": (ReadAttributeRequest_fc01, "pollingfc01"),
     "fc21": (ReadAttributeRequest_fc21, "pollingfc21"),
     "fc40": (ReadAttributeRequest_fc40, "pollingfc40"),

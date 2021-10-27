@@ -18,7 +18,8 @@
     },
     "Type": "",
     "ClusterToBind": [
-        "0001"
+        "0001",
+        "0102"
     ],
     "ConfigureReporting": {
         "0001": {

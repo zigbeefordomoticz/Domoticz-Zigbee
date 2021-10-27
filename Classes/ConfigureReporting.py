@@ -87,11 +87,9 @@ class ConfigureReporting:
         now = int(time())
         if NWKID is None:
             if self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE:
-                self.logging(
-                    "Debug",
+                self.logging( "Debug",
                     "configureReporting - skip configureReporting for now ... system too busy (%s/%s) for %s"
-                    % (self.busy, self.ZigateComm.loadTransmit(), NWKID),
-                    nwkid=NWKID,
+                    % (self.busy, self.ZigateComm.loadTransmit(), NWKID),nwkid=NWKID,
                 )
                 return  # Will do at the next round
             if not self.target:
@@ -108,12 +106,12 @@ class ConfigureReporting:
 
             if key not in self.ListOfDevices:
                 self.target.remove(key)
-                Domoticz.Error("processConfigureReporting - Unknown key: %s" % key)
+                self.logging( "Debug","processConfigureReporting - Unknown key: %s" % key,nwkid=NWKID)
                 continue
 
             if "Status" not in self.ListOfDevices[key]:
                 self.target.remove(key)
-                Domoticz.Error("processConfigureReporting - no 'Status' flag for device %s !!!" % key)
+                self.logging( "Debug","processConfigureReporting - no 'Status' flag for device %s !!!" % key,nwkid=NWKID)
                 continue
 
             if self.ListOfDevices[key]["Status"] != "inDB":

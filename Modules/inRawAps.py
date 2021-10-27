@@ -191,6 +191,32 @@ def inRawAps(
 
         return
 
+    if cluster == "0102":  # Window Covering
+        if Command == "00":  # Up/Open
+            Domoticz.Log("Window Covering - Up/Open Command")
+
+        elif Command == "01": # Down / Close
+            Domoticz.Log("Window Covering - Down/Close Command")
+
+        elif Command == "02": # Stop
+            Domoticz.Log("Window Covering - Stop Command")
+
+        elif Command == "04": # Go To Lift Value
+            Domoticz.Log("Window Covering - Go To Lift value Command %s" %Data[0:] )
+
+        elif Command == "05": # Go To Lift Percentage
+            Domoticz.Log("Window Covering - Go To Lift percentage Command %s" %Data[0:] )
+
+        elif Command == "07": # Go to Tilt Value
+            Domoticz.Log("Window Covering - Go To Tilt value Command %s" %Data[0:] )
+
+        elif Command == "08": # Go to Tilt Percentage
+            Domoticz.Log("Window Covering - Go To Tilt percentage Command %s" %Data[0:] )
+
+        else:
+            Domoticz.Log("Unknown Window Covering Command: %s" % Command)
+
+
     if "Manufacturer" not in self.ListOfDevices[srcnwkid]:
         return
 
