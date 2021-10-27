@@ -667,8 +667,6 @@ def legrand_enable_Led_InDark_by_nwkid(self, NwkId, OnOff):
 
 def legrandReenforcement(self, NWKID):
 
-    return
-
     if "Health" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Health"] == "Not Reachable":
         return False
 
