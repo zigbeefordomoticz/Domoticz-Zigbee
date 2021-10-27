@@ -1157,7 +1157,8 @@ def convertTime(_timeInSec):  # Ok 13/10
 
 def _logging_headers(self, headers):  # OK 13/10
 
-    return
+    if 'debugOTA' not in self.pluginconf.pluginConf or not self.pluginconf.pluginConf["debugOTA"]:
+        return
     for attribut in headers:
         if attribut in ("stack_version", "security_cred_version", "image_version"):
             continue
