@@ -128,6 +128,7 @@ TUYA_eTRV1_MANUFACTURER = (
     "_TYST11_kfvq6avy",
     "_TZE200_kfvq6avy",
     "_TYST11_jeaxp72v",
+    "_TZE200_cwnjrr72",
 )
 TUYA_eTRV2_MANUFACTURER = (
     "_TZE200_ckud7u2l",
