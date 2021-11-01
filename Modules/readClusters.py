@@ -3726,6 +3726,7 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         return
 
     checkAttribute(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID)
+
     if not checkValidValue(self, MsgSrcAddr, MsgAttType, MsgClusterData):
         self.log.logging(
             "Cluster",
