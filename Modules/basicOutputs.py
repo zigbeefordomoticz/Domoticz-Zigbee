@@ -1235,7 +1235,7 @@ def mgt_routing_req(self, nwkid, start_index="00"):
     #    self.ZiGateModel == 2 and int(self.FirmwareMajorVersion, 16) >= 5 and int(self.FirmwareVersion, 16) >= 0x0320
     #):
     #    return
-    self.log.logging("BasicOutput", "Log", "mgt_routing_req - %s" % nwkid)
+    self.log.logging("BasicOutput", "Debug", "mgt_routing_req - %s" % nwkid)
     if "RoutingTable" not in self.ListOfDevices[nwkid]:
         self.ListOfDevices[nwkid]["RoutingTable"] = {}
         self.ListOfDevices[nwkid]["RoutingTable"]["Devices"] = []

@@ -114,12 +114,13 @@ TUYA_THERMOSTAT_MANUFACTURER = (
     "_TYST11_zuhszj9s",
     "_TYST11_jeaxp72v",
 )
-TUYA_eTRV1_MANUFACTURER = (
-    "_TZE200_kfvq6avy",
-    "_TZE200_ckud7u2l",
-    "_TYST11_KGbxAXL2",
-    "_TYST11_ckud7u2l",
-)
+#TUYA_eTRV1_MANUFACTURER = (
+#    "_TZE200_kfvq6avy",
+#    "_TZE200_ckud7u2l",
+#    "_TYST11_KGbxAXL2",
+#    "_TYST11_ckud7u2l",
+#)
+
 
 # https://github.com/zigpy/zigpy/discussions/653#discussioncomment-314395
 TUYA_eTRV1_MANUFACTURER = (
