@@ -255,7 +255,18 @@ SWITCH_LVL_MATRIX = {
         "LevelNames": "Off|On|Push Up|Push Down|Release",
         "Language": {"fr-FR": {"LevelNames": "Arrêt|Marche|Appuyer Haut|Appuyer Bas|Relacher"}},
     },
+
+    "blindIKEA": {
+        "00": (1,"10"),
+        "01": (2,"20"),
+        "02": (3,"30"),
+        "ForceUpdate": True,
+        "LevelNames": "Off|Open|Close|Stop",
+        "Language": {"fr-FR": {"LevelNames": "Off|Ouvrir|Fermer|Arreter"}}
+    },
+
     "Ikea_Round_OnOff": {"00": "00", "toggle": (1, "10"), "ForceUpdate": True},
+
     "Ikea_Round_5b": {
         "00": (0, "00"),
         "toggle": (1, "10"),

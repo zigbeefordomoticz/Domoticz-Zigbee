@@ -236,7 +236,7 @@ def check_sibbling(self, reportLQI):
             parent2 = find_parent_for_node(reportLQI, node1)
             # Domoticz.Log("--parents found: %s + %s" %(parent1,parent2))
 
-            if len(parent1) and len(parent2) == 0:
+            if len(parent1) !=0 and len(parent2) == 0:
                 continue
 
             for x in parent1:
