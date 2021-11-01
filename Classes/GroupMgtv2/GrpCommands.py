@@ -74,6 +74,14 @@ def remove_group_member_ship(self, NwkId, DeviceEp, GrpId):
         datas = "07" + NwkId + ZIGATE_EP + DeviceEp + GrpId
     self.ZigateComm.sendData("0063", datas, ackIsDisabled=GRP_CMD_WITHOUT_ACK)
 
+def remove_all_groups( self, NwkId, DeviceEp):
+    self.logging("Debug", "remove_all_groups  NwkId: %s Ep: %s" % ( NwkId, DeviceEp))
+    if not GRP_CMD_WITHOUT_ACK:
+        datas = "02" + NwkId + ZIGATE_EP + DeviceEp
+    else:
+        datas = "07" + NwkId + ZIGATE_EP + DeviceEp
+    self.ZigateComm.sendData("0064", datas, ackIsDisabled=GRP_CMD_WITHOUT_ACK)
+
 
 # Operating commands on groups
 def send_group_member_ship_identify(self, NwkId, DeviceEp, goup_addr="0000"):
