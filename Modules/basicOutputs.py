@@ -1227,16 +1227,19 @@ def do_Many_To_One_RouteRequest(self):
         self.log.logging("BasicOutput", "Log", "do_Many_To_One_RouteRequest call !")
 
 
-def mgt_routing_req(self, nwkid, start_index):
+def mgt_routing_req(self, nwkid, start_index="00"):
 
-    if not (
-        self.ZiGateModel == 2 and int(self.FirmwareMajorVersion, 16) >= 5 and int(self.FirmwareVersion, 16) >= 0x0320
-    ):
-        return
+    self.log.logging("BasicOutput", "Debug", "mgt_routing_req - %s" % nwkid)
 
+    #if not (
+    #    self.ZiGateModel == 2 and int(self.FirmwareMajorVersion, 16) >= 5 and int(self.FirmwareVersion, 16) >= 0x0320
+    #):
+    #    return
+    self.log.logging("BasicOutput", "Log", "mgt_routing_req - %s" % nwkid)
     if "RoutingTable" not in self.ListOfDevices[nwkid]:
         self.ListOfDevices[nwkid]["RoutingTable"] = {}
         self.ListOfDevices[nwkid]["RoutingTable"]["Devices"] = []
+    if "SQN" not in self.ListOfDevices[nwkid]["RoutingTable"]:
         self.ListOfDevices[nwkid]["RoutingTable"]["SQN"] = 0
     else:
         self.ListOfDevices[nwkid]["RoutingTable"]["SQN"] += 1
@@ -1254,17 +1257,47 @@ def mgt_routing_req(self, nwkid, start_index):
         ackIsDisabled=False,
     )
 
+def mgt_binding_table_req( self, nwkid, start_index="00"):
+
+    #if not (
+    #    self.ZiGateModel == 2 and int(self.FirmwareMajorVersion, 16) >= 5 and int(self.FirmwareVersion, 16) >= 0x0320
+    #):
+    #    return
+
+    self.log.logging("BasicOutput", "Debug", "mgt_binding_table_req - %s" % nwkid)
+
+    if "BindingTable" not in self.ListOfDevices[nwkid]:
+        self.ListOfDevices[nwkid]["BindingTable"] = {}
+        self.ListOfDevices[nwkid]["BindingTable"]["Devices"] = []
+    if "SQN" not in self.ListOfDevices[nwkid]["BindingTable"]:
+        self.ListOfDevices[nwkid]["BindingTable"]["SQN"] = 0
+    else:
+        self.ListOfDevices[nwkid]["BindingTable"]["SQN"] += 1
+
+    payload = "%02x" % self.ListOfDevices[nwkid]["BindingTable"]["SQN"]+ start_index
+    raw_APS_request(
+        self,
+        nwkid,
+        "00",
+        "0033",
+        "0000",
+        payload,
+        zigate_ep="00",
+        highpriority=False,
+        ackIsDisabled=False,
+    )
+
 
 def initiate_change_channel(self, new_channel):
 
-    self.log.logging("BasicOutput", "Log", "initiate_change_channel - channel: %s" % new_channel)
+    self.log.logging("BasicOutput", "Debug", "initiate_change_channel - channel: %s" % new_channel)
     scanDuration = "fe"  # Initiate a change
 
     channel_mask = "%08x" % maskChannel(self, new_channel)
     target_address = "ffff"  # Broadcast to all devices
 
     datas = target_address + channel_mask + scanDuration + "00" + "0000"
-    self.log.logging("BasicOutput", "Log", "initiate_change_channel - 004A %s" % datas)
+    self.log.logging("BasicOutput", "Debug", "initiate_change_channel - 004A %s" % datas)
     send_zigatecmd_raw(self, "004A", datas)
     if "0000" in self.ListOfDevices:
         self.ListOfDevices["0000"]["CheckChannel"] = new_channel

@@ -1170,6 +1170,14 @@ SETTINGS = {
                 "hidden": False,
                 "Advanced": True,
             },
+            "BindingTableRequestFeq": {
+                "type": "int",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": True,
+            },
             "doManyToOneRoute": {
                 "type": "bool",
                 "default": 0,
