@@ -569,8 +569,8 @@ def processKnownDevices(self, Devices, NWKID):
         mgmt_rtg(self, NWKID)
 
     # Reenforcement of Legrand devices options if required
-    if (self.HeartbeatCount % LEGRAND_FEATURES) == 0:
-        rescheduleAction = rescheduleAction or legrandReenforcement(self, NWKID)
+    #if (self.HeartbeatCount % LEGRAND_FEATURES) == 0:
+    #    rescheduleAction = rescheduleAction or legrandReenforcement(self, NWKID)
 
     # Call Schneider Reenforcement if needed
     if self.pluginconf.pluginConf["reenforcementWiser"] and (self.HeartbeatCount % self.pluginconf.pluginConf["reenforcementWiser"]) == 0:

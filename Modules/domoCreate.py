@@ -390,13 +390,13 @@ def CreateDomoDevice(self, Devices, NWKID):
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Toggle/ThermoMode_2" % (t), NWKID)
 
             # 3 Selector , OffHidden, Style 0 (command)
-            if t in ("HACTMODE", "LegranCableMode"):
+            if t in ("HACTMODE", "LegranCableMode", ):
                 Options = createSwitchSelector(self, 3, DeviceType=t, OffHidden=True, SelectorStyle=0)
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in HACTMODE..." % (t), NWKID)
 
             # 4 Selector , OffHidden, Style 0 (command)
-            if t in ("DSwitch",):
+            if t in ("DSwitch", "blindIKEA", ):
                 Options = createSwitchSelector(self, 4, DeviceType=t, OffHidden=True, SelectorStyle=0)
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in DSwitch..." % (t), NWKID)

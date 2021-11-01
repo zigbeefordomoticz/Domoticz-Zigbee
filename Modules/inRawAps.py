@@ -18,6 +18,7 @@ from Modules.orvibo import orviboReadRawAPS
 from Modules.lumi import lumiReadRawAPS
 from Modules.philips import philipsReadRawAPS
 from Modules.tuya import tuyaReadRawAPS, TUYA_MANUFACTURER_NAME
+from Modules.ikeaTradfri import ikea_openclose_remote
 
 from Modules.casaia import CASAIA_MANUF_CODE, casaiaReadRawAPS
 
@@ -192,6 +193,10 @@ def inRawAps(
         return
 
     if cluster == "0102":  # Window Covering
+        if "Model" in self.ListOfDevices[srcnwkid] and self.ListOfDevices[srcnwkid]["Model"] == "TRADFRI openclose remote":
+            ikea_openclose_remote(self, Devices, srcnwkid, srcep, Command, Data, Sqn)
+            return
+
         if Command == "00":  # Up/Open
             Domoticz.Log("Window Covering - Up/Open Command")
 

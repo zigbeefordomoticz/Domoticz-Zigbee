@@ -40,8 +40,8 @@ class AdminWidgets:
         for x in range(1, 255):
             if x not in Devices:
                 return x
-        else:
-            return len(Devices) + 1
+
+        return len(Devices) + 1
 
     def createAdminWidget(self, Devices):
 

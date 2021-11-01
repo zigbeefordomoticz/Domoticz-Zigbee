@@ -1,1 +1,7 @@
-you can check https://github.com/pipiche38/Domoticz-Zigate-Wiki/blob/master/en-eng/Retreiving-Legrand-Firmware.md for more information
+Legrand Netatmo provides the latest Zigbee 3.0 firmware available.
+
+https://developer.legrand.com/documentation/operating-manual/
+https://developer.legrand.com/documentation/firmwares-download/
+
+NLM -> Microdule
+NLL -> Light switch with Neutral

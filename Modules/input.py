@@ -2534,9 +2534,8 @@ def Decode80A6(self, Devices, MsgData, MsgLQI):  # Scene Membership response
 
 
 # Reponses Attributs
-def Decode8100(
-    self, Devices, MsgData, MsgLQI
-):  # Read Attribute Response (in case there are several Attribute call several time rad_report_attributes)
+def Decode8100( self, Devices, MsgData, MsgLQI ):  
+    # Read Attribute Response (in case there are several Attribute call several time read_report_attributes)
 
     MsgSQN = MsgData[0:2]
     i_sqn = sqn_get_internal_sqn_from_app_sqn(self.ZigateComm, MsgSQN, TYPE_APP_ZCL)
@@ -2547,76 +2546,12 @@ def Decode8100(
     updLQI(self, MsgSrcAddr, MsgLQI)
     MsgSrcEp = MsgData[6:8]
     MsgClusterId = MsgData[8:12]
-    idx = 12
 
-    # try:
-    while idx < len(MsgData):
-        MsgAttrID = MsgAttStatus = MsgAttType = MsgAttSize = MsgClusterData = ""
-        MsgAttrID = MsgData[idx: idx + 4]
-        idx += 4
-        MsgAttStatus = MsgData[idx: idx + 2]
-        idx += 2
-        if MsgAttStatus == "00":
-            MsgAttType = MsgData[idx: idx + 2]
-            idx += 2
-            MsgAttSize = MsgData[idx: idx + 4]
-            idx += 4
-            size = int(MsgAttSize, 16) * 2
-            MsgClusterData = MsgData[idx: idx + size]
-            idx += size
-        else:
-            self.log.logging(
-                "Input",
-                "Debug",
-                "Decode8100 - idx: %s Read Attribute Response: [%s:%s] status: %s -> %s"
-                % (idx, MsgSrcAddr, MsgSrcEp, MsgAttStatus, MsgData[idx:]),
-            )
-
-            # If the frame is coming from firmware we get only one attribute at a time, with some dumy datas
-            if len(MsgData[idx:]) == 6:
-                # crap, lets finish it
-                # Domoticz.Log("Crap Data: %s len: %s" %(MsgData[idx:], len(MsgData[idx:])))
-                idx += 6
-        self.log.logging(
-            "Input",
-            "Debug",
-            "Decode8100 - idx: %s Read Attribute Response: [%s:%s] ClusterID: %s MsgSQN: %s, i_sqn: %s, AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<"
-            % (
-                idx,
-                MsgSrcAddr,
-                MsgSrcEp,
-                MsgClusterId,
-                MsgSQN,
-                i_sqn,
-                MsgAttrID,
-                MsgAttStatus,
-                MsgAttType,
-                MsgAttSize,
-                MsgClusterData,
-            ),
-            MsgSrcAddr,
-        )
-        read_report_attributes(
-            self,
-            Devices,
-            "8100",
-            MsgSQN,
-            MsgSrcAddr,
-            MsgSrcEp,
-            MsgClusterId,
-            MsgAttrID,
-            MsgAttStatus,
-            MsgAttType,
-            MsgAttSize,
-            MsgClusterData,
-        )
-
-    # except Exception as e:
-    #    Domoticz.Error(
-    #        "Decode8100 - Catch error while decoding %s/%s cluster: %s MsgData: %s Error: %s"
-    #        % (MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgData, e))
-
+    scan_attribute_reponse( self, Devices, MsgSQN, i_sqn, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgData, "8100" )
     callbackDeviceAwake(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId)
+
+
+    
 
 
 def Decode8101(self, Devices, MsgData, MsgLQI):  # Default Response
@@ -2723,6 +2658,12 @@ def Decode8102(self, Devices, MsgData, MsgLQI):  # Attribute Reports
     updLQI(self, MsgSrcAddr, MsgLQI)
     i_sqn = sqn_get_internal_sqn_from_app_sqn(self.ZigateComm, MsgSQN, TYPE_APP_ZCL)
 
+    scan_attribute_reponse( self, Devices, MsgSQN, i_sqn, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgData, "8102" )
+
+    callbackDeviceAwake(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId)
+
+def scan_attribute_reponse( self, Devices, MsgSQN, i_sqn, MsgSrcAddr, MsgSrcEp, MsgClusterId , MsgData, msgtype):
+    
     idx = 12
     while idx < len(MsgData):
         MsgAttrID = MsgAttStatus = MsgAttType = MsgAttSize = MsgClusterData = ""
@@ -2742,8 +2683,8 @@ def Decode8102(self, Devices, MsgData, MsgLQI):  # Attribute Reports
             self.log.logging(
                 "Input",
                 "Debug",
-                "Decode8102 - idx: %s Attribute Reports: [%s:%s] status: %s -> %s"
-                % (idx, MsgSrcAddr, MsgSrcEp, MsgAttStatus, MsgData[idx:]),
+                "scan_attribute_reponse - %s idx: %s Read Attribute Response: [%s:%s] status: %s -> %s"
+                % (msgtype, idx, MsgSrcAddr, MsgSrcEp, MsgAttStatus, MsgData[idx:]),
             )
 
             # If the frame is coming from firmware we get only one attribute at a time, with some dumy datas
@@ -2751,8 +2692,12 @@ def Decode8102(self, Devices, MsgData, MsgLQI):  # Attribute Reports
                 # crap, lets finish it
                 # Domoticz.Log("Crap Data: %s len: %s" %(MsgData[idx:], len(MsgData[idx:])))
                 idx += 6
-
-        self.log.logging( "Input", "Debug", "Decode8102 - idx: %s Read Attribute Response: [%s:%s] ClusterID: %s MsgSQN: %s, i_sqn: %s, AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<" % (
+        self.log.logging(
+            "Input",
+            "Debug",
+            "scan_attribute_reponse - %s idx: %s Read Attribute Response: [%s:%s] ClusterID: %s MsgSQN: %s, i_sqn: %s, AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<"
+            % (
+                msgtype,
                 idx,
                 MsgSrcAddr,
                 MsgSrcEp,
@@ -2763,12 +2708,14 @@ def Decode8102(self, Devices, MsgData, MsgLQI):  # Attribute Reports
                 MsgAttStatus,
                 MsgAttType,
                 MsgAttSize,
-                MsgClusterData, ), MsgSrcAddr, )
-
+                MsgClusterData,
+            ),
+            MsgSrcAddr,
+        )
         read_report_attributes(
             self,
             Devices,
-            "8102",
+            msgtype,
             MsgSQN,
             MsgSrcAddr,
             MsgSrcEp,
@@ -2778,9 +2725,7 @@ def Decode8102(self, Devices, MsgData, MsgLQI):  # Attribute Reports
             MsgAttType,
             MsgAttSize,
             MsgClusterData,
-            )
-
-    callbackDeviceAwake(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId)
+        )
 
 
 def read_report_attributes(
@@ -3421,40 +3366,16 @@ def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change 
     if "0002" not in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEp]["0500"]:
         self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEp]["0500"]["0002"] = {}
 
-    self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEp]["0500"][
-        "0002"
-    ] = "alarm1: %s, alaram2: %s, tamper: %s, battery: %s, Support Reporting: %s, restore Reporting: %s, trouble: %s, acmain: %s, test: %s, battdef: %s" % (
-        alarm1,
-        alarm2,
-        tamper,
-        battery,
-        suprrprt,
-        restrprt,
-        trouble,
-        acmain,
-        test,
-        battdef,
-    )
+    self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEp]["0500"]["0002"] = "alarm1: %s, alaram2: %s, tamper: %s, battery: %s, Support Reporting: %s, restore Reporting: %s, trouble: %s, acmain: %s, test: %s, battdef: %s" % (
+        alarm1,alarm2,tamper,battery,suprrprt,restrprt,trouble,acmain,test,battdef,)
 
     self.log.logging(
         "Input",
         "Debug",
-        "IAS Zone for device:%s  - alarm1: %s, alarm2: %s, tamper: %s, battery: %s, Support Reporting: %s, restore Reporting: %s, trouble: %s, acmain: %s, test: %s, battdef: %s"
+        "IAS Zone for device:%s  - %s"
         % (
             MsgSrcAddr,
-            alarm1,
-            alarm2,
-            tamper,
-            battery,
-            suprrprt,
-            restrprt,
-            trouble,
-            acmain,
-            test,
-            battdef,
-        ),
-        MsgSrcAddr,
-    )
+            self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEp]["0500"]["0002"] ),MsgSrcAddr,)
 
     self.log.logging(
         "Input",
@@ -3522,18 +3443,7 @@ def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change 
             self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["acmain"] = acmain
             self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["test"] = test
             self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["battdef"] = battdef
-            self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["GlobalInfos"] = "%s;%s;%s;%s;%s;%s;%s;%s;%s;%s" % (
-                alarm1,
-                alarm2,
-                tamper,
-                battery,
-                suprrprt,
-                restrprt,
-                trouble,
-                acmain,
-                test,
-                battdef,
-            )
+            self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["GlobalInfos"] = self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEp]["0500"]["0002"]
             self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["TimeStamp"] = int(time.time())
 
 
@@ -3717,14 +3627,7 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
             self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, %s" % (MsgCmd, unknown_)
             return
 
-        step_mod = MsgData[14:16]
-        up_down = step_size = transition = None
-        if len(MsgData) >= 18:
-            up_down = MsgData[16:18]
-        if len(MsgData) >= 20:
-            step_size = MsgData[18:20]
-        if len(MsgData) >= 22:
-            transition = MsgData[20:22]
+        step_mod, up_down, step_size, transition = extract_info_from_8085( MsgData )                                                                                
 
         self.log.logging(
             "Input",
@@ -3784,14 +3687,7 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
         }
         DIRECTION = {None: "", "00": "left", "ff": "right"}
 
-        step_mod = MsgData[14:16]
-        up_down = step_size = transition = None
-        if len(MsgData) >= 18:
-            up_down = MsgData[16:18]
-        if len(MsgData) >= 20:
-            step_size = MsgData[18:20]
-        if len(MsgData) >= 22:
-            transition = MsgData[20:22]
+        step_mod, up_down, step_size, transition = extract_info_from_8085( MsgData ) 
 
         selector = None
 
@@ -3873,14 +3769,7 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
         }
         DIRECTION = {None: "", "00": "up", "01": "down"}
 
-        step_mod = MsgData[14:16]
-        up_down = step_size = transition = None
-        if len(MsgData) >= 18:
-            up_down = MsgData[16:18]
-        if len(MsgData) >= 20:
-            step_size = MsgData[18:20]
-        if len(MsgData) >= 22:
-            transition = MsgData[20:22]
+        step_mod, up_down, step_size, transition = extract_info_from_8085( MsgData ) 
 
         if TYPE_ACTIONS[step_mod] in ("click", "move"):
             selector = TYPE_ACTIONS[step_mod] + DIRECTION[up_down]
@@ -3914,14 +3803,7 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
         # OSRAM Lightify Switch Mini
         # Force Ep 03 to update Domoticz Widget
 
-        step_mod = MsgData[14:16]
-        up_down = step_size = transition = None
-        if len(MsgData) >= 18:
-            up_down = MsgData[16:18]
-        if len(MsgData) >= 20:
-            step_size = MsgData[18:20]
-        if len(MsgData) >= 22:
-            transition = MsgData[20:22]
+        step_mod, up_down, step_size, transition = extract_info_from_8085( MsgData ) 
 
         self.log.logging(
             "Input",
@@ -4001,19 +3883,14 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
             TYPE_ACTIONS = {None: "", "03": "stop", "05": "move"}
             DIRECTION = {None: "", "00": "up", "01": "down"}
 
-            step_mod = MsgData[14:16]
+            step_mod, up_down, step_size, transition = extract_info_from_8085( MsgData ) 
+
             self.log.logging("Input", "Log", "step_mod: %s" % step_mod)
 
             if step_mod in TYPE_ACTIONS:
                 Domoticz.Error("Decode8085 - Profalux Remote, unknown Action: %s" % step_mod)
 
-            selector = up_down = step_size = transition = None
-            if len(MsgData) >= 18:
-                up_down = MsgData[16:18]
-            if len(MsgData) >= 20:
-                step_size = MsgData[18:20]
-            if len(MsgData) >= 22:
-                transition = MsgData[20:22]
+            selector =  None
 
             if TYPE_ACTIONS[step_mod] in ("move"):
                 selector = TYPE_ACTIONS[step_mod] + DIRECTION[up_down]
@@ -4035,14 +3912,8 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
                 MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, selector)
 
     elif _ModelName == "TS1001":
-        step_mod = MsgData[14:16]
-        up_down = step_size = transition = None
-        if len(MsgData) >= 18:
-            up_down = MsgData[16:18]
-        if len(MsgData) >= 20:
-            step_size = MsgData[18:20]
-        if len(MsgData) >= 22:
-            transition = MsgData[20:22]
+
+        step_mod, up_down, step_size, transition = extract_info_from_8085( MsgData )
         self.log.logging(
             "Input",
             "Log",
@@ -4059,6 +3930,17 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
         )
         self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, %s" % (MsgCmd, unknown_)
 
+def extract_info_from_8085( MsgData ):
+    step_mod = MsgData[14:16]
+    up_down = step_size = transition = None
+    if len(MsgData) >= 18:
+        up_down = MsgData[16:18]
+    if len(MsgData) >= 20:
+        step_size = MsgData[18:20]
+    if len(MsgData) >= 22:
+        transition = MsgData[20:22]
+    
+    return ( step_mod, up_down, step_size, transition)
 
 def Decode8095(self, Devices, MsgData, MsgLQI):
     "Remote button pressed ON/OFF"
