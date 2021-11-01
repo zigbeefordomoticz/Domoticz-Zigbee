@@ -64,6 +64,7 @@ from Modules.zigateConsts import (
     ZCL_CLUSTERS_LIST,
     LEGRAND_REMOTE_SWITCHS,
     ZIGBEE_COMMAND_IDENTIFIER,
+    LEGRAND_REMOTE_MOTION
 )
 from Modules.pluzzy import pluzzyDecode8102
 from Modules.zigate import initLODZigate, receiveZigateEpList, receiveZigateEpDescriptor
@@ -3798,6 +3799,15 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
                     MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, selector)
                     self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = selector
 
+    elif _ModelName in LEGRAND_REMOTE_MOTION:
+        step_mod, up_down, step_size, transition = extract_info_from_8085( MsgData ) 
+        self.log.logging(
+            "Input",
+            "Log",
+            "Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s step_mode: %s up_down: %s step_size: %s transition: %s"
+            % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_, step_mod, up_down, step_size, transition),
+            MsgSrcAddr,)
+
     elif _ModelName == "Lightify Switch Mini":
 
         # OSRAM Lightify Switch Mini
@@ -4094,6 +4104,16 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
         elif MsgCmd == "02":  # Toggle
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, "02")
             self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, %s" % (MsgCmd, unknown_)
+
+    elif _ModelName in LEGRAND_REMOTE_MOTION:
+        self.log.logging(
+            "Input",
+            "Log",
+            "Decode8095 - Legrand: %s/%s, Cmd: %s, Unknown: %s " % (MsgSrcAddr, MsgEP, MsgCmd, unknown_),
+            MsgSrcAddr,
+            )
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0406", unknown_)
+
 
     elif _ModelName == "Lightify Switch Mini":
         #        OSRAM Lightify Switch Mini
