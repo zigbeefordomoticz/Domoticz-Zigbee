@@ -21,6 +21,14 @@ Release Numbering
 
 - Odd numbers --> Stable5
 - Even numbers  --> Beta
+## 27 October 2021 - 5.1.13
+- [Web UI] - Improve Franch translation
+- [Hardware] - Support Casa.IA CPC321, 3 lignes monitoring
+- [Hardware] - Support Tuya TS001F Plug with metering
+- [Technical] - Fix issue preventing correct pairing of Mija Switch
+
+## 25 October 2021 - 5.1.12
+- [Technical] - After a Power Off/On make sure to retreive the current status of Switches, Plug, Led and Level Control
 
 ## 25 October 2021 - 5.1.12
 - [Technical] - After a Power Off/On make sure to retreive the current status of Switches, Plug, Led and Level Control
