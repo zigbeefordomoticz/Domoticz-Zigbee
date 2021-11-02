@@ -127,7 +127,7 @@ def extract_report(self, reportLQI):
     _nwkid_list = []
     _topo = []
 
-    if is_sibling_required(reportLQI) or self.pluginconf.pluginConf["displaySibling"]:
+    if is_sibling_required(reportLQI) or self.pluginconf.pluginConf["Sibling"]:
         reportLQI = check_sibbling(self, reportLQI)
 
     for item in reportLQI:

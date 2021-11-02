@@ -156,9 +156,9 @@ SETTINGS = {
     "WebInterface": {
         "Order": 4,
         "param": {
-            "displaySibling": {
+            "Sibling": {
                 "type": "bool",
-                "default": 0,
+                "default": 1,
                 "current": None,
                 "restart": 0,
                 "hidden": False,
