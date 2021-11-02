@@ -262,3 +262,86 @@ def danfoss_control_algo(self, NwkId, mode):
         nwkid=NwkId,
     )
     write_attribute(self, NwkId, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
+
+def danfoss_orientation(self, NwkId, orientation):
+
+    # 0110 02 955e 01 01 0201 00 01 1246 01 4014 10 01
+
+    orient = 0
+    if orientation == "V":
+        orient = 1
+    elif orientation == "H":
+        orient = 0
+    else:
+        return
+
+    manuf_id = "1246"
+    manuf_spec = "01"
+    cluster_id = "%04x" % 0x0201
+
+    EPout = "01"
+    for tmpEp in self.ListOfDevices[NwkId]["Ep"]:
+        if "0201" in self.ListOfDevices[NwkId]["Ep"][tmpEp]:
+            EPout = tmpEp
+
+    Hattribute = "%04x" % 0x4014
+    data_type = "10"  # boolean
+    self.log.logging("Danfoss", "Debug", "danfoss_orientation: %s" % orient, nwkid=NwkId)
+
+    
+    Hdata = "%02x" % orient
+
+    self.log.logging(
+        "Danfoss",
+        "Debug",
+        "danfoss_orientation for %s with value %s / cluster: %s, attribute: %s type: %s"
+        % (NwkId, Hdata, cluster_id, Hattribute, data_type),
+        nwkid=NwkId,
+    )
+
+    write_attribute(self, NwkId, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, ackIsDisabled=False)
+    read_attribute(self, NwkId, ZIGATE_EP, EPout, cluster_id, "00", manuf_spec, manuf_id, 1, Hattribute, ackIsDisabled=False)
+
+
+def danfoss_viewdirection(self, NwkId, viewdirection):
+    # Command Manufactuer Specific
+    # Set viewing direction
+
+    # 0110 02 955e 01 01 0204 00 01 1246 01 4000 30 01
+
+    viewdir = 0
+    if viewdirection == 1:
+        viewdir = 0
+    elif viewdirection == 2:
+        viewdir = 1
+    else:
+        return
+
+    manuf_id = "1246"
+    manuf_spec = "01"
+    cluster_id = "%04x" % 0x0204
+
+    EPout = "01"
+    for tmpEp in self.ListOfDevices[NwkId]["Ep"]:
+        if "0201" in self.ListOfDevices[NwkId]["Ep"][tmpEp]:
+            EPout = tmpEp
+
+    Hattribute = "%04x" % 0x4000
+    data_type = "30"  # enum8
+    self.log.logging("Danfoss", "Debug", "danfoss_viewdirection: %s" % viewdir, nwkid=NwkId)
+
+    Hdata = "%02x" % viewdir
+
+    self.log.logging(
+        "Danfoss",
+        "Debug",
+        "danfoss_viewdirection for %s with value %s / cluster: %s, attribute: %s type: %s"
+        % (NwkId, Hdata, cluster_id, Hattribute, data_type),
+        nwkid=NwkId,
+    )
+
+    write_attribute(self, NwkId, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, ackIsDisabled=False)
+    read_attribute(self, NwkId, ZIGATE_EP, EPout, cluster_id, "00", manuf_spec, manuf_id, 1, Hattribute, ackIsDisabled=False)
+
+
+    

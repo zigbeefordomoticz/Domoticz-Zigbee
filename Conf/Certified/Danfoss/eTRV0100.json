@@ -102,6 +102,7 @@
 			"4000",
 			"4010",
 			"4011",
+			"4014",
 			"4015",
 			"4020"
 		],
@@ -123,6 +124,8 @@
 		"eTRVExerciseTime": 720,
 		"DanfossRoom": 0,
 		"DanfossRoomFreq": 0,
-		"DanfossSetPointType": 0
+	        "DanfossSetPointType": 0,
+	        "DanfossTRVOrientation": "H",
+		"DanfossViewDirection": 1
 	}
 }
