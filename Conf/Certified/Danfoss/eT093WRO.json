@@ -1,5 +1,5 @@
 {
-	"_comment": "Pop by Danfoss",
+	"_comment": "Popp by Danfoss ( https://assets.danfoss.com/documents/DOC235786405834/DOC235786405834.pdf )",
 	"_version": "0.1",
 	"Ep": {
 		"01": {
@@ -99,7 +99,12 @@
 			"0016",
 			"001b",
 			"001c",
-			"4000"
+			"4000",
+			"4010",
+			"4011",
+			"4014",
+			"4015",
+			"4020"
 		],
 		"0204": [
 			"0000",
@@ -119,6 +124,8 @@
 		"eTRVExerciseTime": 720,
 		"DanfossRoom": 0,
 		"DanfossRoomFreq": 0,
-		"DanfossSetPointType": 0
+	        "DanfossSetPointType": 0,
+	        "DanfossTRVOrientation": "H",
+		"DanfossViewDirection": 1
 	}
 }
