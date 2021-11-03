@@ -11,13 +11,12 @@ Parameters not define in the PluginConf.txt file will be set to their default va
 
 """
 
-import Domoticz
-import os.path
 import json
+import os.path
 import time
 
-from Modules.tools import is_hex, setConfigItem, getConfigItem, is_domoticz_db_available
-
+import Domoticz
+from Modules.tools import getConfigItem, is_domoticz_db_available, is_hex, setConfigItem
 
 SETTINGS = {
     "Services": {
@@ -68,6 +67,14 @@ SETTINGS = {
     "GroupManagement": {
         "Order": 2,
         "param": {
+            "GroupOnBattery": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": False,
+            },
             "OnIfOneOn": {
                 "type": "bool",
                 "default": 1,
@@ -1138,9 +1145,7 @@ SETTINGS = {
     },
     "Patching": {
         "Order": 14,
-        "param": {
-            "Bug566": {"type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True}
-        },
+        "param": {"Bug566": {"type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True}},
     },
     # Experimental
     "Experimental": {
@@ -1698,10 +1703,7 @@ def _load_Settings(self):
         if "TimeStamp" in _domoticz_pluginConf:
             dz_timestamp = _domoticz_pluginConf["TimeStamp"]
             _domoticz_pluginConf = _domoticz_pluginConf["b64Settings"]
-            Domoticz.Log(
-                "Plugin data loaded where saved on %s"
-                % (time.strftime("%A, %Y-%m-%d %H:%M:%S", time.localtime(dz_timestamp)))
-            )
+            Domoticz.Log("Plugin data loaded where saved on %s" % (time.strftime("%A, %Y-%m-%d %H:%M:%S", time.localtime(dz_timestamp))))
         if not isinstance(_domoticz_pluginConf, dict):
             _domoticz_pluginConf = {}
 
@@ -1735,9 +1737,7 @@ def _load_Settings(self):
                     Domoticz.Error("-- %s is missing in Dz" % x)
                 else:
                     if _pluginConf[x] != _domoticz_pluginConf[x]:
-                        Domoticz.Error(
-                            "++ %s is different in Dz: %s from Json: %s" % (x, _domoticz_pluginConf[x], _pluginConf[x])
-                        )
+                        Domoticz.Error("++ %s is different in Dz: %s from Json: %s" % (x, _domoticz_pluginConf[x], _pluginConf[x]))
 
 
 def _load_oldfashon(self, homedir, hardwareid):
@@ -1777,20 +1777,14 @@ def _import_oldfashon_param(self, tmpPluginConf, filename):
                         if is_hex(PluginConf.get(param)):
                             self.pluginConf[param] = int(PluginConf[param], 16)
                         else:
-                            Domoticz.Error(
-                                "Wrong parameter type for %s, keeping default %s"
-                                % (param, self.pluginConf[param]["default"])
-                            )
+                            Domoticz.Error("Wrong parameter type for %s, keeping default %s" % (param, self.pluginConf[param]["default"]))
                             self.pluginConf[param] = self.pluginConf[param]["default"]
 
                     elif SETTINGS[theme]["param"][param]["type"] in ("bool", "int"):
                         if PluginConf.get(param).isdigit():
                             self.pluginConf[param] = int(PluginConf[param])
                         else:
-                            Domoticz.Error(
-                                "Wrong parameter type for %s, keeping default %s"
-                                % (param, self.pluginConf[param]["default"])
-                            )
+                            Domoticz.Error("Wrong parameter type for %s, keeping default %s" % (param, self.pluginConf[param]["default"]))
                             self.pluginConf[param] = self.pluginConf[param]["default"]
                     elif SETTINGS[theme]["param"][param]["type"] == ("path", "str"):
                         self.pluginConf[param] = PluginConf[param]

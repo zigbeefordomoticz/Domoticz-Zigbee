@@ -10,8 +10,7 @@ import os
 from time import time
 
 import Domoticz
-from Classes.WebServer.headerResponse import (prepResponseMessage,
-                                              setupHeadersResponse)
+from Classes.WebServer.headerResponse import prepResponseMessage, setupHeadersResponse
 
 
 def rest_zGroup_lst_avlble_dev(self, verb, data, parameters):
@@ -49,7 +48,7 @@ def rest_zGroup_lst_avlble_dev(self, verb, data, parameters):
             continue
 
         IkeaRemote = False
-        if "Type" in self.ListOfDevices[x] and self.ListOfDevices[x]["Type"] == "Ikea_Round_5b":
+        if self.pluginconf.pluginConf["GroupOnBattery"] or ("Type" in self.ListOfDevices[x] and self.ListOfDevices[x]["Type"] == "Ikea_Round_5b"):
             IkeaRemote = True
 
         if not (self.ListOfDevices[x]["MacCapa"] == "8e" or IkeaRemote):
@@ -59,12 +58,7 @@ def rest_zGroup_lst_avlble_dev(self, verb, data, parameters):
         if "Ep" in self.ListOfDevices[x] and "ZDeviceName" in self.ListOfDevices[x] and "IEEE" in self.ListOfDevices[x]:
             _device = {"_NwkId": x, "WidgetList": []}
             for ep in self.ListOfDevices[x]["Ep"]:
-                if (
-                    "Type" in self.ListOfDevices[x]
-                    and self.ListOfDevices[x]["Type"] == "Ikea_Round_5b"
-                    and ep == "01"
-                    and "ClusterType" in self.ListOfDevices[x]["Ep"]["01"]
-                ):
+                if "Type" in self.ListOfDevices[x] and self.ListOfDevices[x]["Type"] == "Ikea_Round_5b" and ep == "01" and "ClusterType" in self.ListOfDevices[x]["Ep"]["01"]:
                     widgetID = ""
                     for iterDev in self.ListOfDevices[x]["Ep"]["01"]["ClusterType"]:
                         if self.ListOfDevices[x]["Ep"]["01"]["ClusterType"][iterDev] == "Ikea_Round_5b":
@@ -302,8 +296,8 @@ def rest_zGroup(self, verb, data, parameters):
                     _dev = {}
                     _dev["_NwkId"] = ListOfGroups[itemGroup]["Tradfri Remote"]["Device Addr"]
                     _dev["Ep"] = "01"
-                    # zgroup["Devices"].append(_dev)  This looks very bad. Don't know where it is coming from 
-                    zgroup["Devices"][ ListOfGroups[itemGroup]["Tradfri Remote"]["Device Addr"] ] = "01"
+                    # zgroup["Devices"].append(_dev)  This looks very bad. Don't know where it is coming from
+                    zgroup["Devices"][ListOfGroups[itemGroup]["Tradfri Remote"]["Device Addr"]] = "01"
                 _response["Data"] = json.dumps(zgroup, sort_keys=True)
 
         return _response
