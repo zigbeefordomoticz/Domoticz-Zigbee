@@ -54,7 +54,7 @@ class WebServer(object):
     from Classes.WebServer.com import onConnect, onDisconnect, onStop, startWebServer
     from Classes.WebServer.dispatcher import do_rest
     from Classes.WebServer.onMessage import onMessage
-    from Classes.WebServer.rest_Bindings import rest_binding, rest_bindLSTcluster, rest_bindLSTdevice, rest_group_binding, rest_group_unbinding, rest_unbinding
+    from Classes.WebServer.rest_Bindings import rest_binding, rest_binding_table_disp, rest_binding_table_req, rest_bindLSTcluster, rest_bindLSTdevice, rest_group_binding, rest_group_unbinding, rest_unbinding
     from Classes.WebServer.rest_Casaia import rest_casa_device_ircode_update, rest_casa_device_list
     from Classes.WebServer.rest_Energy import rest_req_nwk_full, rest_req_nwk_inter
     from Classes.WebServer.rest_Groups import rest_rescan_group, rest_scan_devices_for_group, rest_zGroup, rest_zGroup_lst_avlble_dev

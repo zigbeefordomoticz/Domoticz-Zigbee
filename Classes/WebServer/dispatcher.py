@@ -28,6 +28,8 @@ def do_rest(self, Connection, verb, data, version, command, parameters):
         "bind-lst-cluster": {"Name": "bind-lst-cluster", "Verbs": {"GET"}, "function": self.rest_bindLSTcluster},
         "bind-lst-device": {"Name": "bind-lst-device", "Verbs": {"GET"}, "function": self.rest_bindLSTdevice},
         "binding": {"Name": "binding", "Verbs": {"PUT"}, "function": self.rest_binding},
+        "binding-table-req": {"Name": "binding", "Verbs": {"GET"}, "function": self.rest_binding_table_req},
+        "binding-table-disp": {"Name": "binding", "Verbs": {"GET"}, "function": self.rest_binding_table_disp},
         "binding-group": {"Name": "binding-group", "Verbs": {"PUT"}, "function": self.rest_group_binding},
         "casaia-list-devices": {
             "Name": "casaia-list-devices",
