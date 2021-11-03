@@ -4,46 +4,127 @@
 # Author: zaraki673 & pipiche38
 #
 
-import Domoticz
 from time import time
 
+import Domoticz
+from Classes.LoggingManagement import LoggingManagement
 from Modules.basicOutputs import sendZigateCmd
 from Modules.zigateConsts import CLUSTERS_LIST
-from Classes.LoggingManagement import LoggingManagement
+
+# def bindGroup(self, ieee, ep, cluster, groupid):
+#
+#    mode = "01"  # Group mode
+#    nwkid = "ffff"
+#    if ieee in self.IEEE2NWK:
+#        nwkid = self.IEEE2NWK[ieee]
+#
+#    self.log.logging(
+#        "Binding",
+#        "Debug",
+#        "bindGroup - ieee: %s, ep: %s, cluster: %s, Group: %s" % (ieee, ep, cluster, groupid),
+#        nwkid=nwkid,
+#    )
+#    datas = ieee + ep + cluster + mode + groupid
+#    sendZigateCmd(self, "0030", datas)
+#
+#
+# def unbindGroup(self, ieee, ep, cluster, groupid):
+#
+#    mode = "01"  # Group mode
+#    nwkid = "ffff"
+#    if ieee in self.IEEE2NWK:
+#        nwkid = self.IEEE2NWK[ieee]
+#
+#    self.log.logging(
+#        "Binding",
+#        "Debug",
+#        "unbindGroup - ieee: %s, ep: %s, cluster: %s, Group: %s" % (ieee, ep, cluster, groupid),
+#        nwkid=nwkid,
+#    )
+#    datas = ieee + ep + cluster + mode + groupid
+#    sendZigateCmd(self, "0031", datas)
 
 
 def bindGroup(self, ieee, ep, cluster, groupid):
 
-    mode = "01"  # Group mode
-    nwkid = "ffff"
-    if ieee in self.IEEE2NWK:
-        nwkid = self.IEEE2NWK[ieee]
+    if ieee not in self.IEEE2NWK:
+        self.log.logging(
+            "Binding",
+            "Debug",
+            "bindGroup - Unknown ieee: %s, ep: %s, cluster: %s, groupId: %s" % (ieee, ep, cluster, groupid),
+        )
+        return
+
+    nwkid = self.IEEE2NWK[ieee]
+    if nwkid not in self.ListOfDevices:
+        self.log.logging(
+            "Binding",
+            "Debug",
+            "bindGroup - Unknown nwkid: %s from ieee: %s, ep: %s, cluster: %s, groupId: %s" % (nwkid, ieee, ep, cluster, groupid),
+        )
+        return
+
+    if self.ZigateIEEE and ieee == self.ZigateIEEE:
+        self.log.logging(
+            "Binding",
+            "Debug",
+            "bindGroup - Cannot bind Zigate from ieee: %s, ep: %s, cluster: %s, groupId: %s" % (ieee, ep, cluster, groupid),
+        )
+        # we have to bind the ZiGate to a group
+        return
 
     self.log.logging(
         "Binding",
         "Debug",
-        "bindGroup - ieee: %s, ep: %s, cluster: %s, Group: %s" % (ieee, ep, cluster, groupid),
+        "bindGroup - ieee: %s, ep: %s, cluster: %s, groupId: %s" % (ieee, ep, cluster, groupid),
         nwkid=nwkid,
     )
-    datas = ieee + ep + cluster + mode + groupid
-    sendZigateCmd(self, "0030", datas)
+    # Read to bind
+    mode = "01"  # Addres Mode to use: group
+
+    datas = str(ieee) + str(ep) + str(cluster) + str(mode) + str(groupid)
+    i_sqn = sendZigateCmd(self, "0030", datas)
 
 
 def unbindGroup(self, ieee, ep, cluster, groupid):
 
-    mode = "01"  # Group mode
-    nwkid = "ffff"
-    if ieee in self.IEEE2NWK:
-        nwkid = self.IEEE2NWK[ieee]
+    if ieee not in self.IEEE2NWK:
+        self.log.logging(
+            "Binding",
+            "Debug",
+            "unbindGroup - Unknown ieee: %s, ep: %s, cluster: %s, groupId: %s" % (ieee, ep, cluster, groupid),
+        )
+        return
+
+    nwkid = self.IEEE2NWK[ieee]
+    if nwkid not in self.ListOfDevices:
+        self.log.logging(
+            "Binding",
+            "Debug",
+            "unbindGroup - Unknown nwkid: %s from ieee: %s, ep: %s, cluster: %s, groupId: %s" % (nwkid, ieee, ep, cluster, groupid),
+        )
+        return
+
+    if self.ZigateIEEE and ieee == self.ZigateIEEE:
+        # we have to bind the ZiGate to a group
+        self.log.logging(
+            "Binding",
+            "Debug",
+            "unbindGroup - Cannot unbind Zigate from ieee: %s, ep: %s, cluster: %s, groupId: %s" % (ieee, ep, cluster, groupid),
+        )
+        return
 
     self.log.logging(
         "Binding",
-        "Debug",
-        "unbindGroup - ieee: %s, ep: %s, cluster: %s, Group: %s" % (ieee, ep, cluster, groupid),
+        "Log",
+        "unbindGroup - ieee: %s, ep: %s, cluster: %s, groupId: %s" % (ieee, ep, cluster, groupid),
         nwkid=nwkid,
     )
-    datas = ieee + ep + cluster + mode + groupid
-    sendZigateCmd(self, "0031", datas)
+    # Read to bind
+    mode = "01"  # Addres Mode to use: group
+
+    datas = str(ieee) + str(ep) + str(cluster) + str(mode) + str(groupid)
+    i_sqn = sendZigateCmd(self, "0031", datas)
 
 
 def bindDevice(self, ieee, ep, cluster, destaddr=None, destep="01"):
@@ -68,9 +149,7 @@ def bindDevice(self, ieee, ep, cluster, destaddr=None, destep="01"):
         if nwkid in self.ListOfDevices:
 
             # Very bad Hack, but at that stage, there is no other information we can Use. PROFALUX
-            if (
-                self.ListOfDevices[nwkid]["ProfileID"] == "0104" and self.ListOfDevices[nwkid]["ZDeviceID"] == "0201"
-            ):  # Remote
+            if self.ListOfDevices[nwkid]["ProfileID"] == "0104" and self.ListOfDevices[nwkid]["ZDeviceID"] == "0201":  # Remote
                 # Do not bind Remote Command
                 self.log.logging(
                     "Binding",
@@ -89,16 +168,12 @@ def bindDevice(self, ieee, ep, cluster, destaddr=None, destep="01"):
                         self.log.logging(
                             "Binding",
                             "Debug",
-                            "----> %s/%s on %s overwrite Zigate Endpoint for bind and use %s"
-                            % (nwkid, ep, cluster, destep),
+                            "----> %s/%s on %s overwrite Zigate Endpoint for bind and use %s" % (nwkid, ep, cluster, destep),
                             nwkid,
                         )
 
                     # For to Bind only the Configured Clusters
-                    if (
-                        "ClusterToBind" in self.DeviceConf[_model]
-                        and cluster not in self.DeviceConf[_model]["ClusterToBind"]
-                    ):
+                    if "ClusterToBind" in self.DeviceConf[_model] and cluster not in self.DeviceConf[_model]["ClusterToBind"]:
                         self.log.logging(
                             "Binding",
                             "Debug",
@@ -122,8 +197,7 @@ def bindDevice(self, ieee, ep, cluster, destaddr=None, destep="01"):
     self.log.logging(
         "Binding",
         "Debug",
-        "bindDevice - ieee: %s, ep: %s, cluster: %s, Zigate_ieee: %s, Zigate_ep: %s"
-        % (ieee, ep, cluster, destaddr, destep),
+        "bindDevice - ieee: %s, ep: %s, cluster: %s, Zigate_ieee: %s, Zigate_ep: %s" % (ieee, ep, cluster, destaddr, destep),
         nwkid=nwkid,
     )
 
@@ -227,8 +301,7 @@ def reWebBind_Clusters(self, NWKID):
                     self.log.logging(
                         "Binding",
                         "Debug",
-                        "Request a rewebbind for : nwkid %s ep: %s cluster: %s destNwkid: %s"
-                        % (NWKID, Ep, cluster, destNwkid),
+                        "Request a rewebbind for : nwkid %s ep: %s cluster: %s destNwkid: %s" % (NWKID, Ep, cluster, destNwkid),
                         nwkid=NWKID,
                     )
                     self.ListOfDevices[NWKID]["WebBind"][Ep][cluster][destNwkid]["Stamp"] = int(time())
@@ -258,18 +331,13 @@ def unbindDevice(self, ieee, ep, cluster, destaddr=None, destep="01"):
         del self.ListOfDevices[nwkid]["ConfigureReporting"]
 
     # Remove the Bind
-    if (
-        "Bind" in self.ListOfDevices[nwkid]
-        and ep in self.ListOfDevices[nwkid]["Bind"]
-        and cluster in self.ListOfDevices[nwkid]["Bind"][ep]
-    ):
+    if "Bind" in self.ListOfDevices[nwkid] and ep in self.ListOfDevices[nwkid]["Bind"] and cluster in self.ListOfDevices[nwkid]["Bind"][ep]:
         del self.ListOfDevices[nwkid]["Bind"][ep][cluster]
 
     self.log.logging(
         "Binding",
         "Debug",
-        "unbindDevice - ieee: %s, ep: %s, cluster: %s, Zigate_ieee: %s, Zigate_ep: %s"
-        % (ieee, ep, cluster, destaddr, destep),
+        "unbindDevice - ieee: %s, ep: %s, cluster: %s, Zigate_ieee: %s, Zigate_ep: %s" % (ieee, ep, cluster, destaddr, destep),
         nwkid=nwkid,
     )
     datas = str(ieee) + str(ep) + str(cluster) + str(mode) + str(destaddr) + str(destep)
@@ -281,15 +349,11 @@ def unbindDevice(self, ieee, ep, cluster, destaddr=None, destep="01"):
 def webBind(self, sourceIeee, sourceEp, destIeee, destEp, Cluster):
 
     if sourceIeee not in self.IEEE2NWK:
-        self.log.logging(
-            "Binding", "Error", "---> unknown sourceIeee: %s" % sourceIeee, None, {"Error code": "BINDINGS-WEBBIND-01"}
-        )
+        self.log.logging("Binding", "Error", "---> unknown sourceIeee: %s" % sourceIeee, None, {"Error code": "BINDINGS-WEBBIND-01"})
         return
 
     if destIeee not in self.IEEE2NWK:
-        self.log.logging(
-            "Binding", "Error", "---> unknown destIeee: %s" % destIeee, None, {"Error code": "BINDINGS-WEBBIND-02"}
-        )
+        self.log.logging("Binding", "Error", "---> unknown destIeee: %s" % destIeee, None, {"Error code": "BINDINGS-WEBBIND-02"})
         return
 
     sourceNwkid = self.IEEE2NWK[sourceIeee]
@@ -307,16 +371,14 @@ def webBind(self, sourceIeee, sourceEp, destIeee, destEp, Cluster):
     self.log.logging(
         "Binding",
         "Debug",
-        "Binding Device %s/%s with Device target %s/%s on Cluster: %s"
-        % (sourceIeee, sourceEp, destIeee, destEp, Cluster),
+        "Binding Device %s/%s with Device target %s/%s on Cluster: %s" % (sourceIeee, sourceEp, destIeee, destEp, Cluster),
         sourceNwkid,
     )
     if Cluster not in self.ListOfDevices[sourceNwkid]["Ep"][sourceEp]:
         self.log.logging(
             "Binding",
             "Error",
-            "---> Cluster %s not find in %s --> %s"
-            % (Cluster, sourceNwkid, self.ListOfDevices[sourceNwkid]["Ep"][sourceEp].keys()),
+            "---> Cluster %s not find in %s --> %s" % (Cluster, sourceNwkid, self.ListOfDevices[sourceNwkid]["Ep"][sourceEp].keys()),
             None,
             {"Error code": "BINDINGS-WEBBIND-04", "sourceEp": sourceEp, "sourceNwkid": sourceNwkid, "Cluster": Cluster},
         )
@@ -324,8 +386,7 @@ def webBind(self, sourceIeee, sourceEp, destIeee, destEp, Cluster):
     self.log.logging(
         "Binding",
         "Debug",
-        "Binding Device %s/%s with Device target %s/%s on Cluster: %s"
-        % (sourceIeee, sourceEp, destIeee, destEp, Cluster),
+        "Binding Device %s/%s with Device target %s/%s on Cluster: %s" % (sourceIeee, sourceEp, destIeee, destEp, Cluster),
         destNwkid,
     )
 
@@ -400,16 +461,14 @@ def webUnBind(self, sourceIeee, sourceEp, destIeee, destEp, Cluster):
     self.log.logging(
         "Binding",
         "Debug",
-        "UnBinding Device %s/%s with Device target %s/%s on Cluster: %s"
-        % (sourceIeee, sourceEp, destIeee, destEp, Cluster),
+        "UnBinding Device %s/%s with Device target %s/%s on Cluster: %s" % (sourceIeee, sourceEp, destIeee, destEp, Cluster),
         sourceNwkid,
     )
     if Cluster not in self.ListOfDevices[sourceNwkid]["Ep"][sourceEp]:
         self.log.logging(
             "Binding",
             "Error",
-            "---> Cluster %s not find in %s --> %s"
-            % (Cluster, sourceNwkid, self.ListOfDevices[sourceNwkid]["Ep"][sourceEp].keys()),
+            "---> Cluster %s not find in %s --> %s" % (Cluster, sourceNwkid, self.ListOfDevices[sourceNwkid]["Ep"][sourceEp].keys()),
             sourceNwkid,
             {"Error code": "BINDINGS-WEBUNBIND-04", "Cluster": Cluster},
         )
@@ -417,8 +476,7 @@ def webUnBind(self, sourceIeee, sourceEp, destIeee, destEp, Cluster):
     self.log.logging(
         "Binding",
         "Debug",
-        "UnBinding Device %s/%s with Device target %s/%s on Cluster: %s"
-        % (sourceIeee, sourceEp, destIeee, destEp, Cluster),
+        "UnBinding Device %s/%s with Device target %s/%s on Cluster: %s" % (sourceIeee, sourceEp, destIeee, destEp, Cluster),
         destNwkid,
     )
 
@@ -475,17 +533,10 @@ def WebBindStatus(self, sourceIeee, sourceEp, destIeee, destEp, Cluster):
         return
 
     sourceNwkid = self.IEEE2NWK[sourceIeee]
-    if (
-        "WebBind" in self.ListOfDevices[sourceNwkid]
-        and sourceEp in self.ListOfDevices[sourceNwkid]["WebBind"]
-        and Cluster in self.ListOfDevices[sourceNwkid]["WebBind"][sourceEp]
-    ):
+    if "WebBind" in self.ListOfDevices[sourceNwkid] and sourceEp in self.ListOfDevices[sourceNwkid]["WebBind"] and Cluster in self.ListOfDevices[sourceNwkid]["WebBind"][sourceEp]:
         destNwkid = self.IEEE2NWK[destIeee]
 
-        if (
-            destNwkid in self.ListOfDevices[sourceNwkid]["WebBind"][sourceEp][Cluster]
-            and "Phase" in self.ListOfDevices[sourceNwkid]["WebBind"][sourceEp][Cluster][destNwkid]
-        ):
+        if destNwkid in self.ListOfDevices[sourceNwkid]["WebBind"][sourceEp][Cluster] and "Phase" in self.ListOfDevices[sourceNwkid]["WebBind"][sourceEp][Cluster][destNwkid]:
             return self.ListOfDevices[sourceNwkid]["WebBind"][sourceEp][Cluster][destNwkid]["Phase"]
     return None
 
@@ -507,15 +558,9 @@ def callBackForBindIfNeeded(self, srcNWKID):
 
     for Ep in list(self.ListOfDevices[srcNWKID]["Bind"]):
         for ClusterId in list(self.ListOfDevices[srcNWKID]["Bind"][Ep]):
-            if (
-                "Phase" in self.ListOfDevices[srcNWKID]["Bind"][Ep][ClusterId]
-                and self.ListOfDevices[srcNWKID]["Bind"][Ep][ClusterId]["Phase"] == "requested"
-            ):
+            if "Phase" in self.ListOfDevices[srcNWKID]["Bind"][Ep][ClusterId] and self.ListOfDevices[srcNWKID]["Bind"][Ep][ClusterId]["Phase"] == "requested":
 
-                if (
-                    "Stamp" in self.ListOfDevices[srcNWKID]["Bind"][Ep][ClusterId]
-                    and time() < self.ListOfDevices[srcNWKID]["Bind"][Ep][ClusterId]["Stamp"] + 5
-                ):  # Let's wait 5s before trying again
+                if "Stamp" in self.ListOfDevices[srcNWKID]["Bind"][Ep][ClusterId] and time() < self.ListOfDevices[srcNWKID]["Bind"][Ep][ClusterId]["Stamp"] + 5:  # Let's wait 5s before trying again
                     continue
 
                 self.log.logging(
@@ -527,10 +572,7 @@ def callBackForBindIfNeeded(self, srcNWKID):
                 # Perforning the bind
                 bindDevice(self, sourceIeee, Ep, ClusterId)
 
-            elif (
-                "Phase" in self.ListOfDevices[srcNWKID]["Bind"][Ep][ClusterId]
-                and self.ListOfDevices[srcNWKID]["Bind"][Ep][ClusterId]["Phase"] == "binded"
-            ) and ("i_sqn" not in self.ListOfDevices[srcNWKID]["Bind"][Ep][ClusterId]):
+            elif ("Phase" in self.ListOfDevices[srcNWKID]["Bind"][Ep][ClusterId] and self.ListOfDevices[srcNWKID]["Bind"][Ep][ClusterId]["Phase"] == "binded") and ("i_sqn" not in self.ListOfDevices[srcNWKID]["Bind"][Ep][ClusterId]):
                 # bind was done with i_sqn, we cant trust it, lets redo it
                 self.log.logging(
                     "Binding",
@@ -567,15 +609,9 @@ def callBackForWebBindIfNeeded(self, srcNWKID):
                         {"Error code": "BINDINGS-CALLBACK-01"},
                     )
                     del self.ListOfDevices[srcNWKID]["WebBind"][Ep][ClusterId][destNwkid]
-                elif (
-                    "Phase" in self.ListOfDevices[srcNWKID]["WebBind"][Ep][ClusterId][destNwkid]
-                    and self.ListOfDevices[srcNWKID]["WebBind"][Ep][ClusterId][destNwkid]["Phase"] == "requested"
-                ):
+                elif "Phase" in self.ListOfDevices[srcNWKID]["WebBind"][Ep][ClusterId][destNwkid] and self.ListOfDevices[srcNWKID]["WebBind"][Ep][ClusterId][destNwkid]["Phase"] == "requested":
 
-                    if (
-                        "Stamp" in self.ListOfDevices[srcNWKID]["WebBind"][Ep][ClusterId][destNwkid]
-                        and time() < self.ListOfDevices[srcNWKID]["WebBind"][Ep][ClusterId][destNwkid]["Stamp"] + 5
-                    ):  # Let's wait 5s before trying again
+                    if "Stamp" in self.ListOfDevices[srcNWKID]["WebBind"][Ep][ClusterId][destNwkid] and time() < self.ListOfDevices[srcNWKID]["WebBind"][Ep][ClusterId][destNwkid]["Stamp"] + 5:  # Let's wait 5s before trying again
                         continue
 
                     self.log.logging("Binding", "Debug", "Redo a WebBind for device %s" % (srcNWKID), srcNWKID)
@@ -585,10 +621,9 @@ def callBackForWebBindIfNeeded(self, srcNWKID):
                     # Perforning the bind
                     webBind(self, sourceIeee, Ep, destIeee, destEp, ClusterId)
 
-                elif (
-                    "Phase" in self.ListOfDevices[srcNWKID]["WebBind"][Ep][ClusterId][destNwkid]
-                    and self.ListOfDevices[srcNWKID]["WebBind"][Ep][ClusterId][destNwkid]["Phase"] == "binded"
-                ) and ("i_sqn" not in self.ListOfDevices[srcNWKID]["WebBind"][Ep][ClusterId][destNwkid]):
+                elif ("Phase" in self.ListOfDevices[srcNWKID]["WebBind"][Ep][ClusterId][destNwkid] and self.ListOfDevices[srcNWKID]["WebBind"][Ep][ClusterId][destNwkid]["Phase"] == "binded") and (
+                    "i_sqn" not in self.ListOfDevices[srcNWKID]["WebBind"][Ep][ClusterId][destNwkid]
+                ):
                     # bind was done with i_sqn, we cant trust it, lets redo it
                     self.log.logging("Binding", "Debug", "Redo a WebBind with sqn for device %s" % (srcNWKID), srcNWKID)
                     sourceIeee = self.ListOfDevices[srcNWKID]["WebBind"][Ep][ClusterId][destNwkid]["SourceIEEE"]

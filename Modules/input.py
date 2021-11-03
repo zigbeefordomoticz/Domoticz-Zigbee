@@ -10,75 +10,51 @@
 
 """
 
-import Domoticz
 import binascii
+import struct
 import time
 from datetime import datetime
-import struct
 
-
+import Domoticz
+from Classes.Transport.sqnMgmt import TYPE_APP_ZCL, TYPE_APP_ZDP, sqn_get_internal_sqn_from_app_sqn, sqn_get_internal_sqn_from_aps_sqn
+from Modules.basicOutputs import getListofAttribute, send_default_response, sendZigateCmd, setTimeServer, unknown_device_nwkid  # leaveMgtReJoin,
+from Modules.callback import callbackDeviceAwake
+from Modules.deviceAnnoucement import device_annoucementv1, device_annoucementv2
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import lastSeenUpdate, timedOutDevice
+from Modules.errorCodes import DisplayStatusCode
+from Modules.inRawAps import inRawAps
+from Modules.legrand_netatmo import rejoin_legrand_reset
+from Modules.livolo import livolo_read_attribute_request
+from Modules.lumi import AqaraOppleDecoding
+from Modules.mgmt_rtg import mgmt_rtg_rsp
+from Modules.pairingProcess import interview_state_8045
+from Modules.pluzzy import pluzzyDecode8102
+from Modules.readAttributes import ReadAttributeRequest_0000
+from Modules.readClusters import ReadCluster
+from Modules.schneider_wiser import wiser_read_attribute_request
+from Modules.timeServer import timeserver_read_attribute_request
 from Modules.tools import (
-    timeStamped,
-    updSQN,
-    updLQI,
     DeviceExist,
-    getSaddrfromIEEE,
-    mainPoweredDevice,
-    loggingMessages,
-    lookupForIEEE,
     ReArrangeMacCapaBasedOnModel,
+    checkAndStoreAttributeValue,
     decodeMacCapa,
-    set_status_datastruct,
     get_isqn_datastruct,
     get_list_isqn_attr_datastruct,
-    set_request_phase_datastruct,
-    checkAndStoreAttributeValue,
+    getSaddrfromIEEE,
+    is_fake_ep,
+    loggingMessages,
+    lookupForIEEE,
+    mainPoweredDevice,
     retreive_cmd_payload_from_8002,
-    is_fake_ep
+    set_request_phase_datastruct,
+    set_status_datastruct,
+    timeStamped,
+    updLQI,
+    updSQN,
 )
-from Modules.pairingProcess import interview_state_8045
-from Modules.deviceAnnoucement import (
-    device_annoucementv1,
-    device_annoucementv2,
-)
-from Modules.basicOutputs import (
-    sendZigateCmd,
-    # leaveMgtReJoin,
-    setTimeServer,
-    unknown_device_nwkid,
-    send_default_response,
-    getListofAttribute,
-)
-from Modules.timeServer import timeserver_read_attribute_request
-from Modules.readAttributes import ReadAttributeRequest_0000
-from Modules.livolo import livolo_read_attribute_request
-from Modules.legrand_netatmo import rejoin_legrand_reset
-from Modules.lumi import AqaraOppleDecoding
-from Modules.schneider_wiser import wiser_read_attribute_request
-from Modules.errorCodes import DisplayStatusCode
-from Modules.readClusters import ReadCluster
-from Modules.zigateConsts import (
-    ADDRESS_MODE,
-    ZCL_CLUSTERS_LIST,
-    LEGRAND_REMOTE_SWITCHS,
-    ZIGBEE_COMMAND_IDENTIFIER,
-    LEGRAND_REMOTE_MOTION
-)
-from Modules.pluzzy import pluzzyDecode8102
-from Modules.zigate import initLODZigate, receiveZigateEpList, receiveZigateEpDescriptor
-
-from Modules.callback import callbackDeviceAwake
-from Modules.inRawAps import inRawAps
-from Modules.mgmt_rtg import mgmt_rtg_rsp
-
-from Classes.Transport.sqnMgmt import (
-    sqn_get_internal_sqn_from_app_sqn,
-    sqn_get_internal_sqn_from_aps_sqn,
-    TYPE_APP_ZCL,
-    TYPE_APP_ZDP,
-)
+from Modules.zigate import initLODZigate, receiveZigateEpDescriptor, receiveZigateEpList
+from Modules.zigateConsts import ADDRESS_MODE, LEGRAND_REMOTE_MOTION, LEGRAND_REMOTE_SWITCHS, ZCL_CLUSTERS_LIST, ZIGBEE_COMMAND_IDENTIFIER
 
 
 def ZigateRead(self, Devices, Data):
@@ -152,16 +128,9 @@ def ZigateRead(self, Devices, Data):
     # self.log.logging( "Input", 'Debug', "ZigateRead - decoded data: " + Data + " lenght: " + str(len(Data)) )
 
     FrameStart = Data[0:2]
-    FrameStop = Data[len(Data) - 2: len(Data)]
+    FrameStop = Data[len(Data) - 2 : len(Data)]
     if FrameStart != "01" and FrameStop != "03":
-        Domoticz.Error(
-            "ZigateRead received a non-zigate frame Data: "
-            + str(Data)
-            + " FS/FS = "
-            + str(FrameStart)
-            + "/"
-            + str(FrameStop)
-        )
+        Domoticz.Error("ZigateRead received a non-zigate frame Data: " + str(Data) + " FS/FS = " + str(FrameStart) + "/" + str(FrameStop))
         return
 
     self.Ping["Nb Ticks"] = 0  # We receive a valid packet
@@ -172,8 +141,8 @@ def ZigateRead(self, Devices, Data):
 
     if len(Data) > 12:
         # We have Payload: data + rssi
-        MsgData = Data[12: len(Data) - 4]
-        MsgLQI = Data[len(Data) - 4: len(Data) - 2]
+        MsgData = Data[12 : len(Data) - 4]
+        MsgLQI = Data[len(Data) - 4 : len(Data) - 2]
     else:
         MsgData = ""
         MsgLQI = "00"
@@ -181,8 +150,7 @@ def ZigateRead(self, Devices, Data):
     self.log.logging(
         "Input",
         "Debug",
-        "ZigateRead - MsgType: %s, MsgLength: %s, MsgCRC: %s, Data: %s, LQI: %s"
-        % (MsgType, MsgLength, MsgCRC, MsgData, int(MsgLQI, 16)),
+        "ZigateRead - MsgType: %s, MsgLength: %s, MsgCRC: %s, Data: %s, LQI: %s" % (MsgType, MsgLength, MsgCRC, MsgData, int(MsgLQI, 16)),
     )
 
     if MsgType in DECODERS:
@@ -212,10 +180,7 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
         return
 
     # Livolo case, where livolo provide Switch status update via a Malformed read Attribute request
-    if ("Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == "TI0001") or (
-        "Manufacturer Name" in self.ListOfDevices[MsgSrcAddr]
-        and self.ListOfDevices[MsgSrcAddr]["Manufacturer Name"] == "LIVOLO"
-    ):
+    if ("Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == "TI0001") or ("Manufacturer Name" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Manufacturer Name"] == "LIVOLO"):
         self.log.logging(
             "Input",
             "Debug",
@@ -259,14 +224,13 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
         manuf = self.ListOfDevices[MsgSrcAddr]["Manufacturer"]
 
     for idx in range(24, len(MsgData), 4):
-        Attribute = MsgData[idx: idx + 4]
+        Attribute = MsgData[idx : idx + 4]
         if MsgClusterId == "000a":
             # Cluster TimeServer
             self.log.logging(
                 "Input",
                 "Debug",
-                "Decode0100 - Received Time Server Cluster %s/%s Idx: %s  Attribute: %s"
-                % (MsgSrcAddr, MsgSrcEp, idx, Attribute),
+                "Decode0100 - Received Time Server Cluster %s/%s Idx: %s  Attribute: %s" % (MsgSrcAddr, MsgSrcEp, idx, Attribute),
             )
             timeserver_read_attribute_request(
                 self,
@@ -290,17 +254,14 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
             self.log.logging(
                 "Input",
                 "Log",
-                "Decode0100 - Read Attribute Request %s/%s Cluster %s Attribute %s"
-                % (MsgSrcAddr, MsgSrcEp, MsgClusterId, Attribute),
+                "Decode0100 - Read Attribute Request %s/%s Cluster %s Attribute %s" % (MsgSrcAddr, MsgSrcEp, MsgClusterId, Attribute),
             )
+
 
 def Decode0302(self, Devices, MsgData, MsgLQI):  # PDM Load
 
     # Must be sent above in order to issue a rejoin_legrand_reset() if needed
-    self.log.logging(
-        "Input",
-        "Debug",
-        "Decode0302 - PDM Load")
+    self.log.logging("Input", "Debug", "Decode0302 - PDM Load")
     rejoin_legrand_reset(self)
 
 
@@ -322,8 +283,7 @@ def Decode0400(self, Devices, MsgData, MsgLQI):  # Enrolment Request Response
     self.log.logging(
         "Input",
         "Log",
-        "Decode0400 - Source Address: %s Source Ep: %s EnrollmentResponseCode: %s ZoneId: %s"
-        % (SrcAddress, SrcEndPoint, EnrollResponseCode, ZoneId),
+        "Decode0400 - Source Address: %s Source Ep: %s EnrollmentResponseCode: %s ZoneId: %s" % (SrcAddress, SrcEndPoint, EnrollResponseCode, ZoneId),
     )
 
     if self.iaszonemgt:
@@ -365,15 +325,13 @@ def Decode8000_v2(self, Devices, MsgData, MsgLQI):  # Status
             self.log.logging(
                 "Input",
                 "Log",
-                "Decod8000 Received         [%s] PacketType:  %s TypeSqn: %s sqn_app: %s/%s sqn_aps: %s/%s Status: [%s] npdu: %s apdu: %s "
-                % (i_sqn, PacketType, type_sqn, sqn_app, dsqn_app, sqn_aps, dsqn_aps, Status, npdu, apdu),
+                "Decod8000 Received         [%s] PacketType:  %s TypeSqn: %s sqn_app: %s/%s sqn_aps: %s/%s Status: [%s] npdu: %s apdu: %s " % (i_sqn, PacketType, type_sqn, sqn_app, dsqn_app, sqn_aps, dsqn_aps, Status, npdu, apdu),
             )
         else:
             self.log.logging(
                 "Input",
                 "Log",
-                "Decod8000 Received         [  ] PacketType:  %s TypeSqn: %s sqn_app: %s/%s sqn_aps: %s/%s Status: [%s] npdu: %s apdu: %s "
-                % (PacketType, type_sqn, sqn_app, dsqn_app, sqn_aps, dsqn_aps, Status, npdu, apdu),
+                "Decod8000 Received         [  ] PacketType:  %s TypeSqn: %s sqn_app: %s/%s sqn_aps: %s/%s Status: [%s] npdu: %s apdu: %s " % (PacketType, type_sqn, sqn_app, dsqn_app, sqn_aps, dsqn_aps, Status, npdu, apdu),
             )
 
     STATUS_CODE = {
@@ -419,15 +377,13 @@ def Decode8000_v2(self, Devices, MsgData, MsgLQI):  # Status
             self.log.logging(
                 "Input",
                 "Error",
-                "Decode8000 - PacketType: %s TypeSqn: %s sqn_app: %s sqn_aps: %s Status: [%s] "
-                % (PacketType, type_sqn, sqn_app, sqn_aps, Status),
+                "Decode8000 - PacketType: %s TypeSqn: %s sqn_app: %s sqn_aps: %s Status: [%s] " % (PacketType, type_sqn, sqn_app, sqn_aps, Status),
             )
         else:
             self.log.logging(
                 "Input",
                 "Error",
-                "Decode8000 - PacketType: %s TypeSqn: %s sqn_app: %s sqn_aps: %s Status: [%s] "
-                % (PacketType, type_sqn, sqn_app, sqn_aps, Status),
+                "Decode8000 - PacketType: %s TypeSqn: %s sqn_app: %s sqn_aps: %s Status: [%s] " % (PacketType, type_sqn, sqn_app, sqn_aps, Status),
             )
 
         # Hack to reboot Zigate
@@ -447,17 +403,12 @@ def Decode8001(self, Decode, MsgData, MsgLQI):  # Reception log Level
 
     MsgLogLvl = MsgData[0:2]
     log_message = binascii.unhexlify(MsgData[2:]).decode("utf-8")
-    logfilename = (
-        self.pluginconf.pluginConf["pluginLogs"] + "/" + LOG_FILE + "_" + "%02d" % self.HardwareID + "_" + ".log"
-    )
+    logfilename = self.pluginconf.pluginConf["pluginLogs"] + "/" + LOG_FILE + "_" + "%02d" % self.HardwareID + "_" + ".log"
     try:
 
         with open(logfilename, "at", encoding="utf-8") as file:
             try:
-                file.write(
-                    "%s %s %s" % (str(datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]), MsgLogLvl, log_message)
-                    + "\n"
-                )
+                file.write("%s %s %s" % (str(datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]), MsgLogLvl, log_message) + "\n")
             except IOError:
                 Domoticz.Error("Error while writing to ZiGate log file %s" % logfilename)
     except IOError:
@@ -487,19 +438,18 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
         ]:
             # Short Address
             MsgDestinationAddress = MsgData[22:26]  # uint16_t
-            MsgPayload = MsgData[26: len(MsgData)]
+            MsgPayload = MsgData[26 : len(MsgData)]
 
         elif int(MsgDestinationAddressMode, 16) == ADDRESS_MODE["ieee"]:  # uint32_t
             # IEEE
             MsgDestinationAddress = MsgData[22:38]  # uint32_t
-            MsgPayload = MsgData[38: len(MsgData)]
+            MsgPayload = MsgData[38 : len(MsgData)]
 
         else:
             self.log.logging(
                 "Input",
                 "Log",
-                "Decode8002 - Unexpected Destination ADDR_MOD: %s, drop packet %s"
-                % (MsgDestinationAddressMode, MsgData),
+                "Decode8002 - Unexpected Destination ADDR_MOD: %s, drop packet %s" % (MsgDestinationAddressMode, MsgData),
             )
             return
 
@@ -511,18 +461,17 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
             ADDRESS_MODE["group"],
         ]:
             MsgDestinationAddress = MsgData[34:38]  # uint16_t
-            MsgPayload = MsgData[38: len(MsgData)]
+            MsgPayload = MsgData[38 : len(MsgData)]
 
         elif int(MsgDestinationAddressMode, 16) == ADDRESS_MODE["ieee"]:
             # IEEE
             MsgDestinationAddress = MsgData[34:40]  # uint32_t
-            MsgPayload = MsgData[40: len(MsgData)]
+            MsgPayload = MsgData[40 : len(MsgData)]
         else:
             self.log.logging(
                 "Input",
                 "Log",
-                "Decode8002 - Unexpected Destination ADDR_MOD: %s, drop packet %s"
-                % (MsgDestinationAddressMode, MsgData),
+                "Decode8002 - Unexpected Destination ADDR_MOD: %s, drop packet %s" % (MsgDestinationAddressMode, MsgData),
             )
             return
 
@@ -537,16 +486,7 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
     self.log.logging(
         "Input",
         "Debug",
-        "Reception Data indication, Source Address: "
-        + MsgSourceAddress
-        + " Destination Address: "
-        + MsgDestinationAddress
-        + " ProfilID: "
-        + MsgProfilID
-        + " ClusterID: "
-        + MsgClusterID
-        + " Message Payload: "
-        + MsgPayload,
+        "Reception Data indication, Source Address: " + MsgSourceAddress + " Destination Address: " + MsgDestinationAddress + " ProfilID: " + MsgProfilID + " ClusterID: " + MsgClusterID + " Message Payload: " + MsgPayload,
     )
 
     # Let's check if this is an Schneider related APS. In that case let's process
@@ -581,7 +521,7 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
         )
         return
 
-    #if MsgClusterID == "0032":
+    # if MsgClusterID == "0032":
     #    # Mgmt_Rtg_req
     #    self.log.logging(
     #        "Input",
@@ -602,8 +542,7 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
         self.log.logging(
             "inRawAPS",
             "Debug",
-            "Decode8002 - NwkId: %s Ep: %s Cluster: %s Payload: %s"
-            % (srcnwkid, MsgSourcePoint, MsgClusterID, MsgPayload),
+            "Decode8002 - NwkId: %s Ep: %s Cluster: %s Payload: %s" % (srcnwkid, MsgSourcePoint, MsgClusterID, MsgPayload),
         )
         return
 
@@ -693,12 +632,7 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
     if "Manufacturer" not in self.ListOfDevices[srcnwkid] and "Manufacturer Name" not in self.ListOfDevices[srcnwkid]:
         return
 
-    if (
-        "Manufacturer" in self.ListOfDevices[srcnwkid]
-        and self.ListOfDevices[srcnwkid]["Manufacturer"] in ("", {})
-        and "Manufacturer Name" in self.ListOfDevices[srcnwkid]
-        and self.ListOfDevices[srcnwkid]["Manufacturer Name"] in ("", {})
-    ):
+    if "Manufacturer" in self.ListOfDevices[srcnwkid] and self.ListOfDevices[srcnwkid]["Manufacturer"] in ("", {}) and "Manufacturer Name" in self.ListOfDevices[srcnwkid] and self.ListOfDevices[srcnwkid]["Manufacturer Name"] in ("", {}):
         return
 
     inRawAps(
@@ -724,19 +658,14 @@ def Decode8003(self, Devices, MsgData, MsgLQI):  # Device cluster list
 
     MsgSourceEP = MsgData[0:2]
     MsgProfileID = MsgData[2:6]
-    MsgClusterID = MsgData[6: len(MsgData)]
+    MsgClusterID = MsgData[6 : len(MsgData)]
 
-    clusterLst = [MsgClusterID[idx: idx + 4] for idx in range(0, len(MsgClusterID), 4)]
+    clusterLst = [MsgClusterID[idx : idx + 4] for idx in range(0, len(MsgClusterID), 4)]
     self.zigatedata["Cluster List"] = clusterLst
     self.log.logging(
         "Input",
         "Status",
-        "Device Cluster list, EP source: "
-        + MsgSourceEP
-        + " ProfileID: "
-        + MsgProfileID
-        + " Cluster List: "
-        + str(clusterLst),
+        "Device Cluster list, EP source: " + MsgSourceEP + " ProfileID: " + MsgProfileID + " Cluster List: " + str(clusterLst),
     )
 
 
@@ -746,22 +675,15 @@ def Decode8004(self, Devices, MsgData, MsgLQI):  # Device attribut list
     MsgSourceEP = MsgData[0:2]
     MsgProfileID = MsgData[2:6]
     MsgClusterID = MsgData[6:10]
-    MsgAttributList = MsgData[10: len(MsgData)]
+    MsgAttributList = MsgData[10 : len(MsgData)]
 
-    attributeLst = [MsgAttributList[idx: idx + 4] for idx in range(0, len(MsgAttributList), 4)]
+    attributeLst = [MsgAttributList[idx : idx + 4] for idx in range(0, len(MsgAttributList), 4)]
 
     self.zigatedata["Device Attributs List"] = attributeLst
     self.log.logging(
         "Input",
         "Status",
-        "Device Attribut list, EP source: "
-        + MsgSourceEP
-        + " ProfileID: "
-        + MsgProfileID
-        + " ClusterID: "
-        + MsgClusterID
-        + " Attribut List: "
-        + str(attributeLst),
+        "Device Attribut list, EP source: " + MsgSourceEP + " ProfileID: " + MsgProfileID + " ClusterID: " + MsgClusterID + " Attribut List: " + str(attributeLst),
     )
 
 
@@ -771,22 +693,15 @@ def Decode8005(self, Devices, MsgData, MsgLQI):  # Command list
     MsgSourceEP = MsgData[0:2]
     MsgProfileID = MsgData[2:6]
     MsgClusterID = MsgData[6:10]
-    MsgCommandList = MsgData[10: len(MsgData)]
+    MsgCommandList = MsgData[10 : len(MsgData)]
 
-    commandLst = [MsgCommandList[idx: idx + 4] for idx in range(0, len(MsgCommandList), 4)]
+    commandLst = [MsgCommandList[idx : idx + 4] for idx in range(0, len(MsgCommandList), 4)]
 
     self.zigatedata["Device Attributs List"] = commandLst
     self.log.logging(
         "Input",
         "Status",
-        "Command list, EP source: "
-        + MsgSourceEP
-        + " ProfileID: "
-        + MsgProfileID
-        + " ClusterID: "
-        + MsgClusterID
-        + " Command List: "
-        + str(commandLst),
+        "Command list, EP source: " + MsgSourceEP + " ProfileID: " + MsgProfileID + " ClusterID: " + MsgClusterID + " Command List: " + str(commandLst),
     )
 
 
@@ -839,21 +754,10 @@ def Decode8009(self, Devices, MsgData, MsgLQI):  # Network State response (Firm 
     self.log.logging(
         "Input",
         "Debug",
-        "Decode8009: Network state - Address:"
-        + addr
-        + " extaddr:"
-        + extaddr
-        + " PanID: "
-        + PanID
-        + " Channel: "
-        + str(int(Channel, 16)),
+        "Decode8009: Network state - Address:" + addr + " extaddr:" + extaddr + " PanID: " + PanID + " Channel: " + str(int(Channel, 16)),
     )
 
-    if (
-        "0000" in self.ListOfDevices
-        and "CheckChannel" in self.ListOfDevices["0000"]
-        and self.ListOfDevices["0000"]["CheckChannel"] != 0
-    ):
+    if "0000" in self.ListOfDevices and "CheckChannel" in self.ListOfDevices["0000"] and self.ListOfDevices["0000"]["CheckChannel"] != 0:
         if self.ListOfDevices["0000"]["CheckChannel"] == int(Channel, 16):
             del self.ListOfDevices["0000"]["CheckChannel"]
 
@@ -876,15 +780,8 @@ def Decode8009(self, Devices, MsgData, MsgLQI):  # Network State response (Firm 
         self.adminWidgets.updateNotificationWidget(Devices, "Zigate Channel: %s" % str(int(Channel, 16)))
 
     # Let's check if this is a first initialisation, and then we need to update the Channel setting
-    if (
-        "startZigateNeeded" not in self.zigatedata
-        and not self.startZigateNeeded
-        and str(int(Channel, 16)) != self.pluginconf.pluginConf["channel"]
-    ):
-        Domoticz.Status(
-            "Updating Channel in Plugin Configuration from: %s to: %s"
-            % (self.pluginconf.pluginConf["channel"], int(Channel, 16))
-        )
+    if "startZigateNeeded" not in self.zigatedata and not self.startZigateNeeded and str(int(Channel, 16)) != self.pluginconf.pluginConf["channel"]:
+        Domoticz.Status("Updating Channel in Plugin Configuration from: %s to: %s" % (self.pluginconf.pluginConf["channel"], int(Channel, 16)))
         self.pluginconf.pluginConf["channel"] = str(int(Channel, 16))
         self.pluginconf.write_Settings()
 
@@ -896,6 +793,9 @@ def Decode8009(self, Devices, MsgData, MsgLQI):  # Network State response (Firm 
 
     if self.groupmgt:
         self.groupmgt.updateZigateIEEE(extaddr)
+
+    if self.webserver:
+        self.webserver.setZigateIEEE(extaddr)
 
     self.log.logging(
         "Input",
@@ -995,8 +895,7 @@ def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
             self.log.logging(
                 "Input",
                 "Log",
-                "Decod8011 Received [%s] for Nwkid: %s with status: %s e_sqn: 0x%02x/%s"
-                % (i_sqn, MsgSrcAddr, MsgStatus, int(MsgSEQ, 16), int(MsgSEQ, 16)),
+                "Decod8011 Received [%s] for Nwkid: %s with status: %s e_sqn: 0x%02x/%s" % (i_sqn, MsgSrcAddr, MsgStatus, int(MsgSEQ, 16), int(MsgSEQ, 16)),
                 MsgSrcAddr,
             )
         else:
@@ -1175,15 +1074,15 @@ def Decode8015(self, Devices, MsgData, MsgLQI):  # Get device list ( following r
         "Number of devices recently active in Zigate = %s" % (str(round(numberofdev / 26))),
     )
     for idx in range(0, len(MsgData), 26):
-        saddr = MsgData[idx + 2: idx + 6]
-        ieee = MsgData[idx + 6: idx + 22]
+        saddr = MsgData[idx + 2 : idx + 6]
+        ieee = MsgData[idx + 6 : idx + 22]
 
         if int(ieee, 16) == 0:
             continue
 
-        DevID = MsgData[idx: idx + 2]
-        power = MsgData[idx + 22: idx + 24]
-        rssi = MsgData[idx + 24: idx + 26]
+        DevID = MsgData[idx : idx + 2]
+        power = MsgData[idx + 22 : idx + 24]
+        rssi = MsgData[idx + 24 : idx + 26]
 
         if DeviceExist(self, Devices, saddr, ieee):
             nickName = modelName = ""
@@ -1194,16 +1093,14 @@ def Decode8015(self, Devices, MsgData, MsgLQI):  # Get device list ( following r
             self.log.logging(
                 "Input",
                 "Status",
-                "[%02d] DevID: %s Network addr: %s IEEE: %s LQI: %03d power: %s Model: %s %s"
-                % (round(idx / 26), DevID, saddr, ieee, int(rssi, 16), power, modelName, nickName),
+                "[%02d] DevID: %s Network addr: %s IEEE: %s LQI: %03d power: %s Model: %s %s" % (round(idx / 26), DevID, saddr, ieee, int(rssi, 16), power, modelName, nickName),
             )
 
             self.ListOfDevices[saddr]["LQI"] = int(rssi, 16) if rssi != "00" else 0
             self.log.logging(
                 "Input",
                 "Debug",
-                "Decode8015: LQI set to %s / %s for %s"
-                % (self.ListOfDevices[saddr]["LQI"], str(int(rssi, 16)), saddr),
+                "Decode8015: LQI set to %s / %s for %s" % (self.ListOfDevices[saddr]["LQI"], str(int(rssi, 16)), saddr),
             )
         else:
             self.log.logging(
@@ -1265,8 +1162,7 @@ def Decode8024(self, Devices, MsgData, MsgLQI):  # Network joined / formed
         self.log.logging(
             "Input",
             "Debug",
-            "Decode8024 - uncomplete frame, MsgData: %s, Len: %s out of 24, data received: >%s<"
-            % (MsgData, MsgLen, MsgData),
+            "Decode8024 - uncomplete frame, MsgData: %s, Len: %s out of 24, data received: >%s<" % (MsgData, MsgLen, MsgData),
         )
         return
 
@@ -1276,15 +1172,8 @@ def Decode8024(self, Devices, MsgData, MsgLQI):  # Network joined / formed
 
     if MsgExtendedAddress != "" and MsgShortAddress != "" and MsgShortAddress == "0000":
         # Let's check if this is a first initialisation, and then we need to update the Channel setting
-        if (
-            "startZigateNeeded" not in self.zigatedata
-            and not self.startZigateNeeded
-            and str(int(MsgChannel, 16)) != self.pluginconf.pluginConf["channel"]
-        ):
-            Domoticz.Status(
-                "Updating Channel in Plugin Configuration from: %s to: %s"
-                % (self.pluginconf.pluginConf["channel"], int(MsgChannel, 16))
-            )
+        if "startZigateNeeded" not in self.zigatedata and not self.startZigateNeeded and str(int(MsgChannel, 16)) != self.pluginconf.pluginConf["channel"]:
+            Domoticz.Status("Updating Channel in Plugin Configuration from: %s to: %s" % (self.pluginconf.pluginConf["channel"], int(MsgChannel, 16)))
             self.pluginconf.pluginConf["channel"] = str(int(MsgChannel, 16))
             self.pluginconf.write_Settings()
 
@@ -1314,10 +1203,7 @@ def Decode8024(self, Devices, MsgData, MsgLQI):  # Network joined / formed
             ),
         )
     else:
-        Domoticz.Error(
-            "Zigate initialisation failed IEEE: %s, Nwkid: %s, Channel: %s"
-            % (MsgExtendedAddress, MsgShortAddress, MsgChannel)
-        )
+        Domoticz.Error("Zigate initialisation failed IEEE: %s, Nwkid: %s, Channel: %s" % (MsgExtendedAddress, MsgShortAddress, MsgChannel))
 
 
 def Decode8028(self, Devices, MsgData, MsgLQI):  # Authenticate response
@@ -1364,12 +1250,7 @@ def Decode802B(self, Devices, MsgData, MsgLQI):  # User Descriptor Notify
     self.log.logging(
         "Input",
         "Log",
-        "ZigateRead - MsgType 802B - User Descriptor Notify, Sequence number: "
-        + MsgSequenceNumber
-        + " Status: "
-        + DisplayStatusCode(MsgDataStatus)
-        + " Network address of interest: "
-        + MsgNetworkAddressInterest,
+        "ZigateRead - MsgType 802B - User Descriptor Notify, Sequence number: " + MsgSequenceNumber + " Status: " + DisplayStatusCode(MsgDataStatus) + " Network address of interest: " + MsgNetworkAddressInterest,
     )
 
 
@@ -1380,7 +1261,7 @@ def Decode802C(self, Devices, MsgData, MsgLQI):  # User Descriptor Response
     MsgDataStatus = MsgData[2:4]
     MsgNetworkAddressInterest = MsgData[4:8]
     MsgLenght = MsgData[8:10]
-    MsgMData = MsgData[10: len(MsgData)]
+    MsgMData = MsgData[10 : len(MsgData)]
 
     self.log.logging(
         "Input",
@@ -1453,25 +1334,17 @@ def Decode8030(self, Devices, MsgData, MsgLQI):  # Bind response
             for Ep in list(self.ListOfDevices[nwkid]["Bind"]):
                 if Ep not in self.ListOfDevices[nwkid]["Ep"]:
                     # Bad hack - Root cause not identify. Suspition of back and fourth move between stable and beta branch
-                    Domoticz.Error(
-                        "Decode8030 --> %s Found an inconstitent Ep: %s in %s"
-                        % (nwkid, Ep, str(self.ListOfDevices[nwkid]["Bind"]))
-                    )
+                    Domoticz.Error("Decode8030 --> %s Found an inconstitent Ep: %s in %s" % (nwkid, Ep, str(self.ListOfDevices[nwkid]["Bind"])))
                     del self.ListOfDevices[nwkid]["Bind"][Ep]
                     continue
 
                 for cluster in list(self.ListOfDevices[nwkid]["Bind"][Ep]):
-                    if (
-                        self.ListOfDevices[nwkid]["Bind"][Ep][cluster]["Phase"] == "requested"
-                        and "i_sqn" in self.ListOfDevices[nwkid]["Bind"][Ep][cluster]
-                        and self.ListOfDevices[nwkid]["Bind"][Ep][cluster]["i_sqn"] == i_sqn
-                    ):
+                    if self.ListOfDevices[nwkid]["Bind"][Ep][cluster]["Phase"] == "requested" and "i_sqn" in self.ListOfDevices[nwkid]["Bind"][Ep][cluster] and self.ListOfDevices[nwkid]["Bind"][Ep][cluster]["i_sqn"] == i_sqn:
 
                         self.log.logging(
                             "Input",
                             "Debug",
-                            "Decode8030 - Set bind request to binded: nwkid %s ep: %s cluster: %s"
-                            % (nwkid, Ep, cluster),
+                            "Decode8030 - Set bind request to binded: nwkid %s ep: %s cluster: %s" % (nwkid, Ep, cluster),
                             MsgSrcAddr,
                         )
                         self.ListOfDevices[nwkid]["Bind"][Ep][cluster]["Stamp"] = int(time.time())
@@ -1483,10 +1356,7 @@ def Decode8030(self, Devices, MsgData, MsgLQI):  # Bind response
             for Ep in list(self.ListOfDevices[nwkid]["WebBind"]):
                 if Ep not in self.ListOfDevices[nwkid]["Ep"]:
                     # Bad hack - Root cause not identify. Suspition of back and fourth move between stable and beta branch
-                    Domoticz.Error(
-                        "Decode8030 --> %s Found an inconstitent Ep: %s in %s"
-                        % (nwkid, Ep, str(self.ListOfDevices[nwkid]["WebBind"]))
-                    )
+                    Domoticz.Error("Decode8030 --> %s Found an inconstitent Ep: %s in %s" % (nwkid, Ep, str(self.ListOfDevices[nwkid]["WebBind"])))
                     del self.ListOfDevices[nwkid]["WebBind"][Ep]
                     continue
 
@@ -1513,8 +1383,7 @@ def Decode8030(self, Devices, MsgData, MsgLQI):  # Bind response
                             self.log.logging(
                                 "Input",
                                 "Debug",
-                                "Decode8030 - Set WebBind request to binded: nwkid %s ep: %s cluster: %s destNwkid: %s"
-                                % (nwkid, Ep, cluster, destNwkid),
+                                "Decode8030 - Set WebBind request to binded: nwkid %s ep: %s cluster: %s destNwkid: %s" % (nwkid, Ep, cluster, destNwkid),
                                 MsgSrcAddr,
                             )
                             self.ListOfDevices[nwkid]["WebBind"][Ep][cluster][destNwkid]["Stamp"] = int(time.time())
@@ -1559,8 +1428,7 @@ def Decode8031(self, Devices, MsgData, MsgLQI):  # Unbind response
         self.log.logging(
             "Input",
             "Debug",
-            "Decode8031 - Unbind response SQN: %s status [%s] - %s"
-            % (MsgSequenceNumber, MsgDataStatus, DisplayStatusCode(MsgDataStatus)),
+            "Decode8031 - Unbind response SQN: %s status [%s] - %s" % (MsgSequenceNumber, MsgDataStatus, DisplayStatusCode(MsgDataStatus)),
             MsgSrcAddr,
         )
 
@@ -1574,7 +1442,7 @@ def Decode8034(self, Devices, MsgData, MsgLQI):  # Complex Descriptor response
     # MsgLenght = MsgData[8:10]
     MsgXMLTag = MsgData[10:12]
     MsgCountField = MsgData[12:14]
-    MsgFieldValues = MsgData[14: len(MsgData)]
+    MsgFieldValues = MsgData[14 : len(MsgData)]
 
     self.log.logging(
         "Input",
@@ -1599,7 +1467,7 @@ def Decode8040(self, Devices, MsgData, MsgLQI):  # Network Address response
     MsgShortAddress = MsgData[20:24]
     MsgNumAssocDevices = MsgData[24:26]
     MsgStartIndex = MsgData[26:28]
-    MsgDeviceList = MsgData[28: len(MsgData)]
+    MsgDeviceList = MsgData[28 : len(MsgData)]
 
     self.log.logging(
         "Input",
@@ -1630,7 +1498,7 @@ def Decode8041(self, Devices, MsgData, MsgLQI):  # IEEE Address response
     MsgShortAddress = MsgData[20:24]
     MsgNumAssocDevices = MsgData[24:26]
     MsgStartIndex = MsgData[26:28]
-    MsgDeviceList = MsgData[28: len(MsgData)]
+    MsgDeviceList = MsgData[28 : len(MsgData)]
 
     self.log.logging(
         "Input",
@@ -1688,18 +1556,7 @@ def Decode8042(self, Devices, MsgData, MsgLQI):  # Node Descriptor response
     self.log.logging(
         "Input",
         "Debug",
-        "Decode8042 - Reception Node Descriptor for: "
-        + addr
-        + " SEQ: "
-        + sequence
-        + " Status: "
-        + status
-        + " manufacturer:"
-        + manufacturer
-        + " mac_capability: "
-        + str(mac_capability)
-        + " bit_field: "
-        + str(bit_field),
+        "Decode8042 - Reception Node Descriptor for: " + addr + " SEQ: " + sequence + " Status: " + status + " manufacturer:" + manufacturer + " mac_capability: " + str(mac_capability) + " bit_field: " + str(bit_field),
         addr,
     )
 
@@ -1762,19 +1619,11 @@ def Decode8042(self, Devices, MsgData, MsgLQI):  # Node Descriptor response
     # else:
     #    PowerSource = "Battery"
 
-    self.log.logging(
-        "Input", "Debug", "Decode8042 - Alternate PAN Coordinator = " + str(AltPAN), addr
-    )  # 1 if node is capable of becoming a PAN coordinator
-    self.log.logging(
-        "Input", "Debug", "Decode8042 - Receiver on Idle = " + str(ReceiveonIdle), addr
-    )  # 1 if the device does not disable its receiver to
+    self.log.logging("Input", "Debug", "Decode8042 - Alternate PAN Coordinator = " + str(AltPAN), addr)  # 1 if node is capable of becoming a PAN coordinator
+    self.log.logging("Input", "Debug", "Decode8042 - Receiver on Idle = " + str(ReceiveonIdle), addr)  # 1 if the device does not disable its receiver to
     # conserve power during idle periods.
-    self.log.logging(
-        "Input", "Debug", "Decode8042 - Power Source = " + str(PowerSource), addr
-    )  # 1 if the current power source is mains power.
-    self.log.logging(
-        "Input", "Debug", "Decode8042 - Device type  = " + str(DeviceType), addr
-    )  # 1 if this node is a full function device (FFD).
+    self.log.logging("Input", "Debug", "Decode8042 - Power Source = " + str(PowerSource), addr)  # 1 if the current power source is mains power.
+    self.log.logging("Input", "Debug", "Decode8042 - Device type  = " + str(DeviceType), addr)  # 1 if this node is a full function device (FFD).
 
     bit_fieldL = int(bit_field[2:4], 16)
     bit_fieldH = int(bit_field[0:2], 16)
@@ -1793,7 +1642,7 @@ def Decode8042(self, Devices, MsgData, MsgLQI):  # Node Descriptor response
     )
     self.log.logging("Input", "Debug", "Decode8042 - Logical Type = " + str(LogicalType), addr)
 
-    if "Manufacturer" not in self.ListOfDevices[addr] or self.ListOfDevices[addr]["Manufacturer"] in ( '', {} ):
+    if "Manufacturer" not in self.ListOfDevices[addr] or self.ListOfDevices[addr]["Manufacturer"] in ("", {}):
         self.ListOfDevices[addr]["Manufacturer"] = manufacturer
 
     if self.ListOfDevices[addr]["Status"] != "inDB":
@@ -1851,8 +1700,7 @@ def Decode8043(self, Devices, MsgData, MsgLQI):  # Reception Simple descriptor r
     self.log.logging(
         "Input",
         "Status",
-        "[%s] NEW OBJECT: %s Simple Descriptor Response EP: 0x%s LQI: %s"
-        % ("-", MsgDataShAddr, MsgDataEp, int(MsgLQI, 16)),
+        "[%s] NEW OBJECT: %s Simple Descriptor Response EP: 0x%s LQI: %s" % ("-", MsgDataShAddr, MsgDataEp, int(MsgLQI, 16)),
     )
 
     # Endpoint V2 (ProfileID and ZDeviceID)
@@ -1899,8 +1747,7 @@ def Decode8043(self, Devices, MsgData, MsgLQI):  # Reception Simple descriptor r
     self.log.logging(
         "Input",
         "Status",
-        "[%s]    NEW OBJECT: %s Application Version %s"
-        % ("-", MsgDataShAddr, self.ListOfDevices[MsgDataShAddr]["ZDeviceVersion"]),
+        "[%s]    NEW OBJECT: %s Application Version %s" % ("-", MsgDataShAddr, self.ListOfDevices[MsgDataShAddr]["ZDeviceVersion"]),
     )
 
     configSourceAvailable = False
@@ -1918,7 +1765,7 @@ def Decode8043(self, Devices, MsgData, MsgLQI):  # Reception Simple descriptor r
     i = 1
     if int(MsgDataInClusterCount, 16) > 0:
         while i <= int(MsgDataInClusterCount, 16):
-            MsgDataCluster = MsgData[idx + ((i - 1) * 4): idx + (i * 4)]
+            MsgDataCluster = MsgData[idx + ((i - 1) * 4) : idx + (i * 4)]
             if not configSourceAvailable:
                 self.ListOfDevices[MsgDataShAddr]["ConfigSource"] = "8043"
                 if MsgDataEp not in self.ListOfDevices[MsgDataShAddr]["Ep"]:
@@ -1963,7 +1810,7 @@ def Decode8043(self, Devices, MsgData, MsgLQI):  # Reception Simple descriptor r
 
     # Decoding Cluster Out
     idx = 24 + int(MsgDataInClusterCount, 16) * 4
-    MsgDataOutClusterCount = MsgData[idx: idx + 2]
+    MsgDataOutClusterCount = MsgData[idx : idx + 2]
 
     self.log.logging(
         "Input",
@@ -1975,7 +1822,7 @@ def Decode8043(self, Devices, MsgData, MsgLQI):  # Reception Simple descriptor r
 
     if int(MsgDataOutClusterCount, 16) > 0:
         while i <= int(MsgDataOutClusterCount, 16):
-            MsgDataCluster = MsgData[idx + ((i - 1) * 4): idx + (i * 4)]
+            MsgDataCluster = MsgData[idx + ((i - 1) * 4) : idx + (i * 4)]
             if not configSourceAvailable:
                 if MsgDataEp not in self.ListOfDevices[MsgDataShAddr]["Ep"]:
                     self.ListOfDevices[MsgDataShAddr]["Ep"][MsgDataEp] = {}
@@ -2047,18 +1894,7 @@ def Decode8044(self, Devices, MsgData, MsgLQI):  # Power Descriptior response
     self.log.logging(
         "Input",
         "Debug",
-        "Decode8044 - SQNum = "
-        + SQNum
-        + " Status = "
-        + Status
-        + " Power mode = "
-        + power_mode
-        + " power_source = "
-        + power_source
-        + " current_power_source = "
-        + current_power_source
-        + " current_power_level = "
-        + current_power_level,
+        "Decode8044 - SQNum = " + SQNum + " Status = " + Status + " Power mode = " + power_mode + " power_source = " + power_source + " current_power_source = " + current_power_source + " current_power_level = " + current_power_level,
     )
 
 
@@ -2070,21 +1906,12 @@ def Decode8045(self, Devices, MsgData, MsgLQI):  # Reception Active endpoint res
     MsgDataShAddr = MsgData[4:8]
     MsgDataEpCount = MsgData[8:10]
 
-    MsgDataEPlist = MsgData[10: len(MsgData)]
+    MsgDataEPlist = MsgData[10 : len(MsgData)]
 
     self.log.logging(
         "Pairing",
         "Debug",
-        "Decode8045 - Reception Active endpoint response: SQN: "
-        + MsgDataSQN
-        + ", Status "
-        + DisplayStatusCode(MsgDataStatus)
-        + ", short Addr "
-        + MsgDataShAddr
-        + ", List "
-        + MsgDataEpCount
-        + ", Ep list "
-        + MsgDataEPlist,
+        "Decode8045 - Reception Active endpoint response: SQN: " + MsgDataSQN + ", Status " + DisplayStatusCode(MsgDataStatus) + ", short Addr " + MsgDataShAddr + ", List " + MsgDataEpCount + ", Ep list " + MsgDataEPlist,
     )
 
     # Special Case, where we build the Zigate list of clusters
@@ -2107,7 +1934,7 @@ def Decode8045(self, Devices, MsgData, MsgLQI):  # Reception Active endpoint res
     updLQI(self, MsgDataShAddr, MsgLQI)
 
     for i in range(0, 2 * int(MsgDataEpCount, 16), 2):
-        tmpEp = MsgDataEPlist[i: i + 2]
+        tmpEp = MsgDataEPlist[i : i + 2]
         if not self.ListOfDevices[MsgDataShAddr]["Ep"].get(tmpEp):
             self.ListOfDevices[MsgDataShAddr]["Ep"][tmpEp] = {}
 
@@ -2124,15 +1951,13 @@ def Decode8045(self, Devices, MsgData, MsgLQI):  # Reception Active endpoint res
         self.log.logging(
             "Input",
             "Status",
-            "[%s] NEW OBJECT: %s Active Endpoint Response Ep: %s LQI: %s"
-            % ("-", MsgDataShAddr, tmpEp, int(MsgLQI, 16)),
+            "[%s] NEW OBJECT: %s Active Endpoint Response Ep: %s LQI: %s" % ("-", MsgDataShAddr, tmpEp, int(MsgLQI, 16)),
         )
         if self.ListOfDevices[MsgDataShAddr]["Status"] != "8045":
             self.log.logging(
                 "Input",
                 "Log",
-                "[%s] NEW OBJECT: %s/%s receiving 0x8043 while in status: %s"
-                % ("-", MsgDataShAddr, tmpEp, self.ListOfDevices[MsgDataShAddr]["Status"]),
+                "[%s] NEW OBJECT: %s/%s receiving 0x8043 while in status: %s" % ("-", MsgDataShAddr, tmpEp, self.ListOfDevices[MsgDataShAddr]["Status"]),
             )
     self.ListOfDevices[MsgDataShAddr]["NbEp"] = str(int(MsgDataEpCount, 16))  # Store the number of EPs
 
@@ -2141,10 +1966,7 @@ def Decode8045(self, Devices, MsgData, MsgLQI):  # Reception Active endpoint res
     self.log.logging(
         "Pairing",
         "Debug",
-        "Decode8045 - Device: "
-        + str(MsgDataShAddr)
-        + " updated ListofDevices with "
-        + str(self.ListOfDevices[MsgDataShAddr]["Ep"]),
+        "Decode8045 - Device: " + str(MsgDataShAddr) + " updated ListofDevices with " + str(self.ListOfDevices[MsgDataShAddr]["Ep"]),
     )
 
 
@@ -2155,23 +1977,14 @@ def Decode8046(self, Devices, MsgData, MsgLQI):  # Match Descriptor response
     MsgDataStatus = MsgData[2:4]
     MsgDataShAddr = MsgData[4:8]
     MsgDataLenList = MsgData[8:10]
-    MsgDataMatchList = MsgData[10: len(MsgData)]
+    MsgDataMatchList = MsgData[10 : len(MsgData)]
 
     updSQN(self, MsgDataShAddr, MsgDataSQN)
     updLQI(self, MsgDataShAddr, MsgLQI)
     self.log.logging(
         "Input",
         "Log",
-        "Decode8046 - Match Descriptor response: SQN: "
-        + MsgDataSQN
-        + ", Status "
-        + DisplayStatusCode(MsgDataStatus)
-        + ", short Addr "
-        + MsgDataShAddr
-        + ", Lenght list  "
-        + MsgDataLenList
-        + ", Match list "
-        + MsgDataMatchList,
+        "Decode8046 - Match Descriptor response: SQN: " + MsgDataSQN + ", Status " + DisplayStatusCode(MsgDataStatus) + ", short Addr " + MsgDataShAddr + ", Lenght list  " + MsgDataLenList + ", Match list " + MsgDataMatchList,
     )
 
 
@@ -2184,8 +1997,7 @@ def Decode8047(self, Devices, MsgData, MsgLQI):  # Management Leave response
     self.log.logging(
         "Input",
         "Status",
-        "Decode8047 - Leave response, LQI: %s Status: %s - %s"
-        % (int(MsgLQI, 16), MsgDataStatus, DisplayStatusCode(MsgDataStatus)),
+        "Decode8047 - Leave response, LQI: %s Status: %s - %s" % (int(MsgLQI, 16), MsgDataStatus, DisplayStatusCode(MsgDataStatus)),
     )
 
 
@@ -2206,9 +2018,7 @@ def Decode8048(self, Devices, MsgData, MsgLQI):  # Leave indication
 
     loggingMessages(self, "8048", None, MsgExtAddress, int(MsgLQI, 16), None)
 
-    if (
-        MsgExtAddress not in self.IEEE2NWK
-    ):  # Most likely this object has been removed and we are receiving the confirmation.
+    if MsgExtAddress not in self.IEEE2NWK:  # Most likely this object has been removed and we are receiving the confirmation.
         device_leave_annoucement(self, Devices, MsgExtAddress)
         return
 
@@ -2250,10 +2060,7 @@ def Decode8048(self, Devices, MsgData, MsgLQI):  # Leave indication
         # Will set to Leave in order to protect Domoticz Widget, Just need to make sure that we can reconnect at a point of time
         self.ListOfDevices[sAddr]["Status"] = "Leave"
         self.ListOfDevices[sAddr]["Heartbeat"] = 0
-        Domoticz.Error(
-            "Receiving a leave from %s/%s while device is %s status"
-            % (sAddr, MsgExtAddress, self.ListOfDevices[sAddr]["Status"])
-        )
+        Domoticz.Error("Receiving a leave from %s/%s while device is %s status" % (sAddr, MsgExtAddress, self.ListOfDevices[sAddr]["Status"]))
 
     zdevname = ""
     if sAddr in self.ListOfDevices and "ZDeviceName" in self.ListOfDevices[sAddr]:
@@ -2261,8 +2068,7 @@ def Decode8048(self, Devices, MsgData, MsgLQI):  # Leave indication
     self.log.logging(
         "Input",
         "Status",
-        "%s (%s/%s) send a Leave indication and will be outside of the network. LQI: %s"
-        % (zdevname, sAddr, MsgExtAddress, int(MsgLQI, 16)),
+        "%s (%s/%s) send a Leave indication and will be outside of the network. LQI: %s" % (zdevname, sAddr, MsgExtAddress, int(MsgLQI, 16)),
     )
 
     self.log.logging(
@@ -2300,12 +2106,7 @@ def Decode804B(self, Devices, MsgData, MsgLQI):  # System Server Discovery respo
     self.log.logging(
         "Input",
         "Log",
-        "ZigateRead - MsgType 804B - System Server Discovery response, Sequence number: "
-        + MsgSequenceNumber
-        + " Status: "
-        + DisplayStatusCode(MsgDataStatus)
-        + " Server Mask: "
-        + MsgServerMask,
+        "ZigateRead - MsgType 804B - System Server Discovery response, Sequence number: " + MsgSequenceNumber + " Status: " + DisplayStatusCode(MsgDataStatus) + " Server Mask: " + MsgServerMask,
     )
 
 
@@ -2359,16 +2160,7 @@ def Decode80A0(self, Devices, MsgData, MsgLQI):  # View Scene response
     self.log.logging(
         "Input",
         "Log",
-        "ZigateRead - MsgType 80A0 - View Scene response, Sequence number: "
-        + MsgSequenceNumber
-        + " EndPoint: "
-        + MsgEP
-        + " ClusterID: "
-        + MsgClusterID
-        + " Status: "
-        + DisplayStatusCode(MsgDataStatus)
-        + " Group ID: "
-        + MsgGroupID,
+        "ZigateRead - MsgType 80A0 - View Scene response, Sequence number: " + MsgSequenceNumber + " EndPoint: " + MsgEP + " ClusterID: " + MsgClusterID + " Status: " + DisplayStatusCode(MsgDataStatus) + " Group ID: " + MsgGroupID,
     )
 
 
@@ -2440,16 +2232,7 @@ def Decode80A3(self, Devices, MsgData, MsgLQI):  # Remove All Scene response
     self.log.logging(
         "Input",
         "Log",
-        "ZigateRead - MsgType 80A3 - Remove All Scene response, Sequence number: "
-        + MsgSequenceNumber
-        + " EndPoint: "
-        + MsgEP
-        + " ClusterID: "
-        + MsgClusterID
-        + " Status: "
-        + DisplayStatusCode(MsgDataStatus)
-        + " Group ID: "
-        + MsgGroupID,
+        "ZigateRead - MsgType 80A3 - Remove All Scene response, Sequence number: " + MsgSequenceNumber + " EndPoint: " + MsgEP + " ClusterID: " + MsgClusterID + " Status: " + DisplayStatusCode(MsgDataStatus) + " Group ID: " + MsgGroupID,
     )
 
 
@@ -2482,7 +2265,7 @@ def Decode80A4(self, Devices, MsgData, MsgLQI):  # Store Scene response
 
 
 def Decode80A6(self, Devices, MsgData, MsgLQI):  # Scene Membership response
-    MsgSrcAddr = MsgData[len(MsgData) - 4: len(MsgData)]
+    MsgSrcAddr = MsgData[len(MsgData) - 4 : len(MsgData)]
 
     # MsgSequenceNumber = MsgData[0:2]
     MsgEP = MsgData[2:4]
@@ -2510,8 +2293,7 @@ def Decode80A6(self, Devices, MsgData, MsgLQI):  # Scene Membership response
         self.log.logging(
             "Input",
             "Log",
-            "Decode80A6 - Scene Membership response - MsgSrcAddr: %s MsgEP: %s MsgClusterID: %s MsgDataStatus: %s"
-            % (MsgSrcAddr, MsgEP, MsgClusterID, MsgDataStatus),
+            "Decode80A6 - Scene Membership response - MsgSrcAddr: %s MsgEP: %s MsgClusterID: %s MsgDataStatus: %s" % (MsgSrcAddr, MsgEP, MsgClusterID, MsgDataStatus),
         )
         return
 
@@ -2523,19 +2305,19 @@ def Decode80A6(self, Devices, MsgData, MsgLQI):  # Scene Membership response
         )
         return
 
-    MsgSceneList = MsgData[18: 18 + MsgSceneCount * 2]
+    MsgSceneList = MsgData[18 : 18 + MsgSceneCount * 2]
     if len(MsgData) > 18 + MsgSceneCount * 2:
-        MsgSrcAddr = MsgData[18 + MsgSceneCount * 2: (18 + MsgSceneCount * 2) + 4]
+        MsgSrcAddr = MsgData[18 + MsgSceneCount * 2 : (18 + MsgSceneCount * 2) + 4]
     MsgScene = []
     for idx in range(0, MsgSceneCount, 2):
-        scene = MsgSceneList[idx: idx + 2]
+        scene = MsgSceneList[idx : idx + 2]
         if scene not in MsgScene:
             MsgScene.append(scene)
     self.log.logging("Input", "Log", "           - Scene List: %s" % (str(MsgScene)))
 
 
 # Reponses Attributs
-def Decode8100( self, Devices, MsgData, MsgLQI ):  
+def Decode8100(self, Devices, MsgData, MsgLQI):
     # Read Attribute Response (in case there are several Attribute call several time read_report_attributes)
 
     MsgSQN = MsgData[0:2]
@@ -2549,11 +2331,8 @@ def Decode8100( self, Devices, MsgData, MsgLQI ):
     MsgClusterId = MsgData[8:12]
 
     self.statistics._clusterOK += 1
-    scan_attribute_reponse( self, Devices, MsgSQN, i_sqn, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgData, "8100" )
+    scan_attribute_reponse(self, Devices, MsgSQN, i_sqn, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgData, "8100")
     callbackDeviceAwake(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId)
-
-
-    
 
 
 def Decode8101(self, Devices, MsgData, MsgLQI):  # Default Response
@@ -2587,7 +2366,7 @@ def Decode8102(self, Devices, MsgData, MsgLQI):  # Attribute Reports
     MsgAttStatus = MsgData[16:18]
     MsgAttType = MsgData[18:20]
     MsgAttSize = MsgData[20:24]
-    MsgClusterData = MsgData[24: len(MsgData)]
+    MsgClusterData = MsgData[24 : len(MsgData)]
 
     self.log.logging(
         "Input",
@@ -2631,17 +2410,7 @@ def Decode8102(self, Devices, MsgData, MsgLQI):  # Attribute Reports
         MsgAttType = _type
         MsgAttSize = _newsize
         MsgClusterData = _newdata
-        MsgData = (
-            MsgSQN
-            + MsgSrcAddr
-            + MsgSrcEp
-            + MsgClusterId
-            + MsgAttrID
-            + MsgAttStatus
-            + MsgAttType
-            + MsgAttSize
-            + MsgClusterData
-        )
+        MsgData = MsgSQN + MsgSrcAddr + MsgSrcEp + MsgClusterId + MsgAttrID + MsgAttStatus + MsgAttType + MsgAttSize + MsgClusterData
         pluzzyDecode8102(
             self,
             MsgSrcAddr,
@@ -2661,34 +2430,33 @@ def Decode8102(self, Devices, MsgData, MsgLQI):  # Attribute Reports
     i_sqn = sqn_get_internal_sqn_from_app_sqn(self.ZigateComm, MsgSQN, TYPE_APP_ZCL)
 
     self.statistics._clusterOK += 1
-    scan_attribute_reponse( self, Devices, MsgSQN, i_sqn, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgData, "8102" )
+    scan_attribute_reponse(self, Devices, MsgSQN, i_sqn, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgData, "8102")
 
     callbackDeviceAwake(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId)
 
-def scan_attribute_reponse( self, Devices, MsgSQN, i_sqn, MsgSrcAddr, MsgSrcEp, MsgClusterId , MsgData, msgtype):
-    
+
+def scan_attribute_reponse(self, Devices, MsgSQN, i_sqn, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgData, msgtype):
 
     idx = 12
     while idx < len(MsgData):
         MsgAttrID = MsgAttStatus = MsgAttType = MsgAttSize = MsgClusterData = ""
-        MsgAttrID = MsgData[idx: idx + 4]
+        MsgAttrID = MsgData[idx : idx + 4]
         idx += 4
-        MsgAttStatus = MsgData[idx: idx + 2]
+        MsgAttStatus = MsgData[idx : idx + 2]
         idx += 2
         if MsgAttStatus == "00":
-            MsgAttType = MsgData[idx: idx + 2]
+            MsgAttType = MsgData[idx : idx + 2]
             idx += 2
-            MsgAttSize = MsgData[idx: idx + 4]
+            MsgAttSize = MsgData[idx : idx + 4]
             idx += 4
             size = int(MsgAttSize, 16) * 2
-            MsgClusterData = MsgData[idx: idx + size]
+            MsgClusterData = MsgData[idx : idx + size]
             idx += size
         else:
             self.log.logging(
                 "Input",
                 "Debug",
-                "scan_attribute_reponse - %s idx: %s Read Attribute Response: [%s:%s] status: %s -> %s"
-                % (msgtype, idx, MsgSrcAddr, MsgSrcEp, MsgAttStatus, MsgData[idx:]),
+                "scan_attribute_reponse - %s idx: %s Read Attribute Response: [%s:%s] status: %s -> %s" % (msgtype, idx, MsgSrcAddr, MsgSrcEp, MsgAttStatus, MsgData[idx:]),
             )
 
             # If the frame is coming from firmware we get only one attribute at a time, with some dumy datas
@@ -2748,10 +2516,7 @@ def read_report_attributes(
 ):
 
     if DeviceExist(self, Devices, MsgSrcAddr):
-        if (
-            self.pluginconf.pluginConf["debugLQI"]
-            and self.ListOfDevices[MsgSrcAddr]["LQI"] <= self.pluginconf.pluginConf["debugLQI"]
-        ):
+        if self.pluginconf.pluginConf["debugLQI"] and self.ListOfDevices[MsgSrcAddr]["LQI"] <= self.pluginconf.pluginConf["debugLQI"]:
             if "ZDeviceName" in self.ListOfDevices[MsgSrcAddr]:
                 if self.ListOfDevices[MsgSrcAddr]["ZDeviceName"] not in [
                     "",
@@ -2803,16 +2568,7 @@ def read_report_attributes(
         self.log.logging(
             "Input",
             "Debug2",
-            "Decode8102: Attribute Report from "
-            + str(MsgSrcAddr)
-            + " SQN = "
-            + str(MsgSQN)
-            + " ClusterID = "
-            + str(MsgClusterId)
-            + " AttrID = "
-            + str(MsgAttrID)
-            + " Attribute Data = "
-            + str(MsgClusterData),
+            "Decode8102: Attribute Report from " + str(MsgSrcAddr) + " SQN = " + str(MsgSQN) + " ClusterID = " + str(MsgClusterId) + " AttrID = " + str(MsgAttrID) + " Attribute Data = " + str(MsgClusterData),
             MsgSrcAddr,
         )
 
@@ -2918,8 +2674,7 @@ def Decode8110_raw(
     self.log.logging(
         "Input",
         "Debug",
-        "Decode8110 - WriteAttributeResponse - MsgSQN: %s,  MsgSrcAddr: %s, MsgSrcEp: %s, MsgClusterId: %s MsgAttrID: %s Status: %s"
-        % (MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus),
+        "Decode8110 - WriteAttributeResponse - MsgSQN: %s,  MsgSrcAddr: %s, MsgSrcEp: %s, MsgClusterId: %s MsgAttrID: %s Status: %s" % (MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus),
         MsgSrcAddr,
     )
 
@@ -2951,8 +2706,7 @@ def Decode8110_raw(
             self.log.logging(
                 "Input",
                 "Log",
-                "Decode8110 - Write Attribute Respons response - ClusterID: %s/%s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s"
-                % (MsgClusterId, MsgAttrID, MsgSrcAddr, MsgSrcEp, MsgAttrStatus),
+                "Decode8110 - Write Attribute Respons response - ClusterID: %s/%s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, MsgSrcEp, MsgAttrStatus),
                 MsgSrcAddr,
             )
         return
@@ -2962,9 +2716,7 @@ def Decode8110_raw(
     i_sqn = sqn_get_internal_sqn_from_app_sqn(self.ZigateComm, MsgSQN, TYPE_APP_ZCL)
     self.log.logging("Input", "Debug", "------- - i_sqn: %0s e_sqn: %s" % (i_sqn, MsgSQN))
 
-    for matchAttributeId in list(
-        get_list_isqn_attr_datastruct(self, "WriteAttributes", MsgSrcAddr, MsgSrcEp, MsgClusterId)
-    ):
+    for matchAttributeId in list(get_list_isqn_attr_datastruct(self, "WriteAttributes", MsgSrcAddr, MsgSrcEp, MsgClusterId)):
         if (
             get_isqn_datastruct(
                 self,
@@ -3001,8 +2753,7 @@ def Decode8110_raw(
             self.log.logging(
                 "Input",
                 "Debug",
-                "Decode8110 - Write Attribute Response response - ClusterID: %s/%s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s"
-                % (MsgClusterId, matchAttributeId, MsgSrcAddr, MsgSrcEp, MsgAttrStatus),
+                "Decode8110 - Write Attribute Response response - ClusterID: %s/%s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s" % (MsgClusterId, matchAttributeId, MsgSrcAddr, MsgSrcEp, MsgAttrStatus),
                 MsgSrcAddr,
             )
 
@@ -3038,9 +2789,9 @@ def Decode8120(self, Devices, MsgData, MsgLQI):  # Configure Reporting response
     else:
         idx = 12
         while idx < len(MsgData):
-            MsgAttributeId = MsgData[idx: idx + 4]
+            MsgAttributeId = MsgData[idx : idx + 4]
             idx += 4
-            MsgStatus = MsgData[idx: idx + 2]
+            MsgStatus = MsgData[idx : idx + 2]
             idx += 4
             Decode8120_attribute(
                 self,
@@ -3058,14 +2809,11 @@ def Decode8120_attribute(self, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     self.log.logging(
         "Input",
         "Debug",
-        "Decode8120 --> SQN: [%s], SrcAddr: %s, SrcEP: %s, ClusterID: %s, Attribute: %s Status: %s"
-        % (MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus),
+        "Decode8120 --> SQN: [%s], SrcAddr: %s, SrcEP: %s, ClusterID: %s, Attribute: %s Status: %s" % (MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus),
         MsgSrcAddr,
     )
 
-    self.configureReporting.read_configure_reporting_response(
-        MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus
-    )
+    self.configureReporting.read_configure_reporting_response(MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus)
 
 
 def Decode8122(self, Devices, MsgData, MsgLQI):  # Read Configure Report response
@@ -3090,8 +2838,7 @@ def Decode8139(self, Devices, MsgData, MsgLQI):
     self.log.logging(
         "Input",
         "Log",
-        "Decode8139 - %s/%s Complete: %s Cluster: %s Attribute Type: %s Attribute: %s"
-        % (uSrcAddress, u8SrcEndpoint, bDiscoveryComplete, u16ClusterEnum, eAttributeDataType, u16AttributeEnum),
+        "Decode8139 - %s/%s Complete: %s Cluster: %s Attribute Type: %s Attribute: %s" % (uSrcAddress, u8SrcEndpoint, bDiscoveryComplete, u16ClusterEnum, eAttributeDataType, u16AttributeEnum),
     )
 
 
@@ -3111,8 +2858,7 @@ def Decode8140(self, Devices, MsgData, MsgLQI):  # Attribute Discovery response
         self.log.logging(
             "Input",
             "Debug",
-            "Decode8140 - Attribute Discovery Response - %s/%s - Cluster: %s - Attribute: %s - Attribute Type: %s Complete: %s"
-            % (MsgSrcAddr, MsgSrcEp, MsgClusterID, MsgAttID, MsgAttType, MsgComplete),
+            "Decode8140 - Attribute Discovery Response - %s/%s - Cluster: %s - Attribute: %s - Attribute Type: %s Complete: %s" % (MsgSrcAddr, MsgSrcEp, MsgClusterID, MsgAttID, MsgAttType, MsgComplete),
             MsgSrcAddr,
         )
 
@@ -3129,10 +2875,7 @@ def Decode8140(self, Devices, MsgData, MsgLQI):  # Attribute Discovery response
         if MsgClusterID not in self.ListOfDevices[MsgSrcAddr]["Attributes List"]["Ep"][MsgSrcEp]:
             self.ListOfDevices[MsgSrcAddr]["Attributes List"]["Ep"][MsgSrcEp][MsgClusterID] = {}
 
-        if (
-            MsgAttID in self.ListOfDevices[MsgSrcAddr]["Attributes List"]["Ep"][MsgSrcEp][MsgClusterID]
-            and self.ListOfDevices[MsgSrcAddr]["Attributes List"]["Ep"][MsgSrcEp][MsgClusterID][MsgAttID] == MsgAttType
-        ):
+        if MsgAttID in self.ListOfDevices[MsgSrcAddr]["Attributes List"]["Ep"][MsgSrcEp][MsgClusterID] and self.ListOfDevices[MsgSrcAddr]["Attributes List"]["Ep"][MsgSrcEp][MsgClusterID][MsgAttID] == MsgAttType:
             return
 
         self.ListOfDevices[MsgSrcAddr]["Attributes List"]["Ep"][MsgSrcEp][MsgClusterID][MsgAttID] = MsgAttType
@@ -3157,8 +2900,7 @@ def Decode8141(self, Devices, MsgData, MsgLQI):  # Attribute Discovery Extended 
     self.log.logging(
         "Input",
         "Log",
-        "Decode8141 - Attribute Discovery Extended Response - MsgComplete: %s AttType: %s Attribute: %s Flag: %s"
-        % (MsgComplete, MsgAttType, MsgAttID, MsgAttFlag),
+        "Decode8141 - Attribute Discovery Extended Response - MsgComplete: %s AttType: %s Attribute: %s Flag: %s" % (MsgComplete, MsgAttType, MsgAttID, MsgAttFlag),
     )
 
     if len(MsgData) > 10:
@@ -3169,8 +2911,7 @@ def Decode8141(self, Devices, MsgData, MsgLQI):  # Attribute Discovery Extended 
         self.log.logging(
             "Input",
             "Log",
-            "Decode8141 - Attribute Discovery Extended Response - %s/%s - Cluster: %s - Attribute: %s - Attribute Type: %s Flag: %s Complete: %s"
-            % (MsgSrcAddr, MsgSrcEp, MsgClusterID, MsgAttID, MsgAttType, MsgAttFlag, MsgComplete),
+            "Decode8141 - Attribute Discovery Extended Response - %s/%s - Cluster: %s - Attribute: %s - Attribute Type: %s Flag: %s Complete: %s" % (MsgSrcAddr, MsgSrcEp, MsgClusterID, MsgAttID, MsgAttType, MsgAttFlag, MsgComplete),
             MsgSrcAddr,
         )
 
@@ -3189,24 +2930,12 @@ def Decode8141(self, Devices, MsgData, MsgLQI):  # Attribute Discovery Extended 
         if MsgAttID not in self.ListOfDevices[MsgSrcAddr]["Attributes List Extended"]["Ep"][MsgSrcEp][MsgClusterID]:
             self.ListOfDevices[MsgSrcAddr]["Attributes List Extended"]["Ep"][MsgSrcEp][MsgClusterID][MsgAttID] = {}
 
-        self.ListOfDevices[MsgSrcAddr]["Attributes List Extended"]["Ep"][MsgSrcEp][MsgClusterID][MsgAttID][
-            "Type"
-        ] = MsgAttType
-        self.ListOfDevices[MsgSrcAddr]["Attributes List Extended"]["Ep"][MsgSrcEp][MsgClusterID][MsgAttID]["Read"] = (
-            int(MsgAttFlag, 16) & 0b00000001
-        )
-        self.ListOfDevices[MsgSrcAddr]["Attributes List Extended"]["Ep"][MsgSrcEp][MsgClusterID][MsgAttID]["Write"] = (
-            int(MsgAttFlag, 16) & 0b00000010
-        ) >> 1
-        self.ListOfDevices[MsgSrcAddr]["Attributes List Extended"]["Ep"][MsgSrcEp][MsgClusterID][MsgAttID][
-            "Reportable"
-        ] = (int(MsgAttFlag, 16) & 0b00000100) >> 2
-        self.ListOfDevices[MsgSrcAddr]["Attributes List Extended"]["Ep"][MsgSrcEp][MsgClusterID][MsgAttID]["Scene"] = (
-            int(MsgAttFlag, 16) & 0b00001000
-        ) >> 3
-        self.ListOfDevices[MsgSrcAddr]["Attributes List Extended"]["Ep"][MsgSrcEp][MsgClusterID][MsgAttID]["Global"] = (
-            int(MsgAttFlag, 16) & 0b00010000
-        ) >> 4
+        self.ListOfDevices[MsgSrcAddr]["Attributes List Extended"]["Ep"][MsgSrcEp][MsgClusterID][MsgAttID]["Type"] = MsgAttType
+        self.ListOfDevices[MsgSrcAddr]["Attributes List Extended"]["Ep"][MsgSrcEp][MsgClusterID][MsgAttID]["Read"] = int(MsgAttFlag, 16) & 0b00000001
+        self.ListOfDevices[MsgSrcAddr]["Attributes List Extended"]["Ep"][MsgSrcEp][MsgClusterID][MsgAttID]["Write"] = (int(MsgAttFlag, 16) & 0b00000010) >> 1
+        self.ListOfDevices[MsgSrcAddr]["Attributes List Extended"]["Ep"][MsgSrcEp][MsgClusterID][MsgAttID]["Reportable"] = (int(MsgAttFlag, 16) & 0b00000100) >> 2
+        self.ListOfDevices[MsgSrcAddr]["Attributes List Extended"]["Ep"][MsgSrcEp][MsgClusterID][MsgAttID]["Scene"] = (int(MsgAttFlag, 16) & 0b00001000) >> 3
+        self.ListOfDevices[MsgSrcAddr]["Attributes List Extended"]["Ep"][MsgSrcEp][MsgClusterID][MsgAttID]["Global"] = (int(MsgAttFlag, 16) & 0b00010000) >> 4
 
 
 # IAS Zone
@@ -3237,10 +2966,7 @@ def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change 
         self.log.logging(
             "Input",
             "Error",
-            "Decode8401 - Reception Zone status change notification but incorrect Address Mode: "
-            + MsgSrcAddrMode
-            + " with MsgData "
-            + MsgData,
+            "Decode8401 - Reception Zone status change notification but incorrect Address Mode: " + MsgSrcAddrMode + " with MsgData " + MsgData,
         )
         return
 
@@ -3371,15 +3097,24 @@ def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change 
         self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEp]["0500"]["0002"] = {}
 
     self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEp]["0500"]["0002"] = "alarm1: %s, alaram2: %s, tamper: %s, battery: %s, Support Reporting: %s, restore Reporting: %s, trouble: %s, acmain: %s, test: %s, battdef: %s" % (
-        alarm1,alarm2,tamper,battery,suprrprt,restrprt,trouble,acmain,test,battdef,)
+        alarm1,
+        alarm2,
+        tamper,
+        battery,
+        suprrprt,
+        restrprt,
+        trouble,
+        acmain,
+        test,
+        battdef,
+    )
 
     self.log.logging(
         "Input",
         "Debug",
-        "IAS Zone for device:%s  - %s"
-        % (
-            MsgSrcAddr,
-            self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEp]["0500"]["0002"] ),MsgSrcAddr,)
+        "IAS Zone for device:%s  - %s" % (MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEp]["0500"]["0002"]),
+        MsgSrcAddr,
+    )
 
     self.log.logging(
         "Input",
@@ -3503,8 +3238,7 @@ def Decode8701(self, Devices, MsgData, MsgLQI):  # Reception Router Disovery Con
     self.log.logging(
         "Input",
         "Debug",
-        "Decode8701 - Route discovery has been performed for %s %s, status: %s Nwk Status: %s "
-        % (MsgSrcAddr, MsgSrcIEEE, Status, NwkStatus),
+        "Decode8701 - Route discovery has been performed for %s %s, status: %s Nwk Status: %s " % (MsgSrcAddr, MsgSrcIEEE, Status, NwkStatus),
     )
 
 
@@ -3520,9 +3254,7 @@ def Decode004D(self, Devices, MsgData, MsgLQI):  # Reception Device announce
     if self.FirmwareVersion and int(self.FirmwareVersion, 16) >= 0x031C and self.pluginconf.pluginConf["AnnoucementV1"]:
         device_annoucementv1(self, Devices, MsgData, MsgLQI)
 
-    elif (
-        self.FirmwareVersion and int(self.FirmwareVersion, 16) >= 0x031C and self.pluginconf.pluginConf["AnnoucementV2"]
-    ):
+    elif self.FirmwareVersion and int(self.FirmwareVersion, 16) >= 0x031C and self.pluginconf.pluginConf["AnnoucementV2"]:
         device_annoucementv2(self, Devices, MsgData, MsgLQI)
 
     else:
@@ -3553,8 +3285,7 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
     self.log.logging(
         "Input",
         "Debug",
-        "Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s "
-        % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
+        "Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
         MsgSrcAddr,
     )
 
@@ -3586,7 +3317,7 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
 
     _ModelName = self.ListOfDevices[MsgSrcAddr]["Model"]
 
-    if _ModelName in ("TRADFRI remote control",  "Remote Control N2"):
+    if _ModelName in ("TRADFRI remote control", "Remote Control N2"):
         if MsgClusterId == "0008" and MsgCmd in TYPE_ACTIONS:
             selector = TYPE_ACTIONS[MsgCmd]
             self.log.logging("Input", "Debug", "Decode8085 - Selector: %s" % selector, MsgSrcAddr)
@@ -3596,8 +3327,7 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
             self.log.logging(
                 "Input",
                 "Log",
-                "Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s"
-                % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
+                "Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s" % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
             )
             self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, %s" % (MsgCmd, unknown_)
 
@@ -3625,19 +3355,17 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
             self.log.logging(
                 "Input",
                 "Log",
-                "Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s"
-                % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
+                "Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s" % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
             )
             self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, %s" % (MsgCmd, unknown_)
             return
 
-        step_mod, up_down, step_size, transition = extract_info_from_8085( MsgData )                                                                                
+        step_mod, up_down, step_size, transition = extract_info_from_8085(MsgData)
 
         self.log.logging(
             "Input",
             "Log",
-            "Decode8085 - INNR RC 110 step_mod: %s direction: %s, size: %s, transition: %s"
-            % (step_mod, up_down, step_size, transition),
+            "Decode8085 - INNR RC 110 step_mod: %s direction: %s, size: %s, transition: %s" % (step_mod, up_down, step_size, transition),
             MsgSrcAddr,
         )
 
@@ -3691,7 +3419,7 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
         }
         DIRECTION = {None: "", "00": "left", "ff": "right"}
 
-        step_mod, up_down, step_size, transition = extract_info_from_8085( MsgData ) 
+        step_mod, up_down, step_size, transition = extract_info_from_8085(MsgData)
 
         selector = None
 
@@ -3751,8 +3479,7 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
             self.log.logging(
                 "Input",
                 "Log",
-                "Decode8085 - =====> Unknown step_mod: %s up_down: %s step_size: %s transition: %s"
-                % (step_mod, up_down, step_size, transition),
+                "Decode8085 - =====> Unknown step_mod: %s up_down: %s step_size: %s transition: %s" % (step_mod, up_down, step_size, transition),
                 MsgSrcAddr,
             )
 
@@ -3760,8 +3487,7 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
         self.log.logging(
             "Input",
             "Debug",
-            "Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s "
-            % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
+            "Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
             MsgSrcAddr,
         )
 
@@ -3773,25 +3499,19 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
         }
         DIRECTION = {None: "", "00": "up", "01": "down"}
 
-        step_mod, up_down, step_size, transition = extract_info_from_8085( MsgData ) 
+        step_mod, up_down, step_size, transition = extract_info_from_8085(MsgData)
 
         if TYPE_ACTIONS[step_mod] in ("click", "move"):
             selector = TYPE_ACTIONS[step_mod] + DIRECTION[up_down]
         elif TYPE_ACTIONS[step_mod] == "stop":
             selector = TYPE_ACTIONS[step_mod]
         else:
-            Domoticz.Error(
-                "Decode8085 - Unknown state for %s step_mod: %s up_down: %s" % (MsgSrcAddr, step_mod, up_down)
-            )
+            Domoticz.Error("Decode8085 - Unknown state for %s step_mod: %s up_down: %s" % (MsgSrcAddr, step_mod, up_down))
             return
 
         self.log.logging("Input", "Debug", "Decode8085 - Legrand selector: %s" % selector, MsgSrcAddr)
         if selector:
-            if (
-                "Param" in self.ListOfDevices[MsgSrcAddr]
-                and "netatmoReleaseButton" in self.ListOfDevices[MsgSrcAddr]["Param"]
-                and self.ListOfDevices[MsgSrcAddr]["Param"]["netatmoReleaseButton"]
-            ):
+            if "Param" in self.ListOfDevices[MsgSrcAddr] and "netatmoReleaseButton" in self.ListOfDevices[MsgSrcAddr]["Param"] and self.ListOfDevices[MsgSrcAddr]["Param"]["netatmoReleaseButton"]:
                 # self.log.logging( "Input", 'Log',"Receive: %s/%s %s" %(MsgSrcAddr,MsgEP,selector))
                 MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, selector)
                 self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = selector
@@ -3803,26 +3523,26 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
                     self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = selector
 
     elif _ModelName in LEGRAND_REMOTE_MOTION:
-        step_mod, up_down, step_size, transition = extract_info_from_8085( MsgData ) 
+        step_mod, up_down, step_size, transition = extract_info_from_8085(MsgData)
         self.log.logging(
             "Input",
             "Log",
             "Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s step_mode: %s up_down: %s step_size: %s transition: %s"
             % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_, step_mod, up_down, step_size, transition),
-            MsgSrcAddr,)
+            MsgSrcAddr,
+        )
 
     elif _ModelName == "Lightify Switch Mini":
 
         # OSRAM Lightify Switch Mini
         # Force Ep 03 to update Domoticz Widget
 
-        step_mod, up_down, step_size, transition = extract_info_from_8085( MsgData ) 
+        step_mod, up_down, step_size, transition = extract_info_from_8085(MsgData)
 
         self.log.logging(
             "Input",
             "Log",
-            "Decode8085 - OSRAM Lightify Switch Mini %s/%s: Mod %s, UpDown %s Size %s Transition %s"
-            % (MsgSrcAddr, MsgEP, step_mod, up_down, step_size, transition),
+            "Decode8085 - OSRAM Lightify Switch Mini %s/%s: Mod %s, UpDown %s Size %s Transition %s" % (MsgSrcAddr, MsgEP, step_mod, up_down, step_size, transition),
         )
 
         if MsgCmd == "04":  # Appui court boutton central
@@ -3896,24 +3616,21 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
             TYPE_ACTIONS = {None: "", "03": "stop", "05": "move"}
             DIRECTION = {None: "", "00": "up", "01": "down"}
 
-            step_mod, up_down, step_size, transition = extract_info_from_8085( MsgData ) 
+            step_mod, up_down, step_size, transition = extract_info_from_8085(MsgData)
 
             self.log.logging("Input", "Log", "step_mod: %s" % step_mod)
 
             if step_mod in TYPE_ACTIONS:
                 Domoticz.Error("Decode8085 - Profalux Remote, unknown Action: %s" % step_mod)
 
-            selector =  None
+            selector = None
 
             if TYPE_ACTIONS[step_mod] in ("move"):
                 selector = TYPE_ACTIONS[step_mod] + DIRECTION[up_down]
             elif TYPE_ACTIONS[step_mod] in ("stop"):
                 selector = TYPE_ACTIONS[step_mod]
             else:
-                Domoticz.Error(
-                    "Decode8085 - Profalux remote Unknown state for %s step_mod: %s up_down: %s"
-                    % (MsgSrcAddr, step_mod, up_down)
-                )
+                Domoticz.Error("Decode8085 - Profalux remote Unknown state for %s step_mod: %s up_down: %s" % (MsgSrcAddr, step_mod, up_down))
 
             self.log.logging(
                 "Input",
@@ -3926,24 +3643,23 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
 
     elif _ModelName == "TS1001":
 
-        step_mod, up_down, step_size, transition = extract_info_from_8085( MsgData )
+        step_mod, up_down, step_size, transition = extract_info_from_8085(MsgData)
         self.log.logging(
             "Input",
             "Log",
-            "Decode8085 - Lidl Remote SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s step_mod: %s step_size: %s up_down: %s"
-            % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_, step_mod, step_size, up_down),
+            "Decode8085 - Lidl Remote SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s step_mod: %s step_size: %s up_down: %s" % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_, step_mod, step_size, up_down),
         )
 
     else:
         self.log.logging(
             "Input",
             "Log",
-            "Decode8085 - Model: %s SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s "
-            % (_ModelName, MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
+            "Decode8085 - Model: %s SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " % (_ModelName, MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
         )
         self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, %s" % (MsgCmd, unknown_)
 
-def extract_info_from_8085( MsgData ):
+
+def extract_info_from_8085(MsgData):
     step_mod = MsgData[14:16]
     up_down = step_size = transition = None
     if len(MsgData) >= 18:
@@ -3952,8 +3668,9 @@ def extract_info_from_8085( MsgData ):
         step_size = MsgData[18:20]
     if len(MsgData) >= 22:
         transition = MsgData[20:22]
-    
-    return ( step_mod, up_down, step_size, transition)
+
+    return (step_mod, up_down, step_size, transition)
+
 
 def Decode8095(self, Devices, MsgData, MsgLQI):
     "Remote button pressed ON/OFF"
@@ -3966,15 +3683,14 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
     MsgCmd = MsgData[14:16]
     MsgPayload = None
     if len(MsgData) > 16:
-        MsgPayload = MsgData[16: len(MsgData)]
+        MsgPayload = MsgData[16 : len(MsgData)]
 
     updLQI(self, MsgSrcAddr, MsgLQI)
 
     self.log.logging(
         "Input",
         "Debug",
-        "Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Payload: %s Unknown: %s "
-        % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgPayload, unknown_),
+        "Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Payload: %s Unknown: %s " % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgPayload, unknown_),
         MsgSrcAddr,
     )
 
@@ -4005,7 +3721,7 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
 
     _ModelName = self.ListOfDevices[MsgSrcAddr]["Model"]
 
-    if _ModelName in ( "TRADFRI remote control", "Remote Control N2"):
+    if _ModelName in ("TRADFRI remote control", "Remote Control N2"):
         # Ikea Remote 5 buttons round.
         # ( cmd, directioni, cluster )
         # ( 0x02, 0x0006) - click middle button - Action Toggle On/Off Off/on
@@ -4020,8 +3736,7 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
             self.log.logging(
                 "Input",
                 "Log",
-                "Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s "
-                % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
+                "Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
             )
         self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, %s" % (MsgCmd, unknown_)
 
@@ -4041,8 +3756,7 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
             self.log.logging(
                 "Input",
                 "Log",
-                "Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s "
-                % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
+                "Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
             )
         self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, %s" % (MsgCmd, unknown_)
 
@@ -4065,8 +3779,7 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
             self.log.logging(
                 "Input",
                 "Log",
-                "Decode8095 - RC 110 ON/Off Command from: %s/%s Cmd: %s Delayed: %s Effect: %s"
-                % (MsgSrcAddr, MsgEP, MsgCmd, delayed_all_off, effect_variant),
+                "Decode8095 - RC 110 ON/Off Command from: %s/%s Cmd: %s Delayed: %s Effect: %s" % (MsgSrcAddr, MsgEP, MsgCmd, delayed_all_off, effect_variant),
                 MsgSrcAddr,
             )
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd)
@@ -4076,8 +3789,7 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
             self.log.logging(
                 "Input",
                 "Log",
-                "Decode8095 - RC 110 Unknown Command: %s for %s/%s, Cmd: %s, Unknown: %s "
-                % (MsgCmd, MsgSrcAddr, MsgEP, MsgCmd, unknown_),
+                "Decode8095 - RC 110 Unknown Command: %s for %s/%s, Cmd: %s, Unknown: %s " % (MsgCmd, MsgSrcAddr, MsgEP, MsgCmd, unknown_),
                 MsgSrcAddr,
             )
 
@@ -4114,9 +3826,8 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
             "Log",
             "Decode8095 - Legrand: %s/%s, Cmd: %s, Unknown: %s " % (MsgSrcAddr, MsgEP, MsgCmd, unknown_),
             MsgSrcAddr,
-            )
+        )
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0406", unknown_)
-
 
     elif _ModelName == "Lightify Switch Mini":
         #        OSRAM Lightify Switch Mini
@@ -4126,8 +3837,7 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
             self.log.logging(
                 "Input",
                 "Log",
-                "Decode8095 - OSRAM Lightify Switch Mini: %s/%s, Cmd: %s, Unknown: %s "
-                % (MsgSrcAddr, MsgEP, MsgCmd, unknown_),
+                "Decode8095 - OSRAM Lightify Switch Mini: %s/%s, Cmd: %s, Unknown: %s " % (MsgSrcAddr, MsgEP, MsgCmd, unknown_),
                 MsgSrcAddr,
             )
             MajDomoDevice(self, Devices, MsgSrcAddr, "03", MsgClusterId, MsgCmd)
@@ -4137,8 +3847,7 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
             self.log.logging(
                 "Input",
                 "Log",
-                "Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s "
-                % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
+                "Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
                 MsgSrcAddr,
             )
 
@@ -4171,8 +3880,7 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
         self.log.logging(
             "Input",
             "Log",
-            "Decode8095 - Tuya %s  Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, MsgPayload: %s "
-            % (_ModelName, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgPayload),
+            "Decode8095 - Tuya %s  Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, MsgPayload: %s " % (_ModelName, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgPayload),
             MsgSrcAddr,
         )
         if MsgCmd[0:2] == "fd" and MsgPayload:
@@ -4210,8 +3918,7 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
         self.log.logging(
             "Input",
             "Log",
-            "Decode8095 - Model: %s SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s "
-            % (_ModelName, MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
+            "Decode8095 - Model: %s SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " % (_ModelName, MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
             MsgSrcAddr,
         )
 
@@ -4238,8 +3945,7 @@ def Decode80A7(self, Devices, MsgData, MsgLQI):
     self.log.logging(
         "Input",
         "Debug",
-        "Decode80A7 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Direction: %s, Unknown_ %s"
-        % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgDirection, unkown_),
+        "Decode80A7 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Direction: %s, Unknown_ %s" % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgDirection, unkown_),
         MsgSrcAddr,
     )
     if MsgSrcAddr not in self.ListOfDevices:
@@ -4267,8 +3973,7 @@ def Decode80A7(self, Devices, MsgData, MsgLQI):
             self.log.logging(
                 "Input",
                 "Log",
-                "Decode80A7 - Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Direction: %s, Unknown_ %s"
-                % (MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgDirection, unkown_),
+                "Decode80A7 - Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Direction: %s, Unknown_ %s" % (MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgDirection, unkown_),
             )
             self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, Direction: %s, %s" % (
                 MsgCmd,
@@ -4309,8 +4014,7 @@ def Decode80A7(self, Devices, MsgData, MsgLQI):
         self.log.logging(
             "Input",
             "Log",
-            "Decode80A7 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Direction: %s, Unknown_ %s"
-            % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgDirection, unkown_),
+            "Decode80A7 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Direction: %s, Unknown_ %s" % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgDirection, unkown_),
         )
         self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, Direction: %s, %s" % (
             MsgCmd,
