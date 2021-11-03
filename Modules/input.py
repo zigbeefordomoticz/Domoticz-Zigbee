@@ -2548,6 +2548,7 @@ def Decode8100( self, Devices, MsgData, MsgLQI ):
     MsgSrcEp = MsgData[6:8]
     MsgClusterId = MsgData[8:12]
 
+    self.statistics._clusterOK += 1
     scan_attribute_reponse( self, Devices, MsgSQN, i_sqn, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgData, "8100" )
     callbackDeviceAwake(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId)
 
@@ -2659,12 +2660,14 @@ def Decode8102(self, Devices, MsgData, MsgLQI):  # Attribute Reports
     updLQI(self, MsgSrcAddr, MsgLQI)
     i_sqn = sqn_get_internal_sqn_from_app_sqn(self.ZigateComm, MsgSQN, TYPE_APP_ZCL)
 
+    self.statistics._clusterOK += 1
     scan_attribute_reponse( self, Devices, MsgSQN, i_sqn, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgData, "8102" )
 
     callbackDeviceAwake(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId)
 
 def scan_attribute_reponse( self, Devices, MsgSQN, i_sqn, MsgSrcAddr, MsgSrcEp, MsgClusterId , MsgData, msgtype):
     
+
     idx = 12
     while idx < len(MsgData):
         MsgAttrID = MsgAttStatus = MsgAttType = MsgAttSize = MsgClusterData = ""
@@ -2818,7 +2821,7 @@ def read_report_attributes(
 
         updSQN(self, MsgSrcAddr, str(MsgSQN))
         lastSeenUpdate(self, Devices, NwkId=MsgSrcAddr)
-        self.statistics._clusterOK += 1
+
         ReadCluster(
             self,
             Devices,
