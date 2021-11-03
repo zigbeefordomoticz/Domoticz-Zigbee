@@ -38,7 +38,7 @@ from Modules.tuya import (
 )
 from Modules.schneider_wiser import wiser_home_lockout_thermostat, iTRV_open_window_detection
 
-from Modules.danfoss import danfoss_exercise_trigger_time, danfoss_exercise_day_of_week
+from Modules.danfoss import danfoss_exercise_trigger_time, danfoss_exercise_day_of_week, danfoss_viewdirection, danfoss_orientation
 
 
 def Ballast_max_level(self, nwkid, max_level):
@@ -190,6 +190,8 @@ DEVICE_PARAMETERS = {
     "TuyaBackLight": tuya_backlight_command,
     "eTRVExerciseDay": danfoss_exercise_day_of_week,
     "eTRVExerciseTime": danfoss_exercise_trigger_time,
+    "DanfossTRVOrientation": danfoss_orientation,
+    "DanfossViewDirection": danfoss_viewdirection,
 }
 
 
