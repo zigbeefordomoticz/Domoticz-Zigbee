@@ -193,11 +193,11 @@ def mgmt_bindingtable_response( self,  srcnwkid, MsgSourcePoint, MsgClusterID, d
         idx += 2
         if addr_mode == '03':
             dest_ieee = BindingTableListRecord[ idx: idx +16]
-            dest_ieee = "%x" %struct.unpack("Q", struct.pack(">Q", int(dest_ieee, 16)))[0])
+            dest_ieee = "%x" %struct.unpack("Q", struct.pack(">Q", int(dest_ieee, 16)))[0]
             idx += 16
         elif addr_mode in ( '02', '01'):
             shortid = BindingTableListRecord[ idx: idx +4]
-            shortid = "%04x" %(struct.unpack("H", struct.pack(">H", int(shortid, 16)))[0])
+            shortid = "%04x" %struct.unpack("H", struct.pack(">H", int(shortid, 16)))[0]
             idx += 4
         dest_ep = BindingTableListRecord[ idx: idx+2]
         idx += 2
