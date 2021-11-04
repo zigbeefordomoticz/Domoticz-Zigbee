@@ -183,40 +183,51 @@ def mgmt_bindingtable_response( self,  srcnwkid, MsgSourcePoint, MsgClusterID, d
     idx = 0
 
     while idx < len(BindingTableListRecord):
-        source_ieee = BindingTableListRecord[ idx: idx+16]
+        binding_record = {}
+
+        # Source
+        source_ieee = "%016x" %struct.unpack("Q", struct.pack(">Q", int( BindingTableListRecord[ idx: idx +16] , 16)))[0]
+        binding_record[source_ieee] = {}
         idx += 16
+
+        # Source Ep
         source_ep = BindingTableListRecord[ idx : idx +2]
+        binding_record[source_ieee]["sourceEp"] = source_ep
         idx += 2
-        cluster = BindingTableListRecord[ idx: idx +4 ]
+
+        # Cluster
+        cluster = "%04x" %struct.unpack("H", struct.pack(">H", int( BindingTableListRecord[ idx: idx +4] , 16)))[0]
+        binding_record[source_ieee]["Cluster"] = cluster
         idx += 4
+
+        # Address mode of Target
         addr_mode = BindingTableListRecord[ idx: idx +2 ]
         idx += 2
-        if addr_mode == '03':
-            dest_ieee = BindingTableListRecord[ idx: idx +16]
-            dest_ieee = "%x" %struct.unpack("Q", struct.pack(">Q", int(dest_ieee, 16)))[0]
+
+        if addr_mode == '03': # IEEE
+            dest_ieee = "%016x" %struct.unpack("Q", struct.pack(">Q", int( BindingTableListRecord[ idx: idx +16] , 16)))[0]
             idx += 16
-        elif addr_mode in ( '02', '01'):
-            shortid = BindingTableListRecord[ idx: idx +4]
-            shortid = "%04x" %struct.unpack("H", struct.pack(">H", int(shortid, 16)))[0]
-            idx += 4
-        dest_ep = BindingTableListRecord[ idx: idx+2]
-        idx += 2
-
-        binding_record = {}
-        binding_record[source_ieee] = {}
-
-        binding_record[source_ieee]["sourceEp"] = source_ep
-        binding_record[source_ieee]["Cluster"] = cluster
-        if addr_mode == '03':
             binding_record[source_ieee]["targetIEEE"] = dest_ieee
             binding_record[source_ieee]["targetNickName"] = get_device_nickname( self, Ieee=dest_ieee)
-        elif addr_mode == '01':
-            binding_record[source_ieee]["targetGroupId"] = shortid
-        elif addr_mode == '02':
+            
+            dest_ep = BindingTableListRecord[ idx: idx+2]
+            idx += 2
+            binding_record[source_ieee]["targetEp"] = dest_ep
+            
+        elif addr_mode == '02': # Short Id
+            shortid = "%04x" %struct.unpack("H", struct.pack(">H", int( BindingTableListRecord[ idx: idx +4] , 16)))[0]
+            idx += 4
             binding_record[source_ieee]["targetNwkId"] = shortid
             binding_record[source_ieee]["targetNickName"] = get_device_nickname( self, NwkId=shortid)
-
-        binding_record[source_ieee]["targetEp"] = dest_ep
+            
+            dest_ep = BindingTableListRecord[ idx: idx+2]
+            idx += 2
+            binding_record[source_ieee]["targetEp"] = dest_ep
+            
+        elif addr_mode == '01': # Group no EndPoint
+            shortid = "%04x" %struct.unpack("H", struct.pack(">H", int( BindingTableListRecord[ idx: idx +4] , 16)))[0]
+            binding_record[source_ieee]["targetGroupId"] = shortid
+            idx += 4
 
         self.ListOfDevices[srcnwkid]["BindingTable"]["Devices"].append(binding_record)
 

@@ -37,6 +37,7 @@ from Modules.tuyaSiren import tuya_sirene_registration
 from Modules.tuyaTools import tuya_TS0121_registration
 from Modules.tuyaTRV import tuya_eTRV_registration, TUYA_eTRV_MODEL
 from Modules.pollControl import poll_set_long_poll_interval
+from Modules.mgmt_rtg import mgmt_rtg
 
 
 def processNotinDBDevices(self, Devices, NWKID, status, RIA):
@@ -371,6 +372,8 @@ def full_provision_device(self, Devices, NWKID, RIA, status):
     self.CommiSSionning = False
 
     self.ListOfDevices[NWKID]["PairingInProgress"] = False
+
+    mgmt_rtg( self, NWKID, "BindingTable" )
 
 
 def zigbee_provision_device(self, Devices, NWKID, RIA, status):
