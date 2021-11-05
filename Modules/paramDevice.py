@@ -116,7 +116,9 @@ def param_PowerOnAfterOffOn(self, nwkid, mode):
         "TS0115",
         "TS011F-multiprise",
         "TS011F-2Gang-switches",
+        "TS011F-plug"
     ):
+        self.log.logging("Heartbeat", "Debug", "param_PowerOnAfterOffOn for %s mode: %s TUYA Manufacturer" % (nwkid, mode), nwkid)
         # Tuya ( 'TS0121' BlitzWolf )
         if "01" not in self.ListOfDevices[nwkid]["Ep"]:
             return

@@ -1106,7 +1106,7 @@ def set_poweron_afteroffon(self, key, OnOffMode=0xFF):
     cluster_id = "0006"
     attribute = "4003"
 
-    if model_name in ("TS0121", "TS0115"):
+    if model_name in ( "TS0121", "TS0115", "TS011F-multiprise", "TS011F-2Gang-switches", "TS011F-plug" ):
         attribute = "8002"
         if OnOffMode == 0xFF:
             OnOffMode = 0x02
