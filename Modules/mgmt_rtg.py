@@ -4,7 +4,6 @@ import time
 import struct
 
 from Modules.basicOutputs import mgt_routing_req, mgt_binding_table_req
-from Modules.schneider_wiser import schneider_thermostat_check_and_bind
 from Modules.tools import is_hex, get_device_nickname
 
 STATUS_CODE = {"00": "Success", "84": "Not Supported (132)"}

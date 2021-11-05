@@ -10,6 +10,7 @@ import Domoticz
 from Classes.LoggingManagement import LoggingManagement
 from Modules.basicOutputs import sendZigateCmd
 from Modules.zigateConsts import CLUSTERS_LIST
+from Modules.mgmt_rtg import mgmt_rtg
 
 # def bindGroup(self, ieee, ep, cluster, groupid):
 #
@@ -85,6 +86,8 @@ def bindGroup(self, ieee, ep, cluster, groupid):
     datas = str(ieee) + str(ep) + str(cluster) + str(mode) + str(groupid)
     i_sqn = sendZigateCmd(self, "0030", datas)
 
+    mgmt_rtg( self, nwkid, "BindingTable" )
+
 
 def unbindGroup(self, ieee, ep, cluster, groupid):
 
@@ -125,6 +128,8 @@ def unbindGroup(self, ieee, ep, cluster, groupid):
 
     datas = str(ieee) + str(ep) + str(cluster) + str(mode) + str(groupid)
     i_sqn = sendZigateCmd(self, "0031", datas)
+
+    mgmt_rtg( self, nwkid, "BindingTable" )
 
 
 def bindDevice(self, ieee, ep, cluster, destaddr=None, destep="01"):
@@ -221,7 +226,8 @@ def bindDevice(self, ieee, ep, cluster, destaddr=None, destep="01"):
         self.ListOfDevices[nwkid]["Bind"][ep][cluster]["Status"] = ""
         self.ListOfDevices[nwkid]["Bind"][ep][cluster]["i_sqn"] = i_sqn
 
-    return
+    mgmt_rtg( self, nwkid, "BindingTable" )
+
 
 
 def rebind_Clusters(self, NWKID):
@@ -343,7 +349,8 @@ def unbindDevice(self, ieee, ep, cluster, destaddr=None, destep="01"):
     datas = str(ieee) + str(ep) + str(cluster) + str(mode) + str(destaddr) + str(destep)
     sendZigateCmd(self, "0031", datas)
 
-    return
+    mgmt_rtg( self, nwkid, "BindingTable" )
+
 
 
 def webBind(self, sourceIeee, sourceEp, destIeee, destEp, Cluster):
@@ -422,6 +429,8 @@ def webBind(self, sourceIeee, sourceEp, destIeee, destEp, Cluster):
     self.ListOfDevices[sourceNwkid]["WebBind"][sourceEp][Cluster][destNwkid]["Phase"] = "requested"
     self.ListOfDevices[sourceNwkid]["WebBind"][sourceEp][Cluster][destNwkid]["i_sqn"] = i_sqn
     self.ListOfDevices[sourceNwkid]["WebBind"][sourceEp][Cluster][destNwkid]["Status"] = ""
+
+    mgmt_rtg( self, sourceNwkid, "BindingTable" )
 
 
 def webUnBind(self, sourceIeee, sourceEp, destIeee, destEp, Cluster):
@@ -509,6 +518,7 @@ def webUnBind(self, sourceIeee, sourceEp, destIeee, destEp, Cluster):
         if len(self.ListOfDevices[sourceNwkid]["WebBind"]) == 0:
             del self.ListOfDevices[sourceNwkid]["WebBind"]
 
+    mgmt_rtg( self, sourceNwkid, "BindingTable" )
 
 def WebBindStatus(self, sourceIeee, sourceEp, destIeee, destEp, Cluster):
 
