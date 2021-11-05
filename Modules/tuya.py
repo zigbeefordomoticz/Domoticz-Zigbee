@@ -243,7 +243,7 @@ def tuya_cmd_0x0000_0xf0(self, NwkId):
             zigate_ep=ZIGATE_EP,
             ackIsDisabled=is_ack_tobe_disabled(self, NwkId),
         )
-        self.log.logging("Tuya", "Debug", "tuya_cmd_0x0000_0xf0 - Nwkid: %s reset device Cmd: fe" % nwNwkIdkid)
+        self.log.logging("Tuya", "Debug", "tuya_cmd_0x0000_0xf0 - Nwkid: %s reset device Cmd: fe" % NwkId)
 
 
 def pollingTuya(self, key):
