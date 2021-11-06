@@ -3787,7 +3787,7 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value), Attribute_=MsgAttrID)
 
         elif "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == "TS011F-plug":
-            conso = value
+            conso = value * 10
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, conso)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(conso), Attribute_="0000")
 
