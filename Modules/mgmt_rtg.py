@@ -1,8 +1,10 @@
+from os import getgrouplist
 import Domoticz
 import time
+import struct
 
-from Modules.basicOutputs import mgt_routing_req
-from Modules.tools import is_hex
+from Modules.basicOutputs import mgt_routing_req, mgt_binding_table_req
+from Modules.tools import is_hex, get_device_nickname
 
 STATUS_CODE = {"00": "Success", "84": "Not Supported (132)"}
 
@@ -17,30 +19,47 @@ STATUS_OF_ROUTE = {
     0x07: "RESERVED (7)",
 }
 
+TABLE_TO_REPORT = {
+    "RoutingTable": mgt_routing_req,
+    "BindingTable": mgt_binding_table_req,
+}
 
-def mgmt_rtg(self, nwkid):
-    if "RoutingTable" not in self.ListOfDevices[nwkid]:
-        self.ListOfDevices[nwkid]["RoutingTable"] = {}
-        self.ListOfDevices[nwkid]["RoutingTable"]["Devices"] = []
-        self.ListOfDevices[nwkid]["RoutingTable"]["SQN"] = 0
-        self.ListOfDevices[nwkid]["RoutingTable"]["TimeStamp"] = time.time()
-        mgt_routing_req(self, nwkid, "00")
+CLUSTER_TO_TABLE = {
+    "8032": "RoutingTable",
+    "8033": "BindingTable"
+}
+
+def mgmt_rtg(self, nwkid, table):
+
+    #Domoticz.Log("=======> mgmt_rtg: %s %s" %(nwkid, table))
+    if table not in TABLE_TO_REPORT:
+        Domoticz.Error("=======> mgmt_rtg: %s %s not found in TABLE_TO_REPORT" %(nwkid, table))
         return
 
-    if "TimeStamp" not in self.ListOfDevices[nwkid]["RoutingTable"]:
-        self.ListOfDevices[nwkid]["RoutingTable"]["TimeStamp"] = time.time()
-        mgt_routing_req(self, nwkid, "00")
+    func = TABLE_TO_REPORT[ table ]
+    if table not in self.ListOfDevices[nwkid]:
+        self.ListOfDevices[nwkid][table] = {}
+        self.ListOfDevices[nwkid][table]["Devices"] = []
+        self.ListOfDevices[nwkid][table]["SQN"] = 0
+        self.ListOfDevices[nwkid][table]["TimeStamp"] = time.time()
+        func(self, nwkid, "00")
+        return
+
+    if "TimeStamp" not in self.ListOfDevices[nwkid][table]:
+        self.ListOfDevices[nwkid][table]["TimeStamp"] = time.time()
+        func(self, nwkid, "00")
         return
 
     if (
-        "Status" in self.ListOfDevices[nwkid]["RoutingTable"]
-        and self.ListOfDevices[nwkid]["RoutingTable"]["Status"] != STATUS_CODE["00"]
+        "Status" in self.ListOfDevices[nwkid][table]
+        and self.ListOfDevices[nwkid][table]["Status"] != STATUS_CODE["00"]
     ):
         return
 
-    feq = self.pluginconf.pluginConf["RoutingTableRequestFeq"]
-    if time.time() > self.ListOfDevices[nwkid]["RoutingTable"]["TimeStamp"] + feq:
-        mgt_routing_req(self, nwkid, "00")
+
+    feq = self.pluginconf.pluginConf[table+"RequestFeq"]
+    if time.time() > self.ListOfDevices[nwkid][table]["TimeStamp"] + feq:
+        func(self, nwkid, "00")
         return
 
 
@@ -66,13 +85,22 @@ def mgmt_rtg_rsp(
         return
 
 
-    # Domoticz.Log("mgmt_rtg_rsp - len: %s Data: %s" % (len(MsgPayload), MsgPayload))
+    if MsgClusterID == "8032":
+        mgmt_routingtable_response( self,  srcnwkid, MsgSourcePoint, MsgClusterID, dstnwkid, MsgDestPoint, MsgPayload, )
+    elif MsgClusterID == "8033":
+        mgmt_bindingtable_response( self,  srcnwkid, MsgSourcePoint, MsgClusterID, dstnwkid, MsgDestPoint, MsgPayload, )
+    else:
+        Domoticz.Error("mgmt_rtg_rsp - unknown Cluster %s" %MsgClusterID)
+        return
+
+def mgmt_routingtable_response( self,  srcnwkid, MsgSourcePoint, MsgClusterID, dstnwkid, MsgDestPoint, MsgPayload, ):
+
     Sqn = MsgPayload[0:2]
     Status = MsgPayload[2:4]
     RoutingTableSize = MsgPayload[4:6]
     RoutingTableIndex = MsgPayload[6:8]
     RoutingTableListCount = MsgPayload[8:10]
-    RoutingTableListRecord = MsgPayload[10:]            
+    RoutingTableListRecord = MsgPayload[10:]     
 
     if "RoutingTable" not in self.ListOfDevices[srcnwkid]:
         self.ListOfDevices[srcnwkid]["RoutingTable"] = {}
@@ -83,20 +111,16 @@ def mgmt_rtg_rsp(
         self.ListOfDevices[srcnwkid]["RoutingTable"]["Devices"] = []
 
     self.ListOfDevices[srcnwkid]["RoutingTable"]["TimeStamp"] = time.time()
-    self.ListOfDevices[srcnwkid]["RoutingTable"]["RoutingTableSize"] = int(RoutingTableSize, 16)
+    self.ListOfDevices[srcnwkid]["RoutingTable"][ "RoutingTable" + "TableSize"] = int(RoutingTableSize, 16)
     if Status in STATUS_CODE:
         self.ListOfDevices[srcnwkid]["RoutingTable"]["Status"] = STATUS_CODE[Status]
     else:
         self.ListOfDevices[srcnwkid]["RoutingTable"]["Status"] = Status
 
-    # Domoticz.Log("mgmt_rtg_rsp %s/%s Status: %s RoutingTableSize: %s RoutingTableIndex: %s RoutingTableIndex: %s RoutingTableListCount: %s" %(
-    #    srcnwkid, MsgSourcePoint, Status, RoutingTableSize, RoutingTableIndex, RoutingTableIndex, RoutingTableListCount ))
-
     if Status != "00":
         return
     idx = 0
     if len(RoutingTableListRecord) % 10 != 0:
-        # Domoticz.Log("Incorrect lenght RoutingListRecord: %s" %RoutingTableListRecord)
         return
     while idx < len(RoutingTableListRecord):
 
@@ -123,10 +147,88 @@ def mgmt_rtg_rsp(
 
         self.ListOfDevices[srcnwkid]["RoutingTable"]["Devices"].append(routing_record)
 
-        # Domoticz.Log("------------ Destination Address: %s Status: %s Memory Constrained: %s Many-to-one: %s Route record required: %s Next-hop address: %s" %(
-        #    target_nwkid, device_status, device_memory_constraint, many_to_one, route_record_required, next_hop ))
-
     if int(RoutingTableIndex, 16) + int(RoutingTableListCount, 16) < int(RoutingTableSize, 16):
-        # Domoticz.Log("------------  - Next Index for %s RoutingTableIndex: %s RoutingTableListCount: %s RoutingTableSize: %s" %(
-        #    (srcnwkid, RoutingTableIndex,RoutingTableListCount, RoutingTableSize )))
         mgt_routing_req(self, srcnwkid, "%02x" % (int(RoutingTableIndex, 16) + int(RoutingTableListCount, 16)))
+
+def mgmt_bindingtable_response( self,  srcnwkid, MsgSourcePoint, MsgClusterID, dstnwkid, MsgDestPoint, MsgPayload, ):
+    
+    Sqn = MsgPayload[0:2]
+    Status = MsgPayload[2:4]
+    BindingTableSize = MsgPayload[4:6]
+    BindingTableIndex = MsgPayload[6:8]
+    BindingTableListCount = MsgPayload[8:10]
+    BindingTableListRecord = MsgPayload[10:]            
+
+    #Domoticz.Log("mgmt_bindingtable_response for %s on cluster %s: >%s< -%s" %(srcnwkid, MsgClusterID, MsgPayload, len(BindingTableListRecord)))  
+
+    if "BindingTable" not in self.ListOfDevices[srcnwkid]:
+        self.ListOfDevices[srcnwkid]["BindingTable"] = {}
+        self.ListOfDevices[srcnwkid]["BindingTable"]["Devices"] = []
+        self.ListOfDevices[srcnwkid]["BindingTable"]["SQN"] = 0
+
+    if BindingTableIndex == "00":
+        self.ListOfDevices[srcnwkid]["BindingTable"]["Devices"] = []
+
+    self.ListOfDevices[srcnwkid]["BindingTable"]["TimeStamp"] = time.time()
+    self.ListOfDevices[srcnwkid]["BindingTable"][ "BindingTable" + "TableSize"] = int(BindingTableSize, 16)
+    if Status in STATUS_CODE:
+        self.ListOfDevices[srcnwkid]["BindingTable"]["Status"] = STATUS_CODE[Status]
+    else:
+        self.ListOfDevices[srcnwkid]["BindingTable"]["Status"] = Status
+
+    if Status != "00":
+        return
+
+    idx = 0
+
+    while idx < len(BindingTableListRecord):
+        binding_record = {}
+
+        # Source
+        source_ieee = "%016x" %struct.unpack("Q", struct.pack(">Q", int( BindingTableListRecord[ idx: idx +16] , 16)))[0]
+        binding_record[source_ieee] = {}
+        idx += 16
+
+        # Source Ep
+        source_ep = BindingTableListRecord[ idx : idx +2]
+        binding_record[source_ieee]["sourceEp"] = source_ep
+        idx += 2
+
+        # Cluster
+        cluster = "%04x" %struct.unpack("H", struct.pack(">H", int( BindingTableListRecord[ idx: idx +4] , 16)))[0]
+        binding_record[source_ieee]["Cluster"] = cluster
+        idx += 4
+
+        # Address mode of Target
+        addr_mode = BindingTableListRecord[ idx: idx +2 ]
+        idx += 2
+
+        if addr_mode == '03': # IEEE
+            dest_ieee = "%016x" %struct.unpack("Q", struct.pack(">Q", int( BindingTableListRecord[ idx: idx +16] , 16)))[0]
+            idx += 16
+            binding_record[source_ieee]["targetIEEE"] = dest_ieee
+            binding_record[source_ieee]["targetNickName"] = get_device_nickname( self, Ieee=dest_ieee)
+            
+            dest_ep = BindingTableListRecord[ idx: idx+2]
+            idx += 2
+            binding_record[source_ieee]["targetEp"] = dest_ep
+            
+        elif addr_mode == '02': # Short Id
+            shortid = "%04x" %struct.unpack("H", struct.pack(">H", int( BindingTableListRecord[ idx: idx +4] , 16)))[0]
+            idx += 4
+            binding_record[source_ieee]["targetNwkId"] = shortid
+            binding_record[source_ieee]["targetNickName"] = get_device_nickname( self, NwkId=shortid)
+            
+            dest_ep = BindingTableListRecord[ idx: idx+2]
+            idx += 2
+            binding_record[source_ieee]["targetEp"] = dest_ep
+            
+        elif addr_mode == '01': # Group no EndPoint
+            shortid = "%04x" %struct.unpack("H", struct.pack(">H", int( BindingTableListRecord[ idx: idx +4] , 16)))[0]
+            binding_record[source_ieee]["targetGroupId"] = shortid
+            idx += 4
+
+        self.ListOfDevices[srcnwkid]["BindingTable"]["Devices"].append(binding_record)
+
+    if int(BindingTableIndex, 16) + int(BindingTableListCount, 16) < int(BindingTableSize, 16):
+        mgt_routing_req(self, srcnwkid, "%02x" % (int(BindingTableIndex, 16) + int(BindingTableListCount, 16)))

@@ -10,61 +10,32 @@
 
 """
 
-import Domoticz
 import binascii
-
 # import time
 import struct
-
 from time import time
 
-from Modules.zigateConsts import (
-    LEGRAND_REMOTE_SHUTTER,
-    LEGRAND_REMOTE_SWITCHS,
-    LEGRAND_REMOTES,
-    ZONE_TYPE,
-)
-
+import Domoticz
 from Modules.domoMaj import MajDomoDevice
-from Modules.domoTools import timedOutDevice, Update_Battery_Device
-from Modules.tools import (
-    DeviceExist,
-    getEPforClusterType,
-    is_hex,
-    voltage2batteryP,
-    checkAttribute,
-    checkAndStoreAttributeValue,
-    set_status_datastruct,
-    set_timestamp_datastruct,
-    # get_isqn_datastruct,
-)
+from Modules.domoTools import Update_Battery_Device, timedOutDevice
+from Modules.lumi import (AqaraOppleDecoding0012, cube_decode, decode_vibr,
+                          decode_vibrAngle, readLumiLock, readXiaomiCluster)
+from Modules.tools import (DeviceExist,  # get_isqn_datastruct,
+                           checkAndStoreAttributeValue, checkAttribute,
+                           getEPforClusterType, is_hex, set_status_datastruct,
+                           set_timestamp_datastruct, voltage2batteryP)
+from Modules.tuya import (TUYA_2GANGS_SWITCH_MANUFACTURER,
+                          TUYA_CURTAIN_MAUFACTURER, TUYA_DIMMER_MANUFACTURER,
+                          TUYA_ENERGY_MANUFACTURER, TUYA_SIREN_MANUFACTURER,
+                          TUYA_SMARTAIR_MANUFACTURER, TUYA_SWITCH_MANUFACTURER,
+                          TUYA_THERMOSTAT_MANUFACTURER, TUYA_TS0601_MODEL_NAME,
+                          TUYA_WATER_TIMER, TUYA_eTRV1_MANUFACTURER,
+                          TUYA_eTRV2_MANUFACTURER, TUYA_eTRV3_MANUFACTURER)
+from Modules.zigateConsts import (LEGRAND_REMOTE_SHUTTER,
+                                  LEGRAND_REMOTE_SWITCHS, LEGRAND_REMOTES,
+                                  ZONE_TYPE)
 
 # from Classes.Transport.sqnMgmt import sqn_get_internal_sqn_from_app_sqn, TYPE_APP_ZCL
-
-from Modules.lumi import (
-    AqaraOppleDecoding0012,
-    readXiaomiCluster,
-    cube_decode,
-    decode_vibr,
-    decode_vibrAngle,
-    readLumiLock,
-)
-
-from Modules.tuya import (
-    TUYA_TS0601_MODEL_NAME,
-    TUYA_SIREN_MANUFACTURER,
-    TUYA_DIMMER_MANUFACTURER,
-    TUYA_ENERGY_MANUFACTURER,
-    TUYA_SWITCH_MANUFACTURER,
-    TUYA_2GANGS_SWITCH_MANUFACTURER,
-    TUYA_CURTAIN_MAUFACTURER,
-    TUYA_THERMOSTAT_MANUFACTURER,
-    TUYA_eTRV1_MANUFACTURER,
-    TUYA_eTRV2_MANUFACTURER,
-    TUYA_eTRV3_MANUFACTURER,
-    TUYA_SMARTAIR_MANUFACTURER,
-    TUYA_WATER_TIMER,
-)
 
 
 def decodeAttribute(self, AttType, Attribute, handleErrors=False):
@@ -208,8 +179,7 @@ def ReadCluster(
     self.log.logging(
         "Cluster",
         "Debug",
-        "ReadCluster - %s - %s/%s AttrId: %s AttrType: %s Attsize: %s Status: %s AttrValue: %s"
-        % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgAttrStatus, MsgClusterData),
+        "ReadCluster - %s - %s/%s AttrId: %s AttrType: %s Attsize: %s Status: %s AttrValue: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgAttrStatus, MsgClusterData),
         MsgSrcAddr,
     )
 
@@ -219,8 +189,7 @@ def ReadCluster(
         self.log.logging(
             "Cluster",
             "Debug",
-            "ReadCluster - Status %s for addr: %s/%s on cluster/attribute %s/%s"
-            % (MsgAttrStatus, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID),
+            "ReadCluster - Status %s for addr: %s/%s on cluster/attribute %s/%s" % (MsgAttrStatus, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID),
             nwkid=MsgSrcAddr,
         )
         self.statistics._clusterKO += 1
@@ -360,9 +329,7 @@ def Cluster0000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
         _manufcode = str(decodeAttribute(self, MsgAttType, MsgClusterData[0:idx], handleErrors=True))
         self.log.logging("Cluster", "Debug", "ReadCluster - 0x0000 - Manufacturer: " + str(_manufcode), MsgSrcAddr)
-        self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId][MsgAttrID] = str(
-            decodeAttribute(self, MsgAttType, MsgClusterData, handleErrors=True)
-        )
+        self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute(self, MsgAttType, MsgClusterData, handleErrors=True))
         if is_hex(_manufcode):
             self.ListOfDevices[MsgSrcAddr]["Manufacturer"] = _manufcode
         else:
@@ -379,9 +346,7 @@ def Cluster0000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             idx += 2
 
         # decode the Attribute
-        AttrModelName = decodeAttribute(
-            self, MsgAttType, MsgClusterData[0:idx], handleErrors=True
-        )  # In case there is an error while decoding then return ''
+        AttrModelName = decodeAttribute(self, MsgAttType, MsgClusterData[0:idx], handleErrors=True)  # In case there is an error while decoding then return ''
 
         # Continue Cleanup and remove '/'
         modelName = AttrModelName.replace("/", "")
@@ -403,7 +368,7 @@ def Cluster0000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             elif manufacturer_name == "_TZ3000_pmz6mjyu":
                 # MOES MS-104BZ-1
                 modelName = "TS011F-2Gang-switches"
-            elif manufacturer_name in ("_TZ3000_cphmq0q7", "_TZ3000_ew3ldmgx", "_TZ3000_dpo1ysak") :
+            elif manufacturer_name in ("_TZ3000_cphmq0q7", "_TZ3000_ew3ldmgx", "_TZ3000_dpo1ysak"):
                 modelName = "TS011F-plug"
 
         elif modelName == "AC211":
@@ -491,9 +456,7 @@ def Cluster0000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             )
 
         elif modelName == "TS0003":
-            if "Manufacturer Name" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Manufacturer Name"] in (
-                "_TYZB01_ncutbjdi",
-            ):
+            if "Manufacturer Name" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Manufacturer Name"] in ("_TYZB01_ncutbjdi",):
                 # QS-Zigbee-S05-LN
                 modelName += "-QS-Zigbee-S05-LN"
 
@@ -538,8 +501,7 @@ def Cluster0000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
                     self.log.logging(
                         "Cluster",
                         "Debug",
-                        "ReadCluster - %s / %s - %s %s is already provisioned in Domoticz"
-                        % (MsgClusterId, MsgAttrID, MsgSrcAddr, modelName),
+                        "ReadCluster - %s / %s - %s %s is already provisioned in Domoticz" % (MsgClusterId, MsgAttrID, MsgSrcAddr, modelName),
                         MsgSrcAddr,
                     )
 
@@ -564,8 +526,7 @@ def Cluster0000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             self.log.logging(
                 "Cluster",
                 "Error",
-                "ReadCluster - %s / %s - no action as it is a different Model Name than registered %s"
-                % (MsgClusterId, MsgAttrID, modelName),
+                "ReadCluster - %s / %s - no action as it is a different Model Name than registered %s" % (MsgClusterId, MsgAttrID, modelName),
                 MsgSrcAddr,
             )
             return
@@ -630,10 +591,7 @@ def Cluster0000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
                             continue
                         for attr in _BackupEp[Ep][cluster]:
                             if attr in self.ListOfDevices[MsgSrcAddr]["Ep"][Ep][cluster]:
-                                if (
-                                    self.ListOfDevices[MsgSrcAddr]["Ep"][Ep][cluster][attr] == ""
-                                    or self.ListOfDevices[MsgSrcAddr]["Ep"][Ep][cluster][attr] == {}
-                                ):
+                                if self.ListOfDevices[MsgSrcAddr]["Ep"][Ep][cluster][attr] == "" or self.ListOfDevices[MsgSrcAddr]["Ep"][Ep][cluster][attr] == {}:
                                     self.ListOfDevices[MsgSrcAddr]["Ep"][Ep][cluster][attr] = _BackupEp[Ep][cluster][attr]
                             else:
                                 self.ListOfDevices[MsgSrcAddr]["Ep"][Ep][cluster][attr] = _BackupEp[Ep][cluster][attr]
@@ -909,8 +867,7 @@ def Cluster0000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Log",
-            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s "
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
         self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute(self, MsgAttType, MsgClusterData))
@@ -955,19 +912,14 @@ def Cluster0001(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Debug",
-            "readCluster 0001 %s Alarm Mask: UnderVoltage: %s OverVoltage: %s MainPowerLost: %s"
-            % (MsgSrcAddr, _undervoltage, _overvoltage, _mainpowerlost),
+            "readCluster 0001 %s Alarm Mask: UnderVoltage: %s OverVoltage: %s MainPowerLost: %s" % (MsgSrcAddr, _undervoltage, _overvoltage, _mainpowerlost),
             MsgSrcAddr,
         )
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
 
     elif MsgAttrID == "0007":  # Power Source
         if MsgClusterData == "01":
-            if (
-                "Model" in self.ListOfDevices[MsgSrcAddr]
-                and self.ListOfDevices[MsgSrcAddr]["Model"] != {}
-                and self.ListOfDevices[MsgSrcAddr]["Model"] == "TI0001"
-            ):
+            if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] != {} and self.ListOfDevices[MsgSrcAddr]["Model"] == "TI0001":
                 return
 
             self.ListOfDevices[MsgSrcAddr]["PowerSource"] = "Main"
@@ -1041,8 +993,7 @@ def Cluster0001(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Debug",
-            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s "
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
 
@@ -1120,9 +1071,7 @@ def UpdateBatteryAttribute(self, Devices, MsgSrcAddr, MsgSrcEp):
     ) + LEGRAND_REMOTES
     BATTERY_45_VOLTS = ("EH-ZB-RTS",)
 
-    BATTERY_BASED_DEVICES = (
-        BATTERY_200PERCENT + BATTERY_3VOLTS + BATTERY_15_VOLTS + BATTERY_30_VOLTS + BATTERY_45_VOLTS + XIAOMI_BATTERY_DEVICES
-    )
+    BATTERY_BASED_DEVICES = BATTERY_200PERCENT + BATTERY_3VOLTS + BATTERY_15_VOLTS + BATTERY_30_VOLTS + BATTERY_45_VOLTS + XIAOMI_BATTERY_DEVICES
 
     if self.ListOfDevices[MsgSrcAddr]["PowerSource"] == "Main" or self.ListOfDevices[MsgSrcAddr]["MacCapa"] in (
         "84",
@@ -1145,23 +1094,16 @@ def UpdateBatteryAttribute(self, Devices, MsgSrcAddr, MsgSrcEp):
     if "0010" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["0001"]:
         battVolt = float(self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["0001"]["0010"])
 
-    if (
-        "0020" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["0001"]
-        and self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["0001"]["0020"] != {}
-    ):
+    if "0020" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["0001"] and self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["0001"]["0020"] != {}:
         battRemainingVolt = float(self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["0001"]["0020"])
 
-    if (
-        "0021" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["0001"]
-        and self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["0001"]["0021"] != {}
-    ):
+    if "0021" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["0001"] and self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["0001"]["0021"] != {}:
         battRemainPer = float(self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["0001"]["0021"])
 
     self.log.logging(
         "Cluster",
         "Debug",
-        "readCluster 0001 - Device: %s Model: %s mainVolt:%s , battVolt:%s, battRemainingVolt: %s, battRemainPer:%s "
-        % (MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]["Model"], mainVolt, battVolt, battRemainingVolt, battRemainPer),
+        "readCluster 0001 - Device: %s Model: %s mainVolt:%s , battVolt:%s, battRemainingVolt: %s, battRemainPer:%s " % (MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]["Model"], mainVolt, battVolt, battRemainingVolt, battRemainPer),
         MsgSrcAddr,
     )
 
@@ -1218,8 +1160,7 @@ def UpdateBatteryAttribute(self, Devices, MsgSrcAddr, MsgSrcEp):
         self.log.logging(
             "Cluster",
             "Debug",
-            "readCluster 0001 - Device: %s Model: %s Updating battery %s to %s"
-            % (MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]["Model"], self.ListOfDevices[MsgSrcAddr]["Battery"], value),
+            "readCluster 0001 - Device: %s Model: %s Updating battery %s to %s" % (MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]["Model"], self.ListOfDevices[MsgSrcAddr]["Battery"], value),
             MsgSrcAddr,
         )
         if value != self.ListOfDevices[MsgSrcAddr]["Battery"]:
@@ -1229,8 +1170,7 @@ def UpdateBatteryAttribute(self, Devices, MsgSrcAddr, MsgSrcEp):
             self.log.logging(
                 "Cluster",
                 "Debug",
-                "readCluster 0001 - Device: %s Model: %s Updating battery to %s"
-                % (MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]["Model"], value),
+                "readCluster 0001 - Device: %s Model: %s Updating battery to %s" % (MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]["Model"], value),
                 MsgSrcAddr,
             )
 
@@ -1240,8 +1180,7 @@ def Cluster0003(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     self.log.logging(
         "Cluster",
         "Debug",
-        "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s"
-        % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+        "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
         MsgSrcAddr,
     )
 
@@ -1263,8 +1202,7 @@ def Cluster0005(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Debug",
-            "readCluster - %s - %s/%s Scene Count: %s %s %s %s "
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "readCluster - %s - %s/%s Scene Count: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
 
@@ -1272,8 +1210,7 @@ def Cluster0005(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Debug",
-            "readCluster - %s - %s/%s Scene Cuurent Scene: %s %s %s %s "
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "readCluster - %s - %s/%s Scene Cuurent Scene: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
 
@@ -1281,8 +1218,7 @@ def Cluster0005(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Debug",
-            "readCluster - %s - %s/%s Scene Current Group: %s %s %s %s "
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "readCluster - %s - %s/%s Scene Current Group: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
 
@@ -1290,8 +1226,7 @@ def Cluster0005(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Debug",
-            "readCluster - %s - %s/%s Scene Valid : %s %s %s %s "
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "readCluster - %s - %s/%s Scene Valid : %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
 
@@ -1299,8 +1234,7 @@ def Cluster0005(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Debug",
-            "readCluster - %s - %s/%s Scene NameSupport: %s %s %s %s "
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "readCluster - %s - %s/%s Scene NameSupport: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
 
@@ -1308,8 +1242,7 @@ def Cluster0005(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Debug",
-            "readCluster - %s - %s/%s Scene Last Configured By : %s %s %s %s "
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "readCluster - %s - %s/%s Scene Last Configured By : %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
 
@@ -1317,8 +1250,7 @@ def Cluster0005(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Debug",
-            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s "
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
 
@@ -1344,8 +1276,7 @@ def Cluster0006(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             self.log.logging(
                 "Cluster",
                 "Debug",
-                "ReadCluster - ClusterId=%s - Unexpected EP, %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, Value: %s"
-                % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+                "ReadCluster - ClusterId=%s - Unexpected EP, %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, Value: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
                 MsgSrcAddr,
             )
             return
@@ -1359,8 +1290,7 @@ def Cluster0006(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             self.log.logging(
                 "Cluster",
                 "Debug",
-                "ReadCluster - ClusterId=%s - not processed EP, %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, Value: %s"
-                % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+                "ReadCluster - ClusterId=%s - not processed EP, %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, Value: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
                 MsgSrcAddr,
             )
             return
@@ -1369,8 +1299,7 @@ def Cluster0006(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
                 self.log.logging(
                     "Cluster",
                     "Log",
-                    "ReadCluster - ClusterId=%s - not processed %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, Value: %s"
-                    % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+                    "ReadCluster - ClusterId=%s - not processed %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, Value: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
                     MsgSrcAddr,
                 )
                 return
@@ -1403,8 +1332,7 @@ def Cluster0006(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             self.log.logging(
                 "Cluster",
                 "Log",
-                "ReadCluster - ClusterId=0006 - %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, : %s"
-                % (MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+                "ReadCluster - ClusterId=0006 - %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, : %s" % (MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
                 MsgSrcAddr,
             )
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgClusterData)
@@ -1416,8 +1344,7 @@ def Cluster0006(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             self.log.logging(
                 "Cluster",
                 "Debug",
-                "ReadCluster - ClusterId=0006 - %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, : %s"
-                % (MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+                "ReadCluster - ClusterId=0006 - %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, : %s" % (MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
                 MsgSrcAddr,
             )
 
@@ -1438,9 +1365,7 @@ def Cluster0006(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             "ReadCluster - ClusterId=0006 - Global Scene Control Attr: %s Value: %s" % (MsgAttrID, MsgClusterData),
             MsgSrcAddr,
         )
-        checkAndStoreAttributeValue(
-            self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, str(decodeAttribute(self, MsgAttType, MsgClusterData))
-        )
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, str(decodeAttribute(self, MsgAttType, MsgClusterData)))
 
     elif MsgAttrID == "4001":  # On Time
         self.log.logging(
@@ -1449,9 +1374,7 @@ def Cluster0006(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             "ReadCluster - ClusterId=0006 - On Time Attr: %s Value: %s" % (MsgAttrID, MsgClusterData),
             MsgSrcAddr,
         )
-        checkAndStoreAttributeValue(
-            self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, str(decodeAttribute(self, MsgAttType, MsgClusterData))
-        )
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, str(decodeAttribute(self, MsgAttType, MsgClusterData)))
 
     elif MsgAttrID == "4002":  # Off Wait Time
         self.log.logging(
@@ -1460,9 +1383,7 @@ def Cluster0006(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             "ReadCluster - ClusterId=0006 - Off Wait Time Attr: %s Value: %s" % (MsgAttrID, MsgClusterData),
             MsgSrcAddr,
         )
-        checkAndStoreAttributeValue(
-            self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, str(decodeAttribute(self, MsgAttType, MsgClusterData))
-        )
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, str(decodeAttribute(self, MsgAttType, MsgClusterData)))
 
     elif MsgAttrID == "4003":  # Power On On Off
         self.log.logging(
@@ -1471,9 +1392,7 @@ def Cluster0006(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             "ReadCluster - ClusterId=0006 - Power On OnOff Attr: %s Value: %s" % (MsgAttrID, MsgClusterData),
             MsgSrcAddr,
         )
-        checkAndStoreAttributeValue(
-            self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, str(decodeAttribute(self, MsgAttType, MsgClusterData))
-        )
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, str(decodeAttribute(self, MsgAttType, MsgClusterData)))
 
     elif MsgAttrID == "8001":
         self.log.logging(
@@ -1482,9 +1401,7 @@ def Cluster0006(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             "ReadCluster - ClusterId=0006 - Power On OnOff Attr: %s Value: %s" % (MsgAttrID, MsgClusterData),
             MsgSrcAddr,
         )
-        checkAndStoreAttributeValue(
-            self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, str(decodeAttribute(self, MsgAttType, MsgClusterData))
-        )
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, str(decodeAttribute(self, MsgAttType, MsgClusterData)))
 
     elif MsgAttrID == "8002":
         self.log.logging(
@@ -1493,9 +1410,7 @@ def Cluster0006(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             "ReadCluster - ClusterId=0006 - Power On OnOff Attr: %s Value: %s" % (MsgAttrID, MsgClusterData),
             MsgSrcAddr,
         )
-        checkAndStoreAttributeValue(
-            self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, str(decodeAttribute(self, MsgAttType, MsgClusterData))
-        )
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, str(decodeAttribute(self, MsgAttType, MsgClusterData)))
 
     elif MsgAttrID == "8003":
         self.log.logging(
@@ -1504,9 +1419,7 @@ def Cluster0006(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             "ReadCluster - ClusterId=0006 - Power On OnOff Attr: %s Value: %s" % (MsgAttrID, MsgClusterData),
             MsgSrcAddr,
         )
-        checkAndStoreAttributeValue(
-            self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, str(decodeAttribute(self, MsgAttType, MsgClusterData))
-        )
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, str(decodeAttribute(self, MsgAttType, MsgClusterData)))
 
     elif MsgAttrID == "f000" and MsgAttType == "23" and MsgAttSize == "0004":
         value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
@@ -1554,8 +1467,7 @@ def Cluster0006(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
                 self.log.logging(
                     "Cluster",
                     "Debug",
-                    "ReadCluster - Xiaomi 0006/f000 - %s/%s %s: %s"
-                    % (MsgSrcAddr, MsgSrcEp, XIAOMI_CODE[_Xiaomi_code], int(_Xiaomi_Value, 16)),
+                    "ReadCluster - Xiaomi 0006/f000 - %s/%s %s: %s" % (MsgSrcAddr, MsgSrcEp, XIAOMI_CODE[_Xiaomi_code], int(_Xiaomi_Value, 16)),
                     MsgSrcAddr,
                 )
 
@@ -1563,8 +1475,7 @@ def Cluster0006(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             self.log.logging(
                 "Cluster",
                 "Debug",
-                "ReadCluster - Xiaomi 0006/f000 - - %s/%s Unknown Xiaomi Code %s raw data: %s (please report to @pipiche)"
-                % (MsgSrcAddr, MsgSrcEp, _Xiaomi_code, MsgClusterData),
+                "ReadCluster - Xiaomi 0006/f000 - - %s/%s Unknown Xiaomi Code %s raw data: %s (please report to @pipiche)" % (MsgSrcAddr, MsgSrcEp, _Xiaomi_code, MsgClusterData),
                 MsgSrcAddr,
             )
 
@@ -1574,21 +1485,16 @@ def Cluster0006(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             "Debug",
             "ReadCluster - ClusterId=0006 - unknown Attr: %s Value: %s" % (MsgAttrID, MsgClusterData),
         )
-        checkAndStoreAttributeValue(
-            self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, str(decodeAttribute(self, MsgAttType, MsgClusterData))
-        )
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, str(decodeAttribute(self, MsgAttType, MsgClusterData)))
 
     else:
         self.log.logging(
             "Cluster",
             "Log",
-            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s "
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
-        checkAndStoreAttributeValue(
-            self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, str(decodeAttribute(self, MsgAttType, MsgClusterData))
-        )
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, str(decodeAttribute(self, MsgAttType, MsgClusterData)))
 
 
 def Cluster0008(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
@@ -1599,20 +1505,16 @@ def Cluster0008(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     self.log.logging(
         "Cluster",
         "Debug",
-        "ReadCluster - ClusterID: %s Addr: %s MsgAttrID: %s MsgAttType: %s MsgAttSize: %s MsgClusterData: %s"
-        % (MsgClusterId, MsgSrcAddr, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+        "ReadCluster - ClusterID: %s Addr: %s MsgAttrID: %s MsgAttType: %s MsgAttSize: %s MsgClusterData: %s" % (MsgClusterId, MsgSrcAddr, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
         MsgSrcAddr,
     )
 
     if MsgAttrID == "0000":  # Current Level
-        if (
-            "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == "TI0001" and MsgSrcEp == "06"
-        ):  # Livolo switch
+        if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == "TI0001" and MsgSrcEp == "06":  # Livolo switch
             self.log.logging(
                 "Cluster",
                 "Debug",
-                "ReadCluster - ClusterId=0008 - %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, : %s"
-                % (MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+                "ReadCluster - ClusterId=0008 - %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, : %s" % (MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
                 MsgSrcAddr,
             )
             # Do nothing as the Livolo state is given by 0x0100
@@ -1676,8 +1578,7 @@ def Cluster0008(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Log",
-            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s "
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
         self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute(self, MsgAttType, MsgClusterData))
@@ -1689,8 +1590,7 @@ def Cluster0009(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     self.log.logging(
         "Cluster",
         "Log",
-        "ReadCluster 0101 - Dev: %s, EP:%s AttrID: %s, AttrType: %s, AttrSize: %s Attribute: %s Len: %s"
-        % (MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, len(MsgClusterData)),
+        "ReadCluster 0101 - Dev: %s, EP:%s AttrID: %s, AttrType: %s, AttrSize: %s Attribute: %s Len: %s" % (MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, len(MsgClusterData)),
         MsgSrcAddr,
     )
 
@@ -1701,8 +1601,7 @@ def Cluster000c(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     self.log.logging(
         "Cluster",
         "Debug",
-        "ReadCluster - ClusterID=000C - MsgSrcEp: %s MsgAttrID: %s MsgAttType: %s MsgClusterData: %s "
-        % (MsgSrcEp, MsgAttrID, MsgAttType, MsgClusterData),
+        "ReadCluster - ClusterID=000C - MsgSrcEp: %s MsgAttrID: %s MsgAttType: %s MsgClusterData: %s " % (MsgSrcEp, MsgAttrID, MsgAttType, MsgClusterData),
         MsgSrcAddr,
     )
     checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, str(decodeAttribute(self, MsgAttType, MsgClusterData)))
@@ -1720,8 +1619,7 @@ def Cluster000c(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             self.log.logging(
                 "Cluster",
                 "Log",
-                "readCluster - %s - %s/%s Xiaomi attribute: %s:  %s "
-                % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, decodeAttribute(self, MsgAttType, MsgClusterData)),
+                "readCluster - %s - %s/%s Xiaomi attribute: %s:  %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, decodeAttribute(self, MsgAttType, MsgClusterData)),
                 MsgSrcAddr,
             )
             MajDomoDevice(
@@ -1795,8 +1693,7 @@ def Cluster000c(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             self.log.logging(
                 "Cluster",
                 "Log",
-                "readCluster - %s - %s/%s unknown attribute: %s %s %s %s "
-                % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+                "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
                 MsgSrcAddr,
             )
 
@@ -1854,8 +1751,7 @@ def Cluster000c(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Log",
-            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s "
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
 
@@ -2026,8 +1922,7 @@ def Cluster000f(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Debug",
-            "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s"
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
 
@@ -2035,8 +1930,7 @@ def Cluster000f(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Log",
-            "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s"
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
 
@@ -2050,8 +1944,7 @@ def Cluster0012(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     self.log.logging(
         "Cluster",
         "Debug",
-        "readCluster - %s - %s/%s - MsgAttrID: %s MsgAttType: %s MsgAttSize: %s MsgClusterData: %s Model: %s"
-        % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, _modelName),
+        "readCluster - %s - %s/%s - MsgAttrID: %s MsgAttType: %s MsgAttSize: %s MsgClusterData: %s Model: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, _modelName),
         MsgSrcAddr,
     )
 
@@ -2125,8 +2018,7 @@ def Cluster0012(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Log",
-            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s Model: %s"
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, _modelName),
+            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s Model: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, _modelName),
             MsgSrcAddr,
         )
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
@@ -2137,8 +2029,7 @@ def Cluster0019(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     self.log.logging(
         "Cluster",
         "Log",
-        "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s"
-        % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+        "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
         MsgSrcAddr,
     )
 
@@ -2195,8 +2086,7 @@ def Cluster0100(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Debug",
-            "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s"
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
 
@@ -2207,8 +2097,7 @@ def Cluster0101(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     self.log.logging(
         "Cluster",
         "Debug",
-        "ReadCluster 0101 - Dev: %s, EP:%s AttrID: %s, AttrType: %s, AttrSize: %s Attribute: %s Len: %s"
-        % (MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, len(MsgClusterData)),
+        "ReadCluster 0101 - Dev: %s, EP:%s AttrID: %s, AttrType: %s, AttrSize: %s Attribute: %s Len: %s" % (MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, len(MsgClusterData)),
         MsgSrcAddr,
     )
 
@@ -2222,8 +2111,7 @@ def Cluster0101(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
                 self.log.logging(
                     "Cluster",
                     "Status",
-                    "%s DoorLock state %s (%s)"
-                    % (self.ListOfDevices[MsgSrcAddr]["ZDeviceName"], MsgClusterData, LOCKSTATE[MsgClusterData]),
+                    "%s DoorLock state %s (%s)" % (self.ListOfDevices[MsgSrcAddr]["ZDeviceName"], MsgClusterData, LOCKSTATE[MsgClusterData]),
                     MsgSrcAddr,
                 )
 
@@ -2238,8 +2126,7 @@ def Cluster0101(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
                 self.log.logging(
                     "Cluster",
                     "Status",
-                    "%s DoorLock state %s (%s)"
-                    % (self.ListOfDevices[MsgSrcAddr]["ZDeviceName"], MsgClusterData, LOCKSTATE[MsgClusterData]),
+                    "%s DoorLock state %s (%s)" % (self.ListOfDevices[MsgSrcAddr]["ZDeviceName"], MsgClusterData, LOCKSTATE[MsgClusterData]),
                     MsgSrcAddr,
                 )
 
@@ -2324,8 +2211,7 @@ def Cluster0101(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Debug",
-            " ReadCluster %s/%s - AttrType: %s AttrLenght: %s AttrData: %s Vibration ==> angleX: %s angleY: %s angleZ: %s"
-            % (MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, angleX, angleY, angleZ),
+            " ReadCluster %s/%s - AttrType: %s AttrLenght: %s AttrData: %s Vibration ==> angleX: %s angleY: %s angleZ: %s" % (MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, angleX, angleY, angleZ),
             MsgSrcAddr,
         )
         MajDomoDevice(
@@ -2350,8 +2236,7 @@ def Cluster0101(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Log",
-            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s "
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
 
@@ -2367,8 +2252,7 @@ def Cluster0102(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     self.log.logging(
         "Cluster",
         "Debug",
-        "ReadCluster - %s - %s/%s - Attribute: %s, Type: %s, Size: %s Data: %s-%s"
-        % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
+        "ReadCluster - %s - %s/%s - Attribute: %s, Type: %s, Size: %s Data: %s-%s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
         MsgSrcAddr,
     )
 
@@ -2376,8 +2260,7 @@ def Cluster0102(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Debug",
-            "ReadCluster - %s - %s/%s - Window Covering Type: %s, Type: %s, Size: %s Data: %s-%s"
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
+            "ReadCluster - %s - %s/%s - Window Covering Type: %s, Type: %s, Size: %s Data: %s-%s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
             MsgSrcAddr,
         )
 
@@ -2399,8 +2282,7 @@ def Cluster0102(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Debug",
-            "ReadCluster - %s - %s/%s - Physical close limit lift cm: %s, Type: %s, Size: %s Data: %s-%s"
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
+            "ReadCluster - %s - %s/%s - Physical close limit lift cm: %s, Type: %s, Size: %s Data: %s-%s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
             MsgSrcAddr,
         )
 
@@ -2408,8 +2290,7 @@ def Cluster0102(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Debug",
-            "ReadCluster - %s - %s/%s - Physical close limit Tilt cm: %s, Type: %s, Size: %s Data: %s-%s"
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
+            "ReadCluster - %s - %s/%s - Physical close limit Tilt cm: %s, Type: %s, Size: %s Data: %s-%s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
             MsgSrcAddr,
         )
 
@@ -2417,8 +2298,7 @@ def Cluster0102(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Debug",
-            "ReadCluster - %s - %s/%s - Curent position Lift in cm: %s, Type: %s, Size: %s Data: %s-%s"
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
+            "ReadCluster - %s - %s/%s - Curent position Lift in cm: %s, Type: %s, Size: %s Data: %s-%s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
             MsgSrcAddr,
         )
 
@@ -2426,8 +2306,7 @@ def Cluster0102(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Debug",
-            "ReadCluster - %s - %s/%s - Curent position Tilt in cm: %s, Type: %s, Size: %s Data: %s-%s"
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
+            "ReadCluster - %s - %s/%s - Curent position Tilt in cm: %s, Type: %s, Size: %s Data: %s-%s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
             MsgSrcAddr,
         )
 
@@ -2435,8 +2314,7 @@ def Cluster0102(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Debug",
-            "ReadCluster - %s - %s/%s - Number of Actuations – Lift: %s, Type: %s, Size: %s Data: %s-%s"
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
+            "ReadCluster - %s - %s/%s - Number of Actuations – Lift: %s, Type: %s, Size: %s Data: %s-%s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
             MsgSrcAddr,
         )
 
@@ -2444,8 +2322,7 @@ def Cluster0102(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Debug",
-            "ReadCluster - %s - %s/%s - Number of Actuations – Tilt: %s, Type: %s, Size: %s Data: %s-%s"
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
+            "ReadCluster - %s - %s/%s - Number of Actuations – Tilt: %s, Type: %s, Size: %s Data: %s-%s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
             MsgSrcAddr,
         )
 
@@ -2462,8 +2339,7 @@ def Cluster0102(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             "Cluster",
             self,
             "Debug",
-            "ReadCluster - %s - %s/%s - Config Status: %s, Type: %s, Size: %s Data: %s-%s"
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
+            "ReadCluster - %s - %s/%s - Config Status: %s, Type: %s, Size: %s Data: %s-%s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
             MsgSrcAddr,
         )
 
@@ -2471,8 +2347,7 @@ def Cluster0102(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Debug",
-            "ReadCluster 0x%s - %s - %s/%s - Current position lift in %%: %s, Type: %s, Size: %s Data: %s-%s"
-            % (Source, MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
+            "ReadCluster 0x%s - %s - %s/%s - Current position lift in %%: %s, Type: %s, Size: %s Data: %s-%s" % (Source, MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
             MsgSrcAddr,
         )
 
@@ -2498,16 +2373,11 @@ def Cluster0102(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
                 # Value: 100 -> Closed
                 # Value: 0   -> Open
                 # Value: 50  -> Stopped
-                if (
-                    "Param" in self.ListOfDevices[MsgSrcAddr]
-                    and "netatmoInvertShutter" in self.ListOfDevices[MsgSrcAddr]["Param"]
-                    and self.ListOfDevices[MsgSrcAddr]["Param"]["netatmoInvertShutter"]
-                ):
+                if "Param" in self.ListOfDevices[MsgSrcAddr] and "netatmoInvertShutter" in self.ListOfDevices[MsgSrcAddr]["Param"] and self.ListOfDevices[MsgSrcAddr]["Param"]["netatmoInvertShutter"]:
                     self.log.logging(
                         "Cluster",
                         "Debug",
-                        "ReadCluster - %s - %s/%s - Model: %s ==>INVERSE==="
-                        % (MsgAttrID, MsgSrcAddr, MsgSrcEp, self.ListOfDevices[MsgSrcAddr]["Model"]),
+                        "ReadCluster - %s - %s/%s - Model: %s ==>INVERSE===" % (MsgAttrID, MsgSrcAddr, MsgSrcEp, self.ListOfDevices[MsgSrcAddr]["Model"]),
                         MsgSrcAddr,
                     )
                     value = 100 - value
@@ -2515,8 +2385,7 @@ def Cluster0102(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Debug",
-            "ReadCluster - %s - %s/%s - Shutter switch with neutral After correction value: %s"
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, value),
+            "ReadCluster - %s - %s/%s - Shutter switch with neutral After correction value: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, value),
             MsgSrcAddr,
         )
 
@@ -2526,8 +2395,7 @@ def Cluster0102(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Debug",
-            "ReadCluster - %s - %s/%s - Curent position Tilte in %%: %s, Type: %s, Size: %s Data: %s-%s"
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
+            "ReadCluster - %s - %s/%s - Curent position Tilte in %%: %s, Type: %s, Size: %s Data: %s-%s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
             MsgSrcAddr,
         )
 
@@ -2535,8 +2403,7 @@ def Cluster0102(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Debug",
-            "ReadCluster - %s - %s/%s - Open limit lift cm: %s, Type: %s, Size: %s Data: %s-%s"
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
+            "ReadCluster - %s - %s/%s - Open limit lift cm: %s, Type: %s, Size: %s Data: %s-%s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
             MsgSrcAddr,
         )
 
@@ -2544,8 +2411,7 @@ def Cluster0102(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Debug",
-            "ReadCluster - %s - %s/%s - Closed limit lift cm: %s, Type: %s, Size: %s Data: %s-%s"
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
+            "ReadCluster - %s - %s/%s - Closed limit lift cm: %s, Type: %s, Size: %s Data: %s-%s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
             MsgSrcAddr,
         )
 
@@ -2553,8 +2419,7 @@ def Cluster0102(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Debug",
-            "ReadCluster - %s - %s/%s - Velocity lift: %s, Type: %s, Size: %s Data: %s-%s"
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
+            "ReadCluster - %s - %s/%s - Velocity lift: %s, Type: %s, Size: %s Data: %s-%s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
             MsgSrcAddr,
         )
         self.log.logging("Cluster", "Debug", "Velocity", MsgSrcAddr)
@@ -2563,8 +2428,7 @@ def Cluster0102(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Debug",
-            "ReadCluster - %s - %s/%s - Windows Covering mode: %s, Type: %s, Size: %s Data: %s-%s"
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
+            "ReadCluster - %s - %s/%s - Windows Covering mode: %s, Type: %s, Size: %s Data: %s-%s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
             MsgSrcAddr,
         )
 
@@ -2576,8 +2440,7 @@ def Cluster0102(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Log",
-            "ReadCluster - %s - %s/%s - Tuya Window Cover Status: %s, Type: %s, Size: %s Data: %s-%s"
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
+            "ReadCluster - %s - %s/%s - Tuya Window Cover Status: %s, Type: %s, Size: %s Data: %s-%s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
             MsgSrcAddr,
         )
 
@@ -2585,8 +2448,7 @@ def Cluster0102(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Debug",
-            "ReadCluster - %s - %s/%s - AttributeID: %s, Type: %s, Size: %s Data: %s-%s"
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
+            "ReadCluster - %s - %s/%s - AttributeID: %s, Type: %s, Size: %s Data: %s-%s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
             MsgSrcAddr,
         )
 
@@ -2594,8 +2456,7 @@ def Cluster0102(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Log",
-            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s "
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
 
@@ -2606,8 +2467,7 @@ def Cluster0201(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     self.log.logging(
         "Cluster",
         "Debug",
-        "ReadCluster - 0201 - %s/%s AttrId: %s AttrType: %s AttSize: %s Data: %s"
-        % (MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+        "ReadCluster - 0201 - %s/%s AttrId: %s AttrType: %s AttSize: %s Data: %s" % (MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
         MsgSrcAddr,
     )
 
@@ -2632,12 +2492,12 @@ def Cluster0201(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         ValueTemp = round(int(value) / 100, 2)
         if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == "TAFFETAS2 D1.00P1.01Z1.00":
             # This is use to communicate the SetPoint, so let's update the SetPoint on Cluster Thermostat
-            checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, "0201", "0012", int(value) )
+            checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, "0201", "0012", int(value))
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0201", ValueTemp, Attribute_="0012")
         else:
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0402", ValueTemp)
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, ValueTemp)
-            checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, "0402", "0000", int( value) )
+            checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, "0402", "0000", int(value))
         self.log.logging("Cluster", "Debug", "ReadCluster - 0201 - Local Temp: %s" % ValueTemp, MsgSrcAddr)
 
     elif MsgAttrID == "0001":  # Outdoor Temperature
@@ -3014,8 +2874,7 @@ def Cluster0201(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
                 self.log.logging(
                     "Cluster",
                     "Debug",
-                    "readCluster - %s - %s/%s Schneider Thermostat Mode %s "
-                    % (MsgClusterId, MsgSrcAddr, MsgSrcEp, THERMOSTAT_MODE[MsgClusterData]),
+                    "readCluster - %s - %s/%s Schneider Thermostat Mode %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, THERMOSTAT_MODE[MsgClusterData]),
                     MsgSrcAddr,
                 )
             else:
@@ -3033,8 +2892,7 @@ def Cluster0201(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             self.log.logging(
                 "Cluster",
                 "Debug",
-                "readCluster - %s - %s/%s Schneider ATTRIBUTE_THERMOSTAT_HACT_CONFIG  %s "
-                % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData),
+                "readCluster - %s - %s/%s Schneider ATTRIBUTE_THERMOSTAT_HACT_CONFIG  %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData),
                 MsgSrcAddr,
             )
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0201", MsgClusterData, Attribute_=MsgAttrID)
@@ -3044,8 +2902,7 @@ def Cluster0201(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             self.log.logging(
                 "Cluster",
                 "Debug",
-                "readCluster - %s - %s/%s Schneider ATTRIBUTE_THERMOSTAT_OPEN_WINDOW_DETECTION_STATUS  %s "
-                % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData),
+                "readCluster - %s - %s/%s Schneider ATTRIBUTE_THERMOSTAT_OPEN_WINDOW_DETECTION_STATUS  %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData),
                 MsgSrcAddr,
             )
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
@@ -3055,8 +2912,7 @@ def Cluster0201(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             self.log.logging(
                 "Cluster",
                 "Debug",
-                "readCluster - %s - %s/%s Schneider ATTRIBUTE_THERMOSTAT_OPEN_WINDOW_DETECTION_THRESHOLD  %s "
-                % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData),
+                "readCluster - %s - %s/%s Schneider ATTRIBUTE_THERMOSTAT_OPEN_WINDOW_DETECTION_THRESHOLD  %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData),
                 MsgSrcAddr,
             )
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
@@ -3065,8 +2921,7 @@ def Cluster0201(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             self.log.logging(
                 "Cluster",
                 "Debug",
-                "readCluster - %s - %s/%s Schneider ATTRIBUTE_THERMOSTAT_OPEN_WINDOW_DETECTION_INTERVAL  %s "
-                % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData),
+                "readCluster - %s - %s/%s Schneider ATTRIBUTE_THERMOSTAT_OPEN_WINDOW_DETECTION_INTERVAL  %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData),
                 MsgSrcAddr,
             )
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
@@ -3110,8 +2965,7 @@ def Cluster0201(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Debug",
-            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s "
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
@@ -3123,8 +2977,7 @@ def Cluster0202(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     self.log.logging(
         "Cluster",
         "Debug",
-        "ReadCluster - 0202 - %s/%s AttrId: %s AttrType: %s AttSize: %s Data: %s"
-        % (MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+        "ReadCluster - 0202 - %s/%s AttrId: %s AttrType: %s AttSize: %s Data: %s" % (MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
         MsgSrcAddr,
     )
 
@@ -3149,8 +3002,7 @@ def Cluster0204(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     self.log.logging(
         "Cluster",
         "Debug",
-        "ReadCluster 0204 - Addr: %s Ep: %s AttrId: %s AttrType: %s AttSize: %s Data: %s"
-        % (MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+        "ReadCluster 0204 - Addr: %s Ep: %s AttrId: %s AttrType: %s AttSize: %s Data: %s" % (MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
         MsgSrcAddr,
     )
 
@@ -3182,8 +3034,7 @@ def Cluster0204(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Debug",
-            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s "
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
 
@@ -3231,8 +3082,7 @@ def Cluster0300(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Debug",
-            "readCluster - %s - %s/%s Color Mode: %s %s %s %s "
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "readCluster - %s - %s/%s Color Mode: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
         self.ListOfDevices[MsgSrcAddr]["ColorInfos"]["ColorMode"] = value
@@ -3254,8 +3104,7 @@ def Cluster0300(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Debug",
-            "readCluster - %s - %s/%s Attribute: %s %s %s %s "
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "readCluster - %s - %s/%s Attribute: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
 
@@ -3270,104 +3119,91 @@ def Cluster0300(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Debug",
-            "readCluster - %s - %s/%s Attribute: %s %s %s %s "
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "readCluster - %s - %s/%s Attribute: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
     elif MsgAttrID == "001a":
         self.log.logging(
             "Cluster",
             "Debug",
-            "readCluster - %s - %s/%s Attribute: %s %s %s %s "
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "readCluster - %s - %s/%s Attribute: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
     elif MsgAttrID == "0032":
         self.log.logging(
             "Cluster",
             "Debug",
-            "readCluster - %s - %s/%s Attribute: %s %s %s %s "
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "readCluster - %s - %s/%s Attribute: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
     elif MsgAttrID == "0033":
         self.log.logging(
             "Cluster",
             "Debug",
-            "readCluster - %s - %s/%s Attribute: %s %s %s %s "
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "readCluster - %s - %s/%s Attribute: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
     elif MsgAttrID == "0034":
         self.log.logging(
             "Cluster",
             "Debug",
-            "readCluster - %s - %s/%s Attribute: %s %s %s %s "
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "readCluster - %s - %s/%s Attribute: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
     elif MsgAttrID == "0036":
         self.log.logging(
             "Cluster",
             "Debug",
-            "readCluster - %s - %s/%s Attribute: %s %s %s %s "
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "readCluster - %s - %s/%s Attribute: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
     elif MsgAttrID == "0037":
         self.log.logging(
             "Cluster",
             "Debug",
-            "readCluster - %s - %s/%s Attribute: %s %s %s %s "
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "readCluster - %s - %s/%s Attribute: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
     elif MsgAttrID == "4001":
         self.log.logging(
             "Cluster",
             "Debug",
-            "readCluster - %s - %s/%s Attribute: %s %s %s %s "
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "readCluster - %s - %s/%s Attribute: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
     elif MsgAttrID == "400a":
         self.log.logging(
             "Cluster",
             "Debug",
-            "readCluster - %s - %s/%s Attribute: %s %s %s %s "
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "readCluster - %s - %s/%s Attribute: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
     elif MsgAttrID == "400b":
         self.log.logging(
             "Cluster",
             "Debug",
-            "readCluster - %s - %s/%s Attribute: %s %s %s %s "
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "readCluster - %s - %s/%s Attribute: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
     elif MsgAttrID == "400c":
         self.log.logging(
             "Cluster",
             "Debug",
-            "readCluster - %s - %s/%s Attribute: %s %s %s %s "
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "readCluster - %s - %s/%s Attribute: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
     elif MsgAttrID == "400d":
         self.log.logging(
             "Cluster",
             "Debug",
-            "readCluster - %s - %s/%s Attribute: %s %s %s %s "
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "readCluster - %s - %s/%s Attribute: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
     elif MsgAttrID == "4010":
         self.log.logging(
             "Cluster",
             "Debug",
-            "readCluster - %s - %s/%s Attribute: %s %s %s %s "
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "readCluster - %s - %s/%s Attribute: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
 
@@ -3375,8 +3211,7 @@ def Cluster0300(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Log",
-            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s "
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
 
@@ -3405,8 +3240,7 @@ def Cluster0301(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Log",
-            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s "
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
 
@@ -3418,8 +3252,7 @@ def Cluster0400(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     self.log.logging(
         "Cluster",
         "Debug",
-        "readCluster - %s - %s/%s  Attr: %s Type: %s Size: %s %s "
-        % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+        "readCluster - %s - %s/%s  Attr: %s Type: %s Size: %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
         MsgSrcAddr,
     )
     value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
@@ -3525,8 +3358,7 @@ def Cluster0402(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Debug",
-            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s "
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
 
@@ -3572,8 +3404,7 @@ def Cluster0403(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Log",
-            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s "
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
 
@@ -3613,8 +3444,7 @@ def Cluster0405(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Log",
-            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s "
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
 
@@ -3637,8 +3467,7 @@ def Cluster0406(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Debug",
-            "ReadCluster - %s - NwkId: %s Ep: %s AttrId: %s AttyType: %s Attsize: %s AttrValue: %s"
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "ReadCluster - %s - NwkId: %s Ep: %s AttrId: %s AttyType: %s Attsize: %s AttrValue: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
         self.log.logging("Cluster", "Debug", "ReadCluster - ClusterId=0406 - Sensor Type: " + str(MsgClusterData), MsgSrcAddr)
@@ -3647,8 +3476,7 @@ def Cluster0406(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Debug",
-            "ReadCluster - %s - NwkId: %s Ep: %s AttrId: %s AttyType: %s Attsize: %s AttrValue: %s"
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "ReadCluster - %s - NwkId: %s Ep: %s AttrId: %s AttyType: %s Attsize: %s AttrValue: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
         self.log.logging(
@@ -3662,8 +3490,7 @@ def Cluster0406(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Debug",
-            "ReadCluster - %s - NwkId: %s Ep: %s AttrId: %s AttyType: %s Attsize: %s AttrValue: %s"
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "ReadCluster - %s - NwkId: %s Ep: %s AttrId: %s AttyType: %s Attsize: %s AttrValue: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
         self.log.logging(
@@ -3677,8 +3504,7 @@ def Cluster0406(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Debug",
-            "ReadCluster - %s - NwkId: %s Ep: %s AttrId: %s AttyType: %s Attsize: %s AttrValue: %s"
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "ReadCluster - %s - NwkId: %s Ep: %s AttrId: %s AttyType: %s Attsize: %s AttrValue: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
         self.log.logging(
@@ -3695,8 +3521,7 @@ def Cluster0406(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Log",
-            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s "
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
 
@@ -3713,8 +3538,7 @@ def Cluster0500(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     self.log.logging(
         "Cluster",
         "Debug",
-        "ReadCluster0500 - Security & Safety IAZ Zone - Device: %s MsgAttrID: %s MsgAttType: %s MsgAttSize: %s MsgClusterData: %s"
-        % (MsgSrcAddr, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+        "ReadCluster0500 - Security & Safety IAZ Zone - Device: %s MsgAttrID: %s MsgAttType: %s MsgAttSize: %s MsgClusterData: %s" % (MsgSrcAddr, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
         MsgSrcAddr,
     )
 
@@ -3786,9 +3610,7 @@ def Cluster0500(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             test = (int(MsgClusterData, 16) & 0b0000000100000000) >> 8
             batdef = (int(MsgClusterData, 16) & 0b0000001000000000) >> 9
 
-            self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId][
-                MsgAttrID
-            ] = "alarm1: %s, alarm2: %s, tamper: %s, batter: %s, srepor: %s, rrepor: %s, troubl: %s, acmain: %s, test: %s, batdef: %s" % (
+            self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId][MsgAttrID] = "alarm1: %s, alarm2: %s, tamper: %s, batter: %s, srepor: %s, rrepor: %s, troubl: %s, acmain: %s, test: %s, batdef: %s" % (
                 alarm1,
                 alarm2,
                 tamper,
@@ -3808,11 +3630,7 @@ def Cluster0500(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
                 MsgSrcAddr,
             )
 
-            if (
-                "IAS" in self.ListOfDevices[MsgSrcAddr]
-                and MsgSrcEp in self.ListOfDevices[MsgSrcAddr]["IAS"]
-                and "ZoneStatus" in self.ListOfDevices[MsgSrcAddr]["IAS"][MsgSrcEp]
-            ):
+            if "IAS" in self.ListOfDevices[MsgSrcAddr] and MsgSrcEp in self.ListOfDevices[MsgSrcAddr]["IAS"] and "ZoneStatus" in self.ListOfDevices[MsgSrcAddr]["IAS"][MsgSrcEp]:
                 self.ListOfDevices[MsgSrcAddr]["IAS"][MsgSrcEp]["ZoneStatus"]["alarm1"] = alarm1
                 self.ListOfDevices[MsgSrcAddr]["IAS"][MsgSrcEp]["ZoneStatus"]["alarm2"] = alarm2
                 self.ListOfDevices[MsgSrcAddr]["IAS"][MsgSrcEp]["ZoneStatus"]["tamper"] = tamper
@@ -3858,8 +3676,7 @@ def Cluster0500(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Log",
-            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s "
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
 
@@ -3871,8 +3688,7 @@ def Cluster0502(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     self.log.logging(
         "Cluster",
         "Debug",
-        "ReadCluster0502 - Security & Safety IAZ Zone - Device: %s MsgAttrID: %s MsgAttType: %s MsgAttSize: %s MsgClusterData: %s"
-        % (MsgSrcAddr, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+        "ReadCluster0502 - Security & Safety IAZ Zone - Device: %s MsgAttrID: %s MsgAttType: %s MsgAttSize: %s MsgClusterData: %s" % (MsgSrcAddr, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
         MsgSrcAddr,
     )
 
@@ -3893,8 +3709,7 @@ def Cluster0502(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Debug",
-            "ReadCluster - 0502 - %s/%s unknown attribute: %s %s %s %s"
-            % (MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "ReadCluster - 0502 - %s/%s unknown attribute: %s %s %s %s" % (MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
 
@@ -3902,8 +3717,7 @@ def Cluster0502(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Log",
-            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s "
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
 
@@ -3911,19 +3725,11 @@ def Cluster0502(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 def compute_conso(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, raw_value):
 
     conso = raw_value  # Raw value
-    if (
-        MsgSrcEp in self.ListOfDevices[MsgSrcAddr]["Ep"]
-        and MsgClusterId in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]
-        and "0302" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]
-    ):
+    if MsgSrcEp in self.ListOfDevices[MsgSrcAddr]["Ep"] and MsgClusterId in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp] and "0302" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]:
         diviser = self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]["0302"]
         value = round(conso / (diviser / 1000), 3)
         self.log.logging("Cluster", "Debug", "compute_conso - %s Power %s, div: %s --> %s Watts" % (MsgAttrID, conso, diviser, value))
-    elif (
-        MsgSrcEp in self.ListOfDevices[MsgSrcAddr]["Ep"]
-        and MsgClusterId in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]
-        and "0301" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]
-    ):
+    elif MsgSrcEp in self.ListOfDevices[MsgSrcAddr]["Ep"] and MsgClusterId in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp] and "0301" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]:
         multiplier = self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]["0301"]
         value = round(conso * multiplier, 3)
         self.log.logging(
@@ -3964,8 +3770,7 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     self.log.logging(
         "Cluster",
         "Debug",
-        "Cluster0702 - MsgAttrID: %s MsgAttType: %s DataLen: %s Data: %s decodedValue: %s"
-        % (MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
+        "Cluster0702 - MsgAttrID: %s MsgAttType: %s DataLen: %s Data: %s decodedValue: %s" % (MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
         MsgSrcAddr,
     )
 
@@ -3980,6 +3785,11 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             )
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value), Attribute_=MsgAttrID)
+
+        elif "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == "TS011F-plug":
+            conso = value * 10
+            checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, conso)
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(conso), Attribute_="0000")
 
         else:
             conso = compute_conso(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
@@ -4244,8 +4054,7 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             self.log.logging(
                 "Cluster",
                 "Debug",
-                "readCluster - %s - %s/%s Schneider Attribute: %s  Raw Data: %s Decoded Data: %s "
-                % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgClusterData, value),
+                "readCluster - %s - %s/%s Schneider Attribute: %s  Raw Data: %s Decoded Data: %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgClusterData, value),
                 MsgSrcAddr,
             )
 
@@ -4346,8 +4155,7 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             self.log.logging(
                 "Cluster",
                 "Debug",
-                "readCluster - %s - %s/%s CASAIA PC321 phase Power Line: %s Summation Power %s"
-                % (MsgClusterId, MsgSrcAddr, fake_ep, line, conso),
+                "readCluster - %s - %s/%s CASAIA PC321 phase Power Line: %s Summation Power %s" % (MsgClusterId, MsgSrcAddr, fake_ep, line, conso),
             )
             MajDomoDevice(self, Devices, MsgSrcAddr, fake_ep, "0702", str(conso), Attribute_="0000")
 
@@ -4362,8 +4170,7 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             self.log.logging(
                 "Cluster",
                 "Debug",
-                "readCluster - %s - %s/%s CASAIA PC321 phase Power Clamp: %s %s %s %s (value: %s)"
-                % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
+                "readCluster - %s - %s/%s CASAIA PC321 phase Power Clamp: %s %s %s %s (value: %s)" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
                 MsgSrcAddr,
             )
 
@@ -4371,8 +4178,7 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Log",
-            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s "
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
@@ -4388,8 +4194,7 @@ def Cluster0b01(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     self.log.logging(
         "Cluster",
         "Debug",
-        "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s"
-        % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+        "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
         MsgSrcAddr,
     )
     value = int(
@@ -4464,8 +4269,7 @@ def Cluster0b04(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             self.log.logging(
                 "Cluster",
                 "Log",
-                "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s Out of Range!!"
-                % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+                "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s Out of Range!!" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
                 MsgSrcAddr,
             )
 
@@ -4605,8 +4409,7 @@ def Cluster0b04(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Log",
-            "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s"
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
 
@@ -4617,11 +4420,7 @@ def zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value):
         return
 
     Isousc = 0
-    if (
-        "0b01" in self.ListOfDevices[MsgSrcAddr]["Ep"]["01"]
-        and "000d" in self.ListOfDevices[MsgSrcAddr]["Ep"]["01"]["0b01"]
-        and isinstance(self.ListOfDevices[MsgSrcAddr]["Ep"]["01"]["0b01"]["000d"], int)
-    ):
+    if "0b01" in self.ListOfDevices[MsgSrcAddr]["Ep"]["01"] and "000d" in self.ListOfDevices[MsgSrcAddr]["Ep"]["01"]["0b01"] and isinstance(self.ListOfDevices[MsgSrcAddr]["Ep"]["01"]["0b01"]["000d"], int):
         Isousc = int(self.ListOfDevices[MsgSrcAddr]["Ep"]["01"]["0b01"]["000d"])
     else:
         self.log.logging(
@@ -4649,7 +4448,7 @@ def zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value):
             MsgSrcAddr,
             MsgSrcEp,
             "0009",
-            "03|Reach >98 % of Max subscribe %s" % (Isousc),
+            "03|Reach >98 %% of Max subscribe %s" % (Isousc),
             Attribute_="0005",
         )
         self.log.logging(
@@ -4665,7 +4464,7 @@ def zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value):
             MsgSrcAddr,
             MsgSrcEp,
             "0009",
-            "02|Reach >90 % of Max subscribe %s" % (Isousc),
+            "02|Reach >90 %% of Max subscribe %s" % (Isousc),
             Attribute_="0005",
         )
         self.log.logging(
@@ -4681,7 +4480,7 @@ def zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value):
             MsgSrcAddr,
             MsgSrcEp,
             "0009",
-            "01|Reach >80 % of Max subscribe %s" % (Isousc),
+            "01|Reach >80 %% of Max subscribe %s" % (Isousc),
             Attribute_="0005",
         )
         self.log.logging(
@@ -4704,8 +4503,7 @@ def Cluster0b05(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     self.log.logging(
         "Cluster",
         "Debug",
-        "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s"
-        % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+        "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
         MsgSrcAddr,
     )
     checkAndStoreAttributeValue(
@@ -4727,21 +4525,43 @@ def Clustere000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     self.log.logging(
         "Cluster",
         "Log",
-        "ReadCluster - %s - %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, : %s"
-        % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+        "ReadCluster - %s - %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, : %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
         MsgSrcAddr,
     )
-    checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, decodeAttribute( self, MsgAttType, MsgClusterData, ), )
+    checkAndStoreAttributeValue(
+        self,
+        MsgSrcAddr,
+        MsgSrcEp,
+        MsgClusterId,
+        MsgAttrID,
+        decodeAttribute(
+            self,
+            MsgAttType,
+            MsgClusterData,
+        ),
+    )
+
 
 def Clustere001(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
     self.log.logging(
         "Cluster",
         "Log",
-        "ReadCluster - %s - %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, : %s"
-        % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+        "ReadCluster - %s - %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, : %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
         MsgSrcAddr,
     )
-    checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, decodeAttribute( self, MsgAttType, MsgClusterData, ), )
+    checkAndStoreAttributeValue(
+        self,
+        MsgSrcAddr,
+        MsgSrcEp,
+        MsgClusterId,
+        MsgAttrID,
+        decodeAttribute(
+            self,
+            MsgAttType,
+            MsgClusterData,
+        ),
+    )
+
 
 def Clusterfe03(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
     # Schneider Wiser (new)
@@ -4787,13 +4607,13 @@ def Clusterfe03(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         ),
     )
 
+
 def Clusterfc00(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
 
     self.log.logging(
         "Cluster",
         "Debug",
-        "ReadCluster - %s - %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, : %s"
-        % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+        "ReadCluster - %s - %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, : %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
         MsgSrcAddr,
     )
 
@@ -4809,8 +4629,7 @@ def Clusterfc00(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Error",
-            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s "
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
             _context,
         )
@@ -4974,8 +4793,7 @@ def Clusterfc00(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Log",
-            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s "
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
 
@@ -5006,13 +4824,13 @@ def Clusterfc00(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     if prev_lvlValue != lvlValue:
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, slvlValue)
 
+
 def Clusterfc01(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
 
     self.log.logging(
         "Cluster",
         "Debug",
-        "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s"
-        % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+        "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
         MsgSrcAddr,
     )
 
@@ -5020,8 +4838,7 @@ def Clusterfc01(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     self.log.logging(
         "Cluster",
         "Debug",
-        "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s"
-        % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+        "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
         MsgSrcAddr,
     )
 
@@ -5067,13 +4884,13 @@ def Clusterfc01(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             # Enable Led if On
             self.ListOfDevices[MsgSrcAddr]["Legrand"]["EnableLedIfOn"] = int(MsgClusterData, 16)
 
+
 def Clusterfc40(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
 
     self.log.logging(
         "Cluster",
         "Debug",
-        "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s"
-        % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+        "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
         MsgSrcAddr,
     )
 
@@ -5081,8 +4898,7 @@ def Clusterfc40(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     self.log.logging(
         "Cluster",
         "Debug",
-        "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s"
-        % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+        "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
         MsgSrcAddr,
     )
 
@@ -5102,6 +4918,7 @@ def Clusterfc40(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         # Off': 0x05
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgClusterData)
 
+
 def Clusterfc21(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
 
     # FC21 : PFX Cluster Profalux
@@ -5112,8 +4929,7 @@ def Clusterfc21(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     self.log.logging(
         "Cluster",
         "Debug",
-        "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s"
-        % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+        "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
         MsgSrcAddr,
     )
 
@@ -5121,25 +4937,25 @@ def Clusterfc21(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging(
             "Cluster",
             "Debug",
-            "ReadCluster %s - %s/%s Orientation BSO: %s - %s °"
-            % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData, int(MsgClusterData, 16)),
+            "ReadCluster %s - %s/%s Orientation BSO: %s - %s °" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData, int(MsgClusterData, 16)),
             MsgSrcAddr,
         )
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgClusterData)
+
 
 def Clusterfcc0(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
 
     self.log.logging(
         "Cluster",
         "Debug",
-        "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s"
-        % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+        "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
         MsgSrcAddr,
     )
     checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
 
     if MsgAttrID == "00f7":
         readXiaomiCluster(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData)
+
 
 def Clusterff66(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
 
@@ -5155,8 +4971,7 @@ def Clusterff66(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     self.log.logging(
         "Cluster",
         "Debug",
-        "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s / Value: %s"
-        % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
+        "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s / Value: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
         MsgSrcAddr,
     )
 

@@ -48,7 +48,7 @@
 		"0702": {
 			"Attributes": {
 				"0000": {
-					"Change": "0000ffffffffffff",
+					"Change": "0000000000000001",
 					"DataType": "25",
 					"MaxInterval": "001E",
 					"MinInterval": "001E",

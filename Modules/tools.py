@@ -1361,3 +1361,14 @@ def is_domoticz_db_available(self):
 
     Domoticz.Log("is_domoticz_db_available: %s" % True)
     return True
+
+def get_device_nickname( self, NwkId=None, Ieee=None):
+
+    if Ieee and Ieee in self.IEEE2NWK:
+        NwkId = self.IEEE2NWK[ Ieee ]
+
+    if NwkId in self.ListOfDevices:
+        if 'ZDeviceName' in self.ListOfDevices[ NwkId] and self.ListOfDevices[ NwkId]['ZDeviceName'] not in ( '', {} ):
+            return self.ListOfDevices[ NwkId]['ZDeviceName']
+
+    return None

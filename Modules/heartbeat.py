@@ -565,8 +565,18 @@ def processKnownDevices(self, Devices, NWKID):
 
                 func(self, NWKID)
 
-    if self.pluginconf.pluginConf["RoutingTableRequestFeq"] and not self.busy and self.ZigateComm.loadTransmit() == 0 and (intHB % 10) == 0:
-        mgmt_rtg(self, NWKID)
+    if ( self.pluginconf.pluginConf["RoutingTableRequestFeq"] and 
+            not self.busy and self.ZigateComm.loadTransmit() < 3 and 
+            (intHB % ( self.pluginconf.pluginConf["RoutingTableRequestFeq"] // HEARTBEAT) == 0)
+        ):
+        mgmt_rtg(self, NWKID, "RoutingTable")
+
+    if ( self.pluginconf.pluginConf["BindingTableRequestFeq"] and 
+            not self.busy and self.ZigateComm.loadTransmit() < 3 and 
+            (intHB % ( self.pluginconf.pluginConf["BindingTableRequestFeq"] // HEARTBEAT) == 0)
+        ):
+        mgmt_rtg(self, NWKID, "BindingTable")
+
 
     # Reenforcement of Legrand devices options if required
     #if (self.HeartbeatCount % LEGRAND_FEATURES) == 0:

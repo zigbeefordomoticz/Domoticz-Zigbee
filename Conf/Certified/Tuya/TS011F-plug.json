@@ -23,24 +23,16 @@
 	},
 	"Type": "",
 	"bindEp": "01",
-	"ClusterToBind": [
-		"0000",
-		"0006",
-		"0019",
-		"0702",
-		"0b04",
-		"e000",
-		"e001"
-	],
+	"ClusterToBind": [],
 	"ConfigureReporting": {
-		"0006": {
+		"0702": {
 			"Attributes": {
 				"0000": {
-					"DataType": "10",
-					"MinInterval": "0001",
+					"DataType": "25",
+					"MinInterval": "0005",
 					"MaxInterval": "012C",
 					"TimeOut": "0000",
-					"Change": "01"
+					"Change": "0000000000000001"
 				}
 			}
 		},
@@ -49,13 +41,13 @@
 				"0505": {
 					"DataType": "21",
 					"MinInterval": "0001",
-					"MaxInterval": "012C",
+					"MaxInterval": "0005",
 					"TimeOut": "0000",
 					"Change": "0001"
 				},
 				"0508": {
 					"DataType": "21",
-					"MinInterval": "000A",
+					"MinInterval": "0001",
 					"MaxInterval": "012C",
 					"TimeOut": "0000",
 					"Change": "0001"
@@ -63,7 +55,7 @@
 				"050b": {
 					"DataType": "29",
 					"MinInterval": "0001",
-					"MaxInterval": "012C",
+					"MaxInterval": "0005",
 					"TimeOut": "0000",
 					"Change": "0001"
 				}
@@ -92,13 +84,28 @@
 			"0000",
 			"4001",
 			"4002",
+			"5000",
+			"8000",
 			"8001",
 			"8002",
-			"fffd"
+			"8003"
+		],
+		"0b04": [
+			"0508",
+			"050b",
+			"0505"
+		],
+		"0702": [
+			"0000"
+		],
+		"000a": [
+			"0007"
 		],
 		"0019": []
 	},
 	"Param": {
-		"PowerOnAfterOffOn": 2
+		"PowerOnAfterOffOn": 2,
+		"IndicatorMode": 1,
+		"PowerPollingFreq": 300
 	}
 }
