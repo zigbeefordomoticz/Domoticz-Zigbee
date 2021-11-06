@@ -21,6 +21,13 @@ Release Numbering
 
 - Odd numbers --> Stable5
 - Even numbers  --> Beta
+
+## 1 November 2021 - 5.1.14
+
+- [Web UI] - Finishing french translation
+- [Hardware] - Additional Moes eTRV Tuya 
+- [Hardware] - Handling the IKEA TRadfri open/close remote
+
 ## 27 October 2021 - 5.1.13
 - [Web UI] - Improve Franch translation
 - [Hardware] - Support Casa.IA CPC321, 3 lignes monitoring
