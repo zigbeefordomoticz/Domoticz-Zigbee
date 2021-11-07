@@ -270,23 +270,18 @@ class ZigateTransport(object):
     #  "debugTransportSerial"
 
     def logging_transport(self, logType, message, NwkId=None, _context=None):
-        # Log all activties towards ZiGate
         self.log.logging("Transport", logType, message, context=_context)
 
     def logging_8000(self, logType, message, NwkId=None, _context=None):
-        # Log all activties towards ZiGate
         self.log.logging("Transport8000", logType, message, context=_context)
 
     def logging_8002(self, logType, message, NwkId=None, _context=None):
-        # Log all activties towards ZiGate
         self.log.logging("Transport8002", logType, message, context=_context)
 
     def logging_8011(self, logType, message, NwkId=None, _context=None):
-        # Log all activties towards ZiGate
         self.log.logging("Transport8011", logType, message, context=_context)
 
     def logging_8012(self, logType, message, NwkId=None, _context=None):
-        # Log all activties towards ZiGate
         self.log.logging("Transport8012", logType, message, context=_context)
 
     def logging_forwarded(self, logType, message, NwkId=None, _context=None):

@@ -185,7 +185,7 @@ def thread_sendData(self, cmd, datas, ackIsDisabled, waitForResponseIn, isqn):
 
     # Check if Datas are hex
     if datas != "" and not is_hex(datas):
-        _context = {
+        context = {
             "Error code": "TRANS-SENDDATA-01",
             "Cmd": cmd,
             "Datas": datas,
@@ -193,7 +193,7 @@ def thread_sendData(self, cmd, datas, ackIsDisabled, waitForResponseIn, isqn):
             "waitForResponseIn": waitForResponseIn,
             "InternalSqn": isqn,
         }
-        self.logging_send_error("sendData", context=_context)
+        self.logging_writer("Error", "sendData", _context=context)
         return "BadData"
 
     self.ListOfCommands[isqn] = {
@@ -318,19 +318,19 @@ def semaphore_timeout(self, current_command):
             # We remove element [0]
             isqn_to_be_removed = list(self.ListOfCommands.keys())[0]
 
-        _context = {
+        context = {
             "Error code": "TRANS-SEMAPHORE-01",
             "ListofCmds": dict.copy(self.ListOfCommands),
             "IsqnCurrent": current_command["InternalSqn"],
             "IsqnToRemove": isqn_to_be_removed,
         }
         if not self.force_dz_communication and self.pluginconf.pluginConf["showTimeOutMsg"]:
-            self.logging_send_error("writerThread Timeout ", context=_context)
+            self.logging_writer("Error", "writerThread Timeout ", _context=context)
         release_command(self, isqn_to_be_removed)
         return
 
     # We need to find which Command is in Timeout
-    _context = {
+    context = {
         "Error code": "TRANS-SEMAPHORE-02",
         "ListofCmds": dict.copy(self.ListOfCommands),
         "IsqnCurrent": current_command["InternalSqn"],
@@ -343,7 +343,7 @@ def semaphore_timeout(self, current_command):
         if time.time() + 8 >= self.ListOfCommands[x]["TimeStamp"]:
             # This command has at least 8s life and can be removed
             release_command(self, x)
-            _context["IsqnToRemove"].append(x)
+            context["IsqnToRemove"].append(x)
 
     if not self.force_dz_communication and self.pluginconf.pluginConf["showTimeOutMsg"]:
-        self.logging_send_error("writerThread Timeout ", context=_context)
+        self.logging_writer("Error", "writerThread Timeout ", _context=context)

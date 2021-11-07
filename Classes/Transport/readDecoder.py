@@ -112,14 +112,14 @@ def check_frame_crc(self, BinMsg):
     ComputedChecksum = 0
     if len(BinMsg) < 6:
         self.statistics._crcErrors += 1
-        _context = {
+        context = {
             "Error code": "TRANS-CHKCRC-02",
             "BinMsg": str(BinMsg),
             "AsciiMsg": str(binascii.hexlify(BinMsg).decode("utf-8")),
             "LastRawMsg": str(binascii.hexlify(self._last_raw_message).decode("utf-8")),
             "len": len(BinMsg),
         }
-        self.logging_receive_error("check_frame_crc", context=_context)
+        self.logging_proto("check_frame_crc", _context=context)
         return False
     Zero1, MsgType, Length, ReceivedChecksum = struct.unpack(">BHHB", BinMsg[0:6])
 
@@ -128,7 +128,7 @@ def check_frame_crc(self, BinMsg):
             ComputedChecksum ^= val
     if ComputedChecksum != ReceivedChecksum:
         self.statistics._crcErrors += 1
-        _context = {
+        context = {
             "Error code": "TRANS-CHKCRC-01",
             "BinMsg": str(BinMsg),
             "AsciiMsg": str(binascii.hexlify(BinMsg).decode("utf-8")),
@@ -139,7 +139,7 @@ def check_frame_crc(self, BinMsg):
             "ComputedChecksum": ComputedChecksum,
             "ReceivedChecksum": ReceivedChecksum,
         }
-        self.logging_receive_error("check_frame_crc", context=_context)
+        self.logging_proto("check_frame_crc", _context=context)
         return False
     return True
 
@@ -151,7 +151,7 @@ def check_frame_lenght(self, BinMsg):
     ReceveidLength = len(BinMsg)
     if ComputedLength != ReceveidLength:
         self.statistics._frameErrors += 1
-        _context = {
+        context = {
             "Error code": "TRANS-CHKLEN-01",
             "Zero1": Zero1,
             "BinMsg": str(BinMsg),
@@ -164,6 +164,6 @@ def check_frame_lenght(self, BinMsg):
             "ComputedLength": ComputedLength,
             "ReceveidLength": ReceveidLength,
         }
-        self.logging_receive_error("check_frame_lenght", context=_context)
+        self.logging_proto("check_frame_lenght", _context=context)
         return False
     return True

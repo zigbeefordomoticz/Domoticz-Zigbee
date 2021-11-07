@@ -5,13 +5,14 @@
 #
 
 import socket
-import time
 from threading import Thread
 
 import Domoticz
 import serial
 from Classes.Transport.readSerial import (open_serial,
-                                          serial_read_write_from_zigate)
+                                          serial_read_write_from_zigate,
+                                          serial_reset_line_in,
+                                          serial_reset_line_out)
 from Classes.Transport.readwriteTcp import open_tcpip, tcpip_read_from_zigate
 
 
@@ -54,8 +55,8 @@ def shutdown_reader_thread(self):
     if self._connection:
         if isinstance(self._connection, serial.serialposix.Serial):
             self.logging_reader("Log", "Flush and cancel_read")
-            self._connection.reset_input_buffer()
-            self._connection.reset_output_buffer()
+            serial_reset_line_in(self)
+            serial_reset_line_out(self)
             self._connection.cancel_read()
 
         elif isinstance(self._connection, socket.socket):

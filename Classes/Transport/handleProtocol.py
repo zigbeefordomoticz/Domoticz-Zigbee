@@ -139,7 +139,7 @@ def NXP_Extended_Error_Code(self, MsgData):
     if MsgData in ZCL_EXTENDED_ERROR_CODES:
         StatusMsg = ZCL_EXTENDED_ERROR_CODES[MsgData]
 
-    _context = {
+    context = {
         "Error code": "TRANS-PROTO-01",
         "ExtendedErrorCode": MsgData,
         "ExtendedError": StatusMsg,
@@ -148,7 +148,7 @@ def NXP_Extended_Error_Code(self, MsgData):
     }
     if self.firmware_with_8012:
         # We have a 31e firmware or above. We are not expecting extensive Extended Error code, so they will be logged
-        self.logging_receive_error("NXP_Extended_Error_Code - Extended Error Code: [%s] %s" % (MsgData, StatusMsg), context=_context)
+        self.logging_proto("NXP_Extended_Error_Code - Extended Error Code: [%s] %s" % (MsgData, StatusMsg), _context=context)
     else:
         self.logging_proto(
             "Log",
