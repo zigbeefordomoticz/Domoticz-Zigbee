@@ -36,7 +36,7 @@ def decode8012_8702(self, decoded_frame):
             "Status": MsgStatus,
             "AddrMode": MsgDataDestMode,
         }
-        self.logging_receive_error("decode8012_8702 - wrong address mode %s" % (MsgDataDestMode), context=_context)
+        self.logging_8012("decode8012_8702 - wrong address mode %s" % (MsgDataDestMode), context=_context)
         return None
 
     update_xPDU(self, nPDU, aPDU)
@@ -47,7 +47,7 @@ def decode8012_8702(self, decoded_frame):
     if isqn is None:
         # self.logging_receive( 'Debug', "decode8012_8702 - 0x8012 not for us Nwkid: %s eSqn: %s" %(MsgAddr, MsgSQN))
         if self.pluginconf.pluginConf["debugzigateCmd"]:
-            self.logging_receive(
+            self.logging_8012(
                 "Log",
                 "Transport - [%s] - Async %s Sqn: %s Addr: %s nPdu: %s aPdu: %s"
                 % (isqn, MsgType, MsgSQN, MsgAddr, nPDU, aPDU),
@@ -57,7 +57,7 @@ def decode8012_8702(self, decoded_frame):
     if isqn not in self.ListOfCommands:
         # self.logging_receive( 'Debug', "decode8012_8702 - 0x8012 not for us Nwkid: %s eSqn: %s " %(MsgAddr, MsgSQN))
         if self.pluginconf.pluginConf["debugzigateCmd"]:
-            self.logging_receive(
+            self.logging_8012(
                 "Log",
                 "Transport - [%s] - Async %s Sqn: %s Addr: %s nPdu: %s aPdu: %s"
                 % (isqn, MsgType, MsgSQN, MsgAddr, nPDU, aPDU),
@@ -87,7 +87,7 @@ def report_timing_8012(self, isqn):
             timing = int((time.time() - TimeStamp) * 1000)
             self.statistics.add_timing8012(timing)
         if self.statistics._averageTiming8012 != 0 and timing >= (3 * self.statistics._averageTiming8012):
-            self.logging_send(
+            self.logging_8012(
                 "Log",
                 "Zigate round trip 0x8012 time seems long. %s ms for %s %s SendingQueue: %s"
                 % (

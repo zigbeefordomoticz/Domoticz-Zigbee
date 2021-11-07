@@ -37,7 +37,7 @@ def decode8000(self, decoded_frame):
             "sqn_aps": sqn_aps,
             "sqn_typ": type_sqn,
         }
-        self.logging_receive_error("decode8000 - cannot get isqn for MsgType %s" % (PacketType), context=_context)
+        self.logging_8000("Error", "decode8000 - cannot get isqn for MsgType %s" % (PacketType), context=_context)
         return
 
     print_listofcommands(self, isqn)
@@ -53,7 +53,7 @@ def decode8000(self, decoded_frame):
             "sqn_aps": sqn_aps,
             "sqn_typ": type_sqn,
         }
-        self.logging_receive_error(
+        self.logging_8000( "Error",
             "decode8000 - command miss-match %s vs. %s" % (self.ListOfCommands[isqn]["cmd"], PacketType),
             context=_context,
         )
@@ -128,12 +128,12 @@ def get_sqn_pdus(self, MsgData):
                 self.firmware_compatibility_mode = False
                 self.firmware_with_aps_sqn = True
                 self.firmware_with_8012 = True
-                self.logging_send("Status", "==> Transport Mode switch to full mode")
+                self.logging_8000("Status", "==> Transport Mode switch to full mode")
 
         elif not self.firmware_with_aps_sqn:
             self.firmware_compatibility_mode = False
             self.firmware_with_aps_sqn = True
-            self.logging_send("Status", "==> Transport Mode switch to: half mode ( no 8012)")
+            self.logging_8000("Status", "==> Transport Mode switch to: half mode ( no 8012)")
 
     return (sqn_aps, type_sqn, apdu, npdu)
 
@@ -147,7 +147,7 @@ def report_timing_8000(self, isqn):
             timing = int((time.time() - TimeStamp) * 1000)
             self.statistics.add_timing8000(timing)
         if self.statistics._averageTiming8000 != 0 and timing >= (3 * self.statistics._averageTiming8000):
-            self.logging_send(
+            self.logging_8000(
                 "Log",
                 "--> decode8000 - Zigate round trip 0x8000 time seems long. %s ms for %s %s SendingQueue: %s"
                 % (timing, self.ListOfCommands[isqn]["cmd"], self.ListOfCommands[isqn]["datas"], self.loadTransmit()),
