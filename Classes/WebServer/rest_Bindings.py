@@ -6,9 +6,9 @@
 import json
 
 import Domoticz
-from Classes.WebServer.headerResponse import (prepResponseMessage,
-                                              setupHeadersResponse)
-from Modules.bindings import webBind, webUnBind, bindGroup
+from Classes.WebServer.headerResponse import prepResponseMessage, setupHeadersResponse
+from Modules.bindings import bindGroup, unbindGroup, webBind, webUnBind
+from Modules.mgmt_rtg import mgt_binding_table_req
 from Modules.zigateConsts import ZCL_CLUSTERS_ACT
 
 
@@ -81,64 +81,17 @@ def rest_binding(self, verb, data, parameters):
     data = data.decode("utf8")
     data = json.loads(data)
 
-    if (
-        "sourceIeee" not in data
-        and "sourceEp" not in data
-        and "destIeee" not in data
-        and "destEp" not in data
-        and "cluster" not in data
-    ):
+    if "sourceIeee" not in data and "sourceEp" not in data and "destIeee" not in data and "destEp" not in data and "cluster" not in data:
         Domoticz.Error("-----> uncomplet json %s" % data)
         _response["Data"] = json.dumps("uncomplet json %s" % data)
         return _response
 
     self.logging(
         "Debug",
-        "rest_binding - Source: %s/%s Dest: %s/%s Cluster: %s"
-        % (data["sourceIeee"], data["sourceEp"], data["destIeee"], data["destEp"], data["cluster"]),
+        "rest_binding - Source: %s/%s Dest: %s/%s Cluster: %s" % (data["sourceIeee"], data["sourceEp"], data["destIeee"], data["destEp"], data["cluster"]),
     )
     webBind(self, data["sourceIeee"], data["sourceEp"], data["destIeee"], data["destEp"], data["cluster"])
-    _response["Data"] = json.dumps(
-        "Binding cluster %s between %s/%s and %s/%s"
-        % (data["cluster"], data["sourceIeee"], data["sourceEp"], data["destIeee"], data["destEp"])
-    )
-    return _response
-
-def rest_group_binding(self, verb, data, parameters):
-
-    # curl -X PUT -d '{"sourceIeee":" 84fd27fffe17e4c5", "sourceEp": "01", "groupId": " 4ca3", "cluster": "0006"}' http://127.0.0.1:9441/rest-zigate/1/binding-group
-    
-    _response = prepResponseMessage(self, setupHeadersResponse())
-
-    if verb != "PUT" or len(parameters) != 0:
-        return _response
-
-    _response["Data"] = None
-
-    data = data.decode("utf8")
-    data = json.loads(data)
-
-    if (
-        "sourceIeee" not in data
-        and "sourceEp" not in data
-        and "groupId" not in data
-        and "cluster" not in data
-    ):
-        Domoticz.Error("-----> uncomplet json %s" % data)
-        _response["Data"] = json.dumps("uncomplet json %s" % data)
-        return _response
-
-    self.logging(
-        "Debug",
-        "rest_binding - Source: %s/%s Dest: %s Cluster: %s"
-        % (data["sourceIeee"], data["sourceEp"], data["groupId"], data["cluster"]),
-    )
-    bindGroup(self, data["sourceIeee"], data["sourceEp"], data["cluster"], data["groupId"])
-
-    _response["Data"] = json.dumps(
-        "Binding cluster %s between %s/%s and %s"
-        % (data["cluster"], data["sourceIeee"], data["sourceEp"], data["groupId"])
-    )
+    _response["Data"] = json.dumps("Binding cluster %s between %s/%s and %s/%s" % (data["cluster"], data["sourceIeee"], data["sourceEp"], data["destIeee"], data["destEp"]))
     return _response
 
 
@@ -154,25 +107,118 @@ def rest_unbinding(self, verb, data, parameters):
     data = data.decode("utf8")
     data = json.loads(data)
 
-    if (
-        "sourceIeee" not in data
-        and "sourceEp" not in data
-        and "destIeee" not in data
-        and "destEp" not in data
-        and "cluster" not in data
-    ):
+    if "sourceIeee" not in data and "sourceEp" not in data and "destIeee" not in data and "destEp" not in data and "cluster" not in data:
         Domoticz.Log("-----> uncomplet json %s" % data)
         _response["Data"] = json.dumps("uncomplet json %s" % data)
         return _response
 
     self.logging(
         "Debug",
-        "rest_unbinding - Source: %s/%s Dest: %s/%s Cluster: %s"
-        % (data["sourceIeee"], data["sourceEp"], data["destIeee"], data["destEp"], data["cluster"]),
+        "rest_unbinding - Source: %s/%s Dest: %s/%s Cluster: %s" % (data["sourceIeee"], data["sourceEp"], data["destIeee"], data["destEp"], data["cluster"]),
     )
     webUnBind(self, data["sourceIeee"], data["sourceEp"], data["destIeee"], data["destEp"], data["cluster"])
-    _response["Data"] = json.dumps(
-        "Binding cluster %s between %s/%s and %s/%s"
-        % (data["cluster"], data["sourceIeee"], data["sourceEp"], data["destIeee"], data["destEp"])
+    _response["Data"] = json.dumps("Binding cluster %s between %s/%s and %s/%s" % (data["cluster"], data["sourceIeee"], data["sourceEp"], data["destIeee"], data["destEp"]))
+    return _response
+
+
+def rest_group_binding(self, verb, data, parameters):
+
+    # curl -X PUT -d '{"sourceIeee":" 84fd27fffe17e4c5", "sourceEp": "01", "groupId": " 4ca3", "cluster": "0006"}' http://127.0.0.1:9441/rest-zigate/1/binding-group
+
+    _response = prepResponseMessage(self, setupHeadersResponse())
+
+    if verb != "PUT" or len(parameters) != 0:
+        return _response
+
+    _response["Data"] = None
+
+    data = data.decode("utf8")
+    data = json.loads(data)
+
+    if "sourceIeee" not in data and "sourceEp" not in data and "groupId" not in data and "cluster" not in data:
+        Domoticz.Error("-----> uncomplet json %s" % data)
+        _response["Data"] = json.dumps("uncomplet json %s" % data)
+        return _response
+
+    self.logging(
+        "Debug",
+        "rest_binding - Source: %s/%s Dest: %s Cluster: %s" % (data["sourceIeee"], data["sourceEp"], data["groupId"], data["cluster"]),
     )
+    bindGroup(self, data["sourceIeee"], data["sourceEp"], data["cluster"], data["groupId"])
+
+    _response["Data"] = json.dumps("Binding cluster %s between %s/%s and %s" % (data["cluster"], data["sourceIeee"], data["sourceEp"], data["groupId"]))
+    return _response
+
+
+def rest_group_unbinding(self, verb, data, parameters):
+
+    # curl -X PUT -d '{"sourceIeee":" 84fd27fffe17e4c5", "sourceEp": "01", "groupId": " 4ca3", "cluster": "0006"}' http://127.0.0.1:9441/rest-zigate/1/unbinding-group
+
+    _response = prepResponseMessage(self, setupHeadersResponse())
+
+    if verb != "PUT" or len(parameters) != 0:
+        return _response
+
+    _response["Data"] = None
+
+    data = data.decode("utf8")
+    data = json.loads(data)
+
+    if "sourceIeee" not in data and "sourceEp" not in data and "groupId" not in data and "cluster" not in data:
+        Domoticz.Error("-----> uncomplet json %s" % data)
+        _response["Data"] = json.dumps("uncomplet json %s" % data)
+        return _response
+
+    self.logging(
+        "Debug",
+        "rest_group_unbinding - Source: %s/%s Dest: %s Cluster: %s" % (data["sourceIeee"], data["sourceEp"], data["groupId"], data["cluster"]),
+    )
+    unbindGroup(self, data["sourceIeee"], data["sourceEp"], data["cluster"], data["groupId"])
+
+    _response["Data"] = json.dumps("UnBinding cluster %s between %s/%s and %s" % (data["cluster"], data["sourceIeee"], data["sourceEp"], data["groupId"]))
+    return _response
+
+
+def rest_binding_table_req(self, verb, data, parameters):
+
+    # curl http://127.0.0.1:9440/rest-zigate/1/binding-table-req/bd92
+    _response = prepResponseMessage(self, setupHeadersResponse())
+    _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+    if verb != "GET":
+        return _response
+
+    if len(parameters) != 1:
+        return _response
+
+    if parameters[0] not in self.ListOfDevices:
+        return _response
+
+    nwkid = parameters[0]
+
+    mgt_binding_table_req(self, nwkid, start_index="00")
+    action = {"Name": "Requested Binding table for device: %s" % nwkid}
+    _response["Data"] = json.dumps(action, sort_keys=True)
+
+    return _response
+
+
+def rest_binding_table_disp(self, verb, data, parameters):
+
+    _response = prepResponseMessage(self, setupHeadersResponse())
+    if verb != "GET":
+        return _response
+
+    if len(parameters) != 1:
+        return _response
+
+    if parameters[0] not in self.ListOfDevices:
+        return _response
+
+    nwkid = parameters[0]
+
+    if "BindingTable" not in self.ListOfDevices[nwkid]:
+        return _response
+
+    bindtable = self.ListOfDevices[nwkid]["BindingTable"]
+    _response["Data"] = json.dumps(bindtable, sort_keys=True)
     return _response

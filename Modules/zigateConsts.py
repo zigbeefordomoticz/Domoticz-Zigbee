@@ -283,9 +283,10 @@ ZONE_TYPE = {
 
 ZCL_CLUSTERS_ACT = {
     "0006": "On/Off",
-    "0008": "Dimmer",
+    "0008": "Level Control",
     "0102": "Windows Covering",
     "0201": "Thermostat",
+    "0300": "Colour Control",
     "0402": "Temperature Measurement",
 }
 
@@ -1635,9 +1636,9 @@ THERMOSTAT_LEVEL_2_MODE = {
 }
 
 THERMOSTAT_LEVEL_3_MODE = {
-    0: "Off", # Off
-    10: "Auto", # Confort
-    20: "Heat", # Eco
+    0: "Off",  # Off
+    10: "Auto",  # Confort
+    20: "Heat",  # Eco
 }
 
 THERMOSTAT_MODE_2_LEVEL = {
@@ -1653,9 +1654,9 @@ THERMOSTAT_MODE_2_LEVEL = {
 }
 
 THERMOSTAT_MODE_3_LEVEL = {
-    0x00: "00", # Off
-    0x01: "10", # Confort ?
-    0x03: "20", # No-Freeze
+    0x00: "00",  # Off
+    0x01: "10",  # Confort ?
+    0x03: "20",  # No-Freeze
 }
 
 # Ordered List - Important for binding
@@ -1688,12 +1689,13 @@ CLUSTERS_LIST = [
     "fc01",  # Legrand
     "fc21",  # Cluster Profalux PFX
     "ef00",  # Tuya TRV
-    "ff66", # Private Cluster for ZLinky_TIC
+    "ff66",  # Private Cluster for ZLinky_TIC
 ]
 
-LEGRAND_REMOTES = ("Remote switch", "Double gangs remote switch", "Shutters central remote switch")
-LEGRAND_REMOTE_SWITCHS = ("Remote switch", "Double gangs remote switch")
+LEGRAND_REMOTES = ("Remote switch", "Double gangs remote switch", "Shutters central remote switch", "Remote motion sensor", "Remote toggle switch")
+LEGRAND_REMOTE_SWITCHS = ("Remote switch", "Double gangs remote switch", "Remote toggle switch")
 LEGRAND_REMOTE_SHUTTER = ("Shutters central remote switch",)
+LEGRAND_REMOTE_MOTION = ("Remote motion sensor",)
 
 
 CFG_RPT_ATTRIBUTESbyCLUSTERS = {
@@ -1722,17 +1724,9 @@ CFG_RPT_ATTRIBUTESbyCLUSTERS = {
         }
     },
     # On/Off Cluster
-    "0006": {
-        "Attributes": {
-            "0000": {"DataType": "10", "MinInterval": "0001", "MaxInterval": "012C", "TimeOut": "0000", "Change": "01"}
-        }
-    },
+    "0006": {"Attributes": {"0000": {"DataType": "10", "MinInterval": "0001", "MaxInterval": "012C", "TimeOut": "0000", "Change": "01"}}},
     # Level Control Cluster
-    "0008": {
-        "Attributes": {
-            "0000": {"DataType": "20", "MinInterval": "0005", "MaxInterval": "012C", "TimeOut": "0000", "Change": "05"}
-        }
-    },
+    "0008": {"Attributes": {"0000": {"DataType": "20", "MinInterval": "0005", "MaxInterval": "012C", "TimeOut": "0000", "Change": "05"}}},
     # Windows Covering
     "0102": {
         "Attributes": {
@@ -1870,11 +1864,7 @@ CFG_RPT_ATTRIBUTESbyCLUSTERS = {
         }
     },
     # Occupancy Sensing
-    "0406": {
-        "Attributes": {
-            "0000": {"DataType": "18", "MinInterval": "0001", "MaxInterval": "012C", "TimeOut": "0000", "Change": "01"}
-        }
-    },
+    "0406": {"Attributes": {"0000": {"DataType": "18", "MinInterval": "0001", "MaxInterval": "012C", "TimeOut": "0000", "Change": "01"}}},
     # Sensitivy for HUE Motion
     #'0030': {'DataType': '20', 'MinInterval': '0005', 'MaxInterval': '1C20', 'TimeOut': '0000', 'Change': '01'}}},
     # IAS ZOne

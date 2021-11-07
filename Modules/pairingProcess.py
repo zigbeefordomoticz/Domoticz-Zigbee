@@ -10,33 +10,37 @@
 
 """
 
-import Domoticz
 import json
 
-
+import Domoticz
 from Classes.LoggingManagement import LoggingManagement
-
-from Modules.schneider_wiser import schneider_wiser_registration, wiser_home_lockout_thermostat, PREFIX_MACADDR_WIZER_LEGACY, WISER_LEGACY_MODEL_NAME_PREFIX
-
-from Modules.bindings import unbindDevice, bindDevice, rebind_Clusters, reWebBind_Clusters
-from Modules.basicOutputs import sendZigateCmd, identifyEffect, getListofAttribute, write_attribute, read_attribute
-
-from Modules.readAttributes import READ_ATTRIBUTES_REQUEST, ReadAttributeRequest_0000, ReadAttributeRequest_0300
-
-from Modules.lumi import enableOppleSwitch, setXiaomiVibrationSensitivity
-from Modules.livolo import livolo_bind
-from Modules.orvibo import OrviboRegistration
-from Modules.profalux import profalux_fake_deviceModel
-from Modules.domoCreate import CreateDomoDevice
-from Modules.tools import get_and_inc_SQN, getListOfEpForCluster, is_fake_ep
-from Modules.zigateConsts import CLUSTERS_LIST
+from Modules.basicOutputs import (getListofAttribute, identifyEffect,
+                                  read_attribute, sendZigateCmd,
+                                  write_attribute)
+from Modules.bindings import (bindDevice, rebind_Clusters, reWebBind_Clusters,
+                              unbindDevice)
 from Modules.casaia import casaia_pairing
+from Modules.domoCreate import CreateDomoDevice
+from Modules.livolo import livolo_bind
+from Modules.lumi import enableOppleSwitch, setXiaomiVibrationSensitivity
+from Modules.mgmt_rtg import mgmt_rtg
+from Modules.orvibo import OrviboRegistration
+from Modules.pollControl import poll_set_long_poll_interval
+from Modules.profalux import profalux_fake_deviceModel
+from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST,
+                                    ReadAttributeRequest_0000,
+                                    ReadAttributeRequest_0300)
+from Modules.schneider_wiser import (PREFIX_MACADDR_WIZER_LEGACY,
+                                     WISER_LEGACY_MODEL_NAME_PREFIX,
+                                     schneider_wiser_registration,
+                                     wiser_home_lockout_thermostat)
 from Modules.thermostats import thermostat_Calibration
+from Modules.tools import get_and_inc_SQN, getListOfEpForCluster, is_fake_ep
 from Modules.tuya import tuya_registration
 from Modules.tuyaSiren import tuya_sirene_registration
 from Modules.tuyaTools import tuya_TS0121_registration
-from Modules.tuyaTRV import tuya_eTRV_registration, TUYA_eTRV_MODEL
-from Modules.pollControl import poll_set_long_poll_interval
+from Modules.tuyaTRV import TUYA_eTRV_MODEL, tuya_eTRV_registration
+from Modules.zigateConsts import CLUSTERS_LIST
 
 
 def processNotinDBDevices(self, Devices, NWKID, status, RIA):
@@ -69,8 +73,7 @@ def processNotinDBDevices(self, Devices, NWKID, status, RIA):
             knownModel = True
             status = "CreateDB"  # Fast track
 
-    self.log.logging("Pairing", "Debug", "[%s] NEW OBJECT: %s Model Name: %s knownModel: %s status: %s" % (
-        RIA, NWKID, self.ListOfDevices[NWKID]["Model"], knownModel, status))
+    self.log.logging("Pairing", "Debug", "[%s] NEW OBJECT: %s Model Name: %s knownModel: %s status: %s" % (RIA, NWKID, self.ListOfDevices[NWKID]["Model"], knownModel, status))
 
     if knownModel and self.ListOfDevices[NWKID]["Model"] == "TI0001":
         # https://zigate.fr/forum/topic/livolo-compatible-zigbee/#postid-596
@@ -93,13 +96,13 @@ def processNotinDBDevices(self, Devices, NWKID, status, RIA):
         )
         status = "CreateDB"
 
-    #if status == "8043" and request_node_descriptor( self, NWKID, RIA=None, status=None):
+    # if status == "8043" and request_node_descriptor( self, NWKID, RIA=None, status=None):
     #    # We have to request the node_descriptor
     #    return
 
     if status in ("CreateDB", "8043"):
         # We do a request_node_description in case of unknown.
-        request_node_descriptor( self, NWKID, RIA=None, status=None)
+        request_node_descriptor(self, NWKID, RIA=None, status=None)
         interview_state_createDB(self, Devices, NWKID, RIA, status)
 
     if status != "CreateDB":
@@ -113,8 +116,9 @@ def processNotinDBDevices(self, Devices, NWKID, status, RIA):
 
         elif RIA > 4 and status not in ("UNKNOW", "inDB"):  # We have done several retry
             status = interview_timeout(self, Devices, NWKID, RIA, status)
-   
-    #self.ListOfDevices[NWKID]["RIA"] = str(RIA + 1)
+
+        else:
+            self.ListOfDevices[NWKID]["RIA"] = str(RIA + 1)
 
 
 def interview_state_004d(self, NWKID, RIA=None, status=None):
@@ -172,7 +176,7 @@ def interview_state_8043(self, NWKID, RIA, knownModel, status):
     self.log.logging("Pairing", "Debug", "[%s] NEW OBJECT: %s Request Model Name" % (RIA, NWKID))
     ReadAttributeRequest_0000(self, NWKID, fullScope=False)  # Reuest Model Name
 
-    request_node_descriptor( self, NWKID, RIA=None, status=None)
+    request_node_descriptor(self, NWKID, RIA=None, status=None)
 
     for iterEp in self.ListOfDevices[NWKID]["Ep"]:
         # ColorMode
@@ -191,7 +195,8 @@ def interview_state_8043(self, NWKID, RIA, knownModel, status):
 
     return status
 
-def request_node_descriptor( self, NWKID, RIA=None, status=None):
+
+def request_node_descriptor(self, NWKID, RIA=None, status=None):
 
     if "Manufacturer" in self.ListOfDevices[NWKID]:
         if self.ListOfDevices[NWKID]["Manufacturer"] in ({}, ""):
@@ -204,12 +209,13 @@ def request_node_descriptor( self, NWKID, RIA=None, status=None):
             "Debug",
             "[%s] NEW OBJECT: %s Manufacturer: %s" % (RIA, NWKID, self.ListOfDevices[NWKID]["Manufacturer"]),
             NWKID,
-            )
+        )
         return False
 
     self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s Request Node Descriptor" % (RIA, NWKID))
     sendZigateCmd(self, "0042", str(NWKID))  # Request a Node Descriptor
     return True
+
 
 def interview_state_8045(self, NWKID, RIA=None, status=None):
     self.log.logging(
@@ -371,6 +377,8 @@ def full_provision_device(self, Devices, NWKID, RIA, status):
     self.CommiSSionning = False
 
     self.ListOfDevices[NWKID]["PairingInProgress"] = False
+
+    mgmt_rtg(self, NWKID, "BindingTable")
 
 
 def zigbee_provision_device(self, Devices, NWKID, RIA, status):

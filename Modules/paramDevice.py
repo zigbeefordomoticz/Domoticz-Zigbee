@@ -11,34 +11,29 @@
 """
 
 import Domoticz
-
-from Modules.philips import philips_set_poweron_after_offon_device, philips_set_pir_occupancySensibility
+from Modules.basicOutputs import (ballast_Configuration_max_level,
+                                  ballast_Configuration_min_level,
+                                  set_PIROccupiedToUnoccupiedDelay,
+                                  set_poweron_afteroffon)
+from Modules.danfoss import (danfoss_exercise_day_of_week,
+                             danfoss_exercise_trigger_time,
+                             danfoss_orientation, danfoss_viewdirection)
 from Modules.enki import enki_set_poweron_after_offon_device
-from Modules.legrand_netatmo import (
-    legrand_enable_Led_Shutter_by_nwkid,
-    legrand_enable_Led_IfOn_by_nwkid,
-    legrand_enable_Led_InDark_by_nwkid,
-    legrand_Dimmer_by_nwkid,
-)
-from Modules.basicOutputs import (
-    set_poweron_afteroffon,
-    set_PIROccupiedToUnoccupiedDelay,
-    ballast_Configuration_max_level,
-    ballast_Configuration_min_level,
-)
-from Modules.readAttributes import ReadAttributeRequest_0006_400x, ReadAttributeRequest_0406_0010
+from Modules.legrand_netatmo import (legrand_Dimmer_by_nwkid,
+                                     legrand_enable_Led_IfOn_by_nwkid,
+                                     legrand_enable_Led_InDark_by_nwkid,
+                                     legrand_enable_Led_Shutter_by_nwkid)
+from Modules.philips import (philips_set_pir_occupancySensibility,
+                             philips_set_poweron_after_offon_device)
+from Modules.readAttributes import (ReadAttributeRequest_0006_400x,
+                                    ReadAttributeRequest_0406_0010)
+from Modules.schneider_wiser import (iTRV_open_window_detection,
+                                     wiser_home_lockout_thermostat)
+from Modules.tuya import (get_tuya_attribute, tuya_backlight_command,
+                          tuya_energy_childLock, tuya_switch_indicate_light,
+                          tuya_switch_relay_status,
+                          tuya_window_cover_motor_reversal)
 from Modules.tuyaTRV import tuya_trv_thermostat_sensor_mode
-from Modules.tuya import (
-    tuya_switch_relay_status,
-    tuya_switch_indicate_light,
-    get_tuya_attribute,
-    tuya_energy_childLock,
-    tuya_window_cover_motor_reversal,
-    tuya_backlight_command,
-)
-from Modules.schneider_wiser import wiser_home_lockout_thermostat, iTRV_open_window_detection
-
-from Modules.danfoss import danfoss_exercise_trigger_time, danfoss_exercise_day_of_week
 
 
 def Ballast_max_level(self, nwkid, max_level):
@@ -121,7 +116,9 @@ def param_PowerOnAfterOffOn(self, nwkid, mode):
         "TS0115",
         "TS011F-multiprise",
         "TS011F-2Gang-switches",
+        "TS011F-plug"
     ):
+        self.log.logging("Heartbeat", "Debug", "param_PowerOnAfterOffOn for %s mode: %s TUYA Manufacturer" % (nwkid, mode), nwkid)
         # Tuya ( 'TS0121' BlitzWolf )
         if "01" not in self.ListOfDevices[nwkid]["Ep"]:
             return
@@ -190,6 +187,8 @@ DEVICE_PARAMETERS = {
     "TuyaBackLight": tuya_backlight_command,
     "eTRVExerciseDay": danfoss_exercise_day_of_week,
     "eTRVExerciseTime": danfoss_exercise_trigger_time,
+    "DanfossTRVOrientation": danfoss_orientation,
+    "DanfossViewDirection": danfoss_viewdirection,
 }
 
 

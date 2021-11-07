@@ -114,12 +114,13 @@ TUYA_THERMOSTAT_MANUFACTURER = (
     "_TYST11_zuhszj9s",
     "_TYST11_jeaxp72v",
 )
-TUYA_eTRV1_MANUFACTURER = (
-    "_TZE200_kfvq6avy",
-    "_TZE200_ckud7u2l",
-    "_TYST11_KGbxAXL2",
-    "_TYST11_ckud7u2l",
-)
+#TUYA_eTRV1_MANUFACTURER = (
+#    "_TZE200_kfvq6avy",
+#    "_TZE200_ckud7u2l",
+#    "_TYST11_KGbxAXL2",
+#    "_TYST11_ckud7u2l",
+#)
+
 
 # https://github.com/zigpy/zigpy/discussions/653#discussioncomment-314395
 TUYA_eTRV1_MANUFACTURER = (
@@ -225,6 +226,24 @@ def tuya_registration(self, nwkid, device_reset=False, parkside=False):
         zigate_ep=ZIGATE_EP,
         ackIsDisabled=is_ack_tobe_disabled(self, nwkid),
     )
+
+
+def tuya_cmd_0x0000_0xf0(self, NwkId):
+
+    # Seen at pairing of a WGH-JLCZ02 / TS011F
+
+        payload = "11" + get_and_inc_SQN(self, NwkId) + "fe"
+        raw_APS_request(
+            self,
+            NwkId,
+            '01',
+            "0000",
+            "0104",
+            payload,
+            zigate_ep=ZIGATE_EP,
+            ackIsDisabled=is_ack_tobe_disabled(self, NwkId),
+        )
+        self.log.logging("Tuya", "Debug", "tuya_cmd_0x0000_0xf0 - Nwkid: %s reset device Cmd: fe" % NwkId)
 
 
 def pollingTuya(self, key):
