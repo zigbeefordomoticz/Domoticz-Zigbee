@@ -5,17 +5,16 @@
 #
 
 
-import Domoticz
-import queue
-import socket
-import select
-import time
 import json
+import queue
+import select
+import socket
+import time
 from threading import Thread
 
-from Modules.tools import is_hex
-
+import Domoticz
 from Classes.Transport.tools import handle_thread_error, release_command
+from Modules.tools import is_hex
 
 
 def start_writer_thread(self):
@@ -155,17 +154,9 @@ def limit_throuput(self, command):
 
 
 def wait_for_semaphore(self, command):
-    # Now we will block on Semaphore to serialize and limit the number of concurent commands on ZiGate
-    # By using the Semaphore Timeout , we will make sure that the Semaphore is not acquired for ever.
-    # However, if the Sem is relaed due to Timeout, we will not be notified !
-    timeout_cmd = 8.0
-    if self.firmware_compatibility_mode:
-        timeout_cmd = 4.0
-
     if self.force_dz_communication or self.pluginconf.pluginConf["writerTimeOut"]:
-        self.logging_send(
-            "Debug", "Waiting for a write slot . Semaphore %s TimeOut of 8s" % (self.semaphore_gate._value)
-        )
+        self.logging_send("Debug", "Waiting for a write slot . Semaphore %s TimeOut of 8s" % (self.semaphore_gate._value))
+        timeout_cmd = 4.0 if self.firmware_compatibility_mode else 8.0
         block_status = self.semaphore_gate.acquire(blocking=True, timeout=timeout_cmd)  # Blocking until 8s
     # else:
     #    self.logging_send( 'Debug', "Waiting for a write slot . Semaphore %s ATTENTION NO TIMEOUT FOR TEST PURPOSES" %(self.semaphore_gate._value))
@@ -312,34 +303,7 @@ def native_write_to_zigate(self, serialConnection, encoded_data):
         self.tcp_send_queue.put(encoded_data)
         return True
 
-    # Serial
-    try:
-        if serialConnection and serialConnection.is_open:
-            nb_write = serialConnection.write(encoded_data)
-            if nb_write != len(encoded_data):
-                _context = {
-                    "Error code": "TRANS-WRTZGTE-01",
-                    "EncodedData": str(encoded_data),
-                    "serialConnection": str(serialConnection),
-                    "NbWrite": nb_write,
-                }
-                self.logging_send_error("write_to_zigate", context=_context)
-            else:
-                serialConnection.flush()
-        else:
-            _context = {
-                "Error code": "TRANS-WRTZGTE-02",
-                "EncodedData": str(encoded_data),
-                "serialConnection": str(serialConnection),
-            }
-            self.logging_send_error("write_to_zigate port is closed!", context=_context)
-            return "PortClosed"
-
-    except TypeError as e:
-        # Disconnect of USB->UART occured
-        self.logging_send("Error", "write_to_zigate - error while writing %s" % (e))
-        return False
-
+    self.serial_send_queue.put(encoded_data)
     return True
 
 

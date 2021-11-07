@@ -1234,6 +1234,7 @@ def start_GrpManagement(self, homefolder):
 def start_OTAManagement(self, homefolder):
     self.OTA = OTAManagement(
         self.pluginconf,
+        self.DeviceConf,
         self.adminWidgets,
         self.ZigateComm,
         homefolder,

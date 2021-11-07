@@ -4,29 +4,26 @@
 # Author: zaraki673 & pipiche38
 #
 
-import threading
-import Domoticz
-import socket
-import serial
-import queue
-import time
-
 import json
-
-from threading import Semaphore
+import queue
+import socket
+import threading
+import time
 from queue import PriorityQueue, Queue
+from threading import Semaphore
 
-from Classes.Transport.sqnMgmt import sqn_init_stack, sqn_generate_new_internal_sqn
-from Classes.Transport.readerThread import open_zigate_and_start_reader, shutdown_reader_thread
-from Classes.Transport.writerThread import start_writer_thread
+import Domoticz
+import serial
 from Classes.Transport.forwarderThread import start_forwarder_thread
-from Classes.Transport.tools import (
-    initialize_command_protocol_parameters,
-    waiting_for_end_thread,
-    stop_waiting_on_queues,
-)
 from Classes.Transport.readDecoder import decode_and_split_message
-
+from Classes.Transport.readerThread import (open_zigate_and_start_reader,
+                                            shutdown_reader_thread)
+from Classes.Transport.sqnMgmt import (sqn_generate_new_internal_sqn,
+                                       sqn_init_stack)
+from Classes.Transport.tools import (initialize_command_protocol_parameters,
+                                     stop_waiting_on_queues,
+                                     waiting_for_end_thread)
+from Classes.Transport.writerThread import start_writer_thread
 from Modules.zigateConsts import MAX_SIMULTANEOUS_ZIGATE_COMMANDS
 
 
@@ -95,6 +92,7 @@ class ZigateTransport(object):
         self.writer_thread = None
         self.prioriy_sqn = 0
         self.tcp_send_queue = Queue()  # We use a Queue as socket is not thread-safe in python
+        self.serial_send_queue = Queue()  # We use a Queue as Serial is not thread-safe in python
 
         # Reader
         self.reader_thread = None
@@ -167,9 +165,7 @@ class ZigateTransport(object):
 
         if (cmd, datas) in self.writer_list_in_queue:
             if self.pluginconf.pluginConf["debugzigateCmd"]:
-                self.logging_send(
-                    "Log", "sendData - Warning %s/%s already in queue this command is dropped" % (cmd, datas)
-                )
+                self.logging_send("Log", "sendData - Warning %s/%s already in queue this command is dropped" % (cmd, datas))
             return None
         self.writer_list_in_queue.append((cmd, datas))
 
@@ -339,9 +335,7 @@ def open_connection(self):
             start_forwarder_thread(self)
 
     elif self._transp in ("Wifi", "V2-Wifi"):
-        Domoticz.Status(
-            "Connection Name: Zigate, Transport: TCP/IP, Address: %s:%s" % (self._serialPort, self._wifiPort)
-        )
+        Domoticz.Status("Connection Name: Zigate, Transport: TCP/IP, Address: %s:%s" % (self._serialPort, self._wifiPort))
         if self.pluginconf.pluginConf["byPassDzConnection"] and not self.force_dz_communication:
             result = open_zigate_and_start_reader(self, "tcpip")
         else:

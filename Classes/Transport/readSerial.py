@@ -4,12 +4,13 @@
 # Author: pipiche38
 #
 
-import Domoticz
-import serial
 import time
 
-from Classes.Transport.tools import stop_waiting_on_queues, handle_thread_error
+import Domoticz
+import serial
 from Classes.Transport.readDecoder import decode_and_split_message
+from Classes.Transport.tools import handle_thread_error, stop_waiting_on_queues
+
 
 # Manage Serial Line
 def open_serial(self):
@@ -46,14 +47,12 @@ def close_serial(self):
         self._connection = None
         self.logging_receive("Status", "ZigateTransport: Serial Connection closed: %s" % self._connection)
     except Exception as e:
-        self.logging_receive(
-            "Log", "ZigateTransport: Error while Serial Connection closing: %s - %s" % (self._connection, e)
-        )
-        pass
+        self.logging_receive("Log", "ZigateTransport: Error while Serial Connection closing: %s - %s" % (self._connection, e))
+
     time.sleep(0.5)
 
 
-def serial_read_from_zigate(self):
+def serial_read_write_from_zigate(self):
 
     self.logging_receive("Debug", "serial_read_from_zigate - listening")
     serial_reset_line_in(self)
@@ -80,24 +79,28 @@ def serial_read_from_zigate(self):
         if not (self._connection and self._connection.is_open):
             time.sleep(0.5)
             continue
-        self.logging_receive("Debug", "serial_read_from_zigate - reading %s bytes" % 1)
-        data = None
+
+        # Reading (prio to read)
+        serial_read_from_zigate(self)
+
+        # Writing
+        serial_write_to_zigate(self)
+
+        time.sleep(0.05)
+
+    stop_waiting_on_queues(self)
+    self.logging_receive("Status", "ZigateTransport: ZiGateSerialListen Thread stop.")
+
+
+def serial_read_from_zigate(self):
+
+    while self._connection.in_waiting:
         try:
-            if self._connection:
-                data = self._connection.read(1)  # Blocking Read
-                if len(data) > 1:
-                    # We did a blocking read for 1 and we received more !!!
-                    self.logging_receive(
-                        "Error",
-                        "serial_read_from_zigate - while serial read for 1 we got more !!! %s %s" % (data, len(data)),
-                    )
-
+            data = self._connection.read(self._connection.in_waiting)
         except serial.SerialException as e:
-            self.logging_receive("Error", "serial_read_from_zigate - error while reading %s" % (e))
             data = None
-            self._connection = None
-            break
-
+            self.logging_receive("Error", "serial_read_from_zigate - error while reading %s" % (e))
+            # Might try to reconnect
         except Exception as e:
             # probably some I/O problem such as disconnected USB serial
             # adapters -> exit
@@ -109,5 +112,33 @@ def serial_read_from_zigate(self):
         if data:
             decode_and_split_message(self, data)
 
-    stop_waiting_on_queues(self)
-    self.logging_receive("Status", "ZigateTransport: ZiGateSerialListen Thread stop.")
+
+def serial_write_to_zigate(self):
+
+    try:
+        if not self._connection or not self._connection.is_open:
+            _context = {
+                "Error code": "TRANS-WRTZGTE-02",
+                "serialConnection": str(self._connection),
+            }
+            self.logging_send_error("write_to_zigate port is closed!", context=_context)
+            return "PortClosed"
+
+        if self.serial_send_queue.qsize() > 0:
+            encode_data = self.serial_send_queue.get()
+            nb_write = self._connection.write(encode_data)
+            if nb_write != len(encode_data):
+                _context = {
+                    "Error code": "TRANS-WRTZGTE-01",
+                    "EncodedData": str(encode_data),
+                    "serialConnection": str(self._connection),
+                    "NbWrite": nb_write,
+                }
+                self.logging_send_error("write_to_zigate", context=_context)
+            else:
+                self._connection.flush()
+
+    except TypeError as e:
+        # Disconnect of USB->UART occured
+        self.logging_send("Error", "write_to_zigate - error while writing %s" % (e))
+        return False
