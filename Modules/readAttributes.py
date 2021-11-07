@@ -725,7 +725,7 @@ def ReadAttributeRequest_000C(self, key):
 
 def ReadAttributeRequest_0019(self, key):
     # Cluster 0x000C with attribute 0x0055 / Xiaomi Power and Metering
-    self.log.logging("ReadAttributes", "Log", "ReadAttributeRequest_0019 - Key: %s " % key, nwkid=key)
+    self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_0019 - Key: %s " % key, nwkid=key)
 
     ListOfEp = getListOfEpForCluster(self, key, "0019")
     for EPout in ListOfEp:
@@ -733,7 +733,7 @@ def ReadAttributeRequest_0019(self, key):
         if listAttributes:
             self.log.logging(
                 "ReadAttributes",
-                "Log",
+                "Debug",
                 "Request 0x0019 info via Read Attribute request: " + key + " EPout = " + EPout,
                 nwkid=key,
             )
