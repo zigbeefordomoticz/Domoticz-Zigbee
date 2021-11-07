@@ -1469,6 +1469,7 @@ def retreive_data_from_current(self, Devices, Unit, _format):
     nb_parameters = len(_format.split(";"))
     currentsValue = Devices[Unit].sValue
     if len(currentsValue.split(";")) != nb_parameters:
+        currentsValue = ""
         for x in range(0, nb_parameters):
             if x != nb_parameters - 1:
                 currentsValue += "0;"
