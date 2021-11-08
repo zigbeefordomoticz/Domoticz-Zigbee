@@ -1024,17 +1024,15 @@ def ReadAttributeRequest_0402(self, key):
 
     self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_0402 - Key: %s " % key, nwkid=key)
 
-    if 'Model' in self.ListOfDevices[key] and self.ListOfDevices[key]["Model"] in ( "TS0201-_TZ3000_qaaysllp",):
-        tuya_cmd_0x0000_0xf0(self, key)
-        
     _model = "Model" in self.ListOfDevices[key]
     ListOfEp = getListOfEpForCluster(self, key, "0402")
     for EPout in ListOfEp:
         listAttributes = []
         for iterAttr in retreive_ListOfAttributesByCluster(self, key, EPout, "0402"):
-            if iterAttr not in listAttributes:
-                if _model and self.ListOfDevices[key]["Model"] == "lumi.light.aqcn02":  # Aqara Blulb
-                    continue
+            if iterAttr not in listAttributes and (
+                not _model
+                or self.ListOfDevices[key]["Model"] != "lumi.light.aqcn02"
+            ):
                 listAttributes.append(iterAttr)
 
         if listAttributes:
@@ -1044,7 +1042,12 @@ def ReadAttributeRequest_0402(self, key):
                 "Temperature info via Read Attribute request: " + key + " EPout = " + EPout,
                 nwkid=key,
             )
-            ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0402", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
+            if 'Model' in self.ListOfDevices[key] and self.ListOfDevices[key]["Model"] in ( "TS0201-_TZ3000_qaaysllp",):
+                tuya_cmd_0x0000_0xf0(self, key)
+                ReadAttributeReq(self, key, ZIGATE_EP, 'ff', "0402", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
+
+            else:
+                ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0402", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
 
 
 def ReadAttributeRequest_0403(self, key):
@@ -1073,18 +1076,16 @@ def ReadAttributeRequest_0403(self, key):
 
 def ReadAttributeRequest_0405(self, key):
     
-    if 'Model' in self.ListOfDevices[key] and self.ListOfDevices[key]["Model"] in ( "TS0201-_TZ3000_qaaysllp",):
-        tuya_cmd_0x0000_0xf0(self, key)
-        
     self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_0405 - Key: %s " % key, nwkid=key)
     _model = "Model" in self.ListOfDevices[key]
     ListOfEp = getListOfEpForCluster(self, key, "0405")
     for EPout in ListOfEp:
         listAttributes = []
         for iterAttr in retreive_ListOfAttributesByCluster(self, key, EPout, "0405"):
-            if iterAttr not in listAttributes:
-                if _model and self.ListOfDevices[key]["Model"] == "lumi.light.aqcn02":  # Aqara Blulb
-                    continue
+            if iterAttr not in listAttributes and (
+                not _model
+                or self.ListOfDevices[key]["Model"] != "lumi.light.aqcn02"
+            ):
                 listAttributes.append(iterAttr)
 
         if listAttributes:
@@ -1094,7 +1095,12 @@ def ReadAttributeRequest_0405(self, key):
                 "Humidity info via Read Attribute request: " + key + " EPout = " + EPout,
                 nwkid=key,
             )
-            ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0405", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
+            if 'Model' in self.ListOfDevices[key] and self.ListOfDevices[key]["Model"] in ( "TS0201-_TZ3000_qaaysllp",):
+                tuya_cmd_0x0000_0xf0(self, key)
+                ReadAttributeReq(self, key, ZIGATE_EP, 'ff', "0405", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
+
+            else:
+                ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0405", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
 
 
 def ReadAttributeRequest_0406(self, key):

@@ -305,51 +305,20 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
         if "Meter" in ClusterType:  # Meter Usage.
             # value is string an represent the Instant Usage
             if WidgetType == "Meter" and Attribute_ == "050f":
-                Options = {}
-                # Do we have the Energy Mode calculation already set ?
-                if "EnergyMeterMode" in Devices[DeviceUnit].Options:
-                    # Yes, let's retreive it
-                    Options = Devices[DeviceUnit].Options
-                else:
-                    # No, let's set to compute
-                    Options["EnergyMeterMode"] = "0"  # By default from device
-                if Options["EnergyMeterMode"] != "1":
-                    oldnValue = Devices[DeviceUnit].nValue
-                    oldsValue = Devices[DeviceUnit].sValue
-                    Options = {}
-                    Options["EnergyMeterMode"] = "1"
-                    Devices[DeviceUnit].Update(oldnValue, oldsValue, Options=Options)
-
+                check_set_meter_widget( Devices, DeviceUnit, 0)
+                
                 sValue = "%s;" % round(float(value), 2)
                 self.log.logging("Widget", "Debug", "------>  : " + sValue)
+                
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
 
             elif WidgetType == "Meter" and Attribute_ == "0000":
                 # We are in the case were we receive Summation , let's find the last instant power and update
-                instant = 0
-                if "0702" in self.ListOfDevices[NWKID]["Ep"][Ep] and "0400" in self.ListOfDevices[NWKID]["Ep"][Ep]["0702"]:
-                    if self.ListOfDevices[NWKID]["Ep"][Ep]["0702"]["0400"] not in ({}, "", "0"):
-                        instant = self.ListOfDevices[NWKID]["Ep"][Ep]["0702"]["0400"]
-                elif "0b04" in self.ListOfDevices[NWKID]["Ep"][Ep] and "050b" in self.ListOfDevices[NWKID]["Ep"][Ep]["0b04"]:
-                    if self.ListOfDevices[NWKID]["Ep"][Ep]["0b04"]["050b"] not in ({}, "", "0"):
-                        instant = self.ListOfDevices[NWKID]["Ep"][Ep]["0b04"]["050b"]
-                Options = {}
-                # Do we have the Energy Mode calculation already set ?
-                Options["EnergyMeterMode"] = "0"
-                if "EnergyMeterMode" in Devices[DeviceUnit].Options:
-                    # Yes, let's retreive it
-                    Options = Devices[DeviceUnit].Options
-
+                check_set_meter_widget( Devices, DeviceUnit, 0)
+                
+                instant, summ = retreive_data_from_current(self, Devices, DeviceUnit, "0;0")
                 summation = round(float(value), 2)
-                # We got summation from Device, let's check that EnergyMeterMode is
-                # correctly set to 0, if not adjust
-                if Options["EnergyMeterMode"] != "0":
-                    oldnValue = Devices[DeviceUnit].nValue
-                    oldsValue = Devices[DeviceUnit].sValue
-                    Options = {}
-                    Options["EnergyMeterMode"] = "0"
-                    Devices[DeviceUnit].Update(oldnValue, oldsValue, Options=Options)
-
+                
                 sValue = "%s;%s" % (instant, summation)
                 self.log.logging("Widget", "Debug", "------>  : " + sValue)
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
@@ -357,45 +326,27 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             elif (WidgetType == "Meter" and Attribute_ == "") or (WidgetType == "Power" and clusterID == "000c"):  # kWh
                 # Let's check if we have Summation in the datastructutre
                 summation = 0
-                if "0702" in self.ListOfDevices[NWKID]["Ep"][Ep]:
-                    if "0000" in self.ListOfDevices[NWKID]["Ep"][Ep]["0702"]:
-                        if self.ListOfDevices[NWKID]["Ep"][Ep]["0702"]["0000"] != {} and self.ListOfDevices[NWKID]["Ep"][Ep]["0702"]["0000"] != "" and self.ListOfDevices[NWKID]["Ep"][Ep]["0702"]["0000"] != "0":
-                            # summation = int(self.ListOfDevices[NWKID]['Ep'][Ep]['0702']['0000'])
-                            summation = self.ListOfDevices[NWKID]["Ep"][Ep]["0702"]["0000"]
-
-                Options = {}
-                # Do we have the Energy Mode calculation already set ?
-                if "EnergyMeterMode" in Devices[DeviceUnit].Options:
-                    # Yes, let's retreive it
-                    Options = Devices[DeviceUnit].Options
-                else:
-                    # No, let's set to compute
-                    Options["EnergyMeterMode"] = "0"  # By default from device
+                if ( 
+                    "0702" in self.ListOfDevices[NWKID]["Ep"][Ep] and 
+                    "0000" in self.ListOfDevices[NWKID]["Ep"][Ep]["0702"] and 
+                    self.ListOfDevices[NWKID]["Ep"][Ep]["0702"]["0000"] not in  ({}, "", "0")
+                ): 
+                    # summation = int(self.ListOfDevices[NWKID]['Ep'][Ep]['0702']['0000'])
+                    summation = self.ListOfDevices[NWKID]["Ep"][Ep]["0702"]["0000"]
 
                 nValue = round(float(value), 2)
                 # Did we get Summation from Data Structure
                 if summation != 0:
                     summation = int(float(summation))
                     sValue = "%s;%s" % (nValue, summation)
-
                     # We got summation from Device, let's check that EnergyMeterMode is
                     # correctly set to 0, if not adjust
-                    if Options["EnergyMeterMode"] != "0":
-                        oldnValue = Devices[DeviceUnit].nValue
-                        oldsValue = Devices[DeviceUnit].sValue
-                        Options = {}
-                        Options["EnergyMeterMode"] = "0"
-                        Devices[DeviceUnit].Update(oldnValue, oldsValue, Options=Options)
+                    check_set_meter_widget( Devices, DeviceUnit, 0)
                 else:
                     sValue = "%s;" % (nValue)
+                    check_set_meter_widget( Devices, DeviceUnit, 1)
                     # No summation retreive, so we make sure that EnergyMeterMode is
                     # correctly set to 1 (compute), if not adjust
-                    if Options["EnergyMeterMode"] != "1":
-                        oldnValue = Devices[DeviceUnit].nValue
-                        oldsValue = Devices[DeviceUnit].sValue
-                        Options = {}
-                        Options["EnergyMeterMode"] = "1"
-                        Devices[DeviceUnit].Update(oldnValue, oldsValue, Options=Options)
 
                 self.log.logging("Widget", "Debug", "------>  : " + sValue)
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
@@ -1462,6 +1413,25 @@ def check_erratic_value(self, NwkId, value_type, value, expected_min, expected_m
             NwkId,
         )
     return True
+
+def check_set_meter_widget( Devices, Unit, mode):
+    # Mode = 0 - From device (default)
+    # Mode = 1 - Computed
+
+    sMode = "%s" %mode
+
+    Options = {'EnergyMeterMode': '0'}
+    # Do we have the Energy Mode calculation already set ?
+    if "EnergyMeterMode" in Devices[Unit].Options:
+        # Yes, let's retreive it
+        Options = Devices[Unit].Options
+
+    if Options["EnergyMeterMode"] != sMode:
+        oldnValue = Devices[Unit].nValue
+        oldsValue = Devices[Unit].sValue
+        Options = {}
+        Options["EnergyMeterMode"] = sMode
+        Devices[Unit].Update(oldnValue, oldsValue, Options=Options)
 
 
 def retreive_data_from_current(self, Devices, Unit, _format):
