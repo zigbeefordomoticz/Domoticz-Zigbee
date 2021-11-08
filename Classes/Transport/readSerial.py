@@ -172,16 +172,15 @@ def serial_write_to_zigate(self):
             nb_write = self._connection.write(encode_data)
             if nb_write == len(encode_data):
                 self._connection.flush()
-
-
-            # Error, missing 
-            context = {
-                "Error code": "TRANS-WRTZGTE-01",
-                "EncodedData": str(encode_data),
-                "serialConnection": str(self._connection),
-                "NbWrite": nb_write,
-            }
-            self.logging_serial("Error", "write_to_zigate", _context=context)
+            else:
+                # Error, missing 
+                context = {
+                    "Error code": "TRANS-WRTZGTE-01",
+                    "EncodedData": str(encode_data),
+                    "serialConnection": str(self._connection),
+                    "NbWrite": nb_write,
+                }
+                self.logging_serial("Error", "write_to_zigate", _context=context)
 
         return True
                 
