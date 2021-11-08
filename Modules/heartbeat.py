@@ -10,44 +10,37 @@
 
 """
 
-import Domoticz
 import time
 
-from Modules.basicOutputs import sendZigateCmd, getListofAttribute
-from Modules.danfoss import danfoss_room_sensor_polling
-from Modules.readAttributes import (
-    READ_ATTRIBUTES_REQUEST,
-    ping_device_with_read_attribute,
-    ReadAttributeRequest_0001,
-    ReadAttributeRequest_0006_0000,
-    ReadAttributeRequest_0008_0000,
-    ReadAttributeRequest_0101_0000,
-    ReadAttributeRequest_0102_0008,
-    ReadAttributeRequest_0201_0012,
-    ReadAttributeRequest_0b04_050b_0505_0508,
-    ReadAttributeRequest_0702_ZLinky_TIC,
-    ReadAttributeRequest_ff66,
-    ping_tuya_device,
-)
-from Modules.legrand_netatmo import legrandReenforcement
-from Modules.schneider_wiser import schneiderRenforceent
+import Domoticz
+
+from Modules.basicOutputs import getListofAttribute, sendZigateCmd
 from Modules.casaia import pollingCasaia
-from Modules.tools import (
-    removeNwkInList,
-    mainPoweredDevice,
-    ReArrangeMacCapaBasedOnModel,
-    is_time_to_perform_work,
-    getListOfEpForCluster,
-    is_hex,
-)
+from Modules.danfoss import danfoss_room_sensor_polling
 from Modules.domoTools import timedOutDevice
-from Modules.zigateConsts import (
-    HEARTBEAT,
-    MAX_LOAD_ZIGATE,
-)
+from Modules.legrand_netatmo import legrandReenforcement
+from Modules.mgmt_rtg import mgmt_rtg
 from Modules.pairingProcess import processNotinDBDevices
 from Modules.paramDevice import sanity_check_of_param
-from Modules.mgmt_rtg import mgmt_rtg
+from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST,
+                                    ReadAttributeRequest_0b04_050b_0505_0508,
+                                    ReadAttributeRequest_0001,
+                                    ReadAttributeRequest_0006_0000,
+                                    ReadAttributeRequest_0008_0000,
+                                    ReadAttributeRequest_0101_0000,
+                                    ReadAttributeRequest_0102_0008,
+                                    ReadAttributeRequest_0201_0012,
+                                    ReadAttributeRequest_0402,
+                                    ReadAttributeRequest_0405,
+                                    ReadAttributeRequest_0702_ZLinky_TIC,
+                                    ReadAttributeRequest_ff66,
+                                    ping_device_with_read_attribute,
+                                    ping_tuya_device)
+from Modules.schneider_wiser import schneiderRenforceent
+from Modules.tools import (ReArrangeMacCapaBasedOnModel, getListOfEpForCluster,
+                           is_hex, is_time_to_perform_work, mainPoweredDevice,
+                           removeNwkInList)
+from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE
 
 # Read Attribute trigger: Every 10"
 # Configure Reporting trigger: Every 15
@@ -72,16 +65,14 @@ def attributeDiscovery(self, NwkId):
     if "ConfigSource" not in self.ListOfDevices[NwkId]:
         return False
 
-    if "ConfigSource" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["ConfigSource"] == "DeviceConf":
+    if self.ListOfDevices[NwkId]["ConfigSource"] == "DeviceConf":
         return False
 
     if "Attributes List" in self.ListOfDevices[NwkId] and len(self.ListOfDevices[NwkId]["Attributes List"]) > 0:
         return False
 
     if "Attributes List" not in self.ListOfDevices[NwkId]:
-        self.ListOfDevices[NwkId]["Attributes List"] = {}
-        self.ListOfDevices[NwkId]["Attributes List"]["Ep"] = {}
-
+        self.ListOfDevices[NwkId]["Attributes List"] = {'Ep': {}}
     if "Request" not in self.ListOfDevices[NwkId]["Attributes List"]:
         self.ListOfDevices[NwkId]["Attributes List"]["Request"] = {}
 
@@ -143,6 +134,8 @@ def pollingManufSpecificDevices(self, NwkId, HB):
         "TuyaPing": ping_tuya_device,
         "BatteryPollingFreq": ReadAttributeRequest_0001,
         "DanfossRoomFreq": danfoss_room_sensor_polling,
+        "TempPollingFreq": ReadAttributeRequest_0402,
+        "HumiPollingFreq": ReadAttributeRequest_0405
     }
 
     if "Param" not in self.ListOfDevices[NwkId]:
@@ -222,40 +215,40 @@ def checkHealth(self, NwkId):
         self.ListOfDevices[NwkId]["Health"] = ""
 
     if "Stamp" not in self.ListOfDevices[NwkId]:
-        self.ListOfDevices[NwkId]["Stamp"] = {}
-        self.ListOfDevices[NwkId]["Stamp"]["LastPing"] = 0
-        self.ListOfDevices[NwkId]["Stamp"]["LastSeen"] = 0
+        self.ListOfDevices[NwkId]["Stamp"] = {'LastPing': 0, 'LastSeen': 0}
         self.ListOfDevices[NwkId]["Health"] = "unknown"
 
     if "LastSeen" not in self.ListOfDevices[NwkId]["Stamp"]:
         self.ListOfDevices[NwkId]["Stamp"]["LastSeen"] = 0
         self.ListOfDevices[NwkId]["Health"] = "unknown"
 
-    if int(time.time()) > (self.ListOfDevices[NwkId]["Stamp"]["LastSeen"] + 21200):  # Age is above 6 hours
-        if self.ListOfDevices[NwkId]["Health"] == "Live":
-            if "ZDeviceName" in self.ListOfDevices[NwkId]:
-                Domoticz.Error(
-                    "Device Health - %s Nwkid: %s,Ieee: %s , Model: %s seems to be out of the network"
-                    % (
-                        self.ListOfDevices[NwkId]["ZDeviceName"],
-                        NwkId,
-                        self.ListOfDevices[NwkId]["IEEE"],
-                        self.ListOfDevices[NwkId]["Model"],
-                    )
+    if (
+        int(time.time())
+        > (self.ListOfDevices[NwkId]["Stamp"]["LastSeen"] + 21200)
+        and self.ListOfDevices[NwkId]["Health"] == "Live"
+    ):
+        if "ZDeviceName" in self.ListOfDevices[NwkId]:
+            Domoticz.Error(
+                "Device Health - %s Nwkid: %s,Ieee: %s , Model: %s seems to be out of the network"
+                % (
+                    self.ListOfDevices[NwkId]["ZDeviceName"],
+                    NwkId,
+                    self.ListOfDevices[NwkId]["IEEE"],
+                    self.ListOfDevices[NwkId]["Model"],
                 )
-            else:
-                Domoticz.Error(
-                    "Device Health - Nwkid: %s,Ieee: %s , Model: %s seems to be out of the network"
-                    % (NwkId, self.ListOfDevices[NwkId]["IEEE"], self.ListOfDevices[NwkId]["Model"])
-                )
-            self.ListOfDevices[NwkId]["Health"] = "Not seen last 24hours"
+            )
+        else:
+            Domoticz.Error(
+                "Device Health - Nwkid: %s,Ieee: %s , Model: %s seems to be out of the network"
+                % (NwkId, self.ListOfDevices[NwkId]["IEEE"], self.ListOfDevices[NwkId]["Model"])
+            )
+        self.ListOfDevices[NwkId]["Health"] = "Not seen last 24hours"
 
     # If device flag as Not Reachable, don't do anything
-    if "Health" in self.ListOfDevices[NwkId]:
-        if self.ListOfDevices[NwkId]["Health"] == "Not Reachable":
-            return False
-
-    return True
+    return (
+        "Health" not in self.ListOfDevices[NwkId]
+        or self.ListOfDevices[NwkId]["Health"] != "Not Reachable"
+    )
 
 
 def pingRetryDueToBadHealth(self, NwkId):
@@ -283,35 +276,41 @@ def pingRetryDueToBadHealth(self, NwkId):
         NwkId,
     )
     # Retry #1
-    if retry == 0:
-        # First retry in the next cycle if possible
-        if self.ZigateComm.loadTransmit() == 0 and now > (lastTimeStamp + 30):  # 30s
-            self.log.logging("Heartbeat", "Debug", "--------> ping Retry 1 Check %s" % NwkId, NwkId)
-            self.ListOfDevices[NwkId]["pingDeviceRetry"]["Retry"] += 1
-            self.ListOfDevices[NwkId]["pingDeviceRetry"]["TimeStamp"] = now
-            submitPing(self, NwkId)
-            return
+    if (
+        retry == 0
+        and self.ZigateComm.loadTransmit() == 0
+        and now > (lastTimeStamp + 30)
+    ):  # 30s
+        self.log.logging("Heartbeat", "Debug", "--------> ping Retry 1 Check %s" % NwkId, NwkId)
+        self.ListOfDevices[NwkId]["pingDeviceRetry"]["Retry"] += 1
+        self.ListOfDevices[NwkId]["pingDeviceRetry"]["TimeStamp"] = now
+        submitPing(self, NwkId)
+        return
 
     # Retry #2
-    if retry == 1:
-        # Second retry in the next 30"
-        if self.ZigateComm.loadTransmit() == 0 and now > (lastTimeStamp + 120):  # 30 + 120s
-            # Let's retry
-            self.log.logging("Heartbeat", "Debug", "--------> ping Retry 2 Check %s" % NwkId, NwkId)
-            self.ListOfDevices[NwkId]["pingDeviceRetry"]["Retry"] += 1
-            self.ListOfDevices[NwkId]["pingDeviceRetry"]["TimeStamp"] = now
-            submitPing(self, NwkId)
-            return
+    if (
+        retry == 1
+        and self.ZigateComm.loadTransmit() == 0
+        and now > (lastTimeStamp + 120)
+    ):  # 30 + 120s
+        # Let's retry
+        self.log.logging("Heartbeat", "Debug", "--------> ping Retry 2 Check %s" % NwkId, NwkId)
+        self.ListOfDevices[NwkId]["pingDeviceRetry"]["Retry"] += 1
+        self.ListOfDevices[NwkId]["pingDeviceRetry"]["TimeStamp"] = now
+        submitPing(self, NwkId)
+        return
 
     # Retry #3
-    if retry == 2:
-        # Last retry after 5 minutes
-        if self.ZigateComm.loadTransmit() == 0 and now > (lastTimeStamp + 300):  # 30 + 120 + 300
-            # Let's retry
-            self.log.logging("Heartbeat", "Debug", "--------> ping Retry 3 (last) Check %s" % NwkId, NwkId)
-            self.ListOfDevices[NwkId]["pingDeviceRetry"]["Retry"] += 1
-            self.ListOfDevices[NwkId]["pingDeviceRetry"]["TimeStamp"] = now
-            submitPing(self, NwkId)
+    if (
+        retry == 2
+        and self.ZigateComm.loadTransmit() == 0
+        and now > (lastTimeStamp + 300)
+    ):  # 30 + 120 + 300
+        # Let's retry
+        self.log.logging("Heartbeat", "Debug", "--------> ping Retry 3 (last) Check %s" % NwkId, NwkId)
+        self.ListOfDevices[NwkId]["pingDeviceRetry"]["Retry"] += 1
+        self.ListOfDevices[NwkId]["pingDeviceRetry"]["TimeStamp"] = now
+        submitPing(self, NwkId)
 
 
 def pingDevices(self, NwkId, health, checkHealthFlag, mainPowerFlag):
@@ -496,9 +495,11 @@ def processKnownDevices(self, Devices, NWKID):
     rescheduleAction = rescheduleAction or pollingManufSpecificDevices(self, NWKID, intHB)
 
     _doReadAttribute = False
-    if self.pluginconf.pluginConf["enableReadAttributes"] or self.pluginconf.pluginConf["resetReadAttributes"]:
-        if (intHB % READATTRIBUTE_FEQ) == 0:
-            _doReadAttribute = True
+    if (
+        self.pluginconf.pluginConf["enableReadAttributes"]
+        or self.pluginconf.pluginConf["resetReadAttributes"]
+    ) and (intHB % READATTRIBUTE_FEQ) == 0:
+        _doReadAttribute = True
 
     # Do we need to force ReadAttribute at plugin startup ?
     # If yes, best is probably to have ResetReadAttribute to 1
@@ -601,9 +602,11 @@ def processKnownDevices(self, Devices, NWKID):
             or "ReceiveOnIdle" not in self.ListOfDevices[NWKID]
         ):
             req_node_descriptor = True
-        if "Manufacturer" in self.ListOfDevices[NWKID]:
-            if self.ListOfDevices[NWKID]["Manufacturer"] == "":
-                req_node_descriptor = True
+        if (
+            "Manufacturer" in self.ListOfDevices[NWKID]
+            and self.ListOfDevices[NWKID]["Manufacturer"] == ""
+        ):
+            req_node_descriptor = True
 
         if req_node_descriptor and not self.busy and self.ZigateComm.loadTransmit() <= MAX_LOAD_ZIGATE:
             self.log.logging(
