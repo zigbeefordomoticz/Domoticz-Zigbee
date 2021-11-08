@@ -203,11 +203,11 @@ def schneider_wiser_registration(self, Devices, key):
     """
     self.log.logging("Schneider", "Debug", "schneider_wiser_registration for device %s" % key, nwkid=key)
 
-    if (
-        "Manufacturer Name" in self.ListOfDevices[key]
-        and self.ListOfDevices[key]["Manufacturer Name"] == "Schneider Electric"
-    ):
-        return
+    #if (
+    #    "Manufacturer Name" in self.ListOfDevices[key]
+    #    and self.ListOfDevices[key]["Manufacturer Name"] == "Schneider Electric"
+    #):
+    #    return
 
     if "Model" in self.ListOfDevices[key] and self.ListOfDevices[key]["Model"] in ("iTRV",):
         iTRV_registration(self, key)
