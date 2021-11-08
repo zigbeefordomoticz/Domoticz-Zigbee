@@ -59,6 +59,7 @@
 	"PollingEnabled": 1,
 	"Param": {
 		"TempPollingFreq": 300,
-		"HumiPollingFreq": 300
+		"HumiPollingFreq": 300,
+		"BattPollingFreq": 3600
 	}
 }

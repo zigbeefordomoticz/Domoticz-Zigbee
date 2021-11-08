@@ -135,7 +135,8 @@ def pollingManufSpecificDevices(self, NwkId, HB):
         "BatteryPollingFreq": ReadAttributeRequest_0001,
         "DanfossRoomFreq": danfoss_room_sensor_polling,
         "TempPollingFreq": ReadAttributeRequest_0402,
-        "HumiPollingFreq": ReadAttributeRequest_0405
+        "HumiPollingFreq": ReadAttributeRequest_0405,
+        "BattPollingFreq": ReadAttributeRequest_0001,
     }
 
     if "Param" not in self.ListOfDevices[NwkId]:
