@@ -30,6 +30,7 @@ from Modules.tools import (
     reset_attr_datastruct,
     is_ack_tobe_disabled,
 )
+from Modules.tuya import tuya_cmd_0x0000_0xf0
 
 ATTRIBUTES = {
     "0000": [
@@ -292,11 +293,12 @@ def retreive_attributes_based_on_configuration(self, key, cluster):
     if cluster not in self.DeviceConf[self.ListOfDevices[key]["Model"]]["ReadAttributes"]:
         return None
 
-    # Domoticz.Log("-->Attributes based on Configuration")
-    targetAttribute = []
-    for attr in self.DeviceConf[self.ListOfDevices[key]["Model"]]["ReadAttributes"][cluster]:
-        targetAttribute.append(int(attr, 16))
-    return targetAttribute
+    return [
+        int(attr, 16)
+        for attr in self.DeviceConf[self.ListOfDevices[key]["Model"]][
+            "ReadAttributes"
+        ][cluster]
+    ]
 
 
 def retreive_attributes_from_default_device_list(self, key, Ep, cluster):
@@ -310,20 +312,22 @@ def retreive_attributes_from_default_device_list(self, key, Ep, cluster):
     if cluster not in self.ListOfDevices[key]["Attributes List"]["Ep"][Ep]:
         return None
 
-    targetAttribute = []
     self.log.logging("ReadAttributes", "Debug", "retreive_ListOfAttributesByCluster: Attributes from Attributes List", nwkid=key)
-    for attr in self.ListOfDevices[key]["Attributes List"]["Ep"][Ep][cluster]:
-        targetAttribute.append(int(attr, 16))
+    targetAttribute = [
+        int(attr, 16)
+        for attr in self.ListOfDevices[key]["Attributes List"]["Ep"][Ep][
+            cluster
+        ]
+    ]
 
     # Special Hacks
-    if "Model" in self.ListOfDevices[key]:
-        # Force Read Attributes
-        if (self.ListOfDevices[key]["Model"] == "SPE600" and cluster == "0702") or (
-            self.ListOfDevices[key]["Model"] == "TS0302" and cluster == "0102"
-        ):  # Zemismart Blind switch
-            for addattr in ATTRIBUTES[cluster]:
-                if addattr not in targetAttribute:
-                    targetAttribute.append(addattr)
+    if "Model" in self.ListOfDevices[key] and (
+        (self.ListOfDevices[key]["Model"] == "SPE600" and cluster == "0702")
+        or (self.ListOfDevices[key]["Model"] == "TS0302" and cluster == "0102")
+    ):  # Zemismart Blind switch
+        for addattr in ATTRIBUTES[cluster]:
+            if addattr not in targetAttribute:
+                targetAttribute.append(addattr)
     return targetAttribute
 
 
@@ -823,10 +827,7 @@ def ReadAttributeRequest_0201(self, key):
     # Thermostat
 
     self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_0201 - Key: %s " % key, nwkid=key)
-    _model = False
-    if "Model" in self.ListOfDevices[key]:
-        _model = True
-
+    _model = "Model" in self.ListOfDevices[key]
     disableAck = True
     if "PowerSource" in self.ListOfDevices[key] and self.ListOfDevices[key]["PowerSource"] == "Battery":
         disableAck = False
@@ -1023,6 +1024,9 @@ def ReadAttributeRequest_0402(self, key):
 
     self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_0402 - Key: %s " % key, nwkid=key)
 
+    if 'Model' in self.ListOfDevices[key] and self.ListOfDevices[key]["Model"] in ( "TS0201-_TZ3000_qaaysllp",):
+        tuya_cmd_0x0000_0xf0(self, key)
+        
     _model = "Model" in self.ListOfDevices[key]
     ListOfEp = getListOfEpForCluster(self, key, "0402")
     for EPout in ListOfEp:
@@ -1051,9 +1055,10 @@ def ReadAttributeRequest_0403(self, key):
     for EPout in ListOfEp:
         listAttributes = []
         for iterAttr in retreive_ListOfAttributesByCluster(self, key, EPout, "0403"):
-            if iterAttr not in listAttributes:
-                if _model and self.ListOfDevices[key]["Model"] == "lumi.light.aqcn02":  # Aqara Blulb
-                    continue
+            if iterAttr not in listAttributes and (
+                not _model
+                or self.ListOfDevices[key]["Model"] != "lumi.light.aqcn02"
+            ):
                 listAttributes.append(iterAttr)
 
         if listAttributes:
@@ -1067,7 +1072,10 @@ def ReadAttributeRequest_0403(self, key):
 
 
 def ReadAttributeRequest_0405(self, key):
-
+    
+    if 'Model' in self.ListOfDevices[key] and self.ListOfDevices[key]["Model"] in ( "TS0201-_TZ3000_qaaysllp",):
+        tuya_cmd_0x0000_0xf0(self, key)
+        
     self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_0405 - Key: %s " % key, nwkid=key)
     _model = "Model" in self.ListOfDevices[key]
     ListOfEp = getListOfEpForCluster(self, key, "0405")
