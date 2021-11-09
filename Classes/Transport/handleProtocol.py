@@ -148,7 +148,7 @@ def NXP_Extended_Error_Code(self, MsgData):
     }
     if self.firmware_with_8012:
         # We have a 31e firmware or above. We are not expecting extensive Extended Error code, so they will be logged
-        self.logging_proto("NXP_Extended_Error_Code - Extended Error Code: [%s] %s" % (MsgData, StatusMsg), _context=context)
+        self.logging_proto("Error", "NXP_Extended_Error_Code - Extended Error Code: [%s] %s" % (MsgData, StatusMsg), _context=context)
     else:
         self.logging_proto(
             "Log",

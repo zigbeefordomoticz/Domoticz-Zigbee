@@ -22,7 +22,7 @@ def open_tcpip(self):
         self._connection = socket.create_connection((self._wifiAddress, self._wifiPort))
 
     except Exception as e:
-        self.logging_receive(
+        self.logging_tcpip(
             "Error", "Cannot open Zigate Wifi %s Port %s error: %s" % (self._wifiAddress, self._serialPort, e)
         )
         return False

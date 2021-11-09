@@ -302,7 +302,6 @@ class ZigateTransport(object):
     def logging_proto(self, logType, message, NwkId=None, _context=None):
         self.log.logging("TransportProto", logType, message, context=_context)
 
-
     def transport_error_context(self, context):
         if context is None:
             context = {}

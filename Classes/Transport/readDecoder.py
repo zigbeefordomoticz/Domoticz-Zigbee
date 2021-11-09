@@ -119,7 +119,7 @@ def check_frame_crc(self, BinMsg):
             "LastRawMsg": str(binascii.hexlify(self._last_raw_message).decode("utf-8")),
             "len": len(BinMsg),
         }
-        self.logging_proto("check_frame_crc", _context=context)
+        self.logging_proto("Error", "check_frame_crc", _context=context)
         return False
     Zero1, MsgType, Length, ReceivedChecksum = struct.unpack(">BHHB", BinMsg[0:6])
 
@@ -139,7 +139,7 @@ def check_frame_crc(self, BinMsg):
             "ComputedChecksum": ComputedChecksum,
             "ReceivedChecksum": ReceivedChecksum,
         }
-        self.logging_proto("check_frame_crc", _context=context)
+        self.logging_proto("Error", "check_frame_crc", _context=context)
         return False
     return True
 
@@ -164,6 +164,6 @@ def check_frame_lenght(self, BinMsg):
             "ComputedLength": ComputedLength,
             "ReceveidLength": ReceveidLength,
         }
-        self.logging_proto("check_frame_lenght", _context=context)
+        self.logging_proto("Error", "check_frame_lenght", _context=context)
         return False
     return True

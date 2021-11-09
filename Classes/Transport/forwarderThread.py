@@ -45,7 +45,7 @@ def forwarder_thread(self):
                 "Error": str(e),
                 "Message": message,
             }
-            self.logging_forwarded("forwarder_thread - Error while receiving a ZiGate command", _context=context)
+            self.logging_forwarded("Error", "forwarder_thread - Error while receiving a ZiGate command", _context=context)
 
             handle_thread_error(self, e, 0, 0, message)
 
