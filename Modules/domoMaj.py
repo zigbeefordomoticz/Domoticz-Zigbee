@@ -305,9 +305,10 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
         if "Meter" in ClusterType:  # Meter Usage.
             # value is string an represent the Instant Usage
             if WidgetType == "Meter" and Attribute_ == "050f":
+                # We receive Instant Power
                 check_set_meter_widget( Devices, DeviceUnit, 0)
-                instant, summ = retreive_data_from_current(self, Devices, DeviceUnit, "0;0")
-                summation = round(float(value), 2)
+                _instant, summation = retreive_data_from_current(self, Devices, DeviceUnit, "0;0")
+                instant = round(float(value), 2)
                 sValue = "%s;%s" % (instant, summation)
                 self.log.logging("Widget", "Debug", "------>  : " + sValue)
                 
@@ -316,7 +317,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             elif WidgetType == "Meter" and Attribute_ == "0000":
                 # We are in the case were we receive Summation , let's find the last instant power and update
                 check_set_meter_widget( Devices, DeviceUnit, 0)    
-                instant, summ = retreive_data_from_current(self, Devices, DeviceUnit, "0;0")
+                instant, _summation = retreive_data_from_current(self, Devices, DeviceUnit, "0;0")
                 summation = round(float(value), 2)
                 
                 sValue = "%s;%s" % (instant, summation)
@@ -324,6 +325,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
 
             elif (WidgetType == "Meter" and Attribute_ == "") or (WidgetType == "Power" and clusterID == "000c"):  # kWh
+                # We receive Instant
                 # Let's check if we have Summation in the datastructutre
                 summation = 0
                 if ( 
@@ -334,16 +336,16 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     # summation = int(self.ListOfDevices[NWKID]['Ep'][Ep]['0702']['0000'])
                     summation = self.ListOfDevices[NWKID]["Ep"][Ep]["0702"]["0000"]
 
-                nValue = round(float(value), 2)
+                instant = round(float(value), 2)
                 # Did we get Summation from Data Structure
                 if summation != 0:
                     summation = int(float(summation))
-                    sValue = "%s;%s" % (nValue, summation)
+                    sValue = "%s;%s" % (instant, summation)
                     # We got summation from Device, let's check that EnergyMeterMode is
                     # correctly set to 0, if not adjust
                     check_set_meter_widget( Devices, DeviceUnit, 0)
                 else:
-                    sValue = "%s;" % (nValue)
+                    sValue = "%s;" % (instant)
                     check_set_meter_widget( Devices, DeviceUnit, 1)
                     # No summation retreive, so we make sure that EnergyMeterMode is
                     # correctly set to 1 (compute), if not adjust
