@@ -56,7 +56,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
     self.log.logging(
         "Widget",
         "Debug",
-        "MajDomoDevice NwkId: %s Ep: %s ClusterId: %s Value: %s ValueType: %s Attribute: %s Color: %s ModelName: %s" % (NWKID, Ep, clusterID, value, type(value), Attribute_, Color_, model_name),
+        "MajDomoDevice NwkId: %s Ep: %s ClusterId: %s Value: %s ValueType: %s Attribute: %s Color: %s ModelName: %s" % (
+            NWKID, Ep, clusterID, value, type(value), Attribute_, Color_, model_name),
         NWKID,
     )
 
