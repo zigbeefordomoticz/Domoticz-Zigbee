@@ -1114,9 +1114,10 @@ def ReadAttributeRequest_0406(self, key):
         listAttrSpecific = []
 
         for iterAttr in retreive_ListOfAttributesByCluster(self, key, EPout, "0406"):
-            if iterAttr not in listAttributes:
-                if _model and self.ListOfDevices[key]["Model"] == "lumi.light.aqcn02":  # Aqara Blulb
-                    continue
+            if iterAttr not in listAttributes and (
+                not _model
+                or self.ListOfDevices[key]["Model"] != "lumi.light.aqcn02"
+            ):
                 listAttributes.append(iterAttr)
 
         # Adjustement before request
