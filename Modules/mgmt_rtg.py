@@ -38,9 +38,7 @@ def mgmt_rtg(self, nwkid, table):
 
     func = TABLE_TO_REPORT[ table ]
     if table not in self.ListOfDevices[nwkid]:
-        self.ListOfDevices[nwkid][table] = {}
-        self.ListOfDevices[nwkid][table]["Devices"] = []
-        self.ListOfDevices[nwkid][table]["SQN"] = 0
+        self.ListOfDevices[nwkid][table] = {'Devices': [], 'SQN': 0}
         self.ListOfDevices[nwkid][table]["TimeStamp"] = time.time()
         func(self, nwkid, "00")
         return
@@ -231,4 +229,4 @@ def mgmt_bindingtable_response( self,  srcnwkid, MsgSourcePoint, MsgClusterID, d
         self.ListOfDevices[srcnwkid]["BindingTable"]["Devices"].append(binding_record)
 
     if int(BindingTableIndex, 16) + int(BindingTableListCount, 16) < int(BindingTableSize, 16):
-        mgt_routing_req(self, srcnwkid, "%02x" % (int(BindingTableIndex, 16) + int(BindingTableListCount, 16)))
+        mgt_binding_table_req(self, srcnwkid, "%02x" % (int(BindingTableIndex, 16) + int(BindingTableListCount, 16)))
