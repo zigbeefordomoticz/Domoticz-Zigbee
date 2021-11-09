@@ -306,16 +306,16 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             # value is string an represent the Instant Usage
             if WidgetType == "Meter" and Attribute_ == "050f":
                 check_set_meter_widget( Devices, DeviceUnit, 0)
-                
-                sValue = "%s;" % round(float(value), 2)
+                instant, summ = retreive_data_from_current(self, Devices, DeviceUnit, "0;0")
+                summation = round(float(value), 2)
+                sValue = "%s;%s" % (instant, summation)
                 self.log.logging("Widget", "Debug", "------>  : " + sValue)
                 
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
 
             elif WidgetType == "Meter" and Attribute_ == "0000":
                 # We are in the case were we receive Summation , let's find the last instant power and update
-                check_set_meter_widget( Devices, DeviceUnit, 0)
-                
+                check_set_meter_widget( Devices, DeviceUnit, 0)    
                 instant, summ = retreive_data_from_current(self, Devices, DeviceUnit, "0;0")
                 summation = round(float(value), 2)
                 
