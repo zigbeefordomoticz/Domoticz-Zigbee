@@ -1040,6 +1040,7 @@ def UpdateBatteryAttribute(self, Devices, MsgSrcAddr, MsgSrcEp):
         "SMOK_V16",
         "RH3001",
         "TS0201",
+        "TS0201-_TZ3000_qaaysllp",
         "COSensor-N",
         "COSensor-EF-3.0",
         "COSensor-EM",
