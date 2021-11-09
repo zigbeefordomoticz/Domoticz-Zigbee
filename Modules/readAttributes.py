@@ -1044,10 +1044,8 @@ def ReadAttributeRequest_0402(self, key):
             )
             if 'Model' in self.ListOfDevices[key] and self.ListOfDevices[key]["Model"] in ( "TS0201-_TZ3000_qaaysllp",):
                 tuya_cmd_0x0000_0xf0(self, key)
-                ReadAttributeReq(self, key, ZIGATE_EP, 'ff', "0402", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
 
-            else:
-                ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0402", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
+            ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0402", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
 
 
 def ReadAttributeRequest_0403(self, key):
@@ -1097,10 +1095,8 @@ def ReadAttributeRequest_0405(self, key):
             )
             if 'Model' in self.ListOfDevices[key] and self.ListOfDevices[key]["Model"] in ( "TS0201-_TZ3000_qaaysllp",):
                 tuya_cmd_0x0000_0xf0(self, key)
-                ReadAttributeReq(self, key, ZIGATE_EP, 'ff', "0405", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
 
-            else:
-                ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0405", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
+            ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0405", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
 
 
 def ReadAttributeRequest_0406(self, key):
