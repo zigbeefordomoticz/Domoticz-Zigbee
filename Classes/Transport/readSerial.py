@@ -38,7 +38,7 @@ def reconnect(self):
                 self.self._connection.close()
             if open_serial(self):
                 return
-        except:
+        except serial.SerialException:
             pass
         self.logging_serial("Error", "ZigateTransport: reconnect: %s delay: %s" % (self._connection, delay))
         time.sleep( float(delay))
@@ -53,7 +53,7 @@ def serial_reset_line_in(self):
         self.logging_serial("Debug", "Reset Serial Line IN")
         try:
             self._connection.reset_input_buffer()
-        except:
+        except serial.SerialException:
             pass
 
 def serial_reset_line_out(self):
@@ -61,7 +61,7 @@ def serial_reset_line_out(self):
         self.logging_serial("Debug", "Reset Serial Line Out")
         try:
             self._connection.reset_output_buffer()
-        except:
+        except serial.SerialException:
             pass
 
 def close_serial(self):
@@ -97,7 +97,7 @@ def check_hw_flow_control(self):
             self.logging_serial("Status", "Upgrade Serial line to RTS/CTS HW flow control")
             self._connection.rtscts = True
 
-    except:
+    except serial.SerialException:
         pass
 
 def serial_read_write_from_zigate(self):
