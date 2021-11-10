@@ -230,18 +230,18 @@ def LoadDeviceList(self):
                 len(self.ListOfDevices),
             ),
         )
-        try:
-            import sys
-
-            sys.path.append("/usr/lib/python3.8/site-packages")
-            import deepdiff
-
-            diff = deepdiff.DeepDiff(self.ListOfDevices, ListOfDevices_from_Domoticz)
-            self.log.logging("Database", "Log", json.dumps(json.loads(diff.to_json()), indent=4))
-
-        except:
-            # self.log.logging("Database", "Log", "Python Module deepdiff not found")
-            pass
+        #try:
+        #    import sys
+#
+        #    sys.path.append("/usr/lib/python3.8/site-packages")
+        #    import deepdiff
+#
+        #    diff = deepdiff.DeepDiff(self.ListOfDevices, ListOfDevices_from_Domoticz)
+        #    self.log.logging("Database", "Log", json.dumps(json.loads(diff.to_json()), indent=4))
+#
+        #except:
+        #    # self.log.logging("Database", "Log", "Python Module deepdiff not found")
+        #    pass
 
     return res
 
