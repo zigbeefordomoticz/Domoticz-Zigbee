@@ -143,11 +143,10 @@ class NetworkMap:
                 return
 
         # We have been through all list of devices and not action triggered
-        else:
-            if not waitResponse:
-                self.logging("Debug", "continue_scan - scan completed, all Neighbour tables received.")
-                finish_scan(self)
-                self._NetworkMapPhase = 0
+        if not waitResponse:
+            self.logging("Debug", "continue_scan - scan completed, all Neighbour tables received.")
+            finish_scan(self)
+            self._NetworkMapPhase = 0
 
 
 def _initNeighbours(self):

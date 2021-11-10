@@ -89,9 +89,8 @@ def FreeUnit(self, Devices, nbunit_=1):
                     self.log.logging("Widget", "Debug", "FreeUnit - device " + str(x) + " available")
                     return x
 
-    else:
-        self.log.logging("Widget", "Debug", "FreeUnit - device " + str(len(Devices) + 1))
-        return len(Devices) + 1
+    self.log.logging("Widget", "Debug", "FreeUnit - device " + str(len(Devices) + 1))
+    return len(Devices) + 1
 
 
 def createSwitchSelector(self, nbSelector, DeviceType=None, OffHidden=False, SelectorStyle=0):
