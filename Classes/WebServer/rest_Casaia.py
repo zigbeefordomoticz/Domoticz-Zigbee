@@ -98,7 +98,7 @@ def list_casaia_ac201(self):
         if (
             "CASA.IA" in self.ListOfDevices[x]
             and "Model" in self.ListOfDevices[x]
-            and self.ListOfDevices[x]["Model"] in ("AC201A", "AC211", "AC221")
+            and self.ListOfDevices[x]["Model"] in ("AC201A", "AC211", "AC221", "CAC221", "CAC211", "CAC201A")
         ):
             irCode = "0000"
             if "IRCode" in self.ListOfDevices[x]["CASA.IA"][DEVICE_ID]:

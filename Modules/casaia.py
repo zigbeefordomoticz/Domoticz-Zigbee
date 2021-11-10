@@ -179,7 +179,7 @@ def casaia_pairing(self, NwkId):
         if self.ListOfDevices[NwkId]["Model"] == "AC201A":
             casaia_AC201_pairing(self, NwkId)
 
-        elif self.ListOfDevices[NwkId]["Model"] in ("AC211", "AC221"):
+        elif self.ListOfDevices[NwkId]["Model"] in ("AC211", "AC221", "CAC221" ):
             casaia_AC211_pairing(self, NwkId)
 
 
@@ -243,7 +243,7 @@ def casaia_check_irPairing(self, NwkId):
             casaia_ac201_ir_pairing(self, NwkId)
             AC201_read_AC_status_request(self, NwkId)
 
-        elif self.ListOfDevices[NwkId]["Model"] in ("AC211", "AC221"):
+        elif self.ListOfDevices[NwkId]["Model"] in ("AC211", "AC221", "CAC221"):
             casaia_ac211_ir_pairing(self, NwkId)
             AC201_read_AC_status_request(self, NwkId)
 

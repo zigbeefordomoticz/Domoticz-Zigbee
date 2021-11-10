@@ -894,7 +894,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
 
             elif (
                 ((ClusterType == "FanControl" and WidgetType == "FanControl") or ("ThermoMode" in ClusterType and WidgetType == "ACSwing" and Attribute_ == "fd00"))
-                and model_name in ("AC211", "AC221")
+                and model_name in ("AC211", "AC221", "CAC221")
                 and "Ep" in self.ListOfDevices[NWKID]
                 and WidgetEp in self.ListOfDevices[NWKID]["Ep"]
                 and "0201" in self.ListOfDevices[NWKID]["Ep"][WidgetEp]
