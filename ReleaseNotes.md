@@ -22,6 +22,17 @@ Release Numbering
 - Odd numbers --> Stable5
 - Even numbers  --> Beta
 
+## 7 November 2021 - 5.1.15
+- [Hardware] - Sunricher remote control ZG2858A
+- [Technical] - Allow binding on cluster 0300
+- [Technical] - Updating Meter when receving summation and not only on instant power
+- [Technical] - Finishing TS011 Plug
+- [Technical] - Provide REST API for Binding Table and Group binding
+- [Technical] - KADRILJ roller blind
+- [Technical] - Allow creating groups on battery based device.
+- [Issue] - Fixing issues in ZLinky alarm
+- [Hardware] - Additional Danfoss parameters for eTRV
+
 ## 1 November 2021 - 5.1.14
 
 - [Web UI] - Finishing french translation
