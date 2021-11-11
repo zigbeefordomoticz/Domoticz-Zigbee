@@ -261,7 +261,7 @@ def thermostat_Mode(self, NwkId, mode):
         Domoticz.Error("thermostat_Mode - unknown system mode: %s" % mode)
         return
 
-    if "Model" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Model"] in ("AC211", "AC221"):
+    if "Model" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Model"] in ("AC211", "AC221", "CAC221"):
         casaia_check_irPairing(self, NwkId)
 
     manuf_id = "0000"

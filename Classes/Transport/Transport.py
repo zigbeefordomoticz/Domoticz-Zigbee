@@ -6,14 +6,12 @@
 
 import json
 import queue
-import socket
 import threading
 import time
 from queue import PriorityQueue, Queue
 from threading import Semaphore
 
 import Domoticz
-import serial
 from Classes.Transport.forwarderThread import start_forwarder_thread
 from Classes.Transport.readDecoder import decode_and_split_message
 from Classes.Transport.readerThread import (open_zigate_and_start_reader,
@@ -98,7 +96,6 @@ class ZigateTransport(object):
         self.reader_thread = None
 
         # Forwarder
-
         self.forwarder_queue = Queue()
         self.forwarder_thread = None
 
@@ -165,7 +162,7 @@ class ZigateTransport(object):
 
         if (cmd, datas) in self.writer_list_in_queue:
             if self.pluginconf.pluginConf["debugzigateCmd"]:
-                self.logging_send("Log", "sendData - Warning %s/%s already in queue this command is dropped" % (cmd, datas))
+                self.logging_transport("Log", "sendData - Warning %s/%s already in queue this command is dropped" % (cmd, datas))
             return None
         self.writer_list_in_queue.append((cmd, datas))
 
@@ -184,7 +181,7 @@ class ZigateTransport(object):
                 # Queue is empty, we reset the priority_sqn number to 0
                 self.prioriy_sqn = 0
             if highpriority:
-                self.logging_send(
+                self.logging_transport(
                     "Debug",
                     "Hih Priority command Hsqn: %s Cmd: %s Data: %s i_sqn: %s"
                     % (self.prioriy_sqn, message["cmd"], message["datas"], message["InternalSqn"]),
@@ -195,10 +192,10 @@ class ZigateTransport(object):
                 self.writer_queue.put((InternalSqn, str(json.dumps(message))))
 
         except queue.Full:
-            self.logging_send("Error", "sendData - writer_queue Full")
+            self.logging_transport("Error", "sendData - writer_queue Full")
 
         except Exception as e:
-            self.logging_send("Error", "sendData - Error: %s" % e)
+            self.logging_transport("Error", "sendData - Error: %s" % e)
 
         return InternalSqn
 
@@ -218,39 +215,39 @@ class ZigateTransport(object):
             self.set_connection()
         if (not self.pluginconf.pluginConf["byPassDzConnection"] or self.force_dz_communication) and self._connection:
             self._connection.Connect()
-        self.logging_send("Log", "Connection open: %s" % self._connection)
+        self.logging_transport("Log", "Connection open: %s" % self._connection)
 
     def re_connect_zigate(self):
 
-        self.logging_send("Error", "Reconnection: Old: %s" % self._connection)
+        self.logging_transport("Error", "Reconnection: Old: %s" % self._connection)
         if self.pluginconf.pluginConf["byPassDzConnection"] and not self.force_dz_communication:
             if self._connection:
                 self._connection.close()
                 self._connection = None
                 time.sleep(1.0)
         else:
-            self.logging_send("Error", "---> Connection state: %s" % self._connection.Connected())
+            self.loggilogging_transportng_send("Error", "---> Connection state: %s" % self._connection.Connected())
             if self._connection.Connected():
-                self.logging_send("Error", "--->Connection still exist !!! Need to shutdown")
+                self.logging_transport("Error", "--->Connection still exist !!! Need to shutdown")
                 self.close_zigate_connection()
                 self._connection = None
 
-        self.logging_send("Error", "--->Connection still exist !!! Need to shutdown")
+        self.logging_transport("Error", "--->Connection still exist !!! Need to shutdown")
         self.open_zigate_connection()
 
     def close_zigate_connection(self):
-        self.logging_send("Log", "Request closing connection: %s" % self._connection)
+        self.logging_transport("Log", "Request closing connection: %s" % self._connection)
 
         self.running = False  # It will shutdown the Thread
 
         if self.pluginconf.pluginConf["byPassDzConnection"] and not self.force_dz_communication:
-            self.logging_send("Log", "-- shutdown reader thread")
+            self.logging_transport("Log", "-- shutdown reader thread")
             shutdown_reader_thread(self)
 
             time.sleep(1.0)
-            self.logging_send("Log", "-- waiting for end of thread")
+            self.logging_transport("Log", "-- waiting for end of thread")
             waiting_for_end_thread(self)
-            self.logging_send("Log", "-- thread endeed")
+            self.logging_transport("Log", "-- thread endeed")
 
         else:
             stop_waiting_on_queues(self)
@@ -260,16 +257,50 @@ class ZigateTransport(object):
         self._connection = None
 
     # Login mecanism
-    def logging_send(self, logType, message, NwkId=None, _context=None):
-        # Log all activties towards ZiGate
-        self.log.logging("TransportTx", logType, message, context=_context)
+    #  "debugTransport":
+    #  "debugTransport8000": 
+    #  "debugTransport8011": 
+    #  "debugTransport8011": 
+    #  "debugTransport8012": 
+    #  "debugTransportWrter":
+    #  "debugTransportFrwder"
+    #  "debugTransportRder": 
+    #  "debugTransportProto":
+    #  "debugTransportTcpip":
+    #  "debugTransportSerial"
+
+    def logging_transport(self, logType, message, NwkId=None, _context=None):
+        self.log.logging("Transport", logType, message, context=_context)
+
+    def logging_8000(self, logType, message, NwkId=None, _context=None):
+        self.log.logging("Transport8000", logType, message, context=_context)
+
+    def logging_8002(self, logType, message, NwkId=None, _context=None):
+        self.log.logging("Transport8002", logType, message, context=_context)
+
+    def logging_8011(self, logType, message, NwkId=None, _context=None):
+        self.log.logging("Transport8011", logType, message, context=_context)
+
+    def logging_8012(self, logType, message, NwkId=None, _context=None):
+        self.log.logging("Transport8012", logType, message, context=_context)
 
     def logging_forwarded(self, logType, message, NwkId=None, _context=None):
         self.log.logging("TransportFrwder", logType, message, context=_context)
 
-    def logging_receive(self, logType, message, nwkid=None, _context=None):
-        # Log all activities received from ZiGate
-        self.log.logging("TransportRx", logType, message, nwkid=nwkid, context=_context)
+    def logging_writer(self, logType, message, NwkId=None, _context=None):
+        self.log.logging("TransportWrter", logType, message, context=_context)
+
+    def logging_serial(self, logType, message, NwkId=None, _context=None):
+        self.log.logging("TransportSerial", logType, message, context=_context)
+
+    def logging_tcpip(self, logType, message, NwkId=None, _context=None):
+        self.log.logging("TransportTcpip", logType, message, context=_context)
+
+    def logging_reader(self, logType, message, NwkId=None, _context=None):
+        self.log.logging("TransportRder", logType, message, context=_context)
+
+    def logging_proto(self, logType, message, NwkId=None, _context=None):
+        self.log.logging("TransportProto", logType, message, context=_context)
 
     def transport_error_context(self, context):
         if context is None:
@@ -309,20 +340,13 @@ class ZigateTransport(object):
         }
         return context
 
-    def logging_receive_error(self, message, Nwkid=None, context=None):
-        self.logging_receive("Error", message, Nwkid, self.transport_error_context(context))
-
-    def logging_send_error(self, message, Nwkid=None, context=None):
-        self.logging_send("Error", message, Nwkid, self.transport_error_context(context))
-
-
 def open_connection(self):
 
     if self._transp in ["USB", "DIN", "PI", "V2-USB", "V2-DIN", "V2-PI"]:
         if self._serialPort.find("/dev/") == -1 and self._serialPort.find("COM") == -1:
-            Domoticz.Error("Connection Name: Zigate, Transport: Serial, Address: %s" % (self._serialPort))
+            self.logging_transport(self, "Error","Connection Name: Zigate, Transport: Serial, Address: %s" % (self._serialPort))
             return
-        Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" % (self._serialPort))
+        self.logging_transport(self, "Status","Connection Name: Zigate, Transport: Serial, Address: %s" % (self._serialPort))
         if self.pluginconf.pluginConf["byPassDzConnection"] and not self.force_dz_communication:
             result = open_zigate_and_start_reader(self, "serial")
         else:
@@ -335,7 +359,7 @@ def open_connection(self):
             start_forwarder_thread(self)
 
     elif self._transp in ("Wifi", "V2-Wifi"):
-        Domoticz.Status("Connection Name: Zigate, Transport: TCP/IP, Address: %s:%s" % (self._serialPort, self._wifiPort))
+        self.logging_transport(self, "Status","Connection Name: Zigate, Transport: TCP/IP, Address: %s:%s" % (self._serialPort, self._wifiPort))
         if self.pluginconf.pluginConf["byPassDzConnection"] and not self.force_dz_communication:
             result = open_zigate_and_start_reader(self, "tcpip")
         else:
@@ -348,4 +372,4 @@ def open_connection(self):
             start_forwarder_thread(self)
 
     else:
-        Domoticz.Error("Unknown Transport Mode: %s" % self._transp)
+        self.logging_transport(self, "Error","Unknown Transport Mode: %s" % self._transp)

@@ -565,6 +565,7 @@ def handle_device_specific_needs(self, Devices, NWKID):
         "AC201A",
         "AC211",
         "AC221",
+        "CAC221"
     ):
         self.log.logging("Pairing", "Debug", "CasaIA registration needed")
         casaia_pairing(self, NWKID)

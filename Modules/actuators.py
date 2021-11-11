@@ -227,7 +227,6 @@ def actuator_setcolor(self, nwkid, EPout, value, Color):
     # ColorModeNone = 1   // White. Valid fields: none
     if Hue_List["m"] == 1:
         ww = int(Hue_List["ww"])  # Can be used as level for monochrome white
-        # TODO : Jamais vu un device avec ca encore
         self.log.logging("Command", "Debug", "Not implemented device color 1", nwkid)
     # ColorModeTemp = 2   // White with color temperature. Valid fields: t
     if Hue_List["m"] == 2:
@@ -250,7 +249,7 @@ def actuator_setcolor(self, nwkid, EPout, value, Color):
         ww = int(Hue_List["ww"])
         cw = int(Hue_List["cw"])
         x, y = rgb_to_xy((int(Hue_List["r"]), int(Hue_List["g"]), int(Hue_List["b"])))
-        # TODO, Pas trouve de device avec ca encore ...
+        # Pas trouve de device avec ca encore ...
         self.log.logging("Command", "Debug", "Not implemented device color 2", nwkid)
     # With saturation and hue, not seen in domoticz but present on zigate, and some device need it
     elif Hue_List["m"] == 9998:

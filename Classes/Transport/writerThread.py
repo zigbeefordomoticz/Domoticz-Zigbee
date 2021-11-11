@@ -25,13 +25,13 @@ def start_writer_thread(self):
 
 
 def writer_thread(self):
-    self.logging_send("Status", "ZigateTransport: writer_thread Thread start.")
+    self.logging_writer("Status", "ZigateTransport: writer_thread Thread start.")
     reset_line_out(self)
     while self.running:
         frame = None
         # Sending messages ( only 1 at a time )
         try:
-            # self.logging_send( 'Debug', "Waiting for next command Qsize: %s" %self.writer_queue.qsize())
+            # self.logging_writer( 'Debug', "Waiting for next command Qsize: %s" %self.writer_queue.qsize())
             if self.writer_queue is None:
                 break
 
@@ -41,17 +41,17 @@ def writer_thread(self):
                 and self.pluginconf.pluginConf["nPDUaPDUThreshold"]
                 and self.firmware_with_8012
             ):
-                self.logging_send(
+                self.logging_writer(
                     "Debug",
                     "ZigateTransport: writer_thread Thread checking #nPDU: %s and #aPDU: %s." % (self.npdu, self.apdu),
                 )
 
                 if self.apdu > 2:
-                    self.logging_send("Log", "ZigateTransport: writer_thread Thread aPDU: %s retry later." % self.apdu)
+                    self.logging_writer("Log", "ZigateTransport: writer_thread Thread aPDU: %s retry later." % self.apdu)
                     time.sleep(0.25)
                     continue
                 if self.npdu > 7:
-                    self.logging_send("Log", "ZigateTransport: writer_thread Thread nPDU: %s retry later." % self.npdu)
+                    self.logging_writer("Log", "ZigateTransport: writer_thread Thread nPDU: %s retry later." % self.npdu)
                     time.sleep(0.25)
                     continue
 
@@ -62,13 +62,13 @@ def writer_thread(self):
 
             command = json.loads(command_str)
             if _isqn != command["InternalSqn"]:
-                self.logging_send(
+                self.logging_writer(
                     "Debug",
                     "Hih Priority command HIsqn: %s Cmd: %s Data: %s i_sqn: %s"
                     % (_isqn, command["cmd"], command["datas"], command["InternalSqn"]),
                 )
 
-            # self.logging_send( 'Debug', "New command received:  %s" %(command))
+            # self.logging_writer( 'Debug', "New command received:  %s" %(command))
             if (
                 isinstance(command, dict)
                 and "cmd" in command
@@ -78,7 +78,7 @@ def writer_thread(self):
                 and "InternalSqn" in command
             ):
                 if (command["cmd"], command["datas"]) in self.writer_list_in_queue:
-                    self.logging_send("Debug", "removing %s/%s from list_in_queue" % (command["cmd"], command["datas"]))
+                    self.logging_writer("Debug", "removing %s/%s from list_in_queue" % (command["cmd"], command["datas"]))
                     self.writer_list_in_queue.remove((command["cmd"], command["datas"]))
 
                 if self.writer_queue.qsize() > self.statistics._MaxLoad:
@@ -89,7 +89,7 @@ def writer_thread(self):
                 #    Domoticz.Log("Command on %s" %command['NwkId'])
 
                 # if self.last_nwkid_failure and 'NwkId' in command and command['NwkId'] == self.last_nwkid_failure:
-                #    self.logging_send( 'Log', "removing %s/%s from list_in_queue as it failed previously" %( command['cmd'], command['datas'] ))
+                #    self.logging_writer( 'Log', "removing %s/%s from list_in_queue as it failed previously" %( command['cmd'], command['datas'] ))
                 #    # Looks like the command is still for the Nwkid which has failed. Drop
                 #    continue
 
@@ -105,7 +105,7 @@ def writer_thread(self):
                     command["waitForResponseIn"],
                     command["InternalSqn"],
                 )
-                self.logging_send("Debug", "Command sent!!!! %s send_ok: %s" % (command, send_ok))
+                self.logging_writer("Debug", "Command sent!!!! %s send_ok: %s" % (command, send_ok))
                 if send_ok in ("PortClosed", "SocketClosed"):
                     # Exit
                     break
@@ -114,17 +114,17 @@ def writer_thread(self):
                 limit_throuput(self, command)
 
             else:
-                self.logging_send("Error", "Hops ... Don't known what to do with that %s" % command)
+                self.logging_writer("Error", "Hops ... Don't known what to do with that %s" % command)
 
         except queue.Empty:
             # Empty Queue, timeout.
             pass
 
         except Exception as e:
-            self.logging_send("Error", "Error while receiving a ZiGate command: %s" % e)
+            self.logging_writer("Error", "Error while receiving a ZiGate command: %s" % e)
             handle_thread_error(self, e, 0, 0, frame)
 
-    self.logging_send("Status", "ZigateTransport: writer_thread Thread stop.")
+    self.logging_writer("Status", "ZigateTransport: writer_thread Thread stop.")
 
 
 def limit_throuput(self, command):
@@ -136,33 +136,33 @@ def limit_throuput(self, command):
     if self.firmware_compatibility_mode:
         # We are in firmware 31a where we control the flow is only on 0x8000
         # Throught put of 2 messages per seconds
-        self.logging_send("Debug", "Firmware 31a limit_throuput regulate to 500")
+        self.logging_writer("Debug", "Firmware 31a limit_throuput regulate to 500")
         time.sleep(0.500)
 
     elif not self.firmware_with_8012:
         # Firmware is not 31e
         # Throught put of 4 messages per seconds
-        self.logging_send("Debug", "Firmware 31d limit_throuput regulate to 300")
+        self.logging_writer("Debug", "Firmware 31d limit_throuput regulate to 300")
         time.sleep(0.350)
 
     elif self.firmware_nosqn:
         time.sleep(1.0)
 
     else:
-        self.logging_send("Debug", "Firmware 31e limit_throuput regulate to 200")
-        time.sleep(0.200)
+        self.logging_writer("Debug", "Firmware 31e limit_throuput regulate to 100")
+        time.sleep(0.100)
 
 
 def wait_for_semaphore(self, command):
     if self.force_dz_communication or self.pluginconf.pluginConf["writerTimeOut"]:
-        self.logging_send("Debug", "Waiting for a write slot . Semaphore %s TimeOut of 8s" % (self.semaphore_gate._value))
+        self.logging_writer("Debug", "Waiting for a write slot . Semaphore %s TimeOut of 8s" % (self.semaphore_gate._value))
         timeout_cmd = 4.0 if self.firmware_compatibility_mode else 8.0
         block_status = self.semaphore_gate.acquire(blocking=True, timeout=timeout_cmd)  # Blocking until 8s
     # else:
-    #    self.logging_send( 'Debug', "Waiting for a write slot . Semaphore %s ATTENTION NO TIMEOUT FOR TEST PURPOSES" %(self.semaphore_gate._value))
+    #    self.logging_writer( 'Debug', "Waiting for a write slot . Semaphore %s ATTENTION NO TIMEOUT FOR TEST PURPOSES" %(self.semaphore_gate._value))
     #    block_status = self.semaphore_gate.acquire( blocking = True, timeout = None) # Blocking
 
-    self.logging_send(
+    self.logging_writer(
         "Debug",
         "============= semaphore %s given with status %s ============== Len: ListOfCmd %s - %s writerQueueSize: %s"
         % (
@@ -179,13 +179,13 @@ def wait_for_semaphore(self, command):
 
 
 def thread_sendData(self, cmd, datas, ackIsDisabled, waitForResponseIn, isqn):
-    self.logging_send("Debug", "thread_sendData")
+    self.logging_writer("Debug", "thread_sendData")
     if datas is None:
         datas = ""
 
     # Check if Datas are hex
     if datas != "" and not is_hex(datas):
-        _context = {
+        context = {
             "Error code": "TRANS-SENDDATA-01",
             "Cmd": cmd,
             "Datas": datas,
@@ -193,7 +193,7 @@ def thread_sendData(self, cmd, datas, ackIsDisabled, waitForResponseIn, isqn):
             "waitForResponseIn": waitForResponseIn,
             "InternalSqn": isqn,
         }
-        self.logging_send_error("sendData", context=_context)
+        self.logging_writer("Error", "sendData", _context=context)
         return "BadData"
 
     self.ListOfCommands[isqn] = {
@@ -207,7 +207,7 @@ def thread_sendData(self, cmd, datas, ackIsDisabled, waitForResponseIn, isqn):
     }
     self.statistics._sent += 1
     if self.pluginconf.pluginConf["debugzigateCmd"]:
-        self.logging_send("Log", "_sendData to ZiGate NOW  - [%s] %s %s" % (isqn, cmd, datas))
+        self.logging_writer("Log", "_sendData to ZiGate NOW  - [%s] %s %s" % (isqn, cmd, datas))
 
     return write_to_zigate(self, self._connection, bytes.fromhex(encode_message(cmd, datas)))
 
@@ -263,7 +263,7 @@ def get_checksum(msgtype, length, datas):
 
 
 def write_to_zigate(self, serialConnection, encoded_data):
-    # self.logging_send('Log', "write_to_zigate")
+    # self.logging_writer('Log', "write_to_zigate")
 
     if self.pluginconf.pluginConf["byPassDzConnection"] and not self.force_dz_communication:
         return native_write_to_zigate(self, serialConnection, encoded_data)
@@ -276,7 +276,7 @@ def domoticz_write_to_zigate(self, encoded_data):
         self._connection.Send(encoded_data, 0)
         return True
 
-    self.logging_send("Error", "domoticz_write_to_zigate - No connection available: %s" % self._connection)
+    self.logging_writer("Error", "domoticz_write_to_zigate - No connection available: %s" % self._connection)
     return False
 
 
@@ -289,7 +289,7 @@ def reset_line_out(self):
         )
         and not self.force_dz_communication
     ):
-        self.logging_send("Debug", "Reset Serial Line OUT")
+        self.logging_writer("Debug", "Reset Serial Line OUT")
         if self._connection:
             self._connection.reset_output_buffer()
 
@@ -318,19 +318,19 @@ def semaphore_timeout(self, current_command):
             # We remove element [0]
             isqn_to_be_removed = list(self.ListOfCommands.keys())[0]
 
-        _context = {
+        context = {
             "Error code": "TRANS-SEMAPHORE-01",
             "ListofCmds": dict.copy(self.ListOfCommands),
             "IsqnCurrent": current_command["InternalSqn"],
             "IsqnToRemove": isqn_to_be_removed,
         }
         if not self.force_dz_communication and self.pluginconf.pluginConf["showTimeOutMsg"]:
-            self.logging_send_error("writerThread Timeout ", context=_context)
+            self.logging_writer("Error", "writerThread Timeout ", _context=context)
         release_command(self, isqn_to_be_removed)
         return
 
     # We need to find which Command is in Timeout
-    _context = {
+    context = {
         "Error code": "TRANS-SEMAPHORE-02",
         "ListofCmds": dict.copy(self.ListOfCommands),
         "IsqnCurrent": current_command["InternalSqn"],
@@ -343,7 +343,7 @@ def semaphore_timeout(self, current_command):
         if time.time() + 8 >= self.ListOfCommands[x]["TimeStamp"]:
             # This command has at least 8s life and can be removed
             release_command(self, x)
-            _context["IsqnToRemove"].append(x)
+            context["IsqnToRemove"].append(x)
 
     if not self.force_dz_communication and self.pluginconf.pluginConf["showTimeOutMsg"]:
-        self.logging_send_error("writerThread Timeout ", context=_context)
+        self.logging_writer("Error", "writerThread Timeout ", _context=context)
