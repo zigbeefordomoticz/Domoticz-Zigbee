@@ -1046,6 +1046,7 @@ def UpdateBatteryAttribute(self, Devices, MsgSrcAddr, MsgSrcEp):
         "COSensor-EM",
         "TS0043",
         "TS0044",
+        "TS004F",
         "TH01",
         "66666",
         "DS01",
