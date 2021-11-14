@@ -3164,6 +3164,7 @@ def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change 
     elif self.ListOfDevices[MsgSrcAddr]["Model"] in (
         "lumi.sensor_magnet",
         "lumi.sensor_magnet.aq2",
+        "lumi.sensor_magnet.acn001",
     ):  # Xiaomi Door sensor
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0006", "%02d" % alarm1)
     else:
