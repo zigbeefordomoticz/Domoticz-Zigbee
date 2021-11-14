@@ -136,7 +136,19 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
 
         if ClusterType == "Alarm" and WidgetType == "Alarm_ZL2" and Attribute_ == "0001":
             # Notification Next Day Color and Peak
-            value, text = value.split("|")
+            
+            tuple_value = value.split("|")
+            if len(tuple_value) != 2:
+                self.log.logging(
+                    "Widget",
+                    "Error",
+                    "------> Expecting 2 values got %s in Value = %s for Nwkid: %s Attribute: %s" % (
+                        len(tuple_value), value, NWKID, Attribute_),
+                    NWKID,
+                )
+                continue
+
+            value, text = tuple_value
             nValue = int(value)
             UpdateDevice_v2(self, Devices, DeviceUnit, nValue, text, BatteryLevel, SignalLevel)
 
