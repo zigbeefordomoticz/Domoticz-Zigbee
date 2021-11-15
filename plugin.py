@@ -56,7 +56,7 @@
             </options>
         </param>
                 <param field="Mode6" label="Debuging" width="150px" required="true" default="None">
-        <description><br/><h3>Plugin debug</h3>This debuging options has been moved to the WebUI > Tools > Debug<br/>
+        <description><br/><h3>Plugin debug</h3>This debuging option has been moved to the WebUI > Tools > Debug<br/>
         </description>
             <options>
                         <option label="None" value="2"  default="true"/>
