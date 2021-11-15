@@ -19,7 +19,7 @@ from Classes.Transport.tools import (CMD_PDM_ON_HOST, STANDALONE_MESSAGE,
                                      get_isqn_from_ListOfCommands,
                                      release_command)
 from Modules.errorCodes import ZCL_EXTENDED_ERROR_CODES
-from Modules.zigateConsts import MAX_SIMULTANEOUS_ZIGATE_COMMANDS
+from Modules.zigateConsts import MAX_SIMULTANEOUS_ZIGATE_COMMANDS, ZIGATE_COMMANDS
 
 
 @time_spent_process_frame()
@@ -38,13 +38,14 @@ def process_frame(self, decoded_frame):
 
     # self.logging_proto( 'Debug', "process_frame - MsgType: %s MsgLenght: %s MsgCrc: %s" %( MsgType, MsgLength, MsgCRC))
 
+
     # Payload
     MsgData = None
     if len(decoded_frame) < 18:
         return
 
     MsgData = decoded_frame[12 : len(decoded_frame) - 4]
-    # self.logging_proto( 'Debug', "process_frame -  MsgType: %s MsgData %s" % (MsgType, MsgData))
+    # self.logging_proto( 'Log', "process_frame -  MsgType: %s MsgData %s" % (MsgType, MsgData))
 
     if MsgType == "8001":
         # Async message
@@ -112,6 +113,12 @@ def process_frame(self, decoded_frame):
         self.forwarder_queue.put(decode8002_and_process(self, decoded_frame))
         return
 
+    if self.pluginconf.pluginConf["ZiGateInHybridMode"]:
+        self.logging_proto("Debug", "==> Shall we skip this message type %s as we are in HybridMode" %MsgType)
+        if MsgType in ( "8100", "8102"):
+            self.logging_proto("Debug", "==> Skiping message type %s as we are in HybridMode" %MsgType)
+            return
+        
     if self.firmware_compatibility_mode and MsgType in ("8102", "8100", "8110"):
         self.statistics._data += 1
         decode8011_31c(self, MsgType, decoded_frame)

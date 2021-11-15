@@ -1183,6 +1183,14 @@ SETTINGS = {
     "Experimental": {
         "Order": 15,
         "param": {
+            "ZiGateInHybridMode": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": True,
+            },
             "nPDUaPDUThreshold": {
                 "type": "bool",
                 "default": 0,
