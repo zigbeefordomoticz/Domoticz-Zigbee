@@ -48,15 +48,15 @@
         </param>
         <param field="Mode3" label="Initialize ZiGate" width="75px" required="true" default="False" >
             <description><br/><h3>ZiGate Reset</h3>Required step only with a new ZiGate or after an Erase EEPROM.<br/>
-            Be aware : this will erase the Zigate memoryand you will delete all pairing information. After that, you'll have to re-pair each devices.<br/>
+            Be aware : this will erase the Zigate memory and you will delete all pairing information. After that, you'll have to re-pair each devices.<br/>
             This is not removing any data from DomoticZ nor the plugin database.</description>
             <options>
                 <option label="True" value="True"/>
                 <option label="False" value="False" default="true" />
             </options>
         </param>
-                <param field="Mode6" label="Debuging" width="150px" required="true" default="None">
-        <description><br/><h3>Plugin debug</h3>This debuging option has been moved to the WebUI > Tools > Debug<br/>
+                <param field="Mode6" label="Debugging" width="150px" required="true" default="None">
+        <description><br/><h3>Plugin debug</h3>This debugging option has been moved to the WebUI > Tools > Debug<br/>
         </description>
             <options>
                         <option label="None" value="2"  default="true"/>
