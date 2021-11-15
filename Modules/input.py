@@ -36,7 +36,9 @@ from Modules.ikeaTradfri import (ikea_motion_sensor_8095,
                                  ikea_remote_switch_8095,
                                  ikea_wireless_dimer_8085)
 from Modules.inRawAps import inRawAps
-from Modules.legrand_netatmo import rejoin_legrand_reset
+from Modules.legrand_netatmo import (legrand_motion_8095,
+                                     legrand_remote_switch_8095,
+                                     rejoin_legrand_reset, legrand_remote_switch_8085, legrand_motion_8085)
 from Modules.livolo import livolo_read_attribute_request
 from Modules.lumi import AqaraOppleDecoding
 from Modules.mgmt_rtg import mgmt_rtg_rsp
@@ -3381,43 +3383,10 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
         ikea_wireless_dimer_8085( self, Devices, MsgSrcAddr,MsgEP, MsgClusterId, MsgCmd, unknown_ , MsgData)
 
     elif _ModelName in LEGRAND_REMOTE_SWITCHS:
-        self.log.logging(
-            "Input",
-            "Debug",
-            "Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
-            MsgSrcAddr,
-        )
-
-        TYPE_ACTIONS = {
-            None: "",
-            "01": "move",
-            "02": "click",
-            "03": "stop",
-        }
-        DIRECTION = {None: "", "00": "up", "01": "down"}
-
-        step_mod, up_down, step_size, transition = extract_info_from_8085(MsgData)
-
-        if TYPE_ACTIONS[step_mod] in ("click", "move"):
-            selector = TYPE_ACTIONS[step_mod] + DIRECTION[up_down]
-        elif TYPE_ACTIONS[step_mod] == "stop":
-            selector = TYPE_ACTIONS[step_mod]
-        else:
-            Domoticz.Error("Decode8085 - Unknown state for %s step_mod: %s up_down: %s" % (MsgSrcAddr, step_mod, up_down))
-            return
-
-        self.log.logging("Input", "Debug", "Decode8085 - Legrand selector: %s" % selector, MsgSrcAddr)
-        if selector:
-            if "Param" in self.ListOfDevices[MsgSrcAddr] and "netatmoReleaseButton" in self.ListOfDevices[MsgSrcAddr]["Param"] and self.ListOfDevices[MsgSrcAddr]["Param"]["netatmoReleaseButton"]:
-                # self.log.logging( "Input", 'Log',"Receive: %s/%s %s" %(MsgSrcAddr,MsgEP,selector))
-                MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, selector)
-                self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = selector
-            elif TYPE_ACTIONS[step_mod] != "stop":
-                # self.log.logging( "Input", 'Log',"Receive: %s/%s %s REQUEST UPDATE" %(MsgSrcAddr,MsgEP,selector))
-                MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, selector)
-                self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = selector
+        legrand_remote_switch_8085(self, Devices, MsgSrcAddr,MsgEP, MsgClusterId, MsgCmd, unknown_, MsgData)
 
     elif _ModelName in LEGRAND_REMOTE_MOTION:
+        legrand_motion_8085(self, Devices, MsgSrcAddr,MsgEP, MsgClusterId, MsgCmd, unknown_, MsgData)
         step_mod, up_down, step_size, transition = extract_info_from_8085(MsgData)
         self.log.logging(
             "Input",
@@ -3611,7 +3580,6 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
         # Ikea Motion Sensor
         ikea_motion_sensor_8095(self, Devices, MsgSrcAddr,MsgEP, MsgClusterId, MsgCmd, unknown_ )
 
-
     elif _ModelName in ("TRADFRI onoff switch", "TRADFRI on/off switch", "TRADFRI SHORTCUT Button", "TRADFRI openclose remote", "TRADFRI open/close remote"):
         # Ikea Switch On/Off
         ikea_remote_switch_8095(self, Devices, MsgSrcAddr,MsgEP, MsgClusterId, MsgCmd, unknown_)
@@ -3646,32 +3614,10 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
 
     elif _ModelName in LEGRAND_REMOTE_SWITCHS:
         # Legrand remote switch
-
-        if MsgCmd == "01":  # On
-            self.log.logging(
-                "Input",
-                "Debug",
-                "Decode8095 - Legrand: %s/%s, Cmd: %s, Unknown: %s " % (MsgSrcAddr, MsgEP, MsgCmd, unknown_),
-                MsgSrcAddr,
-            )
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd)
-            self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, %s" % (MsgCmd, unknown_)
-
-        elif MsgCmd == "00":  # Off
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd)
-            self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId] = {}
-            self.log.logging(
-                "Input",
-                "Debug",
-                "Decode8095 - Legrand: %s/%s, Cmd: %s, Unknown: %s " % (MsgSrcAddr, MsgEP, MsgCmd, unknown_),
-                MsgSrcAddr,
-            )
-
-        elif MsgCmd == "02":  # Toggle
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, "02")
-            self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, %s" % (MsgCmd, unknown_)
+        legrand_remote_switch_8095(self, Devices, MsgSrcAddr,MsgEP, MsgClusterId, MsgCmd, unknown_ )
 
     elif _ModelName in LEGRAND_REMOTE_MOTION:
+        legrand_motion_8095(self, Devices, MsgSrcAddr,MsgEP, MsgClusterId, MsgCmd, unknown_ )
         self.log.logging(
             "Input",
             "Log",

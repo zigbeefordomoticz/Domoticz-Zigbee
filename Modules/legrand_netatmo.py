@@ -10,23 +10,25 @@
 
 """
 
-import Domoticz
 import struct
-
 from time import time
 
-from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_EP, HEARTBEAT, LEGRAND_REMOTES
-from Modules.tools import retreive_cmd_payload_from_8002, is_ack_tobe_disabled, get_and_inc_SQN
-from Modules.readAttributes import (
-    ReadAttributeRequest_0001,
-    ReadAttributeRequest_0006_0000,
-    ReadAttributeRequest_0b04_050b,
-    ReadAttributeRequest_fc01,
-    ReadAttributeRequest_fc40,
-)
+import Domoticz
 
-from Modules.basicOutputs import raw_APS_request, write_attribute, write_attributeNoResponse, read_attribute
+from Modules.domoMaj import MajDomoDevice
+from Modules.basicOutputs import (raw_APS_request, read_attribute,
+                                  write_attribute, write_attributeNoResponse)
 from Modules.bindings import bindDevice, unbindDevice
+from Modules.readAttributes import (ReadAttributeRequest_0b04_050b,
+                                    ReadAttributeRequest_0001,
+                                    ReadAttributeRequest_0006_0000,
+                                    ReadAttributeRequest_fc01,
+                                    ReadAttributeRequest_fc40)
+from Modules.tools import (extract_info_from_8085, get_and_inc_SQN,
+                           is_ack_tobe_disabled,
+                           retreive_cmd_payload_from_8002)
+from Modules.zigateConsts import (HEARTBEAT, LEGRAND_REMOTES, MAX_LOAD_ZIGATE,
+                                  ZIGATE_EP)
 
 LEGRAND_CLUSTER_FC01 = {
     "Dimmer switch wo neutral": {"EnableLedInDark": "0001", "EnableDimmer": "0000", "EnableLedIfOn": "0002"},
@@ -92,9 +94,7 @@ def legrandReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP
     elif ClusterID == "fc01" and Command == "09":
         # IEEE of End Device (remote  )
         _ieee = "%08x" % struct.unpack("q", struct.pack(">Q", int(Data[0:16], 16)))[0]
-        leftright = None
-        if len(Data) == 18:
-            leftright = Data[16:18]
+        leftright = Data[16:18] if len(Data) == 18 else None
         self.log.logging("Legrand", "Debug", "---> Decoding cmd 0x09 Ieee: %s leftright: %s" % (_ieee, leftright))
         assign_group_membership_to_legrand_remote(self, srcNWKID, srcEp, leftright)
 
@@ -287,7 +287,7 @@ def legrand_fc01(self, nwkid, command, OnOff):
     if "Model" not in self.ListOfDevices[nwkid]:
         return
 
-    if self.ListOfDevices[nwkid]["Model"] == {} or self.ListOfDevices[nwkid]["Model"] == "":
+    if self.ListOfDevices[nwkid]["Model"] in ( {} , "" ):
         return
     if self.ListOfDevices[nwkid]["Model"] not in LEGRAND_CLUSTER_FC01:
         self.log.logging(
@@ -677,12 +677,13 @@ def legrandReenforcement(self, NWKID):
         return False
 
     if "Legrand" not in self.ListOfDevices[NWKID]:
-        self.ListOfDevices[NWKID]["Legrand"] = {}
-        self.ListOfDevices[NWKID]["Legrand"]["EnableDimmer"] = 0xFF
-        self.ListOfDevices[NWKID]["Legrand"]["EnableLedIfOn"] = 0xFF
-        self.ListOfDevices[NWKID]["Legrand"]["EnableLedShutter"] = 0xFF
-        self.ListOfDevices[NWKID]["Legrand"]["EnableLedInDark"] = 0xFF
-        self.ListOfDevices[NWKID]["Legrand"]["LegrandFilPilote"] = 0xFF
+        self.ListOfDevices[NWKID]["Legrand"] = {
+            'EnableDimmer': 255,
+            'EnableLedIfOn': 255,
+            'EnableLedShutter': 255,
+            'EnableLedInDark': 255,
+            'LegrandFilPilote': 255,
+        }
 
     if "Model" not in self.ListOfDevices[NWKID]:
         return False
@@ -764,3 +765,87 @@ def legrand_dimmer_disable(self, NwkId):
     self.log.logging("Legrand", "Log", "legrand_dimmer_disable - %s " % NwkId, NwkId)
     # Unbind
     unbindDevice(self, self.ListOfDevices[NwkId]["IEEE"], "01", "0008")
+
+
+def legrand_remote_switch_8095(self, Devices, MsgSrcAddr,MsgEP, MsgClusterId, MsgCmd, unknown_ ):
+    if MsgCmd == "01":  # On
+        self.log.logging(
+            "Input",
+            "Debug",
+            "Decode8095 - Legrand: %s/%s, Cmd: %s, Unknown: %s " % (MsgSrcAddr, MsgEP, MsgCmd, unknown_),
+            MsgSrcAddr,
+        )
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd)
+        self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, %s" % (MsgCmd, unknown_)
+
+    elif MsgCmd == "00":  # Off
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd)
+        self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId] = {}
+        self.log.logging(
+            "Input",
+            "Debug",
+            "Decode8095 - Legrand: %s/%s, Cmd: %s, Unknown: %s " % (MsgSrcAddr, MsgEP, MsgCmd, unknown_),
+            MsgSrcAddr,
+        )
+
+    elif MsgCmd == "02":  # Toggle
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, "02")
+        self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, %s" % (MsgCmd, unknown_)
+
+def legrand_remote_switch_8085(self, Devices, MsgSrcAddr,MsgEP, MsgClusterId, MsgCmd, unknown_, MsgData):
+    self.log.logging(
+        "Input",
+        "Debug",
+        "Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " % (MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
+        MsgSrcAddr,
+    )
+
+    TYPE_ACTIONS = {
+        None: "",
+        "01": "move",
+        "02": "click",
+        "03": "stop",
+    }
+    DIRECTION = {None: "", "00": "up", "01": "down"}
+
+    step_mod, up_down, step_size, transition = extract_info_from_8085(MsgData)
+
+    if TYPE_ACTIONS[step_mod] in ("click", "move"):
+        selector = TYPE_ACTIONS[step_mod] + DIRECTION[up_down]
+    elif TYPE_ACTIONS[step_mod] == "stop":
+        selector = TYPE_ACTIONS[step_mod]
+    else:
+        Domoticz.Error("Decode8085 - Unknown state for %s step_mod: %s up_down: %s" % (MsgSrcAddr, step_mod, up_down))
+        return
+
+    self.log.logging("Input", "Debug", "Decode8085 - Legrand selector: %s" % selector, MsgSrcAddr)
+    if selector:
+        if "Param" in self.ListOfDevices[MsgSrcAddr] and "netatmoReleaseButton" in self.ListOfDevices[MsgSrcAddr]["Param"] and self.ListOfDevices[MsgSrcAddr]["Param"]["netatmoReleaseButton"]:
+            # self.log.logging( "Input", 'Log',"Receive: %s/%s %s" %(MsgSrcAddr,MsgEP,selector))
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, selector)
+            self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = selector
+        elif TYPE_ACTIONS[step_mod] != "stop":
+            # self.log.logging( "Input", 'Log',"Receive: %s/%s %s REQUEST UPDATE" %(MsgSrcAddr,MsgEP,selector))
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, selector)
+            self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = selector
+
+
+def legrand_motion_8095(self, Devices, MsgSrcAddr,MsgEP, MsgClusterId, MsgCmd, unknown_ ):
+    self.log.logging(
+        "Input",
+        "Log",
+        "Decode8095 - Legrand: %s/%s, Cmd: %s, Unknown: %s " % (MsgSrcAddr, MsgEP, MsgCmd, unknown_),
+        MsgSrcAddr,
+    )
+    MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0406", unknown_)
+
+
+def legrand_motion_8085(self, Devices, MsgSrcAddr,MsgEP, MsgClusterId, MsgCmd, unknown_, MsgData):
+    step_mod, up_down, step_size, transition = extract_info_from_8085(MsgData)
+    self.log.logging(
+        "Input",
+        "Log",
+        "Decode8085 - Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s step_mode: %s up_down: %s step_size: %s transition: %s"
+        % (MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_, step_mod, up_down, step_size, transition),
+        MsgSrcAddr,
+    )
