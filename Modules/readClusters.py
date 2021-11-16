@@ -2635,7 +2635,7 @@ def Cluster0201(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
                         if self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]["001c"] == 0x04:
                             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, ValueTemp, Attribute_=MsgAttrID)
 
-            elif self.ListOfDevices[MsgSrcAddr]["Model"] == "EH-ZB-VACT":
+            elif self.ListOfDevices[MsgSrcAddr]["Model"] in ("EH-ZB-VACT", 'iTRV'):
                 # In case of Schneider Wiser Valve, we have to
                 self.log.logging(
                     "Cluster",
