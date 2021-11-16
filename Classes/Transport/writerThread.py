@@ -83,7 +83,6 @@ def writer_thread(self):
 
                 if self.writer_queue.qsize() > self.statistics._MaxLoad:
                     self.statistics._MaxLoad = self.writer_queue.qsize()
-                self.statistics._Load = self.writer_queue.qsize()
 
                 # if 'NwkId' in command:
                 #    Domoticz.Log("Command on %s" %command['NwkId'])
