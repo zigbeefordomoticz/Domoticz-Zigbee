@@ -217,7 +217,7 @@ def buildframe_write_attribute_request(frame, Sqn, SrcNwkId, SrcEndPoint, Cluste
         idx += 2
         if DType in SIZE_DATA_TYPE:
             size = SIZE_DATA_TYPE[DType] * 2
-        elif DType == "4c":
+        elif DType in ( "48", "4c"):
             nbElement = Data[idx + 2 : idx + 4] + Data[idx : idx + 2]
             idx += 4
             # Today found for attribute 0xff02 Xiaomi, just take all data
@@ -282,7 +282,7 @@ def decode_endian_data(data, datatype):
     if datatype in ("23", "2b", "39"):
         return "%08x" % struct.unpack(">i", struct.pack("I", int(data, 16)))[0]
 
-    if datatype in ("00", "41", "42", "4c"):
+    if datatype in ("00", "41", "42", "4c", "48"):
         return data
 
     return data
@@ -304,7 +304,7 @@ def buildframe_read_attribute_response(frame, Sqn, SrcNwkId, SrcEndPoint, Cluste
             idx += 2
             if DType in SIZE_DATA_TYPE:
                 size = SIZE_DATA_TYPE[DType] * 2
-            elif DType == "4c":
+            elif DType in ( "48", "4c"):
                 nbElement = Data[idx + 2 : idx + 4] + Data[idx : idx + 2]
                 idx += 4
                 # Today found for attribute 0xff02 Xiaomi, just take all data
@@ -356,7 +356,7 @@ def buildframe_report_attribute_response(frame, Sqn, SrcNwkId, SrcEndPoint, Clus
         if DType in SIZE_DATA_TYPE:
             size = SIZE_DATA_TYPE[DType] * 2
 
-        elif DType == "4c":
+        elif DType in ( "48", "4c"):
             # Today found for attribute 0xff02 Xiaomi, just take all data
             nbElement = Data[idx + 2 : idx + 4] + Data[idx : idx + 2]
             idx += 4
