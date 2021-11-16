@@ -1044,10 +1044,14 @@ def schneider_thermostat_answer_attribute_request(self, NWKID, EPout, ClusterID,
     data = dataType = payload = ""
 
     zigate_ep = ZIGATE_EP
-    if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ("Wiser2-Thermostat", "iTRV"):
+    if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ("Wiser2-Thermostat",):
         EPout = "01"
         zigate_ep = "01"
         cluster_frame = "08"
+    elif "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ("iTRV",):
+        EPout = "02"
+        zigate_ep = "01"
+        cluster_frame = "08"        
     else:
         cluster_frame = "18"
 
@@ -1334,7 +1338,8 @@ def schneiderReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dst
                     self.log.logging(
                         "Schneider",
                         "Debug",
-                        "Schneider cmd 0x00 [%s] Read Attribute Request on %s/%s" % (Sqn, ClusterID, Attribute),
+                        "Schneider cmd 0x00 [%s] Read Attribute Request on Src: %s/%s for %s/%s Dst: %s/%s" % (
+                            Sqn, srcNWKID, srcEp, ClusterID, Attribute, dstNWKID, dstEP),
                         srcNWKID,
                     )
                     schneider_thermostat_answer_attribute_request(self, srcNWKID, srcEp, ClusterID, Sqn, Attribute)
