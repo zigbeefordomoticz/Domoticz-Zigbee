@@ -1044,14 +1044,10 @@ def schneider_thermostat_answer_attribute_request(self, NWKID, EPout, ClusterID,
     data = dataType = payload = ""
 
     zigate_ep = ZIGATE_EP
-    if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ("Wiser2-Thermostat",):
+    if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ("Wiser2-Thermostat","iTRV"):
         EPout = "01"
         zigate_ep = "01"
         cluster_frame = "08"
-    elif "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ("iTRV",):
-        EPout = "02"
-        zigate_ep = "01"
-        cluster_frame = "08"        
     else:
         cluster_frame = "18"
 
@@ -1065,17 +1061,11 @@ def schneider_thermostat_answer_attribute_request(self, NWKID, EPout, ClusterID,
 
     elif attr == "0015":  # min setpoint temp
         dataType = "29"
-        if self.ListOfDevices[NWKID]["Model"] in ("EH-ZB-VACT"):
-            data = "02bc"  # 7 degree
-        else:
-            data = "0032"  # 0.5 degree
+        data = ( "02bc" if self.ListOfDevices[NWKID]["Model"] in ("EH-ZB-VACT") else "0032" )
 
     elif attr == "0016":  # max setpoint temp
         dataType = "29"
-        if self.ListOfDevices[NWKID]["Model"] in ("EH-ZB-VACT"):
-            data = "0bb8"  # 30.00 degree
-        else:
-            data = "0dac"  # 35.00 degree
+        data = ( "0bb8" if self.ListOfDevices[NWKID]["Model"] in ("EH-ZB-VACT") else "0dac" )
 
     elif attr == "0012":  # occupied setpoint temp
         dataType = "29"
