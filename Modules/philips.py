@@ -109,8 +109,7 @@ def philips_set_pir_occupancySensibility(self, nwkid, level):
 
     if level in (0, 1, 2):
         write_attribute(
-            self, nwkid, ZIGATE_EP, "02", "0406", "100b", "01", "0030", "20", "%02x" % level, ackIsDisabled=True
-        )
+            self, nwkid, ZIGATE_EP, "02", "0406", "100b", "01", "0030", "20", "%02x" % level, ackIsDisabled=False)
         ReadAttributeRequest_0406_philips_0030(self, nwkid)
 
 
