@@ -249,13 +249,14 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
                 Attribute,
             )
 
-        elif MsgClusterId == "0201" and (manuf == "105e" or manuf_name == "Schneider"):
+        elif MsgClusterId == "0201" and (manuf == "105e" or manuf_name == "Schneider" or manuf_name == "Schneider Electric"):
             # Cluster Thermostat for Wiser
             wiser_read_attribute_request(self, MsgSrcAddr, MsgSrcEp, MsgSqn, MsgClusterId, Attribute)
-
-        elif MsgClusterId == "0201" and manuf_name == "Schneider Electric":
-            wiser_read_attribute_request(self, MsgSrcAddr, MsgSrcEp, MsgSqn, MsgClusterId, Attribute)
-
+            self.log.logging(
+                "Schneider",
+                "Debug",
+                "Decode0100 - Mode: %s NwkId: %s SrcEP: %s DstEp: %s ClusterId: %s Direction: %s ManufSpec: %s ManufCode: %s nbAttribute: %s"
+                % ( MsgSqn, MsgSrcAddr, MsgSrcEp, MsgDstEp, MsgClusterId, MsgDirection, MsgManufSpec, MsgManufCode, nbAttribute, ),)
         else:
             self.log.logging(
                 "Input",

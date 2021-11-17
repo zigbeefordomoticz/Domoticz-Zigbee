@@ -399,8 +399,8 @@ class WebServer(object):
 
             Statistics["ForwardedQueueCurrentSize"] = self.ZigateComm.get_forwarder_queue()
             Statistics["WriterQueueCurrentSize"] = self.ZigateComm.get_writer_queue()
+            
             _nbitems = len(self.statistics.TrendStats)
-
             minTS = 0
             if len(self.statistics.TrendStats) == 120:
                 # Identify the smallest TS (we cannot assumed the list is sorted)

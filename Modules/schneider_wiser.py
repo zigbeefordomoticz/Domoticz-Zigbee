@@ -1044,7 +1044,7 @@ def schneider_thermostat_answer_attribute_request(self, NWKID, EPout, ClusterID,
     data = dataType = payload = ""
 
     zigate_ep = ZIGATE_EP
-    if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ("Wiser2-Thermostat", "iTRV"):
+    if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ("Wiser2-Thermostat","iTRV"):
         EPout = "01"
         zigate_ep = "01"
         cluster_frame = "08"
@@ -1061,17 +1061,11 @@ def schneider_thermostat_answer_attribute_request(self, NWKID, EPout, ClusterID,
 
     elif attr == "0015":  # min setpoint temp
         dataType = "29"
-        if self.ListOfDevices[NWKID]["Model"] in ("EH-ZB-VACT"):
-            data = "02bc"  # 7 degree
-        else:
-            data = "0032"  # 0.5 degree
+        data = ( "02bc" if self.ListOfDevices[NWKID]["Model"] in ("EH-ZB-VACT") else "0032" )
 
     elif attr == "0016":  # max setpoint temp
         dataType = "29"
-        if self.ListOfDevices[NWKID]["Model"] in ("EH-ZB-VACT"):
-            data = "0bb8"  # 30.00 degree
-        else:
-            data = "0dac"  # 35.00 degree
+        data = ( "0bb8" if self.ListOfDevices[NWKID]["Model"] in ("EH-ZB-VACT") else "0dac" )
 
     elif attr == "0012":  # occupied setpoint temp
         dataType = "29"
@@ -1334,7 +1328,8 @@ def schneiderReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dst
                     self.log.logging(
                         "Schneider",
                         "Debug",
-                        "Schneider cmd 0x00 [%s] Read Attribute Request on %s/%s" % (Sqn, ClusterID, Attribute),
+                        "Schneider cmd 0x00 [%s] Read Attribute Request on Src: %s/%s for %s/%s Dst: %s/%s" % (
+                            Sqn, srcNWKID, srcEp, ClusterID, Attribute, dstNWKID, dstEP),
                         srcNWKID,
                     )
                     schneider_thermostat_answer_attribute_request(self, srcNWKID, srcEp, ClusterID, Sqn, Attribute)

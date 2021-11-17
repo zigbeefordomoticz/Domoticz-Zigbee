@@ -4,55 +4,27 @@
 # Author: zaraki673 & pipiche38
 #
 """
-<plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="5.1" wikilink="https://www.domoticz.com/wiki/Zigate" externallink="https://github.com/pipiche38/Domoticz-Zigate/wiki">
+<plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="5.1">
     <description>
-        <h2> Plugin ZiGate for Domoticz </h2><br/>
-            The aim of the plugin is to bridge a ZiGate to the DomoticZ software. <br/>
-            This will allow you to manage all your devices through widgets created on the Domoticz side.<br/>
-            On top we have build a specific User Interface which is accessible over your browser to help you
-            in the configuration of the plugin and to customize some behaviour of the Zigate Hardware.<br/>
-
-            <br/><h3> Sources of information </h3><br/>
-                Please use first the Domoticz forums in order to qualify your issue. Select the ZigBee or Zigate topic.
+        <h1> Plugin ZiGate</h1><br/>
+            <br/><h2> Informations</h2><br/>
                 <ul style="list-style-type:square">
-                    <li>&<a href="https://zigbee.blakadder.com/zigate.html">List of Supported Devices (zigbee.blakadder.com)</a></li>
-                    <li>&<a href="https://github.com/pipiche38/Domoticz-Zigate-Wiki">Plugin Wiki</a></li>
-                    <li>&<a href="https://www.domoticz.com/forum/viewforum.php?f=68">English Forum</a></li>
-                    <li>&<a href="https://easydomoticz.com/forum/viewforum.php?f=28">Forum en Français</a></li>
-
-                </ul><br/>
-
-            <h3> Configuration </h3><br/>
-                You can use the following parameter to interact with the Zigate:<br/>
-                <ul style="list-style-type:square">
-                    <li> Model: Wifi</li>
-                        <ul style="list-style-type:square">
-                            <li> IP : For Wifi Zigate, the IP address. </li>
-                            <li> Port: For Wifi Zigate,  port number. </li>
-                        </ul>
-                    <li> Model USB ,  PI or DIN:</li>
-                        <ul style="list-style-type:square">
-                            <li> Serial Port: this is the serial port where your USB or DIN Zigate is connected. <br/>
-                            (The plugin will provide you the list of possible ports)</li>
-                        </ul>
-                    <br/>
-                    <h4>IMPORTANT</h4>
-                    Initialize ZiGate with plugin: This is a required step, with a new ZiGate or if you have done an Erase EEPROM. <br/>
-                    This will for instance create a new ZigBee Network. <br/>
-                    Be aware this will erase the Zigate memory and you will delete all pairing information. <br/>
-                    After that you'll have to re-pair each devices. This is not removing any data from Domoticz nor the plugin database.
+                    <li>&Documentations : &<a href="https://github.com/pipiche38/Domoticz-Zigate-Wiki/blob/master/en-eng/Home.md">English wiki</a>|<a href="https://github.com/pipiche38/Domoticz-Zigate-Wiki/blob/master/fr-fr/Home.md">Wiki Français</a></li>
+                    <li>&Forums : &<a href="https://www.domoticz.com/forum/viewforum.php?f=68">English (www.domoticz.com)</a>|<a href="https://easydomoticz.com/forum/viewforum.php?f=28">Français (www.easydomoticz.com)</a></li>
+                    <li>&List of supported devices : &<a href="https://zigbee.blakadder.com/zigate.html">www.zigbee.blakadder.com</a></li>
                 </ul>
-
-
+            <br/><h2>Parameters</h2>
     </description>
     <params>
         <param field="Mode1" label="Zigate Model" width="75px" required="true" default="None">
+            <description><br/><h3>ZiGate definition</h3><br/>Select the ZiGate version : ZiGate (V1) or ZiGate+ (V2)</description>
             <options>
                 <option label="ZiGate"  value="V1"/>
                 <option label="ZiGate+" value="V2"/>
             </options>
         </param>
-        <param field="Mode2" label="Zigate Communication" width="75px" required="true" default="None">
+        <param field="Mode2" label="Zigate Type" width="75px" required="true" default="None">
+            <description><br/>Select the ZiGate type : USB, DIN, Pi, TCPIP (Wifi, Ethernet)</description>
             <options>
                 <option label="USB"   value="USB" />
                 <option label="DIN"   value="DIN" />
@@ -61,20 +33,31 @@
                 <option label="None"  value="None"/>
             </options>
         </param>
-        <param field="Address" label="IP" width="150px" required="true" default="0.0.0.0"/>
-        <param field="Port" label="Port" width="150px" required="true" default="9999"/>
-        <param field="SerialPort" label="Serial Port" width="150px" required="true" default="/dev/ttyUSB0"/>
-
-        <param field="Mode3" label="Initialize ZiGate (Erase Memory) " width="75px" required="true" default="False" >
+        <param field="SerialPort" label="Serial Port" width="150px" required="true" default="/dev/ttyUSB0" >
+            <description><br/>Set the serial port where the ZiGate is connected (/dev/ttyUSB0 for example)</description>
+        </param>
+        <param field="Address" label="IP" width="150px" required="true" default="0.0.0.0">
+            <description><br/>Set the ZiGate IP adresse (0.0.0.0 for none TCPIP ZiGates)</description>
+        </param>
+        <param field="Port" label="Port" width="150px" required="true" default="9999">
+            <description><br/>Set the ZiGate Port (9999 by default)</description>
+        </param>
+        <param field="Mode4" label="WebUI port" width="75px" required="true" default="9440" >
+            <description><br/><h3>Plugin definition</h3><br/>Set the plugin Dashboard port (9440 by default, None to disable)<br/>
+            To access the plugin WebUI, replace your DomoticZ port (8080 by default) in your web adress by your WebUI port (9440 by default).</description>
+        </param>
+        <param field="Mode3" label="Initialize ZiGate" width="75px" required="true" default="False" >
+            <description><br/><h3>ZiGate Reset</h3>Required step only with a new ZiGate or after an Erase EEPROM.<br/>
+            Be aware : this will erase the Zigate memory and you will delete all pairing information. After that, you'll have to re-pair each devices.<br/>
+            This is not removing any data from DomoticZ nor the plugin database.</description>
             <options>
                 <option label="True" value="True"/>
                 <option label="False" value="False" default="true" />
             </options>
         </param>
-
-        <param field="Mode4" label="Listening port for Web Admin GUI (put None to disable)" width="75px" required="true" default="9440" />
-
-        <param field="Mode6" label="Verbors and Debuging" width="150px" required="true" default="None">
+                <param field="Mode6" label="Debugging" width="150px" required="true" default="None">
+        <description><br/><h3>Plugin debug</h3>This debugging option has been moved to the WebUI > Tools > Debug<br/>
+        </description>
             <options>
                         <option label="None" value="2"  default="true"/>
             </options>
@@ -916,6 +899,7 @@ class BasePlugin:
             self.PluginHealth["Flag"] = 2
             self.PluginHealth["Txt"] = "Enrollment in Progress"
             self.adminWidgets.updateStatusWidget(Devices, "Enrollment")
+            
             # Maintain trend statistics
             self.statistics._Load = self.ZigateComm.loadTransmit()
             self.statistics.addPointforTrendStats(self.HeartbeatCount)
@@ -952,12 +936,12 @@ class BasePlugin:
             sendZigateCmd(self, "0017", "")
 
         # Update MaxLoad if needed
-        self.statistics._Load = 0
         if self.ZigateComm.loadTransmit() >= MAX_FOR_ZIGATE_BUZY:
             # This mean that 4 commands are on the Queue to be executed by Zigate.
             busy_ = True
-            self.statistics._Load = self.ZigateComm.loadTransmit()
+        
         # Maintain trend statistics
+        self.statistics._Load = self.ZigateComm.loadTransmit()
         self.statistics.addPointforTrendStats(self.HeartbeatCount)
 
         if busy_:
@@ -1365,7 +1349,7 @@ def update_DB_device_status_to_reinit( self ):
         if 'Status' in self.ListOfDevices[ x ] and self.ListOfDevices[ x ]['Status'] == 'inDB':
             self.ListOfDevices[ x ]['Status'] = 'erasePDM'
 
-            
+
 global _plugin
 _plugin = BasePlugin()
 
