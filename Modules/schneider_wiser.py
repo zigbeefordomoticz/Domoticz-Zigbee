@@ -1087,7 +1087,7 @@ def schneider_thermostat_answer_attribute_request(self, NWKID, EPout, ClusterID,
         if "0008" not in self.ListOfDevices[NWKID]["Ep"]["01"]["0201"]:
             self.ListOfDevices[NWKID]["Ep"]["01"]["0201"]["0008"] = 0
         dataType = "20"  # uint8
-        data = "%02x" % int(self.ListOfDevices[NWKID]["Ep"]["01"]["0201"]["0008"], 16)
+        data = "%02x" % self.ListOfDevices[NWKID]["Ep"]["01"]["0201"]["0008"]
 
     elif attr == "e110":  # ?? for Wiser Home
         dataType = "30"  # enum8
