@@ -13,7 +13,7 @@ from Modules.tools import retreive_cmd_payload_from_8002
 def decode8002_and_process(self, frame):
 
     SrcNwkId, SrcEndPoint, ClusterId, Payload = extract_nwk_infos_from_8002(frame)
-    # self.logging_receive( 'Debug', "decode8002_and_process NwkId: %s Ep: %s Cluster: %s Payload: %s" %(SrcNwkId, SrcEndPoint, ClusterId , Payload))
+    # self.logging_8002( 'Debug', "decode8002_and_process NwkId: %s Ep: %s Cluster: %s Payload: %s" %(SrcNwkId, SrcEndPoint, ClusterId , Payload))
 
     if SrcNwkId is None:
         return frame
@@ -26,7 +26,7 @@ def decode8002_and_process(self, frame):
         # This is not a Global Command (Read Attribute, Write Attribute and so on)
         return frame
 
-    # self.logging_receive( 'Debug', "decode8002_and_process Sqn: %s/%s ManufCode: %s Command: %s Data: %s " %(int(Sqn,16), Sqn , ManufacturerCode, Command, Data))
+    # self.logging_8002( 'Debug', "decode8002_and_process Sqn: %s/%s ManufCode: %s Command: %s Data: %s " %(int(Sqn,16), Sqn , ManufacturerCode, Command, Data))
     if Command == "00":  # Read Attribute
         return buildframe_read_attribute_request(frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Data)
 
@@ -34,24 +34,27 @@ def decode8002_and_process(self, frame):
         return buildframe_read_attribute_response(frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
 
     if Command == "02":  # Write Attributes
-        pass
-
+        return buildframe_write_attribute_request(frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Data)
+ 
     if Command == "04":  # Write Attribute response
         return buildframe_write_attribute_response(frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
 
     if Command == "06":  # Configure Reporting
-        pass
+        return frame
 
     if Command == "07":  # Configure Reporting Response
         return buildframe_configure_reporting_response(frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
 
     if Command == "0a":  # Report attributes
         return buildframe_report_attribute_response(frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
+    
+    if Command == "0b":  #
+        return frame
 
     if Command == "0d":  # Discover Attributes Response
         return buildframe_discover_attribute_response(frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
 
-    self.logging_receive(
+    self.logging_8002(
         "Log",
         "decode8002_and_process Unknown Command: %s NwkId: %s Ep: %s Cluster: %s Payload: %s - GlobalCommand: %s, Sqn: %s, ManufacturerCode: %s"
         % (
@@ -194,6 +197,64 @@ def buildframe_read_attribute_request(frame, Sqn, SrcNwkId, SrcEndPoint, Cluster
     return newFrame
 
 
+def buildframe_write_attribute_request(frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Data):
+    
+    ManufSpec = "00"
+    ManufCode = "0000"
+    if ManufacturerCode:
+        ManufSpec = "01"
+        ManufCode = ManufacturerCode
+
+    buildPayload = Sqn + SrcNwkId + SrcEndPoint + "01" + ClusterId + "01" + ManufSpec + ManufCode
+    idx = nbAttribute = 0
+    payloadOfAttributes = ""
+    while idx < len(Data):
+        nbAttribute += 1
+        Attribute = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[idx : idx + 4], 16)))[0]
+        idx += 4
+
+        DType = Data[idx : idx + 2]
+        idx += 2
+        if DType in SIZE_DATA_TYPE:
+            size = SIZE_DATA_TYPE[DType] * 2
+        elif DType in ( "48", "4c"):
+            nbElement = Data[idx + 2 : idx + 4] + Data[idx : idx + 2]
+            idx += 4
+            # Today found for attribute 0xff02 Xiaomi, just take all data
+            size = len(Data) - idx
+
+        elif DType in ("41", "42"):  # ZigBee_OctedString = 0x41, ZigBee_CharacterString = 0x42
+            size = int(Data[idx : idx + 2], 16) * 2
+            idx += 2
+        else:
+            Domoticz.Error(
+                "buildframe_read_attribute_response - Unknown DataType size: >%s< vs. %s "
+                % (DType, str(SIZE_DATA_TYPE))
+            )
+            Domoticz.Error(
+                "buildframe_read_attribute_response - ClusterId: %s Attribute: %s Data: %s"
+                % (ClusterId, Attribute, Data)
+            )
+            return frame
+
+        data = Data[idx : idx + size]
+        idx += size
+        value = decode_endian_data(data, DType)
+        lenData = "%04x" % (size // 2)
+        payloadOfAttributes += Attribute +  DType + lenData + value
+
+    buildPayload += "%02x" % (nbAttribute) + payloadOfAttributes
+    newFrame = "01"  # 0:2
+    newFrame += "0110"  # 2:6   MsgType - Write Attribute request
+    newFrame += "%4x" % len(buildPayload)  # 6:10  Length
+    newFrame += "ff"  # 10:12 CRC
+    newFrame += buildPayload
+    newFrame += frame[len(frame) - 4 : len(frame) - 2]  # LQI
+    newFrame += "03"
+    return newFrame
+
+    
+    
 def buildframe_write_attribute_response(frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data):
 
     # This is based on assumption that we only Write 1 attribute at a time
@@ -221,7 +282,7 @@ def decode_endian_data(data, datatype):
     if datatype in ("23", "2b", "39"):
         return "%08x" % struct.unpack(">i", struct.pack("I", int(data, 16)))[0]
 
-    if datatype in ("00", "41", "42", "4c"):
+    if datatype in ("00", "41", "42", "4c", "48"):
         return data
 
     return data
@@ -243,7 +304,7 @@ def buildframe_read_attribute_response(frame, Sqn, SrcNwkId, SrcEndPoint, Cluste
             idx += 2
             if DType in SIZE_DATA_TYPE:
                 size = SIZE_DATA_TYPE[DType] * 2
-            elif DType == "4c":
+            elif DType in ( "48", "4c"):
                 nbElement = Data[idx + 2 : idx + 4] + Data[idx : idx + 2]
                 idx += 4
                 # Today found for attribute 0xff02 Xiaomi, just take all data
@@ -295,7 +356,7 @@ def buildframe_report_attribute_response(frame, Sqn, SrcNwkId, SrcEndPoint, Clus
         if DType in SIZE_DATA_TYPE:
             size = SIZE_DATA_TYPE[DType] * 2
 
-        elif DType == "4c":
+        elif DType in ( "48", "4c"):
             # Today found for attribute 0xff02 Xiaomi, just take all data
             nbElement = Data[idx + 2 : idx + 4] + Data[idx : idx + 2]
             idx += 4

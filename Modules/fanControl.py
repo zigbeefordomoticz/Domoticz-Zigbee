@@ -34,7 +34,7 @@ def change_fan_mode(self, NwkId, Ep, fan_mode):
     if fan_mode not in FAN_MODE:
         return
 
-    if "Model" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Model"] in ("AC211", "AC221"):
+    if "Model" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Model"] in ("AC211", "AC221", "CAC221"):
         casaia_check_irPairing(self, NwkId)
 
     # Fan Mode Sequence

@@ -979,7 +979,7 @@ def retreive_cmd_payload_from_8002(Payload):
         return (None, None, None, None, None)
 
     if is_manufspecific_8002_payload(fcf):
-        ManufacturerCode = Payload[2:6]
+        ManufacturerCode = Payload[4:6] + Payload[2:4]
         Sqn = Payload[6:8]
         Command = Payload[8:10]
         Data = Payload[10:]

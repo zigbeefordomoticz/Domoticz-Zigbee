@@ -230,18 +230,18 @@ def LoadDeviceList(self):
                 len(self.ListOfDevices),
             ),
         )
-        try:
-            import sys
-
-            sys.path.append("/usr/lib/python3.8/site-packages")
-            import deepdiff
-
-            diff = deepdiff.DeepDiff(self.ListOfDevices, ListOfDevices_from_Domoticz)
-            self.log.logging("Database", "Log", json.dumps(json.loads(diff.to_json()), indent=4))
-
-        except:
-            # self.log.logging("Database", "Log", "Python Module deepdiff not found")
-            pass
+        #try:
+        #    import sys
+#
+        #    sys.path.append("/usr/lib/python3.8/site-packages")
+        #    import deepdiff
+#
+        #    diff = deepdiff.DeepDiff(self.ListOfDevices, ListOfDevices_from_Domoticz)
+        #    self.log.logging("Database", "Log", json.dumps(json.loads(diff.to_json()), indent=4))
+#
+        #except:
+        #    # self.log.logging("Database", "Log", "Python Module deepdiff not found")
+        #    pass
 
     return res
 
@@ -422,7 +422,7 @@ def importDeviceConf(self):
     # for iterDevType in list(self.DeviceConf):
     #    Domoticz.Log("%s - %s" %(iterDevType, self.DeviceConf[iterDevType]))
 
-    self.log.logging("Database", "Status", "DeviceConf loaded")
+    self.log.logging("Database", "Status", "DeviceConf loaded - %s confs loaded" %len(self.DeviceConf))
 
 
 def importDeviceConfV2(self):
@@ -479,6 +479,7 @@ def importDeviceConfV2(self):
                     Domoticz.Error("--> Unexpected error when loading a configuration file")
 
     self.log.logging("Database", "Debug", "--> Config loaded: %s" % self.DeviceConf.keys())
+    self.log.logging("Database", "Status", "DeviceConf loaded - %s confs loaded" %len(self.DeviceConf))
 
 
 def checkDevices2LOD(self, Devices):

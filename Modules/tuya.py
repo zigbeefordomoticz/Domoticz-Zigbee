@@ -230,7 +230,7 @@ def tuya_registration(self, nwkid, device_reset=False, parkside=False):
 
 def tuya_cmd_0x0000_0xf0(self, NwkId):
 
-    # Seen at pairing of a WGH-JLCZ02 / TS011F
+    # Seen at pairing of a WGH-JLCZ02 / TS011F and TS0201
 
         payload = "11" + get_and_inc_SQN(self, NwkId) + "fe"
         raw_APS_request(

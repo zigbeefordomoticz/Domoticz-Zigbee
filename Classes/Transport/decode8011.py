@@ -41,11 +41,11 @@ def decode8011(self, decoded_frame):
     isqn = sqn_get_internal_sqn_from_aps_sqn(self, MsgSEQ)
 
     if isqn is None:
-        # self.logging_receive( 'Debug', "decode8011 - 0x8011 not for us NwkId: %s eSqn: %s" %(MsgSrcAddr, MsgSEQ))
+        # self.logging_8011( 'Debug', "decode8011 - 0x8011 not for us NwkId: %s eSqn: %s" %(MsgSrcAddr, MsgSEQ))
         return
 
     if isqn not in self.ListOfCommands:
-        # self.logging_receive( 'Debug', "decode8011 - 0x8011 not for us Nwkid: %s eSqn: %s iSqn: %s" %(MsgSrcAddr, MsgSEQ, isqn))
+        # self.logging_8011( 'Debug', "decode8011 - 0x8011 not for us Nwkid: %s eSqn: %s iSqn: %s" %(MsgSrcAddr, MsgSEQ, isqn))
         return
 
     self.ListOfCommands[isqn]["Status"] = "8011"
@@ -64,7 +64,7 @@ def report_timing_8011(self, isqn):
             timing = int((time.time() - TimeStamp) * 1000)
             self.statistics.add_timing8011(timing)
         if self.statistics._averageTiming8011 != 0 and timing >= (3 * self.statistics._averageTiming8011):
-            self.logging_send(
+            self.logging_8011(
                 "Log",
                 "Zigate round trip 0x8011 time seems long. %s ms for %s %s SendingQueue: %s"
                 % (

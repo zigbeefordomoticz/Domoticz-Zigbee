@@ -62,6 +62,7 @@ def ZigateRead(self, Devices, Data):
     DECODERS = {
         "004d": Decode004D,
         "0100": Decode0100,
+        "0110": Decode0110,
         "0302": Decode0302,
         "0400": Decode0400,
         "8000": Decode8000_v2,
@@ -243,12 +244,14 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
                 Attribute,
             )
 
-        elif MsgClusterId == "0201" and (manuf == "105e" or manuf_name == "Schneider"):
+        elif MsgClusterId == "0201" and (manuf == "105e" or manuf_name == "Schneider" or manuf_name == "Schneider Electric"):
             # Cluster Thermostat for Wiser
             wiser_read_attribute_request(self, MsgSrcAddr, MsgSrcEp, MsgSqn, MsgClusterId, Attribute)
-
-        elif MsgClusterId == "0201" and (manuf == "105e" or manuf_name == "Schneider Electric"):
-            wiser_read_attribute_request(self, MsgSrcAddr, MsgSrcEp, MsgSqn, MsgClusterId, Attribute)
+            self.log.logging(
+                "Schneider",
+                "Debug",
+                "Decode0100 - Mode: %s NwkId: %s SrcEP: %s DstEp: %s ClusterId: %s Direction: %s ManufSpec: %s ManufCode: %s nbAttribute: %s"
+                % ( MsgSqn, MsgSrcAddr, MsgSrcEp, MsgDstEp, MsgClusterId, MsgDirection, MsgManufSpec, MsgManufCode, nbAttribute, ),)
 
         else:
             self.log.logging(
@@ -257,7 +260,36 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
                 "Decode0100 - Read Attribute Request %s/%s Cluster %s Attribute %s" % (MsgSrcAddr, MsgSrcEp, MsgClusterId, Attribute),
             )
 
+def Decode0110(self, Devices, MsgData, MsgLQI):  # Write Attribute request
 
+    self.log.logging("Input", "Log", "Decode0110 - message: %s" % MsgData) 
+    MsgSqn = MsgData[0:2]
+    MsgSrcAddr = MsgData[2:6]
+    MsgSrcEp = MsgData[6:8]
+    MsgDstEp = MsgData[8:10]
+    MsgClusterId = MsgData[10:14]
+    MsgDirection = MsgData[14:16]
+    MsgManufFlag = MsgData[16:18]
+    MsgManufCode = MsgData[18:22]
+    nbAttribute = MsgData[22:24]
+
+    updLQI(self, MsgSrcAddr, MsgLQI)
+    timeStamped(self, MsgSrcAddr, 0x0110)
+    lastSeenUpdate(self, Devices, NwkId=MsgSrcAddr)  
+
+    for idx in range(24, len(MsgData), 4):
+        Attribute = MsgData[idx : idx + 4]
+        idx += 4
+        DataType = MsgData[idx : idx + 2]
+        idx += 2
+        lendata = MsgData[idx : idx + 4]
+        idx += 4
+        DataValue = MsgData[idx : idx + int(lendata)*2]
+        
+        self.log.logging("Input", "Log", "Decode0110 - Sqn: %s NwkId: %s Ep: %s Cluster: %s Manuf: %s Attribute: %s Type: %s Value: %s" %(
+            MsgSqn, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgManufCode ,Attribute, DataType, DataValue ) )
+           
+    
 def Decode0302(self, Devices, MsgData, MsgLQI):  # PDM Load
 
     # Must be sent above in order to issue a rejoin_legrand_reset() if needed
@@ -3134,6 +3166,7 @@ def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change 
     elif self.ListOfDevices[MsgSrcAddr]["Model"] in (
         "lumi.sensor_magnet",
         "lumi.sensor_magnet.aq2",
+        "lumi.sensor_magnet.acn001",
     ):  # Xiaomi Door sensor
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0006", "%02d" % alarm1)
     else:
@@ -3876,7 +3909,7 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
         elif MsgCmd == "01":
             MajDomoDevice(self, Devices, MsgSrcAddr, "01", "0006", "01")
 
-    elif _ModelName in ("TS0041", "TS0043", "TS0044", "TS0042"):  # Tuya remote
+    elif _ModelName in ("TS0041", "TS0043", "TS0044", "TS0042", "TS004F"):  # Tuya remote
         self.log.logging(
             "Input",
             "Log",

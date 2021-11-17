@@ -5,10 +5,8 @@
 #
 
 import Domoticz
-
-
-from Modules.zigateConsts import ZIGATE_COMMANDS, ADDRESS_MODE
 from Classes.Transport.tools import CMD_ONLY_STATUS, CMD_NWK_2NDBytes
+from Modules.zigateConsts import ADDRESS_MODE, ZIGATE_COMMANDS
 
 # These are ZiGate commands which doesn't have Ack/Nack with firmware up to 3.1c
 CMD_NOACK_ZDP = (
@@ -43,7 +41,7 @@ def is_final_step(self, isqn, step):
     if self.firmware_compatibility_mode:
         if self.ListOfCommands[isqn]["ackIsDisabled"]:
             return True
-        if step == 0x8000 and cmd in (0x0100, 0x0110):
+        if step == 0x8000 and cmd in {0x0100, 0x0110}:
             # with firmware 31a we just sync on Response of 0100 -> 8102 and 0110 -> 8110
             return False
         return True
@@ -67,7 +65,7 @@ def is_final_step(self, isqn, step):
     if not is_8012_expected_after_8000(self, isqn, cmd) and not is_8011_expected_after_8000(self, isqn, cmd):
         return True
 
-    # self.logging_receive( 'Debug', "is_final_step - returning False by default Cmd: 0x%04x - %s %s %s %s" %
+    # self.logging_proto( 'Debug', "is_final_step - returning False by default Cmd: 0x%04x - %s %s %s %s" %
     #    (
     #    cmd,
     #    self.firmware_with_8012,
@@ -83,21 +81,21 @@ def is_final_step_8012(self, isqn, cmd):
         if is_group_cmd(self, isqn, cmd):
             return True
         return is_8011_expected_after_8012(self, isqn, cmd)
-    # self.logging_receive( 'Debug', "is_final_step_8012 - returning False by default Cmd: 0x%04d" %cmd)
+    # self.logging_proto( 'Debug', "is_final_step_8012 - returning False by default Cmd: 0x%04d" %cmd)
     return False
 
 
 def is_8011_expected_after_8000(self, isqn, cmd):
     if cmd in ZIGATE_COMMANDS:
         return ZIGATE_COMMANDS[cmd]["Ack"]
-    # self.logging_receive( 'Debug', "is_8011_expected_after_8000 - returning False by default Cmd: 0x%04d" %cmd)
+    # self.logging_proto( 'Debug', "is_8011_expected_after_8000 - returning False by default Cmd: 0x%04d" %cmd)
     return False
 
 
 def is_8012_expected_after_8000(self, isqn, cmd):
     if cmd in ZIGATE_COMMANDS:
         return ZIGATE_COMMANDS[cmd]["8012"]
-    # self.logging_receive( 'Debug', "is_8012_expected_after_8000 - returning False by default Cmd: 0x%04d" %cmd)
+    # self.logging_proto( 'Debug', "is_8012_expected_after_8000 - returning False by default Cmd: 0x%04d" %cmd)
     return False
 
 
@@ -132,10 +130,7 @@ def is_nowait_cmd(self, isqn, cmd):
             return True
 
     if cmd in CMD_NWK_2NDBytes:
-        if (
-            self.ListOfCommands[isqn]["datas"][0:2] == "%02x" % ADDRESS_MODE["group"]
-            and self.ListOfCommands[isqn]["datas"][2:6] == "0000"
-        ):
+        if self.ListOfCommands[isqn]["datas"][0:2] == "%02x" % ADDRESS_MODE["group"] and self.ListOfCommands[isqn]["datas"][2:6] == "0000":
             return True
         if self.ListOfCommands[isqn]["datas"][2:6] == "0000":
             return True

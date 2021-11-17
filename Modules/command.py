@@ -1185,7 +1185,6 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
 
         # if Hue_List['m'] == 1:
         #    ww = int(Hue_List['ww']) # Can be used as level for monochrome white
-        #    #TODO : Jamais vu un device avec ca encore
         #    self.log.logging( "Command", 'Log', "Not implemented device color 1", NWKID)
 
         # ColorModeTemp = 2   // White with color temperature. Valid fields: t

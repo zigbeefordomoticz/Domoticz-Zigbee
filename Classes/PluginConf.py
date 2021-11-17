@@ -830,23 +830,39 @@ SETTINGS = {
                 "hidden": False,
                 "Advanced": True,
             },
-            "debugTransportTx": {
-                "type": "bool",
-                "default": 0,
-                "current": None,
-                "restart": 0,
-                "hidden": False,
-                "Advanced": True,
-            },
-            "debugTransportRx": {
-                "type": "bool",
-                "default": 0,
-                "current": None,
-                "restart": 0,
-                "hidden": False,
-                "Advanced": True,
-            },
             "debugTransport": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": True,
+            },
+            "debugTransport8000": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": True,
+            },
+            "debugTransport8002": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": True,
+            },
+            "debugTransport8011": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": True,
+            },
+            "debugTransport8012": {
                 "type": "bool",
                 "default": 0,
                 "current": None,
@@ -878,7 +894,23 @@ SETTINGS = {
                 "hidden": False,
                 "Advanced": True,
             },
-            "debugTransportFlowCtrl": {
+            "debugTransportProto": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": True,
+            },
+            "debugTransportTcpip": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": True,
+            },
+            "debugTransportSerial": {
                 "type": "bool",
                 "default": 0,
                 "current": None,
@@ -1151,6 +1183,14 @@ SETTINGS = {
     "Experimental": {
         "Order": 15,
         "param": {
+            "ZiGateInHybridMode": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": True,
+            },
             "nPDUaPDUThreshold": {
                 "type": "bool",
                 "default": 0,
@@ -1735,9 +1775,8 @@ def _load_Settings(self):
             for x in _pluginConf:
                 if x not in _domoticz_pluginConf:
                     Domoticz.Error("-- %s is missing in Dz" % x)
-                else:
-                    if _pluginConf[x] != _domoticz_pluginConf[x]:
-                        Domoticz.Error("++ %s is different in Dz: %s from Json: %s" % (x, _domoticz_pluginConf[x], _pluginConf[x]))
+                elif _pluginConf[x] != _domoticz_pluginConf[x]:
+                    Domoticz.Error("++ %s is different in Dz: %s from Json: %s" % (x, _domoticz_pluginConf[x], _pluginConf[x]))
 
 
 def _load_oldfashon(self, homedir, hardwareid):
