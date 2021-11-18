@@ -31,7 +31,7 @@ from Modules.schneider_wiser import (iTRV_open_window_detection,
                                      wiser_home_lockout_thermostat)
 from Modules.tuya import (get_tuya_attribute, tuya_backlight_command,
                           tuya_energy_childLock, tuya_switch_indicate_light,
-                          tuya_switch_relay_status,
+                          tuya_switch_relay_status, tuya_cmd_ts004F,
                           tuya_window_cover_motor_reversal)
 from Modules.tuyaTRV import tuya_trv_thermostat_sensor_mode
 
@@ -189,7 +189,9 @@ DEVICE_PARAMETERS = {
     "eTRVExerciseTime": danfoss_exercise_trigger_time,
     "DanfossTRVOrientation": danfoss_orientation,
     "DanfossViewDirection": danfoss_viewdirection,
+    "TS004FMode": tuya_cmd_ts004F
 }
+
 
 
 def sanity_check_of_param(self, NwkId):

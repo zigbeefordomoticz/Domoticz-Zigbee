@@ -36,7 +36,7 @@ from Modules.schneider_wiser import (PREFIX_MACADDR_WIZER_LEGACY,
                                      wiser_home_lockout_thermostat)
 from Modules.thermostats import thermostat_Calibration
 from Modules.tools import get_and_inc_SQN, getListOfEpForCluster, is_fake_ep
-from Modules.tuya import tuya_registration
+from Modules.tuya import tuya_registration, tuya_cmd_ts004F
 from Modules.tuyaSiren import tuya_sirene_registration
 from Modules.tuyaTools import tuya_TS0121_registration
 from Modules.tuyaTRV import TUYA_eTRV_MODEL, tuya_eTRV_registration
@@ -581,6 +581,11 @@ def handle_device_specific_needs(self, Devices, NWKID):
     elif self.ListOfDevices[NWKID]["Model"] in ("TS0121",):
         self.log.logging("Pairing", "Debug", "Tuya TS0121 registration needed")
         tuya_TS0121_registration(self, NWKID)
+
+    elif self.ListOfDevices[NWKID]["Model"] in ("TS004F",):
+        self.log.logging("Pairing", "Log", "Tuya TS004F registration needed")
+        if "Param" in self.ListOfDevices[NWKID] and "TS004FMode" and self.ListOfDevices[NWKID]["Param"]:
+            tuya_cmd_ts004F(self, NwkId,  self.ListOfDevices[NWKID]["Param"]["TS004FMode" ])
 
     elif self.ListOfDevices[NWKID]["Model"] in (
         "TS0601-Energy",
