@@ -235,7 +235,7 @@ def tuya_cmd_ts004F(self, NwkId, mode):
     if mode not in TS004F_MODE:
         return
 
-    write_attribute(self, nwkid, ZIGATE_EP, "01", "0006", "0000", "00", "8004", "30", '%02x' %TS004F_MODE[ mode ], ackIsDisabled=False)
+    write_attribute(self, NwkId, ZIGATE_EP, "01", "0006", "0000", "00", "8004", "30", '%02x' %TS004F_MODE[ mode ], ackIsDisabled=False)
 
 def tuya_cmd_0x0000_0xf0(self, NwkId):
 
