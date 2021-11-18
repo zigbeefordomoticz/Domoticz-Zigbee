@@ -16,45 +16,50 @@ import time
 from datetime import datetime
 
 import Domoticz
-from Classes.Transport.sqnMgmt import TYPE_APP_ZCL, TYPE_APP_ZDP, sqn_get_internal_sqn_from_app_sqn, sqn_get_internal_sqn_from_aps_sqn
-from Modules.basicOutputs import getListofAttribute, send_default_response, sendZigateCmd, setTimeServer, unknown_device_nwkid  # leaveMgtReJoin,
+from Classes.Transport.sqnMgmt import (TYPE_APP_ZCL, TYPE_APP_ZDP,
+                                       sqn_get_internal_sqn_from_app_sqn,
+                                       sqn_get_internal_sqn_from_aps_sqn)
+
+from Modules.basicOutputs import getListofAttribute  # leaveMgtReJoin,
+from Modules.basicOutputs import (send_default_response, sendZigateCmd,
+                                  setTimeServer, unknown_device_nwkid)
 from Modules.callback import callbackDeviceAwake
-from Modules.deviceAnnoucement import device_annoucementv1, device_annoucementv2
+from Modules.deviceAnnoucement import (device_annoucementv1,
+                                       device_annoucementv2)
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import lastSeenUpdate, timedOutDevice
 from Modules.errorCodes import DisplayStatusCode
+from Modules.ikeaTradfri import (ikea_motion_sensor_8095,
+                                 ikea_remote_control_8085,
+                                 ikea_remote_control_8095,
+                                 ikea_remote_switch_8085,
+                                 ikea_remote_switch_8095,
+                                 ikea_wireless_dimer_8085)
 from Modules.inRawAps import inRawAps
-from Modules.legrand_netatmo import rejoin_legrand_reset
+from Modules.legrand_netatmo import (legrand_motion_8095,
+                                     legrand_remote_switch_8095,
+                                     rejoin_legrand_reset, legrand_remote_switch_8085, legrand_motion_8085)
 from Modules.livolo import livolo_read_attribute_request
 from Modules.lumi import AqaraOppleDecoding
 from Modules.mgmt_rtg import mgmt_rtg_rsp
 from Modules.pairingProcess import interview_state_8045
 from Modules.pluzzy import pluzzyDecode8102
-from Modules.readAttributes import ReadAttributeRequest_0000
 from Modules.readClusters import ReadCluster
 from Modules.schneider_wiser import wiser_read_attribute_request
 from Modules.timeServer import timeserver_read_attribute_request
-from Modules.tools import (
-    DeviceExist,
-    ReArrangeMacCapaBasedOnModel,
-    checkAndStoreAttributeValue,
-    decodeMacCapa,
-    get_isqn_datastruct,
-    get_list_isqn_attr_datastruct,
-    getSaddrfromIEEE,
-    is_fake_ep,
-    loggingMessages,
-    lookupForIEEE,
-    mainPoweredDevice,
-    retreive_cmd_payload_from_8002,
-    set_request_phase_datastruct,
-    set_status_datastruct,
-    timeStamped,
-    updLQI,
-    updSQN,
-)
-from Modules.zigate import initLODZigate, receiveZigateEpDescriptor, receiveZigateEpList
-from Modules.zigateConsts import ADDRESS_MODE, LEGRAND_REMOTE_MOTION, LEGRAND_REMOTE_SWITCHS, ZCL_CLUSTERS_LIST, ZIGBEE_COMMAND_IDENTIFIER
+from Modules.tools import (DeviceExist, ReArrangeMacCapaBasedOnModel,
+                           checkAndStoreAttributeValue, decodeMacCapa,
+                           extract_info_from_8085, get_isqn_datastruct,
+                           get_list_isqn_attr_datastruct, getSaddrfromIEEE,
+                           is_fake_ep, loggingMessages, lookupForIEEE,
+                           mainPoweredDevice, retreive_cmd_payload_from_8002,
+                           set_request_phase_datastruct, set_status_datastruct,
+                           timeStamped, updLQI, updSQN)
+from Modules.zigate import (initLODZigate, receiveZigateEpDescriptor,
+                            receiveZigateEpList)
+from Modules.zigateConsts import (ADDRESS_MODE, LEGRAND_REMOTE_MOTION,
+                                  LEGRAND_REMOTE_SWITCHS, ZCL_CLUSTERS_LIST,
+                                  ZIGBEE_COMMAND_IDENTIFIER)
 
 
 def ZigateRead(self, Devices, Data):
@@ -252,7 +257,6 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
                 "Debug",
                 "Decode0100 - Mode: %s NwkId: %s SrcEP: %s DstEp: %s ClusterId: %s Direction: %s ManufSpec: %s ManufCode: %s nbAttribute: %s"
                 % ( MsgSqn, MsgSrcAddr, MsgSrcEp, MsgDstEp, MsgClusterId, MsgDirection, MsgManufSpec, MsgManufCode, nbAttribute, ),)
-
         else:
             self.log.logging(
                 "Input",
@@ -353,7 +357,6 @@ def Decode8000_v2(self, Devices, MsgData, MsgLQI):  # Status
             i_sqn = sqn_get_internal_sqn_from_app_sqn(self.ZigateComm, sqn_app, TYPE_APP_ZCL)
 
         if i_sqn:
-
             self.log.logging(
                 "Input",
                 "Log",
@@ -400,31 +403,25 @@ def Decode8000_v2(self, Devices, MsgData, MsgLQI):  # Status
     #    pass
 
     # Group Management
-    if PacketType in ("0060", "0061", "0062", "0063", "0064", "0065"):
-        if self.groupmgt:
-            self.groupmgt.statusGroupRequest(MsgData)
+    if (
+        PacketType in ("0060", "0061", "0062", "0063", "0064", "0065")
+        and self.groupmgt
+    ):
+        self.groupmgt.statusGroupRequest(MsgData)
 
     if MsgData[0:2] != "00":
-        if MsgData[0:2] in ("80", "14", "15"):
-            self.log.logging(
-                "Input",
-                "Error",
-                "Decode8000 - PacketType: %s TypeSqn: %s sqn_app: %s sqn_aps: %s Status: [%s] " % (PacketType, type_sqn, sqn_app, sqn_aps, Status),
-            )
-        else:
-            self.log.logging(
-                "Input",
-                "Error",
-                "Decode8000 - PacketType: %s TypeSqn: %s sqn_app: %s sqn_aps: %s Status: [%s] " % (PacketType, type_sqn, sqn_app, sqn_aps, Status),
-            )
-
+        self.log.logging(
+            "Input",
+            "Error",
+            "Decode8000 - PacketType: %s TypeSqn: %s sqn_app: %s sqn_aps: %s Status: [%s] " % (PacketType, type_sqn, sqn_app, sqn_aps, Status),
+        )
         # Hack to reboot Zigate
         if MsgData[0:2] not in ("01", "02", "03", "04", "05"):
             self.internalError += 1
-        # if self.internalError > 4:
-        #    self.internalError = 0
-        #    sendZigateCmd(self, "0011", "" ) # Software Reset
-        #    self.log.logging(  "Input", "Error", "TOO MUCH ERRORS - ZIGATE RESET requested")
+            # if self.internalError > 4:
+            #    self.internalError = 0
+            #    sendZigateCmd(self, "0011", "" ) # Software Reset
+            #    self.log.logging(  "Input", "Error", "TOO MUCH ERRORS - ZIGATE RESET requested")
     else:
         self.internalError = 0
 
@@ -909,11 +906,7 @@ def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
     MsgLen = len(MsgData)
     MsgStatus = MsgData[0:2]
     MsgSrcAddr = MsgData[2:6]
-    # MsgSrcEp = MsgData[6:8]
-    MsgSEQ = None
-    if MsgLen > 12:
-        MsgSEQ = MsgData[12:14]
-
+    MsgSEQ = MsgData[12:14] if MsgLen > 12 else None
     i_sqn = sqn_get_internal_sqn_from_aps_sqn(self.ZigateComm, MsgSEQ)
 
     if MsgSrcAddr not in self.ListOfDevices:
@@ -962,41 +955,47 @@ def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
 
     # Handle only NACK for main powered devices
     timedOutDevice(self, Devices, NwkId=MsgSrcAddr)
-    if "Health" in self.ListOfDevices[MsgSrcAddr]:
-        if self.ListOfDevices[MsgSrcAddr]["Health"] != "Not Reachable":
-            self.ListOfDevices[MsgSrcAddr]["Health"] = "Not Reachable"
+    set_health_state( self, MsgSrcAddr, MsgData[8:12], MsgStatus)
+    
+def set_health_state( self, MsgSrcAddr, ClusterId, Status):
+    if "Health" not in self.ListOfDevices[MsgSrcAddr]:
+        return
+    if self.ListOfDevices[MsgSrcAddr]["Health"] != "Not Reachable":
+        self.ListOfDevices[MsgSrcAddr]["Health"] = "Not Reachable"
 
-        if "ZDeviceName" in self.ListOfDevices[MsgSrcAddr]:
-            MsgClusterId = MsgData[8:12]
-            if self.ListOfDevices[MsgSrcAddr]["ZDeviceName"] not in [
-                {},
-                "",
-            ]:
-                self.log.logging(
-                    "Input",
-                    "Log",
-                    "Receive NACK from %s (%s) clusterId: %s Status: %s"
-                    % (
-                        self.ListOfDevices[MsgSrcAddr]["ZDeviceName"],
-                        MsgSrcAddr,
-                        MsgClusterId,
-                        MsgStatus,
-                    ),
+    if "ZDeviceName" in self.ListOfDevices[MsgSrcAddr]:
+        MsgClusterId = ClusterId
+        if self.ListOfDevices[MsgSrcAddr]["ZDeviceName"] not in [
+            {},
+            "",
+        ]:
+            self.log.logging(
+                "Input",
+                "Log",
+                "Receive NACK from %s (%s) clusterId: %s Status: %s"
+                % (
+                    self.ListOfDevices[MsgSrcAddr]["ZDeviceName"],
                     MsgSrcAddr,
-                )
-            else:
-                self.log.logging(
-                    "Input",
-                    "Log",
-                    "Receive NACK from %s clusterId: %s Status: %s" % (MsgSrcAddr, MsgClusterId, MsgStatus),
-                    MsgSrcAddr,
-                )
+                    MsgClusterId,
+                    Status,
+                ),
+                MsgSrcAddr,
+            )
+        else:
+            self.log.logging(
+                "Input",
+                "Log",
+                "Receive NACK from %s clusterId: %s Status: %s" % (MsgSrcAddr, MsgClusterId, Status),
+                MsgSrcAddr,
+            )
 
-        if self.pluginconf.pluginConf["deviceOffWhenTimeOut"]:
-            for x in self.ListOfDevices[MsgSrcAddr]["Ep"]:
-                if "0006" in self.ListOfDevices[MsgSrcAddr]["Ep"][x]:
-                    if "0000" in self.ListOfDevices[MsgSrcAddr]["Ep"][x]["0006"]:
-                        self.ListOfDevices[MsgSrcAddr]["Ep"][x]["0006"]["0000"] = "00"
+    if self.pluginconf.pluginConf["deviceOffWhenTimeOut"]:
+        for x in self.ListOfDevices[MsgSrcAddr]["Ep"]:
+            if (
+                "0006" in self.ListOfDevices[MsgSrcAddr]["Ep"][x]
+                and "0000" in self.ListOfDevices[MsgSrcAddr]["Ep"][x]["0006"]
+            ):
+                self.ListOfDevices[MsgSrcAddr]["Ep"][x]["0006"]["0000"] = "00"
 
 
 def Decode8012(self, Devices, MsgData, MsgLQI):
@@ -2548,54 +2547,7 @@ def read_report_attributes(
 ):
 
     if DeviceExist(self, Devices, MsgSrcAddr):
-        if self.pluginconf.pluginConf["debugLQI"] and self.ListOfDevices[MsgSrcAddr]["LQI"] <= self.pluginconf.pluginConf["debugLQI"]:
-            if "ZDeviceName" in self.ListOfDevices[MsgSrcAddr]:
-                if self.ListOfDevices[MsgSrcAddr]["ZDeviceName"] not in [
-                    "",
-                    {},
-                ]:
-                    self.log.logging(
-                        "Input",
-                        "Log",
-                        "Decode8102 - LQI: %3s Received Cluster:%s Attribute: %4s Value: %4s from (%4s/%2s)%s"
-                        % (
-                            self.ListOfDevices[MsgSrcAddr]["LQI"],
-                            MsgClusterId,
-                            MsgAttrID,
-                            MsgClusterData,
-                            MsgSrcAddr,
-                            MsgSrcEp,
-                            self.ListOfDevices[MsgSrcAddr]["ZDeviceName"],
-                        ),
-                    )
-                else:
-                    self.log.logging(
-                        "Input",
-                        "Log",
-                        "Decode8102 - LQI: %3s Received Cluster:%s Attribute: %4s Value: %4s from (%4s/%2s)"
-                        % (
-                            self.ListOfDevices[MsgSrcAddr]["LQI"],
-                            MsgClusterId,
-                            MsgAttrID,
-                            MsgClusterData,
-                            MsgSrcAddr,
-                            MsgSrcEp,
-                        ),
-                    )
-            else:
-                self.log.logging(
-                    "Input",
-                    "Log",
-                    "Decode8102 - LQI: %3s Received Cluster:%s Attribute: %4s Value: %4s from (%4s/%2s)"
-                    % (
-                        self.ListOfDevices[MsgSrcAddr]["LQI"],
-                        MsgClusterId,
-                        MsgAttrID,
-                        MsgClusterData,
-                        MsgSrcAddr,
-                        MsgSrcEp,
-                    ),
-                )
+        debug_LQI( self, MsgSrcAddr, MsgClusterId, MsgAttrID, MsgClusterData, MsgSrcEp)
 
         self.log.logging(
             "Input",
@@ -2654,6 +2606,30 @@ def read_report_attributes(
             MsgSrcAddr,
         )
 
+def isZDeviceName(self, MsgSrcAddr):
+    
+    return "ZDeviceName" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["ZDeviceName"] not in ["",{},]
+
+def debug_LQI( self, MsgSrcAddr, MsgClusterId, MsgAttrID, MsgClusterData, MsgSrcEp):
+    if self.pluginconf.pluginConf["debugLQI"] and self.ListOfDevices[MsgSrcAddr]["LQI"] <= self.pluginconf.pluginConf["debugLQI"]:
+        if isZDeviceName(self, MsgSrcAddr):
+            self.log.logging(
+                "Input",
+                "Log",
+                "Decode8102 - LQI: %3s Received Cluster:%s Attribute: %4s Value: %4s from (%4s/%2s)%s"
+                % ( self.ListOfDevices[MsgSrcAddr]["LQI"], MsgClusterId, MsgAttrID, MsgClusterData, MsgSrcAddr, MsgSrcEp, self.ListOfDevices[MsgSrcAddr]["ZDeviceName"], ), )
+        else:
+            self.log.logging(
+                "Input",
+                "Log",
+                "Decode8102 - LQI: %3s Received Cluster:%s Attribute: %4s Value: %4s from (%4s/%2s)"
+                % ( self.ListOfDevices[MsgSrcAddr]["LQI"], MsgClusterId, MsgAttrID, MsgClusterData, MsgSrcAddr, MsgSrcEp, ), )
+    else:
+        self.log.logging(
+            "Input",
+            "Debug",
+            "Decode8102 - LQI: %3s Received Cluster:%s Attribute: %4s Value: %4s from (%4s/%2s)"
+            % ( self.ListOfDevices[MsgSrcAddr]["LQI"], MsgClusterId, MsgAttrID, MsgClusterData, MsgSrcAddr, MsgSrcEp, ), )
 
 def Decode8110(self, Devices, MsgData, MsgLQI):
 
@@ -3048,59 +3024,9 @@ def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change 
         ),
         MsgSrcAddr,
     )
-
     if Model == "PST03A-v2.2.5":
-        # CLD CLD
-        # bit 3, battery status (0=Ok 1=to replace)
-        iData = int(MsgZoneStatus, 16) & 8 >> 3  # Set batery level
-        if iData == 0:
-            self.ListOfDevices[MsgSrcAddr]["IASBattery"] = "100"  # set to 100%
-        else:
-            self.ListOfDevices[MsgSrcAddr]["IASBattery"] = "0"
-        if MsgEp == "02":
-            iData = int(MsgZoneStatus, 16) & 1  # For EP 2, bit 0 = "door/window status"
-            # bit 0 = 1 (door is opened) ou bit 0 = 0 (door is closed)
-            value = "%02d" % iData
-            self.log.logging(
-                "Input",
-                "Debug",
-                "Decode8401 - PST03A-v2.2.5 door/windows status: " + value,
-                MsgSrcAddr,
-            )
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0500", value)
-            # Nota: tamper alarm on EP 2 are discarded
-        elif MsgEp == "01":
-            iData = int(MsgZoneStatus, 16) & 1  # For EP 1, bit 0 = "movement"
-            # bit 0 = 1 ==> movement
-            if iData == 1:
-                value = "%02d" % iData
-                self.log.logging(
-                    "Input",
-                    "Debug",
-                    "Decode8401 - PST03A-v2.2.5 mouvements alarm",
-                    MsgSrcAddr,
-                )
-                MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0406", value)
-            # bit 2 = 1 ==> tamper (device disassembly)
-            iData = (int(MsgZoneStatus, 16) & 4) >> 2
-            if iData == 1:
-                value = "%02d" % iData
-                self.log.logging(
-                    "Input",
-                    "Debug",
-                    "Decode8401 - PST03A-V2.2.5  tamper alarm",
-                    MsgSrcAddr,
-                )
-                MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0006", value)
-        else:
-            self.log.logging(
-                "Input",
-                "Debug",
-                "Decode8401 - PST03A-v2.2.5, unknow EndPoint: " + MsgEp,
-                MsgSrcAddr,
-            )
+        Decode8401_PST03Av225( self, Devices, MsgSrcAddr, MsgEp, Model, MsgZoneStatus)
         return
-    # default
 
     if MsgSrcAddr not in self.ListOfDevices:
         return
@@ -3169,8 +3095,7 @@ def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change 
         "lumi.sensor_magnet.acn001",
     ):  # Xiaomi Door sensor
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0006", "%02d" % alarm1)
-    else:
-        if Model not in ("RC-EF-3.0", "RC-EM"):
+    elif Model not in ("RC-EF-3.0", "RC-EM"):
             MajDomoDevice(
                 self,
                 Devices,
@@ -3200,24 +3125,75 @@ def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change 
     else:
         self.ListOfDevices[MsgSrcAddr]["IASBattery"] = 100  # set to 100%
 
-    if "IAS" in self.ListOfDevices[MsgSrcAddr]:
-        if "ZoneStatus" in self.ListOfDevices[MsgSrcAddr]["IAS"]:
-            if not isinstance(self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"], dict):
-                self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"] = {}
+    if (
+        "IAS" in self.ListOfDevices[MsgSrcAddr]
+        and "ZoneStatus" in self.ListOfDevices[MsgSrcAddr]["IAS"]
+    ):
+        if not isinstance(self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"], dict):
+            self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"] = {}
 
-            self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["alarm1"] = alarm1
-            self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["alarm2"] = alarm2
-            self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["tamper"] = tamper
-            self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["battery"] = battery
-            self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["Support Reporting"] = suprrprt
-            self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["Restore Reporting"] = restrprt
-            self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["trouble"] = trouble
-            self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["acmain"] = acmain
-            self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["test"] = test
-            self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["battdef"] = battdef
-            self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["GlobalInfos"] = self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEp]["0500"]["0002"]
-            self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["TimeStamp"] = int(time.time())
+        self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["alarm1"] = alarm1
+        self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["alarm2"] = alarm2
+        self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["tamper"] = tamper
+        self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["battery"] = battery
+        self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["Support Reporting"] = suprrprt
+        self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["Restore Reporting"] = restrprt
+        self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["trouble"] = trouble
+        self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["acmain"] = acmain
+        self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["test"] = test
+        self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["battdef"] = battdef
+        self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["GlobalInfos"] = self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEp]["0500"]["0002"]
+        self.ListOfDevices[MsgSrcAddr]["IAS"]["ZoneStatus"]["TimeStamp"] = int(time.time())
 
+def Decode8401_PST03Av225( self, Devices, MsgSrcAddr, MsgEp, Model, MsgZoneStatus):
+    
+    # CLD CLD
+    # bit 3, battery status (0=Ok 1=to replace)
+    iData = int(MsgZoneStatus, 16) & 8 >> 3  # Set batery level
+    self.ListOfDevices[MsgSrcAddr]["IASBattery"] = "100" if iData == 0 else "0"
+    if MsgEp == "02":
+        iData = int(MsgZoneStatus, 16) & 1  # For EP 2, bit 0 = "door/window status"
+        # bit 0 = 1 (door is opened) ou bit 0 = 0 (door is closed)
+        value = "%02d" % iData
+        self.log.logging(
+            "Input",
+            "Debug",
+            "Decode8401 - PST03A-v2.2.5 door/windows status: " + value,
+            MsgSrcAddr,
+        )
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0500", value)
+        # Nota: tamper alarm on EP 2 are discarded
+    elif MsgEp == "01":
+        iData = int(MsgZoneStatus, 16) & 1  # For EP 1, bit 0 = "movement"
+        # bit 0 = 1 ==> movement
+        if iData == 1:
+            value = "%02d" % iData
+            self.log.logging(
+                "Input",
+                "Debug",
+                "Decode8401 - PST03A-v2.2.5 mouvements alarm",
+                MsgSrcAddr,
+            )
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0406", value)
+        # bit 2 = 1 ==> tamper (device disassembly)
+        iData = (int(MsgZoneStatus, 16) & 4) >> 2
+        if iData == 1:
+            value = "%02d" % iData
+            self.log.logging(
+                "Input",
+                "Debug",
+                "Decode8401 - PST03A-V2.2.5  tamper alarm",
+                MsgSrcAddr,
+            )
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0006", value)
+    else:
+        self.log.logging(
+            "Input",
+            "Debug",
+            "Decode8401 - PST03A-v2.2.5, unknow EndPoint: " + MsgEp,
+            MsgSrcAddr,
+        )
+    return
 
 # OTA and Remote decoding kindly authorized by https://github.com/ISO-B
 def Decode8501(self, Devices, MsgData, MsgLQI):  # OTA image block request
@@ -3294,6 +3270,7 @@ def Decode004D(self, Devices, MsgData, MsgLQI):  # Reception Device announce
         device_annoucementv2(self, Devices, MsgData, MsgLQI)
 
 
+# Remote
 def Decode8085(self, Devices, MsgData, MsgLQI):
     "Remote button pressed"
 
@@ -3305,15 +3282,6 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
     MsgCmd = MsgData[14:16]
 
     updLQI(self, MsgSrcAddr, MsgLQI)
-    TYPE_ACTIONS = {
-        "01": "hold_down",
-        "02": "click_down",
-        "03": "release_down",
-        "05": "hold_up",
-        "06": "click_up",
-        "07": "release_up",
-    }
-
     # self.log.logging( "Input", 'Debug', "Decode8085 - MsgData: %s "  %MsgData, MsgSrcAddr)
     self.log.logging(
         "Input",
@@ -3328,15 +3296,7 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
     if self.ListOfDevices[MsgSrcAddr]["Status"] != "inDB":
         return
 
-    if "Ep" in self.ListOfDevices[MsgSrcAddr] and MsgEP in self.ListOfDevices[MsgSrcAddr]["Ep"]:
-        if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP]:
-            self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId] = {}
-        if not isinstance(self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId], dict):
-            self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId] = {}
-        if "0000" not in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]:
-            self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = {}
-
-    if MsgSQN != "00" and "SQN" in self.ListOfDevices[MsgSrcAddr] and MsgSQN == self.ListOfDevices[MsgSrcAddr]["SQN"]:
+    if check_duplicate_sqn(self, MsgSrcAddr, MsgEP, MsgClusterId, MsgSQN):
         return
 
     updSQN(self, MsgSrcAddr, MsgSQN)
@@ -3351,18 +3311,8 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
     _ModelName = self.ListOfDevices[MsgSrcAddr]["Model"]
 
     if _ModelName in ("TRADFRI remote control", "Remote Control N2"):
-        if MsgClusterId == "0008" and MsgCmd in TYPE_ACTIONS:
-            selector = TYPE_ACTIONS[MsgCmd]
-            self.log.logging("Input", "Debug", "Decode8085 - Selector: %s" % selector, MsgSrcAddr)
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", selector)
-            self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = selector
-        else:
-            self.log.logging(
-                "Input",
-                "Log",
-                "Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s" % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
-            )
-            self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, %s" % (MsgCmd, unknown_)
+        # 5 Butons remote
+        ikea_remote_control_8085( self, Devices, MsgSrcAddr,MsgEP, MsgClusterId, MsgCmd, unknown_ )
 
     elif _ModelName in ("ROM001",):
         # ZigateRead - MsgType: 8095, MsgLength: 000b, MsgCRC: 19, Data: 00010006029b6e400000, LQI: 183
@@ -3372,16 +3322,8 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
 
     elif _ModelName in ("TRADFRI onoff switch", "TRADFRI on/off switch", "TRADFRI SHORTCUT Button", "TRADFRI openclose remote", "TRADFRI open/close remote"):
         # Ikea Switch On/Off
+        ikea_remote_switch_8085(self, Devices, MsgSrcAddr,MsgEP, MsgClusterId, MsgCmd, unknown_)
 
-        if MsgClusterId == "0008":
-            if MsgCmd == "05":  # Push Up
-                MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0006", "02")
-            elif MsgCmd == "01":  # Push Down
-                MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0006", "03")
-            elif MsgCmd == "07":  # Release Up & Down
-                MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0006", "04")
-
-        self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = MsgCmd
 
     elif _ModelName == "RC 110":
         if MsgClusterId != "0008":
@@ -3439,123 +3381,13 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
         self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = selector
 
     elif _ModelName == "TRADFRI wireless dimmer":
-
-        TYPE_ACTIONS = {
-            None: "",
-            "01": "moveleft",
-            "02": "click",
-            "03": "stop",
-            "04": "OnOff",
-            "05": "moveright",
-            "06": "Step 06",
-            "07": "stop",
-        }
-        DIRECTION = {None: "", "00": "left", "ff": "right"}
-
-        step_mod, up_down, step_size, transition = extract_info_from_8085(MsgData)
-
-        selector = None
-
-        if step_mod == "01":
-            # Move left
-            self.log.logging(
-                "Input",
-                "Debug",
-                "Decode8085 - =====> turning left step_size: %s transition: %s" % (step_size, transition),
-                MsgSrcAddr,
-            )
-            self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "moveup"
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, "moveup")
-
-        elif step_mod == "04" and up_down == "00" and step_size == "00" and transition == "01":
-            # Off
-            self.log.logging(
-                "Input",
-                "Debug",
-                "Decode8085 - =====> turning left step_size: %s transition: %s" % (step_size, transition),
-                MsgSrcAddr,
-            )
-            self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "off"
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, "off")
-
-        elif step_mod == "04" and up_down == "ff" and step_size == "00" and transition == "01":
-            # On
-            self.log.logging(
-                "Input",
-                "Debug",
-                "Decode8085 - =====> turning right step_size: %s transition: %s" % (step_size, transition),
-                MsgSrcAddr,
-            )
-            self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "on"
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, "on")
-
-        elif step_mod == "05":
-            # Move Right
-            self.log.logging(
-                "Input",
-                "Debug",
-                "Decode8085 - =====> turning Right step_size: %s transition: %s" % (step_size, transition),
-                MsgSrcAddr,
-            )
-            self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "movedown"
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, "movedown")
-
-        elif step_mod == "07":
-            # Stop Moving
-            self.log.logging(
-                "Input",
-                "Debug",
-                "Decode8085 - =====> Stop moving step_size: %s transition: %s" % (step_size, transition),
-                MsgSrcAddr,
-            )
-        else:
-            self.log.logging(
-                "Input",
-                "Log",
-                "Decode8085 - =====> Unknown step_mod: %s up_down: %s step_size: %s transition: %s" % (step_mod, up_down, step_size, transition),
-                MsgSrcAddr,
-            )
+        ikea_wireless_dimer_8085( self, Devices, MsgSrcAddr,MsgEP, MsgClusterId, MsgCmd, unknown_ , MsgData)
 
     elif _ModelName in LEGRAND_REMOTE_SWITCHS:
-        self.log.logging(
-            "Input",
-            "Debug",
-            "Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
-            MsgSrcAddr,
-        )
-
-        TYPE_ACTIONS = {
-            None: "",
-            "01": "move",
-            "02": "click",
-            "03": "stop",
-        }
-        DIRECTION = {None: "", "00": "up", "01": "down"}
-
-        step_mod, up_down, step_size, transition = extract_info_from_8085(MsgData)
-
-        if TYPE_ACTIONS[step_mod] in ("click", "move"):
-            selector = TYPE_ACTIONS[step_mod] + DIRECTION[up_down]
-        elif TYPE_ACTIONS[step_mod] == "stop":
-            selector = TYPE_ACTIONS[step_mod]
-        else:
-            Domoticz.Error("Decode8085 - Unknown state for %s step_mod: %s up_down: %s" % (MsgSrcAddr, step_mod, up_down))
-            return
-
-        self.log.logging("Input", "Debug", "Decode8085 - Legrand selector: %s" % selector, MsgSrcAddr)
-        if selector:
-            if "Param" in self.ListOfDevices[MsgSrcAddr] and "netatmoReleaseButton" in self.ListOfDevices[MsgSrcAddr]["Param"] and self.ListOfDevices[MsgSrcAddr]["Param"]["netatmoReleaseButton"]:
-                # self.log.logging( "Input", 'Log',"Receive: %s/%s %s" %(MsgSrcAddr,MsgEP,selector))
-                MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, selector)
-                self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = selector
-            else:
-                # Do update only if not Stop action
-                if TYPE_ACTIONS[step_mod] != "stop":
-                    # self.log.logging( "Input", 'Log',"Receive: %s/%s %s REQUEST UPDATE" %(MsgSrcAddr,MsgEP,selector))
-                    MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, selector)
-                    self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = selector
+        legrand_remote_switch_8085(self, Devices, MsgSrcAddr,MsgEP, MsgClusterId, MsgCmd, unknown_, MsgData)
 
     elif _ModelName in LEGRAND_REMOTE_MOTION:
+        legrand_motion_8085(self, Devices, MsgSrcAddr,MsgEP, MsgClusterId, MsgCmd, unknown_, MsgData)
         step_mod, up_down, step_size, transition = extract_info_from_8085(MsgData)
         self.log.logging(
             "Input",
@@ -3692,18 +3524,6 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
         self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, %s" % (MsgCmd, unknown_)
 
 
-def extract_info_from_8085(MsgData):
-    step_mod = MsgData[14:16]
-    up_down = step_size = transition = None
-    if len(MsgData) >= 18:
-        up_down = MsgData[16:18]
-    if len(MsgData) >= 20:
-        step_size = MsgData[18:20]
-    if len(MsgData) >= 22:
-        transition = MsgData[20:22]
-
-    return (step_mod, up_down, step_size, transition)
-
 
 def Decode8095(self, Devices, MsgData, MsgLQI):
     "Remote button pressed ON/OFF"
@@ -3714,10 +3534,7 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
     unknown_ = MsgData[8:10]
     MsgSrcAddr = MsgData[10:14]
     MsgCmd = MsgData[14:16]
-    MsgPayload = None
-    if len(MsgData) > 16:
-        MsgPayload = MsgData[16 : len(MsgData)]
-
+    MsgPayload = MsgData[16 : len(MsgData)] if len(MsgData) > 16 else None
     updLQI(self, MsgSrcAddr, MsgLQI)
 
     self.log.logging(
@@ -3733,15 +3550,7 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
     if self.ListOfDevices[MsgSrcAddr]["Status"] != "inDB":
         return
 
-    if "Ep" in self.ListOfDevices[MsgSrcAddr] and MsgEP in self.ListOfDevices[MsgSrcAddr]["Ep"]:
-        if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP]:
-            self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId] = {}
-        if not isinstance(self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId], dict):
-            self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId] = {}
-        if "0000" not in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]:
-            self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = {}
-
-    if MsgSQN != "00" and "SQN" in self.ListOfDevices[MsgSrcAddr] and MsgSQN == self.ListOfDevices[MsgSrcAddr]["SQN"]:
+    if check_duplicate_sqn(self, MsgSrcAddr, MsgEP, MsgClusterId, MsgSQN):
         return
 
     updSQN(self, MsgSrcAddr, MsgSQN)
@@ -3758,20 +3567,7 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
         # Ikea Remote 5 buttons round.
         # ( cmd, directioni, cluster )
         # ( 0x02, 0x0006) - click middle button - Action Toggle On/Off Off/on
-
-        if MsgClusterId == "0006" and MsgCmd == "02":
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", "toggle")
-        elif MsgClusterId == "0006" and MsgCmd == "00":
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", "click_down")
-        elif MsgClusterId == "0006" and MsgCmd == "01":
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", "click_up")
-        else:
-            self.log.logging(
-                "Input",
-                "Log",
-                "Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
-            )
-        self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, %s" % (MsgCmd, unknown_)
+        ikea_remote_control_8095( self, Devices, MsgSrcAddr,MsgEP, MsgClusterId, MsgCmd, unknown_ )
 
     elif _ModelName in ("ROM001",):
         # ZigateRead - MsgType: 8085, MsgLength: 000d, MsgCRC: 43, Data: 0a010008029b6e02011e0009, LQI: 171
@@ -3783,20 +3579,11 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
 
     elif _ModelName == "TRADFRI motion sensor":
         # Ikea Motion Sensor
-        if MsgClusterId == "0006" and MsgCmd == "42":  # Motion Sensor On
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0406", "01")
-        else:
-            self.log.logging(
-                "Input",
-                "Log",
-                "Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
-            )
-        self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, %s" % (MsgCmd, unknown_)
+        ikea_motion_sensor_8095(self, Devices, MsgSrcAddr,MsgEP, MsgClusterId, MsgCmd, unknown_ )
 
     elif _ModelName in ("TRADFRI onoff switch", "TRADFRI on/off switch", "TRADFRI SHORTCUT Button", "TRADFRI openclose remote", "TRADFRI open/close remote"):
         # Ikea Switch On/Off
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0006", MsgCmd)
-        self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, %s" % (MsgCmd, unknown_)
+        ikea_remote_switch_8095(self, Devices, MsgSrcAddr,MsgEP, MsgClusterId, MsgCmd, unknown_)
 
     elif _ModelName == "RC 110":
         # INNR RC 110 Remote command
@@ -3828,32 +3615,10 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
 
     elif _ModelName in LEGRAND_REMOTE_SWITCHS:
         # Legrand remote switch
-
-        if MsgCmd == "01":  # On
-            self.log.logging(
-                "Input",
-                "Debug",
-                "Decode8095 - Legrand: %s/%s, Cmd: %s, Unknown: %s " % (MsgSrcAddr, MsgEP, MsgCmd, unknown_),
-                MsgSrcAddr,
-            )
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd)
-            self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, %s" % (MsgCmd, unknown_)
-
-        elif MsgCmd == "00":  # Off
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd)
-            self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId] = {}
-            self.log.logging(
-                "Input",
-                "Debug",
-                "Decode8095 - Legrand: %s/%s, Cmd: %s, Unknown: %s " % (MsgSrcAddr, MsgEP, MsgCmd, unknown_),
-                MsgSrcAddr,
-            )
-
-        elif MsgCmd == "02":  # Toggle
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, "02")
-            self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, %s" % (MsgCmd, unknown_)
+        legrand_remote_switch_8095(self, Devices, MsgSrcAddr,MsgEP, MsgClusterId, MsgCmd, unknown_ )
 
     elif _ModelName in LEGRAND_REMOTE_MOTION:
+        legrand_motion_8095(self, Devices, MsgSrcAddr,MsgEP, MsgClusterId, MsgCmd, unknown_ )
         self.log.logging(
             "Input",
             "Log",
@@ -3988,66 +3753,51 @@ def Decode80A7(self, Devices, MsgData, MsgLQI):
 
     updLQI(self, MsgSrcAddr, MsgLQI)
 
-    if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP]:
-        self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId] = {}
-    if not isinstance(self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId], dict):
-        self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId] = {}
-    if "0000" not in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]:
-        self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = {}
+    check_duplicate_sqn(self, MsgSrcAddr, MsgEP, MsgClusterId, MsgSQN)
 
     timeStamped(self, MsgSrcAddr, 0x80A7)
     lastSeenUpdate(self, Devices, NwkId=MsgSrcAddr)
     if "Model" not in self.ListOfDevices[MsgSrcAddr]:
         return
 
-    if MsgClusterId == "0005":
-        if MsgDirection not in TYPE_DIRECTIONS:
-            # Might be in the case of Release Left or Right
-            self.log.logging(
-                "Input",
-                "Log",
-                "Decode80A7 - Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Direction: %s, Unknown_ %s" % (MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgDirection, unkown_),
-            )
-            self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, Direction: %s, %s" % (
-                MsgCmd,
-                MsgDirection,
-                unkown_,
-            )
+    if MsgClusterId == "0005" and MsgDirection not in TYPE_DIRECTIONS:
+        # Might be in the case of Release Left or Right
+        self.log.logging(
+            "Input",
+            "Log",
+            "Decode80A7 - Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Direction: %s, Unknown_ %s" % (MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgDirection, unkown_),
+        )
+        self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, Direction: %s, %s" % (
+            MsgCmd,
+            MsgDirection,
+            unkown_,
+        )
 
-        elif MsgCmd in TYPE_ACTIONS and MsgDirection in TYPE_DIRECTIONS:
-            selector = TYPE_DIRECTIONS[MsgDirection] + "_" + TYPE_ACTIONS[MsgCmd]
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", selector)
-            self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = selector
-            self.log.logging("Input", "Debug", "Decode80A7 - selector: %s" % selector, MsgSrcAddr)
+    elif MsgClusterId == "0005" and MsgCmd in TYPE_ACTIONS:
+        selector = TYPE_DIRECTIONS[MsgDirection] + "_" + TYPE_ACTIONS[MsgCmd]
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", selector)
+        self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = selector
+        self.log.logging("Input", "Debug", "Decode80A7 - selector: %s" % selector, MsgSrcAddr)
 
-            if self.groupmgt:
-                if TYPE_DIRECTIONS[MsgDirection] in ("right", "left"):
-                    self.groupmgt.manageIkeaTradfriRemoteLeftRight(MsgSrcAddr, TYPE_DIRECTIONS[MsgDirection])
-        else:
-            self.log.logging(
-                "Input",
-                "Log",
-                "Decode80A7 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Direction: %s, Unknown_ %s"
-                % (
-                    MsgSQN,
-                    MsgSrcAddr,
-                    MsgEP,
-                    MsgClusterId,
-                    MsgCmd,
-                    MsgDirection,
-                    unkown_,
-                ),
-            )
-            self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, Direction: %s, %s" % (
-                MsgCmd,
-                MsgDirection,
-                unkown_,
-            )
+        if self.groupmgt and TYPE_DIRECTIONS[MsgDirection] in (
+            "right",
+            "left",
+        ):
+            self.groupmgt.manageIkeaTradfriRemoteLeftRight(MsgSrcAddr, TYPE_DIRECTIONS[MsgDirection])
     else:
         self.log.logging(
             "Input",
             "Log",
-            "Decode80A7 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Direction: %s, Unknown_ %s" % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgDirection, unkown_),
+            "Decode80A7 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Direction: %s, Unknown_ %s"
+            % (
+                MsgSQN,
+                MsgSrcAddr,
+                MsgEP,
+                MsgClusterId,
+                MsgCmd,
+                MsgDirection,
+                unkown_,
+            ),
         )
         self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, Direction: %s, %s" % (
             MsgCmd,
@@ -4159,3 +3909,18 @@ def Decode7000(self, Devices, MsgData, MsgLQI):
             u8CommandIdentifier,
             u8TransactionSequenceNumber,
         )
+
+def check_duplicate_sqn(self, Nwkid, Ep, Cluster, Sqn):
+    if "Ep" in self.ListOfDevices[Nwkid] and Ep in self.ListOfDevices[Nwkid]["Ep"]:
+        if Cluster not in self.ListOfDevices[Nwkid]["Ep"][Ep]:
+            self.ListOfDevices[Nwkid]["Ep"][Ep][Cluster] = {}
+        if not isinstance(self.ListOfDevices[Nwkid]["Ep"][Ep][Cluster], dict):
+            self.ListOfDevices[Nwkid]["Ep"][Ep][Cluster] = {}
+        if "0000" not in self.ListOfDevices[Nwkid]["Ep"][Ep][Cluster]:
+            self.ListOfDevices[Nwkid]["Ep"][Ep][Cluster]["0000"] = {}
+
+    return (
+        Sqn != "00"
+        and "SQN" in self.ListOfDevices[Nwkid]
+        and Sqn == self.ListOfDevices[Nwkid]["SQN"]
+    )
