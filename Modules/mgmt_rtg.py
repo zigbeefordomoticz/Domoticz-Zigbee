@@ -54,9 +54,11 @@ def mgmt_rtg(self, nwkid, table):
     ):
         return
 
-
     feq = self.pluginconf.pluginConf[table+"RequestFeq"]
     if time.time() > self.ListOfDevices[nwkid][table]["TimeStamp"] + feq:
+        del self.ListOfDevices[nwkid][table]
+        self.ListOfDevices[nwkid][table] = {'Devices': [], 'SQN': 0}
+        self.ListOfDevices[nwkid][table]["TimeStamp"] = time.time()
         func(self, nwkid, "00")
         return
 
