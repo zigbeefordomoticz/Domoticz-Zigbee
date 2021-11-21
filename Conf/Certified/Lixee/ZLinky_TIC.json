@@ -36,6 +36,13 @@
 	"ConfigureReporting": {
 		"0702": {
 			"Attributes": {
+				"0000": {
+					"DataType": "23",
+					"MinInterval": "0046",
+					"MaxInterval": "012C",
+					"TimeOut": "0000",
+					"Change": "00000010"
+				},
 				"0020": {
 					"DataType": "42",
 					"MinInterval": "0046",
