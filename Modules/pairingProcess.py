@@ -600,15 +600,6 @@ def handle_device_specific_needs(self, Devices, NWKID):
         self.log.logging("Pairing", "Debug", "Tuya Water Sensor Parkside registration needed")
         tuya_registration(self, NWKID, device_reset=True, parkside=True)
 
-    # Set the sensitivity for Xiaomi Vibration
-    elif self.ListOfDevices[NWKID]["Model"] == "lumi.vibration.aq1":
-        self.log.logging(
-            "Pairing",
-            "Status",
-            "processNotinDBDevices - set viration Aqara %s sensitivity to %s" % (NWKID, self.pluginconf.pluginConf["vibrationAqarasensitivity"]),
-        )
-        setXiaomiVibrationSensitivity(self, NWKID, sensitivity=self.pluginconf.pluginConf["vibrationAqarasensitivity"])
-
     # Set Calibration for Thermostat
     elif self.ListOfDevices[NWKID]["Model"] == "SPZB0001":
         thermostat_Calibration(self, NWKID, 0x00)
@@ -631,6 +622,5 @@ def request_list_of_attributes(self, NWKID):
         for iterCluster in self.ListOfDevices[NWKID]["Ep"][iterEp]:
             if iterCluster in ("Type", "ClusterType", "ColorMode"):
                 continue
-            if "ConfigSource" in self.ListOfDevices[NWKID]:
-                if self.ListOfDevices[NWKID]["ConfigSource"] != "DeviceConf":
-                    getListofAttribute(self, NWKID, iterEp, iterCluster)
+            if "ConfigSource" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["ConfigSource"] != "DeviceConf":
+                getListofAttribute(self, NWKID, iterEp, iterCluster)

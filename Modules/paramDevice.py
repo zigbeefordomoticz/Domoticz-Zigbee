@@ -23,6 +23,7 @@ from Modules.legrand_netatmo import (legrand_Dimmer_by_nwkid,
                                      legrand_enable_Led_IfOn_by_nwkid,
                                      legrand_enable_Led_InDark_by_nwkid,
                                      legrand_enable_Led_Shutter_by_nwkid)
+from Modules.lumi import setXiaomiVibrationSensitivity
 from Modules.philips import (philips_set_pir_occupancySensibility,
                              philips_set_poweron_after_offon_device)
 from Modules.readAttributes import (ReadAttributeRequest_0006_400x,
@@ -189,7 +190,8 @@ DEVICE_PARAMETERS = {
     "eTRVExerciseTime": danfoss_exercise_trigger_time,
     "DanfossTRVOrientation": danfoss_orientation,
     "DanfossViewDirection": danfoss_viewdirection,
-    "TS004FMode": tuya_cmd_ts004F
+    "TS004FMode": tuya_cmd_ts004F,
+    "vibrationAqarasensitivity": setXiaomiVibrationSensitivity,
 }
 
 

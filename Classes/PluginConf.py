@@ -1156,15 +1156,6 @@ SETTINGS = {
                 "hidden": False,
                 "Advanced": True,
             },
-            "vibrationAqarasensitivity": {
-                "type": "list",
-                "list": {"high": "high", "medium": "medium", "low": "low"},
-                "default": "medium",
-                "current": None,
-                "restart": 0,
-                "hidden": False,
-                "Advanced": False,
-            },
             "reenforcementWiser": {
                 "type": "int",
                 "default": 300,
