@@ -4558,6 +4558,39 @@ def Cluster0b05(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             MsgClusterData,
         ),
     )
+    if 'Diagnostic' not in self.ListOfDevices[ MsgSrcAddr ]:
+        self.ListOfDevices[ MsgSrcAddr ]["Diagnostic"] = {}
+        
+    if MsgAttrID == '0000':
+        # NumberOfResets
+        # An attribute that is incremented each time the device resets. A reset is defined as any time the device restarts. 
+        # This is not the same as a reset to factory defaults, which SHOULD clear this and all values.
+        self.ListOfDevices[ MsgSrcAddr ]["Diagnostic"]["NumberOfResets"] = decodeAttribute( self, MsgAttType, MsgClusterData, )
+        
+    elif MsgAttrID == '0001':
+        # PersistentMemoryWrites
+        # This attribute keeps track of the number of writes to persistent memory. Each time that the device stores a 
+        # token in persistent memory it will increment this value. 
+        self.ListOfDevices[ MsgSrcAddr ]["Diagnostic"]["PersistentMemoryWrites"] = decodeAttribute( self, MsgAttType, MsgClusterData, )
+        
+    if MsgAttrID == '011c':
+        # LastMessageLQI
+        # This is the Link Quality Indicator for the last message received. There is no current agreed upon standard for 
+        # calculating the LQI. For some implementations LQI is related directly to RSSI for others it is a function of the 
+        # number  of  errors  received  over  a  fixed  number  of  bytes  in  a  given  message.  The  one  thing  that  has  been 
+        # agreed is that the Link Quality Indicator is a value between 0 and 255 where 0 indicates the worst possible 
+        # link and 255 indicates the best possible link. Note that for a device reading the Last Message LQI the returned 
+        # value SHALL be the LQI for the read attribute message used to read the attribute itself.
+        self.ListOfDevices[ MsgSrcAddr ]["Diagnostic"]["LastMessageLQI"] = decodeAttribute( self, MsgAttType, MsgClusterData, )
+        
+    elif MsgAttrID == '011d':
+        # LastMessageRSSI 
+        # This  is  the  receive  signal  strength  indication  for  the  last  message  received.  As  with  Last  Message  LQI,  a 
+        # device reading the Last Message RSSI, the returned value SHALL be the RSSI of the read attribute message 
+        # used to read the attribute itself.
+        self.ListOfDevices[ MsgSrcAddr ]["Diagnostic"]["LastMessageRSSI"] = decodeAttribute( self, MsgAttType, MsgClusterData, )
+
+        
 
 
 # Cluster Manufacturer specifics
