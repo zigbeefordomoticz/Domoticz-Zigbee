@@ -1095,17 +1095,27 @@ def schneider_thermostat_answer_attribute_request(self, NWKID, EPout, ClusterID,
             in ( "Wiser2-Thermostat","iTRV",)
             ):
             local_temp = iTRV_local_temperature(self, NWKID)
-            if local_temp is None:
+            if local_temp == 0x8000:
+                # We use the inside Temp sensor, let's get local temperature
                 local_temp = int( 100 * schneider_find_attribute(self, NWKID, "01", "0201", "0000") )
             gap_temp = local_temp - int(schneider_find_attribute(self, NWKID, "01", "0201", "0012"))
+            self.log.logging(
+                "Schneider",
+                "Log",
+                "schneider_thermostat_answer_attribute_request: Local_temp: %s , Target: %s gap: %s" %(
+                    local_temp, int(schneider_find_attribute(self, NWKID, "01", "0201", "0012")), gap_temp))
             if ( schneider_find_attribute_and_set( self, NWKID, "01", "0201", "0008", 0 ) == 0 and  gap_temp < 0):
-                if gap_temp < -2:
+                if gap_temp < -100:
                     self.ListOfDevices[NWKID]["Ep"]["01"]["0201"]["0008"] = 10
-                elif gap_temp < -5:
+                elif gap_temp < -250:
                     self.ListOfDevices[NWKID]["Ep"]["01"]["0201"]["0008"] = 50
+                elif gap_temp < -500:
+                        self.ListOfDevices[NWKID]["Ep"]["01"]["0201"]["0008"] = 75
                 else:
                     self.ListOfDevices[NWKID]["Ep"]["01"]["0201"]["0008"] = 100
-                
+            elif ( schneider_find_attribute_and_set( self, NWKID, "01", "0201", "0008", 0 ) != 0 and  gap_temp > 0):
+                self.ListOfDevices[NWKID]["Ep"]["01"]["0201"]["0008"] = 0
+
 
     elif attr == "001c":  # System Mode for Wiser Home
         dataType = "30"  # enum8
