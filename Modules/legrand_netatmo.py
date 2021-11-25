@@ -792,13 +792,7 @@ def legrand_remote_switch_8095(self, Devices, MsgSrcAddr,MsgEP, MsgClusterId, Ms
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, "02")
         self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, %s" % (MsgCmd, unknown_)
 
-def legrand_remote_switch_8085(self, Devices, MsgSrcAddr,MsgEP, MsgClusterId, MsgCmd, unknown_, MsgData):
-    self.log.logging(
-        "Input",
-        "Debug",
-        "Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " % (MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
-        MsgSrcAddr,
-    )
+def legrand_remote_switch_8085(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_, MsgData):
 
     TYPE_ACTIONS = {
         None: "",
