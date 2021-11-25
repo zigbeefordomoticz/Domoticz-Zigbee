@@ -376,7 +376,7 @@ def Cluster0000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
                 modelName = "TS0201" + "-" + manufacturer_name
 
         elif modelName == "TS0202":
-            elif manufacturer_name in ("_TZ3210_jijr1sss",):
+            if manufacturer_name in ("_TZ3210_jijr1sss",):
                 modelName += "-_TZ3210_jijr1sss"
 
         elif modelName == "AC211":

@@ -3087,6 +3087,7 @@ def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change 
         "3AFE28010402000D",
         "MOSZB-140",
         "TS0202",
+        "TS0202-_TZ3210_jijr1sss"
     ):  # Konke Motion Sensor, Devlco/Frient Motion
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0406", "%02d" % alarm1)
     elif self.ListOfDevices[MsgSrcAddr]["Model"] in (

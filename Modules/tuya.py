@@ -72,6 +72,7 @@ TUYA_SWITCH_MANUFACTURER = (
 TUYA_2GANGS_SWITCH_MANUFACTURER = ("_TZE200_g1ib5ldv",)
 TUYA_3GANGS_SWITCH_MANUFACTURER = ("TZE200_oisqyl4o",)
 
+TUYA_SMART_ALLIN1 = ( "_TZ3210_jijr1sss", )
 TUYA_CURTAIN_MAUFACTURER = (
     "_TZE200_cowvfni3",
     "_TZE200_wmcdj3aq",
@@ -180,6 +181,7 @@ TUYA_MANUFACTURER_NAME = (
     + TUYA_eTRV_MANUFACTURER
     + TUYA_SMARTAIR_MANUFACTURER
     + TUYA_WATER_TIMER
+    + TUYA_SMART_ALLIN1
 )
 
 
@@ -277,6 +279,8 @@ def callbackDeviceAwake_Tuya(self, Devices, NwkId, EndPoint, cluster):
 
 def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
 
+    # 19 79 06 00006c02000400000033
+
     if NwkId not in self.ListOfDevices:
         return
     if ClusterID != "ef00":
@@ -333,6 +337,22 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
         )
         tuya_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
 
+    elif cmd == "06":  # TY_DATA_SEARCH
+        status = MsgPayload[6:8]  # uint8
+        transid = MsgPayload[8:10]  # uint8
+        dp = int(MsgPayload[10:12], 16)
+        datatype = int(MsgPayload[12:14], 16)
+        fn = MsgPayload[14:16]
+        len_data = MsgPayload[16:18]
+        data = MsgPayload[18:]
+        self.log.logging(
+            "Tuya",
+            "Debug2",
+            "tuyaReadRawAPS - command %s MsgPayload %s/ Data: %s" % (cmd, MsgPayload, MsgPayload[6:]),
+            NwkId,
+        )
+        tuya_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
+        
     elif cmd == "0b":  # ??
         pass
     elif cmd == "10":  # ???
@@ -373,13 +393,15 @@ def tuya_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, 
         NwkId,
     )
 
+    if _ModelName in ( "TS0202-_TZ3210_jijr1sss",):
+        tuya_smart_motion_all_in_one(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
+        
     if _ModelName in ("TS0601-switch", "TS0601-2Gangs-switch", "TS0601-2Gangs-switch"):
         tuya_switch_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
 
     elif _ModelName in ("TS0601-Parkside-Watering-Timer"):
         tuya_watertimer_response(
-            self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data
-        )
+            self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data )
 
     elif _ModelName == "TS0601-SmartAir":
         tuya_smartair_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
@@ -1119,3 +1141,16 @@ def tuya_energy_countdown(self, NwkId, timing):
     action = "0902"
     data = "%08x" % timing
     tuya_cmd(self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)
+
+
+def tuya_smart_motion_all_in_one(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
+    
+    if dp == 0x6b:  # Temperature
+        self.log.logging("Tuya", "Debug", "tuya_siren_response - Temperature %s" % int(data, 16), NwkId)
+        MajDomoDevice(self, Devices, NwkId, "02", "0402", (int(data, 16) / 10))
+        store_tuya_attribute(self, NwkId, "Temperature", data)
+        
+    elif dp == 0x6c:  # Humidity
+        self.log.logging("Tuya", "Debug", "tuya_siren_response - Humidity %s" % int(data, 16), NwkId)
+        MajDomoDevice(self, Devices, NwkId, "02", "0405", (int(data, 16)))
+        store_tuya_attribute(self, NwkId, "Humidity", data)
