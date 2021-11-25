@@ -1306,7 +1306,7 @@ def Cluster0006(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             )
             return
 
-        if self.ListOfDevices[MsgSrcAddr]["Model"] == "CPR412-E" and MsgClusterData not in ("01", "00"):
+        if self.ListOfDevices[MsgSrcAddr]["Model"] in ("CPR412-E", "CPR412", "PR412")  and MsgClusterData not in ("01", "00"):
             self.log.logging(
                 "Cluster",
                 "Log",

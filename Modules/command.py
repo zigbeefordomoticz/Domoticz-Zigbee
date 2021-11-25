@@ -249,7 +249,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             profalux_stop(self, NWKID)
 
         elif DeviceType in ("WindowCovering", "VenetianInverted", "Venetian"):
-            if _model_name == "PR412":
+            if _model_name in ("PR412", "CPR412"):
                 profalux_stop(self, NWKID)
             else:
                 # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
@@ -408,7 +408,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             sendZigateCmd(self, "00FA", "02" + NWKID + ZIGATE_EP + EPout + "01")  # Blind inverted (On, for Close)
 
         elif DeviceType == "VenetianInverted":
-            if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] == "PR412":
+            if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ("PR412", "CPR412"):
                 sendZigateCmd(self, "0092", "02" + NWKID + ZIGATE_EP + EPout + "01")
             else:
                 sendZigateCmd(
@@ -416,7 +416,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 )  # Venetian Inverted/Blind (On, for Close)
 
         elif DeviceType == "Venetian":
-            if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] == "PR412":
+            if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( "PR412", "CPR412"):
                 sendZigateCmd(self, "0092", "02" + NWKID + ZIGATE_EP + EPout + "00")
             else:
                 sendZigateCmd(self, "00FA", "02" + NWKID + ZIGATE_EP + EPout + "00")  # Venetian /Blind (Off, for Close)
@@ -553,7 +553,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             sendZigateCmd(self, "00FA", "02" + NWKID + ZIGATE_EP + EPout + "00")  # Blind inverted (Off, for Open)
 
         elif DeviceType == "VenetianInverted":
-            if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] == "PR412":
+            if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( "PR412", "CPR412"):
                 sendZigateCmd(self, "0092", "02" + NWKID + ZIGATE_EP + EPout + "00")
             else:
                 sendZigateCmd(
@@ -561,7 +561,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 )  # Venetian inverted/Blind (Off, for Open)
 
         elif DeviceType == "Venetian":
-            if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] == "PR412":
+            if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ("PR412", "CPR412"):
                 sendZigateCmd(self, "0092", "02" + NWKID + ZIGATE_EP + EPout + "01")
             else:
                 sendZigateCmd(self, "00FA", "02" + NWKID + ZIGATE_EP + EPout + "01")  # Venetian/Blind (On, for Open)
