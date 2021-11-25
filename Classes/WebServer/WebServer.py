@@ -13,7 +13,7 @@ from time import time
 import Domoticz
 from Classes.DomoticzDB import DomoticzDB_Preferences
 from Classes.LoggingManagement import LoggingManagement
-from Classes.PluginConf import SETTINGS, PluginConf
+from Classes.PluginConf import SETTINGS
 from Classes.WebServer.headerResponse import prepResponseMessage, setupHeadersResponse
 from Modules.actuators import actuators
 from Modules.basicOutputs import ZigatePermitToJoin, initiate_change_channel, send_zigate_mode, sendZigateCmd, setExtendedPANID, start_Zigate, zigateBlueLed

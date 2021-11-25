@@ -1111,7 +1111,6 @@ def notify_upgrade_end(
             self.PluginHealth["Firmware Update"]["Progress"] = "Failed"
     elif Status == "More":
         _textmsg = "Device: %s has been updated to latest firmware in %s hour %s min %s sec, but additional Image needed" % (
-            Status,
             _name,
             _transferTime_hh,
             _transferTime_mm,

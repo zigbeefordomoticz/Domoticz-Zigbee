@@ -713,7 +713,7 @@ def get_casaia_attribute(self, NwkId, Attribute, device_id=None):
                 "CasaIA",
                 "Debug",
                 "get_casaia_attribute (1) - %s Attribute: %s not found in %s"
-                % (NwkId, self.ListOfDevices[NwkId]["CASA.IA"][device_id]),
+                % (NwkId, self.ListOfDevices[NwkId]["CASA.IA"][device_id], Attribute),
                 NwkId,
             )
             return None
@@ -723,7 +723,7 @@ def get_casaia_attribute(self, NwkId, Attribute, device_id=None):
             "CasaIA",
             "Debug",
             "get_casaia_attribute (2) - %s Attribute: %s not found in %s"
-            % (NwkId, self.ListOfDevices[NwkId]["CASA.IA"]),
+            % (NwkId, self.ListOfDevices[NwkId]["CASA.IA"], Attribute),
             NwkId,
         )
         return None

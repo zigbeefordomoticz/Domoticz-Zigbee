@@ -161,6 +161,7 @@ def set_rgb_color(self, mode, addr, EPin, EPout, r, g, b, transit=None):
 
 
 def set_hue_saturation(self, mode, addr, EPin, EPout, r, g, b, transit=None):
+
     h, s, l = rgb_to_hsl((int(r), int(g), int(b)))
 
     saturation = s * 100  # r

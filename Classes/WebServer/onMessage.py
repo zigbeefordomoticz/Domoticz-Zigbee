@@ -22,7 +22,7 @@ def onMessage(self, Connection, Data):
     # DumpHTTPResponseToLog(Data)
 
     headerCode = "200 OK"
-    if not "Verb" in Data:
+    if "Verb" not in Data:
         Domoticz.Error("Invalid web request received, no Verb present")
         headerCode = "400 Bad Request"
 
@@ -30,7 +30,7 @@ def onMessage(self, Connection, Data):
         Domoticz.Error("Invalid web request received, only GET requests allowed (" + Data["Verb"] + ")")
         headerCode = "405 Method Not Allowed"
 
-    elif not "URL" in Data:
+    elif "URL" not in Data:
         Domoticz.Error("Invalid web request received, no URL present")
         headerCode = "400 Bad Request"
 

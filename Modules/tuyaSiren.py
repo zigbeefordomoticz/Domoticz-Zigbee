@@ -224,7 +224,7 @@ def get_alarm_attrbutes(self, nwkid, alarm_num):
             "Tuya",
             "Error",
             "get_alarm_attrbutes - default value to be used - Missing Duration, Volume or Melogy for alarm %s in Param %s - %s"
-            % (alarm, self.ListOfDevices[nwkid]["Param"]),
+            % (alarm, self.ListOfDevices[nwkid]["Param"], alarm_attributes),
         )
         return default_alarm
 
