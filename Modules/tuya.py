@@ -396,7 +396,7 @@ def tuya_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, 
     if _ModelName in ( "TS0202-_TZ3210_jijr1sss",):
         tuya_smart_motion_all_in_one(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
         
-    if _ModelName in ("TS0601-switch", "TS0601-2Gangs-switch", "TS0601-2Gangs-switch"):
+    elif _ModelName in ("TS0601-switch", "TS0601-2Gangs-switch", "TS0601-2Gangs-switch"):
         tuya_switch_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
 
     elif _ModelName in ("TS0601-Parkside-Watering-Timer"):
@@ -1146,11 +1146,20 @@ def tuya_energy_countdown(self, NwkId, timing):
 def tuya_smart_motion_all_in_one(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     
     if dp == 0x6b:  # Temperature
-        self.log.logging("Tuya", "Debug", "tuya_siren_response - Temperature %s" % int(data, 16), NwkId)
+        self.log.logging("Tuya", "Debug", "tuya_smart_motion_all_in_one - Temperature %s" % int(data, 16), NwkId)
         MajDomoDevice(self, Devices, NwkId, "02", "0402", (int(data, 16) / 10))
         store_tuya_attribute(self, NwkId, "Temperature", data)
         
     elif dp == 0x6c:  # Humidity
-        self.log.logging("Tuya", "Debug", "tuya_siren_response - Humidity %s" % int(data, 16), NwkId)
+        self.log.logging("Tuya", "Debug", "tuya_smart_motion_all_in_one - Humidity %s" % int(data, 16), NwkId)
         MajDomoDevice(self, Devices, NwkId, "02", "0405", (int(data, 16)))
         store_tuya_attribute(self, NwkId, "Humidity", data)
+        
+    else:
+        self.log.logging(
+        "Tuya",
+        "Debug",
+        "tuya_smart_motion_all_in_one - Model: %s Unknow Nwkid: %s/%s dp: %02x data type: %s data: %s"
+        % (_ModelName, NwkId, srcEp, dp, datatype, data),
+        NwkId,
+    )
