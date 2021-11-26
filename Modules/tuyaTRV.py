@@ -677,7 +677,7 @@ def tuya_setpoint(self, nwkid, setpoint_value):
 
     if get_model_name(self, nwkid) == "TS0601-eTRV3":
         # Force Manual mode
-        self.log.logging("Tuya", "Debug", "uya_setpoint - %s Force to be in Manual mode" % (nwkid))
+        self.log.logging("Tuya", "Debug", "tuya_setpoint - %s Force to be in Manual mode" % (nwkid))
         tuya_trv_switch_mode(self, nwkid, 20)
 
     sqn = get_and_inc_SQN(self, nwkid)
@@ -696,7 +696,7 @@ def tuya_setpoint(self, nwkid, setpoint_value):
             setpoint_value = setpoint_value // 10
         
         data = "%08x" % setpoint_value
-        self.log.logging("Tuya", "Debug", "4tuya_setpoint - %s dp %s to Tuya Format SetPoint: %s for model %s with data %s" % (nwkid, dp, setpoint_value, model_name,data))    
+        self.log.logging("Tuya", "Debug", "tuya_setpoint - %s dp %s to Tuya Format SetPoint: %s for model %s with data %s" % (nwkid, dp, setpoint_value, model_name,data))    
         
         # determine which Endpoint
         EPout = "01"
