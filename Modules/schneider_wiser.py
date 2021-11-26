@@ -857,30 +857,26 @@ def schneider_setpoint_actuator(self, key, setpoint):
     # ReadAttributeRequest_0201(self,key)
 
 
-def schneider_setpoint(self, key, setpoint):
+def schneider_setpoint(self, NwkId, setpoint):
 
-    if key not in self.ListOfDevices:
-        self.log.logging("Schneider", "Debug", "schneider_setpoint - unknown key: %s in ListOfDevices!" % (key))
+    if NwkId not in self.ListOfDevices:
+        self.log.logging("Schneider", "Debug", "schneider_setpoint - unknown NwkId: %s in ListOfDevices!" % (NwkId))
         return
 
-    if "Model" in self.ListOfDevices[key]:
-        if self.ListOfDevices[key]["Model"] in ("EH-ZB-RTS", "Wiser2-Thermostat", "iTRV"):
-            schneider_setpoint_thermostat(self, key, setpoint)
+    if "Model" in self.ListOfDevices[NwkId]:
+        if self.ListOfDevices[NwkId]["Model"] in ("EH-ZB-RTS", "Wiser2-Thermostat", ):
+            schneider_setpoint_thermostat(self, NwkId, setpoint)
             
-            #if self.ListOfDevices[key]["Model"] in ( "iTRV", ):
-            #    schneider_find_attribute(self, key, "01", "0201", "0000")
-            #    self.ListOfDevices[key]["Ep"]["01"]["0201"]["0000"] = -32768
-            #    
-            #    schneider_find_attribute_and_set( self, key, "01", "0201", "0008", 0 )
-            #    self.ListOfDevices[key]["Ep"]["01"]["0201"]["0008"] = 0
-
-        elif self.ListOfDevices[key]["Model"] == "EH-ZB-VACT":
-            wiser_set_calibration(self, key, WISER_LEGACY_BASE_EP)
-            schneider_setpoint_thermostat(self, key, setpoint)
-            schneider_setpoint_actuator(self, key, setpoint)
+        if self.ListOfDevices[NwkId]["Model"] in ( "iTRV", ): 
+            schneider_setpoint_thermostat(self, NwkId, setpoint)   
+            
+        elif self.ListOfDevices[NwkId]["Model"] == "EH-ZB-VACT":
+            wiser_set_calibration(self, NwkId, WISER_LEGACY_BASE_EP)
+            schneider_setpoint_thermostat(self, NwkId, setpoint)
+            schneider_setpoint_actuator(self, NwkId, setpoint)
         else:
-            wiser_set_calibration(self, key, WISER_LEGACY_BASE_EP)
-            schneider_setpoint_actuator(self, key, setpoint)
+            wiser_set_calibration(self, NwkId, WISER_LEGACY_BASE_EP)
+            schneider_setpoint_actuator(self, NwkId, setpoint)
 
 
 def schneider_temp_Setcurrent(self, key, setpoint):
@@ -1087,36 +1083,6 @@ def schneider_thermostat_answer_attribute_request(self, NWKID, EPout, ClusterID,
         value = int(schneider_find_attribute_and_set(self, NWKID, "01", ClusterID, attr, 2000))
         data = "%04X" % value
 
-        # In case of iTRV, it looks like we have to trigger the heating demand.
-        # In case the new setpoint is above the local temp, and the Heating Demand is 0, let's enable it
-        if (
-            "Model" in self.ListOfDevices[NWKID]
-            and self.ListOfDevices[NWKID]["Model"]
-            in ( "Wiser2-Thermostat","iTRV",)
-            ):
-            local_temp = iTRV_local_temperature(self, NWKID)
-            if local_temp == 0x8000:
-                # We use the inside Temp sensor, let's get local temperature
-                local_temp = int( 100 * schneider_find_attribute(self, NWKID, "01", "0201", "0000") )
-            gap_temp = local_temp - int(schneider_find_attribute(self, NWKID, "01", "0201", "0012"))
-            self.log.logging(
-                "Schneider",
-                "Log",
-                "schneider_thermostat_answer_attribute_request: Local_temp: %s , Target: %s gap: %s" %(
-                    local_temp, int(schneider_find_attribute(self, NWKID, "01", "0201", "0012")), gap_temp))
-            if ( schneider_find_attribute_and_set( self, NWKID, "01", "0201", "0008", 0 ) == 0 and  gap_temp < 0):
-                if gap_temp < -100:
-                    self.ListOfDevices[NWKID]["Ep"]["01"]["0201"]["0008"] = 10
-                elif gap_temp < -250:
-                    self.ListOfDevices[NWKID]["Ep"]["01"]["0201"]["0008"] = 50
-                elif gap_temp < -500:
-                        self.ListOfDevices[NWKID]["Ep"]["01"]["0201"]["0008"] = 75
-                else:
-                    self.ListOfDevices[NWKID]["Ep"]["01"]["0201"]["0008"] = 100
-            elif ( schneider_find_attribute_and_set( self, NWKID, "01", "0201", "0008", 0 ) != 0 and  gap_temp > 0):
-                self.ListOfDevices[NWKID]["Ep"]["01"]["0201"]["0008"] = 0
-
-
     elif attr == "001c":  # System Mode for Wiser Home
         dataType = "30"  # enum8
         data = "04"  # 0x00 Off, 0x01 Auto, 0x04 Heat
@@ -1126,10 +1092,10 @@ def schneider_thermostat_answer_attribute_request(self, NWKID, EPout, ClusterID,
         data = "02"  # Heating only
 
     elif attr == "0008":  # Pi Heating Demand  (valve position %) for Wiser Home
-        #if "0201" not in self.ListOfDevices[NWKID]["Ep"]["01"]:
-        #    self.ListOfDevices[NWKID]["Ep"]["01"]["0201"] = {}
-        #if "0008" not in self.ListOfDevices[NWKID]["Ep"]["01"]["0201"]:
-        #    self.ListOfDevices[NWKID]["Ep"]["01"]["0201"]["0008"] = 0
+        # In case of iTRV, it looks like we have to trigger the heating demand.
+        # In case the new setpoint is above the local temp, and the Heating Demand is 0, let's enable it
+        define_heating_demand_for_iTRV(self, NWKID)
+        
         dataType = "20"  # uint8
         data = "%02x" % self.ListOfDevices[NWKID]["Ep"]["01"]["0201"]["0008"]
         data = "%02x" % schneider_find_attribute_and_set(self, NWKID, "01", "0201", "0008", 0)
@@ -1171,6 +1137,40 @@ def schneider_thermostat_answer_attribute_request(self, NWKID, EPout, ClusterID,
         zigate_ep=zigate_ep,
         ackIsDisabled=is_ack_tobe_disabled(self, NWKID),
     )
+
+def define_heating_demand_for_iTRV(self, NwkId):
+    
+    if "Model" not in self.ListOfDevices[NwkId] or self.ListOfDevices[NwkId]["Model"] not in ( "Wiser2-Thermostat", "iTRV",):
+        return
+
+    local_temp = iTRV_local_temperature(self, NwkId)
+    if local_temp == 0x8000:
+        # We use the inside Temp sensor, let's get local temperature
+        local_temp = int( 100 * schneider_find_attribute(self, NwkId, "01", "0201", "0000") )
+    gap_temp = local_temp - int(schneider_find_attribute(self, NwkId, "01", "0201", "0012"))
+    self.log.logging(
+        "Schneider",
+        "Debug",
+        "define_heating_demand_for_iTRV: Local_temp: %s , Target: %s gap: %s" %(
+            local_temp, int(schneider_find_attribute(self, NwkId, "01", "0201", "0012")), gap_temp))
+    
+    if ( schneider_find_attribute_and_set( self, NwkId, "01", "0201", "0008", 0 ) == 0 and  gap_temp < 0):
+        if gap_temp < -500:
+            self.ListOfDevices[NwkId]["Ep"]["01"]["0201"]["0008"] = 100
+        elif gap_temp < -250:
+            self.ListOfDevices[NwkId]["Ep"]["01"]["0201"]["0008"] = 75
+        elif gap_temp < -100:
+            self.ListOfDevices[NwkId]["Ep"]["01"]["0201"]["0008"] = 50
+        else:
+            self.ListOfDevices[NwkId]["Ep"]["01"]["0201"]["0008"] = 25
+
+    elif ( schneider_find_attribute_and_set( self, NwkId, "01", "0201", "0008", 0 ) != 0 and  gap_temp > 0):
+        self.ListOfDevices[NwkId]["Ep"]["01"]["0201"]["0008"] = 0
+    self.log.logging(
+        "Schneider",
+        "Debug",
+        "define_heating_demand_for_iTRV: Local_temp: %s , Target: %s gap: %s Heating Demand: %s" %(
+            local_temp, int(schneider_find_attribute(self, NwkId, "01", "0201", "0012")), gap_temp, self.ListOfDevices[NwkId]["Ep"]["01"]["0201"]["0008"]))
 
 
 def schneider_update_ThermostatDevice(self, Devices, NWKID, srcEp, ClusterID, setpoint):
