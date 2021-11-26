@@ -3094,6 +3094,7 @@ def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change 
         "lumi.sensor_magnet",
         "lumi.sensor_magnet.aq2",
         "lumi.sensor_magnet.acn001",
+        "lumi.magnet.acn001",
     ):  # Xiaomi Door sensor
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0006", "%02d" % alarm1)
     elif Model not in ("RC-EF-3.0", "RC-EM"):
