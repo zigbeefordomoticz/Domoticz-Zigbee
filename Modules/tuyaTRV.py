@@ -48,6 +48,8 @@ def receive_setpoint(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNW
     self.log.logging("Tuya", "Debug", "receive_setpoint - Nwkid: %s/%s Setpoint: %s" % (NwkId, srcEp, int(data, 16)))
     if model_target == "TS0601-thermostat":
         setpoint = int(data, 16)
+    elif model_target == "TS0601-_TZE200_b6wax7g0":
+        setpoint = int(data, 16)
     else:
         setpoint = int(data, 16) / 10
     MajDomoDevice(self, Devices, NwkId, srcEp, "0201", setpoint, Attribute_="0012")
@@ -239,10 +241,7 @@ def receive_heating_state(self, Devices, model_target, NwkId, srcEp, ClusterID, 
     # Thermostat
     self.log.logging("Tuya", "Debug", "receive_heating_state - Nwkid: %s/%s HeatingMode: %s" % (NwkId, srcEp, data))
     # Value inverted
-    if data == "00":
-        value = 1
-    else:
-        value = 0
+    value = 1 if data == "00" else 0
     MajDomoDevice(self, Devices, NwkId, srcEp, "0201", value, Attribute_="0124")
     store_tuya_attribute(self, NwkId, "HeatingMode", data)
 
@@ -687,10 +686,15 @@ def tuya_setpoint(self, nwkid, setpoint_value):
         action = "%02x02" % dp
         # In Domoticz Setpoint is in ° , In Modules/command.py we multiplied by 100 (as this is the Zigbee standard).
         # Looks like in the Tuya 0xef00 cluster it is only expressed in 10th of degree
-        setpoint_value = setpoint_value // 10
+
         if get_model_name(self, nwkid) == "TS0601-thermostat":
-            # Setpoiint is defined in ° and not centidegree
+            # Setpoint is defined in ° and not centidegree
+            setpoint_value = setpoint_value // 100
+        elif get_model_name( self, nwkid) == "TS0601-_TZE200_b6wax7g0":
+            setpoint_value = setpoint_value
+        else:
             setpoint_value = setpoint_value // 10
+            
         data = "%08x" % setpoint_value
         # determine which Endpoint
         EPout = "01"
