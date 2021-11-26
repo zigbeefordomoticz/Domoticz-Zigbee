@@ -1059,6 +1059,7 @@ def UpdateBatteryAttribute(self, Devices, MsgSrcAddr, MsgSrcEp):
         "WB-01",
         "TS0041",
         "TS0202",
+        "TS0202-_TZ3210_jijr1sss"
     )
 
     BATTERY_3VOLTS = (
