@@ -47,7 +47,7 @@ def receive_setpoint(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNW
 
     setpoint = int(data, 16)
     self.log.logging("Tuya", "Debug", "receive_setpoint - Nwkid: %s/%s Setpoint: %s for model taget: %s" % (NwkId, srcEp, setpoint, model_target))
-    if model_target in[ "TS0601-thermostat","TS0601-_TZE200_b6wax7g0","TS0601-eTRV2"] :
+    if model_target in[ "TS0601-thermostat","TS0601-eTRV2"] :
         setpoint = int(data, 16)
     else:
         setpoint = int(data, 16) / 10
@@ -689,8 +689,8 @@ def tuya_setpoint(self, nwkid, setpoint_value):
         # Looks like in the Tuya 0xef00 cluster it is only expressed in 10th of degree
 
         model_name = get_model_name(self, nwkid) 
-        if model_name in[ "TS0601-thermostat","TS0601-_TZE200_b6wax7g0","TS0601-eTRV2"] :
-        # Setpoint is defined in ° and not centidegree
+        if model_name in[ "TS0601-thermostat","TS0601-eTRV2"] :
+            # Setpoint is defined in ° and not centidegree
             setpoint_value = setpoint_value // 100
         else:
             setpoint_value = setpoint_value // 10
