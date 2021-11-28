@@ -12,14 +12,17 @@
 
 import json
 
-from Modules.basicOutputs import sendZigateCmd, set_poweron_afteroffon
+from Modules.basicOutputs import set_poweron_afteroffon
 from Modules.readAttributes import ReadAttributeRequest_0006_400x
 from Modules.thermostats import thermostat_Setpoint
 from Modules.tools import Hex_Format, rgb_to_hsl, rgb_to_xy
-from Modules.zclCommands import (zcl_level_move_to_level,
+from Modules.zclCommands import (zcl_identify_send,
+                                 zcl_identify_trigger_effect,
+                                 zcl_level_move_to_level,
                                  zcl_move_hue_and_saturation,
                                  zcl_move_to_colour,
                                  zcl_move_to_colour_temperature,
+                                 zcl_move_to_level_with_onoff,
                                  zcl_onoff_off_noeffect,
                                  zcl_onoff_off_witheffect, zcl_onoff_on,
                                  zcl_onoff_stop, zcl_toggle,
@@ -59,7 +62,7 @@ def actuators(self, action, nwkid, epout, DeviceType, cmd=None, value=None, colo
     elif action == "Stop":
         actuator_off(self, nwkid, epout, DeviceType)
     elif action == "Toggle":
-        zcl_toggle(self, nwkid, epout, DeviceType)
+        zcl_toggle(self, nwkid, epout)
     elif action == "SetLevel" and value is not None:
         actuator_setlevel(self, nwkid, epout, value, DeviceType)
     elif action == "SetColor" and value is not None and color is not None:
@@ -96,10 +99,10 @@ def actuator_off(self, nwkid, EPout, DeviceType, effect=None):
         self.iaszonemgt.alarm_off(nwkid, EPout)
 
     elif DeviceType == "LivoloSWL":
-        sendZigateCmd(self, "0081", "02" + nwkid + ZIGATE_EP + EPout + "00" + "01" + "0001")
+        zcl_move_to_level_with_onoff(self, nwkid, EPout, "00", "01", "0001")
 
     elif DeviceType == "LivoloSWR":
-        sendZigateCmd(self, "0081", "02" + nwkid + ZIGATE_EP + EPout + "00" + "01" + "0002")
+        zcl_move_to_level_with_onoff(self, nwkid, EPout, "00", "01", "0002")
 
     elif DeviceType == "WindowCovering":
         zcl_window_covering_off(self, nwkid, EPout)
@@ -113,9 +116,11 @@ def actuator_on(self, nwkid, EPout, DeviceType):
 
     if DeviceType == "LivoloSWL":
         # Level = 108 / 0x6C for On
-        sendZigateCmd(self, "0081", "02" + nwkid + ZIGATE_EP + EPout + "00" + "6C" + "0001")
+        zcl_move_to_level_with_onoff(self, nwkid, EPout, "00", "6C", "0001")
+
     elif DeviceType == "LivoloSWR":
-        sendZigateCmd(self, "0081", "02" + nwkid + ZIGATE_EP + EPout + "00" + "6C" + "0002")
+        zcl_move_to_level_with_onoff(self, nwkid, EPout, "00", "6C", "0002")
+
 
     elif DeviceType == "WindowCovering":
         zcl_window_covering_on(self, nwkid, EPout)
@@ -311,20 +316,16 @@ def handle_color_mode_9998( self, nwkid, EPout, Hue_List):
 
 def actuator_identify(self, nwkid, ep, value=None):
 
-    duration = 15
-
     if value is None:
+        duration = 15
 
-        datas = "02" + "%s" % (nwkid) + ZIGATE_EP + ep + "%04x" % (duration)
         self.log.logging(
             "Command",
             "Log",
             "identifySend - send an Identify Message to: %s for %04x seconds" % (nwkid, duration),
             nwkid=nwkid,
         )
-        self.log.logging("Command", "Log", "identifySend - data sent >%s< " % (datas), nwkid=nwkid)
-        sendZigateCmd(self, "0070", datas)
-
+        zcl_identify_send( self, nwkid, ep, "%04x" % (duration))
     else:
 
         self.log.logging("Command", "Log", "value: %s" % value)
@@ -337,12 +338,4 @@ def actuator_identify(self, nwkid, ep, value=None):
                 value = 0x00  # Flashing
                 color = 0x03  # Blue
 
-        datas = "02" + "%s" % (nwkid) + ZIGATE_EP + ep + "%02x" % value + "%02x" % color
-        self.log.logging(
-            "Command",
-            "Log",
-            "identifyEffect - send an Identify Effecty Message to: %s for %04x seconds" % (nwkid, duration),
-            nwkid=nwkid,
-        )
-        self.log.logging("Command", "Log", "identifyEffect - data sent >%s< " % (datas), nwkid=nwkid)
-        sendZigateCmd(self, "00E0", datas)
+        zcl_identify_trigger_effect( self, nwkid, ep, "%02x" % value, "%02x" % color)
