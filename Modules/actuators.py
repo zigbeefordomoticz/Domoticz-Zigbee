@@ -88,7 +88,7 @@ def actuator_stop(self, nwkid, EPout, DeviceType):
         sendZigateCmd(self, "0083", "02" + nwkid + ZIGATE_EP + EPout)
 
 
-def actuator_off(self, nwkid, EPout, DeviceType):
+def actuator_off(self, nwkid, EPout, DeviceType, effect=None):
 
     if DeviceType == "AlarmWD":
         self.log.logging("Command", "Log", "Alarm WarningDevice - value: %s" % "off")
@@ -104,6 +104,8 @@ def actuator_off(self, nwkid, EPout, DeviceType):
         # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
         sendZigateCmd(self, "00FA", "02" + nwkid + ZIGATE_EP + EPout + "01")
 
+    elif effect:
+        sendZigateCmd(self, "0094", "02" + nwkid + ZIGATE_EP + EPout + effect)
     else:
         sendZigateCmd(self, "0092", "02" + nwkid + ZIGATE_EP + EPout + "00")
 
@@ -124,7 +126,7 @@ def actuator_on(self, nwkid, EPout, DeviceType):
         sendZigateCmd(self, "0092", "02" + nwkid + ZIGATE_EP + EPout + "01")
 
 
-def actuator_setlevel(self, nwkid, EPout, value, DeviceType):
+def actuator_setlevel(self, nwkid, EPout, value, DeviceType, transition= "0010"):
 
     if DeviceType == "ThermoMode":
         actuator_setthermostat(self, nwkid, EPout, value)
@@ -157,7 +159,7 @@ def actuator_setlevel(self, nwkid, EPout, value, DeviceType):
                 value = 1
 
         value = Hex_Format(2, value)
-        sendZigateCmd(self, "0081", "02" + nwkid + ZIGATE_EP + EPout + OnOff + value + "0010")
+        sendZigateCmd(self, "0081", "02" + nwkid + ZIGATE_EP + EPout + OnOff + value + transition)        
 
 
 def actuator_setthermostat(self, nwkid, ep, value):
@@ -195,9 +197,20 @@ def actuator_setalarm(self, nwkid, EPout, value):
     elif value == 50:  # Disarmed
         self.iaszonemgt.write_IAS_WD_Squawk(nwkid, EPout, "disarmed")
 
+def actuator_move_to_colour_temperature( self, nwkid, EPout, temperature, transiton="0010"):
+    sendZigateCmd(self, "00C0", "02" + nwkid + ZIGATE_EP + EPout + Hex_Format(4, temperature) + transiton)
+
+def actuator_move_hue_and_saturation(self, nwkid, EPout, hue, saturation, transition="0010"):
+    sendZigateCmd( self, "00B6", "02" + nwkid + ZIGATE_EP + EPout + Hex_Format(2, hue) + Hex_Format(2, saturation) + transition)
+    
+def actuator_move_to_colour(self, nwkid, EPout, colorX, colorY, transition="0010"):
+    sendZigateCmd(self, "00B7", "02" + nwkid + ZIGATE_EP + EPout + Hex_Format(4, colorX) + Hex_Format(4, colorY) + transition)
+
 
 def actuator_setcolor(self, nwkid, EPout, value, Color):
+    
     Hue_List = json.loads(Color)
+    self.log.logging("Command", "Debug", "-----> Hue_List: %s" % str(Hue_List), nwkid)
 
     # Color
     #    ColorMode m;
@@ -208,26 +221,34 @@ def actuator_setcolor(self, nwkid, EPout, value, Color):
     #    uint8_t cw;    // Range:0..255, Cold white level
     #    uint8_t ww;    // Range:0..255, Warm white level (also used as level for monochrome white)
     #
+    transitionMoveLevel = transitionRGB = transitionMoveLevel = transitionHue = transitionTemp = "0000"
+    if "Param" in self.ListOfDevices[nwkid]:
+        if "moveToColourTemp" in self.ListOfDevices[nwkid]["Param"]:
+            transitionTemp = "%04x" % int(self.ListOfDevices[nwkid]["Param"]["moveToColourTemp"])
+        if "moveToColourRGB" in self.ListOfDevices[nwkid]["Param"]:
+            transitionRGB = "%04x" % int(self.ListOfDevices[nwkid]["Param"]["moveToColourRGB"])
+        if "moveToLevel" in self.ListOfDevices[nwkid]["Param"]:
+            transitionMoveLevel = "%04x" % int(self.ListOfDevices[nwkid]["Param"]["moveToLevel"])
+        if "moveToHueSatu" in self.ListOfDevices[nwkid]["Param"]:
+            transitionHue = "%04x" % int(self.ListOfDevices[nwkid]["Param"]["moveToHueSatu"])
 
-    self.ListOfDevices[nwkid]["Heartbeat"] = "0"  # As we update the Device, let's restart and do the next pool in 5'
+    self.log.logging(
+        "Command",
+        "Debug",
+        "-----> Transition Timers: %s %s %s %s"
+        % (transitionRGB, transitionMoveLevel, transitionHue, transitionTemp),
+    )
 
     # First manage level
-    self.log.logging("Command", "Log", "----> Value: >%s<" % value)
+    # if Hue_List['m'] or Hue_List['m'] != 9998 or manage_level:
+    if Hue_List["m"] or Hue_List["m"] != 9998:
+        OnOff = "01"  # 00 = off, 01 = on
+        value = int(1 + value * 254 / 100)  # To prevent off state
+        self.log.logging("Command", "Debug", "---------- Set Level: %s" % (value), nwkid)
+        # u16TransitionTime is the time taken, in units of tenths of a second, to reach the target level
+        # (0xFFFF means use the u16OnOffTransitionTime attribute instead
+        actuator_setlevel(self, nwkid, EPout, value, "Light", "ffff")
 
-    OnOff = "01"  # 00 = off, 01 = on
-    value = Hex_Format(2, round(1 + value * 254 / 100))  # To prevent off state
-    sendZigateCmd(self, "0081", "02" + nwkid + ZIGATE_EP + EPout + OnOff + value + "0000")
-
-    if len(Hue_List) == 0:
-        self.log.logging("Command", "Log", "actuator_setcolor - Unable to decode Color: %s --> %s" % (Color, Hue_List))
-        return
-
-    # Now color
-    # ColorModeNone = 0   // Illegal
-    # ColorModeNone = 1   // White. Valid fields: none
-    if Hue_List["m"] == 1:
-        ww = int(Hue_List["ww"])  # Can be used as level for monochrome white
-        self.log.logging("Command", "Debug", "Not implemented device color 1", nwkid)
     # ColorModeTemp = 2   // White with color temperature. Valid fields: t
     if Hue_List["m"] == 2:
         # Value is in mireds (not kelvin)
@@ -235,35 +256,63 @@ def actuator_setcolor(self, nwkid, EPout, value, Color):
         # t is 0 > 255
         TempKelvin = int(((255 - int(Hue_List["t"])) * (6500 - 1700) / 255) + 1700)
         TempMired = 1000000 // TempKelvin
-        sendZigateCmd(self, "00C0", "02" + nwkid + ZIGATE_EP + EPout + Hex_Format(4, TempMired) + "0000")
+        self.log.logging(
+            "Command", "Debug", "---------- Set Temp Kelvin: %s-%s" % (TempMired, Hex_Format(4, TempMired)), nwkid
+        )
+        actuator_move_to_colour_temperature( self, nwkid, EPout, TempMired, transitionTemp)
+
     # ColorModeRGB = 3    // Color. Valid fields: r, g, b.
     elif Hue_List["m"] == 3:
         x, y = rgb_to_xy((int(Hue_List["r"]), int(Hue_List["g"]), int(Hue_List["b"])))
         # Convert 0>1 to 0>FFFF
         x = int(x * 65536)
         y = int(y * 65536)
-        strxy = Hex_Format(4, x) + Hex_Format(4, y)
-        sendZigateCmd(self, "00B7", "02" + nwkid + ZIGATE_EP + EPout + strxy + "0000")
+        #strxy = Hex_Format(4, x) + Hex_Format(4, y)
+        self.log.logging("Command", "Debug", "---------- Set Temp X: %s Y: %s" % (x, y), nwkid)
+        actuator_move_to_colour(self, nwkid, EPout, x, y, transitionRGB)
+
     # ColorModeCustom = 4, // Custom (color + white). Valid fields: r, g, b, cw, ww, depending on device capabilities
     elif Hue_List["m"] == 4:
-        ww = int(Hue_List["ww"])
-        cw = int(Hue_List["cw"])
-        x, y = rgb_to_xy((int(Hue_List["r"]), int(Hue_List["g"]), int(Hue_List["b"])))
-        # Pas trouve de device avec ca encore ...
-        self.log.logging("Command", "Debug", "Not implemented device color 2", nwkid)
-    # With saturation and hue, not seen in domoticz but present on zigate, and some device need it
-    elif Hue_List["m"] == 9998:
-        h, l, s = rgb_to_hsl((int(Hue_List["r"]), int(Hue_List["g"]), int(Hue_List["b"])))
+        # Gledopto GL_008
+        # Color: {"b":43,"cw":27,"g":255,"m":4,"r":44,"t":227,"ww":215}
+        self.log.logging("Command", "Log", "Not fully implemented device color 4", nwkid)
+
+        # Process White color
+        cw = int(Hue_List["cw"])  # 0 < cw < 255 Cold White
+        ww = int(Hue_List["ww"])  # 0 < ww < 255 Warm White
+        if cw != 0 and ww != 0:
+            TempKelvin = int(((255 - int(ww)) * (6500 - 1700) / 255) + 1700)
+            TempMired = 1000000 // TempKelvin
+            self.log.logging(
+                "Command", "Log", "---------- Set Temp Kelvin: %s-%s" % (TempMired, Hex_Format(4, TempMired)), nwkid
+            )
+            actuator_move_to_colour_temperature( self, nwkid, EPout, TempMired, transitionTemp)
+
+        # Process Colour
+        h, s, l = rgb_to_hsl((int(Hue_List["r"]), int(Hue_List["g"]), int(Hue_List["b"])))
         saturation = s * 100  # 0 > 100
         hue = h * 360  # 0 > 360
         hue = int(hue * 254 // 360)
         saturation = int(saturation * 254 // 100)
+        self.log.logging("Command", "Log", "---------- Set Hue X: %s Saturation: %s" % (hue, saturation), nwkid)
+        actuator_move_hue_and_saturation(self, nwkid, EPout, hue, saturation, transitionRGB)
+
+    # With saturation and hue, not seen in domoticz but present on zigate, and some device need it
+    elif Hue_List["m"] == 9998:
+        h, s, l = rgb_to_hsl((int(Hue_List["r"]), int(Hue_List["g"]), int(Hue_List["b"])))
+        saturation = s * 100  # 0 > 100
+        hue = h * 360  # 0 > 360
+        hue = int(hue * 254 // 360)
+        saturation = int(saturation * 254 // 100)
+        self.log.logging("Command", "Debug", "---------- Set Hue X: %s Saturation: %s" % (hue, saturation), nwkid)
+        actuator_move_hue_and_saturation(self, nwkid, EPout, hue, saturation, transitionRGB)
+
         value = int(l * 254 // 100)
         OnOff = "01"
-        sendZigateCmd(
-            self, "00B6", "02" + nwkid + ZIGATE_EP + EPout + Hex_Format(2, hue) + Hex_Format(2, saturation) + "0000"
-        )
-        sendZigateCmd(self, "0081", "02" + nwkid + ZIGATE_EP + EPout + OnOff + Hex_Format(2, value) + "0010")
+        self.log.logging( "Command", "Debug", "---------- Set Level: %s instead of Level: %s" % (value, value), nwkid)
+        actuator_setlevel(self, nwkid, EPout, value, "Light", transitionMoveLevel)
+
+
 
 
 def actuator_identify(self, nwkid, ep, value=None):
