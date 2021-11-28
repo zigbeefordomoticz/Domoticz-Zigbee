@@ -10,21 +10,10 @@
 
 """
 
-import binascii
-import json
-import struct
-import time
-
 import Domoticz
-from Classes.IAS import IAS_Zone_Management
-from Classes.LoggingManagement import LoggingManagement
 
-from Modules.actuators import (actuator_move_hue_and_saturation,
-                               actuator_move_to_colour,
-                               actuator_move_to_colour_temperature,
-                               actuator_off, actuator_on, actuator_setlevel,
-                               actuator_stop, actuators, actuator_setcolor)
-from Modules.basicOutputs import sendZigateCmd
+from Modules.actuators import (actuator_off, actuator_on, actuator_setcolor,
+                               actuator_setlevel, actuator_stop, actuators)
 from Modules.casaia import (casaia_ac201_fan_control, casaia_setpoint,
                             casaia_swing_OnOff, casaia_system_mode)
 from Modules.cmdsDoorLock import cluster0101_lock_door, cluster0101_unlock_door
@@ -40,7 +29,6 @@ from Modules.schneider_wiser import (schneider_EHZBRTS_thermoMode,
                                      schneider_set_contract,
                                      schneider_temp_Setcurrent)
 from Modules.thermostats import thermostat_Mode, thermostat_Setpoint
-from Modules.tools import Hex_Format, rgb_to_hsl, rgb_to_xy
 from Modules.tuya import (tuya_curtain_lvl, tuya_curtain_openclose,
                           tuya_dimmer_dimmer, tuya_dimmer_onoff,
                           tuya_energy_onoff, tuya_switch_command,
@@ -370,19 +358,18 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
 
         if DeviceType in ("ACMode_2", "FanControl"):
             casaia_system_mode(self, NWKID, "Off")
-
-            # UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
-            ## Let's force a refresh of Attribute in the next Heartbeat
-            # self.ListOfDevices[NWKID]['Heartbeat'] = '0'
             return
 
-        if DeviceType == "ACSwing":
-            if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] == "AC201A":
-                casaia_swing_OnOff(self, NWKID, "00")
-                UpdateDevice_v2(
-                    self, Devices, Unit, int(Level) // 10, Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev
-                )
-                return
+        if (
+            DeviceType == "ACSwing"
+            and "Model" in self.ListOfDevices[NWKID]
+            and self.ListOfDevices[NWKID]["Model"] == "AC201A"
+        ):
+            casaia_swing_OnOff(self, NWKID, "00")
+            UpdateDevice_v2(
+                self, Devices, Unit, int(Level) // 10, Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev
+            )
+            return
 
         if DeviceType == "LvlControl" and _model_name == "TS0601-dimmer":
             tuya_dimmer_onoff(self, NWKID, EPout, "00")
@@ -562,13 +549,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             #sendZigateCmd(self, "00FA", "02" + NWKID + ZIGATE_EP + EPout + "00")  # Blind inverted (Off, for Open)
 
         elif DeviceType == "VenetianInverted":
-            if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( "PR412", "CPR412"):
-                actuator_on(self, NWKID, EPout, "WindowCovering")
-                #sendZigateCmd(self, "0092", "02" + NWKID + ZIGATE_EP + EPout + "00")
-            else:
-                actuator_on(self, NWKID, EPout, "WindowCovering")
-                #sendZigateCmd( self, "00FA", "02" + NWKID + ZIGATE_EP + EPout + "00")  # Venetian inverted/Blind (Off, for Open)
-
+            actuator_on(self, NWKID, EPout, "WindowCovering")
         elif DeviceType == "Venetian":
             if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ("PR412", "CPR412"):
                 actuator_on(self, NWKID, EPout, "Light")
@@ -742,20 +723,22 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                     "mgtCommand : -----> Contract Power : %s - %s KVA" % (Level, CONTRACT_MODE[Level]),
                     NWKID,
                 )
-                if "Model" in self.ListOfDevices[NWKID]:
-                    if self.ListOfDevices[NWKID]["Model"] == "EH-ZB-BMS":
-                        self.ListOfDevices[NWKID]["Schneider Wiser"]["Contract Power"] = CONTRACT_MODE[Level]
-                        schneider_set_contract(self, NWKID, EPout, CONTRACT_MODE[Level])
-                        UpdateDevice_v2(
-                            self,
-                            Devices,
-                            Unit,
-                            int(Level) // 10,
-                            Level,
-                            BatteryLevel,
-                            SignalLevel,
-                            ForceUpdate_=forceUpdateDev,
-                        )
+                if (
+                    "Model" in self.ListOfDevices[NWKID]
+                    and self.ListOfDevices[NWKID]["Model"] == "EH-ZB-BMS"
+                ):
+                    self.ListOfDevices[NWKID]["Schneider Wiser"]["Contract Power"] = CONTRACT_MODE[Level]
+                    schneider_set_contract(self, NWKID, EPout, CONTRACT_MODE[Level])
+                    UpdateDevice_v2(
+                        self,
+                        Devices,
+                        Unit,
+                        int(Level) // 10,
+                        Level,
+                        BatteryLevel,
+                        SignalLevel,
+                        ForceUpdate_=forceUpdateDev,
+                    )
 
             # Let's force a refresh of Attribute in the next Heartbeat
             self.ListOfDevices[NWKID]["Heartbeat"] = "0"
@@ -780,47 +763,48 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             if "Schneider Wiser" not in self.ListOfDevices[NWKID]:
                 self.ListOfDevices[NWKID]["Schneider Wiser"] = {}
 
-            if Level in FIL_PILOT_MODE:
+            if (
+                Level in FIL_PILOT_MODE
+                and "Model" in self.ListOfDevices[NWKID]
+            ):
+                if self.ListOfDevices[NWKID]["Model"] == "EH-ZB-HACT":
+                    self.log.logging(
+                        "Command",
+                        "Debug",
+                        "mgtCommand : -----> HACT -> Fil Pilote mode: %s - %s" % (Level, FIL_PILOT_MODE[Level]),
+                        NWKID,
+                    )
+                    self.ListOfDevices[NWKID]["Schneider Wiser"]["HACT FIP Mode"] = FIL_PILOT_MODE[Level]
+                    schneider_hact_fip_mode(self, NWKID, FIL_PILOT_MODE[Level])
+                    UpdateDevice_v2(
+                        self,
+                        Devices,
+                        Unit,
+                        int(Level) // 10,
+                        Level,
+                        BatteryLevel,
+                        SignalLevel,
+                        ForceUpdate_=forceUpdateDev,
+                    )
 
-                if "Model" in self.ListOfDevices[NWKID]:
-                    if self.ListOfDevices[NWKID]["Model"] == "EH-ZB-HACT":
-                        self.log.logging(
-                            "Command",
-                            "Debug",
-                            "mgtCommand : -----> HACT -> Fil Pilote mode: %s - %s" % (Level, FIL_PILOT_MODE[Level]),
-                            NWKID,
-                        )
-                        self.ListOfDevices[NWKID]["Schneider Wiser"]["HACT FIP Mode"] = FIL_PILOT_MODE[Level]
-                        schneider_hact_fip_mode(self, NWKID, FIL_PILOT_MODE[Level])
-                        UpdateDevice_v2(
-                            self,
-                            Devices,
-                            Unit,
-                            int(Level) // 10,
-                            Level,
-                            BatteryLevel,
-                            SignalLevel,
-                            ForceUpdate_=forceUpdateDev,
-                        )
-
-                    elif self.ListOfDevices[NWKID]["Model"] == "Cable outlet":
-                        self.log.logging(
-                            "Command",
-                            "Debug",
-                            "mgtCommand : -----> Fil Pilote mode: %s - %s" % (Level, FIL_PILOT_MODE[Level]),
-                            NWKID,
-                        )
-                        legrand_fc40(self, NWKID, FIL_PILOT_MODE[Level])
-                        UpdateDevice_v2(
-                            self,
-                            Devices,
-                            Unit,
-                            int(Level) // 10,
-                            Level,
-                            BatteryLevel,
-                            SignalLevel,
-                            ForceUpdate_=forceUpdateDev,
-                        )
+                elif self.ListOfDevices[NWKID]["Model"] == "Cable outlet":
+                    self.log.logging(
+                        "Command",
+                        "Debug",
+                        "mgtCommand : -----> Fil Pilote mode: %s - %s" % (Level, FIL_PILOT_MODE[Level]),
+                        NWKID,
+                    )
+                    legrand_fc40(self, NWKID, FIL_PILOT_MODE[Level])
+                    UpdateDevice_v2(
+                        self,
+                        Devices,
+                        Unit,
+                        int(Level) // 10,
+                        Level,
+                        BatteryLevel,
+                        SignalLevel,
+                        ForceUpdate_=forceUpdateDev,
+                    )
 
             # Let's force a refresh of Attribute in the next Heartbeat
             self.ListOfDevices[NWKID]["Heartbeat"] = "0"
@@ -1000,7 +984,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 "WindowCovering - Lift Percentage Command - %s/%s Level: 0x%s %s" % (NWKID, EPout, value, Level),
                 NWKID,
             )
-            actuator_setlevel(self, NWKID, EPout, value, WindowCovering)
+            actuator_setlevel(self, NWKID, EPout, value, "WindowCovering")
             #sendZigateCmd(self, "00FA", "02" + NWKID + ZIGATE_EP + EPout + "05" + value)
 
         elif DeviceType == "Venetian":
@@ -1015,7 +999,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 "Venetian blind - Lift Percentage Command - %s/%s Level: 0x%s %s" % (NWKID, EPout, value, Level),
                 NWKID,
             )
-            actuator_setlevel(self, NWKID, EPout, value, WindowCovering)
+            actuator_setlevel(self, NWKID, EPout, value, "WindowCovering")
             #sendZigateCmd(self, "00FA", "02" + NWKID + ZIGATE_EP + EPout + "05" + value)
 
         elif DeviceType == "VenetianInverted":
@@ -1032,7 +1016,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 % (NWKID, EPout, value, Level),
                 NWKID,
             )
-            actuator_setlevel(self, NWKID, EPout, value, WindowCovering)
+            actuator_setlevel(self, NWKID, EPout, value, "WindowCovering")
             #sendZigateCmd(self, "00FA", "02" + NWKID + ZIGATE_EP + EPout + "05" + value)
 
         elif DeviceType == "AlarmWD":
@@ -1082,9 +1066,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
         elif _model_name == "TS0601-dimmer":
             if Devices[Unit].nValue == 0:
                 tuya_dimmer_onoff(self, NWKID, EPout, "01")
-            if Level < 1:
-                # Never Switch off
-                Level = 1
+            Level = max(Level, 1)
             tuya_dimmer_dimmer(self, NWKID, EPout, Level)
 
         elif _model_name == "TS0601-curtain":
@@ -1102,7 +1084,6 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 if Level > 0 and value == 0:
                     value = 1
 
-            value = Hex_Format(2, value)
             if profalux:
                 actuator_setlevel(self, NWKID, EPout, value, "Light")
                 #sendZigateCmd(self, "0081", "02" + NWKID + ZIGATE_EP + EPout + OnOff + value + "0000")
@@ -1134,10 +1115,10 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
         self.ListOfDevices[NWKID]["Heartbeat"] = "0"
 
     if Command == "Set Color":
-        
+
         actuator_setcolor(self, NWKID, EPout, Level, Color)
-        
-        
+
+
         # RGBW --> Action on W Level (bri) setcolbrightnessvalue: ID: d9, bri: 96, color: '{m: 3, RGB: ffffff, CWWW: 0000, CT: 0}'
         #      --> Action on RGB (RGB)     setcolbrightnessvalue: ID: d9, bri: 59, color: '{m: 3, RGB: 53ff42, CWWW: 0000, CT: 0}'
 

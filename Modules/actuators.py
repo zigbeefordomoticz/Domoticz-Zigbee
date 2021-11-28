@@ -10,15 +10,14 @@
 
 """
 
-import Domoticz
 import json
 
 from Classes.LoggingManagement import LoggingManagement
 
-from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl
 from Modules.basicOutputs import sendZigateCmd, set_poweron_afteroffon
 from Modules.readAttributes import ReadAttributeRequest_0006_400x
 from Modules.thermostats import thermostat_Setpoint
+from Modules.tools import Hex_Format, rgb_to_hsl, rgb_to_xy
 from Modules.zigateConsts import ZIGATE_EP
 
 
@@ -72,12 +71,10 @@ def actuators(self, action, nwkid, epout, DeviceType, cmd=None, value=None, colo
             {"action": action, "epout": epout, "value": value, "color": color},
         )
 
-
 def actuator_toggle(self, nwkid, EPout, DeviceType):
 
     # To be implemented
     sendZigateCmd(self, "0092", "02" + nwkid + ZIGATE_EP + EPout + "02")
-
 
 def actuator_stop(self, nwkid, EPout, DeviceType):
 
@@ -86,7 +83,6 @@ def actuator_stop(self, nwkid, EPout, DeviceType):
         sendZigateCmd(self, "00FA", "02" + nwkid + ZIGATE_EP + EPout + "02")
     else:
         sendZigateCmd(self, "0083", "02" + nwkid + ZIGATE_EP + EPout)
-
 
 def actuator_off(self, nwkid, EPout, DeviceType, effect=None):
 
@@ -109,7 +105,6 @@ def actuator_off(self, nwkid, EPout, DeviceType, effect=None):
     else:
         sendZigateCmd(self, "0092", "02" + nwkid + ZIGATE_EP + EPout + "00")
 
-
 def actuator_on(self, nwkid, EPout, DeviceType):
 
     if DeviceType == "LivoloSWL":
@@ -124,7 +119,6 @@ def actuator_on(self, nwkid, EPout, DeviceType):
 
     else:
         sendZigateCmd(self, "0092", "02" + nwkid + ZIGATE_EP + EPout + "01")
-
 
 def actuator_setlevel(self, nwkid, EPout, value, DeviceType, transition= "0010"):
 
@@ -161,7 +155,6 @@ def actuator_setlevel(self, nwkid, EPout, value, DeviceType, transition= "0010")
         value = Hex_Format(2, value)
         sendZigateCmd(self, "0081", "02" + nwkid + ZIGATE_EP + EPout + OnOff + value + transition)        
 
-
 def actuator_setthermostat(self, nwkid, ep, value):
 
     self.log.logging("Command", "Log", "ThermoMode - requested value: %s" % value)
@@ -174,12 +167,10 @@ def actuator_setthermostat(self, nwkid, ep, value):
     #'Pre-cooling' : 0x06,
     #'Fan only' : 0x07
 
-
 def actuator_setpoint(self, nwkid, ep, value):
     value = int(float(value) * 100)
     self.log.logging("Command", "Log", "Calling thermostat_Setpoint( %s, %s) " % (nwkid, value))
     thermostat_Setpoint(self, nwkid, value)
-
 
 def actuator_setalarm(self, nwkid, EPout, value):
 
@@ -206,6 +197,19 @@ def actuator_move_hue_and_saturation(self, nwkid, EPout, hue, saturation, transi
 def actuator_move_to_colour(self, nwkid, EPout, colorX, colorY, transition="0010"):
     sendZigateCmd(self, "00B7", "02" + nwkid + ZIGATE_EP + EPout + Hex_Format(4, colorX) + Hex_Format(4, colorY) + transition)
 
+def get_all_transition_mode( self, Nwkid):
+
+    transitionMoveLevel = transitionRGB = transitionMoveLevel = transitionHue = transitionTemp = "0000"
+    if "Param" in self.ListOfDevices[Nwkid]:
+        if "moveToColourTemp" in self.ListOfDevices[Nwkid]["Param"]:
+            transitionTemp = "%04x" % int(self.ListOfDevices[Nwkid]["Param"]["moveToColourTemp"])
+        if "moveToColourRGB" in self.ListOfDevices[Nwkid]["Param"]:
+            transitionRGB = "%04x" % int(self.ListOfDevices[Nwkid]["Param"]["moveToColourRGB"])
+        if "moveToLevel" in self.ListOfDevices[Nwkid]["Param"]:
+            transitionMoveLevel = "%04x" % int(self.ListOfDevices[Nwkid]["Param"]["moveToLevel"])
+        if "moveToHueSatu" in self.ListOfDevices[Nwkid]["Param"]:
+            transitionHue = "%04x" % int(self.ListOfDevices[Nwkid]["Param"]["moveToHueSatu"])
+    return transitionMoveLevel , transitionRGB , transitionMoveLevel ,transitionHue , transitionTemp
 
 def actuator_setcolor(self, nwkid, EPout, value, Color):
     
@@ -221,24 +225,7 @@ def actuator_setcolor(self, nwkid, EPout, value, Color):
     #    uint8_t cw;    // Range:0..255, Cold white level
     #    uint8_t ww;    // Range:0..255, Warm white level (also used as level for monochrome white)
     #
-    transitionMoveLevel = transitionRGB = transitionMoveLevel = transitionHue = transitionTemp = "0000"
-    if "Param" in self.ListOfDevices[nwkid]:
-        if "moveToColourTemp" in self.ListOfDevices[nwkid]["Param"]:
-            transitionTemp = "%04x" % int(self.ListOfDevices[nwkid]["Param"]["moveToColourTemp"])
-        if "moveToColourRGB" in self.ListOfDevices[nwkid]["Param"]:
-            transitionRGB = "%04x" % int(self.ListOfDevices[nwkid]["Param"]["moveToColourRGB"])
-        if "moveToLevel" in self.ListOfDevices[nwkid]["Param"]:
-            transitionMoveLevel = "%04x" % int(self.ListOfDevices[nwkid]["Param"]["moveToLevel"])
-        if "moveToHueSatu" in self.ListOfDevices[nwkid]["Param"]:
-            transitionHue = "%04x" % int(self.ListOfDevices[nwkid]["Param"]["moveToHueSatu"])
-
-    self.log.logging(
-        "Command",
-        "Debug",
-        "-----> Transition Timers: %s %s %s %s"
-        % (transitionRGB, transitionMoveLevel, transitionHue, transitionTemp),
-    )
-
+    
     # First manage level
     # if Hue_List['m'] or Hue_List['m'] != 9998 or manage_level:
     if Hue_List["m"] or Hue_List["m"] != 9998:
@@ -251,69 +238,81 @@ def actuator_setcolor(self, nwkid, EPout, value, Color):
 
     # ColorModeTemp = 2   // White with color temperature. Valid fields: t
     if Hue_List["m"] == 2:
-        # Value is in mireds (not kelvin)
-        # Correct values are from 153 (6500K) up to 588 (1700K)
-        # t is 0 > 255
-        TempKelvin = int(((255 - int(Hue_List["t"])) * (6500 - 1700) / 255) + 1700)
-        TempMired = 1000000 // TempKelvin
-        self.log.logging(
-            "Command", "Debug", "---------- Set Temp Kelvin: %s-%s" % (TempMired, Hex_Format(4, TempMired)), nwkid
-        )
-        actuator_move_to_colour_temperature( self, nwkid, EPout, TempMired, transitionTemp)
+        handle_color_mode_2(self, nwkid, EPout, Hue_List)
 
     # ColorModeRGB = 3    // Color. Valid fields: r, g, b.
     elif Hue_List["m"] == 3:
-        x, y = rgb_to_xy((int(Hue_List["r"]), int(Hue_List["g"]), int(Hue_List["b"])))
-        # Convert 0>1 to 0>FFFF
-        x = int(x * 65536)
-        y = int(y * 65536)
-        #strxy = Hex_Format(4, x) + Hex_Format(4, y)
-        self.log.logging("Command", "Debug", "---------- Set Temp X: %s Y: %s" % (x, y), nwkid)
-        actuator_move_to_colour(self, nwkid, EPout, x, y, transitionRGB)
+        handle_color_mode_3(self, nwkid, EPout, Hue_List)
 
     # ColorModeCustom = 4, // Custom (color + white). Valid fields: r, g, b, cw, ww, depending on device capabilities
     elif Hue_List["m"] == 4:
-        # Gledopto GL_008
-        # Color: {"b":43,"cw":27,"g":255,"m":4,"r":44,"t":227,"ww":215}
-        self.log.logging("Command", "Log", "Not fully implemented device color 4", nwkid)
-
-        # Process White color
-        cw = int(Hue_List["cw"])  # 0 < cw < 255 Cold White
-        ww = int(Hue_List["ww"])  # 0 < ww < 255 Warm White
-        if cw != 0 and ww != 0:
-            TempKelvin = int(((255 - int(ww)) * (6500 - 1700) / 255) + 1700)
-            TempMired = 1000000 // TempKelvin
-            self.log.logging(
-                "Command", "Log", "---------- Set Temp Kelvin: %s-%s" % (TempMired, Hex_Format(4, TempMired)), nwkid
-            )
-            actuator_move_to_colour_temperature( self, nwkid, EPout, TempMired, transitionTemp)
-
-        # Process Colour
-        h, s, l = rgb_to_hsl((int(Hue_List["r"]), int(Hue_List["g"]), int(Hue_List["b"])))
-        saturation = s * 100  # 0 > 100
-        hue = h * 360  # 0 > 360
-        hue = int(hue * 254 // 360)
-        saturation = int(saturation * 254 // 100)
-        self.log.logging("Command", "Log", "---------- Set Hue X: %s Saturation: %s" % (hue, saturation), nwkid)
-        actuator_move_hue_and_saturation(self, nwkid, EPout, hue, saturation, transitionRGB)
-
+        handle_color_mode_4(self, nwkid, EPout, Hue_List )
+        
     # With saturation and hue, not seen in domoticz but present on zigate, and some device need it
     elif Hue_List["m"] == 9998:
-        h, s, l = rgb_to_hsl((int(Hue_List["r"]), int(Hue_List["g"]), int(Hue_List["b"])))
-        saturation = s * 100  # 0 > 100
-        hue = h * 360  # 0 > 360
-        hue = int(hue * 254 // 360)
-        saturation = int(saturation * 254 // 100)
-        self.log.logging("Command", "Debug", "---------- Set Hue X: %s Saturation: %s" % (hue, saturation), nwkid)
-        actuator_move_hue_and_saturation(self, nwkid, EPout, hue, saturation, transitionRGB)
+        handle_color_mode_9998( self, nwkid, EPout, Hue_List)
+     
+def handle_color_mode_2(self, nwkid, EPout, Hue_List):
+    # Value is in mireds (not kelvin)
+    # Correct values are from 153 (6500K) up to 588 (1700K)
+    # t is 0 > 255
+    TempKelvin = int(((255 - int(Hue_List["t"])) * (6500 - 1700) / 255) + 1700)
+    TempMired = 1000000 // TempKelvin
+    self.log.logging(
+        "Command", "Debug", "handle_color_mode_2 Set Temp Kelvin: %s-%s" % (TempMired, Hex_Format(4, TempMired)), nwkid
+    )
+    transitionMoveLevel = transitionRGB = transitionMoveLevel = transitionHue = transitionTemp = get_all_transition_mode( self, nwkid)
+    actuator_move_to_colour_temperature( self, nwkid, EPout, TempMired, transitionTemp)
+            
+def handle_color_mode_3(self, nwkid, EPout, Hue_List):
+    x, y = rgb_to_xy((int(Hue_List["r"]), int(Hue_List["g"]), int(Hue_List["b"])))
+    # Convert 0>1 to 0>FFFF
+    x = int(x * 65536)
+    y = int(y * 65536)
+    #strxy = Hex_Format(4, x) + Hex_Format(4, y)
+    self.log.logging("Command", "Debug", "handle_color_mode_3 Set Temp X: %s Y: %s" % (x, y), nwkid)
+    transitionMoveLevel = transitionRGB = transitionMoveLevel = transitionHue = transitionTemp = get_all_transition_mode( self, nwkid)
+    actuator_move_to_colour(self, nwkid, EPout, x, y, transitionRGB)
+    
+def handle_color_mode_4(self, nwkid, EPout, Hue_List ):
+    # Gledopto GL_008
+    # Color: {"b":43,"cw":27,"g":255,"m":4,"r":44,"t":227,"ww":215}
+    self.log.logging("Command", "Log", "Not fully implemented device color 4", nwkid)
+    transitionMoveLevel = transitionRGB = transitionMoveLevel = transitionHue = transitionTemp = get_all_transition_mode( self, nwkid)
+    # Process White color
+    cw = int(Hue_List["cw"])  # 0 < cw < 255 Cold White
+    ww = int(Hue_List["ww"])  # 0 < ww < 255 Warm White
+    if cw != 0 and ww != 0:
+        TempKelvin = int(((255 - int(ww)) * (6500 - 1700) / 255) + 1700)
+        TempMired = 1000000 // TempKelvin
+        self.log.logging(
+            "Command", "Log", "handle_color_mode_4 Set Temp Kelvin: %s-%s" % (TempMired, Hex_Format(4, TempMired)), nwkid
+        )
+        actuator_move_to_colour_temperature( self, nwkid, EPout, TempMired, transitionTemp)
 
-        value = int(l * 254 // 100)
-        OnOff = "01"
-        self.log.logging( "Command", "Debug", "---------- Set Level: %s instead of Level: %s" % (value, value), nwkid)
-        actuator_setlevel(self, nwkid, EPout, value, "Light", transitionMoveLevel)
+    # Process Colour
+    h, s, l = rgb_to_hsl((int(Hue_List["r"]), int(Hue_List["g"]), int(Hue_List["b"])))
+    saturation = s * 100  # 0 > 100
+    hue = h * 360  # 0 > 360
+    hue = int(hue * 254 // 360)
+    saturation = int(saturation * 254 // 100)
+    self.log.logging("Command", "Log", "handle_color_mode_4 Set Hue X: %s Saturation: %s" % (hue, saturation), nwkid)
+    actuator_move_hue_and_saturation(self, nwkid, EPout, hue, saturation, transitionRGB)
+       
+def handle_color_mode_9998( self, nwkid, EPout, Hue_List):
+    transitionMoveLevel = transitionRGB = transitionMoveLevel = transitionHue = transitionTemp = get_all_transition_mode( self, nwkid)    
+    h, s, l = rgb_to_hsl((int(Hue_List["r"]), int(Hue_List["g"]), int(Hue_List["b"])))
+    saturation = s * 100  # 0 > 100
+    hue = h * 360  # 0 > 360
+    hue = int(hue * 254 // 360)
+    saturation = int(saturation * 254 // 100)
+    self.log.logging("Command", "Debug", "handle_color_mode_9998 Set Hue X: %s Saturation: %s" % (hue, saturation), nwkid)
+    actuator_move_hue_and_saturation(self, nwkid, EPout, hue, saturation, transitionRGB)
 
-
-
+    value = int(l * 254 // 100)
+    OnOff = "01"
+    self.log.logging( "Command", "Debug", "handle_color_mode_9998 Set Level: %s instead of Level: %s" % (value, value), nwkid)
+    actuator_setlevel(self, nwkid, EPout, value, "Light", transitionMoveLevel)
 
 def actuator_identify(self, nwkid, ep, value=None):
 
