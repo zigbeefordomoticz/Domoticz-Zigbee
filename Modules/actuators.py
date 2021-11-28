@@ -12,12 +12,21 @@
 
 import json
 
-from Classes.LoggingManagement import LoggingManagement
-
 from Modules.basicOutputs import sendZigateCmd, set_poweron_afteroffon
 from Modules.readAttributes import ReadAttributeRequest_0006_400x
 from Modules.thermostats import thermostat_Setpoint
 from Modules.tools import Hex_Format, rgb_to_hsl, rgb_to_xy
+from Modules.zclCommands import (zcl_level_move_to_level,
+                                 zcl_move_hue_and_saturation,
+                                 zcl_move_to_colour,
+                                 zcl_move_to_colour_temperature,
+                                 zcl_onoff_off_noeffect,
+                                 zcl_onoff_off_witheffect, zcl_onoff_on,
+                                 zcl_onoff_stop, zcl_toggle,
+                                 zcl_window_covering_off,
+                                 zcl_window_covering_on,
+                                 zcl_window_covering_stop,
+                                 zcl_window_coverting_level)
 from Modules.zigateConsts import ZIGATE_EP
 
 
@@ -50,7 +59,7 @@ def actuators(self, action, nwkid, epout, DeviceType, cmd=None, value=None, colo
     elif action == "Stop":
         actuator_off(self, nwkid, epout, DeviceType)
     elif action == "Toggle":
-        actuator_toggle(self, nwkid, epout, DeviceType)
+        zcl_toggle(self, nwkid, epout, DeviceType)
     elif action == "SetLevel" and value is not None:
         actuator_setlevel(self, nwkid, epout, value, DeviceType)
     elif action == "SetColor" and value is not None and color is not None:
@@ -71,18 +80,14 @@ def actuators(self, action, nwkid, epout, DeviceType, cmd=None, value=None, colo
             {"action": action, "epout": epout, "value": value, "color": color},
         )
 
-def actuator_toggle(self, nwkid, EPout, DeviceType):
-
-    # To be implemented
-    sendZigateCmd(self, "0092", "02" + nwkid + ZIGATE_EP + EPout + "02")
 
 def actuator_stop(self, nwkid, EPout, DeviceType):
 
     if DeviceType == "WindowCovering":
-        # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
-        sendZigateCmd(self, "00FA", "02" + nwkid + ZIGATE_EP + EPout + "02")
+        zcl_window_covering_stop(self, nwkid, EPout)
+
     else:
-        sendZigateCmd(self, "0083", "02" + nwkid + ZIGATE_EP + EPout)
+        zcl_onoff_stop( self, nwkid, EPout)
 
 def actuator_off(self, nwkid, EPout, DeviceType, effect=None):
 
@@ -97,13 +102,12 @@ def actuator_off(self, nwkid, EPout, DeviceType, effect=None):
         sendZigateCmd(self, "0081", "02" + nwkid + ZIGATE_EP + EPout + "00" + "01" + "0002")
 
     elif DeviceType == "WindowCovering":
-        # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
-        sendZigateCmd(self, "00FA", "02" + nwkid + ZIGATE_EP + EPout + "01")
+        zcl_window_covering_off(self, nwkid, EPout)
 
     elif effect:
-        sendZigateCmd(self, "0094", "02" + nwkid + ZIGATE_EP + EPout + effect)
+        zcl_onoff_off_witheffect(self, nwkid, EPout, effect)
     else:
-        sendZigateCmd(self, "0092", "02" + nwkid + ZIGATE_EP + EPout + "00")
+        zcl_onoff_off_noeffect(self, nwkid, EPout)
 
 def actuator_on(self, nwkid, EPout, DeviceType):
 
@@ -114,11 +118,9 @@ def actuator_on(self, nwkid, EPout, DeviceType):
         sendZigateCmd(self, "0081", "02" + nwkid + ZIGATE_EP + EPout + "00" + "6C" + "0002")
 
     elif DeviceType == "WindowCovering":
-        # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
-        sendZigateCmd(self, "00FA", "02" + nwkid + ZIGATE_EP + EPout + "00")
-
+        zcl_window_covering_on(self, nwkid, EPout)
     else:
-        sendZigateCmd(self, "0092", "02" + nwkid + ZIGATE_EP + EPout + "01")
+        zcl_onoff_on(self, nwkid, EPout)
 
 def actuator_setlevel(self, nwkid, EPout, value, DeviceType, transition= "0010"):
 
@@ -140,7 +142,7 @@ def actuator_setlevel(self, nwkid, EPout, value, DeviceType, transition= "0010")
             "Log",
             "WindowCovering - Lift Percentage Command - %s/%s value: 0x%s %s" % (nwkid, EPout, value, value),
         )
-        sendZigateCmd(self, "00FA", "02" + nwkid + ZIGATE_EP + EPout + "05" + value)
+        zcl_window_coverting_level(self, nwkid, EPout, value)
     else:
         OnOff = "01"  # 00 = off, 01 = on
         if value == 100:
@@ -153,7 +155,7 @@ def actuator_setlevel(self, nwkid, EPout, value, DeviceType, transition= "0010")
                 value = 1
 
         value = Hex_Format(2, value)
-        sendZigateCmd(self, "0081", "02" + nwkid + ZIGATE_EP + EPout + OnOff + value + transition)        
+        zcl_level_move_to_level( self, nwkid, EPout, OnOff, value, transition)      
 
 def actuator_setthermostat(self, nwkid, ep, value):
 
@@ -188,14 +190,7 @@ def actuator_setalarm(self, nwkid, EPout, value):
     elif value == 50:  # Disarmed
         self.iaszonemgt.write_IAS_WD_Squawk(nwkid, EPout, "disarmed")
 
-def actuator_move_to_colour_temperature( self, nwkid, EPout, temperature, transiton="0010"):
-    sendZigateCmd(self, "00C0", "02" + nwkid + ZIGATE_EP + EPout + Hex_Format(4, temperature) + transiton)
 
-def actuator_move_hue_and_saturation(self, nwkid, EPout, hue, saturation, transition="0010"):
-    sendZigateCmd( self, "00B6", "02" + nwkid + ZIGATE_EP + EPout + Hex_Format(2, hue) + Hex_Format(2, saturation) + transition)
-    
-def actuator_move_to_colour(self, nwkid, EPout, colorX, colorY, transition="0010"):
-    sendZigateCmd(self, "00B7", "02" + nwkid + ZIGATE_EP + EPout + Hex_Format(4, colorX) + Hex_Format(4, colorY) + transition)
 
 def get_all_transition_mode( self, Nwkid):
 
@@ -261,8 +256,8 @@ def handle_color_mode_2(self, nwkid, EPout, Hue_List):
     self.log.logging(
         "Command", "Debug", "handle_color_mode_2 Set Temp Kelvin: %s-%s" % (TempMired, Hex_Format(4, TempMired)), nwkid
     )
-    transitionMoveLevel = transitionRGB = transitionMoveLevel = transitionHue = transitionTemp = get_all_transition_mode( self, nwkid)
-    actuator_move_to_colour_temperature( self, nwkid, EPout, TempMired, transitionTemp)
+    transitionMoveLevel , transitionRGB , transitionMoveLevel , transitionHue , transitionTemp = get_all_transition_mode( self, nwkid)
+    zcl_move_to_colour_temperature( self, nwkid, EPout, TempMired, transitionTemp)
             
 def handle_color_mode_3(self, nwkid, EPout, Hue_List):
     x, y = rgb_to_xy((int(Hue_List["r"]), int(Hue_List["g"]), int(Hue_List["b"])))
@@ -271,14 +266,14 @@ def handle_color_mode_3(self, nwkid, EPout, Hue_List):
     y = int(y * 65536)
     #strxy = Hex_Format(4, x) + Hex_Format(4, y)
     self.log.logging("Command", "Debug", "handle_color_mode_3 Set Temp X: %s Y: %s" % (x, y), nwkid)
-    transitionMoveLevel = transitionRGB = transitionMoveLevel = transitionHue = transitionTemp = get_all_transition_mode( self, nwkid)
-    actuator_move_to_colour(self, nwkid, EPout, x, y, transitionRGB)
+    transitionMoveLevel , transitionRGB , transitionMoveLevel , transitionHue , transitionTemp = get_all_transition_mode( self, nwkid)
+    zcl_move_to_colour(self, nwkid, EPout, x, y, transitionRGB)
     
 def handle_color_mode_4(self, nwkid, EPout, Hue_List ):
     # Gledopto GL_008
     # Color: {"b":43,"cw":27,"g":255,"m":4,"r":44,"t":227,"ww":215}
     self.log.logging("Command", "Log", "Not fully implemented device color 4", nwkid)
-    transitionMoveLevel = transitionRGB = transitionMoveLevel = transitionHue = transitionTemp = get_all_transition_mode( self, nwkid)
+    transitionMoveLevel , transitionRGB , transitionMoveLevel , transitionHue , transitionTemp = get_all_transition_mode( self, nwkid)
     # Process White color
     cw = int(Hue_List["cw"])  # 0 < cw < 255 Cold White
     ww = int(Hue_List["ww"])  # 0 < ww < 255 Warm White
@@ -288,7 +283,7 @@ def handle_color_mode_4(self, nwkid, EPout, Hue_List ):
         self.log.logging(
             "Command", "Log", "handle_color_mode_4 Set Temp Kelvin: %s-%s" % (TempMired, Hex_Format(4, TempMired)), nwkid
         )
-        actuator_move_to_colour_temperature( self, nwkid, EPout, TempMired, transitionTemp)
+        zcl_move_to_colour_temperature( self, nwkid, EPout, TempMired, transitionTemp)
 
     # Process Colour
     h, s, l = rgb_to_hsl((int(Hue_List["r"]), int(Hue_List["g"]), int(Hue_List["b"])))
@@ -297,17 +292,17 @@ def handle_color_mode_4(self, nwkid, EPout, Hue_List ):
     hue = int(hue * 254 // 360)
     saturation = int(saturation * 254 // 100)
     self.log.logging("Command", "Log", "handle_color_mode_4 Set Hue X: %s Saturation: %s" % (hue, saturation), nwkid)
-    actuator_move_hue_and_saturation(self, nwkid, EPout, hue, saturation, transitionRGB)
+    zcl_move_hue_and_saturation(self, nwkid, EPout, hue, saturation, transitionRGB)
        
 def handle_color_mode_9998( self, nwkid, EPout, Hue_List):
-    transitionMoveLevel = transitionRGB = transitionMoveLevel = transitionHue = transitionTemp = get_all_transition_mode( self, nwkid)    
+    transitionMoveLevel , transitionRGB , transitionMoveLevel , transitionHue , transitionTemp = get_all_transition_mode( self, nwkid)    
     h, s, l = rgb_to_hsl((int(Hue_List["r"]), int(Hue_List["g"]), int(Hue_List["b"])))
     saturation = s * 100  # 0 > 100
     hue = h * 360  # 0 > 360
     hue = int(hue * 254 // 360)
     saturation = int(saturation * 254 // 100)
     self.log.logging("Command", "Debug", "handle_color_mode_9998 Set Hue X: %s Saturation: %s" % (hue, saturation), nwkid)
-    actuator_move_hue_and_saturation(self, nwkid, EPout, hue, saturation, transitionRGB)
+    zcl_move_hue_and_saturation(self, nwkid, EPout, hue, saturation, transitionRGB)
 
     value = int(l * 254 // 100)
     OnOff = "01"
