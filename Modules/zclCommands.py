@@ -21,7 +21,7 @@ from Modules.zigateConsts import ZIGATE_EP
 WITHACK_DEFAULT = False
 
 def zcl_read_attribute(self, nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, lenAttr, Attr, ackIsDisabled=True):
-    self.log.logging( "zclCommand", "Log", "read_attribute %s %s %s %s %s %s %s %s %s" % (
+    self.log.logging( "zclCommand", "Debug", "read_attribute %s %s %s %s %s %s %s %s %s" % (
         nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, lenAttr, Attr) )
     if self.pluginconf.pluginConf["RawReadAttribute"]:
         return rawaps_read_attribute_req( self, nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, Attr, ackIsDisabled )
@@ -33,7 +33,7 @@ def zcl_read_attribute(self, nwkid, EpIn, EpOut, Cluster, direction, manufacture
 
 
 def rawaps_read_attribute_req( self, nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, Attr, ackIsDisabled=True ):
-    self.log.logging( "zclCommand", "Log", "rawaps_read_attribute_req %s %s %s %s %s %s %s %s" %(
+    self.log.logging( "zclCommand", "Debug", "rawaps_read_attribute_req %s %s %s %s %s %s %s %s" %(
         nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, Attr) )
     
     cmd = "00"  # Read Attribute Command Identifier
@@ -66,7 +66,7 @@ def rawaps_read_attribute_req( self, nwkid, EpIn, EpOut, Cluster, direction, man
 
 
 def zcl_write_attribute( self, nwkid, EPin, EPout, cluster, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled=True ):
-    self.log.logging("zclCommand", "Log", "zcl_write_attribute %s %s %s %s %s %s %s %s %s" % (
+    self.log.logging("zclCommand", "Debug", "zcl_write_attribute %s %s %s %s %s %s %s %s %s" % (
         nwkid, EPin, EPout, cluster, manuf_id, manuf_spec, attribute, data_type, data))
     #  write_attribute unicast , all with ack in < 31d firmware, ack/noack works since 31d
     #
@@ -93,7 +93,7 @@ def zcl_write_attribute( self, nwkid, EPin, EPout, cluster, manuf_id, manuf_spec
 
 
 def zcl_write_attributeNoResponse(self, nwkid, EPin, EPout, cluster, manuf_id, manuf_spec, attribute, data_type, data):
-    self.log.logging("zclCommand", "Log", "zcl_write_attributeNoResponse %s %s %s %s %s %s %s %s %s" %(
+    self.log.logging("zclCommand", "Debug", "zcl_write_attributeNoResponse %s %s %s %s %s %s %s %s %s" %(
         nwkid, EPin, EPout, cluster, manuf_id, manuf_spec, attribute, data_type, data))
     direction = "00"
     if data_type == "42":  # String
@@ -107,7 +107,7 @@ def zcl_write_attributeNoResponse(self, nwkid, EPin, EPout, cluster, manuf_id, m
 
 
 def rawaps_write_attribute_req( self, nwkid, EPin, EPout, cluster, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled=True ):
-    self.log.logging("zclCommand", "Log", "rawaps_write_attribute_req %s %s %s %s %s %s %s %s %s" %(
+    self.log.logging("zclCommand", "Debug", "rawaps_write_attribute_req %s %s %s %s %s %s %s %s %s" %(
         nwkid, EPin, EPout, cluster, manuf_id, manuf_spec, attribute, data_type, data))
     cmd = "02" 
     cluster_frame = 0b00010000
@@ -135,7 +135,7 @@ def rawaps_write_attribute_req( self, nwkid, EPin, EPout, cluster, manuf_id, man
 
 
 def zcl_configure_reporting_request(self, nwkid, epin, epout, cluster, direction, manufflag, manufcode, nbattribute, attributelist, ackIsDisabled=True):
-    self.log.logging( "zclCommand", "Log","zcl_configure_reporting_request %s %s %s %s %s %s %s %s %s" %(
+    self.log.logging( "zclCommand", "Debug","zcl_configure_reporting_request %s %s %s %s %s %s %s %s %s" %(
         nwkid, epin, epout, cluster, direction, manufflag, manufcode, nbattribute, attributelist ))
     data = epin + epout + cluster + direction + manufflag + manufcode + nbattribute+ attributelist
     if ackIsDisabled:
@@ -151,13 +151,13 @@ def zcl_read_report_config_request(self, nwkid , epin , epout , cluster, directi
 # Cluster 0003
 ##############
 def zcl_identify_send( self, nwkid, EPout, duration, ackIsDisabled=True):
-    self.log.logging( "zclCommand", "Log","zcl_identify_send %s %s %s" %(nwkid, EPout, duration ))
+    self.log.logging( "zclCommand", "Debug","zcl_identify_send %s %s %s" %(nwkid, EPout, duration ))
     if ackIsDisabled:
         return send_zigatecmd_zcl_noack(self, nwkid, "0070", ZIGATE_EP + EPout + duration)
     return send_zigatecmd_zcl_ack(self, nwkid, "0070", ZIGATE_EP + EPout + duration)
     
 def zcl_identify_trigger_effect( self, nwkid, EPout, effectId, effectGradient, ackIsDisabled=True):
-    self.log.logging( "zclCommand", "Log","zcl_identify_trigger_effect %s %s %s %s" %(nwkid, EPout, effectId, effectGradient ))
+    self.log.logging( "zclCommand", "Debug","zcl_identify_trigger_effect %s %s %s %s" %(nwkid, EPout, effectId, effectGradient ))
     if ackIsDisabled:
         return send_zigatecmd_zcl_ack(self, nwkid, "00E0", nwkid+ ZIGATE_EP + EPout + effectId + effectGradient)
     return send_zigatecmd_zcl_noack(self, nwkid, "00E0", nwkid+ ZIGATE_EP + EPout + effectId + effectGradient)
@@ -165,35 +165,35 @@ def zcl_identify_trigger_effect( self, nwkid, EPout, effectId, effectGradient, a
 # Cluster 0006
 ##############
 def zcl_toggle(self, nwkid, EPout, ackIsDisabled=True):
-    self.log.logging( "zclCommand", "Log","zcl_toggle %s %s" %(nwkid, EPout ))
+    self.log.logging( "zclCommand", "Debug","zcl_toggle %s %s" %(nwkid, EPout ))
     if ackIsDisabled:
         return send_zigatecmd_zcl_noack(self, nwkid, "0092", ZIGATE_EP + EPout + "02")
     return send_zigatecmd_zcl_ack(self, nwkid, "0092", ZIGATE_EP + EPout + "02")
 
 
 def zcl_onoff_stop( self, nwkid, EPout, ackIsDisabled=True):
-    self.log.logging( "zclCommand", "Log","zcl_onoff_stop %s %s" %(nwkid, EPout ))
+    self.log.logging( "zclCommand", "Debug","zcl_onoff_stop %s %s" %(nwkid, EPout ))
     data = ZIGATE_EP + EPout
     if ackIsDisabled:
         return send_zigatecmd_zcl_noack(self, nwkid, "0083", data)
     return send_zigatecmd_zcl_ack(self, nwkid, "0083", data)
  
 def zcl_onoff_on(self, nwkid, EPout, ackIsDisabled=True):
-    self.log.logging( "zclCommand", "Log","zcl_onoff_on %s %s" %(nwkid, EPout ))
+    self.log.logging( "zclCommand", "Debug","zcl_onoff_on %s %s" %(nwkid, EPout ))
     data = ZIGATE_EP + EPout + "01"
     if ackIsDisabled:
         return send_zigatecmd_zcl_noack(self, nwkid, "0092", data)
     return send_zigatecmd_zcl_ack(self, nwkid, "0092", data)
     
 def zcl_onoff_off_noeffect(self, nwkid, EPout, ackIsDisabled=True):
-    self.log.logging( "zclCommand", "Log","zcl_onoff_off_noeffect %s %s" %(nwkid, EPout ))
+    self.log.logging( "zclCommand", "Debug","zcl_onoff_off_noeffect %s %s" %(nwkid, EPout ))
     data = ZIGATE_EP + EPout + "00"
     if ackIsDisabled:
         return send_zigatecmd_zcl_noack(self, nwkid, "0092", data)
     return send_zigatecmd_zcl_ack(self, nwkid, "0092", data)
     
 def zcl_onoff_off_witheffect(self, nwkid, EPout, effect, ackIsDisabled=True):
-    self.log.logging( "zclCommand", "Log","zcl_onoff_off_witheffect %s %s %s" %(nwkid, EPout, effect ))
+    self.log.logging( "zclCommand", "Debug","zcl_onoff_off_witheffect %s %s %s" %(nwkid, EPout, effect ))
     data = ZIGATE_EP + EPout + effect
     if ackIsDisabled:
         return send_zigatecmd_zcl_noack(self, nwkid, "0094", data)
@@ -202,7 +202,7 @@ def zcl_onoff_off_witheffect(self, nwkid, EPout, effect, ackIsDisabled=True):
 # Cluster 0008
 ##############
 def zcl_level_move_to_level( self, nwkid, EPout, OnOff, level, transition="0000", ackIsDisabled=True):
-    self.log.logging( "zclCommand", "Log","zcl_level_move_to_level %s %s %s %s %s" %(nwkid, EPout, OnOff, level, transition ))
+    self.log.logging( "zclCommand", "Debug","zcl_level_move_to_level %s %s %s %s %s" %(nwkid, EPout, OnOff, level, transition ))
     data = ZIGATE_EP + EPout + OnOff + level + transition
     if ackIsDisabled:
         return send_zigatecmd_zcl_noack(self, nwkid, "0081", data)
@@ -210,7 +210,7 @@ def zcl_level_move_to_level( self, nwkid, EPout, OnOff, level, transition="0000"
 
 
 def zcl_move_to_level_with_onoff(self, nwkid, EPout, OnOff, level, transition="0000", ackIsDisabled=True):
-    self.log.logging( "zclCommand", "Log","zcl_move_to_level_with_onoff %s %s %s %s %s" %(nwkid, EPout, OnOff, level, transition ))
+    self.log.logging( "zclCommand", "Debug","zcl_move_to_level_with_onoff %s %s %s %s %s" %(nwkid, EPout, OnOff, level, transition ))
     data = ZIGATE_EP + EPout + OnOff + level + transition
     if ackIsDisabled:
         return send_zigatecmd_zcl_noack(self, nwkid, "0081", data)
@@ -221,7 +221,7 @@ def zcl_move_to_level_with_onoff(self, nwkid, EPout, OnOff, level, transition="0
 ##################################
 def zcl_window_covering_stop(self, nwkid, EPout, ackIsDisabled=True):
     # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
-    self.log.logging( "zclCommand", "Log","zcl_window_covering_stop %s %s" %(nwkid, EPout ))
+    self.log.logging( "zclCommand", "Debug","zcl_window_covering_stop %s %s" %(nwkid, EPout ))
     data = ZIGATE_EP + EPout + "02"
     if ackIsDisabled:
         return send_zigatecmd_zcl_noack(self, nwkid, "00FA", data)
@@ -229,7 +229,7 @@ def zcl_window_covering_stop(self, nwkid, EPout, ackIsDisabled=True):
 
 def zcl_window_covering_on(self, nwkid, EPout, ackIsDisabled=True):
     # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
-    self.log.logging( "zclCommand", "Log","zcl_window_covering_on %s %s" %(nwkid, EPout ))
+    self.log.logging( "zclCommand", "Debug","zcl_window_covering_on %s %s" %(nwkid, EPout ))
     data = ZIGATE_EP + EPout + "00"
     if ackIsDisabled:
         return send_zigatecmd_zcl_noack(self, nwkid, "00FA", data)
@@ -237,14 +237,14 @@ def zcl_window_covering_on(self, nwkid, EPout, ackIsDisabled=True):
 
 def zcl_window_covering_off(self, nwkid, EPout, ackIsDisabled=True):   
     # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
-    self.log.logging( "zclCommand", "Log","zcl_window_covering_off %s %s" %(nwkid, EPout ))
+    self.log.logging( "zclCommand", "Debug","zcl_window_covering_off %s %s" %(nwkid, EPout ))
     data = ZIGATE_EP + EPout + "01"
     if ackIsDisabled:
         return send_zigatecmd_zcl_noack(self, nwkid, "00FA", data)
     return send_zigatecmd_zcl_ack(self, nwkid, "00FA", data)
 
 def zcl_window_coverting_level(self, nwkid, EPout, level, ackIsDisabled=True):
-    self.log.logging( "zclCommand", "Log","zcl_window_coverting_level %s %s %s" %(nwkid, EPout, level ))
+    self.log.logging( "zclCommand", "Debug","zcl_window_coverting_level %s %s %s" %(nwkid, EPout, level ))
     data = ZIGATE_EP + EPout + "05" + level
     if ackIsDisabled:
         return send_zigatecmd_zcl_noack(self, nwkid, "00FA", data)
@@ -253,21 +253,21 @@ def zcl_window_coverting_level(self, nwkid, EPout, level, ackIsDisabled=True):
 # Cluster 0300   
 ##############
 def zcl_move_to_colour_temperature( self, nwkid, EPout, temperature, transiton="0010", ackIsDisabled=True):
-    self.log.logging( "zclCommand", "Log","zcl_move_to_colour_temperature %s %s %s %s" %(nwkid, EPout, temperature, transiton ))
+    self.log.logging( "zclCommand", "Debug","zcl_move_to_colour_temperature %s %s %s %s" %(nwkid, EPout, temperature, transiton ))
     data = ZIGATE_EP + EPout + Hex_Format(4, temperature) + transiton
     if ackIsDisabled:
         return send_zigatecmd_zcl_noack(self, nwkid, "00C0", data)
     return send_zigatecmd_zcl_ack(self, nwkid, "00C0", data)
 
 def zcl_move_hue_and_saturation(self, nwkid, EPout, hue, saturation, transition="0010", ackIsDisabled=True):
-    self.log.logging( "zclCommand", "Log","zcl_move_hue_and_saturation %s %s %s %s %s" %(nwkid, EPout, hue, saturation, transition ))
+    self.log.logging( "zclCommand", "Debug","zcl_move_hue_and_saturation %s %s %s %s %s" %(nwkid, EPout, hue, saturation, transition ))
     data = ZIGATE_EP + EPout + Hex_Format(2, hue) + Hex_Format(2, saturation) + transition
     if ackIsDisabled:
         return send_zigatecmd_zcl_noack(self, nwkid, "00B6", data)
     return send_zigatecmd_zcl_ack(self, nwkid, "00B6", data)
     
 def zcl_move_to_colour(self, nwkid, EPout, colorX, colorY, transition="0010", ackIsDisabled=True):
-    self.log.logging( "zclCommand", "Log","zcl_move_to_colour %s %s %s %s %s" %(nwkid, EPout, colorX, colorY, transition ))
+    self.log.logging( "zclCommand", "Debug","zcl_move_to_colour %s %s %s %s %s" %(nwkid, EPout, colorX, colorY, transition ))
     data = ZIGATE_EP + EPout + Hex_Format(4, colorX) + Hex_Format(4, colorY) + transition
     if ackIsDisabled:
         return send_zigatecmd_zcl_noack(self, nwkid, "00B7", data)
