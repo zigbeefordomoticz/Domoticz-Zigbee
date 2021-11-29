@@ -10,26 +10,24 @@
 
 """
 
-from time import time
 import json
 import os.path
 import struct
+from time import time
 
 import Domoticz
 
+from Modules.basicOutputs import read_attribute, write_attribute
+from Modules.bindings import WebBindStatus, webBind
 from Modules.domoMaj import MajDomoDevice
-from Modules.sendZigateCommand import (raw_APS_request)
-from Modules.zclCommands import zcl_onoff_off_noeffect, zcl_onoff_on
-
-from Modules.basicOutputs import  write_attribute, read_attribute
-
-from Modules.bindings import webBind, WebBindStatus
-
 from Modules.readAttributes import ReadAttributeRequest_0001
+from Modules.sendZigateCommand import raw_APS_request
+from Modules.tools import (get_and_inc_SQN, getAttributeValue,
+                           is_ack_tobe_disabled,
+                           retreive_cmd_payload_from_8002)
 from Modules.writeAttributes import write_attribute_when_awake
-
-from Modules.zigateConsts import ZIGATE_EP, MAX_LOAD_ZIGATE
-from Modules.tools import getAttributeValue, retreive_cmd_payload_from_8002, is_ack_tobe_disabled, get_and_inc_SQN
+from Modules.zclCommands import zcl_onoff_off_noeffect, zcl_onoff_on
+from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_EP
 
 PREFIX_MACADDR_WIZER_LEGACY = "00124b00"
 PREFIX_MACADDR_WIZER_HOME = "588E81ff"

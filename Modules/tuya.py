@@ -10,19 +10,20 @@
 
 """
 
+import time
+from datetime import datetime, timedelta
+
 import Domoticz
 
-from datetime import datetime, timedelta
-import time
-
-from Classes.LoggingManagement import LoggingManagement
-from Modules.tools import updSQN, get_and_inc_SQN, is_ack_tobe_disabled, build_fcf, checkAndStoreAttributeValue
+from Modules.basicOutputs import raw_APS_request, write_attribute
 from Modules.domoMaj import MajDomoDevice
-from Modules.tuyaTools import tuya_cmd, store_tuya_attribute, get_tuya_attribute
+from Modules.tools import (build_fcf, checkAndStoreAttributeValue,
+                           get_and_inc_SQN, is_ack_tobe_disabled, updSQN)
 from Modules.tuyaSiren import tuya_siren_response
-from Modules.tuyaTRV import tuya_eTRV_response, TUYA_eTRV_MODEL
+from Modules.tuyaTools import (get_tuya_attribute, store_tuya_attribute,
+                               tuya_cmd)
+from Modules.tuyaTRV import TUYA_eTRV_MODEL, tuya_eTRV_response
 from Modules.zigateConsts import ZIGATE_EP
-from Modules.basicOutputs import write_attribute, raw_APS_request
 
 # Tuya TRV Commands
 # https://medium.com/@dzegarra/zigbee2mqtt-how-to-add-support-for-a-new-tuya-based-device-part-2-5492707e882d

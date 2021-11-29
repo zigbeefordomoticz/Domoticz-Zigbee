@@ -5,25 +5,16 @@
 #   French translation: @martial83
 #
 
-import Domoticz
-
-from Classes.LoggingManagement import LoggingManagement
-from Modules.basicOutputs import write_attribute
-from Modules.sendZigateCommand import (raw_APS_request)
-
-from Modules.tools import (
-    retreive_cmd_payload_from_8002,
-    is_ack_tobe_disabled,
-    checkAndStoreAttributeValue,
-    get_and_inc_SQN,
-)
-from Modules.zigateConsts import ZIGATE_EP
-
-from Modules.domoMaj import MajDomoDevice
-
-import struct
 import json
 import os
+import struct
+
+from Modules.basicOutputs import write_attribute
+from Modules.domoMaj import MajDomoDevice
+from Modules.sendZigateCommand import raw_APS_request
+from Modules.tools import (get_and_inc_SQN, is_ack_tobe_disabled,
+                           retreive_cmd_payload_from_8002)
+from Modules.zigateConsts import ZIGATE_EP
 
 CASAIA_MANUF_CODE = "113c"
 CASAIA_MANUF_CODE_BE = "3c11"

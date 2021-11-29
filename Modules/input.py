@@ -21,10 +21,10 @@ from Classes.Transport.sqnMgmt import (TYPE_APP_ZCL, TYPE_APP_ZDP,
                                        sqn_get_internal_sqn_from_aps_sqn)
 
 from Modules.basicOutputs import getListofAttribute  # leaveMgtReJoin,
-from Modules.basicOutputs import (send_default_response,
-                                  setTimeServer, unknown_device_nwkid)
+from Modules.basicOutputs import (send_default_response, setTimeServer,
+                                  unknown_device_nwkid)
 from Modules.callback import callbackDeviceAwake
-from Modules.deviceAnnoucement import (device_annoucementv2)
+from Modules.deviceAnnoucement import device_annoucementv2
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import lastSeenUpdate, timedOutDevice
 from Modules.errorCodes import DisplayStatusCode
@@ -35,9 +35,10 @@ from Modules.ikeaTradfri import (ikea_motion_sensor_8095,
                                  ikea_remote_switch_8095,
                                  ikea_wireless_dimer_8085)
 from Modules.inRawAps import inRawAps
-from Modules.legrand_netatmo import (legrand_motion_8095,
+from Modules.legrand_netatmo import (legrand_motion_8085, legrand_motion_8095,
+                                     legrand_remote_switch_8085,
                                      legrand_remote_switch_8095,
-                                     rejoin_legrand_reset, legrand_remote_switch_8085, legrand_motion_8085)
+                                     rejoin_legrand_reset)
 from Modules.livolo import livolo_read_attribute_request
 from Modules.lumi import AqaraOppleDecoding
 from Modules.mgmt_rtg import mgmt_rtg_rsp

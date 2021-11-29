@@ -9,15 +9,12 @@
 
     Description: Zigate toolbox
 """
-import binascii
-import time
+
 import datetime
-import struct
-import json
+import time
 
 import Domoticz
 
-from Classes.AdminWidgets import AdminWidgets
 from Modules.database import WriteDeviceList
 
 

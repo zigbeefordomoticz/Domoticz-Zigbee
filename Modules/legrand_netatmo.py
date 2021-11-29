@@ -15,19 +15,16 @@ from time import time
 
 import Domoticz
 
-from Modules.domoMaj import MajDomoDevice
-from Modules.sendZigateCommand import (raw_APS_request, send_zigatecmd_raw,
-                                       send_zigatecmd_zcl_ack,
-                                       send_zigatecmd_zcl_noack)
-
-from Modules.basicOutputs import (read_attribute,
-                                  write_attribute, write_attributeNoResponse)
+from Modules.basicOutputs import (read_attribute, write_attribute,
+                                  write_attributeNoResponse)
 from Modules.bindings import bindDevice, unbindDevice
+from Modules.domoMaj import MajDomoDevice
 from Modules.readAttributes import (ReadAttributeRequest_0b04_050b,
                                     ReadAttributeRequest_0001,
                                     ReadAttributeRequest_0006_0000,
                                     ReadAttributeRequest_fc01,
                                     ReadAttributeRequest_fc40)
+from Modules.sendZigateCommand import raw_APS_request
 from Modules.tools import (extract_info_from_8085, get_and_inc_SQN,
                            is_ack_tobe_disabled,
                            retreive_cmd_payload_from_8002)

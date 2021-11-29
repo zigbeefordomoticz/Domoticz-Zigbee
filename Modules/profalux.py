@@ -10,14 +10,10 @@
 
 """
 
-import Domoticz
-from Modules.zigateConsts import ZIGATE_EP
-from Modules.sendZigateCommand import (raw_APS_request)
-from Modules.zclCommands import zcl_configure_reporting_request
-
+from Modules.sendZigateCommand import raw_APS_request
 from Modules.tools import get_and_inc_SQN
-
-from Classes.LoggingManagement import LoggingManagement
+from Modules.zclCommands import zcl_configure_reporting_request
+from Modules.zigateConsts import ZIGATE_EP
 
 
 def profalux_fake_deviceModel(self, nwkid):

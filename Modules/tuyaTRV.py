@@ -13,12 +13,14 @@
 
 import Domoticz
 
-from Modules.tuyaTools import tuya_cmd, store_tuya_attribute, get_tuya_attribute
-from Modules.basicOutputs import write_attribute, raw_APS_request
-from Modules.zigateConsts import ZIGATE_EP
-from Modules.tools import checkAndStoreAttributeValue, is_ack_tobe_disabled, get_and_inc_SQN
+from Modules.basicOutputs import raw_APS_request, write_attribute
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import Update_Battery_Device
+from Modules.tools import (checkAndStoreAttributeValue, get_and_inc_SQN,
+                           is_ack_tobe_disabled)
+from Modules.tuyaTools import (get_tuya_attribute, store_tuya_attribute,
+                               tuya_cmd)
+from Modules.zigateConsts import ZIGATE_EP
 
 
 def tuya_eTRV_registration(self, nwkid, device_reset=False):

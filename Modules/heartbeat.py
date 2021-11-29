@@ -15,11 +15,9 @@ import time
 import Domoticz
 
 from Modules.basicOutputs import getListofAttribute
-from Modules.zdpCommands import zdp_node_descriptor_request
 from Modules.casaia import pollingCasaia
 from Modules.danfoss import danfoss_room_sensor_polling
 from Modules.domoTools import timedOutDevice
-from Modules.legrand_netatmo import legrandReenforcement
 from Modules.mgmt_rtg import mgmt_rtg
 from Modules.pairingProcess import processNotinDBDevices
 from Modules.paramDevice import sanity_check_of_param
@@ -41,6 +39,7 @@ from Modules.schneider_wiser import schneiderRenforceent
 from Modules.tools import (ReArrangeMacCapaBasedOnModel, getListOfEpForCluster,
                            is_hex, is_time_to_perform_work, mainPoweredDevice,
                            removeNwkInList)
+from Modules.zdpCommands import zdp_node_descriptor_request
 from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE
 
 # Read Attribute trigger: Every 10"

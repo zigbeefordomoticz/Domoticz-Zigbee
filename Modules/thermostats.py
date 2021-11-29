@@ -6,14 +6,12 @@
 
 import Domoticz
 
-from Classes.LoggingManagement import LoggingManagement
-
-from Modules.readAttributes import ReadAttributeRequest_0201
-from Modules.basicOutputs import write_attribute, raw_APS_request
-from Modules.schneider_wiser import schneider_setpoint
-from Modules.tuyaTRV import tuya_setpoint, TUYA_eTRV_MODEL
-from Modules.casaia import casaia_setpoint, casaia_check_irPairing
+from Modules.basicOutputs import write_attribute
+from Modules.casaia import casaia_check_irPairing, casaia_setpoint
 from Modules.danfoss import thermostat_Setpoint_Danfoss
+from Modules.readAttributes import ReadAttributeRequest_0201
+from Modules.schneider_wiser import schneider_setpoint
+from Modules.tuyaTRV import TUYA_eTRV_MODEL, tuya_setpoint
 
 
 def thermostat_Setpoint_SPZB(self, NwkId, setpoint):

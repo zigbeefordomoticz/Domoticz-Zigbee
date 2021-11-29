@@ -8,15 +8,9 @@
     Description: Update of Domoticz Widget
 """
 
-import json
-import time
-
-import Domoticz
-from Classes.LoggingManagement import LoggingManagement
 from Modules.domoTools import (RetreiveSignalLvlBattery,
                                RetreiveWidgetTypeList, TypeFromCluster,
                                UpdateDevice_v2)
-from Modules.tools import instrument_timing
 from Modules.widgets import SWITCH_LVL_MATRIX
 from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
 

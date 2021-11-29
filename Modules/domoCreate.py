@@ -8,11 +8,9 @@
     Description: Creation of Domoticz Widgets
 """
 
-import json
-import time
 
 import Domoticz
-from Classes.LoggingManagement import LoggingManagement
+
 from Modules.domoTools import (GetType, subtypeRGB_FromProfile_Device_IDs,
                                subtypeRGB_FromProfile_Device_IDs_onEp2)
 from Modules.widgets import SWITCH_LVL_MATRIX

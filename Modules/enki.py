@@ -5,18 +5,8 @@
 #
 import Domoticz
 
-from datetime import datetime
-from time import time
-
 from Modules.basicOutputs import set_poweron_afteroffon
-from Modules.readAttributes import (
-    ReadAttributeRequest_0006_0000,
-    ReadAttributeRequest_0008_0000,
-    ReadAttributeRequest_0006_400x,
-)
-from Modules.tools import retreive_cmd_payload_from_8002
-
-from Classes.LoggingManagement import LoggingManagement
+from Modules.readAttributes import ReadAttributeRequest_0006_400x
 
 ENKI_POWERON_MODE = {0x00: "Off", 0x01: "On", 0xFF: "Previous state"}  # Off  # On  # Previous state
 

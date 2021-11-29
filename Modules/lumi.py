@@ -9,24 +9,20 @@
     Description: Lumi specifics handling
 
 """
-import time
 import struct
+import time
+from math import atan, pi, sqrt
 
 import Domoticz
 
-
-from math import atan, sqrt, pi
-
+from Modules.basicOutputs import (ZigatePermitToJoin, leaveRequest,
+                                  write_attribute)
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import Update_Battery_Device
-from Modules.basicOutputs import ZigatePermitToJoin, leaveRequest, write_attribute
-from Modules.zigateConsts import ZIGATE_EP, SIZE_DATA_TYPE
-from Modules.tools import voltage2batteryP, checkAndStoreAttributeValue, is_ack_tobe_disabled
 from Modules.readAttributes import ReadAttributeRequest_0b04_050b
-from Modules.zigateConsts import MAX_LOAD_ZIGATE
-
-from Classes.LoggingManagement import LoggingManagement
-
+from Modules.tools import (checkAndStoreAttributeValue, is_ack_tobe_disabled,
+                           voltage2batteryP)
+from Modules.zigateConsts import MAX_LOAD_ZIGATE, SIZE_DATA_TYPE, ZIGATE_EP
 
 XIAOMI_POWERMETER_EP = {
     "lumi.plug": "02",

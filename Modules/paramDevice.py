@@ -11,6 +11,7 @@
 """
 
 import Domoticz
+
 from Modules.basicOutputs import (ballast_Configuration_max_level,
                                   ballast_Configuration_min_level,
                                   set_PIROccupiedToUnoccupiedDelay,
@@ -31,8 +32,8 @@ from Modules.readAttributes import (ReadAttributeRequest_0006_400x,
 from Modules.schneider_wiser import (iTRV_open_window_detection,
                                      wiser_home_lockout_thermostat)
 from Modules.tuya import (get_tuya_attribute, tuya_backlight_command,
-                          tuya_energy_childLock, tuya_switch_indicate_light,
-                          tuya_switch_relay_status, tuya_cmd_ts004F,
+                          tuya_cmd_ts004F, tuya_energy_childLock,
+                          tuya_switch_indicate_light, tuya_switch_relay_status,
                           tuya_window_cover_motor_reversal)
 from Modules.tuyaTRV import tuya_trv_thermostat_sensor_mode
 

@@ -8,7 +8,7 @@
 
 """
 
-from Modules.sendZigateCommand import send_zigatecmd_raw, sendZigateCmd
+from Modules.sendZigateCommand import send_zigatecmd_raw
 
 
 def zigate_set_mode(self, mode):
