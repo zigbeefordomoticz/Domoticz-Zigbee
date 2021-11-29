@@ -12,9 +12,6 @@
 """
 
 from time import time
-
-from Classes.LoggingManagement import LoggingManagement
-
 from Modules.basicOutputs import write_attribute
 from Modules.tools import get_request_datastruct, set_request_datastruct, get_list_waiting_request_datastruct
 

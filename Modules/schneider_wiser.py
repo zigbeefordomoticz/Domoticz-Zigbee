@@ -18,7 +18,11 @@ import struct
 import Domoticz
 
 from Modules.domoMaj import MajDomoDevice
-from Modules.basicOutputs import sendZigateCmd, raw_APS_request, write_attribute, read_attribute
+from Modules.sendZigateCommand import (raw_APS_request, send_zigatecmd_raw,
+                                       send_zigatecmd_zcl_ack,sendZigateCmd,
+                                       send_zigatecmd_zcl_noack)
+
+from Modules.basicOutputs import  write_attribute, read_attribute
 
 from Modules.bindings import webBind, WebBindStatus
 

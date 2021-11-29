@@ -6,12 +6,10 @@
 
 from time import time
 
-import Domoticz
-from Classes.LoggingManagement import LoggingManagement
-
-from Modules.basicOutputs import sendZigateCmd
 from Modules.zigateConsts import CLUSTERS_LIST
-
+from Modules.sendZigateCommand import (raw_APS_request, send_zigatecmd_raw,
+                                       send_zigatecmd_zcl_ack,sendZigateCmd,
+                                       send_zigatecmd_zcl_noack)
 
 def bindGroup(self, ieee, ep, cluster, groupid):
 

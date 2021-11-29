@@ -17,8 +17,10 @@ import json
 
 from Modules.zigateConsts import ZIGATE_EP
 from Modules.tools import retreive_cmd_payload_from_8002
-from Modules.basicOutputs import sendZigateCmd
 from Modules.domoMaj import MajDomoDevice
+from Modules.sendZigateCommand import (raw_APS_request, send_zigatecmd_raw,
+                                       send_zigatecmd_zcl_ack,sendZigateCmd,
+                                       send_zigatecmd_zcl_noack)
 
 from Classes.LoggingManagement import LoggingManagement
 

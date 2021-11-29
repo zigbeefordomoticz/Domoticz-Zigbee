@@ -10,14 +10,22 @@
 
 """
 
-from Modules.basicOutputs import sendZigateCmd
+from Modules.sendZigateCommand import (send_zigatecmd_zcl_ack,
+                                       send_zigatecmd_zcl_noack, sendZigateCmd)
 from Modules.tools import Hex_Format
 from Modules.zigateConsts import ZIGATE_EP
 
+# Standard commands
+
+
+
+
 # Cluster 0003
 ##############
-def zcl_identify_send( self, nwkid, EPout, duration):
-    sendZigateCmd(self, "0070", "02" + nwkid + ZIGATE_EP + EPout + duration)
+def zcl_identify_send( self, nwkid, EPout, duration, withAck=False):
+    if withAck:
+        return send_zigatecmd_zcl_ack(self, nwkid, "0070", nwkid + ZIGATE_EP + EPout + duration)
+    return send_zigatecmd_zcl_noack(self, nwkid, "0070", nwkid + ZIGATE_EP + EPout + duration)
     
 def zcl_identify_trigger_effect( self, nwkid, EPout, effectId, effectGradient):
     sendZigateCmd(self, "00E0", "02" + "%s" % (nwkid) + ZIGATE_EP + EPout + effectId + effectGradient)

@@ -16,7 +16,6 @@ from Modules.readAttributes import ReadAttributeRequest_0000, ReadAttributeReque
 from Modules.bindings import rebind_Clusters, reWebBind_Clusters
 from Modules.pairingProcess import zigbee_provision_device, interview_state_004d
 from Modules.schneider_wiser import schneider_wiser_registration, PREFIX_MACADDR_WIZER_LEGACY
-from Modules.basicOutputs import sendZigateCmd
 from Modules.livolo import livolo_bind
 from Modules.legrand_netatmo import legrand_refresh_battery_remote
 from Modules.lumi import enableOppleSwitch, setXiaomiVibrationSensitivity

@@ -6,7 +6,7 @@
 
 
 import Domoticz
-from Modules.basicOutputs import sendZigateCmd, write_attribute
+from Modules.basicOutputs import write_attribute
 from Modules.tools import is_ack_tobe_disabled
 from Modules.domoMaj import MajDomoDevice
 from Modules.zigateConsts import ZIGATE_EP

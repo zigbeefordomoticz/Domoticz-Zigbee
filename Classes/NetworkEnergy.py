@@ -26,7 +26,12 @@ import os.path
 import json
 
 import Domoticz
-from Modules.basicOutputs import sendZigateCmd, maskChannel
+
+from Modules.sendZigateCommand import (raw_APS_request, send_zigatecmd_raw,
+                                       send_zigatecmd_zcl_ack,sendZigateCmd,
+                                       send_zigatecmd_zcl_noack)
+
+from Modules.basicOutputs import  maskChannel
 from Classes.AdminWidgets import AdminWidgets
 from Classes.LoggingManagement import LoggingManagement
 

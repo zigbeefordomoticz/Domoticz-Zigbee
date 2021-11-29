@@ -13,11 +13,11 @@
 from time import time
 
 import Domoticz
-from Classes.Transport.sqnMgmt import (TYPE_APP_ZCL,
-                                       sqn_get_internal_sqn_from_app_sqn)
-from Modules.basicOutputs import (ieee_addr_request, send_zigatecmd_zcl_ack,
-                                  send_zigatecmd_zcl_noack)
+from Modules.basicOutputs import ieee_addr_request
 from Modules.bindings import bindDevice
+from Modules.sendZigateCommand import (raw_APS_request, send_zigatecmd_raw,
+                                       send_zigatecmd_zcl_ack,
+                                       send_zigatecmd_zcl_noack, sendZigateCmd)
 from Modules.tools import (get_isqn_datastruct, get_list_isqn_attr_datastruct,
                            getClusterListforEP, is_ack_tobe_disabled,
                            is_attr_unvalid_datastruct, is_time_to_perform_work,
@@ -26,6 +26,9 @@ from Modules.tools import (get_isqn_datastruct, get_list_isqn_attr_datastruct,
                            set_timestamp_datastruct)
 from Modules.zigateConsts import (MAX_LOAD_ZIGATE, ZIGATE_EP,
                                   CFG_RPT_ATTRIBUTESbyCLUSTERS)
+
+from Classes.Transport.sqnMgmt import (TYPE_APP_ZCL,
+                                       sqn_get_internal_sqn_from_app_sqn)
 
 MAX_ATTR_PER_REQ = 3
 CONFIGURE_REPORT_PERFORM_TIME = 21  # Reenforce will be done each xx hours

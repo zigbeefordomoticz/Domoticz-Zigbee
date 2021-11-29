@@ -16,7 +16,11 @@ from time import time
 import Domoticz
 
 from Modules.domoMaj import MajDomoDevice
-from Modules.basicOutputs import (raw_APS_request, read_attribute,
+from Modules.sendZigateCommand import (raw_APS_request, send_zigatecmd_raw,
+                                       send_zigatecmd_zcl_ack,
+                                       send_zigatecmd_zcl_noack)
+
+from Modules.basicOutputs import (read_attribute,
                                   write_attribute, write_attributeNoResponse)
 from Modules.bindings import bindDevice, unbindDevice
 from Modules.readAttributes import (ReadAttributeRequest_0b04_050b,

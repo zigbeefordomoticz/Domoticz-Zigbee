@@ -12,7 +12,10 @@
 
 import Domoticz
 from Modules.zigateConsts import ZIGATE_EP
-from Modules.basicOutputs import sendZigateCmd, raw_APS_request
+from Modules.sendZigateCommand import (raw_APS_request, send_zigatecmd_raw,
+                                       send_zigatecmd_zcl_ack,sendZigateCmd,
+                                       send_zigatecmd_zcl_noack)
+
 from Modules.tools import get_and_inc_SQN
 
 from Classes.LoggingManagement import LoggingManagement

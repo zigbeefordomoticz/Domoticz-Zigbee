@@ -9,8 +9,12 @@ from time import time
 import Domoticz
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
+from Modules.sendZigateCommand import (raw_APS_request, send_zigatecmd_raw,
+                                       send_zigatecmd_zcl_ack,
+                                       send_zigatecmd_zcl_noack)
+
 from Modules.basicOutputs import (ZigatePermitToJoin,
-                                  sendZigateCmd, setExtendedPANID,
+                                  setExtendedPANID,
                                   start_Zigate, zigateBlueLed)
 from Modules.zigateConsts import (PROFILE_ID, ZCL_CLUSTERS_LIST,
                                   ZHA_DEVICES, ZLL_DEVICES)

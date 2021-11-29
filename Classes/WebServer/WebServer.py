@@ -16,11 +16,15 @@ from Classes.LoggingManagement import LoggingManagement
 from Classes.PluginConf import SETTINGS
 from Classes.WebServer.headerResponse import prepResponseMessage, setupHeadersResponse
 from Modules.actuators import actuators
-from Modules.basicOutputs import ZigatePermitToJoin, initiate_change_channel, send_zigate_mode, sendZigateCmd, setExtendedPANID, start_Zigate, zigateBlueLed
+from Modules.basicOutputs import ZigatePermitToJoin, initiate_change_channel, setExtendedPANID, start_Zigate, zigateBlueLed, send_zigate_mode
 from Modules.enki import enki_set_poweron_after_offon
 from Modules.philips import philips_set_poweron_after_offon
 from Modules.tools import is_hex
 from Modules.zigateConsts import CERTIFICATION_CODE, ZCL_CLUSTERS_LIST, ZIGATE_COMMANDS
+from Modules.sendZigateCommand import (raw_APS_request, send_zigatecmd_raw,
+                                       send_zigatecmd_zcl_ack,sendZigateCmd,
+                                       send_zigatecmd_zcl_noack)
+
 
 MIMETYPES = {
     "gif": "image/gif",

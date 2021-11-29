@@ -14,7 +14,8 @@ import time
 
 import Domoticz
 
-from Modules.basicOutputs import getListofAttribute, sendZigateCmd
+from Modules.basicOutputs import getListofAttribute
+from Modules.zdpCommands import zdp_node_descriptor_request
 from Modules.casaia import pollingCasaia
 from Modules.danfoss import danfoss_room_sensor_polling
 from Modules.domoTools import timedOutDevice
@@ -567,16 +568,10 @@ def processKnownDevices(self, Devices, NWKID):
 
                 func(self, NWKID)
 
-    if ( self.pluginconf.pluginConf["RoutingTableRequestFeq"] and 
-            not self.busy and self.ZigateComm.loadTransmit() < 3 and 
-            (intHB % ( self.pluginconf.pluginConf["RoutingTableRequestFeq"] // HEARTBEAT) == 0)
-        ):
+    if ( self.pluginconf.pluginConf["RoutingTableRequestFeq"] and not self.busy and self.ZigateComm.loadTransmit() < 3 and (intHB % ( self.pluginconf.pluginConf["RoutingTableRequestFeq"] // HEARTBEAT) == 0)):
         mgmt_rtg(self, NWKID, "RoutingTable")
 
-    if ( self.pluginconf.pluginConf["BindingTableRequestFeq"] and 
-            not self.busy and self.ZigateComm.loadTransmit() < 3 and 
-            (intHB % ( self.pluginconf.pluginConf["BindingTableRequestFeq"] // HEARTBEAT) == 0)
-        ):
+    if ( self.pluginconf.pluginConf["BindingTableRequestFeq"] and not self.busy and self.ZigateComm.loadTransmit() < 3 and (intHB % ( self.pluginconf.pluginConf["BindingTableRequestFeq"] // HEARTBEAT) == 0)):
         mgmt_rtg(self, NWKID, "BindingTable")
 
 
@@ -618,7 +613,8 @@ def processKnownDevices(self, Devices, NWKID):
             )
             Domoticz.Status("Requesting Node Descriptor for %s" % NWKID)
 
-            sendZigateCmd(self, "0042", str(NWKID), ackIsDisabled=True)  # Request a Node Descriptor
+            #sendZigateCmd(self, "0042", str(NWKID), ackIsDisabled=True)  # Request a Node Descriptor
+            zdp_node_descriptor_request(self, NWKID)
 
     if rescheduleAction and intHB != 0:  # Reschedule is set because Zigate was busy or Queue was too long to process
         self.ListOfDevices[NWKID]["Heartbeat"] = str(intHB - 1)  # So next round it trigger again
