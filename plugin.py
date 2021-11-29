@@ -1162,12 +1162,12 @@ def check_firmware_level(self):
         self.log.logging("Plugin", "Error", "Firmware level not supported, please update ZiGate firmware")
         return False
 
-    if self.FirmwareVersion.lower() == "2100":
+    if int(self.FirmwareVersion.lower(),16) == 0x2100:
         self.log.logging("Plugin", "Status", "Firmware for Pluzzy devices")
         self.PluzzyFirmware = True
         return True
 
-    elif int(self.FirmwareVersion, 16) > 0x0320:
+    if int(self.FirmwareVersion, 16) > 0x0320:
         self.log.logging("Plugin", "Error", "Firmware %s is not yet supported" % self.FirmwareVersion.lower())
 
     return True
@@ -1332,47 +1332,47 @@ def update_DB_device_status_to_reinit( self ):
             self.ListOfDevices[ x ]['Status'] = 'erasePDM'
 
 
-global _plugin
+global _plugin # pylint: disable=global-variable-not-assigned
 _plugin = BasePlugin()
 
 
 def onStart():
-    global _plugin
+    global _plugin # pylint: disable=global-variable-not-assigned
     _plugin.onStart()
 
 
 def onStop():
-    global _plugin # nosec
+    global _plugin # pylint: disable=global-variable-not-assigned
     _plugin.onStop()
 
 
 def onDeviceRemoved(Unit):
-    global _plugin # nosec
+    global _plugin # pylint: disable=global-variable-not-assigned
     _plugin.onDeviceRemoved(Unit)
 
 
 def onConnect(Connection, Status, Description):
-    global _plugin # nosec
+    global _plugin # pylint: disable=global-variable-not-assigned
     _plugin.onConnect(Connection, Status, Description)
 
 
 def onMessage(Connection, Data):
-    global _plugin # nosec
+    global _plugin # pylint: disable=global-variable-not-assigned
     _plugin.onMessage(Connection, Data)
 
 
 def onCommand(Unit, Command, Level, Hue):
-    global _plugin # nosec
+    global _plugin # pylint: disable=global-variable-not-assigned
     _plugin.onCommand(Unit, Command, Level, Hue)
 
 
 def onDisconnect(Connection):
-    global _plugin # nosec
+    global _plugin # pylint: disable=global-variable-not-assigned
     _plugin.onDisconnect(Connection)
 
 
 def onHeartbeat():
-    global _plugin # nosec
+    global _plugin # pylint: disable=global-variable-not-assigned
     _plugin.onHeartbeat()
 
 
