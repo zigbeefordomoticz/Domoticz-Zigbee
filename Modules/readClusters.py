@@ -198,6 +198,7 @@ def ReadCluster(
     DECODE_CLUSTER = {
         "0000": Cluster0000,
         "0001": Cluster0001,
+        "0002": Cluster0002,
         "0003": Cluster0003,
         "0005": Cluster0005,
         "0006": Cluster0006,
@@ -1186,6 +1187,16 @@ def UpdateBatteryAttribute(self, Devices, MsgSrcAddr, MsgSrcEp):
             )
 
 
+def Cluster0002(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
+    # Device Temp
+    if MsgAttrID == "0000" and MsgClusterData != "":
+        value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
+        # Store value in int centi-degre
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0402", value)
+
+
+    
 def Cluster0003(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
 
     self.log.logging(
