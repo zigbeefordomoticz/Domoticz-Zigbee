@@ -107,7 +107,7 @@ def runmode_with_gpiomodule():
 def runmode_with_gpiocommand():
 
     try:
-        from subprocess import run
+        from subprocess import run  # nosec
     except:
         Domoticz.Error("Error while importing run from python module subprocess, fall back to os module")
         runmode_with_osgpiocommand()

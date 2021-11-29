@@ -95,7 +95,6 @@ def zcl_write_attribute( self, nwkid, EPin, EPout, cluster, manuf_id, manuf_spec
 def zcl_write_attributeNoResponse(self, nwkid, EPin, EPout, cluster, manuf_id, manuf_spec, attribute, data_type, data):
     self.log.logging("zclCommand", "Log", "zcl_write_attributeNoResponse %s %s %s %s %s %s %s %s %s" %(
         nwkid, EPin, EPout, cluster, manuf_id, manuf_spec, attribute, data_type, data))
-    """write_atttribute broadcast . ack impossible on broadcast"""
     direction = "00"
     if data_type == "42":  # String
         # In case of Data Type 0x42 ( String ), we have to add the length of string before the string.
