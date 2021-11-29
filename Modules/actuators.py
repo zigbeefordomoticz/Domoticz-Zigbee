@@ -127,7 +127,7 @@ def actuator_on(self, nwkid, EPout, DeviceType):
     else:
         zcl_onoff_on(self, nwkid, EPout)
 
-def actuator_setlevel(self, nwkid, EPout, value, DeviceType, transition= "0010"):
+def actuator_setlevel(self, nwkid, EPout, value, DeviceType, transition="0010"):
 
     if DeviceType == "ThermoMode":
         actuator_setthermostat(self, nwkid, EPout, value)
@@ -262,7 +262,7 @@ def handle_color_mode_2(self, nwkid, EPout, Hue_List):
         "Command", "Debug", "handle_color_mode_2 Set Temp Kelvin: %s-%s" % (TempMired, Hex_Format(4, TempMired)), nwkid
     )
     transitionMoveLevel , transitionRGB , transitionMoveLevel , transitionHue , transitionTemp = get_all_transition_mode( self, nwkid)
-    zcl_move_to_colour_temperature( self, nwkid, EPout, TempMired, transitionTemp)
+    zcl_move_to_colour_temperature( self, nwkid, EPout, Hex_Format(4, TempMired), transitionTemp)
             
 def handle_color_mode_3(self, nwkid, EPout, Hue_List):
     x, y = rgb_to_xy((int(Hue_List["r"]), int(Hue_List["g"]), int(Hue_List["b"])))
@@ -272,7 +272,7 @@ def handle_color_mode_3(self, nwkid, EPout, Hue_List):
     #strxy = Hex_Format(4, x) + Hex_Format(4, y)
     self.log.logging("Command", "Debug", "handle_color_mode_3 Set Temp X: %s Y: %s" % (x, y), nwkid)
     transitionMoveLevel , transitionRGB , transitionMoveLevel , transitionHue , transitionTemp = get_all_transition_mode( self, nwkid)
-    zcl_move_to_colour(self, nwkid, EPout, x, y, transitionRGB)
+    zcl_move_to_colour(self, nwkid, EPout, Hex_Format(4, x), Hex_Format(4, y), transitionRGB)
     
 def handle_color_mode_4(self, nwkid, EPout, Hue_List ):
     # Gledopto GL_008
@@ -288,7 +288,7 @@ def handle_color_mode_4(self, nwkid, EPout, Hue_List ):
         self.log.logging(
             "Command", "Log", "handle_color_mode_4 Set Temp Kelvin: %s-%s" % (TempMired, Hex_Format(4, TempMired)), nwkid
         )
-        zcl_move_to_colour_temperature( self, nwkid, EPout, TempMired, transitionTemp)
+        zcl_move_to_colour_temperature( self, nwkid, EPout, Hex_Format(4, TempMired), transitionTemp)
 
     # Process Colour
     h, s, l = rgb_to_hsl((int(Hue_List["r"]), int(Hue_List["g"]), int(Hue_List["b"])))
@@ -297,7 +297,7 @@ def handle_color_mode_4(self, nwkid, EPout, Hue_List ):
     hue = int(hue * 254 // 360)
     saturation = int(saturation * 254 // 100)
     self.log.logging("Command", "Log", "handle_color_mode_4 Set Hue X: %s Saturation: %s" % (hue, saturation), nwkid)
-    zcl_move_hue_and_saturation(self, nwkid, EPout, hue, saturation, transitionRGB)
+    zcl_move_hue_and_saturation(self, nwkid, EPout, Hex_Format(2, hue), Hex_Format(2, saturation), transitionRGB)
        
 def handle_color_mode_9998( self, nwkid, EPout, Hue_List):
     transitionMoveLevel , transitionRGB , transitionMoveLevel , transitionHue , transitionTemp = get_all_transition_mode( self, nwkid)    
@@ -307,7 +307,7 @@ def handle_color_mode_9998( self, nwkid, EPout, Hue_List):
     hue = int(hue * 254 // 360)
     saturation = int(saturation * 254 // 100)
     self.log.logging("Command", "Debug", "handle_color_mode_9998 Set Hue X: %s Saturation: %s" % (hue, saturation), nwkid)
-    zcl_move_hue_and_saturation(self, nwkid, EPout, hue, saturation, transitionRGB)
+    zcl_move_hue_and_saturation(self, nwkid, EPout, Hex_Format(2, hue), Hex_Format(2, saturation), transitionRGB)
 
     value = int(l * 254 // 100)
     OnOff = "01"
