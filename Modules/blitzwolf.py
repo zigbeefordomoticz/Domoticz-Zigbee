@@ -5,8 +5,7 @@
 #
 import Domoticz
 
-
-from Modules.readAttributes import ReadAttributeRequest_0b04_050b_0505_0508, ReadAttributeRequest_0702_0000
+from Modules.readAttributes import ReadAttributeRequest_0b04_050b_0505_0508
 from Modules.zigateConsts import MAX_LOAD_ZIGATE
 
 

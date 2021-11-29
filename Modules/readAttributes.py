@@ -10,27 +10,22 @@
 
 """
 
-import Domoticz
-
 from datetime import datetime
 from time import time
 
+import Domoticz
 from Classes.LoggingManagement import LoggingManagement
 
-from Modules.zigateConsts import MAX_READATTRIBUTES_REQ, ZIGATE_EP
-from Modules.basicOutputs import send_zigatecmd_zcl_ack, send_zigatecmd_zcl_noack, identifySend, read_attribute
-from Modules.tools import (
-    getListOfEpForCluster,
-    check_datastruct,
-    is_time_to_perform_work,
-    set_isqn_datastruct,
-    set_status_datastruct,
-    set_timestamp_datastruct,
-    is_attr_unvalid_datastruct,
-    reset_attr_datastruct,
-    is_ack_tobe_disabled,
-)
+from Modules.basicOutputs import (identifySend, read_attribute,
+                                  send_zigatecmd_zcl_ack,
+                                  send_zigatecmd_zcl_noack)
+from Modules.tools import (check_datastruct, getListOfEpForCluster,
+                           is_ack_tobe_disabled, is_attr_unvalid_datastruct,
+                           is_time_to_perform_work, reset_attr_datastruct,
+                           set_isqn_datastruct, set_status_datastruct,
+                           set_timestamp_datastruct)
 from Modules.tuya import tuya_cmd_0x0000_0xf0
+from Modules.zigateConsts import MAX_READATTRIBUTES_REQ, ZIGATE_EP
 
 ATTRIBUTES = {
     "0000": [

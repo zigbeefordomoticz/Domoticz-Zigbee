@@ -9,9 +9,10 @@
     Description: PiZigate specifics settings
 
 """
+import os
 import platform
 import sys
-import os
+
 import Domoticz
 
 

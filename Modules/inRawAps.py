@@ -3,25 +3,21 @@
 #
 # Author: zaraki673 & pipiche38
 #
-import Domoticz
 import struct
 
-from Modules.tools import retreive_cmd_payload_from_8002
-from Modules.pollControl import receive_poll_cluster
-
-from Modules.domoMaj import MajDomoDevice
-
-from Modules.schneider_wiser import schneiderReadRawAPS
-from Modules.legrand_netatmo import legrandReadRawAPS
-from Modules.livolo import livoloReadRawAPS
-from Modules.orvibo import orviboReadRawAPS
-from Modules.lumi import lumiReadRawAPS
-from Modules.philips import philipsReadRawAPS
-from Modules.tuya import tuyaReadRawAPS, TUYA_MANUFACTURER_NAME
-from Modules.ikeaTradfri import ikea_openclose_remote
+import Domoticz
 
 from Modules.casaia import CASAIA_MANUF_CODE, casaiaReadRawAPS
-
+from Modules.domoMaj import MajDomoDevice
+from Modules.ikeaTradfri import ikea_openclose_remote
+from Modules.legrand_netatmo import legrandReadRawAPS
+from Modules.livolo import livoloReadRawAPS
+from Modules.lumi import lumiReadRawAPS
+from Modules.orvibo import orviboReadRawAPS
+from Modules.philips import philipsReadRawAPS
+from Modules.pollControl import receive_poll_cluster
+from Modules.schneider_wiser import schneiderReadRawAPS
+from Modules.tuya import TUYA_MANUFACTURER_NAME, tuyaReadRawAPS
 
 ## Requires Zigate firmware > 3.1d
 CALLBACK_TABLE = {

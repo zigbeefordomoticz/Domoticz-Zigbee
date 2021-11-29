@@ -1,8 +1,20 @@
+#!/usr/bin/env python3
+# coding: utf-8 -*-
+#
+# Author: zaraki673 & pipiche38
+#
+"""
+    Module : touchLink.py
 
+
+    Description: 
+"""
 
 from Modules.basicOutputs import raw_APS_request
-from Modules.zigateConsts import ZIGATE_EP, MAX_LOAD_ZIGATE
-from Modules.tools import getListOfEpForCluster, is_ack_tobe_disabled, get_and_inc_SQN
+from Modules.tools import (get_and_inc_SQN, getListOfEpForCluster,
+                           is_ack_tobe_disabled)
+from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_EP
+
 
 def get_group_identifiers_request( self, nwkid ):
     cluster_frame = "19"

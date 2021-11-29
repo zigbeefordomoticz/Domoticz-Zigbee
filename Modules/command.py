@@ -236,7 +236,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             profalux_stop(self, NWKID)
 
         elif DeviceType in ("WindowCovering", "VenetianInverted", "Venetian"):
-            if _model_name in ("PR412", "CPR412"):
+            if _model_name in ("PR412", "CPR412", "CPR412-E"):
                 profalux_stop(self, NWKID)
             else:
                 # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
@@ -398,7 +398,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             #sendZigateCmd(self, "00FA", "02" + NWKID + ZIGATE_EP + EPout + "01")  # Blind inverted (On, for Close)
 
         elif DeviceType == "VenetianInverted":
-            if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ("PR412", "CPR412"):
+            if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ("PR412", "CPR412", "CPR412-E"):
                 actuator_on(self, NWKID, EPout, "WindowCovering")
                 #sendZigateCmd(self, "0092", "02" + NWKID + ZIGATE_EP + EPout + "01")
             else:
@@ -406,7 +406,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 #sendZigateCmd( self, "00FA", "02" + NWKID + ZIGATE_EP + EPout + "01")  # Venetian Inverted/Blind (On, for Close)
 
         elif DeviceType == "Venetian":
-            if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( "PR412", "CPR412"):
+            if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( "PR412", "CPR412", "CPR412-E"):
                 actuator_off(self, NWKID, EPout, "Light")
                 #sendZigateCmd(self, "0092", "02" + NWKID + ZIGATE_EP + EPout + "00")
             else:
@@ -551,7 +551,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
         elif DeviceType == "VenetianInverted":
             actuator_on(self, NWKID, EPout, "WindowCovering")
         elif DeviceType == "Venetian":
-            if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ("PR412", "CPR412"):
+            if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ("PR412", "CPR412", "CPR412-E"):
                 actuator_on(self, NWKID, EPout, "Light")
                 #sendZigateCmd(self, "0092", "02" + NWKID + ZIGATE_EP + EPout + "01")
             else:

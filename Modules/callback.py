@@ -4,15 +4,11 @@
 # Author: zaraki673 & pipiche38
 #
 
-from time import time
 
-import Domoticz
-
-from Modules.schneider_wiser import callbackDeviceAwake_Schneider
+from Modules.bindings import callBackForWebBindIfNeeded
 from Modules.legrand_netatmo import callbackDeviceAwake_Legrand
-from Modules.basicOutputs import write_attribute
+from Modules.schneider_wiser import callbackDeviceAwake_Schneider
 from Modules.writeAttributes import callBackForWriteAttributeIfNeeded
-from Modules.bindings import webBind, callBackForBindIfNeeded, callBackForWebBindIfNeeded
 from Modules.zigateConsts import MAX_LOAD_ZIGATE
 
 CALLBACK_TABLE = {

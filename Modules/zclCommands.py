@@ -10,7 +10,9 @@
 
 """
 import struct
-from Modules.sendZigateCommand import (send_zigatecmd_zcl_ack, raw_APS_request, send_zigatecmd_zcl_noack)
+
+from Modules.sendZigateCommand import (raw_APS_request, send_zigatecmd_zcl_ack,
+                                       send_zigatecmd_zcl_noack)
 from Modules.tools import Hex_Format, get_and_inc_SQN
 from Modules.zigateConsts import ZIGATE_EP
 

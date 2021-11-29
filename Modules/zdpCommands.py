@@ -10,8 +10,7 @@
 
 """
 
-from Modules.sendZigateCommand import (raw_APS_request, send_zigatecmd_raw,
-                                       send_zigatecmd_zcl_noack, sendZigateCmd)
+from Modules.sendZigateCommand import (raw_APS_request, send_zigatecmd_raw )
 
 
 def zdp_IEEE_address_request(self, nwkid, u8RequestType , u8StartIndex):

@@ -11,8 +11,6 @@
 
 """
 
-from Classes.LoggingManagement import LoggingManagement
-
 from Modules.basicOutputs import write_attribute
 from Modules.readAttributes import ReadAttributeRequest_0006_400x
 from Modules.tools import is_ack_tobe_disabled

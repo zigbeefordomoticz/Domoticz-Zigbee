@@ -1,27 +1,32 @@
-import Domoticz
+#!/usr/bin/env python3
+# coding: utf-8 -*-
+#
+# Author: zaraki673 & pipiche38
+#
+"""
+    Module: deviceAnnoucement.py
+
+    Description: 
+
+"""
+
+
 from time import time
 
-from Modules.tools import (
-    loggingMessages,
-    decodeMacCapa,
-    # ReArrangeMacCapaBasedOnModel,
-    timeStamped,
-    IEEEExist,
-    DeviceExist,
-    initDeviceInList,
-    mainPoweredDevice,
-)
+import Domoticz
+
 from Modules.domoTools import lastSeenUpdate
-from Modules.readAttributes import ReadAttributeRequest_0000, ReadAttributeRequest_0006_0000, ReadAttributeRequest_0008_0000
-from Modules.bindings import rebind_Clusters, reWebBind_Clusters
-from Modules.pairingProcess import zigbee_provision_device, interview_state_004d
-from Modules.schneider_wiser import schneider_wiser_registration, PREFIX_MACADDR_WIZER_LEGACY
-from Modules.livolo import livolo_bind
 from Modules.legrand_netatmo import legrand_refresh_battery_remote
-from Modules.lumi import enableOppleSwitch, setXiaomiVibrationSensitivity
-from Modules.casaia import casaia_AC201_pairing
+from Modules.livolo import livolo_bind
+from Modules.pairingProcess import (interview_state_004d,
+                                    zigbee_provision_device)
+from Modules.readAttributes import (ReadAttributeRequest_0006_0000,
+                                    ReadAttributeRequest_0008_0000)
+from Modules.schneider_wiser import PREFIX_MACADDR_WIZER_LEGACY
+from Modules.tools import (DeviceExist, IEEEExist, decodeMacCapa,
+                           initDeviceInList, mainPoweredDevice, timeStamped)
 from Modules.tuyaSiren import tuya_sirene_registration
-from Modules.tuyaTRV import tuya_eTRV_registration, TUYA_eTRV_MODEL
+from Modules.tuyaTRV import TUYA_eTRV_MODEL, tuya_eTRV_registration
 from Modules.zigateConsts import CLUSTERS_LIST
 
 DELAY_BETWEEN_2_DEVICEANNOUCEMENT = 20

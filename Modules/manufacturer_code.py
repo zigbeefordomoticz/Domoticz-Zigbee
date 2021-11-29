@@ -1,3 +1,15 @@
+#!/usr/bin/env python3
+# coding: utf-8 -*-
+#
+# Author: pipiche38
+#
+"""
+    Module: manufacturer_code.py
+ 
+    Description: 
+
+"""
+
 MANUFACTURER_NAME_TO_CODE = {
     "EMBER": "1002",
     "PHILIPS": "100b",

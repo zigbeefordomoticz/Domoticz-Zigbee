@@ -11,18 +11,12 @@
 """
 
 import Domoticz
-import binascii
-import struct
-import json
-
-from Modules.zigateConsts import ZIGATE_EP
-from Modules.tools import retreive_cmd_payload_from_8002
-from Modules.domoMaj import MajDomoDevice
-from Modules.zclCommands import zcl_toggle, zcl_level_move_to_level
-
-
-
 from Classes.LoggingManagement import LoggingManagement
+
+from Modules.domoMaj import MajDomoDevice
+from Modules.tools import retreive_cmd_payload_from_8002
+from Modules.zclCommands import zcl_level_move_to_level, zcl_toggle
+from Modules.zigateConsts import ZIGATE_EP
 
 # Livolo commands.
 #
