@@ -22,7 +22,7 @@ from Modules.tools import (build_fcf, get_and_inc_SQN, getListOfEpForCluster,
                            is_ack_tobe_disabled, is_hex, mainPoweredDevice,
                            set_isqn_datastruct, set_request_datastruct,
                            set_timestamp_datastruct)
-from Modules.zclCommands import zcl_identify_send
+from Modules.zclCommands import zcl_identify_send, zcl_read_attribute, zcl_write_attribute, zcl_write_attributeNoResponse
 from Modules.zdpCommands import (zdp_attribute_discovery_request,
                                  zdp_get_list_attribute_extended_infos,
                                  zdp_IEEE_address_request,
@@ -524,190 +524,20 @@ def ballast_Configuration_min_level(self, nwkid, value):
     ListOfEp = getListOfEpForCluster(self, nwkid, "0301")
     if ListOfEp:
         for EPout in ListOfEp:
-            write_attribute(
-                self, nwkid, ZIGATE_EP, EPout, "0301", "0000", "00", "0010", "20", "%02x" % value, ackIsDisabled=True
-            )
+            write_attribute( self, nwkid, ZIGATE_EP, EPout, "0301", "0000", "00", "0010", "20", "%02x" % value, ackIsDisabled=True)
             read_attribute(self, nwkid, ZIGATE_EP, EPout, "0301", "00", "00", "0000", 1, "0010", ackIsDisabled=True)
 
+def read_attribute(self, nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, lenAttr, Attr, ackIsDisabled=True):
+    return zcl_read_attribute(self, nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, lenAttr, Attr, ackIsDisabled)
 
-
-
-def read_attribute(
-    self, addr, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, lenAttr, Attr, ackIsDisabled=True
-):
-
-    if self.pluginconf.pluginConf["RawReadAttribute"]:
-        return rawaps_read_attribute_req(
-            self, addr, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, Attr, ackIsDisabled
-        )
-
-    if ackIsDisabled:
-        return send_zigatecmd_zcl_noack(
-            self,
-            addr,
-            "0100",
-            EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + "%02x" % lenAttr + Attr,
-        )
-    return send_zigatecmd_zcl_ack(
-        self,
-        addr,
-        "0100",
-        EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + "%02x" % lenAttr + Attr,
-    )
-
-
-def write_attribute(
-    self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled=True
-):
-    #  write_attribute unicast , all with ack in < 31d firmware, ack/noack works since 31d
-    #
-    direction = "00"
-    if data_type == "42":  # String
-        # In case of Data Type 0x42 ( String ), we have to add the length of string before the string.
-        data = "%02x" % (len(data) // 2) + data
-
-    lenght = "01"  # Only 1 attribute
-
-    datas = ZIGATE_EP + EPout + clusterID
-    datas += direction + manuf_spec + manuf_id
-    datas += lenght + attribute + data_type + data
-    self.log.logging("BasicOutput", "Debug", "write_attribute for %s/%s - >%s<" % (key, EPout, datas), key)
-
-    if self.pluginconf.pluginConf["RawWritAttribute"]:
-        i_sqn = rawaps_write_attribute_req(
-            self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled
-        )
-    else:
-        # ATTENTION "0110" with firmware 31c are always call with Ack (overwriten by firmware)
-        # if ackIsDisabled:
-        #    i_sqn = send_zigatecmd_zcl_noack(self, key, "0110", str(datas))
-        # else:
-        #    i_sqn = send_zigatecmd_zcl_ack(self, key, "0110", str(datas))
-        # For now send Write Attribute ALWAYS with Ack.
-        i_sqn = send_zigatecmd_zcl_ack(self, key, "0110", str(datas))
-
+def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled=True ):
+    i_sqn = zcl_write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled=True )
     set_isqn_datastruct(self, "WriteAttributes", key, EPout, clusterID, attribute, i_sqn)
-
-    set_request_datastruct(
-        self,
-        "WriteAttributes",
-        key,
-        EPout,
-        clusterID,
-        attribute,
-        data_type,
-        EPin,
-        EPout,
-        manuf_id,
-        manuf_spec,
-        data,
-        ackIsDisabled,
-        "requested",
-    )
+    set_request_datastruct( self, "WriteAttributes", key, EPout, clusterID, attribute, data_type, EPin, EPout, manuf_id, manuf_spec, data, ackIsDisabled, "requested", )
     set_timestamp_datastruct(self, "WriteAttributes", key, EPout, clusterID, int(time()))
 
-
 def write_attributeNoResponse(self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data):
-    """write_atttribute broadcast . ack impossible on broadcast"""
-    # if key == 'ffff':
-    #    addr_mode = '04'
-    direction = "00"
-
-    if data_type == "42":  # String
-        # In case of Data Type 0x42 ( String ), we have to add the length of string before the string.
-        data = "%02x" % (len(data) // 2) + data
-
-    lenght = "01"  # Only 1 attribute
-
-    datas = ZIGATE_EP + EPout + clusterID
-    datas += direction + manuf_spec + manuf_id
-    datas += lenght + attribute + data_type + data
-    self.log.logging("BasicOutput", "Log", "write_attribute No Reponse for %s/%s - >%s<" % (key, EPout, datas), key)
-
-    # Firmware <= 31c are in fact with ACK
-    return send_zigatecmd_zcl_noack(self, key, "0113", str(datas))
-
-
-def rawaps_read_attribute_req(
-    self, NwkId, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, Attr, ackIsDisabled=True
-):
-
-    self.log.logging(
-        "inRawAPS", "Log", "rawaps_read_attribute_req %s/%s Cluster: %s Attribute: %s" % (NwkId, EpOut, Cluster, Attr)
-    )
-    cmd = "00"  # Read Attribute Command Identifier
-
-    # Cluster Frame:
-    # 0b xxxx xxxx
-    #           |- Frame Type: Cluster Specific (0x00)
-    #          |-- Manufacturer Specific False
-    #         |--- Command Direction: Client to Server (0)
-    #       | ---- Disable default response: True
-    #    |||- ---- Reserved : 0x000
-    #
-
-    cluster_frame = 0b00010000
-    if manufacturer_spec == "01":
-        cluster_frame += 0b00000100
-    fcf = "%02x" % cluster_frame
-
-    sqn = get_and_inc_SQN(self, NwkId)
-
-    payload = fcf
-    if manufacturer_spec == "01":
-        payload += manufacturer_spec + manufacturer[4:2] + manufacturer[0:2]
-
-    payload += sqn + cmd
-    idx = 0
-    while idx < len(Attr):
-        attribute = Attr[idx : idx + 4]
-        idx += 4
-        payload += "%04x" % struct.unpack(">H", struct.pack("H", int(attribute, 16)))[0]
-
-    raw_APS_request(self, NwkId, EpOut, Cluster, "0104", payload, zigate_ep=EpIn, ackIsDisabled=ackIsDisabled)
-
-
-def rawaps_write_attribute_req(
-    self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled=True
-):
-
-    self.log.logging(
-        "inRawAPS",
-        "Log",
-        "rawaps_write_attribute_req %s/%s Cluster: %s Attribute: %s DataType: %s Value: %s"
-        % (key, EPout, clusterID, attribute, data_type, data),
-    )
-    cmd = "02"  # Read Attribute Command Identifier
-    cluster_frame = 0b00010000
-    if manuf_spec == "01":
-        cluster_frame += 0b00000100
-    fcf = "%02x" % cluster_frame
-
-    sqn = get_and_inc_SQN(self, key)
-
-    payload = fcf
-    if manuf_spec == "01":
-        payload += manuf_spec + "%04x" % struct.unpack(">H", struct.pack("H", int(manuf_id, 16)))[0]
-    payload += sqn + cmd
-    payload += "%04x" % struct.unpack(">H", struct.pack("H", int(attribute, 16)))[0]
-    payload += data_type
-
-    if data_type in ("10", "18", "20", "28", "30"):
-        payload += data
-
-    elif data_type in ("09", "16", "21", "29", "31"):
-        payload += "%04x" % struct.unpack(">H", struct.pack("H", int(data, 16)))[0]
-
-    elif data_type in ("22", "2a"):
-        payload += "%06x" % struct.unpack(">i", struct.pack("I", int(data, 16)))[0]
-
-    elif data_type in ("23", "2b", "39"):
-        payload += "%08x" % struct.unpack(">f", struct.pack("I", int(data, 16)))[0]
-
-    else:
-        payload += data
-
-    raw_APS_request(self, key, EPout, clusterID, "0104", payload, zigate_ep=EPin, ackIsDisabled=ackIsDisabled)
+    return zcl_write_attributeNoResponse(self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data)
 
 
 # Scene
