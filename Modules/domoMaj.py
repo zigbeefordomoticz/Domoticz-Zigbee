@@ -7,6 +7,7 @@
     Module: domoMaj.py
     Description: Update of Domoticz Widget
 """
+import Domoticz
 
 from Modules.domoTools import (RetreiveSignalLvlBattery,
                                RetreiveWidgetTypeList, TypeFromCluster,
