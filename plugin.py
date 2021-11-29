@@ -238,7 +238,7 @@ class BasePlugin:
 
     def onStart(self):
         Domoticz.Log("ZiGate plugin started!")
-        assert sys.version_info >= (3, 4)
+        assert sys.version_info >= (3, 4) # nosec
 
         if Parameters["Mode1"] == "V1" and Parameters["Mode2"] in (
             "USB",
@@ -1342,37 +1342,37 @@ def onStart():
 
 
 def onStop():
-    global _plugin
+    global _plugin # nosec
     _plugin.onStop()
 
 
 def onDeviceRemoved(Unit):
-    global _plugin
+    global _plugin # nosec
     _plugin.onDeviceRemoved(Unit)
 
 
 def onConnect(Connection, Status, Description):
-    global _plugin
+    global _plugin # nosec
     _plugin.onConnect(Connection, Status, Description)
 
 
 def onMessage(Connection, Data):
-    global _plugin
+    global _plugin # nosec
     _plugin.onMessage(Connection, Data)
 
 
 def onCommand(Unit, Command, Level, Hue):
-    global _plugin
+    global _plugin # nosec
     _plugin.onCommand(Unit, Command, Level, Hue)
 
 
 def onDisconnect(Connection):
-    global _plugin
+    global _plugin # nosec
     _plugin.onDisconnect(Connection)
 
 
 def onHeartbeat():
-    global _plugin
+    global _plugin # nosec
     _plugin.onHeartbeat()
 
 
