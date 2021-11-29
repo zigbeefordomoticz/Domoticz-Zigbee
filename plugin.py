@@ -73,60 +73,54 @@ try:
 except ImportError:
     pass
 
-import time
+import gc
 import json
 import sys
 import threading
-import gc
+import time
 
-from Modules.piZigate import switchPiZigate_mode
-from Modules.tools import removeDeviceInList
-from Modules.basicOutputs import (
-    sendZigateCmd,
-    start_Zigate,
-    setExtendedPANID,
-    setTimeServer,
-    leaveRequest,
-    zigateBlueLed,
-    ZigatePermitToJoin,
-    do_Many_To_One_RouteRequest,
-)
-from Modules.input import ZigateRead
-from Modules.heartbeat import processListOfDevices
-from Modules.database import (
-    importDeviceConfV2,
-    LoadDeviceList,
-    checkListOfDevice2Devices,
-    checkDevices2LOD,
-    WriteDeviceList,
-)
-from Modules.domoTools import ResetDevice
-from Modules.command import mgtCommand
-from Modules.zigateConsts import HEARTBEAT, CERTIFICATION, MAX_FOR_ZIGATE_BUZY
-from Modules.txPower import set_TxPower
-from Modules.checkingUpdate import checkPluginVersion, checkPluginUpdate, checkFirmwareUpdate
-from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
-from Modules.schneider_wiser import wiser_thermostat_monitoring_heating_demand
-
+from Classes.AdminWidgets import AdminWidgets
 # from Classes.APS import APSManagement
 from Classes.ConfigureReporting import ConfigureReporting
+from Classes.DomoticzDB import (DomoticzDB_DeviceStatus, DomoticzDB_Hardware,
+                                DomoticzDB_Preferences)
+from Classes.GroupMgtv2.GroupManagement import GroupsManagement
 from Classes.IAS import IAS_Zone_Management
+from Classes.LoggingManagement import LoggingManagement
+from Classes.NetworkEnergy import NetworkEnergy
+from Classes.NetworkMap import NetworkMap
+from Classes.OTA import OTAManagement
 from Classes.PluginConf import PluginConf
 from Classes.Transport.Transport import ZigateTransport
 from Classes.TransportStats import TransportStatistics
-from Classes.LoggingManagement import LoggingManagement
-
-from Classes.GroupMgtv2.GroupManagement import GroupsManagement
-from Classes.AdminWidgets import AdminWidgets
-from Classes.OTA import OTAManagement
-
 from Classes.WebServer.WebServer import WebServer
-
-from Classes.NetworkMap import NetworkMap
-from Classes.NetworkEnergy import NetworkEnergy
-
-from Classes.DomoticzDB import DomoticzDB_DeviceStatus, DomoticzDB_Hardware, DomoticzDB_Preferences
-
+from Modules.basicOutputs import (ZigatePermitToJoin,
+                                  do_Many_To_One_RouteRequest, leaveRequest,
+                                  setExtendedPANID,
+                                  setTimeServer, start_Zigate, zigateBlueLed)
+from Modules.checkingUpdate import (checkFirmwareUpdate, checkPluginUpdate,
+                                    checkPluginVersion)
+from Modules.command import mgtCommand
+from Modules.database import (LoadDeviceList, WriteDeviceList,
+                              checkDevices2LOD, checkListOfDevice2Devices,
+                              importDeviceConfV2)
+from Modules.domoTools import ResetDevice
+from Modules.heartbeat import processListOfDevices
+from Modules.input import ZigateRead
+from Modules.piZigate import switchPiZigate_mode
+from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
+from Modules.schneider_wiser import wiser_thermostat_monitoring_heating_demand
+from Modules.tools import removeDeviceInList
+from Modules.txPower import set_TxPower
+from Modules.zigateCommands import (zigate_erase_eeprom,
+                                    zigate_get_firmware_version,
+                                    zigate_get_list_active_devices,
+                                    zigate_get_nwk_state,
+                                    zigate_get_permit_joint_status,
+                                    zigate_get_time,
+                                    zigate_remove_device,
+                                    zigate_set_certificate)
+from Modules.zigateConsts import CERTIFICATION, HEARTBEAT, MAX_FOR_ZIGATE_BUZY
 
 VERSION_FILENAME = ".hidden/VERSION"
 
@@ -603,7 +597,8 @@ class BasePlugin:
 
                     # for a remove in case device didn't send the leave
                     if self.ZigateIEEE:
-                        sendZigateCmd(self, "0026", self.ZigateIEEE + IEEE)
+                        #sendZigateCmd(self, "0026", self.ZigateIEEE + IEEE)
+                        zigate_remove_device(self, self.ZigateIEEE, IEEE)
                         self.log.logging(
                             "Plugin",
                             "Status",
@@ -788,7 +783,8 @@ class BasePlugin:
                 self.log.logging(
                     "Plugin", "Debug", "[%s] PDMready: %s requesting Get version" % (self.internalHB, self.PDMready)
                 )
-                sendZigateCmd(self, "0010", "")
+                zigate_get_firmware_version(self)
+                #sendZigateCmd(self, "0010", "")
             return
 
         if self.transport != "None":
@@ -922,7 +918,8 @@ class BasePlugin:
             and self.permitTojoin["Duration"] != 0
             and int(time.time()) >= (self.permitTojoin["Starttime"] + self.permitTojoin["Duration"])
         ):
-            sendZigateCmd(self, "0014", "")  # Request status
+            zigate_get_permit_joint_status(self)
+            #sendZigateCmd(self, "0014", "")  # Request status
             self.permitTojoin["Duration"] = 0
 
         # Heartbeat - Ping Zigate every minute to check connectivity
@@ -933,7 +930,8 @@ class BasePlugin:
 
         if self.HeartbeatCount % (3600 // HEARTBEAT) == 0:
             self.log.loggingCleaningErrorHistory()
-            sendZigateCmd(self, "0017", "")
+            zigate_get_time(self)
+            #sendZigateCmd(self, "0017", "")
 
         # Update MaxLoad if needed
         if self.ZigateComm.loadTransmit() >= MAX_FOR_ZIGATE_BUZY:
@@ -986,7 +984,8 @@ def zigateInit_Phase1(self):
             if self.domoticzdb_Hardware:
                 self.domoticzdb_Hardware.disableErasePDM()
             self.log.logging("Plugin", "Status", "Erase Zigate PDM")
-            sendZigateCmd(self, "0012", "")
+            zigate_erase_eeprom(self)
+            #sendZigateCmd(self, "0012", "")
             self.PDMready = False
             self.startZigateNeeded = 1
             self.HeartbeatCount = 1
@@ -1009,10 +1008,12 @@ def zigateInit_Phase2(self):
     if self.FirmwareVersion is None or self.ZigateIEEE is None or self.ZigateNWKID == "ffff":
         if self.FirmwareVersion is None:
             # Ask for Firmware Version
-            sendZigateCmd(self, "0010", "")
+            #sendZigateCmd(self, "0010", "")
+            zigate_get_firmware_version(self)
         if self.ZigateIEEE is None or self.ZigateNWKID == "ffff":
             # Request Network State
-            sendZigateCmd(self, "0009", "")
+            zigate_get_nwk_state(self)
+            #sendZigateCmd(self, "0009", "")
 
         if self.HeartbeatCount > TIMEDOUT_FIRMWARE:
             self.log.logging(
@@ -1031,10 +1032,12 @@ def zigateInit_Phase2(self):
     if self.pluginconf.pluginConf["resetPermit2Join"]:
         ZigatePermitToJoin(self, 0)
     else:
-        sendZigateCmd(self, "0014", "")  # Request Permit to Join status
+        zigate_get_permit_joint_status(self)
+        #sendZigateCmd(self, "0014", "")  # Request Permit to Join status
 
     # Request List of Active Devices
-    sendZigateCmd(self, "0015", "")
+    zigate_get_list_active_devices(self)
+    #sendZigateCmd(self, "0015", "")
 
     # Ready for next phase
     self.InitPhase2 = True
@@ -1053,36 +1056,25 @@ def zigateInit_Phase3(self):
     if not check_firmware_level(self):
         self.log.logging("Plugin", "Debug", "Firmware not ready")
         return
+        
+    if self.pluginconf.pluginConf["blueLedOnOff"]:
+        zigateBlueLed(self, True)
+    else:
+        zigateBlueLed(self, False)
 
-    if (
-        self.transport != "None"
-        and int(self.FirmwareVersion, 16) >= 0x030F
-        and int(self.FirmwareMajorVersion, 16) >= 0x03
-    ):
-        if self.pluginconf.pluginConf["blueLedOnOff"]:
-            zigateBlueLed(self, True)
-        else:
-            zigateBlueLed(self, False)
+    # Set the TX Power
+    set_TxPower(self, self.pluginconf.pluginConf["TXpower_set"])
 
-        # Set the TX Power
-        set_TxPower(self, self.pluginconf.pluginConf["TXpower_set"])
+    # Set Certification Code
+    if self.pluginconf.pluginConf["CertificationCode"] in CERTIFICATION:
+        self.log.logging(
+            "Plugin",
+            "Status",
+            "Zigate set to Certification : %s" % CERTIFICATION[self.pluginconf.pluginConf["CertificationCode"]],
+        )
+        #sendZigateCmd(self, "0019", "%02x" % self.pluginconf.pluginConf["CertificationCode"])
+        zigate_set_certificate(self, "%02x" % self.pluginconf.pluginConf["CertificationCode"] )
 
-        # Set Certification Code
-        if self.pluginconf.pluginConf["CertificationCode"] in CERTIFICATION:
-            self.log.logging(
-                "Plugin",
-                "Status",
-                "Zigate set to Certification : %s" % CERTIFICATION[self.pluginconf.pluginConf["CertificationCode"]],
-            )
-            sendZigateCmd(self, "0019", "%02x" % self.pluginconf.pluginConf["CertificationCode"])
-
-        # if int(self.FirmwareVersion,16) >= 0x031e :
-        #    if self.pluginconf.pluginConf['disabledDefaultResponseFirmware'] :
-        #        self.log.logging( 'Plugin', 'Status', "Disable Default Response in firmware")
-        #        disable_firmware_default_response( self , mode='01')
-        #    else:
-        #        self.log.logging( 'Plugin', 'Status', "Enable Default Response in firmware")
-        #        disable_firmware_default_response( self , mode='00')
 
         # Create Configure Reporting object
         if self.configureReporting is None:
@@ -1155,16 +1147,17 @@ def zigateInit_Phase3(self):
         )
 
     # If firmware above 3.0d, Get Network State
-    if self.FirmwareVersion >= "030d" and (self.HeartbeatCount % (3600 // HEARTBEAT)) == 0 and self.transport != "None":
-        sendZigateCmd(self, "0009", "")
+    if (self.HeartbeatCount % (3600 // HEARTBEAT)) == 0 and self.transport != "None":
+        zigate_get_nwk_state(self)
+        #sendZigateCmd(self, "0009", "")
 
 
 def check_firmware_level(self):
     # Check Firmware version
     if (
-        self.FirmwareVersion.lower() < "030f"
-        or self.FirmwareVersion.lower() == "030f"
-        and self.FirmwareMajorVersion == "02"
+        int(self.FirmwareVersion.lower(),16) <= 0x031d
+        or int(self.FirmwareVersion.lower(),16) == 0x031d
+        and int(self.FirmwareMajorVersion,16) == 0x02
     ):
         self.log.logging("Plugin", "Error", "Firmware level not supported, please update ZiGate firmware")
         return False
@@ -1173,20 +1166,6 @@ def check_firmware_level(self):
         self.log.logging("Plugin", "Status", "Firmware for Pluzzy devices")
         self.PluzzyFirmware = True
         return True
-
-    if self.FirmwareVersion.lower() == "031b":
-        self.log.logging(
-            "Plugin",
-            "Status",
-            "You are not on the latest firmware version, This version is known to have problem, please consider to upgrade",
-        )
-        return False
-
-    if self.FirmwareVersion.lower() in ("031a", "031c", "031d"):
-        self.pluginconf.pluginConf["forceAckOnZCL"] = True
-
-    elif self.FirmwareVersion.lower() == "031e":
-        self.pluginconf.pluginConf["forceAckOnZCL"] = False
 
     elif int(self.FirmwareVersion, 16) > 0x0320:
         self.log.logging("Plugin", "Error", "Firmware %s is not yet supported" % self.FirmwareVersion.lower())
@@ -1306,7 +1285,8 @@ def pingZigate(self):
 
         else:
             if (self.Ping["Nb Ticks"] % 3) == 0:
-                sendZigateCmd(self, "0014", "")  # Request status
+                zigate_get_permit_joint_status(self)
+                #sendZigateCmd(self, "0014", "")  # Request status
         return
 
     # If we are more than PING_CHECK_FREQ without any messages, let's check
@@ -1319,7 +1299,8 @@ def pingZigate(self):
 
     if "Status" not in self.Ping:
         self.log.logging("Plugin", "Log", "pingZigate - Unknown Status, Ticks: %s  Send a Ping" % self.Ping["Nb Ticks"])
-        sendZigateCmd(self, "0014", "")  # Request status
+        zigate_get_permit_joint_status(self)
+        #sendZigateCmd(self, "0014", "")  # Request status
         self.Ping["Status"] = "Sent"
         self.Ping["TimeStamp"] = int(time.time())
         return
@@ -1333,7 +1314,8 @@ def pingZigate(self):
             "Debug",
             "pingZigate - Status: %s Send a Ping, Ticks: %s" % (self.Ping["Status"], self.Ping["Nb Ticks"]),
         )
-        sendZigateCmd(self, "0014", "")  # Request status
+        zigate_get_permit_joint_status(self)
+        #sendZigateCmd(self, "0014", "")  # Request status
         self.connectionState = 1
         self.Ping["Status"] = "Sent"
         self.Ping["TimeStamp"] = int(time.time())

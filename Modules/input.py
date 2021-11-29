@@ -21,11 +21,10 @@ from Classes.Transport.sqnMgmt import (TYPE_APP_ZCL, TYPE_APP_ZDP,
                                        sqn_get_internal_sqn_from_aps_sqn)
 
 from Modules.basicOutputs import getListofAttribute  # leaveMgtReJoin,
-from Modules.basicOutputs import (send_default_response, sendZigateCmd,
+from Modules.basicOutputs import (send_default_response,
                                   setTimeServer, unknown_device_nwkid)
 from Modules.callback import callbackDeviceAwake
-from Modules.deviceAnnoucement import (device_annoucementv1,
-                                       device_annoucementv2)
+from Modules.deviceAnnoucement import (device_annoucementv2)
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import lastSeenUpdate, timedOutDevice
 from Modules.errorCodes import DisplayStatusCode
@@ -288,7 +287,7 @@ def Decode0110(self, Devices, MsgData, MsgLQI):  # Write Attribute request
         idx += 2
         lendata = MsgData[idx : idx + 4]
         idx += 4
-        DataValue = MsgData[idx : idx + int(lendata)*2]
+        DataValue = MsgData[idx : idx + int(lendata) *2 ]
         
         self.log.logging("Input", "Log", "Decode0110 - Sqn: %s NwkId: %s Ep: %s Cluster: %s Manuf: %s Attribute: %s Type: %s Value: %s" %(
             MsgSqn, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgManufCode ,Attribute, DataType, DataValue ) )
@@ -421,6 +420,7 @@ def Decode8000_v2(self, Devices, MsgData, MsgLQI):  # Status
             # if self.internalError > 4:
             #    self.internalError = 0
             #    sendZigateCmd(self, "0011", "" ) # Software Reset
+            #    zigate_soft_reset(self)
             #    self.log.logging(  "Input", "Error", "TOO MUCH ERRORS - ZIGATE RESET requested")
     else:
         self.internalError = 0
@@ -3262,14 +3262,7 @@ def Decode8702(self, Devices, MsgData, MsgLQI):  # Reception APS Data confirm fa
 # Device Announce
 def Decode004D(self, Devices, MsgData, MsgLQI):  # Reception Device announce
 
-    if self.FirmwareVersion and int(self.FirmwareVersion, 16) >= 0x031C and self.pluginconf.pluginConf["AnnoucementV1"]:
-        device_annoucementv1(self, Devices, MsgData, MsgLQI)
-
-    elif self.FirmwareVersion and int(self.FirmwareVersion, 16) >= 0x031C and self.pluginconf.pluginConf["AnnoucementV2"]:
-        device_annoucementv2(self, Devices, MsgData, MsgLQI)
-
-    else:
-        device_annoucementv2(self, Devices, MsgData, MsgLQI)
+    device_annoucementv2(self, Devices, MsgData, MsgLQI)
 
 
 # Remote
