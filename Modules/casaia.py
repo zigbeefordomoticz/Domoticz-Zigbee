@@ -9,9 +9,7 @@ import Domoticz
 
 from Classes.LoggingManagement import LoggingManagement
 from Modules.basicOutputs import write_attribute
-from Modules.sendZigateCommand import (raw_APS_request, send_zigatecmd_raw,
-                                       send_zigatecmd_zcl_ack,sendZigateCmd,
-                                       send_zigatecmd_zcl_noack)
+from Modules.sendZigateCommand import (raw_APS_request)
 
 from Modules.tools import (
     retreive_cmd_payload_from_8002,

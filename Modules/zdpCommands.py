@@ -57,3 +57,10 @@ def zdp_attribute_discovery_request(self, nwkid, EpIn, EpOut, cluster, start_att
 
 def zdp_get_list_attribute_extended_infos(self, nwkid, EpIn, EpOut, cluster, start_attribute="0000", manuf_specific="00", manuf_code="0000"):
     send_zigatecmd_zcl_noack(self, nwkid, "0141", EpIn + EpOut + cluster + start_attribute + "00" + manuf_specific + manuf_code + "01")
+
+
+def zdp_binding_device(self, ieee , ep , cluster , addrmode , destaddr , destep):
+    return sendZigateCmd(self, "0030", ieee + ep + cluster + addrmode + destaddr + destep)
+
+def zdp_unbinding_device(self, ieee , ep , cluster , addrmode , destaddr , destep):
+    return sendZigateCmd(self, "0031", ieee + ep + cluster + addrmode + destaddr + destep)

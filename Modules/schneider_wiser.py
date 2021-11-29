@@ -18,9 +18,8 @@ import struct
 import Domoticz
 
 from Modules.domoMaj import MajDomoDevice
-from Modules.sendZigateCommand import (raw_APS_request, send_zigatecmd_raw,
-                                       send_zigatecmd_zcl_ack,sendZigateCmd,
-                                       send_zigatecmd_zcl_noack)
+from Modules.sendZigateCommand import (raw_APS_request)
+from Modules.zclCommands import zcl_onoff_off_noeffect, zcl_onoff_on
 
 from Modules.basicOutputs import  write_attribute, read_attribute
 
@@ -293,8 +292,10 @@ def schneider_wiser_registration(self, Devices, key):
 
     # Pilotage Chauffe eau
     if self.ListOfDevices[key]["Model"] in ("EH-ZB-LMACT"):
-        sendZigateCmd(self, "0092", "02" + key + ZIGATE_EP + EPout + "00")
-        sendZigateCmd(self, "0092", "02" + key + ZIGATE_EP + EPout + "01")
+        #sendZigateCmd(self, "0092", "02" + key + ZIGATE_EP + EPout + "00")
+        zcl_onoff_off_noeffect(self, key, EPout)
+        #sendZigateCmd(self, "0092", "02" + key + ZIGATE_EP + EPout + "01")
+        zcl_onoff_on(self, key, EPout)
 
     # Redo Temp
     if self.ListOfDevices[key]["Model"] in ("EH-ZB-VACT"):  # Actuator, Valve

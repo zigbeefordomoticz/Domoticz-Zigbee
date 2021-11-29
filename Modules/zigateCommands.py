@@ -22,37 +22,37 @@ def zigate_set_loglevel(self, loglevel):
     pass
 
 def zigate_firmware_default_response(self, enable="00"):
-    return sendZigateCmd(self, "0003", enable)
+    return send_zigatecmd_raw(self, "0003", enable)
 
 def zigate_get_nwk_state(self):
-    return sendZigateCmd(self, "0009", "")
+    return send_zigatecmd_raw(self, "0009", "")
 
 def zigate_get_firmware_version(self):
-    return sendZigateCmd(self, "0010", "")
+    return send_zigatecmd_raw(self, "0010", "")
     
 def zigate_soft_reset(self):
-    return sendZigateCmd(self, "0011", "" ) 
+    return send_zigatecmd_raw(self, "0011", "" ) 
     
 def zigate_erase_eeprom(self):
-    return sendZigateCmd(self, "0012", "")
+    return send_zigatecmd_raw(self, "0012", "")
 
 def zigate_get_permit_joint_status(self):
-    return sendZigateCmd(self, "0014", "")  # Request Permit to Join status
+    return send_zigatecmd_raw(self, "0014", "")  # Request Permit to Join status
 
 def zigate_get_list_active_devices(self):
-    return sendZigateCmd(self, "0015", "")
+    return send_zigatecmd_raw(self, "0015", "")
    
 def zigate_set_time(self, timeUTC):
     return send_zigatecmd_raw(self, "0016", timeUTC)
 
 def zigate_get_time(self):
-    return sendZigateCmd(self, "0017", "")
+    return send_zigatecmd_raw(self, "0017", "")
 
 def zigate_blueled(self, OnOff):
     return send_zigatecmd_raw(self, "0018", OnOff)
 
 def zigate_set_certificate(self, certification_code ):
-    return sendZigateCmd(self, "0019", certification_code)
+    return send_zigatecmd_raw(self, "0019", certification_code)
 
 def zigate_set_extended_PanID(self, extPanID):
     return send_zigatecmd_raw(self, "0020", extPanID)
@@ -64,10 +64,10 @@ def zigate_start_nwk(self):
     return send_zigatecmd_raw(self, "0024", "")
 
 def zigate_remove_device(self, target_short_addr, extended_addr):
-    return sendZigateCmd(self, "0026", target_short_addr + extended_addr)
+    return send_zigatecmd_raw(self, "0026", target_short_addr + extended_addr)
 
 def zigate_set_tx_power(self, value):
-    sendZigateCmd(self, "0806", value)
+    return send_zigatecmd_raw(self, "0806", value)
 
 def zigate_get_tx_power(self):
-    sendZigateCmd(self, "0807", "")
+    return send_zigatecmd_raw(self, "0807", "")
