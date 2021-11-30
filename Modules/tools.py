@@ -455,6 +455,22 @@ def get_and_inc_SQN(self, key):
     # self.ListOfDevices[key]['SQN']= '%2x' %_new_sqn
     return "%02x" % _new_sqn
 
+def get_and_inc_ZDP_SQM(self, key):
+    if (
+        (key not in self.ListOfDevices)
+        or ("ZDPSQN" not in self.ListOfDevices[key])
+        or (self.ListOfDevices[key]["ZDPSQN"] == {})
+        or (self.ListOfDevices[key]["ZDPSQN"] == "")
+    ):
+        _new_sqn = 0x00
+    else:
+        _new_sqn = int(self.ListOfDevices[key]["ZDPSQN"], 16) + 1
+        if _new_sqn > 0xFF:
+            _new_sqn = 0x00
+
+    # self.ListOfDevices[key]['SQN']= '%2x' %_new_sqn
+    return "%02x" % _new_sqn
+    
 
 def updSQN(self, key, newSQN):
 
@@ -810,7 +826,7 @@ def loggingMessages(self, msgtype, sAddr=None, ieee=None, LQI=None, SQN=None):
 
     if not self.pluginconf.pluginConf["logFORMAT"]:
         return
-    if sAddr == ieee == None:
+    if sAddr == ieee and sAddr is None:
         return
     _debugMatchId = self.pluginconf.pluginConf["debugMatchId"].lower()
     if sAddr is None:

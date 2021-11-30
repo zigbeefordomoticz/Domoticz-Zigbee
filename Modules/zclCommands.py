@@ -11,16 +11,16 @@
 """
 
 
-from Modules.sendZigateCommand import (raw_APS_request, send_zigatecmd_zcl_ack,
-                                       send_zigatecmd_zcl_noack, send_zigatecmd_raw)
-from Modules.zclRawCommands import raw_zcl_zcl_onoff, rawaps_read_attribute_req, rawaps_write_attribute_req
-
-from Modules.tools import get_and_inc_SQN
-from Modules.zigateConsts import ZIGATE_EP, ADDRESS_MODE
+from Modules.sendZigateCommand import (send_zigatecmd_raw,
+                                       send_zigatecmd_zcl_ack,
+                                       send_zigatecmd_zcl_noack)
+from Modules.zclRawCommands import (raw_zcl_zcl_onoff,
+                                    rawaps_read_attribute_req,
+                                    rawaps_write_attribute_req,
+                                    zcl_raw_level_move_to_level)
+from Modules.zigateConsts import ADDRESS_MODE, ZIGATE_EP
 
 # Standard commands
-
-WITHACK_DEFAULT = False
 
 def zcl_read_attribute(self, nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, lenAttr, Attr, ackIsDisabled=True):
     self.log.logging( "zclCommand", "Debug", "read_attribute %s %s %s %s %s %s %s %s %s" % (
@@ -242,10 +242,11 @@ def zcl_group_onoff_off_witheffect(self, nwkid, epin, EPout, effect):
 ##############
 def zcl_level_move_to_level( self, nwkid, EPout, OnOff, level, transition="0000", ackIsDisabled=True):
     self.log.logging( "zclCommand", "Debug","zcl_level_move_to_level %s %s %s %s %s" %(nwkid, EPout, OnOff, level, transition ))
-    data = ZIGATE_EP + EPout + OnOff + level + transition
-    if ackIsDisabled:
-        return send_zigatecmd_zcl_noack(self, nwkid, "0081", data)
-    return send_zigatecmd_zcl_ack(self, nwkid, "0081", data)
+    #data = ZIGATE_EP + EPout + OnOff + level + transition
+    #if ackIsDisabled:
+    #    return send_zigatecmd_zcl_noack(self, nwkid, "0081", data)
+    #return send_zigatecmd_zcl_ack(self, nwkid, "0081", data)
+    return zcl_raw_level_move_to_level( self, nwkid, ZIGATE_EP, EPout, "MovetoLevel", level,transition="0010", ackIsDisabled=ackIsDisabled)
 
 def zcl_group_level_move_to_level( self, nwkid, epin, EPout, OnOff, level, transition="0000"):
     data = "%02d" % ADDRESS_MODE["group"] + nwkid + epin + EPout + OnOff + level + transition
@@ -254,10 +255,11 @@ def zcl_group_level_move_to_level( self, nwkid, epin, EPout, OnOff, level, trans
     
 def zcl_move_to_level_with_onoff(self, nwkid, EPout, OnOff, level, transition="0000", ackIsDisabled=True):
     self.log.logging( "zclCommand", "Debug","zcl_move_to_level_with_onoff %s %s %s %s %s" %(nwkid, EPout, OnOff, level, transition ))
-    data = ZIGATE_EP + EPout + OnOff + level + transition
-    if ackIsDisabled:
-        return send_zigatecmd_zcl_noack(self, nwkid, "0081", data)
-    return send_zigatecmd_zcl_ack(self, nwkid, "0081", data)
+    #data = ZIGATE_EP + EPout + OnOff + level + transition
+    #if ackIsDisabled:
+    #    return send_zigatecmd_zcl_noack(self, nwkid, "0081", data)
+    #return send_zigatecmd_zcl_ack(self, nwkid, "0081", data)
+    return zcl_raw_level_move_to_level( self, nwkid, ZIGATE_EP, EPout, "MovetoLevelWithOnOff", level,transition="0010", ackIsDisabled=ackIsDisabled)
 
     
 # Cluster 0102 ( Window Covering )

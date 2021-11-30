@@ -148,7 +148,7 @@ def interview_state_004d(self, NWKID, RIA=None, status=None):
     if self.pluginconf.pluginConf["enableSchneiderWiser"] and MsgIEEE[0 : len(PREFIX_IEEE_WISER)] == PREFIX_IEEE_WISER:
         ReadAttributeRequest_0000(self, NWKID, fullScope=False)  # In order to request Model Name
 
-    zdp_simple_descriptor_request(self, NWKID )
+    zdp_active_endpoint_request(self, NWKID )
     return "0045"
 
 
@@ -239,7 +239,7 @@ def interview_state_8045(self, NWKID, RIA=None, status=None):
             continue
 
         self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s Request Simple Descriptor for Ep: %s" % ("-", NWKID, iterEp))
-        zdp_active_endpoint_request(self, NWKID, iterEp)
+        zdp_simple_descriptor_request(self, NWKID, iterEp)
 
     return "0043"
 

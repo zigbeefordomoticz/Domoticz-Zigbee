@@ -10,7 +10,10 @@
 
 """
 
-from Modules.sendZigateCommand import (raw_APS_request, send_zigatecmd_raw )
+from Modules.sendZigateCommand import raw_APS_request, send_zigatecmd_raw
+from Modules.zdpRawCommands import (zdp_raw_active_endpoint_request,
+                                    zdp_raw_node_descriptor_request,
+                                    zdp_raw_simple_descriptor_request)
 
 
 def zdp_IEEE_address_request(self, nwkid, u8RequestType , u8StartIndex):
@@ -19,32 +22,35 @@ def zdp_IEEE_address_request(self, nwkid, u8RequestType , u8StartIndex):
 
 
 def zdp_node_descriptor_request(self, nwkid):
-    self.log.logging( "zdpCommand", "Debug","zdp_node_descriptor_request %s" %(nwkid, ))
-    return send_zigatecmd_raw(self, "0042", nwkid)
+    self.log.logging( "zdpCommand", "Log","zdp_node_descriptor_request %s" %(nwkid, ))
+    #return send_zigatecmd_raw(self, "0042", nwkid)
+    return zdp_raw_node_descriptor_request(self, nwkid)
 
 
-def zdp_active_endpoint_request(self, nwkid, endpoint):
-    self.log.logging( "zdpCommand", "Debug","zdp_active_endpoint_request %s %s" %(nwkid, endpoint))
-    return send_zigatecmd_raw(self, "0043", nwkid + endpoint)
-    
-    
-def zdp_simple_descriptor_request(self, nwkid ):
-    self.log.logging( "zdpCommand", "Debug","zdp_simple_descriptor_request %s" %(nwkid))
-    return send_zigatecmd_raw(self, "0045", nwkid) 
+def zdp_simple_descriptor_request(self, nwkid, endpoint):
+    self.log.logging( "zdpCommand", "Log","zdp_active_endpoint_request %s %s" %(nwkid, endpoint))
+    #return send_zigatecmd_raw(self, "0043", nwkid + endpoint)
+    return zdp_raw_simple_descriptor_request(self, nwkid, endpoint)
+
+
+def zdp_active_endpoint_request(self, nwkid ):
+    self.log.logging( "zdpCommand", "Log","zdp_simple_descriptor_request %s" %(nwkid))
+    #return send_zigatecmd_raw(self, "0045", nwkid) 
+    return zdp_raw_active_endpoint_request(self, nwkid,)
 
 
 def zdp_management_leave_request(self, nwkid, ieee, rejoin="01", remove_children="00"):
-    self.log.logging( "zdpCommand", "Debug","zdp_management_leave_request %s %s %s %s" %(nwkid, ieee, rejoin, remove_children))
+    self.log.logging( "zdpCommand", "Log","zdp_management_leave_request %s %s %s %s" %(nwkid, ieee, rejoin, remove_children))
     return send_zigatecmd_raw(self, "0047", nwkid + ieee + rejoin + remove_children)
 
 
 def zdp_permit_joining_request(self, tgtnwkid , duration , significance):
-    self.log.logging( "zdpCommand", "Debug","zdp_permit_joining_request %s %s %s" %(tgtnwkid , duration , significance))
+    self.log.logging( "zdpCommand", "Log","zdp_permit_joining_request %s %s %s" %(tgtnwkid , duration , significance))
     return send_zigatecmd_raw(self, "0049", tgtnwkid + duration + significance)
 
 
 def zdp_reset_device(self, nwkid, epin, epout):
-    self.log.logging( "zdpCommand", "Debug","zdp_reset_device %s %s %s" %(nwkid, epin, epout))
+    self.log.logging( "zdpCommand", "Log","zdp_reset_device %s %s %s" %(nwkid, epin, epout))
     return send_zigatecmd_raw(self, "0050", "02" + nwkid + epin + epout)
 
 
