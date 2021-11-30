@@ -41,7 +41,6 @@ def zdp_raw_simple_descriptor_request(self, nwkid, endpoint):
 
 def zdp_raw_active_endpoint_request(self, nwkid,):
     self.log.logging( "zdpCommand", "Log","zdp_raw_active_endpoint_request %s" %(nwkid, ))
-
     Cluster = "0005"
     payload = get_and_inc_ZDP_SQM(self, nwkid) + "%04x" % struct.unpack(">H", struct.pack("H", int(nwkid, 16)))[0]
     return raw_APS_request( self, nwkid, "00", Cluster, "0000", payload, zigate_ep="00", groupaddrmode=False, ackIsDisabled=False, )   
