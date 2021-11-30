@@ -1,4 +1,3 @@
-from os import getgrouplist
 import Domoticz
 import time
 import struct
