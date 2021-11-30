@@ -1198,6 +1198,14 @@ SETTINGS = {
                 "hidden": False,
                 "Advanced": True,
             },
+            "ZiGateInRawMode": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": True,
+            },
             "nPDUaPDUThreshold": {
                 "type": "bool",
                 "default": 0,

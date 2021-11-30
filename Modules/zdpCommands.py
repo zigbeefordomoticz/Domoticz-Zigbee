@@ -23,18 +23,23 @@ def zdp_IEEE_address_request(self, nwkid, u8RequestType , u8StartIndex):
 
 def zdp_node_descriptor_request(self, nwkid):
     self.log.logging( "zdpCommand", "Log","zdp_node_descriptor_request %s" %(nwkid, ))
-    #return send_zigatecmd_raw(self, "0042", nwkid)
-    return zdp_raw_node_descriptor_request(self, nwkid)
+    if 'ZiGateInRawMode' in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+        return zdp_raw_node_descriptor_request(self, nwkid)
+    return send_zigatecmd_raw(self, "0042", nwkid)
+    
 
 
 def zdp_simple_descriptor_request(self, nwkid, endpoint):
     self.log.logging( "zdpCommand", "Log","zdp_active_endpoint_request %s %s" %(nwkid, endpoint))
-    #return send_zigatecmd_raw(self, "0043", nwkid + endpoint)
-    return zdp_raw_simple_descriptor_request(self, nwkid, endpoint)
+    if 'ZiGateInRawMode' in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+        return zdp_raw_simple_descriptor_request(self, nwkid, endpoint)
+    return send_zigatecmd_raw(self, "0043", nwkid + endpoint)
+    
 
 
 def zdp_active_endpoint_request(self, nwkid ):
     self.log.logging( "zdpCommand", "Log","zdp_simple_descriptor_request %s" %(nwkid))
+    
     #return send_zigatecmd_raw(self, "0045", nwkid) 
     return zdp_raw_active_endpoint_request(self, nwkid,)
 
