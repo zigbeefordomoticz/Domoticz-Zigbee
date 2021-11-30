@@ -2,6 +2,9 @@ import struct
 from Modules.sendZigateCommand import (raw_APS_request)
 from Modules.tools import get_and_inc_SQN
 
+# General Command Frame
+
+# Read Attributes Command
 def rawaps_read_attribute_req( self, nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, Attr, ackIsDisabled=True ):
     self.log.logging( "zclCommand", "Debug", "rawaps_read_attribute_req %s %s %s %s %s %s %s %s" %(
         nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, Attr) )
@@ -34,6 +37,7 @@ def rawaps_read_attribute_req( self, nwkid, EpIn, EpOut, Cluster, direction, man
         payload += "%04x" % struct.unpack(">H", struct.pack("H", int(attribute, 16)))[0]
     return raw_APS_request(self, nwkid, EpOut, Cluster, "0104", payload, zigate_ep=EpIn, ackIsDisabled=ackIsDisabled)
 
+# Write Attributes
 def rawaps_write_attribute_req( self, nwkid, EPin, EPout, cluster, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled=True ):
     self.log.logging("zclCommand", "Debug", "rawaps_write_attribute_req %s %s %s %s %s %s %s %s %s" %(
         nwkid, EPin, EPout, cluster, manuf_id, manuf_spec, attribute, data_type, data))
@@ -60,6 +64,98 @@ def rawaps_write_attribute_req( self, nwkid, EPin, EPout, cluster, manuf_id, man
     else:
         payload += data
     return raw_APS_request(self, nwkid, EPout, cluster, "0104", payload, zigate_ep=EPin, ackIsDisabled=ackIsDisabled)
+
+
+# Write Attributes No Response 
+
+# Configure Reporting 
+def rawaps_configure_reporting_req( self, nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, attributelist, ackIsDisabled=True ):
+    self.log.logging( "zclCommand", "Debug", "rawaps_read_attribute_req %s %s %s %s %s %s %s %s" %(
+        nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, attributelist) )
+    
+    cmd = "06"  # Configure Reporting Command Identifier
+
+    # Cluster Frame:
+    # 0b xxxx xxxx
+    #           |- Frame Type: Cluster Specific (0x00)
+    #          |-- Manufacturer Specific False
+    #         |--- Command Direction: Client to Server (0)
+    #       | ---- Disable default response: True
+    #    |||- ---- Reserved : 0x000
+    #
+
+    cluster_frame = 0b00010000
+    if manufacturer_spec == "01":
+        cluster_frame += 0b00000100
+        
+    fcf = "%02x" % cluster_frame
+    sqn = get_and_inc_SQN(self, nwkid)
+    payload = fcf
+    if manufacturer_spec == "01":
+        payload += manufacturer_spec + manufacturer[4:2] + manufacturer[0:2]
+    payload += sqn + cmd
+    payload += build_payload_for_configure_reporting( attributelist )
+    return raw_APS_request(self, nwkid, EpOut, Cluster, "0104", payload, zigate_ep=EpIn, ackIsDisabled=ackIsDisabled)
+
+        
+def build_payload_for_configure_reporting( attributelist ):
+    # Zigate Configure Reporting expect attrubuterecord as: attrdirection + attrType + attr + minInter + maxInter + timeOut + chgFlag
+    # So we need to reorder as per Zigbee standard and also handle the Endian
+    # https://zigbeealliance.org/wp-content/uploads/2019/12/07-5123-06-zigbee-cluster-library-specification.pdf 2.5.7.1 
+    idx = 0
+    payload = ""
+    while idx < len(attributelist):
+        attribute_direction = attributelist[idx : idx + 2]
+        attribute_identifier = "%04x" % struct.unpack(">H", struct.pack("H", int(attributelist[idx + 4 : idx + 8], 16)))[0]
+        attribute_datatype = attributelist[idx + 2 : idx + 4]
+        min_reporting = "%04x" % struct.unpack(">H", struct.pack("H", int(attributelist[idx + 8 : idx + 12], 16)))[0]
+        max_reporting = "%04x" % struct.unpack(">H", struct.pack("H", int(attributelist[idx + 12 : idx + 16], 16)))[0]
+        idx += 16
+        reporting_change = get_change_flag( attribute_datatype, attributelist[idx:] )
+        idx += len(reporting_change)
+        timeout_period = "%04x" % struct.unpack(">H", struct.pack("H", int(attributelist[idx : idx + 4], 16)))[0]
+        idx += 4
+
+        payload += attribute_identifier + attribute_datatype + min_reporting + max_reporting
+        if reporting_change != "":
+            payload += reporting_change
+        payload += timeout_period
+    return payload
+
+def get_change_flag( attrType, data):
+    # https://zigbeealliance.org/wp-content/uploads/2019/12/07-5123-06-zigbee-cluster-library-specification.pdf Table 2-10 (page 2-41)
+    
+    data_type_id = int(attrType,16)
+    if data_type_id == 0x00:
+        return ""
+    if data_type_id in {0x08, 0x10, 0x18, 0x20}:
+        # 1 byte
+        return data[0:2]
+    if data_type_id in {0x09, 0x19}:
+        # 2 bytes
+        return "%04x" % struct.unpack(">H", struct.pack("H", int(data[0:4], 16)))[0]
+    if data_type_id in {0x0A, 0x1A}:
+        # 3 bytes
+        return data[6:4] + data[4:2] + data[0:2]
+    if data_type_id in {0x0B, 0x1B}:
+        # 4 bytes
+        return data[8:6] + data[6:4] + data[4:2] + data[2:0]
+    if data_type_id in {0x0C, 0x1C}:
+        # 5 bytes
+        return data[10:8] + data[8:6] + data[6:4] + data[4:2] + data[2:0]
+    if data_type_id in {0x0D, 0x1D}:
+        # 6 bytes
+        return data[12:10] + data[10:8] + data[8:6] + data[6:4] + data[4:2] + data[2:0]
+    if data_type_id in {0x0E, 0x1E}:
+        # 7 bytes
+        return data[14:12] + data[12:10] + data[10:8] + data[8:6] + data[6:4] + data[4:2] + data[2:0]
+    if data_type_id in {0x0F, 0x1F}:
+        # 8 bytes
+        return data[16:14] + data[14:12] + data[12:10] + data[10:8] + data[8:6] + data[6:4] + data[4:2] + data[2:0]
+
+
+    
+# Discover Attributes 
 
 
 # Cluster 0006: On/Off
