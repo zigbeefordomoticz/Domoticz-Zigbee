@@ -546,14 +546,6 @@ SETTINGS = {
                 "hidden": True,
                 "Advanced": True,
             },
-            "ieeeForRawAps": {
-                "type": "bool",
-                "default": 0,
-                "current": None,
-                "restart": 1,
-                "hidden": True,
-                "Advanced": True,
-            },
             "forceFullSeqMode": {
                 "type": "bool",
                 "default": 0,

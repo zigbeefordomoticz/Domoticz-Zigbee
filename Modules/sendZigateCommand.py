@@ -192,33 +192,7 @@ def sendZigateCmd(self, cmd, datas, ackIsDisabled=False):
     return send_zigatecmd_raw(self, cmd, datas, ackIsDisabled)
 
 
-def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep=ZIGATE_EP, highpriority=False, ackIsDisabled=False, ):
-    # This function submits a request to send data to a remote node, with no restrictions
-    # on the type of transmission, destination address, destination application profile,
-    # destination cluster and destination endpoint number - these destination parameters
-    # do not need to be known to the stack or defined in the ZPS configuration. In this
-    # sense, this is most general of the Data Transfer functions.
-
-    # The data is sent in an Application Protocol Data Unit (APDU) instance,
-    #   Command 0x0530
-    #   address mode
-    #   target short address 4
-    #   source endpoint 2
-    #   destination endpoint 2
-    #   clusterId 4/
-    #   profileId 4
-    #   security mode 2
-    #   radius 2
-    #   data length 2
-    #   data Array of 2
-
-    # eSecurityMode is the security mode for the data transfer, one of:
-    #         0x00 : ZPS_E_APL_AF_UNSECURE (no security enabled)
-    #         0x01 : ZPS_E_APL_AF_SECURE Application-level security using link key and network key)
-    #         0x02 : ZPS_E_APL_AF_SECURE_NWK (Network-level security using network key)
-    #         0x10 : ZPS_E_APL_AF_SECURE | ZPS_E_APL_AF_EXT_NONCE (Application-level security using link key and network key with the extended NONCE included in the frame)
-    #         0x20 : ZPS_E_APL_AF_WILD_PROFILE (May be combined with above flags using OR operator. Sends the message using the wild card profile (0xFFFF) instead of the profile in the associated Simple descriptor)
-    # u8Radius is the maximum number of hops permitted to the destination node (zero value specifies that default maximum is to be used)
+def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep=ZIGATE_EP, groupaddrmode=False, highpriority=False, ackIsDisabled=False):
 
     SECURITY = 0x02
     RADIUS = 0x00
@@ -246,24 +220,15 @@ def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zig
         overwrittenackIsDisabled = True  # Indicate that we are without Ack
 
     # self.log.logging( "BasicOutput", "Log", "Raw APS - ackIsDisabled: %s overwrittenackIsDisabled: %s" %(ackIsDisabled,overwrittenackIsDisabled))
-    if self.pluginconf.pluginConf["ieeeForRawAps"]:
-        ieee = self.ListOfDevices[targetaddr]["IEEE"]
-        if ackIsDisabled:
-            return send_zigatecmd_raw(
-                self,
-                "0530",
-                "08" + ieee + zigate_ep + dest_ep + cluster + profileId + security + radius + len_payload + payload,
-                highpriority,
-                ackIsDisabled=overwrittenackIsDisabled,
-            )
+    if groupaddrmode:
         return send_zigatecmd_raw(
             self,
             "0530",
-            "03" + ieee + zigate_ep + dest_ep + cluster + profileId + security + radius + len_payload + payload,
+            "01" + targetaddr + zigate_ep + dest_ep + cluster + profileId + security + radius + len_payload + payload,
             highpriority,
-            ackIsDisabled=overwrittenackIsDisabled,
+            ackIsDisabled=ackIsDisabled,
         )
-
+        
     if ackIsDisabled:
         return send_zigatecmd_raw(
             self,

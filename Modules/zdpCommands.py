@@ -80,12 +80,3 @@ def zdp_binding_device(self, ieee , ep , cluster , addrmode , destaddr , destep)
 def zdp_unbinding_device(self, ieee , ep , cluster , addrmode , destaddr , destep):
     self.log.logging( "zdpCommand", "Debug","zdp_unbinding_device %s %s %s %s %s %s" %(ieee , ep , cluster , addrmode , destaddr , destep))
     return send_zigatecmd_raw(self, "0031", ieee + ep + cluster + addrmode + destaddr + destep)
-
-
-# Unavailable under ZiGate
-def zdp_management_routing_table_request(self, nwkid, payload):
-    return raw_APS_request( self, nwkid, "00", "0032", "0000", payload, zigate_ep="00", highpriority=False, ackIsDisabled=False,)
-
-
-def zdp_management_binding_table_request(self, nwkid, payload):
-    return raw_APS_request( self, nwkid, "00", "0033", "0000", payload, zigate_ep="00", highpriority=False, ackIsDisabled=False,)

@@ -883,6 +883,9 @@ def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
     if self.webserver:
         self.webserver.update_firmware(self.FirmwareVersion)
         self.ZigateComm.update_ZiGate_HW_Version(self.ZiGateModel)
+        
+    if self.groupmgt:
+        self.groupmgt.update_firmware(self.FirmwareVersion)
 
     if self.ZigateComm:
         self.ZigateComm.update_ZiGate_Version(self.FirmwareVersion, self.FirmwareMajorVersion)
