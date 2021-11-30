@@ -50,6 +50,7 @@ ATTRIBUTES = {
         0xF000,
     ],
     "0001": [0x0000, 0x0001, 0x0003, 0x0020, 0x0021, 0x0033, 0x0035],
+    "0002": [0x000, 0x0001, 0x0002, 0x0003, 0x0010, 0x0011, 0x0012, 0x0013, 0x0014],
     "0003": [0x0000],
     "0004": [0x0000],
     "0005": [0x0001, 0x0002, 0x0003, 0x0004],
@@ -595,6 +596,29 @@ def ReadAttributeRequest_0001(self, key, force_disable_ack=None):
                 ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0001", listAttributes, ackIsDisabled=True)
             else:
                 ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0001", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
+
+def ReadAttributeRequest_0002(self, key, force_disable_ack=None):
+    self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_0002 - Key: %s " % key, nwkid=key)
+
+    # Device Temperature
+    ListOfEp = getListOfEpForCluster(self, key, "0001")
+    for EPout in ListOfEp:
+        listAttributes = []
+        for iterAttr in retreive_ListOfAttributesByCluster(self, key, EPout, "0002"):
+            if iterAttr not in listAttributes:
+                listAttributes.append(iterAttr)
+
+        if listAttributes:
+            self.log.logging(
+                "ReadAttributes",
+                "Debug",
+                "Request Device Temperature Config via Read Attribute request: " + key + " EPout = " + EPout,
+                nwkid=key,
+            )
+            if force_disable_ack:
+                ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0002", listAttributes, ackIsDisabled=True)
+            else:
+                ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0002", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
 
 
 def ReadAttributeRequest_0006_0000(self, key):
@@ -1578,6 +1602,7 @@ READ_ATTRIBUTES_REQUEST = {
     # Cluster : ( ReadAttribute function, Frequency )
     "0000": (ReadAttributeRequest_0000, "polling0000"),
     "0001": (ReadAttributeRequest_0001, "polling0001"),
+    "0002": (ReadAttributeRequest_0002, "polling0002"),
     "0008": (ReadAttributeRequest_0008, "pollingLvlControl"),
     "0006": (ReadAttributeRequest_0006, "pollingONOFF"),
     "000C": (ReadAttributeRequest_000C, "polling000C"),
