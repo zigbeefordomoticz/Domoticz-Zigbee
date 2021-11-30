@@ -129,30 +129,32 @@ def get_change_flag( attrType, data):
     data_type_id = int(attrType,16)
     if data_type_id == 0x00:
         return ""
-    if data_type_id in {0x08, 0x10, 0x18, 0x20}:
-        # 1 byte
+    if data_type_id in {0x08, 0x10, 0x18, 0x20, 0x28, 0x30}:
+        # 1 byte - 8b
         return data[0:2]
-    if data_type_id in {0x09, 0x19}:
-        # 2 bytes
+    if data_type_id in {0x09, 0x19, 0x21, 0x29, 0x31, 0x38}:
+        # 2 bytes - 16b
         return "%04x" % struct.unpack(">H", struct.pack("H", int(data[0:4], 16)))[0]
-    if data_type_id in {0x0A, 0x1A}:
-        # 3 bytes
-        return data[6:4] + data[4:2] + data[0:2]
-    if data_type_id in {0x0B, 0x1B}:
-        # 4 bytes
-        return data[8:6] + data[6:4] + data[4:2] + data[2:0]
-    if data_type_id in {0x0C, 0x1C}:
-        # 5 bytes
-        return data[10:8] + data[8:6] + data[6:4] + data[4:2] + data[2:0]
-    if data_type_id in {0x0D, 0x1D}:
-        # 6 bytes
-        return data[12:10] + data[10:8] + data[8:6] + data[6:4] + data[4:2] + data[2:0]
-    if data_type_id in {0x0E, 0x1E}:
-        # 7 bytes
-        return data[14:12] + data[12:10] + data[10:8] + data[8:6] + data[6:4] + data[4:2] + data[2:0]
-    if data_type_id in {0x0F, 0x1F}:
-        # 8 bytes
-        return data[16:14] + data[14:12] + data[12:10] + data[10:8] + data[8:6] + data[6:4] + data[4:2] + data[2:0]
+    if data_type_id in {0x0A, 0x1A, 0x22, 0x2a}:
+        # 3 bytes - 24b
+        return ("%08x" %struct.unpack(">I", struct.pack("I", int("0" + data[0:6], 16)))[0])[0:6]
+    if data_type_id in {0x0B, 0x1B, 0x23, 0x2b, 0x39}:
+        # 4 bytes - 32b
+        return "%08x" %struct.unpack(">I", struct.pack("I", int(data[0:8], 16)))[0]
+    if data_type_id in {0x0C, 0x1C, 0x24, 0x2c }:
+        # 5 bytes - 40b
+        return ("%010x" %struct.unpack(">Q", struct.pack("Q", int("0" + data[0:10], 16)))[0])[0:10]
+    if data_type_id in {0x0D, 0x1D, 0x25, 0x2d}:
+        # 6 bytes - 48b
+        return ("%012x" %struct.unpack(">Q", struct.pack("Q", int(data[0:12], 16)))[0])[0:12]
+    if data_type_id in {0x0E, 0x1E, 0x26, 0x2e}:
+        # 7 bytes - 56b
+        return "%014x" %("%014x" %struct.unpack(">Q", struct.pack("Q", int( "00" + data[0:14], 16)))[0])[0:14]
+    if data_type_id in {0x0F, 0x1F, 0x27, 0x2f, 0x3a}:
+        # 8 bytes - 64b
+        return "%016x" %struct.unpack(">Q", struct.pack("Q", int(data[0:16], 16)))[0]
+    if data_type_id in { 0x41, 0x42 }:
+        return data[2:int(data[0:2],16)]
 
 
 # Discover Attributes 
