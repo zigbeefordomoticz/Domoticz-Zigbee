@@ -122,6 +122,7 @@ def build_payload_for_configure_reporting( attributelist ):
         payload += timeout_period
     return payload
 
+
 def get_change_flag( attrType, data):
     # https://zigbeealliance.org/wp-content/uploads/2019/12/07-5123-06-zigbee-cluster-library-specification.pdf Table 2-10 (page 2-41)
     
@@ -154,7 +155,6 @@ def get_change_flag( attrType, data):
         return data[16:14] + data[14:12] + data[12:10] + data[10:8] + data[8:6] + data[6:4] + data[4:2] + data[2:0]
 
 
-    
 # Discover Attributes 
 
 
