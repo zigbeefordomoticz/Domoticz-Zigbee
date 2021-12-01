@@ -14,17 +14,45 @@ from Modules.zigateConsts import ADDRESS_MODE, SIZE_DATA_TYPE
 def zdp_decoders( self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
     self.logging_8002( 'Debug', "zdp_decoders NwkId: %s Ep: %s Cluster: %s Payload: %s" %(SrcNwkId, SrcEndPoint, ClusterId , Payload))
     
+    if ClusterId == "0000":
+        # NWK_addr_req
+        return frame
+    
+    if  ClusterId == "0001":
+        # IEEE_addr_req
+        return frame
+    
+    if ClusterId == "0002":
+        # Node_Desc_req
+        return frame
+    
+    if ClusterId == "0003":
+        # Power_Desc_req
+        return frame
+    
     if ClusterId == "0013":
         return buildframe_device_annoucement( self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame)
+    
+    if ClusterId == "8002":
+        # Node_Desc_rsp 
+        return buildframe_node_descriptor_response( self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame)
     
     if ClusterId == "8004":
         return buildframe_simple_descriptor_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame)
     
     if ClusterId == "8005":
         return buildframe_active_endpoint_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame)
+    
+    if ClusterId == "8021":
+        return buildframe_bind_response_command(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame)
+    
+    if ClusterId == "8033":
+        # handle directly as raw in Modules/inputs/Decode8002
+        return frame        
+    
     return frame
 
-
+    
 def buildframe_device_annoucement( self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
     # Device Annoucement
     #    if len(MsgData) > 22:  # Firmware 3.1b
@@ -38,8 +66,8 @@ def buildframe_device_annoucement( self, SrcNwkId, SrcEndPoint, ClusterId, Paylo
 
     sqn = Payload[0:2]
     nwkid = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[2:6], 16)))[0]
-    ieee = "%016x" %struct.unpack("Q", struct.pack(">Q", int(Payload[6:32], 16)))[0]
-    maccapa = Payload[32:34]
+    ieee = "%016x" %struct.unpack("Q", struct.pack(">Q", int(Payload[6:22], 16)))[0]
+    maccapa = Payload[22:24]
     
     self.logging_8002( 'Debug', "buildframe_device_annoucement sqn: %s nwkid: %s ieee: %s maccapa: %s" %(sqn,nwkid , ieee , maccapa ))
     
@@ -54,8 +82,47 @@ def buildframe_device_annoucement( self, SrcNwkId, SrcEndPoint, ClusterId, Paylo
     newFrame += "03"
     return newFrame
 
+def buildframe_node_descriptor_response( self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
+    # sequence = MsgData[0:2]
+    # status = MsgData[2:4]
+    # addr = MsgData[4:8]
+    # manufacturer = MsgData[8:12]
+    # max_rx = MsgData[12:16]
+    # max_tx = MsgData[16:20]
+    # # server_mask = MsgData[20:24]
+    # # descriptor_capability = MsgData[24:26]
+    # mac_capability = MsgData[26:28]
+    # max_buffer = MsgData[28:30]
+    # bit_field = MsgData[30:34]
+    
+    #  2c 00 3517   0140/8e/7c11/52/5200/002c/5200/00
+    
+    sqn = Payload[0:2]
+    status = Payload[2:4]
+    nwkid = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[4:8], 16)))[0]
+    bitfield_16 = Payload[8:12]
+    mac_capa_8 = Payload[12:14]
+    manuf_code_16 = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[14:18], 16)))[0]
+    max_buf_size_8 = Payload[18:20]
+    max_in_size_16 = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[20:24], 16)))[0]
+    server_mask_16 = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[24:28], 16)))[0]
+    max_out_size_16 = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[28:32], 16)))[0]
+    descriptor_capability_field_8 = Payload[32:34]
 
+    self.logging_8002( 'Debug', "buildframe_node_descriptor_response sqn: %s nwkid: %s Manuf: %s MacCapa: %s" %(sqn,nwkid , manuf_code_16 , mac_capa_8 ))
 
+    buildPayload = sqn + status + nwkid + manuf_code_16 + max_in_size_16 + max_out_size_16 
+    buildPayload += server_mask_16 + descriptor_capability_field_8 + mac_capa_8 + max_buf_size_8 + bitfield_16
+    
+    newFrame = "01"  # 0:2
+    newFrame += "8042"  # 2:6   MsgType
+    newFrame += "%4x" % len(buildPayload)  # 6:10  Length
+    newFrame += "ff"  # 10:12 CRC
+    newFrame += buildPayload
+    newFrame += frame[len(frame) - 4 : len(frame) - 2]  # LQI
+    newFrame += "03"
+    return newFrame
+    
 def buildframe_active_endpoint_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
     # Active End Point Response
     #    MsgDataSQN = MsgData[0:2]
@@ -78,16 +145,13 @@ def buildframe_active_endpoint_response(self, SrcNwkId, SrcEndPoint, ClusterId, 
     
     buildPayload = sqn + status + nwkid + nbEp + ep_list
     newFrame = "01"  # 0:2
-    newFrame += "004d"  # 2:6   MsgType
+    newFrame += "8045"  # 2:6   MsgType
     newFrame += "%4x" % len(buildPayload)  # 6:10  Length
     newFrame += "ff"  # 10:12 CRC
     newFrame += buildPayload
     newFrame += frame[len(frame) - 4 : len(frame) - 2]  # LQI
     newFrame += "03"
     return newFrame
-
-
-
 
 def buildframe_simple_descriptor_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
     # Node Descriptor Response
@@ -137,10 +201,30 @@ def buildframe_simple_descriptor_response(self, SrcNwkId, SrcEndPoint, ClusterId
         buildPayload += "%04x" % struct.unpack("H", struct.pack(">H", int(SimpleDescriptor[idx+(4*x):idx+(4*x)+4], 16)))[0]
 
     newFrame = "01"  # 0:2
-    newFrame += "004d"  # 2:6   MsgType
+    newFrame += "8043"  # 2:6   MsgType
     newFrame += "%4x" % len(buildPayload)  # 6:10  Length
     newFrame += "ff"  # 10:12 CRC
     newFrame += buildPayload
     newFrame += frame[len(frame) - 4 : len(frame) - 2]  # LQI
     newFrame += "03"
-    return newFrame    
+    return newFrame   
+
+def buildframe_bind_response_command(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
+    # 2d00
+    sqn = Payload[0:2]
+    status = Payload[2:4]
+
+    self.logging_8002( 'Debug', "buildframe_bind_response_command sqn: %s nwkid: %s Ep: %s Status %s" %(sqn, SrcNwkId , SrcEndPoint, status ))
+        
+    buildPayload = sqn + status
+    
+    newFrame = "01"  # 0:2
+    newFrame += "8030"  # 2:6   MsgType
+    newFrame += "%4x" % len(buildPayload)  # 6:10  Length
+    newFrame += "ff"  # 10:12 CRC
+    newFrame += buildPayload
+    newFrame += frame[len(frame) - 4 : len(frame) - 2]  # LQI
+    newFrame += "03"
+    return newFrame
+
+    
