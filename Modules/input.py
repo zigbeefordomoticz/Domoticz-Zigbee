@@ -133,6 +133,9 @@ def ZigateRead(self, Devices, Data):
 
     # self.log.logging( "Input", 'Debug', "ZigateRead - decoded data: " + Data + " lenght: " + str(len(Data)) )
 
+    if Data is None:
+        return
+    
     FrameStart = Data[0:2]
     FrameStop = Data[len(Data) - 2 : len(Data)]
     if FrameStart != "01" and FrameStop != "03":
