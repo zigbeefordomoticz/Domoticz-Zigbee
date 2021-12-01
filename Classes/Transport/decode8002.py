@@ -13,20 +13,21 @@ from Modules.zigateConsts import ADDRESS_MODE
 
 def decode8002_and_process(self, frame):
 
-    SrcNwkId, SrcEndPoint, ClusterId, Payload = extract_nwk_infos_from_8002(frame)
+    ProfileId, SrcNwkId, SrcEndPoint, ClusterId, Payload = extract_nwk_infos_from_8002(frame)
     self.logging_8002( 'Debug', "decode8002_and_process NwkId: %s Ep: %s Cluster: %s Payload: %s" %(SrcNwkId, SrcEndPoint, ClusterId , Payload))
 
     if SrcNwkId is None:
         return frame
 
-
-    if ClusterId == "0000":
-        frame = zdp_decoders( SrcNwkId, SrcEndPoint, ClusterId, Payload, frame )
+    if ProfileId == "0000":
+        frame = zdp_decoders( self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame )
         return frame
     
-    if ClusterId == "0104":
-        frame = zcl_decoders( SrcNwkId, SrcEndPoint, ClusterId, Payload , frame )
+    if ProfileId == "0104":
+        frame = zcl_decoders( self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame )
         return frame
+    
+    return frame
     
 
 
@@ -37,7 +38,7 @@ def extract_nwk_infos_from_8002(frame):
     MsgCRC = frame[10:12]
 
     if len(frame) < 18:
-        return (None, None, None, None)
+        return (None, None, None, None, None)
 
     # Payload
     MsgData = frame[12 : len(frame) - 4]
@@ -67,7 +68,7 @@ def extract_nwk_infos_from_8002(frame):
             Payload = MsgData[38 : len(MsgData)]
 
         else:
-            return (None, None, None, None)
+            return (None, None, None, None, None)
 
     elif int(SrcAddrMode, 16) == ADDRESS_MODE["ieee"]:
         SrcNwkId = MsgData[16:32]  # uint32_t
@@ -85,10 +86,10 @@ def extract_nwk_infos_from_8002(frame):
             TargetNwkId = MsgData[34:40]  # uint32_t
             Payload = MsgData[40 : len(MsgData)]
         else:
-            return (None, None, None, None)
+            return (None, None, None, None, None)
     else:
-        return (None, None, None, None)
+        return (None, None, None, None, None)
 
-    return (SrcNwkId, SrcEndPoint, ClusterId, Payload)
+    return (ProfileId, SrcNwkId, SrcEndPoint, ClusterId, Payload)
 
 
