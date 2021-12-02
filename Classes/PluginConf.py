@@ -1424,6 +1424,14 @@ SETTINGS = {
                 "hidden": True,
                 "Advanced": True,
             },
+            "polling0002": {
+                "type": "int",
+                "default": 86400,
+                "current": None,
+                "restart": 0,
+                "hidden": True,
+                "Advanced": True,
+            },
             "pollingONOFF": {
                 "type": "int",
                 "default": 900,

@@ -199,6 +199,7 @@ def ReadCluster(
     DECODE_CLUSTER = {
         "0000": Cluster0000,
         "0001": Cluster0001,
+        "0002": Cluster0002,
         "0003": Cluster0003,
         "0005": Cluster0005,
         "0006": Cluster0006,
@@ -1187,6 +1188,23 @@ def UpdateBatteryAttribute(self, Devices, MsgSrcAddr, MsgSrcEp):
             )
 
 
+def Cluster0002(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
+    # Device Temperature Configuration 
+    if MsgAttrID == "0000": # CurrentTemperature
+        value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
+        # Store value in int centi-degre
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0402", value)
+    elif MsgAttrID == "0001": # MinTempExperienced 
+        value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value) 
+    elif MsgAttrID == "0002": # MaxTempExperienced 
+        value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
+    elif MsgAttrID == "0003": # OverTempTotalDwell 
+        value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
+    
 def Cluster0003(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
 
     self.log.logging(
@@ -4321,6 +4339,8 @@ def Cluster0b04(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             return
         if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == "outletv4":
             value /= 10
+        if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == "SPLZB-131":
+            value /= 100
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0001", str(value))
 
