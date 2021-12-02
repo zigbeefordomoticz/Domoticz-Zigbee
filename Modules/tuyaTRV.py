@@ -210,6 +210,8 @@ def receive_childlock(self, Devices, model_target, NwkId, srcEp, ClusterID, dstN
 
 def receive_windowdetection(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     self.log.logging("Tuya", "Debug", "receive_windowdetection - Nwkid: %s/%s Window Open: %s" % (NwkId, srcEp, data))
+    if model_target in  ("TS0601-_TZE200_b6wax7g0",):
+        data = "00" if data == "01" else "01"
     MajDomoDevice(self, Devices, NwkId, srcEp, "0500", data)
     store_tuya_attribute(self, NwkId, "OpenWindow", data)
 
@@ -518,6 +520,7 @@ eTRV_MATRIX = {
             0x04: receive_rapid_heating_status,
             #0x07: receive_windowdetection,
             0x08: receive_windowdetection_status,
+            0x09: receive_windowdetection,
             0x0D: receive_childlock,
             0x0E: receive_battery,
             0x67: receive_boost_time,
