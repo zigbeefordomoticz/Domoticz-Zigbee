@@ -92,5 +92,3 @@ def extract_nwk_infos_from_8002(frame):
         return (None, None, None, None, None)
 
     return (ProfileId, SrcNwkId, SrcEndPoint, ClusterId, Payload)
-
-

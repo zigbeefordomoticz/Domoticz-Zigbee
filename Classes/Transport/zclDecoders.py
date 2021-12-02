@@ -359,4 +359,3 @@ def buildframe_configure_reporting_response(frame, Sqn, SrcNwkId, SrcEndPoint, C
     newFrame += frame[len(frame) - 4 : len(frame) - 2]  # LQI
     newFrame += "03"
     return newFrame
-

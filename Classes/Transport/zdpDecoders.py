@@ -226,5 +226,3 @@ def buildframe_bind_response_command(self, SrcNwkId, SrcEndPoint, ClusterId, Pay
     newFrame += frame[len(frame) - 4 : len(frame) - 2]  # LQI
     newFrame += "03"
     return newFrame
-
-    
