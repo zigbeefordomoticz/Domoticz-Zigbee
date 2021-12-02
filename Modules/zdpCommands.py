@@ -16,9 +16,9 @@ from Modules.zdpRawCommands import (zdp_raw_active_endpoint_request,
                                     zdp_raw_simple_descriptor_request)
 
 
-def zdp_IEEE_address_request(self, nwkid, u8RequestType , u8StartIndex):
-    self.log.logging( "zdpCommand", "Debug","zdp_IEEE_address_request %s %s %s" %(nwkid, u8RequestType , u8StartIndex ))
-    return send_zigatecmd_raw(self, "0041", "02" + nwkid + u8RequestType + u8StartIndex)
+def zdp_IEEE_address_request(self, lookup, u8RequestType , u8StartIndex):
+    self.log.logging( "zdpCommand", "Debug","zdp_IEEE_address_request %s %s %s" %( lookup, u8RequestType , u8StartIndex ))
+    return send_zigatecmd_raw(self, "0041", "02" + lookup + lookup + u8RequestType + u8StartIndex)
 
 
 def zdp_node_descriptor_request(self, nwkid):

@@ -688,10 +688,10 @@ def set_poweron_afteroffon(self, key, OnOffMode=0xFF):
         )
 
 
-def ieee_addr_request(self, nwkid):
+def ieee_addr_request(self, lookup):
     u8RequestType = "00"
     u8StartIndex = "00"
-    zdp_IEEE_address_request(self, nwkid, u8RequestType , u8StartIndex)
+    zdp_IEEE_address_request(self, lookup, u8RequestType , u8StartIndex)
     #sendZigateCmd(self, "0041", "02" + nwkid + u8RequestType + u8StartIndex)
 
 

@@ -1556,25 +1556,25 @@ def Decode8041(self, Devices, MsgData, MsgLQI):  # IEEE Address response
         + " Device List: "
         + MsgDeviceList,
     )
-
-    if MsgShortAddress not in self.ListOfDevices:
+    if MsgDataStatus != "00":
         return
+    
+    if MsgShortAddress in self.ListOfDevices:
+        self.log.logging( "Input", "Debug", "Decode 8041 - Receive an IEEE: %s with a NwkId: %s" %( MsgIEEE, MsgShortAddress))
+        return
+
+    # We might check if we didn't have a change in the IEEE <-> NwkId
+    if MsgIEEE in self.IEEE2NWK:
+        # Looks like the device was known with a different NwkId
+        # hoping that we can reconnect to an existing Device
+        self.log.logging( "Input", "Log", "Decode 8041 - Receive an IEEE: %s with a NwkId: %s, will try to reconnect" %( MsgIEEE, MsgShortAddress))
+        if not DeviceExist(self, Devices, MsgShortAddress, MsgIEEE):
+            self.log.logging( "Input", "Log", "Decode 8041 - Not able to reconnect (unknown device)")
+            return
 
     timeStamped(self, MsgShortAddress, 0x8041)
     loggingMessages(self, "8041", MsgShortAddress, MsgIEEE, MsgLQI, MsgSequenceNumber)
     lastSeenUpdate(self, Devices, NwkId=MsgShortAddress)
-
-    if self.ListOfDevices[MsgShortAddress]["Status"] == "8041":  # We have requested a IEEE address for a Short Address,
-        # hoping that we can reconnect to an existing Device
-        if DeviceExist(self, Devices, MsgShortAddress, MsgIEEE):
-            self.log.logging(
-                "Input",
-                "Log",
-                "Decode 8041 - Device details: " + str(self.ListOfDevices[MsgShortAddress]),
-            )
-        else:
-            Domoticz.Error("Decode 8041 - Unknown device: " + str(MsgShortAddress) + " IEEE: " + str(MsgIEEE))
-
 
 def Decode8042(self, Devices, MsgData, MsgLQI):  # Node Descriptor response
     # MsgLen = len(MsgData)

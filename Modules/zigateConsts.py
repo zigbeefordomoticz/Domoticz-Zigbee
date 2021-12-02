@@ -19,6 +19,9 @@ HEARTBEAT = 5
 # Number of Max Command to be submitted to Zigate
 MAX_LOAD_ZIGATE = 5
 
+# ZIGATE BUFFER SIZE. You cannot send a frame greater than that !
+ZIGATE_MAX_BUFFER_SIZE = 255
+
 # Threshold before switching to Busy state. If we have or more than MAX_FOR_ZIGATE_BUZY in the FIFO queue
 MAX_FOR_ZIGATE_BUZY = 10
 
