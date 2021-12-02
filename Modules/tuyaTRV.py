@@ -516,12 +516,12 @@ eTRV_MATRIX = {
             0x02: receive_setpoint,
             0x03: receive_temperature,
             0x04: receive_rapid_heating_status,
-            0x07: receive_windowdetection,
+            #0x07: receive_windowdetection,
             0x08: receive_windowdetection_status,
             0x0D: receive_childlock,
             0x0E: receive_battery,
             0x67: receive_boost_time,
-            0x68: receive_valveposition, 
+            #0x68: receive_valveposition, 
             0x69: receive_calibration,
             0x6A: receive_temporary_away,
             0x6B: receive_eco_temperature,
@@ -807,8 +807,8 @@ def tuya_set_calibration_if_needed(self, NwkId):
     tuya_trv_calibration(self, NwkId, target_calibration)
 
 
-def tuya_trv_calibration(self, nwkid, value):
-    self.log.logging("Tuya", "Debug", "tuya_trv_calibration - %s Calibration: %s" % (nwkid, value))
+def tuya_trv_calibration(self, nwkid, calibration):
+    self.log.logging("Tuya", "Debug", "tuya_trv_calibration - %s Calibration: %s" % (nwkid, calibration))
     sqn = get_and_inc_SQN(self, nwkid)
     dp = get_datapoint_command(self, nwkid, "Calibration")
     self.log.logging("Tuya", "Debug", "tuya_trv_calibration - %s dp for Calibration: %s" % (nwkid, dp))
@@ -818,7 +818,9 @@ def tuya_trv_calibration(self, nwkid, value):
         EPout = "01"
         cluster_frame = "11"
         cmd = "00"  # Command
-        data = "%08x" % value
+        if calibration < 0:
+            calibration = int(hex(-calibration - pow(2, 32))[9:], 16)
+        data = "%08x" % calibration
         tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 
 
