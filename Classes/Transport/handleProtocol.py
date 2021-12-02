@@ -113,12 +113,16 @@ def process_frame(self, decoded_frame):
         self.forwarder_queue.put(decode8002_and_process(self, decoded_frame))
         return
 
-    if self.pluginconf.pluginConf["ZiGateInHybridMode"]:
-        self.logging_proto("Debug", "==> Shall we skip this message type %s as we are in HybridMode" %MsgType)
-        if MsgType in ( "8100", "8102"):
-            self.logging_proto("Debug", "==> Skiping message type %s as we are in HybridMode" %MsgType)
-            return
-        
+    if ( self.pluginconf.pluginConf["ZiGateInRawMode"] and MsgType 
+        not in ( "004D", "8003", "8004", "8005", "8006", "8007", "8008", "8009", "8010", "8014", "8015", "8017", "8017", "8806", "8807", "8024", "8048") 
+    ):
+        self.logging_proto("Debug", "==> RawMode: droping packet %s %s" %(MsgType, decoded_frame))
+        return
+
+    if self.pluginconf.pluginConf["ZiGateInHybridMode"] and MsgType in ( "8100", "8102", ):
+        self.logging_proto("Debug", "==> Skiping message type %s as we are in HybridMode" %MsgType)
+        return
+
     if self.firmware_compatibility_mode and MsgType in ("8102", "8100", "8110"):
         self.statistics._data += 1
         decode8011_31c(self, MsgType, decoded_frame)
