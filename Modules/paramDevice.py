@@ -11,6 +11,7 @@
 """
 
 import Domoticz
+
 from Modules.basicOutputs import (ballast_Configuration_max_level,
                                   ballast_Configuration_min_level,
                                   set_PIROccupiedToUnoccupiedDelay,
@@ -31,10 +32,15 @@ from Modules.readAttributes import (ReadAttributeRequest_0006_400x,
 from Modules.schneider_wiser import (iTRV_open_window_detection,
                                      wiser_home_lockout_thermostat)
 from Modules.tuya import (get_tuya_attribute, tuya_backlight_command,
-                          tuya_energy_childLock, tuya_switch_indicate_light,
-                          tuya_switch_relay_status, tuya_cmd_ts004F,
+                          tuya_cmd_ts004F, tuya_energy_childLock,
+                          tuya_switch_indicate_light, tuya_switch_relay_status,
                           tuya_window_cover_motor_reversal)
-from Modules.tuyaTRV import tuya_trv_thermostat_sensor_mode
+from Modules.tuyaTRV import (tuya_trv_boost_time, tuya_trv_calibration,
+                             tuya_trv_child_lock, tuya_trv_eco_temp,
+                             tuya_trv_set_max_setpoint,
+                             tuya_trv_set_min_setpoint,
+                             tuya_trv_thermostat_sensor_mode,
+                             tuya_trv_window_detection)
 
 
 def Ballast_max_level(self, nwkid, max_level):
@@ -192,6 +198,13 @@ DEVICE_PARAMETERS = {
     "DanfossViewDirection": danfoss_viewdirection,
     "TS004FMode": tuya_cmd_ts004F,
     "vibrationAqarasensitivity": setXiaomiVibrationSensitivity,
+    "BRT100WindowsDetection": tuya_trv_window_detection,
+    "BRT100ChildLock": tuya_trv_child_lock,
+    "BRT100BoostDuration": tuya_trv_boost_time,
+    "BRT100Calibration": tuya_trv_calibration,
+    "BRT100SetpointEco": tuya_trv_eco_temp,
+    "BRT100MaxSetpoint": tuya_trv_set_max_setpoint,
+    "BRT100MinSetpoint": tuya_trv_set_min_setpoint
 }
 
 
