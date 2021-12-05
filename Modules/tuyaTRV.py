@@ -101,7 +101,7 @@ def receive_setpoint(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNW
 
 def receive_temperature(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     self.log.logging(
-        "Tuya", "Debug", "receive_temperature - Nwkid: %s/%s Temperature: %s" % (NwkId, srcEp, int(data, 16))
+        "Tuya", "Log", "receive_temperature - Nwkid: %s/%s Temperature: %s" % (NwkId, srcEp, int(data, 16))
     )
     MajDomoDevice(self, Devices, NwkId, srcEp, "0402", (int(data, 16) / 10))
     checkAndStoreAttributeValue(self, NwkId, "01", "0402", "0000", int(data, 16))
@@ -821,7 +821,7 @@ def tuya_trv_calibration(self, nwkid, calibration):
         cluster_frame = "11"
         cmd = "00"  # Command
         if calibration < 0:
-            calibration = int(hex(-calibration - pow(2, 32))[9:], 16)
+            calibration = (-1 * int(hex(-calibration - pow(2, 32)),16))
         data = "%08x" % calibration
         tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 

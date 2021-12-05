@@ -1188,7 +1188,7 @@ def check_firmware_level(self):
     elif self.FirmwareVersion.lower() == "031e":
         self.pluginconf.pluginConf["forceAckOnZCL"] = False
 
-    elif int(self.FirmwareVersion, 16) > 0x0320:
+    elif int(self.FirmwareVersion, 16) > 0x0321:
         self.log.logging("Plugin", "Error", "Firmware %s is not yet supported" % self.FirmwareVersion.lower())
 
     return True
