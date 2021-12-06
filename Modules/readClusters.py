@@ -31,7 +31,7 @@ from Modules.tuya import (TUYA_2GANGS_SWITCH_MANUFACTURER,
                           TUYA_SMARTAIR_MANUFACTURER, TUYA_SWITCH_MANUFACTURER,
                           TUYA_THERMOSTAT_MANUFACTURER, TUYA_TS0601_MODEL_NAME,
                           TUYA_WATER_TIMER, TUYA_eTRV1_MANUFACTURER,
-                          TUYA_eTRV2_MANUFACTURER, TUYA_eTRV3_MANUFACTURER)
+                          TUYA_eTRV2_MANUFACTURER, TUYA_eTRV3_MANUFACTURER, TUYA_eTRV4_MANUFACTURER)
 from Modules.zigateConsts import (LEGRAND_REMOTE_SHUTTER,
                                   LEGRAND_REMOTE_SWITCHS, LEGRAND_REMOTES,
                                   ZONE_TYPE)
@@ -445,6 +445,9 @@ def Cluster0000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             elif manufacturer_name in TUYA_eTRV3_MANUFACTURER:  # eTRV
                 self.log.logging("Cluster", "Log", "ReadCluster - %s / %s force to eTRV3" % (MsgSrcAddr, MsgSrcEp))
                 modelName += "-eTRV3"
+            elif manufacturer_name in TUYA_eTRV4_MANUFACTURER:  # eTRV
+                self.log.logging("Cluster", "Log", "ReadCluster - %s / %s force to eTRV3" % (MsgSrcAddr, MsgSrcEp))
+                modelName += "-_TZE200_b6wax7g0"
 
             elif manufacturer_name in TUYA_SMARTAIR_MANUFACTURER:  # Smart Air Box
                 self.log.logging("Cluster", "Log", "ReadCluster - %s / %s force to Smart Air" % (MsgSrcAddr, MsgSrcEp))
@@ -945,6 +948,7 @@ def Cluster0001(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging("Cluster", "Debug", "readCluster 0001 - %s Battery: %s V" % (MsgSrcAddr, value), MsgSrcAddr)
         if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in (
             "MOSZB-140",
+            "HMSZB-110",
             "EH-ZB-BMS",
             "DWS312-E",
             "CDWS312",
@@ -1075,6 +1079,7 @@ def UpdateBatteryAttribute(self, Devices, MsgSrcAddr, MsgSrcEp):
     BATTERY_15_VOLTS = ()
     BATTERY_30_VOLTS = (
         "MOSZB-140",
+        "HMSZB-110",
         "3AFE130104020015",
         "3AFE140103020000",
         "3AFE14010402000D",

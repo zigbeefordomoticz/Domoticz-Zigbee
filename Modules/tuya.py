@@ -136,33 +136,22 @@ TUYA_eTRV1_MANUFACTURER = (
 TUYA_eTRV2_MANUFACTURER = (
     "_TZE200_ckud7u2l",
     "_TYST11_ckud7u2l",
-    "_TZE200_b6wax7g0",
+
 )
 TUYA_eTRV3_MANUFACTURER = (
     "_TZE200_c88teujp",
     "_TYST11_KGbxAXL2",
     "_TYST11_zuhszj9s",
 )
+TUYA_eTRV4_MANUFACTURER = (
+    "_TZE200_b6wax7g0",  
+)
+
 TUYA_eTRV_MANUFACTURER = (
     "_TYST11_2dpplnsn",
     "_TZE200_wlosfena",
     "_TZE200_fhn3negr",
     "_TZE200_qc4fpmcn",
-)
-TUYA_eTRV_MODEL = (
-    "TS0601",
-    "TS0601-eTRV",
-    "TS0601-eTRV1",
-    "TS0601-eTRV2",
-    "TS0601-eTRV3",
-    "TS0601-thermostat",
-    "uhszj9s",
-    "GbxAXL2",
-    "88teujp",
-    "kud7u2l",
-    "eaxp72v",
-    "fvq6avy",
-    "ivfvd7h",
 )
 
 TUYA_TS0601_MODEL_NAME = TUYA_eTRV_MODEL + TUYA_CURTAIN_MODEL + TUYA_SIREN_MODEL
@@ -180,6 +169,7 @@ TUYA_MANUFACTURER_NAME = (
     + TUYA_eTRV1_MANUFACTURER
     + TUYA_eTRV2_MANUFACTURER
     + TUYA_eTRV3_MANUFACTURER
+    + TUYA_eTRV4_MANUFACTURER
     + TUYA_eTRV_MANUFACTURER
     + TUYA_SMARTAIR_MANUFACTURER
     + TUYA_WATER_TIMER
@@ -233,9 +223,9 @@ def tuya_registration(self, nwkid, device_reset=False, parkside=False):
 
 def tuya_cmd_ts004F(self, NwkId, mode):
     TS004F_MODE =  {
-            'Scene': 0x01,
-            'Dimmer': 0x00,
-            }
+        'Scene': 0x01,
+        'Dimmer': 0x00,
+    }
     if mode not in TS004F_MODE:
         return
 
@@ -243,7 +233,7 @@ def tuya_cmd_ts004F(self, NwkId, mode):
 
 def tuya_cmd_0x0000_0xf0(self, NwkId):
 
-    # Seen at pairing of a WGH-JLCZ02 / TS011F and TS0201
+    # Seen at pairing of a WGH-JLCZ02 / TS011F and TS0201 and TS0601 (MOES BRT-100)
 
         payload = "11" + get_and_inc_SQN(self, NwkId) + "fe"
         raw_APS_request(
@@ -282,6 +272,8 @@ def callbackDeviceAwake_Tuya(self, Devices, NwkId, EndPoint, cluster):
 def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
 
     # 19 79 06 00006c02000400000033
+    
+    
 
     if NwkId not in self.ListOfDevices:
         return
@@ -306,7 +298,7 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
         tuya_send_default_response(self, NwkId, srcEp, sqn, cmd, fcf)
 
     # https://developer.tuya.com/en/docs/iot/tuuya-zigbee-door-lock-docking-access-standard?id=K9ik5898uzqrk
-
+    
     if cmd == "01":  # TY_DATA_RESPONE
         status = MsgPayload[6:8]  # uint8
         transid = MsgPayload[8:10]  # uint8
@@ -357,6 +349,7 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
         
     elif cmd == "0b":  # ??
         pass
+    
     elif cmd == "10":  # ???
         pass
 
@@ -870,7 +863,7 @@ def tuya_curtain_lvl(self, NwkId, percent):
     tuya_cmd(self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)
 
 
-#### Tuya Smart Dimmer Switch
+# Tuya Smart Dimmer Switch
 def tuya_dimmer_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     #             cmd | status | transId | dp | DataType | fn | len | Data
     # Dim Down:     01     00        01     02      02      00    04   00000334
@@ -1159,9 +1152,9 @@ def tuya_smart_motion_all_in_one(self, Devices, _ModelName, NwkId, srcEp, Cluste
         
     else:
         self.log.logging(
-        "Tuya",
-        "Debug",
-        "tuya_smart_motion_all_in_one - Model: %s Unknow Nwkid: %s/%s dp: %02x data type: %s data: %s"
-        % (_ModelName, NwkId, srcEp, dp, datatype, data),
-        NwkId,
+            "Tuya",
+            "Debug",
+            "tuya_smart_motion_all_in_one - Model: %s Unknow Nwkid: %s/%s dp: %02x data type: %s data: %s"
+            % (_ModelName, NwkId, srcEp, dp, datatype, data),
+            NwkId,
     )

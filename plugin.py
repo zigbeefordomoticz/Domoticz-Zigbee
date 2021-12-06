@@ -138,7 +138,6 @@ class BasePlugin:
         self.ListOfDevices = (
             {}
         )  # {DevicesAddresse : { status : status_de_detection, data : {ep list ou autres en fonctions du status}}, DevicesAddresse : ...}
-        self.DevicesInPairingMode = []
         self.DiscoveryDevices = {}  # Used to collect pairing information
         self.IEEE2NWK = {}
         self.zigatedata = {}
@@ -1167,8 +1166,22 @@ def check_firmware_level(self):
         self.PluzzyFirmware = True
         return True
 
-    if int(self.FirmwareVersion, 16) > 0x0320:
-        self.log.logging("Plugin", "Error", "Firmware %s is not yet supported" % self.FirmwareVersion.lower())
+    if self.FirmwareVersion.lower() == "031b":
+        self.log.logging(
+            "Plugin",
+            "Status",
+            "You are not on the latest firmware version, This version is known to have problem, please consider to upgrade",
+        )
+        return False
+
+    if self.FirmwareVersion.lower() in ("031a", "031c", "031d"):
+        self.pluginconf.pluginConf["forceAckOnZCL"] = True
+
+    elif int(self.FirmwareVersion.lower(),16) >= 0x031e:
+        self.pluginconf.pluginConf["forceAckOnZCL"] = False
+
+    elif int(self.FirmwareVersion, 16) > 0x0321:
+        self.log.logging("Plugin", "Error", "WARNING: Firmware %s is not yet supported" % self.FirmwareVersion.lower())
 
     return True
 
@@ -1224,7 +1237,6 @@ def start_web_server(self, webserver_port, webserver_homefolder):
         self.ZigateComm,
         webserver_homefolder,
         self.HardwareID,
-        self.DevicesInPairingMode,
         Devices,
         self.ListOfDevices,
         self.IEEE2NWK,
