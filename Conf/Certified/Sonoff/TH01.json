@@ -23,10 +23,10 @@
             "Attributes": {
                 "0000": {
                     "DataType": "29",
-                    "MinInterval": "0005",
-                    "MaxInterval": "0e10",
+                    "MinInterval": "001E",
+                    "MaxInterval": "0258",
                     "TimeOut": "0000",
-                    "Change": "003c"
+                    "Change": "000A"
                 }
             }
         },
@@ -34,10 +34,10 @@
             "Attributes": {
                 "0000": {
                     "DataType": "21",
-                    "MinInterval": "0005",
-                    "MaxInterval": "0e10",
+                    "MinInterval": "001E",
+                    "MaxInterval": "0258",
                     "TimeOut": "0000",
-                    "Change": "0258"
+                    "Change": "012C"
                 }
             }
         },
