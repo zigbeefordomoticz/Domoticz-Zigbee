@@ -29,6 +29,19 @@ def tuya_sirene_registration(self, nwkid):
 
     self.log.logging("Tuya", "Debug", "tuya_sirene_registration - Nwkid: %s" % nwkid)
 
+    EPout = "01"
+    payload = "11" + get_and_inc_SQN(self, nwkid) + "10" + "002a"
+    raw_APS_request(
+        self,
+        nwkid,
+        EPout,
+        "ef00",
+        "0104",
+        payload,
+        zigate_ep=ZIGATE_EP,
+        ackIsDisabled=is_ack_tobe_disabled(self, nwkid),
+    )
+
     # (1) 3 x Write Attribute Cluster 0x0000 - Attribute 0xffde  - DT 0x20  - Value: 0x13
     EPout = "01"
     write_attribute(self, nwkid, ZIGATE_EP, EPout, "0000", "0000", "00", "ffde", "20", "13", ackIsDisabled=False)
