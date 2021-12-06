@@ -144,7 +144,6 @@ class BasePlugin:
         self.ListOfDevices = (
             {}
         )  # {DevicesAddresse : { status : status_de_detection, data : {ep list ou autres en fonctions du status}}, DevicesAddresse : ...}
-        self.DevicesInPairingMode = []
         self.DiscoveryDevices = {}  # Used to collect pairing information
         self.IEEE2NWK = {}
         self.zigatedata = {}
@@ -1245,7 +1244,6 @@ def start_web_server(self, webserver_port, webserver_homefolder):
         self.ZigateComm,
         webserver_homefolder,
         self.HardwareID,
-        self.DevicesInPairingMode,
         Devices,
         self.ListOfDevices,
         self.IEEE2NWK,
