@@ -947,6 +947,7 @@ def Cluster0001(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging("Cluster", "Debug", "readCluster 0001 - %s Battery: %s V" % (MsgSrcAddr, value), MsgSrcAddr)
         if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in (
             "MOSZB-140",
+            "HMSZB-110",
             "EH-ZB-BMS",
             "DWS312-E",
             "CDWS312",
@@ -1077,6 +1078,7 @@ def UpdateBatteryAttribute(self, Devices, MsgSrcAddr, MsgSrcEp):
     BATTERY_15_VOLTS = ()
     BATTERY_30_VOLTS = (
         "MOSZB-140",
+        "HMSZB-110",
         "3AFE130104020015",
         "3AFE140103020000",
         "3AFE14010402000D",
