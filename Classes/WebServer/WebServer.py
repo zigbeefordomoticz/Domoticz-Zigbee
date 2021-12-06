@@ -82,7 +82,6 @@ class WebServer(object):
         ZigateComm,
         HomeDirectory,
         hardwareID,
-        DevicesInPairingMode,
         Devices,
         ListOfDevices,
         IEEE2NWK,
@@ -123,7 +122,7 @@ class WebServer(object):
         self.groupmgt = None
         self.OTA = None
         self.ListOfDevices = ListOfDevices
-        self.DevicesInPairingMode = DevicesInPairingMode
+        self.DevicesInPairingMode = [],
         self.fakeDevicesInPairingMode = 0
         self.IEEE2NWK = IEEE2NWK
         self.DeviceConf = DeviceConf
@@ -149,6 +148,10 @@ class WebServer(object):
     def update_networkmap(self, networkmap):
         self.networkmap = networkmap
 
+    def add_element_to_devices_in_pairing_mode( self, nwkid):
+        if nwkid not in self.DevicesInPairingMode:
+            self.DevicesInPairingMode.append( nwkid )
+        
     def update_groupManagement(self, groupmanagement):
         self.groupmgt = groupmanagement if groupmanagement else None
 

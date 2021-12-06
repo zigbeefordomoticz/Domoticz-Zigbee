@@ -341,9 +341,8 @@ def decode004d_new_devicev2(self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgData, 
         self.ListOfDevices[NwkId]["DeviceType"] = "RFD"
 
     self.log.logging("Pairing", "Log", "--> Adding device %s in self.DevicesInPairingMode" % NwkId)
-    if NwkId not in self.DevicesInPairingMode:
-        self.DevicesInPairingMode.append(NwkId)
-    self.log.logging("Pairing", "Log", "--> %s" % str(self.DevicesInPairingMode))
+    self.webserver.add_element_to_devices_in_pairing_mode( NwkId)
+    self.log.logging("Pairing", "Log", "--> %s" % str(self.webserver.DevicesInPairingMode))
 
     self.log.logging(
         "Input",
