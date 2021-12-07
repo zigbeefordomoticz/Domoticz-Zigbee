@@ -9,7 +9,7 @@
 			"ef00": "",
 			"000a": "",
 			"0019": "",
-			"Type": "Temp/ThermoSetpoint/Valve/Door"
+			"Type": "ThermoMode_4/Temp/ThermoSetpoint/Valve/Door"
 		}
 	},
 	"Type": "",

@@ -84,7 +84,19 @@ def tuya_eTRV_registration(self, nwkid, device_reset=False):
             zigate_ep=ZIGATE_EP,
             ackIsDisabled=is_ack_tobe_disabled(self, nwkid),
         )
-
+    if get_model_name(self, nwkid)  in ("TS0601-_TZE200_b6wax7g0",):
+        EPout = "01"
+        payload = "11" + get_and_inc_SQN(self, nwkid) + "10" + "0002"
+        raw_APS_request(
+            self,
+            nwkid,
+            EPout,
+            "ef00",
+            "0104",
+            payload,
+            zigate_ep=ZIGATE_EP,
+            ackIsDisabled=is_ack_tobe_disabled(self, nwkid),
+        )
 
 def receive_setpoint(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
 
@@ -103,7 +115,7 @@ def receive_setpoint(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNW
 
 def receive_temperature(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     self.log.logging(
-        "Tuya", "Log", "receive_temperature - Nwkid: %s/%s Temperature: %s" % (NwkId, srcEp, int(data, 16))
+        "Tuya", "Debug", "receive_temperature - Nwkid: %s/%s Temperature: %s" % (NwkId, srcEp, int(data, 16))
     )
     MajDomoDevice(self, Devices, NwkId, srcEp, "0402", (int(data, 16) / 10))
     checkAndStoreAttributeValue(self, NwkId, "01", "0402", "0000", int(data, 16))
@@ -343,7 +355,40 @@ def receive_schedule(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNW
     elif dp == 0x81:  # Saturday
         store_tuya_attribute(self, NwkId, "Schedule_Saturday", decode_schedule_day(dp, data))
 
+def receive_moe_schedule(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
+    # 00/11/  
+    # Cmd: 65
+    # Dt: 00
+    # 0024
+    #                    Period1  Period2   Period 3   Period 4
+    # Monday to Friday : 0600/28/ 0800/1e/  1100/2c/   1600/1e
+    # Saturday:          0600/28/ 0800/1e/  1100/2c/   1600/1e
+    # Sunday:            0600/28/ 0800/1e/  1100/2c/   1600/1e
+    # 0600-28/ 0b1e-2a/ 0d1e-2c 111e-2e
+    # 0600-30/ 0c00-2e/ 0e1e-2c 111e-2a
+    # 0600-26/ 0c1e-28/ 0e1e-2a 121e-28
+    Domoticz.Log("receive_moe_schedule( %s )" %data) 
+    schedule = {'Monday Friday': decode_moes_plan(data[:24])}
+    schedule['Saturday'] = decode_moes_plan(data[24:48])
+    schedule['Sunday'] = decode_moes_plan(data[48:72])
+    store_tuya_attribute(self, NwkId, "Schedule", schedule )
+        
+def decode_moes_plan( data ):
+    Domoticz.Log("decode_moes_plan( %s )" %data) 
+    return {
+        'Period1': decode_moes_period( data[:6] ),
+        'Period2': decode_moes_period( data[6:12]) ,
+        'Period3': decode_moes_period( data[12:18]) ,
+        'Period4': decode_moes_period( data[18:24]),
+    }
 
+def decode_moes_period( data ):
+    Domoticz.Log("decode_moes_period( %s )" %data)    
+    return {
+        'Start': data[:4],
+        'Setpoint': int(data[4:6],16)
+    } 
+    
 def decode_schedule_day(dp, data):
 
     return_value = {}
@@ -370,10 +415,19 @@ def decode_schedule_day(dp, data):
 
 def receive_brt100_mode(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     # 0x00 - Auto, 0x01 - Manual, 0x02 - Temp Hand, 0x03 - Holliday
+    BRT_MODE = {
+        0x00: 'Auto',
+        0x01: "Manual",
+        0x02: "TemporaryManual",
+        0x03: "Holidays",
+    }
+
     self.log.logging(
         "Tuya", "Debug", "receive_brt100_mode - Nwkid: %s/%s : %s" % (NwkId, srcEp, int(data, 16))
     )
-    store_tuya_attribute(self, NwkId, "BRTMode", data)
+    mode = BRT_MODE.get(int(data, 16), int(data, 16))
+    store_tuya_attribute(self, NwkId, "BRTMode", mode )
+    MajDomoDevice(self, Devices, NwkId, srcEp, "0201", int(data, 16) + 1, Attribute_= "001c")
 
 def receive_rapid_heating_status(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     self.log.logging(
@@ -524,6 +578,7 @@ eTRV_MATRIX = {
             0x09: receive_windowdetection,
             0x0D: receive_childlock,
             0x0E: receive_battery,
+            0x65: receive_moe_schedule,
             0x67: receive_boost_time,
             0x68: receive_valveposition, 
             0x69: receive_calibration,
@@ -586,7 +641,7 @@ def tuya_eTRV_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNW
 def tuya_trv_brt100_set_mode(self, nwkid, mode):
     # 0x00 - Auto, 0x01 - Manual, 0x02 - Temp Hand, 0x03 - Holliday
     self.log.logging("Tuya", "Debug", "tuya_trv_brt100_set_mode - %s mode: %s" % (nwkid, mode))
-    if mode not in (0x00, 0x01,0x03):
+    if mode not in (0x00, 0x01, 0x02, 0x03):
         return
     sqn = get_and_inc_SQN(self, nwkid)
     dp = get_datapoint_command(self, nwkid, "BRTMode")
@@ -812,6 +867,12 @@ def tuya_set_calibration_if_needed(self, NwkId):
 
 
 def tuya_trv_calibration(self, nwkid, calibration):
+    # 000d
+    # Command: 69
+    # Data Type: 02
+    # 00
+    # Len: 04
+    # Data: 00000000
     self.log.logging("Tuya", "Debug", "tuya_trv_calibration - %s Calibration: %s" % (nwkid, calibration))
     sqn = get_and_inc_SQN(self, nwkid)
     dp = get_datapoint_command(self, nwkid, "Calibration")
@@ -823,7 +884,7 @@ def tuya_trv_calibration(self, nwkid, calibration):
         cluster_frame = "11"
         cmd = "00"  # Command
         if calibration < 0:
-            calibration = (-1 * int(hex(-calibration - pow(2, 32)),16))
+            calibration = abs(int(hex(-calibration - pow(2, 32)), 16))
         data = "%08x" % calibration
         tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 
@@ -871,7 +932,8 @@ def tuya_setpoint(self, nwkid, setpoint_value):
         # Looks like in the Tuya 0xef00 cluster it is only expressed in 10th of degree
 
         model_name = get_model_name(self, nwkid) 
-        if model_name in[ "TS0601-thermostat","TS0601-_TZE200_b6wax7g0"] :
+        if model_name in[ "TS0601-thermostat","TS0601-_TZE200_b6wax7g0"]:
+            tuya_trv_brt100_set_mode(self, nwkid, 0x01) #Force to be in Manual
             # Setpoint is defined in ° and not centidegree
             setpoint_value = setpoint_value // 100
         else:

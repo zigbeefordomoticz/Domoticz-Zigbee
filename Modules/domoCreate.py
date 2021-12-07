@@ -405,7 +405,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in ContractPower ..." % (t), NWKID)
 
             # 4 Selectors, OffHidden, Style 1
-            if t in ("DButton",):
+            if t in ("DButton", "ThermoMode_4",):
                 Options = createSwitchSelector(self, 4, DeviceType=t, OffHidden=True, SelectorStyle=1)
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in DButton" % (t), NWKID)

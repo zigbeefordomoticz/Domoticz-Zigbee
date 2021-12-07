@@ -70,7 +70,7 @@ def thermostat_Setpoint(self, NwkId, setpoint):
             # Tuya
             self.log.logging(
                 "Thermostats",
-                "Log",
+                "Debug",
                 "thermostat_Setpoint - calling Tuya for %s with value %s" % (NwkId, setpoint),
                 nwkid=NwkId,
             )

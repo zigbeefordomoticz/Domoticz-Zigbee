@@ -36,7 +36,8 @@ from Modules.tuya import (tuya_curtain_lvl, tuya_curtain_openclose,
                           tuya_window_cover_calibration)
 from Modules.tuyaSiren import (tuya_siren_alarm, tuya_siren_humi_alarm,
                                tuya_siren_temp_alarm)
-from Modules.tuyaTRV import tuya_trv_mode, tuya_trv_onoff
+from Modules.tuyaTRV import (tuya_trv_brt100_set_mode, tuya_trv_mode,
+                             tuya_trv_onoff)
 from Modules.widgets import SWITCH_LVL_MATRIX
 from Modules.zigateConsts import (THERMOSTAT_LEVEL_2_MODE,
                                   THERMOSTAT_LEVEL_3_MODE, ZIGATE_EP)
@@ -105,6 +106,7 @@ ACTIONATORS = [
     "ACMode",
     "ThermoMode_2",
     "ThermoMode_3",
+    "ThermoMode_4",
     "ThermoModeEHZBRTS",
     "FanControl",
     "PAC-SWITCH",
@@ -344,10 +346,21 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 NWKID,
             )
             self.log.logging("Command", "Debug", "ThermoMode - requested Level: %s" % Level, NWKID)
+
             tuya_trv_mode(self, NWKID, 0)
             UpdateDevice_v2(self, Devices, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
             return
+        if DeviceType == "ThermoMode_4":
+            self.log.logging(
+                "Command",
+                "Debug",
+                "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s"
+                % (NWKID, EPout, Unit, DeviceType, Level),
+                NWKID,
+            )
+            self.log.logging("Command", "Debug", "ThermoMode - requested Level: %s" % Level, NWKID)
 
+        
         if DeviceType == "ThermoModeEHZBRTS":
             self.log.logging("Command", "Debug", "MajDomoDevice EHZBRTS Schneider Thermostat Mode Off", NWKID)
             schneider_EHZBRTS_thermoMode(self, NWKID, 0)
@@ -902,6 +915,21 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 self, Devices, Unit, int(Level // 10), Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev
             )
             return
+        if DeviceType == "ThermoMode_4":
+            self.log.logging(
+                "Command",
+                "Log",
+                "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s"
+                % (NWKID, EPout, Unit, DeviceType, Level),
+                NWKID,
+            )
+            
+            if "Model" in self.ListOfDevices[ NWKID ] and self.ListOfDevices[ NWKID ][ "Model" ] == "TS0601-_TZE200_b6wax7g0":
+                self.log.logging("Command", "Log", "ThermoMode_4 - requested Level: %s" % Level, NWKID)
+                # 0x00 - Auto, 0x01 - Manual, 0x02 - Temp Hand, 0x03 - Holliday   
+                tuya_trv_brt100_set_mode(self, NWKID, int(Level / 10) - 1)
+                UpdateDevice_v2(self, Devices, Unit, int(Level / 10), Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+                return
 
         if DeviceType == "FanControl":
 
