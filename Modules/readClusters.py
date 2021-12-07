@@ -357,13 +357,19 @@ def Cluster0000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         if "Manufacturer Name" in self.ListOfDevices[MsgSrcAddr]:
             manufacturer_name = self.ListOfDevices[MsgSrcAddr]["Manufacturer Name"]
 
-        if modelName == "Thermostat" and manufacturer_name == "Schneider Electric":
+        if modelName + '-' + manufacturer_name in self.DeviceConf:
+            modelName = modelName + '-' + manufacturer_name
+            
+        elif modelName + manufacturer_name in self.DeviceConf:
+            modelName = modelName + manufacturer_name
+            
+        elif modelName == "Thermostat" and manufacturer_name == "Schneider Electric":
             modelName = "Wiser2-Thermostat"
 
-        if modelName == "lumi.sensor_swit":
+        elif modelName == "lumi.sensor_swit":
             modelName = "lumi.sensor_switch.aq3"
 
-        if modelName == "TS011F":
+        elif modelName == "TS011F":
             if manufacturer_name == "_TZ3000_vzopcetz":
                 # Lidl multiprise
                 modelName = "TS011F-multiprise"
@@ -892,7 +898,7 @@ def Cluster0001(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
     if MsgAttrID == "0000" and MsgAttType == "00":
         # Xiaomi !!
-        value = int(MsgClusterData[2:4] + MsgClusterData[0:2], 16)
+        value = int(MsgClusterData[2:4] + MsgClusterData[:2], 16)
     else:
         value = decodeAttribute(self, MsgAttType, MsgClusterData)
 
@@ -1065,7 +1071,8 @@ def UpdateBatteryAttribute(self, Devices, MsgSrcAddr, MsgSrcEp):
         "WB-01",
         "TS0041",
         "TS0202",
-        "TS0202-_TZ3210_jijr1sss"
+        "TS0202-_TZ3210_jijr1sss",
+        "TS0201-_TZ3000_mxzo5rhf"
     )
 
     BATTERY_3VOLTS = (
@@ -1086,6 +1093,7 @@ def UpdateBatteryAttribute(self, Devices, MsgSrcAddr, MsgSrcEp):
         "3AFE170100510001",
         "SmokeSensor-EM",
         "COSensor-EM",
+        "TS0201-_TZ3000_mxzo5rhf"
     ) + LEGRAND_REMOTES
     BATTERY_45_VOLTS = ("EH-ZB-RTS",)
 
@@ -1194,19 +1202,13 @@ def UpdateBatteryAttribute(self, Devices, MsgSrcAddr, MsgSrcEp):
 
 
 def Cluster0002(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
-    # Device Temperature Configuration 
+    # Device Temperature Configuration
     if MsgAttrID == "0000": # CurrentTemperature
         value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
         # Store value in int centi-degre
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0402", value)
-    elif MsgAttrID == "0001": # MinTempExperienced 
-        value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
-        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value) 
-    elif MsgAttrID == "0002": # MaxTempExperienced 
-        value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
-        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
-    elif MsgAttrID == "0003": # OverTempTotalDwell 
+    elif MsgAttrID in ["0001", "0002", "0003"]:      # MinTempExperienced 
         value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
     
@@ -1331,7 +1333,7 @@ def Cluster0006(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             )
             return
 
-        if self.ListOfDevices[MsgSrcAddr]["Model"] in ("CPR412-E", "CPR412", "PR412")  and MsgClusterData not in ("01", "00"):
+        if self.ListOfDevices[MsgSrcAddr]["Model"] in ("CPR412-E", "CPR412", "PR412") and MsgClusterData not in ("01", "00"):
             self.log.logging(
                 "Cluster",
                 "Log",
@@ -4452,7 +4454,7 @@ def Cluster0b04(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             MsgSrcAddr,
         )
 
-    elif MsgAttrID in ("0908", "0a08"):  #  Current Phase 2 and Current Phase 3
+    elif MsgAttrID in ("0908", "0a08"):  # Current Phase 2 and Current Phase 3
         value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
 
         if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == "ZLinky_TIC":
