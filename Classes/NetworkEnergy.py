@@ -20,15 +20,14 @@
 # 
 
 
-from datetime import datetime
-from time import time
-import os.path
+
 import json
+import os.path
+from time import time
 
 import Domoticz
-from Modules.basicOutputs import sendZigateCmd, maskChannel
-from Classes.AdminWidgets import AdminWidgets
-from Classes.LoggingManagement import LoggingManagement
+from Modules.basicOutputs import maskChannel
+from Modules.zdpCommands import zdp_management_network_update_request
 
 CHANNELS = ["11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26"]
 DURATION = 0x03
@@ -143,7 +142,7 @@ class NetworkEnergy:
         scanCount = 1
 
         mask = maskChannel(self, channels)
-        datas = target + "%08.x" % (mask) + "%02.x" % (scanDuration) + "%02.x" % (scanCount) + "00" + root
+        #datas = target + "%08.x" % (mask) + "%02.x" % (scanDuration) + "%02.x" % (scanCount) + "00" + root
 
         if len(self.nwkidInQueue) == 0:
             self.logging(
@@ -151,9 +150,10 @@ class NetworkEnergy:
                 "NwkScanReq - request a scan on channels %s for duration %s an count %s"
                 % (channels, scanDuration, scanCount),
             )
-            self.logging("Debug", "NwkScan - %s %s" % ("004A", datas))
+            #self.logging("Debug", "NwkScan - %s %s" % ("004A", datas))
             self.nwkidInQueue.append((root, target))
-            sendZigateCmd(self, "004A", datas)
+            zdp_management_network_update_request(self, target , "%08.x" %mask , "%02.x" %scanDuration , "%02.x" % (scanCount) , "00", root)
+            #sendZigateCmd(self, "004A", datas)
             self.EnergyLevel[root][target]["Status"] = "WaitResponse"
             self.ticks = 0
 

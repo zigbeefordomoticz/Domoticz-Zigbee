@@ -546,14 +546,6 @@ SETTINGS = {
                 "hidden": True,
                 "Advanced": True,
             },
-            "ieeeForRawAps": {
-                "type": "bool",
-                "default": 0,
-                "current": None,
-                "restart": 1,
-                "hidden": True,
-                "Advanced": True,
-            },
             "forceFullSeqMode": {
                 "type": "bool",
                 "default": 0,
@@ -1134,6 +1126,30 @@ SETTINGS = {
                 "hidden": False,
                 "Advanced": True,
             },
+            "debugzdpCommand": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": True,
+            },
+            "debugzclCommand": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": True,
+            },
+            "debugzigateCommand": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": True,
+            },
         },
     },
     # Others
@@ -1175,6 +1191,14 @@ SETTINGS = {
         "Order": 15,
         "param": {
             "ZiGateInHybridMode": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": True,
+            },
+            "ZiGateInRawMode": {
                 "type": "bool",
                 "default": 0,
                 "current": None,

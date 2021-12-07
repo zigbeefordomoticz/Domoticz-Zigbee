@@ -13,10 +13,7 @@
 from time import time
 
 import Domoticz
-from Classes.Transport.sqnMgmt import (TYPE_APP_ZCL,
-                                       sqn_get_internal_sqn_from_app_sqn)
-from Modules.basicOutputs import (ieee_addr_request, send_zigatecmd_zcl_ack,
-                                  send_zigatecmd_zcl_noack)
+from Modules.basicOutputs import ieee_addr_request
 from Modules.bindings import bindDevice
 from Modules.tools import (get_isqn_datastruct, get_list_isqn_attr_datastruct,
                            getClusterListforEP, is_ack_tobe_disabled,
@@ -24,8 +21,13 @@ from Modules.tools import (get_isqn_datastruct, get_list_isqn_attr_datastruct,
                            mainPoweredDevice, reset_attr_datastruct,
                            set_isqn_datastruct, set_status_datastruct,
                            set_timestamp_datastruct)
+from Modules.zclCommands import (zcl_configure_reporting_request,
+                                 zcl_read_report_config_request)
 from Modules.zigateConsts import (MAX_LOAD_ZIGATE, ZIGATE_EP,
                                   CFG_RPT_ATTRIBUTESbyCLUSTERS)
+
+from Classes.Transport.sqnMgmt import (TYPE_APP_ZCL,
+                                       sqn_get_internal_sqn_from_app_sqn)
 
 MAX_ATTR_PER_REQ = 3
 CONFIGURE_REPORT_PERFORM_TIME = 21  # Reenforce will be done each xx hours
@@ -426,9 +428,7 @@ class ConfigureReporting:
             return  # Only one device at a time
         # End for key
 
-    def prepare_and_send_configure_reporting(
-        self, key, Ep, cluster_list, cluster, direction, manufacturer_spec, manufacturer, ListOfAttributesToConfigure
-    ):
+    def prepare_and_send_configure_reporting( self, key, Ep, cluster_list, cluster, direction, manufacturer_spec, manufacturer, ListOfAttributesToConfigure):
 
         # Ready to send the Command in one shoot or in several.
         attributeList = []  # List of Attribute in the this flow of Configure Reporting
@@ -439,8 +439,8 @@ class ConfigureReporting:
         if self.pluginconf.pluginConf["breakConfigureReporting"]:
             maxAttributesPerRequest = 1
 
+        attrdirection = "00"
         for attr in ListOfAttributesToConfigure:
-            attrdirection = "00"
             attrType = cluster_list[cluster]["Attributes"][attr]["DataType"]
             minInter = cluster_list[cluster]["Attributes"][attr]["MinInterval"]
             maxInter = cluster_list[cluster]["Attributes"][attr]["MaxInterval"]
@@ -478,10 +478,10 @@ class ConfigureReporting:
         self, key, Ep, cluster, direction, manufacturer_spec, manufacturer, attrLen, attrList, attributeList
     ):
         # Prepare the payload
-        datas = ZIGATE_EP + Ep + cluster + direction + manufacturer_spec + manufacturer
-        datas += "%02x" % (attrLen) + attrList
+        #datas = ZIGATE_EP + Ep + cluster + direction + manufacturer_spec + manufacturer
+        #datas += "%02x" % (attrLen) + attrList
 
-        self.logging("Debug", "--> send_configure_reporting_attributes_set - 0120 - %s" % (datas))
+        #self.logging("Debug", "--> send_configure_reporting_attributes_set - 0120 - %s" % (datas))
         self.logging(
             "Debug",
             "--> send_configure_reporting_attributes_set Reporting %s/%s on cluster %s Len: %s Attribute List: %s"
@@ -489,10 +489,11 @@ class ConfigureReporting:
             nwkid=key,
         )
 
-        if is_ack_tobe_disabled(self, key):
-            i_sqn = send_zigatecmd_zcl_noack(self, key, "0120", datas)
-        else:
-            i_sqn = send_zigatecmd_zcl_ack(self, key, "0120", datas)
+        i_sqn = zcl_configure_reporting_request(self, key, ZIGATE_EP, Ep, cluster, direction, manufacturer_spec, manufacturer, "%02x" % (attrLen), attrList, is_ack_tobe_disabled(self, key))
+        #if is_ack_tobe_disabled(self, key):  
+        #    #i_sqn = send_zigatecmd_zcl_noack(self, key, "0120", datas)
+        #else:
+        #    #i_sqn = send_zigatecmd_zcl_ack(self, key, "0120", datas)
 
         for x in attributeList:
             set_isqn_datastruct(self, "ConfigureReporting", key, Ep, cluster, x, i_sqn)
@@ -558,17 +559,15 @@ class ConfigureReporting:
     def read_report_configure_request(self, nwkid, epout, cluster_id, attribute_list, manuf_specific="00", manuf_code="0000"):
 
         nb_attribute = "%02x" % len(attribute_list)
-        str_attribute_list = ""
-        for x in attribute_list:
-            str_attribute_list += "%04x" % x
-
+        str_attribute_list = "".join("%04x" % x for x in attribute_list)
         direction = "00"
-        datas = nwkid + ZIGATE_EP + epout + cluster_id + direction + nb_attribute + manuf_specific + manuf_code + str_attribute_list
+        #datas = nwkid + ZIGATE_EP + epout + cluster_id + direction + nb_attribute + manuf_specific + manuf_code + str_attribute_list
 
-        if is_ack_tobe_disabled(self, nwkid):
-            send_zigatecmd_zcl_noack(self, nwkid, "0122", datas)
-        else:
-            send_zigatecmd_zcl_ack(self, nwkid, "0122", datas)
+        zcl_read_report_config_request(self, nwkid , ZIGATE_EP , epout , cluster_id, direction , manuf_specific , manuf_code , nb_attribute, str_attribute_list, is_ack_tobe_disabled(self, nwkid))
+        #if is_ack_tobe_disabled(self, nwkid):
+        #    send_zigatecmd_zcl_noack(self, nwkid, "0122", datas)
+        #else:
+        #    send_zigatecmd_zcl_ack(self, nwkid, "0122", datas)
 
     # decode 0x8122
     def read_report_configure_response(self, MsgData, MsgLQI):  # Read Configure Report response

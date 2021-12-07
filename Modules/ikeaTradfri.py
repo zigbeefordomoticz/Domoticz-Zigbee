@@ -1,4 +1,14 @@
+#!/usr/bin/env python3
+# coding: utf-8 -*-
+#
+# Author: zaraki673 & pipiche38
+#
+"""
+    Module: ikeaTradfri.py
 
+    Description: 
+
+"""
 
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import lastSeenUpdate

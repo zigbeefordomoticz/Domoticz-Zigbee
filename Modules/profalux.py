@@ -10,12 +10,10 @@
 
 """
 
-import Domoticz
-from Modules.zigateConsts import ZIGATE_EP
-from Modules.basicOutputs import sendZigateCmd, raw_APS_request
+from Modules.sendZigateCommand import raw_APS_request
 from Modules.tools import get_and_inc_SQN
-
-from Classes.LoggingManagement import LoggingManagement
+from Modules.zclCommands import zcl_configure_reporting_request
+from Modules.zigateConsts import ZIGATE_EP
 
 
 def profalux_fake_deviceModel(self, nwkid):
@@ -112,9 +110,10 @@ def configureReportingForprofalux(self, NwkId):
         return
 
     attrList = "00" + "20" + "0001" + "0000" + "0000" + "0000" + "00"
-    datas = "02" + NwkId + ZIGATE_EP + "01" + "fc21" + "00" + "01" + "1110" + "01" + attrList
-    sendZigateCmd(self, "0120", datas)
-    self.log.logging("Profalux", "Debug", "-- -- -- configureReportingForprofalux for %s data: %s" % (NwkId, datas))
+    #datas = "02" + NwkId + ZIGATE_EP + "01" + "fc21" + "00" + "01" + "1110" + "01" + attrList
+    zcl_configure_reporting_request(self, NwkId, ZIGATE_EP, "01", "fc21", "00", "01", "1110", "01", attrList)
+    #sendZigateCmd(self, "0120", datas)
+    #self.log.logging("Profalux", "Debug", "-- -- -- configureReportingForprofalux for %s data: %s" % (NwkId, datas))
 
 
 def profalux_stop(self, nwkid):

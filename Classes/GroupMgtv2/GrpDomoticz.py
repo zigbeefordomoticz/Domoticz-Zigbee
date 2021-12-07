@@ -4,16 +4,23 @@
 # Author: zaraki673 & pipiche38
 #
 
-import Domoticz
 import json
 
-from Classes.GroupMgtv2.GrpCommands import set_kelvin_color, set_rgb_color, set_hue_saturation
+import Domoticz
+from Classes.GroupMgtv2.GrpCommands import (set_hue_saturation,
+                                            set_kelvin_color, set_rgb_color)
 from Classes.GroupMgtv2.GrpDatabase import update_due_to_nwk_id_change
-from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl
-from Modules.zigateConsts import ADDRESS_MODE, ZIGATE_EP, LEGRAND_REMOTES
+from Modules.tools import Hex_Format
+from Modules.zclCommands import (zcl_group_level_move_to_level,
+                                 zcl_group_onoff_off_noeffect,
+                                 zcl_group_onoff_off_witheffect,
+                                 zcl_group_onoff_on,
+                                 zcl_group_window_covering_off,
+                                 zcl_group_window_covering_on,
+                                 zcl_group_window_covering_stop)
+from Modules.zigateConsts import ADDRESS_MODE, LEGRAND_REMOTES, ZIGATE_EP
 
 
-from Classes.AdminWidgets import AdminWidgets
 
 WIDGET_STYLE = {
     "Plug": (244, 73, 0),
@@ -579,34 +586,38 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
     # Not sure that Groups are always on EP 01 !!!!!
     EPout = "01"
 
-    if "Cluster" in self.ListOfGroups[GrpId]:
-        # new fashion
-        if self.ListOfGroups[GrpId]["Cluster"] == "0102":  # Venetian store
-            zigate_cmd = "00FA"
-            if Command == "Off":
-                zigate_param = "00"
-                nValue = 0
-                sValue = "Off"
-                update_device_list_attribute(self, GrpId, "0102", 0)
+    if (
+        "Cluster" in self.ListOfGroups[GrpId]
+        and self.ListOfGroups[GrpId]["Cluster"] == "0102"
+    ):  # Venetian store
+        #zigate_cmd = "00FA"
+        if Command == "Off":
+            zigate_param = "00"
+            nValue = 0
+            sValue = "Off"
+            update_device_list_attribute(self, GrpId, "0102", 0)
+            zcl_group_window_covering_on(self, GrpId, ZIGATE_EP, EPout)
 
-            if Command == "On":
-                zigate_param = "01"
-                nValue = 1
-                sValue = "Off"
-                update_device_list_attribute(self, GrpId, "0102", 100)
+        if Command == "On":
+            zigate_param = "01"
+            nValue = 1
+            sValue = "Off"
+            zcl_group_window_covering_off(self, GrpId, ZIGATE_EP, EPout)
+            update_device_list_attribute(self, GrpId, "0102", 100)
 
-            if Command == "Stop":
-                zigate_param = "02"
-                nValue = 2
-                sValue = "50"
-                update_device_list_attribute(self, GrpId, "0102", 50)
+        if Command == "Stop":
+            zigate_param = "02"
+            nValue = 2
+            sValue = "50"
+            zcl_group_window_covering_stop(self, GrpId, ZIGATE_EP, EPout)
+            update_device_list_attribute(self, GrpId, "0102", 50)
 
-            self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue))
-            datas = "%02d" % ADDRESS_MODE["group"] + GrpId + ZIGATE_EP + EPout + zigate_param
-            self.logging("Debug", "Group Command: %s %s-%s" % (Command, zigate_cmd, datas))
-            self.ZigateComm.sendData(zigate_cmd, datas, ackIsDisabled=True)
-            resetDevicesHearttBeat(self, GrpId)
-            return
+        self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue))
+        #datas = "%02d" % ADDRESS_MODE["group"] + GrpId + ZIGATE_EP + EPout + zigate_param
+        #self.logging("Debug", "Group Command: %s %s-%s" % (Command, zigate_cmd, datas))
+        #self.ZigateComm.sendData(zigate_cmd, datas, ackIsDisabled=True)
+        resetDevicesHearttBeat(self, GrpId)
+        return
 
     # Old Fashon
     if Command == "Off":
@@ -618,18 +629,17 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
             elif self.pluginconf.pluginConf["GrpfadingOff"] == 255:
                 effect = "0001"  # No fade
 
-            zigate_cmd = "0094"
-            datas = "%02d" % ADDRESS_MODE["group"] + GrpId + ZIGATE_EP + EPout + effect
+            #zigate_cmd = "0094"
+            #datas = "%02d" % ADDRESS_MODE["group"] + GrpId + ZIGATE_EP + EPout + effect
+            zcl_group_onoff_off_witheffect(self, GrpId, ZIGATE_EP, EPout, effect)
         else:
-            zigate_cmd = "0092"
-            datas = "%02d" % ADDRESS_MODE["group"] + GrpId + ZIGATE_EP + EPout + "00"
+            #zigate_cmd = "0092"
+            #datas = "%02d" % ADDRESS_MODE["group"] + GrpId + ZIGATE_EP + EPout + "00"
+            zcl_group_onoff_off_noeffect(self, GrpId, ZIGATE_EP, EPout)
 
-        nValue = 0
-        sValue = "Off"
-        self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue))
 
-        self.logging("Debug", "Command: %s %s" % (Command, datas))
-        self.ZigateComm.sendData(zigate_cmd, datas, ackIsDisabled=True)
+        #self.logging("Debug", "Command: %s %s" % (Command, datas))
+        #self.ZigateComm.sendData(zigate_cmd, datas, ackIsDisabled=True)
 
         # Update Device
         nValue = 0
@@ -640,17 +650,18 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
         update_domoticz_group_device(self, GrpId)
 
     elif Command == "On":
-        zigate_cmd = "0092"
-        zigate_param = "01"
+        #zigate_cmd = "0092"
+        #zigate_param = "01"
         nValue = "1"
         sValue = "On"
         self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue))
         update_device_list_attribute(self, GrpId, "0006", "01")
         update_domoticz_group_device(self, GrpId)
+        zcl_group_onoff_on(self, GrpId, ZIGATE_EP, EPout)
 
-        datas = "%02d" % ADDRESS_MODE["group"] + GrpId + ZIGATE_EP + EPout + zigate_param
-        self.logging("Debug", "Command: %s %s" % (Command, datas))
-        self.ZigateComm.sendData(zigate_cmd, datas, ackIsDisabled=True)
+        #datas = "%02d" % ADDRESS_MODE["group"] + GrpId + ZIGATE_EP + EPout + zigate_param
+        #self.logging("Debug", "Command: %s %s" % (Command, datas))
+        #self.ZigateComm.sendData(zigate_cmd, datas, ackIsDisabled=True)
         # Update Device
         nValue = 1
         sValue = "On"
@@ -661,18 +672,20 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
         # Converted to value , raw value from 0 to 255
         # sValue is just a string of Level
         zigate_cmd = "0081"
-        OnOff = "01"
+        #OnOff = "01"
         # value = int(Level*255//100)
         value = "%02X" % int(Level * 255 // 100)
-        zigate_param = OnOff + value + "0010"
-        nValue = "1"
-        sValue = str(Level)
-        self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue))
+        #zigate_param = OnOff + value + "0010"
+        #nValue = 1
+        #sValue = str(Level)
+        #self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue))
         update_device_list_attribute(self, GrpId, "0008", value)
+        
+        zcl_group_level_move_to_level( self, GrpId, ZIGATE_EP, EPout, "01", value, "0010")
 
-        datas = "%02d" % ADDRESS_MODE["group"] + GrpId + ZIGATE_EP + EPout + zigate_param
-        self.logging("Debug", "Command: %s %s" % (Command, datas))
-        self.ZigateComm.sendData(zigate_cmd, datas, ackIsDisabled=True)
+        #datas = "%02d" % ADDRESS_MODE["group"] + GrpId + ZIGATE_EP + EPout + zigate_param
+        #self.logging("Debug", "Command: %s %s" % (Command, datas))
+        #self.ZigateComm.sendData(zigate_cmd, datas, ackIsDisabled=True)
         update_domoticz_group_device(self, GrpId)
         # Update Device
         nValue = 2
@@ -689,15 +702,17 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
         # First manage level
         if Hue_List["m"] != 9998:
             # In case of m ==3, we will do the Setlevel
-            OnOff = "01"  # 00 = off, 01 = on
+            #OnOff = "01"  # 00 = off, 01 = on
             value = Hex_Format(2, round(1 + Level * 254 / 100))  # To prevent off state
-            zigate_cmd = "0081"
-            zigate_param = OnOff + value + transitionMoveLevel
+            #zigate_cmd = "0081"
+            #zigate_param = OnOff + value + transitionMoveLevel
 
-            datas = "%02d" % ADDRESS_MODE["group"] + GrpId + ZIGATE_EP + EPout + zigate_param
-            self.logging("Debug", "Command: %s - data: %s" % (zigate_cmd, datas))
+            #datas = "%02d" % ADDRESS_MODE["group"] + GrpId + ZIGATE_EP + EPout + zigate_param
+            #self.logging("Debug", "Command: %s - data: %s" % (zigate_cmd, datas))
             update_device_list_attribute(self, GrpId, "0008", value)
-            self.ZigateComm.sendData(zigate_cmd, datas, ackIsDisabled=True)
+            #self.ZigateComm.sendData(zigate_cmd, datas, ackIsDisabled=True)
+            
+            zcl_group_level_move_to_level( self, GrpId, ZIGATE_EP, EPout, "01", value, "0000")
 
         if Hue_List["m"] == 1:
             ww = int(Hue_List["ww"])  # Can be used as level for monochrome white
@@ -705,25 +720,11 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
 
         # ColorModeTemp = 2   // White with color temperature. Valid fields: t
         if Hue_List["m"] == 2:
-            set_kelvin_color(
-                self, ADDRESS_MODE["group"], GrpId, ZIGATE_EP, EPout, int(Hue_List["t"]), transit=transitionTemp
-            )
+            set_kelvin_color( self, ADDRESS_MODE["group"], GrpId, ZIGATE_EP, EPout, int(Hue_List["t"]), transit=transitionTemp )
 
-        # ColorModeRGB = 3    // Color. Valid fields: r, g, b.
         elif Hue_List["m"] == 3:
-            set_rgb_color(
-                self,
-                ADDRESS_MODE["group"],
-                GrpId,
-                ZIGATE_EP,
-                EPout,
-                int(Hue_List["r"]),
-                int(Hue_List["g"]),
-                int(Hue_List["b"]),
-                transit=transitionRGB,
-            )
+            set_rgb_color( self, ADDRESS_MODE["group"], GrpId, ZIGATE_EP, EPout, int(Hue_List["r"]), int(Hue_List["g"]), int(Hue_List["b"]), transit=transitionRGB, )
 
-        # ColorModeCustom = 4, // Custom (color + white). Valid fields: r, g, b, cw, ww, depending on device capabilities
         elif Hue_List["m"] == 4:
             # Gledopto GL_008
             # Color: {"b":43,"cw":27,"g":255,"m":4,"r":44,"t":227,"ww":215}
@@ -734,51 +735,27 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
             ww = int(Hue_List["ww"])  # 0 < ww < 255 Warm White
             if cw != 0 and ww != 0:
                 set_kelvin_color(self, ADDRESS_MODE["group"], GrpId, ZIGATE_EP, EPout, int(ww), transit=transitionTemp)
-            else:
-                # How to powerOff the WW/CW channel ?
-                pass
-
             # Process Colour
-            set_hue_saturation(
-                self,
-                ADDRESS_MODE["group"],
-                GrpId,
-                ZIGATE_EP,
-                EPout,
-                int(Hue_List["r"]),
-                int(Hue_List["g"]),
-                int(Hue_List["b"]),
-                transit=transitionHue,
-            )
+            set_hue_saturation( self, ADDRESS_MODE["group"], GrpId, ZIGATE_EP, EPout, int(Hue_List["r"]), int(Hue_List["g"]), int(Hue_List["b"]), transit=transitionHue, )
 
-        # With saturation and hue, not seen in domoticz but present on zigate, and some device need it
         elif Hue_List["m"] == 9998:
-            level = set_hue_saturation(
-                self,
-                ADDRESS_MODE["group"],
-                GrpId,
-                ZIGATE_EP,
-                EPout,
-                int(Hue_List["r"]),
-                int(Hue_List["g"]),
-                int(Hue_List["b"]),
-                transit=transitionHue,
-            )
+            level = set_hue_saturation( self, ADDRESS_MODE["group"], GrpId, ZIGATE_EP, EPout, int(Hue_List["r"]), int(Hue_List["g"]), int(Hue_List["b"]), transit=transitionHue, )
 
             value = int(level * 254 // 100)
             OnOff = "01"
             self.logging("Debug", "---------- Set Level: %s instead of Level: %s" % (value, Level))
-            self.ZigateComm.sendData(
-                "0081",
-                "%02d" % ADDRESS_MODE["group"]
-                + GrpId
-                + ZIGATE_EP
-                + EPout
-                + OnOff
-                + Hex_Format(2, value)
-                + transitionMoveLevel,
-                ackIsDisabled=True,
-            )
+            #self.ZigateComm.sendData(
+            #    "0081",
+            #    "%02d" % ADDRESS_MODE["group"]
+            #    + GrpId
+            #    + ZIGATE_EP
+            #    + EPout
+            #    + OnOff
+            #    + Hex_Format(2, value)
+            #    + transitionMoveLevel,
+            #    ackIsDisabled=True,
+            #)
+            zcl_group_level_move_to_level( self, GrpId, ZIGATE_EP, EPout, "01", Hex_Format(2, value), transitionMoveLevel)
 
         # Update Device
         nValue = 1

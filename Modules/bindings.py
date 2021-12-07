@@ -6,12 +6,8 @@
 
 from time import time
 
-import Domoticz
-from Classes.LoggingManagement import LoggingManagement
-
-from Modules.basicOutputs import sendZigateCmd
 from Modules.zigateConsts import CLUSTERS_LIST
-
+from Modules.zdpCommands import ( zdp_binding_device, zdp_unbinding_device)
 
 def bindGroup(self, ieee, ep, cluster, groupid):
 
@@ -50,8 +46,9 @@ def bindGroup(self, ieee, ep, cluster, groupid):
     # Read to bind
     mode = "01"  # Addres Mode to use: group
 
-    datas = str(ieee) + str(ep) + str(cluster) + str(mode) + str(groupid)
-    i_sqn = sendZigateCmd(self, "0030", datas)
+    #datas = str(ieee) + str(ep) + str(cluster) + str(mode) + str(groupid)
+    i_sqn = zdp_binding_device(self, ieee , ep , cluster , mode , groupid , "")
+    #i_sqn = sendZigateCmd(self, "0030", datas)
 
 def unbindGroup(self, ieee, ep, cluster, groupid):
 
@@ -90,8 +87,9 @@ def unbindGroup(self, ieee, ep, cluster, groupid):
     # Read to bind
     mode = "01"  # Addres Mode to use: group
 
-    datas = str(ieee) + str(ep) + str(cluster) + str(mode) + str(groupid)
-    i_sqn = sendZigateCmd(self, "0031", datas)
+    #datas = str(ieee) + str(ep) + str(cluster) + str(mode) + str(groupid)
+    i_sqn = zdp_unbinding_device(self, ieee , ep , cluster , mode , groupid , "")
+    #i_sqn = sendZigateCmd(self, "0031", datas)
 
 def bindDevice(self, ieee, ep, cluster, destaddr=None, destep="01"):
     """
@@ -170,8 +168,9 @@ def bindDevice(self, ieee, ep, cluster, destaddr=None, destep="01"):
     # Read to bind
     mode = "03"  # Addres Mode to use
 
-    datas = str(ieee) + str(ep) + str(cluster) + str(mode) + str(destaddr) + str(destep)
-    i_sqn = sendZigateCmd(self, "0030", datas)
+    #datas = str(ieee) + str(ep) + str(cluster) + str(mode) + str(destaddr) + str(destep)
+    i_sqn = zdp_binding_device(self, ieee , ep , cluster , mode , destaddr , destep)
+    #i_sqn = sendZigateCmd(self, "0030", datas)
 
     if "Bind" not in self.ListOfDevices[nwkid]:
         self.ListOfDevices[nwkid]["Bind"] = {}
@@ -301,8 +300,9 @@ def unbindDevice(self, ieee, ep, cluster, destaddr=None, destep="01"):
         "unbindDevice - ieee: %s, ep: %s, cluster: %s, Zigate_ieee: %s, Zigate_ep: %s" % (ieee, ep, cluster, destaddr, destep),
         nwkid=nwkid,
     )
-    datas = str(ieee) + str(ep) + str(cluster) + str(mode) + str(destaddr) + str(destep)
-    sendZigateCmd(self, "0031", datas)
+    #datas = str(ieee) + str(ep) + str(cluster) + str(mode) + str(destaddr) + str(destep)
+    zdp_unbinding_device(self, ieee , ep , cluster , mode , destaddr , destep)
+    #sendZigateCmd(self, "0031", datas)
 
 def webBind(self, sourceIeee, sourceEp, destIeee, destEp, Cluster):
 
@@ -359,9 +359,10 @@ def webBind(self, sourceIeee, sourceEp, destIeee, destEp, Cluster):
         return
 
     mode = "03"  # IEEE
-    datas = str(sourceIeee) + str(sourceEp) + str(Cluster) + str(mode) + str(destIeee) + str(destEp)
-    i_sqn = sendZigateCmd(self, "0030", datas)
-    self.log.logging("Binding", "Debug", "---> %s %s i_sqn: %s" % ("0030", datas, i_sqn), sourceNwkid)
+    #datas = str(sourceIeee) + str(sourceEp) + str(Cluster) + str(mode) + str(destIeee) + str(destEp)
+    i_sqn = zdp_binding_device(self, sourceIeee , sourceEp , Cluster , mode , destIeee , destEp)
+    #i_sqn = sendZigateCmd(self, "0030", datas)
+    #self.log.logging("Binding", "Debug", "---> %s %s i_sqn: %s" % ("0030", datas, i_sqn), sourceNwkid)
 
     if "WebBind" not in self.ListOfDevices[sourceNwkid]:
         self.ListOfDevices[sourceNwkid]["WebBind"] = {}
@@ -448,9 +449,10 @@ def webUnBind(self, sourceIeee, sourceEp, destIeee, destEp, Cluster):
         return
 
     mode = "03"  # IEEE
-    datas = str(sourceIeee) + str(sourceEp) + str(Cluster) + str(mode) + str(destIeee) + str(destEp)
-    sendZigateCmd(self, "0031", datas)
-    self.log.logging("Binding", "Debug", "---> %s %s" % ("0031", datas), sourceNwkid)
+    #datas = str(sourceIeee) + str(sourceEp) + str(Cluster) + str(mode) + str(destIeee) + str(destEp)
+    zdp_unbinding_device(self, sourceIeee , sourceEp , Cluster , mode , destIeee , destEp)
+    #sendZigateCmd(self, "0031", datas)
+    #self.log.logging("Binding", "Debug", "---> %s %s" % ("0031", datas), sourceNwkid)
 
     if (
         "WebBind" in self.ListOfDevices[sourceNwkid]

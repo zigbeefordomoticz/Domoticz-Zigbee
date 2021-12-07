@@ -15,6 +15,7 @@ from threading import Thread
 import Domoticz
 from Classes.Transport.tools import handle_thread_error, release_command
 from Modules.tools import is_hex
+from Modules.zigateConsts import ZIGATE_MAX_BUFFER_SIZE
 
 
 def start_writer_thread(self):
@@ -264,6 +265,9 @@ def get_checksum(msgtype, length, datas):
 def write_to_zigate(self, serialConnection, encoded_data):
     # self.logging_writer('Log', "write_to_zigate")
 
+    if len(encoded_data) >= ZIGATE_MAX_BUFFER_SIZE:
+        self.logging_writer("Error", "write_to_zigate - looks like your frame is greated than the maximum ZiGate buffer size: %s" % encoded_data)
+        
     if self.pluginconf.pluginConf["byPassDzConnection"] and not self.force_dz_communication:
         return native_write_to_zigate(self, serialConnection, encoded_data)
 

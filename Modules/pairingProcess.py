@@ -10,22 +10,16 @@
 
 """
 
-import json
-
 import Domoticz
-from Classes.LoggingManagement import LoggingManagement
-from Modules.basicOutputs import (getListofAttribute, identifyEffect,
-                                  read_attribute, sendZigateCmd,
-                                  write_attribute)
-from Modules.bindings import (bindDevice, rebind_Clusters, reWebBind_Clusters,
-                              unbindDevice)
+
+from Modules.basicOutputs import getListofAttribute, identifyEffect
+from Modules.bindings import bindDevice, reWebBind_Clusters, unbindDevice
 from Modules.casaia import casaia_pairing
 from Modules.domoCreate import CreateDomoDevice
 from Modules.livolo import livolo_bind
-from Modules.lumi import enableOppleSwitch, setXiaomiVibrationSensitivity
+from Modules.lumi import enableOppleSwitch
 from Modules.mgmt_rtg import mgmt_rtg
 from Modules.orvibo import OrviboRegistration
-from Modules.pollControl import poll_set_long_poll_interval
 from Modules.profalux import profalux_fake_deviceModel
 from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST,
                                     ReadAttributeRequest_0000,
@@ -35,11 +29,14 @@ from Modules.schneider_wiser import (PREFIX_MACADDR_WIZER_LEGACY,
                                      schneider_wiser_registration,
                                      wiser_home_lockout_thermostat)
 from Modules.thermostats import thermostat_Calibration
-from Modules.tools import get_and_inc_SQN, getListOfEpForCluster, is_fake_ep
-from Modules.tuya import tuya_registration, tuya_cmd_ts004F
+from Modules.tools import getListOfEpForCluster, is_fake_ep
+from Modules.tuya import tuya_cmd_ts004F, tuya_registration
 from Modules.tuyaSiren import tuya_sirene_registration
 from Modules.tuyaTools import tuya_TS0121_registration
 from Modules.tuyaTRV import TUYA_eTRV_MODEL, tuya_eTRV_registration
+from Modules.zdpCommands import (zdp_active_endpoint_request,
+                                 zdp_node_descriptor_request,
+                                 zdp_simple_descriptor_request)
 from Modules.zigateConsts import CLUSTERS_LIST
 
 
@@ -151,7 +148,7 @@ def interview_state_004d(self, NWKID, RIA=None, status=None):
     if self.pluginconf.pluginConf["enableSchneiderWiser"] and MsgIEEE[0 : len(PREFIX_IEEE_WISER)] == PREFIX_IEEE_WISER:
         ReadAttributeRequest_0000(self, NWKID, fullScope=False)  # In order to request Model Name
 
-    sendZigateCmd(self, "0045", str(NWKID))
+    zdp_active_endpoint_request(self, NWKID )
     return "0045"
 
 
@@ -201,7 +198,7 @@ def request_node_descriptor(self, NWKID, RIA=None, status=None):
     if "Manufacturer" in self.ListOfDevices[NWKID]:
         if self.ListOfDevices[NWKID]["Manufacturer"] in ({}, ""):
             self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s Request Node Descriptor" % (RIA, NWKID))
-            sendZigateCmd(self, "0042", str(NWKID))  # Request a Node Descriptor
+            zdp_node_descriptor_request(self, NWKID)
             return True
 
         self.log.logging(
@@ -213,7 +210,7 @@ def request_node_descriptor(self, NWKID, RIA=None, status=None):
         return False
 
     self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s Request Node Descriptor" % (RIA, NWKID))
-    sendZigateCmd(self, "0042", str(NWKID))  # Request a Node Descriptor
+    zdp_node_descriptor_request(self, NWKID)
     return True
 
 
@@ -242,7 +239,7 @@ def interview_state_8045(self, NWKID, RIA=None, status=None):
             continue
 
         self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s Request Simple Descriptor for Ep: %s" % ("-", NWKID, iterEp))
-        sendZigateCmd(self, "0043", str(NWKID) + str(iterEp))
+        zdp_simple_descriptor_request(self, NWKID, iterEp)
 
     return "0043"
 
@@ -585,7 +582,7 @@ def handle_device_specific_needs(self, Devices, NWKID):
     elif self.ListOfDevices[NWKID]["Model"] in ("TS004F",):
         self.log.logging("Pairing", "Log", "Tuya TS004F registration needed")
         if "Param" in self.ListOfDevices[NWKID] and "TS004FMode" in self.ListOfDevices[NWKID]["Param"]:
-            tuya_cmd_ts004F(self, NWKID,  self.ListOfDevices[NWKID]["Param"]["TS004FMode" ])
+            tuya_cmd_ts004F(self, NWKID, self.ListOfDevices[NWKID]["Param"]["TS004FMode" ])
 
     elif self.ListOfDevices[NWKID]["Model"] in (
         "TS0601-Energy",

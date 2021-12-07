@@ -10,18 +10,15 @@
 
 """
 
-from typing import Dict
-import Domoticz
-import os.path
-import datetime
-import time
 import json
-import pickle
+import os.path
+import time
+from typing import Dict
 
-from Classes.LoggingManagement import LoggingManagement
-from Modules.manufacturer_code import check_and_update_manufcode
+import Domoticz
 
 import Modules.tools
+from Modules.manufacturer_code import check_and_update_manufcode
 
 ZIGATE_ATTRIBUTES = {
     "Version",
@@ -428,7 +425,7 @@ def importDeviceConf(self):
 def importDeviceConfV2(self):
 
     from os import listdir
-    from os.path import isfile, isdir, join
+    from os.path import isdir, isfile, join
 
     # Read DeviceConf for backward compatibility
     importDeviceConf(self)

@@ -21,11 +21,10 @@ from Classes.Transport.sqnMgmt import (TYPE_APP_ZCL, TYPE_APP_ZDP,
                                        sqn_get_internal_sqn_from_aps_sqn)
 
 from Modules.basicOutputs import getListofAttribute  # leaveMgtReJoin,
-from Modules.basicOutputs import (send_default_response, sendZigateCmd,
-                                  setTimeServer, unknown_device_nwkid)
+from Modules.basicOutputs import (send_default_response, setTimeServer,
+                                  unknown_device_nwkid)
 from Modules.callback import callbackDeviceAwake
-from Modules.deviceAnnoucement import (device_annoucementv1,
-                                       device_annoucementv2)
+from Modules.deviceAnnoucement import device_annoucementv2
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import lastSeenUpdate, timedOutDevice
 from Modules.errorCodes import DisplayStatusCode
@@ -36,9 +35,10 @@ from Modules.ikeaTradfri import (ikea_motion_sensor_8095,
                                  ikea_remote_switch_8095,
                                  ikea_wireless_dimer_8085)
 from Modules.inRawAps import inRawAps
-from Modules.legrand_netatmo import (legrand_motion_8095,
+from Modules.legrand_netatmo import (legrand_motion_8085, legrand_motion_8095,
+                                     legrand_remote_switch_8085,
                                      legrand_remote_switch_8095,
-                                     rejoin_legrand_reset, legrand_remote_switch_8085, legrand_motion_8085)
+                                     rejoin_legrand_reset)
 from Modules.livolo import livolo_read_attribute_request
 from Modules.lumi import AqaraOppleDecoding
 from Modules.mgmt_rtg import mgmt_rtg_rsp
@@ -133,6 +133,9 @@ def ZigateRead(self, Devices, Data):
 
     # self.log.logging( "Input", 'Debug', "ZigateRead - decoded data: " + Data + " lenght: " + str(len(Data)) )
 
+    #if Data is None:
+    #    return
+    
     FrameStart = Data[0:2]
     FrameStop = Data[len(Data) - 2 : len(Data)]
     if FrameStart != "01" and FrameStop != "03":
@@ -288,7 +291,7 @@ def Decode0110(self, Devices, MsgData, MsgLQI):  # Write Attribute request
         idx += 2
         lendata = MsgData[idx : idx + 4]
         idx += 4
-        DataValue = MsgData[idx : idx + int(lendata)*2]
+        DataValue = MsgData[idx : idx + int(lendata) *2 ]
         
         self.log.logging("Input", "Log", "Decode0110 - Sqn: %s NwkId: %s Ep: %s Cluster: %s Manuf: %s Attribute: %s Type: %s Value: %s" %(
             MsgSqn, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgManufCode ,Attribute, DataType, DataValue ) )
@@ -421,6 +424,7 @@ def Decode8000_v2(self, Devices, MsgData, MsgLQI):  # Status
             # if self.internalError > 4:
             #    self.internalError = 0
             #    sendZigateCmd(self, "0011", "" ) # Software Reset
+            #    zigate_soft_reset(self)
             #    self.log.logging(  "Input", "Error", "TOO MUCH ERRORS - ZIGATE RESET requested")
     else:
         self.internalError = 0
@@ -882,6 +886,9 @@ def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
     if self.webserver:
         self.webserver.update_firmware(self.FirmwareVersion)
         self.ZigateComm.update_ZiGate_HW_Version(self.ZiGateModel)
+        
+    if self.groupmgt:
+        self.groupmgt.update_firmware(self.FirmwareVersion)
 
     if self.ZigateComm:
         self.ZigateComm.update_ZiGate_Version(self.FirmwareVersion, self.FirmwareMajorVersion)
@@ -1549,25 +1556,25 @@ def Decode8041(self, Devices, MsgData, MsgLQI):  # IEEE Address response
         + " Device List: "
         + MsgDeviceList,
     )
-
-    if MsgShortAddress not in self.ListOfDevices:
+    if MsgDataStatus != "00":
         return
+    
+    if MsgShortAddress in self.ListOfDevices:
+        self.log.logging( "Input", "Debug", "Decode 8041 - Receive an IEEE: %s with a NwkId: %s" %( MsgIEEE, MsgShortAddress))
+        return
+
+    # We might check if we didn't have a change in the IEEE <-> NwkId
+    if MsgIEEE in self.IEEE2NWK:
+        # Looks like the device was known with a different NwkId
+        # hoping that we can reconnect to an existing Device
+        self.log.logging( "Input", "Log", "Decode 8041 - Receive an IEEE: %s with a NwkId: %s, will try to reconnect" %( MsgIEEE, MsgShortAddress))
+        if not DeviceExist(self, Devices, MsgShortAddress, MsgIEEE):
+            self.log.logging( "Input", "Log", "Decode 8041 - Not able to reconnect (unknown device)")
+            return
 
     timeStamped(self, MsgShortAddress, 0x8041)
     loggingMessages(self, "8041", MsgShortAddress, MsgIEEE, MsgLQI, MsgSequenceNumber)
     lastSeenUpdate(self, Devices, NwkId=MsgShortAddress)
-
-    if self.ListOfDevices[MsgShortAddress]["Status"] == "8041":  # We have requested a IEEE address for a Short Address,
-        # hoping that we can reconnect to an existing Device
-        if DeviceExist(self, Devices, MsgShortAddress, MsgIEEE):
-            self.log.logging(
-                "Input",
-                "Log",
-                "Decode 8041 - Device details: " + str(self.ListOfDevices[MsgShortAddress]),
-            )
-        else:
-            Domoticz.Error("Decode 8041 - Unknown device: " + str(MsgShortAddress) + " IEEE: " + str(MsgIEEE))
-
 
 def Decode8042(self, Devices, MsgData, MsgLQI):  # Node Descriptor response
     # MsgLen = len(MsgData)
@@ -3262,14 +3269,7 @@ def Decode8702(self, Devices, MsgData, MsgLQI):  # Reception APS Data confirm fa
 # Device Announce
 def Decode004D(self, Devices, MsgData, MsgLQI):  # Reception Device announce
 
-    if self.FirmwareVersion and int(self.FirmwareVersion, 16) >= 0x031C and self.pluginconf.pluginConf["AnnoucementV1"]:
-        device_annoucementv1(self, Devices, MsgData, MsgLQI)
-
-    elif self.FirmwareVersion and int(self.FirmwareVersion, 16) >= 0x031C and self.pluginconf.pluginConf["AnnoucementV2"]:
-        device_annoucementv2(self, Devices, MsgData, MsgLQI)
-
-    else:
-        device_annoucementv2(self, Devices, MsgData, MsgLQI)
+    device_annoucementv2(self, Devices, MsgData, MsgLQI)
 
 
 # Remote

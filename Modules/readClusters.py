@@ -16,12 +16,13 @@ import struct
 from time import time
 
 import Domoticz
+
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import Update_Battery_Device, timedOutDevice
 from Modules.lumi import (AqaraOppleDecoding0012, cube_decode, decode_vibr,
                           decode_vibrAngle, readLumiLock, readXiaomiCluster)
-from Modules.tools import (DeviceExist,  # get_isqn_datastruct,
-                           checkAndStoreAttributeValue, checkAttribute,
+from Modules.tools import DeviceExist  # get_isqn_datastruct,
+from Modules.tools import (checkAndStoreAttributeValue, checkAttribute,
                            getEPforClusterType, is_hex, set_status_datastruct,
                            set_timestamp_datastruct, voltage2batteryP)
 from Modules.tuya import (TUYA_2GANGS_SWITCH_MANUFACTURER,
