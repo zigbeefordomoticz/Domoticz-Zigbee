@@ -85,15 +85,15 @@ def tuya_siren_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstN
             )
 
         elif data == "01":  # High
-            self.ListOfDebices[NwkId]["Battery"] = 90
+            self.ListOfDevices[NwkId]["Battery"] = 90
             Update_Battery_Device(self, Devices, NwkId, 90)
 
         elif data == "02":  # Medium
-            self.ListOfDebices[NwkId]["Battery"] = 50
+            self.ListOfDevices[NwkId]["Battery"] = 50
             Update_Battery_Device(self, Devices, NwkId, 50)
 
         elif data == "03":  # Low
-            self.ListOfDebices[NwkId]["Battery"] = 25
+            self.ListOfDevices[NwkId]["Battery"] = 25
             Update_Battery_Device(self, Devices, NwkId, 25)
 
         elif data == "04":
