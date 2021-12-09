@@ -122,7 +122,7 @@ class WebServer(object):
         self.groupmgt = None
         self.OTA = None
         self.ListOfDevices = ListOfDevices
-        self.DevicesInPairingMode = [],
+        self.DevicesInPairingMode = []
         self.fakeDevicesInPairingMode = 0
         self.IEEE2NWK = IEEE2NWK
         self.DeviceConf = DeviceConf
