@@ -1534,6 +1534,15 @@ def Cluster000c(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
                 "readCluster - %s - %s/%s Xiaomi attribute: %s:  %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, decodeAttribute(self, MsgAttType, MsgClusterData)),
                 MsgSrcAddr,
             )
+            if not checkValidValue(self, MsgSrcAddr, MsgAttType, MsgClusterData):
+                self.log.logging(
+                    "Cluster",
+                    "Info",
+                    "Cluster000c - MsgAttrID: %s MsgAttType: %s DataLen: %s : invalid Data Value found : %s"
+                    % (MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+                    MsgSrcAddr,
+                )
+                return
             MajDomoDevice(
                 self,
                 Devices,
@@ -1554,7 +1563,7 @@ def Cluster000c(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             MsgSrcAddr,
         )
 
-        if len(EPforPower) == len(EPforMeter) == len(EPforPowerMeter) == 0:
+        if len(EPforPower) == len(EPforMeter) == len(EPforPowerMeter) == 0 and self.ListOfDevices[MsgSrcAddr]["Model"] != "lumi.airmonitor.acn01":
             # Magic Cub
             rotation_angle = struct.unpack("f", struct.pack("I", int(MsgClusterData, 16)))[0]
             self.log.logging("Cluster", "Debug", "ReadCluster - ClusterId=000c - Magic Cube angle: %s" % rotation_angle, MsgSrcAddr)
@@ -3222,7 +3231,7 @@ def Cluster0402(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         # Store value in int centi-degre
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
 
-        if value > 0x7FFF and value < 0x954D:
+        if 0x7FFF < value < 0x954D or value == 0x8000:
             self.log.logging(
                 "Cluster",
                 "Debug",
@@ -3717,7 +3726,7 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         return
 
     checkAttribute(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID)
-    if not checkValidValue(self, MsgAttType, MsgClusterData):
+    if not checkValidValue(self, MsgSrcAddr, MsgAttType, MsgClusterData):
         self.log.logging(
             "Cluster",
             "Info",
