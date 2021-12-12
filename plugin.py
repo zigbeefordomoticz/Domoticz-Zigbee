@@ -21,6 +21,8 @@
             <options>
                 <option label="ZiGate"  value="V1"/>
                 <option label="ZiGate+" value="V2"/>
+                <option label="Zigate (via zigpy)" value="ZigpyZiGate"/>
+                <option label="Texas Instruments ZNP (via zigpy)" value="ZigpyZNP"/>
             </options>
         </param>
         <param field="Mode2" label="Zigate Type" width="75px" required="true" default="None">
@@ -121,6 +123,12 @@ from Modules.zigateCommands import (zigate_erase_eeprom,
                                     zigate_remove_device,
                                     zigate_set_certificate)
 from Modules.zigateConsts import CERTIFICATION, HEARTBEAT, MAX_FOR_ZIGATE_BUZY
+
+# Zigpy related modules
+from zigpy_zigate.config import CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE
+from Classes.ZigpyTransport.Transport import radio_start, radio_shutdown
+import asyncio
+
 
 VERSION_FILENAME = ".hidden/VERSION"
 
@@ -234,6 +242,9 @@ class BasePlugin:
         self.ZigateRead_timing_cnt = (
             self.ZigateRead_timing_cumul
         ) = self.ZigateRead_timing_avrg = self.ZigateRead_timing_max = 0
+        
+        # Zigpy
+        self.zigpy_running = None
 
     def onStart(self):
         Domoticz.Log("ZiGate plugin started!")
@@ -253,8 +264,13 @@ class BasePlugin:
             "Wifi",
         ):
             self.transport = "V2-" + Parameters["Mode2"]
+            
         elif Parameters["Mode2"] == "None":
             self.transport = "None"
+            
+        elif Parameters["Mode1"] in ( "ZigpyZiGate", "ZigpyZNP"):
+            self.transport = Parameters["Mode1"]
+            
         else:
             Domoticz.Error(
                 "Please cross-check the plugin starting parameters Mode1: %s Mode2: %s and make sure you have restarted Domoticz after updating the plugin"
@@ -491,12 +507,22 @@ class BasePlugin:
             self.FirmwareVersion = "031c"
             self.PluginHealth["Firmware Update"] = {"Progress": "75 %", "Device": "1234"}
             return
+
+        elif self.transport == "ZigpyZiGate":
+            self.zigpy_running = True
+            app = asyncio.run( radio_start (self, "zigate", Parameters["SerialPort"]) )       
+            
+        elif self.transport == "ZigpyZNP" :
+            self.zigpy_running = True
+            app = asyncio.run( radio_start (self, "znp", Parameters["SerialPort"]) )
+            
         else:
             self.log.logging("Plugin", "Error", "Unknown Transport comunication protocol : %s" % str(self.transport))
             return
 
-        self.log.logging("Plugin", "Debug", "Establish Zigate connection")
-        self.ZigateComm.open_zigate_connection()
+        if self.transport not in ("ZigpyZNP", "ZigpyZiGate" ):
+            self.log.logging("Plugin", "Debug", "Establish Zigate connection")
+            self.ZigateComm.open_zigate_connection()
 
         # IAS Zone Management
         if self.iaszonemgt is None:
@@ -534,6 +560,9 @@ class BasePlugin:
         if self.ZigateComm:
             self.ZigateComm.thread_transport_shutdown()
             self.ZigateComm.close_zigate_connection()
+        if self.transport in ("ZigpyZNP", "ZigpyZiGate"):
+            radio_shutdown(self)
+            
         if self.log:
             self.log.logging("Plugin", "Log", "onStop called (3) Transport off")
 
@@ -542,7 +571,6 @@ class BasePlugin:
             self.webserver.onStop()
         if self.log:
             self.log.logging("Plugin", "Log", "onStop called (4) WebServer off")
-
         if self.log:
             self.log.logging("Plugin", "Log", "onStop calling (5) Plugin Database saved")
         WriteDeviceList(self, 0)
