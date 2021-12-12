@@ -1,6 +1,0 @@
-[submodule "external/zigpy-znp"]
-	path = external/zigpy-znp
-	url = https://github.com/pipiche38/zigpy-znp.git
-[submodule "external/zigpy-zigate"]
-	path = external/zigpy-zigate
-	url = https://github.com/pipiche38/zigpy-zigate.git
