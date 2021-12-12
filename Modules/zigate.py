@@ -24,14 +24,14 @@ def endpointZigate(self, zigate_ieee):
 
     if "0000" not in self.ListOfDevices:
         return
-    zdp_simple_descriptor_request(self, "0000" )
+    zdp_active_endpoint_request(self, "0000" )
 
 
 def epDescrZigate(self, ep):
 
     if "0000" not in self.ListOfDevices:
         return
-    zdp_active_endpoint_request(self, "0000", ep)
+    zdp_simple_descriptor_request(self, "0000", ep)
 
 
 def receiveZigateEpList(self, ep_count, ep_list):
