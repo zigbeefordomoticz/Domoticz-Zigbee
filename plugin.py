@@ -4,7 +4,7 @@
 # Author: zaraki673 & pipiche38
 #
 """
-<plugin key="ZigateZigpy" name="Zigate plugin (zigpy enabled)" author="zaraki673 & pipiche38" version="5.1">
+<plugin key="zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="5.1">
     <description>
         <h1> Plugin ZiGate</h1><br/>
             <br/><h2> Informations</h2><br/>
@@ -510,14 +510,15 @@ class BasePlugin:
 
         elif self.transport == "ZigpyZiGate":
             Domoticz.Log("Start Zigpy Transport on zigate")
-            self.ZigateComm = ZigpyTransport( self.HardwareID, "zigate", Parameters["SerialPort"]) 
-            self.ZigateComm.start_zigpy_thread()
+            self.ZigateComm = ZigpyTransport( self.processFrame, self.log, self.statistics, self.HardwareID, "zigate", Parameters["SerialPort"]) 
+            self.ZigateComm.open_zigate_connection()
+            self.pluginconf.pluginConf["ZiGateInRawMode"] = True
             
         elif self.transport == "ZigpyZNP" :
             Domoticz.Log("Start Zigpy Transport on ZNP")
-            self.ZigateComm = ZigpyTransport( self.HardwareID, "znp", Parameters["SerialPort"])  
-            self.ZigateComm.start_zigpy_thread()
-
+            self.ZigateComm = ZigpyTransport( self.processFrame, self.log, self.HardwareID, self.statistics, "znp", Parameters["SerialPort"])  
+            self.ZigateComm.open_zigate_connection()
+            self.pluginconf.pluginConf["ZiGateInRawMode"] = True
             
         else:
             self.log.logging("Plugin", "Error", "Unknown Transport comunication protocol : %s" % str(self.transport))
@@ -561,12 +562,9 @@ class BasePlugin:
             self.log.logging("Plugin", "Log", "onStop called (2) domoticzDb Hardware closed")
 
             self.log.logging("Plugin", "Log", "onStop calling (3) Transport off")
-        if self.ZigateComm and self.transport not in ("ZigpyZNP", "ZigpyZiGate"):
+        if self.ZigateComm:
             self.ZigateComm.thread_transport_shutdown()
             self.ZigateComm.close_zigate_connection()
-
-        if self.transport in ("ZigpyZNP", "ZigpyZiGate"):
-            self.ZigateComm.stop_zigpy_thread()
 
         if self.log:
             self.log.logging("Plugin", "Log", "onStop called (3) Transport off")

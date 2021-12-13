@@ -31,7 +31,7 @@ from Modules.zdpCommands import (zdp_attribute_discovery_request,
                                  zdp_management_leave_request,
                                  zdp_management_network_update_request,
                                  zdp_many_to_one_route_request,
-                                 zdp_permit_joining_request, zdp_reset_device)
+                                 zdp_reset_device)
 from Modules.zdpRawCommands import (zdp_management_binding_table_request,
                                     zdp_management_routing_table_request)
 from Modules.zigateCommands import (zigate_blueled,
@@ -41,7 +41,7 @@ from Modules.zigateCommands import (zigate_blueled,
                                     zigate_get_time, zigate_remove_device,
                                     zigate_set_channel,
                                     zigate_set_extended_PanID, zigate_set_mode,
-                                    zigate_set_time, zigate_start_nwk)
+                                    zigate_set_time, zigate_start_nwk, zigate_permit_joining_request)
 from Modules.zigateConsts import ZIGATE_EP, ZLL_DEVICES
 
 
@@ -90,10 +90,10 @@ def PermitToJoin(self, Interval, TargetAddress="FFFC"):
             if mainPoweredDevice(self, x):
                 self.log.logging("BasicOutput", "Log", "Request router: %s to close the network" % x)
                 #send_zigatecmd_raw(self, "0049", x + Interval + get_TC_significance(x))
-                zdp_permit_joining_request(self, x , Interval , get_TC_significance(x))
+                zigate_permit_joining_request(self, x , Interval , get_TC_significance(x))
     else:
         #send_zigatecmd_raw(self, "0049", TargetAddress + Interval + get_TC_significance(TargetAddress))
-        zdp_permit_joining_request(self, TargetAddress , Interval , get_TC_significance(TargetAddress))
+        zigate_permit_joining_request(self, TargetAddress , Interval , get_TC_significance(TargetAddress))
     if TargetAddress in ("FFFC", "0000"):
         # Request a Status to update the various permitTojoin structure
         zigate_get_permit_joint_status(self)

@@ -49,11 +49,6 @@ def zdp_management_leave_request(self, nwkid, ieee, rejoin="01", remove_children
     return send_zigatecmd_raw(self, "0047", nwkid + ieee + rejoin + remove_children)
 
 
-def zdp_permit_joining_request(self, tgtnwkid , duration , significance):
-    self.log.logging( "zdpCommand", "Log","zdp_permit_joining_request %s %s %s" %(tgtnwkid , duration , significance))
-    return send_zigatecmd_raw(self, "0049", tgtnwkid + duration + significance)
-
-
 def zdp_reset_device(self, nwkid, epin, epout):
     self.log.logging( "zdpCommand", "Log","zdp_reset_device %s %s %s" %(nwkid, epin, epout))
     return send_zigatecmd_raw(self, "0050", "02" + nwkid + epin + epout)

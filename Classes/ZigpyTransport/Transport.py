@@ -1,163 +1,92 @@
-import asyncio
-import importlib
-import logging
-import sys
+
+
+
+from queue import Queue, PriorityQueue
+
+import time
+import json
 from threading import Thread
+from Classes.Transport.forwarderThread import forwarder_thread
 import Domoticz
-from zigpy_zigate.api import ZiGate
-from zigpy_znp.api import ZNP
-from zigpy_zigate.config import CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE
 
-
-from typing import Any, Optional
-
-import zigpy_zigate
-import zigpy_zigate.zigbee.application 
-import zigpy_znp.zigbee.application 
-import zigpy.device
-import zigpy.types as t
-
-from typing import Any, Optional
-
-import zigpy.appdb
-import zigpy.config
-import zigpy.device
-import zigpy.exceptions
-import zigpy.group
-import zigpy.ota
-import zigpy.quirks
-import zigpy.state
-import zigpy.topology
-import zigpy.types as t
-import zigpy.util
-import zigpy.zcl
-import zigpy.zdo
-import zigpy.zdo.types as zdo_types
-
-
-LOGGER = logging.getLogger(__name__)
-    
-def dump_app_info(app):
-    
-    nwk = app[0]
-    ieee = app[1]
-    pan_id = app[2]
-    extended_pan_id = app[3]
-    channel = app[4]
-    
-    Domoticz.Log("PAN ID:               0x%04x" %pan_id)
-    Domoticz.Log("Extended PAN ID:      0x%08x" %extended_pan_id)
-    Domoticz.Log("Channel:              0x%d" %channel)
-    Domoticz.Log("Device IEEE:          %s" %ieee)
-    Domoticz.Log("Device NWK:           0x%04x" %nwk)
-
-class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
-    async def new(
-    cls, config: dict, auto_form: bool = False, start_radio: bool = True
-    ) -> zigpy.application.ControllerApplication:
-        Domoticz.Log("new" )
-
-    async def _load_db(self) -> None:
-        Domoticz.Log("_load_db" )
-    async def startup(self, auto_form=False):
-        await super().startup(auto_form)
-        network_state, lqi = await self._api.get_network_state()
-        dump_app_info( network_state )
-
-    def add_device(self, ieee, nwk):
-        Domoticz.Log("add_device %s" %str(nwk))
-    def device_initialized(self, device):
-        Domoticz.Log("device_initialized")
-    async def remove(self, ieee: t.EUI64) -> None:
-        Domoticz.Log("remove")
-    def get_device(self, ieee=None, nwk=None):
-        Domoticz.Log("get_device")
-    def zigate_callback_handler(self, msg, response, lqi):
-        Domoticz.Log("zigate_callback_handler %04x %s" %(msg, response))
-
-
-
-
-
-    def handle_leave(self, nwk, ieee):
-        #super().handle_leave(nwk,ieee) 
-        Domoticz.Log("handle_leave %s" %str(nwk))
-
-    def handle_join(self, nwk, ieee):
-        #super().handle_join(nwk,ieee) 
-        Domoticz.Log("handle_join %s" %str(nwk))
-
-    def handle_message(
-        self,
-        sender: zigpy.device.Device,
-        profile: int,
-        cluster: int,
-        src_ep: int,
-        dst_ep: int,
-        message: bytes,
-    ) -> None:
-        #Domoticz.Log("handle_message %s %d %d %d %d" %(str(profile),cluster,src_ep,dst_ep))
-        Domoticz.Log("handle_message %s" %(str(profile)))
-        return None
-
-class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
-    pass
-
-         
+from Classes.ZigpyTransport.zigpyThread import zigpy_thread, start_zigpy_thread, stop_zigpy_thread
+from Classes.ZigpyTransport.writerThread import writer_thread, stop_writer_thread, start_writer_thread
+from Classes.ZigpyTransport.forwarderThread import forwarder_thread, start_forwarder_thread, stop_forwarder_thread
+ 
 class ZigpyTransport(object):
-    def __init__( self, hardwareid,radiomodule, serialPort):
-        logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt='%Y-%m-%d:%H:%M:%S',level=logging.DEBUG)
-        
-        self.running = True
-        self._serialPort = serialPort
-        self._radiomodule = radiomodule
+    def __init__( self, F_out, log, statistics, hardwareid,radiomodule, serialPort):
+        self.F_out = F_out  # Function to call to bring the decoded Frame at plugin
+        self.log = log
+        self.statistics = statistics
         self.hardwareid = hardwareid
-        self.zigpy_thread = Thread(name="Zigpy_thread", target=ZigpyTransport.zigpy_thread, args=(self,))
-
-    def start_zigpy_thread(self):
-
-        self.zigpy_thread.start(  )   
-        Domoticz.Log("--> Thread launched: %s" %self.zigpy_thread)
-
-                
-    def stop_zigpy_thread(self):
-        Domoticz.Log("Shuting down co-routine")
-        self.zigpy_running = False
-        self.zigpy_thread.join()
-
-    def zigpy_thread(self):
-        logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt='%Y-%m-%d:%H:%M:%S',level=logging.DEBUG)
-
-        Domoticz.Log("Starting zigpy thread")
-        self.zigpy_running = True
-        app = asyncio.run( radio_start (self, self._radiomodule, self._serialPort) )  
+        self._radiomodule = radiomodule
+        self._serialPort = serialPort
         
-              
-async def radio_start(self, radiomodule, serialPort, auto_form=False ):
+        self.version = None
+        self.Firmwareversion = None
+        self.ZigateIEEE = None
+        self.ZigateNWKID = None
+        self.ZigateExtendedPanId = None
+        self.ZigatePANId = None
+        self.ZigateChannel = None        
+        self.running = True
 
-    Domoticz.Log("In radio_start")
-    logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt='%Y-%m-%d:%H:%M:%S',level=logging.DEBUG)
+        self.app = None
+        self.writer_queue = PriorityQueue()
+        self.forwarder_queue = Queue()
+        self.zigpy_thread = Thread(name="ZigpyCom_%s" % self.hardwareid, target=zigpy_thread, args=(self,))
+        self.writer_thread = Thread(name="ZigpyWriter_%s" % self.hardwareid, target=writer_thread, args=(self,))
+        self.forwarder_thread = Thread( name="ZigpyForwarder_%s" % self.hardwareid, target=forwarder_thread, args=(self,) )
+
+    def open_zigate_connection(self): 
+        start_zigpy_thread( self )
+        start_writer_thread( self )
+        start_forwarder_thread( self )
+
+    def re_connect_zigate(self):
+        pass
     
-    # Import the radio library
-    conf = {CONF_DEVICE: {"path": serialPort}}
-    if radiomodule == 'zigate':
-        app = App_zigate (conf) 
-    elif radiomodule == 'znp':
-        app = App_znp (conf) 
+    def close_zigate_connection(self):
+        pass
+    
+    def thread_transport_shutdown(self):
+        Domoticz.Log("Shuting down co-routine")
+        stop_writer_thread(self)
+        stop_zigpy_thread(self)
+        stop_forwarder_thread(self)
 
-    await app.startup(True)  
+        self.zigpy_thread.join()
+        self.writer_thread.join()
+        self.forwarder_thread.join()
 
-    await app.permit_ncp(time_s=240)
+    def sendData(self, cmd, datas, highpriority=False, ackIsDisabled=False, waitForResponseIn=False, NwkId=None):
+        Domoticz.Log("sendData - Cmd: %s Datas: %s" %(cmd, datas))
+        message = {
+            "cmd": cmd,
+            "datas": datas,
+            "NwkId": NwkId,
+            "TimeStamp": time.time(),
+            }
+        self.writer_queue.put((99, str(json.dumps(message))))        
+        
+    def get_writer_queue(self):
+        return self.writer_queue.qsize()
+    
+    def get_forwarder_queue(self):
+        return self.forwarder_queue.qsize()
+    
+    def loadTransmit(self):
+        # Provide the Load of the Sending Queue
+        return self.writer_queue.qsize()
 
-    # Run forever
-    Domoticz.Log("Starting work loop")
+    def logging_transport(self, logType, message, NwkId=None, _context=None):
+        self.log.logging("Transport", logType, message, context=_context)
 
-    while self.zigpy_running:
-        Domoticz.Log("Continue loop %s" %self.zigpy_running)
-        await asyncio.sleep(.5)
+    def logging_8002(self, logType, message, NwkId=None, _context=None):
+        self.log.logging("Transport8002", logType, message, context=_context)
 
-    Domoticz.Log("Exiting work loop")
+    def logging_forwarded(self, logType, message, NwkId=None, _context=None):
+        self.log.logging("TransportFrwder", logType, message, context=_context)
 
-
-    app.shutdown()
-    Domoticz.Log("Exiting co-rounting radio_start")
+    def logging_writer(self, logType, message, NwkId=None, _context=None):
+        self.log.logging("TransportWrter", logType, message, context=_context)

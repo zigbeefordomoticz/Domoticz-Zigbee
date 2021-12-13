@@ -21,7 +21,7 @@ def zigate_set_mode(self, mode):
 
 def zigate_set_loglevel(self, loglevel):
     self.log.logging( "zigateCommand", "Debug","zigate_set_loglevel %s" %loglevel)
-    pass
+
 
 def zigate_firmware_default_response(self, enable="00"):
     self.log.logging( "zigateCommand", "Debug","zigate_firmware_default_response %s" %enable)
@@ -32,7 +32,7 @@ def zigate_get_nwk_state(self):
     return send_zigatecmd_raw(self, "0009", "")
 
 def zigate_get_firmware_version(self):
-    self.log.logging( "zigateCommand", "Debug","zigate_get_firmware_version")
+    self.log.logging( "zigateCommand", "Debug","zigate_get_firmware_version") 
     return send_zigatecmd_raw(self, "0010", "")
     
 def zigate_soft_reset(self):
@@ -43,6 +43,10 @@ def zigate_erase_eeprom(self):
     self.log.logging( "zigateCommand", "Debug","zigate_erase_eeprom")
     return send_zigatecmd_raw(self, "0012", "")
 
+def zigate_permit_joining_request(self, tgtnwkid , duration , significance):
+    self.log.logging( "zdpCommand", "Log","zdp_permit_joining_request %s %s %s" %(tgtnwkid , duration , significance))
+    return send_zigatecmd_raw(self, "0049", tgtnwkid + duration + significance)
+       
 def zigate_get_permit_joint_status(self):
     self.log.logging( "zigateCommand", "Debug","zigate_get_permit_joint_status")
     return send_zigatecmd_raw(self, "0014", "")  # Request Permit to Join status
