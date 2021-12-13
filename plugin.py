@@ -4,7 +4,7 @@
 # Author: zaraki673 & pipiche38
 #
 """
-<plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="5.1">
+<plugin key="ZigateZigpy" name="Zigate plugin (zigpy enabled)" author="zaraki673 & pipiche38" version="5.1">
     <description>
         <h1> Plugin ZiGate</h1><br/>
             <br/><h2> Informations</h2><br/>
@@ -126,7 +126,7 @@ from Modules.zigateConsts import CERTIFICATION, HEARTBEAT, MAX_FOR_ZIGATE_BUZY
 
 # Zigpy related modules
 from zigpy_zigate.config import CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE
-from Classes.ZigpyTransport.Transport import radio_start, radio_shutdown
+from Classes.ZigpyTransport.Transport import ZigpyTransport
 import asyncio
 
 
@@ -244,7 +244,7 @@ class BasePlugin:
         ) = self.ZigateRead_timing_avrg = self.ZigateRead_timing_max = 0
         
         # Zigpy
-        self.zigpy_running = None
+        self.zigpy_thread = None
 
     def onStart(self):
         Domoticz.Log("ZiGate plugin started!")
@@ -509,12 +509,15 @@ class BasePlugin:
             return
 
         elif self.transport == "ZigpyZiGate":
-            self.zigpy_running = True
-            app = asyncio.run( radio_start (self, "zigate", Parameters["SerialPort"]) )       
+            Domoticz.Log("Start Zigpy Transport on zigate")
+            self.ZigateComm = ZigpyTransport( self.HardwareID, "zigate", Parameters["SerialPort"]) 
+            self.ZigateComm.start_zigpy_thread()
             
         elif self.transport == "ZigpyZNP" :
-            self.zigpy_running = True
-            app = asyncio.run( radio_start (self, "znp", Parameters["SerialPort"]) )
+            Domoticz.Log("Start Zigpy Transport on ZNP")
+            self.ZigateComm = ZigpyTransport( self.HardwareID, "znp", Parameters["SerialPort"])  
+            self.ZigateComm.start_zigpy_thread()
+
             
         else:
             self.log.logging("Plugin", "Error", "Unknown Transport comunication protocol : %s" % str(self.transport))
@@ -542,6 +545,7 @@ class BasePlugin:
         self.busy = False
 
     def onStop(self):
+        Domoticz.Log("onStop()")
         if self.log:
             self.log.logging("Plugin", "Log", "onStop called")
             self.log.logging("Plugin", "Log", "onStop calling (1) domoticzDb DeviceStatus closed")
@@ -557,12 +561,13 @@ class BasePlugin:
             self.log.logging("Plugin", "Log", "onStop called (2) domoticzDb Hardware closed")
 
             self.log.logging("Plugin", "Log", "onStop calling (3) Transport off")
-        if self.ZigateComm:
+        if self.ZigateComm and self.transport not in ("ZigpyZNP", "ZigpyZiGate"):
             self.ZigateComm.thread_transport_shutdown()
             self.ZigateComm.close_zigate_connection()
+
         if self.transport in ("ZigpyZNP", "ZigpyZiGate"):
-            radio_shutdown(self)
-            
+            self.ZigateComm.stop_zigpy_thread()
+
         if self.log:
             self.log.logging("Plugin", "Log", "onStop called (3) Transport off")
 

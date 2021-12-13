@@ -2,7 +2,7 @@ import asyncio
 import importlib
 import logging
 import sys
-
+from threading import Thread
 import Domoticz
 from zigpy_zigate.api import ZiGate
 from zigpy_znp.api import ZNP
@@ -104,20 +104,40 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
     pass
 
          
-     
-class MainListener:
-    def __init__(self, application,):
-        Domoticz.Log("MainListener init App: %s" %(application,))
-
-    def zigate_callback_handler( *args):
-        Domoticz.Log("Listener call with %s" %str(args))
+class ZigpyTransport(object):
+    def __init__( self, hardwareid,radiomodule, serialPort):
+        logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt='%Y-%m-%d:%H:%M:%S',level=logging.DEBUG)
         
-async def radio_shutdown(self):
-    self.zigpy_running = False
-    
+        self.running = True
+        self._serialPort = serialPort
+        self._radiomodule = radiomodule
+        self.hardwareid = hardwareid
+        self.zigpy_thread = Thread(name="Zigpy_thread", target=ZigpyTransport.zigpy_thread, args=(self,))
+
+    def start_zigpy_thread(self):
+
+        self.zigpy_thread.start(  )   
+        Domoticz.Log("--> Thread launched: %s" %self.zigpy_thread)
+
+                
+    def stop_zigpy_thread(self):
+        Domoticz.Log("Shuting down co-routine")
+        self.zigpy_running = False
+        self.zigpy_thread.join()
+
+    def zigpy_thread(self):
+        logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt='%Y-%m-%d:%H:%M:%S',level=logging.DEBUG)
+
+        Domoticz.Log("Starting zigpy thread")
+        self.zigpy_running = True
+        app = asyncio.run( radio_start (self, self._radiomodule, self._serialPort) )  
+        
+              
 async def radio_start(self, radiomodule, serialPort, auto_form=False ):
-    
+
+    Domoticz.Log("In radio_start")
     logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt='%Y-%m-%d:%H:%M:%S',level=logging.DEBUG)
+    
     # Import the radio library
     conf = {CONF_DEVICE: {"path": serialPort}}
     if radiomodule == 'zigate':
@@ -133,10 +153,11 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False ):
     Domoticz.Log("Starting work loop")
 
     while self.zigpy_running:
-        #Domoticz.Log("Continue loop")
+        Domoticz.Log("Continue loop %s" %self.zigpy_running)
         await asyncio.sleep(.5)
 
     Domoticz.Log("Exiting work loop")
 
-    #self.zigbee_controller.close()
+
     app.shutdown()
+    Domoticz.Log("Exiting co-rounting radio_start")
