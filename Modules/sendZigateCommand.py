@@ -254,5 +254,23 @@ def zigate_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, paylo
     
     
 def zigpy_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep, groupaddrmode, highpriority, ackIsDisabled):
-    
-    pass
+
+    data = {
+        'Profile': int(profileId, 16),
+        'Cluster': int(cluster, 16),
+        'TargetNwk': int(targetaddr, 16),
+        'TargetEp': int(dest_ep, 16),
+        'SrcEp': int(zigate_ep, 16),
+        'Sqn': None,
+        'payload': payload,
+    }
+
+    if groupaddrmode:
+        data['AddressMode'] = 0x01
+    elif ackIsDisabled:
+        data['AddressMode'] = 0x07
+    else:
+        data['AddressMode'] = 0x02
+
+    i_sqn = self.ZigateComm.sendData( 0x0530, data)
+    return 

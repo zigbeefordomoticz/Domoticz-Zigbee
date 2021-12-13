@@ -19,6 +19,7 @@ def zigate_set_mode(self, mode):
     #  0x02 - ZiGate in Hybrid mode ( All inbound messages are received via 0x8002 in addition of the normal one)
     return send_zigatecmd_raw(self, "0002", "%02x" % mode)
 
+
 def zigate_set_loglevel(self, loglevel):
     self.log.logging( "zigateCommand", "Debug","zigate_set_loglevel %s" %loglevel)
 
@@ -29,10 +30,41 @@ def zigate_firmware_default_response(self, enable="00"):
 
 def zigate_get_nwk_state(self):
     self.log.logging( "zigateCommand", "Debug","zigate_get_nwk_state")
+    if self.transport in ("ZigpyZNP", "ZigpyZiGate" ):
+        self.ZigateIEEE = self.ZigateComm.get_zigate_ieee()
+        self.ZigateNWKID =  self.ZigateComm.get_zigate_nwkid()
+        self.ZigateExtendedPanId =  self.ZigateComm.get_zigate_extented_panId()
+        self.ZigatePANId =  self.ZigateComm.get_zigate_panId()
+        self.ZigateChannel = self.ZigateComm.get_zigate_channel()
+        self.zigatedata["IEEE"] = self.ZigateIEEE
+        self.zigatedata["Short Address"] = self.ZigateNWKID
+        self.zigatedata["Channel"] = int(self.ZigateChannel, 16)
+        self.zigatedata["PANID"] = self.ZigatePANId
+        self.zigatedata["Extended PANID"] = self.ZigateExtendedPanId
+        return
     return send_zigatecmd_raw(self, "0009", "")
 
 def zigate_get_firmware_version(self):
-    self.log.logging( "zigateCommand", "Debug","zigate_get_firmware_version") 
+    self.log.logging( "zigateCommand", "Debug","zigate_get_firmware_version")
+    if self.transport in ("ZigpyZNP", "ZigpyZiGate" ):
+        self.PDMready = True #TODO this must be done only if the initiatilisation went through
+        version = self.ZigateComm.get_zigate_firmware_version()
+        self.FirmwareBranch = version['Branch']
+        self.FirmwareMajorVersion = version['Model']
+        self.FirmwareVersion = version['Firmware']
+        if self.FirmwareMajorVersion == "03":
+            self.log.logging("Input", "Status", "ZiGate Classic PDM (legacy)")
+            self.ZiGateModel = 1
+        elif self.FirmwareMajorVersion == "04":
+            self.log.logging("Input", "Status", "ZiGate Classic PDM (OptiPDM)")
+            self.ZiGateModel = 1
+        elif self.FirmwareMajorVersion == "05":
+            self.log.logging("Input", "Status", "ZiGate+ (V2)")
+            self.ZiGateModel = 2
+
+
+        
+        return None
     return send_zigatecmd_raw(self, "0010", "")
     
 def zigate_soft_reset(self):

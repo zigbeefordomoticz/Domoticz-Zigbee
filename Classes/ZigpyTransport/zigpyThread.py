@@ -141,6 +141,19 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False ):
         self.app = App_znp (conf) 
 
     await self.app.startup(True)  
+    self.version = None
+
+    self.FirmwareBranch = "00"  # 00 Production, 01 Development 
+    self.FirmwareMajorVersion = "04" # 03 PDM Legcay, 04 PDM Opti, 05 PDM V2
+    self.FirmwareVersion = "0320"
+    
+    self.ZigateIEEE = "%s" %self.app.ieee
+    self.ZigateNWKID = "%04x" %self.app.nwk
+    self.ZigateExtendedPanId = "%08x" %self.app.extended_pan_id
+    self.ZigatePANId = "%04x" %self.app.pan_id
+    self.ZigateChannel = "%d" %self.app.channel
+    self.running = True
+    
 
     #await self.app.permit_ncp(time_s=240)
 

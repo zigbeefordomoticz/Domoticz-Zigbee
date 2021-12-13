@@ -28,7 +28,10 @@ class ZigpyTransport(object):
         self.ZigateNWKID = None
         self.ZigateExtendedPanId = None
         self.ZigatePANId = None
-        self.ZigateChannel = None        
+        self.ZigateChannel = None
+        self.FirmwareBranch = None
+        self.FirmwareMajorVersion = None
+        self.FirmwareVersion = None    
         self.running = True
 
         self.app = None
@@ -68,7 +71,24 @@ class ZigpyTransport(object):
             "TimeStamp": time.time(),
             }
         self.writer_queue.put((99, str(json.dumps(message))))        
-        
+
+    def pdm_lock_status(self):
+        return False
+    
+    def get_zigate_firmware_version(self):
+        return { 'Branch': self.FirmwareBranch,  'Model': self.FirmwareMajorVersion, 'Firmware':self.FirmwareVersion}
+ 
+    def get_zigate_ieee(self):
+        return self.ZigateIEEE
+    def get_zigate_nwkid(self):
+        return self.ZigateNWKID
+    def get_zigate_extented_panId(self):
+        return self.ZigateExtendedPanId
+    def get_zigate_panId(self):
+        return self.ZigatePANId
+    def get_zigate_channel(self):
+        return self.ZigateChannel
+
     def get_writer_queue(self):
         return self.writer_queue.qsize()
     

@@ -3,8 +3,9 @@
 #
 # Author: zaraki673 & pipiche38
 #
+# <plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="5.1">
 """
-<plugin key="zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="5.1">
+<plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="5.1">
     <description>
         <h1> Plugin ZiGate</h1><br/>
             <br/><h2> Informations</h2><br/>
@@ -954,7 +955,7 @@ class BasePlugin:
 
         # Heartbeat - Ping Zigate every minute to check connectivity
         # If fails then try to reConnect
-        if self.pluginconf.pluginConf["Ping"]:
+        if self.pluginconf.pluginConf["Ping"] and self.transport not in ("ZigpyZNP", "ZigpyZiGate", "None" ):
             pingZigate(self)
             self.Ping["Nb Ticks"] += 1
 
@@ -1333,7 +1334,7 @@ def pingZigate(self):
         return
 
     # If we are more than PING_CHECK_FREQ without any messages, let's check
-    if self.Ping["Nb Ticks"] < (PING_CHECK_FREQ // HEARTBEAT):
+    if self.Ping["Nb Ticks"] and self.Ping["Nb Ticks"] < (PING_CHECK_FREQ // HEARTBEAT):
         self.connectionState = 1
         self.log.logging(
             "Plugin", "Debug", "pingZigate - We have receive a message less than %s sec  ago " % PING_CHECK_FREQ
