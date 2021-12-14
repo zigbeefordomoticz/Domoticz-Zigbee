@@ -5,6 +5,8 @@ from queue import Queue, PriorityQueue
 
 import time
 import json
+import zigpy.application
+
 from threading import Thread
 from Classes.Transport.forwarderThread import forwarder_thread
 import Domoticz
@@ -34,7 +36,7 @@ class ZigpyTransport(object):
         self.FirmwareVersion = None    
         self.running = True
 
-        self.app = None
+        self.app : zigpy.application.ControllerApplication |None = None 
         self.writer_queue = PriorityQueue()
         self.forwarder_queue = Queue()
         self.zigpy_thread = Thread(name="ZigpyCom_%s" % self.hardwareid, target=zigpy_thread, args=(self,))
@@ -79,15 +81,15 @@ class ZigpyTransport(object):
         return { 'Branch': self.FirmwareBranch,  'Model': self.FirmwareMajorVersion, 'Firmware':self.FirmwareVersion}
  
     def get_zigate_ieee(self):
-        return self.ZigateIEEE
+        return self.app.ieee
     def get_zigate_nwkid(self):
-        return self.ZigateNWKID
+        return self.app.nwk
     def get_zigate_extented_panId(self):
-        return self.ZigateExtendedPanId
+        return self.app.extended_pan_id
     def get_zigate_panId(self):
-        return self.ZigatePANId
+        return self.app.pan_id
     def get_zigate_channel(self):
-        return self.ZigateChannel
+        return self.app.channel
 
     def get_writer_queue(self):
         return self.writer_queue.qsize()
