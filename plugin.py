@@ -946,7 +946,7 @@ class BasePlugin:
             and self.permitTojoin["Duration"] != 0
             and int(time.time()) >= (self.permitTojoin["Starttime"] + self.permitTojoin["Duration"])
         ):
-            zigate_get_permit_joint_status(self)
+            zdp_get_permit_joint_status(self)
             #sendZigateCmd(self, "0014", "")  # Request status
             self.permitTojoin["Duration"] = 0
 
@@ -1057,7 +1057,7 @@ def zigateInit_Phase2(self):
     if self.pluginconf.pluginConf["resetPermit2Join"]:
         ZigatePermitToJoin(self, 0)
     else:
-        zigate_get_permit_joint_status(self)
+        zdp_get_permit_joint_status(self)
         #sendZigateCmd(self, "0014", "")  # Request Permit to Join status
 
     # Request List of Active Devices
@@ -1322,7 +1322,7 @@ def pingZigate(self):
             restartPluginViaDomoticzJsonApi(self)
 
         elif (self.Ping["Nb Ticks"] % 3) == 0:
-            zigate_get_permit_joint_status(self)
+            zdp_get_permit_joint_status(self)
             #sendZigateCmd(self, "0014", "")  # Request status
         return
 
@@ -1336,7 +1336,7 @@ def pingZigate(self):
 
     if "Status" not in self.Ping:
         self.log.logging("Plugin", "Log", "pingZigate - Unknown Status, Ticks: %s  Send a Ping" % self.Ping["Nb Ticks"])
-        zigate_get_permit_joint_status(self)
+        zdp_get_permit_joint_status(self)
         #sendZigateCmd(self, "0014", "")  # Request status
         self.Ping["Status"] = "Sent"
         self.Ping["TimeStamp"] = int(time.time())
@@ -1351,7 +1351,7 @@ def pingZigate(self):
             "Debug",
             "pingZigate - Status: %s Send a Ping, Ticks: %s" % (self.Ping["Status"], self.Ping["Nb Ticks"]),
         )
-        zigate_get_permit_joint_status(self)
+        zdp_get_permit_joint_status(self)
         #sendZigateCmd(self, "0014", "")  # Request status
         self.connectionState = 1
         self.Ping["Status"] = "Sent"
