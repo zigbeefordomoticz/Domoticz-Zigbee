@@ -10,6 +10,7 @@
 
 """
 import struct
+import Domoticz
 from Modules.zigateConsts import ZIGATE_EP
 from Modules.sendZigateCommand import (raw_APS_request)
 from Modules.tools import get_and_inc_ZDP_SQM
@@ -65,3 +66,10 @@ def zdp_management_routing_table_request(self, nwkid, payload):
 
 def zdp_management_binding_table_request(self, nwkid, payload):
     return raw_APS_request( self, nwkid, "00", "0033", "0000", payload, zigate_ep="00", highpriority=False, ackIsDisabled=False,)
+
+
+def zdp_raw_permit_joining_request(self, tgtnwkid , duration , significance):
+    Domoticz.Log("self.ZigateComm: %s" %str(self.ZigateComm))
+    if self.transport in ("ZigpyZNP", "ZigpyZiGate" ):
+        data = {'Duration': int(duration, 16), 'targetRouter': int(tgtnwkid, 16)}
+        return self.ZigateComm.sendData( "PERMIT-TO-JOIN", data) 

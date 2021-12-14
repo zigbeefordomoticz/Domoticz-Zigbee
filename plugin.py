@@ -4,7 +4,7 @@
 # Author: zaraki673 & pipiche38
 #
 """
-<plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="5.1">
+<plugin key="ZigateZigpy" name="Zigate plugin (zigpy enabled)" author="zaraki673 & pipiche38" version="5.1">
     <description>
         <h1> Plugin ZiGate</h1><br/>
             <br/><h2> Informations</h2><br/>
@@ -118,11 +118,11 @@ from Modules.zigateCommands import (zigate_erase_eeprom,
                                     zigate_get_firmware_version,
                                     zigate_get_list_active_devices,
                                     zigate_get_nwk_state,
-                                    zigate_get_permit_joint_status,
                                     zigate_get_time,
                                     zigate_remove_device,
                                     zigate_set_certificate)
 from Modules.zigateConsts import CERTIFICATION, HEARTBEAT, MAX_FOR_ZIGATE_BUZY
+from Modules.zdpCommands import zdp_get_permit_joint_status
 
 # Zigpy related modules
 from zigpy_zigate.config import CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE
@@ -789,8 +789,6 @@ class BasePlugin:
                 return
             self.HeartbeatCount += 1
 
-        busy_ = False
-
         # Quiet a bad hack. In order to get the needs for ZigateRestart
         # from WebServer
         if "startZigateNeeded" in self.zigatedata and self.zigatedata["startZigateNeeded"]:
@@ -925,7 +923,7 @@ class BasePlugin:
             self.PluginHealth["Flag"] = 2
             self.PluginHealth["Txt"] = "Enrollment in Progress"
             self.adminWidgets.updateStatusWidget(Devices, "Enrollment")
-            
+
             # Maintain trend statistics
             self.statistics._Load = self.ZigateComm.loadTransmit()
             self.statistics.addPointforTrendStats(self.HeartbeatCount)
@@ -964,10 +962,7 @@ class BasePlugin:
             #sendZigateCmd(self, "0017", "")
 
         # Update MaxLoad if needed
-        if self.ZigateComm.loadTransmit() >= MAX_FOR_ZIGATE_BUZY:
-            # This mean that 4 commands are on the Queue to be executed by Zigate.
-            busy_ = True
-        
+        busy_ = self.ZigateComm.loadTransmit() >= MAX_FOR_ZIGATE_BUZY
         # Maintain trend statistics
         self.statistics._Load = self.ZigateComm.loadTransmit()
         self.statistics.addPointforTrendStats(self.HeartbeatCount)
@@ -1326,10 +1321,9 @@ def pingZigate(self):
             # self.ZigateComm.re_conn()
             restartPluginViaDomoticzJsonApi(self)
 
-        else:
-            if (self.Ping["Nb Ticks"] % 3) == 0:
-                zigate_get_permit_joint_status(self)
-                #sendZigateCmd(self, "0014", "")  # Request status
+        elif (self.Ping["Nb Ticks"] % 3) == 0:
+            zigate_get_permit_joint_status(self)
+            #sendZigateCmd(self, "0014", "")  # Request status
         return
 
     # If we are more than PING_CHECK_FREQ without any messages, let's check

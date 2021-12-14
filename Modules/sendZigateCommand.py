@@ -272,5 +272,5 @@ def zigpy_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payloa
     else:
         data['AddressMode'] = 0x02
 
-    i_sqn = self.ZigateComm.sendData( 0x0530, data)
+    i_sqn = self.ZigateComm.sendData( "RAW-COMMAND", data)
     return 

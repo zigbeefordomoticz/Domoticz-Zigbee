@@ -38,7 +38,7 @@ def zigate_get_nwk_state(self):
         self.ZigateChannel = self.ZigateComm.get_zigate_channel()
         self.zigatedata["IEEE"] = self.ZigateIEEE
         self.zigatedata["Short Address"] = self.ZigateNWKID
-        self.zigatedata["Channel"] = int(self.ZigateChannel, 16)
+        self.zigatedata["Channel"] = self.ZigateChannel
         self.zigatedata["PANID"] = self.ZigatePANId
         self.zigatedata["Extended PANID"] = self.ZigateExtendedPanId
         return
@@ -74,14 +74,6 @@ def zigate_soft_reset(self):
 def zigate_erase_eeprom(self):
     self.log.logging( "zigateCommand", "Debug","zigate_erase_eeprom")
     return send_zigatecmd_raw(self, "0012", "")
-
-def zigate_permit_joining_request(self, tgtnwkid , duration , significance):
-    self.log.logging( "zdpCommand", "Log","zdp_permit_joining_request %s %s %s" %(tgtnwkid , duration , significance))
-    return send_zigatecmd_raw(self, "0049", tgtnwkid + duration + significance)
-       
-def zigate_get_permit_joint_status(self):
-    self.log.logging( "zigateCommand", "Debug","zigate_get_permit_joint_status")
-    return send_zigatecmd_raw(self, "0014", "")  # Request Permit to Join status
 
 def zigate_get_list_active_devices(self):
     self.log.logging( "zigateCommand", "Debug","zigate_get_list_active_devices")

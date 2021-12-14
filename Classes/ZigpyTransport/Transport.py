@@ -12,7 +12,6 @@ from Classes.Transport.forwarderThread import forwarder_thread
 import Domoticz
 
 from Classes.ZigpyTransport.zigpyThread import zigpy_thread, start_zigpy_thread, stop_zigpy_thread
-from Classes.ZigpyTransport.writerThread import writer_thread, stop_writer_thread, start_writer_thread
 from Classes.ZigpyTransport.forwarderThread import forwarder_thread, start_forwarder_thread, stop_forwarder_thread
  
 class ZigpyTransport(object):
@@ -35,17 +34,17 @@ class ZigpyTransport(object):
         self.FirmwareMajorVersion = None
         self.FirmwareVersion = None    
         self.running = True
+        
+        self.zigpy_sqn = 0
 
         self.app : zigpy.application.ControllerApplication |None = None 
         self.writer_queue = PriorityQueue()
         self.forwarder_queue = Queue()
         self.zigpy_thread = Thread(name="ZigpyCom_%s" % self.hardwareid, target=zigpy_thread, args=(self,))
-        self.writer_thread = Thread(name="ZigpyWriter_%s" % self.hardwareid, target=writer_thread, args=(self,))
         self.forwarder_thread = Thread( name="ZigpyForwarder_%s" % self.hardwareid, target=forwarder_thread, args=(self,) )
 
     def open_zigate_connection(self): 
         start_zigpy_thread( self )
-        start_writer_thread( self )
         start_forwarder_thread( self )
 
     def re_connect_zigate(self):
@@ -56,16 +55,14 @@ class ZigpyTransport(object):
     
     def thread_transport_shutdown(self):
         Domoticz.Log("Shuting down co-routine")
-        stop_writer_thread(self)
         stop_zigpy_thread(self)
         stop_forwarder_thread(self)
 
         self.zigpy_thread.join()
-        self.writer_thread.join()
         self.forwarder_thread.join()
 
     def sendData(self, cmd, datas, highpriority=False, ackIsDisabled=False, waitForResponseIn=False, NwkId=None):
-        Domoticz.Log("sendData - Cmd: %s Datas: %s" %(cmd, datas))
+        Domoticz.Log("===> sendData - Cmd: %s Datas: %s" %(cmd, datas))            
         message = {
             "cmd": cmd,
             "datas": datas,

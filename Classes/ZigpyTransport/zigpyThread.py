@@ -1,7 +1,10 @@
 
-from typing import Any, Optional
-import logging
 import asyncio
+import binascii
+import json
+import logging
+import queue
+from typing import Any, Optional
 
 import Domoticz
 import zigpy.appdb
@@ -21,7 +24,10 @@ import zigpy.zdo.types as zdo_types
 import zigpy_zigate
 import zigpy_zigate.zigbee.application
 import zigpy_znp.zigbee.application
-from zigpy_zigate.config import CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE
+from Classes.ZigpyTransport.nativeCommands import (NATIVE_COMMANDS_MAPPING,
+                                                   native_commands)
+from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
+                                 SCHEMA_DEVICE)
 
 LOGGER = logging.getLogger(__name__)
     
@@ -56,11 +62,11 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         
     def get_device(self, ieee=None, nwk=None):
         Domoticz.Log("get_device")
-        dev = zigpy.device.Device(self, ieee, nwk)
-        return dev
+        return zigpy.device.Device(self, ieee, nwk)
         
-    #def zigate_callback_handler(self, msg, response, lqi):
-    #    Domoticz.Log("zigate_callback_handler %04x %s" %(msg, response))
+    def zigate_callback_handler(self, msg, response, lqi):
+        Domoticz.Log("zigate_callback_handler %04x %s" %(msg, response))
+    
 
     def handle_leave(self, nwk, ieee):
         #super().handle_leave(nwk,ieee) 
@@ -79,6 +85,8 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         dst_ep: int,
         message: bytes,
     ) -> None:
+        
+        message = binascii.hexlify(message).decode('utf-8')
         Domoticz.Log("handle_message Sender: %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s" %
                      (str(sender), profile, cluster, src_ep, dst_ep, str(message)))
         #Domoticz.Log("handle_message %s" %(str(profile)))
@@ -155,12 +163,118 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False ):
     # Run forever
     Domoticz.Log("Starting work loop")
 
-    while self.zigpy_running:
-        #Domoticz.Log("Continue loop %s" %self.zigpy_running)
-        await asyncio.sleep(.5)
+    await worker_loop(self)
 
     Domoticz.Log("Exiting work loop")
 
-
     await self.app.shutdown()
     Domoticz.Log("Exiting co-rounting radio_start")
+
+
+async def worker_loop(self):
+    self.logging_writer("Status", "ZigyTransport: worker_loop start.")
+
+    while self.zigpy_running:
+        # Sending messages ( only 1 at a time )
+        try:
+            # self.logging_writer( 'Debug', "Waiting for next command Qsize: %s" %self.writer_queue.qsize())
+            if self.writer_queue is None:
+                break
+
+            prio, entry = self.writer_queue.get()
+            if entry == "STOP":
+                break
+        
+            # message = {
+            #      "cmd": cmd,
+            #      "datas": datas,
+            #      "NwkId": NwkId,
+            #      "TimeStamp": time.time(),
+            #      }
+            data = json.loads(entry)
+            
+            if data["cmd"] == "PERMIT-TO-JOIN":
+                duration = data["datas"]["Duration"] 
+                await self.app.permit_ncp(duration)
+            
+            elif   data["cmd"] in NATIVE_COMMANDS_MAPPING:
+                await native_commands(self, data["cmd"], data["datas"])
+                
+            elif data["cmd"] == "RAW-COMMAND":
+                    #data = {
+                    #    'Profile': int(profileId, 16),
+                    #    'Cluster': int(cluster, 16),
+                    #    'TargetNwk': int(targetaddr, 16),
+                    #    'TargetEp': int(dest_ep, 16),
+                    #    'SrcEp': int(zigate_ep, 16),
+                    #    'Sqn': None,
+                    #    'payload': payload,
+                    #    }
+                    Profile = data["Profile"]
+                    Cluster = data[Cluster]
+                    NwkId = data["TargetNwk"]
+                    dEp = data["TargetEp"]
+                    sEp = data["SrcEp"]
+                    payload = data["payload"]
+                    sequence = get_zigpy_sqn(self)
+                    addressmode = data["AddressMode"]
+                    if addressmode == 0x01:
+                        self.ZigateComm.mrequest(self, NwkId, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=True, use_ieee=False)
+                    elif addressmode == 0x02:
+                        destination = t.AddrModeAddress(mode=t.AddrMode.NWK, address=NwkId)
+                        self.ZigateComm.request(self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=True, use_ieee=False)
+                    elif addressmode == 0x07:
+                        destination = t.AddrModeAddress(mode=0x07, address=NwkId)
+                        self.ZigateComm.request(self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=True, use_ieee=False)
+            
+            if self.writer_queue.qsize() > self.statistics._MaxLoad:
+                self.statistics._MaxLoad = self.writer_queue.qsize()
+
+        except queue.Empty:
+            # Empty Queue, timeout.
+            pass
+
+        except Exception as e:
+            self.logging_writer("Error", "Error while receiving a ZiGate command: %s" % e)
+            handle_thread_error(self, e, 0, 0, "None")
+        await asyncio.sleep(.5)
+        
+    self.logging_writer("Status", "ZigyTransport: writer_thread Thread stop.")
+
+
+def get_zigpy_sqn(self):
+    if self.zigpy_sqn >= 255:
+        self.zigpy_sqn = 0
+    else:
+        self.zigpy_sqn += 1
+    return self.zigpy_sqn
+
+def handle_thread_error(self, e, nb_in, nb_out, data):
+    trace = []
+    tb = e.__traceback__
+    self.logging_transport("Error","'%s' failed '%s'" % (tb.tb_frame.f_code.co_name, str(e)))
+    while tb is not None:
+        trace.append(
+            {"Module": tb.tb_frame.f_code.co_filename, "Function": tb.tb_frame.f_code.co_name, "Line": tb.tb_lineno}
+        )
+        self.logging_transport("Error",
+            "----> Line %s in '%s', function %s"
+            % (
+                tb.tb_lineno,
+                tb.tb_frame.f_code.co_filename,
+                tb.tb_frame.f_code.co_name,
+            )
+        )
+        tb = tb.tb_next
+
+    context = {
+        "Error Code": "TRANS-THREADERROR-01",
+        "Type:": str(type(e).__name__),
+        "Message code:": str(e),
+        "Stack Trace": str(trace),
+        "nb_in": nb_in,
+        "nb_out": nb_out,
+        "Data": str(data),
+    }
+    self.logging_transport("Error", "handle_error_in_thread ", _context=context)
+

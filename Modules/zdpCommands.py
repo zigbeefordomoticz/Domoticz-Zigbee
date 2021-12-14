@@ -9,11 +9,12 @@
     Description: 
 
 """
-
+import Domoticz
 from Modules.sendZigateCommand import raw_APS_request, send_zigatecmd_raw
 from Modules.zdpRawCommands import (zdp_raw_active_endpoint_request,
                                     zdp_raw_node_descriptor_request,
-                                    zdp_raw_simple_descriptor_request)
+                                    zdp_raw_simple_descriptor_request,
+                                    zdp_raw_permit_joining_request)
 
 
 def zdp_IEEE_address_request(self, lookup, u8RequestType , u8StartIndex):
@@ -27,6 +28,16 @@ def zdp_node_descriptor_request(self, nwkid):
         return zdp_raw_node_descriptor_request(self, nwkid)
     return send_zigatecmd_raw(self, "0042", nwkid)
     
+def zdp_permit_joining_request(self, tgtnwkid , duration , significance):
+    self.log.logging( "zdpCommand", "Log","zdp_permit_joining_request %s %s %s" %(tgtnwkid , duration , significance))
+    Domoticz.Log("self.ZigateComm: %s" %str(self.ZigateComm))
+    if self.transport in ("ZigpyZNP", "ZigpyZiGate" ):
+        return zdp_raw_permit_joining_request(self, tgtnwkid , duration , significance)
+    return send_zigatecmd_raw(self, "0049", tgtnwkid + duration + significance)
+       
+def zdp_get_permit_joint_status(self):
+    self.log.logging( "zigateCommand", "Debug","zigate_get_permit_joint_status")
+    return send_zigatecmd_raw(self, "0014", "")  # Request Permit to Join status
 
 
 def zdp_simple_descriptor_request(self, nwkid, endpoint):
