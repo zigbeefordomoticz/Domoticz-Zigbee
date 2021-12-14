@@ -64,8 +64,8 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         Domoticz.Log("get_device")
         return zigpy.device.Device(self, ieee, nwk)
         
-    def zigate_callback_handler(self, msg, response, lqi):
-        Domoticz.Log("zigate_callback_handler %04x %s" %(msg, response))
+    #def zigate_callback_handler(self, msg, response, lqi):
+    #    Domoticz.Log("zigate_callback_handler %04x %s" %(msg, response))
     
 
     def handle_leave(self, nwk, ieee):
