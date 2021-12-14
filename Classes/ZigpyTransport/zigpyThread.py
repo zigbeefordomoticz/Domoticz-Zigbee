@@ -211,7 +211,7 @@ async def worker_loop(self):
                     #    'payload': payload,
                     #    }
                     Profile = data["Profile"]
-                    Cluster = data[Cluster]
+                    Cluster = data["Cluster"]
                     NwkId = data["TargetNwk"]
                     dEp = data["TargetEp"]
                     sEp = data["SrcEp"]
