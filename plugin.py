@@ -3,7 +3,6 @@
 #
 # Author: zaraki673 & pipiche38
 #
-# <plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="5.1">
 """
 <plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="5.1">
     <description>
