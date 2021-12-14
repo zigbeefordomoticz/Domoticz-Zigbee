@@ -4,3 +4,6 @@
 [submodule "external/zigpy"]
 	path = external/zigpy
 	url = https://github.com/zigpy/zigpy.git
+[submodule "external/zigpy-zigate"]
+	path = external/zigpy-zigate
+	url = https://github.com/badzz/zigpy-zigate
