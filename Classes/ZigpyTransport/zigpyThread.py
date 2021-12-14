@@ -25,19 +25,6 @@ from zigpy_zigate.config import CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SC
 
 LOGGER = logging.getLogger(__name__)
     
-def dump_app_info(app):
-    
-    nwk = app[0]
-    ieee = app[1]
-    pan_id = app[2]
-    extended_pan_id = app[3]
-    channel = app[4]
-    
-    Domoticz.Log("PAN ID:               0x%04x" %pan_id)
-    Domoticz.Log("Extended PAN ID:      0x%08x" %extended_pan_id)
-    Domoticz.Log("Channel:              0x%d" %channel)
-    Domoticz.Log("Device IEEE:          %s" %ieee)
-    Domoticz.Log("Device NWK:           0x%04x" %nwk)
 
 class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
     
@@ -53,25 +40,10 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
     async def startup(self, auto_form=False):
         await super().startup(auto_form)
         network_state, lqi = await self._api.get_network_state()
-        dump_app_info( network_state )
+        self.udpate_network_info (network_state)
         
     def get_zigate_version(self):
-        return  self.version
-
-    def get_zigate_ieee(self):
-        return self.ZigateIEEE
-    
-    def get_zigate_nwkid(self):
-        return self.ZigateNWKID
-    
-    def get_zigate_panid(self):
-        return self.ZigatePANId
-    
-    def get_zigate_extendedpanid(self):
-        return self.ZigateExtendedPanId
-    
-    def get_zigate_channel(self):
-        return self.ZigateChannel
+        return self.version
 
     def add_device(self, ieee, nwk):
         Domoticz.Log("add_device %s" %str(nwk))
@@ -84,6 +56,8 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         
     def get_device(self, ieee=None, nwk=None):
         Domoticz.Log("get_device")
+        dev = zigpy.device.Device(self, ieee, nwk)
+        return dev
         
     #def zigate_callback_handler(self, msg, response, lqi):
     #    Domoticz.Log("zigate_callback_handler %04x %s" %(msg, response))
@@ -109,6 +83,28 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
                      (str(sender), profile, cluster, src_ep, dst_ep, str(message)))
         #Domoticz.Log("handle_message %s" %(str(profile)))
         return None
+
+    def udpate_network_info (self,network_state):
+        self.state.network_information = zigpy.state.NetworkInformation(
+            extended_pan_id=network_state[3],
+            pan_id=network_state[2],
+            nwk_update_id=None,
+            nwk_manager_id=0x0000,
+            channel=network_state[4],
+            channel_mask=None,
+            security_level=5,
+            network_key=None,
+            tc_link_key=None,
+            children=[],
+            key_table=[],
+            nwk_addresses={},
+            stack_specific=None,
+        )
+        self.state.node_information= zigpy.state.NodeInfo (
+            nwk = network_state[0],
+            ieee = network_state[1],
+            logical_type = None
+        )
 
 class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
     pass
@@ -146,14 +142,13 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False ):
     self.FirmwareBranch = "00"  # 00 Production, 01 Development 
     self.FirmwareMajorVersion = "04" # 03 PDM Legcay, 04 PDM Opti, 05 PDM V2
     self.FirmwareVersion = "0320"
-    
-    self.ZigateIEEE = "%s" %self.app.ieee
-    self.ZigateNWKID = "%04x" %self.app.nwk
-    self.ZigateExtendedPanId = "%08x" %self.app.extended_pan_id
-    self.ZigatePANId = "%04x" %self.app.pan_id
-    self.ZigateChannel = "%d" %self.app.channel
     self.running = True
     
+    Domoticz.Log("PAN ID:               0x%04x" %self.app.pan_id)
+    Domoticz.Log("Extended PAN ID:      0x%08x" %self.app.extended_pan_id)
+    Domoticz.Log("Channel:              %d" %self.app.channel)
+    Domoticz.Log("Device IEEE:          %s" %self.app.ieee)
+    Domoticz.Log("Device NWK:           0x%04x" %self.app.nwk)
 
     #await self.app.permit_ncp(time_s=240)
 
