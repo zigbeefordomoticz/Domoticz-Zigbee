@@ -11,7 +11,7 @@ from Modules.zigateConsts import ADDRESS_MODE, SIZE_DATA_TYPE
 
 
 def zcl_decoders( self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
-    self.logging_8002( 'Debug', "zcl_decoders NwkId: %s Ep: %s Cluster: %s Payload: %s" %(SrcNwkId, SrcEndPoint, ClusterId , Payload))
+    #self.logging_8002( 'Debug', "zcl_decoders NwkId: %s Ep: %s Cluster: %s Payload: %s" %(SrcNwkId, SrcEndPoint, ClusterId , Payload))
 
     if len(Payload) < 8:
         return frame
@@ -49,20 +49,20 @@ def zcl_decoders( self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
     if Command == "0d":  # Discover Attributes Response
         return buildframe_discover_attribute_response(frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
 
-    self.logging_8002(
-        "Log",
-        "decode8002_and_process Unknown Command: %s NwkId: %s Ep: %s Cluster: %s Payload: %s - GlobalCommand: %s, Sqn: %s, ManufacturerCode: %s"
-        % (
-            Command,
-            SrcNwkId,
-            SrcEndPoint,
-            ClusterId,
-            Data,
-            GlobalCommand,
-            Sqn,
-            ManufacturerCode,
-        ),
-    )
+    #self.logging_8002(
+    #    "Log",
+    #    "decode8002_and_process Unknown Command: %s NwkId: %s Ep: %s Cluster: %s Payload: %s - GlobalCommand: %s, Sqn: %s, ManufacturerCode: %s"
+    #    % (
+    #        Command,
+    #        SrcNwkId,
+    #        SrcEndPoint,
+    #        ClusterId,
+    #        Data,
+    #        GlobalCommand,
+    #        Sqn,
+    #        ManufacturerCode,
+    #    ),
+    #)
 
     return frame
 

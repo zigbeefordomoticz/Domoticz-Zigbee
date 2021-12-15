@@ -13,7 +13,7 @@ import Domoticz
 
 from Classes.ZigpyTransport.zigpyThread import zigpy_thread, start_zigpy_thread, stop_zigpy_thread
 from Classes.ZigpyTransport.forwarderThread import forwarder_thread, start_forwarder_thread, stop_forwarder_thread
- 
+from Classes.Transport.sqnMgmt import (sqn_init_stack)
 class ZigpyTransport(object):
     def __init__( self, F_out, log, statistics, hardwareid,radiomodule, serialPort):
         self.F_out = F_out  # Function to call to bring the decoded Frame at plugin
@@ -34,6 +34,10 @@ class ZigpyTransport(object):
         self.FirmwareMajorVersion = None
         self.FirmwareVersion = None    
         self.running = True
+        
+        # Initialise SQN Management
+        sqn_init_stack(self)
+
         
         self.app : zigpy.application.ControllerApplication |None = None 
         self.writer_queue = PriorityQueue()

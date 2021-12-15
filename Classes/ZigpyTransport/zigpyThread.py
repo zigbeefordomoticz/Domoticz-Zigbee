@@ -85,15 +85,11 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         message: bytes,
     ) -> None:
         
-        plugin_frame = build_plugin_frame_content( sender, profile, cluster, src_ep, dst_ep, message)
-        Domoticz.Log("handle_message Sender: %s frame for plugin: %s" %
-                     (str(sender.nwk), plugin_frame))
+        
         #Domoticz.Log("handle_message %s" %(str(profile)))
-        if sender.nwk is not None:
-            #self.callBackFunction (t.AddrMode.NWK,sender.nwk,profile,cluster,src_ep,dst_ep,message)
-            self.callBackFunction (plugin_frame)
-        elif sender.ieee is not None:
-            #self.callBackFunction (t.AddrMode.IEEE,sender.ieee,profile,cluster,src_ep,dst_ep,message)
+        if sender.nwk is not None or sender.ieee is not None:
+            plugin_frame = build_plugin_frame_content( sender, profile, cluster, src_ep, dst_ep, message)
+            Domoticz.Log("handle_message Sender: %s frame for plugin: %s" %(str(sender.nwk), plugin_frame))
             self.callBackFunction (plugin_frame)
         else:
             Domoticz.Log("handle_message Sender unkown device : %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s" %

@@ -60,7 +60,7 @@ from Modules.zigate import (initLODZigate, receiveZigateEpDescriptor,
 from Modules.zigateConsts import (ADDRESS_MODE, LEGRAND_REMOTE_MOTION,
                                   LEGRAND_REMOTE_SWITCHS, ZCL_CLUSTERS_LIST,
                                   ZIGBEE_COMMAND_IDENTIFIER)
-
+from Classes.Transport.decode8002 import decode8002_and_process
 
 def ZigateRead(self, Devices, Data):
 
@@ -135,19 +135,50 @@ def ZigateRead(self, Devices, Data):
 
     #if Data is None:
     #    return
+
+
+    MsgType, MsgData, MsgLQI = extract_messge_infos( Data)
+    self.Ping["Nb Ticks"] = 0  # We receive a valid packet 
     
-    FrameStart = Data[0:2]
+    self.log.logging(
+        "Input",
+        "Debug",
+        "ZigateRead - MsgType: %s,  Data: %s, LQI: %s" % (MsgType, MsgData, int(MsgLQI, 16)),
+    )
+
+    if MsgType == "8002":
+        # Let's try to see if we can decode it, and then get a new MsgType
+        decoded_frame = decode8002_and_process( self, Data)
+        if decoded_frame is None:
+            return
+        MsgType, MsgData, MsgLQI = extract_messge_infos( decoded_frame)
+
+    if MsgType in DECODERS:
+        _decoding = DECODERS[MsgType]
+        _decoding(self, Devices, MsgData, MsgLQI)
+        return
+    if MsgType == "8002":
+        Decode8002(self, Devices, Data, MsgData, MsgLQI)
+        return
+    if MsgType == "8011":
+        Decode8011(self, Devices, MsgData, MsgLQI)
+        return
+    self.log.logging(
+        "Input",
+        "Error",
+        "ZigateRead - Decoder not found for %s" % (MsgType),
+    )
+
+def extract_messge_infos( Data):
+    FrameStart = Data[:2]
     FrameStop = Data[len(Data) - 2 : len(Data)]
     if FrameStart != "01" and FrameStop != "03":
         Domoticz.Error("ZigateRead received a non-zigate frame Data: " + str(Data) + " FS/FS = " + str(FrameStart) + "/" + str(FrameStop))
-        return
-
-    self.Ping["Nb Ticks"] = 0  # We receive a valid packet
+        return None, None, None
     MsgType = Data[2:6]
     MsgType = MsgType.lower()
-    MsgLength = Data[6:10]
-    MsgCRC = Data[10:12]
-
+    #MsgLength = Data[6:10]
+    #MsgCRC = Data[10:12]
     if len(Data) > 12:
         # We have Payload: data + rssi
         MsgData = Data[12 : len(Data) - 4]
@@ -155,23 +186,7 @@ def ZigateRead(self, Devices, Data):
     else:
         MsgData = ""
         MsgLQI = "00"
-
-    self.log.logging(
-        "Input",
-        "Debug",
-        "ZigateRead - MsgType: %s, MsgLength: %s, MsgCRC: %s, Data: %s, LQI: %s" % (MsgType, MsgLength, MsgCRC, MsgData, int(MsgLQI, 16)),
-    )
-
-    if MsgType in DECODERS:
-        _decoding = DECODERS[MsgType]
-        _decoding(self, Devices, MsgData, MsgLQI)
-        return
-
-    if MsgType == "8011":
-        Decode8011(self, Devices, MsgData, MsgLQI)
-        return
-
-    Domoticz.Error("ZigateRead - Decoder not found for %s" % (MsgType))
+    return MsgType, MsgData, MsgLQI
 
 
 def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
@@ -447,6 +462,8 @@ def Decode8001(self, Decode, MsgData, MsgLQI):  # Reception log Level
     except IOError:
         Domoticz.Error("Error while Opening ZiGate log file %s" % logfilename)
 
+    
+    
 
 def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
     # MsgLogLvl = MsgData[0:2]
@@ -2469,7 +2486,10 @@ def Decode8102(self, Devices, MsgData, MsgLQI):  # Attribute Reports
     timeStamped(self, MsgSrcAddr, 0x8102)
     loggingMessages(self, "8102", MsgSrcAddr, None, MsgLQI, MsgSQN)
     updLQI(self, MsgSrcAddr, MsgLQI)
-    i_sqn = sqn_get_internal_sqn_from_app_sqn(self.ZigateComm, MsgSQN, TYPE_APP_ZCL)
+    if self.zigbee_communitation == 'native':
+        i_sqn = sqn_get_internal_sqn_from_app_sqn(self.ZigateComm, MsgSQN, TYPE_APP_ZCL)
+    else:
+        i_sqn = None
 
     self.statistics._clusterOK += 1
     scan_attribute_reponse(self, Devices, MsgSQN, i_sqn, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgData, "8102")

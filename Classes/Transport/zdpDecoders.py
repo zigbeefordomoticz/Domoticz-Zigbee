@@ -12,7 +12,7 @@ from Modules.zigateConsts import ADDRESS_MODE, SIZE_DATA_TYPE
 
 
 def zdp_decoders( self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
-    self.logging_8002( 'Debug', "zdp_decoders NwkId: %s Ep: %s Cluster: %s Payload: %s" %(SrcNwkId, SrcEndPoint, ClusterId , Payload))
+    #self.logging_8002( 'Debug', "zdp_decoders NwkId: %s Ep: %s Cluster: %s Payload: %s" %(SrcNwkId, SrcEndPoint, ClusterId , Payload))
     
     if ClusterId == "0000":
         # NWK_addr_req
@@ -64,15 +64,15 @@ def buildframe_device_annoucement( self, SrcNwkId, SrcEndPoint, ClusterId, Paylo
     # Reception Data indication, Source Address: 1735 Destination Address: fffd ProfilID: 0000 ClusterID: 0013 Message 
     # Payload: 81/3517/a1c786feff9ffd90/8e
 
-    sqn = Payload[0:2]
+    sqn = Payload[:2]
     nwkid = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[2:6], 16)))[0]
     ieee = "%016x" %struct.unpack("Q", struct.pack(">Q", int(Payload[6:22], 16)))[0]
     maccapa = Payload[22:24]
-    
-    self.logging_8002( 'Debug', "buildframe_device_annoucement sqn: %s nwkid: %s ieee: %s maccapa: %s" %(sqn,nwkid , ieee , maccapa ))
-    
+
+    #self.logging_8002( 'Debug', "buildframe_device_annoucement sqn: %s nwkid: %s ieee: %s maccapa: %s" %(sqn,nwkid , ieee , maccapa ))
+
     buildPayload = nwkid + ieee + maccapa
-    
+
     newFrame = "01"  # 0:2
     newFrame += "004d"  # 2:6   MsgType
     newFrame += "%4x" % len(buildPayload)  # 6:10  Length
@@ -94,9 +94,9 @@ def buildframe_node_descriptor_response( self, SrcNwkId, SrcEndPoint, ClusterId,
     # mac_capability = MsgData[26:28]
     # max_buffer = MsgData[28:30]
     # bit_field = MsgData[30:34]
-    
+
     #  2c 00 3517   0140/8e/7c11/52/5200/002c/5200/00
-    
+
     sqn = Payload[0:2]
     status = Payload[2:4]
     nwkid = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[4:8], 16)))[0]
@@ -109,7 +109,7 @@ def buildframe_node_descriptor_response( self, SrcNwkId, SrcEndPoint, ClusterId,
     max_out_size_16 = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[28:32], 16)))[0]
     descriptor_capability_field_8 = Payload[32:34]
 
-    self.logging_8002( 'Debug', "buildframe_node_descriptor_response sqn: %s nwkid: %s Manuf: %s MacCapa: %s" %(sqn,nwkid , manuf_code_16 , mac_capa_8 ))
+    #self.logging_8002( 'Debug', "buildframe_node_descriptor_response sqn: %s nwkid: %s Manuf: %s MacCapa: %s" %(sqn,nwkid , manuf_code_16 , mac_capa_8 ))
 
     buildPayload = sqn + status + nwkid + manuf_code_16 + max_in_size_16 + max_out_size_16 
     buildPayload += server_mask_16 + descriptor_capability_field_8 + mac_capa_8 + max_buf_size_8 + bitfield_16
@@ -134,15 +134,15 @@ def buildframe_active_endpoint_response(self, SrcNwkId, SrcEndPoint, ClusterId, 
 
     # Reception Data indication, Source Address: 1735 Destination Address: 0000 ProfilID: 0000 ClusterID: 8005 Message 
     # Payload: 0000/3517/02/01f2
-    sqn = Payload[0:2]
+    sqn = Payload[:2]
     status = Payload[2:4]
     nwkid = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[4:8], 16)))[0]
     nbEp = Payload[8:10]
     ep_list = Payload[10:]
-    
-    self.logging_8002( 'Debug', "buildframe_active_endpoint_response sqn: %s status: %s nwkid: %s nbEp: %s epList: %s" %(
-        sqn, status, nwkid , nbEp , ep_list ))
-    
+
+    #self.logging_8002( 'Debug', "buildframe_active_endpoint_response sqn: %s status: %s nwkid: %s nbEp: %s epList: %s" %(
+    #    sqn, status, nwkid , nbEp , ep_list ))
+
     buildPayload = sqn + status + nwkid + nbEp + ep_list
     newFrame = "01"  # 0:2
     newFrame += "8045"  # 2:6   MsgType
@@ -172,21 +172,21 @@ def buildframe_simple_descriptor_response(self, SrcNwkId, SrcEndPoint, ClusterId
     # Reception Data indication, Source Address: 1735 Destination Address: 0000 ProfilID: 0000 ClusterID: 8004 Message 
     # Payload: 1b/00/3517/22/   0104 010c 0101 09 0000 0300 0400 0500 0600 0800 0003 0010 7cfc  04 0500 1900 2000 0010
 
-    sqn = Payload[0:2]
+    sqn = Payload[:2]
     status = Payload[2:4]
     nwkid = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[4:8], 16)))[0]
     length = Payload[8:10]
     SimpleDescriptor = Payload[10:]
 
-    ep  = SimpleDescriptor[0:2]
+    ep = SimpleDescriptor[:2]
     profileId = "%04x" % struct.unpack("H", struct.pack(">H", int(SimpleDescriptor[2:4], 16)))[0]
     deviceId = "%04x" % struct.unpack("H", struct.pack(">H", int(SimpleDescriptor[4:8], 16)))[0]
     deviceVers = SimpleDescriptor[8:10]
     reserved = SimpleDescriptor[10:12]
     inputCnt = SimpleDescriptor[12:14]
 
-    self.logging_8002( 'Debug', "buildframe_simple_descriptor_response sqn: %s status: %s nwkid: %s " %(
-        sqn, status, nwkid ))
+    #self.logging_8002( 'Debug', "buildframe_simple_descriptor_response sqn: %s status: %s nwkid: %s " %(
+    #    sqn, status, nwkid ))
 
     buildPayload = sqn + status + nwkid + length + ep + profileId + deviceId + deviceVers + reserved + inputCnt
 
@@ -211,13 +211,13 @@ def buildframe_simple_descriptor_response(self, SrcNwkId, SrcEndPoint, ClusterId
 
 def buildframe_bind_response_command(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
     # 2d00
-    sqn = Payload[0:2]
+    sqn = Payload[:2]
     status = Payload[2:4]
 
-    self.logging_8002( 'Debug', "buildframe_bind_response_command sqn: %s nwkid: %s Ep: %s Status %s" %(sqn, SrcNwkId , SrcEndPoint, status ))
-        
+    #self.logging_8002( 'Debug', "buildframe_bind_response_command sqn: %s nwkid: %s Ep: %s Status %s" %(sqn, SrcNwkId , SrcEndPoint, status ))
+
     buildPayload = sqn + status
-    
+
     newFrame = "01"  # 0:2
     newFrame += "8030"  # 2:6   MsgType
     newFrame += "%4x" % len(buildPayload)  # 6:10  Length
