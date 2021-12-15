@@ -1,9 +1,9 @@
 [submodule "external/zigpy-znp"]
 	path = external/zigpy-znp
-	url = https://github.com/pipiche38/zigpy-znp.git
+	url = git://github.com/pipiche38/zigpy-znp.git
 [submodule "external/zigpy"]
 	path = external/zigpy
-	url = https://github.com/zigpy/zigpy.git
+	url = git://github.com/zigpy/zigpy.git
 [submodule "external/zigpy-zigate"]
 	path = external/zigpy-zigate
-	url = https://github.com/badzz/zigpy-zigate
+	url = git://github.com/badzz/zigpy-zigate
