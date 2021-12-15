@@ -1880,6 +1880,7 @@ def wiser_home_lockout_thermostat(self, NwkId, mode):
 
 
 def change_setpoint_for_time(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, data):
+    # sourcery skip: merge-comparisons, merge-duplicate-blocks, remove-redundant-if, remove-redundant-slice-index
     # Command 0x80: 0301 2e09 7800
     #               0301 d007 1e00   ( 20° for 30 minutes)
     #               0301 7206 1e00   ( 16.5° for 30 minutes)
@@ -1898,14 +1899,7 @@ def change_setpoint_for_time(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID
     if "Model" in self.ListOfDevices[srcNWKID] and self.ListOfDevices[srcNWKID]["Model"] in ("iTRV"):
         EPout = "01"
 
-    if action == "0201":  # Increase temp for CCTFR6100
-        self.log.logging(
-            "Schneider", "Debug", "change_setpoint_for_time -- Setpoint to %s for %s min" % (setpoint, duration)
-        )
-        override_setpoint(self, srcNWKID, EPout, setpoint, duration)
-        schneider_update_ThermostatDevice(self, Devices, srcNWKID, EPout, ClusterID, setpoint)
-
-    elif action == "0202":  # Decrease temp for CCTFR6100
+    if action == "0102":  # Increase temp for CCTFR6100
         self.log.logging(
             "Schneider", "Debug", "change_setpoint_for_time -- Setpoint to %s for %s min" % (setpoint, duration)
         )
@@ -1914,6 +1908,14 @@ def change_setpoint_for_time(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID
 
     elif action == "0103":
         # Set setpoint On
+        self.log.logging(
+            "Schneider", "Debug", "change_setpoint_for_time -- Setpoint to %s for %s min" % (setpoint, duration)
+        )
+        override_setpoint(self, srcNWKID, EPout, setpoint, duration)
+        schneider_update_ThermostatDevice(self, Devices, srcNWKID, EPout, ClusterID, setpoint)
+
+
+    elif action == "0202":  # Decrease temp for CCTFR6100
         self.log.logging(
             "Schneider", "Debug", "change_setpoint_for_time -- Setpoint to %s for %s min" % (setpoint, duration)
         )
