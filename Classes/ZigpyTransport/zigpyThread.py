@@ -34,7 +34,6 @@ LOGGER = logging.getLogger(__name__)
 
 class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
     
-        
     async def new(
     cls, config: dict, auto_form: bool = False, start_radio: bool = True
     ) -> zigpy.application.ControllerApplication:
@@ -48,7 +47,7 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         network_state, lqi = await self._api.get_network_state()
         self.udpate_network_info (network_state)
         
-    def get_zigate_version(self):
+    def get_zigpy_version(self):
         return self.version
 
     def add_device(self, ieee, nwk):
@@ -85,10 +84,35 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         dst_ep: int,
         message: bytes,
     ) -> None:
+        # plugin: 01/8002/002a/ff/00/0104/0405/02/01/02/6a1d/02/0000/18500a0000215c0e/a8/03
+        # receiv:   /8002/0016/7d/00/0104/0405/02/01/02/6a1d/02/0000/18500a0000215c0e/a8/
         
-        message = binascii.hexlify(message).decode('utf-8')
-        Domoticz.Log("handle_message Sender: %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s" %
-                     (str(sender), profile, cluster, src_ep, dst_ep, str(message)))
+        # plugin: 01/8002/0015/ff/00/0104/0006010102a70302000018ee0a000010007e03
+        # receiv:   /8002/0015/a2/00/0104/0006010102a70302000018ee0a000010007e
+        payload = binascii.hexlify(message).decode('utf-8')
+        ProfilID = "%04x" %profile
+        ClusterID = "%04x" %cluster
+        SourcePoint = "%02x" %src_ep
+        DestPoint = "%02x" %dst_ep
+        SourceAddressMode = "%02x" %0x02
+        SourceAddress = "%02x" %sender.nwk
+        DestinationAddressMode = "%02x" %0x02   
+        DestinationAddress = "%04x" %0x0000
+        Payload = payload
+
+        frame_payload = "00" + ProfilID + ClusterID + SourcePoint + DestPoint + SourceAddressMode + SourceAddress
+        frame_payload += DestinationAddressMode + DestinationAddress + Payload
+        
+        plugin_frame = "01"                                  # 0:2
+        plugin_frame += "8002"                               # 2:4 MsgType 0x8002
+        plugin_frame += "%04x" % ((len(frame_payload)//2)+1) # 6:10 lenght
+        plugin_frame += "%02x" % 0xff                        # 10:12 CRC set to ff but would be great to  compute it
+        plugin_frame += frame_payload
+        plugin_frame += "%02x" %sender.lqi
+        plugin_frame += "03"
+        
+        Domoticz.Log("handle_message Sender: %s frame for plugin: %s" %
+                     (str(sender.nwk), plugin_frame))
         #Domoticz.Log("handle_message %s" %(str(profile)))
         return None
 
@@ -176,7 +200,8 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False ):
 
 async def worker_loop(self):
     self.logging_writer("Status", "worker_loop - ZigyTransport: worker_loop start.")
-
+    logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt='%Y-%m-%d:%H:%M:%S',level=logging.DEBUG)
+    
     while self.zigpy_running:
         # Sending messages ( only 1 at a time )
         try:
