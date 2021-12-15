@@ -38,8 +38,6 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         
     async def startup(self, auto_form=False):
         await super().startup(auto_form)
-        network_state, lqi = await self._api.get_network_state()
-        self.udpate_network_info (network_state)
         
     def get_zigpy_version(self):
         return self.version
@@ -93,29 +91,6 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
 
     def set_callback_message (self, callBackFunction):
         self.callBackFunction = callBackFunction
-
-    def udpate_network_info (self,network_state):
-        self.state.network_information = zigpy.state.NetworkInformation(
-            extended_pan_id=network_state[3],
-            pan_id=network_state[2],
-            nwk_update_id=None,
-            nwk_manager_id=0x0000,
-            channel=network_state[4],
-            channel_mask=None,
-            security_level=5,
-            network_key=None,
-            tc_link_key=None,
-            children=[],
-            key_table=[],
-            nwk_addresses={},
-            stack_specific=None,
-        )
-        self.state.node_information= zigpy.state.NodeInfo (
-            nwk = network_state[0],
-            ieee = network_state[1],
-            logical_type = None
-        )
-
 
 def build_plugin_frame_content(sender, profile, cluster, src_ep, dst_ep, message, receiver=0x0000, src_addrmode=0x02, dst_addrmode=0x02):
         payload = binascii.hexlify(message).decode('utf-8')
