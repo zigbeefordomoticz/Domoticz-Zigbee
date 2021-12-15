@@ -119,13 +119,16 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
 
 
 def start_zigpy_thread(self):
+    Domoticz.Log("start_zigpy_thread - Starting zigpy thread")
     self.zigpy_thread.start()
 
 def stop_zigpy_thread(self):
+    Domoticz.Log("stop_zigpy_thread - Stopping zigpy thread")
+    self.writer_queue.put( (0, "STOP") )
     self.zigpy_running = False
     
 def zigpy_thread(self):
-    Domoticz.Log("Starting zigpy thread")
+    Domoticz.Log("zigpy_thread - Starting zigpy thread")
     self.zigpy_running = True
     asyncio.run( radio_start (self, self._radiomodule, self._serialPort) )  
 
@@ -172,7 +175,7 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False ):
 
 
 async def worker_loop(self):
-    self.logging_writer("Status", "ZigyTransport: worker_loop start.")
+    self.logging_writer("Status", "worker_loop - ZigyTransport: worker_loop start.")
 
     while self.zigpy_running:
         # Sending messages ( only 1 at a time )
