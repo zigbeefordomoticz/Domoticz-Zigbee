@@ -31,7 +31,7 @@ def zdp_node_descriptor_request(self, nwkid):
 def zdp_permit_joining_request(self, tgtnwkid , duration , significance):
     self.log.logging( "zdpCommand", "Log","zdp_permit_joining_request %s %s %s" %(tgtnwkid , duration , significance))
     Domoticz.Log("self.ZigateComm: %s" %str(self.ZigateComm))
-    if self.transport in ("ZigpyZNP", "ZigpyZiGate" ):
+    if self.zigbee_communitation == "zigpy":
         return zdp_raw_permit_joining_request(self, tgtnwkid , duration , significance)
     return send_zigatecmd_raw(self, "0049", tgtnwkid + duration + significance)
        

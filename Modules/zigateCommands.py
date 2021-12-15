@@ -30,7 +30,7 @@ def zigate_firmware_default_response(self, enable="00"):
 
 def zigate_get_nwk_state(self):
     self.log.logging( "zigateCommand", "Debug","zigate_get_nwk_state")
-    if self.transport in ("ZigpyZNP", "ZigpyZiGate" ):
+    if self.zigbee_communitation == "zigpy":
         self.ZigateIEEE = self.ZigateComm.get_zigate_ieee()
         self.ZigateNWKID =  self.ZigateComm.get_zigate_nwkid()
         self.ZigateExtendedPanId =  self.ZigateComm.get_zigate_extented_panId()
@@ -46,7 +46,7 @@ def zigate_get_nwk_state(self):
 
 def zigate_get_firmware_version(self):
     self.log.logging( "zigateCommand", "Debug","zigate_get_firmware_version")
-    if self.transport in ("ZigpyZNP", "ZigpyZiGate" ):
+    if self.zigbee_communitation == "zigpy":
         self.PDMready = True #TODO this must be done only if the initiatilisation went through
         version = self.ZigateComm.get_zigate_firmware_version()
         self.FirmwareBranch = version['Branch']

@@ -48,14 +48,12 @@ def zdp_raw_active_endpoint_request(self, nwkid,):
   
 def zdp_raw_complex_descriptor_request(self, nwkid,):
     self.log.logging( "zdpCommand", "Log","zdp_raw_active_endpoint_request %s" %(nwkid, ))
-
     Cluster = "0010"
     payload = get_and_inc_ZDP_SQM(self, nwkid) + "%04x" % struct.unpack(">H", struct.pack("H", int(nwkid, 16)))[0]
     return raw_APS_request( self, nwkid, "00", Cluster, "0000", payload, zigate_ep="00", groupaddrmode=False, ackIsDisabled=False, )   
 
 def zdp_raw_user_descriptor_request(self, nwkid,):
     self.log.logging( "zdpCommand", "Log","zdp_raw_active_endpoint_request %s" %(nwkid, ))
-
     Cluster = "0011"
     payload = get_and_inc_ZDP_SQM(self, nwkid) + "%04x" % struct.unpack(">H", struct.pack("H", int(nwkid, 16)))[0] 
     return raw_APS_request( self, nwkid, "00", Cluster, "0000", payload, zigate_ep=ZIGATE_EP, groupaddrmode=False, ackIsDisabled=False, )   
@@ -70,6 +68,6 @@ def zdp_management_binding_table_request(self, nwkid, payload):
 
 def zdp_raw_permit_joining_request(self, tgtnwkid , duration , significance):
     Domoticz.Log("self.ZigateComm: %s" %str(self.ZigateComm))
-    if self.transport in ("ZigpyZNP", "ZigpyZiGate" ):
+    if self.zigbee_communitation == "zigpy":
         data = {'Duration': int(duration, 16), 'targetRouter': int(tgtnwkid, 16)}
         return self.ZigateComm.sendData( "PERMIT-TO-JOIN", data) 

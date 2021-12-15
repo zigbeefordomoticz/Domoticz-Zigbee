@@ -60,6 +60,7 @@ OTA_CODES = {
 class OTAManagement(object):
     def __init__(
         self,
+        zigbee_communitation,
         PluginConf,
         DeviceConf,
         adminWidgets,
@@ -72,7 +73,7 @@ class OTAManagement(object):
         log,
         PluginHealth,
     ):
-
+        self.zigbee_communitation = zigbee_communitation
         self.HB = 0
         self.ListOfDevices = ListOfDevices  # Point to the Global ListOfDevices
         self.IEEE2NWK = IEEE2NWK  # Point to the List of IEEE to NWKID

@@ -74,6 +74,7 @@ class WebServer(object):
 
     def __init__(
         self,
+        zigbee_communitation,
         ZigateData,
         PluginParameters,
         PluginConf,
@@ -93,7 +94,7 @@ class WebServer(object):
         httpPort,
         log,
     ):
-
+        self.zigbee_communitation = zigbee_communitation
         self.httpServerConn = None
         self.httpClientConn = None
         self.httpServerConns = {}

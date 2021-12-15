@@ -95,6 +95,7 @@ class GroupsManagement(object):
 
     def __init__(
         self,
+        zigbee_communitation,
         VersionNewFashion,
         DomoticzMajor,
         DomoticzMinor,
@@ -108,7 +109,7 @@ class GroupsManagement(object):
         IEEE2NWK,
         log,
     ):
-
+        self.zigbee_communitation = zigbee_communitation
         self.HB = 0
         self.pluginconf = PluginConf
         self.ZigateComm = ZigateComm  # Point to the ZigateComm object

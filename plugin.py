@@ -244,7 +244,7 @@ class BasePlugin:
         ) = self.ZigateRead_timing_avrg = self.ZigateRead_timing_max = 0
         
         # Zigpy
-        self.zigpy_thread = None
+        self.zigbee_communitation = None  # "zigpy" or "native"
 
     def onStart(self):
         Domoticz.Log("ZiGate plugin started!")
@@ -459,6 +459,7 @@ class BasePlugin:
         # Connect to Zigate only when all initialisation are properly done.
         self.log.logging("Plugin", "Status", "Transport mode: %s" % self.transport)
         if self.transport in ("USB", "DIN", "V2-DIN", "V2-USB"):
+            self.zigbee_communitation = "native"
             self.ZigateComm = ZigateTransport(
                 self.HardwareID,
                 self.DomoticzBuild,
@@ -474,6 +475,7 @@ class BasePlugin:
 
         elif self.transport in ("PI", "V2-PI"):
             switchPiZigate_mode(self, "run")
+            self.zigbee_communitation = "native"
             self.ZigateComm = ZigateTransport(
                 self.HardwareID,
                 self.DomoticzBuild,
@@ -488,6 +490,7 @@ class BasePlugin:
             )
 
         elif self.transport in ("Wifi", "V2-Wifi"):
+            self.zigbee_communitation = "native"
             self.ZigateComm = ZigateTransport(
                 self.HardwareID,
                 self.DomoticzBuild,
@@ -509,12 +512,14 @@ class BasePlugin:
             return
 
         elif self.transport == "ZigpyZiGate":
+            self.zigbee_communitation = "zigpy"
             Domoticz.Log("Start Zigpy Transport on zigate")
             self.ZigateComm = ZigpyTransport( self.processFrame, self.log, self.statistics, self.HardwareID, "zigate", Parameters["SerialPort"]) 
             self.ZigateComm.open_zigate_connection()
             self.pluginconf.pluginConf["ZiGateInRawMode"] = True
             
         elif self.transport == "ZigpyZNP" :
+            self.zigbee_communitation = "zigpy"
             Domoticz.Log("Start Zigpy Transport on ZNP")
             self.ZigateComm = ZigpyTransport( self.processFrame, self.log, self.HardwareID, self.statistics, "znp", Parameters["SerialPort"])  
             self.ZigateComm.open_zigate_connection()
@@ -553,22 +558,16 @@ class BasePlugin:
         if self.domoticzdb_DeviceStatus:
             self.domoticzdb_DeviceStatus.closeDB()
         if self.log:
-            self.log.logging("Plugin", "Log", "onStop called (1) domoticzDb DeviceStatus closed")
-
             self.log.logging("Plugin", "Log", "onStop calling (2) domoticzDb Hardware closed")
         if self.domoticzdb_Hardware:
             self.domoticzdb_Hardware.closeDB()
         if self.log:
-            self.log.logging("Plugin", "Log", "onStop called (2) domoticzDb Hardware closed")
-
             self.log.logging("Plugin", "Log", "onStop calling (3) Transport off")
         if self.ZigateComm:
             self.ZigateComm.thread_transport_shutdown()
             self.ZigateComm.close_zigate_connection()
 
         if self.log:
-            self.log.logging("Plugin", "Log", "onStop called (3) Transport off")
-
             self.log.logging("Plugin", "Log", "onStop calling (4) WebServer off")
         if self.webserver:
             self.webserver.onStop()
@@ -952,7 +951,7 @@ class BasePlugin:
 
         # Heartbeat - Ping Zigate every minute to check connectivity
         # If fails then try to reConnect
-        if self.pluginconf.pluginConf["Ping"] and self.transport not in ("ZigpyZNP", "ZigpyZiGate", "None" ):
+        if self.pluginconf.pluginConf["Ping"] and self.zigbee_communitation == "native":
             pingZigate(self)
             self.Ping["Nb Ticks"] += 1
 
@@ -1214,6 +1213,7 @@ def check_firmware_level(self):
 
 def start_GrpManagement(self, homefolder):
     self.groupmgt = GroupsManagement(
+        self.zigbee_communitation,
         self.VersionNewFashion,
         self.DomoticzMajor,
         self.DomoticzMinor,
@@ -1235,6 +1235,7 @@ def start_GrpManagement(self, homefolder):
 
 def start_OTAManagement(self, homefolder):
     self.OTA = OTAManagement(
+        self.zigbee_communitation,
         self.pluginconf,
         self.DeviceConf,
         self.adminWidgets,
@@ -1255,6 +1256,7 @@ def start_web_server(self, webserver_port, webserver_homefolder):
 
     self.log.logging("Plugin", "Status", "Start Web Server connection")
     self.webserver = WebServer(
+        self.zigbee_communitation,
         self.zigatedata,
         self.pluginParameters,
         self.pluginconf,
