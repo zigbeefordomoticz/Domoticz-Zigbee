@@ -24,6 +24,8 @@ import zigpy.zdo.types as zdo_types
 import zigpy_zigate
 import zigpy_zigate.zigbee.application
 import zigpy_znp.zigbee.application
+from Classes.ZigpyTransport.AppZigate import App_zigate
+from Classes.ZigpyTransport.AppZnp import App_znp
 from Classes.ZigpyTransport.nativeCommands import (NATIVE_COMMANDS_MAPPING,
                                                    native_commands)
 from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
@@ -31,99 +33,6 @@ from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
 
 LOGGER = logging.getLogger(__name__)
     
-
-class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
-    
-    async def new(
-    cls, config: dict, auto_form: bool = False, start_radio: bool = True
-    ) -> zigpy.application.ControllerApplication:
-        Domoticz.Log("new" )
-
-    async def _load_db(self) -> None:
-        Domoticz.Log("_load_db" )
-        
-    async def startup(self, auto_form=False):
-        await super().startup(auto_form)
-        network_state, lqi = await self._api.get_network_state()
-        self.udpate_network_info (network_state)
-        
-    def get_zigpy_version(self):
-        return self.version
-
-    def add_device(self, ieee, nwk):
-        Domoticz.Log("add_device %s" %str(nwk))
-        
-    def device_initialized(self, device):
-        Domoticz.Log("device_initialized")
-        
-    async def remove(self, ieee: t.EUI64) -> None:
-        Domoticz.Log("remove")
-        
-    def get_device(self, ieee=None, nwk=None):
-        Domoticz.Log("get_device")
-        return zigpy.device.Device(self, ieee, nwk)
-        
-    #def zigate_callback_handler(self, msg, response, lqi):
-    #    Domoticz.Log("zigate_callback_handler %04x %s" %(msg, response))
-    
-
-    def handle_leave(self, nwk, ieee):
-        #super().handle_leave(nwk,ieee) 
-        Domoticz.Log("handle_leave %s" %str(nwk))
-
-    def handle_join(self, nwk, ieee):
-        #super().handle_join(nwk,ieee) 
-        Domoticz.Log("handle_join %s" %str(nwk))
-
-    def handle_message(
-        self,
-        sender: zigpy.device.Device,
-        profile: int,
-        cluster: int,
-        src_ep: int,
-        dst_ep: int,
-        message: bytes,
-    ) -> None:
-        
-        
-        #Domoticz.Log("handle_message %s" %(str(profile)))
-        if sender.nwk is not None or sender.ieee is not None:
-            plugin_frame = build_plugin_frame_content( sender, profile, cluster, src_ep, dst_ep, message)
-            Domoticz.Log("handle_message Sender: %s frame for plugin: %s" %(str(sender.nwk), plugin_frame))
-            self.callBackFunction (plugin_frame)
-        else:
-            Domoticz.Log("handle_message Sender unkown device : %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s" %
-                     (str(sender), profile, cluster, src_ep, dst_ep, str(message)))
-
-        return None
-
-    def set_callback_message (self, callBackFunction):
-        self.callBackFunction = callBackFunction
-
-    def udpate_network_info (self,network_state):
-        self.state.network_information = zigpy.state.NetworkInformation(
-            extended_pan_id=network_state[3],
-            pan_id=network_state[2],
-            nwk_update_id=None,
-            nwk_manager_id=0x0000,
-            channel=network_state[4],
-            channel_mask=None,
-            security_level=5,
-            network_key=None,
-            tc_link_key=None,
-            children=[],
-            key_table=[],
-            nwk_addresses={},
-            stack_specific=None,
-        )
-        self.state.node_information= zigpy.state.NodeInfo (
-            nwk = network_state[0],
-            ieee = network_state[1],
-            logical_type = None
-        )
-
-class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
-    pass
 
 
 def start_zigpy_thread(self):
@@ -224,12 +133,6 @@ async def worker_loop(self):
         if entry == "STOP":
             break
     
-        # message = {
-        #      "cmd": cmd,
-        #      "datas": datas,
-        #      "NwkId": NwkId,
-        #      "TimeStamp": time.time(),
-        #      }
         data = json.loads(entry)
         
         try:
@@ -255,7 +158,7 @@ async def worker_loop(self):
         except Exception as e:
             self.logging_writer("Error", "Error while receiving a ZiGate command: %s" % e)
             handle_thread_error(self, e, 0, 0, "None")
-        await asyncio.sleep(.5)
+
         
     self.logging_writer("Status", "ZigyTransport: writer_thread Thread stop.")
 
