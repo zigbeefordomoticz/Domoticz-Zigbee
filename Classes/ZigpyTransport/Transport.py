@@ -70,6 +70,7 @@ class ZigpyTransport(object):
             "datas": datas,
             "NwkId": NwkId,
             "TimeStamp": time.time(),
+            "ACKIsDisable": ackIsDisabled
             }
         self.writer_queue.put((99, str(json.dumps(message))))        
 

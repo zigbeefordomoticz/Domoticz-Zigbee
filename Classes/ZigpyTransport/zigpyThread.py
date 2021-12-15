@@ -243,7 +243,7 @@ async def worker_loop(self):
                 await native_commands(self, data["cmd"], data["datas"])
 
             elif data["cmd"] == "RAW-COMMAND":
-                process_raw_command( self, data["datas"])
+                process_raw_command( self, data["datas"], data["ACKIsDisable"])
 
             if self.writer_queue.qsize() > self.statistics._MaxLoad:
                 self.statistics._MaxLoad = self.writer_queue.qsize()
@@ -259,7 +259,7 @@ async def worker_loop(self):
         
     self.logging_writer("Status", "ZigyTransport: writer_thread Thread stop.")
 
-def process_raw_command( self, data):
+def process_raw_command( self, data, AckIsDisable=False):
     #data = {
     #    'Profile': int(profileId, 16),
     #    'Cluster': int(cluster, 16),
@@ -277,14 +277,20 @@ def process_raw_command( self, data):
     payload = data["payload"]
     sequence = self.app.get_sequence()
     addressmode = data["AddressMode"]
+    expect_reply = not AckIsDisable
+    
+    self.logging_writer("Log", "ZigyTransport: process_raw_command ready to request %s %s %s %s %s %s" %(
+        NwkId, Cluster, sequence, payload, addressmode, expect_reply ))
     if addressmode == 0x01:
-        self.app.mrequest(self, NwkId, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=True, use_ieee=False)
-    elif addressmode == 0x02:
+        # Group Mode
+        self.app.mrequest(self, NwkId, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=expect_reply, use_ieee=False)
+    elif addressmode in (0x02,0x07):
+        # Short
         destination = t.AddrModeAddress(mode=t.AddrMode.NWK, address=NwkId)
-        self.app.request(self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=True, use_ieee=False)
-    elif addressmode == 0x07:
-        destination = t.AddrModeAddress(mode=0x07, address=NwkId)
-        self.app.request(self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=True, use_ieee=False)
+        self.app.request(self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=expect_reply, use_ieee=False)
+    elif addressmode in ( 0x03, 0x08):
+        destination = t.AddrModeAddress(mode=t.AddrMode.IEEE, address=NwkId)
+        self.app.request(self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=expect_reply, use_ieee=False)
 
 def handle_thread_error(self, e, nb_in, nb_out, data):
     trace = []
