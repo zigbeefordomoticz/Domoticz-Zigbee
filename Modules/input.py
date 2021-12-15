@@ -2486,10 +2486,7 @@ def Decode8102(self, Devices, MsgData, MsgLQI):  # Attribute Reports
     timeStamped(self, MsgSrcAddr, 0x8102)
     loggingMessages(self, "8102", MsgSrcAddr, None, MsgLQI, MsgSQN)
     updLQI(self, MsgSrcAddr, MsgLQI)
-    if self.zigbee_communitation == 'native':
-        i_sqn = sqn_get_internal_sqn_from_app_sqn(self.ZigateComm, MsgSQN, TYPE_APP_ZCL)
-    else:
-        i_sqn = None
+    i_sqn = sqn_get_internal_sqn_from_app_sqn(self.ZigateComm, MsgSQN, TYPE_APP_ZCL)
 
     self.statistics._clusterOK += 1
     scan_attribute_reponse(self, Devices, MsgSQN, i_sqn, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgData, "8102")
