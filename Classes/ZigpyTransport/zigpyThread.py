@@ -223,37 +223,15 @@ async def worker_loop(self):
             
             if data["cmd"] == "PERMIT-TO-JOIN":
                 duration = data["datas"]["Duration"] 
-                await self.app.permit_ncp(duration)
+                if duration == 0xff:
+                    duration = 0xfe
+                await self.app.permit(time_s=duration)
             
             elif   data["cmd"] in NATIVE_COMMANDS_MAPPING:
                 await native_commands(self, data["cmd"], data["datas"])
                 
             elif data["cmd"] == "RAW-COMMAND":
-                    #data = {
-                    #    'Profile': int(profileId, 16),
-                    #    'Cluster': int(cluster, 16),
-                    #    'TargetNwk': int(targetaddr, 16),
-                    #    'TargetEp': int(dest_ep, 16),
-                    #    'SrcEp': int(zigate_ep, 16),
-                    #    'Sqn': None,
-                    #    'payload': payload,
-                    #    }
-                    Profile = data["Profile"]
-                    Cluster = data["Cluster"]
-                    NwkId = data["TargetNwk"]
-                    dEp = data["TargetEp"]
-                    sEp = data["SrcEp"]
-                    payload = data["payload"]
-                    sequence = get_zigpy_sqn(self)
-                    addressmode = data["AddressMode"]
-                    if addressmode == 0x01:
-                        self.ZigateComm.mrequest(self, NwkId, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=True, use_ieee=False)
-                    elif addressmode == 0x02:
-                        destination = t.AddrModeAddress(mode=t.AddrMode.NWK, address=NwkId)
-                        self.ZigateComm.request(self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=True, use_ieee=False)
-                    elif addressmode == 0x07:
-                        destination = t.AddrModeAddress(mode=0x07, address=NwkId)
-                        self.ZigateComm.request(self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=True, use_ieee=False)
+                process_raw_command( self, data["datas"])
             
             if self.writer_queue.qsize() > self.statistics._MaxLoad:
                 self.statistics._MaxLoad = self.writer_queue.qsize()
@@ -269,13 +247,34 @@ async def worker_loop(self):
         
     self.logging_writer("Status", "ZigyTransport: writer_thread Thread stop.")
 
+def process_raw_command( self, data):
+    #data = {
+    #    'Profile': int(profileId, 16),
+    #    'Cluster': int(cluster, 16),
+    #    'TargetNwk': int(targetaddr, 16),
+    #    'TargetEp': int(dest_ep, 16),
+    #    'SrcEp': int(zigate_ep, 16),
+    #    'Sqn': None,
+    #    'payload': payload,
+    #    }
+    Profile = data["Profile"]
+    Cluster = data["Cluster"]
+    NwkId = data["TargetNwk"]
+    dEp = data["TargetEp"]
+    sEp = data["SrcEp"]
+    payload = data["payload"]
+    sequence = self.app.get_sequence()
+    addressmode = data["AddressMode"]
+    if addressmode == 0x01:
+        self.ZigateComm.mrequest(self, NwkId, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=True, use_ieee=False)
+    elif addressmode == 0x02:
+        destination = t.AddrModeAddress(mode=t.AddrMode.NWK, address=NwkId)
+        self.ZigateComm.request(self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=True, use_ieee=False)
+    elif addressmode == 0x07:
+        destination = t.AddrModeAddress(mode=0x07, address=NwkId)
+        self.ZigateComm.request(self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=True, use_ieee=False)
 
-def get_zigpy_sqn(self):
-    if self.zigpy_sqn >= 255:
-        self.zigpy_sqn = 0
-    else:
-        self.zigpy_sqn += 1
-    return self.zigpy_sqn
+    
 
 def handle_thread_error(self, e, nb_in, nb_out, data):
     trace = []

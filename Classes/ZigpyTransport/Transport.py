@@ -35,8 +35,6 @@ class ZigpyTransport(object):
         self.FirmwareVersion = None    
         self.running = True
         
-        self.zigpy_sqn = 0
-
         self.app : zigpy.application.ControllerApplication |None = None 
         self.writer_queue = PriorityQueue()
         self.forwarder_queue = Queue()
