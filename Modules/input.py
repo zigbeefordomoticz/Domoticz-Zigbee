@@ -536,6 +536,10 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
     dstnwkid = MsgDestinationAddress
 
     if srcnwkid not in self.ListOfDevices:
+        self.log.logging(
+            "Input",
+            "Debug",
+            "Decode8002 - Unknown NwkId: %s Ep: %s Cluster: %s Payload: %s" % (srcnwkid, MsgSourcePoint, MsgClusterID, MsgPayload),)
         return
 
     timeStamped(self, srcnwkid, 0x8002)

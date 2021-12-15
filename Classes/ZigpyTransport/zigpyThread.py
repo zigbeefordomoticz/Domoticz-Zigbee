@@ -90,9 +90,11 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
                      (str(sender.nwk), plugin_frame))
         #Domoticz.Log("handle_message %s" %(str(profile)))
         if sender.nwk is not None:
-            self.callBackFunction (t.AddrMode.NWK,sender.nwk,profile,cluster,src_ep,dst_ep,message)
+            #self.callBackFunction (t.AddrMode.NWK,sender.nwk,profile,cluster,src_ep,dst_ep,message)
+            self.callBackFunction (plugin_frame)
         elif sender.ieee is not None:
-            self.callBackFunction (t.AddrMode.IEEE,sender.ieee,profile,cluster,src_ep,dst_ep,message)
+            #self.callBackFunction (t.AddrMode.IEEE,sender.ieee,profile,cluster,src_ep,dst_ep,message)
+            self.callBackFunction (plugin_frame)
         else:
             Domoticz.Log("handle_message Sender unkown device : %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s" %
                      (str(sender), profile, cluster, src_ep, dst_ep, str(message)))
@@ -142,7 +144,6 @@ def zigpy_thread(self):
     self.zigpy_running = True
     asyncio.run( radio_start (self, self._radiomodule, self._serialPort) )  
 
-
 def build_plugin_frame_content(sender, profile, cluster, src_ep, dst_ep, message, receiver=0x0000, src_addrmode=0x02, dst_addrmode=0x02):
         payload = binascii.hexlify(message).decode('utf-8')
         ProfilID = "%04x" %profile
@@ -150,7 +151,7 @@ def build_plugin_frame_content(sender, profile, cluster, src_ep, dst_ep, message
         SourcePoint = "%02x" %src_ep
         DestPoint = "%02x" %dst_ep
         SourceAddressMode = "%02x" %src_addrmode
-        SourceAddress = "%02x" %sender.nwk
+        SourceAddress = "%04x" %sender.nwk
         DestinationAddressMode = "%02x" %dst_addrmode   
         DestinationAddress = "%04x" %0x0000
         Payload = payload
@@ -167,7 +168,6 @@ def build_plugin_frame_content(sender, profile, cluster, src_ep, dst_ep, message
         plugin_frame += "03"
         
         return plugin_frame
-
 
 async def radio_start(self, radiomodule, serialPort, auto_form=False ):
 
@@ -200,6 +200,9 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False ):
 
     # Run forever
     Domoticz.Log("Starting work loop")
+    
+    # Set Call_handler to send message back to F_OUT
+    self.app.set_callback_message ( self.F_out )
 
     await worker_loop(self)
 
@@ -208,42 +211,44 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False ):
     await self.app.shutdown()
     Domoticz.Log("Exiting co-rounting radio_start")
 
-
 async def worker_loop(self):
     self.logging_writer("Status", "worker_loop - ZigyTransport: worker_loop start.")
     logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt='%Y-%m-%d:%H:%M:%S',level=logging.DEBUG)
     
-    while self.zigpy_running:
-        # Sending messages ( only 1 at a time )
+    while self.zigpy_running:        
+        # self.logging_writer( 'Debug', "Waiting for next command Qsize: %s" %self.writer_queue.qsize())
+        if self.writer_queue is None:
+            break
         try:
-            # self.logging_writer( 'Debug', "Waiting for next command Qsize: %s" %self.writer_queue.qsize())
-            if self.writer_queue is None:
-                break
-
-            prio, entry = self.writer_queue.get()
-            if entry == "STOP":
-                break
-        
-            # message = {
-            #      "cmd": cmd,
-            #      "datas": datas,
-            #      "NwkId": NwkId,
-            #      "TimeStamp": time.time(),
-            #      }
-            data = json.loads(entry)
+            prio, entry = self.writer_queue.get(False)
+        except queue.Empty:
+            await asyncio.sleep(.5)
+            continue
             
+        if entry == "STOP":
+            break
+    
+        # message = {
+        #      "cmd": cmd,
+        #      "datas": datas,
+        #      "NwkId": NwkId,
+        #      "TimeStamp": time.time(),
+        #      }
+        data = json.loads(entry)
+        
+        try:
             if data["cmd"] == "PERMIT-TO-JOIN":
                 duration = data["datas"]["Duration"] 
                 if duration == 0xff:
                     duration = 0xfe
                 await self.app.permit(time_s=duration)
-            
+
             elif   data["cmd"] in NATIVE_COMMANDS_MAPPING:
                 await native_commands(self, data["cmd"], data["datas"])
-                
+
             elif data["cmd"] == "RAW-COMMAND":
                 process_raw_command( self, data["datas"])
-            
+
             if self.writer_queue.qsize() > self.statistics._MaxLoad:
                 self.statistics._MaxLoad = self.writer_queue.qsize()
 
@@ -277,15 +282,13 @@ def process_raw_command( self, data):
     sequence = self.app.get_sequence()
     addressmode = data["AddressMode"]
     if addressmode == 0x01:
-        self.ZigateComm.mrequest(self, NwkId, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=True, use_ieee=False)
+        self.app.mrequest(self, NwkId, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=True, use_ieee=False)
     elif addressmode == 0x02:
         destination = t.AddrModeAddress(mode=t.AddrMode.NWK, address=NwkId)
-        self.ZigateComm.request(self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=True, use_ieee=False)
+        self.app.request(self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=True, use_ieee=False)
     elif addressmode == 0x07:
         destination = t.AddrModeAddress(mode=0x07, address=NwkId)
-        self.ZigateComm.request(self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=True, use_ieee=False)
-
-    
+        self.app.request(self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=True, use_ieee=False)
 
 def handle_thread_error(self, e, nb_in, nb_out, data):
     trace = []
