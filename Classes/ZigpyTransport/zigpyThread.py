@@ -30,6 +30,7 @@ from Classes.ZigpyTransport.nativeCommands import (NATIVE_COMMANDS_MAPPING,
                                                    native_commands)
 from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
                                  SCHEMA_DEVICE)
+from Classes.ZigpyTransport.tools import handle_thread_error
 
 LOGGER = logging.getLogger(__name__)
     
@@ -76,7 +77,7 @@ def build_plugin_frame_content(sender, profile, cluster, src_ep, dst_ep, message
 async def radio_start(self, radiomodule, serialPort, auto_form=False ):
 
     Domoticz.Log("In radio_start")
-    logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt='%Y-%m-%d:%H:%M:%S',level=logging.DEBUG)
+    logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt='%Y-%m-%d:%H:%M:%S',level=logging.INFO)
     
     # Import the radio library
     conf = {CONF_DEVICE: {"path": serialPort}}
@@ -117,7 +118,6 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False ):
 
 async def worker_loop(self):
     self.logging_writer("Status", "worker_loop - ZigyTransport: worker_loop start.")
-    logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt='%Y-%m-%d:%H:%M:%S',level=logging.DEBUG)
     
     while self.zigpy_running:        
         # self.logging_writer( 'Debug', "Waiting for next command Qsize: %s" %self.writer_queue.qsize())
@@ -126,7 +126,7 @@ async def worker_loop(self):
         try:
             prio, entry = self.writer_queue.get(False)
         except queue.Empty:
-            await asyncio.sleep(.5)
+            await asyncio.sleep(.250)
             continue
             
         if entry == "STOP":
@@ -152,9 +152,8 @@ async def worker_loop(self):
 
         except Exception as e:
             self.logging_writer("Error", "Error while receiving a ZiGate command: %s" % e)
-            handle_thread_error(self, e, 0, 0, "None")
+            handle_thread_error(self, e,)
 
-        
     self.logging_writer("Status", "ZigyTransport: writer_thread Thread stop.")
 
 async def process_raw_command( self, data, AckIsDisable=False):
@@ -189,33 +188,4 @@ async def process_raw_command( self, data, AckIsDisable=False):
     elif addressmode in ( 0x03, 0x08):
         destination = zigpy.device.Device(self.app, NwkId, None)
         await self.app.request( destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=enableAck, use_ieee=False)
-
-def handle_thread_error(self, e, nb_in, nb_out, data):
-    trace = []
-    tb = e.__traceback__
-    self.logging_transport("Error","'%s' failed '%s'" % (tb.tb_frame.f_code.co_name, str(e)))
-    while tb is not None:
-        trace.append(
-            {"Module": tb.tb_frame.f_code.co_filename, "Function": tb.tb_frame.f_code.co_name, "Line": tb.tb_lineno}
-        )
-        self.logging_transport("Error",
-            "----> Line %s in '%s', function %s"
-            % (
-                tb.tb_lineno,
-                tb.tb_frame.f_code.co_filename,
-                tb.tb_frame.f_code.co_name,
-            )
-        )
-        tb = tb.tb_next
-
-    context = {
-        "Error Code": "TRANS-THREADERROR-01",
-        "Type:": str(type(e).__name__),
-        "Message code:": str(e),
-        "Stack Trace": str(trace),
-        "nb_in": nb_in,
-        "nb_out": nb_out,
-        "Data": str(data),
-    }
-    self.logging_transport("Error", "handle_error_in_thread ", _context=context)
 

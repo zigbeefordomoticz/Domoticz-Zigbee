@@ -35,6 +35,7 @@ async def native_commands( self, cmd, datas):
     if NATIVE_COMMANDS_MAPPING[ cmd ]['NumParams'] == 0:
         return await func(self)
     if NATIVE_COMMANDS_MAPPING[ cmd ]['NumParams'] == 1:
+        Domoticz.Log("====> %s" %datas["Param1"])
         return await func(self, datas["Param1"] )
 
 # ZIGPY - Mapping

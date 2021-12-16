@@ -81,7 +81,7 @@ class ZigpyTransport(object):
         return { 'Branch': self.FirmwareBranch,  'Model': self.FirmwareMajorVersion, 'Firmware':self.FirmwareVersion}
  
     def get_zigate_ieee(self):
-        return self.app.ieee
+        return str(self.app.ieee).replace(':','') 
     def get_zigate_nwkid(self):
         return self.app.nwk
     def get_zigate_extented_panId(self):

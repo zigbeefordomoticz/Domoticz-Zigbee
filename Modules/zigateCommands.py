@@ -102,7 +102,7 @@ def zigate_set_certificate(self, certification_code ):
     self.log.logging( "zigateCommand", "Debug","zigate_set_certificate %s" %certification_code)
     if self.zigbee_communitation == "zigpy":
         value = 'CE' if certification_code == 0x01 else 'FCC'
-        return self.ZigateComm.sendData( "SET-CERTIFICATION", {"Param1": int(certification_code,16)}) 
+        return self.ZigateComm.sendData( "SET-CERTIFICATION", {"Param1": value}) 
 
     return send_zigatecmd_raw(self, "0019", certification_code)
 

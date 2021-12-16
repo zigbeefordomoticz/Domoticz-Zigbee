@@ -83,8 +83,16 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         
         #Domoticz.Log("handle_message %s" %(str(profile)))
         if sender.nwk is not None or sender.ieee is not None:
-            plugin_frame = build_plugin_8002_frame_content( sender, profile, cluster, src_ep, dst_ep, message)
-            Domoticz.Log("handle_message Sender: %s frame for plugin: %s" %(str(sender.nwk), plugin_frame))
+            Domoticz.Log("=====> Sender %s - %s" %(sender.nwk, sender.ieee))
+            if sender.nwk:
+                addr_mode = 0x02
+                addr = sender.nwk
+            elif sender.ieee:
+                addr = str(sender.ieee).replace(':','')
+                addr_mode = 0x03
+            
+            plugin_frame = build_plugin_8002_frame_content( addr, profile, cluster, src_ep, dst_ep, message, sender.lqi)
+            Domoticz.Log("handle_message Sender: %s frame for plugin: %s" %( addr, plugin_frame))
             self.callBackFunction (plugin_frame)
         else:
             Domoticz.Log("handle_message Sender unkown device : %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s" %
@@ -95,27 +103,6 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
     def set_callback_message (self, callBackFunction):
         self.callBackFunction = callBackFunction
 
-    def udpate_network_info (self,network_state):
-        self.state.network_information = zigpy.state.NetworkInformation(
-            extended_pan_id=network_state[3],
-            pan_id=network_state[2],
-            nwk_update_id=None,
-            nwk_manager_id=0x0000,
-            channel=network_state[4],
-            channel_mask=None,
-            security_level=5,
-            network_key=None,
-            tc_link_key=None,
-            children=[],
-            key_table=[],
-            nwk_addresses={},
-            stack_specific=None,
-        )
-        self.state.node_information= zigpy.state.NodeInfo (
-            nwk = network_state[0],
-            ieee = network_state[1],
-            logical_type = None
-        )
 
 def build_plugin_004D_frame_content(nwk, ieee, parent_nwk):
     
@@ -133,7 +120,7 @@ def build_plugin_004D_frame_content(nwk, ieee, parent_nwk):
 
    
 
-def build_plugin_8002_frame_content(sender, profile, cluster, src_ep, dst_ep, message, receiver=0x0000, src_addrmode=0x02, dst_addrmode=0x02):
+def build_plugin_8002_frame_content(address, profile, cluster, src_ep, dst_ep, message, lqi=0x00, receiver=0x0000, src_addrmode=0x02, dst_addrmode=0x02):
 
         payload = binascii.hexlify(message).decode('utf-8')
         ProfilID = "%04x" %profile
@@ -141,7 +128,7 @@ def build_plugin_8002_frame_content(sender, profile, cluster, src_ep, dst_ep, me
         SourcePoint = "%02x" %src_ep
         DestPoint = "%02x" %dst_ep
         SourceAddressMode = "%02x" %src_addrmode
-        SourceAddress = "%04x" %sender.nwk
+        SourceAddress = "%04x" %address
         DestinationAddressMode = "%02x" %dst_addrmode   
         DestinationAddress = "%04x" %0x0000
         Payload = payload
@@ -154,7 +141,7 @@ def build_plugin_8002_frame_content(sender, profile, cluster, src_ep, dst_ep, me
         plugin_frame += "%04x" % ((len(frame_payload)//2)+1) # 6:10 lenght
         plugin_frame += "%02x" % 0xff                        # 10:12 CRC set to ff but would be great to  compute it
         plugin_frame += frame_payload
-        plugin_frame += "%02x" %sender.lqi
+        plugin_frame += "%02x" %lqi
         plugin_frame += "03"
         
         return plugin_frame
