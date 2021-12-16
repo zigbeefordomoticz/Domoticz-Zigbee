@@ -38,8 +38,6 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         
     async def startup(self, auto_form=False):
         await super().startup(auto_form)
-        network_state, lqi = await self._api.get_network_state()
-        self.udpate_network_info (network_state)
         
     def get_zigpy_version(self):
         return self.version
@@ -136,6 +134,7 @@ def build_plugin_004D_frame_content(nwk, ieee, parent_nwk):
    
 
 def build_plugin_8002_frame_content(sender, profile, cluster, src_ep, dst_ep, message, receiver=0x0000, src_addrmode=0x02, dst_addrmode=0x02):
+
         payload = binascii.hexlify(message).decode('utf-8')
         ProfilID = "%04x" %profile
         ClusterID = "%04x" %cluster
