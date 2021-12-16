@@ -125,9 +125,14 @@ from Modules.zigateConsts import CERTIFICATION, HEARTBEAT, MAX_FOR_ZIGATE_BUZY
 from Modules.zdpCommands import zdp_get_permit_joint_status
 
 # Zigpy related modules
-from zigpy_zigate.config import CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE
-from Classes.ZigpyTransport.Transport import ZigpyTransport
-import asyncio
+try:
+    from zigpy_zigate.config import CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE
+    from Classes.ZigpyTransport.Transport import ZigpyTransport
+    import asyncio
+    ZIGPY_LOADED = True
+except:
+    ZIGPY_LOADED = False
+
 
 
 VERSION_FILENAME = ".hidden/VERSION"
@@ -511,14 +516,14 @@ class BasePlugin:
             self.PluginHealth["Firmware Update"] = {"Progress": "75 %", "Device": "1234"}
             return
 
-        elif self.transport == "ZigpyZiGate":
+        elif self.transport == "ZigpyZiGate" and ZIGPY_LOADED:
             self.zigbee_communitation = "zigpy"
             Domoticz.Log("Start Zigpy Transport on zigate")
             self.ZigateComm = ZigpyTransport( self.processFrame, self.log, self.statistics, self.HardwareID, "zigate", Parameters["SerialPort"]) 
             self.ZigateComm.open_zigate_connection()
             self.pluginconf.pluginConf["ZiGateInRawMode"] = True
             
-        elif self.transport == "ZigpyZNP" :
+        elif self.transport == "ZigpyZNP" and ZIGPY_LOADED:
             self.zigbee_communitation = "zigpy"
             Domoticz.Log("Start Zigpy Transport on ZNP")
             self.ZigateComm = ZigpyTransport( self.processFrame, self.log, self.HardwareID, self.statistics, "znp", Parameters["SerialPort"])  
