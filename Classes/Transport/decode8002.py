@@ -5,7 +5,7 @@
 #
 
 
-
+import Domoticz
 from Classes.Transport.zclDecoders import zcl_decoders
 from Classes.Transport.zdpDecoders import zdp_decoders
 from Modules.zigateConsts import ADDRESS_MODE
@@ -16,18 +16,22 @@ def decode8002_and_process(self, frame):
     ProfileId, SrcNwkId, SrcEndPoint, ClusterId, Payload = extract_nwk_infos_from_8002(frame)
     #self.logging_8002( 'Debug', "decode8002_and_process ProfileID: %s NwkId: %s Ep: %s Cluster: %s Payload: %s" %(
     #    ProfileId, SrcNwkId, SrcEndPoint, ClusterId , Payload))
+    
+    Domoticz.Log("decode8002_and_process ProfileId: %s %s %s" %( SrcNwkId, ProfileId,frame))
 
     if SrcNwkId is None:
         return frame
 
     if ProfileId == "0000":
+        Domoticz.Log("====> zdp_decoders()")
         frame = zdp_decoders( self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame )
         return frame
     
     if ProfileId == "0104":
+        Domoticz.Log("====> zcl_decoders()")
         frame = zcl_decoders( self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame )
         return frame
-    
+    Domoticz.Log("====> No decoder found bad ProfileId >%s<" %ProfileId)
     return frame
     
 

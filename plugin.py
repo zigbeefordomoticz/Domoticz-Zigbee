@@ -4,7 +4,7 @@
 # Author: zaraki673 & pipiche38
 #
 """
-<plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="5.1">
+<plugin key="Zigate" name="Zigate plugin (zigpy enabled)" author="zaraki673 & pipiche38" version="5.1">
     <description>
         <h1> Plugin ZiGate</h1><br/>
             <br/><h2> Informations</h2><br/>
@@ -130,7 +130,7 @@ try:
     from Classes.ZigpyTransport.Transport import ZigpyTransport
     import asyncio
     ZIGPY_LOADED = True
-except:
+except ImportError:
     ZIGPY_LOADED = False
 
 
@@ -606,7 +606,8 @@ class BasePlugin:
         self.adminWidgets.updateStatusWidget(Devices, "No Communication")
 
     def onDeviceRemoved(self, Unit):
-        self.log.logging("Plugin", "Debug", "onDeviceRemoved called")
+        if self.log:
+            self.log.logging("Plugin", "Debug", "onDeviceRemoved called")
 
         # Let's check if this is End Node, or Group related.
         if Devices[Unit].DeviceID in self.IEEE2NWK:
@@ -632,7 +633,7 @@ class BasePlugin:
                     # for a remove in case device didn't send the leave
                     if self.ZigateIEEE:
                         #sendZigateCmd(self, "0026", self.ZigateIEEE + IEEE)
-                        zigate_remove_device(self, self.ZigateIEEE, IEEE)
+                        zigate_remove_device(self, str(self.ZigateIEEE), str(IEEE) )
                         self.log.logging(
                             "Plugin",
                             "Status",

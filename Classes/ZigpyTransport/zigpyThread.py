@@ -77,7 +77,7 @@ def build_plugin_frame_content(sender, profile, cluster, src_ep, dst_ep, message
 async def radio_start(self, radiomodule, serialPort, auto_form=False ):
 
     Domoticz.Log("In radio_start")
-    logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt='%Y-%m-%d:%H:%M:%S',level=logging.INFO)
+    logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt='%Y-%m-%d:%H:%M:%S',level=logging.DEBUG)
     
     # Import the radio library
     conf = {CONF_DEVICE: {"path": serialPort}}
@@ -153,6 +153,9 @@ async def worker_loop(self):
         except Exception as e:
             self.logging_writer("Error", "Error while receiving a ZiGate command: %s" % e)
             handle_thread_error(self, e,)
+        
+        # Wait .5s to reduce load on Zigate
+        await asyncio.sleep(0.75)
 
     self.logging_writer("Status", "ZigyTransport: writer_thread Thread stop.")
 
