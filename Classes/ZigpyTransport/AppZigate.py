@@ -63,9 +63,12 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         #super().handle_leave(nwk,ieee) 
         Domoticz.Log("handle_leave %s" %str(nwk))
 
-    def handle_join(self, nwk, ieee):
+    def handle_join(self, nwk, ieee, parent_nwk, rejoin=None):
         #super().handle_join(nwk,ieee) 
-        Domoticz.Log("handle_join %s" %str(nwk))
+        Domoticz.Log("handle_join nwkid: %04x ieee: %s parent_nwk: %04x rejoin: %s" %(
+            nwk, ieee, parent_nwk, rejoin))
+        plugin_frame = build_plugin_004D_frame_content(nwk, ieee, parent_nwk)
+        self.callBackFunction (plugin_frame)
 
     def handle_message(
         self,
@@ -80,7 +83,7 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         
         #Domoticz.Log("handle_message %s" %(str(profile)))
         if sender.nwk is not None or sender.ieee is not None:
-            plugin_frame = build_plugin_frame_content( sender, profile, cluster, src_ep, dst_ep, message)
+            plugin_frame = build_plugin_8002_frame_content( sender, profile, cluster, src_ep, dst_ep, message)
             Domoticz.Log("handle_message Sender: %s frame for plugin: %s" %(str(sender.nwk), plugin_frame))
             self.callBackFunction (plugin_frame)
         else:
@@ -92,7 +95,46 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
     def set_callback_message (self, callBackFunction):
         self.callBackFunction = callBackFunction
 
-def build_plugin_frame_content(sender, profile, cluster, src_ep, dst_ep, message, receiver=0x0000, src_addrmode=0x02, dst_addrmode=0x02):
+    def udpate_network_info (self,network_state):
+        self.state.network_information = zigpy.state.NetworkInformation(
+            extended_pan_id=network_state[3],
+            pan_id=network_state[2],
+            nwk_update_id=None,
+            nwk_manager_id=0x0000,
+            channel=network_state[4],
+            channel_mask=None,
+            security_level=5,
+            network_key=None,
+            tc_link_key=None,
+            children=[],
+            key_table=[],
+            nwk_addresses={},
+            stack_specific=None,
+        )
+        self.state.node_information= zigpy.state.NodeInfo (
+            nwk = network_state[0],
+            ieee = network_state[1],
+            logical_type = None
+        )
+
+def build_plugin_004D_frame_content(nwk, ieee, parent_nwk):
+    
+    frame_payload = '%04x' %nwk + str(ieee).replace(':','') + '00'
+    
+    plugin_frame = "01"                                  # 0:2
+    plugin_frame += "004d"                               # 2:4 MsgType 0x8002
+    plugin_frame += "%04x" % ((len(frame_payload)//2)+1) # 6:10 lenght
+    plugin_frame += "%02x" % 0xff                        # 10:12 CRC set to ff but would be great to  compute it
+    plugin_frame += frame_payload
+    plugin_frame += "%02x" %0x00
+    plugin_frame += "03"
+    
+    return plugin_frame
+
+   
+
+def build_plugin_8002_frame_content(sender, profile, cluster, src_ep, dst_ep, message, receiver=0x0000, src_addrmode=0x02, dst_addrmode=0x02):
+
         payload = binascii.hexlify(message).decode('utf-8')
         ProfilID = "%04x" %profile
         ClusterID = "%04x" %cluster

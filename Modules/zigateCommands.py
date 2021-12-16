@@ -19,10 +19,8 @@ def zigate_set_mode(self, mode):
     #  0x02 - ZiGate in Hybrid mode ( All inbound messages are received via 0x8002 in addition of the normal one)
     return send_zigatecmd_raw(self, "0002", "%02x" % mode)
 
-
 def zigate_set_loglevel(self, loglevel):
     self.log.logging( "zigateCommand", "Debug","zigate_set_loglevel %s" %loglevel)
-
 
 def zigate_firmware_default_response(self, enable="00"):
     self.log.logging( "zigateCommand", "Debug","zigate_firmware_default_response %s" %enable)
@@ -47,6 +45,7 @@ def zigate_get_nwk_state(self):
 def zigate_get_firmware_version(self):
     self.log.logging( "zigateCommand", "Debug","zigate_get_firmware_version")
     if self.zigbee_communitation == "zigpy":
+        #return self.ZigateComm.sendData( "GET-FIRMWARE-VERSION", None) 
         self.PDMready = True #TODO this must be done only if the initiatilisation went through
         version = self.ZigateComm.get_zigate_firmware_version()
         self.FirmwareBranch = version['Branch']
@@ -61,18 +60,19 @@ def zigate_get_firmware_version(self):
         elif self.FirmwareMajorVersion == "05":
             self.log.logging("Input", "Status", "ZiGate+ (V2)")
             self.ZiGateModel = 2
-
-
-        
         return None
     return send_zigatecmd_raw(self, "0010", "")
     
 def zigate_soft_reset(self):
     self.log.logging( "zigateCommand", "Debug","zigate_soft_reset")
+    if self.zigbee_communitation == "zigpy":
+        return self.ZigateComm.sendData( "SOFT-RESET", None) 
     return send_zigatecmd_raw(self, "0011", "" ) 
     
 def zigate_erase_eeprom(self):
     self.log.logging( "zigateCommand", "Debug","zigate_erase_eeprom")
+    if self.zigbee_communitation == "zigpy":
+        return self.ZigateComm.sendData( "ERASE-PDM", None) 
     return send_zigatecmd_raw(self, "0012", "")
 
 def zigate_get_list_active_devices(self):
@@ -81,26 +81,41 @@ def zigate_get_list_active_devices(self):
    
 def zigate_set_time(self, timeUTC):
     self.log.logging( "zigateCommand", "Debug","zigate_set_time %s" %timeUTC)
+    if self.zigbee_communitation == "zigpy":
+        return self.ZigateComm.sendData( "SET-TIME", {"Param1": int(timeUTC,16)}) 
     return send_zigatecmd_raw(self, "0016", timeUTC)
 
 def zigate_get_time(self):
     self.log.logging( "zigateCommand", "Debug","zigate_get_time")
+    if self.zigbee_communitation == "zigpy":
+        return self.ZigateComm.sendData( "GET-TIME", None) 
     return send_zigatecmd_raw(self, "0017", "")
 
 def zigate_blueled(self, OnOff):
     self.log.logging( "zigateCommand", "Debug","zigate_blueled %s" %OnOff)
+    if self.zigbee_communitation == "zigpy":
+        return self.ZigateComm.sendData( "SET-LED", {"Param1": int(OnOff,16)}) 
+
     return send_zigatecmd_raw(self, "0018", OnOff)
 
 def zigate_set_certificate(self, certification_code ):
     self.log.logging( "zigateCommand", "Debug","zigate_set_certificate %s" %certification_code)
+    if self.zigbee_communitation == "zigpy":
+        value = 'CE' if certification_code == 0x01 else 'FCC'
+        return self.ZigateComm.sendData( "SET-CERTIFICATION", {"Param1": int(certification_code,16)}) 
+
     return send_zigatecmd_raw(self, "0019", certification_code)
 
 def zigate_set_extended_PanID(self, extPanID):
     self.log.logging( "zigateCommand", "Debug","zigate_set_extended_PanID %s" %extPanID)
+    if self.zigbee_communitation == "zigpy":
+        return self.ZigateComm.sendData( "SET-EXTPANID", {"Param1": int(extPanID,16)}) 
     return send_zigatecmd_raw(self, "0020", extPanID)
 
 def zigate_set_channel(self, mask):
     self.log.logging( "zigateCommand", "Debug","zigate_set_channel %s" %mask)
+    if self.zigbee_communitation == "zigpy":
+        return self.ZigateComm.sendData( "SET-CHANNEL", {"Param1": int(mask,16)}) 
     return send_zigatecmd_raw(self, "0021", mask)
 
 def zigate_start_nwk(self):
@@ -113,8 +128,13 @@ def zigate_remove_device(self, target_short_addr, extended_addr):
 
 def zigate_set_tx_power(self, value):
     self.log.logging( "zigateCommand", "Debug","zigate_set_tx_power %s" %value)
+    if self.zigbee_communitation == "zigpy":
+        return self.ZigateComm.sendData( "SET-TX-POWER", {"Param1": int(value,16)}) 
+
     return send_zigatecmd_raw(self, "0806", value)
 
 def zigate_get_tx_power(self):
     self.log.logging( "zigateCommand", "Debug","zigate_get_tx_power")
+    if self.zigbee_communitation == "zigpy":
+        return self.ZigateComm.sendData( "GET-EXTPANID", None) 
     return send_zigatecmd_raw(self, "0807", "")

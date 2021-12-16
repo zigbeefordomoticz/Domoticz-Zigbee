@@ -34,7 +34,6 @@ from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
 LOGGER = logging.getLogger(__name__)
     
 
-
 def start_zigpy_thread(self):
     Domoticz.Log("start_zigpy_thread - Starting zigpy thread")
     self.zigpy_thread.start()
@@ -132,6 +131,9 @@ async def worker_loop(self):
             
         if entry == "STOP":
             break
+        
+        if self.writer_queue.qsize() > self.statistics._MaxLoad:
+            self.statistics._MaxLoad = self.writer_queue.qsize()
     
         data = json.loads(entry)
         
@@ -143,17 +145,10 @@ async def worker_loop(self):
                 await self.app.permit(time_s=duration)
 
             elif   data["cmd"] in NATIVE_COMMANDS_MAPPING:
-                await native_commands(self, data["cmd"], data["datas"])
+                await native_commands(self, data["cmd"], data["datas"] )
 
             elif data["cmd"] == "RAW-COMMAND":
-                process_raw_command( self, data["datas"], data["ACKIsDisable"])
-
-            if self.writer_queue.qsize() > self.statistics._MaxLoad:
-                self.statistics._MaxLoad = self.writer_queue.qsize()
-
-        except queue.Empty:
-            # Empty Queue, timeout.
-            pass
+                await process_raw_command( self, data["datas"], data["ACKIsDisable"])
 
         except Exception as e:
             self.logging_writer("Error", "Error while receiving a ZiGate command: %s" % e)
@@ -162,7 +157,7 @@ async def worker_loop(self):
         
     self.logging_writer("Status", "ZigyTransport: writer_thread Thread stop.")
 
-def process_raw_command( self, data, AckIsDisable=False):
+async def process_raw_command( self, data, AckIsDisable=False):
     #data = {
     #    'Profile': int(profileId, 16),
     #    'Cluster': int(cluster, 16),
@@ -177,23 +172,23 @@ def process_raw_command( self, data, AckIsDisable=False):
     NwkId = data["TargetNwk"]
     dEp = data["TargetEp"]
     sEp = data["SrcEp"]
-    payload = data["payload"]
+    payload = bytes.fromhex(data["payload"])
     sequence = self.app.get_sequence()
     addressmode = data["AddressMode"]
-    expect_reply = not AckIsDisable
+    enableAck = not AckIsDisable
     
-    self.logging_writer("Log", "ZigyTransport: process_raw_command ready to request %s %s %s %s %s %s" %(
-        NwkId, Cluster, sequence, payload, addressmode, expect_reply ))
+    self.logging_writer("Log", "ZigyTransport: process_raw_command ready to request %04x %04x %02x %s %02x %s" %(
+        NwkId, Cluster, sequence, payload, addressmode, enableAck ))
     if addressmode == 0x01:
         # Group Mode
-        self.app.mrequest(self, NwkId, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=expect_reply, use_ieee=False)
+        await self.app.mrequest( NwkId, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=enableAck, use_ieee=False)
     elif addressmode in (0x02,0x07):
         # Short
-        destination = t.AddrModeAddress(mode=t.AddrMode.NWK, address=NwkId)
-        self.app.request(self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=expect_reply, use_ieee=False)
+        destination = zigpy.device.Device(self.app, None, NwkId)
+        await self.app.request( destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=enableAck, use_ieee=False)
     elif addressmode in ( 0x03, 0x08):
-        destination = t.AddrModeAddress(mode=t.AddrMode.IEEE, address=NwkId)
-        self.app.request(self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=expect_reply, use_ieee=False)
+        destination = zigpy.device.Device(self.app, NwkId, None)
+        await self.app.request( destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=enableAck, use_ieee=False)
 
 def handle_thread_error(self, e, nb_in, nb_out, data):
     trace = []

@@ -1,4 +1,4 @@
-
+import Domoticz
 from Classes.ZigpyTransport.apiZigate import (erase_persistent_data,
                                               get_firmware_version,
                                               get_time_server,
@@ -9,21 +9,33 @@ from Classes.ZigpyTransport.apiZigate import (erase_persistent_data,
                                               zigate_soft_reset)
 
 NATIVE_COMMANDS_MAPPING = {
-    "GET-FIRMWARE-VERSION": get_firmware_version,
-    "SOFT-RESET": zigate_soft_reset,
-    "ERASE-PDM": erase_persistent_data,
-    "SET-TIME": set_time,
-    "GET-TIME": get_time_server,
-    "SET-LED": set_led,
-    "SET-CERTIFICATION": set_certification,
-    "SET-TX-POWER": set_tx_power,
-    "SET-CHANNEL": set_channel,
-    "SET-EXTPANID":set_extended_panid
+    "GET-FIRMWARE-VERSION": { 'Function': get_firmware_version, 'NumParams': 0},
+    "SOFT-RESET": { 'Function': zigate_soft_reset, 'NumParams': 0},
+    "ERASE-PDM": { 'Function': erase_persistent_data, 'NumParams': 0},
+    "SET-TIME": { 'Function': set_time, 'NumParams': 1},
+    "GET-TIME": { 'Function': get_time_server, 'NumParams': 0},
+    "SET-LED": { 'Function': set_led, 'NumParams': 1},
+    "SET-CERTIFICATION": { 'Function': set_certification, 'NumParams': 1},
+    "SET-TX-POWER": { 'Function': set_tx_power, 'NumParams': 1},
+    "SET-CHANNEL": { 'Function': set_channel, 'NumParams': 1},
+    "SET-EXTPANID": { 'Function': set_extended_panid, 'NumParams': 1},
     }
 
 
-def native_commands( self, cmd, datas):
-    pass
+async def native_commands( self, cmd, datas):
+    Domoticz.Log("native_commands - cmd: %s datas: %s" %(cmd, datas))
+    func = None
+    if cmd in NATIVE_COMMANDS_MAPPING:
+        func = NATIVE_COMMANDS_MAPPING[ cmd ]['Function']
+    else:
+        Domoticz.Log("Unknown native function %s" %cmd)
+    if func is None:
+        Domoticz.Log("Unknown native function %s" %cmd)
+
+    if NATIVE_COMMANDS_MAPPING[ cmd ]['NumParams'] == 0:
+        return await func(self)
+    if NATIVE_COMMANDS_MAPPING[ cmd ]['NumParams'] == 1:
+        return await func(self, datas["Param1"] )
 
 # ZIGPY - Mapping
 #
