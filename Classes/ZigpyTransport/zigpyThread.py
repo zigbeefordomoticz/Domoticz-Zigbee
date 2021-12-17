@@ -96,7 +96,7 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False ):
     self.running = True
     
     Domoticz.Log("PAN ID:               0x%04x" %self.app.pan_id)
-    Domoticz.Log("Extended PAN ID:      0x%08x" %self.app.extended_pan_id)
+    Domoticz.Log("Extended PAN ID:      0x%s" %self.app.extended_pan_id)
     Domoticz.Log("Channel:              %d" %self.app.channel)
     Domoticz.Log("Device IEEE:          %s" %self.app.ieee)
     Domoticz.Log("Device NWK:           0x%04x" %self.app.nwk)
