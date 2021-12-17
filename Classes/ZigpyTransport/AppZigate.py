@@ -39,6 +39,10 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         
     async def startup(self, auto_form=False):
         await super().startup(auto_form)
+
+    async def startup(self, callBackFunction , auto_form=False):
+        self.callBackFunction = callBackFunction
+        await super().startup(auto_form)
         
     def get_zigpy_version(self):
         return self.version
@@ -56,10 +60,6 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         Domoticz.Log("get_device")
         return zigpy.device.Device(self, ieee, nwk)
         
-    #def zigate_callback_handler(self, msg, response, lqi):
-    #    Domoticz.Log("zigate_callback_handler %04x %s" %(msg, response))
-    
-
     def handle_leave(self, nwk, ieee):
         #super().handle_leave(nwk,ieee) 
         Domoticz.Log("handle_leave %s" %str(nwk))
@@ -100,9 +100,6 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
                      (str(sender), profile, cluster, src_ep, dst_ep, str(message)))
 
         return None
-
-    def set_callback_message (self, callBackFunction):
-        self.callBackFunction = callBackFunction
 
 
 def build_plugin_004D_frame_content(nwk, ieee, parent_nwk):

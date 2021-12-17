@@ -87,7 +87,7 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False ):
     elif radiomodule == 'znp':
         self.app = App_znp (conf) 
 
-    await self.app.startup(True)  
+    await self.app.startup(self.F_out,True)  
     self.version = None
 
     self.FirmwareBranch = "00"  # 00 Production, 01 Development 
@@ -96,7 +96,7 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False ):
     self.running = True
     
     Domoticz.Log("PAN ID:               0x%04x" %self.app.pan_id)
-    Domoticz.Log("Extended PAN ID:      0x%08x" %self.app.extended_pan_id)
+    Domoticz.Log("Extended PAN ID:      0x%s" %self.app.extended_pan_id)
     Domoticz.Log("Channel:              %d" %self.app.channel)
     Domoticz.Log("Device IEEE:          %s" %self.app.ieee)
     Domoticz.Log("Device NWK:           0x%04x" %self.app.nwk)
@@ -106,9 +106,6 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False ):
     # Run forever
     Domoticz.Log("Starting work loop")
     
-    # Set Call_handler to send message back to F_OUT
-    self.app.set_callback_message ( self.F_out )
-
     await worker_loop(self)
 
     Domoticz.Log("Exiting work loop")
