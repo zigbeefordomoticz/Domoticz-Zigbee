@@ -541,10 +541,6 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
 
     # Let's check if this is an Schneider related APS. In that case let's process
     srcnwkid = dstnwkid = None
-    if len(MsgSourceAddress) != 4:
-        Domoticz.Error("not handling IEEE address")
-        return
-
     if len(MsgDestinationAddress) != 4:
         Domoticz.Error("not handling IEEE address")
         return
