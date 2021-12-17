@@ -1075,15 +1075,15 @@ def schneider_thermostat_answer_attribute_request(self, NWKID, EPout, ClusterID,
 
     elif attr == "0015":  # min setpoint temp
         dataType = "29"
-        data = ( "02bc" if self.ListOfDevices[NWKID]["Model"] in ("EH-ZB-VACT") else "0032" )
+        data = ( "02bc" if self.ListOfDevices[NWKID]["Model"] in ("EH-ZB-VACT",) else "0032" )
 
     elif attr == "0016":  # max setpoint temp
         dataType = "29"
-        data = ( "0bb8" if self.ListOfDevices[NWKID]["Model"] in ("EH-ZB-VACT") else "0dac" )
+        data = ( "0bb8" if self.ListOfDevices[NWKID]["Model"] in ("EH-ZB-VACT",) else "0dac" )
 
     elif attr == "0012":  # occupied setpoint temp
         dataType = "29"
-        value = int(schneider_find_attribute_and_set(self, NWKID, "01", ClusterID, attr, 2000))
+        value = int(schneider_find_attribute_and_set(self, NWKID, EPout, ClusterID, attr, 2000))
         data = "%04X" % value
 
     elif attr == "001c":  # System Mode for Wiser Home
@@ -1098,15 +1098,15 @@ def schneider_thermostat_answer_attribute_request(self, NWKID, EPout, ClusterID,
         # In case of iTRV, it looks like we have to trigger the heating demand.
         # In case the new setpoint is above the local temp, and the Heating Demand is 0, let's enable it
         define_heating_demand_for_iTRV(self, NWKID)
-        
+
         dataType = "20"  # uint8
-        data = "%02x" % self.ListOfDevices[NWKID]["Ep"]["01"]["0201"]["0008"]
-        data = "%02x" % schneider_find_attribute_and_set(self, NWKID, "01", "0201", "0008", 0)
+        #data = "%02x" % self.ListOfDevices[NWKID]["Ep"]["01"]["0201"]["0008"]
+        data = "%02x" % schneider_find_attribute_and_set(self, NWKID, EPout, "0201", "0008", 0)
 
     elif attr == "e110":  # ?? for Wiser Home
         dataType = "30"  # enum8
         data = "01"  # 0x02 then 0x030, 0x11
-        
+
     else:
         return
 
