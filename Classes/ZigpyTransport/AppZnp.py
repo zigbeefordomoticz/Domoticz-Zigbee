@@ -21,6 +21,7 @@ import zigpy.zdo.types as zdo_types
 import zigpy_zigate
 import zigpy_zigate.zigbee.application
 import zigpy_znp.zigbee.application
+import zigpy_znp.commands.util
 from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
                                  SCHEMA_DEVICE)
 
@@ -30,11 +31,33 @@ LOGGER = logging.getLogger(__name__)
 
 class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
 
+    async def new(
+    cls, config: dict, auto_form: bool = False, start_radio: bool = True
+    ) -> zigpy.application.ControllerApplication:
+        Domoticz.Log("new" )
+
+    async def _load_db(self) -> None:
+        Domoticz.Log("_load_db" )
+        
+    async def startup(self, auto_form=False):
+        await super().startup(auto_form)
+
 
     async def startup(self, callBackFunction, auto_form=False):
         self.callBackFunction = callBackFunction
         await super().startup(auto_form)
 
+
+#    def get_device(self, ieee=None, nwk=None):
+        #dev = super().get_device(ieee,nwk)
+#        try :
+#            dev = super().get_device(ieee,nwk)
+#        except KeyError:
+#            dev = zigpy.device.Device(self, ieee, nwk)    
+#        Domoticz.Log("get_device nwk %s ieee %s dev 1 %s" %(nwk,ieee,dev))
+        #return dev
+
+        
     def handle_message(
         self,
         sender: zigpy.device.Device,
@@ -44,21 +67,26 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         dst_ep: int,
         message: bytes,
     ) -> None:
-        
-        
+        if sender.nwk is not None and sender.nwk == 0x0000 :
+            return super().handle_message (sender, profile,cluster,src_ep,dst_ep,message)
+
         #Domoticz.Log("handle_message %s" %(str(profile)))
         if sender.nwk is not None or sender.ieee is not None:
             Domoticz.Log("handle_message device : %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s" %
                      (str(sender), profile, cluster, src_ep, dst_ep, str(message)))
             Domoticz.Log("=====> Sender %s - %s" %(sender.nwk, sender.ieee))
-            if sender.nwk:
+            if sender.nwk is not None:
                 addr_mode = 0x02
-                addr = sender.nwk
-            elif sender.ieee:
+                addr = sender.nwk.serialize()[::-1].hex()
+                Domoticz.Log("=====> sender.nwk %s - %s" %(sender.nwk, addr))
+
+            elif sender.ieee is not None:
                 addr = str(sender.ieee).replace(':','')
                 addr_mode = 0x03
             if sender.lqi == None:
                 sender.lqi = 0x00
+            Domoticz.Log("handle_message device : %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s" %
+                     (str(addr), profile, cluster, src_ep, dst_ep, str(message)))                
             plugin_frame = build_plugin_8002_frame_content( addr, profile, cluster, src_ep, dst_ep, message, sender.lqi,src_addrmode=addr_mode)
             Domoticz.Log("handle_message Sender: %s frame for plugin: %s" %( addr, plugin_frame))
             self.callBackFunction (plugin_frame)
@@ -68,7 +96,28 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
 
         return None
 
+    async def set_tx_power (self,power):
+        pass
+        # something to fix here
+        # await self.set_tx_power(dbm=power)
 
+    async def set_led (self, mode):
+        if mode == 1:
+            await self._set_led_mode(led=0xFF, mode= zigpy_znp.commands.util.LEDMode.ON)
+        else :
+            await self._set_led_mode(led=0xFF, mode= zigpy_znp.commands.util.LEDMode.OFF)
+
+    async def set_certification (self, mode):
+        Domoticz.Log ("set_certification not implemented yet") 
+        pass
+
+    async def get_time_server (self):
+        Domoticz.Log ("get_time_server not implemented yet")         
+        pass
+
+    async def set_time_server (self):
+        Domoticz.Log ("set_time_server not implemented yet") 
+        pass
 
 #  handle_message Sender: 0x6A1D frame for plugin: 0180020016ff00010404020201021d6a02000018090a000029cd089c03
 #  ZigateRead - MsgType: 8002,  Data: 00/0104/0402/02/01/02-1d6a/02000018090a000029cd08, LQI: 156
