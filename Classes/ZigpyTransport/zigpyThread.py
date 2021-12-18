@@ -49,30 +49,6 @@ def zigpy_thread(self):
     self.zigpy_running = True
     asyncio.run( radio_start (self, self._radiomodule, self._serialPort) )  
 
-def build_plugin_frame_content(sender, profile, cluster, src_ep, dst_ep, message, receiver=0x0000, src_addrmode=0x02, dst_addrmode=0x02):
-        payload = binascii.hexlify(message).decode('utf-8')
-        ProfilID = "%04x" %profile
-        ClusterID = "%04x" %cluster
-        SourcePoint = "%02x" %src_ep
-        DestPoint = "%02x" %dst_ep
-        SourceAddressMode = "%02x" %src_addrmode
-        SourceAddress = "%04x" %sender.nwk
-        DestinationAddressMode = "%02x" %dst_addrmode   
-        DestinationAddress = "%04x" %0x0000
-        Payload = payload
-
-        frame_payload = "00" + ProfilID + ClusterID + SourcePoint + DestPoint + SourceAddressMode + SourceAddress
-        frame_payload += DestinationAddressMode + DestinationAddress + Payload
-        
-        plugin_frame = "01"                                  # 0:2
-        plugin_frame += "8002"                               # 2:4 MsgType 0x8002
-        plugin_frame += "%04x" % ((len(frame_payload)//2)+1) # 6:10 lenght
-        plugin_frame += "%02x" % 0xff                        # 10:12 CRC set to ff but would be great to  compute it
-        plugin_frame += frame_payload
-        plugin_frame += "%02x" %sender.lqi
-        plugin_frame += "03"
-        
-        return plugin_frame
 
 async def radio_start(self, radiomodule, serialPort, auto_form=False ):
 
@@ -115,8 +91,8 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False ):
 
 async def worker_loop(self):
     self.logging_writer("Status", "worker_loop - ZigyTransport: worker_loop start.")
-    
-    while self.zigpy_running:        
+
+    while self.zigpy_running:
         # self.logging_writer( 'Debug', "Waiting for next command Qsize: %s" %self.writer_queue.qsize())
         if self.writer_queue is None:
             break
@@ -125,13 +101,13 @@ async def worker_loop(self):
         except queue.Empty:
             await asyncio.sleep(.250)
             continue
-            
+
         if entry == "STOP":
             break
-        
-        #if self.writer_queue.qsize() > self.statistics._MaxLoad:
-        #    self.statistics._MaxLoad = self.writer_queue.qsize()
-    
+
+        if self.writer_queue.qsize() > self.statistics._MaxLoad:
+            self.statistics._MaxLoad = self.writer_queue.qsize()
+
         data = json.loads(entry)
         Domoticz.Log("got command %s" %data)
 
