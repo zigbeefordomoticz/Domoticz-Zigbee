@@ -4,7 +4,7 @@
 # Author: zaraki673 & pipiche38
 #
 """
-<plugin key="Zigate" name="Zigate plugin (zigpy enabled)" author="zaraki673 & pipiche38" version="5.1">
+<plugin key="Zigate" name="Zigate plugin (zigpy enabled)" author="zaraki673 & pipiche38" version="6.1">
     <description>
         <h1> Plugin ZiGate</h1><br/>
             <br/><h2> Informations</h2><br/>
@@ -520,13 +520,14 @@ class BasePlugin:
             self.zigbee_communitation = "zigpy"
             Domoticz.Log("Start Zigpy Transport on zigate")
             self.ZigateComm = ZigpyTransport( self.processFrame, self.log, self.statistics, self.HardwareID, "zigate", Parameters["SerialPort"]) 
+            Domoticz.Log("===== >  self.statistics: %s" %type(self.statistics))
             self.ZigateComm.open_zigate_connection()
             self.pluginconf.pluginConf["ZiGateInRawMode"] = True
             
         elif self.transport == "ZigpyZNP" and ZIGPY_LOADED:
             self.zigbee_communitation = "zigpy"
             Domoticz.Log("Start Zigpy Transport on ZNP")
-            self.ZigateComm = ZigpyTransport( self.processFrame, self.log, self.HardwareID, self.statistics, "znp", Parameters["SerialPort"])  
+            self.ZigateComm = ZigpyTransport( self.processFrame, self.log, self.statistics, self.HardwareID, "znp", Parameters["SerialPort"])  
             self.ZigateComm.open_zigate_connection()
             self.pluginconf.pluginConf["ZiGateInRawMode"] = True
             
