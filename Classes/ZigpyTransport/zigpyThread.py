@@ -129,21 +129,32 @@ async def worker_loop(self):
         if entry == "STOP":
             break
         
-        if self.writer_queue.qsize() > self.statistics._MaxLoad:
-            self.statistics._MaxLoad = self.writer_queue.qsize()
+        #if self.writer_queue.qsize() > self.statistics._MaxLoad:
+        #    self.statistics._MaxLoad = self.writer_queue.qsize()
     
         data = json.loads(entry)
-        
+        Domoticz.Log("got command %s" %data)
+
         try:
             if data["cmd"] == "PERMIT-TO-JOIN":
                 duration = data["datas"]["Duration"] 
                 if duration == 0xff:
                     duration = 0xfe
                 await self.app.permit(time_s=duration)
-
+            elif data["cmd"] == "SET-TX-POWER":
+                await self.app.set_tx_power (data["datas"]["Param1"])
+            elif data["cmd"] == "SET-LED":
+                await self.app.set_led  (data["datas"]["Param1"])
+            elif data["cmd"] == "SET-CERTIFICATION":
+                await self.app.set_certification  (data["datas"]["Param1"])
+            elif data["cmd"] == "GET-TIME":
+                await self.app.get_time_server  ()
+            elif data["cmd"] == "SET-TIME":
+                await self.app.set_time_server  ()
             elif   data["cmd"] in NATIVE_COMMANDS_MAPPING:
                 await native_commands(self, data["cmd"], data["datas"] )
-
+            elif   data["cmd"] in NATIVE_COMMANDS_MAPPING:
+                await native_commands(self, data["cmd"], data["datas"] )
             elif data["cmd"] == "RAW-COMMAND":
                 await process_raw_command( self, data["datas"], data["ACKIsDisable"])
 
