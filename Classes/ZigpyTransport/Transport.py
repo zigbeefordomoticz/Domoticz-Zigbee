@@ -6,6 +6,7 @@ from queue import Queue, PriorityQueue
 import time
 import json
 import zigpy.application
+import zigpy.types as t
 
 from threading import Thread
 from Classes.Transport.forwarderThread import forwarder_thread
@@ -14,8 +15,8 @@ import Domoticz
 from Classes.ZigpyTransport.zigpyThread import zigpy_thread, start_zigpy_thread, stop_zigpy_thread
 from Classes.ZigpyTransport.forwarderThread import forwarder_thread, start_forwarder_thread, stop_forwarder_thread
 from Classes.Transport.sqnMgmt import (sqn_init_stack)
-class ZigpyTransport(object):
-    def __init__( self, F_out, log, statistics, hardwareid,radiomodule, serialPort):
+class ZigpyTransport(object): 
+    def __init__( self, F_out, log, statistics, hardwareid, radiomodule, serialPort):
         self.zigbee_communitation = "zigpy"
         
         self.F_out = F_out  # Function to call to bring the decoded Frame at plugin
@@ -40,7 +41,6 @@ class ZigpyTransport(object):
         # Initialise SQN Management
         sqn_init_stack(self)
 
-        
         self.app : zigpy.application.ControllerApplication |None = None 
         self.writer_queue = PriorityQueue()
         self.forwarder_queue = Queue()
@@ -83,13 +83,14 @@ class ZigpyTransport(object):
         return { 'Branch': self.FirmwareBranch,  'Model': self.FirmwareMajorVersion, 'Firmware':self.FirmwareVersion}
  
     def get_zigate_ieee(self):
-        return str(self.app.ieee).replace(':','') 
+        return "%016x" %t.uint64_t.deserialize(self.app.ieee.serialize())[0]
+        #return str(self.app.ieee).replace(':','') 
     def get_zigate_nwkid(self):
-        return self.app.nwk
+        return "%04x" %self.app.nwk
     def get_zigate_extented_panId(self):
-        return self.app.extended_pan_id
+        return "%16x" %self.app.extended_pan_id
     def get_zigate_panId(self):
-        return self.app.pan_id
+        return "%04x" %self.app.pan_id
     def get_zigate_channel(self):
         return self.app.channel
 
