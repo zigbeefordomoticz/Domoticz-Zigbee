@@ -19,6 +19,7 @@ from Modules.tools import Hex_Format, rgb_to_hsl, rgb_to_xy
 from Modules.zclCommands import (zcl_identify_send,
                                  zcl_identify_trigger_effect,
                                  zcl_level_move_to_level,
+                                 zcl_move_to_level_with_onoff,
                                  zcl_move_hue_and_saturation,
                                  zcl_move_to_colour,
                                  zcl_move_to_colour_temperature,
@@ -160,7 +161,7 @@ def actuator_setlevel(self, nwkid, EPout, value, DeviceType, transition="0010"):
                 value = 1
 
         value = Hex_Format(2, value)
-        zcl_level_move_to_level( self, nwkid, EPout, OnOff, value, transition)      
+        zcl_move_to_level_with_onoff( self, nwkid, EPout, OnOff, value, transition)      
 
 def actuator_setthermostat(self, nwkid, ep, value):
 

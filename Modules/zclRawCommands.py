@@ -2,10 +2,12 @@ import struct
 from Modules.sendZigateCommand import (raw_APS_request)
 from Modules.tools import get_and_inc_SQN
 
+DEFAULT_ACK_MODE = False
+
 # General Command Frame
 
 # Read Attributes Command
-def rawaps_read_attribute_req( self, nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, Attr, ackIsDisabled=True ):
+def rawaps_read_attribute_req( self, nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, Attr, ackIsDisabled=DEFAULT_ACK_MODE ):
     self.log.logging( "zclCommand", "Debug", "rawaps_read_attribute_req %s %s %s %s %s %s %s %s" %(
         nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, Attr) )
     
@@ -38,7 +40,7 @@ def rawaps_read_attribute_req( self, nwkid, EpIn, EpOut, Cluster, direction, man
     return raw_APS_request(self, nwkid, EpOut, Cluster, "0104", payload, zigate_ep=EpIn, ackIsDisabled=ackIsDisabled)
 
 # Write Attributes
-def rawaps_write_attribute_req( self, nwkid, EPin, EPout, cluster, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled=True ):
+def rawaps_write_attribute_req( self, nwkid, EPin, EPout, cluster, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled=DEFAULT_ACK_MODE ):
     self.log.logging("zclCommand", "Debug", "rawaps_write_attribute_req %s %s %s %s %s %s %s %s %s" %(
         nwkid, EPin, EPout, cluster, manuf_id, manuf_spec, attribute, data_type, data))
     cmd = "02" 
@@ -69,7 +71,7 @@ def rawaps_write_attribute_req( self, nwkid, EPin, EPout, cluster, manuf_id, man
 # Write Attributes No Response 
 
 # Configure Reporting 
-def rawaps_configure_reporting_req( self, nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, attributelist, ackIsDisabled=True ):
+def rawaps_configure_reporting_req( self, nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, attributelist, ackIsDisabled=DEFAULT_ACK_MODE ):
     self.log.logging( "zclCommand", "Debug", "rawaps_read_attribute_req %s %s %s %s %s %s %s %s" %(
         nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, attributelist) )
     
@@ -162,7 +164,7 @@ def get_change_flag( attrType, data):
 
 # Cluster 0006: On/Off
 ######################
-def raw_zcl_zcl_onoff(self, nwkid, EPIn, EpOut, command, effect="", groupaddrmode=False, ackIsDisabled=True):
+def raw_zcl_zcl_onoff(self, nwkid, EPIn, EpOut, command, effect="", groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE):
     self.log.logging( "zclCommand", "Log","raw_zcl_zcl_onoff %s %s %s %s %s %s" %(nwkid, EPIn, EpOut, command, effect, groupaddrmode ))
     
     Cluster = "0006"
@@ -196,7 +198,7 @@ def raw_zcl_zcl_onoff(self, nwkid, EPIn, EpOut, command, effect="", groupaddrmod
 # Cluster 0008: Level Control
 #############################
     
-def zcl_raw_level_move_to_level( self, nwkid, EPIn, EPout, command, level="00", move_mode="00", rate="FF", step_mode="00", step_size="01", transition="0010", groupaddrmode=False, ackIsDisabled=True):
+def zcl_raw_level_move_to_level( self, nwkid, EPIn, EPout, command, level="00", move_mode="00", rate="FF", step_mode="00", step_size="01", transition="0010", groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE):
     self.log.logging( "zclCommand", "Debug","zcl_raw_level_move_to_level %s %s %s %s %s %s %s %s %s %s" %(
         nwkid, EPIn, EPout, command, level, move_mode, rate, step_mode, step_size, transition ))
     
@@ -239,7 +241,7 @@ def zcl_raw_level_move_to_level( self, nwkid, EPIn, EPout, command, level="00", 
 # Cluster 0102: Window Covering
 ################################ 
 
-def zcl_raw_window_covering(self, nwkid, EPIn, EPout, command, level="00", percentage="00", groupaddrmode=False, ackIsDisabled=True):
+def zcl_raw_window_covering(self, nwkid, EPIn, EPout, command, level="00", percentage="00", groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE):
     self.log.logging( "zclCommand", "Debug","zcl_raw_window_covering %s %s %s %s %s" %(nwkid, EPout, command, level , percentage))
     
     Cluster = "0102"
@@ -273,3 +275,64 @@ def zcl_raw_window_covering(self, nwkid, EPIn, EPout, command, level="00", perce
         payload += percentage 
  
     return raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigate_ep=EPIn, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
+
+# Cluster 0300: Color
+
+def zcl_raw_move_color( self, nwkid, EPIn, EPout, command, temperature=None,  hue=None, saturation=None, colorX=None, colorY=None, transition="0010", groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE):
+
+    self.log.logging( "zclCommand", "Debug", "zcl_raw_move_color %s %s %s %s %s %s %s %s %s %s %s" %( 
+                    nwkid, EPIn, EPout, command, temperature,  hue, saturation, colorX, colorY, transition, ackIsDisabled))
+
+    COLOR_COMMANDS = {
+        #"MovetoHue": 0x00,
+        #"MoveHue": 0x01,
+        #"StepHue": 0x02,
+        #"MovetoSaturation": 0x03,
+        #"MoveSaturation": 0x04,
+        #"StepSaturation": 0x05,
+        "MovetoHueandSaturation": 0x06,      # zcl_move_hue_and_saturation(self, nwkid, EPout, hue, saturation, transition="0010", ackIsDisabled=DEFAULT_ACK_MODE)
+        "MovetoColor": 0x07,                # zcl_move_to_colour(self, nwkid, EPout, colorX, colorY, transition="0010", ackIsDisabled=DEFAULT_ACK_MODE)
+        #"MoveColor": 0x08,
+        #"StepColor": 0x09,
+        "MovetoColorTemperature": 0x0a,     # zcl_move_to_colour_temperature( self, nwkid, EPout, temperature, transiton="0010", ackIsDisabled=DEFAULT_ACK_MODE)
+        #"EnhancedMovetoHue": 0x40,
+        #"EnhancedMoveHue": 0x41,
+        #"EnhancedStepHue": 0x42,
+        #"EnhancedMovetoHueandSaturation": 0x43,
+        #"ColorLoopSet": 0x44,
+        #"StopMoveStep": 0x47,
+        #"MoveCOlorTemperature": 0x4b,
+        #"StepColorTemperature": 0x4c
+    }
+
+
+    Cluster = "0300"
+    if command not in COLOR_COMMANDS:
+        self.log.logging( "zclCommand", "Debug", "zcl_raw_move_color command %s not implemented yet!!" %command)
+        return
+
+    
+    cluster_frame = 0b00010001
+    sqn = get_and_inc_SQN(self, nwkid)
+    
+    payload = "%02x" % cluster_frame + sqn + "%02x" %COLOR_COMMANDS[ command ] 
+     
+    if command == "MovetoHueandSaturation" and hue and saturation:
+        payload += hue 
+        payload += saturation 
+        payload += "%04x" % (struct.unpack(">H", struct.pack("H", int(transition, 16)))[0])
+        
+    elif command == "MovetoColor" and colorX and colorY:
+        payload += "%04x" % (struct.unpack(">H", struct.pack("H", int(colorX, 16)))[0])  
+        payload += "%04x" % (struct.unpack(">H", struct.pack("H", int(colorY, 16)))[0])  
+        payload += "%04x" % (struct.unpack(">H", struct.pack("H", int(transition, 16)))[0])
+        
+    elif command == "MovetoColorTemperature" and temperature:
+        payload += "%04x" % (struct.unpack(">H", struct.pack("H", int(temperature, 16)))[0])  
+        payload += "%04x" % (struct.unpack(">H", struct.pack("H", int(transition, 16)))[0])
+        
+    return raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigate_ep=EPIn, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
+
+
+
+    
