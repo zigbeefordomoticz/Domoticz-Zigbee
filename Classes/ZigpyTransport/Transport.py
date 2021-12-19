@@ -88,7 +88,7 @@ class ZigpyTransport(object):
     def get_zigate_nwkid(self):
         return "%04x" %self.app.nwk
     def get_zigate_extented_panId(self):
-        return "%16x" %self.app.extended_pan_id
+        return "%16x" %t.uint64_t.deserialize(self.app.extended_pan_id.serialize())[0] 
     def get_zigate_panId(self):
         return "%04x" %self.app.pan_id
     def get_zigate_channel(self):
