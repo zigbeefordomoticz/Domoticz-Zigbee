@@ -71,3 +71,19 @@ def zdp_raw_permit_joining_request(self, tgtnwkid , duration , significance):
     if self.zigbee_communitation == "zigpy":
         data = {'Duration': int(duration, 16), 'targetRouter': int(tgtnwkid, 16)}
         return self.ZigateComm.sendData( "PERMIT-TO-JOIN", data) 
+
+def zdp_raw_leave_request(self, nwkid, ieee, rejoin="01", remove_children="00"):
+    self.log.logging( "zdpCommand", "Log","zdp_raw_leave_request %s %s" %(nwkid, ieee))
+    Cluster = "0034" 
+    
+    if rejoin == "00" and remove_children == "00":
+        flag = "00"
+    elif rejoin == "00" and remove_children == "01":
+        flag = "01"
+    elif rejoin == "01" and remove_children == "00":
+        flag = "02"
+    if rejoin == "01" and remove_children == "01":
+        flag = '03'
+    payload = get_and_inc_ZDP_SQM(self, nwkid) +  "%016x" %struct.unpack("Q", struct.pack(">Q", int(ieee, 16)))[0] + flag
+    
+    return raw_APS_request( self, nwkid, "00", Cluster, "0000", payload, zigate_ep="00", groupaddrmode=False, ackIsDisabled=False, )   
