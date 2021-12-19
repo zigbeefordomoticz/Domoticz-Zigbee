@@ -193,9 +193,7 @@ def sendZigateCmd(self, cmd, datas, ackIsDisabled=False):
 
 
 def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep=ZIGATE_EP, groupaddrmode=False, highpriority=False, ackIsDisabled=False):
-
-
-    if self.transport in ("ZigpyZNP", "ZigpyZiGate" ):
+    if self.zigbee_communitation == "zigpy":
         return zigpy_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep, groupaddrmode, highpriority, ackIsDisabled)
     return zigate_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep, groupaddrmode, highpriority, ackIsDisabled)
 
