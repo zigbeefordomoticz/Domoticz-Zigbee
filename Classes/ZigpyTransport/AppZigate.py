@@ -1,8 +1,8 @@
 
 import binascii
 import logging
-from typing import Any, Optional
 import struct
+from typing import Any, Optional
 
 import Domoticz
 import zigpy.appdb
@@ -21,6 +21,9 @@ import zigpy.zdo
 import zigpy.zdo.types as zdo_types
 import zigpy_zigate
 import zigpy_zigate.zigbee.application
+from Modules.zigateCommands import (zigate_blueled,
+                                    zigate_get_time, zigate_set_certificate,
+                                    zigate_set_time, zigate_set_tx_power)
 from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
                                  SCHEMA_DEVICE)
 
@@ -40,9 +43,15 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
     async def startup(self, auto_form=False):
         await super().startup(auto_form)
 
-    async def startup(self, callBackFunction , auto_form=False):
-        self.callBackFunction = callBackFunction
+    #async def startup(self, callBackFunction , auto_form=False):
+    #    self.callBackFunction = callBackFunction
+    #    await super().startup(auto_form)
+
+    async def startup(self, callBackHandleMessage, callBackGetDevice=None, auto_form=False):
+        self.callBackFunction = callBackHandleMessage
+        self.callBackGetDevice = callBackGetDevice
         await super().startup(auto_form)
+
         
     def get_zigpy_version(self):
         return self.version
@@ -100,6 +109,24 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
                      (str(sender), profile, cluster, src_ep, dst_ep, str(message)))
 
         return None
+
+    async def set_tx_power (self,power):
+        pass
+
+    async def set_led (self, mode):
+        pass
+
+    async def set_certification (self, mode):
+        pass
+
+    async def get_time_server (self):
+        pass
+
+    async def set_time_server (self):
+        pass
+
+    async def get_firmware_version (self):
+        pass
 
 
 def build_plugin_004D_frame_content(nwk, ieee, parent_nwk):

@@ -69,13 +69,6 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
 
         raise KeyError
 
-#    def handle_join(self, nwk, ieee, parent_nwk):
-#        super().handle_join(nwk,ieee) 
-#        Domoticz.Log("handle_join nwkid: %04x ieee: %s parent_nwk: %s" %(
-#            nwk, ieee, parent_nwk))
-#        plugin_frame = build_plugin_004D_frame_content(nwk, ieee, parent_nwk)
-#        self.callBackFunction (plugin_frame)
-
 
         
     def handle_message(
