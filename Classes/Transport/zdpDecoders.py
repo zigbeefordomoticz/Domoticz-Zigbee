@@ -169,6 +169,9 @@ def buildframe_simple_descriptor_response(self, SrcNwkId, SrcEndPoint, ClusterId
     #    MsgDataBField = MsgData[20:22]
     #    MsgDataInClusterCount = MsgData[22:24]
 
+    if len(Payload) < 14:
+        Domoticz.Error("buildframe_simple_descriptor_response - Payload too short: %s from %s" %(Payload,frame))
+        return
     sqn = Payload[:2]
     Domoticz.Log("==> buildframe_simple_descriptor_response sqn: %s" %sqn)
     status = Payload[2:4]
