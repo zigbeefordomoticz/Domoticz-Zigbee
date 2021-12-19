@@ -105,8 +105,9 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
 def build_plugin_004D_frame_content(nwk, ieee, parent_nwk):
     # No endian decoding as it will go directly to Decode004d
     nwk = "%04x" %nwk
-    ieee = str(ieee).replace(':','')
-    ieee = "%016x" %int(ieee,16)
+    #ieee = str(ieee).replace(':','')
+    #ieee = "%016x" %int(ieee,16)
+    ieee = "%016x" %t.uint64_t.deserialize(ieee.serialize())[0]
     frame_payload = nwk + ieee + '00'
     
     plugin_frame = "01"                                  # 0:2
