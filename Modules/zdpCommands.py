@@ -15,7 +15,7 @@ from Modules.zdpRawCommands import (zdp_raw_active_endpoint_request,
                                     zdp_raw_node_descriptor_request,
                                     zdp_raw_simple_descriptor_request,
                                     zdp_raw_permit_joining_request,
-                                    zdp_raw_leave_request)
+                                    zdp_raw_leave_request, zdp_raw_binding_device, zdp_raw_unbinding_device)
 
 
 def zdp_IEEE_address_request(self, lookup, u8RequestType , u8StartIndex):
@@ -93,9 +93,13 @@ def zdp_get_list_attribute_extended_infos(self, nwkid, EpIn, EpOut, cluster, sta
 
 def zdp_binding_device(self, ieee , ep , cluster , addrmode , destaddr , destep):
     self.log.logging( "zdpCommand", "Debug","zdp_binding_device %s %s %s %s %s %s" %(ieee , ep , cluster , addrmode , destaddr , destep))
+    if 'ZiGateInRawMode' in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+        return zdp_raw_binding_device(self, ieee , ep , cluster , addrmode , destaddr , destep)
     return send_zigatecmd_raw(self, "0030", ieee + ep + cluster + addrmode + destaddr + destep)
 
 
 def zdp_unbinding_device(self, ieee , ep , cluster , addrmode , destaddr , destep):
     self.log.logging( "zdpCommand", "Debug","zdp_unbinding_device %s %s %s %s %s %s" %(ieee , ep , cluster , addrmode , destaddr , destep))
+    if 'ZiGateInRawMode' in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+        return zdp_raw_unbinding_device(self, ieee , ep , cluster , addrmode , destaddr , destep)
     return send_zigatecmd_raw(self, "0031", ieee + ep + cluster + addrmode + destaddr + destep)

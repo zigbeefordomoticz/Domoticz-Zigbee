@@ -87,3 +87,43 @@ def zdp_raw_leave_request(self, nwkid, ieee, rejoin="01", remove_children="00"):
     payload = get_and_inc_ZDP_SQM(self, nwkid) +  "%016x" %struct.unpack("Q", struct.pack(">Q", int(ieee, 16)))[0] + flag
     
     return raw_APS_request( self, nwkid, "00", Cluster, "0000", payload, zigate_ep="00", groupaddrmode=False, ackIsDisabled=False, )   
+
+def zdp_raw_binding_device(self, source , src_ep , cluster , addrmode , destination , dst_ep):
+    self.log.logging( "zdpCommand", "Log","zdp_raw_binding_device %s %s %s %s %s %s" %(source , src_ep , cluster , addrmode , destination , dst_ep))
+     
+    if source in self.IEEE2NWK:
+        nwkid = self.IEEE2NWK[ source ]
+    else:
+        self.log.logging( "zdpCommand", "Log","zdp_raw_unbinding_device %s not found in IEEE2NWK" %(source ))
+        return
+    Cluster = "0021"
+    payload = get_and_inc_ZDP_SQM(self, nwkid) 
+    payload += "%016x" %struct.unpack("Q", struct.pack(">Q", int(source, 16)))[0]
+    payload += src_ep
+    payload += "%04x" % struct.unpack(">H", struct.pack("H", int(cluster, 16)))[0]
+    payload += "03" # Unicast
+    payload += "%016x" %struct.unpack("Q", struct.pack(">Q", int(destination, 16)))[0]
+    payload += dst_ep
+    
+    return raw_APS_request( self, nwkid, "00", Cluster, "0000", payload, zigate_ep="00", groupaddrmode=False, ackIsDisabled=False, )   
+
+
+def zdp_raw_unbinding_device(self, source , src_ep , cluster , addrmode , destination , dst_ep):
+    self.log.logging( "zdpCommand", "Log","zdp_raw_unbinding_device %s %s %s %s %s %s" %(source , src_ep , cluster , addrmode , destination , dst_ep))
+     
+    if source in self.IEEE2NWK:
+        nwkid = self.IEEE2NWK[ source ]
+    else:
+        self.log.logging( "zdpCommand", "Log","zdp_raw_unbinding_device %s not found in IEEE2NWK" %(source ))
+        return
+    Cluster = "0022"
+    payload = get_and_inc_ZDP_SQM(self, nwkid) 
+    payload += "%016x" %struct.unpack("Q", struct.pack(">Q", int(source, 16)))[0]
+    payload += src_ep
+    payload += "%04x" % struct.unpack(">H", struct.pack("H", int(cluster, 16)))[0]
+    payload += "03" # Unicast
+    payload += "%016x" %struct.unpack("Q", struct.pack(">Q", int(destination, 16)))[0]
+    payload += dst_ep
+    
+    return raw_APS_request( self, nwkid, "00", Cluster, "0000", payload, zigate_ep="00", groupaddrmode=False, ackIsDisabled=False, )   
+    
