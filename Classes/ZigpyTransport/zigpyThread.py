@@ -49,6 +49,8 @@ def zigpy_thread(self):
     self.zigpy_running = True
     asyncio.run( radio_start (self, self._radiomodule, self._serialPort) )  
 
+def callBackGetDevice (nwk,ieee):
+    return None
 
 async def radio_start(self, radiomodule, serialPort, auto_form=False ):
 

@@ -43,26 +43,35 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         await super().startup(auto_form)
 
 
-    async def startup(self, callBackFunction, auto_form=False):
-        self.callBackFunction = callBackFunction
+    async def startup(self, callBackHandleMessage, callBackGetDevice, auto_form=False):
+        self.callBackHandleMessage = callBackHandleMessage
+        self.callBackGetDevice = callBackGetDevice
         await super().startup(auto_form)
 
 
-#    def get_device(self, ieee=None, nwk=None):
-        #dev = super().get_device(ieee,nwk)
-#        try :
-#            dev = super().get_device(ieee,nwk)
-#        except KeyError:
-#            dev = zigpy.device.Device(self, ieee, nwk)    
-#        Domoticz.Log("get_device nwk %s ieee %s dev 1 %s" %(nwk,ieee,dev))
-        #return dev
+    def get_device(self, ieee=None, nwk=None):
 
-    #def handle_join(self, nwk, ieee, parent_nwk):
-    #    #super().handle_join(nwk,ieee) 
-    #    Domoticz.Log("handle_join nwkid: %04x ieee: %s parent_nwk: %s" %(
-    #        nwk, ieee, parent_nwk))
-    #    plugin_frame = build_plugin_004D_frame_content(nwk, ieee, parent_nwk)
-    #    self.callBackFunction (plugin_frame)
+        Domoticz.Log("get_device nwk %s ieee %s" %(nwk,ieee))
+
+        dev = None
+        try :
+            dev = super().get_device(ieee,nwk)
+        except KeyError:
+            dev = self.callBackGetDevice (ieee , nwk)
+
+        if dev is not None:
+            Domoticz.Log("found device dev: %s" %(dev))
+            return dev 
+
+        raise KeyError
+
+    def handle_join(self, nwk, ieee, parent_nwk):
+        #super().handle_join(nwk,ieee) 
+        Domoticz.Log("handle_join nwkid: %04x ieee: %s parent_nwk: %s" %(
+            nwk, ieee, parent_nwk))
+#        plugin_frame = build_plugin_004D_frame_content(nwk, ieee, parent_nwk)
+#        self.callBackFunction (plugin_frame)
+
 
         
     def handle_message(
@@ -98,7 +107,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
                      (str(addr), profile, cluster, src_ep, dst_ep, str(message)))                
             plugin_frame = build_plugin_8002_frame_content( addr, profile, cluster, src_ep, dst_ep, message, sender.lqi,src_addrmode=addr_mode)
             Domoticz.Log("handle_message Sender: %s frame for plugin: %s" %( addr, plugin_frame))
-            self.callBackFunction (plugin_frame)
+            self.callBackHandleMessage (plugin_frame)
         else:
             Domoticz.Log("handle_message Sender unkown device : %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s" %
                      (str(sender), profile, cluster, src_ep, dst_ep, str(message)))
@@ -127,6 +136,9 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
     async def set_time_server (self):
         Domoticz.Log ("set_time_server not implemented yet") 
         pass
+
+    async def get_firmware_version (self):
+        return self.znp.version
 
 
 def build_plugin_004D_frame_content(nwk, ieee, parent_nwk):
