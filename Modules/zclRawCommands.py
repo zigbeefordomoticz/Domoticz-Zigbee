@@ -1,6 +1,7 @@
 import struct
 from Modules.sendZigateCommand import (raw_APS_request)
 from Modules.tools import get_and_inc_SQN
+import Domoticz
 
 DEFAULT_ACK_MODE = False
 
@@ -10,7 +11,7 @@ DEFAULT_ACK_MODE = False
 def rawaps_read_attribute_req( self, nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, Attr, ackIsDisabled=DEFAULT_ACK_MODE ):
     self.log.logging( "zclCommand", "Debug", "rawaps_read_attribute_req %s %s %s %s %s %s %s %s" %(
         nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, Attr) )
-    
+
     cmd = "00"  # Read Attribute Command Identifier
 
     # Cluster Frame:
@@ -25,12 +26,12 @@ def rawaps_read_attribute_req( self, nwkid, EpIn, EpOut, Cluster, direction, man
     cluster_frame = 0b00010000
     if manufacturer_spec == "01":
         cluster_frame += 0b00000100
-        
+
     fcf = "%02x" % cluster_frame
     sqn = get_and_inc_SQN(self, nwkid)
     payload = fcf
     if manufacturer_spec == "01":
-        payload += manufacturer_spec + manufacturer[4:2] + manufacturer[0:2]
+        payload += manufacturer[4:2] + manufacturer[:2]
     payload += sqn + cmd
     idx = 0
     while idx < len(Attr):
@@ -52,7 +53,7 @@ def rawaps_write_attribute_req( self, nwkid, EPin, EPout, cluster, manuf_id, man
     sqn = get_and_inc_SQN(self, nwkid)
     payload = fcf
     if manuf_spec == "01":
-        payload += manuf_spec + "%04x" % struct.unpack(">H", struct.pack("H", int(manuf_id, 16)))[0]
+        payload += "%04x" % struct.unpack(">H", struct.pack("H", int(manuf_id, 16)))[0]
     payload += sqn + cmd
     payload += "%04x" % struct.unpack(">H", struct.pack("H", int(attribute, 16)))[0]    # Attribute Id
     payload += data_type                                                                # Attribute Data Type
@@ -66,6 +67,8 @@ def rawaps_write_attribute_req( self, nwkid, EPin, EPout, cluster, manuf_id, man
         payload += "%08x" % struct.unpack(">f", struct.pack("I", int(data, 16)))[0]
     else:
         payload += data
+    self.log.logging("zclCommand", "Debug", "rawaps_write_attribute_req ==== payload: %s" %(payload))
+
     return raw_APS_request(self, nwkid, EPout, cluster, "0104", payload, zigate_ep=EPin, ackIsDisabled=ackIsDisabled)
 
 
@@ -75,7 +78,7 @@ def rawaps_write_attribute_req( self, nwkid, EPin, EPout, cluster, manuf_id, man
 def rawaps_configure_reporting_req( self, nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, attributelist, ackIsDisabled=DEFAULT_ACK_MODE ):
     self.log.logging( "zclCommand", "Debug", "rawaps_read_attribute_req %s %s %s %s %s %s %s %s" %(
         nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, attributelist) )
-    
+
     cmd = "06"  # Configure Reporting Command Identifier
 
     # Cluster Frame:
@@ -90,12 +93,12 @@ def rawaps_configure_reporting_req( self, nwkid, EpIn, EpOut, Cluster, direction
     cluster_frame = 0b00010000
     if manufacturer_spec == "01":
         cluster_frame += 0b00000100
-        
+
     fcf = "%02x" % cluster_frame
     sqn = get_and_inc_SQN(self, nwkid)
     payload = fcf
     if manufacturer_spec == "01":
-        payload += manufacturer_spec + manufacturer[4:2] + manufacturer[0:2]
+        payload += manufacturer[4:2] + manufacturer[:2]
     payload += sqn + cmd
     payload += build_payload_for_configure_reporting( attributelist )
     return raw_APS_request(self, nwkid, EpOut, Cluster, "0104", payload, zigate_ep=EpIn, ackIsDisabled=ackIsDisabled)
@@ -128,36 +131,59 @@ def build_payload_for_configure_reporting( attributelist ):
 
 def get_change_flag( attrType, data):
     # https://zigbeealliance.org/wp-content/uploads/2019/12/07-5123-06-zigbee-cluster-library-specification.pdf Table 2-10 (page 2-41)
-    
+
     data_type_id = int(attrType,16)
     if data_type_id == 0x00:
         return ""
     if data_type_id in {0x08, 0x10, 0x18, 0x20, 0x28, 0x30}:
         # 1 byte - 8b
-        return data[0:2]
+        return data[:2]
     if data_type_id in {0x09, 0x19, 0x21, 0x29, 0x31, 0x38}:
         # 2 bytes - 16b
-        return "%04x" % struct.unpack(">H", struct.pack("H", int(data[0:4], 16)))[0]
+        return "%04x" % struct.unpack(">H", struct.pack("H", int(data[:4], 16)))[0]
     if data_type_id in {0x0A, 0x1A, 0x22, 0x2a}:
         # 3 bytes - 24b
-        return ("%08x" %struct.unpack(">I", struct.pack("I", int("0" + data[0:6], 16)))[0])[0:6]
+        return (
+            "%08x"
+            % struct.unpack(">I", struct.pack("I", int("0" + data[:6], 16)))[0]
+        )[:6]
+
     if data_type_id in {0x0B, 0x1B, 0x23, 0x2b, 0x39}:
         # 4 bytes - 32b
-        return "%08x" %struct.unpack(">I", struct.pack("I", int(data[0:8], 16)))[0]
+        return "%08x" % struct.unpack(">I", struct.pack("I", int(data[:8], 16)))[0]
     if data_type_id in {0x0C, 0x1C, 0x24, 0x2c }:
         # 5 bytes - 40b
-        return ("%010x" %struct.unpack(">Q", struct.pack("Q", int("0" + data[0:10], 16)))[0])[0:10]
+        return (
+            "%010x"
+            % struct.unpack(">Q", struct.pack("Q", int("0" + data[:10], 16)))[
+                0
+            ]
+        )[:10]
+
     if data_type_id in {0x0D, 0x1D, 0x25, 0x2d}:
         # 6 bytes - 48b
-        return ("%012x" %struct.unpack(">Q", struct.pack("Q", int(data[0:12], 16)))[0])[0:12]
+        return (
+            "%012x"
+            % struct.unpack(">Q", struct.pack("Q", int(data[:12], 16)))[0]
+        )[:12]
+
     if data_type_id in {0x0E, 0x1E, 0x26, 0x2e}:
         # 7 bytes - 56b
-        return "%014x" %("%014x" %struct.unpack(">Q", struct.pack("Q", int( "00" + data[0:14], 16)))[0])[0:14]
+        return (
+            "%014x"
+            % (
+                "%014x"
+                % struct.unpack(
+                    ">Q", struct.pack("Q", int("00" + data[:14], 16))
+                )[0]
+            )[:14]
+        )
+
     if data_type_id in {0x0F, 0x1F, 0x27, 0x2f, 0x3a}:
         # 8 bytes - 64b
-        return "%016x" %struct.unpack(">Q", struct.pack("Q", int(data[0:16], 16)))[0]
+        return "%016x" % struct.unpack(">Q", struct.pack("Q", int(data[:16], 16)))[0]
     if data_type_id in { 0x41, 0x42 }:
-        return data[2:int(data[0:2],16)]
+        return data[2:int(data[:2], 16)]
 
 
 # Discover Attributes 
