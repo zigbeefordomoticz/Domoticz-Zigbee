@@ -54,7 +54,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         Domoticz.Log("get_device nwk %s ieee %s" %(nwk,ieee))
         # self.callBackGetDevice is set to zigpy_get_device(self, nwkid = None, ieee=None)
         # will return None if not found
-        # will return nwkid, ieee if found
+        # will return nwkid, ieee if found ( nwkid and ieee are numbers)
         
         dev = None
         try :
