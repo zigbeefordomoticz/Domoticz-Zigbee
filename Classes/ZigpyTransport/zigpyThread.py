@@ -24,6 +24,7 @@ import zigpy.zdo.types as zdo_types
 import zigpy_zigate
 import zigpy_zigate.zigbee.application
 import zigpy_znp.zigbee.application
+from zigpy.exceptions import DeliveryError, InvalidResponse
 from Classes.ZigpyTransport.AppZigate import App_zigate
 from Classes.ZigpyTransport.AppZnp import App_znp
 from Classes.ZigpyTransport.nativeCommands import (NATIVE_COMMANDS_MAPPING,
@@ -65,7 +66,7 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False ):
     elif radiomodule == 'znp':
         self.app = App_znp (conf) 
 
-    await self.app.startup(self.F_out,True)  
+    await self.app.startup(self.F_out,callBackGetDevice=None, auto_form=True)  
     self.version = None
 
     self.FirmwareBranch = "00"  # 00 Production, 01 Development 
@@ -126,16 +127,24 @@ async def worker_loop(self):
             elif data["cmd"] == "SET-CERTIFICATION":
                 await self.app.set_certification  (data["datas"]["Param1"])
             elif data["cmd"] == "GET-TIME":
-                await self.app.get_time_server  ()
+                await self.app.get_time_server()
             elif data["cmd"] == "SET-TIME":
-                await self.app.set_time_server  ()
-            elif   data["cmd"] in NATIVE_COMMANDS_MAPPING:
-                await native_commands(self, data["cmd"], data["datas"] )
+                await self.app.set_time_server()
             elif   data["cmd"] in NATIVE_COMMANDS_MAPPING:
                 await native_commands(self, data["cmd"], data["datas"] )
             elif data["cmd"] == "RAW-COMMAND":
                 await process_raw_command( self, data["datas"], data["ACKIsDisable"])
 
+        except DeliveryError:
+            self.logging_writer("Error", "DeliveryError: Not able to execute the zigpy command: %s data: %s" %(
+                data["cmd"], data["datas"]))
+            
+        except InvalidResponse:
+            self.logging_writer("Error", "InvalidResponse: Not able to execute the zigpy command: %s data: %s" %(
+                data["cmd"], data["datas"]))
+
+            
+            
         except Exception as e:
             self.logging_writer("Error", "Error while receiving a ZiGate command: %s" % e)
             handle_thread_error(self, e,)

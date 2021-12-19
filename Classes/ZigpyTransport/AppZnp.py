@@ -39,11 +39,11 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
     async def _load_db(self) -> None:
         Domoticz.Log("_load_db" )
         
-    async def startup(self, auto_form=False):
-        await super().startup(auto_form)
+    #async def startup(self, auto_form=False):
+    #    await super().startup(auto_form)
 
 
-    async def startup(self, callBackHandleMessage, callBackGetDevice, auto_form=False):
+    async def startup(self, callBackHandleMessage, callBackGetDevice=None, auto_form=False):
         self.callBackHandleMessage = callBackHandleMessage
         self.callBackGetDevice = callBackGetDevice
         await super().startup(auto_form)
@@ -57,7 +57,8 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         try :
             dev = super().get_device(ieee,nwk)
         except KeyError:
-            dev = self.callBackGetDevice (ieee , nwk)
+            if self.callBackGetDevice:
+                dev = self.callBackGetDevice (ieee , nwk)
 
         if dev is not None:
             Domoticz.Log("found device dev: %s" %(dev))
