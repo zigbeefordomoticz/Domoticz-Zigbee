@@ -44,8 +44,9 @@ def rawaps_write_attribute_req( self, nwkid, EPin, EPout, cluster, manuf_id, man
     self.log.logging("zclCommand", "Debug", "rawaps_write_attribute_req %s %s %s %s %s %s %s %s %s" %(
         nwkid, EPin, EPout, cluster, manuf_id, manuf_spec, attribute, data_type, data))
     cmd = "02" 
-    cluster_frame = 0b00010000
-    if manuf_spec == "01":
+    
+    cluster_frame = 0b00010000                                                          # The frame type sub-field SHALL be set to indicate a global command (0b00)
+    if manuf_spec == "01":                                                              # The manufacturer specific sub-field SHALL be set to 0 if this command is being used to Write Attributes defined for any cluster in the ZCL or 1 if this command is being used to write manufacturer specific attributes
         cluster_frame += 0b00000100
     fcf = "%02x" % cluster_frame
     sqn = get_and_inc_SQN(self, nwkid)
@@ -53,9 +54,9 @@ def rawaps_write_attribute_req( self, nwkid, EPin, EPout, cluster, manuf_id, man
     if manuf_spec == "01":
         payload += manuf_spec + "%04x" % struct.unpack(">H", struct.pack("H", int(manuf_id, 16)))[0]
     payload += sqn + cmd
-    payload += "%04x" % struct.unpack(">H", struct.pack("H", int(attribute, 16)))[0]
-    payload += data_type
-    if data_type in ("10", "18", "20", "28", "30"):
+    payload += "%04x" % struct.unpack(">H", struct.pack("H", int(attribute, 16)))[0]    # Attribute Id
+    payload += data_type                                                                # Attribute Data Type
+    if data_type in ("10", "18", "20", "28", "30"):                                     # Attribute Data
         payload += data
     elif data_type in ("09", "16", "21", "29", "31"):
         payload += "%04x" % struct.unpack(">H", struct.pack("H", int(data, 16)))[0]
