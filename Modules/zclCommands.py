@@ -355,22 +355,22 @@ def zcl_group_window_covering_level(self, nwkid, epin, EPout, level):
 
 # Cluster 0300   
 ##############
-def zcl_move_to_colour_temperature( self, nwkid, EPout, temperature, transiton="0010", ackIsDisabled=DEFAULT_ACK_MODE):
-    self.log.logging( "zclCommand", "Debug","zcl_move_to_colour_temperature %s %s %s %s" %(nwkid, EPout, temperature, transiton ))
+def zcl_move_to_colour_temperature( self, nwkid, EPout, temperature, transition="0010", ackIsDisabled=DEFAULT_ACK_MODE):
+    self.log.logging( "zclCommand", "Debug","zcl_move_to_colour_temperature %s %s %s %s" %(nwkid, EPout, temperature, transition ))
 
     if 'ZiGateInRawMode' in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:    
-        return zcl_raw_move_color( self, nwkid, ZIGATE_EP, EPout, "MovetoColorTemperature", temperature, transiton, ackIsDisabled=ackIsDisabled)
+        return zcl_raw_move_color( self, nwkid, ZIGATE_EP, EPout, "MovetoColorTemperature", temperature, transition, ackIsDisabled=ackIsDisabled)
 
-    data = ZIGATE_EP + EPout + temperature + transiton    
+    data = ZIGATE_EP + EPout + temperature + transition    
     if ackIsDisabled:
         return send_zigatecmd_zcl_noack(self, nwkid, "00C0", data)
     return send_zigatecmd_zcl_ack(self, nwkid, "00C0", data)
 
-def zcl_group_move_to_colour_temperature( self, nwkid, epin, EPout, temperature, transiton="0010"):
+def zcl_group_move_to_colour_temperature( self, nwkid, epin, EPout, temperature, transition="0010"):
     if 'ZiGateInRawMode' in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:    
-        return zcl_raw_move_color( self, nwkid, ZIGATE_EP, EPout, "MovetoColorTemperature", temperature, transiton, groupaddrmode=True)
+        return zcl_raw_move_color( self, nwkid, ZIGATE_EP, EPout, "MovetoColorTemperature", temperature, transition, groupaddrmode=True)
 
-    data = "%02d" % ADDRESS_MODE["group"] + nwkid + epin + EPout + temperature + transiton
+    data = "%02d" % ADDRESS_MODE["group"] + nwkid + epin + EPout + temperature + transition
     return send_zigatecmd_raw( self, "00C0", data )
 
 def zcl_move_hue_and_saturation(self, nwkid, EPout, hue, saturation, transition="0010", ackIsDisabled=DEFAULT_ACK_MODE):
@@ -401,6 +401,6 @@ def zcl_move_to_colour(self, nwkid, EPout, colorX, colorY, transition="0010", ac
 
 def zcl_group_move_to_colour(self, nwkid, EPin, EPout, colorX, colorY, transition="0010"):
     if 'ZiGateInRawMode' in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:    
-        return zcl_raw_move_color( self, nwkid, ZIGATE_EP, EPout, "MovetoColorTemperature", colorX, colorY, transiton, groupaddrmode=True)
+        return zcl_raw_move_color( self, nwkid, ZIGATE_EP, EPout, "MovetoColorTemperature", colorX, colorY, transition, groupaddrmode=True)
     data = "%02d" % ADDRESS_MODE["group"] + nwkid + EPin + EPout + colorX + colorY + transition
     return send_zigatecmd_raw( self, "00B7", data )

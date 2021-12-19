@@ -294,7 +294,7 @@ def zcl_raw_move_color( self, nwkid, EPIn, EPout, command, temperature=None,  hu
         "MovetoColor": 0x07,                # zcl_move_to_colour(self, nwkid, EPout, colorX, colorY, transition="0010", ackIsDisabled=DEFAULT_ACK_MODE)
         #"MoveColor": 0x08,
         #"StepColor": 0x09,
-        "MovetoColorTemperature": 0x0a,     # zcl_move_to_colour_temperature( self, nwkid, EPout, temperature, transiton="0010", ackIsDisabled=DEFAULT_ACK_MODE)
+        "MovetoColorTemperature": 0x0a,     # zcl_move_to_colour_temperature( self, nwkid, EPout, temperature, transition="0010", ackIsDisabled=DEFAULT_ACK_MODE)
         #"EnhancedMovetoHue": 0x40,
         #"EnhancedMoveHue": 0x41,
         #"EnhancedStepHue": 0x42,
