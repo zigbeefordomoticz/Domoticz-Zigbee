@@ -18,7 +18,7 @@ def zcl_decoders( self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
     
     Domoticz.Log("decode8002_and_process Sqn: %s/%s GlobalCommand: %s ManufCode: %s Command: %s Data: %s " %(int(Sqn,16), Sqn , GlobalCommand, ManufacturerCode, Command, Data))    
     if not GlobalCommand:
-        Domoticz.Log("====> not GlobalCommand")
+        Domoticz.Log("====> not GlobalCommand == Cluster Specific")
         if ClusterId == "0006":
             # Remote report
             Domoticz.Log("======> 8095")
@@ -79,37 +79,6 @@ def zcl_decoders( self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
 
     return frame
 
-def buildframe_80x5_message( MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Command, Data):
-    # sourcery skip: assign-if-exp
-    # handle_message Sender: 0x0EC8 frame for plugin: 0180020011ff00010400060101020ec8020000112401b103
-    # decode8002_and_process ProfileId: 0ec8 0104 0180020011ff/ 00/0104/0006/0101020/ec80/20000- 1124 01/b1/03
-    # ====> zcl_decoders()
-    # ==>  zcl_decoders
-    # decode8002_and_process Sqn: 36/24 GlobalCommand: False ManufCode: None Command: 01 Data:
-    # ZigateRead - MsgType: 8002,  Data: 00010400060101020ec8020000112401, LQI: 177
-    # 
-    #     MsgSQN = MsgData[0:2]
-    #     MsgEP = MsgData[2:4]
-    #     MsgClusterId = MsgData[4:8]
-    #     unknown_ = MsgData[8:10]
-    #     MsgSrcAddr = MsgData[10:14]
-    #     MsgCmd = MsgData[14:16]
-    #     MsgPayload = MsgData[16 : len(MsgData)] if len(MsgData) > 16 else None
-
-    Domoticz.Log("======> Building %s message : Cluster: %s Command: >%s< Data: >%s< (Frame: %s)" %(MsgType, ClusterId, Command, Data, frame))
-    unknown_ = Data[:2] if len (Data) >= 2 else "00"
-    buildPayload = Sqn + SrcEndPoint + ClusterId + unknown_ + SrcNwkId + Command + Data[2:]
-
-    newFrame = "01"  # 0:2
-    newFrame += MsgType  # 2:6   MsgType
-    newFrame += "%04x" % len(buildPayload)  # 6:10  Length
-    newFrame += "ff"  # 10:12 CRC
-    newFrame += buildPayload
-    newFrame += frame[len(frame) - 4 : len(frame) - 2]  # LQI
-    newFrame += "03"
-    Domoticz.Log("======> New frame for plugin  %s " %newFrame)
-    return newFrame
-
 
 def buildframe_discover_attribute_response(frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data):
     
@@ -137,7 +106,6 @@ def buildframe_discover_attribute_response(frame, Sqn, SrcNwkId, SrcEndPoint, Cl
     newFrame += frame[len(frame) - 4 : len(frame) - 2]  # LQI
     newFrame += "03"
     return newFrame
-
 
 def buildframe_read_attribute_request(frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Data):
 
@@ -169,7 +137,6 @@ def buildframe_read_attribute_request(frame, Sqn, SrcNwkId, SrcEndPoint, Cluster
     newFrame += frame[len(frame) - 4 : len(frame) - 2]  # LQI
     newFrame += "03"
     return newFrame
-
 
 def buildframe_write_attribute_request(frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Data):
     
@@ -227,7 +194,6 @@ def buildframe_write_attribute_request(frame, Sqn, SrcNwkId, SrcEndPoint, Cluste
     newFrame += "03"
     return newFrame
   
-    
 def buildframe_write_attribute_response(frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data):
 
     # This is based on assumption that we only Write 1 attribute at a time
@@ -401,4 +367,41 @@ def buildframe_configure_reporting_response(frame, Sqn, SrcNwkId, SrcEndPoint, C
     newFrame += buildPayload
     newFrame += frame[len(frame) - 4 : len(frame) - 2]  # LQI
     newFrame += "03"
+    return newFrame
+
+
+## Cluster Specific commands
+# Cluster 0x0006
+
+def buildframe_80x5_message( MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Command, Data):
+    # sourcery skip: assign-if-exp
+    # handle_message Sender: 0x0EC8 frame for plugin: 0180020011ff00010400060101020ec8020000112401b103
+    # decode8002_and_process ProfileId: 0ec8 0104 0180020011ff/ 00/0104/0006/0101020/ec80/20000- 1124 01/b1/03
+    # ====> zcl_decoders()
+    # ==>  zcl_decoders
+    # decode8002_and_process Sqn: 36/24 GlobalCommand: False ManufCode: None Command: 01 Data:
+    # ZigateRead - MsgType: 8002,  Data: 00010400060101020ec8020000112401, LQI: 177
+    # 
+    #     MsgSQN = MsgData[0:2]
+    #     MsgEP = MsgData[2:4]
+    #     MsgClusterId = MsgData[4:8]
+    #     unknown_ = MsgData[8:10]
+    #     MsgSrcAddr = MsgData[10:14]
+    #     MsgCmd = MsgData[14:16]
+    #     MsgPayload = MsgData[16 : len(MsgData)] if len(MsgData) > 16 else None
+
+    Domoticz.Log("======> Building %s message : Cluster: %s Command: >%s< Data: >%s< (Frame: %s)" %(MsgType, ClusterId, Command, Data, frame))
+    
+    # It looks like the ZiGate firmware was adding _unknown (which is not part of the norm)
+    unknown_ = Data[:2] if len (Data) >= 2 else "00"
+    buildPayload = Sqn + SrcEndPoint + ClusterId + unknown_ + SrcNwkId + Command + Data[2:]
+
+    newFrame = "01"  # 0:2
+    newFrame += MsgType  # 2:6   MsgType
+    newFrame += "%04x" % len(buildPayload)  # 6:10  Length
+    newFrame += "ff"  # 10:12 CRC
+    newFrame += buildPayload
+    newFrame += frame[len(frame) - 4 : len(frame) - 2]  # LQI
+    newFrame += "03"
+    Domoticz.Log("======> New frame for plugin  %s " %newFrame)
     return newFrame
