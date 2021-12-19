@@ -14,7 +14,8 @@ from Modules.sendZigateCommand import raw_APS_request, send_zigatecmd_raw
 from Modules.zdpRawCommands import (zdp_raw_active_endpoint_request,
                                     zdp_raw_node_descriptor_request,
                                     zdp_raw_simple_descriptor_request,
-                                    zdp_raw_permit_joining_request)
+                                    zdp_raw_permit_joining_request,
+                                    zdp_raw_leave_request)
 
 
 def zdp_IEEE_address_request(self, lookup, u8RequestType , u8StartIndex):
@@ -39,7 +40,6 @@ def zdp_get_permit_joint_status(self):
     self.log.logging( "zigateCommand", "Debug","zigate_get_permit_joint_status")
     return send_zigatecmd_raw(self, "0014", "")  # Request Permit to Join status
 
-
 def zdp_simple_descriptor_request(self, nwkid, endpoint):
     self.log.logging( "zdpCommand", "Log","zdp_active_endpoint_request %s %s" %(nwkid, endpoint))
     if 'ZiGateInRawMode' in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
@@ -57,6 +57,8 @@ def zdp_active_endpoint_request(self, nwkid ):
 
 def zdp_management_leave_request(self, nwkid, ieee, rejoin="01", remove_children="00"):
     self.log.logging( "zdpCommand", "Log","zdp_management_leave_request %s %s %s %s" %(nwkid, ieee, rejoin, remove_children))
+    if 'ZiGateInRawMode' in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+        return zdp_raw_leave_request(self, nwkid, ieee, rejoin="01", remove_children="00")
     return send_zigatecmd_raw(self, "0047", nwkid + ieee + rejoin + remove_children)
 
 

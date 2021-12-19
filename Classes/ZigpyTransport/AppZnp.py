@@ -72,6 +72,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
 #        plugin_frame = build_plugin_004D_frame_content(nwk, ieee, parent_nwk)
 #        self.callBackFunction (plugin_frame)
 
+
         
     def handle_message(
         self,
@@ -98,8 +99,10 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
             elif sender.ieee is not None:
                 addr = str(sender.ieee).replace(':','')
                 addr_mode = 0x03
-            if sender.lqi == None:
+            if sender.lqi is None:
                 sender.lqi = 0x00
+            if src_ep == dst_ep == 0x00:
+                profile = 0x0000
             Domoticz.Log("handle_message device : %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s" %
                      (str(addr), profile, cluster, src_ep, dst_ep, str(message)))                
             plugin_frame = build_plugin_8002_frame_content( addr, profile, cluster, src_ep, dst_ep, message, sender.lqi,src_addrmode=addr_mode)

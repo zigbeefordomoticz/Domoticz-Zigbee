@@ -75,7 +75,7 @@ def buildframe_device_annoucement( self, SrcNwkId, SrcEndPoint, ClusterId, Paylo
 
     newFrame = "01"  # 0:2
     newFrame += "004d"  # 2:6   MsgType
-    newFrame += "%4x" % len(buildPayload)  # 6:10  Length
+    newFrame += "%04x" % len(buildPayload)  # 6:10  Length
     newFrame += "ff"  # 10:12 CRC
     newFrame += buildPayload
     newFrame += frame[len(frame) - 4 : len(frame) - 2]  # LQI
@@ -116,7 +116,7 @@ def buildframe_node_descriptor_response( self, SrcNwkId, SrcEndPoint, ClusterId,
 
     newFrame = "01"  # 0:2
     newFrame += "8042"  # 2:6   MsgType
-    newFrame += "%4x" % len(buildPayload)  # 6:10  Length
+    newFrame += "%04x" % len(buildPayload)  # 6:10  Length
     newFrame += "ff"  # 10:12 CRC
     newFrame += buildPayload
     newFrame += frame[len(frame) - 4 : len(frame) - 2]  # LQI
@@ -146,7 +146,7 @@ def buildframe_active_endpoint_response(self, SrcNwkId, SrcEndPoint, ClusterId, 
     buildPayload = sqn + status + nwkid + nbEp + ep_list
     newFrame = "01"  # 0:2
     newFrame += "8045"  # 2:6   MsgType
-    newFrame += "%4x" % len(buildPayload)  # 6:10  Length
+    newFrame += "%04x" % len(buildPayload)  # 6:10  Length
     newFrame += "ff"  # 10:12 CRC
     newFrame += buildPayload
     newFrame += frame[len(frame) - 4 : len(frame) - 2]  # LQI
@@ -169,6 +169,9 @@ def buildframe_simple_descriptor_response(self, SrcNwkId, SrcEndPoint, ClusterId
     #    MsgDataBField = MsgData[20:22]
     #    MsgDataInClusterCount = MsgData[22:24]
 
+    if len(Payload) < 14:
+        Domoticz.Error("buildframe_simple_descriptor_response - Payload too short: %s from %s" %(Payload,frame))
+        return
     sqn = Payload[:2]
     Domoticz.Log("==> buildframe_simple_descriptor_response sqn: %s" %sqn)
     status = Payload[2:4]
@@ -209,7 +212,7 @@ def buildframe_simple_descriptor_response(self, SrcNwkId, SrcEndPoint, ClusterId
 
     newFrame = "01"  # 0:2
     newFrame += "8043"  # 2:6   MsgType
-    newFrame += "%4x" % len(buildPayload)  # 6:10  Length
+    newFrame += "%04x" % len(buildPayload)  # 6:10  Length
     newFrame += "ff"  # 10:12 CRC
     newFrame += buildPayload
     newFrame += frame[len(frame) - 4 : len(frame) - 2]  # LQI
@@ -227,7 +230,7 @@ def buildframe_bind_response_command(self, SrcNwkId, SrcEndPoint, ClusterId, Pay
 
     newFrame = "01"  # 0:2
     newFrame += "8030"  # 2:6   MsgType
-    newFrame += "%4x" % len(buildPayload)  # 6:10  Length
+    newFrame += "%04x" % len(buildPayload)  # 6:10  Length
     newFrame += "ff"  # 10:12 CRC
     newFrame += buildPayload
     newFrame += frame[len(frame) - 4 : len(frame) - 2]  # LQI
