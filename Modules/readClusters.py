@@ -43,7 +43,8 @@ def decodeAttribute(self, AttType, Attribute, handleErrors=False):
 
     if len(Attribute) == 0:
         return
-    # self.log.logging( "Cluster", 'Debug', "decodeAttribute( %s, %s) " %(AttType, Attribute) )
+
+    self.log.logging( "Cluster", 'Debug', "decodeAttribute( %s, %s) " %(AttType, Attribute) )
 
     if int(AttType, 16) == 0x10:  # Boolean
         return Attribute[0:2]
