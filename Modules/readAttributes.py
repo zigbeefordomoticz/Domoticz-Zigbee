@@ -451,12 +451,18 @@ def ReadAttributeRequest_0000_for_pairing(self, key):
             "Request Basic  via Read Attribute request: " + key + " EPout = " + "01, 02, 03, 06, 09",
             nwkid=key,
         )
-        ReadAttributeReq(self, key, ZIGATE_EP, "01", "0000", listAttributes, ackIsDisabled=False, checkTime=False)
-        ReadAttributeReq(self, key, ZIGATE_EP, "0b", "0000", listAttributes, ackIsDisabled=False, checkTime=False)  # Schneider
-        ReadAttributeReq(self, key, ZIGATE_EP, "02", "0000", listAttributes, ackIsDisabled=False, checkTime=False)
-        ReadAttributeReq(self, key, ZIGATE_EP, "03", "0000", listAttributes, ackIsDisabled=False, checkTime=False)
-        ReadAttributeReq(self, key, ZIGATE_EP, "06", "0000", listAttributes, ackIsDisabled=False, checkTime=False)  # Livolo
-        ReadAttributeReq(self, key, ZIGATE_EP, "09", "0000", listAttributes, ackIsDisabled=False, checkTime=False)
+        PREFIX_IEEE_XIAOMI = "00158d000"
+        PREFIX_IEEE_OPPLE = "04cf8cdf3"
+        ieee = self.ListOfDevices[ key ]['IEEE']
+        if ( ieee[: len(PREFIX_IEEE_XIAOMI)] == PREFIX_IEEE_XIAOMI or ieee[: len(PREFIX_IEEE_OPPLE)] == PREFIX_IEEE_OPPLE ):
+            ReadAttributeReq(self, key, ZIGATE_EP, "01", "0000", listAttributes, ackIsDisabled=False, checkTime=False)
+        else:
+            ReadAttributeReq(self, key, ZIGATE_EP, "01", "0000", listAttributes, ackIsDisabled=False, checkTime=False)
+            ReadAttributeReq(self, key, ZIGATE_EP, "0b", "0000", listAttributes, ackIsDisabled=False, checkTime=False)  # Schneider
+            ReadAttributeReq(self, key, ZIGATE_EP, "02", "0000", listAttributes, ackIsDisabled=False, checkTime=False)
+            ReadAttributeReq(self, key, ZIGATE_EP, "03", "0000", listAttributes, ackIsDisabled=False, checkTime=False)
+            ReadAttributeReq(self, key, ZIGATE_EP, "06", "0000", listAttributes, ackIsDisabled=False, checkTime=False)  # Livolo
+            ReadAttributeReq(self, key, ZIGATE_EP, "09", "0000", listAttributes, ackIsDisabled=False, checkTime=False)
 
     else:
         for epout in self.ListOfDevices[key]["Ep"]:
