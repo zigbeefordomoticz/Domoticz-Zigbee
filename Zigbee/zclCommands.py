@@ -94,7 +94,18 @@ def zcl_read_report_config_request(self, nwkid , epin , epout , cluster, directi
     if ackIsDisabled:
         return send_zigatecmd_zcl_noack(self, nwkid, "0122", data)
     return send_zigatecmd_zcl_ack(self, nwkid, "0122", data)       
-  
+
+def zcl_attribute_discovery_request(self, nwkid, EpIn, EpOut, cluster, start_attribute="0000", manuf_specific="00", manuf_code="0000"):
+    self.log.logging( "zdpCommand", "Debug","zcl_attribute_discovery_request %s %s %s %s %s %s %s" %(
+        nwkid, EpIn, EpOut, cluster, start_attribute, manuf_specific, manuf_code))
+    
+    return send_zigatecmd_raw(self, nwkid, "0140", EpIn + EpOut + cluster + start_attribute + "00" + manuf_specific + manuf_code + "01")
+
+def zcl_get_list_attribute_extended_infos(self, nwkid, EpIn, EpOut, cluster, start_attribute="0000", manuf_specific="00", manuf_code="0000"):
+    self.log.logging( "zdpCommand", "Debug","zcl_get_list_attribute_extended_infos %s %s %s %s %s %s %s" %(
+        nwkid, EpIn, EpOut, cluster, start_attribute, manuf_specific, manuf_code))
+    return send_zigatecmd_raw(self, nwkid, "0141", EpIn + EpOut + cluster + start_attribute + "00" + manuf_specific + manuf_code + "01")
+ 
 # Cluster 0003
 ##############
 def zcl_identify_send( self, nwkid, EPout, duration, ackIsDisabled=DEFAULT_ACK_MODE):

@@ -34,9 +34,23 @@ def zdp_decoders( self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
     if ClusterId == "0013":
         return buildframe_device_annoucement( self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame)
     
+    if ClusterId == "8000":
+        # NWK_addr_rsp
+        return buildframe_nwk_address_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame)
+
+    if ClusterId == "8001":
+        # IEEE_addr_rsp
+        return buildframe_ieee_address_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame)
+
+    
     if ClusterId == "8002":
         # Node_Desc_rsp 
         return buildframe_node_descriptor_response( self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame)
+    
+    if ClusterId == "8003":
+        # Power_Desc_rsp
+        return buildframe_power_description_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame)
+ 
     
     if ClusterId == "8004":
         return buildframe_simple_descriptor_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame)
@@ -44,12 +58,58 @@ def zdp_decoders( self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
     if ClusterId == "8005":
         return buildframe_active_endpoint_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame)
     
+    if ClusterId == "8006":
+        # Match_Desc_rsp
+        return buildframe_match_description_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame)
+
+    
+    if ClusterId == "8010":
+        # Complex_Desc_rsp
+        return buildframe_complex_description_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame)
+
+    
+    if ClusterId == "8011":
+        # User_Desc_rsp
+        return buildframe_user_description_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame)
+
+    
     if ClusterId == "8021":
         return buildframe_bind_response_command(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame)
     
+    if ClusterId == "8022":
+        return buildframe_unbind_response_command(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame)
+        
+    if ClusterId == "8030":
+        # Mgmt_NWK_Disc_rsp
+        return buildframe_management_nwk_discovery_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame)
+        
+    if ClusterId == "8031":
+        # Mgmt_Lqi_rsp
+        return buildframe_management_lqi_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame)
+        
+    if ClusterId == "8032":
+        # Mgmt_Rtg_rsp
+        return buildframe_routing_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame)
+        
     if ClusterId == "8033":
         # handle directly as raw in Modules/inputs/Decode8002
         return frame        
+
+    if ClusterId == "8034":
+        # Mgmt_Leave_rsp
+        return buildframe_leave_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame)
+        
+    if ClusterId == "8035":
+        # Mgmt_Direct_Join_rsp
+        return buildframe_direct_join_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame)
+        
+    if ClusterId == "8036":
+        # Mgmt_Permit_Joining_rsp
+        return buildframe_permit_join_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame)
+        
+    if ClusterId == "8038":
+        # Mgmt_NWK_Update_notify
+        return buildframe_management_nwk_update_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame)
     
     return frame
     

@@ -126,15 +126,15 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
 
     async def set_certification (self, mode):
         Domoticz.Log ("set_certification not implemented yet") 
-        pass
+
 
     async def get_time_server (self):
         Domoticz.Log ("get_time_server not implemented yet")         
-        pass
 
-    async def set_time_server (self):
+
+    async def set_time_server (self, newtime):
         Domoticz.Log ("set_time_server not implemented yet") 
-        pass
+
 
     async def get_firmware_version (self):
         return self.znp.version

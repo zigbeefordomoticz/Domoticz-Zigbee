@@ -15,12 +15,10 @@ import struct
 from datetime import datetime
 from time import time
 
-from Zigbee.zclCommands import (zcl_identify_send, zcl_read_attribute,
+from Zigbee.zclCommands import (zcl_get_list_attribute_extended_infos, zcl_attribute_discovery_request, zcl_identify_send, zcl_read_attribute,
                                 zcl_write_attribute,
                                 zcl_write_attributeNoResponse)
-from Zigbee.zdpCommands import (zdp_attribute_discovery_request,
-                                zdp_get_list_attribute_extended_infos,
-                                zdp_get_permit_joint_status,
+from Zigbee.zdpCommands import (zdp_get_permit_joint_status,
                                 zdp_IEEE_address_request,
                                 zdp_management_leave_request,
                                 zdp_management_network_update_request,
@@ -179,14 +177,14 @@ def getListofAttribute(self, nwkid, EpOut, cluster, start_attribute="0000", manu
     #datas = ZIGATE_EP + EpOut + cluster + start_attribute + "00" + manuf_specific + manuf_code + "01"
     #self.log.logging("BasicOutput", "Debug", "attribute_discovery_request - " + str(datas), nwkid)
     #send_zigatecmd_zcl_noack(self, nwkid, "0140", datas)
-    zdp_attribute_discovery_request(self, nwkid, ZIGATE_EP, EpOut, cluster, start_attribute, manuf_specific, manuf_code)
+    zcl_attribute_discovery_request(self, nwkid, ZIGATE_EP, EpOut, cluster, start_attribute, manuf_specific, manuf_code)
 
 def getListofAttributeExtendedInfos( self, nwkid, EpOut, cluster, start_attribute="0000", manuf_specific="00", manuf_code="0000"):
 
     #datas = ZIGATE_EP + EpOut + cluster + start_attribute + "00" + manuf_specific + manuf_code + "01"
     #self.log.logging("BasicOutput", "Debug", "attribute_discovery_request - " + str(datas), nwkid)
     #send_zigatecmd_zcl_noack(self, nwkid, "0141", datas)
-    zdp_get_list_attribute_extended_infos(self, nwkid, ZIGATE_EP, EpOut, cluster, start_attribute, manuf_specific, manuf_code)
+    zcl_get_list_attribute_extended_infos(self, nwkid, ZIGATE_EP, EpOut, cluster, start_attribute, manuf_specific, manuf_code)
 
 
 #def initiateTouchLink(self):

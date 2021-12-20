@@ -42,7 +42,7 @@ class ZigpyTransport(object):
         # Initialise SQN Management
         sqn_init_stack(self)
 
-        self.app : zigpy.application.ControllerApplication |None = None 
+        self.app : zigpy.application.ControllerApplication | None = None 
         self.writer_queue = PriorityQueue()
         self.forwarder_queue = Queue()
         self.zigpy_thread = Thread(name="ZigpyCom_%s" % self.hardwareid, target=zigpy_thread, args=(self,))

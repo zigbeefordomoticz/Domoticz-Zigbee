@@ -902,6 +902,14 @@ SETTINGS = {
                 "hidden": False,
                 "Advanced": True,
             },
+            "debugZigpyLayer": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": True,
+            },
             "debugTransportSerial": {
                 "type": "bool",
                 "default": 0,

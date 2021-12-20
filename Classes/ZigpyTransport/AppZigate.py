@@ -3,6 +3,7 @@
 import logging
 
 from typing import Any, Optional
+import datetime
 
 import Domoticz
 import zigpy.appdb
@@ -21,9 +22,6 @@ import zigpy.zdo
 import zigpy.zdo.types as zdo_types
 import zigpy_zigate
 import zigpy_zigate.zigbee.application
-from Modules.zigateCommands import (zigate_blueled,
-                                    zigate_get_time, zigate_set_certificate,
-                                    zigate_set_time, zigate_set_tx_power)
 from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
                                  SCHEMA_DEVICE)
 from Zigbee.plugin_encoders import build_plugin_004D_frame_content, build_plugin_8002_frame_content
@@ -112,19 +110,25 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         return None
 
     async def set_tx_power (self,power):
-        pass
+        await self._api.set_tx_power( power )
 
     async def set_led (self, mode):
-        pass
+        await self._api.set_led( mode )
 
     async def set_certification (self, mode):
-        pass
+        await self._api.set_certification( mode)
 
     async def get_time_server (self):
-        pass
+        await self._api.get_time_server()
 
-    async def set_time_server (self):
-        pass
-
+    async def set_time_server (self, newtime):
+        await self._api.set_time()
+        
     async def get_firmware_version (self):
         pass
+    
+    async def erase_pdm(self):
+        await self._api.erase_persistent_data()
+        
+    async def soft_reset(self):
+        await self._api.reset()

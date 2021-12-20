@@ -13,13 +13,13 @@ async def erase_persistent_data(self):
     await  self.app._api.erase_persistent_data()
     
 async def set_time(self, dt=None):
-    await self.app._api.set_time( dt=None)
+    await self.app._api.set_time( dt )
     
 async def get_time_server(self):
     await self.app._api.get_time_server()
     
 async def set_led(self, enable=True):
-    await self.app._api.set_led( enable=True)
+    await self.app._api.set_led( enable)
     
 async def set_certification(self, typ='CE'):
     await self.app._api.set_certification( typ)
@@ -32,7 +32,6 @@ async def set_tx_power(self, power=63):
     
 async def set_channel(self, channels=None):
     await self.app._api.set_channel( channels=None)
-    
     
 async def set_extended_panid(self, extended_pan_id):
     await self.app._api.set_extended_panid( extended_pan_id)
