@@ -91,7 +91,7 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         
         
         #Domoticz.Log("handle_message %s" %(str(profile)))
-        if sender.nwk is not None or sender.ieee is not None:
+        if sender.nwk or sender.ieee:
             Domoticz.Log("=====> Sender %s - %s" %(sender.nwk, sender.ieee))
             if sender.nwk:
                 addr_mode = 0x02
@@ -101,10 +101,14 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
             elif sender.ieee:
                 addr = "%016x" %t.uint64_t.deserialize(self.app.ieee.serialize())[0]
                 addr_mode = 0x03
-                        
-            plugin_frame = build_plugin_8002_frame_content( addr, profile, cluster, src_ep, dst_ep, message, sender.lqi)
-            Domoticz.Log("handle_message Sender: %s frame for plugin: %s" %( addr, plugin_frame))
-            self.callBackFunction (plugin_frame)
+                Domoticz.Log("=====> sender.ieee %s - %s" %(sender.ieee, addr))
+                
+            if addr:
+                plugin_frame = build_plugin_8002_frame_content( addr, profile, cluster, src_ep, dst_ep, message, sender.lqi)
+                Domoticz.Log("handle_message Sender: %s frame for plugin: %s" %( addr, plugin_frame))
+                self.callBackFunction (plugin_frame)
+            else:
+                Domoticz.Error("handle_message - Issue with addr: %s while sender is %s %s" %(addr, sender.nwk, sender.ieee))
         else:
             Domoticz.Log("handle_message Sender unkown device : %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s" %
                      (str(sender), profile, cluster, src_ep, dst_ep, str(message)))
