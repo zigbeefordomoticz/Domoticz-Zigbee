@@ -25,7 +25,7 @@ import zigpy_znp.commands.util
 from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
                                  SCHEMA_DEVICE)
 
-from Zigbee.plugin_encoders import build_plugin_004D_frame_content, build_plugin_8002_frame_content
+from Zigbee.plugin_encoders import  build_plugin_8002_frame_content
 
 LOGGER = logging.getLogger(__name__)
     
@@ -94,16 +94,15 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
                 addr_mode = 0x02
                 addr = sender.nwk.serialize()[::-1].hex()
                 Domoticz.Log("=====> sender.nwk %s - %s" %(sender.nwk, addr))
-
             elif sender.ieee is not None:
-                addr = str(sender.ieee).replace(':','')
+                addr = "%016x" %t.uint64_t.deserialize(self.app.ieee.serialize())[0]
                 addr_mode = 0x03
             if sender.lqi is None:
                 sender.lqi = 0x00
             if src_ep == dst_ep == 0x00:
                 profile = 0x0000
-            Domoticz.Log("handle_message device : %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s" %
-                     (str(addr), profile, cluster, src_ep, dst_ep, str(message)))                
+            Domoticz.Log("handle_message device : %s (%s) Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s " %
+                     (str(addr), type(addr), profile, cluster, src_ep, dst_ep, str(message)))                
             plugin_frame = build_plugin_8002_frame_content( addr, profile, cluster, src_ep, dst_ep, message, sender.lqi,src_addrmode=addr_mode)
             Domoticz.Log("handle_message Sender: %s frame for plugin: %s" %( addr, plugin_frame))
             self.callBackHandleMessage (plugin_frame)

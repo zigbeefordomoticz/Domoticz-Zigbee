@@ -95,11 +95,13 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
             Domoticz.Log("=====> Sender %s - %s" %(sender.nwk, sender.ieee))
             if sender.nwk:
                 addr_mode = 0x02
-                addr = sender.nwk
+                addr = sender.nwk.serialize()[::-1].hex()
+                Domoticz.Log("=====> sender.nwk %s - %s" %(sender.nwk, addr))
+
             elif sender.ieee:
-                addr = str(sender.ieee).replace(':','')
+                addr = "%016x" %t.uint64_t.deserialize(self.app.ieee.serialize())[0]
                 addr_mode = 0x03
-            
+                        
             plugin_frame = build_plugin_8002_frame_content( addr, profile, cluster, src_ep, dst_ep, message, sender.lqi)
             Domoticz.Log("handle_message Sender: %s frame for plugin: %s" %( addr, plugin_frame))
             self.callBackFunction (plugin_frame)
