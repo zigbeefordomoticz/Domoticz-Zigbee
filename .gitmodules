@@ -7,3 +7,6 @@
 [submodule "external/zigpy-zigate"]
 	path = external/zigpy-zigate
 	url = git://github.com/badzz/zigpy-zigate
+[submodule "external/pyserial"]
+	path = external/pyserial
+	url = https://github.com/pyserial/pyserial.git
