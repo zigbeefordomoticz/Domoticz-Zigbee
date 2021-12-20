@@ -101,6 +101,7 @@ async def worker_loop(self):
             break
         try:
             prio, entry = self.writer_queue.get(False)
+            
         except queue.Empty:
             await asyncio.sleep(.250)
             continue
@@ -148,7 +149,7 @@ async def worker_loop(self):
             handle_thread_error(self, e,)
         
         # Wait .5s to reduce load on Zigate
-        await asyncio.sleep(0.10)
+        #await asyncio.sleep(0.10)
 
     self.logging_writer("Status", "ZigyTransport: writer_thread Thread stop.")
 
