@@ -39,6 +39,10 @@ def profalux_fake_deviceModel(self, nwkid):
     if "Manufacturer" not in self.ListOfDevices[nwkid]:
         return
 
+    if "Model" in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]["Model"] in ( "MOT-C1Z06C",):
+        # No needs as we have a model Name ;-)
+        return
+    
     if self.ListOfDevices[nwkid]["Manufacturer"] != "1110":
         return
 
