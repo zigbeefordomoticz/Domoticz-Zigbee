@@ -9,6 +9,7 @@ import Domoticz
 import struct 
 from Modules.tools import retreive_cmd_payload_from_8002
 from Modules.zigateConsts import ADDRESS_MODE, SIZE_DATA_TYPE
+from Zigbee.encoder_tools import encapsulate_plugin_frame
 
 
 def zdp_decoders( self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
@@ -67,12 +68,10 @@ def zdp_decoders( self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
         # Complex_Desc_rsp
         return buildframe_complex_description_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame)
 
-    
     if ClusterId == "8011":
         # User_Desc_rsp
         return buildframe_user_description_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame)
-
-    
+ 
     if ClusterId == "8021":
         return buildframe_bind_response_command(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame)
     
@@ -133,14 +132,7 @@ def buildframe_device_annoucement( self, SrcNwkId, SrcEndPoint, ClusterId, Paylo
 
     buildPayload = nwkid + ieee + maccapa
 
-    newFrame = "01"  # 0:2
-    newFrame += "004d"  # 2:6   MsgType
-    newFrame += "%04x" % len(buildPayload)  # 6:10  Length
-    newFrame += "ff"  # 10:12 CRC
-    newFrame += buildPayload
-    newFrame += frame[len(frame) - 4 : len(frame) - 2]  # LQI
-    newFrame += "03"
-    return newFrame
+    return encapsulate_plugin_frame( "004d", buildPayload , frame[len(frame) - 4 : len(frame) - 2]) 
 
 def buildframe_node_descriptor_response( self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
     # sequence = MsgData[0:2]
@@ -174,14 +166,7 @@ def buildframe_node_descriptor_response( self, SrcNwkId, SrcEndPoint, ClusterId,
     buildPayload = sqn + status + nwkid + manuf_code_16 + max_in_size_16 + max_out_size_16
     buildPayload += server_mask_16 + descriptor_capability_field_8 + mac_capa_8 + max_buf_size_8 + bitfield_16
 
-    newFrame = "01"  # 0:2
-    newFrame += "8042"  # 2:6   MsgType
-    newFrame += "%04x" % len(buildPayload)  # 6:10  Length
-    newFrame += "ff"  # 10:12 CRC
-    newFrame += buildPayload
-    newFrame += frame[len(frame) - 4 : len(frame) - 2]  # LQI
-    newFrame += "03"
-    return newFrame
+    return encapsulate_plugin_frame( "80xx", buildPayload, frame[len(frame) - 4 : len(frame) - 2] ) 
     
 def buildframe_active_endpoint_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
     # Active End Point Response
@@ -204,14 +189,7 @@ def buildframe_active_endpoint_response(self, SrcNwkId, SrcEndPoint, ClusterId, 
     #    sqn, status, nwkid , nbEp , ep_list ))
 
     buildPayload = sqn + status + nwkid + nbEp + ep_list
-    newFrame = "01"  # 0:2
-    newFrame += "8045"  # 2:6   MsgType
-    newFrame += "%04x" % len(buildPayload)  # 6:10  Length
-    newFrame += "ff"  # 10:12 CRC
-    newFrame += buildPayload
-    newFrame += frame[len(frame) - 4 : len(frame) - 2]  # LQI
-    newFrame += "03"
-    return newFrame
+    return encapsulate_plugin_frame( "8045", buildPayload, frame[len(frame) - 4 : len(frame) - 2] ) 
 
 def buildframe_simple_descriptor_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
     # Node Descriptor Response
@@ -270,14 +248,7 @@ def buildframe_simple_descriptor_response(self, SrcNwkId, SrcEndPoint, ClusterId
         for x in range(int(outputCnt,16)):
             buildPayload += "%04x" % struct.unpack("H", struct.pack(">H", int(SimpleDescriptor[idx+(4*x):idx+(4*x)+4], 16)))[0]
 
-    newFrame = "01"  # 0:2
-    newFrame += "8043"  # 2:6   MsgType
-    newFrame += "%04x" % len(buildPayload)  # 6:10  Length
-    newFrame += "ff"  # 10:12 CRC
-    newFrame += buildPayload
-    newFrame += frame[len(frame) - 4 : len(frame) - 2]  # LQI
-    newFrame += "03"
-    return newFrame   
+    return encapsulate_plugin_frame( "8043", buildPayload , frame[len(frame) - 4 : len(frame) - 2])   
 
 def buildframe_bind_response_command(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
     # 2d00
@@ -288,11 +259,58 @@ def buildframe_bind_response_command(self, SrcNwkId, SrcEndPoint, ClusterId, Pay
 
     buildPayload = sqn + status
 
-    newFrame = "01"  # 0:2
-    newFrame += "8030"  # 2:6   MsgType
-    newFrame += "%04x" % len(buildPayload)  # 6:10  Length
-    newFrame += "ff"  # 10:12 CRC
-    newFrame += buildPayload
-    newFrame += frame[len(frame) - 4 : len(frame) - 2]  # LQI
-    newFrame += "03"
-    return newFrame
+    return encapsulate_plugin_frame( "8030", buildPayload , frame[len(frame) - 4 : len(frame) - 2])
+
+
+def buildframe_nwk_address_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
+    Domoticz.Log("buildframe_nwk_address_response NOT IMPLEMENTED YET")
+    return frame
+    
+def buildframe_ieee_address_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
+    Domoticz.Log("buildframe_nwk_address_response NOT IMPLEMENTED YET")
+    return frame
+   
+def buildframe_power_description_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
+    Domoticz.Log("buildframe_power_description_response NOT IMPLEMENTED YET")
+    return frame
+    
+def buildframe_match_description_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
+    Domoticz.Log("buildframe_match_description_response NOT IMPLEMENTED YET")
+    return frame
+    
+def buildframe_user_description_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
+    Domoticz.Log("buildframe_user_description_response NOT IMPLEMENTED YET")
+    return frame
+    
+def buildframe_unbind_response_command(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
+    Domoticz.Log("buildframe_unbind_response_command NOT IMPLEMENTED YET")
+    return frame
+    
+def buildframe_management_nwk_discovery_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
+    Domoticz.Log("buildframe_management_nwk_discovery_response NOT IMPLEMENTED YET")
+    return frame
+    
+def buildframe_management_lqi_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
+    Domoticz.Log("buildframe_management_lqi_response NOT IMPLEMENTED YET")
+    return frame
+    
+def buildframe_routing_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
+    Domoticz.Log("buildframe_routing_response NOT IMPLEMENTED YET")
+    return frame
+    
+def buildframe_leave_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
+    Domoticz.Log("buildframe_leave_response NOT IMPLEMENTED YET")
+    return frame
+    
+def buildframe_direct_join_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
+    Domoticz.Log("buildframe_direct_join_response NOT IMPLEMENTED YET")
+    return frame
+    
+def buildframe_permit_join_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
+    Domoticz.Log("buildframe_permit_join_response NOT IMPLEMENTED YET")
+    return frame
+    
+def buildframe_management_nwk_update_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
+    Domoticz.Log("buildframe_management_nwk_update_response NOT IMPLEMENTED YET")
+    return frame
+    

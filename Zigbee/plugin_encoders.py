@@ -2,6 +2,7 @@
 import zigpy.types as t
 import binascii
 import Domoticz
+from Zigbee.encoder_tools import encapsulate_plugin_frame
 
 def build_plugin_004D_frame_content(nwk, ieee, parent_nwk):
     # No endian decoding as it will go directly to Decode004d
@@ -11,14 +12,7 @@ def build_plugin_004D_frame_content(nwk, ieee, parent_nwk):
     ieee = "%016x" %t.uint64_t.deserialize(ieee.serialize())[0]
     frame_payload = nwk + ieee + '00'
     
-    plugin_frame = "01"                                  # 0:2
-    plugin_frame += "004d"                               # 2:4 MsgType 0x8002
-    plugin_frame += "%04x" % ((len(frame_payload)//2)+1) # 6:10 lenghts
-    plugin_frame += "%02x" % 0xff                        # 10:12 CRC set to ff but would be great to  compute it
-    plugin_frame += frame_payload
-    plugin_frame += "%02x" %0x00
-    plugin_frame += "03"
-    return plugin_frame
+    return encapsulate_plugin_frame( "004d", frame_payload, "%02x" %0x00)
 
 
 def build_plugin_8002_frame_content(address, profile, cluster, src_ep, dst_ep, message, lqi=0x00, receiver=0x0000, src_addrmode=0x02, dst_addrmode=0x02):
@@ -41,11 +35,4 @@ def build_plugin_8002_frame_content(address, profile, cluster, src_ep, dst_ep, m
         frame_payload = "00" + ProfilID + ClusterID + SourcePoint + DestPoint + SourceAddressMode + SourceAddress
         frame_payload += DestinationAddressMode + DestinationAddress + Payload
         
-        plugin_frame = "01"                                  # 0:2
-        plugin_frame += "8002"                               # 2:4 MsgType 0x8002
-        plugin_frame += "%04x" % ((len(frame_payload)//2)+1) # 6:10 lenght
-        plugin_frame += "%02x" % 0xff                        # 10:12 CRC set to ff but would be great to  compute it
-        plugin_frame += frame_payload
-        plugin_frame += "%02x" %lqi
-        plugin_frame += "03"
-        return plugin_frame
+        return encapsulate_plugin_frame( "8002", frame_payload, "%02x" %lqi)
