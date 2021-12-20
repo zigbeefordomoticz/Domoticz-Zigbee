@@ -12,25 +12,24 @@
 
 import json
 
+from Zigbee.zclCommands import (zcl_identify_send, zcl_identify_trigger_effect,
+                                zcl_level_move_to_level,
+                                zcl_move_hue_and_saturation,
+                                zcl_move_to_colour,
+                                zcl_move_to_colour_temperature,
+                                zcl_move_to_level_with_onoff,
+                                zcl_onoff_off_noeffect,
+                                zcl_onoff_off_witheffect, zcl_onoff_on,
+                                zcl_onoff_stop, zcl_toggle,
+                                zcl_window_covering_off,
+                                zcl_window_covering_on,
+                                zcl_window_covering_stop,
+                                zcl_window_coverting_level)
+
 from Modules.basicOutputs import set_poweron_afteroffon
 from Modules.readAttributes import ReadAttributeRequest_0006_400x
 from Modules.thermostats import thermostat_Setpoint
 from Modules.tools import Hex_Format, rgb_to_hsl, rgb_to_xy
-from Modules.zclCommands import (zcl_identify_send,
-                                 zcl_identify_trigger_effect,
-                                 zcl_level_move_to_level,
-                                 zcl_move_to_level_with_onoff,
-                                 zcl_move_hue_and_saturation,
-                                 zcl_move_to_colour,
-                                 zcl_move_to_colour_temperature,
-                                 zcl_move_to_level_with_onoff,
-                                 zcl_onoff_off_noeffect,
-                                 zcl_onoff_off_witheffect, zcl_onoff_on,
-                                 zcl_onoff_stop, zcl_toggle,
-                                 zcl_window_covering_off,
-                                 zcl_window_covering_on,
-                                 zcl_window_covering_stop,
-                                 zcl_window_coverting_level)
 from Modules.zigateConsts import ZIGATE_EP
 
 

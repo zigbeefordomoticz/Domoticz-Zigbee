@@ -11,7 +11,7 @@ from Classes.GroupMgtv2.GrpCommands import (set_hue_saturation,
                                             set_kelvin_color, set_rgb_color)
 from Classes.GroupMgtv2.GrpDatabase import update_due_to_nwk_id_change
 from Modules.tools import Hex_Format
-from Modules.zclCommands import (zcl_group_level_move_to_level,
+from Zigbee.zclCommands import (zcl_group_level_move_to_level,
                                  zcl_group_onoff_off_noeffect,
                                  zcl_group_onoff_off_witheffect,
                                  zcl_group_onoff_on,

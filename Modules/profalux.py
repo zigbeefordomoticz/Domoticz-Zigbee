@@ -10,9 +10,10 @@
 
 """
 
+from Zigbee.zclCommands import zcl_configure_reporting_request
+
 from Modules.sendZigateCommand import raw_APS_request
 from Modules.tools import get_and_inc_SQN
-from Modules.zclCommands import zcl_configure_reporting_request
 from Modules.zigateConsts import ZIGATE_EP
 
 

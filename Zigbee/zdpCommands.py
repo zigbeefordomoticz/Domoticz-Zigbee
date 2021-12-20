@@ -11,7 +11,7 @@
 """
 import Domoticz
 from Modules.sendZigateCommand import raw_APS_request, send_zigatecmd_raw
-from Modules.zdpRawCommands import (zdp_raw_active_endpoint_request,
+from Zigbee.zdpRawCommands import (zdp_raw_active_endpoint_request,
                                     zdp_raw_node_descriptor_request,
                                     zdp_raw_simple_descriptor_request,
                                     zdp_raw_permit_joining_request,

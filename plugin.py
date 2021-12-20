@@ -98,8 +98,8 @@ from Classes.TransportStats import TransportStatistics
 from Classes.WebServer.WebServer import WebServer
 from Modules.basicOutputs import (ZigatePermitToJoin,
                                   do_Many_To_One_RouteRequest, leaveRequest,
-                                  setExtendedPANID,
-                                  setTimeServer, start_Zigate, zigateBlueLed)
+                                  setExtendedPANID, setTimeServer,
+                                  start_Zigate, zigateBlueLed)
 from Modules.checkingUpdate import (checkFirmwareUpdate, checkPluginUpdate,
                                     checkPluginVersion)
 from Modules.command import mgtCommand
@@ -117,21 +117,28 @@ from Modules.txPower import set_TxPower
 from Modules.zigateCommands import (zigate_erase_eeprom,
                                     zigate_get_firmware_version,
                                     zigate_get_list_active_devices,
-                                    zigate_get_nwk_state,
-                                    zigate_get_time,
+                                    zigate_get_nwk_state, zigate_get_time,
                                     zigate_remove_device,
                                     zigate_set_certificate)
 from Modules.zigateConsts import CERTIFICATION, HEARTBEAT, MAX_FOR_ZIGATE_BUZY
-from Modules.zdpCommands import zdp_get_permit_joint_status
+from Zigbee.zdpCommands import zdp_get_permit_joint_status
 
 # Zigpy related modules
 try:
-    from zigpy_zigate.config import CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE
-    from Classes.ZigpyTransport.Transport import ZigpyTransport
     import asyncio
+
+    from Classes.ZigpyTransport.Transport import ZigpyTransport
+    from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH,
+                                     CONFIG_SCHEMA, SCHEMA_DEVICE)
     ZIGPY_LOADED = True
 except ImportError:
     ZIGPY_LOADED = False
+
+#from zigpy_zigate.config import CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE
+#from Classes.ZigpyTransport.Transport import ZigpyTransport
+#import asyncio
+#ZIGPY_LOADED = True
+
 
 
 

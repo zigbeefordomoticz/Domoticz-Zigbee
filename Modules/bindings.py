@@ -7,7 +7,7 @@
 from time import time
 
 from Modules.zigateConsts import CLUSTERS_LIST
-from Modules.zdpCommands import ( zdp_binding_device, zdp_unbinding_device)
+from Zigbee.zdpCommands import ( zdp_binding_device, zdp_unbinding_device)
 
 def bindGroup(self, ieee, ep, cluster, groupid):
 

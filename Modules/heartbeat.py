@@ -13,6 +13,7 @@
 import time
 
 import Domoticz
+from Zigbee.zdpCommands import zdp_node_descriptor_request
 
 from Modules.basicOutputs import getListofAttribute
 from Modules.casaia import pollingCasaia
@@ -39,7 +40,6 @@ from Modules.schneider_wiser import schneiderRenforceent
 from Modules.tools import (ReArrangeMacCapaBasedOnModel, getListOfEpForCluster,
                            is_hex, is_time_to_perform_work, mainPoweredDevice,
                            removeNwkInList)
-from Modules.zdpCommands import zdp_node_descriptor_request
 from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE
 
 # Read Attribute trigger: Every 10"

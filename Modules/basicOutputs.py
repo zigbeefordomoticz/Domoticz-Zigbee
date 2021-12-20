@@ -15,6 +15,20 @@ import struct
 from datetime import datetime
 from time import time
 
+from Zigbee.zclCommands import (zcl_identify_send, zcl_read_attribute,
+                                zcl_write_attribute,
+                                zcl_write_attributeNoResponse)
+from Zigbee.zdpCommands import (zdp_attribute_discovery_request,
+                                zdp_get_list_attribute_extended_infos,
+                                zdp_get_permit_joint_status,
+                                zdp_IEEE_address_request,
+                                zdp_management_leave_request,
+                                zdp_management_network_update_request,
+                                zdp_many_to_one_route_request,
+                                zdp_permit_joining_request, zdp_reset_device)
+from Zigbee.zdpRawCommands import (zdp_management_binding_table_request,
+                                   zdp_management_routing_table_request)
+
 from Modules.sendZigateCommand import (raw_APS_request, send_zigatecmd_raw,
                                        send_zigatecmd_zcl_ack,
                                        send_zigatecmd_zcl_noack)
@@ -22,25 +36,12 @@ from Modules.tools import (build_fcf, get_and_inc_SQN, getListOfEpForCluster,
                            is_ack_tobe_disabled, is_hex, mainPoweredDevice,
                            set_isqn_datastruct, set_request_datastruct,
                            set_timestamp_datastruct)
-from Modules.zclCommands import (zcl_identify_send, zcl_read_attribute,
-                                 zcl_write_attribute,
-                                 zcl_write_attributeNoResponse)
-from Modules.zdpCommands import (zdp_attribute_discovery_request,
-                                 zdp_get_list_attribute_extended_infos,
-                                 zdp_IEEE_address_request,
-                                 zdp_management_leave_request,
-                                 zdp_management_network_update_request,
-                                 zdp_many_to_one_route_request,
-                                 zdp_reset_device, zdp_permit_joining_request, zdp_get_permit_joint_status)
-from Modules.zdpRawCommands import (zdp_management_binding_table_request,
-                                    zdp_management_routing_table_request)
 from Modules.zigateCommands import (zigate_blueled,
                                     zigate_firmware_default_response,
-                                    zigate_get_nwk_state,
-                                    zigate_get_time, zigate_remove_device,
-                                    zigate_set_channel,
+                                    zigate_get_nwk_state, zigate_get_time,
+                                    zigate_remove_device, zigate_set_channel,
                                     zigate_set_extended_PanID, zigate_set_mode,
-                                    zigate_set_time, zigate_start_nwk, )
+                                    zigate_set_time, zigate_start_nwk)
 from Modules.zigateConsts import ZIGATE_EP, ZLL_DEVICES
 
 

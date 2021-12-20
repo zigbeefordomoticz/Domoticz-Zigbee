@@ -8,7 +8,7 @@
 
 import Domoticz
 from Modules.tools import Hex_Format, rgb_to_hsl, rgb_to_xy
-from Modules.zclCommands import (zcl_add_group_membership,
+from Zigbee.zclCommands import (zcl_add_group_membership,
                                  zcl_check_group_member_ship,
                                  zcl_group_identify_trigger_effect,
                                  zcl_group_move_hue_and_saturation,

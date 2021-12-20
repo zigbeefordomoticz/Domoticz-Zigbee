@@ -14,7 +14,7 @@
 from Modules.sendZigateCommand import (send_zigatecmd_raw,
                                        send_zigatecmd_zcl_ack,
                                        send_zigatecmd_zcl_noack)
-from Modules.zclRawCommands import (raw_zcl_zcl_onoff,
+from Zigbee.zclRawCommands import (raw_zcl_zcl_onoff,
                                     rawaps_read_attribute_req,
                                     rawaps_write_attribute_req,
                                     zcl_raw_level_move_to_level,

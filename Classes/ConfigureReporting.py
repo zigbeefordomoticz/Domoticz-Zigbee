@@ -21,10 +21,10 @@ from Modules.tools import (get_isqn_datastruct, get_list_isqn_attr_datastruct,
                            mainPoweredDevice, reset_attr_datastruct,
                            set_isqn_datastruct, set_status_datastruct,
                            set_timestamp_datastruct)
-from Modules.zclCommands import (zcl_configure_reporting_request,
-                                 zcl_read_report_config_request)
 from Modules.zigateConsts import (MAX_LOAD_ZIGATE, ZIGATE_EP,
                                   CFG_RPT_ATTRIBUTESbyCLUSTERS)
+from Zigbee.zclCommands import (zcl_configure_reporting_request,
+                                zcl_read_report_config_request)
 
 from Classes.Transport.sqnMgmt import (TYPE_APP_ZCL,
                                        sqn_get_internal_sqn_from_app_sqn)

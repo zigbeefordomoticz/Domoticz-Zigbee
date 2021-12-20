@@ -6,9 +6,9 @@
 
 
 import Domoticz
-from Classes.Transport.zclDecoders import zcl_decoders
-from Classes.Transport.zdpDecoders import zdp_decoders
 from Modules.zigateConsts import ADDRESS_MODE
+from Zigbee.zclDecoders import zcl_decoders
+from Zigbee.zdpDecoders import zdp_decoders
 
 
 def decode8002_and_process(self, frame):

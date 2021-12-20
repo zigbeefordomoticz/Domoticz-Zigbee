@@ -16,6 +16,7 @@ import struct
 from time import time
 
 import Domoticz
+from Zigbee.zclCommands import zcl_onoff_off_noeffect, zcl_onoff_on
 
 from Modules.basicOutputs import read_attribute, write_attribute
 from Modules.bindings import WebBindStatus, webBind
@@ -26,7 +27,6 @@ from Modules.tools import (get_and_inc_SQN, getAttributeValue,
                            is_ack_tobe_disabled,
                            retreive_cmd_payload_from_8002)
 from Modules.writeAttributes import write_attribute_when_awake
-from Modules.zclCommands import zcl_onoff_off_noeffect, zcl_onoff_on
 from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_EP
 
 PREFIX_MACADDR_WIZER_LEGACY = "00124b00"
