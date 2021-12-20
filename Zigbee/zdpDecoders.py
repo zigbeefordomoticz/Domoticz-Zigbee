@@ -277,6 +277,11 @@ def buildframe_power_description_response(self, SrcNwkId, SrcEndPoint, ClusterId
 def buildframe_match_description_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
     Domoticz.Log("buildframe_match_description_response NOT IMPLEMENTED YET")
     return frame
+
+def buildframe_complex_description_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
+    Domoticz.Log("buildframe_match_description_response NOT IMPLEMENTED YET")
+    return frame
+    
     
 def buildframe_user_description_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
     Domoticz.Log("buildframe_user_description_response NOT IMPLEMENTED YET")
