@@ -56,7 +56,7 @@ def callBackGetDevice (nwk,ieee):
 async def radio_start(self, radiomodule, serialPort, auto_form=False ):
 
     Domoticz.Log("In radio_start")
-    #logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt='%Y-%m-%d:%H:%M:%S',level=logging.DEBUG)
+    logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt='%Y-%m-%d:%H:%M:%S',level=logging.DEBUG)
     
     # Import the radio library
     conf = {CONF_DEVICE: {"path": serialPort}}
