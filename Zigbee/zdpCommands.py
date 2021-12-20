@@ -22,7 +22,6 @@ def zdp_IEEE_address_request(self, lookup, u8RequestType , u8StartIndex):
     self.log.logging( "zdpCommand", "Debug","zdp_IEEE_address_request %s %s %s" %( lookup, u8RequestType , u8StartIndex ))
     if 'ZiGateInRawMode' in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
         return zdp_raw_NWK_address_request(self, "0000", lookup, u8RequestType , u8StartIndex)
-    
     return send_zigatecmd_raw(self, "0041", "02" + lookup + lookup + u8RequestType + u8StartIndex)
 
 
@@ -48,27 +47,21 @@ def zdp_simple_descriptor_request(self, nwkid, endpoint):
         return zdp_raw_simple_descriptor_request(self, nwkid, endpoint)
     return send_zigatecmd_raw(self, "0043", nwkid + endpoint)
     
-
-
 def zdp_active_endpoint_request(self, nwkid ):
     self.log.logging( "zdpCommand", "Log","zdp_simple_descriptor_request %s" %(nwkid))
     if 'ZiGateInRawMode' in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
         return zdp_raw_active_endpoint_request(self, nwkid,)
     return send_zigatecmd_raw(self, "0045", nwkid) 
     
-
-
 def zdp_management_leave_request(self, nwkid, ieee, rejoin="01", remove_children="00"):
     self.log.logging( "zdpCommand", "Log","zdp_management_leave_request %s %s %s %s" %(nwkid, ieee, rejoin, remove_children))
     if 'ZiGateInRawMode' in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
         return zdp_raw_leave_request(self, nwkid, ieee, rejoin="01", remove_children="00")
     return send_zigatecmd_raw(self, "0047", nwkid + ieee + rejoin + remove_children)
 
-
 def zdp_reset_device(self, nwkid, epin, epout):
     self.log.logging( "zdpCommand", "Log","zdp_reset_device %s %s %s" %(nwkid, epin, epout))
     return send_zigatecmd_raw(self, "0050", "02" + nwkid + epin + epout)
-
 
 def zdp_management_network_update_request(self, target_address , channel_mask , scanDuration , scan_repeat="00" , nwk_updateid="00", nwk_manager="0000"):
     self.log.logging( "zdpCommand", "Debug","zdp_management_network_update_request %s %s %s %s %s %s" %(
@@ -78,20 +71,17 @@ def zdp_management_network_update_request(self, target_address , channel_mask , 
     datas = target_address + channel_mask + scanDuration + scan_repeat + nwk_updateid + nwk_manager
     return send_zigatecmd_raw(self, "004A", datas)
 
-
 def zdp_many_to_one_route_request(self, bCacheRoute, u8Radius):
     self.log.logging( "zdpCommand", "Debug","zdp_many_to_one_route_request %s %s" %(bCacheRoute, u8Radius))
     if 'ZiGateInRawMode' in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
         return
     return send_zigatecmd_raw(self, "004F", bCacheRoute + u8Radius)
 
-
 def zdp_binding_device(self, ieee , ep , cluster , addrmode , destaddr , destep):
     self.log.logging( "zdpCommand", "Debug","zdp_binding_device %s %s %s %s %s %s" %(ieee , ep , cluster , addrmode , destaddr , destep))
     if 'ZiGateInRawMode' in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
         return zdp_raw_binding_device(self, ieee , ep , cluster , addrmode , destaddr , destep)
     return send_zigatecmd_raw(self, "0030", ieee + ep + cluster + addrmode + destaddr + destep)
-
 
 def zdp_unbinding_device(self, ieee , ep , cluster , addrmode , destaddr , destep):
     self.log.logging( "zdpCommand", "Debug","zdp_unbinding_device %s %s %s %s %s %s" %(ieee , ep , cluster , addrmode , destaddr , destep))

@@ -24,7 +24,7 @@ def build_plugin_8002_frame_content(address, profile, cluster, src_ep, dst_ep, m
         DestPoint = "%02x" %dst_ep
         SourceAddressMode = "%02x" %src_addrmode
         if src_addrmode in ( 0x02, 0x01 ):
-            SourceAddress = "%04x" % address
+            SourceAddress = address
         elif src_addrmode == 0x03:
             SourceAddress = "%016x" % address
         DestinationAddressMode = "%02x" %dst_addrmode   

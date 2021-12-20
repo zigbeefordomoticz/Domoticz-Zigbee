@@ -166,7 +166,7 @@ def buildframe_node_descriptor_response( self, SrcNwkId, SrcEndPoint, ClusterId,
     buildPayload = sqn + status + nwkid + manuf_code_16 + max_in_size_16 + max_out_size_16
     buildPayload += server_mask_16 + descriptor_capability_field_8 + mac_capa_8 + max_buf_size_8 + bitfield_16
 
-    return encapsulate_plugin_frame( "80xx", buildPayload, frame[len(frame) - 4 : len(frame) - 2] ) 
+    return encapsulate_plugin_frame( "8042", buildPayload, frame[len(frame) - 4 : len(frame) - 2] ) 
     
 def buildframe_active_endpoint_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
     # Active End Point Response
