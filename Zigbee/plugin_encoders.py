@@ -1,5 +1,5 @@
 
-
+import zigpy.types as t
 import binascii
 import Domoticz
 
