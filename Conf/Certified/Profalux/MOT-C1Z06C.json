@@ -38,7 +38,9 @@
 	},
 	"Type": "",
 	"ClusterToBind": [
-		"0008"
+		"0006",
+		"0008",
+		"fc21"
 	],
 	"ConfigureReporting": {
 		"0008": {
