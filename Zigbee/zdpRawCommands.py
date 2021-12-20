@@ -10,7 +10,6 @@
 
 """
 import struct
-import Domoticz
 from Modules.zigateConsts import ZIGATE_EP
 from Modules.sendZigateCommand import (raw_APS_request)
 from Modules.tools import get_and_inc_ZDP_SQM

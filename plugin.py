@@ -93,7 +93,7 @@ from Classes.NetworkEnergy import NetworkEnergy
 from Classes.NetworkMap import NetworkMap
 from Classes.OTA import OTAManagement
 from Classes.PluginConf import PluginConf
-from Classes.Transport.Transport import ZigateTransport
+
 from Classes.TransportStats import TransportStatistics
 from Classes.WebServer.WebServer import WebServer
 from Modules.basicOutputs import (ZigatePermitToJoin,
@@ -123,16 +123,6 @@ from Modules.zigateCommands import (zigate_erase_eeprom,
 from Modules.zigateConsts import CERTIFICATION, HEARTBEAT, MAX_FOR_ZIGATE_BUZY
 from Zigbee.zdpCommands import zdp_get_permit_joint_status
 
-# Zigpy related modules
-try:
-    import asyncio
-
-    from Classes.ZigpyTransport.Transport import ZigpyTransport
-    from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH,
-                                     CONFIG_SCHEMA, SCHEMA_DEVICE)
-    ZIGPY_LOADED = True
-except ImportError:
-    ZIGPY_LOADED = False
 
 #from zigpy_zigate.config import CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE
 #from Classes.ZigpyTransport.Transport import ZigpyTransport
@@ -471,6 +461,8 @@ class BasePlugin:
         # Connect to Zigate only when all initialisation are properly done.
         self.log.logging("Plugin", "Status", "Transport mode: %s" % self.transport)
         if self.transport in ("USB", "DIN", "V2-DIN", "V2-USB"):
+            from Classes.Transport.Transport import ZigateTransport
+            
             self.zigbee_communitation = "native"
             self.ZigateComm = ZigateTransport(
                 self.HardwareID,
@@ -486,6 +478,8 @@ class BasePlugin:
             )
 
         elif self.transport in ("PI", "V2-PI"):
+            from Classes.Transport.Transport import ZigateTransport
+            
             switchPiZigate_mode(self, "run")
             self.zigbee_communitation = "native"
             self.ZigateComm = ZigateTransport(
@@ -502,6 +496,8 @@ class BasePlugin:
             )
 
         elif self.transport in ("Wifi", "V2-Wifi"):
+            from Classes.Transport.Transport import ZigateTransport
+            
             self.zigbee_communitation = "native"
             self.ZigateComm = ZigateTransport(
                 self.HardwareID,
@@ -518,20 +514,30 @@ class BasePlugin:
             )
 
         elif self.transport == "None":
+            from Classes.Transport.Transport import ZigateTransport
+            
             self.log.logging("Plugin", "Status", "Transport mode set to None, no communication.")
             self.FirmwareVersion = "031c"
             self.PluginHealth["Firmware Update"] = {"Progress": "75 %", "Device": "1234"}
             return
 
-        elif self.transport == "ZigpyZiGate" and ZIGPY_LOADED:
+        elif self.transport == "ZigpyZiGate":
+            # Zigpy related modules
+            from Classes.ZigpyTransport.Transport import ZigpyTransport
+            from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH,
+                                                CONFIG_SCHEMA, SCHEMA_DEVICE)
+
             self.zigbee_communitation = "zigpy"
             Domoticz.Log("Start Zigpy Transport on zigate")
             self.ZigateComm = ZigpyTransport( self.processFrame, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "zigate", Parameters["SerialPort"]) 
-            Domoticz.Log("===== >  self.statistics: %s" %type(self.statistics))
             self.ZigateComm.open_zigate_connection()
             self.pluginconf.pluginConf["ZiGateInRawMode"] = True
             
-        elif self.transport == "ZigpyZNP" and ZIGPY_LOADED:
+        elif self.transport == "ZigpyZNP":
+            from Classes.ZigpyTransport.Transport import ZigpyTransport
+            from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH,
+                                                CONFIG_SCHEMA, SCHEMA_DEVICE)
+
             self.zigbee_communitation = "zigpy"
             Domoticz.Log("Start Zigpy Transport on ZNP")
             self.ZigateComm = ZigpyTransport( self.processFrame, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "znp", Parameters["SerialPort"])  

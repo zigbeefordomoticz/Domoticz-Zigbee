@@ -11,22 +11,16 @@ from Modules.zigateConsts import ADDRESS_MODE, SIZE_DATA_TYPE
 
 
 def zcl_decoders( self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
-    #self.logging_8002( 'Debug', "zcl_decoders NwkId: %s Ep: %s Cluster: %s Payload: %s" %(SrcNwkId, SrcEndPoint, ClusterId , Payload))
 
-    Domoticz.Log("==>  zcl_decoders")
     GlobalCommand, Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002(Payload)
     
-    Domoticz.Log("decode8002_and_process Sqn: %s/%s GlobalCommand: %s ManufCode: %s Command: %s Data: %s " %(int(Sqn,16), Sqn , GlobalCommand, ManufacturerCode, Command, Data))    
     if not GlobalCommand:
-        Domoticz.Log("====> not GlobalCommand == Cluster Specific")
         if ClusterId == "0006":
             # Remote report
-            Domoticz.Log("======> 8095")
             return buildframe_80x5_message( "8095", frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Command, Data)
         # This is not a Global Command (Read Attribute, Write Attribute and so on)
         if ClusterId == "0008":
             # Remote report
-            Domoticz.Log("======> 8085")
             return buildframe_80x5_message( "8085", frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Command, Data)
         if ClusterId == "0300":
             return frame
@@ -83,7 +77,7 @@ def zcl_decoders( self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
 def buildframe_discover_attribute_response(frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data):
     
     # Domoticz.Log("buildframe_discover_attribute_response - Data: %s" %Data)
-    discovery_complete = Data[0:2]
+    discovery_complete = Data[:2]
     if discovery_complete == "01":
         Attribute_type = "00"
         Attribute = "0000"
@@ -390,7 +384,7 @@ def buildframe_80x5_message( MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, Cluster
     #     MsgCmd = MsgData[14:16]
     #     MsgPayload = MsgData[16 : len(MsgData)] if len(MsgData) > 16 else None
 
-    Domoticz.Log("======> Building %s message : Cluster: %s Command: >%s< Data: >%s< (Frame: %s)" %(MsgType, ClusterId, Command, Data, frame))
+    #Domoticz.Log("======> Building %s message : Cluster: %s Command: >%s< Data: >%s< (Frame: %s)" %(MsgType, ClusterId, Command, Data, frame))
     
     # It looks like the ZiGate firmware was adding _unknown (which is not part of the norm)
     unknown_ = Data[:2] if len (Data) >= 2 else "00"
@@ -403,5 +397,5 @@ def buildframe_80x5_message( MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, Cluster
     newFrame += buildPayload
     newFrame += frame[len(frame) - 4 : len(frame) - 2]  # LQI
     newFrame += "03"
-    Domoticz.Log("======> New frame for plugin  %s " %newFrame)
+    #Domoticz.Log("======> New frame for plugin  %s " %newFrame)
     return newFrame

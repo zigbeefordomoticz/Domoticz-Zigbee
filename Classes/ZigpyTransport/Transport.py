@@ -59,7 +59,7 @@ class ZigpyTransport(object):
         pass
     
     def thread_transport_shutdown(self):
-        Domoticz.Log("Shuting down co-routine")
+        self.logging_transport( "Status","Shuting down co-routine")
         stop_zigpy_thread(self)
         stop_forwarder_thread(self)
 
@@ -67,7 +67,7 @@ class ZigpyTransport(object):
         self.forwarder_thread.join()
 
     def sendData(self, cmd, datas, highpriority=False, ackIsDisabled=False, waitForResponseIn=False, NwkId=None):
-        Domoticz.Log("===> sendData - Cmd: %s Datas: %s" %(cmd, datas))            
+        self.logging_transport( "Debug", "===> sendData - Cmd: %s Datas: %s" %(cmd, datas))            
         message = {
             "cmd": cmd,
             "datas": datas,
@@ -85,13 +85,16 @@ class ZigpyTransport(object):
  
     def get_zigate_ieee(self):
         return "%016x" %t.uint64_t.deserialize(self.app.ieee.serialize())[0]
-        #return str(self.app.ieee).replace(':','') 
+
     def get_zigate_nwkid(self):
         return "%04x" %self.app.nwk
+
     def get_zigate_extented_panId(self):
         return "%16x" %t.uint64_t.deserialize(self.app.extended_pan_id.serialize())[0] 
+
     def get_zigate_panId(self):
         return "%04x" %self.app.pan_id
+
     def get_zigate_channel(self):
         return self.app.channel
 

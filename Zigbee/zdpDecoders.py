@@ -5,7 +5,7 @@
 # Author: pipiche38
 #
 
-import Domoticz
+
 import struct 
 from Modules.tools import retreive_cmd_payload_from_8002
 from Modules.zigateConsts import ADDRESS_MODE, SIZE_DATA_TYPE
@@ -14,7 +14,7 @@ from Zigbee.encoder_tools import encapsulate_plugin_frame
 
 def zdp_decoders( self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
     #self.logging_8002( 'Debug', "zdp_decoders NwkId: %s Ep: %s Cluster: %s Payload: %s" %(SrcNwkId, SrcEndPoint, ClusterId , Payload))
-    Domoticz.Log("===> zdp_decoders %s %s %s %s" %(SrcNwkId, SrcEndPoint, ClusterId, Payload))
+    self.log.logging( "zdpCommand", "Debug","===> zdp_decoders %s %s %s %s" %(SrcNwkId, SrcEndPoint, ClusterId, Payload))
     
     if ClusterId == "0000":
         # NWK_addr_req
@@ -208,27 +208,19 @@ def buildframe_simple_descriptor_response(self, SrcNwkId, SrcEndPoint, ClusterId
     #    MsgDataInClusterCount = MsgData[22:24]
 
     if len(Payload) < 14:
-        Domoticz.Error("buildframe_simple_descriptor_response - Payload too short: %s from %s" %(Payload,frame))
+        self.log.logging( "zdpCommand", "Error","buildframe_simple_descriptor_response - Payload too short: %s from %s" %(Payload,frame))
         return
     sqn = Payload[:2]
-    Domoticz.Log("==> buildframe_simple_descriptor_response sqn: %s" %sqn)
     status = Payload[2:4]
-    Domoticz.Log("==> buildframe_simple_descriptor_response status: %s" %status)
     nwkid = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[4:8], 16)))[0]
-    Domoticz.Log("==> buildframe_simple_descriptor_response nwkid: %s" %nwkid)
     length = Payload[8:10]
-    Domoticz.Log("==> buildframe_simple_descriptor_response length: %s" %length)
     if status != '00':
         buildPayload = sqn + status + nwkid + length
     else:
         SimpleDescriptor = Payload[10:]
-        Domoticz.Log("==> buildframe_simple_descriptor_response SimpleDescriptor: %s" %SimpleDescriptor)
         ep = SimpleDescriptor[:2]
-        Domoticz.Log("==> buildframe_simple_descriptor_response ep: %s" %ep)
         profileId = "%04x" % struct.unpack("H", struct.pack(">H", int(SimpleDescriptor[2:6], 16)))[0]
-        Domoticz.Log("==> buildframe_simple_descriptor_response profileId: %s" %profileId)
         deviceId = "%04x" % struct.unpack("H", struct.pack(">H", int(SimpleDescriptor[6:10], 16)))[0]
-        Domoticz.Log("==> buildframe_simple_descriptor_response deviceId: %s" %deviceId)
         deviceVers = SimpleDescriptor[10:11]
         reserved = SimpleDescriptor[11:12]
         inputCnt = SimpleDescriptor[12:14]
@@ -263,59 +255,59 @@ def buildframe_bind_response_command(self, SrcNwkId, SrcEndPoint, ClusterId, Pay
 
 
 def buildframe_nwk_address_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
-    Domoticz.Log("buildframe_nwk_address_response NOT IMPLEMENTED YET")
+    self.log.logging( "zdpCommand", "Error","buildframe_nwk_address_response NOT IMPLEMENTED YET")
     return frame
     
 def buildframe_ieee_address_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
-    Domoticz.Log("buildframe_nwk_address_response NOT IMPLEMENTED YET")
+    self.log.logging( "zdpCommand", "Error","buildframe_nwk_address_response NOT IMPLEMENTED YET")
     return frame
    
 def buildframe_power_description_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
-    Domoticz.Log("buildframe_power_description_response NOT IMPLEMENTED YET")
+    self.log.logging( "zdpCommand", "Error","buildframe_power_description_response NOT IMPLEMENTED YET")
     return frame
     
 def buildframe_match_description_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
-    Domoticz.Log("buildframe_match_description_response NOT IMPLEMENTED YET")
+    self.log.logging( "zdpCommand", "Error","buildframe_match_description_response NOT IMPLEMENTED YET")
     return frame
 
 def buildframe_complex_description_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
-    Domoticz.Log("buildframe_match_description_response NOT IMPLEMENTED YET")
+    self.log.logging( "zdpCommand", "Error","buildframe_match_description_response NOT IMPLEMENTED YET")
     return frame
     
     
 def buildframe_user_description_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
-    Domoticz.Log("buildframe_user_description_response NOT IMPLEMENTED YET")
+    self.log.logging( "zdpCommand", "Error","buildframe_user_description_response NOT IMPLEMENTED YET")
     return frame
     
 def buildframe_unbind_response_command(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
-    Domoticz.Log("buildframe_unbind_response_command NOT IMPLEMENTED YET")
+    self.log.logging( "zdpCommand", "Error","buildframe_unbind_response_command NOT IMPLEMENTED YET")
     return frame
     
 def buildframe_management_nwk_discovery_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
-    Domoticz.Log("buildframe_management_nwk_discovery_response NOT IMPLEMENTED YET")
+    self.log.logging( "zdpCommand", "Error","buildframe_management_nwk_discovery_response NOT IMPLEMENTED YET")
     return frame
     
 def buildframe_management_lqi_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
-    Domoticz.Log("buildframe_management_lqi_response NOT IMPLEMENTED YET")
+    self.log.logging( "zdpCommand", "Error","buildframe_management_lqi_response NOT IMPLEMENTED YET")
     return frame
     
 def buildframe_routing_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
-    Domoticz.Log("buildframe_routing_response NOT IMPLEMENTED YET")
+    self.log.logging( "zdpCommand", "Error","buildframe_routing_response NOT IMPLEMENTED YET")
     return frame
     
 def buildframe_leave_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
-    Domoticz.Log("buildframe_leave_response NOT IMPLEMENTED YET")
+    self.log.logging( "zdpCommand", "Error","buildframe_leave_response NOT IMPLEMENTED YET")
     return frame
     
 def buildframe_direct_join_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
-    Domoticz.Log("buildframe_direct_join_response NOT IMPLEMENTED YET")
+    self.log.logging( "zdpCommand", "Error","buildframe_direct_join_response NOT IMPLEMENTED YET")
     return frame
     
 def buildframe_permit_join_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
-    Domoticz.Log("buildframe_permit_join_response NOT IMPLEMENTED YET")
+    self.log.logging( "zdpCommand", "Error","buildframe_permit_join_response NOT IMPLEMENTED YET")
     return frame
     
 def buildframe_management_nwk_update_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
-    Domoticz.Log("buildframe_management_nwk_update_response NOT IMPLEMENTED YET")
+    self.log.logging( "zdpCommand", "Error","buildframe_management_nwk_update_response NOT IMPLEMENTED YET")
     return frame
     

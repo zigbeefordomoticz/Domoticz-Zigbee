@@ -11,7 +11,7 @@ from datetime import datetime
 import Domoticz
 from Classes.Transport.compatibilityMode import decode8011_31c
 from Classes.Transport.decode8000 import decode8000
-from Classes.Transport.decode8002 import decode8002_and_process
+from Zigbee.decode8002 import decode8002_and_process
 from Classes.Transport.decode8011 import decode8011
 from Classes.Transport.decode8012 import decode8012_8702
 from Classes.Transport.instrumentation import time_spent_process_frame

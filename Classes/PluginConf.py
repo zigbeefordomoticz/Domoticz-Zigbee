@@ -696,7 +696,7 @@ SETTINGS = {
             },
             "enablePluginLogging": {
                 "type": "bool",
-                "default": 0,
+                "default": 1,
                 "current": None,
                 "restart": 1,
                 "hidden": False,

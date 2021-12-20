@@ -1,7 +1,6 @@
 import struct
 from Modules.sendZigateCommand import (raw_APS_request)
 from Modules.tools import get_and_inc_SQN
-import Domoticz
 
 DEFAULT_ACK_MODE = False
 

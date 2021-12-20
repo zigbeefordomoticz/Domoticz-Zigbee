@@ -1,8 +1,11 @@
 
-import zigpy.types as t
 import binascii
-import Domoticz
+
+import zigpy.types as t
+
+#import Domoticz
 from Zigbee.encoder_tools import encapsulate_plugin_frame
+
 
 def build_plugin_004D_frame_content(nwk, ieee, parent_nwk):
     # No endian decoding as it will go directly to Decode004d
@@ -31,7 +34,7 @@ def build_plugin_8002_frame_content(address, profile, cluster, src_ep, dst_ep, m
         DestinationAddress = "%04x" %0x0000
         Payload = payload
 
-        Domoticz.Log("==> build_plugin_8002_frame_content - SourceAddr: %s message: %s" %( SourceAddress, message))
+        #Domoticz.Log("==> build_plugin_8002_frame_content - SourceAddr: %s message: %s" %( SourceAddress, message))
         frame_payload = "00" + ProfilID + ClusterID + SourcePoint + DestPoint + SourceAddressMode + SourceAddress
         frame_payload += DestinationAddressMode + DestinationAddress + Payload
         

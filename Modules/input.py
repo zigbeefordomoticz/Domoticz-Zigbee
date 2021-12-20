@@ -60,7 +60,7 @@ from Modules.zigate import (initLODZigate, receiveZigateEpDescriptor,
 from Modules.zigateConsts import (ADDRESS_MODE, LEGRAND_REMOTE_MOTION,
                                   LEGRAND_REMOTE_SWITCHS, ZCL_CLUSTERS_LIST,
                                   ZIGBEE_COMMAND_IDENTIFIER)
-from Classes.Transport.decode8002 import decode8002_and_process
+from Zigbee.decode8002 import decode8002_and_process
 
 def ZigateRead(self, Devices, Data):
 

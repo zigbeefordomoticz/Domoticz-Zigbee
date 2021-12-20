@@ -1,4 +1,4 @@
-import Domoticz
+
 from Classes.ZigpyTransport.apiZigate import (erase_persistent_data,
                                               get_firmware_version,
                                               get_time_server,
@@ -23,19 +23,19 @@ NATIVE_COMMANDS_MAPPING = {
 
 
 async def native_commands( self, cmd, datas):
-    Domoticz.Log("native_commands - cmd: %s datas: %s" %(cmd, datas))
+    self.logging_writer("Debug","native_commands - cmd: %s datas: %s" %(cmd, datas))
     func = None
     if cmd in NATIVE_COMMANDS_MAPPING:
         func = NATIVE_COMMANDS_MAPPING[ cmd ]['Function']
     else:
-        Domoticz.Log("Unknown native function %s" %cmd)
+        self.logging_writer("Error","Unknown native function %s" %cmd)
     if func is None:
-        Domoticz.Log("Unknown native function %s" %cmd)
+        self.logging_writer("Error","Unknown native function %s" %cmd)
 
     if NATIVE_COMMANDS_MAPPING[ cmd ]['NumParams'] == 0:
         return await func(self)
     if NATIVE_COMMANDS_MAPPING[ cmd ]['NumParams'] == 1:
-        Domoticz.Log("====> %s" %datas["Param1"])
+        self.logging_writer("Debug","====> %s" %datas["Param1"])
         return await func(self, datas["Param1"] )
 
 # ZIGPY - Mapping

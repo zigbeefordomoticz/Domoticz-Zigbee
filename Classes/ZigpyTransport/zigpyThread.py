@@ -37,16 +37,16 @@ LOGGER = logging.getLogger(__name__)
     
 
 def start_zigpy_thread(self):
-    Domoticz.Log("start_zigpy_thread - Starting zigpy thread")
+    self.logging_writer( "Debug","start_zigpy_thread - Starting zigpy thread")
     self.zigpy_thread.start()
 
 def stop_zigpy_thread(self):
-    Domoticz.Log("stop_zigpy_thread - Stopping zigpy thread")
+    self.logging_writer( "Debug","stop_zigpy_thread - Stopping zigpy thread")
     self.writer_queue.put( (0, "STOP") )
     self.zigpy_running = False
     
 def zigpy_thread(self):
-    Domoticz.Log("zigpy_thread - Starting zigpy thread")
+    self.logging_writer( "Debug","zigpy_thread - Starting zigpy thread")
     self.zigpy_running = True
     asyncio.run( radio_start (self, self._radiomodule, self._serialPort) )  
 
@@ -55,8 +55,10 @@ def callBackGetDevice (nwk,ieee):
 
 async def radio_start(self, radiomodule, serialPort, auto_form=False ):
 
-    Domoticz.Log("In radio_start")
-    logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt='%Y-%m-%d:%H:%M:%S',level=logging.DEBUG)
+    self.logging_writer( "Debug","In radio_start")
+    #if self.log:
+    #    self.log.enable_zigpy_login()
+    #logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt='%Y-%m-%d:%H:%M:%S',level=logging.DEBUG)
     
     # Import the radio library
     conf = {CONF_DEVICE: {"path": serialPort}}
@@ -74,26 +76,22 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False ):
     self.FirmwareVersion = "0320"
     self.running = True
     
-    Domoticz.Log("PAN ID:               0x%04x" %self.app.pan_id)
-    Domoticz.Log("Extended PAN ID:      0x%s" %self.app.extended_pan_id)
-    Domoticz.Log("Channel:              %d" %self.app.channel)
-    Domoticz.Log("Device IEEE:          %s" %self.app.ieee)
-    Domoticz.Log("Device NWK:           0x%04x" %self.app.nwk)
+    self.logging_writer( "Debug","PAN ID:               0x%04x" %self.app.pan_id)
+    self.logging_writer( "Debug","Extended PAN ID:      0x%s" %self.app.extended_pan_id)
+    self.logging_writer( "Debug","Channel:              %d" %self.app.channel)
+    self.logging_writer( "Debug","Device IEEE:          %s" %self.app.ieee)
+    self.logging_writer( "Debug","Device NWK:           0x%04x" %self.app.nwk)
 
     #await self.app.permit_ncp(time_s=240)
 
     # Run forever
-    Domoticz.Log("Starting work loop")
-    
     await worker_loop(self)
 
-    Domoticz.Log("Exiting work loop")
-
     await self.app.shutdown()
-    Domoticz.Log("Exiting co-rounting radio_start")
+    self.logging_writer( "Debug","Exiting co-rounting radio_start")
 
 async def worker_loop(self):
-    self.logging_writer("Status", "worker_loop - ZigyTransport: worker_loop start.")
+    self.logging_writer("Debug", "worker_loop - ZigyTransport: worker_loop start.")
 
     while self.zigpy_running:
         # self.logging_writer( 'Debug', "Waiting for next command Qsize: %s" %self.writer_queue.qsize())
@@ -113,7 +111,7 @@ async def worker_loop(self):
             self.statistics._MaxLoad = self.writer_queue.qsize()
 
         data = json.loads(entry)
-        Domoticz.Log("got command %s" %data)
+        self.logging_writer("Debug","got command %s" %data)
 
         try:
             if data["cmd"] == "PERMIT-TO-JOIN":
@@ -151,7 +149,7 @@ async def worker_loop(self):
         # Wait .5s to reduce load on Zigate
         #await asyncio.sleep(0.10)
 
-    self.logging_writer("Status", "ZigyTransport: writer_thread Thread stop.")
+    self.logging_writer("Debug", "ZigyTransport: writer_thread Thread stop.")
 
 async def process_raw_command( self, data, AckIsDisable=False):
     #data = {
@@ -173,7 +171,7 @@ async def process_raw_command( self, data, AckIsDisable=False):
     addressmode = data["AddressMode"]
     enableAck = not AckIsDisable
     
-    self.logging_writer("Log", "ZigyTransport: process_raw_command ready to request %04x %04x %02x %s %02x %s" %(
+    self.logging_writer("Debug", "ZigyTransport: process_raw_command ready to request %04x %04x %02x %s %02x %s" %(
         NwkId, Cluster, sequence, payload, addressmode, enableAck ))
     if addressmode == 0x01:
         # Group Mode

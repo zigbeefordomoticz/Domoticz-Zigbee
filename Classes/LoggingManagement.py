@@ -70,36 +70,42 @@ class LoggingManagement:
             self.LogErrorHistory[str(self.LogErrorHistory["LastLog"])]["FirmwareVersion"] = FirmwareVersion
             self.LogErrorHistory[str(self.LogErrorHistory["LastLog"])]["FirmwareMajorVersion"] = FirmwareMajorVersion
 
+    def enable_zigpy_login(self):
+        if 'debugZigpyLayer' in self.pluginconf.pluginConf and self.pluginconf.pluginConf["debugZigpyLayer"]: 
+            self.open_logging_mode()
+
     def openLogFile(self):
-
-        if self.pluginconf.pluginConf["enablePluginLogging"]:
-            logfilename = (
-                self.pluginconf.pluginConf["pluginLogs"] + "/PluginZigate_" + "%02d" % self.HardwareID + ".log"
+        self.open_logging_mode()
+        self.open_log_history()
+        
+    def open_logging_mode(self):
+        if not self.pluginconf.pluginConf["enablePluginLogging"]:
+            return
+        
+        logfilename = ( self.pluginconf.pluginConf["pluginLogs"] + "/PluginZigate_" + "%02d" % self.HardwareID + ".log" )
+        _backupCount = 7  # Keep 7 days of Logging
+        _maxBytes = 0
+        if "loggingBackupCount" in self.pluginconf.pluginConf:
+            _backupCount = int(self.pluginconf.pluginConf["loggingBackupCount"])
+        if "loggingMaxMegaBytes" in self.pluginconf.pluginConf:
+            _maxBytes = int(self.pluginconf.pluginConf["loggingMaxMegaBytes"]) * 1024 * 1024
+        Domoticz.Status("Please watch plugin log into %s" %logfilename)
+        if _maxBytes == 0:
+            # Enable TimedRotating
+            logging.basicConfig(
+                level=logging.DEBUG,
+                format="%(asctime)s %(levelname)-8s:%(message)s",
+                handlers=[ TimedRotatingFileHandler(logfilename, when="midnight", interval=1, backupCount=_backupCount) ],
             )
-            _backupCount = 7  # Keep 7 days of Logging
-            _maxBytes = 0
-            if "loggingBackupCount" in self.pluginconf.pluginConf:
-                _backupCount = int(self.pluginconf.pluginConf["loggingBackupCount"])
-            if "loggingMaxMegaBytes" in self.pluginconf.pluginConf:
-                _maxBytes = int(self.pluginconf.pluginConf["loggingMaxMegaBytes"]) * 1024 * 1024
+        else:
+            # Enable RotatingFileHandler
+            logging.basicConfig(
+                level=logging.DEBUG,
+                format="%(asctime)s %(levelname)-8s:%(message)s",
+                handlers=[ RotatingFileHandler(logfilename, maxBytes=_maxBytes, backupCount=_backupCount)],
+            )
 
-            if _maxBytes == 0:
-                # Enable TimedRotating
-                logging.basicConfig(
-                    level=logging.DEBUG,
-                    format="%(asctime)s %(levelname)-8s:%(message)s",
-                    handlers=[
-                        TimedRotatingFileHandler(logfilename, when="midnight", interval=1, backupCount=_backupCount)
-                    ],
-                )
-            else:
-                # Enable RotatingFileHandler
-                logging.basicConfig(
-                    level=logging.DEBUG,
-                    format="%(asctime)s %(levelname)-8s:%(message)s",
-                    handlers=[RotatingFileHandler(logfilename, maxBytes=_maxBytes, backupCount=_backupCount)],
-                )
-
+    def open_log_history(self):
         jsonLogHistory = self.pluginconf.pluginConf["pluginLogs"] + "/" + "Zigate_log_error_history.json"
         try:
             handle = open(jsonLogHistory, "r", encoding="utf-8")
@@ -121,6 +127,7 @@ class LoggingManagement:
         except Exception as e:
             loggingWriteErrorHistory( self )  # flush the file to avoid the error next startup
             Domoticz.Error("load Json LogErrorHistory Error %s, not JSON: %s" % (jsonLogHistory, e))
+            
         handle.close()
 
     def closeLogFile(self):
@@ -185,13 +192,13 @@ class LoggingManagement:
 
 def _loggingStatus(self, thread_name, message):
 
-    if not self.pluginconf.pluginConf["enablePluginLogging"]:
-        if self.pluginconf.pluginConf["logThreadName"]:
-            Domoticz.Status(" [%17s] " % thread_name + message)
-        else:
-            Domoticz.Status(message)
-    else:
+    if self.pluginconf.pluginConf["enablePluginLogging"]:
         logging.info(" [%17s] " % thread_name + message)
+        Domoticz.Status(message)
+
+    elif self.pluginconf.pluginConf["logThreadName"]:
+        Domoticz.Status(" [%17s] " % thread_name + message)
+    else:
         Domoticz.Status(message)
 
 
