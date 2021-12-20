@@ -365,9 +365,7 @@ def full_provision_device(self, Devices, NWKID, RIA, status):
 
     # Purpose of this call is to patch Model and Manufacturer Name in case of Profalux
     # We do it just before calling CreateDomoDevice
-    if (
-        "Manufacturer" in self.ListOfDevices[NWKID]
-        and self.ListOfDevices[NWKID]["Manufacturer"] == "1110"
+    if ( "Manufacturer" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Manufacturer"] == "1110"
     ):
         profalux_fake_deviceModel(self, NWKID)
 
