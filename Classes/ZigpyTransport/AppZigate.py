@@ -4,8 +4,7 @@ import logging
 
 from typing import Any, Optional
 import datetime
-
-import Domoticz
+import binascii
 import zigpy.appdb
 import zigpy.config
 import zigpy.device
@@ -104,6 +103,9 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
                 logging.debug("=====> sender.ieee %s - %s" %(sender.ieee, addr))
                 
             if addr:
+                logging.debug(" handle_message addr: %s profile: %s cluster: %04x src_ep: %02x dst_ep: %02x message: %s lqi: %02x" %(
+                    addr, profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode('utf-8'), sender.lqi
+                ))
                 plugin_frame = build_plugin_8002_frame_content( addr, profile, cluster, src_ep, dst_ep, message, sender.lqi)
                 logging.debug("handle_message Sender: %s frame for plugin: %s" %( addr, plugin_frame))
                 self.callBackFunction (plugin_frame)
