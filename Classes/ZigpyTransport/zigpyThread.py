@@ -146,7 +146,7 @@ async def worker_loop(self):
 
         except Exception as e:
             self.logging_writer("Error", "Error while receiving a ZiGate command: %s" % e)
-            handle_thread_error(self, e,)
+            handle_thread_error(self, e, data)
         
         # Wait .5s to reduce load on Zigate
         #await asyncio.sleep(0.10)
