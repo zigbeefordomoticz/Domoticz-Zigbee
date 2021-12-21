@@ -1,9 +1,9 @@
-import Domoticz
 
 from time import sleep
 import queue
 from threading import Thread
 from Classes.ZigpyTransport.tools import handle_thread_error
+from Classes.Transport.instrumentation import time_spent_forwarder
 
 
 
@@ -36,6 +36,7 @@ def forwarder_thread(self):
 
     self.log.logging("TransportFrwder", "Status", "ZigpyTransport: thread_processing_and_sending Thread stop.")
 
+@time_spent_forwarder()
 def forward_message(self, message):  
     self.log.logging("TransportFrwder", "Debug", "Receive a message to forward: %s" % (str(message)))
     self.statistics._data += 1

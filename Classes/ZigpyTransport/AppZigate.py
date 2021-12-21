@@ -95,8 +95,7 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
                 addr_mode = 0x03
                 self.log.logging("TransportZigpy", "Debug","=====> sender.ieee %s - %s" %(sender.ieee, addr))
                 
-            if addr:
-                self.statistics._received += 1   
+            if addr:  
                 self.log.logging("TransportZigpy", "Debug"," handle_message addr: %s profile: %s cluster: %04x src_ep: %02x dst_ep: %02x message: %s lqi: %02x" %(
                     addr, profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode('utf-8'), sender.lqi
                 ))

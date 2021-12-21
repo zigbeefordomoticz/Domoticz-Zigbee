@@ -15,9 +15,9 @@ from Classes.ZigpyTransport.zigpyThread import zigpy_thread, start_zigpy_thread,
 from Classes.ZigpyTransport.forwarderThread import forwarder_thread, start_forwarder_thread, stop_forwarder_thread
 from Classes.Transport.sqnMgmt import (sqn_init_stack)
 class ZigpyTransport(object): 
-    def __init__( self, F_out, zigpy_get_device, log, statistics, hardwareid, radiomodule, serialPort):
+    def __init__( self, pluginconf, F_out, zigpy_get_device, log, statistics, hardwareid, radiomodule, serialPort):
         self.zigbee_communitation = "zigpy"
-        
+        self.pluginconf = pluginconf
         self.F_out = F_out  # Function to call to bring the decoded Frame at plugin
         self.ZigpyGetDevice = zigpy_get_device
         self.log = log

@@ -529,7 +529,7 @@ class BasePlugin:
 
             self.zigbee_communitation = "zigpy"
             Domoticz.Log("Start Zigpy Transport on zigate")
-            self.ZigateComm = ZigpyTransport( self.processFrame, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "zigate", Parameters["SerialPort"]) 
+            self.ZigateComm = ZigpyTransport( self.pluginconf, self.processFrame, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "zigate", Parameters["SerialPort"]) 
             self.ZigateComm.open_zigate_connection()
             self.pluginconf.pluginConf["ZiGateInRawMode"] = True
             
@@ -540,7 +540,7 @@ class BasePlugin:
 
             self.zigbee_communitation = "zigpy"
             Domoticz.Log("Start Zigpy Transport on ZNP")
-            self.ZigateComm = ZigpyTransport( self.processFrame, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "znp", Parameters["SerialPort"])  
+            self.ZigateComm = ZigpyTransport( self.pluginconf,self.processFrame, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "znp", Parameters["SerialPort"])  
             self.ZigateComm.open_zigate_connection()
             self.pluginconf.pluginConf["ZiGateInRawMode"] = True
             

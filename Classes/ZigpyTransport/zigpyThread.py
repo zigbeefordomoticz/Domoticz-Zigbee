@@ -6,6 +6,7 @@ import logging
 import queue
 from typing import Any, Optional
 
+import time
 import zigpy.appdb
 import zigpy.config
 import zigpy.device
@@ -31,6 +32,7 @@ from Classes.ZigpyTransport.nativeCommands import (NATIVE_COMMANDS_MAPPING,
 from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
                                  SCHEMA_DEVICE)
 from Classes.ZigpyTransport.tools import handle_thread_error
+
 
 LOGGER = logging.getLogger(__name__)
     
@@ -150,6 +152,7 @@ async def worker_loop(self):
 
     self.log.logging("TransportWrter", "Debug", "ZigyTransport: writer_thread Thread stop.")
 
+
 async def process_raw_command( self, data, AckIsDisable=False):
     #data = {
     #    'Profile': int(profileId, 16),
@@ -173,6 +176,10 @@ async def process_raw_command( self, data, AckIsDisable=False):
     self.statistics._sent += 1
     self.log.logging("TransportWrter", "Debug", "ZigyTransport: process_raw_command ready to request NwkId: %04x Cluster: %04x Seq: %02x Payload: %s AddrMode: %02x EnableAck: %s" %(
         NwkId, Cluster, sequence, payload, addressmode, enableAck ))
+    
+    if self.pluginconf.pluginConf["ZiGateReactTime"]:
+        start_timing = time.time()
+        
     if addressmode == 0x01:
         # Group Mode
         await self.app.mrequest( NwkId, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=enableAck, use_ieee=False)
@@ -184,3 +191,6 @@ async def process_raw_command( self, data, AckIsDisable=False):
         destination = zigpy.device.Device(self.app, NwkId, None)
         await self.app.request( destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=enableAck, use_ieee=False)
 
+    if self.pluginconf.pluginConf["ZiGateReactTime"]:
+        delay = int((time.time() - start_timing) * 1000)
+        self.statistics.add_timing8000(delay)
