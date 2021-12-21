@@ -1147,6 +1147,13 @@ def define_heating_demand_for_iTRV(self, NwkId):
         return
 
     local_temp = iTRV_local_temperature(self, NwkId)
+    self.log.logging(
+        "Schneider",
+        "Debug",
+        "define_heating_demand_for_iTRV: 0x0000 = %s (%s) 0x0012 %s (%s)" %(
+            schneider_find_attribute(self, NwkId, "01", "0201", "0000"), type(schneider_find_attribute(self, NwkId, "01", "0201", "0000")),
+            schneider_find_attribute(self, NwkId, "01", "0201", "0012"), type(schneider_find_attribute(self, NwkId, "01", "0201", "0012"))))
+    
     if local_temp == 0x8000:
         # We use the inside Temp sensor, let's get local temperature
         local_temp = int( 100 * schneider_find_attribute(self, NwkId, "01", "0201", "0000") )
@@ -1611,7 +1618,9 @@ def schneider_find_attribute(self, NWKID, EP, ClusterID, attr):
     if not isinstance(self.ListOfDevices[NWKID]["Ep"][EP][ClusterID], dict):
         self.ListOfDevices[NWKID]["Ep"][EP][ClusterID] = {}
     if attr not in self.ListOfDevices[NWKID]["Ep"][EP][ClusterID]:
-        self.ListOfDevices[NWKID]["Ep"][EP][ClusterID][attr] = {}
+        self.ListOfDevices[NWKID]["Ep"][EP][ClusterID][attr] = 0
+    if isinstance(self.ListOfDevices[NWKID]["Ep"][EP][ClusterID][attr], dict):
+        self.ListOfDevices[NWKID]["Ep"][EP][ClusterID][attr] = 0
 
     return self.ListOfDevices[NWKID]["Ep"][EP][ClusterID][attr]
 
