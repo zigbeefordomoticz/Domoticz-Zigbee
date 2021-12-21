@@ -902,14 +902,6 @@ SETTINGS = {
                 "hidden": False,
                 "Advanced": True,
             },
-            "debugZigpyLayer": {
-                "type": "bool",
-                "default": 0,
-                "current": None,
-                "restart": 0,
-                "hidden": False,
-                "Advanced": True,
-            },
             "debugTransportSerial": {
                 "type": "bool",
                 "default": 0,
@@ -918,6 +910,23 @@ SETTINGS = {
                 "hidden": False,
                 "Advanced": True,
             },
+            "debugTransportZigpy": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": True,
+            },
+            "debugTransportPluginEncoder": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": True,
+            },
+
             "debugCluster": {
                 "type": "bool",
                 "default": 0,

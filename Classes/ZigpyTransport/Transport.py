@@ -10,7 +10,6 @@ import zigpy.types as t
 
 from threading import Thread
 from Classes.Transport.forwarderThread import forwarder_thread
-import Domoticz
 
 from Classes.ZigpyTransport.zigpyThread import zigpy_thread, start_zigpy_thread, stop_zigpy_thread
 from Classes.ZigpyTransport.forwarderThread import forwarder_thread, start_forwarder_thread, stop_forwarder_thread
@@ -59,7 +58,7 @@ class ZigpyTransport(object):
         pass
     
     def thread_transport_shutdown(self):
-        self.logging_transport( "Status","Shuting down co-routine")
+        self.log.logging("Transport", "Status","Shuting down co-routine")
         stop_zigpy_thread(self)
         stop_forwarder_thread(self)
 
@@ -67,7 +66,7 @@ class ZigpyTransport(object):
         self.forwarder_thread.join()
 
     def sendData(self, cmd, datas, highpriority=False, ackIsDisabled=False, waitForResponseIn=False, NwkId=None):
-        self.logging_transport( "Debug", "===> sendData - Cmd: %s Datas: %s" %(cmd, datas))            
+        self.log.logging("Transport", "Debug", "===> sendData - Cmd: %s Datas: %s" %(cmd, datas))            
         message = {
             "cmd": cmd,
             "datas": datas,
@@ -108,14 +107,3 @@ class ZigpyTransport(object):
         # Provide the Load of the Sending Queue
         return self.writer_queue.qsize()
 
-    def logging_transport(self, logType, message, NwkId=None, _context=None):
-        self.log.logging("Transport", logType, message, context=_context)
-
-    def logging_8002(self, logType, message, NwkId=None, _context=None):
-        self.log.logging("Transport8002", logType, message, context=_context)
-
-    def logging_forwarded(self, logType, message, NwkId=None, _context=None):
-        self.log.logging("TransportFrwder", logType, message, context=_context)
-
-    def logging_writer(self, logType, message, NwkId=None, _context=None):
-        self.log.logging("TransportWrter", logType, message, context=_context)

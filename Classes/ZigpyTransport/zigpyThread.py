@@ -6,7 +6,6 @@ import logging
 import queue
 from typing import Any, Optional
 
-import Domoticz
 import zigpy.appdb
 import zigpy.config
 import zigpy.device
@@ -37,16 +36,16 @@ LOGGER = logging.getLogger(__name__)
     
 
 def start_zigpy_thread(self):
-    self.logging_writer( "Debug","start_zigpy_thread - Starting zigpy thread")
+    self.log.logging("TransportWrter",  "Debug","start_zigpy_thread - Starting zigpy thread")
     self.zigpy_thread.start()
 
 def stop_zigpy_thread(self):
-    self.logging_writer( "Debug","stop_zigpy_thread - Stopping zigpy thread")
+    self.log.logging("TransportWrter",  "Debug","stop_zigpy_thread - Stopping zigpy thread")
     self.writer_queue.put( (0, "STOP") )
     self.zigpy_running = False
     
 def zigpy_thread(self):
-    self.logging_writer( "Debug","zigpy_thread - Starting zigpy thread")
+    self.log.logging("TransportWrter",  "Debug","zigpy_thread - Starting zigpy thread")
     self.zigpy_running = True
     asyncio.run( radio_start (self, self._radiomodule, self._serialPort) )  
 
@@ -55,7 +54,7 @@ def callBackGetDevice (nwk,ieee):
 
 async def radio_start(self, radiomodule, serialPort, auto_form=False ):
 
-    self.logging_writer( "Debug","In radio_start")
+    self.log.logging("TransportWrter",  "Debug","In radio_start")
     #if self.log:
     #    self.log.enable_zigpy_login()
     #logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt='%Y-%m-%d:%H:%M:%S',level=logging.DEBUG)
@@ -68,7 +67,7 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False ):
     elif radiomodule == 'znp':
         self.app = App_znp (conf) 
 
-    await self.app.startup (self.F_out, callBackGetDevice=self.ZigpyGetDevice, auto_form=True)  
+    await self.app.startup (self.F_out, callBackGetDevice=self.ZigpyGetDevice, auto_form=True, log=self.log)  
     self.version = None
 
     self.FirmwareBranch = "00"  # 00 Production, 01 Development 
@@ -76,11 +75,11 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False ):
     self.FirmwareVersion = "0320"
     self.running = True
     
-    self.logging_writer( "Debug","PAN ID:               0x%04x" %self.app.pan_id)
-    self.logging_writer( "Debug","Extended PAN ID:      0x%s" %self.app.extended_pan_id)
-    self.logging_writer( "Debug","Channel:              %d" %self.app.channel)
-    self.logging_writer( "Debug","Device IEEE:          %s" %self.app.ieee)
-    self.logging_writer( "Debug","Device NWK:           0x%04x" %self.app.nwk)
+    self.log.logging("TransportWrter",  "Debug","PAN ID:               0x%04x" %self.app.pan_id)
+    self.log.logging("TransportWrter",  "Debug","Extended PAN ID:      0x%s" %self.app.extended_pan_id)
+    self.log.logging("TransportWrter",  "Debug","Channel:              %d" %self.app.channel)
+    self.log.logging("TransportWrter",  "Debug","Device IEEE:          %s" %self.app.ieee)
+    self.log.logging("TransportWrter",  "Debug","Device NWK:           0x%04x" %self.app.nwk)
 
     #await self.app.permit_ncp(time_s=240)
 
@@ -88,13 +87,13 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False ):
     await worker_loop(self)
 
     await self.app.shutdown()
-    self.logging_writer( "Debug","Exiting co-rounting radio_start")
+    self.log.logging("TransportWrter",  "Debug","Exiting co-rounting radio_start")
 
 async def worker_loop(self):
-    self.logging_writer("Debug", "worker_loop - ZigyTransport: worker_loop start.")
+    self.log.logging("TransportWrter", "Debug", "worker_loop - ZigyTransport: worker_loop start.")
 
     while self.zigpy_running:
-        # self.logging_writer( 'Debug', "Waiting for next command Qsize: %s" %self.writer_queue.qsize())
+        # self.log.logging("TransportWrter",  'Debug', "Waiting for next command Qsize: %s" %self.writer_queue.qsize())
         if self.writer_queue is None:
             break
         try:
@@ -111,7 +110,7 @@ async def worker_loop(self):
             self.statistics._MaxLoad = self.writer_queue.qsize()
 
         data = json.loads(entry)
-        self.logging_writer("Debug","got command %s" %data)
+        self.log.logging("TransportWrter", "Debug","got command %s" %data)
 
         try:
             if data["cmd"] == "PERMIT-TO-JOIN":
@@ -135,21 +134,21 @@ async def worker_loop(self):
                 await process_raw_command( self, data["datas"], data["ACKIsDisable"])
 
         except DeliveryError:
-            self.logging_writer("Error", "DeliveryError: Not able to execute the zigpy command: %s data: %s" %(
+            self.log.logging("TransportWrter", "Error", "DeliveryError: Not able to execute the zigpy command: %s data: %s" %(
                 data["cmd"], data["datas"]))
             
         except InvalidResponse:
-            self.logging_writer("Error", "InvalidResponse: Not able to execute the zigpy command: %s data: %s" %(
+            self.log.logging("TransportWrter", "Error", "InvalidResponse: Not able to execute the zigpy command: %s data: %s" %(
                 data["cmd"], data["datas"]))
 
         except Exception as e:
-            self.logging_writer("Error", "Error while receiving a ZiGate command: %s" % e)
+            self.log.logging("TransportWrter", "Error", "Error while receiving a Plugin command: %s" % e)
             handle_thread_error(self, e, data)
         
         # Wait .5s to reduce load on Zigate
         #await asyncio.sleep(0.10)
 
-    self.logging_writer("Debug", "ZigyTransport: writer_thread Thread stop.")
+    self.log.logging("TransportWrter", "Debug", "ZigyTransport: writer_thread Thread stop.")
 
 async def process_raw_command( self, data, AckIsDisable=False):
     #data = {
@@ -171,7 +170,7 @@ async def process_raw_command( self, data, AckIsDisable=False):
     addressmode = data["AddressMode"]
     enableAck = not AckIsDisable
     
-    self.logging_writer("Debug", "ZigyTransport: process_raw_command ready to request %04x %04x %02x %s %02x %s" %(
+    self.log.logging("TransportWrter", "Debug", "ZigyTransport: process_raw_command ready to request %04x %04x %02x %s %02x %s" %(
         NwkId, Cluster, sequence, payload, addressmode, enableAck ))
     if addressmode == 0x01:
         # Group Mode

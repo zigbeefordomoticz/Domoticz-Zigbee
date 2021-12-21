@@ -43,7 +43,8 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
     #    await super().startup(auto_form)
 
 
-    async def startup(self, callBackHandleMessage, callBackGetDevice=None, auto_form=False):
+    async def startup(self, callBackHandleMessage, callBackGetDevice=None, auto_form=False, log=None):
+        self.log = log
         self.callBackHandleMessage = callBackHandleMessage
         self.callBackGetDevice = callBackGetDevice
         await super().startup(auto_form)
@@ -80,18 +81,19 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         dst_ep: int,
         message: bytes,
     ) -> None:
-        if sender.nwk is not None and sender.nwk == 0x0000 :
+        if sender.nwk == 0x0000 :
+            self.log.logging("TransportZigpy", "Error", "handle_message from Controller %s!!" %str(sender.nwk))
             return super().handle_message (sender, profile,cluster,src_ep,dst_ep,message)
 
         #Domoticz.Log("handle_message %s" %(str(profile)))
         if sender.nwk is not None or sender.ieee is not None:
-            logging.debug("handle_message device : %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s" %
+            self.log.logging("TransportZigpy", "Debug","handle_message device : %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s" %
                      (str(sender), profile, cluster, src_ep, dst_ep, str(message)))
-            logging.debug("=====> Sender %s - %s" %(sender.nwk, sender.ieee))
+            self.log.logging("TransportZigpy", "Debug","=====> Sender %s - %s" %(sender.nwk, sender.ieee))
             if sender.nwk is not None:
                 addr_mode = 0x02
                 addr = sender.nwk.serialize()[::-1].hex()
-                logging.debug("=====> sender.nwk %s - %s" %(sender.nwk, addr))
+                self.log.logging("TransportZigpy", "Debug","=====> sender.nwk %s - %s" %(sender.nwk, addr))
             elif sender.ieee is not None:
                 addr = "%016x" %t.uint64_t.deserialize(self.app.ieee.serialize())[0]
                 addr_mode = 0x03
@@ -99,18 +101,19 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
                 sender.lqi = 0x00
             if src_ep == dst_ep == 0x00:
                 profile = 0x0000
-            logging.debug("handle_message device : %s (%s) Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s " %
+            self.log.logging("TransportZigpy", "Debug","handle_message device : %s (%s) Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s " %
                      (str(addr), type(addr), profile, cluster, src_ep, dst_ep, str(message)))                
-            plugin_frame = build_plugin_8002_frame_content( addr, profile, cluster, src_ep, dst_ep, message, sender.lqi,src_addrmode=addr_mode)
-            logging.debug("handle_message Sender: %s frame for plugin: %s" %( addr, plugin_frame))
+            plugin_frame = build_plugin_8002_frame_content( self, addr, profile, cluster, src_ep, dst_ep, message, sender.lqi,src_addrmode=addr_mode)
+            self.log.logging("TransportZigpy", "Debug","handle_message Sender: %s frame for plugin: %s" %( addr, plugin_frame))
             self.callBackHandleMessage (plugin_frame)
         else:
-            logging.debug("handle_message Sender unkown device : %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s" %
+            self.log.logging("TransportZigpy", "Error","handle_message Sender unkown device : %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s" %
                      (str(sender), profile, cluster, src_ep, dst_ep, str(message)))
 
         return None
 
     async def set_tx_power (self,power):
+        self.log.logging("TransportZigpy", "Debug","set_tx_power not implemented yet") 
         pass
         # something to fix here
         # await self.set_tx_power(dbm=power)
@@ -122,15 +125,15 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
             await self._set_led_mode(led=0xFF, mode= zigpy_znp.commands.util.LEDMode.OFF)
 
     async def set_certification (self, mode):
-        logging.error ("set_certification not implemented yet") 
+        self.log.logging("TransportZigpy", "Debug","set_certification not implemented yet") 
 
 
     async def get_time_server (self):
-        logging.error ("get_time_server not implemented yet")         
+        self.log.logging("TransportZigpy", "Debug","get_time_server not implemented yet")         
 
 
     async def set_time_server (self, newtime):
-        logging.error ("set_time_server not implemented yet") 
+        self.log.logging("TransportZigpy", "Debug","set_time_server not implemented yet") 
 
 
     async def get_firmware_version (self):

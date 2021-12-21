@@ -26,7 +26,6 @@ from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
 from Zigbee.plugin_encoders import build_plugin_004D_frame_content, build_plugin_8002_frame_content
 
 LOGGER = logging.getLogger(__name__)
-    
 
 class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
     
@@ -38,16 +37,10 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
     async def _load_db(self) -> None:
         logging.debug("_load_db" )
         
-    async def startup(self, auto_form=False):
-        await super().startup(auto_form)
-
-    #async def startup(self, callBackFunction , auto_form=False):
-    #    self.callBackFunction = callBackFunction
-    #    await super().startup(auto_form)
-
-    async def startup(self, callBackHandleMessage, callBackGetDevice=None, auto_form=False):
+    async def startup(self, callBackHandleMessage, callBackGetDevice=None, auto_form=False, log=None):
         self.callBackFunction = callBackHandleMessage
         self.callBackGetDevice = callBackGetDevice
+        self.log = log
         await super().startup(auto_form)
 
         
@@ -69,13 +62,13 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         
     def handle_leave(self, nwk, ieee):
         #super().handle_leave(nwk,ieee) 
-        logging.debug("handle_leave %s" %str(nwk))
+        self.log.logging("TransportZigpy", "Debug","handle_leave %s" %str(nwk))
 
     def handle_join(self, nwk, ieee, parent_nwk, rejoin=None):
         #super().handle_join(nwk,ieee) 
-        logging.debug("handle_join nwkid: %04x ieee: %s parent_nwk: %04x rejoin: %s" %(
+        self.log.logging("TransportZigpy", "Debug","handle_join nwkid: %04x ieee: %s parent_nwk: %04x rejoin: %s" %(
             nwk, ieee, parent_nwk, rejoin))
-        plugin_frame = build_plugin_004D_frame_content(nwk, ieee, parent_nwk)
+        plugin_frame = build_plugin_004D_frame_content(self, nwk, ieee, parent_nwk)
         self.callBackFunction (plugin_frame)
 
     def handle_message(
@@ -91,28 +84,28 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         
         #Domoticz.Log("handle_message %s" %(str(profile)))
         if sender.nwk or sender.ieee:
-            logging.debug("=====> Sender %s - %s" %(sender.nwk, sender.ieee))
+            self.log.logging("TransportZigpy", "Debug","=====> Sender %s - %s" %(sender.nwk, sender.ieee))
             if sender.nwk:
                 addr_mode = 0x02
                 addr = sender.nwk.serialize()[::-1].hex()
-                logging.debug("=====> sender.nwk %s - %s" %(sender.nwk, addr))
+                self.log.logging("TransportZigpy", "Debug","=====> sender.nwk %s - %s" %(sender.nwk, addr))
 
             elif sender.ieee:
                 addr = "%016x" %t.uint64_t.deserialize(self.app.ieee.serialize())[0]
                 addr_mode = 0x03
-                logging.debug("=====> sender.ieee %s - %s" %(sender.ieee, addr))
+                self.log.logging("TransportZigpy", "Debug","=====> sender.ieee %s - %s" %(sender.ieee, addr))
                 
             if addr:
-                logging.debug(" handle_message addr: %s profile: %s cluster: %04x src_ep: %02x dst_ep: %02x message: %s lqi: %02x" %(
+                self.log.logging("TransportZigpy", "Debug"," handle_message addr: %s profile: %s cluster: %04x src_ep: %02x dst_ep: %02x message: %s lqi: %02x" %(
                     addr, profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode('utf-8'), sender.lqi
                 ))
-                plugin_frame = build_plugin_8002_frame_content( addr, profile, cluster, src_ep, dst_ep, message, sender.lqi)
-                logging.debug("handle_message Sender: %s frame for plugin: %s" %( addr, plugin_frame))
+                plugin_frame = build_plugin_8002_frame_content( self, addr, profile, cluster, src_ep, dst_ep, message, sender.lqi)
+                self.log.logging("TransportZigpy", "Debug","handle_message Sender: %s frame for plugin: %s" %( addr, plugin_frame))
                 self.callBackFunction (plugin_frame)
             else:
-                logging.error("handle_message - Issue with addr: %s while sender is %s %s" %(addr, sender.nwk, sender.ieee))
+                self.log.logging("TransportZigpy", "Error","handle_message - Issue with addr: %s while sender is %s %s" %(addr, sender.nwk, sender.ieee))
         else:
-            logging.error("handle_message Sender unkown device : %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s" %
+            self.log.logging("TransportZigpy", "Error","handle_message Sender unkown device : %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s" %
                      (str(sender), profile, cluster, src_ep, dst_ep, str(message)))
 
         return None

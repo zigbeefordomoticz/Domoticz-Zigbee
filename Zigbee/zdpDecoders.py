@@ -206,6 +206,7 @@ def buildframe_simple_descriptor_response(self, SrcNwkId, SrcEndPoint, ClusterId
     #    MsgDataDeviceId = MsgData[16:20]
     #    MsgDataBField = MsgData[20:22]
     #    MsgDataInClusterCount = MsgData[22:24]
+    
 
     if len(Payload) < 14:
         self.log.logging( "zdpCommand", "Error","buildframe_simple_descriptor_response - Payload too short: %s from %s" %(Payload,frame))
