@@ -11,6 +11,7 @@
 """
 
 import Domoticz
+
 from Modules.basicOutputs import (ballast_Configuration_max_level,
                                   ballast_Configuration_min_level,
                                   set_PIROccupiedToUnoccupiedDelay,
@@ -23,6 +24,7 @@ from Modules.legrand_netatmo import (legrand_Dimmer_by_nwkid,
                                      legrand_enable_Led_IfOn_by_nwkid,
                                      legrand_enable_Led_InDark_by_nwkid,
                                      legrand_enable_Led_Shutter_by_nwkid)
+from Modules.lumi import setXiaomiVibrationSensitivity
 from Modules.philips import (philips_set_pir_occupancySensibility,
                              philips_set_poweron_after_offon_device)
 from Modules.readAttributes import (ReadAttributeRequest_0006_400x,
@@ -30,10 +32,15 @@ from Modules.readAttributes import (ReadAttributeRequest_0006_400x,
 from Modules.schneider_wiser import (iTRV_open_window_detection,
                                      wiser_home_lockout_thermostat)
 from Modules.tuya import (get_tuya_attribute, tuya_backlight_command,
-                          tuya_energy_childLock, tuya_switch_indicate_light,
-                          tuya_switch_relay_status,
+                          tuya_cmd_ts004F, tuya_energy_childLock,
+                          tuya_switch_indicate_light, tuya_switch_relay_status,
                           tuya_window_cover_motor_reversal)
-from Modules.tuyaTRV import tuya_trv_thermostat_sensor_mode
+from Modules.tuyaTRV import (tuya_trv_boost_time, tuya_trv_calibration,
+                             tuya_trv_child_lock, tuya_trv_eco_temp,
+                             tuya_trv_set_max_setpoint,
+                             tuya_trv_set_min_setpoint,
+                             tuya_trv_thermostat_sensor_mode,
+                             tuya_trv_window_detection)
 
 
 def Ballast_max_level(self, nwkid, max_level):
@@ -61,10 +68,9 @@ def param_Occupancy_settings_PIROccupiedToUnoccupiedDelay(self, nwkid, delay):
         if "0010" not in self.ListOfDevices[nwkid]["Ep"]["02"]["0406"]:
             set_PIROccupiedToUnoccupiedDelay(self, nwkid, delay)
             ReadAttributeRequest_0406_0010(self, nwkid)
-        else:
-            if int(self.ListOfDevices[nwkid]["Ep"]["02"]["0406"]["0010"], 16) != delay:
-                set_PIROccupiedToUnoccupiedDelay(self, nwkid, delay)
-                ReadAttributeRequest_0406_0010(self, nwkid)
+        elif int(self.ListOfDevices[nwkid]["Ep"]["02"]["0406"]["0010"], 16) != delay:
+            set_PIROccupiedToUnoccupiedDelay(self, nwkid, delay)
+            ReadAttributeRequest_0406_0010(self, nwkid)
 
     elif self.ListOfDevices[nwkid]["Manufacturer"] == "1015" or self.ListOfDevices[nwkid]["Manufacturer Name"] == "frient A/S":  # Frientd
         # delay = 10 * delay # Tenth of seconds
@@ -79,9 +85,8 @@ def param_Occupancy_settings_PIROccupiedToUnoccupiedDelay(self, nwkid, delay):
                 continue
             if "0010" not in self.ListOfDevices[nwkid]["Ep"][ep]["0406"]:
                 set_PIROccupiedToUnoccupiedDelay(self, nwkid, delay, ListOfEp=[ep])
-            else:
-                if int(self.ListOfDevices[nwkid]["Ep"][ep]["0406"]["0010"], 16) != delay:
-                    set_PIROccupiedToUnoccupiedDelay(self, nwkid, delay, ListOfEp=[ep])
+            elif int(self.ListOfDevices[nwkid]["Ep"][ep]["0406"]["0010"], 16) != delay:
+                set_PIROccupiedToUnoccupiedDelay(self, nwkid, delay, ListOfEp=[ep])
         ReadAttributeRequest_0406_0010(self, nwkid)
     else:
         Domoticz.Log("=====> Unknown Manufacturer/Name")
@@ -189,7 +194,17 @@ DEVICE_PARAMETERS = {
     "eTRVExerciseTime": danfoss_exercise_trigger_time,
     "DanfossTRVOrientation": danfoss_orientation,
     "DanfossViewDirection": danfoss_viewdirection,
+    "TS004FMode": tuya_cmd_ts004F,
+    "vibrationAqarasensitivity": setXiaomiVibrationSensitivity,
+    "BRT100WindowsDetection": tuya_trv_window_detection,
+    "BRT100ChildLock": tuya_trv_child_lock,
+    "BRT100BoostDuration": tuya_trv_boost_time,
+    "BRT100Calibration": tuya_trv_calibration,
+    "BRT100SetpointEco": tuya_trv_eco_temp,
+    "BRT100MaxSetpoint": tuya_trv_set_max_setpoint,
+    "BRT100MinSetpoint": tuya_trv_set_min_setpoint
 }
+
 
 
 def sanity_check_of_param(self, NwkId):

@@ -11,16 +11,12 @@
 """
 
 import Domoticz
-import binascii
-import struct
-import json
-
-from Modules.zigateConsts import ZIGATE_EP
-from Modules.tools import retreive_cmd_payload_from_8002
-from Modules.basicOutputs import sendZigateCmd
-from Modules.domoMaj import MajDomoDevice
-
 from Classes.LoggingManagement import LoggingManagement
+
+from Modules.domoMaj import MajDomoDevice
+from Modules.tools import retreive_cmd_payload_from_8002
+from Modules.zclCommands import zcl_level_move_to_level, zcl_toggle
+from Modules.zigateConsts import ZIGATE_EP
 
 # Livolo commands.
 #
@@ -61,7 +57,7 @@ def livolo_OnOff(self, nwkid, EPout, devunit, onoff):
 
     if onoff == "Toggle" and devunit == "All":
         self.log.logging("Livolo", "Debug", "livolo_toggle", nwkid=nwkid)
-        sendZigateCmd(self, "0092", "02" + nwkid + ZIGATE_EP + EPout + "02")
+        zcl_toggle(self, nwkid, EPout)
     else:
         level_value = timing_value = None
         if onoff == "On":
@@ -81,7 +77,8 @@ def livolo_OnOff(self, nwkid, EPout, devunit, onoff):
                 "livolo_OnOff - %s/%s Level: %s, Timing: %s" % (nwkid, EPout, level_value, timing_value),
                 nwkid=nwkid,
             )
-            sendZigateCmd(self, "0081", "02" + nwkid + ZIGATE_EP + EPout + "00" + level_value + timing_value)
+            zcl_level_move_to_level( self, nwkid, EPout, "00", level_value, timing_value)
+            #sendZigateCmd(self, "0081", "02" + nwkid + ZIGATE_EP + EPout + "00" + level_value + timing_value)
         else:
             Domoticz.Error("livolo_OnOff - Wrong parameters sent ! onoff: %s devunit: %s" % (onoff, devunit))
 
@@ -131,16 +128,16 @@ def livolo_onoff_status(self, Devices, nwkid, ep, onoff):
         return
     if "0006" not in self.ListOfDevices[nwkid]["Ep"][ep]:
         return
-    if onoff == "00":  # Left / Single - Off
-        # MajDomoDevice(self, Devices, nwkid, ep, '0006', '00')
-        pass
-    elif onoff == "01":  # Left / Single - On
-        # MajDomoDevice(self, Devices, nwkid, ep, '0006', '01')
-        pass
-    if onoff == "02":  # Right - Off
-        # MajDomoDevice(self, Devices, nwkid, ep, '0006', '10')
-        pass
-    elif onoff == "03":  # Right - On
-        # MajDomoDevice(self, Devices, nwkid, ep, '0006', '11')
-        pass
+    #if onoff == "00":  # Left / Single - Off
+    #    # MajDomoDevice(self, Devices, nwkid, ep, '0006', '00')
+    #    pass
+    #elif onoff == "01":  # Left / Single - On
+    #    # MajDomoDevice(self, Devices, nwkid, ep, '0006', '01')
+    #    pass
+    #if onoff == "02":  # Right - Off
+    #    # MajDomoDevice(self, Devices, nwkid, ep, '0006', '10')
+    #    pass
+    #elif onoff == "03":  # Right - On
+    #    # MajDomoDevice(self, Devices, nwkid, ep, '0006', '11')
+    #    pass
     # self.ListOfDevices[MsgSrcAddr]['Ep'][ep]['0006']['0000'] = MsgStatus

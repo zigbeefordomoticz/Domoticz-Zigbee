@@ -546,14 +546,6 @@ SETTINGS = {
                 "hidden": True,
                 "Advanced": True,
             },
-            "ieeeForRawAps": {
-                "type": "bool",
-                "default": 0,
-                "current": None,
-                "restart": 1,
-                "hidden": True,
-                "Advanced": True,
-            },
             "forceFullSeqMode": {
                 "type": "bool",
                 "default": 0,
@@ -1134,6 +1126,30 @@ SETTINGS = {
                 "hidden": False,
                 "Advanced": True,
             },
+            "debugzdpCommand": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": True,
+            },
+            "debugzclCommand": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": True,
+            },
+            "debugzigateCommand": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": True,
+            },
         },
     },
     # Others
@@ -1156,15 +1172,6 @@ SETTINGS = {
                 "hidden": False,
                 "Advanced": True,
             },
-            "vibrationAqarasensitivity": {
-                "type": "list",
-                "list": {"high": "high", "medium": "medium", "low": "low"},
-                "default": "medium",
-                "current": None,
-                "restart": 0,
-                "hidden": False,
-                "Advanced": False,
-            },
             "reenforcementWiser": {
                 "type": "int",
                 "default": 300,
@@ -1184,6 +1191,14 @@ SETTINGS = {
         "Order": 15,
         "param": {
             "ZiGateInHybridMode": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": True,
+            },
+            "ZiGateInRawMode": {
                 "type": "bool",
                 "default": 0,
                 "current": None,
@@ -1402,6 +1417,14 @@ SETTINGS = {
                 "Advanced": True,
             },
             "polling0001": {
+                "type": "int",
+                "default": 86400,
+                "current": None,
+                "restart": 0,
+                "hidden": True,
+                "Advanced": True,
+            },
+            "polling0002": {
                 "type": "int",
                 "default": 86400,
                 "current": None,

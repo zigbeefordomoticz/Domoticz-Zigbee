@@ -4,16 +4,14 @@
 # Author: zaraki673 & pipiche38
 #
 import Domoticz
-from Modules.basicOutputs import sendZigateCmd
+from Modules.zdpCommands import zdp_simple_descriptor_request, zdp_active_endpoint_request
 
 
 def initLODZigate(self, nwkid, ieee):
 
     Domoticz.Status("Initialize Zigate Data Structure %s %s" % (nwkid, ieee))
     self.IEEE2NWK[ieee] = nwkid
-    self.ListOfDevices[nwkid] = {}
-    self.ListOfDevices[nwkid]["Version"] = "3"
-    self.ListOfDevices[nwkid]["ZDeviceName"] = "Zigate"
+    self.ListOfDevices[nwkid] = {'Version': '3', 'ZDeviceName': 'Zigate'}
     self.ListOfDevices[nwkid]["IEEE"] = ieee
     self.ListOfDevices[nwkid]["Ep"] = {}
     self.ListOfDevices[nwkid]["PowerSource"] = "Main"
@@ -26,14 +24,14 @@ def endpointZigate(self, zigate_ieee):
 
     if "0000" not in self.ListOfDevices:
         return
-    sendZigateCmd(self, "0045", "0000")
+    zdp_active_endpoint_request(self, "0000" )
 
 
 def epDescrZigate(self, ep):
 
     if "0000" not in self.ListOfDevices:
         return
-    sendZigateCmd(self, "0043", "0000" + ep)
+    zdp_simple_descriptor_request(self, "0000", ep)
 
 
 def receiveZigateEpList(self, ep_count, ep_list):

@@ -314,7 +314,7 @@ class DomoticzDB_DeviceStatus:
                 return 0
 
             Domoticz.Error(
-                "retreiveAddjValue_baro - Unexpected exception for ID: %s HardwareID: Ms" % (ID, self.HardwareID)
+                "retreiveAddjValue_baro - Unexpected exception for ID: %s HardwareID: %s" % (ID, self.HardwareID)
             )
             self.closeDB()
             return 0
@@ -365,7 +365,7 @@ class DomoticzDB_DeviceStatus:
                 return 0
 
             Domoticz.Error(
-                "retreiveTimeOut_Motion - Unexpected exception for ID: %s HardwareID: Ms" % (ID, self.HardwareID)
+                "retreiveTimeOut_Motion - Unexpected exception for ID: %s HardwareID: %s" % (ID, self.HardwareID)
             )
             self.closeDB()
             return 0
@@ -414,7 +414,7 @@ class DomoticzDB_DeviceStatus:
                 return 0
 
             Domoticz.Error(
-                "retreiveAddjValue_temp - Unexpected exception for ID: %s HardwareID: Ms" % (ID, self.HardwareID)
+                "retreiveAddjValue_temp - Unexpected exception for ID: %s HardwareID: %s" % (ID, self.HardwareID)
             )
             self.closeDB()
             return 0

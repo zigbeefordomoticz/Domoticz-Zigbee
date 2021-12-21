@@ -1,10 +1,22 @@
-from os import getgrouplist
-import Domoticz
-import time
-import struct
+#!/usr/bin/env python3
+# coding: utf-8 -*-
+#
+# Author: pipiche38
+#
+"""
+    Module: mgmt_rtpg.py
+ 
+    Description: 
 
-from Modules.basicOutputs import mgt_routing_req, mgt_binding_table_req
-from Modules.tools import is_hex, get_device_nickname
+"""
+
+import struct
+import time
+
+import Domoticz
+
+from Modules.basicOutputs import mgt_binding_table_req, mgt_routing_req
+from Modules.tools import get_device_nickname
 
 STATUS_CODE = {"00": "Success", "84": "Not Supported (132)"}
 
@@ -54,9 +66,11 @@ def mgmt_rtg(self, nwkid, table):
     ):
         return
 
-
     feq = self.pluginconf.pluginConf[table+"RequestFeq"]
     if time.time() > self.ListOfDevices[nwkid][table]["TimeStamp"] + feq:
+        del self.ListOfDevices[nwkid][table]
+        self.ListOfDevices[nwkid][table] = {'Devices': [], 'SQN': 0}
+        self.ListOfDevices[nwkid][table]["TimeStamp"] = time.time()
         func(self, nwkid, "00")
         return
 

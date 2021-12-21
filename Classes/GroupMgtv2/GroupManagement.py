@@ -123,7 +123,7 @@ class GroupsManagement(object):
         self.ZigateIEEE = None
         self.ScanDevicesToBeDone = []  # List of Devices for which a GrpMemberShip request as to be performed
         self.GroupStatus = "Starting"  # Used by WebServer to display Status of Group!
-
+        self.FirmwareVersion = None 
         self.VersionNewFashion = VersionNewFashion
         self.DomoticzMajor = DomoticzMajor
         self.DomoticzMinor = DomoticzMinor
@@ -151,6 +151,9 @@ class GroupsManagement(object):
         self.load_groups_list_from_json()
         self.GroupStatus = "ready"
 
+    def update_firmware(self, firmwareversion):
+        self.FirmwareVersion = firmwareversion
+            
     def updateZigateIEEE(self, ZigateIEEE):
         self.ZigateIEEE = ZigateIEEE
 

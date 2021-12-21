@@ -59,6 +59,7 @@
 	},
 	"Param": {
 		"WiserLockThermostat": 0,
-		"WiseriTrvWindowOpen": 1
+		"WiseriTrvWindowOpen": 1,
+		"WiserRoomNumber": 1
 	}
 }

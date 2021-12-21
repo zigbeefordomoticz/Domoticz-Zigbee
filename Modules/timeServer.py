@@ -4,7 +4,6 @@
 # Author: zaraki673 & pipiche38
 #
 
-import Domoticz
 
 from Modules.basicInputs import read_attribute_response
 from datetime import datetime

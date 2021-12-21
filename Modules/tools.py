@@ -9,15 +9,12 @@
 
     Description: Zigate toolbox
 """
-import binascii
-import time
+
 import datetime
-import struct
-import json
+import time
 
 import Domoticz
 
-from Classes.AdminWidgets import AdminWidgets
 from Modules.database import WriteDeviceList
 
 
@@ -101,16 +98,12 @@ def getListOfEpForCluster(self, NwkId, SearchCluster):
 
         if oldFashion:
             EpList.append(Ep)
-        else:
-            if (
+        elif (
                 "ClusterType" in self.ListOfDevices[NwkId]["Ep"][Ep]
                 and self.ListOfDevices[NwkId]["Ep"][Ep]["ClusterType"] != {}
                 and self.ListOfDevices[NwkId]["Ep"][Ep]["ClusterType"] != ""
             ):
-                EpList.append(Ep)
-            # else:
-            #    Domoticz.Log("------------> Skiping Cluster: %s Clustertype not found in %s" %(  SearchCluster, str(self.ListOfDevices[ NwkId]['Ep'][Ep]) ) )
-
+            EpList.append(Ep)
     # Domoticz.Log("----------> NwkId: %s Ep: %s Cluster: %s oldFashion: %s EpList: %s" %( NwkId, Ep, SearchCluster, oldFashion, EpList))
     return EpList
 
@@ -462,6 +455,22 @@ def get_and_inc_SQN(self, key):
     # self.ListOfDevices[key]['SQN']= '%2x' %_new_sqn
     return "%02x" % _new_sqn
 
+def get_and_inc_ZDP_SQM(self, key):
+    if (
+        (key not in self.ListOfDevices)
+        or ("ZDPSQN" not in self.ListOfDevices[key])
+        or (self.ListOfDevices[key]["ZDPSQN"] == {})
+        or (self.ListOfDevices[key]["ZDPSQN"] == "")
+    ):
+        _new_sqn = 0x00
+    else:
+        _new_sqn = int(self.ListOfDevices[key]["ZDPSQN"], 16) + 1
+        if _new_sqn > 0xFF:
+            _new_sqn = 0x00
+
+    # self.ListOfDevices[key]['SQN']= '%2x' %_new_sqn
+    return "%02x" % _new_sqn
+    
 
 def updSQN(self, key, newSQN):
 
@@ -506,13 +515,12 @@ def updLQI(self, key, LQI):
 
 def is_fake_ep( self, nwkid, ep):
     
-    if ( "Model" in self.ListOfDevices[nwkid]
-            and self.ListOfDevices[nwkid]["Model"] in self.DeviceConf
-            and "FakeEp" in self.DeviceConf[ self.ListOfDevices[nwkid]["Model"] ]
-            and ep in self.DeviceConf[ self.ListOfDevices[nwkid]["Model"] ]["FakeEp"]
-    ):
-        return True
-    return False
+    return (
+        "Model" in self.ListOfDevices[nwkid]
+        and self.ListOfDevices[nwkid]["Model"] in self.DeviceConf
+        and "FakeEp" in self.DeviceConf[self.ListOfDevices[nwkid]["Model"]]
+        and ep in self.DeviceConf[self.ListOfDevices[nwkid]["Model"]]["FakeEp"]
+    )
 
 
 def getTypebyCluster(self, Cluster):
@@ -554,7 +562,7 @@ def getListofClusterbyModel(self, Model, InOut):
         for ep in list(self.DeviceConf[Model][InOut].keys()):
             seen = ""
             for cluster in sorted(self.DeviceConf[Model][InOut][ep]):
-                if cluster in ("ClusterType", "Type", "ColorMode") or cluster == seen:
+                if cluster in ("ClusterType", "Type", "ColorMode", seen):
                     continue
                 listofCluster.append(cluster)
                 seen = cluster
@@ -780,14 +788,14 @@ def mainPoweredDevice(self, nwkid):
     if nwkid not in self.ListOfDevices:
         Domoticz.Log("mainPoweredDevice - Unknown Device: %s" % nwkid)
         return False
-    
+
     model_name = ""
     if "Model" in self.ListOfDevices[nwkid]:
         model_name = self.ListOfDevices[nwkid]["Model"]
 
     mainPower = False
     if "MacCapa" in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]["MacCapa"] != {}:
-        mainPower = ("8e" == self.ListOfDevices[nwkid]["MacCapa"]) or ("84" == self.ListOfDevices[nwkid]["MacCapa"])
+        mainPower = self.ListOfDevices[nwkid]["MacCapa"] in ["8e", "84"]
 
     # These are Model annouced as Main Power and are not
     if model_name in (
@@ -806,7 +814,7 @@ def mainPoweredDevice(self, nwkid):
 
 
     if not mainPower and "PowerSource" in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]["PowerSource"] != {}:
-        mainPower = "Main" == self.ListOfDevices[nwkid]["PowerSource"]
+        mainPower = self.ListOfDevices[nwkid]["PowerSource"] == "Main"
 
     # We need to take in consideration that Livolo is reporting a MacCapa of 0x80
     # That Aqara Opple are reporting MacCap 0x84 while they are Battery devices
@@ -818,19 +826,13 @@ def loggingMessages(self, msgtype, sAddr=None, ieee=None, LQI=None, SQN=None):
 
     if not self.pluginconf.pluginConf["logFORMAT"]:
         return
-    if sAddr == ieee == None:
+    if sAddr == ieee and sAddr is None:
         return
     _debugMatchId = self.pluginconf.pluginConf["debugMatchId"].lower()
     if sAddr is None:
-        # Get sAddr from IEEE
-        sAddr = ""
-        if ieee in self.IEEE2NWK:
-            sAddr = self.IEEE2NWK[ieee]
+        sAddr = self.IEEE2NWK[ieee] if ieee in self.IEEE2NWK else ""
     if ieee is None:
-        # Get ieee from sAddr
-        ieee = ""
-        if sAddr in self.ListOfDevices:
-            ieee = self.ListOfDevices[sAddr]["IEEE"]
+        ieee = self.ListOfDevices[sAddr]["IEEE"] if sAddr in self.ListOfDevices else ""
     if _debugMatchId not in ["ffff", sAddr]:
         # If not matching _debugMatchId
         return
@@ -1304,14 +1306,15 @@ def getConfigItem(Key=None, Attribute="", Default={}):
     Value = Default
     try:
         Config = Domoticz.Configuration()
-        if Key is None:
-            Value = Config  # return the whole configuration if no key
-        else:
-            Value = Config[Key]  # only return requested key if there was one
+        Value = Config if Key is None else Config[Key]
     except KeyError:
         Value = Default
     except Exception as inst:
-        Domoticz.Error("getConfigItem - Domoticz.Configuration read failed: '" + str(inst) + "'")
+        Domoticz.Error(
+            "getConfigItem - Domoticz.Configuration read failed: '"
+            + str(inst)
+            + "'"
+        )
 
     return repair_dict_after_load(Value, Attribute)
 
@@ -1367,8 +1370,23 @@ def get_device_nickname( self, NwkId=None, Ieee=None):
     if Ieee and Ieee in self.IEEE2NWK:
         NwkId = self.IEEE2NWK[ Ieee ]
 
-    if NwkId in self.ListOfDevices:
-        if 'ZDeviceName' in self.ListOfDevices[ NwkId] and self.ListOfDevices[ NwkId]['ZDeviceName'] not in ( '', {} ):
-            return self.ListOfDevices[ NwkId]['ZDeviceName']
+    if (
+        NwkId in self.ListOfDevices
+        and 'ZDeviceName' in self.ListOfDevices[NwkId]
+        and self.ListOfDevices[NwkId]['ZDeviceName'] not in ('', {})
+    ):
+        return self.ListOfDevices[ NwkId]['ZDeviceName']
 
     return None
+
+def extract_info_from_8085(MsgData):
+    step_mod = MsgData[14:16]
+    up_down = step_size = transition = None
+    if len(MsgData) >= 18:
+        up_down = MsgData[16:18]
+    if len(MsgData) >= 20:
+        step_size = MsgData[18:20]
+    if len(MsgData) >= 22:
+        transition = MsgData[20:22]
+
+    return (step_mod, up_down, step_size, transition)

@@ -10,22 +10,16 @@
 
 """
 
-import json
-
 import Domoticz
-from Classes.LoggingManagement import LoggingManagement
-from Modules.basicOutputs import (getListofAttribute, identifyEffect,
-                                  read_attribute, sendZigateCmd,
-                                  write_attribute)
-from Modules.bindings import (bindDevice, rebind_Clusters, reWebBind_Clusters,
-                              unbindDevice)
+
+from Modules.basicOutputs import getListofAttribute, identifyEffect
+from Modules.bindings import bindDevice, reWebBind_Clusters, unbindDevice
 from Modules.casaia import casaia_pairing
 from Modules.domoCreate import CreateDomoDevice
 from Modules.livolo import livolo_bind
-from Modules.lumi import enableOppleSwitch, setXiaomiVibrationSensitivity
+from Modules.lumi import enableOppleSwitch
 from Modules.mgmt_rtg import mgmt_rtg
 from Modules.orvibo import OrviboRegistration
-from Modules.pollControl import poll_set_long_poll_interval
 from Modules.profalux import profalux_fake_deviceModel
 from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST,
                                     ReadAttributeRequest_0000,
@@ -35,11 +29,14 @@ from Modules.schneider_wiser import (PREFIX_MACADDR_WIZER_LEGACY,
                                      schneider_wiser_registration,
                                      wiser_home_lockout_thermostat)
 from Modules.thermostats import thermostat_Calibration
-from Modules.tools import get_and_inc_SQN, getListOfEpForCluster, is_fake_ep
-from Modules.tuya import tuya_registration
+from Modules.tools import getListOfEpForCluster, is_fake_ep
+from Modules.tuya import tuya_cmd_ts004F, tuya_registration
 from Modules.tuyaSiren import tuya_sirene_registration
 from Modules.tuyaTools import tuya_TS0121_registration
 from Modules.tuyaTRV import TUYA_eTRV_MODEL, tuya_eTRV_registration
+from Modules.zdpCommands import (zdp_active_endpoint_request,
+                                 zdp_node_descriptor_request,
+                                 zdp_simple_descriptor_request)
 from Modules.zigateConsts import CLUSTERS_LIST
 
 
@@ -144,14 +141,21 @@ def interview_state_004d(self, NWKID, RIA=None, status=None):
 
     PREFIX_IEEE_XIAOMI = "00158d000"
     PREFIX_IEEE_OPPLE = "04cf8cdf3"
-    if MsgIEEE and MsgIEEE[0 : len(PREFIX_IEEE_XIAOMI)] == PREFIX_IEEE_XIAOMI or MsgIEEE[0 : len(PREFIX_IEEE_OPPLE)] == PREFIX_IEEE_OPPLE:
+    if (
+        MsgIEEE
+        and MsgIEEE[: len(PREFIX_IEEE_XIAOMI)] == PREFIX_IEEE_XIAOMI
+        or MsgIEEE[: len(PREFIX_IEEE_OPPLE)] == PREFIX_IEEE_OPPLE
+    ):
         ReadAttributeRequest_0000(self, NWKID, fullScope=False)  # In order to request Model Name
 
     PREFIX_IEEE_WISER = "00124b000"
-    if self.pluginconf.pluginConf["enableSchneiderWiser"] and MsgIEEE[0 : len(PREFIX_IEEE_WISER)] == PREFIX_IEEE_WISER:
+    if (
+        self.pluginconf.pluginConf["enableSchneiderWiser"]
+        and MsgIEEE[: len(PREFIX_IEEE_WISER)] == PREFIX_IEEE_WISER
+    ):
         ReadAttributeRequest_0000(self, NWKID, fullScope=False)  # In order to request Model Name
 
-    sendZigateCmd(self, "0045", str(NWKID))
+    zdp_active_endpoint_request(self, NWKID )
     return "0045"
 
 
@@ -201,7 +205,7 @@ def request_node_descriptor(self, NWKID, RIA=None, status=None):
     if "Manufacturer" in self.ListOfDevices[NWKID]:
         if self.ListOfDevices[NWKID]["Manufacturer"] in ({}, ""):
             self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s Request Node Descriptor" % (RIA, NWKID))
-            sendZigateCmd(self, "0042", str(NWKID))  # Request a Node Descriptor
+            zdp_node_descriptor_request(self, NWKID)
             return True
 
         self.log.logging(
@@ -213,7 +217,7 @@ def request_node_descriptor(self, NWKID, RIA=None, status=None):
         return False
 
     self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s Request Node Descriptor" % (RIA, NWKID))
-    sendZigateCmd(self, "0042", str(NWKID))  # Request a Node Descriptor
+    zdp_node_descriptor_request(self, NWKID)
     return True
 
 
@@ -242,7 +246,7 @@ def interview_state_8045(self, NWKID, RIA=None, status=None):
             continue
 
         self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s Request Simple Descriptor for Ep: %s" % ("-", NWKID, iterEp))
-        sendZigateCmd(self, "0043", str(NWKID) + str(iterEp))
+        zdp_simple_descriptor_request(self, NWKID, iterEp)
 
     return "0043"
 
@@ -281,49 +285,70 @@ def interview_state_createDB(self, Devices, NWKID, RIA, status):
         ),
     )
     # We will try to create the device(s) based on the Model , if we find it in DeviceConf or against the Cluster
-    if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] == {} or self.ListOfDevices[NWKID]["Model"] == "":
-        if status == "8043" and int(self.ListOfDevices[NWKID]["RIA"], 10) < 3:  # Let's take one more chance to get Model
-            self.log.logging("Pairing", "Debug", "Too early, let's try to get the Model")
-            return
+    if (
+        (
+            "Model" in self.ListOfDevices[NWKID]
+            and self.ListOfDevices[NWKID]["Model"] == {}
+            or self.ListOfDevices[NWKID]["Model"] == ""
+        )
+        and status == "8043"
+        and int(self.ListOfDevices[NWKID]["RIA"], 10) < 3
+    ):  # Let's take one more chance to get Model
+        self.log.logging("Pairing", "Debug", "Too early, let's try to get the Model")
+        return
 
     # Let's check if we have to disable the widget creation
-    if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] != {} and self.ListOfDevices[NWKID]["Model"] in self.DeviceConf and "CreateWidgetDomoticz" in self.DeviceConf[self.ListOfDevices[NWKID]["Model"]]:
-        if not self.DeviceConf[self.ListOfDevices[NWKID]["Model"]]["CreateWidgetDomoticz"]:
-            self.ListOfDevices[NWKID]["Status"] = "notDB"
-            self.ListOfDevices[NWKID]["PairingInProgress"] = False
-            self.CommiSSionning = False
-            return
+    if (
+        "Model" in self.ListOfDevices[NWKID]
+        and self.ListOfDevices[NWKID]["Model"] != {}
+        and self.ListOfDevices[NWKID]["Model"] in self.DeviceConf
+        and "CreateWidgetDomoticz"
+        in self.DeviceConf[self.ListOfDevices[NWKID]["Model"]]
+        and not self.DeviceConf[self.ListOfDevices[NWKID]["Model"]][
+            "CreateWidgetDomoticz"
+        ]
+    ):
+        self.ListOfDevices[NWKID]["Status"] = "notDB"
+        self.ListOfDevices[NWKID]["PairingInProgress"] = False
+        self.CommiSSionning = False
+        return
 
     # Let's check if we have a profalux device, and if that is a remote. In such case, just drop this
-    if "Manufacturer" in self.ListOfDevices[NWKID]:
-        if self.ListOfDevices[NWKID]["Manufacturer"] == "1110":
-            if self.ListOfDevices[NWKID]["ZDeviceID"] == "0201":  # Remote
-                self.ListOfDevices[NWKID]["Status"] = "notDB"
-                self.ListOfDevices[NWKID]["PairingInProgress"] = False
-                self.CommiSSionning = False
-                return
+    if (
+        "Manufacturer" in self.ListOfDevices[NWKID]
+        and self.ListOfDevices[NWKID]["Manufacturer"] == "1110"
+        and self.ListOfDevices[NWKID]["ZDeviceID"] == "0201"
+    ):  # Remote
+        self.ListOfDevices[NWKID]["Status"] = "notDB"
+        self.ListOfDevices[NWKID]["PairingInProgress"] = False
+        self.CommiSSionning = False
+        return
 
     # Check once more if we have received the Model Name
     if "ConfigSource" in self.ListOfDevices[NWKID]:
-        if self.ListOfDevices[NWKID]["ConfigSource"] != "DeviceConf":
-            if "Model" in self.ListOfDevices[NWKID]:
-                if self.ListOfDevices[NWKID]["Model"] in self.DeviceConf:
-                    self.ListOfDevices[NWKID]["ConfigSource"] = "DeviceConf"
-    else:
-        if "Model" in self.ListOfDevices[NWKID]:
-            if self.ListOfDevices[NWKID]["Model"] in self.DeviceConf:
-                self.ListOfDevices[NWKID]["ConfigSource"] = "DeviceConf"
+        if (
+            self.ListOfDevices[NWKID]["ConfigSource"] != "DeviceConf"
+            and "Model" in self.ListOfDevices[NWKID]
+            and self.ListOfDevices[NWKID]["Model"] in self.DeviceConf
+        ):
+            self.ListOfDevices[NWKID]["ConfigSource"] = "DeviceConf"
+    elif (
+        "Model" in self.ListOfDevices[NWKID]
+        and self.ListOfDevices[NWKID]["Model"] in self.DeviceConf
+    ):
+        self.ListOfDevices[NWKID]["ConfigSource"] = "DeviceConf"
 
     self.log.logging("Pairing", "Debug", "[%s] NEW OBJECT: %s Trying to create Domoticz device(s)" % (RIA, NWKID))
     IsCreated = False
     # Let's check if the IEEE is not known in Domoticz
     for x in Devices:
-        if self.ListOfDevices[NWKID].get("IEEE"):
-            if Devices[x].DeviceID == str(self.ListOfDevices[NWKID]["IEEE"]):
-                IsCreated = True
-                Domoticz.Error("processNotinDBDevices - Devices already exist. " + Devices[x].Name + " with " + str(self.ListOfDevices[NWKID]))
-                Domoticz.Error("processNotinDBDevices - Please cross check the consistency of the Domoticz and Plugin database.")
-                break
+        if self.ListOfDevices[NWKID].get("IEEE") and Devices[
+            x
+        ].DeviceID == str(self.ListOfDevices[NWKID]["IEEE"]):
+            IsCreated = True
+            Domoticz.Error("processNotinDBDevices - Devices already exist. " + Devices[x].Name + " with " + str(self.ListOfDevices[NWKID]))
+            Domoticz.Error("processNotinDBDevices - Please cross check the consistency of the Domoticz and Plugin database.")
+            break
 
     if not IsCreated:
         full_provision_device(self, Devices, NWKID, RIA, status)
@@ -340,9 +365,9 @@ def full_provision_device(self, Devices, NWKID, RIA, status):
 
     # Purpose of this call is to patch Model and Manufacturer Name in case of Profalux
     # We do it just before calling CreateDomoDevice
-    if "Manufacturer" in self.ListOfDevices[NWKID]:
-        if self.ListOfDevices[NWKID]["Manufacturer"] == "1110":
-            profalux_fake_deviceModel(self, NWKID)
+    if ( "Manufacturer" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Manufacturer"] == "1110"
+    ):
+        profalux_fake_deviceModel(self, NWKID)
 
     CreateDomoDevice(self, Devices, NWKID)
     if self.ListOfDevices[NWKID]["Status"] not in ("inDB", "failDB"):
@@ -382,6 +407,12 @@ def full_provision_device(self, Devices, NWKID, RIA, status):
 
 
 def zigbee_provision_device(self, Devices, NWKID, RIA, status):
+
+    if self.ListOfDevices[NWKID]["Model"] in ("TS004F",):
+        self.log.logging("Pairing", "Log", "Tuya TS004F registration needed")
+        if "Param" in self.ListOfDevices[NWKID] and "TS004FMode" in self.ListOfDevices[NWKID]["Param"]:
+            tuya_cmd_ts004F(self, NWKID, self.ListOfDevices[NWKID]["Param"]["TS004FMode" ])
+
     # Bindings ....
     binding_needed_clusters_with_zigate(self, NWKID)
 
@@ -528,13 +559,16 @@ def send_identify_effect(self, NWKID):
 def create_group_if_required(self, NWKID):
     if self.groupmgt and self.pluginconf.pluginConf["allowGroupMembership"] and "Model" in self.ListOfDevices[NWKID]:
         self.log.logging("Pairing", "Debug", "Creation Group")
-        if self.ListOfDevices[NWKID]["Model"] in self.DeviceConf:
-            if "GroupMembership" in self.DeviceConf[self.ListOfDevices[NWKID]["Model"]]:
-                for groupToAdd in self.DeviceConf[self.ListOfDevices[NWKID]["Model"]]["GroupMembership"]:
-                    if len(groupToAdd) == 2:
-                        self.groupmgt.addGroupMemberShip(NWKID, groupToAdd[0], groupToAdd[1])
-                    else:
-                        Domoticz.Error("Uncorrect GroupMembership definition %s" % str(self.DeviceConf[self.ListOfDevices[NWKID]["Model"]]["GroupMembership"]))
+        if (
+            self.ListOfDevices[NWKID]["Model"] in self.DeviceConf
+            and "GroupMembership"
+            in self.DeviceConf[self.ListOfDevices[NWKID]["Model"]]
+        ):
+            for groupToAdd in self.DeviceConf[self.ListOfDevices[NWKID]["Model"]]["GroupMembership"]:
+                if len(groupToAdd) == 2:
+                    self.groupmgt.addGroupMemberShip(NWKID, groupToAdd[0], groupToAdd[1])
+                else:
+                    Domoticz.Error("Uncorrect GroupMembership definition %s" % str(self.DeviceConf[self.ListOfDevices[NWKID]["Model"]]["GroupMembership"]))
 
     if self.groupmgt and "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] == "tint-Remote-white":
         # Tint Remote manage 4 groups and we will create with ZiGate attached.
@@ -558,7 +592,12 @@ def handle_device_specific_needs(self, Devices, NWKID):
     if self.ListOfDevices[NWKID]["Model"] in ("Wiser2-Thermostat",):
         wiser_home_lockout_thermostat(self, NWKID, 0)
 
-    elif MsgIEEE[0 : len(PREFIX_MACADDR_WIZER_LEGACY)] == PREFIX_MACADDR_WIZER_LEGACY and WISER_LEGACY_MODEL_NAME_PREFIX in self.ListOfDevices[NWKID]["Model"]:
+    elif (
+        MsgIEEE[: len(PREFIX_MACADDR_WIZER_LEGACY)]
+        == PREFIX_MACADDR_WIZER_LEGACY
+        and WISER_LEGACY_MODEL_NAME_PREFIX
+        in self.ListOfDevices[NWKID]["Model"]
+    ):
         schneider_wiser_registration(self, Devices, NWKID)
 
     elif self.ListOfDevices[NWKID]["Model"] in (
@@ -582,6 +621,11 @@ def handle_device_specific_needs(self, Devices, NWKID):
         self.log.logging("Pairing", "Debug", "Tuya TS0121 registration needed")
         tuya_TS0121_registration(self, NWKID)
 
+    elif self.ListOfDevices[NWKID]["Model"] in ("TS004F",):
+        self.log.logging("Pairing", "Log", "Tuya TS004F registration needed")
+        if "Param" in self.ListOfDevices[NWKID] and "TS004FMode" in self.ListOfDevices[NWKID]["Param"]:
+            tuya_cmd_ts004F(self, NWKID, self.ListOfDevices[NWKID]["Param"]["TS004FMode" ])
+
     elif self.ListOfDevices[NWKID]["Model"] in (
         "TS0601-Energy",
         "TS0601-switch",
@@ -595,16 +639,6 @@ def handle_device_specific_needs(self, Devices, NWKID):
         self.log.logging("Pairing", "Debug", "Tuya Water Sensor Parkside registration needed")
         tuya_registration(self, NWKID, device_reset=True, parkside=True)
 
-    # Set the sensitivity for Xiaomi Vibration
-    elif self.ListOfDevices[NWKID]["Model"] == "lumi.vibration.aq1":
-        self.log.logging(
-            "Pairing",
-            "Status",
-            "processNotinDBDevices - set viration Aqara %s sensitivity to %s" % (NWKID, self.pluginconf.pluginConf["vibrationAqarasensitivity"]),
-        )
-        setXiaomiVibrationSensitivity(self, NWKID, sensitivity=self.pluginconf.pluginConf["vibrationAqarasensitivity"])
-
-    # Set Calibration for Thermostat
     elif self.ListOfDevices[NWKID]["Model"] == "SPZB0001":
         thermostat_Calibration(self, NWKID, 0x00)
 
@@ -626,6 +660,5 @@ def request_list_of_attributes(self, NWKID):
         for iterCluster in self.ListOfDevices[NWKID]["Ep"][iterEp]:
             if iterCluster in ("Type", "ClusterType", "ColorMode"):
                 continue
-            if "ConfigSource" in self.ListOfDevices[NWKID]:
-                if self.ListOfDevices[NWKID]["ConfigSource"] != "DeviceConf":
-                    getListofAttribute(self, NWKID, iterEp, iterCluster)
+            if "ConfigSource" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["ConfigSource"] != "DeviceConf":
+                getListofAttribute(self, NWKID, iterEp, iterCluster)

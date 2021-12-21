@@ -10,27 +10,22 @@
 
 """
 
-import Domoticz
-
 from datetime import datetime
 from time import time
 
+import Domoticz
 from Classes.LoggingManagement import LoggingManagement
 
-from Modules.zigateConsts import MAX_READATTRIBUTES_REQ, ZIGATE_EP
-from Modules.basicOutputs import send_zigatecmd_zcl_ack, send_zigatecmd_zcl_noack, identifySend, read_attribute
-from Modules.tools import (
-    getListOfEpForCluster,
-    check_datastruct,
-    is_time_to_perform_work,
-    set_isqn_datastruct,
-    set_status_datastruct,
-    set_timestamp_datastruct,
-    is_attr_unvalid_datastruct,
-    reset_attr_datastruct,
-    is_ack_tobe_disabled,
-)
+from Modules.basicOutputs import (identifySend, read_attribute,
+                                  send_zigatecmd_zcl_ack,
+                                  send_zigatecmd_zcl_noack)
+from Modules.tools import (check_datastruct, getListOfEpForCluster,
+                           is_ack_tobe_disabled, is_attr_unvalid_datastruct,
+                           is_time_to_perform_work, reset_attr_datastruct,
+                           set_isqn_datastruct, set_status_datastruct,
+                           set_timestamp_datastruct)
 from Modules.tuya import tuya_cmd_0x0000_0xf0
+from Modules.zigateConsts import MAX_READATTRIBUTES_REQ, ZIGATE_EP
 
 ATTRIBUTES = {
     "0000": [
@@ -50,6 +45,7 @@ ATTRIBUTES = {
         0xF000,
     ],
     "0001": [0x0000, 0x0001, 0x0003, 0x0020, 0x0021, 0x0033, 0x0035],
+    "0002": [0x000, 0x0001, 0x0002, 0x0003, 0x0010, 0x0011, 0x0012, 0x0013, 0x0014],
     "0003": [0x0000],
     "0004": [0x0000],
     "0005": [0x0001, 0x0002, 0x0003, 0x0004],
@@ -595,6 +591,29 @@ def ReadAttributeRequest_0001(self, key, force_disable_ack=None):
                 ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0001", listAttributes, ackIsDisabled=True)
             else:
                 ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0001", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
+
+def ReadAttributeRequest_0002(self, key, force_disable_ack=None):
+    self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_0002 - Key: %s " % key, nwkid=key)
+
+    # Device Temperature
+    ListOfEp = getListOfEpForCluster(self, key, "0001")
+    for EPout in ListOfEp:
+        listAttributes = []
+        for iterAttr in retreive_ListOfAttributesByCluster(self, key, EPout, "0002"):
+            if iterAttr not in listAttributes:
+                listAttributes.append(iterAttr)
+
+        if listAttributes:
+            self.log.logging(
+                "ReadAttributes",
+                "Debug",
+                "Request Device Temperature Config via Read Attribute request: " + key + " EPout = " + EPout,
+                nwkid=key,
+            )
+            if force_disable_ack:
+                ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0002", listAttributes, ackIsDisabled=True)
+            else:
+                ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0002", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
 
 
 def ReadAttributeRequest_0006_0000(self, key):
@@ -1578,6 +1597,7 @@ READ_ATTRIBUTES_REQUEST = {
     # Cluster : ( ReadAttribute function, Frequency )
     "0000": (ReadAttributeRequest_0000, "polling0000"),
     "0001": (ReadAttributeRequest_0001, "polling0001"),
+    "0002": (ReadAttributeRequest_0002, "polling0002"),
     "0008": (ReadAttributeRequest_0008, "pollingLvlControl"),
     "0006": (ReadAttributeRequest_0006, "pollingONOFF"),
     "000C": (ReadAttributeRequest_000C, "polling000C"),

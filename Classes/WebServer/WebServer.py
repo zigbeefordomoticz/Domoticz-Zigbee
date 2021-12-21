@@ -13,14 +13,19 @@ from time import time
 import Domoticz
 from Classes.DomoticzDB import DomoticzDB_Preferences
 from Classes.LoggingManagement import LoggingManagement
-from Classes.PluginConf import SETTINGS, PluginConf
+from Classes.PluginConf import SETTINGS
 from Classes.WebServer.headerResponse import prepResponseMessage, setupHeadersResponse
 from Modules.actuators import actuators
-from Modules.basicOutputs import ZigatePermitToJoin, initiate_change_channel, send_zigate_mode, sendZigateCmd, setExtendedPANID, start_Zigate, zigateBlueLed
+from Modules.basicOutputs import ZigatePermitToJoin, initiate_change_channel, setExtendedPANID, start_Zigate, zigateBlueLed 
 from Modules.enki import enki_set_poweron_after_offon
 from Modules.philips import philips_set_poweron_after_offon
 from Modules.tools import is_hex
 from Modules.zigateConsts import CERTIFICATION_CODE, ZCL_CLUSTERS_LIST, ZIGATE_COMMANDS
+from Modules.sendZigateCommand import (raw_APS_request, send_zigatecmd_raw,
+                                       send_zigatecmd_zcl_ack,sendZigateCmd,
+                                       send_zigatecmd_zcl_noack)
+from Modules.zigateCommands import zigate_set_mode
+
 
 MIMETYPES = {
     "gif": "image/gif",
@@ -77,7 +82,6 @@ class WebServer(object):
         ZigateComm,
         HomeDirectory,
         hardwareID,
-        DevicesInPairingMode,
         Devices,
         ListOfDevices,
         IEEE2NWK,
@@ -118,7 +122,7 @@ class WebServer(object):
         self.groupmgt = None
         self.OTA = None
         self.ListOfDevices = ListOfDevices
-        self.DevicesInPairingMode = DevicesInPairingMode
+        self.DevicesInPairingMode = []
         self.fakeDevicesInPairingMode = 0
         self.IEEE2NWK = IEEE2NWK
         self.DeviceConf = DeviceConf
@@ -144,6 +148,10 @@ class WebServer(object):
     def update_networkmap(self, networkmap):
         self.networkmap = networkmap
 
+    def add_element_to_devices_in_pairing_mode( self, nwkid):
+        if nwkid not in self.DevicesInPairingMode:
+            self.DevicesInPairingMode.append( nwkid )
+        
     def update_groupManagement(self, groupmanagement):
         self.groupmgt = groupmanagement if groupmanagement else None
 
@@ -1259,7 +1267,8 @@ class WebServer(object):
             if len(parameters) == 1:
                 mode = parameters[0]
                 if mode in ("0", "1", "2"):
-                    send_zigate_mode(self, int(mode))
+                    zigate_set_mode(self, int(mode) )
+                    #send_zigate_mode(self, int(mode))
                     _response["Data"] = {"ZiGate mode: %s requested" % mode}
         return _response
 

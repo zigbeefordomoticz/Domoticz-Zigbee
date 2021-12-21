@@ -7,16 +7,11 @@
     Module: domoMaj.py
     Description: Update of Domoticz Widget
 """
-
-import json
-import time
-
 import Domoticz
-from Classes.LoggingManagement import LoggingManagement
+
 from Modules.domoTools import (RetreiveSignalLvlBattery,
                                RetreiveWidgetTypeList, TypeFromCluster,
                                UpdateDevice_v2)
-from Modules.tools import instrument_timing
 from Modules.widgets import SWITCH_LVL_MATRIX
 from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
 
@@ -39,7 +34,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
     if "Status" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Status"] != "inDB":
         self.log.logging(
             "Widget",
-            "Error",
+            "Log",
             "MajDomoDevice NwkId: %s status: %s not inDB" % (NWKID, self.ListOfDevices[NWKID]["Status"]),
             NWKID,
         )
@@ -248,16 +243,16 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, str(sValue), BatteryLevel, SignalLevel)
 
             if WidgetType == "P1Meter_ZL" and "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] == "ZLinky_TIC" and Attribute_ in ("0100", "0102", "0104", "0106", "0108", "010a", "050f"):
-
+ 
                 if Attribute_ != "050f" and Ep == "01" and Attribute_ not in ("0100", "0102"):
                     # Ep = 01, so we store Base, or HP,HC, or BBRHCJB, BBRHPJB
-                    return
+                    continue
                 if Attribute_ != "050f" and Ep == "f2" and Attribute_ not in ("0104", "0106"):
                     # Ep = f2, so we store BBRHCJW, BBRHPJW
-                    return
+                    continue
                 if Attribute_ != "050f" and Ep == "f3" and Attribute_ not in ("0108", "010a"):
                     # Ep == f3, so we store BBRHCJR, BBRHPJR
-                    return
+                    continue
                 tarif_color = None
                 if "ZLinky" in self.ListOfDevices[NWKID] and "Color" in self.ListOfDevices[NWKID]["ZLinky"]:
                     tarif_color = self.ListOfDevices[NWKID]["ZLinky"]["Color"]
@@ -324,10 +319,14 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 instant = round(float(value), 2)
                 sValue = "%s;%s" % (instant, summation)
                 self.log.logging("Widget", "Debug", "------>  : " + sValue)
-                
+
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
 
-            elif WidgetType == "Meter" and Attribute_ == "0000":
+            elif WidgetType == "Meter" and ( Attribute_ == "0000" or 
+                                            ( Attribute_ in ("0100", "0102") and Ep == "01") or
+                                            ( Attribute_ in ("0104", "0106") and Ep == "f2") or
+                                            ( Attribute_ in ("0108", "010a") and Ep == "f3")):
+                
                 # We are in the case were we receive Summation , let's find the last instant power and update
                 check_set_meter_widget( Devices, DeviceUnit, 0)    
                 instant, _summation = retreive_data_from_current(self, Devices, DeviceUnit, "0;0")
@@ -531,6 +530,14 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 sValue = SWITCH_LVL_MATRIX["ThermoMode_2"][value][1]
                 self.log.logging("Widget", "Debug", "------>  Thermostat Mode 2 %s %s:%s" % (value, nValue, sValue), NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
+
+            elif WidgetType == "ThermoMode_4" and Attribute_ == "001c":
+                # Use by Tuya TRV
+                nValue = value
+                sValue = '%02d' %( nValue * 10)
+                self.log.logging("Widget", "Debug", "------>  Thermostat Mode 2 %s %s:%s" % (value, nValue, sValue), NWKID)
+                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
+
 
             elif WidgetType in ("ThermoMode", "ACMode") and Attribute_ == "001c":
                 # value seems to come as int or str. To be fixed
@@ -754,6 +761,16 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 # Called with ClusterID: 0x0006 but we have to update a Dimmer, so we need to keep the level
                 nValue = int(value)
                 sValue = Devices[DeviceUnit].sValue
+                if Devices[DeviceUnit].SwitchType in (13, 16):
+                    # Correct for Blinds where we have to display %
+                    if value == "00":
+                        nValue = 0
+                        sValue = "0"
+                    elif value == "01" and Devices[DeviceUnit].sValue == "100":
+                        nValue = 1
+                        sValue = "100"
+                    else:
+                        nValue = 2
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
 
             elif WidgetType == "DSwitch":

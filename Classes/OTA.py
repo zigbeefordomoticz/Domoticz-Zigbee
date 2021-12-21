@@ -53,6 +53,7 @@ OTA_CODES = {
     "Schneider": {"Folder": "SCHNEIDER-WISER", "ManufCode": 0x105E, "ManufName": "Schneider Electric", "Enabled": True},
     "Salus": {"Folder": "SALUS", "ManufCode": 0x1078, "ManufName": "Computime", "Enabled": True},
     "Lixee": {"Folder": "LIXEE", "ManufCode": 0x1037, "ManufName": "LiXee", "Enabled": True},
+    "Eurotronics": {"Folder": "EUROTRONICS", "ManufCode": 0x1037, "ManufName": "Eurotronic", "Enabled": True},
 }
 
 
@@ -1111,7 +1112,6 @@ def notify_upgrade_end(
             self.PluginHealth["Firmware Update"]["Progress"] = "Failed"
     elif Status == "More":
         _textmsg = "Device: %s has been updated to latest firmware in %s hour %s min %s sec, but additional Image needed" % (
-            Status,
             _name,
             _transferTime_hh,
             _transferTime_mm,

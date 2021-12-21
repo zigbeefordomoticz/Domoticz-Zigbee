@@ -10,24 +10,35 @@
 
 """
 
-import Domoticz
-
 import struct
 
-from Classes.LoggingManagement import LoggingManagement
+import Domoticz
 
-from Modules.zigateConsts import ZIGATE_EP
 from Modules.basicOutputs import raw_APS_request, write_attribute
-from Modules.tools import checkAndStoreAttributeValue, is_ack_tobe_disabled, get_and_inc_SQN
-from Modules.tuyaTools import tuya_cmd, store_tuya_attribute
-
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import Update_Battery_Device
+from Modules.tools import (checkAndStoreAttributeValue, get_and_inc_SQN,
+                           is_ack_tobe_disabled)
+from Modules.tuyaTools import store_tuya_attribute, tuya_cmd
+from Modules.zigateConsts import ZIGATE_EP
 
 
 def tuya_sirene_registration(self, nwkid):
 
     self.log.logging("Tuya", "Debug", "tuya_sirene_registration - Nwkid: %s" % nwkid)
+
+    EPout = "01"
+    payload = "11" + get_and_inc_SQN(self, nwkid) + "10" + "002a"
+    raw_APS_request(
+        self,
+        nwkid,
+        EPout,
+        "ef00",
+        "0104",
+        payload,
+        zigate_ep=ZIGATE_EP,
+        ackIsDisabled=is_ack_tobe_disabled(self, nwkid),
+    )
 
     # (1) 3 x Write Attribute Cluster 0x0000 - Attribute 0xffde  - DT 0x20  - Value: 0x13
     EPout = "01"
@@ -74,15 +85,15 @@ def tuya_siren_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstN
             )
 
         elif data == "01":  # High
-            self.ListOfDebices[NwkId]["Battery"] = 90
+            self.ListOfDevices[NwkId]["Battery"] = 90
             Update_Battery_Device(self, Devices, NwkId, 90)
 
         elif data == "02":  # Medium
-            self.ListOfDebices[NwkId]["Battery"] = 50
+            self.ListOfDevices[NwkId]["Battery"] = 50
             Update_Battery_Device(self, Devices, NwkId, 50)
 
         elif data == "03":  # Low
-            self.ListOfDebices[NwkId]["Battery"] = 25
+            self.ListOfDevices[NwkId]["Battery"] = 25
             Update_Battery_Device(self, Devices, NwkId, 25)
 
         elif data == "04":
@@ -224,7 +235,7 @@ def get_alarm_attrbutes(self, nwkid, alarm_num):
             "Tuya",
             "Error",
             "get_alarm_attrbutes - default value to be used - Missing Duration, Volume or Melogy for alarm %s in Param %s - %s"
-            % (alarm, self.ListOfDevices[nwkid]["Param"]),
+            % (alarm, self.ListOfDevices[nwkid]["Param"], alarm_attributes),
         )
         return default_alarm
 

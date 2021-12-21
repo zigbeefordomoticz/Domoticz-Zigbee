@@ -5,20 +5,14 @@
 #
 import Domoticz
 
-from datetime import datetime
-from time import time
-
-from Modules.basicOutputs import set_poweron_afteroffon, write_attribute, raw_APS_request
-from Modules.readAttributes import (
-    ReadAttributeRequest_0006_0000,
-    ReadAttributeRequest_0008_0000,
-    ReadAttributeRequest_0006_400x,
-    ReadAttributeRequest_0406_philips_0030,
-)
-from Modules.tools import retreive_cmd_payload_from_8002, is_ack_tobe_disabled
+from Modules.basicOutputs import (raw_APS_request, set_poweron_afteroffon,
+                                  write_attribute)
+from Modules.readAttributes import (ReadAttributeRequest_0006_0000,
+                                    ReadAttributeRequest_0006_400x,
+                                    ReadAttributeRequest_0008_0000,
+                                    ReadAttributeRequest_0406_philips_0030)
+from Modules.tools import is_ack_tobe_disabled, retreive_cmd_payload_from_8002
 from Modules.zigateConsts import ZIGATE_EP
-
-from Classes.LoggingManagement import LoggingManagement
 
 PHILIPS_POWERON_MODE = {0x00: "Off", 0x01: "On", 0xFF: "Previous state"}  # Off  # On  # Previous state
 
@@ -109,8 +103,7 @@ def philips_set_pir_occupancySensibility(self, nwkid, level):
 
     if level in (0, 1, 2):
         write_attribute(
-            self, nwkid, ZIGATE_EP, "02", "0406", "100b", "01", "0030", "20", "%02x" % level, ackIsDisabled=True
-        )
+            self, nwkid, ZIGATE_EP, "02", "0406", "100b", "01", "0030", "20", "%02x" % level, ackIsDisabled=False)
         ReadAttributeRequest_0406_philips_0030(self, nwkid)
 
 
