@@ -76,6 +76,9 @@ class ZigpyTransport(object):
             }
         self.writer_queue.put((99, str(json.dumps(message))))        
 
+    def receiveData(self, message):
+        self.forwarder_queue.put( message )
+        
     def pdm_lock_status(self):
         return False
     

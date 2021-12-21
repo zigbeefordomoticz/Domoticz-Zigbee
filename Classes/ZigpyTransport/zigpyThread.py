@@ -67,7 +67,7 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False ):
     elif radiomodule == 'znp':
         self.app = App_znp (conf) 
 
-    await self.app.startup (self.F_out, callBackGetDevice=self.ZigpyGetDevice, auto_form=True, log=self.log)  
+    await self.app.startup (self.receiveData, callBackGetDevice=self.ZigpyGetDevice, auto_form=True, log=self.log)  
     self.version = None
 
     self.FirmwareBranch = "00"  # 00 Production, 01 Development 

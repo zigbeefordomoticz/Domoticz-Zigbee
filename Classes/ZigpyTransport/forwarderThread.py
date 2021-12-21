@@ -24,6 +24,7 @@ def forwarder_thread(self):
             message = self.forwarder_queue.get()
             if message == "STOP":
                 break   
+            forward_message(self, message)
         except queue.Empty:
             # Empty Queue, timeout.
             continue
