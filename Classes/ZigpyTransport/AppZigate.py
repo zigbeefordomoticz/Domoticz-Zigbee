@@ -55,7 +55,7 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         
     async def remove(self, ieee: t.EUI64) -> None:
         logging.debug("remove")
-        
+     
     def get_device(self, ieee=None, nwk=None):
         logging.debug("get_device")
         return zigpy.device.Device(self, ieee, nwk)
@@ -81,7 +81,7 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         message: bytes,
     ) -> None:
         
-        
+         
         #Domoticz.Log("handle_message %s" %(str(profile)))
         if sender.nwk or sender.ieee:
             self.log.logging("TransportZigpy", "Debug","=====> Sender %s - %s" %(sender.nwk, sender.ieee))
@@ -96,6 +96,7 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
                 self.log.logging("TransportZigpy", "Debug","=====> sender.ieee %s - %s" %(sender.ieee, addr))
                 
             if addr:
+                self.statistics._received += 1   
                 self.log.logging("TransportZigpy", "Debug"," handle_message addr: %s profile: %s cluster: %04x src_ep: %02x dst_ep: %02x message: %s lqi: %02x" %(
                     addr, profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode('utf-8'), sender.lqi
                 ))

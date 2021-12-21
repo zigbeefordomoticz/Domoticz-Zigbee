@@ -23,20 +23,16 @@ def forwarder_thread(self):
             self.log.logging("TransportFrwder", "Debug", "Waiting for next message")
             message = self.forwarder_queue.get()
             if message == "STOP":
-                break   
+                break
+            self.statistics._received += 1 
             forward_message(self, message)
         except queue.Empty:
             # Empty Queue, timeout.
             continue
         except Exception as e:
-            context = {
-                "Error code": "TRANS-FWD-01",
-                "Error": str(e),
-                "Message": message,
-            }
-            self.log.logging("TransportFrwder", "Error", "forwarder_thread - Error while receiving a ZiGate command", _context=context)
+            self.log.logging("TransportFrwder", "Error", "forwarder_thread - Error while receiving a ZiGate command")
 
-            handle_thread_error(self, e)
+            handle_thread_error(self, e, message)
 
     self.log.logging("TransportFrwder", "Status", "ZigpyTransport: thread_processing_and_sending Thread stop.")
 

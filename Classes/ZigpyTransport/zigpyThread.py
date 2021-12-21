@@ -170,7 +170,8 @@ async def process_raw_command( self, data, AckIsDisable=False):
     addressmode = data["AddressMode"]
     enableAck = not AckIsDisable
     
-    self.log.logging("TransportWrter", "Debug", "ZigyTransport: process_raw_command ready to request %04x %04x %02x %s %02x %s" %(
+    self.statistics._sent += 1
+    self.log.logging("TransportWrter", "Debug", "ZigyTransport: process_raw_command ready to request NwkId: %04x Cluster: %04x Seq: %02x Payload: %s AddrMode: %02x EnableAck: %s" %(
         NwkId, Cluster, sequence, payload, addressmode, enableAck ))
     if addressmode == 0x01:
         # Group Mode

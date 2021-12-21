@@ -1119,6 +1119,14 @@ SETTINGS = {
                 "hidden": False,
                 "Advanced": True,
             },
+            "debugoutRawAPS": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": True,
+            },
             "debugTiming": {
                 "type": "bool",
                 "default": 1,

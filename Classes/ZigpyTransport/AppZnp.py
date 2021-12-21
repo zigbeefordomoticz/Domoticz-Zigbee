@@ -49,7 +49,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         self.callBackGetDevice = callBackGetDevice
         await super().startup(auto_form)
 
-
+    
     def get_device(self, ieee=None, nwk=None):
 
         logging.debug("get_device nwk %s ieee %s" %(nwk,ieee))

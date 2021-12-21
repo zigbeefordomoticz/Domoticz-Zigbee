@@ -193,6 +193,13 @@ def sendZigateCmd(self, cmd, datas, ackIsDisabled=False):
 
 
 def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep=ZIGATE_EP, groupaddrmode=False, highpriority=False, ackIsDisabled=False):
+    self.log.logging(
+        "outRawAPS",
+        "Debug",
+        "raw_APS_request - Zigbee Communication: %s Profile: %s Cluster: %s TargetNwk: %s TargetEp: %s SrcEp: %s payload: %s GroupMode: %s ackIsDisable: %s"
+        % (self.zigbee_communitation, profileId, cluster, targetaddr, dest_ep, zigate_ep, payload, groupaddrmode, ackIsDisabled),
+    )
+
     if self.zigbee_communitation == "zigpy":
         return zigpy_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep, groupaddrmode, highpriority, ackIsDisabled)
     return zigate_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep, groupaddrmode, highpriority, ackIsDisabled)
@@ -211,9 +218,9 @@ def zigate_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, paylo
     # APS RAW is always sent in NO-ACK below 31d (included)
     # APS RAW has ACK/NO-ACK option as of 31e
     self.log.logging(
-        "inRawAPS",
+        "outRawAPS",
         "Debug",
-        "raw_APS_request - ackIsDisabled: %s Addr: %s Ep: %s Cluster: %s ProfileId: %s Payload: %s"
+        "zigate_raw_APS_request - ackIsDisabled: %s Addr: %s Ep: %s Cluster: %s ProfileId: %s Payload: %s"
         % (ackIsDisabled, targetaddr, dest_ep, cluster, profileId, payload),
         dest_ep,
     )
@@ -269,6 +276,13 @@ def zigpy_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payloa
         data['AddressMode'] = 0x07
     else:
         data['AddressMode'] = 0x02
+        
+    self.log.logging(
+        "outRawAPS",
+        "Debug",
+        "zigpy_raw_APS_request - Profile: %04x Cluster: %04x TargetNwk: %04x TargetEp: %02x SrcEp: %02x  payload: %s"
+        % ( data['Profile'], data['Cluster'], data['TargetNwk'], data['TargetEp'], data['SrcEp'],  data['payload'])
+    )
 
     i_sqn = self.ZigateComm.sendData( "RAW-COMMAND", data)
     return 
