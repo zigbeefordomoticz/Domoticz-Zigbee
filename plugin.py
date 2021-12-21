@@ -744,7 +744,7 @@ class BasePlugin:
         # stop_time = int(time.time() *1000)
         # Domoticz.Log("### Completion: %s is %s ms" %(Data, ( stop_time - start_time)))
 
-    def zigpy_get_device(self, nwkid = None, ieee=None):
+    def zigpy_get_device(self, ieee=None, nwkid = None):
         # allow to inter-connect zigpy world and plugin
         if nwkid in self.ListOfDevices and 'IEEE' in self.ListOfDevices[ nwkid ]:
             ieee = self.ListOfDevices[ nwkid ]['IEEE']
