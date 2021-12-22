@@ -237,10 +237,12 @@ def buildframe_simple_descriptor_response(self, SrcNwkId, SrcEndPoint, ClusterId
 
         idx = 14 + ( 4 * int(inputCnt,16) )
         outputCnt = SimpleDescriptor[idx:idx + 2]
+        buildPayload += outputCnt
         idx += 2
         for x in range(int(outputCnt,16)):
             buildPayload += "%04x" % struct.unpack("H", struct.pack(">H", int(SimpleDescriptor[idx+(4*x):idx+(4*x)+4], 16)))[0]
 
+    self.log.logging( "zdpCommand", "Debug","buildframe_simple_descriptor_response - New payload %s" %(buildPayload))
     return encapsulate_plugin_frame( "8043", buildPayload , frame[len(frame) - 4 : len(frame) - 2])   
 
 def buildframe_bind_response_command(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
