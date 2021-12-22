@@ -35,8 +35,6 @@ from zigpy.exceptions import DeliveryError, InvalidResponse
 from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
                                  SCHEMA_DEVICE)
 
-LOGGER = logging.getLogger(__name__)
-    
 
 def start_zigpy_thread(self):
     self.log.logging("TransportWrter",  "Debug","start_zigpy_thread - Starting zigpy thread")
@@ -58,11 +56,7 @@ def callBackGetDevice (nwk,ieee):
 async def radio_start(self, radiomodule, serialPort, auto_form=False ):
 
     self.log.logging("TransportWrter",  "Debug","In radio_start")
-    #if self.log:
-    #    self.log.enable_zigpy_login()
-    #logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',datefmt='%Y-%m-%d:%H:%M:%S',level=logging.DEBUG)
     
-    # Import the radio library
     conf = {CONF_DEVICE: {"path": serialPort}}
     if radiomodule == 'zigate':
         self.app = App_zigate (conf) 

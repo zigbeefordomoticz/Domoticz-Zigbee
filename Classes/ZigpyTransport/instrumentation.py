@@ -1,4 +1,4 @@
-import Domoticz
+
 import time
 
 instrument_time = True
