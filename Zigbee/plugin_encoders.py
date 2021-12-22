@@ -19,7 +19,15 @@ def build_plugin_004D_frame_content(self, nwk, ieee, parent_nwk):
     
     return encapsulate_plugin_frame( "004d", frame_payload, "%02x" %0x00)
 
-
+def build_plugin_8011_frame_content(self, nwkid, status, lqi):
+    #MsgLen = len(MsgData)
+    #MsgStatus = MsgData[0:2]
+    #MsgSrcAddr = MsgData[2:6]
+    #MsgSEQ = MsgData[12:14] if MsgLen > 12 else None
+    lqi = lqi or 0x00
+    frame_payload =  "06" + "%02x" %status + nwkid
+    return encapsulate_plugin_frame( "8011", frame_payload, "%02x" %lqi)
+    
 def build_plugin_8002_frame_content(self, address, profile, cluster, src_ep, dst_ep, message, lqi=0x00, receiver=0x0000, src_addrmode=0x02, dst_addrmode=0x02):
     self.log.logging("TransportPluginEncoder", "Debug", "build_plugin_8002_frame_content %s %s %s %s %s %s %s %s %s %s" %(
         address, profile, cluster, src_ep, dst_ep, message, lqi, receiver, src_addrmode, dst_addrmode))

@@ -3,7 +3,7 @@ from time import sleep
 import queue
 from threading import Thread
 from Classes.ZigpyTransport.tools import handle_thread_error
-from Classes.Transport.instrumentation import time_spent_forwarder
+from Classes.ZigpyTransport.instrumentation import time_spent_forwarder
 
 
 

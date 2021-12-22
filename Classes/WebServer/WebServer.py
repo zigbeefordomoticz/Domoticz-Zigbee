@@ -386,6 +386,8 @@ class WebServer(object):
             Statistics["AvgZiGateRoundTime8012 "] = self.statistics._averageTiming8012
             Statistics["MaxTimeSpentInProcFrame"] = self.statistics._max_reading_thread_timing
             Statistics["AvgTimeSpentInProcFrame"] = self.statistics._average_reading_thread_timing
+            Statistics["MaxTimeSendingZigpy"] = self.statistics._max_reading_zigpy_timing
+            Statistics["AvgTimeSendingZigpy"] = self.statistics._average_reading_zigpy_timing
 
             Statistics["MaxTimeSpentInForwarder"] = self.statistics._maxRxProcesses
             Statistics["AvgTimeSpentInForwarder"] = self.statistics._averageRxProcess

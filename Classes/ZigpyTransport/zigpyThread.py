@@ -4,9 +4,9 @@ import binascii
 import json
 import logging
 import queue
+import time
 from typing import Any, Optional
 
-import time
 import zigpy.appdb
 import zigpy.config
 import zigpy.device
@@ -24,15 +24,16 @@ import zigpy.zdo.types as zdo_types
 import zigpy_zigate
 import zigpy_zigate.zigbee.application
 import zigpy_znp.zigbee.application
-from zigpy.exceptions import DeliveryError, InvalidResponse
 from Classes.ZigpyTransport.AppZigate import App_zigate
 from Classes.ZigpyTransport.AppZnp import App_znp
+
 from Classes.ZigpyTransport.nativeCommands import (NATIVE_COMMANDS_MAPPING,
                                                    native_commands)
+from Classes.ZigpyTransport.tools import handle_thread_error
+from Zigbee.plugin_encoders import build_plugin_8011_frame_content
+from zigpy.exceptions import DeliveryError, InvalidResponse
 from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
                                  SCHEMA_DEVICE)
-from Classes.ZigpyTransport.tools import handle_thread_error
-
 
 LOGGER = logging.getLogger(__name__)
     
@@ -178,19 +179,45 @@ async def process_raw_command( self, data, AckIsDisable=False):
         NwkId, Cluster, sequence, payload, addressmode, enableAck ))
     
     if self.pluginconf.pluginConf["ZiGateReactTime"]:
-        start_timing = time.time()
+        t_start = 1000 * time.time()
         
     if addressmode == 0x01:
         # Group Mode
-        await self.app.mrequest( NwkId, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=enableAck, use_ieee=False)
+        result, msg = await self.app.mrequest( NwkId, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=enableAck, use_ieee=False)
     elif addressmode in (0x02,0x07):
         # Short
         destination = zigpy.device.Device(self.app, None, NwkId)
-        await self.app.request( destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=enableAck, use_ieee=False)
+        result, msg = await self.app.request( destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=enableAck, use_ieee=False)
     elif addressmode in ( 0x03, 0x08):
         destination = zigpy.device.Device(self.app, NwkId, None)
-        await self.app.request( destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=enableAck, use_ieee=False)
+        result, msg = await self.app.request( destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=enableAck, use_ieee=False)
 
     if self.pluginconf.pluginConf["ZiGateReactTime"]:
-        delay = int((time.time() - start_timing) * 1000)
-        self.statistics.add_timing8000(delay)
+        t_end = 1000 * time.time()
+        t_elapse = int(t_end - t_start)
+        self.statistics.add_timing_zigpy(t_elapse)
+        if t_elapse > 1000:
+            self.log.logging(
+            "TransportWrter",
+            "Log",
+            "process_raw_command (zigpyThread) spend more than 1s (%s ms) frame: %s with Ack: %s"
+            % (t_elapse, data, AckIsDisable),
+        )
+
+
+    self.log.logging("TransportWrter", "Debug", "ZigyTransport: process_raw_command completed NwkId: %s result: %s msg: %s" %(
+        destination, result, msg))
+    
+    if enableAck:
+        # Looks like Zigate return an int, while ZNP returns a status.type
+        if not isinstance(result, int):
+            result = int(result.serialize().hex(),16)
+
+        # Update statistics
+        if result != 0x00:
+            self.statistics._APSNck += 1
+        else:
+            self.statistics._APSAck += 1
+
+        # Send Ack/Nack to Plugin
+        self.forwarder_queue.put( build_plugin_8011_frame_content(self, destination.nwk.serialize()[::-1].hex(), result, destination.lqi) )
