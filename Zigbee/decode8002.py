@@ -23,10 +23,12 @@ def decode8002_and_process(self, frame):
 
     if ProfileId == "0000":
         frame = zdp_decoders( self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame )
+        self.log.logging("Transport8002", 'Debug', "decode8002_and_process return ZDP frame: %s" %frame)
         return frame
     
     if ProfileId == "0104":
         frame = zcl_decoders( self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame )
+        self.log.logging("Transport8002", 'Debug', "decode8002_and_process return ZCL frame: %s" %frame)
         return frame
     return frame
     
