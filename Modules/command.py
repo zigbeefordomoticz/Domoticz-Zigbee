@@ -568,7 +568,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 actuator_on(self, NWKID, EPout, "Light")
                 #sendZigateCmd(self, "0092", "02" + NWKID + ZIGATE_EP + EPout + "01")
             else:
-                actuator_off(self, NWKID, EPout, "WindowCovering")
+                actuator_on(self, NWKID, EPout, "WindowCovering")
                 #sendZigateCmd(self, "00FA", "02" + NWKID + ZIGATE_EP + EPout + "01")  # Venetian/Blind (On, for Open)
 
         elif DeviceType == "HeatingSwitch":
