@@ -760,11 +760,17 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             if ClusterType == "Switch" and WidgetType == "LvlControl":
                 # Called with ClusterID: 0x0006 but we have to update a Dimmer, so we need to keep the level
                 nValue = int(value)
-                if Devices[DeviceUnit].SwitchType in (13, 16) and nValue == 1:
-                    # Correct for Blinds where we have to display %
-                    nValue = 2
-                    
                 sValue = Devices[DeviceUnit].sValue
+                if Devices[DeviceUnit].SwitchType in (13, 16):
+                    # Correct for Blinds where we have to display %
+                    if value == "00":
+                        nValue = 0
+                        sValue = "0"
+                    elif value == "01" and Devices[DeviceUnit].sValue == "100":
+                        nValue = 1
+                        sValue = "100"
+                    else:
+                        nValue = 2
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
 
             elif WidgetType == "DSwitch":
