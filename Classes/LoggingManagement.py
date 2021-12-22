@@ -37,6 +37,9 @@ class LoggingManagement:
         self.logging_queue = None
         self.logging_thread = None
         self._startTime = int(time.time())
+        self.zigpy_log_zigate = None
+        self.zigpy_log_znp = None
+        self.zigpy_login()
 
         start_logging_thread(self)
 
@@ -70,9 +73,28 @@ class LoggingManagement:
             self.LogErrorHistory[str(self.LogErrorHistory["LastLog"])]["FirmwareVersion"] = FirmwareVersion
             self.LogErrorHistory[str(self.LogErrorHistory["LastLog"])]["FirmwareMajorVersion"] = FirmwareMajorVersion
 
-    def enable_zigpy_login(self):
-        if 'debugZigpyLayer' in self.pluginconf.pluginConf and self.pluginconf.pluginConf["debugZigpyLayer"]: 
-            self.open_logging_mode()
+    def zigpy_login(self):
+        if 'debugTransportZigpyZNP' in self.pluginconf.pluginConf and self.pluginconf.pluginConf['debugTransportZigpyZNP']:
+            requests_logger = logging.getLogger('zigpy') 
+            requests_logger.setLevel(logging.DEBUG) 
+            requests_logger = logging.getLogger('zigpy_znp') 
+            requests_logger.setLevel(logging.DEBUG)
+
+        elif 'debugTransportZigpyZigate' in self.pluginconf.pluginConf and self.pluginconf.pluginConf['debugTransportZigpyZigate']:
+            requests_logger = logging.getLogger('zigpy') 
+            requests_logger.setLevel(logging.DEBUG) 
+            requests_logger = logging.getLogger('zigpy_zigate') 
+            requests_logger.setLevel(logging.DEBUG)
+            
+        else:
+            requests_logger = logging.getLogger('zigpy') 
+            requests_logger.setLevel(logging.WARNING) 
+            requests_logger = logging.getLogger('zigpy_znp') 
+            requests_logger.setLevel(logging.WARNING)
+            requests_logger = logging.getLogger('zigpy_zigate') 
+            requests_logger.setLevel(logging.WARNING)
+
+
 
     def openLogFile(self):
         self.open_logging_mode()
@@ -175,6 +197,24 @@ class LoggingManagement:
         self._newError = False
 
     def logging(self, module, logType, message, nwkid=None, context=None):
+        if 'debugTransportZigpyZNP' in self.pluginconf.pluginConf and self.pluginconf.pluginConf['debugTransportZigpyZNP']:
+            if not self.zigpy_log_znp:
+                self.zigpy_log_znp = True
+                self.zigpy_login()
+        elif self.zigpy_log_znp:
+            self.zigpy_log_znp = False
+            self.zigpy_login()
+
+
+        if 'debugTransportZigpyZigate' in self.pluginconf.pluginConf and self.pluginconf.pluginConf['debugTransportZigpyZigate']:
+            if not self.zigpy_log_zigate:
+                self.zigpy_log_zigate = True
+                self.zigpy_login()
+        elif self.zigpy_log_zigate:
+            self.zigpy_log_zigate = False
+            self.zigpy_login()
+
+
         if self.logging_thread and self.logging_queue:
             logging_tupple = [
                 str(time.time()),

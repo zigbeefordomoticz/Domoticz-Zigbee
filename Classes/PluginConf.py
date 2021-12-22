@@ -918,6 +918,22 @@ SETTINGS = {
                 "hidden": False,
                 "Advanced": True,
             },
+            "debugTransportZigpyZigate": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": True,
+            },
+            "debugTransportZigpyZNP": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": True,
+            },
             "debugTransportPluginEncoder": {
                 "type": "bool",
                 "default": 0,
