@@ -53,9 +53,6 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         self.callBackFunction( build_plugin_8010_frame_content( Model, FirmwareMajorVersion, FirmwareVersion) )
 
         
-    #def get_zigpy_version(self):
-    #    return self.version
-#
     def add_device(self, ieee, nwk):
         logging.debug("add_device %s" %str(nwk))
         
