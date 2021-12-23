@@ -98,6 +98,7 @@ from Modules.basicOutputs import (ZigatePermitToJoin,
                                   do_Many_To_One_RouteRequest, leaveRequest,
                                   setExtendedPANID,
                                   setTimeServer, start_Zigate, zigateBlueLed)
+from Modules.zigateCommands import zigate_set_mode
 from Modules.checkingUpdate import (checkFirmwareUpdate, checkPluginUpdate,
                                     checkPluginVersion)
 from Modules.command import mgtCommand
@@ -1025,6 +1026,9 @@ def zigateInit_Phase2(self):
 
     # Set Time server to HOST time
     setTimeServer(self)
+
+    # Reset ZiGate to Standard Mode
+    zigate_set_mode(self, 0x00)
 
     # If applicable, put Zigate in NO Pairing Mode
     self.Ping["Permit"] = None
