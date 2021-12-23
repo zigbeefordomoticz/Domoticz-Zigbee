@@ -7,6 +7,7 @@ import zigpy.types as t
 from Zigbee.encoder_tools import encapsulate_plugin_frame
 
 
+
 def build_plugin_004D_frame_content(self, nwk, ieee, parent_nwk):
     # No endian decoding as it will go directly to Decode004d
     self.log.logging("TransportPluginEncoder", "Debug", "build_plugin_004D_frame_content %s %s %s" %(nwk, ieee, parent_nwk))
@@ -25,8 +26,20 @@ def build_plugin_8015_frame_content(self, ):
     
 def build_plugin_8009_frame_content(self, ):
     # Get Network State
-    pass
-    
+    frame_payload =  "%04x" %self.app.nwk
+    frame_payload += "%016x" %t.uint64_t.deserialize(self.app.ieee.serialize())[0]
+    frame_payload += "%04x" %self.app.nwk
+    frame_payload += "%16x" %t.uint64_t.deserialize(self.app.extended_pan_id.serialize())[0] 
+    frame_payload += "%04x" %self.app.pan_id
+    frame_payload += "%02x" %self.app.channel
+    return encapsulate_plugin_frame( "8009", frame_payload, "00")
+
+def build_plugin_8010_frame_content( Branch, Major, Version):
+    # Version
+
+    return encapsulate_plugin_frame( "8010", Branch + Major + Version, "00")
+
+
 def build_plugin_8011_frame_content(self, nwkid, status, lqi):
     #MsgLen = len(MsgData)
     #MsgStatus = MsgData[0:2]

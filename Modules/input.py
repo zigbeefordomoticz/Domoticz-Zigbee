@@ -862,8 +862,10 @@ def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
     FIRMWARE_BRANCH = {
         "00": "Production",
         "01": "Beta",
+        "10": "zigpy",
+
     }
-    self.FirmwareBranch = MsgData[0:2]
+    self.FirmwareBranch = MsgData[:2]
     self.FirmwareMajorVersion = MsgData[2:4]
     self.FirmwareVersion = MsgData[4:8]
 
@@ -877,6 +879,9 @@ def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
     elif self.FirmwareMajorVersion == "05":
         self.log.logging("Input", "Status", "ZiGate+ (V2)")
         self.ZiGateModel = 2
+    elif self.FirmwareMajorVersion == "10":
+        self.log.logging("Input", "Status", "Texas Instrument ZNP CC1352/CC2652, Z-Stack 3.30+)")
+        
     self.log.logging("Input", "Status", "Installer Version Number: %s" % self.FirmwareVersion)
     self.log.logging("Input", "Status", "Branch Version: ==> %s <==" % FIRMWARE_BRANCH[self.FirmwareBranch])
     self.zigatedata["Firmware Version"] = "Branch: %s Major: %s Version: %s" % (

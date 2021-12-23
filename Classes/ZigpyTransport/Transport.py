@@ -14,6 +14,7 @@ from Classes.Transport.forwarderThread import forwarder_thread
 from Classes.ZigpyTransport.zigpyThread import zigpy_thread, start_zigpy_thread, stop_zigpy_thread
 from Classes.ZigpyTransport.forwarderThread import forwarder_thread, start_forwarder_thread, stop_forwarder_thread
 from Classes.Transport.sqnMgmt import (sqn_init_stack)
+
 class ZigpyTransport(object): 
     def __init__( self, pluginconf, F_out, zigpy_get_device, log, statistics, hardwareid, radiomodule, serialPort):
         self.zigbee_communitation = "zigpy"
@@ -78,28 +79,17 @@ class ZigpyTransport(object):
 
     def receiveData(self, message):
         self.forwarder_queue.put( message )
-        
+
+
+    # TO be cleaned . This is to make the plugin working
+    def update_ZiGate_HW_Version(self, version):
+        return
+    def update_ZiGate_Version(self, FirmwareVersion, FirmwareMajorVersion):
+        return
     def pdm_lock_status(self):
         return False
     
-    def get_zigate_firmware_version(self):
-        return { 'Branch': self.FirmwareBranch,  'Model': self.FirmwareMajorVersion, 'Firmware':self.FirmwareVersion}
- 
-    def get_zigate_ieee(self):
-        return "%016x" %t.uint64_t.deserialize(self.app.ieee.serialize())[0]
-
-    def get_zigate_nwkid(self):
-        return "%04x" %self.app.nwk
-
-    def get_zigate_extented_panId(self):
-        return "%16x" %t.uint64_t.deserialize(self.app.extended_pan_id.serialize())[0] 
-
-    def get_zigate_panId(self):
-        return "%04x" %self.app.pan_id
-
-    def get_zigate_channel(self):
-        return self.app.channel
-
+    
     def get_writer_queue(self):
         return self.writer_queue.qsize()
     

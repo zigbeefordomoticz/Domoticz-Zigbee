@@ -23,9 +23,11 @@ import zigpy_zigate
 import zigpy_zigate.zigbee.application
 from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
                                  SCHEMA_DEVICE)
-from Zigbee.plugin_encoders import build_plugin_004D_frame_content, build_plugin_8002_frame_content
+from Zigbee.plugin_encoders import build_plugin_004D_frame_content, build_plugin_8002_frame_content, build_plugin_8010_frame_content
 
 LOGGER = logging.getLogger(__name__)
+
+import Domoticz
 
 class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
     
@@ -43,10 +45,17 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         self.log = log
         await super().startup(auto_form)
 
-        
-    def get_zigpy_version(self):
-        return self.version
+        version = await self._api.version_str()
+        Domoticz.Log("Zigate Version: %s" %version)
+        Model = "10"  # Zigpy
+        FirmwareMajorVersion = version[2:4]
+        FirmwareVersion = "0321"   #TODO : https://github.com/pipiche38/Domoticz-Zigate/issues/925
+        self.callBackFunction( build_plugin_8010_frame_content( Model, FirmwareMajorVersion, FirmwareVersion) )
 
+        
+    #def get_zigpy_version(self):
+    #    return self.version
+#
     def add_device(self, ieee, nwk):
         logging.debug("add_device %s" %str(nwk))
         

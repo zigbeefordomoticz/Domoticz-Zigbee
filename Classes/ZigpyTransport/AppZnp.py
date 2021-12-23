@@ -20,14 +20,14 @@ import zigpy.zdo.types as zdo_types
 import zigpy_zigate.zigbee.application
 import zigpy_znp.commands.util
 import zigpy_znp.zigbee.application
-from Zigbee.plugin_encoders import build_plugin_8002_frame_content
+from Zigbee.plugin_encoders import build_plugin_8002_frame_content, build_plugin_8010_frame_content
 from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
                                  SCHEMA_DEVICE)
 
 LOGGER = logging.getLogger(__name__)
     
 
-
+import Domoticz
 class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
 
     async def new(
@@ -48,6 +48,15 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         self.callBackHandleMessage = callBackHandleMessage
         self.callBackGetDevice = callBackGetDevice
         await super().startup(auto_form)
+        
+        # Trigger Version payload to plugin
+
+
+        Model = "10"  # Zigpy
+        FirmwareMajorVersion = "10"
+        FirmwareVersion = "0400"
+        self.callBackHandleMessage( build_plugin_8010_frame_content( Model, FirmwareMajorVersion, FirmwareVersion) )
+
 
     
     def get_device(self, ieee=None, nwk=None):
@@ -70,7 +79,13 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
 
         raise KeyError
 
+    def get_zigpy_version(self):
+        # This is a fake version number. This is just to inform the plugin that we are using ZNP over Zigpy
+        
 
+ 
+
+        return self.version
         
     def handle_message(
         self,

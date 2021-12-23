@@ -30,7 +30,7 @@ from Classes.ZigpyTransport.AppZnp import App_znp
 from Classes.ZigpyTransport.nativeCommands import (NATIVE_COMMANDS_MAPPING,
                                                    native_commands)
 from Classes.ZigpyTransport.tools import handle_thread_error
-from Zigbee.plugin_encoders import build_plugin_8011_frame_content
+from Zigbee.plugin_encoders import build_plugin_8011_frame_content, build_plugin_8009_frame_content
 from zigpy.exceptions import DeliveryError, InvalidResponse
 from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
                                  SCHEMA_DEVICE)
@@ -65,20 +65,16 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False ):
         self.app = App_znp (conf) 
 
     await self.app.startup (self.receiveData, callBackGetDevice=self.ZigpyGetDevice, auto_form=True, log=self.log)  
-    self.version = None
-
-    self.FirmwareBranch = "00"  # 00 Production, 01 Development 
-    self.FirmwareMajorVersion = "04" # 03 PDM Legcay, 04 PDM Opti, 05 PDM V2
-    self.FirmwareVersion = "0320"
-    self.running = True
     
+    # Send Network information to plugin, in order to poplulate various objetcs
+    
+    self.receiveData( build_plugin_8009_frame_content(self) )
+        
     self.log.logging("TransportWrter",  "Debug","PAN ID:               0x%04x" %self.app.pan_id)
     self.log.logging("TransportWrter",  "Debug","Extended PAN ID:      0x%s" %self.app.extended_pan_id)
     self.log.logging("TransportWrter",  "Debug","Channel:              %d" %self.app.channel)
     self.log.logging("TransportWrter",  "Debug","Device IEEE:          %s" %self.app.ieee)
     self.log.logging("TransportWrter",  "Debug","Device NWK:           0x%04x" %self.app.nwk)
-
-    #await self.app.permit_ncp(time_s=240)
 
     # Run forever
     await worker_loop(self)
