@@ -19,6 +19,14 @@ def build_plugin_004D_frame_content(self, nwk, ieee, parent_nwk):
     
     return encapsulate_plugin_frame( "004d", frame_payload, "%02x" %0x00)
 
+def build_plugin_8015_frame_content(self, ):
+    # Get list of active devices
+    pass
+    
+def build_plugin_8009_frame_content(self, ):
+    # Get Network State
+    pass
+    
 def build_plugin_8011_frame_content(self, nwkid, status, lqi):
     #MsgLen = len(MsgData)
     #MsgStatus = MsgData[0:2]
