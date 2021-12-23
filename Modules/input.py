@@ -571,22 +571,6 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
         )
         return
 
-    # if MsgClusterID == "0032":
-    #    # Mgmt_Rtg_req
-    #    self.log.logging(
-    #        "Input",
-    #        "Log",
-    #        "Reception Data indication, Source Address: "
-    #        + MsgSourceAddress
-    #        + " Destination Address: "
-    #        + MsgDestinationAddress
-    #        + " ProfilID: "
-    #        + MsgProfilID
-    #        + " ClusterID: "
-    #        + MsgClusterID,
-    #    )
-    #    return
-
     if MsgProfilID != "0104":
         # Not handle
         self.log.logging(
