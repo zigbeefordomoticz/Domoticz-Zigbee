@@ -7,8 +7,6 @@
 
 
 import struct 
-from Modules.tools import retreive_cmd_payload_from_8002
-from Modules.zigateConsts import ADDRESS_MODE, SIZE_DATA_TYPE
 from Zigbee.encoder_tools import encapsulate_plugin_frame
 
 
@@ -18,18 +16,22 @@ def zdp_decoders( self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
     
     if ClusterId == "0000":
         # NWK_addr_req
+        self.log.logging( "zdpCommand", "Error","NWK_addr_req NOT IMPLEMENTED YET")
         return frame
     
     if  ClusterId == "0001":
         # IEEE_addr_req
+        self.log.logging( "zdpCommand", "Error","IEEE_addr_req NOT IMPLEMENTED YET")
         return frame
     
     if ClusterId == "0002":
         # Node_Desc_req
+        self.log.logging( "zdpCommand", "Error","Node_Desc_req NOT IMPLEMENTED YET")
         return frame
     
     if ClusterId == "0003":
         # Power_Desc_req
+        self.log.logging( "zdpCommand", "Error","Power_Desc_req NOT IMPLEMENTED YET")
         return frame
     
     if ClusterId == "0013":
@@ -43,7 +45,6 @@ def zdp_decoders( self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
         # IEEE_addr_rsp
         return buildframe_ieee_address_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame)
 
-    
     if ClusterId == "8002":
         # Node_Desc_rsp 
         return buildframe_node_descriptor_response( self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame)
@@ -52,7 +53,6 @@ def zdp_decoders( self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
         # Power_Desc_rsp
         return buildframe_power_description_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame)
  
-    
     if ClusterId == "8004":
         return buildframe_simple_descriptor_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame)
     
@@ -63,7 +63,6 @@ def zdp_decoders( self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
         # Match_Desc_rsp
         return buildframe_match_description_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame)
 
-    
     if ClusterId == "8010":
         # Complex_Desc_rsp
         return buildframe_complex_description_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame)
@@ -114,40 +113,18 @@ def zdp_decoders( self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
     
 def buildframe_device_annoucement( self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
     # Device Annoucement
-    #    if len(MsgData) > 22:  # Firmware 3.1b
-    #        RejoinFlag = MsgData[22:24]
-    #
-    #    NwkId = MsgData[0:4]
-    #    Ieee = MsgData[4:20]
-    #    MacCapa = MsgData[20:22]
-    # Reception Data indication, Source Address: 1735 Destination Address: fffd ProfilID: 0000 ClusterID: 0013 Message 
-    # Payload: 81/3517/a1c786feff9ffd90/8e
 
     sqn = Payload[:2]
     nwkid = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[2:6], 16)))[0]
     ieee = "%016x" %struct.unpack("Q", struct.pack(">Q", int(Payload[6:22], 16)))[0]
     maccapa = Payload[22:24]
 
-    #self.logging_8002( 'Debug', "buildframe_device_annoucement sqn: %s nwkid: %s ieee: %s maccapa: %s" %(sqn,nwkid , ieee , maccapa ))
+    self.log.logging( "zdpCommand", 'Debug', "buildframe_device_annoucement sqn: %s nwkid: %s ieee: %s maccapa: %s" %(sqn,nwkid , ieee , maccapa ))
 
     buildPayload = nwkid + ieee + maccapa
-
     return encapsulate_plugin_frame( "004d", buildPayload , frame[len(frame) - 4 : len(frame) - 2]) 
 
 def buildframe_node_descriptor_response( self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
-    # sequence = MsgData[0:2]
-    # status = MsgData[2:4]
-    # addr = MsgData[4:8]
-    # manufacturer = MsgData[8:12]
-    # max_rx = MsgData[12:16]
-    # max_tx = MsgData[16:20]
-    # # server_mask = MsgData[20:24]
-    # # descriptor_capability = MsgData[24:26]
-    # mac_capability = MsgData[26:28]
-    # max_buffer = MsgData[28:30]
-    # bit_field = MsgData[30:34]
-
-    #  2c 00 3517   0140/8e/7c11/52/5200/002c/5200/00
 
     sqn = Payload[:2]
     status = Payload[2:4]
@@ -161,7 +138,7 @@ def buildframe_node_descriptor_response( self, SrcNwkId, SrcEndPoint, ClusterId,
     max_out_size_16 = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[28:32], 16)))[0]
     descriptor_capability_field_8 = Payload[32:34]
 
-    #self.logging_8002( 'Debug', "buildframe_node_descriptor_response sqn: %s nwkid: %s Manuf: %s MacCapa: %s" %(sqn,nwkid , manuf_code_16 , mac_capa_8 ))
+    self.log.logging( "zdpCommand",'Debug', "buildframe_node_descriptor_response sqn: %s nwkid: %s Manuf: %s MacCapa: %s" %(sqn,nwkid , manuf_code_16 , mac_capa_8 ))
 
     buildPayload = sqn + status + nwkid + manuf_code_16 + max_in_size_16 + max_out_size_16
     buildPayload += server_mask_16 + descriptor_capability_field_8 + mac_capa_8 + max_buf_size_8 + bitfield_16
@@ -170,43 +147,20 @@ def buildframe_node_descriptor_response( self, SrcNwkId, SrcEndPoint, ClusterId,
     
 def buildframe_active_endpoint_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
     # Active End Point Response
-    #    MsgDataSQN = MsgData[0:2]
-    #    MsgDataStatus = MsgData[2:4]
-    #    MsgDataShAddr = MsgData[4:8]
-    #    MsgDataEpCount = MsgData[8:10]
-    #
-    #    MsgDataEPlist = MsgData[10 : len(MsgData)]
-
-    # Reception Data indication, Source Address: 1735 Destination Address: 0000 ProfilID: 0000 ClusterID: 8005 Message 
-    # Payload: 0000/3517/02/01f2
     sqn = Payload[:2]
     status = Payload[2:4]
     nwkid = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[4:8], 16)))[0]
     nbEp = Payload[8:10]
     ep_list = Payload[10:]
 
-    #self.logging_8002( 'Debug', "buildframe_active_endpoint_response sqn: %s status: %s nwkid: %s nbEp: %s epList: %s" %(
-    #    sqn, status, nwkid , nbEp , ep_list ))
+    self.log.logging( "zdpCommand", 'Debug', "buildframe_active_endpoint_response sqn: %s status: %s nwkid: %s nbEp: %s epList: %s" %(
+        sqn, status, nwkid , nbEp , ep_list ))
 
     buildPayload = sqn + status + nwkid + nbEp + ep_list
     return encapsulate_plugin_frame( "8045", buildPayload, frame[len(frame) - 4 : len(frame) - 2] ) 
 
 def buildframe_simple_descriptor_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
     # Node Descriptor Response
-    #    MsgDataSQN = MsgData[0:2]
-    #    MsgDataStatus = MsgData[2:4]
-    #    MsgDataShAddr = MsgData[4:8]
-    #    MsgDataLenght = MsgData[8:10]
-    #
-    #    if int(MsgDataLenght, 16) == 0:
-    #        return
-    #
-    #    MsgDataEp = MsgData[10:12]
-    #    MsgDataProfile = MsgData[12:16]
-    #    MsgDataDeviceId = MsgData[16:20]
-    #    MsgDataBField = MsgData[20:22]
-    #    MsgDataInClusterCount = MsgData[22:24]
-    
 
     if len(Payload) < 14:
         self.log.logging( "zdpCommand", "Error","buildframe_simple_descriptor_response - Payload too short: %s from %s" %(Payload,frame))
@@ -225,10 +179,6 @@ def buildframe_simple_descriptor_response(self, SrcNwkId, SrcEndPoint, ClusterId
         deviceVers = SimpleDescriptor[10:11]
         reserved = SimpleDescriptor[11:12]
         inputCnt = SimpleDescriptor[12:14]
-
-        #self.logging_8002( 'Debug', "buildframe_simple_descriptor_response sqn: %s status: %s nwkid: %s " %(
-        #    sqn, status, nwkid ))
-
         buildPayload = sqn + status + nwkid + length + ep + profileId + deviceId + deviceVers + reserved + inputCnt
 
         idx = 14
@@ -250,11 +200,11 @@ def buildframe_bind_response_command(self, SrcNwkId, SrcEndPoint, ClusterId, Pay
     sqn = Payload[:2]
     status = Payload[2:4]
 
-    #self.logging_8002( 'Debug', "buildframe_bind_response_command sqn: %s nwkid: %s Ep: %s Status %s" %(sqn, SrcNwkId , SrcEndPoint, status ))
+    self.log.logging( "zdpCommand", 'Debug', "buildframe_bind_response_command sqn: %s nwkid: %s Ep: %s Status %s" %(sqn, SrcNwkId , SrcEndPoint, status ))
 
     buildPayload = sqn + status
-
     return encapsulate_plugin_frame( "8030", buildPayload , frame[len(frame) - 4 : len(frame) - 2])
+
 
 
 def buildframe_nwk_address_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
