@@ -557,7 +557,7 @@ class BasePlugin:
         if self.iaszonemgt is None:
             # Create IAS Zone object
             # Domoticz.Log("Init IAS_Zone_management ZigateComm: %s" %self.ZigateComm)
-            self.iaszonemgt = IAS_Zone_Management(self.pluginconf, self.ZigateComm, self.ListOfDevices, self.log)
+            self.iaszonemgt = IAS_Zone_Management(self.pluginconf, self.ZigateComm, self.ListOfDevices, self.log, self.zigbee_communitation, self.FirmwareVersion)
 
             # Starting WebServer
         if self.webserver is None:
