@@ -1,3 +1,9 @@
+# !/usr/bin/env python3
+# coding: utf-8 -*-
+#
+# Author: pipiche38
+#
+
 import struct
 from Modules.sendZigateCommand import (raw_APS_request)
 from Modules.tools import get_and_inc_SQN
@@ -360,5 +366,104 @@ def zcl_raw_move_color( self, nwkid, EPIn, EPout, command, temperature=None,  hu
     return raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigate_ep=EPIn, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
 
 
+# Cluster 0500: IAS
+    
+# Cluster 0500 ( 0x0400 )
+
+def zcl_raw_ias_zone_enroll_response(self, nwkid, EPin, EPout, response_code, zone_id, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE):
+    Cluster = "0500"
+    cmd = "00"
+    cluster_frame = 0b00010001
+    sqn = get_and_inc_SQN(self, nwkid)
+    payload = "%02x" % cluster_frame + sqn + cmd + response_code + zone_id
+    return raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)  
+    
+    
+def zcl_raw_ias_initiate_normal_operation_mode(self, nwkid, EPin, EPout, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE):
+    
+    cmd = "01"
+    Cluster = "0500"
+    cluster_frame = 0b00010001
+    sqn = get_and_inc_SQN(self, nwkid)
+    payload = "%02x" % cluster_frame + sqn + cmd
+    return raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)  
+
+def zcl_raw_ias_initiate_test_mode(self, nwkid, EPin, EPout, duration="01", current_zone_sensitivy_level="01", groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE):
+    
+    cmd = "02"
+    Cluster = "0500"
+    cluster_frame = 0b00010001
+    sqn = get_and_inc_SQN(self, nwkid)
+    payload = "%02x" % cluster_frame + sqn + cmd + duration + current_zone_sensitivy_level
+    return raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)  
+   
+    
+
+
+
+# Cluster 0501 IAS ACE ( 0x0111, 0x0112)
 
     
+IAS_ACE_COMMANDS = {
+    'Arm': 0x00,
+    #'Bypass': 0x01,
+    #'Emergency': 0x02,
+    #'Fire': 0x03,
+    #'Panic': 0x04,
+    #'GetZoneID Map': 0x05,
+    #'GetZoneInformation': 0x06,
+    #'GetPanelStatus': 0x07,
+    #'GetBypassedZoneList': 0x08,
+    #'GetZoneStatus': 0x09
+}
+    
+def zcl_raw_ias_ace_commands_arm(self, EPin, EPout, nwkid, arm_mode, arm_code, zone_id, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE):
+    
+    cmd = IAS_ACE_COMMANDS['Arm']
+    Cluster = "0501"
+    cluster_frame = 0b00010001
+    sqn = get_and_inc_SQN(self, nwkid)
+    payload = "%02x" % cluster_frame + sqn + cmd + "%02x" %arm_mode + "%02x" %arm_code + "%02x" %zone_id
+    return raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)  
+
+
+# Cluster 0502 IAS WD
+
+IAS_WD_COMMANDS = {
+    'StartWarning': "00",
+    "Squawk": "01"
+}
+
+def zcl_raw_ias_wd_command_start_warning(self, EPin, EPout, nwkid, warning_mode=0x00, strobe_mode=0x01, siren_level=0x01, warning_duration=0x0001, strobe_duty=0x00, strobe_level=0x00, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE):
+    self.log.logging( "zclCommand", "Debug","zcl_raw_ias_wd_command_start_warning %s %s %s %s %s %s %s" %(nwkid, warning_mode, strobe_mode, siren_level, warning_duration, strobe_duty, strobe_level))
+
+    cmd = IAS_WD_COMMANDS['StartWarning']
+    Cluster = "0502"
+    cluster_frame = 0b00010001
+    sqn = get_and_inc_SQN(self, nwkid)
+    
+    # Warnindg mode , Strobe, Sirene Level
+    field1 = 0x00
+    field1 = field1 & 0xF0 | ( warning_mode << 4 )
+    field1 = field1 & 0xF7 | (( strobe_mode & 0x01) << 2)
+    field1 = field1 & 0xFC | ( siren_level & 0x03 )
+ 
+    payload = "%02x" % cluster_frame + sqn + cmd 
+    payload += "%02x" %field1 + "%04x" % struct.unpack(">H", struct.pack("H", warning_duration))[0] + "%02x" %(strobe_duty) + "%02x" %(strobe_level)
+    return raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
+
+def zcl_raw_ias_wd_command_squawk(self, EPin, EPout, nwkid, squawk_mode, strobe, squawk_level, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE):
+    self.log.logging( "zclCommand", "Debug","zcl_raw_ias_wd_command_squawk %s %s %s %s" %(nwkid, squawk_mode, strobe, squawk_level))
+    
+    cmd = IAS_WD_COMMANDS['Squawk']
+    Cluster = "0502"
+    cluster_frame = 0b00010001
+    sqn = get_and_inc_SQN(self, nwkid)
+
+    field1 = 0x0000
+    field1 = field1 & 0xF0 | ( squawk_mode << 4 )
+    field1 = field1 & 0xF7 | (( strobe & 0x01) << 3)
+    field1 = field1 & 0xFC | ( squawk_level & 0x03 )
+    payload = "%02x" % cluster_frame + sqn + cmd + "%02x" %field1
+    
+    return raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled) 

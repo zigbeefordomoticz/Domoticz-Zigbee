@@ -14,12 +14,16 @@
 from Modules.sendZigateCommand import (send_zigatecmd_raw,
                                        send_zigatecmd_zcl_ack,
                                        send_zigatecmd_zcl_noack)
-from Zigbee.zclRawCommands import (raw_zcl_zcl_onoff,
-                                    rawaps_read_attribute_req,
-                                    rawaps_write_attribute_req,
-                                    zcl_raw_level_move_to_level,
-                                    zcl_raw_move_color)
 from Modules.zigateConsts import ADDRESS_MODE, ZIGATE_EP
+
+from Zigbee.zclRawCommands import (raw_zcl_zcl_onoff,
+                                   rawaps_read_attribute_req,
+                                   rawaps_write_attribute_req,
+                                   zcl_raw_ias_initiate_normal_operation_mode,
+                                   zcl_raw_ias_initiate_test_mode,
+                                   zcl_raw_ias_zone_enroll_response,
+                                   zcl_raw_level_move_to_level,
+                                   zcl_raw_move_color, zcl_raw_ias_wd_command_start_warning, zcl_raw_ias_wd_command_squawk)
 
 DEFAULT_ACK_MODE = False
 
@@ -415,3 +419,35 @@ def zcl_group_move_to_colour(self, nwkid, EPin, EPout, colorX, colorY, transitio
         return zcl_raw_move_color( self, nwkid, ZIGATE_EP, EPout, "MovetoColor", colorX=colorX, colorY=colorY, transition=transition, groupaddrmode=True)
     data = "%02d" % ADDRESS_MODE["group"] + nwkid + EPin + EPout + colorX + colorY + transition
     return send_zigatecmd_raw( self, "00B7", data )
+
+# Cluster 0500 ( 0x0400 )
+
+def zcl_ias_zone_enroll_response(self, nwkid, EPin, EPout, response_code, zone_id, ackIsDisabled=DEFAULT_ACK_MODE):
+    if 'ZiGateInRawMode' in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:    
+        return zcl_raw_ias_zone_enroll_response(self, nwkid, EPin, EPout, response_code, zone_id, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE)
+    datas = "02" + nwkid + ZIGATE_EP + EPout + response_code + zone_id
+    self.ZigateComm.sendData("0400", datas)
+
+def zcl_ias_initiate_normal_operation_mode(self, nwkid, EPin, EPout,ackIsDisabled=DEFAULT_ACK_MODE):   
+    return zcl_raw_ias_initiate_normal_operation_mode(self, nwkid, EPin, EPout, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE)
+
+
+def zcl_ias_initiate_test_mode(self, nwkid, EPin, EPout,duration="01", current_zone_sensitivy_level="01", ackIsDisabled=DEFAULT_ACK_MODE):
+    return zcl_raw_ias_initiate_test_mode(self, nwkid, EPin, EPout, duration, current_zone_sensitivy_level, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE)
+    
+    
+
+
+
+# Cluster 0502 ( 0x0111, 0x0112)
+
+def zcl_ias_wd_command_start_warning(self, EPin, EPout, nwkid, warning_mode, strobe_mode, siren_level, warning_duration, strobe_duty, strobe_level, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE):
+    self.log.logging( "zclCommand", "Debug","zcl_ias_wd_command_start_warning %s %s %s %s %s %s %s" %(nwkid, warning_mode, strobe_mode, siren_level, warning_duration, strobe_duty, strobe_level ))
+    return zcl_raw_ias_wd_command_start_warning(self, EPin, EPout, nwkid, warning_mode, strobe_mode, siren_level, warning_duration, strobe_duty, strobe_level, ackIsDisabled=ackIsDisabled)
+
+def zcl_ias_wd_command_squawk(self, EPin, EPout, nwkid, squawk_mode, strobe, squawk_level, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE):
+    self.log.logging( "zclCommand", "Debug","zcl_ias_wd_command_squawk %s %s %s %s" %(nwkid, squawk_mode, strobe, squawk_level))
+    return zcl_raw_ias_wd_command_squawk(self, EPin, EPout, nwkid, squawk_mode, strobe, squawk_level, ackIsDisabled=ackIsDisabled)
+    
+
+
