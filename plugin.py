@@ -122,6 +122,7 @@ from Modules.zigateCommands import (zigate_erase_eeprom,
                                     zigate_set_certificate)
 from Modules.zigateConsts import CERTIFICATION, HEARTBEAT, MAX_FOR_ZIGATE_BUZY
 from Zigbee.zdpCommands import zdp_get_permit_joint_status
+from Modules.zigateCommands import zigate_set_mode
 
 
 #from zigpy_zigate.config import CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE
@@ -962,7 +963,11 @@ class BasePlugin:
         ResetDevice(self, Devices, "Motion", 5)
 
         # Send a Many-to-One-Route-request
-        if self.pluginconf.pluginConf["doManyToOneRoute"] and self.HeartbeatCount % ((50 * 60) // HEARTBEAT) == 0:
+        if (
+            self.zigbee_communitation == "native"
+            and self.pluginconf.pluginConf["doManyToOneRoute"]
+            and self.HeartbeatCount % ((50 * 60) // HEARTBEAT) == 0
+        ):
             do_Many_To_One_RouteRequest(self)
 
         # OTA upgrade
@@ -1079,7 +1084,12 @@ def zigateInit_Phase2(self):
         return
 
     # Set Time server to HOST time
-    setTimeServer(self)
+    if self.zigbee_communitation == "native":
+        setTimeServer(self)
+    
+    # Make sure Zigate is in Standard mode
+    if self.zigbee_communitation == "native":
+        zigate_set_mode(self, 0x00)
 
     # If applicable, put Zigate in NO Pairing Mode
     self.Ping["Permit"] = None
@@ -1090,7 +1100,8 @@ def zigateInit_Phase2(self):
         #sendZigateCmd(self, "0014", "")  # Request Permit to Join status
 
     # Request List of Active Devices
-    zigate_get_list_active_devices(self)
+    if self.zigbee_communitation == "native":
+        zigate_get_list_active_devices(self)
     #sendZigateCmd(self, "0015", "")
 
     # Ready for next phase
@@ -1319,7 +1330,9 @@ def pingZigate(self):
     'Nb Ticks' is set to 0 every time a message is received from Zigate
     'Nb Ticks' is incremented at every heartbeat
     """
-
+    if self.zigbee_communitation != "native":
+        return
+    
     # Frequency is set to below 4' as regards to the TCP timeout with Wifi-Zigate
     PING_CHECK_FREQ = ((5 * 60) / 2) - 7
 
