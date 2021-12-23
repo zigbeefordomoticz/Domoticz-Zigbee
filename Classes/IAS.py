@@ -86,7 +86,7 @@ class IAS_Zone_Management:
         zcl_read_attribute(self, addr, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, lenAttr, Attr, ackIsDisabled=False)
 
     def setZigateIEEE(self, ZigateIEEE):
-
+        
         self.logging("Debug", "setZigateIEEE - Set Zigate IEEE: %s" % ZigateIEEE)
         self.ZigateIEEE = ZigateIEEE
 
@@ -324,31 +324,6 @@ class IAS_Zone_Management:
                         del self.devices[iterKey]
 
     def write_IAS_WD_Squawk(self, nwkid, ep, SquawkMode):
-
-        #
-        # <address mode: uint8_t>
-        # <target short address: uint16_t>
-        # <source endpoint: uint8_t>
-        # <destination endpoint: uint8_t>
-        # <direction: uint8_t>
-        # <manufacturer specific: uint8_t>
-        # <manufacturer id: uint16_t>
-        # <SquawkModeStrobeAndLevel: uint8_t>
-        # Bits 	Description
-        # 0-3 	Squawk Mode - indicates the meaning of the required ‘squawk’:
-        #    0 - System is armed
-        #    1 - System is disarmed
-        #    All other values are reserved
-        # 4 	Strobe - indicates whether a visual strobe indication of the ‘squawk’ is required:
-        #    0 - No strobe
-        #    1 - Use strobe
-        #    5 	Reserved
-        # 6-7 	Squawk Level - indicates the requested level of the audible squawk sound:
-        #    0 - Low level
-        #    1 - Medium level
-        #    2 - High level
-        #    3 - Very high level
-        #
         SQUAWKMODE = {"disarmed": 0b00000000, "armed": 0b00000001}
 
         if SquawkMode not in SQUAWKMODE:
@@ -358,23 +333,6 @@ class IAS_Zone_Management:
             "Debug",
             "write_IAS_WD_Squawk - %s/%s - Squawk Mode: %s >%s<" % (nwkid, ep, SquawkMode, SQUAWKMODE[SquawkMode]),
         )
-        #direction = 0x00
-        #manuf = 0x00
-        #manufid = 0x0000
-#
-        #datas = "%02X" % ADDRESS_MODE["short"]
-        #datas += nwkid
-        #datas += ZIGATE_EP
-        #datas += ep
-        #datas += "%02x" % direction
-        #datas += "%02X" % manuf
-        #datas += "%04X" % manufid
-        #datas += "%02X" % SQUAWKMODE[SquawkMode]
-#
-        #self.logging("Debug", "_write_IASWD - 0x0112 %s" % datas)
-        #self.ZigateComm.sendData("0112", datas)
-        #
-        squawk_mode = strobe = squawk_level = 0 # Armed, Strobe 1, Low level
         if SquawkMode == 'disarmed':
             squawk_mode = 0x01
             strobe = 0x00
@@ -386,44 +344,6 @@ class IAS_Zone_Management:
         
         zcl_ias_wd_command_squawk(self, ZIGATE_EP, ep, nwkid, squawk_mode, strobe, squawk_level, ackIsDisabled=False)
 
-    # IAS Warning Device Cluster
-    # https://www.nxp.com/docs/en/user-guide/JN-UG-3077.pdf
-    # Section 28 - page 545
-
-    #   def _write_IASWD(self, nwkid, ep, warning_mode, warning_duration, strobe_duty, strobe_level):
-#   
-    #       # Zigate -> Obj	0x0111 	Write Attribute request IAS_WD (from v3.1a)
-    #       #                 <address mode: uint8_t>
-    #       # 	<target short address: uint16_t>
-    #       # 	<source endpoint: uint8_t>
-    #       # 	<destination endpoint: uint8_t>
-    #       # 	<direction: uint8_t>
-    #       # 	<manufacturer specific: uint8_t>
-    #       # 	<manufacturer id: uint16_t>
-    #       # 	<Warning Mode: uint8_t>
-    #       # 	<Warning Duration: uint16_t>
-    #       # 	<Strobe duty cycle : uint8_t>
-    #       # 	<Strobe level : uint8_t>
-#   
-    #       direction = 0x00
-    #       manuf = 0x00
-    #       manufid = 0x0000
-#   
-    #       datas = "%02X" % ADDRESS_MODE["short"]
-    #       datas += nwkid
-    #       datas += ZIGATE_EP
-    #       datas += ep
-    #       datas += "%02x" % direction
-    #       datas += "%02X" % manuf
-    #       datas += "%04X" % manufid
-    #       datas += "%02X" % warning_mode
-    #       datas += "%04X" % warning_duration
-    #       datas += "%02X" % strobe_duty
-    #       datas += "%02X" % strobe_level
-#   
-    #       self.logging("Debug", "_write_IASWD - 0x0111 %s" % datas)
-    #       self.ZigateComm.sendData("0111", datas)
-
     def warningMode(self, nwkid, ep, mode="both", siren_level = 0x00, warning_duration = 0x01, strobe_duty = 0x00, strobe_level = 0x00):
 
         STROBE_LEVEL = {"Low": 0x00, "Medium": 0x01}
@@ -432,38 +352,28 @@ class IAS_Zone_Management:
         
         if self.ListOfDevices[nwkid]["Model"] == "WarningDevice":
             if mode == "both":
-                #warning_mode = 0b00010111
                 strobe_mode = 0x01
                 warning_mode = 0x01
             elif mode == "siren":
-                #warning_mode = 0b00010011
                 warning_mode = 0x01
             elif mode == "strobe":
-                #warning_mode = 0b00000100
                 strobe_mode = 0x01
                 warning_mode = 0x00
             elif mode == "stop":
                 strobe_mode = 0x00
                 warning_mode = 0x00
-                
 
         elif mode in SIRENE_MODE:
             if mode == "both":
-                #warning_mode = WARNING_MODE["Fire"] + STROBE_MODE["Use Strobe"]
-                #strobe_duty = 0x1E  # % duty cycle in 10% steps
                 strobe_level = STROBE_LEVEL["Low"]
                 strobe_mode = 0x02
                 warning_mode = 0x01
             elif mode == "siren":
-                #warning_mode = WARNING_MODE["Fire"] + STROBE_MODE["No Strobe"]
                 warning_mode = 0x02
             elif mode == "stop":
-                #warning_mode = WARNING_MODE["Stop"]
                 strobe_mode = 0x00
                 warning_mode = 0x00         
             elif mode == "strobe":
-                #warning_mode = WARNING_MODE["Stop"] + STROBE_MODE["Use Strobe"]
-                #strobe_duty = 0x1E  # % duty cycle in 10% steps
                 strobe_level = STROBE_LEVEL["Low"]
                 strobe_mode = 0x01
                 warning_mode = 0x00
@@ -480,8 +390,6 @@ class IAS_Zone_Management:
                 
         self.logging( "Debug", "warningMode - Mode: %s, Duration: %s, Duty: %s, Level: %s" % (bin(warning_mode), warning_duration, strobe_duty, strobe_level), )
         zcl_ias_wd_command_start_warning(self, ZIGATE_EP, ep, nwkid, warning_mode, strobe_mode, siren_level, warning_duration, strobe_duty, strobe_level, groupaddrmode=False, ackIsDisabled=False)
-       
-        #self._write_IASWD(nwkid, ep, warning_mode, warning_duration, strobe_duty, strobe_level)
 
     def siren_both(self, nwkid, ep):
         self.logging("Debug", "Device Alarm On ( Siren + Strobe)")
