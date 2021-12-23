@@ -24,9 +24,15 @@ def zcl_decoders( self, SrcNwkId, SrcEndPoint, ClusterId, Payload , frame):
             # Remote report
             return buildframe_80x5_message( self, "8085", frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Command, Data)
         if ClusterId == "0300":
+            self.log.logging( "Transport8002", "Error","zcl_decoders for Cluster %s NOT IMPLEMENTED YET" %(ClusterId))
             return frame
+        if ClusterId == "0500":
+            self.log.logging( "Transport8002", "Error","zcl_decoders for Cluster %s NOT IMPLEMENTED YET" %(ClusterId))
+            return frame
+            
         
         # This is not a Global Command (Read Attribute, Write Attribute and so on)
+        self.log.logging( "Transport8002", "Error","zcl_decoders for Cluster %s NOT IMPLEMENTED YET Global Cmd: %s" %(ClusterId, GlobalCommand))
         return frame
 
     self.log.logging("Transport8002", 'Debug', "decode8002_and_process Sqn: %s/%s ManufCode: %s Command: %s Data: %s " %(int(Sqn,16), Sqn , ManufacturerCode, Command, Data))
