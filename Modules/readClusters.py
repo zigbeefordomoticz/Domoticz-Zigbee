@@ -4347,7 +4347,7 @@ def Cluster0b04(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             return
         if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == "outletv4":
             value /= 10
-        if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == "SPLZB-131":
+        if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ("SPLZB-131", "SPLZB-132"):
             value /= 100
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0001", str(value))
@@ -4545,22 +4545,6 @@ def zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value):
             "Cluster",
             "Log",
             "zlinky_check_alarm - %s/%s Alarm-02" % (MsgSrcAddr, MsgSrcEp),
-            MsgSrcAddr,
-        )
-    elif flevel > 80:
-        MajDomoDevice(
-            self,
-            Devices,
-            MsgSrcAddr,
-            MsgSrcEp,
-            "0009",
-            "01|Reach >80 %% of Max subscribe %s" % (Isousc),
-            Attribute_="0005",
-        )
-        self.log.logging(
-            "Cluster",
-            "Log",
-            "zlinky_check_alarm - %s/%s Alarm-03" % (MsgSrcAddr, MsgSrcEp),
             MsgSrcAddr,
         )
     else:
