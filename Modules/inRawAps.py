@@ -82,7 +82,7 @@ def inRawAps(
 
         if Command == "01":
             # Query Next Image Request
-            self.log.logging("inRawAPS","Log","Cluster 0019 -- OTA CLUSTER Command 01")
+            self.log.logging("inRawAPS", "Log", "Cluster 0019 -- OTA CLUSTER Command 01")
             # fieldcontrol = Data[0:2]
             manufcode = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[2:6], 16)))[0]
             imagetype = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[6:10], 16)))[0]
@@ -91,7 +91,7 @@ def inRawAps(
                 "inRawAPS",
                 "Log",
                 "Cluster 0019 -- OTA CLUSTER Command 01Device %s Request OTA with current ManufCode: %s ImageType: %s Version: %s"
-                % (srcnwkid, manufcode, imagetype, currentVersion)
+                % (srcnwkid, manufcode, imagetype, currentVersion),
             )
 
             if "OTA" not in self.ListOfDevices[srcnwkid]:
@@ -185,39 +185,41 @@ def inRawAps(
                 MajDomoDevice(self, Devices, srcnwkid, srcep, "0008", "18")
 
         else:
-            self.log.logging("inRawAPS","Log","Unknown Color Control Command: %s" % Command)
+            self.log.logging("inRawAPS", "Log", "Unknown Color Control Command: %s" % Command)
 
         return
 
     if cluster == "0102":  # Window Covering
-        if "Model" in self.ListOfDevices[srcnwkid] and self.ListOfDevices[srcnwkid]["Model"] == "TRADFRI openclose remote":
+        if (
+            "Model" in self.ListOfDevices[srcnwkid]
+            and self.ListOfDevices[srcnwkid]["Model"] == "TRADFRI openclose remote"
+        ):
             ikea_openclose_remote(self, Devices, srcnwkid, srcep, Command, Data, Sqn)
             return
 
         if Command == "00":  # Up/Open
-            self.log.logging("inRawAPS","Log","Window Covering - Up/Open Command")
+            self.log.logging("inRawAPS", "Log", "Window Covering - Up/Open Command")
 
-        elif Command == "01": # Down / Close
-            self.log.logging("inRawAPS","Log","Window Covering - Down/Close Command")
+        elif Command == "01":  # Down / Close
+            self.log.logging("inRawAPS", "Log", "Window Covering - Down/Close Command")
 
-        elif Command == "02": # Stop
-            self.log.logging("inRawAPS","Log","Window Covering - Stop Command")
+        elif Command == "02":  # Stop
+            self.log.logging("inRawAPS", "Log", "Window Covering - Stop Command")
 
-        elif Command == "04": # Go To Lift Value
-            self.log.logging("inRawAPS","Log","Window Covering - Go To Lift value Command %s" %Data[0:] )
+        elif Command == "04":  # Go To Lift Value
+            self.log.logging("inRawAPS", "Log", "Window Covering - Go To Lift value Command %s" % Data[0:])
 
-        elif Command == "05": # Go To Lift Percentage
-            self.log.logging("inRawAPS","Log","Window Covering - Go To Lift percentage Command %s" %Data[0:] )
+        elif Command == "05":  # Go To Lift Percentage
+            self.log.logging("inRawAPS", "Log", "Window Covering - Go To Lift percentage Command %s" % Data[0:])
 
-        elif Command == "07": # Go to Tilt Value
-            self.log.logging("inRawAPS","Log","Window Covering - Go To Tilt value Command %s" %Data[0:] )
+        elif Command == "07":  # Go to Tilt Value
+            self.log.logging("inRawAPS", "Log", "Window Covering - Go To Tilt value Command %s" % Data[0:])
 
-        elif Command == "08": # Go to Tilt Percentage
-            self.log.logging("inRawAPS","Log","Window Covering - Go To Tilt percentage Command %s" %Data[0:] )
+        elif Command == "08":  # Go to Tilt Percentage
+            self.log.logging("inRawAPS", "Log", "Window Covering - Go To Tilt percentage Command %s" % Data[0:])
 
         else:
-            self.log.logging("inRawAPS","Log","Unknown Window Covering Command: %s" % Command)
-
+            self.log.logging("inRawAPS", "Log", "Unknown Window Covering Command: %s" % Command)
 
     if "Manufacturer" not in self.ListOfDevices[srcnwkid]:
         return
