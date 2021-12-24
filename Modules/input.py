@@ -520,6 +520,7 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
         "Input",
         "Debug",
         "Reception Data indication, Source Address: " + MsgSourceAddress + " Destination Address: " + MsgDestinationAddress + " ProfilID: " + MsgProfilID + " ClusterID: " + MsgClusterID + " Message Payload: " + MsgPayload,
+        MsgSourceAddress,
     )
 
     # Let's check if this is an Schneider related APS. In that case let's process
@@ -576,6 +577,7 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
             "inRawAPS",
             "Debug",
             "Decode8002 - NwkId: %s Ep: %s Cluster: %s Payload: %s" % (srcnwkid, MsgSourcePoint, MsgClusterID, MsgPayload),
+            srcnwkid,
         )
         return
 
@@ -600,6 +602,7 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
                 Command,
                 Data,
             ),
+            srcnwkid,
         )
         return
 
@@ -619,6 +622,7 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
                 ZIGBEE_COMMAND_IDENTIFIER[int(Command, 16)],
                 Data,
             ),
+            srcnwkid,
         )
     else:
         self.log.logging(
@@ -633,6 +637,7 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
                 Command,
                 Data,
             ),
+            srcnwkid,
         )
 
     updLQI(self, srcnwkid, MsgLQI)
@@ -657,6 +662,7 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
                 cmd,
                 direction,
             ),
+            srcnwkid,
         )
         Decode80A7(self, Devices, data, MsgLQI)
         return
