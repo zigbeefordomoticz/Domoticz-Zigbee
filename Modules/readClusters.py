@@ -4546,22 +4546,6 @@ def zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value):
             "zlinky_check_alarm - %s/%s Alarm-02" % (MsgSrcAddr, MsgSrcEp),
             MsgSrcAddr,
         )
-    elif flevel > 80:
-        MajDomoDevice(
-            self,
-            Devices,
-            MsgSrcAddr,
-            MsgSrcEp,
-            "0009",
-            "01|Reach >80 %% of Max subscribe %s" % (Isousc),
-            Attribute_="0005",
-        )
-        self.log.logging(
-            "Cluster",
-            "Log",
-            "zlinky_check_alarm - %s/%s Alarm-03" % (MsgSrcAddr, MsgSrcEp),
-            MsgSrcAddr,
-        )
     else:
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0009", "00|Normal", Attribute_="0005")
         self.log.logging(
