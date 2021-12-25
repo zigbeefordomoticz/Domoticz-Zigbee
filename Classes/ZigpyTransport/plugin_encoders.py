@@ -13,8 +13,6 @@ def build_plugin_004D_frame_content(self, nwk, ieee, parent_nwk):
     self.log.logging("TransportPluginEncoder", "Debug", "build_plugin_004D_frame_content %s %s %s" %(nwk, ieee, parent_nwk))
     
     nwk = "%04x" %nwk
-    #ieee = str(ieee).replace(':','')
-    #ieee = "%016x" %int(ieee,16)
     ieee = "%016x" %t.uint64_t.deserialize(ieee.serialize())[0]
     frame_payload = nwk + ieee + '00'
     
@@ -25,12 +23,19 @@ def build_plugin_8015_frame_content(self, ):
     pass
     
 def build_plugin_8009_frame_content(self, ):
+    #addr = MsgData[0:4]
+    #extaddr = MsgData[4:20]
+    #PanID = MsgData[20:24]
+    #extPanID = MsgData[24:40]
+    #Channel = MsgData[40:42]
+
     # Get Network State
+    self.log.logging("TransportPluginEncoder", "Debug", "build_plugin_8009_frame_content %s %s %s %s %s" %(
+        self.app.nwk, self.app.ieee, self.app.extended_pan_id, self.app.pan_id,self.app.channel ))
     frame_payload =  "%04x" %self.app.nwk
     frame_payload += "%016x" %t.uint64_t.deserialize(self.app.ieee.serialize())[0]
-    frame_payload += "%04x" %self.app.nwk
-    frame_payload += "%16x" %t.uint64_t.deserialize(self.app.extended_pan_id.serialize())[0] 
     frame_payload += "%04x" %self.app.pan_id
+    frame_payload += "%16x" %t.uint64_t.deserialize(self.app.extended_pan_id.serialize())[0] 
     frame_payload += "%02x" %self.app.channel
     return encapsulate_plugin_frame( "8009", frame_payload, "00")
 
