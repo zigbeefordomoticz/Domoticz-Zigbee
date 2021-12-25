@@ -436,10 +436,8 @@ def timeStamped(self, key, Type):
 
 
 def get_and_inc_SQN(self, key):
-
     # Get the latest SQN from ListOfDevice and Increment by 1.
     # In case of overflow manage it
-
     if (
         (key not in self.ListOfDevices)
         or ("SQN" not in self.ListOfDevices[key])
@@ -451,41 +449,30 @@ def get_and_inc_SQN(self, key):
         _new_sqn = int(self.ListOfDevices[key]["SQN"], 16) + 1
         if _new_sqn > 0xFF:
             _new_sqn = 0x00
-            
-
     # self.ListOfDevices[key]['SQN']= '%2x' %_new_sqn
     return "%02x" % _new_sqn
 
-def get_and_inc_ZDP_SQM(self, key):
-    if (
-        (key not in self.ListOfDevices)
-        or ("ZDPSQN" not in self.ListOfDevices[key])
-        or (self.ListOfDevices[key]["ZDPSQN"] == {})
-        or (self.ListOfDevices[key]["ZDPSQN"] == "")
-    ):
-        _new_sqn = 0x00
-    else:
-        _new_sqn = int(self.ListOfDevices[key]["ZDPSQN"], 16) + 1
-        if _new_sqn > 0xFF:
-            _new_sqn = 0x00
-    self.ListOfDevices[key]["ZDPSQN"] = "%02x" %_new_sqn
-    return "%02x" % _new_sqn
+# Used by zcl/zdpRawCommands
+def get_and_inc_ZDP_SQN(self, key):
+    return get_and_increment_generic_SQN(self, key, "ZDPSQN")
    
 def get_and_inc_ZCL_SQN(self, key):
-    if (
-        (key not in self.ListOfDevices)
-        or ("ZCLSQN" not in self.ListOfDevices[key])
-        or (self.ListOfDevices[key]["ZCLSQN"] == {})
-        or (self.ListOfDevices[key]["ZCLSQN"] == "")
-    ):
-        _new_sqn = 0x00
-    else:
-        _new_sqn = int(self.ListOfDevices[key]["ZCLSQN"], 16) + 1
-        if _new_sqn > 0xFF:
-            _new_sqn = 0x00
-    self.ListOfDevices[key]["ZCLSQN"] = "%02x" %_new_sqn
-    return "%02x" % _new_sqn
-     
+    return get_and_increment_generic_SQN(self, key, "ZCLSQN")
+  
+def get_and_increment_generic_SQN(self, nwkid, sqn_type):
+    if nwkid not in self.ListOfDevices: 
+        return  "%02x" %0x00
+    if sqn_type not in self.ListOfDevices[nwkid]:
+        self.ListOfDevices[nwkid][ sqn_type ] = "%02x" %0x00
+        return self.ListOfDevices[nwkid][ sqn_type ]
+    
+    if self.ListOfDevices[nwkid][ sqn_type ] in ( '', {}):
+        self.ListOfDevices[nwkid][ sqn_type ] =  "%02x" %0x00
+        return self.ListOfDevices[nwkid][ sqn_type ]
+
+    self.ListOfDevices[nwkid][ sqn_type ] =  "%02x" %( ( int(self.ListOfDevices[nwkid][ sqn_type ],16) + 1) % 256)
+    return self.ListOfDevices[nwkid][ sqn_type ]
+    
 
 def updSQN(self, key, newSQN):
 
@@ -988,7 +975,7 @@ def getAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID):
 def retreive_cmd_payload_from_8002(Payload):
 
     ManufacturerCode = None
-    fcf = Payload[0:2]
+    fcf = Payload[:2]
 
     GlobalCommand = is_golbalcommand(fcf)
     if GlobalCommand is None:

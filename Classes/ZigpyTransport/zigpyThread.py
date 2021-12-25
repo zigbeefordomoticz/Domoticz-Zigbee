@@ -25,12 +25,15 @@ import zigpy_zigate.zigbee.application
 import zigpy_znp.zigbee.application
 from Classes.ZigpyTransport.AppZigate import App_zigate
 from Classes.ZigpyTransport.AppZnp import App_znp
-
-from Classes.ZigpyTransport.nativeCommands import NATIVE_COMMANDS_MAPPING, native_commands
+from Classes.ZigpyTransport.nativeCommands import (NATIVE_COMMANDS_MAPPING,
+                                                   native_commands)
+from Classes.ZigpyTransport.plugin_encoders import (
+    build_plugin_8009_frame_content, build_plugin_8011_frame_content)
 from Classes.ZigpyTransport.tools import handle_thread_error
-from Classes.ZigpyTransport.plugin_encoders import build_plugin_8011_frame_content, build_plugin_8009_frame_content
 from zigpy.exceptions import DeliveryError, InvalidResponse
-from zigpy_zigate.config import CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE
+from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
+                                 SCHEMA_DEVICE)
+from zigpy_znp.exceptions import CommandNotRecognized, InvalidFrame
 
 
 def start_zigpy_thread(self):
@@ -126,7 +129,7 @@ async def worker_loop(self):
             elif data["cmd"] in NATIVE_COMMANDS_MAPPING:
                 await native_commands(self, data["cmd"], data["datas"])
             elif data["cmd"] == "RAW-COMMAND":
-                await process_raw_command(self, data["datas"], data["ACKIsDisable"])
+                await process_raw_command(self, data["datas"], AckIsDisable=data["ACKIsDisable"], Sqn=data["Sqn"])
 
         except DeliveryError:
             self.log.logging(
@@ -135,6 +138,21 @@ async def worker_loop(self):
                 "DeliveryError: Not able to execute the zigpy command: %s data: %s" % (data["cmd"], data["datas"]),
             )
 
+        except InvalidFrame:
+            self.log.logging(
+                "TransportWrter",
+                "Error",
+                "InvalidFrame: Not able to execute the zigpy command: %s data: %s" % (data["cmd"], data["datas"]),
+            )
+
+        except CommandNotRecognized:
+            self.log.logging(
+                "TransportWrter",
+                "Error",
+                "CommandNotRecognized: Not able to execute the zigpy command: %s data: %s" % (data["cmd"], data["datas"]),
+            )
+
+            
         except InvalidResponse:
             self.log.logging(
                 "TransportWrter",
@@ -142,17 +160,21 @@ async def worker_loop(self):
                 "InvalidResponse: Not able to execute the zigpy command: %s data: %s" % (data["cmd"], data["datas"]),
             )
 
-        except Exception as e:
-            self.log.logging("TransportWrter", "Error", "Error while receiving a Plugin command: %s" % e)
-            handle_thread_error(self, e, data)
+        except RuntimeError as e:
+            self.log.logging(
+                "TransportWrter",
+                "Error",
+                "RuntimeError: %s Not able to execute the zigpy command: %s data: %s" % (e, data["cmd"], data["datas"]),
+            )
 
-        # Wait .5s to reduce load on Zigate
-        # await asyncio.sleep(0.10)
+        except Exception as e:
+            self.log.logging("TransportWrter", "Error", "Error while receiving a Plugin command: >%s<" % e)
+            handle_thread_error(self, e, data)
 
     self.log.logging("TransportWrter", "Debug", "ZigyTransport: writer_thread Thread stop.")
 
 
-async def process_raw_command(self, data, AckIsDisable=False):
+async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
     # data = {
     #    'Profile': int(profileId, 16),
     #    'Cluster': int(cluster, 16),
@@ -168,7 +190,7 @@ async def process_raw_command(self, data, AckIsDisable=False):
     dEp = data["TargetEp"]
     sEp = data["SrcEp"]
     payload = bytes.fromhex(data["payload"])
-    sequence = self.app.get_sequence()
+    sequence = Sqn or self.app.get_sequence()
     addressmode = data["AddressMode"]
     enableAck = not AckIsDisable
 
@@ -176,8 +198,8 @@ async def process_raw_command(self, data, AckIsDisable=False):
     self.log.logging(
         "TransportWrter",
         "Debug",
-        "ZigyTransport: process_raw_command ready to request NwkId: %04x Cluster: %04x Seq: %02x Payload: %s AddrMode: %02x EnableAck: %s"
-        % (NwkId, Cluster, sequence, payload, addressmode, enableAck),
+        "ZigyTransport: process_raw_command ready to request NwkId: %04x Cluster: %04x Seq: %02x Payload: %s AddrMode: %02x EnableAck: %s, Sqn: %s"
+        % (NwkId, Cluster, sequence, payload, addressmode, enableAck, Sqn),
     )
 
     if self.pluginconf.pluginConf["ZiGateReactTime"]:
@@ -231,5 +253,4 @@ async def process_raw_command(self, data, AckIsDisable=False):
 
         # Send Ack/Nack to Plugin
         self.forwarder_queue.put(
-            build_plugin_8011_frame_content(self, destination.nwk.serialize()[::-1].hex(), result, destination.lqi)
-        )
+            build_plugin_8011_frame_content(self, destination.nwk.serialize()[::-1].hex(), result, destination.lqi) )

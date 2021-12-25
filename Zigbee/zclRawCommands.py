@@ -43,7 +43,8 @@ def rawaps_read_attribute_req(self, nwkid, EpIn, EpOut, Cluster, direction, manu
         attribute = Attr[idx : idx + 4]
         idx += 4
         payload += "%04x" % struct.unpack(">H", struct.pack("H", int(attribute, 16)))[0]
-    return raw_APS_request(self, nwkid, EpOut, Cluster, "0104", payload, zigate_ep=EpIn, ackIsDisabled=ackIsDisabled)
+    raw_APS_request(self, nwkid, EpOut, Cluster, "0104", payload, zigate_ep=EpIn, ackIsDisabled=ackIsDisabled)
+    return  sqn
 
 
 # Write Attributes
@@ -76,7 +77,8 @@ def rawaps_write_attribute_req(self, nwkid, EPin, EPout, cluster, manuf_id, manu
         payload += data
     self.log.logging("zclCommand", "Debug", "rawaps_write_attribute_req ==== payload: %s" % (payload))
 
-    return raw_APS_request(self, nwkid, EPout, cluster, "0104", payload, zigate_ep=EPin, ackIsDisabled=ackIsDisabled)
+    raw_APS_request(self, nwkid, EPout, cluster, "0104", payload, zigate_ep=EPin, ackIsDisabled=ackIsDisabled)
+    return  sqn
 
 
 # Write Attributes No Response
@@ -121,98 +123,10 @@ def zcl_raw_configure_reporting_requestv2(self, nwkid, epin, epout, cluster, dir
         # payload +=  "%04x" % struct.unpack(">H", struct.pack("H",int(x['timeOut'],16)))[0]
         self.log.logging("zclCommand", "Debug", "zcl_raw_configure_reporting_requestv2  payload: %s" % payload)
 
-    return raw_APS_request(self, nwkid, epout, cluster, "0104", payload, zigate_ep=epin, ackIsDisabled=ackIsDisabled)
+    raw_APS_request(self, nwkid, epout, cluster, "0104", payload, zigate_ep=epin, ackIsDisabled=ackIsDisabled)
+    return  sqn
 
 
-def rawaps_configure_reporting_req(self, nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, attributelist, ackIsDisabled=DEFAULT_ACK_MODE):
-    self.log.logging("zclCommand", "Debug", "rawaps_configure_reporting_req %s %s %s %s %s %s %s %s" % (nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, attributelist))
-
-    cmd = "06"  # Configure Reporting Command Identifier
-
-    # Cluster Frame:
-    # 0b xxxx xxxx
-    #           |- Frame Type: Cluster Specific (0x00)
-    #          |-- Manufacturer Specific False
-    #         |--- Command Direction: Client to Server (0)
-    #       | ---- Disable default response: True
-    #    |||- ---- Reserved : 0x000
-    #
-
-    cluster_frame = 0b00010000
-    if manufacturer_spec == "01":
-        cluster_frame += 0b00000100
-
-    fcf = "%02x" % cluster_frame
-    sqn = get_and_inc_ZCL_SQN(self, nwkid)
-    payload = fcf
-    if manufacturer_spec == "01":
-        payload += manufacturer[4:2] + manufacturer[:2]
-    payload += sqn + cmd
-    payload += build_payload_for_configure_reporting(attributelist)
-    return raw_APS_request(self, nwkid, EpOut, Cluster, "0104", payload, zigate_ep=EpIn, ackIsDisabled=ackIsDisabled)
-
-
-def build_payload_for_configure_reporting(attributelist):
-    # Zigate Configure Reporting expect attrubuterecord as: attrdirection + attrType + attr + minInter + maxInter + timeOut + chgFlag
-    # So we need to reorder as per Zigbee standard and also handle the Endian
-    # https://zigbeealliance.org/wp-content/uploads/2019/12/07-5123-06-zigbee-cluster-library-specification.pdf 2.5.7.1
-    idx = 0
-    payload = ""
-    while idx < len(attributelist):
-        attribute_direction = attributelist[idx : idx + 2]
-        attribute_identifier = "%04x" % struct.unpack(">H", struct.pack("H", int(attributelist[idx + 4 : idx + 8], 16)))[0]
-        attribute_datatype = attributelist[idx + 2 : idx + 4]
-        min_reporting = "%04x" % struct.unpack(">H", struct.pack("H", int(attributelist[idx + 8 : idx + 12], 16)))[0]
-        max_reporting = "%04x" % struct.unpack(">H", struct.pack("H", int(attributelist[idx + 12 : idx + 16], 16)))[0]
-        idx += 16
-        reporting_change = get_change_flag(attribute_datatype, attributelist[idx:])
-        idx += len(reporting_change)
-        timeout_period = "%04x" % struct.unpack(">H", struct.pack("H", int(attributelist[idx : idx + 4], 16)))[0]
-        idx += 4
-
-        payload += attribute_identifier + attribute_datatype + min_reporting + max_reporting
-        if reporting_change != "":
-            payload += reporting_change
-        payload += timeout_period
-    return payload
-
-
-def get_change_flag(attrType, data):
-    # https://zigbeealliance.org/wp-content/uploads/2019/12/07-5123-06-zigbee-cluster-library-specification.pdf Table 2-10 (page 2-41)
-
-    data_type_id = int(attrType, 16)
-    if data_type_id == 0x00:
-        return ""
-    if data_type_id in {0x08, 0x10, 0x18, 0x20, 0x28, 0x30}:
-        # 1 byte - 8b
-        return data[:2]
-    if data_type_id in {0x09, 0x19, 0x21, 0x29, 0x31, 0x38}:
-        # 2 bytes - 16b
-        return "%04x" % struct.unpack(">H", struct.pack("H", int(data[:4], 16)))[0]
-    if data_type_id in {0x0A, 0x1A, 0x22, 0x2A}:
-        # 3 bytes - 24b
-        return ("%08x" % struct.unpack(">I", struct.pack("I", int("0" + data[:6], 16)))[0])[:6]
-
-    if data_type_id in {0x0B, 0x1B, 0x23, 0x2B, 0x39}:
-        # 4 bytes - 32b
-        return "%08x" % struct.unpack(">I", struct.pack("I", int(data[:8], 16)))[0]
-    if data_type_id in {0x0C, 0x1C, 0x24, 0x2C}:
-        # 5 bytes - 40b
-        return ("%010x" % struct.unpack(">Q", struct.pack("Q", int("0" + data[:10], 16)))[0])[:10]
-
-    if data_type_id in {0x0D, 0x1D, 0x25, 0x2D}:
-        # 6 bytes - 48b
-        return ("%012x" % struct.unpack(">Q", struct.pack("Q", int(data[:12], 16)))[0])[:12]
-
-    if data_type_id in {0x0E, 0x1E, 0x26, 0x2E}:
-        # 7 bytes - 56b
-        return "%014x" % ("%014x" % struct.unpack(">Q", struct.pack("Q", int("00" + data[:14], 16)))[0])[:14]
-
-    if data_type_id in {0x0F, 0x1F, 0x27, 0x2F, 0x3A}:
-        # 8 bytes - 64b
-        return "%016x" % struct.unpack(">Q", struct.pack("Q", int(data[:16], 16)))[0]
-    if data_type_id in {0x41, 0x42}:
-        return data[2 : int(data[:2], 16)]
 
 
 # Discover Attributes
@@ -248,7 +162,8 @@ def raw_zcl_zcl_onoff(self, nwkid, EPIn, EpOut, command, effect="", groupaddrmod
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
     payload = "%02x" % cluster_frame + sqn + "%02x" % ONOFF_COMMANDS[command] + effect
 
-    return raw_APS_request(self, nwkid, EpOut, Cluster, "0104", payload, zigate_ep=EPIn, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
+    raw_APS_request(self, nwkid, EpOut, Cluster, "0104", payload, zigate_ep=EPIn, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
+    return  sqn
 
 
 # Cluster 0008: Level Control
@@ -282,7 +197,8 @@ def zcl_raw_level_move_to_level(self, nwkid, EPIn, EPout, command, level="00", m
     elif command == ("Step", "StepWithOnOff"):
         payload += step_mode + step_size + "%04x" % (struct.unpack(">H", struct.pack("H", int(transition, 16)))[0])
 
-    return raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigate_ep=EPIn, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
+    raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigate_ep=EPIn, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
+    return  sqn
 
 
 # Cluster 0102: Window Covering
@@ -314,7 +230,8 @@ def zcl_raw_window_covering(self, nwkid, EPIn, EPout, command, level="00", perce
     elif command == ("GoToLiftValue", "GoToTiltValue"):
         payload += percentage
 
-    return raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigate_ep=EPIn, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
+    raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigate_ep=EPIn, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
+    return  sqn
 
 
 # Cluster 0300: Color
@@ -370,7 +287,8 @@ def zcl_raw_move_color(self, nwkid, EPIn, EPout, command, temperature=None, hue=
         payload += "%04x" % (struct.unpack(">H", struct.pack("H", int(temperature, 16)))[0])
         payload += "%04x" % (struct.unpack(">H", struct.pack("H", int(transition, 16)))[0])
 
-    return raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigate_ep=EPIn, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
+    raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigate_ep=EPIn, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
+    return  sqn
 
 
 # Cluster 0500: IAS
@@ -384,7 +302,8 @@ def zcl_raw_ias_zone_enroll_response(self, nwkid, EPin, EPout, response_code, zo
     cluster_frame = 0b00010001
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
     payload = "%02x" % cluster_frame + sqn + cmd + response_code + zone_id
-    return raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
+    raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
+    return  sqn
 
 
 def zcl_raw_ias_initiate_normal_operation_mode(self, nwkid, EPin, EPout, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE):
@@ -394,7 +313,8 @@ def zcl_raw_ias_initiate_normal_operation_mode(self, nwkid, EPin, EPout, groupad
     cluster_frame = 0b00010001
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
     payload = "%02x" % cluster_frame + sqn + cmd
-    return raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
+    raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
+    return  sqn
 
 
 def zcl_raw_ias_initiate_test_mode(self, nwkid, EPin, EPout, duration="01", current_zone_sensitivy_level="01", groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE):
@@ -404,7 +324,8 @@ def zcl_raw_ias_initiate_test_mode(self, nwkid, EPin, EPout, duration="01", curr
     cluster_frame = 0b00010001
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
     payload = "%02x" % cluster_frame + sqn + cmd + duration + current_zone_sensitivy_level
-    return raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
+    raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
+    return  sqn
 
 
 # Cluster 0501 IAS ACE ( 0x0111, 0x0112)
@@ -431,7 +352,8 @@ def zcl_raw_ias_ace_commands_arm(self, EPin, EPout, nwkid, arm_mode, arm_code, z
     cluster_frame = 0b00010001
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
     payload = "%02x" % cluster_frame + sqn + cmd + "%02x" % arm_mode + "%02x" % arm_code + "%02x" % zone_id
-    return raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
+    raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
+    return  sqn
 
 
 # Cluster 0502 IAS WD
@@ -455,7 +377,8 @@ def zcl_raw_ias_wd_command_start_warning(self, EPin, EPout, nwkid, warning_mode=
 
     payload = "%02x" % cluster_frame + sqn + cmd
     payload += "%02x" % field1 + "%04x" % struct.unpack(">H", struct.pack("H", warning_duration))[0] + "%02x" % (strobe_duty) + "%02x" % (strobe_level)
-    return raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
+    raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
+    return  sqn
 
 
 def zcl_raw_ias_wd_command_squawk(self, EPin, EPout, nwkid, squawk_mode, strobe, squawk_level, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE):
@@ -472,4 +395,5 @@ def zcl_raw_ias_wd_command_squawk(self, EPin, EPout, nwkid, squawk_mode, strobe,
     field1 = field1 & 0xFC | (squawk_level & 0x03)
     payload = "%02x" % cluster_frame + sqn + cmd + "%02x" % field1
 
-    return raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
+    raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
+    return  sqn

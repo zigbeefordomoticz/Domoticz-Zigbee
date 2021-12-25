@@ -18,7 +18,6 @@ from Zigbee.zclRawCommands import (
     raw_zcl_zcl_onoff,
     rawaps_read_attribute_req,
     rawaps_write_attribute_req,
-    rawaps_configure_reporting_req,
     zcl_raw_configure_reporting_requestv2,
     zcl_raw_ias_initiate_normal_operation_mode,
     zcl_raw_ias_initiate_test_mode,
@@ -82,17 +81,6 @@ def zcl_write_attributeNoResponse(self, nwkid, EPin, EPout, cluster, manuf_id, m
     datas += direction + manuf_spec + manuf_id
     datas += lenght + attribute + data_type + data
     return send_zigatecmd_zcl_noack(self, nwkid, "0113", str(datas))
-
-
-def zcl_configure_reporting_request(self, nwkid, epin, epout, cluster, direction, manufflag, manufcode, nbattribute, attributelist, ackIsDisabled=DEFAULT_ACK_MODE):
-    self.log.logging("zclCommand", "Debug", "zcl_configure_reporting_request %s %s %s %s %s %s %s %s %s" % (nwkid, epin, epout, cluster, direction, manufflag, manufcode, nbattribute, attributelist))
-    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
-        return rawaps_configure_reporting_req(self, nwkid, epin, epout, cluster, direction, manufflag, manufcode, attributelist, ackIsDisabled=ackIsDisabled)
-
-    data = epin + epout + cluster + direction + manufflag + manufcode + nbattribute + attributelist
-    if ackIsDisabled:
-        return send_zigatecmd_zcl_noack(self, nwkid, "0120", data)
-    return send_zigatecmd_zcl_ack(self, nwkid, "0120", data)
 
 
 def zcl_configure_reporting_requestv2(self, nwkid, epin, epout, cluster, direction, manufacturer_spec, manufacturer, attribute_reporting_configuration, ackIsDisabled=DEFAULT_ACK_MODE):

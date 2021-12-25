@@ -15,52 +15,47 @@ def zcl_decoders(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
 
     GlobalCommand, Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002(Payload)
 
-    if not GlobalCommand:
+    if not GlobalCommand: # Cluster Commands
         if ClusterId == "0006":
             # Remote report
             return buildframe_80x5_message(self, "8095", frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Command, Data)
-        # This is not a Global Command (Read Attribute, Write Attribute and so on)
+        
         if ClusterId == "0008":
             # Remote report
             return buildframe_80x5_message(self, "8085", frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Command, Data)
-        if ClusterId == "0300":
-            self.log.logging("Transport8002", "Error", "zcl_decoders for Cluster %s NOT IMPLEMENTED YET" % (ClusterId))
+        
+        if ClusterId == "0500" and Command == "00":
+            # Zone Enroll Response
+            return buildframe_0400_cmd(self, "0400", frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Command, Data)
+
+    else:
+        self.log.logging("Transport8002", "Debug", "decode8002_and_process Sqn: %s/%s ManufCode: %s Command: %s Data: %s " % (int(Sqn, 16), Sqn, ManufacturerCode, Command, Data))
+        if Command == "00":  # Read Attribute
+            return buildframe_read_attribute_request(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Data)
+
+        if Command == "01":  # Read Attribute response
+            return buildframe_read_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
+
+        if Command == "02":  # Write Attributes
+            return buildframe_write_attribute_request(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Data)
+
+        if Command == "04":  # Write Attribute response
+            return buildframe_write_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
+
+        if Command == "06":  # Configure Reporting
             return frame
-        if ClusterId == "0500":
-            self.log.logging("Transport8002", "Error", "zcl_decoders for Cluster %s NOT IMPLEMENTED YET" % (ClusterId))
+
+        if Command == "07":  # Configure Reporting Response
+            return buildframe_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
+
+        if Command == "0a":  # Report attributes
+            return buildframe_report_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
+
+        if Command == "0b":  #
             return frame
 
-        # This is not a Global Command (Read Attribute, Write Attribute and so on)
-        self.log.logging("Transport8002", "Error", "zcl_decoders for Cluster %s NOT IMPLEMENTED YET Global Cmd: %s" % (ClusterId, GlobalCommand))
-        return frame
-
-    self.log.logging("Transport8002", "Debug", "decode8002_and_process Sqn: %s/%s ManufCode: %s Command: %s Data: %s " % (int(Sqn, 16), Sqn, ManufacturerCode, Command, Data))
-    if Command == "00":  # Read Attribute
-        return buildframe_read_attribute_request(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Data)
-
-    if Command == "01":  # Read Attribute response
-        return buildframe_read_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
-
-    if Command == "02":  # Write Attributes
-        return buildframe_write_attribute_request(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Data)
-
-    if Command == "04":  # Write Attribute response
-        return buildframe_write_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
-
-    if Command == "06":  # Configure Reporting
-        return frame
-
-    if Command == "07":  # Configure Reporting Response
-        return buildframe_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
-
-    if Command == "0a":  # Report attributes
-        return buildframe_report_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
-
-    if Command == "0b":  #
-        return frame
-
-    if Command == "0d":  # Discover Attributes Response
-        return buildframe_discover_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
+        if Command == "0d":  # Discover Attributes Response
+            return buildframe_discover_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
 
     self.log.logging(
         "Transport8002",
@@ -192,24 +187,36 @@ def buildframe_read_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, 
             idx += 2
             if DType in SIZE_DATA_TYPE:
                 size = SIZE_DATA_TYPE[DType] * 2
+                data = Data[idx : idx + size]
+                idx += size
+                value = decode_endian_data(data, DType)
+                lenData = "%04x" % (size // 2)
+
+                
             elif DType in ("48", "4c"):
                 nbElement = Data[idx + 2 : idx + 4] + Data[idx : idx + 2]
                 idx += 4
                 # Today found for attribute 0xff02 Xiaomi, just take all data
                 size = len(Data) - idx
+                data = Data[idx : idx + size]
+                idx += size
+                value = decode_endian_data(data, DType)
+                lenData = "%04x" % (size // 2)
+
 
             elif DType in ("41", "42"):  # ZigBee_OctedString = 0x41, ZigBee_CharacterString = 0x42
                 size = int(Data[idx : idx + 2], 16) * 2
                 idx += 2
+                data = Data[idx : idx + size]
+                idx += size
+                value = decode_endian_data(data, DType, size)
+                lenData = "%04x" % (size // 2)
+
             else:
-                self.log.logging("Transport8002", "Error" "buildframe_read_attribute_response - Unknown DataType size: >%s< vs. %s " % (DType, str(SIZE_DATA_TYPE)))
+                self.log.logging("Transport8002", "Error", "buildframe_read_attribute_response - Unknown DataType size: >%s< vs. %s " % (DType, str(SIZE_DATA_TYPE)))
                 self.log.logging("Transport8002", "Error", "buildframe_read_attribute_response - ClusterId: %s Attribute: %s Data: %s" % (ClusterId, Attribute, Data))
                 return frame
 
-            data = Data[idx : idx + size]
-            idx += size
-            value = decode_endian_data(data, DType)
-            lenData = "%04x" % (size // 2)
             buildPayload += Attribute + Status + DType + lenData + value
         else:
             # Status != 0x00
@@ -299,3 +306,19 @@ def buildframe_80x5_message(self, MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, Cl
     buildPayload = Sqn + SrcEndPoint + ClusterId + unknown_ + SrcNwkId + Command + Data[2:]
 
     return encapsulate_plugin_frame(MsgType, buildPayload, frame[len(frame) - 4 : len(frame) - 2])
+
+
+## Cluster 0x0500
+# Cmd : 0x00 Zone Enroll Response  -> 0400
+#     : 0x01 Initiate Normal Operation Mode
+#     : 0x02 Initiate Test mode
+
+def buildframe_0400_cmd(self, MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Command, Data):
+    
+    # Zone Enroll Response
+    enroll_response_code = Data[:2]
+    zone_id = Data[2:4]
+    buildPayload = Sqn + SrcNwkId + SrcEndPoint + enroll_response_code + zone_id
+    return encapsulate_plugin_frame( MsgType, buildPayload, frame[len(frame) - 4 : len(frame) - 2])
+        
+

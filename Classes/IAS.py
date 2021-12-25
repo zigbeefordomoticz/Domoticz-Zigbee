@@ -15,6 +15,7 @@ from Zigbee.zclCommands import (zcl_ias_wd_command_squawk,
                                 zcl_ias_wd_command_start_warning,
                                 zcl_ias_zone_enroll_response,
                                 zcl_read_attribute, zcl_write_attribute)
+from Modules.basicOutputs import write_attribute
 
 ENROLL_RESPONSE_CODE = 0x00
 ZONE_ID = 0x00
@@ -49,7 +50,8 @@ class IAS_Zone_Management:
         #datas += lenght + attribute + data_type + data
         # Domoticz.Log("__write_attribute : %s" %self.ZigateComm)
         #self.ZigateComm.sendData("0110", datas, ackIsDisabled=False)
-        zcl_write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled=False )
+        #zcl_write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled=False )
+        write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled=False )
 
     def __ReadAttributeReq(self, addr, EpIn, EpOut, Cluster, ListOfAttributes):
 

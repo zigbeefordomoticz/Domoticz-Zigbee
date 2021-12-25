@@ -516,23 +516,24 @@ def ballast_Configuration_max_level(self, nwkid, value):
     if ListOfEp:
         for EPout in ListOfEp:
             write_attribute(
-                self, nwkid, ZIGATE_EP, EPout, "0301", "0000", "00", "0011", "20", "%02x" % value, ackIsDisabled=True
+                self, nwkid, ZIGATE_EP, EPout, "0301", "0000", "00", "0011", "20", "%02x" % value, ackIsDisabled=False
             )
-            read_attribute(self, nwkid, ZIGATE_EP, EPout, "0301", "00", "00", "0000", 1, "0011", ackIsDisabled=True)
+            read_attribute(self, nwkid, ZIGATE_EP, EPout, "0301", "00", "00", "0000", 1, "0011", ackIsDisabled=False)
 
 
 def ballast_Configuration_min_level(self, nwkid, value):
     ListOfEp = getListOfEpForCluster(self, nwkid, "0301")
     if ListOfEp:
         for EPout in ListOfEp:
-            write_attribute( self, nwkid, ZIGATE_EP, EPout, "0301", "0000", "00", "0010", "20", "%02x" % value, ackIsDisabled=True)
-            read_attribute(self, nwkid, ZIGATE_EP, EPout, "0301", "00", "00", "0000", 1, "0010", ackIsDisabled=True)
+            write_attribute( self, nwkid, ZIGATE_EP, EPout, "0301", "0000", "00", "0010", "20", "%02x" % value, ackIsDisabled=False)
+            read_attribute(self, nwkid, ZIGATE_EP, EPout, "0301", "00", "00", "0000", 1, "0010", ackIsDisabled=False)
 
-def read_attribute(self, nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, lenAttr, Attr, ackIsDisabled=True):
+def read_attribute(self, nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, lenAttr, Attr, ackIsDisabled=False):
     return zcl_read_attribute(self, nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, lenAttr, Attr, ackIsDisabled)
 
-def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled=True ):
-    i_sqn = zcl_write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled=True )
+def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled=False ):
+    i_sqn = zcl_write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled=ackIsDisabled )
+    
     set_isqn_datastruct(self, "WriteAttributes", key, EPout, clusterID, attribute, i_sqn)
     set_request_datastruct( self, "WriteAttributes", key, EPout, clusterID, attribute, data_type, EPin, EPout, manuf_id, manuf_spec, data, ackIsDisabled, "requested", )
     set_timestamp_datastruct(self, "WriteAttributes", key, EPout, clusterID, int(time()))

@@ -1,30 +1,51 @@
 import struct
 
 
-def decode_endian_data(data, datatype):
+def decode_endian_data(data, datatype, len_stream=None):
     # Tested with Raw Configure reporting
+    # https://zigbeealliance.org/wp-content/uploads/2019/12/07-5123-06-zigbee-cluster-library-specification.pdf Table 2-10 (page 2-41)
 
-    if datatype in ("10", "18", "20", "28", "30"):
-        return data
+    data_type_id = int(datatype, 16)
+    if data_type_id == 0x00:
+        return ""
+    
+    if data_type_id in {0x08, 0x10, 0x18, 0x20, 0x28, 0x30}:
+        # 1 byte - 8b
+        return data[:2]
+    
+    if data_type_id in {0x09, 0x19, 0x21, 0x29, 0x31, 0x38}:
+        # 2 bytes - 16b
+        return "%04x" % struct.unpack(">H", struct.pack("H", int(data[:4], 16)))[0]
+    
+    if data_type_id in {0x0A, 0x1A, 0x22, 0x2A}:
+        # 3 bytes - 24b
+        return ("%08x" % struct.unpack(">I", struct.pack("I", int("0" + data[:6], 16)))[0])[:6]
 
-    if datatype in ("09", "19", "21", "29", "31"):
-        data = "%04x" % struct.unpack(">H", struct.pack("H", int(data, 16)))[0]
-        return data[:4]
+    if data_type_id in {0x0B, 0x1B, 0x23, 0x2B, 0x39}:
+        # 4 bytes - 32b
+        return "%08x" % struct.unpack(">I", struct.pack("I", int(data[:8], 16)))[0]
+    
+    if data_type_id in {0x0C, 0x1C, 0x24, 0x2C}:
+        # 5 bytes - 40b
+        return ("%010x" % struct.unpack(">Q", struct.pack("Q", int("0" + data[:10], 16)))[0])[:10]
 
-    if datatype in ("22", "2a"):
-        data = "%06x" % struct.unpack(">I", struct.pack("I", int(data, 16)))[0]
-        return data[:6]
+    if data_type_id in {0x0D, 0x1D, 0x25, 0x2D}:
+        # 6 bytes - 48b
+        return ("%012x" % struct.unpack(">Q", struct.pack("Q", int(data[:12], 16)))[0])[:12]
 
-    if datatype in ("23", "2b", "39"):
-        data = "%08x" % struct.unpack(">i", struct.pack("I", int(data, 16)))[0]
-        return data[:8]
+    if data_type_id in {0x0E, 0x1E, 0x26, 0x2E}:
+        # 7 bytes - 56b
+        return "%014x" % ("%014x" % struct.unpack(">Q", struct.pack("Q", int("00" + data[:14], 16)))[0])[:14]
 
-    if datatype in ("25", "2d"):  # Tested Ok
-        data = "%012x" % struct.unpack("Q", struct.pack(">Q", int(data, 16)))[0]
-        return data[:12]
-
-    if datatype in ("00", "41", "42", "4c", "48"):
-        return data
+    if data_type_id in {0x0F, 0x1F, 0x27, 0x2F, 0x3A}:
+        # 8 bytes - 64b
+        return "%016x" % struct.unpack(">Q", struct.pack("Q", int(data[:16], 16)))[0]
+    
+    if data_type_id in {0x41, 0x42} and len_stream:
+        return data[: len_stream ]
+    
+    if data_type_id in {0xfe}:
+        return "%016x" % struct.unpack(">Q", struct.pack("Q", int(data[:16], 16)))[0]
 
     return data
 

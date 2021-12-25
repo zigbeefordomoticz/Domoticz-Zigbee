@@ -205,7 +205,7 @@ def buildframe_bind_response_command(self, SrcNwkId, SrcEndPoint, ClusterId, Pay
 
     self.log.logging("zdpCommand", "Debug", "buildframe_bind_response_command sqn: %s nwkid: %s Ep: %s Status %s" % (sqn, SrcNwkId, SrcEndPoint, status))
 
-    buildPayload = sqn + status
+    buildPayload = sqn + status + "02" + SrcNwkId
     return encapsulate_plugin_frame("8030", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 

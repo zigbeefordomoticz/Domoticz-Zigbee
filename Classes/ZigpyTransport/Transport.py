@@ -66,9 +66,9 @@ class ZigpyTransport(object):
         self.zigpy_thread.join()
         self.forwarder_thread.join()
 
-    def sendData(self, cmd, datas, highpriority=False, ackIsDisabled=False, waitForResponseIn=False, NwkId=None):
+    def sendData(self, cmd, datas, sqn= None, highpriority=False, ackIsDisabled=False, waitForResponseIn=False, NwkId=None):
         self.log.logging("Transport", "Debug", "===> sendData - Cmd: %s Datas: %s" % (cmd, datas))
-        message = {"cmd": cmd, "datas": datas, "NwkId": NwkId, "TimeStamp": time.time(), "ACKIsDisable": ackIsDisabled}
+        message = {"cmd": cmd, "datas": datas, "NwkId": NwkId, "TimeStamp": time.time(), "ACKIsDisable": ackIsDisabled, "Sqn": sqn}
         self.writer_queue.put((99, str(json.dumps(message))))
 
     def receiveData(self, message):
