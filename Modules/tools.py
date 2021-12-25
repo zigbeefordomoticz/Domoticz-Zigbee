@@ -451,6 +451,7 @@ def get_and_inc_SQN(self, key):
         _new_sqn = int(self.ListOfDevices[key]["SQN"], 16) + 1
         if _new_sqn > 0xFF:
             _new_sqn = 0x00
+            
 
     # self.ListOfDevices[key]['SQN']= '%2x' %_new_sqn
     return "%02x" % _new_sqn
@@ -467,10 +468,24 @@ def get_and_inc_ZDP_SQM(self, key):
         _new_sqn = int(self.ListOfDevices[key]["ZDPSQN"], 16) + 1
         if _new_sqn > 0xFF:
             _new_sqn = 0x00
-
-    # self.ListOfDevices[key]['SQN']= '%2x' %_new_sqn
+    self.ListOfDevices[key]["ZDPSQN"] = "%02x" %_new_sqn
     return "%02x" % _new_sqn
-    
+   
+def get_and_inc_ZCL_SQN(self, key):
+    if (
+        (key not in self.ListOfDevices)
+        or ("ZCLSQN" not in self.ListOfDevices[key])
+        or (self.ListOfDevices[key]["ZCLSQN"] == {})
+        or (self.ListOfDevices[key]["ZCLSQN"] == "")
+    ):
+        _new_sqn = 0x00
+    else:
+        _new_sqn = int(self.ListOfDevices[key]["ZCLSQN"], 16) + 1
+        if _new_sqn > 0xFF:
+            _new_sqn = 0x00
+    self.ListOfDevices[key]["ZCLSQN"] = "%02x" %_new_sqn
+    return "%02x" % _new_sqn
+     
 
 def updSQN(self, key, newSQN):
 

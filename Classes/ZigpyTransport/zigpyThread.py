@@ -1,4 +1,3 @@
-
 import asyncio
 import binascii
 import json
@@ -27,60 +26,63 @@ import zigpy_znp.zigbee.application
 from Classes.ZigpyTransport.AppZigate import App_zigate
 from Classes.ZigpyTransport.AppZnp import App_znp
 
-from Classes.ZigpyTransport.nativeCommands import (NATIVE_COMMANDS_MAPPING,
-                                                   native_commands)
+from Classes.ZigpyTransport.nativeCommands import NATIVE_COMMANDS_MAPPING, native_commands
 from Classes.ZigpyTransport.tools import handle_thread_error
-from Zigbee.plugin_encoders import build_plugin_8011_frame_content, build_plugin_8009_frame_content
+from Classes.ZigpyTransport.plugin_encoders import build_plugin_8011_frame_content, build_plugin_8009_frame_content
 from zigpy.exceptions import DeliveryError, InvalidResponse
-from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
-                                 SCHEMA_DEVICE)
+from zigpy_zigate.config import CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE
 
 
 def start_zigpy_thread(self):
-    self.log.logging("TransportWrter",  "Debug","start_zigpy_thread - Starting zigpy thread")
+    self.log.logging("TransportWrter", "Debug", "start_zigpy_thread - Starting zigpy thread")
     self.zigpy_thread.start()
 
-def stop_zigpy_thread(self):
-    self.log.logging("TransportWrter",  "Debug","stop_zigpy_thread - Stopping zigpy thread")
-    self.writer_queue.put( (0, "STOP") )
-    self.zigpy_running = False
-    
-def zigpy_thread(self):
-    self.log.logging("TransportWrter",  "Debug","zigpy_thread - Starting zigpy thread")
-    self.zigpy_running = True
-    asyncio.run( radio_start (self, self._radiomodule, self._serialPort) )  
 
-def callBackGetDevice (nwk,ieee):
+def stop_zigpy_thread(self):
+    self.log.logging("TransportWrter", "Debug", "stop_zigpy_thread - Stopping zigpy thread")
+    self.writer_queue.put((0, "STOP"))
+    self.zigpy_running = False
+
+
+def zigpy_thread(self):
+    self.log.logging("TransportWrter", "Debug", "zigpy_thread - Starting zigpy thread")
+    self.zigpy_running = True
+    asyncio.run(radio_start(self, self._radiomodule, self._serialPort))
+
+
+def callBackGetDevice(nwk, ieee):
     return None
 
-async def radio_start(self, radiomodule, serialPort, auto_form=False ):
 
-    self.log.logging("TransportWrter",  "Debug","In radio_start")
-    
+async def radio_start(self, radiomodule, serialPort, auto_form=False):
+
+    self.log.logging("TransportWrter", "Debug", "In radio_start")
+
     conf = {CONF_DEVICE: {"path": serialPort}}
-    if radiomodule == 'zigate':
-        self.app = App_zigate (conf) 
-        
-    elif radiomodule == 'znp':
-        self.app = App_znp (conf) 
+    if radiomodule == "zigate":
+        self.app = App_zigate(conf)
 
-    await self.app.startup (self.receiveData, callBackGetDevice=self.ZigpyGetDevice, auto_form=True, log=self.log)  
-    
+    elif radiomodule == "znp":
+        self.app = App_znp(conf)
+
+    await self.app.startup(self.receiveData, callBackGetDevice=self.ZigpyGetDevice, auto_form=True, log=self.log)
+
     # Send Network information to plugin, in order to poplulate various objetcs
-    
-    self.receiveData( build_plugin_8009_frame_content(self) )
-        
-    self.log.logging("TransportWrter",  "Debug","PAN ID:               0x%04x" %self.app.pan_id)
-    self.log.logging("TransportWrter",  "Debug","Extended PAN ID:      0x%s" %self.app.extended_pan_id)
-    self.log.logging("TransportWrter",  "Debug","Channel:              %d" %self.app.channel)
-    self.log.logging("TransportWrter",  "Debug","Device IEEE:          %s" %self.app.ieee)
-    self.log.logging("TransportWrter",  "Debug","Device NWK:           0x%04x" %self.app.nwk)
+    self.receiveData(build_plugin_8009_frame_content(self))
+
+    self.log.logging("TransportWrter", "Debug", "PAN ID:               0x%04x" % self.app.pan_id)
+
+    self.log.logging("TransportWrter", "Debug", "Extended PAN ID:      0x%s" % self.app.extended_pan_id)
+    self.log.logging("TransportWrter", "Debug", "Channel:              %d" % self.app.channel)
+    self.log.logging("TransportWrter", "Debug", "Device IEEE:          %s" % self.app.ieee)
+    self.log.logging("TransportWrter", "Debug", "Device NWK:           0x%04x" % self.app.nwk)
 
     # Run forever
     await worker_loop(self)
 
     await self.app.shutdown()
-    self.log.logging("TransportWrter",  "Debug","Exiting co-rounting radio_start")
+    self.log.logging("TransportWrter", "Debug", "Exiting co-rounting radio_start")
+
 
 async def worker_loop(self):
     self.log.logging("TransportWrter", "Debug", "worker_loop - ZigyTransport: worker_loop start.")
@@ -91,9 +93,9 @@ async def worker_loop(self):
             break
         try:
             prio, entry = self.writer_queue.get(False)
-            
+
         except queue.Empty:
-            await asyncio.sleep(.250)
+            await asyncio.sleep(0.250)
             continue
 
         if entry == "STOP":
@@ -103,49 +105,55 @@ async def worker_loop(self):
             self.statistics._MaxLoad = self.writer_queue.qsize()
 
         data = json.loads(entry)
-        self.log.logging("TransportWrter", "Debug","got command %s" %data)
+        self.log.logging("TransportWrter", "Debug", "got command %s" % data)
 
         try:
             if data["cmd"] == "PERMIT-TO-JOIN":
-                duration = data["datas"]["Duration"] 
-                if duration == 0xff:
-                    duration = 0xfe
+                duration = data["datas"]["Duration"]
+                if duration == 0xFF:
+                    duration = 0xFE
                 await self.app.permit(time_s=duration)
             elif data["cmd"] == "SET-TX-POWER":
-                await self.app.set_tx_power (data["datas"]["Param1"])
+                await self.app.set_tx_power(data["datas"]["Param1"])
             elif data["cmd"] == "SET-LED":
-                await self.app.set_led  (data["datas"]["Param1"])
+                await self.app.set_led(data["datas"]["Param1"])
             elif data["cmd"] == "SET-CERTIFICATION":
-                await self.app.set_certification  (data["datas"]["Param1"])
+                await self.app.set_certification(data["datas"]["Param1"])
             elif data["cmd"] == "GET-TIME":
                 await self.app.get_time_server()
             elif data["cmd"] == "SET-TIME":
-                await self.app.set_time_server( data["datas"]["Param1"] )
-            elif   data["cmd"] in NATIVE_COMMANDS_MAPPING:
-                await native_commands(self, data["cmd"], data["datas"] )
+                await self.app.set_time_server(data["datas"]["Param1"])
+            elif data["cmd"] in NATIVE_COMMANDS_MAPPING:
+                await native_commands(self, data["cmd"], data["datas"])
             elif data["cmd"] == "RAW-COMMAND":
-                await process_raw_command( self, data["datas"], data["ACKIsDisable"])
+                await process_raw_command(self, data["datas"], data["ACKIsDisable"])
 
         except DeliveryError:
-            self.log.logging("TransportWrter", "Error", "DeliveryError: Not able to execute the zigpy command: %s data: %s" %(
-                data["cmd"], data["datas"]))
-            
+            self.log.logging(
+                "TransportWrter",
+                "Error",
+                "DeliveryError: Not able to execute the zigpy command: %s data: %s" % (data["cmd"], data["datas"]),
+            )
+
         except InvalidResponse:
-            self.log.logging("TransportWrter", "Error", "InvalidResponse: Not able to execute the zigpy command: %s data: %s" %(
-                data["cmd"], data["datas"]))
+            self.log.logging(
+                "TransportWrter",
+                "Error",
+                "InvalidResponse: Not able to execute the zigpy command: %s data: %s" % (data["cmd"], data["datas"]),
+            )
 
         except Exception as e:
             self.log.logging("TransportWrter", "Error", "Error while receiving a Plugin command: %s" % e)
             handle_thread_error(self, e, data)
-        
+
         # Wait .5s to reduce load on Zigate
-        #await asyncio.sleep(0.10)
+        # await asyncio.sleep(0.10)
 
     self.log.logging("TransportWrter", "Debug", "ZigyTransport: writer_thread Thread stop.")
 
 
-async def process_raw_command( self, data, AckIsDisable=False):
-    #data = {
+async def process_raw_command(self, data, AckIsDisable=False):
+    # data = {
     #    'Profile': int(profileId, 16),
     #    'Cluster': int(cluster, 16),
     #    'TargetNwk': int(targetaddr, 16),
@@ -163,24 +171,34 @@ async def process_raw_command( self, data, AckIsDisable=False):
     sequence = self.app.get_sequence()
     addressmode = data["AddressMode"]
     enableAck = not AckIsDisable
-    
+
     self.statistics._sent += 1
-    self.log.logging("TransportWrter", "Debug", "ZigyTransport: process_raw_command ready to request NwkId: %04x Cluster: %04x Seq: %02x Payload: %s AddrMode: %02x EnableAck: %s" %(
-        NwkId, Cluster, sequence, payload, addressmode, enableAck ))
-    
+    self.log.logging(
+        "TransportWrter",
+        "Debug",
+        "ZigyTransport: process_raw_command ready to request NwkId: %04x Cluster: %04x Seq: %02x Payload: %s AddrMode: %02x EnableAck: %s"
+        % (NwkId, Cluster, sequence, payload, addressmode, enableAck),
+    )
+
     if self.pluginconf.pluginConf["ZiGateReactTime"]:
         t_start = 1000 * time.time()
-        
+
     if addressmode == 0x01:
         # Group Mode
-        result, msg = await self.app.mrequest( NwkId, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=enableAck, use_ieee=False)
-    elif addressmode in (0x02,0x07):
+        result, msg = await self.app.mrequest(
+            NwkId, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=enableAck, use_ieee=False
+        )
+    elif addressmode in (0x02, 0x07):
         # Short
         destination = zigpy.device.Device(self.app, None, NwkId)
-        result, msg = await self.app.request( destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=enableAck, use_ieee=False)
-    elif addressmode in ( 0x03, 0x08):
+        result, msg = await self.app.request(
+            destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=enableAck, use_ieee=False
+        )
+    elif addressmode in (0x03, 0x08):
         destination = zigpy.device.Device(self.app, NwkId, None)
-        result, msg = await self.app.request( destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=enableAck, use_ieee=False)
+        result, msg = await self.app.request(
+            destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=enableAck, use_ieee=False
+        )
 
     if self.pluginconf.pluginConf["ZiGateReactTime"]:
         t_end = 1000 * time.time()
@@ -188,20 +206,22 @@ async def process_raw_command( self, data, AckIsDisable=False):
         self.statistics.add_timing_zigpy(t_elapse)
         if t_elapse > 1000:
             self.log.logging(
-            "TransportWrter",
-            "Log",
-            "process_raw_command (zigpyThread) spend more than 1s (%s ms) frame: %s with Ack: %s"
-            % (t_elapse, data, AckIsDisable),
-        )
+                "TransportWrter",
+                "Log",
+                "process_raw_command (zigpyThread) spend more than 1s (%s ms) frame: %s with Ack: %s"
+                % (t_elapse, data, AckIsDisable),
+            )
 
+    self.log.logging(
+        "TransportWrter",
+        "Debug",
+        "ZigyTransport: process_raw_command completed NwkId: %s result: %s msg: %s" % (destination, result, msg),
+    )
 
-    self.log.logging("TransportWrter", "Debug", "ZigyTransport: process_raw_command completed NwkId: %s result: %s msg: %s" %(
-        destination, result, msg))
-    
     if enableAck:
         # Looks like Zigate return an int, while ZNP returns a status.type
         if not isinstance(result, int):
-            result = int(result.serialize().hex(),16)
+            result = int(result.serialize().hex(), 16)
 
         # Update statistics
         if result != 0x00:
@@ -210,4 +230,6 @@ async def process_raw_command( self, data, AckIsDisable=False):
             self.statistics._APSAck += 1
 
         # Send Ack/Nack to Plugin
-        self.forwarder_queue.put( build_plugin_8011_frame_content(self, destination.nwk.serialize()[::-1].hex(), result, destination.lqi) )
+        self.forwarder_queue.put(
+            build_plugin_8011_frame_content(self, destination.nwk.serialize()[::-1].hex(), result, destination.lqi)
+        )

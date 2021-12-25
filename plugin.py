@@ -125,10 +125,9 @@ from Zigbee.zdpCommands import zdp_get_permit_joint_status
 from Modules.zigateCommands import zigate_set_mode
 
 
-#from zigpy_zigate.config import CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE
-#from Classes.ZigpyTransport.Transport import ZigpyTransport
-#import asyncio
-#ZIGPY_LOADED = True
+from zigpy_zigate.config import CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE
+from Classes.ZigpyTransport.Transport import ZigpyTransport
+import asyncio
 
 
 
@@ -480,7 +479,7 @@ class BasePlugin:
 
         elif self.transport in ("PI", "V2-PI"):
             from Classes.Transport.Transport import ZigateTransport
-            
+            self.pluginconf.pluginConf["ZiGateInRawMode"] = False
             switchPiZigate_mode(self, "run")
             self.zigbee_communitation = "native"
             self.ZigateComm = ZigateTransport(
@@ -498,7 +497,7 @@ class BasePlugin:
 
         elif self.transport in ("Wifi", "V2-Wifi"):
             from Classes.Transport.Transport import ZigateTransport
-            
+            self.pluginconf.pluginConf["ZiGateInRawMode"] = False
             self.zigbee_communitation = "native"
             self.ZigateComm = ZigateTransport(
                 self.HardwareID,
@@ -516,7 +515,7 @@ class BasePlugin:
 
         elif self.transport == "None":
             from Classes.Transport.Transport import ZigateTransport
-            
+            self.pluginconf.pluginConf["ZiGateInRawMode"] = False
             self.log.logging("Plugin", "Status", "Transport mode set to None, no communication.")
             self.FirmwareVersion = "031c"
             self.PluginHealth["Firmware Update"] = {"Progress": "75 %", "Device": "1234"}
@@ -1144,6 +1143,7 @@ def zigateInit_Phase3(self):
         # Create Configure Reporting object
         if self.configureReporting is None:
             self.configureReporting = ConfigureReporting(
+                self.zigbee_communitation,
                 self.pluginconf,
                 self.DeviceConf,
                 self.ZigateComm,

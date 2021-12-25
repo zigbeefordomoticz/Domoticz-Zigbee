@@ -17,6 +17,15 @@ def zigate_set_mode(self, mode):
     #  0x00 - ZiGate in norml operation
     #  0x01 - ZiGate in RAW mode
     #  0x02 - ZiGate in Hybrid mode ( All inbound messages are received via 0x8002 in addition of the normal one)
+    if mode == 0x00:
+        self.pluginconf.pluginConf["ZiGateInRawMode"] = False
+        self.pluginconf.pluginConf["ZiGateInHybridMode"] = False
+    elif mode == 0x01:
+        self.pluginconf.pluginConf["ZiGateInRawMode"] = True
+        self.pluginconf.pluginConf["ZiGateInHybridMode"] = False
+    elif mode == 0x02:
+        self.pluginconf.pluginConf["ZiGateInHybridMode"] = True
+        self.pluginconf.pluginConf["ZiGateInRawMode"] = True
     return send_zigatecmd_raw(self, "0002", "%02x" % mode)
 
 def zigate_set_loglevel(self, loglevel):
