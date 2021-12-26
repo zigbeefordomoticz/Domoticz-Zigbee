@@ -209,7 +209,14 @@ def zcl_raw_window_covering(self, nwkid, EPIn, EPout, command, level="00", perce
     self.log.logging("zclCommand", "Debug", "zcl_raw_window_covering %s %s %s %s %s" % (nwkid, EPout, command, level, percentage))
 
     Cluster = "0102"
-    WINDOW_COVERING_COMMANDS = {"Up": 0x00, "Down": 0x01, "Stop": 0x02, "GoToLiftValue": 0x04, "GoToLiftPercentage": 0x05, "GoToTiltValue": 0x07, "GoToTiltPercentage": 0x08}
+    WINDOW_COVERING_COMMANDS = {
+        "Up": 0x00, 
+        "Down": 0x01, 
+        "Stop": 0x02, 
+        "GoToLiftValue": 0x04, 
+        "GoToLiftPercentage": 0x05, 
+        "GoToTiltValue": 0x07, 
+        "GoToTiltPercentage": 0x08}
     if command not in WINDOW_COVERING_COMMANDS:
         return
 

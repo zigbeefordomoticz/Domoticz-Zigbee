@@ -11,22 +11,22 @@
 """
 
 
-from Modules.sendZigateCommand import send_zigatecmd_raw, send_zigatecmd_zcl_ack, send_zigatecmd_zcl_noack
+from Modules.sendZigateCommand import (send_zigatecmd_raw,
+                                       send_zigatecmd_zcl_ack,
+                                       send_zigatecmd_zcl_noack)
 from Modules.zigateConsts import ADDRESS_MODE, ZIGATE_EP
 
-from Zigbee.zclRawCommands import (
-    raw_zcl_zcl_onoff,
-    rawaps_read_attribute_req,
-    rawaps_write_attribute_req,
-    zcl_raw_configure_reporting_requestv2,
-    zcl_raw_ias_initiate_normal_operation_mode,
-    zcl_raw_ias_initiate_test_mode,
-    zcl_raw_ias_zone_enroll_response,
-    zcl_raw_level_move_to_level,
-    zcl_raw_move_color,
-    zcl_raw_ias_wd_command_start_warning,
-    zcl_raw_ias_wd_command_squawk,
-)
+from Zigbee.zclRawCommands import (raw_zcl_zcl_onoff,
+                                   rawaps_read_attribute_req,
+                                   rawaps_write_attribute_req,
+                                   zcl_raw_configure_reporting_requestv2,
+                                   zcl_raw_ias_initiate_normal_operation_mode,
+                                   zcl_raw_ias_initiate_test_mode,
+                                   zcl_raw_ias_wd_command_squawk,
+                                   zcl_raw_ias_wd_command_start_warning,
+                                   zcl_raw_ias_zone_enroll_response,
+                                   zcl_raw_level_move_to_level,
+                                   zcl_raw_move_color, zcl_raw_window_covering)
 
 DEFAULT_ACK_MODE = False
 
@@ -336,7 +336,8 @@ def zcl_window_covering_stop(self, nwkid, EPout, ackIsDisabled=DEFAULT_ACK_MODE)
     # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
     self.log.logging("zclCommand", "Debug", "zcl_window_covering_stop %s %s" % (nwkid, EPout))
     if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
-        pass
+        return zcl_raw_window_covering(self, nwkid, ZIGATE_EP, EPout, "Stop",  groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE)
+
     data = ZIGATE_EP + EPout + "02"
     if ackIsDisabled:
         return send_zigatecmd_zcl_noack(self, nwkid, "00FA", data)
@@ -345,7 +346,7 @@ def zcl_window_covering_stop(self, nwkid, EPout, ackIsDisabled=DEFAULT_ACK_MODE)
 
 def zcl_group_window_covering_stop(self, nwkid, epin, EPout):
     if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
-        pass
+        return zcl_raw_window_covering(self, nwkid, ZIGATE_EP, EPout, "Stop",  groupaddrmode=True, ackIsDisabled=DEFAULT_ACK_MODE)
     data = "%02d" % ADDRESS_MODE["group"] + nwkid + epin + EPout + "02"
     return send_zigatecmd_raw(self, "00FA", data)
 
@@ -354,7 +355,7 @@ def zcl_window_covering_on(self, nwkid, EPout, ackIsDisabled=DEFAULT_ACK_MODE):
     # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
     self.log.logging("zclCommand", "Debug", "zcl_window_covering_on %s %s" % (nwkid, EPout))
     if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
-        pass
+        return zcl_raw_window_covering(self, nwkid, ZIGATE_EP, EPout, "Up",  groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE)
     data = ZIGATE_EP + EPout + "00"
     if ackIsDisabled:
         return send_zigatecmd_zcl_noack(self, nwkid, "00FA", data)
@@ -363,7 +364,7 @@ def zcl_window_covering_on(self, nwkid, EPout, ackIsDisabled=DEFAULT_ACK_MODE):
 
 def zcl_group_window_covering_on(self, nwkid, epin, EPout):
     if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
-        pass
+        return zcl_raw_window_covering(self, nwkid, ZIGATE_EP, EPout, "Up",  groupaddrmode=True, ackIsDisabled=DEFAULT_ACK_MODE)
     data = "%02d" % ADDRESS_MODE["group"] + nwkid + epin + EPout + "00"
     return send_zigatecmd_raw(self, "00FA", data)
 
@@ -372,7 +373,7 @@ def zcl_window_covering_off(self, nwkid, EPout, ackIsDisabled=DEFAULT_ACK_MODE):
     # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
     self.log.logging("zclCommand", "Debug", "zcl_window_covering_off %s %s" % (nwkid, EPout))
     if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
-        pass
+        return zcl_raw_window_covering(self, nwkid, ZIGATE_EP, EPout, "Down",  groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE)
     data = ZIGATE_EP + EPout + "01"
     if ackIsDisabled:
         return send_zigatecmd_zcl_noack(self, nwkid, "00FA", data)
@@ -381,25 +382,25 @@ def zcl_window_covering_off(self, nwkid, EPout, ackIsDisabled=DEFAULT_ACK_MODE):
 
 def zcl_group_window_covering_off(self, nwkid, epin, EPout):
     if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
-        pass
+        return zcl_raw_window_covering(self, nwkid, ZIGATE_EP, EPout, "Down",  groupaddrmode=True, ackIsDisabled=DEFAULT_ACK_MODE)
     data = "%02d" % ADDRESS_MODE["group"] + nwkid + epin + EPout + "01"
     return send_zigatecmd_raw(self, "00FA", data)
 
 
-def zcl_window_coverting_level(self, nwkid, EPout, level, ackIsDisabled=DEFAULT_ACK_MODE):
-    self.log.logging("zclCommand", "Debug", "zcl_window_coverting_level %s %s %s" % (nwkid, EPout, level))
+def zcl_window_coverting_level(self, nwkid, EPout, percentage, ackIsDisabled=DEFAULT_ACK_MODE):
+    self.log.logging("zclCommand", "Debug", "zcl_window_coverting_level %s %s %s" % (nwkid, EPout, percentage))
     if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
-        pass
-    data = ZIGATE_EP + EPout + "05" + level
+        return zcl_raw_window_covering(self, nwkid, ZIGATE_EP, EPout, "GoToLiftPercentage", percentage= percentage,groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE)
+    data = ZIGATE_EP + EPout + "05" + percentage
     if ackIsDisabled:
         return send_zigatecmd_zcl_noack(self, nwkid, "00FA", data)
     return send_zigatecmd_zcl_ack(self, nwkid, "00FA", data)
 
 
-def zcl_group_window_covering_level(self, nwkid, epin, EPout, level):
+def zcl_group_window_covering_level(self, nwkid, epin, EPout, percentage):
     if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
-        pass
-    data = "%02d" % ADDRESS_MODE["group"] + nwkid + epin + EPout + "05"
+        return zcl_raw_window_covering(self, nwkid, ZIGATE_EP, EPout, "GoToLiftPercentage", percentage= percentage,groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE)
+    data = "%02d" % ADDRESS_MODE["group"] + nwkid + epin + EPout + "05" + percentage
     return send_zigatecmd_raw(self, "00FA", data)
 
 
