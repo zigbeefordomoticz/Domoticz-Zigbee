@@ -38,11 +38,11 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
     async def _load_db(self) -> None:
         logging.debug("_load_db")
 
-    async def startup(self, callBackHandleMessage, callBackGetDevice=None, auto_form=False, log=None):
+    async def startup(self, callBackHandleMessage, callBackGetDevice=None, auto_form=False, force_form=False, log=None):
         self.callBackFunction = callBackHandleMessage
         self.callBackGetDevice = callBackGetDevice
         self.log = log
-        await super().startup(auto_form)
+        await super().startup(auto_form=auto_form,force_form=force_form)
 
         version = await self._api.version_str()
         Domoticz.Log("Zigate Version: %s" % version)

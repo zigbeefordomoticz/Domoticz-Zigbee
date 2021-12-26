@@ -42,11 +42,11 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
     # async def startup(self, auto_form=False):
     #    await super().startup(auto_form)
 
-    async def startup(self, callBackHandleMessage, callBackGetDevice=None, auto_form=False, log=None):
+    async def startup(self, callBackHandleMessage, callBackGetDevice=None, auto_form=False, force_form=False,log=None):
         self.log = log
         self.callBackHandleMessage = callBackHandleMessage
         self.callBackGetDevice = callBackGetDevice
-        await super().startup(auto_form)
+        await super().startup(auto_form=auto_form,force_form=force_form)
 
         # Trigger Version payload to plugin
 
@@ -158,10 +158,10 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         
     async def set_extended_pan_id (self,extended_pan_ip):
         self.confif[conf.CONF_NWK][conf.CONF_NWK_EXTENDED_PAN_ID] = extended_pan_ip
-        self.startup(self.callBackHandleMessage,self.callBackGetDevice,auto_form=True,log=self.log)
+        self.startup(self.callBackHandleMessage,self.callBackGetDevice,auto_form=True,force_form=True,log=self.log)
 
     async def set_channel (self,channel):
         self.confif[conf.CONF_NWK][conf.CONF_NWK_EXTENDED_PAN_ID] =  channel
-        self.startup(self.callBackHandleMessage,self.callBackGetDevice,auto_form=True,log=self.log)
+        self.startup(self.callBackHandleMessage,self.callBackGetDevice,auto_form=True,force_form=True,log=self.log)
 
 
