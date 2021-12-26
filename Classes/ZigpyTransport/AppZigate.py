@@ -148,3 +148,10 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
 
     async def soft_reset(self):
         await self._api.reset()
+
+
+    async def set_extended_pan_id (self):
+        pass      
+
+    async def set_channel (self):
+        pass        
