@@ -206,6 +206,7 @@ def buildframe_simple_descriptor_response(self, SrcNwkId, SrcEndPoint, ClusterId
 
 def buildframe_bind_response_command(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
     # 2d00
+    # 01/8002/001e/ff/000000/8021/0000/02/2e0b/0200009900/7e/03
     sqn = Payload[:2]
     status = Payload[2:4]
 

@@ -71,6 +71,7 @@ class ZigpyTransport(object):
         self.writer_queue.put((99, str(json.dumps(message))))
 
     def receiveData(self, message):
+        self.log.logging("Transport", "Debug", "===> receiveData for Forwarded - Message %s" % (message))
         self.forwarder_queue.put(message)
 
     # TO be cleaned . This is to make the plugin working

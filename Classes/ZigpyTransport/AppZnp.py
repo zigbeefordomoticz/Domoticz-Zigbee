@@ -41,7 +41,9 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
     # async def startup(self, auto_form=False):
     #    await super().startup(auto_form)
 
-    async def startup(self, callBackHandleMessage, callBackGetDevice=None, auto_form=False, log=None):
+    async def startup(self, callBackHandleMessage, callBackGetDevice=None, auto_form=False, log=None, set_channel=0, set_extendedPanId=0):
+        # If set to != 0 (default) extended PanId will be use when forming the network.
+        # If set to !=0 (default) channel will be use when formin the network
         self.log = log
         self.callBackHandleMessage = callBackHandleMessage
         self.callBackGetDevice = callBackGetDevice
@@ -97,8 +99,8 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
             self.log.logging(
                 "TransportZigpy",
                 "Debug",
-                "handle_message device : %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s" % (str(sender), profile, cluster, src_ep, dst_ep, str(message)),
-            )
+                "handle_message device 1: %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s lqi: %s" % (
+                    str(sender), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8"), sender.lqi)),
             self.log.logging("TransportZigpy", "Debug", "=====> Sender %s - %s" % (sender.nwk, sender.ieee))
             if sender.nwk is not None:
                 addr_mode = 0x02
@@ -114,7 +116,8 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
             self.log.logging(
                 "TransportZigpy",
                 "Debug",
-                "handle_message device : %s (%s) Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s " % (str(addr), type(addr), profile, cluster, src_ep, dst_ep, str(message)),
+                "handle_message device 2: %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s lqi: %s" % (
+                    str(addr),  profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8"), sender.lqi),
             )
             plugin_frame = build_plugin_8002_frame_content(self, addr, profile, cluster, src_ep, dst_ep, message, sender.lqi, src_addrmode=addr_mode)
             self.log.logging("TransportZigpy", "Debug", "handle_message Sender: %s frame for plugin: %s" % (addr, plugin_frame))
@@ -123,14 +126,14 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
             self.log.logging(
                 "TransportZigpy",
                 "Error",
-                "handle_message Sender unkown device : %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s" % (str(sender), profile, cluster, src_ep, dst_ep, str(message)),
+                "handle_message Sender unkown device : %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s" % (
+                    str(sender), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8")),
             )
 
         return None
 
     async def set_tx_power(self, power):
         self.log.logging("TransportZigpy", "Debug", "set_tx_power not implemented yet")
-        pass
         # something to fix here
         # await self.set_tx_power(dbm=power)
 

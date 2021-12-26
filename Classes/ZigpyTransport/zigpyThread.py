@@ -34,29 +34,35 @@ from zigpy_znp.exceptions import CommandNotRecognized, InvalidFrame
 
 
 def start_zigpy_thread(self):
-    self.log.logging("TransportWrter", "Debug", "start_zigpy_thread - Starting zigpy thread")
+    self.log.logging("TransportZigpy", "Debug", "start_zigpy_thread - Starting zigpy thread")
     self.zigpy_thread.start()
 
 
 def stop_zigpy_thread(self):
-    self.log.logging("TransportWrter", "Debug", "stop_zigpy_thread - Stopping zigpy thread")
+    self.log.logging("TransportZigpy", "Debug", "stop_zigpy_thread - Stopping zigpy thread")
     self.writer_queue.put((0, "STOP"))
     self.zigpy_running = False
 
 
 def zigpy_thread(self):
-    self.log.logging("TransportWrter", "Debug", "zigpy_thread - Starting zigpy thread")
+    self.log.logging("TransportZigpy", "Debug", "zigpy_thread - Starting zigpy thread")
     self.zigpy_running = True
-    asyncio.run(radio_start(self, self._radiomodule, self._serialPort))
+    extendedPANID = 0
+    channel = 0
+    if "channel" in self.pluginconf.pluginConf:
+        channel = int(self.pluginconf.pluginConf["channel"])
+    if "extendedPANID" in self.pluginconf.pluginConf:
+        extendedPANID = int(self.pluginconf.pluginConf["extendedPANID"])
+    asyncio.run(radio_start(self, self._radiomodule, self._serialPort, set_channel=channel, set_extendedPanId=extendedPANID ))
 
 
 def callBackGetDevice(nwk, ieee):
     return None
 
 
-async def radio_start(self, radiomodule, serialPort, auto_form=False):
+async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channel=0, set_extendedPanId=0):
 
-    self.log.logging("TransportWrter", "Debug", "In radio_start")
+    self.log.logging("TransportZigpy", "Debug", "In radio_start")
 
     conf = {CONF_DEVICE: {"path": serialPort}}
     if radiomodule == "zigate":
@@ -65,36 +71,36 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False):
     elif radiomodule == "znp":
         self.app = App_znp(conf)
 
-    await self.app.startup(self.receiveData, callBackGetDevice=self.ZigpyGetDevice, auto_form=True, log=self.log)
+    await self.app.startup(self.receiveData, callBackGetDevice=self.ZigpyGetDevice, auto_form=True, log=self.log, set_channel=set_channel, set_extendedPanId=set_extendedPanId)
 
     # Send Network information to plugin, in order to poplulate various objetcs
     self.forwarder_queue.put(build_plugin_8009_frame_content(self, radiomodule))
 
-    self.log.logging("TransportWrter", "Debug", "PAN ID:               0x%04x" % self.app.pan_id)
+    self.log.logging("TransportZigpy", "Debug", "PAN ID:               0x%04x" % self.app.pan_id)
 
-    self.log.logging("TransportWrter", "Debug", "Extended PAN ID:      0x%s" % self.app.extended_pan_id)
-    self.log.logging("TransportWrter", "Debug", "Channel:              %d" % self.app.channel)
-    self.log.logging("TransportWrter", "Debug", "Device IEEE:          %s" % self.app.ieee)
-    self.log.logging("TransportWrter", "Debug", "Device NWK:           0x%04x" % self.app.nwk)
+    self.log.logging("TransportZigpy", "Debug", "Extended PAN ID:      0x%s" % self.app.extended_pan_id)
+    self.log.logging("TransportZigpy", "Debug", "Channel:              %d" % self.app.channel)
+    self.log.logging("TransportZigpy", "Debug", "Device IEEE:          %s" % self.app.ieee)
+    self.log.logging("TransportZigpy", "Debug", "Device NWK:           0x%04x" % self.app.nwk)
 
     # Retreive Active Ep and Simple Descriptor of Controller
     # self.endpoints: dict[int, zdo.ZDO | zigpy.endpoint.Endpoint] = {0: self.zdo}
-    self.log.logging("TransportWrter", "Debug", "Active Endpoint List:  %s" % str(self.app.get_device(nwk=0x0000).endpoints.keys()))
+    self.log.logging("TransportZigpy", "Debug", "Active Endpoint List:  %s" % str(self.app.get_device(nwk=0x0000).endpoints.keys()))
     for ep in self.app.get_device(nwk=0x0000).endpoints.keys():
-        self.log.logging("TransportWrter", "Debug", "Simple Descriptor:  %s" % self.app.get_device(nwk=0x0000).endpoints[ep])
+        self.log.logging("TransportZigpy", "Debug", "Simple Descriptor:  %s" % self.app.get_device(nwk=0x0000).endpoints[ep])
 
     # Run forever
     await worker_loop(self)
 
     await self.app.shutdown()
-    self.log.logging("TransportWrter", "Debug", "Exiting co-rounting radio_start")
+    self.log.logging("TransportZigpy", "Debug", "Exiting co-rounting radio_start")
 
 
 async def worker_loop(self):
-    self.log.logging("TransportWrter", "Debug", "worker_loop - ZigyTransport: worker_loop start.")
+    self.log.logging("TransportZigpy", "Debug", "worker_loop - ZigyTransport: worker_loop start.")
 
     while self.zigpy_running:
-        # self.log.logging("TransportWrter",  'Debug', "Waiting for next command Qsize: %s" %self.writer_queue.qsize())
+        # self.log.logging("TransportZigpy",  'Debug', "Waiting for next command Qsize: %s" %self.writer_queue.qsize())
         if self.writer_queue is None:
             break
         try:
@@ -111,7 +117,7 @@ async def worker_loop(self):
             self.statistics._MaxLoad = self.writer_queue.qsize()
 
         data = json.loads(entry)
-        self.log.logging("TransportWrter", "Debug", "got command %s" % data)
+        self.log.logging("TransportZigpy", "Debug", "got command %s" % data)
 
         try:
             if data["cmd"] == "PERMIT-TO-JOIN":
@@ -136,44 +142,44 @@ async def worker_loop(self):
 
         except DeliveryError:
             self.log.logging(
-                "TransportWrter",
+                "TransportZigpy",
                 "Error",
                 "DeliveryError: Not able to execute the zigpy command: %s data: %s" % (data["cmd"], data["datas"]),
             )
 
         except InvalidFrame:
             self.log.logging(
-                "TransportWrter",
+                "TransportZigpy",
                 "Error",
                 "InvalidFrame: Not able to execute the zigpy command: %s data: %s" % (data["cmd"], data["datas"]),
             )
 
         except CommandNotRecognized:
             self.log.logging(
-                "TransportWrter",
+                "TransportZigpy",
                 "Error",
                 "CommandNotRecognized: Not able to execute the zigpy command: %s data: %s" % (data["cmd"], data["datas"]),
             )
 
         except InvalidResponse:
             self.log.logging(
-                "TransportWrter",
+                "TransportZigpy",
                 "Error",
                 "InvalidResponse: Not able to execute the zigpy command: %s data: %s" % (data["cmd"], data["datas"]),
             )
 
         except RuntimeError as e:
             self.log.logging(
-                "TransportWrter",
+                "TransportZigpy",
                 "Error",
                 "RuntimeError: %s Not able to execute the zigpy command: %s data: %s" % (e, data["cmd"], data["datas"]),
             )
 
         except Exception as e:
-            self.log.logging("TransportWrter", "Error", "Error while receiving a Plugin command: >%s<" % e)
+            self.log.logging("TransportZigpy", "Error", "Error while receiving a Plugin command: >%s<" % e)
             handle_thread_error(self, e, data)
 
-    self.log.logging("TransportWrter", "Debug", "ZigyTransport: writer_thread Thread stop.")
+    self.log.logging("TransportZigpy", "Debug", "ZigyTransport: writer_thread Thread stop.")
 
 
 async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
@@ -198,7 +204,7 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
 
     self.statistics._sent += 1
     self.log.logging(
-        "TransportWrter",
+        "TransportZigpy",
         "Debug",
         "ZigyTransport: process_raw_command ready to request NwkId: %04x Cluster: %04x Seq: %02x Payload: %s AddrMode: %02x EnableAck: %s, Sqn: %s" % (NwkId, Cluster, sequence, payload, addressmode, enableAck, Sqn),
     )
@@ -223,13 +229,13 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
         self.statistics.add_timing_zigpy(t_elapse)
         if t_elapse > 1000:
             self.log.logging(
-                "TransportWrter",
+                "TransportZigpy",
                 "Log",
                 "process_raw_command (zigpyThread) spend more than 1s (%s ms) frame: %s with Ack: %s" % (t_elapse, data, AckIsDisable),
             )
 
     self.log.logging(
-        "TransportWrter",
+        "TransportZigpy",
         "Debug",
         "ZigyTransport: process_raw_command completed NwkId: %s result: %s msg: %s" % (destination, result, msg),
     )
