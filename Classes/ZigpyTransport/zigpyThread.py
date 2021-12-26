@@ -206,7 +206,8 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
     self.log.logging(
         "TransportZigpy",
         "Debug",
-        "ZigyTransport: process_raw_command ready to request NwkId: %04x Cluster: %04x Seq: %02x Payload: %s AddrMode: %02x EnableAck: %s, Sqn: %s" % (NwkId, Cluster, sequence, payload, addressmode, enableAck, Sqn),
+        "ZigyTransport: process_raw_command ready to request NwkId: %04x Cluster: %04x Seq: %02x Payload: %s AddrMode: %02x EnableAck: %s, Sqn: %s" % (
+            NwkId, Cluster, sequence, binascii.hexlify(payload).decode("utf-8"), addressmode, enableAck, Sqn),
     )
 
     if self.pluginconf.pluginConf["ZiGateReactTime"]:
@@ -214,11 +215,13 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
 
     if addressmode == 0x01:
         # Group Mode
-        result, msg = await self.app.mrequest(NwkId, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=enableAck, use_ieee=False)
+        result, msg = await self.app.mrequest(NwkId, Profile, Cluster, sEp, sequence, payload)
+        
     elif addressmode in (0x02, 0x07):
         # Short
         destination = zigpy.device.Device(self.app, None, NwkId)
         result, msg = await self.app.request(destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=enableAck, use_ieee=False)
+
     elif addressmode in (0x03, 0x08):
         destination = zigpy.device.Device(self.app, NwkId, None)
         result, msg = await self.app.request(destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=enableAck, use_ieee=False)

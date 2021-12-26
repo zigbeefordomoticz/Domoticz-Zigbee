@@ -49,6 +49,16 @@ def zcl_decoders(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
             # Remote report
             return buildframe_80x5_message(self, "8095", frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Command, Data)
 
+        if ClusterId == "0004":
+            if Command == "00":
+                return buildframe_8060_add_group_member_ship_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
+            if Command == "01":
+                return buildframe_8061_check_group_member_ship_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
+            if Command == "02":
+                return buildframe8062_look_for_group_member_ship_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
+            if Command == "03":
+                return buildframe8063_remove_group_member_ship_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
+            
         if ClusterId == "0008":
             # Remote report
             return buildframe_80x5_message(self, "8085", frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Command, Data)
@@ -314,6 +324,76 @@ def buildframe_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPo
 
 
 ## Cluster Specific commands
+
+def buildframe_8060_add_group_member_ship_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data):
+    #MsgSequenceNumber = MsgData[0:2]
+    #MsgEP = MsgData[2:4]
+    #MsgClusterID = MsgData[4:8]
+    #MsgStatus = MsgData[8:10]
+    #MsgGroupID = MsgData[10:14]
+    #MsgSrcAddr = MsgData[14:18]
+    self.log.logging("zclDecoder", "Debug", "buildframe_8060_add_group_member_ship_response - Data: %s" % Data)
+        
+    buildPayload = Sqn + SrcEndPoint + "0004" + Data[:2] + decode_endian_data(Data[2:6], "21") + SrcNwkId
+    return encapsulate_plugin_frame("8060", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
+
+
+def buildframe_8061_check_group_member_ship_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data):
+    #MsgSequenceNumber = MsgData[0:2]
+    #MsgEP = MsgData[2:4]
+    #MsgClusterID = MsgData[4:8]
+    #MsgStatus = MsgData[8:10]
+    #MsgGroupID = MsgData[10:14]
+    #MsgSrcAddr = MsgData[14:18]
+    self.log.logging("zclDecoder", "Debug", "buildframe_8061_check_group_member_ship_response - Data: %s" % Data)
+    status = Data[:2]
+    groupid = decode_endian_data(Data[2:6], "21")
+    self.log.logging("zclDecoder", "Debug", "buildframe_8061_    GroupId: %s Status: %s" %( groupid, status))
+    
+
+    buildPayload = Sqn + SrcEndPoint + "0004" + status + groupid + SrcNwkId
+    return encapsulate_plugin_frame("8061", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
+
+def buildframe8062_look_for_group_member_ship_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data):
+    #MsgSequenceNumber = MsgData[0:2]
+    #MsgEP = MsgData[2:4]
+    #MsgClusterID = MsgData[4:8]
+    #MsgCapacity = MsgData[8:10]
+    #MsgGroupCount = MsgData[10:12]
+    #MsgListOfGroup = MsgData[12 : lenMsgData - 4]
+    #MsgSrcAddr = MsgData[lenMsgData - 4 : lenMsgData]
+    self.log.logging("zclDecoder", "Debug", "buildframe8062_look_for_group_member_ship_response - Data: %s" % Data)
+
+    capacity = Data[:2]
+    group_count = Data[2:4]
+    
+    self.log.logging("zclDecoder", "Debug", "buildframe8062_ Group Count: %s" %group_count)
+    group_list = ""
+    idx = 0
+    while  idx < int(group_count,16)*4:
+        self.log.logging("zclDecoder", "Debug", "buildframe8062_ GroupId: %s" %decode_endian_data( Data[ 4+idx : (4 + idx) + 4 ], "21"))
+        group_list += decode_endian_data( Data[ 4+idx : (4 + idx) + 4 ], "21")
+        idx += 4
+        
+    buildPayload = Sqn + SrcEndPoint + "0004" + capacity + group_count + group_list + SrcNwkId
+    return encapsulate_plugin_frame("8062", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
+
+
+def buildframe8063_remove_group_member_ship_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data):
+    #MsgSequenceNumber = MsgData[0:2]
+    #MsgEP = MsgData[2:4]
+    #MsgClusterID = MsgData[4:8]
+    #MsgStatus = MsgData[8:10]
+    #MsgGroupID = MsgData[10:14]
+    #MsgSrcAddr = MsgData[14:18]
+    self.log.logging("zclDecoder", "Debug", "buildframe8063_remove_group_member_ship_response - Data: %s" % Data)
+    
+    buildPayload = Sqn + SrcEndPoint + "0004" + Data[:2] + decode_endian_data( Data[ 2:6 ], "21")
+    return encapsulate_plugin_frame("8063", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
+
+
+
+
 # Cluster 0x0006
 
 

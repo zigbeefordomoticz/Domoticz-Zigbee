@@ -11,23 +11,29 @@
 """
 
 
-from Modules.sendZigateCommand import send_zigatecmd_raw, send_zigatecmd_zcl_ack, send_zigatecmd_zcl_noack
+from Modules.sendZigateCommand import (send_zigatecmd_raw,
+                                       send_zigatecmd_zcl_ack,
+                                       send_zigatecmd_zcl_noack)
 from Modules.zigateConsts import ADDRESS_MODE, ZIGATE_EP
 
-from Zigbee.zclRawCommands import (
-    raw_zcl_zcl_onoff,
-    rawaps_read_attribute_req,
-    rawaps_write_attribute_req,
-    zcl_raw_configure_reporting_requestv2,
-    zcl_raw_ias_initiate_normal_operation_mode,
-    zcl_raw_ias_initiate_test_mode,
-    zcl_raw_ias_wd_command_squawk,
-    zcl_raw_ias_wd_command_start_warning,
-    zcl_raw_ias_zone_enroll_response,
-    zcl_raw_level_move_to_level,
-    zcl_raw_move_color,
-    zcl_raw_window_covering,
-)
+from Zigbee.zclRawCommands import (raw_zcl_zcl_onoff,
+                                   rawaps_read_attribute_req,
+                                   rawaps_write_attribute_req,
+                                   zcl_raw_add_group_membership,
+                                   zcl_raw_check_group_member_ship,
+                                   zcl_raw_configure_reporting_requestv2,
+                                   zcl_raw_ias_initiate_normal_operation_mode,
+                                   zcl_raw_ias_initiate_test_mode,
+                                   zcl_raw_ias_wd_command_squawk,
+                                   zcl_raw_ias_wd_command_start_warning,
+                                   zcl_raw_ias_zone_enroll_response,
+                                   zcl_raw_level_move_to_level,
+                                   zcl_raw_look_for_group_member_ship,
+                                   zcl_raw_move_color,
+                                   zcl_raw_remove_all_groups,
+                                   zcl_raw_remove_group_member_ship,
+                                   zcl_raw_send_group_member_ship_identify,
+                                   zcl_raw_window_covering)
 
 DEFAULT_ACK_MODE = False
 
@@ -156,6 +162,9 @@ def zcl_group_identify_trigger_effect(self, nwkid, epin, epout, effectId, effect
 # Cluster 0004 - Groups
 ##############
 def zcl_add_group_membership(self, nwkid, epin, epout, GrpId, ackIsDisabled=DEFAULT_ACK_MODE):
+    self.log.logging("zclCommand", "Debug", "zcl_add_group_membership %s %s %s" % (nwkid, epout, GrpId))
+    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+        return zcl_raw_add_group_membership(self, nwkid, epin, epout, GrpId, ackIsDisabled=ackIsDisabled)
 
     data = epin + epout + GrpId
     if ackIsDisabled:
@@ -164,6 +173,9 @@ def zcl_add_group_membership(self, nwkid, epin, epout, GrpId, ackIsDisabled=DEFA
 
 
 def zcl_check_group_member_ship(self, nwkid, epin, epout, GrpId, ackIsDisabled=DEFAULT_ACK_MODE):
+    self.log.logging("zclCommand", "Debug", "zcl_check_group_member_ship %s %s %s" % (nwkid, epout, GrpId))
+    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+        return zcl_raw_check_group_member_ship(self, nwkid, epin, epout, GrpId, ackIsDisabled=ackIsDisabled)
 
     data = epin + epout + GrpId
     if ackIsDisabled:
@@ -172,6 +184,9 @@ def zcl_check_group_member_ship(self, nwkid, epin, epout, GrpId, ackIsDisabled=D
 
 
 def zcl_look_for_group_member_ship(self, nwkid, epin, epout, nbgroup, group_list, ackIsDisabled=DEFAULT_ACK_MODE):
+    self.log.logging("zclCommand", "Debug", "zcl_look_for_group_member_ship %s %s %s %s" % (nwkid, epout, nbgroup, group_list))
+    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+        return zcl_raw_look_for_group_member_ship(self, nwkid, epin, epout, nbgroup, group_list, ackIsDisabled=ackIsDisabled)
 
     data = epin + epout + nbgroup + group_list
     if ackIsDisabled:
@@ -180,6 +195,9 @@ def zcl_look_for_group_member_ship(self, nwkid, epin, epout, nbgroup, group_list
 
 
 def zcl_remove_group_member_ship(self, nwkid, epin, epout, GrpId, ackIsDisabled=DEFAULT_ACK_MODE):
+    self.log.logging("zclCommand", "Debug", "zcl_remove_group_member_ship %s %s %s" % (nwkid, epout, GrpId))
+    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+        return zcl_raw_remove_group_member_ship(self, nwkid, epin, epout, GrpId, ackIsDisabled=ackIsDisabled)
 
     data = epin + epout + GrpId
     if ackIsDisabled:
@@ -188,6 +206,10 @@ def zcl_remove_group_member_ship(self, nwkid, epin, epout, GrpId, ackIsDisabled=
 
 
 def zcl_remove_all_groups(self, nwkid, epin, epout, ackIsDisabled=DEFAULT_ACK_MODE):
+    self.log.logging("zclCommand", "Debug", "zcl_remove_all_groups %s %s %s" % (nwkid, epout))
+    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+        return zcl_raw_remove_all_groups(self, nwkid, epin, epout, ackIsDisabled=ackIsDisabled)
+
     data = epin + epout
     if ackIsDisabled:
         return send_zigatecmd_zcl_noack(self, nwkid, "0062", data)
@@ -195,6 +217,10 @@ def zcl_remove_all_groups(self, nwkid, epin, epout, ackIsDisabled=DEFAULT_ACK_MO
 
 
 def zcl_send_group_member_ship_identify(self, nwkid, epin, epout, goup_addr, ackIsDisabled=DEFAULT_ACK_MODE):
+    self.log.logging("zclCommand", "Debug", "zcl_send_group_member_ship_identify %s %s %s" % (nwkid, epout, goup_addr))
+    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+        return zcl_raw_send_group_member_ship_identify(self, nwkid, epin, epout, goup_addr, ackIsDisabled=ackIsDisabled)
+
     data = epin + epout + goup_addr
     if ackIsDisabled:
         return send_zigatecmd_zcl_noack(self, nwkid, "0065", data)

@@ -129,6 +129,105 @@ def zcl_raw_configure_reporting_requestv2(self, nwkid, epin, epout, cluster, dir
 
 # Discover Attributes
 
+# Cluster 0004: Groups
+
+def zcl_raw_add_group_membership(self, nwkid, epin, epout, GrpId, ackIsDisabled=DEFAULT_ACK_MODE):
+    self.log.logging("zclCommand", "Log", "zcl_raw_add_group_membership %s %s %s %s" % (nwkid, epin, epout, GrpId))
+    
+    cmd = "00"
+    cluster = "0004"
+    cluster_frame = 0b00010001
+    
+    fcf = "%02x" % cluster_frame
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
+    payload = fcf
+    payload += sqn + cmd + "%04x" % (struct.unpack(">H", struct.pack("H", int(GrpId, 16)))[0]) + "00"
+    raw_APS_request(self, nwkid, epout, cluster, "0104", payload, zigate_ep=epin, ackIsDisabled=ackIsDisabled)
+    return sqn
+    
+
+def zcl_raw_check_group_member_ship(self, nwkid, epin, epout, GrpId, ackIsDisabled=DEFAULT_ACK_MODE):
+    self.log.logging("zclCommand", "Log", "zcl_raw_check_group_member_ship %s %s %s %s" % (nwkid, epin, epout, GrpId))
+    
+    cmd = "01"
+    cluster = "0004"
+    cluster_frame = 0b00010001
+
+    fcf = "%02x" % cluster_frame
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
+    payload = fcf
+    payload += sqn + cmd + "%04x" % (struct.unpack(">H", struct.pack("H", int(GrpId, 16)))[0])
+    raw_APS_request(self, nwkid, epout, cluster, "0104", payload, zigate_ep=epin, ackIsDisabled=ackIsDisabled)
+    return sqn
+
+
+def zcl_raw_look_for_group_member_ship(self, nwkid, epin, epout, nbgroup, group_list, ackIsDisabled=DEFAULT_ACK_MODE):
+    self.log.logging("zclCommand", "Log", "zcl_raw_look_for_group_member_ship %s %s %s %s %s" % (nwkid, epin, epout, nbgroup, group_list))
+    
+    cmd = "02"
+    cluster = "0004"
+    cluster_frame = 0b00010001
+
+    fcf = "%02x" % cluster_frame
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
+    payload = fcf
+    
+    payload += sqn + cmd + nbgroup  
+
+    idx = 0
+    while  idx < int(nbgroup,16)*4:
+        payload += decode_endian_data( group_list[ idx : idx + 4 ], "21")
+        idx += 4
+
+    raw_APS_request(self, nwkid, epout, cluster, "0104", payload, zigate_ep=epin, ackIsDisabled=ackIsDisabled)
+    return sqn
+
+
+def zcl_raw_remove_group_member_ship(self, nwkid, epin, epout, GrpId, ackIsDisabled=DEFAULT_ACK_MODE):
+    self.log.logging("zclCommand", "Log", "zcl_raw_remove_group_member_ship %s %s %s %s" % (nwkid, epin, epout, GrpId))
+    
+    cmd = "03"
+    cluster = "0004"
+    cluster_frame = 0b00010001
+
+    fcf = "%02x" % cluster_frame
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
+    payload = fcf
+    payload += sqn + cmd + "%04x" % (struct.unpack(">H", struct.pack("H", int(GrpId, 16)))[0])
+    raw_APS_request(self, nwkid, epout, cluster, "0104", payload, zigate_ep=epin, ackIsDisabled=ackIsDisabled)
+    return sqn
+
+
+def zcl_raw_remove_all_groups(self, nwkid, epin, epout, ackIsDisabled=DEFAULT_ACK_MODE):
+    self.log.logging("zclCommand", "Log", "zcl_raw_remove_group_member_ship %s %s %s" % (nwkid, epin, epout))
+    
+    cmd = "05"
+    cluster = "0004"
+    cluster_frame = 0b00010001
+
+    fcf = "%02x" % cluster_frame
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
+    payload = fcf
+    payload += sqn + cmd
+    raw_APS_request(self, nwkid, epout, cluster, "0104", payload, zigate_ep=epin, ackIsDisabled=ackIsDisabled)
+    return sqn
+
+
+def zcl_raw_send_group_member_ship_identify(self, nwkid, epin, epout, GrpId, ackIsDisabled=DEFAULT_ACK_MODE):
+    self.log.logging("zclCommand", "Log", "zcl_raw_send_group_member_ship_identify %s %s %s %s" % (nwkid, epin, epout, GrpId))
+
+    cmd = "06"
+    cluster = "0004"
+    cluster_frame = 0b00010001
+
+    fcf = "%02x" % cluster_frame
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
+    payload = fcf
+    payload += sqn + cmd + "%04x" % (struct.unpack(">H", struct.pack("H", int(GrpId, 16)))[0])
+    raw_APS_request(self, nwkid, epout, cluster, "0104", payload, zigate_ep=epin, ackIsDisabled=ackIsDisabled)
+    return sqn
+
+
 
 # Cluster 0006: On/Off
 ######################
