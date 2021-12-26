@@ -229,7 +229,7 @@ def zdp_raw_binding_device(self, source, src_ep, cluster, addrmode, destination,
         groupaddrmode=False,
         ackIsDisabled=False,
     )
-    self.log.logging("zdpCommand", "Debug", "zdp_raw_binding_device returning sqn: %s" % sqn)
+    self.log.logging("zdpCommand", "Debug", "zdp_raw_binding_device returning ZDP SQN: %s" % sqn)
     return sqn
 
 
