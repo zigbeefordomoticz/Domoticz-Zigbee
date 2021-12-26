@@ -134,9 +134,13 @@ async def worker_loop(self):
             elif data["cmd"] == "GET-TIME":
                 await self.app.get_time_server()
             elif data["cmd"] == "SET-TIME":
-                await self.app.set_time_server(data["datas"]["Param1"])
-            elif data["cmd"] in NATIVE_COMMANDS_MAPPING:
-                await native_commands(self, data["cmd"], data["datas"])
+                await self.app.set_time_server( data["datas"]["Param1"] )
+            elif data["cmd"] == "SET-EXTPANID":
+                self.app.set_extended_pan_id(data["datas"]["Param1"])
+            elif data["cmd"] == "SET-CHANNEL":
+                self.app.set_channel(data["datas"]["Param1"])
+            elif   data["cmd"] in NATIVE_COMMANDS_MAPPING:
+                await native_commands(self, data["cmd"], data["datas"] )
             elif data["cmd"] == "RAW-COMMAND":
                 await process_raw_command(self, data["datas"], AckIsDisable=data["ACKIsDisable"], Sqn=data["Sqn"])
 
