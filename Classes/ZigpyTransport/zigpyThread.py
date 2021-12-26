@@ -71,7 +71,7 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False):
     await self.app.startup(self.receiveData, callBackGetDevice=self.ZigpyGetDevice, auto_form=True, log=self.log)
 
     # Send Network information to plugin, in order to poplulate various objetcs
-    self.receiveData(build_plugin_8009_frame_content(self))
+    self.forwarder_queue.put(build_plugin_8009_frame_content(self, radiomodule))
 
     self.log.logging("TransportWrter", "Debug", "PAN ID:               0x%04x" % self.app.pan_id)
 
@@ -80,6 +80,14 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False):
     self.log.logging("TransportWrter", "Debug", "Device IEEE:          %s" % self.app.ieee)
     self.log.logging("TransportWrter", "Debug", "Device NWK:           0x%04x" % self.app.nwk)
 
+    # Retreive Active Ep and Simple Descriptor of Controller
+    # self.endpoints: dict[int, zdo.ZDO | zigpy.endpoint.Endpoint] = {0: self.zdo}
+    self.log.logging("TransportWrter", "Debug", "Active Endpoint List:  %s" %str( self.app.get_device( nwk=0x0000).endpoints.keys() ))
+    for ep in self.app.get_device( nwk=0x0000).endpoints.keys():
+        self.log.logging("TransportWrter", "Debug", "Simple Descriptor:  %s" %self.app.get_device( nwk=0x0000).endpoints[ ep ])
+
+    
+    
     # Run forever
     await worker_loop(self)
 

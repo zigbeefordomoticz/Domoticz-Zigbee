@@ -1,6 +1,7 @@
 import binascii
 
 import zigpy.types as t
+import struct
 
 # import Domoticz
 from Zigbee.encoder_tools import encapsulate_plugin_frame
@@ -27,7 +28,7 @@ def build_plugin_8015_frame_content(
 
 
 def build_plugin_8009_frame_content(
-    self,
+    self, radiomodule
 ):
     # addr = MsgData[0:4]
     # extaddr = MsgData[4:20]
@@ -42,10 +43,16 @@ def build_plugin_8009_frame_content(
         "build_plugin_8009_frame_content %s %s %s %s %s"
         % (self.app.nwk, self.app.ieee, self.app.extended_pan_id, self.app.pan_id, self.app.channel),
     )
+    ieee = "%016x" % t.uint64_t.deserialize(self.app.ieee.serialize())[0]
+    ext_panid = "%16x" % t.uint64_t.deserialize(self.app.extended_pan_id.serialize())[0]
+    if radiomodule == "zigate":
+        ieee = "%016x" % struct.unpack("Q", struct.pack(">Q", int(ieee, 16)))[0]
+        ext_panid = "%016x" % struct.unpack("Q", struct.pack(">Q", int(ext_panid, 16)))[0]
+        
     frame_payload = "%04x" % self.app.nwk
-    frame_payload += "%016x" % t.uint64_t.deserialize(self.app.ieee.serialize())[0]
+    frame_payload += ieee
     frame_payload += "%04x" % self.app.pan_id
-    frame_payload += "%16x" % t.uint64_t.deserialize(self.app.extended_pan_id.serialize())[0]
+    frame_payload += ext_panid
     frame_payload += "%02x" % self.app.channel
     return encapsulate_plugin_frame("8009", frame_payload, "00")
 

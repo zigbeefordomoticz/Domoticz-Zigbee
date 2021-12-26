@@ -963,8 +963,7 @@ def Decode8009(self, Devices, MsgData, MsgLQI):  # Network State response (Firm 
     self.zigatedata["Channel"] = int(Channel, 16)
     self.zigatedata["PANID"] = PanID
     self.zigatedata["Extended PANID"] = extPanID
-
-
+    
 def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
     # MsgLen = len(MsgData)
 

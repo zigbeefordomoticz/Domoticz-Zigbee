@@ -47,11 +47,13 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         await super().startup(auto_form)
 
         # Trigger Version payload to plugin
-
+    
         Model = "10"  # Zigpy
         FirmwareMajorVersion = "10"
         FirmwareVersion = "0400"
         self.callBackHandleMessage(build_plugin_8010_frame_content(Model, FirmwareMajorVersion, FirmwareVersion))
+        
+        
 
     def get_device(self, ieee=None, nwk=None):
 
