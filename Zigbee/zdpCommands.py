@@ -11,17 +11,17 @@
 """
 
 from Modules.sendZigateCommand import raw_APS_request, send_zigatecmd_raw
-from Zigbee.zdpRawCommands import (
-    zdp_raw_active_endpoint_request,
-    zdp_raw_node_descriptor_request,
-    zdp_raw_simple_descriptor_request,
-    zdp_raw_permit_joining_request,
-    zdp_raw_leave_request,
-    zdp_raw_binding_device,
-    zdp_raw_unbinding_device,
-    zdp_raw_NWK_address_request,
-    zdp_raw_nwk_update_request,
-)
+
+from Zigbee.zdpRawCommands import (zdp_raw_active_endpoint_request,
+                                   zdp_raw_binding_device,
+                                   zdp_raw_leave_request,
+                                   zdp_raw_node_descriptor_request,
+                                   zdp_raw_NWK_address_request,
+                                   zdp_raw_nwk_lqi_request,
+                                   zdp_raw_nwk_update_request,
+                                   zdp_raw_permit_joining_request,
+                                   zdp_raw_simple_descriptor_request,
+                                   zdp_raw_unbinding_device)
 
 
 def zdp_IEEE_address_request(self, lookup, u8RequestType, u8StartIndex):
@@ -106,3 +106,9 @@ def zdp_unbinding_device(self, ieee, ep, cluster, addrmode, destaddr, destep):
     if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
         return zdp_raw_unbinding_device(self, ieee, ep, cluster, addrmode, destaddr, destep)
     return send_zigatecmd_raw(self, "0031", ieee + ep + cluster + addrmode + destaddr + destep)
+
+
+def zdp_nwk_lqi_request( self, nwkid, start):
+    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+        return zdp_raw_nwk_lqi_request(self, nwkid, start)
+    return send_zigatecmd_raw(self, "0030", nwkid + start)

@@ -1174,7 +1174,7 @@ def zigateInit_Phase3(self):
         # Create Network Map object and trigger one scan
         if self.networkmap is None:
             self.networkmap = NetworkMap(
-                self.pluginconf, self.ZigateComm, self.ListOfDevices, Devices, self.HardwareID, self.log
+                self.zigbee_communitation ,self.pluginconf, self.ZigateComm, self.ListOfDevices, Devices, self.HardwareID, self.log
             )
         if self.networkmap:
             self.webserver.update_networkmap(self.networkmap)

@@ -391,7 +391,9 @@ def zdp_raw_nwk_update_request(self, nwkid, scanchannel, scanduration, scancount
     self.log.logging("zdpCommand", "Log", "zdp_raw_nwk_update_request %s %s %s %s %s %s" % (nwkid, scanchannel, scanduration, scancount, nwkupdateid, nwkmanageraddr))
     Cluster = "0038"
     sqn = get_and_inc_ZDP_SQN(self, nwkid)
-    payload = sqn + scanchannel + scanduration + scancount + nwkupdateid + nwkmanageraddr
+    payload = sqn + scanchannel + scanduration + scancount + nwkupdateid
+    if scanduration == "ff":
+        payload += nwkmanageraddr
     raw_APS_request(
         self,
         nwkid,

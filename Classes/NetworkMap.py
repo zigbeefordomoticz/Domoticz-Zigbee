@@ -24,19 +24,17 @@
 #
 
 
-from datetime import datetime
-import time
-import os.path
 import json
+import os.path
+import time
+from datetime import datetime
 
-import Domoticz
-
-from Classes.AdminWidgets import AdminWidgets
-from Classes.LoggingManagement import LoggingManagement
+from Zigbee.zdpCommands import zdp_nwk_lqi_request
 
 
 class NetworkMap:
-    def __init__(self, PluginConf, ZigateComm, ListOfDevices, Devices, HardwareID, log):
+    def __init__(self, zigbee_communitation, PluginConf, ZigateComm, ListOfDevices, Devices, HardwareID, log):
+        self.zigbee_communitation = zigbee_communitation
         self.pluginconf = PluginConf
         self.ZigateComm = ZigateComm
         self.ListOfDevices = ListOfDevices
@@ -408,8 +406,9 @@ def LQIreq(self, nwkid="0000"):
         self.Neighbours[nwkid]["Status"] = "NotReachable"
         return
 
-    self.logging("Debug", "004E %s" % datas)
-    self.ZigateComm.sendData("004E", datas)
+    self.logging("Debug", "zdp_nwk_lqi_request %s" % datas)
+    zdp_nwk_lqi_request( self, nwkid, "%02x" %index)
+    #self.ZigateComm.sendData("004E", datas)
 
 
 def LQIresp_decoding(self, MsgData):

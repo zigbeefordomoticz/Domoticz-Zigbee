@@ -217,6 +217,10 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
     if self.pluginconf.pluginConf["ZiGateReactTime"]:
         t_start = 1000 * time.time()
 
+    if NwkId == 0xffff: # Broadcast
+        result, msg = await self.app.broadcast( Profile, Cluster, sEp, dEp, NwkId, 0, sequence, payload, NwkId, )
+
+
     if addressmode == 0x01:
         # Group Mode
         result, msg = await self.app.mrequest(NwkId, Profile, Cluster, sEp, sequence, payload)

@@ -15,7 +15,10 @@ import struct
 from datetime import datetime
 from time import time
 
-from Zigbee.zclCommands import (zcl_get_list_attribute_extended_infos, zcl_attribute_discovery_request, zcl_identify_send, zcl_read_attribute,
+from Zigbee.encoder_tools import decode_endian_data
+from Zigbee.zclCommands import (zcl_attribute_discovery_request,
+                                zcl_get_list_attribute_extended_infos,
+                                zcl_identify_send, zcl_read_attribute,
                                 zcl_write_attribute,
                                 zcl_write_attributeNoResponse)
 from Zigbee.zdpCommands import (zdp_get_permit_joint_status,
@@ -23,7 +26,8 @@ from Zigbee.zdpCommands import (zdp_get_permit_joint_status,
                                 zdp_management_leave_request,
                                 zdp_management_network_update_request,
                                 zdp_many_to_one_route_request,
-                                zdp_permit_joining_request, zdp_reset_device)
+                                zdp_permit_joining_request,
+                                zdp_raw_nwk_update_request, zdp_reset_device)
 from Zigbee.zdpRawCommands import (zdp_management_binding_table_request,
                                    zdp_management_routing_table_request)
 
@@ -812,8 +816,7 @@ def mgt_binding_table_req( self, nwkid, start_index="00"):
     self.log.logging("BasicOutput", "Debug", "mgt_binding_table_req - %s" % nwkid)
 
     if "BindingTable" not in self.ListOfDevices[nwkid]:
-        self.ListOfDevices[nwkid]["BindingTable"] = {}
-        self.ListOfDevices[nwkid]["BindingTable"]["Devices"] = []
+        self.ListOfDevices[nwkid]["BindingTable"] = {'Devices': []}
     if "SQN" not in self.ListOfDevices[nwkid]["BindingTable"]:
         self.ListOfDevices[nwkid]["BindingTable"]["SQN"] = 0
     else:
@@ -831,7 +834,11 @@ def initiate_change_channel(self, new_channel):
     channel_mask = "%08x" % maskChannel(self, new_channel)
     target_address = "ffff"  # Broadcast to all devices
 
-    zdp_management_network_update_request(self, target_address , channel_mask , scanDuration , "00" , "0000")
+    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+        channel_mask = decode_endian_data(channel_mask, "1b")
+        zdp_raw_nwk_update_request(self, target_address, channel_mask, scanDuration, scancount="00", nwkupdateid="0000", nwkmanageraddr="0000")
+    else:
+        zdp_management_network_update_request(self, target_address , channel_mask , scanDuration , "00" , "0000")
     #send_zigatecmd_raw(self, "004A", datas)
     if "0000" in self.ListOfDevices:
         self.ListOfDevices["0000"]["CheckChannel"] = new_channel
