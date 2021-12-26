@@ -1183,6 +1183,23 @@ SETTINGS = {
                 "hidden": False,
                 "Advanced": True,
             },
+            "debugzdpDecoder": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": True,
+            },
+            "debugzclDecoder": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": True,
+            },
+
             "debugzigateCommand": {
                 "type": "bool",
                 "default": 0,

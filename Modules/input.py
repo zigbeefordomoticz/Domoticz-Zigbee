@@ -1799,28 +1799,6 @@ def Decode8042(self, Devices, MsgData, MsgLQI):  # Node Descriptor response
     else:
         ReceiveonIdle = "Off"
 
-    # mac_capability = int(mac_capability,16)
-
-    # if mac_capability == 0x0000:
-    #    return
-    # AltPAN      =   ( mac_capability & 0x00000001 )
-    # DeviceType  =   ( mac_capability >> 1 ) & 1
-    # PowerSource =   ( mac_capability >> 2 ) & 1
-    # ReceiveonIdle = ( mac_capability >> 3 ) & 1
-
-    # if DeviceType == 1:
-    #    DeviceType = "FFD"
-    # else:
-    #    DeviceType = "RFD"
-    # if ReceiveonIdle == 1:
-    #    ReceiveonIdle = "On"
-    # else:
-    #    ReceiveonIdle = "Off"
-    # if PowerSource == 1:
-    #    PowerSource = "Main"
-    # else:
-    #    PowerSource = "Battery"
-
     self.log.logging(
         "Input", "Debug", "Decode8042 - Alternate PAN Coordinator = " + str(AltPAN), addr
     )  # 1 if node is capable of becoming a PAN coordinator
@@ -1837,6 +1815,10 @@ def Decode8042(self, Devices, MsgData, MsgLQI):  # Node Descriptor response
 
     bit_fieldL = int(bit_field[2:4], 16)
     bit_fieldH = int(bit_field[0:2], 16)
+    
+    self.log.logging(
+        "Input", "Debug", "Decode8042 - bit_fieldL  = %s bit_fieldH = %s" %(bit_fieldL,bit_fieldH)) 
+
     LogicalType = bit_fieldL & 0x00F
     if LogicalType == 0:
         LogicalType = "Coordinator"

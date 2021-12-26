@@ -29,7 +29,7 @@ def zcl_decoders(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
             return buildframe_0400_cmd(self, "0400", frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Command, Data)
 
     else:
-        self.log.logging("Transport8002", "Debug", "decode8002_and_process Sqn: %s/%s ManufCode: %s Command: %s Data: %s " % (int(Sqn, 16), Sqn, ManufacturerCode, Command, Data))
+        self.log.logging("zclDecoder", "Debug", "decode8002_and_process Sqn: %s/%s ManufCode: %s Command: %s Data: %s " % (int(Sqn, 16), Sqn, ManufacturerCode, Command, Data))
         if Command == "00":  # Read Attribute
             return buildframe_read_attribute_request(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Data)
 
@@ -58,7 +58,7 @@ def zcl_decoders(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
             return buildframe_discover_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
 
     self.log.logging(
-        "Transport8002",
+        "zclDecoder",
         "Log",
         "decode8002_and_process Unknown Command: %s NwkId: %s Ep: %s Cluster: %s Payload: %s - GlobalCommand: %s, Sqn: %s, ManufacturerCode: %s"
         % (
@@ -78,7 +78,7 @@ def zcl_decoders(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
 
 def buildframe_discover_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data):
 
-    self.log.logging("Transport8002", "Debug", "buildframe_discover_attribute_response - Data: %s" % Data)
+    self.log.logging("zclDecoder", "Debug", "buildframe_discover_attribute_response - Data: %s" % Data)
     discovery_complete = Data[:2]
     if discovery_complete == "01":
         Attribute_type = "00"
@@ -96,9 +96,9 @@ def buildframe_discover_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoi
 
 
 def buildframe_read_attribute_request(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Data):
-
+    self.log.logging("zclDecoder", "Debug", "buildframe_read_attribute_request - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
     if len(Data) % 4 != 0:
-        self.log.logging("Transport8002", "Debug", "Most Likely Livolo Frame : %s (%s)" % (Data, len(Data)))
+        self.log.logging("zclDecoder", "Debug", "Most Likely Livolo Frame : %s (%s)" % (Data, len(Data)))
         return frame
 
     ManufSpec = "00"
@@ -121,6 +121,7 @@ def buildframe_read_attribute_request(self, frame, Sqn, SrcNwkId, SrcEndPoint, C
 
 
 def buildframe_write_attribute_request(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Data):
+    self.log.logging("zclDecoder", "Debug", "buildframe_write_attribute_request - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
 
     ManufSpec = "00"
     ManufCode = "0000"
@@ -150,8 +151,8 @@ def buildframe_write_attribute_request(self, frame, Sqn, SrcNwkId, SrcEndPoint, 
             size = int(Data[idx : idx + 2], 16) * 2
             idx += 2
         else:
-            self.log.logging("Transport8002", "Error", "buildframe_write_attribute_request - Unknown DataType size: >%s< vs. %s " % (DType, str(SIZE_DATA_TYPE)))
-            self.log.logging("Transport8002", "Error", "buildframe_write_attribute_request - ClusterId: %s Attribute: %s Data: %s" % (ClusterId, Attribute, Data))
+            self.log.logging("zclDecoder", "Error", "buildframe_write_attribute_request - Unknown DataType size: >%s< vs. %s " % (DType, str(SIZE_DATA_TYPE)))
+            self.log.logging("zclDecoder", "Error", "buildframe_write_attribute_request - ClusterId: %s Attribute: %s Data: %s" % (ClusterId, Attribute, Data))
             return frame
 
         data = Data[idx : idx + size]
@@ -165,6 +166,7 @@ def buildframe_write_attribute_request(self, frame, Sqn, SrcNwkId, SrcEndPoint, 
 
 
 def buildframe_write_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data):
+    self.log.logging("zclDecoder", "Debug", "buildframe_write_attribute_response - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
 
     # This is based on assumption that we only Write 1 attribute at a time
     buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId + "0000" + Data
@@ -172,6 +174,7 @@ def buildframe_write_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint,
 
 
 def buildframe_read_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data):
+    self.log.logging("zclDecoder", "Debug", "buildframe_read_attribute_response - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
 
     nbAttribute = 0
     idx = 0
@@ -213,8 +216,8 @@ def buildframe_read_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, 
                 lenData = "%04x" % (size // 2)
 
             else:
-                self.log.logging("Transport8002", "Error", "buildframe_read_attribute_response - Unknown DataType size: >%s< vs. %s " % (DType, str(SIZE_DATA_TYPE)))
-                self.log.logging("Transport8002", "Error", "buildframe_read_attribute_response - ClusterId: %s Attribute: %s Data: %s" % (ClusterId, Attribute, Data))
+                self.log.logging("zclDecoder", "Error", "buildframe_read_attribute_response - Unknown DataType size: >%s< vs. %s " % (DType, str(SIZE_DATA_TYPE)))
+                self.log.logging("zclDecoder", "Error", "buildframe_read_attribute_response - ClusterId: %s Attribute: %s Data: %s" % (ClusterId, Attribute, Data))
                 return frame
 
             buildPayload += Attribute + Status + DType + lenData + value
@@ -226,6 +229,8 @@ def buildframe_read_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, 
 
 
 def buildframe_report_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data):
+    self.log.logging("zclDecoder", "Debug", "buildframe_report_attribute_response - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
+
     buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId
     nbAttribute = 0
     idx = 0
@@ -250,13 +255,13 @@ def buildframe_report_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint
 
         elif DType == "00":
             self.log.logging(
-                "Transport8002", "Error", "buildframe_report_attribute_response %s/%s Cluster: %s nbAttribute: %s Attribute: %s DType: %s idx: %s frame: %s" % (SrcNwkId, SrcEndPoint, ClusterId, nbAttribute, Attribute, DType, idx, frame)
+                "zclDecoder", "Error", "buildframe_report_attribute_response %s/%s Cluster: %s nbAttribute: %s Attribute: %s DType: %s idx: %s frame: %s" % (SrcNwkId, SrcEndPoint, ClusterId, nbAttribute, Attribute, DType, idx, frame)
             )
             return frame
 
         else:
-            self.log.logging("Transport8002", "Error", "buildframe_report_attribute_response - Unknown DataType size: >%s< vs. %s " % (DType, str(SIZE_DATA_TYPE)))
-            self.log.logging("Transport8002", "Error", "buildframe_report_attribute_response - NwkId: %s ClusterId: %s Attribute: %s Frame: %s" % (SrcNwkId, ClusterId, Attribute, frame))
+            self.log.logging("zclDecoder", "Error", "buildframe_report_attribute_response - Unknown DataType size: >%s< vs. %s " % (DType, str(SIZE_DATA_TYPE)))
+            self.log.logging("zclDecoder", "Error", "buildframe_report_attribute_response - NwkId: %s ClusterId: %s Attribute: %s Frame: %s" % (SrcNwkId, ClusterId, Attribute, frame))
             return frame
 
         data = Data[idx : idx + size]
@@ -269,6 +274,7 @@ def buildframe_report_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint
 
 
 def buildframe_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data):
+    self.log.logging("zclDecoder", "Debug", "buildframe_configure_reporting_response - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
 
     if len(Data) == 2:
         nbAttribute = 1
@@ -299,7 +305,7 @@ def buildframe_80x5_message(self, MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, Cl
     # sourcery skip: assign-if-exp
     # handle_message Sender: 0x0EC8 frame for plugin: 0180020011ff00010400060101020ec8020000112401b103
 
-    self.log.logging("Transport8002", "Debug", "======> Building %s message : Cluster: %s Command: >%s< Data: >%s< (Frame: %s)" % (MsgType, ClusterId, Command, Data, frame))
+    self.log.logging("zclDecoder", "Debug", "======> Building %s message : Cluster: %s Command: >%s< Data: >%s< (Frame: %s)" % (MsgType, ClusterId, Command, Data, frame))
 
     # It looks like the ZiGate firmware was adding _unknown (which is not part of the norm)
     unknown_ = Data[:2] if len(Data) >= 2 else "00"
@@ -314,7 +320,8 @@ def buildframe_80x5_message(self, MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, Cl
 #     : 0x02 Initiate Test mode
 
 def buildframe_0400_cmd(self, MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Command, Data):
-    
+    self.log.logging("zclDecoder", "Debug", "buildframe_configure_reporting_response - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
+
     # Zone Enroll Response
     enroll_response_code = Data[:2]
     zone_id = Data[2:4]

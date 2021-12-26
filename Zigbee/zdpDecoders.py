@@ -11,26 +11,26 @@ from Zigbee.encoder_tools import encapsulate_plugin_frame
 
 def zdp_decoders(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
     # self.logging_8002( 'Debug', "zdp_decoders NwkId: %s Ep: %s Cluster: %s Payload: %s" %(SrcNwkId, SrcEndPoint, ClusterId , Payload))
-    self.log.logging("zdpCommand", "Debug", "===> zdp_decoders %s %s %s %s" % (SrcNwkId, SrcEndPoint, ClusterId, Payload))
+    self.log.logging("zdpDecoder", "Debug", "===> zdp_decoders %s %s %s %s" % (SrcNwkId, SrcEndPoint, ClusterId, Payload))
 
     if ClusterId == "0000":
         # NWK_addr_req
-        self.log.logging("zdpCommand", "Error", "NWK_addr_req NOT IMPLEMENTED YET")
+        self.log.logging("zdpDecoder", "Error", "NWK_addr_req NOT IMPLEMENTED YET")
         return frame
 
     if ClusterId == "0001":
         # IEEE_addr_req
-        self.log.logging("zdpCommand", "Error", "IEEE_addr_req NOT IMPLEMENTED YET")
+        self.log.logging("zdpDecoder", "Error", "IEEE_addr_req NOT IMPLEMENTED YET")
         return frame
 
     if ClusterId == "0002":
         # Node_Desc_req
-        self.log.logging("zdpCommand", "Error", "Node_Desc_req NOT IMPLEMENTED YET")
+        self.log.logging("zdpDecoder", "Error", "Node_Desc_req NOT IMPLEMENTED YET")
         return frame
 
     if ClusterId == "0003":
         # Power_Desc_req
-        self.log.logging("zdpCommand", "Error", "Power_Desc_req NOT IMPLEMENTED YET")
+        self.log.logging("zdpDecoder", "Error", "Power_Desc_req NOT IMPLEMENTED YET")
         return frame
 
     if ClusterId == "0013":
@@ -119,19 +119,26 @@ def buildframe_device_annoucement(self, SrcNwkId, SrcEndPoint, ClusterId, Payloa
     ieee = "%016x" % struct.unpack("Q", struct.pack(">Q", int(Payload[6:22], 16)))[0]
     maccapa = Payload[22:24]
 
-    self.log.logging("zdpCommand", "Debug", "buildframe_device_annoucement sqn: %s nwkid: %s ieee: %s maccapa: %s" % (sqn, nwkid, ieee, maccapa))
+    self.log.logging("zdpDecoder", "Debug", "buildframe_device_annoucement sqn: %s nwkid: %s ieee: %s maccapa: %s" % (sqn, nwkid, ieee, maccapa))
 
     buildPayload = nwkid + ieee + maccapa
     return encapsulate_plugin_frame("004d", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 
 def buildframe_node_descriptor_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
+    # decode8002_and_process ProfileId: b7ca 0000 01/8002/003c/ff/0000008002000002b7ca020000/0300cab701408e66117f50000000500000/b1/03
+    # decode8002_and_process return ZDP frame:    01/8042/0022/ff/03-00-b7ca-1166005000500000008e7f0140/b1/03
+    
+    # 01408e66117f50000000500000
 
     sqn = Payload[:2]
     status = Payload[2:4]
     nwkid = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[4:8], 16)))[0]
-    bitfield_16 = Payload[8:12]
+    
+    
+    bitfield_16 = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[8:12], 16)))[0]
     mac_capa_8 = Payload[12:14]
+    
     manuf_code_16 = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[14:18], 16)))[0]
     max_buf_size_8 = Payload[18:20]
     max_in_size_16 = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[20:24], 16)))[0]
@@ -139,7 +146,7 @@ def buildframe_node_descriptor_response(self, SrcNwkId, SrcEndPoint, ClusterId, 
     max_out_size_16 = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[28:32], 16)))[0]
     descriptor_capability_field_8 = Payload[32:34]
 
-    self.log.logging("zdpCommand", "Debug", "buildframe_node_descriptor_response sqn: %s nwkid: %s Manuf: %s MacCapa: %s" % (sqn, nwkid, manuf_code_16, mac_capa_8))
+    self.log.logging("zdpDecoder", "Debug", "buildframe_node_descriptor_response sqn: %s nwkid: %s Manuf: %s MacCapa: %s" % (sqn, nwkid, manuf_code_16, mac_capa_8))
 
     buildPayload = sqn + status + nwkid + manuf_code_16 + max_in_size_16 + max_out_size_16
     buildPayload += server_mask_16 + descriptor_capability_field_8 + mac_capa_8 + max_buf_size_8 + bitfield_16
@@ -155,7 +162,7 @@ def buildframe_active_endpoint_response(self, SrcNwkId, SrcEndPoint, ClusterId, 
     nbEp = Payload[8:10]
     ep_list = Payload[10:]
 
-    self.log.logging("zdpCommand", "Debug", "buildframe_active_endpoint_response sqn: %s status: %s nwkid: %s nbEp: %s epList: %s" % (sqn, status, nwkid, nbEp, ep_list))
+    self.log.logging("zdpDecoder", "Debug", "buildframe_active_endpoint_response sqn: %s status: %s nwkid: %s nbEp: %s epList: %s" % (sqn, status, nwkid, nbEp, ep_list))
 
     buildPayload = sqn + status + nwkid + nbEp + ep_list
     return encapsulate_plugin_frame("8045", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
@@ -165,7 +172,7 @@ def buildframe_simple_descriptor_response(self, SrcNwkId, SrcEndPoint, ClusterId
     # Node Descriptor Response
 
     if len(Payload) < 14:
-        self.log.logging("zdpCommand", "Error", "buildframe_simple_descriptor_response - Payload too short: %s from %s" % (Payload, frame))
+        self.log.logging("zdpDecoder", "Error", "buildframe_simple_descriptor_response - Payload too short: %s from %s" % (Payload, frame))
         return
     sqn = Payload[:2]
     status = Payload[2:4]
@@ -194,7 +201,7 @@ def buildframe_simple_descriptor_response(self, SrcNwkId, SrcEndPoint, ClusterId
         for x in range(int(outputCnt, 16)):
             buildPayload += "%04x" % struct.unpack("H", struct.pack(">H", int(SimpleDescriptor[idx + (4 * x) : idx + (4 * x) + 4], 16)))[0]
 
-    self.log.logging("zdpCommand", "Debug", "buildframe_simple_descriptor_response - New payload %s" % (buildPayload))
+    self.log.logging("zdpDecoder", "Debug", "buildframe_simple_descriptor_response - New payload %s" % (buildPayload))
     return encapsulate_plugin_frame("8043", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 
@@ -203,77 +210,77 @@ def buildframe_bind_response_command(self, SrcNwkId, SrcEndPoint, ClusterId, Pay
     sqn = Payload[:2]
     status = Payload[2:4]
 
-    self.log.logging("zdpCommand", "Debug", "buildframe_bind_response_command sqn: %s nwkid: %s Ep: %s Status %s" % (sqn, SrcNwkId, SrcEndPoint, status))
+    self.log.logging("zdpDecoder", "Debug", "buildframe_bind_response_command sqn: %s nwkid: %s Ep: %s Status %s" % (sqn, SrcNwkId, SrcEndPoint, status))
 
     buildPayload = sqn + status + "02" + SrcNwkId
     return encapsulate_plugin_frame("8030", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 
 def buildframe_nwk_address_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
-    self.log.logging("zdpCommand", "Error", "buildframe_nwk_address_response NOT IMPLEMENTED YET")
+    self.log.logging("zdpDecoder", "Error", "buildframe_nwk_address_response NOT IMPLEMENTED YET")
     return frame
 
 
 def buildframe_ieee_address_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
-    self.log.logging("zdpCommand", "Error", "buildframe_nwk_address_response NOT IMPLEMENTED YET")
+    self.log.logging("zdpDecoder", "Error", "buildframe_nwk_address_response NOT IMPLEMENTED YET")
     return frame
 
 
 def buildframe_power_description_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
-    self.log.logging("zdpCommand", "Error", "buildframe_power_description_response NOT IMPLEMENTED YET")
+    self.log.logging("zdpDecoder", "Error", "buildframe_power_description_response NOT IMPLEMENTED YET")
     return frame
 
 
 def buildframe_match_description_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
-    self.log.logging("zdpCommand", "Error", "buildframe_match_description_response NOT IMPLEMENTED YET")
+    self.log.logging("zdpDecoder", "Error", "buildframe_match_description_response NOT IMPLEMENTED YET")
     return frame
 
 
 def buildframe_complex_description_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
-    self.log.logging("zdpCommand", "Error", "buildframe_match_description_response NOT IMPLEMENTED YET")
+    self.log.logging("zdpDecoder", "Error", "buildframe_match_description_response NOT IMPLEMENTED YET")
     return frame
 
 
 def buildframe_user_description_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
-    self.log.logging("zdpCommand", "Error", "buildframe_user_description_response NOT IMPLEMENTED YET")
+    self.log.logging("zdpDecoder", "Error", "buildframe_user_description_response NOT IMPLEMENTED YET")
     return frame
 
 
 def buildframe_unbind_response_command(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
-    self.log.logging("zdpCommand", "Error", "buildframe_unbind_response_command NOT IMPLEMENTED YET")
+    self.log.logging("zdpDecoder", "Error", "buildframe_unbind_response_command NOT IMPLEMENTED YET")
     return frame
 
 
 def buildframe_management_nwk_discovery_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
-    self.log.logging("zdpCommand", "Error", "buildframe_management_nwk_discovery_response NOT IMPLEMENTED YET")
+    self.log.logging("zdpDecoder", "Error", "buildframe_management_nwk_discovery_response NOT IMPLEMENTED YET")
     return frame
 
 
 def buildframe_management_lqi_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
-    self.log.logging("zdpCommand", "Error", "buildframe_management_lqi_response NOT IMPLEMENTED YET")
+    self.log.logging("zdpDecoder", "Error", "buildframe_management_lqi_response NOT IMPLEMENTED YET")
     return frame
 
 
 def buildframe_routing_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
-    self.log.logging("zdpCommand", "Error", "buildframe_routing_response NOT IMPLEMENTED YET")
+    self.log.logging("zdpDecoder", "Error", "buildframe_routing_response NOT IMPLEMENTED YET")
     return frame
 
 
 def buildframe_leave_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
-    self.log.logging("zdpCommand", "Error", "buildframe_leave_response NOT IMPLEMENTED YET")
+    self.log.logging("zdpDecoder", "Error", "buildframe_leave_response NOT IMPLEMENTED YET")
     return frame
 
 
 def buildframe_direct_join_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
-    self.log.logging("zdpCommand", "Error", "buildframe_direct_join_response NOT IMPLEMENTED YET")
+    self.log.logging("zdpDecoder", "Error", "buildframe_direct_join_response NOT IMPLEMENTED YET")
     return frame
 
 
 def buildframe_permit_join_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
-    self.log.logging("zdpCommand", "Error", "buildframe_permit_join_response NOT IMPLEMENTED YET")
+    self.log.logging("zdpDecoder", "Error", "buildframe_permit_join_response NOT IMPLEMENTED YET")
     return frame
 
 
 def buildframe_management_nwk_update_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
-    self.log.logging("zdpCommand", "Error", "buildframe_management_nwk_update_response NOT IMPLEMENTED YET")
+    self.log.logging("zdpDecoder", "Error", "buildframe_management_nwk_update_response NOT IMPLEMENTED YET")
     return frame
