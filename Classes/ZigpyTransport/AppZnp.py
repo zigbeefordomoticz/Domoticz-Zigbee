@@ -19,6 +19,7 @@ import zigpy.zdo
 import zigpy.zdo.types as zdo_types
 import zigpy_zigate.zigbee.application
 import zigpy_znp.commands.util
+import zigpy_znp.config as conf
 import zigpy_znp.zigbee.application
 from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_8002_frame_content, build_plugin_8010_frame_content)
@@ -41,13 +42,14 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
     # async def startup(self, auto_form=False):
     #    await super().startup(auto_form)
 
-    async def startup(self, callBackHandleMessage, callBackGetDevice=None, auto_form=False, log=None, set_channel=0, set_extendedPanId=0):
+
+    async def startup(self, callBackHandleMessage, callBackGetDevice=None, auto_form=False, force_form=False, log=None, set_channel=0, set_extendedPanId=0):
         # If set to != 0 (default) extended PanId will be use when forming the network.
         # If set to !=0 (default) channel will be use when formin the network
         self.log = log
         self.callBackHandleMessage = callBackHandleMessage
         self.callBackGetDevice = callBackGetDevice
-        await super().startup(auto_form)
+        await super().startup(auto_form=auto_form,force_form=force_form)
 
         # Trigger Version payload to plugin
 
@@ -154,3 +156,16 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
 
     async def get_firmware_version(self):
         return self.znp.version
+
+    async def erase_pdm(self):
+        pass
+        
+    async def set_extended_pan_id (self,extended_pan_ip):
+        self.confif[conf.CONF_NWK][conf.CONF_NWK_EXTENDED_PAN_ID] = extended_pan_ip
+        self.startup(self.callBackHandleMessage,self.callBackGetDevice,auto_form=True,force_form=True,log=self.log)
+
+    async def set_channel (self,channel):
+        self.confif[conf.CONF_NWK][conf.CONF_NWK_EXTENDED_PAN_ID] =  channel
+        self.startup(self.callBackHandleMessage,self.callBackGetDevice,auto_form=True,force_form=True,log=self.log)
+
+

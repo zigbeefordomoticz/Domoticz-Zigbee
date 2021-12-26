@@ -38,11 +38,12 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
     async def _load_db(self) -> None:
         logging.debug("_load_db")
 
-    async def startup(self, callBackHandleMessage, callBackGetDevice=None, auto_form=False, log=None, set_channel=0, set_extendedPanId=0):
+
+    async def startup(self, callBackHandleMessage, callBackGetDevice=None, auto_form=False, force_form=False, log=None, set_channel=0, set_extendedPanId=0):
         self.callBackFunction = callBackHandleMessage
         self.callBackGetDevice = callBackGetDevice
         self.log = log
-        await super().startup(auto_form)
+        await super().startup(auto_form=auto_form,force_form=force_form)
 
         version_str = await self._api.version_str()
         Model = "10"  # Zigpy
@@ -147,3 +148,10 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
 
     async def soft_reset(self):
         await self._api.reset()
+
+
+    async def set_extended_pan_id (self):
+        pass      
+
+    async def set_channel (self):
+        pass        
