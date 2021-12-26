@@ -128,17 +128,16 @@ def buildframe_device_annoucement(self, SrcNwkId, SrcEndPoint, ClusterId, Payloa
 def buildframe_node_descriptor_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
     # decode8002_and_process ProfileId: b7ca 0000 01/8002/003c/ff/0000008002000002b7ca020000/0300cab701408e66117f50000000500000/b1/03
     # decode8002_and_process return ZDP frame:    01/8042/0022/ff/03-00-b7ca-1166005000500000008e7f0140/b1/03
-    
+
     # 01408e66117f50000000500000
 
     sqn = Payload[:2]
     status = Payload[2:4]
     nwkid = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[4:8], 16)))[0]
-    
-    
+
     bitfield_16 = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[8:12], 16)))[0]
     mac_capa_8 = Payload[12:14]
-    
+
     manuf_code_16 = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[14:18], 16)))[0]
     max_buf_size_8 = Payload[18:20]
     max_in_size_16 = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[20:24], 16)))[0]

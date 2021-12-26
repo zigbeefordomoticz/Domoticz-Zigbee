@@ -1,16 +1,17 @@
-from queue import Queue, PriorityQueue
-
-import time
 import json
+import time
+from queue import PriorityQueue, Queue
+from threading import Thread
+
 import zigpy.application
 import zigpy.types as t
-
-from threading import Thread
-from Classes.Transport.forwarderThread import forwarder_thread
-
-from Classes.ZigpyTransport.zigpyThread import zigpy_thread, start_zigpy_thread, stop_zigpy_thread
-from Classes.ZigpyTransport.forwarderThread import forwarder_thread, start_forwarder_thread, stop_forwarder_thread
 from Classes.Transport.sqnMgmt import sqn_init_stack
+from Classes.ZigpyTransport.forwarderThread import (forwarder_thread,
+                                                    start_forwarder_thread,
+                                                    stop_forwarder_thread)
+from Classes.ZigpyTransport.zigpyThread import (start_zigpy_thread,
+                                                stop_zigpy_thread,
+                                                zigpy_thread)
 
 
 class ZigpyTransport(object):
@@ -44,9 +45,7 @@ class ZigpyTransport(object):
         self.writer_queue = PriorityQueue()
         self.forwarder_queue = Queue()
         self.zigpy_thread = Thread(name="ZigpyCom_%s" % self.hardwareid, target=zigpy_thread, args=(self,))
-        self.forwarder_thread = Thread(
-            name="ZigpyForwarder_%s" % self.hardwareid, target=forwarder_thread, args=(self,)
-        )
+        self.forwarder_thread = Thread(name="ZigpyForwarder_%s" % self.hardwareid, target=forwarder_thread, args=(self,))
 
     def open_zigate_connection(self):
         start_zigpy_thread(self)
@@ -66,7 +65,7 @@ class ZigpyTransport(object):
         self.zigpy_thread.join()
         self.forwarder_thread.join()
 
-    def sendData(self, cmd, datas, sqn= None, highpriority=False, ackIsDisabled=False, waitForResponseIn=False, NwkId=None):
+    def sendData(self, cmd, datas, sqn=None, highpriority=False, ackIsDisabled=False, waitForResponseIn=False, NwkId=None):
         self.log.logging("Transport", "Debug", "===> sendData - Cmd: %s Datas: %s" % (cmd, datas))
         message = {"cmd": cmd, "datas": datas, "NwkId": NwkId, "TimeStamp": time.time(), "ACKIsDisable": ackIsDisabled, "Sqn": sqn}
         self.writer_queue.put((99, str(json.dumps(message))))

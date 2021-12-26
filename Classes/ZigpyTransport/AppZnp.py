@@ -2,6 +2,7 @@ import binascii
 import logging
 from typing import Any, Optional
 
+import Domoticz
 import zigpy.appdb
 import zigpy.config
 import zigpy.device
@@ -19,19 +20,19 @@ import zigpy.zdo.types as zdo_types
 import zigpy_zigate.zigbee.application
 import zigpy_znp.commands.util
 import zigpy_znp.zigbee.application
-from Classes.ZigpyTransport.plugin_encoders import build_plugin_8002_frame_content, build_plugin_8010_frame_content
-from zigpy_zigate.config import CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE
+from Classes.ZigpyTransport.plugin_encoders import (
+    build_plugin_8002_frame_content, build_plugin_8010_frame_content)
+from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
+                                 SCHEMA_DEVICE)
 
 LOGGER = logging.getLogger(__name__)
 
 
-import Domoticz
+
 
 
 class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
-    async def new(
-        cls, config: dict, auto_form: bool = False, start_radio: bool = True
-    ) -> zigpy.application.ControllerApplication:
+    async def new(cls, config: dict, auto_form: bool = False, start_radio: bool = True) -> zigpy.application.ControllerApplication:
         logging.debug("new")
 
     async def _load_db(self) -> None:
@@ -47,17 +48,15 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         await super().startup(auto_form)
 
         # Trigger Version payload to plugin
-    
+
         Model = "10"  # Zigpy
         FirmwareMajorVersion = "10"
         FirmwareVersion = "0400"
         self.callBackHandleMessage(build_plugin_8010_frame_content(Model, FirmwareMajorVersion, FirmwareVersion))
-        
-        
 
     def get_device(self, ieee=None, nwk=None):
 
-        #logging.debug("get_device nwk %s ieee %s" % (nwk, ieee))
+        # logging.debug("get_device nwk %s ieee %s" % (nwk, ieee))
         # self.callBackGetDevice is set to zigpy_get_device(self, nwkid = None, ieee=None)
         # will return None if not found
         # will return nwkid, ieee if found ( nwkid and ieee are numbers)
@@ -70,7 +69,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
                 dev = self.callBackGetDevice(ieee, nwk)
 
         if dev is not None:
-            #logging.debug("found device dev: %s" % (str(dev)))
+            # logging.debug("found device dev: %s" % (str(dev)))
             return dev
 
         raise KeyError
@@ -98,8 +97,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
             self.log.logging(
                 "TransportZigpy",
                 "Debug",
-                "handle_message device : %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s"
-                % (str(sender), profile, cluster, src_ep, dst_ep, str(message)),
+                "handle_message device : %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s" % (str(sender), profile, cluster, src_ep, dst_ep, str(message)),
             )
             self.log.logging("TransportZigpy", "Debug", "=====> Sender %s - %s" % (sender.nwk, sender.ieee))
             if sender.nwk is not None:
@@ -116,22 +114,16 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
             self.log.logging(
                 "TransportZigpy",
                 "Debug",
-                "handle_message device : %s (%s) Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s "
-                % (str(addr), type(addr), profile, cluster, src_ep, dst_ep, str(message)),
+                "handle_message device : %s (%s) Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s " % (str(addr), type(addr), profile, cluster, src_ep, dst_ep, str(message)),
             )
-            plugin_frame = build_plugin_8002_frame_content(
-                self, addr, profile, cluster, src_ep, dst_ep, message, sender.lqi, src_addrmode=addr_mode
-            )
-            self.log.logging(
-                "TransportZigpy", "Debug", "handle_message Sender: %s frame for plugin: %s" % (addr, plugin_frame)
-            )
+            plugin_frame = build_plugin_8002_frame_content(self, addr, profile, cluster, src_ep, dst_ep, message, sender.lqi, src_addrmode=addr_mode)
+            self.log.logging("TransportZigpy", "Debug", "handle_message Sender: %s frame for plugin: %s" % (addr, plugin_frame))
             self.callBackHandleMessage(plugin_frame)
         else:
             self.log.logging(
                 "TransportZigpy",
                 "Error",
-                "handle_message Sender unkown device : %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s"
-                % (str(sender), profile, cluster, src_ep, dst_ep, str(message)),
+                "handle_message Sender unkown device : %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s" % (str(sender), profile, cluster, src_ep, dst_ep, str(message)),
             )
 
         return None

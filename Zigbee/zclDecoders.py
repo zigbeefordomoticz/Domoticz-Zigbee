@@ -15,7 +15,6 @@ def zcl_decoders(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
 
     GlobalCommand, Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002(Payload)
 
-
     if GlobalCommand:
         self.log.logging("zclDecoder", "Debug", "decode8002_and_process Sqn: %s/%s ManufCode: %s Command: %s Data: %s " % (int(Sqn, 16), Sqn, ManufacturerCode, Command, Data))
         if Command == "00":  # Read Attribute
@@ -45,15 +44,15 @@ def zcl_decoders(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
         if Command == "0d":  # Discover Attributes Response
             return buildframe_discover_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
 
-    else: # Cluster Commands
+    else:  # Cluster Commands
         if ClusterId == "0006":
             # Remote report
             return buildframe_80x5_message(self, "8095", frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Command, Data)
-        
+
         if ClusterId == "0008":
             # Remote report
             return buildframe_80x5_message(self, "8085", frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Command, Data)
-        
+
         if ClusterId == "0019":
             # OTA Upgrade
             OTA_UPGRADE_COMMAND = {
@@ -66,17 +65,12 @@ def zcl_decoders(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
                 "06": "Upgrade End Request",  # 8503
                 "07": "Upgrade End response",
                 "08": "Query Device Specific File Request",
-                "09": "Query Device Specific File response"
-            }        
+                "09": "Query Device Specific File response",
+            }
             if Command in OTA_UPGRADE_COMMAND:
-                self.log.logging(
-                    "zclDecoder",
-                    "Log",
-                    "zcl_decoders OTA Upgrade Command %s/%s data: %s" %(
-                        Command, OTA_UPGRADE_COMMAND[ Command ], Data))
+                self.log.logging("zclDecoder", "Log", "zcl_decoders OTA Upgrade Command %s/%s data: %s" % (Command, OTA_UPGRADE_COMMAND[Command], Data))
                 return frame
-    
-        
+
         if ClusterId == "0500" and Command == "00":
             # Zone Enroll Response
             return buildframe_0400_cmd(self, "0400", frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Command, Data)
@@ -219,7 +213,6 @@ def buildframe_read_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, 
                 value = decode_endian_data(data, DType)
                 lenData = "%04x" % (size // 2)
 
-                
             elif DType in ("48", "4c"):
                 nbElement = Data[idx + 2 : idx + 4] + Data[idx : idx + 2]
                 idx += 4
@@ -229,7 +222,6 @@ def buildframe_read_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, 
                 idx += size
                 value = decode_endian_data(data, DType)
                 lenData = "%04x" % (size // 2)
-
 
             elif DType in ("41", "42"):  # ZigBee_OctedString = 0x41, ZigBee_CharacterString = 0x42
                 size = int(Data[idx : idx + 2], 16) * 2
@@ -337,12 +329,14 @@ def buildframe_80x5_message(self, MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, Cl
 
     return encapsulate_plugin_frame(MsgType, buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
+
 ## Cluster: 0x0019
 
 ## Cluster 0x0500
 # Cmd : 0x00 Zone Enroll Response  -> 0400
 #     : 0x01 Initiate Normal Operation Mode
 #     : 0x02 Initiate Test mode
+
 
 def buildframe_0400_cmd(self, MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Command, Data):
     self.log.logging("zclDecoder", "Debug", "buildframe_configure_reporting_response - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
@@ -351,6 +345,4 @@ def buildframe_0400_cmd(self, MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, Cluste
     enroll_response_code = Data[:2]
     zone_id = Data[2:4]
     buildPayload = Sqn + SrcNwkId + SrcEndPoint + enroll_response_code + zone_id
-    return encapsulate_plugin_frame( MsgType, buildPayload, frame[len(frame) - 4 : len(frame) - 2])
-        
-
+    return encapsulate_plugin_frame(MsgType, buildPayload, frame[len(frame) - 4 : len(frame) - 2])

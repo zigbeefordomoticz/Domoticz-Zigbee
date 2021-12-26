@@ -8,15 +8,15 @@ def decode_endian_data(data, datatype, len_stream=None):
     data_type_id = int(datatype, 16)
     if data_type_id == 0x00:
         return ""
-    
+
     if data_type_id in {0x08, 0x10, 0x18, 0x20, 0x28, 0x30}:
         # 1 byte - 8b
         return data[:2]
-    
+
     if data_type_id in {0x09, 0x19, 0x21, 0x29, 0x31, 0x38}:
         # 2 bytes - 16b
         return "%04x" % struct.unpack(">H", struct.pack("H", int(data[:4], 16)))[0]
-    
+
     if data_type_id in {0x0A, 0x1A, 0x22, 0x2A}:
         # 3 bytes - 24b
         return ("%08x" % struct.unpack(">I", struct.pack("I", int("0" + data[:6], 16)))[0])[:6]
@@ -24,7 +24,7 @@ def decode_endian_data(data, datatype, len_stream=None):
     if data_type_id in {0x0B, 0x1B, 0x23, 0x2B, 0x39}:
         # 4 bytes - 32b
         return "%08x" % struct.unpack(">I", struct.pack("I", int(data[:8], 16)))[0]
-    
+
     if data_type_id in {0x0C, 0x1C, 0x24, 0x2C}:
         # 5 bytes - 40b
         return ("%010x" % struct.unpack(">Q", struct.pack("Q", int("0" + data[:10], 16)))[0])[:10]
@@ -40,11 +40,11 @@ def decode_endian_data(data, datatype, len_stream=None):
     if data_type_id in {0x0F, 0x1F, 0x27, 0x2F, 0x3A}:
         # 8 bytes - 64b
         return "%016x" % struct.unpack(">Q", struct.pack("Q", int(data[:16], 16)))[0]
-    
+
     if data_type_id in {0x41, 0x42} and len_stream:
-        return data[: len_stream ]
-    
-    if data_type_id in {0xfe}:
+        return data[:len_stream]
+
+    if data_type_id in {0xFE}:
         return "%016x" % struct.unpack(">Q", struct.pack("Q", int(data[:16], 16)))[0]
 
     return data

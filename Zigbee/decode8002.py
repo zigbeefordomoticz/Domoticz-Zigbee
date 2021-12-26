@@ -9,6 +9,7 @@ from Modules.zigateConsts import ADDRESS_MODE
 from Zigbee.zclDecoders import zcl_decoders
 from Zigbee.zdpDecoders import zdp_decoders
 
+
 def decode8002_and_process(self, frame):
 
     ProfileId, SrcNwkId, SrcEndPoint, ClusterId, Payload = extract_nwk_infos_from_8002(frame)

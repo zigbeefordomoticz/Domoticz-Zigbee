@@ -9,9 +9,7 @@ from Zigbee.encoder_tools import encapsulate_plugin_frame
 
 def build_plugin_004D_frame_content(self, nwk, ieee, parent_nwk):
     # No endian decoding as it will go directly to Decode004d
-    self.log.logging(
-        "TransportPluginEncoder", "Debug", "build_plugin_004D_frame_content %s %s %s" % (nwk, ieee, parent_nwk)
-    )
+    self.log.logging("TransportPluginEncoder", "Debug", "build_plugin_004D_frame_content %s %s %s" % (nwk, ieee, parent_nwk))
 
     nwk = "%04x" % nwk
     ieee = "%016x" % t.uint64_t.deserialize(ieee.serialize())[0]
@@ -27,9 +25,7 @@ def build_plugin_8015_frame_content(
     pass
 
 
-def build_plugin_8009_frame_content(
-    self, radiomodule
-):
+def build_plugin_8009_frame_content(self, radiomodule):
     # addr = MsgData[0:4]
     # extaddr = MsgData[4:20]
     # PanID = MsgData[20:24]
@@ -40,15 +36,14 @@ def build_plugin_8009_frame_content(
     self.log.logging(
         "TransportPluginEncoder",
         "Debug",
-        "build_plugin_8009_frame_content %s %s %s %s %s"
-        % (self.app.nwk, self.app.ieee, self.app.extended_pan_id, self.app.pan_id, self.app.channel),
+        "build_plugin_8009_frame_content %s %s %s %s %s" % (self.app.nwk, self.app.ieee, self.app.extended_pan_id, self.app.pan_id, self.app.channel),
     )
     ieee = "%016x" % t.uint64_t.deserialize(self.app.ieee.serialize())[0]
     ext_panid = "%16x" % t.uint64_t.deserialize(self.app.extended_pan_id.serialize())[0]
     if radiomodule == "zigate":
         ieee = "%016x" % struct.unpack("Q", struct.pack(">Q", int(ieee, 16)))[0]
         ext_panid = "%016x" % struct.unpack("Q", struct.pack(">Q", int(ext_panid, 16)))[0]
-        
+
     frame_payload = "%04x" % self.app.nwk
     frame_payload += ieee
     frame_payload += "%04x" % self.app.pan_id
@@ -89,8 +84,7 @@ def build_plugin_8002_frame_content(
     self.log.logging(
         "TransportPluginEncoder",
         "Debug",
-        "build_plugin_8002_frame_content %s %s %s %s %s %s %s %s %s %s"
-        % (address, profile, cluster, src_ep, dst_ep, message, lqi, receiver, src_addrmode, dst_addrmode),
+        "build_plugin_8002_frame_content %s %s %s %s %s %s %s %s %s %s" % (address, profile, cluster, src_ep, dst_ep, message, lqi, receiver, src_addrmode, dst_addrmode),
     )
 
     payload = binascii.hexlify(message).decode("utf-8")

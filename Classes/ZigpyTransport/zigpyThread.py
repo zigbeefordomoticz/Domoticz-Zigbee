@@ -25,14 +25,11 @@ import zigpy_zigate.zigbee.application
 import zigpy_znp.zigbee.application
 from Classes.ZigpyTransport.AppZigate import App_zigate
 from Classes.ZigpyTransport.AppZnp import App_znp
-from Classes.ZigpyTransport.nativeCommands import (NATIVE_COMMANDS_MAPPING,
-                                                   native_commands)
-from Classes.ZigpyTransport.plugin_encoders import (
-    build_plugin_8009_frame_content, build_plugin_8011_frame_content)
+from Classes.ZigpyTransport.nativeCommands import NATIVE_COMMANDS_MAPPING, native_commands
+from Classes.ZigpyTransport.plugin_encoders import build_plugin_8009_frame_content, build_plugin_8011_frame_content
 from Classes.ZigpyTransport.tools import handle_thread_error
 from zigpy.exceptions import DeliveryError, InvalidResponse
-from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
-                                 SCHEMA_DEVICE)
+from zigpy_zigate.config import CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE
 from zigpy_znp.exceptions import CommandNotRecognized, InvalidFrame
 
 
@@ -82,12 +79,10 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False):
 
     # Retreive Active Ep and Simple Descriptor of Controller
     # self.endpoints: dict[int, zdo.ZDO | zigpy.endpoint.Endpoint] = {0: self.zdo}
-    self.log.logging("TransportWrter", "Debug", "Active Endpoint List:  %s" %str( self.app.get_device( nwk=0x0000).endpoints.keys() ))
-    for ep in self.app.get_device( nwk=0x0000).endpoints.keys():
-        self.log.logging("TransportWrter", "Debug", "Simple Descriptor:  %s" %self.app.get_device( nwk=0x0000).endpoints[ ep ])
+    self.log.logging("TransportWrter", "Debug", "Active Endpoint List:  %s" % str(self.app.get_device(nwk=0x0000).endpoints.keys()))
+    for ep in self.app.get_device(nwk=0x0000).endpoints.keys():
+        self.log.logging("TransportWrter", "Debug", "Simple Descriptor:  %s" % self.app.get_device(nwk=0x0000).endpoints[ep])
 
-    
-    
     # Run forever
     await worker_loop(self)
 
@@ -160,7 +155,6 @@ async def worker_loop(self):
                 "CommandNotRecognized: Not able to execute the zigpy command: %s data: %s" % (data["cmd"], data["datas"]),
             )
 
-            
         except InvalidResponse:
             self.log.logging(
                 "TransportWrter",
@@ -206,8 +200,7 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
     self.log.logging(
         "TransportWrter",
         "Debug",
-        "ZigyTransport: process_raw_command ready to request NwkId: %04x Cluster: %04x Seq: %02x Payload: %s AddrMode: %02x EnableAck: %s, Sqn: %s"
-        % (NwkId, Cluster, sequence, payload, addressmode, enableAck, Sqn),
+        "ZigyTransport: process_raw_command ready to request NwkId: %04x Cluster: %04x Seq: %02x Payload: %s AddrMode: %02x EnableAck: %s, Sqn: %s" % (NwkId, Cluster, sequence, payload, addressmode, enableAck, Sqn),
     )
 
     if self.pluginconf.pluginConf["ZiGateReactTime"]:
@@ -215,20 +208,14 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
 
     if addressmode == 0x01:
         # Group Mode
-        result, msg = await self.app.mrequest(
-            NwkId, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=enableAck, use_ieee=False
-        )
+        result, msg = await self.app.mrequest(NwkId, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=enableAck, use_ieee=False)
     elif addressmode in (0x02, 0x07):
         # Short
         destination = zigpy.device.Device(self.app, None, NwkId)
-        result, msg = await self.app.request(
-            destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=enableAck, use_ieee=False
-        )
+        result, msg = await self.app.request(destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=enableAck, use_ieee=False)
     elif addressmode in (0x03, 0x08):
         destination = zigpy.device.Device(self.app, NwkId, None)
-        result, msg = await self.app.request(
-            destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=enableAck, use_ieee=False
-        )
+        result, msg = await self.app.request(destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=enableAck, use_ieee=False)
 
     if self.pluginconf.pluginConf["ZiGateReactTime"]:
         t_end = 1000 * time.time()
@@ -238,8 +225,7 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
             self.log.logging(
                 "TransportWrter",
                 "Log",
-                "process_raw_command (zigpyThread) spend more than 1s (%s ms) frame: %s with Ack: %s"
-                % (t_elapse, data, AckIsDisable),
+                "process_raw_command (zigpyThread) spend more than 1s (%s ms) frame: %s with Ack: %s" % (t_elapse, data, AckIsDisable),
             )
 
     self.log.logging(
@@ -260,5 +246,4 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
             self.statistics._APSAck += 1
 
         # Send Ack/Nack to Plugin
-        self.forwarder_queue.put(
-            build_plugin_8011_frame_content(self, destination.nwk.serialize()[::-1].hex(), result, destination.lqi) )
+        self.forwarder_queue.put(build_plugin_8011_frame_content(self, destination.nwk.serialize()[::-1].hex(), result, destination.lqi))

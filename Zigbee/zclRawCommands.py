@@ -44,7 +44,7 @@ def rawaps_read_attribute_req(self, nwkid, EpIn, EpOut, Cluster, direction, manu
         idx += 4
         payload += "%04x" % struct.unpack(">H", struct.pack("H", int(attribute, 16)))[0]
     raw_APS_request(self, nwkid, EpOut, Cluster, "0104", payload, zigate_ep=EpIn, ackIsDisabled=ackIsDisabled)
-    return  sqn
+    return sqn
 
 
 # Write Attributes
@@ -78,7 +78,7 @@ def rawaps_write_attribute_req(self, nwkid, EPin, EPout, cluster, manuf_id, manu
     self.log.logging("zclCommand", "Debug", "rawaps_write_attribute_req ==== payload: %s" % (payload))
 
     raw_APS_request(self, nwkid, EPout, cluster, "0104", payload, zigate_ep=EPin, ackIsDisabled=ackIsDisabled)
-    return  sqn
+    return sqn
 
 
 # Write Attributes No Response
@@ -124,9 +124,7 @@ def zcl_raw_configure_reporting_requestv2(self, nwkid, epin, epout, cluster, dir
         self.log.logging("zclCommand", "Debug", "zcl_raw_configure_reporting_requestv2  payload: %s" % payload)
 
     raw_APS_request(self, nwkid, epout, cluster, "0104", payload, zigate_ep=epin, ackIsDisabled=ackIsDisabled)
-    return  sqn
-
-
+    return sqn
 
 
 # Discover Attributes
@@ -163,7 +161,7 @@ def raw_zcl_zcl_onoff(self, nwkid, EPIn, EpOut, command, effect="", groupaddrmod
     payload = "%02x" % cluster_frame + sqn + "%02x" % ONOFF_COMMANDS[command] + effect
 
     raw_APS_request(self, nwkid, EpOut, Cluster, "0104", payload, zigate_ep=EPIn, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
-    return  sqn
+    return sqn
 
 
 # Cluster 0008: Level Control
@@ -198,7 +196,7 @@ def zcl_raw_level_move_to_level(self, nwkid, EPIn, EPout, command, level="00", m
         payload += step_mode + step_size + "%04x" % (struct.unpack(">H", struct.pack("H", int(transition, 16)))[0])
 
     raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigate_ep=EPIn, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
-    return  sqn
+    return sqn
 
 
 # Cluster 0102: Window Covering
@@ -209,14 +207,7 @@ def zcl_raw_window_covering(self, nwkid, EPIn, EPout, command, level="00", perce
     self.log.logging("zclCommand", "Debug", "zcl_raw_window_covering %s %s %s %s %s" % (nwkid, EPout, command, level, percentage))
 
     Cluster = "0102"
-    WINDOW_COVERING_COMMANDS = {
-        "Up": 0x00, 
-        "Down": 0x01, 
-        "Stop": 0x02, 
-        "GoToLiftValue": 0x04, 
-        "GoToLiftPercentage": 0x05, 
-        "GoToTiltValue": 0x07, 
-        "GoToTiltPercentage": 0x08}
+    WINDOW_COVERING_COMMANDS = {"Up": 0x00, "Down": 0x01, "Stop": 0x02, "GoToLiftValue": 0x04, "GoToLiftPercentage": 0x05, "GoToTiltValue": 0x07, "GoToTiltPercentage": 0x08}
     if command not in WINDOW_COVERING_COMMANDS:
         return
 
@@ -238,7 +229,7 @@ def zcl_raw_window_covering(self, nwkid, EPIn, EPout, command, level="00", perce
         payload += percentage
 
     raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigate_ep=EPIn, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
-    return  sqn
+    return sqn
 
 
 # Cluster 0300: Color
@@ -295,7 +286,7 @@ def zcl_raw_move_color(self, nwkid, EPIn, EPout, command, temperature=None, hue=
         payload += "%04x" % (struct.unpack(">H", struct.pack("H", int(transition, 16)))[0])
 
     raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigate_ep=EPIn, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
-    return  sqn
+    return sqn
 
 
 # Cluster 0500: IAS
@@ -310,7 +301,7 @@ def zcl_raw_ias_zone_enroll_response(self, nwkid, EPin, EPout, response_code, zo
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
     payload = "%02x" % cluster_frame + sqn + cmd + response_code + zone_id
     raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
-    return  sqn
+    return sqn
 
 
 def zcl_raw_ias_initiate_normal_operation_mode(self, nwkid, EPin, EPout, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE):
@@ -321,7 +312,7 @@ def zcl_raw_ias_initiate_normal_operation_mode(self, nwkid, EPin, EPout, groupad
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
     payload = "%02x" % cluster_frame + sqn + cmd
     raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
-    return  sqn
+    return sqn
 
 
 def zcl_raw_ias_initiate_test_mode(self, nwkid, EPin, EPout, duration="01", current_zone_sensitivy_level="01", groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE):
@@ -332,7 +323,7 @@ def zcl_raw_ias_initiate_test_mode(self, nwkid, EPin, EPout, duration="01", curr
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
     payload = "%02x" % cluster_frame + sqn + cmd + duration + current_zone_sensitivy_level
     raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
-    return  sqn
+    return sqn
 
 
 # Cluster 0501 IAS ACE ( 0x0111, 0x0112)
@@ -360,7 +351,7 @@ def zcl_raw_ias_ace_commands_arm(self, EPin, EPout, nwkid, arm_mode, arm_code, z
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
     payload = "%02x" % cluster_frame + sqn + cmd + "%02x" % arm_mode + "%02x" % arm_code + "%02x" % zone_id
     raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
-    return  sqn
+    return sqn
 
 
 # Cluster 0502 IAS WD
@@ -385,7 +376,7 @@ def zcl_raw_ias_wd_command_start_warning(self, EPin, EPout, nwkid, warning_mode=
     payload = "%02x" % cluster_frame + sqn + cmd
     payload += "%02x" % field1 + "%04x" % struct.unpack(">H", struct.pack("H", warning_duration))[0] + "%02x" % (strobe_duty) + "%02x" % (strobe_level)
     raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
-    return  sqn
+    return sqn
 
 
 def zcl_raw_ias_wd_command_squawk(self, EPin, EPout, nwkid, squawk_mode, strobe, squawk_level, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE):
@@ -403,4 +394,4 @@ def zcl_raw_ias_wd_command_squawk(self, EPin, EPout, nwkid, squawk_mode, strobe,
     payload = "%02x" % cluster_frame + sqn + cmd + "%02x" % field1
 
     raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
-    return  sqn
+    return sqn

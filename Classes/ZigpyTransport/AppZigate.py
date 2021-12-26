@@ -1,8 +1,9 @@
-import logging
-
-from typing import Any, Optional
-import datetime
 import binascii
+import datetime
+import logging
+from typing import Any, Optional
+
+import Domoticz
 import zigpy.appdb
 import zigpy.config
 import zigpy.device
@@ -19,22 +20,19 @@ import zigpy.zdo
 import zigpy.zdo.types as zdo_types
 import zigpy_zigate
 import zigpy_zigate.zigbee.application
-from zigpy_zigate.config import CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE
 from Classes.ZigpyTransport.plugin_encoders import (
-    build_plugin_004D_frame_content,
-    build_plugin_8002_frame_content,
-    build_plugin_8010_frame_content,
-)
+    build_plugin_004D_frame_content, build_plugin_8002_frame_content,
+    build_plugin_8010_frame_content)
+from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
+                                 SCHEMA_DEVICE)
 
 LOGGER = logging.getLogger(__name__)
 
-import Domoticz
+
 
 
 class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
-    async def new(
-        cls, config: dict, auto_form: bool = False, start_radio: bool = True
-    ) -> zigpy.application.ControllerApplication:
+    async def new(cls, config: dict, auto_form: bool = False, start_radio: bool = True) -> zigpy.application.ControllerApplication:
         logging.debug("new")
 
     async def _load_db(self) -> None:
@@ -107,15 +105,10 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
                 self.log.logging(
                     "TransportZigpy",
                     "Debug",
-                    " handle_message addr: %s profile: %s cluster: %04x src_ep: %02x dst_ep: %02x message: %s lqi: %02x"
-                    % (addr, profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8"), sender.lqi),
+                    " handle_message addr: %s profile: %s cluster: %04x src_ep: %02x dst_ep: %02x message: %s lqi: %02x" % (addr, profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8"), sender.lqi),
                 )
-                plugin_frame = build_plugin_8002_frame_content(
-                    self, addr, profile, cluster, src_ep, dst_ep, message, sender.lqi
-                )
-                self.log.logging(
-                    "TransportZigpy", "Debug", "handle_message Sender: %s frame for plugin: %s" % (addr, plugin_frame)
-                )
+                plugin_frame = build_plugin_8002_frame_content(self, addr, profile, cluster, src_ep, dst_ep, message, sender.lqi)
+                self.log.logging("TransportZigpy", "Debug", "handle_message Sender: %s frame for plugin: %s" % (addr, plugin_frame))
                 self.callBackFunction(plugin_frame)
             else:
                 self.log.logging(
@@ -127,8 +120,7 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
             self.log.logging(
                 "TransportZigpy",
                 "Error",
-                "handle_message Sender unkown device : %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s"
-                % (str(sender), profile, cluster, src_ep, dst_ep, str(message)),
+                "handle_message Sender unkown device : %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s" % (str(sender), profile, cluster, src_ep, dst_ep, str(message)),
             )
 
         return None
