@@ -15,20 +15,8 @@ def zcl_decoders(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
 
     GlobalCommand, Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002(Payload)
 
-    if not GlobalCommand: # Cluster Commands
-        if ClusterId == "0006":
-            # Remote report
-            return buildframe_80x5_message(self, "8095", frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Command, Data)
-        
-        if ClusterId == "0008":
-            # Remote report
-            return buildframe_80x5_message(self, "8085", frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Command, Data)
-        
-        if ClusterId == "0500" and Command == "00":
-            # Zone Enroll Response
-            return buildframe_0400_cmd(self, "0400", frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Command, Data)
 
-    else:
+    if GlobalCommand:
         self.log.logging("zclDecoder", "Debug", "decode8002_and_process Sqn: %s/%s ManufCode: %s Command: %s Data: %s " % (int(Sqn, 16), Sqn, ManufacturerCode, Command, Data))
         if Command == "00":  # Read Attribute
             return buildframe_read_attribute_request(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Data)
@@ -57,10 +45,46 @@ def zcl_decoders(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
         if Command == "0d":  # Discover Attributes Response
             return buildframe_discover_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
 
+    else: # Cluster Commands
+        if ClusterId == "0006":
+            # Remote report
+            return buildframe_80x5_message(self, "8095", frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Command, Data)
+        
+        if ClusterId == "0008":
+            # Remote report
+            return buildframe_80x5_message(self, "8085", frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Command, Data)
+        
+        if ClusterId == "0019":
+            # OTA Upgrade
+            OTA_UPGRADE_COMMAND = {
+                "00": "Image Notify",
+                "01": "Query Next Image Request",
+                "02": "Query Next Image response",
+                "03": "Image Block Request",  # 8501
+                "04": "Image Page request",
+                "05": "Image Block Response",
+                "06": "Upgrade End Request",  # 8503
+                "07": "Upgrade End response",
+                "08": "Query Device Specific File Request",
+                "09": "Query Device Specific File response"
+            }        
+            if Command in OTA_UPGRADE_COMMAND:
+                self.log.logging(
+                    "zclDecoder",
+                    "Log",
+                    "zcl_decoders OTA Upgrade Command %s/%s data: %s" %(
+                        Command, OTA_UPGRADE_COMMAND[ Command ], Data))
+                return frame
+    
+        
+        if ClusterId == "0500" and Command == "00":
+            # Zone Enroll Response
+            return buildframe_0400_cmd(self, "0400", frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Command, Data)
+
     self.log.logging(
         "zclDecoder",
         "Log",
-        "decode8002_and_process Unknown Command: %s NwkId: %s Ep: %s Cluster: %s Payload: %s - GlobalCommand: %s, Sqn: %s, ManufacturerCode: %s"
+        "zcl_decoders Unknown Command: %s NwkId: %s Ep: %s Cluster: %s Payload: %s - GlobalCommand: %s, Sqn: %s, ManufacturerCode: %s"
         % (
             Command,
             SrcNwkId,
@@ -313,6 +337,7 @@ def buildframe_80x5_message(self, MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, Cl
 
     return encapsulate_plugin_frame(MsgType, buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
+## Cluster: 0x0019
 
 ## Cluster 0x0500
 # Cmd : 0x00 Zone Enroll Response  -> 0400
