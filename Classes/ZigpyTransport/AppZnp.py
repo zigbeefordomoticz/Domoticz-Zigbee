@@ -28,20 +28,12 @@ from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
 
 LOGGER = logging.getLogger(__name__)
 
-
-
-
-
 class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
     async def new(cls, config: dict, auto_form: bool = False, start_radio: bool = True) -> zigpy.application.ControllerApplication:
         logging.debug("new")
 
     async def _load_db(self) -> None:
         logging.debug("_load_db")
-
-    # async def startup(self, auto_form=False):
-    #    await super().startup(auto_form)
-
 
     async def startup(self, callBackHandleMessage, callBackGetDevice=None, auto_form=False, force_form=False, log=None, set_channel=0, set_extendedPanId=0):
         # If set to != 0 (default) extended PanId will be use when forming the network.
@@ -52,7 +44,6 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         await super().startup(auto_form=auto_form,force_form=force_form)
 
         # Trigger Version payload to plugin
-
         Model = "10"  # Zigpy
         FirmwareMajorVersion = "10"
         FirmwareVersion = "0400"

@@ -76,12 +76,11 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channe
     # Send Network information to plugin, in order to poplulate various objetcs
     self.forwarder_queue.put(build_plugin_8009_frame_content(self, radiomodule))
 
-    self.log.logging("TransportZigpy", "Debug", "PAN ID:               0x%04x" % self.app.pan_id)
-
-    self.log.logging("TransportZigpy", "Debug", "Extended PAN ID:      0x%s" % self.app.extended_pan_id)
-    self.log.logging("TransportZigpy", "Debug", "Channel:              %d" % self.app.channel)
-    self.log.logging("TransportZigpy", "Debug", "Device IEEE:          %s" % self.app.ieee)
-    self.log.logging("TransportZigpy", "Debug", "Device NWK:           0x%04x" % self.app.nwk)
+    #self.log.logging("TransportZigpy", "Debug", "PAN ID:               0x%04x" % self.app.pan_id)
+    #self.log.logging("TransportZigpy", "Debug", "Extended PAN ID:      0x%s" % self.app.extended_pan_id)
+    #self.log.logging("TransportZigpy", "Debug", "Channel:              %d" % self.app.channel)
+    #self.log.logging("TransportZigpy", "Debug", "Device IEEE:          %s" % self.app.ieee)
+    #self.log.logging("TransportZigpy", "Debug", "Device NWK:           0x%04x" % self.app.nwk)
 
     # Retreive Active Ep and Simple Descriptor of Controller
     # self.endpoints: dict[int, zdo.ZDO | zigpy.endpoint.Endpoint] = {0: self.zdo}
@@ -103,6 +102,7 @@ async def worker_loop(self):
         # self.log.logging("TransportZigpy",  'Debug', "Waiting for next command Qsize: %s" %self.writer_queue.qsize())
         if self.writer_queue is None:
             break
+        
         try:
             prio, entry = self.writer_queue.get(False)
 
