@@ -22,7 +22,7 @@ Release Numbering
 - Odd numbers --> Stable5
 - Even numbers  --> Beta
 
-## 21 December 2021 - 5.1.16
+## 27 December 2021 - 5.1.16
 
 - [Hardware] - Scene controller Tuya TS004F
 - [Hardware] - New Aqara Door sensor (Lumi.Magnet.acn001)
