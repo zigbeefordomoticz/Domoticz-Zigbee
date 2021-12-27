@@ -12,9 +12,9 @@
 
 Is a domoticz plugin to connect Zigbee devices through Zigbee controllers like [Zigate](https://zigate.fr) , Texas Instruments CC2531, CC13x2, CC26x2 adapters (via Zigpy library) like [zzh](https://electrolama.com/projects/zig-a-zig-ah/) .
 
-This plugin is an evolution of the mature Zigate plugin, which will continue to manage and handle Zigate via a so call native mode, while other coordinator will be handle through a unified communication library named [zigpy](https://github.com/zigpy/zigpy).
+This plugin is an evolution of the mature Zigate plugin, which will continue to manage and handle Zigate in native mode, while other coordinator will be handle through a unified communication library named [zigpy](https://github.com/zigpy/zigpy).
 
-## COMPATIBILITY WARNINGS
+## Compatibility WARNINGS
 
 ### REQUIRES Domoticz 2020 or above
 
@@ -24,7 +24,7 @@ If you cannot be on Domoticz 2020.x or above, please use the 'stable' branch whi
 ### Tested Hardware Coordinatoros
 
 The plugin has been full developpped on [Zigate](https://zigate.fr) controller and in closed relationship with the [Zigate](https://zigate.fr) manufactuer.
-Since late 2021 where we have stated opening the plugin to further brands of Coordinators we have focussed on the [zzh](https://electrolama.com/projects/zig-a-zig-ah/) from [Electrolama](https://electrolama.com).
+Since late 2021 where we have stated opening the plugin to further brands of Coordinators and we have focussed on the [zzh](https://electrolama.com/projects/zig-a-zig-ah/) from [Electrolama](https://electrolama.com), thanks to their sponsorship.
 
 Any Texas Instruments CC2531, CC13x2, CC26x2 adapters based on the [Zigbee Network Processors](http://dev.ti.com/tirex/content/simplelink_zigbee_sdk_plugin_2_20_00_06/docs/zigbee_user_guide/html/zigbee/introduction.html ) should be supported, more information could be found on [zigpy-znp](https://github.com/zigpy/zigpy-znp) which provided the layer to interface with the coordinator.
 You can also find a list of [Supported Adapters](https://www.zigbee2mqtt.io/guide/adapters/#recommended) which also works with [zigpy-znp](https://github.com/zigpy/zigpy-znp) and so should work with the plugin
@@ -46,16 +46,19 @@ Your first place to get support is via the Forums.
 
 ## About release channels
 
-In order to provide stability and also provide more recent development, Zigate plugin has the following channels
+In order to provide stability and also provide more recent development, Zigbee for Domoticz plugin has the following channels
 
 ### stable (will be deprecated)
 
-Support only ZiGate V1. and supported on best effort
+Support only ZiGate V1. (not supported anymore)
 
 ### stable5
 
 Support ALL ZiGate models known today and requires Domoticz 2020.x at minima
-This is considered as a solid , reliable version.
+
+### stable6
+
+Support the up coming evolutions and the non-ZiGate controllers via the zigpy layer.
 
 ### beta
 
