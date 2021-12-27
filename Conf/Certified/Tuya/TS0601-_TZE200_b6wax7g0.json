@@ -1,0 +1,40 @@
+{
+	"_comment": "Tuya TRV - MOES BRT-100 Radiator Thermostat(TRV)",
+	"_version": "0.10",
+	"Ep": {
+		"01": {
+			"0000": "",
+			"0004": "",
+			"0005": "",
+			"ef00": "",
+			"000a": "",
+			"0019": "",
+			"Type": "ThermoMode_4/Temp/ThermoSetpoint/Valve/Door"
+		}
+	},
+	"Type": "",
+	"ClusterToBind": [
+		"0019",
+		"ef00"
+	],
+	"ConfigureReporting": {},
+	"ReadAttributes": {
+		"0000": [
+			"0004",
+			"0000",
+			"0001",
+			"0005",
+			"0007",
+			"fffe"
+		]
+	},
+	"Param": {
+		"BRT100WindowsDetection": 1,
+		"BRT100ChildLock": 0,
+		"BRT100BoostDuration": 300,
+		"BRT100Calibration": 0,
+		"BRT100SetpointEco": 18,
+		"BRT100MaxSetpoint": 30,
+		"BRT100MinSetpoint": 3
+	}
+}

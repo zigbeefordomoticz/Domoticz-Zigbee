@@ -1,0 +1,47 @@
+{
+  "_comment": "ZigBee Relay (10A, Remembering Status of Power Failure ",
+  "_version": "0.1",
+  "Ep": {
+    "01": {
+      "0000": "",
+      "0003": "",
+      "0004": "",
+      "0005": "",
+      "0006": "",
+      "Type": "Switch"
+    }
+  },
+  "Type": "",
+  "ClusterToBind": [
+    "0006"
+  ],
+  "ConfigureReporting": {
+    "0006": {
+      "Attributes": {
+        "0000": {
+          "DataType": "10",
+          "MinInterval": "0001",
+          "MaxInterval": "012C",
+          "TimeOut": "0FFF",
+          "Change": "01"
+        }
+      }
+    }
+  },
+  "ReadAttributes": {
+    "0000": [
+      "0000",
+      "0001",
+      "0002",
+      "0003",
+      "0004",
+      "0005",
+      "0006",
+      "0007"
+    ],
+    "0003": [],
+    "0006": [
+      "0000"
+    ]
+  }
+}

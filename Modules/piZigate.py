@@ -9,9 +9,10 @@
     Description: PiZigate specifics settings
 
 """
+import os
 import platform
 import sys
-import os
+
 import Domoticz
 
 
@@ -106,7 +107,7 @@ def runmode_with_gpiomodule():
 def runmode_with_gpiocommand():
 
     try:
-        from subprocess import run
+        from subprocess import run  # nosec
     except:
         Domoticz.Error("Error while importing run from python module subprocess, fall back to os module")
         runmode_with_osgpiocommand()
@@ -116,18 +117,18 @@ def runmode_with_gpiocommand():
     GPIO_CMD = "/usr/bin/gpio"
     if os.path.isfile(GPIO_CMD):
         Domoticz.Log("+ Checkint GPIO PINs")
-        run(GPIO_CMD + " read 0", shell=True, check=True)  # nose
-        run(GPIO_CMD + " read 2", shell=True, check=True)  # nose
+        run(GPIO_CMD + " read 0", shell=True, check=True)  # nosec
+        run(GPIO_CMD + " read 2", shell=True, check=True)  # nosec
 
-        run(GPIO_CMD + " mode 0 out", shell=True, check=True)  # nose
-        run(GPIO_CMD + " mode 2 out", shell=True, check=True)  # nose
-        run(GPIO_CMD + " write 2 1", shell=True, check=True)  # nose
-        run(GPIO_CMD + " write 0 0", shell=True, check=True)  # nose
-        run(GPIO_CMD + " write 0 1", shell=True, check=True)  # nose
+        run(GPIO_CMD + " mode 0 out", shell=True, check=True)  # nosec
+        run(GPIO_CMD + " mode 2 out", shell=True, check=True)  # nosec
+        run(GPIO_CMD + " write 2 1", shell=True, check=True)  # nosec
+        run(GPIO_CMD + " write 0 0", shell=True, check=True)  # nosec
+        run(GPIO_CMD + " write 0 1", shell=True, check=True)  # nosec
 
         Domoticz.Log("+ Checkint GPIO PINs")
-        run(GPIO_CMD + " read 0", shell=True, check=True)  # nose
-        run(GPIO_CMD + " read 2", shell=True, check=True)  # nose
+        run(GPIO_CMD + " read 0", shell=True, check=True)  # nosec
+        run(GPIO_CMD + " read 2", shell=True, check=True)  # nosec
     else:
         Domoticz.Error("%s command missing. Make sure to install wiringPi package" % GPIO_CMD)
 

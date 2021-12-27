@@ -4,19 +4,11 @@
 # Author: zaraki673 & pipiche38
 #
 
-import Domoticz
-
-from Classes.LoggingManagement import LoggingManagement
 
 from Modules.basicOutputs import write_attribute
-from Modules.tools import (
-    get_request_datastruct,
-    set_request_datastruct,
-    get_list_waiting_request_datastruct,
-    is_ack_tobe_disabled,
-)
-from Modules.zigateConsts import ZIGATE_EP
 from Modules.casaia import casaia_check_irPairing
+from Modules.tools import is_ack_tobe_disabled
+from Modules.zigateConsts import ZIGATE_EP
 
 FAN_MODE = {
     "Off": 0x00,
@@ -34,7 +26,7 @@ def change_fan_mode(self, NwkId, Ep, fan_mode):
     if fan_mode not in FAN_MODE:
         return
 
-    if "Model" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Model"] in ("AC211", "AC221"):
+    if "Model" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Model"] in ("AC211", "AC221", "CAC221"):
         casaia_check_irPairing(self, NwkId)
 
     # Fan Mode Sequence

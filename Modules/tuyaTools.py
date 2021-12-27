@@ -10,9 +10,9 @@
 
 """
 
-from Modules.zigateConsts import ZIGATE_EP
 from Modules.basicOutputs import raw_APS_request, write_attribute
-from Modules.tools import is_ack_tobe_disabled, get_and_inc_SQN
+from Modules.tools import get_and_inc_SQN, is_ack_tobe_disabled
+from Modules.zigateConsts import ZIGATE_EP
 
 
 def tuya_TS0121_registration(self, NwkId):

@@ -7,19 +7,15 @@
     Module: txPower.py
 
     Description: TxPower management
-
+zigate_set_tx_power
 """
 
 
-import Domoticz
-import binascii
-import struct
-import json
 
 from datetime import datetime
 from time import time
 
-from Modules.basicOutputs import sendZigateCmd
+from Modules.zigateCommands import zigate_set_tx_power, zigate_get_tx_power
 
 # 
 # (Zigate) JN5168 standard-power module has a transmission power range of -32 to 0 dBm
@@ -47,7 +43,8 @@ def set_TxPower(self, powerlevel):
     setValue = POWER_LEVEL[powerlevel]
 
     attr_tx_power = "%02x" % setValue
-    sendZigateCmd(self, "0806", attr_tx_power)
+    zigate_set_tx_power(self, attr_tx_power)
+    #sendZigateCmd(self, "0806", attr_tx_power)
 
 
 def get_TxPower(self):
@@ -60,4 +57,5 @@ def get_TxPower(self):
     then response is going to be only status(0x8000) with status 1.
     """
 
-    sendZigateCmd(self, "0807", "")
+    #sendZigateCmd(self, "0807", "")
+    zigate_get_tx_power(self)

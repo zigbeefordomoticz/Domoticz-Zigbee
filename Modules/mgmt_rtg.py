@@ -1,9 +1,22 @@
+#!/usr/bin/env python3
+# coding: utf-8 -*-
+#
+# Author: pipiche38
+#
+"""
+    Module: mgmt_rtpg.py
+ 
+    Description: 
+
+"""
+
+
 import Domoticz
 import time
 import struct
 
-from Modules.basicOutputs import mgt_routing_req, mgt_binding_table_req
-from Modules.tools import is_hex, get_device_nickname
+from Modules.basicOutputs import mgt_binding_table_req, mgt_routing_req
+from Modules.tools import get_device_nickname
 
 STATUS_CODE = {"00": "Success", "84": "Not Supported (132)"}
 
@@ -37,9 +50,7 @@ def mgmt_rtg(self, nwkid, table):
 
     func = TABLE_TO_REPORT[ table ]
     if table not in self.ListOfDevices[nwkid]:
-        self.ListOfDevices[nwkid][table] = {}
-        self.ListOfDevices[nwkid][table]["Devices"] = []
-        self.ListOfDevices[nwkid][table]["SQN"] = 0
+        self.ListOfDevices[nwkid][table] = {'Devices': [], 'SQN': 0}
         self.ListOfDevices[nwkid][table]["TimeStamp"] = time.time()
         func(self, nwkid, "00")
         return
@@ -55,9 +66,11 @@ def mgmt_rtg(self, nwkid, table):
     ):
         return
 
-
     feq = self.pluginconf.pluginConf[table+"RequestFeq"]
     if time.time() > self.ListOfDevices[nwkid][table]["TimeStamp"] + feq:
+        del self.ListOfDevices[nwkid][table]
+        self.ListOfDevices[nwkid][table] = {'Devices': [], 'SQN': 0}
+        self.ListOfDevices[nwkid][table]["TimeStamp"] = time.time()
         func(self, nwkid, "00")
         return
 
@@ -102,10 +115,7 @@ def mgmt_routingtable_response( self,  srcnwkid, MsgSourcePoint, MsgClusterID, d
     RoutingTableListRecord = MsgPayload[10:]     
 
     if "RoutingTable" not in self.ListOfDevices[srcnwkid]:
-        self.ListOfDevices[srcnwkid]["RoutingTable"] = {}
-        self.ListOfDevices[srcnwkid]["RoutingTable"]["Devices"] = []
-        self.ListOfDevices[srcnwkid]["RoutingTable"]["SQN"] = 0
-
+        self.ListOfDevices[srcnwkid]["RoutingTable"] = {'Devices': [], 'SQN': 0}
     if RoutingTableIndex == "00":
         self.ListOfDevices[srcnwkid]["RoutingTable"]["Devices"] = []
 
@@ -118,27 +128,26 @@ def mgmt_routingtable_response( self,  srcnwkid, MsgSourcePoint, MsgClusterID, d
 
     if Status != "00":
         return
-    idx = 0
     if len(RoutingTableListRecord) % 10 != 0:
         return
-    while idx < len(RoutingTableListRecord):
+    for idx in range(0, len(RoutingTableListRecord), 10):
 
         target_nwkid = RoutingTableListRecord[idx + 2 : idx + 4] + RoutingTableListRecord[idx : idx + 2]
         target_bitfields = RoutingTableListRecord[idx + 4 : idx + 6]
         next_hop = RoutingTableListRecord[idx + 8 : idx + 10] + RoutingTableListRecord[idx + 6 : idx + 8]
-        idx += 10
-
         device_status = int(target_bitfields, 16) & 0b00000111
         device_memory_constraint = (int(target_bitfields, 16) & 0b00001000) >> 3
         many_to_one = (int(target_bitfields, 16) & 0b00010000) >> 4
         route_record_required = (int(target_bitfields, 16) & 0b00100000) >> 5
 
-        routing_record = {}
-        routing_record[target_nwkid] = {}
-        if device_status in STATUS_OF_ROUTE:
-            routing_record[target_nwkid]["Status"] = STATUS_OF_ROUTE[device_status]
-        else:
-            routing_record[target_nwkid]["Status"] = "Unknown (%s)" % device_status
+        routing_record = {
+            target_nwkid: {
+                'Status': STATUS_OF_ROUTE[device_status]
+                if device_status in STATUS_OF_ROUTE
+                else "Unknown (%s)" % device_status
+            }
+        }
+
         routing_record[target_nwkid]["MemoryConstrained"] = device_memory_constraint
         routing_record[target_nwkid]["ManyToOne"] = many_to_one
         routing_record[target_nwkid]["RouteRecordRequired"] = route_record_required
@@ -161,10 +170,7 @@ def mgmt_bindingtable_response( self,  srcnwkid, MsgSourcePoint, MsgClusterID, d
     #Domoticz.Log("mgmt_bindingtable_response for %s on cluster %s: >%s< -%s" %(srcnwkid, MsgClusterID, MsgPayload, len(BindingTableListRecord)))  
 
     if "BindingTable" not in self.ListOfDevices[srcnwkid]:
-        self.ListOfDevices[srcnwkid]["BindingTable"] = {}
-        self.ListOfDevices[srcnwkid]["BindingTable"]["Devices"] = []
-        self.ListOfDevices[srcnwkid]["BindingTable"]["SQN"] = 0
-
+        self.ListOfDevices[srcnwkid]["BindingTable"] = {'Devices': [], 'SQN': 0}
     if BindingTableIndex == "00":
         self.ListOfDevices[srcnwkid]["BindingTable"]["Devices"] = []
 
@@ -207,21 +213,21 @@ def mgmt_bindingtable_response( self,  srcnwkid, MsgSourcePoint, MsgClusterID, d
             idx += 16
             binding_record[source_ieee]["targetIEEE"] = dest_ieee
             binding_record[source_ieee]["targetNickName"] = get_device_nickname( self, Ieee=dest_ieee)
-            
+
             dest_ep = BindingTableListRecord[ idx: idx+2]
             idx += 2
             binding_record[source_ieee]["targetEp"] = dest_ep
-            
+
         elif addr_mode == '02': # Short Id
             shortid = "%04x" %struct.unpack("H", struct.pack(">H", int( BindingTableListRecord[ idx: idx +4] , 16)))[0]
             idx += 4
             binding_record[source_ieee]["targetNwkId"] = shortid
             binding_record[source_ieee]["targetNickName"] = get_device_nickname( self, NwkId=shortid)
-            
+
             dest_ep = BindingTableListRecord[ idx: idx+2]
             idx += 2
             binding_record[source_ieee]["targetEp"] = dest_ep
-            
+
         elif addr_mode == '01': # Group no EndPoint
             shortid = "%04x" %struct.unpack("H", struct.pack(">H", int( BindingTableListRecord[ idx: idx +4] , 16)))[0]
             binding_record[source_ieee]["targetGroupId"] = shortid
@@ -230,4 +236,4 @@ def mgmt_bindingtable_response( self,  srcnwkid, MsgSourcePoint, MsgClusterID, d
         self.ListOfDevices[srcnwkid]["BindingTable"]["Devices"].append(binding_record)
 
     if int(BindingTableIndex, 16) + int(BindingTableListCount, 16) < int(BindingTableSize, 16):
-        mgt_routing_req(self, srcnwkid, "%02x" % (int(BindingTableIndex, 16) + int(BindingTableListCount, 16)))
+        mgt_binding_table_req(self, srcnwkid, "%02x" % (int(BindingTableIndex, 16) + int(BindingTableListCount, 16)))

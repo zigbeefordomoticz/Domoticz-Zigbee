@@ -40,7 +40,7 @@ def sqn_generate_new_internal_sqn(self):  # to be called in zigatecmd
     if self.current_sqn == sys.maxsize:
         self.current_sqn = 0
 
-    # self.logging_send(  'Debug',"sqnMgmt generate_new_internal_sqn %s" %i_sqn)
+    # self.logging_proto(  'Debug',"sqnMgmt generate_new_internal_sqn %s" %i_sqn)
 
     return i_sqn
 
@@ -58,7 +58,7 @@ def sqn_add_external_sqn(
     elif sqnAPP_type == TYPE_APP_ZDP:
         self.sqn_zdp[e_sqnAPP] = i_sqn
 
-    # self.logging_send(  'Debug',"sqnMgmt add_external_sqn i_sqn:%s e_sqnAPP:%s sqnAPP_type:%s e_sqnAPS:%s" %(i_sqn, e_sqnAPP,sqnAPP_type ,e_sqnAPS))
+    # self.logging_proto(  'Debug',"sqnMgmt add_external_sqn i_sqn:%s e_sqnAPP:%s sqnAPP_type:%s e_sqnAPS:%s" %(i_sqn, e_sqnAPP,sqnAPP_type ,e_sqnAPS))
 
 
 def sqn_get_internal_sqn_from_aps_sqn(self, e_sqn):

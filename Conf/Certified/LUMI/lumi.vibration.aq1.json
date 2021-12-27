@@ -25,5 +25,8 @@
 			"0005"
 		],
 		"0101": []
+	},
+	"Param": {
+		"vibrationAqarasensitivity": "medium"
 	}
 }

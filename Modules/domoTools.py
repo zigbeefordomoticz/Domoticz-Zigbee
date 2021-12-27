@@ -8,16 +8,14 @@
     Description: Tools to manage Domoticz widget inetractions
 """
 
-import json
+
 import time
 
 import Domoticz
 
-from Classes.LoggingManagement import LoggingManagement
 from Modules.tools import lookupForIEEE
-
-from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
 from Modules.widgets import SWITCH_LVL_MATRIX
+from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
 
 
 def RetreiveWidgetTypeList(self, Devices, NwkId, DeviceUnit=None):

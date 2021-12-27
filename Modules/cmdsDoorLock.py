@@ -10,7 +10,6 @@
 
 """
 
-import Domoticz
 from Modules.zigateConsts import ZIGATE_EP
 from Modules.basicOutputs import raw_APS_request, get_and_inc_SQN
 

@@ -11,8 +11,6 @@
 """
 
 import Domoticz
-from Classes.LoggingManagement import LoggingManagement
-
 
 def pluzzyDecode004D(self, MsgSrcAddr, MsgIEEE, MsgMacCapa, decodedMacCapa, LQI):
 

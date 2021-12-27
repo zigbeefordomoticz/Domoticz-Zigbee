@@ -10,18 +10,15 @@
 
 """
 
-from typing import Dict
-import Domoticz
-import os.path
-import datetime
-import time
 import json
-import pickle
+import os.path
+import time
+from typing import Dict
 
-from Classes.LoggingManagement import LoggingManagement
-from Modules.manufacturer_code import check_and_update_manufcode
+import Domoticz
 
 import Modules.tools
+from Modules.manufacturer_code import check_and_update_manufcode
 
 ZIGATE_ATTRIBUTES = {
     "Version",
@@ -230,18 +227,18 @@ def LoadDeviceList(self):
                 len(self.ListOfDevices),
             ),
         )
-        try:
-            import sys
-
-            sys.path.append("/usr/lib/python3.8/site-packages")
-            import deepdiff
-
-            diff = deepdiff.DeepDiff(self.ListOfDevices, ListOfDevices_from_Domoticz)
-            self.log.logging("Database", "Log", json.dumps(json.loads(diff.to_json()), indent=4))
-
-        except:
-            # self.log.logging("Database", "Log", "Python Module deepdiff not found")
-            pass
+        #try:
+        #    import sys
+#
+        #    sys.path.append("/usr/lib/python3.8/site-packages")
+        #    import deepdiff
+#
+        #    diff = deepdiff.DeepDiff(self.ListOfDevices, ListOfDevices_from_Domoticz)
+        #    self.log.logging("Database", "Log", json.dumps(json.loads(diff.to_json()), indent=4))
+#
+        #except:
+        #    # self.log.logging("Database", "Log", "Python Module deepdiff not found")
+        #    pass
 
     return res
 
@@ -422,13 +419,13 @@ def importDeviceConf(self):
     # for iterDevType in list(self.DeviceConf):
     #    Domoticz.Log("%s - %s" %(iterDevType, self.DeviceConf[iterDevType]))
 
-    self.log.logging("Database", "Status", "DeviceConf loaded")
+    self.log.logging("Database", "Status", "DeviceConf loaded - %s confs loaded" %len(self.DeviceConf))
 
 
 def importDeviceConfV2(self):
 
     from os import listdir
-    from os.path import isfile, isdir, join
+    from os.path import isdir, isfile, join
 
     # Read DeviceConf for backward compatibility
     importDeviceConf(self)
@@ -479,6 +476,7 @@ def importDeviceConfV2(self):
                     Domoticz.Error("--> Unexpected error when loading a configuration file")
 
     self.log.logging("Database", "Debug", "--> Config loaded: %s" % self.DeviceConf.keys())
+    self.log.logging("Database", "Status", "DeviceConf loaded - %s confs loaded" %len(self.DeviceConf))
 
 
 def checkDevices2LOD(self, Devices):

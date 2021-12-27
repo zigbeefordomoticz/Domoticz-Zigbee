@@ -10,30 +10,24 @@
 
 """
 
-import Domoticz
-
 from time import time
 
-from Modules.basicOutputs import send_zigatecmd_zcl_noack, send_zigatecmd_zcl_ack, ieee_addr_request
+import Domoticz
+from Modules.basicOutputs import ieee_addr_request
 from Modules.bindings import bindDevice
+from Modules.tools import (get_isqn_datastruct, get_list_isqn_attr_datastruct,
+                           getClusterListforEP, is_ack_tobe_disabled,
+                           is_attr_unvalid_datastruct, is_time_to_perform_work,
+                           mainPoweredDevice, reset_attr_datastruct,
+                           set_isqn_datastruct, set_status_datastruct,
+                           set_timestamp_datastruct)
+from Modules.zclCommands import (zcl_configure_reporting_request,
+                                 zcl_read_report_config_request)
+from Modules.zigateConsts import (MAX_LOAD_ZIGATE, ZIGATE_EP,
+                                  CFG_RPT_ATTRIBUTESbyCLUSTERS)
 
-from Modules.zigateConsts import MAX_LOAD_ZIGATE, CFG_RPT_ATTRIBUTESbyCLUSTERS, ZIGATE_EP
-from Modules.tools import (
-    getClusterListforEP,
-    mainPoweredDevice,
-    is_ack_tobe_disabled,
-    is_time_to_perform_work,
-    set_isqn_datastruct,
-    set_status_datastruct,
-    set_timestamp_datastruct,
-    is_attr_unvalid_datastruct,
-    reset_attr_datastruct,
-    get_list_isqn_attr_datastruct,
-    get_isqn_datastruct,
-)
-
-from Classes.Transport.sqnMgmt import sqn_get_internal_sqn_from_app_sqn, TYPE_APP_ZCL
-
+from Classes.Transport.sqnMgmt import (TYPE_APP_ZCL,
+                                       sqn_get_internal_sqn_from_app_sqn)
 
 MAX_ATTR_PER_REQ = 3
 CONFIGURE_REPORT_PERFORM_TIME = 21  # Reenforce will be done each xx hours
@@ -87,9 +81,11 @@ class ConfigureReporting:
         now = int(time())
         if NWKID is None:
             if self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE:
-                self.logging( "Debug",
+                self.logging(
+                    "Debug",
                     "configureReporting - skip configureReporting for now ... system too busy (%s/%s) for %s"
-                    % (self.busy, self.ZigateComm.loadTransmit(), NWKID),nwkid=NWKID,
+                    % (self.busy, self.ZigateComm.loadTransmit(), NWKID),
+                    nwkid=NWKID,
                 )
                 return  # Will do at the next round
             if not self.target:
@@ -106,12 +102,12 @@ class ConfigureReporting:
 
             if key not in self.ListOfDevices:
                 self.target.remove(key)
-                self.logging( "Debug","processConfigureReporting - Unknown key: %s" % key,nwkid=NWKID)
+                self.logging("Debug", "processConfigureReporting - Unknown key: %s" % key, nwkid=NWKID)
                 continue
 
             if "Status" not in self.ListOfDevices[key]:
                 self.target.remove(key)
-                self.logging( "Debug","processConfigureReporting - no 'Status' flag for device %s !!!" % key,nwkid=NWKID)
+                self.logging("Debug", "processConfigureReporting - no 'Status' flag for device %s !!!" % key, nwkid=NWKID)
                 continue
 
             if self.ListOfDevices[key]["Status"] != "inDB":
@@ -123,27 +119,28 @@ class ConfigureReporting:
                     self.target.remove(key)
                     continue  # Not Main Powered!
 
-                if "Health" in self.ListOfDevices[key]:
-                    if self.ListOfDevices[key]["Health"] == "Not Reachable":
-                        self.target.remove(key)
-                        continue
+                if "Health" in self.ListOfDevices[key] and self.ListOfDevices[key]["Health"] == "Not Reachable":
+                    self.target.remove(key)
+                    continue
 
-                # if self.ListOfDevices[key]['Model'] != {}:
-                #    if self.ListOfDevices[key]['Model'] == 'TI0001': # Livolo switch
-                #        continue
+                    # if self.ListOfDevices[key]['Model'] != {}:
+                    #    if self.ListOfDevices[key]['Model'] == 'TI0001': # Livolo switch
+                    #        continue
 
             cluster_list = CFG_RPT_ATTRIBUTESbyCLUSTERS
-            if "Model" in self.ListOfDevices[key]:
-                if self.ListOfDevices[key]["Model"] != {}:
-                    if self.ListOfDevices[key]["Model"] in self.DeviceConf:
-                        if "ConfigureReporting" in self.DeviceConf[self.ListOfDevices[key]["Model"]]:
-                            spec_cfgrpt = self.DeviceConf[self.ListOfDevices[key]["Model"]]["ConfigureReporting"]
-                            cluster_list = spec_cfgrpt
-                            self.logging(
-                                "Debug",
-                                "------> CFG_RPT_ATTRIBUTESbyCLUSTERS updated: %s --> %s" % (key, cluster_list),
-                                nwkid=key,
-                            )
+            if (
+                "Model" in self.ListOfDevices[key]
+                and self.ListOfDevices[key]["Model"] != {}
+                and self.ListOfDevices[key]["Model"] in self.DeviceConf
+                and "ConfigureReporting" in self.DeviceConf[self.ListOfDevices[key]["Model"]]
+            ):
+                spec_cfgrpt = self.DeviceConf[self.ListOfDevices[key]["Model"]]["ConfigureReporting"]
+                cluster_list = spec_cfgrpt
+                self.logging(
+                    "Debug",
+                    "------> CFG_RPT_ATTRIBUTESbyCLUSTERS updated: %s --> %s" % (key, cluster_list),
+                    nwkid=key,
+                )
 
             self.logging("Debug", "----> configurereporting - processing %s" % key, nwkid=key)
 
@@ -164,32 +161,32 @@ class ConfigureReporting:
                         continue
                     if cluster not in cluster_list:
                         continue
-                    if "Model" in self.ListOfDevices[key]:
-                        if self.ListOfDevices[key]["Model"] != {}:
-                            if self.ListOfDevices[key]["Model"] == "lumi.light.aqcn02":
-                                if cluster in ("0402", "0403", "0405", "0406"):
-                                    continue
-                            if self.ListOfDevices[key]["Model"] == "lumi.remote.b686opcn01" and Ep != "01":
-                                # We bind only on EP 01
-                                self.logging(
-                                    "Debug",
-                                    "Do not Configure Reporting lumi.remote.b686opcn01 to Zigate Ep %s Cluster %s"
-                                    % (Ep, cluster),
-                                    key,
-                                )
-                                continue
-
-                    # Bad Hack for now. FOR PROFALUX
-                    if self.ListOfDevices[key]["ProfileID"] == "0104":
-                        if self.ListOfDevices[key]["ZDeviceID"] == "0201":  # Remote
-                            # Do not Configure Reports Remote Command
+                    if "Model" in self.ListOfDevices[key] and self.ListOfDevices[key]["Model"] != {}:
+                        if self.ListOfDevices[key]["Model"] == "lumi.light.aqcn02" and cluster in (
+                            "0402",
+                            "0403",
+                            "0405",
+                            "0406",
+                        ):
+                            continue
+                        if self.ListOfDevices[key]["Model"] == "lumi.remote.b686opcn01" and Ep != "01":
+                            # We bind only on EP 01
                             self.logging(
                                 "Debug",
-                                "----> Do not Configure Reports cluster %s for Profalux Remote command %s/%s"
-                                % (cluster, key, Ep),
+                                "Do not Configure Reporting lumi.remote.b686opcn01 to Zigate Ep %s Cluster %s" % (Ep, cluster),
                                 key,
                             )
                             continue
+
+                    # Bad Hack for now. FOR PROFALUX
+                    if self.ListOfDevices[key]["ProfileID"] == "0104" and self.ListOfDevices[key]["ZDeviceID"] == "0201":  # Remote
+                        # Do not Configure Reports Remote Command
+                        self.logging(
+                            "Debug",
+                            "----> Do not Configure Reports cluster %s for Profalux Remote command %s/%s" % (cluster, key, Ep),
+                            key,
+                        )
+                        continue
 
                     self.logging(
                         "Debug2",
@@ -250,10 +247,12 @@ class ConfigureReporting:
                     if NWKID is None and self.pluginconf.pluginConf["allowReBindingClusters"]:
                         ieee_addr_request(self, key)
                         # Correctif 22 Novembre. Delete only for the specific cluster and not the all Set
-                        if "Bind" in self.ListOfDevices[key]:
-                            if Ep in self.ListOfDevices[key]["Bind"]:
-                                if cluster in self.ListOfDevices[key]["Bind"][Ep]:
-                                    del self.ListOfDevices[key]["Bind"][Ep][cluster]
+                        if (
+                            "Bind" in self.ListOfDevices[key]
+                            and Ep in self.ListOfDevices[key]["Bind"]
+                            and cluster in self.ListOfDevices[key]["Bind"][Ep]
+                        ):
+                            del self.ListOfDevices[key]["Bind"][Ep][cluster]
                         if "IEEE" in self.ListOfDevices[key]:
                             self.logging(
                                 "Debug",
@@ -263,8 +262,7 @@ class ConfigureReporting:
                             bindDevice(self, self.ListOfDevices[key]["IEEE"], Ep, cluster)
                         else:
                             Domoticz.Error(
-                                "configureReporting - inconsitency on %s no IEEE found : %s "
-                                % (key, str(self.ListOfDevices[key]))
+                                "configureReporting - inconsitency on %s no IEEE found : %s " % (key, str(self.ListOfDevices[key]))
                             )
 
                     set_timestamp_datastruct(self, "ConfigureReporting", key, Ep, cluster, int(time()))
@@ -282,36 +280,37 @@ class ConfigureReporting:
                                 continue
 
                             ZDeviceID = self.ListOfDevices[key]["ZDeviceID"]
-                            if "ZDeviceID" in cluster_list[cluster]["Attributes"][attr]:
-                                if (
-                                    ZDeviceID not in cluster_list[cluster]["Attributes"][attr]["ZDeviceID"]
-                                    and len(cluster_list[cluster]["Attributes"][attr]["ZDeviceID"]) != 0
-                                ):
-                                    self.logging(
-                                        "Debug",
-                                        "configureReporting - %s/%s skip Attribute %s for Cluster %s due to ZDeviceID %s"
-                                        % (key, Ep, attr, cluster, ZDeviceID),
-                                        nwkid=key,
-                                    )
-                                    continue
+                            if "ZDeviceID" in cluster_list[cluster]["Attributes"][attr] and (
+                                ZDeviceID not in cluster_list[cluster]["Attributes"][attr]["ZDeviceID"]
+                                and len(cluster_list[cluster]["Attributes"][attr]["ZDeviceID"]) != 0
+                            ):
+                                self.logging(
+                                    "Debug",
+                                    "configureReporting - %s/%s skip Attribute %s for Cluster %s due to ZDeviceID %s"
+                                    % (key, Ep, attr, cluster, ZDeviceID),
+                                    nwkid=key,
+                                )
+                                continue
 
                         # Check against Attribute List only if the Model is not defined in the Certified Conf.
                         if (
-                            "Model" in self.ListOfDevices[key]
-                            and self.ListOfDevices[key]["Model"] != {}
-                            and self.ListOfDevices[key]["Model"] not in self.DeviceConf
-                            and "Attributes List" in self.ListOfDevices[key]
+                            (
+                                "Model" in self.ListOfDevices[key]
+                                and self.ListOfDevices[key]["Model"] != {}
+                                and self.ListOfDevices[key]["Model"] not in self.DeviceConf
+                                and "Attributes List" in self.ListOfDevices[key]
+                            )
+                            and "Ep" in self.ListOfDevices[key]["Attributes List"]
+                            and Ep in self.ListOfDevices[key]["Attributes List"]["Ep"]
+                            and cluster in self.ListOfDevices[key]["Attributes List"]["Ep"][Ep]
+                            and attr not in self.ListOfDevices[key]["Attributes List"]["Ep"][Ep][cluster]
                         ):
-                            if "Ep" in self.ListOfDevices[key]["Attributes List"]:
-                                if Ep in self.ListOfDevices[key]["Attributes List"]["Ep"]:
-                                    if cluster in self.ListOfDevices[key]["Attributes List"]["Ep"][Ep]:
-                                        if attr not in self.ListOfDevices[key]["Attributes List"]["Ep"][Ep][cluster]:
-                                            self.logging(
-                                                "Debug",
-                                                "configureReporting: drop attribute %s" % attr,
-                                                nwkid=key,
-                                            )
-                                            continue
+                            self.logging(
+                                "Debug",
+                                "configureReporting: drop attribute %s" % attr,
+                                nwkid=key,
+                            )
+                            continue
 
                         if self.FirmwareVersion and int(self.FirmwareVersion, 16) <= int("31c", 16):
                             if is_attr_unvalid_datastruct(self, "ConfigureReporting", key, Ep, cluster, "0000"):
@@ -423,15 +422,13 @@ class ConfigureReporting:
                         ListOfAttributesToConfigure,
                     )
 
-                # End for Cluster
+                    # End for Cluster
             # End for Ep
             self.target.remove(key)
             return  # Only one device at a time
         # End for key
 
-    def prepare_and_send_configure_reporting(
-        self, key, Ep, cluster_list, cluster, direction, manufacturer_spec, manufacturer, ListOfAttributesToConfigure
-    ):
+    def prepare_and_send_configure_reporting( self, key, Ep, cluster_list, cluster, direction, manufacturer_spec, manufacturer, ListOfAttributesToConfigure):
 
         # Ready to send the Command in one shoot or in several.
         attributeList = []  # List of Attribute in the this flow of Configure Reporting
@@ -442,8 +439,8 @@ class ConfigureReporting:
         if self.pluginconf.pluginConf["breakConfigureReporting"]:
             maxAttributesPerRequest = 1
 
+        attrdirection = "00"
         for attr in ListOfAttributesToConfigure:
-            attrdirection = "00"
             attrType = cluster_list[cluster]["Attributes"][attr]["DataType"]
             minInter = cluster_list[cluster]["Attributes"][attr]["MinInterval"]
             maxInter = cluster_list[cluster]["Attributes"][attr]["MaxInterval"]
@@ -481,10 +478,10 @@ class ConfigureReporting:
         self, key, Ep, cluster, direction, manufacturer_spec, manufacturer, attrLen, attrList, attributeList
     ):
         # Prepare the payload
-        datas = ZIGATE_EP + Ep + cluster + direction + manufacturer_spec + manufacturer
-        datas += "%02x" % (attrLen) + attrList
+        #datas = ZIGATE_EP + Ep + cluster + direction + manufacturer_spec + manufacturer
+        #datas += "%02x" % (attrLen) + attrList
 
-        self.logging("Debug", "--> send_configure_reporting_attributes_set - 0120 - %s" % (datas))
+        #self.logging("Debug", "--> send_configure_reporting_attributes_set - 0120 - %s" % (datas))
         self.logging(
             "Debug",
             "--> send_configure_reporting_attributes_set Reporting %s/%s on cluster %s Len: %s Attribute List: %s"
@@ -492,10 +489,11 @@ class ConfigureReporting:
             nwkid=key,
         )
 
-        if is_ack_tobe_disabled(self, key):
-            i_sqn = send_zigatecmd_zcl_noack(self, key, "0120", datas)
-        else:
-            i_sqn = send_zigatecmd_zcl_ack(self, key, "0120", datas)
+        i_sqn = zcl_configure_reporting_request(self, key, ZIGATE_EP, Ep, cluster, direction, manufacturer_spec, manufacturer, "%02x" % (attrLen), attrList, is_ack_tobe_disabled(self, key))
+        #if is_ack_tobe_disabled(self, key):  
+        #    #i_sqn = send_zigatecmd_zcl_noack(self, key, "0120", datas)
+        #else:
+        #    #i_sqn = send_zigatecmd_zcl_ack(self, key, "0120", datas)
 
         for x in attributeList:
             set_isqn_datastruct(self, "ConfigureReporting", key, Ep, cluster, x, i_sqn)
@@ -526,9 +524,7 @@ class ConfigureReporting:
         i_sqn = sqn_get_internal_sqn_from_app_sqn(self.ZigateComm, MsgSQN, TYPE_APP_ZCL)
         self.logging("Debug", "------- - i_sqn: %0s e_sqn: %s" % (i_sqn, MsgSQN))
 
-        for matchAttributeId in list(
-            get_list_isqn_attr_datastruct(self, "ConfigureReporting", MsgSrcAddr, MsgSrcEp, MsgClusterId)
-        ):
+        for matchAttributeId in list(get_list_isqn_attr_datastruct(self, "ConfigureReporting", MsgSrcAddr, MsgSrcEp, MsgClusterId)):
             if (
                 get_isqn_datastruct(
                     self,
@@ -560,32 +556,18 @@ class ConfigureReporting:
                     MsgSrcAddr,
                 )
 
-    def read_report_configure_request(
-        self, nwkid, epout, cluster_id, attribute_list, manuf_specific="00", manuf_code="0000"
-    ):
+    def read_report_configure_request(self, nwkid, epout, cluster_id, attribute_list, manuf_specific="00", manuf_code="0000"):
 
         nb_attribute = "%02x" % len(attribute_list)
-        str_attribute_list = ""
-        for x in attribute_list:
-            str_attribute_list += "%04x" % x
-
+        str_attribute_list = "".join("%04x" % x for x in attribute_list)
         direction = "00"
-        datas = (
-            nwkid
-            + ZIGATE_EP
-            + epout
-            + cluster_id
-            + direction
-            + nb_attribute
-            + manuf_specific
-            + manuf_code
-            + str_attribute_list
-        )
+        #datas = nwkid + ZIGATE_EP + epout + cluster_id + direction + nb_attribute + manuf_specific + manuf_code + str_attribute_list
 
-        if is_ack_tobe_disabled(self, nwkid):
-            send_zigatecmd_zcl_noack(self, nwkid, "0122", datas)
-        else:
-            send_zigatecmd_zcl_ack(self, nwkid, "0122", datas)
+        zcl_read_report_config_request(self, nwkid , ZIGATE_EP , epout , cluster_id, direction , manuf_specific , manuf_code , nb_attribute, str_attribute_list, is_ack_tobe_disabled(self, nwkid))
+        #if is_ack_tobe_disabled(self, nwkid):
+        #    send_zigatecmd_zcl_noack(self, nwkid, "0122", datas)
+        #else:
+        #    send_zigatecmd_zcl_ack(self, nwkid, "0122", datas)
 
     # decode 0x8122
     def read_report_configure_response(self, MsgData, MsgLQI):  # Read Configure Report response

@@ -22,6 +22,18 @@ Release Numbering
 - Odd numbers --> Stable5
 - Even numbers  --> Beta
 
+## 27 December 2021 - 5.1.16
+
+- [Hardware] - Scene controller Tuya TS004F
+- [Hardware] - New Aqara Door sensor (Lumi.Magnet.acn001)
+- [Hardware] - Tuya Smart all in One ( Lux, Motion, temp, Humi)
+- [Hardware] - Config file for Casa.IA devices
+- [Hardware] - Danfoss Ally Room Sensor 014G2480
+- [Hardware] - Support of Firmware 321
+- [Issue] - Fix Config Reporting issue with Frient Temp/Humi sensor
+- [Hardware] - Aqara Vibration sensivity can be define on a per device.
+- [Hardware] - Enable Wiser TRV to get temperature from external sensor
+
 ## 7 November 2021 - 5.1.15
 - [Hardware] - Sunricher remote control ZG2858A
 - [Technical] - Allow binding on cluster 0300

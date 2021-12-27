@@ -5,23 +5,16 @@
 #   French translation: @martial83
 #
 
-import Domoticz
-
-from Classes.LoggingManagement import LoggingManagement
-from Modules.basicOutputs import write_attribute, sendZigateCmd, raw_APS_request
-from Modules.tools import (
-    retreive_cmd_payload_from_8002,
-    is_ack_tobe_disabled,
-    checkAndStoreAttributeValue,
-    get_and_inc_SQN,
-)
-from Modules.zigateConsts import ZIGATE_EP
-
-from Modules.domoMaj import MajDomoDevice
-
-import struct
 import json
 import os
+import struct
+
+from Modules.basicOutputs import write_attribute
+from Modules.domoMaj import MajDomoDevice
+from Modules.sendZigateCommand import raw_APS_request
+from Modules.tools import (get_and_inc_SQN, is_ack_tobe_disabled,
+                           retreive_cmd_payload_from_8002)
+from Modules.zigateConsts import ZIGATE_EP
 
 CASAIA_MANUF_CODE = "113c"
 CASAIA_MANUF_CODE_BE = "3c11"
@@ -179,7 +172,7 @@ def casaia_pairing(self, NwkId):
         if self.ListOfDevices[NwkId]["Model"] == "AC201A":
             casaia_AC201_pairing(self, NwkId)
 
-        elif self.ListOfDevices[NwkId]["Model"] in ("AC211", "AC221"):
+        elif self.ListOfDevices[NwkId]["Model"] in ("AC211", "AC221", "CAC221" ):
             casaia_AC211_pairing(self, NwkId)
 
 
@@ -243,7 +236,7 @@ def casaia_check_irPairing(self, NwkId):
             casaia_ac201_ir_pairing(self, NwkId)
             AC201_read_AC_status_request(self, NwkId)
 
-        elif self.ListOfDevices[NwkId]["Model"] in ("AC211", "AC221"):
+        elif self.ListOfDevices[NwkId]["Model"] in ("AC211", "AC221", "CAC221"):
             casaia_ac211_ir_pairing(self, NwkId)
             AC201_read_AC_status_request(self, NwkId)
 
@@ -323,7 +316,7 @@ def casaia_ac201_fan_control(self, NwkId, Level):
         # UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
 
 
-## 0xFFAC Client to Server
+# 0xFFAC Client to Server
 #####################################################################################
 def AC211_ReadPairingCodeRequest(self, NwkId):
     # Command  0x00
@@ -365,7 +358,7 @@ def AC211_WritePairingCodeRequest(self, NwkId, pairing_code_value):
     self.log.logging("CasaIA", "Debug", "AC211_WritePairingCodeRequest ++++ %s payload: %s" % (NwkId, payload), NwkId)
 
 
-## 0xFFAD Client to Server
+# 0xFFAD Client to Server
 #####################################################################################
 def AC201_read_multi_pairing_code_request(self, NwkId):
     # Command  0x00
@@ -498,7 +491,7 @@ def AC201_command_mysterious(self, NwkId, magic):
     self.log.logging("CasaIA", "Debug", "AC201_command_mysterious ++++ %s payload: %s" % (NwkId, payload), NwkId)
 
 
-## 0xFFAC Server to Client
+# 0xFFAC Server to Client
 #####################################################################################
 def AC211_ReadPairingCodeResponse(self, Devices, NwkId, Ep, payload):
     # Command 0x00
@@ -516,7 +509,7 @@ def AC211_ReadLearnedStatesResponse(self, Devices, NwkId, Ep, payload):
     store_casaia_attribute(self, NwkId, "LearnedState", value, device_id=DEVICE_ID)
 
 
-## 0xFFAD Server to Client
+# 0xFFAD Server to Client
 #####################################################################################
 def AC201_read_multi_pairing_response(self, Devices, NwkId, Ep, payload):
     # Command 0x00
@@ -641,7 +634,7 @@ def AC201_read_learned_data_group_name_request_response(self, Devices, NwkId, sr
     store_casaia_attribute(self, NwkId, "GroupName", group_name)
 
 
-## Internal
+# Internal
 
 
 def check_hot_cold_setpoint(self, NwkId):
@@ -713,7 +706,7 @@ def get_casaia_attribute(self, NwkId, Attribute, device_id=None):
                 "CasaIA",
                 "Debug",
                 "get_casaia_attribute (1) - %s Attribute: %s not found in %s"
-                % (NwkId, self.ListOfDevices[NwkId]["CASA.IA"][device_id]),
+                % (NwkId, self.ListOfDevices[NwkId]["CASA.IA"][device_id], Attribute),
                 NwkId,
             )
             return None
@@ -723,7 +716,7 @@ def get_casaia_attribute(self, NwkId, Attribute, device_id=None):
             "CasaIA",
             "Debug",
             "get_casaia_attribute (2) - %s Attribute: %s not found in %s"
-            % (NwkId, self.ListOfDevices[NwkId]["CASA.IA"]),
+            % (NwkId, self.ListOfDevices[NwkId]["CASA.IA"], Attribute),
             NwkId,
         )
         return None

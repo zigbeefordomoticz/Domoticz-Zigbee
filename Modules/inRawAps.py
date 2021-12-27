@@ -3,25 +3,19 @@
 #
 # Author: zaraki673 & pipiche38
 #
-import Domoticz
 import struct
 
-from Modules.tools import retreive_cmd_payload_from_8002
-from Modules.pollControl import receive_poll_cluster
-
+from Modules.casaia import CASAIA_MANUF_CODE, casaiaReadRawAPS
 from Modules.domoMaj import MajDomoDevice
-
-from Modules.schneider_wiser import schneiderReadRawAPS
+from Modules.ikeaTradfri import ikea_openclose_remote
 from Modules.legrand_netatmo import legrandReadRawAPS
 from Modules.livolo import livoloReadRawAPS
-from Modules.orvibo import orviboReadRawAPS
 from Modules.lumi import lumiReadRawAPS
+from Modules.orvibo import orviboReadRawAPS
 from Modules.philips import philipsReadRawAPS
-from Modules.tuya import tuyaReadRawAPS, TUYA_MANUFACTURER_NAME
-from Modules.ikeaTradfri import ikea_openclose_remote
-
-from Modules.casaia import CASAIA_MANUF_CODE, casaiaReadRawAPS
-
+from Modules.pollControl import receive_poll_cluster
+from Modules.schneider_wiser import schneiderReadRawAPS
+from Modules.tuya import TUYA_MANUFACTURER_NAME, tuyaReadRawAPS
 
 ## Requires Zigate firmware > 3.1d
 CALLBACK_TABLE = {
@@ -76,25 +70,28 @@ def inRawAps(
         "Debug",
         "inRawAps Nwkid: %s Ep: %s Cluster: %s ManufCode: %s Cmd: %s Data: %s"
         % (srcnwkid, srcep, cluster, ManufacturerCode, Command, Data),
+        srcnwkid,
     )
     if cluster == "0020":  # Poll Control ( Not implemented in firmware )
-        # Domoticz.Log("Cluster 0020 -- POLL CLUSTER")
+        # self.log.logging("inRawAPS","Log","Cluster 0020 -- POLL CLUSTER")
         receive_poll_cluster(self, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, ManufacturerCode, Command, Data)
         return
 
     if cluster == "0019":  # OTA Cluster
-        # Domoticz.Log("Cluster 0019 -- OTA CLUSTER")
+        # self.log.logging("inRawAPS","Log","Cluster 0019 -- OTA CLUSTER")
 
         if Command == "01":
             # Query Next Image Request
-            Domoticz.Log("Cluster 0019 -- OTA CLUSTER Command 01")
+            self.log.logging("inRawAPS", "Log", "Cluster 0019 -- OTA CLUSTER Command 01")
             # fieldcontrol = Data[0:2]
             manufcode = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[2:6], 16)))[0]
             imagetype = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[6:10], 16)))[0]
             currentVersion = "%08x" % struct.unpack("I", struct.pack(">I", int(Data[10:18], 16)))[0]
-            Domoticz.Log(
+            self.log.logging(
+                "inRawAPS",
+                "Log",
                 "Cluster 0019 -- OTA CLUSTER Command 01Device %s Request OTA with current ManufCode: %s ImageType: %s Version: %s"
-                % (srcnwkid, manufcode, imagetype, currentVersion)
+                % (srcnwkid, manufcode, imagetype, currentVersion),
             )
 
             if "OTA" not in self.ListOfDevices[srcnwkid]:
@@ -154,7 +151,7 @@ def inRawAps(
         if Command == "0a":  # Move to Color Temperature
             color_temp_mired = payload[8:10] + payload[6:8]
             transition_time = payload[12:14] + payload[10:12]
-            # Domoticz.Log("Move to Color Temp - Command: %s Temp_Mired: %s TransitionTime: %s" %(Command, color_temp_mired, transition_time))
+            # self.log.logging("inRawAPS","Log","Move to Color Temp - Command: %s Temp_Mired: %s TransitionTime: %s" %(Command, color_temp_mired, transition_time))
             if "Model" in self.ListOfDevices[srcnwkid] and self.ListOfDevices[srcnwkid]["Model"] == "tint-Remote-white":
                 COLOR_SCENE_WHITE = {
                     "022b": "09",
@@ -173,7 +170,7 @@ def inRawAps(
             rate = payload[10:12] + payload[8:10]
             color_temp_min_mireds = payload[14:16] + payload[12:14]
             color_temp_max_mireds = payload[18:20] + payload[16:18]
-            # Domoticz.Log("Move Color Temperature - Command: %s mode: %s rate: %s min_mired: %s max_mired: %s" %(
+            # self.log.logging("inRawAPS","Log","Move Color Temperature - Command: %s mode: %s rate: %s min_mired: %s max_mired: %s" %(
             #    Command, move_mode, rate, color_temp_min_mireds, color_temp_max_mireds))
             if "Model" in self.ListOfDevices[srcnwkid] and self.ListOfDevices[srcnwkid]["Model"] == "tint-Remote-white":
                 if move_mode == "01":  # Down
@@ -183,44 +180,46 @@ def inRawAps(
                     MajDomoDevice(self, Devices, srcnwkid, srcep, "0008", "17")
 
         elif Command == "47":  # Stop Move Step
-            # Domoticz.Log("Stop Move Step - Command: %s" %Command)
+            # self.log.logging("inRawAPS","Log","Stop Move Step - Command: %s" %Command)
             if "Model" in self.ListOfDevices[srcnwkid] and self.ListOfDevices[srcnwkid]["Model"] == "tint-Remote-white":
                 MajDomoDevice(self, Devices, srcnwkid, srcep, "0008", "18")
 
         else:
-            Domoticz.Log("Unknown Color Control Command: %s" % Command)
+            self.log.logging("inRawAPS", "Log", "Unknown Color Control Command: %s" % Command)
 
         return
 
     if cluster == "0102":  # Window Covering
-        if "Model" in self.ListOfDevices[srcnwkid] and self.ListOfDevices[srcnwkid]["Model"] == "TRADFRI openclose remote":
+        if (
+            "Model" in self.ListOfDevices[srcnwkid]
+            and self.ListOfDevices[srcnwkid]["Model"] == "TRADFRI openclose remote"
+        ):
             ikea_openclose_remote(self, Devices, srcnwkid, srcep, Command, Data, Sqn)
             return
 
         if Command == "00":  # Up/Open
-            Domoticz.Log("Window Covering - Up/Open Command")
+            self.log.logging("inRawAPS", "Log", "Window Covering - Up/Open Command")
 
-        elif Command == "01": # Down / Close
-            Domoticz.Log("Window Covering - Down/Close Command")
+        elif Command == "01":  # Down / Close
+            self.log.logging("inRawAPS", "Log", "Window Covering - Down/Close Command")
 
-        elif Command == "02": # Stop
-            Domoticz.Log("Window Covering - Stop Command")
+        elif Command == "02":  # Stop
+            self.log.logging("inRawAPS", "Log", "Window Covering - Stop Command")
 
-        elif Command == "04": # Go To Lift Value
-            Domoticz.Log("Window Covering - Go To Lift value Command %s" %Data[0:] )
+        elif Command == "04":  # Go To Lift Value
+            self.log.logging("inRawAPS", "Log", "Window Covering - Go To Lift value Command %s" % Data[0:])
 
-        elif Command == "05": # Go To Lift Percentage
-            Domoticz.Log("Window Covering - Go To Lift percentage Command %s" %Data[0:] )
+        elif Command == "05":  # Go To Lift Percentage
+            self.log.logging("inRawAPS", "Log", "Window Covering - Go To Lift percentage Command %s" % Data[0:])
 
-        elif Command == "07": # Go to Tilt Value
-            Domoticz.Log("Window Covering - Go To Tilt value Command %s" %Data[0:] )
+        elif Command == "07":  # Go to Tilt Value
+            self.log.logging("inRawAPS", "Log", "Window Covering - Go To Tilt value Command %s" % Data[0:])
 
-        elif Command == "08": # Go to Tilt Percentage
-            Domoticz.Log("Window Covering - Go To Tilt percentage Command %s" %Data[0:] )
+        elif Command == "08":  # Go to Tilt Percentage
+            self.log.logging("inRawAPS", "Log", "Window Covering - Go To Tilt percentage Command %s" % Data[0:])
 
         else:
-            Domoticz.Log("Unknown Window Covering Command: %s" % Command)
-
+            self.log.logging("inRawAPS", "Log", "Unknown Window Covering Command: %s" % Command)
 
     if "Manufacturer" not in self.ListOfDevices[srcnwkid]:
         return
@@ -236,6 +235,7 @@ def inRawAps(
         "Debug",
         "inRawAps Nwkid: %s Ep: %s Cluster: %s ManufCode: %s manuf: %s manuf_name: %s Cmd: %s Data: %s"
         % (srcnwkid, srcep, cluster, ManufacturerCode, manuf, manuf_name, Command, Data),
+        srcnwkid,
     )
 
     func = None
@@ -250,9 +250,11 @@ def inRawAps(
     elif manuf_name in TUYA_MANUFACTURER_NAME:
         func = tuyaReadRawAPS
     else:
-        Domoticz.Log(
+        self.log.logging(
+            "inRawAPS",
+            "Log",
             "inRawAps %s/%s Cluster %s Manuf: %s/%s Command: %s Data: %s Payload: %s not processed !!!"
-            % (srcnwkid, srcep, cluster, manuf, manuf_name, Command, Data, payload)
+            % (srcnwkid, srcep, cluster, manuf, manuf_name, Command, Data, payload),
         )
 
     if func:

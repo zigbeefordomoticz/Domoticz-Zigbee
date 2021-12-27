@@ -4,10 +4,9 @@
 # Author: zaraki673 & pipiche38
 #
 
-import Domoticz
-import subprocess
-
 import os
+
+import Domoticz
 
 CURL_COMMAND = "/usr/bin/curl"
 

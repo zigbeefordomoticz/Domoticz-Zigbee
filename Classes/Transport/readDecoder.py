@@ -4,17 +4,17 @@
 # Author: pipiche38
 #
 
-import Domoticz
-import struct
 import binascii
+import struct
 
+import Domoticz
 from Classes.Transport.handleProtocol import process_frame
 
 
 def decode_and_split_message(self, raw_message):
 
     # Process/Decode raw_message
-    # self.logging_receive( 'Log', "onMessage - %s" %(raw_message))
+    # self.logging_reader( 'Log', "onMessage - %s" %(raw_message))
     if raw_message is not None:
         self._ReqRcv += raw_message  # Add the incoming data
         # Domoticz.Debug("onMessage incoming data : '" + str(binascii.hexlify(self._ReqRcv).decode('utf-8')) + "'")
@@ -28,13 +28,13 @@ def decode_and_split_message(self, raw_message):
         if BinMsg is None:
             return
         if not check_frame_lenght(self, BinMsg) or not check_frame_crc(self, BinMsg):
-            self.logging_receive("Error", "on_message Frame error Crc/len %s" % (BinMsg))
+            self.logging_reader("Error", "on_message Frame error Crc/len %s" % (BinMsg))
             continue
 
         AsciiMsg = binascii.hexlify(BinMsg).decode("utf-8")
 
         # if self.pluginconf.pluginConf["debugzigateCmd"]:
-        #    self.logging_send('Log', "on_message AsciiMsg: %s , Remaining buffer: %s" %(AsciiMsg,  self._ReqRcv ))
+        #    self.logging_reader('Log', "on_message AsciiMsg: %s , Remaining buffer: %s" %(AsciiMsg,  self._ReqRcv ))
 
         self.statistics._received += 1
         process_frame(self, AsciiMsg)
@@ -56,7 +56,7 @@ def get_raw_frame_from_raw_message(self):
         return None
 
     if frame_start > zero3_position:
-        self.logging_receive(
+        self.logging_reader(
             "Error",
             "Frame error we will drop the buffer!! start: %s zero3: %s buffer: %s"
             % (
@@ -112,14 +112,14 @@ def check_frame_crc(self, BinMsg):
     ComputedChecksum = 0
     if len(BinMsg) < 6:
         self.statistics._crcErrors += 1
-        _context = {
+        context = {
             "Error code": "TRANS-CHKCRC-02",
             "BinMsg": str(BinMsg),
             "AsciiMsg": str(binascii.hexlify(BinMsg).decode("utf-8")),
             "LastRawMsg": str(binascii.hexlify(self._last_raw_message).decode("utf-8")),
             "len": len(BinMsg),
         }
-        self.logging_receive_error("check_frame_crc", context=_context)
+        self.logging_proto("Error", "check_frame_crc", _context=context)
         return False
     Zero1, MsgType, Length, ReceivedChecksum = struct.unpack(">BHHB", BinMsg[0:6])
 
@@ -128,7 +128,7 @@ def check_frame_crc(self, BinMsg):
             ComputedChecksum ^= val
     if ComputedChecksum != ReceivedChecksum:
         self.statistics._crcErrors += 1
-        _context = {
+        context = {
             "Error code": "TRANS-CHKCRC-01",
             "BinMsg": str(BinMsg),
             "AsciiMsg": str(binascii.hexlify(BinMsg).decode("utf-8")),
@@ -139,7 +139,7 @@ def check_frame_crc(self, BinMsg):
             "ComputedChecksum": ComputedChecksum,
             "ReceivedChecksum": ReceivedChecksum,
         }
-        self.logging_receive_error("check_frame_crc", context=_context)
+        self.logging_proto("Error", "check_frame_crc", _context=context)
         return False
     return True
 
@@ -151,7 +151,7 @@ def check_frame_lenght(self, BinMsg):
     ReceveidLength = len(BinMsg)
     if ComputedLength != ReceveidLength:
         self.statistics._frameErrors += 1
-        _context = {
+        context = {
             "Error code": "TRANS-CHKLEN-01",
             "Zero1": Zero1,
             "BinMsg": str(BinMsg),
@@ -164,6 +164,6 @@ def check_frame_lenght(self, BinMsg):
             "ComputedLength": ComputedLength,
             "ReceveidLength": ReceveidLength,
         }
-        self.logging_receive_error("check_frame_lenght", context=_context)
+        self.logging_proto("Error", "check_frame_lenght", _context=context)
         return False
     return True
