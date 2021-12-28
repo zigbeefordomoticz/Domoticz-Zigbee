@@ -43,8 +43,8 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         self.callBackFunction = callBackHandleMessage
         self.callBackGetDevice = callBackGetDevice
         self.log = log
-        #await super().startup(auto_form=auto_form,force_form=force_form)
-        await super().startup(auto_form=auto_form,)
+        await super().startup(auto_form=auto_form,force_form=force_form)
+        #await super().startup(auto_form=auto_form,)
 
         version_str = await self._api.version_str()
         Model = "10"  # Zigpy
@@ -93,16 +93,16 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
 
         # Domoticz.Log("handle_message %s" %(str(profile)))
         if sender.nwk or sender.ieee:
-            self.log.logging("TransportZigpy", "Debug", "=====> Sender %s - %s" % (sender.nwk, sender.ieee))
+            #self.log.logging("TransportZigpy", "Debug", "=====> Sender %s - %s" % (sender.nwk, sender.ieee))
             if sender.nwk:
                 addr_mode = 0x02
                 addr = sender.nwk.serialize()[::-1].hex()
-                self.log.logging("TransportZigpy", "Debug", "=====> sender.nwk %s - %s" % (sender.nwk, addr))
+                #self.log.logging("TransportZigpy", "Debug", "=====> sender.nwk %s - %s" % (sender.nwk, addr))
 
             elif sender.ieee:
                 addr = "%016x" % t.uint64_t.deserialize(self.app.ieee.serialize())[0]
                 addr_mode = 0x03
-                self.log.logging("TransportZigpy", "Debug", "=====> sender.ieee %s - %s" % (sender.ieee, addr))
+                #self.log.logging("TransportZigpy", "Debug", "=====> sender.ieee %s - %s" % (sender.ieee, addr))
 
             if addr:
                 self.log.logging(
