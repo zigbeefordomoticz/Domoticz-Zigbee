@@ -14,76 +14,44 @@ from Modules.zigateConsts import ADDRESS_MODE, SIZE_DATA_TYPE
 def zcl_decoders(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
 
     GlobalCommand, Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002(Payload)
+    self.log.logging("zclDecoder", "Debug", "zcl_decoders GlobalCommand: %s Sqn: %s ManufCode: %s Command: %s Data: %s Payload: %s" %(
+        GlobalCommand, Sqn, ManufacturerCode, Command, Data, Payload))
 
     if GlobalCommand:
-        self.log.logging("zclDecoder", "Debug", "decode8002_and_process Sqn: %s/%s ManufCode: %s Command: %s Data: %s " % (int(Sqn, 16), Sqn, ManufacturerCode, Command, Data))
-        if Command == "00":  # Read Attribute
-            return buildframe_read_attribute_request(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Data)
+        return buildframe_foundation_cluster( self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Data )
 
-        if Command == "01":  # Read Attribute response
-            return buildframe_read_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
+    if ClusterId == "0004":
+        return buildframe_for_cluster_0004(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
 
-        if Command == "02":  # Write Attributes
-            return buildframe_write_attribute_request(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Data)
+    if ClusterId == "0006":
+        # Remote report
+        return buildframe_80x5_message(self, "8095", frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Command, Data)
 
-        if Command == "04":  # Write Attribute response
-            return buildframe_write_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
+    if ClusterId == "0008":
+        # Remote report
+        return buildframe_80x5_message(self, "8085", frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Command, Data)
 
-        if Command == "06":  # Configure Reporting
+    if ClusterId == "0019":
+        # OTA Upgrade
+        OTA_UPGRADE_COMMAND = {
+            "00": "Image Notify",
+            "01": "Query Next Image Request",
+            "02": "Query Next Image response",
+            "03": "Image Block Request",  # 8501
+            "04": "Image Page request",
+            "05": "Image Block Response",
+            "06": "Upgrade End Request",  # 8503
+            "07": "Upgrade End response",
+            "08": "Query Device Specific File Request",
+            "09": "Query Device Specific File response",
+        }
+        if Command in OTA_UPGRADE_COMMAND:
+            self.log.logging("zclDecoder", "Log", "zcl_decoders OTA Upgrade Command %s/%s data: %s" % (Command, OTA_UPGRADE_COMMAND[Command], Data))
             return frame
 
-        if Command == "07":  # Configure Reporting Response
-            return buildframe_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
-
-        if Command == "0a":  # Report attributes
-            return buildframe_report_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
-
-        if Command == "0b":  #
-            return frame
-
-        if Command == "0d":  # Discover Attributes Response
-            return buildframe_discover_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
-
-    else:  # Cluster Commands
-        if ClusterId == "0006":
-            # Remote report
-            return buildframe_80x5_message(self, "8095", frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Command, Data)
-
-        if ClusterId == "0004":
-            if Command == "00":
-                return buildframe_8060_add_group_member_ship_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
-            if Command == "01":
-                return buildframe_8061_check_group_member_ship_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
-            if Command == "02":
-                return buildframe8062_look_for_group_member_ship_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
-            if Command == "03":
-                return buildframe8063_remove_group_member_ship_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
-            
-        if ClusterId == "0008":
-            # Remote report
-            return buildframe_80x5_message(self, "8085", frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Command, Data)
-
-        if ClusterId == "0019":
-            # OTA Upgrade
-            OTA_UPGRADE_COMMAND = {
-                "00": "Image Notify",
-                "01": "Query Next Image Request",
-                "02": "Query Next Image response",
-                "03": "Image Block Request",  # 8501
-                "04": "Image Page request",
-                "05": "Image Block Response",
-                "06": "Upgrade End Request",  # 8503
-                "07": "Upgrade End response",
-                "08": "Query Device Specific File Request",
-                "09": "Query Device Specific File response",
-            }
-            if Command in OTA_UPGRADE_COMMAND:
-                self.log.logging("zclDecoder", "Log", "zcl_decoders OTA Upgrade Command %s/%s data: %s" % (Command, OTA_UPGRADE_COMMAND[Command], Data))
-                return frame
-
-        if ClusterId == "0500" and Command == "00":
-            # Zone Enroll Response
-            return buildframe_0400_cmd(self, "0400", frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Command, Data)
+    if ClusterId == "0500" and Command == "00":
+        # Zone Enroll Response
+        return buildframe_0400_cmd(self, "0400", frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Command, Data)
 
     self.log.logging(
         "zclDecoder",
@@ -102,6 +70,35 @@ def zcl_decoders(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
     )
 
     return frame
+
+def buildframe_foundation_cluster( self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Data ):
+    self.log.logging("zclDecoder", "Debug", "zcl_decoders Sqn: %s/%s ManufCode: %s Command: %s Data: %s " % (int(Sqn, 16), Sqn, ManufacturerCode, Command, Data))
+    if Command == "00":  # Read Attribute
+        return buildframe_read_attribute_request(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Data)
+
+    if Command == "01":  # Read Attribute response
+        return buildframe_read_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
+
+    if Command == "02":  # Write Attributes
+        return buildframe_write_attribute_request(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Data)
+
+    if Command == "04":  # Write Attribute response
+        return buildframe_write_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
+
+    if Command == "06":  # Configure Reporting
+        return frame
+
+    if Command == "07":  # Configure Reporting Response
+        return buildframe_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
+
+    if Command == "0a":  # Report attributes
+        return buildframe_report_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
+
+    if Command == "0b":  #
+        return frame
+
+    if Command == "0d":  # Discover Attributes Response
+        return buildframe_discover_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
 
 
 def buildframe_discover_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data):
@@ -325,6 +322,19 @@ def buildframe_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPo
 
 ## Cluster Specific commands
 
+# Cluster 0x0004 - Groups
+
+def buildframe_for_cluster_0004(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data ):
+    if Command == "00":
+        return buildframe_8060_add_group_member_ship_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
+    if Command == "01":
+        return buildframe_8061_check_group_member_ship_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
+    if Command == "02":
+        return buildframe8062_look_for_group_member_ship_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
+    if Command == "03":
+        return buildframe8063_remove_group_member_ship_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
+
+
 def buildframe_8060_add_group_member_ship_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data):
     #MsgSequenceNumber = MsgData[0:2]
     #MsgEP = MsgData[2:4]
@@ -404,8 +414,8 @@ def buildframe_80x5_message(self, MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, Cl
     self.log.logging("zclDecoder", "Debug", "======> Building %s message : Cluster: %s Command: >%s< Data: >%s< (Frame: %s)" % (MsgType, ClusterId, Command, Data, frame))
 
     # It looks like the ZiGate firmware was adding _unknown (which is not part of the norm)
-    unknown_ = Data[:2] if len(Data) >= 2 else "00"
-    buildPayload = Sqn + SrcEndPoint + ClusterId + unknown_ + SrcNwkId + Command + Data[2:]
+    unknown_ = "02" # Seems coming from ZiGate firmware !!!
+    buildPayload = Sqn + SrcEndPoint + ClusterId + unknown_ + SrcNwkId + Command + Data
 
     return encapsulate_plugin_frame(MsgType, buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
