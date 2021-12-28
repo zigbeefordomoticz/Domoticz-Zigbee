@@ -3585,7 +3585,7 @@ def Decode004D(self, Devices, MsgData, MsgLQI):  # Reception Device announce
 def Decode8085(self, Devices, MsgData, MsgLQI):
     "Remote button pressed"
 
-    MsgSQN = MsgData[0:2]
+    MsgSQN = MsgData[:2]
     MsgEP = MsgData[2:4]
     MsgClusterId = MsgData[4:8]
     unknown_ = MsgData[8:10]
@@ -3593,7 +3593,7 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
     MsgCmd = MsgData[14:16]
 
     updLQI(self, MsgSrcAddr, MsgLQI)
-    # self.log.logging( "Input", 'Debug', "Decode8085 - MsgData: %s "  %MsgData, MsgSrcAddr)
+    self.log.logging( "Input", 'Debug', "Decode8085 - MsgData: %s "  %MsgData, MsgSrcAddr)
     self.log.logging(
         "Input",
         "Debug",
@@ -3852,7 +3852,7 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
 def Decode8095(self, Devices, MsgData, MsgLQI):
     "Remote button pressed ON/OFF"
 
-    MsgSQN = MsgData[0:2]
+    MsgSQN = MsgData[:2]
     MsgEP = MsgData[2:4]
     MsgClusterId = MsgData[4:8]
     unknown_ = MsgData[8:10]
@@ -3860,6 +3860,7 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
     MsgCmd = MsgData[14:16]
     MsgPayload = MsgData[16 : len(MsgData)] if len(MsgData) > 16 else None
     updLQI(self, MsgSrcAddr, MsgLQI)
+    self.log.logging( "Input", 'Debug', "Decode8095 - MsgData: %s "  %MsgData, MsgSrcAddr)
 
     self.log.logging(
         "Input",
@@ -4017,7 +4018,7 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
             % (_ModelName, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgPayload),
             MsgSrcAddr,
         )
-        if MsgCmd[0:2] == "fd" and MsgPayload:
+        if MsgCmd[:2] == "fd" and MsgPayload:
             if MsgPayload == "00":
                 MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0006", "01")  # Click
                 checkAndStoreAttributeValue(self, MsgSrcAddr, MsgEP, MsgClusterId, "0000", MsgPayload)
@@ -4061,7 +4062,7 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
 def Decode80A7(self, Devices, MsgData, MsgLQI):
     "Remote button pressed (LEFT/RIGHT)"
 
-    MsgSQN = MsgData[0:2]
+    MsgSQN = MsgData[:2]
     MsgEP = MsgData[2:4]
     MsgClusterId = MsgData[4:8]
     MsgCmd = MsgData[8:10]
@@ -4076,7 +4077,7 @@ def Decode80A7(self, Devices, MsgData, MsgLQI):
 
     TYPE_DIRECTIONS = {"00": "right", "01": "left", "02": "middle"}
     TYPE_ACTIONS = {"07": "click", "08": "hold", "09": "release"}
-
+    self.log.logging( "Input", 'Debug', "Decode80A7 - MsgData: %s "  %MsgData, MsgSrcAddr)
     self.log.logging(
         "Input",
         "Debug",
