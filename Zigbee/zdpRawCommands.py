@@ -56,7 +56,7 @@ def zdp_raw_IEEE_address_request(self, nwkid, u8RequestType, u8StartIndex):
 
 
 def zdp_raw_node_descriptor_request(self, nwkid):
-    self.log.logging("zdpCommand", "Log", "zdp_raw_node_descriptor_request %s" % (nwkid,))
+    self.log.logging("zdpCommand", "Debug", "zdp_raw_node_descriptor_request %s" % (nwkid,))
     Cluster = "0002"
     sqn = get_and_inc_ZDP_SQN(self, nwkid)
     payload = sqn + "%04x" % struct.unpack(">H", struct.pack("H", int(nwkid, 16)))[0]
@@ -76,7 +76,7 @@ def zdp_raw_node_descriptor_request(self, nwkid):
 
 
 def zdp_power_descriptor_request(self, nwkid):
-    self.log.logging("zdpCommand", "Log", "zdp_power_descriptor_request %s" % (nwkid,))
+    self.log.logging("zdpCommand", "Debug", "zdp_power_descriptor_request %s" % (nwkid,))
     Cluster = "0003"
     sqn = get_and_inc_ZDP_SQN(self, nwkid)
     payload = sqn + "%04x" % struct.unpack(">H", struct.pack("H", int(nwkid, 16)))[0]
@@ -96,7 +96,7 @@ def zdp_power_descriptor_request(self, nwkid):
 
 
 def zdp_raw_simple_descriptor_request(self, nwkid, endpoint):
-    self.log.logging("zdpCommand", "Log", "zdp_raw_simple_descriptor_request %s %s" % (nwkid, endpoint))
+    self.log.logging("zdpCommand", "Debug", "zdp_raw_simple_descriptor_request %s %s" % (nwkid, endpoint))
     Cluster = "0004"
     sqn = get_and_inc_ZDP_SQN(self, nwkid)
     payload = sqn + "%04x" % struct.unpack(">H", struct.pack("H", int(nwkid, 16)))[0] + endpoint
@@ -119,7 +119,7 @@ def zdp_raw_active_endpoint_request(
     self,
     nwkid,
 ):
-    self.log.logging("zdpCommand", "Log", "zdp_raw_active_endpoint_request %s" % (nwkid,))
+    self.log.logging("zdpCommand", "Debug", "zdp_raw_active_endpoint_request %s" % (nwkid,))
     Cluster = "0005"
     sqn = get_and_inc_ZDP_SQN(self, nwkid)
     payload = sqn + "%04x" % struct.unpack(">H", struct.pack("H", int(nwkid, 16)))[0]
@@ -139,7 +139,7 @@ def zdp_raw_active_endpoint_request(
 
 
 def zdp_raw_match_desc_req(self, nwkid):
-    self.log.logging("zdpCommand", "Log", "zdp_raw_match_desc_req %s" % ("NOT IMPLEMENTED",))
+    self.log.logging("zdpCommand", "Debug", "zdp_raw_match_desc_req %s" % ("NOT IMPLEMENTED",))
     cluster = "0006"
     sqn = get_and_inc_ZDP_SQN(self, nwkid)
 
@@ -148,7 +148,7 @@ def zdp_raw_complex_descriptor_request(
     self,
     nwkid,
 ):
-    self.log.logging("zdpCommand", "Log", "zdp_raw_active_endpoint_request %s" % (nwkid,))
+    self.log.logging("zdpCommand", "Debug", "zdp_raw_active_endpoint_request %s" % (nwkid,))
     Cluster = "0010"
     sqn = get_and_inc_ZDP_SQN(self, nwkid)
     payload = sqn + "%04x" % struct.unpack(">H", struct.pack("H", int(nwkid, 16)))[0]
@@ -171,7 +171,7 @@ def zdp_raw_user_descriptor_request(
     self,
     nwkid,
 ):
-    self.log.logging("zdpCommand", "Log", "zdp_raw_active_endpoint_request %s" % (nwkid,))
+    self.log.logging("zdpCommand", "Debug", "zdp_raw_active_endpoint_request %s" % (nwkid,))
     Cluster = "0011"
     sqn = get_and_inc_ZDP_SQN(self, nwkid)
     payload = sqn + "%04x" % struct.unpack(">H", struct.pack("H", int(nwkid, 16)))[0]
@@ -205,7 +205,7 @@ def zdp_raw_binding_device(self, source, src_ep, cluster, addrmode, destination,
     if source in self.IEEE2NWK:
         nwkid = self.IEEE2NWK[source]
     else:
-        self.log.logging("zdpCommand", "Log", "zdp_raw_unbinding_device %s not found in IEEE2NWK" % (source))
+        self.log.logging("zdpCommand", "Debug", "zdp_raw_unbinding_device %s not found in IEEE2NWK" % (source))
         return
     Cluster = "0021"
     sqn = get_and_inc_ZDP_SQN(self, nwkid)
@@ -234,12 +234,12 @@ def zdp_raw_binding_device(self, source, src_ep, cluster, addrmode, destination,
 
 
 def zdp_raw_unbinding_device(self, source, src_ep, cluster, addrmode, destination, dst_ep):
-    self.log.logging("zdpCommand", "Log", "zdp_raw_unbinding_device %s %s %s %s %s %s" % (source, src_ep, cluster, addrmode, destination, dst_ep))
+    self.log.logging("zdpCommand", "Debug", "zdp_raw_unbinding_device %s %s %s %s %s %s" % (source, src_ep, cluster, addrmode, destination, dst_ep))
 
     if source in self.IEEE2NWK:
         nwkid = self.IEEE2NWK[source]
     else:
-        self.log.logging("zdpCommand", "Log", "zdp_raw_unbinding_device %s not found in IEEE2NWK" % (source))
+        self.log.logging("zdpCommand", "Debug", "zdp_raw_unbinding_device %s not found in IEEE2NWK" % (source))
         return
     Cluster = "0022"
     sqn = get_and_inc_ZDP_SQN(self, nwkid)
@@ -271,7 +271,7 @@ def zdp_raw_unbinding_device(self, source, src_ep, cluster, addrmode, destinatio
 
 
 def zdp_raw_nwk_lqi_request(self, nwkid, start_index):
-    self.log.logging("zdpCommand", "Log", "zdp_raw_nwk_lqi_request %s" % (start_index,))
+    self.log.logging("zdpCommand", "Debug", "zdp_raw_nwk_lqi_request %s" % (start_index,))
     Cluster = "0031"
     sqn = get_and_inc_ZDP_SQN(self, nwkid)
     payload = sqn + start_index
@@ -291,7 +291,7 @@ def zdp_raw_nwk_lqi_request(self, nwkid, start_index):
 
 
 def zdp_management_routing_table_request(self, nwkid, payload):
-    self.log.logging("zdpCommand", "Log", "zdp_management_routing_table_request %s" % (payload,))
+    self.log.logging("zdpCommand", "Debug", "zdp_management_routing_table_request %s" % (payload,))
     Cluster = "0032"
     sqn = get_and_inc_ZDP_SQN(self, nwkid)
     raw_APS_request(
@@ -310,7 +310,7 @@ def zdp_management_routing_table_request(self, nwkid, payload):
 
 
 def zdp_management_binding_table_request(self, nwkid, payload):
-    self.log.logging("zdpCommand", "Log", "zdp_management_binding_table_request %s" % (payload,))
+    self.log.logging("zdpCommand", "Debug", "zdp_management_binding_table_request %s" % (payload,))
     Cluster = "0033"
     sqn = get_and_inc_ZDP_SQN(self, nwkid)
     raw_APS_request(
@@ -331,7 +331,7 @@ def zdp_management_binding_table_request(self, nwkid, payload):
 def zdp_raw_permit_joining_request(self, tgtnwkid, duration, significance):
     self.log.logging(
         "zdpCommand",
-        "Log",
+        "Debug",
         "zdp_raw_permit_joining_request %s %s %s"
         % (
             tgtnwkid,
@@ -347,7 +347,7 @@ def zdp_raw_permit_joining_request(self, tgtnwkid, duration, significance):
 def zdp_raw_management_permit_joining_req(self, nwkid, duration, significance):
     self.log.logging(
         "zdpCommand",
-        "Log",
+        "Debug",
         "zdp_raw_management_permit_joining_req %s %s %s"
         % (
             nwkid,
@@ -358,7 +358,7 @@ def zdp_raw_management_permit_joining_req(self, nwkid, duration, significance):
 
 
 def zdp_raw_leave_request(self, nwkid, ieee, rejoin="01", remove_children="00"):
-    self.log.logging("zdpCommand", "Log", "zdp_raw_leave_request %s %s" % (nwkid, ieee))
+    self.log.logging("zdpCommand", "Debug", "zdp_raw_leave_request %s %s" % (nwkid, ieee))
     Cluster = "0034"
     sqn = get_and_inc_ZDP_SQN(self, nwkid)
 
@@ -388,15 +388,17 @@ def zdp_raw_leave_request(self, nwkid, ieee, rejoin="01", remove_children="00"):
 
 
 def zdp_raw_nwk_update_request(self, nwkid, scanchannel, scanduration, scancount="", nwkupdateid="", nwkmanageraddr=""):
-    self.log.logging("zdpCommand", "Log", "zdp_raw_nwk_update_request %s %s %s %s %s %s" % (nwkid, scanchannel, scanduration, scancount, nwkupdateid, nwkmanageraddr))
+    self.log.logging("zdpCommand", "Debug", "zdp_raw_nwk_update_request %s %s %s %s %s %s" % (nwkid, scanchannel, scanduration, scancount, nwkupdateid, nwkmanageraddr))
     Cluster = "0038"
     sqn = get_and_inc_ZDP_SQN(self, nwkid)
     payload = sqn + scanchannel + scanduration + scancount + nwkupdateid
     if scanduration == "ff":
         payload += nwkmanageraddr
+    self.log.logging("zdpCommand", "Debug", "zdp_raw_nwk_update_request Payload: %s" % ( payload))
+        
     raw_APS_request(
         self,
-        nwkid,
+        "fffd",
         "00",
         Cluster,
         "0000",
