@@ -117,7 +117,7 @@ async def worker_loop(self):
             self.statistics._MaxLoad = self.writer_queue.qsize()
 
         data = json.loads(entry)
-        self.log.logging("TransportZigpy", "Debug", "got command %s" % data)
+        self.log.logging("TransportZigpy", "Debug", "got command %s" % data["cmd"], )
 
         try:
             if data["cmd"] == "PERMIT-TO-JOIN":
@@ -219,9 +219,8 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
     if self.pluginconf.pluginConf["ZiGateReactTime"]:
         t_start = 1000 * time.time()
 
-    if NwkId == 0xffff: # Broadcast
-        result, msg = await self.app.broadcast( Profile, Cluster, sEp, dEp, NwkId, 0, sequence, payload, NwkId, )
-
+    if NwkId in (0xffff, 0xfffe, 0xfffd, 0xfffc, 0xfffb): # Broadcast
+        result, msg = await self.app.broadcast( Profile, Cluster, sEp, dEp, 0x0, 0x30, sequence, payload, )
 
     if addressmode == 0x01:
         # Group Mode
@@ -273,8 +272,12 @@ def properyly_display_data( Datas):
     log = "{"
     for x in Datas:
         value = Datas[x]
-        if isinstance(value, int):
-            value = "%X" %value
+        if x in ( 'Profile', 'Cluster', 'TargetNwk', ):
+            if isinstance(value, int):
+                value = "%04x" %value
+        elif x in ( 'TargetEp', 'SrcEp', 'Sqn', 'AddressMode'):
+            if isinstance(value, int):
+                value = "%02x" %value
         log += "'%s' : %s," %(x,value)
     log += "}"
     return log
