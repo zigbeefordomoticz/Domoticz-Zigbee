@@ -94,11 +94,11 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
                 "Debug",
                 "handle_message device 1: %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s lqi: %s" % (
                     str(sender), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8"), sender.lqi)),
-            self.log.logging("TransportZigpy", "Debug", "=====> Sender %s - %s" % (sender.nwk, sender.ieee))
+            #self.log.logging("TransportZigpy", "Debug", "=====> Sender %s - %s" % (sender.nwk, sender.ieee))
             if sender.nwk is not None:
                 addr_mode = 0x02
                 addr = sender.nwk.serialize()[::-1].hex()
-                self.log.logging("TransportZigpy", "Debug", "=====> sender.nwk %s - %s" % (sender.nwk, addr))
+                #self.log.logging("TransportZigpy", "Debug", "=====> sender.nwk %s - %s" % (sender.nwk, addr))
             elif sender.ieee is not None:
                 addr = "%016x" % t.uint64_t.deserialize(self.app.ieee.serialize())[0]
                 addr_mode = 0x03
