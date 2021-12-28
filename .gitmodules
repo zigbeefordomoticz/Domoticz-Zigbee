@@ -10,3 +10,6 @@
 [submodule "external/pyserial"]
 	path = external/pyserial
 	url = https://github.com/pyserial/pyserial.git
+[submodule "external/dnspython"]
+	path = external/dnspython
+	url = https://github.com/rthalley/dnspython
