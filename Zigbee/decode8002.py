@@ -13,9 +13,9 @@ from Zigbee.zdpDecoders import zdp_decoders
 def decode8002_and_process(self, frame):
 
     ProfileId, SrcNwkId, SrcEndPoint, ClusterId, Payload = extract_nwk_infos_from_8002(frame)
+    self.log.logging("Transport8002", "Debug", "decode8002_and_process ProfileId: %s %s %s" % (SrcNwkId, ProfileId, frame))
     self.log.logging("Transport8002", "Debug", "decode8002_and_process ProfileID: %s NwkId: %s Ep: %s Cluster: %s Payload: %s" % (ProfileId, SrcNwkId, SrcEndPoint, ClusterId, Payload))
 
-    self.log.logging("Transport8002", "Debug", "decode8002_and_process ProfileId: %s %s %s" % (SrcNwkId, ProfileId, frame))
 
     if SrcNwkId is None:
         return frame
