@@ -142,41 +142,43 @@ async def worker_loop(self):
             elif   data["cmd"] in NATIVE_COMMANDS_MAPPING:
                 await native_commands(self, data["cmd"], data["datas"] )
             elif data["cmd"] == "RAW-COMMAND":
+                self.log.logging( "TransportZigpy", "Debug", "RAW-COMMAND: %s" %properyly_display_data( data["datas"]) )
+                                 
                 await process_raw_command(self, data["datas"], AckIsDisable=data["ACKIsDisable"], Sqn=data["Sqn"])
 
         except DeliveryError:
             self.log.logging(
                 "TransportZigpy",
                 "Error",
-                "DeliveryError: Not able to execute the zigpy command: %s data: %s" % (data["cmd"], data["datas"]),
+                "DeliveryError: Not able to execute the zigpy command: %s data: %s" % (data["cmd"], properyly_display_data( data["datas"])),
             )
 
         except InvalidFrame:
             self.log.logging(
                 "TransportZigpy",
                 "Error",
-                "InvalidFrame: Not able to execute the zigpy command: %s data: %s" % (data["cmd"], data["datas"]),
+                "InvalidFrame: Not able to execute the zigpy command: %s data: %s" % (data["cmd"], properyly_display_data( data["datas"])),
             )
 
         except CommandNotRecognized:
             self.log.logging(
                 "TransportZigpy",
                 "Error",
-                "CommandNotRecognized: Not able to execute the zigpy command: %s data: %s" % (data["cmd"], data["datas"]),
+                "CommandNotRecognized: Not able to execute the zigpy command: %s data: %s" % (data["cmd"], properyly_display_data( data["datas"])),
             )
 
         except InvalidResponse:
             self.log.logging(
                 "TransportZigpy",
                 "Error",
-                "InvalidResponse: Not able to execute the zigpy command: %s data: %s" % (data["cmd"], data["datas"]),
+                "InvalidResponse: Not able to execute the zigpy command: %s data: %s" % (data["cmd"], properyly_display_data( data["datas"])),
             )
 
         except RuntimeError as e:
             self.log.logging(
                 "TransportZigpy",
                 "Error",
-                "RuntimeError: %s Not able to execute the zigpy command: %s data: %s" % (e, data["cmd"], data["datas"]),
+                "RuntimeError: %s Not able to execute the zigpy command: %s data: %s" % (e, data["cmd"], properyly_display_data( data["datas"])),
             )
 
         except Exception as e:
@@ -264,3 +266,15 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
 
         # Send Ack/Nack to Plugin
         self.forwarder_queue.put(build_plugin_8011_frame_content(self, destination.nwk.serialize()[::-1].hex(), result, destination.lqi))
+
+
+def properyly_display_data( Datas):
+    
+    log = "{"
+    for x in Datas:
+        value = Datas[x]
+        if isinstance(value, int):
+            value = "%X" %value
+        log += "'%s' : %s," %(x,value)
+    log += "}"
+    return log
