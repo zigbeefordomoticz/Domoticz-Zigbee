@@ -95,6 +95,7 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channe
     self.log.logging("TransportZigpy", "Debug", "Exiting co-rounting radio_start")
 
 
+    
 async def worker_loop(self):
     self.log.logging("TransportZigpy", "Debug", "worker_loop - ZigyTransport: worker_loop start.")
 
@@ -103,48 +104,18 @@ async def worker_loop(self):
         if self.writer_queue is None:
             break
         
-        try:
-            prio, entry = self.writer_queue.get(False)
-
-        except queue.Empty:
-            await asyncio.sleep(0.250)
+        prio, entry = await get_next_command( self ) 
+        if entry is None:
             continue
-
-        if entry == "STOP":
+        elif entry == "STOP":
+            # Shutding down
             break
-
-        if self.writer_queue.qsize() > self.statistics._MaxLoad:
-            self.statistics._MaxLoad = self.writer_queue.qsize()
 
         data = json.loads(entry)
         self.log.logging("TransportZigpy", "Debug", "got command %s" % data["cmd"], )
 
         try:
-            if data["cmd"] == "PERMIT-TO-JOIN":
-                duration = data["datas"]["Duration"]
-                if duration == 0xFF:
-                    duration = 0xFE
-                await self.app.permit(time_s=duration)
-            elif data["cmd"] == "SET-TX-POWER":
-                await self.app.set_tx_power(data["datas"]["Param1"])
-            elif data["cmd"] == "SET-LED":
-                await self.app.set_led(data["datas"]["Param1"])
-            elif data["cmd"] == "SET-CERTIFICATION":
-                await self.app.set_certification(data["datas"]["Param1"])
-            elif data["cmd"] == "GET-TIME":
-                await self.app.get_time_server()
-            elif data["cmd"] == "SET-TIME":
-                await self.app.set_time_server( data["datas"]["Param1"] )
-            elif data["cmd"] == "SET-EXTPANID":
-                self.app.set_extended_pan_id(data["datas"]["Param1"])
-            elif data["cmd"] == "SET-CHANNEL":
-                self.app.set_channel(data["datas"]["Param1"])
-            elif   data["cmd"] in NATIVE_COMMANDS_MAPPING:
-                await native_commands(self, data["cmd"], data["datas"] )
-            elif data["cmd"] == "RAW-COMMAND":
-                self.log.logging( "TransportZigpy", "Debug", "RAW-COMMAND: %s" %properyly_display_data( data["datas"]) )
-                                 
-                await process_raw_command(self, data["datas"], AckIsDisable=data["ACKIsDisable"], Sqn=data["Sqn"])
+            await dispatch_command( self, data)
 
         except DeliveryError:
             self.log.logging(
@@ -187,6 +158,40 @@ async def worker_loop(self):
 
     self.log.logging("TransportZigpy", "Debug", "ZigyTransport: writer_thread Thread stop.")
 
+async def get_next_command( self ):
+    try:
+        prio, entry = self.writer_queue.get(False)
+    except queue.Empty:
+        await asyncio.sleep(0.100)
+        return None, None
+    return prio, entry
+
+async def dispatch_command(self, data):
+
+    if data["cmd"] == "PERMIT-TO-JOIN":
+        duration = data["datas"]["Duration"]
+        if duration == 0xFF:
+            duration = 0xFE
+        await self.app.permit(time_s=duration)
+    elif data["cmd"] == "SET-TX-POWER":
+        await self.app.set_tx_power(data["datas"]["Param1"])
+    elif data["cmd"] == "SET-LED":
+        await self.app.set_led(data["datas"]["Param1"])
+    elif data["cmd"] == "SET-CERTIFICATION":
+        await self.app.set_certification(data["datas"]["Param1"])
+    elif data["cmd"] == "GET-TIME":
+        await self.app.get_time_server()
+    elif data["cmd"] == "SET-TIME":
+        await self.app.set_time_server( data["datas"]["Param1"] )
+    elif data["cmd"] == "SET-EXTPANID":
+        self.app.set_extended_pan_id(data["datas"]["Param1"])
+    elif data["cmd"] == "SET-CHANNEL":
+        self.app.set_channel(data["datas"]["Param1"])
+    elif   data["cmd"] in NATIVE_COMMANDS_MAPPING:
+        await native_commands(self, data["cmd"], data["datas"] )
+    elif data["cmd"] == "RAW-COMMAND":
+        self.log.logging( "TransportZigpy", "Debug", "RAW-COMMAND: %s" %properyly_display_data( data["datas"]) )
+        await process_raw_command(self, data["datas"], AckIsDisable=data["ACKIsDisable"], Sqn=data["Sqn"])
 
 async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
     # data = {
@@ -220,11 +225,14 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
         t_start = 1000 * time.time()
 
     if NwkId in (0xffff, 0xfffe, 0xfffd, 0xfffc, 0xfffb): # Broadcast
+        enableAck = False
         result, msg = await self.app.broadcast( Profile, Cluster, sEp, dEp, 0x0, 0x30, sequence, payload, )
 
     if addressmode == 0x01:
         # Group Mode
-        result, msg = await self.app.mrequest(NwkId, Profile, Cluster, sEp, sequence, payload)
+        enableAck = False
+        destination = t.AddrModeAddress(mode=t.AddrMode.Group, address=NwkId)
+        result, msg = await self.app.mrequest(destination, Profile, Cluster, sEp, sequence, payload)
         
     elif addressmode in (0x02, 0x07):
         # Short
