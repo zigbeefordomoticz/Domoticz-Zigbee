@@ -6,7 +6,7 @@
 [![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/pipiche38/Domoticz-Zigate.svg)](http://isitmaintained.com/project/pipiche38/Domoticz-Zigate "Average time to resolve an issue")
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://paypal.me/pipiche "Donate via PayPal")
 
-[![CodeFactor](https://www.codefactor.io/repository/github/pipiche38/domoticz-zigate/badge/beta)](https://www.codefactor.io/repository/github/pipiche38/domoticz-zigate/overview/beta)
+[![CodeFactor](https://www.codefactor.io/repository/github/zigbeefordomoticz/domoticz-zigbee/badge/beta)](https://www.codefactor.io/repository/github/pipiche38/domoticz-zigate/overview/beta)
 
 ## Zigbee for Domoticz
 
@@ -24,9 +24,10 @@ If you cannot be on Domoticz 2020.x or above, please use the 'stable' branch whi
 ### Tested Hardware Coordinatoros
 
 The plugin has been full developpped on [Zigate](https://zigate.fr) controller and in closed relationship with the [Zigate](https://zigate.fr) manufactuer.
-Since late 2021 where we have stated opening the plugin to further brands of Coordinators and we have focussed on the [zzh](https://electrolama.com/projects/zig-a-zig-ah/) from [Electrolama](https://electrolama.com), thanks to their sponsorship.
+Since late 2021 where we have stated opening the plugin to further brands of Coordinators and we have focussed on the [zzh](https://electrolama.com/projects/zig-a-zig-ah/) from [Electrolama](https://electrolama.com), thanks to their sponsorship. And a big thanks to @puddly and @hedda from the zigpy team.
 
 Any Texas Instruments CC2531, CC13x2, CC26x2 adapters based on the [Zigbee Network Processors](http://dev.ti.com/tirex/content/simplelink_zigbee_sdk_plugin_2_20_00_06/docs/zigbee_user_guide/html/zigbee/introduction.html ) should be supported, more information could be found on [zigpy-znp](https://github.com/zigpy/zigpy-znp) which provided the layer to interface with the coordinator.
+
 You can also find a list of [Supported Adapters](https://www.zigbee2mqtt.io/guide/adapters/#recommended) which also works with [zigpy-znp](https://github.com/zigpy/zigpy-znp) and so should work with the plugin
 
 ## LIMITATIONS
