@@ -697,7 +697,7 @@ def legrandReenforcement(self, NWKID):
         if cmd == "None":
             continue
 
-        if self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE:
+        if self.busy or self.ControllerLink.loadTransmit() > MAX_LOAD_ZIGATE:
             return True
 
         if cmd not in self.ListOfDevices[NWKID]["Legrand"]:

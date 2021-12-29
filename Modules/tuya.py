@@ -255,7 +255,7 @@ def pollingTuya(self, key):
     The frequency is defined in the pollingSchneider parameter (in number of seconds)
     """
 
-    # if  ( self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE):
+    # if  ( self.busy or self.ControllerLink.loadTransmit() > MAX_LOAD_ZIGATE):
     #    return True
 
     return False

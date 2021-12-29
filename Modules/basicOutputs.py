@@ -499,16 +499,16 @@ def removeZigateDevice(self, IEEE):
     if mainPoweredDevice(self, nwkid):
         ParentAddr = IEEE
     else:
-        if self.ZigateIEEE is None:
+        if self.ControllerIEEE is None:
             self.log.logging(
                 "BasicOutput",
                 "Error",
-                "Zigae IEEE unknown: %s" % self.ZigateIEEE,
+                "Zigae IEEE unknown: %s" % self.ControllerIEEE,
                 None,
                 {"Error code": "BOUTPUTS-REMOVE-01"},
             )
             return None
-        ParentAddr = self.ZigateIEEE
+        ParentAddr = self.ControllerIEEE
 
     ChildAddr = IEEE
     return zigate_remove_device(self, ParentAddr, ChildAddr)

@@ -28,10 +28,10 @@ class IAS_Zone_Management:
         self.tryHB = 0
         self.wip = []
         self.HB = 0
-        self.ZigateComm = ZigateComm
-        self.ZigateIEEE = None
+        self.ControllerLink = ZigateComm
+        self.ControllerIEEE = None
         if ZigateIEEE:
-            self.ZigateIEEE = ZigateIEEE
+            self.ControllerIEEE = ZigateIEEE
         self.pluginconf = pluginconf
         self.log = log
         self.zigbee_communitation = zigbee_communitation
@@ -48,8 +48,8 @@ class IAS_Zone_Management:
         #datas = addr_mode + key + EPin + EPout + clusterID
         #datas += direction + manuf_spec + manuf_id
         #datas += lenght + attribute + data_type + data
-        # Domoticz.Log("__write_attribute : %s" %self.ZigateComm)
-        #self.ZigateComm.sendData("0110", datas, ackIsDisabled=False)
+        # Domoticz.Log("__write_attribute : %s" %self.ControllerLink)
+        #self.ControllerLink.sendData("0110", datas, ackIsDisabled=False)
         #zcl_write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled=False )
         write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled=False )
 
@@ -84,18 +84,18 @@ class IAS_Zone_Management:
         #    + "%02x" % (lenAttr)
         #    + Attr
         #)
-        #self.ZigateComm.sendData("0100", datas, ackIsDisabled=False)
+        #self.ControllerLink.sendData("0100", datas, ackIsDisabled=False)
         zcl_read_attribute(self, addr, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, lenAttr, Attr, ackIsDisabled=False)
 
     def setZigateIEEE(self, ZigateIEEE):
         
         self.logging("Debug", "setZigateIEEE - Set Zigate IEEE: %s" % ZigateIEEE)
-        self.ZigateIEEE = ZigateIEEE
+        self.ControllerIEEE = ZigateIEEE
 
     def setIASzoneControlerIEEE(self, key, Epout):
 
         self.logging("Debug", "setIASzoneControlerIEEE for %s allow: %s" % (key, Epout))
-        if not self.ZigateIEEE:
+        if not self.ControllerIEEE:
             self.logging("Error", "readConfirmEnroll - Zigate IEEE not yet known")
             return
 
@@ -104,13 +104,13 @@ class IAS_Zone_Management:
         cluster_id = "%04x" % 0x0500
         attribute = "%04x" % 0x0010
         data_type = "F0"  # ZigBee_IeeeAddress = 0xf0
-        data = str(self.ZigateIEEE)
+        data = str(self.ControllerIEEE)
         self.__write_attribute(key, ZIGATE_EP, Epout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
 
 
     def readConfirmEnroll(self, key, Epout):
 
-        if not self.ZigateIEEE:
+        if not self.ControllerIEEE:
             self.logging("Error", "readConfirmEnroll - Zigate IEEE not yet known")
             return
         if key not in self.devices and Epout not in self.devices[key]:
@@ -124,7 +124,7 @@ class IAS_Zone_Management:
 
     def readConfirmIEEE(self, key, Epout):
 
-        if not self.ZigateIEEE:
+        if not self.ControllerIEEE:
             self.logging("Error", "readConfirmEnroll - Zigate IEEE not yet known")
             return
         if key not in self.devices and Epout not in self.devices[key]:
@@ -138,7 +138,7 @@ class IAS_Zone_Management:
     def IASZone_enroll_response_zoneIDzoneID(self, nwkid, Epout):
         """2./4.the CIE sends again a ‘response’ message to the IAS Zone device with ZoneID"""
 
-        if not self.ZigateIEEE:
+        if not self.ControllerIEEE:
             self.logging("Error", "IASZone_enroll_response_zoneIDzoneID - Zigate IEEE not yet known")
             return
         if nwkid not in self.devices and Epout not in self.devices[nwkid]:
@@ -151,7 +151,7 @@ class IAS_Zone_Management:
         zoneid = "%02x" % ZONE_ID
 
         #datas = addr_mode + nwkid + ZIGATE_EP + Epout + enroll_rsp_code + zoneid
-        #self.ZigateComm.sendData("0400", datas)
+        #self.ControllerLink.sendData("0400", datas)
         zcl_ias_zone_enroll_response(self, nwkid, ZIGATE_EP, Epout, enroll_rsp_code, zoneid)
 
     def IASWD_enroll(self, nwkid, Epout):
@@ -166,7 +166,7 @@ class IAS_Zone_Management:
 
     def IASZone_attributes(self, nwkid, Epout):
 
-        if not self.ZigateIEEE:
+        if not self.ControllerIEEE:
             self.logging("Error", "IASZone_attributes - Zigate IEEE not yet known")
             return
         if nwkid not in self.devices and Epout not in self.devices[nwkid]:
@@ -180,7 +180,7 @@ class IAS_Zone_Management:
     def IASZone_triggerenrollement(self, nwkid, Epout):
 
         self.logging("Debug", "IASZone_triggerenrollement - Addr: %s Ep: %s" % (nwkid, Epout))
-        if not self.ZigateIEEE:
+        if not self.ControllerIEEE:
             self.logging("Error", "IASZone_triggerenrollement - Zigate IEEE not yet known")
             return
         if nwkid not in self.devices:
@@ -224,7 +224,7 @@ class IAS_Zone_Management:
 
         self.logging("Debug", "receiveIASmessages - from: %s Step: %s Value: %s" % (nwkid, step, value))
 
-        if not self.ZigateIEEE:
+        if not self.ControllerIEEE:
             self.logging("Debug", "receiveIASmessages - Zigate IEEE not yet known")
             return
         if nwkid not in self.devices:
@@ -274,7 +274,7 @@ class IAS_Zone_Management:
         if len(self.wip) == 0:
             return
         self.logging("Debug", "IAS_heartbeat ")
-        if not self.ZigateIEEE:
+        if not self.ControllerIEEE:
             self.logging("Debug", "IAS_heartbeat - Zigate IEEE not yet known")
             return
 

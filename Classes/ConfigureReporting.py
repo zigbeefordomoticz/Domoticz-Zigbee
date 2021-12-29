@@ -59,7 +59,7 @@ class ConfigureReporting:
         self.zigbee_communitation = zigbee_communitation
         self.pluginconf = PluginConf
         self.DeviceConf = DeviceConf
-        self.ZigateComm = ZigateComm
+        self.ControllerLink = ZigateComm
         self.ListOfDevices = ListOfDevices
         self.Devices = Devices
         self.log = log
@@ -68,7 +68,7 @@ class ConfigureReporting:
 
         # Needed for bind
         self.IEEE2NWK = IEEE2NWK
-        self.ZigateIEEE = ZigateIEEE
+        self.ControllerIEEE = ZigateIEEE
 
         # Local
         self.target = []
@@ -89,10 +89,10 @@ class ConfigureReporting:
 
         now = int(time())
         if NWKID is None:
-            if self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE:
+            if self.busy or self.ControllerLink.loadTransmit() > MAX_LOAD_ZIGATE:
                 self.logging(
                     "Debug",
-                    "configureReporting - skip configureReporting for now ... system too busy (%s/%s) for %s" % (self.busy, self.ZigateComm.loadTransmit(), NWKID),
+                    "configureReporting - skip configureReporting for now ... system too busy (%s/%s) for %s" % (self.busy, self.ControllerLink.loadTransmit(), NWKID),
                     nwkid=NWKID,
                 )
                 return  # Will do at the next round
@@ -225,10 +225,10 @@ class ConfigureReporting:
                             )
                             continue
 
-                    if NWKID is None and (self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE):
+                    if NWKID is None and (self.busy or self.ControllerLink.loadTransmit() > MAX_LOAD_ZIGATE):
                         self.logging(
                             "Debug",
-                            "---> configureReporting - %s skip configureReporting for now ... system too busy (%s/%s) for %s" % (key, self.busy, self.ZigateComm.loadTransmit(), key),
+                            "---> configureReporting - %s skip configureReporting for now ... system too busy (%s/%s) for %s" % (key, self.busy, self.ControllerLink.loadTransmit(), key),
                             nwkid=key,
                         )
                         return  # Will do at the next round
@@ -529,7 +529,7 @@ class ConfigureReporting:
 
         # We got a global status for all attributes requested in this command
         # We need to find the Attributes related to the i_sqn
-        i_sqn = sqn_get_internal_sqn_from_app_sqn(self.ZigateComm, MsgSQN, TYPE_APP_ZCL)
+        i_sqn = sqn_get_internal_sqn_from_app_sqn(self.ControllerLink, MsgSQN, TYPE_APP_ZCL)
         self.logging("Debug", "------- - i_sqn: %0s e_sqn: %s" % (i_sqn, MsgSQN))
 
         for matchAttributeId in list(get_list_isqn_attr_datastruct(self, "ConfigureReporting", MsgSrcAddr, MsgSrcEp, MsgClusterId)):

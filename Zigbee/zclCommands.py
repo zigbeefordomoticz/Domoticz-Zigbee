@@ -496,7 +496,7 @@ def zcl_ias_zone_enroll_response(self, nwkid, EPin, EPout, response_code, zone_i
     if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
         return zcl_raw_ias_zone_enroll_response(self, nwkid, EPin, EPout, response_code, zone_id, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE)
     datas = "02" + nwkid + ZIGATE_EP + EPout + response_code + zone_id
-    self.ZigateComm.sendData("0400", datas)
+    self.ControllerLink.sendData("0400", datas)
 
 
 def zcl_ias_initiate_normal_operation_mode(self, nwkid, EPin, EPout, ackIsDisabled=DEFAULT_ACK_MODE):

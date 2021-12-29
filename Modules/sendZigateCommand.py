@@ -97,33 +97,33 @@ def send_zigatecmd_raw(self, cmd, datas, highpriority=False, ackIsDisabled=False
     #
     # Send the cmd directly to ZiGate
 
-    if self.ZigateComm is None:
+    if self.ControllerLink is None:
         self.log.logging(
             "BasicOutput", "Error", "Zigate Communication error.", None, {"Error code": "BOUTPUTS-CMDRAW-01"}
         )
         return
 
-    i_sqn = self.ZigateComm.sendData(cmd, datas, highpriority, ackIsDisabled, NwkId=NwkId)
+    i_sqn = self.ControllerLink.sendData(cmd, datas, highpriority, ackIsDisabled, NwkId=NwkId)
     if self.pluginconf.pluginConf["debugzigateCmd"]:
         self.log.logging(
             "BasicOutput",
             "Log",
             "send_zigatecmd_raw       - [%s] %s %s %s Queue Length: %s"
-            % (i_sqn, cmd, datas, NwkId, self.ZigateComm.loadTransmit()),
+            % (i_sqn, cmd, datas, NwkId, self.ControllerLink.loadTransmit()),
         )
     else:
         self.log.logging(
             "BasicOutput",
             "Debug",
             "====> send_zigatecmd_raw - [%s] %s %s %s Queue Length: %s"
-            % (i_sqn, cmd, datas, NwkId, self.ZigateComm.loadTransmit()),
+            % (i_sqn, cmd, datas, NwkId, self.ControllerLink.loadTransmit()),
         )
-    if self.ZigateComm.loadTransmit() > 15:
+    if self.ControllerLink.loadTransmit() > 15:
         self.log.logging(
             "BasicOutput",
             "Log",
             "WARNING - send_zigatecmd : [%s] %s %18s %s ZigateQueue: %s"
-            % (i_sqn, cmd, datas, NwkId, self.ZigateComm.loadTransmit()),
+            % (i_sqn, cmd, datas, NwkId, self.ControllerLink.loadTransmit()),
         )
 
     return i_sqn
@@ -285,5 +285,5 @@ def zigpy_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payloa
         % ( data['Profile'], data['Cluster'], data['TargetNwk'], data['TargetEp'], data['SrcEp'],  data['payload'])
     )
 
-    i_sqn = self.ZigateComm.sendData( "RAW-COMMAND", data)
+    i_sqn = self.ControllerLink.sendData( "RAW-COMMAND", data)
     return 

@@ -36,7 +36,7 @@ class NetworkMap:
     def __init__(self, zigbee_communitation, PluginConf, ZigateComm, ListOfDevices, Devices, HardwareID, log):
         self.zigbee_communitation = zigbee_communitation
         self.pluginconf = PluginConf
-        self.ZigateComm = ZigateComm
+        self.ControllerLink = ZigateComm
         self.ListOfDevices = ListOfDevices
         self.Devices = Devices
         self.HardwareID = HardwareID
@@ -408,7 +408,7 @@ def LQIreq(self, nwkid="0000"):
 
     self.logging("Debug", "zdp_nwk_lqi_request %s" % datas)
     zdp_nwk_lqi_request( self, nwkid, "%02x" %index)
-    #self.ZigateComm.sendData("004E", datas)
+    #self.ControllerLink.sendData("004E", datas)
 
 
 def LQIresp_decoding(self, MsgData):

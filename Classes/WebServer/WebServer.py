@@ -110,9 +110,9 @@ class WebServer(object):
         self.WebUsername = WebUserName
         self.WebPassword = WebPassword
         self.pluginconf = PluginConf
-        self.zigatedata = ZigateData
+        self.ControlerData = ZigateData
         self.adminWidget = adminWidgets
-        self.ZigateComm = ZigateComm
+        self.ControllerLink = ZigateComm
         self.statistics = Statistics
         self.pluginParameters = PluginParameters
         self.networkmap = None
@@ -129,7 +129,7 @@ class WebServer(object):
         self.DeviceConf = DeviceConf
         self.Devices = Devices
 
-        self.ZigateIEEE = None
+        self.ControllerIEEE = None
 
         self.restart_needed = {"RestartNeeded": 0}
         self.homedirectory = HomeDirectory
@@ -161,7 +161,7 @@ class WebServer(object):
 
     def setZigateIEEE(self, ZigateIEEE):
 
-        self.ZigateIEEE = ZigateIEEE
+        self.ControllerIEEE = ZigateIEEE
 
     def rest_plugin_health(self, verb, data, parameters):
 
@@ -211,7 +211,7 @@ class WebServer(object):
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == "GET":
             if self.pluginParameters["Mode2"] != "None":
-                self.zigatedata["startZigateNeeded"] = True
+                self.ControlerData["startZigateNeeded"] = True
                 # start_Zigate( self )
                 sendZigateCmd(self, "0002", "00")  # Force Zigate to Normal mode
                 sendZigateCmd(self, "0011", "")  # Software Reset
@@ -224,8 +224,8 @@ class WebServer(object):
         _response = prepResponseMessage(self, setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == "GET":
-            if self.zigatedata:
-                _response["Data"] = json.dumps(self.zigatedata, sort_keys=True)
+            if self.ControlerData:
+                _response["Data"] = json.dumps(self.ControlerData, sort_keys=True)
             else:
                 fake_zigate = {
                     "Firmware Version": "fake - 0310",
@@ -401,15 +401,15 @@ class WebServer(object):
             Statistics["APSFailure"] = self.statistics._APSFailure
             Statistics["APSAck"] = self.statistics._APSAck
             Statistics["APSNck"] = self.statistics._APSNck
-            Statistics["CurrentLoad"] = self.ZigateComm.loadTransmit()
+            Statistics["CurrentLoad"] = self.ControllerLink.loadTransmit()
             Statistics["MaxLoad"] = self.statistics._MaxLoad
             Statistics["StartTime"] = self.statistics._start
 
             Statistics["MaxApdu"] = self.statistics._MaxaPdu
             Statistics["MaxNpdu"] = self.statistics._MaxnPdu
 
-            Statistics["ForwardedQueueCurrentSize"] = self.ZigateComm.get_forwarder_queue()
-            Statistics["WriterQueueCurrentSize"] = self.ZigateComm.get_writer_queue()
+            Statistics["ForwardedQueueCurrentSize"] = self.ControllerLink.get_forwarder_queue()
+            Statistics["WriterQueueCurrentSize"] = self.ControllerLink.get_writer_queue()
             
             _nbitems = len(self.statistics.TrendStats)
             minTS = 0
@@ -732,9 +732,9 @@ class WebServer(object):
                     del self.IEEE2NWK[ieee]
 
                 # for a remove in case device didn't send the leave
-                if "IEEE" in self.zigatedata and ieee:
+                if "IEEE" in self.ControlerData and ieee:
                     # uParrentAddress + uChildAddress (uint64)
-                    sendZigateCmd(self, "0026", self.zigatedata["IEEE"] + ieee)
+                    sendZigateCmd(self, "0026", self.ControlerData["IEEE"] + ieee)
 
                 action = {"Name": "Device %s/%s removed" % (nwkid, ieee)}
                 _response["Data"] = json.dumps(action, sort_keys=True)

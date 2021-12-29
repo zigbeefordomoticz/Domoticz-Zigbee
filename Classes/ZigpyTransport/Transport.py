@@ -28,8 +28,8 @@ class ZigpyTransport(object):
 
         self.version = None
         self.Firmwareversion = None
-        self.ZigateIEEE = None
-        self.ZigateNWKID = None
+        self.ControllerIEEE = None
+        self.ControllerNWKID = None
         self.ZigateExtendedPanId = None
         self.ZigatePANId = None
         self.ZigateChannel = None

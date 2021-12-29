@@ -37,7 +37,7 @@ class NetworkEnergy:
     def __init__(self, PluginConf, ZigateComm, ListOfDevices, Devices, HardwareID, log):
 
         self.pluginconf = PluginConf
-        self.ZigateComm = ZigateComm
+        self.ControllerLink = ZigateComm
         self.ListOfDevices = ListOfDevices
         self.Devices = Devices
         self.HardwareID = HardwareID
