@@ -9,13 +9,13 @@ from Modules.zigateConsts import ADDRESS_MODE
 from Zigbee.zclDecoders import zcl_decoders
 from Zigbee.zdpDecoders import zdp_decoders
 
-
 def decode8002_and_process(self, frame):
 
     ProfileId, SrcNwkId, SrcEndPoint, ClusterId, Payload = extract_nwk_infos_from_8002(frame)
-    self.log.logging("Transport8002", "Debug", "decode8002_and_process ProfileId: %s %s %s" % (SrcNwkId, ProfileId, frame))
-    self.log.logging("Transport8002", "Debug", "decode8002_and_process ProfileID: %s NwkId: %s Ep: %s Cluster: %s Payload: %s" % (ProfileId, SrcNwkId, SrcEndPoint, ClusterId, Payload))
-
+    self.log.logging("Transport8002", "Debug", "decode8002_and_process ProfileId: %04x %s %s" % (
+        int(ProfileId,16), SrcNwkId, frame))
+    self.log.logging("Transport8002", "Debug", "decode8002_and_process ProfileID: %04x NwkId: %s Ep: %s Cluster: %s Payload: %s" % (
+        int(ProfileId,16), SrcNwkId, SrcEndPoint, ClusterId, Payload))
 
     if SrcNwkId is None:
         return frame
@@ -25,10 +25,8 @@ def decode8002_and_process(self, frame):
         self.log.logging("Transport8002", "Debug", "decode8002_and_process return ZDP frame: %s" % frame)
         return frame
 
-    if ProfileId == "0104":
-        frame = zcl_decoders(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame)
-        self.log.logging("Transport8002", "Debug", "decode8002_and_process return ZCL frame: %s" % frame)
-        return frame
+    frame = zcl_decoders(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame)
+    self.log.logging("Transport8002", "Debug", "decode8002_and_process return ZCL frame: %s" % frame)
     return frame
 
 
