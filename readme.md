@@ -1,12 +1,12 @@
 # Zigbee for Domoticz a Zigbee for Domoticz
 
-![zigate.fr](https://github.com/pipiche38/Domoticz-Zigate-Wiki/blob/master/Images/ZiGate.png)
+![Zigbee for Domoticz](https://github.com/zigbeefordomoticz/Domoticz-Zigbee/blob/zigpy/images/Z4D.png)
 
-[![Percentage of issues still open](http://isitmaintained.com/badge/open/pipiche38/Domoticz-Zigate.svg)](http://isitmaintained.com/project/pipiche38/Domoticz-Zigate "Percentage of issues still open")
-[![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/pipiche38/Domoticz-Zigate.svg)](http://isitmaintained.com/project/pipiche38/Domoticz-Zigate "Average time to resolve an issue")
+[![Percentage of issues still open](http://isitmaintained.com/badge/open/zigbeefordomoticz/Domoticz-Zigate.svg)](http://isitmaintained.com/project/zigbeefordomoticz/Domoticz-Zigate "Percentage of issues still open")
+[![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/zigbeefordomoticz/Domoticz-Zigate.svg)](http://isitmaintained.com/project/zigbeefordomoticz/Domoticz-Zigate "Average time to resolve an issue")
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://paypal.me/pipiche "Donate via PayPal")
 
-[![CodeFactor](https://www.codefactor.io/repository/github/pipiche38/domoticz-zigate/badge/beta)](https://www.codefactor.io/repository/github/pipiche38/domoticz-zigate/overview/beta)
+[![CodeFactor](https://www.codefactor.io/repository/github/zigbeefordomoticz/domoticz-zigate/badge/beta)](https://www.codefactor.io/repository/github/zigbeefordomoticz/domoticz-zigate/overview/beta)
 
 ## Zigbee for Domoticz
 
@@ -35,7 +35,7 @@ You can also find a list of [Supported Adapters](https://www.zigbee2mqtt.io/guid
 
 ## Documentation
 
-Documentation are available on the GitHub [Wiki](https://github.com/pipiche38/Domoticz-Zigate-Wiki "Wiki")
+Documentation are available on the GitHub [Wiki](https://github.com/zigbeefordomoticz/Domoticz-Zigate-Wiki "Wiki")
 
 ## Support
 
