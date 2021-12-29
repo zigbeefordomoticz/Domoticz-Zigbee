@@ -4,9 +4,9 @@
 # Author: zaraki673 & pipiche38
 #
 """
-<plugin key="Zigate" name="Zigate plugin (zigpy enabled)" author="zaraki673 & pipiche38" version="6.0">
+<plugin key="Zigate" name="Zigbee for domoticz plugin (zigpy enabled)" author="pipiche38" version="6.0">
     <description>
-        <h1> Plugin ZiGate</h1><br/>
+        <h1> Plugin Zigbee for domoticz</h1><br/>
             <br/><h2> Informations</h2><br/>
                 <ul style="list-style-type:square">
                     <li>&Documentations : &<a href="https://github.com/pipiche38/Domoticz-Zigate-Wiki/blob/master/en-eng/Home.md">English wiki</a>|<a href="https://github.com/pipiche38/Domoticz-Zigate-Wiki/blob/master/fr-fr/Home.md">Wiki Français</a></li>
@@ -17,16 +17,16 @@
     </description>
     <params>
         <param field="Mode1" label="Zigate Model" width="75px" required="true" default="None">
-            <description><br/><h3>ZiGate definition</h3><br/>Select the ZiGate version : ZiGate (V1) or ZiGate+ (V2)</description>
+            <description><br/><h3>Zigbee controller definition</h3><br/>Select the Zigbee radio controller version : ZiGate (V1), ZiGate+ (V2), Texas Instrument ZNP</description>
             <options>
                 <option label="ZiGate"  value="V1"/>
                 <option label="ZiGate+" value="V2"/>
-                <option label="Zigate (via zigpy)" value="ZigpyZiGate"/>
+                <option label="Zigate (via zigpy for dev ONLY)" value="ZigpyZiGate"/>
                 <option label="Texas Instruments ZNP (via zigpy)" value="ZigpyZNP"/>
             </options>
         </param>
         <param field="Mode2" label="Zigate Type" width="75px" required="true" default="None">
-            <description><br/>Select the ZiGate type : USB, DIN, Pi, TCPIP (Wifi, Ethernet)</description>
+            <description><br/>Select the Radio Controller connection type : USB, DIN, Pi, TCPIP (Wifi, Ethernet)</description>
             <options>
                 <option label="USB"   value="USB" />
                 <option label="DIN"   value="DIN" />
@@ -36,13 +36,13 @@
             </options>
         </param>
         <param field="SerialPort" label="Serial Port" width="150px" required="true" default="/dev/ttyUSB0" >
-            <description><br/>Set the serial port where the ZiGate is connected (/dev/ttyUSB0 for example)</description>
+            <description><br/>Set the serial port where the Radio Controller is connected (/dev/ttyUSB0 for example)</description>
         </param>
         <param field="Address" label="IP" width="150px" required="true" default="0.0.0.0">
-            <description><br/>Set the ZiGate IP adresse (0.0.0.0 for none TCPIP ZiGates)</description>
+            <description><br/>Set the Radio Controller IP adresse (0.0.0.0 if not applicable)</description>
         </param>
         <param field="Port" label="Port" width="150px" required="true" default="9999">
-            <description><br/>Set the ZiGate Port (9999 by default)</description>
+            <description><br/>Set the Radio Controller Port (9999 by default)</description>
         </param>
         <param field="Mode4" label="WebUI port" width="75px" required="true" default="9440" >
             <description><br/><h3>Plugin definition</h3><br/>Set the plugin Dashboard port (9440 by default, None to disable)<br/>
@@ -125,9 +125,9 @@ from Zigbee.zdpCommands import zdp_get_permit_joint_status
 from Modules.zigateCommands import zigate_set_mode
 
 
-from zigpy_zigate.config import CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE
-from Classes.ZigpyTransport.Transport import ZigpyTransport
-import asyncio
+#from zigpy_zigate.config import CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE
+#from Classes.ZigpyTransport.Transport import ZigpyTransport
+#import asyncio
 
 
 
