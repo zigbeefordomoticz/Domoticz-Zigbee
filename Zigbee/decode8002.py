@@ -25,6 +25,7 @@ def decode8002_and_process(self, frame):
         self.log.logging("Transport8002", "Debug", "decode8002_and_process return ZDP frame: %s" % frame)
         return frame
 
+    # Z-Stack doesn't provide Profile Information, so we should assumed that if it is not 0x0000 (ZDP) it is then ZCL
     frame = zcl_decoders(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame)
     self.log.logging("Transport8002", "Debug", "decode8002_and_process return ZCL frame: %s" % frame)
     return frame
