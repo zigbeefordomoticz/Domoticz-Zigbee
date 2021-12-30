@@ -4,16 +4,15 @@
 # Author: pipiche38
 #
 
-import Domoticz
-import socket
 import select
+import socket
 import time
 
-from threading import Semaphore
+from Classes.ZigateTransport.readDecoder import decode_and_split_message
+from Classes.ZigateTransport.tools import (handle_thread_error,
+                                           stop_waiting_on_queues)
 from Modules.zigateConsts import MAX_SIMULTANEOUS_ZIGATE_COMMANDS
 
-from Classes.Transport.tools import stop_waiting_on_queues, handle_thread_error
-from Classes.Transport.readDecoder import decode_and_split_message
 
 # Manage TCP connection
 def open_tcpip(self):

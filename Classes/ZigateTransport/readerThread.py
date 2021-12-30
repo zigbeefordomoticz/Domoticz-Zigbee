@@ -9,11 +9,12 @@ from threading import Thread
 
 import Domoticz
 import serial
-from Classes.Transport.readSerial import (open_serial,
-                                          serial_read_write_from_zigate,
-                                          serial_reset_line_in,
-                                          serial_reset_line_out)
-from Classes.Transport.readwriteTcp import open_tcpip, tcpip_read_from_zigate
+from Classes.ZigateTransport.readSerial import (open_serial,
+                                                serial_read_write_from_zigate,
+                                                serial_reset_line_in,
+                                                serial_reset_line_out)
+from Classes.ZigateTransport.readwriteTcp import (open_tcpip,
+                                                  tcpip_read_from_zigate)
 
 
 def open_zigate_and_start_reader(self, zigate_mode):

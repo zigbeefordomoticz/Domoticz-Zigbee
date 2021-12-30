@@ -4,12 +4,11 @@
 # Author: pipiche38
 #
 
-import Domoticz
-
 import queue
 from threading import Thread
-from Classes.Transport.tools import handle_thread_error
-from Classes.Transport.instrumentation import time_spent_forwarder
+
+from Classes.ZigateTransport.instrumentation import time_spent_forwarder
+from Classes.ZigateTransport.tools import handle_thread_error
 
 
 def start_forwarder_thread(self):

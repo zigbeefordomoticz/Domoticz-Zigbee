@@ -4,10 +4,10 @@
 # Author: pipiche38
 #
 
-from Classes.Transport.tools import release_command, print_listofcommands
-from Classes.Transport.sqnMgmt import sqn_get_internal_sqn_from_aps_sqn
-
 import time
+
+from Classes.ZigateTransport.sqnMgmt import sqn_get_internal_sqn_from_aps_sqn
+from Classes.ZigateTransport.tools import print_listofcommands, release_command
 
 
 def decode8011(self, decoded_frame):

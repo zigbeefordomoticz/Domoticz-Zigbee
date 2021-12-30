@@ -7,13 +7,10 @@
 
 import json
 import queue
-import select
-import socket
 import time
 from threading import Thread
 
-import Domoticz
-from Classes.Transport.tools import handle_thread_error, release_command
+from Classes.ZigateTransport.tools import handle_thread_error, release_command
 from Modules.tools import is_hex
 from Modules.zigateConsts import ZIGATE_MAX_BUFFER_SIZE
 

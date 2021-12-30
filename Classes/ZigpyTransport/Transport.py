@@ -5,7 +5,7 @@ from threading import Thread
 
 import zigpy.application
 import zigpy.types as t
-from Classes.Transport.sqnMgmt import sqn_init_stack
+from Classes.ZigateTransport.sqnMgmt import sqn_init_stack
 from Classes.ZigpyTransport.forwarderThread import (forwarder_thread,
                                                     start_forwarder_thread,
                                                     stop_forwarder_thread)
@@ -68,6 +68,14 @@ class ZigpyTransport(object):
     def sendData(self, cmd, datas, sqn=None, highpriority=False, ackIsDisabled=False, waitForResponseIn=False, NwkId=None):
         if self.writer_queue.qsize() > self.statistics._MaxLoad:
             self.statistics._MaxLoad = self.writer_queue.qsize()
+
+        if self.pluginconf.pluginConf["debugzigateCmd"]:
+            self.log.logging(
+                "Transport",
+                "Log",
+                "sendData       - [%s] %s %s %s Queue Length: %s"
+                % (sqn, cmd, datas, NwkId, self.writer_queue.qsize()),
+            )
 
         self.log.logging("Transport", "Debug", "===> sendData - Cmd: %s Datas: %s" % (cmd, datas))
         message = {"cmd": cmd, "datas": datas, "NwkId": NwkId, "TimeStamp": time.time(), "ACKIsDisable": ackIsDisabled, "Sqn": sqn}

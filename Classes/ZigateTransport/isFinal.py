@@ -4,8 +4,7 @@
 # Author: pipiche38
 #
 
-import Domoticz
-from Classes.Transport.tools import CMD_ONLY_STATUS, CMD_NWK_2NDBytes
+from Classes.ZigateTransport.tools import CMD_ONLY_STATUS, CMD_NWK_2NDBytes
 from Modules.zigateConsts import ADDRESS_MODE, ZIGATE_COMMANDS
 
 # These are ZiGate commands which doesn't have Ack/Nack with firmware up to 3.1c

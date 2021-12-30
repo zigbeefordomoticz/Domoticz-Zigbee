@@ -16,7 +16,7 @@ import time
 from datetime import datetime
 
 import Domoticz
-from Classes.Transport.sqnMgmt import (
+from Classes.ZigateTransport.sqnMgmt import (
     TYPE_APP_ZCL,
     TYPE_APP_ZDP,
     sqn_get_internal_sqn_from_app_sqn,

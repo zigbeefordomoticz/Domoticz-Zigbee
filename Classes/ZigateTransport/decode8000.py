@@ -4,12 +4,15 @@
 # Author: pipiche38
 #
 
-from Classes.Transport.tools import update_xPDU, print_listofcommands
-from Classes.Transport.tools import CMD_PDM_ON_HOST, ZIGATE_COMMANDS, get_isqn_from_ListOfCommands, release_command
-from Classes.Transport.sqnMgmt import sqn_add_external_sqn, TYPE_APP_ZCL, TYPE_APP_ZDP
-from Classes.Transport.isFinal import is_final_step
-
 import time
+
+from Classes.ZigateTransport.isFinal import is_final_step
+from Classes.ZigateTransport.sqnMgmt import (TYPE_APP_ZCL, TYPE_APP_ZDP,
+                                             sqn_add_external_sqn)
+from Classes.ZigateTransport.tools import (CMD_PDM_ON_HOST, ZIGATE_COMMANDS,
+                                           get_isqn_from_ListOfCommands,
+                                           print_listofcommands,
+                                           release_command, update_xPDU)
 
 
 def decode8000(self, decoded_frame):

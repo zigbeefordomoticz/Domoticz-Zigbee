@@ -7,8 +7,9 @@
 import time
 
 import serial
-from Classes.Transport.readDecoder import decode_and_split_message
-from Classes.Transport.tools import handle_thread_error, stop_waiting_on_queues
+from Classes.ZigateTransport.readDecoder import decode_and_split_message
+from Classes.ZigateTransport.tools import (handle_thread_error,
+                                           stop_waiting_on_queues)
 
 
 # Manage Serial Line

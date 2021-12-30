@@ -3,14 +3,13 @@
 #
 # Author: pipiche38
 #
-import Domoticz
-from Classes.Transport.sqnMgmt import (TYPE_APP_ZCL, TYPE_APP_ZDP,
-                                       sqn_get_internal_sqn_from_app_sqn)
-from Classes.Transport.tools import (CMD_WITH_RESPONSE,
-                                     get_nwkid_from_datas_for_zcl_command,
-                                     get_response_from_command,
-                                     is_nwkid_available, print_listofcommands,
-                                     release_command)
+
+from Classes.ZigateTransport.sqnMgmt import (TYPE_APP_ZCL, TYPE_APP_ZDP,
+                                             sqn_get_internal_sqn_from_app_sqn)
+from Classes.ZigateTransport.tools import (
+    CMD_WITH_RESPONSE, get_nwkid_from_datas_for_zcl_command,
+    get_response_from_command, is_nwkid_available, print_listofcommands,
+    release_command)
 from Modules.zigateConsts import (MAX_SIMULTANEOUS_ZIGATE_COMMANDS,
                                   ZIGATE_COMMANDS)
 
