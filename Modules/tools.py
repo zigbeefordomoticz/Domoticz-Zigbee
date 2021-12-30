@@ -82,7 +82,7 @@ def getListOfEpForCluster(self, NwkId, SearchCluster):
     In case ClusterType exists and not empty at Global Level, then just return the list of Ep for which Cluster is found
     """
     readattributeslistofep = []
-    if "Model" in self.ListOfDevices[ NwkId ] and self.ListOfDevices[ NwkId ]["Model"] not in ( "", {} ):
+    if NwkId in self.ListOfDevices and "Model" in self.ListOfDevices[ NwkId ] and self.ListOfDevices[ NwkId ]["Model"] not in ( "", {} ):
         _model = self.ListOfDevices[ NwkId ]["Model"]
         if ( _model in self.DeviceConf and "ReadAttributesEp" in self.DeviceConf[_model]):
             readattributeslistofep = self.DeviceConf[_model]["ReadAttributesEp"]
