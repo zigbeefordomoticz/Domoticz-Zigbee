@@ -49,34 +49,21 @@ Your first place to get support is via the Forums.
 
 In order to provide stability and also provide more recent development, Zigbee for Domoticz plugin has the following channels
 
-### stable (will be deprecated)
-
-Support only ZiGate V1. (not supported anymore)
-
-### stable5
-
-Support ALL ZiGate models known today and requires Domoticz 2020.x at minima
-
-### stable6
-
-Support the up coming evolutions and the non-ZiGate controllers via the zigpy layer.
-
-### beta
-
-We can open the beta channel to provide early version and to stabilize the version priori to be move to the stable channel
-
-### master ( deprecated )
-
-This channel is not maintained anymore and is not compatible to the most recent version.
-Moving from this channel to the other will required either ar restart from scratch or to do an upgrade of the Domoticz and Zigate database.
+* **stable6**: Support the up coming evolutions and the non-ZiGate controllers via the zigpy layer.
+* **beta**: We can open the beta channel to provide early version and to stabilize the version priori to be move to the stable channel
+* **stable5**: Support ALL ZiGate models known today and requires Domoticz 2020.x at minima
+* ***stable***: latest version 4.11. - Feb. 2021) deprecated
+* ***master***: latest version 3.0. - Sept. 2018) deprecated
 
 ## How to switch from one channel to the other
 
-`git pull`
+`git pull --recurse-submodules`
 
 `git checkout stable5  // will move you to the stable5 channel`
 
 `git checkout beta    // will move you to the beta channel`
+
+`git pull --recurse-submodules` // Might be required
 
 In case you need to be on stable instead of stable5
 
