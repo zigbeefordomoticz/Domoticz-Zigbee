@@ -121,6 +121,7 @@ ATTRIBUTES = {
         0x0508,
     ],
     "0b05": [0x0000],
+    "e001": [0xd011], # Tuya TS004F
     "fc01": [0x0000, 0x0001, 0x0002],  # Legrand Cluster
     "fc21": [0x0001],
     "fc40": [0x0000],  # Legrand
@@ -405,30 +406,30 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
 def ReadAttributeRequest_0000_for_pairing(self, key):
     self.log.logging("ReadAttributes", "Debug", "--> Not full scope", nwkid=key)
     self.log.logging("ReadAttributes", "Debug", "--> Build list of Attributes", nwkid=key)
-    skipModel = False
+
 
     listAttributes = []
+    ListOfEp = getListOfEpForCluster(self, key, "0000")
     # Do we Have Manufacturer
-    if self.ListOfDevices[key]["Manufacturer"] == "" and self.ListOfDevices[key]["Ep"] and self.ListOfDevices[key]["Ep"] != {}:
+    if self.ListOfDevices[key]["Manufacturer"] == "" and ListOfEp:
         self.log.logging("ReadAttributes", "Log", "Request Basic  Manufacturer via Read Attribute request: %s" % "0004", nwkid=key)
         manuf_name = [0x0004]
-        for x in self.ListOfDevices[key]["Ep"]:
+        for x in ListOfEp:
             ReadAttributeReq(self, key, ZIGATE_EP, x, "0000", manuf_name, ackIsDisabled=False, checkTime=False)
 
     # Do We have Model Name
     if (
-        not skipModel
-        and self.ListOfDevices[key]["Model"] in [{}, ""]
-        and self.ListOfDevices[key]["Ep"]
-        and self.ListOfDevices[key]["Ep"] != {}
+        self.ListOfDevices[key]["Model"] in [{}, ""]
+        and ListOfEp
     ):
         self.log.logging("ReadAttributes", "Debug", "Request Basic  Model Name via Read Attribute request: %s" % "0005", nwkid=key)
         model_name = [0x0005]
-        for x in self.ListOfDevices[key]["Ep"]:
+        for x in ListOfEp:
             ReadAttributeReq(self, key, ZIGATE_EP, x, "0000", model_name, ackIsDisabled=False, checkTime=False)
     else:
         listAttributes.append(0x0005)
 
+    skipModel = False
     # Check if Model Name should be requested
     if self.ListOfDevices[key]["Manufacturer"] == "1110":  # Profalux.
         listAttributes.append(0x0010)
@@ -443,7 +444,7 @@ def ReadAttributeRequest_0000_for_pairing(self, key):
     listAttributes = add_attributes_from_device_certified_conf(self, key, "0000", listAttributes)
     self.log.logging("ReadAttributes", "Log", "EP: %s" % self.ListOfDevices[key]["Ep"])
 
-    if self.ListOfDevices[key]["Ep"] is None or self.ListOfDevices[key]["Ep"] == {}:
+    if len(ListOfEp) == 0:
         # We don't have yet any Endpoint information , we will then try several known Endpoint, and luckly we will get some answers
         self.log.logging(
             "ReadAttributes",
