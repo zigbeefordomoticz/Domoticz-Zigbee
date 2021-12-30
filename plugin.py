@@ -461,7 +461,7 @@ class BasePlugin:
         # Connect to Zigate only when all initialisation are properly done.
         self.log.logging("Plugin", "Status", "Transport mode: %s" % self.transport)
         if self.transport in ("USB", "DIN", "V2-DIN", "V2-USB"):
-            from Classes.Transport.Transport import ZigateTransport
+            from Classes.ZigateTransport.Transport import ZigateTransport
             
             self.zigbee_communitation = "native"
             self.ControllerLink= ZigateTransport(
@@ -478,7 +478,7 @@ class BasePlugin:
             )
 
         elif self.transport in ("PI", "V2-PI"):
-            from Classes.Transport.Transport import ZigateTransport
+            from Classes.ZigateTransport.Transport import ZigateTransport
             self.pluginconf.pluginConf["ZiGateInRawMode"] = False
             switchPiZigate_mode(self, "run")
             self.zigbee_communitation = "native"
@@ -496,7 +496,7 @@ class BasePlugin:
             )
 
         elif self.transport in ("Wifi", "V2-Wifi"):
-            from Classes.Transport.Transport import ZigateTransport
+            from Classes.ZigateTransport.Transport import ZigateTransport
             self.pluginconf.pluginConf["ZiGateInRawMode"] = False
             self.zigbee_communitation = "native"
             self.ControllerLink= ZigateTransport(
@@ -514,7 +514,7 @@ class BasePlugin:
             )
 
         elif self.transport == "None":
-            from Classes.Transport.Transport import ZigateTransport
+            from Classes.ZigateTransport.Transport import ZigateTransport
             self.pluginconf.pluginConf["ZiGateInRawMode"] = False
             self.log.logging("Plugin", "Status", "Transport mode set to None, no communication.")
             self.FirmwareVersion = "031c"

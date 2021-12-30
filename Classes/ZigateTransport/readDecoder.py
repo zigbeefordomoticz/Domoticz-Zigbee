@@ -7,8 +7,7 @@
 import binascii
 import struct
 
-import Domoticz
-from Classes.Transport.handleProtocol import process_frame
+from Classes.ZigateTransport.handleProtocol import process_frame
 
 
 def decode_and_split_message(self, raw_message):

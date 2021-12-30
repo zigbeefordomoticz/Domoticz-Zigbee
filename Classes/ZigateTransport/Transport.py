@@ -12,16 +12,16 @@ from queue import PriorityQueue, Queue
 from threading import Semaphore
 
 import Domoticz
-from Classes.Transport.forwarderThread import start_forwarder_thread
-from Classes.Transport.readDecoder import decode_and_split_message
-from Classes.Transport.readerThread import (open_zigate_and_start_reader,
-                                            shutdown_reader_thread)
-from Classes.Transport.sqnMgmt import (sqn_generate_new_internal_sqn,
-                                       sqn_init_stack)
-from Classes.Transport.tools import (initialize_command_protocol_parameters,
-                                     stop_waiting_on_queues,
-                                     waiting_for_end_thread)
-from Classes.Transport.writerThread import start_writer_thread
+from Classes.ZigateTransport.forwarderThread import start_forwarder_thread
+from Classes.ZigateTransport.readDecoder import decode_and_split_message
+from Classes.ZigateTransport.readerThread import (open_zigate_and_start_reader,
+                                                  shutdown_reader_thread)
+from Classes.ZigateTransport.sqnMgmt import (sqn_generate_new_internal_sqn,
+                                             sqn_init_stack)
+from Classes.ZigateTransport.tools import (
+    initialize_command_protocol_parameters, stop_waiting_on_queues,
+    waiting_for_end_thread)
+from Classes.ZigateTransport.writerThread import start_writer_thread
 from Modules.zigateConsts import MAX_SIMULTANEOUS_ZIGATE_COMMANDS
 
 

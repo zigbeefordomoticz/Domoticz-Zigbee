@@ -8,18 +8,18 @@ import binascii
 import time
 from datetime import datetime
 
-import Domoticz
-from Classes.Transport.compatibilityMode import decode8011_31c
-from Classes.Transport.decode8000 import decode8000
-from Zigbee.decode8002 import decode8002_and_process
-from Classes.Transport.decode8011 import decode8011
-from Classes.Transport.decode8012 import decode8012_8702
-from Classes.Transport.instrumentation import time_spent_process_frame
-from Classes.Transport.tools import (CMD_PDM_ON_HOST, STANDALONE_MESSAGE,
-                                     get_isqn_from_ListOfCommands,
-                                     release_command)
+from Classes.ZigateTransport.compatibilityMode import decode8011_31c
+from Classes.ZigateTransport.decode8000 import decode8000
+from Classes.ZigateTransport.decode8011 import decode8011
+from Classes.ZigateTransport.decode8012 import decode8012_8702
+from Classes.ZigateTransport.instrumentation import time_spent_process_frame
+from Classes.ZigateTransport.tools import (CMD_PDM_ON_HOST, STANDALONE_MESSAGE,
+                                           get_isqn_from_ListOfCommands,
+                                           release_command)
 from Modules.errorCodes import ZCL_EXTENDED_ERROR_CODES
-from Modules.zigateConsts import MAX_SIMULTANEOUS_ZIGATE_COMMANDS, ZIGATE_COMMANDS
+from Modules.zigateConsts import (MAX_SIMULTANEOUS_ZIGATE_COMMANDS,
+                                  ZIGATE_COMMANDS)
+from Zigbee.decode8002 import decode8002_and_process
 
 
 @time_spent_process_frame()

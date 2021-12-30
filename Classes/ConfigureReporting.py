@@ -34,7 +34,7 @@ from Zigbee.zclCommands import (
     zcl_configure_reporting_requestv2,
 )
 
-from Classes.Transport.sqnMgmt import TYPE_APP_ZCL, sqn_get_internal_sqn_from_app_sqn
+from Classes.ZigateTransport.sqnMgmt import TYPE_APP_ZCL, sqn_get_internal_sqn_from_app_sqn
 
 MAX_ATTR_PER_REQ = 3
 CONFIGURE_REPORT_PERFORM_TIME = 21  # Reenforce will be done each xx hours

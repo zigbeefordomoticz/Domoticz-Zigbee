@@ -5,9 +5,11 @@
 #
 
 import time
-from Classes.Transport.tools import release_command, update_xPDU, print_listofcommands
-from Classes.Transport.sqnMgmt import sqn_get_internal_sqn_from_aps_sqn
-from Classes.Transport.isFinal import is_final_step
+
+from Classes.ZigateTransport.isFinal import is_final_step
+from Classes.ZigateTransport.sqnMgmt import sqn_get_internal_sqn_from_aps_sqn
+from Classes.ZigateTransport.tools import (print_listofcommands,
+                                           release_command, update_xPDU)
 
 
 def decode8012_8702(self, decoded_frame):

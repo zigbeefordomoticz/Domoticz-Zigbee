@@ -11,8 +11,6 @@
     Description: generate and handle the list of internal SQN
     
 """
-import Domoticz
-import time
 import sys
 
 # from itertools import filterfalse
