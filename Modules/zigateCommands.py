@@ -79,6 +79,8 @@ def zigate_erase_eeprom(self):
 
 def zigate_get_list_active_devices(self):
     self.log.logging( "zigateCommand", "Debug","zigate_get_list_active_devices")
+    if self.zigbee_communitation == "zigpy":
+        return
     return send_zigatecmd_raw(self, "0015", "")
    
 def zigate_set_time(self, timeUTC):
@@ -122,10 +124,14 @@ def zigate_set_channel(self, mask):
 
 def zigate_start_nwk(self):
     self.log.logging( "zigateCommand", "Debug","zigate_start_nwk")
+    if self.zigbee_communitation == "zigpy":
+        return
     return send_zigatecmd_raw(self, "0024", "")
 
 def zigate_remove_device(self, target_short_addr, extended_addr):
     self.log.logging( "zigateCommand", "Debug","zigate_remove_device %s %s" %(target_short_addr, extended_addr))
+    if self.zigbee_communitation == "zigpy":
+        return
     return send_zigatecmd_raw(self, "0026", target_short_addr + extended_addr)
 
 def zigate_set_tx_power(self, value):
