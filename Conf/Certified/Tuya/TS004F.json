@@ -25,26 +25,8 @@
 		}
 	},
 	"Type": "",
-	"bindEp": [
-		"01"
-	],
-	"ClusterToBind": [
-		"0001",
-		"0006"
-	],
-	"ConfigureReporting": {
-		"0006": {
-			"Attributes": {
-				"0000": {
-					"DataType": "10",
-					"MinInterval": "0001",
-					"MaxInterval": "012C",
-					"TimeOut": "0258",
-					"Change": "01"
-				}
-			}
-		}
-	},
+	"ClusterToBind": [],
+	"ConfigureReporting": {},
 	"ReadAttributesEp": [
 		"01"
 	],

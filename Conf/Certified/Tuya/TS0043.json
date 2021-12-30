@@ -20,9 +20,6 @@
 		}
 	},
 	"Type": "",
-	"bindEp": [
-		"01"
-	],
 	"ClusterToUnbind": [],
 	"ClusterToBind": [
 		"0006"
