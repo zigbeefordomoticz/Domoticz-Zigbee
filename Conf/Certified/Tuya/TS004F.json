@@ -45,6 +45,9 @@
 			}
 		}
 	},
+	"ReadAttributesEp": [
+		"01"
+	],
 	"ReadAttributes": {
 		"0000": [
 			"0004",
