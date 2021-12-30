@@ -69,6 +69,14 @@ class ZigpyTransport(object):
         if self.writer_queue.qsize() > self.statistics._MaxLoad:
             self.statistics._MaxLoad = self.writer_queue.qsize()
 
+        if self.pluginconf.pluginConf["debugzigateCmd"]:
+            self.log.logging(
+                "Transport",
+                "Log",
+                "sendData       - [%s] %s %s %s Queue Length: %s"
+                % (sqn, cmd, datas, NwkId, self.writer_queue.qsize()),
+            )
+
         self.log.logging("Transport", "Debug", "===> sendData - Cmd: %s Datas: %s" % (cmd, datas))
         message = {"cmd": cmd, "datas": datas, "NwkId": NwkId, "TimeStamp": time.time(), "ACKIsDisable": ackIsDisabled, "Sqn": sqn}
         self.writer_queue.put((99, str(json.dumps(message))))
