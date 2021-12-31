@@ -59,6 +59,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         dev = None
         try:
             dev = super().get_device(ieee, nwk)
+            
         except KeyError:
             if self.callBackGetDevice:
                 dev = self.callBackGetDevice(ieee, nwk)
@@ -66,12 +67,13 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         if dev is not None:
             # logging.debug("found device dev: %s" % (str(dev)))
             return dev
-
+        
+        logging.debug("get_device raise KeyError ieee: %s nwk: %s !!" %( ieee, nwk))
         raise KeyError
 
     def get_zigpy_version(self):
         # This is a fake version number. This is just to inform the plugin that we are using ZNP over Zigpy
-
+        logging.debug("get_zigpy_version ake version number. !!")
         return self.version
 
     def handle_message(
@@ -84,8 +86,10 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         message: bytes,
     ) -> None:
         if sender.nwk == 0x0000:
-            self.log.logging("TransportZigpy", "Error", "handle_message from Controller %s!!" % str(sender.nwk))
-            return super().handle_message(sender, profile, cluster, src_ep, dst_ep, message)
+            self.log.logging("TransportZigpy", "Error", "handle_message from Controller Sender: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
+                str(sender.nwk), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8")))
+            if cluster != 0x8031:
+                return super().handle_message(sender, profile, cluster, src_ep, dst_ep, message)
 
         # Domoticz.Log("handle_message %s" %(str(profile)))
         if sender.nwk is not None or sender.ieee is not None:

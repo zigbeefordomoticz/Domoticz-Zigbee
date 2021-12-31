@@ -79,12 +79,18 @@ class LoggingManagement:
             requests_logger.setLevel(logging.DEBUG) 
             requests_logger = logging.getLogger('zigpy_znp') 
             requests_logger.setLevel(logging.DEBUG)
+            requests_logger = logging.getLogger('AppZnp') 
+            requests_logger.setLevel(logging.DEBUG)
+
 
         elif 'debugTransportZigpyZigate' in self.pluginconf.pluginConf and self.pluginconf.pluginConf['debugTransportZigpyZigate']:
             requests_logger = logging.getLogger('zigpy') 
             requests_logger.setLevel(logging.DEBUG) 
             requests_logger = logging.getLogger('zigpy_zigate') 
             requests_logger.setLevel(logging.DEBUG)
+            requests_logger = logging.getLogger('AppZigate') 
+            requests_logger.setLevel(logging.DEBUG)
+
             
         else:
             requests_logger = logging.getLogger('zigpy') 
@@ -93,7 +99,7 @@ class LoggingManagement:
             requests_logger.setLevel(logging.WARNING)
             requests_logger = logging.getLogger('zigpy_zigate') 
             requests_logger.setLevel(logging.WARNING)
-
+            
 
 
     def openLogFile(self):

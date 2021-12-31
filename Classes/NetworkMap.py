@@ -398,6 +398,7 @@ def LQIreq(self, nwkid="0000"):
         self.Neighbours[nwkid]["Status"] = "WaitResponse2"
 
     if (
+        nwkid != "0000" and 
         nwkid in self.ListOfDevices
         and "Health" in self.ListOfDevices[nwkid]
         and self.ListOfDevices[nwkid]["Health"] == "Not Reachable"
