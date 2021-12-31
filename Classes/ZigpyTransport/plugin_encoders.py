@@ -24,6 +24,10 @@ def build_plugin_8015_frame_content(
     # Get list of active devices
     pass
 
+def build_plugin_0302_frame_content(self,):
+    # That correspond to PDM loaded on ZiGate (after a restart or a power Off/On)
+    return encapsulate_plugin_frame("0302", "", "%02x" % 0x00)
+    
 
 def build_plugin_8009_frame_content(self, radiomodule):
     # addr = MsgData[0:4]
