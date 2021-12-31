@@ -61,9 +61,16 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
             dev = super().get_device(ieee, nwk)
         except KeyError:
             if self.callBackGetDevice:
+                if nwk is not None:
+                    nwk = nwk.serialize()[::-1].hex()
+                if ieee is not None:
+                    ieee = "%016x" % t.uint64_t.deserialize(ieee.serialize())[0]
+                self.log.logging("TransportZigpy", "Debug", "get_device calling  callBackGetDevice %s %s" % (ieee,nwk))
                 zfd_dev = self.callBackGetDevice(ieee, nwk)
                 if zfd_dev is not None:
-                    dev = zigpy.device.Device(self, zfd_dev.ieee, zfd_dev.nwk)
+                    (nwk, ieee) = zfd_dev
+                    dev = zigpy.device.Device(self, ieee, nwk) 
+                    self.log.logging("TransportZigpy", "Debug", "get_device %s" % dev)
 
         if dev is not None:
             # logging.debug("found device dev: %s" % (str(dev)))
@@ -102,7 +109,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
                 addr = sender.nwk.serialize()[::-1].hex()
                 #self.log.logging("TransportZigpy", "Debug", "=====> sender.nwk %s - %s" % (sender.nwk, addr))
             elif sender.ieee is not None:
-                addr = "%016x" % t.uint64_t.deserialize(self.app.ieee.serialize())[0]
+                addr = "%016x" % t.uint64_t.deserialize(sender.ieee.serialize())[0]
                 addr_mode = 0x03
             if sender.lqi is None:
                 sender.lqi = 0x00

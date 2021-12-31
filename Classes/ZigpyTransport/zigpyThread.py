@@ -84,9 +84,9 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channe
 
     # Retreive Active Ep and Simple Descriptor of Controller
     # self.endpoints: dict[int, zdo.ZDO | zigpy.endpoint.Endpoint] = {0: self.zdo}
-    self.log.logging("TransportZigpy", "Debug", "Active Endpoint List:  %s" % str(self.app.get_device(nwk=0x0000).endpoints.keys()))
-    for ep in self.app.get_device(nwk=0x0000).endpoints.keys():
-        self.log.logging("TransportZigpy", "Debug", "Simple Descriptor:  %s" % self.app.get_device(nwk=0x0000).endpoints[ep])
+    self.log.logging("TransportZigpy", "Debug", "Active Endpoint List:  %s" % str(self.app.get_device(nwk = t.NWK(0x0000)).endpoints.keys()))
+    for ep in self.app.get_device(nwk = t.NWK(0x0000)).endpoints.keys():
+        self.log.logging("TransportZigpy", "Debug", "Simple Descriptor:  %s" % self.app.get_device(nwk = t.NWK(0x0000)).endpoints[ep])
 
     # Run forever
     await worker_loop(self)
