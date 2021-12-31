@@ -77,7 +77,7 @@ def rawaps_write_attribute_req(self, nwkid, EPin, EPout, cluster, manuf_id, manu
         payload += data
     self.log.logging("zclCommand", "Debug", "rawaps_write_attribute_req ==== payload: %s" % (payload))
 
-    raw_APS_request(self, nwkid, EPout, cluster, "0104", payload, zigate_ep=EPin, ackIsDisabled=ackIsDisabled)
+    raw_APS_request(self, nwkid, EPout, cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, ackIsDisabled=ackIsDisabled)
     return sqn
 
 
@@ -111,7 +111,7 @@ def zcl_raw_write_attributeNoResponse(self, nwkid, EPin, EPout, cluster, manuf_i
         payload += data
     self.log.logging("zclCommand", "Debug", "rawaps_write_attribute_req ==== payload: %s" % (payload))
 
-    raw_APS_request(self, nwkid, EPout, cluster, "0104", payload, zigate_ep=EPin, ackIsDisabled=ackIsDisabled)
+    raw_APS_request(self, nwkid, EPout, cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, ackIsDisabled=ackIsDisabled)
     return sqn
     
     
@@ -155,7 +155,7 @@ def zcl_raw_configure_reporting_requestv2(self, nwkid, epin, epout, cluster, dir
         # payload +=  "%04x" % struct.unpack(">H", struct.pack("H",int(x['timeOut'],16)))[0]
         self.log.logging("zclCommand", "Debug", "zcl_raw_configure_reporting_requestv2  payload: %s" % payload)
 
-    raw_APS_request(self, nwkid, epout, cluster, "0104", payload, zigate_ep=epin, ackIsDisabled=ackIsDisabled)
+    raw_APS_request(self, nwkid, epout, cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=epin, ackIsDisabled=ackIsDisabled)
     return sqn
 
 
@@ -174,7 +174,7 @@ def zcl_raw_add_group_membership(self, nwkid, epin, epout, GrpId, ackIsDisabled=
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
     payload = fcf
     payload += sqn + cmd + "%04x" % (struct.unpack(">H", struct.pack("H", int(GrpId, 16)))[0]) + "00"
-    raw_APS_request(self, nwkid, epout, cluster, "0104", payload, zigate_ep=epin, ackIsDisabled=ackIsDisabled)
+    raw_APS_request(self, nwkid, epout, cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=epin, ackIsDisabled=ackIsDisabled)
     return sqn
     
 
@@ -189,7 +189,7 @@ def zcl_raw_check_group_member_ship(self, nwkid, epin, epout, GrpId, ackIsDisabl
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
     payload = fcf
     payload += sqn + cmd + "%04x" % (struct.unpack(">H", struct.pack("H", int(GrpId, 16)))[0])
-    raw_APS_request(self, nwkid, epout, cluster, "0104", payload, zigate_ep=epin, ackIsDisabled=ackIsDisabled)
+    raw_APS_request(self, nwkid, epout, cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=epin, ackIsDisabled=ackIsDisabled)
     return sqn
 
 
@@ -211,7 +211,7 @@ def zcl_raw_look_for_group_member_ship(self, nwkid, epin, epout, nbgroup, group_
         payload += decode_endian_data( group_list[ idx : idx + 4 ], "21")
         idx += 4
 
-    raw_APS_request(self, nwkid, epout, cluster, "0104", payload, zigate_ep=epin, ackIsDisabled=ackIsDisabled)
+    raw_APS_request(self, nwkid, epout, cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=epin, ackIsDisabled=ackIsDisabled)
     return sqn
 
 
@@ -226,7 +226,7 @@ def zcl_raw_remove_group_member_ship(self, nwkid, epin, epout, GrpId, ackIsDisab
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
     payload = fcf
     payload += sqn + cmd + "%04x" % (struct.unpack(">H", struct.pack("H", int(GrpId, 16)))[0])
-    raw_APS_request(self, nwkid, epout, cluster, "0104", payload, zigate_ep=epin, ackIsDisabled=ackIsDisabled)
+    raw_APS_request(self, nwkid, epout, cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=epin, ackIsDisabled=ackIsDisabled)
     return sqn
 
 
@@ -241,7 +241,7 @@ def zcl_raw_remove_all_groups(self, nwkid, epin, epout, ackIsDisabled=DEFAULT_AC
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
     payload = fcf
     payload += sqn + cmd
-    raw_APS_request(self, nwkid, epout, cluster, "0104", payload, zigate_ep=epin, ackIsDisabled=ackIsDisabled)
+    raw_APS_request(self, nwkid, epout, cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=epin, ackIsDisabled=ackIsDisabled)
     return sqn
 
 
@@ -256,7 +256,7 @@ def zcl_raw_send_group_member_ship_identify(self, nwkid, epin, epout, GrpId, ack
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
     payload = fcf
     payload += sqn + cmd + "%04x" % (struct.unpack(">H", struct.pack("H", int(GrpId, 16)))[0])
-    raw_APS_request(self, nwkid, epout, cluster, "0104", payload, zigate_ep=epin, ackIsDisabled=ackIsDisabled)
+    raw_APS_request(self, nwkid, epout, cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=epin, ackIsDisabled=ackIsDisabled)
     return sqn
 
 
@@ -291,7 +291,7 @@ def raw_zcl_zcl_onoff(self, nwkid, EPIn, EpOut, command, effect="", groupaddrmod
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
     payload = "%02x" % cluster_frame + sqn + "%02x" % ONOFF_COMMANDS[command] + effect
 
-    raw_APS_request(self, nwkid, EpOut, Cluster, "0104", payload, zigate_ep=EPIn, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
+    raw_APS_request(self, nwkid, EpOut, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPIn, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
     return sqn
 
 
@@ -326,7 +326,7 @@ def zcl_raw_level_move_to_level(self, nwkid, EPIn, EPout, command, level="00", m
     elif command == ("Step", "StepWithOnOff"):
         payload += step_mode + step_size + "%04x" % (struct.unpack(">H", struct.pack("H", int(transition, 16)))[0])
 
-    raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigate_ep=EPIn, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
+    raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPIn, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
     return sqn
 
 
@@ -359,7 +359,7 @@ def zcl_raw_window_covering(self, nwkid, EPIn, EPout, command, level="00", perce
     elif command == ("GoToLiftValue", "GoToTiltValue"):
         payload += percentage
 
-    raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigate_ep=EPIn, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
+    raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPIn, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
     return sqn
 
 
@@ -416,7 +416,7 @@ def zcl_raw_move_color(self, nwkid, EPIn, EPout, command, temperature=None, hue=
         payload += "%04x" % (struct.unpack(">H", struct.pack("H", int(temperature, 16)))[0])
         payload += "%04x" % (struct.unpack(">H", struct.pack("H", int(transition, 16)))[0])
 
-    raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigate_ep=EPIn, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
+    raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPIn, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
     return sqn
 
 
@@ -431,7 +431,7 @@ def zcl_raw_ias_zone_enroll_response(self, nwkid, EPin, EPout, response_code, zo
     cluster_frame = 0b00010001
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
     payload = "%02x" % cluster_frame + sqn + cmd + response_code + zone_id
-    raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
+    raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
     return sqn
 
 
@@ -442,7 +442,7 @@ def zcl_raw_ias_initiate_normal_operation_mode(self, nwkid, EPin, EPout, groupad
     cluster_frame = 0b00010001
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
     payload = "%02x" % cluster_frame + sqn + cmd
-    raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
+    raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
     return sqn
 
 
@@ -453,7 +453,7 @@ def zcl_raw_ias_initiate_test_mode(self, nwkid, EPin, EPout, duration="01", curr
     cluster_frame = 0b00010001
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
     payload = "%02x" % cluster_frame + sqn + cmd + duration + current_zone_sensitivy_level
-    raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
+    raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
     return sqn
 
 
@@ -481,7 +481,7 @@ def zcl_raw_ias_ace_commands_arm(self, EPin, EPout, nwkid, arm_mode, arm_code, z
     cluster_frame = 0b00010001
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
     payload = "%02x" % cluster_frame + sqn + cmd + "%02x" % arm_mode + "%02x" % arm_code + "%02x" % zone_id
-    raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
+    raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
     return sqn
 
 
@@ -506,7 +506,7 @@ def zcl_raw_ias_wd_command_start_warning(self, EPin, EPout, nwkid, warning_mode=
 
     payload = "%02x" % cluster_frame + sqn + cmd
     payload += "%02x" % field1 + "%04x" % struct.unpack(">H", struct.pack("H", warning_duration))[0] + "%02x" % (strobe_duty) + "%02x" % (strobe_level)
-    raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
+    raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
     return sqn
 
 
@@ -524,5 +524,5 @@ def zcl_raw_ias_wd_command_squawk(self, EPin, EPout, nwkid, squawk_mode, strobe,
     field1 = field1 & 0xFC | (squawk_level & 0x03)
     payload = "%02x" % cluster_frame + sqn + cmd + "%02x" % field1
 
-    raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
+    raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
     return sqn

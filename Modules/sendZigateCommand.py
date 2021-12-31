@@ -192,16 +192,16 @@ def sendZigateCmd(self, cmd, datas, ackIsDisabled=False):
     return send_zigatecmd_raw(self, cmd, datas, ackIsDisabled)
 
 
-def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep=ZIGATE_EP, zdpsqn= None, groupaddrmode=False, highpriority=False, ackIsDisabled=False):
+def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep=ZIGATE_EP, zigpyzqn= None, groupaddrmode=False, highpriority=False, ackIsDisabled=False):
     self.log.logging(
         "outRawAPS",
         "Debug",
         "raw_APS_request - Zigbee Communication: %s Profile: %s Cluster: %s TargetNwk: %s TargetEp: %s SrcEp: %s payload: %s ZDPsqn: %s GroupMode: %s ackIsDisable: %s"
-        % (self.zigbee_communitation, profileId, cluster, targetaddr, dest_ep, zigate_ep, payload, zdpsqn, groupaddrmode, ackIsDisabled),
+        % (self.zigbee_communitation, profileId, cluster, targetaddr, dest_ep, zigate_ep, payload, zigpyzqn, groupaddrmode, ackIsDisabled),
     )
 
     if self.zigbee_communitation == "zigpy":
-        return zigpy_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep, zdpsqn, groupaddrmode, highpriority, ackIsDisabled)
+        return zigpy_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep, zigpyzqn, groupaddrmode, highpriority, ackIsDisabled)
     
     return zigate_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep, groupaddrmode, highpriority, ackIsDisabled)
 
@@ -259,7 +259,7 @@ def zigate_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, paylo
     )
     
     
-def zigpy_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep, zdpsqn=None, groupaddrmode=False, highpriority=False, ackIsDisabled=False):
+def zigpy_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep, zigpyzqn=None, groupaddrmode=False, highpriority=False, ackIsDisabled=False):
 
     data = {
         'Profile': int(profileId, 16),
@@ -267,7 +267,7 @@ def zigpy_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payloa
         'TargetNwk': int(targetaddr, 16),
         'TargetEp': int(dest_ep, 16),
         'SrcEp': int(zigate_ep, 16),
-        'Sqn': zdpsqn,
+        'Sqn': zigpyzqn,
         'payload': payload,
     }
 
