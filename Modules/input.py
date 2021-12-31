@@ -23,8 +23,8 @@ from Classes.ZigateTransport.sqnMgmt import (
     sqn_get_internal_sqn_from_aps_sqn,
 )
 
-from Modules.basicOutputs import getListofAttribute  # leaveMgtReJoin,
-from Modules.basicOutputs import send_default_response, setTimeServer, unknown_device_nwkid
+from Modules.basicOutputs import send_default_response, setTimeServer, unknown_device_nwkid, getListofAttribute
+from Modules.basicInputs import read_attribute_response
 from Modules.callback import callbackDeviceAwake
 from Modules.deviceAnnoucement import device_annoucementv2
 from Modules.domoMaj import MajDomoDevice
@@ -312,6 +312,10 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
                     nbAttribute,
                 ),
             )
+        if MsgClusterId == "0000" and Attribute == "f000" and manuf_name in ("1021", "Legrand" ):
+            if self.pluginconf.pluginConf["LegrandCompatibilityMode"]:
+                operation_time = time() - self.statistics._start
+                read_attribute_response(self, MsgSrcAddr, MsgSrcEp, MsgSqn, MsgClusterId, "00", "23", Attribute, operation_time, manuf_code=MsgManufCode)
         else:
             self.log.logging(
                 "Input",
