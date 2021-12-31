@@ -62,8 +62,26 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         logging.debug("remove")
 
     def get_device(self, ieee=None, nwk=None):
-        logging.debug("get_device")
-        return zigpy.device.Device(self, ieee, nwk)
+
+        # logging.debug("get_device nwk %s ieee %s" % (nwk, ieee))
+        # self.callBackGetDevice is set to zigpy_get_device(self, nwkid = None, ieee=None)
+        # will return None if not found
+        # will return (nwkid, ieee) if found ( nwkid and ieee are numbers)
+
+        dev = None
+        try:
+            dev = super().get_device(ieee, nwk)
+        except KeyError:
+            if self.callBackGetDevice:
+                zfd_dev = self.callBackGetDevice(ieee, nwk)
+                if zfd_dev is not None:
+                    dev = zigpy.device.Device(self, zfd_dev.ieee, zfd_dev.nwk)
+
+        if dev is not None:
+            # logging.debug("found device dev: %s" % (str(dev)))
+            return dev
+
+        raise KeyError      
 
     def handle_leave(self, nwk, ieee):
         # super().handle_leave(nwk,ieee)

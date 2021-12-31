@@ -54,14 +54,16 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         # logging.debug("get_device nwk %s ieee %s" % (nwk, ieee))
         # self.callBackGetDevice is set to zigpy_get_device(self, nwkid = None, ieee=None)
         # will return None if not found
-        # will return nwkid, ieee if found ( nwkid and ieee are numbers)
+        # will return (nwkid, ieee) if found ( nwkid and ieee are numbers)
 
         dev = None
         try:
             dev = super().get_device(ieee, nwk)
         except KeyError:
             if self.callBackGetDevice:
-                dev = self.callBackGetDevice(ieee, nwk)
+                zfd_dev = self.callBackGetDevice(ieee, nwk)
+                if zfd_dev is not None:
+                    dev = zigpy.device.Device(self, zfd_dev.ieee, zfd_dev.nwk)
 
         if dev is not None:
             # logging.debug("found device dev: %s" % (str(dev)))
