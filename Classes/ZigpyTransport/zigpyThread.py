@@ -226,23 +226,27 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
     if self.pluginconf.pluginConf["ZiGateReactTime"]:
         t_start = 1000 * time.time()
 
-    if NwkId in (0xffff, 0xfffe, 0xfffd, 0xfffc, 0xfffb): # Broadcast
+    if NwkId in (0xffff, 0xfffe, 0xfffd, 0xfffc, 0xfffb, "ffff", "fffe", "fffc", "fffb"): # Broadcast
         enableAck = False
+        self.log.logging( "TransportZigpy", "Debug", "process_raw_command  call broadcast destimnation: %s" %NwkId)
         result, msg = await self.app.broadcast( Profile, Cluster, sEp, dEp, 0x0, 0x30, sequence, payload, )
 
     if addressmode == 0x01:
         # Group Mode
         enableAck = False
         destination = t.AddrModeAddress(mode=t.AddrMode.Group, address=NwkId)
+        self.log.logging( "TransportZigpy", "Debug", "process_raw_command  call mrequest destimnation: %s" %destination)
         result, msg = await self.app.mrequest(destination, Profile, Cluster, sEp, sequence, payload)
         
     elif addressmode in (0x02, 0x07):
         # Short
         destination = zigpy.device.Device(self.app, None, NwkId)
+        self.log.logging( "TransportZigpy", "Debug", "process_raw_command  call request destimnation: %s" %destination)
         result, msg = await self.app.request(destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=enableAck, use_ieee=False)
 
     elif addressmode in (0x03, 0x08):
         destination = zigpy.device.Device(self.app, NwkId, None)
+        self.log.logging( "TransportZigpy", "Debug", "process_raw_command  call request destimnation: %s" %destination)
         result, msg = await self.app.request(destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=enableAck, use_ieee=False)
 
     if self.pluginconf.pluginConf["ZiGateReactTime"]:
