@@ -257,8 +257,36 @@ def buildframe_management_nwk_discovery_response(self, SrcNwkId, SrcEndPoint, Cl
 
 
 def buildframe_management_lqi_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
-    self.log.logging("zdpDecoder", "Error", "buildframe_management_lqi_response NOT IMPLEMENTED YET")
-    return frame
+    self.log.logging("zdpDecoder", "Debug", "buildframe_management_lqi_response")
+    #07/00/0f00029e96eba7565e4d4129f7c2dbfdfeff23a460120201aa9e96eba7565e4d41ec9a6ad0773cdf8ccf04120201aa
+    sqn = Payload[:2]
+    status = Payload[2:4]
+    NeighborTableEntries = Payload[4:6]
+    StartIndex = Payload[6:8]
+    NeighborTableListCount = Payload[8:10]
+    NeighborTableList = Payload[10:]
+
+    buildPayload = sqn + status + NeighborTableEntries + NeighborTableListCount + StartIndex
+    idx = 10
+    for _ in range(int(NeighborTableListCount, 16)):
+        ExtendedPanId = "%016x" % struct.unpack("Q", struct.pack(">Q", int(Payload[idx: idx+16], 16)))[0]
+        idx += 16
+        Extendedaddress = "%016x" % struct.unpack("Q", struct.pack(">Q", int(Payload[idx: idx+16], 16)))[0]
+        idx += 16
+        Networkaddress = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[idx: idx+4], 16)))[0]
+        idx += 4
+        bitfield1 = Payload[idx:idx+2]
+        idx +=2
+        bitfield2 = Payload[idx:idx+2]
+        idx += 2
+        depth =  Payload[idx:idx+2]
+        idx += 2
+        lqi = Payload[idx:idx+2]
+        idx += 2
+        buildPayload += Networkaddress + ExtendedPanId + Extendedaddress + depth + lqi + bitfield1
+
+    return encapsulate_plugin_frame("804E", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
+
 
 
 def buildframe_routing_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
@@ -267,18 +295,28 @@ def buildframe_routing_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload,
 
 
 def buildframe_leave_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
-    self.log.logging("zdpDecoder", "Error", "buildframe_leave_response NOT IMPLEMENTED YET")
-    return frame
+    self.log.logging("zdpDecoder", "Debug", "buildframe_leave_response")
+    sqn = Payload[:2]
+    status = Payload[2:4]
+    buildPayload = sqn + status
+    return encapsulate_plugin_frame("804E", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 
 def buildframe_direct_join_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
-    self.log.logging("zdpDecoder", "Error", "buildframe_direct_join_response NOT IMPLEMENTED YET")
+    self.log.logging("zdpDecoder", "Error", "buildframe_direct_join_response NOT USED in Plugin")
+    sqn = Payload[:2]
+    status = Payload[2:4]
+    buildPayload = sqn + status
+    #return encapsulate_plugin_frame("804E", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
     return frame
 
 
 def buildframe_permit_join_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
     self.log.logging("zdpDecoder", "Error", "buildframe_permit_join_response NOT IMPLEMENTED YET")
-    return frame
+    sqn = Payload[:2]
+    status = Payload[2:4]
+    buildPayload = sqn + status
+    return encapsulate_plugin_frame("8014", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 
 def buildframe_management_nwk_update_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
