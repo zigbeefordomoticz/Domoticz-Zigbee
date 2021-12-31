@@ -82,7 +82,39 @@ def rawaps_write_attribute_req(self, nwkid, EPin, EPout, cluster, manuf_id, manu
 
 
 # Write Attributes No Response
+def zcl_raw_write_attributeNoResponse(self, nwkid, EPin, EPout, cluster, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled=DEFAULT_ACK_MODE):
+    self.log.logging("zclCommand", "Debug", "zcl_raw_write_attributeNoResponse %s %s %s %s %s %s %s %s %s" % (nwkid, EPin, EPout, cluster, manuf_id, manuf_spec, attribute, data_type, data))
+    cmd = "05"
 
+    cluster_frame = 0b00010000  # The frame type sub-field SHALL be set to indicate a global command (0b00)
+    if (
+        manuf_spec == "01"
+    ):  # The manufacturer specific sub-field SHALL be set to 0 if this command is being used to Write Attributes defined for any cluster in the ZCL or 1 if this command is being used to write manufacturer specific attributes
+        cluster_frame += 0b00000100
+    fcf = "%02x" % cluster_frame
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
+    payload = fcf
+    if manuf_spec == "01":
+        payload += "%04x" % struct.unpack(">H", struct.pack("H", int(manuf_id, 16)))[0]
+    payload += sqn + cmd
+    payload += "%04x" % struct.unpack(">H", struct.pack("H", int(attribute, 16)))[0]  # Attribute Id
+    payload += data_type  # Attribute Data Type
+    if data_type in ("10", "18", "20", "28", "30"):  # Attribute Data
+        payload += data
+    elif data_type in ("09", "16", "21", "29", "31"):
+        payload += "%04x" % struct.unpack(">H", struct.pack("H", int(data, 16)))[0]
+    elif data_type in ("22", "2a"):
+        payload += "%06x" % struct.unpack(">i", struct.pack("I", int(data, 16)))[0]
+    elif data_type in ("23", "2b", "39"):
+        payload += "%08x" % struct.unpack(">i", struct.pack("I", int(data, 16)))[0]
+    else:
+        payload += data
+    self.log.logging("zclCommand", "Debug", "rawaps_write_attribute_req ==== payload: %s" % (payload))
+
+    raw_APS_request(self, nwkid, EPout, cluster, "0104", payload, zigate_ep=EPin, ackIsDisabled=ackIsDisabled)
+    return sqn
+    
+    
 # Configure Reporting
 def zcl_raw_configure_reporting_requestv2(self, nwkid, epin, epout, cluster, direction, manufacturer_spec, manufacturer, attribute_reporting_configuration, ackIsDisabled=DEFAULT_ACK_MODE):
     self.log.logging("zclCommand", "Debug", "zcl_raw_configure_reporting_requestv2 %s %s %s %s %s %s %s %s" % (nwkid, epin, epout, cluster, direction, manufacturer_spec, manufacturer, attribute_reporting_configuration))

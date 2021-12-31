@@ -33,7 +33,7 @@ from Zigbee.zclRawCommands import (raw_zcl_zcl_onoff,
                                    zcl_raw_remove_all_groups,
                                    zcl_raw_remove_group_member_ship,
                                    zcl_raw_send_group_member_ship_identify,
-                                   zcl_raw_window_covering)
+                                   zcl_raw_window_covering, zcl_raw_write_attributeNoResponse)
 
 DEFAULT_ACK_MODE = False
 
@@ -77,8 +77,11 @@ def zcl_write_attribute(self, nwkid, EPin, EPout, cluster, manuf_id, manuf_spec,
     return send_zigatecmd_zcl_ack(self, nwkid, "0110", str(datas))
 
 
-def zcl_write_attributeNoResponse(self, nwkid, EPin, EPout, cluster, manuf_id, manuf_spec, attribute, data_type, data):
+def zcl_write_attributeNoResponse(self, nwkid, EPin, EPout, cluster, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled=DEFAULT_ACK_MODE):
     self.log.logging("zclCommand", "Debug", "zcl_write_attributeNoResponse %s %s %s %s %s %s %s %s %s" % (nwkid, EPin, EPout, cluster, manuf_id, manuf_spec, attribute, data_type, data))
+    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+        return zcl_raw_write_attributeNoResponse(self, nwkid, EPin, EPout, cluster, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled=ackIsDisabled)
+
     direction = "00"
     if data_type == "42":  # String
         # In case of Data Type 0x42 ( String ), we have to add the length of string before the string.
