@@ -26,7 +26,7 @@ import zigpy_znp.zigbee.application
 from Classes.ZigpyTransport.AppZigate import App_zigate
 from Classes.ZigpyTransport.AppZnp import App_znp
 from Classes.ZigpyTransport.nativeCommands import NATIVE_COMMANDS_MAPPING, native_commands
-from Classes.ZigpyTransport.plugin_encoders import build_plugin_8009_frame_content, build_plugin_8011_frame_content
+from Classes.ZigpyTransport.plugin_encoders import build_plugin_8009_frame_content, build_plugin_8011_frame_content, build_plugin_0302_frame_content
 from Classes.ZigpyTransport.tools import handle_thread_error
 from zigpy.exceptions import DeliveryError, InvalidResponse
 from zigpy_zigate.config import CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE
@@ -88,6 +88,8 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channe
     for ep in self.app.get_device(nwk=0x0000).endpoints.keys():
         self.log.logging("TransportZigpy", "Debug", "Simple Descriptor:  %s" % self.app.get_device(nwk=0x0000).endpoints[ep])
 
+    # Let send a 0302 to simulate an Off/on
+    self.forwarder_queue.put(build_plugin_0302_frame_content(self,))
     # Run forever
     await worker_loop(self)
 
