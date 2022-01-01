@@ -255,13 +255,13 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
         
     elif addressmode in (0x02, 0x07):
         # Short
-        destination = zigpy.device.Device(self.app,  None, NwkId )
+        destination = self.app.get_device (nwk = t.NWK(int(NwkId,16)))
         self.log.logging( "TransportZigpy", "Debug", "process_raw_command  call request destination: %s Profile: %s Cluster: %s sEp: %s dEp: %s Seq: %s Payload: %s" %(
             destination, Profile, Cluster, sEp, dEp, sequence, payload))
         result, msg = await self.app.request(destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=enableAck, use_ieee=False)
 
     elif addressmode in (0x03, 0x08):
-        destination = zigpy.device.Device(self.app, None, NwkId)
+        destination = self.app.get_device (nwk = t.NWK(int(NwkId,16)))
         self.log.logging( "TransportZigpy", "Debug", "process_raw_command  call request destination: %s" %destination)
         result, msg = await self.app.request(destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=enableAck, use_ieee=False)
 

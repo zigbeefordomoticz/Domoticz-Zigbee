@@ -261,6 +261,8 @@ def zigate_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, paylo
     
 def zigpy_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep, zigpyzqn=None, groupaddrmode=False, highpriority=False, ackIsDisabled=False):
 
+    if zigpyzqn is None:
+        zigpyzqn = "0"
     data = {
         'Profile': int(profileId, 16),
         'Cluster': int(cluster, 16),

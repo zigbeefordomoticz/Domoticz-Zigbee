@@ -70,7 +70,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
                 zfd_dev = self.callBackGetDevice(ieee, nwk)
                 if zfd_dev is not None:
                     (nwk, ieee) = zfd_dev
-                    dev = zigpy.device.Device(self, ieee, nwk) 
+                    dev = zigpy.device.Device(self, t.EUI64(t.uint64_t(ieee).serialize()), nwk) 
                     self.log.logging("TransportZigpy", "Debug", "get_device %s" % dev)
 
         if dev is not None:
