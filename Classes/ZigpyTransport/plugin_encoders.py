@@ -71,6 +71,41 @@ def build_plugin_8011_frame_content(self, nwkid, status, lqi):
     frame_payload = "06" + "%02x" % status + nwkid
     return encapsulate_plugin_frame("8011", frame_payload, "%02x" % lqi)
 
+def build_plugin_8045_frame_list_controller_ep( self, ):
+    nbEp = "%02x" %len((self.app.get_device(nwk = t.NWK(0x0000)).endpoints.keys()))
+    self.log.logging( "TransportPluginEncoder", "Debug", "build_plugin_8045_frame_list_controller_ep %s %s" % ( nbEp, type(nbEp)))
+    ep_list = "".join(
+        "%02x" % ep_id
+        for ep_id in self.app.get_device(nwk=t.NWK(0x0000)).endpoints.keys()
+    )
+
+    self.log.logging(
+        "TransportPluginEncoder",
+        "Debug",
+        "build_plugin_8045_frame_list_controller_ep %s %s" % (
+            nbEp, ep_list)  )
+
+    buildPayload = "00" + "00" + "0000" + nbEp + ep_list
+    return encapsulate_plugin_frame("8045", buildPayload, "00")   
+
+def build_plugin_8043_frame_list_node_descriptor( self, epid, simpledescriptor):
+    self.log.logging( "TransportPluginEncoder", "Debug", "build_plugin_8043_frame_list_node_descriptor %s %s" % ( epid, simpledescriptor))
+
+    buildPayload = "00" + "00" + "0000" + "01"
+    buildPayload += "%02x" %epid
+    buildPayload += "%04x" %simpledescriptor.profile_id
+    buildPayload += "%04x" %simpledescriptor.device_type
+    buildPayload += "00"
+
+    buildPayload += "%02x" %len(simpledescriptor.in_clusters)
+    for in_cluster in simpledescriptor.in_clusters:
+        buildPayload += "%04x" %in_cluster
+
+    buildPayload += "%02x" %len(simpledescriptor.out_clusters)   
+    for out_clusters in simpledescriptor.out_clusters:
+        buildPayload += "%04x" %out_clusters
+    return encapsulate_plugin_frame("8043", buildPayload, "00")
+
 
 def build_plugin_8002_frame_content(
     self,
