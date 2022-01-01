@@ -36,7 +36,7 @@ from Classes.ZigpyTransport.tools import handle_thread_error
 from zigpy.exceptions import DeliveryError, InvalidResponse
 from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
                                  SCHEMA_DEVICE)
-from zigpy_znp.exceptions import CommandNotRecognized, InvalidFrame
+from zigpy_znp.exceptions import CommandNotRecognized, InvalidFrame, InvalidCommandResponse
 
 
 def start_zigpy_thread(self):
@@ -160,7 +160,22 @@ async def worker_loop(self):
                 "Error",
                 "InvalidResponse: Not able to execute the zigpy command: %s data: %s" % (data["cmd"], properyly_display_data( data["datas"])),
             )
+            
+        except InvalidCommandResponse:
+            self.log.logging(
+                "TransportZigpy",
+                "Error",
+                "InvalidCommandResponse: Not able to execute the zigpy command: %s data: %s" % (data["cmd"], properyly_display_data( data["datas"])),
+            )
 
+
+        except asyncio.TimeoutError:
+            self.log.logging(
+                "TransportZigpy",
+                "Error",
+                "TimeoutError: Not able to execute the zigpy command: %s data: %s" % (data["cmd"], properyly_display_data( data["datas"])),
+            )
+            
         except RuntimeError as e:
             self.log.logging(
                 "TransportZigpy",
@@ -233,8 +248,8 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
     self.log.logging(
         "TransportZigpy",
         "Debug",
-        "ZigyTransport: process_raw_command ready to request NwkId: %s Cluster: %04x Seq: %02x Payload: %s AddrMode: %02x EnableAck: %s, Sqn: %s" % (
-            NwkId, Cluster, sequence, binascii.hexlify(payload).decode("utf-8"), addressmode, enableAck, Sqn),
+        "ZigyTransport: process_raw_command ready to request NwkId: %04x Cluster: %04x Seq: %02x Payload: %s AddrMode: %02x EnableAck: %s, Sqn: %s" % (
+            int(NwkId,16), Cluster, sequence, binascii.hexlify(payload).decode("utf-8"), addressmode, enableAck, Sqn),
     )
 
     if self.pluginconf.pluginConf["ZiGateReactTime"]:
@@ -254,13 +269,14 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
         result, msg = await self.app.mrequest(destination, Profile, Cluster, sEp, sequence, payload)
         
     elif addressmode in (0x02, 0x07):
-        # Short
-        destination = zigpy.device.Device(self.app,  None, NwkId )
+        # Short is a str
+        destination = zigpy.device.Device(self.app,  None, int(NwkId,16) )
         self.log.logging( "TransportZigpy", "Debug", "process_raw_command  call request destination: %s Profile: %s Cluster: %s sEp: %s dEp: %s Seq: %s Payload: %s" %(
             destination, Profile, Cluster, sEp, dEp, sequence, payload))
         result, msg = await self.app.request(destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=enableAck, use_ieee=False)
 
     elif addressmode in (0x03, 0x08):
+        # Nwkid is in fact an IEEE
         destination = zigpy.device.Device(self.app, None, NwkId)
         self.log.logging( "TransportZigpy", "Debug", "process_raw_command  call request destination: %s" %destination)
         result, msg = await self.app.request(destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=enableAck, use_ieee=False)
