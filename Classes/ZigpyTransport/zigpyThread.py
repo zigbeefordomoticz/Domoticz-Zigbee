@@ -128,7 +128,7 @@ async def worker_loop(self):
             break
 
         data = json.loads(entry)
-        self.log.logging("TransportZigpy", "Debug", "got command %s" % data["cmd"], )
+        self.log.logging("TransportZigpy", "Debug", "got a command %s" % data["cmd"], )
 
         try:
             await dispatch_command( self, data)
@@ -255,7 +255,8 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
     elif addressmode in (0x02, 0x07):
         # Short
         destination = zigpy.device.Device(self.app, None, NwkId)
-        self.log.logging( "TransportZigpy", "Debug", "process_raw_command  call request destimnation: %s" %destination)
+        self.log.logging( "TransportZigpy", "Debug", "process_raw_command  call request destimnation: %s Profile: %s Cluster: %s sEp: %s dEp: %s Seq: %s Payload: %s" %(
+            destination, Profile, Cluster, sEp, dEp, sequence, payload))
         result, msg = await self.app.request(destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=enableAck, use_ieee=False)
 
     elif addressmode in (0x03, 0x08):
@@ -294,6 +295,7 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
         # Send Ack/Nack to Plugin
         self.forwarder_queue.put(build_plugin_8011_frame_content(self, destination.nwk.serialize()[::-1].hex(), result, destination.lqi))
 
+    await asyncio.sleep(0.500)
 
 def properyly_display_data( Datas):
     

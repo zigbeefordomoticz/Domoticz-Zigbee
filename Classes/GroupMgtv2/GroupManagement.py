@@ -107,6 +107,7 @@ class GroupsManagement(object):
         Devices,
         ListOfDevices,
         IEEE2NWK,
+        DeviceConf,
         log,
     ):
         self.zigbee_communitation = zigbee_communitation
@@ -118,6 +119,7 @@ class GroupsManagement(object):
         self.Devices = Devices  # Point to the List of Domoticz Devices
         self.ListOfDevices = ListOfDevices  # Point to the Global ListOfDevices
         self.IEEE2NWK = IEEE2NWK  # Point to the List of IEEE to NWKID
+        self.DeviceConf = DeviceConf
         self.ListOfGroups = {}  # Data structutre to store all groups
         self.log = log
         self.GroupListFileName = None  # Filename of Group cashing file
