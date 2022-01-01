@@ -267,7 +267,7 @@ def zigpy_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payloa
         'TargetNwk': int(targetaddr, 16),
         'TargetEp': int(dest_ep, 16),
         'SrcEp': int(zigate_ep, 16),
-        'Sqn': zigpyzqn,
+        'Sqn': int(zigpyzqn,16),
         'payload': payload,
     }
 
@@ -277,7 +277,7 @@ def zigpy_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payloa
         data['AddressMode'] = 0x07
     else:
         data['AddressMode'] = 0x02
-        
+
     self.log.logging(
         "outRawAPS",
         "Debug",
@@ -285,5 +285,5 @@ def zigpy_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payloa
         % ( data['Profile'], data['Cluster'], data['TargetNwk'], data['TargetEp'], data['SrcEp'],  data['payload'])
     )
 
-    i_sqn = self.ControllerLink.sendData( "RAW-COMMAND", data)
-    return 
+    return self.ControllerLink.sendData( "RAW-COMMAND", data, NwkId=int(targetaddr,16), sqn=int(zigpyzqn,16), ackIsDisabled=ackIsDisabled )
+
