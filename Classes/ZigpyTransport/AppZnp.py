@@ -55,7 +55,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
 
     async def _register_endpoints(self) -> None:
         LIST_ENDPOINT = [0x0b , 0x0a , 0x6e, 0x15, 0x08, 0x03] # WISER, ORVIBO , TERNCY, KONKE, LIVOLO, WISER2
-        super()._register_endpoints()
+        await super()._register_endpoints()
 
         for endpoint in LIST_ENDPOINT:
             await self._znp.request(
@@ -121,8 +121,8 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         if sender.nwk == 0x0000:
             self.log.logging("TransportZigpy", "Error", "handle_message from Controller Sender: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
                 str(sender.nwk), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8")))
-            if cluster != 0x8031:
-                return super().handle_message(sender, profile, cluster, src_ep, dst_ep, message)
+            #if cluster != 0x8031: # why 8031 ??
+            super().handle_message(sender, profile, cluster, src_ep, dst_ep, message)
 
         # Domoticz.Log("handle_message %s" %(str(profile)))
         if sender.nwk is not None or sender.ieee is not None:
@@ -160,7 +160,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
                     str(sender), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8")),
             )
 
-        return None
+        return
 
     async def set_tx_power(self, power):
         self.log.logging("TransportZigpy", "Debug", "set_tx_power not implemented yet")
