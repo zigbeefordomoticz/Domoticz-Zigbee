@@ -25,11 +25,17 @@ import zigpy_zigate.zigbee.application
 import zigpy_znp.zigbee.application
 from Classes.ZigpyTransport.AppZigate import App_zigate
 from Classes.ZigpyTransport.AppZnp import App_znp
-from Classes.ZigpyTransport.nativeCommands import NATIVE_COMMANDS_MAPPING, native_commands
-from Classes.ZigpyTransport.plugin_encoders import build_plugin_8009_frame_content, build_plugin_8011_frame_content, build_plugin_0302_frame_content
+from Classes.ZigpyTransport.nativeCommands import (NATIVE_COMMANDS_MAPPING,
+                                                   native_commands)
+from Classes.ZigpyTransport.plugin_encoders import (
+    build_plugin_0302_frame_content, build_plugin_8009_frame_content,
+    build_plugin_8011_frame_content,
+    build_plugin_8043_frame_list_node_descriptor,
+    build_plugin_8045_frame_list_controller_ep)
 from Classes.ZigpyTransport.tools import handle_thread_error
 from zigpy.exceptions import DeliveryError, InvalidResponse
-from zigpy_zigate.config import CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE
+from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
+                                 SCHEMA_DEVICE)
 from zigpy_znp.exceptions import CommandNotRecognized, InvalidFrame
 
 
@@ -84,12 +90,20 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channe
 
     # Retreive Active Ep and Simple Descriptor of Controller
     # self.endpoints: dict[int, zdo.ZDO | zigpy.endpoint.Endpoint] = {0: self.zdo}
+
+    # Send Controller Active Node and Node Descriptor
+    self.forwarder_queue.put(build_plugin_8045_frame_list_controller_ep(self,))
+
     self.log.logging("TransportZigpy", "Debug", "Active Endpoint List:  %s" % str(self.app.get_device(nwk = t.NWK(0x0000)).endpoints.keys()))
-    for ep in self.app.get_device(nwk = t.NWK(0x0000)).endpoints.keys():
-        self.log.logging("TransportZigpy", "Debug", "Simple Descriptor:  %s" % self.app.get_device(nwk = t.NWK(0x0000)).endpoints[ep])
+    for epid, ep in self.app.get_device(nwk = t.NWK(0x0000)).endpoints.items():
+        if epid == 0:
+            continue
+        self.log.logging("TransportZigpy", "Debug", "Simple Descriptor:  %s" % ep )
+        self.forwarder_queue.put(build_plugin_8043_frame_list_node_descriptor(self, epid, ep))
 
     # Let send a 0302 to simulate an Off/on
     self.forwarder_queue.put(build_plugin_0302_frame_content(self,))
+    
     # Run forever
     await worker_loop(self)
 
