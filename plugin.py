@@ -97,7 +97,7 @@ from Classes.PluginConf import PluginConf
 from Classes.TransportStats import TransportStatistics
 from Classes.WebServer.WebServer import WebServer
 from Modules.basicOutputs import (ZigatePermitToJoin,
-                                  do_Many_To_One_RouteRequest, leaveRequest,
+                                  do_Many_To_One_RouteRequest, ieee_addr_request, leaveRequest,
                                   setExtendedPANID, setTimeServer,
                                   start_Zigate, zigateBlueLed)
 from Modules.checkingUpdate import (checkFirmwareUpdate, checkPluginUpdate,
@@ -746,12 +746,21 @@ class BasePlugin:
 
     def zigpy_get_device(self, ieee=None, nwkid = None):
         # allow to inter-connect zigpy world and plugin
+        sieee = ieee
+        snwkid = nwkid
+        model = manuf = None
         if nwkid in self.ListOfDevices and 'IEEE' in self.ListOfDevices[ nwkid ]:
             ieee = self.ListOfDevices[ nwkid ]['IEEE']
         elif ieee in self.IEEE2NWK:
             nwkid =   self.IEEE2NWK[ ieee ]
         else:
+            self.log.logging("TransportZigpy", "Log", "zigpy_get_device( %s(%s), %s(%s)) NOT FOUND" %( sieee, type(sieee), snwkid, type(sieee) ))
             return None
+        if nwkid in self.ListOfDevices and "Model" in self.ListOfDevices[ nwkid ] and self.ListOfDevices[ nwkid ]["Model"] not in ( "", {} ):
+            model = self.ListOfDevices[ nwkid ]["Model"]
+        if nwkid in self.ListOfDevices and "Manufacturer" in self.ListOfDevices[ nwkid ] and self.ListOfDevices[ nwkid ]["Manufacturer"] not in ( "", {} ):
+            manuf = self.ListOfDevices[ nwkid ]["Manufacturer"]
+        self.log.logging("TransportZigpy", "Log", "zigpy_get_device( %s, %s returns %04x %016x" %( sieee, snwkid, int(nwkid,16), int(ieee,16) ))
         return int(nwkid,16) ,int(ieee,16)
     
     def onCommand(self, Unit, Command, Level, Color):
