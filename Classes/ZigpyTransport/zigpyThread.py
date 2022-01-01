@@ -255,7 +255,7 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
     if self.pluginconf.pluginConf["ZiGateReactTime"]:
         t_start = 1000 * time.time()
 
-    if NwkId in ( "ffff", "fffe", "fffc", "fffb"): # Broadcast
+    if int(NwkId,16) >= 0xfffb: # Broadcast
         destination = NwkId
         enableAck = False
         self.log.logging( "TransportZigpy", "Debug", "process_raw_command  call broadcast destination: %s" %NwkId)
@@ -299,20 +299,25 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
     )
 
     if enableAck:
-        # Looks like Zigate return an int, while ZNP returns a status.type
-        if not isinstance(result, int):
-            result = int(result.serialize().hex(), 16)
-
-        # Update statistics
-        if result != 0x00:
-            self.statistics._APSNck += 1
-        else:
-            self.statistics._APSAck += 1
-
-        # Send Ack/Nack to Plugin
-        self.forwarder_queue.put(build_plugin_8011_frame_content(self, destination.nwk.serialize()[::-1].hex(), result, destination.lqi))
-
+        push_APS_ACK_NACKto_plugin(self, destination, result)
+        
+    # Slow down for now
     await asyncio.sleep(0.500)
+
+def push_APS_ACK_NACKto_plugin(self, destination, result):
+    # Looks like Zigate return an int, while ZNP returns a status.type
+    if not isinstance(result, int):
+        result = int(result.serialize().hex(), 16)
+
+    # Update statistics
+    if result != 0x00:
+        self.statistics._APSNck += 1
+    else:
+        self.statistics._APSAck += 1
+
+    # Send Ack/Nack to Plugin
+    self.forwarder_queue.put(build_plugin_8011_frame_content(self, destination.nwk.serialize()[::-1].hex(), result, destination.lqi))
+    
 
 def properyly_display_data( Datas):
     
