@@ -1266,6 +1266,7 @@ def start_GrpManagement(self, homefolder):
         Devices,
         self.ListOfDevices,
         self.IEEE2NWK,
+        self.DeviceConf, 
         self.log,
     )
     if self.groupmgt and self.ControllerIEEE:
