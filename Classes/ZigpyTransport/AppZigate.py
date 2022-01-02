@@ -52,20 +52,13 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         FirmwareVersion = "%04x" % await self._api.version_int()
         self.callBackFunction(build_plugin_8010_frame_content(Model, FirmwareMajorVersion, FirmwareVersion))
 
-    def add_device(self, ieee, nwk):
-        logging.debug("add_device %s" % str(nwk))
-
-    def device_initialized(self, device):
-        logging.debug("device_initialized")
-
-    async def remove(self, ieee: t.EUI64) -> None:
-        logging.debug("remove")
-
     def get_device(self, ieee=None, nwk=None):
         # logging.debug("get_device nwk %s ieee %s" % (nwk, ieee))
         # self.callBackGetDevice is set to zigpy_get_device(self, nwkid = None, ieee=None)
         # will return None if not found
         # will return (nwkid, ieee) if found ( nwkid and ieee are numbers)
+        self.log.logging("TransportZigpy", "Debug", "App - get_device ieee:%s nwk:%s " % (ieee,nwk ))
+#        self.log.logging("TransportZigpy", "Debug", "App - get_device current_list%s  " % (self.devices ))
 
         dev = None
         try:
@@ -77,15 +70,15 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
                     nwk = nwk.serialize()[::-1].hex()
                 if ieee is not None:
                     ieee = "%016x" % t.uint64_t.deserialize(ieee.serialize())[0]
-                self.log.logging("TransportZigpy", "Debug", "get_device calling  callBackGetDevice %s (%s) %s (%s)" % (ieee,type(ieee),nwk, type(nwk)))
+                self.log.logging("TransportZigpy", "Debug", "App - get_device calling callBackGetDevice %s (%s) %s (%s)" % (ieee,type(ieee),nwk, type(nwk)))
                 zfd_dev = self.callBackGetDevice(ieee, nwk)
                 if zfd_dev is not None:
                     (nwk, ieee) = zfd_dev
-                    dev = zigpy.device.Device(self, t.EUI64(t.uint64_t(ieee).serialize()), nwk) 
-                    self.log.logging("TransportZigpy", "Debug", "get_device %s" % dev)
+                    dev = self.add_device(t.EUI64(t.uint64_t(ieee).serialize()),nwk)
 
         if dev is not None:
             # logging.debug("found device dev: %s" % (str(dev)))
+            self.log.logging("TransportZigpy", "Debug", "App - get_device found device: %s" % dev)
             return dev
         
         logging.debug("get_device raise KeyError ieee: %s nwk: %s !!" %( ieee, nwk))
@@ -94,15 +87,15 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
 
 
     def handle_leave(self, nwk, ieee):
-        # super().handle_leave(nwk,ieee)
+        super().handle_leave(nwk,ieee)
         self.log.logging("TransportZigpy", "Debug", "handle_leave %s" % str(nwk))
 
-    def handle_join(self, nwk, ieee, parent_nwk, rejoin=None):
-        # super().handle_join(nwk,ieee)
+    def handle_join(self, nwk, ieee, parent_nwk):
+        super().handle_join(nwk,ieee,parent_nwk)
         self.log.logging(
             "TransportZigpy",
             "Debug",
-            "handle_join nwkid: %04x ieee: %s parent_nwk: %04x rejoin: %s" % (nwk, ieee, parent_nwk, rejoin),
+            "handle_join nwkid: %04x ieee: %s parent_nwk: %04x " % (nwk, ieee, parent_nwk),
         )
         plugin_frame = build_plugin_004D_frame_content(self, nwk, ieee, parent_nwk)
         self.callBackFunction(plugin_frame)
@@ -117,13 +110,20 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         message: bytes,
     ) -> None:
 
-        if sender.nwk or sender.ieee:
-            if sender.nwk:
+        if sender.nwk == 0x0000:
+            self.log.logging("TransportZigpy", "Error", "handle_message from Controller Sender: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
+                str(sender.nwk), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8")))
+            if cluster != 0x8031: # why 8031 ??
+                # temporarly stop processing here. It seems nodedesc calls do not work properly on zigate
+                return super().handle_message(sender, profile, cluster, src_ep, dst_ep, message)
+
+        if sender.nwk is not None or sender.ieee is not None:
+            if sender.nwk is not None:
                 addr_mode = 0x02
                 addr = sender.nwk.serialize()[::-1].hex()
                 #self.log.logging("TransportZigpy", "Debug", "=====> sender.nwk %s - %s" % (sender.nwk, addr))
 
-            elif sender.ieee:
+            elif sender.ieee is not None:
                 addr = "%016x" % t.uint64_t.deserialize(sender.ieee.serialize())[0]
                 addr_mode = 0x03
 
@@ -133,7 +133,7 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
                     "Debug",
                     " handle_message addr: %s profile: %s cluster: %04x src_ep: %02x dst_ep: %02x message: %s lqi: %02x" % (addr, profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8"), sender.lqi),
                 )
-                plugin_frame = build_plugin_8002_frame_content(self, addr, profile, cluster, src_ep, dst_ep, message, sender.lqi)
+                plugin_frame = build_plugin_8002_frame_content(self, addr, profile, cluster, src_ep, dst_ep, message, sender.lqi, src_addrmode=addr_mode)
                 self.log.logging("TransportZigpy", "Debug", "handle_message Sender: %s frame for plugin: %s" % (addr, plugin_frame))
                 self.callBackFunction(plugin_frame)
             else:
