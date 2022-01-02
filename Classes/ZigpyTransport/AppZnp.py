@@ -74,7 +74,6 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
 
 
     def get_device(self, ieee=None, nwk=None):
-
         # logging.debug("get_device nwk %s ieee %s" % (nwk, ieee))
         # self.callBackGetDevice is set to zigpy_get_device(self, nwkid = None, ieee=None)
         # will return None if not found
@@ -124,25 +123,26 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
             #if cluster != 0x8031: # why 8031 ??
             super().handle_message(sender, profile, cluster, src_ep, dst_ep, message)
 
-        # Domoticz.Log("handle_message %s" %(str(profile)))
-        if sender.nwk is not None or sender.ieee is not None:
+        if sender.nwk  or sender.ieee:
             self.log.logging(
                 "TransportZigpy",
                 "Debug",
                 "handle_message device 1: %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s lqi: %s" % (
                     str(sender), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8"), sender.lqi)),
-            #self.log.logging("TransportZigpy", "Debug", "=====> Sender %s - %s" % (sender.nwk, sender.ieee))
-            if sender.nwk is not None:
+
+            if sender.nwk:
                 addr_mode = 0x02
                 addr = sender.nwk.serialize()[::-1].hex()
-                #self.log.logging("TransportZigpy", "Debug", "=====> sender.nwk %s - %s" % (sender.nwk, addr))
-            elif sender.ieee is not None:
+                
+            elif sender.ieee:
                 addr = "%016x" % t.uint64_t.deserialize(sender.ieee.serialize())[0]
                 addr_mode = 0x03
+                
             if sender.lqi is None:
                 sender.lqi = 0x00
             if src_ep == dst_ep == 0x00:
                 profile = 0x0000
+
             self.log.logging(
                 "TransportZigpy",
                 "Debug",
