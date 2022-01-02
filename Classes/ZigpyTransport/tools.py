@@ -1,4 +1,4 @@
-import Domoticz
+
 import traceback
 
 #def handle_thread_error(self, e, data=""):
@@ -23,6 +23,12 @@ import traceback
 
 def handle_thread_error(self, e, data=""):
 
-    self.log.logging("TransportWrter", "Error", "Issue in request, dumping stack")
-    self.log.logging("TransportWrter", "Error", "==>  %s" % data)
-    self.log.logging("TransportWrter", "Error", "%s" % (traceback.format_exc() ))
+    context = {
+        "Message code:": str(e),
+        "Stack Trace": str(traceback.format_exc()),
+        "Data": str(data),
+    }
+    
+    self.log.logging("TransportWrter", "Error", "Issue in request %s, dumping stack: %s" %( data, (traceback.format_exc() )), context= context)
+
+

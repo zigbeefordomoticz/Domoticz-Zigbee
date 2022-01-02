@@ -4,6 +4,7 @@ import json
 import logging
 import queue
 import time
+import traceback
 from typing import Any, Optional
 
 import zigpy.appdb
@@ -36,7 +37,8 @@ from Classes.ZigpyTransport.tools import handle_thread_error
 from zigpy.exceptions import DeliveryError, InvalidResponse
 from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
                                  SCHEMA_DEVICE)
-from zigpy_znp.exceptions import CommandNotRecognized, InvalidFrame, InvalidCommandResponse
+from zigpy_znp.exceptions import (CommandNotRecognized, InvalidCommandResponse,
+                                  InvalidFrame)
 
 
 def start_zigpy_thread(self):
@@ -133,55 +135,27 @@ async def worker_loop(self):
         try:
             await dispatch_command( self, data)
 
-        except DeliveryError:
-            self.log.logging(
-                "TransportZigpy",
-                "Error",
-                "DeliveryError: Not able to execute the zigpy command: %s data: %s" % (data["cmd"], properyly_display_data( data["datas"])),
-            )
+        except DeliveryError as e:
+            log_exception(self, DeliveryError, e, data["cmd"], data["datas"])
 
-        except InvalidFrame:
-            self.log.logging(
-                "TransportZigpy",
-                "Error",
-                "InvalidFrame: Not able to execute the zigpy command: %s data: %s" % (data["cmd"], properyly_display_data( data["datas"])),
-            )
+        except InvalidFrame as e:
+            log_exception(self, InvalidFrame, e, data["cmd"], data["datas"])
 
-        except CommandNotRecognized:
-            self.log.logging(
-                "TransportZigpy",
-                "Error",
-                "CommandNotRecognized: Not able to execute the zigpy command: %s data: %s" % (data["cmd"], properyly_display_data( data["datas"])),
-            )
+        except CommandNotRecognized as e:
+            log_exception(self, CommandNotRecognized, e, data["cmd"], data["datas"])
 
-        except InvalidResponse:
-            self.log.logging(
-                "TransportZigpy",
-                "Error",
-                "InvalidResponse: Not able to execute the zigpy command: %s data: %s" % (data["cmd"], properyly_display_data( data["datas"])),
-            )
+        except InvalidResponse as e:
+            log_exception(self, InvalidResponse, e, data["cmd"], data["datas"])
             
-        except InvalidCommandResponse:
-            self.log.logging(
-                "TransportZigpy",
-                "Error",
-                "InvalidCommandResponse: Not able to execute the zigpy command: %s data: %s" % (data["cmd"], properyly_display_data( data["datas"])),
-            )
+        except InvalidCommandResponse as e:
+            log_exception(self, InvalidCommandResponse, e, data["cmd"], data["datas"])
 
 
-        except asyncio.TimeoutError:
-            self.log.logging(
-                "TransportZigpy",
-                "Error",
-                "TimeoutError: Not able to execute the zigpy command: %s data: %s" % (data["cmd"], properyly_display_data( data["datas"])),
-            )
+        except asyncio.TimeoutError as e:
+            log_exception(self, asyncio.TimeoutError, e, data["cmd"], data["datas"])
             
         except RuntimeError as e:
-            self.log.logging(
-                "TransportZigpy",
-                "Error",
-                "RuntimeError: %s Not able to execute the zigpy command: %s data: %s" % (e, data["cmd"], properyly_display_data( data["datas"])),
-            )
+            log_exception(self, RuntimeError, e, data["cmd"], data["datas"])
 
         except Exception as e:
             self.log.logging("TransportZigpy", "Error", "Error while receiving a Plugin command: >%s<" % e)
@@ -333,3 +307,18 @@ def properyly_display_data( Datas):
         log += "'%s' : %s," %(x,value)
     log += "}"
     return log
+
+def log_exception(self, exception, error, cmd, data):
+    
+    context = {
+        "Exception": str(exception),
+        "Message code:": str(error),
+        "Stack Trace": str(traceback.format_exc()),
+        "Command": str(cmd),
+        "Data": properyly_display_data( data),
+    }
+    
+    self.log.logging(
+        "TransportZigpy",
+        "Error",
+        "%s: request() Not able to execute the zigpy command: %s data: %s" % (error, cmd, properyly_display_data( data)), context=context)
