@@ -78,6 +78,8 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         # self.callBackGetDevice is set to zigpy_get_device(self, nwkid = None, ieee=None)
         # will return None if not found
         # will return (nwkid, ieee) if found ( nwkid and ieee are numbers)
+        self.log.logging("TransportZigpy", "Debug", "AppZnp - get_device ieee:%s nwk:%s " % (ieee,nwk ))
+#        self.log.logging("TransportZigpy", "Debug", "AppZnp - get_device current_list%s  " % (self.devices ))
 
         dev = None
         try:
@@ -89,15 +91,15 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
                     nwk = nwk.serialize()[::-1].hex()
                 if ieee is not None:
                     ieee = "%016x" % t.uint64_t.deserialize(ieee.serialize())[0]
-                self.log.logging("TransportZigpy", "Debug", "get_device calling  callBackGetDevice %s (%s) %s (%s)" % (ieee,type(ieee),nwk, type(nwk)))
+                self.log.logging("TransportZigpy", "Debug", "AppZnp - get_device calling callBackGetDevice %s (%s) %s (%s)" % (ieee,type(ieee),nwk, type(nwk)))
                 zfd_dev = self.callBackGetDevice(ieee, nwk)
                 if zfd_dev is not None:
                     (nwk, ieee) = zfd_dev
-                    dev = zigpy.device.Device(self, t.EUI64(t.uint64_t(ieee).serialize()), nwk) 
-                    self.log.logging("TransportZigpy", "Debug", "get_device %s" % dev)
+                    dev = self.add_device(t.EUI64(t.uint64_t(ieee).serialize()),nwk)
 
         if dev is not None:
             # logging.debug("found device dev: %s" % (str(dev)))
+            self.log.logging("TransportZigpy", "Debug", "AppZnp - get_device found device: %s" % dev)
             return dev
         
         logging.debug("get_device raise KeyError ieee: %s nwk: %s !!" %( ieee, nwk))
