@@ -62,7 +62,6 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         logging.debug("remove")
 
     def get_device(self, ieee=None, nwk=None):
-
         # logging.debug("get_device nwk %s ieee %s" % (nwk, ieee))
         # self.callBackGetDevice is set to zigpy_get_device(self, nwkid = None, ieee=None)
         # will return None if not found
@@ -71,17 +70,28 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         dev = None
         try:
             dev = super().get_device(ieee, nwk)
+            
         except KeyError:
             if self.callBackGetDevice:
+                if nwk is not None:
+                    nwk = nwk.serialize()[::-1].hex()
+                if ieee is not None:
+                    ieee = "%016x" % t.uint64_t.deserialize(ieee.serialize())[0]
+                self.log.logging("TransportZigpy", "Debug", "get_device calling  callBackGetDevice %s (%s) %s (%s)" % (ieee,type(ieee),nwk, type(nwk)))
                 zfd_dev = self.callBackGetDevice(ieee, nwk)
                 if zfd_dev is not None:
-                    dev = zigpy.device.Device(self, zfd_dev.ieee, zfd_dev.nwk)
+                    (nwk, ieee) = zfd_dev
+                    dev = zigpy.device.Device(self, t.EUI64(t.uint64_t(ieee).serialize()), nwk) 
+                    self.log.logging("TransportZigpy", "Debug", "get_device %s" % dev)
 
         if dev is not None:
             # logging.debug("found device dev: %s" % (str(dev)))
             return dev
+        
+        logging.debug("get_device raise KeyError ieee: %s nwk: %s !!" %( ieee, nwk))
+        raise KeyError
 
-        raise KeyError      
+
 
     def handle_leave(self, nwk, ieee):
         # super().handle_leave(nwk,ieee)
@@ -107,20 +117,15 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         message: bytes,
     ) -> None:
 
-
-
-        # Domoticz.Log("handle_message %s" %(str(profile)))
         if sender.nwk or sender.ieee:
-            #self.log.logging("TransportZigpy", "Debug", "=====> Sender %s - %s" % (sender.nwk, sender.ieee))
             if sender.nwk:
                 addr_mode = 0x02
                 addr = sender.nwk.serialize()[::-1].hex()
                 #self.log.logging("TransportZigpy", "Debug", "=====> sender.nwk %s - %s" % (sender.nwk, addr))
 
             elif sender.ieee:
-                addr = "%016x" % t.uint64_t.deserialize(self.app.ieee.serialize())[0]
+                addr = "%016x" % t.uint64_t.deserialize(sender.ieee.serialize())[0]
                 addr_mode = 0x03
-                #self.log.logging("TransportZigpy", "Debug", "=====> sender.ieee %s - %s" % (sender.ieee, addr))
 
             if addr:
                 self.log.logging(
