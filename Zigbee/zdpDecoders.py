@@ -217,13 +217,47 @@ def buildframe_bind_response_command(self, SrcNwkId, SrcEndPoint, ClusterId, Pay
 
 
 def buildframe_nwk_address_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
-    self.log.logging("zdpDecoder", "Error", "buildframe_nwk_address_response NOT IMPLEMENTED YET")
-    return frame
+    
+    NWKAddrAssocDevList = ""
+    sqn = Payload[:2]
+    status = Payload[2:4]
+    ieee = "%016x" % struct.unpack("Q", struct.pack(">Q", int(Payload[4:20], 16)))[0]
+    nwkid = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[20:24], 16)))[0]
+    
+    self.log.logging("zdpDecoder", "Debug", "buildframe_nwk_address_response sqn: %s status: %s ieee: %s nwkid: %s" %( sqn, status, ieee, nwkid))
+    NumAssocDev = Payload[24:26] if len(Payload) > 24 else ""
+    StartIndex = Payload[26:28] if len(Payload) > 26 else ""
+    if len(Payload) > 28:
+        NWKAddrAssocDevList = ""
+        idx = 28
+        for _ in range(int(NumAssocDev,16)):
+            NWKAddrAssocDevList += "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[idx:idx+4], 16)))[0]
+            idx += 4
+
+    buildPayload = sqn + status + ieee + nwkid + NumAssocDev + StartIndex + NWKAddrAssocDevList
+    return encapsulate_plugin_frame("8040", buildPayload, frame[len(frame) - 4 : len(frame) - 2])    
 
 
 def buildframe_ieee_address_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
-    self.log.logging("zdpDecoder", "Error", "buildframe_nwk_address_response NOT IMPLEMENTED YET")
-    return frame
+    NWKAddrAssocDevList = ""
+    sqn = Payload[:2]
+    status = Payload[2:4]
+    ieee = "%016x" % struct.unpack("Q", struct.pack(">Q", int(Payload[4:20], 16)))[0]
+    nwkid = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[20:24], 16)))[0]
+
+    self.log.logging("zdpDecoder", "Debug", "buildframe_ieee_address_response sqn: %s status: %s ieee: %s nwkid: %s" %( sqn, status, ieee, nwkid))
+    NumAssocDev = Payload[24:26] if len(Payload) > 24 else ""
+    StartIndex = Payload[26:28] if len(Payload) > 26 else ""
+    if len(Payload) > 28:
+        NWKAddrAssocDevList = ""
+        idx = 28
+        for _ in range(int(NumAssocDev,16)):
+            NWKAddrAssocDevList += "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[idx:idx+4], 16)))[0]
+            idx += 4
+
+    buildPayload = sqn + status + ieee + nwkid + NumAssocDev + StartIndex + NWKAddrAssocDevList
+    return encapsulate_plugin_frame("8041", buildPayload, frame[len(frame) - 4 : len(frame) - 2])    
+    
 
 
 def buildframe_power_description_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
