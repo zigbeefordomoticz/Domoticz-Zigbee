@@ -84,15 +84,6 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channe
     # Send Network information to plugin, in order to poplulate various objetcs
     self.forwarder_queue.put(build_plugin_8009_frame_content(self, radiomodule))
 
-    #self.log.logging("TransportZigpy", "Debug", "PAN ID:               0x%04x" % self.app.pan_id)
-    #self.log.logging("TransportZigpy", "Debug", "Extended PAN ID:      0x%s" % self.app.extended_pan_id)
-    #self.log.logging("TransportZigpy", "Debug", "Channel:              %d" % self.app.channel)
-    #self.log.logging("TransportZigpy", "Debug", "Device IEEE:          %s" % self.app.ieee)
-    #self.log.logging("TransportZigpy", "Debug", "Device NWK:           0x%04x" % self.app.nwk)
-
-    # Retreive Active Ep and Simple Descriptor of Controller
-    # self.endpoints: dict[int, zdo.ZDO | zigpy.endpoint.Endpoint] = {0: self.zdo}
-
     # Send Controller Active Node and Node Descriptor
     self.forwarder_queue.put(build_plugin_8045_frame_list_controller_ep(self,))
 
@@ -102,6 +93,7 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channe
             continue
         self.log.logging("TransportZigpy", "Debug", "Simple Descriptor:  %s" % ep )
         self.forwarder_queue.put(build_plugin_8043_frame_list_node_descriptor(self, epid, ep))
+        
     self.log.logging ("TransportZigpy", "Debug", "Controller Model %s" % self.app.get_device(nwk = t.NWK(0x0000)).model)
     self.log.logging ("TransportZigpy", "Debug", "Controller Manufacturer %s" % self.app.get_device(nwk = t.NWK(0x0000)).manufacturer)
     # Let send a 0302 to simulate an Off/on

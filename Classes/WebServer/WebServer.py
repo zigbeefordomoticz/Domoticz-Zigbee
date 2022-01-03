@@ -110,7 +110,7 @@ class WebServer(object):
         self.WebUsername = WebUserName
         self.WebPassword = WebPassword
         self.pluginconf = PluginConf
-        self.ControlerData = ZigateData
+        self.ControllerData = ZigateData
         self.adminWidget = adminWidgets
         self.ControllerLink = ZigateComm
         self.statistics = Statistics
@@ -211,7 +211,7 @@ class WebServer(object):
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == "GET":
             if self.pluginParameters["Mode2"] != "None":
-                self.ControlerData["startZigateNeeded"] = True
+                self.ControllerData["startZigateNeeded"] = True
                 # start_Zigate( self )
                 sendZigateCmd(self, "0002", "00")  # Force Zigate to Normal mode
                 sendZigateCmd(self, "0011", "")  # Software Reset
@@ -224,8 +224,8 @@ class WebServer(object):
         _response = prepResponseMessage(self, setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == "GET":
-            if self.ControlerData:
-                _response["Data"] = json.dumps(self.ControlerData, sort_keys=True)
+            if self.ControllerData:
+                _response["Data"] = json.dumps(self.ControllerData, sort_keys=True)
             else:
                 fake_zigate = {
                     "Firmware Version": "fake - 0310",
@@ -732,9 +732,9 @@ class WebServer(object):
                     del self.IEEE2NWK[ieee]
 
                 # for a remove in case device didn't send the leave
-                if "IEEE" in self.ControlerData and ieee:
+                if "IEEE" in self.ControllerData and ieee:
                     # uParrentAddress + uChildAddress (uint64)
-                    sendZigateCmd(self, "0026", self.ControlerData["IEEE"] + ieee)
+                    sendZigateCmd(self, "0026", self.ControllerData["IEEE"] + ieee)
 
                 action = {"Name": "Device %s/%s removed" % (nwkid, ieee)}
                 _response["Data"] = json.dumps(action, sort_keys=True)

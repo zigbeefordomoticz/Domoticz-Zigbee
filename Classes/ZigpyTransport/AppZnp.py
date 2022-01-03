@@ -49,10 +49,15 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         await super().startup(auto_form=auto_form,force_form=force_form)
 
         # Trigger Version payload to plugin
-        Model = "10"  # Zigpy
-        FirmwareMajorVersion = "10"
-        FirmwareVersion = "0400"
-        self.callBackHandleMessage(build_plugin_8010_frame_content(Model, FirmwareMajorVersion, FirmwareVersion))
+        
+        znp_model = self.get_device(nwk = t.NWK(0x0000)).model
+        znp_manuf = self.get_device(nwk = t.NWK(0x0000)).manufacturer
+        ZNP_330 = "CC1352/CC2652, Z-Stack 3.30+"
+        FirmwareBranch = "10" if znp_model[:len(ZNP_330)] == ZNP_330 else "99"
+        znp_model[ znp_model.find("build") + 6 : -5 ]
+        FirmwareMajorVersion = "%02x" %int(znp_model[ znp_model.find("build") + 8 : -5 ])
+        FirmwareVersion = "%04x" %int(znp_model[ znp_model.find("build") + 10: -1])
+        self.callBackHandleMessage(build_plugin_8010_frame_content(FirmwareBranch, FirmwareMajorVersion, FirmwareVersion))
 
 
     async def _register_endpoints(self) -> None:

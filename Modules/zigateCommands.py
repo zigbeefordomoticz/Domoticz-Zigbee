@@ -47,22 +47,6 @@ def zigate_get_firmware_version(self):
     if self.zigbee_communitation == "zigpy":
         # Should be done during zigpy startup()
         return
-        #return self.ControllerLink.sendData( "GET-FIRMWARE-VERSION", None) 
-        #self.PDMready = True #TODO this must be done only if the initiatilisation went through
-        #version = self.ControllerLink.get_zigpy_firmware_version()
-        #self.FirmwareBranch = version['Branch']
-        #self.FirmwareMajorVersion = version['Model']
-        #self.FirmwareVersion = version['Firmware']
-        #if self.FirmwareMajorVersion == "03":
-        #    self.log.logging("Input", "Status", "ZiGate Classic PDM (legacy)")
-        #    self.ZiGateModel = 1
-        #elif self.FirmwareMajorVersion == "04":
-        #    self.log.logging("Input", "Status", "ZiGate Classic PDM (OptiPDM)")
-        #    self.ZiGateModel = 1
-        #elif self.FirmwareMajorVersion == "05":
-        #    self.log.logging("Input", "Status", "ZiGate+ (V2)")
-        #    self.ZiGateModel = 2
-        #return None
     return send_zigatecmd_raw(self, "0010", "")
     
 def zigate_soft_reset(self):
