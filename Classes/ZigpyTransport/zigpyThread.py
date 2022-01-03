@@ -102,7 +102,8 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channe
             continue
         self.log.logging("TransportZigpy", "Debug", "Simple Descriptor:  %s" % ep )
         self.forwarder_queue.put(build_plugin_8043_frame_list_node_descriptor(self, epid, ep))
-
+    self.log.logging ("TransportZigpy", "Debug", "Controller Model %s" % self.app.get_device(nwk = t.NWK(0x0000)).model)
+    self.log.logging ("TransportZigpy", "Debug", "Controller Manufacturer %s" % self.app.get_device(nwk = t.NWK(0x0000)).manufacturer)
     # Let send a 0302 to simulate an Off/on
     self.forwarder_queue.put(build_plugin_0302_frame_content(self,))
     
