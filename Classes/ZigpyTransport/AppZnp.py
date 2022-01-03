@@ -44,6 +44,8 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         self.log = log
         self.callBackHandleMessage = callBackHandleMessage
         self.callBackGetDevice = callBackGetDevice
+        self.znp_config[conf.CONF_MAX_CONCURRENT_REQUESTS] = 16
+
         await super().startup(auto_form=auto_form,force_form=force_form)
 
         # Trigger Version payload to plugin
