@@ -11,7 +11,7 @@ from Zigbee.zdpDecoders import zdp_decoders
 
 def decode8002_and_process(self, frame):
 
-    ProfileId, SrcNwkId, SrcEndPoint, ClusterId, Payload = extract_nwk_infos_from_8002(frame)
+    ProfileId, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload = extract_nwk_infos_from_8002(frame)
     self.log.logging("Transport8002", "Debug", "decode8002_and_process ProfileId: %04x %s %s" % (
         int(ProfileId,16), SrcNwkId, frame))
     self.log.logging("Transport8002", "Debug", "decode8002_and_process ProfileID: %04x NwkId: %s Ep: %s Cluster: %s Payload: %s" % (
@@ -21,12 +21,12 @@ def decode8002_and_process(self, frame):
         return frame
 
     if ProfileId == "0000":
-        frame = zdp_decoders(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame)
+        frame = zdp_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, frame)
         self.log.logging("Transport8002", "Debug", "decode8002_and_process return ZDP frame: %s" % frame)
         return frame
 
     # Z-Stack doesn't provide Profile Information, so we should assumed that if it is not 0x0000 (ZDP) it is then ZCL
-    frame = zcl_decoders(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame)
+    frame = zcl_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, frame)
     self.log.logging("Transport8002", "Debug", "decode8002_and_process return ZCL frame: %s" % frame)
     return frame
 
@@ -38,7 +38,7 @@ def extract_nwk_infos_from_8002(frame):
     MsgCRC = frame[10:12]
 
     if len(frame) < 18:
-        return (None, None, None, None, None)
+        return (None, None, None, None, None, None)
 
     # Payload
     MsgData = frame[12 : len(frame) - 4]
@@ -68,7 +68,7 @@ def extract_nwk_infos_from_8002(frame):
             Payload = MsgData[38 : len(MsgData)]
 
         else:
-            return (None, None, None, None, None)
+            return (None, None, None, None, None, None)
 
     elif int(SrcAddrMode, 16) == ADDRESS_MODE["ieee"]:
         SrcNwkId = MsgData[16:32]  # uint32_t
@@ -86,8 +86,8 @@ def extract_nwk_infos_from_8002(frame):
             TargetNwkId = MsgData[34:40]  # uint32_t
             Payload = MsgData[40 : len(MsgData)]
         else:
-            return (None, None, None, None, None)
+            return (None, None, None, None, None, None)
     else:
-        return (None, None, None, None, None)
+        return (None, None, None, None, None, None)
 
-    return (ProfileId, SrcNwkId, SrcEndPoint, ClusterId, Payload)
+    return (ProfileId, SrcNwkId, SrcEndPoint, TargetEndPoint, ClusterId, Payload)

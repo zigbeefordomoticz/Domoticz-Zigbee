@@ -425,7 +425,7 @@ def ReadAttributeRequest_0000_for_pairing(self, key):
     # Do We have Model Name
     if ( ListOfEp and  self.ListOfDevices[key]["Model"] in [ {}, ""] ):
         self.log.logging("ReadAttributes", "Debug", "Request Basic  Model Name via Read Attribute request: %s" % "0005", nwkid=key)
-        model_name = [0x0005]
+        model_name = [0x0004, 0x0005]
         for x in ListOfEp:
             ReadAttributeReq(self, key, ZIGATE_EP, x, "0000", model_name, ackIsDisabled=False, checkTime=False)
 

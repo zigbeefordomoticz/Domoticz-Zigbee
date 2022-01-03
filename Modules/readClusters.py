@@ -358,13 +358,17 @@ def Cluster0000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         if "Manufacturer Name" in self.ListOfDevices[MsgSrcAddr]:
             manufacturer_name = self.ListOfDevices[MsgSrcAddr]["Manufacturer Name"]
 
+        manuf_code = ""
+        if "Manufacturer" in self.ListOfDevices[MsgSrcAddr]:
+            manuf_code = self.ListOfDevices[MsgSrcAddr]["Manufacturer"]
+
         if modelName + '-' + manufacturer_name in self.DeviceConf:
             modelName = modelName + '-' + manufacturer_name
             
         elif modelName + manufacturer_name in self.DeviceConf:
             modelName = modelName + manufacturer_name
             
-        elif modelName == "Thermostat" and manufacturer_name == "Schneider Electric":
+        elif modelName == "Thermostat" and ( manufacturer_name == "Schneider Electric" or manuf_code == "105e"):
             modelName = "Wiser2-Thermostat"
 
         elif modelName == "lumi.sensor_swit":
