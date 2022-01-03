@@ -419,7 +419,11 @@ def LQIresp_decoding(self, MsgData):
     NwkIdSource = None
     if len(self.LQIreqInProgress) > 0:
         NwkIdSource = self.LQIreqInProgress.pop()
-
+        
+    if len(MsgData) < 10:
+        self.logging("Erro", "LQIresp_decoding - Incomplete message: %s (%s)" %(MsgData, len(MsgData)))
+        return
+        
     SQN = MsgData[0:2]
     Status = MsgData[2:4]
     NeighbourTableEntries = int(MsgData[4:6], 16)
