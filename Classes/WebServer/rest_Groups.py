@@ -32,9 +32,9 @@ def rest_zGroup_lst_avlble_dev(self, verb, data, parameters):
     _widget["Ep"] = "01"
     _widget["ZDeviceName"] = "Zigate (Coordinator)"
 
-    if self.ControlerData and "IEEE" in self.ControlerData:
-        _widget["IEEE"] = self.ControlerData["IEEE"]
-        _device["_NwkId"] = self.ControlerData["Short Address"]
+    if self.ControllerData and "IEEE" in self.ControllerData:
+        _widget["IEEE"] = self.ControllerData["IEEE"]
+        _device["_NwkId"] = self.ControllerData["Short Address"]
 
     _device["WidgetList"].append(_widget)
     device_lst.append(_device)

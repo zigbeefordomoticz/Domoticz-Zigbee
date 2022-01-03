@@ -771,7 +771,7 @@ def Decode8003(self, Devices, MsgData, MsgLQI):  # Device cluster list
     MsgClusterID = MsgData[6 : len(MsgData)]
 
     clusterLst = [MsgClusterID[idx : idx + 4] for idx in range(0, len(MsgClusterID), 4)]
-    self.ControlerData["Cluster List"] = clusterLst
+    self.ControllerData["Cluster List"] = clusterLst
     self.log.logging(
         "Input",
         "Status",
@@ -794,7 +794,7 @@ def Decode8004(self, Devices, MsgData, MsgLQI):  # Device attribut list
 
     attributeLst = [MsgAttributList[idx : idx + 4] for idx in range(0, len(MsgAttributList), 4)]
 
-    self.ControlerData["Device Attributs List"] = attributeLst
+    self.ControllerData["Device Attributs List"] = attributeLst
     self.log.logging(
         "Input",
         "Status",
@@ -819,7 +819,7 @@ def Decode8005(self, Devices, MsgData, MsgLQI):  # Command list
 
     commandLst = [MsgCommandList[idx : idx + 4] for idx in range(0, len(MsgCommandList), 4)]
 
-    self.ControlerData["Device Attributs List"] = commandLst
+    self.ControllerData["Device Attributs List"] = commandLst
     self.log.logging(
         "Input",
         "Status",
@@ -921,7 +921,7 @@ def Decode8009(self, Devices, MsgData, MsgLQI):  # Network State response (Firm 
 
     # Let's check if this is a first initialisation, and then we need to update the Channel setting
     if (
-        "startZigateNeeded" not in self.ControlerData
+        "startZigateNeeded" not in self.ControllerData
         and not self.startZigateNeeded
         and str(int(Channel, 16)) != self.pluginconf.pluginConf["channel"]
     ):
@@ -962,11 +962,11 @@ def Decode8009(self, Devices, MsgData, MsgLQI):  # Network State response (Firm 
             "Network state UP, PANID: %s extPANID: 0x%s Channel: %s" % (PanID, extPanID, int(Channel, 16)),
         )
 
-    self.ControlerData["IEEE"] = extaddr
-    self.ControlerData["Short Address"] = addr
-    self.ControlerData["Channel"] = int(Channel, 16)
-    self.ControlerData["PANID"] = PanID
-    self.ControlerData["Extended PANID"] = extPanID
+    self.ControllerData["IEEE"] = extaddr
+    self.ControllerData["Short Address"] = addr
+    self.ControllerData["Channel"] = int(Channel, 16)
+    self.ControllerData["PANID"] = PanID
+    self.ControllerData["Extended PANID"] = extPanID
     
 def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
     # MsgLen = len(MsgData)
@@ -974,15 +974,25 @@ def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
     FIRMWARE_BRANCH = {
         "00": "Production",
         "01": "Beta",
-        "10": "zigpy",
-
+        "10": "zigpy-znp",
+        "11": "zigpy-zigate"
     }
     self.FirmwareBranch = MsgData[:2]
     self.FirmwareMajorVersion = MsgData[2:4]
     self.FirmwareVersion = MsgData[4:8]
 
     self.log.logging("Input", "Debug", "Decode8010 - Reception Version list:%s" % MsgData)
-    if self.FirmwareMajorVersion == "03":
+
+    if self.FirmwareBranch in FIRMWARE_BRANCH and int(self.FirmwareBranch,16) > 0x10:
+        # Zigpy-Znp
+        if self.FirmwareBranch == "10":
+            self.log.logging("Input", "Status", "Texas Instrument ZNP CC1352/CC2652, Z-Stack 3.30+)")
+            self.ControllerData["Controller firmware"] = "Texas Instrument ZNP CC1352/CC2652, Z-Stack 3.30+)"
+            # the Build date is coded into "20" + "%02d" %int(FirmwareMajorVersion,16) + "%04d" %int(FirmwareVersion,16)
+            self.ControllerData["Firmware Version"] = "Zigpy-znp, build(20%02d%04d" %( int(self.FirmwareMajorVersion,16), int(self.FirmwareVersion,16))
+        else:
+            self.log.logging("Input", "Error", "Un tested Zigbee adapater model, please report to the Zigbee for Domoticz team")
+    elif self.FirmwareMajorVersion == "03":
         self.log.logging("Input", "Status", "ZiGate Classic PDM (legacy)")
         self.ZiGateModel = 1
     elif self.FirmwareMajorVersion == "04":
@@ -991,12 +1001,11 @@ def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
     elif self.FirmwareMajorVersion == "05":
         self.log.logging("Input", "Status", "ZiGate+ (V2)")
         self.ZiGateModel = 2
-    elif self.FirmwareMajorVersion == "10":
-        self.log.logging("Input", "Status", "Texas Instrument ZNP CC1352/CC2652, Z-Stack 3.30+)")
-        
+
+
     self.log.logging("Input", "Status", "Installer Version Number: %s" % self.FirmwareVersion)
     self.log.logging("Input", "Status", "Branch Version: ==> %s <==" % FIRMWARE_BRANCH[self.FirmwareBranch])
-    self.ControlerData["Firmware Version"] = "Branch: %s Major: %s Version: %s" % (
+    self.ControllerData["Firmware Version"] = "Branch: %s Major: %s Version: %s" % (
         self.FirmwareBranch,
         self.FirmwareMajorVersion,
         self.FirmwareVersion,
@@ -1333,7 +1342,7 @@ def Decode8024(self, Devices, MsgData, MsgLQI):  # Network joined / formed
     if MsgExtendedAddress != "" and MsgShortAddress != "" and MsgShortAddress == "0000":
         # Let's check if this is a first initialisation, and then we need to update the Channel setting
         if (
-            "startZigateNeeded" not in self.ControlerData
+            "startZigateNeeded" not in self.ControllerData
             and not self.startZigateNeeded
             and str(int(MsgChannel, 16)) != self.pluginconf.pluginConf["channel"]
         ):
@@ -1353,9 +1362,9 @@ def Decode8024(self, Devices, MsgData, MsgLQI):  # Network joined / formed
         if self.groupmgt:
             self.groupmgt.updateZigateIEEE(MsgExtendedAddress)
 
-        self.ControlerData["IEEE"] = MsgExtendedAddress
-        self.ControlerData["Short Address"] = MsgShortAddress
-        self.ControlerData["Channel"] = int(MsgChannel, 16)
+        self.ControllerData["IEEE"] = MsgExtendedAddress
+        self.ControllerData["Short Address"] = MsgShortAddress
+        self.ControllerData["Channel"] = int(MsgChannel, 16)
 
         self.log.logging(
             "Input",
@@ -4185,10 +4194,10 @@ def Decode8806(self, Devices, MsgData, MsgLQI):
     self.log.logging("Input", "Debug", "Decode8806 - MsgData: %s" % MsgData)
 
     TxPower = MsgData[0:2]
-    self.ControlerData["Tx-Power"] = TxPower
+    self.ControllerData["Tx-Power"] = TxPower
 
     if int(TxPower, 16) in ATTENUATION_dBm["JN516x"]:
-        self.ControlerData["Tx-Attenuation"] = ATTENUATION_dBm["JN516x"][int(TxPower, 16)]
+        self.ControllerData["Tx-Attenuation"] = ATTENUATION_dBm["JN516x"][int(TxPower, 16)]
         self.log.logging(
             "Input",
             "Status",
@@ -4208,9 +4217,9 @@ def Decode8807(self, Devices, MsgData, MsgLQI):
     Domoticz.Debug("Decode8807 - MsgData: %s" % MsgData)
 
     TxPower = MsgData[0:2]
-    self.ControlerData["Tx-Power"] = TxPower
+    self.ControllerData["Tx-Power"] = TxPower
     if int(TxPower, 16) in ATTENUATION_dBm["JN516x"]:
-        self.ControlerData["Tx-Attenuation"] = ATTENUATION_dBm["JN516x"][int(TxPower, 16)]
+        self.ControllerData["Tx-Attenuation"] = ATTENUATION_dBm["JN516x"][int(TxPower, 16)]
         self.log.logging(
             "Input",
             "Status",

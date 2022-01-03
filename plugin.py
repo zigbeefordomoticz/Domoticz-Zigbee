@@ -150,7 +150,7 @@ class BasePlugin:
         )  # {DevicesAddresse : { status : status_de_detection, data : {ep list ou autres en fonctions du status}}, DevicesAddresse : ...}
         self.DiscoveryDevices = {}  # Used to collect pairing information
         self.IEEE2NWK = {}
-        self.ControlerData = {}
+        self.ControllerData = {}
         self.DeviceConf = {}  # Store DeviceConf.txt, all known devices configuration
 
         # Objects from Classe
@@ -829,9 +829,9 @@ class BasePlugin:
 
         # Quiet a bad hack. In order to get the needs for ZigateRestart
         # from WebServer
-        if "startZigateNeeded" in self.ControlerData and self.ControlerData["startZigateNeeded"]:
+        if "startZigateNeeded" in self.ControllerData and self.ControllerData["startZigateNeeded"]:
             self.startZigateNeeded = self.HeartbeatCount
-            del self.ControlerData["startZigateNeeded"]
+            del self.ControllerData["startZigateNeeded"]
 
         # Starting PDM on Host firmware version, we have to wait that Zigate is fully initialized ( PDM loaded into memory from Host).
         # We wait for self.zigateReady which is set to True in th pdmZigate module
@@ -1126,7 +1126,7 @@ def zigateInit_Phase3(self):
 
     self.pluginParameters["FirmwareVersion"] = self.FirmwareVersion
 
-    if not check_firmware_level(self):
+    if self.zigbee_communitation == "native" and not check_firmware_level(self):
         self.log.logging("Plugin", "Debug", "Firmware not ready")
         return
         
@@ -1308,7 +1308,7 @@ def start_web_server(self, webserver_port, webserver_homefolder):
     self.log.logging("Plugin", "Status", "Start Web Server connection")
     self.webserver = WebServer(
         self.zigbee_communitation,
-        self.ControlerData,
+        self.ControllerData,
         self.pluginParameters,
         self.pluginconf,
         self.statistics,
