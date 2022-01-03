@@ -11,14 +11,14 @@ from Zigbee.encoder_tools import encapsulate_plugin_frame, decode_endian_data
 from Modules.zigateConsts import ADDRESS_MODE, SIZE_DATA_TYPE
 
 
-def zcl_decoders(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
+def zcl_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, frame):
 
     GlobalCommand, Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002(Payload)
     self.log.logging("zclDecoder", "Debug", "zcl_decoders GlobalCommand: %s Sqn: %s ManufCode: %s Command: %s Data: %s Payload: %s" %(
         GlobalCommand, Sqn, ManufacturerCode, Command, Data, Payload))
 
     if GlobalCommand:
-        return buildframe_foundation_cluster( self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Data )
+        return buildframe_foundation_cluster( self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Data )
 
     if ClusterId == "0004":
         return buildframe_for_cluster_0004(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data )
@@ -71,37 +71,37 @@ def zcl_decoders(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
 
     return frame
 
-def buildframe_foundation_cluster( self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Data ):
+def buildframe_foundation_cluster( self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Data ):
     self.log.logging("zclDecoder", "Debug", "zcl_decoders Sqn: %s/%s ManufCode: %s Command: %s Data: %s " % (int(Sqn, 16), Sqn, ManufacturerCode, Command, Data))
     if Command == "00":  # Read Attribute
-        return buildframe_read_attribute_request(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Data)
+        return buildframe_read_attribute_request(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Data)
 
     if Command == "01":  # Read Attribute response
-        return buildframe_read_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
+        return buildframe_read_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
 
     if Command == "02":  # Write Attributes
-        return buildframe_write_attribute_request(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Data)
+        return buildframe_write_attribute_request(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Data)
 
     if Command == "04":  # Write Attribute response
-        return buildframe_write_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
+        return buildframe_write_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
 
     if Command == "06":  # Configure Reporting
         return frame
 
     if Command == "07":  # Configure Reporting Response
-        return buildframe_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
+        return buildframe_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
 
     if Command == "0a":  # Report attributes
-        return buildframe_report_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
+        return buildframe_report_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
 
     if Command == "0b":  #
         return frame
 
     if Command == "0d":  # Discover Attributes Response
-        return buildframe_discover_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
+        return buildframe_discover_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
 
 
-def buildframe_discover_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data):
+def buildframe_discover_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
 
     self.log.logging("zclDecoder", "Debug", "buildframe_discover_attribute_response - Data: %s" % Data)
     discovery_complete = Data[:2]
@@ -120,7 +120,7 @@ def buildframe_discover_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoi
     return encapsulate_plugin_frame("8140", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 
-def buildframe_read_attribute_request(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Data):
+def buildframe_read_attribute_request(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Data):
     self.log.logging("zclDecoder", "Debug", "buildframe_read_attribute_request - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
     if len(Data) % 4 != 0:
         self.log.logging("zclDecoder", "Debug", "Most Likely Livolo Frame : %s (%s)" % (Data, len(Data)))
@@ -132,7 +132,7 @@ def buildframe_read_attribute_request(self, frame, Sqn, SrcNwkId, SrcEndPoint, C
         ManufSpec = "01"
         ManufCode = ManufacturerCode
 
-    buildPayload = Sqn + SrcNwkId + SrcEndPoint + "01" + ClusterId + "01" + ManufSpec + ManufCode
+    buildPayload = Sqn + SrcNwkId + SrcEndPoint + TargetEp + ClusterId + "01" + ManufSpec + ManufCode
     idx = nbAttribute = 0
     payloadOfAttributes = ""
     while idx < len(Data):
@@ -145,7 +145,7 @@ def buildframe_read_attribute_request(self, frame, Sqn, SrcNwkId, SrcEndPoint, C
     return encapsulate_plugin_frame("0100", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 
-def buildframe_write_attribute_request(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Data):
+def buildframe_write_attribute_request(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Data):
     self.log.logging("zclDecoder", "Debug", "buildframe_write_attribute_request - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
 
     ManufSpec = "00"
@@ -154,7 +154,7 @@ def buildframe_write_attribute_request(self, frame, Sqn, SrcNwkId, SrcEndPoint, 
         ManufSpec = "01"
         ManufCode = ManufacturerCode
 
-    buildPayload = Sqn + SrcNwkId + SrcEndPoint + "01" + ClusterId + "01" + ManufSpec + ManufCode
+    buildPayload = Sqn + SrcNwkId + SrcEndPoint + TargetEp + ClusterId + "01" + ManufSpec + ManufCode
     idx = nbAttribute = 0
     payloadOfAttributes = ""
     while idx < len(Data):
@@ -190,7 +190,7 @@ def buildframe_write_attribute_request(self, frame, Sqn, SrcNwkId, SrcEndPoint, 
     return encapsulate_plugin_frame("0110", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 
-def buildframe_write_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data):
+def buildframe_write_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
     self.log.logging("zclDecoder", "Debug", "buildframe_write_attribute_response - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
 
     # This is based on assumption that we only Write 1 attribute at a time
@@ -198,7 +198,7 @@ def buildframe_write_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint,
     return encapsulate_plugin_frame("8110", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 
-def buildframe_read_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data):
+def buildframe_read_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
     self.log.logging("zclDecoder", "Debug", "buildframe_read_attribute_response - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
 
     nbAttribute = 0
@@ -251,7 +251,7 @@ def buildframe_read_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, 
     return encapsulate_plugin_frame("8100", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 
-def buildframe_report_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data):
+def buildframe_report_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
     self.log.logging("zclDecoder", "Debug", "buildframe_report_attribute_response - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
 
     buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId
@@ -296,7 +296,7 @@ def buildframe_report_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint
     return encapsulate_plugin_frame("8102", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 
-def buildframe_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data):
+def buildframe_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
     self.log.logging("zclDecoder", "Debug", "buildframe_configure_reporting_response - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
 
     if len(Data) == 2:
@@ -324,18 +324,18 @@ def buildframe_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPo
 
 # Cluster 0x0004 - Groups
 
-def buildframe_for_cluster_0004(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data ):
+def buildframe_for_cluster_0004(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data ):
     if Command == "00":
-        return buildframe_8060_add_group_member_ship_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
+        return buildframe_8060_add_group_member_ship_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
     if Command == "01":
-        return buildframe_8061_check_group_member_ship_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
+        return buildframe_8061_check_group_member_ship_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
     if Command == "02":
-        return buildframe8062_look_for_group_member_ship_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
+        return buildframe8062_look_for_group_member_ship_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
     if Command == "03":
-        return buildframe8063_remove_group_member_ship_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data)
+        return buildframe8063_remove_group_member_ship_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
 
 
-def buildframe_8060_add_group_member_ship_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data):
+def buildframe_8060_add_group_member_ship_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
     #MsgSequenceNumber = MsgData[0:2]
     #MsgEP = MsgData[2:4]
     #MsgClusterID = MsgData[4:8]
@@ -348,7 +348,7 @@ def buildframe_8060_add_group_member_ship_response(self, frame, Sqn, SrcNwkId, S
     return encapsulate_plugin_frame("8060", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 
-def buildframe_8061_check_group_member_ship_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data):
+def buildframe_8061_check_group_member_ship_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
     #MsgSequenceNumber = MsgData[0:2]
     #MsgEP = MsgData[2:4]
     #MsgClusterID = MsgData[4:8]
@@ -364,7 +364,7 @@ def buildframe_8061_check_group_member_ship_response(self, frame, Sqn, SrcNwkId,
     buildPayload = Sqn + SrcEndPoint + "0004" + status + groupid + SrcNwkId
     return encapsulate_plugin_frame("8061", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
-def buildframe8062_look_for_group_member_ship_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data):
+def buildframe8062_look_for_group_member_ship_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
     #MsgSequenceNumber = MsgData[0:2]
     #MsgEP = MsgData[2:4]
     #MsgClusterID = MsgData[4:8]
@@ -389,7 +389,7 @@ def buildframe8062_look_for_group_member_ship_response(self, frame, Sqn, SrcNwkI
     return encapsulate_plugin_frame("8062", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 
-def buildframe8063_remove_group_member_ship_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, Data):
+def buildframe8063_remove_group_member_ship_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
     #MsgSequenceNumber = MsgData[0:2]
     #MsgEP = MsgData[2:4]
     #MsgClusterID = MsgData[4:8]
@@ -407,7 +407,7 @@ def buildframe8063_remove_group_member_ship_response(self, frame, Sqn, SrcNwkId,
 # Cluster 0x0006
 
 
-def buildframe_80x5_message(self, MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Command, Data):
+def buildframe_80x5_message(self, MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Command, Data):
     # sourcery skip: assign-if-exp
     # handle_message Sender: 0x0EC8 frame for plugin: 0180020011ff00010400060101020ec8020000112401b103
 
@@ -428,7 +428,7 @@ def buildframe_80x5_message(self, MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, Cl
 #     : 0x02 Initiate Test mode
 
 
-def buildframe_0400_cmd(self, MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, ClusterId, ManufacturerCode, Command, Data):
+def buildframe_0400_cmd(self, MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Command, Data):
     self.log.logging("zclDecoder", "Debug", "buildframe_configure_reporting_response - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
 
     # Zone Enroll Response

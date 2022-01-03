@@ -9,7 +9,7 @@ import struct
 from Zigbee.encoder_tools import encapsulate_plugin_frame
 
 
-def zdp_decoders(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
+def zdp_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, frame):
     # self.logging_8002( 'Debug', "zdp_decoders NwkId: %s Ep: %s Cluster: %s Payload: %s" %(SrcNwkId, SrcEndPoint, ClusterId , Payload))
     self.log.logging("zdpDecoder", "Debug", "===> zdp_decoders %s %s %s %s" % (SrcNwkId, SrcEndPoint, ClusterId, Payload))
 
@@ -114,6 +114,11 @@ def zdp_decoders(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
 def buildframe_device_annoucement(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
     # Device Annoucement
 
+    if len(Payload) != 24:
+        self.log.logging("zdpDecoder", "Error", "buildframe_device_annoucement not a Device Annoucement frame %s" % (Payload))
+        return frame
+        
+        
     sqn = Payload[:2]
     nwkid = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[2:6], 16)))[0]
     ieee = "%016x" % struct.unpack("Q", struct.pack(">Q", int(Payload[6:22], 16)))[0]
@@ -128,9 +133,12 @@ def buildframe_device_annoucement(self, SrcNwkId, SrcEndPoint, ClusterId, Payloa
 def buildframe_node_descriptor_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
     # decode8002_and_process ProfileId: b7ca 0000 01/8002/003c/ff/0000008002000002b7ca020000/0300cab701408e66117f50000000500000/b1/03
     # decode8002_and_process return ZDP frame:    01/8042/0022/ff/03-00-b7ca-1166005000500000008e7f0140/b1/03
-
     # 01408e66117f50000000500000
 
+    if len(Payload) != 34:
+        self.log.logging("zdpDecoder", "Error", "buildframe_node_descriptor_response not a Node Descriptor frame %s" % (Payload))
+        return frame
+        
     sqn = Payload[:2]
     status = Payload[2:4]
     nwkid = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[4:8], 16)))[0]
@@ -155,6 +163,10 @@ def buildframe_node_descriptor_response(self, SrcNwkId, SrcEndPoint, ClusterId, 
 
 def buildframe_active_endpoint_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
     # Active End Point Response
+    if len(Payload) < 10:
+        self.log.logging("zdpDecoder", "Error", "buildframe_active_endpoint_response not a Active Endpoint frame %s" % (Payload))
+        return frame
+
     sqn = Payload[:2]
     status = Payload[2:4]
     nwkid = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[4:8], 16)))[0]
@@ -171,7 +183,7 @@ def buildframe_simple_descriptor_response(self, SrcNwkId, SrcEndPoint, ClusterId
     # Node Descriptor Response
 
     if len(Payload) < 14:
-        self.log.logging("zdpDecoder", "Error", "buildframe_simple_descriptor_response - Payload too short: %s from %s" % (Payload, frame))
+        self.log.logging("zdpDecoder", "Error", "buildframe_simple_descriptor_response - not a Simple Descriptor resp" % (Payload))
         return
     sqn = Payload[:2]
     status = Payload[2:4]
@@ -207,6 +219,10 @@ def buildframe_simple_descriptor_response(self, SrcNwkId, SrcEndPoint, ClusterId
 def buildframe_bind_response_command(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
     # 2d00
     # 01/8002/001e/ff/000000/8021/0000/02/2e0b/0200009900/7e/03
+    if len(Payload) < 4:
+        self.log.logging("zdpDecoder", "Error", "buildframe_bind_response_command not a Bind Respo frame %s" % (Payload))
+        return frame
+
     sqn = Payload[:2]
     status = Payload[2:4]
 
@@ -217,6 +233,10 @@ def buildframe_bind_response_command(self, SrcNwkId, SrcEndPoint, ClusterId, Pay
 
 
 def buildframe_nwk_address_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
+
+    if len(Payload) < 24:
+        self.log.logging("zdpDecoder", "Error", "buildframe_nwk_address_response not a Nwk Address Resp frame %s" % (Payload))
+        return frame
     
     NWKAddrAssocDevList = ""
     sqn = Payload[:2]
@@ -239,6 +259,9 @@ def buildframe_nwk_address_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payl
 
 
 def buildframe_ieee_address_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
+    if len(Payload) < 24:
+        self.log.logging("zdpDecoder", "Error", "buildframe_ieee_address_response not a IEEE Address Resp frame %s" % (Payload))
+        return frame
     NWKAddrAssocDevList = ""
     sqn = Payload[:2]
     status = Payload[2:4]
@@ -291,6 +314,10 @@ def buildframe_management_nwk_discovery_response(self, SrcNwkId, SrcEndPoint, Cl
 
 
 def buildframe_management_lqi_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
+    if len(Payload) < 10:
+        self.log.logging("zdpDecoder", "Error", "buildframe_management_lqi_response not a Mgt LQI Resp frame %s" % (Payload))
+        return frame
+
     self.log.logging("zdpDecoder", "Debug", "buildframe_management_lqi_response")
     #07/00/0f00029e96eba7565e4d4129f7c2dbfdfeff23a460120201aa9e96eba7565e4d41ec9a6ad0773cdf8ccf04120201aa
     sqn = Payload[:2]
@@ -337,6 +364,10 @@ def buildframe_leave_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, f
 
 
 def buildframe_direct_join_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
+    if len(Payload) < 4:
+        self.log.logging("zdpDecoder", "Error", "buildframe_direct_join_response not a Direct Join Resp frame %s" % (Payload))
+        return frame
+
     self.log.logging("zdpDecoder", "Error", "buildframe_direct_join_response NOT USED in Plugin")
     sqn = Payload[:2]
     status = Payload[2:4]
@@ -346,6 +377,10 @@ def buildframe_direct_join_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payl
 
 
 def buildframe_permit_join_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
+    if len(Payload) < 4:
+        self.log.logging("zdpDecoder", "Error", "buildframe_permit_join_response not a Permit Join Resp frame %s" % (Payload))
+        return frame
+
     self.log.logging("zdpDecoder", "Error", "buildframe_permit_join_response NOT IMPLEMENTED YET")
     sqn = Payload[:2]
     status = Payload[2:4]
