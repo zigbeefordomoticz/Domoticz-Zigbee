@@ -10,9 +10,9 @@
 
 ## Zigbee for Domoticz
 
-Is a domoticz plugin to connect Zigbee devices through Zigbee controllers like [Zigate](https://zigate.fr) , Texas Instruments CC2531, CC13x2, CC26x2 adapters (via Zigpy library) like [zzh](https://electrolama.com/projects/zig-a-zig-ah/) .
+Zigbee for Domoticz a plugin for [Domoticz home automation software](https://www.domoticz.com/) to connect Zigbee devices through Zigbee cooridnators (Zigbee controllers), like [ZiGate](https://zigate.fr), as well as Texas Instruments CC253x/CC13x2/CC26x2 Zigbee adapters via [zigpy](https://github.com/zigpy) library.
 
-This plugin is an evolution of the mature Zigate plugin, which will continue to manage and handle Zigate in native mode, while other coordinator will be handle through a unified communication library named [zigpy](https://github.com/zigpy/zigpy).
+This plugin is an evolution of the mature Zigate plugin for Domoticz, which will continue to manage and handle Zigate in native mode, while Texas Instruments's and other future Zigbee stacks will be handle through unified communication libraries from the [zigpy](https://github.com/zigpy/zigpy) project.
 
 ## Compatibility WARNINGS
 
@@ -21,18 +21,18 @@ This plugin is an evolution of the mature Zigate plugin, which will continue to 
 The plugin requires Domoticz 2020 or above. We strongly recommend 2021.1 or above
 If you cannot be on Domoticz 2020.x or above, please use the 'stable' branch which is the only one compatible with the oldest Domoticz version
 
-### Tested Hardware Coordinatoros
+### Tested Zigbee Coordinator hardware
 
-The plugin has been full developpped on [Zigate](https://zigate.fr) controller and in closed relationship with the [Zigate](https://zigate.fr) manufactuer.
-Since late 2021 where we have stated opening the plugin to further brands of Coordinators and we have focussed on the [zzh](https://electrolama.com/projects/zig-a-zig-ah/) from [Electrolama](https://electrolama.com), thanks to their sponsorship. And a big thanks to @puddly and @hedda from the zigpy team.
+The plugin was originally developed for the [Zigate](https://zigate.fr) controller in close relationship with the [Zigate](https://zigate.fr) manufactuer.
+Since late 2021 where we have stated opening the plugin to further brands of Zigbee Coordinators and begun focusing on compatibility with the [zzh](https://electrolama.com/projects/zig-a-zig-ah/) from [Electrolama](https://electrolama.com), thanks to their sponsorship. And a big thanks to @puddly and @Adminiuga from the zigpy team.
 
-Any Texas Instruments CC2531, CC13x2, CC26x2 adapters based on the [Zigbee Network Processors](http://dev.ti.com/tirex/content/simplelink_zigbee_sdk_plugin_2_20_00_06/docs/zigbee_user_guide/html/zigbee/introduction.html ) should be supported, more information could be found on [zigpy-znp](https://github.com/zigpy/zigpy-znp) which provided the layer to interface with the coordinator.
+All Texas Instruments CC253x/CC13x2/CC26x2 ZNP (Zigbee Network Processors) adapter using standard Z-Stack 3 (TI  SimpleLink Zigbee stack) firmware should be supported, (e.g. [zzh USB adapter by Electrolama](https://electrolama.com/projects/zig-a-zig-ah/)), more information could be found on [zigpy-znp](https://github.com/zigpy/zigpy-znp) which provides the layer to interface with the Zigbee coordinator.
 
-You can also find a list of [Supported Adapters](https://www.zigbee2mqtt.io/guide/adapters/#recommended) which also works with [zigpy-znp](https://github.com/zigpy/zigpy-znp) and so should work with the plugin
+You can also find a list of Texas Instruments in [Supported Adapters](https://www.zigbee2mqtt.io/guide/adapters/#recommended) which also works with [zigpy-znp](https://github.com/zigpy/zigpy-znp) and as such should also work with this plugin
 
 ## LIMITATIONS
 
-* Please do consider that the current plugin is limited to create a maximum of 255 "Widgets" (Domoticz devices).  This will still give you the possibility to integrate a large number of Zigbee devices , but not an unlimited number.
+* Please do consider that the current plugin is limited to create a maximum of 255 "Widgets" (Domoticz devices).  This will still give you the possibility to integrate a large number of Zigbee devices, but not an unlimited number.
 
 ## Documentation
 
