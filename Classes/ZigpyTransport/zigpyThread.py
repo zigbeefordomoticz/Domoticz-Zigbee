@@ -230,7 +230,7 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
         t_start = 1000 * time.time()
 
     if int(NwkId,16) >= 0xfffb: # Broadcast
-        destination = NwkId
+        destination = int(NwkId,16)
         enableAck = False
         self.log.logging( "TransportZigpy", "Debug", "process_raw_command  call broadcast destination: %s" %NwkId)
         result, msg = await self.app.broadcast( Profile, Cluster, sEp, dEp, 0x0, 0x30, sequence, payload, )
@@ -238,7 +238,7 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
     elif addressmode == 0x01:
         # Group Mode
         enableAck = False
-        destination = t.AddrModeAddress(mode=t.AddrMode.Group, address=NwkId)
+        destination = int(NwkId,16)
         self.log.logging( "TransportZigpy", "Debug", "process_raw_command  call mrequest destination: %s" %destination)
         result, msg = await self.app.mrequest(destination, Profile, Cluster, sEp, sequence, payload)
         
