@@ -14,6 +14,33 @@ Is a domoticz plugin to connect Zigbee devices through Zigbee controllers like [
 
 This plugin is an evolution of the mature Zigate plugin, which will continue to manage and handle Zigate in native mode, while other coordinator will be handle through a unified communication library named [zigpy](https://github.com/zigpy/zigpy).
 
+## First Installation
+
+The first time you have to install the plugin via the `git clone` command
+
+* Go in your Domoticz directory using a command line and open the plugins directory.
+  Usually you should be under domoticz/plugins
+
+* Run: `git clone https://github.com/zigbeefordomoticz/Domoticz-Zigbee.git`
+  It will create a folder 'Domoticz-Zigbee'
+
+* Go in the Zigbee for Domoticz folder ( Domoticz-Zigbee ).
+  Usally you should be under domoticz/plugins/Domoticz-Zigbee
+
+* run: `git submodule update --init --recursive`
+  Finally, make the plugin.py file executable `chmod +x Domoticz-Zigate/plugin.py`
+
+* Restart Domoticz.
+
+[More information available here](https://github.com/pipiche38/Domoticz-Zigate-Wiki/blob/master/en-eng/Plugin_Installation.md)
+
+## Plugin update
+
+* Go in the Zigbee for Domoticz plugin directory
+  Usally you should be under domoticz/plugins/Domoticz-Zigbee
+  
+* run: `git pull --recurse-submodules`
+
 ## Compatibility WARNINGS
 
 ### REQUIRES Domoticz 2020 or above
