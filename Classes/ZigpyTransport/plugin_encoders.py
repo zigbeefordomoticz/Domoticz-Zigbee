@@ -135,7 +135,7 @@ def build_plugin_8002_frame_content(
     if src_addrmode in (0x02, 0x01):
         SourceAddress = address
     elif src_addrmode == 0x03:
-        SourceAddress = "%016x" % address
+        SourceAddress = address
     DestinationAddressMode = "%02x" % dst_addrmode
     DestinationAddress = "%04x" % 0x0000
     Payload = payload
