@@ -942,7 +942,6 @@ SETTINGS = {
                 "hidden": False,
                 "Advanced": True,
             },
-
             "debugCluster": {
                 "type": "bool",
                 "default": 0,
@@ -1199,8 +1198,47 @@ SETTINGS = {
                 "hidden": False,
                 "Advanced": True,
             },
-
             "debugzigateCommand": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": True,
+            },
+            "debugThreadForwarder": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": True,
+            },
+            "debugThreadDomoticz": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": True,
+            },
+            "debugThreadZigpy": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": True,
+            },
+            "debugThreadWriter": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": True,
+            },
+            "debugThreadSerial": {
                 "type": "bool",
                 "default": 0,
                 "current": None,
