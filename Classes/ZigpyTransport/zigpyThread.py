@@ -132,6 +132,9 @@ async def worker_loop(self):
         data = json.loads(entry)
         self.log.logging("TransportZigpy", "Debug", "got a command %s" % data["cmd"], )
 
+        if self.pluginconf.pluginConf["ZiGateReactTime"]:
+            t_start = 1000 * time.time()
+            
         try:
             await dispatch_command( self, data)
 
@@ -160,6 +163,18 @@ async def worker_loop(self):
         except Exception as e:
             self.log.logging("TransportZigpy", "Error", "Error while receiving a Plugin command: >%s<" % e)
             handle_thread_error(self, e, data)
+
+        if self.pluginconf.pluginConf["ZiGateReactTime"]:
+            t_end = 1000 * time.time()
+            t_elapse = int(t_end - t_start)
+            self.statistics.add_timing_zigpy(t_elapse)
+            if t_elapse > 1000:
+                self.log.logging(
+                    "TransportZigpy",
+                    "Log",
+                    "process_raw_command (zigpyThread) spend more than 1s (%s ms) frame: %s" % (t_elapse, data),
+                )
+
 
     self.log.logging("TransportZigpy", "Debug", "ZigyTransport: writer_thread Thread stop.")
 
@@ -216,28 +231,22 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
     payload = bytes.fromhex(data["payload"])
     sequence = Sqn or self.app.get_sequence()
     addressmode = data["AddressMode"]
-    enableAck = not AckIsDisable
 
     self.statistics._sent += 1
     self.log.logging(
         "TransportZigpy",
         "Debug",
         "ZigyTransport: process_raw_command ready to request NwkId: %04x Cluster: %04x Seq: %02x Payload: %s AddrMode: %02x EnableAck: %s, Sqn: %s" % (
-            int(NwkId,16), Cluster, sequence, binascii.hexlify(payload).decode("utf-8"), addressmode, enableAck, Sqn),
+            int(NwkId,16), Cluster, sequence, binascii.hexlify(payload).decode("utf-8"), addressmode, not AckIsDisable, Sqn),
     )
-
-    if self.pluginconf.pluginConf["ZiGateReactTime"]:
-        t_start = 1000 * time.time()
 
     if int(NwkId,16) >= 0xfffb: # Broadcast
         destination = int(NwkId,16)
-        enableAck = False
         self.log.logging( "TransportZigpy", "Debug", "process_raw_command  call broadcast destination: %s" %NwkId)
         result, msg = await self.app.broadcast( Profile, Cluster, sEp, dEp, 0x0, 0x30, sequence, payload, )
 
     elif addressmode == 0x01:
         # Group Mode
-        enableAck = False
         destination = int(NwkId,16)
         self.log.logging( "TransportZigpy", "Debug", "process_raw_command  call mrequest destination: %s" %destination)
         result, msg = await self.app.mrequest(destination, Profile, Cluster, sEp, sequence, payload)
@@ -247,38 +256,26 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
         destination = self.app.get_device (nwk = t.NWK(int(NwkId,16)))
         self.log.logging( "TransportZigpy", "Debug", "process_raw_command  call request destination: %s Profile: %s Cluster: %s sEp: %s dEp: %s Seq: %s Payload: %s" %(
             destination, Profile, Cluster, sEp, dEp, sequence, payload))
-        result, msg = await self.app.request(destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=enableAck, use_ieee=False)
+        result, msg = await self.app.request(destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False)
+        if not AckIsDisable:
+            push_APS_ACK_NACKto_plugin(self, NwkId, result, destination.lqi)
 
     elif addressmode in (0x03, 0x08):
         # Nwkid is in fact an IEEE
         destination = self.app.get_device (nwk = t.NWK(int(NwkId,16)))
         self.log.logging( "TransportZigpy", "Debug", "process_raw_command  call request destination: %s" %destination)
-        result, msg = await self.app.request(destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=enableAck, use_ieee=False)
-
-    if self.pluginconf.pluginConf["ZiGateReactTime"]:
-        t_end = 1000 * time.time()
-        t_elapse = int(t_end - t_start)
-        self.statistics.add_timing_zigpy(t_elapse)
-        if t_elapse > 1000:
-            self.log.logging(
-                "TransportZigpy",
-                "Log",
-                "process_raw_command (zigpyThread) spend more than 1s (%s ms) frame: %s with Ack: %s" % (t_elapse, data, AckIsDisable),
-            )
+        result, msg = await self.app.request(destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False)
 
     self.log.logging(
         "TransportZigpy",
         "Debug",
         "ZigyTransport: process_raw_command completed NwkId: %s result: %s msg: %s" % (destination, result, msg),
     )
-
-    if enableAck:
-        push_APS_ACK_NACKto_plugin(self, destination, result)
-        
+   
     # Slow down for now
     await asyncio.sleep(0.500)
 
-def push_APS_ACK_NACKto_plugin(self, destination, result):
+def push_APS_ACK_NACKto_plugin(self, nwkid, result, lqi):
     # Looks like Zigate return an int, while ZNP returns a status.type
     if not isinstance(result, int):
         result = int(result.serialize().hex(), 16)
@@ -290,9 +287,8 @@ def push_APS_ACK_NACKto_plugin(self, destination, result):
         self.statistics._APSAck += 1
 
     # Send Ack/Nack to Plugin
-    self.forwarder_queue.put(build_plugin_8011_frame_content(self, destination.nwk.serialize()[::-1].hex(), result, destination.lqi))
+    self.forwarder_queue.put(build_plugin_8011_frame_content(self, nwkid, result, lqi))
     
-
 def properyly_display_data( Datas):
     
     log = "{"
