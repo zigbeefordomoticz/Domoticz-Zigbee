@@ -13,13 +13,11 @@
 
 import Domoticz
 import json
-from datetime import datetime
 import threading
 import time
 from queue import Queue, PriorityQueue
 import logging
 from logging.handlers import TimedRotatingFileHandler, RotatingFileHandler
-
 
 class LoggingManagement:
     def __init__(self, pluginconf, PluginHealth, HardwareID, ListOfDevices, permitTojoin):
@@ -42,6 +40,17 @@ class LoggingManagement:
         self.zigpy_login()
 
         start_logging_thread(self)
+
+        # Thread log filter configuration
+        self.threadLogConfig = {}
+        self.threadLogConfig["MainThread"] = "Domoticz"
+        self.threadLogConfig["ZigateSerial_%s" % HardwareID] = self.threadLogConfig[
+            "ZigateTCPIP_%s" % HardwareID
+        ] = self.threadLogConfig["ZigpyCom_%s" % HardwareID] = "Communication"
+        self.threadLogConfig["ZigateForwader_%s" % HardwareID] = self.threadLogConfig[
+            "ZigpyForwarder_%s" % HardwareID
+        ] = "Forwarder"
+        self.threadLogConfig["ZiGateWriter_%s" % HardwareID] = "Writer"
 
     def reset_new_error(self):
         self._newError = False
@@ -74,63 +83,65 @@ class LoggingManagement:
             self.LogErrorHistory[str(self.LogErrorHistory["LastLog"])]["FirmwareMajorVersion"] = FirmwareMajorVersion
 
     def zigpy_login(self):
-        if 'debugTransportZigpyZNP' in self.pluginconf.pluginConf and self.pluginconf.pluginConf['debugTransportZigpyZNP']:
-            requests_logger = logging.getLogger('zigpy') 
-            requests_logger.setLevel(logging.DEBUG) 
-            requests_logger = logging.getLogger('zigpy_znp') 
+        if (
+            "debugTransportZigpyZNP" in self.pluginconf.pluginConf
+            and self.pluginconf.pluginConf["debugTransportZigpyZNP"]
+        ):
+            requests_logger = logging.getLogger("zigpy")
             requests_logger.setLevel(logging.DEBUG)
-            requests_logger = logging.getLogger('AppZnp') 
+            requests_logger = logging.getLogger("zigpy_znp")
             requests_logger.setLevel(logging.DEBUG)
-
-
-        elif 'debugTransportZigpyZigate' in self.pluginconf.pluginConf and self.pluginconf.pluginConf['debugTransportZigpyZigate']:
-            requests_logger = logging.getLogger('zigpy') 
-            requests_logger.setLevel(logging.DEBUG) 
-            requests_logger = logging.getLogger('zigpy_zigate') 
-            requests_logger.setLevel(logging.DEBUG)
-            requests_logger = logging.getLogger('AppZigate') 
+            requests_logger = logging.getLogger("AppZnp")
             requests_logger.setLevel(logging.DEBUG)
 
-            
+        elif (
+            "debugTransportZigpyZigate" in self.pluginconf.pluginConf
+            and self.pluginconf.pluginConf["debugTransportZigpyZigate"]
+        ):
+            requests_logger = logging.getLogger("zigpy")
+            requests_logger.setLevel(logging.DEBUG)
+            requests_logger = logging.getLogger("zigpy_zigate")
+            requests_logger.setLevel(logging.DEBUG)
+            requests_logger = logging.getLogger("AppZigate")
+            requests_logger.setLevel(logging.DEBUG)
+
         else:
-            requests_logger = logging.getLogger('zigpy') 
-            requests_logger.setLevel(logging.WARNING) 
-            requests_logger = logging.getLogger('zigpy_znp') 
+            requests_logger = logging.getLogger("zigpy")
             requests_logger.setLevel(logging.WARNING)
-            requests_logger = logging.getLogger('zigpy_zigate') 
+            requests_logger = logging.getLogger("zigpy_znp")
             requests_logger.setLevel(logging.WARNING)
-            
-
+            requests_logger = logging.getLogger("zigpy_zigate")
+            requests_logger.setLevel(logging.WARNING)
 
     def openLogFile(self):
         self.open_logging_mode()
         self.open_log_history()
-        
+
     def open_logging_mode(self):
         if not self.pluginconf.pluginConf["enablePluginLogging"]:
             return
-        
-        logfilename = ( self.pluginconf.pluginConf["pluginLogs"] + "/PluginZigate_" + "%02d" % self.HardwareID + ".log" )
+
+        logfilename = self.pluginconf.pluginConf["pluginLogs"] + "/PluginZigate_" + "%02d" % self.HardwareID + ".log"
         _backupCount = 7  # Keep 7 days of Logging
         _maxBytes = 0
         if "loggingBackupCount" in self.pluginconf.pluginConf:
             _backupCount = int(self.pluginconf.pluginConf["loggingBackupCount"])
         if "loggingMaxMegaBytes" in self.pluginconf.pluginConf:
             _maxBytes = int(self.pluginconf.pluginConf["loggingMaxMegaBytes"]) * 1024 * 1024
-        Domoticz.Status("Please watch plugin log into %s" %logfilename)
+        Domoticz.Status("Please watch plugin log into %s" % logfilename)
         if _maxBytes == 0:
             # Enable TimedRotating
             logging.basicConfig(
                 level=logging.DEBUG,
                 format="%(asctime)s %(levelname)-8s:%(message)s",
-                handlers=[ TimedRotatingFileHandler(logfilename, when="midnight", interval=1, backupCount=_backupCount) ],
+                handlers=[TimedRotatingFileHandler(logfilename, when="midnight", interval=1, backupCount=_backupCount)],
             )
         else:
             # Enable RotatingFileHandler
             logging.basicConfig(
                 level=logging.DEBUG,
                 format="%(asctime)s %(levelname)-8s:%(message)s",
-                handlers=[ RotatingFileHandler(logfilename, maxBytes=_maxBytes, backupCount=_backupCount)],
+                handlers=[RotatingFileHandler(logfilename, maxBytes=_maxBytes, backupCount=_backupCount)],
             )
 
     def open_log_history(self):
@@ -149,13 +160,13 @@ class LoggingManagement:
             #    self._newError  = True
 
         except json.decoder.JSONDecodeError as e:
-            loggingWriteErrorHistory( self )  # flush the file to avoid the error next startup
+            loggingWriteErrorHistory(self)  # flush the file to avoid the error next startup
             Domoticz.Error("load Json LogErrorHistory poorly-formed %s, not JSON: %s" % (jsonLogHistory, e))
 
         except Exception as e:
-            loggingWriteErrorHistory( self )  # flush the file to avoid the error next startup
+            loggingWriteErrorHistory(self)  # flush the file to avoid the error next startup
             Domoticz.Error("load Json LogErrorHistory Error %s, not JSON: %s" % (jsonLogHistory, e))
-            
+
         handle.close()
 
     def closeLogFile(self):
@@ -203,7 +214,10 @@ class LoggingManagement:
         self._newError = False
 
     def logging(self, module, logType, message, nwkid=None, context=None):
-        if 'debugTransportZigpyZNP' in self.pluginconf.pluginConf and self.pluginconf.pluginConf['debugTransportZigpyZNP']:
+        if (
+            "debugTransportZigpyZNP" in self.pluginconf.pluginConf
+            and self.pluginconf.pluginConf["debugTransportZigpyZNP"]
+        ):
             if not self.zigpy_log_znp:
                 self.zigpy_log_znp = True
                 self.zigpy_login()
@@ -211,15 +225,16 @@ class LoggingManagement:
             self.zigpy_log_znp = False
             self.zigpy_login()
 
-
-        if 'debugTransportZigpyZigate' in self.pluginconf.pluginConf and self.pluginconf.pluginConf['debugTransportZigpyZigate']:
+        if (
+            "debugTransportZigpyZigate" in self.pluginconf.pluginConf
+            and self.pluginconf.pluginConf["debugTransportZigpyZigate"]
+        ):
             if not self.zigpy_log_zigate:
                 self.zigpy_log_zigate = True
                 self.zigpy_login()
         elif self.zigpy_log_zigate:
             self.zigpy_log_zigate = False
             self.zigpy_login()
-
 
         if self.logging_thread and self.logging_queue:
             logging_tupple = [
@@ -401,7 +416,6 @@ def logging_thread(self):
     while self.running:
         # We loop until self.running is set to False,
         # which indicate plugin shutdown
-        data = None
         logging_tupple = self.logging_queue.get()
         if len(logging_tupple) == 2:
             timing, command = logging_tupple
@@ -427,6 +441,14 @@ def logging_thread(self):
             if logType == "Error":
                 loggingError(self, thread_name, module, message, nwkid, context)
             elif logType == "Debug":
+                # thread filter
+                threadFilter = [
+                    x for x in self.threadLogConfig if self.pluginconf.pluginConf["debugThread" + self.threadLogConfig[x]] == 1
+                ]
+                if threadFilter:
+                    if thread_name not in threadFilter:
+                        continue
+
                 pluginConfModule = "debug" + str(module)
                 if pluginConfModule in self.pluginconf.pluginConf:
                     if self.pluginconf.pluginConf[pluginConfModule]:
