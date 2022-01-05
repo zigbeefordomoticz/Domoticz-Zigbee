@@ -468,11 +468,16 @@ def binding_needed_clusters_with_zigate(self, NWKID):
     #    return
     # self.ListOfDevices[NWKID]["BindingTimeStamps"] = time.time()
 
+
     # Do we have to follow Certified Conf file, or look for standard mecanishm ?
     if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] != {} and self.ListOfDevices[NWKID]["Model"] in self.DeviceConf:
         self.log.logging("Pairing", "Log", "binding_needed_clusters_with_zigate %s based on Device Configuration" % (NWKID))
 
         _model = self.ListOfDevices[NWKID]["Model"]
+        
+        if "DelayBindingAtPairing" in self.DeviceConf[_model] and self.DeviceConf[_model]["DelayBindingAtPairing"]:
+            return
+        
         # Check if we have to unbind clusters
         if "ClusterToUnbind" in self.DeviceConf[_model]:
             for iterEp, iterUnBindCluster in self.DeviceConf[_model]["ClusterToUnbind"]:
