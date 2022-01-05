@@ -4,8 +4,7 @@
 # Author: zaraki673 & pipiche38
 #
 import Domoticz
-from Zigbee.zdpCommands import (zdp_active_endpoint_request,
-                                zdp_simple_descriptor_request)
+from Modules.zdpCommands import zdp_simple_descriptor_request, zdp_active_endpoint_request
 
 
 def initLODZigate(self, nwkid, ieee):

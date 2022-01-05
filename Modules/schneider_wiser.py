@@ -16,7 +16,6 @@ import struct
 from time import time
 
 import Domoticz
-from Zigbee.zclCommands import zcl_onoff_off_noeffect, zcl_onoff_on
 
 from Modules.basicOutputs import read_attribute, write_attribute
 from Modules.bindings import WebBindStatus, webBind
@@ -27,6 +26,7 @@ from Modules.tools import (get_and_inc_SQN, getAttributeValue,
                            is_ack_tobe_disabled,
                            retreive_cmd_payload_from_8002)
 from Modules.writeAttributes import write_attribute_when_awake
+from Modules.zclCommands import zcl_onoff_off_noeffect, zcl_onoff_on
 from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_EP
 
 PREFIX_MACADDR_WIZER_LEGACY = "00124b00"
@@ -1015,12 +1015,12 @@ def schneiderRenforceent(self, NWKID):
 
     if "Schneider Wiser" in self.ListOfDevices[NWKID]:
         if "HACT Mode" in self.ListOfDevices[NWKID]["Schneider Wiser"]:
-            if not self.busy and self.ControllerLink.loadTransmit() <= MAX_LOAD_ZIGATE:
+            if not self.busy and self.ZigateComm.loadTransmit() <= MAX_LOAD_ZIGATE:
                 schneider_hact_heating_mode(self, NWKID, self.ListOfDevices[NWKID]["Schneider Wiser"]["HACT Mode"])
             else:
                 rescheduleAction = True
         if "HACT FIP Mode" in self.ListOfDevices[NWKID]["Schneider Wiser"]:
-            if not self.busy and self.ControllerLink.loadTransmit() <= MAX_LOAD_ZIGATE:
+            if not self.busy and self.ZigateComm.loadTransmit() <= MAX_LOAD_ZIGATE:
                 schneider_hact_fip_mode(self, NWKID, self.ListOfDevices[NWKID]["Schneider Wiser"]["HACT FIP Mode"])
             else:
                 rescheduleAction = True

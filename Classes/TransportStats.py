@@ -37,8 +37,9 @@ class TransportStatistics:
         self._maxTiming8011 = self._cumulTiming8011 = self._cntTiming8011 = self._averageTiming8011 = 0
         self._maxTiming8012 = self._cumulTiming8012 = self._cntTiming8012 = self._averageTiming8012 = 0
         self._maxRxProcesses = self._cumulRxProcess = self._cntRxProcess = self._averageRxProcess = 0
-        self._max_reading_thread_timing = self._cumul_reading_thread_timing  = self._cnt_reading_thread_timing = self._average_reading_thread_timing = 0
-        self._max_reading_zigpy_timing = self._cumul_reading_zigpy_timing  = self._cnt_reading_zigpy_timing = self._average_reading_zigpy_timing = 0
+        self._max_reading_thread_timing = (
+            self._cumul_reading_thread_timing
+        ) = self._cnt_reading_thread_timing = self._average_reading_thread_timing = 0
         self._start = int(time())
         self.TrendStats = []
         self.pluginconf = pluginconf
@@ -53,22 +54,6 @@ class TransportStatistics:
     def get_pdm_loaded(self):
         return self._pdmLoads
 
-    def add_timing_zigpy(self, timing):
-        self._cumul_reading_zigpy_timing += timing
-        self._cnt_reading_zigpy_timing += 1
-        self._average_reading_zigpy_timing = int((self._cumul_reading_zigpy_timing / self._cnt_reading_zigpy_timing))
-        if timing > self._max_reading_zigpy_timing:
-            self._max_reading_zigpy_timing = timing
-            Domoticz.Log(
-                "Zigate Thread Serial Read Max: %s ms with an of average: %s ms"
-                % (self._max_reading_zigpy_timing, self._average_reading_zigpy_timing)
-            )
-        Domoticz.Log(
-            "Zigate Thread Serial Read Max: %s ms with an of average: %s ms"
-            % (self._max_reading_zigpy_timing, self._average_reading_zigpy_timing)
-        )
-
-        
     def add_timing_thread(self, timing):
         self._cumul_reading_thread_timing += timing
         self._cnt_reading_thread_timing += 1

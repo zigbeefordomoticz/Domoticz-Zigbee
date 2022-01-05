@@ -15,22 +15,6 @@ import struct
 from datetime import datetime
 from time import time
 
-from Zigbee.encoder_tools import decode_endian_data
-from Zigbee.zclCommands import (zcl_attribute_discovery_request,
-                                zcl_get_list_attribute_extended_infos,
-                                zcl_identify_send, zcl_read_attribute,
-                                zcl_write_attribute,
-                                zcl_write_attributeNoResponse)
-from Zigbee.zdpCommands import (zdp_get_permit_joint_status,
-                                zdp_IEEE_address_request,
-                                zdp_management_leave_request,
-                                zdp_management_network_update_request,
-                                zdp_many_to_one_route_request,
-                                zdp_permit_joining_request,
-                                zdp_raw_nwk_update_request, zdp_reset_device)
-from Zigbee.zdpRawCommands import (zdp_management_binding_table_request,
-                                   zdp_management_routing_table_request)
-
 from Modules.sendZigateCommand import (raw_APS_request, send_zigatecmd_raw,
                                        send_zigatecmd_zcl_ack,
                                        send_zigatecmd_zcl_noack)
@@ -38,10 +22,24 @@ from Modules.tools import (build_fcf, get_and_inc_SQN, getListOfEpForCluster,
                            is_ack_tobe_disabled, is_hex, mainPoweredDevice,
                            set_isqn_datastruct, set_request_datastruct,
                            set_timestamp_datastruct)
+from Modules.zclCommands import (zcl_identify_send, zcl_read_attribute,
+                                 zcl_write_attribute,
+                                 zcl_write_attributeNoResponse)
+from Modules.zdpCommands import (zdp_attribute_discovery_request,
+                                 zdp_get_list_attribute_extended_infos,
+                                 zdp_IEEE_address_request,
+                                 zdp_management_leave_request,
+                                 zdp_management_network_update_request,
+                                 zdp_many_to_one_route_request,
+                                 zdp_permit_joining_request, zdp_reset_device)
+from Modules.zdpRawCommands import (zdp_management_binding_table_request,
+                                    zdp_management_routing_table_request)
 from Modules.zigateCommands import (zigate_blueled,
                                     zigate_firmware_default_response,
-                                    zigate_get_nwk_state, zigate_get_time,
-                                    zigate_remove_device, zigate_set_channel,
+                                    zigate_get_nwk_state,
+                                    zigate_get_permit_joint_status,
+                                    zigate_get_time, zigate_remove_device,
+                                    zigate_set_channel,
                                     zigate_set_extended_PanID, zigate_set_mode,
                                     zigate_set_time, zigate_start_nwk)
 from Modules.zigateConsts import ZIGATE_EP, ZLL_DEVICES
@@ -98,7 +96,7 @@ def PermitToJoin(self, Interval, TargetAddress="FFFC"):
         zdp_permit_joining_request(self, TargetAddress , Interval , get_TC_significance(TargetAddress))
     if TargetAddress in ("FFFC", "0000"):
         # Request a Status to update the various permitTojoin structure
-        zdp_get_permit_joint_status(self)
+        zigate_get_permit_joint_status(self)
         #send_zigatecmd_raw(self, "0014", "")  # Request status
 
 
@@ -141,9 +139,9 @@ def start_Zigate(self, Mode="Controller"):
         setTimeServer(self)
 
         self.log.logging("BasicOutput", "Debug", "Request network Status")
-        zdp_get_permit_joint_status(self)
+        zigate_get_permit_joint_status(self)
         zigate_get_nwk_state(self)
-        zdp_get_permit_joint_status(self)
+        zigate_get_permit_joint_status(self)
         #send_zigatecmd_raw(self, "0014", "")  # Request status
         #send_zigatecmd_raw(self, "0009", "")  # Request status
 
@@ -181,14 +179,14 @@ def getListofAttribute(self, nwkid, EpOut, cluster, start_attribute="0000", manu
     #datas = ZIGATE_EP + EpOut + cluster + start_attribute + "00" + manuf_specific + manuf_code + "01"
     #self.log.logging("BasicOutput", "Debug", "attribute_discovery_request - " + str(datas), nwkid)
     #send_zigatecmd_zcl_noack(self, nwkid, "0140", datas)
-    zcl_attribute_discovery_request(self, nwkid, ZIGATE_EP, EpOut, cluster, start_attribute, manuf_specific, manuf_code)
+    zdp_attribute_discovery_request(self, nwkid, ZIGATE_EP, EpOut, cluster, start_attribute, manuf_specific, manuf_code)
 
 def getListofAttributeExtendedInfos( self, nwkid, EpOut, cluster, start_attribute="0000", manuf_specific="00", manuf_code="0000"):
 
     #datas = ZIGATE_EP + EpOut + cluster + start_attribute + "00" + manuf_specific + manuf_code + "01"
     #self.log.logging("BasicOutput", "Debug", "attribute_discovery_request - " + str(datas), nwkid)
     #send_zigatecmd_zcl_noack(self, nwkid, "0141", datas)
-    zcl_get_list_attribute_extended_infos(self, nwkid, ZIGATE_EP, EpOut, cluster, start_attribute, manuf_specific, manuf_code)
+    zdp_get_list_attribute_extended_infos(self, nwkid, ZIGATE_EP, EpOut, cluster, start_attribute, manuf_specific, manuf_code)
 
 
 #def initiateTouchLink(self):
@@ -390,7 +388,7 @@ def leaveMgtReJoin(self, saddr, ieee, rejoin=True):
             )
             send_zigatecmd_raw(self, "0049", "FFFC" + "%02x" % dur_req + "00")
             self.log.logging("BasicOutput", "Debug", "leaveMgtReJoin - Request Pairing Status")
-            zdp_get_permit_joint_status(self)
+            zigate_get_permit_joint_status(self)
             #send_zigatecmd_raw(self, "0014", "")  # Request status
         elif duration != 255:
             if int(time()) >= (self.permitTojoin["Starttime"] + 60):
@@ -402,7 +400,7 @@ def leaveMgtReJoin(self, saddr, ieee, rejoin=True):
                 )
                 send_zigatecmd_raw(self, "0049", "FFFC" + "%02x" % dur_req + "00")
                 self.log.logging("BasicOutput", "Debug", "leaveMgtReJoin - Request Pairing Status")
-                zdp_get_permit_joint_status(self)
+                zigate_get_permit_joint_status(self)
                 #send_zigatecmd_raw(self, "0014", "")  # Request status
 
         # Request a Re-Join and Do not remove children
@@ -499,16 +497,16 @@ def removeZigateDevice(self, IEEE):
     if mainPoweredDevice(self, nwkid):
         ParentAddr = IEEE
     else:
-        if self.ControllerIEEE is None:
+        if self.ZigateIEEE is None:
             self.log.logging(
                 "BasicOutput",
                 "Error",
-                "Zigae IEEE unknown: %s" % self.ControllerIEEE,
+                "Zigae IEEE unknown: %s" % self.ZigateIEEE,
                 None,
                 {"Error code": "BOUTPUTS-REMOVE-01"},
             )
             return None
-        ParentAddr = self.ControllerIEEE
+        ParentAddr = self.ZigateIEEE
 
     ChildAddr = IEEE
     return zigate_remove_device(self, ParentAddr, ChildAddr)
@@ -520,24 +518,23 @@ def ballast_Configuration_max_level(self, nwkid, value):
     if ListOfEp:
         for EPout in ListOfEp:
             write_attribute(
-                self, nwkid, ZIGATE_EP, EPout, "0301", "0000", "00", "0011", "20", "%02x" % value, ackIsDisabled=False
+                self, nwkid, ZIGATE_EP, EPout, "0301", "0000", "00", "0011", "20", "%02x" % value, ackIsDisabled=True
             )
-            read_attribute(self, nwkid, ZIGATE_EP, EPout, "0301", "00", "00", "0000", 1, "0011", ackIsDisabled=False)
+            read_attribute(self, nwkid, ZIGATE_EP, EPout, "0301", "00", "00", "0000", 1, "0011", ackIsDisabled=True)
 
 
 def ballast_Configuration_min_level(self, nwkid, value):
     ListOfEp = getListOfEpForCluster(self, nwkid, "0301")
     if ListOfEp:
         for EPout in ListOfEp:
-            write_attribute( self, nwkid, ZIGATE_EP, EPout, "0301", "0000", "00", "0010", "20", "%02x" % value, ackIsDisabled=False)
-            read_attribute(self, nwkid, ZIGATE_EP, EPout, "0301", "00", "00", "0000", 1, "0010", ackIsDisabled=False)
+            write_attribute( self, nwkid, ZIGATE_EP, EPout, "0301", "0000", "00", "0010", "20", "%02x" % value, ackIsDisabled=True)
+            read_attribute(self, nwkid, ZIGATE_EP, EPout, "0301", "00", "00", "0000", 1, "0010", ackIsDisabled=True)
 
-def read_attribute(self, nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, lenAttr, Attr, ackIsDisabled=False):
+def read_attribute(self, nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, lenAttr, Attr, ackIsDisabled=True):
     return zcl_read_attribute(self, nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, lenAttr, Attr, ackIsDisabled)
 
-def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled=False ):
-    i_sqn = zcl_write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled=ackIsDisabled )
-    
+def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled=True ):
+    i_sqn = zcl_write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled=True )
     set_isqn_datastruct(self, "WriteAttributes", key, EPout, clusterID, attribute, i_sqn)
     set_request_datastruct( self, "WriteAttributes", key, EPout, clusterID, attribute, data_type, EPin, EPout, manuf_id, manuf_spec, data, ackIsDisabled, "requested", )
     set_timestamp_datastruct(self, "WriteAttributes", key, EPout, clusterID, int(time()))
@@ -816,7 +813,8 @@ def mgt_binding_table_req( self, nwkid, start_index="00"):
     self.log.logging("BasicOutput", "Debug", "mgt_binding_table_req - %s" % nwkid)
 
     if "BindingTable" not in self.ListOfDevices[nwkid]:
-        self.ListOfDevices[nwkid]["BindingTable"] = {'Devices': []}
+        self.ListOfDevices[nwkid]["BindingTable"] = {}
+        self.ListOfDevices[nwkid]["BindingTable"]["Devices"] = []
     if "SQN" not in self.ListOfDevices[nwkid]["BindingTable"]:
         self.ListOfDevices[nwkid]["BindingTable"]["SQN"] = 0
     else:
@@ -834,11 +832,7 @@ def initiate_change_channel(self, new_channel):
     channel_mask = "%08x" % maskChannel(self, new_channel)
     target_address = "ffff"  # Broadcast to all devices
 
-    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
-        channel_mask = decode_endian_data(channel_mask, "1b")
-        zdp_raw_nwk_update_request(self, target_address, channel_mask, scanDuration, scancount="00", nwkupdateid="0000", nwkmanageraddr="0000")
-    else:
-        zdp_management_network_update_request(self, target_address , channel_mask , scanDuration , "00" , "0000")
+    zdp_management_network_update_request(self, target_address , channel_mask , scanDuration , "00" , "0000")
     #send_zigatecmd_raw(self, "004A", datas)
     if "0000" in self.ListOfDevices:
         self.ListOfDevices["0000"]["CheckChannel"] = new_channel

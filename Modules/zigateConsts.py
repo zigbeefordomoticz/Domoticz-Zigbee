@@ -138,60 +138,25 @@ ZHA_DATA_TYPE = {
 SIZE_DATA_TYPE = {
     #    For each Data Type, provide the length in number of bytes
     "09": 2,  # 16bit data
-    # data / discrete
-    "08": 1,
-    "09": 2,
-    "0a": 3,
-    "0b": 4,
-    "0c": 5,
-    "0d": 6,
-    "0e": 7,
-    "0f": 8,
-    # Boolean
-    "10": 1,
-    # Bitmap / discrete
-    "16": 2,  # 16bitmap
+    "10": 1,  # Bool
     "18": 1,  # 8bitmap
+    "16": 2,  # 16bitmap
     "19": 2,  # 16BitBitMap = 0x19
-    "1a": 3,
-    "1b": 4,
-    "1c": 5,
-    "1d": 6,
-    "1e": 7,
-    "1f": 8,
-    # Unsigned / Analog
     "20": 1,  # uint8
     "21": 2,  # uint16
     "22": 3,  # Uint24
     "23": 4,  # Uint32
     "24": 5,  # Uint40
     "25": 6,  # Uint48
-    "26": 7,
-    "27": 8,
-    # Signed / Analog
     "28": 1,  # int8
     "29": 2,  # int16
     "2a": 3,  # int24
     "2b": 4,  # int32
-    "2c": 5,
     "2d": 6,  # int48
-    "2e": 7,
-    "2f": 8,
-    # Enum / Discret
     "30": 1,  # enum8
     "31": 2,  # enum16
-    # precision / Analog
-    "38": 2,
     "39": 4,  # Single Float
-    "3a": 8,
-    # Analog
-    "e0": 4,
-    "e1": 4,
     "e2": 4,  # UTCtime
-    "e8": 2,
-    "e9": 2,
-    "f0": 8, # IEEE
-    "f1": 16
 }
 
 ZLL_DEVICES = {

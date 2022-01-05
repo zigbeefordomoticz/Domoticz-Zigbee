@@ -12,10 +12,10 @@
 
 import Domoticz
 from Classes.LoggingManagement import LoggingManagement
-from Zigbee.zclCommands import zcl_level_move_to_level, zcl_toggle
 
 from Modules.domoMaj import MajDomoDevice
 from Modules.tools import retreive_cmd_payload_from_8002
+from Modules.zclCommands import zcl_level_move_to_level, zcl_toggle
 from Modules.zigateConsts import ZIGATE_EP
 
 # Livolo commands.

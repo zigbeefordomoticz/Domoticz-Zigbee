@@ -74,7 +74,6 @@ class WebServer(object):
 
     def __init__(
         self,
-        zigbee_communitation,
         ZigateData,
         PluginParameters,
         PluginConf,
@@ -94,7 +93,7 @@ class WebServer(object):
         httpPort,
         log,
     ):
-        self.zigbee_communitation = zigbee_communitation
+
         self.httpServerConn = None
         self.httpClientConn = None
         self.httpServerConns = {}
@@ -110,9 +109,9 @@ class WebServer(object):
         self.WebUsername = WebUserName
         self.WebPassword = WebPassword
         self.pluginconf = PluginConf
-        self.ControllerData = ZigateData
+        self.zigatedata = ZigateData
         self.adminWidget = adminWidgets
-        self.ControllerLink = ZigateComm
+        self.ZigateComm = ZigateComm
         self.statistics = Statistics
         self.pluginParameters = PluginParameters
         self.networkmap = None
@@ -129,7 +128,7 @@ class WebServer(object):
         self.DeviceConf = DeviceConf
         self.Devices = Devices
 
-        self.ControllerIEEE = None
+        self.ZigateIEEE = None
 
         self.restart_needed = {"RestartNeeded": 0}
         self.homedirectory = HomeDirectory
@@ -161,7 +160,7 @@ class WebServer(object):
 
     def setZigateIEEE(self, ZigateIEEE):
 
-        self.ControllerIEEE = ZigateIEEE
+        self.ZigateIEEE = ZigateIEEE
 
     def rest_plugin_health(self, verb, data, parameters):
 
@@ -211,7 +210,7 @@ class WebServer(object):
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == "GET":
             if self.pluginParameters["Mode2"] != "None":
-                self.ControllerData["startZigateNeeded"] = True
+                self.zigatedata["startZigateNeeded"] = True
                 # start_Zigate( self )
                 sendZigateCmd(self, "0002", "00")  # Force Zigate to Normal mode
                 sendZigateCmd(self, "0011", "")  # Software Reset
@@ -224,8 +223,8 @@ class WebServer(object):
         _response = prepResponseMessage(self, setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == "GET":
-            if self.ControllerData:
-                _response["Data"] = json.dumps(self.ControllerData, sort_keys=True)
+            if self.zigatedata:
+                _response["Data"] = json.dumps(self.zigatedata, sort_keys=True)
             else:
                 fake_zigate = {
                     "Firmware Version": "fake - 0310",
@@ -386,8 +385,6 @@ class WebServer(object):
             Statistics["AvgZiGateRoundTime8012 "] = self.statistics._averageTiming8012
             Statistics["MaxTimeSpentInProcFrame"] = self.statistics._max_reading_thread_timing
             Statistics["AvgTimeSpentInProcFrame"] = self.statistics._average_reading_thread_timing
-            Statistics["MaxTimeSendingZigpy"] = self.statistics._max_reading_zigpy_timing
-            Statistics["AvgTimeSendingZigpy"] = self.statistics._average_reading_zigpy_timing
 
             Statistics["MaxTimeSpentInForwarder"] = self.statistics._maxRxProcesses
             Statistics["AvgTimeSpentInForwarder"] = self.statistics._averageRxProcess
@@ -401,15 +398,15 @@ class WebServer(object):
             Statistics["APSFailure"] = self.statistics._APSFailure
             Statistics["APSAck"] = self.statistics._APSAck
             Statistics["APSNck"] = self.statistics._APSNck
-            Statistics["CurrentLoad"] = self.ControllerLink.loadTransmit()
+            Statistics["CurrentLoad"] = self.ZigateComm.loadTransmit()
             Statistics["MaxLoad"] = self.statistics._MaxLoad
             Statistics["StartTime"] = self.statistics._start
 
             Statistics["MaxApdu"] = self.statistics._MaxaPdu
             Statistics["MaxNpdu"] = self.statistics._MaxnPdu
 
-            Statistics["ForwardedQueueCurrentSize"] = self.ControllerLink.get_forwarder_queue()
-            Statistics["WriterQueueCurrentSize"] = self.ControllerLink.get_writer_queue()
+            Statistics["ForwardedQueueCurrentSize"] = self.ZigateComm.get_forwarder_queue()
+            Statistics["WriterQueueCurrentSize"] = self.ZigateComm.get_writer_queue()
             
             _nbitems = len(self.statistics.TrendStats)
             minTS = 0
@@ -732,9 +729,9 @@ class WebServer(object):
                     del self.IEEE2NWK[ieee]
 
                 # for a remove in case device didn't send the leave
-                if "IEEE" in self.ControllerData and ieee:
+                if "IEEE" in self.zigatedata and ieee:
                     # uParrentAddress + uChildAddress (uint64)
-                    sendZigateCmd(self, "0026", self.ControllerData["IEEE"] + ieee)
+                    sendZigateCmd(self, "0026", self.zigatedata["IEEE"] + ieee)
 
                 action = {"Name": "Device %s/%s removed" % (nwkid, ieee)}
                 _response["Data"] = json.dumps(action, sort_keys=True)

@@ -27,7 +27,7 @@ from time import time
 
 import Domoticz
 from Modules.basicOutputs import maskChannel
-from Zigbee.zdpCommands import zdp_management_network_update_request
+from Modules.zdpCommands import zdp_management_network_update_request
 
 CHANNELS = ["11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26"]
 DURATION = 0x03
@@ -37,7 +37,7 @@ class NetworkEnergy:
     def __init__(self, PluginConf, ZigateComm, ListOfDevices, Devices, HardwareID, log):
 
         self.pluginconf = PluginConf
-        self.ControllerLink = ZigateComm
+        self.ZigateComm = ZigateComm
         self.ListOfDevices = ListOfDevices
         self.Devices = Devices
         self.HardwareID = HardwareID
