@@ -19,7 +19,8 @@ from Modules.casaia import pollingCasaia
 from Modules.danfoss import danfoss_room_sensor_polling
 from Modules.domoTools import timedOutDevice
 from Modules.mgmt_rtg import mgmt_rtg
-from Modules.pairingProcess import processNotinDBDevices
+from Modules.pairingProcess import (binding_needed_clusters_with_zigate,
+                                    processNotinDBDevices)
 from Modules.paramDevice import sanity_check_of_param
 from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST,
                                     ReadAttributeRequest_0b04_050b_0505_0508,
@@ -159,7 +160,7 @@ def check_delay_binding( self, NwkId, model ):
         mgmt_rtg(self, NwkId, "BindingTable")
         return
     
-    if len(self.ListOfDevices[ NwkId ]["BindingTable"]) == 0:
+    if "Devices" in self.ListOfDevices[ NwkId ]["BindingTable"] and len(self.ListOfDevices[ NwkId ]["BindingTable"]["Devices"]) == 0:
         # Too early come later
         self.log.logging( "Heartbeat", "Debug", "check_delay_binding -  %s BindingTable empty" % (
             NwkId), NwkId, )
@@ -176,7 +177,8 @@ def check_delay_binding( self, NwkId, model ):
             self.ListOfDevices[ NwkId ]["Bind"] = {} 
         self.log.logging( "Heartbeat", "Debug", "check_delay_binding -  %s request Configure Reporting (and so bindings)" % (
             NwkId), NwkId, )
-        self.configureReporting.processConfigureReporting(NWKID=NwkId) 
+        binding_needed_clusters_with_zigate(self, NwkId)
+        self.configureReporting.processConfigureReporting( NWKID=NwkId ) 
         self.ListOfDevices[ NwkId ]["DelayBindingAtPairing"] = "Completed"
 
         

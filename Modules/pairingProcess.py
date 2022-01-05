@@ -413,9 +413,10 @@ def zigbee_provision_device(self, Devices, NWKID, RIA, status):
             tuya_cmd_ts004F(self, NWKID, self.ListOfDevices[NWKID]["Param"]["TS004FMode" ])
 
     # Bindings ....
-    binding_needed_clusters_with_zigate(self, NWKID)
+    if not delay_binding_and_reporting(self, NWKID):
+        binding_needed_clusters_with_zigate(self, NWKID)
 
-    reWebBind_Clusters(self, NWKID)
+        reWebBind_Clusters(self, NWKID)
 
     # Just after Binding Enable Opple with Magic Word
     if self.ListOfDevices[NWKID]["Model"] in (
@@ -430,8 +431,9 @@ def zigbee_provision_device(self, Devices, NWKID, RIA, status):
         enableOppleSwitch(self, NWKID)
 
     # 2 Enable Configure Reporting for any applicable cluster/attributes
-    self.log.logging("Pairing", "Debug", "Request Configure Reporting for %s" % NWKID)
-    self.configureReporting.processConfigureReporting(NWKID)
+    if not delay_binding_and_reporting(self, NWKID):
+        self.log.logging("Pairing", "Debug", "Request Configure Reporting for %s" % NWKID)
+        self.configureReporting.processConfigureReporting(NWKID)
 
     # 3 Read attributes
     device_interview(self, NWKID)
@@ -471,13 +473,7 @@ def binding_needed_clusters_with_zigate(self, NWKID):
     # Do we have to follow Certified Conf file, or look for standard mecanishm ?
     if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] != {} and self.ListOfDevices[NWKID]["Model"] in self.DeviceConf:
         self.log.logging("Pairing", "Log", "binding_needed_clusters_with_zigate %s based on Device Configuration" % (NWKID))
-
         _model = self.ListOfDevices[NWKID]["Model"]
-
-        if "DelayBindingAtPairing" in self.DeviceConf[_model] and self.DeviceConf[_model]["DelayBindingAtPairing"]:
-            self.ListOfDevices[ NWKID ]["DelayBindingAtPairing"] = ""
-            self.log.logging("Pairing", "Log", "binding_needed_clusters_with_zigate %s Skip Binding due to >DelayBindingAtPairing<" % (NWKID))
-            return
 
         # Check if we have to unbind clusters
         if "ClusterToUnbind" in self.DeviceConf[_model]:
@@ -510,6 +506,17 @@ def binding_needed_clusters_with_zigate(self, NWKID):
                         unbindDevice(self, self.ListOfDevices[NWKID]["IEEE"], ep, iterBindCluster)
                     # Finaly binding
                     bindDevice(self, self.ListOfDevices[NWKID]["IEEE"], ep, iterBindCluster)
+
+def delay_binding_and_reporting(self, Nwkid):
+    
+    if "Model" not in self.ListOfDevices[Nwkid] or self.ListOfDevices[Nwkid]["Model"] in  ( "", {}):
+        return False
+    _model = self.ListOfDevices[Nwkid]["Model"]
+    if "DelayBindingAtPairing" in self.DeviceConf[_model] and self.DeviceConf[_model]["DelayBindingAtPairing"]:
+        self.ListOfDevices[ Nwkid ]["DelayBindingAtPairing"] = ""
+        self.log.logging("Pairing", "Log", "binding_needed_clusters_with_zigate %s Skip Binding due to >DelayBindingAtPairing<" % (Nwkid))
+        return True
+    return False
 
 
 def handle_IAS_enrollmment_if_needed(self, NWKID, RIA, status):
