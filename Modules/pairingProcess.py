@@ -365,8 +365,7 @@ def full_provision_device(self, Devices, NWKID, RIA, status):
 
     # Purpose of this call is to patch Model and Manufacturer Name in case of Profalux
     # We do it just before calling CreateDomoDevice
-    if ( "Manufacturer" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Manufacturer"] == "1110"
-    ):
+    if ( "Manufacturer" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Manufacturer"] == "1110"):
         profalux_fake_deviceModel(self, NWKID)
 
     CreateDomoDevice(self, Devices, NWKID)
@@ -474,10 +473,12 @@ def binding_needed_clusters_with_zigate(self, NWKID):
         self.log.logging("Pairing", "Log", "binding_needed_clusters_with_zigate %s based on Device Configuration" % (NWKID))
 
         _model = self.ListOfDevices[NWKID]["Model"]
-        
+
         if "DelayBindingAtPairing" in self.DeviceConf[_model] and self.DeviceConf[_model]["DelayBindingAtPairing"]:
+            self.ListOfDevices[ NWKID ]["DelayBindingAtPairing"] = ""
+            self.log.logging("Pairing", "Log", "binding_needed_clusters_with_zigate %s Skip Binding due to >DelayBindingAtPairing<" % (NWKID))
             return
-        
+
         # Check if we have to unbind clusters
         if "ClusterToUnbind" in self.DeviceConf[_model]:
             for iterEp, iterUnBindCluster in self.DeviceConf[_model]["ClusterToUnbind"]:
