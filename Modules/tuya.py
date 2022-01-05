@@ -223,9 +223,10 @@ def tuya_registration(self, nwkid, device_reset=False, parkside=False):
 
 def tuya_cmd_ts004F(self, NwkId, mode):
     TS004F_MODE =  {
-        'Scene': 0x01,
-        'Dimmer': 0x00,
+        'Scene': 0x01,  # Scene controller
+        'Dimmer': 0x00, # Remote dimming
     }
+    # By default set to 0x00
     if mode not in TS004F_MODE:
         return
 

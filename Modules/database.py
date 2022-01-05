@@ -90,7 +90,8 @@ BUILD_ATTRIBUTES = (
     "Stamp",
     "Health",
     "IASBattery",
-    "Operating Time"
+    "Operating Time",
+    "DelayBindingAtPairing"
 )
 
 MANUFACTURER_ATTRIBUTES = ("Legrand", "Schneider", "Lumi", "LUMI", "CASA.IA", "Tuya", "ZLinky")
