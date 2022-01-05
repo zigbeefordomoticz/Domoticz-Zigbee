@@ -188,7 +188,7 @@ def extract_report(self, reportLQI):
                         # _relation[master] = self.ListOfDevices[_father]['ZDeviceName']
                         _relation["Father"] = self.ListOfDevices[_father]["ZDeviceName"]
             else:
-                _relation["Father"] = "Zigate"
+                _relation["Father"] = "Zigbee Controller"
 
             if _child != "0000":
                 if "ZDeviceName" in self.ListOfDevices[_child]:
@@ -199,7 +199,7 @@ def extract_report(self, reportLQI):
                         # _relation[slave] = self.ListOfDevices[_child]['ZDeviceName']
                         _relation["Child"] = self.ListOfDevices[_child]["ZDeviceName"]
             else:
-                _relation["Child"] = "Zigate"
+                _relation["Child"] = "Zigbee Controller"
 
             # Sanity check, remove the direct loop
             if (_relation["Child"], _relation["Father"]) in _check_duplicate:

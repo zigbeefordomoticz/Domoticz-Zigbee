@@ -15,7 +15,7 @@ def pollingBlitzwolfPower(self, key):
     The frequency is defined in the pollingSchneider parameter (in number of seconds)
     """
 
-    if self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE:
+    if self.busy or self.ControllerLink.loadTransmit() > MAX_LOAD_ZIGATE:
         return True
 
     if "Model" in self.ListOfDevices[key] and self.ListOfDevices[key]["Model"] == "TS0121":

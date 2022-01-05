@@ -31,7 +31,7 @@ def callbackDeviceAwake(self, Devices, NwkId, endpoint, cluster):
     # 09/11/2020: Let's check if we are not in pairing mode for this device, or if the Zigate is not overloaded
     if "PairingInProgress" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["PairingInProgress"]:
         return
-    if self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE:
+    if self.busy or self.ControllerLink.loadTransmit() > MAX_LOAD_ZIGATE:
         return
     # Let's check if any WebBind have to be established
 

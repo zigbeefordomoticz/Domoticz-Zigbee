@@ -121,6 +121,7 @@ ATTRIBUTES = {
         0x0508,
     ],
     "0b05": [0x0000],
+    "e001": [0xd011], # Tuya TS004F
     "fc01": [0x0000, 0x0001, 0x0002],  # Legrand Cluster
     "fc21": [0x0001],
     "fc40": [0x0000],  # Legrand
@@ -418,14 +419,14 @@ def ReadAttributeRequest_0000_for_pairing(self, key):
     if  ListOfEp and self.ListOfDevices[key]["Manufacturer"] in [ {}, ""]:
         self.log.logging("ReadAttributes", "Log", "Request Basic  Manufacturer via Read Attribute request: %s" % "0004", nwkid=key)
         manuf_name = [0x0004]
-        for x in self.ListOfDevices[key]["Ep"]:
+        for x in ListOfEp:
             ReadAttributeReq(self, key, ZIGATE_EP, x, "0000", manuf_name, ackIsDisabled=False, checkTime=False)
 
     # Do We have Model Name
     if ( ListOfEp and  self.ListOfDevices[key]["Model"] in [ {}, ""] ):
         self.log.logging("ReadAttributes", "Debug", "Request Basic  Model Name via Read Attribute request: %s" % "0005", nwkid=key)
-        model_name = [0x0005]
-        for x in self.ListOfDevices[key]["Ep"]:
+        model_name = [0x0004, 0x0005]
+        for x in ListOfEp:
             ReadAttributeReq(self, key, ZIGATE_EP, x, "0000", model_name, ackIsDisabled=False, checkTime=False)
 
     # Check if Model Name should be requested
@@ -440,7 +441,7 @@ def ReadAttributeRequest_0000_for_pairing(self, key):
     listAttributes = add_attributes_from_device_certified_conf(self, key, "0000", listAttributes)
     self.log.logging("ReadAttributes", "Log", "EP: %s" % self.ListOfDevices[key]["Ep"])
 
-    if self.ListOfDevices[key]["Ep"] is None or self.ListOfDevices[key]["Ep"] == {}:
+    if len(ListOfEp) == 0:
         # We don't have yet any Endpoint information , we will then try several known Endpoint, and luckly we will get some answers
         self.log.logging(
             "ReadAttributes",
