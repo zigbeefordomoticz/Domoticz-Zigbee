@@ -1035,14 +1035,15 @@ def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
 def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
 
     # APP APS ACK
-    self.log.logging("Input", "Debug2", "Decode8011 - APS ACK: %s" % MsgData)
+    self.log.logging("Input", "Debug", "Decode8011 - APS ACK: %s" % MsgData)
 
     MsgLen = len(MsgData)
-    MsgStatus = MsgData[0:2]
+    MsgStatus = MsgData[:2]
     MsgSrcAddr = MsgData[2:6]
     MsgSEQ = MsgData[12:14] if MsgLen > 12 else None
     i_sqn = sqn_get_internal_sqn_from_aps_sqn(self.ControllerLink, MsgSEQ)
-
+    self.log.logging("Input", "Debug", "Decode8011 - Nwkid: %s Status: %s  Seq: %s iSqn: %s" %( 
+        MsgSrcAddr, MsgStatus , MsgSEQ, i_sqn))
     if MsgSrcAddr not in self.ListOfDevices:
         return
 
