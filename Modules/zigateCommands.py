@@ -89,7 +89,8 @@ def zigate_blueled(self, OnOff):
 def zigate_set_certificate(self, certification_code ):
     self.log.logging( "zigateCommand", "Debug","zigate_set_certificate %s" %certification_code)
     if self.zigbee_communitation == "zigpy":
-        value = 'CE' if certification_code == 0x01 else 'FCC'
+        value = 'FCC' if certification_code == '02' else 'CE'
+        self.log.logging( "zigateCommand", "Debug","zigate_set_certificate value: %s" %value)
         return self.ControllerLink.sendData( "SET-CERTIFICATION", {"Param1": value}) 
 
     return send_zigatecmd_raw(self, "0019", certification_code)
