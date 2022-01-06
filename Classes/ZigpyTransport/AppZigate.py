@@ -90,13 +90,24 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         super().handle_leave(nwk,ieee)
         self.log.logging("TransportZigpy", "Debug", "handle_leave %s" % str(nwk))
 
-    def handle_join(self, nwk, ieee, parent_nwk):
-        super().handle_join(nwk,ieee,parent_nwk)
-        self.log.logging(
-            "TransportZigpy",
-            "Debug",
-            "handle_join nwkid: %04x ieee: %s parent_nwk: %04x " % (nwk, ieee, parent_nwk),
-        )
+    def handle_join(self, nwk: t.NWK, ieee: t.EUI64, parent_nwk: t.NWK) -> None:
+        """
+        Called when a device joins or announces itself on the network.
+        """
+
+        ieee = t.EUI64(ieee)
+
+        try:
+            dev = self.get_device(ieee)
+            LOGGER.info("Device 0x%04x (%s) joined the network", nwk, ieee)
+        except KeyError:
+            dev = self.add_device(ieee, nwk)
+            LOGGER.info("New device 0x%04x (%s) joined the network", nwk, ieee)
+
+        if dev.nwk != nwk:
+            dev.nwk = nwk
+            LOGGER.debug("Device %s changed id (0x%04x => 0x%04x)", ieee, dev.nwk, nwk)
+
         plugin_frame = build_plugin_004D_frame_content(self, nwk, ieee, parent_nwk)
         self.callBackFunction(plugin_frame)
 
