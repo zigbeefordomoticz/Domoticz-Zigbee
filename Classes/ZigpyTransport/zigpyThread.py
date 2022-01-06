@@ -270,6 +270,9 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
 
 def push_APS_ACK_NACKto_plugin(self, nwkid, result, lqi):
     # Looks like Zigate return an int, while ZNP returns a status.type
+    if nwkid == "0000":
+        # No Ack/Nack for Controller
+        return
     if not isinstance(result, int):
         result = int(result.serialize().hex(), 16)
 
