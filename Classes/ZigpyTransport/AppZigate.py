@@ -105,11 +105,8 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
             LOGGER.info("New device 0x%04x (%s) joined the network", nwk, ieee)
 
         if dev.nwk != nwk:
-            dev.nwk = nwk
             LOGGER.debug("Device %s changed id (0x%04x => 0x%04x)", ieee, dev.nwk, nwk)
-
-        plugin_frame = build_plugin_004D_frame_content(self, nwk, ieee, parent_nwk)
-        self.callBackFunction(plugin_frame)
+            dev.nwk = nwk
 
     def handle_message(
         self,
