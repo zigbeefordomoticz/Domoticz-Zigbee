@@ -4035,7 +4035,7 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
     elif _ModelName in ("TS0041", "TS0043", "TS0044", "TS0042", "TS004F"):  # Tuya remote
         self.log.logging(
             "Input",
-            "Log",
+            "Debug",
             "Decode8095 - Tuya %s  Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, MsgPayload: %s "
             % (_ModelName, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgPayload),
             MsgSrcAddr,

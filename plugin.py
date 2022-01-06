@@ -904,10 +904,6 @@ class BasePlugin:
         # Reset Motion sensors
         ResetDevice(self, Devices, "Motion", 5)
 
-        # Send a Many-to-One-Route-request
-        if self.pluginconf.pluginConf["doManyToOneRoute"] and self.HeartbeatCount % ((50 * 60) // HEARTBEAT) == 0:
-            do_Many_To_One_RouteRequest(self)
-
         # OTA upgrade
         if self.OTA:
             self.OTA.heartbeat()
@@ -1204,6 +1200,7 @@ def start_GrpManagement(self, homefolder):
         Devices,
         self.ListOfDevices,
         self.IEEE2NWK,
+        self.DeviceConf, 
         self.log,
     )
     if self.groupmgt and self.ZigateIEEE:
