@@ -1062,7 +1062,8 @@ def zigateInit_Phase3(self):
         zigateBlueLed(self, False)
 
     # Set the TX Power
-    set_TxPower(self, self.pluginconf.pluginConf["TXpower_set"])
+    if self.ZiGateModel ==  1:
+        set_TxPower(self, self.pluginconf.pluginConf["TXpower_set"])
 
     # Set Certification Code
     if self.pluginconf.pluginConf["CertificationCode"] in CERTIFICATION:
