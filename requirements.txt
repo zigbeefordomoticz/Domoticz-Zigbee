@@ -8,7 +8,6 @@ charset_normalizer==2.0.10
 crccheck==1.1
 frozenlist==1.2.0
 multidict==5.2.0
-pycrypto==2.6.1
 pyserial==3.5
 pyserial_asyncio==0.6
 pyusb==1.2.1
