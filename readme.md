@@ -34,7 +34,7 @@ The first time you have to install the plugin via the `git clone` command
 
 * Zigpy layers will requires additional python3 modules to be install:
 
-  `sudo pip3 install <to be completed>`
+  `sudo pip3 install voluptuous pycrypto aiosqlite crccheck pyusb attr attrs aiohttp pyserial-asyncio`
 
 
 [More information available here](https://github.com/pipiche38/Domoticz-Zigate-Wiki/blob/master/en-eng/Plugin_Installation.md)
