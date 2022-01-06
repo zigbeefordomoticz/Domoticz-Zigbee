@@ -81,6 +81,8 @@ def getListOfEpForCluster(self, NwkId, SearchCluster):
     indicate that there is no Widget associated and all informations in Ep are not used)
     In case ClusterType exists and not empty at Global Level, then just return the list of Ep for which Cluster is found
     """
+    
+    # In case ReadAttributesEp is defined in Conf file, then we will restrict to only those Ep.
     readattributeslistofep = []
     if NwkId in self.ListOfDevices and "Model" in self.ListOfDevices[ NwkId ] and self.ListOfDevices[ NwkId ]["Model"] not in ( "", {} ):
         _model = self.ListOfDevices[ NwkId ]["Model"]
@@ -99,14 +101,13 @@ def getListOfEpForCluster(self, NwkId, SearchCluster):
 
         if oldFashion:
             EpList.append(Ep)
-        elif (
-                "ClusterType" in self.ListOfDevices[NwkId]["Ep"][Ep]
-                and self.ListOfDevices[NwkId]["Ep"][Ep]["ClusterType"] != {}
-                and self.ListOfDevices[NwkId]["Ep"][Ep]["ClusterType"] != ""
-            ):
-            if Ep in readattributeslistofep:
-                EpList.append(Ep)
-
+            
+        elif ( 
+            "ClusterType" in self.ListOfDevices[NwkId]["Ep"][Ep] 
+            and self.ListOfDevices[NwkId]["Ep"][Ep]["ClusterType"] not in ( {}, "") 
+            and ( not readattributeslistofep or Ep in readattributeslistofep)  
+        ):
+            EpList.append(Ep)
     return EpList
 
 
@@ -513,7 +514,7 @@ def updLQI(self, key, LQI):
     return
 
 
-#### Those functions will be use with the new DeviceConf structutre
+# Those functions will be use with the new DeviceConf structutre
 
 def is_fake_ep( self, nwkid, ep):
     
