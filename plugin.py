@@ -11,7 +11,7 @@
                 <ul style="list-style-type:square">
                     <li>&Documentations : &<a href="https://github.com/pipiche38/Domoticz-Zigate-Wiki/blob/master/en-eng/Home.md">English wiki</a>|<a href="https://github.com/pipiche38/Domoticz-Zigate-Wiki/blob/master/fr-fr/Home.md">Wiki Français</a></li>
                     <li>&Forums : &<a href="https://www.domoticz.com/forum/viewforum.php?f=68">English (www.domoticz.com)</a>|<a href="https://easydomoticz.com/forum/viewforum.php?f=28">Français (www.easydomoticz.com)</a></li>
-                    <li>&List of supported devices : &<a href="https://zigbee.blakadder.com/zigate.html">www.zigbee.blakadder.com</a></li>
+                    <li>&List of supported devices : &<a href="https://zigbee.blakadder.com/z4d.html">www.zigbee.blakadder.com</a></li>
                 </ul>
             <br/><h2>Parameters</h2>
     </description>
