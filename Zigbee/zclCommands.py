@@ -209,7 +209,7 @@ def zcl_remove_group_member_ship(self, nwkid, epin, epout, GrpId, ackIsDisabled=
 
 
 def zcl_remove_all_groups(self, nwkid, epin, epout, ackIsDisabled=DEFAULT_ACK_MODE):
-    self.log.logging("zclCommand", "Debug", "zcl_remove_all_groups %s %s %s" % (nwkid, epout))
+    self.log.logging("zclCommand", "Debug", "zcl_remove_all_groups %s %s" % (nwkid, epout))
     if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
         return zcl_raw_remove_all_groups(self, nwkid, epin, epout, ackIsDisabled=ackIsDisabled)
 

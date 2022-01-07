@@ -183,7 +183,7 @@ def buildframe_simple_descriptor_response(self, SrcNwkId, SrcEndPoint, ClusterId
     # Node Descriptor Response
 
     if len(Payload) < 14:
-        self.log.logging("zdpDecoder", "Error", "buildframe_simple_descriptor_response - not a Simple Descriptor resp" % (Payload))
+        self.log.logging("zdpDecoder", "Error", "buildframe_simple_descriptor_response - not a Simple Descriptor resp data: %s" % (Payload))
         return
     sqn = Payload[:2]
     status = Payload[2:4]
