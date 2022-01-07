@@ -70,8 +70,11 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channe
 
     config = {conf.CONF_DEVICE: {"path": serialPort}}
     config[conf.CONF_NWK] = {}
-    config[conf.CONF_NWK][conf.CONF_NWK_EXTENDED_PAN_ID] = "%s" %(t.EUI64(t.uint64_t(set_extendedPanId).serialize()))
-    
+    if set_extendedPanId != 0:
+        config[conf.CONF_NWK][conf.CONF_NWK_EXTENDED_PAN_ID] = "%s" %(t.EUI64(t.uint64_t(set_extendedPanId).serialize()))
+    if set_channel != 0:
+        config[conf.CONF_NWK][conf.CONF_NWK_CHANNEL] = set_channel
+
     if radiomodule == "zigate":
         self.app = App_zigate(config)
 
@@ -81,10 +84,10 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channe
     if self.pluginParameters["Mode3"] == "True":
         self.log.logging("TransportZigpy", "Status", "Form a New Network with Channel: %s(0x%02x) ExtendedPanId: 0x%016x" %(
            set_channel,  set_channel, set_extendedPanId ))
-        await self.app.startup(self.receiveData, callBackGetDevice=self.ZigpyGetDevice, auto_form=True, force_form=True, log=self.log, set_channel=set_channel, set_extendedPanId=set_extendedPanId)
+        await self.app.startup(self.receiveData, callBackGetDevice=self.ZigpyGetDevice, auto_form=True, force_form=True, log=self.log)
         self.ErasePDMDone = True
     else:
-        await self.app.startup(self.receiveData, callBackGetDevice=self.ZigpyGetDevice, auto_form=True, log=self.log, set_channel=set_channel, set_extendedPanId=set_extendedPanId)
+        await self.app.startup(self.receiveData, callBackGetDevice=self.ZigpyGetDevice, auto_form=True, log=self.log)
         
     # Send Network information to plugin, in order to poplulate various objetcs
     self.forwarder_queue.put(build_plugin_8009_frame_content(self, radiomodule))

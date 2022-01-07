@@ -38,7 +38,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
     async def _load_db(self) -> None:
         logging.debug("_load_db")
 
-    async def startup(self, callBackHandleMessage, callBackGetDevice=None, auto_form=False, force_form=False, log=None, set_channel=0, set_extendedPanId=0):
+    async def startup(self, callBackHandleMessage, callBackGetDevice=None, auto_form=False, force_form=False, log=None):
         # If set to != 0 (default) extended PanId will be use when forming the network.
         # If set to !=0 (default) channel will be use when formin the network
         self.log = log

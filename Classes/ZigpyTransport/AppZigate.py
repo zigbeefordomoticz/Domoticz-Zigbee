@@ -39,7 +39,7 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         logging.debug("_load_db")
 
 
-    async def startup(self, callBackHandleMessage, callBackGetDevice=None, auto_form=False, force_form=False, log=None, set_channel=0, set_extendedPanId=0):
+    async def startup(self, callBackHandleMessage, callBackGetDevice=None, auto_form=False, force_form=False, log=None ):
         self.callBackFunction = callBackHandleMessage
         self.callBackGetDevice = callBackGetDevice
         self.log = log
