@@ -127,7 +127,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         if sender.nwk == 0x0000:
             super().handle_message(sender, profile, cluster, src_ep, dst_ep, message)
 
-        if sender.nwk  or sender.ieee:
+        if sender.nwk or sender.ieee:
             self.log.logging(
                 "TransportZigpy",
                 "Debug",
