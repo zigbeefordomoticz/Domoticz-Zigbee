@@ -7,8 +7,6 @@ import time
 import traceback
 from typing import Any, Optional
 
-import zigpy.appdb
-import zigpy.config
 import zigpy.device
 import zigpy.exceptions
 import zigpy.group
@@ -21,9 +19,8 @@ import zigpy.util
 import zigpy.zcl
 import zigpy.zdo
 import zigpy.zdo.types as zdo_types
-import zigpy_zigate
-import zigpy_zigate.zigbee.application
-import zigpy_znp.zigbee.application
+import zigpy_znp.config as conf
+
 from Classes.ZigpyTransport.AppZigate import App_zigate
 from Classes.ZigpyTransport.AppZnp import App_znp
 from Classes.ZigpyTransport.nativeCommands import (NATIVE_COMMANDS_MAPPING,
@@ -35,8 +32,7 @@ from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_8045_frame_list_controller_ep)
 from Classes.ZigpyTransport.tools import handle_thread_error
 from zigpy.exceptions import DeliveryError, InvalidResponse
-from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
-                                 SCHEMA_DEVICE)
+
 from zigpy_znp.exceptions import (CommandNotRecognized, InvalidCommandResponse,
                                   InvalidFrame)
 
@@ -64,23 +60,23 @@ def zigpy_thread(self):
         extendedPANID = self.pluginconf.pluginConf["extendedPANID"]
         self.log.logging("TransportZigpy", "Status", "===> extendedPanId: 0x%X" %extendedPANID)
 
+    self.log.logging("TransportZigpy", "Debug", "zigpy_thread -extendedPANID %s %d" %(self.pluginconf.pluginConf["extendedPANID"],extendedPANID))
     asyncio.run(radio_start(self, self._radiomodule, self._serialPort, set_channel=channel, set_extendedPanId=extendedPANID ))
-
-
-def callBackGetDevice(nwk, ieee):
-    return None
 
 
 async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channel=0, set_extendedPanId=0):
 
     self.log.logging("TransportZigpy", "Debug", "In radio_start")
 
-    conf = {CONF_DEVICE: {"path": serialPort}}
+    config = {conf.CONF_DEVICE: {"path": serialPort}}
+    config[conf.CONF_NWK] = {}
+    config[conf.CONF_NWK][conf.CONF_NWK_EXTENDED_PAN_ID] = "%s" %(t.EUI64(t.uint64_t(set_extendedPanId).serialize()))
+    
     if radiomodule == "zigate":
-        self.app = App_zigate(conf)
+        self.app = App_zigate(config)
 
     elif radiomodule == "znp":
-        self.app = App_znp(conf)
+        self.app = App_znp(config)
 
     if self.pluginParameters["Mode3"] == "True":
         self.log.logging("TransportZigpy", "Status", "Form a New Network with Channel: %s(0x%02x) ExtendedPanId: 0x%016x" %(
