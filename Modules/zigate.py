@@ -49,7 +49,7 @@ def receiveZigateEpList(self, ep_count, ep_list):
 
 def receiveZigateEpDescriptor(self, MsgData):
 
-    MsgDataSQN = MsgData[0:2]
+    MsgDataSQN = MsgData[:2]
     MsgDataStatus = MsgData[2:4]
     MsgDataShAddr = MsgData[4:8]
     MsgDataLenght = MsgData[8:10]
@@ -60,6 +60,9 @@ def receiveZigateEpDescriptor(self, MsgData):
     MsgDataDeviceId = MsgData[16:20]
     MsgDataBField = MsgData[20:22]
     MsgDataInClusterCount = MsgData[22:24]
+    
+    if MsgDataEp not in self.ListOfDevices[MsgDataShAddr]["Ep"]:
+        self.ListOfDevices[MsgDataShAddr]["Ep"] = {}
 
     idx = 24
     i = 1
