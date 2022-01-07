@@ -15,8 +15,9 @@ from Classes.ZigpyTransport.zigpyThread import (start_zigpy_thread,
 
 
 class ZigpyTransport(object):
-    def __init__(self, pluginconf, F_out, zigpy_get_device, log, statistics, hardwareid, radiomodule, serialPort):
+    def __init__(self, pluginParameters, pluginconf, F_out, zigpy_get_device, log, statistics, hardwareid, radiomodule, serialPort):
         self.zigbee_communitation = "zigpy"
+        self.pluginParameters  = pluginParameters
         self.pluginconf = pluginconf
         self.F_out = F_out  # Function to call to bring the decoded Frame at plugin
         self.ZigpyGetDevice = zigpy_get_device

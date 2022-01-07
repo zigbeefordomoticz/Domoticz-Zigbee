@@ -43,7 +43,7 @@ def build_plugin_8009_frame_content(self, radiomodule):
         "build_plugin_8009_frame_content %s %s %s %s %s" % (self.app.nwk, self.app.ieee, self.app.extended_pan_id, self.app.pan_id, self.app.channel),
     )
     ieee = "%016x" % t.uint64_t.deserialize(self.app.ieee.serialize())[0]
-    ext_panid = "%16x" % t.uint64_t.deserialize(self.app.extended_pan_id.serialize())[0]
+    ext_panid = "%016x" % t.uint64_t.deserialize(self.app.extended_pan_id.serialize())[0]
     if radiomodule == "zigate":
         ieee = "%016x" % struct.unpack("Q", struct.pack(">Q", int(ieee, 16)))[0]
         ext_panid = "%016x" % struct.unpack("Q", struct.pack(">Q", int(ext_panid, 16)))[0]

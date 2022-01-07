@@ -59,8 +59,11 @@ def zigpy_thread(self):
     channel = 0
     if "channel" in self.pluginconf.pluginConf:
         channel = int(self.pluginconf.pluginConf["channel"])
+        self.log.logging("TransportZigpy", "Status", "===> channel: %s" %channel)
     if "extendedPANID" in self.pluginconf.pluginConf:
-        extendedPANID = int(self.pluginconf.pluginConf["extendedPANID"])
+        extendedPANID = self.pluginconf.pluginConf["extendedPANID"]
+        self.log.logging("TransportZigpy", "Status", "===> extendedPanId: 0x%X" %extendedPANID)
+
     asyncio.run(radio_start(self, self._radiomodule, self._serialPort, set_channel=channel, set_extendedPanId=extendedPANID ))
 
 
@@ -79,8 +82,14 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channe
     elif radiomodule == "znp":
         self.app = App_znp(conf)
 
-    await self.app.startup(self.receiveData, callBackGetDevice=self.ZigpyGetDevice, auto_form=True, log=self.log, set_channel=set_channel, set_extendedPanId=set_extendedPanId)
-
+    if self.pluginParameters["Mode3"] == "True":
+        self.log.logging("TransportZigpy", "Status", "Form a New Network with Channel: %s(0x%02x) ExtendedPanId: 0x%016x" %(
+           set_channel,  set_channel, set_extendedPanId ))
+        await self.app.startup(self.receiveData, callBackGetDevice=self.ZigpyGetDevice, auto_form=True, force_form=True, log=self.log, set_channel=set_channel, set_extendedPanId=set_extendedPanId)
+        self.ErasePDMDone = True
+    else:
+        await self.app.startup(self.receiveData, callBackGetDevice=self.ZigpyGetDevice, auto_form=True, log=self.log, set_channel=set_channel, set_extendedPanId=set_extendedPanId)
+        
     # Send Network information to plugin, in order to poplulate various objetcs
     self.forwarder_queue.put(build_plugin_8009_frame_content(self, radiomodule))
 
@@ -200,8 +209,6 @@ async def dispatch_command(self, data):
         self.app.set_extended_pan_id(data["datas"]["Param1"])
     elif data["cmd"] == "SET-CHANNEL":
         self.app.set_channel(data["datas"]["Param1"])
-    elif   data["cmd"] in NATIVE_COMMANDS_MAPPING:
-        await native_commands(self, data["cmd"], data["datas"] )
     elif data["cmd"] == "RAW-COMMAND":
         self.log.logging( "TransportZigpy", "Debug", "RAW-COMMAND: %s" %properyly_display_data( data["datas"]) )
         await process_raw_command(self, data["datas"], AckIsDisable=data["ACKIsDisable"], Sqn=data["Sqn"])

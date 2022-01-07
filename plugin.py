@@ -529,7 +529,7 @@ class BasePlugin:
 
             self.zigbee_communitation = "zigpy"
             Domoticz.Log("Start Zigpy Transport on zigate")
-            self.ControllerLink= ZigpyTransport( self.pluginconf, self.processFrame, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "zigate", Parameters["SerialPort"]) 
+            self.ControllerLink= ZigpyTransport( self.pluginParameters, self.pluginconf, self.processFrame, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "zigate", Parameters["SerialPort"]) 
             self.ControllerLink.open_zigate_connection()
             self.pluginconf.pluginConf["ZiGateInRawMode"] = True
             
@@ -540,7 +540,7 @@ class BasePlugin:
 
             self.zigbee_communitation = "zigpy"
             Domoticz.Log("Start Zigpy Transport on ZNP")
-            self.ControllerLink= ZigpyTransport( self.pluginconf,self.processFrame, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "znp", Parameters["SerialPort"])  
+            self.ControllerLink= ZigpyTransport( self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "znp", Parameters["SerialPort"])  
             self.ControllerLink.open_zigate_connection()
             self.pluginconf.pluginConf["ZiGateInRawMode"] = True
             
@@ -1037,7 +1037,7 @@ def zigateInit_Phase1(self):
     """
     self.log.logging("Plugin", "Debug", "zigateInit_Phase1 PDMDone: %s" % (self.ErasePDMDone))
     # Check if we have to Erase PDM.
-    if Parameters["Mode3"] == "True" and not self.ErasePDMDone:  # Erase PDM
+    if self.zigbee_communitation == "native" and Parameters["Mode3"] == "True" and not self.ErasePDMDone:  # Erase PDM
         if not self.ErasePDMDone:
             self.ErasePDMDone = True
             if self.domoticzdb_Hardware:
@@ -1136,8 +1136,8 @@ def zigateInit_Phase3(self):
         self.log.logging(
             "Plugin",
             "Status",
-            "Zigate set to Certification : %s" % CERTIFICATION[self.pluginconf.pluginConf["CertificationCode"]],
-        )
+            "Zigate set to Certification : %s/%s -> %s" % ( 
+                    self.pluginconf.pluginConf["CertificationCode"], self.pluginconf.pluginConf["Certification"],  CERTIFICATION[self.pluginconf.pluginConf["CertificationCode"]],))
         #sendZigateCmd(self, "0019", "%02x" % self.pluginconf.pluginConf["CertificationCode"])
         zigate_set_certificate(self, "%02x" % self.pluginconf.pluginConf["CertificationCode"] )
 
