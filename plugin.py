@@ -16,7 +16,7 @@
             <br/><h2>Parameters</h2>
     </description>
     <params>
-        <param field="Mode1" label="Zigate Model" width="75px" required="true" default="None">
+        <param field="Mode1" label="Controller Model" width="75px" required="true" default="None">
             <description><br/><h3>Zigbee controller definition</h3><br/>Select the Zigbee radio controller version : ZiGate (V1), ZiGate+ (V2), Texas Instrument ZNP</description>
             <options>
                 <option label="ZiGate"  value="V1"/>
@@ -25,7 +25,7 @@
                 <option label="Texas Instruments ZNP (via zigpy)" value="ZigpyZNP"/>
             </options>
         </param>
-        <param field="Mode2" label="Zigate Type" width="75px" required="true" default="None">
+        <param field="Mode2" label="Controller Type" width="75px" required="true" default="None">
             <description><br/>Select the Radio Controller connection type : USB, DIN, Pi, TCPIP (Wifi, Ethernet)</description>
             <options>
                 <option label="USB"   value="USB" />
@@ -48,9 +48,9 @@
             <description><br/><h3>Plugin definition</h3><br/>Set the plugin Dashboard port (9440 by default, None to disable)<br/>
             To access the plugin WebUI, replace your DomoticZ port (8080 by default) in your web adress by your WebUI port (9440 by default).</description>
         </param>
-        <param field="Mode3" label="Initialize ZiGate" width="75px" required="true" default="False" >
+        <param field="Mode3" label="Initialize Controller" width="75px" required="true" default="False" >
             <description><br/><h3>ZiGate Reset</h3>Required step only with a new ZiGate or after an Erase EEPROM.<br/>
-            Be aware : this will erase the Zigate memory and you will delete all pairing information. After that, you'll have to re-pair each devices.<br/>
+            Be aware : this will reset the controller and all paired devices will be lost. After that, you'll have to re-pair each devices.<br/>
             This is not removing any data from DomoticZ nor the plugin database.</description>
             <options>
                 <option label="True" value="True"/>
