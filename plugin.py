@@ -4,7 +4,7 @@
 # Author: zaraki673 & pipiche38
 #
 """
-<plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="5.1">
+<plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="6.0">
     <description>
         <h1> Plugin ZiGate</h1><br/>
             <br/><h2> Informations</h2><br/>
