@@ -22,6 +22,10 @@ Release Numbering
 - Odd numbers --> Stable5
 - Even numbers  --> Beta
 
+##    January 2022 - 5.1.17
+- [Hardware] - New Profalux Blind MOCT-xxxx
+- [Technocal] - Several fixes
+
 ## 27 December 2021 - 5.1.16
 
 - [Hardware] - Scene controller Tuya TS004F

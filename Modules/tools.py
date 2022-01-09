@@ -81,30 +81,33 @@ def getListOfEpForCluster(self, NwkId, SearchCluster):
     indicate that there is no Widget associated and all informations in Ep are not used)
     In case ClusterType exists and not empty at Global Level, then just return the list of Ep for which Cluster is found
     """
+    
+    # In case ReadAttributesEp is defined in Conf file, then we will restrict to only those Ep.
+    readattributeslistofep = []
+    if NwkId in self.ListOfDevices and "Model" in self.ListOfDevices[ NwkId ] and self.ListOfDevices[ NwkId ]["Model"] not in ( "", {} ):
+        _model = self.ListOfDevices[ NwkId ]["Model"]
+        if ( _model in self.DeviceConf and "ReadAttributesEp" in self.DeviceConf[_model]):
+            readattributeslistofep = self.DeviceConf[_model]["ReadAttributesEp"]
+
 
     EpList = []
     if NwkId not in self.ListOfDevices:
         return EpList
 
-    oldFashion = (
-        "ClusterType" in self.ListOfDevices[NwkId]
-        and self.ListOfDevices[NwkId]["ClusterType"] != {}
-        and self.ListOfDevices[NwkId]["ClusterType"] != ""
-    )
+    oldFashion = ( "ClusterType" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["ClusterType"] not in  ({}, "") )
     for Ep in list(self.ListOfDevices[NwkId]["Ep"].keys()):
         if SearchCluster not in self.ListOfDevices[NwkId]["Ep"][Ep]:
-            # Domoticz.Log("---- Cluster %s on %s" %( SearchCluster, str(self.ListOfDevices[NwkId]['Ep'][Ep] ) ))
             continue
 
         if oldFashion:
             EpList.append(Ep)
-        elif (
-                "ClusterType" in self.ListOfDevices[NwkId]["Ep"][Ep]
-                and self.ListOfDevices[NwkId]["Ep"][Ep]["ClusterType"] != {}
-                and self.ListOfDevices[NwkId]["Ep"][Ep]["ClusterType"] != ""
-            ):
+            
+        elif ( 
+            "ClusterType" in self.ListOfDevices[NwkId]["Ep"][Ep] 
+            and self.ListOfDevices[NwkId]["Ep"][Ep]["ClusterType"] not in ( {}, "") 
+            and ( not readattributeslistofep or Ep in readattributeslistofep)  
+        ):
             EpList.append(Ep)
-    # Domoticz.Log("----------> NwkId: %s Ep: %s Cluster: %s oldFashion: %s EpList: %s" %( NwkId, Ep, SearchCluster, oldFashion, EpList))
     return EpList
 
 
@@ -511,7 +514,7 @@ def updLQI(self, key, LQI):
     return
 
 
-#### Those functions will be use with the new DeviceConf structutre
+# Those functions will be use with the new DeviceConf structutre
 
 def is_fake_ep( self, nwkid, ep):
     

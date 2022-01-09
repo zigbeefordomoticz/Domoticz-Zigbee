@@ -412,10 +412,10 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
 
         elif DeviceType == "VenetianInverted":
             if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ("PR412", "CPR412", "CPR412-E"):
-                actuator_on(self, NWKID, EPout, "WindowCovering")
+                actuator_on(self, NWKID, EPout, "Light")
                 #sendZigateCmd(self, "0092", "02" + NWKID + ZIGATE_EP + EPout + "01")
             else:
-                actuator_on(self, NWKID, EPout, "Light")
+                actuator_on(self, NWKID, EPout, "WindowCovering")
                 #sendZigateCmd( self, "00FA", "02" + NWKID + ZIGATE_EP + EPout + "01")  # Venetian Inverted/Blind (On, for Close)
 
         elif DeviceType == "Venetian":
@@ -562,8 +562,11 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             #sendZigateCmd(self, "00FA", "02" + NWKID + ZIGATE_EP + EPout + "00")  # Blind inverted (Off, for Open)
 
         elif DeviceType == "VenetianInverted":
-            actuator_off(self, NWKID, EPout, "WindowCovering")
-            
+            if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ("PR412", "CPR412", "CPR412-E"):
+                actuator_off(self, NWKID, EPout, "Light")
+            else:
+                actuator_off(self, NWKID, EPout, "WindowCovering")
+
         elif DeviceType == "Venetian":
             if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ("PR412", "CPR412", "CPR412-E"):
                 actuator_on(self, NWKID, EPout, "Light")

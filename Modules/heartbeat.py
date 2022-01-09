@@ -19,7 +19,8 @@ from Modules.casaia import pollingCasaia
 from Modules.danfoss import danfoss_room_sensor_polling
 from Modules.domoTools import timedOutDevice
 from Modules.mgmt_rtg import mgmt_rtg
-from Modules.pairingProcess import processNotinDBDevices
+from Modules.pairingProcess import (binding_needed_clusters_with_zigate,
+                                    processNotinDBDevices)
 from Modules.paramDevice import sanity_check_of_param
 from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST,
                                     ReadAttributeRequest_0b04_050b_0505_0508,
@@ -123,6 +124,66 @@ def ManufSpecOnOffPolling(self, NwkId):
     ReadAttributeRequest_0008_0000(self, NwkId)
 
 
+def check_delay_binding( self, NwkId, model ):
+    # Profalux is the first one, but could get others
+    # At pairing we need to leave time for the remote to get binded to the VR
+    # Once it is done, then we can overwrite the binding
+    
+    if "DelayBindingAtPairing" in self.ListOfDevices[ NwkId ] and self.ListOfDevices[ NwkId ]["DelayBindingAtPairing"] == "Completed":
+        self.log.logging( "Heartbeat", "Debug", "check_delay_binding -  %s DelayBindingAtPairing: %s" % (
+            NwkId, self.ListOfDevices[ NwkId ]["DelayBindingAtPairing"]), NwkId, )
+
+        return
+    
+    if model in ( "", {}):
+        self.log.logging( "Heartbeat", "Debug", "check_delay_binding -  %s model: %s" % (
+            NwkId, model), NwkId, )
+
+        return
+
+    if model not in self.DeviceConf or  "DelayBindingAtPairing" not in self.DeviceConf[ model ] or self.DeviceConf[ model ]["DelayBindingAtPairing"] != 1:
+        self.log.logging( "Heartbeat", "Debug", "check_delay_binding -  %s not applicable" % (
+            NwkId), NwkId, )
+        return
+    
+    if "ClusterToBind" not in self.DeviceConf[ model ] or len(self.DeviceConf[ model ]["ClusterToBind"]) == 0:
+        self.log.logging( "Heartbeat", "Debug", "check_delay_binding -  %s Empty ClusterToBind" % (
+            NwkId), NwkId, )
+
+        return
+    
+    # We have a good candidate
+    if "BindingTable" not in self.ListOfDevices[ NwkId ]:
+        # Cannot do more
+        self.log.logging( "Heartbeat", "Debug", "check_delay_binding -  %s BindingTable do not exist" % (
+            NwkId), NwkId, )
+        mgmt_rtg(self, NwkId, "BindingTable")
+        return
+    
+    if "Devices" in self.ListOfDevices[ NwkId ]["BindingTable"] and len(self.ListOfDevices[ NwkId ]["BindingTable"]["Devices"]) == 0:
+        # Too early come later
+        self.log.logging( "Heartbeat", "Debug", "check_delay_binding -  %s BindingTable empty" % (
+            NwkId), NwkId, )
+        mgmt_rtg(self, NwkId, "BindingTable")
+        return
+    
+    # We reached that step, because we have DelayindingAtPairing enabled and the BindTable is not empty.
+    # Let's bind
+    if self.configureReporting:
+        if "Bind" in self.ListOfDevices[ NwkId ]:
+            del self.ListOfDevices[ NwkId ]["Bind"]
+            self.ListOfDevices[ NwkId ]["Bind"] = {}
+        if "ConfigureReporting" in self.ListOfDevices[ NwkId ]:
+            del self.ListOfDevices[ NwkId ]["ConfigureReporting"]
+            self.ListOfDevices[ NwkId ]["Bind"] = {} 
+        self.log.logging( "Heartbeat", "Debug", "check_delay_binding -  %s request Configure Reporting (and so bindings)" % (
+            NwkId), NwkId, )
+        binding_needed_clusters_with_zigate(self, NwkId)
+        self.configureReporting.processConfigureReporting( NWKID=NwkId ) 
+        self.ListOfDevices[ NwkId ]["DelayBindingAtPairing"] = "Completed"
+
+        
+    
 def pollingManufSpecificDevices(self, NwkId, HB):
 
     FUNC_MANUF = {
@@ -484,6 +545,10 @@ def processKnownDevices(self, Devices, NWKID):
 
     # Action not taken, must be reschedule to next cycle
     rescheduleAction = False
+
+    if ( intHB == 1 and "DelayBindingAtPairing" in self.ListOfDevices[ NWKID ] and self.ListOfDevices[ NWKID ]["DelayBindingAtPairing"] != "Completed"):   
+        # Will check only after a Command has been sent, in order to limit.
+        check_delay_binding( self, NWKID, model )
 
     if self.pluginconf.pluginConf["forcePollingAfterAction"] and (intHB == 1):  # HB has been reset to 0 as for a Group command
         # intHB is 1 as if it has been reset, we get +1 in ProcessListOfDevices

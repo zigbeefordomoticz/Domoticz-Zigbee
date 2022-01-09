@@ -24,23 +24,11 @@
 		}
 	},
 	"Type": "",
-	"ClusterToBind": [
-		"0001",
-		"0006"
+	"ClusterToBind": [],
+	"ConfigureReporting": {},
+	"ReadAttributesEp": [
+		"01"
 	],
-	"ConfigureReporting": {
-		"0006": {
-			"Attributes": {
-				"0000": {
-					"DataType": "10",
-					"MinInterval": "0001",
-					"MaxInterval": "012C",
-					"TimeOut": "0258",
-					"Change": "01"
-				}
-			}
-		}
-	},
 	"ReadAttributes": {
 		"0000": [
 			"0000",
@@ -52,8 +40,13 @@
 			"0020",
 			"0021"
 		],
-		"0006": [ "0000", "8004" ],
-		"E001": [ "D011" ]
+		"0006": [
+			"0000",
+			"8004"
+		],
+		"E001": [
+			"D011"
+		]
 	},
 	"Param": {
 		"TS004FMode": "Scene"

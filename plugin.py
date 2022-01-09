@@ -11,7 +11,7 @@
                 <ul style="list-style-type:square">
                     <li>&Documentations : &<a href="https://github.com/pipiche38/Domoticz-Zigate-Wiki/blob/master/en-eng/Home.md">English wiki</a>|<a href="https://github.com/pipiche38/Domoticz-Zigate-Wiki/blob/master/fr-fr/Home.md">Wiki Français</a></li>
                     <li>&Forums : &<a href="https://www.domoticz.com/forum/viewforum.php?f=68">English (www.domoticz.com)</a>|<a href="https://easydomoticz.com/forum/viewforum.php?f=28">Français (www.easydomoticz.com)</a></li>
-                    <li>&List of supported devices : &<a href="https://zigbee.blakadder.com/zigate.html">www.zigbee.blakadder.com</a></li>
+                    <li>&List of supported devices : &<a href="https://zigbee.blakadder.com/z4d.html">www.zigbee.blakadder.com</a></li>
                 </ul>
             <br/><h2>Parameters</h2>
     </description>
@@ -904,10 +904,6 @@ class BasePlugin:
         # Reset Motion sensors
         ResetDevice(self, Devices, "Motion", 5)
 
-        # Send a Many-to-One-Route-request
-        if self.pluginconf.pluginConf["doManyToOneRoute"] and self.HeartbeatCount % ((50 * 60) // HEARTBEAT) == 0:
-            do_Many_To_One_RouteRequest(self)
-
         # OTA upgrade
         if self.OTA:
             self.OTA.heartbeat()
@@ -1066,7 +1062,8 @@ def zigateInit_Phase3(self):
         zigateBlueLed(self, False)
 
     # Set the TX Power
-    set_TxPower(self, self.pluginconf.pluginConf["TXpower_set"])
+    if self.ZiGateModel ==  1:
+        set_TxPower(self, self.pluginconf.pluginConf["TXpower_set"])
 
     # Set Certification Code
     if self.pluginconf.pluginConf["CertificationCode"] in CERTIFICATION:
@@ -1203,6 +1200,7 @@ def start_GrpManagement(self, homefolder):
         Devices,
         self.ListOfDevices,
         self.IEEE2NWK,
+        self.DeviceConf, 
         self.log,
     )
     if self.groupmgt and self.ZigateIEEE:
