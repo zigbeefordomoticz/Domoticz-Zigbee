@@ -250,7 +250,7 @@ class BasePlugin:
 
     def onStart(self):
         Domoticz.Log("ZiGate plugin started!")
-        assert sys.version_info >= (3, 4) # nosec
+        assert sys.version_info >= (3, 4)  # nosec
 
         if Parameters["Mode1"] == "V1" and Parameters["Mode2"] in (
             "USB",
@@ -524,8 +524,7 @@ class BasePlugin:
         elif self.transport == "ZigpyZiGate":
             # Zigpy related modules
             from Classes.ZigpyTransport.Transport import ZigpyTransport
-            from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH,
-                                                CONFIG_SCHEMA, SCHEMA_DEVICE)
+            from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE)
 
             self.zigbee_communitation = "zigpy"
             Domoticz.Log("Start Zigpy Transport on zigate")
@@ -535,8 +534,7 @@ class BasePlugin:
             
         elif self.transport == "ZigpyZNP":
             from Classes.ZigpyTransport.Transport import ZigpyTransport
-            from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH,
-                                                CONFIG_SCHEMA, SCHEMA_DEVICE)
+            from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE)
 
             self.zigbee_communitation = "zigpy"
             Domoticz.Log("Start Zigpy Transport on ZNP")
@@ -744,7 +742,7 @@ class BasePlugin:
         # stop_time = int(time.time() *1000)
         # Domoticz.Log("### Completion: %s is %s ms" %(Data, ( stop_time - start_time)))
 
-    def zigpy_get_device(self, ieee=None, nwkid = None):
+    def zigpy_get_device(self, ieee=None, nwkid=None):
         # allow to inter-connect zigpy world and plugin
         sieee = ieee
         snwkid = nwkid
@@ -752,7 +750,7 @@ class BasePlugin:
         if nwkid in self.ListOfDevices and 'IEEE' in self.ListOfDevices[ nwkid ]:
             ieee = self.ListOfDevices[ nwkid ]['IEEE']
         elif ieee in self.IEEE2NWK:
-            nwkid =   self.IEEE2NWK[ ieee ]
+            nwkid = self.IEEE2NWK[ ieee ]
         else:
             self.log.logging("TransportZigpy", "Log", "zigpy_get_device( %s(%s), %s(%s)) NOT FOUND" %( sieee, type(sieee), snwkid, type(sieee) ))
             return None
@@ -1136,8 +1134,10 @@ def zigateInit_Phase3(self):
         self.log.logging(
             "Plugin",
             "Status",
-            "Zigate set to Certification : %s/%s -> %s" % ( 
-                    self.pluginconf.pluginConf["CertificationCode"], self.pluginconf.pluginConf["Certification"],  CERTIFICATION[self.pluginconf.pluginConf["CertificationCode"]],))
+            "Zigate set to Certification : %s/%s -> %s" % (
+                self.pluginconf.pluginConf["CertificationCode"], 
+                self.pluginconf.pluginConf["Certification"], 
+                CERTIFICATION[self.pluginconf.pluginConf["CertificationCode"]],))
         #sendZigateCmd(self, "0019", "%02x" % self.pluginconf.pluginConf["CertificationCode"])
         zigate_set_certificate(self, "%02x" % self.pluginconf.pluginConf["CertificationCode"] )
 
@@ -1220,36 +1220,19 @@ def zigateInit_Phase3(self):
 
 def check_firmware_level(self):
     # Check Firmware version
-    if (
-        int(self.FirmwareVersion.lower(),16) <= 0x031d
-        or int(self.FirmwareVersion.lower(),16) == 0x031d
-        and int(self.FirmwareMajorVersion,16) == 0x02
-    ):
+    if int(self.FirmwareVersion.lower(),16) < 0x031d:
         self.log.logging("Plugin", "Error", "Firmware level not supported, please update ZiGate firmware")
         return False
 
-    if int(self.FirmwareVersion.lower(),16) == 0x2100:
+    elif int(self.FirmwareVersion.lower(),16) == 0x2100:
         self.log.logging("Plugin", "Status", "Firmware for Pluzzy devices")
         self.PluzzyFirmware = True
         return True
 
-    if self.FirmwareVersion.lower() == "031b":
-        self.log.logging(
-            "Plugin",
-            "Status",
-            "You are not on the latest firmware version, This version is known to have problem, please consider to upgrade",
-        )
-        return False
-
-    if self.FirmwareVersion.lower() in ("031a", "031c", "031d"):
-        self.pluginconf.pluginConf["forceAckOnZCL"] = True
-
-    elif int(self.FirmwareVersion.lower(),16) >= 0x031e:
-        self.pluginconf.pluginConf["forceAckOnZCL"] = False
-
     elif int(self.FirmwareVersion, 16) > 0x0321:
         self.log.logging("Plugin", "Error", "WARNING: Firmware %s is not yet supported" % self.FirmwareVersion.lower())
 
+    self.pluginconf.pluginConf["forceAckOnZCL"] = False
     return True
 
 
@@ -1416,47 +1399,47 @@ def update_DB_device_status_to_reinit( self ):
             self.ListOfDevices[ x ]['Status'] = 'erasePDM'
 
 
-global _plugin # pylint: disable=global-variable-not-assigned
+global _plugin  # pylint: disable=global-variable-not-assigned
 _plugin = BasePlugin()
 
 
 def onStart():
-    global _plugin # pylint: disable=global-variable-not-assigned
+    global _plugin  # pylint: disable=global-variable-not-assigned
     _plugin.onStart()
 
 
 def onStop():
-    global _plugin # pylint: disable=global-variable-not-assigned
+    global _plugin  # pylint: disable=global-variable-not-assigned
     _plugin.onStop()
 
 
 def onDeviceRemoved(Unit):
-    global _plugin # pylint: disable=global-variable-not-assigned
+    global _plugin  # pylint: disable=global-variable-not-assigned
     _plugin.onDeviceRemoved(Unit)
 
 
 def onConnect(Connection, Status, Description):
-    global _plugin # pylint: disable=global-variable-not-assigned
+    global _plugin  # pylint: disable=global-variable-not-assigned
     _plugin.onConnect(Connection, Status, Description)
 
 
 def onMessage(Connection, Data):
-    global _plugin # pylint: disable=global-variable-not-assigned
+    global _plugin  # pylint: disable=global-variable-not-assigned
     _plugin.onMessage(Connection, Data)
 
 
 def onCommand(Unit, Command, Level, Hue):
-    global _plugin # pylint: disable=global-variable-not-assigned
+    global _plugin  # pylint: disable=global-variable-not-assigned
     _plugin.onCommand(Unit, Command, Level, Hue)
 
 
 def onDisconnect(Connection):
-    global _plugin # pylint: disable=global-variable-not-assigned
+    global _plugin  # pylint: disable=global-variable-not-assigned
     _plugin.onDisconnect(Connection)
 
 
 def onHeartbeat():
-    global _plugin # pylint: disable=global-variable-not-assigned
+    global _plugin  # pylint: disable=global-variable-not-assigned
     _plugin.onHeartbeat()
 
 
