@@ -1155,9 +1155,7 @@ def zigateInit_Phase3(self):
 def check_firmware_level(self):
     # Check Firmware version
     if (
-        int(self.FirmwareVersion.lower(),16) <= 0x031d
-        or int(self.FirmwareVersion.lower(),16) == 0x031d
-        and int(self.FirmwareMajorVersion,16) == 0x02
+        int(self.FirmwareVersion.lower(),16) < 0x031d
     ):
         self.log.logging("Plugin", "Error", "Firmware level not supported, please update ZiGate firmware")
         return False
@@ -1166,17 +1164,6 @@ def check_firmware_level(self):
         self.log.logging("Plugin", "Status", "Firmware for Pluzzy devices")
         self.PluzzyFirmware = True
         return True
-
-    if self.FirmwareVersion.lower() == "031b":
-        self.log.logging(
-            "Plugin",
-            "Status",
-            "You are not on the latest firmware version, This version is known to have problem, please consider to upgrade",
-        )
-        return False
-
-    if self.FirmwareVersion.lower() in ("031a", "031c", "031d"):
-        self.pluginconf.pluginConf["forceAckOnZCL"] = True
 
     elif int(self.FirmwareVersion.lower(),16) >= 0x031e:
         self.pluginconf.pluginConf["forceAckOnZCL"] = False
