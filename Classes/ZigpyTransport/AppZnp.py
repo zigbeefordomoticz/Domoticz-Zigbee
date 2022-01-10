@@ -153,7 +153,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
                 "handle_message device 1: %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s lqi: %s" % (
                     str(sender), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8"), sender.lqi)),
 
-            if sender.ieee is not None:
+            if sender.nwk is not None:
                 addr_mode = 0x02
                 addr = sender.nwk.serialize()[::-1].hex()
                 

@@ -44,9 +44,6 @@ def build_plugin_8009_frame_content(self, radiomodule):
     )
     ieee = "%016x" % t.uint64_t.deserialize(self.app.ieee.serialize())[0]
     ext_panid = "%016x" % t.uint64_t.deserialize(self.app.extended_pan_id.serialize())[0]
-    if radiomodule == "zigate":
-        ieee = "%016x" % struct.unpack("Q", struct.pack(">Q", int(ieee, 16)))[0]
-        ext_panid = "%016x" % struct.unpack("Q", struct.pack(">Q", int(ext_panid, 16)))[0]
 
     frame_payload = "%04x" % self.app.nwk
     frame_payload += ieee
