@@ -17,7 +17,6 @@ import zigpy.util
 import zigpy.zcl
 import zigpy.zdo
 import zigpy.zdo.types as zdo_types
-import zigpy_zigate.zigbee.application
 import zigpy_znp.commands.util
 import zigpy_znp.config as conf
 import zigpy_znp.commands as c
@@ -42,7 +41,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         # If set to != 0 (default) extended PanId will be use when forming the network.
         # If set to !=0 (default) channel will be use when formin the network
         self.log = log
-        self.callBackHandleMessage = callBackHandleMessage
+        self.callBackFunction = callBackHandleMessage
         self.callBackGetDevice = callBackGetDevice
         self.znp_config[conf.CONF_MAX_CONCURRENT_REQUESTS] = 16
 
@@ -57,7 +56,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         znp_model[ znp_model.find("build") + 6 : -5 ]
         FirmwareMajorVersion = "%02x" %int(znp_model[ znp_model.find("build") + 8 : -5 ])
         FirmwareVersion = "%04x" %int(znp_model[ znp_model.find("build") + 10: -1])
-        self.callBackHandleMessage(build_plugin_8010_frame_content(FirmwareBranch, FirmwareMajorVersion, FirmwareVersion))
+        self.callBackFunction(build_plugin_8010_frame_content(FirmwareBranch, FirmwareMajorVersion, FirmwareVersion))
 
 
     async def _register_endpoints(self) -> None:
@@ -110,6 +109,24 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         logging.debug("get_device raise KeyError ieee: %s nwk: %s !!" %( ieee, nwk))
         raise KeyError
 
+    def handle_join(self, nwk: t.NWK, ieee: t.EUI64, parent_nwk: t.NWK) -> None:
+        """
+        Called when a device joins or announces itself on the network.
+        """
+
+        ieee = t.EUI64(ieee)
+
+        try:
+            dev = self.get_device(ieee)
+            LOGGER.info("Device 0x%04x (%s) joined the network", nwk, ieee)
+        except KeyError:
+            dev = self.add_device(ieee, nwk)
+            LOGGER.info("New device 0x%04x (%s) joined the network", nwk, ieee)
+
+        if dev.nwk != nwk:
+            LOGGER.debug("Device %s changed id (0x%04x => 0x%04x)", ieee, dev.nwk, nwk)
+            dev.nwk = nwk
+            
     def get_zigpy_version(self):
         # This is a fake version number. This is just to inform the plugin that we are using ZNP over Zigpy
         logging.debug("get_zigpy_version ake version number. !!")
@@ -125,25 +142,28 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         message: bytes,
     ) -> None:
         if sender.nwk == 0x0000:
+            self.log.logging("TransportZigpy", "Error", "handle_message from Controller Sender: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
+                str(sender.nwk), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8")))
             super().handle_message(sender, profile, cluster, src_ep, dst_ep, message)
 
-        if sender.nwk or sender.ieee:
+        if sender.nwk is not None or sender.ieee is not None:
             self.log.logging(
                 "TransportZigpy",
                 "Debug",
                 "handle_message device 1: %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s lqi: %s" % (
                     str(sender), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8"), sender.lqi)),
 
-            if sender.nwk:
+            if sender.ieee is not None:
                 addr_mode = 0x02
                 addr = sender.nwk.serialize()[::-1].hex()
                 
-            elif sender.ieee:
+            elif sender.ieee is not None:
                 addr = "%016x" % t.uint64_t.deserialize(sender.ieee.serialize())[0]
                 addr_mode = 0x03
                 
             if sender.lqi is None:
                 sender.lqi = 0x00
+
             if src_ep == dst_ep == 0x00:
                 profile = 0x0000
 
@@ -153,9 +173,16 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
                 "handle_message device 2: %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s lqi: %s" % (
                     str(addr),  profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8"), sender.lqi),
             )
-            plugin_frame = build_plugin_8002_frame_content(self, addr, profile, cluster, src_ep, dst_ep, message, sender.lqi, src_addrmode=addr_mode)
-            self.log.logging("TransportZigpy", "Debug", "handle_message Sender: %s frame for plugin: %s" % (addr, plugin_frame))
-            self.callBackHandleMessage(plugin_frame)
+            if addr:
+                plugin_frame = build_plugin_8002_frame_content(self, addr, profile, cluster, src_ep, dst_ep, message, sender.lqi, src_addrmode=addr_mode)
+                self.log.logging("TransportZigpy", "Debug", "handle_message Sender: %s frame for plugin: %s" % (addr, plugin_frame))
+                self.callBackFunction(plugin_frame)
+            else:
+                self.log.logging(
+                    "TransportZigpy",
+                    "Error",
+                    "handle_message - Issue with addr: %s while sender is %s %s" % (addr, sender.nwk, sender.ieee),
+                )
         else:
             self.log.logging(
                 "TransportZigpy",
