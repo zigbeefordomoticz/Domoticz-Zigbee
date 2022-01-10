@@ -16,8 +16,8 @@
             <br/><h2>Parameters</h2>
     </description>
     <params>
-        <param field="Mode1" label="Controller Model" width="75px" required="true" default="None">
-            <description><br/><h3>Zigbee controller definition</h3><br/>Select the Zigbee radio controller version : ZiGate (V1), ZiGate+ (V2), Texas Instrument ZNP</description>
+        <param field="Mode1" label="Coordinator Model" width="75px" required="true" default="None">
+            <description><br/><h3>Zigbee Coordinator definition</h3><br/>Select the Zigbee radio Coordinator version : ZiGate (V1), ZiGate+ (V2), Texas Instrument ZNP</description>
             <options>
                 <option label="ZiGate"  value="V1"/>
                 <option label="ZiGate+" value="V2"/>
@@ -25,8 +25,8 @@
                 <option label="Texas Instruments ZNP (via zigpy)" value="ZigpyZNP"/>
             </options>
         </param>
-        <param field="Mode2" label="Controller Type" width="75px" required="true" default="None">
-            <description><br/>Select the Radio Controller connection type : USB, DIN, Pi, TCPIP (Wifi, Ethernet)</description>
+        <param field="Mode2" label="Coordinator Type" width="75px" required="true" default="None">
+            <description><br/>Select the Radio Coordinator connection type : USB, DIN, Pi, TCPIP (Wifi, Ethernet)</description>
             <options>
                 <option label="USB"   value="USB" />
                 <option label="DIN"   value="DIN" />
@@ -36,22 +36,22 @@
             </options>
         </param>
         <param field="SerialPort" label="Serial Port" width="150px" required="true" default="/dev/ttyUSB0" >
-            <description><br/>Set the serial port where the Radio Controller is connected (/dev/ttyUSB0 for example)</description>
+            <description><br/>Set the serial port where the Radio Coordinator is connected (/dev/ttyUSB0 for example)</description>
         </param>
         <param field="Address" label="IP" width="150px" required="true" default="0.0.0.0">
-            <description><br/>Set the Radio Controller IP adresse (0.0.0.0 if not applicable)</description>
+            <description><br/>Set the Radio Coordinator IP adresse (0.0.0.0 if not applicable)</description>
         </param>
         <param field="Port" label="Port" width="150px" required="true" default="9999">
-            <description><br/>Set the Radio Controller Port (9999 by default)</description>
+            <description><br/>Set the Radio Coordinator Port (9999 by default)</description>
         </param>
         <param field="Mode4" label="WebUI port" width="75px" required="true" default="9440" >
             <description><br/><h3>Plugin definition</h3><br/>Set the plugin Dashboard port (9440 by default, None to disable)<br/>
             To access the plugin WebUI, replace your DomoticZ port (8080 by default) in your web adress by your WebUI port (9440 by default).</description>
         </param>
-        <param field="Mode3" label="Initialize Controller" width="75px" required="true" default="False" >
-            <description><br/><h3>Controller initialization</h3>Required step only with a new Controller or if you want to create a new Zigbee network.<br/>
+        <param field="Mode3" label="Initialize Coordinator" width="75px" required="true" default="False" >
+            <description><br/><h3>Coordinator initialization</h3>Required step only with a new Coordinator or if you want to create a new Zigbee network.<br/>
             This can be usefull if you want to use a specific Extended PanId requires for Wiser (legacy) devices.
-            Be aware : this will reset the controller and all paired devices will be lost. After that, you'll have to re-pair each devices.<br/>
+            Be aware : this will reset the Coordinator and all paired devices will be lost. After that, you'll have to re-pair each devices.<br/>
             This is not removing any data from DomoticZ nor the plugin database.</description>
             <options>
                 <option label="True" value="True"/>
