@@ -634,7 +634,7 @@ def handle_device_specific_needs(self, Devices, NWKID):
         self.log.logging("Pairing", "Debug", "Tuya TS0121 registration needed")
         tuya_TS0121_registration(self, NWKID)
 
-    elif self.ListOfDevices[NWKID]["Model"] in ("TS004F",):
+    elif self.ListOfDevices[NWKID]["Model"] in ("TS004F", "TS004F-_TZ3000_xabckq1v"):
         self.log.logging("Pairing", "Log", "Tuya TS004F registration needed")
         if "Param" in self.ListOfDevices[NWKID] and "TS004FMode" in self.ListOfDevices[NWKID]["Param"]:
             tuya_cmd_ts004F(self, NWKID, self.ListOfDevices[NWKID]["Param"]["TS004FMode" ])

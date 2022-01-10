@@ -1063,6 +1063,7 @@ def UpdateBatteryAttribute(self, Devices, MsgSrcAddr, MsgSrcEp):
         "TS0043",
         "TS0044",
         "TS004F",
+        "TS004F-_TZ3000_xabckq1v",
         "TH01",
         "66666",
         "DS01",
