@@ -113,48 +113,41 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
     ) -> None:
 
         if sender.nwk == 0x0000:
-            self.log.logging("TransportZigpy", "Error", "handle_message from Controller Sender: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
+            self.log.logging("TransportZigpy", "Debug", "handle_message from Controller Sender: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
                 str(sender.nwk), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8")))
-            if cluster != 0x8031: # why 8031 ??
-                # temporarly stop processing here. It seems nodedesc calls do not work properly on zigate
-                return super().handle_message(sender, profile, cluster, src_ep, dst_ep, message)
+            super().handle_message(sender, profile, cluster, src_ep, dst_ep, message)
 
-        if sender.nwk is not None or sender.ieee is not None:
-            self.log.logging(
-                "TransportZigpy",
-                "Debug",
-                "handle_message device 1: %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s lqi: %s" % (
-                    str(sender), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8"), sender.lqi)),
-            if sender.nwk is not None:
-                addr_mode = 0x02
-                addr = sender.nwk.serialize()[::-1].hex()
 
-            else:
-                addr = "%016x" % t.uint64_t.deserialize(sender.ieee.serialize())[0]
-                addr_mode = 0x03
+        self.log.logging(
+            "TransportZigpy",
+            "Debug",
+            "handle_message device 1: %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s lqi: %s" % (
+                str(sender), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8"), sender.lqi)),
+        
+        if sender.nwk:
+            addr_mode = 0x02
+            addr = sender.nwk.serialize()[::-1].hex()
 
-            if sender.lqi is None:
-                sender.lqi = 0x00
+        elif sender.ieee:
+            addr = "%016x" % t.uint64_t.deserialize(sender.ieee.serialize())[0]
+            addr_mode = 0x03
 
-            if src_ep == dst_ep == 0x00:
-                profile = 0x0000
+        if sender.lqi is None:
+            sender.lqi = 0x00
 
-            if addr:
-                plugin_frame = build_plugin_8002_frame_content(self, addr, profile, cluster, src_ep, dst_ep, message, sender.lqi, src_addrmode=addr_mode)
-                self.log.logging("TransportZigpy", "Debug", "handle_message Sender: %s frame for plugin: %s" % (addr, plugin_frame))
-                self.callBackFunction(plugin_frame)
-            else:
-                self.log.logging(
-                    "TransportZigpy",
-                    "Error",
-                    "handle_message - Issue with addr: %s while sender is %s %s" % (addr, sender.nwk, sender.ieee),
-                )
+        if src_ep == dst_ep == 0x00:
+            profile = 0x0000
+
+        if addr:
+            plugin_frame = build_plugin_8002_frame_content(self, addr, profile, cluster, src_ep, dst_ep, message, sender.lqi, src_addrmode=addr_mode)
+            self.log.logging("TransportZigpy", "Debug", "handle_message Sender: %s frame for plugin: %s" % (addr, plugin_frame))
+            self.callBackFunction(plugin_frame)
         else:
             self.log.logging(
                 "TransportZigpy",
                 "Error",
-                "handle_message Sender unkown device : %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s" % (
-                    str(sender), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8")),
+                "handle_message Sender unkown device : %s addr: %s addr_mode: %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s" % (
+                    str(sender), addr, addr_mode, profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8")),
             )
 
         return None
