@@ -512,7 +512,7 @@ def delay_binding_and_reporting(self, Nwkid):
     if "Model" not in self.ListOfDevices[Nwkid] or self.ListOfDevices[Nwkid]["Model"] in  ( "", {}):
         return False
     _model = self.ListOfDevices[Nwkid]["Model"]
-    if "DelayBindingAtPairing" in self.DeviceConf[_model] and self.DeviceConf[_model]["DelayBindingAtPairing"]:
+    if _model in self.DeviceConf and "DelayBindingAtPairing" in self.DeviceConf[_model] and self.DeviceConf[_model]["DelayBindingAtPairing"]:
         self.ListOfDevices[ Nwkid ]["DelayBindingAtPairing"] = ""
         self.log.logging("Pairing", "Log", "binding_needed_clusters_with_zigate %s Skip Binding due to >DelayBindingAtPairing<" % (Nwkid))
         return True
