@@ -118,19 +118,24 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
             super().handle_message(sender, profile, cluster, src_ep, dst_ep, message)
 
 
-        self.log.logging(
-            "TransportZigpy",
-            "Debug",
-            "handle_message device 1: %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s lqi: %s" % (
-                str(sender), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8"), sender.lqi)),
-        
         if sender.nwk:
             addr_mode = 0x02
             addr = sender.nwk.serialize()[::-1].hex()
+            self.log.logging(
+                "TransportZigpy",
+                "Debug",
+                "handle_message device 1: %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s lqi: %s" % (
+                    str(sender), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8"), sender.lqi)),
+
 
         elif sender.ieee:
             addr = "%016x" % t.uint64_t.deserialize(sender.ieee.serialize())[0]
             addr_mode = 0x03
+            self.log.logging(
+                "TransportZigpy",
+                "Debug",
+                "handle_message device 1: %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s lqi: %s" % (
+                    str(sender), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8"), sender.lqi)),
 
         if sender.lqi is None:
             sender.lqi = 0x00
