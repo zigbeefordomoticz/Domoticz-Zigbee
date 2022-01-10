@@ -450,7 +450,7 @@ def zcl_move_to_colour_temperature(self, nwkid, EPout, temperature, transition="
 
 def zcl_group_move_to_colour_temperature(self, nwkid, epin, EPout, temperature, transition="0010"):
     if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
-        return zcl_raw_move_color(self, nwkid, ZIGATE_EP, EPout, "MovetoColorTemperature", temperature=temperature, transitiont=transition, groupaddrmode=True)
+        return zcl_raw_move_color(self, nwkid, ZIGATE_EP, EPout, "MovetoColorTemperature", temperature=temperature, transition=transition, groupaddrmode=True)
 
     data = "%02d" % ADDRESS_MODE["group"] + nwkid + epin + EPout + temperature + transition
     return send_zigatecmd_raw(self, "00C0", data)
