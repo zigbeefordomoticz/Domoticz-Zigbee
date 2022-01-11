@@ -17,7 +17,7 @@ from Modules.pollControl import receive_poll_cluster
 from Modules.schneider_wiser import schneiderReadRawAPS
 from Modules.tuya import TUYA_MANUFACTURER_NAME, tuyaReadRawAPS
 
-## Requires Zigate firmware > 3.1d
+# Requires Zigate firmware > 3.1d
 CALLBACK_TABLE = {
     # Manuf : ( callbackDeviceAwake_xxxxx function )
     "105e": schneiderReadRawAPS,
@@ -108,7 +108,7 @@ def inRawAps(
         # 0x01  Initiate Normal Operation Mode
         # 0x02  Initiate Test Mode
 
-        enroll_response_code = Data[0:2]
+        enroll_response_code = Data[:2]
         zone_id = Data[2:4]
 
         if Command == "00":
