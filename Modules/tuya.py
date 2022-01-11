@@ -16,7 +16,9 @@ from datetime import datetime, timedelta
 import Domoticz
 
 from Modules.basicOutputs import raw_APS_request, write_attribute
+from Modules.bindings import bindDevice
 from Modules.domoMaj import MajDomoDevice
+
 from Modules.tools import (build_fcf, checkAndStoreAttributeValue,
                            get_and_inc_SQN, is_ack_tobe_disabled, updSQN)
 from Modules.tuyaSiren import tuya_siren_response
@@ -24,7 +26,6 @@ from Modules.tuyaTools import (get_tuya_attribute, store_tuya_attribute,
                                tuya_cmd)
 from Modules.tuyaTRV import TUYA_eTRV_MODEL, tuya_eTRV_response
 from Modules.zigateConsts import ZIGATE_EP
-from Modules.bindings import bindDevice
 
 # Tuya TRV Commands
 # https://medium.com/@dzegarra/zigbee2mqtt-how-to-add-support-for-a-new-tuya-based-device-part-2-5492707e882d
@@ -230,15 +231,17 @@ def tuya_cmd_ts004F(self, NwkId, mode):
     # By default set to 0x00
     if mode not in TS004F_MODE:
         return
+    
     write_attribute(self, NwkId, ZIGATE_EP, "01", "0006", "0000", "00", "8004", "30", '%02x' %TS004F_MODE[ mode ], ackIsDisabled=False)
-    write_attribute(self, NwkId, ZIGATE_EP, "01", "0006", "0000", "00", "8004", "30", '%02x' %TS004F_MODE[ mode ], ackIsDisabled=False)
-    write_attribute(self, NwkId, ZIGATE_EP, "01", "0006", "0000", "00", "8004", "30", '%02x' %TS004F_MODE[ mode ], ackIsDisabled=False)
-    #ieee = self.ListOfDevices[ NwkId ]['IEEE']
-    #cluster = "0006"
-    #bindDevice(self, ieee, "01", cluster, destaddr=None, destep="01")
-    #bindDevice(self, ieee, "02", cluster, destaddr=None, destep="01")
-    #bindDevice(self, ieee, "03", cluster, destaddr=None, destep="01")
-    #bindDevice(self, ieee, "04", cluster, destaddr=None, destep="01")
+    
+    ieee = self.ListOfDevices[ NwkId ]['IEEE']
+    cluster = "0006"
+    bindDevice(self, ieee, "01", cluster, destaddr=None, destep="01")
+    bindDevice(self, ieee, "02", cluster, destaddr=None, destep="01")
+    bindDevice(self, ieee, "03", cluster, destaddr=None, destep="01")
+    bindDevice(self, ieee, "04", cluster, destaddr=None, destep="01")
+
+    
 
 def tuya_cmd_0x0000_0xf0(self, NwkId):
 
