@@ -55,6 +55,7 @@ MANDATORY_ATTRIBUTES = (
     "Manufacturer Name",
     "Model",
     "NbEp",
+    "OTA",
     "OTAUpgrade",
     "OTAClient",
     "PowerSource",
