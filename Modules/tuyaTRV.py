@@ -29,6 +29,7 @@ TUYA_eTRV_MODEL = (
     "TS0601-eTRV2",
     "TS0601-eTRV3",
     "TS0601-_TZE200_b6wax7g0",      # BRT-100  MOES by Tuya
+    "TS0601-_TZE200_chyvmhay",      # Lidl Valve
     "TS0601-thermostat",
     "uhszj9s",
     "GbxAXL2",
@@ -60,7 +61,10 @@ eTRV_MODELS = {
     "TS0601-eTRV3": "TS0601-eTRV3",
     
     # MOES BRT-100
-    "TS0601-_TZE200_b6wax7g0": "TS0601-_TZE200_b6wax7g0"
+    "TS0601-_TZE200_b6wax7g0": "TS0601-_TZE200_b6wax7g0",
+    
+    # Lidl Valve
+    "TS0601-_TZE200_chyvmhay": "TS0601-_TZE200_chyvmhay"
 }
 
 
@@ -84,7 +88,7 @@ def tuya_eTRV_registration(self, nwkid, device_reset=False):
             zigate_ep=ZIGATE_EP,
             ackIsDisabled=is_ack_tobe_disabled(self, nwkid),
         )
-    if get_model_name(self, nwkid)  in ("TS0601-_TZE200_b6wax7g0",):
+    if get_model_name(self, nwkid) in ("TS0601-_TZE200_b6wax7g0",):
         EPout = "01"
         payload = "11" + get_and_inc_SQN(self, nwkid) + "10" + "0002"
         raw_APS_request(
@@ -427,7 +431,7 @@ def receive_brt100_mode(self, Devices, model_target, NwkId, srcEp, ClusterID, ds
     )
     mode = BRT_MODE.get(int(data, 16), int(data, 16))
     store_tuya_attribute(self, NwkId, "BRTMode", mode )
-    MajDomoDevice(self, Devices, NwkId, srcEp, "0201", int(data, 16) + 1, Attribute_= "001c")
+    MajDomoDevice(self, Devices, NwkId, srcEp, "0201", int(data, 16) + 1, Attribute_="001c")
 
 def receive_rapid_heating_status(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     self.log.logging(
@@ -599,6 +603,18 @@ eTRV_MATRIX = {
             "EcoTemp": 0x6B,         # => tuya_trv_eco_temp() Type: 02, lenght 0x04
             "MaxSetpoint": 0x6C,     # => tuya_trv_set_max_setpoint() Type 02, lenght 0x04
             "MinSetpoint": 0x6D,     # => tuya_trv_set_min_setpoint() type 02, lenght 0x04 
+        },
+    },
+    "TS0601-_TZE200_chyvmhay": {
+        "FromDevice": {
+            0x10: receive_setpoint,
+            0x18: receive_temperature,
+            0x23: receive_battery,      # Battery Voltage ?
+            0x28: receive_childlock,
+            0x68: receive_calibration,
+        },
+        "ToDevice": {
+            "SetPoint": 0x10,
         }
     }
 }
@@ -933,7 +949,7 @@ def tuya_setpoint(self, nwkid, setpoint_value):
 
         model_name = get_model_name(self, nwkid) 
         if model_name in[ "TS0601-thermostat","TS0601-_TZE200_b6wax7g0"]:
-            tuya_trv_brt100_set_mode(self, nwkid, 0x01) #Force to be in Manual
+            tuya_trv_brt100_set_mode(self, nwkid, 0x01)  # Force to be in Manual
             # Setpoint is defined in ° and not centidegree
             setpoint_value = setpoint_value // 100
         else:
