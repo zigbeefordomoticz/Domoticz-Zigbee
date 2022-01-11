@@ -22,6 +22,11 @@ Release Numbering
 - Odd numbers --> Stable5
 - Even numbers  --> Beta
 
+##                  - 6.0.001
+
+- [Technical] - relying zigpy libraries for none Zigate Coordinators
+
+
 ## 21 December 2021 - 5.1.16
 
 - [Hardware] - Scene controller Tuya TS004F

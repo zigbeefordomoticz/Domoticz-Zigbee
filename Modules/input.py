@@ -62,7 +62,7 @@ from Modules.tools import (DeviceExist, ReArrangeMacCapaBasedOnModel,
                            mainPoweredDevice, retreive_cmd_payload_from_8002,
                            set_request_phase_datastruct, set_status_datastruct,
                            timeStamped, updLQI, updSQN)
-from Modules.zigate import (initLODZigate, receiveZigateEpDescriptor,
+from Modules.zigbeeController import (initLODZigate, receiveZigateEpDescriptor,
                             receiveZigateEpList)
 from Modules.zigateConsts import (ADDRESS_MODE, LEGRAND_REMOTE_MOTION,
                                   LEGRAND_REMOTE_SWITCHS, ZCL_CLUSTERS_LIST,
