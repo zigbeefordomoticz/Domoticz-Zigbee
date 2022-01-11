@@ -974,42 +974,60 @@ def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
     FIRMWARE_BRANCH = {
         "00": "Production",
         "01": "Beta",
-        "10": "zigpy-znp",
-        "11": "zigpy-zigate"
+        "11": "zigpy-zigate",
+        "20": "zigpy-znp 3.x",
+        "21": "zigpy-znp 3.0",
+        
+        "99": "Unknown"
     }
     self.FirmwareBranch = MsgData[:2]
     self.FirmwareMajorVersion = MsgData[2:4]
     self.FirmwareVersion = MsgData[4:8]
 
-    self.log.logging("Input", "Debug", "Decode8010 - Reception Version list:%s" % MsgData)
+    self.log.logging("Input", "Debug", "Decode8010 - Reception Version list:%s Branch: %s Major: %s Version: %s" % (
+        MsgData, self.FirmwareBranch, self.FirmwareMajorVersion, self.FirmwareVersion))
+    
+    if self.FirmwareBranch in FIRMWARE_BRANCH:
+        if int(self.FirmwareBranch,16) >= 0x20:
+            # Zigpy-Znp
+            if self.FirmwareBranch == "20":
+                self.log.logging("Input", "Status", "Texas Instrument ZNP CC1352/CC2652, Z-Stack 3.30+")
+                self.ControllerData["Controller firmware"] = "Texas Instrument ZNP CC1352/CC2652, Z-Stack 3.30+"
+                # the Build date is coded into "20" + "%02d" %int(FirmwareMajorVersion,16) + "%04d" %int(FirmwareVersion,16)
+                self.ControllerData["Firmware Version"] = "Zigpy-znp, build(20%02d%04d" %( int(self.FirmwareMajorVersion,16), int(self.FirmwareVersion,16))
 
-    if self.FirmwareBranch in FIRMWARE_BRANCH and int(self.FirmwareBranch,16) > 0x10:
-        # Zigpy-Znp
-        if self.FirmwareBranch == "10":
-            self.log.logging("Input", "Status", "Texas Instrument ZNP CC1352/CC2652, Z-Stack 3.30+)")
-            self.ControllerData["Controller firmware"] = "Texas Instrument ZNP CC1352/CC2652, Z-Stack 3.30+)"
-            # the Build date is coded into "20" + "%02d" %int(FirmwareMajorVersion,16) + "%04d" %int(FirmwareVersion,16)
-            self.ControllerData["Firmware Version"] = "Zigpy-znp, build(20%02d%04d" %( int(self.FirmwareMajorVersion,16), int(self.FirmwareVersion,16))
-        else:
-            self.log.logging("Input", "Error", "Un tested Zigbee adapater model, please report to the Zigbee for Domoticz team")
-    elif self.FirmwareMajorVersion == "03":
-        self.log.logging("Input", "Status", "ZiGate Classic PDM (legacy)")
-        self.ZiGateModel = 1
-    elif self.FirmwareMajorVersion == "04":
-        self.log.logging("Input", "Status", "ZiGate Classic PDM (OptiPDM)")
-        self.ZiGateModel = 1
-    elif self.FirmwareMajorVersion == "05":
-        self.log.logging("Input", "Status", "ZiGate+ (V2)")
-        self.ZiGateModel = 2
+            elif self.FirmwareBranch == "21":
+                self.log.logging("Input", "Status", "Texas Instrument CC2531, Z-Stack 3.0.x")
+                self.ControllerData["Controller firmware"] = "Texas Instrument CC2531, Z-Stack 3.0.x"
+                # the Build date is coded into "20" + "%02d" %int(FirmwareMajorVersion,16) + "%04d" %int(FirmwareVersion,16)
+                self.ControllerData["Firmware Version"] = "Zigpy-znp, build(20%02d%04d" %( int(self.FirmwareMajorVersion,16), int(self.FirmwareVersion,16))
+
+            else:
+                self.log.logging("Input", "Error", "Un tested Zigbee adapater model, please report to the Zigbee for Domoticz team")
+        
+        # Zigate Native version
+        elif self.FirmwareMajorVersion == "03":
+            self.log.logging("Input", "Status", "ZiGate Classic PDM (legacy)")
+            self.ZiGateModel = 1
+        elif self.FirmwareMajorVersion == "04":
+            self.log.logging("Input", "Status", "ZiGate Classic PDM (OptiPDM)")
+            self.ZiGateModel = 1
+        elif self.FirmwareMajorVersion == "05":
+            self.log.logging("Input", "Status", "ZiGate+ (V2)")
+            self.ZiGateModel = 2
 
 
-    self.log.logging("Input", "Status", "Installer Version Number: %s" % self.FirmwareVersion)
-    self.log.logging("Input", "Status", "Branch Version: ==> %s <==" % FIRMWARE_BRANCH[self.FirmwareBranch])
-    self.ControllerData["Firmware Version"] = "Branch: %s Major: %s Version: %s" % (
-        self.FirmwareBranch,
-        self.FirmwareMajorVersion,
-        self.FirmwareVersion,
-    )
+        self.log.logging("Input", "Status", "Installer Version Number: %s" % self.FirmwareVersion)
+        self.log.logging("Input", "Status", "Branch Version: ==> %s <==" % FIRMWARE_BRANCH[self.FirmwareBranch])
+        self.ControllerData["Firmware Version"] = "Branch: %s Major: %s Version: %s" % (
+            self.FirmwareBranch,
+            self.FirmwareMajorVersion,
+            self.FirmwareVersion,
+        )
+        
+        if self.pluginconf.pluginConf["RoutingTableRequestFeq"] and self.ZiGateModel != 2:
+            self.pluginconf.pluginConf["RoutingTableRequestFeq"] = 0
+
     if self.webserver:
         self.webserver.update_firmware(self.FirmwareVersion)
         self.ControllerLink.update_ZiGate_HW_Version(self.ZiGateModel)
@@ -1023,11 +1041,6 @@ def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
     if self.log:
         self.log.loggingUpdateFirmware(self.FirmwareVersion, self.FirmwareMajorVersion)
 
-    if self.pluginconf.pluginConf["doManyToOneRoute"] and self.ZiGateModel != 2:
-        self.pluginconf.pluginConf["doManyToOneRoute"] = 0
-
-    if self.pluginconf.pluginConf["RoutingTableRequestFeq"] and self.ZiGateModel != 2:
-        self.pluginconf.pluginConf["RoutingTableRequestFeq"] = 0
 
     self.PDMready = True
 
