@@ -17,7 +17,7 @@ from Modules.pollControl import receive_poll_cluster
 from Modules.schneider_wiser import schneiderReadRawAPS
 from Modules.tuya import TUYA_MANUFACTURER_NAME, tuyaReadRawAPS
 
-## Requires Zigate firmware > 3.1d
+# Requires Zigate firmware > 3.1d
 CALLBACK_TABLE = {
     # Manuf : ( callbackDeviceAwake_xxxxx function )
     "105e": schneiderReadRawAPS,
@@ -82,7 +82,7 @@ def inRawAps(
 
         if Command == "01":
             # Query Next Image Request
-            self.log.logging("inRawAPS", "Log", "Cluster 0019 -- OTA CLUSTER Command 01")
+            self.log.logging("inRawAPS", "Debug", "Cluster 0019 -- OTA CLUSTER Command 01")
             # fieldcontrol = Data[0:2]
             manufcode = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[2:6], 16)))[0]
             imagetype = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[6:10], 16)))[0]
@@ -94,11 +94,12 @@ def inRawAps(
                 % (srcnwkid, manufcode, imagetype, currentVersion),
             )
 
-            if "OTA" not in self.ListOfDevices[srcnwkid]:
-                self.ListOfDevices[srcnwkid]["OTA"] = {}
-            self.ListOfDevices[srcnwkid]["OTA"]["ManufacturerCode"] = manufcode
-            self.ListOfDevices[srcnwkid]["OTA"]["ImageType"] = imagetype
-            self.ListOfDevices[srcnwkid]["OTA"]["CurrentImageVersion"] = currentVersion
+            if "OTAClient" not in self.ListOfDevices[srcnwkid]:
+                self.ListOfDevices[srcnwkid]["OTAClient"] = {}
+            self.ListOfDevices[srcnwkid]["OTAClient"]["ManufacturerCode"] = manufcode
+            self.ListOfDevices[srcnwkid]["OTAClient"]["ImageType"] = imagetype
+            self.ListOfDevices[srcnwkid]["OTAClient"]["CurrentImageVersion"] = currentVersion
+
         return
 
     if cluster == "0500":  # IAS Cluster
@@ -108,7 +109,7 @@ def inRawAps(
         # 0x01  Initiate Normal Operation Mode
         # 0x02  Initiate Test Mode
 
-        enroll_response_code = Data[0:2]
+        enroll_response_code = Data[:2]
         zone_id = Data[2:4]
 
         if Command == "00":
