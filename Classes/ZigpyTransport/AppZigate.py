@@ -47,7 +47,7 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         #await super().startup(auto_form=auto_form,)
 
         version_str = await self._api.version_str()
-        Model = "10"  # Zigpy
+        Model = "11"  # Zigpy
         FirmwareMajorVersion = version_str[2:4]
         FirmwareVersion = "%04x" % await self._api.version_int()
         self.callBackFunction(build_plugin_8010_frame_content(Model, FirmwareMajorVersion, FirmwareVersion))
@@ -58,7 +58,6 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         # will return None if not found
         # will return (nwkid, ieee) if found ( nwkid and ieee are numbers)
         self.log.logging("TransportZigpy", "Debug", "App - get_device ieee:%s nwk:%s " % (ieee,nwk ))
-#        self.log.logging("TransportZigpy", "Debug", "App - get_device current_list%s  " % (self.devices ))
 
         dev = None
         try:
@@ -182,8 +181,8 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         await self._api.reset()
 
 
-    async def set_extended_pan_id (self):
+    async def set_extended_pan_id(self):
         pass      
 
-    async def set_channel (self):
+    async def set_channel(self):
         pass        
