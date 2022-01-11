@@ -33,7 +33,8 @@ from Zigbee.zclRawCommands import (raw_zcl_zcl_onoff,
                                    zcl_raw_remove_all_groups,
                                    zcl_raw_remove_group_member_ship,
                                    zcl_raw_send_group_member_ship_identify,
-                                   zcl_raw_window_covering, zcl_raw_write_attributeNoResponse)
+                                   zcl_raw_window_covering,
+                                   zcl_raw_write_attributeNoResponse)
 
 DEFAULT_ACK_MODE = False
 
