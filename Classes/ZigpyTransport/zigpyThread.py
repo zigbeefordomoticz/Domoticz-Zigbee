@@ -68,8 +68,7 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channe
 
     self.log.logging("TransportZigpy", "Debug", "In radio_start")
 
-    config = {conf.CONF_DEVICE: {"path": serialPort}}
-    config[conf.CONF_NWK] = {}
+    config = {conf.CONF_DEVICE: {"path": serialPort}, conf.CONF_NWK: {}}
     if set_extendedPanId != 0:
         config[conf.CONF_NWK][conf.CONF_NWK_EXTENDED_PAN_ID] = "%s" %(t.EUI64(t.uint64_t(set_extendedPanId).serialize()))
     if set_channel != 0:
@@ -83,30 +82,30 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channe
 
     if self.pluginParameters["Mode3"] == "True":
         self.log.logging("TransportZigpy", "Status", "Form a New Network with Channel: %s(0x%02x) ExtendedPanId: 0x%016x" %(
-           set_channel,  set_channel, set_extendedPanId ))
+            set_channel, set_channel, set_extendedPanId ))
         await self.app.startup(self.receiveData, callBackGetDevice=self.ZigpyGetDevice, auto_form=True, force_form=True, log=self.log)
         self.ErasePDMDone = True
     else:
         await self.app.startup(self.receiveData, callBackGetDevice=self.ZigpyGetDevice, auto_form=True, log=self.log)
-        
+
     # Send Network information to plugin, in order to poplulate various objetcs
     self.forwarder_queue.put(build_plugin_8009_frame_content(self, radiomodule))
 
     # Send Controller Active Node and Node Descriptor
     self.forwarder_queue.put(build_plugin_8045_frame_list_controller_ep(self,))
 
-    self.log.logging("TransportZigpy", "Debug", "Active Endpoint List:  %s" % str(self.app.get_device(nwk = t.NWK(0x0000)).endpoints.keys()))
-    for epid, ep in self.app.get_device(nwk = t.NWK(0x0000)).endpoints.items():
+    self.log.logging("TransportZigpy", "Debug", "Active Endpoint List:  %s" % str(self.app.get_device(nwk=t.NWK(0x0000)).endpoints.keys()))
+    for epid, ep in self.app.get_device(nwk=t.NWK(0x0000)).endpoints.items():
         if epid == 0:
             continue
         self.log.logging("TransportZigpy", "Debug", "Simple Descriptor:  %s" % ep )
         self.forwarder_queue.put(build_plugin_8043_frame_list_node_descriptor(self, epid, ep))
-        
-    self.log.logging ("TransportZigpy", "Debug", "Controller Model %s" % self.app.get_device(nwk = t.NWK(0x0000)).model)
-    self.log.logging ("TransportZigpy", "Debug", "Controller Manufacturer %s" % self.app.get_device(nwk = t.NWK(0x0000)).manufacturer)
+
+    self.log.logging("TransportZigpy", "Debug", "Controller Model %s" % self.app.get_device(nwk=t.NWK(0x0000)).model)
+    self.log.logging("TransportZigpy", "Debug", "Controller Manufacturer %s" % self.app.get_device(nwk=t.NWK(0x0000)).manufacturer)
     # Let send a 0302 to simulate an Off/on
     self.forwarder_queue.put(build_plugin_0302_frame_content(self,))
-    
+
     # Run forever
     await worker_loop(self)
 
@@ -138,26 +137,25 @@ async def worker_loop(self):
             await dispatch_command( self, data)
 
         except DeliveryError as e:
-            log_exception(self, DeliveryError, e, data["cmd"], data["datas"])
+            log_exception(self, "DeliveryError", e, data["cmd"], data["datas"])
 
         except InvalidFrame as e:
-            log_exception(self, InvalidFrame, e, data["cmd"], data["datas"])
+            log_exception(self, "InvalidFrame", e, data["cmd"], data["datas"])
 
         except CommandNotRecognized as e:
-            log_exception(self, CommandNotRecognized, e, data["cmd"], data["datas"])
+            log_exception(self, "CommandNotRecognized", e, data["cmd"], data["datas"])
 
         except InvalidResponse as e:
-            log_exception(self, InvalidResponse, e, data["cmd"], data["datas"])
+            log_exception(self, "InvalidResponse", e, data["cmd"], data["datas"])
             
         except InvalidCommandResponse as e:
-            log_exception(self, InvalidCommandResponse, e, data["cmd"], data["datas"])
-
+            log_exception(self, "InvalidCommandResponse", e, data["cmd"], data["datas"])
 
         except asyncio.TimeoutError as e:
-            log_exception(self, asyncio.TimeoutError, e, data["cmd"], data["datas"])
+            log_exception(self, "asyncio.TimeoutError", e, data["cmd"], data["datas"])
             
         except RuntimeError as e:
-            log_exception(self, RuntimeError, e, data["cmd"], data["datas"])
+            log_exception(self, "RuntimeError", e, data["cmd"], data["datas"])
 
         except Exception as e:
             self.log.logging("TransportZigpy", "Error", "Error while receiving a Plugin command: >%s<" % e)
@@ -211,6 +209,38 @@ async def dispatch_command(self, data):
         await asyncio.sleep(10)
         await self.app.load_network_info()
         self.forwarder_queue.put(build_plugin_8009_frame_content(self, self._radiomodule))
+
+    elif data["cmd"] == "SWITCH-CHANNEL":
+
+        new_channel = data["datas"]["Param1"]
+
+        await self.app.request(
+            request=self.app.ZDO.MgmtNWKUpdateReq.Req(
+                Dst=0x0000,
+                DstAddrMode=t.AddrMode.NWK,
+                Channels=t.Channels.from_channel_list([new_channel]),
+                ScanDuration=0xFE,  # switch channels
+                ScanCount=0,
+                NwkManagerAddr=0x0000,
+            ),
+            RspStatus=t.Status.SUCCESS,
+        )
+
+        # The above command takes a few seconds to work
+        #while self.channel != new_channel:
+        #    await self.load_network_info()
+        #    await asyncio.sleep(1)
+
+          
+        #rsp = await app.get_device(nwk=0x0000).zdo.Mgmt_NWK_Update_req(
+        #    zdo_t.NwkUpdate(
+        #        ScanChannels=t.Channels.ALL_CHANNELS,
+        #        ScanDuration=0x02,
+        #        ScanCount=1,
+        #    )
+        #)
+
+
         
     elif data["cmd"] == "RAW-COMMAND":
         self.log.logging( "TransportZigpy", "Debug", "RAW-COMMAND: %s" %properyly_display_data( data["datas"]) )
@@ -243,7 +273,7 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
             int(NwkId,16), Cluster, sequence, binascii.hexlify(payload).decode("utf-8"), addressmode, not AckIsDisable, Sqn),
     )
 
-    if int(NwkId,16) >= 0xfffb: # Broadcast
+    if int(NwkId,16) >= 0xfffb:  # Broadcast
         destination = int(NwkId,16)
         self.log.logging( "TransportZigpy", "Debug", "process_raw_command  call broadcast destination: %s" %NwkId)
         result, msg = await self.app.broadcast( Profile, Cluster, sEp, dEp, 0x0, 0x0, sequence, payload, )
@@ -256,7 +286,7 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
         
     elif addressmode in (0x02, 0x07):
         # Short is a str
-        destination = self.app.get_device (nwk = t.NWK(int(NwkId,16)))
+        destination = self.app.get_device(nwk=t.NWK(int(NwkId,16)))
         self.log.logging( "TransportZigpy", "Debug", "process_raw_command  call request destination: %s Profile: %s Cluster: %s sEp: %s dEp: %s Seq: %s Payload: %s" %(
             destination, Profile, Cluster, sEp, dEp, sequence, payload))
         result, msg = await self.app.request(destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False)
@@ -265,7 +295,7 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
 
     elif addressmode in (0x03, 0x08):
         # Nwkid is in fact an IEEE
-        destination = self.app.get_device (nwk = t.NWK(int(NwkId,16)))
+        destination = self.app.get_device(nwk=t.NWK(int(NwkId,16)))
         self.log.logging( "TransportZigpy", "Debug", "process_raw_command  call request destination: %s" %destination)
         result, msg = await self.app.request(destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False)
 
