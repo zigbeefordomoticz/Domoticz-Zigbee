@@ -112,9 +112,7 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channe
 
     await self.app.shutdown()
     self.log.logging("TransportZigpy", "Debug", "Exiting co-rounting radio_start")
-
-
-    
+ 
 async def worker_loop(self):
     self.log.logging("TransportZigpy", "Debug", "worker_loop - ZigyTransport: worker_loop start.")
 
@@ -208,6 +206,12 @@ async def dispatch_command(self, data):
         self.app.set_extended_pan_id(data["datas"]["Param1"])
     elif data["cmd"] == "SET-CHANNEL":
         self.app.set_channel(data["datas"]["Param1"])
+        
+    elif data["cmd"] == "REQ-NWK-STATUS":
+        await asyncio.sleep(10)
+        await self.app.load_network_info()
+        self.forwarder_queue.put(build_plugin_8009_frame_content(self, self._radiomodule))
+        
     elif data["cmd"] == "RAW-COMMAND":
         self.log.logging( "TransportZigpy", "Debug", "RAW-COMMAND: %s" %properyly_display_data( data["datas"]) )
         await process_raw_command(self, data["datas"], AckIsDisable=data["ACKIsDisable"], Sqn=data["Sqn"])
@@ -242,7 +246,7 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
     if int(NwkId,16) >= 0xfffb: # Broadcast
         destination = int(NwkId,16)
         self.log.logging( "TransportZigpy", "Debug", "process_raw_command  call broadcast destination: %s" %NwkId)
-        result, msg = await self.app.broadcast( Profile, Cluster, sEp, dEp, 0x0, 0x30, sequence, payload, )
+        result, msg = await self.app.broadcast( Profile, Cluster, sEp, dEp, 0x0, 0x0, sequence, payload, )
 
     elif addressmode == 0x01:
         # Group Mode
