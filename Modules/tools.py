@@ -375,8 +375,9 @@ def removeDeviceInList(self, Devices, IEEE, Unit):
                 emptyCT = False
 
     if emptyCT:
-        del self.ListOfDevices[key]
-        del self.IEEE2NWK[IEEE]
+        #del self.ListOfDevices[key]
+        #del self.IEEE2NWK[IEEE]
+        self.ListOfDevices[key]["Status"] = "Removed"
 
         self.adminWidgets.updateNotificationWidget(
             Devices, "Device fully removed %s with IEEE: %s" % (Devices[Unit].Name, IEEE)

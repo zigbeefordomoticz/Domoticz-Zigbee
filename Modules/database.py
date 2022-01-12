@@ -579,6 +579,7 @@ def CheckDeviceList(self, key, val):
         "UNKNOW",
         "failDB",
         "DUP",
+        "Removed"
     ):
         self.log.logging("Database", "Error", "Not Loading %s as Status: %s" % (key, DeviceListVal["Status"]))
         return
