@@ -29,6 +29,10 @@ def zdp_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, fram
         # Power_Desc_req
         self.log.logging("zdpDecoder", "Error", "Power_Desc_req NOT IMPLEMENTED YET")
         return frame
+    
+    if ClusterId == "0036":
+        self.log.logging("zdpDecoder", "Error", "Mgmt_Permit_Joining_req NOT IMPLEMENTED %s" %Payload)
+        return None
 
     if ClusterId == "0013":
         return buildframe_device_annoucement(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame)
