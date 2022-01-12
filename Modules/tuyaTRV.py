@@ -17,7 +17,7 @@ from Modules.basicOutputs import raw_APS_request, write_attribute
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import Update_Battery_Device
 from Modules.tools import (checkAndStoreAttributeValue, get_and_inc_SQN,
-                           is_ack_tobe_disabled)
+                           is_ack_tobe_disabled, voltage2batteryP)
 from Modules.tuyaTools import (get_tuya_attribute, store_tuya_attribute,
                                tuya_cmd)
 from Modules.zigateConsts import ZIGATE_EP
@@ -108,6 +108,8 @@ def receive_setpoint(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNW
     self.log.logging("Tuya", "Debug", "receive_setpoint - Nwkid: %s/%s Setpoint: %s for model taget: %s" % (NwkId, srcEp, setpoint, model_target))
     if model_target in[ "TS0601-thermostat","TS0601-_TZE200_b6wax7g0"] :
         setpoint = int(data, 16)
+    elif model_target in [ "TS0601-_TZE200_chyvmhay", ]:
+        setpoint = int(data,16) / 2
     else:
         setpoint = int(data, 16) / 10
     self.log.logging("Tuya", "Debug", "receive_setpoint - After Nwkid: %s/%s Setpoint: %s for model taget: %s" % (NwkId, srcEp, setpoint, model_target))
@@ -185,7 +187,20 @@ def receive_preset(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKI
         MajDomoDevice(self, Devices, NwkId, srcEp, "0201", 2, Attribute_="001c")
         checkAndStoreAttributeValue(self, NwkId, "01", "0201", "001c", "Manual")
 
+def receive_LIDLMode(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
 
+    self.log.logging(
+        "Tuya",
+        "Debug",
+        "receive_receive_LIDLMode - Nwkid: %s/%s Dp: %s DataType: %s ManualMode: %s" % (NwkId, srcEp, dp, datatype, data),
+    )
+    store_tuya_attribute(self, NwkId, "LIDLMode", data)
+    
+    # Thermostat Mode Auto / As Manual mode is Off
+    self.log.logging("Tuya", "Debug", "receive_receive_LIDLMode - Nwkid: %s/%s Manual Mode Off" % (NwkId, srcEp))
+    MajDomoDevice(self, Devices, NwkId, srcEp, "0201", 2, Attribute_="001c")
+    checkAndStoreAttributeValue(self, NwkId, "01", "0201", "001c", "%02x" %( int(data,16) + 1))
+    
 def receive_manual_mode(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     # Specific to Thermostat.
     # Indicate if the Manual mode is On or Off
@@ -257,10 +272,19 @@ def receive_battery(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWK
     self.log.logging(
         "Tuya", "Debug", "receive_battery - Nwkid: %s/%s Battery status %s" % (NwkId, srcEp, int(data, 16))
     )
-    checkAndStoreAttributeValue(self, NwkId, "01", "0001", "0000", int(data, 16))
-    self.ListOfDevices[NwkId]["Battery"] = int(data, 16)
-    Update_Battery_Device(self, Devices, NwkId, int(data, 16))
-    store_tuya_attribute(self, NwkId, "BatteryStatus", data)
+    if model_target == "TS0601-_TZE200_chyvmhay":
+        # We received a voltage
+        voltage = int(data,16) / 100
+        percentage = voltage2batteryP(voltage * 100, 150, 100)
+        checkAndStoreAttributeValue(self, NwkId, "01", "0001", "0000", voltage)
+        checkAndStoreAttributeValue(self, NwkId, "01", "0001", "0010", voltage)
+        checkAndStoreAttributeValue(self, NwkId, "01", "0001", "0020", voltage)
+        checkAndStoreAttributeValue(self, NwkId, "01", "0001", "0021", percentage)
+    else:
+        checkAndStoreAttributeValue(self, NwkId, "01", "0001", "0000", int(data, 16))
+        self.ListOfDevices[NwkId]["Battery"] = int(data, 16)
+        Update_Battery_Device(self, Devices, NwkId, int(data, 16))
+        store_tuya_attribute(self, NwkId, "BatteryStatus", data)
 
 
 def receive_battery_state(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
@@ -607,6 +631,7 @@ eTRV_MATRIX = {
     },
     "TS0601-_TZE200_chyvmhay": {
         "FromDevice": {
+            0x02: receive_LIDLMode,
             0x10: receive_setpoint,
             0x18: receive_temperature,
             0x23: receive_battery,      # Battery Voltage ?
@@ -615,6 +640,7 @@ eTRV_MATRIX = {
         },
         "ToDevice": {
             "SetPoint": 0x10,
+            "LIDLMode": 0x02,
         }
     }
 }
@@ -654,6 +680,26 @@ def tuya_eTRV_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNW
         )
 
 
+def tuya_lidl_set_mode(self, nwkid, mode):
+    # 1: // manual
+    # 2: // away
+    # 0: // auto
+    self.log.logging("Tuya", "Debug", "tuya_lidl_set_mode - %s mode: %s" % (nwkid, mode))
+    if mode not in (0x00, 0x01, 0x02, ):
+        return
+    sqn = get_and_inc_SQN(self, nwkid)
+    dp = get_datapoint_command(self, nwkid, "LIDLMode")
+    self.log.logging("Tuya", "Debug", "tuya_trv_brt100_set_mode - %s dp for mode: %s" % (nwkid, dp))
+    if dp:
+        action = "%02x04" % dp
+        # determine which Endpoint
+        EPout = "01"
+        cluster_frame = "11"
+        cmd = "00"  # Command
+        data = "%02x" % mode
+        tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
+
+    
 def tuya_trv_brt100_set_mode(self, nwkid, mode):
     # 0x00 - Auto, 0x01 - Manual, 0x02 - Temp Hand, 0x03 - Holliday
     self.log.logging("Tuya", "Debug", "tuya_trv_brt100_set_mode - %s mode: %s" % (nwkid, mode))
@@ -952,6 +998,10 @@ def tuya_setpoint(self, nwkid, setpoint_value):
             tuya_trv_brt100_set_mode(self, nwkid, 0x01)  # Force to be in Manual
             # Setpoint is defined in ° and not centidegree
             setpoint_value = setpoint_value // 100
+            
+        elif model_name in [ "TS0601-_TZE200_chyvmhay", ]:
+            setpoint_value = (setpoint_value // 10 ) * 2
+    
         else:
             setpoint_value = setpoint_value // 10
         
@@ -1012,6 +1062,7 @@ def tuya_trv_mode(self, nwkid, mode):
             #       Dp: 0x03 / 0x01 -- Manual Off
             tuya_trv_switch_manual(self, nwkid, 0x00)
             tuya_trv_switch_schedule(self, nwkid, 0x01)
+
     else:
         tuya_trv_switch_mode(self, nwkid, mode)
 

@@ -943,7 +943,7 @@ def Cluster0001(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
             self.ListOfDevices[MsgSrcAddr]["PowerSource"] = "Main"
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
-
+ 
     elif MsgAttrID == "0010":  # Voltage
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
         self.log.logging("Cluster", "Debug", "readCluster 0001 - %s Battery Voltage: %s " % (MsgSrcAddr, value), MsgSrcAddr)

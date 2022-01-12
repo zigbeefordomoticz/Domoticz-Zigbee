@@ -36,7 +36,7 @@ from Modules.tuya import (tuya_curtain_lvl, tuya_curtain_openclose,
                           tuya_window_cover_calibration)
 from Modules.tuyaSiren import (tuya_siren_alarm, tuya_siren_humi_alarm,
                                tuya_siren_temp_alarm)
-from Modules.tuyaTRV import (tuya_trv_brt100_set_mode, tuya_trv_mode,
+from Modules.tuyaTRV import (tuya_trv_brt100_set_mode, tuya_trv_mode, tuya_lidl_set_mode,
                              tuya_trv_onoff)
 from Modules.widgets import SWITCH_LVL_MATRIX
 from Modules.zigateConsts import (THERMOSTAT_LEVEL_2_MODE,
@@ -107,6 +107,7 @@ ACTIONATORS = [
     "ThermoMode_2",
     "ThermoMode_3",
     "ThermoMode_4",
+    "ThermoMode_5",
     "ThermoModeEHZBRTS",
     "FanControl",
     "PAC-SWITCH",
@@ -337,7 +338,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             self.ListOfDevices[NWKID]["Heartbeat"] = "0"
             return
 
-        if DeviceType == "ThermoMode_2":
+        if DeviceType == ("ThermoMode_2", ):
             self.log.logging(
                 "Command",
                 "Debug",
@@ -350,7 +351,8 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             tuya_trv_mode(self, NWKID, 0)
             UpdateDevice_v2(self, Devices, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
             return
-        if DeviceType == "ThermoMode_4":
+        
+        if DeviceType == ("ThermoMode_4", "ThermoMode_5", ):
             self.log.logging(
                 "Command",
                 "Debug",
@@ -934,6 +936,19 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 tuya_trv_brt100_set_mode(self, NWKID, int(Level / 10) - 1)
                 UpdateDevice_v2(self, Devices, Unit, int(Level / 10), Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
                 return
+        if DeviceType == "ThermoMode_5":
+            self.log.logging(
+                "Command",
+                "Log",
+                "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s"
+                % (NWKID, EPout, Unit, DeviceType, Level),
+                NWKID,
+            )
+            
+            if "Model" in self.ListOfDevices[ NWKID ] and self.ListOfDevices[ NWKID ][ "Model" ] == "TS0601-_TZE200_chyvmhay":
+                # 1: // manual 2: // away 0: // auto
+                tuya_lidl_set_mode( self, NWKID, int(Level / 10) - 1 )
+                UpdateDevice_v2(self, Devices, Unit, int(Level / 10), Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
 
         if DeviceType == "FanControl":
 

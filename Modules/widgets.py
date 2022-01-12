@@ -334,15 +334,24 @@ SWITCH_LVL_MATRIX = {
     "ThermoMode_4": {
         # 0x00 - Auto, 0x01 - Manual, 0x02 - Temp Hand, 0x03 - Holliday  
         0: (0, "Off"),
-        1: (1, "Auto"), # Auto
-        2: (2, "10"),   # Manual
-        3: (3, "20"),   # Temp hand
-        4: (4, "30"),   # Holiday
+        1: (1, "Auto"),  # Auto
+        2: (2, "10"),    # Manual
+        3: (3, "20"),    # Temp hand
+        4: (4, "30"),    # Holiday
         "ForceUpdate": True,
         "LevelNames": "Off|Auto|Manual|Temp Hand|Holidays",
         "Language": {"fr-FR": {"LevelNames": "Arrêt|Auto|Manuel"}},
     },
-     
+    "ThermoMode_5": {
+        0: (0, "Off"),  # 
+        1: (1, "10"),   # Auto
+        2: (2, "20"),   # Manual
+        3: (3, "20"),   # Away
+        "ForceUpdate": True,
+        "LevelNames": "Off|Confort|No-Freeze",
+        "Language": {"fr-FR": {"LevelNames": "Arrêt|Auto|Manual|Away"}},
+    },   
+      
     "HeatingStatus": {
         0: (0, "Off"),
         1: (1, "10"),
