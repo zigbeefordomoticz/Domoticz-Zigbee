@@ -65,7 +65,7 @@ def RemoveNwkIdFromAllGroups(self, Nwkid):
 
     # Check if any groups are empty. If so remove the Domoticz Widget
     self.logging("Debug", "RemoveNwkIdFromAllGroups - ListOfGroups: %s" % str(self.ListOfGroups.keys()))
-    for GrpId in self.ListOfGroups:
+    for GrpId in list(self.ListOfGroups):
         if check_if_group_empty(self, GrpId):
             self.logging("Debug", "RemoveNwkIdFromAllGroups - Empty Group: %s" % GrpId)
             remove_group(self, GrpId)
