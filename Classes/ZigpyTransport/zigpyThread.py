@@ -137,6 +137,9 @@ async def worker_loop(self):
             await dispatch_command( self, data)
 
         except DeliveryError as e:
+            # This could be relevant to APS NACK after retry
+            # Request failed after 5 attempts: <Status.MAC_NO_ACK: 233>  
+            # status_code = int(e[34+len("Status."):].split(':')[1][:-1])
             log_exception(self, "DeliveryError", e, data["cmd"], data["datas"])
 
         except InvalidFrame as e:
@@ -289,7 +292,15 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
         destination = self.app.get_device(nwk=t.NWK(int(NwkId,16)))
         self.log.logging( "TransportZigpy", "Debug", "process_raw_command  call request destination: %s Profile: %s Cluster: %s sEp: %s dEp: %s Seq: %s Payload: %s" %(
             destination, Profile, Cluster, sEp, dEp, sequence, payload))
-        result, msg = await self.app.request(destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False)
+        try:
+            result, msg = await self.app.request(destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False)
+        except DeliveryError as e:
+            # This could be relevant to APS NACK after retry
+            # Request failed after 5 attempts: <Status.MAC_NO_ACK: 233>  
+            self.log.logging( "TransportZigpy", "Debug", "process_raw_command - DeliveryError : %s" %e)
+            msg = "%s" %e
+            result = 0xb6
+
         if not AckIsDisable:
             push_APS_ACK_NACKto_plugin(self, NwkId, result, destination.lqi)
 
@@ -353,4 +364,4 @@ def log_exception(self, exception, error, cmd, data):
     self.log.logging(
         "TransportZigpy",
         "Error",
-        "%s: request() Not able to execute the zigpy command: %s data: %s" % (error, cmd, properyly_display_data( data)), context=context)
+        "%s / %s: request() Not able to execute the zigpy command: %s data: %s" % (exception, error, cmd, properyly_display_data( data)), context=context)
