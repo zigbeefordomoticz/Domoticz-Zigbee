@@ -64,6 +64,7 @@ from Modules.tools import (DeviceExist, ReArrangeMacCapaBasedOnModel,
                            timeStamped, updLQI, updSQN)
 from Modules.zigbeeController import (initLODZigate, receiveZigateEpDescriptor,
                             receiveZigateEpList)
+from Modules.sendZigateCommand import raw_APS_request
 from Modules.zigateConsts import (ADDRESS_MODE, LEGRAND_REMOTE_MOTION,
                                   LEGRAND_REMOTE_SWITCHS, ZCL_CLUSTERS_LIST,
                                   ZIGBEE_COMMAND_IDENTIFIER)
@@ -208,7 +209,86 @@ def extract_messge_infos( Data):
         MsgLQI = "00"
     return MsgType, MsgData, MsgLQI
 
+def Decode0040(self, Devices, MsgData, MsgLQI):  # NWK_addr_req
+    # sqn + ieee + u8RequestType + u8StartIndex
+    sqn = MsgData[:2]
+    srcNwkId = MsgData[2:6]
+    srcEp = MsgData[6:8]
+    ieee = MsgData[8:24]
+    reqType = MsgData[24:26]
+    startIndex = MsgData[26:28]
+    
+    # we should answer: sqn + status + ieee + nwkid + NumAssocDev + StartIndex + NWKAddrAssocDevList
+    Cluster = "8000"
+    if ieee == self.ControllerIEEE:
+        status = "00"
+        payload = sqn + status + self.ControllerIEEE + self.ControllerNWKID + "00"
+    else:
+        status = "81"  # Device not found
+        payload = sqn + status + self.ControllerIEEE
+    raw_APS_request( self, srcNwkId, "00", Cluster, "0000", payload, zigpyzqn=sqn, zigate_ep="00", )
+    
 
+def Decode0041(self, Devices, MsgData, MsgLQI):  # IEEE_addr_req
+    # sqn + nwkid + u8RequestType + u8StartIndex
+    sqn = MsgData[:2]
+    srcNwkId = MsgData[2:6]
+    srcEp = MsgData[6:8]
+    nwkid = MsgData[8:12]
+    reqType = MsgData[12:14]
+    startIndex = MsgData[14:16]
+    
+    # we should answer: sqn + status + ieee + nwkid + NumAssocDev + StartIndex + NWKAddrAssocDevList
+    Cluster = "8001"
+    if nwkid == self.ControllerNWKID:
+        status = "00"
+        payload = sqn + status + self.ControllerIEEE + self.ControllerNWKID + "00"
+    else:
+        status = "81"  # Device not found
+        payload = sqn + status + self.ControllerIEEE
+    raw_APS_request( self, srcNwkId, "00", Cluster, "0000", payload, zigpyzqn=sqn, zigate_ep="00", )
+
+    
+def Decode0042(self, Devices, MsgData, MsgLQI):  # Node_Desc_req
+    # sqn + nwkid
+    sqn = MsgData[:2]
+    srcNwkId = MsgData[2:6]
+    srcEp = MsgData[6:8]
+    nwkid = MsgData[8:12]
+
+    # we should answer:
+    # buildPayload = sqn + status + nwkid + manuf_code_16 + max_in_size_16 + max_out_size_16
+    # buildPayload += server_mask_16 + descriptor_capability_field_8 + mac_capa_8 + max_buf_size_8 + bitfield_16
+    Cluster = "8002"
+    if nwkid != "0000":
+        status = "80"  # Invalid request Type
+        payload = sqn + status + nwkid
+            
+    elif "0000" not in self.ListOfDevices:
+        status = "81"  # Device not found
+        payload = sqn + status + nwkid
+        
+    elif "Manufacturer" not in self.ListOfDevices[ "0000" ]:
+        status = "89"  # No Descriptor
+        payload = sqn + status + nwkid
+    
+    else:
+        status = "00"
+        controllerManufacturerCode = self.ListOfDevices[ "0000" ]["Manufacturer"]
+        manuf_code16 = "%04x" % struct.unpack("H", struct.pack(">H", int(controllerManufacturerCode, 16)))[0]
+        max_in_size16 = "%04x" % struct.unpack("H", struct.pack(">H", int(self.ListOfDevices[ "0000" ]["Max Rx"], 16)))[0] 
+        max_out_size16 = "%04x" % struct.unpack("H", struct.pack(">H", int(self.ListOfDevices[ "0000" ]["Max Tx"], 16)))[0] 
+        server_mask16 = "%04x" % struct.unpack("H", struct.pack(">H", int(self.ListOfDevices[ "0000" ]["server_mask"], 16)))[0]
+        descriptor_capability8 = self.ListOfDevices[ "0000" ]["descriptor_capability"]
+        mac_capa8 = self.ListOfDevices[ "0000" ]["macap"]
+        max_buf_size8 = self.ListOfDevices[ "0000" ]["Max buffer Size"]
+        bitfield16 = "%04x" % struct.unpack("H", struct.pack(">H", int(self.ListOfDevices[ "0000" ]["bitfield"], 16)))[0]
+        
+        payload = sqn + status + nwkid + manuf_code16 + max_in_size16 + max_out_size16 + server_mask16 + descriptor_capability8
+        payload += mac_capa8 + max_buf_size8 + bitfield16
+
+    raw_APS_request( self, srcNwkId, "00", Cluster, "0000", payload, zigpyzqn=sqn, zigate_ep="00", )
+    
 def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
 
     MsgSqn = MsgData[0:2]
@@ -1160,7 +1240,7 @@ def Decode8012(self, Devices, MsgData, MsgLQI):
 def Decode8014(self, Devices, MsgData, MsgLQI):  # "Permit Join" status response
 
     # MsgLen = len(MsgData)
-    Status = MsgData[0:2]
+    Status = MsgData[:2]
     timestamp = int(time.time())
 
     self.log.logging("Input", "Debug", "Decode8014 - Permit Join status: %s" % (Status == "01"), "ffff")
@@ -1790,8 +1870,8 @@ def Decode8042(self, Devices, MsgData, MsgLQI):  # Node Descriptor response
     manufacturer = MsgData[8:12]
     max_rx = MsgData[12:16]
     max_tx = MsgData[16:20]
-    # server_mask = MsgData[20:24]
-    # descriptor_capability = MsgData[24:26]
+    server_mask = MsgData[20:24]
+    descriptor_capability = MsgData[24:26]
     mac_capability = MsgData[26:28]
     max_buffer = MsgData[28:30]
     bit_field = MsgData[30:34]
@@ -1827,6 +1907,10 @@ def Decode8042(self, Devices, MsgData, MsgLQI):  # Node Descriptor response
     self.ListOfDevices[addr]["Max Buffer Size"] = max_buffer
     self.ListOfDevices[addr]["Max Rx"] = max_rx
     self.ListOfDevices[addr]["Max Tx"] = max_tx
+    self.ListOfDevices[addr]["macapa"] = mac_capability
+    self.ListOfDevices[addr]["bitfield"] = bit_field
+    self.ListOfDevices[addr]["server_mask"] = server_mask
+    self.ListOfDevices[addr]["descriptor_capability"] = descriptor_capability
 
     mac_capability = ReArrangeMacCapaBasedOnModel(self, addr, mac_capability)
     capabilities = decodeMacCapa(mac_capability)
@@ -2312,19 +2396,17 @@ def Decode8048(self, Devices, MsgData, MsgLQI):  # Leave indication
 
     timeStamped(self, sAddr, 0x8048)
 
-    if self.ListOfDevices[sAddr]["Status"] == "inDB":
+    if self.ListOfDevices[sAddr]["Status"] == "Removed":
+        del self.ListOfDevices[sAddr]
+        del self.IEEE2NWK[sAddr]
+    
+    elif self.ListOfDevices[sAddr]["Status"] == "inDB":
         self.ListOfDevices[sAddr]["Status"] = "Left"
         self.ListOfDevices[sAddr]["Heartbeat"] = 0
         # Domoticz.Status("Calling leaveMgt to request a rejoin of %s/%s " %( sAddr, MsgExtAddress))
         # leaveMgtReJoin( self, sAddr, MsgExtAddress )
 
-    elif self.ListOfDevices[sAddr]["Status"] in (
-        "004d",
-        "0043",
-        "8043",
-        "0045",
-        "8045",
-    ):
+    elif self.ListOfDevices[sAddr]["Status"] in ( "004d", "0043", "8043", "0045", "8045", ):
         if MsgExtAddress in self.IEEE2NWK:
             del self.IEEE2NWK[MsgExtAddress]
         del self.ListOfDevices[sAddr]
