@@ -421,6 +421,8 @@ def ReadAttributeRequest_0000_for_pairing(self, key):
         manuf_name = [0x0004]
         for x in ListOfEp:
             ReadAttributeReq(self, key, ZIGATE_EP, x, "0000", manuf_name, ackIsDisabled=False, checkTime=False)
+            # We do on the first Ep
+            break
 
     # Do We have Model Name
     if ( ListOfEp and  self.ListOfDevices[key]["Model"] in [ {}, ""] ):
@@ -428,6 +430,8 @@ def ReadAttributeRequest_0000_for_pairing(self, key):
         model_name = [0x0004, 0x0005]
         for x in ListOfEp:
             ReadAttributeReq(self, key, ZIGATE_EP, x, "0000", model_name, ackIsDisabled=False, checkTime=False)
+            # We do on the first Ep
+            break
 
     # Check if Model Name should be requested
     if self.ListOfDevices[key]["Manufacturer"] == "1110":  # Profalux.
