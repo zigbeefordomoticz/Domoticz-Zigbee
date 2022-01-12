@@ -385,9 +385,12 @@ def buildframe_routing_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload,
 def buildframe_leave_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
     self.log.logging("zdpDecoder", "Debug", "buildframe_leave_response")
     sqn = Payload[:2]
+    ieee = "%016x" % 0x0
+    if SrcNwkId in self.ListOfDevices:
+        ieee = self.ListOfDevices[ SrcNwkId ]["IEEE"]
     status = Payload[2:4]
-    buildPayload = sqn + status
-    return encapsulate_plugin_frame("804E", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
+    buildPayload = sqn + ieee + status
+    return encapsulate_plugin_frame("8048", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 
 def buildframe_direct_join_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
@@ -399,7 +402,7 @@ def buildframe_direct_join_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payl
     sqn = Payload[:2]
     status = Payload[2:4]
     buildPayload = sqn + status
-    #return encapsulate_plugin_frame("804E", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
+    #return encapsulate_plugin_frame("xxxx", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
     return frame
 
 
