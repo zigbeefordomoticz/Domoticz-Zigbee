@@ -289,7 +289,13 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
         
     elif addressmode in (0x02, 0x07):
         # Short is a str
-        destination = self.app.get_device(nwk=t.NWK(int(NwkId,16)))
+        try:
+            destination = self.app.get_device(nwk=t.NWK(int(NwkId,16)))
+        except KeyError:
+            self.log.logging( "TransportZigpy", "Error", "process_raw_command device not found destination: %s Profile: %s Cluster: %s sEp: %s dEp: %s Seq: %s Payload: %s" %(
+                NwkId, Profile, Cluster, sEp, dEp, sequence, payload))
+            return
+
         self.log.logging( "TransportZigpy", "Debug", "process_raw_command  call request destination: %s Profile: %s Cluster: %s sEp: %s dEp: %s Seq: %s Payload: %s" %(
             destination, Profile, Cluster, sEp, dEp, sequence, payload))
         try:
