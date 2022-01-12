@@ -24,7 +24,7 @@ import zigpy_znp.zigbee.application
 
 from zigpy.zcl import clusters
 from Classes.ZigpyTransport.plugin_encoders import (
-    build_plugin_8002_frame_content, build_plugin_8010_frame_content, build_plugin_8048_frame_content)
+    build_plugin_8002_frame_content, build_plugin_8010_frame_content, build_plugin_8048_frame_content, build_plugin_8047_frame_content)
 from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
                                  SCHEMA_DEVICE)
 
@@ -46,6 +46,10 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         self.znp_config[conf.CONF_MAX_CONCURRENT_REQUESTS] = 16
 
         await super().startup(auto_form=auto_form,force_form=force_form)
+        self._znp.callback_for_response(
+            c.ZDO.MgmtLeaveRsp.Callback(partial=True),
+            self.on_zdo_mgmt_leave_rsp,
+        )
 
         # Trigger Version payload to plugin
         
@@ -67,6 +71,11 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         FirmwareVersion = "%04d" %int(znp_model[ znp_model.find("build") + 10: -1])
         self.callBackFunction(build_plugin_8010_frame_content(FirmwareBranch, FirmwareMajorVersion, FirmwareVersion))
 
+
+    async def on_zdo_mgmt_leave_rsp(self, msg: c.ZDO.MgmtLeaveRsp.Callback) -> None:
+        self.log.logging("TransportZigpy", "Debug", "AppZnp - on_zdo_mgmt_leave_rsp nwk:%s " % (msg.Src ))
+        plugin_frame = build_plugin_8047_frame_content (self)
+        self.callBackFunction(plugin_frame)
 
     async def _register_endpoints(self) -> None:
         LIST_ENDPOINT = [0x0b , 0x0a , 0x6e, 0x15, 0x08, 0x03]  # WISER, ORVIBO , TERNCY, KONKE, LIVOLO, WISER2
