@@ -33,7 +33,8 @@ from Zigbee.zclRawCommands import (raw_zcl_zcl_onoff,
                                    zcl_raw_remove_all_groups,
                                    zcl_raw_remove_group_member_ship,
                                    zcl_raw_send_group_member_ship_identify,
-                                   zcl_raw_window_covering, zcl_raw_write_attributeNoResponse)
+                                   zcl_raw_window_covering,
+                                   zcl_raw_write_attributeNoResponse)
 
 DEFAULT_ACK_MODE = False
 
@@ -42,7 +43,7 @@ DEFAULT_ACK_MODE = False
 
 def zcl_read_attribute(self, nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, lenAttr, Attr, ackIsDisabled=DEFAULT_ACK_MODE):
     self.log.logging("zclCommand", "Debug", "read_attribute %s %s %s %s %s %s %s %s %s" % (nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, lenAttr, Attr))
-    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return rawaps_read_attribute_req(self, nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, Attr, ackIsDisabled)
 
     data = EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + "%02x" % lenAttr + Attr
@@ -65,7 +66,7 @@ def zcl_write_attribute(self, nwkid, EPin, EPout, cluster, manuf_id, manuf_spec,
     datas += direction + manuf_spec + manuf_id
     datas += lenght + attribute + data_type + data
 
-    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return rawaps_write_attribute_req(self, nwkid, EPin, EPout, cluster, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled)
 
     # ATTENTION "0110" with firmware 31c are always call with Ack (overwriten by firmware)
@@ -79,7 +80,7 @@ def zcl_write_attribute(self, nwkid, EPin, EPout, cluster, manuf_id, manuf_spec,
 
 def zcl_write_attributeNoResponse(self, nwkid, EPin, EPout, cluster, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled=DEFAULT_ACK_MODE):
     self.log.logging("zclCommand", "Debug", "zcl_write_attributeNoResponse %s %s %s %s %s %s %s %s %s" % (nwkid, EPin, EPout, cluster, manuf_id, manuf_spec, attribute, data_type, data))
-    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return zcl_raw_write_attributeNoResponse(self, nwkid, EPin, EPout, cluster, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled=ackIsDisabled)
 
     direction = "00"
@@ -109,7 +110,7 @@ def zcl_configure_reporting_requestv2(self, nwkid, epin, epout, cluster, directi
             attribute_reporting_configuration,
         ),
     )
-    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return zcl_raw_configure_reporting_requestv2(self, nwkid, epin, epout, cluster, direction, manufacturer_spec, manufacturer, attribute_reporting_configuration, ackIsDisabled=ackIsDisabled)
     data = epin + epout + cluster + direction + manufacturer_spec + manufacturer + "%02x" % len(attribute_reporting_configuration)
     for x in attribute_reporting_configuration:
@@ -166,7 +167,7 @@ def zcl_group_identify_trigger_effect(self, nwkid, epin, epout, effectId, effect
 ##############
 def zcl_add_group_membership(self, nwkid, epin, epout, GrpId, ackIsDisabled=DEFAULT_ACK_MODE):
     self.log.logging("zclCommand", "Debug", "zcl_add_group_membership %s %s %s" % (nwkid, epout, GrpId))
-    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return zcl_raw_add_group_membership(self, nwkid, epin, epout, GrpId, ackIsDisabled=ackIsDisabled)
 
     data = epin + epout + GrpId
@@ -177,7 +178,7 @@ def zcl_add_group_membership(self, nwkid, epin, epout, GrpId, ackIsDisabled=DEFA
 
 def zcl_check_group_member_ship(self, nwkid, epin, epout, GrpId, ackIsDisabled=DEFAULT_ACK_MODE):
     self.log.logging("zclCommand", "Debug", "zcl_check_group_member_ship %s %s %s" % (nwkid, epout, GrpId))
-    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return zcl_raw_check_group_member_ship(self, nwkid, epin, epout, GrpId, ackIsDisabled=ackIsDisabled)
 
     data = epin + epout + GrpId
@@ -188,7 +189,7 @@ def zcl_check_group_member_ship(self, nwkid, epin, epout, GrpId, ackIsDisabled=D
 
 def zcl_look_for_group_member_ship(self, nwkid, epin, epout, nbgroup, group_list, ackIsDisabled=DEFAULT_ACK_MODE):
     self.log.logging("zclCommand", "Debug", "zcl_look_for_group_member_ship %s %s %s %s" % (nwkid, epout, nbgroup, group_list))
-    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return zcl_raw_look_for_group_member_ship(self, nwkid, epin, epout, nbgroup, group_list, ackIsDisabled=ackIsDisabled)
 
     data = epin + epout + nbgroup + group_list
@@ -199,7 +200,7 @@ def zcl_look_for_group_member_ship(self, nwkid, epin, epout, nbgroup, group_list
 
 def zcl_remove_group_member_ship(self, nwkid, epin, epout, GrpId, ackIsDisabled=DEFAULT_ACK_MODE):
     self.log.logging("zclCommand", "Debug", "zcl_remove_group_member_ship %s %s %s" % (nwkid, epout, GrpId))
-    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return zcl_raw_remove_group_member_ship(self, nwkid, epin, epout, GrpId, ackIsDisabled=ackIsDisabled)
 
     data = epin + epout + GrpId
@@ -210,7 +211,7 @@ def zcl_remove_group_member_ship(self, nwkid, epin, epout, GrpId, ackIsDisabled=
 
 def zcl_remove_all_groups(self, nwkid, epin, epout, ackIsDisabled=DEFAULT_ACK_MODE):
     self.log.logging("zclCommand", "Debug", "zcl_remove_all_groups %s %s" % (nwkid, epout))
-    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return zcl_raw_remove_all_groups(self, nwkid, epin, epout, ackIsDisabled=ackIsDisabled)
 
     data = epin + epout
@@ -221,7 +222,7 @@ def zcl_remove_all_groups(self, nwkid, epin, epout, ackIsDisabled=DEFAULT_ACK_MO
 
 def zcl_send_group_member_ship_identify(self, nwkid, epin, epout, goup_addr, ackIsDisabled=DEFAULT_ACK_MODE):
     self.log.logging("zclCommand", "Debug", "zcl_send_group_member_ship_identify %s %s %s" % (nwkid, epout, goup_addr))
-    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return zcl_raw_send_group_member_ship_identify(self, nwkid, epin, epout, goup_addr, ackIsDisabled=ackIsDisabled)
 
     data = epin + epout + goup_addr
@@ -234,7 +235,7 @@ def zcl_send_group_member_ship_identify(self, nwkid, epin, epout, goup_addr, ack
 ##############
 def zcl_toggle(self, nwkid, EPout, ackIsDisabled=DEFAULT_ACK_MODE):
     self.log.logging("zclCommand", "Debug", "zcl_toggle %s %s" % (nwkid, EPout))
-    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return raw_zcl_zcl_onoff(self, nwkid, ZIGATE_EP, EPout, "Toggle", groupaddrmode=False, ackIsDisabled=ackIsDisabled)
     if ackIsDisabled:
         return send_zigatecmd_zcl_noack(self, nwkid, "0092", ZIGATE_EP + EPout + "02")
@@ -243,7 +244,7 @@ def zcl_toggle(self, nwkid, EPout, ackIsDisabled=DEFAULT_ACK_MODE):
 
 def zcl_onoff_stop(self, nwkid, EPout, ackIsDisabled=DEFAULT_ACK_MODE):
     self.log.logging("zclCommand", "Debug", "zcl_onoff_stop %s %s" % (nwkid, EPout))
-    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return raw_zcl_zcl_onoff(self, nwkid, ZIGATE_EP, EPout, "Stop", groupaddrmode=False, ackIsDisabled=ackIsDisabled)
     data = ZIGATE_EP + EPout
     if ackIsDisabled:
@@ -253,7 +254,7 @@ def zcl_onoff_stop(self, nwkid, EPout, ackIsDisabled=DEFAULT_ACK_MODE):
 
 def zcl_onoff_on(self, nwkid, EPout, ackIsDisabled=DEFAULT_ACK_MODE):
     self.log.logging("zclCommand", "Debug", "zcl_onoff_on %s %s" % (nwkid, EPout))
-    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return raw_zcl_zcl_onoff(self, nwkid, ZIGATE_EP, EPout, "On", groupaddrmode=False, ackIsDisabled=ackIsDisabled)
     data = ZIGATE_EP + EPout + "01"
     if ackIsDisabled:
@@ -263,7 +264,7 @@ def zcl_onoff_on(self, nwkid, EPout, ackIsDisabled=DEFAULT_ACK_MODE):
 
 def zcl_onoff_off_noeffect(self, nwkid, EPout, ackIsDisabled=DEFAULT_ACK_MODE):
     self.log.logging("zclCommand", "Debug", "zcl_onoff_off_noeffect %s %s" % (nwkid, EPout))
-    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return raw_zcl_zcl_onoff(self, nwkid, ZIGATE_EP, EPout, "Off", groupaddrmode=False, ackIsDisabled=ackIsDisabled)
     data = ZIGATE_EP + EPout + "00"
     if ackIsDisabled:
@@ -273,7 +274,7 @@ def zcl_onoff_off_noeffect(self, nwkid, EPout, ackIsDisabled=DEFAULT_ACK_MODE):
 
 def zcl_onoff_off_witheffect(self, nwkid, EPout, effect, ackIsDisabled=DEFAULT_ACK_MODE):
     self.log.logging("zclCommand", "Debug", "zcl_onoff_off_witheffect %s %s %s" % (nwkid, EPout, effect))
-    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return raw_zcl_zcl_onoff(self, nwkid, ZIGATE_EP, EPout, "Off", effect=effect, groupaddrmode=False, ackIsDisabled=ackIsDisabled)
     data = ZIGATE_EP + EPout + effect
     if ackIsDisabled:
@@ -283,7 +284,7 @@ def zcl_onoff_off_witheffect(self, nwkid, EPout, effect, ackIsDisabled=DEFAULT_A
 
 def zcl_group_toggle(self, nwkid, epin, EPout):
     self.log.logging("zclCommand", "Log", "zcl_group_toggle %s %s" % (nwkid, EPout))
-    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return raw_zcl_zcl_onoff(self, nwkid, epin, EPout, "Toggle", groupaddrmode=True)
     data = "%02d" % ADDRESS_MODE["group"] + nwkid + epin + EPout + "02"
     return send_zigatecmd_raw(self, "0092", data)
@@ -291,7 +292,7 @@ def zcl_group_toggle(self, nwkid, epin, EPout):
 
 def zcl_group_onoff_stop(self, nwkid, epin, EPout):
     self.log.logging("zclCommand", "Log", "zcl_group_onoff_stop %s %s" % (nwkid, EPout))
-    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return raw_zcl_zcl_onoff(self, nwkid, epin, EPout, "Stop", groupaddrmode=True)
     data = "%02d" % ADDRESS_MODE["group"] + nwkid + epin + EPout
     return send_zigatecmd_raw(self, "0083", data)
@@ -299,7 +300,7 @@ def zcl_group_onoff_stop(self, nwkid, epin, EPout):
 
 def zcl_group_onoff_on(self, nwkid, epin, EPout):
     self.log.logging("zclCommand", "Debug", "zcl_group_onoff_on %s %s" % (nwkid, EPout))
-    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return raw_zcl_zcl_onoff(self, nwkid, epin, EPout, "On", groupaddrmode=True)
     data = "%02d" % ADDRESS_MODE["group"] + nwkid + epin + EPout + "01"
     return send_zigatecmd_raw(self, "0092", data)
@@ -307,7 +308,7 @@ def zcl_group_onoff_on(self, nwkid, epin, EPout):
 
 def zcl_group_onoff_off_noeffect(self, nwkid, epin, EPout):
     self.log.logging("zclCommand", "Log", "zcl_group_onoff_off_noeffect %s %s %s" % (nwkid, epin, EPout))
-    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return raw_zcl_zcl_onoff(self, nwkid, epin, EPout, "Off", groupaddrmode=True)
     data = "%02d" % ADDRESS_MODE["group"] + nwkid + epin + EPout + "00"
     return send_zigatecmd_raw(self, "0092", data)
@@ -315,7 +316,7 @@ def zcl_group_onoff_off_noeffect(self, nwkid, epin, EPout):
 
 def zcl_group_onoff_off_witheffect(self, nwkid, epin, EPout, effect):
     self.log.logging("zclCommand", "Log", "zcl_group_onoff_off_witheffect %s %s %s" % (nwkid, EPout, effect))
-    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return raw_zcl_zcl_onoff(self, nwkid, epin, EPout, "Off", effect=effect, groupaddrmode=True)
     data = "%02d" % ADDRESS_MODE["group"] + nwkid + epin + EPout + effect
     return send_zigatecmd_raw(self, "0094", data)
@@ -325,7 +326,7 @@ def zcl_group_onoff_off_witheffect(self, nwkid, epin, EPout, effect):
 ##############
 def zcl_level_move_to_level(self, nwkid, EPout, OnOff, level, transition="0000", ackIsDisabled=DEFAULT_ACK_MODE):
     self.log.logging("zclCommand", "Debug", "zcl_level_move_to_level %s %s %s %s %s" % (nwkid, EPout, OnOff, level, transition))
-    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return zcl_raw_level_move_to_level(self, nwkid, ZIGATE_EP, EPout, "MovetoLevel", level, transition, ackIsDisabled=ackIsDisabled)
     data = ZIGATE_EP + EPout + OnOff + level + transition
     if ackIsDisabled:
@@ -334,7 +335,7 @@ def zcl_level_move_to_level(self, nwkid, EPout, OnOff, level, transition="0000",
 
 
 def zcl_group_level_move_to_level(self, nwkid, epin, EPout, OnOff, level, transition="0000"):
-    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return zcl_raw_level_move_to_level(self, nwkid, ZIGATE_EP, EPout, "MovetoLevel", level, transition, groupaddrmode=True)
     data = "%02d" % ADDRESS_MODE["group"] + nwkid + epin + EPout + OnOff + level + transition
     return send_zigatecmd_raw(self, "0081", data)
@@ -342,7 +343,7 @@ def zcl_group_level_move_to_level(self, nwkid, epin, EPout, OnOff, level, transi
 
 def zcl_move_to_level_with_onoff(self, nwkid, EPout, OnOff, level, transition="0000", ackIsDisabled=DEFAULT_ACK_MODE):
     self.log.logging("zclCommand", "Debug", "zcl_move_to_level_with_onoff %s %s %s %s %s" % (nwkid, EPout, OnOff, level, transition))
-    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return zcl_raw_level_move_to_level(self, nwkid, ZIGATE_EP, EPout, "MovetoLevelWithOnOff", level, transition, ackIsDisabled=ackIsDisabled)
     data = ZIGATE_EP + EPout + OnOff + level + transition
     if ackIsDisabled:
@@ -352,7 +353,7 @@ def zcl_move_to_level_with_onoff(self, nwkid, EPout, OnOff, level, transition="0
 
 def zcl_group_move_to_level_with_onoff(self, nwkid, EPout, OnOff, level, transition="0000", ackIsDisabled=DEFAULT_ACK_MODE):
     self.log.logging("zclCommand", "Debug", "zcl_move_to_level_with_onoff %s %s %s %s %s" % (nwkid, EPout, OnOff, level, transition))
-    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return zcl_raw_level_move_to_level(self, nwkid, ZIGATE_EP, EPout, "MovetoLevelWithOnOff", level, transition="0010", groupaddrmode=True)
     data = ZIGATE_EP + EPout + OnOff + level + transition
     if ackIsDisabled:
@@ -365,7 +366,7 @@ def zcl_group_move_to_level_with_onoff(self, nwkid, EPout, OnOff, level, transit
 def zcl_window_covering_stop(self, nwkid, EPout, ackIsDisabled=DEFAULT_ACK_MODE):
     # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
     self.log.logging("zclCommand", "Debug", "zcl_window_covering_stop %s %s" % (nwkid, EPout))
-    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return zcl_raw_window_covering(self, nwkid, ZIGATE_EP, EPout, "Stop", groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE)
 
     data = ZIGATE_EP + EPout + "02"
@@ -375,7 +376,7 @@ def zcl_window_covering_stop(self, nwkid, EPout, ackIsDisabled=DEFAULT_ACK_MODE)
 
 
 def zcl_group_window_covering_stop(self, nwkid, epin, EPout):
-    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return zcl_raw_window_covering(self, nwkid, ZIGATE_EP, EPout, "Stop", groupaddrmode=True, ackIsDisabled=DEFAULT_ACK_MODE)
     data = "%02d" % ADDRESS_MODE["group"] + nwkid + epin + EPout + "02"
     return send_zigatecmd_raw(self, "00FA", data)
@@ -384,7 +385,7 @@ def zcl_group_window_covering_stop(self, nwkid, epin, EPout):
 def zcl_window_covering_on(self, nwkid, EPout, ackIsDisabled=DEFAULT_ACK_MODE):
     # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
     self.log.logging("zclCommand", "Debug", "zcl_window_covering_on %s %s" % (nwkid, EPout))
-    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return zcl_raw_window_covering(self, nwkid, ZIGATE_EP, EPout, "Up", groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE)
     data = ZIGATE_EP + EPout + "00"
     if ackIsDisabled:
@@ -393,7 +394,7 @@ def zcl_window_covering_on(self, nwkid, EPout, ackIsDisabled=DEFAULT_ACK_MODE):
 
 
 def zcl_group_window_covering_on(self, nwkid, epin, EPout):
-    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return zcl_raw_window_covering(self, nwkid, ZIGATE_EP, EPout, "Up", groupaddrmode=True, ackIsDisabled=DEFAULT_ACK_MODE)
     data = "%02d" % ADDRESS_MODE["group"] + nwkid + epin + EPout + "00"
     return send_zigatecmd_raw(self, "00FA", data)
@@ -402,7 +403,7 @@ def zcl_group_window_covering_on(self, nwkid, epin, EPout):
 def zcl_window_covering_off(self, nwkid, EPout, ackIsDisabled=DEFAULT_ACK_MODE):
     # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
     self.log.logging("zclCommand", "Debug", "zcl_window_covering_off %s %s" % (nwkid, EPout))
-    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return zcl_raw_window_covering(self, nwkid, ZIGATE_EP, EPout, "Down", groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE)
     data = ZIGATE_EP + EPout + "01"
     if ackIsDisabled:
@@ -411,7 +412,7 @@ def zcl_window_covering_off(self, nwkid, EPout, ackIsDisabled=DEFAULT_ACK_MODE):
 
 
 def zcl_group_window_covering_off(self, nwkid, epin, EPout):
-    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return zcl_raw_window_covering(self, nwkid, ZIGATE_EP, EPout, "Down", groupaddrmode=True, ackIsDisabled=DEFAULT_ACK_MODE)
     data = "%02d" % ADDRESS_MODE["group"] + nwkid + epin + EPout + "01"
     return send_zigatecmd_raw(self, "00FA", data)
@@ -419,7 +420,7 @@ def zcl_group_window_covering_off(self, nwkid, epin, EPout):
 
 def zcl_window_coverting_level(self, nwkid, EPout, percentage, ackIsDisabled=DEFAULT_ACK_MODE):
     self.log.logging("zclCommand", "Debug", "zcl_window_coverting_level %s %s %s" % (nwkid, EPout, percentage))
-    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return zcl_raw_window_covering(self, nwkid, ZIGATE_EP, EPout, "GoToLiftPercentage", percentage=percentage, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE)
     data = ZIGATE_EP + EPout + "05" + percentage
     if ackIsDisabled:
@@ -428,7 +429,7 @@ def zcl_window_coverting_level(self, nwkid, EPout, percentage, ackIsDisabled=DEF
 
 
 def zcl_group_window_covering_level(self, nwkid, epin, EPout, percentage):
-    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return zcl_raw_window_covering(self, nwkid, ZIGATE_EP, EPout, "GoToLiftPercentage", percentage=percentage, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE)
     data = "%02d" % ADDRESS_MODE["group"] + nwkid + epin + EPout + "05" + percentage
     return send_zigatecmd_raw(self, "00FA", data)
@@ -439,7 +440,7 @@ def zcl_group_window_covering_level(self, nwkid, epin, EPout, percentage):
 def zcl_move_to_colour_temperature(self, nwkid, EPout, temperature, transition="0010", ackIsDisabled=DEFAULT_ACK_MODE):
     self.log.logging("zclCommand", "Debug", "zcl_move_to_colour_temperature %s %s %s %s" % (nwkid, EPout, temperature, transition))
 
-    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return zcl_raw_move_color(self, nwkid, ZIGATE_EP, EPout, "MovetoColorTemperature", temperature=temperature, transition=transition, ackIsDisabled=ackIsDisabled)
 
     data = ZIGATE_EP + EPout + temperature + transition
@@ -449,7 +450,7 @@ def zcl_move_to_colour_temperature(self, nwkid, EPout, temperature, transition="
 
 
 def zcl_group_move_to_colour_temperature(self, nwkid, epin, EPout, temperature, transition="0010"):
-    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return zcl_raw_move_color(self, nwkid, ZIGATE_EP, EPout, "MovetoColorTemperature", temperature=temperature, transition=transition, groupaddrmode=True)
 
     data = "%02d" % ADDRESS_MODE["group"] + nwkid + epin + EPout + temperature + transition
@@ -458,7 +459,7 @@ def zcl_group_move_to_colour_temperature(self, nwkid, epin, EPout, temperature, 
 
 def zcl_move_hue_and_saturation(self, nwkid, EPout, hue, saturation, transition="0010", ackIsDisabled=DEFAULT_ACK_MODE):
     self.log.logging("zclCommand", "Debug", "zcl_move_hue_and_saturation %s %s %s %s %s" % (nwkid, EPout, hue, saturation, transition))
-    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return zcl_raw_move_color(self, nwkid, ZIGATE_EP, EPout, "MovetoHueandSaturation", hue=hue, saturation=saturation, transition=transition, ackIsDisabled=ackIsDisabled)
 
     data = ZIGATE_EP + EPout + hue + saturation + transition
@@ -468,7 +469,7 @@ def zcl_move_hue_and_saturation(self, nwkid, EPout, hue, saturation, transition=
 
 
 def zcl_group_move_hue_and_saturation(self, nwkid, EPin, EPout, hue, saturation, transition="0010"):
-    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return zcl_raw_move_color(self, nwkid, ZIGATE_EP, EPout, "MovetoHueandSaturation", hue=hue, saturation=saturation, transition=transition, groupaddrmode=True)
 
     data = "%02d" % ADDRESS_MODE["group"] + nwkid + EPin + EPout + hue + saturation + transition
@@ -477,7 +478,7 @@ def zcl_group_move_hue_and_saturation(self, nwkid, EPin, EPout, hue, saturation,
 
 def zcl_move_to_colour(self, nwkid, EPout, colorX, colorY, transition="0010", ackIsDisabled=DEFAULT_ACK_MODE):
     self.log.logging("zclCommand", "Debug", "zcl_move_to_colour %s %s %s %s %s" % (nwkid, EPout, colorX, colorY, transition))
-    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return zcl_raw_move_color(self, nwkid, ZIGATE_EP, EPout, "MovetoColor", colorX=colorX, colorY=colorY, transition=transition, ackIsDisabled=ackIsDisabled)
     data = ZIGATE_EP + EPout + colorX + colorY + transition
     if ackIsDisabled:
@@ -486,7 +487,7 @@ def zcl_move_to_colour(self, nwkid, EPout, colorX, colorY, transition="0010", ac
 
 
 def zcl_group_move_to_colour(self, nwkid, EPin, EPout, colorX, colorY, transition="0010"):
-    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return zcl_raw_move_color(self, nwkid, ZIGATE_EP, EPout, "MovetoColor", colorX=colorX, colorY=colorY, transition=transition, groupaddrmode=True)
     data = "%02d" % ADDRESS_MODE["group"] + nwkid + EPin + EPout + colorX + colorY + transition
     return send_zigatecmd_raw(self, "00B7", data)
@@ -496,7 +497,7 @@ def zcl_group_move_to_colour(self, nwkid, EPin, EPout, colorX, colorY, transitio
 
 
 def zcl_ias_zone_enroll_response(self, nwkid, EPin, EPout, response_code, zone_id, ackIsDisabled=DEFAULT_ACK_MODE):
-    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return zcl_raw_ias_zone_enroll_response(self, nwkid, EPin, EPout, response_code, zone_id, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE)
     datas = "02" + nwkid + ZIGATE_EP + EPout + response_code + zone_id
     self.ControllerLink.sendData("0400", datas)

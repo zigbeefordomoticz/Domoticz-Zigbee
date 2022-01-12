@@ -1288,7 +1288,7 @@ SETTINGS = {
     "Experimental": {
         "Order": 15,
         "param": {
-            "ZiGateInHybridMode": {
+            "ControllerInHybridMode": {
                 "type": "bool",
                 "default": 0,
                 "current": None,
@@ -1296,7 +1296,7 @@ SETTINGS = {
                 "hidden": False,
                 "Advanced": True,
             },
-            "ZiGateInRawMode": {
+            "ControllerInRawMode": {
                 "type": "bool",
                 "default": 0,
                 "current": None,

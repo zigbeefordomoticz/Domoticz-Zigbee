@@ -498,23 +498,34 @@ def zdp_raw_leave_request(self, nwkid, ieee, rejoin="01", remove_children="00"):
 
 def zdp_raw_nwk_update_request(self, nwkid, scanchannel, scanduration, scancount="", nwkupdateid="", nwkmanageraddr=""):
     self.log.logging("zdpCommand", "Debug", "zdp_raw_nwk_update_request %s %s %s %s %s %s" % (nwkid, scanchannel, scanduration, scancount, nwkupdateid, nwkmanageraddr))
+
+    #return self.ControllerLink.sendData( "SWITCH-CHANNEL", {"Param1": 20}) 
+
     Cluster = "0038"
     sqn = get_and_inc_ZDP_SQN(self, nwkid)
-    payload = sqn + scanchannel + scanduration + scancount + nwkupdateid
+    payload = sqn + scanchannel + scanduration 
+    
+    if 0x01 < int(scanduration,16) < 0x05:
+        payload += scancount
+        
+    if scanduration in ( "fe", "ff"):
+        payload += nwkupdateid
+        
     if scanduration == "ff":
         payload += nwkmanageraddr
+        
     self.log.logging("zdpCommand", "Debug", "zdp_raw_nwk_update_request Payload: %s" % ( payload))
     if self.pluginconf.pluginConf["debugzigateCmd"]:
         self.log.logging(
         "zdpCommand",
         "Log",
-        "zdp_raw_nwk_update_request  - [%s] %s Queue Length: %s"
-        % (sqn, nwkid, self.ControllerLink.loadTransmit()),
+        "zdp_raw_nwk_update_request  - [%s] %s %s Queue Length: %s"
+        % (sqn, nwkid, payload, self.ControllerLink.loadTransmit()),
     )
         
     raw_APS_request(
         self,
-        "fffd",
+        "fffc",
         "00",
         Cluster,
         "0000",
@@ -524,4 +535,17 @@ def zdp_raw_nwk_update_request(self, nwkid, scanchannel, scanduration, scancount
         highpriority=False,
         ackIsDisabled=False,
     )
+    raw_APS_request(
+        self,
+        "0000",
+        "00",
+        Cluster,
+        "0000",
+        payload,
+        zigpyzqn=sqn,
+        zigate_ep="00",
+        highpriority=False,
+        ackIsDisabled=False,
+    )
+
     return sqn

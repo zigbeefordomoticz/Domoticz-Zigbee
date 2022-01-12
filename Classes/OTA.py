@@ -644,18 +644,18 @@ def ota_upgrade_end_response(self, dest_addr, dest_ep, intMsgImageVersion, image
         % (dest_addr, _FileVersion, _ImageType, _ManufacturerCode),
     )
 
-    if "OTA" not in self.ListOfDevices[dest_addr]:
-        self.ListOfDevices[dest_addr]["OTA"] = {}
+    if "OTAUpgrade" not in self.ListOfDevices[dest_addr]:
+        self.ListOfDevices[dest_addr]["OTAUpgrade"] = {}
 
-    if not isinstance(self.ListOfDevices[dest_addr]["OTA"], dict):
-        del self.ListOfDevices[dest_addr]["OTA"]
-        self.ListOfDevices[dest_addr]["OTA"] = {}
+    if not isinstance(self.ListOfDevices[dest_addr]["OTAUpgrade"], dict):
+        del self.ListOfDevices[dest_addr]["OTAUpgrade"]
+        self.ListOfDevices[dest_addr]["OTAUpgrade"] = {}
 
     now = int(time())
-    self.ListOfDevices[dest_addr]["OTA"][now] = {"Time": datetime.fromtimestamp(time()).strftime("%Y-%m-%d %H:%M:%S")}
-
-    self.ListOfDevices[dest_addr]["OTA"][now]["Version"] = "%08X" % _FileVersion
-    self.ListOfDevices[dest_addr]["OTA"][now]["Type"] = "%04X" % _ImageType
+    self.ListOfDevices[dest_addr]["OTAUpgrade"][now] = {"Time": datetime.fromtimestamp(time()).strftime("%Y-%m-%d %H:%M:%S")}
+ 
+    self.ListOfDevices[dest_addr]["OTAUpgrade"][now]["Version"] = "%08X" % _FileVersion
+    self.ListOfDevices[dest_addr]["OTAUpgrade"][now]["Type"] = "%04X" % _ImageType
 
 
 def ota_management(self, MsgSrcAddr, MsgEP, delay=500):

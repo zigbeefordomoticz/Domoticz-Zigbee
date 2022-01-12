@@ -15,23 +15,24 @@ def zdp_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, fram
 
     if ClusterId == "0000":
         # NWK_addr_req
-        self.log.logging("zdpDecoder", "Error", "NWK_addr_req NOT IMPLEMENTED YET")
-        return frame
+        return buildframe_NWK_addr_req(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame)
 
     if ClusterId == "0001":
         # IEEE_addr_req
-        self.log.logging("zdpDecoder", "Error", "IEEE_addr_req NOT IMPLEMENTED YET")
-        return frame
+        return buildframe_IEEE_addr_req(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame)
 
     if ClusterId == "0002":
         # Node_Desc_req
-        self.log.logging("zdpDecoder", "Error", "Node_Desc_req NOT IMPLEMENTED YET")
-        return frame
+        return buildframe_Node_Desc_req(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame)
 
     if ClusterId == "0003":
         # Power_Desc_req
         self.log.logging("zdpDecoder", "Error", "Power_Desc_req NOT IMPLEMENTED YET")
         return frame
+    
+    if ClusterId == "0036":
+        self.log.logging("zdpDecoder", "Error", "Mgmt_Permit_Joining_req NOT IMPLEMENTED %s" %Payload)
+        return None
 
     if ClusterId == "0013":
         return buildframe_device_annoucement(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame)
@@ -111,6 +112,32 @@ def zdp_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, fram
     return frame
 
 
+def buildframe_NWK_addr_req(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
+    self.log.logging("zdpDecoder", "Debug", "buildframe_NWK_addr_req nwkid: %s Ep: %s Payload: %s" % (SrcNwkId, SrcEndPoint, Payload))
+    sqn = Payload[:2]
+    ieee = "%016x" % struct.unpack("Q", struct.pack(">Q", int(Payload[2:18], 16)))[0]
+    u8RequestType = Payload[18:20]
+    u8StartIndex = Payload[20:22]
+    buildPayload = sqn + SrcNwkId + SrcEndPoint + ieee + u8RequestType + u8StartIndex
+    return encapsulate_plugin_frame("0040", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
+
+    
+def buildframe_IEEE_addr_req(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
+    self.log.logging("zdpDecoder", "Debug", "buildframe_IEEE_addr_req nwkid: %s Ep: %s Payload: %s" % (SrcNwkId, SrcEndPoint, Payload))
+    sqn = Payload[:2]
+    nwkid = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[2:6], 16)))[0]
+    u8RequestType = Payload[6:8]
+    u8StartIndex = Payload[8:10]
+    buildPayload = sqn + SrcNwkId + SrcEndPoint + nwkid + u8RequestType + u8StartIndex
+    return encapsulate_plugin_frame("0041", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
+    
+def buildframe_Node_Desc_req(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
+    self.log.logging("zdpDecoder", "Debug", "buildframe_Node_Desc_req nwkid: %s Ep: %s Payload: %s" % (SrcNwkId, SrcEndPoint, Payload))
+    sqn = Payload[:2]
+    nwkid = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[2:6], 16)))[0]
+    buildPayload = sqn + SrcNwkId + SrcEndPoint + nwkid
+    return encapsulate_plugin_frame("0042", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
+    
 def buildframe_device_annoucement(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
     # Device Annoucement
 
@@ -251,7 +278,7 @@ def buildframe_nwk_address_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payl
         NWKAddrAssocDevList = ""
         idx = 28
         for _ in range(int(NumAssocDev,16)):
-            NWKAddrAssocDevList += "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[idx:idx+4], 16)))[0]
+            NWKAddrAssocDevList += "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[idx:idx + 4], 16)))[0]
             idx += 4
 
     buildPayload = sqn + status + ieee + nwkid + NumAssocDev + StartIndex + NWKAddrAssocDevList
@@ -275,7 +302,7 @@ def buildframe_ieee_address_response(self, SrcNwkId, SrcEndPoint, ClusterId, Pay
         NWKAddrAssocDevList = ""
         idx = 28
         for _ in range(int(NumAssocDev,16)):
-            NWKAddrAssocDevList += "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[idx:idx+4], 16)))[0]
+            NWKAddrAssocDevList += "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[idx:idx + 4], 16)))[0]
             idx += 4
 
     buildPayload = sqn + status + ieee + nwkid + NumAssocDev + StartIndex + NWKAddrAssocDevList
@@ -330,19 +357,19 @@ def buildframe_management_lqi_response(self, SrcNwkId, SrcEndPoint, ClusterId, P
     buildPayload = sqn + status + NeighborTableEntries + NeighborTableListCount + StartIndex
     idx = 10
     for _ in range(int(NeighborTableListCount, 16)):
-        ExtendedPanId = "%016x" % struct.unpack("Q", struct.pack(">Q", int(Payload[idx: idx+16], 16)))[0]
+        ExtendedPanId = "%016x" % struct.unpack("Q", struct.pack(">Q", int(Payload[idx: idx + 16], 16)))[0]
         idx += 16
-        Extendedaddress = "%016x" % struct.unpack("Q", struct.pack(">Q", int(Payload[idx: idx+16], 16)))[0]
+        Extendedaddress = "%016x" % struct.unpack("Q", struct.pack(">Q", int(Payload[idx: idx + 16], 16)))[0]
         idx += 16
-        Networkaddress = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[idx: idx+4], 16)))[0]
+        Networkaddress = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[idx: idx + 4], 16)))[0]
         idx += 4
-        bitfield1 = Payload[idx:idx+2]
+        bitfield1 = Payload[idx:idx + 2]
         idx +=2
-        bitfield2 = Payload[idx:idx+2]
+        bitfield2 = Payload[idx:idx + 2]
         idx += 2
-        depth =  Payload[idx:idx+2]
+        depth = Payload[idx:idx + 2]
         idx += 2
-        lqi = Payload[idx:idx+2]
+        lqi = Payload[idx:idx + 2]
         idx += 2
         buildPayload += Networkaddress + ExtendedPanId + Extendedaddress + depth + lqi + bitfield1
 
@@ -358,9 +385,12 @@ def buildframe_routing_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload,
 def buildframe_leave_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
     self.log.logging("zdpDecoder", "Debug", "buildframe_leave_response")
     sqn = Payload[:2]
+    ieee = "%016x" % 0x0
+    if SrcNwkId in self.ListOfDevices:
+        ieee = self.ListOfDevices[ SrcNwkId ]["IEEE"]
     status = Payload[2:4]
-    buildPayload = sqn + status
-    return encapsulate_plugin_frame("804E", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
+    buildPayload = sqn + ieee + status
+    return encapsulate_plugin_frame("8048", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 
 def buildframe_direct_join_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
@@ -372,7 +402,7 @@ def buildframe_direct_join_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payl
     sqn = Payload[:2]
     status = Payload[2:4]
     buildPayload = sqn + status
-    #return encapsulate_plugin_frame("804E", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
+    #return encapsulate_plugin_frame("xxxx", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
     return frame
 
 
@@ -381,10 +411,9 @@ def buildframe_permit_join_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payl
         self.log.logging("zdpDecoder", "Error", "buildframe_permit_join_response not a Permit Join Resp frame %s" % (Payload))
         return frame
 
-    self.log.logging("zdpDecoder", "Error", "buildframe_permit_join_response NOT IMPLEMENTED YET")
     sqn = Payload[:2]
     status = Payload[2:4]
-    buildPayload = sqn + status
+    buildPayload = status
     return encapsulate_plugin_frame("8014", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 

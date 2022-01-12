@@ -24,7 +24,7 @@ import zigpy_znp.zigbee.application
 
 from zigpy.zcl import clusters
 from Classes.ZigpyTransport.plugin_encoders import (
-    build_plugin_8002_frame_content, build_plugin_8010_frame_content)
+    build_plugin_8002_frame_content, build_plugin_8010_frame_content, build_plugin_8048_frame_content)
 from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
                                  SCHEMA_DEVICE)
 
@@ -49,18 +49,27 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
 
         # Trigger Version payload to plugin
         
-        znp_model = self.get_device(nwk = t.NWK(0x0000)).model
-        znp_manuf = self.get_device(nwk = t.NWK(0x0000)).manufacturer
+        znp_model = self.get_device(nwk=t.NWK(0x0000)).model
+        znp_manuf = self.get_device(nwk=t.NWK(0x0000)).manufacturer
         ZNP_330 = "CC1352/CC2652, Z-Stack 3.30+"
-        FirmwareBranch = "10" if znp_model[:len(ZNP_330)] == ZNP_330 else "99"
-        znp_model[ znp_model.find("build") + 6 : -5 ]
-        FirmwareMajorVersion = "%02x" %int(znp_model[ znp_model.find("build") + 8 : -5 ])
-        FirmwareVersion = "%04x" %int(znp_model[ znp_model.find("build") + 10: -1])
+        ZNP_30X = "CC2531, Z-Stack 3.0.x"
+        if znp_model[:len(ZNP_330)] == ZNP_330:
+            FirmwareBranch = "20"
+            
+        elif znp_model[:len(ZNP_30X)] == ZNP_30X:
+            FirmwareBranch = "21"
+            
+        else:
+            FirmwareBranch = "99"
+            
+        year = znp_model[ znp_model.find("build") + 6 : -5 ]
+        FirmwareMajorVersion = "%02d" %int(znp_model[ znp_model.find("build") + 8 : -5 ])
+        FirmwareVersion = "%04d" %int(znp_model[ znp_model.find("build") + 10: -1])
         self.callBackFunction(build_plugin_8010_frame_content(FirmwareBranch, FirmwareMajorVersion, FirmwareVersion))
 
 
     async def _register_endpoints(self) -> None:
-        LIST_ENDPOINT = [0x0b , 0x0a , 0x6e, 0x15, 0x08, 0x03] # WISER, ORVIBO , TERNCY, KONKE, LIVOLO, WISER2
+        LIST_ENDPOINT = [0x0b , 0x0a , 0x6e, 0x15, 0x08, 0x03]  # WISER, ORVIBO , TERNCY, KONKE, LIVOLO, WISER2
         await super()._register_endpoints()
 
         for endpoint in LIST_ENDPOINT:
@@ -127,6 +136,13 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
             LOGGER.debug("Device %s changed id (0x%04x => 0x%04x)", ieee, dev.nwk, nwk)
             dev.nwk = nwk
             
+    def handle_leave(self, nwk, ieee):
+        self.log.logging("TransportZigpy", "Debug","handle_leave (0x%04x %s)" %(nwk, ieee))
+
+        plugin_frame = build_plugin_8048_frame_content(self, ieee)
+        self.callBackFunction(plugin_frame)
+        super().handle_leave(nwk, ieee)
+
     def get_zigpy_version(self):
         # This is a fake version number. This is just to inform the plugin that we are using ZNP over Zigpy
         logging.debug("get_zigpy_version ake version number. !!")
@@ -148,7 +164,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
 
 
         addr = None
-        if sender.nwk:
+        if sender.nwk is not None:
             addr_mode = 0x02
             addr = sender.nwk.serialize()[::-1].hex()
             self.log.logging(
@@ -157,10 +173,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
                 "handle_message device 1: %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s lqi: %s" % (
                     str(sender), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8"), sender.lqi)),
 
-            
-            
-            
-        elif sender.ieee:
+        elif sender.ieee is not None:
             addr = "%016x" % t.uint64_t.deserialize(sender.ieee.serialize())[0]
             addr_mode = 0x03
             self.log.logging(
@@ -180,7 +193,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
             "TransportZigpy",
             "Debug",
             "handle_message device 2: %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s lqi: %s" % (
-                str(addr),  profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8"), sender.lqi),
+                str(addr), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8"), sender.lqi),
         )
         
         if addr:
@@ -191,7 +204,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
             self.log.logging(
                 "TransportZigpy",
                 "Error",
-                "handle_message - Issue with addr: %s while sender is %s %s" % (sender.nwk, sender.ieee),
+                "handle_message - Issue with sender is %s %s" % (sender.nwk, sender.ieee),
             )
 
         return
@@ -221,13 +234,11 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
 
     async def erase_pdm(self):
         pass
-        
-    async def set_extended_pan_id (self,extended_pan_ip):
+
+    async def set_extended_pan_id(self,extended_pan_ip):
         self.confif[conf.CONF_NWK][conf.CONF_NWK_EXTENDED_PAN_ID] = extended_pan_ip
         self.startup(self.callBackHandleMessage,self.callBackGetDevice,auto_form=True,force_form=True,log=self.log)
 
-    async def set_channel (self,channel):
-        self.confif[conf.CONF_NWK][conf.CONF_NWK_EXTENDED_PAN_ID] =  channel
+    async def set_channel(self,channel):
+        self.confif[conf.CONF_NWK][conf.CONF_NWK_EXTENDED_PAN_ID] = channel
         self.startup(self.callBackHandleMessage,self.callBackGetDevice,auto_form=True,force_form=True,log=self.log)
-
-

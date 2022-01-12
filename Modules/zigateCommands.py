@@ -18,14 +18,14 @@ def zigate_set_mode(self, mode):
     #  0x01 - ZiGate in RAW mode
     #  0x02 - ZiGate in Hybrid mode ( All inbound messages are received via 0x8002 in addition of the normal one)
     if mode == 0x00:
-        self.pluginconf.pluginConf["ZiGateInRawMode"] = False
-        self.pluginconf.pluginConf["ZiGateInHybridMode"] = False
+        self.pluginconf.pluginConf["ControllerInRawMode"] = False
+        self.pluginconf.pluginConf["ControllerInHybridMode"] = False
     elif mode == 0x01:
-        self.pluginconf.pluginConf["ZiGateInRawMode"] = True
-        self.pluginconf.pluginConf["ZiGateInHybridMode"] = False
+        self.pluginconf.pluginConf["ControllerInRawMode"] = True
+        self.pluginconf.pluginConf["ControllerInHybridMode"] = False
     elif mode == 0x02:
-        self.pluginconf.pluginConf["ZiGateInHybridMode"] = True
-        self.pluginconf.pluginConf["ZiGateInRawMode"] = True
+        self.pluginconf.pluginConf["ControllerInHybridMode"] = True
+        self.pluginconf.pluginConf["ControllerInRawMode"] = False
     return send_zigatecmd_raw(self, "0002", "%02x" % mode)
 
 def zigate_set_loglevel(self, loglevel):
@@ -39,7 +39,7 @@ def zigate_get_nwk_state(self):
     self.log.logging( "zigateCommand", "Debug","zigate_get_nwk_state")
     if self.zigbee_communitation == "zigpy":
         # Should be done during zigpy layer startup()
-        return
+        return self.ControllerLink.sendData( "REQ-NWK-STATUS", None) 
     return send_zigatecmd_raw(self, "0009", "")
 
 def zigate_get_firmware_version(self):

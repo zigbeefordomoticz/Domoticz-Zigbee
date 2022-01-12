@@ -22,7 +22,7 @@ import zigpy_zigate
 import zigpy_zigate.zigbee.application
 from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_004D_frame_content, build_plugin_8002_frame_content,
-    build_plugin_8010_frame_content)
+    build_plugin_8010_frame_content, build_plugin_8048_frame_content)
 from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
                                  SCHEMA_DEVICE)
 
@@ -47,7 +47,7 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         #await super().startup(auto_form=auto_form,)
 
         version_str = await self._api.version_str()
-        Model = "10"  # Zigpy
+        Model = "11"  # Zigpy
         FirmwareMajorVersion = version_str[2:4]
         FirmwareVersion = "%04x" % await self._api.version_int()
         self.callBackFunction(build_plugin_8010_frame_content(Model, FirmwareMajorVersion, FirmwareVersion))
@@ -58,7 +58,6 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         # will return None if not found
         # will return (nwkid, ieee) if found ( nwkid and ieee are numbers)
         self.log.logging("TransportZigpy", "Debug", "App - get_device ieee:%s nwk:%s " % (ieee,nwk ))
-#        self.log.logging("TransportZigpy", "Debug", "App - get_device current_list%s  " % (self.devices ))
 
         dev = None
         try:
@@ -102,6 +101,13 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
             LOGGER.debug("Device %s changed id (0x%04x => 0x%04x)", ieee, dev.nwk, nwk)
             dev.nwk = nwk
 
+    def handle_leave(self, nwk, ieee):
+        self.log.logging("TransportZigpy", "Debug","handle_leave (0x%04x %s)" %(nwk, ieee))
+
+        plugin_frame = build_plugin_8048_frame_content(self, ieee)
+        self.callBackFunction(plugin_frame)
+        super().handle_leave(nwk, ieee)
+
     def handle_message(
         self,
         sender: zigpy.device.Device,
@@ -118,7 +124,7 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
             super().handle_message(sender, profile, cluster, src_ep, dst_ep, message)
 
 
-        if sender.nwk:
+        if sender.nwk is not None:
             addr_mode = 0x02
             addr = sender.nwk.serialize()[::-1].hex()
             self.log.logging(
@@ -128,7 +134,7 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
                     str(sender), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8"), sender.lqi)),
 
 
-        elif sender.ieee:
+        elif sender.ieee is not None:
             addr = "%016x" % t.uint64_t.deserialize(sender.ieee.serialize())[0]
             addr_mode = 0x03
             self.log.logging(
@@ -182,8 +188,8 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         await self._api.reset()
 
 
-    async def set_extended_pan_id (self):
+    async def set_extended_pan_id(self):
         pass      
 
-    async def set_channel (self):
+    async def set_channel(self):
         pass        
