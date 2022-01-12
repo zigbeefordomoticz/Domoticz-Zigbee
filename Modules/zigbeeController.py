@@ -61,6 +61,10 @@ def receiveZigateEpDescriptor(self, MsgData):
     MsgDataBField = MsgData[20:22]
     MsgDataInClusterCount = MsgData[22:24]
     
+    if MsgDataShAddr not in self.ListOfDevices:
+        self.ListOfDevices[ MsgDataShAddr ] = {}
+    if "Ep" not in self.ListOfDevices[MsgDataShAddr]:
+        self.ListOfDevices[MsgDataShAddr]["Ep"] = {}
     if MsgDataEp not in self.ListOfDevices[MsgDataShAddr]["Ep"]:
         self.ListOfDevices[MsgDataShAddr]["Ep"][MsgDataEp] = {}
 

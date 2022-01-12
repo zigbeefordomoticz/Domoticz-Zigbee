@@ -1905,6 +1905,10 @@ def Decode8042(self, Devices, MsgData, MsgLQI):  # Node Descriptor response
         addr,
     )
 
+    if addr == "0000" and addr not in self.ListOfDevices:
+        self.ListOfDevices[ addr ] = {}
+        self.ListOfDevices[ addr ]["Ep"] = {}
+
     if addr not in self.ListOfDevices:
         self.log.logging(
             "Input",
