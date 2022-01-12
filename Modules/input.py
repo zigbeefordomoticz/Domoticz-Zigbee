@@ -74,6 +74,9 @@ def ZigateRead(self, Devices, Data):
 
     DECODERS = {
         "004d": Decode004D,
+        "0040": Decode0040,
+        "0041": Decode0041,
+        "0042": Decode0042,
         "0100": Decode0100,
         "0110": Decode0110,
         "0302": Decode0302,
@@ -210,6 +213,7 @@ def extract_messge_infos( Data):
     return MsgType, MsgData, MsgLQI
 
 def Decode0040(self, Devices, MsgData, MsgLQI):  # NWK_addr_req
+    self.log.logging("Input", "Log", "Decode0040 - NWK_addr_req: %s" % MsgData)
     # sqn + ieee + u8RequestType + u8StartIndex
     sqn = MsgData[:2]
     srcNwkId = MsgData[2:6]
@@ -218,18 +222,22 @@ def Decode0040(self, Devices, MsgData, MsgLQI):  # NWK_addr_req
     reqType = MsgData[24:26]
     startIndex = MsgData[26:28]
     
+    controller_ieee = "%016x" % struct.unpack("Q", struct.pack(">Q", int(self.ControllerIEEE, 16)))[0]
+    controller_nwkid = "%04x" % struct.unpack("H", struct.pack(">H", int(self.ControllerNWKID, 16)))[0]
     # we should answer: sqn + status + ieee + nwkid + NumAssocDev + StartIndex + NWKAddrAssocDevList
     Cluster = "8000"
     if ieee == self.ControllerIEEE:
         status = "00"
-        payload = sqn + status + self.ControllerIEEE + self.ControllerNWKID + "00"
+        payload = sqn + status + controller_ieee + controller_nwkid + "00"
     else:
         status = "81"  # Device not found
-        payload = sqn + status + self.ControllerIEEE
+        payload = sqn + status + ieee
+    self.log.logging("Input", "Log", "Decode0040 - response payload: %s" %payload)
     raw_APS_request( self, srcNwkId, "00", Cluster, "0000", payload, zigpyzqn=sqn, zigate_ep="00", )
     
 
 def Decode0041(self, Devices, MsgData, MsgLQI):  # IEEE_addr_req
+    self.log.logging("Input", "Log", "Decode0041 - IEEE_addr_req: %s" % MsgData)
     # sqn + nwkid + u8RequestType + u8StartIndex
     sqn = MsgData[:2]
     srcNwkId = MsgData[2:6]
@@ -242,14 +250,18 @@ def Decode0041(self, Devices, MsgData, MsgLQI):  # IEEE_addr_req
     Cluster = "8001"
     if nwkid == self.ControllerNWKID:
         status = "00"
-        payload = sqn + status + self.ControllerIEEE + self.ControllerNWKID + "00"
+        controller_ieee = "%016x" % struct.unpack("Q", struct.pack(">Q", int(self.ControllerIEEE, 16)))[0]
+        controller_nwkid = "%04x" % struct.unpack("H", struct.pack(">H", int(self.ControllerNWKID, 16)))[0]
+        payload = sqn + status + controller_ieee + controller_nwkid + "00"
     else:
         status = "81"  # Device not found
-        payload = sqn + status + self.ControllerIEEE
+        payload = sqn + status + srcNwkId
     raw_APS_request( self, srcNwkId, "00", Cluster, "0000", payload, zigpyzqn=sqn, zigate_ep="00", )
+    self.log.logging("Input", "Log", "Decode0041 - response payload: %s" %payload)
 
     
 def Decode0042(self, Devices, MsgData, MsgLQI):  # Node_Desc_req
+    self.log.logging("Input", "Log", "Decode0042 - Node_Desc_req: %s" % MsgData)
     # sqn + nwkid
     sqn = MsgData[:2]
     srcNwkId = MsgData[2:6]
@@ -275,6 +287,9 @@ def Decode0042(self, Devices, MsgData, MsgLQI):  # Node_Desc_req
     else:
         status = "00"
         controllerManufacturerCode = self.ListOfDevices[ "0000" ]["Manufacturer"]
+        controllerManufacturerCode = '0007'
+        self.log.logging("Input", "Log", "Decode0042 - Overwrite Manuf Code: %s" % controllerManufacturerCode)
+        
         manuf_code16 = "%04x" % struct.unpack("H", struct.pack(">H", int(controllerManufacturerCode, 16)))[0]
         max_in_size16 = "%04x" % struct.unpack("H", struct.pack(">H", int(self.ListOfDevices[ "0000" ]["Max Rx"], 16)))[0] 
         max_out_size16 = "%04x" % struct.unpack("H", struct.pack(">H", int(self.ListOfDevices[ "0000" ]["Max Tx"], 16)))[0] 
@@ -286,7 +301,7 @@ def Decode0042(self, Devices, MsgData, MsgLQI):  # Node_Desc_req
         
         payload = sqn + status + nwkid + manuf_code16 + max_in_size16 + max_out_size16 + server_mask16 + descriptor_capability8
         payload += mac_capa8 + max_buf_size8 + bitfield16
-
+    self.log.logging("Input", "Log", "Decode0042 - response payload: %s" %payload)
     raw_APS_request( self, srcNwkId, "00", Cluster, "0000", payload, zigpyzqn=sqn, zigate_ep="00", )
     
 def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
