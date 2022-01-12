@@ -500,21 +500,29 @@ def zdp_raw_nwk_update_request(self, nwkid, scanchannel, scanduration, scancount
     self.log.logging("zdpCommand", "Debug", "zdp_raw_nwk_update_request %s %s %s %s %s %s" % (nwkid, scanchannel, scanduration, scancount, nwkupdateid, nwkmanageraddr))
     Cluster = "0038"
     sqn = get_and_inc_ZDP_SQN(self, nwkid)
-    payload = sqn + scanchannel + scanduration + scancount + nwkupdateid
+    payload = sqn + scanchannel + scanduration 
+    
+    if 0x01 < int(scanduration,16) < 0x05:
+        payload += scancount
+        
+    if scanduration in ( "fe", "ff"):
+        payload += nwkupdateid
+        
     if scanduration == "ff":
         payload += nwkmanageraddr
+        
     self.log.logging("zdpCommand", "Debug", "zdp_raw_nwk_update_request Payload: %s" % ( payload))
     if self.pluginconf.pluginConf["debugzigateCmd"]:
         self.log.logging(
         "zdpCommand",
         "Log",
-        "zdp_raw_nwk_update_request  - [%s] %s Queue Length: %s"
-        % (sqn, nwkid, self.ControllerLink.loadTransmit()),
+        "zdp_raw_nwk_update_request  - [%s] %s %s Queue Length: %s"
+        % (sqn, nwkid, payload, self.ControllerLink.loadTransmit()),
     )
         
     raw_APS_request(
         self,
-        "fffd",
+        "fffc",
         "00",
         Cluster,
         "0000",

@@ -796,8 +796,7 @@ def mgt_routing_req(self, nwkid, start_index="00"):
     #    return
     self.log.logging("BasicOutput", "Debug", "mgt_routing_req - %s" % nwkid)
     if "RoutingTable" not in self.ListOfDevices[nwkid]:
-        self.ListOfDevices[nwkid]["RoutingTable"] = {}
-        self.ListOfDevices[nwkid]["RoutingTable"]["Devices"] = []
+        self.ListOfDevices[nwkid]["RoutingTable"] = {'Devices': []}
     if "SQN" not in self.ListOfDevices[nwkid]["RoutingTable"]:
         self.ListOfDevices[nwkid]["RoutingTable"]["SQN"] = 0
     else:
@@ -830,15 +829,16 @@ def initiate_change_channel(self, new_channel):
 
     self.log.logging("BasicOutput", "Debug", "initiate_change_channel - channel: %s" % new_channel)
     scanDuration = "fe"  # Initiate a change
-
+ 
     channel_mask = "%08x" % maskChannel(self, new_channel)
     target_address = "ffff"  # Broadcast to all devices
 
-    if "ZiGateInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateInRawMode"]:
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         channel_mask = decode_endian_data(channel_mask, "1b")
-        zdp_raw_nwk_update_request(self, target_address, channel_mask, scanDuration, scancount="00", nwkupdateid="0000", nwkmanageraddr="0000")
+        zdp_raw_nwk_update_request(self, target_address, channel_mask, scanDuration, scancount="00", nwkupdateid="01")
     else:
-        zdp_management_network_update_request(self, target_address , channel_mask , scanDuration , "00" , "0000")
+        zdp_management_network_update_request(self, target_address , channel_mask , scanDuration , scancount="00" , nwkupdateid="01")
     #send_zigatecmd_raw(self, "004A", datas)
+    zigate_get_nwk_state(self)
     if "0000" in self.ListOfDevices:
         self.ListOfDevices["0000"]["CheckChannel"] = new_channel

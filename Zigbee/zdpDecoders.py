@@ -381,7 +381,6 @@ def buildframe_permit_join_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payl
         self.log.logging("zdpDecoder", "Error", "buildframe_permit_join_response not a Permit Join Resp frame %s" % (Payload))
         return frame
 
-    self.log.logging("zdpDecoder", "Error", "buildframe_permit_join_response NOT IMPLEMENTED YET")
     sqn = Payload[:2]
     status = Payload[2:4]
     buildPayload = sqn + status
