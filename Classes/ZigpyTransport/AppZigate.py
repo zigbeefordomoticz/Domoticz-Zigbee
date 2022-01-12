@@ -104,7 +104,7 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
     def handle_leave(self, nwk, ieee):
         self.log.logging("TransportZigpy", "Debug","handle_leave (0x%04x %s)" %(nwk, ieee))
 
-        plugin_frame = build_plugin_8048_frame_content (self, ieee)
+        plugin_frame = build_plugin_8048_frame_content(self, ieee)
         self.callBackFunction(plugin_frame)
         super().handle_leave(nwk, ieee)
 
@@ -124,7 +124,7 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
             super().handle_message(sender, profile, cluster, src_ep, dst_ep, message)
 
 
-        if sender.nwk:
+        if sender.nwk is not None:
             addr_mode = 0x02
             addr = sender.nwk.serialize()[::-1].hex()
             self.log.logging(
@@ -134,7 +134,7 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
                     str(sender), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8"), sender.lqi)),
 
 
-        elif sender.ieee:
+        elif sender.ieee is not None:
             addr = "%016x" % t.uint64_t.deserialize(sender.ieee.serialize())[0]
             addr_mode = 0x03
             self.log.logging(
