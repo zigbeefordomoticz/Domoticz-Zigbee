@@ -166,9 +166,6 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
                 "handle_message device 1: %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s lqi: %s" % (
                     str(sender), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8"), sender.lqi)),
 
-            
-            
-            
         elif sender.ieee:
             addr = "%016x" % t.uint64_t.deserialize(sender.ieee.serialize())[0]
             addr_mode = 0x03
@@ -230,7 +227,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
 
     async def erase_pdm(self):
         pass
-        
+
     async def set_extended_pan_id(self,extended_pan_ip):
         self.confif[conf.CONF_NWK][conf.CONF_NWK_EXTENDED_PAN_ID] = extended_pan_ip
         self.startup(self.callBackHandleMessage,self.callBackGetDevice,auto_form=True,force_form=True,log=self.log)
