@@ -7,7 +7,7 @@ import struct
 from Zigbee.encoder_tools import encapsulate_plugin_frame
 
 
-def build_plugin_004D_frame_content(self, nwk, ieee, parent_nwk):
+def build_plugin_004D_frame_content(self, nwk, ieee, parent_nwk): #join indication
     # No endian decoding as it will go directly to Decode004d
     self.log.logging("TransportPluginEncoder", "Debug", "build_plugin_004D_frame_content %s %s %s" % (nwk, ieee, parent_nwk))
 
@@ -17,6 +17,16 @@ def build_plugin_004D_frame_content(self, nwk, ieee, parent_nwk):
 
     return encapsulate_plugin_frame("004d", frame_payload, "%02x" % 0x00)
 
+def build_plugin_8048_frame_content(self, ieee): # leave indication
+    
+    self.log.logging("TransportPluginEncoder", "Debug", "build_plugin_8048_frame_content %s leave_indication" % ( ieee))
+
+    ieee = "%016x" % t.uint64_t.deserialize(ieee.serialize())[0]
+    frame_payload = ieee
+    frame_payload += "00" #rejoin
+    frame_payload += "00" #remove children
+
+    return encapsulate_plugin_frame("8048", frame_payload, "%02x" % 0x00)    
 
 def build_plugin_8015_frame_content(
     self,

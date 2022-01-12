@@ -24,7 +24,7 @@ import zigpy_znp.zigbee.application
 
 from zigpy.zcl import clusters
 from Classes.ZigpyTransport.plugin_encoders import (
-    build_plugin_8002_frame_content, build_plugin_8010_frame_content)
+    build_plugin_8002_frame_content, build_plugin_8010_frame_content, build_plugin_8048_frame_content)
 from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
                                  SCHEMA_DEVICE)
 
@@ -136,6 +136,13 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
             LOGGER.debug("Device %s changed id (0x%04x => 0x%04x)", ieee, dev.nwk, nwk)
             dev.nwk = nwk
             
+    def handle_leave(self, nwk, ieee):
+        self.log.logging("TransportZigpy", "Debug","handle_leave (0x%04x %s)" %(nwk, ieee))
+
+        plugin_frame = build_plugin_8048_frame_content (self, ieee)
+        self.callBackFunction(plugin_frame)
+        super().handle_leave(nwk, ieee)
+
     def get_zigpy_version(self):
         # This is a fake version number. This is just to inform the plugin that we are using ZNP over Zigpy
         logging.debug("get_zigpy_version ake version number. !!")
