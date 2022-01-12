@@ -22,7 +22,7 @@ import zigpy_zigate
 import zigpy_zigate.zigbee.application
 from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_004D_frame_content, build_plugin_8002_frame_content,
-    build_plugin_8010_frame_content)
+    build_plugin_8010_frame_content, build_plugin_8048_frame_content)
 from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
                                  SCHEMA_DEVICE)
 
@@ -100,6 +100,13 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         if dev.nwk != nwk:
             LOGGER.debug("Device %s changed id (0x%04x => 0x%04x)", ieee, dev.nwk, nwk)
             dev.nwk = nwk
+
+    def handle_leave(self, nwk, ieee):
+        self.log.logging("TransportZigpy", "Debug","handle_leave (0x%04x %s)" %(nwk, ieee))
+
+        plugin_frame = build_plugin_8048_frame_content (self, ieee)
+        self.callBackFunction(plugin_frame)
+        super().handle_leave(nwk, ieee)
 
     def handle_message(
         self,
