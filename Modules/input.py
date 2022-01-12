@@ -16,36 +16,30 @@ import time
 from datetime import datetime
 
 import Domoticz
-from Classes.ZigateTransport.sqnMgmt import (
-    TYPE_APP_ZCL,
-    TYPE_APP_ZDP,
-    sqn_get_internal_sqn_from_app_sqn,
-    sqn_get_internal_sqn_from_aps_sqn,
-)
+from Classes.ZigateTransport.sqnMgmt import (TYPE_APP_ZCL, TYPE_APP_ZDP,
+                                             sqn_get_internal_sqn_from_app_sqn,
+                                             sqn_get_internal_sqn_from_aps_sqn)
+from Zigbee.decode8002 import decode8002_and_process
 
-from Modules.basicOutputs import send_default_response, setTimeServer, unknown_device_nwkid, getListofAttribute
 from Modules.basicInputs import read_attribute_response
+from Modules.basicOutputs import (getListofAttribute, send_default_response,
+                                  setTimeServer, unknown_device_nwkid)
 from Modules.callback import callbackDeviceAwake
 from Modules.deviceAnnoucement import device_annoucementv2
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import lastSeenUpdate, timedOutDevice
 from Modules.errorCodes import DisplayStatusCode
-from Modules.ikeaTradfri import (
-    ikea_motion_sensor_8095,
-    ikea_remote_control_8085,
-    ikea_remote_control_8095,
-    ikea_remote_switch_8085,
-    ikea_remote_switch_8095,
-    ikea_wireless_dimer_8085,
-)
+from Modules.ikeaTradfri import (ikea_motion_sensor_8095,
+                                 ikea_remote_control_8085,
+                                 ikea_remote_control_8095,
+                                 ikea_remote_switch_8085,
+                                 ikea_remote_switch_8095,
+                                 ikea_wireless_dimer_8085)
 from Modules.inRawAps import inRawAps
-from Modules.legrand_netatmo import (
-    legrand_motion_8085,
-    legrand_motion_8095,
-    legrand_remote_switch_8085,
-    legrand_remote_switch_8095,
-    rejoin_legrand_reset,
-)
+from Modules.legrand_netatmo import (legrand_motion_8085, legrand_motion_8095,
+                                     legrand_remote_switch_8085,
+                                     legrand_remote_switch_8095,
+                                     rejoin_legrand_reset)
 from Modules.livolo import livolo_read_attribute_request
 from Modules.lumi import AqaraOppleDecoding
 from Modules.mgmt_rtg import mgmt_rtg_rsp
@@ -53,6 +47,7 @@ from Modules.pairingProcess import interview_state_8045
 from Modules.pluzzy import pluzzyDecode8102
 from Modules.readClusters import ReadCluster
 from Modules.schneider_wiser import wiser_read_attribute_request
+from Modules.sendZigateCommand import raw_APS_request
 from Modules.timeServer import timeserver_read_attribute_request
 from Modules.tools import (DeviceExist, ReArrangeMacCapaBasedOnModel,
                            checkAndStoreAttributeValue, decodeMacCapa,
@@ -62,13 +57,12 @@ from Modules.tools import (DeviceExist, ReArrangeMacCapaBasedOnModel,
                            mainPoweredDevice, retreive_cmd_payload_from_8002,
                            set_request_phase_datastruct, set_status_datastruct,
                            timeStamped, updLQI, updSQN)
-from Modules.zigbeeController import (initLODZigate, receiveZigateEpDescriptor,
-                            receiveZigateEpList)
-from Modules.sendZigateCommand import raw_APS_request
 from Modules.zigateConsts import (ADDRESS_MODE, LEGRAND_REMOTE_MOTION,
                                   LEGRAND_REMOTE_SWITCHS, ZCL_CLUSTERS_LIST,
                                   ZIGBEE_COMMAND_IDENTIFIER)
-from Zigbee.decode8002 import decode8002_and_process
+from Modules.zigbeeController import (initLODZigate, receiveZigateEpDescriptor,
+                                      receiveZigateEpList)
+
 
 def ZigateRead(self, Devices, Data):
 
@@ -180,18 +174,19 @@ def ZigateRead(self, Devices, Data):
     if MsgType in DECODERS:
         _decoding = DECODERS[MsgType]
         _decoding(self, Devices, MsgData, MsgLQI)
-        return
-    if MsgType == "8002":
+        
+    elif MsgType == "8002":
         Decode8002(self, Devices, Data, MsgData, MsgLQI)
-        return
-    if MsgType == "8011":
+        
+    elif MsgType == "8011":
         Decode8011(self, Devices, MsgData, MsgLQI)
-        return
-    self.log.logging(
-        "Input",
-        "Error",
-        "ZigateRead - Decoder not found for %s" % (MsgType),
-    )
+        
+    else:
+        self.log.logging(
+            "Input",
+            "Error",
+            "ZigateRead - Decoder not found for %s" % (MsgType),
+        )
 
 def extract_messge_infos( Data):
     FrameStart = Data[:2]
@@ -262,7 +257,8 @@ def Decode0041(self, Devices, MsgData, MsgLQI):  # IEEE_addr_req
     
 def Decode0042(self, Devices, MsgData, MsgLQI):  # Node_Desc_req
     self.log.logging("Input", "Log", "Decode0042 - Node_Desc_req: %s" % MsgData)
-    # sqn + nwkid
+    #  sqn + SrcNwkId + SrcEndPoint + nwkid
+    #  01 / 0012/ 4b0021600542000000
     sqn = MsgData[:2]
     srcNwkId = MsgData[2:6]
     srcEp = MsgData[6:8]
@@ -3742,7 +3738,7 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
     MsgCmd = MsgData[14:16]
 
     updLQI(self, MsgSrcAddr, MsgLQI)
-    self.log.logging( "Input", 'Debug', "Decode8085 - MsgData: %s "  %MsgData, MsgSrcAddr)
+    self.log.logging( "Input", 'Debug', "Decode8085 - MsgData: %s"  %MsgData, MsgSrcAddr)
     self.log.logging(
         "Input",
         "Debug",
@@ -4009,7 +4005,7 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
     MsgCmd = MsgData[14:16]
     MsgPayload = MsgData[16 : len(MsgData)] if len(MsgData) > 16 else None
     updLQI(self, MsgSrcAddr, MsgLQI)
-    self.log.logging( "Input", 'Debug', "Decode8095 - MsgData: %s "  %MsgData, MsgSrcAddr)
+    self.log.logging( "Input", 'Debug', "Decode8095 - MsgData: %s"  %MsgData, MsgSrcAddr)
 
     self.log.logging(
         "Input",
@@ -4226,7 +4222,7 @@ def Decode80A7(self, Devices, MsgData, MsgLQI):
 
     TYPE_DIRECTIONS = {"00": "right", "01": "left", "02": "middle"}
     TYPE_ACTIONS = {"07": "click", "08": "hold", "09": "release"}
-    self.log.logging( "Input", 'Debug', "Decode80A7 - MsgData: %s "  %MsgData, MsgSrcAddr)
+    self.log.logging( "Input", 'Debug', "Decode80A7 - MsgData: %s"  %MsgData, MsgSrcAddr)
     self.log.logging(
         "Input",
         "Debug",
