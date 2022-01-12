@@ -498,6 +498,9 @@ def zdp_raw_leave_request(self, nwkid, ieee, rejoin="01", remove_children="00"):
 
 def zdp_raw_nwk_update_request(self, nwkid, scanchannel, scanduration, scancount="", nwkupdateid="", nwkmanageraddr=""):
     self.log.logging("zdpCommand", "Debug", "zdp_raw_nwk_update_request %s %s %s %s %s %s" % (nwkid, scanchannel, scanduration, scancount, nwkupdateid, nwkmanageraddr))
+
+    #return self.ControllerLink.sendData( "SWITCH-CHANNEL", {"Param1": 20}) 
+
     Cluster = "0038"
     sqn = get_and_inc_ZDP_SQN(self, nwkid)
     payload = sqn + scanchannel + scanduration 
@@ -532,4 +535,17 @@ def zdp_raw_nwk_update_request(self, nwkid, scanchannel, scanduration, scancount
         highpriority=False,
         ackIsDisabled=False,
     )
+    raw_APS_request(
+        self,
+        "0000",
+        "00",
+        Cluster,
+        "0000",
+        payload,
+        zigpyzqn=sqn,
+        zigate_ep="00",
+        highpriority=False,
+        ackIsDisabled=False,
+    )
+
     return sqn
