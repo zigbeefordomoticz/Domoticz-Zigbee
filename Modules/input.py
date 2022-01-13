@@ -1763,13 +1763,21 @@ def Decode8034(self, Devices, MsgData, MsgLQI):  # Complex Descriptor response
 def Decode8040(self, Devices, MsgData, MsgLQI):  # Network Address response
     # MsgLen = len(MsgData)
 
-    MsgSequenceNumber = MsgData[0:2]
+    MsgSequenceNumber = MsgData[:2]
     MsgDataStatus = MsgData[2:4]
     MsgIEEE = MsgData[4:20]
-    MsgShortAddress = MsgData[20:24]
-    MsgNumAssocDevices = MsgData[24:26]
-    MsgStartIndex = MsgData[26:28]
-    MsgDeviceList = MsgData[28 : len(MsgData)]
+    if MsgDataStatus == "00":
+        MsgShortAddress = MsgData[20:24]
+        MsgNumAssocDevices = MsgData[24:26]
+        MsgStartIndex = MsgData[26:28]
+        MsgDeviceList = MsgData[28 : len(MsgData)]
+
+    if MsgDataStatus != "00":
+        self.log.logging(
+            "Input",
+            "Log",
+            "Decode8040 - Reception of Node Descriptor for %s with status %s" %(MsgIEEE, MsgDataStatus))
+        return
 
     self.log.logging(
         "Input",
@@ -1789,8 +1797,6 @@ def Decode8040(self, Devices, MsgData, MsgLQI):  # Network Address response
         + " Device List: "
         + MsgDeviceList,
     )
-    if MsgDataStatus != "00":
-        return
 
     if MsgShortAddress in self.ListOfDevices:
         self.log.logging(
@@ -1819,13 +1825,22 @@ def Decode8040(self, Devices, MsgData, MsgLQI):  # Network Address response
 def Decode8041(self, Devices, MsgData, MsgLQI):  # IEEE Address response
     # MsgLen = len(MsgData)
 
-    MsgSequenceNumber = MsgData[0:2]
+    MsgSequenceNumber = MsgData[:2]
     MsgDataStatus = MsgData[2:4]
     MsgIEEE = MsgData[4:20]
-    MsgShortAddress = MsgData[20:24]
-    MsgNumAssocDevices = MsgData[24:26]
-    MsgStartIndex = MsgData[26:28]
-    MsgDeviceList = MsgData[28 : len(MsgData)]
+    if MsgDataStatus == "00":
+        MsgShortAddress = MsgData[20:24]
+        MsgNumAssocDevices = MsgData[24:26]
+        MsgStartIndex = MsgData[26:28]
+        MsgDeviceList = MsgData[28 : len(MsgData)]
+
+    if MsgDataStatus != "00":
+        self.log.logging(
+            "Input",
+            "Log",
+            "Decode8041 - Reception of Node Descriptor for %s with status %s" %(MsgIEEE, MsgDataStatus))
+
+        return
 
     self.log.logging(
         "Input",
@@ -1845,8 +1860,6 @@ def Decode8041(self, Devices, MsgData, MsgLQI):  # IEEE Address response
         + " Device List: "
         + MsgDeviceList,
     )
-    if MsgDataStatus != "00":
-        return
 
     if MsgShortAddress in self.ListOfDevices:
         self.log.logging(
