@@ -1875,36 +1875,36 @@ def Decode8041(self, Devices, MsgData, MsgLQI):  # IEEE Address response
 def Decode8042(self, Devices, MsgData, MsgLQI):  # Node Descriptor response
     # MsgLen = len(MsgData)
 
-    sequence = MsgData[0:2]
+    sequence = MsgData[:2]
     status = MsgData[2:4]
     addr = MsgData[4:8]
-    manufacturer = MsgData[8:12]
-    max_rx = MsgData[12:16]
-    max_tx = MsgData[16:20]
-    server_mask = MsgData[20:24]
-    descriptor_capability = MsgData[24:26]
-    mac_capability = MsgData[26:28]
-    max_buffer = MsgData[28:30]
-    bit_field = MsgData[30:34]
+    if status == "00":
+        manufacturer = MsgData[8:12]
+        max_rx = MsgData[12:16]
+        max_tx = MsgData[16:20]
+        server_mask = MsgData[20:24]
+        descriptor_capability = MsgData[24:26]
+        mac_capability = MsgData[26:28]
+        max_buffer = MsgData[28:30]
+        bit_field = MsgData[30:34]
 
+
+    if status != "00":
+        self.log.logging(
+            "Input",
+            "Log",
+            "Decode8042 - Reception of Node Descriptor for %s with status %s" %(addr, status))
+        return
+            
     self.log.logging(
         "Input",
         "Debug",
         "Decode8042 - Reception Node Descriptor for: "
-        + addr
-        + " SEQ: "
-        + sequence
-        + " Status: "
-        + status
-        + " manufacturer:"
-        + manufacturer
-        + " mac_capability: "
-        + str(mac_capability)
-        + " bit_field: "
-        + str(bit_field),
+        + addr + " SEQ: " + sequence + " Status: " + status + " manufacturer:" + manufacturer 
+        + " mac_capability: " + str(mac_capability) + " bit_field: " + str(bit_field),
         addr,
     )
-
+                
     if addr == "0000" and addr not in self.ListOfDevices:
         self.ListOfDevices[ addr ] = {}
         self.ListOfDevices[ addr ]["Ep"] = {}
