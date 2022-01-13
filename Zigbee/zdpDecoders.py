@@ -157,8 +157,7 @@ def buildframe_device_annoucement(self, SrcNwkId, SrcEndPoint, ClusterId, Payloa
     return encapsulate_plugin_frame("004d", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 
-def buildframe_node_descriptor_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
-        
+def buildframe_node_descriptor_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):    
     sqn = Payload[:2]
     status = Payload[2:4]
     nwkid = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[4:8], 16)))[0]
@@ -188,28 +187,23 @@ def buildframe_node_descriptor_response(self, SrcNwkId, SrcEndPoint, ClusterId, 
 
 def buildframe_active_endpoint_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
     # Active End Point Response
-    if len(Payload) < 10:
-        self.log.logging("zdpDecoder", "Error", "buildframe_active_endpoint_response not a Active Endpoint frame %s" % (Payload))
-        return frame
-
     sqn = Payload[:2]
     status = Payload[2:4]
     nwkid = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[4:8], 16)))[0]
-    nbEp = Payload[8:10]
-    ep_list = Payload[10:]
+    if status != "00":
+        buildPayload = sqn + status + nwkid
+    else:
+        nbEp = Payload[8:10]
+        ep_list = Payload[10:]
+        buildPayload = sqn + status + nwkid + nbEp + ep_list
 
-    self.log.logging("zdpDecoder", "Debug", "buildframe_active_endpoint_response sqn: %s status: %s nwkid: %s nbEp: %s epList: %s" % (sqn, status, nwkid, nbEp, ep_list))
-
-    buildPayload = sqn + status + nwkid + nbEp + ep_list
+    self.log.logging("zdpDecoder", "Debug", "buildframe_active_endpoint_response sqn: %s status: %s nwkid: %s nbEp: %s epList: %s" % (
+        sqn, status, nwkid, nbEp, ep_list))
     return encapsulate_plugin_frame("8045", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 
 def buildframe_simple_descriptor_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
     # Node Descriptor Response
-
-    if len(Payload) < 14:
-        self.log.logging("zdpDecoder", "Error", "buildframe_simple_descriptor_response - not a Simple Descriptor resp data: %s" % (Payload))
-        return
     sqn = Payload[:2]
     status = Payload[2:4]
     nwkid = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[4:8], 16)))[0]
@@ -244,15 +238,9 @@ def buildframe_simple_descriptor_response(self, SrcNwkId, SrcEndPoint, ClusterId
 def buildframe_bind_response_command(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
     # 2d00
     # 01/8002/001e/ff/000000/8021/0000/02/2e0b/0200009900/7e/03
-    if len(Payload) < 4:
-        self.log.logging("zdpDecoder", "Error", "buildframe_bind_response_command not a Bind Respo frame %s" % (Payload))
-        return frame
-
     sqn = Payload[:2]
     status = Payload[2:4]
-
     self.log.logging("zdpDecoder", "Debug", "buildframe_bind_response_command sqn: %s nwkid: %s Ep: %s Status %s" % (sqn, SrcNwkId, SrcEndPoint, status))
-
     buildPayload = sqn + status + "02" + SrcNwkId
     return encapsulate_plugin_frame("8030", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
