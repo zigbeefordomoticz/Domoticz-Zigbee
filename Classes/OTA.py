@@ -40,6 +40,7 @@ from Classes.LoggingManagement import LoggingManagement
 from Modules.readAttributes import ReadAttributeRequest_0000
 from Modules.zigateConsts import (ADDRESS_MODE, HEARTBEAT, MAX_LOAD_ZIGATE,
                                   ZIGATE_EP)
+from Modules.sendZigateCommand import raw_APS_request
 
 OTA_CLUSTER_ID = "0019"
 
@@ -454,6 +455,37 @@ class OTAManagement(object):
             target_ep = x["Ep"]
             force_update = x["ForceUpdate"]
             firmware_update(self, brand, file_name, target_nwkid, target_ep, force_update)
+
+    def query_next_image_request(self, srcnwkid, srcep, Sqn, Data):
+        # This is a Client -> Server (direction set to 0x00)
+        # The server takes the client’s information in the command and determines whether it has a suitable image for the particular client.
+        # The decision SHOULD be based on specific policy that is specific to the upgrade server and outside the scope of this document... 
+        # However, a recommended default policy is for the server to send back a response that indicates the availability of an image
+        # that matches the manufacturer code, image type, and the highest available file version of that image on the server. 
+        # However, the server MAY choose to up- grade or downgrade a clients’ image, as its policy dictates. 
+        # If client’s hardware version is included in the command, the server SHALL examine the value against the minimum and
+        # maximum hardware versions in- cluded in the OTA file header.
+
+        # Command: 0x01
+
+        fieldcontrol = int(Data[:2],16)
+        manufcode = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[2:6], 16)))[0]
+        imagetype = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[6:10], 16)))[0]
+        currentVersion = "%08x" % struct.unpack("I", struct.pack(">I", int(Data[10:18], 16)))[0]
+        if fieldcontrol:
+            hardwareversion = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[18:22], 16)))[0]
+
+        logging(self, "Log", "OTA Query Next Image request for %s/%s [%s] - %s %s %s %s" % (
+            srcnwkid, srcep, Sqn, fieldcontrol, manufcode, imagetype, currentVersion ))
+        
+        if "OTAClient" not in self.ListOfDevices[srcnwkid]:
+            self.ListOfDevices[srcnwkid]["OTAClient"] = {}
+        self.ListOfDevices[srcnwkid]["OTAClient"]["ManufacturerCode"] = manufcode
+        self.ListOfDevices[srcnwkid]["OTAClient"]["ImageType"] = imagetype
+        self.ListOfDevices[srcnwkid]["OTAClient"]["CurrentImageVersion"] = currentVersion 
+
+        # For now we respond NO IMAGE AVAILABLE 0x98
+        query_next_image_response( self, srcnwkid, srcep, Sqn, '98', )
 
 
 # Routines sending Data
@@ -1245,3 +1277,34 @@ def start_upgrade_infos(self, MsgSrcAddr, intMsgImageType, intMsgManufCode, MsgF
         _durss,
     )
     self.adminWidgets.updateNotificationWidget(self.Devices, _textmsg)
+
+
+    
+    
+def query_next_image_response( self, nwkid, ep, sqn, status, manufcode="", imagetype="", fileversion="", imagesize="" ):
+    # Frame type is 0x01: commands are cluster specific (not a global command).
+    # Direction: SHALL be either 0x00 (client->server) or 0x01 (server->client) depending on the com- mands.
+    # Disable default response is 0x00 for all OTA request commands sent from client to server
+    # Disable default response is 0x01 for all OTA response commands (sent from server to client) 
+
+    logging(self, "Log", "OTA Query Next Image response for %s/%s [%s] - %s" % (
+        nwkid, ep, sqn, status ))
+
+    command = '02'
+    cluster_frame = "%02x" %0b00011001
+    if status != '00':
+        payload = cluster_frame + sqn + command + status
+    else:
+        # Will be implemented
+        payload = cluster_frame + sqn + command + status + manufcode + imagetype + fileversion + imagesize
+        
+    raw_APS_request(
+        self,
+        nwkid,
+        ep,
+        OTA_CLUSTER_ID,
+        "0104",
+        payload,
+        zigate_ep=ZIGATE_EP,
+        zigpyzqn=sqn,
+    )
