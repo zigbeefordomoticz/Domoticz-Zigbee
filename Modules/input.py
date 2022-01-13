@@ -2425,8 +2425,10 @@ def Decode8048(self, Devices, MsgData, MsgLQI):  # Leave indication
     timeStamped(self, sAddr, 0x8048)
 
     if self.ListOfDevices[sAddr]["Status"] == "Removed":
-        del self.ListOfDevices[sAddr]
-        del self.IEEE2NWK[sAddr]
+        if sAddr in self.ListOfDevices:
+            del self.ListOfDevices[sAddr]
+        if MsgExtAddress in self.IEEE2NWK:
+            del self.IEEE2NWK[MsgExtAddress]
     
     elif self.ListOfDevices[sAddr]["Status"] == "inDB":
         self.ListOfDevices[sAddr]["Status"] = "Left"
