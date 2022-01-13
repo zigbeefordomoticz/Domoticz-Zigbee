@@ -17,6 +17,10 @@ def build_plugin_004D_frame_content(self, nwk, ieee, parent_nwk): #join indicati
 
     return encapsulate_plugin_frame("004d", frame_payload, "%02x" % 0x00)
 
+def build_plugin_8047_frame_content(self): # leave response
+    return encapsulate_plugin_frame("0302", "00", "%02x" % 0x00)
+
+
 def build_plugin_8048_frame_content(self, ieee): # leave indication
     
     self.log.logging("TransportPluginEncoder", "Debug", "build_plugin_8048_frame_content %s leave_indication" % ( ieee))
