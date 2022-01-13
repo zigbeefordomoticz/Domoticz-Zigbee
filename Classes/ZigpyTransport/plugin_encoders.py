@@ -7,7 +7,7 @@ import struct
 from Zigbee.encoder_tools import encapsulate_plugin_frame
 
 
-def build_plugin_004D_frame_content(self, nwk, ieee, parent_nwk): #join indication
+def build_plugin_004D_frame_content(self, nwk, ieee, parent_nwk):  # join indication
     # No endian decoding as it will go directly to Decode004d
     self.log.logging("TransportPluginEncoder", "Debug", "build_plugin_004D_frame_content %s %s %s" % (nwk, ieee, parent_nwk))
 
@@ -17,105 +17,10 @@ def build_plugin_004D_frame_content(self, nwk, ieee, parent_nwk): #join indicati
 
     return encapsulate_plugin_frame("004d", frame_payload, "%02x" % 0x00)
 
-def build_plugin_8047_frame_content(self): # leave response
-    return encapsulate_plugin_frame("0302", "00", "%02x" % 0x00)
-
-
-def build_plugin_8048_frame_content(self, ieee): # leave indication
-    
-    self.log.logging("TransportPluginEncoder", "Debug", "build_plugin_8048_frame_content %s leave_indication" % ( ieee))
-
-    ieee = "%016x" % t.uint64_t.deserialize(ieee.serialize())[0]
-    frame_payload = ieee
-    frame_payload += "00" #rejoin
-    frame_payload += "00" #remove children
-
-    return encapsulate_plugin_frame("8048", frame_payload, "%02x" % 0x00)    
-
-def build_plugin_8015_frame_content(
-    self,
-):
-    # Get list of active devices
-    pass
 
 def build_plugin_0302_frame_content(self,):
     # That correspond to PDM loaded on ZiGate (after a restart or a power Off/On)
     return encapsulate_plugin_frame("0302", "", "%02x" % 0x00)
-    
-
-def build_plugin_8009_frame_content(self, radiomodule):
-    # addr = MsgData[0:4]
-    # extaddr = MsgData[4:20]
-    # PanID = MsgData[20:24]
-    # extPanID = MsgData[24:40]
-    # Channel = MsgData[40:42]
-
-    # Get Network State
-    self.log.logging(
-        "TransportPluginEncoder",
-        "Debug",
-        "build_plugin_8009_frame_content %s %s %s %s %s" % (self.app.nwk, self.app.ieee, self.app.extended_pan_id, self.app.pan_id, self.app.channel),
-    )
-    ieee = "%016x" % t.uint64_t.deserialize(self.app.ieee.serialize())[0]
-    ext_panid = "%016x" % t.uint64_t.deserialize(self.app.extended_pan_id.serialize())[0]
-
-    frame_payload = "%04x" % self.app.nwk
-    frame_payload += ieee
-    frame_payload += "%04x" % self.app.pan_id
-    frame_payload += ext_panid
-    frame_payload += "%02x" % self.app.channel
-    return encapsulate_plugin_frame("8009", frame_payload, "00")
-
-
-def build_plugin_8010_frame_content(Branch, Major, Version):
-    # Version
-
-    return encapsulate_plugin_frame("8010", Branch + Major + Version, "00")
-
-
-def build_plugin_8011_frame_content(self, nwkid, status, lqi):
-    # MsgLen = len(MsgData)
-    # MsgStatus = MsgData[0:2]
-    # MsgSrcAddr = MsgData[2:6]
-    # MsgSEQ = MsgData[12:14] if MsgLen > 12 else None
-    lqi = lqi or 0x00
-    frame_payload = "%02x" % status + nwkid
-    return encapsulate_plugin_frame("8011", frame_payload, "%02x" % lqi)
-
-def build_plugin_8045_frame_list_controller_ep( self, ):
-    nbEp = "%02x" %len((self.app.get_device(nwk = t.NWK(0x0000)).endpoints.keys()))
-    self.log.logging( "TransportPluginEncoder", "Debug", "build_plugin_8045_frame_list_controller_ep %s %s" % ( nbEp, type(nbEp)))
-    ep_list = "".join(
-        "%02x" % ep_id
-        for ep_id in self.app.get_device(nwk=t.NWK(0x0000)).endpoints.keys()
-    )
-
-    self.log.logging(
-        "TransportPluginEncoder",
-        "Debug",
-        "build_plugin_8045_frame_list_controller_ep %s %s" % (
-            nbEp, ep_list)  )
-
-    buildPayload = "00" + "00" + "0000" + nbEp + ep_list
-    return encapsulate_plugin_frame("8045", buildPayload, "00")   
-
-def build_plugin_8043_frame_list_node_descriptor( self, epid, simpledescriptor):
-    self.log.logging( "TransportPluginEncoder", "Debug", "build_plugin_8043_frame_list_node_descriptor %s %s" % ( epid, simpledescriptor))
-
-    buildPayload = "00" + "00" + "0000" + "01"
-    buildPayload += "%02x" %epid
-    buildPayload += "%04x" %simpledescriptor.profile_id
-    buildPayload += "%04x" %simpledescriptor.device_type
-    buildPayload += "00"
-
-    buildPayload += "%02x" %len(simpledescriptor.in_clusters)
-    for in_cluster in simpledescriptor.in_clusters:
-        buildPayload += "%04x" %in_cluster
-
-    buildPayload += "%02x" %len(simpledescriptor.out_clusters)   
-    for out_clusters in simpledescriptor.out_clusters:
-        buildPayload += "%04x" %out_clusters
-    return encapsulate_plugin_frame("8043", buildPayload, "00")
 
 
 def build_plugin_8002_frame_content(
@@ -160,3 +65,101 @@ def build_plugin_8002_frame_content(
     frame_payload += DestinationAddressMode + DestinationAddress + Payload
 
     return encapsulate_plugin_frame("8002", frame_payload, "%02x" % lqi)
+
+
+def build_plugin_8009_frame_content(self, radiomodule):
+    # addr = MsgData[0:4]
+    # extaddr = MsgData[4:20]
+    # PanID = MsgData[20:24]
+    # extPanID = MsgData[24:40]
+    # Channel = MsgData[40:42]
+
+    # Get Network State
+    self.log.logging(
+        "TransportPluginEncoder",
+        "Debug",
+        "build_plugin_8009_frame_content %s %s %s %s %s" % (self.app.nwk, self.app.ieee, self.app.extended_pan_id, self.app.pan_id, self.app.channel),
+    )
+    ieee = "%016x" % t.uint64_t.deserialize(self.app.ieee.serialize())[0]
+    ext_panid = "%016x" % t.uint64_t.deserialize(self.app.extended_pan_id.serialize())[0]
+
+    frame_payload = "%04x" % self.app.nwk
+    frame_payload += ieee
+    frame_payload += "%04x" % self.app.pan_id
+    frame_payload += ext_panid
+    frame_payload += "%02x" % self.app.channel
+    return encapsulate_plugin_frame("8009", frame_payload, "00")
+
+
+def build_plugin_8010_frame_content(Branch, Major, Version):
+    # Version
+
+    return encapsulate_plugin_frame("8010", Branch + Major + Version, "00")
+
+
+def build_plugin_8011_frame_content(self, nwkid, status, lqi):
+    # MsgLen = len(MsgData)
+    # MsgStatus = MsgData[0:2]
+    # MsgSrcAddr = MsgData[2:6]
+    # MsgSEQ = MsgData[12:14] if MsgLen > 12 else None
+    lqi = lqi or 0x00
+    frame_payload = "%02x" % status + nwkid
+    return encapsulate_plugin_frame("8011", frame_payload, "%02x" % lqi)
+
+
+def build_plugin_8015_frame_content( self, ):
+    # Get list of active devices
+    pass
+
+
+def build_plugin_8043_frame_list_node_descriptor( self, epid, simpledescriptor):
+    self.log.logging( "TransportPluginEncoder", "Debug", "build_plugin_8043_frame_list_node_descriptor %s %s" % ( epid, simpledescriptor))
+
+    buildPayload = "00" + "00" + "0000" + "01"
+    buildPayload += "%02x" %epid
+    buildPayload += "%04x" %simpledescriptor.profile_id
+    buildPayload += "%04x" %simpledescriptor.device_type
+    buildPayload += "00"
+
+    buildPayload += "%02x" %len(simpledescriptor.in_clusters)
+    for in_cluster in simpledescriptor.in_clusters:
+        buildPayload += "%04x" %in_cluster
+
+    buildPayload += "%02x" %len(simpledescriptor.out_clusters)   
+    for out_clusters in simpledescriptor.out_clusters:
+        buildPayload += "%04x" %out_clusters
+    return encapsulate_plugin_frame("8043", buildPayload, "00")
+
+
+def build_plugin_8045_frame_list_controller_ep( self, ):
+    nbEp = "%02x" %len((self.app.get_device(nwk=t.NWK(0x0000)).endpoints.keys()))
+    self.log.logging( "TransportPluginEncoder", "Debug", "build_plugin_8045_frame_list_controller_ep %s %s" % ( nbEp, type(nbEp)))
+    ep_list = "".join(
+        "%02x" % ep_id
+        for ep_id in self.app.get_device(nwk=t.NWK(0x0000)).endpoints.keys()
+    )
+
+    self.log.logging(
+        "TransportPluginEncoder",
+        "Debug",
+        "build_plugin_8045_frame_list_controller_ep %s %s" % (
+            nbEp, ep_list)  )
+
+    buildPayload = "00" + "00" + "0000" + nbEp + ep_list
+    return encapsulate_plugin_frame("8045", buildPayload, "00")   
+
+
+def build_plugin_8047_frame_content(self):  # leave response
+    return encapsulate_plugin_frame("0302", "00", "%02x" % 0x00)
+
+
+def build_plugin_8048_frame_content(self, ieee):  # leave indication
+    
+    self.log.logging("TransportPluginEncoder", "Debug", "build_plugin_8048_frame_content %s leave_indication" % ( ieee))
+
+    ieee = "%016x" % t.uint64_t.deserialize(ieee.serialize())[0]
+    frame_payload = ieee
+    frame_payload += "00"  # rejoin
+    frame_payload += "00"  # remove children
+
+    return encapsulate_plugin_frame("8048", frame_payload, "%02x" % 0x00)    
