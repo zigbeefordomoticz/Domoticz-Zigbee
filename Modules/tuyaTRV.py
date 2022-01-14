@@ -188,17 +188,15 @@ def receive_preset(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKI
         checkAndStoreAttributeValue(self, NwkId, "01", "0201", "001c", "Manual")
 
 def receive_LIDLMode(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
-
     self.log.logging(
         "Tuya",
         "Debug",
-        "receive_receive_LIDLMode - Nwkid: %s/%s Dp: %s DataType: %s ManualMode: %s" % (NwkId, srcEp, dp, datatype, data),
+        "receive_receive_LIDLMode - Nwkid: %s/%s Dp: %s DataType: %s Mode: %s" % (NwkId, srcEp, dp, datatype, data),
     )
     store_tuya_attribute(self, NwkId, "LIDLMode", data)
-    
-    # Thermostat Mode Auto / As Manual mode is Off
-    self.log.logging("Tuya", "Debug", "receive_receive_LIDLMode - Nwkid: %s/%s Manual Mode Off" % (NwkId, srcEp))
-    MajDomoDevice(self, Devices, NwkId, srcEp, "0201", 2, Attribute_="001c")
+
+    self.log.logging("Tuya", "Debug", "receive_LIDLMode - Nwkid: %s/%s Mode %s" % (NwkId, srcEp, data))
+    MajDomoDevice(self, Devices, NwkId, srcEp, "0201", "%02x" %( int(data,16) + 1), Attribute_="001c")
     checkAndStoreAttributeValue(self, NwkId, "01", "0201", "001c", "%02x" %( int(data,16) + 1))
     
 def receive_manual_mode(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
@@ -681,8 +679,8 @@ def tuya_eTRV_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNW
 
 
 def tuya_lidl_set_mode(self, nwkid, mode):
-    # 1: // manual
     # 2: // away
+    # 1: // manual
     # 0: // auto
     self.log.logging("Tuya", "Debug", "tuya_lidl_set_mode - %s mode: %s" % (nwkid, mode))
     if mode not in (0x00, 0x01, 0x02, ):
