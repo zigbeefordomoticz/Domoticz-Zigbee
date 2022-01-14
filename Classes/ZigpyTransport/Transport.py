@@ -43,6 +43,8 @@ class ZigpyTransport(object):
         self.FirmwareMajorVersion = None
         self.FirmwareVersion = None
         self.running = True
+        
+        self.permit_to_join_timer = { "Timer": None, "Duration": None}
 
         # Initialise SQN Management
         sqn_init_stack(self)

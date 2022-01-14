@@ -28,8 +28,8 @@ import zigpy_znp.types as t
 import zigpy_znp.zigbee.application
 from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_8002_frame_content, build_plugin_8010_frame_content,
-    build_plugin_8015_frame_content, build_plugin_8047_frame_content,
-    build_plugin_8048_frame_content)
+    build_plugin_8014_frame_content, build_plugin_8015_frame_content,
+    build_plugin_8047_frame_content, build_plugin_8048_frame_content)
 from zigpy.zcl import clusters
 from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
                                  SCHEMA_DEVICE)
@@ -43,10 +43,11 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
     async def _load_db(self) -> None:
         logging.debug("_load_db")
 
-    async def startup(self, callBackHandleMessage, callBackGetDevice=None, auto_form=False, force_form=False, log=None):
+    async def startup(self, callBackHandleMessage, callBackGetDevice=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
         # If set to != 0 (default) extended PanId will be use when forming the network.
         # If set to !=0 (default) channel will be use when formin the network
         self.log = log
+        self.permit_to_join_timer = permit_to_join_timer
         self.callBackFunction = callBackHandleMessage
         self.callBackGetDevice = callBackGetDevice
         self.znp_config[conf.CONF_MAX_CONCURRENT_REQUESTS] = 2
@@ -55,6 +56,10 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         self._znp.callback_for_response(
             c.ZDO.MgmtLeaveRsp.Callback(partial=True),
             self.on_zdo_mgmt_leave_rsp,
+        )
+        self._znp.callback_for_response(
+            c.ZDO.MgmtPermitJoinRsp.Callback(partial=True),
+            self.on_zdo_mgmt_permitjoin_rsp,
         )
 
         # Populate and get the list of active devices.
@@ -87,6 +92,11 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         plugin_frame = build_plugin_8047_frame_content (self)
         self.callBackFunction(plugin_frame)
 
+    async def on_zdo_mgmt_permitjoin_rsp(self, msg: c.ZDO.MgmtPermitJoinRsp.Callback) -> None:
+        self.log.logging("TransportZigpy", "Debug", "AppZnp - on_zdo_mgmt_permitjoin_rsp nwk:%s " % ( str( msg)))
+        self.callBackFunction(build_plugin_8014_frame_content (self, msg.Src))
+
+        
     async def _register_endpoints(self) -> None:
         LIST_ENDPOINT = [0x0b , 0x0a , 0x6e, 0x15, 0x08, 0x03]  # WISER, ORVIBO , TERNCY, KONKE, LIVOLO, WISER2
         await super()._register_endpoints()
@@ -176,6 +186,11 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         dst_ep: int,
         message: bytes,
     ) -> None:
+        
+        if cluster == 0x8036:
+            # This has been handle via on_zdo_mgmt_permitjoin_rsp() don't know why we get it here
+            return
+        
         if sender.nwk == 0x0000:
             self.log.logging("TransportZigpy", "Debug", "handle_message from Controller Sender: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
                 str(sender.nwk), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8")))

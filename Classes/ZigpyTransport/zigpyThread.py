@@ -85,10 +85,18 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channe
     if self.pluginParameters["Mode3"] == "True":
         self.log.logging("TransportZigpy", "Status", "Form a New Network with Channel: %s(0x%02x) ExtendedPanId: 0x%016x" %(
             set_channel, set_channel, set_extendedPanId ))
-        await self.app.startup(self.receiveData, callBackGetDevice=self.ZigpyGetDevice, auto_form=True, force_form=True, log=self.log)
         self.ErasePDMDone = True
+        new_network = True
     else:
-        await self.app.startup(self.receiveData, callBackGetDevice=self.ZigpyGetDevice, auto_form=True, log=self.log)
+        new_network = False
+
+    await self.app.startup(
+        self.receiveData, 
+        callBackGetDevice=self.ZigpyGetDevice, 
+        auto_form=True, 
+        force_form=new_network,
+        log=self.log, 
+        permit_to_join_timer=self.permit_to_join_timer)
 
     # Send Network information to plugin, in order to poplulate various objetcs
     self.forwarder_queue.put(build_plugin_8009_frame_content(self, radiomodule))
@@ -105,10 +113,6 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channe
 
     self.log.logging("TransportZigpy", "Debug", "Controller Model %s" % self.app.get_device(nwk=t.NWK(0x0000)).model)
     self.log.logging("TransportZigpy", "Debug", "Controller Manufacturer %s" % self.app.get_device(nwk=t.NWK(0x0000)).manufacturer)
-
-
-
-
 
 
     # Let send a 0302 to simulate an Off/on
@@ -200,7 +204,10 @@ async def dispatch_command(self, data):
         duration = data["datas"]["Duration"]
         if duration == 0xFF:
             duration = 0xFE
+        self.permit_to_join_timer["Timer"] = time.time()
+        self.permit_to_join_timer["Duration"] = duration
         await self.app.permit(time_s=duration)
+        
     elif data["cmd"] == "SET-TX-POWER":
         await self.app.set_tx_power(data["datas"]["Param1"])
     elif data["cmd"] == "SET-LED":
