@@ -49,7 +49,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         self.log = log
         self.callBackFunction = callBackHandleMessage
         self.callBackGetDevice = callBackGetDevice
-        self.znp_config[conf.CONF_MAX_CONCURRENT_REQUESTS] = 1
+        self.znp_config[conf.CONF_MAX_CONCURRENT_REQUESTS] = 2
 
         await super().startup(auto_form=auto_form,force_form=force_form)
         self._znp.callback_for_response(

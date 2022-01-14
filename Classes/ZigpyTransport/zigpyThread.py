@@ -221,41 +221,10 @@ async def dispatch_command(self, data):
         await self.app.load_network_info()
         self.forwarder_queue.put(build_plugin_8009_frame_content(self, self._radiomodule))
 
-    elif data["cmd"] == "SWITCH-CHANNEL":
-
-        new_channel = data["datas"]["Param1"]
-
-        await self.app.request(
-            request=self.app.ZDO.MgmtNWKUpdateReq.Req(
-                Dst=0x0000,
-                DstAddrMode=t.AddrMode.NWK,
-                Channels=t.Channels.from_channel_list([new_channel]),
-                ScanDuration=0xFE,  # switch channels
-                ScanCount=0,
-                NwkManagerAddr=0x0000,
-            ),
-            RspStatus=t.Status.SUCCESS,
-        )
-
-        # The above command takes a few seconds to work
-        #while self.channel != new_channel:
-        #    await self.load_network_info()
-        #    await asyncio.sleep(1)
-
-          
-        #rsp = await app.get_device(nwk=0x0000).zdo.Mgmt_NWK_Update_req(
-        #    zdo_t.NwkUpdate(
-        #        ScanChannels=t.Channels.ALL_CHANNELS,
-        #        ScanDuration=0x02,
-        #        ScanCount=1,
-        #    )
-        #)
-
-
         
     elif data["cmd"] == "RAW-COMMAND":
         self.log.logging( "TransportZigpy", "Debug", "RAW-COMMAND: %s" %properyly_display_data( data["datas"]) )
-        await process_raw_command(self, data["datas"], AckIsDisable=data["ACKIsDisable"], Sqn=data["Sqn"])
+        asyncio.create_task( process_raw_command(self, data["datas"], AckIsDisable=data["ACKIsDisable"], Sqn=data["Sqn"]) )
 
 async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
     # data = {
