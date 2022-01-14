@@ -14,9 +14,9 @@ Zigbee for Domoticz a plugin for [Domoticz home automation software](https://www
 
 This plugin is an evolution of the mature Zigate plugin for Domoticz, which will continue to manage and handle Zigate in native mode, while Texas Instruments's will be handle through unified communication libraries from the [zigpy](https://github.com/zigpy/zigpy) project.
 
-## First Installation
+## Plugin first installation or first time on release 6.xxx
 
-The first time you have to install the plugin via the `git clone` command
+The first time you have to install the plugin via the `git clone` command, or you have been move to the release 6.x.
 
 * Go in your Domoticz directory using a command line and open the plugins directory.
   Usually you should be under domoticz/plugins
@@ -36,7 +36,6 @@ The first time you have to install the plugin via the `git clone` command
 
   `sudo pip3 install voluptuous pycrypto aiosqlite crccheck pyusb attr attrs aiohttp pyserial-asyncio`
 
-
 [More information available here](https://github.com/pipiche38/Domoticz-Zigate-Wiki/blob/master/en-eng/Plugin_Installation.md)
 
 ## Plugin update
@@ -53,7 +52,7 @@ The first time you have to install the plugin via the `git clone` command
 The plugin requires Domoticz 2020 or above. We strongly recommend 2021.1 or above
 If you cannot be on Domoticz 2020.x or above, please use the 'stable' branch which is the only one compatible with the oldest Domoticz version
 
-### Tested Hardware Zigbee adapters/dongles/sticks/keys 
+### Tested Hardware Zigbee adapters/dongles/sticks/keys
 
 The plugin was originally developed for the [Zigate](https://zigate.fr) Coordinators in close relationship with [Zigate](https://zigate.fr) manufactuer.
 
