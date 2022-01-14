@@ -1,8 +1,11 @@
+# coding: utf-8 -*-
+#
+# Author: pipiche38
+#
+
 import binascii
 
 import zigpy.types as t
-import struct
-
 # import Domoticz
 from Zigbee.encoder_tools import encapsulate_plugin_frame
 
@@ -107,9 +110,18 @@ def build_plugin_8011_frame_content(self, nwkid, status, lqi):
     return encapsulate_plugin_frame("8011", frame_payload, "%02x" % lqi)
 
 
-def build_plugin_8015_frame_content( self, ):
+def build_plugin_8015_frame_content( self, network_info):
     # Get list of active devices
-    pass
+    self.log.logging( "TransportPluginEncoder", "Debug", "build_plugin_8015_frame_content key_table %s" %str(network_info))
+    buildPayload = ""
+    id = 0
+    for ieee, nwk in network_info.nwk_addresses.items():
+            self.log.logging( "TransportPluginEncoder", "Debug", "build_plugin_8015_frame_content nwk_addresses : ieee: %s nwk_addr: %s" %(
+                ieee.serialize()[::-1].hex(),
+                nwk.serialize()[::-1].hex(),
+            ))
+            buildPayload += "%02x" %id + "%04x" %int(nwk.serialize()[::-1].hex(),16 ) + "%016x" %int( ieee.serialize()[::-1].hex(), 16) + "ff" + "00"
+    return encapsulate_plugin_frame("8015", buildPayload, "00")
 
 
 def build_plugin_8043_frame_list_node_descriptor( self, epid, simpledescriptor):

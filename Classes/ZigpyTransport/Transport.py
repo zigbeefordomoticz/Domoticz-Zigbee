@@ -1,3 +1,8 @@
+# coding: utf-8 -*-
+#
+# Author: pipiche38
+#
+
 import json
 import time
 from queue import PriorityQueue, Queue

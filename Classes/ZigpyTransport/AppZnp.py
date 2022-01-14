@@ -1,8 +1,13 @@
+#!/usr/bin/env python3
+# coding: utf-8 -*-
+#
+# Author: badz & pipiche38
+#
+
 import binascii
 import logging
 from typing import Any, Optional
 
-import Domoticz
 import zigpy.appdb
 import zigpy.config
 import zigpy.device
@@ -12,19 +17,20 @@ import zigpy.ota
 import zigpy.quirks
 import zigpy.state
 import zigpy.topology
-import zigpy_znp.types as t
 import zigpy.util
 import zigpy.zcl
 import zigpy.zdo
 import zigpy.zdo.types as zdo_types
+import zigpy_znp.commands as c
 import zigpy_znp.commands.util
 import zigpy_znp.config as conf
-import zigpy_znp.commands as c
+import zigpy_znp.types as t
 import zigpy_znp.zigbee.application
-
-from zigpy.zcl import clusters
 from Classes.ZigpyTransport.plugin_encoders import (
-    build_plugin_8002_frame_content, build_plugin_8010_frame_content, build_plugin_8048_frame_content, build_plugin_8047_frame_content)
+    build_plugin_8002_frame_content, build_plugin_8010_frame_content,
+    build_plugin_8015_frame_content, build_plugin_8047_frame_content,
+    build_plugin_8048_frame_content)
+from zigpy.zcl import clusters
 from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
                                  SCHEMA_DEVICE)
 
@@ -51,8 +57,13 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
             self.on_zdo_mgmt_leave_rsp,
         )
 
-        # Trigger Version payload to plugin
+        # Populate and get the list of active devices.
+        # This will allow the plugin if needed to update the IEEE -> NwkId
+        await self.load_network_info( load_devices=True )
+        network_info = self._znp.network_info
+        self.callBackFunction(build_plugin_8015_frame_content( self, network_info))
         
+        # Trigger Version payload to plugin
         znp_model = self.get_device(nwk=t.NWK(0x0000)).model
         znp_manuf = self.get_device(nwk=t.NWK(0x0000)).manufacturer
         ZNP_330 = "CC1352/CC2652, Z-Stack 3.30+"
@@ -70,7 +81,6 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         FirmwareMajorVersion = "%02d" %int(znp_model[ znp_model.find("build") + 8 : -5 ])
         FirmwareVersion = "%04d" %int(znp_model[ znp_model.find("build") + 10: -1])
         self.callBackFunction(build_plugin_8010_frame_content(FirmwareBranch, FirmwareMajorVersion, FirmwareVersion))
-
 
     async def on_zdo_mgmt_leave_rsp(self, msg: c.ZDO.MgmtLeaveRsp.Callback) -> None:
         self.log.logging("TransportZigpy", "Debug", "AppZnp - on_zdo_mgmt_leave_rsp nwk:%s " % (msg.Src ))

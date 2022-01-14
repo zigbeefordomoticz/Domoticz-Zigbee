@@ -1,8 +1,15 @@
-from time import sleep
+#!/usr/bin/env python3
+# coding: utf-8 -*-
+#
+# Author: pipiche38
+#
+
 import queue
 from threading import Thread
-from Classes.ZigpyTransport.tools import handle_thread_error
+from time import sleep
+
 from Classes.ZigpyTransport.instrumentation import time_spent_forwarder
+from Classes.ZigpyTransport.tools import handle_thread_error
 
 
 def start_forwarder_thread(self):

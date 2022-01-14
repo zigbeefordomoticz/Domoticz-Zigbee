@@ -1,7 +1,11 @@
+# coding: utf-8 -*-
+#
+# Author: pipiche38
+#
+
 import asyncio
 import binascii
 import json
-import logging
 import queue
 import time
 import traceback
@@ -20,7 +24,6 @@ import zigpy.zcl
 import zigpy.zdo
 import zigpy.zdo.types as zdo_types
 import zigpy_znp.config as conf
-
 from Classes.ZigpyTransport.AppZigate import App_zigate
 from Classes.ZigpyTransport.AppZnp import App_znp
 from Classes.ZigpyTransport.nativeCommands import (NATIVE_COMMANDS_MAPPING,
@@ -32,7 +35,6 @@ from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_8045_frame_list_controller_ep)
 from Classes.ZigpyTransport.tools import handle_thread_error
 from zigpy.exceptions import DeliveryError, InvalidResponse
-
 from zigpy_znp.exceptions import (CommandNotRecognized, InvalidCommandResponse,
                                   InvalidFrame)
 
@@ -103,6 +105,12 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channe
 
     self.log.logging("TransportZigpy", "Debug", "Controller Model %s" % self.app.get_device(nwk=t.NWK(0x0000)).model)
     self.log.logging("TransportZigpy", "Debug", "Controller Manufacturer %s" % self.app.get_device(nwk=t.NWK(0x0000)).manufacturer)
+
+
+
+
+
+
     # Let send a 0302 to simulate an Off/on
     self.forwarder_queue.put(build_plugin_0302_frame_content(self,))
 

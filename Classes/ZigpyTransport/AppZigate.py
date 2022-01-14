@@ -1,3 +1,9 @@
+#!/usr/bin/env python3
+# coding: utf-8 -*-
+#
+# Author: badz & pipiche38
+#
+
 import binascii
 import datetime
 import logging

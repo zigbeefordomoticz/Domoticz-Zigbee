@@ -1,3 +1,8 @@
+# coding: utf-8 -*-
+#
+# Author: pipiche38
+#
+
 import time
 
 instrument_time = True

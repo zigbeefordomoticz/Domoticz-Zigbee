@@ -1,4 +1,9 @@
 
+# coding: utf-8 -*-
+#
+# Author: pipiche38
+#
+
 import traceback
 
 #def handle_thread_error(self, e, data=""):
