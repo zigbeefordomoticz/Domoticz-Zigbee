@@ -390,6 +390,7 @@ async def _limit_concurrency(self, destination):
     Mainly a thin wrapper around `asyncio.Semaphore` that logs when it has to wait.
     """
     _ieee = str(destination.ieee)
+    _nwkid = destination.nwk.serialize()[::-1].hex()
 
     if _ieee not in self._concurrent_requests_semaphores_list:
         self._concurrent_requests_semaphores_list[_ieee] = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS_PER_DEVICE)
@@ -409,8 +410,8 @@ async def _limit_concurrency(self, destination):
         self.log.logging(
             "TransportZigpy",
             "Debug",
-            "Max concurrency reached, delaying requests (%s enqueued)" %
-            self._currently_waiting_requests_list[_ieee],
+            "Max concurrency reached for %s, delaying requests (%s enqueued)" %
+            (_nwkid,self._currently_waiting_requests_list[_ieee]), _nwkid,
         )
 
     try:
@@ -420,8 +421,9 @@ async def _limit_concurrency(self, destination):
                     "TransportZigpy",
                     "Debug",
                     "Previously delayed request is now running, "
-                    "delayed by %0.2f seconds"%(
-                    time.time() - start_time),
+                    "delayed by %0.2f seconds for %s"%(
+                    (time.time() - start_time),_nwkid),
+                  _nwkid,
                 ) 
             yield
     finally:
