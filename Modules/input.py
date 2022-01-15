@@ -1071,30 +1071,24 @@ def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
         MsgData, self.FirmwareBranch, self.FirmwareMajorVersion, self.FirmwareVersion))
     
     if self.FirmwareBranch in FIRMWARE_BRANCH:
-        if int(self.FirmwareBranch,16) >= 0x20:
+        if int(self.FirmwareBranch) == 99:
+            self.log.logging("Input", "Error", "Untested Zigbee adapater model, please report to the Zigbee for Domoticz team")
+        if int(self.FirmwareBranch) >= 20:
             # Zigpy-Znp
-            if self.FirmwareBranch == "20":
-                self.log.logging("Input", "Status", "Texas Instrument ZNP CC1352/CC2652, Z-Stack 3.30+")
-                self.ControllerData["Controller firmware"] = "Texas Instrument ZNP CC1352/CC2652, Z-Stack 3.30+"
-                # the Build date is coded into "20" + "%02d" %int(FirmwareMajorVersion,16) + "%04d" %int(FirmwareVersion,16)
-                self.ControllerData["Firmware Version"] = "Zigpy-znp, build(20%02d%04d" %( int(self.FirmwareMajorVersion,16), int(self.FirmwareVersion,16))
+            self.log.logging("Input", "Status", "%s" %FIRMWARE_BRANCH[ self.FirmwareBranch ])
+            self.ControllerData["Controller firmware"] = FIRMWARE_BRANCH[ self.FirmwareBranch ]
+            # the Build date is coded into "20" + "%02d" %int(FirmwareMajorVersion,16) + "%04d" %int(FirmwareVersion,16)
+            self.ControllerData["Firmware Version"] = "Zigpy-znp, build(20%02d%04d" %( int(self.FirmwareMajorVersion,16), int(self.FirmwareVersion,16))
 
-            elif self.FirmwareBranch == "21":
-                self.log.logging("Input", "Status", "Texas Instrument CC2531, Z-Stack 3.0.x")
-                self.ControllerData["Controller firmware"] = "Texas Instrument CC2531, Z-Stack 3.0.x"
-                # the Build date is coded into "20" + "%02d" %int(FirmwareMajorVersion,16) + "%04d" %int(FirmwareVersion,16)
-                self.ControllerData["Firmware Version"] = "Zigpy-znp, build(20%02d%04d" %( int(self.FirmwareMajorVersion,16), int(self.FirmwareVersion,16))
-
-            else:
-                self.log.logging("Input", "Error", "Un tested Zigbee adapater model, please report to the Zigbee for Domoticz team")
-        
         # Zigate Native version
         elif self.FirmwareMajorVersion == "03":
             self.log.logging("Input", "Status", "ZiGate Classic PDM (legacy)")
             self.ZiGateModel = 1
+            
         elif self.FirmwareMajorVersion == "04":
             self.log.logging("Input", "Status", "ZiGate Classic PDM (OptiPDM)")
             self.ZiGateModel = 1
+            
         elif self.FirmwareMajorVersion == "05":
             self.log.logging("Input", "Status", "ZiGate+ (V2)")
             self.ZiGateModel = 2
