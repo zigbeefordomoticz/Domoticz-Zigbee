@@ -998,7 +998,7 @@ def tuya_setpoint(self, nwkid, setpoint_value):
             setpoint_value = setpoint_value // 100
             
         elif model_name in [ "TS0601-_TZE200_chyvmhay", ]:
-            setpoint_value = (setpoint_value // 10 ) * 2
+            setpoint_value = (setpoint_value // 100 ) * 2
     
         else:
             setpoint_value = setpoint_value // 10
