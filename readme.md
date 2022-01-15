@@ -14,6 +14,14 @@ Zigbee for Domoticz a plugin for [Domoticz home automation software](https://www
 
 This plugin is an evolution of the mature Zigate plugin for Domoticz, which will continue to manage and handle Zigate in native mode, while Texas Instruments's will be handle through unified communication libraries from the [zigpy](https://github.com/zigpy/zigpy) project.
 
+## Pre requisities
+
+* Domoticz 2021.1 or above
+* You need Python 3.7 at least
+* Zigpy layers will requires additional python3 modules to be install:
+
+  `sudo pip3 install voluptuous pycrypto aiosqlite crccheck pyusb attr attrs aiohttp pyserial-asyncio`
+
 ## Plugin first installation or first time on release 6.xxx
 
 The first time you have to install the plugin via the `git clone` command, or you have been move to the release 6.x.
@@ -32,10 +40,6 @@ The first time you have to install the plugin via the `git clone` command, or yo
 
 * Restart Domoticz.
 
-* Zigpy layers will requires additional python3 modules to be install:
-
-  `sudo pip3 install voluptuous pycrypto aiosqlite crccheck pyusb attr attrs aiohttp pyserial-asyncio`
-
 [More information available here](https://github.com/pipiche38/Domoticz-Zigate-Wiki/blob/master/en-eng/Plugin_Installation.md)
 
 ## Plugin update
@@ -44,13 +48,6 @@ The first time you have to install the plugin via the `git clone` command, or yo
   Usally you should be under domoticz/plugins/Domoticz-Zigbee
   
 * run: `git pull --recurse-submodules`
-
-## Compatibility WARNINGS
-
-### REQUIRES Domoticz 2020 or above
-
-The plugin requires Domoticz 2020 or above. We strongly recommend 2021.1 or above
-If you cannot be on Domoticz 2020.x or above, please use the 'stable' branch which is the only one compatible with the oldest Domoticz version
 
 ### Tested Hardware Zigbee adapters/dongles/sticks/keys
 
@@ -81,11 +78,12 @@ Your first place to get support is via the Forums.
 
 In order to provide stability and also provide more recent development, Zigbee for Domoticz plugin has the following channels
 
-* **stable6**: Support the up coming evolutions and the non-ZiGate controllers via the zigpy layer.
-* **beta**: We can open the beta channel to provide early version and to stabilize the version priori to be move to the stable channel
 * **stable5**: Support ALL ZiGate models known today and requires Domoticz 2020.x at minima
-* ***stable***: latest version 4.11. - Feb. 2021) deprecated
-* ***master***: latest version 3.0. - Sept. 2018) deprecated
+* **beta**: We can open the beta channel to provide early version and to stabilize the version priori to be move to the stable channel
+
+* Not supported
+  * ***stable***: latest version 4.11. - Feb. 2021) deprecated
+  * ***master***: latest version 3.0. - Sept. 2018) deprecated
 
 ## How to switch from one channel to the other
 
