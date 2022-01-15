@@ -360,6 +360,7 @@ def log_exception(self, exception, error, cmd, data):
         "%s / %s: request() Not able to execute the zigpy command: %s data: %s" % (exception, error, cmd, properyly_display_data( data)), context=context)
 
 async def transport_request(self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=True, use_ieee=False):
+    _nwkid = destination.nwk.serialize()[::-1].hex()
     try:
         async with _limit_concurrency(self, destination):    
             result, msg = await self.app.request(destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply, use_ieee)
@@ -367,18 +368,18 @@ async def transport_request(self, destination, Profile, Cluster, sEp, dEp, seque
     except DeliveryError as e:
         # This could be relevant to APS NACK after retry
         # Request failed after 5 attempts: <Status.MAC_NO_ACK: 233>  
-        self.log.logging( "TransportZigpy", "Debug", "process_raw_command - DeliveryError : %s" %e)
+        self.log.logging( "TransportZigpy", "Debug", "process_raw_command - DeliveryError : %s" %e, _nwkid)
         msg = "%s" %e
         result = 0xb6
         
     if expect_reply:
-        push_APS_ACK_NACKto_plugin(self, destination.nwk.serialize()[::-1].hex(), result, destination.lqi)
+        push_APS_ACK_NACKto_plugin(self, _nwkid, result, destination.lqi)
 
     self.log.logging(
         "TransportZigpy",
         "Debug",
-        "ZigyTransport: process_raw_command completed NwkId: %s result: %s msg: %s" % (destination.nwk, result, msg),
-        str(destination.nwk),
+        "ZigyTransport: process_raw_command completed NwkId: %s result: %s msg: %s" % (_nwkid, result, msg),
+        _nwkid,
     )
     
 
