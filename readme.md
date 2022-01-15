@@ -27,6 +27,8 @@ The first time you have to install the plugin via the `git clone` command, or yo
 * Go in the Zigbee for Domoticz folder ( Domoticz-Zigbee ).
   Usally you should be under domoticz/plugins/Domoticz-Zigbee
 
+* Move to the zigpy branche `git checkout zigpy`
+
 * run: `git submodule update --init --recursive`
   Finally, make the plugin.py file executable `chmod +x Domoticz-Zigate/plugin.py`
 
