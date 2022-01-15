@@ -400,5 +400,26 @@ def buildframe_permit_join_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payl
 
 
 def buildframe_management_nwk_update_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
-    self.log.logging("zdpDecoder", "Error", "buildframe_management_nwk_update_response NOT IMPLEMENTED YET")
-    return frame
+    self.log.logging("zdpDecoder", "Error", "buildframe_management_nwk_update_response %s %s" %( SrcNwkId, Payload))
+
+    sqn = Payload[:2]
+    status = Payload[2:4]
+    scanned_channels = "%08x" % struct.unpack(">I", struct.pack("I", int(Payload[4:12], 16)))[0] 
+    TotalTransmissions = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[12:16], 16)))[0]
+    MsgTransmissionFailures = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[16:20], 16)))[0]
+    ScannedChannelsListCount = Payload[16:18]
+    EnergyValues = Payload[18:]
+
+    self.log.logging("zdpDecoder", "Error", "buildframe_management_nwk_update_response %s status: %s" %( SrcNwkId, status))
+    self.log.logging("zdpDecoder", "Error", "buildframe_management_nwk_update_response %s scanned_channels: %s" %( SrcNwkId, scanned_channels))
+    self.log.logging("zdpDecoder", "Error", "buildframe_management_nwk_update_response %s TotalTransmissions: %s" %( SrcNwkId, TotalTransmissions))
+    self.log.logging("zdpDecoder", "Error", "buildframe_management_nwk_update_response %s MsgTransmissionFailures: %s" %( SrcNwkId, MsgTransmissionFailures))
+    self.log.logging("zdpDecoder", "Error", "buildframe_management_nwk_update_response %s ScannedChannelsListCount: %s" %( SrcNwkId, ScannedChannelsListCount))
+    self.log.logging("zdpDecoder", "Error", "buildframe_management_nwk_update_response %s EnergyValues: %s" %( SrcNwkId, EnergyValues))
+    
+    if status != "00":
+        buildPayload = sqn + status
+    else:
+        buildPayload = sqn + status + TotalTransmissions + MsgTransmissionFailures + scanned_channels + ScannedChannelsListCount + EnergyValues + SrcNwkId
+
+    return encapsulate_plugin_frame("804A", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
