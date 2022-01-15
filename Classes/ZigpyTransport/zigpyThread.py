@@ -206,6 +206,8 @@ async def dispatch_command(self, data):
         duration = data["datas"]["Duration"]
         if duration == 0xFF:
             duration = 0xFE
+        self.permit_to_join_timer["Timer"] = time.time()
+        self.permit_to_join_timer["Duration"] = duration
         await self.app.permit(time_s=duration)
     elif data["cmd"] == "SET-TX-POWER":
         await self.app.set_tx_power(data["datas"]["Param1"])
