@@ -9,6 +9,7 @@ import json
 import queue
 import time
 import traceback
+import contextlib
 from typing import Any, Optional
 
 import zigpy.device
@@ -38,6 +39,7 @@ from zigpy.exceptions import DeliveryError, InvalidResponse
 from zigpy_znp.exceptions import (CommandNotRecognized, InvalidCommandResponse,
                                   InvalidFrame)
 
+MAX_CONCURRENT_REQUESTS_PER_DEVICE = 1
 
 def start_zigpy_thread(self):
     self.log.logging("TransportZigpy", "Debug", "start_zigpy_thread - Starting zigpy thread")
@@ -204,10 +206,7 @@ async def dispatch_command(self, data):
         duration = data["datas"]["Duration"]
         if duration == 0xFF:
             duration = 0xFE
-        self.permit_to_join_timer["Timer"] = time.time()
-        self.permit_to_join_timer["Duration"] = duration
         await self.app.permit(time_s=duration)
-        
     elif data["cmd"] == "SET-TX-POWER":
         await self.app.set_tx_power(data["datas"]["Param1"])
     elif data["cmd"] == "SET-LED":
@@ -231,7 +230,7 @@ async def dispatch_command(self, data):
         
     elif data["cmd"] == "RAW-COMMAND":
         self.log.logging( "TransportZigpy", "Debug", "RAW-COMMAND: %s" %properyly_display_data( data["datas"]) )
-        asyncio.create_task( process_raw_command(self, data["datas"], AckIsDisable=data["ACKIsDisable"], Sqn=data["Sqn"]) )
+        await process_raw_command(self, data["datas"], AckIsDisable=data["ACKIsDisable"], Sqn=data["Sqn"])
 
 async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
     # data = {
@@ -251,8 +250,9 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
     payload = bytes.fromhex(data["payload"])
     sequence = Sqn or self.app.get_sequence()
     addressmode = data["AddressMode"]
+    result = None
 
-    self.statistics._sent += 1
+    
     self.log.logging(
         "TransportZigpy",
         "Debug",
@@ -283,7 +283,7 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
         self.log.logging( "TransportZigpy", "Debug", "process_raw_command  call request destination: %s Profile: %s Cluster: %s sEp: %s dEp: %s Seq: %s Payload: %s" %(
             destination, Profile, Cluster, sEp, dEp, sequence, payload))
         try:
-            result, msg = await self.app.request(destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False)
+             asyncio.create_task(transport_request(self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False))
         except DeliveryError as e:
             # This could be relevant to APS NACK after retry
             # Request failed after 5 attempts: <Status.MAC_NO_ACK: 233>  
@@ -291,23 +291,26 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
             msg = "%s" %e
             result = 0xb6
 
-        if not AckIsDisable:
-            push_APS_ACK_NACKto_plugin(self, NwkId, result, destination.lqi)
+        # if result and not AckIsDisable:
+        #     push_APS_ACK_NACKto_plugin(self, NwkId, result, destination.lqi)
 
     elif addressmode in (0x03, 0x08):
         # Nwkid is in fact an IEEE
         destination = self.app.get_device(nwk=t.NWK(int(NwkId,16)))
         self.log.logging( "TransportZigpy", "Debug", "process_raw_command  call request destination: %s" %destination)
-        result, msg = await self.app.request(destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False)
-
-    self.log.logging(
-        "TransportZigpy",
-        "Debug",
-        "ZigyTransport: process_raw_command completed NwkId: %s result: %s msg: %s" % (destination, result, msg),
-    )
-   
-    # Slow down for now
-    await asyncio.sleep(0.500)
+        asyncio.create_task(transport_request(self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False))
+        
+        # if result and not AckIsDisable:
+        #     push_APS_ACK_NACKto_plugin(self, NwkId, result, destination.lqi)
+        
+    if result:
+        self.log.logging(
+            "TransportZigpy",
+            "Debug",
+            "ZigyTransport: process_raw_command completed NwkId: %s result: %s msg: %s" % (destination, result, msg),
+        )
+    
+    self.statistics._sent += 1
 
 def push_APS_ACK_NACKto_plugin(self, nwkid, result, lqi):
     # Looks like Zigate return an int, while ZNP returns a status.type
@@ -355,3 +358,71 @@ def log_exception(self, exception, error, cmd, data):
         "TransportZigpy",
         "Error",
         "%s / %s: request() Not able to execute the zigpy command: %s data: %s" % (exception, error, cmd, properyly_display_data( data)), context=context)
+
+async def transport_request(self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=True, use_ieee=False):
+    try:
+        async with _limit_concurrency(self, destination):    
+            result, msg = await self.app.request(destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply, use_ieee)
+
+    except DeliveryError as e:
+        # This could be relevant to APS NACK after retry
+        # Request failed after 5 attempts: <Status.MAC_NO_ACK: 233>  
+        self.log.logging( "TransportZigpy", "Debug", "process_raw_command - DeliveryError : %s" %e)
+        msg = "%s" %e
+        result = 0xb6
+        
+    if expect_reply:
+        push_APS_ACK_NACKto_plugin(self, destination.nwk.serialize()[::-1].hex(), result, destination.lqi)
+
+    self.log.logging(
+        "TransportZigpy",
+        "Debug",
+        "ZigyTransport: process_raw_command completed NwkId: %s result: %s msg: %s" % (destination.nwk, result, msg),
+        str(destination.nwk),
+    )
+    
+
+@contextlib.asynccontextmanager
+async def _limit_concurrency(self, destination):
+    """
+    Async context manager that prevents devices from being overwhelmed by requests.
+    Mainly a thin wrapper around `asyncio.Semaphore` that logs when it has to wait.
+    """
+    _ieee = str(destination.ieee)
+
+    if _ieee not in self._concurrent_requests_semaphores_list:
+        self._concurrent_requests_semaphores_list[_ieee] = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS_PER_DEVICE)
+        self._currently_waiting_requests_list[_ieee] = 0
+    
+    # self.log.logging(
+    #         "TransportZigpy",
+    #         "Debug",
+    #         " limit_concurrency: %s" %repr(self._concurrent_requests_semaphores_list)
+    #         )
+
+    start_time = time.time()
+    was_locked = self._concurrent_requests_semaphores_list[_ieee].locked()
+
+    if was_locked:
+        self._currently_waiting_requests_list[_ieee] += 1
+        self.log.logging(
+            "TransportZigpy",
+            "Debug",
+            "Max concurrency reached, delaying requests (%s enqueued)" %
+            self._currently_waiting_requests_list[_ieee],
+        )
+
+    try:
+        async with self._concurrent_requests_semaphores_list[_ieee]:
+            if was_locked:
+                self.log.logging(
+                    "TransportZigpy",
+                    "Debug",
+                    "Previously delayed request is now running, "
+                    "delayed by %0.2f seconds"%(
+                    time.time() - start_time),
+                ) 
+            yield
+    finally:
+        if was_locked:
+            self._currently_waiting_requests_list[_ieee] -= 1
