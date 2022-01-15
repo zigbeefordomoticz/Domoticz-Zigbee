@@ -46,6 +46,10 @@ class ZigpyTransport(object):
         
         self.permit_to_join_timer = { "Timer": None, "Duration": None}
 
+        # Semaphore per devices
+        self._concurrent_requests_semaphores_list = {}
+        self._currently_waiting_requests_list = {}  
+
         # Initialise SQN Management
         sqn_init_stack(self)
 
@@ -74,15 +78,16 @@ class ZigpyTransport(object):
         self.forwarder_thread.join()
 
     def sendData(self, cmd, datas, sqn=None, highpriority=False, ackIsDisabled=False, waitForResponseIn=False, NwkId=None):
-        if self.writer_queue.qsize() > self.statistics._MaxLoad:
-            self.statistics._MaxLoad = self.writer_queue.qsize()
+        _queue = self.loadTransmit()
+        if _queue > self.statistics._MaxLoad:
+            self.statistics._MaxLoad = _queue
 
         if self.pluginconf.pluginConf["debugzigateCmd"]:
             self.log.logging(
                 "Transport",
                 "Log",
                 "sendData       - [%s] %s %s %s Queue Length: %s"
-                % (sqn, cmd, datas, NwkId, self.writer_queue.qsize()),
+                % (sqn, cmd, datas, NwkId, _queue),
             )
 
         self.log.logging("Transport", "Debug", "===> sendData - Cmd: %s Datas: %s" % (cmd, datas))
@@ -111,4 +116,8 @@ class ZigpyTransport(object):
 
     def loadTransmit(self):
         # Provide the Load of the Sending Queue
-        return self.writer_queue.qsize()
+        _queue = self.writer_queue.qsize()
+        for device in self._currently_waiting_requests_list:
+            _queue += self._currently_waiting_requests_list[device]
+        return _queue
+
