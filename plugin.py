@@ -1184,7 +1184,7 @@ def zigateInit_Phase3(self):
     # Create Network Energy object and trigger one scan
     if self.networkenergy is None:
         self.networkenergy = NetworkEnergy(
-            self.pluginconf, self.ControllerLink, self.ListOfDevices, Devices, self.HardwareID, self.log
+            self.zigbee_communitation, self.pluginconf, self.ControllerLink, self.ListOfDevices, Devices, self.HardwareID, self.log
         )
         # if len(self.ListOfDevices) > 1:
         #   self.log.logging( 'Plugin', 'Status', "Trigger a Energy Level Scan")
