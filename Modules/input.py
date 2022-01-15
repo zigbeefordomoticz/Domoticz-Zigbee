@@ -62,6 +62,7 @@ from Modules.zigateConsts import (ADDRESS_MODE, LEGRAND_REMOTE_MOTION,
                                   ZIGBEE_COMMAND_IDENTIFIER)
 from Modules.zigbeeController import (initLODZigate, receiveZigateEpDescriptor,
                                       receiveZigateEpList)
+from Modules.zigbeeVersionTable import FIRMWARE_BRANCH
 
 
 def ZigateRead(self, Devices, Data):
@@ -1062,15 +1063,6 @@ def Decode8009(self, Devices, MsgData, MsgLQI):  # Network State response (Firm 
 def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
     # MsgLen = len(MsgData)
 
-    FIRMWARE_BRANCH = {
-        "00": "Production",
-        "01": "Beta",
-        "11": "zigpy-zigate",
-        "20": "zigpy-znp 3.x",
-        "21": "zigpy-znp 3.0",
-        
-        "99": "Unknown"
-    }
     self.FirmwareBranch = MsgData[:2]
     self.FirmwareMajorVersion = MsgData[2:4]
     self.FirmwareVersion = MsgData[4:8]
