@@ -30,6 +30,7 @@ from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_8002_frame_content, build_plugin_8010_frame_content,
     build_plugin_8014_frame_content, build_plugin_8015_frame_content,
     build_plugin_8047_frame_content, build_plugin_8048_frame_content)
+from Modules.zigbeeVersionTable import ZNP_MODEL
 from zigpy.zcl import clusters
 from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
                                  SCHEMA_DEVICE)
@@ -71,20 +72,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         # Trigger Version payload to plugin
         znp_model = self.get_device(nwk=t.NWK(0x0000)).model
         znp_manuf = self.get_device(nwk=t.NWK(0x0000)).manufacturer
-        ZNP_330 = "CC1352/CC2652, Z-Stack 3.30+"
-        ZNP_30X = "CC2531, Z-Stack 3.0.x"
-        if znp_model[:len(ZNP_330)] == ZNP_330:
-            FirmwareBranch = "20"
-            
-        elif znp_model[:len(ZNP_30X)] == ZNP_30X:
-            FirmwareBranch = "21"
-            
-        else:
-            FirmwareBranch = "99"
-            
-        year = znp_model[ znp_model.find("build") + 6 : -5 ]
-        FirmwareMajorVersion = "%02d" %int(znp_model[ znp_model.find("build") + 8 : -5 ])
-        FirmwareVersion = "%04d" %int(znp_model[ znp_model.find("build") + 10: -1])
+        FirmwareBranch, FirmwareMajorVersion, FirmwareVersion = extract_versioning_for_plugin( znp_model, znp_manuf)
         self.callBackFunction(build_plugin_8010_frame_content(FirmwareBranch, FirmwareMajorVersion, FirmwareVersion))
 
     async def on_zdo_mgmt_leave_rsp(self, msg: c.ZDO.MgmtLeaveRsp.Callback) -> None:
@@ -276,3 +264,25 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
     async def set_channel(self,channel):
         self.confif[conf.CONF_NWK][conf.CONF_NWK_EXTENDED_PAN_ID] = channel
         self.startup(self.callBackHandleMessage,self.callBackGetDevice,auto_form=True,force_form=True,log=self.log)
+
+
+
+def extract_versioning_for_plugin( znp_model, znp_manuf):
+    
+    ZNP_330 = "CC1352/CC2652, Z-Stack 3.30+"
+    ZNP_30X = "CC2531, Z-Stack 3.0.x"
+    
+    for x in ZNP_MODEL:
+        if znp_model[:len(x)] == x:
+            FirmwareBranch = ZNP_MODEL[x]
+            break
+    else:
+        # Not found in the Table.
+        FirmwareBranch = "99"
+        
+    year = znp_model[ znp_model.find("build") + 6 : -5 ]
+    FirmwareMajorVersion = "%02d" %int(znp_model[ znp_model.find("build") + 8 : -5 ])
+    FirmwareVersion = "%04d" %int(znp_model[ znp_model.find("build") + 10: -1])
+        
+    return FirmwareBranch, FirmwareMajorVersion, FirmwareVersion
+
