@@ -46,6 +46,10 @@ class ZigpyTransport(object):
         
         self.permit_to_join_timer = { "Timer": None, "Duration": None}
 
+        # Semaphore per devices
+        self._concurrent_requests_semaphores_list = {}
+        self._currently_waiting_requests_list = {}  
+
         # Initialise SQN Management
         sqn_init_stack(self)
 
