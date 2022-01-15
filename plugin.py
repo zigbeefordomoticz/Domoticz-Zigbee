@@ -753,7 +753,7 @@ class BasePlugin:
         elif ieee in self.IEEE2NWK:
             nwkid = self.IEEE2NWK[ ieee ]
         else:
-            self.log.logging("TransportZigpy", "Log", "zigpy_get_device( %s(%s), %s(%s)) NOT FOUND" %( sieee, type(sieee), snwkid, type(sieee) ))
+            self.log.logging("TransportZigpy", "Log", "zigpy_get_device( %s(%s), %s(%s)) NOT FOUND" %( sieee, type(sieee), snwkid, type(snwkid) ))
             return None
         if nwkid in self.ListOfDevices and "Model" in self.ListOfDevices[ nwkid ] and self.ListOfDevices[ nwkid ]["Model"] not in ( "", {} ):
             model = self.ListOfDevices[ nwkid ]["Model"]
@@ -1200,7 +1200,7 @@ def zigateInit_Phase3(self):
     if self.OTA is None and self.pluginconf.pluginConf["allowOTA"]:
         start_OTAManagement(self, Parameters["HomeFolder"])
 
-    if self.FirmwareMajorVersion == "03":
+    if self.FirmwareMajorVersion == "03": 
         self.log.logging(
             "Plugin", "Status", "Plugin with Zigate, firmware %s correctly initialized" % self.FirmwareVersion
         )
@@ -1213,6 +1213,11 @@ def zigateInit_Phase3(self):
             "Plugin", "Status", "Plugin with Zigate+, firmware %s correctly initialized" % self.FirmwareVersion
         )
 
+    elif int(self.FirmwareBranch) >= 20:
+        self.log.logging(
+            "Plugin", "Status", "Plugin with ZNP, firmware %s-%s correctly initialized" % (self.FirmwareMajorVersion, self.FirmwareVersion))
+
+        
     # If firmware above 3.0d, Get Network State
     if (self.HeartbeatCount % (3600 // HEARTBEAT)) == 0 and self.transport != "None":
         zigate_get_nwk_state(self)
