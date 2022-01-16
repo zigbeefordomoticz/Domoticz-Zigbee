@@ -57,6 +57,7 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
     Ieee = MsgData[4:20]
     MacCapa = MsgData[20:22]
 
+
     newDeviceForPlugin = not IEEEExist(self, Ieee)
 
     self.log.logging(
@@ -129,7 +130,7 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
 
     reseted_device = False
 
-    if NwkId in self.ListOfDevices and "Status" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Status"] in ("erasePDM", "provREQ", "Left"):
+    if NwkId in self.ListOfDevices and "Status" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Status"] in ("Removed" , "erasePDM", "provREQ", "Left"):
         reseted_device = True
         if "Bind" in self.ListOfDevices[NwkId]:
             del self.ListOfDevices[NwkId]["Bind"]
