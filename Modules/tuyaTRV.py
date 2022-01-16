@@ -196,7 +196,7 @@ def receive_LIDLMode(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNW
     store_tuya_attribute(self, NwkId, "LIDLMode", data)
 
     self.log.logging("Tuya", "Debug", "receive_LIDLMode - Nwkid: %s/%s Mode %s" % (NwkId, srcEp, data))
-    MajDomoDevice(self, Devices, NwkId, srcEp, "0201", "%02x" %( int(data,16) + 1), Attribute_="001c")
+    MajDomoDevice(self, Devices, NwkId, srcEp, "0201", int(data,16) + 1, Attribute_="001c")
     checkAndStoreAttributeValue(self, NwkId, "01", "0201", "001c", "%02x" %( int(data,16) + 1))
     
 def receive_manual_mode(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
