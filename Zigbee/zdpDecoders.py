@@ -328,47 +328,57 @@ def buildframe_management_lqi_response(self, SrcNwkId, SrcEndPoint, ClusterId, P
         return frame
 
     self.log.logging("zdpDecoder", "Debug", "buildframe_management_lqi_response")
-    #07/00/0f00029e96eba7565e4d4129f7c2dbfdfeff23a460120201aa9e96eba7565e4d41ec9a6ad0773cdf8ccf04120201aa
     sqn = Payload[:2]
     status = Payload[2:4]
-    NeighborTableEntries = Payload[4:6]
-    StartIndex = Payload[6:8]
-    NeighborTableListCount = Payload[8:10]
-    NeighborTableList = Payload[10:]
+    
+    if status != "00":
+        buildPayload = sqn + status
+    else:
+        NeighborTableEntries = Payload[4:6]
+        StartIndex = Payload[6:8]
+        NeighborTableListCount = Payload[8:10]
+        NeighborTableList = Payload[10:]
 
-    buildPayload = sqn + status + NeighborTableEntries + NeighborTableListCount + StartIndex
-    idx = 10
-    for _ in range(int(NeighborTableListCount, 16)):
-        ExtendedPanId = "%016x" % struct.unpack("Q", struct.pack(">Q", int(Payload[idx: idx + 16], 16)))[0]
-        idx += 16
-        Extendedaddress = "%016x" % struct.unpack("Q", struct.pack(">Q", int(Payload[idx: idx + 16], 16)))[0]
-        idx += 16
-        Networkaddress = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[idx: idx + 4], 16)))[0]
-        idx += 4
+        buildPayload = sqn + status + NeighborTableEntries + NeighborTableListCount + StartIndex
+        idx = 10
+        for _ in range(int(NeighborTableListCount, 16)):
+            ExtendedPanId = "%016x" % struct.unpack("Q", struct.pack(">Q", int(Payload[idx: idx + 16], 16)))[0]
+            idx += 16
+            Extendedaddress = "%016x" % struct.unpack("Q", struct.pack(">Q", int(Payload[idx: idx + 16], 16)))[0]
+            idx += 16
+            Networkaddress = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[idx: idx + 4], 16)))[0]
+            idx += 4
 
-        bitfield1 = int(Payload[idx:idx + 2],16)
-        idx +=2
+            bitfield1 = int(Payload[idx:idx + 2],16)
+            idx +=2
 
-        bitfield2 = int(Payload[idx:idx + 2],16)
-        idx += 2
+            bitfield2 = int(Payload[idx:idx + 2],16)
+            idx += 2
+
+            depth = Payload[idx:idx + 2]
+            idx += 2
+            lqi = Payload[idx:idx + 2]
+            idx += 2
+
+            # bitfield1 + bitfield2 joing in NXP stack
+            devicetype =     bitfield1 & 0x03
+            rxonwhenidle = ( bitfield1 & 0x0C) >> 2
+            relationship = ( bitfield1 & 0x70) >> 4
+            permitjoining = bitfield2 & 0x03
+            _bitmap = 0
+            _bitmap += ( devicetype )
+            _bitmap += ( permitjoining << 2)
+            _bitmap += ( relationship << 4 )
+            _bitmap += ( rxonwhenidle << 6 )
+
+            buildPayload += Networkaddress + ExtendedPanId + Extendedaddress + depth + lqi + "%02x" %_bitmap
+            self.log.logging("zdpDecoder", "Debug", "buildframe_management_lqi_response deviceType: %s" % devicetype)
+            self.log.logging("zdpDecoder", "Debug", "buildframe_management_lqi_response rxonwhenidle: %s" % rxonwhenidle)
+            self.log.logging("zdpDecoder", "Debug", "buildframe_management_lqi_response relationship: %s" % relationship)
+            self.log.logging("zdpDecoder", "Debug", "buildframe_management_lqi_response permitjoining: %s" % permitjoining)
+            self.log.logging("zdpDecoder", "Debug", "buildframe_management_lqi_response _bitmap: %s %s" % (_bitmap, bin(_bitmap)))
         
-        depth = Payload[idx:idx + 2]
-        idx += 2
-        lqi = Payload[idx:idx + 2]
-        idx += 2
         
-        # bitfield1 + bitfield2 joing in NXP stack
-        devicetype =     bitfield1 & 0x03
-        rxonwhenidle = ( bitfield1 & 0x0C) >> 2
-        relationship = ( bitfield1 & 0x70) >> 4
-        permitjoining = bitfield2 & 0x03
-        _bitmap = 0
-        _bitmap += ( devicetype )
-        _bitmap += ( permitjoining << 2)
-        _bitmap += ( relationship << 4 )
-        _bitmap += ( rxonwhenidle << 6 )
-        buildPayload += Networkaddress + ExtendedPanId + Extendedaddress + depth + lqi + "%02x" %_bitmap
-
     return encapsulate_plugin_frame("804E", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 
@@ -414,7 +424,7 @@ def buildframe_permit_join_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payl
 
 
 def buildframe_management_nwk_update_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
-    self.log.logging("zdpDecoder", "Error", "buildframe_management_nwk_update_response %s %s" %( SrcNwkId, Payload))
+    self.log.logging("zdpDecoder", "Debug", "buildframe_management_nwk_update_response %s %s" %( SrcNwkId, Payload))
 
     sqn = Payload[:2]
     status = Payload[2:4]
@@ -424,12 +434,12 @@ def buildframe_management_nwk_update_response(self, SrcNwkId, SrcEndPoint, Clust
     ScannedChannelsListCount = Payload[16:18]
     EnergyValues = Payload[18:]
 
-    self.log.logging("zdpDecoder", "Error", "buildframe_management_nwk_update_response %s status: %s" %( SrcNwkId, status))
-    self.log.logging("zdpDecoder", "Error", "buildframe_management_nwk_update_response %s scanned_channels: %s" %( SrcNwkId, scanned_channels))
-    self.log.logging("zdpDecoder", "Error", "buildframe_management_nwk_update_response %s TotalTransmissions: %s" %( SrcNwkId, TotalTransmissions))
-    self.log.logging("zdpDecoder", "Error", "buildframe_management_nwk_update_response %s MsgTransmissionFailures: %s" %( SrcNwkId, MsgTransmissionFailures))
-    self.log.logging("zdpDecoder", "Error", "buildframe_management_nwk_update_response %s ScannedChannelsListCount: %s" %( SrcNwkId, ScannedChannelsListCount))
-    self.log.logging("zdpDecoder", "Error", "buildframe_management_nwk_update_response %s EnergyValues: %s" %( SrcNwkId, EnergyValues))
+    self.log.logging("zdpDecoder", "Debug", "buildframe_management_nwk_update_response %s status: %s" %( SrcNwkId, status))
+    self.log.logging("zdpDecoder", "Debug", "buildframe_management_nwk_update_response %s scanned_channels: %s" %( SrcNwkId, scanned_channels))
+    self.log.logging("zdpDecoder", "Debug", "buildframe_management_nwk_update_response %s TotalTransmissions: %s" %( SrcNwkId, TotalTransmissions))
+    self.log.logging("zdpDecoder", "Debug", "buildframe_management_nwk_update_response %s MsgTransmissionFailures: %s" %( SrcNwkId, MsgTransmissionFailures))
+    self.log.logging("zdpDecoder", "Debug", "buildframe_management_nwk_update_response %s ScannedChannelsListCount: %s" %( SrcNwkId, ScannedChannelsListCount))
+    self.log.logging("zdpDecoder", "Debug", "buildframe_management_nwk_update_response %s EnergyValues: %s" %( SrcNwkId, EnergyValues))
     
     if status != "00":
         buildPayload = sqn + status
