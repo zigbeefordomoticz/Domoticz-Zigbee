@@ -173,7 +173,7 @@ def build_plugin_8045_frame_list_controller_ep( self, ):
 
 
 def build_plugin_8047_frame_content(self):  # leave response
-    return encapsulate_plugin_frame("8047", "00", "%02x" % 0x00)
+    return encapsulate_plugin_frame("8047", "00", ("00" + "%02x" % 0x00) )
 
 
 def build_plugin_8048_frame_content(self, ieee):  # leave indication
