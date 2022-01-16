@@ -199,3 +199,6 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
 
     async def set_channel(self):
         pass        
+
+    async def remove_ieee(self, ieee):
+        pass

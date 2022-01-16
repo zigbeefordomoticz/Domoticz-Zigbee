@@ -223,13 +223,15 @@ async def dispatch_command(self, data):
         self.app.set_extended_pan_id(data["datas"]["Param1"])
     elif data["cmd"] == "SET-CHANNEL":
         self.app.set_channel(data["datas"]["Param1"])
+    elif data["cmd"] == "REMOVE-DEVICE":
+        ieee = data["datas"]["Param1"]
+        await self.app.remove_ieee( t.EUI64(t.uint64_t(ieee).serialize()) ) 
         
     elif data["cmd"] == "REQ-NWK-STATUS":
         await asyncio.sleep(10)
         await self.app.load_network_info()
         self.forwarder_queue.put(build_plugin_8009_frame_content(self, self._radiomodule))
 
-        
     elif data["cmd"] == "RAW-COMMAND":
         self.log.logging( "TransportZigpy", "Debug", "RAW-COMMAND: %s" %properyly_display_data( data["datas"]) )
         await process_raw_command(self, data["datas"], AckIsDisable=data["ACKIsDisable"], Sqn=data["Sqn"])

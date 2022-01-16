@@ -174,16 +174,22 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         dst_ep: int,
         message: bytes,
     ) -> None:
-        
-        if cluster == 0x8036:
-            # This has been handle via on_zdo_mgmt_permitjoin_rsp() don't know why we get it here
-            return
-        
         if sender.nwk == 0x0000:
             self.log.logging("TransportZigpy", "Debug", "handle_message from Controller Sender: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
                 str(sender.nwk), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8")))
             super().handle_message(sender, profile, cluster, src_ep, dst_ep, message)
 
+        if cluster == 0x8036:
+            # This has been handle via on_zdo_mgmt_permitjoin_rsp()
+            self.log.logging("TransportZigpy", "Debug", "handle_message 0x8036: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
+                str(sender.nwk), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8")))
+            return
+        
+        if cluster == 0x8034:
+            # This has been handle via on_zdo_mgmt_leave_rsp()
+            self.log.logging("TransportZigpy", "Debug", "handle_message 0x8036: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
+                str(sender.nwk), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8")))
+            return
 
         addr = None
         if sender.nwk is not None:
@@ -265,7 +271,8 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         self.confif[conf.CONF_NWK][conf.CONF_NWK_EXTENDED_PAN_ID] = channel
         self.startup(self.callBackHandleMessage,self.callBackGetDevice,auto_form=True,force_form=True,log=self.log)
 
-
+    async def remove_ieee(self, ieee):
+        await self.remove( ieee )
 
 def extract_versioning_for_plugin( znp_model, znp_manuf):
     

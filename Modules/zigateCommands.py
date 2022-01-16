@@ -116,7 +116,7 @@ def zigate_start_nwk(self):
 def zigate_remove_device(self, target_short_addr, extended_addr):
     self.log.logging( "zigateCommand", "Debug","zigate_remove_device %s %s" %(target_short_addr, extended_addr))
     if self.zigbee_communitation == "zigpy":
-        return
+        return self.ControllerLink.sendData( "REMOVE-DEVICE", {"Param1": int(extended_addr,16)}) 
     return send_zigatecmd_raw(self, "0026", target_short_addr + extended_addr)
 
 def zigate_set_tx_power(self, value):
