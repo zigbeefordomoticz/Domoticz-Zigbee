@@ -1001,6 +1001,19 @@ def retreive_cmd_payload_from_8002(Payload):
     # Domoticz.Log("retreive_cmd_payload_from_8002 ======> Payload: %s " %Data)
     return (GlobalCommand, Sqn, ManufacturerCode, Command, Data)
 
+def direction(fcf):
+    # If direction = 1 Server to Client
+    # If direction = 0 Client to Server
+    
+    if not is_hex(fcf) or len(fcf) != 2:
+        return None
+    return (int(fcf, 16) & 0x08) >> 3
+
+def is_direction_to_client(fcf):
+    return direction(fcf) == 0x1
+
+def is_direction_to_server(fcf):
+    return direction(fcf) == 0x0
 
 def is_golbalcommand(fcf):
     if not is_hex(fcf) or len(fcf) != 2:

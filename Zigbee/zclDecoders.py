@@ -6,13 +6,14 @@
 
 
 import struct
-from Modules.tools import retreive_cmd_payload_from_8002
+from Modules.tools import retreive_cmd_payload_from_8002, is_direction_to_client, is_direction_to_server
 from Zigbee.encoder_tools import encapsulate_plugin_frame, decode_endian_data
 from Modules.zigateConsts import ADDRESS_MODE, SIZE_DATA_TYPE
 
 
 def zcl_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, frame):
 
+    fcf = Payload[:2]
     GlobalCommand, Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002(Payload)
     self.log.logging("zclDecoder", "Debug", "zcl_decoders GlobalCommand: %s Sqn: %s ManufCode: %s Command: %s Data: %s Payload: %s" %(
         GlobalCommand, Sqn, ManufacturerCode, Command, Data, Payload))
@@ -49,10 +50,14 @@ def zcl_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, fram
             self.log.logging("zclDecoder", "Log", "zcl_decoders OTA Upgrade Command %s/%s data: %s" % (Command, OTA_UPGRADE_COMMAND[Command], Data))
             return frame
 
-    if ClusterId == "0500" and Command == "00":
-        # Zone Enroll Response
+    if ClusterId == "0500" and is_direction_to_server(fcf)  and Command == "00":
         return buildframe_0400_cmd(self, "0400", frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Command, Data)
 
+    if ClusterId == "0500" and is_direction_to_client(fcf) and Command == "00":
+        return buildframe_8401_cmd(self, "8401", frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Command, Data)
+
+
+    
     self.log.logging(
         "zclDecoder",
         "Log",
@@ -429,10 +434,25 @@ def buildframe_80x5_message(self, MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, Ta
 
 
 def buildframe_0400_cmd(self, MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Command, Data):
-    self.log.logging("zclDecoder", "Debug", "buildframe_configure_reporting_response - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
+    self.log.logging("zclDecoder", "Debug", "buildframe_0400_cmd - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
 
     # Zone Enroll Response
     enroll_response_code = Data[:2]
     zone_id = Data[2:4]
     buildPayload = Sqn + SrcNwkId + SrcEndPoint + enroll_response_code + zone_id
+    return encapsulate_plugin_frame(MsgType, buildPayload, frame[len(frame) - 4 : len(frame) - 2])
+
+def buildframe_8401_cmd(self, MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Command, Data):
+    self.log.logging("zclDecoder", "Debug", "buildframe_8401_cmd - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
+    # Zone status change
+
+    zone_status = decode_endian_data(Data[:4], "19")
+    extended_status = Data[4:6]
+    zoneid = Data[6:8]
+    delay = decode_endian_data(Data[8:12], "21")
+    
+    buildPayload = Sqn + SrcEndPoint + ClusterId + "02" + SrcNwkId 
+    buildPayload += zone_status + extended_status + zoneid + delay
+    
+    
     return encapsulate_plugin_frame(MsgType, buildPayload, frame[len(frame) - 4 : len(frame) - 2])
