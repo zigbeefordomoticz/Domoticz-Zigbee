@@ -345,15 +345,29 @@ def buildframe_management_lqi_response(self, SrcNwkId, SrcEndPoint, ClusterId, P
         idx += 16
         Networkaddress = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[idx: idx + 4], 16)))[0]
         idx += 4
-        bitfield1 = Payload[idx:idx + 2]
+
+        bitfield1 = int(Payload[idx:idx + 2],16)
         idx +=2
-        bitfield2 = Payload[idx:idx + 2]
+
+        bitfield2 = int(Payload[idx:idx + 2],16)
         idx += 2
+        
         depth = Payload[idx:idx + 2]
         idx += 2
         lqi = Payload[idx:idx + 2]
         idx += 2
-        buildPayload += Networkaddress + ExtendedPanId + Extendedaddress + depth + lqi + bitfield1
+        
+        # bitfield1 + bitfield2 joing in NXP stack
+        devicetype =     bitfield1 & 0x03
+        rxonwhenidle = ( bitfield1 & 0x0C) >> 2
+        relationship = ( bitfield1 & 0x70) >> 4
+        permitjoining = bitfield2 & 0x03
+        _bitmap = 0
+        _bitmap += ( devicetype )
+        _bitmap += ( permitjoining << 2)
+        _bitmap += ( relationship << 4 )
+        _bitmap += ( rxonwhenidle << 6 )
+        buildPayload += Networkaddress + ExtendedPanId + Extendedaddress + depth + lqi + "%02x" %_bitmap
 
     return encapsulate_plugin_frame("804E", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
