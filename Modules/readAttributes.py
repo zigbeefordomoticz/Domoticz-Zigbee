@@ -377,12 +377,27 @@ def ping_device_with_read_attribute(self, key):
     for EPout in ListOfEp:
         check_datastruct(self, "ReadAttributes", key, EPout, PING_CLUSTER)
         #       send_zigatecmd_zcl_ack( self, key, '0100', EpIn      + EpOut + Cluster      + dir  + ManufSpe + manufacturer + '%02x' %lenAttr + Attr )
-        i_sqn = send_zigatecmd_zcl_ack(
+        #i_sqn = send_zigatecmd_zcl_ack(
+        #    self,
+        #    key,
+        #    "0100",
+        #    ZIGATE_EP + EPout + PING_CLUSTER + "00" + "00" + "0000" + "%02x" % (0x01) + PING_CLUSTER_ATTRIBUTE,
+        #)
+        
+        i_sqn = read_attribute(
             self,
             key,
-            "0100",
-            ZIGATE_EP + EPout + PING_CLUSTER + "00" + "00" + "0000" + "%02x" % (0x01) + PING_CLUSTER_ATTRIBUTE,
+            ZIGATE_EP,
+            EPout,
+            PING_CLUSTER,
+            "00",
+            "00",
+            "0000",
+            "%02x" % (0x01),
+            PING_CLUSTER_ATTRIBUTE,
+            ackIsDisabled=False,
         )
+
         set_isqn_datastruct(self, "ReadAttributes", key, EPout, PING_CLUSTER, PING_CLUSTER_ATTRIBUTE, i_sqn)
         # Let's ping only 1 EndPoint
         break
