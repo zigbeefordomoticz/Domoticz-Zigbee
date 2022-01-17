@@ -416,7 +416,7 @@ def tuya_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, 
     elif _ModelName == "TS0601-curtain":
         tuya_curtain_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
 
-    elif _ModelName == "TS0601-TZE200nklqjk62":
+    elif _ModelName == "TS0601-_TZE200_nklqjk62":
         tuya_garage_door_response( self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
         
     elif _ModelName in ("TS0601-thermostat"):
@@ -1198,7 +1198,7 @@ def tuya_garage_door_action( self, NwkId, action):
     cluster_frame = "11"
     cmd = "00"  # Command
     action = "0b01"
-    data = "%02x" % action
+    data = "%02x" % int(action)
     tuya_cmd(self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)
     
         
