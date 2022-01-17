@@ -184,8 +184,12 @@ TUYA_MANUFACTURER_NAME = (
 
 
 def tuya_registration(self, nwkid, device_reset=False, parkside=False):
+    if "Model" not in self.ListOfDevices[nwkid]:
+            return
+    _ModelName = self.ListOfDevices[nwkid]["Model"]
 
-    self.log.logging("Tuya", "Debug", "tuya_registration - Nwkid: %s" % nwkid)
+    self.log.logging("Tuya", "Debug", "tuya_registration - Nwkid: %s Model: %s" % (nwkid, _ModelName))
+
     # (1) 3 x Write Attribute Cluster 0x0000 - Attribute 0xffde  - DT 0x20  - Value: 0x13 ( 19 Decimal)
     #  It looks like for Lidl Watering switch the Value is 0x0d ( 13 in decimal )
     EPout = "01"
@@ -212,7 +216,10 @@ def tuya_registration(self, nwkid, device_reset=False, parkside=False):
 
     # Gw->Zigbee gateway query MCU version
     self.log.logging("Tuya", "Debug", "tuya_registration - Nwkid: %s Request MCU Version Cmd: 10" % nwkid)
-    payload = "11" + get_and_inc_SQN(self, nwkid) + "10" + "0002"
+    if _ModelName in ( "TS0601-_TZE200_nklqjk62", ):
+        payload = "11" + get_and_inc_SQN(self, nwkid) + "10" + "000e"
+    else:
+        payload = "11" + get_and_inc_SQN(self, nwkid) + "10" + "0002"
     raw_APS_request(
         self,
         nwkid,
@@ -225,9 +232,9 @@ def tuya_registration(self, nwkid, device_reset=False, parkside=False):
     )
 
 def tuya_cmd_ts004F(self, NwkId, mode):
-    TS004F_MODE =  {
-        'Scene': 0x01,  # Scene controller
-        'Dimmer': 0x00, # Remote dimming
+    TS004F_MODE = {
+        'Scene': 0x01,   # Scene controller
+        'Dimmer': 0x00,  # Remote dimming
     }
     # By default set to 0x00
     if mode not in TS004F_MODE:
@@ -1172,35 +1179,33 @@ def tuya_smart_motion_all_in_one(self, Devices, _ModelName, NwkId, srcEp, Cluste
             "tuya_smart_motion_all_in_one - Model: %s Unknow Nwkid: %s/%s dp: %02x data type: %s data: %s"
             % (_ModelName, NwkId, srcEp, dp, datatype, data),
             NwkId,
-    )
+        )
 
 def tuya_garage_door_response( self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     
-    if dp == 0x03:
+    if dp == 0x01:
+        # Switch
+        self.log.logging("Tuya", "Debug", "tuya_garage_door_response - Switch %s" % int(data, 16), NwkId)
+        MajDomoDevice(self, Devices, NwkId, "01", "0006", "%02x" %(int(data, 16)) )
+        store_tuya_attribute(self, NwkId, "Door", data)
+        
+    elif dp == 0x03:
         # Door: 0x00 => Closed, 0x01 => Open
         self.log.logging("Tuya", "Debug", "tuya_garage_door_response - Door %s" % int(data, 16), NwkId)
         MajDomoDevice(self, Devices, NwkId, "01", "0500", "%02x" %(int(data, 16)) )
         store_tuya_attribute(self, NwkId, "Door", data)
         
-    elif dp == 0x0b:
-        self.log.logging("Tuya", "Debug", "tuya_garage_door_response - Switch %s" % int(data, 16), NwkId)
-        MajDomoDevice(self, Devices, NwkId, "01", "0006", "%02x" %(int(data, 16)) )
-        store_tuya_attribute(self, NwkId, "0b", data)
-        
     else:
         store_tuya_attribute(self, NwkId, "dp:%s-dt:%s" %(dp, datatype), data)
         
-        
-        
+
 def tuya_garage_door_action( self, NwkId, action):
-    #EPout = "01"
-    #sqn = get_and_inc_SQN(self, NwkId)
-    #cluster_frame = "11"
-    #cmd = "00"  # Command
-    #action = "0b01"
-    #data = "%02x" % int(action)
-    #tuya_cmd(self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)
-    
-    tuya_watertimer_command(self, NwkId, action, 0x01)
-    
-        
+    # 000f/0101/0001/00
+    # 0010/0101/0001/01
+    EPout = "01"
+    sqn = get_and_inc_SQN(self, NwkId)
+    cluster_frame = "11"
+    cmd = "00"  # Command
+    action = "0101"
+    data = "%02x" % int(action)
+    tuya_cmd(self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)
