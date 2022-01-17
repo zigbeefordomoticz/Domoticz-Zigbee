@@ -36,7 +36,7 @@ def rawaps_read_attribute_req(self, nwkid, EpIn, EpOut, Cluster, direction, manu
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
     payload = fcf
     if manufacturer_spec == "01":
-        payload += manufacturer[4:2] + manufacturer[:2]
+        payload += "%04x" % struct.unpack(">H", struct.pack("H", int(manufacturer, 16)))[0]
     payload += sqn + cmd
     idx = 0
     while idx < len(Attr):
