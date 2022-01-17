@@ -566,8 +566,11 @@ def processKnownDevices(self, Devices, NWKID):
     ) and (intHB % READATTRIBUTE_FEQ) == 0:
         _doReadAttribute = True
 
-    # Do we need to force ReadAttribute at plugin startup ?
-    # If yes, best is probably to have ResetReadAttribute to 1
+    if 'PairingTime' in self.ListOfDevices[ NWKID ]:
+        # In case we have just finished the pairing give 3 minutes to finish.
+        if time.time() < self.ListOfDevices[ NWKID ]["PairingTime"] + 180:
+            _doReadAttribute = False
+            
     if _doReadAttribute:
         self.log.logging(
             "Heartbeat",

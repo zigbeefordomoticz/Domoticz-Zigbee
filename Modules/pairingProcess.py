@@ -38,7 +38,7 @@ from Modules.tuyaSiren import tuya_sirene_registration
 from Modules.tuyaTools import tuya_TS0121_registration
 from Modules.tuyaTRV import TUYA_eTRV_MODEL, tuya_eTRV_registration
 from Modules.zigateConsts import CLUSTERS_LIST
-
+import time
 
 def processNotinDBDevices(self, Devices, NWKID, status, RIA):
 
@@ -376,6 +376,7 @@ def full_provision_device(self, Devices, NWKID, RIA, status):
         self.CommiSSionning = False
         return
 
+    self.ListOfDevices[ NWKID ]["PairingTime"] = time.time()
     # Don't know why we need as this seems very weird
     if NWKID not in self.ListOfDevices:
         Domoticz.Error("processNotinDBDevices - %s doesn't exist in Post creation widget" % NWKID)
