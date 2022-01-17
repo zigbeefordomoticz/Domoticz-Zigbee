@@ -1179,12 +1179,12 @@ def tuya_garage_door_response( self, Devices, _ModelName, NwkId, srcEp, ClusterI
     if dp == 0x03:
         # Door: 0x00 => Closed, 0x01 => Open
         self.log.logging("Tuya", "Debug", "tuya_garage_door_response - Door %s" % int(data, 16), NwkId)
-        MajDomoDevice(self, Devices, NwkId, "01", "0500", (int(data, 16)))
+        MajDomoDevice(self, Devices, NwkId, "01", "0500", "%02x" %(int(data, 16)) )
         store_tuya_attribute(self, NwkId, "Door", data)
         
     elif dp == 0x0b:
         self.log.logging("Tuya", "Debug", "tuya_garage_door_response - Switch %s" % int(data, 16), NwkId)
-        MajDomoDevice(self, Devices, NwkId, "01", "0006", (int(data, 16)))
+        MajDomoDevice(self, Devices, NwkId, "01", "0006", "%02x" %(int(data, 16)) )
         store_tuya_attribute(self, NwkId, "0b", data)
         
     else:
