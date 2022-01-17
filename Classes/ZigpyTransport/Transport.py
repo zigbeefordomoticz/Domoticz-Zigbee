@@ -109,7 +109,7 @@ class ZigpyTransport(object):
         return False
 
     def get_writer_queue(self):
-        return self.writer_queue.qsize()
+        return self.loadTransmit()
 
     def get_forwarder_queue(self):
         return self.forwarder_queue.qsize()
