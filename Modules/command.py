@@ -31,13 +31,13 @@ from Modules.schneider_wiser import (schneider_EHZBRTS_thermoMode,
 from Modules.thermostats import thermostat_Mode, thermostat_Setpoint
 from Modules.tuya import (tuya_curtain_lvl, tuya_curtain_openclose,
                           tuya_dimmer_dimmer, tuya_dimmer_onoff,
-                          tuya_energy_onoff, tuya_switch_command,
-                          tuya_watertimer_command,
+                          tuya_energy_onoff, tuya_garage_door_action,
+                          tuya_switch_command, tuya_watertimer_command,
                           tuya_window_cover_calibration)
 from Modules.tuyaSiren import (tuya_siren_alarm, tuya_siren_humi_alarm,
                                tuya_siren_temp_alarm)
-from Modules.tuyaTRV import (tuya_trv_brt100_set_mode, tuya_trv_mode, tuya_lidl_set_mode,
-                             tuya_trv_onoff)
+from Modules.tuyaTRV import (tuya_lidl_set_mode, tuya_trv_brt100_set_mode,
+                             tuya_trv_mode, tuya_trv_onoff)
 from Modules.widgets import SWITCH_LVL_MATRIX
 from Modules.zigateConsts import (THERMOSTAT_LEVEL_2_MODE,
                                   THERMOSTAT_LEVEL_3_MODE, ZIGATE_EP)
@@ -265,9 +265,15 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             NWKID,
         )
 
-        if _model_name in ("TS0601-switch", "TS0601-2Gangs-switch", "TS0601-2Gangs-switch"):
+        if _model_name in ("TS0601-switch", "TS0601-2Gangs-switch", "TS0601-2Gangs-switch", "TS0601-TZE200nklqjk62"):
             self.log.logging("Command", "Debug", "mgtCommand : Off for Tuya Switches Gang/EPout: %s" % EPout)
             tuya_switch_command(self, NWKID, "00", gang=int(EPout, 16))
+            UpdateDevice_v2(self, Devices, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+            return
+        
+        if _model_name in ("TS0601-TZE200nklqjk62", ):
+            self.log.logging("Command", "Debug", "mgtCommand : Off for Tuya Garage Door %s" % NWKID)
+            tuya_garage_door_action( self, NWKID, "00")
             UpdateDevice_v2(self, Devices, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
             return
 
@@ -506,6 +512,13 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             tuya_switch_command(self, NWKID, "01", gang=int(EPout, 16))
             UpdateDevice_v2(self, Devices, Unit, 1, "On", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
             return
+
+        if _model_name in ("TS0601-TZE200nklqjk62", ):
+            self.log.logging("Command", "Debug", "mgtCommand : Off for Tuya Garage Door %s" % NWKID)
+            tuya_garage_door_action( self, NWKID, "01")
+            UpdateDevice_v2(self, Devices, Unit, 0, "On", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+            return
+
 
         if _model_name == "TS0601-Parkside-Watering-Timer":
             self.log.logging("Command", "Debug", "mgtCommand : On for Tuya ParkSide Water Time")

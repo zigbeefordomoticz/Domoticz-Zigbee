@@ -417,6 +417,9 @@ def tuya_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, 
     elif _ModelName == "TS0601-curtain":
         tuya_curtain_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
 
+    elif _ModelName == "TS0601-TZE200nklqjk62":
+        tuya_garage_door_response( self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
+        
     elif _ModelName in ("TS0601-thermostat"):
         tuya_eTRV_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
 
@@ -1171,3 +1174,26 @@ def tuya_smart_motion_all_in_one(self, Devices, _ModelName, NwkId, srcEp, Cluste
             % (_ModelName, NwkId, srcEp, dp, datatype, data),
             NwkId,
     )
+
+def tuya_garage_door_response( self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
+    
+    if dp == 0x03:
+        # Door: 0x00 => Closed, 0x01 => Open
+        self.log.logging("Tuya", "Debug", "tuya_garage_door_response - Door %s" % int(data, 16), NwkId)
+        MajDomoDevice(self, Devices, NwkId, "01", "0500", (int(data, 16)))
+        
+    elif dp == 0x0b:
+        self.log.logging("Tuya", "Debug", "tuya_garage_door_response - Switch %s" % int(data, 16), NwkId)
+        MajDomoDevice(self, Devices, NwkId, "01", "0006", (int(data, 16)))
+        
+        
+def tuya_garage_door_action( self, NwkId, action):
+    EPout = "01"
+    sqn = get_and_inc_SQN(self, NwkId)
+    cluster_frame = "11"
+    cmd = "00"  # Command
+    action = "0b01"
+    data = "%02x" % action
+    tuya_cmd(self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)
+    
+        
