@@ -54,14 +54,6 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         self.znp_config[conf.CONF_MAX_CONCURRENT_REQUESTS] = 2
 
         await super().startup(auto_form=auto_form,force_form=force_form)
-        self._znp.callback_for_response(
-            c.ZDO.MgmtLeaveRsp.Callback(partial=True),
-            self.on_zdo_mgmt_leave_rsp,
-        )
-        self._znp.callback_for_response(
-            c.ZDO.MgmtPermitJoinRsp.Callback(partial=True),
-            self.on_zdo_mgmt_permitjoin_rsp,
-        )
 
         # Populate and get the list of active devices.
         # This will allow the plugin if needed to update the IEEE -> NwkId
@@ -75,16 +67,6 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         FirmwareBranch, FirmwareMajorVersion, FirmwareVersion = extract_versioning_for_plugin( znp_model, znp_manuf)
         self.callBackFunction(build_plugin_8010_frame_content(FirmwareBranch, FirmwareMajorVersion, FirmwareVersion))
 
-    async def on_zdo_mgmt_leave_rsp(self, msg: c.ZDO.MgmtLeaveRsp.Callback) -> None:
-        self.log.logging("TransportZigpy", "Debug", "AppZnp - on_zdo_mgmt_leave_rsp nwk:%s " % (msg.Src ))
-        plugin_frame = build_plugin_8047_frame_content (self)
-        self.callBackFunction(plugin_frame)
-
-    async def on_zdo_mgmt_permitjoin_rsp(self, msg: c.ZDO.MgmtPermitJoinRsp.Callback) -> None:
-        self.log.logging("TransportZigpy", "Debug", "AppZnp - on_zdo_mgmt_permitjoin_rsp nwk:%s " % ( str( msg)))
-        self.callBackFunction(build_plugin_8014_frame_content (self, msg.Src))
-
-        
     async def _register_endpoints(self) -> None:
         LIST_ENDPOINT = [0x0b , 0x0a , 0x6e, 0x15, 0x08, 0x03]  # WISER, ORVIBO , TERNCY, KONKE, LIVOLO, WISER2
         await super()._register_endpoints()
@@ -183,12 +165,14 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
             # This has been handle via on_zdo_mgmt_permitjoin_rsp()
             self.log.logging("TransportZigpy", "Debug", "handle_message 0x8036: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
                 str(sender.nwk), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8")))
+            self.callBackFunction( build_plugin_8014_frame_content (self, str(sender), binascii.hexlify(message).decode("utf-8") ) )
             return
         
         if cluster == 0x8034:
             # This has been handle via on_zdo_mgmt_leave_rsp()
             self.log.logging("TransportZigpy", "Debug", "handle_message 0x8036: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
                 str(sender.nwk), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8")))
+            self.callBackFunction( build_plugin_8047_frame_content (self, str(sender), binascii.hexlify(message).decode("utf-8")) )
             return
 
         addr = None
