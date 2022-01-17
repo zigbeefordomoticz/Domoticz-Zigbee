@@ -8,7 +8,7 @@
 			"ef00": "",
 			"000a": "",
 			"0019": "",
-			"Type": "Switch/Door"
+			"Type": "Switch/DoorSensor"
 		},
 		"f2": {
 			"0021": ""

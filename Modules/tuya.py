@@ -1193,12 +1193,14 @@ def tuya_garage_door_response( self, Devices, _ModelName, NwkId, srcEp, ClusterI
         
         
 def tuya_garage_door_action( self, NwkId, action):
-    EPout = "01"
-    sqn = get_and_inc_SQN(self, NwkId)
-    cluster_frame = "11"
-    cmd = "00"  # Command
-    action = "0b01"
-    data = "%02x" % int(action)
-    tuya_cmd(self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)
+    #EPout = "01"
+    #sqn = get_and_inc_SQN(self, NwkId)
+    #cluster_frame = "11"
+    #cmd = "00"  # Command
+    #action = "0b01"
+    #data = "%02x" % int(action)
+    #tuya_cmd(self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)
+    
+    tuya_watertimer_command(self, NwkId, action, 0x01)
     
         
