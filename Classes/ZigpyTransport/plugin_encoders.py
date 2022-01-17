@@ -108,17 +108,21 @@ def build_plugin_8011_frame_content(self, nwkid, status, lqi):
     frame_payload = "%02x" % status + nwkid
     return encapsulate_plugin_frame("8011", frame_payload, "%02x" % lqi)
 
-def build_plugin_8014_frame_content(self, nwkid):
+def build_plugin_8014_frame_content(self, nwkid, payload):
     # Return status = 0x00 if not in pairing mode
     #        status = 0x01 if in pairing mode
-    self.log.logging( "TransportPluginEncoder", "Debug", "build_plugin_8014_frame_content Nwkid: %s Timer: %s" %( nwkid, self.permit_to_join_timer))
-    buildPayload = "00"
-    if ( 
-        self.permit_to_join_timer["Timer"] 
-        and self.permit_to_join_timer["Duration"]
-        and (self.permit_to_join_timer["Timer"] + self.permit_to_join_timer["Duration"]) > time.time()
-    ):
-        buildPayload = "01"
+    status = payload[2:4]
+    if status != "00":
+        buildPayload = status
+    else:
+        self.log.logging( "TransportPluginEncoder", "Debug", "build_plugin_8014_frame_content Nwkid: %s Timer: %s" %( nwkid, self.permit_to_join_timer))
+        buildPayload = "00"
+        if ( 
+            self.permit_to_join_timer["Timer"] 
+            and self.permit_to_join_timer["Duration"]
+            and (self.permit_to_join_timer["Timer"] + self.permit_to_join_timer["Duration"]) > time.time()
+        ):
+            buildPayload = "01"
     return encapsulate_plugin_frame("8014", buildPayload, "00")
     
 def build_plugin_8015_frame_content( self, network_info):
@@ -172,8 +176,10 @@ def build_plugin_8045_frame_list_controller_ep( self, ):
     return encapsulate_plugin_frame("8045", buildPayload, "00")   
 
 
-def build_plugin_8047_frame_content(self):  # leave response
-    return encapsulate_plugin_frame("8047", "00", ("00" + "%02x" % 0x00) )
+def build_plugin_8047_frame_content(self, nwkid, payload):  # leave response
+    self.log.logging("TransportPluginEncoder", "Debug", "build_plugin_8047_frame_content %s leave response %s" % ( nwkid, payload))
+    frame_payload = payload
+    return encapsulate_plugin_frame("8047", frame_payload, "%02x" %0x00 )
 
 
 def build_plugin_8048_frame_content(self, ieee):  # leave indication
