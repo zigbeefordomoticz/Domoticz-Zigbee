@@ -242,7 +242,6 @@ def tuya_cmd_ts004F(self, NwkId, mode):
     bindDevice(self, ieee, "03", cluster, destaddr=None, destep="01")
     bindDevice(self, ieee, "04", cluster, destaddr=None, destep="01")
 
-    
 
 def tuya_cmd_0x0000_0xf0(self, NwkId):
 
