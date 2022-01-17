@@ -650,12 +650,11 @@ def handle_device_specific_needs(self, Devices, NWKID):
         "TS0601-switch",
         "TS0601-2Gangs-switch",
         "TS0601-SmartAir",
-        "TS0601-_TZE200_nklqjk62"
     ):
         self.log.logging("Pairing", "Debug", "Tuya general registration needed")
         tuya_registration(self, NWKID, device_reset=True)
 
-    elif self.ListOfDevices[NWKID]["Model"] in ("TS0601-Parkside-Watering-Timer",):
+    elif self.ListOfDevices[NWKID]["Model"] in ("TS0601-Parkside-Watering-Timer", "TS0601-_TZE200_nklqjk62"):
         self.log.logging("Pairing", "Debug", "Tuya Water Sensor Parkside registration needed")
         tuya_registration(self, NWKID, device_reset=True, parkside=True)
 
