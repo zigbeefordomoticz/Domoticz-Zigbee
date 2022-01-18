@@ -11,7 +11,8 @@
 """
 
 from Modules.zigateConsts import ADDRESS_MODE, ZIGATE_COMMANDS, ZIGATE_EP
-
+import sys
+import time
 
 def add_Last_Cmds(self, isqn, address_mode, nwkid, cmd, datas):
 
@@ -263,7 +264,11 @@ def zigpy_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payloa
 
     if zigpyzqn is None:
         zigpyzqn = "0"
+        
+    # Debug mode
+    callingfunction = sys._getframe(2).f_code.co_name
     data = {
+        'Function': callingfunction,
         'Profile': int(profileId, 16),
         'Cluster': int(cluster, 16),
         'TargetNwk': int(targetaddr, 16),
@@ -271,6 +276,7 @@ def zigpy_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payloa
         'SrcEp': int(zigate_ep, 16),
         'Sqn': int(zigpyzqn,16),
         'payload': payload,
+        'timestamp': time.time()
     }
 
     if groupaddrmode:
@@ -283,8 +289,8 @@ def zigpy_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payloa
     self.log.logging(
         "outRawAPS",
         "Debug",
-        "zigpy_raw_APS_request - Profile: %04x Cluster: %04x TargetNwk: %04x TargetEp: %02x SrcEp: %02x  payload: %s"
-        % ( data['Profile'], data['Cluster'], data['TargetNwk'], data['TargetEp'], data['SrcEp'],  data['payload'])
+        "zigpy_raw_APS_request - %s ==> Profile: %04x Cluster: %04x TargetNwk: %04x TargetEp: %02x SrcEp: %02x  payload: %s"
+        % ( callingfunction, data['Profile'], data['Cluster'], data['TargetNwk'], data['TargetEp'], data['SrcEp'],  data['payload'])
     )
 
     return self.ControllerLink.sendData( "RAW-COMMAND", data, NwkId=int(targetaddr,16), sqn=int(zigpyzqn,16), ackIsDisabled=ackIsDisabled )

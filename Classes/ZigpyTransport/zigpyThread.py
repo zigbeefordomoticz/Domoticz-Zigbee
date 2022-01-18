@@ -246,6 +246,8 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
     #    'Sqn': None,
     #    'payload': payload,
     #    }
+    Function = data["Function"]
+    TimeStamp = data["timestamp"]
     Profile = data["Profile"]
     Cluster = data["Cluster"]
     NwkId = "%04x" %data["TargetNwk"]
@@ -260,8 +262,8 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
     self.log.logging(
         "TransportZigpy",
         "Debug",
-        "ZigyTransport: process_raw_command ready to request NwkId: %04x Cluster: %04x Seq: %02x Payload: %s AddrMode: %02x EnableAck: %s, Sqn: %s" % (
-            int(NwkId,16), Cluster, sequence, binascii.hexlify(payload).decode("utf-8"), addressmode, not AckIsDisable, Sqn),
+        "ZigyTransport: process_raw_command ready to request Function: %s NwkId: %04x Cluster: %04x Seq: %02x Payload: %s AddrMode: %02x EnableAck: %s, Sqn: %s" % (
+            Function, int(NwkId,16), Cluster, sequence, binascii.hexlify(payload).decode("utf-8"), addressmode, not AckIsDisable, Sqn),
     )
 
     if int(NwkId,16) >= 0xfffb:  # Broadcast
