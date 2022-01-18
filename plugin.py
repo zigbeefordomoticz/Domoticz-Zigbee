@@ -352,7 +352,7 @@ class BasePlugin:
         )
 
         # Create the adminStatusWidget if needed
-        self.PluginHealth["Flag"] = 1
+        self.PluginHealth["Flag"] = 4
         self.PluginHealth["Txt"] = "Startup"
 
         if self.log is None:
