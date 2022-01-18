@@ -53,13 +53,13 @@ The first time you have to install the plugin via the `git clone` command, or yo
 
 ### Tested Hardware Zigbee adapters/dongles/sticks/keys
 
-The plugin was originally developed for the [Zigate](https://zigate.fr) Coordinators in close relationship with [Zigate](https://zigate.fr) manufactuer.
+The plugin was originally developed for the [ZiGate](https://zigate.fr) Zigbee Coordinator adapter in close relationship with the [ZiGate](https://zigate.fr) manufacturer and today all ZiGate based coordinators are supported .
 
-Since late 2021 where we have started opening the plugin to further brands of Zigbee Coordinators and begun focusing on compatibility with the [zzh](https://electrolama.com/projects/zig-a-zig-ah/) from [Electrolama](https://electrolama.com), thanks to their sponsorship.
+Since late 2021 where we have also begun opening the plugin to aupport additional brands of Zigbee Coordinator adapters made with chips from other manufacturers, starting by focusing on compatibility with the CC2652R-based [zzh](https://electrolama.com/projects/zig-a-zig-ah/) adapter from [Electrolama](https://electrolama.com), thanks to their sponsorship.
 
-Any Texas Instruments CC2531, CC13x2, CC26x2 adapters based on the [Zigbee Network Processors](http://dev.ti.com/tirex/content/simplelink_zigbee_sdk_plugin_2_20_00_06/docs/zigbee_user_guide/html/zigbee/introduction.html ) should be supported, more information could be found on [zigpy-znp](https://github.com/zigpy/zigpy-znp) which provided the layer to interface with the coordinator.
+Today any Texas Instruments CC253x, CC13x2, CC26x2 adapters based on the [Zigbee Network Processors](http://dev.ti.com/tirex/content/simplelink_zigbee_sdk_plugin_2_20_00_06/docs/zigbee_user_guide/html/zigbee/introduction.html ) should now be supported as well. More information can be found on [zigpy-znp](https://github.com/zigpy/zigpy-znp) which provided the layer to interface with the Zigbee Coordinator.
 
-You can also find a list of [Texas Instruments supported adapters](https://www.zigbee2mqtt.io/guide/adapters/#recommended) which also works with [zigpy-znp](https://github.com/zigpy/zigpy-znp) and as such should also work with this plugin
+Best is to look at "recommended" list in [Texas Instruments supported adapters](https://www.zigbee2mqtt.io/guide/adapters/#recommended) as all those also works with [zigpy-znp](https://github.com/zigpy/zigpy-znp) and as such should also work with this Zigbee for Domoticz plugin. Take note hat CC2530, CC2531, and CC2538 are not recommended to buyers as a new purchase due to their older underpowered hardware and/or end-of-life firmware which is no longer maintained by Texas Instruments.
 
 ## LIMITATIONS
 
