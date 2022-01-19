@@ -58,11 +58,12 @@ from Modules.tools import (DeviceExist, ReArrangeMacCapaBasedOnModel,
                            set_request_phase_datastruct, set_status_datastruct,
                            timeStamped, updLQI, updSQN)
 from Modules.zigateConsts import (ADDRESS_MODE, LEGRAND_REMOTE_MOTION,
-                                  LEGRAND_REMOTE_SWITCHS, ZCL_CLUSTERS_LIST,
+                                  LEGRAND_REMOTE_SWITCHS, ZCL_CLUSTERS_LIST, ZIGATE_EP,
                                   ZIGBEE_COMMAND_IDENTIFIER)
 from Modules.zigbeeController import (initLODZigate, receiveZigateEpDescriptor,
                                       receiveZigateEpList)
 from Modules.zigbeeVersionTable import FIRMWARE_BRANCH
+from Zigbee.zclCommands import zcl_ias_zone_enroll_response
 
 
 def ZigateRead(self, Devices, Data):
@@ -126,6 +127,7 @@ def ZigateRead(self, Devices, Data):
         "8122": Decode8122,
         "8139": Decode8140,
         "8140": Decode8140,
+        "8400": Decode8400,
         "8401": Decode8401,
         "8501": Decode8501,
         "8503": Decode8503,
@@ -3416,6 +3418,16 @@ def Decode8141(self, Devices, MsgData, MsgLQI):  # Attribute Discovery Extended 
 
 
 # IAS Zone
+def Decode8400(self, Devices, MsgData, MsgLQI):
+    # IAS Zone Enroll Request
+    sqn = MsgData[:2]
+    zonetype = MsgData[2:6]
+    manufacturercode = MsgData[6:10]
+    nwkid = MsgData[10:14]
+    ep = MsgData[14:16]
+    zcl_ias_zone_enroll_response(self, nwkid, ZIGATE_EP, ep, "00", "00", ackIsDisabled=False)
+        
+        
 def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change notification
 
     self.log.logging(

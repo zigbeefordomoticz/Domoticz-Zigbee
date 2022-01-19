@@ -56,7 +56,8 @@ def zcl_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, fram
     if ClusterId == "0500" and is_direction_to_client(fcf) and Command == "00":
         return buildframe_8401_cmd(self, "8401", frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Command, Data)
 
-
+    if ClusterId == "0500" and is_direction_to_client(fcf) and Command == "01":
+        return buildframe_8400_cmd(self, "8400", frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Command, Data)
     
     self.log.logging(
         "zclDecoder",
@@ -441,6 +442,16 @@ def buildframe_0400_cmd(self, MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, Target
     zone_id = Data[2:4]
     buildPayload = Sqn + SrcNwkId + SrcEndPoint + enroll_response_code + zone_id
     return encapsulate_plugin_frame(MsgType, buildPayload, frame[len(frame) - 4 : len(frame) - 2])
+
+def buildframe_8400_cmd(self, MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Command, Data):
+    # IAS Zone Enroll request
+    self.log.logging("zclDecoder", "Debug", "buildframe_8400_cmd - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
+    zonetype = decode_endian_data( Data[:4], '31')
+    ManufacturerCode = decode_endian_data( Data[4:8], '21' )
+    buildPayload = Sqn + zonetype + ManufacturerCode + SrcNwkId + SrcEndPoint
+    return encapsulate_plugin_frame(MsgType, buildPayload, frame[len(frame) - 4 : len(frame) - 2])
+    
+    
 
 def buildframe_8401_cmd(self, MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Command, Data):
     self.log.logging("zclDecoder", "Debug", "buildframe_8401_cmd - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
