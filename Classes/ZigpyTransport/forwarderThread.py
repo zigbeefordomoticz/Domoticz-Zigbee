@@ -40,7 +40,7 @@ def forwarder_thread(self):
             # Empty Queue, timeout.
             continue
         except Exception as e:
-            self.log.logging("TransportFrwder", "Error", "forwarder_thread - Error while receiving a ZiGate command")
+            self.log.logging("TransportFrwder", "Error", "forwarder_thread - Error while receiving a Coordinator command")
 
             handle_thread_error(self, e, message)
 
