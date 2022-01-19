@@ -24,9 +24,11 @@ from Modules.tools import (check_datastruct, getListOfEpForCluster,
                            is_time_to_perform_work, reset_attr_datastruct,
                            set_isqn_datastruct, set_status_datastruct,
                            set_timestamp_datastruct)
-from Modules.tuya import tuya_cmd_0x0000_0xf0
+from Modules.tuya import tuya_cmd_0x0000_0xf0, PREFIX_MACADDR_TUYA, PREFIX_MACADDR_TUYA_LIST
+
 from Modules.zigateConsts import MAX_READATTRIBUTES_REQ, ZIGATE_EP
 from Modules.ikeaTradfri import PREFIX_MACADDR_IKEA_TRADFRI
+
 
 ATTRIBUTES = {
     "0000": [
@@ -143,11 +145,20 @@ def ReadAttributeReq(
     checkTime=True,
 ):
 
+    PREFIX_MACADDR_FRIENT = "0015bc00"
+
     # Check if we are in pairing mode and Read Attribute must be broken down in 1 attribute max, otherwise use the default value
     maxReadAttributesByRequest = MAX_READATTRIBUTES_REQ
     
     if 'IEEE' in self.ListOfDevices[ addr ] and self.ListOfDevices[ addr ]['IEEE'][: len(PREFIX_MACADDR_IKEA_TRADFRI)] == PREFIX_MACADDR_IKEA_TRADFRI:
         maxReadAttributesByRequest = MAX_READATTRIBUTES_REQ
+    
+    elif 'IEEE' in self.ListOfDevices[ addr ] and self.ListOfDevices[ addr ]['IEEE'][: len(PREFIX_MACADDR_TUYA)] in PREFIX_MACADDR_TUYA_LIST:
+        maxReadAttributesByRequest = 5
+        
+    elif 'IEEE' in self.ListOfDevices[ addr ] and self.ListOfDevices[ addr ]['IEEE'][: len(PREFIX_MACADDR_FRIENT)] == PREFIX_MACADDR_FRIENT:
+        maxReadAttributesByRequest = 5
+        
     elif "PairingInProgress" in self.ListOfDevices[addr] and self.ListOfDevices[addr]["PairingInProgress"]:
         maxReadAttributesByRequest = 1
 
