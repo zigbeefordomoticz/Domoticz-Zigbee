@@ -39,7 +39,8 @@ LEGRAND_CLUSTER_FC01 = {
     "Micromodule switch": {"None": "None"},
 }
 
-
+PREFIX_MACADDR_LEGRAND = "00047400"
+ 
 def pollingLegrand(self, key):
 
     """
