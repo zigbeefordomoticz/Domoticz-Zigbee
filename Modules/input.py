@@ -1999,11 +1999,21 @@ def Decode8043(self, Devices, MsgData, MsgLQI):  # Reception Simple descriptor r
     # MsgLen = len(MsgData)
 
     MsgDataSQN = MsgData[0:2]
-    # MsgDataStatus = MsgData[2:4]
+    MsgDataStatus = MsgData[2:4]
     MsgDataShAddr = MsgData[4:8]
     MsgDataLenght = MsgData[8:10]
+    self.log.logging(
+        "Input",
+        "Debug",
+        "Decode8043 - Received SQN: %s Addr: %s Len: %s Status: %s Data: %s" % (MsgDataSQN, MsgDataShAddr, MsgDataLenght, MsgDataStatus, MsgData),
+    )
 
+    if MsgDataSQN == self.ListOfDevices[MsgDataShAddr]["SQN"]:
+        return
+    
     if int(MsgDataLenght, 16) == 0:
+        return
+    if MsgDataStatus != '00':
         return
 
     MsgDataEp = MsgData[10:12]

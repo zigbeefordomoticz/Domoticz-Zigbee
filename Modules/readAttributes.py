@@ -26,6 +26,7 @@ from Modules.tools import (check_datastruct, getListOfEpForCluster,
                            set_timestamp_datastruct)
 from Modules.tuya import tuya_cmd_0x0000_0xf0
 from Modules.zigateConsts import MAX_READATTRIBUTES_REQ, ZIGATE_EP
+from Modules.ikeaTradfri import PREFIX_MACADDR_IKEA_TRADFRI
 
 ATTRIBUTES = {
     "0000": [
@@ -144,7 +145,10 @@ def ReadAttributeReq(
 
     # Check if we are in pairing mode and Read Attribute must be broken down in 1 attribute max, otherwise use the default value
     maxReadAttributesByRequest = MAX_READATTRIBUTES_REQ
-    if "PairingInProgress" in self.ListOfDevices[addr] and self.ListOfDevices[addr]["PairingInProgress"]:
+    
+    if 'IEEE' in self.ListOfDevices[ addr ] and self.ListOfDevices[ addr ]['IEEE'][: len(PREFIX_MACADDR_IKEA_TRADFRI)] == PREFIX_MACADDR_IKEA_TRADFRI:
+        maxReadAttributesByRequest = MAX_READATTRIBUTES_REQ
+    elif "PairingInProgress" in self.ListOfDevices[addr] and self.ListOfDevices[addr]["PairingInProgress"]:
         maxReadAttributesByRequest = 1
 
     if not isinstance(ListOfAttributes, list) or len(ListOfAttributes) <= maxReadAttributesByRequest:
@@ -426,20 +430,12 @@ def ReadAttributeRequest_0000_for_pairing(self, key):
     # Do we Have Manufacturer
     if  ListOfEp and self.ListOfDevices[key]["Manufacturer"] in [ {}, ""]:
         self.log.logging("ReadAttributes", "Log", "Request Basic  Manufacturer via Read Attribute request: %s" % "0004", nwkid=key)
-        manuf_name = [0x0004]
-        for x in ListOfEp:
-            ReadAttributeReq(self, key, ZIGATE_EP, x, "0000", manuf_name, ackIsDisabled=False, checkTime=False)
-            # We do on the first Ep
-            break
+        listAttributes.append(0x0004)
 
     # Do We have Model Name
     if ( ListOfEp and  self.ListOfDevices[key]["Model"] in [ {}, ""] ):
         self.log.logging("ReadAttributes", "Debug", "Request Basic  Model Name via Read Attribute request: %s" % "0005", nwkid=key)
-        model_name = [0x0005]
-        for x in ListOfEp:
-            ReadAttributeReq(self, key, ZIGATE_EP, x, "0000", model_name, ackIsDisabled=False, checkTime=False)
-            # We do on the first Ep
-            break
+        listAttributes.append(0x0005)
 
     # Check if Model Name should be requested
     if self.ListOfDevices[key]["Manufacturer"] == "1110":  # Profalux.

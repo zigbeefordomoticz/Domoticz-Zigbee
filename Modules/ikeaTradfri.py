@@ -14,6 +14,7 @@ from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import lastSeenUpdate
 from Modules.tools import  updSQN, extract_info_from_8085
 
+PREFIX_MACADDR_IKEA_TRADFRI = "000d6fff"
 
 def ikea_openclose_remote(self, Devices, NwkId, Ep, command, Data, Sqn):
 

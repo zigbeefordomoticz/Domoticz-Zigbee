@@ -24,7 +24,7 @@ from Modules.readAttributes import (ReadAttributeRequest_0006_0000,
                                     ReadAttributeRequest_0008_0000)
 from Modules.schneider_wiser import PREFIX_MACADDR_WIZER_LEGACY
 from Modules.tools import (DeviceExist, IEEEExist, decodeMacCapa,
-                           initDeviceInList, mainPoweredDevice, timeStamped)
+                           initDeviceInList, mainPoweredDevice, timeStamped, mainPoweredDevice)
 from Modules.tuyaSiren import tuya_sirene_registration
 from Modules.tuyaTRV import TUYA_eTRV_MODEL, tuya_eTRV_registration
 from Modules.zigateConsts import CLUSTERS_LIST
@@ -380,6 +380,9 @@ def store_annoucement(self, NwkId, MsgRejoinFlag, now):
 def read_attributes_if_needed( self, NwkId):
     # We receive a Device Annoucement
     # Let's check the status for a Switch or LvlControl
+    if not mainPoweredDevice(self, NwkId):
+        return
+
     for ep in self.ListOfDevices[ NwkId ]['Ep']:
         if "0006" in self.ListOfDevices[ NwkId ]['Ep'][ ep ]:
             ReadAttributeRequest_0006_0000(self, NwkId)

@@ -81,7 +81,7 @@ def processNotinDBDevices(self, Devices, NWKID, status, RIA):
 
     if status == "8043":  # We have at least receive 1 EndPoint
         status = interview_state_8043(self, NWKID, RIA, knownModel, status)
-        if status != "CreateDB" and RIA < 2:
+        if status != "CreateDB" and RIA <= 2:
             return
 
     if knownModel and RIA > 3 and status not in ("UNKNOW", "inDB"):
