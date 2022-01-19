@@ -442,7 +442,9 @@ def zdp_raw_permit_joining_request(self, tgtnwkid, duration, significance):
         ),
     )
     if self.zigbee_communitation == "zigpy":
-        data = {"Duration": int(duration, 16), "targetRouter": int(tgtnwkid, 16)}
+        if tgtnwkid in self.ListOfDevices and 'IEEE' in self.ListOfDevices[ tgtnwkid ]:
+            ieee = self.ListOfDevices[ tgtnwkid ]['IEEE']
+        data = {"Duration": int(duration, 16), "targetRouter": int(ieee, 16)}
         return self.ControllerLink.sendData("PERMIT-TO-JOIN", data)
 
 

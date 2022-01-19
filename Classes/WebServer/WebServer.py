@@ -16,7 +16,7 @@ from Classes.LoggingManagement import LoggingManagement
 from Classes.PluginConf import SETTINGS
 from Classes.WebServer.headerResponse import prepResponseMessage, setupHeadersResponse
 from Modules.actuators import actuators
-from Modules.basicOutputs import ZigatePermitToJoin, initiate_change_channel, setExtendedPANID, start_Zigate, zigateBlueLed 
+from Modules.basicOutputs import ZigatePermitToJoin, initiate_change_channel, setExtendedPANID, start_Zigate, zigateBlueLed , PermitToJoin
 from Modules.enki import enki_set_poweron_after_offon
 from Modules.philips import philips_set_poweron_after_offon
 from Modules.tools import is_hex
@@ -25,7 +25,6 @@ from Modules.sendZigateCommand import (raw_APS_request, send_zigatecmd_raw,
                                        send_zigatecmd_zcl_ack,sendZigateCmd,
                                        send_zigatecmd_zcl_noack)
 from Modules.zigateCommands import zigate_set_mode
-
 
 MIMETYPES = {
     "gif": "image/gif",
@@ -636,10 +635,12 @@ class WebServer(object):
                         else:
                             TcSignificance = "00"
                         # TcSignificance determines whether the remote device is a ‘Trust Centre’: TRUE: A Trust Centre FALSE: Not a Trust Centre
-                        sendZigateCmd(self, "0049", router + "%02x" % duration + TcSignificance)
+                        #sendZigateCmd(self, "0049", router + "%02x" % duration + TcSignificance)
+                        PermitToJoin(self, "%02x" % duration, TargetAddress=router)
 
                 else:
                     if self.pluginParameters["Mode2"] != "None":
+                        
                         ZigatePermitToJoin(self, int(data["PermitToJoin"]))
         return _response
 

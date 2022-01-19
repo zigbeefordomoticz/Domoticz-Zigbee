@@ -204,11 +204,13 @@ async def dispatch_command(self, data):
 
     if data["cmd"] == "PERMIT-TO-JOIN":
         duration = data["datas"]["Duration"]
-        if duration == 0xFF:
-            duration = 0xFE
+        target_router = data["datas"]['targetRouter']
+        target_router = None if target_router == int(0xFFFC) else t.EUI64(t.uint64_t(target_router).serialize())
+        duration == 0xFF if duration == 0xFE else duration
         self.permit_to_join_timer["Timer"] = time.time()
         self.permit_to_join_timer["Duration"] = duration
-        await self.app.permit(time_s=duration)
+        await self.app.permit(time_s=duration, node=target_router)
+
     elif data["cmd"] == "SET-TX-POWER":
         await self.app.set_tx_power(data["datas"]["Param1"])
     elif data["cmd"] == "SET-LED":
@@ -226,7 +228,7 @@ async def dispatch_command(self, data):
     elif data["cmd"] == "REMOVE-DEVICE":
         ieee = data["datas"]["Param1"]
         await self.app.remove_ieee( t.EUI64(t.uint64_t(ieee).serialize()) ) 
-        
+
     elif data["cmd"] == "REQ-NWK-STATUS":
         await asyncio.sleep(10)
         await self.app.load_network_info()
@@ -305,9 +307,6 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
         destination = self.app.get_device(nwk=t.NWK(int(NwkId,16)))
         self.log.logging( "TransportZigpy", "Debug", "process_raw_command  call request destination: %s" %destination)
         asyncio.create_task(transport_request(self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False))
-        
-        # if result and not AckIsDisable:
-        #     push_APS_ACK_NACKto_plugin(self, NwkId, result, destination.lqi)
         
     if result:
         self.log.logging(
