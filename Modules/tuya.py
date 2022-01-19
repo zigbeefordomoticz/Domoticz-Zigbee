@@ -34,6 +34,10 @@ from Modules.zigateConsts import ZIGATE_EP
 #   Direction: Device -> Coordinator 0x01
 #   Direction: Device -> Coordinator 0x02 Setpoint command response
 
+PREFIX_MACADDR_TUYA =    "847127ff"
+PREFIX_MACADDR_TUYA_LIST =  ( "847127ff", "60a423ff")  
+
+
 TUYA_MANUF_CODE = "1002"
 
 #   "_TZE200_i48qyn9s" : tuyaReadRawAPS ,
