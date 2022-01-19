@@ -2008,7 +2008,7 @@ def Decode8043(self, Devices, MsgData, MsgLQI):  # Reception Simple descriptor r
         "Decode8043 - Received SQN: %s Addr: %s Len: %s Status: %s Data: %s" % (MsgDataSQN, MsgDataShAddr, MsgDataLenght, MsgDataStatus, MsgData),
     )
 
-    if MsgDataSQN == self.ListOfDevices[MsgDataShAddr]["SQN"]:
+    if "SQN" in self.ListOfDevices[MsgDataShAddr] and MsgDataSQN == self.ListOfDevices[MsgDataShAddr]["SQN"]:
         return
     
     if int(MsgDataLenght, 16) == 0:
