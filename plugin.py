@@ -250,7 +250,7 @@ class BasePlugin:
         self.zigbee_communitation = None  # "zigpy" or "native"
 
     def onStart(self):
-        Domoticz.Log("ZiGate plugin started!")
+        Domoticz.Log("Zigbee for Domoticz plugin started!")
         assert sys.version_info >= (3, 4)  # nosec
 
         if Parameters["Mode1"] == "V1" and Parameters["Mode2"] in (
@@ -839,10 +839,10 @@ class BasePlugin:
                 self.log.logging(
                     "Plugin",
                     "Error",
-                    "[%3s] I have hard time to get ZiGate Version. Mostlikly ZiGate communication doesn't work"
+                    "[%3s] I have hard time to get Coordinator Version. Mostlikly there is a communication issue"
                     % (self.internalHB),
                 )
-                self.log.logging("Plugin", "Error", "[   ] Stop the plugin and check ZiGate.")
+                self.log.logging("Plugin", "Error", "[   ] Stop the plugin and check the Coordinator connectivity.")
 
             if (self.internalHB % 5) == 0:
                 self.log.logging(
