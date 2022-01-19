@@ -630,18 +630,13 @@ class WebServer(object):
                             self.logging("Log", "Requesting router: %s to disable Permit to join" % router)
                         else:
                             self.logging("Log", "Requesting router: %s to enable Permit to join" % router)
-                        if router == "0000":
-                            TcSignificance = "01"
-                        else:
-                            TcSignificance = "00"
+                        TcSignificance = "01" if router == "0000" else "00"
                         # TcSignificance determines whether the remote device is a ‘Trust Centre’: TRUE: A Trust Centre FALSE: Not a Trust Centre
                         #sendZigateCmd(self, "0049", router + "%02x" % duration + TcSignificance)
                         PermitToJoin(self, "%02x" % duration, TargetAddress=router)
 
-                else:
-                    if self.pluginParameters["Mode2"] != "None":
-                        
-                        ZigatePermitToJoin(self, int(data["PermitToJoin"]))
+                elif self.pluginParameters["Mode2"] != "None":
+                    ZigatePermitToJoin(self, int(data["PermitToJoin"]))
         return _response
 
     def rest_Device(self, verb, data, parameters):

@@ -203,13 +203,22 @@ async def get_next_command( self ):
 async def dispatch_command(self, data):
 
     if data["cmd"] == "PERMIT-TO-JOIN":
+        self.log.logging( "TransportZigpy", "Debug", "PERMIT-TO-JOIN: %s duration: %s" %(
+            data["datas"]['targetRouter'], data["datas"]["Duration"] ))
         duration = data["datas"]["Duration"]
         target_router = data["datas"]['targetRouter']
-        target_router = None if target_router == int(0xFFFC) else t.EUI64(t.uint64_t(target_router).serialize())
-        duration == 0xFF if duration == 0xFE else duration
+        target_router = None if target_router == 'FFFC' else t.EUI64(t.uint64_t(target_router).serialize())
+        duration == 0xFE if duration == 0xFF else duration
         self.permit_to_join_timer["Timer"] = time.time()
         self.permit_to_join_timer["Duration"] = duration
-        await self.app.permit(time_s=duration, node=target_router)
+        
+        if target_router is None:
+            self.log.logging( "TransportZigpy", "Debug", "PERMIT-TO-JOIN: duration: %s" %duration)
+            await self.app.permit(time_s=duration)
+        else:
+            self.log.logging( "TransportZigpy", "Debug", "PERMIT-TO-JOIN: duration: %s target: %s" %(duration, target_router))
+            await self.app.permit(time_s=duration, node=target_router)
+            
 
     elif data["cmd"] == "SET-TX-POWER":
         await self.app.set_tx_power(data["datas"]["Param1"])
