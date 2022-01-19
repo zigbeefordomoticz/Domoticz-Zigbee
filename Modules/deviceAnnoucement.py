@@ -22,7 +22,7 @@ from Modules.pairingProcess import (interview_state_004d,
                                     zigbee_provision_device)
 from Modules.readAttributes import (ReadAttributeRequest_0006_0000,
                                     ReadAttributeRequest_0008_0000)
-from Modules.schneider_wiser import PREFIX_MACADDR_WIZER_LEGACY
+from Modules.manufacturer_code import PREFIX_MACADDR_LIVOLO, PREFIX_MAC_LEN
 from Modules.tools import (DeviceExist, IEEEExist, decodeMacCapa,
                            initDeviceInList, mainPoweredDevice, timeStamped, mainPoweredDevice)
 from Modules.tuyaSiren import tuya_sirene_registration
@@ -278,10 +278,11 @@ def decode004d_new_devicev2(self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgData, 
     deviceMacCapa = list(decodeMacCapa(MsgMacCapa))
 
     # There is a dilem here as Livolo and Schneider Wiser share the same IEEE prefix.
-    if self.pluginconf.pluginConf["Livolo"]:
-        PREFIX_MACADDR_LIVOLO = "00124b00"
-        if MsgIEEE[0 : len(PREFIX_MACADDR_LIVOLO)] == PREFIX_MACADDR_LIVOLO:
-            livolo_bind(self, NwkId, "06")
+    if (
+        self.pluginconf.pluginConf["Livolo"]
+        and MsgIEEE[: len(PREFIX_MAC_LEN)] == PREFIX_MACADDR_LIVOLO
+    ):
+        livolo_bind(self, NwkId, "06")
 
     # New device comming. The IEEE is not known
     self.log.logging("Input", "Debug", "Decode004D - New Device %s %s" % (NwkId, MsgIEEE), NwkId)
@@ -311,15 +312,15 @@ def decode004d_new_devicev2(self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgData, 
     self.IEEE2NWK[MsgIEEE] = NwkId
 
     # This code should not happen !( PP 02/05/2020 )
-    if IEEEExist(self, MsgIEEE):
-        # we are getting a dupplicate. Most-likely the Device is existing and we have to reconnect.
-        if not DeviceExist(self, Devices, NwkId, MsgIEEE):
-            self.log.logging(
-                "Pairing",
-                "Error",
-                "Decode004d - Paranoia .... NwkID: %s, IEEE: %s -> %s " % (NwkId, MsgIEEE, str(self.ListOfDevices[NwkId])),
-            )
-            return
+    if IEEEExist(self, MsgIEEE) and not DeviceExist(
+        self, Devices, NwkId, MsgIEEE
+    ):
+        self.log.logging(
+            "Pairing",
+            "Error",
+            "Decode004d - Paranoia .... NwkID: %s, IEEE: %s -> %s " % (NwkId, MsgIEEE, str(self.ListOfDevices[NwkId])),
+        )
+        return
 
     # 2- Create the Data Structutre
     initDeviceInList(self, NwkId)

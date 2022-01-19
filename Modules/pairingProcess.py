@@ -10,6 +10,8 @@
 
 """
 
+import time
+
 import Domoticz
 from Zigbee.zdpCommands import (zdp_active_endpoint_request,
                                 zdp_node_descriptor_request,
@@ -21,14 +23,15 @@ from Modules.casaia import casaia_pairing
 from Modules.domoCreate import CreateDomoDevice
 from Modules.livolo import livolo_bind
 from Modules.lumi import enableOppleSwitch
+from Modules.manufacturer_code import (PREFIX_MAC_LEN,
+                                       PREFIX_MACADDR_WIZER_LEGACY, PREFIX_MACADDR_XIAOMI, PREFIX_MACADDR_OPPLE, )
 from Modules.mgmt_rtg import mgmt_rtg
 from Modules.orvibo import OrviboRegistration
 from Modules.profalux import profalux_fake_deviceModel
 from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST,
                                     ReadAttributeRequest_0000,
                                     ReadAttributeRequest_0300)
-from Modules.schneider_wiser import (PREFIX_MACADDR_WIZER_LEGACY,
-                                     WISER_LEGACY_MODEL_NAME_PREFIX,
+from Modules.schneider_wiser import (WISER_LEGACY_MODEL_NAME_PREFIX,
                                      schneider_wiser_registration,
                                      wiser_home_lockout_thermostat)
 from Modules.thermostats import thermostat_Calibration
@@ -38,7 +41,7 @@ from Modules.tuyaSiren import tuya_sirene_registration
 from Modules.tuyaTools import tuya_TS0121_registration
 from Modules.tuyaTRV import TUYA_eTRV_MODEL, tuya_eTRV_registration
 from Modules.zigateConsts import CLUSTERS_LIST
-import time
+
 
 def processNotinDBDevices(self, Devices, NWKID, status, RIA):
 
@@ -139,19 +142,18 @@ def interview_state_004d(self, NWKID, RIA=None, status=None):
     if "IEEE" in self.ListOfDevices[NWKID]:
         MsgIEEE = self.ListOfDevices[NWKID]["IEEE"]
 
-    PREFIX_IEEE_XIAOMI = "00158d000"
-    PREFIX_IEEE_OPPLE = "04cf8cdf3"
+    
+    
     if (
         MsgIEEE
-        and MsgIEEE[: len(PREFIX_IEEE_XIAOMI)] == PREFIX_IEEE_XIAOMI
-        or MsgIEEE[: len(PREFIX_IEEE_OPPLE)] == PREFIX_IEEE_OPPLE
+        and MsgIEEE[: len(PREFIX_MAC_LEN)] in PREFIX_MACADDR_XIAOMI
+        or MsgIEEE[: len(PREFIX_MAC_LEN)] in PREFIX_MACADDR_OPPLE
     ):
         ReadAttributeRequest_0000(self, NWKID, fullScope=False)  # In order to request Model Name
 
-    PREFIX_IEEE_WISER = "00124b000"
     if (
         self.pluginconf.pluginConf["enableSchneiderWiser"]
-        and MsgIEEE[: len(PREFIX_IEEE_WISER)] == PREFIX_IEEE_WISER
+        and MsgIEEE[: len(PREFIX_MAC_LEN)] in PREFIX_MACADDR_WIZER_LEGACY
     ):
         ReadAttributeRequest_0000(self, NWKID, fullScope=False)  # In order to request Model Name
 
@@ -607,8 +609,8 @@ def handle_device_specific_needs(self, Devices, NWKID):
         wiser_home_lockout_thermostat(self, NWKID, 0)
 
     elif (
-        MsgIEEE[: len(PREFIX_MACADDR_WIZER_LEGACY)]
-        == PREFIX_MACADDR_WIZER_LEGACY
+        MsgIEEE[: len(PREFIX_MAC_LEN)]
+        in PREFIX_MACADDR_WIZER_LEGACY
         and WISER_LEGACY_MODEL_NAME_PREFIX
         in self.ListOfDevices[NWKID]["Model"]
     ):

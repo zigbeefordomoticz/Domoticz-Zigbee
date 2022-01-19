@@ -30,9 +30,6 @@ from Modules.writeAttributes import write_attribute_when_awake
 from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_EP
 
 
-PREFIX_MACADDR_WIZER_LEGACY = "00124b00"
-PREFIX_MACADDR_WIZER_HOME = "588E81ff"
-
 WISER_LEGACY_MODEL_NAME_PREFIX = "EH-ZB"
 WISER_LEGACY_BASE_EP = "0b"
 

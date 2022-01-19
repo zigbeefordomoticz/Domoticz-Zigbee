@@ -19,16 +19,18 @@ from Classes.LoggingManagement import LoggingManagement
 from Modules.basicOutputs import (identifySend, read_attribute,
                                   send_zigatecmd_zcl_ack,
                                   send_zigatecmd_zcl_noack)
+from Modules.manufacturer_code import (PREFIX_MAC_LEN, PREFIX_MACADDR_DEVELCO,
+                                       PREFIX_MACADDR_IKEA_TRADFRI,
+                                       PREFIX_MACADDR_OPPLE,
+                                       PREFIX_MACADDR_TUYA,
+                                       PREFIX_MACADDR_XIAOMI)
 from Modules.tools import (check_datastruct, getListOfEpForCluster,
                            is_ack_tobe_disabled, is_attr_unvalid_datastruct,
                            is_time_to_perform_work, reset_attr_datastruct,
                            set_isqn_datastruct, set_status_datastruct,
                            set_timestamp_datastruct)
-from Modules.tuya import tuya_cmd_0x0000_0xf0, PREFIX_MACADDR_TUYA, PREFIX_MACADDR_TUYA_LIST
-
+from Modules.tuya import tuya_cmd_0x0000_0xf0
 from Modules.zigateConsts import MAX_READATTRIBUTES_REQ, ZIGATE_EP
-from Modules.ikeaTradfri import PREFIX_MACADDR_IKEA_TRADFRI
-
 
 ATTRIBUTES = {
     "0000": [
@@ -145,18 +147,16 @@ def ReadAttributeReq(
     checkTime=True,
 ):
 
-    PREFIX_MACADDR_FRIENT = "0015bc00"
-
     # Check if we are in pairing mode and Read Attribute must be broken down in 1 attribute max, otherwise use the default value
     maxReadAttributesByRequest = MAX_READATTRIBUTES_REQ
     
-    if 'IEEE' in self.ListOfDevices[ addr ] and self.ListOfDevices[ addr ]['IEEE'][: len(PREFIX_MACADDR_IKEA_TRADFRI)] == PREFIX_MACADDR_IKEA_TRADFRI:
+    if 'IEEE' in self.ListOfDevices[ addr ] and self.ListOfDevices[ addr ]['IEEE'][: PREFIX_MAC_LEN] in PREFIX_MACADDR_IKEA_TRADFRI:
         maxReadAttributesByRequest = MAX_READATTRIBUTES_REQ
     
-    elif 'IEEE' in self.ListOfDevices[ addr ] and self.ListOfDevices[ addr ]['IEEE'][: len(PREFIX_MACADDR_TUYA)] in PREFIX_MACADDR_TUYA_LIST:
+    elif 'IEEE' in self.ListOfDevices[ addr ] and self.ListOfDevices[ addr ]['IEEE'][: PREFIX_MAC_LEN] in PREFIX_MACADDR_TUYA:
         maxReadAttributesByRequest = 5
         
-    elif 'IEEE' in self.ListOfDevices[ addr ] and self.ListOfDevices[ addr ]['IEEE'][: len(PREFIX_MACADDR_FRIENT)] == PREFIX_MACADDR_FRIENT:
+    elif 'IEEE' in self.ListOfDevices[ addr ] and self.ListOfDevices[ addr ]['IEEE'][: PREFIX_MAC_LEN] in PREFIX_MACADDR_DEVELCO:
         maxReadAttributesByRequest = 5
         
     elif "PairingInProgress" in self.ListOfDevices[addr] and self.ListOfDevices[addr]["PairingInProgress"]:
@@ -468,12 +468,10 @@ def ReadAttributeRequest_0000_for_pairing(self, key):
             "Request Basic  via Read Attribute request: " + key + " EPout = " + "01, 02, 03, 06, 09, 0b",
             nwkid=key,
         )
-        PREFIX_IEEE_XIAOMI = "00158d000"
-        PREFIX_IEEE_OPPLE =  "04cf8cdf3"
 
         ieee = self.ListOfDevices[ key ]['IEEE']
-        if ( ieee[: len(PREFIX_IEEE_XIAOMI)] == PREFIX_IEEE_XIAOMI or 
-            ieee[: len(PREFIX_IEEE_OPPLE)] == PREFIX_IEEE_OPPLE):
+        if ( ieee[: len(PREFIX_MAC_LEN)] in PREFIX_MACADDR_XIAOMI or 
+            ieee[: len(PREFIX_MAC_LEN)] in PREFIX_MACADDR_OPPLE):
             ReadAttributeReq(self, key, ZIGATE_EP, "01", "0000", listAttributes, ackIsDisabled=False, checkTime=False)
         else:
             ReadAttributeReq(self, key, ZIGATE_EP, "01", "0000", listAttributes, ackIsDisabled=False, checkTime=False)

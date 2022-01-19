@@ -38,8 +38,6 @@ LEGRAND_CLUSTER_FC01 = {
     "Shutter switch with neutral": {"EnableLedShutter": "0001"},
     "Micromodule switch": {"None": "None"},
 }
-
-PREFIX_MACADDR_LEGRAND = "00047400"
  
 def pollingLegrand(self, key):
 
