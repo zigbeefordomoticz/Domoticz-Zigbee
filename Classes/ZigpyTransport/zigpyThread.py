@@ -48,7 +48,7 @@ def start_zigpy_thread(self):
 
 def stop_zigpy_thread(self):
     self.log.logging("TransportZigpy", "Debug", "stop_zigpy_thread - Stopping zigpy thread")
-    self.writer_queue.put((0, "STOP"))
+    self.writer_queue.put("STOP")
     self.zigpy_running = False
 
 
@@ -134,7 +134,7 @@ async def worker_loop(self):
         if self.writer_queue is None:
             break
         
-        prio, entry = await get_next_command( self ) 
+        entry = await get_next_command( self ) 
         if entry is None:
             continue
         elif entry == "STOP":
@@ -194,11 +194,11 @@ async def worker_loop(self):
 
 async def get_next_command( self ):
     try:
-        prio, entry = self.writer_queue.get(False)
+        entry = self.writer_queue.get(False)
     except queue.Empty:
         await asyncio.sleep(0.100)
-        return None, None
-    return prio, entry
+        return None
+    return entry
 
 async def dispatch_command(self, data):
 
@@ -273,8 +273,8 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
     self.log.logging(
         "TransportZigpy",
         "Debug",
-        "ZigyTransport: process_raw_command ready to request Function: %s NwkId: %04x Cluster: %04x Seq: %02x Payload: %s AddrMode: %02x EnableAck: %s, Sqn: %s" % (
-            Function, int(NwkId,16), Cluster, sequence, binascii.hexlify(payload).decode("utf-8"), addressmode, not AckIsDisable, Sqn),
+        "ZigyTransport: process_raw_command ready to request Function: %s NwkId: %04x/%s Cluster: %04x Seq: %02x Payload: %s AddrMode: %02x EnableAck: %s, Sqn: %s" % (
+            Function, int(NwkId,16), dEp, Cluster, sequence, binascii.hexlify(payload).decode("utf-8"), addressmode, not AckIsDisable, Sqn),
     )
 
     if int(NwkId,16) >= 0xfffb:  # Broadcast
@@ -300,7 +300,7 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
         self.log.logging( "TransportZigpy", "Debug", "process_raw_command  call request destination: %s Profile: %s Cluster: %s sEp: %s dEp: %s Seq: %s Payload: %s" %(
             destination, Profile, Cluster, sEp, dEp, sequence, payload))
         try:
-             asyncio.create_task(transport_request(self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False))
+            asyncio.create_task(transport_request(self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False))
         except DeliveryError as e:
             # This could be relevant to APS NACK after retry
             # Request failed after 5 attempts: <Status.MAC_NO_ACK: 233>  

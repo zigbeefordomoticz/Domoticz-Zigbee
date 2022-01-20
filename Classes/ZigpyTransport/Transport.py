@@ -54,7 +54,7 @@ class ZigpyTransport(object):
         sqn_init_stack(self)
 
         self.app: zigpy.application.ControllerApplication | None = None
-        self.writer_queue = PriorityQueue()
+        self.writer_queue = Queue()
         self.forwarder_queue = Queue()
         self.zigpy_thread = Thread(name="ZigpyCom_%s" % self.hardwareid, target=zigpy_thread, args=(self,))
         self.forwarder_thread = Thread(name="ZigpyForwarder_%s" % self.hardwareid, target=forwarder_thread, args=(self,))
@@ -92,7 +92,7 @@ class ZigpyTransport(object):
 
         self.log.logging("Transport", "Debug", "===> sendData - Cmd: %s Datas: %s" % (cmd, datas))
         message = {"cmd": cmd, "datas": datas, "NwkId": NwkId, "TimeStamp": time.time(), "ACKIsDisable": ackIsDisabled, "Sqn": sqn}
-        self.writer_queue.put((99, str(json.dumps(message))))
+        self.writer_queue.put(str(json.dumps(message)))
 
     def receiveData(self, message):
         self.log.logging("Transport", "Debug", "===> receiveData for Forwarded - Message %s" % (message))
