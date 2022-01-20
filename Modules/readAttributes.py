@@ -22,7 +22,7 @@ from Modules.basicOutputs import (identifySend, read_attribute,
 from Modules.manufacturer_code import (PREFIX_MAC_LEN, PREFIX_MACADDR_DEVELCO,
                                        PREFIX_MACADDR_IKEA_TRADFRI,
                                        PREFIX_MACADDR_OPPLE,
-                                       PREFIX_MACADDR_TUYA,
+                                       PREFIX_MACADDR_TUYA, PREFIX_MACADDR_CASAIA, 
                                        PREFIX_MACADDR_XIAOMI)
 from Modules.tools import (check_datastruct, getListOfEpForCluster,
                            is_ack_tobe_disabled, is_attr_unvalid_datastruct,
@@ -159,6 +159,9 @@ def ReadAttributeReq(
     elif 'IEEE' in self.ListOfDevices[ addr ] and self.ListOfDevices[ addr ]['IEEE'][: PREFIX_MAC_LEN] in PREFIX_MACADDR_DEVELCO:
         maxReadAttributesByRequest = 5
         
+    elif 'IEEE' in self.ListOfDevices[ addr ] and self.ListOfDevices[ addr ]['IEEE'][: PREFIX_MAC_LEN] in PREFIX_MACADDR_CASAIA:
+        maxReadAttributesByRequest = 5
+    
     elif "PairingInProgress" in self.ListOfDevices[addr] and self.ListOfDevices[addr]["PairingInProgress"]:
         maxReadAttributesByRequest = 1
 

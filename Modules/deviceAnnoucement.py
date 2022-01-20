@@ -280,7 +280,7 @@ def decode004d_new_devicev2(self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgData, 
     # There is a dilem here as Livolo and Schneider Wiser share the same IEEE prefix.
     if (
         self.pluginconf.pluginConf["Livolo"]
-        and MsgIEEE[: len(PREFIX_MAC_LEN)] == PREFIX_MACADDR_LIVOLO
+        and MsgIEEE[: PREFIX_MAC_LEN] == PREFIX_MACADDR_LIVOLO
     ):
         livolo_bind(self, NwkId, "06")
 

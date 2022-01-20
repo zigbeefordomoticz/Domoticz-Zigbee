@@ -146,14 +146,14 @@ def interview_state_004d(self, NWKID, RIA=None, status=None):
     
     if (
         MsgIEEE
-        and MsgIEEE[: len(PREFIX_MAC_LEN)] in PREFIX_MACADDR_XIAOMI
-        or MsgIEEE[: len(PREFIX_MAC_LEN)] in PREFIX_MACADDR_OPPLE
+        and MsgIEEE[: PREFIX_MAC_LEN] in PREFIX_MACADDR_XIAOMI
+        or MsgIEEE[: PREFIX_MAC_LEN] in PREFIX_MACADDR_OPPLE
     ):
         ReadAttributeRequest_0000(self, NWKID, fullScope=False)  # In order to request Model Name
 
     if (
         self.pluginconf.pluginConf["enableSchneiderWiser"]
-        and MsgIEEE[: len(PREFIX_MAC_LEN)] in PREFIX_MACADDR_WIZER_LEGACY
+        and MsgIEEE[: PREFIX_MAC_LEN] in PREFIX_MACADDR_WIZER_LEGACY
     ):
         ReadAttributeRequest_0000(self, NWKID, fullScope=False)  # In order to request Model Name
 
@@ -609,7 +609,7 @@ def handle_device_specific_needs(self, Devices, NWKID):
         wiser_home_lockout_thermostat(self, NWKID, 0)
 
     elif (
-        MsgIEEE[: len(PREFIX_MAC_LEN)]
+        MsgIEEE[: PREFIX_MAC_LEN]
         in PREFIX_MACADDR_WIZER_LEGACY
         and WISER_LEGACY_MODEL_NAME_PREFIX
         in self.ListOfDevices[NWKID]["Model"]
