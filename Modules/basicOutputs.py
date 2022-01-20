@@ -837,7 +837,7 @@ def initiate_change_channel(self, new_channel):
         channel_mask = decode_endian_data(channel_mask, "1b")
         zdp_raw_nwk_update_request(self, target_address, channel_mask, scanDuration, scancount="00", nwkupdateid="01")
     else:
-        zdp_management_network_update_request(self, target_address , channel_mask , scanDuration , scancount="00" , nwkupdateid="01")
+        zdp_management_network_update_request(self, target_address , channel_mask , scanDuration , scan_repeat="00" , nwk_updateid="01")
     #send_zigatecmd_raw(self, "004A", datas)
     zigate_get_nwk_state(self)
     if "0000" in self.ListOfDevices:
