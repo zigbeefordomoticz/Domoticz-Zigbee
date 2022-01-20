@@ -473,8 +473,8 @@ def ReadAttributeRequest_0000_for_pairing(self, key):
         )
 
         ieee = self.ListOfDevices[ key ]['IEEE']
-        if ( ieee[: len(PREFIX_MAC_LEN)] in PREFIX_MACADDR_XIAOMI or 
-            ieee[: len(PREFIX_MAC_LEN)] in PREFIX_MACADDR_OPPLE):
+        if ( ieee[: PREFIX_MAC_LEN] in PREFIX_MACADDR_XIAOMI or 
+            ieee[: PREFIX_MAC_LEN] in PREFIX_MACADDR_OPPLE):
             ReadAttributeReq(self, key, ZIGATE_EP, "01", "0000", listAttributes, ackIsDisabled=False, checkTime=False)
         else:
             ReadAttributeReq(self, key, ZIGATE_EP, "01", "0000", listAttributes, ackIsDisabled=False, checkTime=False)
