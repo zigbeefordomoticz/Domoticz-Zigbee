@@ -141,20 +141,11 @@ def interview_state_004d(self, NWKID, RIA=None, status=None):
     MsgIEEE = None
     if "IEEE" in self.ListOfDevices[NWKID]:
         MsgIEEE = self.ListOfDevices[NWKID]["IEEE"]
-
     
-    
-    if (
-        MsgIEEE
-        and MsgIEEE[: PREFIX_MAC_LEN] in PREFIX_MACADDR_XIAOMI
-        or MsgIEEE[: PREFIX_MAC_LEN] in PREFIX_MACADDR_OPPLE
-    ):
+    if ( MsgIEEE and ( MsgIEEE[: PREFIX_MAC_LEN] in PREFIX_MACADDR_XIAOMI or MsgIEEE[: PREFIX_MAC_LEN] in PREFIX_MACADDR_OPPLE ) ):
         ReadAttributeRequest_0000(self, NWKID, fullScope=False)  # In order to request Model Name
 
-    if (
-        self.pluginconf.pluginConf["enableSchneiderWiser"]
-        and MsgIEEE[: PREFIX_MAC_LEN] in PREFIX_MACADDR_WIZER_LEGACY
-    ):
+    if ( self.pluginconf.pluginConf["enableSchneiderWiser"] and MsgIEEE[: PREFIX_MAC_LEN] in PREFIX_MACADDR_WIZER_LEGACY ):
         ReadAttributeRequest_0000(self, NWKID, fullScope=False)  # In order to request Model Name
 
     zdp_active_endpoint_request(self, NWKID )
@@ -547,6 +538,7 @@ def handle_IAS_enrollmment_if_needed(self, NWKID, RIA, status):
 
 
 def device_interview(self, NWKID):
+    self.log.logging("Pairing", "Debug", "device_interview %s" %NWKID)
     for iterEp in self.ListOfDevices[NWKID]["Ep"]:
         # Let's scan each Endpoint cluster and check if there is anything to read
         for iterReadAttrCluster in CLUSTERS_LIST:
@@ -559,6 +551,7 @@ def device_interview(self, NWKID):
                 continue
             # if iterReadAttrCluster == '0000':
             #    reset_cluster_datastruct( self, 'ReadAttributes', NWKID, iterEp, iterReadAttrCluster  )
+            self.log.logging("Pairing", "Debug", "device_interview %s Read Attribute for cluster: %s" %(NWKID, iterReadAttrCluster ))
             func = READ_ATTRIBUTES_REQUEST[iterReadAttrCluster][0]
             func(self, NWKID)
 
