@@ -234,6 +234,8 @@ class IAS_Zone_Management:
         if step == 3:  # Receive Write Attribute Message
             self.logging("Debug", "receiveIASmessages - Write rAttribute Response: %s" % value)
             self.HB = 0
+            if SrcEp not in self.devices[nwkid]:
+                return
             self.devices[nwkid][SrcEp]["Step"] = max(self.devices[nwkid][SrcEp]["Step"], 4)
             self.readConfirmEnroll(nwkid, SrcEp)
             self.IASZone_enroll_response_zoneIDzoneID(nwkid, SrcEp)
