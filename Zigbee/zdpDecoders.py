@@ -157,10 +157,13 @@ def buildframe_device_annoucement(self, SrcNwkId, SrcEndPoint, ClusterId, Payloa
     return encapsulate_plugin_frame("004d", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 
-def buildframe_node_descriptor_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):    
+def buildframe_node_descriptor_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
     sqn = Payload[:2]
     status = Payload[2:4]
     nwkid = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[4:8], 16)))[0]
+    self.log.logging("zdpDecoder", "Debug", "buildframe_node_descriptor_response for %s with status %s nwkid: %s SrcNwkId: %s Payload: %s" %(
+        nwkid, status, nwkid, SrcNwkId, Payload ))    
+    
     if status != "00":
         # Error
         # 0x80  Invalid request Type
