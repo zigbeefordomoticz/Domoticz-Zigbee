@@ -566,15 +566,24 @@ def processKnownDevices(self, Devices, NWKID):
     ) and (intHB % READATTRIBUTE_FEQ) == 0:
         _doReadAttribute = True
 
-    if 'PairingTime' in self.ListOfDevices[ NWKID ]:
+    if ( 
+        self.ControllerLink.loadTransmit() > 5
+        and 'PairingTime' in self.ListOfDevices[ NWKID ]
+        and time.time() <= ( self.ListOfDevices[ NWKID ]["PairingTime"] + ( self.ControllerLink.loadTransmit() // 5 ) + 15 ) 
+        ):
         # In case we have just finished the pairing give 3 minutes to finish.
-        if time.time() < self.ListOfDevices[ NWKID ]["PairingTime"] + 180:
-            _doReadAttribute = False
+        self.log.logging(
+            "Heartbeat",
+            "Error",
+            "processKnownDevices -  %s delay the next ReadAttribute to closed to the pairing %s" % (NWKID, self.ListOfDevices[ NWKID ]["PairingTime"],),
+            NWKID,
+        )
+        return
             
     if _doReadAttribute:
         self.log.logging(
             "Heartbeat",
-            "Debug",
+            "Log",
             "processKnownDevices -  %s intHB: %s _mainPowered: %s doReadAttr: %s" % (NWKID, intHB, _mainPowered, _doReadAttribute),
             NWKID,
         )
