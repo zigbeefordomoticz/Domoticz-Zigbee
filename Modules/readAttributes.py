@@ -126,11 +126,11 @@ ATTRIBUTES = {
         0x0508,
     ],
     "0b05": [0x0000],
-    "e001": [0xd011], # Tuya TS004F
+    "e001": [0xd011],   # Tuya TS004F
     "fc01": [0x0000, 0x0001, 0x0002],  # Legrand Cluster
     "fc21": [0x0001],
-    "fc40": [0x0000],  # Legrand
-    "ff66": [0x0000, 0x0002, 0x0003],  # Zlinky
+    "fc40": [0x0000],   # Legrand
+    "ff66": [0x0000, 0x0002, 0x0003],   # Zlinky
 }
 
 
@@ -209,7 +209,6 @@ def normalizedReadAttributeReq(self, addr, EpIn, EpOut, Cluster, ListOfAttribute
         ListOfAttributes.append(_tmpAttr)
 
     lenAttr = 0
-    weight = int((lenAttr) / 2) + 1
     Attr = ""
     attributeList = []
     self.log.logging("ReadAttributes", "Debug2", "attributes: " + str(ListOfAttributes), nwkid=addr)
@@ -444,21 +443,26 @@ def ReadAttributeRequest_0000_for_pairing(self, key):
     # Do we Have Manufacturer
     if  ListOfEp and self.ListOfDevices[key]["Manufacturer"] in [ {}, ""]:
         self.log.logging("ReadAttributes", "Log", "Request Basic  Manufacturer via Read Attribute request: %s" % "0004", nwkid=key)
-        listAttributes.append(0x0004)
+        if 0x0004 not in listAttributes:
+            listAttributes.append(0x0004)
 
     # Do We have Model Name
     if ( ListOfEp and  self.ListOfDevices[key]["Model"] in [ {}, ""] ):
         self.log.logging("ReadAttributes", "Debug", "Request Basic  Model Name via Read Attribute request: %s" % "0005", nwkid=key)
-        listAttributes.append(0x0005)
+        if 0x0005 not in listAttributes:
+            listAttributes.append(0x0005)
 
     # Check if Model Name should be requested
     if self.ListOfDevices[key]["Manufacturer"] == "1110":  # Profalux.
-        listAttributes.append(0x0010)
+        if 0x0010 not in listAttributes:
+            listAttributes.append(0x0010)
 
     elif self.ListOfDevices[key]["Manufacturer"] == "Legrand":
         self.log.logging("ReadAttributes", "Debug", "----> Adding: %s" % "f000", nwkid=key)
-        listAttributes.append(0x4000)
-        listAttributes.append(0xF000)
+        if 0x4000 not in listAttributes:
+            listAttributes.append(0x4000)
+        if 0xF000 not in listAttributes:
+            listAttributes.append(0xF000)
 
     listAttributes = add_attributes_from_device_certified_conf(self, key, "0000", listAttributes)
     self.log.logging("ReadAttributes", "Log", "EP: %s" % self.ListOfDevices[key]["Ep"])
@@ -473,8 +477,7 @@ def ReadAttributeRequest_0000_for_pairing(self, key):
         )
 
         ieee = self.ListOfDevices[ key ]['IEEE']
-        if ( ieee[: PREFIX_MAC_LEN] in PREFIX_MACADDR_XIAOMI or 
-            ieee[: PREFIX_MAC_LEN] in PREFIX_MACADDR_OPPLE):
+        if ( ieee[: PREFIX_MAC_LEN] in PREFIX_MACADDR_XIAOMI or ieee[: PREFIX_MAC_LEN] in PREFIX_MACADDR_OPPLE):
             ReadAttributeReq(self, key, ZIGATE_EP, "01", "0000", listAttributes, ackIsDisabled=False, checkTime=False)
         else:
             ReadAttributeReq(self, key, ZIGATE_EP, "01", "0000", listAttributes, ackIsDisabled=False, checkTime=False)
@@ -509,19 +512,21 @@ def add_attributes_from_device_certified_conf(self, key, cluster, listAttributes
 
 def ReadAttributeRequest_0000_for_general(self, key):
 
-    listAttributes = []
+    
     self.log.logging("ReadAttributes", "Debug", "--> Full scope", nwkid=key)
     ListOfEp = getListOfEpForCluster(self, key, "0000")
     for EPout in ListOfEp:
+        listAttributes = []
         for iterAttr in retreive_ListOfAttributesByCluster(self, key, EPout, "0000"):
-            listAttributes.append(iterAttr)
+            if iterAttr not in listAttributes:
+                listAttributes.append(iterAttr)
 
         if "Model" in self.ListOfDevices[key] and self.ListOfDevices[key]["Model"] != {}:
-            if str(self.ListOfDevices[key]["Model"]).find("lumi") != -1:
+            if "lumi" in str(self.ListOfDevices[key]["Model"]):
                 listAttributes.append(0xFF01)
                 listAttributes.append(0xFF02)
 
-            if str(self.ListOfDevices[key]["Model"]).find("TS0302") != -1:  # Inter Blind Zemismart
+            if "TS0302" in str(self.ListOfDevices[key]["Model"]):  # Inter Blind Zemismart
                 listAttributes.append(0xFFFD)
                 listAttributes.append(0xFFFE)
                 listAttributes.append(0xFFE1)
