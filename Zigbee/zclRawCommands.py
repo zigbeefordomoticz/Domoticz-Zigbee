@@ -61,18 +61,12 @@ def rawaps_write_attribute_req(self, nwkid, EPin, EPout, cluster, manuf_id, manu
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
     payload = fcf
     if manuf_spec == "01":
-        payload += "%04x" % struct.unpack(">H", struct.pack("H", int(manuf_id, 16)))[0]
+        payload += "%04x" %struct.unpack(">H", struct.pack("H", int(manuf_id, 16)))[0]
     payload += sqn + cmd
     payload += "%04x" % struct.unpack(">H", struct.pack("H", int(attribute, 16)))[0]  # Attribute Id
     payload += data_type  # Attribute Data Type
-    if data_type in ("10", "18", "20", "28", "30"):  # Attribute Data
-        payload += data
-    elif data_type in ("09", "16", "21", "29", "31"):
-        payload += "%04x" % struct.unpack(">H", struct.pack("H", int(data, 16)))[0]
-    elif data_type in ("22", "2a"):
-        payload += "%06x" % struct.unpack(">i", struct.pack("I", int(data, 16)))[0]
-    elif data_type in ("23", "2b", "39"):
-        payload += "%08x" % struct.unpack(">f", struct.pack("I", int(data, 16)))[0]
+    if data_type not in ( "41", "42"):
+        payload += decode_endian_data(data, data_type)
     else:
         payload += data
     self.log.logging("zclCommand", "Debug", "rawaps_write_attribute_req ==== payload: %s" % (payload))
@@ -99,16 +93,11 @@ def zcl_raw_write_attributeNoResponse(self, nwkid, EPin, EPout, cluster, manuf_i
     payload += sqn + cmd
     payload += "%04x" % struct.unpack(">H", struct.pack("H", int(attribute, 16)))[0]  # Attribute Id
     payload += data_type  # Attribute Data Type
-    if data_type in ("10", "18", "20", "28", "30"):  # Attribute Data
-        payload += data
-    elif data_type in ("09", "16", "21", "29", "31"):
-        payload += "%04x" % struct.unpack(">H", struct.pack("H", int(data, 16)))[0]
-    elif data_type in ("22", "2a"):
-        payload += "%06x" % struct.unpack(">i", struct.pack("I", int(data, 16)))[0]
-    elif data_type in ("23", "2b", "39"):
-        payload += "%08x" % struct.unpack(">i", struct.pack("I", int(data, 16)))[0]
+    if data_type not in ( "41", "42"):
+            payload += decode_endian_data(data, data_type)
     else:
         payload += data
+    
     self.log.logging("zclCommand", "Debug", "rawaps_write_attribute_req ==== payload: %s" % (payload))
 
     raw_APS_request(self, nwkid, EPout, cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, ackIsDisabled=ackIsDisabled)
@@ -425,11 +414,12 @@ def zcl_raw_move_color(self, nwkid, EPIn, EPout, command, temperature=None, hue=
 # Cluster 0500 ( 0x0400 )
 
 
-def zcl_raw_ias_zone_enroll_response(self, nwkid, EPin, EPout, response_code, zone_id, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE):
+def zcl_raw_ias_zone_enroll_response(self, nwkid, EPin, EPout, response_code, zone_id, sqn, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE):
     Cluster = "0500"
     cmd = "00"
     cluster_frame = 0b00010001
-    sqn = get_and_inc_ZCL_SQN(self, nwkid)
+    if sqn is None:
+        sqn = get_and_inc_ZCL_SQN(self, nwkid)
     payload = "%02x" % cluster_frame + sqn + cmd + response_code + zone_id
     raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
     return sqn
