@@ -160,7 +160,7 @@ def ReadAttributeReq(
         maxReadAttributesByRequest = 5
         
     elif 'IEEE' in self.ListOfDevices[ addr ] and self.ListOfDevices[ addr ]['IEEE'][: PREFIX_MAC_LEN] in PREFIX_MACADDR_CASAIA:
-        maxReadAttributesByRequest = 5
+        maxReadAttributesByRequest = 2
     
     elif "PairingInProgress" in self.ListOfDevices[addr] and self.ListOfDevices[addr]["PairingInProgress"]:
         maxReadAttributesByRequest = 1
@@ -1629,8 +1629,8 @@ READ_ATTRIBUTES_REQUEST = {
     "0000": (ReadAttributeRequest_0000, "polling0000"),
     "0001": (ReadAttributeRequest_0001, "polling0001"),
     "0002": (ReadAttributeRequest_0002, "polling0002"),
-    "0008": (ReadAttributeRequest_0008, "pollingLvlControl"),
     "0006": (ReadAttributeRequest_0006, "pollingONOFF"),
+    "0008": (ReadAttributeRequest_0008, "pollingLvlControl"),
     "000C": (ReadAttributeRequest_000C, "polling000C"),
     #'000f' : ( ReadAttributeRequest_000f, 'polling000f' ),
     "0019": (ReadAttributeRequest_0019, "polling0019"),
