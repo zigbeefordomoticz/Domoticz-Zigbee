@@ -537,24 +537,32 @@ def handle_IAS_enrollmment_if_needed(self, NWKID, RIA, status):
             self.iaszonemgt.IASWD_enroll(NWKID, iterEp)
 
 
-def device_interview(self, NWKID):
-    self.log.logging("Pairing", "Debug", "device_interview %s" %NWKID)
-    for iterEp in self.ListOfDevices[NWKID]["Ep"]:
+def device_interview(self, Nwkid):
+    self.log.logging("Pairing", "Debug", "device_interview %s" %Nwkid)
+                
+    for iterReadAttrCluster in get_list_of_clusters_for_device( self, Nwkid):
+        # if iterReadAttrCluster == '0000':
+        #    reset_cluster_datastruct( self, 'ReadAttributes', NWKID, iterEp, iterReadAttrCluster  )
+        self.log.logging("Pairing", "Debug", "device_interview %s Read Attribute for cluster: %s" %(Nwkid, iterReadAttrCluster ))
+        func = READ_ATTRIBUTES_REQUEST[iterReadAttrCluster][0]
+        func(self, Nwkid)
+
+def get_list_of_clusters_for_device( self, Nwkid):
+    # We want to collect all clusters for this devices despite the EndPoint
+    target_list_of_cluster = []
+    for iterEp in self.ListOfDevices[Nwkid]["Ep"]:
         # Let's scan each Endpoint cluster and check if there is anything to read
         for iterReadAttrCluster in CLUSTERS_LIST:
-            if iterReadAttrCluster not in self.ListOfDevices[NWKID]["Ep"][iterEp]:
+            if iterReadAttrCluster not in self.ListOfDevices[Nwkid]["Ep"][iterEp]:
                 continue
             if iterReadAttrCluster not in READ_ATTRIBUTES_REQUEST:
                 continue
             if iterReadAttrCluster == "0500":
                 # Skip IAS as it is address by IAS Enrollment
                 continue
-            # if iterReadAttrCluster == '0000':
-            #    reset_cluster_datastruct( self, 'ReadAttributes', NWKID, iterEp, iterReadAttrCluster  )
-            self.log.logging("Pairing", "Debug", "device_interview %s Read Attribute for cluster: %s" %(NWKID, iterReadAttrCluster ))
-            func = READ_ATTRIBUTES_REQUEST[iterReadAttrCluster][0]
-            func(self, NWKID)
-
+            if iterReadAttrCluster not in target_list_of_cluster:
+                target_list_of_cluster.append( iterReadAttrCluster )
+    return  target_list_of_cluster   
 
 def send_identify_effect(self, NWKID):
     # Identify for ZLL compatible devices
