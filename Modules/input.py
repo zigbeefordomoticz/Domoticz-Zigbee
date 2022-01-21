@@ -3425,7 +3425,7 @@ def Decode8400(self, Devices, MsgData, MsgLQI):
     manufacturercode = MsgData[6:10]
     nwkid = MsgData[10:14]
     ep = MsgData[14:16]
-    zcl_ias_zone_enroll_response(self, nwkid, ZIGATE_EP, ep, "00", "00", ackIsDisabled=False)
+    zcl_ias_zone_enroll_response(self, nwkid, ZIGATE_EP, ep, "00", "00", sqn, ackIsDisabled=False)
         
         
 def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change notification

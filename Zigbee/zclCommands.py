@@ -496,9 +496,9 @@ def zcl_group_move_to_colour(self, nwkid, EPin, EPout, colorX, colorY, transitio
 # Cluster 0500 ( 0x0400 )
 
 
-def zcl_ias_zone_enroll_response(self, nwkid, EPin, EPout, response_code, zone_id, ackIsDisabled=DEFAULT_ACK_MODE):
+def zcl_ias_zone_enroll_response(self, nwkid, EPin, EPout, response_code, zone_id, sqn=None, ackIsDisabled=DEFAULT_ACK_MODE):
     if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
-        return zcl_raw_ias_zone_enroll_response(self, nwkid, EPin, EPout, response_code, zone_id, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE)
+        return zcl_raw_ias_zone_enroll_response(self, nwkid, EPin, EPout, response_code, zone_id, sqn, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE)
     datas = "02" + nwkid + ZIGATE_EP + EPout + response_code + zone_id
     self.ControllerLink.sendData("0400", datas)
 
