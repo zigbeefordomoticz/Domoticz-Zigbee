@@ -47,6 +47,8 @@ def zdp_permit_joining_request(self, tgtnwkid, duration, significance):
 
 def zdp_get_permit_joint_status(self):
     self.log.logging("zigateCommand", "Debug", "zigate_get_permit_joint_status")
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
+        return
     return send_zigatecmd_raw(self, "0014", "")  # Request Permit to Join status
 
 
