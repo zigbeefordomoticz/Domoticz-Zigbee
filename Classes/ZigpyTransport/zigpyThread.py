@@ -378,6 +378,7 @@ async def transport_request(self, destination, Profile, Cluster, sEp, dEp, seque
     try:
         async with _limit_concurrency(self, destination):    
             result, msg = await self.app.request(destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply, use_ieee)
+            await asyncio.sleep(.250)
 
     except DeliveryError as e:
         # This could be relevant to APS NACK after retry
