@@ -465,6 +465,7 @@ class BasePlugin:
             from Classes.ZigateTransport.Transport import ZigateTransport
             
             self.zigbee_communitation = "native"
+            self.pluginParameters["zigpy"] = False
             self.ControllerLink= ZigateTransport(
                 self.HardwareID,
                 self.DomoticzBuild,
@@ -483,6 +484,7 @@ class BasePlugin:
             self.pluginconf.pluginConf["ControllerInRawMode"] = False
             switchPiZigate_mode(self, "run")
             self.zigbee_communitation = "native"
+            self.pluginParameters["zigpy"] = False
             self.ControllerLink= ZigateTransport(
                 self.HardwareID,
                 self.DomoticzBuild,
@@ -500,6 +502,7 @@ class BasePlugin:
             from Classes.ZigateTransport.Transport import ZigateTransport
             self.pluginconf.pluginConf["ControllerInRawMode"] = False
             self.zigbee_communitation = "native"
+            self.pluginParameters["zigpy"] = False
             self.ControllerLink= ZigateTransport(
                 self.HardwareID,
                 self.DomoticzBuild,
@@ -517,6 +520,7 @@ class BasePlugin:
         elif self.transport == "None":
             from Classes.ZigateTransport.Transport import ZigateTransport
             self.pluginconf.pluginConf["ControllerInRawMode"] = False
+            self.pluginParameters["zigpy"] = False
             self.log.logging("Plugin", "Status", "Transport mode set to None, no communication.")
             self.FirmwareVersion = "031c"
             self.PluginHealth["Firmware Update"] = {"Progress": "75 %", "Device": "1234"}
@@ -528,6 +532,7 @@ class BasePlugin:
             from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE)
 
             self.zigbee_communitation = "zigpy"
+            self.pluginParameters["zigpy"] = True
             Domoticz.Log("Start Zigpy Transport on zigate")
             self.ControllerLink= ZigpyTransport( self.pluginParameters, self.pluginconf, self.processFrame, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "zigate", Parameters["SerialPort"]) 
             self.ControllerLink.open_zigate_connection()
@@ -538,6 +543,7 @@ class BasePlugin:
             from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE)
 
             self.zigbee_communitation = "zigpy"
+            self.pluginParameters["zigpy"] = True
             Domoticz.Log("Start Zigpy Transport on ZNP")
             self.ControllerLink= ZigpyTransport( self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "znp", Parameters["SerialPort"])  
             self.ControllerLink.open_zigate_connection()
