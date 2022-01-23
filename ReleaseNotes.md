@@ -22,7 +22,11 @@ Release Numbering
 - Odd numbers --> Stable5
 - Even numbers  --> Beta
 
-##                 - 6.0.001
+## 23 January 2022  - 5.1.18
+- [Issue] - Fix several issues preventing good pairing
+- [Hardware] - Orvibo dry Contact CM10ZW
+- [Hardware] - Lidle Valve
+- [Hardware] - TS004F Scene controller
 
 
 ##    January 2022 - 5.1.17
