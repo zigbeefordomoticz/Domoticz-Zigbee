@@ -120,7 +120,8 @@ ATTRIBUTES = {
         0x0505,
         0x0508,
     ],
-    "0b05": [0x0000],
+    "0b05": [0x0000], # Tuya
+    "e001": [0xd011],
     "fc01": [0x0000, 0x0001, 0x0002],  # Legrand Cluster
     "fc21": [0x0001],
     "fc40": [0x0000],  # Legrand
@@ -488,10 +489,10 @@ def add_attributes_from_device_certified_conf(self, key, cluster, listAttributes
 
 def ReadAttributeRequest_0000_for_general(self, key):
 
-    listAttributes = []
     self.log.logging("ReadAttributes", "Debug", "--> Full scope", nwkid=key)
     ListOfEp = getListOfEpForCluster(self, key, "0000")
     for EPout in ListOfEp:
+        listAttributes = []
         for iterAttr in retreive_ListOfAttributesByCluster(self, key, EPout, "0000"):
             listAttributes.append(iterAttr)
 

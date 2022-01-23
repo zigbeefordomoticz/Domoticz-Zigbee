@@ -22,6 +22,9 @@ Release Numbering
 - Odd numbers --> Stable5
 - Even numbers  --> Beta
 
+##                 - 6.0.001
+
+
 ##    January 2022 - 5.1.17
 - [Hardware] - New Profalux Blind MOCT-xxxx
 - [Technocal] - Several fixes

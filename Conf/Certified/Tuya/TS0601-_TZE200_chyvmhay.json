@@ -1,0 +1,32 @@
+{
+	"_comment": "Tuya TRV - Lidl Valve",
+	"_version": "0.10",
+	"Ep": {
+		"01": {
+			"0000": "",
+			"0004": "",
+			"0005": "",
+			"ef00": "",
+			"000a": "",
+			"0019": "",
+			"Type": "Temp/ThermoSetpoint/ThermoMode_5"
+		}
+	},
+	"Type": "",
+	"ClusterToBind": [
+		"0019",
+		"ef00"
+	],
+	"ConfigureReporting": {},
+	"ReadAttributes": {
+		"0000": [
+			"0004",
+			"0000",
+			"0001",
+			"0005",
+			"0007",
+			"fffe"
+		]
+	},
+	"Param": {}
+}
