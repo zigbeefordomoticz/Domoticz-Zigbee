@@ -14,7 +14,7 @@
 from Zigbee.zclCommands import zcl_configure_reporting_requestv2
 
 from Modules.sendZigateCommand import raw_APS_request
-from Modules.tools import get_and_inc_SQN
+from Modules.tools import get_and_inc_ZCL_SQN
 from Modules.zigateConsts import ZIGATE_EP
 
 
@@ -154,7 +154,7 @@ def profalux_stop(self, nwkid):
             EPout = tmpEp
 
     cluster_frame = "01"
-    sqn = get_and_inc_SQN(self, nwkid)
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
 
     cmd = "03"  # Ask the Tilt Blind to stop moving
 
@@ -172,7 +172,7 @@ def profalux_MoveToLevelWithOnOff(self, nwkid, level):
             EPout = tmpEp
 
     cluster_frame = "01"
-    sqn = get_and_inc_SQN(self, nwkid)
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
 
     cmd = "04"  # Ask the Tilt Blind to go to a certain Level
 
@@ -198,7 +198,7 @@ def profalux_MoveWithOnOff(self, nwkid, OnOff):
             EPout = tmpEp
 
     cluster_frame = "11"
-    sqn = get_and_inc_SQN(self, nwkid)
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
 
     cmd = "05"  # Ask the Tilt Blind to open or Close
 
@@ -284,7 +284,7 @@ def profalux_MoveToLiftAndTilt(self, nwkid, level=None, tilt=None):
     #  Disable default response: false
     #  Reserved : 0x00
     cluster_frame = "05"
-    sqn = get_and_inc_SQN(self, nwkid)
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
 
     cmd = "10"  # Propriatary Command: Ask the Tilt Blind to go to a Certain Position and Orientate to a certain angle
 

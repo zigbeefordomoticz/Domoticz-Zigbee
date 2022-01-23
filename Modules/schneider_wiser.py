@@ -23,7 +23,7 @@ from Modules.bindings import WebBindStatus, webBind
 from Modules.domoMaj import MajDomoDevice
 from Modules.readAttributes import ReadAttributeRequest_0001
 from Modules.sendZigateCommand import raw_APS_request
-from Modules.tools import (get_and_inc_SQN, getAttributeValue,
+from Modules.tools import (get_and_inc_ZCL_SQN, getAttributeValue,
                            is_ack_tobe_disabled,
                            retreive_cmd_payload_from_8002)
 from Modules.writeAttributes import write_attribute_when_awake
@@ -653,7 +653,7 @@ def schneider_hact_fip_mode(self, key, mode):
     schneider_hact_heating_mode(self, key, "FIP")
 
     cluster_frame = "11"
-    sqn = get_and_inc_SQN(self, key)
+    sqn = get_and_inc_ZCL_SQN(self, key)
     cmd = "e1"
 
     zone_mode = "01"  # Heating
@@ -831,7 +831,7 @@ def schneider_setpoint_actuator(self, key, setpoint):
     for tmpEp in self.ListOfDevices[key]["Ep"]:
         if "0201" in self.ListOfDevices[key]["Ep"][tmpEp]:
             EPout = tmpEp
-    sqn = get_and_inc_SQN(self, key)
+    sqn = get_and_inc_ZCL_SQN(self, key)
 
     cmd = "e0"
 
@@ -896,7 +896,7 @@ def schneider_temp_Setcurrent(self, key, setpoint):
     attr = "0000"
     sqn = "00"
     dataType = "29"
-    sqn = get_and_inc_SQN(self, key)
+    sqn = get_and_inc_ZCL_SQN(self, key)
 
     cmd = "0a"
 

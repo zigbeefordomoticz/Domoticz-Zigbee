@@ -16,7 +16,7 @@ import Domoticz
 from Modules.basicOutputs import raw_APS_request, write_attribute
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import Update_Battery_Device
-from Modules.tools import (checkAndStoreAttributeValue, get_and_inc_SQN,
+from Modules.tools import (checkAndStoreAttributeValue, get_and_inc_ZCL_SQN,
                            is_ack_tobe_disabled)
 from Modules.tuyaTools import (get_tuya_attribute, store_tuya_attribute,
                                tuya_cmd)
@@ -73,7 +73,7 @@ def tuya_eTRV_registration(self, nwkid, device_reset=False):
 
     # (3) Cmd 0x03 on Cluster 0xef00  (Cluster Specific)
     if device_reset and get_model_name(self, nwkid) not in ("TS0601-thermostat",):
-        payload = "11" + get_and_inc_SQN(self, nwkid) + "03"
+        payload = "11" + get_and_inc_ZCL_SQN(self, nwkid) + "03"
         raw_APS_request(
             self,
             nwkid,
@@ -84,9 +84,9 @@ def tuya_eTRV_registration(self, nwkid, device_reset=False):
             zigate_ep=ZIGATE_EP,
             ackIsDisabled=is_ack_tobe_disabled(self, nwkid),
         )
-    if get_model_name(self, nwkid)  in ("TS0601-_TZE200_b6wax7g0",):
+    if get_model_name(self, nwkid) in ("TS0601-_TZE200_b6wax7g0",):
         EPout = "01"
-        payload = "11" + get_and_inc_SQN(self, nwkid) + "10" + "0002"
+        payload = "11" + get_and_inc_ZCL_SQN(self, nwkid) + "10" + "0002"
         raw_APS_request(
             self,
             nwkid,
@@ -427,7 +427,7 @@ def receive_brt100_mode(self, Devices, model_target, NwkId, srcEp, ClusterID, ds
     )
     mode = BRT_MODE.get(int(data, 16), int(data, 16))
     store_tuya_attribute(self, NwkId, "BRTMode", mode )
-    MajDomoDevice(self, Devices, NwkId, srcEp, "0201", int(data, 16) + 1, Attribute_= "001c")
+    MajDomoDevice(self, Devices, NwkId, srcEp, "0201", int(data, 16) + 1, Attribute_="001c")
 
 def receive_rapid_heating_status(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     self.log.logging(
@@ -643,7 +643,7 @@ def tuya_trv_brt100_set_mode(self, nwkid, mode):
     self.log.logging("Tuya", "Debug", "tuya_trv_brt100_set_mode - %s mode: %s" % (nwkid, mode))
     if mode not in (0x00, 0x01, 0x02, 0x03):
         return
-    sqn = get_and_inc_SQN(self, nwkid)
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
     dp = get_datapoint_command(self, nwkid, "BRTMode")
     self.log.logging("Tuya", "Debug", "tuya_trv_brt100_set_mode - %s dp for mode: %s" % (nwkid, dp))
     if dp:
@@ -660,7 +660,7 @@ def tuya_trv_boost(self, nwkid, onoff):
     self.log.logging("Tuya", "Debug", "tuya_trv_boost - %s onoff: %s" % (nwkid, onoff))
     if onoff not in (0x00, 0x01,0x03):
         return
-    sqn = get_and_inc_SQN(self, nwkid)
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
     dp = get_datapoint_command(self, nwkid, "RapidHeating")
     self.log.logging("Tuya", "Debug", "tuya_trv_boost - %s dp for mode: %s" % (nwkid, dp))
     if dp:
@@ -675,7 +675,7 @@ def tuya_trv_boost(self, nwkid, onoff):
     
 def tuya_trv_boost_time(self, nwkid, duration):
     self.log.logging("Tuya", "Debug", "tuya_trv_boost_time - %s duration: %s" % (nwkid, duration))
-    sqn = get_and_inc_SQN(self, nwkid)
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
     dp = get_datapoint_command(self, nwkid, "BoostTime")
     self.log.logging("Tuya", "Debug", "tuya_trv_boost_time - %s dp for duration: %s" % (nwkid, dp))
     if dp:
@@ -691,7 +691,7 @@ def tuya_trv_temporary_away(self, nwkid, onoff):
     self.log.logging("Tuya", "Debug", "tuya_trv_temporary_away - %s onoff: %s" % (nwkid, onoff))
     if onoff not in (0x00, 0x01,0x03):
         return
-    sqn = get_and_inc_SQN(self, nwkid)
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
     dp = get_datapoint_command(self, nwkid, "RapidHeating")
     self.log.logging("Tuya", "Debug", "tuya_trv_temporary_away - %s dp for mode: %s" % (nwkid, dp))
     if dp:
@@ -705,7 +705,7 @@ def tuya_trv_temporary_away(self, nwkid, onoff):
     
 def tuya_trv_eco_temp(self, nwkid, temperature):
     self.log.logging("Tuya", "Debug", "tuya_trv_eco_temp - %s duration: %s" % (nwkid, temperature))
-    sqn = get_and_inc_SQN(self, nwkid)
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
     dp = get_datapoint_command(self, nwkid, "EcoTemp")
     self.log.logging("Tuya", "Debug", "tuya_trv_eco_temp - %s dp for duration: %s" % (nwkid, dp))
     if dp:
@@ -719,7 +719,7 @@ def tuya_trv_eco_temp(self, nwkid, temperature):
 
 def tuya_trv_set_max_setpoint(self, nwkid, maxsetpoint):
     self.log.logging("Tuya", "Debug", "tuya_trv_set_max_setpoint - %s duration: %s" % (nwkid, maxsetpoint))
-    sqn = get_and_inc_SQN(self, nwkid)
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
     dp = get_datapoint_command(self, nwkid, "MaxSetpoint")
     self.log.logging("Tuya", "Debug", "tuya_trv_set_max_setpoint - %s dp for duration: %s" % (nwkid, dp))
     if dp:
@@ -733,7 +733,7 @@ def tuya_trv_set_max_setpoint(self, nwkid, maxsetpoint):
    
 def tuya_trv_set_min_setpoint(self, nwkid, minsetpoint):
     self.log.logging("Tuya", "Debug", "tuya_trv_set_min_setpoint - %s duration: %s" % (nwkid, minsetpoint))
-    sqn = get_and_inc_SQN(self, nwkid)
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
     dp = get_datapoint_command(self, nwkid, "MinSetpoint")
     self.log.logging("Tuya", "Debug", "tuya_trv_set_min_setpoint - %s dp for duration: %s" % (nwkid, dp))
     if dp:
@@ -750,7 +750,7 @@ def tuya_trv_valve_detection(self, nwkid, onoff):
     self.log.logging("Tuya", "Debug", "tuya_trv_valve_detection - %s ValveDetection: %s" % (nwkid, onoff))
     if onoff not in (0x00, 0x01):
         return
-    sqn = get_and_inc_SQN(self, nwkid)
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
     dp = get_datapoint_command(self, nwkid, "ValveDetection")
     self.log.logging("Tuya", "Debug", "tuya_trv_valve_detection - %s dp for SetPoint: %s" % (nwkid, dp))
     if dp:
@@ -767,7 +767,7 @@ def tuya_trv_window_detection(self, nwkid, onoff):
     self.log.logging("Tuya", "Debug", "tuya_trv_window_detection - %s WindowDetection: %s" % (nwkid, onoff))
     if onoff not in (0x00, 0x01):
         return
-    sqn = get_and_inc_SQN(self, nwkid)
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
     dp = get_datapoint_command(self, nwkid, "WindowDetection")
     self.log.logging("Tuya", "Debug", "tuya_trv_window_detection - %s dp for WindowDetection: %s" % (nwkid, dp))
     if dp:
@@ -784,7 +784,7 @@ def tuya_trv_child_lock(self, nwkid, onoff):
     self.log.logging("Tuya", "Debug", "tuya_trv_child_lock - %s ChildLock: %s" % (nwkid, onoff))
     if onoff not in (0x00, 0x01):
         return
-    sqn = get_and_inc_SQN(self, nwkid)
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
     dp = get_datapoint_command(self, nwkid, "ChildLock")
     self.log.logging("Tuya", "Debug", "tuya_trv_child_lock - %s dp for ChildLock: %s" % (nwkid, dp))
     if dp:
@@ -804,7 +804,7 @@ def tuya_trv_thermostat_sensor_mode(self, nwkid, mode):
     self.log.logging("Tuya", "Debug", "tuya_trv_thermostat_sensor_mode - %s SensorMode: %s" % (nwkid, mode))
     if mode not in (0x00, 0x01, 0x02):
         return
-    sqn = get_and_inc_SQN(self, nwkid)
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
     dp = get_datapoint_command(self, nwkid, "SensorMode")
     self.log.logging("Tuya", "Debug", "tuya_trv_thermostat_sensor_mode - %s dp for SensorMode: %s" % (nwkid, dp))
     if dp:
@@ -874,7 +874,7 @@ def tuya_trv_calibration(self, nwkid, calibration):
     # Len: 04
     # Data: 00000000
     self.log.logging("Tuya", "Debug", "tuya_trv_calibration - %s Calibration: %s" % (nwkid, calibration))
-    sqn = get_and_inc_SQN(self, nwkid)
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
     dp = get_datapoint_command(self, nwkid, "Calibration")
     self.log.logging("Tuya", "Debug", "tuya_trv_calibration - %s dp for Calibration: %s" % (nwkid, dp))
     if dp:
@@ -923,7 +923,7 @@ def tuya_setpoint(self, nwkid, setpoint_value):
         self.log.logging("Tuya", "Debug", "tuya_setpoint - %s Force to be in Manual mode" % (nwkid))
         tuya_trv_switch_mode(self, nwkid, 20)
 
-    sqn = get_and_inc_SQN(self, nwkid)
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
     dp = get_datapoint_command(self, nwkid, "SetPoint")
     self.log.logging("Tuya", "Debug", "tuya_setpoint - %s dp %s for SetPoint: %s" % (nwkid, dp, setpoint_value))
     if dp:
@@ -933,7 +933,7 @@ def tuya_setpoint(self, nwkid, setpoint_value):
 
         model_name = get_model_name(self, nwkid) 
         if model_name in[ "TS0601-thermostat","TS0601-_TZE200_b6wax7g0"]:
-            tuya_trv_brt100_set_mode(self, nwkid, 0x01) #Force to be in Manual
+            tuya_trv_brt100_set_mode(self, nwkid, 0x01)   # Force to be in Manual
             # Setpoint is defined in ° and not centidegree
             setpoint_value = setpoint_value // 100
         else:
@@ -1002,7 +1002,7 @@ def tuya_trv_mode(self, nwkid, mode):
 
 def tuya_trv_switch_manual(self, nwkid, offon):
     self.log.logging("Tuya", "Debug", "tuya_trv_switch_manual - %s Manual On/Off: %x" % (nwkid, offon), nwkid)
-    sqn = get_and_inc_SQN(self, nwkid)
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
     dp = get_datapoint_command(self, nwkid, "ManualMode")
     self.log.logging("Tuya", "Debug", "tuya_trv_switch_manual - %s dp for ManualMode: %x" % (nwkid, dp), nwkid)
     if dp:
@@ -1016,7 +1016,7 @@ def tuya_trv_switch_manual(self, nwkid, offon):
 
 def tuya_trv_switch_schedule(self, nwkid, offon):
     self.log.logging("Tuya", "Debug", "tuya_trv_switch_schedule - %s Schedule On/Off: %x" % (nwkid, offon), nwkid)
-    sqn = get_and_inc_SQN(self, nwkid)
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
     dp = get_datapoint_command(self, nwkid, "ScheduleMode")
     self.log.logging("Tuya", "Debug", "tuya_trv_switch_schedule - %s dp for ScheduleMode: %x" % (nwkid, dp), nwkid)
     if dp:
@@ -1030,7 +1030,7 @@ def tuya_trv_switch_schedule(self, nwkid, offon):
 
 def tuya_trv_switch_mode(self, nwkid, mode):
     self.log.logging("Tuya", "Debug", "tuya_trv_switch_mode - %s Switch Mode: %x" % (nwkid, mode), nwkid)
-    sqn = get_and_inc_SQN(self, nwkid)
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
     dp = get_datapoint_command(self, nwkid, "TrvMode")
     self.log.logging("Tuya", "Debug", "tuya_trv_switch_mode - %s dp for TrvMode: %x" % (nwkid, dp), nwkid)
     if dp:
@@ -1061,7 +1061,7 @@ def tuya_trv_switch_onoff(self, nwkid, onoff):
     self.log.logging("Tuya", "Debug", "tuya_trv_switch_onoff - %s Switch: %s" % (nwkid, onoff))
     if onoff not in (0x00, 0x01):
         return
-    sqn = get_and_inc_SQN(self, nwkid)
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
     dp = get_datapoint_command(self, nwkid, "Switch")
     self.log.logging("Tuya", "Debug", "tuya_trv_switch_onoff - %s dp for Switch: %s" % (nwkid, dp))
     if dp:
@@ -1087,7 +1087,7 @@ def tuya_trv_reset_schedule(self, nwkid, schedule):
     # Mon/Tue/Wed              00 19 6d00 0012 07 07 000000c3 000000c3 000000c3 000000c3
     # Thu/Fri/Sat              00 1a 6d00 0012 38 07 000000b9 000000b9 000000b9 000000b9
 
-    sqn = get_and_inc_SQN(self, nwkid)
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
     dp = get_datapoint_command(self, nwkid, "TrvSchedule")
     if dp:
         EPout = "01"
