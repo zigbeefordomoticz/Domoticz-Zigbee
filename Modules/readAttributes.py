@@ -489,10 +489,10 @@ def add_attributes_from_device_certified_conf(self, key, cluster, listAttributes
 
 def ReadAttributeRequest_0000_for_general(self, key):
 
-    listAttributes = []
     self.log.logging("ReadAttributes", "Debug", "--> Full scope", nwkid=key)
     ListOfEp = getListOfEpForCluster(self, key, "0000")
     for EPout in ListOfEp:
+        listAttributes = []
         for iterAttr in retreive_ListOfAttributesByCluster(self, key, EPout, "0000"):
             listAttributes.append(iterAttr)
 
