@@ -212,7 +212,6 @@ class IAS_Zone_Management:
             self.ListOfDevices[nwkid]["IAS"][SrcEp]["ZoneStatus"] = {}
 
         if "Model" in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]["Model"] == "MOSZB-140":
-
             if EnrolmentCode == "00":
                 self.ListOfDevices[nwkid]["IAS"][SrcEp]["EnrolledStatus"] = 1
             self.ListOfDevices[nwkid]["IAS"][SrcEp]["ZoneId"] = zoneid
@@ -231,14 +230,17 @@ class IAS_Zone_Management:
             self.logging("Debug", "receiveIASmessages - %s not in %s" % (nwkid, self.devices))
             return
 
-        if step == 3:  # Receive Write Attribute Message
-            self.logging("Debug", "receiveIASmessages - Write rAttribute Response: %s" % value)
+        if step == 3:  # Receive Write Attribute Status
+            self.logging("Debug", "receiveIASmessages - Write Attribute Response: %s" % value)
             self.HB = 0
             if SrcEp not in self.devices[nwkid]:
                 return
-            self.devices[nwkid][SrcEp]["Step"] = max(self.devices[nwkid][SrcEp]["Step"], 4)
-            self.readConfirmEnroll(nwkid, SrcEp)
-            self.IASZone_enroll_response_zoneIDzoneID(nwkid, SrcEp)
+            if self.zigbee_communitation == "native":
+                # With Zigate native, we do not receive the request, so let's send the response
+                # While on Zigpy we will wait to receive the Enrollment Request, to properly respond
+                self.devices[nwkid][SrcEp]["Step"] = max(self.devices[nwkid][SrcEp]["Step"], 4)
+                self.readConfirmEnroll(nwkid, SrcEp)
+                self.IASZone_enroll_response_zoneIDzoneID(nwkid, SrcEp)
 
         elif step == 5:  # Receive Attribute 0x0000 (Enrollment)
             if SrcEp not in self.devices[nwkid]:
@@ -255,8 +257,10 @@ class IAS_Zone_Management:
             if self.devices[nwkid][SrcEp]["Step"] <= 7 and value == "01":
                 self.devices[nwkid][SrcEp]["Step"] = 7
                 self.readConfirmIEEE(nwkid, SrcEp)
-            self.IASZone_enroll_response_zoneIDzoneID(nwkid, SrcEp)
-            self.readConfirmEnroll(nwkid, SrcEp)
+                
+            if self.zigbee_communitation == "native":
+                self.IASZone_enroll_response_zoneIDzoneID(nwkid, SrcEp)
+                self.readConfirmEnroll(nwkid, SrcEp)
 
             self.devices[nwkid][SrcEp]["ticks_5"] += 1
 
@@ -275,6 +279,7 @@ class IAS_Zone_Management:
 
         if len(self.wip) == 0:
             return
+
         self.logging("Debug", "IAS_heartbeat ")
         if not self.ControllerIEEE:
             self.logging("Debug", "IAS_heartbeat - Zigate IEEE not yet known")
@@ -289,11 +294,17 @@ class IAS_Zone_Management:
                     continue
 
                 if self.HB > 1 and self.devices[iterKey][iterEp]["Step"] == 2:
-                    self.HB = 0
-
-                    self.logging("Debug", "IAS_heartbeat - TO restart self.IASZone_attributes")
-                    self.IASZone_enroll_response_zoneIDzoneID(iterKey, iterEp)
-                    self.IASZone_attributes(iterKey, iterEp)
+                    # We have trigger the enrollment by setIASzoneControlerIEEE - Write Attribute to IAS_CIE_Address
+                    # we are now looking to receive an Zone Enroll Request (on Zigate this is filtered )
+                    if self.zigbee_communitation == "native":
+                        self.HB = 0
+                        self.logging("Debug", "IAS_heartbeat - TO restart self.IASZone_attributes")
+                        self.IASZone_enroll_response_zoneIDzoneID(iterKey, iterEp)
+                        self.IASZone_attributes(iterKey, iterEp)
+                        
+                    elif self.HB > 3:
+                        self.HB = 0
+                        self.devices[iterKey][iterEp]["Step"] = 5
 
                 elif self.HB > 1 and self.devices[iterKey][iterEp]["Step"] == 4:
                     self.tryHB += self.tryHB
@@ -314,6 +325,7 @@ class IAS_Zone_Management:
                     self.logging("Debug", "IAS_heartbeat - TO restart self.readConfirmEnroll")
                     if self.tryHB > 3:
                         self.tryHB = 0
+                        self.readConfirmIEEE(iterKey, iterEp)
                         self.devices[iterKey][iterEp]["Step"] = 7
 
                 elif self.devices[iterKey][iterEp]["Step"] == 7:  # Receive Confirming Enrollement
