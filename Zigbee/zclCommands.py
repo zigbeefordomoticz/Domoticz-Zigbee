@@ -497,6 +497,8 @@ def zcl_group_move_to_colour(self, nwkid, EPin, EPout, colorX, colorY, transitio
 
 
 def zcl_ias_zone_enroll_response(self, nwkid, EPin, EPout, response_code, zone_id, sqn=None, ackIsDisabled=DEFAULT_ACK_MODE):
+    self.log.logging("zclCommand", "Debug", "zcl_ias_zone_enroll_response %s %s %s %s %s %s" % (nwkid, EPin, EPout, response_code, zone_id, sqn))
+    
     if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return zcl_raw_ias_zone_enroll_response(self, nwkid, EPin, EPout, response_code, zone_id, sqn, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE)
     datas = "02" + nwkid + ZIGATE_EP + EPout + response_code + zone_id

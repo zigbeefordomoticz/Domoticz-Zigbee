@@ -415,6 +415,8 @@ def zcl_raw_move_color(self, nwkid, EPIn, EPout, command, temperature=None, hue=
 
 
 def zcl_raw_ias_zone_enroll_response(self, nwkid, EPin, EPout, response_code, zone_id, sqn, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE):
+    self.log.logging("zclCommand", "Debug", "zcl_raw_ias_zone_enroll_response %s %s %s %s %s %s" % (nwkid, EPin, EPout, response_code, zone_id, sqn))
+    
     Cluster = "0500"
     cmd = "00"
     cluster_frame = 0b00010001
