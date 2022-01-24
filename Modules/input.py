@@ -470,6 +470,7 @@ def Decode0400(self, Devices, MsgData, MsgLQI):  # Enrolment Request Response
         return
 
     # Enrolment Request Response
+    sqn = MsgData[0:2]
     SrcAddress = MsgData[2:6]
     SrcEndPoint = MsgData[6:8]
     EnrollResponseCode = MsgData[10:12]
@@ -3425,7 +3426,14 @@ def Decode8400(self, Devices, MsgData, MsgLQI):
     manufacturercode = MsgData[6:10]
     nwkid = MsgData[10:14]
     ep = MsgData[14:16]
-    zcl_ias_zone_enroll_response(self, nwkid, ZIGATE_EP, ep, "00", "00", sqn, ackIsDisabled=False)
+    self.log.logging(
+        "Input",
+        "Log",
+        "Decode8400 - IAS Zone Enroll Request NwkId: %s/%s Sqn: %s ZoneType: %s Manuf: %s"
+        % (nwkid, ep, sqn, zonetype, manufacturercode),
+    )
+
+    zcl_ias_zone_enroll_response(self, nwkid, ZIGATE_EP, ep, "00", "00", sqn=sqn, ackIsDisabled=False)
         
         
 def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change notification

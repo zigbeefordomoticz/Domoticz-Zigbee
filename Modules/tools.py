@@ -439,23 +439,6 @@ def timeStamped(self, key, Type):
     self.ListOfDevices[key]["Stamp"]["MsgType"] = "%4x" % (Type)
 
 
-def get_and_inc_SQN(self, key):
-    # Get the latest SQN from ListOfDevice and Increment by 1.
-    # In case of overflow manage it
-    if (
-        (key not in self.ListOfDevices)
-        or ("SQN" not in self.ListOfDevices[key])
-        or (self.ListOfDevices[key]["SQN"] == {})
-        or (self.ListOfDevices[key]["SQN"] == "")
-    ):
-        _new_sqn = 0x00
-    else:
-        _new_sqn = int(self.ListOfDevices[key]["SQN"], 16) + 1
-        if _new_sqn > 0xFF:
-            _new_sqn = 0x00
-    # self.ListOfDevices[key]['SQN']= '%2x' %_new_sqn
-    return "%02x" % _new_sqn
-
 # Used by zcl/zdpRawCommands
 def get_and_inc_ZDP_SQN(self, key):
     return get_and_increment_generic_SQN(self, key, "ZDPSQN")

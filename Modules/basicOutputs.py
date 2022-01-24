@@ -34,10 +34,10 @@ from Zigbee.zdpRawCommands import (zdp_management_binding_table_request,
 from Modules.sendZigateCommand import (raw_APS_request, send_zigatecmd_raw,
                                        send_zigatecmd_zcl_ack,
                                        send_zigatecmd_zcl_noack)
-from Modules.tools import (build_fcf, get_and_inc_SQN, getListOfEpForCluster,
+from Modules.tools import (build_fcf, getListOfEpForCluster,
                            is_ack_tobe_disabled, is_hex, mainPoweredDevice,
                            set_isqn_datastruct, set_request_datastruct,
-                           set_timestamp_datastruct)
+                           set_timestamp_datastruct, get_and_inc_ZDP_SQN)
 from Modules.zigateCommands import (zigate_blueled,
                                     zigate_firmware_default_response,
                                     zigate_get_nwk_state, zigate_get_time,
@@ -79,10 +79,7 @@ def ZigatePermitToJoin(self, permit):
 
 
 def get_TC_significance(nwkid):
-    if nwkid == "0000":
-        return "01"
-
-    return "00"
+    return "01" if nwkid == "0000" else "00"
 
 
 def PermitToJoin(self, Interval, TargetAddress="FFFC"):
@@ -797,12 +794,8 @@ def mgt_routing_req(self, nwkid, start_index="00"):
     self.log.logging("BasicOutput", "Debug", "mgt_routing_req - %s" % nwkid)
     if "RoutingTable" not in self.ListOfDevices[nwkid]:
         self.ListOfDevices[nwkid]["RoutingTable"] = {'Devices': []}
-    if "SQN" not in self.ListOfDevices[nwkid]["RoutingTable"]:
-        self.ListOfDevices[nwkid]["RoutingTable"]["SQN"] = 0
-    else:
-        self.ListOfDevices[nwkid]["RoutingTable"]["SQN"] += 1
 
-    payload = "%02x" % self.ListOfDevices[nwkid]["RoutingTable"]["SQN"] + start_index
+    payload = get_and_inc_ZDP_SQN(self, nwkid) + start_index
     zdp_management_routing_table_request(self, nwkid, payload)
 
 def mgt_binding_table_req( self, nwkid, start_index="00"):
@@ -816,12 +809,8 @@ def mgt_binding_table_req( self, nwkid, start_index="00"):
 
     if "BindingTable" not in self.ListOfDevices[nwkid]:
         self.ListOfDevices[nwkid]["BindingTable"] = {'Devices': []}
-    if "SQN" not in self.ListOfDevices[nwkid]["BindingTable"]:
-        self.ListOfDevices[nwkid]["BindingTable"]["SQN"] = 0
-    else:
-        self.ListOfDevices[nwkid]["BindingTable"]["SQN"] += 1
 
-    payload = "%02x" % self.ListOfDevices[nwkid]["BindingTable"]["SQN"]+ start_index
+    payload = get_and_inc_ZDP_SQN(self, nwkid) + start_index
     zdp_management_binding_table_request(self, nwkid, payload)
 
 
