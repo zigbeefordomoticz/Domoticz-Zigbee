@@ -131,8 +131,6 @@ from Modules.zigateCommands import zigate_set_mode
 #import asyncio
 
 
-
-
 VERSION_FILENAME = ".hidden/VERSION"
 
 TEMPO_NETWORK = 2  # Start HB totrigget Network Status
@@ -248,6 +246,7 @@ class BasePlugin:
         
         # Zigpy
         self.zigbee_communitation = None  # "zigpy" or "native"
+        self.pythonModuleVersion = {}
 
     def onStart(self):
         Domoticz.Log("Zigbee for Domoticz plugin started!")
@@ -462,7 +461,13 @@ class BasePlugin:
         # Connect to Zigate only when all initialisation are properly done.
         self.log.logging("Plugin", "Status", "Transport mode: %s" % self.transport)
         if self.transport in ("USB", "DIN", "V2-DIN", "V2-USB"):
+            import serial
+            import dns
             from Classes.ZigateTransport.Transport import ZigateTransport
+            
+            self.pythonModuleVersion["serial"] = (serial.__version__)
+            self.pythonModuleVersion["dns"] = (dns.__version__)
+            check_python_modules_version( self )
             
             self.zigbee_communitation = "native"
             self.pluginParameters["Zigpy"] = False
@@ -481,6 +486,13 @@ class BasePlugin:
 
         elif self.transport in ("PI", "V2-PI"):
             from Classes.ZigateTransport.Transport import ZigateTransport
+            import serial
+            import dns
+
+            self.pythonModuleVersion["serial"] = (serial.__version__)
+            self.pythonModuleVersion["dns"] = (dns.__version__)
+            check_python_modules_version( self )
+
             self.pluginconf.pluginConf["ControllerInRawMode"] = False
             switchPiZigate_mode(self, "run")
             self.zigbee_communitation = "native"
@@ -500,6 +512,11 @@ class BasePlugin:
 
         elif self.transport in ("Wifi", "V2-Wifi"):
             from Classes.ZigateTransport.Transport import ZigateTransport
+            import dns
+
+            self.pythonModuleVersion["dns"] = (dns.__version__)
+            check_python_modules_version( self )
+            
             self.pluginconf.pluginConf["ControllerInRawMode"] = False
             self.zigbee_communitation = "native"
             self.pluginParameters["Zigpy"] = False
@@ -528,23 +545,48 @@ class BasePlugin:
 
         elif self.transport == "ZigpyZiGate":
             # Zigpy related modules
+            import dns
+            import zigpy
+            import serial
+            import zigpy_zigate
             from Classes.ZigpyTransport.Transport import ZigpyTransport
             from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE)
-
+            
+            
+            self.pythonModuleVersion["dns"] = (dns.__version__)
+            self.pythonModuleVersion["serial"] = (serial.__version__)
+            self.pythonModuleVersion["zigpy"] = (zigpy.__version__)
+            self.pythonModuleVersion["zigpy_zigate"] = (zigpy_zigate.__version__)
+            check_python_modules_version( self )
+            
+            
             self.zigbee_communitation = "zigpy"
             self.pluginParameters["Zigpy"] = True
             Domoticz.Log("Start Zigpy Transport on zigate")
+            
             self.ControllerLink= ZigpyTransport( self.pluginParameters, self.pluginconf, self.processFrame, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "zigate", Parameters["SerialPort"]) 
             self.ControllerLink.open_zigate_connection()
             self.pluginconf.pluginConf["ControllerInRawMode"] = True
             
         elif self.transport == "ZigpyZNP":
+            import dns
+            import serial
+            import zigpy
+            import zigpy_znp
             from Classes.ZigpyTransport.Transport import ZigpyTransport
             from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE)
-
+            
+             
+            self.pythonModuleVersion["dns"] = (dns.__version__)
+            self.pythonModuleVersion["serial"] = (serial.__version__)
+            self.pythonModuleVersion["zigpy"] = (zigpy.__version__)
+            self.pythonModuleVersion["zigpy_znp"] = (zigpy_znp.__version__)
+            check_python_modules_version( self )
+            
             self.zigbee_communitation = "zigpy"
             self.pluginParameters["Zigpy"] = True
             Domoticz.Log("Start Zigpy Transport on ZNP")
+            
             self.ControllerLink= ZigpyTransport( self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "znp", Parameters["SerialPort"])  
             self.ControllerLink.open_zigate_connection()
             self.pluginconf.pluginConf["ControllerInRawMode"] = True
@@ -1410,7 +1452,33 @@ def update_DB_device_status_to_reinit( self ):
         if 'Status' in self.ListOfDevices[ x ] and self.ListOfDevices[ x ]['Status'] == 'inDB':
             self.ListOfDevices[ x ]['Status'] = 'erasePDM'
 
+def check_python_modules_version( self ):
+    
+    MODULES_VERSION = {
+        "dns": "2.2.0rc1",
+        "serial": "3.5",
+        "zigpy": "0.43.0.dev0",
+        "zigpy_znp": "0.7.0",
+        "zigpy_zigate": "0.8.0"
+        }
+    
+    flag = True
 
+    for x in self.pythonModuleVersion:
+        if x not in MODULES_VERSION:
+            self.log.logging("Plugin", "Error", "A python module has been loaded and is unknown")
+            flag = False
+            continue
+        
+        self.log.logging("Plugin", "Debug", "Python module %s loaded with version %s - %s" %( x, self.pythonModuleVersion[ x ], MODULES_VERSION[ x]))   
+        if self.pythonModuleVersion[ x ] != MODULES_VERSION[ x]:
+            self.log.logging("Plugin", "Error", "The python module %s loaded in not compatible as we are expecting this level %s" %(
+                x, MODULES_VERSION[ x] ))
+            flag = False
+            
+    return flag
+            
+    
 global _plugin  # pylint: disable=global-variable-not-assigned
 _plugin = BasePlugin()
 
