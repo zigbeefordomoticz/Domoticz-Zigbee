@@ -77,7 +77,7 @@ def callbackDeviceAwake_Schneider(self, Devices, NwkId, EndPoint, cluster):
         Domoticz.Log("%s/%s Switching Reporting to NORMAL mode" % (NwkId, EndPoint))
         vact_config_reporting_normal(self, NwkId, EndPoint)
 
-    if "Model" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Model"] in ("Wiser2-Thermostat",):
+    if "Model" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Model"] in ("Wiser2-Thermostat", "iTRV"):
         check_end_of_override_setpoint(self, Devices, NwkId, EndPoint)
 
 
