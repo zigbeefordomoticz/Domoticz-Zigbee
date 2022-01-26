@@ -1042,7 +1042,7 @@ def Decode8009(self, Devices, MsgData, MsgLQI):  # Network State response (Firm 
     self.log.logging(
         "Input",
         "Status",
-        "Zigate addresses ieee: %s , short addr: %s" % (self.ControllerIEEE, self.ControllerNWKID),
+        "Zigbee Coordinator ieee: %s , short addr: %s" % (self.ControllerIEEE, self.ControllerNWKID),
     )
 
     # from https://github.com/fairecasoimeme/ZiGate/issues/15 , if PanID == 0 -> Network is done
