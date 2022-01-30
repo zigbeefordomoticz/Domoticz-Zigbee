@@ -59,10 +59,10 @@ def zigpy_thread(self):
     channel = 0
     if "channel" in self.pluginconf.pluginConf:
         channel = int(self.pluginconf.pluginConf["channel"])
-        self.log.logging("TransportZigpy", "Status", "===> channel: %s" %channel)
+        self.log.logging("TransportZigpy", "Debug", "===> channel: %s" %channel)
     if "extendedPANID" in self.pluginconf.pluginConf:
         extendedPANID = self.pluginconf.pluginConf["extendedPANID"]
-        self.log.logging("TransportZigpy", "Status", "===> extendedPanId: 0x%X" %extendedPANID)
+        self.log.logging("TransportZigpy", "Debug", "===> extendedPanId: 0x%X" %extendedPANID)
 
     self.log.logging("TransportZigpy", "Debug", "zigpy_thread -extendedPANID %s %d" %(self.pluginconf.pluginConf["extendedPANID"],extendedPANID))
     asyncio.run(radio_start(self, self._radiomodule, self._serialPort, set_channel=channel, set_extendedPanId=extendedPANID ))
