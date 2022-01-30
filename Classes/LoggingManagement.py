@@ -121,7 +121,7 @@ class LoggingManagement:
         if not self.pluginconf.pluginConf["enablePluginLogging"]:
             return
 
-        logfilename = self.pluginconf.pluginConf["pluginLogs"] + "/PluginZigate_" + "%02d" % self.HardwareID + ".log"
+        logfilename = self.pluginconf.pluginConf["pluginLogs"] + "/PluginZigbee_" + "%02d" % self.HardwareID + ".log"
         _backupCount = 7  # Keep 7 days of Logging
         _maxBytes = 0
         if "loggingBackupCount" in self.pluginconf.pluginConf:
