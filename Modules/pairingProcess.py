@@ -24,7 +24,7 @@ from Modules.lumi import enableOppleSwitch
 from Modules.mgmt_rtg import mgmt_rtg
 from Modules.orvibo import OrviboRegistration
 from Modules.profalux import profalux_fake_deviceModel
-from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST,
+from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST, ReadAttributeReq,
                                     ReadAttributeRequest_0000,
                                     ReadAttributeRequest_0300)
 from Modules.schneider_wiser import (PREFIX_MACADDR_WIZER_LEGACY,
@@ -37,7 +37,10 @@ from Modules.tuya import tuya_cmd_ts004F, tuya_registration
 from Modules.tuyaSiren import tuya_sirene_registration
 from Modules.tuyaTools import tuya_TS0121_registration
 from Modules.tuyaTRV import TUYA_eTRV_MODEL, tuya_eTRV_registration
-from Modules.zigateConsts import CLUSTERS_LIST
+from Modules.zdpCommands import (zdp_active_endpoint_request,
+                                 zdp_node_descriptor_request,
+                                 zdp_simple_descriptor_request)
+from Modules.zigateConsts import CLUSTERS_LIST, ZIGATE_EP
 
 
 def processNotinDBDevices(self, Devices, NWKID, status, RIA):
@@ -365,8 +368,7 @@ def full_provision_device(self, Devices, NWKID, RIA, status):
 
     # Purpose of this call is to patch Model and Manufacturer Name in case of Profalux
     # We do it just before calling CreateDomoDevice
-    if ( "Manufacturer" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Manufacturer"] == "1110"
-    ):
+    if ( "Manufacturer" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Manufacturer"] == "1110"):
         profalux_fake_deviceModel(self, NWKID)
 
     CreateDomoDevice(self, Devices, NWKID)
@@ -414,9 +416,10 @@ def zigbee_provision_device(self, Devices, NWKID, RIA, status):
             tuya_cmd_ts004F(self, NWKID, self.ListOfDevices[NWKID]["Param"]["TS004FMode" ])
 
     # Bindings ....
-    binding_needed_clusters_with_zigate(self, NWKID)
+    if not delay_binding_and_reporting(self, NWKID):
+        binding_needed_clusters_with_zigate(self, NWKID)
 
-    reWebBind_Clusters(self, NWKID)
+        reWebBind_Clusters(self, NWKID)
 
     # Just after Binding Enable Opple with Magic Word
     if self.ListOfDevices[NWKID]["Model"] in (
@@ -431,8 +434,9 @@ def zigbee_provision_device(self, Devices, NWKID, RIA, status):
         enableOppleSwitch(self, NWKID)
 
     # 2 Enable Configure Reporting for any applicable cluster/attributes
-    self.log.logging("Pairing", "Debug", "Request Configure Reporting for %s" % NWKID)
-    self.configureReporting.processConfigureReporting(NWKID)
+    if not delay_binding_and_reporting(self, NWKID):
+        self.log.logging("Pairing", "Debug", "Request Configure Reporting for %s" % NWKID)
+        self.configureReporting.processConfigureReporting(NWKID)
 
     # 3 Read attributes
     device_interview(self, NWKID)
@@ -468,11 +472,12 @@ def binding_needed_clusters_with_zigate(self, NWKID):
     #    return
     # self.ListOfDevices[NWKID]["BindingTimeStamps"] = time.time()
 
+
     # Do we have to follow Certified Conf file, or look for standard mecanishm ?
     if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] != {} and self.ListOfDevices[NWKID]["Model"] in self.DeviceConf:
         self.log.logging("Pairing", "Log", "binding_needed_clusters_with_zigate %s based on Device Configuration" % (NWKID))
-
         _model = self.ListOfDevices[NWKID]["Model"]
+
         # Check if we have to unbind clusters
         if "ClusterToUnbind" in self.DeviceConf[_model]:
             for iterEp, iterUnBindCluster in self.DeviceConf[_model]["ClusterToUnbind"]:
@@ -505,6 +510,17 @@ def binding_needed_clusters_with_zigate(self, NWKID):
                     # Finaly binding
                     bindDevice(self, self.ListOfDevices[NWKID]["IEEE"], ep, iterBindCluster)
 
+def delay_binding_and_reporting(self, Nwkid):
+    
+    if "Model" not in self.ListOfDevices[Nwkid] or self.ListOfDevices[Nwkid]["Model"] in  ( "", {}):
+        return False
+    _model = self.ListOfDevices[Nwkid]["Model"]
+    if _model in self.DeviceConf and "DelayBindingAtPairing" in self.DeviceConf[_model] and self.DeviceConf[_model]["DelayBindingAtPairing"]:
+        self.ListOfDevices[ Nwkid ]["DelayBindingAtPairing"] = ""
+        self.log.logging("Pairing", "Log", "binding_needed_clusters_with_zigate %s Skip Binding due to >DelayBindingAtPairing<" % (Nwkid))
+        return True
+    return False
+
 
 def handle_IAS_enrollmment_if_needed(self, NWKID, RIA, status):
     if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] == "MOSZB-140":
@@ -529,22 +545,32 @@ def handle_IAS_enrollmment_if_needed(self, NWKID, RIA, status):
             self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s 0x%04s - IAS WD enrolment" % (RIA, NWKID, status))
             self.iaszonemgt.IASWD_enroll(NWKID, iterEp)
 
+def device_interview(self, Nwkid):
+    self.log.logging("Pairing", "Debug", "device_interview %s" %Nwkid)
 
-def device_interview(self, NWKID):
-    for iterEp in self.ListOfDevices[NWKID]["Ep"]:
+    for iterReadAttrCluster in get_list_of_clusters_for_device( self, Nwkid):
+        # if iterReadAttrCluster == '0000':
+        #    reset_cluster_datastruct( self, 'ReadAttributes', NWKID, iterEp, iterReadAttrCluster  )
+        self.log.logging("Pairing", "Debug", "device_interview %s Read Attribute for cluster: %s" %(Nwkid, iterReadAttrCluster ))
+        func = READ_ATTRIBUTES_REQUEST[iterReadAttrCluster][0]
+        func(self, Nwkid)
+
+def get_list_of_clusters_for_device( self, Nwkid):
+    # We want to collect all clusters for this devices despite the EndPoint
+    target_list_of_cluster = []
+    for iterEp in self.ListOfDevices[Nwkid]["Ep"]:
         # Let's scan each Endpoint cluster and check if there is anything to read
         for iterReadAttrCluster in CLUSTERS_LIST:
-            if iterReadAttrCluster not in self.ListOfDevices[NWKID]["Ep"][iterEp]:
+            if iterReadAttrCluster not in self.ListOfDevices[Nwkid]["Ep"][iterEp]:
                 continue
             if iterReadAttrCluster not in READ_ATTRIBUTES_REQUEST:
                 continue
             if iterReadAttrCluster == "0500":
                 # Skip IAS as it is address by IAS Enrollment
                 continue
-            # if iterReadAttrCluster == '0000':
-            #    reset_cluster_datastruct( self, 'ReadAttributes', NWKID, iterEp, iterReadAttrCluster  )
-            func = READ_ATTRIBUTES_REQUEST[iterReadAttrCluster][0]
-            func(self, NWKID)
+            if iterReadAttrCluster not in target_list_of_cluster:
+                target_list_of_cluster.append( iterReadAttrCluster )
+    return  target_list_of_cluster
 
 
 def send_identify_effect(self, NWKID):
@@ -621,10 +647,16 @@ def handle_device_specific_needs(self, Devices, NWKID):
         self.log.logging("Pairing", "Debug", "Tuya TS0121 registration needed")
         tuya_TS0121_registration(self, NWKID)
 
-    elif self.ListOfDevices[NWKID]["Model"] in ("TS004F",):
+    elif self.ListOfDevices[NWKID]["Model"] in ("TS004F", "TS004F-_TZ3000_xabckq1v"):
         self.log.logging("Pairing", "Log", "Tuya TS004F registration needed")
         if "Param" in self.ListOfDevices[NWKID] and "TS004FMode" in self.ListOfDevices[NWKID]["Param"]:
+            #ReadAttributeReq( self, NWKID, ZIGATE_EP, "01", "0000", [ 0x0004, 0x0000, 0x0001, 0x0005, 0x0007, 0xfffe ], ackIsDisabled=False, checkTime=False, )
+            #ReadAttributeReq( self, NWKID, ZIGATE_EP, "01", "0006", [ 0x8004 ], ackIsDisabled=False, checkTime=False, )
+            #ReadAttributeReq( self, NWKID, ZIGATE_EP, "01", "e001", [ 0xd011 ], ackIsDisabled=False, checkTime=False, )
+            #ReadAttributeReq( self, NWKID, ZIGATE_EP, "01", "0001", [ 0x0020, 0x0021 ], ackIsDisabled=False, checkTime=False, )
+            #ReadAttributeReq( self, NWKID, ZIGATE_EP, "01", "0006", [ 0x8004 ], ackIsDisabled=False, checkTime=False, )
             tuya_cmd_ts004F(self, NWKID, self.ListOfDevices[NWKID]["Param"]["TS004FMode" ])
+            ReadAttributeReq( self, NWKID, ZIGATE_EP, "01", "0006", [ 0x8004 ], ackIsDisabled=False, checkTime=False, )
 
     elif self.ListOfDevices[NWKID]["Model"] in (
         "TS0601-Energy",
@@ -635,7 +667,7 @@ def handle_device_specific_needs(self, Devices, NWKID):
         self.log.logging("Pairing", "Debug", "Tuya general registration needed")
         tuya_registration(self, NWKID, device_reset=True)
 
-    elif self.ListOfDevices[NWKID]["Model"] in ("TS0601-Parkside-Watering-Timer",):
+    elif self.ListOfDevices[NWKID]["Model"] in ("TS0601-Parkside-Watering-Timer", "TS0601-_TZE200_nklqjk62"):
         self.log.logging("Pairing", "Debug", "Tuya Water Sensor Parkside registration needed")
         tuya_registration(self, NWKID, device_reset=True, parkside=True)
 

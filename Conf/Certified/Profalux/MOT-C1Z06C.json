@@ -39,9 +39,9 @@
 	"Type": "",
 	"ClusterToBind": [
 		"0006",
-		"0008",
-		"fc21"
+		"0008"
 	],
+	"DelayBindingAtPairing": 1,
 	"ConfigureReporting": {
 		"0008": {
 			"Attributes": {

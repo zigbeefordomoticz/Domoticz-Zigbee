@@ -22,7 +22,18 @@ Release Numbering
 - Odd numbers --> Stable5
 - Even numbers  --> Beta
 
-## 21 December 2021 - 5.1.16
+## 23 January 2022  - 5.1.18
+- [Issue] - Fix several issues preventing good pairing
+- [Hardware] - Orvibo dry Contact CM10ZW
+- [Hardware] - Lidle Valve
+- [Hardware] - TS004F Scene controller
+
+
+##    January 2022 - 5.1.17
+- [Hardware] - New Profalux Blind MOCT-xxxx
+- [Technocal] - Several fixes
+
+## 27 December 2021 - 5.1.16
 
 - [Hardware] - Scene controller Tuya TS004F
 - [Hardware] - New Aqara Door sensor (Lumi.Magnet.acn001)

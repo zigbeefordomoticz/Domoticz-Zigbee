@@ -211,7 +211,7 @@ def extract_messge_infos( Data):
 
 def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
 
-    MsgSqn = MsgData[0:2]
+    MsgSqn = MsgData[:2]
     MsgSrcAddr = MsgData[2:6]
     MsgSrcEp = MsgData[6:8]
     MsgDstEp = MsgData[8:10]
@@ -621,6 +621,7 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
         return
 
     timeStamped(self, srcnwkid, 0x8002)
+    lastSeenUpdate(self, Devices, NwkId=srcnwkid)
     updLQI(self, srcnwkid, MsgLQI)
 
     if MsgClusterID in ("8032", "8033"):
@@ -2623,6 +2624,7 @@ def Decode8100(self, Devices, MsgData, MsgLQI):
     MsgSrcAddr = MsgData[2:6]
     timeStamped(self, MsgSrcAddr, 0x8100)
     loggingMessages(self, "8100", MsgSrcAddr, None, MsgLQI, MsgSQN)
+    lastSeenUpdate(self, Devices, NwkId=MsgSrcAddr)
     updLQI(self, MsgSrcAddr, MsgLQI)
     MsgSrcEp = MsgData[6:8]
     MsgClusterId = MsgData[8:12]
@@ -2733,6 +2735,7 @@ def Decode8102(self, Devices, MsgData, MsgLQI):  # Attribute Reports
 
     timeStamped(self, MsgSrcAddr, 0x8102)
     loggingMessages(self, "8102", MsgSrcAddr, None, MsgLQI, MsgSQN)
+    lastSeenUpdate(self, Devices, NwkId=MsgSrcAddr)
     updLQI(self, MsgSrcAddr, MsgLQI)
     i_sqn = sqn_get_internal_sqn_from_app_sqn(self.ControllerLink, MsgSQN, TYPE_APP_ZCL)
 
@@ -4048,7 +4051,7 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
         elif MsgCmd == "01":
             MajDomoDevice(self, Devices, MsgSrcAddr, "01", "0006", "01")
 
-    elif _ModelName in ("TS0041", "TS0043", "TS0044", "TS0042", "TS004F"):  # Tuya remote
+    elif _ModelName in ("TS0041", "TS0043", "TS0044", "TS0042", "TS004F", "TS004F-_TZ3000_xabckq1v"):  # Tuya remote
         self.log.logging(
             "Input",
             "Debug",

@@ -11,7 +11,7 @@
                 <ul style="list-style-type:square">
                     <li>&Documentations : &<a href="https://github.com/pipiche38/Domoticz-Zigate-Wiki/blob/master/en-eng/Home.md">English wiki</a>|<a href="https://github.com/pipiche38/Domoticz-Zigate-Wiki/blob/master/fr-fr/Home.md">Wiki Français</a></li>
                     <li>&Forums : &<a href="https://www.domoticz.com/forum/viewforum.php?f=68">English (www.domoticz.com)</a>|<a href="https://easydomoticz.com/forum/viewforum.php?f=28">Français (www.easydomoticz.com)</a></li>
-                    <li>&List of supported devices : &<a href="https://zigbee.blakadder.com/zigate.html">www.zigbee.blakadder.com</a></li>
+                    <li>&List of supported devices : &<a href="https://zigbee.blakadder.com/z4d.html">www.zigbee.blakadder.com</a></li>
                 </ul>
             <br/><h2>Parameters</h2>
     </description>
@@ -970,14 +970,6 @@ class BasePlugin:
         # Reset Motion sensors
         ResetDevice(self, Devices, "Motion", 5)
 
-        # Send a Many-to-One-Route-request
-        if (
-            self.zigbee_communitation == "native"
-            and self.pluginconf.pluginConf["doManyToOneRoute"]
-            and self.HeartbeatCount % ((50 * 60) // HEARTBEAT) == 0
-        ):
-            do_Many_To_One_RouteRequest(self)
-
         # OTA upgrade
         if self.OTA:
             self.OTA.heartbeat()
@@ -1136,7 +1128,8 @@ def zigateInit_Phase3(self):
         zigateBlueLed(self, False)
 
     # Set the TX Power
-    set_TxPower(self, self.pluginconf.pluginConf["TXpower_set"])
+    if self.ZiGateModel ==  1:
+        set_TxPower(self, self.pluginconf.pluginConf["TXpower_set"])
 
     # Set Certification Code
     if self.pluginconf.pluginConf["CertificationCode"] in CERTIFICATION:
@@ -1229,9 +1222,7 @@ def zigateInit_Phase3(self):
 def check_firmware_level(self):
     # Check Firmware version
     if (
-        int(self.FirmwareVersion.lower(),16) <= 0x031d
-        or int(self.FirmwareVersion.lower(),16) == 0x031d
-        and int(self.FirmwareMajorVersion,16) == 0x02
+        int(self.FirmwareVersion.lower(),16) < 0x031d
     ):
         self.log.logging("Plugin", "Error", "Firmware level not supported, please update ZiGate firmware")
         return False
@@ -1240,17 +1231,6 @@ def check_firmware_level(self):
         self.log.logging("Plugin", "Status", "Firmware for Pluzzy devices")
         self.PluzzyFirmware = True
         return True
-
-    if self.FirmwareVersion.lower() == "031b":
-        self.log.logging(
-            "Plugin",
-            "Status",
-            "You are not on the latest firmware version, This version is known to have problem, please consider to upgrade",
-        )
-        return False
-
-    if self.FirmwareVersion.lower() in ("031a", "031c", "031d"):
-        self.pluginconf.pluginConf["forceAckOnZCL"] = True
 
     elif int(self.FirmwareVersion.lower(),16) >= 0x031e:
         self.pluginconf.pluginConf["forceAckOnZCL"] = False
