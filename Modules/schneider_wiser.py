@@ -16,21 +16,19 @@ import struct
 from time import time
 
 import Domoticz
+from Zigbee.zclCommands import zcl_onoff_off_noeffect, zcl_onoff_on
 
 from Modules.basicOutputs import read_attribute, write_attribute
 from Modules.bindings import WebBindStatus, webBind
 from Modules.domoMaj import MajDomoDevice
 from Modules.readAttributes import ReadAttributeRequest_0001
 from Modules.sendZigateCommand import raw_APS_request
-from Modules.tools import (get_and_inc_SQN, getAttributeValue,
+from Modules.tools import (get_and_inc_ZCL_SQN, getAttributeValue,
                            is_ack_tobe_disabled,
                            retreive_cmd_payload_from_8002)
 from Modules.writeAttributes import write_attribute_when_awake
-from Modules.zclCommands import zcl_onoff_off_noeffect, zcl_onoff_on
 from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_EP
 
-PREFIX_MACADDR_WIZER_LEGACY = "00124b00"
-PREFIX_MACADDR_WIZER_HOME = "588E81ff"
 
 WISER_LEGACY_MODEL_NAME_PREFIX = "EH-ZB"
 WISER_LEGACY_BASE_EP = "0b"
@@ -655,7 +653,7 @@ def schneider_hact_fip_mode(self, key, mode):
     schneider_hact_heating_mode(self, key, "FIP")
 
     cluster_frame = "11"
-    sqn = get_and_inc_SQN(self, key)
+    sqn = get_and_inc_ZCL_SQN(self, key)
     cmd = "e1"
 
     zone_mode = "01"  # Heating
@@ -833,7 +831,7 @@ def schneider_setpoint_actuator(self, key, setpoint):
     for tmpEp in self.ListOfDevices[key]["Ep"]:
         if "0201" in self.ListOfDevices[key]["Ep"][tmpEp]:
             EPout = tmpEp
-    sqn = get_and_inc_SQN(self, key)
+    sqn = get_and_inc_ZCL_SQN(self, key)
 
     cmd = "e0"
 
@@ -898,7 +896,7 @@ def schneider_temp_Setcurrent(self, key, setpoint):
     attr = "0000"
     sqn = "00"
     dataType = "29"
-    sqn = get_and_inc_SQN(self, key)
+    sqn = get_and_inc_ZCL_SQN(self, key)
 
     cmd = "0a"
 
@@ -1015,12 +1013,12 @@ def schneiderRenforceent(self, NWKID):
 
     if "Schneider Wiser" in self.ListOfDevices[NWKID]:
         if "HACT Mode" in self.ListOfDevices[NWKID]["Schneider Wiser"]:
-            if not self.busy and self.ZigateComm.loadTransmit() <= MAX_LOAD_ZIGATE:
+            if not self.busy and self.ControllerLink.loadTransmit() <= MAX_LOAD_ZIGATE:
                 schneider_hact_heating_mode(self, NWKID, self.ListOfDevices[NWKID]["Schneider Wiser"]["HACT Mode"])
             else:
                 rescheduleAction = True
         if "HACT FIP Mode" in self.ListOfDevices[NWKID]["Schneider Wiser"]:
-            if not self.busy and self.ZigateComm.loadTransmit() <= MAX_LOAD_ZIGATE:
+            if not self.busy and self.ControllerLink.loadTransmit() <= MAX_LOAD_ZIGATE:
                 schneider_hact_fip_mode(self, NWKID, self.ListOfDevices[NWKID]["Schneider Wiser"]["HACT FIP Mode"])
             else:
                 rescheduleAction = True
@@ -1784,7 +1782,7 @@ def vact_config_reporting_normal(self, NwkId, EndPoint):
 
     self.ListOfDevices[NwkId]["Schneider"]["ReportingMode"] = "Normal"
 
-
+ 
 def schneider_UpdateConfigureReporting(self, NwkId, Ep, ClusterId=None, AttributesConfig=None):
     """
     Will send a Config reporting to a specific Endpoint of a Wiser Device.
@@ -1801,12 +1799,15 @@ def schneider_UpdateConfigureReporting(self, NwkId, Ep, ClusterId=None, Attribut
             "e012": {"DataType": "30", "MinInterval":"001E", "MaxInterval":"0258", "TimeOut":"0000","Change":"01"}
         }
     """
-    MAX_ATTR_PER_REQ = 5
 
     if NwkId not in self.ListOfDevices:
         return
 
     if ClusterId is None:
+        return
+    
+    if AttributesConfig is None:
+        # AttributesConfig is not defined, so lets get it from the Model
         if "Model" not in self.ListOfDevices[NwkId]:
             return
 
@@ -1816,8 +1817,10 @@ def schneider_UpdateConfigureReporting(self, NwkId, Ep, ClusterId=None, Attribut
 
         if "ConfigureReporting" not in self.DeviceConf[_modelName]:
             return
+
         if ClusterId not in self.DeviceConf[_modelName]["ConfigureReporting"]:
             return
+
         if "Attributes" not in self.DeviceConf[_modelName]["ConfigureReporting"][ClusterId]:
             return
 
@@ -1825,59 +1828,17 @@ def schneider_UpdateConfigureReporting(self, NwkId, Ep, ClusterId=None, Attribut
             "Attributes"
         ]
 
-    # We have :
-    # Nwkid and Endpoint we want to configure
-    # ClusterId
-    # AttributesConfig
-    manufacturer = "0000"
-    manufacturer_spec = "00"
-    direction = "00"
-    # addr_mode = "02"
+    cluster_list = {
+        ClusterId: { "Attributes": AttributesConfig}
+    }
+    
+    ListOfAttributesToConfigure = AttributesConfig.keys()
+    self.log.logging( "Schneider", "Debug", "schneider_UpdateConfigureReporting - ClusterId: %s ClusterList: %s ListOfAttribute: %s" %(
+        ClusterId, str(cluster_list), str(ListOfAttributesToConfigure)))
+    self.configureReporting.prepare_and_send_configure_reporting(
+        NwkId, Ep, cluster_list, ClusterId, "00", "00", "0000", ListOfAttributesToConfigure)
+    
 
-    attrList = ""
-    attrLen = 0
-    attributeList = []
-    attrdirection = "00"
-    for attr in AttributesConfig:
-        attrType = AttributesConfig[attr]["DataType"]
-        minInter = AttributesConfig[attr]["MinInterval"]
-        maxInter = AttributesConfig[attr]["MaxInterval"]
-        timeOut = AttributesConfig[attr]["TimeOut"]
-        chgFlag = AttributesConfig[attr]["Change"]
-        attributeList.append(attr)
-        if int(attrType, 16) < 0x30:
-            attrList += attrdirection + attrType + attr + minInter + maxInter + timeOut + chgFlag
-        else:
-            # Data Type above 0x30 (included) are considered as discret/analog values and the change flag is not considered.
-            # in such NXP stack do not expect that information in the payload
-            attrList += attrdirection + attrType + attr + minInter + maxInter + timeOut
-        attrLen += 1
-
-        # Let's check if we have to send a chunk
-        if attrLen == MAX_ATTR_PER_REQ:
-            # Prepare the payload
-            # datas =   addr_mode + NwkId + ZIGATE_EP + Ep + ClusterId + direction + manufacturer_spec + manufacturer
-            # datas +=  "%02x" %(attrLen) + attrList
-            # sendZigateCmd( self, "0120", datas )
-            self.configureReporting.send_configure_reporting_attributes_set(
-                NwkId, Ep, ClusterId, direction, manufacturer_spec, manufacturer, attrLen, attrList, attributeList
-            )
-
-            # Reset the Lenght to 0
-            attrList = ""
-            attrLen = 0
-            attributeList = []
-    # end for
-
-    # Let's check if we have some remaining to send
-    if attrLen != 0:
-        # Prepare the payload
-        # datas =   addr_mode + NwkId + WISER_LEGACY_BASE_EP + Ep + ClusterId + direction + manufacturer_spec + manufacturer
-        # datas +=  "%02x" %(attrLen) + attrList
-        # sendZigateCmd( self, "0120", datas )
-        self.configureReporting.send_configure_reporting_attributes_set(
-            NwkId, Ep, ClusterId, direction, manufacturer_spec, manufacturer, attrLen, attrList, attributeList
-        )
 
 
 # Wiser New Version

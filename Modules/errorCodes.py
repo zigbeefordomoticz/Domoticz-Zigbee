@@ -117,7 +117,7 @@ def DisplayStatusCode(StatusCode):
 
     StatusMsg = ""
     if StatusCode in ZIGATE_CODES:
-        return "ZIGATE - [%s] %s" % (StatusCode, ZIGATE_CODES[StatusCode])
+        return "[%s] %s" % (StatusCode, ZIGATE_CODES[StatusCode])
 
     if StatusCode in APS_CODES:
         return "APS - [%s] %s" % (StatusCode, APS_CODES[StatusCode])

@@ -19,6 +19,11 @@ from Classes.LoggingManagement import LoggingManagement
 from Modules.basicOutputs import (identifySend, read_attribute,
                                   send_zigatecmd_zcl_ack,
                                   send_zigatecmd_zcl_noack)
+from Modules.manufacturer_code import (PREFIX_MAC_LEN, PREFIX_MACADDR_DEVELCO,
+                                       PREFIX_MACADDR_IKEA_TRADFRI,
+                                       PREFIX_MACADDR_OPPLE,
+                                       PREFIX_MACADDR_TUYA, PREFIX_MACADDR_CASAIA, 
+                                       PREFIX_MACADDR_XIAOMI)
 from Modules.tools import (check_datastruct, getListOfEpForCluster,
                            is_ack_tobe_disabled, is_attr_unvalid_datastruct,
                            is_time_to_perform_work, reset_attr_datastruct,
@@ -120,12 +125,12 @@ ATTRIBUTES = {
         0x0505,
         0x0508,
     ],
-    "0b05": [0x0000], # Tuya
-    "e001": [0xd011],
+    "0b05": [0x0000],  # Tuya
+    "e001": [0xd011],  # Tuya TS004F
     "fc01": [0x0000, 0x0001, 0x0002],  # Legrand Cluster
     "fc21": [0x0001],
-    "fc40": [0x0000],  # Legrand
-    "ff66": [0x0000, 0x0002, 0x0003],  # Zlinky
+    "fc40": [0x0000],   # Legrand
+    "ff66": [0x0000, 0x0002, 0x0003],   # Zlinky
 }
 
 
@@ -144,7 +149,20 @@ def ReadAttributeReq(
 
     # Check if we are in pairing mode and Read Attribute must be broken down in 1 attribute max, otherwise use the default value
     maxReadAttributesByRequest = MAX_READATTRIBUTES_REQ
-    if "PairingInProgress" in self.ListOfDevices[addr] and self.ListOfDevices[addr]["PairingInProgress"]:
+    
+    if 'IEEE' in self.ListOfDevices[ addr ] and self.ListOfDevices[ addr ]['IEEE'][: PREFIX_MAC_LEN] in PREFIX_MACADDR_IKEA_TRADFRI:
+        maxReadAttributesByRequest = MAX_READATTRIBUTES_REQ
+    
+    elif 'IEEE' in self.ListOfDevices[ addr ] and self.ListOfDevices[ addr ]['IEEE'][: PREFIX_MAC_LEN] in PREFIX_MACADDR_TUYA:
+        maxReadAttributesByRequest = 5
+        
+    elif 'IEEE' in self.ListOfDevices[ addr ] and self.ListOfDevices[ addr ]['IEEE'][: PREFIX_MAC_LEN] in PREFIX_MACADDR_DEVELCO:
+        maxReadAttributesByRequest = 5
+        
+    elif 'IEEE' in self.ListOfDevices[ addr ] and self.ListOfDevices[ addr ]['IEEE'][: PREFIX_MAC_LEN] in PREFIX_MACADDR_CASAIA:
+        maxReadAttributesByRequest = 2
+    
+    elif "PairingInProgress" in self.ListOfDevices[addr] and self.ListOfDevices[addr]["PairingInProgress"]:
         maxReadAttributesByRequest = 1
 
     if not isinstance(ListOfAttributes, list) or len(ListOfAttributes) <= maxReadAttributesByRequest:
@@ -191,7 +209,6 @@ def normalizedReadAttributeReq(self, addr, EpIn, EpOut, Cluster, ListOfAttribute
         ListOfAttributes.append(_tmpAttr)
 
     lenAttr = 0
-    weight = int((lenAttr) / 2) + 1
     Attr = ""
     attributeList = []
     self.log.logging("ReadAttributes", "Debug2", "attributes: " + str(ListOfAttributes), nwkid=addr)
@@ -376,13 +393,21 @@ def ping_device_with_read_attribute(self, key):
     ListOfEp = getListOfEpForCluster(self, key, PING_CLUSTER)
     for EPout in ListOfEp:
         check_datastruct(self, "ReadAttributes", key, EPout, PING_CLUSTER)
-        #       send_zigatecmd_zcl_ack( self, key, '0100', EpIn      + EpOut + Cluster      + dir  + ManufSpe + manufacturer + '%02x' %lenAttr + Attr )
-        i_sqn = send_zigatecmd_zcl_ack(
+        
+        i_sqn = read_attribute(
             self,
             key,
-            "0100",
-            ZIGATE_EP + EPout + PING_CLUSTER + "00" + "00" + "0000" + "%02x" % (0x01) + PING_CLUSTER_ATTRIBUTE,
+            ZIGATE_EP,
+            EPout,
+            PING_CLUSTER,
+            "00",
+            "00",
+            "0000",
+            "%02x" % (0x01),
+            PING_CLUSTER_ATTRIBUTE,
+            ackIsDisabled=False,
         )
+
         set_isqn_datastruct(self, "ReadAttributes", key, EPout, PING_CLUSTER, PING_CLUSTER_ATTRIBUTE, i_sqn)
         # Let's ping only 1 EndPoint
         break
@@ -418,30 +443,31 @@ def ReadAttributeRequest_0000_for_pairing(self, key):
     # Do we Have Manufacturer
     if  ListOfEp and self.ListOfDevices[key]["Manufacturer"] in [ {}, ""]:
         self.log.logging("ReadAttributes", "Log", "Request Basic  Manufacturer via Read Attribute request: %s" % "0004", nwkid=key)
-        manuf_name = [0x0004]
-        for x in self.ListOfDevices[key]["Ep"]:
-            ReadAttributeReq(self, key, ZIGATE_EP, x, "0000", manuf_name, ackIsDisabled=False, checkTime=False)
+        if 0x0004 not in listAttributes:
+            listAttributes.append(0x0004)
 
     # Do We have Model Name
     if ( ListOfEp and  self.ListOfDevices[key]["Model"] in [ {}, ""] ):
         self.log.logging("ReadAttributes", "Debug", "Request Basic  Model Name via Read Attribute request: %s" % "0005", nwkid=key)
-        model_name = [0x0005]
-        for x in self.ListOfDevices[key]["Ep"]:
-            ReadAttributeReq(self, key, ZIGATE_EP, x, "0000", model_name, ackIsDisabled=False, checkTime=False)
+        if 0x0005 not in listAttributes:
+            listAttributes.append(0x0005)
 
     # Check if Model Name should be requested
     if self.ListOfDevices[key]["Manufacturer"] == "1110":  # Profalux.
-        listAttributes.append(0x0010)
+        if 0x0010 not in listAttributes:
+            listAttributes.append(0x0010)
 
     elif self.ListOfDevices[key]["Manufacturer"] == "Legrand":
         self.log.logging("ReadAttributes", "Debug", "----> Adding: %s" % "f000", nwkid=key)
-        listAttributes.append(0x4000)
-        listAttributes.append(0xF000)
+        if 0x4000 not in listAttributes:
+            listAttributes.append(0x4000)
+        if 0xF000 not in listAttributes:
+            listAttributes.append(0xF000)
 
     listAttributes = add_attributes_from_device_certified_conf(self, key, "0000", listAttributes)
     self.log.logging("ReadAttributes", "Log", "EP: %s" % self.ListOfDevices[key]["Ep"])
 
-    if self.ListOfDevices[key]["Ep"] is None or self.ListOfDevices[key]["Ep"] == {}:
+    if len(ListOfEp) == 0:
         # We don't have yet any Endpoint information , we will then try several known Endpoint, and luckly we will get some answers
         self.log.logging(
             "ReadAttributes",
@@ -449,12 +475,9 @@ def ReadAttributeRequest_0000_for_pairing(self, key):
             "Request Basic  via Read Attribute request: " + key + " EPout = " + "01, 02, 03, 06, 09, 0b",
             nwkid=key,
         )
-        PREFIX_IEEE_XIAOMI = "00158d000"
-        PREFIX_IEEE_OPPLE =  "04cf8cdf3"
 
         ieee = self.ListOfDevices[ key ]['IEEE']
-        if ( ieee[: len(PREFIX_IEEE_XIAOMI)] == PREFIX_IEEE_XIAOMI or 
-            ieee[: len(PREFIX_IEEE_OPPLE)] == PREFIX_IEEE_OPPLE):
+        if ( ieee[: PREFIX_MAC_LEN] in PREFIX_MACADDR_XIAOMI or ieee[: PREFIX_MAC_LEN] in PREFIX_MACADDR_OPPLE):
             ReadAttributeReq(self, key, ZIGATE_EP, "01", "0000", listAttributes, ackIsDisabled=False, checkTime=False)
         else:
             ReadAttributeReq(self, key, ZIGATE_EP, "01", "0000", listAttributes, ackIsDisabled=False, checkTime=False)
@@ -494,14 +517,15 @@ def ReadAttributeRequest_0000_for_general(self, key):
     for EPout in ListOfEp:
         listAttributes = []
         for iterAttr in retreive_ListOfAttributesByCluster(self, key, EPout, "0000"):
-            listAttributes.append(iterAttr)
+            if iterAttr not in listAttributes:
+                listAttributes.append(iterAttr)
 
         if "Model" in self.ListOfDevices[key] and self.ListOfDevices[key]["Model"] != {}:
-            if str(self.ListOfDevices[key]["Model"]).find("lumi") != -1:
+            if "lumi" in str(self.ListOfDevices[key]["Model"]):
                 listAttributes.append(0xFF01)
                 listAttributes.append(0xFF02)
 
-            if str(self.ListOfDevices[key]["Model"]).find("TS0302") != -1:  # Inter Blind Zemismart
+            if "TS0302" in str(self.ListOfDevices[key]["Model"]):  # Inter Blind Zemismart
                 listAttributes.append(0xFFFD)
                 listAttributes.append(0xFFFE)
                 listAttributes.append(0xFFE1)
@@ -1604,8 +1628,8 @@ READ_ATTRIBUTES_REQUEST = {
     "0000": (ReadAttributeRequest_0000, "polling0000"),
     "0001": (ReadAttributeRequest_0001, "polling0001"),
     "0002": (ReadAttributeRequest_0002, "polling0002"),
-    "0008": (ReadAttributeRequest_0008, "pollingLvlControl"),
     "0006": (ReadAttributeRequest_0006, "pollingONOFF"),
+    "0008": (ReadAttributeRequest_0008, "pollingLvlControl"),
     "000C": (ReadAttributeRequest_000C, "polling000C"),
     #'000f' : ( ReadAttributeRequest_000f, 'polling000f' ),
     "0019": (ReadAttributeRequest_0019, "polling0019"),

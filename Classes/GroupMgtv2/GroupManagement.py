@@ -95,6 +95,7 @@ class GroupsManagement(object):
 
     def __init__(
         self,
+        zigbee_communitation,
         VersionNewFashion,
         DomoticzMajor,
         DomoticzMinor,
@@ -106,13 +107,13 @@ class GroupsManagement(object):
         Devices,
         ListOfDevices,
         IEEE2NWK,
-        DeviceConf, 
+        DeviceConf,
         log,
     ):
-
+        self.zigbee_communitation = zigbee_communitation
         self.HB = 0
         self.pluginconf = PluginConf
-        self.ZigateComm = ZigateComm  # Point to the ZigateComm object
+        self.ControllerLink = ZigateComm  # Point to the ZigateComm object
         self.adminWidgets = adminWidgets
         self.homeDirectory = HomeDirectory
         self.Devices = Devices  # Point to the List of Domoticz Devices
@@ -122,7 +123,7 @@ class GroupsManagement(object):
         self.ListOfGroups = {}  # Data structutre to store all groups
         self.log = log
         self.GroupListFileName = None  # Filename of Group cashing file
-        self.ZigateIEEE = None
+        self.ControllerIEEE = None
         self.ScanDevicesToBeDone = []  # List of Devices for which a GrpMemberShip request as to be performed
         self.GroupStatus = "Starting"  # Used by WebServer to display Status of Group!
         self.FirmwareVersion = None 
@@ -157,7 +158,7 @@ class GroupsManagement(object):
         self.FirmwareVersion = firmwareversion
             
     def updateZigateIEEE(self, ZigateIEEE):
-        self.ZigateIEEE = ZigateIEEE
+        self.ControllerIEEE = ZigateIEEE
 
     def hearbeat_group_mgt(self):
 
@@ -168,7 +169,7 @@ class GroupsManagement(object):
         # Check if we have some Scan to be done
         for NwkId, Ep in self.ScanDevicesToBeDone:
             self.GroupStatus = "scan"
-            if self.ZigateComm.loadTransmit() <= MAX_LOAD_ZIGATE:
+            if self.ControllerLink.loadTransmit() <= MAX_LOAD_ZIGATE:
                 self.ScanDevicesToBeDone.remove([NwkId, Ep])
                 scan_device_for_grp_membership(self, NwkId, Ep)
 

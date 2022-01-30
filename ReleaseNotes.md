@@ -22,6 +22,11 @@ Release Numbering
 - Odd numbers --> Stable5
 - Even numbers  --> Beta
 
+##                  - 6.0.001
+
+- [Technical] - relying zigpy libraries for none Zigate Coordinators
+
+
 ## 23 January 2022  - 5.1.18
 - [Issue] - Fix several issues preventing good pairing
 - [Hardware] - Orvibo dry Contact CM10ZW
@@ -34,7 +39,6 @@ Release Numbering
 - [Technocal] - Several fixes
 
 ## 27 December 2021 - 5.1.16
-
 - [Hardware] - Scene controller Tuya TS004F
 - [Hardware] - New Aqara Door sensor (Lumi.Magnet.acn001)
 - [Hardware] - Tuya Smart all in One ( Lux, Motion, temp, Humi)

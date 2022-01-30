@@ -63,6 +63,14 @@ def inRawAps(
     """
 
     if srcnwkid not in self.ListOfDevices:
+        self.log.logging(
+            "inRawAPS",
+            "Error",
+            "inRawAps Nwkid: %s Ep: %s Cluster: %s ManufCode: %s Cmd: %s Data: %s not found in ListOfDevices !!"
+                % (srcnwkid, srcep, cluster, ManufacturerCode, Command, Data),
+            srcnwkid,
+        )
+
         return
 
     self.log.logging(
@@ -78,27 +86,11 @@ def inRawAps(
         return
 
     if cluster == "0019":  # OTA Cluster
-        # self.log.logging("inRawAPS","Log","Cluster 0019 -- OTA CLUSTER")
-
         if Command == "01":
             # Query Next Image Request
-            self.log.logging("inRawAPS", "Log", "Cluster 0019 -- OTA CLUSTER Command 01")
-            # fieldcontrol = Data[0:2]
-            manufcode = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[2:6], 16)))[0]
-            imagetype = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[6:10], 16)))[0]
-            currentVersion = "%08x" % struct.unpack("I", struct.pack(">I", int(Data[10:18], 16)))[0]
-            self.log.logging(
-                "inRawAPS",
-                "Log",
-                "Cluster 0019 -- OTA CLUSTER Command 01Device %s Request OTA with current ManufCode: %s ImageType: %s Version: %s"
-                % (srcnwkid, manufcode, imagetype, currentVersion),
-            )
+            if self.OTA:
+                self.OTA.query_next_image_request(srcnwkid, srcep, Sqn, Data)
 
-            if "OTA" not in self.ListOfDevices[srcnwkid]:
-                self.ListOfDevices[srcnwkid]["OTA"] = {}
-            self.ListOfDevices[srcnwkid]["OTA"]["ManufacturerCode"] = manufcode
-            self.ListOfDevices[srcnwkid]["OTA"]["ImageType"] = imagetype
-            self.ListOfDevices[srcnwkid]["OTA"]["CurrentImageVersion"] = currentVersion
         return
 
     if cluster == "0500":  # IAS Cluster

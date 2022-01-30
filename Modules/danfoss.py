@@ -6,7 +6,7 @@
 
 from Modules.basicOutputs import (raw_APS_request, read_attribute,
                                   write_attribute)
-from Modules.tools import (build_fcf, get_and_inc_SQN, getListOfEpForCluster,
+from Modules.tools import (build_fcf, get_and_inc_ZCL_SQN, getListOfEpForCluster,
                            is_ack_tobe_disabled)
 from Modules.zigateConsts import ZIGATE_EP
 
@@ -221,7 +221,7 @@ def thermostat_Setpoint_Danfoss(self, NwkId, setpoint):
     #
     cluster_id = "%04x" % 0x0201
     manuf_id = "1246"
-    sqn = get_and_inc_SQN(self, NwkId)
+    sqn = get_and_inc_ZCL_SQN(self, NwkId)
     cluster_frame = build_fcf("1", "1", "0", "0")
     payload = cluster_frame + manuf_id[2:4] + manuf_id[0:2] + sqn + danfoss_setpoint_command + danfoss_setpoint_type + danfoss_setpoint_value[2:4] + danfoss_setpoint_value[0:2]
     self.log.logging(

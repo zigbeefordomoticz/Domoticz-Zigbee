@@ -43,7 +43,8 @@ def decodeAttribute(self, AttType, Attribute, handleErrors=False):
 
     if len(Attribute) == 0:
         return
-    # self.log.logging( "Cluster", 'Debug', "decodeAttribute( %s, %s) " %(AttType, Attribute) )
+
+    self.log.logging( "Cluster", 'Debug', "decodeAttribute( %s, %s) " %(AttType, Attribute) )
 
     if int(AttType, 16) == 0x10:  # Boolean
         return Attribute[0:2]
@@ -122,7 +123,7 @@ def decodeAttribute(self, AttType, Attribute, handleErrors=False):
 
 def storeReadAttributeStatus(self, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus):
 
-    # i_sqnFromMessage = sqn_get_internal_sqn_from_app_sqn(self.ZigateComm, MsgSQN, TYPE_APP_ZCL)
+    # i_sqnFromMessage = sqn_get_internal_sqn_from_app_sqn(self.ControllerLink, MsgSQN, TYPE_APP_ZCL)
     # i_sqn_expected = get_isqn_datastruct(self, "ReadAttributes", MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID)
 
     # if MsgType == '8100' and i_sqn_expected and i_sqnFromMessage and i_sqn_expected != i_sqnFromMessage:
@@ -357,13 +358,17 @@ def Cluster0000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         if "Manufacturer Name" in self.ListOfDevices[MsgSrcAddr]:
             manufacturer_name = self.ListOfDevices[MsgSrcAddr]["Manufacturer Name"]
 
+        manuf_code = ""
+        if "Manufacturer" in self.ListOfDevices[MsgSrcAddr]:
+            manuf_code = self.ListOfDevices[MsgSrcAddr]["Manufacturer"]
+
         if modelName + '-' + manufacturer_name in self.DeviceConf:
             modelName = modelName + '-' + manufacturer_name
             
         elif modelName + manufacturer_name in self.DeviceConf:
             modelName = modelName + manufacturer_name
             
-        elif modelName == "Thermostat" and manufacturer_name == "Schneider Electric":
+        elif modelName == "Thermostat" and ( manufacturer_name == "Schneider Electric" or manuf_code == "105e"):
             modelName = "Wiser2-Thermostat"
 
         elif modelName == "lumi.sensor_swit":
