@@ -109,7 +109,7 @@ def scan_device_for_grp_membership(self, NwkId, Ep):
 
 def submitForGroupMemberShipScaner(self, NwkId, Ep):
 
-    if self.ZigateComm.loadTransmit() >= 1:
+    if self.ControllerLink.loadTransmit() >= 1:
         self.ScanDevicesToBeDone.append([NwkId, Ep])
     else:
         scan_device_for_grp_membership(self, NwkId, Ep)

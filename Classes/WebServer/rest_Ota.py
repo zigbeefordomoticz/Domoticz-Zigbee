@@ -31,7 +31,7 @@ def rest_ota_firmware_list(self, verb, data, parameters):
     _response["Data"] = None
 
     if self.OTA and verb == "GET" and len(parameters) == 0:
-        if len(self.zigatedata) == 0:
+        if len(self.ControllerData) == 0:
             _response["Data"] = fake_rest_ota_firmware_list()
             return _response
 
@@ -315,7 +315,7 @@ def rest_ota_devices_for_manufcode(self, verb, data, parameters):
     if self.OTA is None or verb != "GET" or len(parameters) != 1:
         return _response
 
-    if len(self.zigatedata) == 0:
+    if len(self.ControllerData) == 0:
         _response["Data"] = fake_rest_ota_devices_for_manufcode()
         return _response
 

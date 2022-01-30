@@ -10,9 +10,11 @@
 
 """
 
+
+from Zigbee.zclCommands import zcl_configure_reporting_requestv2
+
 from Modules.sendZigateCommand import raw_APS_request
 from Modules.tools import get_and_inc_SQN
-from Modules.zclCommands import zcl_configure_reporting_request
 from Modules.zigateConsts import ZIGATE_EP
 
 
@@ -113,9 +115,32 @@ def configureReportingForprofalux(self, NwkId):
     if NwkId not in self.ListOfDevices:
         return
 
-    attrList = "00" + "20" + "0001" + "0000" + "0000" + "0000" + "00"
+    attribute_reporting_configuration = {}
+    attribute_reporting_record = {
+        "Attribute": "0001",
+        "DataType": "20",
+        "minInter": "0000",
+        "maxInter": "0000",
+        "rptChg": "00",
+        "timeOut": "0000",
+    }
+    attribute_reporting_configuration.append(attribute_reporting_record)
+
     #datas = "02" + NwkId + ZIGATE_EP + "01" + "fc21" + "00" + "01" + "1110" + "01" + attrList
-    zcl_configure_reporting_request(self, NwkId, ZIGATE_EP, "01", "fc21", "00", "01", "1110", "01", attrList)
+    #zcl_configure_reporting_request(self, NwkId, ZIGATE_EP, "01", "fc21", "00", "01", "1110", "01", attrList)
+    
+    i_sqn = zcl_configure_reporting_requestv2(
+        self,
+        NwkId,
+        ZIGATE_EP,
+        "01",
+        "fc21",
+        "00",
+        "01",
+        "1110",
+        attribute_reporting_configuration,
+    )
+
     #sendZigateCmd(self, "0120", datas)
     #self.log.logging("Profalux", "Debug", "-- -- -- configureReportingForprofalux for %s data: %s" % (NwkId, datas))
 

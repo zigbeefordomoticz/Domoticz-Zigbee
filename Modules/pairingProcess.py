@@ -11,6 +11,9 @@
 """
 
 import Domoticz
+from Zigbee.zdpCommands import (zdp_active_endpoint_request,
+                                zdp_node_descriptor_request,
+                                zdp_simple_descriptor_request)
 
 from Modules.basicOutputs import getListofAttribute, identifyEffect
 from Modules.bindings import bindDevice, reWebBind_Clusters, unbindDevice

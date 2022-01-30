@@ -24,21 +24,19 @@
 #
 
 
-from datetime import datetime
-import time
-import os.path
 import json
+import os.path
+import time
+from datetime import datetime
 
-import Domoticz
-
-from Classes.AdminWidgets import AdminWidgets
-from Classes.LoggingManagement import LoggingManagement
+from Zigbee.zdpCommands import zdp_nwk_lqi_request
 
 
 class NetworkMap:
-    def __init__(self, PluginConf, ZigateComm, ListOfDevices, Devices, HardwareID, log):
+    def __init__(self, zigbee_communitation, PluginConf, ZigateComm, ListOfDevices, Devices, HardwareID, log):
+        self.zigbee_communitation = zigbee_communitation
         self.pluginconf = PluginConf
-        self.ZigateComm = ZigateComm
+        self.ControllerLink = ZigateComm
         self.ListOfDevices = ListOfDevices
         self.Devices = Devices
         self.HardwareID = HardwareID
@@ -400,6 +398,7 @@ def LQIreq(self, nwkid="0000"):
         self.Neighbours[nwkid]["Status"] = "WaitResponse2"
 
     if (
+        nwkid != "0000" and 
         nwkid in self.ListOfDevices
         and "Health" in self.ListOfDevices[nwkid]
         and self.ListOfDevices[nwkid]["Health"] == "Not Reachable"
@@ -408,8 +407,9 @@ def LQIreq(self, nwkid="0000"):
         self.Neighbours[nwkid]["Status"] = "NotReachable"
         return
 
-    self.logging("Debug", "004E %s" % datas)
-    self.ZigateComm.sendData("004E", datas)
+    self.logging("Debug", "zdp_nwk_lqi_request %s" % datas)
+    zdp_nwk_lqi_request( self, nwkid, "%02x" %index)
+    #self.ControllerLink.sendData("004E", datas)
 
 
 def LQIresp_decoding(self, MsgData):
@@ -419,7 +419,11 @@ def LQIresp_decoding(self, MsgData):
     NwkIdSource = None
     if len(self.LQIreqInProgress) > 0:
         NwkIdSource = self.LQIreqInProgress.pop()
-
+        
+    if len(MsgData) < 10:
+        self.logging("Erro", "LQIresp_decoding - Incomplete message: %s (%s)" %(MsgData, len(MsgData)))
+        return
+        
     SQN = MsgData[0:2]
     Status = MsgData[2:4]
     NeighbourTableEntries = int(MsgData[4:6], 16)
