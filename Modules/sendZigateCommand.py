@@ -97,33 +97,33 @@ def send_zigatecmd_raw(self, cmd, datas, highpriority=False, ackIsDisabled=False
     #
     # Send the cmd directly to ZiGate
 
-    if self.ZigateComm is None:
+    if self.ControllerLink is None:
         self.log.logging(
             "BasicOutput", "Error", "Zigate Communication error.", None, {"Error code": "BOUTPUTS-CMDRAW-01"}
         )
         return
 
-    i_sqn = self.ZigateComm.sendData(cmd, datas, highpriority, ackIsDisabled, NwkId=NwkId)
+    i_sqn = self.ControllerLink.sendData(cmd, datas, highpriority, ackIsDisabled, NwkId=NwkId)
     if self.pluginconf.pluginConf["debugzigateCmd"]:
         self.log.logging(
             "BasicOutput",
             "Log",
             "send_zigatecmd_raw       - [%s] %s %s %s Queue Length: %s"
-            % (i_sqn, cmd, datas, NwkId, self.ZigateComm.loadTransmit()),
+            % (i_sqn, cmd, datas, NwkId, self.ControllerLink.loadTransmit()),
         )
     else:
         self.log.logging(
             "BasicOutput",
             "Debug",
             "====> send_zigatecmd_raw - [%s] %s %s %s Queue Length: %s"
-            % (i_sqn, cmd, datas, NwkId, self.ZigateComm.loadTransmit()),
+            % (i_sqn, cmd, datas, NwkId, self.ControllerLink.loadTransmit()),
         )
-    if self.ZigateComm.loadTransmit() > 15:
+    if self.ControllerLink.loadTransmit() > 15:
         self.log.logging(
             "BasicOutput",
             "Log",
             "WARNING - send_zigatecmd : [%s] %s %18s %s ZigateQueue: %s"
-            % (i_sqn, cmd, datas, NwkId, self.ZigateComm.loadTransmit()),
+            % (i_sqn, cmd, datas, NwkId, self.ControllerLink.loadTransmit()),
         )
 
     return i_sqn
@@ -192,8 +192,21 @@ def sendZigateCmd(self, cmd, datas, ackIsDisabled=False):
     return send_zigatecmd_raw(self, cmd, datas, ackIsDisabled)
 
 
-def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep=ZIGATE_EP, groupaddrmode=False, highpriority=False, ackIsDisabled=False):
+def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep=ZIGATE_EP, zigpyzqn= None, groupaddrmode=False, highpriority=False, ackIsDisabled=False):
+    self.log.logging(
+        "outRawAPS",
+        "Debug",
+        "raw_APS_request - Zigbee Communication: %s Profile: %s Cluster: %s TargetNwk: %s TargetEp: %s SrcEp: %s payload: %s ZDPsqn: %s GroupMode: %s ackIsDisable: %s"
+        % (self.zigbee_communitation, profileId, cluster, targetaddr, dest_ep, zigate_ep, payload, zigpyzqn, groupaddrmode, ackIsDisabled),
+    )
 
+    if self.zigbee_communitation == "zigpy":
+        return zigpy_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep, zigpyzqn, groupaddrmode, highpriority, ackIsDisabled)
+    
+    return zigate_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep, groupaddrmode, highpriority, ackIsDisabled)
+
+def zigate_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep=ZIGATE_EP, groupaddrmode=False, highpriority=False, ackIsDisabled=False):
+            
     SECURITY = 0x02
     RADIUS = 0x00
 
@@ -206,9 +219,9 @@ def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zig
     # APS RAW is always sent in NO-ACK below 31d (included)
     # APS RAW has ACK/NO-ACK option as of 31e
     self.log.logging(
-        "inRawAPS",
+        "outRawAPS",
         "Debug",
-        "raw_APS_request - ackIsDisabled: %s Addr: %s Ep: %s Cluster: %s ProfileId: %s Payload: %s"
+        "zigate_raw_APS_request - ackIsDisabled: %s Addr: %s Ep: %s Cluster: %s ProfileId: %s Payload: %s"
         % (ackIsDisabled, targetaddr, dest_ep, cluster, profileId, payload),
         dest_ep,
     )
@@ -244,3 +257,35 @@ def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zig
         highpriority,
         ackIsDisabled=overwrittenackIsDisabled,
     )
+    
+    
+def zigpy_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep, zigpyzqn=None, groupaddrmode=False, highpriority=False, ackIsDisabled=False):
+
+    if zigpyzqn is None:
+        zigpyzqn = "0"
+    data = {
+        'Profile': int(profileId, 16),
+        'Cluster': int(cluster, 16),
+        'TargetNwk': int(targetaddr, 16),
+        'TargetEp': int(dest_ep, 16),
+        'SrcEp': int(zigate_ep, 16),
+        'Sqn': int(zigpyzqn,16),
+        'payload': payload,
+    }
+
+    if groupaddrmode:
+        data['AddressMode'] = 0x01
+    elif ackIsDisabled:
+        data['AddressMode'] = 0x07
+    else:
+        data['AddressMode'] = 0x02
+
+    self.log.logging(
+        "outRawAPS",
+        "Debug",
+        "zigpy_raw_APS_request - Profile: %04x Cluster: %04x TargetNwk: %04x TargetEp: %02x SrcEp: %02x  payload: %s"
+        % ( data['Profile'], data['Cluster'], data['TargetNwk'], data['TargetEp'], data['SrcEp'],  data['payload'])
+    )
+
+    return self.ControllerLink.sendData( "RAW-COMMAND", data, NwkId=int(targetaddr,16), sqn=int(zigpyzqn,16), ackIsDisabled=ackIsDisabled )
+

@@ -1,0 +1,15 @@
+[submodule "external/zigpy-znp"]
+	path = external/zigpy-znp
+	url = git://github.com/zigbeefordomoticz/zigpy-znp.git
+[submodule "external/zigpy"]
+	path = external/zigpy
+	url = git://github.com/zigbeefordomoticz/zigpy.git
+[submodule "external/zigpy-zigate"]
+	path = external/zigpy-zigate
+	url = git://github.com/zigbeefordomoticz/zigpy-zigate
+[submodule "external/pyserial"]
+	path = external/pyserial
+	url = git://github.com/pyserial/pyserial.git
+[submodule "external/dnspython"]
+	path = external/dnspython
+	url = git://github.com/rthalley/dnspython

@@ -13,6 +13,7 @@
 import time
 
 import Domoticz
+from Zigbee.zdpCommands import zdp_node_descriptor_request
 
 from Modules.basicOutputs import getListofAttribute
 from Modules.casaia import pollingCasaia
@@ -39,7 +40,6 @@ from Modules.schneider_wiser import schneiderRenforceent
 from Modules.tools import (ReArrangeMacCapaBasedOnModel, getListOfEpForCluster,
                            is_hex, is_time_to_perform_work, mainPoweredDevice,
                            removeNwkInList)
-from Modules.zdpCommands import zdp_node_descriptor_request
 from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE
 
 # Read Attribute trigger: Every 10"
@@ -91,7 +91,7 @@ def attributeDiscovery(self, NwkId):
             if self.ListOfDevices[NwkId]["Attributes List"]["Request"][iterEp][iterCluster] != 0:
                 continue
 
-            if not self.busy and self.ZigateComm.loadTransmit() <= MAX_LOAD_ZIGATE:
+            if not self.busy and self.ControllerLink.loadTransmit() <= MAX_LOAD_ZIGATE:
                 if int(iterCluster, 16) < 0x0FFF:
                     getListofAttribute(self, NwkId, iterEp, iterCluster)
                     # getListofAttributeExtendedInfos(self, nwkid, EpOut, cluster, start_attribute=None, manuf_specific=None, manuf_code=None)
@@ -142,7 +142,7 @@ def pollingManufSpecificDevices(self, NwkId, HB):
     if "Param" not in self.ListOfDevices[NwkId]:
         return False
 
-    if self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE:
+    if self.busy or self.ControllerLink.loadTransmit() > MAX_LOAD_ZIGATE:
         return True
 
     self.log.logging(
@@ -184,7 +184,7 @@ def pollingDeviceStatus(self, NwkId):
     # Purpose is to trigger ReadAttrbute 0x0006 and 0x0008 on attribute 0x0000 if applicable
     # """
 
-    if self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE:
+    if self.busy or self.ControllerLink.loadTransmit() > MAX_LOAD_ZIGATE:
         return True
     self.log.logging("Heartbeat", "Debug", "--------> pollingDeviceStatus Device %s" % NwkId, NwkId)
     if len(getListOfEpForCluster(self, NwkId, "0006")) != 0:
@@ -279,7 +279,7 @@ def pingRetryDueToBadHealth(self, NwkId):
     # Retry #1
     if (
         retry == 0
-        and self.ZigateComm.loadTransmit() == 0
+        and self.ControllerLink.loadTransmit() == 0
         and now > (lastTimeStamp + 30)
     ):  # 30s
         self.log.logging("Heartbeat", "Debug", "--------> ping Retry 1 Check %s" % NwkId, NwkId)
@@ -291,7 +291,7 @@ def pingRetryDueToBadHealth(self, NwkId):
     # Retry #2
     if (
         retry == 1
-        and self.ZigateComm.loadTransmit() == 0
+        and self.ControllerLink.loadTransmit() == 0
         and now > (lastTimeStamp + 120)
     ):  # 30 + 120s
         # Let's retry
@@ -304,7 +304,7 @@ def pingRetryDueToBadHealth(self, NwkId):
     # Retry #3
     if (
         retry == 2
-        and self.ZigateComm.loadTransmit() == 0
+        and self.ControllerLink.loadTransmit() == 0
         and now > (lastTimeStamp + 300)
     ):  # 30 + 120 + 300
         # Let's retry
@@ -389,7 +389,7 @@ def pingDevices(self, NwkId, health, checkHealthFlag, mainPowerFlag):
     lastPing = self.ListOfDevices[NwkId]["Stamp"]["LastPing"]
     lastSeen = self.ListOfDevices[NwkId]["Stamp"]["LastSeen"]
 
-    if checkHealthFlag and now > (lastPing + 60) and self.ZigateComm.loadTransmit() == 0:
+    if checkHealthFlag and now > (lastPing + 60) and self.ControllerLink.loadTransmit() == 0:
         submitPing(self, NwkId)
         return
 
@@ -404,7 +404,7 @@ def pingDevices(self, NwkId, health, checkHealthFlag, mainPowerFlag):
     if (
         (now > (lastPing + self.pluginconf.pluginConf["pingDevicesFeq"]))
         and (now > (lastSeen + self.pluginconf.pluginConf["pingDevicesFeq"]))
-        and self.ZigateComm.loadTransmit() == 0
+        and self.ControllerLink.loadTransmit() == 0
     ):
 
         self.log.logging(
@@ -532,12 +532,12 @@ def processKnownDevices(self, Devices, NWKID):
                     if self.ListOfDevices[NWKID]["Model"] == "lumi.ctrl_neutral2" and tmpEp not in ("02", "03"):
                         continue
 
-                if self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE:
+                if self.busy or self.ControllerLink.loadTransmit() > MAX_LOAD_ZIGATE:
                     self.log.logging(
                         "Heartbeat",
                         "Debug",
                         "--  -  %s skip ReadAttribute for now ... system too busy (%s/%s)"
-                        % (NWKID, self.busy, self.ZigateComm.loadTransmit()),
+                        % (NWKID, self.busy, self.ControllerLink.loadTransmit()),
                         NWKID,
                     )
                     rescheduleAction = True
@@ -567,10 +567,10 @@ def processKnownDevices(self, Devices, NWKID):
 
                 func(self, NWKID)
 
-    if ( self.pluginconf.pluginConf["RoutingTableRequestFeq"] and not self.busy and self.ZigateComm.loadTransmit() < 3 and (intHB % ( self.pluginconf.pluginConf["RoutingTableRequestFeq"] // HEARTBEAT) == 0)):
+    if ( self.pluginconf.pluginConf["RoutingTableRequestFeq"] and not self.busy and self.ControllerLink.loadTransmit() < 3 and (intHB % ( self.pluginconf.pluginConf["RoutingTableRequestFeq"] // HEARTBEAT) == 0)):
         mgmt_rtg(self, NWKID, "RoutingTable")
 
-    if ( self.pluginconf.pluginConf["BindingTableRequestFeq"] and not self.busy and self.ZigateComm.loadTransmit() < 3 and (intHB % ( self.pluginconf.pluginConf["BindingTableRequestFeq"] // HEARTBEAT) == 0)):
+    if ( self.pluginconf.pluginConf["BindingTableRequestFeq"] and not self.busy and self.ControllerLink.loadTransmit() < 3 and (intHB % ( self.pluginconf.pluginConf["BindingTableRequestFeq"] // HEARTBEAT) == 0)):
         mgmt_rtg(self, NWKID, "BindingTable")
 
 
@@ -603,11 +603,11 @@ def processKnownDevices(self, Devices, NWKID):
         ):
             req_node_descriptor = True
 
-        if req_node_descriptor and not self.busy and self.ZigateComm.loadTransmit() <= MAX_LOAD_ZIGATE:
+        if req_node_descriptor and not self.busy and self.ControllerLink.loadTransmit() <= MAX_LOAD_ZIGATE:
             self.log.logging(
                 "Heartbeat",
                 "Debug",
-                "-- - skip ReadAttribute for now ... system too busy (%s/%s) for %s" % (self.busy, self.ZigateComm.loadTransmit(), NWKID),
+                "-- - skip ReadAttribute for now ... system too busy (%s/%s) for %s" % (self.busy, self.ControllerLink.loadTransmit(), NWKID),
                 NWKID,
             )
             Domoticz.Status("Requesting Node Descriptor for %s" % NWKID)
@@ -624,7 +624,7 @@ def processKnownDevices(self, Devices, NWKID):
 def processListOfDevices(self, Devices):
     # Let's check if we do not have a command in TimeOut
 
-    # self.ZigateComm.checkTOwaitFor()
+    # self.ControllerLink.checkTOwaitFor()
     entriesToBeRemoved = []
 
     for NWKID in list(self.ListOfDevices.keys()):
@@ -753,21 +753,21 @@ def processListOfDevices(self, Devices):
             self.log.logging(
                 "Heartbeat",
                 "Debug",
-                "processListOfDevices Topology scan is possible %s" % self.ZigateComm.loadTransmit(),
+                "processListOfDevices Topology scan is possible %s" % self.ControllerLink.loadTransmit(),
             )
-            if self.ZigateComm.loadTransmit() < MAX_LOAD_ZIGATE:
+            if self.ControllerLink.loadTransmit() < MAX_LOAD_ZIGATE:
                 self.networkmap.continue_scan()
 
     # if (self.HeartbeatCount > QUIET_AFTER_START) and (self.HeartbeatCount > NETWORK_ENRG_START):
     #    # Network Energy Level
     if self.networkenergy:
-        if self.ZigateComm.loadTransmit() <= MAX_LOAD_ZIGATE:
+        if self.ControllerLink.loadTransmit() <= MAX_LOAD_ZIGATE:
             self.networkenergy.do_scan()
 
     self.log.logging(
         "Heartbeat",
         "Debug",
         "processListOfDevices END with HB: %s, Busy: %s, Enroll: %s, Load: %s"
-        % (self.HeartbeatCount, self.busy, self.CommiSSionning, self.ZigateComm.loadTransmit()),
+        % (self.HeartbeatCount, self.busy, self.CommiSSionning, self.ControllerLink.loadTransmit()),
     )
     return

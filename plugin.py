@@ -4,9 +4,9 @@
 # Author: zaraki673 & pipiche38
 #
 """
-<plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="5.1">
+<plugin key="Zigate" name="Zigbee for domoticz plugin (zigpy enabled)" author="pipiche38" version="6.0">
     <description>
-        <h1> Plugin ZiGate</h1><br/>
+        <h1> Plugin Zigbee for domoticz</h1><br/>
             <br/><h2> Informations</h2><br/>
                 <ul style="list-style-type:square">
                     <li>&Documentations : &<a href="https://github.com/pipiche38/Domoticz-Zigate-Wiki/blob/master/en-eng/Home.md">English wiki</a>|<a href="https://github.com/pipiche38/Domoticz-Zigate-Wiki/blob/master/fr-fr/Home.md">Wiki Français</a></li>
@@ -17,14 +17,16 @@
     </description>
     <params>
         <param field="Mode1" label="Zigate Model" width="75px" required="true" default="None">
-            <description><br/><h3>ZiGate definition</h3><br/>Select the ZiGate version : ZiGate (V1) or ZiGate+ (V2)</description>
+            <description><br/><h3>Zigbee controller definition</h3><br/>Select the Zigbee radio controller version : ZiGate (V1), ZiGate+ (V2), Texas Instrument ZNP</description>
             <options>
                 <option label="ZiGate"  value="V1"/>
                 <option label="ZiGate+" value="V2"/>
+                <option label="Zigate (via zigpy for dev ONLY)" value="ZigpyZiGate"/>
+                <option label="Texas Instruments ZNP (via zigpy)" value="ZigpyZNP"/>
             </options>
         </param>
         <param field="Mode2" label="Zigate Type" width="75px" required="true" default="None">
-            <description><br/>Select the ZiGate type : USB, DIN, Pi, TCPIP (Wifi, Ethernet)</description>
+            <description><br/>Select the Radio Controller connection type : USB, DIN, Pi, TCPIP (Wifi, Ethernet)</description>
             <options>
                 <option label="USB"   value="USB" />
                 <option label="DIN"   value="DIN" />
@@ -34,13 +36,13 @@
             </options>
         </param>
         <param field="SerialPort" label="Serial Port" width="150px" required="true" default="/dev/ttyUSB0" >
-            <description><br/>Set the serial port where the ZiGate is connected (/dev/ttyUSB0 for example)</description>
+            <description><br/>Set the serial port where the Radio Controller is connected (/dev/ttyUSB0 for example)</description>
         </param>
         <param field="Address" label="IP" width="150px" required="true" default="0.0.0.0">
-            <description><br/>Set the ZiGate IP adresse (0.0.0.0 for none TCPIP ZiGates)</description>
+            <description><br/>Set the Radio Controller IP adresse (0.0.0.0 if not applicable)</description>
         </param>
         <param field="Port" label="Port" width="150px" required="true" default="9999">
-            <description><br/>Set the ZiGate Port (9999 by default)</description>
+            <description><br/>Set the Radio Controller Port (9999 by default)</description>
         </param>
         <param field="Mode4" label="WebUI port" width="75px" required="true" default="9440" >
             <description><br/><h3>Plugin definition</h3><br/>Set the plugin Dashboard port (9440 by default, None to disable)<br/>
@@ -91,14 +93,13 @@ from Classes.NetworkEnergy import NetworkEnergy
 from Classes.NetworkMap import NetworkMap
 from Classes.OTA import OTAManagement
 from Classes.PluginConf import PluginConf
-from Classes.Transport.Transport import ZigateTransport
+
 from Classes.TransportStats import TransportStatistics
 from Classes.WebServer.WebServer import WebServer
 from Modules.basicOutputs import (ZigatePermitToJoin,
-                                  do_Many_To_One_RouteRequest, leaveRequest,
-                                  setExtendedPANID,
-                                  setTimeServer, start_Zigate, zigateBlueLed)
-from Modules.zigateCommands import zigate_set_mode
+                                  do_Many_To_One_RouteRequest, ieee_addr_request, leaveRequest,
+                                  setExtendedPANID, setTimeServer,
+                                  start_Zigate, zigateBlueLed)
 from Modules.checkingUpdate import (checkFirmwareUpdate, checkPluginUpdate,
                                     checkPluginVersion)
 from Modules.command import mgtCommand
@@ -116,12 +117,20 @@ from Modules.txPower import set_TxPower
 from Modules.zigateCommands import (zigate_erase_eeprom,
                                     zigate_get_firmware_version,
                                     zigate_get_list_active_devices,
-                                    zigate_get_nwk_state,
-                                    zigate_get_permit_joint_status,
-                                    zigate_get_time,
+                                    zigate_get_nwk_state, zigate_get_time,
                                     zigate_remove_device,
                                     zigate_set_certificate)
 from Modules.zigateConsts import CERTIFICATION, HEARTBEAT, MAX_FOR_ZIGATE_BUZY
+from Zigbee.zdpCommands import zdp_get_permit_joint_status
+from Modules.zigateCommands import zigate_set_mode
+
+
+#from zigpy_zigate.config import CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE
+#from Classes.ZigpyTransport.Transport import ZigpyTransport
+#import asyncio
+
+
+
 
 VERSION_FILENAME = ".hidden/VERSION"
 
@@ -141,12 +150,12 @@ class BasePlugin:
         )  # {DevicesAddresse : { status : status_de_detection, data : {ep list ou autres en fonctions du status}}, DevicesAddresse : ...}
         self.DiscoveryDevices = {}  # Used to collect pairing information
         self.IEEE2NWK = {}
-        self.zigatedata = {}
+        self.ControllerData = {}
         self.DeviceConf = {}  # Store DeviceConf.txt, all known devices configuration
 
         # Objects from Classe
         self.configureReporting = None
-        self.ZigateComm = None
+        self.ControllerLink= None
         self.groupmgt = None
         self.networkmap = None
         self.networkenergy = None
@@ -190,8 +199,8 @@ class BasePlugin:
         self.internalHB = 0
 
         self.currentChannel = None  # Curent Channel. Set in Decode8009/Decode8024
-        self.ZigateIEEE = None  # Zigate IEEE. Set in CDecode8009/Decode8024
-        self.ZigateNWKID = None  # Zigate NWKID. Set in CDecode8009/Decode8024
+        self.ControllerIEEE = None  # Zigate IEEE. Set in CDecode8009/Decode8024
+        self.ControllerNWKID = None  # Zigate NWKID. Set in CDecode8009/Decode8024
         self.ZiGateModel = None  # V1 or V2
         self.FirmwareVersion = None
         self.FirmwareMajorVersion = None
@@ -235,6 +244,9 @@ class BasePlugin:
         self.ZigateRead_timing_cnt = (
             self.ZigateRead_timing_cumul
         ) = self.ZigateRead_timing_avrg = self.ZigateRead_timing_max = 0
+        
+        # Zigpy
+        self.zigbee_communitation = None  # "zigpy" or "native"
 
     def onStart(self):
         Domoticz.Log("ZiGate plugin started!")
@@ -254,8 +266,13 @@ class BasePlugin:
             "Wifi",
         ):
             self.transport = "V2-" + Parameters["Mode2"]
+            
         elif Parameters["Mode2"] == "None":
             self.transport = "None"
+            
+        elif Parameters["Mode1"] in ( "ZigpyZiGate", "ZigpyZNP"):
+            self.transport = Parameters["Mode1"]
+            
         else:
             Domoticz.Error(
                 "Please cross-check the plugin starting parameters Mode1: %s Mode2: %s and make sure you have restarted Domoticz after updating the plugin"
@@ -444,7 +461,10 @@ class BasePlugin:
         # Connect to Zigate only when all initialisation are properly done.
         self.log.logging("Plugin", "Status", "Transport mode: %s" % self.transport)
         if self.transport in ("USB", "DIN", "V2-DIN", "V2-USB"):
-            self.ZigateComm = ZigateTransport(
+            from Classes.ZigateTransport.Transport import ZigateTransport
+            
+            self.zigbee_communitation = "native"
+            self.ControllerLink= ZigateTransport(
                 self.HardwareID,
                 self.DomoticzBuild,
                 self.DomoticzMajor,
@@ -458,8 +478,11 @@ class BasePlugin:
             )
 
         elif self.transport in ("PI", "V2-PI"):
+            from Classes.ZigateTransport.Transport import ZigateTransport
+            self.pluginconf.pluginConf["ZiGateInRawMode"] = False
             switchPiZigate_mode(self, "run")
-            self.ZigateComm = ZigateTransport(
+            self.zigbee_communitation = "native"
+            self.ControllerLink= ZigateTransport(
                 self.HardwareID,
                 self.DomoticzBuild,
                 self.DomoticzMajor,
@@ -473,7 +496,10 @@ class BasePlugin:
             )
 
         elif self.transport in ("Wifi", "V2-Wifi"):
-            self.ZigateComm = ZigateTransport(
+            from Classes.ZigateTransport.Transport import ZigateTransport
+            self.pluginconf.pluginConf["ZiGateInRawMode"] = False
+            self.zigbee_communitation = "native"
+            self.ControllerLink= ZigateTransport(
                 self.HardwareID,
                 self.DomoticzBuild,
                 self.DomoticzMajor,
@@ -488,22 +514,49 @@ class BasePlugin:
             )
 
         elif self.transport == "None":
+            from Classes.ZigateTransport.Transport import ZigateTransport
+            self.pluginconf.pluginConf["ZiGateInRawMode"] = False
             self.log.logging("Plugin", "Status", "Transport mode set to None, no communication.")
             self.FirmwareVersion = "031c"
             self.PluginHealth["Firmware Update"] = {"Progress": "75 %", "Device": "1234"}
             return
+
+        elif self.transport == "ZigpyZiGate":
+            # Zigpy related modules
+            from Classes.ZigpyTransport.Transport import ZigpyTransport
+            from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH,
+                                                CONFIG_SCHEMA, SCHEMA_DEVICE)
+
+            self.zigbee_communitation = "zigpy"
+            Domoticz.Log("Start Zigpy Transport on zigate")
+            self.ControllerLink= ZigpyTransport( self.pluginconf, self.processFrame, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "zigate", Parameters["SerialPort"]) 
+            self.ControllerLink.open_zigate_connection()
+            self.pluginconf.pluginConf["ZiGateInRawMode"] = True
+            
+        elif self.transport == "ZigpyZNP":
+            from Classes.ZigpyTransport.Transport import ZigpyTransport
+            from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH,
+                                                CONFIG_SCHEMA, SCHEMA_DEVICE)
+
+            self.zigbee_communitation = "zigpy"
+            Domoticz.Log("Start Zigpy Transport on ZNP")
+            self.ControllerLink= ZigpyTransport( self.pluginconf,self.processFrame, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "znp", Parameters["SerialPort"])  
+            self.ControllerLink.open_zigate_connection()
+            self.pluginconf.pluginConf["ZiGateInRawMode"] = True
+            
         else:
             self.log.logging("Plugin", "Error", "Unknown Transport comunication protocol : %s" % str(self.transport))
             return
 
-        self.log.logging("Plugin", "Debug", "Establish Zigate connection")
-        self.ZigateComm.open_zigate_connection()
+        if self.transport not in ("ZigpyZNP", "ZigpyZiGate" ):
+            self.log.logging("Plugin", "Debug", "Establish Zigate connection")
+            self.ControllerLink.open_zigate_connection()
 
         # IAS Zone Management
         if self.iaszonemgt is None:
             # Create IAS Zone object
-            # Domoticz.Log("Init IAS_Zone_management ZigateComm: %s" %self.ZigateComm)
-            self.iaszonemgt = IAS_Zone_Management(self.pluginconf, self.ZigateComm, self.ListOfDevices, self.log)
+            # Domoticz.Log("Init IAS_Zone_management ZigateComm: %s" %self.ControllerLink)
+            self.iaszonemgt = IAS_Zone_Management(self.pluginconf, self.ControllerLink, self.ListOfDevices, self.log, self.zigbee_communitation, self.FirmwareVersion)
 
             # Starting WebServer
         if self.webserver is None:
@@ -517,33 +570,28 @@ class BasePlugin:
         self.busy = False
 
     def onStop(self):
+        Domoticz.Log("onStop()")
         if self.log:
             self.log.logging("Plugin", "Log", "onStop called")
             self.log.logging("Plugin", "Log", "onStop calling (1) domoticzDb DeviceStatus closed")
         if self.domoticzdb_DeviceStatus:
             self.domoticzdb_DeviceStatus.closeDB()
         if self.log:
-            self.log.logging("Plugin", "Log", "onStop called (1) domoticzDb DeviceStatus closed")
-
             self.log.logging("Plugin", "Log", "onStop calling (2) domoticzDb Hardware closed")
         if self.domoticzdb_Hardware:
             self.domoticzdb_Hardware.closeDB()
         if self.log:
-            self.log.logging("Plugin", "Log", "onStop called (2) domoticzDb Hardware closed")
-
             self.log.logging("Plugin", "Log", "onStop calling (3) Transport off")
-        if self.ZigateComm:
-            self.ZigateComm.thread_transport_shutdown()
-            self.ZigateComm.close_zigate_connection()
-        if self.log:
-            self.log.logging("Plugin", "Log", "onStop called (3) Transport off")
+        if self.ControllerLink:
+            self.ControllerLink.thread_transport_shutdown()
+            self.ControllerLink.close_zigate_connection()
 
+        if self.log:
             self.log.logging("Plugin", "Log", "onStop calling (4) WebServer off")
         if self.webserver:
             self.webserver.onStop()
         if self.log:
             self.log.logging("Plugin", "Log", "onStop called (4) WebServer off")
-
         if self.log:
             self.log.logging("Plugin", "Log", "onStop calling (5) Plugin Database saved")
         WriteDeviceList(self, 0)
@@ -572,7 +620,8 @@ class BasePlugin:
         self.adminWidgets.updateStatusWidget(Devices, "No Communication")
 
     def onDeviceRemoved(self, Unit):
-        self.log.logging("Plugin", "Debug", "onDeviceRemoved called")
+        if self.log:
+            self.log.logging("Plugin", "Debug", "onDeviceRemoved called")
 
         # Let's check if this is End Node, or Group related.
         if Devices[Unit].DeviceID in self.IEEE2NWK:
@@ -596,9 +645,9 @@ class BasePlugin:
                     leaveRequest(self, ShortAddr=NwkId, IEEE=IEEE)
 
                     # for a remove in case device didn't send the leave
-                    if self.ZigateIEEE:
-                        #sendZigateCmd(self, "0026", self.ZigateIEEE + IEEE)
-                        zigate_remove_device(self, self.ZigateIEEE, IEEE)
+                    if self.ControllerIEEE:
+                        #sendZigateCmd(self, "0026", self.ControllerIEEE + IEEE)
+                        zigate_remove_device(self, str(self.ControllerIEEE), str(IEEE) )
                         self.log.logging(
                             "Plugin",
                             "Status",
@@ -648,7 +697,7 @@ class BasePlugin:
             self.log.logging("Plugin", "Error", "Failed to connect (" + str(Status) + ")")
             self.log.logging("Plugin", "Debug", "Failed to connect (" + str(Status) + ") with error: " + Description)
             self.connectionState = 0
-            self.ZigateComm.re_conn()
+            self.ControllerLink.re_conn()
             self.PluginHealth["Flag"] = 3
             self.PluginHealth["Txt"] = "No Communication"
             self.adminWidgets.updateStatusWidget(Devices, "No Communication")
@@ -684,7 +733,7 @@ class BasePlugin:
 
         self.Ping["Nb Ticks"] = 0
         self.connectionState = 1
-        self.ZigateComm.on_message(Data)
+        self.ControllerLink.on_message(Data)
 
     def processFrame(self, Data):
         if not self.VersionNewFashion:
@@ -695,6 +744,25 @@ class BasePlugin:
         # stop_time = int(time.time() *1000)
         # Domoticz.Log("### Completion: %s is %s ms" %(Data, ( stop_time - start_time)))
 
+    def zigpy_get_device(self, ieee=None, nwkid = None):
+        # allow to inter-connect zigpy world and plugin
+        sieee = ieee
+        snwkid = nwkid
+        model = manuf = None
+        if nwkid in self.ListOfDevices and 'IEEE' in self.ListOfDevices[ nwkid ]:
+            ieee = self.ListOfDevices[ nwkid ]['IEEE']
+        elif ieee in self.IEEE2NWK:
+            nwkid =   self.IEEE2NWK[ ieee ]
+        else:
+            self.log.logging("TransportZigpy", "Log", "zigpy_get_device( %s(%s), %s(%s)) NOT FOUND" %( sieee, type(sieee), snwkid, type(sieee) ))
+            return None
+        if nwkid in self.ListOfDevices and "Model" in self.ListOfDevices[ nwkid ] and self.ListOfDevices[ nwkid ]["Model"] not in ( "", {} ):
+            model = self.ListOfDevices[ nwkid ]["Model"]
+        if nwkid in self.ListOfDevices and "Manufacturer" in self.ListOfDevices[ nwkid ] and self.ListOfDevices[ nwkid ]["Manufacturer"] not in ( "", {} ):
+            manuf = self.ListOfDevices[ nwkid ]["Manufacturer"]
+        self.log.logging("TransportZigpy", "Log", "zigpy_get_device( %s, %s returns %04x %016x" %( sieee, snwkid, int(nwkid,16), int(ieee,16) ))
+        return int(nwkid,16) ,int(ieee,16)
+    
     def onCommand(self, Unit, Command, Level, Color):
         self.log.logging(
             "Plugin", "Debug", "onCommand - unit: %s, command: %s, level: %s, color: %s" % (Unit, Command, Level, Color)
@@ -759,13 +827,11 @@ class BasePlugin:
                 return
             self.HeartbeatCount += 1
 
-        busy_ = False
-
         # Quiet a bad hack. In order to get the needs for ZigateRestart
         # from WebServer
-        if "startZigateNeeded" in self.zigatedata and self.zigatedata["startZigateNeeded"]:
+        if "startZigateNeeded" in self.ControllerData and self.ControllerData["startZigateNeeded"]:
             self.startZigateNeeded = self.HeartbeatCount
-            del self.zigatedata["startZigateNeeded"]
+            del self.ControllerData["startZigateNeeded"]
 
         # Starting PDM on Host firmware version, we have to wait that Zigate is fully initialized ( PDM loaded into memory from Host).
         # We wait for self.zigateReady which is set to True in th pdmZigate module
@@ -800,7 +866,7 @@ class BasePlugin:
                     self.InitPhase1,
                     self.InitPhase2,
                     self.InitPhase3,
-                    self.ZigateComm.pdm_lock_status(),
+                    self.ControllerLink.pdm_lock_status(),
                 ),
             )
 
@@ -895,9 +961,9 @@ class BasePlugin:
             self.PluginHealth["Flag"] = 2
             self.PluginHealth["Txt"] = "Enrollment in Progress"
             self.adminWidgets.updateStatusWidget(Devices, "Enrollment")
-            
+
             # Maintain trend statistics
-            self.statistics._Load = self.ZigateComm.loadTransmit()
+            self.statistics._Load = self.ControllerLink.loadTransmit()
             self.statistics.addPointforTrendStats(self.HeartbeatCount)
             return
 
@@ -905,7 +971,11 @@ class BasePlugin:
         ResetDevice(self, Devices, "Motion", 5)
 
         # Send a Many-to-One-Route-request
-        if self.pluginconf.pluginConf["doManyToOneRoute"] and self.HeartbeatCount % ((50 * 60) // HEARTBEAT) == 0:
+        if (
+            self.zigbee_communitation == "native"
+            and self.pluginconf.pluginConf["doManyToOneRoute"]
+            and self.HeartbeatCount % ((50 * 60) // HEARTBEAT) == 0
+        ):
             do_Many_To_One_RouteRequest(self)
 
         # OTA upgrade
@@ -918,13 +988,13 @@ class BasePlugin:
             and self.permitTojoin["Duration"] != 0
             and int(time.time()) >= (self.permitTojoin["Starttime"] + self.permitTojoin["Duration"])
         ):
-            zigate_get_permit_joint_status(self)
+            zdp_get_permit_joint_status(self)
             #sendZigateCmd(self, "0014", "")  # Request status
             self.permitTojoin["Duration"] = 0
 
         # Heartbeat - Ping Zigate every minute to check connectivity
         # If fails then try to reConnect
-        if self.pluginconf.pluginConf["Ping"]:
+        if self.pluginconf.pluginConf["Ping"] and self.zigbee_communitation == "native":
             pingZigate(self)
             self.Ping["Nb Ticks"] += 1
 
@@ -934,12 +1004,9 @@ class BasePlugin:
             #sendZigateCmd(self, "0017", "")
 
         # Update MaxLoad if needed
-        if self.ZigateComm.loadTransmit() >= MAX_FOR_ZIGATE_BUZY:
-            # This mean that 4 commands are on the Queue to be executed by Zigate.
-            busy_ = True
-        
+        busy_ = self.ControllerLink.loadTransmit() >= MAX_FOR_ZIGATE_BUZY
         # Maintain trend statistics
-        self.statistics._Load = self.ZigateComm.loadTransmit()
+        self.statistics._Load = self.ControllerLink.loadTransmit()
         self.statistics.addPointforTrendStats(self.HeartbeatCount)
 
         if busy_:
@@ -1005,12 +1072,12 @@ def zigateInit_Phase2(self):
     """
     Make sure that all setup is in place
     """
-    if self.FirmwareVersion is None or self.ZigateIEEE is None or self.ZigateNWKID == "ffff":
+    if self.FirmwareVersion is None or self.ControllerIEEE is None or self.ControllerNWKID == "ffff":
         if self.FirmwareVersion is None:
             # Ask for Firmware Version
             #sendZigateCmd(self, "0010", "")
             zigate_get_firmware_version(self)
-        if self.ZigateIEEE is None or self.ZigateNWKID == "ffff":
+        if self.ControllerIEEE is None or self.ControllerNWKID == "ffff":
             # Request Network State
             zigate_get_nwk_state(self)
             #sendZigateCmd(self, "0009", "")
@@ -1025,21 +1092,24 @@ def zigateInit_Phase2(self):
         return
 
     # Set Time server to HOST time
-    setTimeServer(self)
-
-    # Reset ZiGate to Standard Mode
-    zigate_set_mode(self, 0x00)
+    if self.zigbee_communitation == "native":
+        setTimeServer(self)
+    
+    # Make sure Zigate is in Standard mode
+    if self.zigbee_communitation == "native":
+        zigate_set_mode(self, 0x00)
 
     # If applicable, put Zigate in NO Pairing Mode
     self.Ping["Permit"] = None
     if self.pluginconf.pluginConf["resetPermit2Join"]:
         ZigatePermitToJoin(self, 0)
     else:
-        zigate_get_permit_joint_status(self)
+        zdp_get_permit_joint_status(self)
         #sendZigateCmd(self, "0014", "")  # Request Permit to Join status
 
     # Request List of Active Devices
-    zigate_get_list_active_devices(self)
+    if self.zigbee_communitation == "native":
+        zigate_get_list_active_devices(self)
     #sendZigateCmd(self, "0015", "")
 
     # Ready for next phase
@@ -1056,7 +1126,7 @@ def zigateInit_Phase3(self):
 
     self.pluginParameters["FirmwareVersion"] = self.FirmwareVersion
 
-    if not check_firmware_level(self):
+    if self.zigbee_communitation == "native" and not check_firmware_level(self):
         self.log.logging("Plugin", "Debug", "Firmware not ready")
         return
         
@@ -1082,16 +1152,17 @@ def zigateInit_Phase3(self):
         # Create Configure Reporting object
         if self.configureReporting is None:
             self.configureReporting = ConfigureReporting(
+                self.zigbee_communitation,
                 self.pluginconf,
                 self.DeviceConf,
-                self.ZigateComm,
+                self.ControllerLink,
                 self.ListOfDevices,
                 Devices,
                 self.log,
                 self.busy,
                 self.FirmwareVersion,
                 self.IEEE2NWK,
-                self.ZigateIEEE
+                self.ControllerIEEE
             )
 
         # Enable Group Management
@@ -1112,7 +1183,7 @@ def zigateInit_Phase3(self):
         # Create Network Map object and trigger one scan
         if self.networkmap is None:
             self.networkmap = NetworkMap(
-                self.pluginconf, self.ZigateComm, self.ListOfDevices, Devices, self.HardwareID, self.log
+                self.zigbee_communitation ,self.pluginconf, self.ControllerLink, self.ListOfDevices, Devices, self.HardwareID, self.log
             )
         if self.networkmap:
             self.webserver.update_networkmap(self.networkmap)
@@ -1120,7 +1191,7 @@ def zigateInit_Phase3(self):
         # Create Network Energy object and trigger one scan
         if self.networkenergy is None:
             self.networkenergy = NetworkEnergy(
-                self.pluginconf, self.ZigateComm, self.ListOfDevices, Devices, self.HardwareID, self.log
+                self.pluginconf, self.ControllerLink, self.ListOfDevices, Devices, self.HardwareID, self.log
             )
             # if len(self.ListOfDevices) > 1:
             #   self.log.logging( 'Plugin', 'Status', "Trigger a Energy Level Scan")
@@ -1192,31 +1263,34 @@ def check_firmware_level(self):
 
 def start_GrpManagement(self, homefolder):
     self.groupmgt = GroupsManagement(
+        self.zigbee_communitation,
         self.VersionNewFashion,
         self.DomoticzMajor,
         self.DomoticzMinor,
         self.pluginconf,
-        self.ZigateComm,
+        self.ControllerLink,
         self.adminWidgets,
         Parameters["HomeFolder"],
         self.HardwareID,
         Devices,
         self.ListOfDevices,
         self.IEEE2NWK,
+        self.DeviceConf, 
         self.log,
     )
-    if self.groupmgt and self.ZigateIEEE:
-        self.groupmgt.updateZigateIEEE(self.ZigateIEEE)
+    if self.groupmgt and self.ControllerIEEE:
+        self.groupmgt.updateZigateIEEE(self.ControllerIEEE)
     if self.groupmgt:
         self.webserver.update_groupManagement(self.groupmgt)
 
 
 def start_OTAManagement(self, homefolder):
     self.OTA = OTAManagement(
+        self.zigbee_communitation,
         self.pluginconf,
         self.DeviceConf,
         self.adminWidgets,
-        self.ZigateComm,
+        self.ControllerLink,
         homefolder,
         self.HardwareID,
         Devices,
@@ -1233,12 +1307,13 @@ def start_web_server(self, webserver_port, webserver_homefolder):
 
     self.log.logging("Plugin", "Status", "Start Web Server connection")
     self.webserver = WebServer(
-        self.zigatedata,
+        self.zigbee_communitation,
+        self.ControllerData,
         self.pluginParameters,
         self.pluginconf,
         self.statistics,
         self.adminWidgets,
-        self.ZigateComm,
+        self.ControllerLink,
         webserver_homefolder,
         self.HardwareID,
         Devices,
@@ -1265,7 +1340,9 @@ def pingZigate(self):
     'Nb Ticks' is set to 0 every time a message is received from Zigate
     'Nb Ticks' is incremented at every heartbeat
     """
-
+    if self.zigbee_communitation != "native":
+        return
+    
     # Frequency is set to below 4' as regards to the TCP timeout with Wifi-Zigate
     PING_CHECK_FREQ = ((5 * 60) / 2) - 7
 
@@ -1296,17 +1373,16 @@ def pingZigate(self):
             self.adminWidgets.updateNotificationWidget(Devices, "Ping: Connection with Zigate Lost")
             # self.connectionState = 0
             # self.Ping['TimeStamp'] = int(time.time())
-            # self.ZigateComm.re_conn()
+            # self.ControllerLink.re_conn()
             restartPluginViaDomoticzJsonApi(self)
 
-        else:
-            if (self.Ping["Nb Ticks"] % 3) == 0:
-                zigate_get_permit_joint_status(self)
-                #sendZigateCmd(self, "0014", "")  # Request status
+        elif (self.Ping["Nb Ticks"] % 3) == 0:
+            zdp_get_permit_joint_status(self)
+            #sendZigateCmd(self, "0014", "")  # Request status
         return
 
     # If we are more than PING_CHECK_FREQ without any messages, let's check
-    if self.Ping["Nb Ticks"] < (PING_CHECK_FREQ // HEARTBEAT):
+    if self.Ping["Nb Ticks"] and self.Ping["Nb Ticks"] < (PING_CHECK_FREQ // HEARTBEAT):
         self.connectionState = 1
         self.log.logging(
             "Plugin", "Debug", "pingZigate - We have receive a message less than %s sec  ago " % PING_CHECK_FREQ
@@ -1315,7 +1391,7 @@ def pingZigate(self):
 
     if "Status" not in self.Ping:
         self.log.logging("Plugin", "Log", "pingZigate - Unknown Status, Ticks: %s  Send a Ping" % self.Ping["Nb Ticks"])
-        zigate_get_permit_joint_status(self)
+        zdp_get_permit_joint_status(self)
         #sendZigateCmd(self, "0014", "")  # Request status
         self.Ping["Status"] = "Sent"
         self.Ping["TimeStamp"] = int(time.time())
@@ -1330,7 +1406,7 @@ def pingZigate(self):
             "Debug",
             "pingZigate - Status: %s Send a Ping, Ticks: %s" % (self.Ping["Status"], self.Ping["Nb Ticks"]),
         )
-        zigate_get_permit_joint_status(self)
+        zdp_get_permit_joint_status(self)
         #sendZigateCmd(self, "0014", "")  # Request status
         self.connectionState = 1
         self.Ping["Status"] = "Sent"
