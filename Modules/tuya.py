@@ -20,7 +20,7 @@ from Modules.bindings import bindDevice
 from Modules.domoMaj import MajDomoDevice
 
 from Modules.tools import (build_fcf, checkAndStoreAttributeValue,
-                           get_and_inc_SQN, is_ack_tobe_disabled, updSQN)
+                           get_and_inc_ZCL_SQN, is_ack_tobe_disabled, updSQN)
 from Modules.tuyaSiren import tuya_siren_response
 from Modules.tuyaTools import (get_tuya_attribute, store_tuya_attribute,
                                tuya_cmd)
@@ -201,7 +201,7 @@ def tuya_registration(self, nwkid, device_reset=False, parkside=False):
 
     # (3) Cmd 0x03 on Cluster 0xef00  (Cluster Specific) / Zigbee Device Reset
     if device_reset:
-        payload = "11" + get_and_inc_SQN(self, nwkid) + "03"
+        payload = "11" + get_and_inc_ZCL_SQN(self, nwkid) + "03"
         raw_APS_request(
             self,
             nwkid,
@@ -217,9 +217,9 @@ def tuya_registration(self, nwkid, device_reset=False, parkside=False):
     # Gw->Zigbee gateway query MCU version
     self.log.logging("Tuya", "Debug", "tuya_registration - Nwkid: %s Request MCU Version Cmd: 10" % nwkid)
     if _ModelName in ( "TS0601-_TZE200_nklqjk62", ):
-        payload = "11" + get_and_inc_SQN(self, nwkid) + "10" + "000e"
+    	payload = "11" + get_and_inc_ZCL_SQN(self, nwkid) + "10" + "000e"
     else:
-        payload = "11" + get_and_inc_SQN(self, nwkid) + "10" + "0002"
+    	payload = "11" + get_and_inc_ZCL_SQN(self, nwkid) + "10" + "0002"
     raw_APS_request(
         self,
         nwkid,
@@ -254,7 +254,7 @@ def tuya_cmd_0x0000_0xf0(self, NwkId):
 
     # Seen at pairing of a WGH-JLCZ02 / TS011F and TS0201 and TS0601 (MOES BRT-100)
 
-        payload = "11" + get_and_inc_SQN(self, NwkId) + "fe"
+        payload = "11" + get_and_inc_ZCL_SQN(self, NwkId) + "fe"
         raw_APS_request(
             self,
             NwkId,
@@ -274,7 +274,7 @@ def pollingTuya(self, key):
     The frequency is defined in the pollingSchneider parameter (in number of seconds)
     """
 
-    # if  ( self.busy or self.ZigateComm.loadTransmit() > MAX_LOAD_ZIGATE):
+    # if  ( self.busy or self.ControllerLink.loadTransmit() > MAX_LOAD_ZIGATE):
     #    return True
 
     return False
@@ -461,7 +461,7 @@ def send_timesynchronisation(self, NwkId, srcEp, ClusterID, dstNWKID, dstEP, ser
     # 0053 60e9ba1f  60e9d63f
     if NwkId not in self.ListOfDevices:
         return
-    sqn = get_and_inc_SQN(self, NwkId)
+    sqn = get_and_inc_ZCL_SQN(self, NwkId)
 
     field1 = "0d"
     field2 = "80"
@@ -630,7 +630,7 @@ def tuya_switch_command(self, NwkId, onoff, gang=0x01):
         return
 
     EPout = "01"
-    sqn = get_and_inc_SQN(self, NwkId)
+    sqn = get_and_inc_ZCL_SQN(self, NwkId)
     cluster_frame = "11"
     cmd = "00"  # Command
     action = "%02x01" % gang  # Data Type 0x01 - Bool
@@ -644,7 +644,7 @@ def tuya_energy_childLock(self, NwkId, lock=0x01):
     # 0011 1d 01 0001 01 Child Lock
 
     EPout = "01"
-    sqn = get_and_inc_SQN(self, NwkId)
+    sqn = get_and_inc_ZCL_SQN(self, NwkId)
     cluster_frame = "11"
     cmd = "00"  # Command
     action = "1d01"
@@ -664,7 +664,7 @@ def tuya_switch_indicate_light(self, NwkId, light=0x01):
         return
 
     EPout = "01"
-    sqn = get_and_inc_SQN(self, NwkId)
+    sqn = get_and_inc_ZCL_SQN(self, NwkId)
     cluster_frame = "11"
     cmd = "00"  # Command
     action = "0f04"
@@ -684,7 +684,7 @@ def tuya_switch_relay_status(self, NwkId, gang=0x01, status=0xFF):
         return
 
     EPout = "01"
-    sqn = get_and_inc_SQN(self, NwkId)
+    sqn = get_and_inc_ZCL_SQN(self, NwkId)
     cluster_frame = "11"
     cmd = "00"  # Command
     action = "0e04"
@@ -711,12 +711,12 @@ def tuya_watertimer_command(self, NwkId, onoff, gang=0x01):
     cmd = "00"  # Command
 
     if onoff == "01":
-        sqn = get_and_inc_SQN(self, NwkId)
+        sqn = get_and_inc_ZCL_SQN(self, NwkId)
         action = "0b02"
         data = "0000012c"
         tuya_cmd(self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)
 
-    sqn = get_and_inc_SQN(self, NwkId)
+    sqn = get_and_inc_ZCL_SQN(self, NwkId)
     action = "%02x01" % gang  # Data Type 0x01 - Bool
     data = onoff
     self.log.logging("Tuya", "Debug", "tuya_switch_command - action: %s data: %s" % (action, data))
@@ -859,7 +859,7 @@ def tuya_curtain_openclose(self, NwkId, openclose):
     self.log.logging("Tuya", "Debug", "tuya_curtain_openclose - %s OpenClose: %s" % (NwkId, openclose), NwkId)
     # determine which Endpoint
     EPout = "01"
-    sqn = get_and_inc_SQN(self, NwkId)
+    sqn = get_and_inc_ZCL_SQN(self, NwkId)
     cluster_frame = "11"
     cmd = "00"  # Command
     action = "0101"
@@ -877,7 +877,7 @@ def tuya_curtain_lvl(self, NwkId, percent):
     level = percent
     # determine which Endpoint
     EPout = "01"
-    sqn = get_and_inc_SQN(self, NwkId)
+    sqn = get_and_inc_ZCL_SQN(self, NwkId)
     cluster_frame = "11"
     cmd = "00"  # Command
     action = "0202"
@@ -919,7 +919,7 @@ def tuya_dimmer_onoff(self, NwkId, srcEp, OnOff):
     self.log.logging("Tuya", "Debug", "tuya_dimmer_onoff - %s OnOff: %s" % (NwkId, OnOff), NwkId)
     # determine which Endpoint
     EPout = "01"
-    sqn = get_and_inc_SQN(self, NwkId)
+    sqn = get_and_inc_ZCL_SQN(self, NwkId)
     cluster_frame = "11"
     cmd = "00"  # Command
     action = "0101"
@@ -933,7 +933,7 @@ def tuya_dimmer_dimmer(self, NwkId, srcEp, percent):
     level = percent * 10
     # determine which Endpoint
     EPout = "01"
-    sqn = get_and_inc_SQN(self, NwkId)
+    sqn = get_and_inc_ZCL_SQN(self, NwkId)
     cluster_frame = "11"
     cmd = "00"  # Command
     action = "0202"
@@ -1136,7 +1136,7 @@ def tuya_energy_onoff(self, NwkId, OnOff):
         tuya_energy_countdown(self, NwkId, int(self.ListOfDevices[NwkId]["Param"]["Countdown"]))
     else:
         EPout = "01"
-        sqn = get_and_inc_SQN(self, NwkId)
+        sqn = get_and_inc_ZCL_SQN(self, NwkId)
         cluster_frame = "11"
         cmd = "00"  # Command
         action = "0101"
@@ -1152,7 +1152,7 @@ def tuya_energy_countdown(self, NwkId, timing):
     self.log.logging("Tuya", "Debug", "tuya_energy_countdown - %s timing: %s" % (NwkId, timing), NwkId)
 
     EPout = "01"
-    sqn = get_and_inc_SQN(self, NwkId)
+    sqn = get_and_inc_ZCL_SQN(self, NwkId)
     cluster_frame = "11"
     cmd = "00"  # Command
     action = "0902"

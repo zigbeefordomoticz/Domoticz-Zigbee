@@ -20,7 +20,7 @@ def rest_casa_device_list(self, verb, data, parameters):  # Ok 10/11/2020
     _response["Data"] = list_casaia_ac201(self)
 
     if verb == "GET" and len(parameters) == 0:
-        if len(self.zigatedata) == 0:
+        if len(self.ControllerData) == 0:
             _response["Data"] = json.dumps(fake_list_casaia_ac201(), sort_keys=True)
             return _response
 

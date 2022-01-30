@@ -16,7 +16,7 @@ from Classes.LoggingManagement import LoggingManagement
 from Classes.PluginConf import SETTINGS
 from Classes.WebServer.headerResponse import prepResponseMessage, setupHeadersResponse
 from Modules.actuators import actuators
-from Modules.basicOutputs import ZigatePermitToJoin, initiate_change_channel, setExtendedPANID, start_Zigate, zigateBlueLed 
+from Modules.basicOutputs import ZigatePermitToJoin, initiate_change_channel, setExtendedPANID, start_Zigate, zigateBlueLed , PermitToJoin
 from Modules.enki import enki_set_poweron_after_offon
 from Modules.philips import philips_set_poweron_after_offon
 from Modules.tools import is_hex
@@ -25,7 +25,6 @@ from Modules.sendZigateCommand import (raw_APS_request, send_zigatecmd_raw,
                                        send_zigatecmd_zcl_ack,sendZigateCmd,
                                        send_zigatecmd_zcl_noack)
 from Modules.zigateCommands import zigate_set_mode
-
 
 MIMETYPES = {
     "gif": "image/gif",
@@ -74,6 +73,7 @@ class WebServer(object):
 
     def __init__(
         self,
+        zigbee_communitation,
         ZigateData,
         PluginParameters,
         PluginConf,
@@ -93,7 +93,7 @@ class WebServer(object):
         httpPort,
         log,
     ):
-
+        self.zigbee_communitation = zigbee_communitation
         self.httpServerConn = None
         self.httpClientConn = None
         self.httpServerConns = {}
@@ -109,9 +109,9 @@ class WebServer(object):
         self.WebUsername = WebUserName
         self.WebPassword = WebPassword
         self.pluginconf = PluginConf
-        self.zigatedata = ZigateData
+        self.ControllerData = ZigateData
         self.adminWidget = adminWidgets
-        self.ZigateComm = ZigateComm
+        self.ControllerLink = ZigateComm
         self.statistics = Statistics
         self.pluginParameters = PluginParameters
         self.networkmap = None
@@ -128,7 +128,7 @@ class WebServer(object):
         self.DeviceConf = DeviceConf
         self.Devices = Devices
 
-        self.ZigateIEEE = None
+        self.ControllerIEEE = None
 
         self.restart_needed = {"RestartNeeded": 0}
         self.homedirectory = HomeDirectory
@@ -160,7 +160,7 @@ class WebServer(object):
 
     def setZigateIEEE(self, ZigateIEEE):
 
-        self.ZigateIEEE = ZigateIEEE
+        self.ControllerIEEE = ZigateIEEE
 
     def rest_plugin_health(self, verb, data, parameters):
 
@@ -210,7 +210,7 @@ class WebServer(object):
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == "GET":
             if self.pluginParameters["Mode2"] != "None":
-                self.zigatedata["startZigateNeeded"] = True
+                self.ControllerData["startZigateNeeded"] = True
                 # start_Zigate( self )
                 sendZigateCmd(self, "0002", "00")  # Force Zigate to Normal mode
                 sendZigateCmd(self, "0011", "")  # Software Reset
@@ -223,8 +223,8 @@ class WebServer(object):
         _response = prepResponseMessage(self, setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == "GET":
-            if self.zigatedata:
-                _response["Data"] = json.dumps(self.zigatedata, sort_keys=True)
+            if self.ControllerData:
+                _response["Data"] = json.dumps(self.ControllerData, sort_keys=True)
             else:
                 fake_zigate = {
                     "Firmware Version": "fake - 0310",
@@ -385,6 +385,8 @@ class WebServer(object):
             Statistics["AvgZiGateRoundTime8012 "] = self.statistics._averageTiming8012
             Statistics["MaxTimeSpentInProcFrame"] = self.statistics._max_reading_thread_timing
             Statistics["AvgTimeSpentInProcFrame"] = self.statistics._average_reading_thread_timing
+            Statistics["MaxTimeSendingZigpy"] = self.statistics._max_reading_zigpy_timing
+            Statistics["AvgTimeSendingZigpy"] = self.statistics._average_reading_zigpy_timing
 
             Statistics["MaxTimeSpentInForwarder"] = self.statistics._maxRxProcesses
             Statistics["AvgTimeSpentInForwarder"] = self.statistics._averageRxProcess
@@ -398,15 +400,15 @@ class WebServer(object):
             Statistics["APSFailure"] = self.statistics._APSFailure
             Statistics["APSAck"] = self.statistics._APSAck
             Statistics["APSNck"] = self.statistics._APSNck
-            Statistics["CurrentLoad"] = self.ZigateComm.loadTransmit()
+            Statistics["CurrentLoad"] = self.ControllerLink.loadTransmit()
             Statistics["MaxLoad"] = self.statistics._MaxLoad
             Statistics["StartTime"] = self.statistics._start
 
             Statistics["MaxApdu"] = self.statistics._MaxaPdu
             Statistics["MaxNpdu"] = self.statistics._MaxnPdu
 
-            Statistics["ForwardedQueueCurrentSize"] = self.ZigateComm.get_forwarder_queue()
-            Statistics["WriterQueueCurrentSize"] = self.ZigateComm.get_writer_queue()
+            Statistics["ForwardedQueueCurrentSize"] = self.ControllerLink.get_forwarder_queue()
+            Statistics["WriterQueueCurrentSize"] = self.ControllerLink.get_writer_queue()
             
             _nbitems = len(self.statistics.TrendStats)
             minTS = 0
@@ -628,16 +630,13 @@ class WebServer(object):
                             self.logging("Log", "Requesting router: %s to disable Permit to join" % router)
                         else:
                             self.logging("Log", "Requesting router: %s to enable Permit to join" % router)
-                        if router == "0000":
-                            TcSignificance = "01"
-                        else:
-                            TcSignificance = "00"
+                        TcSignificance = "01" if router == "0000" else "00"
                         # TcSignificance determines whether the remote device is a ‘Trust Centre’: TRUE: A Trust Centre FALSE: Not a Trust Centre
-                        sendZigateCmd(self, "0049", router + "%02x" % duration + TcSignificance)
+                        #sendZigateCmd(self, "0049", router + "%02x" % duration + TcSignificance)
+                        PermitToJoin(self, "%02x" % duration, TargetAddress=router)
 
-                else:
-                    if self.pluginParameters["Mode2"] != "None":
-                        ZigatePermitToJoin(self, int(data["PermitToJoin"]))
+                elif self.pluginParameters["Mode2"] != "None":
+                    ZigatePermitToJoin(self, int(data["PermitToJoin"]))
         return _response
 
     def rest_Device(self, verb, data, parameters):
@@ -729,9 +728,9 @@ class WebServer(object):
                     del self.IEEE2NWK[ieee]
 
                 # for a remove in case device didn't send the leave
-                if "IEEE" in self.zigatedata and ieee:
+                if "IEEE" in self.ControllerData and ieee:
                     # uParrentAddress + uChildAddress (uint64)
-                    sendZigateCmd(self, "0026", self.zigatedata["IEEE"] + ieee)
+                    sendZigateCmd(self, "0026", self.ControllerData["IEEE"] + ieee)
 
                 action = {"Name": "Device %s/%s removed" % (nwkid, ieee)}
                 _response["Data"] = json.dumps(action, sort_keys=True)

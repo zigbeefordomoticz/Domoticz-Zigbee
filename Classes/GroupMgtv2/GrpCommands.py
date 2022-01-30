@@ -8,7 +8,7 @@
 
 import Domoticz
 from Modules.tools import Hex_Format, rgb_to_hsl, rgb_to_xy
-from Modules.zclCommands import (zcl_add_group_membership,
+from Zigbee.zclCommands import (zcl_add_group_membership,
                                  zcl_check_group_member_ship,
                                  zcl_group_identify_trigger_effect,
                                  zcl_group_move_hue_and_saturation,
@@ -32,7 +32,7 @@ def add_group_member_ship(self, NwkId, DeviceEp, GrpId):
     #else:
     #    datas = "07" + NwkId + ZIGATE_EP + DeviceEp + GrpId
     zcl_add_group_membership( self, NwkId , ZIGATE_EP , DeviceEp , GrpId, ackIsDisabled=GRP_CMD_WITHOUT_ACK)
-    #self.ZigateComm.sendData("0060", datas, ackIsDisabled=GRP_CMD_WITHOUT_ACK)
+    #self.ControllerLink.sendData("0060", datas, ackIsDisabled=GRP_CMD_WITHOUT_ACK)
 
 
 def check_group_member_ship(self, NwkId, DeviceEp, goup_addr):
@@ -45,7 +45,7 @@ def check_group_member_ship(self, NwkId, DeviceEp, goup_addr):
     #    datas = "02" + NwkId + ZIGATE_EP + DeviceEp + goup_addr
     #else:
     #    datas = "07" + NwkId + ZIGATE_EP + DeviceEp + goup_addr
-    #self.ZigateComm.sendData("0061", datas, ackIsDisabled=GRP_CMD_WITHOUT_ACK)
+    #self.ControllerLink.sendData("0061", datas, ackIsDisabled=GRP_CMD_WITHOUT_ACK)
 
 
 def look_for_group_member_ship(self, NwkId, DeviceEp, group_list=None):
@@ -68,7 +68,7 @@ def look_for_group_member_ship(self, NwkId, DeviceEp, group_list=None):
         lenGrpLst = 1
     zcl_look_for_group_member_ship(self, NwkId, ZIGATE_EP, DeviceEp, "%02.x" % (lenGrpLst), group_list_, GRP_CMD_WITHOUT_ACK)
     self.logging("Debug", "look_for_group_member_ship - %s/%s from %s" % (NwkId, DeviceEp, group_list))
-    #self.ZigateComm.sendData("0062", datas, ackIsDisabled=GRP_CMD_WITHOUT_ACK)
+    #self.ControllerLink.sendData("0062", datas, ackIsDisabled=GRP_CMD_WITHOUT_ACK)
 
 
 def remove_group_member_ship(self, NwkId, DeviceEp, GrpId):
@@ -79,7 +79,7 @@ def remove_group_member_ship(self, NwkId, DeviceEp, GrpId):
     #    datas = "02" + NwkId + ZIGATE_EP + DeviceEp + GrpId
     #else:
     #    datas = "07" + NwkId + ZIGATE_EP + DeviceEp + GrpId
-    #self.ZigateComm.sendData("0063", datas, ackIsDisabled=GRP_CMD_WITHOUT_ACK)
+    #self.ControllerLink.sendData("0063", datas, ackIsDisabled=GRP_CMD_WITHOUT_ACK)
 
 def remove_all_groups( self, NwkId, DeviceEp):
     self.logging("Debug", "remove_all_groups  NwkId: %s Ep: %s" % ( NwkId, DeviceEp))
@@ -88,7 +88,7 @@ def remove_all_groups( self, NwkId, DeviceEp):
     #    datas = "02" + NwkId + ZIGATE_EP + DeviceEp
     #else:
     #    datas = "07" + NwkId + ZIGATE_EP + DeviceEp
-    #self.ZigateComm.sendData("0064", datas, ackIsDisabled=GRP_CMD_WITHOUT_ACK)
+    #self.ControllerLink.sendData("0064", datas, ackIsDisabled=GRP_CMD_WITHOUT_ACK)
 
 
 # Operating commands on groups
@@ -99,7 +99,7 @@ def send_group_member_ship_identify(self, NwkId, DeviceEp, goup_addr="0000"):
     #    datas = "02" + NwkId + ZIGATE_EP + DeviceEp + goup_addr
     #else:
     #    datas = "07" + NwkId + ZIGATE_EP + DeviceEp + goup_addr
-    #self.ZigateComm.sendData("0065", datas, ackIsDisabled=GRP_CMD_WITHOUT_ACK)
+    #self.ControllerLink.sendData("0065", datas, ackIsDisabled=GRP_CMD_WITHOUT_ACK)
 
 
 def send_group_member_ship_identify_effect(self, GrpId, Ep="01", effect="Okay"):
@@ -134,7 +134,7 @@ def send_group_member_ship_identify_effect(self, GrpId, Ep="01", effect="Okay"):
     #    + "%02x" % (effect_command[effect])
     #    + "%02x" % 0
     #)
-    #self.ZigateComm.sendData("00E0", datas)
+    #self.ControllerLink.sendData("00E0", datas)
     zcl_group_identify_trigger_effect(self, "%s" % (GrpId), ZIGATE_EP, Ep, "%02x" % (effect_command[effect]), "%02x" % 0)
 
 
@@ -150,7 +150,7 @@ def set_kelvin_color(self, mode, addr, EPin, EPout, t, transit="0000"):
     #datas = "%02d" % mode + addr + EPin + EPout + zigate_param
 
     #self.logging("Debug", "Command: %s - data: %s" % (zigate_cmd, datas))
-    #self.ZigateComm.sendData(zigate_cmd, datas)
+    #self.ControllerLink.sendData(zigate_cmd, datas)
     zcl_group_move_to_colour_temperature( self, addr, EPin, EPout, Hex_Format(4, TempMired), transit)
 
 
@@ -166,7 +166,7 @@ def set_rgb_color(self, mode, addr, EPin, EPout, r, g, b, transit="0000"):
     #datas = "%02d" % mode + addr + ZIGATE_EP + EPout + zigate_param
 
     #self.logging("Debug", "Command: %s - data: %s" % (zigate_cmd, datas))
-    #self.ZigateComm.sendData(zigate_cmd, datas)
+    #self.ControllerLink.sendData(zigate_cmd, datas)
     zcl_group_move_to_colour(self, addr, ZIGATE_EP, EPout, Hex_Format(4, x), Hex_Format(4, y), transit)
 
 
@@ -179,7 +179,7 @@ def set_hue_saturation(self, mode, addr, EPin, EPout, r, g, b, transit=None):
     hue = int(hue * 254 // 360)
     saturation = int(saturation * 254 // 100)
     self.logging("Log", "---------- Set Hue X: %s Saturation: %s" % (hue, saturation))
-    #self.ZigateComm.sendData(
+    #self.ControllerLink.sendData(
     #    "00B6",
     #    "%02d" % ADDRESS_MODE["group"]
     #    + addr

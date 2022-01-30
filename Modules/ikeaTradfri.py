@@ -57,6 +57,8 @@ def ikea_remote_control_8085( self, Devices, MsgSrcAddr,MsgEP, MsgClusterId, Msg
         self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, %s" % (MsgCmd, unknown_)
 
 def ikea_remote_control_8095( self, Devices, MsgSrcAddr,MsgEP, MsgClusterId, MsgCmd, unknown_ ):
+    self.log.logging("Input", "Debug", "ikea_remote_control_8095 - Command: %s" % MsgCmd, MsgSrcAddr)
+    
 
     if MsgClusterId == "0006" and MsgCmd == "02":
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", "toggle")

@@ -40,6 +40,7 @@ from Classes.LoggingManagement import LoggingManagement
 from Modules.readAttributes import ReadAttributeRequest_0000
 from Modules.zigateConsts import (ADDRESS_MODE, HEARTBEAT, MAX_LOAD_ZIGATE,
                                   ZIGATE_EP)
+from Modules.sendZigateCommand import raw_APS_request
 
 OTA_CLUSTER_ID = "0019"
 
@@ -60,6 +61,7 @@ OTA_CODES = {
 class OTAManagement(object):
     def __init__(
         self,
+        zigbee_communitation,
         PluginConf,
         DeviceConf,
         adminWidgets,
@@ -72,14 +74,14 @@ class OTAManagement(object):
         log,
         PluginHealth,
     ):
-
+        self.zigbee_communitation = zigbee_communitation
         self.HB = 0
         self.ListOfDevices = ListOfDevices  # Point to the Global ListOfDevices
         self.IEEE2NWK = IEEE2NWK  # Point to the List of IEEE to NWKID
         self.Devices = Devices  # Point to the List of Domoticz Devices
         self.DeviceConf = DeviceConf
         self.adminWidgets = adminWidgets
-        self.ZigateComm = ZigateComm  # Point to the ZigateComm object
+        self.ControllerLink = ZigateComm  # Point to the ZigateComm object
         self.pluginconf = PluginConf
         self.homeDirectory = HomeDirectory
         self.log = log
@@ -454,6 +456,37 @@ class OTAManagement(object):
             force_update = x["ForceUpdate"]
             firmware_update(self, brand, file_name, target_nwkid, target_ep, force_update)
 
+    def query_next_image_request(self, srcnwkid, srcep, Sqn, Data):
+        # This is a Client -> Server (direction set to 0x00)
+        # The server takes the client’s information in the command and determines whether it has a suitable image for the particular client.
+        # The decision SHOULD be based on specific policy that is specific to the upgrade server and outside the scope of this document... 
+        # However, a recommended default policy is for the server to send back a response that indicates the availability of an image
+        # that matches the manufacturer code, image type, and the highest available file version of that image on the server. 
+        # However, the server MAY choose to up- grade or downgrade a clients’ image, as its policy dictates. 
+        # If client’s hardware version is included in the command, the server SHALL examine the value against the minimum and
+        # maximum hardware versions in- cluded in the OTA file header.
+
+        # Command: 0x01
+
+        fieldcontrol = int(Data[:2],16)
+        manufcode = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[2:6], 16)))[0]
+        imagetype = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[6:10], 16)))[0]
+        currentVersion = "%08x" % struct.unpack("I", struct.pack(">I", int(Data[10:18], 16)))[0]
+        if fieldcontrol:
+            hardwareversion = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[18:22], 16)))[0]
+
+        logging(self, "Log", "OTA Query Next Image request for %s/%s [%s] - %s %s %s %s" % (
+            srcnwkid, srcep, Sqn, fieldcontrol, manufcode, imagetype, currentVersion ))
+        
+        if "OTAClient" not in self.ListOfDevices[srcnwkid]:
+            self.ListOfDevices[srcnwkid]["OTAClient"] = {}
+        self.ListOfDevices[srcnwkid]["OTAClient"]["ManufacturerCode"] = manufcode
+        self.ListOfDevices[srcnwkid]["OTAClient"]["ImageType"] = imagetype
+        self.ListOfDevices[srcnwkid]["OTAClient"]["CurrentImageVersion"] = currentVersion 
+
+        # For now we respond NO IMAGE AVAILABLE 0x98
+        query_next_image_response( self, srcnwkid, srcep, Sqn, '98', )
+
 
 # Routines sending Data
 
@@ -505,7 +538,7 @@ def ota_load_image_to_zigate(self, image_type, force_version=None):  # OK 13/10
     datas += security_cred_version + upgrade_file_dest + min_hw_version + max_hw_version
 
     logging(self, "Debug", "ota_load_image_to_zigate: - len:%s datas: %s" % (len(datas), datas))
-    self.ZigateComm.sendData("0500", datas, ackIsDisabled=True)
+    self.ControllerLink.sendData("0500", datas, ackIsDisabled=True)
 
     self.ImageLoaded["ImageVersion"] = image_version
     self.ImageLoaded["image_type"] = image_type
@@ -561,7 +594,7 @@ def ota_send_block(self, dest_addr, dest_ep, image_type, msg_image_version, bloc
         "ota_send_block - Block sent to %s/%s Received yet: %s Sent now: %s" % (dest_addr, dest_ep, _offset, _lenght),
     )
 
-    self.ZigateComm.sendData("0502", datas, ackIsDisabled=False, NwkId=dest_addr)
+    self.ControllerLink.sendData("0502", datas, ackIsDisabled=False, NwkId=dest_addr)
 
 
 def ota_image_advertize(self, dest_addr, dest_ep, image_version, image_type=0xFFFF, manufacturer_code=0xFFFF):  # OK 24/10
@@ -607,7 +640,7 @@ def ota_image_advertize(self, dest_addr, dest_ep, image_version, image_type=0xFF
         "ota_image_advertize - Type: 0x%04x, Version: 0x%08x => datas: %s" % (image_type, image_version, datas),
     )
 
-    self.ZigateComm.sendData("0505", datas, ackIsDisabled=False, NwkId=dest_addr)
+    self.ControllerLink.sendData("0505", datas, ackIsDisabled=False, NwkId=dest_addr)
 
 
 def ota_upgrade_end_response(self, dest_addr, dest_ep, intMsgImageVersion, image_type, intMsgManufCode):  # OK 24/10 with Firmware Ok
@@ -634,7 +667,7 @@ def ota_upgrade_end_response(self, dest_addr, dest_ep, intMsgImageVersion, image
     datas += "%08x" % _FileVersion
     datas += "%04x" % _ImageType
     datas += "%04x" % _ManufacturerCode
-    self.ZigateComm.sendData("0504", datas, ackIsDisabled=False, NwkId=dest_addr)
+    self.ControllerLink.sendData("0504", datas, ackIsDisabled=False, NwkId=dest_addr)
 
     logging(
         self,
@@ -643,18 +676,18 @@ def ota_upgrade_end_response(self, dest_addr, dest_ep, intMsgImageVersion, image
         % (dest_addr, _FileVersion, _ImageType, _ManufacturerCode),
     )
 
-    if "OTA" not in self.ListOfDevices[dest_addr]:
-        self.ListOfDevices[dest_addr]["OTA"] = {}
+    if "OTAUpgrade" not in self.ListOfDevices[dest_addr]:
+        self.ListOfDevices[dest_addr]["OTAUpgrade"] = {}
 
-    if not isinstance(self.ListOfDevices[dest_addr]["OTA"], dict):
-        del self.ListOfDevices[dest_addr]["OTA"]
-        self.ListOfDevices[dest_addr]["OTA"] = {}
+    if not isinstance(self.ListOfDevices[dest_addr]["OTAUpgrade"], dict):
+        del self.ListOfDevices[dest_addr]["OTAUpgrade"]
+        self.ListOfDevices[dest_addr]["OTAUpgrade"] = {}
 
     now = int(time())
-    self.ListOfDevices[dest_addr]["OTA"][now] = {"Time": datetime.fromtimestamp(time()).strftime("%Y-%m-%d %H:%M:%S")}
-
-    self.ListOfDevices[dest_addr]["OTA"][now]["Version"] = "%08X" % _FileVersion
-    self.ListOfDevices[dest_addr]["OTA"][now]["Type"] = "%04X" % _ImageType
+    self.ListOfDevices[dest_addr]["OTAUpgrade"][now] = {"Time": datetime.fromtimestamp(time()).strftime("%Y-%m-%d %H:%M:%S")}
+ 
+    self.ListOfDevices[dest_addr]["OTAUpgrade"][now]["Version"] = "%08X" % _FileVersion
+    self.ListOfDevices[dest_addr]["OTAUpgrade"][now]["Type"] = "%04X" % _ImageType
 
 
 def ota_management(self, MsgSrcAddr, MsgEP, delay=500):
@@ -686,7 +719,7 @@ def ota_management(self, MsgSrcAddr, MsgEP, delay=500):
     datas += "%04X" % _BlockRequestDelayMs
 
     logging(self, "Debug", "ota_management - Reduce Block request to a rate of %s ms" % _BlockRequestDelayMs)
-    self.ZigateComm.sendData("0506", datas, ackIsDisabled=False, NwkId=MsgSrcAddr)
+    self.ControllerLink.sendData("0506", datas, ackIsDisabled=False, NwkId=MsgSrcAddr)
 
 
 ################
@@ -1244,3 +1277,34 @@ def start_upgrade_infos(self, MsgSrcAddr, intMsgImageType, intMsgManufCode, MsgF
         _durss,
     )
     self.adminWidgets.updateNotificationWidget(self.Devices, _textmsg)
+
+
+    
+    
+def query_next_image_response( self, nwkid, ep, sqn, status, manufcode="", imagetype="", fileversion="", imagesize="" ):
+    # Frame type is 0x01: commands are cluster specific (not a global command).
+    # Direction: SHALL be either 0x00 (client->server) or 0x01 (server->client) depending on the com- mands.
+    # Disable default response is 0x00 for all OTA request commands sent from client to server
+    # Disable default response is 0x01 for all OTA response commands (sent from server to client) 
+
+    logging(self, "Log", "OTA Query Next Image response for %s/%s [%s] - %s" % (
+        nwkid, ep, sqn, status ))
+
+    command = '02'
+    cluster_frame = "%02x" %0b00011001
+    if status != '00':
+        payload = cluster_frame + sqn + command + status
+    else:
+        # Will be implemented
+        payload = cluster_frame + sqn + command + status + manufcode + imagetype + fileversion + imagesize
+        
+    raw_APS_request(
+        self,
+        nwkid,
+        ep,
+        OTA_CLUSTER_ID,
+        "0104",
+        payload,
+        zigate_ep=ZIGATE_EP,
+        zigpyzqn=sqn,
+    )

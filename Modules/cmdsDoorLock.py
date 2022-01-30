@@ -11,7 +11,8 @@
 """
 
 from Modules.zigateConsts import ZIGATE_EP
-from Modules.basicOutputs import raw_APS_request, get_and_inc_SQN
+from Modules.basicOutputs import raw_APS_request
+from Modules.tools import get_and_inc_ZCL_SQN
 
 
 def cluster0101_lock_door(self, NwkId):
@@ -19,7 +20,7 @@ def cluster0101_lock_door(self, NwkId):
     cmd = "00"
     # determine which Endpoint
     EPout = "01"
-    sqn = get_and_inc_SQN(self, NwkId)
+    sqn = get_and_inc_ZCL_SQN(self, NwkId)
 
     # Cluster Frame:
     # 0b xxxx xxxx
@@ -40,7 +41,7 @@ def cluster0101_unlock_door(self, NwkId):
     cmd = "01"
     # determine which Endpoint
     EPout = "01"
-    sqn = get_and_inc_SQN(self, NwkId)
+    sqn = get_and_inc_ZCL_SQN(self, NwkId)
 
     # Cluster Frame:
     # 0b xxxx xxxx
@@ -61,7 +62,7 @@ def cluster0101_toggle_door(self, NwkId):
     cmd = "02"
     # determine which Endpoint
     EPout = "01"
-    sqn = get_and_inc_SQN(self, NwkId)
+    sqn = get_and_inc_ZCL_SQN(self, NwkId)
 
     # Cluster Frame:
     # 0b xxxx xxxx

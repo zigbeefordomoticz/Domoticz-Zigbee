@@ -7,7 +7,7 @@
 from time import time
 
 from Modules.zigateConsts import CLUSTERS_LIST
-from Modules.zdpCommands import ( zdp_binding_device, zdp_unbinding_device)
+from Zigbee.zdpCommands import ( zdp_binding_device, zdp_unbinding_device)
 
 def bindGroup(self, ieee, ep, cluster, groupid):
 
@@ -28,11 +28,11 @@ def bindGroup(self, ieee, ep, cluster, groupid):
         )
         return
 
-    if self.ZigateIEEE and ieee == self.ZigateIEEE:
+    if self.ControllerIEEE and ieee == self.ControllerIEEE:
         self.log.logging(
             "Binding",
             "Debug",
-            "bindGroup - Cannot bind Zigate from ieee: %s, ep: %s, cluster: %s, groupId: %s" % (ieee, ep, cluster, groupid),
+            "bindGroup - Cannot bind Coordinator from ieee: %s, ep: %s, cluster: %s, groupId: %s" % (ieee, ep, cluster, groupid),
         )
         # we have to bind the ZiGate to a group
         return
@@ -69,12 +69,12 @@ def unbindGroup(self, ieee, ep, cluster, groupid):
         )
         return
 
-    if self.ZigateIEEE and ieee == self.ZigateIEEE:
+    if self.ControllerIEEE and ieee == self.ControllerIEEE:
         # we have to bind the ZiGate to a group
         self.log.logging(
             "Binding",
             "Debug",
-            "unbindGroup - Cannot unbind Zigate from ieee: %s, ep: %s, cluster: %s, groupId: %s" % (ieee, ep, cluster, groupid),
+            "unbindGroup - Cannot unbind Coordinator from ieee: %s, ep: %s, cluster: %s, groupId: %s" % (ieee, ep, cluster, groupid),
         )
         return
 
@@ -102,10 +102,10 @@ def bindDevice(self, ieee, ep, cluster, destaddr=None, destep="01"):
 
     if not destaddr:
         # destaddr = self.ieee # Let's grab the IEEE of Zigate
-        if self.ZigateIEEE is not None and self.ZigateIEEE != "":
-            destaddr = self.ZigateIEEE
+        if self.ControllerIEEE is not None and self.ControllerIEEE != "":
+            destaddr = self.ControllerIEEE
         else:
-            self.log.logging("Binding", "Debug", "bindDevice - self.ZigateIEEE not yet initialized")
+            self.log.logging("Binding", "Debug", "bindDevice - self.ControllerIEEE not yet initialized")
             return
 
     if ieee in self.IEEE2NWK:
@@ -132,7 +132,7 @@ def bindDevice(self, ieee, ep, cluster, destaddr=None, destep="01"):
                         self.log.logging(
                             "Binding",
                             "Debug",
-                            "----> %s/%s on %s overwrite Zigate Endpoint for bind and use %s" % (nwkid, ep, cluster, destep),
+                            "----> %s/%s on %s overwrite Coordinator Endpoint for bind and use %s" % (nwkid, ep, cluster, destep),
                             nwkid,
                         )
 
@@ -151,7 +151,7 @@ def bindDevice(self, ieee, ep, cluster, destaddr=None, destep="01"):
                         self.log.logging(
                             "Binding",
                             "Debug",
-                            "Do not Bind %s to Zigate Ep %s Cluster %s" % (_model, ep, cluster),
+                            "Do not Bind %s to Coordinator Ep %s Cluster %s" % (_model, ep, cluster),
                             nwkid,
                         )
                         return
@@ -277,11 +277,11 @@ def unbindDevice(self, ieee, ep, cluster, destaddr=None, destep="01"):
     mode = "03"  # IEEE
     if not destaddr:
         # destaddr = self.ieee # Let's grab the IEEE of Zigate
-        if self.ZigateIEEE is not None and self.ZigateIEEE != "":
-            destaddr = self.ZigateIEEE
+        if self.ControllerIEEE is not None and self.ControllerIEEE != "":
+            destaddr = self.ControllerIEEE
             destep = "01"
         else:
-            self.log.logging("Binding", "Debug", "bindDevice - self.ZigateIEEE not yet initialized")
+            self.log.logging("Binding", "Debug", "bindDevice - self.ControllerIEEE not yet initialized")
             return
 
     nwkid = self.IEEE2NWK[ieee]

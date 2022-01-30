@@ -47,7 +47,7 @@ def rest_new_hrdwr(self, verb, data, parameters):
         if len(self.DevicesInPairingMode):
             del self.DevicesInPairingMode
             self.DevicesInPairingMode = []
-        if not self.zigatedata:
+        if not self.ControllerData:
             # Seems we are in None mode - Testing for ben
             self.fakeDevicesInPairingMode = 0
 
@@ -63,7 +63,7 @@ def rest_new_hrdwr(self, verb, data, parameters):
             del self.DevicesInPairingMode
             self.DevicesInPairingMode = []
 
-        if not self.zigatedata:
+        if not self.ControllerData:
             # Seems we are in None mode - Testing for ben
             self.fakeDevicesInPairingMode = 0
 
@@ -89,7 +89,7 @@ def rest_rcv_nw_hrdwr(self, verb, data, parameters):
     data = {}
     data["NewDevices"] = []
 
-    if not self.zigatedata:
+    if not self.ControllerData:
         # Seems we are in None mode - Testing for ben
         if self.fakeDevicesInPairingMode in (0, 1):
             # Do nothing just wait the next pool
@@ -131,7 +131,7 @@ def rest_rcv_nw_hrdwr(self, verb, data, parameters):
     listOfPairedDevices = list(self.DevicesInPairingMode)
     _fake = 0
     for nwkid in listOfPairedDevices:
-        if not self.zigatedata:
+        if not self.ControllerData:
             _fake += 1
         if nwkid not in self.ListOfDevices:
             continue

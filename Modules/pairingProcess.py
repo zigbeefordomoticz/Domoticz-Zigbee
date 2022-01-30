@@ -10,7 +10,12 @@
 
 """
 
+import time
+
 import Domoticz
+from Zigbee.zdpCommands import (zdp_active_endpoint_request,
+                                zdp_node_descriptor_request,
+                                zdp_simple_descriptor_request)
 
 from Modules.basicOutputs import getListofAttribute, identifyEffect
 from Modules.bindings import bindDevice, reWebBind_Clusters, unbindDevice
@@ -18,14 +23,15 @@ from Modules.casaia import casaia_pairing
 from Modules.domoCreate import CreateDomoDevice
 from Modules.livolo import livolo_bind
 from Modules.lumi import enableOppleSwitch
+from Modules.manufacturer_code import (PREFIX_MAC_LEN,
+                                       PREFIX_MACADDR_WIZER_LEGACY, PREFIX_MACADDR_XIAOMI, PREFIX_MACADDR_OPPLE, )
 from Modules.mgmt_rtg import mgmt_rtg
 from Modules.orvibo import OrviboRegistration
 from Modules.profalux import profalux_fake_deviceModel
 from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST, ReadAttributeReq,
                                     ReadAttributeRequest_0000,
                                     ReadAttributeRequest_0300)
-from Modules.schneider_wiser import (PREFIX_MACADDR_WIZER_LEGACY,
-                                     WISER_LEGACY_MODEL_NAME_PREFIX,
+from Modules.schneider_wiser import (WISER_LEGACY_MODEL_NAME_PREFIX,
                                      schneider_wiser_registration,
                                      wiser_home_lockout_thermostat)
 from Modules.thermostats import thermostat_Calibration
@@ -34,9 +40,6 @@ from Modules.tuya import tuya_cmd_ts004F, tuya_registration
 from Modules.tuyaSiren import tuya_sirene_registration
 from Modules.tuyaTools import tuya_TS0121_registration
 from Modules.tuyaTRV import TUYA_eTRV_MODEL, tuya_eTRV_registration
-from Modules.zdpCommands import (zdp_active_endpoint_request,
-                                 zdp_node_descriptor_request,
-                                 zdp_simple_descriptor_request)
 from Modules.zigateConsts import CLUSTERS_LIST, ZIGATE_EP
 
 
@@ -81,7 +84,7 @@ def processNotinDBDevices(self, Devices, NWKID, status, RIA):
 
     if status == "8043":  # We have at least receive 1 EndPoint
         status = interview_state_8043(self, NWKID, RIA, knownModel, status)
-        if status != "CreateDB" and RIA < 2:
+        if status != "CreateDB" and RIA <= 2:
             return
 
     if knownModel and RIA > 3 and status not in ("UNKNOW", "inDB"):
@@ -138,21 +141,11 @@ def interview_state_004d(self, NWKID, RIA=None, status=None):
     MsgIEEE = None
     if "IEEE" in self.ListOfDevices[NWKID]:
         MsgIEEE = self.ListOfDevices[NWKID]["IEEE"]
-
-    PREFIX_IEEE_XIAOMI = "00158d000"
-    PREFIX_IEEE_OPPLE = "04cf8cdf3"
-    if (
-        MsgIEEE
-        and MsgIEEE[: len(PREFIX_IEEE_XIAOMI)] == PREFIX_IEEE_XIAOMI
-        or MsgIEEE[: len(PREFIX_IEEE_OPPLE)] == PREFIX_IEEE_OPPLE
-    ):
+    
+    if ( MsgIEEE and ( MsgIEEE[: PREFIX_MAC_LEN] in PREFIX_MACADDR_XIAOMI or MsgIEEE[: PREFIX_MAC_LEN] in PREFIX_MACADDR_OPPLE ) ):
         ReadAttributeRequest_0000(self, NWKID, fullScope=False)  # In order to request Model Name
 
-    PREFIX_IEEE_WISER = "00124b000"
-    if (
-        self.pluginconf.pluginConf["enableSchneiderWiser"]
-        and MsgIEEE[: len(PREFIX_IEEE_WISER)] == PREFIX_IEEE_WISER
-    ):
+    if ( self.pluginconf.pluginConf["enableSchneiderWiser"] and MsgIEEE[: PREFIX_MAC_LEN] in PREFIX_MACADDR_WIZER_LEGACY ):
         ReadAttributeRequest_0000(self, NWKID, fullScope=False)  # In order to request Model Name
 
     zdp_active_endpoint_request(self, NWKID )
@@ -376,6 +369,7 @@ def full_provision_device(self, Devices, NWKID, RIA, status):
         self.CommiSSionning = False
         return
 
+    self.ListOfDevices[ NWKID ]["PairingTime"] = time.time()
     # Don't know why we need as this seems very weird
     if NWKID not in self.ListOfDevices:
         Domoticz.Error("processNotinDBDevices - %s doesn't exist in Post creation widget" % NWKID)
@@ -544,7 +538,7 @@ def handle_IAS_enrollmment_if_needed(self, NWKID, RIA, status):
 
 def device_interview(self, Nwkid):
     self.log.logging("Pairing", "Debug", "device_interview %s" %Nwkid)
-
+                
     for iterReadAttrCluster in get_list_of_clusters_for_device( self, Nwkid):
         # if iterReadAttrCluster == '0000':
         #    reset_cluster_datastruct( self, 'ReadAttributes', NWKID, iterEp, iterReadAttrCluster  )
@@ -567,8 +561,7 @@ def get_list_of_clusters_for_device( self, Nwkid):
                 continue
             if iterReadAttrCluster not in target_list_of_cluster:
                 target_list_of_cluster.append( iterReadAttrCluster )
-    return  target_list_of_cluster
-
+    return  target_list_of_cluster   
 
 def send_identify_effect(self, NWKID):
     # Identify for ZLL compatible devices
@@ -616,8 +609,8 @@ def handle_device_specific_needs(self, Devices, NWKID):
         wiser_home_lockout_thermostat(self, NWKID, 0)
 
     elif (
-        MsgIEEE[: len(PREFIX_MACADDR_WIZER_LEGACY)]
-        == PREFIX_MACADDR_WIZER_LEGACY
+        MsgIEEE[: PREFIX_MAC_LEN]
+        in PREFIX_MACADDR_WIZER_LEGACY
         and WISER_LEGACY_MODEL_NAME_PREFIX
         in self.ListOfDevices[NWKID]["Model"]
     ):

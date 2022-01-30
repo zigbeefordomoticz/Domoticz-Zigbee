@@ -12,7 +12,7 @@ import struct
 from Modules.basicOutputs import write_attribute
 from Modules.domoMaj import MajDomoDevice
 from Modules.sendZigateCommand import raw_APS_request
-from Modules.tools import (get_and_inc_SQN, is_ack_tobe_disabled,
+from Modules.tools import (get_and_inc_ZCL_SQN, is_ack_tobe_disabled,
                            retreive_cmd_payload_from_8002)
 from Modules.zigateConsts import ZIGATE_EP
 
@@ -322,7 +322,7 @@ def AC211_ReadPairingCodeRequest(self, NwkId):
     # Command  0x00
     # determine which Endpoint
     EPout = get_ffad_endpoint(self, NwkId)
-    sqn = get_and_inc_SQN(self, NwkId)
+    sqn = get_and_inc_ZCL_SQN(self, NwkId)
     cluster_frame = "01"
     device_type = DEVICE_TYPE  # Device type
     cmd = "00"
@@ -364,7 +364,7 @@ def AC201_read_multi_pairing_code_request(self, NwkId):
     # Command  0x00
     # determine which Endpoint
     EPout = get_ffad_endpoint(self, NwkId)
-    sqn = get_and_inc_SQN(self, NwkId)
+    sqn = get_and_inc_ZCL_SQN(self, NwkId)
 
     cluster_frame = "01"
     device_type = DEVICE_TYPE  # Device type
@@ -453,7 +453,7 @@ def write_AC201_status_request(self, NwkId, Action, setpoint=None):
 def AC201_read_learned_data_group_status_request(self, NwkId):
     # Command 0x11
     EPout = get_ffad_endpoint(self, NwkId)
-    sqn = get_and_inc_SQN(self, NwkId)
+    sqn = get_and_inc_ZCL_SQN(self, NwkId)
     device_type = "00"  # Device type
     cluster_frame = "05"
     cmd = "11"
@@ -649,7 +649,7 @@ def check_hot_cold_setpoint(self, NwkId):
 def ffac_send_manuf_specific_cmd(self, NwkId, payload):
 
     cluster_frame = "05"
-    sqn = get_and_inc_SQN(self, NwkId)
+    sqn = get_and_inc_ZCL_SQN(self, NwkId)
     EPout = get_ffad_endpoint(self, NwkId)
 
     data = cluster_frame + CASAIA_MANUF_CODE_BE + sqn
@@ -660,7 +660,7 @@ def ffac_send_manuf_specific_cmd(self, NwkId, payload):
 def ffad_send_manuf_specific_cmd(self, NwkId, payload):
 
     cluster_frame = "05"
-    sqn = get_and_inc_SQN(self, NwkId)
+    sqn = get_and_inc_ZCL_SQN(self, NwkId)
     EPout = get_ffad_endpoint(self, NwkId)
 
     data = cluster_frame + CASAIA_MANUF_CODE_BE + sqn

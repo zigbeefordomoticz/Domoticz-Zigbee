@@ -24,7 +24,7 @@ ZIGATEV2_FIRMWARE_TXT_RECORD = "zigatev2.pipiche.net"
 
 def checkPluginVersion(branch, zigate_model):
 
-    # Domoticz.Log("ZiGate Model: %s" %zigate_model)
+    #Domoticz.Log("ZiGate Model: %s" %zigate_model)
     if zigate_model == "03":
         TXT_RECORD = ZIGATEV1_FIRMWARE_TXT_RECORD
     elif zigate_model == "04":
@@ -32,36 +32,35 @@ def checkPluginVersion(branch, zigate_model):
     elif zigate_model == "05":
         TXT_RECORD = ZIGATEV2_FIRMWARE_TXT_RECORD
 
-    # Domoticz.Log("checkPluginVersion - Start request version")
+    #Domoticz.Log("checkPluginVersion - Start request version for model: %s" %zigate_model)
 
     try:
-        zigate_plugin = (
-            dns.resolver.query(PLUGIN_TXT_RECORD, "TXT", tcp=True, lifetime=1).response.answer[0][-1].strings[0]
-        ).decode("utf8")
-        zigateVersions = (
-            dns.resolver.query(TXT_RECORD, "TXT", tcp=True, lifetime=1).response.answer[0][-1].strings[0]
-        ).decode("utf8")
+        zigate_plugin = dns.resolver.resolve(PLUGIN_TXT_RECORD, "TXT", tcp=True, lifetime=1).response.answer[0]
+        zigate_plugin = str( zigate_plugin[0] ).strip('"')
+        zigateVersions = dns.resolver.resolve(TXT_RECORD, "TXT", tcp=True, lifetime=1).response.answer[0]
+        zigateVersions = str(zigateVersions[0]).strip('"')
     except Exception as e:
-        # Domoticz.Log("DNS error while checking Plugin and Firmware version: %s" %e)
+        #Domoticz.Log("DNS error while checking Plugin and Firmware version: %s" %e)
         return (0, 0, 0)
 
-    # Domoticz.Log("checkPluginVersion - Plugin Version record: %s Type: %s" %(str(zigate_plugin), type(zigate_plugin)))
-    # Domoticz.Log("checkPluginVersion - Firmware Version record: %s Type: %s" %(str(zigateVersions), type(zigateVersions)))
+    #Domoticz.Log("checkPluginVersion - Plugin Version record: %s Type: %s" %(str(zigate_plugin), type(zigate_plugin)))
+    #Domoticz.Log("checkPluginVersion - Firmware Version record: %s Type: %s" %(str(zigateVersions), type(zigateVersions)))
     pluginVersion = {}
     if zigate_plugin and str(zigate_plugin) != "":
         for branch_version in zigate_plugin.split(";"):
-            pluginVersion[branch_version.split("=")[0]] = branch_version.split("=")[1]
-            # Domoticz.Log("checkPluginVersion - Available Plugin Versions are, %s , %s" %(branch_version.split("=")[0], pluginVersion[ branch_version.split("=")[0] ]))
+            pluginVersion[branch_version.split("=")[0]] = branch_version.split("=")[1].strip('"')
+            #Domoticz.Log("checkPluginVersion - Available Plugin Versions are, %s , %s" %(branch_version.split("=")[0], pluginVersion[ branch_version.split("=")[0] ]))
 
     firmwareVersion = {}
     if zigateVersions and str(zigateVersions) != "":
         for major_minor in zigateVersions.split(";"):
-            firmwareVersion[major_minor.split("=")[0]] = major_minor.split("=")[1]
-            # Domoticz.Log("checkPluginVersion - Available Firmware Version is, %s , %s" %(major_minor.split("=")[0], firmwareVersion[ major_minor.split("=")[0] ]))
+            firmwareVersion[major_minor.split("=")[0]] = major_minor.split("=")[1].strip('"')
+            #Domoticz.Log("checkPluginVersion - Available Firmware Version is, %s , %s" %(major_minor.split("=")[0], firmwareVersion[ major_minor.split("=")[0] ]))
 
     if branch in pluginVersion and "firmMajor" in firmwareVersion and "firmMinor" in firmwareVersion:
         return (pluginVersion[branch], firmwareVersion["firmMajor"], firmwareVersion["firmMinor"])
-    Domoticz.Error("checkPluginVersion - Unknown branch: %s" % branch)
+    
+    Domoticz.Error("checkPluginVersion - Unknown branch: >%s< %s %s" % (branch,pluginVersion, firmwareVersion ))
     return (0, 0, 0)
 
 
@@ -69,17 +68,20 @@ def checkPluginUpdate(currentVersion, availVersion):
     if availVersion == 0:
         return False
 
-    # Domoticz.Debug("checkPluginUpdate - %s %s" %(currentVersion, availVersion))
+    Domoticz.Debug("checkPluginUpdate - %s %s" %(currentVersion, availVersion))
     currentMaj, currentMin, currentUpd = currentVersion.split(".")
     availMaj, availMin, availUpd = availVersion.split(".")
 
     if availMaj > currentMaj:
         # Domoticz.Debug("checkPluginVersion - Upgrade available: %s" %availVersion)
         return True
-    if availMaj == currentMaj:
-        if availMin == currentMin and availUpd > currentUpd or availMin > currentMin:
-            # Domoticz.Debug("checkPluginVersion - Upgrade available: %s" %availVersion)
-            return True
+    if availMaj == currentMaj and (
+        availMin == currentMin
+        and availUpd > currentUpd
+        or availMin > currentMin
+    ):
+        # Domoticz.Debug("checkPluginVersion - Upgrade available: %s" %availVersion)
+        return True
     return False
 
 
