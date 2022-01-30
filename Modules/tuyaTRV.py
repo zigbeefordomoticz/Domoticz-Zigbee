@@ -16,7 +16,6 @@ import Domoticz
 from Modules.basicOutputs import raw_APS_request, write_attribute
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import Update_Battery_Device
-<<<<<<< HEAD
 from Modules.tools import (checkAndStoreAttributeValue, get_and_inc_ZCL_SQN,
                            is_ack_tobe_disabled)
 from Modules.tuyaTools import (get_tuya_attribute, store_tuya_attribute,
@@ -994,11 +993,7 @@ def tuya_setpoint(self, nwkid, setpoint_value):
 
         model_name = get_model_name(self, nwkid) 
         if model_name in[ "TS0601-thermostat","TS0601-_TZE200_b6wax7g0"]:
-<<<<<<< HEAD
             tuya_trv_brt100_set_mode(self, nwkid, 0x01)   # Force to be in Manual
-=======
-            tuya_trv_brt100_set_mode(self, nwkid, 0x01)  # Force to be in Manual
->>>>>>> beta6
             # Setpoint is defined in ° and not centidegree
             setpoint_value = setpoint_value // 100
             
