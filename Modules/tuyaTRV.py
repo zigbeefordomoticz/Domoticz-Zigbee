@@ -15,9 +15,9 @@ import Domoticz
 
 from Modules.basicOutputs import raw_APS_request, write_attribute
 from Modules.domoMaj import MajDomoDevice
-from Modules.domoTools import Update_Battery_Device, voltage2batteryP
+from Modules.domoTools import Update_Battery_Device
 from Modules.tools import (checkAndStoreAttributeValue, get_and_inc_ZCL_SQN,
-                           is_ack_tobe_disabled)
+                           is_ack_tobe_disabled, voltage2batteryP)
 from Modules.tuyaTools import (get_tuya_attribute, store_tuya_attribute,
                                tuya_cmd)
 from Modules.zigateConsts import ZIGATE_EP

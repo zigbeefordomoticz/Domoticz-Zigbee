@@ -100,12 +100,11 @@ def build_plugin_8010_frame_content(Branch, Major, Version):
 
 
 def build_plugin_8011_frame_content(self, nwkid, status, lqi):
-    # MsgLen = len(MsgData)
     # MsgStatus = MsgData[0:2]
     # MsgSrcAddr = MsgData[2:6]
     # MsgSEQ = MsgData[12:14] if MsgLen > 12 else None
     lqi = lqi or 0x00
-    frame_payload = "06" + "%02x" % status + nwkid
+    frame_payload = "%02x" % status + nwkid
     return encapsulate_plugin_frame("8011", frame_payload, "%02x" % lqi)
 
 def build_plugin_8014_frame_content(self, nwkid, payload):
