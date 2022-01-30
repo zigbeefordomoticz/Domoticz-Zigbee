@@ -1207,6 +1207,11 @@ def zigateInit_Phase3(self):
                 self.ControllerIEEE
             )
 
+    # Enable Group Management
+    if self.groupmgt is None and self.pluginconf.pluginConf["enablegroupmanagement"]:
+        self.log.logging("Plugin", "Status", "Start Group Management")
+        start_GrpManagement(self, Parameters["HomeFolder"])
+
     # Create Network Energy object and trigger one scan
     if self.networkenergy is None:
         self.networkenergy = NetworkEnergy(
@@ -1299,6 +1304,7 @@ def start_GrpManagement(self, homefolder):
     )
     if self.groupmgt and self.ControllerIEEE:
         self.groupmgt.updateZigateIEEE(self.ControllerIEEE)
+
     if self.groupmgt:
         self.webserver.update_groupManagement(self.groupmgt)
         if self.pluginconf.pluginConf["zigatePartOfGroup0000"]:
