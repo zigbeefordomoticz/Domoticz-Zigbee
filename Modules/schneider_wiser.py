@@ -1929,13 +1929,23 @@ def check_end_of_override_setpoint(self, Devices, NwkId, Ep):
             > self.ListOfDevices[NwkId]["Schneider"]["ThermostatOverride"]["OverrideStartTime"]
             + self.ListOfDevices[NwkId]["Schneider"]["ThermostatOverride"]["OverrideDuration"]
         ):
+            self.log.logging(
+                "Schneider",
+                "Debug",
+                "check_end_of_override_setpoint -- Time to update the Thermostat back from %s to %s" % (
+                    self.ListOfDevices[NwkId]["Schneider"]["ThermostatOverride"]["OverrideSetpoint"],
+                    self.ListOfDevices[NwkId]["Schneider"]["ThermostatOverride"]["CurrentSetpoint"], 
+                    ),
+            )
+            setpoint = self.ListOfDevices[NwkId]["Schneider"]["ThermostatOverride"]["CurrentSetpoint"]
+            schneider_setpoint_thermostat(self, NwkId, setpoint)
             schneider_update_ThermostatDevice(
                 self,
                 Devices,
                 NwkId,
                 Ep,
                 "0201",
-                self.ListOfDevices[NwkId]["Schneider"]["ThermostatOverride"]["CurrentSetpoint"],
+                setpoint,
             )
             del self.ListOfDevices[NwkId]["Schneider"]["ThermostatOverride"]
 
