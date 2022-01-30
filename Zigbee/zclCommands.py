@@ -46,7 +46,9 @@ def zcl_read_attribute(self, nwkid, EpIn, EpOut, Cluster, direction, manufacture
     if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return rawaps_read_attribute_req(self, nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, Attr, ackIsDisabled)
 
-    data = EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + "%02x" % lenAttr + Attr
+    if isinstance( lenAttr, int):
+        lenAttr = "%02x" % (0x01),
+    data = EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + lenAttr + Attr
     if ackIsDisabled:
         return send_zigatecmd_zcl_noack(self, nwkid, "0100", data)
     return send_zigatecmd_zcl_ack(self, nwkid, "0100", data)
