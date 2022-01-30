@@ -28,7 +28,7 @@ from Modules.manufacturer_code import (PREFIX_MAC_LEN,
 from Modules.mgmt_rtg import mgmt_rtg
 from Modules.orvibo import OrviboRegistration
 from Modules.profalux import profalux_fake_deviceModel
-from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST,
+from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST, ReadAttributeReq,
                                     ReadAttributeRequest_0000,
                                     ReadAttributeRequest_0300)
 from Modules.schneider_wiser import (WISER_LEGACY_MODEL_NAME_PREFIX,
@@ -40,7 +40,7 @@ from Modules.tuya import tuya_cmd_ts004F, tuya_registration
 from Modules.tuyaSiren import tuya_sirene_registration
 from Modules.tuyaTools import tuya_TS0121_registration
 from Modules.tuyaTRV import TUYA_eTRV_MODEL, tuya_eTRV_registration
-from Modules.zigateConsts import CLUSTERS_LIST
+from Modules.zigateConsts import CLUSTERS_LIST, ZIGATE_EP
 
 
 def processNotinDBDevices(self, Devices, NWKID, status, RIA):
@@ -536,7 +536,6 @@ def handle_IAS_enrollmment_if_needed(self, NWKID, RIA, status):
             self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s 0x%04s - IAS WD enrolment" % (RIA, NWKID, status))
             self.iaszonemgt.IASWD_enroll(NWKID, iterEp)
 
-
 def device_interview(self, Nwkid):
     self.log.logging("Pairing", "Debug", "device_interview %s" %Nwkid)
                 
@@ -638,10 +637,16 @@ def handle_device_specific_needs(self, Devices, NWKID):
         self.log.logging("Pairing", "Debug", "Tuya TS0121 registration needed")
         tuya_TS0121_registration(self, NWKID)
 
-    elif self.ListOfDevices[NWKID]["Model"] in ("TS004F",):
+    elif self.ListOfDevices[NWKID]["Model"] in ("TS004F", "TS004F-_TZ3000_xabckq1v"):
         self.log.logging("Pairing", "Log", "Tuya TS004F registration needed")
         if "Param" in self.ListOfDevices[NWKID] and "TS004FMode" in self.ListOfDevices[NWKID]["Param"]:
+            #ReadAttributeReq( self, NWKID, ZIGATE_EP, "01", "0000", [ 0x0004, 0x0000, 0x0001, 0x0005, 0x0007, 0xfffe ], ackIsDisabled=False, checkTime=False, )
+            #ReadAttributeReq( self, NWKID, ZIGATE_EP, "01", "0006", [ 0x8004 ], ackIsDisabled=False, checkTime=False, )
+            #ReadAttributeReq( self, NWKID, ZIGATE_EP, "01", "e001", [ 0xd011 ], ackIsDisabled=False, checkTime=False, )
+            #ReadAttributeReq( self, NWKID, ZIGATE_EP, "01", "0001", [ 0x0020, 0x0021 ], ackIsDisabled=False, checkTime=False, )
+            #ReadAttributeReq( self, NWKID, ZIGATE_EP, "01", "0006", [ 0x8004 ], ackIsDisabled=False, checkTime=False, )
             tuya_cmd_ts004F(self, NWKID, self.ListOfDevices[NWKID]["Param"]["TS004FMode" ])
+            ReadAttributeReq( self, NWKID, ZIGATE_EP, "01", "0006", [ 0x8004 ], ackIsDisabled=False, checkTime=False, )
 
     elif self.ListOfDevices[NWKID]["Model"] in (
         "TS0601-Energy",
@@ -652,7 +657,7 @@ def handle_device_specific_needs(self, Devices, NWKID):
         self.log.logging("Pairing", "Debug", "Tuya general registration needed")
         tuya_registration(self, NWKID, device_reset=True)
 
-    elif self.ListOfDevices[NWKID]["Model"] in ("TS0601-Parkside-Watering-Timer",):
+    elif self.ListOfDevices[NWKID]["Model"] in ("TS0601-Parkside-Watering-Timer", "TS0601-_TZE200_nklqjk62"):
         self.log.logging("Pairing", "Debug", "Tuya Water Sensor Parkside registration needed")
         tuya_registration(self, NWKID, device_reset=True, parkside=True)
 

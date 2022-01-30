@@ -1175,7 +1175,7 @@ def zigateInit_Phase3(self):
         zigateBlueLed(self, False)
 
     # Set the TX Power
-    if self.ZiGateModel == 1:
+    if self.ZiGateModel ==  1:
         set_TxPower(self, self.pluginconf.pluginConf["TXpower_set"])
 
     # Set Certification Code
@@ -1190,44 +1190,22 @@ def zigateInit_Phase3(self):
         #sendZigateCmd(self, "0019", "%02x" % self.pluginconf.pluginConf["CertificationCode"])
         zigate_set_certificate(self, "%02x" % self.pluginconf.pluginConf["CertificationCode"] )
 
-    # Create Configure Reporting object
-    if self.configureReporting is None:
-        self.configureReporting = ConfigureReporting(
-            self.zigbee_communitation,
-            self.pluginconf,
-            self.DeviceConf,
-            self.ControllerLink,
-            self.ListOfDevices,
-            Devices,
-            self.log,
-            self.busy,
-            self.FirmwareVersion,
-            self.IEEE2NWK,
-            self.ControllerIEEE
-        )
 
-    # Enable Group Management
-    if self.groupmgt is None and self.pluginconf.pluginConf["enablegroupmanagement"]:
-        self.log.logging("Plugin", "Status", "Start Group Management")
-        start_GrpManagement(self, Parameters["HomeFolder"])
-        if self.pluginconf.pluginConf["zigatePartOfGroup0000"]:
-            # Add Zigate NwkId 0x0000 Ep 0x01 to GroupId 0x0000
-            self.groupmgt.addGroupMemberShip("0000", "01", "0000")
-
-        if self.pluginconf.pluginConf["zigatePartOfGroupTint"]:
-            # Tint Remote manage 4 groups and we will create with ZiGate attached.
-            self.groupmgt.addGroupMemberShip("0000", "01", "4003")
-            self.groupmgt.addGroupMemberShip("0000", "01", "4004")
-            self.groupmgt.addGroupMemberShip("0000", "01", "4005")
-            self.groupmgt.addGroupMemberShip("0000", "01", "4006")
-
-    # Create Network Map object and trigger one scan
-    if self.networkmap is None:
-        self.networkmap = NetworkMap(
-            self.zigbee_communitation ,self.pluginconf, self.ControllerLink, self.ListOfDevices, Devices, self.HardwareID, self.log
-        )
-    if self.networkmap:
-        self.webserver.update_networkmap(self.networkmap)
+        # Create Configure Reporting object
+        if self.configureReporting is None:
+            self.configureReporting = ConfigureReporting(
+                self.zigbee_communitation,
+                self.pluginconf,
+                self.DeviceConf,
+                self.ControllerLink,
+                self.ListOfDevices,
+                Devices,
+                self.log,
+                self.busy,
+                self.FirmwareVersion,
+                self.IEEE2NWK,
+                self.ControllerIEEE
+            )
 
     # Create Network Energy object and trigger one scan
     if self.networkenergy is None:
@@ -1237,8 +1215,17 @@ def zigateInit_Phase3(self):
         # if len(self.ListOfDevices) > 1:
         #   self.log.logging( 'Plugin', 'Status', "Trigger a Energy Level Scan")
         #   self.networkenergy.start_scan()
+
     if self.networkenergy:
         self.webserver.update_networkenergy(self.networkenergy)
+
+        # Create Network Map object and trigger one scan
+    if self.networkmap is None:
+        self.networkmap = NetworkMap(
+            self.zigbee_communitation ,self.pluginconf, self.ControllerLink, self.ListOfDevices, Devices, self.HardwareID, self.log
+        )
+    if self.networkmap:
+        self.webserver.update_networkmap(self.networkmap)
 
     # In case we have Transport = None , let's check if we have to active Group management or not. (For Test and Web UI Dev purposes
     if self.transport == "None" and self.groupmgt is None and self.pluginconf.pluginConf["enablegroupmanagement"]:
@@ -1283,6 +1270,9 @@ def check_firmware_level(self):
         self.PluzzyFirmware = True
         return True
 
+    elif int(self.FirmwareVersion.lower(),16) >= 0x031e:
+        self.pluginconf.pluginConf["forceAckOnZCL"] = False
+
     elif int(self.FirmwareVersion, 16) > 0x0321:
         self.log.logging("Plugin", "Error", "WARNING: Firmware %s is not yet supported" % self.FirmwareVersion.lower())
 
@@ -1311,6 +1301,16 @@ def start_GrpManagement(self, homefolder):
         self.groupmgt.updateZigateIEEE(self.ControllerIEEE)
     if self.groupmgt:
         self.webserver.update_groupManagement(self.groupmgt)
+        if self.pluginconf.pluginConf["zigatePartOfGroup0000"]:
+            # Add Zigate NwkId 0x0000 Ep 0x01 to GroupId 0x0000
+            self.groupmgt.addGroupMemberShip("0000", "01", "0000")
+
+        if self.pluginconf.pluginConf["zigatePartOfGroupTint"]:
+            # Tint Remote manage 4 groups and we will create with ZiGate attached.
+            self.groupmgt.addGroupMemberShip("0000", "01", "4003")
+            self.groupmgt.addGroupMemberShip("0000", "01", "4004")
+            self.groupmgt.addGroupMemberShip("0000", "01", "4005")
+            self.groupmgt.addGroupMemberShip("0000", "01", "4006")
 
 
 def start_OTAManagement(self, homefolder):

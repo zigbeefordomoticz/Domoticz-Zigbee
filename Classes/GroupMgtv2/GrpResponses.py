@@ -163,7 +163,7 @@ def look_for_group_member_ship_response(self, MsgData):
 
     if MsgSrcAddr not in self.ListOfDevices:
         self.logging(
-            "Error", "look_for_group_member_ship_response %s membership on non existing device %s" % (MsgSrcAddr)
+            "Error", "look_for_group_member_ship_response %s membership on non existing device" % (MsgSrcAddr)
         )
         return
 
@@ -178,6 +178,14 @@ def look_for_group_member_ship_response(self, MsgData):
         GrpId = MsgData[12 + (idx * 4) : 12 + (4 + (idx * 4))]
         if MsgSrcAddr not in self.ListOfDevices:
             continue
+        if MsgSrcAddr == '0000' and GrpId == '0000' and idx > 0:
+            # We are in the situation of GrpId 0x0000 and the Coordinator is member
+            #it looks like Zigate is sending 0x0000 when it has an empty slot
+            self.logging( 
+                "Log", "look_for_group_member_ship_response %s membership to %s takes only the 1st" % (MsgSrcAddr,GrpId )
+            )
+
+            break
         if "GroupMemberShip" not in self.ListOfDevices[MsgSrcAddr]:
             self.ListOfDevices[MsgSrcAddr]["GroupMemberShip"] = {}
         if MsgEP not in self.ListOfDevices[MsgSrcAddr]["GroupMemberShip"]:

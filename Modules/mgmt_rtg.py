@@ -10,10 +10,10 @@
 
 """
 
-import struct
-import time
 
 import Domoticz
+import time
+import struct
 
 from Modules.basicOutputs import mgt_binding_table_req, mgt_routing_req
 from Modules.tools import get_device_nickname

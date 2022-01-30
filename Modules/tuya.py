@@ -16,7 +16,9 @@ from datetime import datetime, timedelta
 import Domoticz
 
 from Modules.basicOutputs import raw_APS_request, write_attribute
+from Modules.bindings import bindDevice
 from Modules.domoMaj import MajDomoDevice
+
 from Modules.tools import (build_fcf, checkAndStoreAttributeValue,
                            get_and_inc_ZCL_SQN, is_ack_tobe_disabled, updSQN)
 from Modules.tuyaSiren import tuya_siren_response
@@ -48,7 +50,7 @@ TUYA_ENERGY_MANUFACTURER = (
     "_TZE200_fsb6zw01",
     "_TZE200_byzdayie",
 )
-
+TUYA_GARAGE_DOOR = ( "_TZE200_nklqjk62", )
 TUYA_SMARTAIR_MANUFACTURER = (
     "_TZE200_8ygsuhe1",
     "_TZE200_yvx5lh6k",
@@ -174,6 +176,7 @@ TUYA_MANUFACTURER_NAME = (
     + TUYA_SMARTAIR_MANUFACTURER
     + TUYA_WATER_TIMER
     + TUYA_SMART_ALLIN1
+    + TUYA_GARAGE_DOOR
 )
 
 
@@ -181,8 +184,12 @@ TUYA_MANUFACTURER_NAME = (
 
 
 def tuya_registration(self, nwkid, device_reset=False, parkside=False):
+    if "Model" not in self.ListOfDevices[nwkid]:
+            return
+    _ModelName = self.ListOfDevices[nwkid]["Model"]
 
-    self.log.logging("Tuya", "Debug", "tuya_registration - Nwkid: %s" % nwkid)
+    self.log.logging("Tuya", "Debug", "tuya_registration - Nwkid: %s Model: %s" % (nwkid, _ModelName))
+
     # (1) 3 x Write Attribute Cluster 0x0000 - Attribute 0xffde  - DT 0x20  - Value: 0x13 ( 19 Decimal)
     #  It looks like for Lidl Watering switch the Value is 0x0d ( 13 in decimal )
     EPout = "01"
@@ -209,7 +216,10 @@ def tuya_registration(self, nwkid, device_reset=False, parkside=False):
 
     # Gw->Zigbee gateway query MCU version
     self.log.logging("Tuya", "Debug", "tuya_registration - Nwkid: %s Request MCU Version Cmd: 10" % nwkid)
-    payload = "11" + get_and_inc_ZCL_SQN(self, nwkid) + "10" + "0002"
+    if _ModelName in ( "TS0601-_TZE200_nklqjk62", ):
+    	payload = "11" + get_and_inc_ZCL_SQN(self, nwkid) + "10" + "000e"
+    else:
+    	payload = "11" + get_and_inc_ZCL_SQN(self, nwkid) + "10" + "0002"
     raw_APS_request(
         self,
         nwkid,
@@ -229,8 +239,16 @@ def tuya_cmd_ts004F(self, NwkId, mode):
     # By default set to 0x00
     if mode not in TS004F_MODE:
         return
-
+    
     write_attribute(self, NwkId, ZIGATE_EP, "01", "0006", "0000", "00", "8004", "30", '%02x' %TS004F_MODE[ mode ], ackIsDisabled=False)
+    
+    ieee = self.ListOfDevices[ NwkId ]['IEEE']
+    cluster = "0006"
+    bindDevice(self, ieee, "01", cluster, destaddr=None, destep="01")
+    bindDevice(self, ieee, "02", cluster, destaddr=None, destep="01")
+    bindDevice(self, ieee, "03", cluster, destaddr=None, destep="01")
+    bindDevice(self, ieee, "04", cluster, destaddr=None, destep="01")
+
 
 def tuya_cmd_0x0000_0xf0(self, NwkId):
 
@@ -405,6 +423,9 @@ def tuya_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, 
     elif _ModelName == "TS0601-curtain":
         tuya_curtain_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
 
+    elif _ModelName == "TS0601-_TZE200_nklqjk62":
+        tuya_garage_door_response( self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
+        
     elif _ModelName in ("TS0601-thermostat"):
         tuya_eTRV_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
 
@@ -1159,3 +1180,32 @@ def tuya_smart_motion_all_in_one(self, Devices, _ModelName, NwkId, srcEp, Cluste
             % (_ModelName, NwkId, srcEp, dp, datatype, data),
             NwkId,
         )
+
+def tuya_garage_door_response( self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
+    
+    if dp == 0x01:
+        # Switch
+        self.log.logging("Tuya", "Debug", "tuya_garage_door_response - Switch %s" % int(data, 16), NwkId)
+        MajDomoDevice(self, Devices, NwkId, "01", "0006", "%02x" %(int(data, 16)) )
+        store_tuya_attribute(self, NwkId, "Door", data)
+        
+    elif dp == 0x03:
+        # Door: 0x00 => Closed, 0x01 => Open
+        self.log.logging("Tuya", "Debug", "tuya_garage_door_response - Door %s" % int(data, 16), NwkId)
+        MajDomoDevice(self, Devices, NwkId, "01", "0500", "%02x" %(int(data, 16)) )
+        store_tuya_attribute(self, NwkId, "Door", data)
+        
+    else:
+        store_tuya_attribute(self, NwkId, "dp:%s-dt:%s" %(dp, datatype), data)
+        
+
+def tuya_garage_door_action( self, NwkId, action):
+    # 000f/0101/0001/00
+    # 0010/0101/0001/01
+    EPout = "01"
+    sqn = get_and_inc_SQN(self, NwkId)
+    cluster_frame = "11"
+    cmd = "00"  # Command
+    action = "0101"
+    data = "%02x" % int(action)
+    tuya_cmd(self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)

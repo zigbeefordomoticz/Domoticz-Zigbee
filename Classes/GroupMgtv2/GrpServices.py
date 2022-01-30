@@ -122,6 +122,8 @@ def scan_all_devices_for_grp_membership(self):
         for Ep in self.ListOfDevices[NwkId]["Ep"]:
             if "0004" not in self.ListOfDevices[NwkId]["Ep"][Ep]:
                 continue
+            if NwkId == "0000" and Ep != "01":
+                continue
             submitForGroupMemberShipScaner(self, NwkId, Ep)
 
 

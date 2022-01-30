@@ -86,12 +86,14 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
             )
 
 
+
     def get_device(self, ieee=None, nwk=None):
         # logging.debug("get_device nwk %s ieee %s" % (nwk, ieee))
         # self.callBackGetDevice is set to zigpy_get_device(self, nwkid = None, ieee=None)
         # will return None if not found
         # will return (nwkid, ieee) if found ( nwkid and ieee are numbers)
         self.log.logging("TransportZigpy", "Debug", "AppZnp - get_device ieee:%s nwk:%s " % (ieee,nwk ))
+#        self.log.logging("TransportZigpy", "Debug", "AppZnp - get_device current_list%s  " % (self.devices ))
 
         dev = None
         try:

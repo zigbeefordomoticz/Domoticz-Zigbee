@@ -6,7 +6,7 @@
 [![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/zigbeefordomoticz/Domoticz-Zigbee.svg)](http://isitmaintained.com/project/zigbeefordomoticz/Domoticz-Zigbee "Average time to resolve an issue")
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://paypal.me/pipiche "Donate via PayPal")
 
-[![CodeFactor](https://www.codefactor.io/repository/github/zigbeefordomoticz/domoticz-zigbee/badge/beta)](https://www.codefactor.io/repository/github/zigbeefordomoticz/domoticz-zigbee/overview/beta)
+[![CodeFactor](https://www.codefactor.io/repository/github/zigbeefordomoticz/domoticz-zigbee/badge/beta6)](https://www.codefactor.io/repository/github/zigbeefordomoticz/domoticz-zigbee/overview/beta6)
 
 ## Zigbee for Domoticz
 
@@ -80,12 +80,15 @@ Your first place to get support is via the Forums.
 
 In order to provide stability and also provide more recent development, Zigbee for Domoticz plugin has the following channels
 
+<<<<<<< HEAD
+* **beta6**: Current developpement branch integrates zigpy library and allow TI CCxxxx coordinators in additional of ZiGate
 * **stable5**: Support ALL ZiGate models known today and requires Domoticz 2020.x at minima
-* **beta**: We can open the beta channel to provide early version and to stabilize the version priori to be move to the stable channel
+* ***beta***: deprecated (will be remove end of February 2022)
 
 * Not supported
   * ***stable***: latest version 4.11. - Feb. 2021) deprecated
   * ***master***: latest version 3.0. - Sept. 2018) deprecated
+
 
 ## How to switch from one channel to the other
 

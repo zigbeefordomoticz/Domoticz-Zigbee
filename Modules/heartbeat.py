@@ -164,6 +164,7 @@ def check_delay_binding( self, NwkId, model ):
         # Too early come later
         self.log.logging( "Heartbeat", "Debug", "check_delay_binding -  %s BindingTable empty" % (
             NwkId), NwkId, )
+        mgmt_rtg(self, NwkId, "BindingTable")
         return
     
     # We reached that step, because we have DelayindingAtPairing enabled and the BindTable is not empty.

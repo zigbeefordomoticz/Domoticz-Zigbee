@@ -75,7 +75,7 @@ def callbackDeviceAwake_Schneider(self, Devices, NwkId, EndPoint, cluster):
         Domoticz.Log("%s/%s Switching Reporting to NORMAL mode" % (NwkId, EndPoint))
         vact_config_reporting_normal(self, NwkId, EndPoint)
 
-    if "Model" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Model"] in ("Wiser2-Thermostat",):
+    if "Model" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Model"] in ("Wiser2-Thermostat", "iTRV"):
         check_end_of_override_setpoint(self, Devices, NwkId, EndPoint)
 
 
@@ -1140,6 +1140,7 @@ def schneider_thermostat_answer_attribute_request(self, NWKID, EPout, ClusterID,
     )
 
 def define_heating_demand_for_iTRV(self, NwkId):
+    # We force to use Ep 0x01 even if the iTRV is communicating on Ep 0x02
     
     if "Model" not in self.ListOfDevices[NwkId] or self.ListOfDevices[NwkId]["Model"] not in ( "Wiser2-Thermostat", "iTRV",):
         return
@@ -1649,6 +1650,9 @@ def schneider_find_attribute_and_set(self, NWKID, EP, ClusterID, attr, defaultVa
         % (NWKID, EP, ClusterID, attr, defaultValue, newValue),
         NWKID,
     )
+    if "Model" in self.ListOfDevices[NWKID] and  self.ListOfDevices[NWKID]["Model"] in ( "iTRV",):
+        EP = '01'   # Indeed iTRV request on Ep 0x02, but we store all on Ep 0x01
+
     found = newValue
     if EP not in self.ListOfDevices[NWKID]["Ep"]:
         self.ListOfDevices[NWKID]["Ep"][EP] = {}

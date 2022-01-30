@@ -393,7 +393,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in HACTMODE..." % (t), NWKID)
 
             # 4 Selector , OffHidden, Style 0 (command)
-            if t in ("DSwitch", "blindIKEA", ):
+            if t in ("DSwitch", "blindIKEA", "ThermoMode_5"):
                 Options = createSwitchSelector(self, 4, DeviceType=t, OffHidden=True, SelectorStyle=0)
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in DSwitch..." % (t), NWKID)
@@ -637,7 +637,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, "Voltage")
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Voltage" % (t), NWKID)
 
-            if t == "Door":
+            if t in ("Door", "DoorSensor",):
                 # capteur ouverture/fermeture xiaomi
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=244, Subtype_=73, Switchtype_=11)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Door" % (t), NWKID)
