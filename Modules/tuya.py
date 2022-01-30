@@ -1203,7 +1203,7 @@ def tuya_garage_door_action( self, NwkId, action):
     # 000f/0101/0001/00
     # 0010/0101/0001/01
     EPout = "01"
-    sqn = get_and_inc_SQN(self, NwkId)
+    sqn = get_and_inc_ZCL_SQN(self, NwkId)
     cluster_frame = "11"
     cmd = "00"  # Command
     action = "0101"
