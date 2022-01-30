@@ -37,9 +37,6 @@ from Modules.tuya import tuya_cmd_ts004F, tuya_registration
 from Modules.tuyaSiren import tuya_sirene_registration
 from Modules.tuyaTools import tuya_TS0121_registration
 from Modules.tuyaTRV import TUYA_eTRV_MODEL, tuya_eTRV_registration
-from Modules.zdpCommands import (zdp_active_endpoint_request,
-                                 zdp_node_descriptor_request,
-                                 zdp_simple_descriptor_request)
 from Modules.zigateConsts import CLUSTERS_LIST, ZIGATE_EP
 
 
