@@ -15,7 +15,7 @@ import Domoticz
 
 from Modules.basicOutputs import raw_APS_request, write_attribute
 from Modules.domoMaj import MajDomoDevice
-from Modules.domoTools import Update_Battery_Device
+from Modules.domoTools import Update_Battery_Device, voltage2batteryP
 from Modules.tools import (checkAndStoreAttributeValue, get_and_inc_ZCL_SQN,
                            is_ack_tobe_disabled)
 from Modules.tuyaTools import (get_tuya_attribute, store_tuya_attribute,
@@ -685,7 +685,7 @@ def tuya_lidl_set_mode(self, nwkid, mode):
     self.log.logging("Tuya", "Debug", "tuya_lidl_set_mode - %s mode: %s" % (nwkid, mode))
     if mode not in (0x00, 0x01, 0x02, ):
         return
-    sqn = get_and_inc_SQN(self, nwkid)
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
     dp = get_datapoint_command(self, nwkid, "LIDLMode")
     self.log.logging("Tuya", "Debug", "tuya_trv_brt100_set_mode - %s dp for mode: %s" % (nwkid, dp))
     if dp:
