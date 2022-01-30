@@ -7,12 +7,10 @@
 import json
 import os
 import os.path
-from datetime import datetime
 from time import time
 
 import Domoticz
-from Classes.WebServer.headerResponse import (prepResponseMessage,
-                                              setupHeadersResponse)
+from Classes.WebServer.headerResponse import (prepResponseMessage, setupHeadersResponse)
 
 
 def rest_req_topologie(self, verb, data, parameters):
@@ -195,9 +193,8 @@ def extract_report(self, reportLQI):
             _relation["Child"] = _child_name
             _relation["_lnkqty"] = int(reportLQI[item]["Neighbours"][x]["_lnkqty"], 16)
             _relation["DeviceType"] = reportLQI[item]["Neighbours"][x]["_devicetype"]
-            self.logging( "Log", "Relationship - %15.15s (%s) - %15.15s (%s) %3s %s"
-                % (_relation["Father"], _father, _relation["Child"], _child, _relation["_lnkqty"], _relation["DeviceType"]),
-            )
+            self.logging( "Log", "Relationship - %15.15s (%s) - %15.15s (%s) %3s %s" % (
+                _relation["Father"], _father, _relation["Child"], _child, _relation["_lnkqty"], _relation["DeviceType"]),)
             _topo.append(_relation)
 
     return _topo
