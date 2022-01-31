@@ -47,7 +47,7 @@ def zcl_read_attribute(self, nwkid, EpIn, EpOut, Cluster, direction, manufacture
         return rawaps_read_attribute_req(self, nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, Attr, ackIsDisabled)
 
     if isinstance( lenAttr, int):
-        lenAttr = "%02x" % lenAttr,
+        lenAttr = "%02x" % lenAttr
     data = EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + lenAttr + Attr
     if ackIsDisabled:
         return send_zigatecmd_zcl_noack(self, nwkid, "0100", data)
