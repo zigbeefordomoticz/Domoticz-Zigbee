@@ -442,9 +442,10 @@ class ConfigureReporting:
                 }
             else:
                 self.logging(
-                    "Debug",
-                    "prepare_and_send_configure_reporting - Unexepcted Data Type: Cluster: %s Attribut: %s DataType: %s" % (cluster, attr, attrType),
+                    "Error",
+                    "prepare_and_send_configure_reporting - Unexpected Data Type: Cluster: %s Attribut: %s DataType: %s" % (cluster, attr, attrType),
                 )
+                continue
 
             attribute_reporting_configuration.append(attribute_reporting_record)
 
