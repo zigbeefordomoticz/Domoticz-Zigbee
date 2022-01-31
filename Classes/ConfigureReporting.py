@@ -422,7 +422,7 @@ class ConfigureReporting:
             chgFlag = cluster_list[cluster]["Attributes"][attr]["Change"]
 
             if analog_value( int(attrType, 16) ):
-                # Analog values: For attributes with 'analog' data type (see 2.6.2), the field has the same data type as the attribute. The sign (if any) of the reportable change field is ignored.
+                # Analog values: For attributes with 'analog' data type (see 2.6.2), the "rptChg" has the same data type as the attribute. The sign (if any) of the reportable change field is ignored.
                 attribute_reporting_record = {
                     "Attribute": attr,
                     "DataType": attrType,
@@ -432,7 +432,16 @@ class ConfigureReporting:
                     "timeOut": timeOut,
                 }
             elif discrete_value( int(attrType, 16) ):
-                # Discrete value: For attributes of 'discrete' data type (see 2.6.2), this field is omitted.
+                # Discrete value: For attributes of 'discrete' data type (see 2.6.2), "rptChg" field is omitted.
+                attribute_reporting_record = {
+                    "Attribute": attr,
+                    "DataType": attrType,
+                    "minInter": minInter,
+                    "maxInter": maxInter,
+                    "timeOut": timeOut,
+                }
+            elif composite_value( int(attrType, 16) ):
+                # Composite value: assumed "rptChg" is omitted
                 attribute_reporting_record = {
                     "Attribute": attr,
                     "DataType": attrType,
@@ -674,4 +683,16 @@ def analog_value(data_type):
         0xE0,
         0xE1,
         0xE2,
+    )
+    
+def composite_value( data_type ):
+    return data_type in (
+        0x41,
+        0x42,
+        0x43,
+        0x44,
+        0x48,
+        0x4c,
+        0x50,
+        0x51,
     )
