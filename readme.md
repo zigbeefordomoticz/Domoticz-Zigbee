@@ -1,6 +1,6 @@
 # Zigbee for Domoticz a Zigbee for Domoticz
 
-![Zigbee for Domoticz](https://github.com/zigbeefordomoticz/Domoticz-Zigbee/blob/zigpy/images/Z4D-200.png )
+![Zigbee for Domoticz](https://github.com/zigbeefordomoticz/Domoticz-Zigbee/blob/beta6/images/Z4D-200.png )
 
 [![Percentage of issues still open](http://isitmaintained.com/badge/open/zigbeefordomoticz/Domoticz-Zigbee.svg)](http://isitmaintained.com/project/zigbeefordomoticz/Domoticz-Zigbee "Percentage of issues still open")
 [![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/zigbeefordomoticz/Domoticz-Zigbee.svg)](http://isitmaintained.com/project/zigbeefordomoticz/Domoticz-Zigbee "Average time to resolve an issue")
@@ -22,7 +22,7 @@ This plugin is an evolution of the mature Zigate plugin for Domoticz, which will
 
   `sudo pip3 install voluptuous pycrypto aiosqlite crccheck pyusb attr attrs aiohttp pyserial-asyncio`
 
-## Plugin first installation or first time on release 6.xxx
+## Plugin first installation or first time on release 6.xxx (for now beta6)
 
 The first time you have to install the plugin via the `git clone` command, or you have been move to the release 6.x.
 
@@ -35,14 +35,12 @@ The first time you have to install the plugin via the `git clone` command, or yo
 * Go in the Zigbee for Domoticz folder ( Domoticz-Zigbee ).
   Usally you should be under domoticz/plugins/Domoticz-Zigbee
 
-* Move to the zigpy branche `git checkout zigpy`
-
 * run: `git submodule update --init --recursive`
   Finally, make the plugin.py file executable `chmod +x Domoticz-Zigbee/plugin.py`
 
 * Restart Domoticz.
 
-[More information available here](https://github.com/pipiche38/Domoticz-Zigate-Wiki/blob/master/en-eng/Plugin_Installation.md)
+[More information available here](https://github.com/zigbeefordomoticz/wiki/blob/master/fr-fr/Plugin_Version-6.md)
 
 ## Plugin update
 
@@ -80,12 +78,12 @@ Your first place to get support is via the Forums.
 
 In order to provide stability and also provide more recent development, Zigbee for Domoticz plugin has the following channels
 
-<<<<<<< HEAD
-* **beta6**: Current developpement branch integrates zigpy library and allow TI CCxxxx coordinators in additional of ZiGate
+* **beta6**: Current developpement branch integrates zigpy library and allow TI CCxxxx coordinators on top of ZiGate coordinators. Requires Domoticz 2021.1 at minima
 * **stable5**: Support ALL ZiGate models known today and requires Domoticz 2020.x at minima
-* ***beta***: deprecated (will be remove end of February 2022)
+
 
 * Not supported
+  * ***beta***: deprecated (will be remove end of February 2022)
   * ***stable***: latest version 4.11. - Feb. 2021) deprecated
   * ***master***: latest version 3.0. - Sept. 2018) deprecated
 
@@ -96,17 +94,10 @@ In order to provide stability and also provide more recent development, Zigbee f
 
 `git checkout stable5  // will move you to the stable5 channel`
 
-`git checkout beta    // will move you to the beta channel`
+`git checkout beta6    // will move you to the beta channel`
 
 `git pull --recurse-submodules` // Might be required
 
-In case you need to be on stable instead of stable5
-
-`git checkout stable  // will move you to the stable channel`
-
-## Acknowledgements
-
-And a big thanks to @puddly and @Adminiuga from the zigpy team. whom are supporting and helping us in this journey.
 
 ## Donations
 
