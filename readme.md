@@ -1,6 +1,6 @@
 # Zigbee for Domoticz a Zigbee for Domoticz
 
-![Zigbee for Domoticz](https://github.com/zigbeefordomoticz/Domoticz-Zigbee/blob/zigpy/images/Z4D-200.png )
+![Zigbee for Domoticz](https://github.com/zigbeefordomoticz/Domoticz-Zigbee/blob/beta6/images/Z4D-200.png )
 
 [![Percentage of issues still open](http://isitmaintained.com/badge/open/zigbeefordomoticz/Domoticz-Zigbee.svg)](http://isitmaintained.com/project/zigbeefordomoticz/Domoticz-Zigbee "Percentage of issues still open")
 [![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/zigbeefordomoticz/Domoticz-Zigbee.svg)](http://isitmaintained.com/project/zigbeefordomoticz/Domoticz-Zigbee "Average time to resolve an issue")
@@ -82,9 +82,10 @@ In order to provide stability and also provide more recent development, Zigbee f
 
 * **beta6**: Current developpement branch integrates zigpy library and allow TI CCxxxx coordinators in additional of ZiGate
 * **stable5**: Support ALL ZiGate models known today and requires Domoticz 2020.x at minima
-* ***beta***: deprecated (will be remove end of February 2022)
+
 
 * Not supported
+  * ***beta***: deprecated (will be remove end of February 2022)
   * ***stable***: latest version 4.11. - Feb. 2021) deprecated
   * ***master***: latest version 3.0. - Sept. 2018) deprecated
 
@@ -95,13 +96,10 @@ In order to provide stability and also provide more recent development, Zigbee f
 
 `git checkout stable5  // will move you to the stable5 channel`
 
-`git checkout beta    // will move you to the beta channel`
+`git checkout beta6    // will move you to the beta channel`
 
 `git pull --recurse-submodules` // Might be required
 
-In case you need to be on stable instead of stable5
-
-`git checkout stable  // will move you to the stable channel`
 
 ## Acknowledgements
 
