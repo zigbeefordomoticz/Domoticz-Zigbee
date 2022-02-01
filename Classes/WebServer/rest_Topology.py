@@ -31,6 +31,12 @@ def rest_req_topologie(self, verb, data, parameters):
     return _response
 
 
+def dummy_topology_report( ):
+    
+    return [{"Child": "IAS Sirene", "DeviceType": "Router", "Father": "Zigbee Controller", "_lnkqty": 58}, {"Child": "IAS Sirene", "DeviceType": "Router", "Father": "Led LKex", "_lnkqty": 252}, {"Child": "IAS Sirene", "DeviceType": "Router", "Father": "Led Ikea", "_lnkqty": 241}, {"Child": "OnOff Ikea", "DeviceType": "End Device", "Father": "IAS Sirene", "_lnkqty": 255}, {"Child": "Repeater", "DeviceType": "Coordinator", "Father": "Zigbee Controller", "_lnkqty": 254}, {"Child": "Repeater", "DeviceType": "Router", "Father": "Led LKex", "_lnkqty": 196}, {"Child": "Repeater", "DeviceType": "Router", "Father": "Led Ikea", "_lnkqty": 254}, {"Child": "Motion frient", "DeviceType": "End Device", "Father": "Repeater", "_lnkqty": 168}, {"Child": "Dim Ikea", "DeviceType": "End Device", "Father": "Repeater", "_lnkqty": 89}, {"Child": "Led LKex", "DeviceType": "Coordinator", "Father": "Zigbee Controller", "_lnkqty": 254}, {"Child": "Led LKex", "DeviceType": "Router", "Father": "Led Ikea", "_lnkqty": 244}, {"Child": "Lumi Door", "DeviceType": "End Device", "Father": "Led LKex", "_lnkqty": 211}, {"Child": "Wiser Thermostat", "DeviceType": "End Device", "Father": "Led LKex", "_lnkqty": 223}, {"Child": "Led Ikea", "DeviceType": "Coordinator", "Father": "Zigbee Controller", "_lnkqty": 60}, {"Child": "Led Ikea", "DeviceType": "Router", "Father": "Led LKex", "_lnkqty": 101}, {"Child": "Remote Tradfri", "DeviceType": "End Device", "Father": "Led Ikea", "_lnkqty": 194}, {"Child": "Inter Shutter Legrand", "DeviceType": "Router", "Father": "Led Ikea", "_lnkqty": 133}, {"Child": "Inter Shutter Legrand", "DeviceType": "Coordinator", "Father": "Zigbee Controller", "_lnkqty": 241}, {"Child": "Inter Shutter Legrand", "DeviceType": "Router", "Father": "Led LKex", "_lnkqty": 164}, {"Child": "Lumi Motion", "DeviceType": "End Device", "Father": "Inter Shutter Legrand", "_lnkqty": 242}, {"Child": "Inter Dimmer Legrand", "DeviceType": "Coordinator", "Father": "Zigbee Controller", "_lnkqty": 254}, {"Child": "Inter Dimmer Legrand", "DeviceType": "Router", "Father": "Led LKex", "_lnkqty": 215}, {"Child": "Inter Dimmer Legrand", "DeviceType": "Router", "Father": "Led Ikea", "_lnkqty": 254}, {"Child": "Micromodule Legrand", "DeviceType": "Coordinator", "Father": "Zigbee Controller", "_lnkqty": 252}, {"Child": "Micromodule Legrand", "DeviceType": "Router", "Father": "Led LKex", "_lnkqty": 252}, {"Child": "Micromodule Legrand", "DeviceType": "Router", "Father": "Led Ikea", "_lnkqty": 252}]
+
+
+
 def rest_netTopologie(self, verb, data, parameters):
 
     _response = prepResponseMessage(self, setupHeadersResponse())
@@ -95,17 +101,25 @@ def rest_netTopologie(self, verb, data, parameters):
         return _response
 
     if verb == "GET":
+        
+            
         if len(parameters) == 0:
             # Send list of Time Stamps
+            if len(self.ControllerData) == 0:
+                _timestamps_lst = [1643561599, 1643564628]
             _response["Data"] = json.dumps(_timestamps_lst, sort_keys=True)
 
         elif len(parameters) == 1:
-            timestamp = parameters[0]
-            if timestamp in _topo:
-                self.logging("Debug", "Topologie sent: %s" % _topo[timestamp])
-                _response["Data"] = json.dumps(_topo[timestamp], sort_keys=True)
-            else:
-                _response["Data"] = json.dumps([], sort_keys=True)
+
+                if len(self.ControllerData) == 0:
+                    _response["Data"] = json.dumps(dummy_topology_report( ), sort_keys=True)
+                else:
+                    timestamp = parameters[0]
+                    if timestamp in _topo:
+                        self.logging("Debug", "Topologie sent: %s" % _topo[timestamp])
+                        _response["Data"] = json.dumps(_topo[timestamp], sort_keys=True)
+                    else:
+                        _response["Data"] = json.dumps([], sort_keys=True)
 
     return _response
 

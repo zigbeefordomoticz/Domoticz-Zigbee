@@ -737,84 +737,89 @@ class WebServer(object):
 
         elif verb == "GET":
             _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
-            device_lst = []
-            for x in self.ListOfDevices:
-                if x == "0000":
-                    continue
+            
+            
+            if len(self.ControllerData) == 0:
+                _response["Data"] = json.dumps(dummy_zdevice_name(), sort_keys=True)
+            else:
+                device_lst = []
+                for x in self.ListOfDevices:
+                    if x == "0000":
+                        continue
 
-                device = {"_NwkId": x}
-                for item in (
-                    "Param",
-                    "ZDeviceName",
-                    "IEEE",
-                    "Model",
-                    "MacCapa",
-                    "Status",
-                    "ConsistencyCheck",
-                    "Health",
-                    "LQI",
-                    "Battery",
-                ):
-                    if item in self.ListOfDevices[x]:
-                        if item == "MacCapa":
-                            device["MacCapa"] = []
-                            mac_capability = int(self.ListOfDevices[x][item], 16)
-                            AltPAN = mac_capability & 0x00000001
-                            DeviceType = (mac_capability >> 1) & 1
-                            PowerSource = (mac_capability >> 2) & 1
-                            ReceiveonIdle = (mac_capability >> 3) & 1
-                            if DeviceType == 1:
-                                device["MacCapa"].append("FFD")
+                    device = {"_NwkId": x}
+                    for item in (
+                        "Param",
+                        "ZDeviceName",
+                        "IEEE",
+                        "Model",
+                        "MacCapa",
+                        "Status",
+                        "ConsistencyCheck",
+                        "Health",
+                        "LQI",
+                        "Battery",
+                    ):
+                        if item in self.ListOfDevices[x]:
+                            if item == "MacCapa":
+                                device["MacCapa"] = []
+                                mac_capability = int(self.ListOfDevices[x][item], 16)
+                                AltPAN = mac_capability & 0x00000001
+                                DeviceType = (mac_capability >> 1) & 1
+                                PowerSource = (mac_capability >> 2) & 1
+                                ReceiveonIdle = (mac_capability >> 3) & 1
+                                if DeviceType == 1:
+                                    device["MacCapa"].append("FFD")
+                                else:
+                                    device["MacCapa"].append("RFD")
+                                if ReceiveonIdle == 1:
+                                    device["MacCapa"].append("RxonIdle")
+                                if PowerSource == 1:
+                                    device["MacCapa"].append("MainPower")
+                                else:
+                                    device["MacCapa"].append("Battery")
+                                self.logging(
+                                    "Debug",
+                                    "decoded MacCapa from: %s to %s" % (self.ListOfDevices[x][item], str(device["MacCapa"])),
+                                )
+                            elif item == "Param":
+                                device[item] = str(self.ListOfDevices[x][item])
                             else:
-                                device["MacCapa"].append("RFD")
-                            if ReceiveonIdle == 1:
-                                device["MacCapa"].append("RxonIdle")
-                            if PowerSource == 1:
-                                device["MacCapa"].append("MainPower")
-                            else:
-                                device["MacCapa"].append("Battery")
-                            self.logging(
-                                "Debug",
-                                "decoded MacCapa from: %s to %s" % (self.ListOfDevices[x][item], str(device["MacCapa"])),
-                            )
+                                if self.ListOfDevices[x][item] == {}:
+                                    device[item] = ""
+                                else:
+                                    device[item] = self.ListOfDevices[x][item]
                         elif item == "Param":
-                            device[item] = str(self.ListOfDevices[x][item])
+                            # Seems unknown, so let's create it
+                            device[item] = str({})
                         else:
-                            if self.ListOfDevices[x][item] == {}:
-                                device[item] = ""
-                            else:
-                                device[item] = self.ListOfDevices[x][item]
-                    elif item == "Param":
-                        # Seems unknown, so let's create it
-                        device[item] = str({})
-                    else:
-                        device[item] = ""
+                            device[item] = ""
 
-                device["WidgetList"] = []
-                for ep in self.ListOfDevices[x]["Ep"]:
-                    if "ClusterType" in self.ListOfDevices[x]["Ep"][ep]:
-                        clusterType = self.ListOfDevices[x]["Ep"][ep]["ClusterType"]
-                        for widgetID in clusterType:
-                            for widget in self.Devices:
-                                if self.Devices[widget].ID == int(widgetID):
-                                    self.logging("Debug", "Widget Name: %s %s" % (widgetID, self.Devices[widget].Name))
-                                    if self.Devices[widget].Name not in device["WidgetList"]:
-                                        device["WidgetList"].append(self.Devices[widget].Name)
+                    device["WidgetList"] = []
+                    for ep in self.ListOfDevices[x]["Ep"]:
+                        if "ClusterType" in self.ListOfDevices[x]["Ep"][ep]:
+                            clusterType = self.ListOfDevices[x]["Ep"][ep]["ClusterType"]
+                            for widgetID in clusterType:
+                                for widget in self.Devices:
+                                    if self.Devices[widget].ID == int(widgetID):
+                                        self.logging("Debug", "Widget Name: %s %s" % (widgetID, self.Devices[widget].Name))
+                                        if self.Devices[widget].Name not in device["WidgetList"]:
+                                            device["WidgetList"].append(self.Devices[widget].Name)
 
-                    elif "ClusterType" in self.ListOfDevices[x]:
-                        clusterType = self.ListOfDevices[x]["ClusterType"]
-                        for widgetID in clusterType:
-                            for widget in self.Devices:
-                                if self.Devices[widget].ID == int(widgetID):
-                                    self.logging("Debug", "Widget Name: %s %s" % (widgetID, self.Devices[widget].Name))
-                                    if self.Devices[widget].Name not in device["WidgetList"]:
-                                        device["WidgetList"].append(self.Devices[widget].Name)
+                        elif "ClusterType" in self.ListOfDevices[x]:
+                            clusterType = self.ListOfDevices[x]["ClusterType"]
+                            for widgetID in clusterType:
+                                for widget in self.Devices:
+                                    if self.Devices[widget].ID == int(widgetID):
+                                        self.logging("Debug", "Widget Name: %s %s" % (widgetID, self.Devices[widget].Name))
+                                        if self.Devices[widget].Name not in device["WidgetList"]:
+                                            device["WidgetList"].append(self.Devices[widget].Name)
 
-                if device not in device_lst:
-                    device_lst.append(device)
-            # _response["Data"] = json.dumps( device_lst, sort_keys=True )
-            self.logging("Debug", "zDevice_name - sending %s" % device_lst)
-            _response["Data"] = json.dumps(device_lst, sort_keys=True)
+                    if device not in device_lst:
+                        device_lst.append(device)
+                    # _response["Data"] = json.dumps( device_lst, sort_keys=True )
+                    self.logging("Debug", "zDevice_name - sending %s" % device_lst)
+                    _response["Data"] = json.dumps(device_lst, sort_keys=True)
 
         elif verb == "PUT":
             _response["Data"] = None
@@ -1296,6 +1301,10 @@ class WebServer(object):
 
     def logging(self, logType, message):
         self.log.logging("WebServer", logType, message)
+
+def dummy_zdevice_name():
+    
+    return [{"Battery": "", "ConsistencyCheck": "ok", "Health": "Live", "IEEE": "90fd9ffffe86c7a1", "LQI": 80, "MacCapa": ["FFD", "RxonIdle", "MainPower"], "Model": "TRADFRI bulb E27 WS clear 950lm", "Param": "{'PowerOnAfterOffOn': 255, 'fadingOff': 0, 'moveToHueSatu': 0, 'moveToColourTemp': 0, 'moveToColourRGB': 0, 'moveToLevel': 0}", "Status": "inDB", "WidgetList": ["Zigbee - TRADFRI bulb E27 WS clear 950lm_ColorControlWW-90fd9ffffe86c7a1-01"], "ZDeviceName": "Led Ikea", "_NwkId": "ada7"}, {"Battery": "", "ConsistencyCheck": "ok", "Health": "Live", "IEEE": "60a423fffe529d60", "LQI": 80, "MacCapa": ["FFD", "RxonIdle", "MainPower"], "Model": "LXEK-1", "Param": "{'PowerOnAfterOffOn': 255, 'fadingOff': 0, 'moveToHueSatu': 0, 'moveToColourTemp': 0, 'moveToColourRGB': 0, 'moveToLevel': 0}", "Status": "inDB", "WidgetList": ["Zigbee - LXEK-1_ColorControlRGBWW-60a423fffe529d60-01"], "ZDeviceName": "Led LKex", "_NwkId": "7173"}, {"Battery": "", "ConsistencyCheck": "ok", "Health": "Live", "IEEE": "680ae2fffe7aca89", "LQI": 80, "MacCapa": ["FFD", "RxonIdle", "MainPower"], "Model": "TRADFRI Signal Repeater", "Param": "{}", "Status": "inDB", "WidgetList": ["Zigbee - TRADFRI Signal Repeater_Voltage-680ae2fffe7aca89-01"], "ZDeviceName": "Repeater", "_NwkId": "a5ee"}, {"Battery": 16.0, "ConsistencyCheck": "ok", "Health": "Not seen last 24hours", "IEEE": "90fd9ffffeea89e8", "LQI": 25, "MacCapa": ["RFD", "Battery"], "Model": "TRADFRI remote control", "Param": "{}", "Status": "inDB", "WidgetList": ["Zigbee - TRADFRI remote control_Ikea_Round_5b-90fd9ffffeea89e8-01"], "ZDeviceName": "Remote Tradfri", "_NwkId": "cee1"}, {"Battery": 100, "ConsistencyCheck": "ok", "Health": "Live", "IEEE": "000d6f0011087079", "LQI": 116, "MacCapa": ["FFD", "RxonIdle", "MainPower"], "Model": "WarningDevice", "Param": "{}", "Status": "inDB", "WidgetList": ["Zigbee - WarningDevice_AlarmWD-000d6f0011087079-01"], "ZDeviceName": "IAS Sirene", "_NwkId": "2e33"}, {"Battery": 53, "ConsistencyCheck": "ok", "Health": "Live", "IEEE": "54ef441000298533", "LQI": 76, "MacCapa": ["RFD", "Battery"], "Model": "lumi.magnet.acn001", "Param": "{}", "Status": "inDB", "WidgetList": ["Zigbee - lumi.magnet.acn001_Door-54ef441000298533-01"], "ZDeviceName": "Lumi Door", "_NwkId": "bb45"}, {"Battery": "", "ConsistencyCheck": "ok", "Health": "Live", "IEEE": "00047400008aff8b", "LQI": 80, "MacCapa": ["FFD", "RxonIdle", "MainPower"], "Model": "Shutter switch with neutral", "Param": "{'netatmoInvertShutter': 0, 'netatmoLedShutter': 0}", "Status": "inDB", "WidgetList": ["Zigbee - Shutter switch with neutral_Venetian-00047400008aff8b-01"], "ZDeviceName": "Inter Shutter Legrand", "_NwkId": "06ab"}, {"Battery": "", "ConsistencyCheck": "ok", "Health": "Live", "IEEE": "000474000082a54f", "LQI": 18, "MacCapa": ["FFD", "RxonIdle", "MainPower"], "Model": "Dimmer switch wo neutral", "Param": "{'netatmoEnableDimmer': 1, 'PowerOnAfterOffOn': 255, 'BallastMaxLevel': 254, 'BallastMinLevel': 1}", "Status": "inDB", "WidgetList": ["Zigbee - Dimmer switch wo neutral_LvlControl-000474000082a54f-01"], "ZDeviceName": "Inter Dimmer Legrand", "_NwkId": "9c25"}, {"Battery": "", "ConsistencyCheck": "ok", "Health": "Live", "IEEE": "00047400001f09a4", "LQI": 80, "MacCapa": ["FFD", "RxonIdle", "MainPower"], "Model": "Micromodule switch", "Param": "{'PowerOnAfterOffOn': 255}", "Status": "inDB", "WidgetList": ["Zigbee - Micromodule switch_Switch-00047400001f09a4-01"], "ZDeviceName": "Micromodule Legrand", "_NwkId": "8706"}, {"Battery": "", "ConsistencyCheck": "ok", "Health": "", "IEEE": "00158d0003021601", "LQI": 0, "MacCapa": ["RFD", "Battery"], "Model": "lumi.sensor_motion.aq2", "Param": "{}", "Status": "inDB", "WidgetList": ["Zigbee - lumi.sensor_motion.aq2_Motion-00158d0003021601-01", "Zigbee - lumi.sensor_motion.aq2_Lux-00158d0003021601-01"], "ZDeviceName": "Lumi Motion", "_NwkId": "6f81"}, {"Battery": 100, "ConsistencyCheck": "ok", "Health": "Live", "IEEE": "0015bc001a01aa27", "LQI": 83, "MacCapa": ["RFD", "Battery"], "Model": "MOSZB-140", "Param": "{}", "Status": "inDB", "WidgetList": ["Zigbee - MOSZB-140_Motion-0015bc001a01aa27-23", "Zigbee - MOSZB-140_Tamper-0015bc001a01aa27-23", "Zigbee - MOSZB-140_Voltage-0015bc001a01aa27-23", "Zigbee - MOSZB-140_Temp-0015bc001a01aa27-26", "Zigbee - MOSZB-140_Lux-0015bc001a01aa27-27"], "ZDeviceName": "Motion frient", "_NwkId": "b9bc"}, {"Battery": 63, "ConsistencyCheck": "ok", "Health": "Live", "IEEE": "00158d000323dabe", "LQI": 61, "MacCapa": ["RFD", "Battery"], "Model": "lumi.sensor_switch", "Param": "{}", "Status": "inDB", "WidgetList": ["Zigbee - lumi.sensor_switch_SwitchAQ2-00158d000323dabe-01"], "ZDeviceName": "Lumi Switch (rond)", "_NwkId": "a029"}, {"Battery": 100.0, "ConsistencyCheck": "ok", "Health": "Live", "IEEE": "000d6ffffea1e6da", "LQI": 94, "MacCapa": ["RFD", "Battery"], "Model": "TRADFRI onoff switch", "Param": "{}", "Status": "inDB", "WidgetList": ["Zigbee - TRADFRI onoff switch_SwitchIKEA-000d6ffffea1e6da-01"], "ZDeviceName": "OnOff Ikea", "_NwkId": "c6ca"}, {"Battery": 100.0, "ConsistencyCheck": "ok", "Health": "Live", "IEEE": "000b57fffe2c0dde", "LQI": 87, "MacCapa": ["RFD", "Battery"], "Model": "TRADFRI wireless dimmer", "Param": "{}", "Status": "inDB", "WidgetList": ["Zigbee - TRADFRI wireless dimmer_GenericLvlControl-000b57fffe2c0dde-01"], "ZDeviceName": "Dim Ikea", "_NwkId": "6c43"}, {"Battery": 100, "ConsistencyCheck": "ok", "Health": "Live", "IEEE": "588e81fffe35f595", "LQI": 80, "MacCapa": ["RFD", "Battery"], "Model": "Wiser2-Thermostat", "Param": "{'WiserLockThermostat': 0, 'WiserRoomNumber': 1}", "Status": "inDB", "WidgetList": ["Zigbee - Wiser2-Thermostat_Temp+Hum-588e81fffe35f595-01", "Zigbee - Wiser2-Thermostat_Humi-588e81fffe35f595-01", "Zigbee - Wiser2-Thermostat_Temp-588e81fffe35f595-01", "Zigbee - Wiser2-Thermostat_ThermoSetpoint-588e81fffe35f595-01", "Zigbee - Wiser2-Thermostat_Valve-588e81fffe35f595-01"], "ZDeviceName": "Wiser Thermostat", "_NwkId": "5a00"}]
 
 
 def check_device_param(self, nwkid, param):

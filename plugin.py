@@ -541,6 +541,7 @@ class BasePlugin:
             self.log.logging("Plugin", "Status", "Transport mode set to None, no communication.")
             self.FirmwareVersion = "031c"
             self.PluginHealth["Firmware Update"] = {"Progress": "75 %", "Device": "1234"}
+            start_web_server(self, Parameters["Mode4"], Parameters["HomeFolder"])
             return
 
         elif self.transport == "ZigpyZiGate":
@@ -1221,7 +1222,7 @@ def zigateInit_Phase3(self):
         #   self.log.logging( 'Plugin', 'Status', "Trigger a Energy Level Scan")
         #   self.networkenergy.start_scan()
 
-    if self.networkenergy:
+    if self.webserver and self.networkenergy:
         self.webserver.update_networkenergy(self.networkenergy)
 
         # Create Network Map object and trigger one scan
@@ -1229,7 +1230,7 @@ def zigateInit_Phase3(self):
         self.networkmap = NetworkMap(
             self.zigbee_communitation ,self.pluginconf, self.ControllerLink, self.ListOfDevices, Devices, self.HardwareID, self.log
         )
-    if self.networkmap:
+    if self.webserver and self.networkmap:
         self.webserver.update_networkmap(self.networkmap)
 
     # In case we have Transport = None , let's check if we have to active Group management or not. (For Test and Web UI Dev purposes
@@ -1253,7 +1254,7 @@ def zigateInit_Phase3(self):
             "Plugin", "Status", "Plugin with Zigate+, firmware %s correctly initialized" % self.FirmwareVersion
         )
 
-    elif int(self.FirmwareBranch) >= 20:
+    elif self.FirmwareBranch and int(self.FirmwareBranch) >= 20:
         self.log.logging(
             "Plugin", "Status", "Plugin with ZNP, firmware %s-%s correctly initialized" % (self.FirmwareMajorVersion, self.FirmwareVersion))
 
@@ -1305,7 +1306,7 @@ def start_GrpManagement(self, homefolder):
     if self.groupmgt and self.ControllerIEEE:
         self.groupmgt.updateZigateIEEE(self.ControllerIEEE)
 
-    if self.groupmgt:
+    if self.webserver and self.groupmgt:
         self.webserver.update_groupManagement(self.groupmgt)
         if self.pluginconf.pluginConf["zigatePartOfGroup0000"]:
             # Add Zigate NwkId 0x0000 Ep 0x01 to GroupId 0x0000
@@ -1334,7 +1335,7 @@ def start_OTAManagement(self, homefolder):
         self.log,
         self.PluginHealth,
     )
-    if self.OTA:
+    if self.webserver and self.OTA:
         self.webserver.update_OTA(self.OTA)
 
 
