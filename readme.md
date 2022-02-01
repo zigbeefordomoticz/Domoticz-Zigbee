@@ -80,7 +80,6 @@ Your first place to get support is via the Forums.
 
 In order to provide stability and also provide more recent development, Zigbee for Domoticz plugin has the following channels
 
-<<<<<<< HEAD
 * **beta6**: Current developpement branch integrates zigpy library and allow TI CCxxxx coordinators in additional of ZiGate
 * **stable5**: Support ALL ZiGate models known today and requires Domoticz 2020.x at minima
 * ***beta***: deprecated (will be remove end of February 2022)
