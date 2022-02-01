@@ -99,10 +99,6 @@ In order to provide stability and also provide more recent development, Zigbee f
 `git pull --recurse-submodules` // Might be required
 
 
-## Acknowledgements
-
-And a big thanks to @puddly and @Adminiuga from the zigpy team. whom are supporting and helping us in this journey.
-
 ## Donations
 
 Donations are more than welcome and will be used to buy new hard, devices, sensors and in such testing and making them working with the Zigate plugin. Please feel free to use the current link :
