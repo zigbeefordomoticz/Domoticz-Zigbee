@@ -42,7 +42,7 @@ The first time you have to install the plugin via the `git clone` command, or yo
 
 * Restart Domoticz.
 
-[More information available here](https://github.com/pipiche38/Domoticz-Zigate-Wiki/blob/master/en-eng/Plugin_Installation.md)
+[More information available here](https://github.com/zigbeefordomoticz/wiki/blob/master/fr-fr/Plugin_Version-6.md)
 
 ## Plugin update
 
