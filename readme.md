@@ -78,7 +78,7 @@ Your first place to get support is via the Forums.
 
 In order to provide stability and also provide more recent development, Zigbee for Domoticz plugin has the following channels
 
-* **beta6**: Current developpement branch integrates zigpy library and allow TI CCxxxx coordinators in additional of ZiGate
+* **beta6**: Current developpement branch integrates zigpy library and allow TI CCxxxx coordinators on top of ZiGate coordinators. Requires Domoticz 2021.1 at minima
 * **stable5**: Support ALL ZiGate models known today and requires Domoticz 2020.x at minima
 
 
