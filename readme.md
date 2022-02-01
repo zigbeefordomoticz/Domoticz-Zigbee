@@ -22,7 +22,7 @@ This plugin is an evolution of the mature Zigate plugin for Domoticz, which will
 
   `sudo pip3 install voluptuous pycrypto aiosqlite crccheck pyusb attr attrs aiohttp pyserial-asyncio`
 
-## Plugin first installation or first time on release 6.xxx
+## Plugin first installation or first time on release 6.xxx (for now beta6)
 
 The first time you have to install the plugin via the `git clone` command, or you have been move to the release 6.x.
 
@@ -34,8 +34,6 @@ The first time you have to install the plugin via the `git clone` command, or yo
 
 * Go in the Zigbee for Domoticz folder ( Domoticz-Zigbee ).
   Usally you should be under domoticz/plugins/Domoticz-Zigbee
-
-* Move to the zigpy branche `git checkout zigpy`
 
 * run: `git submodule update --init --recursive`
   Finally, make the plugin.py file executable `chmod +x Domoticz-Zigbee/plugin.py`
