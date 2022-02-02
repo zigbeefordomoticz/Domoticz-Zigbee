@@ -23,6 +23,7 @@
                 <option label="ZiGate+" value="V2"/>
                 <option label="Zigate (via zigpy for dev ONLY)" value="ZigpyZiGate"/>
                 <option label="Texas Instruments ZNP (via zigpy)" value="ZigpyZNP"/>
+                <option label="Silicon Labs EZSP (via zigpy)" value="ZigpyEZSP"/>
             </options>
         </param>
         <param field="Mode2" label="Coordinator Type" width="75px" required="true" default="None">
@@ -270,7 +271,7 @@ class BasePlugin:
         elif Parameters["Mode2"] == "None":
             self.transport = "None"
             
-        elif Parameters["Mode1"] in ( "ZigpyZiGate", "ZigpyZNP"):
+        elif Parameters["Mode1"] in ( "ZigpyZiGate", "ZigpyZNP", "ZigpyEZSP"):
             self.transport = Parameters["Mode1"]
             
         else:
@@ -591,11 +592,33 @@ class BasePlugin:
             self.ControllerLink.open_zigate_connection()
             self.pluginconf.pluginConf["ControllerInRawMode"] = True
             
+        elif self.transport == "ZigpyEZSP":
+            import dns
+            import serial
+            import zigpy
+            import bellows
+            from Classes.ZigpyTransport.Transport import ZigpyTransport
+            from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE)
+            
+            self.pythonModuleVersion["dns"] = (dns.__version__)
+            self.pythonModuleVersion["serial"] = (serial.__version__)
+            self.pythonModuleVersion["zigpy"] = (zigpy.__version__)
+            self.pythonModuleVersion["zigpy_ezsp"] = (bellows.__version__)
+            check_python_modules_version( self )
+            
+            self.zigbee_communitation = "zigpy"
+            self.pluginParameters["Zigpy"] = True
+            Domoticz.Log("Start Zigpy Transport on EZSP")
+
+            self.ControllerLink= ZigpyTransport( self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "ezsp", Parameters["SerialPort"])  
+            self.ControllerLink.open_zigate_connection()
+            self.pluginconf.pluginConf["ControllerInRawMode"] = True
+            
         else:
             self.log.logging("Plugin", "Error", "Unknown Transport comunication protocol : %s" % str(self.transport))
             return
 
-        if self.transport not in ("ZigpyZNP", "ZigpyZiGate" ):
+        if self.transport not in ( "ZigpyEZSP", "ZigpyZNP", "ZigpyZiGate" ):
             self.log.logging("Plugin", "Debug", "Establish Zigate connection")
             self.ControllerLink.open_zigate_connection()
 
