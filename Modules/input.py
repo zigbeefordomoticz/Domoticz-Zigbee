@@ -294,7 +294,7 @@ def Decode0042(self, Devices, MsgData, MsgLQI):  # Node_Desc_req
         max_out_size16 = "%04x" % struct.unpack("H", struct.pack(">H", int(self.ListOfDevices[ "0000" ]["Max Tx"], 16)))[0] 
         server_mask16 = "%04x" % struct.unpack("H", struct.pack(">H", int(self.ListOfDevices[ "0000" ]["server_mask"], 16)))[0]
         descriptor_capability8 = self.ListOfDevices[ "0000" ]["descriptor_capability"]
-        mac_capa8 = self.ListOfDevices[ "0000" ]["macap"]
+        mac_capa8 = self.ListOfDevices[ "0000" ]["macapa"]
         max_buf_size8 = self.ListOfDevices[ "0000" ]["Max buffer Size"]
         bitfield16 = "%04x" % struct.unpack("H", struct.pack(">H", int(self.ListOfDevices[ "0000" ]["bitfield"], 16)))[0]
         
