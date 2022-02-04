@@ -421,7 +421,7 @@ def LQIresp_decoding(self, MsgData):
         NwkIdSource = self.LQIreqInProgress.pop()
         
     if len(MsgData) < 10:
-        self.logging("Erro", "LQIresp_decoding - Incomplete message: %s (%s)" %(MsgData, len(MsgData)))
+        self.logging("Error", "LQIresp_decoding - Incomplete message: %s (%s)" %(MsgData, len(MsgData)))
         return
         
     SQN = MsgData[0:2]
