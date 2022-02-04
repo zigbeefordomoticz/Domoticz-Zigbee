@@ -139,10 +139,35 @@ def extract_report(self, reportLQI):
 
     _topo = []  # Use to store the list to be send to the Browser
 
+    self.logging("Debug", "RAW report" )
+    for item in reportLQI:
+        for x in reportLQI[item]["Neighbours"]:
+            self.logging("Debug", "%s - %s - %s - %s - %s - %s" %(
+                get_node_name( self, item),
+                reportLQI[item]["Neighbours"][x]["_relationshp"],
+                get_node_name( self, x),
+                reportLQI[item]["Neighbours"][x]["_devicetype"],
+                reportLQI[item]["Neighbours"][x]["_lnkqty"],
+                reportLQI[item]["Neighbours"][x]["_relationshp"]
+            ))
+
     if is_sibling_required(reportLQI) or self.pluginconf.pluginConf["Sibling"]:
         reportLQI = check_sibbling(self, reportLQI)
+    
+    self.logging("Debug", "AFTER Sibling report" )
+    for item in reportLQI:
+        for x in reportLQI[item]["Neighbours"]:
+            self.logging("Debug", "%s - %s - %s - %s - %s - %s" %(
+                get_node_name( self, item),
+                reportLQI[item]["Neighbours"][x]["_relationshp"],
+                get_node_name( self, x),
+                reportLQI[item]["Neighbours"][x]["_devicetype"],
+                reportLQI[item]["Neighbours"][x]["_lnkqty"],
+                reportLQI[item]["Neighbours"][x]["_relationshp"]
+            ))
 
     for item in reportLQI:
+        
         if item != "0000" and item not in self.ListOfDevices:
             continue
 
@@ -164,7 +189,7 @@ def extract_report(self, reportLQI):
             # Get nickname
             x_name = get_node_name( self, x)
 
-            self.logging("Debug", "                     ---> %15s (%s) %s %s %s" % (
+            self.logging("Debug2", "                     ---> %15s (%s) %s %s %s" % (
                 x_name, x, 
                 reportLQI[item]["Neighbours"][x]["_relationshp"],
                 reportLQI[item]["Neighbours"][x]["_devicetype"],
@@ -188,17 +213,20 @@ def extract_report(self, reportLQI):
                 _father = item
                 _father_name = item_name
                 _child = x
+                _devicetype = get_device_type(self, x)
                 _child_name = x_name
 
             elif reportLQI[item]["Neighbours"][x]["_relationshp"] == "Child":
                 _father = x
                 _father_name = x_name
                 _child = item
+                _devicetype = get_device_type(self, item)
                 _child_name = item_name
 
-            if ( _father, _child) in _check_duplicate:
+            if ( _father, _child) in _check_duplicate or ( _child, _father) in _check_duplicate:
                 self.logging( "Debug", "Skip (%s,%s) as there is already %s" % ( item, x, str(_check_duplicate)))
                 continue
+            
             _check_duplicate.append(( _father, _child))
 
             # Build the relation for the graph
@@ -206,13 +234,27 @@ def extract_report(self, reportLQI):
             _relation["Father"] = _father_name
             _relation["Child"] = _child_name
             _relation["_lnkqty"] = int(reportLQI[item]["Neighbours"][x]["_lnkqty"], 16)
-            _relation["DeviceType"] = reportLQI[item]["Neighbours"][x]["_devicetype"]
-            self.logging( "Log", "Relationship - %15.15s (%s) - %15.15s (%s) %3s %s" % (
+            _relation["DeviceType"] = _devicetype
+            
+            self.logging( "Debug", "Relationship - %15.15s (%s) - %15.15s (%s) %3s %s" % (
                 _relation["Father"], _father, _relation["Child"], _child, _relation["_lnkqty"], _relation["DeviceType"]),)
             _topo.append(_relation)
-
+            
+    self.logging("Debug", "WebUI report" )
+    for x in _topo:
+        self.logging( "Debug", "Relationship - %15.15s - %15.15s %3s %s" % (
+            x["Father"], x["Child"], x["_lnkqty"], x["DeviceType"]),)
+ 
+    del _check_duplicate
     return _topo
 
+def get_device_type( self, node):
+    if node not in self.ListOfDevices:
+        return '??'
+    if "LogicalType" not in self.ListOfDevices[ node ]:
+        return '??'
+    return self.ListOfDevices[ node ]["LogicalType"]
+        
 def get_node_name( self, node):
     if node == "0000":
         return "Zigbee Controller"
@@ -221,8 +263,7 @@ def get_node_name( self, node):
     if "ZDeviceName" in self.ListOfDevices[node]:
         if self.ListOfDevices[node]["ZDeviceName"] not in ( "",{}):
             return self.ListOfDevices[node]["ZDeviceName"]
-    else:
-        return node
+    return node
     
 def check_sibbling(self, reportLQI):
     # for node1 in sorted(reportLQI):
