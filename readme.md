@@ -83,7 +83,7 @@ In order to provide stability and also provide more recent development, Zigbee f
 
 
 * Not supported
-  * ***beta***: deprecated (will be remove end of February 2022)
+  * ***beta***: lastest version 6.0.15 deprecated (will be remove end of February 2022)
   * ***stable***: latest version 4.11. - Feb. 2021) deprecated
   * ***master***: latest version 3.0. - Sept. 2018) deprecated
 
