@@ -40,7 +40,7 @@ from zigpy.exceptions import DeliveryError, InvalidResponse
 from zigpy_znp.exceptions import CommandNotRecognized, InvalidCommandResponse, InvalidFrame
 
 MAX_CONCURRENT_REQUESTS_PER_DEVICE = 1
-
+CREATE_TASK = True
 
 def start_zigpy_thread(self):
     self.log.logging("TransportZigpy", "Debug", "start_zigpy_thread - Starting zigpy thread")
@@ -327,16 +327,7 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
     if int(NwkId, 16) >= 0xFFFB:  # Broadcast
         destination = int(NwkId, 16)
         self.log.logging("TransportZigpy", "Debug", "process_raw_command  call broadcast destination: %s" % NwkId)
-        result, msg = await self.app.broadcast(
-            Profile,
-            Cluster,
-            sEp,
-            dEp,
-            0x0,
-            0x0,
-            sequence,
-            payload,
-        )
+        result, msg = await self.app.broadcast( Profile, Cluster, sEp, dEp, 0x0, 0x0, sequence, payload, )
 
     elif addressmode == 0x01:
         # Group Mode
@@ -364,20 +355,12 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
             % (destination, Profile, Cluster, sEp, dEp, sequence, payload),
         )
         try:
-            asyncio.create_task(
-                transport_request(
-                    self,
-                    destination,
-                    Profile,
-                    Cluster,
-                    sEp,
-                    dEp,
-                    sequence,
-                    payload,
-                    expect_reply=not AckIsDisable,
-                    use_ieee=False,
-                )
-            )
+            if CREATE_TASK:
+                asyncio.create_task(
+                    transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False, ) )
+            else:
+                await transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False, )
+                
         except DeliveryError as e:
             # This could be relevant to APS NACK after retry
             # Request failed after 5 attempts: <Status.MAC_NO_ACK: 233>
@@ -385,27 +368,15 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
             msg = "%s" % e
             result = 0xB6
 
-        # if result and not AckIsDisable:
-        #     push_APS_ACK_NACKto_plugin(self, NwkId, result, destination.lqi)
-
     elif addressmode in (0x03, 0x08):
         # Nwkid is in fact an IEEE
         destination = self.app.get_device(nwk=t.NWK(int(NwkId, 16)))
         self.log.logging("TransportZigpy", "Debug", "process_raw_command  call request destination: %s" % destination)
-        asyncio.create_task(
-            transport_request(
-                self,
-                destination,
-                Profile,
-                Cluster,
-                sEp,
-                dEp,
-                sequence,
-                payload,
-                expect_reply=not AckIsDisable,
-                use_ieee=False,
-            )
-        )
+        if CREATE_TASK:
+            asyncio.create_task(
+                transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False, ) )
+        else:
+            await transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False, )
 
     if result:
         self.log.logging(
@@ -474,26 +445,24 @@ def log_exception(self, exception, error, cmd, data):
     )
 
 
-async def transport_request(
-    self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=True, use_ieee=False
-):
+async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=True, use_ieee=False ):
     _nwkid = destination.nwk.serialize()[::-1].hex()
     _ieee = str(destination.ieee)
     try:
         async with _limit_concurrency(self, destination, sequence):
-            if _ieee not in self._currently_not_reachable and not self._currently_waiting_requests_list[_ieee]:
-                result, msg = await self.app.request(
-                    destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply, use_ieee
-                )
-                await asyncio.sleep(0.150)
-            else:
+            if _ieee in self._currently_not_reachable and self._currently_waiting_requests_list[_ieee]:
                 self.log.logging(
                     "TransportZigpy",
                     "Debug",
-                    "ZigyTransport: process_raw_command Request %s skipped NwkId: %s not reachable" % (sequence, _nwkid),
+                    "ZigyTransport: process_raw_command Request %s skipped NwkId: %s not reachable - %s %s %s" % (
+                        sequence, _nwkid, _ieee, str(self._currently_not_reachable),self._currently_waiting_requests_list[_ieee] ),
                     _nwkid,
                 )
                 return
+
+            result, msg = await self.app.request( destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply, use_ieee )
+            if self._currently_waiting_requests_list[_ieee]:
+                await asyncio.sleep(0.250)
 
     except DeliveryError as e:
         # This could be relevant to APS NACK after retry
@@ -501,13 +470,13 @@ async def transport_request(
         self.log.logging("TransportZigpy", "Debug", "process_raw_command - DeliveryError : %s" % e, _nwkid)
         msg = "%s" % e
         result = 0xB6
-        self._currently_not_reachable.append(_ieee)
+        self._currently_not_reachable.append( _ieee )
 
     if expect_reply:
         push_APS_ACK_NACKto_plugin(self, _nwkid, result, destination.lqi)
 
-    if _ieee in self._currently_not_reachable:
-        self._currently_not_reachable.remove(_ieee)
+    if result == 0x00 and _ieee in self._currently_not_reachable:
+        self._currently_not_reachable.remove( _ieee )
 
     self.log.logging(
         "TransportZigpy",
