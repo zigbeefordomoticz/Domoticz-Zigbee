@@ -43,7 +43,7 @@ from Modules.legrand_netatmo import (legrand_motion_8085, legrand_motion_8095,
 from Modules.livolo import livolo_read_attribute_request
 from Modules.lumi import AqaraOppleDecoding
 from Modules.mgmt_rtg import mgmt_rtg_rsp
-from Modules.pairingProcess import interview_state_8045
+from Modules.pairingProcess import interview_state_8045, request_next_Ep
 from Modules.pluzzy import pluzzyDecode8102
 from Modules.readClusters import ReadCluster
 from Modules.schneider_wiser import wiser_read_attribute_request
@@ -2232,9 +2232,11 @@ def Decode8043(self, Devices, MsgData, MsgLQI):  # Reception Simple descriptor r
             MsgDataCluster = ""
             i = i + 1
 
-    if self.ListOfDevices[MsgDataShAddr]["Status"] != "inDB":
-        self.ListOfDevices[MsgDataShAddr]["Status"] = "8043"
-        self.ListOfDevices[MsgDataShAddr]["Heartbeat"] = "0"
+    # Let's check if there is any other Ep to be disxcovered
+    if request_next_Ep(self, MsgDataShAddr):
+        if self.ListOfDevices[MsgDataShAddr]["Status"] != "inDB":
+            self.ListOfDevices[MsgDataShAddr]["Status"] = "8043"
+            self.ListOfDevices[MsgDataShAddr]["Heartbeat"] = "0"
 
     self.log.logging(
         "Pairing",
