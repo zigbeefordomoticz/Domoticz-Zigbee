@@ -12,6 +12,9 @@ from Modules.sendZigateCommand import send_zigatecmd_raw
 
 
 def zigate_set_mode(self, mode):
+    if self.zigbee_communitation == "zigpy":
+        self.log.logging( "zigateCommand", "Debug","zigate_set_mode %s not implemennted in zigpy" %mode)
+        return
     self.log.logging( "zigateCommand", "Debug","zigate_set_mode %s" %mode)
     # Mode: cf. https://github.com/fairecasoimeme/ZiGate/pull/307
     #  0x00 - ZiGate in norml operation
@@ -29,9 +32,15 @@ def zigate_set_mode(self, mode):
     return send_zigatecmd_raw(self, "0002", "%02x" % mode)
 
 def zigate_set_loglevel(self, loglevel):
+    if self.zigbee_communitation == "zigpy":
+        self.log.logging( "zigateCommand", "Debug","zigate_set_loglevel %s not implemennted in zigpy" %loglevel)
+        return
     self.log.logging( "zigateCommand", "Debug","zigate_set_loglevel %s" %loglevel)
 
 def zigate_firmware_default_response(self, enable="00"):
+    if self.zigbee_communitation == "zigpy":
+        self.log.logging( "zigateCommand", "Debug","zigate_firmware_default_response %s not implemennted in zigpy" %enable)
+        return
     self.log.logging( "zigateCommand", "Debug","zigate_firmware_default_response %s" %enable)
     return send_zigatecmd_raw(self, "0003", enable)
 
