@@ -1100,8 +1100,11 @@ def zigateInit_Phase1(self):
             return
 
         # After an Erase PDM we have to do a full start of Zigate
-        self.log.logging("Plugin", "Debug", "----> starZigate")
+        self.log.logging("Plugin", "Debug", "----> startZigate")
         return
+    
+    elif self.zigbee_communitation == "zigpy" and Parameters["Mode3"] == "True" and not self.ErasePDMDone:  # Erase PDM
+        update_DB_device_status_to_reinit( self )
 
     self.busy = False
     self.InitPhase1 = True
