@@ -348,7 +348,7 @@ SETTINGS = {
         },
     },
     # Zigate Configuration
-    "ZigateConfiguration": {
+    "CoordinatorConfiguration": {
         "Order": 7,
         "param": {
             "blueLedOnOff": {
