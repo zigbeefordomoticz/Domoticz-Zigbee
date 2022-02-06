@@ -191,7 +191,7 @@ class WebServer(object):
             self.logging("Status", "Erase ZiGate PDM")
             Domoticz.Error("Erase ZiGate PDM non implémenté pour l'instant")
             if self.pluginconf.pluginConf["eraseZigatePDM"]:
-                if self.pluginParameters["Mode2"] != "None":
+                if self.pluginParameters["Mode2"] != "None" and self.zigbee_communitation == "native":
                     sendZigateCmd(self, "0012", "")
                 self.pluginconf.pluginConf["eraseZigatePDM"] = 0
 
@@ -209,7 +209,7 @@ class WebServer(object):
         _response = prepResponseMessage(self, setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == "GET":
-            if self.pluginParameters["Mode2"] != "None":
+            if self.pluginParameters["Mode2"] != "None" and self.zigbee_communitation == "native":
                 self.ControllerData["startZigateNeeded"] = True
                 # start_Zigate( self )
                 sendZigateCmd(self, "0002", "00")  # Force Zigate to Normal mode
@@ -730,7 +730,8 @@ class WebServer(object):
                 # for a remove in case device didn't send the leave
                 if "IEEE" in self.ControllerData and ieee:
                     # uParrentAddress + uChildAddress (uint64)
-                    sendZigateCmd(self, "0026", self.ControllerData["IEEE"] + ieee)
+                    if self.zigbee_communitation == "native":
+                        sendZigateCmd(self, "0026", self.ControllerData["IEEE"] + ieee)
 
                 action = {"Name": "Device %s/%s removed" % (nwkid, ieee)}
                 _response["Data"] = json.dumps(action, sort_keys=True)
