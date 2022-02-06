@@ -88,6 +88,7 @@ def do_rest(self, Connection, verb, data, version, command, parameters):
         "setting-debug": {"Name": "setting", "Verbs": {"GET", "PUT"}, "function": self.rest_Settings_with_debug},
         "setting": {"Name": "setting", "Verbs": {"GET", "PUT"}, "function": self.rest_Settings_wo_debug},
         "sw-reset-zigate": {"Name": "sw-reset-zigate", "Verbs": {"GET"}, "function": self.rest_reset_zigate},
+        "sw-reset-coordinator": {"Name": "sw-reset-zigate", "Verbs": {"GET"}, "function": self.rest_reset_zigate},
         "topologie": {"Name": "topologie", "Verbs": {"GET", "DELETE"}, "function": self.rest_netTopologie},
         "unbinding": {"Name": "unbinding", "Verbs": {"PUT"}, "function": self.rest_unbinding},
         "unbinding-group": {"Name": "unbinding-group", "Verbs": {"PUT"}, "function": self.rest_group_unbinding},
@@ -103,6 +104,13 @@ def do_rest(self, Connection, verb, data, version, command, parameters):
         "zigate-erase-PDM": {"Name": "zigate-erase-PDM", "Verbs": {"GET"}, "function": self.rest_zigate_erase_PDM},
         "zigate-mode": {"Name": "zigate-mode", "Verbs": {"GET"}, "function": self.rest_zigate_mode},
         "zigate": {"Name": "zigate", "Verbs": {"GET"}, "function": self.rest_zigate},
+        
+        "coordinator-erase-PDM": {"Name": "zigate-erase-PDM", "Verbs": {"GET"}, "function": self.rest_zigate_erase_PDM},
+        "coordinator-mode": {"Name": "zigate-mode", "Verbs": {"GET"}, "function": self.rest_zigate_mode},
+        "coordinator": {"Name": "zigate", "Verbs": {"GET"}, "function": self.rest_zigate},
+ 
+ 
+ 
     }
 
     self.logging("Debug", "do_rest - Verb: %s, Command: %s, Param: %s" % (verb, command, parameters))
