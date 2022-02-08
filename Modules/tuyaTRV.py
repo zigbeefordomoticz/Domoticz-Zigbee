@@ -503,6 +503,7 @@ eTRV_MATRIX = {
             0x18: receive_temperature,  # Ok
             0x24: receive_heating_state,
             0x28: receive_childlock,
+            0x1B: receive_calibration,
             0x2B: receive_sensor_mode,
         },
         "ToDevice": {
@@ -511,6 +512,7 @@ eTRV_MATRIX = {
             "ScheduleMode": 0x03,  # 01 Manual, 00 Schedule
             "SetPoint": 0x10,  # Ok
             "ChildLock": 0x28,
+            "Calibration": 0x1B,
             "SensorMode": 0x2B,
         },
     },
