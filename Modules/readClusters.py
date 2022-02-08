@@ -381,7 +381,7 @@ def Cluster0000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             elif manufacturer_name == "_TZ3000_pmz6mjyu":
                 # MOES MS-104BZ-1
                 modelName = "TS011F-2Gang-switches"
-            elif manufacturer_name in ("_TZ3000_cphmq0q7", "_TZ3000_ew3ldmgx", "_TZ3000_dpo1ysak"):
+            elif manufacturer_name in ("_TZ3000_cphmq0q7", "_TZ3000_ew3ldmgx", "_TZ3000_dpo1ysak", "_TZ3000_gjnozsaz"):
                 modelName = "TS011F-plug"
 
         elif modelName == "TS0201":
