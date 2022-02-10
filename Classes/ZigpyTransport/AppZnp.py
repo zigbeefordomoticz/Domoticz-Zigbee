@@ -167,14 +167,14 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
             # This has been handle via on_zdo_mgmt_permitjoin_rsp()
             self.log.logging("TransportZigpy", "Debug", "handle_message 0x8036: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
                 str(sender.nwk), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8")))
-            self.callBackFunction( build_plugin_8014_frame_content (self, str(sender), binascii.hexlify(message).decode("utf-8") ) )
+            self.callBackFunction( build_plugin_8014_frame_content(self, str(sender), binascii.hexlify(message).decode("utf-8") ) )
             return
         
         if cluster == 0x8034:
             # This has been handle via on_zdo_mgmt_leave_rsp()
             self.log.logging("TransportZigpy", "Debug", "handle_message 0x8036: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
                 str(sender.nwk), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8")))
-            self.callBackFunction( build_plugin_8047_frame_content (self, str(sender), binascii.hexlify(message).decode("utf-8")) )
+            self.callBackFunction( build_plugin_8047_frame_content(self, str(sender), binascii.hexlify(message).decode("utf-8")) )
             return
 
         addr = None
@@ -223,10 +223,9 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
 
         return
 
-    async def set_tx_power(self, power):
-        self.log.logging("TransportZigpy", "Debug", "set_tx_power not implemented yet")
-        # something to fix here
-        # await self.set_tx_power(dbm=power)
+    async def set_zigpy_tx_power(self, power):
+        self.log.logging("TransportZigpy", "Debug", "set_tx_power %s" %power)
+        await self.set_tx_power(dbm=power)
 
     async def set_led(self, mode):
         if mode == 1:
@@ -278,4 +277,3 @@ def extract_versioning_for_plugin( znp_model, znp_manuf):
     FirmwareVersion = "%04d" %int(znp_model[ znp_model.find("build") + 10: -1])
         
     return FirmwareBranch, FirmwareMajorVersion, FirmwareVersion
-

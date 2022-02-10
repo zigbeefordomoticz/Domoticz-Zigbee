@@ -245,7 +245,7 @@ class BasePlugin:
         ) = self.ZigateRead_timing_avrg = self.ZigateRead_timing_max = 0
         
         # Zigpy
-        self.zigbee_communitation = None  # "zigpy" or "native"
+        self.zigbee_communitation = "native"  # "zigpy" or "native"
         self.pythonModuleVersion = {}
 
     def onStart(self):
@@ -270,8 +270,9 @@ class BasePlugin:
         elif Parameters["Mode2"] == "None":
             self.transport = "None"
             
-        elif Parameters["Mode1"] in ( "ZigpyZiGate", "ZigpyZNP"):
+        elif Parameters["Mode1"] in ( "ZigpyZiGate", "ZigpyZNP", ):
             self.transport = Parameters["Mode1"]
+            self.zigbee_communitation = "zigpy"
             
         else:
             Domoticz.Error(
@@ -347,7 +348,7 @@ class BasePlugin:
         # Import PluginConf.txt
         Domoticz.Log("load PluginConf")
         self.pluginconf = PluginConf(
-            self.VersionNewFashion, self.DomoticzMajor, self.DomoticzMinor, Parameters["HomeFolder"], self.HardwareID
+            self.zigbee_communitation, self.VersionNewFashion, self.DomoticzMajor, self.DomoticzMinor, Parameters["HomeFolder"], self.HardwareID
         )
 
         # Create the adminStatusWidget if needed
@@ -469,7 +470,6 @@ class BasePlugin:
             self.pythonModuleVersion["dns"] = (dns.__version__)
             check_python_modules_version( self )
             
-            self.zigbee_communitation = "native"
             self.pluginParameters["Zigpy"] = False
             self.ControllerLink= ZigateTransport(
                 self.HardwareID,
@@ -495,7 +495,6 @@ class BasePlugin:
 
             self.pluginconf.pluginConf["ControllerInRawMode"] = False
             switchPiZigate_mode(self, "run")
-            self.zigbee_communitation = "native"
             self.pluginParameters["Zigpy"] = False
             self.ControllerLink= ZigateTransport(
                 self.HardwareID,
@@ -518,7 +517,6 @@ class BasePlugin:
             check_python_modules_version( self )
             
             self.pluginconf.pluginConf["ControllerInRawMode"] = False
-            self.zigbee_communitation = "native"
             self.pluginParameters["Zigpy"] = False
             self.ControllerLink= ZigateTransport(
                 self.HardwareID,
@@ -561,7 +559,6 @@ class BasePlugin:
             check_python_modules_version( self )
             
             
-            self.zigbee_communitation = "zigpy"
             self.pluginParameters["Zigpy"] = True
             Domoticz.Log("Start Zigpy Transport on zigate")
             
@@ -584,7 +581,6 @@ class BasePlugin:
             self.pythonModuleVersion["zigpy_znp"] = (zigpy_znp.__version__)
             check_python_modules_version( self )
             
-            self.zigbee_communitation = "zigpy"
             self.pluginParameters["Zigpy"] = True
             Domoticz.Log("Start Zigpy Transport on ZNP")
             
@@ -1179,7 +1175,7 @@ def zigateInit_Phase3(self):
         zigateBlueLed(self, False)
 
     # Set the TX Power
-    if self.ZiGateModel ==  1:
+    if self.ZiGateModel == 1 or self.zigbee_communitation == "zigpy":
         set_TxPower(self, self.pluginconf.pluginConf["TXpower_set"])
 
     # Set Certification Code

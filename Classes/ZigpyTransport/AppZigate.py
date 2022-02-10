@@ -168,7 +168,7 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
 
         return None
 
-    async def set_tx_power(self, power):
+    async def set_zigpy_tx_power(self, power):
         await self._api.set_tx_power(power)
 
     async def set_led(self, mode):
