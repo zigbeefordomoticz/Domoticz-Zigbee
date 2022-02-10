@@ -1179,7 +1179,7 @@ def zigateInit_Phase3(self):
         zigateBlueLed(self, False)
 
     # Set the TX Power
-    if self.ZiGateModel ==  1:
+    if self.ZiGateModel == 1 or self.zigbee_communitation == "zigpy":
         set_TxPower(self, self.pluginconf.pluginConf["TXpower_set"])
 
     # Set Certification Code
