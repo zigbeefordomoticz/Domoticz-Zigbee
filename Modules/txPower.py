@@ -33,16 +33,11 @@ from Modules.zigateCommands import zigate_set_tx_power, zigate_get_tx_power
 # 
 
 POWER_LEVEL = {0: 00, 1: 52, 2: 40, 3: 32}  # Max (Default)  #  #  # Min
-DBM = { 0: 0, 1:-9, 2:-20, 3: -32}
-
 
 def set_TxPower(self, powerlevel):
 
     if self.zigbee_communitation == "zigpy":
-        dbm = 0
-        if dbm in DBM:
-            dbm = DBM[ powerlevel ]
-        return self.ControllerLink.sendData( "SET-TX-POWER", {"Param1": dbm}) 
+        return self.ControllerLink.sendData( "SET-TX-POWER", {"Param1": powerlevel}) 
         
     if powerlevel not in POWER_LEVEL:
         powerlevel = 0
