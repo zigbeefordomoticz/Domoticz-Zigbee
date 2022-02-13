@@ -4385,8 +4385,11 @@ def Cluster0b04(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value), Attribute_=MsgAttrID)
 
-            # Check if Intensity is below subscription level
-            zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value)
+            # Check if Intensity is below subscription level for oldest version (< 3)
+            if "App Version" in self.ListOfDevices[MsgSrcAddr] and int(self.ListOfDevices[MsgSrcAddr]["App Version"]) > 2:
+                # do nothing - alarm with 0xff66/0x0005 or 0xff66/0x0006:0x0008
+            else:
+                zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value)
 
         else:
             # Other type of devices
@@ -4517,7 +4520,7 @@ def zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value):
     flevel = (value * 100) / Isousc
     self.log.logging(
         "Cluster",
-        "Log",
+        "Debug",
         "zlinky_check_alarm - %s/%s flevel- %s %s %s" % (MsgSrcAddr, MsgSrcEp, value, Isousc, flevel),
         MsgSrcAddr,
     )
@@ -4534,7 +4537,7 @@ def zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value):
         )
         self.log.logging(
             "Cluster",
-            "Log",
+            "Debug",
             "zlinky_check_alarm - %s/%s Alarm-01" % (MsgSrcAddr, MsgSrcEp),
             MsgSrcAddr,
         )
@@ -4550,7 +4553,7 @@ def zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value):
         )
         self.log.logging(
             "Cluster",
-            "Log",
+            "Debug",
             "zlinky_check_alarm - %s/%s Alarm-02" % (MsgSrcAddr, MsgSrcEp),
             MsgSrcAddr,
         )
@@ -4558,7 +4561,7 @@ def zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value):
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0009", "00|Normal", Attribute_="0005")
         self.log.logging(
             "Cluster",
-            "Log",
+            "Debug",
             "zlinky_check_alarm - %s/%s Alarm-03" % (MsgSrcAddr, MsgSrcEp),
             MsgSrcAddr,
         )
