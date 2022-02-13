@@ -4386,9 +4386,7 @@ def Cluster0b04(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value), Attribute_=MsgAttrID)
 
             # Check if Intensity is below subscription level for oldest version (< 3)
-            if "App Version" in self.ListOfDevices[MsgSrcAddr] and int(self.ListOfDevices[MsgSrcAddr]["App Version"]) > 2:
-                # do nothing - alarm with 0xff66/0x0005 or 0xff66/0x0006:0x0008
-            else:
+            if "App Version" in self.ListOfDevices[MsgSrcAddr] and int(self.ListOfDevices[MsgSrcAddr]["App Version"]) < 3:
                 zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value)
 
         else:
