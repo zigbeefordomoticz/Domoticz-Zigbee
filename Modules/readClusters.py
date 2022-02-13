@@ -5154,12 +5154,12 @@ def Clusterff66(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             _tmpattr = "0a08"
 
         if value == 0:
-            MajDomoDevice(self, Devices, MsgSrcAddr, _tmpep, "0009", "00")
+            MajDomoDevice(self, Devices, MsgSrcAddr, _tmpep, "0009", "00|Normal", Attribute_="0005")
             return
 
         # value is equal to the Amper over the souscription
         # Issue critical alarm
-        MajDomoDevice(self, Devices, MsgSrcAddr, _tmpep, "0009", "04")
+        MajDomoDevice(self, Devices, MsgSrcAddr, _tmpep, "0009", "04|Critical", Attribute_="0005")
 
         # Isse Current on the corresponding Ampere
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0b04", str(value), Attribute_=_tmpattr)
