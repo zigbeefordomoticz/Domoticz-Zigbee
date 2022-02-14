@@ -4385,9 +4385,8 @@ def Cluster0b04(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value), Attribute_=MsgAttrID)
 
-            # Check if Intensity is below subscription level for oldest version (< 3)
-            if "App Version" in self.ListOfDevices[MsgSrcAddr] and int(self.ListOfDevices[MsgSrcAddr]["App Version"]) < 3:
-                zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value)
+            # Check if Intensity is below subscription level
+            zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value)
 
         else:
             # Other type of devices
