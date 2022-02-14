@@ -1,5 +1,6 @@
 {
 	"_comment": "Xiaomi Aqara H1 1-gang (neutral wire) WS-EUK03",
+	"_version": "0.1",
 	"Ep": {
 		"01": {
 			"0000": "",
