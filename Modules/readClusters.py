@@ -4517,7 +4517,7 @@ def zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value):
     flevel = (value * 100) / Isousc
     self.log.logging(
         "Cluster",
-        "Log",
+        "Debug",
         "zlinky_check_alarm - %s/%s flevel- %s %s %s" % (MsgSrcAddr, MsgSrcEp, value, Isousc, flevel),
         MsgSrcAddr,
     )
@@ -4534,7 +4534,7 @@ def zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value):
         )
         self.log.logging(
             "Cluster",
-            "Log",
+            "Debug",
             "zlinky_check_alarm - %s/%s Alarm-01" % (MsgSrcAddr, MsgSrcEp),
             MsgSrcAddr,
         )
@@ -4550,7 +4550,7 @@ def zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value):
         )
         self.log.logging(
             "Cluster",
-            "Log",
+            "Debug",
             "zlinky_check_alarm - %s/%s Alarm-02" % (MsgSrcAddr, MsgSrcEp),
             MsgSrcAddr,
         )
@@ -4558,7 +4558,7 @@ def zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value):
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0009", "00|Normal", Attribute_="0005")
         self.log.logging(
             "Cluster",
-            "Log",
+            "Debug",
             "zlinky_check_alarm - %s/%s Alarm-03" % (MsgSrcAddr, MsgSrcEp),
             MsgSrcAddr,
         )
@@ -5154,12 +5154,12 @@ def Clusterff66(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             _tmpattr = "0a08"
 
         if value == 0:
-            MajDomoDevice(self, Devices, MsgSrcAddr, _tmpep, "0009", "00")
+            MajDomoDevice(self, Devices, MsgSrcAddr, _tmpep, "0009", "00|Normal", Attribute_="0005")
             return
 
         # value is equal to the Amper over the souscription
         # Issue critical alarm
-        MajDomoDevice(self, Devices, MsgSrcAddr, _tmpep, "0009", "04")
+        MajDomoDevice(self, Devices, MsgSrcAddr, _tmpep, "0009", "04|Critical", Attribute_="0005")
 
         # Isse Current on the corresponding Ampere
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0b04", str(value), Attribute_=_tmpattr)
