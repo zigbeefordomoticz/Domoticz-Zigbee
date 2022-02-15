@@ -52,7 +52,6 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         await super().connect()
         await super().startup(auto_form=auto_form,force_form=force_form)
         await super().form_network()
-        
         #await super().startup(auto_form=auto_form,)
 
         version_str = await self._api.version_str()
