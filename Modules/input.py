@@ -1109,9 +1109,9 @@ def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
             self.log.logging("Input", "Status", "%s" %FIRMWARE_BRANCH[ self.FirmwareBranch ])
             self.ControllerData["Controller firmware"] = FIRMWARE_BRANCH[ self.FirmwareBranch ]
             # the Build date is coded into "20" + "%02d" %int(FirmwareMajorVersion,16) + "%04d" %int(FirmwareVersion,16)
-            self.ControllerData["Firmware Version"] = "Zigpy-znp, build(20%02d%04d" %( int(self.FirmwareMajorVersion,16), int(self.FirmwareVersion,16))
+            self.ControllerData["Firmware Version"] = "Zigpy-znp, build(20%02d%04d)" %( int(self.FirmwareMajorVersion,16), int(self.FirmwareVersion,16))
             self.ListOfDevices[ '0000' ]['Model'] = FIRMWARE_BRANCH[ self.FirmwareBranch ]
-            self.pluginParameters["Coordinator"] = "Zigpy-znp, build(20%02d%04d" %( int(self.FirmwareMajorVersion,16), int(self.FirmwareVersion,16))
+            self.pluginParameters["Coordinator"] = "Zigpy-znp, build(20%02d%04d)" %( int(self.FirmwareMajorVersion,16), int(self.FirmwareVersion,16))
             
         # Zigate Native version
         elif self.FirmwareMajorVersion == "03":
