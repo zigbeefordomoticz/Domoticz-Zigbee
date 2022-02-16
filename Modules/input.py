@@ -1082,7 +1082,29 @@ def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
     if self.FirmwareBranch in FIRMWARE_BRANCH:
         if int(self.FirmwareBranch) == 99:
             self.log.logging("Input", "Error", "Untested Zigbee adapater model, please report to the Zigbee for Domoticz team")
-        if int(self.FirmwareBranch) >= 20:
+            self.pluginParameters["Coordinator"] = "Unknown"
+           
+        elif int(self.FirmwareBranch) == 11:
+            #Zigpy-Zigate
+            self.log.logging("Input", "Status", "%s" %FIRMWARE_BRANCH[ self.FirmwareBranch ])
+            self.ControllerData["Controller firmware"] = FIRMWARE_BRANCH[ self.FirmwareBranch ]
+            # the Build date is coded into "20" + "%02d" %int(FirmwareMajorVersion,16) + "%04d" %int(FirmwareVersion,16)
+            if int(self.FirmwareMajorVersion,16) == 0x03:
+                version =  "Zigpy-zigate, Zigate V1 (legacy) %04x" %( int(self.FirmwareVersion,16))
+            elif int(self.FirmwareMajorVersion,16) == 0x04:
+                version =  "Zigpy-zigate, Zigate V1 (OptiPDM) %04x" %( int(self.FirmwareVersion,16))
+            elif int(self.FirmwareMajorVersion,16) == 0x05:
+                version =  "Zigpy-zigate, Zigate V2 %04x" %( int(self.FirmwareVersion,16))
+            else:
+                self.log.logging("Input", "Status", "%04x" %int(self.FirmwareMajorVersion,16))
+                version =""
+                
+            self.ControllerData["Firmware Version"] = version
+            self.ListOfDevices[ '0000' ]['Model'] = version
+            self.pluginParameters["Coordinator"] = version
+            
+
+        elif int(self.FirmwareBranch) >= 20:
             # Zigpy-Znp
             self.log.logging("Input", "Status", "%s" %FIRMWARE_BRANCH[ self.FirmwareBranch ])
             self.ControllerData["Controller firmware"] = FIRMWARE_BRANCH[ self.FirmwareBranch ]
