@@ -81,16 +81,16 @@ def build_plugin_8009_frame_content(self, radiomodule):
     self.log.logging(
         "TransportPluginEncoder",
         "Debug",
-        "build_plugin_8009_frame_content %s %s %s %s %s" % (self.app.nwk, self.app.ieee, self.app.extended_pan_id, self.app.pan_id, self.app.channel),
+        "build_plugin_8009_frame_content %s %s %s %s %s" % (self.app.state.node_info.nwk, self.app.state.node_info.ieee, self.app.state.network_info.extended_pan_id, self.app.state.network_info.pan_id, self.app.state.network_info.channel),
     )
-    ieee = "%016x" % t.uint64_t.deserialize(self.app.ieee.serialize())[0]
-    ext_panid = "%016x" % t.uint64_t.deserialize(self.app.extended_pan_id.serialize())[0]
+    ieee = "%016x" % t.uint64_t.deserialize(self.app.state.node_info.ieee.serialize())[0]
+    ext_panid = "%016x" % t.uint64_t.deserialize(self.app.state.network_info.extended_pan_id.serialize())[0]
 
-    frame_payload = "%04x" % self.app.nwk
+    frame_payload = "%04x" % self.app.state.node_info.nwk
     frame_payload += ieee
-    frame_payload += "%04x" % self.app.pan_id
+    frame_payload += "%04x" % self.app.state.network_info.pan_id
     frame_payload += ext_panid
-    frame_payload += "%02x" % self.app.channel
+    frame_payload += "%02x" % self.app.state.network_info.channel
     return encapsulate_plugin_frame("8009", frame_payload, "00")
 
 
