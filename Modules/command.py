@@ -238,7 +238,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             # Profalux offer a Manufacturer command to make Stop on Cluster 0x0008
             profalux_stop(self, NWKID)
 
-        elif DeviceType in ("WindowCovering", "VenetianInverted", "Venetian"):
+        elif DeviceType in ("WindowCovering", "VenetianInverted", "Venetian"): 
             if _model_name in ("PR412", "CPR412", "CPR412-E"):
                 profalux_stop(self, NWKID)
             else:
@@ -430,6 +430,8 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( "PR412", "CPR412", "CPR412-E"):
                 actuator_off(self, NWKID, EPout, "Light")
                 #sendZigateCmd(self, "0092", "02" + NWKID + ZIGATE_EP + EPout + "00")
+            elif "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( "TS130F",):
+                actuator_off(self, NWKID, EPout, "WindowCovering")
             else:
                 actuator_on(self, NWKID, EPout, "WindowCovering")
                 #sendZigateCmd(self, "00FA", "02" + NWKID + ZIGATE_EP + EPout + "00")  # Venetian /Blind (Off, for Close)
@@ -447,7 +449,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
 
         elif DeviceType == "ShutterCalibration":
             self.log.logging("Command", "Debug", "mgtCommand : Disable Window Cover Calibration")
-            tuya_window_cover_calibration(self, NWKID, "00")
+            tuya_window_cover_calibration(self, NWKID, "01")
 
         else:
             # Remaining Slider widget
@@ -585,7 +587,9 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
         elif DeviceType == "Venetian":
             if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ("PR412", "CPR412", "CPR412-E"):
                 actuator_on(self, NWKID, EPout, "Light")
-                #sendZigateCmd(self, "0092", "02" + NWKID + ZIGATE_EP + EPout + "01")
+                #sendZigateCmd(self, "0092", "02" + NWKID + ZIGATE_EP + EPout + "01")        
+            elif "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( "TS130F",):
+                actuator_on(self, NWKID, EPout, "WindowCovering")
             else:
                 actuator_off(self, NWKID, EPout, "WindowCovering")
                 #sendZigateCmd(self, "00FA", "02" + NWKID + ZIGATE_EP + EPout + "01")  # Venetian/Blind (On, for Open)
@@ -599,7 +603,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
 
         elif DeviceType == "ShutterCalibration":
             self.log.logging("Command", "Debug", "mgtCommand : Enable Window Cover Calibration")
-            tuya_window_cover_calibration(self, NWKID, "01")
+            tuya_window_cover_calibration(self, NWKID, "00")
 
         else:
             # Remaining Slider widget
