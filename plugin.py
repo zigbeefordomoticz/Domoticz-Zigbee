@@ -113,7 +113,7 @@ from Modules.input import ZigateRead
 from Modules.piZigate import switchPiZigate_mode
 from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
 from Modules.schneider_wiser import wiser_thermostat_monitoring_heating_demand
-from Modules.tools import removeDeviceInList
+from Modules.tools import removeDeviceInList, how_many_devices
 from Modules.txPower import set_TxPower
 from Modules.zigateCommands import (zigate_erase_eeprom,
                                     zigate_get_firmware_version,
@@ -284,8 +284,14 @@ class BasePlugin:
         # Set plugin heartbeat to 1s
         Domoticz.Heartbeat(1)
 
+
         # Copy the Domoticz.Parameters to a variable accessible in the all objetc
         self.pluginParameters = dict(Parameters)
+
+        self.pluginParameters["CoordinatorIEEE"] = ""
+        self.pluginParameters["CoordinatorModel"] = ""
+        self.pluginParameters["CoordinatorFirmwareVersion"] = ""
+        self.pluginParameters["NetworkSize"] = ""
 
         # Open VERSION file in .hidden
         with open(Parameters["HomeFolder"] + VERSION_FILENAME, "rt") as versionfile:
@@ -312,6 +318,7 @@ class BasePlugin:
         self.HardwareID = Parameters["HardwareID"]
         self.Key = Parameters["Key"]
         lst_version = Parameters["DomoticzVersion"].split(" ")
+
 
         if len(lst_version) == 1:
             # No Build
@@ -1001,6 +1008,9 @@ class BasePlugin:
             self.log.logging("Plugin", "Debug", "Devices size has changed , let's write ListOfDevices on disk")
             WriteDeviceList(self, 0)  # write immediatly
 
+        nbrouters, nbendevices = how_many_devices(self)
+        self.pluginParameters["NetworkSize"] = "Total: %s, Routers: %s End Devices: %s" %( (nbrouters + nbendevices), nbrouters, nbendevices)
+        
         if self.CommiSSionning:
             self.PluginHealth["Flag"] = 2
             self.PluginHealth["Txt"] = "Enrollment in Progress"
