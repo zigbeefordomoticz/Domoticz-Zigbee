@@ -348,7 +348,7 @@ SETTINGS = {
         },
     },
     # Zigate Configuration
-    "ZigateConfiguration": {
+    "CoordinatorConfiguration": {
         "Order": 7,
         "param": {
             "blueLedOnOff": {
@@ -1809,7 +1809,7 @@ SETTINGS = {
 
 
 class PluginConf:
-    def __init__(self, VersionNewFashion, DomoticzMajor, DomoticzMinor, homedir, hardwareid):
+    def __init__(self, zigbee_communication, VersionNewFashion, DomoticzMajor, DomoticzMinor, homedir, hardwareid):
 
         self.pluginConf = {}
         self.homedir = homedir
@@ -1818,6 +1818,7 @@ class PluginConf:
         self.VersionNewFashion = VersionNewFashion
         self.DomoticzMajor = DomoticzMajor
         self.DomoticzMinor = DomoticzMinor
+        self.zigbee_communitation = zigbee_communication 
 
         setup_folder_parameters(self, homedir)
 
@@ -1828,6 +1829,9 @@ class PluginConf:
         else:
             _load_oldfashon(self, homedir, hardwareid)
 
+        if self.zigbee_communitation == "zigpy":
+            zigpy_setup(self)
+            
         # Reset eraseZigatePDM to default
         self.pluginConf["eraseZigatePDM"] = 0
         # Sanity Checks
@@ -1900,6 +1904,8 @@ def _load_Settings(self):
         for param in _pluginConf:
             self.pluginConf[param] = _pluginConf[param]
 
+
+    
     # Check Load
     if is_domoticz_db_available(self) and self.pluginConf["useDomoticzDatabase"]:
         Domoticz.Log("PluginConf Loaded from Dz: %s from Json: %s" % (len(_domoticz_pluginConf), len(_pluginConf)))
@@ -1994,6 +2000,22 @@ def _param_checking(self):
                 Domoticz.Status("%s set to %s" % (param, self.pluginConf[param]))
 
 
+def zigpy_setup(self):
+
+    for theme in SETTINGS:
+        for param in SETTINGS[theme]["param"]:
+            if param == "TXpower_set":
+                SETTINGS[theme]["param"][param] = {
+                    "type": "int",
+                    "default": 0,
+                    "current": None,
+                    "restart": 0,
+                    "hidden": False,
+                    "Advanced": True,
+                }
+                
+        
+        
 def setup_folder_parameters(self, homedir):
     for theme in SETTINGS:
         for param in SETTINGS[theme]["param"]:

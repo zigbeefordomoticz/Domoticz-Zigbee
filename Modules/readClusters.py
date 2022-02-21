@@ -234,6 +234,7 @@ def ReadCluster(
         "e000": Clustere000,
         "e001": Clustere001,
         "fc01": Clusterfc01,
+        "fc03": Clusterfc03,
         "fc21": Clusterfc21,
         "fcc0": Clusterfcc0,
         "fc40": Clusterfc40,
@@ -752,6 +753,22 @@ def Cluster0000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.ListOfDevices[MsgSrcAddr]["Battery0016"] = decodeAttribute(self, MsgAttType, MsgClusterData)
         self.ListOfDevices[MsgSrcAddr]["BatteryUpdateTime"] = int(time())
 
+    elif MsgAttrID == "0020":
+        self.log.logging(
+            "Cluster",
+            "Debug",
+            "ReadCluster - 0x0000 - Attribut %s: %s" % (MsgAttrID, str(decodeAttribute(self, MsgAttType, MsgClusterData))),
+            MsgSrcAddr,
+        )
+ 
+    elif MsgAttrID == "0021":
+        self.log.logging(
+            "Cluster",
+            "Debug",
+            "ReadCluster - 0x0000 - Attribut %s: %s" %(MsgAttrID, str(decodeAttribute(self, MsgAttType, MsgClusterData))),
+            MsgSrcAddr,
+        )
+ 
     elif MsgAttrID == "4000":  # SW Build
         self.log.logging(
             "Cluster",
@@ -1192,7 +1209,8 @@ def UpdateBatteryAttribute(self, Devices, MsgSrcAddr, MsgSrcEp):
         self.log.logging(
             "Cluster",
             "Debug",
-            "readCluster 0001 - Device: %s Model: %s Updating battery %s to %s" % (MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]["Model"], self.ListOfDevices[MsgSrcAddr]["Battery"], value),
+            "readCluster 0001 - Device: %s Model: %s Updating battery %s to %s" % (
+                MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]["Model"], self.ListOfDevices[MsgSrcAddr]["Battery"], value),
             MsgSrcAddr,
         )
         if value != self.ListOfDevices[MsgSrcAddr]["Battery"]:
@@ -1209,7 +1227,7 @@ def UpdateBatteryAttribute(self, Devices, MsgSrcAddr, MsgSrcEp):
 
 def Cluster0002(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
     # Device Temperature Configuration
-    if MsgAttrID == "0000": # CurrentTemperature
+    if MsgAttrID == "0000":   # CurrentTemperature
         value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
         # Store value in int centi-degre
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
@@ -3724,7 +3742,7 @@ def Cluster0500(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
                 batdef,
             )
             self.ListOfDevices[MsgSrcAddr]["IAS"][MsgSrcEp]["ZoneStatus"]["TimeStamp"] = int(time())
-            if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ("RC-EF-3.0", "RC-EM"): # alarm1 or alarm2 not used on thoses devices
+            if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ("RC-EF-3.0", "RC-EM"):   # alarm1 or alarm2 not used on thoses devices
                 return
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, "%02d" % (alarm1 or alarm2))
 
@@ -4517,7 +4535,7 @@ def zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value):
     flevel = (value * 100) / Isousc
     self.log.logging(
         "Cluster",
-        "Log",
+        "Debug",
         "zlinky_check_alarm - %s/%s flevel- %s %s %s" % (MsgSrcAddr, MsgSrcEp, value, Isousc, flevel),
         MsgSrcAddr,
     )
@@ -4534,7 +4552,7 @@ def zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value):
         )
         self.log.logging(
             "Cluster",
-            "Log",
+            "Debug",
             "zlinky_check_alarm - %s/%s Alarm-01" % (MsgSrcAddr, MsgSrcEp),
             MsgSrcAddr,
         )
@@ -4550,7 +4568,7 @@ def zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value):
         )
         self.log.logging(
             "Cluster",
-            "Log",
+            "Debug",
             "zlinky_check_alarm - %s/%s Alarm-02" % (MsgSrcAddr, MsgSrcEp),
             MsgSrcAddr,
         )
@@ -4558,7 +4576,7 @@ def zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value):
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0009", "00|Normal", Attribute_="0005")
         self.log.logging(
             "Cluster",
-            "Log",
+            "Debug",
             "zlinky_check_alarm - %s/%s Alarm-03" % (MsgSrcAddr, MsgSrcEp),
             MsgSrcAddr,
         )
@@ -4982,7 +5000,17 @@ def Clusterfc01(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             # Enable Led if On
             self.ListOfDevices[MsgSrcAddr]["Legrand"]["EnableLedIfOn"] = int(MsgClusterData, 16)
 
+            
+def Clusterfc03(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
+    # Philips cluster - NOT IMPLEMENTED
+    self.log.logging(
+        "Cluster",
+        "Debug",
+        "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+        MsgSrcAddr,
+    )
 
+    
 def Clusterfc40(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
 
     self.log.logging(
@@ -5154,12 +5182,12 @@ def Clusterff66(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             _tmpattr = "0a08"
 
         if value == 0:
-            MajDomoDevice(self, Devices, MsgSrcAddr, _tmpep, "0009", "00")
+            MajDomoDevice(self, Devices, MsgSrcAddr, _tmpep, "0009", "00|Normal", Attribute_="0005")
             return
 
         # value is equal to the Amper over the souscription
         # Issue critical alarm
-        MajDomoDevice(self, Devices, MsgSrcAddr, _tmpep, "0009", "04")
+        MajDomoDevice(self, Devices, MsgSrcAddr, _tmpep, "0009", "04|Critical", Attribute_="0005")
 
         # Isse Current on the corresponding Ampere
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0b04", str(value), Attribute_=_tmpattr)

@@ -7,12 +7,10 @@
 import json
 import os
 import os.path
-from datetime import datetime
 from time import time
 
 import Domoticz
-from Classes.WebServer.headerResponse import (prepResponseMessage,
-                                              setupHeadersResponse)
+from Classes.WebServer.headerResponse import (prepResponseMessage, setupHeadersResponse)
 
 
 def rest_req_topologie(self, verb, data, parameters):
@@ -31,6 +29,12 @@ def rest_req_topologie(self, verb, data, parameters):
                 self.logging("Log", "Cannot start Network Topology as one is in progress...")
 
     return _response
+
+
+def dummy_topology_report( ):
+    
+    return [{"Child": "IAS Sirene", "DeviceType": "Router", "Father": "Zigbee Coordinator", "_lnkqty": 58}, {"Child": "IAS Sirene", "DeviceType": "Router", "Father": "Led LKex", "_lnkqty": 252}, {"Child": "IAS Sirene", "DeviceType": "Router", "Father": "Led Ikea", "_lnkqty": 241}, {"Child": "OnOff Ikea", "DeviceType": "End Device", "Father": "IAS Sirene", "_lnkqty": 255}, {"Child": "Repeater", "DeviceType": "Coordinator", "Father": "Zigbee Coordinator", "_lnkqty": 254}, {"Child": "Repeater", "DeviceType": "Router", "Father": "Led LKex", "_lnkqty": 196}, {"Child": "Repeater", "DeviceType": "Router", "Father": "Led Ikea", "_lnkqty": 254}, {"Child": "Motion frient", "DeviceType": "End Device", "Father": "Repeater", "_lnkqty": 168}, {"Child": "Dim Ikea", "DeviceType": "End Device", "Father": "Repeater", "_lnkqty": 89}, {"Child": "Led LKex", "DeviceType": "Coordinator", "Father": "Zigbee Coordinator", "_lnkqty": 254}, {"Child": "Led LKex", "DeviceType": "Router", "Father": "Led Ikea", "_lnkqty": 244}, {"Child": "Lumi Door", "DeviceType": "End Device", "Father": "Led LKex", "_lnkqty": 211}, {"Child": "Wiser Thermostat", "DeviceType": "End Device", "Father": "Led LKex", "_lnkqty": 223}, {"Child": "Led Ikea", "DeviceType": "Coordinator", "Father": "Zigbee Coordinator", "_lnkqty": 60}, {"Child": "Led Ikea", "DeviceType": "Router", "Father": "Led LKex", "_lnkqty": 101}, {"Child": "Remote Tradfri", "DeviceType": "End Device", "Father": "Led Ikea", "_lnkqty": 194}, {"Child": "Inter Shutter Legrand", "DeviceType": "Router", "Father": "Led Ikea", "_lnkqty": 133}, {"Child": "Inter Shutter Legrand", "DeviceType": "Coordinator", "Father": "Zigbee Coordinator", "_lnkqty": 241}, {"Child": "Inter Shutter Legrand", "DeviceType": "Router", "Father": "Led LKex", "_lnkqty": 164}, {"Child": "Lumi Motion", "DeviceType": "End Device", "Father": "Inter Shutter Legrand", "_lnkqty": 242}, {"Child": "Inter Dimmer Legrand", "DeviceType": "Coordinator", "Father": "Zigbee Coordinator", "_lnkqty": 254}, {"Child": "Inter Dimmer Legrand", "DeviceType": "Router", "Father": "Led LKex", "_lnkqty": 215}, {"Child": "Inter Dimmer Legrand", "DeviceType": "Router", "Father": "Led Ikea", "_lnkqty": 254}, {"Child": "Micromodule Legrand", "DeviceType": "Coordinator", "Father": "Zigbee Coordinator", "_lnkqty": 252}, {"Child": "Micromodule Legrand", "DeviceType": "Router", "Father": "Led LKex", "_lnkqty": 252}, {"Child": "Micromodule Legrand", "DeviceType": "Router", "Father": "Led Ikea", "_lnkqty": 252}]
+
 
 
 def rest_netTopologie(self, verb, data, parameters):
@@ -97,17 +101,25 @@ def rest_netTopologie(self, verb, data, parameters):
         return _response
 
     if verb == "GET":
+        
+            
         if len(parameters) == 0:
             # Send list of Time Stamps
+            if len(self.ControllerData) == 0:
+                _timestamps_lst = [1643561599, 1643564628]
             _response["Data"] = json.dumps(_timestamps_lst, sort_keys=True)
 
         elif len(parameters) == 1:
-            timestamp = parameters[0]
-            if timestamp in _topo:
-                self.logging("Debug", "Topologie sent: %s" % _topo[timestamp])
-                _response["Data"] = json.dumps(_topo[timestamp], sort_keys=True)
-            else:
-                _response["Data"] = json.dumps([], sort_keys=True)
+
+                if len(self.ControllerData) == 0:
+                    _response["Data"] = json.dumps(dummy_topology_report( ), sort_keys=True)
+                else:
+                    timestamp = parameters[0]
+                    if timestamp in _topo:
+                        self.logging("Debug", "Topologie sent: %s" % _topo[timestamp])
+                        _response["Data"] = json.dumps(_topo[timestamp], sort_keys=True)
+                    else:
+                        _response["Data"] = json.dumps([], sort_keys=True)
 
     return _response
 
@@ -123,43 +135,75 @@ def is_sibling_required(reportLQI):
 
 
 def extract_report(self, reportLQI):
-    _check_duplicate = []
-    _nwkid_list = []
-    _topo = []
+    _check_duplicate = []  # List of tuble ( item, x) to prevent adding twice the same relation
+
+    _topo = []  # Use to store the list to be send to the Browser
+
+    self.logging("Debug", "RAW report" )
+    for item in reportLQI:
+        for x in reportLQI[item]["Neighbours"]:
+            self.logging("Debug", "%s - %s - %s - %s - %s - %s" %(
+                get_node_name( self, item),
+                reportLQI[item]["Neighbours"][x]["_relationshp"],
+                get_node_name( self, x),
+                reportLQI[item]["Neighbours"][x]["_devicetype"],
+                reportLQI[item]["Neighbours"][x]["_lnkqty"],
+                reportLQI[item]["Neighbours"][x]["_relationshp"]
+            ))
 
     if is_sibling_required(reportLQI) or self.pluginconf.pluginConf["Sibling"]:
         reportLQI = check_sibbling(self, reportLQI)
+    
+    self.logging("Debug", "AFTER Sibling report" )
+    for item in reportLQI:
+        for x in reportLQI[item]["Neighbours"]:
+            self.logging("Debug", "%s - %s - %s - %s - %s - %s" %(
+                get_node_name( self, item),
+                reportLQI[item]["Neighbours"][x]["_relationshp"],
+                get_node_name( self, x),
+                reportLQI[item]["Neighbours"][x]["_devicetype"],
+                reportLQI[item]["Neighbours"][x]["_lnkqty"],
+                reportLQI[item]["Neighbours"][x]["_relationshp"]
+            ))
 
     for item in reportLQI:
-        self.logging("Debug", "Node: %s" % item)
+        
         if item != "0000" and item not in self.ListOfDevices:
             continue
 
-        if item not in _nwkid_list:
-            _nwkid_list.append(item)
+        # Get the Nickname
+        item_name = get_node_name( self, item)
 
+        self.logging("Debug", "extract_report - found item: %s - %s" %(item, item_name))
+
+        # Let browse the neighbours
         for x in reportLQI[item]["Neighbours"]:
-            self.logging("Debug", "---> %s" % x)
-            # Report only Child relationship
+            # Check it exists
             if x != "0000" and x not in self.ListOfDevices:
                 continue
+
+            # Check it is not the main item
             if item == x:
                 continue
+
+            # Get nickname
+            x_name = get_node_name( self, x)
+
+            self.logging("Debug2", "                     ---> %15s (%s) %s %s %s" % (
+                x_name, x, 
+                reportLQI[item]["Neighbours"][x]["_relationshp"],
+                reportLQI[item]["Neighbours"][x]["_devicetype"],
+                int(reportLQI[item]["Neighbours"][x]["_lnkqty"], 16) ))
+
+            # Report only Child relationship
             if "Neighbours" not in reportLQI[item]:
-                Domoticz.Error("Missing attribute :%s for (%s,%s)" % ("Neighbours", item, x))
+                self.logging("Error", "Missing attribute :%s for (%s,%s)" % ("Neighbours", item, x))
                 continue
 
-            for attribute in (
-                "_relationshp",
-                "_lnkqty",
-                "_devicetype",
-            ):
+            for attribute in ( "_relationshp", "_lnkqty", "_devicetype", ):
                 if attribute not in reportLQI[item]["Neighbours"][x]:
-                    Domoticz.Error("Missing attribute :%s for (%s,%s)" % (attribute, item, x))
+                    self.logging("Error", "Missing attribute :%s for (%s,%s)" % (attribute, item, x))
                     continue
-
-            if x not in _nwkid_list:
-                _nwkid_list.append(x)
 
             # We need to reorganise in Father/Child relationship.
             if reportLQI[item]["Neighbours"][x]["_relationshp"] in ("Former Child", "None", "Sibling"):
@@ -167,60 +211,60 @@ def extract_report(self, reportLQI):
 
             if reportLQI[item]["Neighbours"][x]["_relationshp"] == "Parent":
                 _father = item
+                _father_name = item_name
                 _child = x
+                _devicetype = get_device_type(self, x)
+                _child_name = x_name
 
             elif reportLQI[item]["Neighbours"][x]["_relationshp"] == "Child":
                 _father = x
+                _father_name = x_name
                 _child = item
+                _devicetype = get_device_type(self, item)
+                _child_name = item_name
 
-            _relation = {}
-            _relation["Father"] = _father
-            _relation["Child"] = _child
-            _relation["_lnkqty"] = int(reportLQI[item]["Neighbours"][x]["_lnkqty"], 16)
-            _relation["DeviceType"] = reportLQI[item]["Neighbours"][x]["_devicetype"]
-
-            if _father != "0000":
-                if "ZDeviceName" in self.ListOfDevices[_father]:
-                    if (
-                        self.ListOfDevices[_father]["ZDeviceName"] != ""
-                        and self.ListOfDevices[_father]["ZDeviceName"] != {}
-                    ):
-                        # _relation[master] = self.ListOfDevices[_father]['ZDeviceName']
-                        _relation["Father"] = self.ListOfDevices[_father]["ZDeviceName"]
-            else:
-                _relation["Father"] = "Zigbee Controller"
-
-            if _child != "0000":
-                if "ZDeviceName" in self.ListOfDevices[_child]:
-                    if (
-                        self.ListOfDevices[_child]["ZDeviceName"] != ""
-                        and self.ListOfDevices[_child]["ZDeviceName"] != {}
-                    ):
-                        # _relation[slave] = self.ListOfDevices[_child]['ZDeviceName']
-                        _relation["Child"] = self.ListOfDevices[_child]["ZDeviceName"]
-            else:
-                _relation["Child"] = "Zigbee Controller"
-
-            # Sanity check, remove the direct loop
-            if (_relation["Child"], _relation["Father"]) in _check_duplicate:
-                self.logging(
-                    "Debug",
-                    "Skip (%s,%s) as there is already ( %s, %s)"
-                    % (_relation["Father"], _relation["Child"], _relation["Child"], _relation["Father"]),
-                )
+            if ( _father, _child) in _check_duplicate or ( _child, _father) in _check_duplicate:
+                self.logging( "Debug", "Skip (%s,%s) as there is already %s" % ( item, x, str(_check_duplicate)))
                 continue
+            
+            _check_duplicate.append(( _father, _child))
 
-            _check_duplicate.append((_relation["Father"], _relation["Child"]))
-            self.logging(
-                "Debug",
-                "Relationship - %15.15s - %15.15s %3s"
-                % (_relation["Father"], _relation["Child"], _relation["_lnkqty"]),
-            )
+            # Build the relation for the graph
+            _relation = {}
+            _relation["Father"] = _father_name
+            _relation["Child"] = _child_name
+            _relation["_lnkqty"] = int(reportLQI[item]["Neighbours"][x]["_lnkqty"], 16)
+            _relation["DeviceType"] = _devicetype
+            
+            self.logging( "Debug", "Relationship - %15.15s (%s) - %15.15s (%s) %3s %s" % (
+                _relation["Father"], _father, _relation["Child"], _child, _relation["_lnkqty"], _relation["DeviceType"]),)
             _topo.append(_relation)
-
+            
+    self.logging("Debug", "WebUI report" )
+    for x in _topo:
+        self.logging( "Debug", "Relationship - %15.15s - %15.15s %3s %s" % (
+            x["Father"], x["Child"], x["_lnkqty"], x["DeviceType"]),)
+ 
+    del _check_duplicate
     return _topo
 
-
+def get_device_type( self, node):
+    if node not in self.ListOfDevices:
+        return '??'
+    if "LogicalType" not in self.ListOfDevices[ node ]:
+        return '??'
+    return self.ListOfDevices[ node ]["LogicalType"]
+        
+def get_node_name( self, node):
+    if node == "0000":
+        return "Zigbee Coordinator"
+    if node not in self.ListOfDevices:
+        return node
+    if "ZDeviceName" in self.ListOfDevices[node]:
+        if self.ListOfDevices[node]["ZDeviceName"] not in ( "",{}):
+            return self.ListOfDevices[node]["ZDeviceName"]
+    return node
+    
 def check_sibbling(self, reportLQI):
     # for node1 in sorted(reportLQI):
     #    for node2 in list(reportLQI[node1]['Neighbours']):

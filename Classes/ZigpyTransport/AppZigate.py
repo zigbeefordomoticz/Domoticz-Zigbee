@@ -52,9 +52,14 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         #await super().startup(auto_form=auto_form,)
 
         version_str = await self._api.version_str()
+        version_intmajor, version_intminor = await self._api.version_int()
+        self.log.logging("TransportZigpy", "Debug", "App - version_str: %s" % (version_str ))
+        self.log.logging("TransportZigpy", "Debug", "App - version_int: %s / %s" % (version_intmajor, version_intminor ))
+        
         Model = "11"  # Zigpy
-        FirmwareMajorVersion = version_str[2:4]
-        FirmwareVersion = "%04x" % await self._api.version_int()
+        FirmwareMajorVersion = "%02x" %version_intmajor
+        FirmwareVersion = "%04x" % version_intminor
+        
         self.callBackFunction(build_plugin_8010_frame_content(Model, FirmwareMajorVersion, FirmwareVersion))
 
     def get_device(self, ieee=None, nwk=None):
@@ -168,7 +173,7 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
 
         return None
 
-    async def set_tx_power(self, power):
+    async def set_zigpy_tx_power(self, power):
         await self._api.set_tx_power(power)
 
     async def set_led(self, mode):

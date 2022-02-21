@@ -113,4 +113,4 @@ def zdp_unbinding_device(self, ieee, ep, cluster, addrmode, destaddr, destep):
 def zdp_nwk_lqi_request( self, nwkid, start):
     if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return zdp_raw_nwk_lqi_request(self, nwkid, start)
-    return send_zigatecmd_raw(self, "0030", nwkid + start)
+    return send_zigatecmd_raw(self, "004E", nwkid + start)

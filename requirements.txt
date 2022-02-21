@@ -2,7 +2,6 @@ aiohttp==3.8.1
 aiosignal==1.2.0
 aiosqlite==0.17.0
 async-timeout==4.0.2
-attr==0.3.1
 attrs==21.4.0
 charset-normalizer==2.0.10
 crccheck==1.1
