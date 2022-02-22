@@ -870,7 +870,11 @@ def check_image_valid_version(self, brand, image_type, ota_image_file, headers):
     if existing_image is None:
         # Strange
         return False
-    brand, ota_image_file = existing_image
+
+    brand_image, ota_image_file = existing_image
+    if brand != brand_image:
+        return True
+
     existing_image = self.ListOfImages["Brands"][brand][ota_image_file]
     if existing_image["originalVersion"] >= headers["image_version"]:
         # The up coming Image is older than the one already scaned

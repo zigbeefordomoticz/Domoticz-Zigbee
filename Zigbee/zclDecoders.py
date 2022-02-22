@@ -306,9 +306,12 @@ def buildframe_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPo
     self.log.logging("zclDecoder", "Debug", "buildframe_configure_reporting_response - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
 
     if len(Data) == 2:
+        # The response tells that all Attributes have been correctly configured
+        # in that case Data == Status as Direction and Attribute are omitted.
         nbAttribute = 1
         buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId + Data
     else:
+        # The response details the status per attribute
         idx = 0
         nbAttribute = 0
         buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId
@@ -321,7 +324,6 @@ def buildframe_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPo
             Attribute = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[idx : idx + 4], 16)))[0]
             idx += 4
             buildPayload += Attribute + Status
-        return frame
 
     return encapsulate_plugin_frame("8120", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 

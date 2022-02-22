@@ -43,7 +43,7 @@ from Modules.legrand_netatmo import (legrand_motion_8085, legrand_motion_8095,
 from Modules.livolo import livolo_read_attribute_request
 from Modules.lumi import AqaraOppleDecoding
 from Modules.mgmt_rtg import mgmt_rtg_rsp
-from Modules.pairingProcess import interview_state_8045
+from Modules.pairingProcess import interview_state_8045, request_next_Ep
 from Modules.pluzzy import pluzzyDecode8102
 from Modules.readClusters import ReadCluster
 from Modules.schneider_wiser import wiser_read_attribute_request
@@ -294,7 +294,7 @@ def Decode0042(self, Devices, MsgData, MsgLQI):  # Node_Desc_req
         max_out_size16 = "%04x" % struct.unpack("H", struct.pack(">H", int(self.ListOfDevices[ "0000" ]["Max Tx"], 16)))[0] 
         server_mask16 = "%04x" % struct.unpack("H", struct.pack(">H", int(self.ListOfDevices[ "0000" ]["server_mask"], 16)))[0]
         descriptor_capability8 = self.ListOfDevices[ "0000" ]["descriptor_capability"]
-        mac_capa8 = self.ListOfDevices[ "0000" ]["macap"]
+        mac_capa8 = self.ListOfDevices[ "0000" ]["macapa"]
         max_buf_size8 = self.ListOfDevices[ "0000" ]["Max buffer Size"]
         bitfield16 = "%04x" % struct.unpack("H", struct.pack(">H", int(self.ListOfDevices[ "0000" ]["bitfield"], 16)))[0]
         
@@ -1001,6 +1001,7 @@ def Decode8009(self, Devices, MsgData, MsgLQI):  # Network State response (Firm 
         # In order to update the first time
         self.adminWidgets.updateNotificationWidget(Devices, "Zigate IEEE: %s" % extaddr)
 
+    self.pluginParameters["CoordinatorIEEE"] = extaddr
     self.ControllerIEEE = extaddr
     self.ControllerNWKID = addr
 
@@ -1063,6 +1064,7 @@ def Decode8009(self, Devices, MsgData, MsgLQI):  # Network State response (Firm 
     self.ControllerData["Channel"] = int(Channel, 16)
     self.ControllerData["PANID"] = PanID
     self.ControllerData["Extended PANID"] = extPanID
+    self.pluginParameters["CoordinatorIEEE"] = extaddr
     
 def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
     # MsgLen = len(MsgData)
@@ -1071,32 +1073,72 @@ def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
     self.FirmwareMajorVersion = MsgData[2:4]
     self.FirmwareVersion = MsgData[4:8]
 
+    if '0000' not in self.ListOfDevices:
+        self.ListOfDevices['0000'] = {}
+    if 'Model' not in self.ListOfDevices[ '0000' ]:
+        self.ListOfDevices[ '0000' ]['Model'] = {}
+        
     self.log.logging("Input", "Debug", "Decode8010 - Reception Version list:%s Branch: %s Major: %s Version: %s" % (
         MsgData, self.FirmwareBranch, self.FirmwareMajorVersion, self.FirmwareVersion))
     
     if self.FirmwareBranch in FIRMWARE_BRANCH:
         if int(self.FirmwareBranch) == 99:
             self.log.logging("Input", "Error", "Untested Zigbee adapater model, please report to the Zigbee for Domoticz team")
-        if int(self.FirmwareBranch) >= 20:
-            # Zigpy-Znp
+            self.pluginParameters["CoordinatorModel"] = "Unknown model"
+           
+        elif int(self.FirmwareBranch) == 11:
+            #Zigpy-Zigate
             self.log.logging("Input", "Status", "%s" %FIRMWARE_BRANCH[ self.FirmwareBranch ])
             self.ControllerData["Controller firmware"] = FIRMWARE_BRANCH[ self.FirmwareBranch ]
             # the Build date is coded into "20" + "%02d" %int(FirmwareMajorVersion,16) + "%04d" %int(FirmwareVersion,16)
-            self.ControllerData["Firmware Version"] = "Zigpy-znp, build(20%02d%04d" %( int(self.FirmwareMajorVersion,16), int(self.FirmwareVersion,16))
+            if int(self.FirmwareMajorVersion,16) == 0x03:
+                version =  "Zigpy-zigate, Zigate V1 (legacy) %04x" %( int(self.FirmwareVersion,16))
+                self.pluginParameters["CoordinatorModel"] = "Zigate V1 (legacy)"
+                self.pluginParameters["CoordinatorFirmwareVersion"] = "%04x" %( int(self.FirmwareVersion,16))
+                
+            elif int(self.FirmwareMajorVersion,16) == 0x04:
+                version =  "Zigpy-zigate, Zigate V1 (OptiPDM) %04x" %( int(self.FirmwareVersion,16))
+                self.pluginParameters["CoordinatorModel"] = "Zigate V1 (OptiPDM)"
+                self.pluginParameters["CoordinatorFirmwareVersion"] = "%04x" %( int(self.FirmwareVersion,16))
+                
+            elif int(self.FirmwareMajorVersion,16) == 0x05:
+                version =  "Zigpy-zigate, Zigate V2 %04x" %( int(self.FirmwareVersion,16))
+                self.pluginParameters["CoordinatorModel"] = "Zigate V2"
+                self.pluginParameters["CoordinatorFirmwareVersion"] = "%04x" %( int(self.FirmwareVersion,16))
+
+            else:
+                self.log.logging("Input", "Status", "%04x" %int(self.FirmwareMajorVersion,16))
+                version =""
+
+        elif int(self.FirmwareBranch) >= 20:
+            # Zigpy-Znp
+            self.log.logging("Input", "Status", "%s" %FIRMWARE_BRANCH[ self.FirmwareBranch ])
+            # the Build date is coded into "20" + "%02d" %int(FirmwareMajorVersion,16) + "%04d" %int(FirmwareVersion,16)
+            self.ListOfDevices[ '0000' ]['Model'] = FIRMWARE_BRANCH[ self.FirmwareBranch ]
+            self.pluginParameters["CoordinatorModel"] = FIRMWARE_BRANCH[ self.FirmwareBranch ]
+            self.pluginParameters["CoordinatorFirmwareVersion"] = "%04x" %( int(self.FirmwareVersion,16))
 
         # Zigate Native version
         elif self.FirmwareMajorVersion == "03":
             self.log.logging("Input", "Status", "ZiGate Classic PDM (legacy)")
             self.ZiGateModel = 1
-            
+            self.ListOfDevices[ '0000' ]['Model'] = 'ZiGate Classic PDM (legacy)'
+            self.pluginParameters["CoordinatorModel"] = 'ZiGate Classic PDM (legacy)'
+            self.pluginParameters["CoordinatorFirmwareVersion"] = "%04x" %( int(self.FirmwareVersion,16))
+
         elif self.FirmwareMajorVersion == "04":
             self.log.logging("Input", "Status", "ZiGate Classic PDM (OptiPDM)")
             self.ZiGateModel = 1
-            
+            self.ListOfDevices[ '0000' ]['Model'] = 'ZiGate Classic PDM (OptiPDM)'
+            self.pluginParameters["CoordinatorModel"] = 'ZiGate Classic PDM (OptiPDM)'
+            self.pluginParameters["CoordinatorFirmwareVersion"] = "%04x" %( int(self.FirmwareVersion,16))
+
         elif self.FirmwareMajorVersion == "05":
             self.log.logging("Input", "Status", "ZiGate+ (V2)")
+            self.ListOfDevices[ '0000' ]['Model'] = 'ZiGate+ (V2)'
             self.ZiGateModel = 2
-
+            self.pluginParameters["CoordinatorModel"] = 'ZiGate+ (V2)'
+            self.pluginParameters["CoordinatorFirmwareVersion"] = "%04x" %( int(self.FirmwareVersion,16))
 
         self.log.logging("Input", "Status", "Installer Version Number: %s" % self.FirmwareVersion)
         self.log.logging("Input", "Status", "Branch Version: ==> %s <==" % FIRMWARE_BRANCH[self.FirmwareBranch])
@@ -1450,6 +1492,7 @@ def Decode8024(self, Devices, MsgData, MsgLQI):  # Network joined / formed
         self.currentChannel = int(MsgChannel, 16)
         self.ControllerIEEE = MsgExtendedAddress
         self.ControllerNWKID = MsgShortAddress
+        self.pluginParameters["CoordinatorIEEE"] = MsgExtendedAddress
         if self.iaszonemgt:
             self.iaszonemgt.setZigateIEEE(MsgExtendedAddress)
 
@@ -2224,9 +2267,11 @@ def Decode8043(self, Devices, MsgData, MsgLQI):  # Reception Simple descriptor r
             MsgDataCluster = ""
             i = i + 1
 
-    if self.ListOfDevices[MsgDataShAddr]["Status"] != "inDB":
-        self.ListOfDevices[MsgDataShAddr]["Status"] = "8043"
-        self.ListOfDevices[MsgDataShAddr]["Heartbeat"] = "0"
+    # Let's check if there is any other Ep to be disxcovered
+    if request_next_Ep(self, MsgDataShAddr):
+        if self.ListOfDevices[MsgDataShAddr]["Status"] != "inDB":
+            self.ListOfDevices[MsgDataShAddr]["Status"] = "8043"
+            self.ListOfDevices[MsgDataShAddr]["Heartbeat"] = "0"
 
     self.log.logging(
         "Pairing",

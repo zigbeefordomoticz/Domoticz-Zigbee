@@ -398,8 +398,8 @@ def LQIreq(self, nwkid="0000"):
         self.Neighbours[nwkid]["Status"] = "WaitResponse2"
 
     if (
-        nwkid != "0000" and 
-        nwkid in self.ListOfDevices
+        nwkid != "0000"
+        and nwkid in self.ListOfDevices
         and "Health" in self.ListOfDevices[nwkid]
         and self.ListOfDevices[nwkid]["Health"] == "Not Reachable"
     ):
@@ -421,7 +421,7 @@ def LQIresp_decoding(self, MsgData):
         NwkIdSource = self.LQIreqInProgress.pop()
         
     if len(MsgData) < 10:
-        self.logging("Erro", "LQIresp_decoding - Incomplete message: %s (%s)" %(MsgData, len(MsgData)))
+        self.logging("Error", "LQIresp_decoding - Incomplete message: %s (%s)" %(MsgData, len(MsgData)))
         return
         
     SQN = MsgData[0:2]
@@ -501,18 +501,25 @@ def LQIresp_decoding(self, MsgData):
         self.logging("Debug", "--- -- Entry[%s] %s" % (n // 42, ListOfEntries[n : n + 42]))
         _nwkid = ListOfEntries[n : n + 4]  # uint16
         _extPANID = ListOfEntries[n + 4 : n + 20]  # uint64
-        _ieee = ListOfEntries[n + 20 : n + 36]  # uint64
-
-        _depth = ListOfEntries[n + 36 : n + 38]  # uint8
-        _lnkqty = ListOfEntries[n + 38 : n + 40]  # uint8
+        _ieee = ListOfEntries[n + 20 : n + 36]     # uint64
+        _depth = ListOfEntries[n + 36 : n + 38]    # uint8
+        _lnkqty = ListOfEntries[n + 38 : n + 40]   # uint8
         _bitmap = int(ListOfEntries[n + 40 : n + 42], 16)  # uint8
-
         _devicetype = _bitmap & 0b00000011
         _permitjnt = (_bitmap & 0b00001100) >> 2
         _relationshp = (_bitmap & 0b00110000) >> 4
         _rxonwhenidl = (_bitmap & 0b11000000) >> 6
 
         n = n + 42
+        
+        if int(_ieee,16) in ( 0x00, 0xffffffffffffffff):
+            self.logging(
+                "Log",
+                "Network Topology ignoring invalid neighbor: %s (%s)" %( _ieee, ListOfEntries[n : n + 42])
+            )
+            continue
+
+
         self.logging(
             "Debug",
             "--- --bitmap         : {0:{fill}8b}".format(_bitmap, fill="0")
@@ -524,40 +531,41 @@ def LQIresp_decoding(self, MsgData):
         self.logging("Debug", "--- ----> _rxonwhenidl:-%02d" % _rxonwhenidl)
 
         # s a 2-bit value representing the ZigBee device type of the neighbouring node
-        if _devicetype == 0x00:
-            _devicetype = "Coordinator"
-        elif _devicetype == 0x01:
-            _devicetype = "Router"
-        elif _devicetype == 0x02:
-            _devicetype = "End Device"
-        elif _devicetype == 0x03:
-            _devicetype = "??"
+        DEVICE_TYPE = {
+            0x00: "Coordinator",
+            0x01: "Router",
+            0x02: "End Device",
+            0x03: "??",
+        }
+        if _devicetype in DEVICE_TYPE:
+            _devicetype = DEVICE_TYPE[ _devicetype ]
 
-        if _permitjnt == 0x00:
-            _permitjnt = "Off"
-        elif _permitjnt == 0x01:
-            _permitjnt = "On"
-        elif _permitjnt == 0x02:
-            _permitjnt = "??"
+        PERMIT_JOIN_MODE = {
+            0x00: "Off",
+            0x01: "On",
+            0x02: "??"
+        }
+        if _permitjnt in PERMIT_JOIN_MODE:
+            _permitjnt = PERMIT_JOIN_MODE[ _permitjnt ]
 
         # is a 3-bit value representing the neighbouring node’s relationship to the local node
-        if _relationshp == 0x00:
-            _relationshp = "Parent"
-        elif _relationshp == 0x01:
-            _relationshp = "Child"
-        elif _relationshp == 0x02:
-            _relationshp = "Sibling"
-        elif _relationshp == 0x03:
-            _relationshp = "None"
-        elif _relationshp == 0x04:
-            _relationshp = "Former Child"
+        RELATIONSHIP = {
+            0x00: "Parent",
+            0x01: "Child",
+            0x02: "Sibling",
+            0x03: "None",
+            0x04: "Former Child",
+        }
+        if _relationshp in RELATIONSHIP:
+            _relationshp = RELATIONSHIP[ _relationshp ]
 
-        if _rxonwhenidl == 0x00:
-            _rxonwhenidl = "Rx-Off"
-        elif _rxonwhenidl == 0x01:
-            _rxonwhenidl = "Rx-On"
-        elif _rxonwhenidl == 0x02:
-            _rxonwhenidl = "??"
+        RXONIDLE = {
+            0x00: "Rx-Off",
+            0x01: "Rx-On",
+            0x02: "??"
+        }
+        if _rxonwhenidl in RXONIDLE:
+            _rxonwhenidl = RXONIDLE[ _rxonwhenidl ]
 
         self.logging("Debug", "--- --mgtLQIresp - capture a new neighbour %s from %s" % (_nwkid, NwkIdSource))
         self.logging("Debug", "--- -----> _nwkid: %s" % (_nwkid))

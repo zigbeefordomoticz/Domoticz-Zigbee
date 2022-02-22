@@ -234,16 +234,28 @@ def interview_state_8045(self, NWKID, RIA=None, status=None):
         self.log.logging("Pairing", "Debug", "[%s] NEW OBJECT: %s Request Model Name" % (RIA, NWKID))
         ReadAttributeRequest_0000(self, NWKID, fullScope=False)  # Reuest Model Name
 
-    for iterEp in self.ListOfDevices[NWKID]["Ep"]:
-        if is_fake_ep(self, NWKID, iterEp):
+    if request_next_Ep(self, NWKID):
+        # All Ep discovered
+        return "0043"
+    else:
+        # Still some Ep to be discovered
+        return "0045"
+
+def request_next_Ep(self, Nwkid):
+    for iterEp in self.ListOfDevices[Nwkid]["Ep"]:
+        if is_fake_ep(self, Nwkid, iterEp):
             continue
+        
+        # Let's request only 1 Ep, in order wait for the response and then request the next one
+        if not self.ListOfDevices[Nwkid]["Ep"][ iterEp ]:
+            self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s Request Simple Descriptor for Ep: %s" % ("-", Nwkid, iterEp))
+            zdp_simple_descriptor_request(self, Nwkid, iterEp)
+            return False
+    else:
+        # We have been all Ep, and so nothing else to do
+        return True
 
-        self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s Request Simple Descriptor for Ep: %s" % ("-", NWKID, iterEp))
-        zdp_simple_descriptor_request(self, NWKID, iterEp)
-
-    return "0043"
-
-
+   
 def interview_timeout(self, Devices, NWKID, RIA, status):
     self.log.logging(
         "Pairing",

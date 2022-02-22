@@ -745,13 +745,13 @@ def legrand_dimmer_enable(self, NwkId):
 
     # Configure Reporting
     # 0x0008 / 0x0000  Change 0x01, Min: 0x01, Max: 600
+
     self.configureReporting.send_configure_reporting_attributes_set(
-        NwkId, "01", "0008", "00", "00", "0000", 1, "0020000000010258000001", [0x0000]
-    )
+        NwkId, ZIGATE_EP, "01", "0008", "00", "00", "0000", 1, "0020000000010258000001", [0x0000] )
+    
     # 0x0008 / 0x00011 Change 0x01 Min: 0x00, Max 600
     self.configureReporting.send_configure_reporting_attributes_set(
-        NwkId, "01", "0008", "00", "00", "0000", 1, "0020001100000258000001", [0x0011]
-    )
+        NwkId, ZIGATE_EP, "01", "0008", "00", "00", "0000", 1, "0020001100000258000001", [0x0011])
 
     # Read Attribute 0x0008 / 0x0000 , 0x0011
     read_attribute(self, NwkId, ZIGATE_EP, "01", "0008", "00", "00", "0000", 1, "0000", ackIsDisabled=True)
