@@ -258,7 +258,7 @@ async def dispatch_command(self, data):
             await self.app.permit(time_s=duration, node=target_router)
 
     elif data["cmd"] == "SET-TX-POWER":
-        await self.app.set_tx_power(data["datas"]["Param1"])
+        await self.app.set_zigpy_tx_power(data["datas"]["Param1"])
     elif data["cmd"] == "SET-LED":
         await self.app.set_led(data["datas"]["Param1"])
     elif data["cmd"] == "SET-CERTIFICATION":
