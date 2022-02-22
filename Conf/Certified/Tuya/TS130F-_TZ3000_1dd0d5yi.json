@@ -45,6 +45,7 @@
 		]
 	},
 	"Param": {
-		"TuyaMotoReversal": 0
+		"TuyaMotoReversal": 0,
+		"moesCalibrationTime": 300
 	}
 }
