@@ -130,9 +130,6 @@ def zigate_remove_device(self, target_short_addr, extended_addr):
 
 def zigate_set_tx_power(self, value):
     self.log.logging( "zigateCommand", "Debug","zigate_set_tx_power %s" %value)
-    if self.zigbee_communitation == "zigpy":
-        return self.ControllerLink.sendData( "SET-TX-POWER", {"Param1": int(value,16)}) 
-
     return send_zigatecmd_raw(self, "0806", value)
 
 def zigate_get_tx_power(self):

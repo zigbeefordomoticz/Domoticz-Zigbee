@@ -20,6 +20,7 @@ from Modules.basicOutputs import ZigatePermitToJoin, initiate_change_channel, se
 from Modules.enki import enki_set_poweron_after_offon
 from Modules.philips import philips_set_poweron_after_offon
 from Modules.tools import is_hex
+from Modules.txPower import set_TxPower
 from Modules.zigateConsts import CERTIFICATION_CODE, ZCL_CLUSTERS_LIST, ZIGATE_COMMANDS
 from Modules.sendZigateCommand import (raw_APS_request, send_zigatecmd_raw,
                                        send_zigatecmd_zcl_ack,sendZigateCmd,
@@ -577,6 +578,12 @@ class WebServer(object):
 
                                         self.pluginconf.pluginConf["debugMatchId"] += self.IEEE2NWK[key] + ","
                                 self.pluginconf.pluginConf["debugMatchId"] = self.pluginconf.pluginConf["debugMatchId"][:-1]  # Remove the last ,
+                                
+                        elif param == "TXpower_set" and self.zigbee_communitation == "zigpy":
+                            if self.pluginconf.pluginConf[param] != setting_lst[setting]["current"]:
+                                self.pluginconf.pluginConf[param] = setting_lst[setting]["current"]
+                                set_TxPower(self, self.pluginconf.pluginConf[param])
+                            
                         else:
                             if SETTINGS[_theme]["param"][param]["type"] == "hex":
                                 # Domoticz.Log("--> %s: %s - %s" %(param, self.pluginconf.pluginConf[param], type(self.pluginconf.pluginConf[param])))

@@ -113,7 +113,7 @@ from Modules.input import ZigateRead
 from Modules.piZigate import switchPiZigate_mode
 from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
 from Modules.schneider_wiser import wiser_thermostat_monitoring_heating_demand
-from Modules.tools import removeDeviceInList
+from Modules.tools import removeDeviceInList, how_many_devices
 from Modules.txPower import set_TxPower
 from Modules.zigateCommands import (zigate_erase_eeprom,
                                     zigate_get_firmware_version,
@@ -245,7 +245,7 @@ class BasePlugin:
         ) = self.ZigateRead_timing_avrg = self.ZigateRead_timing_max = 0
         
         # Zigpy
-        self.zigbee_communitation = None  # "zigpy" or "native"
+        self.zigbee_communitation = "native"  # "zigpy" or "native"
         self.pythonModuleVersion = {}
 
     def onStart(self):
@@ -270,8 +270,9 @@ class BasePlugin:
         elif Parameters["Mode2"] == "None":
             self.transport = "None"
             
-        elif Parameters["Mode1"] in ( "ZigpyZiGate", "ZigpyZNP"):
+        elif Parameters["Mode1"] in ( "ZigpyZiGate", "ZigpyZNP", ):
             self.transport = Parameters["Mode1"]
+            self.zigbee_communitation = "zigpy"
             
         else:
             Domoticz.Error(
@@ -283,8 +284,14 @@ class BasePlugin:
         # Set plugin heartbeat to 1s
         Domoticz.Heartbeat(1)
 
+
         # Copy the Domoticz.Parameters to a variable accessible in the all objetc
         self.pluginParameters = dict(Parameters)
+
+        self.pluginParameters["CoordinatorIEEE"] = ""
+        self.pluginParameters["CoordinatorModel"] = ""
+        self.pluginParameters["CoordinatorFirmwareVersion"] = ""
+        self.pluginParameters["NetworkSize"] = ""
 
         # Open VERSION file in .hidden
         with open(Parameters["HomeFolder"] + VERSION_FILENAME, "rt") as versionfile:
@@ -311,6 +318,7 @@ class BasePlugin:
         self.HardwareID = Parameters["HardwareID"]
         self.Key = Parameters["Key"]
         lst_version = Parameters["DomoticzVersion"].split(" ")
+
 
         if len(lst_version) == 1:
             # No Build
@@ -347,7 +355,7 @@ class BasePlugin:
         # Import PluginConf.txt
         Domoticz.Log("load PluginConf")
         self.pluginconf = PluginConf(
-            self.VersionNewFashion, self.DomoticzMajor, self.DomoticzMinor, Parameters["HomeFolder"], self.HardwareID
+            self.zigbee_communitation, self.VersionNewFashion, self.DomoticzMajor, self.DomoticzMinor, Parameters["HomeFolder"], self.HardwareID
         )
 
         # Create the adminStatusWidget if needed
@@ -469,7 +477,6 @@ class BasePlugin:
             self.pythonModuleVersion["dns"] = (dns.__version__)
             check_python_modules_version( self )
             
-            self.zigbee_communitation = "native"
             self.pluginParameters["Zigpy"] = False
             self.ControllerLink= ZigateTransport(
                 self.HardwareID,
@@ -495,7 +502,6 @@ class BasePlugin:
 
             self.pluginconf.pluginConf["ControllerInRawMode"] = False
             switchPiZigate_mode(self, "run")
-            self.zigbee_communitation = "native"
             self.pluginParameters["Zigpy"] = False
             self.ControllerLink= ZigateTransport(
                 self.HardwareID,
@@ -518,7 +524,6 @@ class BasePlugin:
             check_python_modules_version( self )
             
             self.pluginconf.pluginConf["ControllerInRawMode"] = False
-            self.zigbee_communitation = "native"
             self.pluginParameters["Zigpy"] = False
             self.ControllerLink= ZigateTransport(
                 self.HardwareID,
@@ -561,7 +566,6 @@ class BasePlugin:
             check_python_modules_version( self )
             
             
-            self.zigbee_communitation = "zigpy"
             self.pluginParameters["Zigpy"] = True
             Domoticz.Log("Start Zigpy Transport on zigate")
             
@@ -584,7 +588,6 @@ class BasePlugin:
             self.pythonModuleVersion["zigpy_znp"] = (zigpy_znp.__version__)
             check_python_modules_version( self )
             
-            self.zigbee_communitation = "zigpy"
             self.pluginParameters["Zigpy"] = True
             Domoticz.Log("Start Zigpy Transport on ZNP")
             
@@ -1005,6 +1008,9 @@ class BasePlugin:
             self.log.logging("Plugin", "Debug", "Devices size has changed , let's write ListOfDevices on disk")
             WriteDeviceList(self, 0)  # write immediatly
 
+        nbrouters, nbendevices = how_many_devices(self)
+        self.pluginParameters["NetworkSize"] = "Total: %s, Routers: %s End Devices: %s" %( (nbrouters + nbendevices), nbrouters, nbendevices)
+        
         if self.CommiSSionning:
             self.PluginHealth["Flag"] = 2
             self.PluginHealth["Txt"] = "Enrollment in Progress"
@@ -1179,7 +1185,7 @@ def zigateInit_Phase3(self):
         zigateBlueLed(self, False)
 
     # Set the TX Power
-    if self.ZiGateModel ==  1:
+    if self.ZiGateModel == 1 or self.zigbee_communitation == "zigpy":
         set_TxPower(self, self.pluginconf.pluginConf["TXpower_set"])
 
     # Set Certification Code
