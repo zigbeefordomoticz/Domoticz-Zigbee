@@ -234,6 +234,7 @@ def ReadCluster(
         "e000": Clustere000,
         "e001": Clustere001,
         "fc01": Clusterfc01,
+        "fc03": Clusterfc03,
         "fc21": Clusterfc21,
         "fcc0": Clusterfcc0,
         "fc40": Clusterfc40,
@@ -4999,7 +5000,17 @@ def Clusterfc01(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             # Enable Led if On
             self.ListOfDevices[MsgSrcAddr]["Legrand"]["EnableLedIfOn"] = int(MsgClusterData, 16)
 
+            
+def Clusterfc03(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
+    # Philips cluster - NOT IMPLEMENTED
+    self.log.logging(
+        "Cluster",
+        "Debug",
+        "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+        MsgSrcAddr,
+    )
 
+    
 def Clusterfc40(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
 
     self.log.logging(
