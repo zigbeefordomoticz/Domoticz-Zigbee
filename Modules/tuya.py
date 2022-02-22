@@ -217,9 +217,9 @@ def tuya_registration(self, nwkid, device_reset=False, parkside=False):
     # Gw->Zigbee gateway query MCU version
     self.log.logging("Tuya", "Debug", "tuya_registration - Nwkid: %s Request MCU Version Cmd: 10" % nwkid)
     if _ModelName in ( "TS0601-_TZE200_nklqjk62", ):
-    	payload = "11" + get_and_inc_ZCL_SQN(self, nwkid) + "10" + "000e"
+        payload = "11" + get_and_inc_ZCL_SQN(self, nwkid) + "10" + "000e"
     else:
-    	payload = "11" + get_and_inc_ZCL_SQN(self, nwkid) + "10" + "0002"
+        payload = "11" + get_and_inc_ZCL_SQN(self, nwkid) + "10" + "0002"
     raw_APS_request(
         self,
         nwkid,
@@ -955,6 +955,18 @@ def tuya_window_cover_motor_reversal(self, nwkid, mode):
         write_attribute(
             self, nwkid, ZIGATE_EP, "01", "0102", "0000", "00", "f002", "30", "%02x" % int(mode), ackIsDisabled=True
         )
+def tuya_ts130F_module_calibrationtime(self, nwkid, duration ):
+    duration = int(duration)
+    self.log.logging(
+        "Tuya",
+        "Debug",
+        "tuya_ts130F_module_calibrationtime - Nwkid: %s Calibration time: %s"
+        % (nwkid, duration),
+        nwkid,
+        )
+    
+    write_attribute(
+        self, nwkid, ZIGATE_EP, "01", "0102", "0000", "00", "f003", "21", "%04x" % duration, ackIsDisabled=True)
 
 
 def tuya_backlight_command(self, nwkid, mode):
