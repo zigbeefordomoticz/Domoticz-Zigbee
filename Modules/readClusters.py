@@ -1046,6 +1046,7 @@ def Cluster0001(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 def UpdateBatteryAttribute(self, Devices, MsgSrcAddr, MsgSrcEp):
 
     XIAOMI_BATTERY_DEVICES = (
+        "lumi.remote.b28ac1",
         "lumi.remote.b286opcn01",
         "lumi.remote.b486opcn01",
         "lumi.remote.b686opcn01",
@@ -2039,7 +2040,8 @@ def Cluster0012(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         AqaraOppleDecoding0012(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
 
     elif _modelName in (
-        "lumi.remote.b1acn01",
+        "lumi.remote.b1acn01"
+        "lumi.remote.b28ac1", 
         "lumi.remote.b186acn01",
         "lumi.remote.b186acn02",
         "lumi.remote.b286acn01",
