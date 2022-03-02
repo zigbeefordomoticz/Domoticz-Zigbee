@@ -235,10 +235,11 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         await self.set_tx_power(dbm=power)
 
     async def set_led(self, mode):
-        if mode == 1:
-            await self._set_led_mode(led=0xFF, mode=zigpy_bellows.commands.util.LEDMode.ON)
-        else:
-            await self._set_led_mode(led=0xFF, mode=zigpy_bellows.commands.util.LEDMode.OFF)
+        self.log.logging("TransportZigpy", "Debug", "set_led not implemented yet")
+#        if mode == 1:
+#            await self._set_led_mode(led=0xFF, mode=bellows.commands.util.LEDMode.ON)
+#        else:
+#            await self._set_led_mode(led=0xFF, mode=bellows.commands.util.LEDMode.OFF)
 
     async def set_certification(self, mode):
         self.log.logging("TransportZigpy", "Debug", "set_certification not implemented yet")
@@ -265,22 +266,3 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
 
     async def remove_ieee(self, ieee):
         await self.remove( ieee )
-
-def extract_versioning_for_plugin( bellows_model, bellows_manuf):
-    
-    bellows_330 = "CC1352/CC2652, Z-Stack 3.30+"
-    bellows_30X = "CC2531, Z-Stack 3.0.x"
-    
-    for x in bellows_MODEL:
-        if bellows_model[:len(x)] == x:
-            FirmwareBranch = bellows_MODEL[x]
-            break
-    else:
-        # Not found in the Table.
-        FirmwareBranch = "99"
-        
-    year = bellows_model[ bellows_model.find("build") + 6 : -5 ]
-    FirmwareMajorVersion = "%02d" %int(bellows_model[ bellows_model.find("build") + 8 : -5 ])
-    FirmwareVersion = "%04d" %int(bellows_model[ bellows_model.find("build") + 10: -1])
-        
-    return FirmwareBranch, FirmwareMajorVersion, FirmwareVersion
