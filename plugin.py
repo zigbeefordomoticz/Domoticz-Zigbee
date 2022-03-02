@@ -348,7 +348,7 @@ class BasePlugin:
         # Import PluginConf.txt
         Domoticz.Log("load PluginConf")
         self.pluginconf = PluginConf(
-            self.VersionNewFashion, self.DomoticzMajor, self.DomoticzMinor, Parameters["HomeFolder"], self.HardwareID
+            self.zigbee_communitation, self.VersionNewFashion, self.DomoticzMajor, self.DomoticzMinor, Parameters["HomeFolder"], self.HardwareID
         )
 
         # Create the adminStatusWidget if needed
@@ -1489,14 +1489,14 @@ def check_python_modules_version( self ):
         "zigpy": "0.44.0.dev0",
         "zigpy_znp": "0.7.0",
         "zigpy_zigate": "0.8.0",
-        "bellows": "0.30.0.dev0",
+        "zigpy_ezsp": "0.30.0.dev0",
         }
     
     flag = True
 
     for x in self.pythonModuleVersion:
         if x not in MODULES_VERSION:
-            self.log.logging("Plugin", "Error", "A python module has been loaded and is unknown")
+            self.log.logging("Plugin", "Error", "A python module has been loaded and is unknown : %s" %x)
             flag = False
             continue
         
