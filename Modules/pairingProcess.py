@@ -67,8 +67,12 @@ def processNotinDBDevices(self, Devices, NWKID, status, RIA):
 
     knownModel = False
     if self.ListOfDevices[NWKID]["Model"] not in ({}, ""):
-        self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s Model Name: %s" % (RIA, NWKID, self.ListOfDevices[NWKID]["Model"]))
+        self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s Model Name: %s" % (
+            RIA, NWKID, self.ListOfDevices[NWKID]["Model"]))
         # Let's check if this Model is known
+        if "Manufacturer Name" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Manufacturer Name"] not in ({}, ""):
+            self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s Manufacturer Name: %s" % (
+                RIA, NWKID, self.ListOfDevices[NWKID]["Manufacturer Name"]))
         if self.ListOfDevices[NWKID]["Model"] in self.DeviceConf:
             knownModel = True
             status = "CreateDB"  # Fast track
