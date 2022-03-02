@@ -40,7 +40,7 @@ from Classes.LoggingManagement import LoggingManagement
 from Modules.readAttributes import ReadAttributeRequest_0000
 from Modules.zigateConsts import (ADDRESS_MODE, HEARTBEAT, MAX_LOAD_ZIGATE,
                                   ZIGATE_EP)
-from Modules.sendZigateCommand import raw_APS_request
+from Modules.sendZigateCommand import (raw_APS_request, sendZigateCmd)
 
 OTA_CLUSTER_ID = "0019"
 
@@ -738,6 +738,10 @@ def cleanup_after_completed_upgrade(self, NwkId, Status):
     )
     self.ListInUpdate["Process"] = None
 
+    # Reset the controller (ziagte in native mode only for now)
+    sendZigateCmd(self, "0002", "00")  # Force Zigate to Normal mode
+    sendZigateCmd(self, "0011", "")  # Software Reset
+
 
 def firmware_update(self, brand, file_name, target_nwkid, target_ep, force_update=False):
 
@@ -841,6 +845,13 @@ def ota_scan_folder(self):  # OK 13/10
                 self, brand, image_type, ota_image_file, headers
             ):
                 # Most likely we have a more higher version already loaded!
+                continue
+
+            # Check if the Image type is not used by another brand
+            if image_type in self.ListOfImages["ImageType"] and self.ListOfImages["ImageType"][image_type] != brand:
+                logging(self, "Error", 
+                    "ota_scan_folder Firmware %s not loaded, another firmware with the same ImageType and another brand is already loaded" 
+                    %ota_image_file)
                 continue
 
             self.ListOfImages["ImageType"][image_type] = brand
