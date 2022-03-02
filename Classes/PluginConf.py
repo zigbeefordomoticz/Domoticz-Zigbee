@@ -62,6 +62,15 @@ SETTINGS = {
                 "hidden": False,
                 "Advanced": True,
             },
+            "PluginAnalytics": {
+                "type": "bool",
+                "default": -1,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": False,
+   
+            }
         },
     },
     "GroupManagement": {
