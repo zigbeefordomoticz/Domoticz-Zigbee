@@ -80,26 +80,27 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channe
     self.log.logging("TransportZigpy", "Debug", "In radio_start")
     
     if radiomodule == "ezsp":
-        import bellows.config as conf
-        config = conf.CONFIG_SCHEMA({conf.CONF_DEVICE: {"path": serialPort, "baudrate": 115200}})
+        import bellows.config as conf1
+        import zigpy.config as conf
+        config = {conf1.CONF_DEVICE: {"path": serialPort, "baudrate": 115200}, conf.CONF_NWK: {}}
     else:
         import zigpy_znp.config as conf
         config = {conf.CONF_DEVICE: {"path": serialPort}, conf.CONF_NWK: {}}
 
     
-        if set_extendedPanId != 0:
-            config[conf.CONF_NWK][conf.CONF_NWK_EXTENDED_PAN_ID] = "%s" % (
-                t.EUI64(t.uint64_t(set_extendedPanId).serialize())
-            )
-        if set_channel != 0:
-            config[conf.CONF_NWK][conf.CONF_NWK_CHANNEL] = set_channel
+    if set_extendedPanId != 0:
+        config[conf.CONF_NWK][conf.CONF_NWK_EXTENDED_PAN_ID] = "%s" % (
+            t.EUI64(t.uint64_t(set_extendedPanId).serialize())
+        )
+    if set_channel != 0:
+        config[conf.CONF_NWK][conf.CONF_NWK_CHANNEL] = set_channel
 
     if radiomodule == "zigate":
         self.app = App_zigate(config)
     elif radiomodule == "znp":
         self.app = App_znp(config)
     elif radiomodule == "ezsp":
-        self.app = App_bellows(config)
+        self.app = App_bellows(conf1.CONFIG_SCHEMA(config))
 
     if self.pluginParameters["Mode3"] == "True":
         self.log.logging(
