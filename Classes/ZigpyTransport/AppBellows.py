@@ -26,7 +26,7 @@ import zigpy.zdo.types as zdo_types
 import bellows.config as conf
 import bellows.ezsp.v4.types as t
 import bellows.zigbee.application
-
+from zigpy.types import Addressing
 from bellows.exception import ControllerError, EzspError
 import bellows.ezsp as ezsp
 
@@ -60,6 +60,7 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
             auto_form = False
         await super().startup(auto_form=auto_form)
         if force_form:
+            await self._ezsp.leaveNetwork()
             await super().form_network()
 
         # Populate and get the list of active devices.
@@ -69,29 +70,22 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         # self.callBackFunction(build_plugin_8015_frame_content( self, network_info))
         
         # Trigger Version payload to plugin
-        bellows_model = self.get_device(nwk=t.EmberNodeId(0x0000)).model
-        bellows_manuf = self.get_device(nwk=t.EmberNodeId(0x0000)).manufacturer
+        try:
+            brd_manuf, brd_name, version = await self._ezsp.get_board_info()
+            logging.debug("EmberZNet version: %s" %version)
+        except EzspError as exc:
+            logging.error("EZSP Radio does not support getMfgToken command: %s" %str(exc))
+
         # FirmwareBranch, FirmwareMajorVersion, FirmwareVersion = extract_versioning_for_plugin( bellows_model, bellows_manuf)
-        # self.callBackFunction(build_plugin_8010_frame_content(FirmwareBranch, FirmwareMajorVersion, FirmwareVersion))
+        self.callBackFunction(build_plugin_8010_frame_content("11", "05", "0321"))
 
-    async def _register_endpoints(self) -> None:
+    async def add_endpoint(self, endpoint=1, profile_id=zigpy.profiles.zha.PROFILE_ID, device_id=0xBEEF, app_flags=0x00, input_clusters=[], output_clusters=[],) -> None:
+        await super().add_endpoint(output_clusters=output_clusters)
+        
         LIST_ENDPOINT = [0x0b , 0x0a , 0x6e, 0x15, 0x08, 0x03]  # WISER, ORVIBO , TERNCY, KONKE, LIVOLO, WISER2
-        # await super()._register_endpoints()
 
-#        for endpoint in LIST_ENDPOINT:
-#            await self._bellows.request(
-#                c.AF.Register.Req(
-#                    Endpoint=endpoint,
-#                    ProfileId=zigpy.profiles.zha.PROFILE_ID,
-#                    DeviceId=zigpy.profiles.zll.DeviceType.CONTROLLER,
-#                    DeviceVersion=0b0000,
-#                    LatencyReq=c.af.LatencyReq.NoLatencyReqs,
-#                    InputClusters=[clusters.general.Basic.cluster_id],
-#                    OutputClusters=[],
-#                ),
-#                RspStatus=t.Status.SUCCESS,
-#            )
-
+        #for endpoint in LIST_ENDPOINT:
+            #await super().add_endpoint(endpoint)
 
 
     def get_device(self, ieee=None, nwk=None):
@@ -164,11 +158,12 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         src_ep: int,
         dst_ep: int,
         message: bytes,
+        dst_addressing: Addressing,
     ) -> None:
         if sender.nwk == 0x0000:
             self.log.logging("TransportZigpy", "Debug", "handle_message from Controller Sender: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
                 str(sender.nwk), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8")))
-            super().handle_message(sender, profile, cluster, src_ep, dst_ep, message)
+            super().handle_message(sender, profile, cluster, src_ep, dst_ep, message, dst_addressing=dst_addressing)
 
         if cluster == 0x8036:
             # This has been handle via on_zdo_mgmt_permitjoin_rsp()
