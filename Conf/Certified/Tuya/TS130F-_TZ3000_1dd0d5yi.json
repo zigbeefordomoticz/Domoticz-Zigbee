@@ -42,10 +42,12 @@
 		"0006": [
 			"8001",
 			"5000"
-		]
-	},
-	"Param": {
-		"TuyaMotoReversal": 0,
-		"TuyaBackLight": 1
-	}
+		],
+	]
+},
+"Param": {
+	"TuyaMotoReversal": 0,
+	"TuyaBackLight": 1,
+	"moesCalibrationTime": 300
+}
 }

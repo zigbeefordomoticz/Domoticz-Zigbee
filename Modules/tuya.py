@@ -217,9 +217,9 @@ def tuya_registration(self, nwkid, device_reset=False, parkside=False):
     # Gw->Zigbee gateway query MCU version
     self.log.logging("Tuya", "Debug", "tuya_registration - Nwkid: %s Request MCU Version Cmd: 10" % nwkid)
     if _ModelName in ( "TS0601-_TZE200_nklqjk62", ):
-    	payload = "11" + get_and_inc_ZCL_SQN(self, nwkid) + "10" + "000e"
+        payload = "11" + get_and_inc_ZCL_SQN(self, nwkid) + "10" + "000e"
     else:
-    	payload = "11" + get_and_inc_ZCL_SQN(self, nwkid) + "10" + "0002"
+        payload = "11" + get_and_inc_ZCL_SQN(self, nwkid) + "10" + "0002"
     raw_APS_request(
         self,
         nwkid,
@@ -947,8 +947,8 @@ def tuya_window_cover_calibration(self, nwkid, start_stop):
     # (0x0102) | Write Attributes (0x02) | 0xf001 | 8-Bit (0x30) | 1 (0x01) | End Calibration
     #write_attribute(self, nwkid, ZIGATE_EP, "01", "0102", "0000", "00", "f001", "30", start_stop, ackIsDisabled=True)
     duration = 60
-    if "Param" in self.ListOfDevices[ nwkid ] and "CalibrationDuration" in self.ListOfDevices[ nwkid ]["Param"]:
-        duration = int(self.ListOfDevices[ nwkid ]["Param"]["CalibrationDuration"])
+    if "Param" in self.ListOfDevices[ nwkid ] and "moesCalibrationTime" in self.ListOfDevices[ nwkid ]["Param"]:
+        duration = int(self.ListOfDevices[ nwkid ]["Param"]["moesCalibrationTime"])
     write_attribute(self, nwkid, ZIGATE_EP, "01", "0102", "0000", "00", "f003", "21", duration, ackIsDisabled=True)
 
 

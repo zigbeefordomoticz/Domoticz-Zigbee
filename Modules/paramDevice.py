@@ -202,7 +202,7 @@ DEVICE_PARAMETERS = {
     "BRT100Calibration": tuya_trv_calibration,
     "BRT100SetpointEco": tuya_trv_eco_temp,
     "BRT100MaxSetpoint": tuya_trv_set_max_setpoint,
-    "BRT100MinSetpoint": tuya_trv_set_min_setpoint
+    "BRT100MinSetpoint": tuya_trv_set_min_setpoint,
 }
 
 
