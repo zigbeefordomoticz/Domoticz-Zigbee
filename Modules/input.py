@@ -4274,6 +4274,22 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
             ),
         )
 
+    elif _ModelName == ( "lumi.remote.b28ac1",):
+        self.log.logging(
+            "Input",
+            "Log",
+            "Decode8095 - Lumi Remote SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s"
+            % (
+                MsgSQN,
+                MsgSrcAddr,
+                MsgEP,
+                MsgClusterId,
+                MsgCmd,
+                unknown_,
+            ),
+        )
+
+
     else:
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0006", str(int(MsgCmd, 16)))
         self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, %s" % (MsgCmd, unknown_)
