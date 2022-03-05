@@ -366,7 +366,7 @@ class IAS_Zone_Management:
         SIRENE_MODE = ("both", "siren", "strobe", "stop")
         strobe_mode = 0x00
         
-        if self.ListOfDevices[nwkid]["Model"] == "WarningDevice":
+        if self.ListOfDevices[nwkid]["Model"] in ( "WarningDevice", "WarningDevice-EF-3.0", "SRHMP-I1", "TS0216-_TYZB01_8scntis1"):
             if mode == "both":
                 strobe_mode = 0x01
                 warning_mode = 0x01
