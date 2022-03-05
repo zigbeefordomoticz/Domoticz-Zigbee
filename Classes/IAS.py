@@ -360,13 +360,13 @@ class IAS_Zone_Management:
         
         zcl_ias_wd_command_squawk(self, ZIGATE_EP, ep, nwkid, squawk_mode, strobe, squawk_level, ackIsDisabled=False)
 
-    def warningMode(self, nwkid, ep, mode="both", siren_level = 0x00, warning_duration = 0x01, strobe_duty = 0x00, strobe_level = 0x00):
+    def warningMode(self, nwkid, ep, mode="both", siren_level=0x00, warning_duration=0x01, strobe_duty=0x00, strobe_level=0x00):
 
         STROBE_LEVEL = {"Low": 0x00, "Medium": 0x01}
         SIRENE_MODE = ("both", "siren", "strobe", "stop")
         strobe_mode = 0x00
         
-        if self.ListOfDevices[nwkid]["Model"] in ( "WarningDevice", "WarningDevice-EF-3.0", "SRHMP-I1", "TS0216-_TYZB01_8scntis1"):
+        if self.ListOfDevices[nwkid]["Model"] in ( "WarningDevice", "WarningDevice-EF-3.0", "SRHMP-I1",) :
             if mode == "both":
                 strobe_mode = 0x01
                 warning_mode = 0x01
@@ -379,6 +379,9 @@ class IAS_Zone_Management:
                 strobe_mode = 0x00
                 warning_mode = 0x00
 
+        elif self.ListOfDevices[nwkid]["Model"] in  ( "TS0216", "TS0216-_TYZB01_8scntis1", ):
+            tuya_ts0216_custom_private_attribute( self, nwkid, ep, mode)
+            
         elif mode in SIRENE_MODE:
             if mode == "both":
                 strobe_level = STROBE_LEVEL["Low"]
@@ -425,3 +428,16 @@ class IAS_Zone_Management:
     def alarm_off(self, nwkid, ep):
         self.logging("Debug", "Device Alarm Off")
         self.warningMode(nwkid, ep, "stop")
+
+def tuya_ts0216_custom_private_attribute( self, nwkid, ep, mode):
+    IASWD_TUYA_MODE = {
+        "stop": "00",
+        "siren": "01",
+        "strobe": "02",
+        "both": "03"
+    }
+    if mode not in IASWD_TUYA_MODE:
+        self.logging( "Debug", "tuya_ts0216_custom_private_attribute - Incorrect Mode: %s" %mode)
+        return
+        
+    zcl_write_attribute( self, nwkid, ZIGATE_EP, ep, "0502", "120b", "01", "fffd", "21", "%02x" %IASWD_TUYA_MODE[ mode ], ackIsDisabled=False )
