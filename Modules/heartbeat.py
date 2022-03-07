@@ -575,7 +575,7 @@ def processKnownDevices(self, Devices, NWKID):
         # In case we have just finished the pairing give 3 minutes to finish.
         self.log.logging(
             "Heartbeat",
-            "Error",
+            "Debug",
             "processKnownDevices -  %s delay the next ReadAttribute to closed to the pairing %s" % (NWKID, self.ListOfDevices[ NWKID ]["PairingTime"],),
             NWKID,
         )
