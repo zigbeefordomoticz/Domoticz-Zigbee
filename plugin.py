@@ -276,6 +276,7 @@ class BasePlugin:
             
         elif Parameters["Mode1"] in ( "ZigpyZiGate", "ZigpyZNP", "ZigpyEZSP"):
             self.transport = Parameters["Mode1"]
+            self.zigbee_communitation = "zigpy"
             
         else:
             Domoticz.Error(
