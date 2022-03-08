@@ -6,7 +6,7 @@ FIRMWARE_BRANCH = {
     "21": "CC2531, Z-Stack 3.0.x (znp)",
     "22": "CC2531, Z-Stack Home 1.2 (znp",
     "30": "Elelabs, ELR023",
-    "31": "Elelabs, ELR013",
+    "31": "Elelabs, ELU013",
     
     "99": "Unknown"
 }
@@ -16,5 +16,5 @@ ZNP_MODEL = {
     "CC2531, Z-Stack 3.0.x":        "21",
     "CC2531, Z-Stack Home 1.2":     "22",
     "Elelabs, ELR023":              "30",
-    "Elelabs, ELR013":              "31",
+    "Elelabs, ELU013":              "31",
 }
