@@ -259,6 +259,7 @@ class BasePlugin:
             "Wifi",
         ):
             self.transport = Parameters["Mode2"]
+            self.zigbee_communitation = "native"
         elif Parameters["Mode1"] == "V2" and Parameters["Mode2"] in (
             "USB",
             "DIN",
@@ -266,8 +267,10 @@ class BasePlugin:
             "Wifi",
         ):
             self.transport = "V2-" + Parameters["Mode2"]
+            self.zigbee_communitation = "native"
             
         elif Parameters["Mode2"] == "None":
+            self.zigbee_communitation = "native"
             self.transport = "None"
             
         elif Parameters["Mode1"] in ( "ZigpyZiGate", "ZigpyZNP", ):
