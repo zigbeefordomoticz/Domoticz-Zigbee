@@ -37,6 +37,7 @@ from Classes.ZigpyTransport.plugin_encoders import (
 from zigpy.zcl import clusters
 from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
                                  SCHEMA_DEVICE)
+from Modules.zigbeeVersionTable import ZNP_MODEL
 
 LOGGER = logging.getLogger(__name__)
 
@@ -72,12 +73,14 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         # Trigger Version payload to plugin
         try:
             brd_manuf, brd_name, version = await self._ezsp.get_board_info()
+            logging.debug("EZSP Radio manufacturer: %s", brd_manuf)
+            logging.debug("EZSP Radio board name: %s", brd_name)
             logging.debug("EmberZNet version: %s" %version)
         except EzspError as exc:
             logging.error("EZSP Radio does not support getMfgToken command: %s" %str(exc))
 
-        # FirmwareBranch, FirmwareMajorVersion, FirmwareVersion = extract_versioning_for_plugin( bellows_model, bellows_manuf)
-        self.callBackFunction(build_plugin_8010_frame_content("11", "05", "0321"))
+        FirmwareBranch, FirmwareMajorVersion, FirmwareVersion = extract_versioning_for_plugin(brd_manuf, brd_name, version)
+        self.callBackFunction(build_plugin_8010_frame_content(FirmwareBranch, FirmwareMajorVersion, FirmwareVersion))
 
     # Only needed if the device require simple node descriptor from the coordinator
     async def register_endpoint(self, endpoint=1):
@@ -262,6 +265,7 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
     async def remove_ieee(self, ieee):
         await self.remove( ieee )
 
+
     # MUST BE REMOVED WHEN INTEGRATED IN BELLOWS
     async def load_network_info(self, *, load_devices=False) -> None:
         ezsp = self._ezsp
@@ -396,7 +400,24 @@ def zigpy_key_to_ezsp_key(zigpy_key, ezsp):
         key.bitmask |= ezsp.types.EmberKeyStructBitmask.KEY_HAS_PARTNER_EUI64
 
     return key
-    
+
+def extract_versioning_for_plugin( brd_manuf, brd_name, version):
+    FirmwareBranch = "99" # Not found in the Table.
+    if brd_manuf == 'Elelabs':
+        if brd_name == 'ELU013':
+            FirmwareBranch = "31"
+        elif brd_name == 'ELR023':
+            FirmwareBranch = "30" 
+            
+    # EmberZNet version: 6.10.3.0 build 297    
+    FirmwareMajorVersion = (version[0: 2])
+    FirmwareMajorVersion = "%02d" %int(FirmwareMajorVersion.replace('.',''))
+    FirmwareVersion = version[ 2:8]
+    FirmwareVersion = FirmwareVersion.replace(' ','')
+    FirmwareVersion = "%04d" %int(FirmwareVersion.replace('.',''))
+        
+    return FirmwareBranch, FirmwareMajorVersion, FirmwareVersion
+   
 
 from bellows.types import basic
 class EmberDistinguishedNodeId(basic.enum16):
