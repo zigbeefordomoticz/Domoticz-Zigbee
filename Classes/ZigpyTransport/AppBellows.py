@@ -66,7 +66,7 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
 
         # Populate and get the list of active devices.
         # This will allow the plugin if needed to update the IEEE -> NwkId
-        await self.load_network_info( load_devices=True )
+        await self.load_network_info( load_devices=False ) # load_devices shows nothing for now
         network_info = self.state.network_information
         self.callBackFunction(build_plugin_8015_frame_content( self, network_info))
         
@@ -408,12 +408,12 @@ def zigpy_key_to_ezsp_key(zigpy_key, ezsp):
 def extract_versioning_for_plugin( brd_manuf, brd_name, version):
     FirmwareBranch = "99" # Not found in the Table.
     if brd_manuf == 'Elelabs':
-        if brd_name == 'ELU013':
+        if 'ELU01' in brd_name:
             FirmwareBranch = "31"
-        elif brd_name == 'ELR023':
+        elif 'ELR02' in brd_name:
             FirmwareBranch = "30" 
             
-    # EmberZNet version: 6.10.3.0 build 297    
+    # 6.10.3.0 build 297    
     FirmwareMajorVersion = (version[0: 2])
     FirmwareMajorVersion = "%02d" %int(FirmwareMajorVersion.replace('.',''))
     FirmwareVersion = version[ 2:8]
