@@ -1147,6 +1147,9 @@ def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
             self.FirmwareMajorVersion,
             self.FirmwareVersion,
         )
+        self.ControllerData["Branch Version"] = self.FirmwareBranch
+        self.ControllerData["Major Version"] = self.FirmwareMajorVersion
+        self.ControllerData["Minor Version"] = self.FirmwareVersion
         
         if self.pluginconf.pluginConf["RoutingTableRequestFeq"] and self.ZiGateModel != 2:
             self.pluginconf.pluginConf["RoutingTableRequestFeq"] = 0
