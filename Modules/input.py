@@ -64,6 +64,7 @@ from Modules.zigbeeController import (initLODZigate, receiveZigateEpDescriptor,
                                       receiveZigateEpList)
 from Modules.zigbeeVersionTable import FIRMWARE_BRANCH
 from Zigbee.zclCommands import zcl_ias_zone_enroll_response
+from Modules.zigbeeVersionTable import set_display_firmware_version
 
 
 def ZigateRead(self, Devices, Data):
@@ -1150,7 +1151,9 @@ def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
         self.ControllerData["Branch Version"] = self.FirmwareBranch
         self.ControllerData["Major Version"] = self.FirmwareMajorVersion
         self.ControllerData["Minor Version"] = self.FirmwareVersion
-        
+ 
+        set_display_firmware_version( self )
+               
         if self.pluginconf.pluginConf["RoutingTableRequestFeq"] and self.ZiGateModel != 2:
             self.pluginconf.pluginConf["RoutingTableRequestFeq"] = 0
 
