@@ -14,3 +14,22 @@ ZNP_MODEL = {
     "CC2531, Z-Stack 3.0.x":        "21",
     "CC2531, Z-Stack Home 1.2":     "22",
 }
+
+
+def set_display_firmware_version( self ):
+
+    if 0 < int(self.ControllerData["Branch Version"]) < 20:   
+        self.pluginParameters["DisplayFirmwareVersion"] = "Zig - %s" % self.ControllerData["Minor Version"] 
+        
+    elif 20 <= int(self.ControllerData["Branch Version"]) < 30:
+        # ZNP
+        self.pluginParameters["DisplayFirmwareVersion"] = "Znp - (....%s)" % self.ControllerData["Minor Version"] 
+
+    elif 30 <= int(self.ControllerData["Branch Version"]) < 40:   
+        # Silicon Labs
+        self.pluginParameters["DisplayFirmwareVersion"] = "Ezsp - %s.%s" %(
+            self.ControllerData["Major Version"] , self.ControllerData["Minor Version"] )
+        
+    else:
+        self.pluginParameters["DisplayFirmwareVersion"] = "UNK - %s" % self.ControllerData["Minor Version"] 
+

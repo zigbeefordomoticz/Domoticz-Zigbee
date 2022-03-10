@@ -224,6 +224,7 @@ class WebServer(object):
         _response = prepResponseMessage(self, setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == "GET":
+            
             if self.ControllerData:
                 _response["Data"] = json.dumps(self.ControllerData, sort_keys=True)
             else:
