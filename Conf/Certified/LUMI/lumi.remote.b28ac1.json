@@ -9,9 +9,12 @@
 			"fcc0": "",
 			"Type": "Button_3"
 		},
+		"02": {
+			"0012": "",
+			"Type": "Button_3"
+		},
 		"03": {
-			"0003": "",
-			"0006": "",
+			"0012": "",
 			"Type": "Button_3"
 		}
 	},
@@ -20,19 +23,7 @@
 		"0006",
 		"0000"
 	],
-	"ConfigureReporting": {
-		"0006": {
-			"Attributes": {
-				"0000": {
-					"Change": "01",
-					"DataType": "10",
-					"MaxInterval": "0258",
-					"MinInterval": "0000",
-					"TimeOut": "0000"
-				}
-			}
-		}
-	},
+	"ConfigureReporting": {},
 	"ReadAttributes": {
 		"0000": [
 			"0001",
