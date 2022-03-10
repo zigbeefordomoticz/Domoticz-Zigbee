@@ -49,7 +49,7 @@ Support only ZiGate V1. and supported on best effort
 Support ALL ZiGate models known today and requires Domoticz 2020.x at minima
 This is considered as a solid , reliable version.
 
-### beta
+### beta (beta6)
 
 We can open the beta channel to provide early version and to stabilize the version priori to be move to the stable channel
 
@@ -64,7 +64,7 @@ Moving from this channel to the other will required either ar restart from scrat
 
 `git checkout stable5  // will move you to the stable5 channel`
 
-`git checkout beta    // will move you to the beta channel`
+To move to beta6, please do check [here](https://github.com/zigbeefordomoticz/Domoticz-Zigbee/tree/beta6#plugin-first-installation-or-first-time-on-release-6xxx-for-now-beta6)
 
 In case you need to be on stable instead of stable5
 
