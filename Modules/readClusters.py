@@ -1046,6 +1046,7 @@ def Cluster0001(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 def UpdateBatteryAttribute(self, Devices, MsgSrcAddr, MsgSrcEp):
 
     XIAOMI_BATTERY_DEVICES = (
+        "lumi.remote.b28ac1",
         "lumi.remote.b286opcn01",
         "lumi.remote.b486opcn01",
         "lumi.remote.b686opcn01",
@@ -2028,18 +2029,20 @@ def Cluster0012(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
     self.log.logging(
         "Cluster",
-        "Debug",
-        "readCluster - %s - %s/%s - MsgAttrID: %s MsgAttType: %s MsgAttSize: %s MsgClusterData: %s Model: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, _modelName),
+        "Log",
+        "readCluster - %s - %s/%s MsgAttrID: %s MsgAttType: %s MsgAttSize: %s MsgClusterData: %s Model: >%s<" % (
+            MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, _modelName),
         MsgSrcAddr,
     )
 
     # Hanlding Message from the Aqara Opple Switch 2,4,6 buttons
-    if _modelName in ("lumi.remote.b686opcn01", "lumi.remote.b486opcn01", "lumi.remote.b286opcn01"):
+    if _modelName in ("lumi.remote.b686opcn01", "lumi.remote.b486opcn01", "lumi.remote.b286opcn01",):
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
         AqaraOppleDecoding0012(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
 
     elif _modelName in (
         "lumi.remote.b1acn01",
+        "lumi.remote.b28ac1", 
         "lumi.remote.b186acn01",
         "lumi.remote.b186acn02",
         "lumi.remote.b286acn01",
@@ -2052,7 +2055,7 @@ def Cluster0012(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
         self.log.logging(
             "Cluster",
-            "Debug",
+            "Log",
             "ReadCluster - ClusterId=0012 - Switch Aqara: EP: %s Value: %s " % (MsgSrcEp, value),
             MsgSrcAddr,
         )
