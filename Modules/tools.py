@@ -948,6 +948,13 @@ def checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAtt
 
     self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId][MsgAttrID] = Value
 
+def checkValidValue(self, AttType, Data ):
+
+    if int(AttType, 16) == 0xe2:  # UTCTime
+        if Data == "ffffffff":
+            return False
+
+    return True
 
 def getAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID):
 

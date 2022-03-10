@@ -59,7 +59,7 @@ This is the case where you have move from the stable5 branch to stable6/beta6.
   
 5. run: `sudo pip3 install -r requirements.txt`
 
-6. Restart Domoticz. (you need a FULL restart of Domotciz)
+### beta (beta6)
 
 [More information available here](https://zigbeefordomoticz.github.io/wiki/en-eng/Plugin_Version-6.html)
 
@@ -78,6 +78,7 @@ This is the case where you have move from the stable5 branch to stable6/beta6.
 
 The plugin was originally developed for the [Zigate](https://zigate.fr) Coordinators in close relationship with [Zigate](https://zigate.fr) manufactuer.
 
+<<<<<<< HEAD
 ### Texas Instrument Zigbee Coordinators
 
 Since late 2021 where we have started opening the plugin to further brands of Zigbee Coordinators and begun focusing on compatibility with the [zzh](https://electrolama.com/projects/zig-a-zig-ah/) from [Electrolama](https://electrolama.com), thanks to their sponsorship.
@@ -128,6 +129,9 @@ In order to provide stability and also provide more recent development, Zigbee f
   * *__master__*: latest version 3.0. - Sept. 2018) deprecated
 
 ## How to switch from one channel to the other
+=======
+To move to beta6, please do check [here](https://github.com/zigbeefordomoticz/Domoticz-Zigbee/tree/beta6#plugin-first-installation-or-first-time-on-release-6xxx-for-now-beta6)
+>>>>>>> 0f26eaab (Update readme.md)
 
 `git pull --recurse-submodules`
 `git checkout stable6  // will move you to the stable6 channel`

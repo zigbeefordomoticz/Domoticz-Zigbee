@@ -18,13 +18,14 @@ from time import time
 import Domoticz
 
 from Modules.domoMaj import MajDomoDevice
-from Modules.domoTools import Update_Battery_Device, timedOutDevice
+from Modules.domoTools import timedOutDevice, Update_Battery_Device
 from Modules.lumi import (AqaraOppleDecoding0012, cube_decode, decode_vibr,
                           decode_vibrAngle, readLumiLock, readXiaomiCluster)
-from Modules.tools import (DeviceExist, checkAndStoreAttributeValue,
-                           checkAttribute, get_deviceconf_parameter_value,
+from Modules.tools import DeviceExist  # get_isqn_datastruct,
+from Modules.tools import (checkAndStoreAttributeValue, checkAttribute, checkValidValue,
                            getEPforClusterType, is_hex, set_status_datastruct,
-                           set_timestamp_datastruct, voltage2batteryP)
+                           set_timestamp_datastruct, voltage2batteryP,
+                           get_deviceconf_parameter_value)
 from Modules.tuya import (TUYA_2GANGS_SWITCH_MANUFACTURER,
                           TUYA_CURTAIN_MAUFACTURER, TUYA_DIMMER_MANUFACTURER,
                           TUYA_ENERGY_MANUFACTURER, TUYA_SIREN_MANUFACTURER,
@@ -3712,6 +3713,15 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         return
 
     checkAttribute(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID)
+    if not checkValidValue(self, MsgAttType, MsgClusterData):
+        self.log.logging(
+            "Cluster",
+            "Info",
+            "Cluster0702 - MsgAttrID: %s MsgAttType: %s DataLen: %s : invalid Data Value found : %s"
+            % (MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            MsgSrcAddr,
+        )
+        return
 
     value = decodeAttribute(self, MsgAttType, MsgClusterData)
     if MsgAttType not in ("41", "42"):
