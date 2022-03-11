@@ -45,7 +45,7 @@ TS0041_MANUF_NAME = ("_TZ3000_xkwalgne", "_TZ3000_peszejy7", "_TZ3000_8kzqqzu4",
 
 
 # TS0601
-TUYA_WATER_TIMER = ("_TZE200_htnnfasr",)
+TUYA_WATER_TIMER = ("_TZE200_htnnfasr", "_TZE200_akjefhj5")
 TUYA_ENERGY_MANUFACTURER = (
     "_TZE200_fsb6zw01",
     "_TZE200_byzdayie",
