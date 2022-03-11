@@ -83,9 +83,24 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channe
     if radiomodule == "ezsp":
         import bellows.config as conf
         config = {conf.CONF_DEVICE: {"path": serialPort, "baudrate": 115200}, conf.CONF_NWK: {}}
+        
+    elif radiomodule =="zigate":
+        import zigpy_zigate.config as conf
+        config = {conf.CONF_DEVICE: {"path": serialPort, "baudrate": 115200}, conf.CONF_NWK: {}}
+        
+    elif radiomodule =="znp":
+        import zigpy_znp.config as conf
+        config = {conf.CONF_DEVICE: {"path": serialPort, "baudrate": 115200}, conf.CONF_NWK: {}}
+        
+    elif radiomodule =="deCONZ":
+        import zigpy_deconz.config as conf
+        config = {conf.CONF_DEVICE: {"path": serialPort}, conf.CONF_NWK: {}}
+        
     else:
         import zigpy_znp.config as conf
         config = {conf.CONF_DEVICE: {"path": serialPort}, conf.CONF_NWK: {}}
+    
+    
 
     
     if set_extendedPanId != 0:
@@ -102,7 +117,7 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channe
         self.app = App_znp(config)
         
     elif radiomodule == "deCONZ":
-        self.app = App_deconz(config)
+        self.app = App_deconz(conf.CONFIG_SCHEMA(config))
         
     elif radiomodule == "ezsp":
         self.app = App_bellows(conf.CONFIG_SCHEMA(config))
@@ -260,16 +275,23 @@ async def dispatch_command(self, data):
         target_router = None if target_router == "FFFC" else t.EUI64(t.uint64_t(target_router).serialize())
         duration == 0xFE if duration == 0xFF else duration
         self.permit_to_join_timer["Timer"] = time.time()
-        self.permit_to_join_timer["Duration"] = duration
+        self.permit_to_join_timer["Duration"] = duration 
 
         if target_router is None:
-            self.log.logging("TransportZigpy", "Debug", "PERMIT-TO-JOIN: duration: %s" % duration)
-            await self.app.permit(time_s=duration)
+            self.log.logging("TransportZigpy", "Debug", "PERMIT-TO-JOIN: duration: %s for Radio: %s" % (duration, self._radiomodule))
+            if self._radiomodule == "deCONZ":
+                await self.app.permit_ncp( time_s=duration)
+            else:
+                await self.app.permit(time_s=duration)            
         else:
             self.log.logging(
-                "TransportZigpy", "Debug", "PERMIT-TO-JOIN: duration: %s target: %s" % (duration, target_router)
-            )
-            await self.app.permit(time_s=duration, node=target_router)
+                "TransportZigpy", "Debug", "PERMIT-TO-JOIN: duration: %s target: %s" % (duration, target_router))
+            if self._radiomodule == "deCONZ":
+                await self.app.permit_ncp( time_s=duration)  
+            else:
+                await self.app.permit(time_s=duration, node=target_router)
+                
+
 
     elif data["cmd"] == "SET-TX-POWER":
         await self.app.set_zigpy_tx_power(data["datas"]["Param1"])
@@ -291,7 +313,7 @@ async def dispatch_command(self, data):
 
     elif data["cmd"] == "REQ-NWK-STATUS":
         await asyncio.sleep(10)
-        await self.app.load_network_info()
+        #await self.app.load_network_info()
         self.forwarder_queue.put(build_plugin_8009_frame_content(self, self._radiomodule))
 
     elif data["cmd"] == "RAW-COMMAND":

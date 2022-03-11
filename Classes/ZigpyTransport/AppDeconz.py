@@ -51,7 +51,6 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         self.permit_to_join_timer = permit_to_join_timer
         self.callBackFunction = callBackHandleMessage
         self.callBackGetDevice = callBackGetDevice
-        #self.znp_config[conf.CONF_MAX_CONCURRENT_REQUESTS] = 2
 
         logging.debug("startup in AppDeconz - super()")
         await super().startup(auto_form=auto_form)
@@ -65,11 +64,6 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         #self.callBackFunction(build_plugin_8015_frame_content( self, network_info))
         
         # Trigger Version payload to plugin
-        #znp_model = self.get_device(nwk=t.NWK(0x0000)).model
-        #znp_manuf = self.get_device(nwk=t.NWK(0x0000)).manufacturer
-        #FirmwareBranch, FirmwareMajorVersion, FirmwareVersion = extract_versioning_for_plugin( znp_model, znp_manuf)
-        #self.callBackFunction(build_plugin_8010_frame_content(FirmwareBranch, FirmwareMajorVersion, FirmwareVersion))
-
         logging.debug("startup in AppDeconz - build 8010")
         deconz_model = self.get_device(nwk=t.NWK(0x0000)).model
         deconz_manuf = self.get_device(nwk=t.NWK(0x0000)).manufacturer
@@ -77,9 +71,7 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         deconz_version = "%08x" %self.version
         deconz_major = deconz_version[0:4]
         deconz_minor = deconz_version[4:8]
-        
-        logging.debug("startup in AppDeconz - build 8010 %s %s %s %x" % (deconz_model, deconz_manuf, deconz_version, self.version))
-        
+
         if deconz_model == "ConBee II":
             self.callBackFunction(build_plugin_8010_frame_content("40", deconz_major, deconz_minor))
         elif deconz_model == "RaspBee II":
@@ -87,11 +79,6 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         else:
             self.callBackFunction(build_plugin_8010_frame_content("99", deconz_major, deconz_minor))
             
-            
-
-
-
-
 
     def get_device(self, ieee=None, nwk=None):
         # logging.debug("get_device nwk %s ieee %s" % (nwk, ieee))
@@ -228,14 +215,13 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         pass
 
     async def erase_pdm(self):
-        await self._api.erase_persistent_data()
+        pass
 
     async def soft_reset(self):
-        await self._api.reset()
+        pass
 
-
-    async def set_extended_pan_id(self):
-        pass      
+    async def set_extended_pan_id(self, extended_pan_ip): 
+        pass 
 
     async def set_channel(self):
         pass        
