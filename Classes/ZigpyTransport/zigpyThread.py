@@ -96,13 +96,6 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channe
         import zigpy_deconz.config as conf
         config = {conf.CONF_DEVICE: {"path": serialPort}, conf.CONF_NWK: {}}
         
-    else:
-        import zigpy_znp.config as conf
-        config = {conf.CONF_DEVICE: {"path": serialPort}, conf.CONF_NWK: {}}
-    
-    
-
-    
     if set_extendedPanId != 0:
         config[conf.CONF_NWK][conf.CONF_NWK_EXTENDED_PAN_ID] = "%s" % (
             t.EUI64(t.uint64_t(set_extendedPanId).serialize())
