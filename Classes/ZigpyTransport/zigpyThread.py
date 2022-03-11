@@ -27,6 +27,7 @@ import zigpy.zdo.types as zdo_types
 import zigpy_znp.config as conf
 from Classes.ZigpyTransport.AppZigate import App_zigate
 from Classes.ZigpyTransport.AppZnp import App_znp
+from Classes.ZigpyTransport.AppDeconz import App_deconz
 from Classes.ZigpyTransport.nativeCommands import NATIVE_COMMANDS_MAPPING, native_commands
 from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_0302_frame_content,
@@ -77,7 +78,7 @@ def zigpy_thread(self):
 
 async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channel=0, set_extendedPanId=0):
 
-    self.log.logging("TransportZigpy", "Debug", "In radio_start")
+    self.log.logging("TransportZigpy", "Debug", "In radio_start %s" %radiomodule)
 
     config = {conf.CONF_DEVICE: {"path": serialPort}, conf.CONF_NWK: {}}
     if set_extendedPanId != 0:
@@ -92,6 +93,9 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channe
 
     elif radiomodule == "znp":
         self.app = App_znp(config)
+        
+    elif radiomodule == "deCONZ":
+        self.app = App_deconz(config)
 
     if self.pluginParameters["Mode3"] == "True":
         self.log.logging(
