@@ -95,6 +95,17 @@ class LoggingManagement:
             requests_logger.setLevel(logging.DEBUG)
 
         elif (
+            "debugTransportZigpyEZSP" in self.pluginconf.pluginConf
+            and self.pluginconf.pluginConf["debugTransportZigpyEZSP"]
+        ):
+            requests_logger = logging.getLogger("zigpy")
+            requests_logger.setLevel(logging.DEBUG)
+            requests_logger = logging.getLogger("bellows")
+            requests_logger.setLevel(logging.DEBUG)
+            requests_logger = logging.getLogger("AppEzsp")
+            requests_logger.setLevel(logging.DEBUG)
+
+        elif (
             "debugTransportZigpyZigate" in self.pluginconf.pluginConf
             and self.pluginconf.pluginConf["debugTransportZigpyZigate"]
         ):

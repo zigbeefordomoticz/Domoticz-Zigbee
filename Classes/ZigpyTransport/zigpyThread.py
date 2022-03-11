@@ -24,10 +24,10 @@ import zigpy.util
 import zigpy.zcl
 import zigpy.zdo
 import zigpy.zdo.types as zdo_types
-import zigpy_znp.config as conf
 from Classes.ZigpyTransport.AppZigate import App_zigate
 from Classes.ZigpyTransport.AppZnp import App_znp
 from Classes.ZigpyTransport.AppDeconz import App_deconz
+from Classes.ZigpyTransport.AppBellows import App_bellows
 from Classes.ZigpyTransport.nativeCommands import NATIVE_COMMANDS_MAPPING, native_commands
 from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_0302_frame_content,
@@ -79,8 +79,15 @@ def zigpy_thread(self):
 async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channel=0, set_extendedPanId=0):
 
     self.log.logging("TransportZigpy", "Debug", "In radio_start %s" %radiomodule)
+    
+    if radiomodule == "ezsp":
+        import bellows.config as conf
+        config = {conf.CONF_DEVICE: {"path": serialPort, "baudrate": 115200}, conf.CONF_NWK: {}}
+    else:
+        import zigpy_znp.config as conf
+        config = {conf.CONF_DEVICE: {"path": serialPort}, conf.CONF_NWK: {}}
 
-    config = {conf.CONF_DEVICE: {"path": serialPort}, conf.CONF_NWK: {}}
+    
     if set_extendedPanId != 0:
         config[conf.CONF_NWK][conf.CONF_NWK_EXTENDED_PAN_ID] = "%s" % (
             t.EUI64(t.uint64_t(set_extendedPanId).serialize())
@@ -90,12 +97,15 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channe
 
     if radiomodule == "zigate":
         self.app = App_zigate(config)
-
+        
     elif radiomodule == "znp":
         self.app = App_znp(config)
         
     elif radiomodule == "deCONZ":
         self.app = App_deconz(config)
+        
+    elif radiomodule == "ezsp":
+        self.app = App_bellows(conf.CONFIG_SCHEMA(config))
 
     if self.pluginParameters["Mode3"] == "True":
         self.log.logging(

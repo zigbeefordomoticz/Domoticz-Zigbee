@@ -7,6 +7,8 @@ FIRMWARE_BRANCH = {
     "22": "CC2531, Z-Stack Home 1.2 (znp",
     "40": "ConBee II",
     "41": "RaspBee II",
+    "30": "Elelabs, ELR02x",
+    "31": "Elelabs, ELU01x",
     
     "99": "Unknown"
 }
@@ -17,6 +19,8 @@ ZNP_MODEL = {
     "CC2531, Z-Stack Home 1.2":     "22",
     "ConBee II":                    "40",
     "Raspbee II":                   "41",
+    "Elelabs, ELR02x":              "30",
+    "Elelabs, ELU01x":              "31",
 }
 
 

@@ -24,6 +24,7 @@
                 <option label="Zigate (via zigpy for dev ONLY)" value="ZigpyZiGate"/>
                 <option label="Texas Instruments ZNP (via zigpy)" value="ZigpyZNP"/>
                 <option label="deCONZ based devices (via zigpy)" value="ZigpydeCONZ"/>
+                <option label="Silicon Labs EZSP (via zigpy)" value="ZigpyEZSP"/>
             </options>
         </param>
         <param field="Mode2" label="Coordinator Type" width="75px" required="true" default="None">
@@ -114,7 +115,7 @@ from Modules.input import ZigateRead
 from Modules.piZigate import switchPiZigate_mode
 from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
 from Modules.schneider_wiser import wiser_thermostat_monitoring_heating_demand
-from Modules.tools import removeDeviceInList, how_many_devices
+from Modules.tools import removeDeviceInList
 from Modules.txPower import set_TxPower
 from Modules.zigateCommands import (zigate_erase_eeprom,
                                     zigate_get_firmware_version,
@@ -246,7 +247,7 @@ class BasePlugin:
         ) = self.ZigateRead_timing_avrg = self.ZigateRead_timing_max = 0
         
         # Zigpy
-        self.zigbee_communitation = "native"  # "zigpy" or "native"
+        self.zigbee_communitation = None  # "zigpy" or "native"
         self.pythonModuleVersion = {}
 
     def onStart(self):
@@ -274,7 +275,7 @@ class BasePlugin:
             self.zigbee_communitation = "native"
             self.transport = "None"
             
-        elif Parameters["Mode1"] in ( "ZigpyZiGate", "ZigpyZNP", "ZigpydeCONZ", ):
+        elif Parameters["Mode1"] in ( "ZigpyZiGate", "ZigpyZNP", "ZigpydeCONZ", "ZigpyEZSP"):
             self.transport = Parameters["Mode1"]
             self.zigbee_communitation = "zigpy"
             
@@ -288,14 +289,8 @@ class BasePlugin:
         # Set plugin heartbeat to 1s
         Domoticz.Heartbeat(1)
 
-
         # Copy the Domoticz.Parameters to a variable accessible in the all objetc
         self.pluginParameters = dict(Parameters)
-
-        self.pluginParameters["CoordinatorIEEE"] = ""
-        self.pluginParameters["CoordinatorModel"] = ""
-        self.pluginParameters["CoordinatorFirmwareVersion"] = ""
-        self.pluginParameters["NetworkSize"] = ""
 
         # Open VERSION file in .hidden
         with open(Parameters["HomeFolder"] + VERSION_FILENAME, "rt") as versionfile:
@@ -322,7 +317,6 @@ class BasePlugin:
         self.HardwareID = Parameters["HardwareID"]
         self.Key = Parameters["Key"]
         lst_version = Parameters["DomoticzVersion"].split(" ")
-
 
         if len(lst_version) == 1:
             # No Build
@@ -481,6 +475,7 @@ class BasePlugin:
             self.pythonModuleVersion["dns"] = (dns.__version__)
             check_python_modules_version( self )
             
+            self.zigbee_communitation = "native"
             self.pluginParameters["Zigpy"] = False
             self.ControllerLink= ZigateTransport(
                 self.HardwareID,
@@ -506,6 +501,7 @@ class BasePlugin:
 
             self.pluginconf.pluginConf["ControllerInRawMode"] = False
             switchPiZigate_mode(self, "run")
+            self.zigbee_communitation = "native"
             self.pluginParameters["Zigpy"] = False
             self.ControllerLink= ZigateTransport(
                 self.HardwareID,
@@ -528,6 +524,7 @@ class BasePlugin:
             check_python_modules_version( self )
             
             self.pluginconf.pluginConf["ControllerInRawMode"] = False
+            self.zigbee_communitation = "native"
             self.pluginParameters["Zigpy"] = False
             self.ControllerLink= ZigateTransport(
                 self.HardwareID,
@@ -550,7 +547,6 @@ class BasePlugin:
             self.log.logging("Plugin", "Status", "Transport mode set to None, no communication.")
             self.FirmwareVersion = "031c"
             self.PluginHealth["Firmware Update"] = {"Progress": "75 %", "Device": "1234"}
-            start_web_server(self, Parameters["Mode4"], Parameters["HomeFolder"])
             return
 
         elif self.transport == "ZigpyZiGate":
@@ -570,6 +566,7 @@ class BasePlugin:
             check_python_modules_version( self )
             
             
+            self.zigbee_communitation = "zigpy"
             self.pluginParameters["Zigpy"] = True
             Domoticz.Log("Start Zigpy Transport on zigate")
             
@@ -592,6 +589,7 @@ class BasePlugin:
             self.pythonModuleVersion["zigpy_znp"] = (zigpy_znp.__version__)
             check_python_modules_version( self )
             
+            self.zigbee_communitation = "zigpy"
             self.pluginParameters["Zigpy"] = True
             Domoticz.Log("Start Zigpy Transport on ZNP")
             
@@ -615,9 +613,30 @@ class BasePlugin:
             check_python_modules_version( self )
             
             self.pluginParameters["Zigpy"] = True
-            Domoticz.Log("Start Zigpy Transport on deCONZ")
-            
+            Domoticz.Log("Start Zigpy Transport on deCONZ")            
             self.ControllerLink= ZigpyTransport( self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "deCONZ", Parameters["SerialPort"])  
+            self.ControllerLink.open_zigate_connection()
+            self.pluginconf.pluginConf["ControllerInRawMode"] = True
+            
+        elif self.transport == "ZigpyEZSP":
+            import dns
+            import serial
+            import zigpy
+            import bellows
+            from Classes.ZigpyTransport.Transport import ZigpyTransport
+            from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE)
+            
+            self.pythonModuleVersion["dns"] = (dns.__version__)
+            self.pythonModuleVersion["serial"] = (serial.__version__)
+            self.pythonModuleVersion["zigpy"] = (zigpy.__version__)
+            self.pythonModuleVersion["zigpy_ezsp"] = (bellows.__version__)
+            check_python_modules_version( self )
+            
+            self.zigbee_communitation = "zigpy"
+            self.pluginParameters["Zigpy"] = True
+            Domoticz.Log("Start Zigpy Transport on EZSP")
+
+            self.ControllerLink= ZigpyTransport( self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "ezsp", Parameters["SerialPort"])  
             self.ControllerLink.open_zigate_connection()
             self.pluginconf.pluginConf["ControllerInRawMode"] = True
             
@@ -625,7 +644,7 @@ class BasePlugin:
             self.log.logging("Plugin", "Error", "Unknown Transport comunication protocol : %s" % str(self.transport))
             return
 
-        if self.transport not in ("ZigpyZNP", "ZigpydeCONZ", "ZigpyZiGate" ):
+        if self.transport not in ("ZigpyZNP", "ZigpydeCONZ", "ZigpyEZSP", "ZigpyZiGate" ):
             self.log.logging("Plugin", "Debug", "Establish Zigate connection")
             self.ControllerLink.open_zigate_connection()
 
@@ -1034,9 +1053,6 @@ class BasePlugin:
             self.log.logging("Plugin", "Debug", "Devices size has changed , let's write ListOfDevices on disk")
             WriteDeviceList(self, 0)  # write immediatly
 
-        nbrouters, nbendevices = how_many_devices(self)
-        self.pluginParameters["NetworkSize"] = "Total: %s, Routers: %s End Devices: %s" %( (nbrouters + nbendevices), nbrouters, nbendevices)
-        
         if self.CommiSSionning:
             self.PluginHealth["Flag"] = 2
             self.PluginHealth["Txt"] = "Enrollment in Progress"
@@ -1132,11 +1148,8 @@ def zigateInit_Phase1(self):
             return
 
         # After an Erase PDM we have to do a full start of Zigate
-        self.log.logging("Plugin", "Debug", "----> startZigate")
+        self.log.logging("Plugin", "Debug", "----> starZigate")
         return
-    
-    elif self.zigbee_communitation == "zigpy" and Parameters["Mode3"] == "True" and not self.ErasePDMDone:  # Erase PDM
-        update_DB_device_status_to_reinit( self )
 
     self.busy = False
     self.InitPhase1 = True
@@ -1211,7 +1224,7 @@ def zigateInit_Phase3(self):
         zigateBlueLed(self, False)
 
     # Set the TX Power
-    if self.ZiGateModel == 1 or self.zigbee_communitation == "zigpy":
+    if self.ZiGateModel ==  1:
         set_TxPower(self, self.pluginconf.pluginConf["TXpower_set"])
 
     # Set Certification Code
@@ -1257,7 +1270,7 @@ def zigateInit_Phase3(self):
         #   self.log.logging( 'Plugin', 'Status', "Trigger a Energy Level Scan")
         #   self.networkenergy.start_scan()
 
-    if self.webserver and self.networkenergy:
+    if self.networkenergy:
         self.webserver.update_networkenergy(self.networkenergy)
 
         # Create Network Map object and trigger one scan
@@ -1265,7 +1278,7 @@ def zigateInit_Phase3(self):
         self.networkmap = NetworkMap(
             self.zigbee_communitation ,self.pluginconf, self.ControllerLink, self.ListOfDevices, Devices, self.HardwareID, self.log
         )
-    if self.webserver and self.networkmap:
+    if self.networkmap:
         self.webserver.update_networkmap(self.networkmap)
 
     # In case we have Transport = None , let's check if we have to active Group management or not. (For Test and Web UI Dev purposes
@@ -1289,7 +1302,7 @@ def zigateInit_Phase3(self):
             "Plugin", "Status", "Plugin with Zigate+, firmware %s correctly initialized" % self.FirmwareVersion
         )
 
-    elif self.FirmwareBranch and int(self.FirmwareBranch) >= 20:
+    elif int(self.FirmwareBranch) >= 20:
         self.log.logging(
             "Plugin", "Status", "Plugin with ZNP, firmware %s-%s correctly initialized" % (self.FirmwareMajorVersion, self.FirmwareVersion))
 
@@ -1341,7 +1354,7 @@ def start_GrpManagement(self, homefolder):
     if self.groupmgt and self.ControllerIEEE:
         self.groupmgt.updateZigateIEEE(self.ControllerIEEE)
 
-    if self.webserver and self.groupmgt:
+    if self.groupmgt:
         self.webserver.update_groupManagement(self.groupmgt)
         if self.pluginconf.pluginConf["zigatePartOfGroup0000"]:
             # Add Zigate NwkId 0x0000 Ep 0x01 to GroupId 0x0000
@@ -1370,7 +1383,7 @@ def start_OTAManagement(self, homefolder):
         self.log,
         self.PluginHealth,
     )
-    if self.webserver and self.OTA:
+    if self.OTA:
         self.webserver.update_OTA(self.OTA)
 
 
@@ -1502,14 +1515,15 @@ def check_python_modules_version( self ):
         "zigpy": "0.44.0.dev0",
         "zigpy_znp": "0.7.0",
         "zigpy_deconz": "0.15.0.dev0",
-        "zigpy_zigate": "0.8.0"
+        "zigpy_zigate": "0.8.0",
+        "zigpy_ezsp": "0.30.0.dev0",
         }
     
     flag = True
 
     for x in self.pythonModuleVersion:
         if x not in MODULES_VERSION:
-            self.log.logging("Plugin", "Error", "A python module has been loaded and is unknown")
+            self.log.logging("Plugin", "Error", "A python module has been loaded and is unknown : %s" %x)
             flag = False
             continue
         
