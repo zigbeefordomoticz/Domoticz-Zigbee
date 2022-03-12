@@ -942,14 +942,21 @@ def tuya_dimmer_dimmer(self, NwkId, srcEp, percent):
 
 
 # Tuya Smart Cover Switch
-def tuya_window_cover_calibration(self, nwkid, start_stop):
+def tuya_window_cover_calibration(self, nwkid, duration):
     # (0x0102) | Write Attributes (0x02) | 0xf001 | 8-Bit (0x30) | 0 (0x00) | Start Calibration
     # (0x0102) | Write Attributes (0x02) | 0xf001 | 8-Bit (0x30) | 1 (0x01) | End Calibration
     #write_attribute(self, nwkid, ZIGATE_EP, "01", "0102", "0000", "00", "f001", "30", start_stop, ackIsDisabled=True)
-    duration = 60
-    if "Param" in self.ListOfDevices[ nwkid ] and "moesCalibrationTime" in self.ListOfDevices[ nwkid ]["Param"]:
-        duration = "%02x" %int(self.ListOfDevices[ nwkid ]["Param"]["moesCalibrationTime"])
-    write_attribute(self, nwkid, ZIGATE_EP, "01", "0102", "0000", "00", "f003", "21", duration, ackIsDisabled=True)
+    self.log.logging(
+        "Tuya",
+        "Debug",
+        "tuya_window_cover_calibration - Nwkid: %s Calibtration %s" % (nwkid, duration),
+        nwkid,
+    )
+
+    self.log.logging( "Tuya", "Debug", "tuya_window_cover_calibration - duration %s" % ( duration), nwkid, )
+
+    write_attribute(self, nwkid, ZIGATE_EP, "01", "0102", "0000", "00", "f003", "21", "%04x" %duration, ackIsDisabled=False)
+
 
 
 def tuya_window_cover_motor_reversal(self, nwkid, mode):
@@ -957,7 +964,7 @@ def tuya_window_cover_motor_reversal(self, nwkid, mode):
     # (0x0102) | Write Attributes (0x02) | 0xf002 | 8-Bit (0x30) | 1 (0x01) | On
     if int(mode) in {0, 1}:
         write_attribute(
-            self, nwkid, ZIGATE_EP, "01", "0102", "0000", "00", "f002", "30", "%02x" % int(mode), ackIsDisabled=True
+            self, nwkid, ZIGATE_EP, "01", "0102", "0000", "00", "f002", "30", "%02x" % int(mode), ackIsDisabled=False
         )
 
 
@@ -968,7 +975,7 @@ def tuya_backlight_command(self, nwkid, mode):
             else "8001" )
 
         write_attribute(
-            self, nwkid, ZIGATE_EP, "01", "0006", "0000", "00", backlist_attribute, "30", "%02x" % int(mode), ackIsDisabled=True
+            self, nwkid, ZIGATE_EP, "01", "0006", "0000", "00", backlist_attribute, "30", "%02x" % int(mode), ackIsDisabled=False
         )
 
 

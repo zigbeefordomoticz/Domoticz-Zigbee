@@ -12,7 +12,7 @@
             "ee00": "",
             "f001": "",
             "f002": "",
-            "Type": "Venetian/ShutterCalibration"
+            "Type": "Venetian"
         }
     },
     "Type": "",
@@ -47,6 +47,6 @@
     "Param": {
         "TuyaMotoReversal": 0,
         "TuyaBackLight": 1,
-        "moesCalibrationTime": 300
+        "moesCalibrationTime": 200
     }
 }
