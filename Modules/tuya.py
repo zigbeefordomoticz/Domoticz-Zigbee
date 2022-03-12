@@ -948,7 +948,7 @@ def tuya_window_cover_calibration(self, nwkid, start_stop):
     #write_attribute(self, nwkid, ZIGATE_EP, "01", "0102", "0000", "00", "f001", "30", start_stop, ackIsDisabled=True)
     duration = 60
     if "Param" in self.ListOfDevices[ nwkid ] and "moesCalibrationTime" in self.ListOfDevices[ nwkid ]["Param"]:
-        duration = int(self.ListOfDevices[ nwkid ]["Param"]["moesCalibrationTime"])
+        duration = "%02x" %int(self.ListOfDevices[ nwkid ]["Param"]["moesCalibrationTime"])
     write_attribute(self, nwkid, ZIGATE_EP, "01", "0102", "0000", "00", "f003", "21", duration, ackIsDisabled=True)
 
 
