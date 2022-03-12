@@ -797,7 +797,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                     t,
                     Type_=244,
                     Subtype_=73,
-                    Switchtype_=16,
+                    Switchtype_=21,
                 )
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in BlindInverted" % (t), NWKID)
     
@@ -828,7 +828,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                     t,
                     Type_=244,
                     Subtype_=73,
-                    Switchtype_=13,
+                    Switchtype_=22,
                 )
                 
             if t == "Blind":

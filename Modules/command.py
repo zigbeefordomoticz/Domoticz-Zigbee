@@ -75,7 +75,9 @@ DEVICE_SWITCH_MATRIX = {
     (244, 73, 9): ("Button",),
     (244, 73, 13): ("BSO",),
     (244, 73, 15): ("VenetianInverted", "Venetian"),
-    (244, 73, 16): ("BlindInverted", "WindowCovering", "VanneInverted"),
+    (244, 73, 16): ("BlindInverted", "WindowCovering"),
+    (244, 73, 22): ("Vanne",),
+    (244, 73, 21): ("VanneInverted",)
 }
 
 ACTIONATORS = [
@@ -90,7 +92,7 @@ ACTIONATORS = [
     "Venetian",
     "VenetianInverted",
     "VanneInverted",
-    "Vanne"
+    "Vanne",
     "WindowCovering",
     "BSO",
     "BSO-Orientation",
@@ -432,7 +434,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( "PR412", "CPR412", "CPR412-E"):
                 actuator_off(self, NWKID, EPout, "Light")
                 #sendZigateCmd(self, "0092", "02" + NWKID + ZIGATE_EP + EPout + "00")
-            elif "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( "TS130F",):
+            elif DeviceType == "Vanne" or "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( "TS130F",):
                 actuator_off(self, NWKID, EPout, "WindowCovering")
             else:
                 actuator_on(self, NWKID, EPout, "WindowCovering")
@@ -590,7 +592,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ("PR412", "CPR412", "CPR412-E"):
                 actuator_on(self, NWKID, EPout, "Light")
                 #sendZigateCmd(self, "0092", "02" + NWKID + ZIGATE_EP + EPout + "01")        
-            elif "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( "TS130F",):
+            elif DeviceType == "Vanne" or "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( "TS130F",):
                 actuator_on(self, NWKID, EPout, "WindowCovering")
             else:
                 actuator_off(self, NWKID, EPout, "WindowCovering")
