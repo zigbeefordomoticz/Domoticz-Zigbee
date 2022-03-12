@@ -22,7 +22,7 @@ from Modules.bindings import bindDevice, reWebBind_Clusters, unbindDevice
 from Modules.casaia import casaia_pairing
 from Modules.domoCreate import CreateDomoDevice
 from Modules.livolo import livolo_bind
-from Modules.lumi import enableOppleSwitch
+from Modules.lumi import enableOppleSwitch, enable_click_mode_aqara, enable_operation_mode_aqara
 from Modules.manufacturer_code import (PREFIX_MAC_LEN,
                                        PREFIX_MACADDR_WIZER_LEGACY, PREFIX_MACADDR_XIAOMI, PREFIX_MACADDR_OPPLE, )
 from Modules.mgmt_rtg import mgmt_rtg
@@ -67,8 +67,12 @@ def processNotinDBDevices(self, Devices, NWKID, status, RIA):
 
     knownModel = False
     if self.ListOfDevices[NWKID]["Model"] not in ({}, ""):
-        self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s Model Name: %s" % (RIA, NWKID, self.ListOfDevices[NWKID]["Model"]))
+        self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s Model Name: %s" % (
+            RIA, NWKID, self.ListOfDevices[NWKID]["Model"]))
         # Let's check if this Model is known
+        if "Manufacturer Name" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Manufacturer Name"] not in ({}, ""):
+            self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s Manufacturer Name: %s" % (
+                RIA, NWKID, self.ListOfDevices[NWKID]["Manufacturer Name"]))
         if self.ListOfDevices[NWKID]["Model"] in self.DeviceConf:
             knownModel = True
             status = "CreateDB"  # Fast track
@@ -676,7 +680,10 @@ def handle_device_specific_needs(self, Devices, NWKID):
     elif self.ListOfDevices[NWKID]["Model"] == "SPZB0001":
         thermostat_Calibration(self, NWKID, 0x00)
 
-
+    elif self.ListOfDevices[NWKID]["Model"] == "lumi.remote.b28ac1":
+        enable_click_mode_aqara( self, NWKID )
+        enable_operation_mode_aqara( self, NWKID )
+        
 def scan_device_for_group_memebership(self, NWKID):
     for ep in self.ListOfDevices[NWKID]["Ep"]:
         if "0004" in self.ListOfDevices[NWKID]["Ep"][ep] and self.groupmgt:

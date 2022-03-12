@@ -13,3 +13,6 @@
 [submodule "external/dnspython"]
 	path = external/dnspython
 	url = https://github.com/rthalley/dnspython
+[submodule "external/bellows"]
+	path = external/bellows
+	url = https://github.com/zigbeefordomoticz/bellows.git

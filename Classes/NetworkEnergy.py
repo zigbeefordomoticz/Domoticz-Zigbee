@@ -333,10 +333,13 @@ class NetworkEnergy:
     def NwkScanResponse(self, MsgData):
 
         self.logging("Debug", "NwkScanResponse >%s<" % MsgData)
-
         MsgSrc = None
         MsgSequenceNumber = MsgData[0:2]
         MsgDataStatus = MsgData[2:4]
+        if MsgDataStatus != '00':
+            self.logging("Log", "NwkScanResponse Error: %s, %s " %(MsgDataStatus, MsgData ))
+            return
+                         
         MsgTotalTransmission = MsgData[4:8]
         MsgTransmissionFailures = MsgData[8:12]
         MsgScannedChannel = MsgData[12:20]
