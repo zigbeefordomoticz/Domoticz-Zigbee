@@ -45,7 +45,7 @@ TS0041_MANUF_NAME = ("_TZ3000_xkwalgne", "_TZ3000_peszejy7", "_TZ3000_8kzqqzu4",
 
 
 # TS0601
-TUYA_WATER_TIMER = ("_TZE200_htnnfasr",)
+TUYA_WATER_TIMER = ("_TZE200_htnnfasr", "_TZE200_akjefhj5")
 TUYA_ENERGY_MANUFACTURER = (
     "_TZE200_fsb6zw01",
     "_TZE200_byzdayie",
@@ -728,7 +728,7 @@ def tuya_watertimer_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID,
     self.log.logging(
         "Tuya",
         "Debug",
-        "tuya_response - Model: %s Nwkid: %s/%s dp: %02x data type: %02x data: %s"
+        "tuya_watertimer_response - Model: %s Nwkid: %s/%s dp: %02x data type: %02x data: %s"
         % (_ModelName, NwkId, srcEp, dp, datatype, data),
         NwkId,
     )
@@ -748,6 +748,16 @@ def tuya_watertimer_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID,
         # tuya_response - Model: TS0601-Parkside-Watering-Timer Nwkid: a82e/01 dp: 01 data type: 1 data: 000502000400000001
 
         store_tuya_attribute(self, NwkId, "Valve 0x01", data)
+        if datatype == 0x01:   # Bool
+            self.log.logging(
+                "Tuya",
+                "Debug",
+                "tuya_watertimer_response - Model: %s Nwkid: %s/%s dp: %02x data type: %02x data: %s reporting to Domoticz"
+                % (_ModelName, NwkId, srcEp, dp, datatype, data),
+                NwkId,
+            )
+
+            MajDomoDevice(self, Devices, NwkId, "01", "0006", data)
 
     elif dp == 0x05:  #
         store_tuya_attribute(self, NwkId, "Valve 0x05", data)
