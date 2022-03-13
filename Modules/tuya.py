@@ -217,9 +217,9 @@ def tuya_registration(self, nwkid, device_reset=False, parkside=False):
     # Gw->Zigbee gateway query MCU version
     self.log.logging("Tuya", "Debug", "tuya_registration - Nwkid: %s Request MCU Version Cmd: 10" % nwkid)
     if _ModelName in ( "TS0601-_TZE200_nklqjk62", ):
-    	payload = "11" + get_and_inc_ZCL_SQN(self, nwkid) + "10" + "000e"
+        payload = "11" + get_and_inc_ZCL_SQN(self, nwkid) + "10" + "000e"
     else:
-    	payload = "11" + get_and_inc_ZCL_SQN(self, nwkid) + "10" + "0002"
+        payload = "11" + get_and_inc_ZCL_SQN(self, nwkid) + "10" + "0002"
     raw_APS_request(
         self,
         nwkid,
@@ -942,32 +942,40 @@ def tuya_dimmer_dimmer(self, NwkId, srcEp, percent):
 
 
 # Tuya Smart Cover Switch
-def tuya_window_cover_calibration(self, nwkid, start_stop):
+def tuya_window_cover_calibration(self, nwkid, duration):
     # (0x0102) | Write Attributes (0x02) | 0xf001 | 8-Bit (0x30) | 0 (0x00) | Start Calibration
     # (0x0102) | Write Attributes (0x02) | 0xf001 | 8-Bit (0x30) | 1 (0x01) | End Calibration
-    write_attribute(self, nwkid, ZIGATE_EP, "01", "0102", "0000", "00", "f001", "30", start_stop, ackIsDisabled=True)
+    #write_attribute(self, nwkid, ZIGATE_EP, "01", "0102", "0000", "00", "f001", "30", start_stop, ackIsDisabled=True)
+    self.log.logging(
+        "Tuya",
+        "Debug",
+        "tuya_window_cover_calibration - Nwkid: %s Calibtration %s" % (nwkid, duration),
+        nwkid,
+    )
+
+    self.log.logging( "Tuya", "Debug", "tuya_window_cover_calibration - duration %s" % ( duration), nwkid, )
+
+    write_attribute(self, nwkid, ZIGATE_EP, "01", "0102", "0000", "00", "f003", "21", "%04x" %duration, ackIsDisabled=False)
+
 
 
 def tuya_window_cover_motor_reversal(self, nwkid, mode):
     # (0x0102) | Write Attributes (0x02) | 0xf002 | 8-Bit (0x30) | 0 (0x00) | Off
     # (0x0102) | Write Attributes (0x02) | 0xf002 | 8-Bit (0x30) | 1 (0x01) | On
-    if int(mode) in (0, 1):
+    if int(mode) in {0, 1}:
         write_attribute(
-            self, nwkid, ZIGATE_EP, "01", "0102", "0000", "00", "f002", "30", "%02x" % int(mode), ackIsDisabled=True
+            self, nwkid, ZIGATE_EP, "01", "0102", "0000", "00", "f002", "30", "%02x" % int(mode), ackIsDisabled=False
         )
 
 
 def tuya_backlight_command(self, nwkid, mode):
-    # 0x0006 / 0x80001
-    # Indicator LED off: 0x00
-    # Indicator switch On/Off: 0x01
-    # Indicate swicth location: 0x02
-    # (0x0006) | Write Attributes (0x02) | 0x8001 | 8-Bit (0x30) | 0 (0x00) | Light Mode 1
-    # (0x0006) | Write Attributes (0x02) | 0x8001 | 8-Bit (0x30) | 1 (0x01) | Light Mode 2
-    # (0x0006) | Write Attributes (0x02) | 0x8001 | 8-Bit (0x30) | 2 (0x02) | Light Mode 3
-    if int(mode) in (0, 1, 2):
+    if int(mode) in {0, 1, 2}:
+        backlist_attribute = ( 
+            "5000" if 'Model' in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]["Model"] in ("TS130F-_TZ3000_1dd0d5yi",) 
+            else "8001" )
+
         write_attribute(
-            self, nwkid, ZIGATE_EP, "01", "0006", "0000", "00", "8001", "30", "%02x" % int(mode), ackIsDisabled=True
+            self, nwkid, ZIGATE_EP, "01", "0006", "0000", "00", backlist_attribute, "30", "%02x" % int(mode), ackIsDisabled=False
         )
 
 

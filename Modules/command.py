@@ -76,6 +76,8 @@ DEVICE_SWITCH_MATRIX = {
     (244, 73, 13): ("BSO",),
     (244, 73, 15): ("VenetianInverted", "Venetian"),
     (244, 73, 16): ("BlindInverted", "WindowCovering"),
+    (244, 73, 22): ("Vanne",),
+    (244, 73, 21): ("VanneInverted",)
 }
 
 ACTIONATORS = [
@@ -89,6 +91,8 @@ ACTIONATORS = [
     "Toggle",
     "Venetian",
     "VenetianInverted",
+    "VanneInverted",
+    "Vanne",
     "WindowCovering",
     "BSO",
     "BSO-Orientation",
@@ -238,7 +242,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             # Profalux offer a Manufacturer command to make Stop on Cluster 0x0008
             profalux_stop(self, NWKID)
 
-        elif DeviceType in ("WindowCovering", "VenetianInverted", "Venetian"):
+        elif DeviceType in ("WindowCovering", "VenetianInverted", "Venetian", "Vanne", "VanneInverted"): 
             if _model_name in ("PR412", "CPR412", "CPR412-E"):
                 profalux_stop(self, NWKID)
             else:
@@ -418,7 +422,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             actuator_off(self, NWKID, EPout, "WindowCovering")
             #sendZigateCmd(self, "00FA", "02" + NWKID + ZIGATE_EP + EPout + "01")  # Blind inverted (On, for Close)
 
-        elif DeviceType == "VenetianInverted":
+        elif DeviceType in ("VenetianInverted", "VanneInverted"):
             if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ("PR412", "CPR412", "CPR412-E"):
                 actuator_on(self, NWKID, EPout, "Light")
                 #sendZigateCmd(self, "0092", "02" + NWKID + ZIGATE_EP + EPout + "01")
@@ -426,10 +430,12 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 actuator_on(self, NWKID, EPout, "WindowCovering")
                 #sendZigateCmd( self, "00FA", "02" + NWKID + ZIGATE_EP + EPout + "01")  # Venetian Inverted/Blind (On, for Close)
 
-        elif DeviceType == "Venetian":
+        elif DeviceType in ( "Venetian", "Vanne"):
             if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( "PR412", "CPR412", "CPR412-E"):
                 actuator_off(self, NWKID, EPout, "Light")
                 #sendZigateCmd(self, "0092", "02" + NWKID + ZIGATE_EP + EPout + "00")
+            elif DeviceType == "Vanne" or "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( "TS130F",):
+                actuator_off(self, NWKID, EPout, "WindowCovering")
             else:
                 actuator_on(self, NWKID, EPout, "WindowCovering")
                 #sendZigateCmd(self, "00FA", "02" + NWKID + ZIGATE_EP + EPout + "00")  # Venetian /Blind (Off, for Close)
@@ -447,7 +453,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
 
         elif DeviceType == "ShutterCalibration":
             self.log.logging("Command", "Debug", "mgtCommand : Disable Window Cover Calibration")
-            tuya_window_cover_calibration(self, NWKID, "00")
+            tuya_window_cover_calibration(self, NWKID, "01")
 
         else:
             # Remaining Slider widget
@@ -576,16 +582,18 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             actuator_on(self, NWKID, EPout, "WindowCovering")
             #sendZigateCmd(self, "00FA", "02" + NWKID + ZIGATE_EP + EPout + "00")  # Blind inverted (Off, for Open)
 
-        elif DeviceType == "VenetianInverted":
+        elif DeviceType in ("VenetianInverted", "VanneInverted"):
             if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ("PR412", "CPR412", "CPR412-E"):
                 actuator_off(self, NWKID, EPout, "Light")
             else:
                 actuator_off(self, NWKID, EPout, "WindowCovering")
 
-        elif DeviceType == "Venetian":
+        elif DeviceType in ("Venetian", "Vanne"):
             if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ("PR412", "CPR412", "CPR412-E"):
                 actuator_on(self, NWKID, EPout, "Light")
-                #sendZigateCmd(self, "0092", "02" + NWKID + ZIGATE_EP + EPout + "01")
+                #sendZigateCmd(self, "0092", "02" + NWKID + ZIGATE_EP + EPout + "01")        
+            elif DeviceType == "Vanne" or "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( "TS130F",):
+                actuator_on(self, NWKID, EPout, "WindowCovering")
             else:
                 actuator_off(self, NWKID, EPout, "WindowCovering")
                 #sendZigateCmd(self, "00FA", "02" + NWKID + ZIGATE_EP + EPout + "01")  # Venetian/Blind (On, for Open)
@@ -599,7 +607,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
 
         elif DeviceType == "ShutterCalibration":
             self.log.logging("Command", "Debug", "mgtCommand : Enable Window Cover Calibration")
-            tuya_window_cover_calibration(self, NWKID, "01")
+            tuya_window_cover_calibration(self, NWKID, "00")
 
         else:
             # Remaining Slider widget
@@ -1044,10 +1052,10 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 "WindowCovering - Lift Percentage Command - %s/%s Level: 0x%s %s" % (NWKID, EPout, value, Level),
                 NWKID,
             )
-            actuator_setlevel(self, NWKID, EPout, value, "WindowCovering")
+            actuator_setlevel(self, NWKID, EPout, Level, "WindowCovering")
             #sendZigateCmd(self, "00FA", "02" + NWKID + ZIGATE_EP + EPout + "05" + value)
 
-        elif DeviceType == "Venetian":
+        elif DeviceType in ("Venetian","Vanne"):
             if Level == 0:
                 Level = 1
             elif Level >= 100:
@@ -1059,10 +1067,10 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 "Venetian blind - Lift Percentage Command - %s/%s Level: 0x%s %s" % (NWKID, EPout, value, Level),
                 NWKID,
             )
-            actuator_setlevel(self, NWKID, EPout, value, "WindowCovering")
+            actuator_setlevel(self, NWKID, EPout, Level, "WindowCovering")
             #sendZigateCmd(self, "00FA", "02" + NWKID + ZIGATE_EP + EPout + "05" + value)
 
-        elif DeviceType == "VenetianInverted":
+        elif DeviceType in ("VenetianInverted", "VanneInverted"):
             Level = 100 - Level
             if Level == 0:
                 Level = 1
@@ -1076,7 +1084,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 % (NWKID, EPout, value, Level),
                 NWKID,
             )
-            actuator_setlevel(self, NWKID, EPout, value, "WindowCovering")
+            actuator_setlevel(self, NWKID, EPout, Level, "WindowCovering")
             #sendZigateCmd(self, "00FA", "02" + NWKID + ZIGATE_EP + EPout + "05" + value)
 
         elif DeviceType == "AlarmWD":
