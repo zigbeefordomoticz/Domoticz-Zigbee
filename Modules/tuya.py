@@ -59,6 +59,7 @@ TUYA_SMARTAIR_MANUFACTURER = (
 TUYA_SIREN_MANUFACTURER = (
     "_TZE200_d0yu2xgi",
     "_TYST11_d0yu2xgi",
+    "_TZE200_t1blo2bj",
 )
 TUYA_SIREN_MODEL = (
     "TS0601",
