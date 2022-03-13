@@ -748,6 +748,8 @@ def tuya_watertimer_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID,
         # tuya_response - Model: TS0601-Parkside-Watering-Timer Nwkid: a82e/01 dp: 01 data type: 1 data: 000502000400000001
 
         store_tuya_attribute(self, NwkId, "Valve 0x01", data)
+        if datatype == 0x01: # Bool
+            MajDomoDevice(self, Devices, NwkId, "01", "0006", data)
 
     elif dp == 0x05:  #
         store_tuya_attribute(self, NwkId, "Valve 0x05", data)
