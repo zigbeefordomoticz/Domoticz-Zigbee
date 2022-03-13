@@ -217,9 +217,9 @@ def tuya_registration(self, nwkid, device_reset=False, parkside=False):
     # Gw->Zigbee gateway query MCU version
     self.log.logging("Tuya", "Debug", "tuya_registration - Nwkid: %s Request MCU Version Cmd: 10" % nwkid)
     if _ModelName in ( "TS0601-_TZE200_nklqjk62", ):
-    	payload = "11" + get_and_inc_ZCL_SQN(self, nwkid) + "10" + "000e"
+        payload = "11" + get_and_inc_ZCL_SQN(self, nwkid) + "10" + "000e"
     else:
-    	payload = "11" + get_and_inc_ZCL_SQN(self, nwkid) + "10" + "0002"
+        payload = "11" + get_and_inc_ZCL_SQN(self, nwkid) + "10" + "0002"
     raw_APS_request(
         self,
         nwkid,
@@ -728,7 +728,7 @@ def tuya_watertimer_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID,
     self.log.logging(
         "Tuya",
         "Debug",
-        "tuya_response - Model: %s Nwkid: %s/%s dp: %02x data type: %02x data: %s"
+        "tuya_watertimer_response - Model: %s Nwkid: %s/%s dp: %02x data type: %02x data: %s"
         % (_ModelName, NwkId, srcEp, dp, datatype, data),
         NwkId,
     )
@@ -748,7 +748,15 @@ def tuya_watertimer_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID,
         # tuya_response - Model: TS0601-Parkside-Watering-Timer Nwkid: a82e/01 dp: 01 data type: 1 data: 000502000400000001
 
         store_tuya_attribute(self, NwkId, "Valve 0x01", data)
-        if datatype == 0x01: # Bool
+        if datatype == 0x01:   # Bool
+            self.log.logging(
+                "Tuya",
+                "Debug",
+                "tuya_watertimer_response - Model: %s Nwkid: %s/%s dp: %02x data type: %02x data: %s reporting to Domoticz"
+                % (_ModelName, NwkId, srcEp, dp, datatype, data),
+                NwkId,
+            )
+
             MajDomoDevice(self, Devices, NwkId, "01", "0006", data)
 
     elif dp == 0x05:  #
