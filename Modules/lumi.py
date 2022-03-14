@@ -124,7 +124,42 @@ def enableOppleSwitch(self, nwkid):
         ackIsDisabled=is_ack_tobe_disabled(self, nwkid),
     )
 
+def enable_operation_mode_aqara( self, nwkid):
+    if nwkid not in self.ListOfDevices:
+        return
 
+    manuf_id = "115f"
+    manuf_spec = "01"
+    cluster_id = "fcc0"
+    Hattribute = "0009"
+    data_type = "20"
+    Hdata = "01" # Event mode
+
+    self.log.logging("Lumi", "Log", "Write enable_operation_mode_aqara AQARA Wireless Switch: %s" % nwkid, nwkid)
+    write_attribute( 
+        self, nwkid, ZIGATE_EP, "01", cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, 
+        ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
+
+    
+def enable_click_mode_aqara(self, nwkid):
+    
+    if nwkid not in self.ListOfDevices:
+        return
+
+    manuf_id = "115f"
+    manuf_spec = "01"
+    cluster_id = "fcc0"
+    Hattribute = "0125"
+    data_type = "20"
+    Hdata = "02" # Multi-Click
+
+    self.log.logging("Lumi", "Log", "Write enable_scene_mode_aqara AQARA Wireless Switch: %s" % nwkid, nwkid)
+    write_attribute( 
+        self, nwkid, ZIGATE_EP, "01", cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, 
+        ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
+
+    
+    
 def lumiReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
 
     if srcNWKID not in self.ListOfDevices:

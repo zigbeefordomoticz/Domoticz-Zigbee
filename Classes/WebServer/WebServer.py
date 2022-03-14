@@ -224,8 +224,32 @@ class WebServer(object):
         _response = prepResponseMessage(self, setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == "GET":
+            
             if self.ControllerData:
-                _response["Data"] = json.dumps(self.ControllerData, sort_keys=True)
+                coordinator_infos = {}
+                coordinator_infos["Firmware Version"] = self.ControllerData["Firmware Version"]
+                coordinator_infos["IEEE"] = self.ControllerData["IEEE"]
+                coordinator_infos["Short Address"] = self.ControllerData["Short Address"]
+                coordinator_infos["Channel"] = self.ControllerData["Channel"]
+                coordinator_infos["PANID"] = self.ControllerData["PANID"]
+                coordinator_infos["Extended PANID"] = self.ControllerData["Extended PANID"]
+                coordinator_infos["Branch Version"] = self.ControllerData["Branch Version"]
+                coordinator_infos["Major Version"] = self.ControllerData["Major Version"] 
+                coordinator_infos["Minor Version"] = self.ControllerData["Minor Version"] 
+
+                if 0 < int(self.ControllerData["Branch Version"]) <= 20:   
+                    coordinator_infos["Display Firmware Version"] = "Zig - %s" % self.ControllerData["Minor Version"] 
+                elif 20 <= int(self.ControllerData["Branch Version"]) < 30:
+                    # ZNP
+                    coordinator_infos["Display Firmware Version"] = "Znp - %s" % self.ControllerData["Minor Version"] 
+
+                elif 30 <= int(self.ControllerData["Branch Version"]) < 40:   
+                    # Silicon Labs
+                    coordinator_infos["Display Firmware Version"] = "Ezsp - %s.%s" %(
+                        self.ControllerData["Major Version"] , self.ControllerData["Minor Version"] )
+                else:
+                    coordinator_infos["Display Firmware Version"] = "UNK - %s" % self.ControllerData["Minor Version"] 
+                _response["Data"] = json.dumps(coordinator_infos, sort_keys=True)
             else:
                 fake_zigate = {
                     "Firmware Version": "fake - 0310",

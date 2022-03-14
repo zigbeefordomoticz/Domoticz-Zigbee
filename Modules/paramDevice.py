@@ -34,7 +34,7 @@ from Modules.schneider_wiser import (iTRV_open_window_detection,
 from Modules.tuya import (get_tuya_attribute, tuya_backlight_command,
                           tuya_cmd_ts004F, tuya_energy_childLock,
                           tuya_switch_indicate_light, tuya_switch_relay_status,
-                          tuya_window_cover_motor_reversal)
+                          tuya_window_cover_motor_reversal, tuya_window_cover_calibration)
 from Modules.tuyaTRV import (tuya_trv_boost_time, tuya_trv_calibration,
                              tuya_trv_child_lock, tuya_trv_eco_temp,
                              tuya_trv_set_max_setpoint,
@@ -202,7 +202,8 @@ DEVICE_PARAMETERS = {
     "BRT100Calibration": tuya_trv_calibration,
     "BRT100SetpointEco": tuya_trv_eco_temp,
     "BRT100MaxSetpoint": tuya_trv_set_max_setpoint,
-    "BRT100MinSetpoint": tuya_trv_set_min_setpoint
+    "BRT100MinSetpoint": tuya_trv_set_min_setpoint,
+    "moesCalibrationTime": tuya_window_cover_calibration,
 }
 
 
