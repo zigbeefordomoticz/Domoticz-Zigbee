@@ -21,12 +21,15 @@ def zcl_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, fram
     if GlobalCommand:
         return buildframe_foundation_cluster( self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Data )
 
+    if ClusterId == "0003":
+        return buildframe_for_cluster_0003(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data )
+
     if ClusterId == "0004":
         return buildframe_for_cluster_0004(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data )
 
     if ClusterId == "0006":
         # Remote report
-        return buildframe_80x5_message(self, "8095", frame, Sqn, SrcNwkId, SrcEndPoint,TargetEp,  ClusterId, ManufacturerCode, Command, Data)
+        return buildframe_80x5_message(self, "8095", frame, Sqn, SrcNwkId, SrcEndPoint,TargetEp, ClusterId, ManufacturerCode, Command, Data)
 
     if ClusterId == "0008":
         # Remote report
@@ -50,7 +53,7 @@ def zcl_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, fram
             self.log.logging("zclDecoder", "Log", "zcl_decoders OTA Upgrade Command %s/%s data: %s" % (Command, OTA_UPGRADE_COMMAND[Command], Data))
             return frame
 
-    if ClusterId == "0500" and is_direction_to_server(fcf)  and Command == "00":
+    if ClusterId == "0500" and is_direction_to_server(fcf) and Command == "00":
         return buildframe_0400_cmd(self, "0400", frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Command, Data)
 
     if ClusterId == "0500" and is_direction_to_client(fcf) and Command == "00":
@@ -328,7 +331,23 @@ def buildframe_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPo
     return encapsulate_plugin_frame("8120", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 
-## Cluster Specific commands
+# Cluster Specific commands
+
+# Cluster 0x0003 - Identify
+
+def buildframe_for_cluster_0003(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data ):
+    if Command == "00":  # Identify
+        self.log.logging("zclDecoder", "Log", "buildframe_for_cluster_0003 - Identify command Time: %s" % Data[:4])
+        return None
+
+    if Command == "01":  # Identify Query
+        self.log.logging("zclDecoder", "Log", "buildframe_for_cluster_0003 - Identify Query ")
+        return None
+
+    if Command == "40":  # Trigger effect
+        self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_0003 - Trigger Effect: %s   %s" % ( Data[:2], Data[2:4]))
+        return None
+
 
 # Cluster 0x0004 - Groups
 
@@ -388,9 +407,9 @@ def buildframe8062_look_for_group_member_ship_response(self, frame, Sqn, SrcNwkI
     self.log.logging("zclDecoder", "Debug", "buildframe8062_ Group Count: %s" %group_count)
     group_list = ""
     idx = 0
-    while  idx < int(group_count,16)*4:
-        self.log.logging("zclDecoder", "Debug", "buildframe8062_ GroupId: %s" %decode_endian_data( Data[ 4+idx : (4 + idx) + 4 ], "21"))
-        group_list += decode_endian_data( Data[ 4+idx : (4 + idx) + 4 ], "21")
+    while  idx < int(group_count,16) * 4:
+        self.log.logging("zclDecoder", "Debug", "buildframe8062_ GroupId: %s" %decode_endian_data( Data[ 4 + idx : (4 + idx) + 4 ], "21"))
+        group_list += decode_endian_data( Data[ 4 + idx : (4 + idx) + 4 ], "21")
         idx += 4
         
     buildPayload = Sqn + SrcEndPoint + "0004" + capacity + group_count + group_list + SrcNwkId
@@ -422,15 +441,15 @@ def buildframe_80x5_message(self, MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, Ta
     self.log.logging("zclDecoder", "Debug", "======> Building %s message : Cluster: %s Command: >%s< Data: >%s< (Frame: %s)" % (MsgType, ClusterId, Command, Data, frame))
 
     # It looks like the ZiGate firmware was adding _unknown (which is not part of the norm)
-    unknown_ = "02" # Seems coming from ZiGate firmware !!!
+    unknown_ = "02"   # Seems coming from ZiGate firmware !!!
     buildPayload = Sqn + SrcEndPoint + ClusterId + unknown_ + SrcNwkId + Command + Data
 
     return encapsulate_plugin_frame(MsgType, buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 
-## Cluster: 0x0019
+# Cluster: 0x0019
 
-## Cluster 0x0500
+# Cluster 0x0500
 # Cmd : 0x00 Zone Enroll Response  -> 0400
 #     : 0x01 Initiate Normal Operation Mode
 #     : 0x02 Initiate Test mode
