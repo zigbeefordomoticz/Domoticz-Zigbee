@@ -126,15 +126,14 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channe
         new_network = True
     else:
         new_network = False
-    
+
     await self.app.startup(
-        self.receiveData,
-        callBackGetDevice=self.ZigpyGetDevice,
-        auto_form=True,
-        force_form=new_network,
-        log=self.log,
-        permit_to_join_timer=self.permit_to_join_timer,
-    )
+        callBackHandleMessage = self.receiveData,
+        callBackGetDevice = self.ZigpyGetDevice,
+        auto_form = True,
+        force_form = new_network,
+        log = self.log,
+        permit_to_join_timer = self.permit_to_join_timer)
     
     # Send Network information to plugin, in order to poplulate various objetcs
     self.forwarder_queue.put(build_plugin_8009_frame_content(self, radiomodule))
