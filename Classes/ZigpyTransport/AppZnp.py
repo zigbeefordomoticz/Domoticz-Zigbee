@@ -53,7 +53,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         self.callBackGetDevice = callBackGetDevice
         self.znp_config[conf.CONF_MAX_CONCURRENT_REQUESTS] = 2
 
-        await super().connect()
+        #await super().connect()
         if force_form:
             auto_form = False
         await super().startup(auto_form=auto_form)
@@ -64,7 +64,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         # Populate and get the list of active devices.
         # This will allow the plugin if needed to update the IEEE -> NwkId
         await self.load_network_info( load_devices=True )
-        network_info = self._znp.network_info
+        network_info = self.state.network_info
         self.callBackFunction(build_plugin_8015_frame_content( self, network_info))
         
         # Trigger Version payload to plugin
