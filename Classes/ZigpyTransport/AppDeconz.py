@@ -62,19 +62,20 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         # This will allow the plugin if needed to update the IEEE -> NwkId
         #await self.load_network_info( load_devices=True )
         #network_info = self.state.network_information
-        
+
         #logging.debug("startup %s" %network_info) 
         #self.callBackFunction(build_plugin_8015_frame_content( self, network_info))
-        
+
         # Trigger Version payload to plugin
-        
+
         deconz_model = self.get_device(nwk=t.NWK(0x0000)).model
         deconz_manuf = self.get_device(nwk=t.NWK(0x0000)).manufacturer
-        
+
         deconz_version = "%08x" %self.version
-        deconz_major = deconz_version[0:4]
+        deconz_major = deconz_version[:4]
         deconz_minor = deconz_version[4:8]
-        logging.debug("startup in AppDeconz - build 8010 %s %08x %s" %(deconz_version, self.version, deconz_major+deconz_minor))
+        logging.debug("startup in AppDeconz - build 8010 %s %08x %s" %(
+            deconz_version, self.version, deconz_major + deconz_minor))
         if deconz_model == "ConBee II":
             self.callBackFunction(build_plugin_8010_frame_content("40", deconz_major, deconz_minor))
         elif deconz_model == "RaspBee II":
