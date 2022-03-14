@@ -2521,9 +2521,9 @@ def Cluster0102(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         )
 
     elif MsgAttrID == "f000":
-        # 0x00: Open
-        # 0x01: Close
-        # 0x02: Stop
+        # 0x00: Open/Up
+        # 0x02: Close/Down
+        # 0x01: Stop
 
         self.log.logging(
             "Cluster",
