@@ -8,6 +8,12 @@ import binascii
 import logging
 from typing import Any, Optional
 
+#import bellows.commands as c
+#import bellows.commands.util
+import bellows.config as conf
+import bellows.ezsp as ezsp
+import bellows.ezsp.v4.types as t
+import bellows.zigbee.application
 import zigpy.appdb
 import zigpy.config
 import zigpy.device
@@ -21,23 +27,16 @@ import zigpy.util
 import zigpy.zcl
 import zigpy.zdo
 import zigpy.zdo.types as zdo_types
-#import bellows.commands as c
-#import bellows.commands.util
-import bellows.config as conf
-import bellows.ezsp.v4.types as t
-import bellows.zigbee.application
-from zigpy.types import Addressing, KeyData
 from bellows.exception import ControllerError, EzspError
-import bellows.ezsp as ezsp
-
 from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_8002_frame_content, build_plugin_8010_frame_content,
     build_plugin_8014_frame_content, build_plugin_8015_frame_content,
     build_plugin_8047_frame_content, build_plugin_8048_frame_content)
+from Modules.zigbeeVersionTable import ZNP_MODEL
+from zigpy.types import Addressing, KeyData
 from zigpy.zcl import clusters
 from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
                                  SCHEMA_DEVICE)
-from Modules.zigbeeVersionTable import ZNP_MODEL
 
 LOGGER = logging.getLogger(__name__)
 
@@ -414,7 +413,7 @@ def extract_versioning_for_plugin( brd_manuf, brd_name, version):
             FirmwareBranch = "30" 
             
     # 6.10.3.0 build 297    
-    FirmwareMajorVersion = (version[0: 2])
+    FirmwareMajorVersion = (version[: 2])
     FirmwareMajorVersion = "%02d" %int(FirmwareMajorVersion.replace('.',''))
     FirmwareVersion = version[ 2:8]
     FirmwareVersion = FirmwareVersion.replace(' ','')
@@ -424,6 +423,8 @@ def extract_versioning_for_plugin( brd_manuf, brd_name, version):
    
 
 from bellows.types import basic
+
+
 class EmberDistinguishedNodeId(basic.enum16):
     """A distinguished network ID that will never be assigned to any node"""
 

@@ -13,6 +13,9 @@
 [submodule "external/dnspython"]
 	path = external/dnspython
 	url = https://github.com/rthalley/dnspython
+[submodule "external/zigpy-deconz"]
+	path = external/zigpy-deconz
+	url = https://github.com/zigbeefordomoticz/zigpy-deconz.git
 [submodule "external/bellows"]
 	path = external/bellows
 	url = https://github.com/zigbeefordomoticz/bellows.git

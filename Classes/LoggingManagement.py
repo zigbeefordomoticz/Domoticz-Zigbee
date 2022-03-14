@@ -115,6 +115,17 @@ class LoggingManagement:
             requests_logger.setLevel(logging.DEBUG)
             requests_logger = logging.getLogger("AppZigate")
             requests_logger.setLevel(logging.DEBUG)
+            
+        elif (
+            "debugTransportZigpydeCONZ" in self.pluginconf.pluginConf 
+            and self.pluginconf.pluginConf["debugTransportZigpydeCONZ"]
+        ):
+            requests_logger = logging.getLogger("zigpy")
+            requests_logger.setLevel(logging.DEBUG)
+            requests_logger = logging.getLogger("zigpy_deconz")
+            requests_logger.setLevel(logging.DEBUG)
+            requests_logger = logging.getLogger("AppDeconz")
+            requests_logger.setLevel(logging.DEBUG)
 
         else:
             requests_logger = logging.getLogger("zigpy")
