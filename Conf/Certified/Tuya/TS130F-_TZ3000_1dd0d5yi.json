@@ -1,0 +1,52 @@
+{
+    "_comment": "MOES Smart Curtain Switch Module",
+    "_version": "1.0",
+    "Ep": {
+        "01": {
+            "0000": "",
+            "0004": "",
+            "0005": "",
+            "0006": "",
+            "0102": "",
+            "0019": "",
+            "ee00": "",
+            "f001": "",
+            "f002": "",
+            "Type": "Vanne"
+        }
+    },
+    "Type": "",
+    "ClusterToBind": [],
+    "ConfigureReporting": {},
+    "ReadAttributes": {
+        "0000": [
+            "0000",
+            "0001",
+            "0002",
+            "0003",
+            "0004",
+            "0005",
+            "0007",
+            "ffe2"
+        ],
+        "0102": [
+            "0008",
+            "0017",
+            "f000",
+            "f001",
+            "f002",
+            "f003",
+            "8000",
+            "8001"
+        ],
+        "0006": [
+            "8001",
+            "5000"
+        ]
+    },
+    "Param": {
+        "TuyaMotoReversal": 0,
+        "TuyaBackLight": 1,
+        "moesCalibrationTime": 200
+    }
+}
