@@ -382,7 +382,7 @@ def Cluster0000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             elif manufacturer_name == "_TZ3000_pmz6mjyu":
                 # MOES MS-104BZ-1
                 modelName = "TS011F-2Gang-switches"
-            elif manufacturer_name in ("_TZ3000_cphmq0q7", "_TZ3000_ew3ldmgx", "_TZ3000_dpo1ysak"):
+            elif manufacturer_name in ("_TZ3000_cphmq0q7", "_TZ3000_ew3ldmgx", "_TZ3000_dpo1ysak", ):
                 modelName = "TS011F-plug"
 
         elif modelName == "TS0201":
@@ -1046,6 +1046,7 @@ def Cluster0001(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 def UpdateBatteryAttribute(self, Devices, MsgSrcAddr, MsgSrcEp):
 
     XIAOMI_BATTERY_DEVICES = (
+        "lumi.remote.b28ac1",
         "lumi.remote.b286opcn01",
         "lumi.remote.b486opcn01",
         "lumi.remote.b686opcn01",
@@ -2038,18 +2039,20 @@ def Cluster0012(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
     self.log.logging(
         "Cluster",
-        "Debug",
-        "readCluster - %s - %s/%s - MsgAttrID: %s MsgAttType: %s MsgAttSize: %s MsgClusterData: %s Model: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, _modelName),
+        "Log",
+        "readCluster - %s - %s/%s MsgAttrID: %s MsgAttType: %s MsgAttSize: %s MsgClusterData: %s Model: >%s<" % (
+            MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, _modelName),
         MsgSrcAddr,
     )
 
     # Hanlding Message from the Aqara Opple Switch 2,4,6 buttons
-    if _modelName in ("lumi.remote.b686opcn01", "lumi.remote.b486opcn01", "lumi.remote.b286opcn01"):
+    if _modelName in ("lumi.remote.b686opcn01", "lumi.remote.b486opcn01", "lumi.remote.b286opcn01",):
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
         AqaraOppleDecoding0012(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
 
     elif _modelName in (
         "lumi.remote.b1acn01",
+        "lumi.remote.b28ac1", 
         "lumi.remote.b186acn01",
         "lumi.remote.b186acn02",
         "lumi.remote.b286acn01",
@@ -2062,7 +2065,7 @@ def Cluster0012(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
         self.log.logging(
             "Cluster",
-            "Debug",
+            "Log",
             "ReadCluster - ClusterId=0012 - Switch Aqara: EP: %s Value: %s " % (MsgSrcEp, value),
             MsgSrcAddr,
         )
@@ -2528,9 +2531,9 @@ def Cluster0102(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         )
 
     elif MsgAttrID == "f000":
-        # 0x00: Open
-        # 0x01: Close
-        # 0x02: Stop
+        # 0x00: Open/Up
+        # 0x02: Close/Down
+        # 0x01: Stop
 
         self.log.logging(
             "Cluster",

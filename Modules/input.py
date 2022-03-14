@@ -64,6 +64,7 @@ from Modules.zigbeeController import (initLODZigate, receiveZigateEpDescriptor,
                                       receiveZigateEpList)
 from Modules.zigbeeVersionTable import FIRMWARE_BRANCH
 from Zigbee.zclCommands import zcl_ias_zone_enroll_response
+from Modules.zigbeeVersionTable import set_display_firmware_version
 
 
 def ZigateRead(self, Devices, Data):
@@ -295,7 +296,7 @@ def Decode0042(self, Devices, MsgData, MsgLQI):  # Node_Desc_req
         server_mask16 = "%04x" % struct.unpack("H", struct.pack(">H", int(self.ListOfDevices[ "0000" ]["server_mask"], 16)))[0]
         descriptor_capability8 = self.ListOfDevices[ "0000" ]["descriptor_capability"]
         mac_capa8 = self.ListOfDevices[ "0000" ]["macapa"]
-        max_buf_size8 = self.ListOfDevices[ "0000" ]["Max buffer Size"]
+        max_buf_size8 = self.ListOfDevices[ "0000" ]["Max Buffer Size"]
         bitfield16 = "%04x" % struct.unpack("H", struct.pack(">H", int(self.ListOfDevices[ "0000" ]["bitfield"], 16)))[0]
         
         payload = sqn + status + nwkid + manuf_code16 + max_in_size16 + max_out_size16 + server_mask16 + descriptor_capability8
@@ -1147,7 +1148,12 @@ def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
             self.FirmwareMajorVersion,
             self.FirmwareVersion,
         )
-        
+        self.ControllerData["Branch Version"] = self.FirmwareBranch
+        self.ControllerData["Major Version"] = self.FirmwareMajorVersion
+        self.ControllerData["Minor Version"] = self.FirmwareVersion
+ 
+        set_display_firmware_version( self )
+               
         if self.pluginconf.pluginConf["RoutingTableRequestFeq"] and self.ZiGateModel != 2:
             self.pluginconf.pluginConf["RoutingTableRequestFeq"] = 0
 

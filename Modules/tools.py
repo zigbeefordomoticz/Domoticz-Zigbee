@@ -454,10 +454,10 @@ def get_and_increment_generic_SQN(self, nwkid, sqn_type):
         return self.ListOfDevices[nwkid][ sqn_type ]
     
     if self.ListOfDevices[nwkid][ sqn_type ] in ( '', {}):
-        self.ListOfDevices[nwkid][ sqn_type ] =  "%02x" %0x00
+        self.ListOfDevices[nwkid][ sqn_type ] = "%02x" %0x00
         return self.ListOfDevices[nwkid][ sqn_type ]
 
-    self.ListOfDevices[nwkid][ sqn_type ] =  "%02x" %( ( int(self.ListOfDevices[nwkid][ sqn_type ],16) + 1) % 256)
+    self.ListOfDevices[nwkid][ sqn_type ] = "%02x" %( ( int(self.ListOfDevices[nwkid][ sqn_type ],16) + 1) % 256)
     return self.ListOfDevices[nwkid][ sqn_type ]
     
 
@@ -724,7 +724,6 @@ def ReArrangeMacCapaBasedOnModel(self, nwkid, inMacCapa):
 
     Return the old or the revised MacCapa and eventually fix some Attributes
     """
-
     if nwkid not in self.ListOfDevices:
         Domoticz.Error("%s not known !!!" % nwkid)
         return inMacCapa
@@ -759,7 +758,7 @@ def ReArrangeMacCapaBasedOnModel(self, nwkid, inMacCapa):
             self.ListOfDevices[nwkid]["Capability"].remove("Main Powered")
         return "80"
 
-    if self.ListOfDevices[nwkid]["MacCapa"] == "80" and (
+    if "MacCapa" in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]["MacCapa"] == "80" and (
         self.ListOfDevices[nwkid]["PowerSource"] == "" or "PowerSource" not in self.ListOfDevices[nwkid]
     ):
         # This is needed for VOC_Sensor from Nextrum for instance. (Looks like the device do not provide Node Descriptor )
