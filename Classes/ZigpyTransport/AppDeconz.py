@@ -45,29 +45,32 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
     async def _load_db(self) -> None:
         logging.debug("_load_db")
 
-    async def startup(self, callBackHandleMessage, callBackGetDevice=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None ):
+    async def startup(self, callBackHandleMessage, callBackGetDevice=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
         logging.debug("startup in AppDeconz")
         self.log = log
         self.permit_to_join_timer = permit_to_join_timer
         self.callBackFunction = callBackHandleMessage
         self.callBackGetDevice = callBackGetDevice
 
-        logging.debug("startup in AppDeconz - super()")
+        #await super().connect()
+        if force_form:
+            auto_form = False
+
         await super().startup(auto_form=auto_form)
         if force_form:
-            logging.debug("startup in AppDeconz - form new network")
             await super().form_network()
 
         # Populate and get the list of active devices.
         # This will allow the plugin if needed to update the IEEE -> NwkId
-        #await self.load_network_info( load_devices=True )
-        #network_info = self.state.network_information
+        await self.load_network_info( load_devices=True )
+        network_info = self.state.network_info
+        logging.debug("startup Network Info: %s" %str(network_info))
+        self.callBackFunction(build_plugin_8015_frame_content( self, network_info))
 
-        #logging.debug("startup %s" %network_info) 
-        #self.callBackFunction(build_plugin_8015_frame_content( self, network_info))
+        logging.debug("startup %s" %network_info)
+        self.callBackFunction(build_plugin_8015_frame_content( self, network_info))
 
         # Trigger Version payload to plugin
-
         deconz_model = self.get_device(nwk=t.NWK(0x0000)).model
         deconz_manuf = self.get_device(nwk=t.NWK(0x0000)).manufacturer
 
