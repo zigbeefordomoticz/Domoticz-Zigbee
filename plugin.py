@@ -23,7 +23,6 @@
                 <option label="ZiGate+" value="V2"/>
                 <option label="Zigate (via zigpy for dev ONLY)" value="ZigpyZiGate"/>
                 <option label="Texas Instruments ZNP (via zigpy)" value="ZigpyZNP"/>
-                <option label="deCONZ based devices (via zigpy)" value="ZigpydeCONZ"/>
                 <option label="Silicon Labs EZSP (via zigpy)" value="ZigpyEZSP"/>
             </options>
         </param>
