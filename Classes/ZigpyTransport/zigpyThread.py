@@ -110,7 +110,7 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channe
         self.app = App_znp(config)
 
     elif radiomodule == "deCONZ":
-        self.app = App_deconz(conf.CONFIG_SCHEMA(config))
+        self.app = App_deconz(config)
 
     elif radiomodule == "ezsp":
         self.app = App_bellows(conf.CONFIG_SCHEMA(config))
