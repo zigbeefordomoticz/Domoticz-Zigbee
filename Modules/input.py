@@ -1069,8 +1069,9 @@ def Decode8009(self, Devices, MsgData, MsgLQI):  # Network State response (Firm 
     
 def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
     # MsgLen = len(MsgData)
-
-    self.FirmwareBranch = MsgData[:2]        
+    # 00 05 0321
+    self.FirmwareBranch = MsgData[:2] 
+       
 
     if '0000' not in self.ListOfDevices:
         self.ListOfDevices['0000'] = {}
@@ -1158,6 +1159,10 @@ def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
             self.pluginParameters["CoordinatorModel"] = 'ZiGate+ (V2)'
             self.pluginParameters["CoordinatorFirmwareVersion"] = "%04x" %( int(self.FirmwareVersion,16))
 
+        else:
+            self.FirmwareMajorVersion = MsgData[2:4]
+            self.FirmwareVersion = MsgData[4:8]
+  
         self.log.logging("Input", "Status", "Installer Version Number: %s" % self.FirmwareVersion)
         self.log.logging("Input", "Status", "Branch Version: ==> %s <==" % FIRMWARE_BRANCH[self.FirmwareBranch])
         self.ControllerData["Firmware Version"] = "Branch: %s Major: %s Version: %s" % (
