@@ -274,7 +274,7 @@ class BasePlugin:
             self.zigbee_communitation = "native"
             self.transport = "None"
             
-        elif Parameters["Mode1"] in ( "ZigpyZiGate", "ZigpyZNP", "ZigpyEZSP"):
+        elif Parameters["Mode1"] in ( "ZigpyZiGate", "ZigpyZNP", "ZigpydeCONZ", "ZigpyEZSP"):
             self.transport = Parameters["Mode1"]
             self.zigbee_communitation = "zigpy"
             
@@ -596,6 +596,27 @@ class BasePlugin:
             self.ControllerLink.open_zigate_connection()
             self.pluginconf.pluginConf["ControllerInRawMode"] = True
             
+        elif self.transport == "ZigpydeCONZ":
+            import dns
+            import serial
+            import zigpy
+            import zigpy_deconz
+            from Classes.ZigpyTransport.Transport import ZigpyTransport
+            from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE)
+            
+             
+            self.pythonModuleVersion["dns"] = (dns.__version__)
+            self.pythonModuleVersion["serial"] = (serial.__version__)
+            self.pythonModuleVersion["zigpy"] = (zigpy.__version__)
+            self.pythonModuleVersion["zigpy_deconz"] = (zigpy_deconz.__version__)
+            check_python_modules_version( self )
+            
+            self.pluginParameters["Zigpy"] = True
+            Domoticz.Log("Start Zigpy Transport on deCONZ")            
+            self.ControllerLink= ZigpyTransport( self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "deCONZ", Parameters["SerialPort"])  
+            self.ControllerLink.open_zigate_connection()
+            self.pluginconf.pluginConf["ControllerInRawMode"] = True
+            
         elif self.transport == "ZigpyEZSP":
             import dns
             import serial
@@ -622,7 +643,7 @@ class BasePlugin:
             self.log.logging("Plugin", "Error", "Unknown Transport comunication protocol : %s" % str(self.transport))
             return
 
-        if self.transport not in ( "ZigpyEZSP", "ZigpyZNP", "ZigpyZiGate" ):
+        if self.transport not in ("ZigpyZNP", "ZigpydeCONZ", "ZigpyEZSP", "ZigpyZiGate" ):
             self.log.logging("Plugin", "Debug", "Establish Zigate connection")
             self.ControllerLink.open_zigate_connection()
 
@@ -1492,6 +1513,7 @@ def check_python_modules_version( self ):
         "serial": "3.5",
         "zigpy": "0.44.0.dev0",
         "zigpy_znp": "0.7.0",
+        "zigpy_deconz": "0.15.0.dev0",
         "zigpy_zigate": "0.8.0",
         "zigpy_ezsp": "0.30.0.dev0",
         }
