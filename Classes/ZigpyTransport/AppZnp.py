@@ -53,10 +53,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         self.callBackGetDevice = callBackGetDevice
         self.znp_config[conf.CONF_MAX_CONCURRENT_REQUESTS] = 2
 
-        #await super().connect()
-        if force_form:
-            auto_form = False
-        await super().startup(auto_form=auto_form)
+        await super().startup(auto_form=True)
         if force_form:
             await super().form_network()
         

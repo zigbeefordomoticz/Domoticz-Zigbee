@@ -49,10 +49,7 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         self.callBackGetDevice = callBackGetDevice
         self.log = log
         
-        await super().connect()
-        if force_form:
-            auto_form = False
-        await super().startup(auto_form=auto_form)
+        await super().startup(auto_form=True)
         if force_form:
             await super().form_network()
 

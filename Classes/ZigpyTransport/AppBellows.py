@@ -56,9 +56,7 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         self.callBackGetDevice = callBackGetDevice
         #self.bellows_config[conf.CONF_MAX_CONCURRENT_REQUESTS] = 2
 
-        if force_form:
-            auto_form = False
-        await super().startup(auto_form=auto_form)
+        await super().startup(auto_form=True)
         if force_form:
             await self._ezsp.leaveNetwork()
             await super().form_network()

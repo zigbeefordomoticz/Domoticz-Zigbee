@@ -54,15 +54,11 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
             self.callBackFunction = callBackHandleMessage
             self.callBackGetDevice = callBackGetDevice
 
-            if force_form:
-                auto_form = False
-
-            await super().startup(auto_form=auto_form)
+            await super().startup(auto_form=True)
             if force_form:
                 logging.debug("startup form new network")
                 await super().form_network()
                 
-
             # Populate and get the list of active devices.
             # This will allow the plugin if needed to update the IEEE -> NwkId
             await self.load_network_info( load_devices=True )
