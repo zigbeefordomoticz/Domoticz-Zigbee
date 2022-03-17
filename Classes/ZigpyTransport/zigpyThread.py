@@ -114,6 +114,16 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channe
 
     elif radiomodule == "ezsp":
         self.app = App_bellows(conf.CONFIG_SCHEMA(config))
+        
+    else:
+        self.log.logging(
+            "TransportZigpy",
+            "Error",
+            "Wrong radiomode: %s"
+            % (radiomodule),
+        )
+        return
+
 
     if self.pluginParameters["Mode3"] == "True":
         self.log.logging(
@@ -271,17 +281,11 @@ async def dispatch_command(self, data):
 
         if target_router is None:
             self.log.logging("TransportZigpy", "Debug", "PERMIT-TO-JOIN: duration: %s for Radio: %s" % (duration, self._radiomodule))
-            if self._radiomodule == "deCONZ":
-                await self.app.permit_ncp( time_s=duration)
-            else:
-                await self.app.permit(time_s=duration)            
+            await self.app.permit(time_s=duration)            
         else:
             self.log.logging(
                 "TransportZigpy", "Debug", "PERMIT-TO-JOIN: duration: %s target: %s" % (duration, target_router))
-            if self._radiomodule == "deCONZ":
-                await self.app.permit_ncp( time_s=duration)  
-            else:
-                await self.app.permit(time_s=duration, node=target_router)
+            await self.app.permit(time_s=duration, node=target_router)
                 
 
 
