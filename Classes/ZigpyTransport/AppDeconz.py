@@ -65,12 +65,12 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
 
             # Populate and get the list of active devices.
             # This will allow the plugin if needed to update the IEEE -> NwkId
-            logging.debug("startup load network info")
             await self.load_network_info( load_devices=True )
             network_info = self.state.network_info
 
-            logging.debug("startup Network Info: %s" %str(network_info))
-            self.callBackFunction(build_plugin_8015_frame_content( self, network_info))
+            # deConz doesn't have such capabilities to provided list of paired devices.
+            #logging.debug("startup Network Info: %s" %str(network_info))
+            #self.callBackFunction(build_plugin_8015_frame_content( self, network_info))
 
             # Trigger Version payload to plugin
             deconz_model = self.get_device(nwk=t.NWK(0x0000)).model
