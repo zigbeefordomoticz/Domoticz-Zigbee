@@ -72,6 +72,7 @@ As for TI coordinator, we rely on [zigpy-bellows](https://github.com/zigpy/bello
 ## LIMITATIONS
 
 * Please do consider that the current plugin is limited to create a maximum of 255 "Widgets" (Domoticz devices).  This will still give you the possibility to integrate a large number of Zigbee devices , but not an unlimited number.
+  * Note that as with all Zigbee hubs/gateways/bridges you will need to add several "Zigbee Router" devices in order to increase the size of your Zigbee network mesh to reach that maximum number of devices, as the Zigbee Coordinator adapter will only support a smaller number of direct connected devices. See documentation troubleshooting section for best practices.
 
 ## Documentation
 
