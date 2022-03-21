@@ -459,6 +459,10 @@ def tuya_siren2_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dst
         self.log.logging("Tuya", "Debug", "tuya_siren2_response - OnOff: %s" % (int(data, 16)), NwkId)
         store_tuya_attribute(self, NwkId, "Alarm", data)
         MajDomoDevice(self, Devices, NwkId, srcEp, "0006", data)
+        
+    elif dp == 0x0f:   # Battery Percentage
+        store_tuya_attribute(self, NwkId, "Battery", data)
+        self.ListOfDevices[NwkId]["Battery"] = int(data,16)
 
 
 def tuya_siren2_alarm_volume(self, nwkid, volume):
