@@ -33,6 +33,7 @@ from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_8047_frame_content, build_plugin_8048_frame_content)
 from zigpy_deconz.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
                                  SCHEMA_DEVICE)
+from serial import SerialException
 
 LOGGER = logging.getLogger(__name__)
 
@@ -54,11 +55,16 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
             self.callBackFunction = callBackHandleMessage
             self.callBackGetDevice = callBackGetDevice
 
-            await super().startup(auto_form=True)
+            try:
+                await super().startup(auto_form=True)
+            except SerialException as e:
+                logging.error("startup in AppDeconz - problem while opening %s" %(e))
+                return
+  
             if force_form:
                 logging.debug("startup form new network")
                 await super().form_network()
-                
+
             # Populate and get the list of active devices.
             # This will allow the plugin if needed to update the IEEE -> NwkId
             await self.load_network_info( load_devices=True )

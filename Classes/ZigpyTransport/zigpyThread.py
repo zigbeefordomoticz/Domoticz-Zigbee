@@ -4,6 +4,7 @@
 #
 
 import asyncio
+import asyncio.events
 import binascii
 import json
 import queue
@@ -46,6 +47,7 @@ CREATE_TASK = True
 def start_zigpy_thread(self):
     self.log.logging("TransportZigpy", "Debug", "start_zigpy_thread - Starting zigpy thread")
     self.zigpy_thread.start()
+    self.log.logging("TransportZigpy", "Debug", "start_zigpy_thread - zigpy thread started")
 
 
 def stop_zigpy_thread(self):
@@ -71,9 +73,17 @@ def zigpy_thread(self):
         "Debug",
         "zigpy_thread -extendedPANID %s %d" % (self.pluginconf.pluginConf["extendedPANID"], extendedPANID),
     )
-    asyncio.run(
+    
+    loop = asyncio.events.new_event_loop()
+    asyncio.events.set_event_loop(loop)
+    task = loop.create_task(
         radio_start(self, self._radiomodule, self._serialPort, set_channel=channel, set_extendedPanId=extendedPANID)
-    )
+        )
+    loop.run_until_complete(task)
+    loop.run_until_complete(asyncio.sleep(1))
+    loop.close()
+
+    self.log.logging("TransportZigpy", "Debug", "zigpy_thread - exiting zigpy thread")
 
 
 async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channel=0, set_extendedPanId=0):
@@ -172,18 +182,13 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channe
     )
 
     # Let send a 0302 to simulate an Off/on
-    self.forwarder_queue.put(
-        build_plugin_0302_frame_content(
-            self,
-        )
-    )
+    self.forwarder_queue.put( build_plugin_0302_frame_content( self, ) )
 
     # Run forever
     await worker_loop(self)
 
     await self.app.shutdown()
     self.log.logging("TransportZigpy", "Debug", "Exiting co-rounting radio_start")
-
 
 async def worker_loop(self):
     self.log.logging("TransportZigpy", "Debug", "worker_loop - ZigyTransport: worker_loop start.")
@@ -198,6 +203,8 @@ async def worker_loop(self):
             continue
         elif entry == "STOP":
             # Shutding down
+            self.log.logging("TransportZigpy", "Log", "worker_loop - Shutting down ... exit.")
+            self.zigpy_running = False
             break
 
         data = json.loads(entry)
@@ -252,7 +259,12 @@ async def worker_loop(self):
                     "process_raw_command (zigpyThread) spend more than 1s (%s ms) frame: %s" % (t_elapse, data),
                 )
 
-    self.log.logging("TransportZigpy", "Debug", "ZigyTransport: writer_thread Thread stop.")
+    self.log.logging("TransportZigpy", "Log", "worker_loop: Exiting Worker loop. Semaphore : %s " %
+        len(self._concurrent_requests_semaphores_list))
+    
+    if self._concurrent_requests_semaphores_list:
+        for x in self._concurrent_requests_semaphores_list:
+            self.log.logging("TransportZigpy", "Log", "worker_loop:      Semaphore[%s] " %x)
 
 
 async def get_next_command(self):
@@ -388,7 +400,7 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
         )
         try:
             if CREATE_TASK:
-                asyncio.create_task(
+                task = asyncio.create_task(
                     transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False, ) )
             else:
                 await transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False, )
@@ -405,7 +417,7 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
         destination = self.app.get_device(nwk=t.NWK(int(NwkId, 16)))
         self.log.logging("TransportZigpy", "Debug", "process_raw_command  call request destination: %s" % destination)
         if CREATE_TASK:
-            asyncio.create_task(
+            task =  asyncio.create_task(
                 transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False, ) )
         else:
             await transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False, )

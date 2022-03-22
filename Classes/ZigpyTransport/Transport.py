@@ -50,7 +50,6 @@ class ZigpyTransport(object):
         self._concurrent_requests_semaphores_list = {}
         self._currently_waiting_requests_list = {}  
         self._currently_not_reachable = []
-
         # Initialise SQN Management
         sqn_init_stack(self)
 
