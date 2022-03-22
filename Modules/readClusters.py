@@ -1214,10 +1214,10 @@ def UpdateBatteryAttribute(self, Devices, MsgSrcAddr, MsgSrcEp):
                 MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]["Model"], self.ListOfDevices[MsgSrcAddr]["Battery"], value),
             MsgSrcAddr,
         )
+        self.ListOfDevices[MsgSrcAddr]["BatteryUpdateTime"] = int(time())
         if value != self.ListOfDevices[MsgSrcAddr]["Battery"]:
             self.ListOfDevices[MsgSrcAddr]["Battery"] = value
             Update_Battery_Device(self, Devices, MsgSrcAddr, value)
-            self.ListOfDevices[MsgSrcAddr]["BatteryUpdateTime"] = int(time())
             self.log.logging(
                 "Cluster",
                 "Debug",

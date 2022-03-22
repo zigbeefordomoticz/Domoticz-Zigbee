@@ -25,6 +25,7 @@ from Classes.WebServer.headerResponse import prepResponseMessage, setupHeadersRe
 def do_rest(self, Connection, verb, data, version, command, parameters):
 
     REST_COMMANDS = {
+        "battery-state": {"Name": "battery-state", "Verbs": {"GET"}, "function": self.rest_battery_state},
         "bind-lst-cluster": {"Name": "bind-lst-cluster", "Verbs": {"GET"}, "function": self.rest_bindLSTcluster},
         "bind-lst-device": {"Name": "bind-lst-device", "Verbs": {"GET"}, "function": self.rest_bindLSTdevice},
         "binding": {"Name": "binding", "Verbs": {"PUT"}, "function": self.rest_binding},
