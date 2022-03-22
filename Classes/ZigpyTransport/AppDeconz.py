@@ -55,11 +55,8 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
             self.callBackFunction = callBackHandleMessage
             self.callBackGetDevice = callBackGetDevice
 
-            try:
-                await super().startup(auto_form=True)
-            except SerialException as e:
-                logging.error("startup in AppDeconz - problem while opening %s" %(e))
-                return
+            await asyncio.sleep( 2 )
+            await super().startup(auto_form=True)
   
             if force_form:
                 logging.debug("startup form new network")
