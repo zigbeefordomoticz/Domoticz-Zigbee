@@ -1331,6 +1331,44 @@ class WebServer(object):
             self.log.loggingClearErrorHistory()
         return _response
 
+    def rest_battery_state(self, verb, data, parameters):
+        _response = prepResponseMessage(self, setupHeadersResponse())
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+        if verb == "GET":
+            _battEnv = {"Battery":{"<30%":{}, "<50%": {}, ">50%" : {}},"Update Time":{ "Unknown": {}, "< 1 week": {}, "> 1 week": {}}}
+            for x in self.ListOfDevices:
+                if x == "0000":
+                        continue
+                        
+                if self.ListOfDevices[x]["ZDeviceName"] == "":
+                    _deviceName = x
+                else:
+                    _deviceName = self.ListOfDevices[x]["ZDeviceName"]
+
+                if "Battery" in self.ListOfDevices[x] and isinstance(self.ListOfDevices[x]["Battery"], int) :
+                    if self.ListOfDevices[x]["Battery"] > 50:
+                        _battEnv["Battery"][">50%"][_deviceName] = {}
+                        _battEnv["Battery"][">50%"][_deviceName]["Battery"] = self.ListOfDevices[x]["Battery"]
+                    elif self.ListOfDevices[x]["Battery"] > 30:
+                        _battEnv["Battery"]["<50%"][_deviceName] = {}
+                        _battEnv["Battery"]["<50%"][_deviceName]["Battery"] = self.ListOfDevices[x]["Battery"]
+                    else:
+                        _battEnv["Battery"]["<30%"][_deviceName] = {}
+                        _battEnv["Battery"]["<30%"][_deviceName]["Battery"] = self.ListOfDevices[x]["Battery"]
+                        
+                    if "BatteryUpdateTime" in self.ListOfDevices[x]:
+                        if (int(time()) - self.ListOfDevices[x]["BatteryUpdateTime"]) > 604800: # one week in seconds
+                            _battEnv["Update Time"]["> 1 week"][_deviceName] = {}
+                            _battEnv["Update Time"]["> 1 week"][_deviceName]["BatteryUpdateTime"] = self.ListOfDevices[x]["BatteryUpdateTime"]
+                        else:
+                            _battEnv["Update Time"]["< 1 week"][_deviceName] = {}
+                            _battEnv["Update Time"]["< 1 week"][_deviceName]["BatteryUpdateTime"] = self.ListOfDevices[x]["BatteryUpdateTime"]
+                    else:
+                        _battEnv["Update Time"]["Unknown"][_deviceName] = "Unknown"
+
+            _response["Data"] = json.dumps(_battEnv, sort_keys=True)
+        return _response
+
     def logging(self, logType, message):
         self.log.logging("WebServer", logType, message)
 
