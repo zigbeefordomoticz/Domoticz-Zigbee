@@ -20,7 +20,7 @@ This plugin is an evolution of the mature Zigate plugin for Domoticz, which will
 * You need Python 3.7 at least
 * Zigpy layers will requires additional python3 modules to be install:
 
-  `sudo pip3 install voluptuous pycrypto aiosqlite crccheck pyusb attr attrs aiohttp pyserial-asyncio`
+  `sudo pip3 install voluptuous pycrypto aiosqlite crccheck pyusb attrs aiohttp pyserial-asyncio`
 
 ## Plugin first installation or first time on release 6.xxx (for now beta6)
 
