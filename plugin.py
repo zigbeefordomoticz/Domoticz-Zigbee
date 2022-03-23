@@ -466,8 +466,11 @@ class BasePlugin:
         # Connect to Zigate only when all initialisation are properly done.
         self.log.logging("Plugin", "Status", "Transport mode: %s" % self.transport)
         if self.transport in ("USB", "DIN", "V2-DIN", "V2-USB"):
-            import serial
-            import dns
+            try:
+                import serial
+                import dns
+            except:
+                Domoticz.Error("Missing serial or dns modules. https://github.com/zigbeefordomoticz/wiki/blob/zigpy/en-eng/missing-modules.md#make-sure-that-you-have-correctly-installed-the-plugin")
             from Classes.ZigateTransport.Transport import ZigateTransport
             
             self.pythonModuleVersion["serial"] = (serial.__version__)
@@ -491,8 +494,11 @@ class BasePlugin:
 
         elif self.transport in ("PI", "V2-PI"):
             from Classes.ZigateTransport.Transport import ZigateTransport
-            import serial
-            import dns
+            try:
+                import serial
+                import dns
+            except:
+                Domoticz.Error("Missing serial or dns modules. https://github.com/zigbeefordomoticz/wiki/blob/zigpy/en-eng/missing-modules.md#make-sure-that-you-have-correctly-installed-the-plugin")
 
             self.pythonModuleVersion["serial"] = (serial.__version__)
             self.pythonModuleVersion["dns"] = (dns.__version__)
@@ -517,7 +523,10 @@ class BasePlugin:
 
         elif self.transport in ("Wifi", "V2-Wifi"):
             from Classes.ZigateTransport.Transport import ZigateTransport
-            import dns
+            try:
+                import dns
+            except:
+                Domoticz.Error("Missing serial or dns modules. https://github.com/zigbeefordomoticz/wiki/blob/zigpy/en-eng/missing-modules.md#make-sure-that-you-have-correctly-installed-the-plugin")
 
             self.pythonModuleVersion["dns"] = (dns.__version__)
             check_python_modules_version( self )
@@ -550,9 +559,13 @@ class BasePlugin:
 
         elif self.transport == "ZigpyZiGate":
             # Zigpy related modules
-            import dns
+            try:
+                import dns
+                import serial
+            except:
+                Domoticz.Error("Missing serial or dns modules. https://github.com/zigbeefordomoticz/wiki/blob/zigpy/en-eng/missing-modules.md#make-sure-that-you-have-correctly-installed-the-plugin")
+
             import zigpy
-            import serial
             import zigpy_zigate
             from Classes.ZigpyTransport.Transport import ZigpyTransport
             from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE)
@@ -574,8 +587,12 @@ class BasePlugin:
             self.pluginconf.pluginConf["ControllerInRawMode"] = True
             
         elif self.transport == "ZigpyZNP":
-            import dns
-            import serial
+            try:
+                import dns
+                import serial
+            except:
+                Domoticz.Error("Missing serial or dns modules. https://github.com/zigbeefordomoticz/wiki/blob/zigpy/en-eng/missing-modules.md#make-sure-that-you-have-correctly-installed-the-plugin")
+
             import zigpy
             import zigpy_znp
             from Classes.ZigpyTransport.Transport import ZigpyTransport
@@ -597,8 +614,12 @@ class BasePlugin:
             self.pluginconf.pluginConf["ControllerInRawMode"] = True
             
         elif self.transport == "ZigpydeCONZ":
-            import dns
-            import serial
+            try:
+                import dns
+                import serial
+            except:
+                Domoticz.Error("Missing serial or dns modules. https://github.com/zigbeefordomoticz/wiki/blob/zigpy/en-eng/missing-modules.md#make-sure-that-you-have-correctly-installed-the-plugin")
+
             import zigpy
             import zigpy_deconz
             from Classes.ZigpyTransport.Transport import ZigpyTransport
@@ -618,8 +639,12 @@ class BasePlugin:
             self.pluginconf.pluginConf["ControllerInRawMode"] = True
             
         elif self.transport == "ZigpyEZSP":
-            import dns
-            import serial
+            try:
+                import dns
+                import serial
+            except:
+                Domoticz.Error("Missing serial or dns modules. https://github.com/zigbeefordomoticz/wiki/blob/zigpy/en-eng/missing-modules.md#make-sure-that-you-have-correctly-installed-the-plugin")
+
             import zigpy
             import bellows
             from Classes.ZigpyTransport.Transport import ZigpyTransport

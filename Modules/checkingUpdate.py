@@ -13,8 +13,11 @@
 # Provide response to REST API request
 import time
 import Domoticz
-import dns.resolver
 
+try:
+    import dns.resolver
+except:
+    Domoticz.Error("Missing serial or dns modules. https://github.com/zigbeefordomoticz/wiki/blob/zigpy/en-eng/missing-modules.md#make-sure-that-you-have-correctly-installed-the-plugin")
 
 PLUGIN_TXT_RECORD = "zigate_plugin.pipiche.net"
 ZIGATEV1_FIRMWARE_TXT_RECORD = "zigatev1.pipiche.net"
