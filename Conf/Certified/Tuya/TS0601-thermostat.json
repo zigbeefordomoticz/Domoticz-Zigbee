@@ -30,6 +30,7 @@
 	},
 	"Param": {
 		"ValveDetection": 1,
-		"SensorMode": 0
+		"SensorMode": 0,
+		"Calibration": 0
 	}
 }
