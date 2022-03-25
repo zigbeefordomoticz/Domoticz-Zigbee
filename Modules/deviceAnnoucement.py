@@ -15,16 +15,17 @@ from time import time
 
 import Domoticz
 
+from Modules.casaia import restart_plugin_reset_ModuleIRCode
 from Modules.domoTools import lastSeenUpdate
 from Modules.legrand_netatmo import legrand_refresh_battery_remote
 from Modules.livolo import livolo_bind
+from Modules.manufacturer_code import PREFIX_MAC_LEN, PREFIX_MACADDR_LIVOLO
 from Modules.pairingProcess import (interview_state_004d,
                                     zigbee_provision_device)
 from Modules.readAttributes import (ReadAttributeRequest_0006_0000,
                                     ReadAttributeRequest_0008_0000)
-from Modules.manufacturer_code import PREFIX_MACADDR_LIVOLO, PREFIX_MAC_LEN
 from Modules.tools import (DeviceExist, IEEEExist, decodeMacCapa,
-                           initDeviceInList, mainPoweredDevice, timeStamped, mainPoweredDevice)
+                           initDeviceInList, mainPoweredDevice, timeStamped)
 from Modules.tuyaSiren import tuya_sirene_registration
 from Modules.tuyaTRV import TUYA_eTRV_MODEL, tuya_eTRV_registration
 from Modules.zigateConsts import CLUSTERS_LIST
@@ -196,6 +197,8 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
             legrand_refresh_battery_remote(self, NwkId)
 
             read_attributes_if_needed( self, NwkId)
+            
+            restart_plugin_reset_ModuleIRCode(self, NwkId)
             
             if reseted_device:
                 zigbee_provision_device(self, Devices, NwkId, 0, "inDB")

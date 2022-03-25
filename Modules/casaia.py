@@ -126,6 +126,9 @@ def casaiaReadRawAPS(self, Devices, NwkId, srcEp, ClusterId, dstNWKID, dstEP, Ms
 
 
 def casaia_swing_OnOff(self, NwkId, OnOff):
+    
+    if "Model" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Model"] in ("AC211", "AC221", "CAC221"):
+        casaia_check_irPairing(self, NwkId)
 
     if OnOff not in ("00", "01"):
         return
@@ -177,6 +180,7 @@ def casaia_pairing(self, NwkId):
 
 
 def casaia_check_irPairing(self, NwkId):
+    # Check if then irCode is correctly set on the device
 
     if "CASA.IA" not in self.ListOfDevices[NwkId]:
         self.log.logging(
@@ -242,7 +246,17 @@ def casaia_check_irPairing(self, NwkId):
 
     return None
 
+def restart_plugin_reset_ModuleIRCode(self, nwkid=None):
+    list_of_device_to_reset = ( [ nwkid, ] if nwkid else list(self.ListOfDevices.keys()) )
 
+    for x in list_of_device_to_reset:
+        if "CASA.IA" not in self.ListOfDevices[ x ]:
+            continue
+        if DEVICE_ID not in self.ListOfDevices[ x ]["CASA.IA"]:
+            continue
+        if "ModuleIRCode" in self.ListOfDevices[ x ]["CASA.IA"][DEVICE_ID]:
+            self.ListOfDevices[ x ]["CASA.IA"][DEVICE_ID]["ModuleIRCode"] = 0
+            
 # Model Specifics
 #####################################################################################
 def casaia_AC211_pairing(self, NwkId):
@@ -301,6 +315,10 @@ def casaia_ac201_ir_pairing(self, NwkId):
 
 
 def casaia_ac201_fan_control(self, NwkId, Level):
+    
+    if "Model" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Model"] in ("AC211", "AC221", "CAC221"):
+        casaia_check_irPairing(self, NwkId)
+
 
     if Level == 10:
         casaia_system_mode(self, NwkId, "FanAuto")
