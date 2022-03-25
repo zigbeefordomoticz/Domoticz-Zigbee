@@ -152,8 +152,12 @@ def casaia_swing_OnOff(self, NwkId, OnOff):
 
 def casaia_setpoint(self, NwkId, setpoint):
 
+    if "Model" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Model"] in ("AC211", "AC221", "CAC221"):
+        casaia_check_irPairing(self, NwkId)
+
     if "Model" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Model"] == "AC201A":
         self.log.logging("CasaIA", "Debug", "casaia_setpoint %s SetPoint: %s" % (NwkId, setpoint), NwkId)
+        
         if str(check_hot_cold_setpoint(self, NwkId)) == "Heat":
             write_AC201_status_request(self, NwkId, "HeatSetpoint", setpoint)
         elif str(check_hot_cold_setpoint(self, NwkId)) == "Cool":
@@ -163,6 +167,9 @@ def casaia_setpoint(self, NwkId, setpoint):
 
 
 def casaia_system_mode(self, NwkId, Action):
+
+    if "Model" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Model"] in ("AC211", "AC221", "CAC221"):
+        casaia_check_irPairing(self, NwkId)
 
     if "Model" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Model"] == "AC201A":
         self.log.logging("CasaIA", "Debug", "casaia_system_mode %s Action: %s" % (NwkId, Action), NwkId)
@@ -181,6 +188,7 @@ def casaia_pairing(self, NwkId):
 
 def casaia_check_irPairing(self, NwkId):
     # Check if then irCode is correctly set on the device
+    self.log.logging("CasaIA", "Debug", "casaia_check_irPairing %s" % (NwkId), NwkId)
 
     if "CASA.IA" not in self.ListOfDevices[NwkId]:
         self.log.logging(
@@ -236,13 +244,17 @@ def casaia_check_irPairing(self, NwkId):
         AC201_read_multi_pairing_code_request(self, NwkId)
 
     if "Model" in self.ListOfDevices[NwkId]:
-        if self.ListOfDevices[NwkId]["Model"] == "AC201A":
+        if self.ListOfDevices[NwkId]["Model"] in ("AC201A", "AC201"):
             casaia_ac201_ir_pairing(self, NwkId)
             AC201_read_AC_status_request(self, NwkId)
 
         elif self.ListOfDevices[NwkId]["Model"] in ("AC211", "AC221", "CAC221"):
             casaia_ac211_ir_pairing(self, NwkId)
             AC201_read_AC_status_request(self, NwkId)
+            
+        else:
+            self.log.logging("CasaIA", "Error", "casaia_check_irPairing %s unexpected model: %s" % (
+                NwkId, self.ListOfDevices[NwkId]["Model"]), NwkId)
 
     return None
 
@@ -316,10 +328,6 @@ def casaia_ac201_ir_pairing(self, NwkId):
 
 def casaia_ac201_fan_control(self, NwkId, Level):
     
-    if "Model" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Model"] in ("AC211", "AC221", "CAC221"):
-        casaia_check_irPairing(self, NwkId)
-
-
     if Level == 10:
         casaia_system_mode(self, NwkId, "FanAuto")
         # UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
