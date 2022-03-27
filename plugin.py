@@ -729,7 +729,7 @@ class BasePlugin:
 
         for thread in threading.enumerate():
             if thread.name != threading.current_thread().name:
-                Domoticz.Log(
+                self.log.logging("Plugin", "Log"
                     "'"
                     + thread.name
                     + "' is running, it must be shutdown otherwise Domoticz will abort on plugin exit."

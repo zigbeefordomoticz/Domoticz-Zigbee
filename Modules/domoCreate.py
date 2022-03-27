@@ -370,6 +370,11 @@ def CreateDomoDevice(self, Devices, NWKID):
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options, Image=16)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in ACMode_2" % (t), NWKID)
 
+            if t in ( "SwitchAlarm", ):
+                createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=244, Subtype_=73, Switchtype_=0, Image=13)
+                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Switch Alarm" % (t), NWKID)
+
+                
             if t in ("FanControl",):  # 6
                 Options = createSwitchSelector(self, 6, DeviceType=t, OffHidden=False, SelectorStyle=1)
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options, Image=7)
