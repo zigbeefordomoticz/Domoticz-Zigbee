@@ -71,10 +71,22 @@ def zigpy_thread(self):
         "Debug",
         "zigpy_thread -extendedPANID %s %d" % (self.pluginconf.pluginConf["extendedPANID"], extendedPANID),
     )
-    asyncio.run(
-        radio_start(self, self._radiomodule, self._serialPort, set_channel=channel, set_extendedPanId=extendedPANID)
-    )
 
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        
+        loop = asyncio.events.new_event_loop()
+        asyncio.events.set_event_loop(loop)
+        
+    task = loop.create_task(
+        radio_start(self, self._radiomodule, self._serialPort, set_channel=channel, set_extendedPanId=extendedPANID)
+        )
+    loop.run_until_complete(task)
+    loop.run_until_complete(asyncio.sleep(1))
+    loop.close()
+        
+    self.log.logging("TransportZigpy", "Debug", "zigpy_thread - exiting zigpy thread")
 
 async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channel=0, set_extendedPanId=0):
 
