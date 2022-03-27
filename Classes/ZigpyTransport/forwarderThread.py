@@ -13,6 +13,7 @@ from Classes.ZigpyTransport.tools import handle_thread_error
 
 
 def start_forwarder_thread(self):
+    self.forwarder_thread = Thread(name="ZigpyForwarder_%s" % self.hardwareid, target=forwarder_thread, args=(self,))
     self.forwarder_thread.start()
 
 

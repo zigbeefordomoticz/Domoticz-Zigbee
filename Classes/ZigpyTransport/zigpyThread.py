@@ -76,22 +76,25 @@ def zigpy_thread(self):
         "Debug",
         "zigpy_thread -extendedPANID %s %d" % (self.pluginconf.pluginConf["extendedPANID"], extendedPANID),
     )
-    
-    try:
-        loop = asyncio.get_running_loop()
-    except RuntimeError:
+
+    loop = get_or_create_eventloop()
         
-        loop = asyncio.events.new_event_loop()
-        asyncio.events.set_event_loop(loop)
-        
-    task = loop.create_task(
-        radio_start(self, self._radiomodule, self._serialPort, set_channel=channel, set_extendedPanId=extendedPANID)
-        )
+    task = radio_start(self, self._radiomodule, self._serialPort, set_channel=channel, set_extendedPanId=extendedPANID)
+ 
     loop.run_until_complete(task)
     loop.run_until_complete(asyncio.sleep(1))
     loop.close()
 
     self.log.logging("TransportZigpy", "Debug", "zigpy_thread - exiting zigpy thread")
+
+def get_or_create_eventloop():
+    try:
+        return asyncio.get_event_loop()
+    except RuntimeError as ex:
+        if "There is no current event loop in thread" in str(ex):
+            asyncio.set_event_loop(asyncio.new_event_loop())
+            return asyncio.get_event_loop()    
+    
 
 
 async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channel=0, set_extendedPanId=0):

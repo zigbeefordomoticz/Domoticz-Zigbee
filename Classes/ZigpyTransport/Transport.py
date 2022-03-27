@@ -21,6 +21,7 @@ from Classes.ZigpyTransport.zigpyThread import (start_zigpy_thread,
 
 class ZigpyTransport(object):
     def __init__(self, pluginParameters, pluginconf, F_out, zigpy_get_device, log, statistics, hardwareid, radiomodule, serialPort):
+        
         self.zigbee_communitation = "zigpy"
         self.pluginParameters  = pluginParameters
         self.pluginconf = pluginconf
@@ -50,14 +51,18 @@ class ZigpyTransport(object):
         self._concurrent_requests_semaphores_list = {}
         self._currently_waiting_requests_list = {}  
         self._currently_not_reachable = []
+        
+        self.log.logging("Transport", "Log", "ZigpyTransport __init__")
+        
         # Initialise SQN Management
         sqn_init_stack(self)
 
         self.app: zigpy.application.ControllerApplication | None = None
+        
         self.writer_queue = Queue()
         self.forwarder_queue = Queue()
-        self.zigpy_thread = Thread(name="ZigpyCom_%s" % self.hardwareid, target=zigpy_thread, args=(self,))
-        self.forwarder_thread = Thread(name="ZigpyForwarder_%s" % self.hardwareid, target=forwarder_thread, args=(self,))
+        self.zigpy_thread = None
+        self.forwarder_thread = None
 
     def open_zigate_connection(self):
         start_zigpy_thread(self)
