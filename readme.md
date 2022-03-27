@@ -42,7 +42,7 @@ The first time you have to install the plugin via the `git clone` command, or yo
 
 * Restart Domoticz.
 
-[More information available here](https://github.com/zigbeefordomoticz/wiki/blob/master/fr-fr/Plugin_Version-6.md)
+[More information available here](https://zigbeefordomoticz.github.io/wiki/en-eng/Plugin_Installation)
 
 ## Plugin update
 
@@ -76,7 +76,7 @@ As for TI coordinator, we rely on [zigpy-bellows](https://github.com/zigpy/bello
 
 ## Documentation
 
-Documentation are available on the GitHub [Wiki](https://github.com/zigbeefordomoticz/Domoticz-Zigate-Wiki "Wiki")
+Documentation are available on the [Wiki](https://zigbeefordomoticz.github.io/wiki)
 
 ## Support
 
