@@ -6,11 +6,12 @@
 import asyncio
 import asyncio.events
 import binascii
+import contextlib
 import json
 import queue
 import time
 import traceback
-import contextlib
+from threading import Thread
 from typing import Any, Optional
 
 import zigpy.device
@@ -25,27 +26,29 @@ import zigpy.util
 import zigpy.zcl
 import zigpy.zdo
 import zigpy.zdo.types as zdo_types
+from Classes.ZigpyTransport.AppBellows import App_bellows
+from Classes.ZigpyTransport.AppDeconz import App_deconz
 from Classes.ZigpyTransport.AppZigate import App_zigate
 from Classes.ZigpyTransport.AppZnp import App_znp
-from Classes.ZigpyTransport.AppDeconz import App_deconz
-from Classes.ZigpyTransport.AppBellows import App_bellows
-from Classes.ZigpyTransport.nativeCommands import NATIVE_COMMANDS_MAPPING, native_commands
+from Classes.ZigpyTransport.nativeCommands import (NATIVE_COMMANDS_MAPPING,
+                                                   native_commands)
 from Classes.ZigpyTransport.plugin_encoders import (
-    build_plugin_0302_frame_content,
-    build_plugin_8009_frame_content,
+    build_plugin_0302_frame_content, build_plugin_8009_frame_content,
     build_plugin_8011_frame_content,
     build_plugin_8043_frame_list_node_descriptor,
-    build_plugin_8045_frame_list_controller_ep,
-)
+    build_plugin_8045_frame_list_controller_ep)
 from Classes.ZigpyTransport.tools import handle_thread_error
 from zigpy.exceptions import DeliveryError, InvalidResponse
-from zigpy_znp.exceptions import CommandNotRecognized, InvalidCommandResponse, InvalidFrame
+from zigpy_znp.exceptions import (CommandNotRecognized, InvalidCommandResponse,
+                                  InvalidFrame)
 
 MAX_CONCURRENT_REQUESTS_PER_DEVICE = 1
 CREATE_TASK = True
 
 def start_zigpy_thread(self):
     self.log.logging("TransportZigpy", "Debug", "start_zigpy_thread - Starting zigpy thread")
+    self.zigpy_thread = Thread(name="ZigpyCom_%s" % self.hardwareid, target=zigpy_thread, args=(self,))
+    self.log.logging("TransportZigpy", "Debug", "start_zigpy_thread - zigpy thread setup done")
     self.zigpy_thread.start()
     self.log.logging("TransportZigpy", "Debug", "start_zigpy_thread - zigpy thread started")
 
@@ -74,8 +77,13 @@ def zigpy_thread(self):
         "zigpy_thread -extendedPANID %s %d" % (self.pluginconf.pluginConf["extendedPANID"], extendedPANID),
     )
     
-    loop = asyncio.events.new_event_loop()
-    asyncio.events.set_event_loop(loop)
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        
+        loop = asyncio.events.new_event_loop()
+        asyncio.events.set_event_loop(loop)
+        
     task = loop.create_task(
         radio_start(self, self._radiomodule, self._serialPort, set_channel=channel, set_extendedPanId=extendedPANID)
         )
