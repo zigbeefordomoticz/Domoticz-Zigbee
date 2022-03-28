@@ -775,7 +775,6 @@ def schneider_setpoint_thermostat(self, key, setpoint):
 
     EPout = WISER_LEGACY_BASE_EP
     if "Model" in self.ListOfDevices[key] and self.ListOfDevices[key]["Model"] in ("Wiser2-Thermostat", "iTRV"):
-        self.log.logging("Schneider", "Debug", "schneider_setpoint -Force Endpoint to 0x01: %s ", NWKID)
         EPout = "01"
 
     ClusterID = "0201"
