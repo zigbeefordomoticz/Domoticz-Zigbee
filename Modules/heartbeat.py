@@ -533,7 +533,7 @@ def processKnownDevices(self, Devices, NWKID):
     if model in self.DeviceConf and "PollingEnabled" in self.DeviceConf[model] and self.DeviceConf[model]["PollingEnabled"]:
         enabledEndDevicePolling = True
 
-    if "CheckParam" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["CheckParam"] and intHB > (120 // HEARTBEAT):
+    if "CheckParam" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["CheckParam"] and intHB > (60 // HEARTBEAT):
         sanity_check_of_param(self, NWKID)
         self.ListOfDevices[NWKID]["CheckParam"] = False
 

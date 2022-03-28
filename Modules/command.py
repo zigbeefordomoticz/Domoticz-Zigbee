@@ -34,8 +34,8 @@ from Modules.tuya import (tuya_curtain_lvl, tuya_curtain_openclose,
                           tuya_energy_onoff, tuya_garage_door_action,
                           tuya_switch_command, tuya_watertimer_command,
                           tuya_window_cover_calibration)
-from Modules.tuyaSiren import (tuya_siren_alarm, tuya_siren_humi_alarm,
-                               tuya_siren_temp_alarm)
+from Modules.tuyaSiren import (tuya_siren2_trigger, tuya_siren_alarm,
+                               tuya_siren_humi_alarm, tuya_siren_temp_alarm)
 from Modules.tuyaTRV import (tuya_lidl_set_mode, tuya_trv_brt100_set_mode,
                              tuya_trv_mode, tuya_trv_onoff)
 from Modules.widgets import SWITCH_LVL_MATRIX
@@ -130,6 +130,7 @@ ACTIONATORS = [
     "TuyaSirenTemp",
     "ThermoOnOff",
     "ShutterCalibration",
+    "SwitchAlarm"
 ]
 
 
@@ -294,6 +295,12 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 self.log.logging("Command", "Log", "mgtCommand : Off for Tuya ParkSide Water Time - OnOff Mode")
                 actuator_off(self, NWKID, EPout, "Light")
                 #sendZigateCmd(self, "0092", "02" + NWKID + ZIGATE_EP + EPout + "00")
+
+        if DeviceType == "SwitchAlarm" and _model_name == "TS0601-_TZE200_t1blo2bj":
+            tuya_siren2_trigger(self, NWKID, '00')
+            UpdateDevice_v2(self, Devices, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+            return
+
 
         if _model_name in ("TS0601-Energy",):
             tuya_energy_onoff(self, NWKID, "00")
@@ -519,6 +526,12 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             UpdateDevice_v2(self, Devices, Unit, 1, "On", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
             return
 
+        if DeviceType == "SwitchAlarm" and _model_name == "TS0601-_TZE200_t1blo2bj":
+            tuya_siren2_trigger(self, NWKID, '01')
+            UpdateDevice_v2(self, Devices, Unit, 1, "On", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+            return
+            
+            
         if _model_name in ("TS0601-_TZE200nklqjk62", ):
             self.log.logging("Command", "Debug", "mgtCommand : Off for Tuya Garage Door %s" % NWKID)
             tuya_garage_door_action( self, NWKID, "01")

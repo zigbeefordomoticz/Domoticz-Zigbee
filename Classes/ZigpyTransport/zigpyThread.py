@@ -80,8 +80,8 @@ def zigpy_thread(self):
     loop = get_or_create_eventloop()
         
     task = radio_start(self, self._radiomodule, self._serialPort, set_channel=channel, set_extendedPanId=extendedPANID)
- 
     loop.run_until_complete(task)
+    
     loop.run_until_complete(asyncio.sleep(1))
     loop.close()
 
@@ -95,8 +95,6 @@ def get_or_create_eventloop():
             asyncio.set_event_loop(asyncio.new_event_loop())
             return asyncio.get_event_loop()    
     
-
-
 async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channel=0, set_extendedPanId=0):
 
     self.log.logging("TransportZigpy", "Debug", "In radio_start %s" %radiomodule)

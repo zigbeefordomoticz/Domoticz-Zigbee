@@ -457,6 +457,7 @@ def Cluster0000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             elif manufacturer_name in TUYA_eTRV3_MANUFACTURER:  # eTRV
                 self.log.logging("Cluster", "Log", "ReadCluster - %s / %s force to eTRV3" % (MsgSrcAddr, MsgSrcEp))
                 modelName += "-eTRV3"
+
             elif manufacturer_name in TUYA_eTRV4_MANUFACTURER:  # eTRV
                 self.log.logging("Cluster", "Log", "ReadCluster - %s / %s force to eTRV3" % (MsgSrcAddr, MsgSrcEp))
                 modelName += "-_TZE200_b6wax7g0"

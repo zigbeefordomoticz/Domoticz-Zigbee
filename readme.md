@@ -20,7 +20,7 @@ This plugin is an evolution of the mature Zigate plugin for Domoticz, which will
 * You need Python 3.7 at least
 * Zigpy layers will requires additional python3 modules to be install:
 
-  `sudo pip3 install voluptuous pycrypto aiosqlite crccheck pyusb attr attrs aiohttp pyserial-asyncio`
+  `sudo pip3 install voluptuous pycrypto aiosqlite crccheck pyusb attrs aiohttp pyserial-asyncio`
 
 ## Plugin first installation or first time on release 6.xxx (for now beta6)
 
@@ -42,7 +42,7 @@ The first time you have to install the plugin via the `git clone` command, or yo
 
 * Restart Domoticz.
 
-[More information available here](https://github.com/zigbeefordomoticz/wiki/blob/master/fr-fr/Plugin_Version-6.md)
+[More information available here](https://zigbeefordomoticz.github.io/wiki/en-eng/Plugin_Installation)
 
 ## Plugin update
 
@@ -76,7 +76,7 @@ As for TI coordinator, we rely on [zigpy-bellows](https://github.com/zigpy/bello
 
 ## Documentation
 
-Documentation are available on the GitHub [Wiki](https://github.com/zigbeefordomoticz/Domoticz-Zigate-Wiki "Wiki")
+Documentation are available on the [Wiki](https://zigbeefordomoticz.github.io/wiki)
 
 ## Support
 
