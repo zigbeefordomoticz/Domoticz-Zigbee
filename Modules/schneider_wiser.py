@@ -775,6 +775,7 @@ def schneider_setpoint_thermostat(self, key, setpoint):
 
     EPout = WISER_LEGACY_BASE_EP
     if "Model" in self.ListOfDevices[key] and self.ListOfDevices[key]["Model"] in ("Wiser2-Thermostat", "iTRV"):
+        self.log.logging("Schneider", "Debug", "schneider_setpoint -Force Endpoint to 0x01: %s ", NWKID)
         EPout = "01"
 
     ClusterID = "0201"
@@ -868,7 +869,7 @@ def schneider_setpoint(self, NwkId, setpoint):
         if self.ListOfDevices[NwkId]["Model"] in ("EH-ZB-RTS", "Wiser2-Thermostat", ):
             schneider_setpoint_thermostat(self, NwkId, setpoint)
             
-        if self.ListOfDevices[NwkId]["Model"] in ( "iTRV", ): 
+        elif self.ListOfDevices[NwkId]["Model"] in ( "iTRV", ): 
             schneider_setpoint_thermostat(self, NwkId, setpoint)   
             
         elif self.ListOfDevices[NwkId]["Model"] == "EH-ZB-VACT":
