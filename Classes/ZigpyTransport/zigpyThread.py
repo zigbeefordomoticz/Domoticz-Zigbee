@@ -83,6 +83,13 @@ def zigpy_thread(self):
     loop.run_until_complete(task)
     
     loop.run_until_complete(asyncio.sleep(1))
+    
+    self.log.logging("TransportZigpy", "Debug", "Check and cancelled any left task (if any)")
+    for not_yet_finished_task  in  asyncio.all_tasks(loop):
+        self.log.logging("TransportZigpy", "Debug", "         - not yet finished %s" %not_yet_finished_task.get_name())
+        not_yet_finished_task.cancel()
+
+    loop.run_until_complete(asyncio.sleep(1))       
     loop.close()
 
     self.log.logging("TransportZigpy", "Debug", "zigpy_thread - exiting zigpy thread")
