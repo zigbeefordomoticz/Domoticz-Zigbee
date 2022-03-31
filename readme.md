@@ -110,14 +110,14 @@ Your first place to get support is via the Forums.
 In order to provide stability and also provide more recent development, Zigbee for Domoticz plugin has the following channels
 
 * **beta6**: Current developpement branch and allow TI CCxxxx , Silicon Labs and deConz coordinators on top of ZiGate coordinators.
-* **stable6**: Support
+* **stable6**: default branch for
   * [ZiGate](https://zigate.fr) models knwon today,
   * [Electrolama](https://electrolama.com/) models as well as the Texas Instrument CCxxx based coordinators,
   * [Elelabs](https://elelabs.com/products/elelabs-usb-adapter.html) as well as the Silicon Labs based coordinators.
 
 * Not supported
   * **stable5**: Support ALL ZiGate models known today and requires Domoticz 2020.x at minima (not supported anymore)
-  * ***beta***: lastest version 6.0.15 deprecated (will be remove end of February 2022)
+  * ***beta***: lastest version 6.0.15 - February 2022
   * ***stable***: latest version 4.11. - Feb. 2021) deprecated
   * ***master***: latest version 3.0. - Sept. 2018) deprecated
 
