@@ -41,9 +41,9 @@ This plugin is an evolution of the mature Zigate plugin for Domoticz, which will
 
 7. Restart Domoticz.
 
-## Plugin first time on release 6 (stable6)
+## Plugin first time on release 6 (stable6 or beta6)
 
-This is the case where you have move from the stable5 branch to stable6.
+This is the case where you have move from the stable5 branch to stable6/beta6.
 
 1. Make sure the pre-requisites steps (here above) have been executed
 
