@@ -498,16 +498,14 @@ def check_transport_readiness(self):
     
     if self._radiomodule == "zigate":
         return True
-        
-    elif self._radiomodule == "znp":
-        if self.app._znp is None:
-            return False
+
+    if self._radiomodule == "znp":
+        return self.app._znp is not None
+    
+    if self._radiomodule == "deCONZ":
         return True
-        
-    elif self._radiomodule == "deCONZ":
-        return True
-        
-    elif self._radiomodule == "ezsp":
+
+    if self._radiomodule == "ezsp":
         return True
         
 async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=True, use_ieee=False ):
