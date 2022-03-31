@@ -1170,6 +1170,13 @@ def zigateInit_Phase1(self):
             self.HeartbeatCount = 1
             update_DB_device_status_to_reinit( self )
             return
+    elif self.zigbee_communitation == "zigpy" and Parameters["Mode3"] == "True" and not self.ErasePDMDone: 
+        if not self.ErasePDMDone:
+            self.ErasePDMDone = True
+            if self.domoticzdb_Hardware:
+                self.domoticzdb_Hardware.disableErasePDM()
+            update_DB_device_status_to_reinit( self )
+        
 
         # After an Erase PDM we have to do a full start of Zigate
         self.log.logging("Plugin", "Debug", "----> starZigate")
