@@ -1032,7 +1032,7 @@ class BasePlugin:
                 self.pluginParameters["available"],
                 self.pluginParameters["available-firmMajor"],
                 self.pluginParameters["available-firmMinor"],
-            ) = checkPluginVersion(self.pluginParameters["PluginBranch"], self.FirmwareMajorVersion)
+            ) = checkPluginVersion(self.zigbee_communitation, self.pluginParameters["PluginBranch"], self.FirmwareMajorVersion)
             self.pluginParameters["FirmwareUpdate"] = False
             self.pluginParameters["PluginUpdate"] = False
 
