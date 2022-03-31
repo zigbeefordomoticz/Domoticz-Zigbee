@@ -66,7 +66,7 @@ def checkPluginVersion(zigbee_communitation, branch, zigate_model):
 
     if zigbee_communitation == "native" and  branch in pluginVersion and "firmMajor" in firmwareVersion and "firmMinor" in firmwareVersion:
         return (pluginVersion[branch], firmwareVersion["firmMajor"], firmwareVersion["firmMinor"])
-    elif zigbee_communitation == "zigpy" and branch in pluginVersion:
+    if zigbee_communitation == "zigpy" and branch in pluginVersion:
         return (pluginVersion[branch], 0, 0)
 
     Domoticz.Error("checkPluginVersion - Unknown branch: >%s< %s %s %s" % (branch,zigate_model, pluginVersion, firmwareVersion ))
