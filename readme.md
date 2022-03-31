@@ -21,34 +21,52 @@ This plugin is an evolution of the mature Zigate plugin for Domoticz, which will
 
   `sudo pip3 install voluptuous pycrypto aiosqlite crccheck pyusb attrs aiohttp pyserial-asyncio`
 
-## Plugin first installation or first time on release 6.xxx (for now beta6)
+## Plugin first installation or first time on release 6.xxx (stable6)
 
-The first time you have to install the plugin via the `git clone` command, or you have been move to the release 6.x.
+1. Make sure the pre-requisites steps (here above) have been executed
 
-* Go in your Domoticz directory using a command line and open the plugins directory.
+2. Go in your Domoticz directory using a command line and open the plugins directory.
   Usually you should be under domoticz/plugins
 
-* Run: `git clone https://github.com/zigbeefordomoticz/Domoticz-Zigbee.git`
+3. Run: `git clone https://github.com/zigbeefordomoticz/Domoticz-Zigbee.git`
   It will create a folder 'Domoticz-Zigbee'
 
-* Go in the Zigbee for Domoticz folder ( Domoticz-Zigbee ).
+4. Go in the Zigbee for Domoticz folder ( Domoticz-Zigbee ).
   Usally you should be under domoticz/plugins/Domoticz-Zigbee
 
-* run: `git config --add submodule.recurse true`
+5. run: `git config --add submodule.recurse true`
 
-* run: `git submodule update --init --recursive`
+6. run: `git submodule update --init --recursive`
   Finally, make the plugin.py file executable `chmod +x Domoticz-Zigbee/plugin.py`
 
-* Restart Domoticz.
+7. Restart Domoticz.
+
+## Plugin first time on release 6 (stable6)
+
+This is the case where you have move from the stable5 branch to stable6.
+
+1. Make sure the pre-requisites steps (here above) have been executed
+
+2. Go in the Zigbee for Domoticz folder ( Domoticz-Zigbee ).
+  Usally you should be under domoticz/plugins/Domoticz-Zigbee
+
+3. run: `git config --add submodule.recurse true`
+
+4. run: `git submodule update --init --recursive`
+  Finally, make the plugin.py file executable `chmod +x Domoticz-Zigbee/plugin.py`
+
+5. Restart Domoticz. (you need a FULL restart of Domotciz)
 
 [More information available here](https://zigbeefordomoticz.github.io/wiki/en-eng/Plugin_Installation)
 
-## Plugin update
+## Usall Plugin update (when already on stable6)
 
-* Go in the Zigbee for Domoticz plugin directory
+1. Go in the Zigbee for Domoticz plugin directory
   Usally you should be under domoticz/plugins/Domoticz-Zigbee
   
-* run: `git pull --recurse-submodules`
+2. run: `git pull --recurse-submodules`
+
+3. Restart Domoticz or plugin.
 
 ## Tested Hardware Zigbee adapters/dongles/sticks/keys
 
@@ -71,7 +89,10 @@ As for TI coordinator, we rely on [zigpy-bellows](https://github.com/zigpy/bello
 ## LIMITATIONS
 
 * Please do consider that the current plugin is limited to create a maximum of 255 "Widgets" (Domoticz devices).  This will still give you the possibility to integrate a large number of Zigbee devices , but not an unlimited number.
+
   * Note that as with all Zigbee hubs/gateways/bridges you will need to add several "Zigbee Router" devices in order to increase the size of your Zigbee network mesh to reach that maximum number of devices, as the Zigbee Coordinator adapter will only support a smaller number of direct connected devices. See documentation troubleshooting section for best practices.
+
+* Currently there is a limitation with the non-ZiGate coordinator to have only 1 coordinator instance.
 
 ## Documentation
 
@@ -88,8 +109,11 @@ Your first place to get support is via the Forums.
 
 In order to provide stability and also provide more recent development, Zigbee for Domoticz plugin has the following channels
 
-* **beta6**: Current developpement branch integrates zigpy library and allow TI CCxxxx , Silicon Labs and deConz coordinators on top of ZiGate coordinators. Requires Domoticz 2021.1 at minima
-* **stable6**: Support ALL [ZiGate](https://zigate.fr) models knwon today, support all [Electrolama](https://electrolama.com/) models as well as the Texas Instrument CCxxx based coordinators and the [Elelabs](https://elelabs.com/products/elelabs-usb-adapter.html) as well as the Silicon Labs based coordinators.
+* **beta6**: Current developpement branch and allow TI CCxxxx , Silicon Labs and deConz coordinators on top of ZiGate coordinators.
+* **stable6**: Support
+  * [ZiGate](https://zigate.fr) models knwon today,
+  * [Electrolama](https://electrolama.com/) models as well as the Texas Instrument CCxxx based coordinators,
+  * [Elelabs](https://elelabs.com/products/elelabs-usb-adapter.html) as well as the Silicon Labs based coordinators.
 
 * Not supported
   * **stable5**: Support ALL ZiGate models known today and requires Domoticz 2020.x at minima (not supported anymore)
