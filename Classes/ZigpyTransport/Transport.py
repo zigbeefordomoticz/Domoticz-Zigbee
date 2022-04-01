@@ -43,7 +43,7 @@ class ZigpyTransport(object):
         self.FirmwareMajorVersion = None
         self.FirmwareVersion = None
         self.running = True
-        
+
         self.permit_to_join_timer = { "Timer": None, "Duration": None}
 
         # Semaphore per devices
@@ -57,6 +57,7 @@ class ZigpyTransport(object):
         self.app: zigpy.application.ControllerApplication | None = None
         self.writer_queue = Queue()
         self.forwarder_queue = Queue()
+        self.zigpy_loop = None
         self.zigpy_thread = Thread(name="ZigpyCom_%s" % self.hardwareid, target=zigpy_thread, args=(self,))
         self.forwarder_thread = Thread(name="ZigpyForwarder_%s" % self.hardwareid, target=forwarder_thread, args=(self,))
 
