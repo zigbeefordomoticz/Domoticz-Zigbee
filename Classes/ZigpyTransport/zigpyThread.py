@@ -46,6 +46,7 @@ MAX_CONCURRENT_REQUESTS_PER_DEVICE = 1
 CREATE_TASK = True
 
 def start_zigpy_thread(self):
+    self.zigpy_loop = get_or_create_eventloop()
     self.log.logging("TransportZigpy", "Debug", "start_zigpy_thread - Starting zigpy thread")
     self.zigpy_thread = Thread(name="ZigpyCom_%s" % self.hardwareid, target=zigpy_thread, args=(self,))
     self.log.logging("TransportZigpy", "Debug", "start_zigpy_thread - zigpy thread setup done")
@@ -77,29 +78,31 @@ def zigpy_thread(self):
         "zigpy_thread -extendedPANID %s %d" % (self.pluginconf.pluginConf["extendedPANID"], extendedPANID),
     )
 
-    loop = get_or_create_eventloop()
-        
     task = radio_start(self, self._radiomodule, self._serialPort, set_channel=channel, set_extendedPanId=extendedPANID)
-    loop.run_until_complete(task)
-    
-    loop.run_until_complete(asyncio.sleep(1))
+ 
+    self.zigpy_loop.run_until_complete(task)
+    self.zigpy_loop.run_until_complete(asyncio.sleep(1))
+
     self.log.logging("TransportZigpy", "Debug", "Check and cancelled any left task (if any)")
-    for not_yet_finished_task  in  asyncio.all_tasks(loop):
+    for not_yet_finished_task  in  asyncio.all_tasks(self.zigpy_loop):
         self.log.logging("TransportZigpy", "Debug", "         - not yet finished %s" %not_yet_finished_task.get_name())
         not_yet_finished_task.cancel()
-    loop.run_until_complete(asyncio.sleep(1))
+    self.zigpy_loop.run_until_complete(asyncio.sleep(1))
 
-    loop.close()
+    self.zigpy_loop.close()
 
     self.log.logging("TransportZigpy", "Debug", "zigpy_thread - exiting zigpy thread")
 
 def get_or_create_eventloop():
     try:
-        return asyncio.get_event_loop()
+        loop = asyncio.get_event_loop()
+
     except RuntimeError as ex:
         if "There is no current event loop in thread" in str(ex):
-            asyncio.set_event_loop(asyncio.new_event_loop())
-            return asyncio.get_event_loop()    
+            asyncio.new_event_loop()
+     
+    asyncio.set_event_loop( loop )
+    return loop   
     
 async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channel=0, set_extendedPanId=0):
 
