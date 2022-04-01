@@ -57,9 +57,9 @@ This is the case where you have move from the stable5 branch to stable6/beta6.
 
 5. Restart Domoticz. (you need a FULL restart of Domotciz)
 
-[More information available here](https://zigbeefordomoticz.github.io/wiki/en-eng/Plugin_Installation)
+[More information available here](https://zigbeefordomoticz.github.io/wiki/en-eng/Plugin_Version-6.html)
 
-## Usall Plugin update (when already on stable6)
+## Regular Plugin update (when already on stable6)
 
 1. Go in the Zigbee for Domoticz plugin directory
   Usally you should be under domoticz/plugins/Domoticz-Zigbee
