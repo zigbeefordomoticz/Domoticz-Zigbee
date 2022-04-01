@@ -19,10 +19,10 @@ stable-2020 is the new stable branche dedicated for DomoticZ equal and above 202
 
 Release Numbering
 
-- Odd numbers --> Stable5/6
+- Odd numbers --> Stable/6
 - Even numbers  --> Beta/6
 
-## - stable6.1.001
+## 1 April 2022 - stable6.1.001 ( Zigate, Zigate+, TI CCxxxx ZNP, Silicon Labs EZSP)
 
 - [Technical] - relying zigpy libraries for none Zigate Coordinators
 - [Hardware] - Enable Texas Instrument Coordinator based on zigpy-znp library
@@ -31,6 +31,13 @@ Release Numbering
 - [Hardware] - Moes Curtain Switch calibration
 - [Hardware] - Moes Siren without temp/humi sensors
 - [Hardware] - New Lumi remote switch b28ac1
+- [Hardware] - Tuya plug \_TS3000
+- [Hardware] - Enable calibration for MOES Thermostat
+- [WebUI] - API to getBattery device status
+- [WebUI] - Refactoring of the Topology Report. Click on node to get more insights
+- [Hardware] - Schneider Shutter/Dimmer NHPBSHUTTER1
+- [Hardware] - Tuya garage door
+- [Hardware] - Orvibo dry Contact Module CM10ZW
 
 ## 23 January 2022  - 5.1.18
 
