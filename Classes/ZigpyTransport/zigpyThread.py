@@ -83,13 +83,12 @@ def zigpy_thread(self):
     loop.run_until_complete(task)
     
     loop.run_until_complete(asyncio.sleep(1))
-    
     self.log.logging("TransportZigpy", "Debug", "Check and cancelled any left task (if any)")
     for not_yet_finished_task  in  asyncio.all_tasks(loop):
         self.log.logging("TransportZigpy", "Debug", "         - not yet finished %s" %not_yet_finished_task.get_name())
         not_yet_finished_task.cancel()
+    loop.run_until_complete(asyncio.sleep(1))
 
-    loop.run_until_complete(asyncio.sleep(1))       
     loop.close()
 
     self.log.logging("TransportZigpy", "Debug", "zigpy_thread - exiting zigpy thread")
@@ -504,10 +503,26 @@ def log_exception(self, exception, error, cmd, data):
         context=context,
     )
 
+def check_transport_readiness(self):
+    
+    if self._radiomodule == "zigate":
+        return True
 
+    if self._radiomodule == "znp":
+        return self.app._znp is not None
+    
+    if self._radiomodule == "deCONZ":
+        return True
+
+    if self._radiomodule == "ezsp":
+        return True
+        
 async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=True, use_ieee=False ):
     _nwkid = destination.nwk.serialize()[::-1].hex()
     _ieee = str(destination.ieee)
+    if not check_transport_readiness:
+        return
+
     try:
         async with _limit_concurrency(self, destination, sequence):
             if _ieee in self._currently_not_reachable and self._currently_waiting_requests_list[_ieee]:
