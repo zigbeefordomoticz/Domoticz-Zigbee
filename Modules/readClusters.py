@@ -382,7 +382,7 @@ def Cluster0000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             elif manufacturer_name == "_TZ3000_pmz6mjyu":
                 # MOES MS-104BZ-1
                 modelName = "TS011F-2Gang-switches"
-            elif manufacturer_name in ("_TZ3000_cphmq0q7", "_TZ3000_ew3ldmgx", "_TZ3000_dpo1ysak", ):
+            elif manufacturer_name in ("_TZ3000_cphmq0q7", "_TZ3000_ew3ldmgx", "_TZ3000_dpo1ysak", "_TZ3000_typdpbpg", ):
                 modelName = "TS011F-plug"
 
         elif modelName == "TS0201":
@@ -457,6 +457,7 @@ def Cluster0000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             elif manufacturer_name in TUYA_eTRV3_MANUFACTURER:  # eTRV
                 self.log.logging("Cluster", "Log", "ReadCluster - %s / %s force to eTRV3" % (MsgSrcAddr, MsgSrcEp))
                 modelName += "-eTRV3"
+
             elif manufacturer_name in TUYA_eTRV4_MANUFACTURER:  # eTRV
                 self.log.logging("Cluster", "Log", "ReadCluster - %s / %s force to eTRV3" % (MsgSrcAddr, MsgSrcEp))
                 modelName += "-_TZE200_b6wax7g0"
@@ -1214,10 +1215,10 @@ def UpdateBatteryAttribute(self, Devices, MsgSrcAddr, MsgSrcEp):
                 MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]["Model"], self.ListOfDevices[MsgSrcAddr]["Battery"], value),
             MsgSrcAddr,
         )
+        self.ListOfDevices[MsgSrcAddr]["BatteryUpdateTime"] = int(time())
         if value != self.ListOfDevices[MsgSrcAddr]["Battery"]:
             self.ListOfDevices[MsgSrcAddr]["Battery"] = value
             Update_Battery_Device(self, Devices, MsgSrcAddr, value)
-            self.ListOfDevices[MsgSrcAddr]["BatteryUpdateTime"] = int(time())
             self.log.logging(
                 "Cluster",
                 "Debug",

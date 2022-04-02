@@ -21,7 +21,7 @@ from Modules.domoMaj import MajDomoDevice
 
 from Modules.tools import (build_fcf, checkAndStoreAttributeValue,
                            get_and_inc_ZCL_SQN, is_ack_tobe_disabled, updSQN)
-from Modules.tuyaSiren import tuya_siren_response
+from Modules.tuyaSiren import tuya_siren_response, tuya_siren2_response
 from Modules.tuyaTools import (get_tuya_attribute, store_tuya_attribute,
                                tuya_cmd)
 from Modules.tuyaTRV import TUYA_eTRV_MODEL, tuya_eTRV_response
@@ -432,8 +432,11 @@ def tuya_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, 
     elif _ModelName in (TUYA_eTRV_MODEL):
         tuya_eTRV_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
 
-    elif _ModelName == "TS0601-sirene":
+    elif _ModelName in ( "TS0601-sirene", ):
         tuya_siren_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
+
+    elif _ModelName in ( "TS0601-_TZE200_t1blo2bj", ):
+        tuya_siren2_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
 
     elif _ModelName == "TS0601-dimmer":
         tuya_dimmer_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)

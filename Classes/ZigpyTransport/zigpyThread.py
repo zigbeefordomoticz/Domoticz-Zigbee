@@ -44,6 +44,7 @@ MAX_CONCURRENT_REQUESTS_PER_DEVICE = 1
 CREATE_TASK = True
 
 def start_zigpy_thread(self):
+    self.zigpy_loop = get_or_create_eventloop()
     self.log.logging("TransportZigpy", "Debug", "start_zigpy_thread - Starting zigpy thread")
     self.zigpy_thread.start()
 
@@ -71,11 +72,33 @@ def zigpy_thread(self):
         "Debug",
         "zigpy_thread -extendedPANID %s %d" % (self.pluginconf.pluginConf["extendedPANID"], extendedPANID),
     )
-    asyncio.run(
-        radio_start(self, self._radiomodule, self._serialPort, set_channel=channel, set_extendedPanId=extendedPANID)
-    )
 
+    task = radio_start(self, self._radiomodule, self._serialPort, set_channel=channel, set_extendedPanId=extendedPANID)
+ 
+    self.zigpy_loop.run_until_complete(task)
+    self.zigpy_loop.run_until_complete(asyncio.sleep(1))
 
+    self.log.logging("TransportZigpy", "Debug", "Check and cancelled any left task (if any)")
+    for not_yet_finished_task  in  asyncio.all_tasks(self.zigpy_loop):
+        self.log.logging("TransportZigpy", "Debug", "         - not yet finished %s" %not_yet_finished_task.get_name())
+        not_yet_finished_task.cancel()
+    self.zigpy_loop.run_until_complete(asyncio.sleep(1))
+
+    self.zigpy_loop.close()
+
+    self.log.logging("TransportZigpy", "Debug", "zigpy_thread - exiting zigpy thread")
+
+def get_or_create_eventloop():
+    try:
+        loop = asyncio.get_event_loop()
+
+    except RuntimeError as ex:
+        if "There is no current event loop in thread" in str(ex):
+            asyncio.new_event_loop()
+     
+    asyncio.set_event_loop( loop )
+    return loop   
+    
 async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channel=0, set_extendedPanId=0):
 
     self.log.logging("TransportZigpy", "Debug", "In radio_start %s" %radiomodule)
@@ -473,10 +496,26 @@ def log_exception(self, exception, error, cmd, data):
         context=context,
     )
 
+def check_transport_readiness(self):
+    
+    if self._radiomodule == "zigate":
+        return True
 
+    if self._radiomodule == "znp":
+        return self.app._znp is not None
+    
+    if self._radiomodule == "deCONZ":
+        return True
+
+    if self._radiomodule == "ezsp":
+        return True
+        
 async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=True, use_ieee=False ):
     _nwkid = destination.nwk.serialize()[::-1].hex()
     _ieee = str(destination.ieee)
+    if not check_transport_readiness:
+        return
+
     try:
         async with _limit_concurrency(self, destination, sequence):
             if _ieee in self._currently_not_reachable and self._currently_waiting_requests_list[_ieee]:

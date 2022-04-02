@@ -717,6 +717,12 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
                 return
 
+        if ClusterType == "Switch" and WidgetType == "SwitchAlarm":
+            # value is str
+            nValue = int( value,16 )
+            sValue = "%02x" %nValue
+            UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
+            
         if ClusterType == WidgetType == "Motion":
             nValue = int(value, 16)
             if nValue == 1:

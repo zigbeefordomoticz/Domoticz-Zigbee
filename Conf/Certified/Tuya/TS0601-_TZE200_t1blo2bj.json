@@ -1,22 +1,18 @@
 {
-	"_comment": "Tuya TRV: _TZE200_aoclfnxz /TS0601 /Moes /Thermostat BTH-002",
+	"_comment": "Tuya Siren Alarm - without any Temp/humi sensors",
 	"_version": "0.10",
 	"Ep": {
 		"01": {
 			"0000": "",
 			"0004": "",
-			"0005": "",
 			"ef00": "",
 			"000a": "",
 			"0019": "",
-			"Type": "Temp/ThermoSetpoint/ThermoOnOff/ThermoMode_2/HeatingStatus"
+			"Type": "SwitchAlarm"
 		}
 	},
 	"Type": "",
-	"ClusterToBind": [
-		"0000",
-		"ef00"
-	],
+	"ClusterToBind": [],
 	"ConfigureReporting": {},
 	"ReadAttributes": {
 		"0000": [
@@ -29,8 +25,8 @@
 		]
 	},
 	"Param": {
-		"ValveDetection": 1,
-		"SensorMode": 0,
-		"Calibration": 0
+		"AlarmDuration": 10,
+		"AlarmLevel": 0,
+		"AlarmMelody": 1
 	}
 }

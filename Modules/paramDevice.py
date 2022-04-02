@@ -34,7 +34,11 @@ from Modules.schneider_wiser import (iTRV_open_window_detection,
 from Modules.tuya import (get_tuya_attribute, tuya_backlight_command,
                           tuya_cmd_ts004F, tuya_energy_childLock,
                           tuya_switch_indicate_light, tuya_switch_relay_status,
-                          tuya_window_cover_motor_reversal, tuya_window_cover_calibration)
+                          tuya_window_cover_calibration,
+                          tuya_window_cover_motor_reversal)
+from Modules.tuyaSiren import (tuya_siren2_alarm_duration,
+                               tuya_siren2_alarm_melody,
+                               tuya_siren2_alarm_volume)
 from Modules.tuyaTRV import (tuya_trv_boost_time, tuya_trv_calibration,
                              tuya_trv_child_lock, tuya_trv_eco_temp,
                              tuya_trv_set_max_setpoint,
@@ -204,9 +208,10 @@ DEVICE_PARAMETERS = {
     "BRT100MaxSetpoint": tuya_trv_set_max_setpoint,
     "BRT100MinSetpoint": tuya_trv_set_min_setpoint,
     "moesCalibrationTime": tuya_window_cover_calibration,
+    "AlarmLevel": tuya_siren2_alarm_volume,
+    "AlarmDuration": tuya_siren2_alarm_duration,
+    "AlarmMelody": tuya_siren2_alarm_melody,
 }
-
-
 
 def sanity_check_of_param(self, NwkId):
     # Domoticz.Log("sanity_check_of_param for %s" %NwkId)

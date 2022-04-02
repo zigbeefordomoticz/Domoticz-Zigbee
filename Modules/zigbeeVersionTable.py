@@ -27,7 +27,7 @@ ZNP_MODEL = {
 def set_display_firmware_version( self ):
 
     if 0 <= int(self.ControllerData["Branch Version"]) < 20:   
-        self.pluginParameters["DisplayFirmwareVersion"] = "Zig - %s" % self.ControllerData["Minor Version"] 
+        self.pluginParameters["DisplayFirmwareVersion"] = "Zigate - %s" % self.ControllerData["Minor Version"] 
         
     elif 20 <= int(self.ControllerData["Branch Version"]) < 30:
         # ZNP
