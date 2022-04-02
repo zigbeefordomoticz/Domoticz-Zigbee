@@ -77,7 +77,7 @@ def tuya_sirene_registration(self, nwkid):
 def tuya_siren_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
 
     self.log.logging("Tuya", "Debug", "tuya_siren_response - Nwkid: %s dp: %02x data: %s" % (NwkId, dp, data))
-
+    # 000a/0504/0001/00
     if dp == 0x65:  # Power Mode ( 0x00 Battery, 0x04 USB )
         if data == "00":
             self.log.logging(
@@ -174,7 +174,8 @@ def tuya_siren_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstN
         attribute_name = "UnknowDp_0x%02x_Dt_0x%02x" % (dp, datatype)
         store_tuya_attribute(self, NwkId, attribute_name, data)
 
-
+        
+        
 def tuya_siren_alarm(self, nwkid, onoff, alarm_num=1):
 
     self.log.logging("Tuya", "Debug", "tuya_siren_alarm - %s onoff: %s" % (nwkid, onoff))
@@ -433,3 +434,86 @@ def tuya_siren_alarm_temp(self, nwkid, min_temp_alarm, max_temp):
     data2 = "%08x" % min_temp_alarm
 
     tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action1, data1, action2, data2)
+
+
+def tuya_siren2_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
+    
+    self.log.logging("Tuya", "Debug", "tuya_siren2_response - Nwkid: %s dp: %02x data: %s" % (NwkId, dp, data))
+    if dp == 0x05:    # Sound level
+        # 000a/0504/00/01/00 Low
+        # 000e/0504/00/01/02 Max
+        self.log.logging("Tuya", "Debug", "tuya_siren2_response - Sound Level: %s" % (int(data, 16)), NwkId)
+        store_tuya_attribute(self, NwkId, "AlarmLevel", data)
+    
+    elif dp == 0x07:   # Duration   
+        # 0010/0702/00/04/0000003c
+        self.log.logging("Tuya", "Debug", "tuya_siren2_response - Sound duration: %s" % (int(data, 16)), NwkId)
+        store_tuya_attribute(self, NwkId, "AlarmDuration", data)
+    
+    elif dp == 0x15:    # Melodie
+        # 0012/1504/0001/00
+        self.log.logging("Tuya", "Debug", "tuya_siren2_response - Sound Melody: %s" % (int(data, 16)), NwkId)
+        store_tuya_attribute(self, NwkId, "AlarmMelody", data)
+        
+    elif dp == 0x0d:   # OnOff
+        self.log.logging("Tuya", "Debug", "tuya_siren2_response - OnOff: %s" % (int(data, 16)), NwkId)
+        store_tuya_attribute(self, NwkId, "Alarm", data)
+        MajDomoDevice(self, Devices, NwkId, srcEp, "0006", data)
+        
+    elif dp == 0x0f:   # Battery Percentage
+        store_tuya_attribute(self, NwkId, "Battery", data)
+        self.ListOfDevices[NwkId]["Battery"] = int(data,16)
+
+
+def tuya_siren2_alarm_volume(self, nwkid, volume):
+    # duration in second
+
+    self.log.logging("Tuya", "Debug", "tuya_siren2_alarm_volume - %s volume: %s" % (nwkid, volume))
+    EPout = "01"
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
+    cluster_frame = "11"
+    cmd = "00"  # Command
+    action = "%04x" % struct.unpack("H", struct.pack(">H", 0x0405))[0]
+    data = "%02x" % volume
+    tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
+
+
+def tuya_siren2_alarm_duration(self, nwkid, duration):
+    # duration in second
+
+    self.log.logging("Tuya", "Debug", "tuya_siren2_alarm_duration - %s duration: %s" % (nwkid, duration))
+    EPout = "01"
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
+    cluster_frame = "11"
+    cmd = "00"  # Command
+    action = "%04x" % struct.unpack("H", struct.pack(">H", 0x0207))[0]
+    data = "%08x" % duration
+    tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
+
+def tuya_siren2_alarm_melody(self, nwkid, melody):
+    # duration in second
+
+    self.log.logging("Tuya", "Debug", "tuya_siren2_alarm_melody - %s melody: %s" % (nwkid, melody))
+    EPout = "01"
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
+    cluster_frame = "11"
+    cmd = "00"  # Command
+    action = "%04x" % struct.unpack("H", struct.pack(">H", 0x0415))[0]
+    data = "%02x" % melody
+    tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
+
+
+
+
+def tuya_siren2_trigger(self, nwkid, onoff):
+    self.log.logging("Tuya", "Debug", "tuya_siren2_trigger - %s onoff: %s" % (nwkid, onoff))
+
+    # 0017/ 0d01 00 01 01
+    # 0023/ 0d01 00 01 01
+    EPout = "01"
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
+    cluster_frame = "11"
+    cmd = "00"  # Command
+    action = "%04x" % struct.unpack("H", struct.pack(">H", 0x010d))[0]
+    data = onoff
+    tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)

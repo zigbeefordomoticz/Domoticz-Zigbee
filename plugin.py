@@ -4,7 +4,7 @@
 # Author: zaraki673 & pipiche38
 #
 """
-<plugin key="Zigate" name="Zigbee for domoticz plugin (zigpy enabled)" author="pipiche38" version="6.0">
+<plugin key="Zigate" name="Zigbee for domoticz plugin (zigpy enabled)" author="pipiche38" version="6.2">
     <description>
         <h1> Plugin Zigbee for domoticz</h1><br/>
             <br/><h2> Informations</h2><br/>
@@ -17,11 +17,10 @@
     </description>
     <params>
         <param field="Mode1" label="Coordinator Model" width="75px" required="true" default="None">
-            <description><br/><h3>Zigbee Coordinator definition</h3><br/>Select the Zigbee radio Coordinator version : ZiGate (V1), ZiGate+ (V2), Texas Instrument ZNP</description>
+            <description><br/><h3>Zigbee Coordinator definition</h3><br/>Select the Zigbee radio Coordinator version : ZiGate (V1), ZiGate+ (V2), Texas Instrument ZNP, or Silicon Labs EZSP</description>
             <options>
                 <option label="ZiGate"  value="V1"/>
                 <option label="ZiGate+" value="V2"/>
-                <option label="Zigate (via zigpy for dev ONLY)" value="ZigpyZiGate"/>
                 <option label="Texas Instruments ZNP (via zigpy)" value="ZigpyZNP"/>
                 <option label="Silicon Labs EZSP (via zigpy)" value="ZigpyEZSP"/>
             </options>
@@ -466,8 +465,11 @@ class BasePlugin:
         # Connect to Zigate only when all initialisation are properly done.
         self.log.logging("Plugin", "Status", "Transport mode: %s" % self.transport)
         if self.transport in ("USB", "DIN", "V2-DIN", "V2-USB"):
-            import serial
-            import dns
+            try:
+                import serial
+                import dns
+            except:
+                Domoticz.Error("Missing serial or dns modules. https://github.com/zigbeefordomoticz/wiki/blob/zigpy/en-eng/missing-modules.md#make-sure-that-you-have-correctly-installed-the-plugin")
             from Classes.ZigateTransport.Transport import ZigateTransport
             
             self.pythonModuleVersion["serial"] = (serial.__version__)
@@ -491,8 +493,11 @@ class BasePlugin:
 
         elif self.transport in ("PI", "V2-PI"):
             from Classes.ZigateTransport.Transport import ZigateTransport
-            import serial
-            import dns
+            try:
+                import serial
+                import dns
+            except:
+                Domoticz.Error("Missing serial or dns modules. https://github.com/zigbeefordomoticz/wiki/blob/zigpy/en-eng/missing-modules.md#make-sure-that-you-have-correctly-installed-the-plugin")
 
             self.pythonModuleVersion["serial"] = (serial.__version__)
             self.pythonModuleVersion["dns"] = (dns.__version__)
@@ -517,7 +522,10 @@ class BasePlugin:
 
         elif self.transport in ("Wifi", "V2-Wifi"):
             from Classes.ZigateTransport.Transport import ZigateTransport
-            import dns
+            try:
+                import dns
+            except:
+                Domoticz.Error("Missing serial or dns modules. https://github.com/zigbeefordomoticz/wiki/blob/zigpy/en-eng/missing-modules.md#make-sure-that-you-have-correctly-installed-the-plugin")
 
             self.pythonModuleVersion["dns"] = (dns.__version__)
             check_python_modules_version( self )
@@ -550,9 +558,13 @@ class BasePlugin:
 
         elif self.transport == "ZigpyZiGate":
             # Zigpy related modules
-            import dns
+            try:
+                import dns
+                import serial
+            except:
+                Domoticz.Error("Missing serial or dns modules. https://github.com/zigbeefordomoticz/wiki/blob/zigpy/en-eng/missing-modules.md#make-sure-that-you-have-correctly-installed-the-plugin")
+
             import zigpy
-            import serial
             import zigpy_zigate
             from Classes.ZigpyTransport.Transport import ZigpyTransport
             from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE)
@@ -574,8 +586,12 @@ class BasePlugin:
             self.pluginconf.pluginConf["ControllerInRawMode"] = True
             
         elif self.transport == "ZigpyZNP":
-            import dns
-            import serial
+            try:
+                import dns
+                import serial
+            except:
+                Domoticz.Error("Missing serial or dns modules. https://github.com/zigbeefordomoticz/wiki/blob/zigpy/en-eng/missing-modules.md#make-sure-that-you-have-correctly-installed-the-plugin")
+
             import zigpy
             import zigpy_znp
             from Classes.ZigpyTransport.Transport import ZigpyTransport
@@ -597,8 +613,12 @@ class BasePlugin:
             self.pluginconf.pluginConf["ControllerInRawMode"] = True
             
         elif self.transport == "ZigpydeCONZ":
-            import dns
-            import serial
+            try:
+                import dns
+                import serial
+            except:
+                Domoticz.Error("Missing serial or dns modules. https://github.com/zigbeefordomoticz/wiki/blob/zigpy/en-eng/missing-modules.md#make-sure-that-you-have-correctly-installed-the-plugin")
+
             import zigpy
             import zigpy_deconz
             from Classes.ZigpyTransport.Transport import ZigpyTransport
@@ -618,8 +638,12 @@ class BasePlugin:
             self.pluginconf.pluginConf["ControllerInRawMode"] = True
             
         elif self.transport == "ZigpyEZSP":
-            import dns
-            import serial
+            try:
+                import dns
+                import serial
+            except:
+                Domoticz.Error("Missing serial or dns modules. https://github.com/zigbeefordomoticz/wiki/blob/zigpy/en-eng/missing-modules.md#make-sure-that-you-have-correctly-installed-the-plugin")
+
             import zigpy
             import bellows
             from Classes.ZigpyTransport.Transport import ZigpyTransport
@@ -704,7 +728,7 @@ class BasePlugin:
 
         for thread in threading.enumerate():
             if thread.name != threading.current_thread().name:
-                Domoticz.Log(
+                self.log.logging("Plugin", "Log"
                     "'"
                     + thread.name
                     + "' is running, it must be shutdown otherwise Domoticz will abort on plugin exit."
@@ -1007,7 +1031,7 @@ class BasePlugin:
                 self.pluginParameters["available"],
                 self.pluginParameters["available-firmMajor"],
                 self.pluginParameters["available-firmMinor"],
-            ) = checkPluginVersion(self.pluginParameters["PluginBranch"], self.FirmwareMajorVersion)
+            ) = checkPluginVersion(self.zigbee_communitation, self.pluginParameters["PluginBranch"], self.FirmwareMajorVersion)
             self.pluginParameters["FirmwareUpdate"] = False
             self.pluginParameters["PluginUpdate"] = False
 
@@ -1145,6 +1169,13 @@ def zigateInit_Phase1(self):
             self.HeartbeatCount = 1
             update_DB_device_status_to_reinit( self )
             return
+    elif self.zigbee_communitation == "zigpy" and Parameters["Mode3"] == "True" and not self.ErasePDMDone: 
+        if not self.ErasePDMDone:
+            self.ErasePDMDone = True
+            if self.domoticzdb_Hardware:
+                self.domoticzdb_Hardware.disableErasePDM()
+            update_DB_device_status_to_reinit( self )
+        
 
         # After an Erase PDM we have to do a full start of Zigate
         self.log.logging("Plugin", "Debug", "----> starZigate")

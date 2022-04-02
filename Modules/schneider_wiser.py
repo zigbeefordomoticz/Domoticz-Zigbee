@@ -868,7 +868,7 @@ def schneider_setpoint(self, NwkId, setpoint):
         if self.ListOfDevices[NwkId]["Model"] in ("EH-ZB-RTS", "Wiser2-Thermostat", ):
             schneider_setpoint_thermostat(self, NwkId, setpoint)
             
-        if self.ListOfDevices[NwkId]["Model"] in ( "iTRV", ): 
+        elif self.ListOfDevices[NwkId]["Model"] in ( "iTRV", ): 
             schneider_setpoint_thermostat(self, NwkId, setpoint)   
             
         elif self.ListOfDevices[NwkId]["Model"] == "EH-ZB-VACT":
