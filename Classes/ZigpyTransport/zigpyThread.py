@@ -84,9 +84,13 @@ def zigpy_thread(self):
     self.zigpy_loop.run_until_complete(asyncio.sleep(1))
 
     self.log.logging("TransportZigpy", "Debug", "Check and cancelled any left task (if any)")
-    for not_yet_finished_task  in  asyncio.all_tasks(self.zigpy_loop):
-        self.log.logging("TransportZigpy", "Debug", "         - not yet finished %s" %not_yet_finished_task.get_name())
-        not_yet_finished_task.cancel()
+    for not_yet_finished_task in list(asyncio.all_tasks(self.zigpy_loop)):
+        try:
+            self.log.logging("TransportZigpy", "Debug", "         - not yet finished %s" %not_yet_finished_task.get_name())
+            not_yet_finished_task.cancel()
+        except AttributeError:
+            continue
+        
     self.zigpy_loop.run_until_complete(asyncio.sleep(1))
 
     self.zigpy_loop.close()
@@ -166,12 +170,12 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channe
         new_network = False
 
     await self.app.startup(
-        callBackHandleMessage = self.receiveData,
-        callBackGetDevice = self.ZigpyGetDevice,
-        auto_form = True,
-        force_form = new_network,
-        log = self.log,
-        permit_to_join_timer = self.permit_to_join_timer)
+        callBackHandleMessage=self.receiveData,
+        callBackGetDevice=self.ZigpyGetDevice,
+        auto_form=True,
+        force_form=new_network,
+        log=self.log,
+        permit_to_join_timer=self.permit_to_join_timer)
     
     # Send Network information to plugin, in order to poplulate various objetcs
     self.forwarder_queue.put(build_plugin_8009_frame_content(self, radiomodule))
@@ -277,8 +281,7 @@ async def worker_loop(self):
                     "process_raw_command (zigpyThread) spend more than 1s (%s ms) frame: %s" % (t_elapse, data),
                 )
 
-    self.log.logging("TransportZigpy", "Log", "worker_loop: Exiting Worker loop. Semaphore : %s " %
-        len(self._concurrent_requests_semaphores_list))
+    self.log.logging("TransportZigpy", "Log", "worker_loop: Exiting Worker loop. Semaphore : %s" %len(self._concurrent_requests_semaphores_list))
     
     if self._concurrent_requests_semaphores_list:
         for x in self._concurrent_requests_semaphores_list:
@@ -435,7 +438,7 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
         destination = self.app.get_device(nwk=t.NWK(int(NwkId, 16)))
         self.log.logging("TransportZigpy", "Debug", "process_raw_command  call request destination: %s" % destination)
         if CREATE_TASK:
-            task =  asyncio.create_task(
+            task = asyncio.create_task(
                 transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False, ) )
         else:
             await transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False, )

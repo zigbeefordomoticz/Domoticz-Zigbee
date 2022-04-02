@@ -729,10 +729,10 @@ class BasePlugin:
 
         for thread in threading.enumerate():
             if thread.name != threading.current_thread().name:
-                self.log.logging("Plugin", "Log"
-                    "'"
-                    + thread.name
-                    + "' is running, it must be shutdown otherwise Domoticz will abort on plugin exit."
+                self.log.logging(
+                    "Plugin", 
+                    "Log", 
+                    "'" + thread.name + "' is running, it must be shutdown otherwise Domoticz will abort on plugin exit."
                 )
 
         self.PluginHealth["Flag"] = 3
@@ -1255,7 +1255,7 @@ def zigateInit_Phase3(self):
         zigateBlueLed(self, False)
 
     # Set the TX Power
-    if self.ZiGateModel ==  1:
+    if self.ZiGateModel == 1:
         set_TxPower(self, self.pluginconf.pluginConf["TXpower_set"])
 
     # Set Certification Code
@@ -1320,24 +1320,32 @@ def zigateInit_Phase3(self):
     if self.OTA is None and self.pluginconf.pluginConf["allowOTA"]:
         start_OTAManagement(self, Parameters["HomeFolder"])
 
-    if self.FirmwareMajorVersion == "03": 
-        self.log.logging(
-            "Plugin", "Status", "Plugin with Zigate, firmware %s correctly initialized" % self.FirmwareVersion
-        )
-    elif self.FirmwareMajorVersion == "04":
-        self.log.logging(
-            "Plugin", "Status", "Plugin with Zigate (OptiPDM), firmware %s correctly initialized" % self.FirmwareVersion
-        )
-    elif self.FirmwareMajorVersion == "05":
-        self.log.logging(
-            "Plugin", "Status", "Plugin with Zigate+, firmware %s correctly initialized" % self.FirmwareVersion
-        )
+    if self.FirmwareBranch in ( "00", "01",):
+        # ZiGate
+        if self.FirmwareMajorVersion == "03": 
+            self.log.logging(
+                "Plugin", "Status", "Plugin with Zigate, firmware %s correctly initialized" % self.FirmwareVersion)
+        elif self.FirmwareMajorVersion == "04":
+            self.log.logging(
+                "Plugin", "Status", "Plugin with Zigate (OptiPDM), firmware %s correctly initialized" % self.FirmwareVersion )
+        elif self.FirmwareMajorVersion == "05":
+            self.log.logging(
+                "Plugin", "Status", "Plugin with Zigate+, firmware %s correctly initialized" % self.FirmwareVersion )
 
-    elif int(self.FirmwareBranch) >= 20:
+    elif self.FirmwareBranch in  ( "20", "21", "22", ):
         self.log.logging(
             "Plugin", "Status", "Plugin with ZNP, firmware %s-%s correctly initialized" % (self.FirmwareMajorVersion, self.FirmwareVersion))
 
-        
+    elif  self.FirmwareBranch in ( "30", "31", ):
+        self.log.logging(
+            "Plugin", "Status", "Plugin with EZNP (Bellows), firmware %s-%s correctly initialized" % (self.FirmwareMajorVersion, self.FirmwareVersion))
+
+    elif  self.FirmwareBranch in ( "40", "41",):
+        self.log.logging(
+            "Plugin", "Status", "Plugin with deConz, firmware %s-%s correctly initialized" % (self.FirmwareMajorVersion, self.FirmwareVersion))
+
+              
+           
     # If firmware above 3.0d, Get Network State
     if (self.HeartbeatCount % (3600 // HEARTBEAT)) == 0 and self.transport != "None":
         zigate_get_nwk_state(self)
