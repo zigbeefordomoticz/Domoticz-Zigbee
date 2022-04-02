@@ -1318,7 +1318,7 @@ SETTINGS = {
                 "default": 0,
                 "current": None,
                 "restart": 0,
-                "hidden": False,
+                "hidden": True,
                 "Advanced": True,
             },
             "ControllerInRawMode": {
@@ -1326,7 +1326,7 @@ SETTINGS = {
                 "default": 0,
                 "current": None,
                 "restart": 0,
-                "hidden": False,
+                "hidden": True,
                 "Advanced": True,
             },
             "nPDUaPDUThreshold": {
@@ -1334,7 +1334,7 @@ SETTINGS = {
                 "default": 0,
                 "current": None,
                 "restart": 0,
-                "hidden": False,
+                "hidden": True,
                 "Advanced": True,
             },
             "forceAckOnZCL": {
@@ -1350,7 +1350,7 @@ SETTINGS = {
                 "default": 0,
                 "current": None,
                 "restart": 0,
-                "hidden": False,
+                "hidden": True,
                 "Advanced": True,
             },
             "BindingTableRequestFeq": {
@@ -1358,7 +1358,7 @@ SETTINGS = {
                 "default": 0,
                 "current": None,
                 "restart": 0,
-                "hidden": False,
+                "hidden": True,
                 "Advanced": True,
             },
             "doManyToOneRoute": {
@@ -1366,7 +1366,7 @@ SETTINGS = {
                 "default": 0,
                 "current": None,
                 "restart": 0,
-                "hidden": False,
+                "hidden": True,
                 "Advanced": True,
             },
             "DropBadAnnoucement": {
@@ -1382,7 +1382,7 @@ SETTINGS = {
                 "default": 0,
                 "current": None,
                 "restart": 0,
-                "hidden": True,
+                "hidden": False,
                 "Advanced": True,
             },
             "useDomoticzDatabase": {
@@ -1390,7 +1390,7 @@ SETTINGS = {
                 "default": 0,
                 "current": None,
                 "restart": 0,
-                "hidden": False,
+                "hidden": True,
                 "Advanced": True,
             },
             "XiaomiLeave": {
