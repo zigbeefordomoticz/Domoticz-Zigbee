@@ -1542,7 +1542,7 @@ def check_python_modules_version( self ):
     MODULES_VERSION = {
         "dns": "2.2.0rc1",
         "serial": "3.5",
-        "zigpy": "0.44.0.dev0",
+        "zigpy": "0.45.0.dev0",
         "zigpy_znp": "0.7.0",
         "zigpy_deconz": "0.15.0.dev0",
         "zigpy_zigate": "0.8.0",
