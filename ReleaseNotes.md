@@ -19,26 +19,40 @@ stable-2020 is the new stable branche dedicated for DomoticZ equal and above 202
 
 Release Numbering
 
-- Odd numbers --> Stable5
-- Even numbers  --> Beta
+- Odd numbers --> Stable/6
+- Even numbers  --> Beta/6
 
-##                  - 6.0.001
+## 1 April 2022 - stable6.1.001 ( Zigate, Zigate+, TI CCxxxx ZNP, Silicon Labs EZSP)
 
 - [Technical] - relying zigpy libraries for none Zigate Coordinators
-
+- [Hardware] - Enable Texas Instrument Coordinator based on zigpy-znp library
+- [Hardware] - Enable Silicon Labs Coordinator based on zigpy bellows library
+- [Technical] - Enable analytics information from WebUI
+- [Hardware] - Moes Curtain Switch calibration
+- [Hardware] - Moes Siren without temp/humi sensors
+- [Hardware] - New Lumi remote switch b28ac1
+- [Hardware] - Tuya plug \_TS3000
+- [Hardware] - Enable calibration for MOES Thermostat
+- [WebUI] - API to getBattery device status
+- [WebUI] - Refactoring of the Topology Report. Click on node to get more insights
+- [Hardware] - Schneider Shutter/Dimmer NHPBSHUTTER1
+- [Hardware] - Tuya garage door
+- [Hardware] - Orvibo dry Contact Module CM10ZW
 
 ## 23 January 2022  - 5.1.18
+
 - [Issue] - Fix several issues preventing good pairing
 - [Hardware] - Orvibo dry Contact CM10ZW
 - [Hardware] - Lidle Valve
 - [Hardware] - TS004F Scene controller
 
+## January 2022 - 5.1.17
 
-##    January 2022 - 5.1.17
 - [Hardware] - New Profalux Blind MOCT-xxxx
 - [Technocal] - Several fixes
 
 ## 27 December 2021 - 5.1.16
+
 - [Hardware] - Scene controller Tuya TS004F
 - [Hardware] - New Aqara Door sensor (Lumi.Magnet.acn001)
 - [Hardware] - Tuya Smart all in One ( Lux, Motion, temp, Humi)
@@ -50,6 +64,7 @@ Release Numbering
 - [Hardware] - Enable Wiser TRV to get temperature from external sensor
 
 ## 7 November 2021 - 5.1.15
+
 - [Hardware] - Sunricher remote control ZG2858A
 - [Technical] - Allow binding on cluster 0300
 - [Technical] - Updating Meter when receving summation and not only on instant power
@@ -63,23 +78,26 @@ Release Numbering
 ## 1 November 2021 - 5.1.14
 
 - [Web UI] - Finishing french translation
-- [Hardware] - Additional Moes eTRV Tuya 
+- [Hardware] - Additional Moes eTRV Tuya
 - [Hardware] - Handling the IKEA TRadfri open/close remote
 
 ## 27 October 2021 - 5.1.13
+
 - [Web UI] - Improve Franch translation
 - [Hardware] - Support Casa.IA CPC321, 3 lignes monitoring
 - [Hardware] - Support Tuya TS001F Plug with metering
 - [Technical] - Fix issue preventing correct pairing of Mija Switch
 
 ## 25 October 2021 - 5.1.12
+
 - [Technical] - After a Power Off/On make sure to retreive the current status of Switches, Plug, Led and Level Control
 
 ## 25 October 2021 - 5.1.12
+
 - [Technical] - After a Power Off/On make sure to retreive the current status of Switches, Plug, Led and Level Control
 
-
 ## 24 October 2021 - 5.1.11
+
 - [Technical] - After a Power Off/On make sure to retreive the current status of Switches, Plug, Led and Level Control
 
 ## 24 October 2021 - 5.1.10

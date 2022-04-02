@@ -1,0 +1,32 @@
+{
+	"_comment": "Tuya Siren Alarm - without any Temp/humi sensors",
+	"_version": "0.10",
+	"Ep": {
+		"01": {
+			"0000": "",
+			"0004": "",
+			"ef00": "",
+			"000a": "",
+			"0019": "",
+			"Type": "SwitchAlarm"
+		}
+	},
+	"Type": "",
+	"ClusterToBind": [],
+	"ConfigureReporting": {},
+	"ReadAttributes": {
+		"0000": [
+			"0004",
+			"0000",
+			"0001",
+			"0005",
+			"0007",
+			"fffe"
+		]
+	},
+	"Param": {
+		"AlarmDuration": 10,
+		"AlarmLevel": 0,
+		"AlarmMelody": 1
+	}
+}

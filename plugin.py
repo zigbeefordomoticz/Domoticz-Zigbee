@@ -4,7 +4,7 @@
 # Author: zaraki673 & pipiche38
 #
 """
-<plugin key="Zigate" name="Zigbee for domoticz plugin (zigpy enabled)" author="pipiche38" version="6.0">
+<plugin key="Zigate" name="Zigbee for domoticz plugin (zigpy enabled)" author="pipiche38" version="6.2">
     <description>
         <h1> Plugin Zigbee for domoticz</h1><br/>
             <br/><h2> Informations</h2><br/>
@@ -17,11 +17,10 @@
     </description>
     <params>
         <param field="Mode1" label="Coordinator Model" width="75px" required="true" default="None">
-            <description><br/><h3>Zigbee Coordinator definition</h3><br/>Select the Zigbee radio Coordinator version : ZiGate (V1), ZiGate+ (V2), Texas Instrument ZNP</description>
+            <description><br/><h3>Zigbee Coordinator definition</h3><br/>Select the Zigbee radio Coordinator version : ZiGate (V1), ZiGate+ (V2), Texas Instrument ZNP, or Silicon Labs EZSP</description>
             <options>
                 <option label="ZiGate"  value="V1"/>
                 <option label="ZiGate+" value="V2"/>
-                <option label="Zigate (via zigpy for dev ONLY)" value="ZigpyZiGate"/>
                 <option label="Texas Instruments ZNP (via zigpy)" value="ZigpyZNP"/>
                 <option label="Silicon Labs EZSP (via zigpy)" value="ZigpyEZSP"/>
             </options>
@@ -729,7 +728,7 @@ class BasePlugin:
 
         for thread in threading.enumerate():
             if thread.name != threading.current_thread().name:
-                Domoticz.Log(
+                self.log.logging("Plugin", "Log"
                     "'"
                     + thread.name
                     + "' is running, it must be shutdown otherwise Domoticz will abort on plugin exit."
@@ -1032,7 +1031,7 @@ class BasePlugin:
                 self.pluginParameters["available"],
                 self.pluginParameters["available-firmMajor"],
                 self.pluginParameters["available-firmMinor"],
-            ) = checkPluginVersion(self.pluginParameters["PluginBranch"], self.FirmwareMajorVersion)
+            ) = checkPluginVersion(self.zigbee_communitation, self.pluginParameters["PluginBranch"], self.FirmwareMajorVersion)
             self.pluginParameters["FirmwareUpdate"] = False
             self.pluginParameters["PluginUpdate"] = False
 
@@ -1170,6 +1169,13 @@ def zigateInit_Phase1(self):
             self.HeartbeatCount = 1
             update_DB_device_status_to_reinit( self )
             return
+    elif self.zigbee_communitation == "zigpy" and Parameters["Mode3"] == "True" and not self.ErasePDMDone: 
+        if not self.ErasePDMDone:
+            self.ErasePDMDone = True
+            if self.domoticzdb_Hardware:
+                self.domoticzdb_Hardware.disableErasePDM()
+            update_DB_device_status_to_reinit( self )
+        
 
         # After an Erase PDM we have to do a full start of Zigate
         self.log.logging("Plugin", "Debug", "----> starZigate")
