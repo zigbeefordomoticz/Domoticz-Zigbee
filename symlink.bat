@@ -4,7 +4,7 @@ del dns
 mklink /D dns external\dnspython\dns
 
 del bellows
-mklink /D bellows external\bellows\bellow
+mklink /D bellows external\bellows\bellows
 
 del serial
 mklink /D serial external\pyserial\serial
