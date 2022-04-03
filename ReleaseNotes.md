@@ -22,6 +22,10 @@ Release Numbering
 - Odd numbers --> Stable/6
 - Even numbers  --> Beta/6
 
+## 3 April 2022 - stable6.1.002
+- [Issue] - Fix potential issue around Firmware decoding, and rest-api.
+- [Technical] - If plugin not started after 120s, then stop
+
 ## 1 April 2022 - stable6.1.001 ( Zigate, Zigate+, TI CCxxxx ZNP, Silicon Labs EZSP)
 
 - [Technical] - relying zigpy libraries for none Zigate Coordinators
