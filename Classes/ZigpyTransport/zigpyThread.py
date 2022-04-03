@@ -45,11 +45,10 @@ MAX_CONCURRENT_REQUESTS_PER_DEVICE = 1
 CREATE_TASK = True
 
 def start_zigpy_thread(self):
-    
-    if sys.platform == "win32" and (3,8,0) <= sys.version_info < (3,9,0):
-        # https://stackoverflow.com/questions/60359157/valueerror-set-wakeup-fd-only-works-in-main-thread-on-windows-on-python-3-8-wit
-        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEvenntLoopPolicy())
-        
+
+    if sys.platform == "win32" and (3, 8, 0) <= sys.version_info < (3, 9, 0):
+        asyncio.set_event_loop_policy( asyncio.WindowsSelectorEventLoopPolicy() )
+            
     self.zigpy_loop = get_or_create_eventloop()
     self.log.logging("TransportZigpy", "Debug", "start_zigpy_thread - Starting zigpy thread")
     self.zigpy_thread.start()
