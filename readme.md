@@ -124,7 +124,7 @@ In order to provide stability and also provide more recent development, Zigbee f
 ## How to switch from one channel to the other
 
 `git pull --recurse-submodules`
-`git checkout stable6  // will move you to the stable5 channel`
+`git checkout stable6  // will move you to the stable6 channel`
 
 `git checkout beta6    // will move you to the beta channel`
 `git pull --recurse-submodules`
