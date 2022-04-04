@@ -9,6 +9,7 @@ import binascii
 import contextlib
 import json
 import queue
+import sys
 import time
 import traceback
 from threading import Thread
@@ -46,6 +47,10 @@ MAX_CONCURRENT_REQUESTS_PER_DEVICE = 1
 CREATE_TASK = True
 
 def start_zigpy_thread(self):
+
+    if sys.platform == "win32" and (3, 8, 0) <= sys.version_info < (3, 9, 0):
+        asyncio.set_event_loop_policy( asyncio.WindowsSelectorEventLoopPolicy() )
+            
     self.zigpy_loop = get_or_create_eventloop()
     self.log.logging("TransportZigpy", "Debug", "start_zigpy_thread - Starting zigpy thread")
     self.zigpy_thread = Thread(name="ZigpyCom_%s" % self.hardwareid, target=zigpy_thread, args=(self,))

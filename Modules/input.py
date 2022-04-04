@@ -143,7 +143,7 @@ def ZigateRead(self, Devices, Data):
     # self.log.logging( "Input", 'Debug', "ZigateRead - decoded data: " + Data + " lenght: " + str(len(Data)) )
 
     if Data is None:
-       return
+        return
 
     FrameStart = Data[0:2]
     FrameStop = Data[len(Data) - 2 : len(Data)]
@@ -1068,18 +1068,23 @@ def Decode8009(self, Devices, MsgData, MsgLQI):  # Network State response (Firm 
     self.pluginParameters["CoordinatorIEEE"] = extaddr
     
 def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
-    # MsgLen = len(MsgData)
-    # 00 05 0321
+    MsgLen = len(MsgData)
     self.FirmwareBranch = MsgData[:2] 
-       
+    if len(MsgData) > 8:
+        self.FirmwareMajorVersion = MsgData[2:6]
+        self.FirmwareVersion = MsgData[6:10]
+    else:
+        self.FirmwareMajorVersion = MsgData[2:4]
+        self.FirmwareVersion = MsgData[4:8]
 
+        
     if '0000' not in self.ListOfDevices:
         self.ListOfDevices['0000'] = {}
     if 'Model' not in self.ListOfDevices[ '0000' ]:
         self.ListOfDevices[ '0000' ]['Model'] = {}
-        
-    self.log.logging("Input", "Debug", "Decode8010 - Reception Version list:%s Branch: %s Major: %s Version: %s" % (
-        MsgData, self.FirmwareBranch, self.FirmwareMajorVersion, self.FirmwareVersion))
+
+    self.log.logging("Input", "Log", "Decode8010 - Reception Version list:%s len: %s Branch: %s Major: %s Version: %s" % (
+        MsgData, MsgLen, self.FirmwareBranch, self.FirmwareMajorVersion, self.FirmwareVersion))
     
     if self.FirmwareBranch in FIRMWARE_BRANCH:
         if int(self.FirmwareBranch) == 99:
@@ -1088,24 +1093,21 @@ def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
            
         elif int(self.FirmwareBranch) == 11:
             #Zigpy-Zigate
-            self.FirmwareMajorVersion = MsgData[2:4]
-            self.FirmwareVersion = MsgData[4:8]
-
             self.log.logging("Input", "Status", "%s" %FIRMWARE_BRANCH[ self.FirmwareBranch ])
             self.ControllerData["Controller firmware"] = FIRMWARE_BRANCH[ self.FirmwareBranch ]
             # the Build date is coded into "20" + "%02d" %int(FirmwareMajorVersion,16) + "%04d" %int(FirmwareVersion,16)
             if int(self.FirmwareMajorVersion,16) == 0x03:
-                version =  "Zigpy-zigate, Zigate V1 (legacy) %04x" %( int(self.FirmwareVersion,16))
+                version = "Zigpy-zigate, Zigate V1 (legacy) %04x" %( int(self.FirmwareVersion,16))
                 self.pluginParameters["CoordinatorModel"] = "Zigate V1 (legacy)"
                 self.pluginParameters["CoordinatorFirmwareVersion"] = "%04x" %( int(self.FirmwareVersion,16))
                 
             elif int(self.FirmwareMajorVersion,16) == 0x04:
-                version =  "Zigpy-zigate, Zigate V1 (OptiPDM) %04x" %( int(self.FirmwareVersion,16))
+                version = "Zigpy-zigate, Zigate V1 (OptiPDM) %04x" %( int(self.FirmwareVersion,16))
                 self.pluginParameters["CoordinatorModel"] = "Zigate V1 (OptiPDM)"
                 self.pluginParameters["CoordinatorFirmwareVersion"] = "%04x" %( int(self.FirmwareVersion,16))
                 
             elif int(self.FirmwareMajorVersion,16) == 0x05:
-                version =  "Zigpy-zigate, Zigate V2 %04x" %( int(self.FirmwareVersion,16))
+                version = "Zigpy-zigate, Zigate V2 %04x" %( int(self.FirmwareVersion,16))
                 self.pluginParameters["CoordinatorModel"] = "Zigate V2"
                 self.pluginParameters["CoordinatorFirmwareVersion"] = "%04x" %( int(self.FirmwareVersion,16))
 
@@ -1115,13 +1117,6 @@ def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
 
         elif int(self.FirmwareBranch) >= 20:
             # Zigpy-Znp
-            if len(MsgData) > 8:
-                self.FirmwareMajorVersion = MsgData[2:6]
-                self.FirmwareVersion = MsgData[6:10]
-            else:
-                self.FirmwareMajorVersion = MsgData[2:4]
-                self.FirmwareVersion = MsgData[4:8]
-
             self.log.logging("Input", "Status", "%s" %FIRMWARE_BRANCH[ self.FirmwareBranch ])
             # the Build date is coded into "20" + "%02d" %int(FirmwareMajorVersion,16) + "%04d" %int(FirmwareVersion,16)
             self.ListOfDevices[ '0000' ]['Model'] = FIRMWARE_BRANCH[ self.FirmwareBranch ]
@@ -1130,9 +1125,6 @@ def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
 
         # Zigate Native version
         elif self.FirmwareMajorVersion == "03":
-            self.FirmwareMajorVersion = MsgData[2:4]
-            self.FirmwareVersion = MsgData[4:8]
-
             self.log.logging("Input", "Status", "ZiGate Classic PDM (legacy)")
             self.ZiGateModel = 1
             self.ListOfDevices[ '0000' ]['Model'] = 'ZiGate Classic PDM (legacy)'
@@ -1140,9 +1132,6 @@ def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
             self.pluginParameters["CoordinatorFirmwareVersion"] = "%04x" %( int(self.FirmwareVersion,16))
 
         elif self.FirmwareMajorVersion == "04":
-            self.FirmwareMajorVersion = MsgData[2:4]
-            self.FirmwareVersion = MsgData[4:8]
-
             self.log.logging("Input", "Status", "ZiGate Classic PDM (OptiPDM)")
             self.ZiGateModel = 1
             self.ListOfDevices[ '0000' ]['Model'] = 'ZiGate Classic PDM (OptiPDM)'
@@ -1150,19 +1139,12 @@ def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
             self.pluginParameters["CoordinatorFirmwareVersion"] = "%04x" %( int(self.FirmwareVersion,16))
 
         elif self.FirmwareMajorVersion == "05":
-            self.FirmwareMajorVersion = MsgData[2:4]
-            self.FirmwareVersion = MsgData[4:8]
-
             self.log.logging("Input", "Status", "ZiGate+ (V2)")
             self.ListOfDevices[ '0000' ]['Model'] = 'ZiGate+ (V2)'
             self.ZiGateModel = 2
             self.pluginParameters["CoordinatorModel"] = 'ZiGate+ (V2)'
             self.pluginParameters["CoordinatorFirmwareVersion"] = "%04x" %( int(self.FirmwareVersion,16))
 
-        else:
-            self.FirmwareMajorVersion = MsgData[2:4]
-            self.FirmwareVersion = MsgData[4:8]
-  
         self.log.logging("Input", "Status", "Installer Version Number: %s" % self.FirmwareVersion)
         self.log.logging("Input", "Status", "Branch Version: ==> %s <==" % FIRMWARE_BRANCH[self.FirmwareBranch])
         self.ControllerData["Firmware Version"] = "Branch: %s Major: %s Version: %s" % (
@@ -3848,7 +3830,7 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
     MsgCmd = MsgData[14:16]
 
     updLQI(self, MsgSrcAddr, MsgLQI)
-    self.log.logging( "Input", 'Debug', "Decode8085 - MsgData: %s"  %MsgData, MsgSrcAddr)
+    self.log.logging( "Input", 'Debug', "Decode8085 - MsgData: %s" %MsgData, MsgSrcAddr)
     self.log.logging(
         "Input",
         "Debug",
@@ -4115,7 +4097,7 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
     MsgCmd = MsgData[14:16]
     MsgPayload = MsgData[16 : len(MsgData)] if len(MsgData) > 16 else None
     updLQI(self, MsgSrcAddr, MsgLQI)
-    self.log.logging( "Input", 'Debug', "Decode8095 - MsgData: %s"  %MsgData, MsgSrcAddr)
+    self.log.logging( "Input", 'Debug', "Decode8095 - MsgData: %s" % MsgData, MsgSrcAddr)
 
     self.log.logging(
         "Input",
@@ -4332,7 +4314,7 @@ def Decode80A7(self, Devices, MsgData, MsgLQI):
 
     TYPE_DIRECTIONS = {"00": "right", "01": "left", "02": "middle"}
     TYPE_ACTIONS = {"07": "click", "08": "hold", "09": "release"}
-    self.log.logging( "Input", 'Debug', "Decode80A7 - MsgData: %s"  %MsgData, MsgSrcAddr)
+    self.log.logging( "Input", 'Debug', "Decode80A7 - MsgData: %s" % MsgData, MsgSrcAddr)
     self.log.logging(
         "Input",
         "Debug",
