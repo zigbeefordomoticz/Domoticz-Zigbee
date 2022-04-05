@@ -22,7 +22,7 @@ Release Numbering
 - Odd numbers --> Stable/6
 - Even numbers  --> Beta/6
 
-##              - stable6.1.003
+## 5 April 2022 - stable6.1.003
 
 - [Technical] - Make plugin working on Windows system
 - [Technical] - Rely on requirements.txt for python modules installation
