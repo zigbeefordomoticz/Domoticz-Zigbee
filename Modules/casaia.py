@@ -259,9 +259,12 @@ def casaia_check_irPairing(self, NwkId):
     return None
 
 def restart_plugin_reset_ModuleIRCode(self, nwkid=None):
+    
+    self.log.logging("CasaIA", "Error", "casaia_check_irPairing %s " %nwkid)
     list_of_device_to_reset = ( [ nwkid, ] if nwkid else list(self.ListOfDevices.keys()) )
 
     for x in list_of_device_to_reset:
+        self.log.logging("CasaIA", "Error", "casaia_check_irPairing reseting %s " %x)
         if "CASA.IA" not in self.ListOfDevices[ x ]:
             continue
         if DEVICE_ID not in self.ListOfDevices[ x ]["CASA.IA"]:
@@ -703,7 +706,8 @@ def get_ffad_endpoint(self, NwkId):
 
 
 def store_casaia_attribute(self, NwkId, Attribute, Value, device_id=None):
-
+    self.logging( "CasaIA", "Log", "store_casaia_attribute %s %s %s %s" %(
+      NwkId, Attribute, Value, device_id))
     if "CASA.IA" not in self.ListOfDevices[NwkId]:
         self.ListOfDevices[NwkId]["CASA.IA"] = {}
     if device_id:
