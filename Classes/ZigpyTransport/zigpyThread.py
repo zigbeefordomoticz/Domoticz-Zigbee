@@ -5,11 +5,12 @@
 
 import asyncio
 import binascii
+import contextlib
 import json
 import queue
+import sys
 import time
 import traceback
-import contextlib
 from typing import Any, Optional
 
 import zigpy.device
@@ -24,26 +25,30 @@ import zigpy.util
 import zigpy.zcl
 import zigpy.zdo
 import zigpy.zdo.types as zdo_types
+from Classes.ZigpyTransport.AppBellows import App_bellows
+from Classes.ZigpyTransport.AppDeconz import App_deconz
 from Classes.ZigpyTransport.AppZigate import App_zigate
 from Classes.ZigpyTransport.AppZnp import App_znp
-from Classes.ZigpyTransport.AppDeconz import App_deconz
-from Classes.ZigpyTransport.AppBellows import App_bellows
-from Classes.ZigpyTransport.nativeCommands import NATIVE_COMMANDS_MAPPING, native_commands
+from Classes.ZigpyTransport.nativeCommands import (NATIVE_COMMANDS_MAPPING,
+                                                   native_commands)
 from Classes.ZigpyTransport.plugin_encoders import (
-    build_plugin_0302_frame_content,
-    build_plugin_8009_frame_content,
+    build_plugin_0302_frame_content, build_plugin_8009_frame_content,
     build_plugin_8011_frame_content,
     build_plugin_8043_frame_list_node_descriptor,
-    build_plugin_8045_frame_list_controller_ep,
-)
+    build_plugin_8045_frame_list_controller_ep)
 from Classes.ZigpyTransport.tools import handle_thread_error
 from zigpy.exceptions import DeliveryError, InvalidResponse
-from zigpy_znp.exceptions import CommandNotRecognized, InvalidCommandResponse, InvalidFrame
+from zigpy_znp.exceptions import (CommandNotRecognized, InvalidCommandResponse,
+                                  InvalidFrame)
 
 MAX_CONCURRENT_REQUESTS_PER_DEVICE = 1
 CREATE_TASK = True
 
 def start_zigpy_thread(self):
+
+    if sys.platform == "win32" and (3, 8, 0) <= sys.version_info < (3, 9, 0):
+        asyncio.set_event_loop_policy( asyncio.WindowsSelectorEventLoopPolicy() )
+            
     self.zigpy_loop = get_or_create_eventloop()
     self.log.logging("TransportZigpy", "Debug", "start_zigpy_thread - Starting zigpy thread")
     self.zigpy_thread.start()
