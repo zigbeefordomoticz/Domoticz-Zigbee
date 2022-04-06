@@ -1065,7 +1065,7 @@ class BasePlugin:
             self.log.logging("Plugin", "Debug", "Devices size has changed , let's write ListOfDevices on disk")
             WriteDeviceList(self, 0)  # write immediatly
             networksize_update(self)
-            build_list_of_device_model(self)
+            #build_list_of_device_model(self)
 
         if self.CommiSSionning:
             self.PluginHealth["Flag"] = 2
@@ -1348,7 +1348,7 @@ def zigateInit_Phase3(self):
         start_OTAManagement(self, Parameters["HomeFolder"])
 
     networksize_update(self)
-    build_list_of_device_model(self)
+    #build_list_of_device_model(self)
     
     if self.FirmwareMajorVersion == "03": 
         self.log.logging(
