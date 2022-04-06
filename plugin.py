@@ -1065,6 +1065,7 @@ class BasePlugin:
             self.log.logging("Plugin", "Debug", "Devices size has changed , let's write ListOfDevices on disk")
             WriteDeviceList(self, 0)  # write immediatly
             networksize_update(self)
+            build_list_of_device_model(self)
 
         if self.CommiSSionning:
             self.PluginHealth["Flag"] = 2
@@ -1129,11 +1130,43 @@ class BasePlugin:
         return True
 
 def networksize_update(self):
+    self.log.logging("Plugin", "Log", "Devices size has changed , let's write ListOfDevices on disk")
 
     routers, enddevices = how_many_devices(self)
     self.pluginParameters["NetworkSize"] = "Total: %s | Routers: %s | End Devices: %s" %(
         routers + enddevices, routers, enddevices)
 
+def build_list_of_device_model(self):
+    
+    self.pluginParameters["NetworkDevices"] = {}
+
+    for x in self.ListOfDevices:
+        manufcode = manufname = modelname = None
+        if "Manufacturer" in self.ListOfDevices[x]:
+            manufcode = self.ListOfDevices[x]["Manufacturer"]
+            if manufcode in ( "", {}):
+                continue
+            if manufcode not in self.pluginParameters["NetworkDevices"]:
+                self.pluginParameters["NetworkDevices"][ manufcode ] = {}
+
+        if manufcode and  "Manufacturer Name" in self.ListOfDevices[x]:
+            manufname = self.ListOfDevices[x]["Manufacturer Name"]
+            if manufname in ( "", {} ):
+                manufname = "unknow"
+            if manufname not in self.pluginParameters["NetworkDevices"][ manufcode ]:
+                self.pluginParameters["NetworkDevices"][ manufcode ][ manufname ] = []
+
+        if manufcode and manufname and "Model" in self.ListOfDevices[x]:
+            modelname = self.ListOfDevices[x]["Model"]
+            if modelname in ( "", {} ):
+                continue
+            if modelname not in self.pluginParameters["NetworkDevices"][ manufcode ][ manufname ]:
+               self.pluginParameters["NetworkDevices"][ manufcode ][ manufname ].append( modelname )
+
+        #Domoticz.Log("%s %s %s" %( manufcode, manufname, modelname))
+        #Domoticz.Log("==> %s" %self.pluginParameters["NetworkDevices"])
+        
+            
 def decodeConnection(connection):
 
     decoded = {}
@@ -1315,6 +1348,7 @@ def zigateInit_Phase3(self):
         start_OTAManagement(self, Parameters["HomeFolder"])
 
     networksize_update(self)
+    build_list_of_device_model(self)
     
     if self.FirmwareMajorVersion == "03": 
         self.log.logging(
