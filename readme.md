@@ -13,7 +13,7 @@ Zigbee for Domoticz a plugin for [Domoticz home automation software](https://www
 
 This plugin is an evolution of the mature Zigate plugin for Domoticz, which will continue to manage and handle Zigate in native mode, while Texas Instruments's will be handle through unified communication libraries from the [zigpy](https://github.com/zigpy/zigpy) project.
 
-For __Windows users__, please check the [Plugin V6 running on Windows](<https://zigbeefordomoticz.github.io/wiki/en-eng/Plugin_Version6_on_Windows.htmPlugin> V6 running on Windows
+For __Windows users__, please check the [Plugin V6 running on Windows](https://zigbeefordomoticz.github.io/wiki/en-eng/Plugin_Version6_on_Windows.htmPlugin) V6 running on Windows
 
 ## Pre requisities
 
