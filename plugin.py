@@ -1061,10 +1061,14 @@ class BasePlugin:
         # Write the ListOfDevice in HBcount % 200 ( 3' ) or immediatly if we have remove or added a Device
         if len(Devices) == prevLenDevices:
             WriteDeviceList(self, (90 * 5))
+            
         else:
             self.log.logging("Plugin", "Debug", "Devices size has changed , let's write ListOfDevices on disk")
             WriteDeviceList(self, 0)  # write immediatly
             networksize_update(self)
+            
+        if self.internalHB % (24 * 3600 // HEARTBEAT) == 0:
+            # Update the NetworkDevices attributes if needed , once by day
             build_list_of_device_model(self)
 
         if self.CommiSSionning:
