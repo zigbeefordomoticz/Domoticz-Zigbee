@@ -10,8 +10,7 @@ crccheck==1.1
 frozenlist==1.2.0
 multidict==5.2.0
 pyserial==3.5
-pyserial-asyncio>=0.5
-pyserial-asyncio!=0.5; platform_system=="Windows"',  # 0.5 broke writesv on Windows OS
+pyserial-asyncio!=0.5
 pyusb==1.2.1
 typing-extensions==4.0.1
 voluptuous==0.12.2
