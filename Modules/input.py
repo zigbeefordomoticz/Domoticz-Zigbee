@@ -1083,7 +1083,7 @@ def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
     if 'Model' not in self.ListOfDevices[ '0000' ]:
         self.ListOfDevices[ '0000' ]['Model'] = {}
 
-    self.log.logging("Input", "Log", "Decode8010 - Reception Version list:%s len: %s Branch: %s Major: %s Version: %s" % (
+    self.log.logging("Input", "Debug", "Decode8010 - Reception Version list:%s len: %s Branch: %s Major: %s Version: %s" % (
         MsgData, MsgLen, self.FirmwareBranch, self.FirmwareMajorVersion, self.FirmwareVersion))
     
     if self.FirmwareBranch in FIRMWARE_BRANCH:
