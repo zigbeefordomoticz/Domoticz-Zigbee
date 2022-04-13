@@ -1083,7 +1083,7 @@ def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
     if 'Model' not in self.ListOfDevices[ '0000' ]:
         self.ListOfDevices[ '0000' ]['Model'] = {}
 
-    self.log.logging("Input", "Log", "Decode8010 - Reception Version list:%s len: %s Branch: %s Major: %s Version: %s" % (
+    self.log.logging("Input", "Debug", "Decode8010 - Reception Version list:%s len: %s Branch: %s Major: %s Version: %s" % (
         MsgData, MsgLen, self.FirmwareBranch, self.FirmwareMajorVersion, self.FirmwareVersion))
     
     if self.FirmwareBranch in FIRMWARE_BRANCH:
@@ -4283,6 +4283,22 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
                 unknown_,
             ),
         )
+
+    elif _ModelName == ( "lumi.remote.b28ac1",):
+        self.log.logging(
+            "Input",
+            "Log",
+            "Decode8095 - Lumi Remote SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s"
+            % (
+                MsgSQN,
+                MsgSrcAddr,
+                MsgEP,
+                MsgClusterId,
+                MsgCmd,
+                unknown_,
+            ),
+        )
+
 
     else:
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0006", str(int(MsgCmd, 16)))
