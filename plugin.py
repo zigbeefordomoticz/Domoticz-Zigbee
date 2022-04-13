@@ -1360,7 +1360,6 @@ def zigateInit_Phase3(self):
         self.log.logging(
             "Plugin", "Status", "Plugin with ZNP, firmware %s-%s correctly initialized" % (self.FirmwareMajorVersion, self.FirmwareVersion))
 
-        
     # If firmware above 3.0d, Get Network State
     if (self.HeartbeatCount % (3600 // HEARTBEAT)) == 0 and self.transport != "None":
         zigate_get_nwk_state(self)
@@ -1369,23 +1368,25 @@ def zigateInit_Phase3(self):
 
 def check_firmware_level(self):
     # Check Firmware version
-    if int(self.FirmwareVersion.lower(),16) < 0x031d:
-        self.log.logging("Plugin", "Error", "Firmware level not supported, please update ZiGate firmware")
-        return False
-
-    elif int(self.FirmwareVersion.lower(),16) == 0x2100:
+    if int(self.FirmwareVersion.lower(),16) == 0x2100:
         self.log.logging("Plugin", "Status", "Firmware for Pluzzy devices")
         self.PluzzyFirmware = True
         return True
 
+    if int(self.FirmwareVersion.lower(),16) < 0x031d:
+        self.log.logging("Plugin", "Error", "Firmware level not supported, please update ZiGate firmware")
+        return False
+
+    if int(self.FirmwareVersion, 16) > 0x0321:
+        self.log.logging("Plugin", "Error", "WARNING: Firmware %s is not yet supported" % self.FirmwareVersion.lower())
+        self.pluginconf.pluginConf["forceAckOnZCL"] = False
+        return True
+
     if int(self.FirmwareVersion.lower(),16) >= 0x031e:
         self.pluginconf.pluginConf["forceAckOnZCL"] = False
+        return True
 
-    elif int(self.FirmwareVersion, 16) > 0x0321:
-        self.log.logging("Plugin", "Error", "WARNING: Firmware %s is not yet supported" % self.FirmwareVersion.lower())
-
-    self.pluginconf.pluginConf["forceAckOnZCL"] = False
-    return True
+    return False
 
 
 def start_GrpManagement(self, homefolder):
