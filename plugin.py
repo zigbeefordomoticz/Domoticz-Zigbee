@@ -113,7 +113,7 @@ from Modules.input import ZigateRead
 from Modules.piZigate import switchPiZigate_mode
 from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
 from Modules.schneider_wiser import wiser_thermostat_monitoring_heating_demand
-from Modules.tools import removeDeviceInList
+from Modules.tools import removeDeviceInList, how_many_devices
 from Modules.txPower import set_TxPower
 from Modules.zigateCommands import (zigate_erase_eeprom,
                                     zigate_get_firmware_version,
@@ -381,23 +381,8 @@ class BasePlugin:
         )
 
         # Debuging information
-        self.log.logging("Plugin", "Debug", "Is GC enabled: %s" % gc.isenabled())
-        self.log.logging("Plugin", "Debug", "DomoticzVersion: %s" % Parameters["DomoticzVersion"])
-        for x in self.pluginParameters:
-            self.log.logging("Plugin", "Debug", "Parameters[%s] %s" % (x, self.pluginParameters[x]))
-
-        self.log.logging("Plugin", "Debug", "Debug: %s" % Parameters["Mode6"])
-        self.log.logging("Plugin", "Debug", "Python Version - %s" % sys.version)
-        self.log.logging("Plugin", "Debug", "DomoticzVersion: %s" % Parameters["DomoticzVersion"])
-        self.log.logging("Plugin", "Debug", "DomoticzHash: %s" % Parameters["DomoticzHash"])
-        self.log.logging("Plugin", "Debug", "DomoticzBuildTime: %s" % Parameters["DomoticzBuildTime"])
-        self.log.logging("Plugin", "Debug", "Startup Folder: %s" % Parameters["StartupFolder"])
-        self.log.logging("Plugin", "Debug", "Home Folder: %s" % Parameters["HomeFolder"])
-        self.log.logging("Plugin", "Debug", "User Data Folder: %s" % Parameters["UserDataFolder"])
-        self.log.logging("Plugin", "Debug", "Web Root Folder: %s" % Parameters["WebRoot"])
-        self.log.logging("Plugin", "Debug", "Database: %s" % Parameters["Database"])
-        self.log.logging("Plugin", "Debug", "Opening DomoticzDB in raw")
-        self.log.logging("Plugin", "Debug", "   - DeviceStatus table")
+        debuging_information(self, "Debug")
+         
         self.StartupFolder = Parameters["StartupFolder"]
 
         self.domoticzdb_DeviceStatus = DomoticzDB_DeviceStatus(
@@ -728,7 +713,7 @@ class BasePlugin:
 
         for thread in threading.enumerate():
             if thread.name != threading.current_thread().name:
-                self.log.logging("Plugin", "Log"
+                self.log.logging("Plugin", "Log",
                     "'"
                     + thread.name
                     + "' is running, it must be shutdown otherwise Domoticz will abort on plugin exit."
@@ -955,7 +940,7 @@ class BasePlugin:
         # Starting PDM on Host firmware version, we have to wait that Zigate is fully initialized ( PDM loaded into memory from Host).
         # We wait for self.zigateReady which is set to True in th pdmZigate module
         if self.transport != "None" and not self.PDMready:
-            if self.internalHB > 60:
+            if self.internalHB > 60 and (self.internalHB % 10) == 0:
                 self.log.logging(
                     "Plugin",
                     "Error",
@@ -964,7 +949,11 @@ class BasePlugin:
                 )
                 self.log.logging("Plugin", "Error", "[   ] Stop the plugin and check the Coordinator connectivity.")
 
-            if (self.internalHB % 5) == 0:
+            if self.internalHB > 120:
+                debuging_information(self, "Log")
+                restartPluginViaDomoticzJsonApi(self, stop=True)
+
+            if (self.internalHB % 10) == 0:
                 self.log.logging(
                     "Plugin", "Debug", "[%s] PDMready: %s requesting Get version" % (self.internalHB, self.PDMready)
                 )
@@ -1072,9 +1061,15 @@ class BasePlugin:
         # Write the ListOfDevice in HBcount % 200 ( 3' ) or immediatly if we have remove or added a Device
         if len(Devices) == prevLenDevices:
             WriteDeviceList(self, (90 * 5))
+            
         else:
             self.log.logging("Plugin", "Debug", "Devices size has changed , let's write ListOfDevices on disk")
             WriteDeviceList(self, 0)  # write immediatly
+            networksize_update(self)
+
+        if self.internalHB % (24 * 3600 // HEARTBEAT) == 0:
+            # Update the NetworkDevices attributes if needed , once by day
+            build_list_of_device_model(self)
 
         if self.CommiSSionning:
             self.PluginHealth["Flag"] = 2
@@ -1138,7 +1133,42 @@ class BasePlugin:
         self.busy = busy_
         return True
 
+def networksize_update(self):
+    self.log.logging("Plugin", "Log", "Devices size has changed , let's write ListOfDevices on disk")
+    routers, enddevices = how_many_devices(self)
+    self.pluginParameters["NetworkSize"] = "Total: %s | Routers: %s | End Devices: %s" %(
+        routers + enddevices, routers, enddevices)
 
+def build_list_of_device_model(self):
+    
+    self.pluginParameters["NetworkDevices"] = {}
+    for x in self.ListOfDevices:
+        manufcode = manufname = modelname = None
+        if "Manufacturer" in self.ListOfDevices[x]:
+            manufcode = self.ListOfDevices[x]["Manufacturer"]
+            if manufcode in ( "", {}):
+                continue
+            if manufcode not in self.pluginParameters["NetworkDevices"]:
+                self.pluginParameters["NetworkDevices"][ manufcode ] = {}
+
+        if manufcode and  "Manufacturer Name" in self.ListOfDevices[x]:
+            manufname = self.ListOfDevices[x]["Manufacturer Name"]
+            if manufname in ( "", {} ):
+                manufname = "unknow"
+            if manufname not in self.pluginParameters["NetworkDevices"][ manufcode ]:
+                self.pluginParameters["NetworkDevices"][ manufcode ][ manufname ] = []
+
+        if manufcode and manufname and "Model" in self.ListOfDevices[x]:
+            modelname = self.ListOfDevices[x]["Model"]
+            if modelname in ( "", {} ):
+                continue
+            if modelname not in self.pluginParameters["NetworkDevices"][ manufcode ][ manufname ]:
+               self.pluginParameters["NetworkDevices"][ manufcode ][ manufname ].append( modelname )
+
+        #Domoticz.Log("%s %s %s" %( manufcode, manufname, modelname))
+        #Domoticz.Log("==> %s" %self.pluginParameters["NetworkDevices"])
+        
+            
 def decodeConnection(connection):
 
     decoded = {}
@@ -1176,7 +1206,6 @@ def zigateInit_Phase1(self):
                 self.domoticzdb_Hardware.disableErasePDM()
             update_DB_device_status_to_reinit( self )
         
-
         # After an Erase PDM we have to do a full start of Zigate
         self.log.logging("Plugin", "Debug", "----> starZigate")
         return
@@ -1247,14 +1276,14 @@ def zigateInit_Phase3(self):
     if self.zigbee_communitation == "native" and not check_firmware_level(self):
         self.log.logging("Plugin", "Debug", "Firmware not ready")
         return
-        
+
     if self.pluginconf.pluginConf["blueLedOnOff"]:
         zigateBlueLed(self, True)
     else:
         zigateBlueLed(self, False)
 
     # Set the TX Power
-    if self.ZiGateModel ==  1:
+    if self.ZiGateModel == 1:
         set_TxPower(self, self.pluginconf.pluginConf["TXpower_set"])
 
     # Set Certification Code
@@ -1318,6 +1347,9 @@ def zigateInit_Phase3(self):
     # Enable Over The Air Upgrade if applicable
     if self.OTA is None and self.pluginconf.pluginConf["allowOTA"]:
         start_OTAManagement(self, Parameters["HomeFolder"])
+
+    networksize_update(self)
+    build_list_of_device_model(self)
 
     if self.FirmwareMajorVersion == "03": 
         self.log.logging(
@@ -1542,7 +1574,7 @@ def check_python_modules_version( self ):
     MODULES_VERSION = {
         "dns": "2.2.0rc1",
         "serial": "3.5",
-        "zigpy": "0.44.0.dev0",
+        "zigpy": "0.45.0.dev0",
         "zigpy_znp": "0.7.0",
         "zigpy_deconz": "0.15.0.dev0",
         "zigpy_zigate": "0.8.0",
@@ -1565,6 +1597,24 @@ def check_python_modules_version( self ):
             
     return flag
             
+def debuging_information(self, mode):
+    self.log.logging("Plugin", mode, "Is GC enabled: %s" % gc.isenabled())
+    self.log.logging("Plugin", mode, "DomoticzVersion: %s" % Parameters["DomoticzVersion"])
+    for x in self.pluginParameters:
+        self.log.logging("Plugin", mode, "Parameters[%s] %s" % (x, self.pluginParameters[x]))
+
+    self.log.logging("Plugin", mode, "Debug: %s" % Parameters["Mode6"])
+    self.log.logging("Plugin", mode, "Python Version - %s" % sys.version)
+    self.log.logging("Plugin", mode, "DomoticzVersion: %s" % Parameters["DomoticzVersion"])
+    self.log.logging("Plugin", mode, "DomoticzHash: %s" % Parameters["DomoticzHash"])
+    self.log.logging("Plugin", mode, "DomoticzBuildTime: %s" % Parameters["DomoticzBuildTime"])
+    self.log.logging("Plugin", mode, "Startup Folder: %s" % Parameters["StartupFolder"])
+    self.log.logging("Plugin", mode, "Home Folder: %s" % Parameters["HomeFolder"])
+    self.log.logging("Plugin", mode, "User Data Folder: %s" % Parameters["UserDataFolder"])
+    self.log.logging("Plugin", mode, "Web Root Folder: %s" % Parameters["WebRoot"])
+    self.log.logging("Plugin", mode, "Database: %s" % Parameters["Database"])
+    self.log.logging("Plugin", mode, "Opening DomoticzDB in raw")
+    self.log.logging("Plugin", mode, "   - DeviceStatus table")
     
 global _plugin  # pylint: disable=global-variable-not-assigned
 _plugin = BasePlugin()
