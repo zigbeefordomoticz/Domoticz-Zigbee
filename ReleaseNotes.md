@@ -21,10 +21,13 @@ Release Numbering
 
 - Odd numbers --> Stable/6
 - Even numbers  --> Beta/6
+
+
 ##   April 2022 - 
 
 - [Hardware] - Profalux MOT C1Z06F
 - [Technical] - WebUI event management NetworkDevices
+- [Hardware] - LUMI lumi.switch.n1aeu1 WS-EUK03 
 
 ## 5 April 2022 - stable6.1.003
 
