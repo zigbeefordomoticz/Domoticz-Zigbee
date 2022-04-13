@@ -31,6 +31,7 @@ XIAOMI_POWERMETER_EP = {
     "lumi.plug.mmeu01": "15",
     "lumi.plug.maeu01": "01",
     "lumi.relay.c2acn01": "01",
+    "lumi.switch.n1aeu1": "15"   # Xiaomi Aqara H1 1-gang (neutral wire) WS-EUK03
 }
 
 

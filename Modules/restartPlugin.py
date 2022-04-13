@@ -11,12 +11,18 @@ import Domoticz
 CURL_COMMAND = "/usr/bin/curl"
 
 
-def restartPluginViaDomoticzJsonApi(self):
+def restartPluginViaDomoticzJsonApi(self, stop=False):
 
     if not os.path.isfile(CURL_COMMAND):
         Domoticz.Log("Unable to restart the plugin, %s not available" % CURL_COMMAND)
         return
 
+    
+    if stop:
+        enabled="false"
+    else:
+        enabled="true"
+    
     if self.WebUsername and self.WebPassword:
         url = "http://%s:%s@127.0.0.1:%s" % (self.WebUsername, self.WebPassword, self.pluginconf.pluginConf["port"])
     else:
@@ -35,7 +41,7 @@ def restartPluginViaDomoticzJsonApi(self):
     url += "&Mode5=%s" % self.pluginParameters["Mode5"]
     url += "&Mode6=%s" % self.pluginParameters["Mode6"]
     url += "&extra=%s" % self.pluginParameters["Key"]
-    url += "&enabled=true"
+    url += "&enabled=%s" % enabled
     url += "&datatimeout=0"
     if "LogLevel" in self.pluginParameters:
         url += "&loglevel=%s" % self.pluginParameters["LogLevel"]

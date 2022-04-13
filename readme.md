@@ -1,4 +1,4 @@
-# Zigbee for Domoticz a Zigbee for Domoticz
+# Zigbee for Domoticz plugin: Connect all your Zigbee devices to Domoticz
 
 ![Zigbee for Domoticz](https://github.com/zigbeefordomoticz/Domoticz-Zigbee/blob/beta6/images/Z4D-200.png )
 
@@ -13,13 +13,17 @@ Zigbee for Domoticz a plugin for [Domoticz home automation software](https://www
 
 This plugin is an evolution of the mature Zigate plugin for Domoticz, which will continue to manage and handle Zigate in native mode, while Texas Instruments's will be handle through unified communication libraries from the [zigpy](https://github.com/zigpy/zigpy) project.
 
+For __Windows users__, please check the [Plugin V6 running on Windows](https://zigbeefordomoticz.github.io/wiki/en-eng/Plugin_Version6_on_Windows.htmPlugin) V6 running on Windows
+
 ## Pre requisities
 
 * Domoticz 2021.1 or above
 * You need Python 3.7 at least
 * Zigpy layers will requires additional python3 modules to be install:
 
-  `sudo pip3 install voluptuous pycrypto aiosqlite crccheck pyusb attrs aiohttp pyserial-asyncio`
+  Go to the plugin Home directory ( domoticz/plugins/Domoticz-Zigate or Domoticz-Zigbee)
+
+  `sudo pip3 install -r requirements.tx`
 
 ## Plugin first installation or first time on release 6.xxx (stable6)
 
@@ -109,22 +113,22 @@ Your first place to get support is via the Forums.
 
 In order to provide stability and also provide more recent development, Zigbee for Domoticz plugin has the following channels
 
-* **beta6**: Current developpement branch and allow TI CCxxxx , Silicon Labs and deConz coordinators on top of ZiGate coordinators.
-* **stable6**: default branch for
+* __beta6__: Current developpement branch and allow TI CCxxxx , Silicon Labs and deConz coordinators on top of ZiGate coordinators.
+* __stable6__: default branch for
   * [ZiGate](https://zigate.fr) models knwon today,
   * [Electrolama](https://electrolama.com/) models as well as the Texas Instrument CCxxx based coordinators,
   * [Elelabs](https://elelabs.com/products/elelabs-usb-adapter.html) as well as the Silicon Labs based coordinators.
 
 * Not supported
-  * **stable5**: Support ALL ZiGate models known today and requires Domoticz 2020.x at minima (not supported anymore)
-  * ***beta***: lastest version 6.0.15 - February 2022
-  * ***stable***: latest version 4.11. - Feb. 2021) deprecated
-  * ***master***: latest version 3.0. - Sept. 2018) deprecated
+  * __stable5__: Support ALL ZiGate models known today and requires Domoticz 2020.x at minima (not supported anymore)
+  * *__beta__*: lastest version 6.0.15 - February 2022
+  * *__stable__*: latest version 4.11. - Feb. 2021) deprecated
+  * *__master__*: latest version 3.0. - Sept. 2018) deprecated
 
 ## How to switch from one channel to the other
 
 `git pull --recurse-submodules`
-`git checkout stable6  // will move you to the stable5 channel`
+`git checkout stable6  // will move you to the stable6 channel`
 
 `git checkout beta6    // will move you to the beta channel`
 `git pull --recurse-submodules`
