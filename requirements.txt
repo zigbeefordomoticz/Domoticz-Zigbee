@@ -4,7 +4,7 @@ aiosqlite==0.17.0
 async-timeout==4.0.2
 attrs==21.4.0
 charset-normalizer==2.0.10
-click==8.0.4
+click
 coloredlogs==15.0.1
 crccheck==1.1
 frozenlist==1.2.0

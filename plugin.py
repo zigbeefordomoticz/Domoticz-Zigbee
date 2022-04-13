@@ -1061,11 +1061,15 @@ class BasePlugin:
         # Write the ListOfDevice in HBcount % 200 ( 3' ) or immediatly if we have remove or added a Device
         if len(Devices) == prevLenDevices:
             WriteDeviceList(self, (90 * 5))
+            
         else:
             self.log.logging("Plugin", "Debug", "Devices size has changed , let's write ListOfDevices on disk")
             WriteDeviceList(self, 0)  # write immediatly
             networksize_update(self)
-            #build_list_of_device_model(self)
+
+        if self.internalHB % (24 * 3600 // HEARTBEAT) == 0:
+            # Update the NetworkDevices attributes if needed , once by day
+            build_list_of_device_model(self)
 
         if self.CommiSSionning:
             self.PluginHealth["Flag"] = 2
@@ -1131,7 +1135,6 @@ class BasePlugin:
 
 def networksize_update(self):
     self.log.logging("Plugin", "Log", "Devices size has changed , let's write ListOfDevices on disk")
-
     routers, enddevices = how_many_devices(self)
     self.pluginParameters["NetworkSize"] = "Total: %s | Routers: %s | End Devices: %s" %(
         routers + enddevices, routers, enddevices)
@@ -1139,7 +1142,6 @@ def networksize_update(self):
 def build_list_of_device_model(self):
     
     self.pluginParameters["NetworkDevices"] = {}
-
     for x in self.ListOfDevices:
         manufcode = manufname = modelname = None
         if "Manufacturer" in self.ListOfDevices[x]:
@@ -1204,7 +1206,6 @@ def zigateInit_Phase1(self):
                 self.domoticzdb_Hardware.disableErasePDM()
             update_DB_device_status_to_reinit( self )
         
-
         # After an Erase PDM we have to do a full start of Zigate
         self.log.logging("Plugin", "Debug", "----> starZigate")
         return
@@ -1348,8 +1349,8 @@ def zigateInit_Phase3(self):
         start_OTAManagement(self, Parameters["HomeFolder"])
 
     networksize_update(self)
-    #build_list_of_device_model(self)
-    
+    build_list_of_device_model(self)
+
     if self.FirmwareMajorVersion == "03": 
         self.log.logging(
             "Plugin", "Status", "Plugin with Zigate, firmware %s correctly initialized" % self.FirmwareVersion

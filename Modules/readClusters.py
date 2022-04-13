@@ -1423,6 +1423,16 @@ def Cluster0006(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             MsgSrcAddr,
         )
 
+    elif MsgAttrID == "00f5":
+        self.log.logging(
+            "Cluster",
+            "Log",
+            "ReadCluster - ClusterId=0006 -  Attr: %s Value: %s" % (MsgAttrID, MsgClusterData),
+            MsgSrcAddr,
+        )
+
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, str(decodeAttribute(self, MsgAttType, MsgClusterData)))
+        
     elif MsgAttrID == "4000":  # Global Scene Control
         self.log.logging(
             "Cluster",
