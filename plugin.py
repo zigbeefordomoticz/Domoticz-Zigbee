@@ -713,11 +713,7 @@ class BasePlugin:
 
         for thread in threading.enumerate():
             if thread.name != threading.current_thread().name:
-                self.log.logging("Plugin", "Log",
-                    "'"
-                    + thread.name
-                    + "' is running, it must be shutdown otherwise Domoticz will abort on plugin exit."
-                )
+                self.log.logging("Plugin", "Log", "'" + thread.name + "' is running, it must be shutdown otherwise Domoticz will abort on plugin exit.")
 
         self.PluginHealth["Flag"] = 3
         self.PluginHealth["Txt"] = "No Communication"
@@ -1163,12 +1159,8 @@ def build_list_of_device_model(self):
             if modelname in ( "", {} ):
                 continue
             if modelname not in self.pluginParameters["NetworkDevices"][ manufcode ][ manufname ]:
-               self.pluginParameters["NetworkDevices"][ manufcode ][ manufname ].append( modelname )
+                self.pluginParameters["NetworkDevices"][ manufcode ][ manufname ].append( modelname )
 
-        #Domoticz.Log("%s %s %s" %( manufcode, manufname, modelname))
-        #Domoticz.Log("==> %s" %self.pluginParameters["NetworkDevices"])
-        
-            
 def decodeConnection(connection):
 
     decoded = {}
@@ -1386,7 +1378,7 @@ def check_firmware_level(self):
         self.PluzzyFirmware = True
         return True
 
-    elif int(self.FirmwareVersion.lower(),16) >= 0x031e:
+    if int(self.FirmwareVersion.lower(),16) >= 0x031e:
         self.pluginconf.pluginConf["forceAckOnZCL"] = False
 
     elif int(self.FirmwareVersion, 16) > 0x0321:
