@@ -1021,7 +1021,8 @@ class BasePlugin:
             self.pluginParameters["PluginUpdate"] = False
 
             if checkPluginUpdate(self.pluginParameters["PluginVersion"], self.pluginParameters["available"]):
-                self.log.logging("Plugin", "Status", "There is a newer plugin version available on gitHub")
+                self.log.logging("Plugin", "Error", "There is a newer plugin version available on gitHub. Current %s Available %s" %(
+                    self.pluginParameters["PluginVersion"], self.pluginParameters["available"]))
                 self.pluginParameters["PluginUpdate"] = True
             if checkFirmwareUpdate(
                 self.FirmwareMajorVersion,
