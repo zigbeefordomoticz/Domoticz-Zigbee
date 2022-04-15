@@ -241,9 +241,9 @@ def interview_state_8045(self, NWKID, RIA=None, status=None):
     if request_next_Ep(self, NWKID):
         # All Ep discovered
         return "0043"
-    else:
-        # Still some Ep to be discovered
-        return "0045"
+
+    # Still some Ep to be discovered
+    return "0045"
 
 def request_next_Ep(self, Nwkid):
     for iterEp in self.ListOfDevices[Nwkid]["Ep"]:

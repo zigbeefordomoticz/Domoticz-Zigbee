@@ -78,6 +78,7 @@ MANDATORY_ATTRIBUTES = (
 
 # List of Attributes whcih are going to be loaded, ut in case of Reset (resetPluginDS) they will be re-initialized.
 BUILD_ATTRIBUTES = (
+    "Log_UnknowDeviceFlag",
     "NeighbourTableSize",
     "BindingTable",
     "RoutingTable",
