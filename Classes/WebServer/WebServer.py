@@ -285,7 +285,8 @@ class WebServer(object):
         _response = prepResponseMessage(self, setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == "GET":
-            _response["Data"] = json.dumps(self.pluginParameters, sort_keys=True)
+            #Domoticz.Log("pluginParameters: %s" %self.pluginParameters)
+            _response["Data"] = json.dumps(self.pluginParameters)
         return _response
 
     def rest_nwk_stat(self, verb, data, parameters):

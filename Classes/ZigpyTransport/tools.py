@@ -34,6 +34,4 @@ def handle_thread_error(self, e, data=""):
         "Data": str(data),
     }
     
-    self.log.logging("TransportWrter", "Error", "Issue in request %s, dumping stack: %s" %( data, (traceback.format_exc() )), context= context)
-
-
+    self.log.logging("TransportWrter", "Error", "Issue in request %s, dumping stack: %s" %( data, (traceback.format_exc() )), context=context)

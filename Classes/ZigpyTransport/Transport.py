@@ -22,7 +22,7 @@ from Classes.ZigpyTransport.zigpyThread import (start_zigpy_thread,
 class ZigpyTransport(object):
     def __init__(self, pluginParameters, pluginconf, F_out, zigpy_get_device, log, statistics, hardwareid, radiomodule, serialPort):
         self.zigbee_communitation = "zigpy"
-        self.pluginParameters  = pluginParameters
+        self.pluginParameters = pluginParameters
         self.pluginconf = pluginconf
         self.F_out = F_out  # Function to call to bring the decoded Frame at plugin
         self.ZigpyGetDevice = zigpy_get_device
@@ -122,4 +122,3 @@ class ZigpyTransport(object):
         for device in self._currently_waiting_requests_list:
             _queue += self._currently_waiting_requests_list[device]
         return _queue
-
