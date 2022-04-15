@@ -23,7 +23,7 @@ Release Numbering
 - Even numbers  --> Beta/6
 
 
-##   April 2022 - stable6 - 6.1.004
+## 15 April 2022 - stable6 - 6.1.004
 
 - [Hardware] - Profalux MOT C1Z06F
 - [Technical] - WebUI event management NetworkDevices
