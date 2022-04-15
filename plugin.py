@@ -271,7 +271,7 @@ class BasePlugin:
         elif Parameters["Mode2"] == "None":
             self.zigbee_communitation = "native"
             self.transport = "None"
-            
+
         elif Parameters["Mode1"] in ( "ZigpyZiGate", "ZigpyZNP", "ZigpydeCONZ", "ZigpyEZSP"):
             self.transport = Parameters["Mode1"]
             self.zigbee_communitation = "zigpy"
@@ -1174,27 +1174,26 @@ def build_list_of_device_model(self):
 
 def unknown_device_model(self, NwkId, Model, ManufCode, ManufName ):
     
-    if 'Log_UnknowDeviceFlag' in self.ListOfDevices[ NwkId ] and self.ListOfDevices[ NwkId ]['Log_UnknowDeviceFlag'] + (24 * 3600) < time.time():
+    if 'logUnknownDeviceModel' in self.pluginconf.pluginConf and not self.pluginconf.pluginConf["logUnknownDeviceModel"]:
+        return
+    if 'Log_UnknowDeviceFlag' in self.ListOfDevices[ NwkId ] and self.ListOfDevices[ NwkId ]['Log_UnknowDeviceFlag'] + ( 24 * 3600) < time.time():
         return
 
     device_name = get_device_nickname( self, NwkId=NwkId)
     if device_name is None:
         device_name = ""
 
-    self.log.logging("Plugin", "Status", 
-        "We have detected a working device %s (%s) Model: %s not certified on the plugin. " %(
+    self.log.logging("Plugin", "Status", "We have detected a working device %s (%s) Model: %s not certified on the plugin. " %(
         get_device_nickname( self, NwkId=NwkId),
         NwkId,
         Model,
     ))
-    self.log.logging("Plugin", "Status", 
-        "--- can you to create an Issue https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/new?assignees=&labels=Device+Integration&template=certified-device-model.md&title=%5BModel+Certification%5D"
-    )
-    self. log.logging("Plugin", "Status",
-        "--- Provide as much inputs as you can but at least Product and Brand name, URL of a web site where you did the purchase"
-    )
+    self.log.logging("Plugin", "Status", "--- can you to create an Issue https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/new?assignees=&labels=Device+Integration&template=certified-device-model.md&title=%5BModel+Certification%5D")
+    self. log.logging("Plugin", "Status", "--- Provide as much inputs as you can but at least Product and Brand name, URL of a web site where you did the purchase" )
     self. log.logging("Plugin", "Status", "-------------------- Please copy-paste the here after information -------------------- ")
+
     self. log.logging("Plugin", "Status", "%s" %(json.dumps(self.ListOfDevices[ NwkId ], sort_keys=False)))
+    
     self. log.logging("Plugin", "Status", "-------------------- End of Copy-Paste -------------------- ")
     
     self.ListOfDevices[ NwkId ]['Log_UnknowDeviceFlag'] = time.time()
