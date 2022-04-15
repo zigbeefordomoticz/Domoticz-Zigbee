@@ -1,7 +1,7 @@
 ---
 name: Certified Device Model
 about: Request to add a new device to be supported by plugin
-title: "[Model Certification]"
+title: "[Model Certification] - "
 labels: Device Integration
 assignees: ''
 
