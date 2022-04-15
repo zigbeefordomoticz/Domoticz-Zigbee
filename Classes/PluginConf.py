@@ -1425,6 +1425,15 @@ SETTINGS = {
                 "hidden": True,
                 "Advanced": True,
             },
+            "logUnknownDeviceModel": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": True,
+                "Advanced": True,
+            },
+                
         },
     },
     "Reserved": {
