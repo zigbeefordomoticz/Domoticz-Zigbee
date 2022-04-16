@@ -1110,6 +1110,7 @@ def UpdateBatteryAttribute(self, Devices, MsgSrcAddr, MsgSrcEp):
 
     BATTERY_15_VOLTS = ()
     BATTERY_30_VOLTS = (
+        "SMSZB-120",
         "MOSZB-140",
         "HMSZB-110",
         "3AFE130104020015",
