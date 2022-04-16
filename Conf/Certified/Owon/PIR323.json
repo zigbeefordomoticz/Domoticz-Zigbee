@@ -45,5 +45,7 @@
 		]
 	},
 	"VoltageConverter": 10,
+	"BatteryDevice": 1,
+	"BatteryPercentageConverter": 2,
 	"Param": {}
 }

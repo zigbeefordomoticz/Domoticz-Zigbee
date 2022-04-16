@@ -73,5 +73,7 @@
 	},
 	"Param": {
 		"DanfossRoom": 0
-	}
+	},
+	        "BatteryDevice": 1,
+	 "BatteryPercentageConverter": 2
 }
