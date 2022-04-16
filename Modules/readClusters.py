@@ -21,8 +21,8 @@ from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import Update_Battery_Device, timedOutDevice
 from Modules.lumi import (AqaraOppleDecoding0012, cube_decode, decode_vibr,
                           decode_vibrAngle, readLumiLock, readXiaomiCluster)
-from Modules.tools import DeviceExist  # get_isqn_datastruct,
-from Modules.tools import (checkAndStoreAttributeValue, checkAttribute,
+from Modules.tools import (DeviceExist, checkAndStoreAttributeValue,
+                           checkAttribute, get_deviceconf_parameter_value,
                            getEPforClusterType, is_hex, set_status_datastruct,
                            set_timestamp_datastruct, voltage2batteryP)
 from Modules.tuya import (TUYA_2GANGS_SWITCH_MANUFACTURER,
@@ -31,7 +31,8 @@ from Modules.tuya import (TUYA_2GANGS_SWITCH_MANUFACTURER,
                           TUYA_SMARTAIR_MANUFACTURER, TUYA_SWITCH_MANUFACTURER,
                           TUYA_THERMOSTAT_MANUFACTURER, TUYA_TS0601_MODEL_NAME,
                           TUYA_WATER_TIMER, TUYA_eTRV1_MANUFACTURER,
-                          TUYA_eTRV2_MANUFACTURER, TUYA_eTRV3_MANUFACTURER, TUYA_eTRV4_MANUFACTURER)
+                          TUYA_eTRV2_MANUFACTURER, TUYA_eTRV3_MANUFACTURER,
+                          TUYA_eTRV4_MANUFACTURER)
 from Modules.zigateConsts import (LEGRAND_REMOTE_SHUTTER,
                                   LEGRAND_REMOTE_SWITCHS, LEGRAND_REMOTES,
                                   ZONE_TYPE)
@@ -975,17 +976,12 @@ def Cluster0001(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     elif MsgAttrID == "0020":  # Battery Voltage
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
         self.log.logging("Cluster", "Debug", "readCluster 0001 - %s Battery: %s V" % (MsgSrcAddr, value), MsgSrcAddr)
-        if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in (
-            "MOSZB-140",
-            "HMSZB-110",
-            "EH-ZB-BMS",
-            "DWS312-E",
-            "CDWS312",
-            "CTHS317ET",
-            "CMS323",
-            "PIR323-A",
-        ):
-            value = round(value / 10, 1)
+
+        if "Model" in self.ListOfDevices[MsgSrcAddr]:
+            VoltageConverter = get_deviceconf_parameter_value(self, self.ListOfDevices[MsgSrcAddr]["Model"], "VoltageConverter")
+            if VoltageConverter:
+                value = round( value / VoltageConverter, 1)
+
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value))
 
     elif MsgAttrID == "0021":  # Battery %

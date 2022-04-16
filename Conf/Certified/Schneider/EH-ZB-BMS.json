@@ -133,5 +133,6 @@
       "e201",
       "e202"
     ]
-  }
+  },
+  "VoltageConverter": 10
 }

@@ -85,6 +85,7 @@
 			"0011"
 		]
 	},
+	"VoltageConverter": 10,
 	"Param": {
 		"resetMotiondelay": 0
 	}

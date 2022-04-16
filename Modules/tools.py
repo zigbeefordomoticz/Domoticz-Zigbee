@@ -1423,3 +1423,11 @@ def how_many_devices(self):
             continue
 
     return routers, enddevices
+
+def get_deviceconf_parameter_value(self, model, attribute):
+    
+    if model not in self.DeviceConf:
+        return None
+    if attribute not in self.DeviceConf[ model ]:
+        return None
+    return self.DeviceConf[ model ][ attribute ]

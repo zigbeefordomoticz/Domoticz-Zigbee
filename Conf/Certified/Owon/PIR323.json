@@ -44,5 +44,6 @@
 			"0011"
 		]
 	},
+	"VoltageConverter": 10,
 	"Param": {}
 }
