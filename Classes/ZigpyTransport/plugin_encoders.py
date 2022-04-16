@@ -129,13 +129,13 @@ def build_plugin_8015_frame_content( self, network_info):
     # Get list of active devices
     self.log.logging( "TransportPluginEncoder", "Debug", "build_plugin_8015_frame_content key_table %s" %str(network_info))
     buildPayload = ""
-    id = 0
+    idx = 0
     for ieee, nwk in network_info.nwk_addresses.items():
             self.log.logging( "TransportPluginEncoder", "Debug", "build_plugin_8015_frame_content nwk_addresses : ieee: %s nwk_addr: %s" %(
                 ieee.serialize()[::-1].hex(),
                 nwk.serialize()[::-1].hex(),
             ))
-            buildPayload += "%02x" %id + "%04x" %int(nwk.serialize()[::-1].hex(),16 ) + "%016x" %int( ieee.serialize()[::-1].hex(), 16) + "ff" + "00"
+            buildPayload += "%02x" %idx + "%04x" %int(nwk.serialize()[::-1].hex(),16 ) + "%016x" %int( ieee.serialize()[::-1].hex(), 16) + "ff" + "00"
     return encapsulate_plugin_frame("8015", buildPayload, "00")
 
 

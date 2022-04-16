@@ -95,11 +95,11 @@ from Classes.NetworkEnergy import NetworkEnergy
 from Classes.NetworkMap import NetworkMap
 from Classes.OTA import OTAManagement
 from Classes.PluginConf import PluginConf
-
 from Classes.TransportStats import TransportStatistics
 from Classes.WebServer.WebServer import WebServer
 from Modules.basicOutputs import (ZigatePermitToJoin,
-                                  do_Many_To_One_RouteRequest, ieee_addr_request, leaveRequest,
+                                  do_Many_To_One_RouteRequest,
+                                  ieee_addr_request, leaveRequest,
                                   setExtendedPANID, setTimeServer,
                                   start_Zigate, zigateBlueLed)
 from Modules.checkingUpdate import (checkFirmwareUpdate, checkPluginUpdate,
@@ -114,18 +114,17 @@ from Modules.input import ZigateRead
 from Modules.piZigate import switchPiZigate_mode
 from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
 from Modules.schneider_wiser import wiser_thermostat_monitoring_heating_demand
-from Modules.tools import removeDeviceInList, how_many_devices
+from Modules.tools import (get_device_nickname, how_many_devices,
+                           removeDeviceInList)
 from Modules.txPower import set_TxPower
 from Modules.zigateCommands import (zigate_erase_eeprom,
                                     zigate_get_firmware_version,
                                     zigate_get_list_active_devices,
                                     zigate_get_nwk_state, zigate_get_time,
                                     zigate_remove_device,
-                                    zigate_set_certificate)
+                                    zigate_set_certificate, zigate_set_mode)
 from Modules.zigateConsts import CERTIFICATION, HEARTBEAT, MAX_FOR_ZIGATE_BUZY
 from Zigbee.zdpCommands import zdp_get_permit_joint_status
-from Modules.zigateCommands import zigate_set_mode
-
 
 #from zigpy_zigate.config import CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE
 #from Classes.ZigpyTransport.Transport import ZigpyTransport
@@ -269,11 +268,11 @@ class BasePlugin:
         ):
             self.transport = "V2-" + Parameters["Mode2"]
             self.zigbee_communitation = "native"
-            
+
         elif Parameters["Mode2"] == "None":
             self.zigbee_communitation = "native"
             self.transport = "None"
-            
+
         elif Parameters["Mode1"] in ( "ZigpyZiGate", "ZigpyZNP", "ZigpydeCONZ", "ZigpyEZSP"):
             self.transport = Parameters["Mode1"]
             self.zigbee_communitation = "zigpy"
@@ -452,8 +451,8 @@ class BasePlugin:
         self.log.logging("Plugin", "Status", "Transport mode: %s" % self.transport)
         if self.transport in ("USB", "DIN", "V2-DIN", "V2-USB"):
             try:
-                import serial
                 import dns
+                import serial
             except:
                 Domoticz.Error("Missing serial or dns modules. https://github.com/zigbeefordomoticz/wiki/blob/zigpy/en-eng/missing-modules.md#make-sure-that-you-have-correctly-installed-the-plugin")
             from Classes.ZigateTransport.Transport import ZigateTransport
@@ -480,8 +479,8 @@ class BasePlugin:
         elif self.transport in ("PI", "V2-PI"):
             from Classes.ZigateTransport.Transport import ZigateTransport
             try:
-                import serial
                 import dns
+                import serial
             except:
                 Domoticz.Error("Missing serial or dns modules. https://github.com/zigbeefordomoticz/wiki/blob/zigpy/en-eng/missing-modules.md#make-sure-that-you-have-correctly-installed-the-plugin")
 
@@ -553,7 +552,8 @@ class BasePlugin:
             import zigpy
             import zigpy_zigate
             from Classes.ZigpyTransport.Transport import ZigpyTransport
-            from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE)
+            from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH,
+                                             CONFIG_SCHEMA, SCHEMA_DEVICE)
             
             
             self.pythonModuleVersion["dns"] = (dns.__version__)
@@ -581,7 +581,8 @@ class BasePlugin:
             import zigpy
             import zigpy_znp
             from Classes.ZigpyTransport.Transport import ZigpyTransport
-            from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE)
+            from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH,
+                                             CONFIG_SCHEMA, SCHEMA_DEVICE)
             
              
             self.pythonModuleVersion["dns"] = (dns.__version__)
@@ -608,7 +609,8 @@ class BasePlugin:
             import zigpy
             import zigpy_deconz
             from Classes.ZigpyTransport.Transport import ZigpyTransport
-            from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE)
+            from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH,
+                                             CONFIG_SCHEMA, SCHEMA_DEVICE)
             
              
             self.pythonModuleVersion["dns"] = (dns.__version__)
@@ -630,10 +632,11 @@ class BasePlugin:
             except:
                 Domoticz.Error("Missing serial or dns modules. https://github.com/zigbeefordomoticz/wiki/blob/zigpy/en-eng/missing-modules.md#make-sure-that-you-have-correctly-installed-the-plugin")
 
-            import zigpy
             import bellows
+            import zigpy
             from Classes.ZigpyTransport.Transport import ZigpyTransport
-            from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE)
+            from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH,
+                                             CONFIG_SCHEMA, SCHEMA_DEVICE)
             
             self.pythonModuleVersion["dns"] = (dns.__version__)
             self.pythonModuleVersion["serial"] = (serial.__version__)
@@ -714,11 +717,7 @@ class BasePlugin:
 
         for thread in threading.enumerate():
             if thread.name != threading.current_thread().name:
-                self.log.logging(
-                    "Plugin", 
-                    "Log", 
-                    "'" + thread.name + "' is running, it must be shutdown otherwise Domoticz will abort on plugin exit."
-                )
+                self.log.logging("Plugin", "Log", "'" + thread.name + "' is running, it must be shutdown otherwise Domoticz will abort on plugin exit.")
 
         self.PluginHealth["Flag"] = 3
         self.PluginHealth["Txt"] = "No Communication"
@@ -1026,7 +1025,12 @@ class BasePlugin:
             self.pluginParameters["PluginUpdate"] = False
 
             if checkPluginUpdate(self.pluginParameters["PluginVersion"], self.pluginParameters["available"]):
-                self.log.logging("Plugin", "Status", "There is a newer plugin version available on gitHub")
+                if "beta" in self.pluginParameters["PluginBranch"] :
+                    log_mode = "Error"
+                else:
+                    log_mode = "Status"
+                self.log.logging("Plugin", log_mode, "There is a newer plugin version available on gitHub. Current %s Available %s" %(
+                    self.pluginParameters["PluginVersion"], self.pluginParameters["available"]))
                 self.pluginParameters["PluginUpdate"] = True
             if checkFirmwareUpdate(
                 self.FirmwareMajorVersion,
@@ -1164,12 +1168,40 @@ def build_list_of_device_model(self):
             if modelname in ( "", {} ):
                 continue
             if modelname not in self.pluginParameters["NetworkDevices"][ manufcode ][ manufname ]:
-               self.pluginParameters["NetworkDevices"][ manufcode ][ manufname ].append( modelname )
+                self.pluginParameters["NetworkDevices"][ manufcode ][ manufname ].append( modelname )
+                if modelname not in self.DeviceConf:
+                    unknown_device_model(self, x, modelname,manufcode, manufname )
 
-        #Domoticz.Log("%s %s %s" %( manufcode, manufname, modelname))
-        #Domoticz.Log("==> %s" %self.pluginParameters["NetworkDevices"])
+
+def unknown_device_model(self, NwkId, Model, ManufCode, ManufName ):
+    
+    if 'logUnknownDeviceModel' in self.pluginconf.pluginConf and not self.pluginconf.pluginConf["logUnknownDeviceModel"]:
+        return
+    if 'Log_UnknowDeviceFlag' in self.ListOfDevices[ NwkId ] and self.ListOfDevices[ NwkId ]['Log_UnknowDeviceFlag'] + ( 24 * 3600) < time.time():
+        return
+
+    device_name = get_device_nickname( self, NwkId=NwkId)
+    if device_name is None:
+        device_name = ""
+
+    self.log.logging("Plugin", "Status", "We have detected a working device %s (%s) Model: %s not certified on the plugin. " %(
+        get_device_nickname( self, NwkId=NwkId),
+        NwkId,
+        Model,
+    ))
+    self.log.logging("Plugin", "Status", "--- can you to create an Issue https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/new?assignees=&labels=Device+Integration&template=certified-device-model.md&title=%5BModel+Certification%5D")
+    self. log.logging("Plugin", "Status", "--- Provide as much inputs as you can but at least Product and Brand name, URL of a web site where you did the purchase" )
+    self. log.logging("Plugin", "Status", "-------------------- Please copy-paste the here after information -------------------- ")
+
+    self. log.logging("Plugin", "Status", "%s" %(json.dumps(self.ListOfDevices[ NwkId ], sort_keys=False)))
+    
+    self. log.logging("Plugin", "Status", "-------------------- End of Copy-Paste -------------------- ")
+    
+    self.ListOfDevices[ NwkId ]['Log_UnknowDeviceFlag'] = time.time()
         
-            
+    
+    
+    
 def decodeConnection(connection):
 
     decoded = {}
@@ -1377,23 +1409,25 @@ def zigateInit_Phase3(self):
 
 def check_firmware_level(self):
     # Check Firmware version
-    if int(self.FirmwareVersion.lower(),16) < 0x031d:
-        self.log.logging("Plugin", "Error", "Firmware level not supported, please update ZiGate firmware")
-        return False
-
-    elif int(self.FirmwareVersion.lower(),16) == 0x2100:
+    if int(self.FirmwareVersion.lower(),16) == 0x2100:
         self.log.logging("Plugin", "Status", "Firmware for Pluzzy devices")
         self.PluzzyFirmware = True
         return True
 
-    elif int(self.FirmwareVersion.lower(),16) >= 0x031e:
-        self.pluginconf.pluginConf["forceAckOnZCL"] = False
+    if int(self.FirmwareVersion.lower(),16) < 0x031d:
+        self.log.logging("Plugin", "Error", "Firmware level not supported, please update ZiGate firmware")
+        return False
 
-    elif int(self.FirmwareVersion, 16) > 0x0321:
+    if int(self.FirmwareVersion, 16) > 0x0321:
         self.log.logging("Plugin", "Error", "WARNING: Firmware %s is not yet supported" % self.FirmwareVersion.lower())
+        self.pluginconf.pluginConf["forceAckOnZCL"] = False
+        return True
 
-    self.pluginconf.pluginConf["forceAckOnZCL"] = False
-    return True
+    if int(self.FirmwareVersion.lower(),16) >= 0x031e:
+        self.pluginconf.pluginConf["forceAckOnZCL"] = False
+        return True
+
+    return False
 
 
 def start_GrpManagement(self, homefolder):
