@@ -409,7 +409,7 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
             )
         if MsgClusterId == "0000" and Attribute == "f000" and manuf_name in ("1021", "Legrand" ):
             if self.pluginconf.pluginConf["LegrandCompatibilityMode"]:
-                operation_time = time() - self.statistics._start
+                operation_time = time.time() - self.statistics._start
                 read_attribute_response(self, MsgSrcAddr, MsgSrcEp, MsgSqn, MsgClusterId, "00", "23", Attribute, operation_time, manuf_code=MsgManufCode)
         else:
             self.log.logging(
