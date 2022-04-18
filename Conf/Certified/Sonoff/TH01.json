@@ -79,5 +79,7 @@
         "0405": [
             "0000"
         ]
-    }
+    },
+            "BatteryDevice": 1,
+     "BatteryPercentageConverter": 2
 }
