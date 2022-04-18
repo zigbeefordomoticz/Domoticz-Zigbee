@@ -351,11 +351,12 @@ def restart_plugin_reset_ModuleIRCode(self, nwkid=None):
     )
 
     for x in list_of_device_to_reset:
-        self.log.logging("CasaIA", "Error", "casaia_check_irPairing reseting %s " % x)
+        
         if "CASA.IA" not in self.ListOfDevices[x]:
             continue
         if DEVICE_ID not in self.ListOfDevices[x]["CASA.IA"]:
             continue
+        self.log.logging("CasaIA", "Log", "casaia_check_irPairing reseting %s " % x)
         if "ModuleIRCode" in self.ListOfDevices[x]["CASA.IA"][DEVICE_ID]:
             self.ListOfDevices[x]["CASA.IA"][DEVICE_ID]["ModuleIRCode"] = "0000"
 

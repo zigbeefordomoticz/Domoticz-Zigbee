@@ -101,6 +101,7 @@ from Modules.basicOutputs import (ZigatePermitToJoin,
                                   do_Many_To_One_RouteRequest, ieee_addr_request, leaveRequest,
                                   setExtendedPANID, setTimeServer,
                                   start_Zigate, zigateBlueLed)
+from Modules.casaia import restart_plugin_reset_ModuleIRCode
 from Modules.checkingUpdate import (checkFirmwareUpdate, checkPluginUpdate,
                                     checkPluginVersion)
 from Modules.command import mgtCommand
@@ -1350,6 +1351,9 @@ def zigateInit_Phase3(self):
 
     networksize_update(self)
     build_list_of_device_model(self)
+
+    # Request to resend the IRCode with the next command of Casaia/Owon ACxxxx
+    restart_plugin_reset_ModuleIRCode(self, nwkid=None)
 
     if self.FirmwareMajorVersion == "03": 
         self.log.logging(
