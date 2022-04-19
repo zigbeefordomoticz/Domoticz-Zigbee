@@ -65,6 +65,9 @@
     ]
   },
   "PollingEnabled": 1,
+  "BatteryDevice": 1,
+  "MaxBatteryVoltage": 45,
+  "MinBatteryVoltage": 30,
   "Param": {
     "BatteryPollingFreq": 43200
   }

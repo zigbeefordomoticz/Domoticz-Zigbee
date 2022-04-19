@@ -78,5 +78,7 @@
 	"Param": {
 		"Calibration": 0
 	},
+	        "BatteryDevice": 1,
+	 "BatteryPercentageConverter": 2,
 	"PollingEnabled": 1
 }
