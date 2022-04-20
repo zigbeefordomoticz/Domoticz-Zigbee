@@ -40,21 +40,21 @@ def decode_endian_data(data, datatype, len_stream=None):
         if len(data) == 16:
             # we expect 5 bytes lenght
             data = data[6:16]
-        return ("%010x" % struct.unpack(">Q", struct.pack("Q", int("000000" + data[:10], 16)))[0])[:10]
+        return ("%016x" % struct.unpack(">Q", struct.pack("Q", int("000000" + data[:10], 16)))[0])[:10]
 
     if data_type_id in {0x0D, 0x1D, 0x25, 0x2D}:
         # 6 bytes - 48b
         if len(data) == 16:
             # we expect 6 bytes lenght
             data = data[4:16]
-        return ("%012x" % struct.unpack(">Q", struct.pack("Q", int("0000" + data[:12], 16)))[0])[:12]
+        return ("%016x" % struct.unpack(">Q", struct.pack("Q", int("0000" + data[:12], 16)))[0])[:12]
 
     if data_type_id in {0x0E, 0x1E, 0x26, 0x2E}:
         if len(data) == 16:
             # we expect 7 bytes lenght
             data = data[2:16]
         # 7 bytes - 56b
-        return "%014x" % ("%014x" % struct.unpack(">Q", struct.pack("Q", int("00" + data[:14], 16)))[0])[:14]
+        return "%016x" % ("%014x" % struct.unpack(">Q", struct.pack("Q", int("00" + data[:14], 16)))[0])[:14]
 
     if data_type_id in {0x0F, 0x1F, 0x27, 0x2F, 0x3A, 0xF0}:
         # 8 bytes - 64b
