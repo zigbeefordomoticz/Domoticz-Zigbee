@@ -547,8 +547,9 @@ async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequ
                 return
 
             result, msg = await self.app.request( destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply, use_ieee )
-            if self._currently_waiting_requests_list[_ieee]:
-                await asyncio.sleep(0.250)
+            await asyncio.sleep(0.300)
+            #if self._currently_waiting_requests_list[_ieee]:
+            #    await asyncio.sleep(0.250)
 
     except DeliveryError as e:
         # This could be relevant to APS NACK after retry
