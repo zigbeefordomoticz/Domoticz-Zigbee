@@ -70,24 +70,21 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         FirmwareBranch, FirmwareMajorVersion, FirmwareVersion = extract_versioning_for_plugin( znp_model, znp_manuf)
         self.callBackFunction(build_plugin_8010_frame_content(FirmwareBranch, FirmwareMajorVersion, FirmwareVersion))
 
-    async def _register_endpoints(self) -> None:
+    async def register_endpoints(self):
+        await super().register_endpoints()  
+
         LIST_ENDPOINT = [0x0b , 0x0a , 0x6e, 0x15, 0x08, 0x03]  # WISER, ORVIBO , TERNCY, KONKE, LIVOLO, WISER2
-        await super()._register_endpoints()
-
-        for endpoint in LIST_ENDPOINT:
-            await self._znp.request(
-                c.AF.Register.Req(
-                    Endpoint=endpoint,
-                    ProfileId=zigpy.profiles.zha.PROFILE_ID,
-                    DeviceId=zigpy.profiles.zll.DeviceType.CONTROLLER,
-                    DeviceVersion=0b0000,
-                    LatencyReq=c.af.LatencyReq.NoLatencyReqs,
-                    InputClusters=[clusters.general.Basic.cluster_id],
-                    OutputClusters=[],
-                ),
-                RspStatus=t.Status.SUCCESS,
+        for controller_ep in LIST_ENDPOINT:
+            await self.add_endpoint(
+                zdo_types.SimpleDescriptor(
+                    endpoint=controller_ep,
+                    profile=zigpy.profiles.zha.PROFILE_ID,
+                    device_type=zigpy.profiles.zll.DeviceType.CONTROLLER,
+                    device_version=0b0000,
+                    input_clusters=[zigpy.zcl.clusters.general.Basic.cluster_id,],
+                    output_clusters=[],
+                )
             )
-
 
 
     def get_device(self, ieee=None, nwk=None):
