@@ -66,24 +66,24 @@
             "Attributes": {
                 "0505": {
                     "DataType": "21",
-                    "MinInterval": "0001",
+                    "MinInterval": "0005",
                     "MaxInterval": "012C",
                     "TimeOut": "0000",
-                    "Change": "0001"
+                    "Change": "000a"
                 },
                 "0508": {
                     "DataType": "21",
-                    "MinInterval": "0001",
+                    "MinInterval": "0005",
                     "MaxInterval": "012C",
                     "TimeOut": "0000",
-                    "Change": "0001"
+                    "Change": "000a"
                 },
                 "050b": {
                     "DataType": "29",
                     "MinInterval": "0005",
                     "MaxInterval": "012C",
                     "TimeOut": "0000",
-                    "Change": "0001"
+                    "Change": "000a"
                 }
             }
         }
