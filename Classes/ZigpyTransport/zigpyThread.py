@@ -52,11 +52,12 @@ def start_zigpy_thread(self):
         asyncio.set_event_loop_policy( asyncio.WindowsSelectorEventLoopPolicy() )
             
     self.zigpy_loop = get_or_create_eventloop()
-    self.log.logging("TransportZigpy", "Debug", "start_zigpy_thread - Starting zigpy thread")
-    self.zigpy_thread = Thread(name="ZigpyCom_%s" % self.hardwareid, target=zigpy_thread, args=(self,))
-    self.log.logging("TransportZigpy", "Debug", "start_zigpy_thread - zigpy thread setup done")
-    self.zigpy_thread.start()
-    self.log.logging("TransportZigpy", "Debug", "start_zigpy_thread - zigpy thread started")
+    if self.zigpy_loop:
+        self.log.logging("TransportZigpy", "Debug", "start_zigpy_thread - Starting zigpy thread")
+        self.zigpy_thread = Thread(name="ZigpyCom_%s" % self.hardwareid, target=zigpy_thread, args=(self,))
+        self.log.logging("TransportZigpy", "Debug", "start_zigpy_thread - zigpy thread setup done")
+        self.zigpy_thread.start()
+        self.log.logging("TransportZigpy", "Debug", "start_zigpy_thread - zigpy thread started")
 
 
 def stop_zigpy_thread(self):
@@ -103,6 +104,7 @@ def zigpy_thread(self):
     self.log.logging("TransportZigpy", "Debug", "zigpy_thread - exiting zigpy thread")
 
 def get_or_create_eventloop():
+    loop = None
     try:
         loop = asyncio.get_event_loop()
 
@@ -119,27 +121,35 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channe
 
     if radiomodule == "ezsp":
         import bellows.config as conf
+        self.log.logging("TransportZigpy", "Debug", "Start Conf %s" %radiomodule)
         config = {conf.CONF_DEVICE: {"path": serialPort, "baudrate": 115200}, conf.CONF_NWK: {}}
 
     elif radiomodule =="zigate":
         import zigpy_zigate.config as conf
+        self.log.logging("TransportZigpy", "Debug", "Start Conf %s" %radiomodule)
         config = {conf.CONF_DEVICE: {"path": serialPort, "baudrate": 115200}, conf.CONF_NWK: {}}
 
     elif radiomodule =="znp":
         import zigpy_znp.config as conf
+        self.log.logging("TransportZigpy", "Debug", "Start Conf %s" %radiomodule)
         config = {conf.CONF_DEVICE: {"path": serialPort, "baudrate": 115200}, conf.CONF_NWK: {}}
 
     elif radiomodule =="deCONZ":
         import zigpy_deconz.config as conf
+        self.log.logging("TransportZigpy", "Debug", "Start Conf %s" %radiomodule)
         config = {conf.CONF_DEVICE: {"path": serialPort}, conf.CONF_NWK: {}}
-
+        self.log.logging("TransportZigpy", "Debug", "Start Conf %s Done !" %radiomodule)
+    
+    self.log.logging("TransportZigpy", "Debug", "1- %s" %radiomodule) 
     if set_extendedPanId != 0:
         config[conf.CONF_NWK][conf.CONF_NWK_EXTENDED_PAN_ID] = "%s" % (
             t.EUI64(t.uint64_t(set_extendedPanId).serialize())
         )
+    self.log.logging("TransportZigpy", "Debug", "2- %s" %radiomodule) 
     if set_channel != 0:
         config[conf.CONF_NWK][conf.CONF_NWK_CHANNEL] = set_channel
 
+    self.log.logging("TransportZigpy", "Debug", "3- %s" %radiomodule) 
     if radiomodule == "zigate":
         self.app = App_zigate(config)
 
@@ -147,7 +157,10 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channe
         self.app = App_znp(config)
 
     elif radiomodule == "deCONZ":
-        self.app = App_deconz(config)
+        try:
+            self.app = App_deconz(config)
+        except Exception as e:
+            self.log.logging("TransportZigpy", "Error", "Error while launching App_deconz %s" %e) 
 
     elif radiomodule == "ezsp":
         self.app = App_bellows(conf.CONFIG_SCHEMA(config))
@@ -161,7 +174,7 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channe
         )
         return
 
-
+    self.log.logging("TransportZigpy", "Debug", "4- %s" %radiomodule) 
     if self.pluginParameters["Mode3"] == "True":
         self.log.logging(
             "TransportZigpy",
