@@ -234,7 +234,7 @@ def interview_state_8045(self, NWKID, RIA=None, status=None):
     self.ListOfDevices[NWKID]["Heartbeat"] = "0"
     self.ListOfDevices[NWKID]["Status"] = "0043"
 
-    if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] == {}:
+    if "Model" not in self.ListOfDevices[NWKID] or self.ListOfDevices[NWKID]["Model"] in ( {}, ""):
         self.log.logging("Pairing", "Debug", "[%s] NEW OBJECT: %s Request Model Name" % (RIA, NWKID))
         ReadAttributeRequest_0000(self, NWKID, fullScope=False)  # Reuest Model Name
 
