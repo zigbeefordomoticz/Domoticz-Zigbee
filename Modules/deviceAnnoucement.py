@@ -130,8 +130,12 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
         return
 
     reseted_device = False
-
-    if NwkId in self.ListOfDevices and "Status" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Status"] in ("Removed" , "erasePDM", "provREQ", "Left"):
+    self.log.logging("Input", "Debug", "Nwkid: %s Status: %s" %(NwkId,self.ListOfDevices[NwkId]["Status"] ), NwkId)
+    if (
+        ( "Status" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Status"] in ("Removed", "erasePDM", "provREQ", "Left") ) or
+        ( "PreviousStatus" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["PreviousStatus"] in ("Removed", "erasePDM", "provREQ", "Left"))
+    ):
+        self.log.logging("Input", "Debug", "--> Device reset, removing key Attributes", NwkId)
         reseted_device = True
         if "Bind" in self.ListOfDevices[NwkId]:
             del self.ListOfDevices[NwkId]["Bind"]
@@ -143,8 +147,15 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
             del self.ListOfDevices[NwkId]["Neighbours"]
         if "IAS" in self.ListOfDevices[NwkId]:
             del self.ListOfDevices[NwkId]["IAS"]
+            for x in self.ListOfDevices[NwkId]["Ep"]:
+                if "0500" in self.ListOfDevices[NwkId]["Ep"][ x ]:
+                    del self.ListOfDevices[NwkId]["Ep"][ x ]["0500"]
+                if "0502" in self.ListOfDevices[NwkId]["Ep"][ x ]:
+                    del self.ListOfDevices[NwkId]["Ep"][ x ]["0500"]
+
         if "WriteAttributes" in self.ListOfDevices[NwkId]:
             del self.ListOfDevices[NwkId]["WriteAttributes"]
+
         self.ListOfDevices[NwkId]["Status"] = "inDB"
 
     if "ZDeviceName" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["ZDeviceName"] not in ("", {}):
@@ -172,15 +183,15 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
         lastSeenUpdate(self, Devices, NwkId=NwkId)
 
         legrand_refresh_battery_remote(self, NwkId)
-        
+
         # CasaIA ( AC221, CAC221 )
         restart_plugin_reset_ModuleIRCode(self, NwkId)
-        
+
         if mainPoweredDevice(self, NwkId):
             read_attributes_if_needed( self, NwkId)
-            
 
         if reseted_device:
+            self.log.logging("Input", "Debug", "--> Device reset, redoing provisioning", NwkId)
             zigbee_provision_device(self, Devices, NwkId, 0, "inDB")
 
         return
@@ -201,7 +212,6 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
             legrand_refresh_battery_remote(self, NwkId)
 
             read_attributes_if_needed( self, NwkId)
-            
             restart_plugin_reset_ModuleIRCode(self, NwkId)
             
             if reseted_device:

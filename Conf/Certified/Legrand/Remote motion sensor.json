@@ -42,6 +42,7 @@
             "0001"
         ]
     },
+    "BatteryDevice": 1,
     "Param": {},
     "GroupMembership": []
 }

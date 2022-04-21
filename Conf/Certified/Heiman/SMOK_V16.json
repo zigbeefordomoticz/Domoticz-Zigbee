@@ -11,5 +11,7 @@
 			"Type": "Smoke"
 		}
 	},
-	"Type": ""
+	"Type": "",
+	        "BatteryDevice": 1,
+	 "BatteryPercentageConverter": 2
 }

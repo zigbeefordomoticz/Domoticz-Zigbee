@@ -55,5 +55,7 @@
 	},
 	"Param": {
 		"TS004FMode": "Scene"
-	}
+	},
+	        "BatteryDevice": 1,
+	 "BatteryPercentageConverter": 2
 }
