@@ -16,6 +16,8 @@ from Zigbee.zclCommands import (zcl_ias_wd_command_squawk,
                                 zcl_ias_zone_enroll_response,
                                 zcl_read_attribute, zcl_write_attribute)
 from Modules.basicOutputs import write_attribute
+from Modules.sendZigateCommand import raw_APS_request
+from Modules.tools import get_and_inc_ZCL_SQN
 
 ENROLL_RESPONSE_CODE = 0x00
 ZONE_ID = 0x00
@@ -425,3 +427,24 @@ class IAS_Zone_Management:
     def alarm_off(self, nwkid, ep):
         self.logging("Debug", "Device Alarm Off")
         self.warningMode(nwkid, ep, "stop")
+
+
+    def iaswd_develco_warning(self, Nwkid, ep, sirenonoff):
+
+        if sirenonoff not in ( "00", "01"):
+            return 
+
+        cmd = "00"
+        Cluster = "0502"
+        cluster_frame = 0b00010001
+        sqn = get_and_inc_ZCL_SQN(self, Nwkid)
+
+        # Warnindg mode , Strobe, Sirene Level
+        if "Param" not in self.ListOfDevices[ Nwkid ] and "AlarmDuration" not in self.ListOfDevices[ Nwkid ]["Param"]:
+            warningduration = 0x0a
+        else:
+            warningduration = int(self.ListOfDevices[ Nwkid ]["Param"]["AlarmDuration"])
+
+        payload = "%02x" % cluster_frame + sqn + cmd + sirenonoff + "%04x" %warningduration
+        raw_APS_request(self, Nwkid, ep, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=ZIGATE_EP,  ackIsDisabled=False)
+        return sqn
