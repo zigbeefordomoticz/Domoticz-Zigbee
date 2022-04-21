@@ -90,7 +90,21 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         except Exception as e:
             logging.error( "Error %s" %(traceback.format_exc() ))
           
+    async def register_endpoints(self):
+        await super().register_endpoints()  
 
+        #for controller_ep in [ 0x08, ]:
+        #    await self.add_endpoint(
+        #        zdo_types.SimpleDescriptor(
+        #            endpoint=controller_ep,
+        #            profile=zigpy.profiles.zha.PROFILE_ID,
+        #            device_type=zigpy.profiles.zll.DeviceType.CONTROLLER,
+        #            device_version=0b0000,
+        #            input_clusters=[zigpy.zcl.clusters.general.Basic.cluster_id,],
+        #            output_clusters=[],
+        #        )
+        #    )
+        
     def get_device(self, ieee=None, nwk=None):
         # logging.debug("get_device nwk %s ieee %s" % (nwk, ieee))
         # self.callBackGetDevice is set to zigpy_get_device(self, nwkid = None, ieee=None)
