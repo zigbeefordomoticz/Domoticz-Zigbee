@@ -25,5 +25,7 @@
 			"0010",
 			"0011"
 		]
-	}
+	},
+	"BatteryDevice": 1,
+	"BatteryPercentageConverter": 2
 }

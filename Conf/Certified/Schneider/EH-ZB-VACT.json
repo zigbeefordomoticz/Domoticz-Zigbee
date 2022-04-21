@@ -124,6 +124,9 @@
 			"0001"
 		]
 	},
+	"BatteryDevice": 1,
+	"MaxBatteryVoltage": 3,
+	"MinBatteryVoltage": 2,
 	"PollingEnabled": 1,
 	"Param": {
 		"Calibration": 0

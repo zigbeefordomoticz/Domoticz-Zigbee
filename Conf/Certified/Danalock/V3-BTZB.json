@@ -108,5 +108,7 @@
             "fffd"
         ]
     },
+            "BatteryDevice": 1,
+     "BatteryPercentageConverter": 2,
     "PollingEnabled": 1
 }

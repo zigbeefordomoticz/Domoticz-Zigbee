@@ -193,7 +193,7 @@ def sendZigateCmd(self, cmd, datas, ackIsDisabled=False):
     return send_zigatecmd_raw(self, cmd, datas, ackIsDisabled)
 
 
-def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep=ZIGATE_EP, zigpyzqn= None, groupaddrmode=False, highpriority=False, ackIsDisabled=False):
+def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep=ZIGATE_EP, zigpyzqn=None, groupaddrmode=False, highpriority=False, ackIsDisabled=False):
     self.log.logging(
         "outRawAPS",
         "Debug",
@@ -290,8 +290,7 @@ def zigpy_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payloa
         "outRawAPS",
         "Debug",
         "zigpy_raw_APS_request - %s ==> Profile: %04x Cluster: %04x TargetNwk: %04x TargetEp: %02x SrcEp: %02x  payload: %s"
-        % ( callingfunction, data['Profile'], data['Cluster'], data['TargetNwk'], data['TargetEp'], data['SrcEp'],  data['payload'])
+        % ( callingfunction, data['Profile'], data['Cluster'], data['TargetNwk'], data['TargetEp'], data['SrcEp'], data['payload'])
     )
 
     return self.ControllerLink.sendData( "RAW-COMMAND", data, NwkId=int(targetaddr,16), sqn=int(zigpyzqn,16), ackIsDisabled=ackIsDisabled )
-
