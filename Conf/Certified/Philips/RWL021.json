@@ -22,5 +22,7 @@
 		"0001": [ "0020" ] ,
 		"000f": [ ],
 		"fc00": [ "0000" ] 
-	}
+	},
+	        "BatteryDevice": 1,
+	 "BatteryPercentageConverter": 2
 }

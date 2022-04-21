@@ -14,5 +14,7 @@
                 "0000": [ "0004", "0005"],
 		"0001": [ "0020", "0021" ],
 		"0500": [ ]
-        }
+        },
+	        "BatteryDevice": 1,
+	 "BatteryPercentageConverter": 2
 }

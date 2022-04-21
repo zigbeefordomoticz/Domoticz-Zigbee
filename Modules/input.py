@@ -409,7 +409,7 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
             )
         if MsgClusterId == "0000" and Attribute == "f000" and manuf_name in ("1021", "Legrand" ):
             if self.pluginconf.pluginConf["LegrandCompatibilityMode"]:
-                operation_time = time() - self.statistics._start
+                operation_time = time.time() - self.statistics._start
                 read_attribute_response(self, MsgSrcAddr, MsgSrcEp, MsgSqn, MsgClusterId, "00", "23", Attribute, operation_time, manuf_code=MsgManufCode)
         else:
             self.log.logging(
@@ -1011,7 +1011,7 @@ def Decode8009(self, Devices, MsgData, MsgLQI):  # Network State response (Firm 
         return
 
     # At that stage IEEE is set to 0x0000 which is correct for the Coordinator
-    if extaddr not in self.IEEE2NWK and self.IEEE2NWK != addr:
+    if extaddr not in self.IEEE2NWK or self.IEEE2NWK[ extaddr ] != addr or addr not in self.ListOfDevices or extaddr != self.ListOfDevices[ addr ]['IEEE']:
         initLODZigate(self, addr, extaddr)
 
     if self.currentChannel != int(Channel, 16):
