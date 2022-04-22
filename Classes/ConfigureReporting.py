@@ -27,6 +27,7 @@ from Modules.tools import (
     set_isqn_datastruct,
     set_status_datastruct,
     set_timestamp_datastruct,
+    is_fake_ep
 )
 from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_EP, CFG_RPT_ATTRIBUTESbyCLUSTERS
 from Zigbee.zclCommands import (
@@ -152,6 +153,8 @@ class ConfigureReporting:
             direction = "00"
 
             for Ep in self.ListOfDevices[key]["Ep"]:
+                if is_fake_ep( self, key, Ep):
+                    continue
                 self.logging("Debug", "------> Configurereporting - processing %s/%s" % (key, Ep), nwkid=key)
                 clusterList = getClusterListforEP(self, key, Ep)
                 self.logging(
