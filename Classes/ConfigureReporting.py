@@ -15,27 +15,19 @@ from time import time
 import Domoticz
 from Modules.basicOutputs import ieee_addr_request
 from Modules.bindings import bindDevice
-from Modules.tools import (
-    get_isqn_datastruct,
-    get_list_isqn_attr_datastruct,
-    getClusterListforEP,
-    is_ack_tobe_disabled,
-    is_attr_unvalid_datastruct,
-    is_time_to_perform_work,
-    mainPoweredDevice,
-    reset_attr_datastruct,
-    set_isqn_datastruct,
-    set_status_datastruct,
-    set_timestamp_datastruct,
-    is_fake_ep
-)
-from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_EP, CFG_RPT_ATTRIBUTESbyCLUSTERS
-from Zigbee.zclCommands import (
-    zcl_read_report_config_request,
-    zcl_configure_reporting_requestv2,
-)
+from Modules.tools import (get_isqn_datastruct, get_list_isqn_attr_datastruct,
+                           getClusterListforEP, is_ack_tobe_disabled,
+                           is_attr_unvalid_datastruct, is_bind_ep, is_fake_ep,
+                           is_time_to_perform_work, mainPoweredDevice,
+                           reset_attr_datastruct, set_isqn_datastruct,
+                           set_status_datastruct, set_timestamp_datastruct)
+from Modules.zigateConsts import (MAX_LOAD_ZIGATE, ZIGATE_EP,
+                                  CFG_RPT_ATTRIBUTESbyCLUSTERS)
+from Zigbee.zclCommands import (zcl_configure_reporting_requestv2,
+                                zcl_read_report_config_request)
 
-from Classes.ZigateTransport.sqnMgmt import TYPE_APP_ZCL, sqn_get_internal_sqn_from_app_sqn
+from Classes.ZigateTransport.sqnMgmt import (TYPE_APP_ZCL,
+                                             sqn_get_internal_sqn_from_app_sqn)
 
 MAX_ATTR_PER_REQ = 3
 CONFIGURE_REPORT_PERFORM_TIME = 21  # Reenforce will be done each xx hours
@@ -154,7 +146,12 @@ class ConfigureReporting:
 
             for Ep in self.ListOfDevices[key]["Ep"]:
                 if is_fake_ep( self, key, Ep):
+                    self.logging("Debug", "------> Configurereporting - Fake Ep %s/%s skiping" % (key, Ep), nwkid=key)
                     continue
+                if not is_bind_ep( self, key, Ep):
+                    self.logging("Debug", "------> Configurereporting - Not Binding ep %s/%s skiping" % (key, Ep), nwkid=key)
+                    continue
+ 
                 self.logging("Debug", "------> Configurereporting - processing %s/%s" % (key, Ep), nwkid=key)
                 clusterList = getClusterListforEP(self, key, Ep)
                 self.logging(
