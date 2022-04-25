@@ -44,6 +44,7 @@
 			"0001"
 		]
 	},
+	"BatteryDevice": 1,
 	"Param": {
 		"netatmoReleaseButton": 0
 	}

@@ -293,6 +293,7 @@ def reconnectNWkDevice(self, new_NwkId, IEEE, old_NwkId):
             "reconnectNWkDevice - Update Status from %s to 'inDB' for NetworkID : %s"
             % (self.ListOfDevices[new_NwkId]["Status"], new_NwkId)
         )
+        self.ListOfDevices[new_NwkId]["PreviousStatus"] = self.ListOfDevices[new_NwkId]["Status"]
         self.ListOfDevices[new_NwkId]["Status"] = "inDB"
         self.ListOfDevices[new_NwkId]["Heartbeat"] = "0"
 
@@ -511,6 +512,15 @@ def is_fake_ep( self, nwkid, ep):
         and ep in self.DeviceConf[self.ListOfDevices[nwkid]["Model"]]["FakeEp"]
     )
 
+def is_bind_ep( self, nwkid, ep):
+
+    return (
+        "Model" not in self.ListOfDevices[nwkid]
+        or self.ListOfDevices[nwkid]["Model"] not in self.DeviceConf
+        or "bindEp" not in self.DeviceConf[self.ListOfDevices[nwkid]["Model"]]
+        or ep in self.DeviceConf[self.ListOfDevices[nwkid]["Model"]]["bindEp"]
+    )
+    
 
 def getTypebyCluster(self, Cluster):
     clustersType = {
@@ -667,22 +677,22 @@ def rgb_to_hsl(rgb):
     b = float(b / 255)
     high = max(r, g, b)
     low = min(r, g, b)
-    h, s, l = ((high + low) / 2,) * 3
+    var_h, var_s, var_l = ((high + low) / 2,) * 3
 
     if high == low:
-        h = 0.0
-        s = 0.0
+        var_h = 0.0
+        var_s = 0.0
     else:
         d = high - low
-        s = d / (2 - high - low) if l > 0.5 else d / (high + low)
-        h = {
+        var_s = d / (2 - high - low) if var_l > 0.5 else d / (high + low)
+        var_h = {
             r: (g - b) / d + (6 if g < b else 0),
             g: (b - r) / d + 2,
             b: (r - g) / d + 4,
         }[high]
-        h /= 6
+        var_h /= 6
 
-    return h, s, l
+    return var_h, var_s, var_l
 
 
 def decodeMacCapa(inMacCapa):
@@ -1423,3 +1433,11 @@ def how_many_devices(self):
             continue
 
     return routers, enddevices
+
+def get_deviceconf_parameter_value(self, model, attribute, return_default=None):
+    
+    if model not in self.DeviceConf:
+        return return_default
+    if attribute not in self.DeviceConf[ model ]:
+        return return_default
+    return self.DeviceConf[ model ][ attribute ]
