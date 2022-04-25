@@ -157,6 +157,7 @@ def interview_state_004d(self, NWKID, RIA=None, status=None):
 
 
 def interview_state_8043(self, NWKID, RIA, knownModel, status):
+    # At that stage, we have at least One Ep Description
     self.log.logging(
         "Pairing",
         "Debug",
@@ -545,7 +546,7 @@ def handle_IAS_enrollmment_if_needed(self, NWKID, RIA, status):
         # IAS Zone
         # We found a Cluster 0x0500 IAS. May be time to start the IAS Zone process
         self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s 0x%04s - IAS Zone controler setting" % (RIA, NWKID, status))
-        self.iaszonemgt.IASZone_triggerenrollement(NWKID, iterEp)
+        self.iaszonemgt.IAS_device_enrollment(NWKID, iterEp)
 
         if "0502" in self.ListOfDevices[NWKID]["Ep"][iterEp]:
             self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s 0x%04s - IAS WD enrolment" % (RIA, NWKID, status))

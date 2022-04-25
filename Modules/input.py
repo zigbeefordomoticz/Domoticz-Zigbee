@@ -485,7 +485,7 @@ def Decode0400(self, Devices, MsgData, MsgLQI):  # Enrolment Request Response
     )
 
     if self.iaszonemgt:
-        self.iaszonemgt.receiveIASenrollmentRequestResponse(SrcAddress, SrcEndPoint, EnrollResponseCode, ZoneId)
+        self.iaszonemgt.IAS_zone_enroll_request_response(SrcAddress, SrcEndPoint, EnrollResponseCode, ZoneId)
 
 
 # Responses
@@ -2809,6 +2809,10 @@ def Decode8100(self, Devices, MsgData, MsgLQI):
     MsgClusterId = MsgData[8:12]
 
     self.statistics._clusterOK += 1
+    
+    if MsgClusterId == "0500":
+        self.iaszonemgt.IAS_CIE_service_discovery_response( self, MsgSrcAddr, MsgSrcEp, MsgData)
+        
     scan_attribute_reponse(self, Devices, MsgSQN, i_sqn, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgData, "8100")
     callbackDeviceAwake(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId)
 
@@ -3273,7 +3277,7 @@ def Decode8110_raw(
             )
 
     if MsgClusterId == "0500":
-        self.iaszonemgt.receiveIASmessages(MsgSrcAddr, MsgSrcEp, 3, MsgAttrStatus)
+        self.iaszonemgt.IAS_CIE_write_response(self, MsgSrcAddr, MsgSrcEp, MsgAttrStatus)
 
 
 def Decode8120(self, Devices, MsgData, MsgLQI):  # Configure Reporting response
@@ -3490,7 +3494,9 @@ def Decode8400(self, Devices, MsgData, MsgLQI):
         % (nwkid, ep, sqn, zonetype, manufacturercode),
     )
 
-    zcl_ias_zone_enroll_response(self, nwkid, ZIGATE_EP, ep, "00", "00", sqn=sqn, ackIsDisabled=False)
+    self.iaszonemgt.IAS_zone_enroll_request(self, nwkid, ep, zonetype, sqn)
+    
+
         
         
 def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change notification
