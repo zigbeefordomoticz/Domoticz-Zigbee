@@ -902,11 +902,13 @@ def ReadAttributeRequest_0201(self, key):
         manufacturer_code = "0000"
 
         if ("Manufacturer" in self.ListOfDevices[key] and self.ListOfDevices[key]["Manufacturer"] == "105e") or (
+            ("Manufacturer" in self.ListOfDevices[key] and self.ListOfDevices[key]["Manufacturer"] == "113c") or
             "Manufacturer Name" in self.ListOfDevices[key] and self.ListOfDevices[key]["Manufacturer Name"] == "Schneider Electric"
         ):
             # We need to break the Read Attribute between Manufacturer specifcs one and teh generic one
             if self.ListOfDevices[key]["Manufacturer Name"] == "Schneider Electric":
                 manufacturer_code = "105e"
+
             elif self.ListOfDevices[key]["Manufacturer Name"] in ("OWON", "CASAIA"):
                 manufacturer_code = "113c"
 

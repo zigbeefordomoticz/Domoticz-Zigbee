@@ -15,26 +15,19 @@ from time import time
 import Domoticz
 from Modules.basicOutputs import ieee_addr_request
 from Modules.bindings import bindDevice
-from Modules.tools import (
-    get_isqn_datastruct,
-    get_list_isqn_attr_datastruct,
-    getClusterListforEP,
-    is_ack_tobe_disabled,
-    is_attr_unvalid_datastruct,
-    is_time_to_perform_work,
-    mainPoweredDevice,
-    reset_attr_datastruct,
-    set_isqn_datastruct,
-    set_status_datastruct,
-    set_timestamp_datastruct,
-)
-from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_EP, CFG_RPT_ATTRIBUTESbyCLUSTERS
-from Zigbee.zclCommands import (
-    zcl_read_report_config_request,
-    zcl_configure_reporting_requestv2,
-)
+from Modules.tools import (get_isqn_datastruct, get_list_isqn_attr_datastruct,
+                           getClusterListforEP, is_ack_tobe_disabled,
+                           is_attr_unvalid_datastruct, is_bind_ep, is_fake_ep,
+                           is_time_to_perform_work, mainPoweredDevice,
+                           reset_attr_datastruct, set_isqn_datastruct,
+                           set_status_datastruct, set_timestamp_datastruct)
+from Modules.zigateConsts import (MAX_LOAD_ZIGATE, ZIGATE_EP,
+                                  CFG_RPT_ATTRIBUTESbyCLUSTERS)
+from Zigbee.zclCommands import (zcl_configure_reporting_requestv2,
+                                zcl_read_report_config_request)
 
-from Classes.ZigateTransport.sqnMgmt import TYPE_APP_ZCL, sqn_get_internal_sqn_from_app_sqn
+from Classes.ZigateTransport.sqnMgmt import (TYPE_APP_ZCL,
+                                             sqn_get_internal_sqn_from_app_sqn)
 
 MAX_ATTR_PER_REQ = 3
 CONFIGURE_REPORT_PERFORM_TIME = 21  # Reenforce will be done each xx hours
@@ -152,6 +145,13 @@ class ConfigureReporting:
             direction = "00"
 
             for Ep in self.ListOfDevices[key]["Ep"]:
+                if is_fake_ep( self, key, Ep):
+                    self.logging("Debug", "------> Configurereporting - Fake Ep %s/%s skiping" % (key, Ep), nwkid=key)
+                    continue
+                if not is_bind_ep( self, key, Ep):
+                    self.logging("Debug", "------> Configurereporting - Not Binding ep %s/%s skiping" % (key, Ep), nwkid=key)
+                    continue
+ 
                 self.logging("Debug", "------> Configurereporting - processing %s/%s" % (key, Ep), nwkid=key)
                 clusterList = getClusterListforEP(self, key, Ep)
                 self.logging(
@@ -306,30 +306,8 @@ class ConfigureReporting:
 
                         # Check if we have a Manufacturer Specific Cluster/Attribute. If that is the case, we need to send what we have ,
                         # and then pile what we have until we switch back to non manufacturer specific
-                        if (
-                            (
-                                attr
-                                in (
-                                    "4000",
-                                    "4012",
-                                    "fd00",
-                                )
-                                and cluster == "0201"
-                                and "Model" in self.ListOfDevices[key]
-                                and self.ListOfDevices[key]["Model"] in ("eT093WRO", "eTRV0100", "AC221", "AC211")
-                            )
-                            or (cluster == "fc21" and "Manufacturer" in self.ListOfDevices[key] and self.ListOfDevices[key]["Manufacturer"] == "1110")
-                            or (
-                                attr
-                                in (
-                                    "0030",
-                                    "0031",
-                                )
-                                and cluster == "0406"
-                                and "Manufacturer" in self.ListOfDevices[key]
-                                and self.ListOfDevices[key]["Manufacturer"] == "100b"
-                            )
-                        ):
+                        manufacturer_code = manufacturer_specific_attribute(self, key, cluster, attr, cluster_list[cluster]["Attributes"][attr] )
+                        if manufacturer_code:
 
                             # Send what we have
                             if ListOfAttributesToConfigure:
@@ -352,14 +330,6 @@ class ConfigureReporting:
                             # Process the Attribute
                             ListOfAttributesToConfigure = []
                             manufacturer_spec = "01"
-                            if self.ListOfDevices[key]["Model"] in ("eT093WRO", "eTRV0100"):
-                                manufacturer = "1246"  # Danfoss
-                            elif self.ListOfDevices[key]["Model"] in ("AC221", "AC211"):
-                                manufacturer = "113c"
-                            elif self.ListOfDevices[key]["Manufacturer"] == "1110":
-                                manufacturer = "1110"
-                            elif self.ListOfDevices[key]["Manufacturer"] == "100b":
-                                manufacturer = "100b"
 
                             ListOfAttributesToConfigure.append(attr)
                             self.prepare_and_send_configure_reporting(
@@ -369,7 +339,7 @@ class ConfigureReporting:
                                 cluster,
                                 direction,
                                 manufacturer_spec,
-                                manufacturer,
+                                manufacturer_code,
                                 ListOfAttributesToConfigure,
                             )
 
@@ -406,6 +376,9 @@ class ConfigureReporting:
             return  # Only one device at a time
         # End for key
 
+        
+        
+        
     def prepare_and_send_configure_reporting(self, key, Ep, cluster_list, cluster, direction, manufacturer_spec, manufacturer, ListOfAttributesToConfigure):
         # Ready to send the Command in one shoot or in several.
 
@@ -593,10 +566,6 @@ class ConfigureReporting:
             str_attribute_list,
             is_ack_tobe_disabled(self, nwkid),
         )
-        # if is_ack_tobe_disabled(self, nwkid):
-        #    send_zigatecmd_zcl_noack(self, nwkid, "0122", datas)
-        # else:
-        #    send_zigatecmd_zcl_ack(self, nwkid, "0122", datas)
 
     # decode 0x8122
     def read_report_configure_response(self, MsgData, MsgLQI):  # Read Configure Report response
@@ -630,6 +599,31 @@ class ConfigureReporting:
             MsgNwkId,
         )
 
+def manufacturer_specific_attribute(self, key, cluster, attr, cfg_attribute):
+    
+    # Return False if the attribute is not a manuf specific, otherwise return the Manufacturer code
+    if "ManufSpecific" in cfg_attribute:
+        self.logging(
+            "Log",
+            "manufacturer_specific_attribute - NwkId: %s found attribute: %s Manuf Specific, return ManufCode: %s"
+            % (
+                key,
+                attr,
+                cfg_attribute[ "ManufSpecific"]
+            ))
+        return cfg_attribute[ "ManufSpecific"]
+    
+    if attr  in ( "4000", "4012",  ) and cluster == "0201" and "Model" in self.ListOfDevices[key] and self.ListOfDevices[key]["Model"] in ("eT093WRO", "eTRV0100"):
+        return "1246"
+    
+    if attr  in ( "fd00", ) and cluster == "0201" and "Model" in self.ListOfDevices[key] and self.ListOfDevices[key]["Model"] in ("AC221", "AC211"):
+        return "113c"
+    
+    if cluster == "fc21" and "Manufacturer" in self.ListOfDevices[key] and self.ListOfDevices[key]["Manufacturer"] == "1110":
+        return "1110"
+    
+    if attr in ( "0030", "0031", ) and cluster == "0406" and "Manufacturer" in self.ListOfDevices[key] and self.ListOfDevices[key]["Manufacturer"] == "100b":
+        return "100b"
 
 def discrete_value(data_type):
     return data_type in (

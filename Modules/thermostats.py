@@ -44,6 +44,9 @@ def thermostat_Setpoint(self, NwkId, setpoint):
 
     self.log.logging("Thermostats", "Debug", "thermostat_Setpoint - for %s with value %s" % (NwkId, setpoint), nwkid=NwkId)
 
+    if "Model" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Model"] in ("AC211", "AC221", "CAC221"):
+        casaia_check_irPairing(self, NwkId)
+
     if "Model" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Model"] != {}:
         if self.ListOfDevices[NwkId]["Model"] == "SPZB0001":
             # Eurotronic

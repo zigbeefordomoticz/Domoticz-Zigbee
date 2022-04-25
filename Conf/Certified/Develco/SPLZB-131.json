@@ -58,7 +58,7 @@
                     "MinInterval": "FFFF",
                     "MaxInterval": "0000",
                     "TimeOut": "0000",
-                    "Change": "000000000000000a"
+                    "Change": "00000000000003E8"
                 }
             }
         },
@@ -66,24 +66,24 @@
             "Attributes": {
                 "0505": {
                     "DataType": "21",
-                    "MinInterval": "0001",
+                    "MinInterval": "0005",
                     "MaxInterval": "012C",
                     "TimeOut": "0000",
-                    "Change": "0001"
+                    "Change": "0064"
                 },
                 "0508": {
                     "DataType": "21",
-                    "MinInterval": "0001",
+                    "MinInterval": "0005",
                     "MaxInterval": "012C",
                     "TimeOut": "0000",
-                    "Change": "0001"
+                    "Change": "0064"
                 },
                 "050b": {
                     "DataType": "29",
                     "MinInterval": "0005",
                     "MaxInterval": "012C",
                     "TimeOut": "0000",
-                    "Change": "0001"
+                    "Change": "000a"
                 }
             }
         }

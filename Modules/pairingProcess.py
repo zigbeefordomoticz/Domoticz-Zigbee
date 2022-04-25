@@ -297,8 +297,7 @@ def interview_state_createDB(self, Devices, NWKID, RIA, status):
     if (
         (
             "Model" in self.ListOfDevices[NWKID]
-            and self.ListOfDevices[NWKID]["Model"] == {}
-            or self.ListOfDevices[NWKID]["Model"] == ""
+            and self.ListOfDevices[NWKID]["Model"] in ( {}, "" )
         )
         and status == "8043"
         and int(self.ListOfDevices[NWKID]["RIA"], 10) < 3
@@ -309,7 +308,7 @@ def interview_state_createDB(self, Devices, NWKID, RIA, status):
     # Let's check if we have to disable the widget creation
     if (
         "Model" in self.ListOfDevices[NWKID]
-        and self.ListOfDevices[NWKID]["Model"] != {}
+        and self.ListOfDevices[NWKID]["Model"] not in ( {}, "" )
         and self.ListOfDevices[NWKID]["Model"] in self.DeviceConf
         and "CreateWidgetDomoticz"
         in self.DeviceConf[self.ListOfDevices[NWKID]["Model"]]
@@ -481,7 +480,7 @@ def binding_needed_clusters_with_zigate(self, NWKID):
 
 
     # Do we have to follow Certified Conf file, or look for standard mecanishm ?
-    if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] != {} and self.ListOfDevices[NWKID]["Model"] in self.DeviceConf:
+    if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] not in ( {}, "") and self.ListOfDevices[NWKID]["Model"] in self.DeviceConf:
         self.log.logging("Pairing", "Log", "binding_needed_clusters_with_zigate %s based on Device Configuration" % (NWKID))
         _model = self.ListOfDevices[NWKID]["Model"]
 
