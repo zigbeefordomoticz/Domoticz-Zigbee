@@ -167,7 +167,7 @@ class LoggingManagement:
             )
 
     def open_log_history(self):
-        jsonLogHistory = self.pluginconf.pluginConf["pluginLogs"] + "/" + "Zigate_log_error_history.json"
+        jsonLogHistory = self.pluginconf.pluginConf["pluginLogs"] + "/" + "PluginZigbee_log_error_history.json"
         try:
             handle = open(jsonLogHistory, "r", encoding="utf-8")
         except Exception as e:

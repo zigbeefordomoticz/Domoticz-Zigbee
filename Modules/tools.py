@@ -512,6 +512,15 @@ def is_fake_ep( self, nwkid, ep):
         and ep in self.DeviceConf[self.ListOfDevices[nwkid]["Model"]]["FakeEp"]
     )
 
+def is_bind_ep( self, nwkid, ep):
+
+    return (
+        "Model" not in self.ListOfDevices[nwkid]
+        or self.ListOfDevices[nwkid]["Model"] not in self.DeviceConf
+        or "bindEp" not in self.DeviceConf[self.ListOfDevices[nwkid]["Model"]]
+        or ep in self.DeviceConf[self.ListOfDevices[nwkid]["Model"]]["bindEp"]
+    )
+    
 
 def getTypebyCluster(self, Cluster):
     clustersType = {
