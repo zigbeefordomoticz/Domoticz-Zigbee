@@ -95,15 +95,19 @@ class IAS_Zone_Management:
     def IAS_device_enrollment(self, Nwkid):
         # This is coming from the plugin.
         # Let's see first if anything has to be done
+        ias_ep = getEpForCluster(self, Nwkid, "0500")
+        if not ias_ep:
+            return
+        
         self.logging("Debug", f"IAS device Enrollment for {Nwkid}")
         if "IAS" not in self.ListOfDevices[ Nwkid ]:
-            self.ListOfDevices[Nwkid]["IAS"] = {"Auto-Enrollment": {"Status": {}, "Ep": {}}}
+            self.ListOfDevices[Nwkid]["IAS"] = {"Auto-Enrollment": {"Status": "Enrollment In Progress", "Ep": {}}}
             
         if self.ListOfDevices[Nwkid]["IAS"]["Auto-Enrollment"]["Status"] == "Enrolled":
             return
 
         completed = True
-        for ep in getEpForCluster(self, Nwkid, "0500"):
+        for ep in ias_ep:
             if ep not in self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"]:
                 self.logging("Debug", f"IAS device Enrollment for {Nwkid} - start Enrollment on Ep: {ep}")
                 self.ListOfDevices[Nwkid]["IAS"]["Auto-Enrollment"]["Ep"][ep] = {"Status": "Service Discovery", "TimeStamp": time.time()}
@@ -118,16 +122,21 @@ class IAS_Zone_Management:
         self.logging("Debug", f"IAS device Enrollment for {Nwkid} - received a Read Attribute Response on Discovery Request for Ep: {ep}")
         attributes = retreive_attributes(self, Data)
         self.logging("Debug", f"         Attributes : {attributes}")
-        if IAS_ATTRIBUT_ZONE_STATE in attributes and attributes[ IAS_ATTRIBUT_ZONE_STATE ] == "00":
+        if IAS_ATTRIBUT_ZONE_STATE not in attributes:
+            self.logging("Debug", f"IAS device Enrollment for {Nwkid} - Attribute {IAS_ATTRIBUT_ZONE_STATE} not found in {attributes}")
+            return
+        if attributes[ IAS_ATTRIBUT_ZONE_STATE ]["Status"] != "00":
+            self.logging("Debug", f"IAS device Enrollment for {Nwkid} - Attribute {IAS_ATTRIBUT_ZONE_STATE} Status: {attributes[ IAS_ATTRIBUT_ZONE_STATE ]['Status']}")
+            
+        if attributes[ IAS_ATTRIBUT_ZONE_STATE ]["Value"] == "00":
             # Not Enrolled, let's start the process
-            self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"]["Status"] = "set IAS CIE Address"
+            self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"][ep]["Status"] = "set IAS CIE Address"
             set_IAS_CIE_Address(self, Nwkid, ep)
-        elif IAS_ATTRIBUT_ZONE_STATE in attributes and attributes[ IAS_ATTRIBUT_ZONE_STATE ] == "01":
+        elif attributes[ IAS_ATTRIBUT_ZONE_STATE ]["Value"]  == "01":
             # Enrolled, let's req the IAS ICE address
             check_IAS_CIE_Address(self, Nwkid, ep)
-            self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"]["Status"] = "Enrolled"
+            self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"][ep]["Status"] = "Enrolled"
             
-
     def IAS_zone_enroll_request(self, Nwkid, Ep, ZoneType, sqn):
         self.logging("Debug", f"IAS device Enrollment Request for {Nwkid}/{Ep} ZoneType: {ZoneType}")
         # Receiving an Enrollment Request
@@ -144,10 +153,10 @@ class IAS_Zone_Management:
         if self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"] != "Wait for Enrollment request":
             self.logging("Error", f"IAS_zone_enroll_request for {Nwkid}/{Ep} received Enrollment request but {self.ListOfDevices[ Nwkid ]['IAS']['Auto-Enrollment']['Ep'][ Ep ]['Status']} ")
         
-        self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"] = "Enrollment Request Received"
-        zcl_ias_zone_enroll_response(self, Nwkid, ZIGATE_EP, Ep, ENROLL_RESPONSE_OK_CODE, ZONE_ID, sqn=sqn, ackIsDisabled=False)
+        self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"] = "Enrolled"
+        IAS_Zone_enrollment_response(self, Nwkid, Ep, sqn)
+        
 
-    
     def IAS_zone_enroll_request_response(self, Nwkid, Ep, EnrollResponseCode, ZoneId):
         self.logging("Debug", f"IAS device Enrollment Request Response for {Nwkid}/{Ep} Response: {EnrollResponseCode} ZoneId: {ZoneId}")
         if ( 
@@ -160,8 +169,8 @@ class IAS_Zone_Management:
             self.logging("Error", f"IAS device Enrollment Request Response for {Nwkid}/{Ep} Response: {EnrollResponseCode} ZoneId: {ZoneId}")
             return
         
-        if EnrollResponseCode == ENROLL_RESPONSE_OK_CODE:
-            self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"]
+        if EnrollResponseCode == "%02x" %ENROLL_RESPONSE_OK_CODE:
+            self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"] = "Enrolled"
               
     def IAS_CIE_write_response(self, Nwkid, Ep, Status):
         # We are receiving a Write Attribute response
@@ -174,11 +183,14 @@ class IAS_Zone_Management:
             and Ep not in self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"]
         ):
             return
+
         if self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"] != "set IAS CIE Address":
+            self.logging("Debug", f"IAS CIE write Response for {Nwkid}/{Ep}  {self.ListOfDevices[ Nwkid ]['IAS']['Auto-Enrollment']['Ep'][ Ep ]['Status']} !=  set IAS CIE Address")
             return
-        
+
         # We got the confirmation. Now we have to wait for the Enrollment Request
         if Status == "00":
+            self.logging("Debug", f"IAS CIE write Response for {Nwkid}/{Ep}  Waiting for Enrollment request")
             self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"] = "Wait for Enrollment request"
 
     def IASWD_enroll(self, nwkid, Epout):
@@ -245,7 +257,6 @@ class IAS_Zone_Management:
         self.warningMode(nwkid, ep, "stop")
 
 
-#
 def ias_sirene_mode( self, nwkid , mode ):
     strobe_mode, warning_mode, strobe_level, warning_duration = None
     if self.ListOfDevices[nwkid]["Model"] == "WarningDevice":
@@ -314,7 +325,7 @@ def set_IAS_CIE_Address(self, NwkId, Epout):
 def check_IAS_CIE_Address(self, NwkId, Epout):
     self.logging("Debug", f"Request IAS CIE Address of the device {NwkId}/{Epout}")
     lenAttr, attributes = format_list_attributes( self, 0x010)
-    zcl_read_attribute(self, NwkId, ZIGATE_EP, Epout, "0500", "00", "00", "0000", lenAttr, attributes, ackIsDisabled=False)
+    zcl_read_attribute(self, NwkId, ZIGATE_EP, Epout, "0500", "00", "00", "0010", lenAttr, attributes, ackIsDisabled=False)
 
 def IAS_CIE_service_discovery( self, NwkId, Epout):
     # IAS CIE MAY perform service discovery
@@ -326,14 +337,14 @@ def IAS_CIE_service_discovery( self, NwkId, Epout):
     lenAttr, attributes = format_list_attributes( self, [0x0000, 0x0001, 0x0002])
     zcl_read_attribute(self, NwkId, ZIGATE_EP, Epout, "0500", "00", "00", "0000", lenAttr, attributes, ackIsDisabled=False)
 
-def IAS_Zone_enrollment_response(self, nwkid, Epout):
+def IAS_Zone_enrollment_response(self, Nwkid, Ep, sqn):
     # The IAS Zone server SHALL change its ZoneState attribute to 0x01 (enrolled). 
-    self.logging("Debug", f"IAS Zone_enroll_response for {nwkid}/{Epout}")
+    self.logging("Debug", f"IAS Zone_enroll_response for {Nwkid}/{Ep}")
     if not self.ControllerIEEE:
         self.logging("Error", "IASZone_enroll_response_zoneIDzoneID - Zigate IEEE not yet known")
         return
-    zcl_ias_zone_enroll_response(self, nwkid, ZIGATE_EP, Epout, "00", "%02x" % ZONE_ID)
-
+    self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"] = "Enrolled"
+    zcl_ias_zone_enroll_response(self, Nwkid, ZIGATE_EP, Ep, "%02x" %ENROLL_RESPONSE_OK_CODE, "%02x" %ZONE_ID, sqn=sqn, ackIsDisabled=False)
 
 def retreive_attributes(self, MsgData):
     

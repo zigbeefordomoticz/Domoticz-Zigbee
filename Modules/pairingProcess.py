@@ -171,12 +171,16 @@ def interview_state_8043(self, NWKID, RIA, knownModel, status):
 
     self.ListOfDevices[NWKID]["RIA"] = str(RIA + 1)
 
+    # IAS Enrollment if required
+    self.iaszonemgt.IAS_device_enrollment(NWKID)
+
     if knownModel:
         self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s Model Name: %s" % (RIA, NWKID, self.ListOfDevices[NWKID]["Model"]))
         return "CreateDB"  # Fast track
 
-    self.log.logging("Pairing", "Debug", "[%s] NEW OBJECT: %s Request Model Name" % (RIA, NWKID))
-    ReadAttributeRequest_0000(self, NWKID, fullScope=False)  # Reuest Model Name
+    if "Model" not in self.ListOfDevices[NWKID] or self.ListOfDevices[NWKID]["Model"] in ( "", {}):
+        self.log.logging("Pairing", "Debug", "[%s] NEW OBJECT: %s Request Model Name" % (RIA, NWKID))
+        ReadAttributeRequest_0000(self, NWKID, fullScope=False)  # Reuest Model Name
 
     request_node_descriptor(self, NWKID, RIA=None, status=None)
 
@@ -403,6 +407,9 @@ def full_provision_device(self, Devices, NWKID, RIA, status):
             "Device: %s - Config Source: %s Ep Details: %s" % (NWKID, self.ListOfDevices[NWKID]["ConfigSource"], str(self.ListOfDevices[NWKID]["Ep"])),
         )
 
+    # IAS Enrollment if required
+    self.iaszonemgt.IAS_device_enrollment(NWKID)
+
     zigbee_provision_device(self, Devices, NWKID, RIA, status)
 
     # Reset HB in order to force Read Attribute Status
@@ -449,7 +456,7 @@ def zigbee_provision_device(self, Devices, NWKID, RIA, status):
     device_interview(self, NWKID)
 
     # 4. IAS Enrollment
-    handle_IAS_enrollmment_if_needed(self, NWKID, RIA, status)
+    #handle_IAS_enrollmment_if_needed(self, NWKID, RIA, status)
 
     # Other stuff
     scan_device_for_group_memebership(self, NWKID)
