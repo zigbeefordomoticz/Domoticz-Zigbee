@@ -1732,16 +1732,16 @@ def DumpHTTPResponseToLog(httpDict):
 
 def install_Z4D_to_domoticz_custom_ui():
 
-    line1 = '<iframe id="ZigbeeforDomoticz_%s"' %Parameters['HardwareID'] +  'style="width:100%;height:800px;overflow:scroll;">\n'
+    line1 = '<iframe id="%s"' %Parameters['Name'] +  'style="width:100%;height:800px;overflow:scroll;">\n'
     line2 = '</iframe>\n'
-    line3 = '\n'     
+    line3 = '\n'
     line4 = '<script>\n'
-    line5 = 'document.getElementById(\'ZigbeeforDomoticz_%s\').src' %Parameters['HardwareID'] + ' = "http://" + location.hostname + ":%s/";\n' %Parameters['Mode4']
+    line5 = 'document.getElementById(\'%s\').src' %Parameters['Name'] + ' = "http://" + location.hostname + ":%s/";\n' %Parameters['Mode4']
     line6 = '</script>\n'
 
-    Domoticz.Log("Installing plugin custom page")
+    custom_file = Parameters['StartupFolder'] + 'www/templates/' + f"{Parameters['Name']}" + '.html'
+    Domoticz.Log(f"Installing plugin custom page {custom_file} ")
 
-    custom_file = Parameters['StartupFolder'] + 'www/templates' + '/Zigbee4Domoticz' + '_%s' %Parameters['HardwareID'] + '.html'          
     try:
         with open( custom_file, "wt") as z4d_html_file:
             z4d_html_file.write( line1 )
@@ -1757,7 +1757,7 @@ def install_Z4D_to_domoticz_custom_ui():
 
 def uninstall_Z4D_to_domoticz_custom_ui():
 
-    custom_file = Parameters['StartupFolder'] + 'www/templates' + '/Zigbee4Domoticz' + '_%s' %Parameters['HardwareID'] + '.html'          
+    custom_file = Parameters['StartupFolder'] + 'www/templates' + f"{Parameters['Name']}" + '.html'
     try:
         if os.path.exists(custom_file ):
             os.remove(custom_file )
