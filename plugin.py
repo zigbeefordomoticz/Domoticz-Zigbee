@@ -1741,7 +1741,7 @@ def install_Z4D_to_domoticz_custom_ui():
 
     Domoticz.Log("Installing plugin custom page")
 
-    custom_file = Parameters['UserDataFolder'] + 'www/templates' + '/Zigbee4Domoticz' + '_%s' %Parameters['HardwareID'] + '.html'          
+    custom_file = Parameters['StartupFolder'] + 'www/templates' + '/Zigbee4Domoticz' + '_%s' %Parameters['HardwareID'] + '.html'          
     with open( custom_file, "wt") as z4d_html_file:
         z4d_html_file.write( line1 )
         z4d_html_file.write( line2 )
@@ -1753,6 +1753,6 @@ def install_Z4D_to_domoticz_custom_ui():
 
 def uninstall_Z4D_to_domoticz_custom_ui():
 
-    custom_file = Parameters['UserDataFolder'] + 'www/templates' + '/Zigbee4Domoticz' + '_%s' %Parameters['HardwareID'] + '.html'          
+    custom_file = Parameters['StartupFolder'] + 'www/templates' + '/Zigbee4Domoticz' + '_%s' %Parameters['HardwareID'] + '.html'          
     if os.path.exists(custom_file ):
         os.remove(custom_file )
