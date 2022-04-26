@@ -22,14 +22,10 @@ from Modules.livolo import livolo_bind
 from Modules.manufacturer_code import PREFIX_MAC_LEN, PREFIX_MACADDR_LIVOLO
 from Modules.pairingProcess import (interview_state_004d,
                                     zigbee_provision_device)
-from Modules.readAttributes import (ReadAttributeRequest_0006_0000,
-                                    ReadAttributeRequest_0008_0000,
-                                    ReadAttributeRequest_0201)
 from Modules.tools import (DeviceExist, IEEEExist, decodeMacCapa,
                            initDeviceInList, mainPoweredDevice, timeStamped)
 from Modules.tuyaSiren import tuya_sirene_registration
 from Modules.tuyaTRV import TUYA_eTRV_MODEL, tuya_eTRV_registration
-from Modules.zigateConsts import CLUSTERS_LIST
 
 DELAY_BETWEEN_2_DEVICEANNOUCEMENT = 20
 
@@ -212,8 +208,8 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
 
             legrand_refresh_battery_remote(self, NwkId)
 
-            read_attributes_if_needed( self, NwkId)
             restart_plugin_reset_ModuleIRCode(self, NwkId)
+            read_attributes_if_needed( self, NwkId)
             
             if reseted_device:
                 zigbee_provision_device(self, Devices, NwkId, 0, "inDB")
