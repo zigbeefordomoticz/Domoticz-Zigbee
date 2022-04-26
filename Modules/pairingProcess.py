@@ -505,6 +505,10 @@ def binding_needed_clusters_with_zigate(self, NWKID):
                 for y in cluster_to_bind:
                     if y not in self.DeviceConf[_model]["Ep"][x]:
                         continue
+                    if y == "0500":
+                        # Binding will be done in IAS
+                        continue
+
                     self.log.logging("Pairing", "Debug", "Request a Bind for %s/%s on Cluster %s" % (NWKID, x, y))
                     # If option enabled, unbind
                     if self.pluginconf.pluginConf["doUnbindBind"]:
@@ -518,6 +522,10 @@ def binding_needed_clusters_with_zigate(self, NWKID):
         for ep in self.ListOfDevices[NWKID]["Epv2"]:
             if "ClusterIn" in self.ListOfDevices[NWKID]["Epv2"][ep]:
                 for iterBindCluster in self.ListOfDevices[NWKID]["Epv2"][ep]["ClusterIn"]:
+                    if iterBindCluster == "0500":
+                        # Binding will be done in IAS
+                        continue
+
                     self.log.logging("Pairing", "Debug", "Request a Bind for %s/%s on ClusterIn %s" % (NWKID, ep, iterBindCluster))
                     if self.pluginconf.pluginConf["doUnbindBind"]:
                         unbindDevice(self, self.ListOfDevices[NWKID]["IEEE"], ep, iterBindCluster)

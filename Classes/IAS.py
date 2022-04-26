@@ -12,6 +12,7 @@
 import time
 
 import Domoticz
+from Modules.bindings import bindDevice
 from Modules.tools import getEpForCluster
 from Modules.zigateConsts import ZIGATE_EP
 from Zigbee.zclCommands import (zcl_ias_wd_command_squawk,
@@ -79,8 +80,10 @@ strobe_mode = 0x00
 
 class IAS_Zone_Management:
     
-    def __init__(self, pluginconf, ZigateComm, ListOfDevices, log, zigbee_communitation, FirmwareVersion, ZigateIEEE=None):
+    def __init__(self, pluginconf, ZigateComm, ListOfDevices, IEEE2NWK, DeviceConf, log, zigbee_communitation, FirmwareVersion, ZigateIEEE=None):
         self.ListOfDevices = ListOfDevices
+        self.IEEE2NWK = IEEE2NWK
+        self.DeviceConf = DeviceConf
         self.ControllerLink = ZigateComm
         self.ControllerIEEE = None
         if ZigateIEEE:
@@ -144,22 +147,41 @@ class IAS_Zone_Management:
             
     def IAS_zone_enroll_request(self, Nwkid, Ep, ZoneType, sqn):
         self.logging("Debug", f"IAS device Enrollment Request for {Nwkid}/{Ep} ZoneType: {ZoneType}")
+
+        if Nwkid not in self.ListOfDevices:
+            return
+
         # Receiving an Enrollment Request
         if ( 
-            Nwkid not in self.ListOfDevices 
-            and "IAS" not in self.ListOfDevices[ Nwkid ] 
-            and "Auto-Enrollment" not in self.ListOfDevices[ Nwkid ]["IAS"] 
-            and "Ep" not in self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"] 
-            and Ep not in self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"]
+            "IAS" not in self.ListOfDevices[ Nwkid ]
+            or "Auto-Enrollment" not in self.ListOfDevices[ Nwkid ]["IAS"]
+            or "Ep" not in self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"] 
+            or Ep not in self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"]
+            or self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"] != "Wait for Enrollment request"
         ):
-            self.logging("Error", f"IAS device Enrollment Request for {Nwkid}/{Ep} ZoneType: {ZoneType}")
+            if "IAS" not in self.ListOfDevices[ Nwkid ]:
+                self.ListOfDevices[ Nwkid ]["IAS"] = {}
+            if "Auto-Enrollment" not in self.ListOfDevices[ Nwkid ]["IAS"]:
+                self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"] = {"Status": {}}
+            if "Ep" not in self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]:
+                self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"] = {}
+            if Ep not in self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"]:
+                self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ] = {}
+
+            # We are may be in an Auto-Enrollment by the device ( Frient )
+            self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"] = "Enrolled2"
+            IAS_Zone_enrollment_response(self, Nwkid, Ep, sqn)
+            check_IAS_CIE_Address(self, Nwkid, Ep)
+            IAS_CIE_service_discovery( self, Nwkid, Ep)
+            bindDevice(self, self.ListOfDevices[ Nwkid ]['IEEE'], Ep, "0500")
             return
-        
-        if self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"] != "Wait for Enrollment request":
-            self.logging("Error", f"IAS_zone_enroll_request for {Nwkid}/{Ep} received Enrollment request but {self.ListOfDevices[ Nwkid ]['IAS']['Auto-Enrollment']['Ep'][ Ep ]['Status']} ")
-        
+
+
         self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"] = "Enrolled"
         IAS_Zone_enrollment_response(self, Nwkid, Ep, sqn)
+        check_IAS_CIE_Address(self, Nwkid, Ep)
+        bindDevice(self, self.ListOfDevices[ Nwkid ]['IEEE'], Ep, "0500")
+        
         
 
     def IAS_zone_enroll_request_response(self, Nwkid, Ep, EnrollResponseCode, ZoneId):
@@ -199,20 +221,9 @@ class IAS_Zone_Management:
             self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"] = "Wait for Enrollment request"
 
     def IASWD_enroll(self, nwkid, Epout):
-
-        cluster_id = "0502"
-        manuf_id = "00"
-        manuf_spec = "0000"
-        attribute = "0000"
         data_type = "%02X" % 0x21
         data = "%04X" % 0xFFFE
-        self.__write_attribute(nwkid, ZIGATE_EP, Epout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
-
-    def decode8401(
-        self, MsgSQN, MsgEp, MsgClusterId, MsgSrcAddrMode, MsgSrcAddr, MsgZoneStatus, MsgExtStatus, MsgZoneID, MsgDelay
-    ):
-
-        return
+        zcl_write_attribute( self, nwkid, ZIGATE_EP, Epout, "0502", "00", "0000", "0000", data_type, data, ackIsDisabled=False )
 
     def write_IAS_WD_Squawk(self, nwkid, ep, SquawkMode):
         SQUAWKMODE = {"disarmed": 0b00000000, "armed": 0b00000001}
@@ -272,7 +283,7 @@ class IAS_Zone_Management:
         sqn = get_and_inc_ZCL_SQN(self, Nwkid)
 
         # Warnindg mode , Strobe, Sirene Level
-        if "Param" not in self.ListOfDevices[ Nwkid ] and "AlarmDuration" not in self.ListOfDevices[ Nwkid ]["Param"]:
+        if "Param" not in self.ListOfDevices[ Nwkid ] or "AlarmDuration" not in self.ListOfDevices[ Nwkid ]["Param"]:
             warningduration = 0x0a
         else:
             warningduration = int(self.ListOfDevices[ Nwkid ]["Param"]["AlarmDuration"])
