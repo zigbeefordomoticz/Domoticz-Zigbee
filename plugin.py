@@ -285,8 +285,6 @@ class BasePlugin:
             )
             return
 
-        install_Z4D_to_domoticz_custom_ui( )
-
         # Set plugin heartbeat to 1s
         Domoticz.Heartbeat(1)
 
@@ -356,6 +354,10 @@ class BasePlugin:
         self.pluginconf = PluginConf(
             self.zigbee_communitation, self.VersionNewFashion, self.DomoticzMajor, self.DomoticzMinor, Parameters["HomeFolder"], self.HardwareID
         )
+
+        # Create Domoticz Sub menu
+        if "DomoticzCustomMenu" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["DomoticzCustomMenu"] :
+            install_Z4D_to_domoticz_custom_ui( )
 
         # Create the adminStatusWidget if needed
         self.PluginHealth["Flag"] = 4
@@ -1757,7 +1759,7 @@ def install_Z4D_to_domoticz_custom_ui():
 
 def uninstall_Z4D_to_domoticz_custom_ui():
 
-    custom_file = Parameters['StartupFolder'] + 'www/templates' + f"{Parameters['Name']}" + '.html'
+    custom_file = Parameters['StartupFolder'] + 'www/templates/' + f"{Parameters['Name']}" + '.html'
     try:
         if os.path.exists(custom_file ):
             os.remove(custom_file )
