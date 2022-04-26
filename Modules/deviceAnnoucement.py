@@ -403,4 +403,5 @@ def read_attributes_if_needed( self, NwkId):
     if not mainPoweredDevice(self, NwkId):
         return
     # Will be forcing Read Attribute (if forcePollingAfterAction is enabled -default-)
+    self.log.logging( "Input", "Debug", "read_attributes_if_needed %s" %NwkId)
     self.ListOfDevices[NwkId]["Heartbeat"] = "0"
