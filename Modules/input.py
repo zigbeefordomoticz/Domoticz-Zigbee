@@ -461,7 +461,7 @@ def Decode0302(self, Devices, MsgData, MsgLQI):  # PDM Load
     rejoin_legrand_reset(self)
 
 
-def Decode0400(self, Devices, MsgData, MsgLQI):  # Enrolment Request Response
+def Decode0400(self, Devices, MsgData, MsgLQI):  # Enrollment Request Response
 
     self.log.logging("Input", "Log", "Decode0400 - message: %s" % MsgData)
     # 02 0000 01 01 00 00
@@ -485,7 +485,7 @@ def Decode0400(self, Devices, MsgData, MsgLQI):  # Enrolment Request Response
     )
 
     if self.iaszonemgt:
-        self.iaszonemgt.receiveIASenrollmentRequestResponse(SrcAddress, SrcEndPoint, EnrollResponseCode, ZoneId)
+        self.iaszonemgt.IAS_zone_enroll_request_response(SrcAddress, SrcEndPoint, EnrollResponseCode, ZoneId)
 
 
 # Responses
@@ -2809,6 +2809,11 @@ def Decode8100(self, Devices, MsgData, MsgLQI):
     MsgClusterId = MsgData[8:12]
 
     self.statistics._clusterOK += 1
+    
+    if MsgClusterId == "0500":
+        self.log.logging("Input", "Log", "Read Attributed Request Response n Cluster 0x0500 for %s" % (MsgSrcAddr))
+        self.iaszonemgt.IAS_CIE_service_discovery_response( MsgSrcAddr, MsgSrcEp, MsgData)
+        
     scan_attribute_reponse(self, Devices, MsgSQN, i_sqn, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgData, "8100")
     callbackDeviceAwake(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId)
 
@@ -3273,7 +3278,7 @@ def Decode8110_raw(
             )
 
     if MsgClusterId == "0500":
-        self.iaszonemgt.receiveIASmessages(MsgSrcAddr, MsgSrcEp, 3, MsgAttrStatus)
+        self.iaszonemgt.IAS_CIE_write_response( MsgSrcAddr, MsgSrcEp, MsgAttrStatus)
 
 
 def Decode8120(self, Devices, MsgData, MsgLQI):  # Configure Reporting response
@@ -3490,7 +3495,9 @@ def Decode8400(self, Devices, MsgData, MsgLQI):
         % (nwkid, ep, sqn, zonetype, manufacturercode),
     )
 
-    zcl_ias_zone_enroll_response(self, nwkid, ZIGATE_EP, ep, "00", "00", sqn=sqn, ackIsDisabled=False)
+    self.iaszonemgt.IAS_zone_enroll_request(nwkid, ep, zonetype, sqn)
+    
+
         
         
 def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change notification

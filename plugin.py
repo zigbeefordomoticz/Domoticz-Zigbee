@@ -1055,7 +1055,7 @@ class BasePlugin:
         # Manage all entries in  ListOfDevices (existing and up-coming devices)
         processListOfDevices(self, Devices)
 
-        self.iaszonemgt.IAS_heartbeat()
+        #self.iaszonemgt.IAS_heartbeat()
 
         # Check and Update Heating demand for Wiser if applicable (this will be check in the call)
         wiser_thermostat_monitoring_heating_demand(self, Devices)

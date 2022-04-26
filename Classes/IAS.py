@@ -9,27 +9,78 @@
 """
 
 
+import time
+
 import Domoticz
-from Modules.zigateConsts import ADDRESS_MODE, ZIGATE_EP
+from Modules.tools import getEpForCluster
+from Modules.zigateConsts import ZIGATE_EP
 from Zigbee.zclCommands import (zcl_ias_wd_command_squawk,
                                 zcl_ias_wd_command_start_warning,
                                 zcl_ias_zone_enroll_response,
                                 zcl_read_attribute, zcl_write_attribute)
+
 from Modules.basicOutputs import write_attribute
 from Modules.sendZigateCommand import raw_APS_request
 from Modules.tools import get_and_inc_ZCL_SQN
 
-ENROLL_RESPONSE_CODE = 0x00
-ZONE_ID = 0x00
+
+# Synopsys
+#
+
+# Auto-Enroll-Response ( CasaIA/Owon)
+# -------------------------
+#
+# Node -> Host : Simple Desc riptor Request Response
+#   - If 0x0500 in then Host -> Node :  Read Attribute Request ( 0x0500 / 0x0000, 0x0001, 0x0002 )
+#
+# Node -> Host Receiving the Read Attribute Response on 0x0500 / 0x0000, 0x0001, 0x0002 )
+#              if ZoneState: Note Enrolled ( 0x0000 )
+#                       Host -> Node :  Write Attribute IAS_CIE ( 0x0500 / 0x0010 )
+#
+# Node -> Host : Receiving ZCL IAS Zone: Zone Enrollement Request ( 0x0500 - Command 0x01 )
+# Host -> Node : Send ZCL IAS Zone: Zone Enrollment Response ( 0x0500 - Command 0x00 with Status = 0x00 ; Zone Id: 0x01
+#
+# Host -> Node :  Read Attribute Request ( 0x0500 / 0x0000, 0x0001, 0x0002 )
+
+ENROLL_RESPONSE_OK_CODE = 0x00
+ZONE_ID = 0x01
+
+IAS_ATTRIBUT_ZONE_STATE = "0000"
+IAS_ATTRIBUT_ZONE_TYPE = "0001"
+IAS_ATTRIBUT_ZONE_STATUS = "0002"
+
+ZONE_STATE = {
+    '00': 'Not enrolled',
+    '01': 'Enrolled'
+}
+
+ZONE_TYPE = {
+    '0000': 'Standard CIE 0x000d Motion sensor',
+    '0015': 'Contact switch',
+    '0016': 'Door/Window handle',
+    '0028': 'Fire sensor',
+    '002a': 'Water sensor',
+    '002b': 'Carbon Monoxide (CO) sensor',
+    '002c': 'Personal emergency device',
+    '002d': 'Vibration/Movement sensor',
+    '010f': 'Remote Control',
+    '0115': 'Key fob 0x021d Keypad',
+    '0225': 'Standard Warning Device',
+    '0226': 'Glass break sensor',
+    '0229': 'Security repeater',
+    'ffff': 'Invalid Zone type'
+}
+
+
+STROBE_LEVEL = {"Low": 0x00, "Medium": 0x01}
+SIRENE_MODE = ("both", "siren", "strobe", "stop")
+strobe_mode = 0x00
 
 
 class IAS_Zone_Management:
+    
     def __init__(self, pluginconf, ZigateComm, ListOfDevices, log, zigbee_communitation, FirmwareVersion, ZigateIEEE=None):
-        self.devices = {}
         self.ListOfDevices = ListOfDevices
-        self.tryHB = 0
-        self.wip = []
-        self.HB = 0
         self.ControllerLink = ZigateComm
         self.ControllerIEEE = None
         if ZigateIEEE:
@@ -42,119 +93,110 @@ class IAS_Zone_Management:
     def logging(self, logType, message):
         self.log.logging("IAS", logType, message)
 
-    def __write_attribute(self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data):
-
-        #addr_mode = "02"  # Short address
-        #direction = "00"
-        #lenght = "01"  # Only 1 attribute
-        #datas = addr_mode + key + EPin + EPout + clusterID
-        #datas += direction + manuf_spec + manuf_id
-        #datas += lenght + attribute + data_type + data
-        # Domoticz.Log("__write_attribute : %s" %self.ControllerLink)
-        #self.ControllerLink.sendData("0110", datas, ackIsDisabled=False)
-        #zcl_write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled=False )
-        write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled=False )
-
-    def __ReadAttributeReq(self, addr, EpIn, EpOut, Cluster, ListOfAttributes):
-
-        direction = "00"
-        manufacturer_spec = "00"
-        manufacturer = "0000"
-        if addr not in self.ListOfDevices:
-            return
-        # if 'Manufacturer' in self.ListOfDevices[addr]:
-        #    manufacturer = self.ListOfDevices[addr]['Manufacturer']
-        if not isinstance(ListOfAttributes, list):
-            # We received only 1 attribute
-            Attr = "%04x" % (ListOfAttributes)
-            lenAttr = 1
-        else:
-            lenAttr = len(ListOfAttributes)
-            Attr = ""
-            for x in ListOfAttributes:
-                Attr_ = "%04x" % (x)
-                Attr += Attr_
-        #datas = (
-        #    "02"
-        #    + addr
-        #    + EpIn
-        #    + EpOut
-        #    + Cluster
-        #    + direction
-        #    + manufacturer_spec
-        #    + manufacturer
-        #    + "%02x" % (lenAttr)
-        #    + Attr
-        #)
-        #self.ControllerLink.sendData("0100", datas, ackIsDisabled=False)
-        zcl_read_attribute(self, addr, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, lenAttr, Attr, ackIsDisabled=False)
-
     def setZigateIEEE(self, ZigateIEEE):
-        
-        self.logging("Debug", "setZigateIEEE - Set Zigate IEEE: %s" % ZigateIEEE)
+        self.logging("Debug", f"setZigateIEEE - Set Zigate IEEE: {ZigateIEEE}")
         self.ControllerIEEE = ZigateIEEE
 
-    def setIASzoneControlerIEEE(self, key, Epout):
-
-        self.logging("Debug", "setIASzoneControlerIEEE for %s allow: %s" % (key, Epout))
-        if not self.ControllerIEEE:
-            self.logging("Error", "readConfirmEnroll - Zigate IEEE not yet known")
+    def IAS_device_enrollment(self, Nwkid):
+        # This is coming from the plugin.
+        # Let's see first if anything has to be done
+        ias_ep = getEpForCluster(self, Nwkid, "0500")
+        if not ias_ep:
+            return
+        
+        self.logging("Debug", f"IAS device Enrollment for {Nwkid}")
+        if "IAS" not in self.ListOfDevices[ Nwkid ]:
+            self.ListOfDevices[Nwkid]["IAS"] = {"Auto-Enrollment": {"Status": "Enrollment In Progress", "Ep": {}}}
+            
+        if self.ListOfDevices[Nwkid]["IAS"]["Auto-Enrollment"]["Status"] == "Enrolled":
             return
 
-        manuf_id = "0000"
-        manuf_spec = "00"
-        cluster_id = "%04x" % 0x0500
-        attribute = "%04x" % 0x0010
-        data_type = "F0"  # ZigBee_IeeeAddress = 0xf0
-        data = str(self.ControllerIEEE)
-        self.__write_attribute(key, ZIGATE_EP, Epout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
+        completed = True
+        for ep in ias_ep:
+            if ep not in self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"]:
+                self.logging("Debug", f"IAS device Enrollment for {Nwkid} - start Enrollment on Ep: {ep}")
+                self.ListOfDevices[Nwkid]["IAS"]["Auto-Enrollment"]["Ep"][ep] = {"Status": "Service Discovery", "TimeStamp": time.time()}
+                IAS_CIE_service_discovery( self, Nwkid, ep)
+            if self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"][ep]["Status"] != "Enrolled":
+                completed = False
+                
+        if completed:
+            self.ListOfDevices[Nwkid]["IAS"]["Auto-Enrollment"]["Status"] = "Enrolled"
 
-
-    def readConfirmEnroll(self, key, Epout):
-
-        if not self.ControllerIEEE:
-            self.logging("Error", "readConfirmEnroll - Zigate IEEE not yet known")
+    def IAS_CIE_service_discovery_response( self, Nwkid, ep, Data):
+        self.logging("Debug", f"IAS device Enrollment for {Nwkid} - received a Read Attribute Response on Discovery Request for Ep: {ep}")
+        attributes = retreive_attributes(self, Data)
+        self.logging("Debug", f"         Attributes : {attributes}")
+        if IAS_ATTRIBUT_ZONE_STATE not in attributes:
+            self.logging("Debug", f"IAS device Enrollment for {Nwkid} - Attribute {IAS_ATTRIBUT_ZONE_STATE} not found in {attributes}")
             return
-        if key not in self.devices and Epout not in self.devices[key]:
-            self.logging("Log", "readConfirmEnroll - while not yet started")
+        if attributes[ IAS_ATTRIBUT_ZONE_STATE ]["Status"] != "00":
+            self.logging("Debug", f"IAS device Enrollment for {Nwkid} - Attribute {IAS_ATTRIBUT_ZONE_STATE} Status: {attributes[ IAS_ATTRIBUT_ZONE_STATE ]['Status']}")
+            
+        if attributes[ IAS_ATTRIBUT_ZONE_STATE ]["Value"] == "00":
+            # Not Enrolled, let's start the process
+            self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"][ep]["Status"] = "set IAS CIE Address"
+            set_IAS_CIE_Address(self, Nwkid, ep)
+        elif attributes[ IAS_ATTRIBUT_ZONE_STATE ]["Value"]  == "01":
+            # Enrolled, let's req the IAS ICE address
+            check_IAS_CIE_Address(self, Nwkid, ep)
+            self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"][ep]["Status"] = "Enrolled"
+            
+    def IAS_zone_enroll_request(self, Nwkid, Ep, ZoneType, sqn):
+        self.logging("Debug", f"IAS device Enrollment Request for {Nwkid}/{Ep} ZoneType: {ZoneType}")
+        # Receiving an Enrollment Request
+        if ( 
+            Nwkid not in self.ListOfDevices 
+            and "IAS" not in self.ListOfDevices[ Nwkid ] 
+            and "Auto-Enrollment" not in self.ListOfDevices[ Nwkid ]["IAS"] 
+            and "Ep" not in self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"] 
+            and Ep not in self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"]
+        ):
+            self.logging("Error", f"IAS device Enrollment Request for {Nwkid}/{Ep} ZoneType: {ZoneType}")
+            return
+        
+        if self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"] != "Wait for Enrollment request":
+            self.logging("Error", f"IAS_zone_enroll_request for {Nwkid}/{Ep} received Enrollment request but {self.ListOfDevices[ Nwkid ]['IAS']['Auto-Enrollment']['Ep'][ Ep ]['Status']} ")
+        
+        self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"] = "Enrolled"
+        IAS_Zone_enrollment_response(self, Nwkid, Ep, sqn)
+        
+
+    def IAS_zone_enroll_request_response(self, Nwkid, Ep, EnrollResponseCode, ZoneId):
+        self.logging("Debug", f"IAS device Enrollment Request Response for {Nwkid}/{Ep} Response: {EnrollResponseCode} ZoneId: {ZoneId}")
+        if ( 
+            Nwkid not in self.ListOfDevices 
+            and "IAS" not in self.ListOfDevices[ Nwkid ] 
+            and "Auto-Enrollment" not in self.ListOfDevices[ Nwkid ]["IAS"] 
+            and "Ep" not in self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"] 
+            and Ep not in self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"]
+        ):
+            self.logging("Error", f"IAS device Enrollment Request Response for {Nwkid}/{Ep} Response: {EnrollResponseCode} ZoneId: {ZoneId}")
+            return
+        
+        if EnrollResponseCode == "%02x" %ENROLL_RESPONSE_OK_CODE:
+            self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"] = "Enrolled"
+              
+    def IAS_CIE_write_response(self, Nwkid, Ep, Status):
+        # We are receiving a Write Attribute response
+        self.logging("Debug", f"IAS CIE write Response for {Nwkid}/{Ep}  Status: {Status}")
+        if ( 
+            Nwkid not in self.ListOfDevices 
+            and "IAS" not in self.ListOfDevices[ Nwkid ] 
+            and "Auto-Enrollment" not in self.ListOfDevices[ Nwkid ]["IAS"] 
+            and "Ep" not in self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"] 
+            and Ep not in self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"]
+        ):
             return
 
-        cluster_id = "%04x" % 0x0500
-        attribute = 0x0000
-        self.__ReadAttributeReq(key, ZIGATE_EP, Epout, cluster_id, attribute)
-
-
-    def readConfirmIEEE(self, key, Epout):
-
-        if not self.ControllerIEEE:
-            self.logging("Error", "readConfirmEnroll - Zigate IEEE not yet known")
-            return
-        if key not in self.devices and Epout not in self.devices[key]:
-            self.logging("Log", "readConfirmEnroll - while not yet started")
+        if self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"] != "set IAS CIE Address":
+            self.logging("Debug", f"IAS CIE write Response for {Nwkid}/{Ep}  {self.ListOfDevices[ Nwkid ]['IAS']['Auto-Enrollment']['Ep'][ Ep ]['Status']} !=  set IAS CIE Address")
             return
 
-        cluster_id = "%04x" % 0x0500
-        attribute = 0x0010
-        self.__ReadAttributeReq(key, ZIGATE_EP, Epout, cluster_id, attribute)
-
-    def IASZone_enroll_response_zoneIDzoneID(self, nwkid, Epout):
-        """2./4.the CIE sends again a ‘response’ message to the IAS Zone device with ZoneID"""
-
-        if not self.ControllerIEEE:
-            self.logging("Error", "IASZone_enroll_response_zoneIDzoneID - Zigate IEEE not yet known")
-            return
-        if nwkid not in self.devices and Epout not in self.devices[nwkid]:
-            self.logging("Log", "IASZone_enroll_response_zoneIDzoneID - while not yet started")
-            return
-
-        self.logging("Debug", "IASZone_enroll_response for %s" % nwkid)
-        addr_mode = "02"
-        enroll_rsp_code = "%02x" % ENROLL_RESPONSE_CODE
-        zoneid = "%02x" % ZONE_ID
-
-        #datas = addr_mode + nwkid + ZIGATE_EP + Epout + enroll_rsp_code + zoneid
-        #self.ControllerLink.sendData("0400", datas)
-        zcl_ias_zone_enroll_response(self, nwkid, ZIGATE_EP, Epout, enroll_rsp_code, zoneid)
+        # We got the confirmation. Now we have to wait for the Enrollment Request
+        if Status == "00":
+            self.logging("Debug", f"IAS CIE write Response for {Nwkid}/{Ep}  Waiting for Enrollment request")
+            self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"] = "Wait for Enrollment request"
 
     def IASWD_enroll(self, nwkid, Epout):
 
@@ -166,180 +208,11 @@ class IAS_Zone_Management:
         data = "%04X" % 0xFFFE
         self.__write_attribute(nwkid, ZIGATE_EP, Epout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
 
-    def IASZone_attributes(self, nwkid, Epout):
-
-        if not self.ControllerIEEE:
-            self.logging("Error", "IASZone_attributes - Zigate IEEE not yet known")
-            return
-        if nwkid not in self.devices and Epout not in self.devices[nwkid]:
-            self.logging("Log", "IASZone_attributes - while not yet started")
-            return
-
-        cluster_id = "%04x" % 0x0500
-        attribute = [0x0000, 0x0001, 0x0002]
-        self.__ReadAttributeReq(nwkid, ZIGATE_EP, Epout, cluster_id, attribute)
-
-    def IASZone_triggerenrollement(self, nwkid, Epout):
-
-        self.logging("Debug", "IASZone_triggerenrollement - Addr: %s Ep: %s" % (nwkid, Epout))
-        if not self.ControllerIEEE:
-            self.logging("Error", "IASZone_triggerenrollement - Zigate IEEE not yet known")
-            return
-        if nwkid not in self.devices:
-            self.devices[nwkid] = {}
-
-        if Epout not in self.devices[nwkid]:
-            self.devices[nwkid][Epout] = {}
-
-        self.wip.append((nwkid, Epout))
-        self.HB = 0
-        self.devices[nwkid][Epout]["Step"] = 2
-
-        self.setIASzoneControlerIEEE(nwkid, Epout)
-
-    def receiveIASenrollmentRequestResponse(self, nwkid, SrcEp, EnrolmentCode, zoneid):
-
-        if "IAS" not in self.ListOfDevices[nwkid]:
-            self.ListOfDevices[nwkid]["IAS"] = {}
-
-        if SrcEp not in self.ListOfDevices[nwkid]["IAS"]:
-            self.ListOfDevices[nwkid]["IAS"][SrcEp] = {
-                'EnrolledStatus': {},
-                'ZoneType': {},
-                'ZoneTypeName': {},
-                'ZoneStatus': {},
-            }
-
-        if not isinstance(self.ListOfDevices[nwkid]["IAS"][SrcEp]["ZoneStatus"], dict):
-            self.ListOfDevices[nwkid]["IAS"][SrcEp]["ZoneStatus"] = {}
-
-        if "Model" in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]["Model"] == "MOSZB-140":
-            if EnrolmentCode == "00":
-                self.ListOfDevices[nwkid]["IAS"][SrcEp]["EnrolledStatus"] = 1
-            self.ListOfDevices[nwkid]["IAS"][SrcEp]["ZoneId"] = zoneid
-
-            if nwkid in self.devices and SrcEp in self.devices[nwkid] and "Step" in self.devices[nwkid][SrcEp]:
-                self.devices[nwkid][SrcEp]["Step"] = 7
-
-    def receiveIASmessages(self, nwkid, SrcEp, step, value):
-
-        self.logging("Debug", "receiveIASmessages - from: %s Step: %s Value: %s" % (nwkid, step, value))
-
-        if not self.ControllerIEEE:
-            self.logging("Debug", "receiveIASmessages - Zigate IEEE not yet known")
-            return
-        if nwkid not in self.devices:
-            self.logging("Debug", "receiveIASmessages - %s not in %s" % (nwkid, self.devices))
-            return
-
-        if step == 3:  # Receive Write Attribute Status
-            self.logging("Debug", "receiveIASmessages - Write Attribute Response: %s" % value)
-            self.HB = 0
-            if SrcEp not in self.devices[nwkid]:
-                return
-            if self.zigbee_communitation == "native":
-                # With Zigate native, we do not receive the request, so let's send the response
-                # While on Zigpy we will wait to receive the Enrollment Request, to properly respond
-                self.devices[nwkid][SrcEp]["Step"] = max(self.devices[nwkid][SrcEp]["Step"], 4)
-                self.readConfirmEnroll(nwkid, SrcEp)
-                self.IASZone_enroll_response_zoneIDzoneID(nwkid, SrcEp)
-
-        elif step == 5:  # Receive Attribute 0x0000 (Enrollment)
-            if SrcEp not in self.devices[nwkid]:
-                return
-            if "ticks_5" not in self.devices[nwkid][SrcEp]:
-                self.devices[nwkid][SrcEp]["ticks_5"] = 0
-
-            if self.devices[nwkid][SrcEp]["ticks_5"] > 3:
-                self.logging("Debug", "receiveIASmessages - Timeout %s/%s at step 5" % (nwkid, SrcEp))
-                del self.devices[nwkid][SrcEp]
-                return
-
-            self.HB = 0
-            if self.devices[nwkid][SrcEp]["Step"] <= 7 and value == "01":
-                self.devices[nwkid][SrcEp]["Step"] = 7
-                self.readConfirmIEEE(nwkid, SrcEp)
-                
-            if self.zigbee_communitation == "native":
-                self.IASZone_enroll_response_zoneIDzoneID(nwkid, SrcEp)
-                self.readConfirmEnroll(nwkid, SrcEp)
-
-            self.devices[nwkid][SrcEp]["ticks_5"] += 1
-
-        elif step == 7:  # Receive Enrollement IEEEE
-            self.logging("Debug", "IAS_heartbeat - Enrollment with IEEE:%s" % value)
-
     def decode8401(
         self, MsgSQN, MsgEp, MsgClusterId, MsgSrcAddrMode, MsgSrcAddr, MsgZoneStatus, MsgExtStatus, MsgZoneID, MsgDelay
     ):
 
         return
-
-    def IAS_heartbeat(self):
-
-        self.HB += 1
-
-        if len(self.wip) == 0:
-            return
-
-        self.logging("Debug", "IAS_heartbeat ")
-        if not self.ControllerIEEE:
-            self.logging("Debug", "IAS_heartbeat - Zigate IEEE not yet known")
-            return
-
-        for iterKey in list(self.devices):
-            for iterEp in list(self.devices[iterKey]):
-                self.logging(
-                    "Debug", "IAS_heartbeat - processing %s step: %s" % (iterKey, self.devices[iterKey][iterEp]["Step"])
-                )
-                if self.devices[iterKey][iterEp]["Step"] == 0:
-                    continue
-
-                if self.HB > 1 and self.devices[iterKey][iterEp]["Step"] == 2:
-                    # We have trigger the enrollment by setIASzoneControlerIEEE - Write Attribute to IAS_CIE_Address
-                    # we are now looking to receive an Zone Enroll Request (on Zigate this is filtered )
-                    if self.zigbee_communitation == "native":
-                        self.HB = 0
-                        self.logging("Debug", "IAS_heartbeat - TO restart self.IASZone_attributes")
-                        self.IASZone_enroll_response_zoneIDzoneID(iterKey, iterEp)
-                        self.IASZone_attributes(iterKey, iterEp)
-                        
-                    elif self.HB > 3:
-                        self.HB = 0
-                        self.devices[iterKey][iterEp]["Step"] = 5
-
-                elif self.HB > 1 and self.devices[iterKey][iterEp]["Step"] == 4:
-                    self.tryHB += self.tryHB
-                    self.HB = 0
-                    if iterKey not in self.wip:
-                        self.wip.append(iterKey)
-
-                    self.logging("Debug", "IAS_heartbeat - TO restart self.setIASzoneControlerIEEE")
-                    if self.tryHB > 3:
-                        self.tryHB = 0
-                        self.devices[iterKey][iterEp]["Step"] = 5
-
-                elif self.HB > 1 and self.devices[iterKey][iterEp]["Step"] == 6:
-                    self.tryHB += self.tryHB
-                    self.HB = 0
-
-                    self.readConfirmEnroll(iterKey, iterEp)
-                    self.logging("Debug", "IAS_heartbeat - TO restart self.readConfirmEnroll")
-                    if self.tryHB > 3:
-                        self.tryHB = 0
-                        self.readConfirmIEEE(iterKey, iterEp)
-                        self.devices[iterKey][iterEp]["Step"] = 7
-
-                elif self.devices[iterKey][iterEp]["Step"] == 7:  # Receive Confirming Enrollement
-                    self.logging("Debug", "IAS_heartbeat - Enrollment confirmed/completed")
-                    self.HB = 0
-                    if (iterKey, iterEp) in self.wip:
-                        self.wip.remove((iterKey, iterEp))
-
-                    self.devices[iterKey][iterEp]["Step"] = 0
-                    del self.devices[iterKey][iterEp]
-                    if len(self.devices[iterKey]) == 0:
-                        del self.devices[iterKey]
 
     def write_IAS_WD_Squawk(self, nwkid, ep, SquawkMode):
         SQUAWKMODE = {"disarmed": 0b00000000, "armed": 0b00000001}
@@ -362,51 +235,11 @@ class IAS_Zone_Management:
         
         zcl_ias_wd_command_squawk(self, ZIGATE_EP, ep, nwkid, squawk_mode, strobe, squawk_level, ackIsDisabled=False)
 
-    def warningMode(self, nwkid, ep, mode="both", siren_level = 0x00, warning_duration = 0x01, strobe_duty = 0x00, strobe_level = 0x00):
+    def warningMode(self, nwkid, ep, mode="both", siren_level=0x00, warning_duration=0x01, strobe_duty=0x00, strobe_level=0x00):
 
-        STROBE_LEVEL = {"Low": 0x00, "Medium": 0x01}
-        SIRENE_MODE = ("both", "siren", "strobe", "stop")
-        strobe_mode = 0x00
-        
-        if self.ListOfDevices[nwkid]["Model"] == "WarningDevice":
-            if mode == "both":
-                strobe_mode = 0x01
-                warning_mode = 0x01
-            elif mode == "siren":
-                warning_mode = 0x01
-            elif mode == "strobe":
-                strobe_mode = 0x01
-                warning_mode = 0x00
-            elif mode == "stop":
-                strobe_mode = 0x00
-                warning_mode = 0x00
+        strobe_mode, warning_mode, strobe_level, warning_duration = ias_sirene_mode( self, nwkid , mode )
+        self.logging("Debug", f"warningMode - Mode: {bin(warning_mode)}, Duration: {warning_duration}, Duty: {strobe_duty}, Level: {strobe_level}")
 
-        elif mode in SIRENE_MODE:
-            if mode == "both":
-                strobe_level = STROBE_LEVEL["Low"]
-                strobe_mode = 0x02
-                warning_mode = 0x01
-            elif mode == "siren":
-                warning_mode = 0x02
-            elif mode == "stop":
-                strobe_mode = 0x00
-                warning_mode = 0x00         
-            elif mode == "strobe":
-                strobe_level = STROBE_LEVEL["Low"]
-                strobe_mode = 0x01
-                warning_mode = 0x00
-
-        if "Param" in self.ListOfDevices[nwkid]:
-            if "alarmDuration" in self.ListOfDevices[nwkid]["Param"]:
-                warning_duration = int(self.ListOfDevices[nwkid]["Param"]["alarmDuration"])
-                
-            if mode == "strobe" and "alarmStrobeCode" in self.ListOfDevices[nwkid]["Param"]:
-                strobe_mode = int(self.ListOfDevices[nwkid]["Param"]["alarmStrobeCode"])
-                
-            if mode == "siren" and "alarmSirenCode" in self.ListOfDevices[nwkid]["Param"]:
-                warning_mode = int(self.ListOfDevices[nwkid]["Param"]["alarmSirenCode"])
-                
-        self.logging( "Debug", "warningMode - Mode: %s, Duration: %s, Duty: %s, Level: %s" % (bin(warning_mode), warning_duration, strobe_duty, strobe_level), )
         zcl_ias_wd_command_start_warning(self, ZIGATE_EP, ep, nwkid, warning_mode, strobe_mode, siren_level, warning_duration, strobe_duty, strobe_level, groupaddrmode=False, ackIsDisabled=False)
 
     def siren_both(self, nwkid, ep):
@@ -428,7 +261,6 @@ class IAS_Zone_Management:
         self.logging("Debug", "Device Alarm Off")
         self.warningMode(nwkid, ep, "stop")
 
-
     def iaswd_develco_warning(self, Nwkid, ep, sirenonoff):
 
         if sirenonoff not in ( "00", "01"):
@@ -448,3 +280,120 @@ class IAS_Zone_Management:
         payload = "%02x" % cluster_frame + sqn + cmd + sirenonoff + "%04x" %warningduration
         raw_APS_request(self, Nwkid, ep, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=ZIGATE_EP,  ackIsDisabled=False)
         return sqn
+
+def ias_sirene_mode( self, nwkid , mode ):
+    strobe_mode, warning_mode, strobe_level, warning_duration = None
+    if self.ListOfDevices[nwkid]["Model"] == "WarningDevice":
+        if mode == "both":
+            strobe_mode = 0x01
+            warning_mode = 0x01
+        elif mode == "siren":
+            warning_mode = 0x01
+        elif mode == "stop":
+            strobe_mode = 0x00
+            warning_mode = 0x00
+        elif mode == "strobe":
+            strobe_mode = 0x01
+            warning_mode = 0x00      
+    elif mode in SIRENE_MODE:
+        if mode == "both":
+            strobe_level = STROBE_LEVEL["Low"]
+            strobe_mode = 0x02
+            warning_mode = 0x01
+        elif mode == "siren":
+            warning_mode = 0x02
+        elif mode == "stop":
+            strobe_mode = 0x00
+            warning_mode = 0x00         
+        elif mode == "strobe":
+            strobe_level = STROBE_LEVEL["Low"]
+            strobe_mode = 0x01
+            warning_mode = 0x00
+    if "Param" in self.ListOfDevices[nwkid]:
+        if "alarmDuration" in self.ListOfDevices[nwkid]["Param"]:
+            warning_duration = int(self.ListOfDevices[nwkid]["Param"]["alarmDuration"])
+
+        if mode == "strobe" and "alarmStrobeCode" in self.ListOfDevices[nwkid]["Param"]:
+            strobe_mode = int(self.ListOfDevices[nwkid]["Param"]["alarmStrobeCode"])
+
+        if mode == "siren" and "alarmSirenCode" in self.ListOfDevices[nwkid]["Param"]:
+            warning_mode = int(self.ListOfDevices[nwkid]["Param"]["alarmSirenCode"])
+
+    return strobe_mode, warning_mode, strobe_level, warning_duration
+
+def format_list_attributes( self, ListOfAttributes):
+    if not isinstance(ListOfAttributes, list):
+        # We received only 1 attribute
+        Attr = "%04x" % (ListOfAttributes)
+        lenAttr = 1
+    else:
+        lenAttr = len(ListOfAttributes)
+        Attr = "".join("%04x" % (x) for x in ListOfAttributes)
+    return lenAttr, Attr
+
+
+# Host -> Node
+def set_IAS_CIE_Address(self, NwkId, Epout):
+    # If the IAS CIE determines it wants to enroll the IAS Zone server, 
+    # it SHALL send a Write Attribute command on the IAS Zone server’s IAS_CIE_Address attribute with its IEEE address.
+    self.logging("Debug", f"Write Attribute command on the IAS Zone server’s IAS_CIE_Address for {NwkId}/{Epout}")
+    if not self.ControllerIEEE:
+        self.logging("Error", "readConfirmEnroll - Zigate IEEE not yet known")
+        return
+    cluster_id = "%04x" % 0x0500
+    attribute = "%04x" % 0x0010
+    data_type = "F0"  # ZigBee_IeeeAddress = 0xf0
+    data = str(self.ControllerIEEE)
+    zcl_write_attribute( self, NwkId, ZIGATE_EP, Epout, cluster_id, "00", "0000", attribute, data_type, data, ackIsDisabled=False )
+    
+def check_IAS_CIE_Address(self, NwkId, Epout):
+    self.logging("Debug", f"Request IAS CIE Address of the device {NwkId}/{Epout}")
+    lenAttr, attributes = format_list_attributes( self, 0x010)
+    zcl_read_attribute(self, NwkId, ZIGATE_EP, Epout, "0500", "00", "00", "0010", lenAttr, attributes, ackIsDisabled=False)
+
+def IAS_CIE_service_discovery( self, NwkId, Epout):
+    # IAS CIE MAY perform service discovery
+    # request Zone Information
+    self.logging("Debug", f"IAS CIE service discovery, look for Zone Information {NwkId}/{Epout}")
+    if not self.ControllerIEEE:
+        self.logging("Error", "readConfirmEnroll - Zigate IEEE not yet known")
+        return
+    lenAttr, attributes = format_list_attributes( self, [0x0000, 0x0001, 0x0002])
+    zcl_read_attribute(self, NwkId, ZIGATE_EP, Epout, "0500", "00", "00", "0000", lenAttr, attributes, ackIsDisabled=False)
+
+def IAS_Zone_enrollment_response(self, Nwkid, Ep, sqn):
+    # The IAS Zone server SHALL change its ZoneState attribute to 0x01 (enrolled). 
+    self.logging("Debug", f"IAS Zone_enroll_response for {Nwkid}/{Ep}")
+    if not self.ControllerIEEE:
+        self.logging("Error", "IASZone_enroll_response_zoneIDzoneID - Zigate IEEE not yet known")
+        return
+    self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"] = "Enrolled"
+    zcl_ias_zone_enroll_response(self, Nwkid, ZIGATE_EP, Ep, "%02x" %ENROLL_RESPONSE_OK_CODE, "%02x" %ZONE_ID, sqn=sqn, ackIsDisabled=False)
+
+def retreive_attributes(self, MsgData):
+    
+    attributes ={}
+    idx = 12
+    while idx < len(MsgData):
+        MsgAttrID = MsgAttStatus = MsgAttType = MsgAttSize = MsgClusterData = ""
+        MsgAttrID = MsgData[idx : idx + 4]
+        attributes[ MsgAttrID ] = {}
+        idx += 4
+        MsgAttStatus = MsgData[idx : idx + 2]
+        attributes[ MsgAttrID ]["Status"] = MsgAttStatus
+        idx += 2
+        if MsgAttStatus == "00":
+            MsgAttType = MsgData[idx : idx + 2]
+            idx += 2
+            MsgAttSize = MsgData[idx : idx + 4]
+            idx += 4
+            size = int(MsgAttSize, 16) * 2
+            MsgClusterData = MsgData[idx : idx + size]
+            attributes[ MsgAttrID ]["Value"] = MsgClusterData
+            idx += size
+        elif len(MsgData[idx:]) == 6:
+            # crap, lets finish it
+            # Domoticz.Log("Crap Data: %s len: %s" %(MsgData[idx:], len(MsgData[idx:])))
+            idx += 6
+    
+    return attributes

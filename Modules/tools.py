@@ -138,7 +138,7 @@ def getClusterListforEP(self, NWKID, Ep):
     return ClusterList
 
 
-def getEpForCluster(self, nwkid, ClusterId):
+def getEpForCluster(self, nwkid, ClusterId, strict=None):
     """
     Return the Ep or a list of Ep associated to the ClusterId
     If not found return Ep: 01
@@ -151,8 +151,8 @@ def getEpForCluster(self, nwkid, ClusterId):
     ]
 
     if not EPout:
-        return EPout
-
+        return None if strict else EPout
+    
     if len(self.ListOfDevices[nwkid]["Ep"]) == 1:
         return [self.ListOfDevices[nwkid]["Ep"].keys()]
 
