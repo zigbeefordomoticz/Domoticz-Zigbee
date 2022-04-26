@@ -138,25 +138,30 @@ def getClusterListforEP(self, NWKID, Ep):
     return ClusterList
 
 
-def getEpForCluster(self, nwkid, ClusterId, strict=None):
+def getEpForCluster(self, nwkid, ClusterId, strict=False):
     """
     Return the Ep or a list of Ep associated to the ClusterId
     If not found return Ep: 01
+    If strict is True, then None will return if there is no Cluster found
     """
 
-    EPout = [
-        tmpEp
-        for tmpEp in list(self.ListOfDevices[nwkid]["Ep"].keys())
-        if ClusterId in self.ListOfDevices[nwkid]["Ep"][tmpEp]
-    ]
+    EPlist = []
+    for x in list(self.ListOfDevices[nwkid]["Ep"].keys() ):
+        if x in EPlist:
+            continue
+        if ClusterId in self.ListOfDevices[nwkid]["Ep"][x]:
+            EPlist.append( str(x) )
 
-    if not EPout:
-        return None if strict else EPout
-    
+    Domoticz.Log("---------> EPout: %s" %str(EPlist) )
+
+    return EPlist
+    if not EPlist:
+        return None if strict else EPlist
+
     if len(self.ListOfDevices[nwkid]["Ep"]) == 1:
         return [self.ListOfDevices[nwkid]["Ep"].keys()]
 
-    return EPout
+    return EPlist
 
 
 def DeviceExist(self, Devices, lookupNwkId, lookupIEEE=""):

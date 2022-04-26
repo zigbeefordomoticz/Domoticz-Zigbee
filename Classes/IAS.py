@@ -103,24 +103,38 @@ class IAS_Zone_Management:
     def IAS_device_enrollment(self, Nwkid):
         # This is coming from the plugin.
         # Let's see first if anything has to be done
-        ias_ep = getEpForCluster(self, Nwkid, "0500")
-        if not ias_ep:
+        ias_ep_list = getEpForCluster(self, Nwkid, "0500", strict=True)
+        self.logging("Debug", f"IAS device Enrollment for {Nwkid} on {ias_ep_list}, type: {type(ias_ep_list)} ")
+        self.logging("Debug", "IAS_EP_LIST: %s" %str(ias_ep_list))
+        if not ias_ep_list:
             return
         
-        self.logging("Debug", f"IAS device Enrollment for {Nwkid}")
+        self.logging("Debug", f"IAS device Enrollment for {Nwkid} on {ias_ep_list}, type: {type(ias_ep_list)} ")
         if "IAS" not in self.ListOfDevices[ Nwkid ]:
-            self.ListOfDevices[Nwkid]["IAS"] = {"Auto-Enrollment": {"Status": "Enrollment In Progress", "Ep": {}}}
+            self.ListOfDevices[Nwkid]["IAS"] = {}
+        if "Auto-Enrollment" not in self.ListOfDevices[Nwkid]["IAS"]:
+            self.ListOfDevices[Nwkid]["IAS"]["Auto-Enrollment"] = {}
+        if "Status" not in self.ListOfDevices[Nwkid]["IAS"]["Auto-Enrollment"]:
+            
+            self.ListOfDevices[Nwkid]["IAS"]["Auto-Enrollment"]["Status"] = "Enrollment In Progress"
+        if "Ep" not in self.ListOfDevices[Nwkid]["IAS"]["Auto-Enrollment"]:
+            self.ListOfDevices[Nwkid]["IAS"]["Auto-Enrollment"]["Ep"] ={}
             
         if self.ListOfDevices[Nwkid]["IAS"]["Auto-Enrollment"]["Status"] == "Enrolled":
             return
 
+        self.logging("Debug", f"IAS device Enrollment for {Nwkid} - IAS_EP: {ias_ep_list}, Ep: {self.ListOfDevices[Nwkid]['IAS']['Auto-Enrollment']['Ep']}")
         completed = True
-        for ep in ias_ep:
-            if ep not in self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"]:
-                self.logging("Debug", f"IAS device Enrollment for {Nwkid} - start Enrollment on Ep: {ep}")
-                self.ListOfDevices[Nwkid]["IAS"]["Auto-Enrollment"]["Ep"][ep] = {"Status": "Service Discovery", "TimeStamp": time.time()}
-                IAS_CIE_service_discovery( self, Nwkid, ep)
-            if self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"][ep]["Status"] != "Enrolled":
+        for ep in list(ias_ep_list):
+            self.logging("Debug", f"IAS device Enrollment for {Nwkid} - Checking Ep: {ep}")
+            if self.ListOfDevices[Nwkid]["IAS"]["Auto-Enrollment"]["Ep"] != {} and ep in self.ListOfDevices[Nwkid]["IAS"]["Auto-Enrollment"]["Ep"]:
+                continue
+            
+            self.logging("Debug", f"IAS device Enrollment for {Nwkid} - start Enrollment on Ep: {ep}")
+            self.ListOfDevices[Nwkid]["IAS"]["Auto-Enrollment"]["Ep"][str(ep)] = {"Status": "Service Discovery", "TimeStamp": time.time()}
+            IAS_CIE_service_discovery( self, Nwkid, str(ep))
+            
+            if self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"][str(ep)]["Status"] != "Enrolled":
                 completed = False
                 
         if completed:
