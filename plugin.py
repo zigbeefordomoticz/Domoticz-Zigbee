@@ -1742,17 +1742,26 @@ def install_Z4D_to_domoticz_custom_ui():
     Domoticz.Log("Installing plugin custom page")
 
     custom_file = Parameters['StartupFolder'] + 'www/templates' + '/Zigbee4Domoticz' + '_%s' %Parameters['HardwareID'] + '.html'          
-    with open( custom_file, "wt") as z4d_html_file:
-        z4d_html_file.write( line1 )
-        z4d_html_file.write( line2 )
-        z4d_html_file.write( line3 )
-        z4d_html_file.write( line4 )
-        z4d_html_file.write( line5 )
-        z4d_html_file.write( line6 )
+    try:
+        with open( custom_file, "wt") as z4d_html_file:
+            z4d_html_file.write( line1 )
+            z4d_html_file.write( line2 )
+            z4d_html_file.write( line3 )
+            z4d_html_file.write( line4 )
+            z4d_html_file.write( line5 )
+            z4d_html_file.write( line6 )
+    except Exception as e:
+        Domoticz.Error('Error during installing plugin custom page')
+        Domoticz.Error(repr(e))
 
 
 def uninstall_Z4D_to_domoticz_custom_ui():
 
     custom_file = Parameters['StartupFolder'] + 'www/templates' + '/Zigbee4Domoticz' + '_%s' %Parameters['HardwareID'] + '.html'          
-    if os.path.exists(custom_file ):
-        os.remove(custom_file )
+    try:
+        if os.path.exists(custom_file ):
+            os.remove(custom_file )
+
+    except Exception as e:
+        Domoticz.Error('Error during installing plugin custom page')
+        Domoticz.Error(repr(e))
