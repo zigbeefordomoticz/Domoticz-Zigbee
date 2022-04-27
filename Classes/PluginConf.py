@@ -70,7 +70,15 @@ SETTINGS = {
                 "hidden": False,
                 "Advanced": False,
    
-            }
+            },
+            "DomoticzCustomMenu": {
+                "type": "bool",
+                "default": 1,
+                "current": None,
+                "restart": 1,
+                "hidden": False,
+                "Advanced": False,
+            },
         },
     },
     "GroupManagement": {
@@ -225,7 +233,7 @@ SETTINGS = {
                 "default": 1,
                 "current": None,
                 "restart": 0,
-                "hidden": False,
+                "hidden": True,
                 "Advanced": True,
             },
             "enableKeepalive": {
@@ -233,7 +241,7 @@ SETTINGS = {
                 "default": 1,
                 "current": None,
                 "restart": 0,
-                "hidden": False,
+                "hidden": True,
                 "Advanced": True,
             },
             "enableCache": {
@@ -241,7 +249,7 @@ SETTINGS = {
                 "default": 1,
                 "current": None,
                 "restart": 0,
-                "hidden": False,
+                "hidden": True,
                 "Advanced": True,
             },
         },

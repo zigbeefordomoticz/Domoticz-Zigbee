@@ -22,13 +22,10 @@ from Modules.livolo import livolo_bind
 from Modules.manufacturer_code import PREFIX_MAC_LEN, PREFIX_MACADDR_LIVOLO
 from Modules.pairingProcess import (interview_state_004d,
                                     zigbee_provision_device)
-from Modules.readAttributes import (ReadAttributeRequest_0006_0000,
-                                    ReadAttributeRequest_0008_0000)
 from Modules.tools import (DeviceExist, IEEEExist, decodeMacCapa,
                            initDeviceInList, mainPoweredDevice, timeStamped)
 from Modules.tuyaSiren import tuya_sirene_registration
 from Modules.tuyaTRV import TUYA_eTRV_MODEL, tuya_eTRV_registration
-from Modules.zigateConsts import CLUSTERS_LIST
 
 DELAY_BETWEEN_2_DEVICEANNOUCEMENT = 20
 
@@ -132,8 +129,8 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
     reseted_device = False
     self.log.logging("Input", "Debug", "Nwkid: %s Status: %s" %(NwkId,self.ListOfDevices[NwkId]["Status"] ), NwkId)
     if (
-        ( "Status" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Status"] in ("Removed", "erasePDM", "provREQ", "Left") ) or
-        ( "PreviousStatus" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["PreviousStatus"] in ("Removed", "erasePDM", "provREQ", "Left"))
+        ( "Status" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Status"] in ("Removed", "erasePDM", "provREQ", "Left") ) 
+        or ( "PreviousStatus" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["PreviousStatus"] in ("Removed", "erasePDM", "provREQ", "Left"))
     ):
         self.log.logging("Input", "Debug", "--> Device reset, removing key Attributes", NwkId)
         reseted_device = True
@@ -211,8 +208,8 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
 
             legrand_refresh_battery_remote(self, NwkId)
 
-            read_attributes_if_needed( self, NwkId)
             restart_plugin_reset_ModuleIRCode(self, NwkId)
+            read_attributes_if_needed( self, NwkId)
             
             if reseted_device:
                 zigbee_provision_device(self, Devices, NwkId, 0, "inDB")
@@ -401,9 +398,6 @@ def read_attributes_if_needed( self, NwkId):
     # Let's check the status for a Switch or LvlControl
     if not mainPoweredDevice(self, NwkId):
         return
-
-    for ep in self.ListOfDevices[ NwkId ]['Ep']:
-        if "0006" in self.ListOfDevices[ NwkId ]['Ep'][ ep ]:
-            ReadAttributeRequest_0006_0000(self, NwkId)
-        if "0008" in self.ListOfDevices[ NwkId ]['Ep'][ ep ]:
-            ReadAttributeRequest_0008_0000(self, NwkId)
+    # Will be forcing Read Attribute (if forcePollingAfterAction is enabled -default-)
+    self.log.logging( "Input", "Debug", "read_attributes_if_needed %s" %NwkId)
+    self.ListOfDevices[NwkId]["Heartbeat"] = "0"

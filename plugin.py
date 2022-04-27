@@ -81,6 +81,7 @@ import json
 import sys
 import threading
 import time
+import os
 
 from Classes.AdminWidgets import AdminWidgets
 # from Classes.APS import APSManagement
@@ -353,6 +354,10 @@ class BasePlugin:
         self.pluginconf = PluginConf(
             self.zigbee_communitation, self.VersionNewFashion, self.DomoticzMajor, self.DomoticzMinor, Parameters["HomeFolder"], self.HardwareID
         )
+
+        # Create Domoticz Sub menu
+        if "DomoticzCustomMenu" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["DomoticzCustomMenu"] :
+            install_Z4D_to_domoticz_custom_ui( )
 
         # Create the adminStatusWidget if needed
         self.PluginHealth["Flag"] = 4
@@ -679,6 +684,8 @@ class BasePlugin:
 
     def onStop(self):
         Domoticz.Log("onStop()")
+        uninstall_Z4D_to_domoticz_custom_ui()
+
         if self.log:
             self.log.logging("Plugin", "Log", "onStop called")
             self.log.logging("Plugin", "Log", "onStop calling (1) domoticzDb DeviceStatus closed")
@@ -1726,3 +1733,40 @@ def DumpHTTPResponseToLog(httpDict):
                     Domoticz.Log("------->'" + y + "':'" + str(httpDict[x][y]) + "'")
             else:
                 Domoticz.Log("--->'" + x + "':'" + str(httpDict[x]) + "'")
+
+
+def install_Z4D_to_domoticz_custom_ui():
+
+    line1 = '<iframe id="%s"' %Parameters['Name'] +  'style="width:100%;height:800px;overflow:scroll;">\n'
+    line2 = '</iframe>\n'
+    line3 = '\n'
+    line4 = '<script>\n'
+    line5 = 'document.getElementById(\'%s\').src' %Parameters['Name'] + ' = "http://" + location.hostname + ":%s/";\n' %Parameters['Mode4']
+    line6 = '</script>\n'
+
+    custom_file = Parameters['StartupFolder'] + 'www/templates/' + f"{Parameters['Name']}" + '.html'
+    Domoticz.Log(f"Installing plugin custom page {custom_file} ")
+
+    try:
+        with open( custom_file, "wt") as z4d_html_file:
+            z4d_html_file.write( line1 )
+            z4d_html_file.write( line2 )
+            z4d_html_file.write( line3 )
+            z4d_html_file.write( line4 )
+            z4d_html_file.write( line5 )
+            z4d_html_file.write( line6 )
+    except Exception as e:
+        Domoticz.Error('Error during installing plugin custom page')
+        Domoticz.Error(repr(e))
+
+
+def uninstall_Z4D_to_domoticz_custom_ui():
+
+    custom_file = Parameters['StartupFolder'] + 'www/templates/' + f"{Parameters['Name']}" + '.html'
+    try:
+        if os.path.exists(custom_file ):
+            os.remove(custom_file )
+
+    except Exception as e:
+        Domoticz.Error('Error during installing plugin custom page')
+        Domoticz.Error(repr(e))
