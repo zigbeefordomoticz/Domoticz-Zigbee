@@ -208,9 +208,9 @@ DEVICE_PARAMETERS = {
     "BRT100MaxSetpoint": tuya_trv_set_max_setpoint,
     "BRT100MinSetpoint": tuya_trv_set_min_setpoint,
     "moesCalibrationTime": tuya_window_cover_calibration,
-    "AlarmLevel": tuya_siren2_alarm_volume,
-    "AlarmDuration": tuya_siren2_alarm_duration,
-    "AlarmMelody": tuya_siren2_alarm_melody,
+    "TuyaAlarmLevel": tuya_siren2_alarm_volume,
+    "TuyaAlarmDuration": tuya_siren2_alarm_duration,
+    "TuyaAlarmMelody": tuya_siren2_alarm_melody,
 }
 
 def sanity_check_of_param(self, NwkId):

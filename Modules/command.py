@@ -295,6 +295,8 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 self.log.logging("Command", "Log", "mgtCommand : Off for Tuya ParkSide Water Time - OnOff Mode")
                 actuator_off(self, NWKID, EPout, "Light")
                 #sendZigateCmd(self, "0092", "02" + NWKID + ZIGATE_EP + EPout + "00")
+            UpdateDevice_v2(self, Devices, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+            return
 
         if DeviceType == "SwitchAlarm" and _model_name == "TS0601-_TZE200_t1blo2bj":
             tuya_siren2_trigger(self, NWKID, '00')

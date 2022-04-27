@@ -104,6 +104,10 @@ class IAS_Zone_Management:
     def IAS_device_enrollment(self, NwkId):
         # This is coming from the plugin.
         # Let's see first if anything has to be done
+        if "Model" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Model"] in ( "MOSZB-140", "SMSZB-120"):
+            # Frient trigger itself the Device Enrollment
+            return
+
         ias_ep_list = getEpForCluster(self, NwkId, "0500", strict=True)
         self.logging("Debug", f"IAS device Enrollment for {NwkId} on {ias_ep_list}, type: {type(ias_ep_list)} ")
         self.logging("Debug", "IAS_EP_LIST: %s" %str(ias_ep_list))
