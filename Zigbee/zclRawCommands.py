@@ -103,16 +103,14 @@ def zcl_raw_write_attributeNoResponse(self, nwkid, EPin, EPout, cluster, manuf_i
     raw_APS_request(self, nwkid, EPout, cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, ackIsDisabled=ackIsDisabled)
     return sqn
     
-def zcl_raw_default_response( self, nwkid, EPin, EPout, cluster, sqn):
-    self.log.logging("zclCommand", "Debug", "zcl_raw_default_response %s %s %s %s %s" % (nwkid, EPin, EPout, cluster, sqn))
-    cmd = "0b"
+def zcl_raw_default_response( self, nwkid, EPin, EPout, cluster, response_to_command, sqn):
+    self.log.logging("zclCommand", "Debug", f"zcl_raw_default_response {nwkid} {EPin} {EPout} {cluster} {sqn} for command {response_to_command}")
 
+    cmd = "0b"
     cluster_frame = 0b00000000  # The frame type sub-field SHALL be set to indicate a global command (0b00)
     fcf = "%02x" % cluster_frame
-
-    payload = fcf + sqn + cmd + "00" + "00"
-
-    self.log.logging("zclCommand", "Debug", "zcl_raw_default_response ==== payload: %s" % (payload))
+    payload = fcf + sqn + cmd + response_to_command + "00"
+    self.log.logging("zclCommand", "Debug", f"zcl_raw_default_response ==== payload: {payload}")
 
     raw_APS_request(self, nwkid, EPout, cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, ackIsDisabled=False)
     return sqn

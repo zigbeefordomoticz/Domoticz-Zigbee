@@ -10,6 +10,7 @@
 
 
 import time
+import struct
 
 import Domoticz
 from Modules.bindings import bindDevice
@@ -44,7 +45,7 @@ from Modules.tools import get_and_inc_ZCL_SQN
 # Host -> Node :  Read Attribute Request ( 0x0500 / 0x0000, 0x0001, 0x0002 )
 
 ENROLL_RESPONSE_OK_CODE = 0x00
-ZONE_ID = 0x01
+ZONE_ID = 0x00
 
 IAS_ATTRIBUT_ZONE_STATE = "0000"
 IAS_ATTRIBUT_ZONE_TYPE = "0001"
@@ -100,154 +101,176 @@ class IAS_Zone_Management:
         self.logging("Debug", f"setZigateIEEE - Set Zigate IEEE: {ZigateIEEE}")
         self.ControllerIEEE = ZigateIEEE
 
-    def IAS_device_enrollment(self, Nwkid):
+    def IAS_device_enrollment(self, NwkId):
         # This is coming from the plugin.
         # Let's see first if anything has to be done
-        ias_ep_list = getEpForCluster(self, Nwkid, "0500", strict=True)
-        self.logging("Debug", f"IAS device Enrollment for {Nwkid} on {ias_ep_list}, type: {type(ias_ep_list)} ")
+        ias_ep_list = getEpForCluster(self, NwkId, "0500", strict=True)
+        self.logging("Debug", f"IAS device Enrollment for {NwkId} on {ias_ep_list}, type: {type(ias_ep_list)} ")
         self.logging("Debug", "IAS_EP_LIST: %s" %str(ias_ep_list))
         if not ias_ep_list:
             return
         
-        self.logging("Debug", f"IAS device Enrollment for {Nwkid} on {ias_ep_list}, type: {type(ias_ep_list)} ")
-        if "IAS" not in self.ListOfDevices[ Nwkid ]:
-            self.ListOfDevices[Nwkid]["IAS"] = {}
-        if "Auto-Enrollment" not in self.ListOfDevices[Nwkid]["IAS"]:
-            self.ListOfDevices[Nwkid]["IAS"]["Auto-Enrollment"] = {}
-        if "Status" not in self.ListOfDevices[Nwkid]["IAS"]["Auto-Enrollment"]:
+        if is_device_enrollment_completed(self, NwkId):
+            return
+        
+        self.logging("Debug", f"IAS device Enrollment for {NwkId} on {ias_ep_list}, type: {type(ias_ep_list)} ")
+        if "IAS" not in self.ListOfDevices[ NwkId ]:
+            self.ListOfDevices[NwkId]["IAS"] = {}
+        if "Auto-Enrollment" not in self.ListOfDevices[NwkId]["IAS"]:
+            self.ListOfDevices[NwkId]["IAS"]["Auto-Enrollment"] = {}
+        if "Status" not in self.ListOfDevices[NwkId]["IAS"]["Auto-Enrollment"]:
             
-            self.ListOfDevices[Nwkid]["IAS"]["Auto-Enrollment"]["Status"] = "Enrollment In Progress"
-        if "Ep" not in self.ListOfDevices[Nwkid]["IAS"]["Auto-Enrollment"]:
-            self.ListOfDevices[Nwkid]["IAS"]["Auto-Enrollment"]["Ep"] ={}
+            self.ListOfDevices[NwkId]["IAS"]["Auto-Enrollment"]["Status"] = "Enrollment In Progress"
+        if "Ep" not in self.ListOfDevices[NwkId]["IAS"]["Auto-Enrollment"]:
+            self.ListOfDevices[NwkId]["IAS"]["Auto-Enrollment"]["Ep"] ={}
             
-        if self.ListOfDevices[Nwkid]["IAS"]["Auto-Enrollment"]["Status"] == "Enrolled":
+        if self.ListOfDevices[NwkId]["IAS"]["Auto-Enrollment"]["Status"] == "Enrolled":
             return
 
-        self.logging("Debug", f"IAS device Enrollment for {Nwkid} - IAS_EP: {ias_ep_list}, Ep: {self.ListOfDevices[Nwkid]['IAS']['Auto-Enrollment']['Ep']}")
-        completed = True
+        self.logging("Debug", f"IAS device Enrollment for {NwkId} - IAS_EP: {ias_ep_list}, Ep: {self.ListOfDevices[NwkId]['IAS']['Auto-Enrollment']['Ep']}")
         for ep in list(ias_ep_list):
-            self.logging("Debug", f"IAS device Enrollment for {Nwkid} - Checking Ep: {ep}")
-            if self.ListOfDevices[Nwkid]["IAS"]["Auto-Enrollment"]["Ep"] != {} and ep in self.ListOfDevices[Nwkid]["IAS"]["Auto-Enrollment"]["Ep"]:
+            self.logging("Debug", f"IAS device Enrollment for {NwkId} - Checking Ep: {ep}")
+            if self.ListOfDevices[NwkId]["IAS"]["Auto-Enrollment"]["Ep"] != {} and ep in self.ListOfDevices[NwkId]["IAS"]["Auto-Enrollment"]["Ep"]:
                 continue
             
-            self.logging("Debug", f"IAS device Enrollment for {Nwkid} - start Enrollment on Ep: {ep}")
-            self.ListOfDevices[Nwkid]["IAS"]["Auto-Enrollment"]["Ep"][str(ep)] = {"Status": "Service Discovery", "TimeStamp": time.time()}
-            IAS_CIE_service_discovery( self, Nwkid, str(ep))
+            self.logging("Debug", f"IAS device Enrollment for {NwkId} - start Enrollment on Ep: {ep}")
+            self.ListOfDevices[NwkId]["IAS"]["Auto-Enrollment"]["Ep"][str(ep)] = {"Status": "Service Discovery", "TimeStamp": time.time()}
+            IAS_CIE_service_discovery( self, NwkId, str(ep))
             
-            if self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"][str(ep)]["Status"] != "Enrolled":
-                completed = False
-                
-        if completed:
-            self.ListOfDevices[Nwkid]["IAS"]["Auto-Enrollment"]["Status"] = "Enrolled"
+        if is_device_enrollment_completed(self, NwkId):
+            self.ListOfDevices[NwkId]["IAS"]["Auto-Enrollment"]["Status"] = "Enrolled"
 
-    def IAS_CIE_service_discovery_response( self, Nwkid, ep, Data):
-        self.logging("Debug", f"IAS device Enrollment for {Nwkid} - received a Read Attribute Response on Discovery Request for Ep: {ep}")
+                
+        
+    def IAS_CIE_service_discovery_response( self, NwkId, ep, Data):
+        self.logging("Debug", f"IAS device Enrollment for {NwkId} - received a Read Attribute Response on Discovery Request for Ep: {ep}")
         attributes = retreive_attributes(self, Data)
         self.logging("Debug", f"         Attributes : {attributes}")
         if IAS_ATTRIBUT_ZONE_STATE not in attributes:
-            self.logging("Debug", f"IAS device Enrollment for {Nwkid} - Attribute {IAS_ATTRIBUT_ZONE_STATE} not found in {attributes}")
+            self.logging("Debug", f"IAS device Enrollment for {NwkId} - Attribute {IAS_ATTRIBUT_ZONE_STATE} not found in {attributes}")
             return
         if attributes[ IAS_ATTRIBUT_ZONE_STATE ]["Status"] != "00":
-            self.logging("Debug", f"IAS device Enrollment for {Nwkid} - Attribute {IAS_ATTRIBUT_ZONE_STATE} Status: {attributes[ IAS_ATTRIBUT_ZONE_STATE ]['Status']}")
+            self.logging("Debug", f"IAS device Enrollment for {NwkId} - Attribute {IAS_ATTRIBUT_ZONE_STATE} Status: {attributes[ IAS_ATTRIBUT_ZONE_STATE ]['Status']}")
             
         if attributes[ IAS_ATTRIBUT_ZONE_STATE ]["Value"] == "00":
             # Not Enrolled, let's start the process
-            self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"][ep]["Status"] = "set IAS CIE Address"
-            set_IAS_CIE_Address(self, Nwkid, ep)
-        elif attributes[ IAS_ATTRIBUT_ZONE_STATE ]["Value"]  == "01":
+            self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]["Ep"][ep]["Status"] = "set IAS CIE Address"
+            set_IAS_CIE_Address(self, NwkId, ep)
+        elif attributes[ IAS_ATTRIBUT_ZONE_STATE ]["Value"] == "01":
             # Enrolled, let's req the IAS ICE address
-            check_IAS_CIE_Address(self, Nwkid, ep)
-            self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"][ep]["Status"] = "Enrolled"
-            
-    def IAS_zone_enroll_request(self, Nwkid, Ep, ZoneType, sqn):
-        self.logging("Debug", f"IAS device Enrollment Request for {Nwkid}/{Ep} ZoneType: {ZoneType}")
+            check_IAS_CIE_Address(self, NwkId, ep)
+            self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]["Ep"][ep]["Status"] = "Enrolled"
+          
+        if is_device_enrollment_completed(self, NwkId):
+            self.ListOfDevices[NwkId]["IAS"]["Auto-Enrollment"]["Status"] = "Enrolled"
+  
+    def IAS_zone_enroll_request(self, NwkId, Ep, ZoneType, sqn):
+        self.logging("Debug", f"IAS device Enrollment Request for {NwkId}/{Ep} ZoneType: {ZoneType}")
 
-        if Nwkid not in self.ListOfDevices:
+        if NwkId not in self.ListOfDevices:
+            return
+        
+        if is_device_enrollment_completed(self, NwkId):
             return
 
         # Receiving an Enrollment Request
         if ( 
-            "IAS" not in self.ListOfDevices[ Nwkid ]
-            or "Auto-Enrollment" not in self.ListOfDevices[ Nwkid ]["IAS"]
-            or "Ep" not in self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"] 
-            or Ep not in self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"]
-            or self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"] != "Wait for Enrollment request"
+            "IAS" not in self.ListOfDevices[ NwkId ]
+            or "Auto-Enrollment" not in self.ListOfDevices[ NwkId ]["IAS"]
+            or "Ep" not in self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"] 
+            or Ep not in self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]["Ep"]
+            or self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"] != "Wait for Enrollment request"
         ):
-            if "IAS" not in self.ListOfDevices[ Nwkid ]:
-                self.ListOfDevices[ Nwkid ]["IAS"] = {}
-            if "Auto-Enrollment" not in self.ListOfDevices[ Nwkid ]["IAS"]:
-                self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"] = {"Status": {}}
-            if "Ep" not in self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]:
-                self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"] = {}
-            if Ep not in self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"]:
-                self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ] = {}
+            # We are receiving a spontenous Enrollment Request (Frient/Develco)
+            # Process will be fast and Quick
+            if "IAS" not in self.ListOfDevices[ NwkId ]:
+                self.ListOfDevices[ NwkId ]["IAS"] = {}
+            if "Auto-Enrollment" not in self.ListOfDevices[ NwkId ]["IAS"]:
+                self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"] = {"Status": {}}
+            if "Ep" not in self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]:
+                self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]["Ep"] = {}
+            if Ep not in self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]["Ep"]:
+                self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ] = {}
 
             # We are may be in an Auto-Enrollment by the device ( Frient )
-            self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"] = "Enrolled2"
-            IAS_Zone_enrollment_response(self, Nwkid, Ep, sqn)
-            check_IAS_CIE_Address(self, Nwkid, Ep)
-            IAS_CIE_service_discovery( self, Nwkid, Ep)
-            bindDevice(self, self.ListOfDevices[ Nwkid ]['IEEE'], Ep, "0500")
+            self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"] = "Enrolled2"
+            self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["ZoneId"] = "%02x" %ZONE_ID
+            IAS_Zone_enrollment_response(self, NwkId, Ep, sqn, ZONE_ID)
+            check_IAS_CIE_Address(self, NwkId, Ep)
+            IAS_CIE_service_discovery( self, NwkId, Ep)
+            bindDevice(self, self.ListOfDevices[ NwkId ]['IEEE'], Ep, "0500")
+            if is_device_enrollment_completed(self, NwkId):
+                self.ListOfDevices[NwkId]["IAS"]["Auto-Enrollment"]["Status"] = "Enrolled2"
             return
 
-
-        self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"] = "Enrolled"
-        IAS_Zone_enrollment_response(self, Nwkid, Ep, sqn)
-        check_IAS_CIE_Address(self, Nwkid, Ep)
-        bindDevice(self, self.ListOfDevices[ Nwkid ]['IEEE'], Ep, "0500")
+        if self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"] in ( "Enrolled", "Enrolled2"):
+            self.logging("Debug", f"IAS device Enrollment Request for {NwkId}/{Ep} already Enrolled !!!")
+            check_IAS_CIE_Address(self, NwkId, Ep)
+            return
         
-        
+        self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"] = "Enrolled"
+        self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["ZoneId"] = "%02x" %ZONE_ID
+        IAS_Zone_enrollment_response(self, NwkId, Ep, sqn, ZONE_ID)
+        check_IAS_CIE_Address(self, NwkId, Ep)
+        IAS_CIE_service_discovery( self, NwkId, Ep)
+        bindDevice(self, self.ListOfDevices[ NwkId ]['IEEE'], Ep, "0500")
+        if is_device_enrollment_completed(self, NwkId):
+            self.ListOfDevices[NwkId]["IAS"]["Auto-Enrollment"]["Status"] = "Enrolled"
+            
 
-    def IAS_zone_enroll_request_response(self, Nwkid, Ep, EnrollResponseCode, ZoneId):
-        self.logging("Debug", f"IAS device Enrollment Request Response for {Nwkid}/{Ep} Response: {EnrollResponseCode} ZoneId: {ZoneId}")
+    def IAS_zone_enroll_request_response(self, NwkId, Ep, EnrollResponseCode, ZoneId):
+        self.logging("Debug", f"IAS device Enrollment Request Response for {NwkId}/{Ep} Response: {EnrollResponseCode} ZoneId: {ZoneId}")
         if ( 
-            Nwkid not in self.ListOfDevices 
-            and "IAS" not in self.ListOfDevices[ Nwkid ] 
-            and "Auto-Enrollment" not in self.ListOfDevices[ Nwkid ]["IAS"] 
-            and "Ep" not in self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"] 
-            and Ep not in self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"]
+            NwkId not in self.ListOfDevices 
+            and "IAS" not in self.ListOfDevices[ NwkId ] 
+            and "Auto-Enrollment" not in self.ListOfDevices[ NwkId ]["IAS"] 
+            and "Ep" not in self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"] 
+            and Ep not in self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]["Ep"]
         ):
-            self.logging("Error", f"IAS device Enrollment Request Response for {Nwkid}/{Ep} Response: {EnrollResponseCode} ZoneId: {ZoneId}")
+            self.logging("Error", f"IAS device Enrollment Request Response for {NwkId}/{Ep} Response: {EnrollResponseCode} ZoneId: {ZoneId}")
             return
         
         if EnrollResponseCode == "%02x" %ENROLL_RESPONSE_OK_CODE:
-            self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"] = "Enrolled"
-              
-    def IAS_CIE_write_response(self, Nwkid, Ep, Status):
+            self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"] = "Enrolled"
+        if is_device_enrollment_completed(self, NwkId):
+            self.ListOfDevices[NwkId]["IAS"]["Auto-Enrollment"]["Status"] = "Enrolled"
+            self.ListOfDevices[NwkId]["IAS"]["ZoneId"] = ZoneId
+     
+    def IAS_CIE_write_response(self, NwkId, Ep, Status):
         # We are receiving a Write Attribute response
-        self.logging("Debug", f"IAS CIE write Response for {Nwkid}/{Ep}  Status: {Status}")
+        self.logging("Debug", f"IAS CIE write Response for {NwkId}/{Ep}  Status: {Status}")
         if ( 
-            Nwkid not in self.ListOfDevices 
-            and "IAS" not in self.ListOfDevices[ Nwkid ] 
-            and "Auto-Enrollment" not in self.ListOfDevices[ Nwkid ]["IAS"] 
-            and "Ep" not in self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"] 
-            and Ep not in self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"]
+            NwkId not in self.ListOfDevices 
+            and "IAS" not in self.ListOfDevices[ NwkId ] 
+            and "Auto-Enrollment" not in self.ListOfDevices[ NwkId ]["IAS"] 
+            and "Ep" not in self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"] 
+            and Ep not in self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]["Ep"]
         ):
             return
 
-        if self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"] != "set IAS CIE Address":
-            self.logging("Debug", f"IAS CIE write Response for {Nwkid}/{Ep}  {self.ListOfDevices[ Nwkid ]['IAS']['Auto-Enrollment']['Ep'][ Ep ]['Status']} !=  set IAS CIE Address")
+        if self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"] != "set IAS CIE Address":
+            self.logging("Debug", f"IAS CIE write Response for {NwkId}/{Ep}  {self.ListOfDevices[ NwkId ]['IAS']['Auto-Enrollment']['Ep'][ Ep ]['Status']} !=  set IAS CIE Address")
             return
 
         # We got the confirmation. Now we have to wait for the Enrollment Request
         if Status == "00":
-            self.logging("Debug", f"IAS CIE write Response for {Nwkid}/{Ep}  Waiting for Enrollment request")
-            self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"] = "Wait for Enrollment request"
+            self.logging("Debug", f"IAS CIE write Response for {NwkId}/{Ep}  Waiting for Enrollment request")
+            self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"] = "Wait for Enrollment request"
 
-    def IASWD_enroll(self, nwkid, Epout):
+    def IASWD_enroll(self, NwkId, Epout):
         data_type = "%02X" % 0x21
         data = "%04X" % 0xFFFE
-        zcl_write_attribute( self, nwkid, ZIGATE_EP, Epout, "0502", "00", "0000", "0000", data_type, data, ackIsDisabled=False )
+        zcl_write_attribute( self, NwkId, ZIGATE_EP, Epout, "0502", "00", "0000", "0000", data_type, data, ackIsDisabled=False )
 
-    def write_IAS_WD_Squawk(self, nwkid, ep, SquawkMode):
+    def write_IAS_WD_Squawk(self, NwkId, ep, SquawkMode):
         SQUAWKMODE = {"disarmed": 0b00000000, "armed": 0b00000001}
 
         if SquawkMode not in SQUAWKMODE:
-            Domoticz.Error("_write_IAS_WD_Squawk - %s/%s Unknown Squawk Mode: %s" % (nwkid, ep, SquawkMode))
+            Domoticz.Error("_write_IAS_WD_Squawk - %s/%s Unknown Squawk Mode: %s" % (NwkId, ep, SquawkMode))
 
         self.logging(
             "Debug",
-            "write_IAS_WD_Squawk - %s/%s - Squawk Mode: %s >%s<" % (nwkid, ep, SquawkMode, SQUAWKMODE[SquawkMode]),
+            "write_IAS_WD_Squawk - %s/%s - Squawk Mode: %s >%s<" % (NwkId, ep, SquawkMode, SQUAWKMODE[SquawkMode]),
         )
         if SquawkMode == 'disarmed':
             squawk_mode = 0x01
@@ -258,35 +281,35 @@ class IAS_Zone_Management:
             strobe = 0x01
             squawk_level = 0x01
         
-        zcl_ias_wd_command_squawk(self, ZIGATE_EP, ep, nwkid, squawk_mode, strobe, squawk_level, ackIsDisabled=False)
+        zcl_ias_wd_command_squawk(self, ZIGATE_EP, ep, NwkId, squawk_mode, strobe, squawk_level, ackIsDisabled=False)
 
-    def warningMode(self, nwkid, ep, mode="both", siren_level=0x00, warning_duration=0x01, strobe_duty=0x00, strobe_level=0x00):
+    def warningMode(self, NwkId, ep, mode="both", siren_level=0x00, warning_duration=0x01, strobe_duty=0x00, strobe_level=0x00):
 
-        strobe_mode, warning_mode, strobe_level, warning_duration = ias_sirene_mode( self, nwkid , mode )
+        strobe_mode, warning_mode, strobe_level, warning_duration = ias_sirene_mode( self, NwkId , mode )
         self.logging("Debug", f"warningMode - Mode: {bin(warning_mode)}, Duration: {warning_duration}, Duty: {strobe_duty}, Level: {strobe_level}")
 
-        zcl_ias_wd_command_start_warning(self, ZIGATE_EP, ep, nwkid, warning_mode, strobe_mode, siren_level, warning_duration, strobe_duty, strobe_level, groupaddrmode=False, ackIsDisabled=False)
+        zcl_ias_wd_command_start_warning(self, ZIGATE_EP, ep, NwkId, warning_mode, strobe_mode, siren_level, warning_duration, strobe_duty, strobe_level, groupaddrmode=False, ackIsDisabled=False)
 
-    def siren_both(self, nwkid, ep):
+    def siren_both(self, NwkId, ep):
         self.logging("Debug", "Device Alarm On ( Siren + Strobe)")
-        self.warningMode(nwkid, ep, "both")
+        self.warningMode(NwkId, ep, "both")
 
-    def siren_only(self, nwkid, ep):
+    def siren_only(self, NwkId, ep):
         self.logging("Debug", "Device Alarm On (Siren)")
-        self.warningMode(nwkid, ep, "siren")
+        self.warningMode(NwkId, ep, "siren")
 
-    def strobe_only(self, nwkid, ep):
+    def strobe_only(self, NwkId, ep):
         self.logging("Debug", "Device Alarm On ( Strobe)")
-        self.warningMode(nwkid, ep, "strobe")
+        self.warningMode(NwkId, ep, "strobe")
 
-    def alarm_on(self, nwkid, ep):
-        self.siren_both(nwkid, ep)
+    def alarm_on(self, NwkId, ep):
+        self.siren_both(NwkId, ep)
 
-    def alarm_off(self, nwkid, ep):
+    def alarm_off(self, NwkId, ep):
         self.logging("Debug", "Device Alarm Off")
-        self.warningMode(nwkid, ep, "stop")
+        self.warningMode(NwkId, ep, "stop")
 
-    def iaswd_develco_warning(self, Nwkid, ep, sirenonoff):
+    def iaswd_develco_warning(self, NwkId, ep, sirenonoff):
 
         if sirenonoff not in ( "00", "01"):
             return 
@@ -294,21 +317,21 @@ class IAS_Zone_Management:
         cmd = "00"
         Cluster = "0502"
         cluster_frame = 0b00010001
-        sqn = get_and_inc_ZCL_SQN(self, Nwkid)
+        sqn = get_and_inc_ZCL_SQN(self, NwkId)
 
         # Warnindg mode , Strobe, Sirene Level
-        if "Param" not in self.ListOfDevices[ Nwkid ] or "AlarmDuration" not in self.ListOfDevices[ Nwkid ]["Param"]:
+        if "Param" not in self.ListOfDevices[ NwkId ] or "AlarmDuration" not in self.ListOfDevices[ NwkId ]["Param"]:
             warningduration = 0x0a
         else:
-            warningduration = int(self.ListOfDevices[ Nwkid ]["Param"]["AlarmDuration"])
+            warningduration = int(self.ListOfDevices[ NwkId ]["Param"]["AlarmDuration"])
 
-        payload = "%02x" % cluster_frame + sqn + cmd + sirenonoff + "%04x" %warningduration
-        raw_APS_request(self, Nwkid, ep, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=ZIGATE_EP,  ackIsDisabled=False)
+        payload = "%02x" % cluster_frame + sqn + cmd + sirenonoff + "%04x" %struct.unpack(">H", struct.pack("H", warningduration))[0]
+        raw_APS_request(self, NwkId, ep, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=ZIGATE_EP, ackIsDisabled=False)
         return sqn
 
-def ias_sirene_mode( self, nwkid , mode ):
+def ias_sirene_mode( self, NwkId , mode ):
     strobe_mode, warning_mode, strobe_level, warning_duration = None
-    if self.ListOfDevices[nwkid]["Model"] == "WarningDevice":
+    if self.ListOfDevices[NwkId]["Model"] == "WarningDevice":
         if mode == "both":
             strobe_mode = 0x01
             warning_mode = 0x01
@@ -334,15 +357,15 @@ def ias_sirene_mode( self, nwkid , mode ):
             strobe_level = STROBE_LEVEL["Low"]
             strobe_mode = 0x01
             warning_mode = 0x00
-    if "Param" in self.ListOfDevices[nwkid]:
-        if "alarmDuration" in self.ListOfDevices[nwkid]["Param"]:
-            warning_duration = int(self.ListOfDevices[nwkid]["Param"]["alarmDuration"])
+    if "Param" in self.ListOfDevices[NwkId]:
+        if "alarmDuration" in self.ListOfDevices[NwkId]["Param"]:
+            warning_duration = int(self.ListOfDevices[NwkId]["Param"]["alarmDuration"])
 
-        if mode == "strobe" and "alarmStrobeCode" in self.ListOfDevices[nwkid]["Param"]:
-            strobe_mode = int(self.ListOfDevices[nwkid]["Param"]["alarmStrobeCode"])
+        if mode == "strobe" and "alarmStrobeCode" in self.ListOfDevices[NwkId]["Param"]:
+            strobe_mode = int(self.ListOfDevices[NwkId]["Param"]["alarmStrobeCode"])
 
-        if mode == "siren" and "alarmSirenCode" in self.ListOfDevices[nwkid]["Param"]:
-            warning_mode = int(self.ListOfDevices[nwkid]["Param"]["alarmSirenCode"])
+        if mode == "siren" and "alarmSirenCode" in self.ListOfDevices[NwkId]["Param"]:
+            warning_mode = int(self.ListOfDevices[NwkId]["Param"]["alarmSirenCode"])
 
     return strobe_mode, warning_mode, strobe_level, warning_duration
 
@@ -386,14 +409,14 @@ def IAS_CIE_service_discovery( self, NwkId, Epout):
     lenAttr, attributes = format_list_attributes( self, [0x0000, 0x0001, 0x0002])
     zcl_read_attribute(self, NwkId, ZIGATE_EP, Epout, "0500", "00", "00", "0000", lenAttr, attributes, ackIsDisabled=False)
 
-def IAS_Zone_enrollment_response(self, Nwkid, Ep, sqn):
+def IAS_Zone_enrollment_response(self, NwkId, Ep, sqn, ZoneID):
     # The IAS Zone server SHALL change its ZoneState attribute to 0x01 (enrolled). 
-    self.logging("Debug", f"IAS Zone_enroll_response for {Nwkid}/{Ep}")
+    self.logging("Debug", f"IAS Zone_enroll_response for {NwkId}/{Ep}")
     if not self.ControllerIEEE:
         self.logging("Error", "IASZone_enroll_response_zoneIDzoneID - Zigate IEEE not yet known")
         return
-    self.ListOfDevices[ Nwkid ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"] = "Enrolled"
-    zcl_ias_zone_enroll_response(self, Nwkid, ZIGATE_EP, Ep, "%02x" %ENROLL_RESPONSE_OK_CODE, "%02x" %ZONE_ID, sqn=sqn, ackIsDisabled=False)
+    self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"] = "Enrolled"
+    zcl_ias_zone_enroll_response(self, NwkId, ZIGATE_EP, Ep, "%02x" %ENROLL_RESPONSE_OK_CODE, "%02x" %ZoneID, sqn=sqn, ackIsDisabled=False)
 
 def retreive_attributes(self, MsgData):
     
@@ -422,3 +445,17 @@ def retreive_attributes(self, MsgData):
             idx += 6
     
     return attributes
+
+
+def is_device_enrollment_completed(self, NwkId):
+    
+    if "IAS" not in self.ListOfDevices[NwkId]:
+        return False
+    if "Auto-Enrollment" not in self.ListOfDevices[NwkId]["IAS"]:
+        return False
+    if "Ep" not in self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]:
+        return False
+    if "Status" in self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"] and self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]["Status"] == "Enrolled":
+        return True
+
+    return not any(("Status" in self.ListOfDevices[NwkId]["IAS"]["Auto-Enrollment"]["Ep"][x] and self.ListOfDevices[NwkId]["IAS"]["Auto-Enrollment"]["Ep"][x]["Status"] not in ("Enrolled", "Enrolled2")) for x in self.ListOfDevices[NwkId]["IAS"]["Auto-Enrollment"]["Ep"])

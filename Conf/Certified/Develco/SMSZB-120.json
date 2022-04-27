@@ -67,5 +67,7 @@
         ]
     },
     "VoltageConverter": 10,
-    "Param": {}
+    "Param": {
+        "AlarmDuration": 5
+    }
 }
