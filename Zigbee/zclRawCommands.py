@@ -103,6 +103,20 @@ def zcl_raw_write_attributeNoResponse(self, nwkid, EPin, EPout, cluster, manuf_i
     raw_APS_request(self, nwkid, EPout, cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, ackIsDisabled=ackIsDisabled)
     return sqn
     
+def zcl_raw_default_response( self, nwkid, EPin, EPout, cluster, sqn):
+    self.log.logging("zclCommand", "Debug", "zcl_raw_default_response %s %s %s %s %s" % (nwkid, EPin, EPout, cluster, sqn))
+    cmd = "0b"
+
+    cluster_frame = 0b00000000  # The frame type sub-field SHALL be set to indicate a global command (0b00)
+    fcf = "%02x" % cluster_frame
+
+    payload = fcf + sqn + cmd + "00" + "00"
+
+    self.log.logging("zclCommand", "Debug", "zcl_raw_default_response ==== payload: %s" % (payload))
+
+    raw_APS_request(self, nwkid, EPout, cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, ackIsDisabled=False)
+    return sqn
+    
     
 # Configure Reporting
 def zcl_raw_configure_reporting_requestv2(self, nwkid, epin, epout, cluster, direction, manufacturer_spec, manufacturer, attribute_reporting_configuration, ackIsDisabled=DEFAULT_ACK_MODE):

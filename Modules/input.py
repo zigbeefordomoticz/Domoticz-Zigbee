@@ -65,6 +65,7 @@ from Modules.zigbeeController import (initLODZigate, receiveZigateEpDescriptor,
 from Modules.zigbeeVersionTable import FIRMWARE_BRANCH
 from Zigbee.zclCommands import zcl_ias_zone_enroll_response
 from Modules.zigbeeVersionTable import set_display_firmware_version
+from Zigbee.zclRawCommands import zcl_raw_default_response
 
 
 def ZigateRead(self, Devices, Data):
@@ -3539,6 +3540,10 @@ def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change 
     # 5a 02 0500 02 0ffd 0010 00 ff 0001
     # 5d 02 0500 02 0ffd 0011 00 ff 0001
 
+    if self.zigbee_communitation == "zigpy":
+        # For instance needed by Frient/Develco Motion detector, which request a default response to disable the Alarm
+        zcl_raw_default_response( self, MsgSrcAddr, ZIGATE_EP, MsgEp, MsgClusterId, MsgSQN)
+    
     lastSeenUpdate(self, Devices, NwkId=MsgSrcAddr)
 
     if MsgSrcAddr not in self.ListOfDevices:
@@ -3641,13 +3646,12 @@ def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change 
     value = MsgZoneStatus[2:4]
 
     if self.ListOfDevices[MsgSrcAddr]["Model"] in (
-        "3AFE14010402000D",
-        "3AFE28010402000D",
+        "3AFE14010402000D", "3AFE28010402000D",
         "MOSZB-140",
-        "TS0202",
-        "TS0202-_TZ3210_jijr1sss",
+        "TS0202","TS0202-_TZ3210_jijr1sss",
     ):  # Konke Motion Sensor, Devlco/Frient Motion
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0406", "%02d" % alarm1)
+        
     elif self.ListOfDevices[MsgSrcAddr]["Model"] in (
         "lumi.sensor_magnet",
         "lumi.sensor_magnet.aq2",
@@ -3655,15 +3659,9 @@ def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change 
         "lumi.magnet.acn001",
     ):  # Xiaomi Door sensor
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0006", "%02d" % alarm1)
+        
     elif Model not in ("RC-EF-3.0", "RC-EM"):
-        MajDomoDevice(
-            self,
-            Devices,
-            MsgSrcAddr,
-            MsgEp,
-            MsgClusterId,
-            "%02d" % (alarm1 or alarm2),
-        )
+        MajDomoDevice( self, Devices, MsgSrcAddr, MsgEp, MsgClusterId, "%02d" % (alarm1 or alarm2), )
 
     # if self.ListOfDevices[MsgSrcAddr]["Model"] in (  'MOSZB-140',):
     #    # Tamper is inverse
