@@ -289,7 +289,7 @@ class IAS_Zone_Management:
 
     def warningMode(self, NwkId, ep, mode="both", siren_level=0x00, warning_duration=0x01, strobe_duty=0x00, strobe_level=0x00):
 
-        strobe_mode, warning_mode, strobe_level, warning_duration = ias_sirene_mode( self, NwkId , mode )
+        strobe_mode, warning_mode, strobe_level, warning_duration = ias_sirene_mode( self, NwkId , mode , warning_duration)
         self.logging("Debug", f"warningMode - Mode: {bin(warning_mode)}, Duration: {warning_duration}, Duty: {strobe_duty}, Level: {strobe_level}")
 
         zcl_ias_wd_command_start_warning(self, ZIGATE_EP, ep, NwkId, warning_mode, strobe_mode, siren_level, warning_duration, strobe_duty, strobe_level, groupaddrmode=False, ackIsDisabled=False)
@@ -333,8 +333,8 @@ class IAS_Zone_Management:
         raw_APS_request(self, NwkId, ep, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=ZIGATE_EP, ackIsDisabled=False)
         return sqn
 
-def ias_sirene_mode( self, NwkId , mode ):
-    strobe_mode, warning_mode, strobe_level, warning_duration = None
+def ias_sirene_mode( self, NwkId , mode, warning_duration ):
+    strobe_mode = warning_mode = strobe_level = 0x00
     if self.ListOfDevices[NwkId]["Model"] == "WarningDevice":
         if mode == "both":
             strobe_mode = 0x01
