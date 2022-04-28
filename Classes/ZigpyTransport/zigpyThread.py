@@ -43,6 +43,7 @@ from zigpy_znp.exceptions import (CommandNotRecognized, InvalidCommandResponse,
 
 MAX_CONCURRENT_REQUESTS_PER_DEVICE = 1
 CREATE_TASK = True
+WAITING_TIME_BETWEEN_COMMANDS = 0.350
 
 def start_zigpy_thread(self):
 
@@ -534,9 +535,9 @@ async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequ
                 return
 
             result, msg = await self.app.request( destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply, use_ieee )
-            await asyncio.sleep(0.300)
+            await asyncio.sleep(WAITING_TIME_BETWEEN_COMMANDS)
             #if self._currently_waiting_requests_list[_ieee]:
-            #    await asyncio.sleep(0.250)
+            #    await asyncio.sleep(WAITING_TIME_BETWEEN_COMMANDS)
 
     except DeliveryError as e:
         # This could be relevant to APS NACK after retry
