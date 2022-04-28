@@ -693,6 +693,10 @@ def handle_device_specific_needs(self, Devices, NWKID):
         self.log.logging("Pairing", "Debug", "Tuya Water Sensor Parkside registration needed")
         tuya_registration(self, NWKID, device_reset=True, parkside=True)
 
+    elif self.ListOfDevices[NWKID]["Model"] in ( "TS0216", ):
+        # Do just the registration
+        tuya_registration(self, NWKID )
+
     elif self.ListOfDevices[NWKID]["Model"] == "SPZB0001":
         thermostat_Calibration(self, NWKID, 0x00)
 

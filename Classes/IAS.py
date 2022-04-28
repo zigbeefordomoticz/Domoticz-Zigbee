@@ -266,6 +266,11 @@ class IAS_Zone_Management:
         data = "%04X" % 0xFFFE
         zcl_write_attribute( self, NwkId, ZIGATE_EP, Epout, "0502", "00", "0000", "0000", data_type, data, ackIsDisabled=False )
 
+    def IAS_WD_Maximum_duration(self, NwkId, Epout, duration):
+        data_type = "21"
+        duration = "%04x" %duration
+        zcl_write_attribute( self, NwkId, ZIGATE_EP, Epout, "0502", "00", "0000", "0000", data_type, duration, ackIsDisabled=False )
+        
     def write_IAS_WD_Squawk(self, NwkId, ep, SquawkMode):
         SQUAWKMODE = {"disarmed": 0b00000000, "armed": 0b00000001}
 
@@ -287,11 +292,12 @@ class IAS_Zone_Management:
         
         zcl_ias_wd_command_squawk(self, ZIGATE_EP, ep, NwkId, squawk_mode, strobe, squawk_level, ackIsDisabled=False)
 
-    def warningMode(self, NwkId, ep, mode="both", siren_level=0x00, warning_duration=0x01, strobe_duty=0x00, strobe_level=0x00):
+    def warningMode(self, NwkId, ep, mode="both", siren_level=0x01, warning_duration=0x01, strobe_duty=0x32, strobe_level=0x00):
 
         strobe_mode, warning_mode, strobe_level, warning_duration = ias_sirene_mode( self, NwkId , mode , warning_duration)
         self.logging("Debug", f"warningMode - Mode: {bin(warning_mode)}, Duration: {warning_duration}, Duty: {strobe_duty}, Level: {strobe_level}")
-
+        if "Model" in self.ListOfDevices[ NwkId ] and self.ListOfDevices[ NwkId ]["Model"] == "TS0216":
+            warning_duration = 0x0000
         zcl_ias_wd_command_start_warning(self, ZIGATE_EP, ep, NwkId, warning_mode, strobe_mode, siren_level, warning_duration, strobe_duty, strobe_level, groupaddrmode=False, ackIsDisabled=False)
 
     def siren_both(self, NwkId, ep):

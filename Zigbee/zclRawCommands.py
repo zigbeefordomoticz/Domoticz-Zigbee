@@ -528,5 +528,6 @@ def zcl_raw_ias_wd_command_squawk(self, EPin, EPout, nwkid, squawk_mode, strobe,
     field1 = field1 & 0xFC | (squawk_level & 0x03)
     payload = "%02x" % cluster_frame + sqn + cmd + "%02x" % field1
 
+    self.log.logging("zclCommand", "Debug", "zcl_raw_ias_wd_command_squawk %s payload: %s (field1 %s)" % (nwkid, payload, field1))
     raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
     return sqn

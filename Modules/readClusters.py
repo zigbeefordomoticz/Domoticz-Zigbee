@@ -3618,6 +3618,30 @@ def Cluster0502(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             self.ListOfDevices[MsgSrcAddr]["IAS WD"] = {}
         self.ListOfDevices[MsgSrcAddr]["IAS WD"]["MaxDuration"] = decodeAttribute(self, MsgAttType, MsgClusterData)
 
+    elif MsgAttrID == "f000":
+        # Looks like a reporting from the TS0216 / _TYZB01_8scntis1 - Heiman looks like Alarm
+        # 0x00: Off
+        # 0x01: Alarm
+        # 0x02: Strobe
+        # 0x03: Alarm + Strobe
+        RPT_ATTR_WIDGET = {
+            "00": "00",
+            "01": "20",
+            "02": "30",
+            "03": "10"
+        }
+        self.log.logging(
+            "Cluster",
+            "Debug",
+            "ReadCluster - 0502 - %s/%s  %s %s %s %s" % (MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            MsgSrcAddr,
+        )
+        if MsgClusterData not in RPT_ATTR_WIDGET:
+            return
+
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, RPT_ATTR_WIDGET[MsgClusterData ])
+        
+
     elif MsgAttrID == "fffd":
         self.log.logging(
             "Cluster",
