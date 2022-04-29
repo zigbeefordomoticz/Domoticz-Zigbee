@@ -107,7 +107,7 @@ ACTIONATORS = [
     "ColorControlRGBW",
     "ThermoSetpoint",
     "ThermoMode",
-    "ACMode",
+    "ACMode", "CAC221ACMode",
     "ThermoMode_2",
     "ThermoMode_3",
     "ThermoMode_4",
@@ -330,7 +330,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             self.ListOfDevices[NWKID]["Heartbeat"] = "0"
             return
 
-        if DeviceType in ("ThermoMode", "ACMode", "ThermoMode_3"):
+        if DeviceType in ("ThermoMode", "ACMode", "ThermoMode_3", "CAC221ACMode"):
             self.log.logging(
                 "Command",
                 "Debug",
@@ -941,6 +941,26 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             self.ListOfDevices[NWKID]["Heartbeat"] = "0"
             return
 
+        if DeviceType == "CAC221ACMode":
+            CAC221ACLevel_TO_MODE = {
+                0: "Off",
+                10: "Auto",
+                20: "Cool",
+                30: "Heat",
+                40: "Dry",
+                50: "Fan Only",
+            }
+            self.log.logging( "Command", "Debug", "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" % (NWKID, EPout, Unit, DeviceType, Level), NWKID, )
+            self.log.logging("Command", "Debug", "ThermoMode - requested Level: %s" % Level, NWKID)
+            if Level in CAC221ACLevel_TO_MODE:
+                self.log.logging( "Command", "Debug", " - Set Thermostat Mode to : %s / %s" % (Level, CAC221ACLevel_TO_MODE[Level]), NWKID )
+                thermostat_Mode(self, NWKID, CAC221ACLevel_TO_MODE[Level])
+                UpdateDevice_v2( self, Devices, Unit, int(Level) // 10, Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev )
+            # Let's force a refresh of Attribute in the next Heartbeat
+            self.ListOfDevices[NWKID]["Heartbeat"] = "0"
+            return
+            
+            
         if DeviceType == "ThermoMode_2":
             self.log.logging(
                 "Command",
