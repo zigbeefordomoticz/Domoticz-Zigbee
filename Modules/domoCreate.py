@@ -440,6 +440,10 @@ def CreateDomoDevice(self, Devices, NWKID):
                 Options = createSwitchSelector(self, 5, DeviceType=t, SelectorStyle=1)
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in ACMode" % (t), NWKID)
+            if t in ("CAC221ACMode",):
+                Options = createSwitchSelector(self, 6, DeviceType=t, SelectorStyle=1)
+                createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
+                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in CAC221ACMode" % (t), NWKID)
 
             # 6 Selectors, Style 1
             if t in (

@@ -82,12 +82,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
         )
         if WidgetType not in WidgetByPassEpMatch and WidgetEp != Ep:
             # We need to make sure that we are on the right Endpoint
-            self.log.logging(
-                "Widget",
-                "Debug",
-                "------> skiping this WidgetEp as do not match Ep : %s %s" % (WidgetEp, Ep),
-                NWKID,
-            )
+            self.log.logging( "Widget", "Debug", "------> skiping this WidgetEp as do not match Ep : %s %s" % (WidgetEp, Ep), NWKID,)
             continue
 
         DeviceUnit = 0
@@ -96,11 +91,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 DeviceUnit = x
                 break
         if DeviceUnit == 0:
-            self.log.logging(
-                "Widget",
-                "Error",
-                "Device %s not found !!!" % WidgetId, NWKID)
-            return
+            self.log.logging( "Widget", "Error", "Device %s not found !!!" % WidgetId, NWKID)
+            continue
 
         Switchtype = Devices[DeviceUnit].SwitchType
         Subtype = Devices[DeviceUnit].SubType
@@ -551,7 +543,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 self.log.logging("Widget", "Debug", "------>  Thermostat Mode 5 %s %s:%s" % (value, nValue, sValue), NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
 
-            elif WidgetType in ("ThermoMode", "ACMode", ) and Attribute_ == "001c":
+            elif WidgetType in ("ThermoMode", "ACMode",  ) and Attribute_ == "001c":
                 # value seems to come as int or str. To be fixed
                 self.log.logging("Widget", "Debug", "------>  Thermostat Mode %s type: %s" % (value, type(value)), NWKID)
                 if value in THERMOSTAT_MODE_2_LEVEL:
@@ -565,6 +557,25 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                         UpdateDevice_v2(self, Devices, DeviceUnit, 3, "30", BatteryLevel, SignalLevel)
                     elif THERMOSTAT_MODE_2_LEVEL[value] == "50":  # Fan
                         UpdateDevice_v2(self, Devices, DeviceUnit, 4, "40", BatteryLevel, SignalLevel)
+                        
+            elif  WidgetType in ("CAC221ACMode",  ) and Attribute_ == "001c":
+                self.log.logging("Widget", "Debug", "------>  Thermostat CAC221ACMode %s type: %s" % (value, type(value)), NWKID)
+                if value in THERMOSTAT_MODE_2_LEVEL:
+                    if THERMOSTAT_MODE_2_LEVEL[value] == "00":  # Off
+                        UpdateDevice_v2(self, Devices, DeviceUnit, 0, "00", BatteryLevel, SignalLevel)
+                    elif THERMOSTAT_MODE_2_LEVEL[value] == "10":  # Auto
+                        UpdateDevice_v2(self, Devices, DeviceUnit, 1, "10", BatteryLevel, SignalLevel)
+                    elif THERMOSTAT_MODE_2_LEVEL[value] == "20":  # Cool
+                        UpdateDevice_v2(self, Devices, DeviceUnit, 2, "20", BatteryLevel, SignalLevel)
+                    elif THERMOSTAT_MODE_2_LEVEL[value] == "30":  # Heat
+                        UpdateDevice_v2(self, Devices, DeviceUnit, 3, "30", BatteryLevel, SignalLevel)
+                    elif THERMOSTAT_MODE_2_LEVEL[value] == "40":  # Dry
+                        UpdateDevice_v2(self, Devices, DeviceUnit, 4, "40", BatteryLevel, SignalLevel)
+                    elif THERMOSTAT_MODE_2_LEVEL[value] == "50":  # Fan
+                        UpdateDevice_v2(self, Devices, DeviceUnit, 5, "50", BatteryLevel, SignalLevel)
+    
+                
+                
 
         if ClusterType == "Temp" and WidgetType == "AirQuality" and Attribute_ == "0002":
             # eco2 for VOC_Sensor from Nexturn is provided via Temp cluster

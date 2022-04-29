@@ -2644,16 +2644,18 @@ def Cluster0201(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     elif MsgAttrID == "001c":  # System Mode
         self.log.logging("Cluster", "Debug", "ReadCluster - 0201 - System Mode: %s" % (value), MsgSrcAddr)
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)     
-        if (
-            value == 0x01  # Auto
-            and "Param" in self.ListOfDevices[ MsgSrcAddr ] 
-            and "CAC221ForceAuto2Off" in self.ListOfDevices[ MsgSrcAddr ]["Param"] 
-            and self.ListOfDevices[ MsgSrcAddr ]["Param"]["CAC221ForceAuto2Off"]
-        ):
-            self.log.logging("Cluster", "Debug", "ReadCluster - 0201 - System Mode: %s Forcing Mode to Off (CasaIA CAC221)" % (value), MsgSrcAddr)
-            value = 0x00
-            self.log.logging("Cluster", "Debug", "ReadCluster - 0201 - System Mode: %s" % (value), MsgSrcAddr)
-            checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)  
+        #if (
+        #    value == 0x01  # Auto
+        #    and "Model" in self.ListOfDevices[MsgSrcAddr]
+        #    and self.ListOfDevices[MsgSrcAddr]["Model"] in ("AC211", "AC221", "CAC221")
+        #    and "Param" in self.ListOfDevices[ MsgSrcAddr ] 
+        #    and "CAC221ForceAuto2Off" in self.ListOfDevices[ MsgSrcAddr ]["Param"] 
+        #    and self.ListOfDevices[ MsgSrcAddr ]["Param"]["CAC221ForceAuto2Off"]
+        #):
+        #    self.log.logging("Cluster", "Debug", "ReadCluster - 0201 - System Mode: %s Forcing Mode to Off (CasaIA CAC221)" % (value), MsgSrcAddr)
+        #    value = 0x00
+        #    self.log.logging("Cluster", "Debug", "ReadCluster - 0201 - System Mode: %s" % (value), MsgSrcAddr)
+        #    checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)  
             
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value, Attribute_=MsgAttrID)
 

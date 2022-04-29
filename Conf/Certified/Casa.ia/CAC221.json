@@ -14,7 +14,7 @@
 			"000a": "",
 			"0019": "",
 			"ffac": "",
-			"Type": "Temp/ThermoSetpoint/FanControl/ACMode"
+			"Type": "Temp/ThermoSetpoint/FanControl/CAC221ACMode"
 		}
 	},
 	"Type": "",
@@ -110,8 +110,5 @@
 			"0000"
 		],
 		"0b04": []
-	},
-	"Param": {
-		"CAC221ForceAuto2Off": 1
 	}
 }

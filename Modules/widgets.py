@@ -255,7 +255,6 @@ SWITCH_LVL_MATRIX = {
         "LevelNames": "Off|On|Push Up|Push Down|Release",
         "Language": {"fr-FR": {"LevelNames": "Arrêt|Marche|Appuyer Haut|Appuyer Bas|Relacher"}},
     },
-
     "blindIKEA": {
         "00": (1,"10"),
         "01": (2,"20"),
@@ -264,9 +263,7 @@ SWITCH_LVL_MATRIX = {
         "LevelNames": "Off|Open|Close|Stop",
         "Language": {"fr-FR": {"LevelNames": "Off|Ouvrir|Fermer|Arreter"}}
     },
-
     "Ikea_Round_OnOff": {"00": "00", "toggle": (1, "10"), "ForceUpdate": True},
-
     "Ikea_Round_5b": {
         "00": (0, "00"),
         "toggle": (1, "10"),
@@ -494,15 +491,16 @@ SWITCH_LVL_MATRIX = {
         "LevelNames": "Off|Cool|Heat|Dry|Fan",
         "Language": {"fr-FR": {"LevelNames": "Arrêt|Froid|Chaud|Déshumidicateur|Ventilateur"}},
     },
-    "ACMode": {
+    "CAC221ACMode": {
         "00": (0, "00"),  # Off
-        "03": (1, "10"),  # Cool
-        "04": (2, "20"),  # Heat
-        "08": (3, "30"),  # Dry
-        "07": (4, "40"),  # Fan
+        "01": (1, "10"),  # Auto
+        "03": (2, "20"),  # Cool
+        "04": (2, "30"),  # Heat
+        "08": (3, "40"),  # Dry
+        "07": (4, "50"),  # Fan
         "ForceUpdate": False,
-        "LevelNames": "Off|Cool|Heat|Dry|Fan",
-        "Language": {"fr-FR": {"LevelNames": "Arrêt|Froid|Chaud|Déshumidicateur|Ventilateur"}},
+        "LevelNames": "Off|Auto|Cool|Heat|Dry|Fan",
+        "Language": {"fr-FR": {"LevelNames": "Arrêt|Auto|Froid|Chaud|Déshumidicateur|Ventilateur"}},
     },
     "ACSwing": {
         "00": (0, "00"),  # Off - All wings stopped
@@ -520,5 +518,15 @@ SWITCH_LVL_MATRIX = {
         "ForceUpdate": True,
         "LevelNames": "Off|0|X|+|-",
         "Language": {"fr-FR": {"LevelNames": "Off|0|X|+|-"}},
+    },
+    "ACMode": {
+        "00": (0, "00"),  # Off
+        "03": (1, "10"),  # Cool
+        "04": (2, "20"),  # Heat
+        "08": (3, "30"),  # Dry
+        "07": (4, "40"),  # Fan
+        "ForceUpdate": False,
+        "LevelNames": "Off|Cool|Heat|Dry|Fan",
+        "Language": {"fr-FR": {"LevelNames": "Arrêt|Froid|Chaud|Déshumidicateur|Ventilateur"}},
     },
 }
