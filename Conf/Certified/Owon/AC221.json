@@ -14,7 +14,7 @@
 			"000a": "",
 			"0019": "",
 			"ffac": "",
-			"Type": "Temp/ThermoSetpoint/FanControl/ACMode"
+			"Type": "Temp/ThermoSetpoint/FanControl/CAC221ACMode"
 		}
 	},
 	"Type": "",

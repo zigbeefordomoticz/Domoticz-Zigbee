@@ -140,7 +140,6 @@ SIZE_DATA_TYPE = {
     "09": 2,  # 16bit data
     # data / discrete
     "08": 1,
-    "09": 2,
     "0a": 3,
     "0b": 4,
     "0c": 5,
