@@ -148,7 +148,7 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
                 if "0500" in self.ListOfDevices[NwkId]["Ep"][ x ]:
                     del self.ListOfDevices[NwkId]["Ep"][ x ]["0500"]
                 if "0502" in self.ListOfDevices[NwkId]["Ep"][ x ]:
-                    del self.ListOfDevices[NwkId]["Ep"][ x ]["0500"]
+                    del self.ListOfDevices[NwkId]["Ep"][ x ]["0502"]
 
         if "WriteAttributes" in self.ListOfDevices[NwkId]:
             del self.ListOfDevices[NwkId]["WriteAttributes"]
