@@ -151,16 +151,6 @@ def getEpForCluster(self, nwkid, ClusterId, strict=False):
             continue
         if ClusterId in self.ListOfDevices[nwkid]["Ep"][x]:
             EPlist.append( str(x) )
-
-    Domoticz.Log("---------> EPout: %s" %str(EPlist) )
-
-    return EPlist
-    if not EPlist:
-        return None if strict else EPlist
-
-    if len(self.ListOfDevices[nwkid]["Ep"]) == 1:
-        return [self.ListOfDevices[nwkid]["Ep"].keys()]
-
     return EPlist
 
 
