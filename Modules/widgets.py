@@ -40,8 +40,7 @@ SWITCH_LVL_MATRIX = {
         "ForceUpdate": True,
         "LevelNames": "Off|Unauthorized|Bad Insert|Unlock all to neutral|All Key Removed|New Key|Autorized Key #1|Key in lock #1|Autorized Key #2|Key in lock #2|Autorized Key #3|Key in lock #3|Autorized Key #4|Key in lock #4|Autorized Key #5|Key in lock #5",
         "Language": {
-            "fr-FR": { "Off|Unauthorized|Bad Insert|Unlock all to neutral|All Key Removed|New Key|Autorized Key #1|Key in lock #1|Autorized Key #2|Key in lock #2|Autorized Key #3|Key in lock #3|Autorized Key #4|Key in lock #4|Autorized Key #5|Key in lock #5"
-            }
+            "fr-FR": { "Off|Unauthorized|Bad Insert|Unlock all to neutral|All Key Removed|New Key|Autorized Key #1|Key in lock #1|Autorized Key #2|Key in lock #2|Autorized Key #3|Key in lock #3|Autorized Key #4|Key in lock #4|Autorized Key #5|Key in lock #5"}
         },
     },
     "Smoke": {"00": (0, "Off"), "01": (1, "On"), "ForceUpdate": False},
@@ -92,8 +91,7 @@ SWITCH_LVL_MATRIX = {
         "ForceUpdate": True,
         "LevelNames": "Off|On|Color -|Color +|Dim -| Dim+|Long Dim-|Long Dim+|Stop|Scene1|Scene2|Scene3|Scene4|Scene5|Scene6|Scene7|Color Up|Color Down|Color Stop",
         "Language": {
-            "fr-FR": { "LevelNames": "Off|On|Color -|Color +|Dim -| Dim+|Long Dim-|Long Dim+|Stop|Scene1|Scene2|Scene3|Scene4|Scene5|Scene6|Scene7|Color Up|Color Down|Color Stop",
-            }
+            "fr-FR": { "LevelNames": "Off|On|Color -|Color +|Dim -| Dim+|Long Dim-|Long Dim+|Stop|Scene1|Scene2|Scene3|Scene4|Scene5|Scene6|Scene7|Color Up|Color Down|Color Stop",}
         },
     },
     "Button": {"01": (1, "On"), "ForceUpdate": True},
@@ -217,8 +215,7 @@ SWITCH_LVL_MATRIX = {
         "ForceUpdate": True,
         "LevelNames": "Off|Left click|Left Double click|Left Long click|Right click|Right Double Click|Right Long click|Both click|Both Double click|Both Long click",
         "Language": {
-            "fr-FR": { "LevelNames": "Arrêt|Click Gauche|Double click Gauche|Long Click Gauche|Click Droit|Double Click Droit|Long Click Droit|Click des 2|Double Click des 2|Long Click des 2"
-            }
+            "fr-FR": { "LevelNames": "Arrêt|Click Gauche|Double click Gauche|Long Click Gauche|Click Droit|Double Click Droit|Long Click Droit|Click des 2|Double Click des 2|Long Click des 2"}
         },
     },
     "Toggle": {
@@ -231,16 +228,14 @@ SWITCH_LVL_MATRIX = {
         "ForceUpdate": True,
         "LevelNames": "Off|Shake|Alert|Free_Fall|Flip_90|Flip_180|Move|Tap|Clock_Wise|Anti_Clock_Wise",
         "Language": {
-            "fr-FR": { "LevelNames": "Arrêt|Agiter|Alerte|Chute libre|Retourner_90|Retourner_180|Bouger|Frapper|Rotation Horaire|Rotation Antihoraire"
-            }
+            "fr-FR": { "LevelNames": "Arrêt|Agiter|Alerte|Chute libre|Retourner_90|Retourner_180|Bouger|Frapper|Rotation Horaire|Rotation Antihoraire"}
         },
     },
     "XCube": {
         "ForceUpdate": True,
         "LevelNames": "Off|Shake|Alert|Free_Fall|Flip_90|Flip_180|Move|Tap|Clock_Wise|Anti_Clock_Wise",
         "Language": {
-            "fr-FR": { "LevelNames": "Arrêt|Agiter|Alerte|Chute libre|Retourner_90|Retourner_180|Bouger|Frapper|Rotation Horaire|Rotation Antihoraire"
-            }
+            "fr-FR": { "LevelNames": "Arrêt|Agiter|Alerte|Chute libre|Retourner_90|Retourner_180|Bouger|Frapper|Rotation Horaire|Rotation Antihoraire" }
         },
     },
     "Vibration": {
@@ -286,14 +281,13 @@ SWITCH_LVL_MATRIX = {
         "hold_down": (8, "80"),
         "release_down": (9, "90"),
         "right_hold": (10, "100"),
-        "release_down": (11, "110"),
+        #"release_down": (11, "110"),
         "left_hold": (12, "120"),
-        "release_down": (13, "130"),
+        #"release_down": (13, "130"),
         "ForceUpdate": True,
         "LevelNames": "Off|ToggleOnOff|Left_click|Right_click|Up_click|Up_push|Up_release|Down_click|Down_push|Down_release|Right_push|Right_release|Left_push|Left_release",
         "Language": {
-            "fr-FR": { "LevelNames": "Arrêt|Basculer|Click Gauche|Click Droit|Click Haut|Click Haut Long|Relacher Haut|Click Bas|Click Bas Long|Relacher Bas|Click Long Droit|Relacher Droit|Click Long Gauche|Relacher Gauche"
-            }
+            "fr-FR": { "LevelNames": "Arrêt|Basculer|Click Gauche|Click Droit|Click Haut|Click Haut Long|Relacher Haut|Click Bas|Click Bas Long|Relacher Bas|Click Long Droit|Relacher Droit|Click Long Gauche|Relacher Gauche"}
         },
     },
     "ThermoModeEHZBRTS": {
@@ -451,8 +445,7 @@ SWITCH_LVL_MATRIX = {
         "ForceUpdate": True,
         "LevelNames": "Off|BT 1 Click|BT 1 Long|BT 1 Release|BT 2 Click|BT 2 Long|BT 2 Release|BT 3 Click|BT 3 Long|BT 3 Release|BT 4 Click|BT 4 Long|BT 4 Release",
         "Language": {
-            "fr-FR": { "Off|BT 1 Click|BT 1 Long|BT 1 Release|BT 2 Click|BT 2 Long|BT 2 Release|BT 3 Click|BT 3 Long|BT 3 Release|BT 4 Click|BT 4 Long|BT 4 Release"
-            }
+            "fr-FR": { "Off|BT 1 Click|BT 1 Long|BT 1 Release|BT 2 Click|BT 2 Long|BT 2 Release|BT 3 Click|BT 3 Long|BT 3 Release|BT 4 Click|BT 4 Long|BT 4 Release"}
         },
     },
     "Alarm": {
@@ -528,7 +521,7 @@ SWITCH_LVL_MATRIX = {
         "ForceUpdate": False,
         "LevelNames": "Off|Auto|Cool|Heat|Dry|Fan",
         "Language": {
-            "fr-FR": {"LevelNames": "Arrêt|Auto|Froid|Chaud|Déshumidicateur|Ventilateur"}
+            "fr-FR": {"LevelNames": "Arrêt|Auto|Froid|Chaud|Déshumidicateur|Ventilateur"},
             "es-ES": {"LevelNames": "Off|Auto|Frío||Calefacción|Deshumidificador|Ventilador"}},
     },
     "ACSwing": {
