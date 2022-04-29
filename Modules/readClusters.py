@@ -2642,10 +2642,23 @@ def Cluster0201(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
     elif MsgAttrID == "001c":  # System Mode
         self.log.logging("Cluster", "Debug", "ReadCluster - 0201 - System Mode: %s" % (value), MsgSrcAddr)
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)     
+        #if (
+        #    value == 0x01  # Auto
+        #    and "Model" in self.ListOfDevices[MsgSrcAddr]
+        #    and self.ListOfDevices[MsgSrcAddr]["Model"] in ("AC211", "AC221", "CAC221")
+        #    and "Param" in self.ListOfDevices[ MsgSrcAddr ] 
+        #    and "CAC221ForceAuto2Off" in self.ListOfDevices[ MsgSrcAddr ]["Param"] 
+        #    and self.ListOfDevices[ MsgSrcAddr ]["Param"]["CAC221ForceAuto2Off"]
+        #):
+        #    self.log.logging("Cluster", "Debug", "ReadCluster - 0201 - System Mode: %s Forcing Mode to Off (CasaIA CAC221)" % (value), MsgSrcAddr)
+        #    value = 0x00
+        #    self.log.logging("Cluster", "Debug", "ReadCluster - 0201 - System Mode: %s" % (value), MsgSrcAddr)
+        #    checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)  
+            
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value, Attribute_=MsgAttrID)
-        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
 
-        # We shoudl also force Shutdown of FanControl and eventualy Wong
+        # We shoudl also force Shutdown of FanControl and eventualy Wing
         if value == 0x00 and "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ("AC211", "AC221", "CAC221"):
             # Shutdown the other widgets
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0202", "%02x" % 0x0)
