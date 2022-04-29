@@ -130,7 +130,7 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
     self.log.logging("Input", "Debug", "Nwkid: %s Status: %s" %(NwkId,self.ListOfDevices[NwkId]["Status"] ), NwkId)
     if (
         ( "Status" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Status"] in ("Removed", "erasePDM", "provREQ", "Left") ) 
-        or ( "PreviousStatus" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["PreviousStatus"] in ("Removed", "erasePDM", "provREQ", "Left"))
+        or ( "PreviousStatus" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["PreviousStatus"] in ("Removed", "erasePDM", "provREQ", "Left") )
     ):
         self.log.logging("Input", "Debug", "--> Device reset, removing key Attributes", NwkId)
         reseted_device = True
@@ -195,7 +195,7 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
             self.iaszonemgt.IAS_device_enrollment(NwkId)
 
             zigbee_provision_device(self, Devices, NwkId, 0, "inDB")
-            
+
 
         return
 
@@ -218,6 +218,9 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
             read_attributes_if_needed( self, NwkId)
             
             if reseted_device:
+                # IAS Enrollment if required
+                self.iaszonemgt.IAS_device_enrollment(NwkId)
+
                 zigbee_provision_device(self, Devices, NwkId, 0, "inDB")
 
             if self.ListOfDevices[NwkId]["Model"] in ("TS0601-sirene"):
