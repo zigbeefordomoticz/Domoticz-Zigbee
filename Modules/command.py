@@ -944,6 +944,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
         if DeviceType == "CAC221ACMode":
             CAC221ACLevel_TO_MODE = {
                 0: "Off",
+                10: "Auto",
                 20: "Cool",
                 30: "Heat",
                 40: "Dry",
