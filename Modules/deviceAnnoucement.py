@@ -147,8 +147,10 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
             for x in self.ListOfDevices[NwkId]["Ep"]:
                 if "0500" in self.ListOfDevices[NwkId]["Ep"][ x ]:
                     del self.ListOfDevices[NwkId]["Ep"][ x ]["0500"]
+                    self.ListOfDevices[NwkId]["Ep"][ x ]["0500"] = {}
                 if "0502" in self.ListOfDevices[NwkId]["Ep"][ x ]:
                     del self.ListOfDevices[NwkId]["Ep"][ x ]["0502"]
+                    self.ListOfDevices[NwkId]["Ep"][ x ]["0502"] = {}
 
         if "WriteAttributes" in self.ListOfDevices[NwkId]:
             del self.ListOfDevices[NwkId]["WriteAttributes"]
@@ -189,7 +191,11 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
 
         if reseted_device:
             self.log.logging("Input", "Debug", "--> Device reset, redoing provisioning", NwkId)
+            # IAS Enrollment if required
+            self.iaszonemgt.IAS_device_enrollment(NwkId)
+
             zigbee_provision_device(self, Devices, NwkId, 0, "inDB")
+            
 
         return
 
