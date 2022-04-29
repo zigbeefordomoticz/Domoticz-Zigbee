@@ -514,7 +514,7 @@ SWITCH_LVL_MATRIX = {
         "ForceUpdate": True,
         "LevelNames": "Off|Cool|Heat|Dry|Fan",
         "Language": {
-            "fr-FR": {"LevelNames": "Arrêt|Froid|Chaud|Déshumidicateur|Ventilateur"}
+            "fr-FR": {"LevelNames": "Arrêt|Froid|Chaud|Déshumidicateur|Ventilateur"},
             "es-ES": {"LevelNames": "Off|Frío||Calefacción|Deshumidificador|Ventilador"}
             },
     },
