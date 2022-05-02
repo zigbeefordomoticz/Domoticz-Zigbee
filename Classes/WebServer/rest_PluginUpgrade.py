@@ -1,0 +1,31 @@
+
+
+import json
+import subprocess
+
+import Domoticz
+from Classes.WebServer.headerResponse import (prepResponseMessage,
+                                              setupHeadersResponse)
+
+PLUGIN_UPGRADE_SCRIPT = "Tools/plugin-auto-upgrade.sh"
+
+def rest_plugin_upgrade(self, verb, data, parameters):
+    
+    pluginFolder = self.pluginParameters["HomeFolder"]
+    upgrade_script = pluginFolder + PLUGIN_UPGRADE_SCRIPT
+    result = {}
+    _response = prepResponseMessage(self, setupHeadersResponse())
+    if verb == "GET" and len(parameters) == 0:
+        
+        process = subprocess.run( upgrade_script ,
+                                universal_newlines=True,
+                                text=True,
+                                capture_output=True,
+                                #stderr=subprocess.STDOUT,
+                                shell=True)
+        
+        result = {"result": str(process.stdout), "ReturnCode": process.returncode }
+        
+    _response["Data"] = json.dumps(result, sort_keys=True)
+
+    return _response

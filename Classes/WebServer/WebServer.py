@@ -69,6 +69,7 @@ class WebServer(object):
     from Classes.WebServer.rest_Topology import rest_netTopologie, rest_req_topologie
     from Classes.WebServer.sendresponse import sendResponse
     from Classes.WebServer.tools import DumpHTTPResponseToLog, keepConnectionAlive
+    from Classes.WebServer.rest_PluginUpgrade import rest_plugin_upgrade
 
     hearbeats = 0
 
