@@ -18,10 +18,10 @@ def rest_plugin_upgrade(self, verb, data, parameters):
     if verb == "GET" and len(parameters) == 0:
         
         process = subprocess.run( upgrade_script ,
+                                 cwd= self.pluginParameters["HomeFolder"],
                                 universal_newlines=True,
                                 text=True,
                                 capture_output=True,
-                                #stderr=subprocess.STDOUT,
                                 shell=True)
         
         result = {"result": str(process.stdout), "ReturnCode": process.returncode }
