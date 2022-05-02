@@ -5,6 +5,10 @@
 echo "Starting Zigbee for Domoticz plugin Upgrade process."
 echo "----------------------------------------------------"
 
+#env
+#echo $(id)
+#echo $(who am i)
+
 echo "Checking pip3 and upgrading if needed"
 sudo python3 -m pip install --upgrade pip
 ret="$?"
@@ -26,12 +30,14 @@ fi
 
 
 echo "(2) updating Zigbee for Domoticz plugin"
-git config --add submodule.recurse true
-git pull --recurse-submodules
+echo "Git Status: $(git status)"
+
+echo "Setup submodule.recurse $(git config --add submodule.recurse true)"
+echo "Exceute git pull $(git pull --recurse-submodules)"
 ret="$?"
 if [ "$ret" != "0" ] ; then
     echo "Problem while running command 'git pull --recurse-submodules'."
-    exit -2
+    exit -3
 fi
 
 
