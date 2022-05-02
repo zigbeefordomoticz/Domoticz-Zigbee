@@ -254,6 +254,10 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
         "Debug",
         "------------ > Finally do the existing device and rebind if needed",
     )
+    if reseted_device:
+        # IAS Enrollment if required
+        self.iaszonemgt.IAS_device_enrollment(NwkId)
+
     decode004d_existing_devicev2(self, Devices, NwkId, Ieee, MacCapa, MsgLQI, now)
 
     if "Announced" in self.ListOfDevices[NwkId]:
