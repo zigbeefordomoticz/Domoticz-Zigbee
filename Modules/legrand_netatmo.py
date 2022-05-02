@@ -743,19 +743,35 @@ def legrand_dimmer_enable(self, NwkId):
         return
     bindDevice(self, ieee, "01", "0008", destaddr=None, destep="01")
 
-    # Configure Reporting
-    # 0x0008 / 0x0000  Change 0x01, Min: 0x01, Max: 600
+    attribute_reporting_record = {
+        "Attribute": "0000",
+        "DataType": "20",
+        "minInter": "0001",
+        "maxInter": "0258",
+        "timeOut": "0000",
+    }
 
     self.configureReporting.send_configure_reporting_attributes_set(
-        NwkId, ZIGATE_EP, "01", "0008", "00", "00", "0000", 1, "0020000000010258000001", [0x0000] )
+        NwkId, ZIGATE_EP, "01", "0008", "00", "00", "0000", [ attribute_reporting_record,] )
     
     # 0x0008 / 0x00011 Change 0x01 Min: 0x00, Max 600
+    attribute_reporting_record = {
+        "Attribute": "0000",
+        "DataType": "20",
+        "minInter": "0000",
+        "maxInter": "0258",
+        "timeOut": "0000",
+    }
+
+    #self.configureReporting.send_configure_reporting_attributes_set(
+    #    NwkId, ZIGATE_EP, "01", "0008", "00", "00", "0000", 1, "0020/0011/0000/0258/0000/01", [0x0011])
     self.configureReporting.send_configure_reporting_attributes_set(
-        NwkId, ZIGATE_EP, "01", "0008", "00", "00", "0000", 1, "0020001100000258000001", [0x0011])
+        NwkId, ZIGATE_EP, "01", "0008", "00", "00", "0000", [attribute_reporting_record,])
 
     # Read Attribute 0x0008 / 0x0000 , 0x0011
     read_attribute(self, NwkId, ZIGATE_EP, "01", "0008", "00", "00", "0000", 1, "0000", ackIsDisabled=True)
-    read_attribute(self, NwkId, ZIGATE_EP, "01", "0008", "00", "00", "0011", 1, "0000", ackIsDisabled=True)
+    read_attribute(self, NwkId, ZIGATE_EP, "01", "0008", "00", "00", "0000", 1, "0011", ackIsDisabled=True)
+    
     # Read Attribute 0x0006 / 0x0000
     read_attribute(self, NwkId, ZIGATE_EP, "01", "0006", "00", "00", "0000", 1, "0000", ackIsDisabled=True)
 

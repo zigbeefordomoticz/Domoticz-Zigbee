@@ -249,7 +249,11 @@ def request_next_Ep(self, Nwkid):
     for iterEp in self.ListOfDevices[Nwkid]["Ep"]:
         if is_fake_ep(self, Nwkid, iterEp):
             continue
-        
+
+        # Skip Green Zigbee EndPoint
+        if iterEp == 'f2' and self.zigbee_communitation == 'zigpy':
+            continue
+
         # Let's request only 1 Ep, in order wait for the response and then request the next one
         if not self.ListOfDevices[Nwkid]["Ep"][ iterEp ]:
             self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s Request Simple Descriptor for Ep: %s" % ("-", Nwkid, iterEp))
