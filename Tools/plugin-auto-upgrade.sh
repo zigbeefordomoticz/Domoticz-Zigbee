@@ -33,7 +33,7 @@ echo "(2) updating Zigbee for Domoticz plugin"
 echo "Git Status: $(git status)"
 
 echo "Setup submodule.recurse $(git config --add submodule.recurse true)"
-echo "Exceute git pull $(git pull --recurse-submodules)"
+git pull --recurse-submodules
 ret="$?"
 if [ "$ret" != "0" ] ; then
     echo "Problem while running command 'git pull --recurse-submodules'."
