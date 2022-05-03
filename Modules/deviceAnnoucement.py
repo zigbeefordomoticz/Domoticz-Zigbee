@@ -127,7 +127,7 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
         return
 
     reseted_device = False
-    self.log.logging("Input", "Debug", "Nwkid: %s Status: %s" %(NwkId,self.ListOfDevices[NwkId]["Status"] ), NwkId)
+    self.log.logging("Input", "Debug", "device_annoucementv2 - Nwkid: %s Status: %s" %(NwkId,self.ListOfDevices[NwkId]["Status"] ), NwkId)
     if (
         ( "Status" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Status"] in ("Removed", "erasePDM", "provREQ", "Left") ) 
         or ( "PreviousStatus" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["PreviousStatus"] in ("Removed", "erasePDM", "provREQ", "Left") )
