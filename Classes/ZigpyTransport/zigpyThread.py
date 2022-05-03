@@ -386,12 +386,14 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
         destination = int(NwkId, 16)
         self.log.logging("TransportZigpy", "Debug", "process_raw_command  call broadcast destination: %s" % NwkId)
         result, msg = await self.app.broadcast( Profile, Cluster, sEp, dEp, 0x0, 0x0, sequence, payload, )
+        await asyncio.sleep( WAITING_TIME_BETWEEN_COMMANDS)
 
     elif addressmode == 0x01:
         # Group Mode
         destination = int(NwkId, 16)
         self.log.logging("TransportZigpy", "Debug", "process_raw_command  call mrequest destination: %s" % destination)
         result, msg = await self.app.mrequest(destination, Profile, Cluster, sEp, sequence, payload)
+        await asyncio.sleep( WAITING_TIME_BETWEEN_COMMANDS)
 
     elif addressmode in (0x02, 0x07):
         # Short is a str
@@ -418,6 +420,7 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
                     transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False, ) )
             else:
                 await transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False, )
+                await asyncio.sleep( WAITING_TIME_BETWEEN_COMMANDS)
                 
         except DeliveryError as e:
             # This could be relevant to APS NACK after retry
@@ -435,7 +438,8 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
                 transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False, ) )
         else:
             await transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False, )
-
+            await asyncio.sleep( WAITING_TIME_BETWEEN_COMMANDS)
+            
     if result:
         self.log.logging(
             "TransportZigpy",
@@ -524,6 +528,7 @@ async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequ
 
     try:
         async with _limit_concurrency(self, destination, sequence):
+            self.log.logging( "TransportZigpy", "Log", "transport_request: _limit_concurrency %s %s" %(destination, sequence))
             if _ieee in self._currently_not_reachable and self._currently_waiting_requests_list[_ieee]:
                 self.log.logging(
                     "TransportZigpy",
@@ -535,9 +540,9 @@ async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequ
                 return
 
             result, msg = await self.app.request( destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply, use_ieee )
-            await asyncio.sleep(WAITING_TIME_BETWEEN_COMMANDS)
-            #if self._currently_waiting_requests_list[_ieee]:
-            #    await asyncio.sleep(WAITING_TIME_BETWEEN_COMMANDS)
+            if self._currently_waiting_requests_list[_ieee]:
+                self.log.logging( "TransportZigpy", "Log", "ZigyTransport: process_raw_command waiting a while ")
+                await asyncio.sleep( 1.5 * WAITING_TIME_BETWEEN_COMMANDS)
 
     except DeliveryError as e:
         # This could be relevant to APS NACK after retry
