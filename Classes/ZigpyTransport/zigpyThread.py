@@ -540,9 +540,17 @@ async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequ
                 return
 
             result, msg = await self.app.request( destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply, use_ieee )
+            self.log.logging( "TransportZigpy", "Log", "ZigyTransport: process_raw_command  %s %s (%s) %s (%s)" %( _ieee, Profile, type(Profile), Cluster, type(Cluster)))
+            if Profile == 0x0000 and  Cluster == 0x0005:
+                # Most likely for the CasaIA devices which seems to have issue
+                self.log.logging( "TransportZigpy", "Log", "ZigyTransport: process_raw_command waiting 5 secondes ")
+                await asyncio.sleep( 6 )
+
+            # Slow down the through put when too many commands. Try to not overload the coordinators
+            multi = 1
             if self._currently_waiting_requests_list[_ieee]:
-                self.log.logging( "TransportZigpy", "Log", "ZigyTransport: process_raw_command waiting a while ")
-                await asyncio.sleep( 1.5 * WAITING_TIME_BETWEEN_COMMANDS)
+                multi = 1.5
+            await asyncio.sleep( multi * WAITING_TIME_BETWEEN_COMMANDS)
 
     except DeliveryError as e:
         # This could be relevant to APS NACK after retry
