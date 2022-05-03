@@ -1,7 +1,7 @@
 
 
 import json
-import subprocess
+import subprocess  # nosec
 
 import Domoticz
 from Classes.WebServer.headerResponse import (prepResponseMessage,
