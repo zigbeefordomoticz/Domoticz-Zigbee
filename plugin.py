@@ -69,6 +69,10 @@
 </plugin>
 """
 
+import pathlib
+
+from pkg_resources import DistributionNotFound
+
 import Domoticz
 
 try:
@@ -139,7 +143,7 @@ TIMEDOUT_START = 10  # Timeoud for the all startup
 TIMEDOUT_FIRMWARE = 5  # HB before request Firmware again
 TEMPO_START_ZIGATE = 1  # Nb HB before requesting a Start_Zigate
 
-
+REQUIRES = ["aiohttp", "aiosqlite>=0.16.0", "crccheck", "pycryptodome", "voluptuous"]
 class BasePlugin:
     enabled = False
 
@@ -252,6 +256,9 @@ class BasePlugin:
     def onStart(self):
         Domoticz.Log("Zigbee for Domoticz plugin started!")
         assert sys.version_info >= (3, 4)  # nosec
+        
+        if check_requirements( self ):
+            return
 
         if Parameters["Mode1"] == "V1" and Parameters["Mode2"] in (
             "USB",
@@ -544,7 +551,7 @@ class BasePlugin:
             self.log.logging("Plugin", "Status", "Transport mode set to None, no communication.")
             self.FirmwareVersion = "031c"
             self.PluginHealth["Firmware Update"] = {"Progress": "75 %", "Device": "1234"}
-            return
+
 
         elif self.transport == "ZigpyZiGate":
             # Zigpy related modules
@@ -656,12 +663,12 @@ class BasePlugin:
             self.ControllerLink= ZigpyTransport( self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "ezsp", Parameters["SerialPort"])  
             self.ControllerLink.open_zigate_connection()
             self.pluginconf.pluginConf["ControllerInRawMode"] = True
-            
+          
         else:
             self.log.logging("Plugin", "Error", "Unknown Transport comunication protocol : %s" % str(self.transport))
             return
 
-        if self.transport not in ("ZigpyZNP", "ZigpydeCONZ", "ZigpyEZSP", "ZigpyZiGate" ):
+        if self.transport not in ("ZigpyZNP", "ZigpydeCONZ", "ZigpyEZSP", "ZigpyZiGate", "None" ):
             self.log.logging("Plugin", "Debug", "Establish Zigate connection")
             self.ControllerLink.open_zigate_connection()
 
@@ -1014,13 +1021,13 @@ class BasePlugin:
                 zigateInit_Phase2(self)
                 return
 
-        if not self.InitPhase3:
+        if self.transport != "None" and not self.InitPhase3:
             zigateInit_Phase3(self)
             return
 
         # Checking Version
         self.pluginParameters["TimeStamp"] = int(time.time())
-        if self.pluginconf.pluginConf["internetAccess"] and (
+        if self.transport != "None" and self.pluginconf.pluginConf["internetAccess"] and (
             self.pluginParameters["available"] is None or self.HeartbeatCount % (12 * 3600 // HEARTBEAT) == 0
         ):
             (
@@ -1206,9 +1213,7 @@ def unknown_device_model(self, NwkId, Model, ManufCode, ManufName ):
     
     self.ListOfDevices[ NwkId ]['Log_UnknowDeviceFlag'] = time.time()
         
-    
-    
-    
+
 def decodeConnection(connection):
 
     decoded = {}
@@ -1313,7 +1318,7 @@ def zigateInit_Phase3(self):
 
     self.pluginParameters["FirmwareVersion"] = self.FirmwareVersion
 
-    if self.zigbee_communitation == "native" and not check_firmware_level(self):
+    if self.transport != "None" and self.zigbee_communitation == "native" and not check_firmware_level(self):
         self.log.logging("Plugin", "Debug", "Firmware not ready")
         return
 
@@ -1640,7 +1645,30 @@ def check_python_modules_version( self ):
             flag = False
             
     return flag
-            
+  
+def check_requirements( self ):
+
+    from pathlib import Path
+
+    import pkg_resources
+
+    _filename = pathlib.Path( Parameters[ "HomeFolder"] + "requirements.txt" )
+
+    Domoticz.Status("Checking Python modules %s" %_filename)
+    requirements = pkg_resources.parse_requirements(_filename.open())
+    for requirements in requirements:
+        req = str(requirements)
+        try:
+            pkg_resources.require(req)
+        except DistributionNotFound:
+            Domoticz.Error("Looks like %s python module is not installed. Make sure to install the required python3 module" %req)
+            Domoticz.Error("Use the command:")
+            Domoticz.Error("sudo pip3 install -r requirements.txt")
+            return True
+    return False          
+        
+    
+              
 def debuging_information(self, mode):
     self.log.logging("Plugin", mode, "Is GC enabled: %s" % gc.isenabled())
     self.log.logging("Plugin", mode, "DomoticzVersion: %s" % Parameters["DomoticzVersion"])
