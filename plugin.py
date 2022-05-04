@@ -676,7 +676,7 @@ class BasePlugin:
         if self.iaszonemgt is None:
             # Create IAS Zone object
             # Domoticz.Log("Init IAS_Zone_management ZigateComm: %s" %self.ControllerLink)
-            self.iaszonemgt = IAS_Zone_Management(self.pluginconf, self.ControllerLink, self.ListOfDevices, self.log, self.zigbee_communitation, self.FirmwareVersion)
+            self.iaszonemgt = IAS_Zone_Management(self.pluginconf, self.ControllerLink, self.ListOfDevices, self.IEEE2NWK, self.DeviceConf, self.log, self.zigbee_communitation, self.FirmwareVersion)
 
             # Starting WebServer
         if self.webserver is None:
@@ -1069,7 +1069,7 @@ class BasePlugin:
         # Manage all entries in  ListOfDevices (existing and up-coming devices)
         processListOfDevices(self, Devices)
 
-        self.iaszonemgt.IAS_heartbeat()
+        #self.iaszonemgt.IAS_heartbeat()
 
         # Check and Update Heating demand for Wiser if applicable (this will be check in the call)
         wiser_thermostat_monitoring_heating_demand(self, Devices)
@@ -1414,7 +1414,10 @@ def zigateInit_Phase3(self):
 
     elif int(self.FirmwareBranch) >= 20:
         self.log.logging(
-            "Plugin", "Status", "Plugin with ZNP, firmware %s-%s correctly initialized" % (self.FirmwareMajorVersion, self.FirmwareVersion))
+            "Plugin", "Status", "Plugin with Zigpy, Coordinator %s firmware %s correctly initialized" % (
+                self.pluginParameters["CoordinatorModel"], self.pluginParameters["DisplayFirmwareVersion"]))
+
+
 
     # If firmware above 3.0d, Get Network State
     if (self.HeartbeatCount % (3600 // HEARTBEAT)) == 0 and self.transport != "None":
