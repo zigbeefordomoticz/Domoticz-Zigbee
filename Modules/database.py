@@ -532,7 +532,9 @@ def checkListOfDevice2Devices(self, Devices):
                     + " not found in Plugin Database",
                 )
             else:
-                Domoticz.Error(
+                self.log.logging(
+                    "Database",
+                    "Error",
                     "checkListOfDevice2Devices - "
                     + str(Devices[x].Name)
                     + " - "

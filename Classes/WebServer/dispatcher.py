@@ -70,6 +70,7 @@ def do_rest(self, Connection, verb, data, version, command, parameters):
         },
         "permit-to-join": {"Name": "permit-to-join", "Verbs": {"GET", "PUT"}, "function": self.rest_PermitToJoin},
         "plugin-health": {"Name": "plugin-health", "Verbs": {"GET"}, "function": self.rest_plugin_health},
+        "plugin-upgrade":  {"Name": "plugin-upgrade", "Verbs": {"GET"}, "function": self.rest_plugin_upgrade},
         "plugin-restart": {"Name": "plugin-restart", "Verbs": {"GET"}, "function": self.rest_plugin_restart},
         "plugin-stat": {"Name": "plugin-stat", "Verbs": {"GET"}, "function": self.rest_plugin_stat},
         "plugin": {"Name": "plugin", "Verbs": {"GET"}, "function": self.rest_PluginEnv},
