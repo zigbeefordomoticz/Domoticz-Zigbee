@@ -1937,21 +1937,21 @@ def change_setpoint_for_time(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID
 
     if action == "0102":  # Increase temp for CCTFR6100
         self.log.logging( "Schneider", "Debug", "change_setpoint_for_time -- Setpoint to %s for %s min" % (setpoint, duration))
-        override_setpoint(self, srcNWKID, EPout, setpoint, duration)
+        setpoint = override_setpoint(self, srcNWKID, EPout, setpoint, duration)
         schneider_update_ThermostatDevice(self, Devices, srcNWKID, EPout, ClusterID, setpoint)
         self.ListOfDevices[srcNWKID ]["Schneider"]["BoostDemand"] = True
 
     elif action == "0103":
         # Set setpoint On
         self.log.logging( "Schneider", "Debug", "change_setpoint_for_time -- Setpoint to %s for %s min" % (setpoint, duration) )
-        override_setpoint(self, srcNWKID, EPout, setpoint, duration)
+        setpoint = override_setpoint(self, srcNWKID, EPout, setpoint, duration)
         schneider_update_ThermostatDevice(self, Devices, srcNWKID, EPout, ClusterID, setpoint)
         self.ListOfDevices[srcNWKID ]["Schneider"]["BoostDemand"] = True
 
 
     elif action == "0202":  # Decrease temp for CCTFR6100
         self.log.logging( "Schneider", "Debug", "change_setpoint_for_time -- Setpoint to %s for %s min" % (setpoint, duration) )
-        override_setpoint(self, srcNWKID, EPout, setpoint, duration)
+        setpoint = override_setpoint(self, srcNWKID, EPout, setpoint, duration)
         schneider_update_ThermostatDevice(self, Devices, srcNWKID, EPout, ClusterID, setpoint)
         self.ListOfDevices[srcNWKID ]["Schneider"]["BoostDemand"] = True
 
@@ -2022,7 +2022,6 @@ def override_setpoint(self, NwkId, Ep, override, duration):
     if current_setpoint == {}:
         current_setpoint = 2000
 
-
     if "Param" in self.ListOfDevices[NwkId]:
         if "OverrideDurationInMinutes" in self.ListOfDevices[NwkId]["Param"]:
             self.log.logging( "Schneider", "Debug", "override_setpoint -- Duration: %s" % (duration))
@@ -2041,6 +2040,8 @@ def override_setpoint(self, NwkId, Ep, override, duration):
     self.ListOfDevices[NwkId]["Schneider"]["ThermostatOverride"]["OverrideDuration"] = duration * 60
     self.ListOfDevices[NwkId]["Schneider"]["ThermostatOverride"]["OverrideStartTime"] = time()
     self.ListOfDevices[NwkId ]["Schneider"]["BoostDemand"] = True
+    
+    return override
 
 
 def iTRV_open_window_detection(self, NwkId, enable=False):
